@@ -53,34 +53,34 @@ export default function MinerPanel({ miner }: Props) {
     <section className="zion-card">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Pickaxe size={18} className="text-amber-400" />
+          <Pickaxe size={18} className="text-zion-gold" />
           <h2 className="text-sm font-bold">Miner</h2>
         </div>
-        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${running ? 'bg-emerald-700/40 text-emerald-300' : 'bg-red-700/40 text-red-300'}`}>
+        <span className={`zion-badge ${running ? 'zion-badge-green' : 'zion-badge-red'}`}>
           {running ? 'LIVE' : 'DOWN'}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-white/5 rounded-xl p-3 text-center">
+        <div className="zion-panel-soft p-3 text-center">
           <div className="text-3xl font-bold text-gradient">{m.hashrate ? m.hashrate.toFixed(2) : '—'}</div>
           <div className="text-[10px] text-gray-400 mt-1">KH/s</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-3 text-center">
+        <div className="zion-panel-soft p-3 text-center">
           <div className="text-3xl font-bold text-emerald-400">{m.shares_accepted ?? '—'}</div>
           <div className="text-[10px] text-gray-400 mt-1">Shares OK / {m.shares_rejected ?? '—'}</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-3">
+        <div className="zion-panel-soft p-3">
           <div className="text-[10px] text-gray-400">Device</div>
           <div className="text-xs font-mono text-white truncate">
             {(m.gpu_backend ? m.gpu_backend + ': ' : '') + (m.gpu_device ?? 'cpu')}
           </div>
         </div>
-        <div className="bg-white/5 rounded-xl p-3">
+        <div className="zion-panel-soft p-3">
           <div className="text-[10px] text-gray-400">Pool</div>
           <div className="text-xs font-mono text-white truncate">{m.pool_addr ?? '—'}</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-3 col-span-2">
+        <div className="zion-panel-soft p-3 col-span-2">
           <div className="text-[10px] text-gray-400 mb-1.5">Algorithm</div>
           <div className="flex gap-1.5">
             {ALGO_LIST.map((a) => (

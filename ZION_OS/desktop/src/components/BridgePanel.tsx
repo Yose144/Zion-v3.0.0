@@ -52,17 +52,13 @@ export default function BridgePanel() {
   const online = data?.online ?? false;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-gray-900/40 p-4">
+    <div className="zion-panel p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <ArrowLeftRight className="h-4 w-4 text-blue-400" />
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Bridge Relay</h3>
         </div>
-        <span className={`inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full border ${
-          online
-            ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-            : 'text-red-400 bg-red-500/10 border-red-500/20'
-        }`}>
+        <span className={`zion-badge ${online ? 'zion-badge-green' : 'zion-badge-red'}`}>
           {online ? <CheckCircle2 className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
           {online ? 'Online' : 'Offline'}
         </span>

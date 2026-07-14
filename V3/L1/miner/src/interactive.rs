@@ -363,7 +363,7 @@ pub struct ComputedHashrates {
 
 /// Number of rows the dashboard always occupies.
 /// Must match the actual number of printed lines below.
-const DASHBOARD_ROWS: u16 = 20;
+const DASHBOARD_ROWS: u16 = 22;
 
 /// Short display names for algorithms
 fn algo_display(algo: &str) -> &str {
@@ -393,7 +393,7 @@ pub fn draw_dashboard(
 
     // ── Title bar ──
     let title = format!(
-        " ZION v3.0.1  GPU Miner  |  {}",
+        " ZION v3.0.6  Triple Parallel  |  {}",
         algo_display(&control.algorithm)
     );
     let title_padded = format!("{:<78}", title);
@@ -473,7 +473,64 @@ pub fn draw_dashboard(
         )),
     )?;
 
-    // ── Shares ──
+    // ── Triple Stream Shares (Claymore-style per-stream breakdown) ──
+    let zion_total = rates.zion_accepted + rates.zion_rejected;
+    let zion_pct = if zion_total > 0 {
+        rates.zion_accepted as f64 * 100.0 / zion_total as f64
+    } else {
+        100.0
+    };
+    let pearl_total = rates.pearl_accepted + rates.pearl_rejected;
+    let pearl_pct = if pearl_total > 0 {
+        rates.pearl_accepted as f64 * 100.0 / pearl_total as f64
+    } else {
+        100.0
+    };
+    let ext_total = rates.ext_accepted + rates.ext_rejected;
+    let ext_pct = if ext_total > 0 {
+        rates.ext_accepted as f64 * 100.0 / ext_total as f64
+    } else {
+        100.0
+    };
+
+    // Stream 1: ZION Deeksha
+    queue!(
+        out,
+        Print("  Stream 1 "),
+        SetForegroundColor(Color::Cyan),
+        Print(format!("ZION")),
+        ResetColor,
+        Print(format!(
+            "  {:>5} acc / {:>3} rej ({:>5.1}%)",
+            rates.zion_accepted, rates.zion_rejected, zion_pct
+        )),
+    )?;
+    // Stream 2: Pearl PoUW
+    queue!(
+        out,
+        Print("  |  "),
+        SetForegroundColor(Color::Magenta),
+        Print(format!("PRL")),
+        ResetColor,
+        Print(format!(
+            "  {:>5} acc / {:>3} rej ({:>5.1}%)",
+            rates.pearl_accepted, rates.pearl_rejected, pearl_pct
+        )),
+    )?;
+    // Stream 3: External
+    queue!(
+        out,
+        Print("  |  "),
+        SetForegroundColor(Color::Yellow),
+        Print(format!("EXT")),
+        ResetColor,
+        Print(format!(
+            "  {:>5} acc / {:>3} rej ({:>5.1}%)\n",
+            rates.ext_accepted, rates.ext_rejected, ext_pct
+        )),
+    )?;
+
+    // ── Total Shares ──
     let acc = rates.accepted;
     let rej = rates.rejected;
     let total = acc + rej;
@@ -485,7 +542,7 @@ pub fn draw_dashboard(
     let rej_col = if rej > 0 { Color::Red } else { Color::DarkGrey };
     queue!(
         out,
-        Print("  Shares    "),
+        Print("  Total     "),
         SetForegroundColor(Color::Green),
         Print(format!("{acc} accepted")),
         ResetColor,

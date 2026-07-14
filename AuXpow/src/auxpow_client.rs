@@ -390,10 +390,11 @@ impl AuxPowClient {
         // Subscribe + Authorize (non-EPIC protocols — EPIC already handled above)
         if self.protocol != StratumProtocol::EpicStratum {
             if self.protocol == StratumProtocol::PearlStratum {
-                // Pearl handshake: configure → subscribe → authorize (all fire-and-forget).
-                // The pool sends pearl.set_mining_params + pearl.challenge as notifications.
-                self.pearl_configure().await?;
-                self.subscribe().await?;
+                // Pearl plain stratum (port 5571): NO mining.subscribe or
+                // mining.configure — go straight to mining.authorize with
+                // object params.  The pool responds with an ack and pushes
+                // mining.notify immediately.
+                // See https://prl.suprnova.cc/stratum-spec.html §4.1
             } else {
                 self.subscribe().await?;
             }
@@ -430,15 +431,16 @@ impl AuxPowClient {
 
         if self.protocol == StratumProtocol::EpicStratum {
             // EPIC pools (de.epicmine.io:3334) require TLS.
-            // Install the aws-lc-rs CryptoProvider as the process-level default.
-            // This is needed because both aws-lc-rs and ring may be present
-            // (ring via reqwest), and rustls can't auto-select.
-            let _ = tokio_rustls::rustls::crypto::aws_lc_rs::default_provider()
-                .install_default();
+            // Use explicit provider to avoid "Could not automatically determine
+            // the process-level CryptoProvider" panic.
+            let provider = std::sync::Arc::new(
+                tokio_rustls::rustls::crypto::ring::default_provider()
+            );
             let roots = RootCertStore {
                 roots: webpki_roots::TLS_SERVER_ROOTS.iter().cloned().collect(),
             };
-            let config = tokio_rustls::rustls::ClientConfig::builder()
+            let config = tokio_rustls::rustls::ClientConfig::builder_with_provider(provider)
+                .with_safe_default_protocol_versions()?
                 .with_root_certificates(roots)
                 .with_no_client_auth();
             let connector = tokio_rustls::TlsConnector::from(std::sync::Arc::new(config));
@@ -472,11 +474,9 @@ impl AuxPowClient {
             self.epic_login(payout_wallet).await?;
             self.epic_getjobtemplate().await?;
         } else {
-            // PearlStratum: mining.configure → mining.subscribe → mining.authorize
-            if self.protocol == StratumProtocol::PearlStratum {
-                self.pearl_configure().await?;
-                self.subscribe_inline().await?;
-            } else {
+            // PearlStratum: straight to mining.authorize (no subscribe/configure).
+            // See https://prl.suprnova.cc/stratum-spec.html §4.1
+            if self.protocol != StratumProtocol::PearlStratum {
                 self.subscribe_inline().await?;
             }
             self.authorize_inline(payout_wallet).await?;
@@ -738,12 +738,17 @@ impl AuxPowClient {
             "mining.authorize"
         };
 
-        // PearlStratum: array params ["<wallet>", "<worker>"] — matches official miner.
+        // PearlStratum (port 5571 plain stratum): object params per suprnova spec.
         let req = if is_pearl {
             json!({
                 "id": 2,
                 "method": "mining.authorize",
-                "params": [payout_wallet, self.profile.worker_name]
+                "params": {
+                    "wallet": payout_wallet,
+                    "worker": self.profile.worker_name,
+                    "pass": password,
+                    "agent": "zion-miner/3.0.6"
+                }
             })
         } else {
             json!({
@@ -752,19 +757,6 @@ impl AuxPowClient {
                 "params": [worker, password]
             })
         };
-
-        // PearlStratum: AlphaPool doesn't respond to mining.authorize.
-        // Send fire-and-forget and assume success.
-        if is_pearl {
-            let req_line = format!("{}\n", serde_json::to_string(&req)?);
-            let mut stream = self.stream.lock().await;
-            if let Some(w) = stream.as_mut() {
-                w.write_all(req_line.as_bytes()).await?;
-                println!("auxpow: PRL authorize sent (fire-and-forget for AlphaPool)");
-            }
-            *self.authorized.lock().await = true;
-            return Ok(());
-        }
 
         let resp = self.send_request_inline(&req).await?;
         let ok = if is_ethstratum {
@@ -1144,7 +1136,7 @@ impl AuxPowClient {
             "x"
         } else if is_pearl {
             // Pearl (PRL): password may carry d=N for custom difficulty.
-            // Default "x" — pool will use VarDiff on port 5566.
+            // Default "x" — pool will use VarDiff on port 5571.
             "x"
         } else if self.profile.coin == ExternalCoin::XMR {
             // MoneroOcean expects a wallet.worker username and a fixed/starting
@@ -1165,13 +1157,19 @@ impl AuxPowClient {
             "mining.authorize"
         };
 
-        // PearlStratum: the official alpha-miner uses array params
-        // ["<wallet>", "<worker>"] — NOT object params.
+        // PearlStratum (port 5571 plain stratum): use object params per
+        // suprnova spec §4.1 — {wallet, worker, pass, agent}.
+        // The pool DOES respond with {"id":N,"result":true,"error":null}.
         let req = if is_pearl {
             json!({
                 "id": 2,
                 "method": "mining.authorize",
-                "params": [payout_wallet, self.profile.worker_name]
+                "params": {
+                    "wallet": payout_wallet,
+                    "worker": self.profile.worker_name,
+                    "pass": password,
+                    "agent": "zion-miner/3.0.6"
+                }
             })
         } else {
             json!({
@@ -1180,21 +1178,6 @@ impl AuxPowClient {
                 "params": [worker, password]
             })
         };
-
-        // PearlStratum: AlphaPool doesn't respond to mining.authorize with a
-        // matching id — it just sends another pearl.challenge. So we send the
-        // authorize and don't wait for a response. We assume success and let
-        // the poll loop handle incoming challenges/notifies.
-        if is_pearl {
-            let req_line = format!("{}\n", serde_json::to_string(&req)?);
-            let mut stream = self.stream.lock().await;
-            if let Some(w) = stream.as_mut() {
-                w.write_all(req_line.as_bytes()).await?;
-                println!("auxpow: PRL authorize sent (fire-and-forget for AlphaPool)");
-            }
-            *self.authorized.lock().await = true;
-            return Ok(());
-        }
 
         let resp = self.send_request(&req).await?;
         let ok = if is_ethstratum {
@@ -2825,29 +2808,12 @@ impl AuxPowClient {
                 job_id, plain_proof.len()
             );
 
-            // AlphaPool uses submitPlainProof with JSON-RPC 2.0 format:
-            //   {"jsonrpc":"2.0","method":"submitPlainProof","id":N,
-            //    "params":{"plain_proof":"<base64>","mining_job":{
-            //      "incomplete_header_bytes":"<base64>","target":<int>
-            //    }}}
-            // The incomplete_header_bytes is the 76-byte block header (base64).
-            // The target is the share target as an integer.
-            let header_b64 = base64::Engine::encode(
-                &base64::engine::general_purpose::STANDARD,
-                &job.as_ref().map(|j| j.header_bytes.clone()).unwrap_or_default(),
-            );
-            let target_int = job.as_ref().map(|j| {
-                // Convert 32-byte big-endian target to u256 decimal string
-                // The official miner sends target as a decimal integer
-                target_bytes_to_decimal_string(&j.target_bytes)
-            }).unwrap_or_else(|| u64::MAX.to_string());
-
-            ("submitPlainProof", json!({
-                "plain_proof": plain_proof,
-                "mining_job": {
-                    "incomplete_header_bytes": header_b64,
-                    "target": serde_json::Value::Number(serde_json::Number::from_str(&target_int).unwrap_or_else(|_| serde_json::Number::from(u64::MAX)))
-                }
+            // Pearl plain stratum (port 5571) per suprnova spec §4.3:
+            //   mining.submit with object params {job_id, plain_proof}
+            //   plain_proof is base64-encoded bincode PlainProof
+            ("mining.submit", json!({
+                "job_id": job_id,
+                "plain_proof": plain_proof
             }))
         } else {
             let hex = format!("0x{:016x}", nonce);

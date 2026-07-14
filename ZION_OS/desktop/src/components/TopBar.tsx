@@ -18,10 +18,10 @@ export default function TopBar({ status, autoRefresh, onToggleRefresh, onRefresh
   const peers = status?.edge_node?.known_peers ?? status?.node1?.known_peers ?? 0;
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-black/40 border-b border-white/10">
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-black/50 border-b border-white/10">
       <div className="max-w-[1600px] mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 via-purple-500 to-cyan-400 flex items-center justify-center text-xs font-bold shadow-lg shadow-purple-500/20">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-zion-gold via-zion-purple to-zion-cyan flex items-center justify-center text-xs font-bold text-black shadow-lg shadow-zion-purple/20">
             Z
           </div>
           <div>
@@ -39,14 +39,14 @@ export default function TopBar({ status, autoRefresh, onToggleRefresh, onRefresh
         </div>
 
         <div className="hidden md:flex items-center gap-2 text-xs">
-          <HeroPill label="Height" value={fmt(heroH)} color="text-amber-400" />
+          <HeroPill label="Height" value={fmt(heroH)} color="text-zion-gold" />
           <HeroPill label="Hashrate" value={hr ? hr.toFixed(2) : '—'} unit="KH/s" color="text-emerald-400" />
-          <HeroPill label="Peers" value={String(peers)} color="text-cyan-400" />
+          <HeroPill label="Peers" value={String(peers)} color="text-zion-cyan" />
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={`text-[10px] px-2 py-1 rounded font-bold border ${isEdge ? 'bg-purple-700/30 text-purple-300 border-purple-500/20' : 'bg-blue-700/30 text-blue-300 border-blue-500/20'}`}>
-            {isEdge ? '🌍 Edge-Primary' : '🔷 Local-Dev'}
+          <span className={`zion-badge ${isEdge ? 'zion-badge-purple' : 'zion-badge-cyan'}`}>
+            {isEdge ? 'Edge-Primary' : 'Local-Dev'}
           </span>
           <button onClick={onRefresh} className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition" title="Refresh">
             <RefreshCw size={14} className="text-gray-300" />

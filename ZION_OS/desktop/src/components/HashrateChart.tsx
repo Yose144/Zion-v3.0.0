@@ -85,7 +85,7 @@ export default function HashrateChart() {
   }));
 
   return (
-    <div className="rounded-xl border border-white/10 bg-gray-900/40 p-4">
+    <div className="zion-panel p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-emerald-400" />

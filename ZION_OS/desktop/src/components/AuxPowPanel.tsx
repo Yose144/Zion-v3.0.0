@@ -93,7 +93,7 @@ export default function AuxPowPanel() {
           <h3 className="text-xs font-bold uppercase tracking-widest text-gray-300">AuxPow Config</h3>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${c.enabled ? 'bg-emerald-700/40 text-emerald-300' : 'bg-gray-700/40 text-gray-400'}`}>
+          <span className={`zion-badge ${c.enabled ? 'zion-badge-green' : 'zion-badge'}`}>
             {c.enabled ? 'ENABLED' : 'DISABLED'}
           </span>
           <button

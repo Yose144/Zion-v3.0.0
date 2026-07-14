@@ -868,15 +868,29 @@ fn run_local_session(
         c.algorithm.clone()
     };
 
-    // ── GPU backend init (multi-algo manager — lazy per-algorithm) ──
-    let mut gpu_manager =
-        gpu_backend::GpuBackendManager::new(config.gpu_backend, config.gpu_work_size);
+    // ── GPU backend init (TriGpuManager — 3-stream Claymore-style) ──
     let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
+    let mut tri_gpu = match gpu_backend::TriGpuManager::with_work_sizes(
+        config.gpu_backend,
+        config.gpu_work_size,
+        config.pearl_gpu_work_size,
+        config.secondary_gpu_work_size,
+    ) {
+        Ok(t) => t,
+        Err(e) => {
+            println!("gpu_init_fallback reason=\"{e}\" using=cpu");
+            gpu_available = false;
+            gpu_backend::TriGpuManager::with_work_sizes(
+                gpu_backend::GpuBackendKind::Cpu,
+                1, 1, 1,
+            )?
+        }
+    };
     if gpu_available {
-        match gpu_manager.ensure_algorithm(&initial_algorithm) {
+        match tri_gpu.primary() {
             Ok(g) => {
                 println!(
-                    "gpu_init backend={} device=\"{}\" work_size={} algorithm={}",
+                    "gpu_init backend={} device=\"{}\" work_size={} algorithm={} streams=3",
                     g.backend_kind().as_str(),
                     g.device_name(),
                     config.gpu_work_size,
@@ -968,18 +982,19 @@ fn run_local_session(
                 job.job_id, job.nonce_count, job.start_nonce, current_algorithm
             );
         }
-        // Ensure GPU backend matches current algorithm (lazy create / switch)
+        // Primary GPU backend (Deeksha) — never switches algorithm.
+        // TriGpuManager keeps the primary backend alive for the entire session.
         // Skip GPU for CPU-only algorithms (verushash, randomx) — they have no
         // GPU kernel and must use CPU mining.
         let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
         if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu
             && !gpu_backend::is_cpu_only_algorithm(&current_algorithm)
         {
-            match gpu_manager.ensure_algorithm(&current_algorithm) {
+            match tri_gpu.primary() {
                 Ok(g) => gpu_ref = Some(g),
                 Err(e) => {
                     println!(
-                        "gpu_algo_fallback job={} algorithm={} reason=\"{e}\" using=cpu",
+                        "gpu_primary_error job={} algorithm={} reason=\"{e}\" using=cpu",
                         job.job_id, current_algorithm
                     );
                 }
@@ -1289,15 +1304,33 @@ fn run_remote_session(
         c.algorithm.clone()
     };
 
-    // ── GPU backend init (multi-algo manager — lazy per-algorithm) ──
-    let mut gpu_manager =
-        gpu_backend::GpuBackendManager::new(config.gpu_backend, config.gpu_work_size);
+    // ── GPU backend init (TriGpuManager — 3-stream Claymore-style) ──
+    // Primary (Deeksha) is created immediately. Pearl + secondary are
+    // lazy-created by their respective persistent threads on demand.
     let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
+    let mut tri_gpu = match gpu_backend::TriGpuManager::with_work_sizes(
+        config.gpu_backend,
+        config.gpu_work_size,
+        config.pearl_gpu_work_size,
+        config.secondary_gpu_work_size,
+    ) {
+        Ok(t) => t,
+        Err(e) => {
+            println!("gpu_init_fallback reason=\"{e}\" using=cpu");
+            gpu_available = false;
+            // Fallback: CPU dummy — primary() will error but is never called
+            // when gpu_available is false.
+            gpu_backend::TriGpuManager::with_work_sizes(
+                gpu_backend::GpuBackendKind::Cpu,
+                1, 1, 1,
+            )?
+        }
+    };
     if gpu_available {
-        match gpu_manager.ensure_algorithm(&initial_algorithm) {
+        match tri_gpu.primary() {
             Ok(g) => {
                 println!(
-                    "gpu_init backend={} device=\"{}\" work_size={} algorithm={}",
+                    "gpu_init backend={} device=\"{}\" work_size={} algorithm={} streams=3",
                     g.backend_kind().as_str(),
                     g.device_name(),
                     config.gpu_work_size,
@@ -1331,31 +1364,51 @@ fn run_remote_session(
         }
     }
 
-    // ── Persistent Blake3 GPU thread (Claymore-style parallel dual mining) ──
-    // Creates a SEPARATE OpenCL context on the same GPU device.
-    // Runs continuously, receiving external stream jobs via channel.
-    // The GPU hardware scheduler time-shares between Deeksha (main thread)
-    // and Blake3 (this thread) — both run SIMULTANEOUSLY.
+    // ── Persistent Blake3 GPU thread (Stream 3a: DCR/ALPH external) ──
+    // Claymore-style: separate OpenCL context, runs SIMULTANEOUSLY with
+    // Deeksha (main thread). Uses secondary_gpu_work_size for independent
+    // intensity control per stream.
     let (ext_gpu_tx, ext_gpu_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
     let (ext_gpu_share_tx, ext_gpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
 
     let dual_gpu_enabled = gpu_available
         && config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
     if dual_gpu_enabled {
-        let ws = config.gpu_work_size;
+        let ws = config.secondary_gpu_work_size;
         thread::spawn(move || {
             blake3_gpu_thread(ext_gpu_rx, ext_gpu_share_tx, ws);
         });
         println!(
-            "[{}] dual_gpu_blake3_thread_started work_size={}",
+            "[{}] stream3a_blake3_gpu_started work_size={} (secondary)",
             log_timestamp(),
-            config.gpu_work_size
+            config.secondary_gpu_work_size
         );
     } else {
-        println!("[{}] dual_gpu_blake3_thread_disabled (gpu_available={})", log_timestamp(), gpu_available);
+        println!("[{}] stream3a_blake3_gpu_disabled (gpu_available={})", log_timestamp(), gpu_available);
     }
 
-    // ── Persistent Pearl PoUW thread (pool-routed) ──
+    // ── Persistent ProgPow GPU thread (Stream 3b: EPIC external) ──
+    // Separate OpenCL context, runs SIMULTANEOUSLY with Deeksha + Blake3.
+    // Uses secondary_gpu_work_size for independent intensity control.
+    let (progpow_tx, progpow_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
+    let (progpow_share_tx, progpow_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
+
+    let progpow_gpu_enabled = dual_gpu_enabled;
+    if progpow_gpu_enabled {
+        let ws = config.secondary_gpu_work_size;
+        thread::spawn(move || {
+            progpow_gpu_thread(progpow_rx, progpow_share_tx, ws);
+        });
+        println!(
+            "[{}] stream3b_progpow_gpu_started work_size={} (secondary)",
+            log_timestamp(),
+            config.secondary_gpu_work_size
+        );
+    } else {
+        println!("[{}] stream3b_progpow_gpu_disabled (gpu_available={})", log_timestamp(), gpu_available);
+    }
+
+    // ── Persistent Pearl PoUW thread (Stream 2: pool-routed) ──
     // Receives PRL external stream jobs via channel from the main loop.
     // Mines PoUW using the real Pearl pipeline and sends proofs back.
     // The main thread submits proofs to the ZION pool via PearlSubmit.
@@ -1364,7 +1417,22 @@ fn run_remote_session(
     thread::spawn(move || {
         pearl_gpu_thread(pearl_rx, pearl_proof_tx);
     });
-    println!("[{}] pearl_gpu_thread_started (pool-routed)", log_timestamp());
+    println!("[{}] stream2_pearl_gpu_started (pool-routed)", log_timestamp());
+
+    // ── Persistent CPU external thread (Stream 3c: VerusHash/RandomX) ──
+    // Claymore-style: persistent thread instead of per-iteration spawn.
+    // Receives CPU-only external jobs via channel, mines continuously.
+    let (ext_cpu_tx, ext_cpu_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
+    let (ext_cpu_share_tx, ext_cpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
+    let ext_cpu_threads = config.threads.max(1);
+    thread::spawn(move || {
+        ext_cpu_thread(ext_cpu_rx, ext_cpu_share_tx, ext_cpu_threads);
+    });
+    println!(
+        "[{}] stream3c_ext_cpu_started threads={}",
+        log_timestamp(),
+        config.threads
+    );
 
     sync_miner_metrics(
         metrics,
@@ -1392,7 +1460,7 @@ fn run_remote_session(
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
 
-    let backend_str = gpu_manager.current_backend_name().unwrap_or("cpu");
+    let backend_str = tri_gpu.primary_backend_kind().as_str();
     // BUG #2 fix: use current control.algorithm (user may have pressed 'a' to switch)
     let hello_algorithm = {
         let c = control.lock().unwrap();
@@ -1513,18 +1581,19 @@ fn run_remote_session(
             (c.cpu_enabled, c.gpu_enabled, c.dual_mode)
         };
 
-        // Ensure GPU backend matches current algorithm (lazy create / switch)
+        // Primary GPU backend (Deeksha) — never switches algorithm.
+        // TriGpuManager keeps the primary backend alive for the entire session.
         // Skip GPU for CPU-only algorithms (verushash, randomx) — they have no
         // GPU kernel and must use CPU mining.
         let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
         if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu && gpu_on
             && !gpu_backend::is_cpu_only_algorithm(&current_algorithm)
         {
-            match gpu_manager.ensure_algorithm(&current_algorithm) {
+            match tri_gpu.primary() {
                 Ok(g) => gpu_ref = Some(g),
                 Err(e) => {
                     println!(
-                        "gpu_algo_fallback job={} algorithm={} reason=\"{e}\" using=cpu",
+                        "gpu_primary_error job={} algorithm={} reason=\"{e}\" using=cpu",
                         job.job_id, current_algorithm
                     );
                 }
@@ -1569,35 +1638,24 @@ fn run_remote_session(
         // ── Pearl stream already spawned at session start ──
 
         // Send external stream job to the appropriate persistent thread:
-        // - PRL (pearlhash) → Pearl PoUW GPU thread (pool-routed)
-        // - Blake3 (DCR/ALPH) → Blake3 GPU thread
-        // - Other (VerusHash, etc.) → CPU parallel thread
+        // - PRL (pearlhash) → Stream 2: Pearl PoUW GPU thread (pool-routed)
+        // - Blake3 (DCR/ALPH) → Stream 3a: Blake3 GPU thread
+        // - EPIC (progpow) → Stream 3b: ProgPow GPU thread
+        // - Other (VerusHash, RandomX) → Stream 3c: CPU persistent thread
         if let Some(ref ext) = external_stream {
             if ext.coin.eq_ignore_ascii_case("PRL") || ext.algorithm.eq_ignore_ascii_case("pearlhash") {
                 let _ = pearl_tx.send(ext.clone());
             } else if matches!(ext.algorithm.as_str(), "blake3" | "blake3_dcr" | "blake3_alph") {
                 let _ = ext_gpu_tx.send(ext.clone());
+            } else if ext.coin.eq_ignore_ascii_case("EPIC")
+                || matches!(ext.algorithm.as_str(), "progpow" | "progpow_epic")
+            {
+                let _ = progpow_tx.send(ext.clone());
+            } else {
+                // CPU-only external stream → persistent CPU thread
+                let _ = ext_cpu_tx.send(ext.clone());
             }
         }
-
-        // CPU-only external stream (VerusHash, etc.) → CPU parallel thread
-        // Pearl (PRL) and Blake3 are handled by persistent GPU threads above.
-        let ext_handle = if let Some(ref ext) = external_stream {
-            let is_pearl = ext.coin.eq_ignore_ascii_case("PRL")
-                || ext.algorithm.eq_ignore_ascii_case("pearlhash");
-            let is_blake3 = matches!(ext.algorithm.as_str(), "blake3" | "blake3_dcr" | "blake3_alph");
-            if !is_pearl && !is_blake3 {
-                let ext = ext.clone();
-                let ext_threads = threads.max(1);
-                Some(thread::spawn(move || {
-                    mine_external_stream_cpu(&ext, ext_threads)
-                }))
-            } else {
-                None
-            }
-        } else {
-            None
-        };
 
         let scan_result = if can_gpu {
             let g = gpu_ref.unwrap();
@@ -1629,27 +1687,44 @@ fn run_remote_session(
             Err(_) => None,
         };
 
-        // ── Join CPU external stream thread (VerusHash) and submit ─────
-        if let Some(handle) = ext_handle {
-            let ext_result = handle.join().unwrap_or(None);
-            if let Some(share) = ext_result {
-                submit_external_share(
-                    &mut writer, &mut reader, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
-                );
-            } else if let Some(ref ext) = external_stream {
-                println!(
-                    "[{}] external_no_share  coin={}  algo={}",
-                    log_timestamp(),
-                    ext.coin,
-                    ext.algorithm,
-                );
-            }
+        // ── Collect ProgPow GPU share from persistent thread (non-blocking) ──
+        let progpow_share = match progpow_share_rx.try_recv() {
+            Ok(share) => Some(share),
+            Err(_) => None,
+        };
+
+        // ── Collect CPU external share from persistent thread (non-blocking) ──
+        let ext_cpu_share = match ext_cpu_share_rx.try_recv() {
+            Ok(share) => Some(share),
+            Err(_) => None,
+        };
+
+        // ── Submit CPU external share (VerusHash/RandomX, if found) ────
+        if let Some(share) = ext_cpu_share {
+            submit_external_share(
+                &mut writer, &mut reader, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
+            );
         }
 
         // ── Submit Blake3 GPU share (if found by persistent thread) ────
         if let Some(share) = ext_gpu_share {
             println!(
                 "[{}] external_gpu_share_found  coin={}  algo={}  job_id={}  nonce={}",
+                log_timestamp(),
+                share.coin,
+                share.algorithm,
+                share.external_job_id,
+                share.nonce,
+            );
+            submit_external_share(
+                &mut writer, &mut reader, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
+            );
+        }
+
+        // ── Submit ProgPow GPU share (if found by persistent thread) ───
+        if let Some(share) = progpow_share {
+            println!(
+                "[{}] progpow_gpu_share_found  coin={}  algo={}  job_id={}  nonce={}",
                 log_timestamp(),
                 share.coin,
                 share.algorithm,
@@ -2888,6 +2963,59 @@ fn pearl_gpu_thread(
                 // Brief sleep to avoid tight error loop
                 thread::sleep(Duration::from_millis(100));
             }
+        }
+    }
+}
+
+
+/// Persistent CPU external stream thread (Stream 3c: VerusHash/RandomX).
+///
+/// Claymore-style: created once at session start, receives jobs via channel,
+/// mines continuously, and sends shares back via channel.  This replaces
+/// the old per-iteration `thread::spawn(mine_external_stream_cpu)` pattern
+/// which created and destroyed a thread every mining cycle.
+fn ext_cpu_thread(
+    rx: std::sync::mpsc::Receiver<zion_pool::ExternalStreamJob>,
+    tx: std::sync::mpsc::Sender<ExternalShareResult>,
+    threads: usize,
+) {
+    println!(
+        "[{}] ext_cpu_thread: started (persistent, threads={})",
+        log_timestamp(),
+        threads
+    );
+
+    let mut current_job: Option<zion_pool::ExternalStreamJob> = None;
+
+    loop {
+        // Check for new job (non-blocking)
+        match rx.try_recv() {
+            Ok(job) => {
+                println!(
+                    "[{}] ext_cpu_thread: new job coin={} algo={} job_id={}",
+                    log_timestamp(),
+                    job.coin,
+                    job.algorithm,
+                    job.job_id,
+                );
+                current_job = Some(job);
+            }
+            Err(std::sync::mpsc::TryRecvError::Empty) => {}
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                println!("[{}] ext_cpu_thread: channel closed, exiting", log_timestamp());
+                return;
+            }
+        }
+
+        // Mine current job (if any)
+        if let Some(ref ext) = current_job {
+            if let Some(share) = mine_external_stream_cpu(ext, threads) {
+                let _ = tx.send(share);
+                current_job = None; // Wait for next job
+            }
+        } else {
+            // No job — brief sleep to avoid busy-loop
+            std::thread::sleep(std::time::Duration::from_millis(200));
         }
     }
 }

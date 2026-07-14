@@ -652,6 +652,11 @@ async fn run_auxpow_bridge(
 }
 
 fn main() -> Result<()> {
+    // Install the aws-lc-rs CryptoProvider as the process-level default
+    // BEFORE any rustls usage (reqwest, tokio-rustls, etc.).  Both aws-lc-rs
+    // and ring may be present (ring via reqwest), so rustls can't auto-select.
+    zion_auxpow::install_rustls_crypto_provider();
+
     let config = ServerConfig::from_env()?;
     let log_channel = Arc::new(LogChannel::spawn());
     let pool = Arc::new(Mutex::new(MiningPool::with_job_ttl(

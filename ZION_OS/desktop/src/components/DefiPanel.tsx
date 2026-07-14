@@ -49,17 +49,13 @@ export default function DefiPanel() {
   const isLive = data?.source === 'live';
 
   return (
-    <div className="rounded-xl border border-white/10 bg-gray-900/40 p-4">
+    <div className="zion-panel p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Droplets className="h-4 w-4 text-cyan-400" />
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">DeFi Pool</h3>
         </div>
-        <span className={`text-[9px] px-2 py-0.5 rounded-full border ${
-          isLive
-            ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-            : 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-        }`}>
+        <span className={`zion-badge ${isLive ? 'zion-badge-green' : 'zion-badge-amber'}`}>
           {data?.source ?? '—'}
         </span>
       </div>

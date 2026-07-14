@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Activity } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import type { V3Status } from '../lib/api';
 
@@ -33,7 +34,10 @@ export default function PerformanceCharts({ miner }: Props) {
 
   return (
     <section className="zion-card">
-      <h2 className="text-sm font-bold mb-3">📈 Performance</h2>
+      <div className="flex items-center gap-2 mb-3">
+        <Activity className="h-4 w-4 text-emerald-400" />
+        <h2 className="text-sm font-bold">Local Performance</h2>
+      </div>
       <div className="space-y-4">
         <div style={{ height: 160 }}>
           <ResponsiveContainer width="100%" height="100%">

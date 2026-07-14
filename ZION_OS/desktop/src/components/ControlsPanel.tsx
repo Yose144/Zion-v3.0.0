@@ -56,7 +56,9 @@ export default function ControlsPanel({ className = '', status }: Props) {
   return (
     <div className={`zion-card ${className}`}>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-300">Service Controls</h3>
+        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-300 flex items-center gap-2">
+          <Power size={14} className="text-amber-400" /> Service Controls
+        </h3>
         <button
           onClick={refreshStatus}
           disabled={!!loading}
@@ -117,7 +119,7 @@ function StatusRow({ label, running }: { label: string; running: boolean }) {
   return (
     <div className="flex items-center justify-between text-xs">
       <span className="text-gray-300">{label}</span>
-      <span className={`flex items-center gap-1 text-[10px] font-bold ${running ? 'text-emerald-400' : 'text-gray-500'}`}>
+      <span className={`zion-badge ${running ? 'zion-badge-green' : 'zion-badge'}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${running ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600'}`} />
         {running ? 'RUNNING' : 'STOPPED'}
       </span>
@@ -137,7 +139,7 @@ function CtrlBtn({ icon, label, color, disabled, onClick }: {
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`flex items-center gap-1 px-2 py-1 rounded border text-[10px] font-semibold transition disabled:opacity-40 ${colors[color]}`}
+      className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded border text-[10px] font-semibold transition disabled:opacity-40 ${colors[color]}`}
     >
       {icon} {label}
     </button>

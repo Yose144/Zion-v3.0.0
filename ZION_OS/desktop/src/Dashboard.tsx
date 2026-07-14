@@ -5,8 +5,12 @@ import {
   CheckCircle,
   Globe,
   History,
+  LayoutGrid,
   ListChecks,
+  Network,
+  Pickaxe,
   Settings,
+  Terminal,
   TrendingUp,
   Wallet as WalletIcon,
   XCircle,
@@ -29,6 +33,12 @@ import PerformanceCharts from './components/PerformanceCharts';
 import MonitoringPanel from './components/MonitoringPanel';
 import LogViewer from './components/LogViewer';
 import AuxPowPanel from './components/AuxPowPanel';
+import AgentPanel from './components/AgentPanel';
+import SecurityPanel from './components/SecurityPanel';
+import LayerStatusPanel from './components/LayerStatusPanel';
+import BackupPanel from './components/BackupPanel';
+import MempoolPanel from './components/MempoolPanel';
+import ControlsPanel from './components/ControlsPanel';
 
 import {
   fetchFullStatus,
@@ -78,6 +88,7 @@ export default function Dashboard() {
   const [controls, setControls] = useState<{ actions: string[]; topology: string } | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'mining' | 'network' | 'ecosystem' | 'operations'>('overview');
 
   const refresh = useCallback(async () => {
     try {
@@ -139,6 +150,14 @@ export default function Dashboard() {
     if (!res?.ok) throw new Error(res?.error || 'Action failed');
   };
 
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: LayoutGrid },
+    { id: 'mining', label: 'Mining', icon: Pickaxe },
+    { id: 'network', label: 'Network', icon: Network },
+    { id: 'ecosystem', label: 'Ecosystem', icon: Globe },
+    { id: 'operations', label: 'Operations', icon: Terminal },
+  ] as const;
+
   return (
     <div className="min-h-screen">
       <TopBar
@@ -152,71 +171,114 @@ export default function Dashboard() {
       <main className="max-w-[1600px] mx-auto px-4 py-5 space-y-5">
         {lastError && (
           <div className="px-3 py-2 rounded bg-amber-900/30 border border-amber-500/20 text-amber-200 text-xs">
-            ⚠️ {lastError} — Spust Python dashboard: <code>python ZION_OS/dashboard/app.py</code>
+            {lastError} — Spust Python dashboard: <code>python ZION_OS/dashboard/app.py</code>
           </div>
         )}
 
-        <ReadinessBar readiness={readiness} />
-        <ChecklistSection checklist={checklist} />
-        <EdgeOverviewSection overview={edgeOverview} />
+        <div className="flex flex-wrap gap-2 border-b border-white/10 pb-3">
+          {tabs.map((t) => {
+            const Icon = t.icon;
+            const active = activeTab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${
+                  active
+                    ? 'bg-zion-purple/20 text-zion-purple border-zion-purple/40'
+                    : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Icon size={14} />
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
 
-        <section>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Services</h2>
-            <div className="flex gap-3 text-[10px]">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />Live</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" />Degraded</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" />Down</span>
+        {activeTab === 'overview' && (
+          <div className="space-y-5">
+            <ReadinessBar readiness={readiness} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <ChecklistSection checklist={checklist} />
+              <EdgeOverviewSection overview={edgeOverview} />
+            </div>
+            <section>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Services</h2>
+                <div className="flex gap-3 text-[10px]">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />Live</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" />Degraded</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" />Down</span>
+                </div>
+              </div>
+              <ServiceGrid services={services} />
+            </section>
+            <MonitoringPanel monitoring={monitoring} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <ChainPanel status={status} />
+              <AlertsPanel alerts={alerts} />
             </div>
           </div>
-          <ServiceGrid services={services} />
-        </section>
+        )}
 
-        <MonitoringPanel monitoring={monitoring} />
+        {activeTab === 'mining' && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <MinerPanel miner={status?.miner} />
+              <PoolPanel pool={status?.pool} poolEdge={status?.pool_edge} />
+              <PerformanceCharts miner={status?.miner} />
+            </div>
+            <HashrateChart />
+            <RevenueSection revenue={revenue} poolDashboard={poolDashboard} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <AuxPowPanel />
+              <EventsSection events={events} connectionHistory={poolDashboard?.connection_history} />
+            </div>
+          </div>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <ServiceControlsSection actions={controls?.actions ?? []} onAction={handleControl} />
-          <MinerPanel miner={status?.miner} />
-          <PoolPanel pool={status?.pool} poolEdge={status?.pool_edge} />
-        </div>
+        {activeTab === 'network' && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <ChainPanel status={status} />
+              <MempoolPanel />
+              <AgentPanel />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <WalletsSection wallets={wallets} />
+              <ExplorerSection blocks={blocks} overview={edgeOverview} />
+            </div>
+            <AlertsHistorySection history={alertsHistory} />
+          </div>
+        )}
 
-        <HashrateChart />
+        {activeTab === 'ecosystem' && (
+          <div className="space-y-5">
+            <LayerStatusPanel />
+            <section>
+              <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">DeFi · Bridge · WARP · DAO</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <DefiPanel />
+                <BridgePanel />
+                <CexPanel />
+                <WarpPanel />
+                <DaoPanel />
+              </div>
+            </section>
+          </div>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <ChainPanel status={status} />
-          <AlertsPanel alerts={alerts} />
-          <PerformanceCharts miner={status?.miner} />
-        </div>
-
-        <RevenueSection revenue={revenue} poolDashboard={poolDashboard} />
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <AuxPowPanel />
-          <div className="lg:col-span-2">
+        {activeTab === 'operations' && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <ControlsPanel status={status} />
+              <BackupPanel />
+              <SecurityPanel />
+            </div>
             <LogViewer />
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <WalletsSection wallets={wallets} />
-          <ExplorerSection blocks={blocks} overview={edgeOverview} />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <AlertsHistorySection history={alertsHistory} />
-          <EventsSection events={events} connectionHistory={poolDashboard?.connection_history} />
-        </div>
-
-        <section>
-          <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Edge Ecosystem</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <DefiPanel />
-            <BridgePanel />
-            <CexPanel />
-            <WarpPanel />
-            <DaoPanel />
-          </div>
-        </section>
+        )}
       </main>
 
       <footer className="border-t border-white/10 mt-6 py-3">
@@ -418,7 +480,7 @@ function RevenueSection({ revenue, poolDashboard }: { revenue: RevenueDashboard 
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {/* Live AuxPoW / Revenue */}
-        <div className="bg-white/5 rounded-xl p-3">
+        <div className="zion-panel-soft p-3">
           <div className="text-[10px] text-gray-400 mb-1">AuxPoW</div>
           <div className="text-lg font-bold text-cyan-400">{r?.current_coin || aux?.current_coin || '—'}</div>
           <div className="text-xs text-gray-400">{r?.current_algorithm || aux?.current_algorithm || '—'} · {r?.current_pool || aux?.current_pool || '—'}</div>
@@ -432,7 +494,7 @@ function RevenueSection({ revenue, poolDashboard }: { revenue: RevenueDashboard 
         </div>
 
         {/* USD / ZION totals */}
-        <div className="bg-white/5 rounded-xl p-3">
+        <div className="zion-panel-soft p-3">
           <div className="text-[10px] text-gray-400 mb-1">Revenue</div>
           <div className="text-lg font-bold text-zion-gold">${r?.total_usd?.toFixed(4) ?? '—'}</div>
           <div className="text-xs text-gray-400">{r?.daily_estimate_usd ? `~$${r.daily_estimate_usd.toFixed(4)}/day` : '—'}</div>
@@ -445,7 +507,7 @@ function RevenueSection({ revenue, poolDashboard }: { revenue: RevenueDashboard 
         </div>
 
         {/* Blocks / Pool */}
-        <div className="bg-white/5 rounded-xl p-3">
+        <div className="zion-panel-soft p-3">
           <div className="text-[10px] text-gray-400 mb-1">Mining</div>
           <div className="text-lg font-bold text-emerald-400">{fmt(r?.blocks_found)}</div>
           <div className="text-xs text-gray-400">{r?.blocks_per_day ? `${r.blocks_per_day}/day` : '—'}</div>
@@ -458,7 +520,7 @@ function RevenueSection({ revenue, poolDashboard }: { revenue: RevenueDashboard 
         </div>
 
         {/* Pool Wallet */}
-        <div className="bg-white/5 rounded-xl p-3">
+        <div className="zion-panel-soft p-3">
           <div className="text-[10px] text-gray-400 mb-1">Pool Wallet</div>
           <div className="text-xs font-mono text-white truncate">{pw?.pool_wallet ? `${pw.pool_wallet.slice(0, 20)}…` : '—'}</div>
           <div className="grid grid-cols-2 gap-2 mt-2 text-[10px]">
@@ -472,7 +534,7 @@ function RevenueSection({ revenue, poolDashboard }: { revenue: RevenueDashboard 
         </div>
 
         {/* Fee Split */}
-        <div className="bg-white/5 rounded-xl p-3">
+        <div className="zion-panel-soft p-3">
           <div className="text-[10px] text-gray-400 mb-1">Fee Split</div>
           <div className="grid grid-cols-2 gap-2 text-[10px]">
             <div className="text-gray-400">Miner</div><div className="text-right font-mono text-white">{fee?.miner_pct ?? r?.miner_share_pct ?? '—'}%</div>
@@ -487,7 +549,7 @@ function RevenueSection({ revenue, poolDashboard }: { revenue: RevenueDashboard 
         </div>
 
         {/* Routing */}
-        <div className="bg-white/5 rounded-xl p-3">
+        <div className="zion-panel-soft p-3">
           <div className="text-[10px] text-gray-400 mb-1">Routing</div>
           <div className="grid grid-cols-2 gap-2 text-[10px]">
             <div className="text-gray-400">Submits</div><div className="text-right font-mono text-white">{fmt(routing?.submits)}</div>
@@ -501,7 +563,7 @@ function RevenueSection({ revenue, poolDashboard }: { revenue: RevenueDashboard 
         </div>
 
         {/* Coin revenue */}
-        <div className="bg-white/5 rounded-xl p-3 md:col-span-2 lg:col-span-2">
+        <div className="zion-panel-soft p-3 md:col-span-2 lg:col-span-2">
           <div className="text-[10px] text-gray-400 mb-1">Coin Revenue</div>
           <div className="max-h-40 overflow-y-auto">
             <table className="w-full text-[10px]">
@@ -533,7 +595,7 @@ function RevenueSection({ revenue, poolDashboard }: { revenue: RevenueDashboard 
         </div>
 
         {/* Distributions */}
-        <div className="bg-white/5 rounded-xl p-3 md:col-span-2 lg:col-span-2">
+        <div className="zion-panel-soft p-3 md:col-span-2 lg:col-span-2">
           <div className="text-[10px] text-gray-400 mb-1">Distributions</div>
           <div className="max-h-40 overflow-y-auto">
             <table className="w-full text-[10px]">
@@ -563,7 +625,7 @@ function RevenueSection({ revenue, poolDashboard }: { revenue: RevenueDashboard 
         </div>
 
         {/* Stream profit weights */}
-        <div className="bg-white/5 rounded-xl p-3 md:col-span-2 lg:col-span-2 xl:col-span-4">
+        <div className="zion-panel-soft p-3 md:col-span-2 lg:col-span-2 xl:col-span-4">
           <div className="text-[10px] text-gray-400 mb-1">Stream Profit Weights</div>
           <div className="flex flex-wrap gap-3">
             {(r?.stream_profit_weights || []).map((w, i) => (
@@ -597,19 +659,19 @@ function WalletsSection({ wallets }: { wallets: WalletsResponse | null }) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-        <div className="bg-white/5 rounded-xl p-2 text-center">
+        <div className="zion-panel-soft p-2 text-center">
           <div className="text-lg font-bold text-white">{fmt(s.total_wallets)}</div>
           <div className="text-[9px] text-gray-400">Total</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-2 text-center">
+        <div className="zion-panel-soft p-2 text-center">
           <div className="text-lg font-bold text-cyan-400">{fmt(s.premine_wallets)}</div>
           <div className="text-[9px] text-gray-400">Premine</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-2 text-center">
+        <div className="zion-panel-soft p-2 text-center">
           <div className="text-lg font-bold text-amber-400">{fmt(s.operational_wallets)}</div>
           <div className="text-[9px] text-gray-400">Operational</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-2 text-center">
+        <div className="zion-panel-soft p-2 text-center">
           <div className="text-lg font-bold text-emerald-400">{fmt(s.with_live_balance)}</div>
           <div className="text-[9px] text-gray-400">Live Balance</div>
         </div>
@@ -662,19 +724,19 @@ function ExplorerSection({ blocks, overview }: { blocks: BlockSummary[] | null; 
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-        <div className="bg-white/5 rounded-xl p-2 text-center">
+        <div className="zion-panel-soft p-2 text-center">
           <div className="text-lg font-bold text-white">{fmt(overview?.chain_height)}</div>
           <div className="text-[9px] text-gray-400">Edge Height</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-2 text-center">
+        <div className="zion-panel-soft p-2 text-center">
           <div className="text-lg font-bold text-cyan-400">{fmt(lb?.chain_height)}</div>
           <div className="text-[9px] text-gray-400">Local Height</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-2 text-center">
+        <div className="zion-panel-soft p-2 text-center">
           <div className="text-lg font-bold text-amber-400">{fmt(lb?.mempool_size)}</div>
           <div className="text-[9px] text-gray-400">Mempool</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-2 text-center">
+        <div className="zion-panel-soft p-2 text-center">
           <div className="text-lg font-bold text-emerald-400">{fmt(lb?.known_peers)}</div>
           <div className="text-[9px] text-gray-400">Peers</div>
         </div>
