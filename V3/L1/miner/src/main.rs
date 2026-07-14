@@ -1518,7 +1518,7 @@ fn run_remote_session(
             VERBOSE.store(c.verbose, Ordering::Relaxed);
         }
 
-        let (job_line, mut job, algorithm, raw_header_bytes, stream_weights_str, external_stream) =
+        let (job_line, mut job, algorithm, raw_header_bytes, stream_weights_str, external_stream, external_stream_cpu) =
             match read_next_job(&mut reader) {
                 Ok(result) => result,
                 Err(e) => {
@@ -1655,6 +1655,14 @@ fn run_remote_session(
                 // CPU-only external stream → persistent CPU thread
                 let _ = ext_cpu_tx.send(ext.clone());
             }
+        }
+
+        // ── Claymore Triple Parallel: CPU external stream (VRSC, RandomX) ──
+        // The pool sends CPU-only external jobs in a separate `external_stream_cpu`
+        // field so they don't conflict with the GPU `external_stream` (EPIC).
+        // Route directly to the persistent CPU thread.
+        if let Some(ref ext_cpu) = external_stream_cpu {
+            let _ = ext_cpu_tx.send(ext_cpu.clone());
         }
 
         let scan_result = if can_gpu {
@@ -2892,6 +2900,7 @@ fn pearl_gpu_thread(
                 target_hex,
                 m, n, k, noise_rank, noise_range,
                 hash_tile_h, hash_tile_w,
+                attempt_count,
             )
         };
 
@@ -2901,6 +2910,7 @@ fn pearl_gpu_thread(
             target_hex,
             m, n, k, noise_rank, noise_range,
             hash_tile_h, hash_tile_w,
+            attempt_count,
         );
 
         attempt_count += 1;
@@ -3122,6 +3132,7 @@ fn read_next_job(
     Vec<u8>,
     String,
     Option<zion_pool::ExternalStreamJob>,
+    Option<zion_pool::ExternalStreamJob>,
 )> {
     loop {
         let (line, message) = read_wire_message(reader)?;
@@ -3136,6 +3147,7 @@ fn read_next_job(
                 height,
                 stream_weights,
                 external_stream,
+                external_stream_cpu,
             } => {
                 // Log stream weights if present (Deeksha Chv3 pipeline parameterisation).
                 if !stream_weights.is_empty() {
@@ -3145,6 +3157,12 @@ fn read_next_job(
                     println!(
                         "external_stream job={} coin={} algo={}",
                         job_id, ext.coin, ext.algorithm
+                    );
+                }
+                if let Some(ref ext_cpu) = external_stream_cpu {
+                    println!(
+                        "external_stream_cpu job={} coin={} algo={}",
+                        job_id, ext_cpu.coin, ext_cpu.algorithm
                     );
                 }
                 // Keep raw header bytes for external algorithms that may
@@ -3167,6 +3185,7 @@ fn read_next_job(
                     raw_header_bytes,
                     stream_weights,
                     external_stream,
+                    external_stream_cpu,
                 ))
             }
             PoolMessage::Stale { .. } => println!("wire_stale={line}"),

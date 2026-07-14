@@ -109,6 +109,14 @@ pub enum PoolMessage {
         /// None/absent = no external stream (ZION-only iteration).
         #[serde(default)]
         external_stream: Option<ExternalStreamJob>,
+        /// Second parallel external stream for CPU-only algorithms (VRSC, RandomX).
+        ///
+        /// Claymore-style triple parallel: ZION (GPU) + EPIC (GPU) + VRSC (CPU)
+        /// simultaneously.  This field carries the CPU-stream job so the miner
+        /// can route it to `ext_cpu_thread` without conflicting with the GPU
+        /// `external_stream`.  None/absent = no CPU external stream.
+        #[serde(default)]
+        external_stream_cpu: Option<ExternalStreamJob>,
     },
     Submit {
         job_id: u64,
@@ -460,6 +468,7 @@ impl MiningPool {
             height: job.height,
             stream_weights: stream_weights.to_string(),
             external_stream: None,
+            external_stream_cpu: None,
         }
     }
 
@@ -484,6 +493,7 @@ impl MiningPool {
             height: job.height,
             stream_weights: stream_weights.to_string(),
             external_stream: Some(external),
+            external_stream_cpu: None,
         }
     }
 

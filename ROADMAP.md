@@ -1,7 +1,7 @@
 # ZION Roadmap — From 3.0.5 to Public Mainnet Launch
 
-> **Version:** 3.0.5 "All Green" canonical  
-> **Last updated:** 2026-07-12
+> **Version:** 3.0.6 "Triple Parallel" canonical  
+> **Last updated:** 2026-07-15
 > **One source of truth:** [`3.0.4.md`](./docs/3.0.4/3.0.4.md) + [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./docs/3.0.4/SecurityFirst.md)  
 > **Engineering detail:** [`V3/ROADMAP.md`](./V3/ROADMAP.md)
 
@@ -35,6 +35,16 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 - **Web deploy optimalizace:** Docker image 2.57 GB → 377 MB (85% redukce) via standalone output + cache fix + build cache prune (23 GB freed)
 - **Health check 2026-07-14:** Chain height 5800+, 16.81B ZION circulating, 14/14 services active, RAM 2.7G/7.8G, disk 62G/145G
 - Report: [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)
+
+✅ **3.0.6 "Triple Parallel" Done (2026-07-15)**
+- **Claymore-style triple parallel mining LIVE:** ZION (GPU DeekshaChv3) + EPIC (GPU ProgPow) + VRSC (CPU VerusHash) simultaneously
+- Second AuxPow bridge (`cpu_auxpow_bridge`) for CPU-only coins — connects to LuckPool (VRSC)
+- `external_stream_cpu` field in `PoolMessage::Job` — miners receive both GPU + CPU external streams
+- OpenMP-parallel DAG generation (19 threads, epoch 120 ~2GB in ~4 min)
+- `native-hashers` feature enabled in miner build — `DagManager` + `generate_ethash_dag()` active
+- Share routing: VRSC → `cpu_auxpow_bridge.forward()`, EPIC → `auxpow_bridge.forward()`
+- Verified live: 99.7% ZION accept rate, EPIC ProgPow 7169+ batches, VRSC CPU VerusHash 4 threads
+- Plan: [`AuxPowTriplePlan.md`](./AuxPowTriplePlan.md) §11 Live Verification
 
 ✅ **Done (3.0.4 and earlier)**
 - DeFi contracts deployed on Base Mainnet: ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm

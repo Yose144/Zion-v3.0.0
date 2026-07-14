@@ -58,6 +58,7 @@ impl ShareForwarder {
             Ok(ShareResult::Accepted) => Ok(ShareForwardResult::Accepted),
             Ok(ShareResult::Rejected(reason)) => Ok(ShareForwardResult::Rejected(reason)),
             Ok(ShareResult::Unknown) => Ok(ShareForwardResult::Unknown),
+            Ok(ShareResult::NoShare) => Ok(ShareForwardResult::Unknown),
             Err(e) => Err(e),
         }
     }

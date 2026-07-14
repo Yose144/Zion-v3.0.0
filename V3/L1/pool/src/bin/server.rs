@@ -848,6 +848,41 @@ fn main() -> Result<()> {
         println!("auxpow_bridge: disabled (set ZION_POOL_AUXPOW_ENABLED=1 to enable B2b multiplexing)");
     }
 
+    // ── CPU AuxPow bridge (VRSC / VerusHash) ───────────────────────────
+    // Claymore-style triple parallel: a SECOND AuxPow bridge connects to
+    // LuckPool (VRSC) and provides CPU-only external jobs.  These are
+    // embedded in the `external_stream_cpu` field of Job messages so miners
+    // can run ZION (GPU) + EPIC (GPU) + VRSC (CPU) simultaneously.
+    let cpu_bridge_cfg = if config.auxpow_config.enabled {
+        AuxPowIntegrationConfig::cpu_bridge_from_env()
+    } else {
+        None
+    };
+    let (cpu_auxpow_bridge, cpu_auxpow_share_rx, cpu_auxpow_pearl_rx) =
+        AuxPowBridge::new(cpu_bridge_cfg.is_some());
+    if let Some(ref cpu_cfg) = cpu_bridge_cfg {
+        println!(
+            "cpu_auxpow_bridge: enabled coin={:?} wallet={} worker={}",
+            cpu_cfg.force_coin, cpu_cfg.payout_wallet, cpu_cfg.worker_name,
+        );
+        let bridge = cpu_auxpow_bridge.clone();
+        let cfg = cpu_cfg.clone();
+        thread::spawn(move || {
+            let rt = match tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .thread_name("cpu-auxpow-bridge")
+                .build()
+            {
+                Ok(rt) => rt,
+                Err(e) => {
+                    eprintln!("cpu_auxpow_bridge_rt_error: {e}");
+                    return;
+                }
+            };
+            rt.block_on(run_auxpow_bridge(cfg, bridge, cpu_auxpow_share_rx, cpu_auxpow_pearl_rx));
+        });
+    }
+
     if let Some(metrics_bind) = config.routing_metrics_bind.as_deref() {
         println!("routing_metrics_bind={metrics_bind}");
         let routing_stats = Arc::clone(&routing_stats);
@@ -1392,6 +1427,7 @@ fn main() -> Result<()> {
         let log_ch = Arc::clone(&log_channel);
         let deferred_ref = Arc::clone(&deferred_payouts);
         let auxpow_bridge = auxpow_bridge.clone();
+        let cpu_auxpow_bridge = cpu_auxpow_bridge.clone();
         let banned_ips_ref = Arc::clone(&no_solution_banned_ips);
         let config = config.clone();
         handles.push(thread::spawn(move || {
@@ -1408,6 +1444,7 @@ fn main() -> Result<()> {
                 template_cache_ref,
                 deferred_ref,
                 auxpow_bridge,
+                cpu_auxpow_bridge,
                 &config,
                 &log_ch,
                 peer_ip,
@@ -1852,6 +1889,7 @@ fn handle_client(
     template_cache: Arc<Mutex<TemplateCache>>,
     deferred_payouts: DeferredPayoutQueue,
     auxpow_bridge: AuxPowBridge,
+    cpu_auxpow_bridge: AuxPowBridge,
     config: &ServerConfig,
     log_ch: &LogChannel,
     peer_ip: IpAddr,
@@ -2062,17 +2100,14 @@ fn handle_client(
             .stream_weights_string();
 
         let desired_external_coin = if config.auxpow_config.enabled {
-            // For sessions explicitly assigned to the Zion group, never
-            // override with an external coin — the miner asked for ZION work.
-            // For Revenue/Auto groups, prefer force_coin then revenue_source.
-            if session_group == SessionGroup::Zion {
-                None
-            } else {
-                config
-                    .auxpow_config
-                    .force_coin
-                    .or_else(|| revenue_source_to_external_coin(revenue_source))
-            }
+            // Claymore triple-parallel: always provide the GPU external stream
+            // (EPIC/ProgPow) alongside ZION, regardless of session group.
+            // The session group controls the PRIMARY work assignment (always
+            // ZION for Zion group), not the parallel external streams.
+            config
+                .auxpow_config
+                .force_coin
+                .or_else(|| revenue_source_to_external_coin(revenue_source))
         } else {
             None
         };
@@ -2150,6 +2185,50 @@ fn handle_client(
                 None
             };
 
+        // ── Fetch CPU external job (VRSC) for triple parallel streaming ──
+        // Pop a VRSC job from the CPU bridge and embed it as
+        // `external_stream_cpu` so the miner can run it on CPU simultaneously
+        // with the GPU external_stream (EPIC) and ZION (Deeksha).
+        let external_stream_cpu_job: Option<zion_pool::ExternalStreamJob> =
+            if let Some(ext_job) = cpu_auxpow_bridge.pop_job() {
+                    let ext_coin_ticker = ext_job.external_coin.ticker().to_string();
+                    let ext_algorithm = ext_job.external_coin.algorithm().to_string();
+                    let ext_job_id = ext_job.external_job_id.clone();
+                    let ext_height = ext_job.block_number.unwrap_or(0);
+                    let ext_target_hex = to_hex(&ext_job.target_bytes);
+                    let ext_header_hex = to_hex(&ext_job.header_bytes);
+                    let ext_extranonce1_hex = to_hex(&ext_job.extranonce1);
+                    let ext_protocol = match ext_job.external_coin {
+                        zion_auxpow::ExternalCoin::VRSC => "zcashstratum".to_string(),
+                        _ => "stratum".to_string(),
+                    };
+                    println!(
+                        "parallel_stream_cpu_embedded miner={} coin={} algo={} ext_job_id={} height={}",
+                        worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height
+                    );
+                    let easy_target_hex = if std::env::var("ZION_AUXPOW_EASY_TARGET")
+                        .as_deref()
+                        .unwrap_or("")
+                        .eq_ignore_ascii_case("1")
+                    {
+                        "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".to_string()
+                    } else {
+                        ext_target_hex
+                    };
+                    Some(zion_pool::ExternalStreamJob {
+                        coin: ext_coin_ticker,
+                        algorithm: ext_algorithm,
+                        job_id: ext_job_id,
+                        header_hex: ext_header_hex,
+                        target_hex: easy_target_hex,
+                        height: ext_height,
+                        extranonce1_hex: ext_extranonce1_hex,
+                        protocol: ext_protocol,
+                    })
+            } else {
+                None
+            };
+
         let job_issued_at = Instant::now();
         // Store network target for block validation; send share target to miner.
         let network_target = DifficultyTarget {
@@ -2196,6 +2275,7 @@ fn handle_client(
             height: assignment_height(&assignment),
             stream_weights: stream_weights_string.clone(),
             external_stream: external_stream_job.clone(),
+            external_stream_cpu: external_stream_cpu_job.clone(),
         };
         let job_line = write_wire_message(&mut writer, &job_message)?;
 
@@ -2263,13 +2343,26 @@ fn handle_client(
                                 continue;
                             }
                         };
-                        // Get target from the external stream job we sent
-                        let target_bytes = match &external_stream_job {
-                            Some(ext) => match zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external target") {
-                                Ok(t) => t,
-                                Err(_) => [0xFFu8; 32],
-                            },
-                            None => [0xFFu8; 32],
+                        // Get target from the external stream job we sent.
+                        // For VRSC (CPU stream), use external_stream_cpu_job target.
+                        let is_cpu_share = coin.eq_ignore_ascii_case("VRSC")
+                            || coin.eq_ignore_ascii_case("XMR");
+                        let target_bytes = if is_cpu_share {
+                            match &external_stream_cpu_job {
+                                Some(ext) => match zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external cpu target") {
+                                    Ok(t) => t,
+                                    Err(_) => [0xFFu8; 32],
+                                },
+                                None => [0xFFu8; 32],
+                            }
+                        } else {
+                            match &external_stream_job {
+                                Some(ext) => match zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external target") {
+                                    Ok(t) => t,
+                                    Err(_) => [0xFFu8; 32],
+                                },
+                                None => [0xFFu8; 32],
+                            }
                         };
                         // Parse mix hash if present
                         let mix_hash = mix_hash_hex
@@ -2282,7 +2375,14 @@ fn handle_client(
                             target: target_bytes,
                             mix_hash,
                         };
-                        let (accepted, status) = match auxpow_bridge.forward(forward_req) {
+                        // Route to the correct bridge: VRSC → cpu_auxpow_bridge,
+                        // EPIC/others → auxpow_bridge (GPU stream).
+                        let bridge_result = if is_cpu_share {
+                            cpu_auxpow_bridge.forward(forward_req)
+                        } else {
+                            auxpow_bridge.forward(forward_req)
+                        };
+                        let (accepted, status) = match bridge_result {
                             Some(outcome) => match outcome.result {
                                 ShareForwardResult::Accepted => (true, "accepted".to_string()),
                                 ShareForwardResult::BelowTarget => (false, "below_target".to_string()),
@@ -3306,6 +3406,52 @@ impl AuxPowIntegrationConfig {
             }
         }
         cfg
+    }
+
+    /// Build a CPU-bridge config for VRSC (or other CPU-only coin).
+    ///
+    /// Reads `ZION_POOL_AUXPOW_CPU_COIN` (default: VRSC) and
+    /// `ZION_POOL_AUXPOW_CPU_WALLET` / `ZION_POOL_AUXPOW_CPU_WORKER_NAME`.
+    /// Falls back to the legacy `ZION_AUXPOW_*` env vars if the CPU-specific
+    /// ones are not set.
+    fn cpu_bridge_from_env() -> Option<Self> {
+        let cpu_coin_str = std::env::var("ZION_POOL_AUXPOW_CPU_COIN")
+            .unwrap_or_else(|_| "VRSC".to_string());
+        let cpu_coin = ExternalCoin::from_str_loose(&cpu_coin_str)?;
+
+        let payout_wallet = std::env::var("ZION_POOL_AUXPOW_CPU_WALLET")
+            .or_else(|_| std::env::var("ZION_AUXPOW_WALLET"))
+            .unwrap_or_else(|_| zion_auxpow::types::DEFAULT_BTC_WALLET.to_string());
+        let worker_name = std::env::var("ZION_POOL_AUXPOW_CPU_WORKER_NAME")
+            .or_else(|_| std::env::var("ZION_AUXPOW_WORKER_NAME"))
+            .unwrap_or_else(|_| "zion-cpu".to_string());
+        let region = std::env::var("ZION_POOL_AUXPOW_CPU_REGION")
+            .or_else(|_| std::env::var("ZION_POOL_AUXPOW_REGION"))
+            .unwrap_or_else(|_| "eu".to_string());
+
+        // Per-coin wallet overrides (same env vars as main bridge).
+        let mut coin_wallets = std::collections::HashMap::new();
+        for coin in ExternalCoin::all() {
+            let key = format!("ZION_POOL_AUXPOW_WALLET_{}", coin.ticker());
+            if let Ok(v) = std::env::var(&key) {
+                if !v.trim().is_empty() {
+                    coin_wallets.insert(coin.ticker().to_string(), v.trim().to_string());
+                }
+            }
+        }
+
+        Some(Self {
+            enabled: true,
+            split: None,
+            force_coin: Some(cpu_coin),
+            pool_preference: zion_auxpow::PoolPreference::Default,
+            region,
+            payout_wallet,
+            worker_name,
+            coin_wallets,
+            profit_check_interval_secs: 60,
+            hysteresis_pct: 15.0,
+        })
     }
 
     fn parse_split_env() -> Option<SplitConfig> {
@@ -5663,6 +5809,7 @@ mod tests {
         let deferred_payouts: DeferredPayoutQueue = Arc::new(Mutex::new(Vec::new()));
         let auxpow_bridge = auxpow_bridge.unwrap_or_else(|| AuxPowBridge::new(config.auxpow_config.enabled).0);
         let auxpow_bridge_for_session = auxpow_bridge.clone();
+        let cpu_auxpow_bridge_for_session = AuxPowBridge::new(false).0;
 
         let handle = thread::spawn(move || -> Result<()> {
             let (stream, _) = listener.accept().context("accept pool test client")?;
@@ -5678,6 +5825,7 @@ mod tests {
                 template_cache,
                 deferred_payouts,
                 auxpow_bridge_for_session,
+                cpu_auxpow_bridge_for_session,
                 &config,
                 &log_ch,
                 "127.0.0.1".parse().unwrap(),

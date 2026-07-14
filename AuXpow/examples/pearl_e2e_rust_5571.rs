@@ -1,4 +1,4 @@
-//! Live E2E test: connect to AlphaPool port 5571, authorize, receive mining.notify.
+//! Live E2E test: connect to 2miners PRL pool, authorize, receive mining.notify.
 use std::time::Duration;
 use tokio::time::sleep;
 
@@ -12,7 +12,7 @@ async fn main() {
 
     // Use the test wallet from previous sessions
     let wallet = "prl1pk5t3amreqnqlp0q0l5zcauy2nyszlalux3rlcw93spwtr9mrlywsdesmmp";
-    println!("Connecting to AlphaPool port 5571...");
+    println!("Connecting to 2miners PRL pool...");
     client.connect(wallet).await.expect("connect failed");
     println!("Connected and authorized!");
 

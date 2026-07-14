@@ -2127,7 +2127,7 @@ mod tests {
         use crate::types::ExternalCoin;
         assert_eq!(ExternalCoin::PRL.ticker(), "PRL");
         assert_eq!(ExternalCoin::PRL.algorithm(), "pearlhash");
-        assert_eq!(ExternalCoin::PRL.default_pool(), "us2.alphapool.tech:5571");
+        assert_eq!(ExternalCoin::PRL.default_pool(), "prl.2miners.com:1818");
         assert_eq!(ExternalCoin::from_str_loose("prl"), Some(ExternalCoin::PRL));
         assert_eq!(ExternalCoin::from_str_loose("pearl"), Some(ExternalCoin::PRL));
         assert!(ExternalCoin::all().contains(&ExternalCoin::PRL));

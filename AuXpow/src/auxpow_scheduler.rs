@@ -462,6 +462,10 @@ impl AuxPowScheduler {
                 Ok(ShareResult::Unknown) => {
                     // Pool didn't explicitly accept or reject
                 }
+                Ok(ShareResult::NoShare) => {
+                    // No share met target — no submission made
+                    stats.shares_submitted = stats.shares_submitted.saturating_sub(1);
+                }
                 Err(e) => {
                     warn!("AuxPow: submit error: {}", e);
                     return Err(e);
