@@ -2798,6 +2798,7 @@ async function loadRevenueTab(){
           ncl_ai: 'bg-purple-500',
           deeksha_lite: 'bg-amber-500',
           thermal_bonus: 'bg-red-500',
+          pearl_external: 'bg-teal-500',
         };
         streamBars.innerHTML = spWeights.map(w => {
           const pct = Number(w.weight_pct || 0).toFixed(1);
@@ -2900,6 +2901,7 @@ async function loadRevenueReport(){
           ncl: 'border-purple-500/30 bg-purple-500/5',
           blake3: 'border-amber-500/30 bg-amber-500/5',
           kheavyhash: 'border-red-500/30 bg-red-500/5',
+          pearl: 'border-teal-500/30 bg-teal-500/5',
         };
         topEl.innerHTML = active.slice(0, 8).map(s => {
           const label = (s.source || '').replace(/_/g, ' ');
@@ -2960,6 +2962,7 @@ async function loadStreamTelemetry(){
           ncl_ai: 'bg-purple-500',
           deeksha_lite: 'bg-amber-500',
           thermal_bonus: 'bg-red-500',
+          pearl_external: 'bg-teal-500',
         };
         streamsEl.innerHTML = streams.map(s => {
           const pct = Number(s.weight_pct || 0).toFixed(1);
