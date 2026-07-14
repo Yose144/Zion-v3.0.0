@@ -995,3 +995,174 @@ __kernel void pearl_pouw_mine_persistent(
         }
     }
 }
+
+// ─── Real Pearl PoUW GEMM kernel (CPU-prep + GPU dispatch) ──────────────────
+//
+// This kernel implements ONLY the noisy GEMM + jackpot hash + target check
+// for the REAL Pearl PoUW algorithm (matching pearl_real_pouw.rs).
+//
+// CPU pre-computes: matrices A/B (BLAKE3 PRNG), Merkle trees, noise matrices,
+// noised matrices A' (m×k int8) and B'^T (n×k int8), then uploads them.
+// GPU runs this kernel to check all hash tiles in parallel.
+//
+// Key differences from pearl_pouw_mine_native_v3:
+//   - int8 noised matrix inputs (not int32) — 4x less bandwidth
+//   - 16×16 hash tiles (256 work-items per group, not 32)
+//   - Little-endian U256 target comparison (from byte 31, not byte 0)
+//   - Dynamic noise_rank and hash_tile dimensions (passed as args)
+//   - No matrix generation / noise generation on GPU
+//
+// Work-group layout: lws = hash_tile_h * hash_tile_w (e.g. 256 for 16×16)
+// One work-group per hash tile. Each work-item computes one (u,v) element.
+//
+// Hash tile encoding:
+//   total_output_tiles = (m / noise_rank) * (n / noise_rank)
+//   hash_tiles_per_output = (noise_rank / hash_tile_h) * (noise_rank / hash_tile_w)
+//   total_hash_tiles = total_output_tiles * hash_tiles_per_output
+//
+//   output_tile_idx = tile_id / hash_tiles_per_output
+//   ht_idx = tile_id % hash_tiles_per_output
+//   i_out = output_tile_idx / (n / noise_rank)
+//   j_out = output_tile_idx % (n / noise_rank)
+//   ht_h = ht_idx / (noise_rank / hash_tile_w)
+//   ht_w = ht_idx % (noise_rank / hash_tile_w)
+
+__kernel void pearl_pouw_mine_real_v1(
+    __global const char* noised_a,     // m×k int8 (A' = A + E_AL·E_AR, wrapped to int8)
+    __global const char* noised_bt,    // n×k int8 (B'^T = transpose of B')
+    __global const uchar* pow_key,     // 32 bytes (noise_seed_a, used as BLAKE3 key)
+    __global const uchar* target,      // 32 bytes (little-endian U256)
+    __global uint* output_tile,        // [1] — winning hash tile index
+    __global uchar* output_jackpot,    // [32] — winning jackpot hash
+    __global volatile uint* found,     // [1] — atomic flag
+    const uint m_dim,
+    const uint n_dim,
+    const uint k_dim,
+    const uint noise_rank,
+    const uint hash_tile_h,
+    const uint hash_tile_w,
+    const uint num_ht_h,              // noise_rank / hash_tile_h
+    const uint num_ht_w,              // noise_rank / hash_tile_w
+    const uint num_output_tiles_i,    // m / noise_rank
+    const uint num_output_tiles_j     // n / noise_rank
+)
+{
+    // Local memory for XOR reduction across hash tile elements
+    uint tile_size = hash_tile_h * hash_tile_w;
+    // Max tile_size we support is 256 (16×16). Allocate 256 entries.
+    __local int tile_acc[256];
+    __local uint jackpot[16];       // transcript: 16 × uint32 = 64 bytes
+    __local uint reduce_buf[256];
+
+    uint lid = get_local_id(0);
+    uint tile_id = get_group_id(0);
+
+    if (*found) return;
+
+    // Decode tile_id → (i_out, j_out, ht_h, ht_w)
+    uint hash_tiles_per_output = num_ht_h * num_ht_w;
+    uint output_tile_idx = tile_id / hash_tiles_per_output;
+    uint ht_idx = tile_id % hash_tiles_per_output;
+
+    uint i_out = output_tile_idx / num_output_tiles_j;
+    uint j_out = output_tile_idx % num_output_tiles_j;
+
+    uint ht_h_idx = ht_idx / num_ht_w;
+    uint ht_w_idx = ht_idx % num_ht_w;
+
+    // Base row/col offsets for this hash tile
+    uint i_off = i_out * noise_rank + ht_h_idx * hash_tile_h;
+    uint j_off = j_out * noise_rank + ht_w_idx * hash_tile_w;
+
+    // Work-item → (u, v) within hash tile
+    uint u = lid / hash_tile_w;
+    uint v = lid % hash_tile_w;
+
+    // Global row/col for this work-item
+    uint a_row = i_off + u;
+    uint b_col = j_off + v;
+
+    if (a_row >= m_dim || b_col >= n_dim) return;
+
+    // Initialize accumulator and transcript
+    tile_acc[lid] = 0;
+    if (lid < 16) jackpot[lid] = 0u;
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    // ── GEMM in noise_rank steps ──────────────────────────────────────
+    uint reduction_count = 0;
+    for (uint p = 0; p < k_dim; p += noise_rank) {
+        // Compute dot product: sum over l in [0, noise_rank) of
+        //   noised_a[a_row * k_dim + p + l] * noised_bt[b_col * k_dim + p + l]
+        int acc = 0;
+        uint a_base = a_row * k_dim + p;
+        uint b_base = b_col * k_dim + p;
+
+        // Vectorized char4 loads: 4 elements per transaction
+        for (uint l = 0; l < noise_rank; l += 4) {
+            char4 av = vload4(0, &noised_a[a_base + l]);
+            char4 bv = vload4(0, &noised_bt[b_base + l]);
+            acc += (int)av.x * (int)bv.x + (int)av.y * (int)bv.y
+                 + (int)av.z * (int)bv.z + (int)av.w * (int)bv.w;
+        }
+
+        tile_acc[lid] += acc;
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        // Parallel XOR reduction across tile_size work-items
+        reduce_buf[lid] = (uint)tile_acc[lid];
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        // Tree reduction: tile_size → 1
+        for (uint stride = tile_size / 2; stride > 0; stride >>= 1) {
+            if (lid < stride) {
+                reduce_buf[lid] ^= reduce_buf[lid + stride];
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+        }
+
+        // reduce_buf[0] has XOR of all tile elements
+        if (lid == 0) {
+            uint xored = reduce_buf[0];
+            uint tid = reduction_count % 16u;
+            jackpot[tid] = (jackpot[tid] << 13u) | (jackpot[tid] >> (32u - 13u));
+            jackpot[tid] ^= xored;
+        }
+        reduction_count++;
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    // ── BLAKE3 keyed hash of transcript + target check ────────────────
+    if (lid == 0) {
+        // Build 64-byte jackpot message from transcript (16 × uint32 LE)
+        uchar jackpot_msg[64];
+        for (int i = 0; i < 16; i++) {
+            jackpot_msg[i * 4 + 0] = (uchar)(jackpot[i]);
+            jackpot_msg[i * 4 + 1] = (uchar)(jackpot[i] >> 8);
+            jackpot_msg[i * 4 + 2] = (uchar)(jackpot[i] >> 16);
+            jackpot_msg[i * 4 + 3] = (uchar)(jackpot[i] >> 24);
+        }
+
+        // BLAKE3 keyed hash (key = pow_key, message = 64 bytes)
+        uchar hash[32];
+        blake3_keyed_hash_64_gpu(pow_key, jackpot_msg, hash);
+
+        // Little-endian U256 comparison: hash <= target
+        // Compare from most significant byte (index 31) down to least (index 0)
+        bool meets = true;
+        for (int i = 31; i >= 0; i--) {
+            if (hash[i] != target[i]) {
+                meets = (hash[i] < target[i]);
+                break;
+            }
+        }
+
+        if (meets) {
+            uint old = atomic_xchg(found, 1u);
+            if (old == 0u) {
+                *output_tile = tile_id;
+                for (int i = 0; i < 32; i++) output_jackpot[i] = hash[i];
+            }
+        }
+    }
+}

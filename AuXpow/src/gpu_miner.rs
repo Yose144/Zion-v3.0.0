@@ -1658,6 +1658,53 @@ pub struct PearlPouwNativeResult {
     pub matrix_bt: Vec<i8>,
 }
 
+/// Result of real Pearl PoUW GPU GEMM mining (CPU-prep + GPU dispatch).
+/// Contains the winning hash tile index and jackpot hash, plus dimension
+/// metadata needed to decode the tile index back to row/column indices.
+pub struct PearlRealGpuResult {
+    pub tile_index: u32,
+    pub jackpot_hash: [u8; 32],
+    pub m: usize,
+    pub n: usize,
+    pub k: usize,
+    pub noise_rank: usize,
+    pub hash_tile_h: usize,
+    pub hash_tile_w: usize,
+    pub num_ht_h: usize,
+    pub num_ht_w: usize,
+    pub num_output_tiles_i: usize,
+    pub num_output_tiles_j: usize,
+}
+
+impl PearlRealGpuResult {
+    /// Decode the tile_index into (a_row_indices, b_col_indices) for the
+    /// winning hash tile. These are the rows of A and columns of B that
+    /// need to be included in the Merkle proof.
+    pub fn decode_tile_indices(&self) -> (Vec<usize>, Vec<usize>) {
+        let hash_tiles_per_output = self.num_ht_h * self.num_ht_w;
+        let output_tile_idx = self.tile_index as usize / hash_tiles_per_output;
+        let ht_idx = self.tile_index as usize % hash_tiles_per_output;
+
+        let i_out = output_tile_idx / self.num_output_tiles_j;
+        let j_out = output_tile_idx % self.num_output_tiles_j;
+
+        let ht_h_idx = ht_idx / self.num_ht_w;
+        let ht_w_idx = ht_idx % self.num_ht_w;
+
+        let i_off = i_out * self.noise_rank + ht_h_idx * self.hash_tile_h;
+        let j_off = j_out * self.noise_rank + ht_w_idx * self.hash_tile_w;
+
+        let a_row_indices: Vec<usize> = (0..self.hash_tile_h)
+            .map(|u| i_off + u)
+            .collect();
+        let b_col_indices: Vec<usize> = (0..self.hash_tile_w)
+            .map(|v| j_off + v)
+            .collect();
+
+        (a_row_indices, b_col_indices)
+    }
+}
+
 /// Compute a safe (power-of-2) local work size that divides the global work size.
 /// OpenCL requires `global_work_size % local_work_size == 0` and `local_work_size <= global_work_size`.
 #[cfg(feature = "gpu-opencl")]
@@ -2476,6 +2523,141 @@ impl GpuMiner {
             nonce: winning_nonce,
             matrix_a,
             matrix_bt,
+        }))
+    }
+
+    // ─── Real Pearl PoUW: CPU-prep + GPU GEMM dispatch ───────────────────
+
+    /// Run the GEMM + jackpot + target check on GPU for the REAL Pearl PoUW
+    /// algorithm. CPU pre-computes the noised matrices (A' and B'^T as int8)
+    /// using the real Pearl algorithm (BLAKE3 PRNG, proper noise), then this
+    /// function uploads them and runs the mining kernel.
+    ///
+    /// Returns `Some(result)` if a winning hash tile was found, `None` otherwise.
+    /// The caller is responsible for building the Merkle proof from the
+    /// original matrices (A, B) and the decoded tile indices.
+    #[cfg(feature = "gpu-opencl")]
+    pub fn pearl_pouw_gpu_mine_real(
+        &mut self,
+        noised_a: &[i8],     // m×k int8 (A' = A + E_AL·E_AR, wrapped to int8)
+        noised_bt: &[i8],    // n×k int8 (B'^T)
+        pow_key: &[u8; 32],  // noise_seed_a (BLAKE3 key for jackpot)
+        target: &[u8; 32],   // little-endian U256 target
+        m: usize,
+        n: usize,
+        k: usize,
+        noise_rank: usize,
+        hash_tile_h: usize,
+        hash_tile_w: usize,
+    ) -> Result<Option<PearlRealGpuResult>> {
+        let kernel_file = "pearl_pouw_native.cl";
+        let pro_que = self.ensure_proque(kernel_file)?;
+        let q = pro_que.queue().clone();
+        let program = pro_que.program().clone();
+        let _ = pro_que;
+
+        // Validate dimensions
+        if noised_a.len() != m * k {
+            return Err(anyhow!("noised_a length mismatch: {} != {}", noised_a.len(), m * k));
+        }
+        if noised_bt.len() != n * k {
+            return Err(anyhow!("noised_bt length mismatch: {} != {}", noised_bt.len(), n * k));
+        }
+        if m % noise_rank != 0 {
+            return Err(anyhow!("m must be divisible by noise_rank"));
+        }
+        if n % noise_rank != 0 {
+            return Err(anyhow!("n must be divisible by noise_rank"));
+        }
+        if noise_rank % hash_tile_h != 0 {
+            return Err(anyhow!("noise_rank must be divisible by hash_tile_h"));
+        }
+        if noise_rank % hash_tile_w != 0 {
+            return Err(anyhow!("noise_rank must be divisible by hash_tile_w"));
+        }
+
+        let num_ht_h = noise_rank / hash_tile_h;
+        let num_ht_w = noise_rank / hash_tile_w;
+        let num_output_tiles_i = m / noise_rank;
+        let num_output_tiles_j = n / noise_rank;
+        let hash_tiles_per_output = num_ht_h * num_ht_w;
+        let total_output_tiles = num_output_tiles_i * num_output_tiles_j;
+        let total_hash_tiles = total_output_tiles * hash_tiles_per_output;
+
+        // Upload noised matrices (as i8 bytes)
+        let noised_a_buf: Buffer<i8> = Buffer::builder()
+            .queue(q.clone()).len(m * k)
+            .copy_host_slice(noised_a).build()?;
+        let noised_bt_buf: Buffer<i8> = Buffer::builder()
+            .queue(q.clone()).len(n * k)
+            .copy_host_slice(noised_bt).build()?;
+        let pow_key_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone()).len(32)
+            .copy_host_slice(pow_key).build()?;
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone()).len(32)
+            .copy_host_slice(target).build()?;
+
+        // Output buffers
+        let output_tile_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone()).len(1).build()?;
+        let output_jackpot_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone()).len(32).build()?;
+        let found_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone()).len(1).fill_val(0u32).build()?;
+
+        // Launch kernel
+        let lws = hash_tile_h * hash_tile_w;  // 256 for 16×16
+        let gws = total_hash_tiles * lws;
+
+        let kern = Kernel::builder()
+            .queue(q.clone())
+            .program(&program)
+            .name("pearl_pouw_mine_real_v1")
+            .arg(&noised_a_buf)
+            .arg(&noised_bt_buf)
+            .arg(&pow_key_buf)
+            .arg(&target_buf)
+            .arg(&output_tile_buf)
+            .arg(&output_jackpot_buf)
+            .arg(&found_buf)
+            .arg(m as u32)
+            .arg(n as u32)
+            .arg(k as u32)
+            .arg(noise_rank as u32)
+            .arg(hash_tile_h as u32)
+            .arg(hash_tile_w as u32)
+            .arg(num_ht_h as u32)
+            .arg(num_ht_w as u32)
+            .arg(num_output_tiles_i as u32)
+            .arg(num_output_tiles_j as u32)
+            .build()?;
+
+        unsafe {
+            kern.cmd()
+                .global_work_size(gws)
+                .local_work_size(lws)
+                .enq()?;
+        }
+        q.finish()?;
+
+        // Read results
+        let mut found = [0u32; 1];
+        found_buf.read(&mut found[..]).enq()?;
+        if found[0] == 0 {
+            return Ok(None);
+        }
+
+        let mut tile = [0u32; 1];
+        output_tile_buf.read(&mut tile[..]).enq()?;
+        let mut jackpot_hash = [0u8; 32];
+        output_jackpot_buf.read(&mut jackpot_hash[..]).enq()?;
+
+        Ok(Some(PearlRealGpuResult {
+            tile_index: tile[0],
+            jackpot_hash,
+            m, n, k, noise_rank, hash_tile_h, hash_tile_w,
+            num_ht_h, num_ht_w, num_output_tiles_i, num_output_tiles_j,
         }))
     }
 }
