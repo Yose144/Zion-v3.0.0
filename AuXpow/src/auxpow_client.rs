@@ -18,6 +18,7 @@
 use anyhow::{anyhow, bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::str::FromStr;
 use std::sync::Arc;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -2258,6 +2259,8 @@ impl AuxPowClient {
                             row_indices: vec![],
                         },
                         moe: None,
+                        noised_a_fragment: vec![0u8; 64],
+                        noised_b_fragment: vec![0u8; 64],
                     };
                     dummy.to_base64().unwrap_or_default()
                 }
@@ -2286,6 +2289,8 @@ impl AuxPowClient {
                             row_indices: vec![],
                         },
                         moe: None,
+                        noised_a_fragment: vec![0u8; 64],
+                        noised_b_fragment: vec![0u8; 64],
                     };
                     dummy.to_base64().unwrap_or_default()
                 }
@@ -2308,22 +2313,16 @@ impl AuxPowClient {
                 &job.as_ref().map(|j| j.header_bytes.clone()).unwrap_or_default(),
             );
             let target_int = job.as_ref().map(|j| {
-                // Convert 32-byte big-endian target to integer
-                let mut target = 0u128;
-                // Use first 16 bytes (most significant) for u128 approximation
-                for &b in j.target_bytes.iter() {
-                    target = (target << 8) | (b as u128);
-                    if target == 0 && b == 0 { continue; }
-                }
-                target as u64
-            }).unwrap_or(u64::MAX);
+                // Convert 32-byte big-endian target to u256 decimal string
+                // The official miner sends target as a decimal integer
+                target_bytes_to_decimal_string(&j.target_bytes)
+            }).unwrap_or_else(|| u64::MAX.to_string());
 
             ("submitPlainProof", json!({
                 "plain_proof": plain_proof,
                 "mining_job": {
                     "incomplete_header_bytes": header_b64,
-                    "target": target_int,
-                    "cert_version": 0
+                    "target": serde_json::Value::Number(serde_json::Number::from_str(&target_int).unwrap_or_else(|_| serde_json::Number::from(u64::MAX)))
                 }
             }))
         } else {
@@ -2334,6 +2333,7 @@ impl AuxPowClient {
         };
 
         let req = json!({
+            "jsonrpc": "2.0",
             "id": 100,
             "method": method,
             "params": params
@@ -2365,6 +2365,80 @@ impl AuxPowClient {
                 format!("{}", err)
             };
             warn!("AuxPow: share rejected for {}: {}", self.profile.coin, reason);
+            Ok(ShareResult::Rejected(reason))
+        } else {
+            Ok(ShareResult::Unknown)
+        }
+    }
+
+    /// Submit a pre-built Pearl PlainProof to AlphaPool.
+    ///
+    /// Unlike `submit_share()` which mines the PoUW internally, this method
+    /// just forwards a proof that the miner has already computed on GPU.
+    /// This is the pool-routed path: the miner mines PoUW → sends PearlSubmit
+    /// to the ZION pool → the pool calls this method to forward to AlphaPool.
+    ///
+    /// `plain_proof_b64` is the bincode-serialized PlainProof, base64-encoded.
+    /// `header_bytes` is the incomplete block header (from the pearl.challenge).
+    /// `target_bytes` is the share target (32 bytes big-endian).
+    pub async fn submit_pearl_proof(
+        &self,
+        _job_id: &str,
+        plain_proof_b64: &str,
+        header_bytes: &[u8],
+        target_bytes: &[u8; 32],
+    ) -> Result<ShareResult> {
+        let header_b64 = base64::Engine::encode(
+            &base64::engine::general_purpose::STANDARD,
+            header_bytes,
+        );
+        // Convert 32-byte big-endian target to decimal string
+        let target_str = target_bytes_to_decimal_string(target_bytes);
+
+        let params = json!({
+            "plain_proof": plain_proof_b64,
+            "mining_job": {
+                "incomplete_header_bytes": header_b64,
+                "target": serde_json::Value::Number(serde_json::Number::from_str(&target_str).unwrap_or_else(|_| serde_json::Number::from(u64::MAX)))
+            }
+        });
+
+        let req = json!({
+            "jsonrpc": "2.0",
+            "id": 200,
+            "method": "submitPlainProof",
+            "params": params
+        });
+
+        println!(
+            "auxpow: PRL forward proof — proof_b64_len={} header_len={} target={}",
+            plain_proof_b64.len(),
+            header_bytes.len(),
+            target_str
+        );
+
+        let resp = self.send_request(&req).await?;
+
+        let accepted = resp
+            .get("result")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+
+        if accepted {
+            info!("AuxPow: PRL proof accepted by AlphaPool");
+            Ok(ShareResult::Accepted)
+        } else if let Some(err) = resp.get("error") {
+            if err.is_null() {
+                return Ok(ShareResult::Unknown);
+            }
+            let reason = if let Some(m) = err.get("message").and_then(|m| m.as_str()) {
+                m.to_string()
+            } else if let Some(s) = err.as_str() {
+                s.to_string()
+            } else {
+                format!("{}", err)
+            };
+            warn!("AuxPow: PRL proof rejected: {}", reason);
             Ok(ShareResult::Rejected(reason))
         } else {
             Ok(ShareResult::Unknown)
@@ -2717,6 +2791,14 @@ impl AuxPowClient {
 /// where `max_target` is the largest 256-bit value.  The result saturates
 /// at `max_target`, so difficulties `<= 1.0` produce the easiest possible
 /// target (all bytes `0xFF`).
+/// Convert a 32-byte big-endian target to a decimal string (for JSON-RPC).
+/// The official Pearl miner sends target as a decimal integer, not hex.
+pub fn target_bytes_to_decimal_string(target: &[u8; 32]) -> String {
+    use num_bigint::BigUint;
+    let target_big: BigUint = BigUint::from_bytes_be(target);
+    target_big.to_str_radix(10)
+}
+
 /// Convert a 32-byte big-endian target to a difficulty value.
 /// difficulty = 2^256 / (target + 1), approximated as 2^256 / target.
 pub fn target_to_difficulty(target: &[u8; 32]) -> f64 {

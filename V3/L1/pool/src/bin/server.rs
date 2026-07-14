@@ -21,7 +21,7 @@ use zion_pool::{
 };
 use zion_auxpow::{
     AuxPowScheduler, AuxPowStats, ExternalCoin, JobMultiplexer, JobPackage, ShareForwardResult,
-    ShareForwarder, SplitConfig,
+    ShareForwarder, ShareResult, SplitConfig,
 };
 use zion_cosmic_harmony::{
     fetch_live_profit_estimates, select_best_coin, ExternalCoin as ChExternalCoin,
@@ -458,6 +458,7 @@ async fn run_auxpow_bridge(
     cfg: AuxPowIntegrationConfig,
     bridge: AuxPowBridge,
     share_rx: std::sync::mpsc::Receiver<(ShareForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
+    pearl_rx: std::sync::mpsc::Receiver<(PearlForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
 ) {
     let mut mux = JobMultiplexer::new(&cfg.payout_wallet, &cfg.worker_name)
         .with_preference(cfg.pool_preference, &cfg.region);
@@ -591,6 +592,51 @@ async fn run_auxpow_bridge(
                     }
                     Err(e) => {
                         eprintln!("auxpow_bridge: forward error: {}", e);
+                        ShareForwardResult::Unknown
+                    }
+                }
+            } else {
+                ShareForwardResult::NotConnected
+            };
+            let _ = reply_tx.send(ShareForwardOutcome {
+                result,
+                elapsed_ms: started.elapsed().as_millis() as u64,
+            });
+        }
+
+        // Drain any pending Pearl proof-forward requests.
+        while let Ok((req, reply_tx)) = pearl_rx.try_recv() {
+            let started = Instant::now();
+            let result = if let Some(client) = mux.client() {
+                match client.submit_pearl_proof(
+                    &req.external_job_id,
+                    &req.plain_proof_b64,
+                    &req.header_bytes,
+                    &req.target_bytes,
+                ).await {
+                    Ok(ShareResult::Accepted) => {
+                        println!(
+                            "auxpow_bridge: pearl_proof_forwarded job_id={} result=accepted elapsed_ms={}",
+                            req.external_job_id, started.elapsed().as_millis()
+                        );
+                        ShareForwardResult::Accepted
+                    }
+                    Ok(ShareResult::Rejected(reason)) => {
+                        println!(
+                            "auxpow_bridge: pearl_proof_rejected job_id={} reason={} elapsed_ms={}",
+                            req.external_job_id, reason, started.elapsed().as_millis()
+                        );
+                        ShareForwardResult::Rejected(reason)
+                    }
+                    Ok(ShareResult::Unknown) => {
+                        println!(
+                            "auxpow_bridge: pearl_proof_unknown job_id={} elapsed_ms={}",
+                            req.external_job_id, started.elapsed().as_millis()
+                        );
+                        ShareForwardResult::Unknown
+                    }
+                    Err(e) => {
+                        eprintln!("auxpow_bridge: pearl forward error: {}", e);
                         ShareForwardResult::Unknown
                     }
                 }
@@ -767,7 +813,7 @@ fn main() -> Result<()> {
     // Stratum pool.  A tokio runtime runs the JobMultiplexer in a background
     // thread and keeps a queue of current external jobs; session threads pop
     // jobs synchronously and send shares back for forwarding.
-    let (auxpow_bridge, auxpow_share_rx) = AuxPowBridge::new(config.auxpow_config.enabled);
+    let (auxpow_bridge, auxpow_share_rx, auxpow_pearl_rx) = AuxPowBridge::new(config.auxpow_config.enabled);
     if config.auxpow_config.enabled {
         println!(
             "auxpow_bridge: enabled coin={:?} wallet={} worker={} preference={:?} region={}",
@@ -791,7 +837,7 @@ fn main() -> Result<()> {
                     return;
                 }
             };
-            rt.block_on(run_auxpow_bridge(aux_cfg, bridge, auxpow_share_rx));
+            rt.block_on(run_auxpow_bridge(aux_cfg, bridge, auxpow_share_rx, auxpow_pearl_rx));
         });
     } else {
         println!("auxpow_bridge: disabled (set ZION_POOL_AUXPOW_ENABLED=1 to enable B2b multiplexing)");
@@ -2248,6 +2294,70 @@ fn handle_client(
                             sub_miner_id, coin, accepted, status
                         );
                     }
+                    PoolMessage::PearlSubmit {
+                        miner_id: sub_miner_id,
+                        worker_name: sub_worker_name,
+                        coin,
+                        algorithm: _,
+                        external_job_id,
+                        hash_hex: _,
+                        plain_proof_b64,
+                        mining_job_b64: _,
+                    } => {
+                        // Forward Pearl PoUW proof to AlphaPool via the bridge
+                        println!(
+                            "pearl_proof_received miner={} coin={} job_id={} proof_b64_len={}",
+                            sub_miner_id, coin, external_job_id, plain_proof_b64.len()
+                        );
+                        // Get header + target from the external stream job we sent
+                        let (header_bytes, target_bytes) = match &external_stream_job {
+                            Some(ext) => {
+                                let hdr = hex::decode(&ext.header_hex).unwrap_or_default();
+                                let tgt = zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "pearl target")
+                                    .unwrap_or([0xFFu8; 32]);
+                                (hdr, tgt)
+                            }
+                            None => (vec![], [0xFFu8; 32]),
+                        };
+                        let pearl_req = PearlForwardRequest {
+                            external_job_id: external_job_id.clone(),
+                            plain_proof_b64: plain_proof_b64.clone(),
+                            header_bytes,
+                            target_bytes,
+                        };
+                        let (accepted, status) = match auxpow_bridge.forward_pearl(pearl_req) {
+                            Some(outcome) => match outcome.result {
+                                ShareForwardResult::Accepted => (true, "accepted".to_string()),
+                                ShareForwardResult::BelowTarget => (false, "below_target".to_string()),
+                                ShareForwardResult::Rejected(ref r) => (false, format!("rejected: {r}")),
+                                ShareForwardResult::Unknown => (false, "unknown".to_string()),
+                                ShareForwardResult::NotConnected => (false, "not_connected".to_string()),
+                            },
+                            None => (false, "bridge_unavailable".to_string()),
+                        };
+                        let ext_result = PoolMessage::ExternalResult {
+                            accepted,
+                            status: status.clone(),
+                            coin: coin.clone(),
+                        };
+                        let _ = write_wire_message(&mut writer, &ext_result);
+                        println!(
+                            "pearl_proof_result miner={} coin={} accepted={} status={}",
+                            sub_miner_id, coin, accepted, status
+                        );
+                        // Record in routing stats as PearlExternal
+                        {
+                            let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
+                            let should_log = stats.record(
+                                session_group,
+                                RevenueSource::PearlExternal,
+                                accepted,
+                            );
+                            if should_log {
+                                println!("routing_snapshot {}", stats.snapshot_line());
+                            }
+                        }
+                    }
                     PoolMessage::Submit { .. } | PoolMessage::NoSolution { .. } => {
                         zion_line = line;
                         zion_msg = Some(msg);
@@ -3184,8 +3294,8 @@ struct RoutingStats {
     total_stale: u64,
     group_submits: [u64; 4],
     group_accepted: [u64; 4],
-    source_submits: [u64; 14],
-    source_accepted: [u64; 14],
+    source_submits: [u64; 17],
+    source_accepted: [u64; 17],
 }
 
 enum JobCompletion {
@@ -3217,6 +3327,17 @@ struct ShareForwardRequest {
     mix_hash: Option<[u8; 32]>,
 }
 
+/// Request to forward a pre-built Pearl PlainProof to AlphaPool.
+/// Unlike ShareForwardRequest, this carries the full proof blob (~178KB)
+/// because Pearl PoUW proofs are too large for the 32-byte hash field.
+#[derive(Debug)]
+struct PearlForwardRequest {
+    external_job_id: String,
+    plain_proof_b64: String,
+    header_bytes: Vec<u8>,
+    target_bytes: [u8; 32],
+}
+
 /// Result of a share-forward request returned to the session handler.
 #[derive(Debug, Clone)]
 struct ShareForwardOutcome {
@@ -3238,17 +3359,25 @@ struct AuxPowBridge {
     enabled: bool,
     job_queue: Arc<Mutex<VecDeque<JobPackage>>>,
     share_tx: std::sync::mpsc::Sender<(ShareForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
+    /// Separate channel for Pearl PoUW proof forwarding (large blobs).
+    pearl_tx: std::sync::mpsc::Sender<(PearlForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
 }
 
 impl AuxPowBridge {
-    fn new(enabled: bool) -> (Self, std::sync::mpsc::Receiver<(ShareForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>) {
+    fn new(enabled: bool) -> (
+        Self,
+        std::sync::mpsc::Receiver<(ShareForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
+        std::sync::mpsc::Receiver<(PearlForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
+    ) {
         let (share_tx, share_rx) = std::sync::mpsc::channel();
+        let (pearl_tx, pearl_rx) = std::sync::mpsc::channel();
         let bridge = Self {
             enabled,
             job_queue: Arc::new(Mutex::new(VecDeque::new())),
             share_tx,
+            pearl_tx,
         };
-        (bridge, share_rx)
+        (bridge, share_rx, pearl_rx)
     }
 
     /// Return a clone of the freshest external job from the queue.
@@ -3274,6 +3403,20 @@ impl AuxPowBridge {
         }
         let (tx, rx) = std::sync::mpsc::channel();
         if self.share_tx.send((req, tx)).is_err() {
+            return None;
+        }
+        rx.recv().ok()
+    }
+
+    /// Forward a pre-built Pearl PlainProof to AlphaPool.  Blocks until the
+    /// tokio task processes the request.  Uses a separate channel because
+    /// Pearl proofs are ~178KB and shouldn't block regular share forwarding.
+    fn forward_pearl(&self, req: PearlForwardRequest) -> Option<ShareForwardOutcome> {
+        if !self.enabled {
+            return None;
+        }
+        let (tx, rx) = std::sync::mpsc::channel();
+        if self.pearl_tx.send((req, tx)).is_err() {
             return None;
         }
         rx.recv().ok()
@@ -3802,6 +3945,30 @@ impl RevenueScheduler {
             0,
             default_value_usd,
         )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::VerusHashExternal,
+            "ZION_STREAM_VERUSHASH_PCT",
+            "ZION_STREAM_VERUSHASH_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::ProgPowExternal,
+            "ZION_STREAM_PROGPOW_PCT",
+            "ZION_STREAM_PROGPOW_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::PearlExternal,
+            "ZION_STREAM_PEARL_PCT",
+            "ZION_STREAM_PEARL_USD",
+            0,
+            default_value_usd,
+        )?;
 
         let total_weight: u32 = lanes.iter().map(|l| l.weight).sum();
         if total_weight == 0 {
@@ -3854,7 +4021,10 @@ impl RevenueScheduler {
                 | RevenueSource::KawPowExternal
                 | RevenueSource::AutolykosExternal
                 | RevenueSource::RandomXExternal
-                | RevenueSource::ZelHashExternal => {
+                | RevenueSource::ZelHashExternal
+                | RevenueSource::VerusHashExternal
+                | RevenueSource::ProgPowExternal
+                | RevenueSource::PearlExternal => {
                     choices.push((SessionGroup::Revenue, lane.weight))
                 }
                 RevenueSource::NclAi => choices.push((SessionGroup::Ncl, lane.weight)),
@@ -3925,6 +4095,9 @@ impl RevenueScheduler {
                                     | RevenueSource::AutolykosExternal
                                     | RevenueSource::RandomXExternal
                                     | RevenueSource::ZelHashExternal
+                                    | RevenueSource::VerusHashExternal
+                                    | RevenueSource::ProgPowExternal
+                                    | RevenueSource::PearlExternal
                             )
                     })
                     .copied()
@@ -4043,8 +4216,8 @@ impl RoutingStats {
             total_stale: 0,
             group_submits: [0; 4],
             group_accepted: [0; 4],
-            source_submits: [0; 14],
-            source_accepted: [0; 14],
+            source_submits: [0; 17],
+            source_accepted: [0; 17],
         }
     }
 
@@ -4121,6 +4294,9 @@ impl RoutingStats {
             RevenueSource::NclAi,
             RevenueSource::DeekshaLite,
             RevenueSource::ThermalBonus,
+            RevenueSource::VerusHashExternal,
+            RevenueSource::ProgPowExternal,
+            RevenueSource::PearlExternal,
         ] {
             let idx = source_index(source);
             let submits = self.source_submits[idx];
@@ -4650,8 +4826,8 @@ fn build_stats_payload(
     json.to_string()
 }
 
-/// All 14 revenue sources in canonical order (matches `source_index`).
-const ALL_REVENUE_SOURCES: [RevenueSource; 14] = [
+/// All 17 revenue sources in canonical order (matches `source_index`).
+const ALL_REVENUE_SOURCES: [RevenueSource; 17] = [
     RevenueSource::Zion,
     RevenueSource::KeccakBonus,
     RevenueSource::Sha3Bonus,
@@ -4666,6 +4842,9 @@ const ALL_REVENUE_SOURCES: [RevenueSource; 14] = [
     RevenueSource::ZelHashExternal,
     RevenueSource::DeekshaLite,
     RevenueSource::ThermalBonus,
+    RevenueSource::VerusHashExternal,
+    RevenueSource::ProgPowExternal,
+    RevenueSource::PearlExternal,
 ];
 
 /// Build the comprehensive revenue report payload for `/api/v1/revenue/stats`.
@@ -4683,7 +4862,7 @@ fn build_revenue_stats_payload(
     let pplns = pplns_engine.stats();
     let fees = pplns_engine.fee_stats();
 
-    // Per-source breakdown — all 14 sources with submits, accepted, and
+    // Per-source breakdown — all 17 sources with submits, accepted, and
     // derived revenue estimates.
     let sources: Vec<_> = ALL_REVENUE_SOURCES
         .iter()
@@ -5918,7 +6097,7 @@ mod tests {
         };
 
         // 3) Build the bridge and a background tokio task that forwards shares.
-        let (bridge, share_rx) = AuxPowBridge::new(true);
+        let (bridge, share_rx, _pearl_rx) = AuxPowBridge::new(true);
         bridge
             .job_queue
             .lock()

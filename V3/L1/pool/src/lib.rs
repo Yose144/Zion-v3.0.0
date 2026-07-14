@@ -201,6 +201,29 @@ pub enum PoolMessage {
         #[serde(default)]
         extranonce1_hex: String,
     },
+    /// Miner → pool: Pearl PoUW proof submission.
+    ///
+    /// Like ExternalSubmit but carries the full PlainProof blob (~178KB base64)
+    /// which is too large for ExternalSubmit's 32-byte hash_hex field.
+    ///
+    /// The pool forwards this to AlphaPool via `submitPlainProof` without
+    /// doing any mining itself — the miner has already mined the PoUW on GPU.
+    PearlSubmit {
+        miner_id: String,
+        worker_name: String,
+        /// "PRL"
+        coin: String,
+        /// "pearlhash"
+        algorithm: String,
+        /// External job ID from the external_stream
+        external_job_id: String,
+        /// Jackpot hash (32 bytes, big-endian hex) — for quick pool-side validation
+        hash_hex: String,
+        /// Full PlainProof (bincode → base64, ~178KB)
+        plain_proof_b64: String,
+        /// Mining job metadata: incomplete_header_bytes + target (base64-encoded JSON)
+        mining_job_b64: String,
+    },
     /// Pool → miner: external stream share result.
     ExternalResult {
         accepted: bool,

@@ -69,6 +69,7 @@ blake3.workspace = true
 num_cpus = "1"
 rayon = "1"
 hex = "0.4"
+base64 = "0.22"
 ocl = { version = "0.19", optional = true }
 serde_json.workspace = true
 tokio = { version = "1", features = ["rt-multi-thread", "time", "sync"] }

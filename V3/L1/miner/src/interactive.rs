@@ -194,6 +194,19 @@ pub struct HashrateTracker {
     pub total_hashes: AtomicU64,
     pub accepted_shares: AtomicU64,
     pub rejected_shares: AtomicU64,
+    // ── Per-stream share counters (3-stream parallel mining) ──
+    /// Stream 1: ZION Deeksha accepted shares
+    pub zion_accepted: AtomicU64,
+    /// Stream 1: ZION Deeksha rejected shares
+    pub zion_rejected: AtomicU64,
+    /// Stream 2: Pearl PoUW accepted proofs
+    pub pearl_accepted: AtomicU64,
+    /// Stream 2: Pearl PoUW rejected proofs
+    pub pearl_rejected: AtomicU64,
+    /// Stream 3: External (Verus/Blake3/etc) accepted shares
+    pub ext_accepted: AtomicU64,
+    /// Stream 3: External (Verus/Blake3/etc) rejected shares
+    pub ext_rejected: AtomicU64,
     /// Pool height — updated by mining loop via set_pool_height()
     pub pool_height: AtomicU64,
     /// GPU device info set by mining loop after gpu_init (via set_gpu_info)
@@ -210,6 +223,12 @@ impl HashrateTracker {
             total_hashes: AtomicU64::new(0),
             accepted_shares: AtomicU64::new(0),
             rejected_shares: AtomicU64::new(0),
+            zion_accepted: AtomicU64::new(0),
+            zion_rejected: AtomicU64::new(0),
+            pearl_accepted: AtomicU64::new(0),
+            pearl_rejected: AtomicU64::new(0),
+            ext_accepted: AtomicU64::new(0),
+            ext_rejected: AtomicU64::new(0),
             pool_height: AtomicU64::new(0),
             gpu_info: Mutex::new(Vec::new()),
             windows: Mutex::new((Window::new(10), Window::new(60), Window::new(900))),

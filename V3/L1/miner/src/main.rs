@@ -1355,6 +1355,17 @@ fn run_remote_session(
         println!("[{}] dual_gpu_blake3_thread_disabled (gpu_available={})", log_timestamp(), gpu_available);
     }
 
+    // ── Persistent Pearl PoUW thread (pool-routed) ──
+    // Receives PRL external stream jobs via channel from the main loop.
+    // Mines PoUW using the real Pearl pipeline and sends proofs back.
+    // The main thread submits proofs to the ZION pool via PearlSubmit.
+    let (pearl_tx, pearl_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
+    let (pearl_proof_tx, pearl_proof_rx) = std::sync::mpsc::channel::<PearlProofResult>();
+    thread::spawn(move || {
+        pearl_gpu_thread(pearl_rx, pearl_proof_tx);
+    });
+    println!("[{}] pearl_gpu_thread_started (pool-routed)", log_timestamp());
+
     sync_miner_metrics(
         metrics,
         &telemetry,
@@ -1557,16 +1568,25 @@ fn run_remote_session(
         // start, receives jobs via channel, runs continuously.
         // ── Pearl stream already spawned at session start ──
 
-        // Send external stream job to the persistent Blake3 GPU thread
+        // Send external stream job to the appropriate persistent thread:
+        // - PRL (pearlhash) → Pearl PoUW GPU thread (pool-routed)
+        // - Blake3 (DCR/ALPH) → Blake3 GPU thread
+        // - Other (VerusHash, etc.) → CPU parallel thread
         if let Some(ref ext) = external_stream {
-            if matches!(ext.algorithm.as_str(), "blake3" | "blake3_dcr" | "blake3_alph") {
+            if ext.coin.eq_ignore_ascii_case("PRL") || ext.algorithm.eq_ignore_ascii_case("pearlhash") {
+                let _ = pearl_tx.send(ext.clone());
+            } else if matches!(ext.algorithm.as_str(), "blake3" | "blake3_dcr" | "blake3_alph") {
                 let _ = ext_gpu_tx.send(ext.clone());
             }
         }
 
-        // CPU-only external stream (VerusHash) → CPU parallel thread
+        // CPU-only external stream (VerusHash, etc.) → CPU parallel thread
+        // Pearl (PRL) and Blake3 are handled by persistent GPU threads above.
         let ext_handle = if let Some(ref ext) = external_stream {
-            if !matches!(ext.algorithm.as_str(), "blake3" | "blake3_dcr" | "blake3_alph") {
+            let is_pearl = ext.coin.eq_ignore_ascii_case("PRL")
+                || ext.algorithm.eq_ignore_ascii_case("pearlhash");
+            let is_blake3 = matches!(ext.algorithm.as_str(), "blake3" | "blake3_dcr" | "blake3_alph");
+            if !is_pearl && !is_blake3 {
                 let ext = ext.clone();
                 let ext_threads = threads.max(1);
                 Some(thread::spawn(move || {
@@ -1638,6 +1658,26 @@ fn run_remote_session(
             );
             submit_external_share(
                 &mut writer, &mut reader, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
+            );
+        }
+
+        // ── Collect Pearl PoUW proof from persistent thread (non-blocking) ──
+        let pearl_proof = match pearl_proof_rx.try_recv() {
+            Ok(proof) => Some(proof),
+            Err(_) => None,
+        };
+
+        // ── Submit Pearl PoUW proof (if found by persistent thread) ──────
+        if let Some(proof) = pearl_proof {
+            println!(
+                "[{}] pearl_proof_submitting  coin={}  job_id={}  proof_b64_len={}",
+                log_timestamp(),
+                proof.coin,
+                proof.external_job_id,
+                proof.plain_proof_b64.len(),
+            );
+            submit_pearl_proof(
+                &mut writer, &mut reader, &config, &proof, &hashrate, VERBOSE.load(Ordering::Relaxed),
             );
         }
 
@@ -1790,6 +1830,7 @@ fn run_remote_session(
                 if accepted {
                     accepted_iterations += 1;
                     hashrate.record_share(true);
+                    hashrate.zion_accepted.fetch_add(1, Ordering::Relaxed);
                     ui::log_accepted(
                         job.job_id,
                         job.height,
@@ -1808,6 +1849,7 @@ fn run_remote_session(
                 } else {
                     rejected_iterations += 1;
                     hashrate.record_share(false);
+                    hashrate.zion_rejected.fetch_add(1, Ordering::Relaxed);
                     ui::log_rejected(
                         job.job_id,
                         job.height,
@@ -2216,6 +2258,19 @@ struct ExternalShareResult {
     extranonce1_hex: String,
 }
 
+/// Result of mining a Pearl PoUW job — carries the full PlainProof blob.
+struct PearlProofResult {
+    coin: String,
+    algorithm: String,
+    external_job_id: String,
+    /// Jackpot hash (32 bytes, big-endian hex)
+    hash_hex: String,
+    /// Full PlainProof (bincode → base64, ~178KB)
+    plain_proof_b64: String,
+    /// Mining job metadata (base64-encoded JSON: incomplete_header_bytes + target)
+    mining_job_b64: String,
+}
+
 /// Submit an external share to the pool and read the result.
 /// Used by both CPU (VerusHash) and GPU (Blake3) external stream paths.
 fn submit_external_share(
@@ -2248,15 +2303,75 @@ fn submit_external_share(
                 if let PoolMessage::ExternalResult { accepted, status, coin } = msg {
                     if accepted {
                         hashrate.accepted_shares.fetch_add(1, Ordering::Relaxed);
+                        hashrate.ext_accepted.fetch_add(1, Ordering::Relaxed);
                         println!("[{}] external_share_accepted coin={} status={}", log_timestamp(), coin, status);
                     } else {
                         hashrate.rejected_shares.fetch_add(1, Ordering::Relaxed);
+                        hashrate.ext_rejected.fetch_add(1, Ordering::Relaxed);
                         println!("[{}] external_share_rejected coin={} status={}", log_timestamp(), coin, status);
                     }
                 }
             }
             Err(e) => {
                 println!("external_result_read_error: {e}");
+            }
+        }
+    }
+}
+
+/// Submit a Pearl PoUW proof to the pool via PearlSubmit message.
+/// The pool forwards the proof to AlphaPool via submitPlainProof.
+fn submit_pearl_proof(
+    writer: &mut impl Write,
+    reader: &mut impl BufRead,
+    config: &MinerConfig,
+    proof: &PearlProofResult,
+    hashrate: &HashrateTracker,
+    verbose: bool,
+) {
+    let pearl_submit = PoolMessage::PearlSubmit {
+        miner_id: config.miner_id.clone(),
+        worker_name: config.worker_name.clone(),
+        coin: proof.coin.clone(),
+        algorithm: proof.algorithm.clone(),
+        external_job_id: proof.external_job_id.clone(),
+        hash_hex: proof.hash_hex.clone(),
+        plain_proof_b64: proof.plain_proof_b64.clone(),
+        mining_job_b64: proof.mining_job_b64.clone(),
+    };
+    if let Err(e) = write_wire_message(writer, &pearl_submit) {
+        println!("pearl_submit_write_error: {e}");
+    } else {
+        match read_next_result(reader) {
+            Ok((line, msg)) => {
+                if verbose {
+                    // Don't log the full line — it contains the 178KB proof
+                    println!("wire_pearl_result received (len={})", line.len());
+                }
+                if let PoolMessage::ExternalResult { accepted, status, coin } = msg {
+                    if accepted {
+                        hashrate.accepted_shares.fetch_add(1, Ordering::Relaxed);
+                        hashrate.pearl_accepted.fetch_add(1, Ordering::Relaxed);
+                        println!(
+                            "[{}] pearl_proof_accepted coin={} status={}",
+                            log_timestamp(),
+                            coin,
+                            status
+                        );
+                    } else {
+                        hashrate.rejected_shares.fetch_add(1, Ordering::Relaxed);
+                        hashrate.pearl_rejected.fetch_add(1, Ordering::Relaxed);
+                        println!(
+                            "[{}] pearl_proof_rejected coin={} status={}",
+                            log_timestamp(),
+                            coin,
+                            status
+                        );
+                    }
+                }
+            }
+            Err(e) => {
+                println!("pearl_result_read_error: {e}");
             }
         }
     }
@@ -2426,6 +2541,174 @@ fn blake3_gpu_thread(
     }
 }
 
+/// Persistent Pearl PoUW miner thread (pool-routed).
+///
+/// Runs in a separate thread, receives PRL external stream jobs via channel
+/// (from the main pool I/O loop), mines PoUW using the real Pearl pipeline,
+/// and sends found proofs back via another channel.
+///
+/// The main thread submits proofs to the ZION pool via PearlSubmit messages.
+/// The pool forwards them to AlphaPool via submitPlainProof.
+///
+/// Uses CPU PoUW pipeline by default. When gpu-opencl feature is enabled
+/// and a GPU is available, uses the GPU-accelerated pipeline.
+fn pearl_gpu_thread(
+    rx: std::sync::mpsc::Receiver<zion_pool::ExternalStreamJob>,
+    tx: std::sync::mpsc::Sender<PearlProofResult>,
+) {
+    use zion_auxpow::pearl_real_pouw;
+
+    println!(
+        "[{}] pearl_gpu_thread: started (pool-routed PoUW mining)",
+        log_timestamp()
+    );
+
+    // Standard Pearl PoUW dimensions
+    let m = pearl_real_pouw::DEFAULT_M;
+    let n = pearl_real_pouw::DEFAULT_N;
+    let k = pearl_real_pouw::DEFAULT_K;
+    let noise_rank = pearl_real_pouw::DEFAULT_NOISE_RANK;
+    let noise_range = pearl_real_pouw::DEFAULT_NOISE_RANGE;
+    let hash_tile_h = pearl_real_pouw::DEFAULT_HASH_TILE_H;
+    let hash_tile_w = pearl_real_pouw::DEFAULT_HASH_TILE_W;
+
+    let mut current_job: Option<zion_pool::ExternalStreamJob> = None;
+    let mut attempt_count: u64 = 0;
+    let mut last_heartbeat = Instant::now();
+
+    loop {
+        // Check for new job (non-blocking, then blocking with timeout)
+        match rx.try_recv() {
+            Ok(job) => {
+                println!(
+                    "[{}] pearl_gpu_thread: new job coin={} algo={} job_id={}",
+                    log_timestamp(),
+                    job.coin,
+                    job.algorithm,
+                    job.job_id
+                );
+                current_job = Some(job);
+                attempt_count = 0;
+            }
+            Err(std::sync::mpsc::TryRecvError::Empty) => {}
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                println!("[{}] pearl_gpu_thread: channel closed, exiting", log_timestamp());
+                return;
+            }
+        }
+
+        let job = match &current_job {
+            Some(j) => j.clone(),
+            None => {
+                // No job yet — wait for one (blocking with timeout)
+                match rx.recv_timeout(Duration::from_secs(5)) {
+                    Ok(job) => {
+                        println!(
+                            "[{}] pearl_gpu_thread: first job coin={} algo={}",
+                            log_timestamp(),
+                            job.coin,
+                            job.algorithm
+                        );
+                        current_job = Some(job.clone());
+                        job
+                    }
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => continue,
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                        println!("[{}] pearl_gpu_thread: channel closed, exiting", log_timestamp());
+                        return;
+                    }
+                }
+            }
+        };
+
+        // Mine one PoUW attempt
+        let header_hex = &job.header_hex;
+        let target_hex = &job.target_hex;
+
+        #[cfg(feature = "gpu-opencl")]
+        let mined_result = {
+            // Try GPU first, fall back to CPU
+            // For now, use CPU — GPU Pearl kernel integration is Phase 3
+            pearl_real_pouw::mine_pearl_share(
+                header_hex,
+                target_hex,
+                m, n, k, noise_rank, noise_range,
+                hash_tile_h, hash_tile_w,
+            )
+        };
+
+        #[cfg(not(feature = "gpu-opencl"))]
+        let mined_result = pearl_real_pouw::mine_pearl_share(
+            header_hex,
+            target_hex,
+            m, n, k, noise_rank, noise_range,
+            hash_tile_h, hash_tile_w,
+        );
+
+        attempt_count += 1;
+
+        // Heartbeat every 30s
+        if last_heartbeat.elapsed() >= Duration::from_secs(30) {
+            println!(
+                "[{}] pearl_gpu_heartbeat attempts={} job_id={}",
+                log_timestamp(),
+                attempt_count,
+                job.job_id
+            );
+            last_heartbeat = Instant::now();
+        }
+
+        match mined_result {
+            Ok(Some(proof)) => {
+                let plain_proof_b64 = proof.to_base64().unwrap_or_default();
+                // Compute a hash for quick pool-side validation (use proof root)
+                let hash_hex = hex::encode(&proof.a.proof.root);
+                // Build mining_job_b64 — encode header bytes as base64
+                let header_bytes = hex::decode(job.header_hex.trim_start_matches("0x"))
+                    .unwrap_or_default();
+
+                let result = PearlProofResult {
+                    coin: job.coin.clone(),
+                    algorithm: job.algorithm.clone(),
+                    external_job_id: job.job_id.clone(),
+                    hash_hex,
+                    plain_proof_b64,
+                    mining_job_b64: base64::Engine::encode(
+                        &base64::engine::general_purpose::STANDARD,
+                        &header_bytes,
+                    ),
+                };
+
+                println!(
+                    "[{}] pearl_gpu_thread: proof found! job_id={} proof_b64_len={}",
+                    log_timestamp(),
+                    job.job_id,
+                    result.plain_proof_b64.len()
+                );
+
+                if tx.send(result).is_err() {
+                    eprintln!("[{}] pearl_gpu_thread: share channel closed, exiting", log_timestamp());
+                    return;
+                }
+                // Reset attempt count after finding a proof
+                attempt_count = 0;
+            }
+            Ok(None) => {
+                // No share found this attempt — loop and try again
+            }
+            Err(e) => {
+                eprintln!(
+                    "[{}] pearl_gpu_thread: mining error: {} — retrying",
+                    log_timestamp(),
+                    e
+                );
+                // Brief sleep to avoid tight error loop
+                thread::sleep(Duration::from_millis(100));
+            }
+        }
+    }
+}
+
 
 fn mine_external_stream_cpu(ext: &ExternalStreamJob, _threads: usize) -> Option<ExternalShareResult> {
     // Parse external coin from ticker
@@ -2516,131 +2799,6 @@ fn mine_external_stream_cpu(ext: &ExternalStreamJob, _threads: usize) -> Option<
             None
         }
     }
-}
-
-/// Mine an external stream job on GPU using the OpenCL external miner.
-///
-/// This runs IN PARALLEL with the GPU scanning the ZION Deeksha job.
-/// The external miner creates its own OpenCL context/command queue, so
-/// it time-shares the GPU device with the Deeksha kernel concurrently.
-///
-/// Used for Blake3-based external coins (DCR, ALPH) where GPU scanning
-/// is orders of magnitude faster than CPU.  VerusHash stays on CPU
-/// (see `mine_external_stream_cpu`).
-fn mine_external_stream_gpu(
-    ext: &ExternalStreamJob,
-    work_size: usize,
-) -> Option<ExternalShareResult> {
-    // Parse header bytes
-    let header_bytes = match hex::decode(ext.header_hex.trim_start_matches("0x")) {
-        Ok(b) => b,
-        Err(e) => {
-            println!("external_stream_gpu_header_decode_error: {e}");
-            return None;
-        }
-    };
-
-    // Parse target
-    let target_bytes = match zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external target") {
-        Ok(t) => t,
-        Err(e) => {
-            println!("external_stream_gpu_target_parse_error: {e}");
-            return None;
-        }
-    };
-
-    // Create the OpenCL external miner for this algorithm
-    let algorithm = if ext.algorithm == "blake3" { "blake3_dcr" } else { &ext.algorithm };
-    let mut gpu_miner = match gpu_backend::create_gpu_backend(
-        gpu_backend::GpuBackendKind::OpenCL,
-        work_size,
-        algorithm,
-    ) {
-        Ok(m) => {
-            println!(
-                "external_stream_gpu_init coin={} algo={} work_size={}",
-                ext.coin, algorithm, work_size
-            );
-            m
-        }
-        Err(e) => {
-            println!(
-                "external_stream_gpu_init_failed coin={} algo={} err=\"{e}\" falling_back=cpu",
-                ext.coin, algorithm
-            );
-            // Fall back to CPU if GPU init fails
-            return mine_external_stream_cpu(ext, 1);
-        }
-    };
-
-    // Use a random nonce base so concurrent miners don't duplicate shares.
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-    let mut h = DefaultHasher::new();
-    ext.job_id.hash(&mut h);
-    std::process::id().hash(&mut h);
-    std::thread::current().id().hash(&mut h);
-    let nonce_base: u64 = (h.finish() as u32) as u64;
-
-    let target = DifficultyTarget {
-        bytes: target_bytes,
-    };
-
-    // Scan in GPU-sized batches.  Loop until we find a share or exhaust
-    // a reasonable nonce space (50M nonces ≈ 100 batches at 256K work_size).
-    let total_scan: u64 = 50_000_000;
-    let batch_size = work_size as u64;
-    let mut nonce = nonce_base;
-    let mut scanned = 0u64;
-
-    while scanned < total_scan {
-        let result = if header_bytes.len() > 80 {
-            gpu_miner.mine_batch_raw(&header_bytes, target.clone(), nonce, batch_size)
-        } else {
-            // For ≤80B headers, pad into MiningHeader
-            let mut bytes = [0u8; 80];
-            let len = header_bytes.len().min(80);
-            bytes[..len].copy_from_slice(&header_bytes[..len]);
-            let header = MiningHeader::from_bytes(bytes);
-            gpu_miner.mine_batch(header, target.clone(), nonce, batch_size)
-        };
-
-        match result {
-            Ok(batch_result) => {
-                scanned += batch_result.nonces_tested;
-                if let Some((found_nonce, hash, _mix)) = batch_result.solutions.first() {
-                    println!(
-                        "external_stream_gpu_share_found coin={} algo={} nonce={} hash={}",
-                        ext.coin,
-                        algorithm,
-                        found_nonce,
-                        hex::encode(hash)
-                    );
-                    return Some(ExternalShareResult {
-                        coin: ext.coin.clone(),
-                        algorithm: ext.algorithm.clone(),
-                        external_job_id: ext.job_id.clone(),
-                        nonce: *found_nonce,
-                        hash: *hash,
-                        extranonce1_hex: ext.extranonce1_hex.clone(),
-                    });
-                }
-            }
-            Err(e) => {
-                println!(
-                    "external_stream_gpu_batch_error coin={} nonce={} err=\"{e}\" falling_back=cpu",
-                    ext.coin, nonce
-                );
-                // Fall back to CPU for the remaining scan
-                return mine_external_stream_cpu(ext, 1);
-            }
-        }
-
-        nonce = nonce.wrapping_add(batch_size);
-    }
-
-    // No share found in the scan window
-    None
 }
 
 fn read_next_job(
@@ -2881,6 +3039,11 @@ struct MinerConfig {
     threads: usize,
     gpu_backend: gpu_backend::GpuBackendKind,
     gpu_work_size: usize,
+    /// Work size for Pearl PoUW GPU (Stream 2). Defaults to gpu_work_size.
+    pearl_gpu_work_size: usize,
+    /// Work size for secondary external GPU (Stream 3, GPU-capable coins).
+    /// Defaults to gpu_work_size.
+    secondary_gpu_work_size: usize,
     /// Algorithm advertised in hello and used if pool matches.
     algorithm: String,
 }
@@ -3021,6 +3184,14 @@ impl MinerConfig {
             threads,
             gpu_backend: gpu_backend::GpuBackendKind::from_env(),
             gpu_work_size: std::env::var("ZION_GPU_WORK_SIZE")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(1 << 18), // 256K default
+            pearl_gpu_work_size: std::env::var("ZION_PEARL_GPU_WORK_SIZE")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(1 << 18), // 256K default
+            secondary_gpu_work_size: std::env::var("ZION_SECONDARY_GPU_WORK_SIZE")
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(1 << 18), // 256K default

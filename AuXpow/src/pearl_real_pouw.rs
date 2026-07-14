@@ -437,6 +437,13 @@ pub struct PlainProof {
     pub a: MatrixMerkleProof,
     pub bt: MatrixMerkleProof,
     pub moe: Option<MoEProofParams>,
+    /// First 64 bytes of the noised A row (for jackpot verification).
+    /// Populated by the GPU mining path; None for legacy CPU-only proofs.
+    #[serde(default)]
+    pub noised_a_fragment: Vec<u8>,
+    /// First 64 bytes of the noised B^T row.
+    #[serde(default)]
+    pub noised_b_fragment: Vec<u8>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -450,13 +457,157 @@ pub struct MoEProofParams {
 }
 
 impl PlainProof {
-    /// Serialize to bincode then base64.
+    /// Serialize to the official flat binary format then base64.
+    ///
+    /// Format (matches alpha-miner-amd v1.7.5):
+    /// ```text
+    /// Header (48 bytes):
+    ///   u64 LE: m
+    ///   u64 LE: n
+    ///   u64 LE: k
+    ///   u64 LE: noise_rank
+    ///   u64 LE: num_selected_rows
+    ///   u64 LE: k (repeated)
+    /// A selected rows (num_selected × k bytes, raw int8)
+    /// B^T selected rows (num_selected × k bytes, raw int8)
+    /// Noised A fragment (64 bytes, if present)
+    /// Noised B^T fragment (64 bytes, if present)
+    /// A Merkle proof:
+    ///   u64 LE: row_index
+    ///   u64 LE: num_siblings
+    ///   u64 LE: total_leaves
+    ///   32 × num_siblings bytes: sibling hashes
+    /// B^T Merkle proof:
+    ///   u64 LE: row_index
+    ///   32 × num_siblings bytes: sibling hashes
+    ///   u64 LE: num_siblings (or total_leaves)
+    ///   u64 LE: total_leaves (or num_siblings)
+    /// ```
+    pub fn to_flat_binary(&self) -> Result<Vec<u8>> {
+        let mut buf = Vec::with_capacity(256);
+
+        // Header (6 × u64 = 48 bytes)
+        let num_sel = self.a.row_indices.len();
+        buf.extend_from_slice(&(self.m as u64).to_le_bytes());
+        buf.extend_from_slice(&(self.n as u64).to_le_bytes());
+        buf.extend_from_slice(&(self.k as u64).to_le_bytes());
+        buf.extend_from_slice(&(self.noise_rank as u64).to_le_bytes());
+        buf.extend_from_slice(&(num_sel as u64).to_le_bytes());
+        buf.extend_from_slice(&(self.k as u64).to_le_bytes());
+
+        // A selected rows (raw int8, row by row)
+        // Each row is k bytes, which may span multiple chunks (CHUNK_LEN=1024)
+        for &row_idx in &self.a.row_indices {
+            let first_chunk = row_idx * self.k / CHUNK_LEN;
+            let last_chunk = ((row_idx + 1) * self.k - 1) / CHUNK_LEN;
+            let mut row_bytes = Vec::with_capacity(self.k);
+            for chunk_idx in first_chunk..=last_chunk {
+                // Find this chunk in the proof's leaf_data
+                // leaf_indices maps proof leaf_data entries to actual chunk indices
+                let proof_pos = self.a.proof.leaf_indices.iter()
+                    .position(|&li| li == chunk_idx);
+                if let Some(pos) = proof_pos {
+                    if pos < self.a.proof.leaf_data.len() {
+                        row_bytes.extend_from_slice(&self.a.proof.leaf_data[pos]);
+                    }
+                }
+            }
+            // Truncate or pad to exactly k bytes
+            if row_bytes.len() > self.k {
+                row_bytes.truncate(self.k);
+            } else if row_bytes.len() < self.k {
+                row_bytes.resize(self.k, 0);
+            }
+            buf.extend_from_slice(&row_bytes);
+        }
+
+        // B^T selected rows (raw int8, row by row)
+        for &row_idx in &self.bt.row_indices {
+            let first_chunk = row_idx * self.k / CHUNK_LEN;
+            let last_chunk = ((row_idx + 1) * self.k - 1) / CHUNK_LEN;
+            let mut row_bytes = Vec::with_capacity(self.k);
+            for chunk_idx in first_chunk..=last_chunk {
+                let proof_pos = self.bt.proof.leaf_indices.iter()
+                    .position(|&li| li == chunk_idx);
+                if let Some(pos) = proof_pos {
+                    if pos < self.bt.proof.leaf_data.len() {
+                        row_bytes.extend_from_slice(&self.bt.proof.leaf_data[pos]);
+                    }
+                }
+            }
+            if row_bytes.len() > self.k {
+                row_bytes.truncate(self.k);
+            } else if row_bytes.len() < self.k {
+                row_bytes.resize(self.k, 0);
+            }
+            buf.extend_from_slice(&row_bytes);
+        }
+
+        // Noised A fragment (64 bytes, if present)
+        let frag_len = 64;
+        if !self.noised_a_fragment.is_empty() {
+            let len = self.noised_a_fragment.len().min(frag_len);
+            buf.extend_from_slice(&self.noised_a_fragment[..len]);
+            if len < frag_len {
+                buf.extend(std::iter::repeat_n(0u8, frag_len - len));
+            }
+        } else {
+            buf.extend(std::iter::repeat_n(0u8, frag_len));
+        }
+
+        // Noised B^T fragment (64 bytes, if present)
+        if !self.noised_b_fragment.is_empty() {
+            let len = self.noised_b_fragment.len().min(frag_len);
+            buf.extend_from_slice(&self.noised_b_fragment[..len]);
+            if len < frag_len {
+                buf.extend(std::iter::repeat_n(0u8, frag_len - len));
+            }
+        } else {
+            buf.extend(std::iter::repeat_n(0u8, frag_len));
+        }
+
+        // A Merkle proof
+        let a_proof = &self.a.proof;
+        // For multi-leaf proofs, we use the first row index
+        let a_row_idx = self.a.row_indices.first().copied().unwrap_or(0) as u64;
+        let a_num_sib = a_proof.siblings.len() as u64;
+        let a_total = a_proof.total_leaves as u64;
+        buf.extend_from_slice(&a_row_idx.to_le_bytes());
+        buf.extend_from_slice(&a_num_sib.to_le_bytes());
+        buf.extend_from_slice(&a_total.to_le_bytes());
+        for sib in &a_proof.siblings {
+            buf.extend_from_slice(sib);
+        }
+
+        // B^T Merkle proof (different field order: row_idx, siblings, then counts)
+        let b_proof = &self.bt.proof;
+        let b_row_idx = self.bt.row_indices.first().copied().unwrap_or(0) as u64;
+        let b_num_sib = b_proof.siblings.len() as u64;
+        let b_total = b_proof.total_leaves as u64;
+        buf.extend_from_slice(&b_row_idx.to_le_bytes());
+        for sib in &b_proof.siblings {
+            buf.extend_from_slice(sib);
+        }
+        buf.extend_from_slice(&b_num_sib.to_le_bytes());
+        buf.extend_from_slice(&b_total.to_le_bytes());
+
+        Ok(buf)
+    }
+
+    /// Serialize to flat binary format then base64 (official format).
     pub fn to_base64(&self) -> Result<String> {
+        // Try flat binary format first (official alpha-miner format)
+        let bytes = self.to_flat_binary()?;
+        Ok(B64.encode(bytes))
+    }
+
+    /// Serialize to legacy bincode format then base64.
+    pub fn to_base64_bincode(&self) -> Result<String> {
         let bytes = bincode::serialize(self)?;
         Ok(B64.encode(bytes))
     }
 
-    /// Deserialize from base64 (via bincode).
+    /// Deserialize from base64 (via bincode, for internal testing).
     pub fn from_base64(data: &str) -> Result<Self> {
         let bytes = B64.decode(data)?;
         // Try current format, then legacy V1 (append Option::None tag)
@@ -923,6 +1074,8 @@ pub fn create_plain_proof(
         a: a_proof,
         bt: bt_proof,
         moe: None,
+        noised_a_fragment: Vec::new(),
+        noised_b_fragment: Vec::new(),
     })
 }
 
@@ -1160,9 +1313,11 @@ mod tests {
                 row_indices: vec![0],
             },
             moe: None,
+            noised_a_fragment: Vec::new(),
+            noised_b_fragment: Vec::new(),
         };
 
-        let b64 = proof.to_base64().unwrap();
+        let b64 = proof.to_base64_bincode().unwrap();
         let recovered = PlainProof::from_base64(&b64).unwrap();
         assert_eq!(recovered.m, proof.m);
         assert_eq!(recovered.k, proof.k);
@@ -1447,7 +1602,7 @@ pub fn mine_pearl_share_gpu(
     // Step 3: Build PlainProof if found
     if let Some(result) = gpu_result {
         let (a_row_indices, b_col_indices) = result.decode_tile_indices();
-        let proof = create_plain_proof(
+        let mut proof = create_plain_proof(
             &prep.matrix_a,
             &prep.matrix_b,
             prep.m, prep.n, prep.k, prep.noise_rank,
@@ -1455,6 +1610,26 @@ pub fn mine_pearl_share_gpu(
             &b_col_indices,
             &prep.job_key,
         )?;
+
+        // Populate noised row fragments (first 64 bytes of each selected noised row)
+        // These are needed by the verifier to check the jackpot hash
+        if let Some(&first_a_row) = a_row_indices.first() {
+            let start = first_a_row * prep.k;
+            let end = (start + 64).min(prep.noised_a.len());
+            if start < prep.noised_a.len() {
+                let bytes: &[u8] = bytemuck::cast_slice(&prep.noised_a[start..end]);
+                proof.noised_a_fragment = bytes.to_vec();
+            }
+        }
+        if let Some(&first_b_col) = b_col_indices.first() {
+            let start = first_b_col * prep.k;
+            let end = (start + 64).min(prep.noised_bt.len());
+            if start < prep.noised_bt.len() {
+                let bytes: &[u8] = bytemuck::cast_slice(&prep.noised_bt[start..end]);
+                proof.noised_b_fragment = bytes.to_vec();
+            }
+        }
+
         Ok(Some(proof))
     } else {
         Ok(None)
