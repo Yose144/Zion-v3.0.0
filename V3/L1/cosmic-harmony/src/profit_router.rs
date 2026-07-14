@@ -267,7 +267,7 @@ impl ExternalCoin {
             Self::DCR => StratumProtocol::Stratum,
             Self::ALPH => StratumProtocol::Stratum,
             Self::KAS => StratumProtocol::Stratum,
-            Self::ERG => StratumProtocol::EthStratum,
+            Self::ERG => StratumProtocol::Stratum,
             Self::RVN => StratumProtocol::EthStratum,
             Self::ETC => StratumProtocol::EthStratum,
             Self::EVR => StratumProtocol::EthStratum,

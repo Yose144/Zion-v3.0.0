@@ -299,6 +299,11 @@ fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> 
         }
 
         let hash = crate::external_hashers::hash_verushash_header(&work_header);
+        // Debug: log first 3 hashes to verify VerusHash is working
+        if nonce - start < 3 {
+            eprintln!("DEBUG verushash: nonce={} header_len={} hash={} target={} meets={}",
+                nonce, work_header.len(), hex::encode(hash), hex::encode(target), meets_target(&hash, target));
+        }
         if meets_target(&hash, target) {
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
