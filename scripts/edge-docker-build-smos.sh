@@ -3,7 +3,7 @@
 set -euo pipefail
 VERSION="${1:-v3.0.34-parallel-stream}"
 REPO="/home/zionserver/2.9.6-main"
-OUT_DIR="/var/www/zion-miner"
+OUT_DIR="${OUT_DIR:-/home/zionserver/zion-miner-packages}"
 CONTAINER="zion-miner-build-${VERSION}"
 
 echo "=== Docker SMOS build ${VERSION} ==="

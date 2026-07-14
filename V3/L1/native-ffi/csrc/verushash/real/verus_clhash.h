@@ -44,8 +44,10 @@
 #include <asm/hwcap.h>
 #endif
 #else
-/* <cpuid.h> and <x86intrin.h> are already included by compat.h;
-   re-including <cpuid.h> causes __get_cpuid_max redefinition on GCC 9. */
+/* <x86intrin.h> is already included by compat.h; <cpuid.h> is not
+   (avoiding a redefinition on GCC 9).  Include it here for the
+   __get_cpuid / bit_* constants used in IsCPUVerusOptimized(). */
+#include <cpuid.h>
 #endif // !WIN32
 
 /* boost stubbed by compat.h */
