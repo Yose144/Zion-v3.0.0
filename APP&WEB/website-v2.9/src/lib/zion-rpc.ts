@@ -615,7 +615,10 @@ class ZionRpcClient {
 
   /** Get range of block headers (inclusive) — sequential V3 getBlockByHeight calls */
   async getBlockHeaders(startHeight: number, endHeight: number): Promise<ZionBlockHeader[]> {
-    const clampedStart = Math.max(0, endHeight - 99);
+    // Allow up to 500 blocks per call (needed for miner block scanning).
+    // The V3 RPC is fast enough for this batch size over localhost.
+    const MAX_BLOCKS = 500;
+    const clampedStart = Math.max(0, endHeight - (MAX_BLOCKS - 1));
     const start = Math.max(startHeight, clampedStart);
 
     const promises: Promise<ZionBlockHeader | null>[] = [];

@@ -7,9 +7,16 @@ export const revalidate = 0;
 const SWAP_UPSTREAM_BASE =
   coreUrl('atomicSwap', process.env.ZION_SWAP_API_URL);
 
+/** Paths that map to the swap server's root endpoints (not under /swap/). */
+const ROOT_PATHS = new Set(['health', 'status']);
+
 function buildUpstreamUrl(request: Request, path: string[]) {
   const incoming = new URL(request.url);
   const suffix = path.map((segment) => encodeURIComponent(segment)).join('/');
+  // Swap server exposes /health directly; HTLC lookups under /swap/{hash}
+  if (ROOT_PATHS.has(suffix)) {
+    return `${SWAP_UPSTREAM_BASE.replace(/\/$/, '')}/${suffix}${incoming.search}`;
+  }
   return `${SWAP_UPSTREAM_BASE.replace(/\/$/, '')}/swap/${suffix}${incoming.search}`;
 }
 
