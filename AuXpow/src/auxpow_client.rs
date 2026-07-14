@@ -938,10 +938,10 @@ impl AuxPowClient {
             .and_then(|v| v.as_u64())
             .or_else(|| job.get("job_id").and_then(|v| v.as_i64()).map(|i| i as u64))
             .unwrap_or(0);
-        let algorithm = job.get("algorithm")
-            .and_then(|v| v.as_str())
-            .unwrap_or("progpow")
-            .to_string();
+        // EPIC jobs cover all 3 algorithms (cuckoo, randomx, progpow), but
+        // we only mine progpow.  Force the algorithm to "progpow" regardless
+        // of the top-level algorithm field.
+        let algorithm = "progpow".to_string();
 
         // Difficulty: EPIC sends a nested array of [algo_name, diff_value] pairs:
         //   [["cuckoo", 3], ["randomx", 800000], ["progpow", 2500000000]]
