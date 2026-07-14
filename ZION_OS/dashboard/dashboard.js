@@ -1,5 +1,46 @@
 'use strict';
 
+// Patch fetch so opening the dashboard with credentials in the URL
+// (e.g. https://user:pass@dashboard...) does not break every API call.
+// Chrome rejects fetch() when the resolved URL contains embedded credentials;
+// we strip them from the URL and add an Authorization header instead.
+(function(){
+  const _origFetch = window.fetch;
+  window.fetch = function(input, init){
+    let url = (input instanceof Request) ? input.url : String(input);
+    let headers;
+    if (init && init.headers) {
+      if (typeof Headers !== 'undefined' && init.headers instanceof Headers) {
+        headers = new Headers(init.headers);
+      } else {
+        headers = { ...init.headers };
+      }
+    } else {
+      headers = {};
+    }
+    let changed = false;
+    try {
+      // If the page was opened with credentials in the URL, Chrome rejects
+      // fetch() for relative URLs because it resolves them against that
+      // credentials-containing base URL. Build an absolute URL from the bare
+      // origin so every relative API call works and the browser uses its
+      // cached Basic Auth credentials normally.
+      if (url.startsWith('/') && !url.startsWith('//')) {
+        if (input instanceof Request) {
+          input = new Request(location.origin + url, input);
+        } else {
+          input = location.origin + url;
+        }
+        changed = true;
+      }
+    } catch(e) {}
+    if (changed) {
+      init = { ...init, headers };
+    }
+    return _origFetch(input, init);
+  };
+})();
+
 const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','pool-miners','revenue','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
@@ -5095,7 +5136,8 @@ async function renderMainnetCharts(){
 
 async function loadEvents(){
   const res = await fetch('/api/events').then(r => r.json()).catch(()=>({events:[]}));
-  const c = document.getElementById('events-feed');
+  const c = document.getElementById('events-list');
+  if(!c) return;
   if(!res.events || !res.events.length){
     c.innerHTML = '<div class="text-gray-500 italic text-sm">No block events recorded yet. Events appear as nodes mine and relay blocks.</div>';
     return;
@@ -8419,6 +8461,7 @@ function setText(id, text) {
   const el = document.getElementById(id);
   if(el) el.textContent = text;
 }
+const set = setText;
 
 function updateNetworkEmission(em){
   if(!em) return;
@@ -9401,11 +9444,12 @@ async function loadBridgeValidators(){
 
 // ── Genesis Backup/Restore ──
 async function loadGenesisBackupList(){
+  const listEl=document.getElementById('genesis-backup-list');
+  if(!listEl) return;
   try{
     const res=await fetch('/api/genesis-backup?action=list').then(r=>r.json());
-    const listEl=document.getElementById('genesis-backup-list');
     
-    if(res.success && res.backups.length>0){
+    if(res.success && res.backups && res.backups.length>0){
       let html='';
       res.backups.forEach(backup=>{
         html+=`<div class="flex items-center justify-between bg-black/40 rounded p-2 text-xs border border-white/5">
@@ -9425,12 +9469,13 @@ async function loadGenesisBackupList(){
     }
   }catch(e){
     console.error('Failed to load genesis backup list:',e);
-    document.getElementById('genesis-backup-list').innerHTML='<div class="text-xs text-red-400">Nepodařilo se načíst zálohy</div>';
+    listEl.innerHTML='<div class="text-xs text-red-400">Nepodařilo se načíst zálohy</div>';
   }
 }
 
 async function genesisBackupAction(action){
   const details=document.getElementById('genesis-backup-details');
+  if(!details) return;
   details.innerHTML='<div class="text-blue-400">⏳ Zpracuji...</div>';
   
   try{
