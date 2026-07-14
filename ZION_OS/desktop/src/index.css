@@ -198,6 +198,105 @@ body {
   .status-down {
     border-color: rgba(239, 68, 68, 0.35);
   }
+
+  /* macOS-style bottom dock like the legacy desktop-agent */
+  .zion-dock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 18px;
+    margin: 0 auto 12px;
+    max-width: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(40px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+  .zion-dock::-webkit-scrollbar { display: none; }
+
+  .zion-dock-sep {
+    width: 1px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: 0 6px;
+    flex-shrink: 0;
+  }
+
+  .zion-dock-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 12px;
+    border-radius: 14px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    min-width: 52px;
+    position: relative;
+  }
+
+  .zion-dock-item:hover {
+    background: rgba(var(--color-zion-purple), 0.08);
+    border-color: rgba(var(--color-zion-purple), 0.15);
+    transform: translateY(-3px) scale(1.08);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .zion-dock-item.active {
+    background: rgba(var(--color-zion-purple), 0.12);
+    border-color: rgba(var(--color-zion-purple), 0.25);
+    color: rgb(var(--color-zion-gold));
+    transform: translateY(-2px);
+  }
+
+  .zion-dock-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgb(var(--color-zion-gold));
+    box-shadow: 0 0 6px rgb(var(--color-zion-gold));
+  }
+
+  /* View shell like the legacy desktop-agent floating glass window */
+  .zion-shell {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 28px;
+    backdrop-filter: blur(32px) saturate(140%);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    padding: 24px;
+    contain: layout style;
+  }
+
+  @media (max-width: 768px) {
+    .zion-shell { border-radius: 18px; padding: 16px; }
+    .zion-dock-item { min-width: 46px; padding: 6px 8px; }
+  }
 }
 
 @layer utilities {
