@@ -1041,6 +1041,54 @@ fn main() -> Result<()> {
                 }
             };
 
+            // Before retrying, check if the payout was already sent in a
+            // previous attempt (race condition: TX accepted but response lost).
+            // Scan recent blocks for a matching TX from pool wallet to miner.
+            let mut already_paid = Vec::new();
+            let mut still_pending = Vec::new();
+            for p in &payouts {
+                match check_payout_in_recent_blocks(rpc, wallet, &p.address, p.amount, 200) {
+                    Ok(Some(tx_id)) => {
+                        println!(
+                            "payout_deferred_already_paid height={} miner={} tx_id={} (skipping retry)",
+                            height, p.miner_id, &tx_id[..tx_id.len().min(20)],
+                        );
+                        already_paid.push((p.clone(), tx_id));
+                    }
+                    _ => {
+                        still_pending.push(p.clone());
+                    }
+                }
+            }
+            // Mark already-paid payouts as confirmed in telemetry
+            if !already_paid.is_empty() {
+                let mut telemetry = telemetry_ref
+                    .lock()
+                    .expect("miner telemetry lock poisoned");
+                for (p, tx_id) in &already_paid {
+                    telemetry.confirm_failed_payout(&p.miner_id, height, p.amount, tx_id);
+                }
+            }
+            // If all payouts were already paid, remove from queue
+            if still_pending.is_empty() && !already_paid.is_empty() {
+                let mut queue = deferred_ref.lock().expect("deferred lock poisoned");
+                queue.remove(0);
+                continue;
+            }
+            // Update queue with only still-pending payouts
+            if !already_paid.is_empty() {
+                let mut queue = deferred_ref.lock().expect("deferred lock poisoned");
+                if let Some(entry) = queue.first_mut() {
+                    entry.payouts = still_pending.clone();
+                }
+                drop(queue);
+            }
+
+            let payouts = still_pending;
+            if payouts.is_empty() {
+                continue;
+            }
+
             match execute_pool_payout(rpc, wallet, key, &payouts, height) {
                 Ok(outcome) => {
                     println!(
@@ -1085,6 +1133,109 @@ fn main() -> Result<()> {
                             err_str
                         );
                     }
+                }
+            }
+        });
+    }
+
+    // ── Payout confirmation sweep ──────────────────────────────────────
+    // Background thread that periodically checks `submitted_to_node` payouts
+    // against the chain.  If a TX is found in a block, the status is updated
+    // to `confirmed`.  Also checks `submit_failed` payouts by scanning recent
+    // blocks for matching TXs (handles the race condition where the node
+    // accepted the TX but the pool recorded it as failed).
+    {
+        let telemetry_ref = Arc::clone(&miner_telemetry);
+        let pplns_ref = Arc::clone(&pplns_engine);
+        let node_rpc = config.node_rpc_addr.clone();
+        let pool_wallet = config.pool_wallet_address.clone();
+        let sweep_interval_secs =
+            parse_env_u64("ZION_PAYOUT_SWEEP_INTERVAL_SECS", 30).unwrap_or(30);
+        println!(
+            "payout_confirmation_sweep: enabled interval_secs={}",
+            sweep_interval_secs
+        );
+        thread::spawn(move || loop {
+            thread::sleep(Duration::from_secs(sweep_interval_secs));
+
+            let (rpc, wallet) = match (&node_rpc, &pool_wallet) {
+                (Some(r), Some(w)) => (r, w),
+                _ => continue,
+            };
+
+            // 1. Confirm submitted_to_node payouts via getTransaction
+            let submitted: Vec<(String, u64, String)> = {
+                let telemetry = telemetry_ref.lock().expect("telemetry lock poisoned");
+                telemetry.collect_submitted_payouts()
+            };
+            if !submitted.is_empty() {
+                let mut confirmed_count = 0u32;
+                for (miner_id, height, tx_id) in &submitted {
+                    match check_tx_on_chain(rpc, tx_id) {
+                        Ok(Some(_)) => {
+                            let mut telemetry = telemetry_ref.lock().expect("telemetry lock poisoned");
+                            telemetry.confirm_payout(miner_id, *height, tx_id);
+                            confirmed_count += 1;
+                        }
+                        Ok(None) => {} // not on chain yet
+                        Err(_) => {}   // transient RPC error
+                    }
+                }
+                if confirmed_count > 0 {
+                    println!(
+                        "payout_confirmed_sweep confirmed={} remaining_submitted={}",
+                        confirmed_count,
+                        submitted.len() - confirmed_count as usize,
+                    );
+                }
+            }
+
+            // 2. Check submit_failed payouts by scanning recent blocks
+            //    (handles race condition where TX was accepted but pool
+            //     recorded it as failed)
+            let failed_payouts: Vec<(String, u64, u64, String)> = {
+                let telemetry = telemetry_ref.lock().expect("telemetry lock poisoned");
+                let pplns = pplns_ref.lock().expect("pplns lock poisoned");
+                let mut out = Vec::new();
+                for (miner_id, miner) in &telemetry.miners {
+                    for record in &miner.payouts {
+                        if record.status == "submit_failed" {
+                            if let Some(addr) = pplns.address_for(miner_id) {
+                                out.push((
+                                    miner_id.clone(),
+                                    record.height,
+                                    record.amount_atomic,
+                                    addr.to_string(),
+                                ));
+                            }
+                        }
+                    }
+                }
+                out
+            };
+            if !failed_payouts.is_empty() {
+                let mut recovered_count = 0u32;
+                for (miner_id, height, amount, miner_addr) in &failed_payouts {
+                    match check_payout_in_recent_blocks(rpc, wallet, miner_addr, *amount, 200) {
+                        Ok(Some(tx_id)) => {
+                            let mut telemetry =
+                                telemetry_ref.lock().expect("telemetry lock poisoned");
+                            telemetry.confirm_failed_payout(miner_id, *height, *amount, &tx_id);
+                            recovered_count += 1;
+                            println!(
+                                "payout_recovered height={} miner={} tx_id={} (was submit_failed, found on chain)",
+                                height, miner_id, &tx_id[..tx_id.len().min(20)],
+                            );
+                        }
+                        _ => {}
+                    }
+                }
+                if recovered_count > 0 {
+                    println!(
+                        "payout_failed_sweep recovered={} remaining_failed={}",
+                        recovered_count,
+                        failed_payouts.len() - recovered_count as usize,
+                    );
                 }
             }
         });
@@ -1884,12 +2035,24 @@ fn handle_client(
                         "parallel_stream_embedded miner={} coin={} algo={} ext_job_id={} height={}",
                         worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height
                     );
+                    // For testing: use an easier target so the miner can find
+                    // shares quickly.  The pool still checks against the real
+                    // external target before forwarding to LuckPool.
+                    let easy_target_hex = if std::env::var("ZION_AUXPOW_EASY_TARGET")
+                        .as_deref()
+                        .unwrap_or("")
+                        .eq_ignore_ascii_case("1")
+                    {
+                        "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".to_string()
+                    } else {
+                        ext_target_hex
+                    };
                     Some(zion_pool::ExternalStreamJob {
                         coin: ext_coin_ticker,
                         algorithm: ext_algorithm,
                         job_id: ext_job_id,
                         header_hex: ext_header_hex,
-                        target_hex: ext_target_hex,
+                        target_hex: easy_target_hex,
                         height: ext_height,
                         extranonce1_hex: ext_extranonce1_hex,
                         protocol: ext_protocol,
@@ -1913,9 +2076,24 @@ fn handle_client(
         // For external AuxPoW jobs, use the external pool's target as the
         // share target (the external pool sets the difficulty).  For ZION
         // jobs, use the vardiff share target.
+        // When ZION_AUXPOW_EASY_TARGET=1, use an easier target for testing.
         let share_target = if assignment.is_external() {
-            DifficultyTarget {
-                bytes: assignment.target_bytes(),
+            if std::env::var("ZION_AUXPOW_EASY_TARGET")
+                .as_deref()
+                .unwrap_or("")
+                .eq_ignore_ascii_case("1")
+            {
+                DifficultyTarget {
+                    bytes: zion_pool::parse_fixed_hex::<32>(
+                        "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                        "easy target",
+                    )
+                    .unwrap_or([0xFFu8; 32]),
+                }
+            } else {
+                DifficultyTarget {
+                    bytes: assignment.target_bytes(),
+                }
             }
         } else {
             vardiff.share_target()
@@ -3368,6 +3546,60 @@ impl MinerTelemetryRegistry {
         });
         while miner.payouts.len() > PAYOUT_HISTORY_LIMIT {
             miner.payouts.pop_back();
+        }
+    }
+
+    /// Collect all payouts with `submitted_to_node` status and their tx_ids.
+    /// Used by the confirmation sweep thread to check which TXs are on chain.
+    fn collect_submitted_payouts(&self) -> Vec<(String, u64, String)> {
+        // Returns (miner_id, height, tx_id) tuples
+        let mut out = Vec::new();
+        for (miner_id, miner) in &self.miners {
+            for record in &miner.payouts {
+                if record.status == "submitted_to_node" {
+                    if let Some(ref tx_id) = record.tx_id {
+                        out.push((miner_id.clone(), record.height, tx_id.clone()));
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    /// Mark a submitted payout as confirmed on chain.
+    fn confirm_payout(&mut self, miner_id: &str, height: u64, tx_id: &str) {
+        let Some(miner) = self.miners.get_mut(miner_id) else {
+            return;
+        };
+        for record in miner.payouts.iter_mut() {
+            if record.height == height
+                && record.status == "submitted_to_node"
+                && record.tx_id.as_deref() == Some(tx_id)
+            {
+                record.status = "confirmed".to_string();
+                break;
+            }
+        }
+    }
+
+    /// Mark a failed payout as actually confirmed (TX was on chain despite
+    /// the pool thinking it failed).  Also credits `paid_total_atomic`.
+    fn confirm_failed_payout(&mut self, miner_id: &str, height: u64, amount: u64, tx_id: &str) {
+        let miner = self
+            .miners
+            .entry(miner_id.to_string())
+            .or_insert_with(|| MinerTelemetry::new("", "", "", now_unix_seconds()));
+        for record in miner.payouts.iter_mut() {
+            if record.height == height
+                && record.amount_atomic == amount
+                && record.status == "submit_failed"
+            {
+                record.status = "confirmed".to_string();
+                record.tx_id = Some(tx_id.to_string());
+                record.error = None;
+                miner.paid_total_atomic = miner.paid_total_atomic.saturating_add(amount);
+                break;
+            }
         }
     }
 
@@ -6681,6 +6913,104 @@ fn fetch_pool_account_balance(node_rpc_addr: &str, address: &str) -> Result<u128
     balance_str
         .parse::<u128>()
         .map_err(|e| anyhow!("failed to parse balance_flowers '{}': {}", balance_str, e))
+}
+
+// ---------------------------------------------------------------------------
+// Payout confirmation helpers
+// ---------------------------------------------------------------------------
+// The pool fires payout TXs to the node but never checks if they were actually
+// included in a block.  This leads to two problems:
+//   1. `submitted_to_node` payouts stay in that status forever even after
+//      confirmation (cosmetic — the miner was paid).
+//   2. `submit_failed` payouts that were actually accepted by the node (race
+//      condition / lost response) get retried forever, hitting
+//      `insufficient balance` on every retry because the funds are gone.
+//
+// The functions below query the node to verify whether a payout TX is on chain.
+
+/// Generic single-request JSON-RPC call over TCP (newline-delimited).
+fn rpc_single_call(node_rpc_addr: &str, method: &str, params: serde_json::Value) -> Result<serde_json::Value> {
+    let request_body = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": method,
+        "params": params,
+    });
+    let mut stream = TcpStream::connect(node_rpc_addr)
+        .with_context(|| format!("failed to connect to node rpc at {node_rpc_addr}"))?;
+    let mut request_line = serde_json::to_string(&request_body)?;
+    request_line.push('\n');
+    stream.write_all(request_line.as_bytes())?;
+    stream.flush()?;
+    let mut reader = BufReader::new(stream);
+    let mut response_line = String::new();
+    reader.read_line(&mut response_line)?;
+    let response: serde_json::Value =
+        serde_json::from_str(&response_line).context("failed to parse RPC response")?;
+    if let Some(error) = response.get("error") {
+        if !error.is_null() {
+            let msg = error.get("message").and_then(|m| m.as_str()).unwrap_or("unknown");
+            return Err(anyhow!("RPC error {}: {}", method, msg));
+        }
+    }
+    response.get("result").cloned().ok_or_else(|| anyhow!("missing result in {} response", method))
+}
+
+/// Check if a TX (by tx_id) is confirmed on chain.
+/// Returns `Ok(Some(height))` if confirmed, `Ok(None)` if not found.
+fn check_tx_on_chain(node_rpc_addr: &str, tx_id: &str) -> Result<Option<u64>> {
+    let result = rpc_single_call(node_rpc_addr, "getTransaction", serde_json::json!({ "txid": tx_id }))?;
+    if result.is_null() {
+        return Ok(None);
+    }
+    let height = result.get("block_height").and_then(|v| v.as_u64());
+    Ok(height)
+}
+
+/// Get current chain height from the node.
+fn get_chain_height(node_rpc_addr: &str) -> Result<u64> {
+    let result = rpc_single_call(node_rpc_addr, "getChainInfo", serde_json::json!([]))?;
+    result
+        .get("chain_height")
+        .and_then(|v| v.as_u64())
+        .ok_or_else(|| anyhow!("missing chain_height in getChainInfo response"))
+}
+
+/// Check if a payout (pool_wallet → miner_address for `amount`) already exists
+/// in recent blocks.  Scans `num_blocks` blocks ending at current chain height.
+/// Returns the tx_id if found.
+fn check_payout_in_recent_blocks(
+    node_rpc_addr: &str,
+    pool_wallet: &str,
+    miner_address: &str,
+    amount: u64,
+    num_blocks: u64,
+) -> Result<Option<String>> {
+    let chain_height = get_chain_height(node_rpc_addr)?;
+    let start = chain_height.saturating_sub(num_blocks);
+    for h in (start..=chain_height).rev() {
+        let result = match rpc_single_call(
+            node_rpc_addr,
+            "getBlockByHeight",
+            serde_json::json!({ "height": h }),
+        ) {
+            Ok(r) => r,
+            Err(_) => continue, // pruned block or transient error
+        };
+        let txs = result.get("transactions").and_then(|v| v.as_array());
+        if let Some(txs) = txs {
+            for tx in txs {
+                let from = tx.get("from").and_then(|v| v.as_str()).unwrap_or("");
+                let to = tx.get("to").and_then(|v| v.as_str()).unwrap_or("");
+                let amt = tx.get("amount_zion").and_then(|v| v.as_u64()).unwrap_or(0);
+                if from == pool_wallet && to == miner_address && amt == amount {
+                    let tx_id = tx.get("tx_id").and_then(|v| v.as_str()).unwrap_or("");
+                    return Ok(Some(tx_id.to_string()));
+                }
+            }
+        }
+    }
+    Ok(None)
 }
 
 /// Submit an account-model transaction to the node via submitAccountTransaction RPC.
