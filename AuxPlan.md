@@ -831,7 +831,9 @@ ZION Miner (GPU rig)
 - [x] `server.rs` — PRL mapping v revenue_source_to/from_external_coin, auxpow_to_ch, protocol
 - [x] Unit testy: `pearl_protocol_is_pearl_stratum`, `pearl_stratum_round_trip_notify_and_submit`
 - [ ] Merge mining support: `prl1PRL+mdl1MDL` address format
-- [ ] E2E test s AlphaPool (`us2.alphapool.tech:5566`, 0% fee)
+- [x] E2E test s suprnova (`prl.suprnova.cc:3373`) — authorize ✅, notify ✅, job parsing ✅
+  - Job `52f06ed4_2000000`, height 86340, 76-byte header, target parsed
+  - Share submission needs full PoUW MatMul kernel (BLAKE3 placeholder won't produce valid shares)
 
 #### 13.2 Pearl CPU hasher (PoUW verify) — BLAKE3 placeholder ✅ / full PoUW TODO
 

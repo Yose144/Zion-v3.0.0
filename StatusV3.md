@@ -219,8 +219,10 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 **Pearl (PRL):** ★★★ HIGHEST PRIORITY — PoUW MatMul + BLAKE3, 22x profitabilnější než KAS.
 **Status:** PearlStratum protocol ✅ (custom dialect: object params, no subscribe, plain_proof),
 CPU hasher ✅ (BLAKE3 placeholder), dispatch/harness ✅, GPU kernels ✅ (BLAKE3 placeholder),
-cosmic-harmony + server.rs integration ✅. 8/8 Pearl tests pass. **Remaining:** full PoUW MatMul
-kernels (INT8 tiled MatMul + noise + Plonky2 ZK), E2E test s AlphaPool, merge mining PRL+MDL.
+cosmic-harmony + server.rs integration ✅. 8/8 Pearl tests pass.
+**E2E verified against suprnova** (prl.suprnova.cc:3373) — authorize ✅, notify ✅ (job 52f06ed4_2000000,
+height 86340, 76-byte header), job parsing ✅. **Remaining:** full PoUW MatMul kernels
+(INT8 tiled MatMul + noise + Plonky2 ZK), share submission, merge mining PRL+MDL.
 
 ### Stream Profit Env Vars
 ```bash
