@@ -1,8 +1,8 @@
 # EPIC Stratum TLS Protocol — Implementation Report
 
-**Date:** 2026-07-14
+**Date:** 2026-07-14 (aktualizováno 2026-07-14 23:30)
 **Status:** COMPLETE — E2E verified on Edge server (62.171.141.136)
-**Commits:** `54514c3fc`, `41c350b97`
+**Commits:** `54514c3fc`, `41c350b97`, `53ed2ab5c`, `952b8747f`
 
 ---
 
@@ -27,7 +27,7 @@ EPIC uses a **custom JSON-RPC 2.0 protocol over TLS** — not Stratum v1. This r
 | Property | Value |
 |----------|-------|
 | Pool | `de.epicmine.io:3334` |
-| Transport | TLS (rustls, aws-lc-rs CryptoProvider) |
+| Transport | TLS (rustls, ring CryptoProvider via `install_rustls_crypto_provider()`) |
 | Protocol | JSON-RPC 2.0 (newline-delimited) |
 | Username limit | 5–20 chars (wallet.worker) |
 | Password limit | ≥ 8 chars |
@@ -324,12 +324,59 @@ ZION_STREAM_VERUSHASH_PCT=25
 |------|---------|
 | `54514c3fc` | `feat(auxpow): add EpicStratum TLS protocol for EPIC ProgPow pool` |
 | `41c350b97` | `fix(auxpow): EPIC protocol fixes — JSON-RPC 2.0, fire-and-forget getjobtemplate, poll loop ordering` |
+| `53ed2ab5c` | `feat(3.0.6): sync local dashboard, miner, pool and auxpow updates` (progpow_gpu_thread spawn, ring CryptoProvider, getjobtemplate handler) |
+| `952b8747f` | `feat(auxpow): switch Pearl stratum to port 5571 plain stratum protocol` (EPIC poll debug, getjobtemplate response handler) |
 
 ---
 
-## 8. Next Steps
+## 8. Post-Deploy Fixes (2026-07-14 23:30)
 
-1. **Miner-side ProgPow hashing** — The miner (`V3/L1/miner`) has ProgPow GPU support (DAG management, `scan_progpow`), but the full hash pipeline from `pre_pow` → ProgPow hash → mix_hash needs end-to-end testing with a real GPU
+### 8.1 CryptoProvider Panic Fix
+
+**Problem:** Pool server panicked on EPIC TLS connect: "Could not automatically determine the process-level CryptoProvider from Rustls crate features."
+
+**Root cause:** `tokio-rustls` had both `aws-lc-rs` and `ring` crypto providers available (ring via `reqwest`'s `rustls-tls` feature). Rustls 0.23 can't auto-select when both are present.
+
+**Fix:** Added `install_rustls_crypto_provider()` in `AuXpow/src/lib.rs` — installs `ring::default_provider()` as process-level default. Called at the very start of `main()` in `V3/L1/pool/src/bin/server.rs` BEFORE any rustls usage.
+
+Also enabled `features = ["ring"]` on `tokio-rustls` in `AuXpow/Cargo.toml` and switched `connect_tcp()` to use `ClientConfig::builder_with_provider()` with explicit ring provider.
+
+### 8.2 getjobtemplate Response Handler
+
+**Problem:** EPIC server responds to `getjobtemplate` with `method:"getjobtemplate"` and job data in `result` field. The poll loop only handled `method:"job"` notifications, missing the getjobtemplate response.
+
+**Fix:** Added `"getjobtemplate"` case in `poll_messages()` that parses `msg["result"]` via `parse_epic_job()` — same as `"job"` handler but reads from `result` instead of `params`.
+
+### 8.3 progpow_gpu_thread Spawn
+
+**Problem:** `progpow_gpu_thread()` was defined in `V3/L1/miner/src/main.rs` but never spawned — marked as dead_code. Miners received EPIC ProgPow jobs but had no GPU thread to compute ProgPow hashes.
+
+**Fix:**
+- Spawn `progpow_gpu_thread` at session start (next to blake3_gpu_thread and pearl_gpu_thread)
+- Add EPIC/progpow routing in dispatch section: `coin=="EPIC" || algorithm=="progpow"` → `progpow_tx.send()`
+- Exclude progpow from CPU fallback path (`is_progpow` check)
+- Collect ProgPow shares via `progpow_share_rx.try_recv()` and submit via `submit_external_share()`
+
+### 8.4 Live Verification (Edge, 2026-07-14 23:29)
+
+```
+install_rustls_crypto_provider: result=Ok(())
+auxpow: EPIC login as ziontest.pool (len=13) on EPIC (protocol=epicstratum)
+auxpow: EPIC raw response: {"id":"1","jsonrpc":"2.0","method":"login","result":"ok","error":null}
+auxpow: EPIC login successful for EPIC
+auxpow: EPIC getjobtemplate sent (fire-and-forget)
+auxpow: EPIC poll msg method=getjobtemplate id=Some(Number(10)) (len=1009)
+auxpow_bridge: queued job_id=0 coin=EPIC algo=progpow
+parallel_stream_embedded miner=5070Ti coin=EPIC algo=progpow ext_job_id=8 height=3620922
+```
+
+EPIC jobs are received, parsed, queued, and embedded into miner wire_job messages. ✓
+
+---
+
+## 9. Next Steps
+
+1. **Deploy new miner binary to rigs** — The miner code has `progpow_gpu_thread` spawned, but rigs (5070Ti, vega-smos, barker) still run old binaries. Need to deploy and verify ProgPow GPU hashing.
 2. **EPIC share submission** — The `submit_share` method sends `{pow: {ProgPow: [mixHash]}}` but hasn't been tested with a real share yet (EPIC share difficulty is 2.5 billion — very high)
 3. **`ZION_STREAM_PROGPOW_PCT`** — Set this env var on Edge to enable EPIC as a dedicated revenue lane (currently EPIC runs via the B2b bridge only)
 4. **EPIC wallet** — Replace the test wallet `epic1qz0z0z0z0...` with a real EPIC wallet for payout collection
@@ -337,11 +384,11 @@ ZION_STREAM_VERUSHASH_PCT=25
 
 ---
 
-## 9. Dependencies Added
+## 10. Dependencies Added
 
 | Crate | Version | Purpose |
 |-------|---------|---------|
-| `tokio-rustls` | 0.26 | Async TLS client |
+| `tokio-rustls` | 0.26 (features: `ring`) | Async TLS client |
 | `webpki-roots` | 1.0 | Mozilla CA certificate bundle |
 | `rustls-pki-types` | 1.0 | ServerName type for TLS |
 

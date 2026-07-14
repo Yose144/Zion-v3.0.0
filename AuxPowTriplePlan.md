@@ -1,6 +1,6 @@
 # AuxPow Triple Implementation Plan — v3.0.6 "Triple Parallel"
 
-> **Status:** PLANNING — created 2026-07-14
+> **Status:** IN PROGRESS — Implementation DONE, Phase 7 (Deploy/Verify) active
 > **Goal:** Complete the 3-stream parallel mining architecture (ZION Deeksha + Pearl PoUW + External GPU) so all 7 phases of `FullRevenueAuxPow.md` are fully DONE.
 > **Predecessor:** `FullRevenueAuxPow.md` (design doc, Phases 1-7)
 > **Companion:** `3.0.6.md` (patch summary for 3-stream split + version bumps)
@@ -9,7 +9,7 @@
 
 ## 0. Executive Summary
 
-The 3-stream architecture has been **partially implemented** across 7 phases. Phases 1-2 (pool-side Pearl + miner pearl_gpu_thread) are DONE. Phases 3-6 are PARTIAL — data structures and scaffolding exist but are not wired together. This plan completes the remaining work.
+The 3-stream architecture has been **fully implemented** across Phases 1-6. Phase 7 is in progress — build is clean, tests pass, deployment to Edge and live verification are next.
 
 ### Current State at a Glance
 
@@ -17,11 +17,11 @@ The 3-stream architecture has been **partially implemented** across 7 phases. Ph
 |-------|-------------|--------|-------------|----------------|
 | 1 | Pool-Side Pearl | ✅ DONE | PearlSubmit msg, forward_pearl(), pearl_rx channel, PRL in profit rotation | — |
 | 2 | Miner Pearl GPU Thread | ✅ DONE | pearl_gpu_thread() at main.rs:2738, pearl_tx/pearl_proof_rx channels, submit_pearl_proof() | — |
-| 3 | TriGpuManager | ⚠️ SCAFFOLD | Struct defined in gpu_backend.rs:257, all methods implemented | NOT wired into main.rs (still uses GpuBackendManager at 4 locations) |
-| 4 | Clean Thread Arch | ⚠️ PARTIAL | blake3_gpu_thread + progpow_gpu_thread persistent, pearl_gpu_thread persistent | progpow_gpu_thread never spawned, ensure_algorithm spam in main loop, mine_external_stream_cpu still per-iteration |
-| 5 | Per-Stream Metrics | ⚠️ PARTIAL | HashrateTracker has 3-stream fields + record methods, ComputedHashrates has per-stream fields | draw_dashboard() still shows only total shares, no per-stream display |
-| 6 | Dashboard app.py | ⚠️ PARTIAL | PRL in SUPPORTED_COINS, stream_profit endpoint exists | No 3-stream hashrate display in dashboard UI |
-| 7 | Build/Deploy/Verify | ✅ Build clean | 577 core + 73 pool + 129 auxpow tests pass | Deployment + live verification pending |
+| 3 | TriGpuManager | ✅ DONE | Wired into `run_remote_session()` and `run_local_session()`; primary Deeksha never switches; secondary GPU threads use `secondary_gpu_work_size` | — |
+| 4 | Clean Thread Arch | ✅ DONE | `progpow_gpu_thread` spawned; `ext_cpu_thread` persistent; `ensure_algorithm` spam removed | — |
+| 5 | Per-Stream Metrics | ✅ DONE | `draw_dashboard()` shows Claymore-style per-stream shares (ZION / PRL / EXT) | Per-stream hashrate (requires thread-level hash counters) — future enhancement |
+| 6 | Dashboard app.py | ✅ DONE | Triple Stream Mining panel added to `dashboard.html`/`dashboard.js`, wired to `/api/pool/miners-dashboard` routing sources | — |
+| 7 | Build/Deploy/Verify | ✅ Deployed | Release binaries built, copied to Edge `62.171.141.136`, `zion-pool` and `zion-dashboard` restarted; pool reports all 3 streams in `routing.sources` | Live share verification requires rigs connected to pool |
 
 ### What "Done" Looks Like
 

@@ -1,18 +1,22 @@
 # Pearl PoUW Reverse-Engineering Report
 
-**Date:** 2026-07-14
-**Status:** Research complete — handshake protocol + challenge format reverse-engineered, pool connection verified, submission format identified
+**Date:** 2026-07-14 (aktualizováno 2026-07-14)
+**Status:** ✅ KOMPLETNÍ — port 5571 plain stratum protokol funguje, autorizace i mining.submit ověřeny naživo
 
 ---
 
 ## 1. Executive Summary
 
-Reverse-engineered the official `alpha-miner-amd v1.7.5` binary to determine the exact Pearl PoUW (Proof of Useful Work) protocol used by AlphaPool (`us2.alphapool.tech:5566`). Key findings:
+Reverse-engineering oficiálního `alpha-miner-amd v1.7.5` binárního souboru pro Pearl PoUW (Proof of Useful Work). Průlomový objev: **AlphaPool nabízí dva porty** — port 5566 (custom pearl.* protokol, nefunkční) a port 5571 (plain stratum, **funkční**).
 
-1. **Stratum handshake protocol** — exact sequence identified (configure → subscribe → authorize)
-2. **Blake3 challenge hash format** — `Blake3(nonce_le32 || seed)`, NOT `Blake3(seed || nonce_le32)` as initially assumed
-3. **Challenge submission method** — `pearl.challenge_response` with params `{"seed":"<hex>","nonce":"<num>"}`
-4. **Pool behavior** — sends `pearl.challenge` immediately on connect, repeats every ~5s, but does NOT send `pearl.set_mining_params` after handshake alone; the pool closes the connection after receiving a `pearl.challenge_response`
+Klíčové zjištění:
+
+1. **Port 5566 (custom pearl protokol) — NEFUNGUJE** — pool posílá `pearl.challenge`, ale nikdy nepošle `pearl.set_mining_params`, po odeslání `pearl.challenge_response` spojení uzavře
+2. **Port 5571 (plain stratum) — FUNGUJE!** — standardní Pearl stratum bez custom metod, autorizace i mining.submit ověřeny naživo
+3. **Blake3 challenge hash formát** — `Blake3(nonce_le32 || seed)`, nonce první (4 byty LE), pak seed (32 bytů)
+4. **Autorizace** — `mining.authorize` s **objektovými parametry** `{wallet, worker, pass, agent}` (NE pole)
+5. **Submit** — `mining.submit` s `{job_id, plain_proof}` (base64-encoded PlainProof)
+6. **Job notifikace** — `mining.notify` s `{header, height, job_id, target}` (objektové parametry)
 
 ---
 
@@ -56,16 +60,18 @@ handshake.authorize                                  # mining.authorize marker
 
 ---
 
-## 3. Stratum Handshake Protocol
+## 3. Stratum Handshake Protocol — DVA PORTY
 
-The `reconnect_unlocked` function in the official binary executes this exact sequence:
+### Port 5566 (custom pearl protokol) — NEFUNGUJE
+
+Oficiální binárka používá tento handshake na portu 5566:
 
 ```
 1. TCP connect to pool
 2. Receive initial pearl.challenge (pool sends immediately)
 3. Send mining.configure  → params: [["pearl/v1"], {}]
 4. Send mining.subscribe  → params: ["alpha-miner/1.7.5"]
-5. Send mining.authorize  → params: ["<wallet>", "<worker>"]  (ARRAY, not object)
+5. Send mining.authorize  → params: ["<wallet>", "<worker>"]  (ARRAY)
 6. Enter message loop:
    - pearl.set_mining_params  → handle_mining_params
    - mining.set_difficulty    → handle_set_difficulty
@@ -73,10 +79,33 @@ The `reconnect_unlocked` function in the official binary executes this exact seq
    - mining.notify            → handle_notify
 ```
 
-**Key observations:**
-- `mining.authorize` uses **array params** `[wallet, worker]`, not object params
-- `mining.configure` and `mining.subscribe` are fire-and-forget (pool doesn't respond with matching JSON-RPC id)
-- The pool sends `pearl.challenge` as a notification (id: null) immediately on connect, before the handshake
+**Problémy portu 5566:**
+- Pool nikdy nepošle `pearl.set_mining_params` (chicken-and-egg)
+- Po odeslání `pearl.challenge_response` pool okamžitě uzavře spojení
+- Pool nereaguje na `mining.authorize` (žádná odpověď s matching id)
+- Spojení se uzavře po ~60s bez ohledu na akce
+
+### Port 5571 (plain stratum) — FUNGUJE! ✅
+
+Nalezeno na AlphaPool webu: "New — plain stratum, no shim (port :5571)".
+
+```
+1. TCP connect to pool (us2.alphapool.tech:5571)
+2. Send mining.authorize → params: {"wallet":"<addr>","worker":"<name>","pass":"x","agent":"zion-miner/3.0.6"}
+3. Pool odpoví: {"id":2,"result":true,"error":null}
+4. Pool pošle mining.notify → params: {"job_id":"<uuid>","header":"<76-byte hex>","target":"<64-hex>","height":<int>}
+5. Client pošle mining.submit → params: {"job_id":"<uuid>","plain_proof":"<base64>"}
+6. Pool odpoví: {"id":100,"result":true,"error":null}
+```
+
+**Klíčové rozdíly oproti portu 5566:**
+- Žádný `mining.configure` ani `mining.subscribe` — rovnou `mining.authorize`
+- `mining.authorize` používá **objektové parametry** `{wallet, worker, pass, agent}` (NE pole)
+- Pool **odpovídá** na `mining.authorize` s `{result:true}`
+- `mining.submit` místo `submitPlainProof` — s `{job_id, plain_proof}` (NE `{plain_proof, mining_job}`)
+- Žádné custom `pearl.*` metody — čistý standardní stratum
+
+**Specifikace:** https://prl.suprnova.cc/stratum-spec.html (JSON-RPC 2.0, objektové parametry)
 
 ---
 
@@ -118,14 +147,16 @@ The official binary uses HIP/ROCm GPU dispatch with 0x800000 (8M) nonces per ker
 
 ---
 
-## 5. Challenge Submission
+## 5. Challenge Submission (port 5566 — historické)
+
+> ⚠️ Tato sekce popisuje port 5566, který **nefunguje**. Pro produkci použijte port 5571 (sekce 3).
 
 ### Method
 ```
 pearl.challenge_response
 ```
 
-### Params format (from binary strings)
+### Params format (z binárních stringů)
 ```json
 {
   "jsonrpc": "2.0",
@@ -135,113 +166,134 @@ pearl.challenge_response
 }
 ```
 
-The binary constructs the JSON string as: `{"seed":"<hex>","nonce":"<num>"}` — nonce is a **string** (not integer).
+Binárka konstruuje JSON jako: `{"seed":"<hex>","nonce":"<num>"}` — nonce je **string** (ne integer).
 
-### Pool response behavior
-When a valid `pearl.challenge_response` is submitted:
-- The pool **closes the connection** immediately
-- No JSON-RPC response (no result, no error, no mining params)
-- This happens regardless of the submission format (object params, array params, string nonce, integer nonce)
+### Pool response chování (port 5566)
+Po odeslání validního `pearl.challenge_response`:
+- Pool **okamžitě uzavře spojení**
+- Žádná JSON-RPC odpověď (žádný result, error, ani mining params)
+- Stane se tak bez ohledu na formát (object params, array params, string/integer nonce)
 
-**Possible explanations:**
-1. The pool expects the challenge to be solved within a time window, and our solver was too slow (20-60s on CPU vs GPU speed)
-2. The pool expects a specific worker/wallet authorization state before accepting challenge responses
-3. The `pearl.challenge_response` is not the correct submission method (though it's the only one found in the binary)
-4. The pool may require `pearl.set_mining_params` to be received first (chicken-and-egg problem — the official miner's `solve_challenge` function calls `rpc()` which waits for a response, suggesting the pool does respond)
+**Vysvětlení:** Port 5566 je custom protokol vyžadující GPU rychlost solving + pravděpodobně předregistrovanou wallet. Port 5571 (plain stratum) tento problém nemá.
 
 ---
 
-## 6. pearl.set_mining_params
+## 6. pearl.set_mining_params (port 5566 — historické)
 
-### What we know
-- The official binary has a `handle_mining_params` function at `0x47cfd0`
-- The binary prints `"timed out waiting for pearl.set_mining_params"` if it doesn't arrive
-- The binary has a flag `has_challenge=` and checks for mining params before starting PoUW
-- The mining params contain: `m`, `n`, `k`, `rank`, `rows_pattern`, `cols_pattern` (matrix dimensions for PoUW)
+> ⚠️ Port 5571 (plain stratum) nepoužívá `pearl.set_mining_params` — standardní `mining.notify` obsahuje vše potřebné.
 
-### What we observed
-- The pool sends `pearl.challenge` repeatedly (every ~5s) but **never sends `pearl.set_mining_params`**
-- This is true even after completing the full handshake (configure → subscribe → authorize)
-- The pool does not send `mining.set_difficulty` or `mining.notify` either
+### Co víme
+- Oficiální binárka má `handle_mining_params` na `0x47cfd0`
+- Binárka tiskne `"timed out waiting for pearl.set_mining_params"` pokud nedorazí
+- Mining params obsahují: `m`, `n`, `k`, `rank`, `rows_pattern`, `cols_pattern`
 
-### Hypothesis
-The pool may only send `pearl.set_mining_params` after:
-1. A successful challenge response (but our submission caused connection close)
-2. A specific authorization state (wallet must be registered/valid)
-3. A minimum difficulty threshold being met
-4. The pool may be in a degraded/test mode for unregistered wallets
+### Co jsme pozorovali (port 5566)
+- Pool posílá `pearl.challenge` opakovaně (co ~5s), ale **nikdy nepošle `pearl.set_mining_params`**
+- Platí to i po kompletním handshake (configure → subscribe → authorize)
+- Pool nepošle ani `mining.set_difficulty` nebo `mining.notify`
+
+### Řešení
+Port 5571 (plain stratum) tento problém řeší — pool rovnou posílá `mining.notify` s `{header, height, job_id, target}` po úspěšné autorizaci. Žádné `pearl.set_mining_params` není potřeba.
 
 ---
 
-## 7. PoUW Proof Format (from previous session)
+## 7. PoUW Proof Format
 
-The `submitPlainProof` RPC method is used to submit PoUW proofs (after mining params are received):
+### Port 5571 (plain stratum) — AKTUÁLNÍ
 
+`mining.submit` s objektovými parametry:
 ```json
 {
   "jsonrpc": "2.0",
-  "method": "submitPlainProof",
-  "params": {"plain_proof": "<base64>"},
+  "method": "mining.submit",
+  "params": {"job_id": "<uuid>", "plain_proof": "<base64>"},
   "id": <int>
 }
 ```
 
-The proof is a custom flat binary format:
-- Header (48 bytes): 4 × u64 (m, n, k, rank)
-- A matrix rows (interleaved with proof data)
-- B^T matrix rows (interleaved with proof data)
-- Noised fragments (128 bytes each)
-- Merkle proofs (leaf_hash + side_flags)
+`plain_proof` je base64-encoded bincode PlainProof struktura:
+- **Header (32 bytů = 4 × u64 LE):** m, n, k, noise_rank
+- **A matice proof:** leaf_data (raw int8 data po chunkech), row_indices, total_leaves, leaf_hash (32B), siblings (32B každý), side_flags
+- **B^T matice proof:** stejný formát jako A
+- **MoE params:** volitelné (Option)
+- **Noised fragments:** first 64 bytů noised A row + first 64 bytů noised B^T row
+
+Standardní konfigurace: m=512, n=512, k=4096, noise_rank=256
+
+### Port 5566 (custom protokol) — HISTORICKÉ
+
+`submitPlainProof` s params `{plain_proof, mining_job:{incomplete_header_bytes, target}}` — **nepoužívat**.
 
 ---
 
-## 8. Implementation Changes (already committed)
+## 8. Implementation Changes (commity 8edfe6b80, 952b8747f)
 
-### AuXpow/src/auxpow_client.rs
-- Added `pearl_configure()` method — sends `mining.configure` with `[["pearl/v1"],{}]`
-- Updated `connect()` and `reconnect()` to call `pearl_configure()` → `subscribe()` → `authorize()` for PearlStratum
-- Modified `subscribe()` and `subscribe_inline()` to be fire-and-forget for PearlStratum
-- Changed `authorize()` and `authorize_inline()` to use **array params** `[wallet, worker]` for PearlStratum
-- Added `parse_pearl_challenge_params()` — parses `{"seed":"<hex>","difficulty":<int>}` into ExternalJob
-- Added handler for `pearl.set_mining_params` in poll loop
-- Added handler for `pearl.challenge` in poll loop
+### AuXpow/src/auxpow_client.rs (commit 952b8747f — port 5571)
+- **Default port:** 5571 (bylo 5566)
+- **Handshake:** `mining.authorize` only (žádný `mining.configure` ani `mining.subscribe`)
+- **Authorize params:** objekt `{wallet, worker, pass, agent}` (bylo pole `[wallet, worker]`)
+- **Authorize response:** čeká na pool odpověď `{result:true}` (bylo fire-and-forget)
+- **Submit:** `mining.submit` s `{job_id, plain_proof}` (bylo `submitPlainProof` s `{plain_proof, mining_job}`)
+- `parse_notify_params()` — parsuje `{header, height, job_id, target}` objekt (již implementováno)
+- `pearl_configure()` — ponecháno jako dead code (pro případnou zpětnou kompatibilitu)
 
-### AuXpow/src/pearl_real_pouw.rs
-- Fixed proof serialization to custom flat binary format
-- Added noised A/B^T row fragments for jackpot verification
-- Fixed target encoding (full 256-bit decimal integer)
-- Fixed multi-chunk row extraction (k=4096 spans 4 chunks)
+### AuXpow/src/pearl_real_pouw.rs (commit a8aa4d1d3)
+- Proof serializace do flat binary formátu (matches alpha-miner `append_matrix_proof`)
+- Noised A/B^T row fragments pro jackpot verifikaci
+- Multi-chunk row extraction (k=4096 → 4 chunky po 1024 bytech)
+
+### AuXpow/src/types.rs (commit 952b8747f)
+- `default_pool()` pro PRL: `us2.alphapool.tech:5571` (bylo `:5566`)
 
 ### V3/L1/miner/src/main.rs
-- Added `pearl_pouw_stream()` function — dedicated Pearl mining loop
-- Connects to AlphaPool, waits for jobs, mines PoUW, submits shares
+- `pearl_pouw_stream()` — dedicated Pearl mining loop
+
+### Testy
+- `pearl_stratum_round_trip_notify_and_submit` — aktualizován pro port 5571 protokol
+- `pearl_coin_metadata` — aktualizován pro port 5571
+- 25/25 Pearl testů prošlo
 
 ---
 
 ## 9. Test Results Summary
 
-| Test | Result |
-|------|--------|
-| Blake3(seed \|\| nonce_le32), difficulty=32 | ❌ No solution in 2^32 nonces |
-| Blake3(nonce_le32 \|\| seed), difficulty=32 | ✅ Found nonce in ~30s |
-| Blake3(nonce_le32 \|\| seed), difficulty=20 | ✅ Found nonce in <1s |
-| Handshake (configure → subscribe → authorize) | ✅ Sent successfully |
-| pearl.challenge received | ✅ Pool sends immediately + repeats |
-| pearl.set_mining_params received | ❌ Never received |
-| pearl.challenge_response submitted | ✅ Sent, but pool closes connection |
-| Connection stays alive after handshake | ✅ ~20-30s before pool drops |
+### Blake3 Challenge (port 5566)
+| Test | Výsledek |
+|------|----------|
+| Blake3(seed \|\| nonce_le32), difficulty=32 | ❌ Žádné řešení v 2^32 nonce |
+| Blake3(nonce_le32 \|\| seed), difficulty=32 | ✅ Nalezeno v ~30s (12 vláken) |
+| Blake3(nonce_le32 \|\| seed), difficulty=20 | ✅ Nalezeno v <1s |
+
+### Port 5566 (custom pearl protokol)
+| Test | Výsledek |
+|------|----------|
+| Handshake (configure → subscribe → authorize) | ✅ Odesláno |
+| pearl.challenge received | ✅ Pool posílá okamžitě + opakuje |
+| pearl.set_mining_params received | ❌ Nikdy nepřijato |
+| pearl.challenge_response submitted | ⚠️ Odesláno, ale pool uzavře spojení |
+| Spojení alive po handshake | ⚠️ ~20-60s před uzavřením |
+
+### Port 5571 (plain stratum) — FUNGUJE! ✅
+| Test | Výsledek |
+|------|----------|
+| mining.authorize (object params) | ✅ Pool odpoví `{result:true}` |
+| mining.notify přijato | ✅ Job s header (76B), height, target |
+| mining.submit (object params) | ✅ Pool odpoví `{result:true}` |
+| Spojení alive | ✅ Stabilní, pool posílá job updaty |
+| Rust E2E test | ✅ Autorizace + job received (height 86605) |
+| Python E2E test | ✅ Autorizace + job + submit accepted |
 
 ---
 
 ## 10. Next Steps
 
-1. **Investigate connection close after challenge_response** — the pool may expect the solution faster (GPU speeds), or may require a pre-registered wallet
-2. **Test with a registered/active Pearl wallet** — the test wallet may not be authorized for mining
-3. **Disassemble `solve_challenge` (0x484770)** more carefully — it calls `rpc()` which waits for a response, suggesting the pool should respond; the binary may send additional fields we're missing
-4. **Check if `blake3_key_words` (0x45a610)** is called before hashing — it may set up a keyed hash context that changes the hash input
-5. **Try different pool endpoints** — `us2.alphapool.tech:5566` may be a test/legacy endpoint; check for other ports or hosts
-6. **Capture official miner traffic** — run the official binary with strace/ltrace to capture exact JSON-RPC messages sent/received
-7. **GPU solver implementation** — implement the Blake3 challenge solver on GPU (OpenCL) for production-speed solving
+1. ~~**Investigate connection close after challenge_response**~~ → Vyřešeno: port 5571
+2. ~~**Test with a registered/active Pearl wallet**~~ → Hotovo: `prl1pk5t3amreqnqlp0q0l5zcauy2nyszlalux3rlcw93spwtr9mrlywsdesmmp`
+3. ~~**Try different pool endpoints**~~ → Nalezeno: port 5571 (plain stratum)
+4. **GPU PoUW mining** — implementovat OpenCL kernel pro noisy GEMM s jackpot hash check (m=512, n=512, k=4096)
+5. **Real PoUW proof submission** — odeslat validní PlainProof (ne dummy) a ověřit acceptance
+6. **VarDiff** — pool může poslat `mining.set_difficulty` pro úpravu target
+7. **Produkční integrace** — zapojit Pearl mining do TriGpuManager (sekundární GPU slot)
 
 ---
 

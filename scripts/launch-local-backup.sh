@@ -38,8 +38,9 @@ done
 # ── Backup Node (syncs from Edge primary) ──
 export ZION_NODE_ID='local-backup-node'
 export ZION_P2P_BIND='0.0.0.0:8333'
-export ZION_RPC_BIND='0.0.0.0:8443'
+export ZION_RPC_BIND='0.0.0.0:8446'
 export ZION_NODE_STATE_PATH="$REPO_ROOT/V3/data/zion-node-state.db"
+export ZION_MIGRATION_HEIGHT='1'
 # Connect to Edge primary via Tailscale VPN
 export ZION_SEED_PEERS='62.171.141.136:8333'
 # Burn model: 89/5/5/1 — canonical fee split addresses (must match Edge)
