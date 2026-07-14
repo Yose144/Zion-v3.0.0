@@ -33,8 +33,19 @@ echo "==> Building frontend…"
 npm ci 2>/dev/null || npm install
 npm run build
 
-echo "==> Building Tauri .deb bundle…"
+echo "==> Building Tauri .deb bundle (with embedded Python dashboard)…"
+# Use a clean target dir to avoid root-owned artifact conflicts.
+export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$(pwd)/src-tauri/target}"
 npm run tauri:build
 
 echo "==> Installer ready:"
-ls -lh src-tauri/target/release/bundle/deb/*.deb
+DEB_PATH="$(find "$CARGO_TARGET_DIR/release/bundle/deb" -name '*.deb' | sort -V | tail -1)"
+if [ -z "$DEB_PATH" ]; then
+  echo "ERROR: no .deb found in $CARGO_TARGET_DIR/release/bundle/deb/"
+  exit 1
+fi
+ls -lh "$DEB_PATH"
+echo ""
+echo "Install with:"
+echo "  sudo dpkg -i \"$DEB_PATH\""
+echo "  sudo apt-get install -f   # resolves dependencies if needed"
