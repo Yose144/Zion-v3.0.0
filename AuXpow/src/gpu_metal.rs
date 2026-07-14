@@ -36,6 +36,7 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         "zelhash" | "zelhash_flux" => Some(("zelhash_kernel.metal", "zelhash_mine")),
         "progpow" | "progpow_epic" => Some(("progpow_kernel.metal", "progpow_mine")),
         "pearlhash" | "pearlhash_prl" => Some(("pearl_kernel.metal", "pearl_mine")),
+        "pearlpouw" => Some(("pearl_pouw_kernel.metal", "pearl_pouw_mine")),
         _ => None,
     }
 }
@@ -541,6 +542,160 @@ impl GpuBackend for MetalBackend {
 
     fn set_work_size(&mut self, size: usize) {
         self.work_size = size;
+    }
+}
+
+// ─── Pearl PoUW GPU mining ──────────────────────────────────────────────────
+
+/// Input data for Pearl PoUW GPU mining.
+pub struct PearlPouwGpuInput<'a> {
+    pub noised_a: &'a [i32],    // m×k, row-major
+    pub noised_b: &'a [i32],    // n×k, B^T row-major
+    pub a_noise_seed: [u8; 32],
+    pub target: [u8; 32],
+    pub row_offsets: &'a [u32], // 64 entries
+    pub col_offsets: &'a [u32], // 64 entries
+    pub rows_base: &'a [u32],   // 4 entries [0, 8, 64, 72]
+    pub cols_base: &'a [u32],   // 8 entries [0, 1, 8, 9, 32, 33, 40, 41]
+}
+
+/// Result of Pearl PoUW GPU mining.
+pub struct PearlPouwGpuResult {
+    pub tile_index: u32,
+    pub jackpot_hash: [u8; 32],
+}
+
+impl MetalBackend {
+    /// Mine Pearl PoUW on GPU. Launches 4096 work-items (64×64 tiles).
+    /// Returns the winning tile index and jackpot hash if a valid share is found.
+    pub fn pearl_pouw_mine(&mut self, input: &PearlPouwGpuInput<'_>) -> Result<Option<PearlPouwGpuResult>> {
+        let kernel_file = "pearl_pouw_kernel.metal";
+        let kernel_name = "pearl_pouw_mine";
+
+        let library = self.ensure_library(kernel_file)?;
+        let function = library
+            .get_function(kernel_name, None)
+            .map_err(|e| anyhow!("Metal function not found: {kernel_name}: {e}"))?;
+
+        let pipeline_state = self
+            .device
+            .new_compute_pipeline_state_with_function(&function)
+            .map_err(|e| anyhow!("Metal pipeline state failed for {kernel_name}: {e}"))?;
+
+        // Create buffers
+        let a_buf = self.device.new_buffer_with_data(
+            input.noised_a.as_ptr() as *const _,
+            (input.noised_a.len() * std::mem::size_of::<i32>()) as u64,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+        let b_buf = self.device.new_buffer_with_data(
+            input.noised_b.as_ptr() as *const _,
+            (input.noised_b.len() * std::mem::size_of::<i32>()) as u64,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+        let seed_buf = self.device.new_buffer_with_data(
+            input.a_noise_seed.as_ptr() as *const _,
+            32,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+        let target_buf = self.device.new_buffer_with_data(
+            input.target.as_ptr() as *const _,
+            32,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+        let row_off_buf = self.device.new_buffer_with_data(
+            input.row_offsets.as_ptr() as *const _,
+            (input.row_offsets.len() * std::mem::size_of::<u32>()) as u64,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+        let col_off_buf = self.device.new_buffer_with_data(
+            input.col_offsets.as_ptr() as *const _,
+            (input.col_offsets.len() * std::mem::size_of::<u32>()) as u64,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+        let rows_base_buf = self.device.new_buffer_with_data(
+            input.rows_base.as_ptr() as *const _,
+            (input.rows_base.len() * std::mem::size_of::<u32>()) as u64,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+        let cols_base_buf = self.device.new_buffer_with_data(
+            input.cols_base.as_ptr() as *const _,
+            (input.cols_base.len() * std::mem::size_of::<u32>()) as u64,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+
+        let tile_init: u32 = 0;
+        let output_tile_buf = self.device.new_buffer_with_data(
+            &tile_init as *const u32 as *const _,
+            std::mem::size_of::<u32>() as u64,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+        let jackpot_init = [0u8; 32];
+        let output_jackpot_buf = self.device.new_buffer_with_data(
+            jackpot_init.as_ptr() as *const _,
+            32,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+        let found_init: u32 = 0;
+        let found_buf = self.device.new_buffer_with_data(
+            &found_init as *const u32 as *const _,
+            4,
+            MTLResourceOptions::CPUCacheModeDefaultCache,
+        );
+
+        // Create command buffer
+        let cmd_buffer = self.cmd_queue.new_command_buffer();
+        let encoder = cmd_buffer.new_compute_command_encoder();
+        encoder.set_compute_pipeline_state(&pipeline_state);
+
+        // Set buffers
+        encoder.set_buffer(0, Some(&a_buf), 0);
+        encoder.set_buffer(1, Some(&b_buf), 0);
+        encoder.set_buffer(2, Some(&seed_buf), 0);
+        encoder.set_buffer(3, Some(&target_buf), 0);
+        encoder.set_buffer(4, Some(&row_off_buf), 0);
+        encoder.set_buffer(5, Some(&col_off_buf), 0);
+        encoder.set_buffer(6, Some(&rows_base_buf), 0);
+        encoder.set_buffer(7, Some(&cols_base_buf), 0);
+        encoder.set_buffer(8, Some(&output_tile_buf), 0);
+        encoder.set_buffer(9, Some(&output_jackpot_buf), 0);
+        encoder.set_buffer(10, Some(&found_buf), 0);
+
+        // Dispatch: 4096 work-items (64 row_offsets × 64 col_offsets)
+        let grid_size = MTLSize { width: 4096, height: 1, depth: 1 };
+        let max_tg = self.device.max_threads_per_threadgroup();
+        let group_size = MTLSize {
+            width: max_tg.width.min(256),
+            height: 1,
+            depth: 1,
+        };
+
+        encoder.dispatch_threads(grid_size, group_size);
+        encoder.end_encoding();
+
+        cmd_buffer.commit();
+        cmd_buffer.wait_until_completed();
+
+        // Read results
+        let found_ptr = found_buf.contents() as *const u32;
+        let found = unsafe { *found_ptr };
+        if found == 0 {
+            return Ok(None);
+        }
+
+        let tile_ptr = output_tile_buf.contents() as *const u32;
+        let tile_index = unsafe { *tile_ptr };
+
+        let jackpot_ptr = output_jackpot_buf.contents() as *const u8;
+        let mut jackpot_hash = [0u8; 32];
+        unsafe {
+            std::ptr::copy_nonoverlapping(jackpot_ptr, jackpot_hash.as_mut_ptr(), 32);
+        }
+
+        Ok(Some(PearlPouwGpuResult {
+            tile_index,
+            jackpot_hash,
+        }))
     }
 }
 

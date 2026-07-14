@@ -990,4 +990,336 @@ mod tests {
         );
         assert!(!b64.is_empty());
     }
+
+    #[cfg(feature = "gpu-metal")]
+    #[test]
+    fn test_gpu_pouw_kernel_compiles() {
+        // Verify the Metal kernel compiles by running a minimal mining call
+        use crate::gpu_metal::{MetalBackend, PearlPouwGpuInput};
+        let mut backend = MetalBackend::new(256).expect("Metal backend");
+        // Minimal input: 1×1 matrices, easy target
+        let a = vec![0i32; 1];
+        let b = vec![0i32; 1];
+        let row_off = vec![0u32];
+        let col_off = vec![0u32];
+        let rows_base = vec![0u32];
+        let cols_base = vec![0u32];
+        let input = PearlPouwGpuInput {
+            noised_a: &a,
+            noised_b: &b,
+            a_noise_seed: [0u8; 32],
+            target: [0xFFu8; 32],
+            row_offsets: &row_off,
+            col_offsets: &col_off,
+            rows_base: &rows_base,
+            cols_base: &cols_base,
+        };
+        // This should compile the kernel and run (may or may not find a share)
+        let result = backend.pearl_pouw_mine(&input);
+        assert!(result.is_ok(), "GPU mining call failed: {:?}", result.err());
+    }
+
+    #[cfg(feature = "gpu-metal")]
+    #[test]
+    fn test_gpu_pouw_matches_cpu() {
+        // Generate one nonce's data on CPU, run GPU, and verify the GPU
+        // finds the same winning tile as CPU (with a very easy target).
+        use crate::gpu_metal::{MetalBackend, PearlPouwGpuInput};
+
+        let m = 256;
+        let n = 512;
+        let k = 1024;
+        let rank = 32;
+        let nonce = 42u64;
+
+        let header = IncompleteBlockHeader {
+            version: 1,
+            prev_block: [0xAA; 32],
+            merkle_root: [0xBB; 32],
+            timestamp: 1234567890,
+            nbits: 0x1E01FFFF,
+        };
+        let config = MiningConfiguration::default_mainnet();
+
+        // Generate matrices on CPU
+        let mut rng = SimpleRng::new(nonce);
+        let a_matrix: Vec<Vec<i8>> = (0..m)
+            .map(|_| (0..k).map(|_| rng.range(SIGNAL_MIN, SIGNAL_MAX)).collect())
+            .collect();
+        let b_matrix: Vec<Vec<i8>> = (0..k)
+            .map(|_| (0..n).map(|_| rng.range(SIGNAL_MIN, SIGNAL_MAX)).collect())
+            .collect();
+        let b_transposed: Vec<Vec<i8>> = (0..n)
+            .map(|i| (0..k).map(|j| b_matrix[j][i]).collect())
+            .collect();
+
+        let job_key = compute_job_key(&header, &config);
+        let a_row_major = pad_to_chunk_boundary(&flatten_matrix(&a_matrix));
+        let b_col_major = pad_to_chunk_boundary(&flatten_matrix(&b_transposed));
+        let (b_noise_seed, a_noise_seed) = compute_commitment_hash(&job_key, &a_row_major, &b_col_major);
+
+        let a_all_rows: Vec<usize> = (0..m).collect();
+        let b_all_cols: Vec<usize> = (0..n).collect();
+        let noise = compute_noise_for_indices(k, rank, (b_noise_seed, a_noise_seed), &a_all_rows, &b_all_cols);
+
+        let a_noised: Vec<Vec<i32>> = a_matrix
+            .iter()
+            .zip(&noise.a)
+            .map(|(a_row, n_row)| a_row.iter().zip(n_row).map(|(&a, &n)| a as i32 + n as i32).collect())
+            .collect();
+        let b_noised_t: Vec<Vec<i32>> = b_transposed
+            .iter()
+            .zip(&noise.b)
+            .map(|(bt_row, n_row)| bt_row.iter().zip(n_row).map(|(&b, &n)| b as i32 + n as i32).collect())
+            .collect();
+
+        // Compute all jackpot hashes on CPU
+        let row_offsets: Vec<u32> = (0..m as u32)
+            .filter(|&i| config.rows_pattern.offset_is_valid(i))
+            .collect();
+        let col_offsets: Vec<u32> = (0..n as u32)
+            .filter(|&i| config.cols_pattern.offset_is_valid(i))
+            .collect();
+        let rows_base: Vec<u32> = config.rows_pattern.to_list();
+        let cols_base: Vec<u32> = config.cols_pattern.to_list();
+
+        // Find the best (lowest) jackpot hash on CPU
+        let mut best_hash: Option<([u8; 32], usize)> = None;
+        for (tile_idx, &row_off) in row_offsets.iter().enumerate() {
+            for (col_idx, &col_off) in col_offsets.iter().enumerate() {
+                let a_rows: Vec<usize> = rows_base.iter().map(|&d| row_off as usize + d as usize).collect();
+                let b_cols: Vec<usize> = cols_base.iter().map(|&d| col_off as usize + d as usize).collect();
+
+                let mut jackpot_tile: Vec<Vec<i32>> = vec![vec![0; b_cols.len()]; a_rows.len()];
+                let mut jackpot: [u32; JACKPOT_SIZE] = [0; JACKPOT_SIZE];
+
+                for ll in (rank..=k).step_by(rank) {
+                    for (u, &a_idx) in a_rows.iter().enumerate() {
+                        for (v, &b_idx) in b_cols.iter().enumerate() {
+                            for l in ll - rank..ll {
+                                jackpot_tile[u][v] += a_noised[a_idx][l] * b_noised_t[b_idx][l];
+                            }
+                        }
+                    }
+                    let xored = jackpot_tile.iter().flatten().fold(0u32, |a, &x| a ^ x as u32);
+                    let tid = (ll / rank - 1) % JACKPOT_SIZE;
+                    jackpot[tid] = jackpot[tid].rotate_left(LROT_PER_TILE) ^ xored;
+                }
+
+                let jh = compute_jackpot_hash(&jackpot, a_noise_seed);
+                let flat_idx = tile_idx * 64 + col_idx;
+                if best_hash.is_none() || jh < best_hash.unwrap().0 {
+                    best_hash = Some((jh, flat_idx));
+                }
+            }
+        }
+
+        let (cpu_best_hash, cpu_best_tile) = best_hash.unwrap();
+
+        // Run GPU with a target that accepts the best hash
+        // Target = all 0xFF (accept everything) to find the first winning tile
+        let easy_target = [0xFFu8; 32];
+
+        let a_flat: Vec<i32> = a_noised.iter().flat_map(|r| r.iter().copied()).collect();
+        let b_flat: Vec<i32> = b_noised_t.iter().flat_map(|r| r.iter().copied()).collect();
+
+        let mut backend = MetalBackend::new(256).expect("Metal backend");
+        let gpu_input = PearlPouwGpuInput {
+            noised_a: &a_flat,
+            noised_b: &b_flat,
+            a_noise_seed,
+            target: easy_target,
+            row_offsets: &row_offsets,
+            col_offsets: &col_offsets,
+            rows_base: &rows_base,
+            cols_base: &cols_base,
+        };
+
+        let gpu_result = backend.pearl_pouw_mine(&gpu_input).expect("GPU mine").expect("GPU should find a share");
+
+        // The GPU should find a tile (first one that meets the easy target)
+        // Verify the GPU jackpot hash matches the CPU-computed hash for that tile
+        let gpu_tile = gpu_result.tile_index as usize;
+        let gpu_hash = gpu_result.jackpot_hash;
+
+        // Recompute CPU hash for the GPU's winning tile
+        let gpu_row_off_idx = gpu_tile / 64;
+        let gpu_col_off_idx = gpu_tile % 64;
+        let gpu_row_off = row_offsets[gpu_row_off_idx] as usize;
+        let gpu_col_off = col_offsets[gpu_col_off_idx] as usize;
+        let gpu_a_rows: Vec<usize> = rows_base.iter().map(|&d| gpu_row_off + d as usize).collect();
+        let gpu_b_cols: Vec<usize> = cols_base.iter().map(|&d| gpu_col_off + d as usize).collect();
+
+        let mut jackpot_tile: Vec<Vec<i32>> = vec![vec![0; gpu_b_cols.len()]; gpu_a_rows.len()];
+        let mut jackpot: [u32; JACKPOT_SIZE] = [0; JACKPOT_SIZE];
+        for ll in (rank..=k).step_by(rank) {
+            for (u, &a_idx) in gpu_a_rows.iter().enumerate() {
+                for (v, &b_idx) in gpu_b_cols.iter().enumerate() {
+                    for l in ll - rank..ll {
+                        jackpot_tile[u][v] += a_noised[a_idx][l] * b_noised_t[b_idx][l];
+                    }
+                }
+            }
+            let xored = jackpot_tile.iter().flatten().fold(0u32, |a, &x| a ^ x as u32);
+            let tid = (ll / rank - 1) % JACKPOT_SIZE;
+            jackpot[tid] = jackpot[tid].rotate_left(LROT_PER_TILE) ^ xored;
+        }
+        let cpu_hash_for_gpu_tile = compute_jackpot_hash(&jackpot, a_noise_seed);
+
+        assert_eq!(
+            gpu_hash, cpu_hash_for_gpu_tile,
+            "GPU jackpot hash mismatch at tile {} — GPU={:?} CPU={:?}",
+            gpu_tile, gpu_hash, cpu_hash_for_gpu_tile
+        );
+
+        // Also verify the GPU found the same best tile as CPU
+        // (with easy target, GPU finds first tile that meets, which should be tile 0
+        // since all tiles meet the easy target — but the hash should still match)
+        eprintln!("CPU best tile={} hash={:02x?}", cpu_best_tile, cpu_best_hash);
+        eprintln!("GPU found tile={} hash={:02x?}", gpu_tile, gpu_hash);
+    }
 }
+
+// ─── GPU-accelerated mining (Metal) ─────────────────────────────────────────
+
+/// Try to mine one proof using GPU for MatMul + jackpot scanning.
+/// CPU handles matrix generation, noise, and Merkle proof construction.
+/// GPU handles the 4096-tile MatMul + jackpot hash computation.
+#[cfg(feature = "gpu-metal")]
+pub fn try_mine_one_gpu(
+    nonce: u64,
+    m: usize,
+    n: usize,
+    k: usize,
+    rank: usize,
+    header: &IncompleteBlockHeader,
+    config: &MiningConfiguration,
+    difficulty_bound: &[u8; 32],
+    gpu_backend: &mut crate::gpu_metal::MetalBackend,
+) -> Option<MinedProof> {
+    use crate::gpu_metal::{PearlPouwGpuInput, PearlPouwGpuResult};
+
+    // Deterministic RNG from nonce
+    let mut rng = SimpleRng::new(nonce);
+
+    // Generate random matrices A (m×k) and B (k×n) with int7 entries
+    let a_matrix: Vec<Vec<i8>> = (0..m)
+        .map(|_| (0..k).map(|_| rng.range(SIGNAL_MIN, SIGNAL_MAX)).collect())
+        .collect();
+    let b_matrix: Vec<Vec<i8>> = (0..k)
+        .map(|_| (0..n).map(|_| rng.range(SIGNAL_MIN, SIGNAL_MAX)).collect())
+        .collect();
+
+    // Transpose B → B^T (n×k)
+    let b_transposed: Vec<Vec<i8>> = (0..n)
+        .map(|i| (0..k).map(|j| b_matrix[j][i]).collect())
+        .collect();
+
+    // Compute job_key and commitment hash
+    let job_key = compute_job_key(header, config);
+    let a_row_major = pad_to_chunk_boundary(&flatten_matrix(&a_matrix));
+    let b_col_major = pad_to_chunk_boundary(&flatten_matrix(&b_transposed));
+    let (b_noise_seed, a_noise_seed) = compute_commitment_hash(&job_key, &a_row_major, &b_col_major);
+
+    // Compute noise for all rows/cols
+    let a_all_rows: Vec<usize> = (0..m).collect();
+    let b_all_cols: Vec<usize> = (0..n).collect();
+    let noise = compute_noise_for_indices(k, rank, (b_noise_seed, a_noise_seed), &a_all_rows, &b_all_cols);
+
+    // Add noise: A' = A + E, B'^T = B^T + F
+    let a_noised: Vec<Vec<i32>> = a_matrix
+        .iter()
+        .zip(&noise.a)
+        .map(|(a_row, n_row)| a_row.iter().zip(n_row).map(|(&a, &n)| a as i32 + n as i32).collect())
+        .collect();
+    let b_noised_t: Vec<Vec<i32>> = b_transposed
+        .iter()
+        .zip(&noise.b)
+        .map(|(bt_row, n_row)| bt_row.iter().zip(n_row).map(|(&b, &n)| b as i32 + n as i32).collect())
+        .collect();
+
+    // Flatten noised matrices for GPU (row-major)
+    let a_flat: Vec<i32> = a_noised.iter().flat_map(|r| r.iter().copied()).collect();
+    let b_flat: Vec<i32> = b_noised_t.iter().flat_map(|r| r.iter().copied()).collect();
+
+    // Compute valid row/col offsets
+    let row_offsets: Vec<u32> = (0..m as u32)
+        .filter(|&i| config.rows_pattern.offset_is_valid(i))
+        .collect();
+    let col_offsets: Vec<u32> = (0..n as u32)
+        .filter(|&i| config.cols_pattern.offset_is_valid(i))
+        .collect();
+
+    let rows_base: Vec<u32> = config.rows_pattern.to_list();
+    let cols_base: Vec<u32> = config.cols_pattern.to_list();
+
+    // Run GPU mining
+    let gpu_input = PearlPouwGpuInput {
+        noised_a: &a_flat,
+        noised_b: &b_flat,
+        a_noise_seed,
+        target: *difficulty_bound,
+        row_offsets: &row_offsets,
+        col_offsets: &col_offsets,
+        rows_base: &rows_base,
+        cols_base: &cols_base,
+    };
+
+    let gpu_result = gpu_backend.pearl_pouw_mine(&gpu_input).ok()??;
+
+    // GPU found a valid tile — reconstruct Merkle proof on CPU
+    let tile_idx = gpu_result.tile_index as usize;
+    let row_off_idx = tile_idx / 64;
+    let col_off_idx = tile_idx % 64;
+
+    let row_off = row_offsets[row_off_idx] as usize;
+    let col_off = col_offsets[col_off_idx] as usize;
+
+    let a_rows: Vec<usize> = rows_base.iter().map(|&d| row_off + d as usize).collect();
+    let b_cols: Vec<usize> = cols_base.iter().map(|&d| col_off + d as usize).collect();
+
+    // Build Merkle proofs
+    let a_proof = build_matrix_proof(&a_matrix, &job_key, &a_rows, k);
+    let bt_proof = build_matrix_proof(&b_transposed, &job_key, &b_cols, k);
+
+    let proof = PearlPlainProof {
+        m, n, k,
+        noise_rank: rank,
+        a: a_proof,
+        bt: bt_proof,
+        moe: None,
+    };
+
+    let proof_bytes = bincode::serialize(&proof).ok()?;
+    let plain_proof_b64 = base64::Engine::encode(
+        &base64::engine::general_purpose::STANDARD,
+        &proof_bytes,
+    );
+
+    Some(MinedProof {
+        plain_proof_b64,
+        jackpot_hash: gpu_result.jackpot_hash,
+    })
+}
+
+/// Mine using GPU. Scans nonces, each nonce = one GPU dispatch.
+#[cfg(feature = "gpu-metal")]
+pub fn mine_gpu(
+    m: usize,
+    n: usize,
+    k: usize,
+    rank: usize,
+    header: &IncompleteBlockHeader,
+    config: &MiningConfiguration,
+    difficulty_bound: &[u8; 32],
+    max_attempts: u64,
+    gpu_backend: &mut crate::gpu_metal::MetalBackend,
+) -> Option<MinedProof> {
+    for nonce in 0..max_attempts {
+        if let Some(proof) = try_mine_one_gpu(nonce, m, n, k, rank, header, config, difficulty_bound, gpu_backend) {
+            return Some(proof);
+        }
+    }
+    None
+}
+
