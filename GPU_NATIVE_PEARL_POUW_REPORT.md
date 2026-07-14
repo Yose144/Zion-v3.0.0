@@ -2,12 +2,13 @@
 
 **Date:** 2026-07-14
 **Status:** COMPLETE — all tests passing, pushed to main
+**Updated:** 2026-07-14 — OpenCL port for AMD RX 5700 XT (ROCm) verified
 
 ---
 
 ## Overview
 
-Implemented a **fully GPU-native Pearl PoUW mining pipeline** for Apple Metal (M1). All computational steps run on GPU — CPU only provides job parameters and reconstructs the Merkle proof when a winning tile is found.
+Implemented a **fully GPU-native Pearl PoUW mining pipeline** for Apple Metal (M1) and **ported to OpenCL** for AMD GPUs (RX 5700 XT / ROCm). All computational steps run on GPU — CPU only provides job parameters and reconstructs the Merkle proof when a winning tile is found.
 
 ### Commits
 
@@ -38,6 +39,47 @@ Earlier benchmark run (before shared-storage change for matrix read-back):
 
 The speedup varies (8.9x–76.5x) depending on system load and whether the CPU-prep path is warmed up. The GPU-native path is consistently ~10ms/nonce.
 
+### Benchmark Results (AMD RX 5700 XT, ROCm OpenCL, 2026-07-14)
+
+| Pipeline | Time/nonce | Nonces/s | Speedup vs CPU |
+|---|---|---|---|
+| CPU-only (baseline, release) | 21.65 ms | 46.2 | 1x |
+| OpenCL GPU-native v1 (original) | 45.12 ms | 22.2 | 0.5x |
+| OpenCL GPU-native v3 (int4 + unrolled) | 3.70 ms | 270.0 | 5.8x |
+| OpenCL GPU-native v3 + buffer reuse | 2.17 ms | 460.3 | 10.0x |
+| OpenCL GPU-native v3 + batched (batch=4) | 1.68 ms | 594.5 | 12.9x |
+| OpenCL GPU-native v3 + batched (batch=8) | 1.85 ms | 539.1 | 11.7x |
+| **OpenCL GPU-native v3 + batched (batch=16)** | **1.52 ms** | **657.6** | **14.2x** |
+| E2E (GPU + CPU Merkle proof construction) | 2.17 ms | 461.0 | 10.0x |
+
+Hardware: AMD Radeon RX 5700 XT (Navi 10, gfx1010, RDNA1), ROCm OpenCL (`AMD Accelerated Parallel Processing` platform).
+
+E2E test: 3/3 tests passed (trivial target, easy ~12-bit target, BLAKE3 consistency). Valid Merkle proof (13713 bytes) produced.
+
+### Optimization Journey (OpenCL, RX 5700 XT)
+
+| Optimization | ms/nonce | nonces/s | Improvement |
+|---|---|---|---|
+| v1 (original, 1 work-item/tile) | 45.12 | 22.2 | baseline |
+| v2 (local memory tiling, 256 WI) | 20.00 | 50.0 | 2.3x |
+| v3 (L1 cache, 32 WI, sequential reduction) | 5.50 | 181.8 | 8.2x |
+| v3 + int4 vectorized loads + unrolled | 3.70 | 270.0 | 12.2x |
+| v3 + buffer reuse (cached GPU buffers) | 2.17 | 460.3 | 20.8x |
+| **v3 + buffer reuse + batched (batch=16)** | **1.52** | **657.6** | **29.7x** |
+
+Key optimizations:
+1. **v2 → v3**: Removed local memory tiling (48KB limited occupancy to 1 CU). Relied on L1 cache instead, reduced work-group to 32 items (TILE_H×TILE_W=4×8).
+2. **int4 vectorized loads**: `vload4` for 4 elements per transaction, fully unrolled inner loop (8 iterations for rank=32).
+3. **Buffer reuse**: Cached all GPU buffers in `PearlPouwBufferCache` struct, keyed by (m,n,k,rank,num_row_offsets,num_col_offsets). Per-nonce only uploads job_key + target and resets found/output_tile.
+4. **Batched persistent mining**: Process N nonces in a single mining kernel launch. Steps 1-6 run per-nonce (sequential), then one `pearl_pouw_mine_persistent` kernel checks all N×16 tiles in parallel. batch_size=16 is optimal (256 work-groups → full 40-CU utilization). Configurable via `AUXPOW_PRL_BATCH_SIZE` env var (default=8).
+
+### Integration
+
+- **AuXpow** (`auxpow_client.rs`): `with_gpu_opencl()` initializes OpenCL backend, `mine_gpu_native_opencl_batched()` called when `gpu-opencl` feature enabled. Batch size configurable via `AUXPOW_PRL_BATCH_SIZE` env var.
+- **V3 miner** (`main.rs`): `pearl_pouw_stream()` uses `AuxPowClient::new(profile).with_gpu_opencl().await` when `gpu-opencl` feature is enabled. Launched via `--pearl H:P:W` CLI flag or `ZION_PEARL_STREAM` env var.
+- **V3 pool**: No changes needed — pool is a stratum server that receives shares, doesn't mine.
+- **V3 node**: No changes needed — node validates blocks, doesn't mine PoUW.
+
 ### CPU Prep Optimization (intermediate step)
 
 Before going fully GPU-native, the CPU prep was optimized with flat arrays instead of `Vec<Vec>`:
@@ -63,7 +105,7 @@ Before going fully GPU-native, the CPU prep was optimized with flat arrays inste
 
 6. **Noised matrix computation** — `noised_a[i][l] = A[i][l] + (E_AL[i][E_AR[l].first] - E_AL[i][E_AR[l].second])`. Same for B^T with E_BR/E_BL. One thread per element.
 
-7. **MatMul + jackpot + target check** — 4096 tiles (64 row offsets × 64 col offsets). Each thread computes one 4×8 tile: MatMul accumulation, jackpot XOR+rotate, BLAKE3 keyed hash of 64-byte jackpot message, target comparison. Atomic `found` flag for early exit.
+7. **MatMul + jackpot + target check** — 16 tiles (2 row offsets × 8 col offsets for default_mainnet). Each work-group (32 work-items, TILE_H×TILE_W=4×8) computes one tile: MatMul accumulation with int4 vectorized loads, jackpot XOR+rotate, BLAKE3 keyed hash of 64-byte jackpot message, target comparison. Atomic `found` flag for early exit. **Batched mode**: `pearl_pouw_mine_persistent` kernel processes N nonces × 16 tiles in a single launch (128 work-groups for batch=8 → full 40-CU GPU utilization).
 
 ### Merkle Proof Reconstruction (CPU, only when share found)
 

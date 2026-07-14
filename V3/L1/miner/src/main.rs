@@ -1331,6 +1331,30 @@ fn run_remote_session(
         }
     }
 
+    // ── Persistent Blake3 GPU thread (Claymore-style parallel dual mining) ──
+    // Creates a SEPARATE OpenCL context on the same GPU device.
+    // Runs continuously, receiving external stream jobs via channel.
+    // The GPU hardware scheduler time-shares between Deeksha (main thread)
+    // and Blake3 (this thread) — both run SIMULTANEOUSLY.
+    let (ext_gpu_tx, ext_gpu_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
+    let (ext_gpu_share_tx, ext_gpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
+
+    let dual_gpu_enabled = gpu_available
+        && config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
+    if dual_gpu_enabled {
+        let ws = config.gpu_work_size;
+        thread::spawn(move || {
+            blake3_gpu_thread(ext_gpu_rx, ext_gpu_share_tx, ws);
+        });
+        println!(
+            "[{}] dual_gpu_blake3_thread_started work_size={}",
+            log_timestamp(),
+            config.gpu_work_size
+        );
+    } else {
+        println!("[{}] dual_gpu_blake3_thread_disabled (gpu_available={})", log_timestamp(), gpu_available);
+    }
+
     sync_miner_metrics(
         metrics,
         &telemetry,
@@ -1519,47 +1543,37 @@ fn run_remote_session(
         let mut cpu_nonces_tested = 0u64;
         let mut gpu_mix_hash: Option<[u8; 32]> = None;
 
-        // ── DeekshaChv3 parallel streaming ──────────────────────────────
-        // When the pool sends an external_stream job embedded in the ZION
-        // job, spawn a thread to mine the external coin IN PARALLEL with
-        // the GPU scanning the ZION Deeksha job.  Both streams submit shares
-        // independently.
+        // ── Claymore-style parallel GPU dual mining ────────────────────
+        // Both Deeksha (ZION) and Blake3 (DCR) run on GPU SIMULTANEOUSLY
+        // in separate threads with separate OpenCL contexts/queues.
+        // The GPU hardware scheduler time-shares between them.
         //
-        // Dispatch logic (v3.0.34-parallel-stream):
-        //   - Blake3 (DCR/ALPH) → GPU interleaved (after Deeksha scan)
-        //   - VerusHash (VRSC)  → CPU parallel (multiple threads)
+        // Architecture (v3.0.34-parallel-stream):
+        //   GPU #1 (main thread):     deeksha_lite_v1 (ZION main job)
+        //   GPU #2 (parallel thread): blake3_dcr (DCR external stream)
+        //   CPU:                      verushash (VRSC) — if present
         //
-        // This is the canonical DeekshaChv3 parallel streaming architecture:
-        //   - GPU: deeksha_lite_v1 (ZION main job) → then blake3_dcr (DCR)
-        //   - CPU: verushash external stream (VRSC) — if present
-        // The external pool sets the difficulty/target.
+        // The Blake3 GPU thread is PERSISTENT — created once at session
+        // start, receives jobs via channel, runs continuously.
         // ── Pearl stream already spawned at session start ──
-        //
-        // ── Parallel dispatch (v3.0.34-parallel-stream) ──────────────
-        //   Blake3-based external coins (DCR, ALPH) → GPU interleaved
-        //     (after Deeksha scan, same GPU switches to blake3_dcr)
-        //   VerusHash / other CPU-only algos         → CPU parallel
-        //     (multiple CPU threads, runs during GPU scan)
 
+        // Send external stream job to the persistent Blake3 GPU thread
+        if let Some(ref ext) = external_stream {
+            if matches!(ext.algorithm.as_str(), "blake3" | "blake3_dcr" | "blake3_alph") {
+                let _ = ext_gpu_tx.send(ext.clone());
+            }
+        }
+
+        // CPU-only external stream (VerusHash) → CPU parallel thread
         let ext_handle = if let Some(ref ext) = external_stream {
-            let ext = ext.clone();
-            let ext_threads = threads.max(1);
-            let ext_algo = ext.algorithm.clone();
-            // Blake3/DCR → GPU interleaved (after Deeksha scan, same GPU)
-            // VerusHash / other CPU-only → CPU parallel thread
-            let ext_is_blake3 = matches!(
-                ext_algo.as_str(),
-                "blake3" | "blake3_dcr" | "blake3_alph"
-            );
-            if ext_is_blake3 {
-                // Blake3 is handled AFTER the Deeksha GPU scan (interleaved).
-                // Don't spawn a CPU thread for it.
-                None
-            } else {
-                // CPU-only algorithms (VerusHash, etc.) → CPU parallel thread
+            if !matches!(ext.algorithm.as_str(), "blake3" | "blake3_dcr" | "blake3_alph") {
+                let ext = ext.clone();
+                let ext_threads = threads.max(1);
                 Some(thread::spawn(move || {
                     mine_external_stream_cpu(&ext, ext_threads)
                 }))
+            } else {
+                None
             }
         } else {
             None
@@ -1589,141 +1603,20 @@ fn run_remote_session(
             None
         };
 
-        // ── Interleaved Blake3 GPU scan for DCR external stream ───────
-        // After the Deeksha GPU scan completes, switch the same GPU to
-        // blake3_dcr and scan a batch of nonces for the external stream.
-        // This reuses the existing OpenCL context (no second context needed)
-        // and leverages the GPU's speed for Blake3 hashing.
-        let ext_gpu_share: Option<ExternalShareResult> = if let Some(ref ext) = external_stream {
-            if matches!(ext.algorithm.as_str(), "blake3" | "blake3_dcr" | "blake3_alph")
-                && can_gpu
-            {
-                // Switch GPU to blake3_dcr and scan
-                match gpu_manager.ensure_algorithm("blake3_dcr") {
-                    Ok(gpu_blake3) => {
-                        let header_bytes = hex::decode(ext.header_hex.trim_start_matches("0x"))
-                            .unwrap_or_default();
-                        let target_bytes = match zion_pool::parse_fixed_hex::<32>(
-                            &ext.target_hex,
-                            "external target",
-                        ) {
-                            Ok(t) => t,
-                            Err(e) => {
-                                println!("external_gpu_target_error: {e}");
-                                [0u8; 32]
-                            }
-                        };
-                        if target_bytes == [0u8; 32] {
-                            None
-                        } else {
-                            let target = DifficultyTarget { bytes: target_bytes };
-                            let batch = config.gpu_work_size as u64;
-                            // Use a random nonce base to avoid duplicates
-                            use std::collections::hash_map::DefaultHasher;
-                            use std::hash::{Hash, Hasher};
-                            let mut h = DefaultHasher::new();
-                            ext.job_id.hash(&mut h);
-                            std::process::id().hash(&mut h);
-                            let nonce_base = (h.finish() as u32) as u64;
-
-                            let result = if header_bytes.len() > 80 {
-                                gpu_blake3.mine_batch_raw(&header_bytes, target, nonce_base, batch)
-                            } else {
-                                let mut bytes = [0u8; 80];
-                                let len = header_bytes.len().min(80);
-                                bytes[..len].copy_from_slice(&header_bytes[..len]);
-                                let header = MiningHeader::from_bytes(bytes);
-                                gpu_blake3.mine_batch(header, target, nonce_base, batch)
-                            };
-
-                            match result {
-                                Ok(br) => {
-                                    if let Some((nonce, hash, _)) = br.solutions.first() {
-                                        println!(
-                                            "[{}] external_gpu_share_found coin=DCR nonce={} hash={}",
-                                            log_timestamp(), nonce, hex::encode(hash)
-                                        );
-                                        Some(ExternalShareResult {
-                                            coin: ext.coin.clone(),
-                                            algorithm: ext.algorithm.clone(),
-                                            external_job_id: ext.job_id.clone(),
-                                            nonce: *nonce,
-                                            hash: *hash,
-                                            extranonce1_hex: ext.extranonce1_hex.clone(),
-                                        })
-                                    } else {
-                                        None
-                                    }
-                                }
-                                Err(e) => {
-                                    println!("external_gpu_batch_error: {e}");
-                                    None
-                                }
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        println!("external_gpu_switch_error algo=blake3_dcr err=\"{e}\"");
-                        None
-                    }
-                }
-            } else {
-                None
-            }
-        } else {
-            None
+        // ── Collect Blake3 GPU share from persistent thread (non-blocking) ──
+        let ext_gpu_share = match ext_gpu_share_rx.try_recv() {
+            Ok(share) => Some(share),
+            Err(_) => None,
         };
 
-        // ── Join external stream thread and submit any found share ──────
+        // ── Join CPU external stream thread (VerusHash) and submit ─────
         if let Some(handle) = ext_handle {
             let ext_result = handle.join().unwrap_or(None);
             if let Some(share) = ext_result {
-                println!(
-                    "[{}] external_share_found  coin={}  algo={}  job_id={}  nonce={}  hash={}",
-                    log_timestamp(),
-                    share.coin,
-                    share.algorithm,
-                    share.external_job_id,
-                    share.nonce,
-                    hex::encode(share.hash),
+                submit_external_share(
+                    &mut writer, &mut reader, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
                 );
-                let ext_submit = PoolMessage::ExternalSubmit {
-                    miner_id: config.miner_id.clone(),
-                    worker_name: config.worker_name.clone(),
-                    coin: share.coin.clone(),
-                    algorithm: share.algorithm.clone(),
-                    external_job_id: share.external_job_id.clone(),
-                    nonce: share.nonce,
-                    hash_hex: hex::encode(share.hash),
-                    mix_hash_hex: None,
-                    extranonce1_hex: share.extranonce1_hex.clone(),
-                };
-                if let Err(e) = write_wire_message(&mut writer, &ext_submit) {
-                    println!("external_submit_write_error: {e}");
-                } else {
-                    // Read the external result (non-blocking — pool may or may not respond)
-                    match read_next_result(&mut reader) {
-                        Ok((line, msg)) => {
-                            if VERBOSE.load(Ordering::Relaxed) {
-                                println!("wire_external_result={line}");
-                            }
-                            if let PoolMessage::ExternalResult { accepted, status, coin } = msg {
-                                if accepted {
-                                    hashrate.accepted_shares.fetch_add(1, Ordering::Relaxed);
-                                    println!("[{}] external_share_accepted coin={} status={}", log_timestamp(), coin, status);
-                                } else {
-                                    hashrate.rejected_shares.fetch_add(1, Ordering::Relaxed);
-                                    println!("[{}] external_share_rejected coin={} status={}", log_timestamp(), coin, status);
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            println!("external_result_read_error: {e}");
-                        }
-                    }
-                }
             } else if let Some(ref ext) = external_stream {
-                // Only log external_no_share if Blake3 GPU also didn't find
                 println!(
                     "[{}] external_no_share  coin={}  algo={}",
                     log_timestamp(),
@@ -1733,50 +1626,19 @@ fn run_remote_session(
             }
         }
 
-        // ── Submit interleaved Blake3 GPU share (if found) ────────────
+        // ── Submit Blake3 GPU share (if found by persistent thread) ────
         if let Some(share) = ext_gpu_share {
             println!(
-                "[{}] external_gpu_submit  coin={}  algo={}  job_id={}  nonce={}",
+                "[{}] external_gpu_share_found  coin={}  algo={}  job_id={}  nonce={}",
                 log_timestamp(),
                 share.coin,
                 share.algorithm,
                 share.external_job_id,
                 share.nonce,
             );
-            let ext_submit = PoolMessage::ExternalSubmit {
-                miner_id: config.miner_id.clone(),
-                worker_name: config.worker_name.clone(),
-                coin: share.coin.clone(),
-                algorithm: share.algorithm.clone(),
-                external_job_id: share.external_job_id.clone(),
-                nonce: share.nonce,
-                hash_hex: hex::encode(share.hash),
-                mix_hash_hex: None,
-                extranonce1_hex: share.extranonce1_hex.clone(),
-            };
-            if let Err(e) = write_wire_message(&mut writer, &ext_submit) {
-                println!("external_gpu_submit_write_error: {e}");
-            } else {
-                match read_next_result(&mut reader) {
-                    Ok((line, msg)) => {
-                        if VERBOSE.load(Ordering::Relaxed) {
-                            println!("wire_external_gpu_result={line}");
-                        }
-                        if let PoolMessage::ExternalResult { accepted, status, coin } = msg {
-                            if accepted {
-                                hashrate.accepted_shares.fetch_add(1, Ordering::Relaxed);
-                                println!("[{}] external_gpu_share_accepted coin={} status={}", log_timestamp(), coin, status);
-                            } else {
-                                hashrate.rejected_shares.fetch_add(1, Ordering::Relaxed);
-                                println!("[{}] external_gpu_share_rejected coin={} status={}", log_timestamp(), coin, status);
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        println!("external_gpu_result_read_error: {e}");
-                    }
-                }
-            }
+            submit_external_share(
+                &mut writer, &mut reader, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
+            );
         }
 
         hashrate.record_gpu_hashes(gpu_nonces_tested);
@@ -2354,11 +2216,192 @@ struct ExternalShareResult {
     extranonce1_hex: String,
 }
 
-/// Mine an external stream job on CPU using the AuXpow miner harness.
+/// Submit an external share to the pool and read the result.
+/// Used by both CPU (VerusHash) and GPU (Blake3) external stream paths.
+fn submit_external_share(
+    writer: &mut impl Write,
+    reader: &mut impl BufRead,
+    config: &MinerConfig,
+    share: &ExternalShareResult,
+    hashrate: &HashrateTracker,
+    verbose: bool,
+) {
+    let ext_submit = PoolMessage::ExternalSubmit {
+        miner_id: config.miner_id.clone(),
+        worker_name: config.worker_name.clone(),
+        coin: share.coin.clone(),
+        algorithm: share.algorithm.clone(),
+        external_job_id: share.external_job_id.clone(),
+        nonce: share.nonce,
+        hash_hex: hex::encode(share.hash),
+        mix_hash_hex: None,
+        extranonce1_hex: share.extranonce1_hex.clone(),
+    };
+    if let Err(e) = write_wire_message(writer, &ext_submit) {
+        println!("external_submit_write_error: {e}");
+    } else {
+        match read_next_result(reader) {
+            Ok((line, msg)) => {
+                if verbose {
+                    println!("wire_external_result={line}");
+                }
+                if let PoolMessage::ExternalResult { accepted, status, coin } = msg {
+                    if accepted {
+                        hashrate.accepted_shares.fetch_add(1, Ordering::Relaxed);
+                        println!("[{}] external_share_accepted coin={} status={}", log_timestamp(), coin, status);
+                    } else {
+                        hashrate.rejected_shares.fetch_add(1, Ordering::Relaxed);
+                        println!("[{}] external_share_rejected coin={} status={}", log_timestamp(), coin, status);
+                    }
+                }
+            }
+            Err(e) => {
+                println!("external_result_read_error: {e}");
+            }
+        }
+    }
+}
+
+/// Persistent Blake3 GPU miner thread (Claymore-style parallel dual mining).
 ///
-/// This runs IN PARALLEL with the GPU scanning the ZION Deeksha job.
-/// Converts the `ExternalStreamJob` from the pool into a `JobPackage` and
-/// calls `zion_auxpow::miner_harness::mine()` with the given thread count.
+/// Runs in a separate thread with its own OpenCL context/command queue.
+/// Receives external stream jobs via a channel, scans Blake3 nonces on GPU,
+/// and sends found shares back via another channel.
+///
+/// The GPU hardware scheduler time-shares between this thread's Blake3 kernel
+/// and the main thread's Deeksha kernel — both run SIMULTANEOUSLY.
+fn blake3_gpu_thread(
+    rx: std::sync::mpsc::Receiver<zion_pool::ExternalStreamJob>,
+    tx: std::sync::mpsc::Sender<ExternalShareResult>,
+    work_size: usize,
+) {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    // Create the Blake3 GPU miner (separate OpenCL context)
+    let mut gpu_miner = match gpu_backend::create_gpu_backend(
+        gpu_backend::GpuBackendKind::OpenCL,
+        work_size,
+        "blake3_dcr",
+    ) {
+        Ok(m) => {
+            println!(
+                "[{}] dual_gpu_blake3_init work_size={} device=\"{}\"",
+                log_timestamp(),
+                work_size,
+                m.device_name()
+            );
+            m
+        }
+        Err(e) => {
+            println!(
+                "[{}] dual_gpu_blake3_init_failed err=\"{e}\" — DCR GPU stream disabled",
+                log_timestamp()
+            );
+            return;
+        }
+    };
+
+    let mut current_job: Option<zion_pool::ExternalStreamJob> = None;
+    let mut nonce_base: u64 = 0;
+    let mut nonce_offset: u64 = 0;
+    let batch_size = work_size as u64;
+
+    loop {
+        // Check for new job (non-blocking)
+        match rx.try_recv() {
+            Ok(job) => {
+                current_job = Some(job.clone());
+                // Random nonce base to avoid duplicates
+                let mut h = DefaultHasher::new();
+                job.job_id.hash(&mut h);
+                std::process::id().hash(&mut h);
+                nonce_base = (h.finish() as u32) as u64;
+                nonce_offset = 0;
+            }
+            Err(std::sync::mpsc::TryRecvError::Empty) => {}
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                println!("[{}] dual_gpu_blake3_channel_closed — exiting", log_timestamp());
+                return;
+            }
+        }
+
+        let job = match &current_job {
+            Some(j) => j,
+            None => {
+                // No job yet — wait a bit
+                thread::sleep(Duration::from_millis(50));
+                continue;
+            }
+        };
+
+        // Parse header and target
+        let header_bytes = match hex::decode(job.header_hex.trim_start_matches("0x")) {
+            Ok(b) => b,
+            Err(e) => {
+                println!("dual_gpu_blake3_header_error: {e}");
+                thread::sleep(Duration::from_millis(100));
+                continue;
+            }
+        };
+
+        let target_bytes = match zion_pool::parse_fixed_hex::<32>(&job.target_hex, "external target") {
+            Ok(t) => t,
+            Err(e) => {
+                println!("dual_gpu_blake3_target_error: {e}");
+                thread::sleep(Duration::from_millis(100));
+                continue;
+            }
+        };
+
+        let target = DifficultyTarget { bytes: target_bytes };
+        let nonce = nonce_base.wrapping_add(nonce_offset);
+
+        // Scan one batch on GPU
+        let result = if header_bytes.len() > 80 {
+            gpu_miner.mine_batch_raw(&header_bytes, target, nonce, batch_size)
+        } else {
+            let mut bytes = [0u8; 80];
+            let len = header_bytes.len().min(80);
+            bytes[..len].copy_from_slice(&header_bytes[..len]);
+            let header = MiningHeader::from_bytes(bytes);
+            gpu_miner.mine_batch(header, target, nonce, batch_size)
+        };
+
+        match result {
+            Ok(br) => {
+                if let Some((found_nonce, hash, _)) = br.solutions.first() {
+                    let share = ExternalShareResult {
+                        coin: job.coin.clone(),
+                        algorithm: job.algorithm.clone(),
+                        external_job_id: job.job_id.clone(),
+                        nonce: *found_nonce,
+                        hash: *hash,
+                        extranonce1_hex: job.extranonce1_hex.clone(),
+                    };
+                    println!(
+                        "[{}] dual_gpu_blake3_share_found coin={} nonce={} hash={}",
+                        log_timestamp(),
+                        share.coin,
+                        share.nonce,
+                        hex::encode(share.hash)
+                    );
+                    let _ = tx.send(share);
+                }
+            }
+            Err(e) => {
+                // Only log every 60s to avoid spam
+                println!("dual_gpu_blake3_batch_error nonce={} err=\"{e}\"", nonce);
+                thread::sleep(Duration::from_millis(500));
+            }
+        }
+
+        // Advance nonce for next batch
+        nonce_offset = nonce_offset.wrapping_add(batch_size);
+    }
+}
+
+
 fn mine_external_stream_cpu(ext: &ExternalStreamJob, _threads: usize) -> Option<ExternalShareResult> {
     // Parse external coin from ticker
     let coin = match zion_auxpow::types::ExternalCoin::from_str_loose(&ext.coin) {
@@ -3551,7 +3594,9 @@ fn pearl_pouw_stream(host: &str, port: u16, wallet: &str) {
         // Create client — with GPU if available
         #[cfg(feature = "gpu-metal")]
         let client = AuxPowClient::new(profile).with_gpu().await;
-        #[cfg(not(feature = "gpu-metal"))]
+        #[cfg(feature = "gpu-opencl")]
+        let client = AuxPowClient::new(profile).with_gpu_opencl().await;
+        #[cfg(not(any(feature = "gpu-metal", feature = "gpu-opencl")))]
         let client = AuxPowClient::new(profile);
 
         let client = std::sync::Arc::new(client);
