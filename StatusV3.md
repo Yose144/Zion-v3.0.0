@@ -1,6 +1,6 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-07-15
+> **Datum poslední aktualizace:** 2026-07-14
 > **Protokol:** `zion-v3-node/3.0.5`
 > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
@@ -12,12 +12,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Height** | 827+ (3-node P2P mesh, all synced) |
+| **Height** | 5801+ (3-node P2P mesh, all synced) |
 | **Protocol** | `zion-v3-node/3.0.5` (v2) |
 | **Genesis** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
 | **Decimals** | 6 (1 ZION = 1,000,000 flowers, post-3.0.3 fork) |
 | **Total Supply** | 144B ZION (144e15 flowers) |
-| **Circulating** | 16.78B ZION (16.78B premine + ~4.47M mined) |
+| **Circulating** | 16.81B ZION (16.78B premine + ~31.33M mined) |
 | **Block Reward** | 5400.067 ZION |
 | **Fee Split** | 89% miner / 5% treasury / 5% community / 1% burn |
 | **Difficulty** | LWMA-60 (integer, ±25% clamp, 30–120s solve) |
@@ -36,22 +36,23 @@
 
 | Service | Port(s) | Bind | Layer | Status |
 |---------|---------|------|-------|--------|
-| zion-node | 8333 (P2P), 8443 (RPC), 8445 (WS), 9100 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active |
-| zion-node2 | 8448 (RPC) | 127.0.0.1 | L1 | ✅ active (follower) |
-| zion-pool | 8444 (Stratum) | 0.0.0.0 | L1 | ✅ active (mining) |
+| zion-node | 8333 (P2P), 9443 (RPC), 8445 (WS), 9100 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active |
+| zion-node2 | 8334 (P2P), 8448 (RPC), 9116 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active (follower) |
+| zion-pool | 8444 (Stratum), 8455 (stats/metrics HTTP) | 8444 0.0.0.0, 8455 127.0.0.1 | L1 | ✅ active (mining) |
 | zion-bridge | 9101 (metrics) | 127.0.0.1 | L2 | ✅ active |
 | zion-dao | 8450 (API) | 127.0.0.1 | L2 | ✅ active |
 | zion-atomic-swap | 8452 (API) | 0.0.0.0 | L2 | ✅ active |
 | zion-warp | 8453 (WARP API) | 0.0.0.0 | L3 | ✅ active |
+| zion-dex | 8454 (DEX Router API) | 0.0.0.0 | L3 | ✅ active |
 | zion-oasis | 8455 | 127.0.0.1 | L4 | ✅ active |
 | zion-free-world | — | — | L5 | ✅ active |
 | zion-issobella | — | — | L6 | ✅ active |
 | zion-dashboard | 8766 | 127.0.0.1 | — | ✅ active |
 | zion-watchdog.timer | — | — | — | ✅ active (2 min) |
-| zion-web-next (Docker) | — | — | — | ✅ Up (377 MB) |
+| zion-web (Docker) | 3000 | 127.0.0.1 | — | ✅ Up (377 MB) |
 | nginx | 80, 443 | 0.0.0.0 | — | ✅ active |
 
-### Local Backup Node: `zionserver-144` (109.81.87.10)
+### Local Backup Node: `zionserver-144` (109.81.27.87)
 
 | Service | Port(s) | Status |
 |---------|---------|--------|
@@ -73,10 +74,10 @@
 
 | Resource | Used | Total | % |
 |----------|------|-------|---|
-| RAM | ~2.2 GB | 7.8 GB | 28% |
-| Disk | 34 GB | 145 GB | 24% |
-| Node1 RSS | ~33 MB | — | stable (post memory-leak fix) |
-| Node2 RSS | ~25 MB | — | stable |
+| RAM | ~2.7 GB | 7.8 GB | 35% |
+| Disk | 62 GB | 145 GB | 43% |
+| Node1 RSS | ~3.5 MB | — | stable (post memory-leak fix) |
+| Node2 RSS | ~3.5 MB | — | stable |
 
 ---
 
@@ -171,19 +172,19 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | R1c | GPU kernel parametrizace (byproduct work) | ✅ DONE | `74a353205` |
 | R2 | DCR revenue live (WoolyPooly) | ⏳ Pending | — |
 | R3 | ALPH + KAS E2E (2miners) | ⏳ Pending | — |
-| R4 | Stream telemetry revenue report | ⏳ Pending | — |
+| R4 | Stream telemetry revenue report | ✅ DONE | `d189712a7` |
 | R5 | SMOS deploy + GPU mining | ✅ DONE | `32e9d07ac` |
 | R6 | EthStratum protocol (ERG/EVR/MEWC/CLORE) | ✅ DONE | `5baa76d60` |
 | R7 | B2b VRSC revenue (ZcashStratum, LuckPool) | ✅ DONE | `bb7d5407b` |
 | R8 | True AuxPow consensus | 🔮 Future | — |
 
-### Supported External Coins (14 total)
+### Supported External Coins (15 total)
 
 | Coin | Algorithm | Protocol | E2E Status |
 |------|-----------|----------|------------|
 | KAS | kheavyhash | Stratum | connect/auth/notify ✅, submit ⚠️ (CPU) |
 | ALPH | blake3 (double) | Stratum | connect/auth/notify ✅, submit ⚠️ (CPU) |
-| DCR | blake3 | Stratum | pooly offline ❌ |
+| DCR | blake3 | Stratum | ✅ LIVE (embedded in pool stream, blake3 GPU kernel) |
 | ERG | autolykos | EthStratum | protocol ✅ (R6), live E2E TODO |
 | RVN | kawpow | Stratum | live E2E ✅ (GPU, shares forwarded to 2miners) |
 | ETC | ethash | Stratum | connect/auth/notify ✅, submit ⚠️ (CPU) |
@@ -192,9 +193,9 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | CLORE | kawpow | EthStratum | protocol ✅ (R6), live E2E TODO |
 | XMR | randomx | Stratum | connect/auth/notify ✅, submit ⚠️ (needs RandomX rig miner) |
 | FLUX | zelhash | Stratum | TODO |
-| VRSC | verushash v2.2 | ZcashStratum | protocol ✅ (R7), live E2E TODO (LuckPool eu.luckpool.net:3956) |
+| VRSC | verushash v2.2 | ZcashStratum | ✅ LIVE (LuckPool eu.luckpool.net:3956, pool mining VRSC) |
 | EPIC | progpow | Stratum (custom HTTP) | kernel ✅, CPU hasher ✅, E2E TODO |
-| PRL | pearlhash (PoUW MatMul) | PearlStratum (custom) | ★★★ PearlStratum ✅ + CPU hasher ✅ + dispatch ✅ + GPU placeholder ✅, full PoUW TODO |
+| PRL | pearlhash (PoUW MatMul) | PearlStratum (custom) | ★★★ PearlStratum ✅ + CPU hasher ✅ + GPU GEMM dispatch ✅ (`0bafbfe83`) + Merkle proof ✅ (`705bff572`) + pool-routed ✅ (`f524b7117`), full PoUW ZK TODO |
 
 ### AuXpow GPU Backend (2026-07-15)
 
@@ -218,11 +219,12 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 **ProgPow (EPIC):** CPU hasher (keccak_f800 + KISS99 + FNV1a) ✅, OpenCL + Metal kernel ✅, 6 unit testů ✅
 **Pearl (PRL):** ★★★ HIGHEST PRIORITY — PoUW MatMul + BLAKE3, 22x profitabilnější než KAS.
 **Status:** PearlStratum protocol ✅ (custom dialect: object params, no subscribe, plain_proof),
-CPU hasher ✅ (BLAKE3 placeholder), dispatch/harness ✅, GPU kernels ✅ (BLAKE3 placeholder),
-cosmic-harmony + server.rs integration ✅. 8/8 Pearl tests pass.
+CPU hasher ✅ (BLAKE3), GPU GEMM dispatch ✅ (`0bafbfe83`, 50x speedup), Merkle proof reconstruction ✅ (`705bff572`),
+pool-routed mode ✅ (`f524b7117`, SMOS v3.0.35-pearl-pool-routed), cosmic-harmony + server.rs integration ✅.
+8/8 Pearl tests pass. Pearl proof format fixed to match official alpha-miner (`a8aa4d1d3`).
 **E2E verified against suprnova** (prl.suprnova.cc:3373) — authorize ✅, notify ✅ (job 52f06ed4_2000000,
-height 86340, 76-byte header), job parsing ✅. **Remaining:** full PoUW MatMul kernels
-(INT8 tiled MatMul + noise + Plonky2 ZK), share submission, merge mining PRL+MDL.
+height 86340, 76-byte header), job parsing ✅. **Remaining:** full PoUW ZK kernels
+(Plonky2 ZK proofs), share submission E2E, merge mining PRL+MDL.
 
 ### Stream Profit Env Vars
 ```bash
@@ -262,7 +264,7 @@ ZION_RPC_DEBUG=0                # verbose RPC logging (default off)
 ### Pool
 ```bash
 ZION_POOL_BIND=0.0.0.0:8444
-ZION_PPLNS_WINDOW_SIZE=5000000  # for 10k miners
+ZION_PPLNS_WINDOW_SIZE=500000   # for 10k miners
 ZION_VARDIFF_TARGET_SECS=15
 ZION_NONCE_COUNT=4096
 ZION_MAX_SESSIONS_PER_IP=100
@@ -293,7 +295,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 | Memory limits (cgroup 2GB/3GB) | ✅ Active |
 | Swap file (4GB) | ✅ In fstab |
 | Journald limited (200M) | ✅ Active |
-| systemd User=zion | ⚠️ NOT DEPLOYED (still User=root) |
+| systemd User=zion | ⚠️ 10/12 services done (dashboard + dex still User=root) |
 | External audit | ⏳ Before public launch |
 
 ---
@@ -302,6 +304,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 
 | Date | Milestone | Key Commits |
 |------|-----------|-------------|
+| 07-14 | Dashboard fix: web-next port 3001→3000, miner health endpoint 8444→8455 — 14/14 UP | `0c17d445c` |
 | 07-14 | AuXpow Metal backend — all 6 algorithms on Apple M1 (18–23 BH/s, 28–224x vs OpenCL) | `a3cbc790b` |
 | 07-13 | Stream Profit R1b — live API fetching | `e1c28689b` |
 | 07-13 | Stream Profit R1c — GPU kernel parametrizace | `74a353205`, `87bb2b2f0` |
@@ -329,16 +332,16 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 ### Blocking (for public launch)
 1. **EVM contract redeploy** — New contracts with new admin keys + multisig (owner action)
 2. **External audit** — Genesis configuration audit before public launch
-3. **systemd User=zion** — Service files still use User=root
+3. **systemd User=zion** — 10/12 services done, dashboard + dex still User=root (need file relocation from /root/)
 
 ### Non-Blocking
 1. Deploy remaining 7 non-EVM chains (Tron, Cardano, Cosmos, Aptos, Sui, NEAR, TON)
 2. Multi-sig (5/5 WARP validators) for Solana mint authority + Stellar issuer
 3. LND node start on Edge (docker compose up + channels)
-4. ZionDex Router service on Edge (port 8454)
+4. ZionDex Router service on Edge (port 8454) — ✅ DONE (live, 7 chains)
 5. R2: DCR revenue live (WoolyPooly)
 6. R3: ALPH + KAS E2E (2miners)
-7. R4: Stream telemetry revenue report (dashboard + API)
+7. R4: Stream telemetry revenue report (dashboard + API) — ✅ DONE (`d189712a7`)
 8. R5: SMOS deploy + GPU mining (done — Vega rig `vega-smos` live on `zion-miner-v3.0.5-gpu-r6.zip`)
 9. R7: VRSC live E2E deploy (LuckPool, needs ZION_VRSC_WALLET — VerusHash C++ native build ✅ DONE)
 10. R8: True AuxPow consensus (future, 20-40h)
@@ -354,6 +357,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 | AGENTS.md | Root | Operating guidance for AI agents |
 | ROADMAP.md | Root | Forward roadmap |
 | AuxPlan.md | Root | AuxPow + Stream Profit development plan |
+| FullRevenueAuxPow.md | Root | 3-stream parallel mining canonical architecture (ZION + Pearl + Verus) |
 | AUXPOW_VRSC_B2B_PLAN.md | Root | VRSC B2b revenue integration design doc |
 | ZionDex.md | Root | ZionDex DEX router documentation |
 | Genesis reset runbook | `docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md` | Hard reset procedure |
