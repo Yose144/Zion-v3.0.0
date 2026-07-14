@@ -2,6 +2,13 @@ const API_BASE = 'http://127.0.0.1:8766';
 const EDGE_HOST = '100.76.16.108';
 const LOCAL_HOST = '127.0.0.1';
 
+// Optional Basic Auth for local Python dashboard (set VITE_DASHBOARD_USER / VITE_DASHBOARD_PASS)
+const DASHBOARD_USER = import.meta.env.VITE_DASHBOARD_USER as string | undefined;
+const DASHBOARD_PASS = import.meta.env.VITE_DASHBOARD_PASS as string | undefined;
+const AUTH_HEADER = (DASHBOARD_USER && DASHBOARD_PASS)
+  ? `Basic ${btoa(`${DASHBOARD_USER}:${DASHBOARD_PASS}`)}`
+  : undefined;
+
 // ── Types ─────────────────────────────────────────────────
 
 export interface ServiceHealth {
@@ -116,7 +123,7 @@ export interface MonitoringStatus {
 export async function apiFetch<T>(path: string): Promise<T | null> {
   try {
     const r = await fetch(`${API_BASE}${path}`, {
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/json', ...(AUTH_HEADER ? { Authorization: AUTH_HEADER } : {}) },
     });
     if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
     return (await r.json()) as T;
@@ -130,7 +137,7 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T | null
   try {
     const r = await fetch(`${API_BASE}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(AUTH_HEADER ? { Authorization: AUTH_HEADER } : {}) },
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
@@ -167,7 +174,7 @@ export async function probeTcp(host: string, port: number, timeoutMs = 2000): Pr
 export async function rpcCall(url: string, method: string, params?: unknown): Promise<unknown> {
   const r = await fetch(`${API_BASE}/api/proxy/rpc`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(AUTH_HEADER ? { Authorization: AUTH_HEADER } : {}) },
     body: JSON.stringify({ url, method, params }),
   });
   return r.json();
