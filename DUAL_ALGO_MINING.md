@@ -230,10 +230,45 @@ Key differences from suprnova Pearl stratum:
 
 ## Performance Notes
 
-- **CPU mode:** Full PoUW pipeline runs on CPU. A single mining attempt (m=512, n=512, k=4096, rank=256) takes ~30-60 seconds on a 12-thread CPU. This is sufficient for testing but not competitive for real mining.
-- **GPU mode (future):** OpenCL kernel for int8 GEMM on AMD GPU is planned. The CPU implementation is the reference; GPU will accelerate the noisy GEMM step.
-- **Memory:** Each mining attempt allocates ~4MB for matrices A, B, noise matrices, and intermediate GEMM results.
-- **Proof size:** ~178KB base64-encoded PlainProof (matches expected ~137KB binary size).
+- **CPU mode:** Full PoUW pipeline runs on CPU. A single mining attempt (m=512, n=512, k=4096, rank=256) trvá ~3.9 sekundy na serveru (12-thread CPU). To stačí pro testování, ale ne pro reálnou těžbu.
+- **GPU mode (AKTIVNÍ — 50.68x speedup):** OpenCL kernel `pearl_pouw_mine_real_v1` běží na AMD RX 5700 XT. CPU připraví noised matice (~63ms), GPU provede noisy GEMM + jackpot hash + target check (~13ms). Celkem ~76ms na attempt (13.1 attempts/s). Architektura: **CPU-prep + GPU GEMM dispatch** — viz [`GPU_NATIVE_PEARL_POUW_REPORT.md`](./GPU_NATIVE_PEARL_POUW_REPORT.md) sekce "Real Pearl PoUW GPU GEMM Dispatch".
+- **Memory:** Každý mining attempt alokuje ~4MB pro matice A, B, noise matice a intermediate GEMM výsledky.
+- **Proof size:** ~178KB base64-encoded PlainProof (odpovídá ~137KB binární velikosti).
+
+### GPU Architektura (CPU-prep + GPU GEMM Dispatch)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ CPU (63ms)                                                      │
+│  1. job_key = blake3(header || config)                          │
+│  2. Matice A, B (BLAKE3 PRNG, 32 bytů/hash)                     │
+│  3. Merkle stromy → hash_a, hash_b                              │
+│  4. Noise seedy (commitment hash)                               │
+│  5. Noise matice (E_AL, E_AR, E_BL, E_BR)                       │
+│  6. Noised A' = A + E_AL·E_AR (permutation index, O(m×k))       │
+│  7. Noised B'^T = transpose(B + E_BL·E_BR)                     │
+│  8. Upload A', B'^T, pow_key, target → GPU                      │
+└──────────────────────────┬──────────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ GPU (13ms) — pearl_pouw_mine_real_v1 kernel                    │
+│  • 256 work-groups (16×16 hash tiles, 256 work-items/group)    │
+│  • Paralelní GEMM: int8 × int8 → int32 accumulation             │
+│  • XOR redukce 256 → 1 (tree reduction)                        │
+│  • rotl_xor do 16-element transcriptu                          │
+│  • BLAKE3 keyed hash (key = noise_seed_a)                      │
+│  • LE U256 target porovnání (hash <= target)                    │
+│  • Atomic found flag + output tile + jackpot hash              │
+└──────────────────────────┬──────────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ CPU (pouze při nalezení share — vzácné)                        │
+│  1. Dekódovat tile_index → (a_row_indices, b_col_indices)       │
+│  2. create_plain_proof(A, B, indices, job_key)                  │
+│  3. bincode → base64 (~178KB)                                   │
+│  4. submitPlainProof → AlphaPool                                │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ## Testing
 
