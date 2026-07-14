@@ -1036,8 +1036,8 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "ports": {},
      "log": "miner.log", "start": "start-miner", "stop": None,
      "health_method": "log", "severity": "warning", "autoheal": True,
-     "health_endpoint": "http://127.0.0.1:8444",
-     "purpose": "Performs Deeksha PoW hashing to find new blocks. Connects to pool 8444.",
+     "health_endpoint": "http://127.0.0.1:8455/miners",
+     "purpose": "Performs Deeksha PoW hashing to find new blocks. Connects to pool 8444. Remote miners via Stratum.",
      "child_says": "⛏️ The miner digs for new gold (ZION coins)!",
      "depends_on": ["pool-edge"]},
 
@@ -1113,11 +1113,11 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "child_says": "🔒 The gatekeeper that protects our websites!",
      "depends_on": []},
     {"id": "web-next", "name": "Next.js Website", "icon": "🌐", "level": "Infra", "kind": "web",
-     "ports": {"http": 3001},
+     "ports": {"http": 3000},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "Next.js 16.2.9 website — 73+ routes, Docker container zion-web:nextjs. Port 3001.",
+     "purpose": "Next.js 16.2.9 website — 73+ routes, Docker container zion-web. Port 3000.",
      "child_says": "🌐 The public face of ZION — our website!",
      "depends_on": ["nginx"]},
 ]
@@ -4116,7 +4116,7 @@ def run_edge_action(action: str) -> dict:
         "restart-hiran":          "systemctl restart zion-hiran-inference 2>/dev/null || echo 'hiran not deployed'",
         "restart-hiranyagarbha":  "systemctl restart zion-hiranyagarbha 2>/dev/null || echo 'hiranyagarbha not deployed'",
         "restart-bridge":         "systemctl restart zion-bridge",
-        "restart-website":        "systemctl restart zion-web-next 2>/dev/null || docker restart zion-web-next 2>/dev/null || echo 'web in maintenance mode'",
+        "restart-website":        "systemctl restart zion-web-next 2>/dev/null || docker restart zion-web 2>/dev/null || echo 'web in maintenance mode'",
         "clean-docker":           "docker builder prune -af 2>&1; docker image prune -af 2>&1; docker container prune -f 2>&1",
         "security-audit":         "echo 'Security audit placeholder — run manually'",
         "full-health":            "systemctl is-active zion-node zion-pool zion-dao zion-warp zion-bridge nginx 2>&1",
@@ -9603,7 +9603,7 @@ def _build_health_map() -> dict:
         health[sid] = "up" if alive else "down"
     # Nginx + web-next: check via SSH on Edge server (not tunneled locally)
     for sid, cmd in [("nginx", "systemctl is-active nginx 2>/dev/null"),
-                     ("web-next", "systemctl is-active zion-web-next 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web-next 2>/dev/null")]:
+                     ("web-next", "systemctl is-active zion-web-next 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web 2>/dev/null")]:
         try:
             result = _run_edge_cmd(cmd, timeout=3)
             alive = result.returncode == 0 and "active" in (result.stdout or "").strip() or "true" in (result.stdout or "").strip()
