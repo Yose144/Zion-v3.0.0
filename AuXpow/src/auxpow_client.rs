@@ -68,18 +68,27 @@ impl ExternalCoin {
             Self::VRSC => {
                 StratumProtocol::ZcashStratum
             }
+            // EPIC (Epic Cash) uses a custom JSON-RPC 2.0 protocol over HTTP POST
+            // (getjobtemplate / job / submit / keepalive / login). For now, we
+            // treat it as Stratum v1 — a dedicated EpicStratumClient may be needed
+            // for the HTTP POST transport + TLS differences.
+            Self::EPIC => {
+                StratumProtocol::Stratum
+            }
         }
     }
 
     /// Epoch length for DAG-based coins.
     /// Ethash/ETC: 30000 blocks per epoch.
     /// KawPow/RVN: 7500 blocks per epoch.
+    /// ProgPow/EPIC: 30000 blocks per epoch (same as Ethash).
     pub fn epoch_length(self) -> u32 {
         match self {
             Self::RVN | Self::CLORE | Self::EVR | Self::MEWC => {
                 crate::external_hashers::KAWPOW_EPOCH_LENGTH
             }
             Self::ETC => crate::external_hashers::ETHASH_EPOCH_LENGTH,
+            Self::EPIC => crate::external_hashers::PROGPOW_EPOCH_LENGTH,
             _ => crate::external_hashers::ETHASH_EPOCH_LENGTH,
         }
     }
@@ -1212,13 +1221,19 @@ impl AuxPowClient {
                     // Instead, we keep a rolling window of recent jobs and let old
                     // entries age out naturally.
                     if clean_jobs {
-                        // Keep only the last 16 jobs to bound memory.
+                        // Keep only the most recent 64 jobs to bound memory.
+                        // VRSC job IDs are monotonically increasing hex strings,
+                        // so we sort lexicographically and remove the smallest
+                        // (oldest) entries.  HashMap iteration order is random,
+                        // so we MUST sort to avoid evicting active jobs.
                         let mut sol = self.job_solution.lock().await;
                         let mut nt = self.job_ntime.lock().await;
                         let mut hp = self.job_header_prefix.lock().await;
-                        if sol.len() > 16 {
-                            let keys: Vec<String> = sol.keys().cloned().collect();
-                            for k in &keys[..keys.len() - 16] {
+                        if sol.len() > 64 {
+                            let mut keys: Vec<String> = sol.keys().cloned().collect();
+                            keys.sort();
+                            let remove_count = keys.len() - 64;
+                            for k in &keys[..remove_count] {
                                 sol.remove(k);
                                 nt.remove(k);
                                 hp.remove(k);
@@ -1239,9 +1254,31 @@ impl AuxPowClient {
                     }
 
                     // Build the hashing blob:
-                    // header_prefix(108B=216hex) + varint(fd4005=3B=6hex) + solution(1344B=2688hex)
+                    // VerusCoin block header = version(4) + prevhash(32) + merkle(32)
+                    //   + reserved(32) + ntime(4) + nbits(4) + nonce(32) + varint(3)
+                    //   + solution(1344) = 1487 bytes total.
+                    // The nonce field (32 bytes at offset 108) = extranonce1 + nonce2.
+                    // The nonceSpace (15 bytes at solution offset 1329) = extranonce1
+                    //   + padding + miner_nonce (PBaaS v7+).
+                    // Both are initialized with extranonce1 + zeros; the miner
+                    // fills in the miner_nonce portion during scanning.
                     let blob = if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
-                        format!("{}{}{}{}{}{}fd4005{}", version, prevhash, merkle, reserved, ntime, nbits, effective_solution)
+                        let en1 = hex::encode(self.extranonce1.lock().await.clone());
+                        // 32-byte nonce field: extranonce1 + zeros padded to 32 bytes
+                        let nonce_field = format!("{:0<64}", en1); // 64 hex chars = 32 bytes
+                        // Embed extranonce1 into solution nonceSpace (last 15 bytes = 30 hex)
+                        let mut sol_with_ns = effective_solution.clone();
+                        if sol_with_ns.len() == 2688 && !en1.is_empty() {
+                            let mut ns = en1.clone();
+                            if ns.len() < 30 {
+                                ns.push_str(&"0".repeat(30 - ns.len()));
+                            }
+                            if ns.len() > 30 {
+                                ns.truncate(30);
+                            }
+                            sol_with_ns.replace_range(2658..2688, &ns);
+                        }
+                        format!("{}{}{}{}{}{}{}fd4005{}", version, prevhash, merkle, reserved, ntime, nbits, nonce_field, sol_with_ns)
                     } else {
                         format!("{}{}{}{}{}{}{}", version, prevhash, merkle, reserved, ntime, nbits, effective_solution)
                     };
@@ -1625,7 +1662,12 @@ impl AuxPowClient {
                 }
             };
 
-            // Build nonce2: extranonce1 (hex) + miner_nonce(LE 4B) + zero padding.
+            // Build nonce2: miner_nonce(LE 4B) + zero padding.
+            // For VRSC (VerusHash/PBaaS v7+): nonceSpace = 15 bytes total.
+            //   nonce2 = nonceSpace - len(extranonce1) = 15 - en_bytes
+            //   The pool reconstructs nonceSpace = extranonce1 + nonce2 (15 bytes).
+            // For standard Zcash (FLUX/Equihash): nonce field = 32 bytes total.
+            //   nonce2 = 32 - en_bytes
             let en1_hex = hex::encode(self.extranonce1.lock().await.clone());
             let nonce2_4b = {
                 let padded = format!("{:0>8x}", nonce & 0xFFFFFFFF);
@@ -1637,12 +1679,34 @@ impl AuxPowClient {
             };
             let nonce2_str = {
                 let en_bytes = en1_hex.len() / 2;
-                let nonce2_bytes = 32usize.saturating_sub(en_bytes);
+                // VRSC: 15-byte nonceSpace; standard Zcash: 32-byte nonce field
+                let nonce_space_total = if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
+                    15usize
+                } else {
+                    32usize
+                };
+                let nonce2_bytes = nonce_space_total.saturating_sub(en_bytes);
                 let nonce2_hex_len = nonce2_bytes * 2;
-                let mut out = nonce2_4b.clone();
-                if out.len() < nonce2_hex_len {
-                    out.push_str(&"0".repeat(nonce2_hex_len - out.len()));
-                } else if out.len() > nonce2_hex_len {
+                // VRSC nonceSpace layout: [en1][padding][miner_nonce]
+                //   → nonce2 = [padding][miner_nonce] (miner_nonce at END)
+                // Standard Zcash nonce: [en1][miner_nonce][padding]
+                //   → nonce2 = [miner_nonce][padding] (miner_nonce at START)
+                let is_verushash = self.profile.algorithm.eq_ignore_ascii_case("verushash");
+                let mut out = String::new();
+                if is_verushash {
+                    let pad_len = nonce2_hex_len.saturating_sub(nonce2_4b.len());
+                    if pad_len > 0 {
+                        out.push_str(&"0".repeat(pad_len));
+                    }
+                    out.push_str(&nonce2_4b);
+                } else {
+                    out.push_str(&nonce2_4b);
+                    let pad_len = nonce2_hex_len.saturating_sub(out.len());
+                    if pad_len > 0 {
+                        out.push_str(&"0".repeat(pad_len));
+                    }
+                }
+                if out.len() > nonce2_hex_len {
                     out.truncate(nonce2_hex_len);
                 }
                 out
@@ -3085,9 +3149,9 @@ mod tests {
             assert_eq!(params.len(), 5, "VRSC submit must have 5 params");
             assert_eq!(params[1].as_str().unwrap(), job_id);
             assert_eq!(params[2].as_str().unwrap(), ntime);
-            // nonce2 = 32 bytes total - extranonce1(4 bytes) = 28 bytes = 56 hex chars
+            // nonce2 = 15 bytes nonceSpace - extranonce1(4 bytes) = 11 bytes = 22 hex chars
             let nonce2 = params[3].as_str().unwrap();
-            assert_eq!(nonce2.len(), 56, "nonce2 must be 28 bytes (56 hex chars) with 4-byte extranonce1");
+            assert_eq!(nonce2.len(), 22, "nonce2 must be 11 bytes (22 hex chars) with 4-byte extranonce1 (PBaaS v7+ 15-byte nonceSpace)");
             // solution_with_varint should start with fd4005 and be 2694 hex chars
             let solution = params[4].as_str().unwrap();
             assert!(solution.starts_with("fd4005"), "solution must start with varint fd4005");
@@ -3113,9 +3177,9 @@ mod tests {
         assert_eq!(job.job_id, job_id);
         assert_eq!(job.external_coin, ExternalCoin::VRSC);
         assert_eq!(job.algorithm, "verushash");
-        // Blob = header_prefix(108B=216hex) + varint(6hex) + solution(2688hex) = 2910 hex
-        assert_eq!(job.header_hex.len(), 2910, "VRSC blob must be 2910 hex chars (108+3+1344 bytes)");
-        assert_eq!(job.header_bytes.len(), 1455, "VRSC blob must be 1455 bytes");
+        // Blob = header_prefix(108B=216hex) + nonce_field(32B=64hex) + varint(6hex) + solution(2688hex) = 2974 hex
+        assert_eq!(job.header_hex.len(), 2974, "VRSC blob must be 2974 hex chars (108+32+3+1344 bytes)");
+        assert_eq!(job.header_bytes.len(), 1487, "VRSC blob must be 1487 bytes");
 
         // Submit a share with nonce 0x1234abcd
         let result = client.submit_share(job_id, 0x1234abcd, "deadbeef", None).await.unwrap();

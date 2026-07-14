@@ -394,6 +394,20 @@ impl AuxPowScheduler {
                     // real ZelHash mining requires a GPU kernel.
                     hash_blake3(header, 0, nonce)
                 }
+                ExternalAlgorithm::ProgPow => {
+                    // ProgPow (EPIC) — GPU-only algorithm. CPU fallback uses
+                    // the simplified pure-Rust hasher (no DAG, no random math).
+                    // Real mining requires the OpenCL/Metal kernel.
+                    let mut h32 = [0u8; 32];
+                    let len = header.len().min(32);
+                    h32[..len].copy_from_slice(&header[..len]);
+                    let (_mix, final_hash) = crate::external_hashers::hash_progpow(
+                        &h32,
+                        nonce,
+                        job.timestamp.unwrap_or(0) as u32,
+                    );
+                    final_hash
+                }
             };
 
             let meets = if job.external_coin == ExternalCoin::DCR {

@@ -252,8 +252,50 @@ fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> 
     let header = &job.header_bytes;
     let target = &job.target_bytes;
 
+    // VerusCoin block header layout (1487 bytes):
+    //   offset 0:   version(4)
+    //   offset 4:   prevhash(32)
+    //   offset 36:  merkle(32)
+    //   offset 68:  reserved(32)
+    //   offset 100: ntime(4)
+    //   offset 104: nbits(4)
+    //   offset 108: nonce(32)        ← miner_nonce goes here
+    //   offset 140: varint(3)
+    //   offset 143: solution(1344)
+    //     solution offset 1329 (= blob offset 1472): nonceSpace(15) ← also miner_nonce
+    //
+    // The extranonce1 is already embedded in both the nonce field and
+    // nonceSpace by the pool's notify parser.  The miner writes its
+    // 4-byte LE nonce at:
+    //   - nonce field: offset 108 + en1_len
+    //   - nonceSpace:  offset 143 + 1329 + en1_len = offset 1472 + en1_len
+    //
+    // For a 4-byte extranonce1 (typical for LuckPool), miner_nonce goes at:
+    //   - nonce field offset 112
+    //   - nonceSpace offset 1476
+
+    let en1_len = job.extranonce1.len();
+    let nonce_field_offset = 108 + en1_len;
+    let nonce_space_blob_offset = 143 + 1329 + en1_len; // = 1472 + en1_len
+
+    let mut work_header = header.to_vec();
+
     for nonce in start..end {
-        let hash = crate::external_hashers::hash_verushash(header, nonce);
+        let nonce_le = (nonce as u32).to_le_bytes();
+
+        // Write miner_nonce into the 32-byte nonce field
+        if nonce_field_offset + 4 <= work_header.len() {
+            work_header[nonce_field_offset..nonce_field_offset + 4]
+                .copy_from_slice(&nonce_le);
+        }
+
+        // Write miner_nonce into the solution nonceSpace
+        if nonce_space_blob_offset + 4 <= work_header.len() {
+            work_header[nonce_space_blob_offset..nonce_space_blob_offset + 4]
+                .copy_from_slice(&nonce_le);
+        }
+
+        let hash = crate::external_hashers::hash_verushash_header(&work_header);
         if meets_target(&hash, target) {
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
@@ -500,9 +542,23 @@ fn scan_ethash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare
 fn scan_verushash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
     let header = &job.header_bytes;
 
+    let en1_len = job.extranonce1.len();
+    let nonce_field_offset = 108 + en1_len;
+    let nonce_space_blob_offset = 143 + 1329 + en1_len;
+    let mut work_header = header.to_vec();
+
     let mut best: Option<FoundShare> = None;
     for nonce in start..end {
-        let hash = crate::external_hashers::hash_verushash(header, nonce);
+        let nonce_le = (nonce as u32).to_le_bytes();
+        if nonce_field_offset + 4 <= work_header.len() {
+            work_header[nonce_field_offset..nonce_field_offset + 4]
+                .copy_from_slice(&nonce_le);
+        }
+        if nonce_space_blob_offset + 4 <= work_header.len() {
+            work_header[nonce_space_blob_offset..nonce_space_blob_offset + 4]
+                .copy_from_slice(&nonce_le);
+        }
+        let hash = crate::external_hashers::hash_verushash_header(&work_header);
         if best
             .as_ref()
             .map(|b| is_hash_better(&hash, &b.hash, false))

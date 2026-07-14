@@ -59,9 +59,10 @@ fn main() {
         ("kheavyhash", "Kaspa (KAS)"),
         ("autolykos", "Ergo (ERG)"),
         ("zelhash", "FLUX (ZelHash)"),
-        // Ethash/KawPow need DAG — skip for pure hashrate benchmark
+        // Ethash/KawPow/ProgPow need DAG — skip for pure hashrate benchmark
         // ("ethash", "Ethereum Classic (ETC)"),
         // ("kawpow", "Ravencoin (RVN)"),
+        // ("progpow", "Epic Cash (EPIC)"),
     ];
 
     println!("{:<20} {:<25} {:>15} {:>15}", "Algorithm", "Coin", "Hashrate (H/s)", "Total Hashes");
