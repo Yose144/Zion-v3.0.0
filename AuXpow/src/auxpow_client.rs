@@ -40,6 +40,23 @@ pub enum StratumProtocol {
     /// Zcash/Equihash Stratum (mining.notify with solution field, 5-param submit)
     /// Used by VRSC (Verus) and other Equihash-based coins.
     ZcashStratum,
+    /// Pearl Stratum — custom JSON-RPC dialect for Pearl (PRL) PoUW mining.
+    ///
+    /// Key differences from standard Stratum v1:
+    ///   - No mining.subscribe — go straight to mining.authorize
+    ///   - params are JSON **objects** (named params), not arrays
+    ///   - mining.authorize: {wallet, worker?, pass?, agent?}
+    ///   - mining.notify: {header (76-byte hex), height, job_id, target}
+    ///     - Pool pushes notify BEFORE authorize ack
+    ///   - mining.submit: {job_id, plain_proof (base64)}
+    ///     - No nonce/extranonce field — randomness lives in PlainProof
+    ///   - No mining.set_difficulty — difficulty conveyed via notify target
+    ///   - Server-pushed notifications use "id": null
+    ///   - Error codes: 20 (method not supported), 21 (stale job),
+    ///     22 (duplicate share), 23 (low difficulty), 24 (wallet missing),
+    ///     25 (invalid proof/wallet malformed), 26 (invalid proof),
+    ///     27 (unauthorized)
+    PearlStratum,
 }
 
 impl ExternalCoin {
@@ -75,12 +92,11 @@ impl ExternalCoin {
             Self::EPIC => {
                 StratumProtocol::Stratum
             }
-            // Pearl (PRL) uses standard Stratum v1 over TCP.
-            // mining.subscribe / mining.authorize / mining.notify / mining.submit
-            // No DAG — matrices generated per-job from seed.
-            // Merge mining: PRL + MDL via "prl1PRL+mdl1MDL" address format.
+            // Pearl (PRL) uses a custom JSON-RPC dialect over TCP.
+            // Object params (not arrays), no mining.subscribe, plain_proof submit.
+            // See StratumProtocol::PearlStratum docs for full protocol details.
             Self::PRL => {
-                StratumProtocol::Stratum
+                StratumProtocol::PearlStratum
             }
         }
     }
@@ -277,7 +293,10 @@ impl AuxPowClient {
         });
 
         // Subscribe + Authorize
-        self.subscribe().await?;
+        // PearlStratum: no mining.subscribe — go straight to authorize.
+        if self.protocol != StratumProtocol::PearlStratum {
+            self.subscribe().await?;
+        }
         self.authorize(payout_wallet).await?;
 
         // For EthStratum pools, start periodic eth_getWork polling.
@@ -320,7 +339,10 @@ impl AuxPowClient {
     /// Uses inline reads because the poll loop is not running during reconnect.
     async fn reconnect(&self, payout_wallet: &str) -> Result<()> {
         self.connect_tcp().await?;
-        self.subscribe_inline().await?;
+        // PearlStratum: no mining.subscribe — go straight to authorize.
+        if self.protocol != StratumProtocol::PearlStratum {
+            self.subscribe_inline().await?;
+        }
         self.authorize_inline(payout_wallet).await?;
         info!("AuxPow: reconnected and authorized for {}", self.profile.coin);
         Ok(())
@@ -459,11 +481,14 @@ impl AuxPowClient {
         let worker = format!("{}.{}", payout_wallet, self.profile.worker_name);
         let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
         let is_zcash = self.protocol == StratumProtocol::ZcashStratum;
+        let is_pearl = self.protocol == StratumProtocol::PearlStratum;
         let password = if !self.profile.password.is_empty() {
             self.profile.password.as_str()
         } else if is_zcash {
             "d=0.01"
         } else if is_ethstratum {
+            "x"
+        } else if is_pearl {
             "x"
         } else if self.profile.coin == ExternalCoin::DCR {
             // DCR (WoolyPooly / zpool) accepts a starting share difficulty in the
@@ -488,11 +513,27 @@ impl AuxPowClient {
         } else {
             "mining.authorize"
         };
-        let req = json!({
-            "id": 2,
-            "method": method,
-            "params": [worker, password]
-        });
+
+        // PearlStratum uses JSON object params (named params), not arrays.
+        let req = if is_pearl {
+            json!({
+                "id": 2,
+                "method": "mining.authorize",
+                "params": {
+                    "wallet": payout_wallet,
+                    "worker": self.profile.worker_name,
+                    "pass": password,
+                    "agent": "zion-auxpow/0.1"
+                }
+            })
+        } else {
+            json!({
+                "id": 2,
+                "method": method,
+                "params": [worker, password]
+            })
+        };
+
         let resp = self.send_request_inline(&req).await?;
         let ok = if is_ethstratum {
             resp.get("result").and_then(|v| v.as_bool()).unwrap_or(false)
@@ -593,6 +634,7 @@ impl AuxPowClient {
         let worker = format!("{}.{}", payout_wallet, self.profile.worker_name);
         let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
         let is_zcash = self.protocol == StratumProtocol::ZcashStratum;
+        let is_pearl = self.protocol == StratumProtocol::PearlStratum;
         let password = if !self.profile.password.is_empty() {
             self.profile.password.as_str()
         } else if is_zcash {
@@ -600,6 +642,10 @@ impl AuxPowClient {
             // d=0.01 gives frequent shares on low hashrate; pool will raise via vardiff.
             "d=0.01"
         } else if is_ethstratum {
+            "x"
+        } else if is_pearl {
+            // Pearl (PRL): password may carry d=N for custom difficulty.
+            // Default "x" — pool will use VarDiff on port 5566.
             "x"
         } else if self.profile.coin == ExternalCoin::DCR {
             // DCR (WoolyPooly / zpool) accepts a starting share difficulty in the
@@ -624,11 +670,33 @@ impl AuxPowClient {
         } else {
             "mining.authorize"
         };
-        let req = json!({
-            "id": 2,
-            "method": method,
-            "params": [worker, password]
-        });
+
+        // PearlStratum uses JSON object params (named params), not arrays.
+        // {wallet, worker?, pass?, agent?}
+        // The pool also accepts glued "wallet.worker" form for compatibility.
+        let req = if is_pearl {
+            json!({
+                "id": 2,
+                "method": "mining.authorize",
+                "params": {
+                    "wallet": payout_wallet,
+                    "worker": self.profile.worker_name,
+                    "pass": password,
+                    "agent": "zion-auxpow/0.1"
+                }
+            })
+        } else {
+            json!({
+                "id": 2,
+                "method": method,
+                "params": [worker, password]
+            })
+        };
+
+        // PearlStratum: the pool pushes mining.notify BEFORE the authorize ack.
+        // The send_request() function already handles skipping notifications
+        // while waiting for the response with matching id, so the notify will
+        // be processed by the poll loop's notification handler.
         let resp = self.send_request(&req).await?;
         let ok = if is_ethstratum {
             // EthStratum may return result=true or result="0x..." for success.
@@ -841,6 +909,67 @@ impl AuxPowClient {
                 "auxpow: DCR raw notify params (truncated): {:.500}",
                 serde_json::to_string(params).unwrap_or_default()
             );
+        }
+
+        // Pearl (PRL) PearlStratum: params is a JSON **object** (named params):
+        //   {header (76-byte hex), height (int), job_id (string), target (64-hex)}
+        // The header is an incomplete Pearl block header (76 of 108 bytes).
+        // The target is a 256-bit big-endian hex string (share threshold).
+        // No extranonce — randomness lives inside the PlainProof on submit.
+        if self.protocol == StratumProtocol::PearlStratum {
+            if let Some(obj) = params.as_object() {
+                let job_id = obj
+                    .get("job_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown")
+                    .to_string();
+                let header_hex = obj
+                    .get("header")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let target_hex = obj
+                    .get("target")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("ffff")
+                    .to_string();
+                let height = obj
+                    .get("height")
+                    .and_then(|v| v.as_u64())
+                    .or(notify_height);
+
+                let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
+                    .unwrap_or_default();
+                let target_bytes = crate::external_hashers::parse_target_hex(&target_hex)
+                    .unwrap_or([0xFFu8; 32]);
+
+                println!(
+                    "auxpow: PRL notify — job={} header_len={} height={:?} target={:.16}...",
+                    job_id,
+                    header_bytes.len(),
+                    height,
+                    target_hex,
+                );
+
+                return Ok(ExternalJob {
+                    job_id,
+                    header_hex,
+                    target_hex,
+                    seed_hash: None,
+                    block_number: height,
+                    algorithm: self.profile.algorithm.clone(),
+                    header_bytes,
+                    target_bytes,
+                    timestamp: None,
+                    nbits: None,
+                    external_coin: self.profile.coin,
+                    from_group: 0,
+                    to_group: 0,
+                    extranonce1: Vec::new(), // Pearl has no extranonce
+                    extranonce2: String::new(),
+                    epoch: None,
+                });
+            }
         }
         // Alephium (Blake3) sends notify params as [ {object} ], where the
         // object contains: jobId, headerBlob, targetBlob, height, fromGroup,
@@ -1791,6 +1920,56 @@ impl AuxPowClient {
             let nonce_le_bytes = (nonce as u32).to_le_bytes();
             let nonce_hex = hex::encode(nonce_le_bytes);
             ("mining.submit", json!([worker, job_id, "", ntime, nonce_hex]))
+        } else if self.protocol == StratumProtocol::PearlStratum {
+            // Pearl (PRL) PearlStratum submit: object params, no nonce.
+            //   {job_id, plain_proof (base64)}
+            // The plain_proof encodes the PoUW proof (MatMul + noise + BLAKE3).
+            // With the BLAKE3 placeholder hasher, we construct a minimal
+            // placeholder proof containing the nonce so the pool can verify
+            // the share hash. The real proof requires the full PoUW kernel.
+            //
+            // PlainProof binary layout (simplified placeholder):
+            //   m(8B LE) | n(8B LE) | k(8B LE) | noise_rank(8B LE)
+            //   | nonce(8B LE) | header_hash(32B) | blake3_hash(32B)
+            // Total: 96 bytes → base64
+            let mut proof_bytes = Vec::with_capacity(96);
+            // Dimensions (placeholder values within sanity bounds)
+            proof_bytes.extend_from_slice(&512u64.to_le_bytes());     // m
+            proof_bytes.extend_from_slice(&512u64.to_le_bytes());     // n
+            proof_bytes.extend_from_slice(&4096u64.to_le_bytes());    // k
+            proof_bytes.extend_from_slice(&256u64.to_le_bytes());     // noise_rank
+            // Nonce
+            proof_bytes.extend_from_slice(&nonce.to_le_bytes());
+            // Header hash (first 32 bytes of header_bytes)
+            let job = self.current_job().await;
+            let header_hash = job
+                .as_ref()
+                .map(|j| {
+                    let mut h = [0u8; 32];
+                    let len = j.header_bytes.len().min(32);
+                    h[..len].copy_from_slice(&j.header_bytes[..len]);
+                    h
+                })
+                .unwrap_or([0u8; 32]);
+            proof_bytes.extend_from_slice(&header_hash);
+            // BLAKE3 placeholder hash
+            let hash = crate::external_hashers::hash_pearl(&header_hash, nonce);
+            proof_bytes.extend_from_slice(&hash);
+
+            let plain_proof = base64::Engine::encode(
+                &base64::engine::general_purpose::STANDARD,
+                &proof_bytes,
+            );
+
+            println!(
+                "auxpow: PRL submit — job={} nonce={} proof_len={}",
+                job_id, nonce, plain_proof.len()
+            );
+
+            ("mining.submit", json!({
+                "job_id": job_id,
+                "plain_proof": plain_proof
+            }))
         } else {
             let hex = format!("0x{:016x}", nonce);
             let wallet = self.payout_wallet.lock().await.clone();
@@ -2179,6 +2358,7 @@ impl StratumProtocol {
             Self::Stratum => "stratum",
             Self::EthStratum => "ethstratum",
             Self::ZcashStratum => "zcashstratum",
+            Self::PearlStratum => "pearlstratum",
         }
     }
 }
@@ -3365,5 +3545,116 @@ mod tests {
         // At difficulty 2 the high byte should halve to 0x01.
         let target2 = difficulty_to_target_with_max(2.0, &max);
         assert_eq!(target2[3], 0x01);
+    }
+
+    // ── Pearl (PRL) PearlStratum tests ──────────────────────────────
+
+    #[test]
+    fn pearl_protocol_is_pearl_stratum() {
+        assert_eq!(
+            ExternalCoin::PRL.protocol(),
+            StratumProtocol::PearlStratum
+        );
+        assert_eq!(StratumProtocol::PearlStratum.as_str(), "pearlstratum");
+    }
+
+    #[tokio::test]
+    async fn pearl_stratum_round_trip_notify_and_submit() {
+        // Mock Pearl stratum server: no subscribe, object params, notify before ack.
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let (host_str, port) = {
+            let mut parts = addr.split(':');
+            let h = parts.next().unwrap_or("127.0.0.1");
+            let p: u16 = parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
+            (h, p)
+        };
+
+        let server_task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (mut reader, mut writer) = socket.split();
+            let mut buf = vec![0u8; 65536];
+
+            // Pearl protocol: NO mining.subscribe.
+            // Read mining.authorize (object params, not array)
+            let n = reader.read(&mut buf).await.unwrap();
+            let auth_req: Value = serde_json::from_slice(&buf[..n]).unwrap();
+            assert_eq!(auth_req["method"], "mining.authorize");
+            // Verify object params (not array)
+            assert!(auth_req["params"].is_object());
+            assert!(auth_req["params"]["wallet"].is_string());
+            assert!(auth_req["params"]["worker"].is_string());
+
+            // Pearl: push mining.notify BEFORE authorize ack
+            // 76-byte header = 152 hex chars
+            let header_hex = "00".repeat(76);
+            let notify = json!({
+                "id": null,
+                "method": "mining.notify",
+                "params": {
+                    "header": header_hex,
+                    "height": 67204,
+                    "job_id": "32fc29f1_500000",
+                    "target": "000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                }
+            });
+            let notify_str = serde_json::to_string(&notify).unwrap() + "\n";
+            writer.write_all(notify_str.as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+
+            // Send authorize ack
+            let auth_resp = json!({
+                "id": 2,
+                "result": true,
+                "error": null
+            });
+            let resp_str = serde_json::to_string(&auth_resp).unwrap() + "\n";
+            writer.write_all(resp_str.as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+
+            // Read mining.submit (object params: job_id + plain_proof)
+            let n = reader.read(&mut buf).await.unwrap();
+            let submit_req: Value = serde_json::from_slice(&buf[..n]).unwrap();
+            assert_eq!(submit_req["method"], "mining.submit");
+            // Verify object params
+            assert!(submit_req["params"].is_object());
+            assert_eq!(submit_req["params"]["job_id"], "32fc29f1_500000");
+            assert!(submit_req["params"]["plain_proof"].is_string());
+
+            // Send submit response (accepted)
+            let submit_resp = json!({ "id": 100, "result": true, "error": null });
+            let resp_str = serde_json::to_string(&submit_resp).unwrap() + "\n";
+            writer.write_all(resp_str.as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+        });
+
+        // Create client for PRL
+        let mut profile = CoinProfile::default_for(ExternalCoin::PRL);
+        profile.pool_host = host_str.to_string();
+        profile.pool_port = port;
+        profile.worker_name = "test_rig".to_string();
+        let client = AuxPowClient::new(profile);
+
+        // Connect (will skip subscribe, go straight to authorize)
+        let wallet = "prl1ptestwallet1234567890abcdefghijklmnopqrstuvwxyz";
+        client.connect(wallet).await.unwrap();
+
+        // Wait for job to arrive
+        tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+        let job = client.current_job().await;
+        assert!(job.is_some(), "Should have received a job");
+        let job = job.unwrap();
+        assert_eq!(job.job_id, "32fc29f1_500000");
+        assert_eq!(job.external_coin, ExternalCoin::PRL);
+        assert_eq!(job.header_bytes.len(), 76); // 76-byte incomplete Pearl header
+        assert_eq!(job.block_number, Some(67204));
+
+        // Submit a share
+        let result = client.submit_share("32fc29f1_500000", 42, "abcd", None).await;
+        assert!(result.is_ok(), "Share submission should succeed");
+        assert_eq!(result.unwrap(), ShareResult::Accepted);
+
+        // Clean up
+        server_task.await.unwrap();
     }
 }

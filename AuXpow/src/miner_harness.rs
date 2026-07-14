@@ -64,6 +64,7 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
         "kawpow" => Ok(scan_kawpow(job, start, end)),
         "ethash" | "etchash" => Ok(scan_ethash(job, start, end)),
         "verushash" => Ok(scan_verushash(job, start, end)),
+        "pearlhash" => Ok(scan_pearl(job, start, end)),
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
 }
@@ -96,6 +97,7 @@ pub fn mine_best(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option
         "kawpow" => Ok(scan_kawpow_best(job, start, end)),
         "ethash" | "etchash" => Ok(scan_ethash_best(job, start, end)),
         "verushash" => Ok(scan_verushash_best(job, start, end)),
+        "pearlhash" => Ok(scan_pearl_best(job, start, end)),
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
 }
@@ -560,6 +562,61 @@ fn scan_verushash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
                 .copy_from_slice(&nonce_le);
         }
         let hash = crate::external_hashers::hash_verushash_header(&work_header);
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&hash, &b.hash, false))
+            .unwrap_or(true)
+        {
+            best = Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    best
+}
+
+// ── Pearl (PRL) — PearlHash PoUW ─────────────────────────────────────
+
+/// CPU scan for Pearl shares using the simplified BLAKE3 placeholder hash.
+///
+/// Pearl's real PoUW algorithm involves INT8 MatMul + noise + BLAKE3 proof
+/// extraction, which requires GPU kernels. This CPU scan uses the BLAKE3
+/// placeholder for protocol testing and share verification.
+fn scan_pearl(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let target = &job.target_bytes;
+
+    // Pearl header is 76 bytes (incomplete block header from pool).
+    // The hash is computed over header || nonce_le.
+    let mut h32 = [0u8; 32];
+    let len = header.len().min(32);
+    h32[..len].copy_from_slice(&header[..len]);
+
+    for nonce in start..end {
+        let hash = crate::external_hashers::hash_pearl(&h32, nonce);
+        if meets_target(&hash, target) {
+            return Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    None
+}
+
+/// CPU scan for the best Pearl share (lowest hash) in the range.
+fn scan_pearl_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let mut h32 = [0u8; 32];
+    let len = header.len().min(32);
+    h32[..len].copy_from_slice(&header[..len]);
+
+    let mut best: Option<FoundShare> = None;
+    for nonce in start..end {
+        let hash = crate::external_hashers::hash_pearl(&h32, nonce);
         if best
             .as_ref()
             .map(|b| is_hash_better(&hash, &b.hash, false))
