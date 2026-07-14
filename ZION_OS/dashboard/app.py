@@ -7555,6 +7555,46 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       </div>
     </div>
 
+    <!-- Triple Stream Mining (Claymore-style 3-stream parallel) -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">⚡ Triple Stream Mining <span class="text-xs px-2 py-0.5 rounded bg-amber-600/30 text-amber-300">v3.0.6</span></h2>
+        <span class="text-xs text-gray-500" id="triple-stream-summary">—</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <!-- Stream 1: ZION Deeksha -->
+        <div class="bg-zion-900 rounded-lg p-3 border border-cyan-900/50">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-cyan-400">Stream 1 — ZION</span>
+            <span class="text-[10px] text-gray-500">Deeksha Lite v1</span>
+          </div>
+          <div class="text-2xl font-bold text-cyan-300" id="stream-zion-shares">—</div>
+          <div class="text-xs text-gray-400 mb-1">Shares (acc/rej)</div>
+          <div class="text-xs text-gray-500" id="stream-zion-pct">—</div>
+        </div>
+        <!-- Stream 2: Pearl PoUW -->
+        <div class="bg-zion-900 rounded-lg p-3 border border-fuchsia-900/50">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-fuchsia-400">Stream 2 — PRL</span>
+            <span class="text-[10px] text-gray-500">Pearl PoUW</span>
+          </div>
+          <div class="text-2xl font-bold text-fuchsia-300" id="stream-prl-shares">—</div>
+          <div class="text-xs text-gray-400 mb-1">Proofs (acc/rej)</div>
+          <div class="text-xs text-gray-500" id="stream-prl-pct">—</div>
+        </div>
+        <!-- Stream 3: External AuxPow -->
+        <div class="bg-zion-900 rounded-lg p-3 border border-amber-900/50">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-amber-400">Stream 3 — EXT</span>
+            <span class="text-[10px] text-gray-500" id="stream-ext-coin">AuxPow</span>
+          </div>
+          <div class="text-2xl font-bold text-amber-300" id="stream-ext-shares">—</div>
+          <div class="text-xs text-gray-400 mb-1">Shares (acc/rej)</div>
+          <div class="text-xs text-gray-500" id="stream-ext-pct">—</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Mainnet Readiness Status -->
     <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
       <div class="flex items-center justify-between mb-3">
@@ -8928,6 +8968,7 @@ async function refreshAll(){
     updateAlerts(al.alerts);
     updateChecklist(cl.checks);
     updatePayouts(s.pool);
+    updateTripleStream(s);
     updateMiniHashrate();
     loadMainnetStatus();
     if(currentTab==='charts')renderCharts();
@@ -9000,6 +9041,49 @@ function updateServiceCards(s){
   document.getElementById('val-miner-gpu').textContent=(m.gpu_backend?m.gpu_backend+': ':'')+(m.gpu_device??'—');
   document.getElementById('val-miner-height').textContent=m.current_height??'—';
   document.getElementById('val-miner-diff').textContent=m.current_diff??'—';
+}
+
+// ── Triple Stream Mining panel (Claymore-style 3-stream) ──
+function updateTripleStream(data){
+  if(!data||!data.routing||!data.routing.sources){
+    document.getElementById('triple-stream-summary').textContent='No routing data';
+    return;
+  }
+  const src=data.routing.sources||{};
+  // Map routing sources to 3 streams
+  // src_zion → Stream 1, src_pearl → Stream 2, everything else → Stream 3
+  const zion=src.src_zion||{accepted:0,rejected:0};
+  const pearl=src.src_pearl||{accepted:0,rejected:0};
+  // Aggregate all external sources into Stream 3
+  let extAcc=0,extRej=0,extCoin='AuxPow';
+  for(const[key,val]of Object.entries(src)){
+    if(key==='src_zion'||key==='src_pearl')continue;
+    if(val&&typeof val==='object'){
+      extAcc+=val.accepted||0;
+      extRej+=val.rejected||0;
+      // Track which coin is active
+      if(val.accepted>0||val.rejected>0){
+        extCoin=key.replace('src_','').toUpperCase();
+      }
+    }
+  }
+  // Stream 1: ZION
+  document.getElementById('stream-zion-shares').textContent=(zion.accepted||0)+' / '+(zion.rejected||0);
+  const zTotal=(zion.accepted||0)+(zion.rejected||0);
+  document.getElementById('stream-zion-pct').textContent=zTotal>0?(100*zion.accepted/zTotal).toFixed(1)+'% accepted':'—';
+  // Stream 2: PRL
+  document.getElementById('stream-prl-shares').textContent=(pearl.accepted||0)+' / '+(pearl.rejected||0);
+  const pTotal=(pearl.accepted||0)+(pearl.rejected||0);
+  document.getElementById('stream-prl-pct').textContent=pTotal>0?(100*pearl.accepted/pTotal).toFixed(1)+'% accepted':'—';
+  // Stream 3: EXT
+  document.getElementById('stream-ext-shares').textContent=extAcc+' / '+extRej;
+  document.getElementById('stream-ext-coin').textContent=extCoin;
+  const eTotal=extAcc+extRej;
+  document.getElementById('stream-ext-pct').textContent=eTotal>0?(100*extAcc/eTotal).toFixed(1)+'% accepted':'—';
+  // Summary
+  const totalAcc=(zion.accepted||0)+(pearl.accepted||0)+extAcc;
+  const totalRej=(zion.rejected||0)+(pearl.rejected||0)+extRej;
+  document.getElementById('triple-stream-summary').textContent=totalAcc+' acc / '+totalRej+' rej total';
 }
 
 function updatePayouts(p){
