@@ -3585,8 +3585,9 @@ impl MinerTelemetry {
 impl MinerTelemetryRegistry {
     fn touch_session(&mut self, miner_id: &str, worker_name: &str, algorithm: &str, backend: &str) {
         let now_s = now_unix_seconds();
+        let key = format!("{miner_id}/{worker_name}");
         self.miners
-            .entry(miner_id.to_string())
+            .entry(key)
             .and_modify(|miner| miner.touch(worker_name, algorithm, backend, now_s))
             .or_insert_with(|| MinerTelemetry::new(worker_name, algorithm, backend, now_s));
     }
@@ -3600,9 +3601,10 @@ impl MinerTelemetryRegistry {
         elapsed_ms: u64,
     ) {
         let now_s = now_unix_seconds();
+        let key = format!("{miner_id}/{worker_name}");
         let miner = self
             .miners
-            .entry(miner_id.to_string())
+            .entry(key)
             .or_insert_with(|| MinerTelemetry::new(worker_name, "", "", now_s));
         miner.touch(worker_name, "", "", now_s);
         miner.completed_jobs = miner.completed_jobs.saturating_add(1);
@@ -3617,9 +3619,10 @@ impl MinerTelemetryRegistry {
 
     fn record_block_found(&mut self, miner_id: &str, worker_name: &str) {
         let now_s = now_unix_seconds();
+        let key = format!("{miner_id}/{worker_name}");
         let miner = self
             .miners
-            .entry(miner_id.to_string())
+            .entry(key)
             .or_insert_with(|| MinerTelemetry::new(worker_name, "", "", now_s));
         miner.touch(worker_name, "", "", now_s);
         miner.blocks_found = miner.blocks_found.saturating_add(1);
@@ -3633,9 +3636,10 @@ impl MinerTelemetryRegistry {
         elapsed_ms: u64,
     ) {
         let now_s = now_unix_seconds();
+        let key = format!("{miner_id}/{worker_name}");
         let miner = self
             .miners
-            .entry(miner_id.to_string())
+            .entry(key)
             .or_insert_with(|| MinerTelemetry::new(worker_name, "", "", now_s));
         miner.touch(worker_name, "", "", now_s);
         miner.completed_jobs = miner.completed_jobs.saturating_add(1);
@@ -4667,10 +4671,14 @@ fn build_prometheus_payload(
         fees.pool_fee_accumulated_flowers
     );
     let _ = writeln!(body, "zion_fee_miner_pct {}", fees.miner_pct);
-    for (miner_id, miner) in &telemetry.miners {
-        let worker_name = sanitize_prometheus_label(&miner.worker_name);
-        let miner_label = sanitize_prometheus_label(miner_id);
-        let pending_balance = pplns_engine.unpaid_balance(miner_id);
+    for (key, miner) in &telemetry.miners {
+        let (miner_id, worker_name) = key
+            .split_once('/')
+            .map(|(mid, wn)| (mid.to_string(), wn.to_string()))
+            .unwrap_or((key.clone(), miner.worker_name.clone()));
+        let worker_name = sanitize_prometheus_label(&worker_name);
+        let miner_label = sanitize_prometheus_label(&miner_id);
+        let pending_balance = pplns_engine.unpaid_balance(key);
         let _ = writeln!(
             body,
             "zion_pool_miner_hashrate_hps{{miner_id=\"{}\",worker_name=\"{}\"}} {:.2}",
@@ -5062,17 +5070,19 @@ fn build_miners_payload(
     let miners = miners
         .into_iter()
         .take(limit)
-        .map(|(miner_id, miner)| {
-            // PPLNS now keys on miner_id/worker_name; try composite key first,
-            // fall back to plain miner_id for legacy entries.
-            let composite_key = format!("{miner_id}/{}", miner.worker_name);
+        .map(|(key, miner)| {
+            // Telemetry key is now composite "miner_id/worker_name".
+            // Split for display; fall back to whole key as miner_id for legacy.
+            let (display_miner_id, display_worker) = key
+                .split_once('/')
+                .map(|(mid, wn)| (mid.to_string(), wn.to_string()))
+                .unwrap_or((key.clone(), miner.worker_name.clone()));
             let payout_addr = pplns_engine
-                .address_for(&composite_key)
-                .or_else(|| pplns_engine.address_for(miner_id))
+                .address_for(key)
                 .unwrap_or("");
             serde_json::json!({
-                "address": miner_id,
-                "worker_name": miner.worker_name,
+                "address": display_miner_id,
+                "worker_name": display_worker,
                 "algorithm": miner.algorithm,
                 "backend": miner.backend,
                 "payout_address": payout_addr,
@@ -5084,7 +5094,7 @@ fn build_miners_payload(
                 "blocks_found": miner.blocks_found,
                 "valid_shares": miner.valid_shares,
                 "invalid_shares": miner.invalid_shares,
-                "pending_balance": pplns_engine.unpaid_balance(miner_id)
+                "pending_balance": pplns_engine.unpaid_balance(key)
             })
         })
         .collect::<Vec<_>>();
