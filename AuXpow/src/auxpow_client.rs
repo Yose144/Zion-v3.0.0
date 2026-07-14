@@ -30,6 +30,59 @@ use tracing::{debug, info, warn};
 
 use crate::types::{CoinProfile, ExternalCoin};
 
+// ─── Pearl PlainProof bincode structures ───────────────────────────────────
+// These mirror the Pearl zk-pow PlainProof struct for bincode serialization.
+// See: https://github.com/pearl-research-labs/pearl/zk-pow/src/ffi/plain_proof.rs
+// The pool deserializes plain_proof via PlainProof::deserialize_compat which
+// uses bincode::deserialize. We replicate the exact struct layout so our
+// placeholder proof passes deserialization (but not Merkle/jackpot verification).
+
+/// BLAKE3 chunk length (1024 bytes) — used in MerkleProof leaf_data.
+const BLAKE3_CHUNK_LEN: usize = 1024;
+/// BLAKE3 digest size (32 bytes).
+const BLAKE3_DIGEST_SIZE: usize = 32;
+
+/// Wrapper for [u8; 1024] with manual Serialize (serde doesn't support large arrays).
+#[derive(Clone)]
+struct Blake3Chunk([u8; BLAKE3_CHUNK_LEN]);
+
+impl serde::Serialize for Blake3Chunk {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeTuple;
+        let mut seq = serializer.serialize_tuple(BLAKE3_CHUNK_LEN)?;
+        for b in &self.0 {
+            seq.serialize_element(b)?;
+        }
+        seq.end()
+    }
+}
+
+#[derive(Serialize)]
+struct PearlMerkleProof {
+    leaf_data: Vec<Blake3Chunk>,
+    leaf_indices: Vec<usize>,
+    total_leaves: usize,
+    root: [u8; BLAKE3_DIGEST_SIZE],
+    siblings: Vec<[u8; BLAKE3_DIGEST_SIZE]>,
+}
+
+#[derive(Serialize)]
+struct PearlMatrixMerkleProof {
+    proof: PearlMerkleProof,
+    row_indices: Vec<usize>,
+}
+
+#[derive(Serialize)]
+struct PearlPlainProof {
+    m: usize,
+    n: usize,
+    k: usize,
+    noise_rank: usize,
+    a: PearlMatrixMerkleProof,
+    bt: PearlMatrixMerkleProof,
+    moe: Option<()>, // None for dense (non-MoE) proofs
+}
+
 /// Stratum protocol variant.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StratumProtocol {
@@ -1479,7 +1532,9 @@ impl AuxPowClient {
                     // fills in the miner_nonce portion during scanning.
                     let blob = if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
                         let en1 = hex::encode(self.extranonce1.lock().await.clone());
-                        // 32-byte nonce field: extranonce1 + zeros padded to 32 bytes
+                        // For PBaaS v7+: use extranonce1 in the nonce field.
+                        // The miner does NOT modify the nonce field during scanning.
+                        // The miner's unique work is in the solution nonceSpace only.
                         let nonce_field = format!("{:0<64}", en1); // 64 hex chars = 32 bytes
                         // Embed extranonce1 into solution nonceSpace (last 15 bytes = 30 hex)
                         let mut sol_with_ns = effective_solution.clone();
@@ -1972,6 +2027,13 @@ impl AuxPowClient {
                 "auxpow: {} submit — job={} ntime={} nonce2_len={} sol_len={}",
                 self.profile.coin, job_id, ntime, nonce2_str.len(), solution_with_varint.len()
             );
+            // Detailed debug: print exact submit params (truncated for readability)
+            println!(
+                "auxpow: VRSC submit DETAIL — nonce2={} sol_first20={} sol_last30={}",
+                nonce2_str,
+                &solution_with_varint[..20.min(solution_with_varint.len())],
+                &solution_with_varint[solution_with_varint.len().saturating_sub(30)..],
+            );
 
             // Zcash Stratum Protocol (ZIP 301) — 5 params:
             //   [worker, job_id, time, nonce2, equihash_solution]
@@ -2025,47 +2087,51 @@ impl AuxPowClient {
         } else if self.protocol == StratumProtocol::PearlStratum {
             // Pearl (PRL) PearlStratum submit: object params, no nonce.
             //   {job_id, plain_proof (base64)}
-            // The plain_proof encodes the PoUW proof (MatMul + noise + BLAKE3).
-            // With the BLAKE3 placeholder hasher, we construct a minimal
-            // placeholder proof containing the nonce so the pool can verify
-            // the share hash. The real proof requires the full PoUW kernel.
             //
-            // PlainProof binary layout (simplified placeholder):
-            //   m(8B LE) | n(8B LE) | k(8B LE) | noise_rank(8B LE)
-            //   | nonce(8B LE) | header_hash(32B) | blake3_hash(32B)
-            // Total: 96 bytes → base64
-            let mut proof_bytes = Vec::with_capacity(96);
-            // Dimensions (placeholder values within sanity bounds)
-            proof_bytes.extend_from_slice(&512u64.to_le_bytes());     // m
-            proof_bytes.extend_from_slice(&512u64.to_le_bytes());     // n
-            proof_bytes.extend_from_slice(&4096u64.to_le_bytes());    // k
-            proof_bytes.extend_from_slice(&256u64.to_le_bytes());     // noise_rank
-            // Nonce
-            proof_bytes.extend_from_slice(&nonce.to_le_bytes());
-            // Header hash (first 32 bytes of header_bytes)
-            let job = self.current_job().await;
-            let header_hash = job
-                .as_ref()
-                .map(|j| {
-                    let mut h = [0u8; 32];
-                    let len = j.header_bytes.len().min(32);
-                    h[..len].copy_from_slice(&j.header_bytes[..len]);
-                    h
-                })
-                .unwrap_or([0u8; 32]);
-            proof_bytes.extend_from_slice(&header_hash);
-            // BLAKE3 placeholder hash
-            let hash = crate::external_hashers::hash_pearl(&header_hash, nonce);
-            proof_bytes.extend_from_slice(&hash);
+            // plain_proof is a bincode-serialized PearlPlainProof, base64-encoded.
+            // The pool deserializes it via PlainProof::deserialize_compat (bincode).
+            //
+            // With the BLAKE3 placeholder hasher, we construct a proof with empty
+            // Merkle proofs (no leaf_data, no siblings). This passes bincode
+            // deserialization but will fail Merkle/jackpot verification.
+            // The real proof requires the full PoUW MatMul kernel.
+            let proof = PearlPlainProof {
+                m: 512,
+                n: 512,
+                k: 4096,
+                noise_rank: 256,
+                a: PearlMatrixMerkleProof {
+                    proof: PearlMerkleProof {
+                        leaf_data: Vec::new(),
+                        leaf_indices: Vec::new(),
+                        total_leaves: 512,
+                        root: [0u8; BLAKE3_DIGEST_SIZE],
+                        siblings: Vec::new(),
+                    },
+                    row_indices: Vec::new(),
+                },
+                bt: PearlMatrixMerkleProof {
+                    proof: PearlMerkleProof {
+                        leaf_data: Vec::new(),
+                        leaf_indices: Vec::new(),
+                        total_leaves: 512,
+                        root: [0u8; BLAKE3_DIGEST_SIZE],
+                        siblings: Vec::new(),
+                    },
+                    row_indices: Vec::new(),
+                },
+                moe: None, // dense (non-MoE) proof
+            };
 
+            let proof_bytes = bincode::serialize(&proof).unwrap_or_default();
             let plain_proof = base64::Engine::encode(
                 &base64::engine::general_purpose::STANDARD,
                 &proof_bytes,
             );
 
             println!(
-                "auxpow: PRL submit — job={} nonce={} proof_len={}",
-                job_id, nonce, plain_proof.len()
+                "auxpow: PRL submit — job={} nonce={} proof_b64_len={} raw_len={}",
+                job_id, nonce, plain_proof.len(), proof_bytes.len()
             );
 
             ("mining.submit", json!({
