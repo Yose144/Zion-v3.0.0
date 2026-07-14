@@ -266,6 +266,39 @@ impl HashrateTracker {
         }
     }
 
+    /// Record a Stream 1 (ZION Deeksha) share result.
+    pub fn record_zion_share(&self, accepted: bool) {
+        if accepted {
+            self.zion_accepted.fetch_add(1, Ordering::Relaxed);
+            self.accepted_shares.fetch_add(1, Ordering::Relaxed);
+        } else {
+            self.zion_rejected.fetch_add(1, Ordering::Relaxed);
+            self.rejected_shares.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    /// Record a Stream 2 (Pearl PoUW) proof result.
+    pub fn record_pearl_share(&self, accepted: bool) {
+        if accepted {
+            self.pearl_accepted.fetch_add(1, Ordering::Relaxed);
+            self.accepted_shares.fetch_add(1, Ordering::Relaxed);
+        } else {
+            self.pearl_rejected.fetch_add(1, Ordering::Relaxed);
+            self.rejected_shares.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    /// Record a Stream 3 (external: Verus/Blake3/etc) share result.
+    pub fn record_ext_share(&self, accepted: bool) {
+        if accepted {
+            self.ext_accepted.fetch_add(1, Ordering::Relaxed);
+            self.accepted_shares.fetch_add(1, Ordering::Relaxed);
+        } else {
+            self.ext_rejected.fetch_add(1, Ordering::Relaxed);
+            self.rejected_shares.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
     pub fn set_pool_height(&self, h: u64) {
         self.pool_height.store(h, Ordering::Relaxed);
     }
@@ -293,6 +326,12 @@ impl HashrateTracker {
             gpu_total: self.gpu_hashes.load(Ordering::Relaxed),
             accepted: self.accepted_shares.load(Ordering::Relaxed),
             rejected: self.rejected_shares.load(Ordering::Relaxed),
+            zion_accepted: self.zion_accepted.load(Ordering::Relaxed),
+            zion_rejected: self.zion_rejected.load(Ordering::Relaxed),
+            pearl_accepted: self.pearl_accepted.load(Ordering::Relaxed),
+            pearl_rejected: self.pearl_rejected.load(Ordering::Relaxed),
+            ext_accepted: self.ext_accepted.load(Ordering::Relaxed),
+            ext_rejected: self.ext_rejected.load(Ordering::Relaxed),
         }
     }
 }
@@ -307,6 +346,15 @@ pub struct ComputedHashrates {
     pub gpu_total: u64,
     pub accepted: u64,
     pub rejected: u64,
+    /// Stream 1: ZION Deeksha
+    pub zion_accepted: u64,
+    pub zion_rejected: u64,
+    /// Stream 2: Pearl PoUW
+    pub pearl_accepted: u64,
+    pub pearl_rejected: u64,
+    /// Stream 3: External (Verus/Blake3/etc)
+    pub ext_accepted: u64,
+    pub ext_rejected: u64,
 }
 
 /* ========================================================================= */

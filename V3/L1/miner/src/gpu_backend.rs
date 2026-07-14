@@ -11,6 +11,7 @@
 #![allow(dead_code)]
 
 use anyhow::Result;
+use std::time::{SystemTime, UNIX_EPOCH};
 use zion_auxpow::external_hashers::hash_blake3;
 use zion_core::{DifficultyTarget, MiningHeader, MiningJob, MiningSolution};
 
@@ -226,6 +227,209 @@ impl GpuBackendManager {
 
 /// Alias for backward compatibility.
 pub type GpuBackend = GpuBackendManager;
+
+/// Simple timestamp helper for TriGpuManager logging.
+fn tri_gpu_timestamp() -> String {
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let h = (secs / 3600) % 24;
+    let m = (secs / 60) % 60;
+    let s = secs % 60;
+    format!("{:02}:{:02}:{:02}", h, m, s)
+}
+
+/// Tri-GPU Manager — 3-stream parallel mining GPU context manager.
+///
+/// Manages three independent GPU backend slots for the 3-stream architecture:
+///   - **Primary** (Stream 1): ZION Deeksha — created at startup, never switches.
+///   - **Pearl** (Stream 2): Pearl PoUW — lazy-created when first PRL job arrives.
+///   - **Secondary** (Stream 3): External GPU algo (KAS/DCR/etc) — lazy-created
+///     when a GPU-capable external stream arrives AND Pearl is NOT active.
+///
+/// On a single GPU (e.g. AMD Vega 64 8GB), all three share the same physical
+/// device via OpenCL hardware scheduling. On multi-GPU systems, each slot
+/// could be pinned to a different device (future enhancement).
+///
+/// This is the 3.0.6 canonical replacement for `GpuBackendManager`. The
+/// legacy manager remains for backward compatibility.
+pub struct TriGpuManager {
+    /// Stream 1: ZION Deeksha — created at startup, never switched.
+    primary: Option<Box<dyn GpuMiner>>,
+    primary_algo: String,
+
+    /// Stream 2: Pearl PoUW — lazy-created when first PRL job arrives.
+    /// Uses pearl_real_pouw CPU fallback if GPU kernel unavailable.
+    pearl: Option<Box<dyn GpuMiner>>,
+    pearl_algo: String,
+
+    /// Stream 3: External GPU algo (KAS/DCR/etc) — lazy-created.
+    /// Only used when external_stream algorithm is GPU-capable AND NOT pearlhash.
+    /// For verushash/randomx, this is None and CPU is used instead.
+    secondary: Option<Box<dyn GpuMiner>>,
+    secondary_algo: String,
+
+    kind: GpuBackendKind,
+    primary_work_size: usize,
+    pearl_work_size: usize,
+    secondary_work_size: usize,
+}
+
+impl TriGpuManager {
+    /// Create a new TriGpuManager with the given GPU backend kind.
+    /// The primary (Deeksha) backend is created immediately.
+    /// Pearl and secondary are lazy-created on demand.
+    pub fn new(kind: GpuBackendKind, primary_work_size: usize) -> Result<Self> {
+        let primary_algo = "deeksha_lite_v1".to_string();
+        let primary = create_gpu_backend(kind, primary_work_size, &primary_algo)?;
+
+        Ok(Self {
+            primary: Some(primary),
+            primary_algo,
+            pearl: None,
+            pearl_algo: String::new(),
+            secondary: None,
+            secondary_algo: String::new(),
+            kind,
+            primary_work_size,
+            pearl_work_size: primary_work_size,
+            secondary_work_size: primary_work_size,
+        })
+    }
+
+    /// Create a TriGpuManager with custom work sizes per stream.
+    pub fn with_work_sizes(
+        kind: GpuBackendKind,
+        primary_ws: usize,
+        pearl_ws: usize,
+        secondary_ws: usize,
+    ) -> Result<Self> {
+        let primary_algo = "deeksha_lite_v1".to_string();
+        let primary = create_gpu_backend(kind, primary_ws, &primary_algo)?;
+
+        Ok(Self {
+            primary: Some(primary),
+            primary_algo,
+            pearl: None,
+            pearl_algo: String::new(),
+            secondary: None,
+            secondary_algo: String::new(),
+            kind,
+            primary_work_size: primary_ws,
+            pearl_work_size: pearl_ws,
+            secondary_work_size: secondary_ws,
+        })
+    }
+
+    /// Access the primary (Stream 1: ZION Deeksha) GPU backend.
+    /// This is always available after construction.
+    pub fn primary(&mut self) -> Result<&mut dyn GpuMiner> {
+        match self.primary.as_mut() {
+            Some(b) => Ok(b.as_mut()),
+            None => Err(anyhow::anyhow!("primary GPU backend not initialized")),
+        }
+    }
+
+    /// Ensure the Pearl (Stream 2) GPU backend is loaded.
+    /// Lazy-creates it on first call.
+    pub fn pearl(&mut self) -> Result<&mut dyn GpuMiner> {
+        if self.pearl.is_none() {
+            let algo = "pearlhash";
+            self.pearl = Some(create_gpu_backend(self.kind, self.pearl_work_size, algo)?);
+            self.pearl_algo = algo.to_string();
+            println!(
+                "[{}] tri_gpu: pearl backend created (stream 2, algo={})",
+                tri_gpu_timestamp(),
+                algo
+            );
+        }
+        match self.pearl.as_mut() {
+            Some(b) => Ok(b.as_mut()),
+            None => Err(anyhow::anyhow!("pearl GPU backend not initialized")),
+        }
+    }
+
+    /// Ensure the secondary (Stream 3) GPU backend is loaded for the given algorithm.
+    /// Lazy-creates or switches as needed. Only for GPU-capable external algos
+    /// (NOT verushash/randomx — those use CPU).
+    pub fn ensure_secondary(&mut self, algorithm: &str) -> Result<&mut dyn GpuMiner> {
+        if self.secondary_algo == algorithm {
+            return match self.secondary.as_mut() {
+                Some(b) => Ok(b.as_mut()),
+                None => Err(anyhow::anyhow!("secondary GPU backend not initialized")),
+            };
+        }
+        println!(
+            "[{}] tri_gpu: secondary switch from={} to={}",
+            tri_gpu_timestamp(),
+            self.secondary_algo,
+            algorithm
+        );
+        let backend = create_gpu_backend(self.kind, self.secondary_work_size, algorithm)?;
+        self.secondary = Some(backend);
+        self.secondary_algo = algorithm.to_string();
+        match self.secondary.as_mut() {
+            Some(b) => Ok(b.as_mut()),
+            None => Err(anyhow::anyhow!("secondary GPU backend not initialized")),
+        }
+    }
+
+    /// Drop the secondary backend (free VRAM for Pearl or vice versa).
+    pub fn drop_secondary(&mut self) {
+        if self.secondary.is_some() {
+            println!(
+                "[{}] tri_gpu: secondary backend dropped (freeing VRAM)",
+                tri_gpu_timestamp()
+            );
+        }
+        self.secondary = None;
+        self.secondary_algo = String::new();
+    }
+
+    /// Drop the Pearl backend (free VRAM).
+    pub fn drop_pearl(&mut self) {
+        if self.pearl.is_some() {
+            println!(
+                "[{}] tri_gpu: pearl backend dropped (freeing VRAM)",
+                tri_gpu_timestamp()
+            );
+        }
+        self.pearl = None;
+        self.pearl_algo = String::new();
+    }
+
+    /// Current primary algorithm name.
+    pub fn primary_algo(&self) -> &str {
+        &self.primary_algo
+    }
+
+    /// Whether the Pearl backend is currently loaded.
+    pub fn pearl_active(&self) -> bool {
+        self.pearl.is_some()
+    }
+
+    /// Whether the secondary backend is currently loaded.
+    pub fn secondary_active(&self) -> bool {
+        self.secondary.is_some()
+    }
+
+    /// Current secondary algorithm name (empty if not loaded).
+    pub fn secondary_algo(&self) -> &str {
+        &self.secondary_algo
+    }
+
+    /// Set stream weights on the primary backend (Deeksha Chv3 pipeline).
+    pub fn set_stream_weights_primary(
+        &mut self,
+        weights: &zion_cosmic_harmony::stream_profit::StreamWeights,
+    ) -> Result<()> {
+        if let Some(ref mut g) = self.primary {
+            g.set_stream_weights(weights)?;
+        }
+        Ok(())
+    }
+}
 
 /// Set of external AuxPoW algorithms that are handled by `zion_auxpow` GPU miner.
 pub fn is_external_algorithm(algorithm: &str) -> bool {
