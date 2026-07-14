@@ -264,19 +264,28 @@ fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> 
     //   offset 143: solution(1344)
     //     solution offset 1329 (= blob offset 1472): nonceSpace(15) ← also miner_nonce
     //
-    // The extranonce1 is already embedded in both the nonce field and
-    // nonceSpace by the pool's notify parser.  The miner writes its
-    // 4-byte LE nonce at:
-    //   - nonce field: offset 108 + en1_len
-    //   - nonceSpace:  offset 143 + 1329 + en1_len = offset 1472 + en1_len
+    // The extranonce1 is already embedded at the START of both the nonce
+    // field and nonceSpace by the pool's notify parser.  The miner writes
+    // its 4-byte LE nonce at the END of the nonceSpace (and the
+    // corresponding position in the nonce field), matching the pool's
+    // submit format where nonce2 = [padding][miner_nonce].
+    //
+    // nonceSpace = 15 bytes: [en1][padding][miner_nonce]
+    // nonce_field = 32 bytes: [en1][padding][miner_nonce][zeros]
+    //
+    // miner_nonce offset within nonceSpace = 15 - 4 = 11
+    // miner_nonce offset within nonce_field = 11 (same, since en1+padding = 11)
     //
     // For a 4-byte extranonce1 (typical for LuckPool), miner_nonce goes at:
-    //   - nonce field offset 112
-    //   - nonceSpace offset 1476
+    //   - nonce field offset 108 + 11 = 119
+    //   - nonceSpace offset 1472 + 11 = 1483
 
     let en1_len = job.extranonce1.len();
-    let nonce_field_offset = 108 + en1_len;
-    let nonce_space_blob_offset = 143 + 1329 + en1_len; // = 1472 + en1_len
+    let nonce_space_total = 15usize; // VRSC PBaaS v7+ nonceSpace
+    let miner_nonce_len = 4usize;
+    let nonce_offset_in_field = nonce_space_total - miner_nonce_len; // = 11
+    let nonce_field_offset = 108 + nonce_offset_in_field;
+    let nonce_space_blob_offset = 143 + 1329 + nonce_offset_in_field; // = 1472 + 11 = 1483
 
     let mut work_header = header.to_vec();
 
@@ -543,8 +552,11 @@ fn scan_verushash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
     let header = &job.header_bytes;
 
     let en1_len = job.extranonce1.len();
-    let nonce_field_offset = 108 + en1_len;
-    let nonce_space_blob_offset = 143 + 1329 + en1_len;
+    let nonce_space_total = 15usize;
+    let miner_nonce_len = 4usize;
+    let nonce_offset_in_field = nonce_space_total - miner_nonce_len;
+    let nonce_field_offset = 108 + nonce_offset_in_field;
+    let nonce_space_blob_offset = 143 + 1329 + nonce_offset_in_field;
     let mut work_header = header.to_vec();
 
     let mut best: Option<FoundShare> = None;

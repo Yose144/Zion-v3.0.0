@@ -1328,6 +1328,10 @@ pub mod verushash {
         /// - `verushash_init` must have completed at least once.
         pub fn verushash_hash(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
 
+        /// Compute VerusHash v2.2 of a complete header (no nonce appended).
+        /// The caller must embed the nonce in the header before calling.
+        pub fn verushash_hash_raw(header: *const u8, header_len: usize, output: *mut u8);
+
         /// Verify VerusHash v2.2 against 32-byte target.
         ///
         /// # Safety
@@ -1366,6 +1370,18 @@ pub mod verushash {
         // SAFETY: init has completed; slice + fresh 32-byte stack output.
         unsafe {
             verushash_hash(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
+        }
+        out
+    }
+
+    /// Hash a complete block header as-is (no nonce appended).
+    /// The caller must embed the nonce in the header's nonce field
+    /// and/or solution nonceSpace before calling.
+    pub fn hash_raw(header: &[u8]) -> [u8; 32] {
+        init();
+        let mut out = [0u8; 32];
+        unsafe {
+            verushash_hash_raw(header.as_ptr(), header.len(), out.as_mut_ptr());
         }
         out
     }

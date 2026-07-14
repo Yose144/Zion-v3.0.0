@@ -371,6 +371,7 @@ fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
         ExternalCoin::XMR => RevenueSource::RandomXExternal,
         ExternalCoin::FLUX => RevenueSource::ZelHashExternal,
         ExternalCoin::VRSC => RevenueSource::VerusHashExternal,
+        ExternalCoin::EPIC => RevenueSource::ProgPowExternal,
     }
 }
 
@@ -407,6 +408,7 @@ fn auxpow_to_ch_external_coin(coin: ExternalCoin) -> ChExternalCoin {
         ExternalCoin::CLORE => ChExternalCoin::CLORE,
         ExternalCoin::XMR => ChExternalCoin::XMR,
         ExternalCoin::VRSC => ChExternalCoin::VRSC,
+        ExternalCoin::EPIC => ChExternalCoin::VRSC, // placeholder — EPIC not in CH enum
     }
 }
 
@@ -440,6 +442,7 @@ fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
         ExternalCoin::FLUX => "zelhash",
         ExternalCoin::EVR | ExternalCoin::MEWC => "kawpow",
         ExternalCoin::VRSC => "verushash",
+        ExternalCoin::EPIC => "progpow",
     }
 }
 
@@ -4745,6 +4748,7 @@ fn source_index(source: RevenueSource) -> usize {
         RevenueSource::DeekshaLite => 12,
         RevenueSource::ThermalBonus => 13,
         RevenueSource::VerusHashExternal => 14,
+        RevenueSource::ProgPowExternal => 15,
     }
 }
 
@@ -4765,6 +4769,7 @@ fn revenue_source_name(source: RevenueSource) -> &'static str {
         RevenueSource::DeekshaLite => "deeksha_lite",
         RevenueSource::ThermalBonus => "thermal_bonus",
         RevenueSource::VerusHashExternal => "verushash",
+        RevenueSource::ProgPowExternal => "progpow",
     }
 }
 
@@ -5000,6 +5005,8 @@ fn parse_revenue_source(value: &str) -> Result<RevenueSource> {
         "autolykos" | "erg" | "ergo" => Ok(RevenueSource::AutolykosExternal),
         "randomx" | "xmr" | "monero" => Ok(RevenueSource::RandomXExternal),
         "zelhash" | "flux" => Ok(RevenueSource::ZelHashExternal),
+        "verushash" | "vrsc" | "verus" => Ok(RevenueSource::VerusHashExternal),
+        "progpow" | "epic" | "epiccash" => Ok(RevenueSource::ProgPowExternal),
         "ncl" | "ncl_ai" => Ok(RevenueSource::NclAi),
         "deeksha_lite" | "dl" => Ok(RevenueSource::DeekshaLite),
         "thermal_bonus" | "fire" | "thermal" => Ok(RevenueSource::ThermalBonus),
