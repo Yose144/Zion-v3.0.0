@@ -75,9 +75,10 @@ impl ExternalCoin {
             Self::FLUX => {
                 StratumProtocol::ZcashStratum
             }
-            // ERG/CLORE/EVR/MEWC use EthStratum (eth_submitLogin +
-            // eth_getWork + eth_submitWork).
-            Self::ERG | Self::EVR | Self::MEWC | Self::CLORE => {
+            // ERG (Autolykos v2) uses standard Stratum v1 on 2miners.
+            // CLORE/EVR/MEWC (KawPow/ProgPow) use EthStratum on WoolyPooly/ZPool.
+            Self::ERG => StratumProtocol::Stratum,
+            Self::EVR | Self::MEWC | Self::CLORE => {
                 StratumProtocol::EthStratum
             }
             // VRSC (Verus) uses Zcash/Equihash Stratum with solution field
@@ -410,10 +411,15 @@ impl AuxPowClient {
                     }
                     "mining.set_target" => {
                         if let Some(target_hex) = parsed.get("params").and_then(|p| p.get(0)).and_then(|d| d.as_str()) {
+                            println!("auxpow: RAW mining.set_target params[0] = '{}' (len={})", target_hex, target_hex.len());
                             let target_bytes = crate::external_hashers::parse_target_hex(
                                 target_hex.trim_start_matches("0x"),
                             ).unwrap_or([0xFFu8; 32]);
                             let diff = target_to_difficulty(&target_bytes);
+                            println!(
+                                "auxpow: {} set_target={} difficulty={:.2} parsed_bytes={}",
+                                self.profile.coin, target_hex, diff, hex::encode(target_bytes)
+                            );
                             *self.current_difficulty.lock().await = diff;
                         }
                     }
@@ -490,11 +496,6 @@ impl AuxPowClient {
             "x"
         } else if is_pearl {
             "x"
-        } else if self.profile.coin == ExternalCoin::DCR {
-            // DCR (WoolyPooly / zpool) accepts a starting share difficulty in the
-            // password. Use d=4 for fast local testing; the upstream pool will
-            // raise it via vardiff once shares are accepted.
-            self.profile.password.as_str()
         } else if self.profile.coin == ExternalCoin::XMR {
             // MoneroOcean expects a wallet.worker username and a fixed/starting
             // difficulty in the password.
@@ -647,11 +648,6 @@ impl AuxPowClient {
             // Pearl (PRL): password may carry d=N for custom difficulty.
             // Default "x" — pool will use VarDiff on port 5566.
             "x"
-        } else if self.profile.coin == ExternalCoin::DCR {
-            // DCR (WoolyPooly / zpool) accepts a starting share difficulty in the
-            // password. Use d=4 for fast local testing; the upstream pool will
-            // raise it via vardiff once shares are accepted.
-            self.profile.password.as_str()
         } else if self.profile.coin == ExternalCoin::XMR {
             // MoneroOcean expects a wallet.worker username and a fixed/starting
             // difficulty in the password.
@@ -836,15 +832,16 @@ impl AuxPowClient {
                     // hex target string instead of mining.set_difficulty.
                     if let Some(params) = msg.get("params") {
                         if let Some(target_hex) = params.get(0).and_then(|d| d.as_str()) {
+                            println!("auxpow: RAW set_target full='{}' len={}", target_hex, target_hex.len());
                             let target_bytes = crate::external_hashers::parse_target_hex(
                                 target_hex.trim_start_matches("0x"),
                             ).unwrap_or([0xFFu8; 32]);
                             // Convert target to difficulty: diff = 2^256 / target
                             let diff = target_to_difficulty(&target_bytes);
                             println!(
-                                "auxpow: {} set_target={} difficulty={:.2}",
+                                "auxpow: {} set_target parsed={} difficulty={:.2}",
                                 self.profile.coin,
-                                &target_hex[..16.min(target_hex.len())],
+                                hex::encode(target_bytes),
                                 diff
                             );
                             *self.current_difficulty.lock().await = diff;
@@ -907,6 +904,13 @@ impl AuxPowClient {
         if self.profile.coin == ExternalCoin::DCR {
             println!(
                 "auxpow: DCR raw notify params (truncated): {:.500}",
+                serde_json::to_string(params).unwrap_or_default()
+            );
+        }
+        // Debug: log raw notify params for ERG to diagnose format issues.
+        if self.profile.coin == ExternalCoin::ERG {
+            println!(
+                "auxpow: ERG raw notify params: {}",
                 serde_json::to_string(params).unwrap_or_default()
             );
         }
@@ -1296,6 +1300,73 @@ impl AuxPowClient {
                             epoch: None,
                         });
                     }
+                }
+            }
+        }
+
+        // ERG / Autolykos v2 (2miners, standard Stratum v1):
+        // mining.notify params = [job_id, height, blob, "", "", target_hex, target_decimal, "", clean_jobs]
+        //   - job_id: short string (e.g. "34dea")
+        //   - height: block height (integer, e.g. 1828793)
+        //   - blob: Autolykos seed hash (32-byte hex = 64 chars)
+        //   - target_hex: compact target (e.g. "00000002")
+        //   - target_decimal: target as decimal string (e.g. "66346743...")
+        //   - clean_jobs: bool
+        // Also: mining.set_target is pushed separately with a 32-byte target.
+        if self.profile.coin == ExternalCoin::ERG {
+            if let Some(arr) = params.as_array() {
+                if arr.len() >= 6 {
+                    let job_id = arr[0].as_str().unwrap_or("unknown").to_string();
+                    let height = arr[1].as_u64();
+                    let blob_hex = arr[2].as_str().unwrap_or("").to_string();
+                    let target_hex = arr[5].as_str().unwrap_or("ffffffff").to_string();
+
+                    let header_bytes = hex::decode(blob_hex.trim_start_matches("0x"))
+                        .unwrap_or_default();
+                    // ERG target: compact hex (e.g. "00000002") or full 32-byte.
+                    // Also check arr[6] for decimal target string.
+                    let target_bytes = if target_hex.len() <= 8 {
+                        // Compact target — parse as LE bytes and pad
+                        let raw = hex::decode(&target_hex).unwrap_or_default();
+                        let mut padded = [0xFFu8; 32];
+                        if !raw.is_empty() && raw.len() <= 32 {
+                            padded[..raw.len()].copy_from_slice(&raw);
+                            for b in &mut padded[raw.len()..] {
+                                *b = 0;
+                            }
+                        }
+                        padded
+                    } else {
+                        crate::external_hashers::parse_target_hex(&target_hex)
+                            .unwrap_or([0xFFu8; 32])
+                    };
+
+                    println!(
+                        "auxpow: ERG notify — job={} blob_len={} height={:?} target={}",
+                        job_id,
+                        header_bytes.len(),
+                        height,
+                        &target_hex,
+                    );
+
+                    return Ok(ExternalJob {
+                        job_id,
+                        header_hex: blob_hex.clone(),
+                        target_hex,
+                        seed_hash: Some(blob_hex),
+                        block_number: height,
+                        algorithm: self.profile.algorithm.clone(),
+                        header_bytes,
+                        target_bytes,
+                        timestamp: None,
+                        nbits: None,
+                        external_coin: self.profile.coin,
+                        from_group: 0,
+                        to_group: 0,
+                        extranonce1: self.extranonce1.lock().await.clone(),
+                        extranonce2: String::new(),
+                        epoch: None,
+                    });
                 }
             }
         }
@@ -1824,8 +1895,13 @@ impl AuxPowClient {
             };
             let nonce2_str = {
                 let en_bytes = en1_hex.len() / 2;
-                // All Zcash/Verushash: 32-byte nonce field
-                let nonce_field_total = 32usize;
+                // PBaaS v7+ (VerusHash/VRSC): nonceSpace = 15 bytes
+                // Standard Zcash (FLUX/Equihash): nonce field = 32 bytes
+                let nonce_field_total = if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
+                    15usize
+                } else {
+                    32usize
+                };
                 let nonce2_bytes = nonce_field_total.saturating_sub(en_bytes);
                 let nonce2_hex_len = nonce2_bytes * 2;
                 // nonce2 = [miner_nonce][padding] (miner_nonce at START)
@@ -1920,6 +1996,32 @@ impl AuxPowClient {
             let nonce_le_bytes = (nonce as u32).to_le_bytes();
             let nonce_hex = hex::encode(nonce_le_bytes);
             ("mining.submit", json!([worker, job_id, "", ntime, nonce_hex]))
+        } else if self.profile.coin == ExternalCoin::ERG {
+            // ERG / Autolykos v2 (2miners): 3 params
+            //   [worker, job_id, nonce2]
+            // nonce2 = extranonce2 + miner_nonce (8 bytes LE hex)
+            let wallet = self.payout_wallet.lock().await.clone();
+            let worker = format!("{}.{}", wallet, self.profile.worker_name);
+            let en1 = self.extranonce1.lock().await;
+            let en1_hex = hex::encode(&*en1);
+            let nonce2_4b = format!("{:08x}", nonce);
+            // ERG nonce2 = miner_nonce (4 bytes) padded to extranonce2 size
+            // 2miners ERG: extranonce2_size = 6 (from subscribe), en1 = 4 bytes
+            // nonce2 = 6 bytes total = miner_nonce(4B) + padding(2B)
+            let nonce2_size = 6usize;
+            let mut nonce2 = nonce2_4b.clone();
+            let needed = nonce2_size * 2;
+            if nonce2.len() < needed {
+                nonce2.push_str(&"0".repeat(needed - nonce2.len()));
+            }
+            if nonce2.len() > needed {
+                nonce2.truncate(needed);
+            }
+            println!(
+                "auxpow: ERG submit — job={} nonce2={} en1={}",
+                job_id, nonce2, en1_hex
+            );
+            ("mining.submit", json!([worker, job_id, nonce2]))
         } else if self.protocol == StratumProtocol::PearlStratum {
             // Pearl (PRL) PearlStratum submit: object params, no nonce.
             //   {job_id, plain_proof (base64)}
@@ -1996,14 +2098,20 @@ impl AuxPowClient {
             Ok(ShareResult::Accepted)
         } else if let Some(err) = resp.get("error") {
             if err.is_null() {
+                println!("auxpow: VRSC submit response (result=false, error=null): {}", resp);
                 return Ok(ShareResult::Unknown);
             }
-            let reason = err
-                .get("message")
-                .and_then(|m| m.as_str())
-                .unwrap_or("unknown");
+            // Log the raw error for debugging
+            println!("auxpow: VRSC submit error raw: {}", err);
+            let reason = if let Some(m) = err.get("message").and_then(|m| m.as_str()) {
+                m.to_string()
+            } else if let Some(s) = err.as_str() {
+                s.to_string()
+            } else {
+                format!("{}", err)
+            };
             warn!("AuxPow: share rejected for {}: {}", self.profile.coin, reason);
-            Ok(ShareResult::Rejected(reason.to_string()))
+            Ok(ShareResult::Rejected(reason))
         } else {
             Ok(ShareResult::Unknown)
         }
@@ -2810,9 +2918,9 @@ mod tests {
 
     #[tokio::test]
     async fn erg_ethstratum_round_trip() {
-        // Mock EthStratum server for ERG (Autolykos).
-        // Flow: mining.subscribe → eth_submitLogin → eth_getWork (poll) →
-        //       eth_submitWork → accept.
+        // Mock standard Stratum v1 server for ERG (Autolykos v2, 2miners).
+        // Flow: mining.subscribe → mining.authorize → mining.notify (push) →
+        //       mining.submit → accept.
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap().to_string();
         let (host, port) = addr.rsplit_once(':').unwrap();
@@ -2844,47 +2952,38 @@ mod tests {
             assert_eq!(req["method"], "mining.subscribe");
             write_json(
                 &mut writer,
-                json!({"id": 1, "result": [true, "EthereumStratum/1.0.0"], "error": null}),
+                json!({"id": 1, "result": [[["mining.set_difficulty","abc"],["mining.notify","abc"]], "5cc4", 6], "error": null}),
             )
             .await;
 
-            // 2. Read eth_submitLogin
+            // 2. Read mining.authorize
             let req = read_json(&mut reader, &mut buf).await;
-            assert_eq!(req["method"], "eth_submitLogin");
+            assert_eq!(req["method"], "mining.authorize");
             write_json(
                 &mut writer,
                 json!({"id": 2, "result": true, "error": null}),
             )
             .await;
 
-            // 3. Read eth_getWork (initial poll) and respond with a job.
-            //    ERG Autolykos: seed_hash is 32 bytes, header is 32 bytes,
-            //    target is 32 bytes — all 0x-prefixed hex.
-            let req = read_json(&mut reader, &mut buf).await;
-            assert_eq!(req["method"], "eth_getWork");
-            let req_id = req["id"].as_i64().unwrap();
-            let seed = "0x".to_string() + &"11".repeat(32);
-            let header = "0x".to_string() + &"22".repeat(32);
-            let target = "0x".to_string() + &"ff".repeat(32);
+            // 3. Push mining.notify
+            //    ERG format: [job_id, height, blob, "", "", target_hex, target_decimal, "", clean_jobs]
+            let blob = "a233a61ea5509f58d801183abbc647c9c5dedb6ba37c997e99a36c85a66726d9";
             write_json(
                 &mut writer,
                 json!({
-                    "id": req_id,
-                    "result": [seed, header, target],
-                    "error": null
+                    "id": null,
+                    "method": "mining.notify",
+                    "params": ["erg_job_1", 1828793, blob, "", "", "00000002", "6634674375215649981044791689095340972727658017446627184440307089471", "", true]
                 }),
             )
             .await;
 
-            // 4. Read eth_submitWork
+            // 4. Read mining.submit
             let req = read_json(&mut reader, &mut buf).await;
-            assert_eq!(req["method"], "eth_submitWork");
+            assert_eq!(req["method"], "mining.submit");
             let params = req["params"].as_array().unwrap();
             assert_eq!(params.len(), 3);
-            // nonce_hex (0x-prefixed), header_hash (job_id), mix_hash
-            assert!(params[0].as_str().unwrap().starts_with("0x"));
-            assert!(params[1].as_str().unwrap().starts_with("0x"));
-            assert!(params[2].as_str().unwrap().starts_with("0x"));
+            assert_eq!(params[1].as_str().unwrap(), "erg_job_1");
 
             let req_id = req["id"].as_i64().unwrap();
             write_json(
@@ -2904,17 +3003,15 @@ mod tests {
         let client = AuxPowClient::new(profile);
         client.connect("9ewyQvX7YJ1PqgJpK5qGjxRwJZQjWxJr5QJ1PqgJpK5qGjxRwJZQ").await.unwrap();
 
-        // Wait for the eth_getWork polling to fetch a job.
+        // Wait for the mining.notify push to deliver a job.
         let job = client.wait_for_job(5000).await.unwrap().unwrap();
-        assert!(job.job_id.starts_with("0x"));
-        assert_eq!(job.header_bytes.len(), 32);
-        assert_eq!(job.target_bytes, [0xFFu8; 32]);
-        assert!(job.seed_hash.is_some());
+        assert_eq!(job.job_id, "erg_job_1");
+        assert_eq!(job.header_bytes.len(), 32); // 64 hex chars = 32 bytes
+        assert_eq!(job.block_number, Some(1828793));
 
-        // Submit a share via eth_submitWork.
-        let mix_hash = [0xAAu8; 32];
+        // Submit a share via mining.submit.
         let result = client
-            .submit_share(&job.job_id, 42, &hex::encode(mix_hash), Some(&hex::encode(mix_hash)))
+            .submit_share(&job.job_id, 42, "deadbeef", None)
             .await
             .unwrap();
         assert_eq!(result, ShareResult::Accepted);
@@ -2925,8 +3022,8 @@ mod tests {
 
     #[tokio::test]
     async fn erg_ethstratum_push_notification() {
-        // Test eth_getWork as a push notification (not polling).
-        // The server pushes eth_getWork without the client requesting it.
+        // Test mining.notify push notification for ERG (standard Stratum v1).
+        // The server pushes mining.notify after authorize.
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap().to_string();
         let (host, port) = addr.rsplit_once(':').unwrap();
@@ -2957,11 +3054,11 @@ mod tests {
             let _req = read_json(&mut reader, &mut buf).await;
             write_json(
                 &mut writer,
-                json!({"id": 1, "result": [true, "EthereumStratum/1.0.0"], "error": null}),
+                json!({"id": 1, "result": [[["mining.set_difficulty","abc"],["mining.notify","abc"]], "5cc4", 6], "error": null}),
             )
             .await;
 
-            // 2. eth_submitLogin
+            // 2. Authorize
             let _req = read_json(&mut reader, &mut buf).await;
             write_json(
                 &mut writer,
@@ -2969,30 +3066,28 @@ mod tests {
             )
             .await;
 
-            // 3. The client will send eth_getWork (polling). Respond with a job.
-            let req = read_json(&mut reader, &mut buf).await;
-            assert_eq!(req["method"], "eth_getWork");
-            let req_id = req["id"].as_i64().unwrap();
-            let seed = "0x".to_string() + &"ab".repeat(32);
-            let header = "0x".to_string() + &"cd".repeat(32);
-            let target = "0x".to_string() + &"ff".repeat(32);
-            write_json(
-                &mut writer,
-                json!({"id": req_id, "result": [seed, header, target], "error": null}),
-            )
-            .await;
-
-            // 4. Also push an eth_getWork notification (id=null, method=eth_getWork)
-            //    to test the notification path.
-            let seed2 = "0x".to_string() + &"33".repeat(32);
-            let header2 = "0x".to_string() + &"44".repeat(32);
-            let target2 = "0x".to_string() + &"ee".repeat(32);
+            // 3. Push first mining.notify
+            let blob1 = "ab".repeat(32);
             write_json(
                 &mut writer,
                 json!({
                     "id": null,
-                    "method": "eth_getWork",
-                    "params": [seed2, header2, target2]
+                    "method": "mining.notify",
+                    "params": ["erg_job_1", 100, blob1, "", "", "00000002", "12345", "", true]
+                }),
+            )
+            .await;
+
+            tokio::time::sleep(Duration::from_millis(200)).await;
+
+            // 4. Push second mining.notify (new job)
+            let blob2 = "cd".repeat(32);
+            write_json(
+                &mut writer,
+                json!({
+                    "id": null,
+                    "method": "mining.notify",
+                    "params": ["erg_job_2", 101, blob2, "", "", "00000002", "12346", "", true]
                 }),
             )
             .await;
@@ -3007,13 +3102,15 @@ mod tests {
         let client = AuxPowClient::new(profile);
         client.connect("testwallet").await.unwrap();
 
-        // The first job comes from polling. Wait for it.
+        // First job from first notify
         let job1 = client.wait_for_job(5000).await.unwrap().unwrap();
-        assert!(job1.header_hex.contains("cdcdcd"));
+        assert_eq!(job1.job_id, "erg_job_1");
+        assert!(job1.header_hex.contains("ababab"));
 
-        // The second job comes from the push notification.
+        // Second job from second notify
         let job2 = client.wait_for_job(5000).await.unwrap().unwrap();
-        assert!(job2.header_hex.contains("444444"));
+        assert_eq!(job2.job_id, "erg_job_2");
+        assert!(job2.header_hex.contains("cdcdcd"));
 
         client.disconnect().await.unwrap();
         server_task.await.unwrap();
@@ -3021,6 +3118,7 @@ mod tests {
 
     #[tokio::test]
     async fn eth_submit_hashrate_test() {
+        // Test eth_submitHashrate on an EthStratum pool (ETC, not ERG).
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap().to_string();
         let (host, port) = addr.rsplit_once(':').unwrap();
@@ -3096,7 +3194,8 @@ mod tests {
             tokio::time::sleep(Duration::from_millis(200)).await;
         });
 
-        let mut profile = CoinProfile::default_for(ExternalCoin::ERG);
+        // Use CLORE (EthStratum) — ETC and ERG now use standard Stratum v1.
+        let mut profile = CoinProfile::default_for(ExternalCoin::CLORE);
         profile.pool_host = host.to_string();
         profile.pool_port = port;
 
@@ -3502,7 +3601,7 @@ mod tests {
         assert_eq!(ExternalCoin::RVN.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::FLUX.protocol(), StratumProtocol::ZcashStratum);
         assert_eq!(ExternalCoin::XMR.protocol(), StratumProtocol::Stratum);
-        assert_eq!(ExternalCoin::ERG.protocol(), StratumProtocol::EthStratum);
+        assert_eq!(ExternalCoin::ERG.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::EVR.protocol(), StratumProtocol::EthStratum);
         assert_eq!(ExternalCoin::MEWC.protocol(), StratumProtocol::EthStratum);
         assert_eq!(ExternalCoin::CLORE.protocol(), StratumProtocol::EthStratum);
