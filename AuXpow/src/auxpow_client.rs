@@ -1712,16 +1712,15 @@ impl AuxPowClient {
 
                 // PBaaS v7+ nonceSpace embedding: write extranonce1 + miner_nonce
                 // into last 15 bytes (30 hex chars) of solution at offset 2658.
+                // Layout: [en1][miner_nonce(4B)][padding] (miner_nonce right after en1)
                 if !en1_hex.is_empty() {
                     let mut nonce_space = en1_hex.clone();
-                    if nonce_space.len() < 22 {
-                        nonce_space.push_str(&"0".repeat(22 - nonce_space.len()));
-                    }
                     nonce_space.push_str(&nonce2_4b);
+                    if nonce_space.len() < 30 {
+                        nonce_space.push_str(&"0".repeat(30 - nonce_space.len()));
+                    }
                     if nonce_space.len() > 30 {
                         nonce_space.truncate(30);
-                    } else if nonce_space.len() < 30 {
-                        nonce_space.push_str(&"0".repeat(30 - nonce_space.len()));
                     }
                     if sol.len() >= 2688 {
                         sol.replace_range(2658..2688, &nonce_space);
