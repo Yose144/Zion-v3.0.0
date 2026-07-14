@@ -28,6 +28,8 @@
 //! When absent, all Hiran functionality operates in transparent stub mode —
 //! existing tests are unaffected.
 
+pub mod adversarial;
+
 use poc_core::{
     apply_dual_vow_bonus, AnomalyAction, AnomalyAlert, AnomalyType, AnomalySeverity,
     CareScoreComponents, HiranEpochStats, HiranVerdict, NetworkHealth, ValidatorId,

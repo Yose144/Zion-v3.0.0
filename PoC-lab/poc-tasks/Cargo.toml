@@ -7,11 +7,19 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 
+[features]
+default = []
+## Enable live data sources (L1 RPC, L3 WARP API).
+## When disabled, only MockDataSource is available (no network access).
+live-data = ["dep:ureq", "dep:serde_json"]
+
 [dependencies]
 poc-core = { path = "../poc-core" }
 serde = { workspace = true }
 thiserror = { workspace = true }
 blake3 = { workspace = true }
+ureq = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }

@@ -1,6 +1,32 @@
 # PoC-lab Architecture
 
-> **Scope:** Skeleton / prototype — mimo `V3/`. Žádná L1 consensus integrace.
+> **Scope:** Prototype / laboratory — mimo `V3/`. Žádná L1 consensus integrace.
+> **Updated:** 2026-07-14 — Fáze 2 implementace (real data, hardened P2P, adversarial economics, persistent storage)
+
+---
+
+## Fáze 2 — Co je nového (2026-07-14)
+
+| Workstream | Status | Detail |
+|-----------|--------|--------|
+| Real data sources | ✅ | `DataSource` trait + `MockDataSource` (default) + `L1RpcSource` + `WarpApiSource` (feature-gated `live-data`) — live L1 RPC + L3 WARP API s automatickým fallback na mock |
+| P2P hardening | ✅ | `NodeIdentity` (Ed25519) + `EncryptedTransport` (X25519 ECDH + AES-256-GCM) + `PeerDiscovery` (exponential backoff, gossip peer exchange) — feature-gated `crypto` |
+| Adversarial economics | ✅ | `AdversarialSimulator` s 6 strategiemi (Honest, Lazy, ScoreGamer, BridgeSpoofer, Colluding, Intermittent) — gaming detection, slashing enforcement, Gini coefficient, survival rate |
+| Persistent storage | ✅ | Nový crate `poc-storage` (10th) — `FileProofStore` (content-addressed bincode), `EpochHistory` (chain hash, replay), `AuditTrail` (tamper-evident hash chain) |
+| Test count | ✅ | 277 default / 325 s všemi features — vše PASS |
+
+---
+
+## Fáze 1 — Co je nového (2026-07-14)
+
+| Workstream | Status | Detail |
+|-----------|--------|--------|
+| OpenCL GPU backend | ✅ | `OpenClBackend` v `poc-npu/src/opencl.rs` — INT8 VM na AMD RX 5600 XT přes ROCm OpenCL, bit-exact s CPU referencí (circuit breaker ověřen) |
+| ProgramConfig presets | ✅ | `CI` (~4K MAC), `BENCH` (~100-200K MAC), `PRODUCTION` (~2M MAC) |
+| Batch inference | ✅ | `NpuBackend::infer_batch()` — default loop, OpenCL override s program reuse |
+| Real care task executors | ✅ | `TaskExecutor` trait + 4 executory (Warp, Anomaly, Liquidity, Constitutional) + `CompositeExecutor` router |
+| P2P multi-process sim | ✅ | Nový crate `poc-p2p` — TCP transport, gossip protokol, `P2pNode`, cross-validation across nodes |
+| Test count | ✅ | 228 default / 239 s OpenCL — vše PASS |
 
 ---
 
@@ -20,6 +46,8 @@
   │poc-tasks│ │poc-npu   │ │poc-verifier│  │poc-registry  │
   │assignment│ │INT8 VM   │ │score + validation│ │validators   │
   │registry  │ │RandomNPU │ │cross-validation   │ │Sefirot Vow   │
+  │executors │ │OpenCL GPU│ │                   │ │              │
+  │(4 real)  │ │batch inf │ │                   │ │              │
   └─────────┘ └──────────┘ └──────────┘  └──────────────┘
         │           │           │               │
         └───────────┴─────┬─────┴───────────────┘
@@ -29,6 +57,24 @@
                    │reward split   │◀───────│network simulator│
                    │slashing model │        │(lib + CLI demo) │
                    └───────────────┘        └────────────────┘
+                                                  │
+                                                  ▼
+                                          ┌────────────────┐
+                                          │  poc-p2p       │
+                                          │  TCP transport │
+                                          │  gossip protokol│
+                                          │  P2pNode       │
+                                          │  cross-valid.  │
+                                          │  crypto (opt)  │
+                                          └────────────────┘
+                                                 │
+                                                 ▼
+                                          ┌────────────────┐
+                                          │  poc-storage   │
+                                          │  FileProofStore│
+                                          │  EpochHistory  │
+                                          │  AuditTrail    │
+                                          └────────────────┘
 ```
 
 ---
@@ -51,32 +97,48 @@
 ## `poc-tasks`
 
 - `TaskAssigner`: deterministicky přiřazuje tasky validátorům per epoch.
-- `DummyExecutor`: prototypový executor, který generuje dummy output.
+- `DummyExecutor`: prototypový executor, který generuje dummy output (fallback).
 - `TaskRegistry`: registry všech 11 care tasků.
+- **`TaskExecutor` trait** (Fáze 1): společný trait pro reálné executory.
+- **`WarpBridgeAuditExecutor`** (Fáze 1): audit WARP bridge consistency —
+  generuje deterministický mock bridge state, kontroluje locked/minted drift,
+  stale pending locky, TVL range. Output = BLAKE3 hash audit výsledku.
+- **`L1AnomalyDetectionExecutor`** (Fáze 1): detekce anomálií v L1 mempoolu —
+  generuje mock mempool, z-score outlier detection, circular transfer detection.
+- **`LiquidityHealthExecutor`** (Fáze 1): kontrola DEX liquidity pool health —
+  constant product check, slippage calculation.
+- **`ConstitutionalAuditExecutor`** (Fáze 1): audit DAO proposal vs constitution —
+  max mint check, treasury transfer check, quorum check.
+- **`CompositeExecutor`** (Fáze 1): router který dispatchuje na správný executor
+  podle task typu. Pro tasky bez specifického executoru fallbackuje na DummyExecutor.
 
 ## `poc-npu`
 
-- `NpuBackend` trait pro různé inference backendy.
+- `NpuBackend` trait pro různé inference backendy (včetně `infer_batch`).
 - `vm` modul: reálná deterministická **INT8 VM** implementující "ZION NPU VM Spec"
-  z `docs/NPU_HARDWARE_MINING_THEORY.md` §4.2 (prototype scale):
+  z `docs/NPU_HARDWARE_MINING_THEORY.md` §4.2:
   - `DeterministicRng` — xorshift64* seedovaný z Blake3 digestu.
   - `Activation` — 4 aktivace (ReLU/GELU/SiLU/HardSwish), každá materializovaná
     jako 256-entry INT8→INT8 lookup table.
   - `DenseLayer` — INT8 matmul + bias + arithmetic shift + clamp + activation lookup.
   - `RandomNpuProgram` — RandomNPU koncept (teorie doc §3): počet vrstev, dimenze
     a aktivace jsou náhodně (ale deterministicky) generované z `(seed, epoch)`.
-    Vstup/výstup jsou fixní `IO_DIM = 64` bytů (odpovídá "64 bytes -> 64 bytes"
-    NPU Mix shape z teorie doc).
+    Vstup/výstup jsou fixní `IO_DIM = 64` bytů.
+  - **`ProgramConfig` presets** (Fáze 1): `CI` (~4K MAC), `BENCH` (~100-200K MAC),
+    `PRODUCTION` (~2M MAC) — konfigurovatelný scale pro benchmarking.
 - `CpuReferenceBackend`: canonical truth backend — používá `vm::RandomNpuProgram`.
-- `OnnxBackend`: stub delegující na CPU reference (v produkci by volal ONNX Runtime
-  s INT8 execution providerem).
-- `RandomNpuGenerator`: tenký wrapper — odvozuje `model_hash` per epoch a
-  poskytuje human-readable popis topologie.
+- **`OpenClBackend`** (Fáze 1): GPU backend přes OpenCL — spouští stejný INT8 VM
+  na AMD RX 5600 XT (RDNA1/gfx1010) přes ROCm OpenCL. Bit-exact s CPU referencí
+  (circuit breaker ověřen přes 50+ inputs, všechny aktivace, multi-layer programy).
+  Feature-gated: `--features opencl`.
+- `OnnxBackend`: stub delegující na CPU reference.
+- `RandomNpuGenerator`: tenký wrapper — odvozuje `model_hash` per epoch.
 - `CircuitBreaker`: porovnává výstup libovolného HW backendu s CPU referencí.
+- **`infer_batch`** (Fáze 1): batch inference — default impl loop, OpenCL override
+  s program reuse (generuje program jednou, reuseuje pro všechny vstupy).
 
-**Scale note:** teoretická studie cílí na ~2M MAC/hash pro efektivní NPU
-workload amortizaci. Prototyp defaultně generuje mnohem menší programy
-(~1-10K MAC), aby testy běžely rychle. Rozsah je konfigurovatelný přes
+**Scale note:** `ProgramConfig::PRODUCTION` cílí na ~2M MAC/hash (theory doc §3.4).
+`ProgramConfig::CI` (default) generuje ~1-10K MAC pro rychlé testy.
 `ProgramConfig` pro budoucí scale-up experimenty.
 
 ## `poc-verifier`
@@ -133,6 +195,26 @@ workload amortizaci. Prototyp defaultně generuje mnohem menší programy
 - CLI demo (`cargo run -p poc-sim`) simuluje 4 validátory (honest, average, **guardian/dual-vow**, lazy)
   přes 5 epoch. Guardian `diana [S+B]` má +5 % care score oproti `alice [S]` se stejnou kvalitou.
 
+## `poc-p2p` (Fáze 1 — NOVÝ)
+
+- P2P networking layer pro multi-node simulaci.
+- `GossipMessage` enum: Hello, CareProofBroadcast, EpochSyncRequest/Response,
+  CrossValidateRequest/Response, Ping/Pong — serializováno jako length-prefixed JSON.
+- `TcpTransport`: synchronní TCP transport (4-byte LE length prefix + JSON).
+- `GossipProtocol`: flooding gossip s TTL-based propagací a BLAKE3 message dedup.
+- `P2pNode`: spojuje `NetworkSimulator` + TCP listener + peer connections.
+  - `bind()`: naslouchá na TCP portu (non-blocking accept loop v dedicated thread).
+  - `connect(peer_addr)`: připojí se k peeru, pošle Hello handshake, spawn reader thread.
+  - `run_epoch(epoch)`: lokální simulace + gossip broadcast care proofs.
+  - `cross_validate_epoch(epoch, model_hash, min_score, quorum)`: honest-majority
+    cross-validation — dedup proofs by validator_id, verifikace přes CareVerifier,
+    quorum check, identifikace divergentních validátorů.
+- `CrossValidationResult`: report s accepted/rejected proofs, quorum status,
+  divergent validators.
+- Thread-per-connection model, 10ms accept poll, 100ms read timeout.
+- Testy: 2-node proof exchange, 3-node honest majority, divergent node detection,
+  empty epoch quorum failure, single-node quorum-1.
+
 ---
 
 ## Data flow (end-to-end, jak implementováno v `poc-sim::run_epoch`)
@@ -170,9 +252,17 @@ workload amortizaci. Prototyp defaultně generuje mnohem menší programy
 ## Determinism strategy
 
 - `CpuReferenceBackend` (nad `vm::RandomNpuProgram`) je canonical reference.
+- **`OpenClBackend`** (Fáze 1) prošel circuit breaker testem — **bit-exact shoda**
+  s CPU referencí ověřena přes 50+ inputs, všechny 4 aktivace, multi-layer programy
+  (3-5 layers, 32-128 hidden dim). OpenCL integer operace (char/int) jsou deterministické
+  podle specifikace, a arithmetic right shift je emulován v kernelu pro zaručení shody
+  s Rust's `i32 >> n`.
 - Každý jiný backend musí projít `CircuitBreaker::check` proti CPU reference,
   nebo (silnější varianta) projít `cross_validation::cross_validate()` honest-majority
   testem proti sadě backendů.
+- **P2P cross-validation** (Fáze 1): `P2pNode::cross_validate_epoch()` implementuje
+  honest-majority across nodes — každý node verifikuje gossiped proofs a quorum
+  je vyžadováno pro epoch validity.
 - Model hash / program topology je deterministicky odvozen z `(genesis_seed, epoch)`.
 - Všechny aritmetické operace ve VM jsou INT8/INT32 s explicitně definovaným
   rounding (arithmetic shift, clamp), takže výsledek je bit-exact na jakémkoli HW,
@@ -186,12 +276,13 @@ workload amortizaci. Prototyp defaultně generuje mnohem menší programy
 
 - `NpuAttestation` je jen stub (quote_hash z výstupu, ne skutečný vendor quote).
   Reálné attestation vyžaduje vendor quote / TEE (viz `ANALYSIS.md` §3.3).
-- `DummyExecutor` negeneruje skutečnou AI práci pro care tasky — `poc-npu::vm`
-  je real deterministic compute, ale sémanticky nejde o skutečnou anomaly
-  detection / bridge audit, jen o demonstraci determinismu a workload sizing.
+- **Real care task executors** (Fáze 1) produkují smysluplný output, ale z
+  deterministických mock generátorů (ne reálná API data). V Fázi 2 se nahradí
+  reálnými napojeními na L3 WARP API, L1 RPC, DEX indexer.
 - `ValidatorRegistry` řeší Sybil resistance jen přes stake; skutečná identity
   uniqueness (hardware attestation, sociální graf, KYC) je out-of-scope.
 - `SlashingPolicy` je konceptuální model; skutečná ekonomika by vyžadovala
   samostatný audit a game-theoretic analýzu (viz `ANALYSIS.md` §4).
-- `poc-sim` je čistě in-memory simulace jednoho procesu — žádná síťová
-  komunikace, žádný skutečný P2P konsensus.
+- `poc-sim` je in-memory simulace. **`poc-p2p`** (Fáze 1) přidává multi-node
+  TCP komunikaci a cross-validation, ale bez produkčního P2P stacku
+  (žádné encryption, DHT, NAT traversal — laboratorní grade).

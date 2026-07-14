@@ -172,17 +172,78 @@ cargo run -p poc-sim -- --hiran-url http://localhost:9000
 
 ---
 
+## Fáze 2 — Co se přidalo
+
+### Skutečná data (Real data sources)
+
+Dosud care tasky pracovaly se simulovanými (mock) daty. Fáze 2 přidává
+`DataSource` trait — rozhraní, přes které tasky získávají reálná data:
+
+- **L1RpcSource** — stahuje bridge state, mempool a pool state z L1 RPC
+  endpointu (`http://127.0.0.1:9443`).
+- **WarpApiSource** — stahuje data z L3 WARP API (`http://127.0.0.1:8453`).
+- **MockDataSource** — deterministická mock data (default, funguje offline).
+
+Pokud live zdroj není dostupný, automaticky se přepne na mock —
+laboratoř tedy funguje vždy, i bez běžícího node.
+
+### Zabezpečená P2P (Crypto)
+
+Fáze 1 přinesla TCP transport a gossip protokol. Fáze 2 přidává šifrování:
+
+- **NodeIdentity** — každý uzel má Ed25519 klíč (podepisování zpráv).
+- **EncryptedTransport** — X25519 klíčová výměna + AES-256-GCM šifrování
+  (utajení + integrita každé zprávy).
+- **PeerDiscovery** — seed-based peer list s exponential backoff a
+  automatickým znovupřipojením.
+
+### Adversarial economics — co když někdo podvádí?
+
+Fáze 2 přidává `AdversarialSimulator` — simulátor, který modeluje
+různé strategie podvodníků:
+
+| Strategie | Co dělá | Jak se detekuje |
+|-----------|---------|-----------------|
+| **Honest** | Poctivě plní tasky | — |
+| **Lazy** | Nedělá nic / minimum | Rejected nebo velmi nízký score |
+| **ScoreGamer** | Optimalizuje jen na score | Score > 1.3× median ostatních |
+| **BridgeSpoofer** | Falšuje bridge audit | ~33% náhodná detekce |
+| **Colluding** | Skupina se domlouvají | ≥3 validátoři s podobným score |
+| **Intermittent** | Střídavě podvádí | Detekce v cheat epochách |
+
+Při detekci se aplikuje **slashing** — progresivní odebrání stake
+(10% → 20% → 40% → trvalý ban). Simulátor měří také **Gini coefficient**
+(rozdělení bohatství) a **survival rate** (kolik validátorů přežije).
+
+### Persistent storage — ukládání proofů
+
+Fáze 2 přidává crate `poc-storage` s třemi komponentami:
+
+- **FileProofStore** — content-addressed úložiště proofů. Každý proof
+  se uloží pod svým BLAKE3 hashem (2-level sharding). Index mapuje
+  `(epoch, validator_id) → proof hash`.
+- **EpochHistory** — append-only záznam epoch. Každá epocha obsahuje
+  hash předchozí (chain hash) — podobně jako blockchain. Lze přehrát
+  celou historii a ověřit konzistenci.
+- **AuditTrail** — monotónický audit log s hash chain. Tamper-evident:
+  jakákoliv úprava minulého záznamu rozbije chain.
+
+---
+
 ## Struktura kódu
 
 ```
 PoC-lab/
 ├── poc-core/       Základní typy: CareTask, CareProof, Hiran verdikty, anomálie
-├── poc-npu/        NPU backend abstrakce + HiranNpuBackend (stub/live)
-├── poc-tasks/      Assigner + DummyExecutor + HiranTaskExecutor
+├── poc-npu/        NPU backend abstrakce + INT8 VM + OpenCL GPU (opencl)
+├── poc-tasks/      Assigner + real executors + data sources (live-data)
 ├── poc-economics/  Reward split, slashing, final_care_score() s NCL bonusem
 ├── poc-registry/   Validátorský registr, Sefirot vow, Bodhisattva vow
 ├── poc-verifier/   Ověřuje strukturu a skóre každého CareProof
-└── poc-sim/        End-to-end simulátor, CLI demo, anomaly reporting
+├── poc-sim/        End-to-end simulátor + adversarial economics
+├── poc-hiran/      Hiran AI verdict engine (stub + live)
+├── poc-p2p/        TCP transport + gossip + crypto (Ed25519/X25519/AES-GCM)
+└── poc-storage/    FileProofStore + EpochHistory + AuditTrail
 ```
 
 ---
@@ -201,6 +262,6 @@ nikoliv jako metafora, ale jako funkční ekonomická pobídka.
 
 ---
 
-*Tento dokument byl vytvořen jako součást PoC-lab Fáze 1 implementace.*
+*Fáze 0: základní laboratoř. Fáze 1: OpenCL GPU, real executors, P2P. Fáze 2: real data, crypto, adversarial economics, storage.*
 *Technická specifikace: `docs/3.0.4/POC_HIRAN_INTEGRATION_SPEC.md`*
 *Filosofický základ: `docs/3.0.4/AI_NATIVE_VOW.md`, `docs/3.0.4/BODHISATTVA_VOW_COMPENDIUM.md`*

@@ -1,5 +1,5 @@
 [workspace]
-members = ["poc-core", "poc-tasks", "poc-verifier", "poc-npu", "poc-registry", "poc-economics", "poc-sim", "poc-hiran"]
+members = ["poc-core", "poc-tasks", "poc-verifier", "poc-npu", "poc-registry", "poc-economics", "poc-sim", "poc-hiran", "poc-p2p", "poc-storage"]
 resolver = "2"
 
 [workspace.package]
