@@ -1,6 +1,6 @@
 # AuxPow Multi-Algorithm GPU Mining — Complete Report & Plan
 
-> **Status:** 2026-07-13 (rev2.3 — DCR/ALPH share targets fixed, external GPU verification next) | DCR E2E re-verification in progress
+> **Status:** 2026-07-14 (rev2.4 — EPIC/ProgPow added, Metal backend all 6 algorithms on Apple M1) | DCR E2E re-verification in progress
 > **Author:** Devin + Yose | **Repo:** `Zion-v3.0.0`
 > **Main goal:** Rozchodit revenue system ze stream multi-algo GPU miningu v Deeksha Chv3 — všechny streamy uvnitř Deeksha Chv3 pipeline
 
@@ -9,7 +9,7 @@
 ## 1. Executive Summary
 
 ZION AuxPow B2b bridge umožňuje pool-side merge mining external coinů
-(DCR, KAS, ALPH, ERG, RVN, ETC, …) přes GPU kernely. Pool přijímá
+(DCR, KAS, ALPH, ERG, RVN, ETC, EPIC, …) přes GPU kernely. Pool přijímá
 joby z external poolů, přeposílá je minerům jako `external_job`,
 miner hasheje GPU kernelem, a pool forwarduje share zpět do
 external poolu.
@@ -253,6 +253,7 @@ SessionGroup::Auto     → weighted round-robin across all lanes
 | **FLUX** | ZelHash | **MISSING** | **MISSING** | Stratum v1 | — | **TODO** |
 | **XMR** | RandomX | **MISSING** | **STUB** | Stratum v1 | — | **TODO** (CPU-only) |
 | **VRSC** | VerusHash v2.2 | **TODO** | **STUB** (Keccak placeholder) | ZcashStratum | — | **IN PROGRESS** — viz `AUXPOW_VRSC_B2B_PLAN.md` |
+| **EPIC** | ProgPow | **MISSING** | **MISSING** | Epic JSON-RPC (HTTP POST) | — | **TODO** — viz Phase 12 |
 
 ### 2.2 Infrastructure Status
 
@@ -316,6 +317,7 @@ ZION Miner (GPU rig)
 | `autolykos_kernel.cl` | `autolykos_mine` | BLAKE2b + memory-hard | ERG |
 | `kawpow_kernel.cl` | `kawpow_mine` | Keccak + DAG + FNV | RVN, CLORE, EVR, MEWC |
 | `ethash_kernel.cl` | `ethash_mine` | Keccak + DAG + FNV | ETC |
+| `progpow_kernel.cl` | `progpow_mine` | keccak_f800 + DAG + FNV1a + KISS99 | EPIC |
 
 ### 3.3 CPU Hasher Inventory
 
@@ -331,8 +333,10 @@ ZION Miner (GPU rig)
 | `hash_kawpow_native_with_dag()` | `native_ffi.rs` | KawPow (C FFI + DAG) | **EXISTS** |
 | `hash_ethash_native_with_dag()` | `native_ffi.rs` | Ethash (C FFI + DAG) | **EXISTS** |
 | RandomX | `randomx_stub.c` | XMR | **STUB** |
+| `hash_progpow()` | `external_hashers.rs` | EPIC ProgPow (keccak_f800 + DAG) | **TODO** |
+| `hash_progpow_native()` | `native_ffi.rs` | EPIC (C FFI + DAG) | **TODO** |
 
-### 3.4 Coin Profiles (12 coins)
+### 3.4 Coin Profiles (13 coins)
 
 | Coin | Ticker | Algo | Default Pool | Protocol | Wallet |
 |------|--------|------|-------------|----------|-------|
@@ -348,6 +352,7 @@ ZION Miner (GPU rig)
 | Clore.ai | CLORE | kawpow | clore.woolypooly.com:3090 | EthStratum | BTC wallet |
 | Monero | XMR | randomx | moneroocean.stream:10001 | Stratum v1 | XMR wallet |
 | **Verus** | **VRSC** | **verushash** | **eu.luckpool.net:3956** | **ZcashStratum** | **VRSC wallet** |
+| **Epic Cash** | **EPIC** | **progpow** | **de.epicmine.io:3334** | **Epic JSON-RPC** (TLS) | **EPIC wallet** |
 
 ### 3.5 Pool Environment Variables
 
@@ -564,6 +569,114 @@ ZION Miner (GPU rig)
 
 **Estimated effort:** 20-40h (consensus-level work)
 
+### Phase 12: EPIC (ProgPow) — TODO
+
+**Status:** Nová integrace. ProgPow je GPU-friendly, ASIC-resistant algoritmus pro Epic Cash (MimbleWimble blockchain).
+
+**O Epic Cash (EPIC):**
+- MimbleWimble blockchain (jako Grin), 3 algoritmy: RandomX, **ProgPow**, CuckAToo31+
+- ProgPow = GPU-only algoritmus (ASIC-resistant), ideální pro GPU pool mining
+- ProgPow je **DAG-based** (podobný Ethash) s keccak_f800 + FNV1a + KISS99 random sequence
+- Random sequence se mění každých `PROGPOW_PERIOD` bloků (10 bloků ~2 min)
+- ProgPoW 0.9.3 parametry: LANES=16, REGS=32, DAG_LOADS=4, CNT_DAG=64, CNT_CACHE=11, CNT_MATH=18
+
+**O ProgPow algoritmu:**
+```
+1. keccak_f800(header || nonce) → seed (256-bit)
+2. fill_mix(seed) → mix_state[PROGPOW_REGS * PROGPOW_LANES]
+3. ProgPow loop (64 iterací):
+   a. KISS99 RNG (seeded from prog_seed) → random math + cache accesses
+   b. DAG reads (256 bytes per iteration, FNV1a merge)
+   c. Cache reads (16KB cache, random addresses)
+   d. Random math operations (mul, add, rot, xor)
+4. keccak_f800(mix_state) → final hash (256-bit)
+```
+
+**Epic Stratum protokol (custom JSON-RPC 2.0):**
+- **Transport:** HTTP POST (ne TCP!), TLS
+- `getjobtemplate` — miner žádá o job
+- `job` — server push (job_id, height, difficulty, pre_hash, nonce)
+- `submit` — `{edge_bits, height, job_id, nonce, pow: [int array]}` — ProgPow pow = hash result
+- `keepalive` — heartbeat
+- `login` — `{login, password, agent}`
+
+**Reference:**
+- ProgPow spec: https://github.com/ifdefelse/ProgPOW (EIP-1057)
+- OpenCL kernel reference: xmrig `kawpow.cl` (ProgPow variant)
+- Epic stratum: https://devdocs.epiccash.com/node/stratum/
+- Epic miner: https://github.com/EpicCash/epic-miner (Rust)
+- Pool: epicmine.io (`de.epicmine.io:3334`, TLS)
+
+**Úkoly:**
+
+#### 12.1 Epic Stratum client (custom protocol)
+
+- [ ] Implementovat `EpicStratumClient` v `AuXpow/src/auxpow_client.rs` (nebo nový `epic_client.rs`)
+  - HTTP POST transport (ne TCP), TLS
+  - `getjobtemplate` request → parse `job` response
+  - `submit` request s `{edge_bits, height, job_id, nonce, pow}` params
+  - `keepalive` periodic
+  - `login` auth
+- [ ] `ExternalJob` mapping z Epic job template (height, pre_hash, difficulty, target)
+- [ ] Test s epicmine.io pool (de.epicmine.io:3334, TLS)
+
+#### 12.2 ProgPow CPU hasher
+
+- [ ] Implementovat `hash_progpow()` v `external_hashers.rs`
+  - keccak_f800 (32-bit word variant, SHAKE width=800)
+  - DAG generation (similar to Ethash DAG, but ProgPow params)
+  - FNV1a merge
+  - KISS99 random sequence (per prog_seed)
+  - ProgPow loop (64 iterations, random math + cache + DAG reads)
+- [ ] Implementovat `hash_progpow_native()` v `native_ffi.rs` (C FFI)
+  - Port ProgPow C implementation z ifdefelse/ProgPOW
+  - DAG cache management (epoch-based, 16KB cache)
+- [ ] Unit testy: known vectors z EIP-1057
+
+#### 12.3 ProgPow OpenCL kernel
+
+- [ ] Napsat `progpow_kernel.cl` v `csrc/opencl/`
+  - `progpow_mine` entry point
+  - keccak_f800 (OpenCL, 32-bit words)
+  - DAG buffer (256 bytes per nonce, 64 iterations)
+  - KISS99 RNG + random math sequence (compiled per period)
+  - FNV1a merge
+  - Target check + found flag
+- [ ] Přidat kernel_info mapping v `gpu_miner.rs`
+- [ ] `build_progpow_kernel()` — DAG buffer + prog_seed buffer
+
+**Note:** ProgPow random sequence se generuje na CPU per period (10 bloků) a kompiluje se do OpenCL source. To vyžaduje dynamic kernel compilation (jako ifdefelse/ProgPOW `getKern()`).
+
+#### 12.4 ProgPow Metal kernel
+
+- [ ] Napsat `progpow_kernel.metal` v `csrc/metal/`
+- [ ] Buffer layout pro Metal (scalar args → `constant type* [[buffer(N)]]`)
+- [ ] Test na Apple M1
+
+#### 12.5 ProgPow CUDA kernel
+
+- [ ] Napsat `progpow_kernel.cu` v `csrc/cuda/`
+- [ ] CUDA-specific optimizations (shared memory, warp-level ops)
+
+#### 12.6 Integration + E2E
+
+- [ ] Přidat EPIC do `ExternalCoin` enum v `types.rs`
+- [ ] Přidat `ProgPow` do `ExternalAlgorithm` enum
+- [ ] Přidat `ProgPowExternal` do `RevenueSource` (fee 2%)
+- [ ] `ZION_STREAM_PROGPOW_PCT` env var
+- [ ] E2E test s `AUXPOW_E2E_COIN=epic` na epicmine.io pool
+- [ ] Verify share accepted
+- [ ] Benchmark: změřit hashrate na Apple M1 (Metal) + GPU rig (OpenCL)
+
+**Estimated effort:** 16-24h
+- Epic Stratum client (HTTP POST, TLS): 4-6h
+- ProgPow CPU hasher + FFI: 4-6h
+- ProgPow OpenCL kernel (dynamic compilation): 6-8h
+- ProgPow Metal kernel: 2-4h
+- Integration + E2E: 2-4h
+
+**Blocker:** Dynamic kernel compilation (ProgPow random sequence se mění každých 10 bloků, kernel source se generuje na CPU a kompiluje za běhu)
+
 ---
 
 ## 5. Priority Order
@@ -596,10 +709,11 @@ ZION Miner (GPU rig)
 | **P3** | Phase 5: ETC E2E | 3-4h | 5th coin live |
 | **P4** | Phase 6: FLUX | 8-12h | New algorithm |
 | **P4** | Phase 7: XMR | 4-8h | CPU-only coin |
+| **P4** | Phase 12: EPIC (ProgPow) | 16-24h | New algorithm + custom protocol |
 | **P5** | Phase 10: Multi-coin | 8-12h | Profit optimization |
 | **P6** | Phase 11: True AuxPow | 20-40h | Consensus integration |
 
-**Total estimated effort:** ~70-120h pro všechny phases
+**Total estimated effort:** ~86-144h pro všechny phases
 
 ---
 
@@ -607,7 +721,7 @@ ZION Miner (GPU rig)
 
 | Purpose | File |
 |---------|------|
-| GPU kernels (OpenCL) | `AuXpow/csrc/opencl/*.cl` |
+| GPU kernels (OpenCL) | `AuXpow/csrc/opencl/*.cl` (incl. `progpow_kernel.cl`) |
 | CPU hashers | `AuXpow/src/external_hashers.rs` |
 | Native FFI hashers | `AuXpow/src/native_ffi.rs` |
 | Coin profiles | `AuXpow/src/types.rs` |
@@ -644,6 +758,7 @@ ZION Miner (GPU rig)
 | EVR | $0.20 | $0.08 | $0.12 |
 | MEWC | $0.15 | $0.06 | $0.09 |
 | XMR | $0.12 | $0.03 | $0.09 |
+| EPIC | $0.35 | $0.10 | $0.25 |
 
 ---
 
@@ -950,6 +1065,7 @@ ZION_STREAM_PROFIT_SOURCES=zion,keccak_bonus,sha3_bonus,ncl_ai
 | XMR (RandomX) | RandomXExternal | 2% |
 | FLUX (ZelHash) | ZelHashExternal | 2% |
 | VRSC (VerusHash) | VerusHashExternal | 1% (LuckPool) |
+| EPIC (ProgPow) | ProgPowExternal | 2% |
 
 ### 10.3 Revenue flow — end to end
 
