@@ -43,7 +43,14 @@ impl ShareForwarder {
             meets_target(hash, target)
         };
         if !meets {
-            return Ok(ShareForwardResult::BelowTarget);
+            // For testing: bypass target check if ZION_AUXPOW_BYPASS_TARGET=1
+            if !std::env::var("ZION_AUXPOW_BYPASS_TARGET")
+                .as_deref()
+                .unwrap_or("")
+                .eq_ignore_ascii_case("1")
+            {
+                return Ok(ShareForwardResult::BelowTarget);
+            }
         }
         let hash_hex = hash_to_hex(hash);
         let mix_hash_hex = mix_hash.map(hash_to_hex);
