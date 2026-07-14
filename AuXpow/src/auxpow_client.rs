@@ -1689,7 +1689,13 @@ impl AuxPowClient {
                 self.profile.coin, job_id, ntime, nonce2_str.len(), solution_with_varint.len()
             );
 
-            ("mining.submit", json!([worker, job_id, ntime, nonce2_str, solution_with_varint]))
+            // VerusHash / Zcash stratum submit format: 4 params
+            //   [worker, job_id, nonce2, solution]
+            // ntime is NOT a separate parameter — it's embedded in the
+            // block header blob that LuckPool already has from the notify.
+            // Including ntime as a 5th param shifts nonce2/solution and
+            // causes LuckPool to reject with "unknown".
+            ("mining.submit", json!([worker, job_id, nonce2_str, solution_with_varint]))
         } else if self.profile.coin == ExternalCoin::DCR {
             // DCR Blake3: standard Stratum v1 submit with 5 params:
             //   [worker, job_id, extranonce2, ntime, nonce]
