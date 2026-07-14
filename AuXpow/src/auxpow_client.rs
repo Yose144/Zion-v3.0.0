@@ -75,6 +75,13 @@ impl ExternalCoin {
             Self::EPIC => {
                 StratumProtocol::Stratum
             }
+            // Pearl (PRL) uses standard Stratum v1 over TCP.
+            // mining.subscribe / mining.authorize / mining.notify / mining.submit
+            // No DAG — matrices generated per-job from seed.
+            // Merge mining: PRL + MDL via "prl1PRL+mdl1MDL" address format.
+            Self::PRL => {
+                StratumProtocol::Stratum
+            }
         }
     }
 
@@ -82,6 +89,7 @@ impl ExternalCoin {
     /// Ethash/ETC: 30000 blocks per epoch.
     /// KawPow/RVN: 7500 blocks per epoch.
     /// ProgPow/EPIC: 30000 blocks per epoch (same as Ethash).
+    /// Pearl/PRL: no DAG (PEARL_EPOCH_LENGTH = 0).
     pub fn epoch_length(self) -> u32 {
         match self {
             Self::RVN | Self::CLORE | Self::EVR | Self::MEWC => {
@@ -89,6 +97,7 @@ impl ExternalCoin {
             }
             Self::ETC => crate::external_hashers::ETHASH_EPOCH_LENGTH,
             Self::EPIC => crate::external_hashers::PROGPOW_EPOCH_LENGTH,
+            Self::PRL => crate::external_hashers::PEARL_EPOCH_LENGTH,
             _ => crate::external_hashers::ETHASH_EPOCH_LENGTH,
         }
     }
@@ -1170,6 +1179,12 @@ impl AuxPowClient {
         // We store the solution and ntime per job_id for submit reconstruction.
         if self.protocol == StratumProtocol::ZcashStratum {
             if let Some(arr) = params.as_array() {
+                // Log raw notify params count and any extra params beyond 9
+                println!(
+                    "auxpow: VRSC notify params_count={} extra={}",
+                    arr.len(),
+                    if arr.len() > 9 { arr[9..].iter().map(|v| v.to_string()).collect::<Vec<_>>().join(",") } else { String::new() }
+                );
                 if arr.len() >= 8 {
                     let as_s = |idx: usize| -> String {
                         arr.get(idx)

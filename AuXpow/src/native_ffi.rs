@@ -846,3 +846,17 @@ pub fn hash_progpow_native_with_dag(
 ) -> Result<([u8; 32], [u8; 32]), &'static str> {
     Err("native ProgPow FFI with DAG not yet implemented — using pure-Rust fallback")
 }
+
+// ── Pearl (PRL) — PearlHash PoUW ─────────────────────────────────────
+
+/// Compute Pearl hash using native C FFI (stub).
+///
+/// Returns `Err` to signal the caller to use the pure-Rust BLAKE3 fallback.
+/// The full PoUW implementation requires INT8 MatMul + noise generation,
+/// which will be implemented in the GPU kernels (pearl_kernel.cl/metal).
+pub fn hash_pearl_native(
+    _header_hash: &[u8; 32],
+    _nonce: u64,
+) -> Result<[u8; 32], &'static str> {
+    Err("native Pearl FFI not yet implemented — using pure-Rust BLAKE3 fallback")
+}
