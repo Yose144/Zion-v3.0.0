@@ -34,7 +34,7 @@ interface Endpoint {
 
 /* ── endpoint data ───────────────────────────────────────────── */
 
-const BASE_URL = "https://zion.cz/api/blockchain";
+const BASE_URL = "https://zionterranova.com/api/blockchain";
 
 const ENDPOINTS: Endpoint[] = [
   /* ── Blockchain ── */

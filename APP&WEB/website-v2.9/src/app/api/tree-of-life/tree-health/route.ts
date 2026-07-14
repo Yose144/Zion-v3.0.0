@@ -83,8 +83,10 @@ function scoreFromValue(value: number, target: number): number {
   return clamp((value / target) * 100);
 }
 
-export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+export async function GET(request: Request) {
+  // Use the request's own origin so internal fetch calls work in any environment
+  const reqUrl = new URL(request.url);
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${reqUrl.protocol}//${reqUrl.host}`;
 
   // Fan out to all existing APIs in parallel
   const [chainStats, defiStatus, bridgeStatus, nclStatus] = await Promise.all([
