@@ -1,29 +1,15 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  Activity,
   AlertTriangle,
   Blocks,
   CheckCircle,
-  CheckSquare,
-  Clock,
-  Coins,
-  Cpu,
-  Database,
   Globe,
   History,
-  Layers,
-  List,
   ListChecks,
-  Pickaxe,
-  Play,
-  RefreshCw,
-  Server,
   Settings,
-  Square,
   TrendingUp,
   Wallet as WalletIcon,
   XCircle,
-  Zap,
 } from 'lucide-react';
 
 import TopBar from './components/TopBar';
