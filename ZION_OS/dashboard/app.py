@@ -4554,8 +4554,8 @@ def get_pool_registered_miners() -> dict:
             "invalid_shares": invalid_shares,
             "pending_balance": pending_atomic,
             "pending_balance_zion": flowers_to_zion(pending_atomic),
-            "paid_total": 0.0,  # per-miner lifetime not tracked in PPLNS state; use pool stats total
-            "paid_total_atomic": 0,
+            "paid_total": float(active.get("paid_total", 0.0) or 0.0) if active else 0.0,
+            "paid_total_atomic": int(active.get("paid_total_atomic", 0) or 0) if active else 0,
             "blocks_found": blocks_found,
             "last_seen": last_seen,
             "last_share": last_share,
@@ -4564,16 +4564,9 @@ def get_pool_registered_miners() -> dict:
         }
         miners.append(m)
 
-    # 4. Aggregate paid total by address for display
-    # The pool /api/v1/miner/:address/payouts can give per-address paid total, but
-    # PPLNS state is authoritative for lifetime. We attach the global total_paid to
-    # each active miner for ranking; registered-only miners show 0 paid.
-    # Use pool stats as authoritative total paid for the whole PPLNS set.
+    # 4. Total paid from PPLNS state (authoritative pool lifetime total) while
+    # per-miner paid_total is already set from active telemetry above.
     total_paid_zion = flowers_to_zion(total_paid_flowers)
-    for m in miners:
-        if m["active"]:
-            m["paid_total"] = total_paid_zion
-            m["paid_total_atomic"] = total_paid_flowers
 
     # Sort by hashrate desc, active first
     miners.sort(key=lambda m: (not m["active"], -(m.get("hashrate_hps") or 0)))
@@ -4588,6 +4581,9 @@ def get_pool_registered_miners() -> dict:
             unique_balances[addr] = float(m.get("on_chain_balance_zion", 0) or 0)
         total_pending += float(m.get("pending_balance_zion", 0) or 0)
         total_paid += float(m.get("paid_total", 0) or 0)
+    # Use PPLNS authoritative total if available; otherwise sum of per-miner paid totals.
+    if total_paid_zion > 0:
+        total_paid = total_paid_zion
     totals = {
         "pending_zion": total_pending,
         "paid_zion": total_paid,
