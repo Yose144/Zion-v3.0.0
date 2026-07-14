@@ -31,16 +31,13 @@
   "bundle": {
     "active": true,
     "targets": ["deb", "nsis"],
-    "resources": {
-      "../../dashboard": "dashboard/"
-    },
+    "resources": {},
     "linux": {
       "deb": {
         "depends": [
           "libayatana-appindicator3-1",
           "libwebkit2gtk-4.1-0",
-          "libgtk-3-0",
-          "python3"
+          "libgtk-3-0"
         ]
       }
     },
