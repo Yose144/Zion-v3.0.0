@@ -493,9 +493,10 @@ impl GpuMiner {
 
         let hash_arr: [u8; 32] = hash.try_into().expect("32 bytes from GPU");
 
-        // Read mix hash for Ethash/KawPow (needed for eth_submitWork).
+        // Read mix hash for Ethash/KawPow/ProgPow (needed for share submission).
         let mix_hash = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc"
-            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc")
+            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            | "progpow" | "progpow_epic")
         {
             let mut mix = vec![0u8; 32];
             output_mix_buf.read(&mut mix).enq()?;

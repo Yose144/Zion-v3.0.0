@@ -2255,6 +2255,8 @@ struct ExternalShareResult {
     external_job_id: String,
     nonce: u64,
     hash: [u8; 32],
+    /// Mix hash for Ethash/KawPow/ProgPow shares (needed by upstream pool).
+    mix_hash: Option<[u8; 32]>,
     extranonce1_hex: String,
 }
 
@@ -2289,7 +2291,7 @@ fn submit_external_share(
         external_job_id: share.external_job_id.clone(),
         nonce: share.nonce,
         hash_hex: hex::encode(share.hash),
-        mix_hash_hex: None,
+        mix_hash_hex: share.mix_hash.map(|m| hex::encode(m)),
         extranonce1_hex: share.extranonce1_hex.clone(),
     };
     if let Err(e) = write_wire_message(writer, &ext_submit) {
@@ -2509,13 +2511,14 @@ fn blake3_gpu_thread(
 
         match result {
             Ok(br) => {
-                if let Some((found_nonce, hash, _)) = br.solutions.first() {
+                if let Some((found_nonce, hash, mix_hash)) = br.solutions.first() {
                     let share = ExternalShareResult {
                         coin: job.coin.clone(),
                         algorithm: job.algorithm.clone(),
                         external_job_id: job.job_id.clone(),
                         nonce: *found_nonce,
                         hash: *hash,
+                        mix_hash: *mix_hash,
                         extranonce1_hex: job.extranonce1_hex.clone(),
                     };
                     println!(
@@ -2531,6 +2534,192 @@ fn blake3_gpu_thread(
             Err(e) => {
                 // Only log every 60s to avoid spam
                 println!("dual_gpu_blake3_batch_error nonce={} err=\"{e}\"", nonce);
+                thread::sleep(Duration::from_millis(500));
+            }
+        }
+
+        // Advance nonce for next batch
+        nonce_offset = nonce_offset.wrapping_add(batch_size);
+        batch_count += 1;
+    }
+}
+
+/// Persistent ProgPow GPU miner thread (EPIC parallel stream).
+///
+/// Similar to `blake3_gpu_thread` but for ProgPow (EPIC).  Manages the
+/// per-epoch DAG via `update_epoch()` on the `OpenClExternalMiner`.
+/// Receives external stream jobs via channel, scans ProgPow nonces on GPU,
+/// and sends found shares (with mix_hash) back via another channel.
+fn progpow_gpu_thread(
+    rx: std::sync::mpsc::Receiver<zion_pool::ExternalStreamJob>,
+    tx: std::sync::mpsc::Sender<ExternalShareResult>,
+    work_size: usize,
+) {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    // Create the ProgPow GPU miner (separate OpenCL context)
+    let mut gpu_miner = match gpu_backend::create_gpu_backend(
+        gpu_backend::GpuBackendKind::OpenCL,
+        work_size,
+        "progpow",
+    ) {
+        Ok(m) => {
+            println!(
+                "[{}] progpow_gpu_init work_size={} device=\"{}\"",
+                log_timestamp(),
+                work_size,
+                m.device_name()
+            );
+            m
+        }
+        Err(e) => {
+            println!(
+                "[{}] progpow_gpu_init_failed err=\"{e}\" — EPIC GPU stream disabled",
+                log_timestamp()
+            );
+            return;
+        }
+    };
+
+    let mut current_job: Option<zion_pool::ExternalStreamJob> = None;
+    let mut nonce_base: u64 = 0;
+    let mut nonce_offset: u64 = 0;
+    let batch_size = 4_186_112u64;
+    let mut batch_count: u64 = 0;
+    let mut last_heartbeat = std::time::Instant::now();
+    let mut last_epoch: Option<u32> = None;
+
+    loop {
+        // Check for new job (non-blocking)
+        match rx.try_recv() {
+            Ok(job) => {
+                current_job = Some(job.clone());
+                let mut h = DefaultHasher::new();
+                job.job_id.hash(&mut h);
+                std::process::id().hash(&mut h);
+                nonce_base = (h.finish() as u32) as u64;
+                nonce_offset = 0;
+                println!(
+                    "[{}] progpow_gpu_job_received coin={} algo={} job_id={} height={}",
+                    log_timestamp(),
+                    job.coin,
+                    job.algorithm,
+                    job.job_id,
+                    job.height,
+                );
+            }
+            Err(std::sync::mpsc::TryRecvError::Empty) => {}
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                println!("[{}] progpow_gpu_channel_closed — exiting", log_timestamp());
+                return;
+            }
+        }
+
+        // Heartbeat every 15s
+        if last_heartbeat.elapsed().as_secs() >= 15 {
+            println!(
+                "[{}] progpow_gpu_heartbeat batches={} nonce_offset={} has_job={} epoch={:?}",
+                log_timestamp(),
+                batch_count,
+                nonce_offset,
+                current_job.is_some(),
+                last_epoch,
+            );
+            last_heartbeat = std::time::Instant::now();
+        }
+
+        let job = match &current_job {
+            Some(j) => j,
+            None => {
+                thread::sleep(Duration::from_millis(50));
+                continue;
+            }
+        };
+
+        // Ensure DAG is loaded for the current epoch
+        let epoch = (job.height / 30000) as u32;
+        if last_epoch != Some(epoch) {
+            println!(
+                "[{}] progpow_gpu_dag_loading epoch={} height={}",
+                log_timestamp(),
+                epoch,
+                job.height,
+            );
+            if let Err(e) = gpu_miner.update_epoch(job.height) {
+                println!(
+                    "[{}] progpow_gpu_dag_load_failed epoch={} err=\"{e}\" — retrying",
+                    log_timestamp(),
+                    epoch,
+                );
+                thread::sleep(Duration::from_secs(2));
+                continue;
+            }
+            last_epoch = Some(epoch);
+            println!(
+                "[{}] progpow_gpu_dag_ready epoch={}",
+                log_timestamp(),
+                epoch,
+            );
+        }
+
+        // Parse header and target
+        let header_bytes = match hex::decode(job.header_hex.trim_start_matches("0x")) {
+            Ok(b) => b,
+            Err(e) => {
+                println!("progpow_gpu_header_error: {e}");
+                thread::sleep(Duration::from_millis(100));
+                continue;
+            }
+        };
+
+        let target_bytes = match zion_pool::parse_fixed_hex::<32>(&job.target_hex, "external target") {
+            Ok(t) => t,
+            Err(e) => {
+                println!("progpow_gpu_target_error: {e}");
+                thread::sleep(Duration::from_millis(100));
+                continue;
+            }
+        };
+
+        let target = DifficultyTarget { bytes: target_bytes };
+        let nonce = nonce_base.wrapping_add(nonce_offset);
+
+        // Scan one batch on GPU
+        let result = if header_bytes.len() > 80 {
+            gpu_miner.mine_batch_raw(&header_bytes, target, nonce, batch_size)
+        } else {
+            let mut bytes = [0u8; 80];
+            let len = header_bytes.len().min(80);
+            bytes[..len].copy_from_slice(&header_bytes[..len]);
+            let header = MiningHeader::from_bytes(bytes);
+            gpu_miner.mine_batch(header, target, nonce, batch_size)
+        };
+
+        match result {
+            Ok(br) => {
+                if let Some((found_nonce, hash, mix_hash)) = br.solutions.first() {
+                    let share = ExternalShareResult {
+                        coin: job.coin.clone(),
+                        algorithm: job.algorithm.clone(),
+                        external_job_id: job.job_id.clone(),
+                        nonce: *found_nonce,
+                        hash: *hash,
+                        mix_hash: *mix_hash,
+                        extranonce1_hex: job.extranonce1_hex.clone(),
+                    };
+                    println!(
+                        "[{}] progpow_gpu_share_found coin={} nonce={} hash={}",
+                        log_timestamp(),
+                        share.coin,
+                        share.nonce,
+                        hex::encode(share.hash)
+                    );
+                    let _ = tx.send(share);
+                }
+            }
+            Err(e) => {
+                println!("progpow_gpu_batch_error nonce={} err=\"{e}\"", nonce);
                 thread::sleep(Duration::from_millis(500));
             }
         }
@@ -2791,6 +2980,7 @@ fn mine_external_stream_cpu(ext: &ExternalStreamJob, _threads: usize) -> Option<
             external_job_id: share.external_job_id,
             nonce: share.nonce,
             hash: share.hash,
+            mix_hash: None,
             extranonce1_hex: ext.extranonce1_hex.clone(),
         }),
         Ok(None) => None,

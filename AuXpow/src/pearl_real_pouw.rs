@@ -351,8 +351,9 @@ impl MerkleTree {
             })
             .collect();
 
-        // Walk tree to collect sibling hashes
+        // Walk tree to collect sibling hashes and side flags
         let mut siblings: Vec<Digest> = Vec::new();
+        let mut side_flags: Vec<usize> = Vec::new();
         let mut current_set = unique;
         let mut level_len = total_leaves;
 
@@ -361,11 +362,15 @@ impl MerkleTree {
             let level_nodes = &self.layers[level];
             for &i in &current_set {
                 if i % 2 == 1 {
+                    // Current node is right child → sibling is left
                     if !current_set.contains(&(i - 1)) {
                         siblings.push(level_nodes[i - 1]);
+                        side_flags.push(1); // sibling is left child
                     }
                 } else if !current_set.contains(&(i + 1)) && (i + 1) < level_len {
+                    // Current node is left child → sibling is right
                     siblings.push(level_nodes[i + 1]);
+                    side_flags.push(0); // sibling is right child
                 }
             }
             current_set = current_set.iter().map(|&i| i / 2).collect();
@@ -373,12 +378,21 @@ impl MerkleTree {
             level += 1;
         }
 
+        // Leaf hash = hash of the first selected leaf
+        let leaf_hash = if !sorted_indices.is_empty() {
+            self.layers[0][sorted_indices[0]]
+        } else {
+            [0u8; 32]
+        };
+
         MerkleProof {
             leaf_data,
             leaf_indices: sorted_indices,
             total_leaves,
             root: self.root(),
             siblings,
+            leaf_hash,
+            side_flags,
         }
     }
 
@@ -405,6 +419,12 @@ pub struct MerkleProof {
     pub total_leaves: usize,
     pub root: Digest,
     pub siblings: Vec<Digest>,
+    /// Hash of the first selected leaf (for the official proof format).
+    #[serde(default)]
+    pub leaf_hash: Digest,
+    /// Side flags for each sibling: 0 = sibling is right child, 1 = sibling is left child.
+    #[serde(default)]
+    pub side_flags: Vec<usize>,
 }
 
 impl std::fmt::Debug for MerkleProof {
@@ -459,139 +479,105 @@ pub struct MoEProofParams {
 impl PlainProof {
     /// Serialize to the official flat binary format then base64.
     ///
-    /// Format (matches alpha-miner-amd v1.7.5):
+    /// Format (matches alpha-miner-amd v1.7.5 `append_matrix_proof`):
     /// ```text
-    /// Header (48 bytes):
+    /// Header (32 bytes = 4 × u64 LE):
     ///   u64 LE: m
     ///   u64 LE: n
     ///   u64 LE: k
     ///   u64 LE: noise_rank
-    ///   u64 LE: num_selected_rows
-    ///   u64 LE: k (repeated)
-    /// A selected rows (num_selected × k bytes, raw int8)
-    /// B^T selected rows (num_selected × k bytes, raw int8)
-    /// Noised A fragment (64 bytes, if present)
-    /// Noised B^T fragment (64 bytes, if present)
-    /// A Merkle proof:
-    ///   u64 LE: row_index
+    ///
+    /// A matrix proof (append_matrix_proof):
+    ///   u64 LE: num_leaves (= data_size / 1024, one per selected chunk)
+    ///   For each chunk:
+    ///     u64 LE: chunk_size (= 1024 = k, or remainder for last chunk)
+    ///     [chunk_size] bytes: raw int8 data
+    ///   u64 LE: row_indices_count
+    ///   For each row index: u64 LE: row_index
+    ///   u64 LE: total_leaves (total leaves in full tree)
+    ///   [32] bytes: leaf_hash (hash of first selected leaf)
     ///   u64 LE: num_siblings
-    ///   u64 LE: total_leaves
-    ///   32 × num_siblings bytes: sibling hashes
-    /// B^T Merkle proof:
-    ///   u64 LE: row_index
-    ///   32 × num_siblings bytes: sibling hashes
-    ///   u64 LE: num_siblings (or total_leaves)
-    ///   u64 LE: total_leaves (or num_siblings)
+    ///   For each sibling: [32] bytes: sibling_hash
+    ///   u64 LE: side_flags_count
+    ///   For each side flag: u64 LE: side_flag (0=sibling right, 1=sibling left)
+    ///
+    /// B^T matrix proof (same format as A)
     /// ```
     pub fn to_flat_binary(&self) -> Result<Vec<u8>> {
         let mut buf = Vec::with_capacity(256);
 
-        // Header (6 × u64 = 48 bytes)
-        let num_sel = self.a.row_indices.len();
+        // Header (4 × u64 = 32 bytes)
         buf.extend_from_slice(&(self.m as u64).to_le_bytes());
         buf.extend_from_slice(&(self.n as u64).to_le_bytes());
         buf.extend_from_slice(&(self.k as u64).to_le_bytes());
         buf.extend_from_slice(&(self.noise_rank as u64).to_le_bytes());
-        buf.extend_from_slice(&(num_sel as u64).to_le_bytes());
-        buf.extend_from_slice(&(self.k as u64).to_le_bytes());
 
-        // A selected rows (raw int8, row by row)
-        // Each row is k bytes, which may span multiple chunks (CHUNK_LEN=1024)
-        for &row_idx in &self.a.row_indices {
-            let first_chunk = row_idx * self.k / CHUNK_LEN;
-            let last_chunk = ((row_idx + 1) * self.k - 1) / CHUNK_LEN;
-            let mut row_bytes = Vec::with_capacity(self.k);
-            for chunk_idx in first_chunk..=last_chunk {
-                // Find this chunk in the proof's leaf_data
-                // leaf_indices maps proof leaf_data entries to actual chunk indices
-                let proof_pos = self.a.proof.leaf_indices.iter()
-                    .position(|&li| li == chunk_idx);
-                if let Some(pos) = proof_pos {
-                    if pos < self.a.proof.leaf_data.len() {
-                        row_bytes.extend_from_slice(&self.a.proof.leaf_data[pos]);
-                    }
-                }
-            }
-            // Truncate or pad to exactly k bytes
-            if row_bytes.len() > self.k {
-                row_bytes.truncate(self.k);
-            } else if row_bytes.len() < self.k {
-                row_bytes.resize(self.k, 0);
-            }
-            buf.extend_from_slice(&row_bytes);
-        }
+        // Append A matrix proof
+        Self::append_matrix_proof_bytes(
+            &mut buf,
+            &self.a.proof,
+            &self.a.row_indices,
+            self.k,
+        );
 
-        // B^T selected rows (raw int8, row by row)
-        for &row_idx in &self.bt.row_indices {
-            let first_chunk = row_idx * self.k / CHUNK_LEN;
-            let last_chunk = ((row_idx + 1) * self.k - 1) / CHUNK_LEN;
-            let mut row_bytes = Vec::with_capacity(self.k);
-            for chunk_idx in first_chunk..=last_chunk {
-                let proof_pos = self.bt.proof.leaf_indices.iter()
-                    .position(|&li| li == chunk_idx);
-                if let Some(pos) = proof_pos {
-                    if pos < self.bt.proof.leaf_data.len() {
-                        row_bytes.extend_from_slice(&self.bt.proof.leaf_data[pos]);
-                    }
-                }
-            }
-            if row_bytes.len() > self.k {
-                row_bytes.truncate(self.k);
-            } else if row_bytes.len() < self.k {
-                row_bytes.resize(self.k, 0);
-            }
-            buf.extend_from_slice(&row_bytes);
-        }
-
-        // Noised A fragment (64 bytes, if present)
-        let frag_len = 64;
-        if !self.noised_a_fragment.is_empty() {
-            let len = self.noised_a_fragment.len().min(frag_len);
-            buf.extend_from_slice(&self.noised_a_fragment[..len]);
-            if len < frag_len {
-                buf.extend(std::iter::repeat_n(0u8, frag_len - len));
-            }
-        } else {
-            buf.extend(std::iter::repeat_n(0u8, frag_len));
-        }
-
-        // Noised B^T fragment (64 bytes, if present)
-        if !self.noised_b_fragment.is_empty() {
-            let len = self.noised_b_fragment.len().min(frag_len);
-            buf.extend_from_slice(&self.noised_b_fragment[..len]);
-            if len < frag_len {
-                buf.extend(std::iter::repeat_n(0u8, frag_len - len));
-            }
-        } else {
-            buf.extend(std::iter::repeat_n(0u8, frag_len));
-        }
-
-        // A Merkle proof
-        let a_proof = &self.a.proof;
-        // For multi-leaf proofs, we use the first row index
-        let a_row_idx = self.a.row_indices.first().copied().unwrap_or(0) as u64;
-        let a_num_sib = a_proof.siblings.len() as u64;
-        let a_total = a_proof.total_leaves as u64;
-        buf.extend_from_slice(&a_row_idx.to_le_bytes());
-        buf.extend_from_slice(&a_num_sib.to_le_bytes());
-        buf.extend_from_slice(&a_total.to_le_bytes());
-        for sib in &a_proof.siblings {
-            buf.extend_from_slice(sib);
-        }
-
-        // B^T Merkle proof (different field order: row_idx, siblings, then counts)
-        let b_proof = &self.bt.proof;
-        let b_row_idx = self.bt.row_indices.first().copied().unwrap_or(0) as u64;
-        let b_num_sib = b_proof.siblings.len() as u64;
-        let b_total = b_proof.total_leaves as u64;
-        buf.extend_from_slice(&b_row_idx.to_le_bytes());
-        for sib in &b_proof.siblings {
-            buf.extend_from_slice(sib);
-        }
-        buf.extend_from_slice(&b_num_sib.to_le_bytes());
-        buf.extend_from_slice(&b_total.to_le_bytes());
+        // Append B^T matrix proof
+        Self::append_matrix_proof_bytes(
+            &mut buf,
+            &self.bt.proof,
+            &self.bt.row_indices,
+            self.k,
+        );
 
         Ok(buf)
+    }
+
+    /// Append a single matrix proof in the official `append_matrix_proof` format.
+    fn append_matrix_proof_bytes(
+        buf: &mut Vec<u8>,
+        proof: &MerkleProof,
+        row_indices: &[usize],
+        k: usize,
+    ) {
+        // u64: num_leaves (= number of chunks in the proof data)
+        let num_leaves = proof.leaf_data.len() as u64;
+        buf.extend_from_slice(&num_leaves.to_le_bytes());
+
+        // For each chunk: u64 chunk_size + raw data
+        for (i, chunk) in proof.leaf_data.iter().enumerate() {
+            let chunk_size = if i == proof.leaf_data.len() - 1 && k < CHUNK_LEN {
+                k as u64 // last chunk might be smaller
+            } else {
+                chunk.len() as u64
+            };
+            buf.extend_from_slice(&chunk_size.to_le_bytes());
+            buf.extend_from_slice(chunk);
+        }
+
+        // append_usize_vec(row_indices): u64 count + u64[] values
+        buf.extend_from_slice(&(row_indices.len() as u64).to_le_bytes());
+        for &idx in row_indices {
+            buf.extend_from_slice(&(idx as u64).to_le_bytes());
+        }
+
+        // u64: total_leaves
+        buf.extend_from_slice(&(proof.total_leaves as u64).to_le_bytes());
+
+        // 32 bytes: leaf_hash
+        buf.extend_from_slice(&proof.leaf_hash);
+
+        // u64: num_siblings
+        buf.extend_from_slice(&(proof.siblings.len() as u64).to_le_bytes());
+
+        // For each sibling: 32 bytes hash
+        for sib in &proof.siblings {
+            buf.extend_from_slice(sib);
+        }
+
+        // append_usize_vec(side_flags): u64 count + u64[] values
+        buf.extend_from_slice(&(proof.side_flags.len() as u64).to_le_bytes());
+        for &flag in &proof.side_flags {
+            buf.extend_from_slice(&(flag as u64).to_le_bytes());
+        }
     }
 
     /// Serialize to flat binary format then base64 (official format).
@@ -1299,6 +1285,8 @@ mod tests {
                     total_leaves: 1,
                     root: [0u8; 32],
                     siblings: vec![],
+                    leaf_hash: [0u8; 32],
+                    side_flags: vec![],
                 },
                 row_indices: vec![0],
             },
@@ -1309,6 +1297,8 @@ mod tests {
                     total_leaves: 1,
                     root: [0u8; 32],
                     siblings: vec![],
+                    leaf_hash: [0u8; 32],
+                    side_flags: vec![],
                 },
                 row_indices: vec![0],
             },

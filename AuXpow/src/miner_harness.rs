@@ -11,6 +11,7 @@
 //!   - `autolykos`   — ERG (pure-Rust fallback; use `native-hashers` for real)
 //!   - `kawpow`      — RVN/CLORE (pure-Rust fallback; use `native-hashers` for real)
 //!   - `ethash`      — ETC (pure-Rust fallback; use `native-hashers` for real)
+//!   - `progpow`     — EPIC (simplified CPU fallback; use GPU kernel for real mining)
 //!
 //! `randomx` requires the RandomX VM and is not yet supported in the CPU harness.
 
@@ -18,7 +19,7 @@ use anyhow::{anyhow, Result};
 
 use crate::external_hashers::{
     hash_autolykos, hash_blake3, hash_blake3_alph, hash_ethash, hash_kawpow, hash_kheavyhash,
-    hash_kheavyhash_extranonce, meets_target, meets_target_little_endian,
+    hash_kheavyhash_extranonce, hash_progpow, meets_target, meets_target_little_endian,
 };
 use crate::types::{ExternalCoin, JobPackage};
 
@@ -64,6 +65,7 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
         "kawpow" => Ok(scan_kawpow(job, start, end)),
         "ethash" | "etchash" => Ok(scan_ethash(job, start, end)),
         "verushash" => Ok(scan_verushash(job, start, end)),
+        "progpow" | "progpow_epic" => Ok(scan_progpow(job, start, end)),
         "pearlhash" => Ok(scan_pearl(job, start, end)),
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
@@ -97,6 +99,7 @@ pub fn mine_best(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option
         "kawpow" => Ok(scan_kawpow_best(job, start, end)),
         "ethash" | "etchash" => Ok(scan_ethash_best(job, start, end)),
         "verushash" => Ok(scan_verushash_best(job, start, end)),
+        "progpow" | "progpow_epic" => Ok(scan_progpow_best(job, start, end)),
         "pearlhash" => Ok(scan_pearl_best(job, start, end)),
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
@@ -221,6 +224,26 @@ fn scan_kawpow(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
 
     for nonce in start..end {
         let (_mix, hash) = hash_kawpow(&header, nonce, height);
+        if meets_target(&hash, target) {
+            return Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    None
+}
+
+fn scan_progpow(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let mut header = [0u8; 32];
+    let len = job.header_bytes.len().min(32);
+    header[..len].copy_from_slice(&job.header_bytes[..len]);
+    let target = &job.target_bytes;
+    let height = job.timestamp as u32;
+
+    for nonce in start..end {
+        let (_mix, hash) = hash_progpow(&header, nonce, height);
         if meets_target(&hash, target) {
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
@@ -537,6 +560,30 @@ fn scan_kawpow_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare
     let mut best: Option<FoundShare> = None;
     for nonce in start..end {
         let (_mix, hash) = hash_kawpow(&header, nonce, height);
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&hash, &b.hash, false))
+            .unwrap_or(true)
+        {
+            best = Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    best
+}
+
+fn scan_progpow_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let mut header = [0u8; 32];
+    let len = job.header_bytes.len().min(32);
+    header[..len].copy_from_slice(&job.header_bytes[..len]);
+    let height = job.timestamp as u32;
+
+    let mut best: Option<FoundShare> = None;
+    for nonce in start..end {
+        let (_mix, hash) = hash_progpow(&header, nonce, height);
         if best
             .as_ref()
             .map(|b| is_hash_better(&hash, &b.hash, false))

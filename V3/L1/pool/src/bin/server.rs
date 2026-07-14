@@ -1890,7 +1890,8 @@ fn handle_client(
     } = &hello_message
     {
         let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
-        pplns.record_share_with_diff(miner_id, worker_name, *height, *difficulty);
+        let relay_key = format!("{miner_id}/{worker_name}");
+        pplns.record_share_with_diff(&relay_key, worker_name, *height, *difficulty);
         println!(
             "share_relay_accepted miner={} worker={} height={} diff={} origin={}",
             miner_id, worker_name, height, difficulty, relay_origin
@@ -1952,10 +1953,13 @@ fn handle_client(
     }
 
     // Register miner payout address for PPLNS distribution.
+    // Key on miner_id/worker_name so that multiple workers sharing the same
+    // miner_id (e.g. local-miner) each get their own payout address.
+    let pplns_key = format!("{miner_id}/{worker_name}");
     pplns_engine
         .lock()
         .expect("pplns lock poisoned")
-        .register_address(&miner_id, &payout_address);
+        .register_address(&pplns_key, &payout_address);
 
     // Choose a welcome algorithm hint.  For sessions that will receive
     // external AuxPoW jobs, advertise the forced coin's algorithm so the
@@ -2498,11 +2502,14 @@ fn handle_client(
                 } else {
                     // ── Valid share: meets share_target ──────────────────
                     // Record in PPLNS with difficulty weight.
+                    // Use composite key miner_id/worker_name so each worker
+                    // gets its own PPLNS entry and payout address.
                     let job_height = assignment_height(&assignment);
                     {
                         let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                        let share_key = format!("{miner_id}/{worker_name}");
                         pplns.record_share_with_diff(
-                            &miner_id,
+                            &share_key,
                             &worker_name,
                             job_height,
                             share_difficulty,
@@ -2822,7 +2829,8 @@ fn handle_client(
                     }
                     {
                         let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
-                        pplns.record_block_found(&miner_id);
+                        let block_key = format!("{miner_id}/{worker_name}");
+                        pplns.record_block_found(&block_key);
                     }
                     let payouts = {
                         if job_height > 0 {
@@ -5055,12 +5063,19 @@ fn build_miners_payload(
         .into_iter()
         .take(limit)
         .map(|(miner_id, miner)| {
+            // PPLNS now keys on miner_id/worker_name; try composite key first,
+            // fall back to plain miner_id for legacy entries.
+            let composite_key = format!("{miner_id}/{}", miner.worker_name);
+            let payout_addr = pplns_engine
+                .address_for(&composite_key)
+                .or_else(|| pplns_engine.address_for(miner_id))
+                .unwrap_or("");
             serde_json::json!({
                 "address": miner_id,
                 "worker_name": miner.worker_name,
                 "algorithm": miner.algorithm,
                 "backend": miner.backend,
-                "payout_address": pplns_engine.address_for(miner_id).unwrap_or(""),
+                "payout_address": payout_addr,
                 "last_share": miner.last_share_time_s,
                 "last_seen": miner.last_seen_s,
                 "hashrate": miner.hashrate_for_window(HASHRATE_WINDOW_LIVE_S, now_s),

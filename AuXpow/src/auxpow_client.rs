@@ -2245,6 +2245,8 @@ impl AuxPowClient {
                                 total_leaves: 0,
                                 root: [0u8; 32],
                                 siblings: vec![],
+                                leaf_hash: [0u8; 32],
+                                side_flags: vec![],
                             },
                             row_indices: vec![],
                         },
@@ -2255,12 +2257,14 @@ impl AuxPowClient {
                                 total_leaves: 0,
                                 root: [0u8; 32],
                                 siblings: vec![],
+                                leaf_hash: [0u8; 32],
+                                side_flags: vec![],
                             },
                             row_indices: vec![],
                         },
                         moe: None,
-                        noised_a_fragment: vec![0u8; 64],
-                        noised_b_fragment: vec![0u8; 64],
+                        noised_a_fragment: vec![],
+                        noised_b_fragment: vec![],
                     };
                     dummy.to_base64().unwrap_or_default()
                 }
@@ -2275,6 +2279,8 @@ impl AuxPowClient {
                                 total_leaves: 0,
                                 root: [0u8; 32],
                                 siblings: vec![],
+                                leaf_hash: [0u8; 32],
+                                side_flags: vec![],
                             },
                             row_indices: vec![],
                         },
@@ -2285,12 +2291,14 @@ impl AuxPowClient {
                                 total_leaves: 0,
                                 root: [0u8; 32],
                                 siblings: vec![],
+                                leaf_hash: [0u8; 32],
+                                side_flags: vec![],
                             },
                             row_indices: vec![],
                         },
                         moe: None,
-                        noised_a_fragment: vec![0u8; 64],
-                        noised_b_fragment: vec![0u8; 64],
+                        noised_a_fragment: vec![],
+                        noised_b_fragment: vec![],
                     };
                     dummy.to_base64().unwrap_or_default()
                 }
