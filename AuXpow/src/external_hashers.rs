@@ -1577,12 +1577,14 @@ pub fn hash_progpow_with_dag(
 ) -> ([u8; 32], [u8; 32]) {
     #[cfg(feature = "native-hashers")]
     {
-        return crate::native_ffi::hash_progpow_native_with_dag(
+        if let Ok((mix, final_hash)) = crate::native_ffi::hash_progpow_native_with_dag(
             header_hash,
             nonce,
             dag,
             dag_size_entries,
-        );
+        ) {
+            return (mix, final_hash);
+        }
     }
 
     // Pure-Rust fallback: use simplified version (no DAG)
