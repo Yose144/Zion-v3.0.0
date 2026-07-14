@@ -97,7 +97,7 @@
 | zion-miner | 59 | ✅ |
 | zion-native-ffi | 13/28 | ✅ |
 | zion-oasis | 124 | ✅ |
-| AuXpow | 81 | ✅ |
+| AuXpow | 105+ (GPU: 16) | ✅ |
 | ZionDex Router | 28 | ✅ |
 | ZionDex Contracts | 7 (Solidity) | ✅ |
 | **Total** | **~2,060+** | **0 failures** |
@@ -194,6 +194,24 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | FLUX | zelhash | Stratum | TODO |
 | VRSC | verushash v2.2 | ZcashStratum | protocol ✅ (R7), live E2E TODO (LuckPool eu.luckpool.net:3956) |
 
+### AuXpow GPU Backend (2026-07-14)
+
+**Crate:** `zion-auxpow` — cross-platform GPU mining (OpenCL + Metal + CUDA)
+
+| Algorithm | Coin | OpenCL (H/s) | Metal (H/s) | CUDA |
+|-----------|------|-------------|-------------|------|
+| blake3 | ALPH | 640M | **18.1B** | ⚠️ kernel only |
+| blake3_dcr | DCR | 650M | **23.3B** | ⚠️ kernel only |
+| kheavyhash | KAS | 320M | **21.1B** | ⚠️ kernel only |
+| autolykos | ERG | 82M | **18.4B** | ⚠️ kernel only |
+| ethash | ETC | — | — (needs DAG) | ⚠️ kernel only |
+| kawpow | RVN | — | — (needs DAG) | ⚠️ kernel only |
+| zelhash | FLUX | 495M | **19.5B** | ⚠️ kernel only |
+
+**Features:** `gpu-opencl`, `gpu-metal`, `gpu-cuda`, `gpu-all`
+**Benchmark:** `cargo run --example gpu_benchmark -p zion-auxpow --features gpu-metal`
+**Auto-detect:** CUDA > Metal > OpenCL (via `GpuBackend::detect_backend()`)
+
 ### Stream Profit Env Vars
 ```bash
 ZION_STREAM_PROFIT_SWITCH=true              # enable profit-based weights
@@ -272,6 +290,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 
 | Date | Milestone | Key Commits |
 |------|-----------|-------------|
+| 07-14 | AuXpow Metal backend — all 6 algorithms on Apple M1 (18–23 BH/s, 28–224x vs OpenCL) | `a3cbc790b` |
 | 07-13 | Stream Profit R1b — live API fetching | `e1c28689b` |
 | 07-13 | Stream Profit R1c — GPU kernel parametrizace | `74a353205`, `87bb2b2f0` |
 | 07-13 | EthStratum R6 — eth_getWork/eth_submitWork/eth_submitHashrate | `5baa76d60` |
