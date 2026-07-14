@@ -27,8 +27,7 @@
         #include <intrin.h>
     #else
         #include <x86intrin.h>
-        /* <cpuid.h> is included by verus_clhash.h when needed; including it
-         * here too causes redefinition errors on GCC 9 (Ubuntu 20.04). */
+        #include <cpuid.h>
     #endif
 #else
     #define VERUSHASH_PORTABLE_ONLY 1
