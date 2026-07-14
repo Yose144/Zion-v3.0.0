@@ -79,7 +79,8 @@ export default function MempoolFeed() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="rounded-[28px] border border-white/10 bg-black/60 p-6"
+      className="zion-rainbow-card p-6"
+      style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
     >
       <div className="flex items-center justify-between mb-5">
         <Link
@@ -104,17 +105,17 @@ export default function MempoolFeed() {
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+        <div className="zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <p className="text-xs text-gray-400">{cs ? "Čekající" : "Pending"}</p>
           <p className="text-xl font-bold text-white">{data?.count ?? 0}</p>
         </div>
-        <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+        <div className="zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <p className="text-xs text-gray-400">{cs ? "Velikost poolu" : "Pool Size"}</p>
           <p className="text-xl font-bold text-cyan-400">
             {formatBytes(data?.pool_size_bytes ?? 0)}
           </p>
         </div>
-        <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+        <div className="zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <p className="text-xs text-gray-400">{cs ? "Poplatky" : "Fees"}</p>
           <p className="text-xl font-bold text-yellow-400">
             {(data?.total_fees ?? 0).toFixed(4)}
@@ -143,7 +144,7 @@ export default function MempoolFeed() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.2, delay: i * 0.02 }}
-            className="rounded-xl border border-white/5 bg-white/5 p-3"
+            className="zion-tile p-3"
           >
             <div className="flex items-center justify-between mb-1">
               <Link

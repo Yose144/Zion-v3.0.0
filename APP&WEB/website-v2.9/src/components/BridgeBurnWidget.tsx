@@ -190,7 +190,7 @@ export default function BridgeBurnWidget() {
   // Not connected — show connect button
   if (phase === 'idle' || phase === 'connecting' || phase === 'switching-chain') {
     return (
-      <div className="rounded-2xl border border-orange-500/30 bg-linear-to-b from-orange-500/10 to-black/60 p-6 space-y-4">
+      <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
           <Flame className="h-5 w-5 text-orange-400" />
           <h3 className="font-semibold text-white text-sm">{cs ? 'Spalit wZION → prijmout ZION na L1' : 'Burn wZION → receive ZION on L1'}</h3>
@@ -237,7 +237,7 @@ export default function BridgeBurnWidget() {
   // Success state
   if (phase === 'success' && txInfo) {
     return (
-      <div className="rounded-2xl border border-emerald-500/30 bg-linear-to-b from-emerald-500/10 to-black/60 p-6 space-y-4">
+      <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-emerald-400" />
           <h3 className="font-semibold text-white text-sm">{cs ? 'Burn odeslan!' : 'Burn submitted!'}</h3>
@@ -299,7 +299,7 @@ export default function BridgeBurnWidget() {
   const amountAtomicDisplay = amountFloat > 0 ? ethers.utils.parseUnits(amountFloat.toString(), WZION_DECIMALS).toString() : '0';
 
   return (
-    <div className="rounded-2xl border border-orange-500/30 bg-linear-to-b from-orange-500/10 to-black/60 p-6 space-y-4">
+    <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Flame className="h-5 w-5 text-orange-400" />
