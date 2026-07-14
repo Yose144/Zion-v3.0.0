@@ -361,10 +361,10 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 | StatusV3 archive | `docs/3.0.5/StatusV3_archive_2026-07-13.md` | Historical incident reports (5239 lines) |
 | AGENTS.md | Root | Operating guidance for AI agents |
 | ROADMAP.md | Root | Forward roadmap |
-| AuxPlan.md | Root | AuxPow + Stream Profit development plan |
+| AuxPlan.md | `docs/3.0.5/archive-root-md/` | AuxPow + Stream Profit development plan (archived) |
 | FullRevenueAuxPow.md | Root | 3-stream parallel mining canonical architecture (ZION + Pearl + Verus) |
-| AUXPOW_VRSC_B2B_PLAN.md | Root | VRSC B2b revenue integration design doc |
-| ZionDex.md | Root | ZionDex DEX router documentation |
+| AUXPOW_VRSC_B2B_PLAN.md | `docs/3.0.5/archive-root-md/` | VRSC B2b revenue integration design doc (archived) |
+| ZionDex.md | `docs/3.0.5/archive-root-md/` | ZionDex DEX router documentation (archived) |
 | Genesis reset runbook | `docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md` | Hard reset procedure |
 | Security disclosures | `docs/security/SECURITY_DISCLOSURE_2026-07.md` | ZION-2026-001 through 005 |
 | Contract addresses | `docs/3.0.5/CONTRACT_ADDRESSES.md` | All deployed contracts |
