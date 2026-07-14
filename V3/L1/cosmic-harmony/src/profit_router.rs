@@ -69,6 +69,10 @@ pub enum ExternalCoin {
     /// Verus — VerusHash v2.2 (Haraka+CLHash). CPU coin. LuckPool.
     /// B2b revenue stream: ASIC/GPU resistant, PBaaS merge mining.
     VRSC,
+    /// Pearl — PearlHash (PoUW: INT8 MatMul + BLAKE3 + Plonky2 ZK).
+    /// GPU coin. AlphaPool/suprnova, 22x more profitable than KAS.
+    /// Custom Stratum dialect (object params, no subscribe, plain_proof).
+    PRL,
 }
 
 impl ExternalCoin {
@@ -87,6 +91,7 @@ impl ExternalCoin {
             Self::CLORE => "CLORE",
             Self::XMR => "XMR",
             Self::VRSC => "VRSC",
+            Self::PRL => "PRL",
         }
     }
 
@@ -105,6 +110,7 @@ impl ExternalCoin {
             Self::CLORE => "kawpow",
             Self::XMR => "randomx",
             Self::VRSC => "verushash",
+            Self::PRL => "pearlhash",
         }
     }
 
@@ -135,6 +141,7 @@ impl ExternalCoin {
             "clore" | "clore.ai" => Some(Self::CLORE),
             "xmr" | "monero" | "randomx" => Some(Self::XMR),
             "vrsc" | "verus" | "verushash" => Some(Self::VRSC),
+            "prl" | "pearl" | "pearlhash" => Some(Self::PRL),
             _ => None,
         }
     }
@@ -155,6 +162,7 @@ impl ExternalCoin {
             Self::CLORE => "clore.woolypooly.com:3090",
             Self::XMR => "gulf.moneroocean.stream:10001",
             Self::VRSC => "eu.luckpool.net:3956",
+            Self::PRL => "us2.alphapool.tech:5566",
         }
     }
 
@@ -268,6 +276,7 @@ impl ExternalCoin {
             Self::CLORE => StratumProtocol::EthStratum,
             Self::XMR => StratumProtocol::Stratum,
             Self::VRSC => StratumProtocol::ZcashStratum,
+            Self::PRL => StratumProtocol::PearlStratum,
         }
     }
 
@@ -286,6 +295,7 @@ impl ExternalCoin {
             Self::CLORE,
             Self::XMR,
             Self::VRSC,
+            Self::PRL,
         ]
     }
 
@@ -307,6 +317,7 @@ impl ExternalCoin {
             Self::XMR => RevenueSource::RandomXExternal,
             Self::FLUX => RevenueSource::ZelHashExternal,
             Self::VRSC => RevenueSource::VerusHashExternal,
+            Self::PRL => RevenueSource::PearlExternal,
         }
     }
 }
@@ -328,6 +339,9 @@ pub enum StratumProtocol {
     /// Zcash/Equihash-style Stratum — used by VRSC/VerusHash pools (LuckPool).
     /// Uses mining.subscribe/authorize/notify/set_target and 5-param submit.
     ZcashStratum,
+    /// Pearl (PRL) custom Stratum dialect — object params (not arrays),
+    /// no mining.subscribe, plain_proof base64 submit. Used by AlphaPool/suprnova.
+    PearlStratum,
 }
 
 impl StratumProtocol {
@@ -336,6 +350,7 @@ impl StratumProtocol {
             Self::Stratum => "stratum",
             Self::EthStratum => "ethstratum",
             Self::ZcashStratum => "zcashstratum",
+            Self::PearlStratum => "pearlstratum",
         }
     }
 }
