@@ -2,6 +2,7 @@
 
 **Date:** 2026-07-14
 **Status:** COMPLETE — all tests passing, pushed to main
+**Updated:** 2026-07-14 — Real Pearl PoUW GPU GEMM dispatch (50.68x speedup, AMD RX 5700 XT)
 **Updated:** 2026-07-14 — OpenCL port for AMD RX 5700 XT (ROCm) verified
 
 ---
@@ -18,6 +19,8 @@ Implemented a **fully GPU-native Pearl PoUW mining pipeline** for Apple Metal (M
 | `c54f1ea4c` | Fully GPU-native Metal kernel + Rust bridge (36.9x speedup) |
 | `705bff572` | Merkle proof reconstruction (read-back matrices from GPU) |
 | `0526a9379` | E2E test with Merkle proof verification |
+| `ec030f86a` | OpenCL port for AMD RX 5700 XT (buffer reuse + batched persistent mining) |
+| `0bafbfe83` | **Real Pearl PoUW GPU GEMM dispatch — 50.68x speedup (CPU-prep + GPU dispatch)** |
 
 ---
 
@@ -79,6 +82,70 @@ Key optimizations:
 - **V3 miner** (`main.rs`): `pearl_pouw_stream()` uses `AuxPowClient::new(profile).with_gpu_opencl().await` when `gpu-opencl` feature is enabled. Launched via `--pearl H:P:W` CLI flag or `ZION_PEARL_STREAM` env var.
 - **V3 pool**: No changes needed — pool is a stratum server that receives shares, doesn't mine.
 - **V3 node**: No changes needed — node validates blocks, doesn't mine PoUW.
+
+---
+
+## Real Pearl PoUW GPU GEMM Dispatch (2026-07-14)
+
+### Architektura: CPU-prep + GPU GEMM Dispatch
+
+Původní GPU-native kernel používal PCG32 PRNG pro generování matic, což produkuje **jiné matice** než reálný Pearl algoritmus (BLAKE3 PRNG). Protože BLAKE3 hash chaining je sekvenční (nelze paralelizovat), byla zvolena **CPU-prep + GPU dispatch** architektura:
+
+1. **CPU** počítá: job_key, matice A/B (BLAKE3 PRNG), Merkle stromy, noise seedy, noise matice, noised matice A'/B'^T (int8)
+2. **GPU** běží: noisy GEMM + XOR redukce + BLAKE3 jackpot hash + target check
+3. **CPU** staví: Merkle proof z původních matic + dekódované tile indexy
+
+### Proč ne fully-GPU-native?
+
+Reálný Pearl algoritmus (`pearl_real_pouw.rs`) používá:
+- **BLAKE3 PRNG** pro generování matic (sekvenční hash chaining — `hash = blake3(prev_hash)`)
+- **BLAKE3 keyed hash** pro noise generování
+- **noise_rank=256** (ne 32), **k=4096** (ne 1024)
+- **16×16 hash tiles** (ne 4×8)
+- **Little-endian U256 target** porovnání (ne big-endian)
+
+GPU-native kernel by musel replikovat BLAKE3 PRNG na GPU, což je možné, ale sekvenční povaha hash chaining limituje paralelismus. CPU-prep je optimální řešení.
+
+### CPU-prep Optimalizace
+
+1. **Generování matic**: Využití všech 32 bytů z každého BLAKE3 hashe (32x méně hash volání)
+2. **Aplikace noise**: Permutation index lookup — O(m×k) místo O(m×k×rank) (256x rychlejší pro rank=256)
+
+### Benchmark Results (AMD RX 5700 XT, 2026-07-14)
+
+| Pipeline | Time/attempt | Attempts/s | Speedup |
+|---|---|---|---|
+| CPU-only (`mine_pearl_share`) | 3865 ms | 0.3 | 1x |
+| **GPU (`mine_pearl_share_gpu`)** | **76 ms** | **13.1** | **50.68x** |
+
+**Breakdown:**
+- CPU-prep: 63 ms (83% celkového času)
+- GPU GEMM: 13 ms (17% celkového času)
+
+**Standardní parametry:** m=512, n=512, k=4096, noise_rank=256, noise_range=128, hash_tile=16×16
+
+### Soubory
+
+| Soubor | Změna |
+|---|---|
+| `AuXpow/csrc/opencl/pearl_pouw_native.cl` | Nový kernel `pearl_pouw_mine_real_v1` — 16×16 hash tiles, int8 vstupy, paralelní XOR redukce, BLAKE3 keyed jackpot hash, LE U256 target porovnání |
+| `AuXpow/src/gpu_miner.rs` | Nový `pearl_pouw_gpu_mine_real()` + `PearlRealGpuResult` s `decode_tile_indices()` |
+| `AuXpow/src/pearl_real_pouw.rs` | Nový `prepare_pearl_gpu_input()` (optimalizovaný) + `mine_pearl_share_gpu()` + `extract_permutation_indices()` |
+| `AuXpow/src/auxpow_client.rs` | Automatický GPU/CPU fallback — GPU GEMM když `gpu-opencl` backend dostupný |
+| `AuXpow/examples/pearl_real_gpu_bench.rs` | Benchmark CPU vs GPU |
+
+### Použití
+
+```bash
+# Build s GPU OpenCL
+cargo build --release --features gpu-opencl -p zion-auxpow
+
+# Benchmark
+cargo run --release --features gpu-opencl --example pearl_real_gpu_bench
+
+# Miner s GPU (automaticky detekuje GPU backend)
+cargo run --release --features gpu-opencl --bin zion-miner -- --pearl "us2.alphapool.tech:5566:prl1pk5t3amreqnqlp0q0l5zcauy2nyszlalux3rlcw93spwtr9mrlywsdesmmp"
+```
 
 ### CPU Prep Optimization (intermediate step)
 
