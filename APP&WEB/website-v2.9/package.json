@@ -40,7 +40,7 @@
     "remark-gfm": "^4.0.1",
     "three": "^0.169.0",
     "viem": "^2.53.1",
-    "zion-wallet-sdk": "file:../zion-wallet-sdk"
+    "zion-wallet-sdk": "file:./zion-wallet-sdk-1.0.0.tgz"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
