@@ -93,6 +93,10 @@ pub struct GpuMiner {
     platform_name: String,
     /// Per-kernel ProQue instances, lazily compiled.
     proques: HashMap<String, ProQue>,
+    /// Per-period ProQue instances for KawPow/ProgPow (keyed by "kernel_file:period").
+    /// KawPow/ProgPow kernels must be recompiled every PERIOD blocks because
+    /// the random math sequence changes.
+    proques_progpow: HashMap<String, ProQue>,
     /// Default work size (number of work-items per batch).
     work_size: usize,
     /// Cached Ethash DAG buffer (set via `set_ethash_dag` before mining ETC).
@@ -162,11 +166,11 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         }
         "autolykos" | "autolykos_erg" => Some(("autolykos_kernel.cl", "autolykos_mine")),
         "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
-            Some(("kawpow_kernel.cl", "kawpow_mine"))
+            Some(("kawpow_kernel.cl", "progpow_search"))
         }
         "ethash" | "etchash" | "ethash_etc" => Some(("ethash_kernel.cl", "ethash_mine")),
         "zelhash" | "zelhash_flux" => Some(("zelhash_kernel.cl", "zelhash_mine")),
-        "progpow" | "progpow_epic" => Some(("progpow_kernel.cl", "progpow_mine")),
+        "progpow" | "progpow_epic" => Some(("progpow_kernel.cl", "ethash_search")),
         "pearlhash" | "pearlhash_prl" => Some(("pearl_kernel.cl", "pearl_mine")),
         _ => None,
     }
@@ -216,6 +220,7 @@ impl GpuMiner {
             device_name,
             platform_name,
             proques: HashMap::new(),
+            proques_progpow: HashMap::new(),
             work_size,
             ethash_dag: None,
             kawpow_dag: None,
@@ -966,6 +971,114 @@ impl GpuMiner {
         Ok(self.proques.get(kernel_file).unwrap())
     }
 
+    /// Ensure a ProQue for KawPow/ProgPow kernel with period-based random math.
+    ///
+    /// The kernel source is regenerated with new random math code every period
+    /// (10 blocks for KawPow, 50 for EPIC ProgPow) and recompiled.
+    /// Cached in `proques_progpow` keyed by `"kernel_file:period"`.
+    fn ensure_proque_progpow(
+        &mut self,
+        kernel_file: &str,
+        block_height: u64,
+        dag_elements: u64,
+    ) -> Result<&ProQue> {
+        use crate::progpow_codegen;
+
+        let (period, params) = match kernel_file {
+            "kawpow_kernel.cl" => (
+                block_height / progpow_codegen::KAWPOW_PARAMS.period as u64,
+                &progpow_codegen::KAWPOW_PARAMS,
+            ),
+            "progpow_kernel.cl" => (
+                block_height / progpow_codegen::EPIC_PROGPOW_PARAMS.period as u64,
+                &progpow_codegen::EPIC_PROGPOW_PARAMS,
+            ),
+            _ => return Err(anyhow!("Not a ProgPow/KawPow kernel: {kernel_file}")),
+        };
+
+        let cache_key = format!("{kernel_file}:period_{period}");
+        if self.proques_progpow.contains_key(&cache_key) {
+            return Ok(self.proques_progpow.get(&cache_key).unwrap());
+        }
+
+        // GC old period entries (keep only current + 1)
+        let prefix = format!("{kernel_file}:period_");
+        let keys_to_remove: Vec<String> = self
+            .proques_progpow
+            .keys()
+            .filter(|k| k.starts_with(&prefix) && **k != cache_key)
+            .cloned()
+            .collect();
+        // Only remove entries that are more than 1 period old
+        for k in keys_to_remove {
+            if let Some(old_period) = k
+                .strip_prefix(&prefix)
+                .and_then(|s| s.parse::<u64>().ok())
+            {
+                if old_period + 1 < period {
+                    self.proques_progpow.remove(&k);
+                }
+            }
+        }
+
+        // Load base kernel source
+        let base_src = match Self::kernel_dir() {
+            Ok(dir) => {
+                let path = dir.join(kernel_file);
+                std::fs::read_to_string(&path)
+                    .with_context(|| format!("reading OpenCL kernel {:?}", path))?
+            }
+            Err(_) => {
+                let embedded = match kernel_file {
+                    "kawpow_kernel.cl" => include_str!("../csrc/opencl/kawpow_kernel.cl"),
+                    "progpow_kernel.cl" => include_str!("../csrc/opencl/progpow_kernel.cl"),
+                    _ => return Err(anyhow!("Unknown ProgPow kernel: {kernel_file}")),
+                };
+                embedded.to_string()
+            }
+        };
+
+        // Inject random math code
+        let src = match kernel_file {
+            "kawpow_kernel.cl" => {
+                progpow_codegen::prepare_kawpow_kernel_source(&base_src, block_height)
+            }
+            "progpow_kernel.cl" => {
+                progpow_codegen::prepare_epic_progpow_kernel_source(&base_src, block_height)
+            }
+            _ => base_src,
+        };
+
+        // Build options: define PROGPOW_DAG_ELEMENTS and GROUP_SIZE
+        let build_opts = format!(
+            "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DGROUP_SIZE=256",
+            dag_elements
+        );
+
+        let mut prog_builder = ProgramBuilder::new();
+        prog_builder.src(src);
+        prog_builder.cmplr_opt(&build_opts);
+
+        let pro_que = ProQue::builder()
+            .platform(self.platform)
+            .device(self.device)
+            .prog_bldr(prog_builder)
+            .dims(self.work_size)
+            .build()
+            .map_err(|e| {
+                anyhow!(
+                    "OpenCL compile failed for {kernel_file} period={period}: {e}"
+                )
+            })?;
+
+        println!(
+            "auxpow_gpu_opencl compiled {kernel_file} for period={period} (block_height={block_height})"
+        );
+
+        self.proques_progpow.insert(cache_key.clone(), pro_que);
+        Ok(self.proques_progpow.get(&cache_key).unwrap())
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn build_header_nonce_kernel(
         pro_que: &ProQue,
@@ -1094,10 +1207,21 @@ impl GpuMiner {
     ) -> Result<Kernel> {
         let q = pro_que.queue().clone();
 
-        // 32-byte header hash
-        let mut header_hash = [0u8; 32];
-        let copy_len = header.len().min(32);
-        header_hash[..copy_len].copy_from_slice(&header[..copy_len]);
+        // KawPow header_hash = keccak256(block_header).
+        // If header is already 32 bytes, use directly; otherwise hash it.
+        let header_hash: [u8; 32] = if header.len() == 32 {
+            let mut h = [0u8; 32];
+            h.copy_from_slice(header);
+            h
+        } else {
+            use sha3::{Digest, Keccak256};
+            let mut hasher = Keccak256::new();
+            hasher.update(header);
+            let result = hasher.finalize();
+            let mut h = [0u8; 32];
+            h.copy_from_slice(&result);
+            h
+        };
 
         let header_buf: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
@@ -1153,10 +1277,21 @@ impl GpuMiner {
     ) -> Result<Kernel> {
         let q = pro_que.queue().clone();
 
-        // 32-byte header hash
-        let mut header_hash = [0u8; 32];
-        let copy_len = header.len().min(32);
-        header_hash[..copy_len].copy_from_slice(&header[..copy_len]);
+        // ProgPow expects a 32-byte header_hash = keccak256(full_block_header).
+        // If the header is already 32 bytes, use it directly; otherwise hash it.
+        let header_hash: [u8; 32] = if header.len() == 32 {
+            let mut h = [0u8; 32];
+            h.copy_from_slice(header);
+            h
+        } else {
+            use sha3::{Digest, Keccak256};
+            let mut hasher = Keccak256::new();
+            hasher.update(header);
+            let result = hasher.finalize();
+            let mut h = [0u8; 32];
+            h.copy_from_slice(&result);
+            h
+        };
 
         let header_buf: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
@@ -1345,11 +1480,21 @@ impl GpuMiner {
     ) -> Result<Kernel> {
         let q = pro_que.queue().clone();
 
-        // Ethash header_hash is exactly 32 bytes (Keccak-256 of the block
-        // header without nonce/mix).
-        let mut header_hash = [0u8; 32];
-        let copy_len = header.len().min(32);
-        header_hash[..copy_len].copy_from_slice(&header[..copy_len]);
+        // Ethash header_hash = keccak256(block_header_without_nonce_mix).
+        // If header is already 32 bytes, use directly; otherwise hash it.
+        let header_hash: [u8; 32] = if header.len() == 32 {
+            let mut h = [0u8; 32];
+            h.copy_from_slice(header);
+            h
+        } else {
+            use sha3::{Digest, Keccak256};
+            let mut hasher = Keccak256::new();
+            hasher.update(header);
+            let result = hasher.finalize();
+            let mut h = [0u8; 32];
+            h.copy_from_slice(&result);
+            h
+        };
 
         let header_buf: Buffer<u8> = Buffer::builder()
             .queue(q.clone())

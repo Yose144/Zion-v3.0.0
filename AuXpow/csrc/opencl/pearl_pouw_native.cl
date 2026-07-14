@@ -614,10 +614,15 @@ __kernel void pearl_pouw_mine_native(
     uchar hash[32];
     blake3_keyed_hash_64_gpu(a_noise_seed, jackpot_msg, hash);
 
+    // hash is little-endian (byte 0 = LSB), target is big-endian (byte 0 = MSB).
+    // Compare as U256: from_little_endian(hash) <= from_big_endian(target)
+    // Equivalent: reverse hash to big-endian, compare from byte 0 (MSB).
     bool meets = true;
     for (int i = 0; i < 32; i++) {
-        if (hash[i] < target[i]) { meets = true; break; }
-        if (hash[i] > target[i]) { meets = false; break; }
+        uchar h = hash[31 - i]; // hash reversed to big-endian
+        uchar t = target[i];    // target already big-endian
+        if (h < t) { meets = true; break; }
+        if (h > t) { meets = false; break; }
     }
 
     if (meets) {
@@ -747,10 +752,13 @@ __kernel void pearl_pouw_mine_native_v2(
         uchar hash[32];
         blake3_keyed_hash_64_gpu(a_noise_seed, jackpot_msg, hash);
 
+        // hash is little-endian, target is big-endian. Reverse hash for comparison.
         bool meets = true;
         for (int i = 0; i < 32; i++) {
-            if (hash[i] < target[i]) { meets = true; break; }
-            if (hash[i] > target[i]) { meets = false; break; }
+            uchar h = hash[31 - i];
+            uchar t = target[i];
+            if (h < t) { meets = true; break; }
+            if (h > t) { meets = false; break; }
         }
 
         if (meets) {
@@ -851,10 +859,13 @@ __kernel void pearl_pouw_mine_native_v3(
         uchar hash[32];
         blake3_keyed_hash_64_gpu(a_noise_seed, jackpot_msg, hash);
 
+        // hash is little-endian, target is big-endian. Reverse hash for comparison.
         bool meets = true;
         for (int i = 0; i < 32; i++) {
-            if (hash[i] < target[i]) { meets = true; break; }
-            if (hash[i] > target[i]) { meets = false; break; }
+            uchar h = hash[31 - i];
+            uchar t = target[i];
+            if (h < t) { meets = true; break; }
+            if (h > t) { meets = false; break; }
         }
 
         if (meets) {
@@ -975,10 +986,13 @@ __kernel void pearl_pouw_mine_persistent(
         uchar hash[32];
         blake3_keyed_hash_64_gpu(a_noise_seed, jackpot_msg, hash);
 
+        // hash is little-endian, target is big-endian. Reverse hash for comparison.
         bool meets = true;
         for (int i = 0; i < 32; i++) {
-            if (hash[i] < target[i]) { meets = true; break; }
-            if (hash[i] > target[i]) { meets = false; break; }
+            uchar h = hash[31 - i];
+            uchar t = target[i];
+            if (h < t) { meets = true; break; }
+            if (h > t) { meets = false; break; }
         }
 
         if (meets) {
@@ -1147,12 +1161,15 @@ __kernel void pearl_pouw_mine_real_v1(
         uchar hash[32];
         blake3_keyed_hash_64_gpu(pow_key, jackpot_msg, hash);
 
-        // Little-endian U256 comparison: hash <= target
-        // Compare from most significant byte (index 31) down to least (index 0)
+        // hash is little-endian (byte 0 = LSB), target is big-endian (byte 0 = MSB).
+        // Compare as U256: from_little_endian(hash) <= from_big_endian(target)
+        // Reverse hash to big-endian, compare from byte 0 (MSB).
         bool meets = true;
-        for (int i = 31; i >= 0; i--) {
-            if (hash[i] != target[i]) {
-                meets = (hash[i] < target[i]);
+        for (int i = 0; i < 32; i++) {
+            uchar h = hash[31 - i];
+            uchar t = target[i];
+            if (h != t) {
+                meets = (h < t);
                 break;
             }
         }

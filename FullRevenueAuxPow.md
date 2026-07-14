@@ -564,6 +564,7 @@ the GPU secondary runs kheavyhash. The pool decides, the miner adapts.
 | 3 | ETC | ethash | GPU* | ZION pool → ETC pool | src_ethash ✅ |
 | 3 | FLUX | zelhash | GPU* | ZION pool → FLUX pool | src_zelhash ✅ |
 | 3 | EPIC | progpow | GPU* | ZION pool → EPIC pool | src_progpow ✅ |
+| 3 | QUAI | kawpow | GPU* | ZION pool → QUAI pool (2miners) | src_kawpow ✅ |
 
 **GPU*** = Uses GPU secondary slot (when Pearl is NOT active).
 When Pearl IS active (profit-switching selected PRL), GPU secondary is
@@ -711,6 +712,26 @@ coin at a time per miner).
 
 **Commits:** `54514c3fc` (EpicStratum TLS), `41c350b97` (protocol fixes)
 **Full report:** [`docs/3.0.6/EPIC_STRATUM_TLS_REPORT.md`](./docs/3.0.6/EPIC_STRATUM_TLS_REPORT.md)
+
+### KawPoW/QUAI: COMPLETE (Pool-Side + Miner-Side)
+
+**Miner-side (fully implemented):**
+- ✅ `kawpow_gpu_thread()` in `miner/main.rs` — dedicated KawPoW GPU thread (clone of `progpow_gpu_thread`)
+- ✅ KawPoW epoch length = 7500 (vs ProgPow 30000)
+- ✅ `kawpow_tx`/`kawpow_rx` channel + `kawpow_share_tx`/`kawpow_share_rx` channel
+- ✅ Routing block for KawPoW coins (QUAI/RVN/CLORE) → `kawpow_tx.send()`
+- ✅ `kawpow_share_rx.try_recv()` drain in main loop
+- ✅ `kawpow_share` submit block in main loop
+
+**Pool-side (fully implemented):**
+- ✅ `ExternalCoin::QUAI` in `AuXpow/src/types.rs` (ticker="QUAI", algorithm="kawpow", default_pool="quai.2miners.com:4848", supports_btc_payout=true)
+- ✅ `StratumProtocol::Stratum` match arm for QUAI in `auxpow_client.rs`
+- ✅ `KawPowExternal` revenue source mapping in pool server
+- ✅ `ExternalCoin::QUAI => ChExternalCoin::RVN` placeholder mapping
+- ✅ `"kawpow"` algorithm mapping in pool server
+- ✅ `"QUAI"` in routing stats coin match
+- ✅ `ShareResult::NoShare` arm added to pearl proof forward match
+- ✅ Env vars: `ZION_POOL_AUXPOW_WALLET_QUAI`, `ZION_POOL_AUXPOW_PASSWORD_QUAI`
 
 ### Build & Deploy Status
 

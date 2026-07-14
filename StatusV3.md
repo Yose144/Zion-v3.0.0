@@ -178,7 +178,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | R7 | B2b VRSC revenue (ZcashStratum, LuckPool) | ✅ DONE | `bb7d5407b` |
 | R8 | True AuxPow consensus | 🔮 Future | — |
 
-### Supported External Coins (15 total)
+### Supported External Coins (16 total)
 
 | Coin | Algorithm | Protocol | E2E Status |
 |------|-----------|----------|------------|
@@ -195,6 +195,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | FLUX | zelhash | Stratum | TODO |
 | VRSC | verushash v2.2 | ZcashStratum | ✅ LIVE (LuckPool eu.luckpool.net:3956, pool mining VRSC) |
 | EPIC | progpow | Stratum (custom HTTP) | ✅ LIVE (GPU ProgPow kernel, epoch 120 DAG, triple parallel with ZION+VRSC) |
+| QUAI | kawpow | Stratum | ✅ Added (KawPoW GPU thread, 2miners pool, BTC payout, `ZION_POOL_AUXPOW_WALLET_QUAI` env var) |
 | PRL | pearlhash (PoUW MatMul) | PearlStratum (custom) | ★★★ PearlStratum ✅ + CPU hasher ✅ + GPU GEMM dispatch ✅ (`0bafbfe83`) + Merkle proof ✅ (`705bff572`) + pool-routed ✅ (`f524b7117`), full PoUW ZK TODO |
 
 ### AuXpow GPU Backend (2026-07-15)
@@ -252,6 +253,9 @@ ZION_POOL_AUXPOW_CPU_COIN="VRSC"            # CPU-stream coin (default: VRSC)
 ZION_POOL_AUXPOW_CPU_WALLET=<verus_wallet>  # CPU bridge payout wallet
 ZION_POOL_AUXPOW_CPU_WORKER_NAME="zion_triple" # CPU bridge worker name
 ZION_POOL_AUXPOW_CPU_REGION="eu"            # CPU bridge pool region
+# QUAI (KawPoW, 2miners, BTC payout)
+ZION_POOL_AUXPOW_WALLET_QUAI=<quai_wallet>  # QUAI payout wallet
+ZION_POOL_AUXPOW_PASSWORD_QUAI=<password>   # QUAI pool password (optional)
 ```
 
 ---
@@ -312,6 +316,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 
 | Date | Milestone | Key Commits |
 |------|-----------|-------------|
+| 07-15 | **QUAI (KawPoW) added** — 16th external coin. KawPoW GPU thread in miner (`kawpow_gpu_thread`), Stratum v1 protocol, 2miners pool (BTC payout). `ExternalCoin::QUAI` in AuXpow enum, pool server routing/algorithm/CH-coin mappings, miner channel+routing+share drain. Env vars: `ZION_POOL_AUXPOW_WALLET_QUAI`, `ZION_POOL_AUXPOW_PASSWORD_QUAI` | (this commit) |
 | 07-15 | **Triple Parallel AuxPoW LIVE** — Claymore-style 3-stream parallel mining: ZION (GPU DeekshaChv3) + EPIC (GPU ProgPow) + VRSC (CPU VerusHash) simultaneously. Second AuxPow bridge (`cpu_auxpow_bridge`) for CPU-only coins. `external_stream_cpu` field in `PoolMessage::Job`. OpenMP-parallel DAG generation (19 threads, epoch 120 ~2GB in ~4 min). All 3 streams verified live on Edge (rx5600-test miner, 99.7% ZION accept rate, EPIC ProgPow kernel 7169+ batches, VRSC CPU thread hashing) | (this commit) |
 | 07-14 | **PPLNS payout bug fix** — composite `miner_id/worker_name` keys (all workers sharing same miner_id had payouts sent to last-registered address) + telemetry registry composite keys | `bd6f1dfb3`, `85250086d` |
 | 07-14 | NoSolution reconnect cooldown — ban IP for 300s on rate-limit exceed | `49f8bfb57` |

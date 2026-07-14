@@ -366,7 +366,8 @@ fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
         ExternalCoin::DCR | ExternalCoin::ALPH => RevenueSource::Blake3External,
         ExternalCoin::KAS => RevenueSource::KHeavyHashExternal,
         ExternalCoin::ETC => RevenueSource::EthashExternal,
-        ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::EVR | ExternalCoin::MEWC => {
+        ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::EVR | ExternalCoin::MEWC
+        | ExternalCoin::QUAI => {
             RevenueSource::KawPowExternal
         }
         ExternalCoin::ERG => RevenueSource::AutolykosExternal,
@@ -413,6 +414,7 @@ fn auxpow_to_ch_external_coin(coin: ExternalCoin) -> ChExternalCoin {
         ExternalCoin::VRSC => ChExternalCoin::VRSC,
         ExternalCoin::EPIC => ChExternalCoin::VRSC, // placeholder — EPIC not in CH enum
         ExternalCoin::PRL => ChExternalCoin::PRL,
+        ExternalCoin::QUAI => ChExternalCoin::RVN, // placeholder — QUAI maps to KawPoW (RVN)
     }
 }
 
@@ -441,7 +443,7 @@ fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
         ExternalCoin::DCR | ExternalCoin::ALPH => "blake3",
         ExternalCoin::KAS => "kheavyhash",
         ExternalCoin::ETC => "ethash",
-        ExternalCoin::RVN | ExternalCoin::CLORE => "kawpow",
+        ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::QUAI => "kawpow",
         ExternalCoin::ERG => "autolykos",
         ExternalCoin::XMR => "randomx",
         ExternalCoin::FLUX => "zelhash",
@@ -634,6 +636,9 @@ async fn run_auxpow_bridge(
                             req.external_job_id, started.elapsed().as_millis()
                         );
                         ShareForwardResult::Unknown
+                    }
+                    Ok(ShareResult::NoShare) => {
+                        ShareForwardResult::BelowTarget
                     }
                     Err(e) => {
                         eprintln!("auxpow_bridge: pearl forward error: {}", e);
@@ -2407,7 +2412,7 @@ fn handle_client(
                             "DCR" | "ALPH" => RevenueSource::Blake3External,
                             "KAS" => RevenueSource::KHeavyHashExternal,
                             "ETC" => RevenueSource::EthashExternal,
-                            "RVN" | "CLORE" | "EVR" | "MEWC" => RevenueSource::KawPowExternal,
+                            "RVN" | "CLORE" | "EVR" | "MEWC" | "QUAI" => RevenueSource::KawPowExternal,
                             "ERG" => RevenueSource::AutolykosExternal,
                             "XMR" => RevenueSource::RandomXExternal,
                             "FLUX" => RevenueSource::ZelHashExternal,
