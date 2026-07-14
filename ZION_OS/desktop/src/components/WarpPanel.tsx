@@ -1,6 +1,5 @@
 import { Bitcoin, Droplets, Coins, ArrowLeftRight, CheckCircle2, Clock, ExternalLink, Zap } from 'lucide-react';
-
-const EDGE_WEB = 'https://zion.cz';
+import { EDGE_WEB } from '../lib/api';
 
 interface Corridor {
   from: string;

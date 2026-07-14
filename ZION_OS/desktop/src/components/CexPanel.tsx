@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Building2, TrendingUp, TrendingDown, BarChart3, ExternalLink, RefreshCw } from 'lucide-react';
+import { apiFetchExternal, EDGE_WEB } from '../lib/api';
 
 interface CexListing {
   name: string;
@@ -36,8 +37,6 @@ interface CexApiResponse {
   fetchedAt: number;
 }
 
-const EDGE_WEB = 'https://zion.cz';
-
 function formatVol(v: number): string {
   if (v >= 1e6) return `$${(v / 1e6).toFixed(2)}M`;
   if (v >= 1e3) return `$${(v / 1e3).toFixed(2)}K`;
@@ -57,10 +56,8 @@ export default function CexPanel() {
 
   const refresh = useCallback(async () => {
     try {
-      const r = await fetch(`${EDGE_WEB}/api/cex/listings`, {
-        signal: AbortSignal.timeout(8000),
-      });
-      if (r.ok) setData(await r.json());
+      const d = await apiFetchExternal<CexApiResponse>('/api/cex/listings', { timeout: 8000 });
+      if (d) setData(d);
     } catch { /* offline */ }
     finally { setLoading(false); }
   }, []);

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Vote, ExternalLink, CheckCircle2, Clock, XCircle } from 'lucide-react';
-
-const EDGE_WEB = 'https://zion.cz';
+import { apiFetchExternal, EDGE_WEB } from '../lib/api';
 
 interface DaoProposal {
   id?: string | number;
@@ -31,11 +30,8 @@ export default function DaoPanel() {
 
   const refresh = useCallback(async () => {
     try {
-      const r = await fetch(`${EDGE_WEB}/api/dao/proposals?limit=10&status=Active`, {
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!r.ok) { setOffline(true); return; }
-      const d: DaoResponse = await r.json();
+      const d = await apiFetchExternal<DaoResponse>('/api/dao/proposals?limit=10&status=Active', { timeout: 8000 });
+      if (!d) { setOffline(true); return; }
       if (d.note && !d.proposals && !d.data?.proposals) {
         setOffline(true);
         setProposals([]);

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeftRight, CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
+import { apiFetchExternal, EDGE_WEB } from '../lib/api';
 
 interface BridgeStatus {
   online: boolean;
@@ -17,8 +18,6 @@ interface BridgeStatus {
   fetched_at: number;
 }
 
-const EDGE_WEB = 'https://zion.cz';
-
 function formatDuration(secs: number): string {
   if (secs <= 0) return '—';
   const h = Math.floor(secs / 3600);
@@ -35,13 +34,8 @@ export default function BridgePanel() {
 
   const refresh = useCallback(async () => {
     try {
-      const r = await fetch(`${EDGE_WEB}/api/bridge/status`, {
-        signal: AbortSignal.timeout(5000),
-      });
-      if (r.ok) {
-        const d = await r.json();
-        setData(d);
-      }
+      const d = await apiFetchExternal<BridgeStatus>('/api/bridge/status', { timeout: 5000 });
+      if (d) setData(d);
     } catch {
       /* offline */
     } finally {
