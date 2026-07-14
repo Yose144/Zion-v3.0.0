@@ -938,6 +938,8 @@ impl GpuMiner {
                     "autolykos_kernel.cl" => include_str!("../csrc/opencl/autolykos_kernel.cl"),
                     "kawpow_kernel.cl" => include_str!("../csrc/opencl/kawpow_kernel.cl"),
                     "ethash_kernel.cl" => include_str!("../csrc/opencl/ethash_kernel.cl"),
+                    "progpow_kernel.cl" => include_str!("../csrc/opencl/progpow_kernel.cl"),
+                    "zelhash_kernel.cl" => include_str!("../csrc/opencl/zelhash_kernel.cl"),
                     "pearl_kernel.cl" => include_str!("../csrc/opencl/pearl_kernel.cl"),
                     "pearl_pouw_native.cl" => include_str!("../csrc/opencl/pearl_pouw_native.cl"),
                     _ => return Err(anyhow!("Unknown kernel file: {kernel_file} (not on disk and not embedded)")),
