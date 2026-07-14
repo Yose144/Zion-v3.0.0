@@ -1563,3 +1563,234 @@ pub fn mine_gpu_native(
     None
 }
 
+// ─── OpenCL GPU-Native Pipeline ───────────────────────────────────────────
+
+/// Try to mine one proof using the fully GPU-native OpenCL pipeline.
+/// GPU handles: matrix gen, BLAKE3 commitment, noise gen, MatMul, jackpot.
+/// CPU only computes job_key and builds Merkle proof if GPU finds a winner.
+#[cfg(feature = "gpu-opencl")]
+pub fn try_mine_one_gpu_native_opencl(
+    nonce: u64,
+    m: usize,
+    n: usize,
+    k: usize,
+    rank: usize,
+    header: &IncompleteBlockHeader,
+    config: &MiningConfiguration,
+    difficulty_bound: &[u8; 32],
+    gpu_backend: &mut crate::gpu_miner::GpuMiner,
+) -> Option<MinedProof> {
+    use crate::gpu_miner::PearlPouwNativeInput;
+
+    let job_key = compute_job_key(header, config);
+
+    let row_offsets: Vec<u32> = (0..m as u32)
+        .filter(|&i| config.rows_pattern.offset_is_valid(i))
+        .collect();
+    let col_offsets: Vec<u32> = (0..n as u32)
+        .filter(|&i| config.cols_pattern.offset_is_valid(i))
+        .collect();
+
+    let rows_base: Vec<u32> = config.rows_pattern.to_list();
+    let cols_base: Vec<u32> = config.cols_pattern.to_list();
+
+    let native_input = PearlPouwNativeInput {
+        nonce,
+        m, n, k, rank,
+        job_key,
+        target: *difficulty_bound,
+        row_offsets: &row_offsets,
+        col_offsets: &col_offsets,
+        rows_base: &rows_base,
+        cols_base: &cols_base,
+        seed_label_a: SEED_LABEL_A,
+        seed_label_b: SEED_LABEL_B,
+    };
+
+    let gpu_result = match gpu_backend.pearl_pouw_mine_native(&native_input) {
+        Ok(Some(r)) => r,
+        Ok(None) => return None,
+        Err(e) => {
+            eprintln!("pearl_pouw_mine_native OpenCL error: {e:#}");
+            return None;
+        }
+    };
+
+    // GPU found a valid tile — reconstruct Merkle proof from read-back matrices.
+    let tile_idx = gpu_result.tile_index as usize;
+    let num_col_off = col_offsets.len();
+    let row_off_idx = tile_idx / num_col_off;
+    let col_off_idx = tile_idx % num_col_off;
+
+    let row_off = row_offsets[row_off_idx] as usize;
+    let col_off = col_offsets[col_off_idx] as usize;
+
+    let a_rows: Vec<usize> = rows_base.iter().map(|&d| row_off + d as usize).collect();
+    let b_cols: Vec<usize> = cols_base.iter().map(|&d| col_off + d as usize).collect();
+
+    // Convert flat matrices to Vec<Vec<i8>> for build_matrix_proof
+    let a_matrix: Vec<Vec<i8>> = (0..m)
+        .map(|i| gpu_result.matrix_a[i * k..(i + 1) * k].to_vec())
+        .collect();
+    let b_transposed: Vec<Vec<i8>> = (0..n)
+        .map(|j| gpu_result.matrix_bt[j * k..(j + 1) * k].to_vec())
+        .collect();
+
+    let a_proof = build_matrix_proof(&a_matrix, &job_key, &a_rows, k);
+    let bt_proof = build_matrix_proof(&b_transposed, &job_key, &b_cols, k);
+
+    let proof = PearlPlainProof {
+        m, n, k,
+        noise_rank: rank,
+        a: a_proof,
+        bt: bt_proof,
+        moe: None,
+    };
+
+    let proof_bytes = bincode::serialize(&proof).ok()?;
+    let plain_proof_b64 = base64::Engine::encode(
+        &base64::engine::general_purpose::STANDARD,
+        &proof_bytes,
+    );
+
+    Some(MinedProof {
+        plain_proof_b64,
+        jackpot_hash: gpu_result.jackpot_hash,
+    })
+}
+
+/// Mine using GPU-native OpenCL pipeline. Scans nonces.
+#[cfg(feature = "gpu-opencl")]
+pub fn mine_gpu_native_opencl(
+    m: usize,
+    n: usize,
+    k: usize,
+    rank: usize,
+    header: &IncompleteBlockHeader,
+    config: &MiningConfiguration,
+    difficulty_bound: &[u8; 32],
+    max_attempts: u64,
+    gpu_backend: &mut crate::gpu_miner::GpuMiner,
+) -> Option<MinedProof> {
+    for nonce in 0..max_attempts {
+        if let Some(proof) = try_mine_one_gpu_native_opencl(
+            nonce, m, n, k, rank, header, config, difficulty_bound, gpu_backend,
+        ) {
+            return Some(proof);
+        }
+    }
+    None
+}
+
+/// Batched OpenCL GPU-native Pearl PoUW mining.
+/// Processes `batch_size` nonces per mining kernel launch for full GPU occupancy.
+/// Falls back to single-nonce path if batch_size == 1.
+#[cfg(feature = "gpu-opencl")]
+pub fn mine_gpu_native_opencl_batched(
+    m: usize,
+    n: usize,
+    k: usize,
+    rank: usize,
+    header: &IncompleteBlockHeader,
+    config: &MiningConfiguration,
+    difficulty_bound: &[u8; 32],
+    max_attempts: u64,
+    gpu_backend: &mut crate::gpu_miner::GpuMiner,
+    batch_size: u32,
+) -> Option<MinedProof> {
+    use crate::gpu_miner::{PearlPouwNativeInput, PearlPouwNativeResult};
+
+    let job_key = compute_job_key(header, config);
+
+    let row_offsets: Vec<u32> = (0..m as u32)
+        .filter(|&i| config.rows_pattern.offset_is_valid(i))
+        .collect();
+    let col_offsets: Vec<u32> = (0..n as u32)
+        .filter(|&i| config.cols_pattern.offset_is_valid(i))
+        .collect();
+    let rows_base: Vec<u32> = config.rows_pattern.to_list();
+    let cols_base: Vec<u32> = config.cols_pattern.to_list();
+
+    let mut nonce: u64 = 0;
+    while nonce < max_attempts {
+        let remaining = max_attempts - nonce;
+        let this_batch = batch_size.min(remaining as u32);
+
+        let native_input = PearlPouwNativeInput {
+            nonce,
+            m, n, k, rank,
+            job_key,
+            target: *difficulty_bound,
+            row_offsets: &row_offsets,
+            col_offsets: &col_offsets,
+            rows_base: &rows_base,
+            cols_base: &cols_base,
+            seed_label_a: SEED_LABEL_A,
+            seed_label_b: SEED_LABEL_B,
+        };
+
+        match gpu_backend.pearl_pouw_mine_batched(&native_input, this_batch) {
+            Ok(Some(result)) => {
+                // Found a winning share — reconstruct Merkle proof
+                let PearlPouwNativeResult {
+                    tile_index, jackpot_hash, nonce: winning_nonce, matrix_a, matrix_bt,
+                } = result;
+
+                let num_col_off = col_offsets.len();
+                let row_off_idx = tile_index as usize / num_col_off;
+                let col_off_idx = tile_index as usize % num_col_off;
+                let row_off = row_offsets[row_off_idx] as usize;
+                let col_off = col_offsets[col_off_idx] as usize;
+                let a_rows: Vec<usize> = rows_base.iter().map(|&d| row_off + d as usize).collect();
+                let b_cols: Vec<usize> = cols_base.iter().map(|&d| col_off + d as usize).collect();
+
+                let a_matrix: Vec<Vec<i8>> = (0..m)
+                    .map(|i| matrix_a[i * k..(i + 1) * k].to_vec())
+                    .collect();
+                let b_transposed: Vec<Vec<i8>> = (0..n)
+                    .map(|j| matrix_bt[j * k..(j + 1) * k].to_vec())
+                    .collect();
+
+                let a_proof = build_matrix_proof(&a_matrix, &job_key, &a_rows, k);
+                let bt_proof = build_matrix_proof(&b_transposed, &job_key, &b_cols, k);
+
+                let proof = PearlPlainProof {
+                    m, n, k,
+                    noise_rank: rank,
+                    a: a_proof,
+                    bt: bt_proof,
+                    moe: None,
+                };
+
+                let proof_bytes = bincode::serialize(&proof).ok()?;
+                let plain_proof_b64 = base64::Engine::encode(
+                    &base64::engine::general_purpose::STANDARD,
+                    &proof_bytes,
+                );
+
+                return Some(MinedProof {
+                    plain_proof_b64,
+                    jackpot_hash,
+                });
+            }
+            Ok(None) => {
+                // No share found in this batch — continue to next batch
+                nonce += this_batch as u64;
+            }
+            Err(e) => {
+                eprintln!("pearl_pouw_mine_batched OpenCL error: {e:#}");
+                // Fall back to single-nonce for the rest
+                for n2 in nonce..max_attempts {
+                    if let Some(proof) = try_mine_one_gpu_native_opencl(
+                        n2, m, n, k, rank, header, config, difficulty_bound, gpu_backend,
+                    ) {
+                        return Some(proof);
+                    }
+                }
+                return None;
+            }
+        }
+    }
+    None
+}
+

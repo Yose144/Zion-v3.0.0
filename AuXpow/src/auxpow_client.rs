@@ -218,6 +218,10 @@ pub struct AuxPowClient {
     /// None = CPU-only mining.
     #[cfg(feature = "gpu-metal")]
     gpu_backend: Arc<Mutex<Option<crate::gpu_metal::MetalBackend>>>,
+    /// GPU backend for PoUW mining (OpenCL on AMD/ROCm).
+    /// None = CPU-only mining.
+    #[cfg(feature = "gpu-opencl")]
+    gpu_opencl_backend: Arc<Mutex<Option<crate::gpu_miner::GpuMiner>>>,
 }
 
 impl AuxPowClient {
@@ -248,6 +252,8 @@ impl AuxPowClient {
             latest_job_id: Arc::new(Mutex::new(None)),
             #[cfg(feature = "gpu-metal")]
             gpu_backend: Arc::new(Mutex::new(None)),
+            #[cfg(feature = "gpu-opencl")]
+            gpu_opencl_backend: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -271,6 +277,28 @@ impl AuxPowClient {
     #[cfg(feature = "gpu-metal")]
     pub async fn has_gpu(&self) -> bool {
         self.gpu_backend.lock().await.is_some()
+    }
+
+    /// Enable GPU mining (OpenCL on AMD/ROCm).
+    /// Call this before connect() for Pearl PoUW GPU acceleration.
+    #[cfg(feature = "gpu-opencl")]
+    pub async fn with_gpu_opencl(self) -> Self {
+        match crate::gpu_miner::opencl_backend::new(262144) {
+            Ok(backend) => {
+                println!("auxpow: OpenCL GPU backend enabled");
+                *self.gpu_opencl_backend.lock().await = Some(backend);
+            }
+            Err(e) => {
+                eprintln!("auxpow: OpenCL GPU backend unavailable, falling back to CPU: {e}");
+            }
+        }
+        self
+    }
+
+    /// Check if OpenCL GPU backend is available.
+    #[cfg(feature = "gpu-opencl")]
+    pub async fn has_gpu_opencl(&self) -> bool {
+        self.gpu_opencl_backend.lock().await.is_some()
     }
 
     /// Connect to the external pool and perform subscribe + authorize.
@@ -2112,15 +2140,23 @@ impl AuxPowClient {
                 gpu.is_some()
             };
 
-            #[cfg(not(feature = "gpu-metal"))]
+            #[cfg(feature = "gpu-opencl")]
+            let use_gpu_opencl = {
+                let gpu = self.gpu_opencl_backend.lock().await;
+                gpu.is_some()
+            };
+
+            #[cfg(not(any(feature = "gpu-metal", feature = "gpu-opencl")))]
             let use_gpu = false;
+            #[cfg(not(feature = "gpu-opencl"))]
+            let use_gpu_opencl = false;
 
             #[cfg(feature = "gpu-metal")]
             let gpu_mode = if use_gpu {
                 if std::env::var("AUXPOW_PRL_GPU_NATIVE").is_ok() { "GPU-native" } else { "GPU" }
             } else { "CPU" };
             #[cfg(not(feature = "gpu-metal"))]
-            let gpu_mode = "CPU";
+            let gpu_mode = if use_gpu_opencl { "GPU-OpenCL-batched" } else { "CPU" };
 
             println!(
                 "auxpow: PRL mining — m={} n={} k={} rank={} attempts={} header_len={} mode={}",
@@ -2162,7 +2198,35 @@ impl AuxPowClient {
                 )
             };
 
-            #[cfg(not(feature = "gpu-metal"))]
+            // OpenCL path: batched persistent mining on AMD/ROCm GPUs
+            #[cfg(feature = "gpu-opencl")]
+            let mined = if use_gpu_opencl {
+                let mut gpu = self.gpu_opencl_backend.lock().await;
+                let gpu_backend = gpu.as_mut().unwrap();
+                let batch_size: u32 = std::env::var("AUXPOW_PRL_BATCH_SIZE")
+                    .ok()
+                    .and_then(|s| s.parse::<u32>().ok())
+                    .unwrap_or(8);
+                crate::pearl_pouw::mine_gpu_native_opencl_batched(
+                    m, n, k, rank,
+                    &header,
+                    &config,
+                    &difficulty_bound,
+                    max_attempts,
+                    gpu_backend,
+                    batch_size,
+                )
+            } else {
+                crate::pearl_pouw::mine(
+                    m, n, k, rank,
+                    &header,
+                    &config,
+                    &difficulty_bound,
+                    max_attempts,
+                )
+            };
+
+            #[cfg(not(any(feature = "gpu-metal", feature = "gpu-opencl")))]
             let mined = crate::pearl_pouw::mine(
                 m, n, k, rank,
                 &header,
