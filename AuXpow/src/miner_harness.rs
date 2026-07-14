@@ -278,21 +278,41 @@ fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> 
     //   - nonceSpace offset 1472 + 4 = 1476
 
     let en1_len = job.extranonce1.len();
-    let nonce_field_offset = 108 + en1_len;
     let nonce_space_blob_offset = 143 + 1329 + en1_len; // = 1472 + en1_len
 
     let mut work_header = header.to_vec();
 
+    // One-time test: check if nonce field affects hash
+    {
+        let mut test_header = work_header.clone();
+        // Set nonce field to extranonce1
+        let en1 = &job.extranonce1;
+        if en1.len() <= 32 && 108 + en1.len() <= test_header.len() {
+            test_header[108..108 + en1.len()].copy_from_slice(en1);
+        }
+        let hash_with_en1 = crate::external_hashers::hash_verushash_header(&test_header);
+        // Set nonce field to zeros
+        let mut test_header2 = work_header.clone();
+        for b in &mut test_header2[108..140] {
+            *b = 0;
+        }
+        let hash_with_zeros = crate::external_hashers::hash_verushash_header(&test_header2);
+        eprintln!(
+            "NONCE_FIELD_TEST: en1_hash={} zeros_hash={} same={}",
+            hex::encode(hash_with_en1),
+            hex::encode(hash_with_zeros),
+            hash_with_en1 == hash_with_zeros
+        );
+    }
+
     for nonce in start..end {
         let nonce_le = (nonce as u32).to_le_bytes();
 
-        // Write miner_nonce into the 32-byte nonce field
-        if nonce_field_offset + 4 <= work_header.len() {
-            work_header[nonce_field_offset..nonce_field_offset + 4]
-                .copy_from_slice(&nonce_le);
-        }
-
-        // Write miner_nonce into the solution nonceSpace
+        // PBaaS v7+: Only write miner_nonce into the solution nonceSpace.
+        // The nonce field (offset 108) is NOT modified — for PBaaS v7+,
+        // the pool uses the daemon's nonce (or zeros) and ignores the
+        // miner's nonce field. The miner's unique work is solely in the
+        // solution nonceSpace.
         if nonce_space_blob_offset + 4 <= work_header.len() {
             work_header[nonce_space_blob_offset..nonce_space_blob_offset + 4]
                 .copy_from_slice(&nonce_le);
@@ -305,6 +325,13 @@ fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> 
                 nonce, work_header.len(), hex::encode(hash), hex::encode(target), meets_target(&hash, target));
         }
         if meets_target(&hash, target) {
+            eprintln!(
+                "SHARE_FOUND nonce={} hash={} nonce_field={} nonceSpace={}",
+                nonce,
+                hex::encode(hash),
+                hex::encode(&work_header[108..140]),
+                hex::encode(&work_header[1472..1487]),
+            );
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
                 nonce,
@@ -551,17 +578,13 @@ fn scan_verushash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
     let header = &job.header_bytes;
 
     let en1_len = job.extranonce1.len();
-    let nonce_field_offset = 108 + en1_len;
     let nonce_space_blob_offset = 143 + 1329 + en1_len;
     let mut work_header = header.to_vec();
 
     let mut best: Option<FoundShare> = None;
     for nonce in start..end {
         let nonce_le = (nonce as u32).to_le_bytes();
-        if nonce_field_offset + 4 <= work_header.len() {
-            work_header[nonce_field_offset..nonce_field_offset + 4]
-                .copy_from_slice(&nonce_le);
-        }
+        // PBaaS v7+: Only modify solution nonceSpace, NOT the nonce field
         if nonce_space_blob_offset + 4 <= work_header.len() {
             work_header[nonce_space_blob_offset..nonce_space_blob_offset + 4]
                 .copy_from_slice(&nonce_le);
