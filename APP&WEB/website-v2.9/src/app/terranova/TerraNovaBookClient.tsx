@@ -18,7 +18,6 @@ import remarkGfm from 'remark-gfm';
 import { useLang } from '@/contexts/LanguageContext';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
 import { CHAPTERS } from './bookData';
-import { EDITIONS_DATA } from './generatedEditions';
 import PioneerProjectCards from './components/PioneerProjectCards';
 import GeographyMenu from './components/GeographyMenu';
 import LayerMenu from './components/LayerMenu';
@@ -128,16 +127,21 @@ const EDITION_INTRO: Record<EditionKey, EditionIntro> = {
   },
 };
 
-const EDITION_CHAPTERS: Record<EditionKey, BookChapter[]> = {
-  final: EDITIONS_DATA['final'] as unknown as BookChapter[],
-};
+function computeEditionChapters(
+  data: Record<string, BookChapter[]> | null
+): Record<EditionKey, BookChapter[]> {
+  return data ? { final: data['final'] as BookChapter[] } : { final: [] };
+}
 
-const EDITION_COMPOSITION_LINES: Record<EditionKey, { cs: string[]; en: string[] }> = {
-  final: {
-    cs: EDITION_CHAPTERS.final.map((chapter) => formatChapterLabel(chapter, true)),
-    en: EDITION_CHAPTERS.final.map((chapter) => formatChapterLabel(chapter, false)),
-  },
-};
+function computeCompositionLines(
+  chapters: Record<EditionKey, BookChapter[]>,
+  edition: EditionKey
+): { cs: string[]; en: string[] } {
+  return {
+    cs: chapters[edition].map((chapter) => formatChapterLabel(chapter, true)),
+    en: chapters[edition].map((chapter) => formatChapterLabel(chapter, false)),
+  };
+}
 
 const STARFIELD_POINTS = Array.from({ length: 40 }, (_, index) => ({
   top: `${((index * 17.23) + 11) % 100}%`,
@@ -774,6 +778,23 @@ export default function TerraNovaBookClient() {
   const cs = lang === 'cs';
 
   const [activeEdition, setActiveEdition] = useState<EditionKey>('final');
+  const [editionsData, setEditionsData] = useState<Record<string, BookChapter[]> | null>(null);
+
+  useEffect(() => {
+    fetch('/terranova-editions.json')
+      .then((res) => res.json())
+      .then((data) => setEditionsData(data))
+      .catch((err) => console.error('Failed to load Terra Nova editions:', err));
+  }, []);
+
+  const EDITION_CHAPTERS = useMemo(() => computeEditionChapters(editionsData), [editionsData]);
+  const EDITION_COMPOSITION_LINES = useMemo(
+    () => ({
+      final: computeCompositionLines(EDITION_CHAPTERS, 'final'),
+    }),
+    [EDITION_CHAPTERS]
+  );
+
   const currentChapters = EDITION_CHAPTERS[activeEdition];
   const currentEdition = EDITION_OPTIONS.find((option) => option.id === activeEdition) ?? EDITION_OPTIONS[0];
   const meta = EDITION_META[activeEdition];
@@ -793,57 +814,6 @@ export default function TerraNovaBookClient() {
   const [twRespText, setTwRespText] = useState('');
   const twRef = useRef({ cmdIdx: 0, charIdx: 0, phase: 'typing' as string, pauseTicks: 0 });
   const contentRef = useRef<HTMLDivElement>(null);
-
-  const chapter = currentChapters[activeChapter];
-  const sections = cs ? chapter.sectionsCs : chapter.sectionsEn;
-  const chapterEpigraph = cs ? chapter.epigraphCs : chapter.epigraphEn;
-  const progress = ((activeChapter + 1) / currentChapters.length) * 100;
-  const overlayOpen = overlayMode !== null;
-  const chapterLabel =
-    chapter.number === 'Prolog'
-      ? cs
-        ? 'Prolog'
-        : 'Prologue'
-      : APPENDIX_NUMBERS.has(chapter.number)
-      ? `${cs ? 'Příloha' : 'Appendix'} ${chapter.number}`
-      : chapter.number === 'Závěr'
-      ? cs
-        ? 'Závěr'
-        : 'Conclusion'
-      : `${cs ? 'Část' : 'Part'} ${chapter.number}`;
-  const selectedDirection = compassDir !== null ? ACCELERATION_DIRECTIONS[compassDir] : null;
-  const selectedDharmaSpoke = DHARMA_WHEEL_SPOKES[dharmaSpoke];
-  const flowersPerZionLabel = cs
-    ? `1 ZION = 10^${Math.log10(ATOMIC_UNITS_PER_ZION)} květů`
-    : `1 ZION = 10^${Math.log10(ATOMIC_UNITS_PER_ZION)} flowers`;
-  const introSignals = cs ? intro.signalsCs : intro.signalsEn;
-  const introLead = cs ? intro.leadCs : intro.leadEn;
-  const introBody = cs ? intro.bodyCs : intro.bodyEn;
-  const introNotes = cs ? intro.notesCs : intro.notesEn;
-  const introQuote = cs
-    ? 'Gate, Gate, Paragate, Parasamgate, Bodhi Swaha'
-    : 'Gate, Gate, Paragate, Parasamgate, Bodhi Swaha';
-  const introDedication = cs
-    ? 'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.'
-    : 'For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam /EnaMaTara/,\nfriends, family, free humanity and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins. Peace & One Love 4ever.';
-  const genesisOverlayLines = cs
-    ? [
-        'Genesis není jen předmluva. Je to okamžik, kdy se jazyk, síť a závazek poprvé dotknou stejného horizontu.',
-        'Proto má Terra Nova na vstupu nést i ceremoniální tíhu počátku, nejen čtecí komfort.',
-      ]
-    : [
-        'Genesis is not only a foreword. It is the instant when language, network, and commitment first touch the same horizon.',
-        'That is why Terra Nova should carry ceremonial weight at the entrance, not only reading comfort.',
-      ];
-  const cliOverlayLines = cs
-    ? [
-        'CLI je zde jako provozní svědomí projektu: připomíná, že vize musí být spustitelná, měřitelná a udržitelná.',
-        'Overlay drží příkazy, boot sekvenci a orientační vrstvu, aby se intro neztratilo po prvním scrollu.',
-      ]
-    : [
-        'The CLI is here as the operational conscience of the project: a reminder that vision must remain runnable, measurable, and sustainable.',
-        'The overlay keeps the commands, boot sequence, and orientation layer present even after the first scroll.',
-      ];
 
   const goTo = useCallback(
     (i: number) => {
@@ -944,6 +914,68 @@ export default function TerraNovaBookClient() {
       document.body.style.overflow = originalOverflow;
     };
   }, [tocOpen, overlayOpen]);
+
+  if (!editionsData || currentChapters.length === 0) {
+    return (
+      <div className="zion-container flex min-h-[60vh] items-center justify-center text-center text-gray-400">
+        <div>
+          <div className="mb-4 inline-block h-10 w-10 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
+          <p>Načítání Terra Nova…</p>
+        </div>
+      </div>
+    );
+  }
+
+  const chapter = currentChapters[activeChapter];
+  const sections = cs ? chapter.sectionsCs : chapter.sectionsEn;
+  const chapterEpigraph = cs ? chapter.epigraphCs : chapter.epigraphEn;
+  const progress = ((activeChapter + 1) / currentChapters.length) * 100;
+  const overlayOpen = overlayMode !== null;
+  const chapterLabel =
+    chapter.number === 'Prolog'
+      ? cs
+        ? 'Prolog'
+        : 'Prologue'
+      : APPENDIX_NUMBERS.has(chapter.number)
+      ? `${cs ? 'Příloha' : 'Appendix'} ${chapter.number}`
+      : chapter.number === 'Závěr'
+      ? cs
+        ? 'Závěr'
+        : 'Conclusion'
+      : `${cs ? 'Část' : 'Part'} ${chapter.number}`;
+  const selectedDirection = compassDir !== null ? ACCELERATION_DIRECTIONS[compassDir] : null;
+  const selectedDharmaSpoke = DHARMA_WHEEL_SPOKES[dharmaSpoke];
+  const flowersPerZionLabel = cs
+    ? `1 ZION = 10^${Math.log10(ATOMIC_UNITS_PER_ZION)} květů`
+    : `1 ZION = 10^${Math.log10(ATOMIC_UNITS_PER_ZION)} flowers`;
+  const introSignals = cs ? intro.signalsCs : intro.signalsEn;
+  const introLead = cs ? intro.leadCs : intro.leadEn;
+  const introBody = cs ? intro.bodyCs : intro.bodyEn;
+  const introNotes = cs ? intro.notesCs : intro.notesEn;
+  const introQuote = cs
+    ? 'Gate, Gate, Paragate, Parasamgate, Bodhi Swaha'
+    : 'Gate, Gate, Paragate, Parasamgate, Bodhi Swaha';
+  const introDedication = cs
+    ? 'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.'
+    : 'For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam /EnaMaTara/,\nfriends, family, free humanity and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins. Peace & One Love 4ever.';
+  const genesisOverlayLines = cs
+    ? [
+        'Genesis není jen předmluva. Je to okamžik, kdy se jazyk, síť a závazek poprvé dotknou stejného horizontu.',
+        'Proto má Terra Nova na vstupu nést i ceremoniální tíhu počátku, nejen čtecí komfort.',
+      ]
+    : [
+        'Genesis is not only a foreword. It is the instant when language, network, and commitment first touch the same horizon.',
+        'That is why Terra Nova should carry ceremonial weight at the entrance, not only reading comfort.',
+      ];
+  const cliOverlayLines = cs
+    ? [
+        'CLI je zde jako provozní svědomí projektu: připomíná, že vize musí být spustitelná, měřitelná a udržitelná.',
+        'Overlay drží příkazy, boot sekvenci a orientační vrstvu, aby se intro neztratilo po prvním scrollu.',
+      ]
+    : [
+        'The CLI is here as the operational conscience of the project: a reminder that vision must remain runnable, measurable, and sustainable.',
+        'The overlay keeps the commands, boot sequence, and orientation layer present even after the first scroll.',
+      ];
 
   return (
     <div className="zion-shell zion-page">

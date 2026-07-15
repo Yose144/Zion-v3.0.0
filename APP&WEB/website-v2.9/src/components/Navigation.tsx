@@ -228,10 +228,10 @@ export default function Navigation() {
               <Image
                 src="/stargate-icon.png"
                 alt="ZION TerraNova Stargate"
+                priority
                 width={36}
                 height={36}
                 className="relative z-10 w-full h-full object-contain"
-                priority
               />
             </div>
             <div className={`hidden sm:flex flex-col leading-none transition-all duration-300 ${scrolled ? 'opacity-0 w-0 overflow-hidden' : ''}`}>

@@ -10122,13 +10122,28 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     ".svg":  "image/svg+xml",
                     ".html": "text/html; charset=utf-8",
                 }.get(v2_file.suffix, "application/octet-stream")
-                body = v2_file.read_bytes()
-                self.send_response(200)
-                self.send_header("Content-Type", content_type)
-                self.send_header("Cache-Control", "public, max-age=31536000, immutable")
-                self.send_header("Content-Length", str(len(body)))
-                self.end_headers()
-                self.wfile.write(body)
+                accepts_gzip = "gzip" in (self.headers.get("Accept-Encoding", "").lower())
+                gz_file = v2_file.with_suffix(v2_file.suffix + ".gz")
+                if accepts_gzip and gz_file.exists():
+                    body = gz_file.read_bytes()
+                    self.send_response(200)
+                    self.send_header("Content-Type", content_type)
+                    self.send_header("Content-Encoding", "gzip")
+                    self.send_header("Vary", "Accept-Encoding")
+                    self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+                    self.send_header("ETag", f'"{hashlib.md5(body).hexdigest()}"')
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                else:
+                    body = v2_file.read_bytes()
+                    self.send_response(200)
+                    self.send_header("Content-Type", content_type)
+                    self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+                    self.send_header("ETag", f'"{hashlib.md5(body).hexdigest()}"')
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
                 return
             else:
                 self.send_error(404)
