@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRef } from 'react';
@@ -594,19 +595,21 @@ export default function EkamMuseumLanding() {
         <div className="mx-auto flex max-w-6xl flex-wrap gap-4">
           <Link
             href="/ekam/deeksha"
-            className="inline-flex items-center justify-center rounded-full border border-amber-200/20 bg-amber-300/10 px-6 py-3 text-sm font-semibold text-amber-50 transition hover:border-amber-200/30 hover:bg-amber-300/14"
+            className="zion-button-primary text-sm"
+            style={{ '--rc': '251, 191, 36' } as CSSProperties}
           >
             O knize Ekam Deeksha
           </Link>
           <Link
             href="/"
-            className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-amber-200/30 hover:bg-white/14"
+            className="zion-button-secondary text-sm"
           >
             {tr('ekamPage', 'cta_home', lang)}
           </Link>
           <Link
             href="/#tree-of-life"
-            className="inline-flex items-center justify-center rounded-full border border-sky-200/15 bg-sky-300/10 px-6 py-3 text-sm font-semibold text-sky-50 transition hover:border-sky-200/30"
+            className="zion-button-primary text-sm"
+            style={{ '--rc': '6, 182, 212' } as CSSProperties}
           >
             {tr('ekamPage', 'cta_tree', lang)}
           </Link>
@@ -614,7 +617,8 @@ export default function EkamMuseumLanding() {
             href={EKAM_SOURCE_URL}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center rounded-full border border-amber-200/15 bg-amber-300/8 px-6 py-3 text-sm font-semibold text-amber-50 transition hover:border-amber-200/30"
+            className="zion-button-secondary text-sm"
+            style={{ '--rc': '251, 191, 36' } as CSSProperties}
           >
             {tr('ekamPage', 'cta_source', lang)}
           </a>

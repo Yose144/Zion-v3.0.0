@@ -301,7 +301,8 @@ export default function CrossChainSwapWidget() {
         <button
           onClick={executeSwap}
           disabled={!quote || phase === 'quoting' || phase === 'executing'}
-          className="w-full mt-4 py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-bold rounded-xl hover:from-amber-400 hover:to-amber-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="zion-button-primary w-full mt-4"
+          style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
         >
           {phase === 'quoting' && <Loader2 className="w-4 h-4 animate-spin" />}
           {phase === 'executing' && <Loader2 className="w-4 h-4 animate-spin" />}

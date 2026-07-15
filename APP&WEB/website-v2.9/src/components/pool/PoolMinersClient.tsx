@@ -588,7 +588,8 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
               </div>
               <button
                 type="submit"
-                className="rounded-xl bg-linear-to-r from-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity whitespace-nowrap inline-flex items-center justify-center gap-2"
+                className="zion-button-primary text-sm whitespace-nowrap"
+                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
               >
                 <Search className="h-4 w-4" />
                 {cs ? "Najít minera" : "Search Miner"}
@@ -892,13 +893,14 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                   : "Start mining ZION and appear on the leaderboard. PPLNS rewards, 89% miner share, humanitarian mission in every block."}
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-                <Link href="/pool" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-white">
+                <Link href="/pool" className="zion-button-primary group text-sm" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <Pickaxe className="h-4 w-4" /> {cs ? "Hlavní stránka poolu" : "Pool Dashboard"}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
-                <a href="#search" onClick={(e) => { e.preventDefault(); (document.querySelector('input[type="text"]') as HTMLInputElement | null)?.focus(); }} className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
+                <a href="#search" onClick={(e) => { e.preventDefault(); (document.querySelector('input[type="text"]') as HTMLInputElement | null)?.focus(); }} className="zion-button-secondary text-sm">
                   <Search className="h-4 w-4" /> {cs ? "Hledat minera" : "Search Miner"}
                 </a>
-                <Link href="/explorer" className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10">
+                <Link href="/explorer" className="zion-button-secondary text-sm">
                   <Server className="h-4 w-4" /> Explorer
                 </Link>
               </div>

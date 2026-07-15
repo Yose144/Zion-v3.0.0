@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
@@ -103,6 +104,7 @@ export default function Hero() {
               <Link
                 href="/network"
                 className="zion-button-primary group w-full sm:w-auto justify-center"
+                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
               >
                 {tr('hero', 'btn_warp', lang)}
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
@@ -111,14 +113,14 @@ export default function Hero() {
                 href="/docs"
                 className="zion-button-secondary w-full sm:w-auto justify-center"
               >
-                <ShieldHalf className="w-5 h-5 text-zion-cyan" />
+                <ShieldHalf className="w-5 h-5" />
                 {tr('hero', 'btn_guardian_docs', lang)}
               </Link>
               <Link
                 href="/download"
-                className="zion-button-secondary hover:border-zion-gold/60 w-full sm:w-auto justify-center"
+                className="zion-button-secondary w-full sm:w-auto justify-center"
               >
-                <CircuitBoard className="w-5 h-5 text-zion-gold" />
+                <CircuitBoard className="w-5 h-5" />
                 {tr('hero', 'btn_native_miner', lang)}
               </Link>
             </div>

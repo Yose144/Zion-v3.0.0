@@ -562,7 +562,8 @@ export default function Navigation() {
                   <Link
                     href="/dashboard"
                     onClick={() => setIsOpen(false)}
-                    className="rounded-xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-3 py-3 inline-flex items-center gap-2 text-white min-h-[44px] font-semibold"
+                    className="zion-button-primary text-sm min-h-[44px] py-3"
+                    style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                   >
                     {tr('nav', 'dashboard', lang)}
                   </Link>
@@ -587,7 +588,8 @@ export default function Navigation() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setIsOpen(false)}
-                  className="mt-2 rounded-xl border border-zion-gold/30 bg-linear-to-r from-zion-gold/10 to-amber-600/8 px-3 py-3 inline-flex items-center justify-center gap-2 min-h-[44px] text-zion-gold font-semibold shadow-[0_0_14px_rgba(251,191,36,0.12)]"
+                  className="zion-button-secondary mt-2 text-sm min-h-[44px] py-3"
+                  style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
                 >
                   <Github className="w-4 h-4" />
                   GitHub · Mainnet Beta

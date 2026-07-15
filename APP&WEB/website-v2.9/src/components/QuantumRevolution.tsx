@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Atom, BookOpen, Brain, Cpu, Download, Eye, Globe, Heart, Sparkles, Zap } from 'lucide-react';
@@ -159,16 +160,18 @@ export default function QuantumRevolution() {
                   href="https://newearth.cz/V2/halls.html"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-zion-gold/90 to-amber-500/80 px-5 py-2.5 text-sm font-semibold text-black shadow-[0_0_40px_rgba(251,191,36,0.2)] transition-all hover:shadow-[0_0_60px_rgba(251,191,36,0.35)]"
+                  className="zion-button-primary group text-sm"
+                  style={{ '--rc': '251, 191, 36' } as CSSProperties}
                 >
                   <BookOpen className="h-4 w-4" />
                   Vstoupit do Amenti Library
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </a>
                 <a
                   href="https://newearth.cz/V2/books/QuantumRevolution.zip"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-all hover:border-white/25 hover:text-white"
+                  className="zion-button-secondary text-sm"
                 >
                   <Download className="h-4 w-4" />
                   Stáhnout vše (ZIP)
@@ -214,20 +217,22 @@ export default function QuantumRevolution() {
             <div className="flex flex-wrap gap-3 justify-center">
               <Link
                 href="/genesis#chapter-4"
-                className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-violet-600 to-purple-500 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:shadow-[0_0_40px_rgba(139,92,246,0.3)]"
+                className="zion-button-primary group text-sm"
+                style={{ '--rc': '139, 92, 246' } as CSSProperties}
               >
                 <Sparkles className="h-4 w-4" />
                 Genesis: AI a kvantum
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <a
                 href="https://newearth.cz/V2/halls.html"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-all hover:border-white/25 hover:text-white"
+                className="zion-button-secondary group text-sm"
               >
                 <Download className="h-4 w-4" />
                 Amenti Library
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </a>
             </div>
           </div>

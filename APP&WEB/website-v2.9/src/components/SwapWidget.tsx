@@ -323,7 +323,8 @@ export default function SwapWidget() {
           <button
             onClick={executeSwap}
             disabled={isBusy || !inputAmount || !quote || parseFloat(inputAmount) <= 0}
-            className="w-full rounded-xl bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan px-5 py-3.5 text-sm font-semibold text-white shadow-lg hover:shadow-xl disabled:opacity-40 transition-all"
+            className="zion-button-primary w-full text-sm"
+            style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
           >
             {phase === 'approving' ? (
               <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> {cs ? 'Schvalování…' : 'Approving…'}</span>
