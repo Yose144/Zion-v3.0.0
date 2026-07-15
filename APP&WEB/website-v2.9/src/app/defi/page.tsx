@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useId } from 'react';
 import {
   ArrowLeftRight,
   Wallet,
@@ -58,6 +58,8 @@ function PriceSparkline({
   width?: number;
   height?: number;
 }) {
+  const fillIdBase = useId();
+  const fillId = `spark-fill-${fillIdBase}`;
   if (prices.length < 2) return null;
   const pad = 4;
   const w = width - pad * 2;
@@ -77,7 +79,6 @@ function PriceSparkline({
   const fillPts = `${first} ${polyline} ${last.split(',')[0]},${pad + h} ${pad},${pad + h}`;
   const up = prices[prices.length - 1] >= prices[0];
   const stroke = up ? '#10b981' : '#f87171';
-  const fillId = `spark-fill-${Math.random().toString(36).slice(2, 7)}`;
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
