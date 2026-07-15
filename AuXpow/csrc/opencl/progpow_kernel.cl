@@ -26,6 +26,12 @@
 #define PROGPOW_PERIOD          50
 #define ETHASH_DATASET_PARENTS  256
 
+// Type definitions (needed by generated progPowLoop code)
+typedef unsigned int       uint32_t;
+typedef unsigned long      uint64_t;
+#define ROTL32(x, n) rotate((x), (uint32_t)(n))
+#define ROTR32(x, n) rotate((x), (uint32_t)(32-n))
+
 #ifndef GROUP_SIZE
 #define GROUP_SIZE 128
 #endif
@@ -122,7 +128,7 @@ void keccak_f800_round(uint32_t st[25], const int r)
 // Keccak - implemented as a variant of SHAKE
 // The width is 800, with a bitrate of 576, a capacity of 224, and no padding
 // Only need 64 bits of output for mining
-uint64_t keccak_f800(__constant hash32_t const* g_header, uint64_t seed, hash32_t digest)
+uint64_t keccak_f800(__global hash32_t const* g_header, uint64_t seed, hash32_t digest)
 {
     uint32_t st[25];
 	#pragma unroll
@@ -193,7 +199,7 @@ __attribute__((reqd_work_group_size(GROUP_SIZE, 1, 1)))
 #endif
 __kernel void ethash_search(
     __global volatile uint* restrict g_output,
-    __constant hash32_t const* g_header,
+    __global hash32_t const* g_header,
     __global dag_t const* g_dag,
     ulong start_nonce,
     ulong target,
