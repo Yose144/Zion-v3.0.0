@@ -286,7 +286,7 @@ export default function ExplorerPage() {
           </div>
         </motion.section>
 
-        {/* ═══════ 3.0.5 E2E LEDGER FEATURES ═══════ */}
+        {/* ═══════ v3.0.6 E2E LEDGER FEATURES ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -460,8 +460,8 @@ export default function ExplorerPage() {
 
         <p className="text-center text-xs text-gray-600">
           {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Živá data z 3-uzlového Rust runtime · v3.0.5 E2E All Green`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Live data from 3-node Rust runtime · v3.0.5 E2E All Green`}
+            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Živá data z 2-uzlového Rust runtime · v3.0.6 E2E All Green`
+            : `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Live data from 2-node Rust runtime · v3.0.6 E2E All Green`}
         </p>
       </div>
     </div>

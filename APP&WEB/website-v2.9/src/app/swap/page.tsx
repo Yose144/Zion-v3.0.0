@@ -522,7 +522,7 @@ export default function SwapPage() {
                 bgClass="bg-purple-400/10"
                 rc="147, 51, 234"
                 label={cs ? 'Protokol' : 'Protocol'}
-                value="v3.0.5"
+                value="v3.0.6"
                 sub={cs ? 'HTLC Atomic Swap' : 'HTLC Atomic Swap'}
                 tip={cs ? 'Aktuální verze ZION Atomic Swap protokolu.' : 'Current version of the ZION Atomic Swap protocol.'}
               />

@@ -101,15 +101,15 @@ const getHeroStats = (cs: boolean) => [
     label: cs ? 'Veřejné nody' : 'Public Nodes',
     value: '3',
     descriptor: cs
-      ? '3-uzlový P2P mesh: Edge 1, Edge 2, Local Backup'
-      : '3-node P2P mesh: Edge 1, Edge 2, Local Backup',
+      ? '2-uzlový P2P mesh: Edge 1, Edge 2 (Local Backup offline)'
+      : '2-node P2P mesh: Edge 1, Edge 2 (Local Backup offline)',
   },
   {
     label: cs ? 'P2P mesh' : 'P2P Mesh',
-    value: cs ? '3 uzly' : '3 nodes',
+    value: cs ? '2 uzly' : '2 nodes',
     descriptor: cs
-      ? 'Edge 1 ↔ Edge 2 ↔ Local Backup, všechny v syncu ≤2 bloků'
-      : 'Edge 1 ↔ Edge 2 ↔ Local Backup, all within ≤2 block sync',
+      ? 'Edge 1 ↔ Edge 2 v syncu ≤2 bloků · Local Backup offline'
+      : 'Edge 1 ↔ Edge 2 within ≤2 block sync · Local Backup offline',
   },
   {
     label: cs ? 'Telemetrie' : 'Telemetry',
@@ -118,7 +118,7 @@ const getHeroStats = (cs: boolean) => [
   },
   {
     label: cs ? 'Topologie' : 'Topology',
-    value: cs ? '3.0.5 E2E' : '3.0.5 E2E',
+    value: cs ? 'v3.0.6 E2E' : 'v3.0.6 E2E',
     descriptor: cs
       ? 'SSH tunely, AppArmor, UFW, RPC audit log — vše aktivní'
       : 'SSH tunnels, AppArmor, UFW, RPC audit log — all active',
@@ -127,8 +127,8 @@ const getHeroStats = (cs: boolean) => [
     label: cs ? 'Síť' : 'Network',
     value: cs ? 'All Green' : 'All Green',
     descriptor: cs
-      ? 'Mainnet Beta · 11/11 služeb · protocol 3.0.5'
-      : 'Mainnet Beta · 11/11 services · protocol 3.0.5',
+      ? 'Mainnet Beta · 11/11 služeb · protocol 3.0.6'
+      : 'Mainnet Beta · 11/11 services · protocol 3.0.6',
   },
 ];
 
@@ -161,13 +161,13 @@ const getInfraFeatures = (cs: boolean) => [
     icon: Server,
     title: cs ? 'Local Backup Node (Prague)' : 'Local Backup Node (Prague)',
     detail: cs
-      ? 'Záložní uzel přes SSH reverzní forward 8446 — P2P 8335, RPC 8446'
-      : 'Backup node via SSH reverse forward 8446 — P2P 8335, RPC 8446',
+      ? 'Záložní uzel přes SSH reverzní forward 8446 — aktuálně offline'
+      : 'Backup node via SSH reverse forward 8446 — currently offline',
     ip: cs ? 'ZION Backup (tunel)' : 'ZION Backup (tunnel)',
-    status: cs ? 'P2P mesh' : 'P2P mesh',
-    color: 'text-amber-400',
-    border: 'border-amber-500/30',
-    bg: 'bg-amber-500/5',
+    status: cs ? 'Offline' : 'Offline',
+    color: 'text-gray-400',
+    border: 'border-gray-500/30',
+    bg: 'bg-gray-500/5',
   },
 ];
 
@@ -184,8 +184,8 @@ const getRuntimePanels = (cs: boolean) => [
     label: 'RPC Endpoint',
     value: SITE_PRIMARY_RPC_URL,
     detail: cs
-      ? 'Nativní Rust JSON-RPC pro explorer a tooling (3-uzlový mesh)'
-      : 'Native Rust JSON-RPC for explorers and tooling (3-node mesh)',
+      ? 'Nativní Rust JSON-RPC pro explorer a tooling (2-uzlový mesh)'
+      : 'Native Rust JSON-RPC for explorers and tooling (2-node mesh)',
     accent: 'text-zion-cyan',
   },
   {
@@ -193,8 +193,8 @@ const getRuntimePanels = (cs: boolean) => [
     label: 'P2P Mesh',
     value: `${SITE_PRIMARY_HOST}:8333`,
     detail: cs
-      ? '3-uzlový mesh: 8333, 8334, 8335 — všechny peery synchronizovány'
-      : '3-node mesh: 8333, 8334, 8335 — all peers synchronized',
+      ? '2-uzlový mesh: 8333, 8334 · backup 8335 offline'
+      : '2-node mesh: 8333, 8334 · backup 8335 offline',
     accent: 'text-emerald-400',
   },
   {
@@ -208,7 +208,7 @@ const getRuntimePanels = (cs: boolean) => [
   },
   {
     icon: Zap,
-    label: cs ? '3.0.5 E2E Status' : '3.0.5 E2E Status',
+    label: cs ? 'v3.0.6 E2E Status' : 'v3.0.6 E2E Status',
     value: cs ? 'All Green ✓' : 'All Green ✓',
     detail: cs
       ? '11/11 služeb aktivních · F4.7 + F5 aktivní · memory leak fix'
@@ -234,8 +234,8 @@ const getGuideBlocks = (cs: boolean) => [
     icon: Terminal,
     title: 'RPC API',
     description: cs
-      ? 'Nativní Rust JSON-RPC endpoint pro explorer a tooling. Dostupný přes 3-uzlový mesh s auto-failover.'
-      : 'Native Rust JSON-RPC endpoint for explorers and tooling. Available across a 3-node mesh with auto-failover.',
+      ? 'Nativní Rust JSON-RPC endpoint pro explorer a tooling. Dostupný přes 2-uzlový mesh s auto-failover.'
+      : 'Native Rust JSON-RPC endpoint for explorers and tooling. Available across a 2-node mesh with auto-failover.',
     items: [
       `Primary: ${SITE_PRIMARY_RPC_URL}`,
       `Scope: ${cs ? 'veřejný runtime endpoint' : 'public runtime endpoint'}`,
@@ -247,28 +247,28 @@ const getGuideBlocks = (cs: boolean) => [
     icon: Globe,
     title: 'P2P Layer',
     description: cs
-      ? 'Nativní Rust P2P síť — 3-uzlový mesh s výškou v syncu ≤2 bloků, všechny peery veřejně routované nebo přes tunel.'
-      : 'Native Rust P2P network — 3-node mesh with height sync within ≤2 blocks, all peers publicly routed or tunneled.',
+      ? 'Nativní Rust P2P síť — 2-uzlový mesh s výškou v syncu ≤2 bloků, všechny peery veřejně routované nebo přes tunel.'
+      : 'Native Rust P2P network — 2-node mesh with height sync within ≤2 blocks, all peers publicly routed or tunneled.',
     items: [
       `${cs ? 'Veřejný peer (Edge 1)' : 'Public peer (Edge 1)'}: ${SITE_PRIMARY_HOST}:8333`,
       `${cs ? 'Veřejný peer (Edge 2)' : 'Public peer (Edge 2)'}: ${SITE_PRIMARY_HOST}:8334`,
-      `${cs ? 'Backup peer (tunel)' : 'Backup peer (tunnel)'}: P2P 8335 / RPC 8446`,
+      `${cs ? 'Backup peer (tunel)' : 'Backup peer (tunnel)'}: P2P 8335 / RPC 8446 — offline`,
       `${cs ? 'Hardcoded seed peers' : 'Hardcoded seed peers'}: ${SITE_PRIMARY_HOST}:8333, ${SITE_PRIMARY_HOST}:8334`,
     ],
   },
 ];
 
 const getNetworkFacts = (cs: boolean) => [
-  { text: cs ? 'Nativní Rust P2P — 3-uzlový mesh' : 'Native Rust P2P — 3-node mesh', done: true },
+  { text: cs ? 'Nativní Rust P2P — 2-uzlový mesh' : 'Native Rust P2P — 2-node mesh', done: true },
   {
-    text: cs ? 'v3.0.5 "All Green, Mainnet Beta" — 11/11 služeb aktivních' : 'v3.0.5 "All Green, Mainnet Beta" — 11/11 services active',
+    text: cs ? 'v3.0.6 "All Green, Mainnet Beta" — 11/11 služeb aktivních' : 'v3.0.6 "All Green, Mainnet Beta" — 11/11 services active',
     done: true,
   },
   {
     text: cs ? `Edge stratum endpoint: ${SITE_POOL_PRIMARY}` : `Edge stratum endpoint: ${SITE_POOL_PRIMARY}`,
     done: true,
   },
-  { text: cs ? 'JSON-RPC endpointy live (8443, 8448, 8446)' : 'JSON-RPC endpoints live (8443, 8448, 8446)', done: true },
+  { text: cs ? 'JSON-RPC endpointy live (8443, 8448; backup 8446 offline)' : 'JSON-RPC endpoints live (8443, 8448; backup 8446 offline)', done: true },
   { text: cs ? 'E2E memo testy potvrzené v bloku 752' : 'E2E memo tests confirmed in block 752', done: true },
   { text: cs ? 'F4.7 max-tx-amount cap + F5 sender balance check aktivní' : 'F4.7 max-tx-amount cap + F5 sender balance check active', done: true },
   { text: cs ? 'LWMA DAA — cíl 60s block time' : 'LWMA DAA — target 60s block time', done: true },
@@ -477,8 +477,8 @@ export default function NetworkPage() {
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
                 {cs
-                  ? 'Telemetrie v reálném čase z aktuálního veřejného runtime v3.0.5. Živá topologie je 3-uzlový P2P mesh — Edge 1 (primary + pool), Edge 2 (follower) a Local Backup Node (Prague) přes SSH tunel.'
-                  : 'Real-time telemetry from the current public v3.0.5 runtime. The live topology is a 3-node P2P mesh — Edge 1 (primary + pool), Edge 2 (follower), and Local Backup Node (Prague) via SSH tunnel.'}
+                  ? 'Telemetrie v reálném čase z aktuálního veřejného runtime v3.0.6. Živá topologie je 2-uzlový P2P mesh — Edge 1 (primary + pool), Edge 2 (follower); Local Backup Node (Prague) je offline.'
+                  : 'Real-time telemetry from the current public v3.0.6 runtime. The live topology is a 2-node P2P mesh — Edge 1 (primary + pool), Edge 2 (follower); Local Backup Node (Prague) is offline.'}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
@@ -767,7 +767,7 @@ export default function NetworkPage() {
               <Shield className="h-7 w-7 text-zion-gold" />
               {cs ? 'Aktuální runtime' : 'Current Runtime'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Aktuální veřejný runtime tvoří 3-uzlový P2P mesh v3.0.5 — Edge 1 (primary + pool), Edge 2 (follower) a Local Backup Node (Prague). Všechny uzly jsou ve syncu ≤2 bloků.' : 'Current public runtime is a 3-node v3.0.5 P2P mesh — Edge 1 (primary + pool), Edge 2 (follower), and Local Backup Node (Prague). All nodes are within ≤2 block sync.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Aktuální veřejný runtime tvoří 2-uzlový P2P mesh v3.0.6 — Edge 1 (primary + pool) a Edge 2 (follower). Local Backup Node (Prague) je offline.' : 'Current public runtime is a 2-node v3.0.6 P2P mesh — Edge 1 (primary + pool) and Edge 2 (follower). Local Backup Node (Prague) is offline.'}</p>
           </div>
           <div className="grid gap-5 md:grid-cols-1 lg:max-w-2xl">
             {infraFeatures.map((node) => (
@@ -799,7 +799,7 @@ export default function NetworkPage() {
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Terminal className="w-3.5 h-3.5 text-gray-500" />
-                    <span>{cs ? 'RPC auto-failover přes 3-uzlový mesh' : 'RPC auto-failover across 3-node mesh'}</span>
+                    <span>{cs ? 'RPC auto-failover přes 2-uzlový mesh' : 'RPC auto-failover across 2-node mesh'}</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Globe className="w-3.5 h-3.5 text-gray-500" />
@@ -811,18 +811,18 @@ export default function NetworkPage() {
           </div>
         </section>
 
-        {/* ═══════ 3.0.5 E2E STACK ═══════ */}
+        {/* ═══════ v3.0.6 E2E STACK ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v3.0.5 E2E</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v3.0.6 E2E</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-zion-gold" />
               {cs ? 'E2E Stack' : 'E2E Stack'}
             </h2>
             <p className="text-sm text-gray-400">
               {cs
-                ? 'Všechny komponenty v3.0.5 byly ověřeny end-to-end na živé mainnet síti.'
-                : 'All v3.0.5 components have been verified end-to-end on the live mainnet.'}
+                ? 'Všechny komponenty v3.0.6 byly ověřeny end-to-end na živé mainnet síti.'
+                : 'All v3.0.6 components have been verified end-to-end on the live mainnet.'}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -864,7 +864,7 @@ export default function NetworkPage() {
               },
               {
                 icon: Server,
-                title: cs ? '3-uzlový mesh' : '3-node mesh',
+                title: cs ? '2-uzlový mesh' : '2-node mesh',
                 detail: cs ? 'Edge 1, Edge 2, Local Backup — všechny v syncu ≤2 bloků.' : 'Edge 1, Edge 2, Local Backup — all within ≤2 block sync.',
               },
             ].map((item) => (
@@ -891,7 +891,7 @@ export default function NetworkPage() {
               <Activity className="h-7 w-7 text-emerald-400" />
               {cs ? 'Stav nodu' : 'Node Status'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Zdraví, výška chainu, hashrate a sync stav v reálném čase z 3-uzlového P2P meshe.' : 'Real-time health, block height, hashrate, and sync status from the 3-node P2P mesh.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Zdraví, výška chainu, hashrate a sync stav v reálném čase z 2-uzlového P2P meshe.' : 'Real-time health, block height, hashrate, and sync status from the 2-node P2P mesh.'}</p>
           </div>
           <NetworkStatus className="max-w-none" />
         </section>
@@ -1044,8 +1044,8 @@ export default function NetworkPage() {
 
         <p className="text-center text-xs text-gray-600">
           {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Síť Pro · 3-uzlový mesh · v3.0.5 E2E All Green`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Network Pro · 3-node mesh · v3.0.5 E2E All Green`}
+            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Síť Pro · 2-uzlový mesh · v3.0.6 E2E All Green`
+            : `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Network Pro · 2-node mesh · v3.0.6 E2E All Green`}
         </p>
       </div>
 
@@ -1119,7 +1119,7 @@ function NetFAQSection({ cs }: { cs: boolean }) {
     { q: cs ? 'Jak se připojit jako miner?' : 'How to connect as a miner?', a: cs ? `Stáhněte si XMRig nebo Desktop Agent a použijte stratum+tcp://${SITE_POOL_PRIMARY} jako pool adresu. Detaily najdete v Connection Guides výše.` : `Download XMRig or the Desktop Agent and use stratum+tcp://${SITE_POOL_PRIMARY} as the pool address. See the Connection Guides section above for details.` },
     { q: cs ? 'Jak spustit vlastní full node?' : 'How to run your own full node?', a: cs ? `Klonujte repo, spusťte cargo build --release v V3/core a pak ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333 --add-exclusive-node ${SITE_PRIMARY_HOST}:8334. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.` : `Clone the repo, cargo build --release from V3/core and then ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333 --add-exclusive-node ${SITE_PRIMARY_HOST}:8334. Docker compose is available in docker/docker-compose.mainnet.yml.` },
     { q: cs ? 'Jaký pool fee si ZION účtuje?' : 'What pool fee does ZION charge?', a: cs ? '89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.' : '89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.' },
-    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). v3.0.5 "All Green" běží na 3-uzlovém P2P meshi s aktivním poolem, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzené v bloku 752.' : 'MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). v3.0.5 "All Green" runs on a 3-node P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752.' },
+    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). v3.0.6 "All Green" běží na 2-uzlovém P2P meshi s aktivním poolem, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzené v bloku 752.' : 'MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). v3.0.6 "All Green" runs on a 2-node P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752.' },
   ];
   return (
     <div className="divide-y divide-white/[0.06]">

@@ -496,7 +496,7 @@ export default function ApiDocsClient() {
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{cs ? "ZION Blockchain API" : "ZION Blockchain API"}</h1>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-300 border border-purple-500/30">
-                  v3.0.5
+                  v3.0.6
                 </span>
               </div>
               <p className="text-sm text-white/40 mt-1">{cs ? "JSON endpointy pro integraci a monitoring" : "JSON endpoints for integration and monitoring"}</p>
@@ -542,8 +542,8 @@ export default function ApiDocsClient() {
         {/* footer */}
         <p className="text-center text-xs text-white/30 pt-4">
           {cs
-            ? "ZION TerraNova v3.0.5 · API dokumentace · Vsechny endpointy vraci JSON"
-            : "ZION TerraNova v3.0.5 · API Documentation · All endpoints return JSON"}
+            ? "ZION TerraNova v3.0.6 · API dokumentace · Vsechny endpointy vraci JSON"
+            : "ZION TerraNova v3.0.6 · API Documentation · All endpoints return JSON"}
         </p>
       </div>
     </div>

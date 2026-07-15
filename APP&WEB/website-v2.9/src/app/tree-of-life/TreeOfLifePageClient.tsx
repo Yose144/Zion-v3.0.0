@@ -483,8 +483,8 @@ export default function TreeOfLifePageClient() {
               </h3>
               <p className="text-xs leading-relaxed text-amber-200/70">
                 {cs
-                  ? 'ZION TerraNova je experimentální projekt v aktivním vývoji. Všechny funkce, vizualizace, roadmapy a technické koncepty na této stránce jsou návrhy, které se mohou kdykoli změnit. evoluZion V2 (Proof-of-Care, NPU mining, Bodhisattva Vow) je vize budoucnosti, nikoli současná realita. Současná síť běží na Proof-of-Work (Mainnet Beta v3.0.5). Nic na této stránce není investiční doporučení.'
-                  : 'ZION TerraNova is an experimental project under active development. All features, visualizations, roadmaps, and technical concepts on this page are proposals that may change at any time. evoluZion V2 (Proof-of-Care, NPU mining, Bodhisattva Vow) is a vision of the future, not current reality. The current network runs on Proof-of-Work (Mainnet Beta v3.0.5). Nothing on this page is investment advice.'}
+                  ? 'ZION TerraNova je experimentální projekt v aktivním vývoji. Všechny funkce, vizualizace, roadmapy a technické koncepty na této stránce jsou návrhy, které se mohou kdykoli změnit. evoluZion V2 (Proof-of-Care, NPU mining, Bodhisattva Vow) je vize budoucnosti, nikoli současná realita. Současná síť běží na Proof-of-Work (Mainnet Beta v3.0.6). Nic na této stránce není investiční doporučení.'
+                  : 'ZION TerraNova is an experimental project under active development. All features, visualizations, roadmaps, and technical concepts on this page are proposals that may change at any time. evoluZion V2 (Proof-of-Care, NPU mining, Bodhisattva Vow) is a vision of the future, not current reality. The current network runs on Proof-of-Work (Mainnet Beta v3.0.6). Nothing on this page is investment advice.'}
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
                 <span className="zion-badge zion-badge-amber">

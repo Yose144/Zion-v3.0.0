@@ -127,7 +127,7 @@ The Golden Age begins. Peace & One Love 4ever.
 `;
 
 const WELCOME_TEXT = `${GENESIS_BANNER}
-ZION Web CLI v3.0.5-beta — Mainnet
+ZION Web CLI v3.0.6 — Mainnet
 6-decimal flowers (1 ZION = 1,000,000 flowers)
 Fee split: 89% miner / 5% humanitarian / 5% Issobella / 1% burned
 Type "help" or "?" for all commands. Press Tab for autocomplete.`;
@@ -398,7 +398,7 @@ export default function WebTerminal() {
                   </span>
                 </p>
                 <p className="truncate text-[10px] text-gray-500 sm:text-xs">
-                  Web CLI v3.0.5-beta · node · pool · explorer · defi · mine · dao · bridge · ai
+                  Web CLI v3.0.6 · node · pool · explorer · defi · mine · dao · bridge · ai
                 </p>
               </div>
             </div>
