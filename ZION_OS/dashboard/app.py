@@ -4885,23 +4885,12 @@ def get_pool_miners_dashboard() -> dict:
     except Exception:
         result["auxpow"] = {}
 
-    # 9c. Revenue System (prepared / placeholder values)
+    # 9c. Revenue System — live data from pool /stats + fee split
     try:
-        result["revenue"] = {
-            "enabled": False,
-            "status": "Preview",
-            "strategy": "Multi-coin merge-mining + swap aggregator",
-            "total_usd": 0.0,
-            "daily_estimate_usd": 0.0,
-            "miner_share_pct": 89,
-            "dao_share_pct": 5,
-            "humanitarian_share_pct": 5,
-            "pool_fee_pct": 1,
-            "last_distribution_ts": None,
-            "next_distribution_ts": None,
-            "active_coins": ["KAS", "ALPH", "DCR"],
-            "circuit_open": False,
-        }
+        rev = get_revenue_dashboard()
+        result["revenue"] = rev.get("revenue", {})
+        # Expose auxpow live snapshot for convenience
+        result["auxpow"] = rev.get("auxpow", result.get("auxpow", {}))
     except Exception:
         result["revenue"] = {}
 
