@@ -63,7 +63,7 @@ export default function NetworkPeers() {
     }
   }, []);
 
-  usePolling(loadPeers, 15_000);
+  usePolling(loadPeers, 30_000);
 
   const connectedCount = data?.connected_peers ?? 0;
   const knownCount = data?.known_peers ?? data?.peer_count ?? 0;

@@ -37,15 +37,14 @@ impl ShareForwarder {
     ) -> Result<ShareForwardResult> {
         let meets = if self.client.profile().coin == ExternalCoin::XMR {
             meets_randomx_target(hash, target)
-        } else if self.client.profile().coin == ExternalCoin::DCR
-            || self.client.profile().coin == ExternalCoin::VRSC
-        {
-            // Decred BLAKE3 (DCP-0011) and VerusHash v2.2 both interpret the PoW
-            // hash as a little-endian integer when comparing against the target.
+        } else if self.client.profile().coin == ExternalCoin::DCR {
+            // Decred BLAKE3 (DCP-0011) interprets the PoW hash as a
+            // little-endian integer when comparing against the target.
             meets_target_little_endian(hash, target)
         } else {
-            // Most other external algorithms compare hash and target as
-            // big-endian 256-bit integers.
+            // VerusHash v2.2 and most other external algorithms compare hash
+            // and target as big-endian 256-bit integers (see verushash_verify
+            // in ffi_wrapper_v3.cpp — direct BE byte-by-byte comparison).
             meets_target(hash, target)
         };
         if !meets {

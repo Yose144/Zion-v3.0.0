@@ -45,9 +45,11 @@ pub use dual_stratum::{
 };
 pub use external_hashers::{
     hash_autolykos, hash_blake3, hash_blake3_alph, hash_ethash, hash_ethash_with_dag, hash_kawpow,
-    hash_kheavyhash, hash_verushash, hash_zelhash, is_valid_zelhash_solution, mine_ethash,
-    mine_zelhash, ExternalAlgorithm,
+    hash_kheavyhash, hash_verushash, hash_verushash_header, hash_zelhash,
+    is_valid_zelhash_solution, mine_ethash, mine_zelhash, ExternalAlgorithm,
 };
+#[cfg(any(feature = "native-hashers", feature = "native-verushash"))]
+pub use external_hashers::init_verushash;
 pub use parent_chains::{
     AlphHeader, CoinbaseCommitment, DcrHeader, AUXPOW_COINBASE_MAGIC, AUXPOW_COMMITMENT_LEN,
     DCR_HEADER_SIZE,

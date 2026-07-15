@@ -93,10 +93,10 @@ export default function ProRecentTransactions() {
     }
   }, []);
 
-  usePolling(fetchTxs, 15_000);
+  usePolling(fetchTxs, 30_000);
   usePolling(() => {
     setTick((t) => t + 1);
-  }, 15_000, { immediate: false });
+  }, 30_000, { immediate: false });
 
   return (
     <motion.div

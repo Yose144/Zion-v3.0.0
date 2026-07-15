@@ -318,25 +318,14 @@ fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> 
         }
 
         let hash = crate::external_hashers::hash_verushash_header(&work_header);
-        // Debug: log first 3 hashes to verify VerusHash is working
-        if nonce - start < 3 {
+        // VerusHash v2.2 returns the hash in big-endian byte order and the
+        // C reference implementation compares hash <= target directly as BE.
+        // See verushash_verify() in ffi_wrapper_v3.cpp.
+        if meets_target(&hash, target) {
             eprintln!(
-                "DEBUG verushash: nonce={} header_len={} hash={} target={} meets={}",
-                nonce,
-                work_header.len(),
-                hex::encode(hash),
-                hex::encode(target),
-                meets_target_little_endian(&hash, target)
-            );
-        }
-        if meets_target_little_endian(&hash, target) {
-            eprintln!(
-                "SHARE_FOUND nonce={} hash={} nonce_field={} nonceSpace={} header={}",
+                "VRSC_SHARE_FOUND nonce={} hash={}",
                 nonce,
                 hex::encode(hash),
-                hex::encode(&work_header[108..140]),
-                hex::encode(&work_header[1472..1487]),
-                hex::encode(&work_header),
             );
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),

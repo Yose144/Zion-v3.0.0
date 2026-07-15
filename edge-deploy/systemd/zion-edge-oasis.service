@@ -29,7 +29,7 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=yes
-ReadWritePaths=/opt/zion/data /opt/zion/logs /data/zion
+ReadWritePaths=/data/zion /opt/zion/data /opt/zion/logs /var/log/zion /data/zion
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 
 [Install]

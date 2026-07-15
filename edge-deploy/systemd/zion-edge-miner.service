@@ -20,7 +20,7 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=yes
-ReadWritePaths=/opt/zion/data /opt/zion/logs
+ReadWritePaths=/data/zion /opt/zion/data /opt/zion/logs /var/log/zion
 
 [Install]
 WantedBy=multi-user.target
