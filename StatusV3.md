@@ -195,7 +195,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | EVR | autolykos | EthStratum | protocol ✅ (R6), live E2E TODO |
 | MEWC | kawpow | EthStratum | protocol ✅ (R6), live E2E TODO |
 | CLORE | kawpow | EthStratum | protocol ✅ (R6), live E2E TODO |
-| XMR | randomx | Stratum | ✅ Native RandomX (tevador/RandomX, per-thread VM, 175 H/s M1 interpreted, seed_hash epoch plumbing). Pool E2E TODO. See `RandomXReport.md` |
+| XMR | randomx | Stratum | ✅ Native RandomX (tevador/RandomX, JIT + HW AES, per-thread VM, 1546 H/s M1, seed_hash epoch plumbing). Pool E2E TODO. See `RandomXReport.md` |
 | FLUX | zelhash | Stratum | TODO |
 | VRSC | verushash v2.2 | ZcashStratum | ⚠️ Native VerusHash ✅ (1.69 MH/s M1), target fix ✅, but LuckPool rejects shares (`low difficulty share` — header hash mismatch). Pool server rebuild needed. See `VerusHashReport.md` |
 | EPIC | progpow | Stratum (custom HTTP) | ✅ LIVE (GPU ProgPow kernel, epoch 120 DAG, triple parallel with ZION+VRSC) |
