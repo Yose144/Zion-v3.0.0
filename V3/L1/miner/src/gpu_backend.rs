@@ -3672,9 +3672,14 @@ pub mod opencl_external {
                     nonce_start,
                     actual_batch,
                 ),
-                "beamhash" | "beamhash_beam" => {
-                    anyhow::bail!("BeamHash III GPU kernel not implemented (algorithm: {})", self.algorithm);
-                }
+                "beamhash" | "beamhash_beam" => self.miner.mine(
+                    &self.algorithm,
+                    &header_bytes,
+                    &[],
+                    &target.bytes,
+                    nonce_start,
+                    actual_batch,
+                ),
                 "kheavyhash" | "kheavyhash_kas" => {
                     // KAS external jobs send a 32-byte pre_pow_hash in header_hex.
                     // The pool pads it to 80 bytes (MiningHeader); the pre_pow_hash
