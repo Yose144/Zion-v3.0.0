@@ -2758,8 +2758,8 @@ fn read_next_job(
                 }
                 if let Some(ref ext_cpu) = external_stream_cpu {
                     println!(
-                        "external_stream_cpu job={} coin={} algo={}",
-                        job_id, ext_cpu.coin, ext_cpu.algorithm
+                        "external_stream_cpu job={} coin={} algo={} target_hex={:.64}",
+                        job_id, ext_cpu.coin, ext_cpu.algorithm, ext_cpu.target_hex
                     );
                 }
                 // Keep raw header bytes for external algorithms that may

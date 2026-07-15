@@ -390,7 +390,11 @@ pub fn meets_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
 /// `difficulty_to_target`.
 #[inline]
 pub fn meets_target_little_endian(hash: &[u8; 32], target: &[u8; 32]) -> bool {
-    hash.iter().rev().cmp(target.iter()).is_le()
+    // Both hash and target are stored as big-endian byte arrays, but VerusHash
+    // and Decred BLAKE3 interpret the PoW result as a little-endian 256-bit
+    // integer. Compare the byte-reversed views so the least-significant byte
+    // of each value is examined first.
+    hash.iter().rev().cmp(target.iter().rev()).is_le()
 }
 
 /// Parse a hex target string (big-endian) into a 32-byte array.
@@ -834,7 +838,8 @@ pub fn hash_verushash_header(header: &[u8]) -> [u8; 32] {
 ///   - previous block hash, merkle root, final sapling root (bytes 4..100)
 ///   - nBits (bytes 104..108)
 ///   - nonce field (bytes 108..140)
-///   - MMR roots in the solution (solution bytes 8..40, absolute 151..183)
+///   - MMR roots in the solution (solution bytes 8..72, absolute 151..215)
+///     both `hashPrevMMRRoot` and `hashBlockMMRRoot` are 32 bytes each.
 ///
 /// The clearing is only applied when the solution version (little-endian
 /// u32 at solution offset 0) is greater than 6 and at least one PBaaS
@@ -873,9 +878,10 @@ pub fn clear_verushash_pbaas(header: &mut [u8]) {
         }
     }
 
-    // MMR roots stored in the first 40 bytes of the solution.
+    // MMR roots stored in the first 72 bytes of the solution:
+    //   hashPrevMMRRoot (32 bytes) + hashBlockMMRRoot (32 bytes).
     let mmr_start = SOLUTION_OFFSET + 8;
-    let mmr_end = SOLUTION_OFFSET + 40;
+    let mmr_end = SOLUTION_OFFSET + 72;
     if header.len() >= mmr_end {
         for b in &mut header[mmr_start..mmr_end] {
             *b = 0;

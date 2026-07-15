@@ -292,8 +292,9 @@ fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> 
     //
     // PBaaS v7+ zeroes the non-canonical header fields before hashing, so the
     // miner's 4-byte LE nonce is written only into the solution nonceSpace.
-    // The upstream pool (LuckPool) interprets the resulting hash as a
-    // little-endian 256-bit integer when checking the target.
+    // VerusHash v2.2 (like Decred BLAKE3) interprets the PoW hash as a
+    // little-endian 256-bit integer when comparing against the share target,
+    // matching node-stratum-pool-verus / LuckPool's share validation.
 
     let en1_len = job.extranonce1.len();
     let nonce_space_blob_offset = 143 + 1329 + en1_len; // = 1472 + en1_len
@@ -330,11 +331,12 @@ fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> 
         }
         if meets_target_little_endian(&hash, target) {
             eprintln!(
-                "SHARE_FOUND nonce={} hash={} nonce_field={} nonceSpace={}",
+                "SHARE_FOUND nonce={} hash={} nonce_field={} nonceSpace={} header={}",
                 nonce,
                 hex::encode(hash),
                 hex::encode(&work_header[108..140]),
                 hex::encode(&work_header[1472..1487]),
+                hex::encode(&work_header),
             );
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),

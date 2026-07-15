@@ -222,6 +222,10 @@ pub struct AuxPowClient {
     connected: Arc<Mutex<bool>>,
     /// Latest difficulty received via mining.set_difficulty.
     current_difficulty: Arc<Mutex<f64>>,
+    /// Raw 32-byte target from `mining.set_target`, if the pool sent one.
+    /// Used verbatim for ZcashStratum/Equihash-style coins so the miner
+    /// searches against exactly the target the upstream validates with.
+    current_target_bytes: Arc<Mutex<Option<[u8; 32]>>>,
     /// Wallet used during authorize; needed for some submit formats.
     payout_wallet: Arc<Mutex<String>>,
     /// Extra nonce 1 provided by the pool (Alephium uses 4 bytes).
@@ -290,6 +294,7 @@ impl AuxPowClient {
             shutdown: Arc::new(Notify::new()),
             connected: Arc::new(Mutex::new(false)),
             current_difficulty: Arc::new(Mutex::new(1.0)),
+            current_target_bytes: Arc::new(Mutex::new(None)),
             payout_wallet: Arc::new(Mutex::new(String::new())),
             extranonce1: Arc::new(Mutex::new(Vec::new())),
             pending_requests: Arc::new(Mutex::new(HashMap::new())),
@@ -635,6 +640,7 @@ impl AuxPowClient {
                                 "auxpow: {} set_target={} difficulty={:.2} parsed_bytes={}",
                                 self.profile.coin, target_hex, diff, hex::encode(target_bytes)
                             );
+                            *self.current_target_bytes.lock().await = Some(target_bytes);
                             *self.current_difficulty.lock().await = diff;
                         }
                     }
@@ -1513,6 +1519,7 @@ impl AuxPowClient {
                                 hex::encode(target_bytes),
                                 diff
                             );
+                            *self.current_target_bytes.lock().await = Some(target_bytes);
                             *self.current_difficulty.lock().await = diff;
                         }
                     }
@@ -2223,20 +2230,28 @@ impl AuxPowClient {
                     };
 
                     let header_bytes = hex::decode(&blob).unwrap_or_default();
-                    let target_bytes = self.share_target().await;
+                    // Use the raw target from mining.set_target if available; fall back
+                    // to deriving it from current_difficulty. This avoids precision
+                    // loss when the pool sends an exact 32-byte boundary target.
+                    let target_bytes = if let Some(raw) = *self.current_target_bytes.lock().await {
+                        raw
+                    } else {
+                        self.share_target().await
+                    };
                     let target_hex = hex::encode(target_bytes);
 
                     // Parse ntime as u64 for the timestamp field.
                     let timestamp = u64::from_str_radix(&ntime, 16).ok();
 
                     println!(
-                        "auxpow: {} notify — job={} blob_len={} sol_len={} ntime={} clean={}",
+                        "auxpow: {} notify — job={} blob_len={} sol_len={} ntime={} clean={} target={}",
                         self.profile.coin,
                         job_id,
                         header_bytes.len(),
                         effective_solution.len() / 2,
                         ntime,
                         clean_jobs,
+                        target_hex,
                     );
 
                     return Ok(ExternalJob {
@@ -2796,6 +2811,11 @@ impl AuxPowClient {
                 nonce2_str,
                 &solution_with_varint[..20.min(solution_with_varint.len())],
                 &solution_with_varint[solution_with_varint.len().saturating_sub(30)..],
+            );
+            // Full reconstruction data for parity checks against the miner header.
+            println!(
+                "auxpow: VRSC submit FULL — job={} ntime={} en1={} nonce2={} solution={}",
+                job_id, ntime, en1_hex, nonce2_str, solution_with_varint
             );
 
             // Zcash Stratum Protocol (ZIP 301) — 5 params:
@@ -4850,6 +4870,10 @@ mod tests {
         // At difficulty 2 the high byte should halve to 0x03.
         let target2 = difficulty_to_target_with_max(2.0, &VERUS_HASH_DIFF1);
         assert_eq!(target2[1], 0x03);
+
+        // Diagnostic: what target does difficulty 8192 produce with Verus base?
+        let target8192 = difficulty_to_target_with_max(8192.0, &VERUS_HASH_DIFF1);
+        eprintln!("VERUS target for diff 8192 = {}", hex::encode(target8192));
     }
 
     // ── Pearl (PRL) PearlStratum tests ──────────────────────────────
