@@ -1792,7 +1792,19 @@ impl DagManager {
         let cache_path = self.cache_dir.join(format!("ethash_epoch{}.bin", epoch));
         let (dag_u64, dag_entries) = if cache_path.exists() {
             eprintln!("dag_manager: loading Ethash DAG from disk cache: {}", cache_path.display());
-            Self::load_dag_from_disk(&cache_path)?
+            match Self::load_dag_from_disk(&cache_path) {
+                Ok(d) => d,
+                Err(e) => {
+                    eprintln!("dag_manager: corrupt Ethash DAG cache, regenerating: {e}");
+                    let _ = std::fs::remove_file(&cache_path);
+                    let dag = generate_ethash_dag(epoch)
+                        .ok_or_else(|| anyhow!("ethash_generate_dag returned NULL for epoch {}", epoch))?;
+                    let entries = dag.dag_size_entries;
+                    let u64_slice = dag.as_u64_slice().to_vec();
+                    self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
+                    (u64_slice, entries)
+                }
+            }
         } else {
             eprintln!("dag_manager: generating Ethash DAG epoch={} via FFI...", epoch);
             let dag = generate_ethash_dag(epoch)
@@ -1840,13 +1852,26 @@ impl DagManager {
         let cache_path = self.cache_dir.join(format!("kawpow_epoch{}.bin", epoch));
         if cache_path.exists() {
             eprintln!("dag_manager: loading KawPow DAG from disk cache: {}", cache_path.display());
-            let (dag_u64, dag_entries) = Self::load_dag_from_disk(&cache_path)?;
-            eprintln!(
-                "dag_manager: uploading KawPow DAG to GPU ({} entries = {:.1} MB)",
-                dag_entries,
-                dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
-            );
-            miner.set_kawpow_dag(&dag_u64, dag_entries, epoch)?;
+            match Self::load_dag_from_disk(&cache_path) {
+                Ok((dag_u64, dag_entries)) => {
+                    eprintln!(
+                        "dag_manager: uploading KawPow DAG to GPU ({} entries = {:.1} MB)",
+                        dag_entries,
+                        dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
+                    );
+                    miner.set_kawpow_dag(&dag_u64, dag_entries, epoch)?;
+                }
+                Err(e) => {
+                    eprintln!("dag_manager: corrupt KawPow DAG cache, regenerating: {e}");
+                    let _ = std::fs::remove_file(&cache_path);
+                    let dag = generate_kawpow_dag(epoch)
+                        .ok_or_else(|| anyhow!("kawpow_generate_dag returned NULL for epoch {}", epoch))?;
+                    let entries = dag.dag_size_entries;
+                    let u64_slice = dag.as_u64_slice().to_vec();
+                    self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
+                    miner.set_kawpow_dag(&u64_slice, entries, epoch)?;
+                }
+            }
         } else {
             // Generate the DAG on the CPU via FFI (same approach as ProgPow).
             // The GPU DAG generation kernel in kawpow_dag.cl requires complex
@@ -1891,7 +1916,19 @@ impl DagManager {
         let cache_path = self.cache_dir.join(format!("progpow_epoch{}.bin", epoch));
         let (dag_u64, dag_entries) = if cache_path.exists() {
             eprintln!("dag_manager: loading ProgPow DAG from disk cache: {}", cache_path.display());
-            Self::load_dag_from_disk(&cache_path)?
+            match Self::load_dag_from_disk(&cache_path) {
+                Ok(d) => d,
+                Err(e) => {
+                    eprintln!("dag_manager: corrupt ProgPow DAG cache, regenerating: {e}");
+                    let _ = std::fs::remove_file(&cache_path);
+                    let dag = generate_ethash_dag(epoch)
+                        .ok_or_else(|| anyhow!("ethash_generate_dag returned NULL for epoch {}", epoch))?;
+                    let entries = dag.dag_size_entries;
+                    let u64_slice = dag.as_u64_slice().to_vec();
+                    self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
+                    (u64_slice, entries)
+                }
+            }
         } else {
             eprintln!("dag_manager: generating ProgPow DAG epoch={} via FFI...", epoch);
             let dag = generate_ethash_dag(epoch)
@@ -1951,6 +1988,17 @@ impl DagManager {
         file.read_exact(&mut entries_buf)
             .map_err(|e| anyhow!("failed to read DAG entries count: {e}"))?;
         let dag_entries = u64::from_le_bytes(entries_buf);
+        let expected_data_bytes = (dag_entries as usize)
+            .checked_mul(128)
+            .ok_or_else(|| anyhow!("DAG entries count overflow: {}", dag_entries))?;
+        if total_bytes - 8 != expected_data_bytes {
+            return Err(anyhow!(
+                "DAG cache size mismatch: header says {} entries ({} bytes), file has {} bytes",
+                dag_entries,
+                expected_data_bytes,
+                total_bytes - 8
+            ));
+        }
         let data_bytes = total_bytes - 8;
         let mut data = vec![0u8; data_bytes];
         file.read_exact(&mut data)

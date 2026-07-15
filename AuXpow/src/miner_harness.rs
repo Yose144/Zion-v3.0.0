@@ -303,10 +303,17 @@ fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> 
 
     let mut work_header = header.to_vec();
 
-    // Normalize the header exactly like LuckPool/verushash-node does for
-    // PBaaS v7+ merge-mining. Without this step the miner's hash differs from
-    // the pool's and every share is rejected as low difficulty.
-    clear_verushash_pbaas(&mut work_header);
+    // NOTE: clear_verushash_pbaas was previously called here to zero
+    // non-canonical header fields (prevBlock, merkleRoot, etc.) before
+    // hashing, matching what the VerusCoin daemon does in
+    // CBlockHeader::GetVerusV2Hash() when CheckNonCanonicalData() returns
+    // true.  However, LuckPool sends a complete header with REAL canonical
+    // data, and validates shares by hashing the header AS-IS (via
+    // CVerusHashV2bWriter directly, not through GetVerusV2Hash()).  Clearing
+    // non-canonical fields caused a hash mismatch → "low difficulty share".
+    // The pool's hash includes the real prevBlock/merkleRoot/etc., so we
+    // must hash the header exactly as received from the pool.
+    // clear_verushash_pbaas(&mut work_header);
 
     for nonce in start..end {
         let nonce_le = (nonce as u32).to_le_bytes();
@@ -705,9 +712,9 @@ fn scan_verushash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
     let nonce_space_blob_offset = 143 + 1329 + en1_len;
     let mut work_header = header.to_vec();
 
-    // Normalize PBaaS v7+ header before scanning so best-share selection
-    // matches the upstream pool's validation hash.
-    clear_verushash_pbaas(&mut work_header);
+    // NOTE: clear_verushash_pbaas disabled — see comment in scan_verushash.
+    // LuckPool hashes the header as-is; clearing causes hash mismatch.
+    // clear_verushash_pbaas(&mut work_header);
 
     let mut best: Option<FoundShare> = None;
     for nonce in start..end {

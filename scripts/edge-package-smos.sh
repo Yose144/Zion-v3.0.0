@@ -46,6 +46,7 @@ export ZION_IGNORE_GPU_SELF_TEST_FAIL="${ZION_IGNORE_GPU_SELF_TEST_FAIL:-1}"
 export ZION_VERBOSE=1
 export ZION_INTERACTIVE=0
 export ZION_MINER_ALGORITHM=deeksha_lite_v1
+export ZION_AUXPOW_EASY_TARGET=1
 
 # Allow overriding the miner binary path
 MINER_BIN="${MINER_BIN:-${SCRIPT_DIR}/zion-miner}"

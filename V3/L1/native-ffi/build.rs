@@ -410,6 +410,12 @@ fn build_randomx(target_os: &str, is_msvc: bool) {
         if std::path::Path::new(&asm_path).exists() {
             b.file(&asm_path);
         }
+    } else if target_arch == "x86_64" {
+        // x86_64: add GNU assembler static code for the x86 JIT compiler
+        let asm_path = format!("{}/jit_compiler_x86_static.S", rx_dir);
+        if std::path::Path::new(&asm_path).exists() {
+            b.file(&asm_path);
+        }
     }
 
     // Platform-specific flags
