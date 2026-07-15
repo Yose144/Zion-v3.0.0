@@ -2988,10 +2988,12 @@ fn mine_external_stream_cpu(
         },
     };
 
-    // ── Multi-threaded scan for VerusHash (CPU-bound, benefits from parallelism) ──
-    // VerusHash v2.2 is CPU-only and benefits greatly from parallel scanning.
+    // ── Multi-threaded scan for CPU-bound algorithms (VerusHash, RandomX) ──
+    // Both VerusHash and RandomX are CPU-only and benefit from parallel scanning.
+    // RandomX uses per-thread VMs (thread_local in C wrapper) so each thread
+    // gets its own VM sharing the global read-only dataset — no mutex contention.
     // Split the nonce range across `threads` worker threads.
-    if ext.algorithm == "verushash" && threads > 1 {
+    if (ext.algorithm == "verushash" || ext.algorithm == "randomx") && threads > 1 {
         use std::sync::Arc;
         let job_arc = Arc::new(job_pkg);
         let chunk = (nonce_count / threads as u64).max(1);
