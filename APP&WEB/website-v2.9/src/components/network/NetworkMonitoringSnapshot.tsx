@@ -124,11 +124,10 @@ async function fetchNetworkStatus(): Promise<{
     if (!res.ok) return { coreOnline: false, poolOnline: false };
     const data = await res.json();
     const nodes = data.nodes ?? [];
-    const core = nodes.find((n: any) => n.id === 'core-pc');
-    const edge = nodes.find((n: any) => n.id === 'edge-vps');
+    const primary = nodes.find((n: any) => n.id === 'edge-vps');
     return {
-      coreOnline: core?.online ?? false,
-      poolOnline: edge?.online ?? false,
+      coreOnline: primary?.online ?? false,
+      poolOnline: primary?.online ?? false,
     };
   } catch {
     return { coreOnline: false, poolOnline: false };
