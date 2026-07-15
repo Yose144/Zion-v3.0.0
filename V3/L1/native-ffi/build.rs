@@ -418,15 +418,20 @@ fn build_randomx(target_os: &str, is_msvc: bool) {
         b.flag_if_supported("-std=c++17");
         b.flag_if_supported("-funroll-loops");
         b.flag_if_supported("-fomit-frame-pointer");
+
+        // ARM64: enable hardware AES (ARMv8 Crypto Extensions)
+        // Apple M1 supports ARMv8.0-A with AES extensions.
+        // This defines __ARM_FEATURE_CRYPTO which activates vaeseq_u8/vaesmcq_u8
+        // in intrin_portable.h, giving ~10x AES throughput vs soft AES.
+        if target_arch == "aarch64" {
+            // Try -march=armv8-a+crypto first (works on Linux + macOS)
+            // On Apple Silicon, -march may not work, so also try -mcpu=apple-m1
+            b.flag_if_supported("-march=armv8-a+crypto");
+            b.flag_if_supported("-mcpu=apple-m1");
+        }
     } else {
         b.flag_if_supported("/std:c++17");
         add_msvc_includes(&mut b);
-    }
-
-    // RandomX configuration
-    if target_arch == "aarch64" {
-        // ARM64: no hardware AES on Apple Silicon, use soft AES
-        b.define("RANDOMX_DEFAULT_ARM", "1");
     }
 
     b.compile("randomx_zion");

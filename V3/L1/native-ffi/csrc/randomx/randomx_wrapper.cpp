@@ -29,6 +29,12 @@
 #include <mutex>
 #include <vector>
 
+/* macOS: thread QoS for performance cores */
+#if defined(__APPLE__)
+#include <pthread.h>
+#include <sys/qos.h>
+#endif
+
 #ifdef _WIN32
     #define EXPORT __declspec(dllexport)
 #else
@@ -56,14 +62,17 @@ static bool seed_matches(const uint8_t* seed, size_t len) {
     return memcmp(g_current_seed, seed, 32) == 0;
 }
 
-/* Determine VM flags based on architecture */
+/* Determine VM flags based on auto-detection + architecture */
 static randomx_flags get_vm_flags() {
-#if defined(__aarch64__) || defined(_M_ARM64)
-    /* ARM64: interpreted VM only, no JIT, soft AES */
-    return (randomx_flags)(RANDOMX_FLAG_FULL_MEM);
-#else
-    return (randomx_flags)(RANDOMX_FLAG_JIT | RANDOMX_FLAG_HARD_AES | RANDOMX_FLAG_FULL_MEM);
+    /* Use randomx_get_flags() for auto-detection of JIT + HARD_AES */
+    randomx_flags flags = randomx_get_flags();
+    /* Add FULL_MEM for dataset mode (fastest hashing) */
+    flags |= RANDOMX_FLAG_FULL_MEM;
+    /* On macOS, use SECURE mode (W^X) for JIT — required by hardened runtime */
+#if defined(__APPLE__) && defined(__aarch64__)
+    flags |= RANDOMX_FLAG_SECURE;
 #endif
+    return flags;
 }
 
 /* Create a per-thread VM */
@@ -74,16 +83,12 @@ static randomx_vm* create_thread_vm() {
         vm = randomx_create_vm(flags, g_cache, g_dataset);
     }
     if (!vm) {
-        /* Fallback: light mode (cache only) */
-        randomx_flags light_flags =
-#if defined(__aarch64__) || defined(_M_ARM64)
-            RANDOMX_FLAG_DEFAULT;
-#else
-            (randomx_flags)(RANDOMX_FLAG_JIT | RANDOMX_FLAG_HARD_AES);
-#endif
+        /* Fallback: light mode (cache only, still JIT+HARD_AES if available) */
+        randomx_flags light_flags = randomx_get_flags();
         vm = randomx_create_vm(light_flags, g_cache, nullptr);
     }
     if (!vm) {
+        /* Last resort: default flags (interpreted, soft AES) */
         vm = randomx_create_vm(RANDOMX_FLAG_DEFAULT, g_cache, nullptr);
     }
     return vm;
@@ -104,16 +109,12 @@ static void update_seed(const uint8_t* seed, size_t len) {
     if (g_dataset) { randomx_release_dataset(g_dataset); g_dataset = nullptr; }
     if (g_cache)   { randomx_release_cache(g_cache);   g_cache = nullptr; }
 
-    /* Allocate + init cache */
-#if defined(__aarch64__) || defined(_M_ARM64)
-    g_cache = randomx_alloc_cache(RANDOMX_FLAG_DEFAULT);
-#else
-    g_cache = randomx_alloc_cache(RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_JIT |
-                                  RANDOMX_FLAG_HARD_AES);
+    /* Allocate + init cache using auto-detected flags (JIT + HARD_AES) */
+    randomx_flags alloc_flags = randomx_get_flags();
+    g_cache = randomx_alloc_cache(alloc_flags);
     if (!g_cache) {
         g_cache = randomx_alloc_cache(RANDOMX_FLAG_DEFAULT);
     }
-#endif
     if (!g_cache) {
         fprintf(stderr, "randomx_zion: failed to allocate cache\n");
         return;
@@ -121,22 +122,24 @@ static void update_seed(const uint8_t* seed, size_t len) {
     randomx_init_cache(g_cache, seed, 32);
 
     /* Allocate + init dataset (full mode for max hashrate) */
-#if defined(__aarch64__) || defined(_M_ARM64)
-    g_dataset = randomx_alloc_dataset(RANDOMX_FLAG_DEFAULT);
-#else
-    g_dataset = randomx_alloc_dataset(RANDOMX_FLAG_LARGE_PAGES);
+    g_dataset = randomx_alloc_dataset(alloc_flags);
     if (!g_dataset) {
         g_dataset = randomx_alloc_dataset(RANDOMX_FLAG_DEFAULT);
     }
-#endif
     if (g_dataset) {
         randomx_init_dataset(g_dataset, g_cache, 0, randomx_dataset_item_count());
     }
 
     memcpy(g_current_seed, seed, 32);
     g_initialized = true;
-    fprintf(stderr, "randomx_zion: cache/dataset initialized (full_mem=%s)\n",
-            g_dataset ? "yes" : "no (light mode)");
+
+    /* Log active flags for debugging */
+    randomx_flags vm_flags = get_vm_flags();
+    fprintf(stderr, "randomx_zion: initialized (full_mem=%s, jit=%s, hard_aes=%s, secure=%s)\n",
+            g_dataset ? "yes" : "no (light mode)",
+            (vm_flags & RANDOMX_FLAG_JIT) ? "yes" : "no",
+            (vm_flags & RANDOMX_FLAG_HARD_AES) ? "yes" : "no",
+            (vm_flags & RANDOMX_FLAG_SECURE) ? "yes" : "no");
 }
 
 /* Ensure this thread has a VM */
@@ -144,6 +147,7 @@ static randomx_vm* ensure_thread_vm() {
     if (t_vm && t_vm_initialized) {
         return t_vm;
     }
+
     /* Destroy old VM if it exists (seed may have changed) */
     if (t_vm) {
         randomx_destroy_vm(t_vm);
