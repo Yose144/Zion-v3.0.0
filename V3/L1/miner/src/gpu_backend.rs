@@ -192,7 +192,7 @@ impl GpuBackendManager {
 
     /// Run a benchmark across all supported algorithms.
     pub fn benchmark_all(&mut self, secs: f64) -> Vec<(String, f64)> {
-        let algos = vec![
+        let all_algos = vec![
             "deeksha_chv3",
             "deeksha_lite_v1",
             "cosmic_harmony_ekam_deeksha_v2",
@@ -201,9 +201,26 @@ impl GpuBackendManager {
             "blake3",
             "kheavyhash",
             "autolykos",
+            "zelhash",
             "kawpow",
             "ethash",
+            "progpow",
         ];
+        // Filter out DAG-based algorithms that the backend cannot safely handle
+        // (e.g. Metal on Apple Silicon — unified memory OOM risk)
+        let algos: Vec<&str> = all_algos
+            .iter()
+            .copied()
+            .filter(|algo| backend_supports_algorithm(self.kind, algo))
+            .collect();
+        let skipped: Vec<&str> = all_algos
+            .iter()
+            .copied()
+            .filter(|algo| !backend_supports_algorithm(self.kind, algo))
+            .collect();
+        if !skipped.is_empty() {
+            println!("benchmark_skip_unsafe backend={} algos={:?}", self.kind.as_str(), skipped);
+        }
         let mut results = Vec::new();
         for algo in algos {
             match self.ensure_algorithm(algo) {
