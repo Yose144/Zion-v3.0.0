@@ -589,7 +589,7 @@ export default function DefiPage() {
       {activeTab === 'overview' && (
       <>
         {/* ═══════ Low Liquidity Warning ═══════ */}
-        {(poolStats?.tvl_usd ?? 0) < 500 && (
+        {dataLoaded && (poolStats?.tvl_usd ?? 0) < 500 && (
           <section className="zion-container relative z-10 mb-6">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
