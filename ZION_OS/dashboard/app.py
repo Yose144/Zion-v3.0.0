@@ -10067,10 +10067,23 @@ class DashboardHandler(BaseHTTPRequestHandler):
             if v2_index.exists():
                 self._html(v2_index.read_text(encoding="utf-8"))
                 return
-            # Fallback to legacy v1 dashboard
+            # Fallback to legacy v1 dashboard — serve pre-compressed HTML if client accepts gzip
             html_path = SCRIPT_DIR / "dashboard.html"
+            gz_path = SCRIPT_DIR / "dashboard.html.gz"
             if html_path.exists():
-                self._html(html_path.read_text(encoding="utf-8"))
+                accepts_gzip = "gzip" in (self.headers.get("Accept-Encoding", "").lower())
+                if accepts_gzip and gz_path.exists():
+                    body = gz_path.read_bytes()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.send_header("Content-Encoding", "gzip")
+                    self.send_header("Vary", "Accept-Encoding")
+                    self.send_header("Cache-Control", "public, max-age=86400, must-revalidate")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                else:
+                    self._html(html_path.read_text(encoding="utf-8"))
             else:
                 self._html(HTML_DASHBOARD)
             return
@@ -10094,16 +10107,31 @@ class DashboardHandler(BaseHTTPRequestHandler):
             else:
                 self.send_error(404)
                 return
-        elif route == "/dashboard.js":
-            js_path = SCRIPT_DIR / "dashboard.js"
+        elif route in ("/dashboard.js", "/dashboard.min.js"):
+            # Prefer minified build; serve pre-compressed .gz when client accepts it.
+            min_path = SCRIPT_DIR / "dashboard.min.js"
+            gz_path = SCRIPT_DIR / "dashboard.min.js.gz"
+            js_path = min_path if min_path.exists() else SCRIPT_DIR / "dashboard.js"
             if js_path.exists():
-                body = js_path.read_bytes()
-                self.send_response(200)
-                self.send_header("Content-Type", "application/javascript; charset=utf-8")
-                self.send_header("Cache-Control", "no-cache, must-revalidate")
-                self.send_header("Content-Length", str(len(body)))
-                self.end_headers()
-                self.wfile.write(body)
+                accepts_gzip = "gzip" in (self.headers.get("Accept-Encoding", "").lower())
+                if accepts_gzip and gz_path.exists():
+                    body = gz_path.read_bytes()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/javascript; charset=utf-8")
+                    self.send_header("Content-Encoding", "gzip")
+                    self.send_header("Vary", "Accept-Encoding")
+                    self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                else:
+                    body = js_path.read_bytes()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/javascript; charset=utf-8")
+                    self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
             else:
                 self.send_error(404)
         # ── Dashboard v3 SPA static files ────────────────────────────────────

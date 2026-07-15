@@ -10,9 +10,30 @@ const nextConfig: NextConfig = {
   output: "standalone", // Enabled — Docker build uses standalone (image 2.5GB→~200MB). Local dev unaffected (next dev ignores this).
   images: {
     unoptimized: true,
+    remotePatterns: [
+      { protocol: 'https', hostname: 'newearth.cz' },
+      { protocol: 'https', hostname: '*.newearth.cz' },
+      { protocol: 'https', hostname: '*.zionterranova.com' },
+      { protocol: 'https', hostname: 'prod.spline.design' },
+      { protocol: 'https', hostname: '*.spline.design' },
+    ],
   },
   // React Compiler disabled — codebase has too many manual effects/patterns that trigger its strict rules.
   reactCompiler: false,
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      'framer-motion',
+      '@lifi/sdk',
+      '@lifi/widget',
+      '@lifi/widget-light',
+      'ethers',
+      'viem',
+      '@splinetool/react-spline',
+      '@react-three/drei',
+      '@react-three/fiber',
+    ],
+  },
   typescript: {
     ignoreBuildErrors: true, // TS check v IDE, ne v Docker buildu — ušetří ~70s
   },
@@ -98,6 +119,15 @@ const nextConfig: NextConfig = {
   // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.
   async headers() {
     return [
+      {
+        source: "/_next/static/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
       {
         source: "/(.*)",
         headers: [

@@ -62,6 +62,20 @@ zion config set miner.wallet zion1...
 
 For a full list of keys, run `zion config set --help`.
 
+### Environment variable overrides
+
+Every `zion config set` key can also be set via an environment variable using the pattern `ZION_<SECTION>_<FIELD>` in upper snake case:
+
+```bash
+export ZION_NODE_RPC_HOST=62.171.141.136
+export ZION_NODE_RPC_PORT=9443
+export ZION_POOL_HOST=62.171.141.136
+export ZION_POOL_PORT=8444
+export ZION_MINER_WALLET=zion1...
+```
+
+Environment variables take precedence over values in `~/.zion/zion.toml`.
+
 ## 4. Wallet and password conventions
 
 Create a wallet with optional encryption:

@@ -429,6 +429,133 @@ impl Config {
     }
 }
 
+fn parse_env<T: std::str::FromStr>(name: &str) -> Option<T> {
+    env::var(name).ok().and_then(|v| v.parse().ok())
+}
+
+/// Override config values from environment variables.
+///
+/// Naming convention: ZION_<SECTION>_<FIELD> in upper snake case, matching the
+/// keys accepted by `zion config set`. Booleans and numbers are parsed; empty
+/// values are ignored.
+fn apply_env_overrides(cfg: &mut Config) {
+    if let Some(v) = env::var("ZION_NODE_RPC_HOST").ok().filter(|s| !s.is_empty()) {
+        cfg.node.rpc_host = v;
+    }
+    if let Some(v) = parse_env::<u16>("ZION_NODE_RPC_PORT") {
+        cfg.node.rpc_port = v;
+    }
+    if let Some(v) = parse_env::<u16>("ZION_NODE_P2P_PORT") {
+        cfg.node.p2p_port = v;
+    }
+    if let Some(v) = parse_env::<u16>("ZION_NODE_WEBSOCKET_PORT") {
+        cfg.node.websocket_port = Some(v);
+    }
+
+    if let Some(v) = env::var("ZION_POOL_HOST").ok().filter(|s| !s.is_empty()) {
+        cfg.pool.host = v;
+    }
+    if let Some(v) = parse_env::<u16>("ZION_POOL_PORT") {
+        cfg.pool.port = v;
+    }
+
+    if let Some(v) = env::var("ZION_MINER_WALLET").ok().filter(|s| !s.is_empty()) {
+        cfg.miner.wallet = v;
+    }
+    if let Some(v) = env::var("ZION_MINER_BTC_WALLET").ok().filter(|s| !s.is_empty()) {
+        cfg.miner.btc_wallet = v;
+    }
+    if let Some(v) = env::var("ZION_MINER_THREADS").ok().filter(|s| !s.is_empty()) {
+        cfg.miner.threads = v;
+    }
+    if let Some(v) = env::var("ZION_MINER_BACKEND").ok().filter(|s| !s.is_empty()) {
+        cfg.miner.backend = v;
+    }
+    if let Some(v) = env::var("ZION_MINER_PROFILE").ok().filter(|s| !s.is_empty()) {
+        cfg.miner.profile = v;
+    }
+    if let Some(v) = env::var("ZION_MINER_ALGORITHM").ok().filter(|s| !s.is_empty()) {
+        cfg.miner.algorithm = v;
+    }
+
+    if let Some(v) = env::var("ZION_AGENT_URL").ok().filter(|s| !s.is_empty()) {
+        cfg.agent.url = v;
+    }
+    if let Some(v) = env::var("ZION_AGENT_MODEL").ok().filter(|s| !s.is_empty()) {
+        cfg.agent.model = v;
+    }
+
+    if let Some(v) = env::var("ZION_BRIDGE_HOST").ok().filter(|s| !s.is_empty()) {
+        cfg.bridge.host = Some(v);
+    }
+    if let Some(v) = parse_env::<u16>("ZION_BRIDGE_PORT") {
+        cfg.bridge.port = v;
+    }
+    if let Some(v) = env::var("ZION_DAO_HOST").ok().filter(|s| !s.is_empty()) {
+        cfg.dao.host = Some(v);
+    }
+    if let Some(v) = parse_env::<u16>("ZION_DAO_PORT") {
+        cfg.dao.port = v;
+    }
+    if let Some(v) = env::var("ZION_SWAP_HOST").ok().filter(|s| !s.is_empty()) {
+        cfg.swap.host = Some(v);
+    }
+    if let Some(v) = parse_env::<u16>("ZION_SWAP_PORT") {
+        cfg.swap.port = v;
+    }
+    if let Some(v) = env::var("ZION_ATOMIC_SWAP_HOST").ok().filter(|s| !s.is_empty()) {
+        cfg.atomic_swap.host = Some(v);
+    }
+    if let Some(v) = parse_env::<u16>("ZION_ATOMIC_SWAP_PORT") {
+        cfg.atomic_swap.port = v;
+    }
+
+    if let Some(v) = env::var("ZION_ISSOBELLA_URL").ok().filter(|s| !s.is_empty()) {
+        cfg.issobella.url = v;
+    }
+    if let Some(v) = env::var("ZION_FREE_WORLD_URL").ok().filter(|s| !s.is_empty()) {
+        cfg.free_world.url = v;
+    }
+
+    if let Some(v) = parse_env::<bool>("ZION_CLI_AUTO_UPDATE_CHECK") {
+        cfg.cli.auto_update_check = v;
+    }
+
+    if let Some(v) = env::var("ZION_DEPLOY_DEFAULT_SERVER").ok().filter(|s| !s.is_empty()) {
+        cfg.deploy.default_server = v;
+    }
+    if let Some(v) = env::var("ZION_DEPLOY_SSH_KEY").ok().filter(|s| !s.is_empty()) {
+        cfg.deploy.ssh_key = v;
+    }
+    if let Some(v) = env::var("ZION_DEPLOY_SSH_USER").ok().filter(|s| !s.is_empty()) {
+        cfg.deploy.ssh_user = v;
+    }
+
+    if let Some(hiran) = cfg.hiran.as_mut() {
+        if let Some(v) = env::var("ZION_HIRAN_MODEL_PATH").ok().filter(|s| !s.is_empty()) {
+            hiran.model_path = v;
+        }
+        if let Some(v) = env::var("ZION_HIRAN_BACKEND").ok().filter(|s| !s.is_empty()) {
+            hiran.backend = v;
+        }
+        if let Some(v) = env::var("ZION_HIRAN_DEVICE").ok().filter(|s| !s.is_empty()) {
+            hiran.device = v;
+        }
+        if let Some(v) = parse_env::<u16>("ZION_HIRAN_PORT") {
+            hiran.port = v;
+        }
+        if let Some(v) = parse_env::<usize>("ZION_HIRAN_MAX_CONTEXT") {
+            hiran.max_context = v;
+        }
+        if let Some(v) = parse_env::<f32>("ZION_HIRAN_TEMPERATURE") {
+            hiran.temperature = v;
+        }
+        if let Some(v) = parse_env::<f32>("ZION_HIRAN_TOP_P") {
+            hiran.top_p = v;
+        }
+    }
+}
+
 pub fn config_path() -> Result<PathBuf> {
     let home = dirs_next().context("Cannot determine home directory")?;
     Ok(home.join(".zion").join("zion.toml"))
