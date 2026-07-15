@@ -344,8 +344,8 @@ export default function PoolDashboard() {
           ...activeMinersHistoryRef.current.filter((p: {ts: number}) => snapTs - p.ts < 3600),
           { ts: snapTs, value: am }
         ].slice(-60);
-        if (json.runtime?.chain_height && json.runtime.chain_height > blockHeight) {
-          setBlockHeight(json.runtime.chain_height);
+        if (json.runtime?.chain_height) {
+          setBlockHeight((prev: number) => Math.max(prev, json.runtime.chain_height));
         }
       }
     } catch {

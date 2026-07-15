@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
 
 const REVENUE_CONFIG_API = '/api/v2.9/revenue/config';
@@ -30,11 +30,7 @@ export default function RevenueSettings() {
   const [config, setConfig] = useState<RevenueConfig | null>(null);
   const [status, setStatus] = useState<string>('');
 
-  useEffect(() => {
-    fetchConfig();
-  }, []);
-
-  const fetchConfig = async () => {
+  const fetchConfig = useCallback(async () => {
     try {
       const res = await fetch(REVENUE_CONFIG_API);
       if (!res.ok) throw new Error('Failed to fetch config');
@@ -46,7 +42,11 @@ export default function RevenueSettings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [lang]);
+
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
 
   const handleSave = async () => {
     if (!config) return;

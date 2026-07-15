@@ -415,7 +415,6 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
       }
     } catch { /* noop */ }
     setLoaded(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ─── Production tick ───────────────────────────────────────────────────────

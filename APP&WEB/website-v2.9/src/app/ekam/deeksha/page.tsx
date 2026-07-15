@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useLang } from "@/contexts/LanguageContext";
 import {
@@ -23,7 +23,7 @@ export default function EkamDeekshaPage() {
   const [activeChapter, setActiveChapter] = useState('predmluva');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const chapters = [
+  const chapters = useMemo(() => [
     { id: 'predmluva',  number: '',   title: lang === 'cs' ? 'Předmluva' : 'Preface',               subtitle: lang === 'cs' ? 'Druhý dech Kvantové Revoluce' : 'Second Breath of the Quantum Revolution' },
     { id: 'kapitel-1', number: '1',  title: lang === 'cs' ? 'Konec odděleného člověka' : 'The End of the Separate Human', subtitle: lang === 'cs' ? 'Krize odděleného self' : 'Crisis of the Separate Self' },
     { id: 'kapitel-2', number: '2',  title: lang === 'cs' ? 'Proč staré mapy nestačí' : 'Why Old Maps Are Not Enough',  subtitle: lang === 'cs' ? 'Čtyři limity moderního hledání' : 'Four Limits of Modern Seeking' },
@@ -35,7 +35,7 @@ export default function EkamDeekshaPage() {
     { id: 'kapitel-8', number: '8',  title: 'Ekam Deeksha PoW',         subtitle: lang === 'cs' ? 'Algoritmus jako zlatý zárodek — Cosmic Harmony v3' : 'Algorithm as Golden Seed — Cosmic Harmony v3' },
     { id: 'kapitel-9', number: '9',  title: lang === 'cs' ? 'Algoritmus Zlatého věku' : 'Algorithm of the Golden Age',  subtitle: lang === 'cs' ? 'Deset kroků od separace k jednotě' : 'Ten Steps from Separation to Unity' },
     { id: 'zaver',     number: '',   title: lang === 'cs' ? 'Závěr' : 'Conclusion',                    subtitle: lang === 'cs' ? 'Kdy začíná Zlatý věk' : 'When the Golden Age Begins' },
-  ];
+  ], [lang]);
 
   const algoSteps = [
     { id: 0, name: 'Hiranyagarbha', color: 'text-amber-300',   border: 'border-amber-300/40',   bg: 'bg-amber-300/10',   desc: lang === 'cs' ? 'Inicializace zlatého zárodku — seed z hlavičky bloku se rozvíjí v primordial state.' : 'Initialization of the golden seed — block header seed expands into primordial state.' },
@@ -65,7 +65,7 @@ export default function EkamDeekshaPage() {
       if (el) observer.observe(el);
     });
     return () => observer.disconnect();
-  }, []);
+  }, [chapters]);
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
