@@ -822,6 +822,67 @@ pub fn hash_verushash_header(header: &[u8]) -> [u8; 32] {
     }
 }
 
+/// Clear non-canonical PBaaS v7+ header data before hashing.
+///
+/// VerusHash 2.2 merge-mining (PBaaS v7+) normalizes the block header by
+/// zeroing the non-canonical fields before the final hash.  The upstream
+/// LuckPool/node-stratum-pool-verus does the same in `verusHashV2b2`.
+/// Without this step the miner's hash will never match the pool's.
+///
+/// `header` must be a full 1487-byte VRSC block header (header prefix +
+/// varint + 1344-byte solution).  Non-canonical fields zeroed in-place:
+///   - previous block hash, merkle root, final sapling root (bytes 4..100)
+///   - nBits (bytes 104..108)
+///   - nonce field (bytes 108..140)
+///   - MMR roots in the solution (solution bytes 8..40, absolute 151..183)
+///
+/// The clearing is only applied when the solution version (little-endian
+/// u32 at solution offset 0) is greater than 6 and at least one PBaaS
+/// header is declared in the solution.
+pub fn clear_verushash_pbaas(header: &mut [u8]) {
+    const SOLUTION_OFFSET: usize = 143;
+    if header.len() < SOLUTION_OFFSET + 8 {
+        return;
+    }
+
+    let sol_ver = u32::from_le_bytes([
+        header[SOLUTION_OFFSET],
+        header[SOLUTION_OFFSET + 1],
+        header[SOLUTION_OFFSET + 2],
+        header[SOLUTION_OFFSET + 3],
+    ]);
+    if sol_ver <= 6 {
+        return;
+    }
+
+    let num_pbaas = header[SOLUTION_OFFSET + 5];
+    if num_pbaas == 0 {
+        return;
+    }
+
+    // Non-canonical fields in the 140-byte header prefix.
+    if header.len() >= 140 {
+        for b in &mut header[4..100] {
+            *b = 0;
+        }
+        for b in &mut header[104..108] {
+            *b = 0;
+        }
+        for b in &mut header[108..140] {
+            *b = 0;
+        }
+    }
+
+    // MMR roots stored in the first 40 bytes of the solution.
+    let mmr_start = SOLUTION_OFFSET + 8;
+    let mmr_end = SOLUTION_OFFSET + 40;
+    if header.len() >= mmr_end {
+        for b in &mut header[mmr_start..mmr_end] {
+            *b = 0;
+        }
+    }
+}
+
 /// Initialize VerusHash lookup tables (Haraka round constants, CLHash keys).
 /// Must be called once before hashing when using the native implementation.
 #[cfg(any(feature = "native-hashers", feature = "native-verushash"))]

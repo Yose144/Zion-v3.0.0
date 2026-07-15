@@ -37,7 +37,11 @@ impl ShareForwarder {
     ) -> Result<ShareForwardResult> {
         let meets = if self.client.profile().coin == ExternalCoin::XMR {
             meets_randomx_target(hash, target)
-        } else if self.client.profile().coin == ExternalCoin::DCR {
+        } else if self.client.profile().coin == ExternalCoin::DCR
+            || self.client.profile().coin == ExternalCoin::VRSC
+        {
+            // Decred BLAKE3 and VerusHash v2.2 both interpret the PoW hash as a
+            // little-endian integer when comparing against the target.
             meets_target_little_endian(hash, target)
         } else {
             meets_target(hash, target)
