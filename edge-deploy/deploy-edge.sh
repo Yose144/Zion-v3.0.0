@@ -70,10 +70,27 @@ tar czf - \
     ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
     "mkdir -p /root/APP\&WEB && cd /root/APP\&WEB && tar xzf -"
 
-# ── Step 4: Upload environment config ──
-log "Uploading environment config..."
+# ── Step 4: Upload environment config (TEMPLATE ONLY — never overwrite live secrets) ──
+# The template at edge-deploy/config/edge-environment.sh contains PLACEHOLDERS for
+# ZION_POOL_PAYOUT_SK_HEX and ZION_SWAP_ESCROW_KEY. Uploading it to /etc/zion/ would
+# WIPE the real signing keys and break pool payouts + atomic swap escrow.
+# We upload the template to the repo path only (for reference), and verify the live
+# /etc/zion/edge-environment.sh still has real (non-placeholder) secrets.
+log "Uploading environment config template (reference only)..."
 scp ${SSH_OPTS} "${REPO_ROOT}/edge-deploy/config/edge-environment.sh" \
     "${EDGE_USER}@${EDGE_HOST}:${REMOTE_ROOT}/edge-deploy/config/edge-environment.sh" 2>/dev/null || true
+
+# Verify live env file has real secrets (not placeholders)
+LIVE_ENV_CHECK=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
+    grep -c 'SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT' /etc/zion/edge-environment.sh 2>/dev/null || echo 0
+" 2>/dev/null || echo "ERR")
+if [[ "${LIVE_ENV_CHECK}" != "0" && "${LIVE_ENV_CHECK}" != "ERR" ]]; then
+    err "LIVE env /etc/zion/edge-environment.sh contains ${LIVE_ENV_CHECK} placeholder(s)!
+        Pool payouts and/or atomic swap are BROKEN. Restore real secrets from backup before continuing:
+        ssh ${EDGE_USER}@${EDGE_HOST} 'ls -la /etc/zion/edge-environment.sh.bak-*'
+        Aborting deploy to prevent data loss."
+fi
+log "Live env file verified: no placeholders detected."
 
 # ── Step 5: Rebuild V3 binaries on Edge ──
 log "Rebuilding V3 binaries on Edge..."
