@@ -732,8 +732,10 @@ fn main() -> Result<()> {
             let zero_seed = [0u8; 32];
             zion_native_ffi::randomx::init_with_seed(&zero_seed);
             println!("randomx_init: OK (tevador/RandomX real, seed=epoch0)");
-            #[cfg(target_arch = "aarch64")]
-            println!("mode: interpreted VM (no JIT on ARM64), soft AES");
+            #[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+            println!("mode: JIT + hardware AES + secure (Apple Silicon, auto-detected)");
+            #[cfg(all(target_arch = "aarch64", not(target_os = "macos")))]
+            println!("mode: JIT + hardware AES (ARM64, auto-detected)");
             #[cfg(not(target_arch = "aarch64"))]
             println!("mode: JIT + hardware AES (if available)");
         }
