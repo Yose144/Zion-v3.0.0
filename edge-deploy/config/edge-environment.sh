@@ -99,6 +99,7 @@ ZION_POOL_AUXPOW_WALLET_PRL=""
 ZION_POOL_AUXPOW_WALLET_EPIC="yose144"
 ZION_POOL_AUXPOW_PASSWORD_EPIC="x3nityOne"
 ZION_POOL_AUXPOW_WALLET_QUAI=""
+ZION_POOL_AUXPOW_WALLET_BEAM=""
 
 # ── CPU AuxPow Bridge (VRSC / VerusHash — Claymore triple parallel) ──
 # Second AuxPow bridge for CPU-only coins. Connects to LuckPool (VRSC)

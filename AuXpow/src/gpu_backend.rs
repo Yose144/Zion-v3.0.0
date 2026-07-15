@@ -307,7 +307,7 @@ pub fn autolykos_table_size() -> usize {
 }
 
 /// Generate a single Autolykos v2 table element via BLAKE2b-256.
-fn gen_autolykos_element(i: u64, seed: &[u8; 32], height: u32) -> u64 {
+pub(crate) fn gen_autolykos_element(i: u64, seed: &[u8; 32], height: u32) -> u64 {
     use blake2::digest::{Update, VariableOutput};
     let mut hasher = blake2::Blake2bVar::new(32).expect("blake2b256");
     hasher.update(seed);

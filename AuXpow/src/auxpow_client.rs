@@ -72,6 +72,17 @@ pub enum StratumProtocol {
     ///   - Error codes: -32000 (syncing), -32500 (login first),
     ///     -32501 (low diff), -32502 (failed validate), -32503 (too late)
     EpicStratum,
+    /// Beam Stratum — custom JSON-RPC 2.0 over TLS for Beam (BEAM) BeamHash III.
+    ///
+    /// Protocol used by beam.2miners.com:5252 (TLS):
+    ///   - TLS connection (not plain TCP)
+    ///   - `login` with {api_key, id, jsonrpc} → returns {id, ...}
+    ///   - Server pushes `job` notifications with {input, id, height, difficulty}
+    ///   - `solution` with {id, nonce, output, jsonrpc} — submit solution
+    ///   - `cancel` with {id} — cancel a job
+    ///   - Solution = 104 bytes (100 bytes compressed indices + 4 bytes extra nonce)
+    ///   - Nonce = 8 bytes (pool nonce prefix + miner nonce)
+    BeamStratum,
 }
 
 impl ExternalCoin {
@@ -111,6 +122,11 @@ impl ExternalCoin {
             // See StratumProtocol::PearlStratum docs for full protocol details.
             Self::PRL => {
                 StratumProtocol::PearlStratum
+            }
+            // Beam (BEAM) uses custom JSON-RPC 2.0 over TLS (BeamStratum).
+            // login/job/solution protocol with Equihash 150,5 (BeamHash III).
+            Self::BEAM => {
+                StratumProtocol::BeamStratum
             }
         }
     }
@@ -346,6 +362,11 @@ impl AuxPowClient {
             self.start_epic_keepalive().await;
         }
 
+        // For BeamStratum, perform login BEFORE spawning the poll loop.
+        if self.protocol == StratumProtocol::BeamStratum {
+            self.beam_login(payout_wallet).await?;
+        }
+
         // Spawn the background reader with auto-reconnect
         let client_clone = Arc::new(self.clone());
         let profile_clone = self.profile.clone();
@@ -390,7 +411,9 @@ impl AuxPowClient {
         });
 
         // Subscribe + Authorize (non-EPIC protocols — EPIC already handled above)
-        if self.protocol != StratumProtocol::EpicStratum {
+        if self.protocol != StratumProtocol::EpicStratum
+            && self.protocol != StratumProtocol::BeamStratum
+        {
             if self.protocol == StratumProtocol::PearlStratum {
                 // Pearl plain stratum (port 5571): NO mining.subscribe or
                 // mining.configure — go straight to mining.authorize with
@@ -431,8 +454,11 @@ impl AuxPowClient {
             .map_err(|_| anyhow!("connect timeout to {}", addr))?
             .context("TCP connect failed")?;
 
-        if self.protocol == StratumProtocol::EpicStratum {
-            // EPIC pools (de.epicmine.io:3334) require TLS.
+        if self.protocol == StratumProtocol::EpicStratum
+            || self.protocol == StratumProtocol::BeamStratum
+        {
+            // EPIC pools (de.epicmine.io:3334) and Beam pools (beam.2miners.com:5252)
+            // require TLS.
             // Use explicit provider to avoid "Could not automatically determine
             // the process-level CryptoProvider" panic.
             let provider = std::sync::Arc::new(
@@ -475,6 +501,8 @@ impl AuxPowClient {
         if self.protocol == StratumProtocol::EpicStratum {
             self.epic_login(payout_wallet).await?;
             self.epic_getjobtemplate().await?;
+        } else if self.protocol == StratumProtocol::BeamStratum {
+            self.beam_login(payout_wallet).await?;
         } else {
             // PearlStratum: straight to mining.authorize (no subscribe/configure).
             // See https://prl.suprnova.cc/stratum-spec.html §4.1
@@ -630,11 +658,25 @@ impl AuxPowClient {
                         }
                     }
                     "job" => {
-                        // EPIC Stratum: server pushes `job` notifications
+                        // EPIC Stratum or BeamStratum: server pushes `job` notifications
                         let job_val = parsed.get("params").unwrap_or(&parsed);
-                        if let Ok(job) = self.parse_epic_job(job_val).await {
+                        if self.protocol == StratumProtocol::BeamStratum {
+                            if let Ok(job) = self.parse_beam_job(&parsed).await {
+                                *self.current_job.lock().await = Some(job);
+                                self.job_notify.notify_waiters();
+                            }
+                        } else if let Ok(job) = self.parse_epic_job(job_val).await {
                             *self.current_job.lock().await = Some(job);
                             self.job_notify.notify_waiters();
+                        }
+                    }
+                    "cancel" => {
+                        // Beam Stratum: server cancels a job
+                        if self.protocol == StratumProtocol::BeamStratum {
+                            if let Some(id) = parsed.get("id").and_then(|v| v.as_str()) {
+                                println!("auxpow: BEAM job cancelled: id={}", id);
+                                *self.current_job.lock().await = None;
+                            }
                         }
                     }
                     _ => {}
@@ -855,6 +897,106 @@ impl AuxPowClient {
             }
         }
         Ok(())
+    }
+
+    /// Beam login — BeamHash III stratum protocol.
+    /// Sends `{"method":"login", "api_key":"WALLET.WORKER", "id":"login", "jsonrpc":"2.0"}`
+    /// The api_key is the wallet address (hex) + optional ".worker" suffix.
+    async fn beam_login(&self, payout_wallet: &str) -> Result<()> {
+        let api_key = if self.profile.worker_name.is_empty() {
+            payout_wallet.to_string()
+        } else {
+            format!("{}.{}", payout_wallet, self.profile.worker_name)
+        };
+        let req = json!({
+            "method": "login",
+            "api_key": api_key,
+            "id": "login",
+            "jsonrpc": "2.0"
+        });
+        println!(
+            "auxpow: BEAM login as {} (len={}) on {} (protocol={})",
+            api_key, api_key.len(), self.profile.coin, self.protocol.as_str()
+        );
+        let resp = self.send_request_inline(&req).await?;
+        if let Some(err) = resp.get("error") {
+            if !err.is_null() {
+                bail!("BEAM login failed: {:?}", err);
+            }
+        }
+        *self.authorized.lock().await = true;
+        *self.subscribed.lock().await = true;
+        println!("auxpow: BEAM login successful for {}", self.profile.coin);
+
+        // The login response may include an initial job.
+        if let Some(job_obj) = resp.get("result").and_then(|r| r.get("job")) {
+            if let Ok(job) = self.parse_beam_job(job_obj).await {
+                *self.current_job.lock().await = Some(job);
+                self.job_notify.notify_waiters();
+            }
+        }
+        Ok(())
+    }
+
+    /// Parse a Beam stratum `job` notification.
+    /// Format: {"method":"job", "input":"<hex>", "id":<num>, "height":<num>,
+    ///          "difficulty":<num>, "nonceprefix":"<hex>"}
+    async fn parse_beam_job(&self, msg: &Value) -> Result<ExternalJob> {
+        let job = msg.get("params").unwrap_or(msg);
+
+        let input_hex = job.get("input").and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("BEAM job: missing 'input' field"))?;
+        let header_bytes = hex::decode(input_hex)
+            .context("BEAM job: invalid hex in 'input'")?;
+
+        let job_id = job.get("id").and_then(|v| {
+            v.as_u64().map(|n| n.to_string())
+                .or_else(|| v.as_str().map(|s| s.to_string()))
+        }).unwrap_or_default();
+
+        let height = job.get("height").and_then(|v| v.as_u64()).unwrap_or(0);
+
+        let difficulty = job.get("difficulty").and_then(|v| {
+            v.as_f64().or_else(|| v.as_u64().map(|n| n as f64))
+        }).unwrap_or(1.0);
+
+        let nonceprefix_hex = job.get("nonceprefix").and_then(|v| v.as_str()).unwrap_or("");
+        let extranonce1 = if !nonceprefix_hex.is_empty() {
+            hex::decode(nonceprefix_hex).unwrap_or_default()
+        } else {
+            Vec::new()
+        };
+
+        let target_bytes = difficulty_to_target(difficulty);
+
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+
+        println!(
+            "auxpow: BEAM job parsed height={} job_id={} input_len={} difficulty={:.2} nonceprefix={}",
+            height, job_id, header_bytes.len(), difficulty, nonceprefix_hex
+        );
+
+        Ok(ExternalJob {
+            job_id,
+            header_hex: input_hex.to_string(),
+            target_hex: hex::encode(target_bytes),
+            seed_hash: None,
+            block_number: Some(height),
+            algorithm: self.profile.algorithm.clone(),
+            header_bytes,
+            target_bytes,
+            timestamp: Some(now),
+            nbits: None,
+            external_coin: self.profile.coin,
+            from_group: 0,
+            to_group: 0,
+            extranonce1,
+            extranonce2: String::new(),
+            epoch: None,
+        })
     }
 
     /// Request a job template from the EPIC pool.
@@ -2268,6 +2410,7 @@ impl AuxPowClient {
             && self.profile.coin == ExternalCoin::KAS;
         let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
         let is_epic = self.protocol == StratumProtocol::EpicStratum;
+        let is_beam = self.protocol == StratumProtocol::BeamStratum;
 
         // EPIC submit format:
         //   {"id": N, "method": "submit", "params": {
@@ -2306,6 +2449,41 @@ impl AuxPowClient {
                         "ProgPow": mix_json
                     }
                 }
+            });
+            let resp = self.send_request(&req).await?;
+            if let Some(err) = resp.get("error") {
+                if !err.is_null() {
+                    let msg = err.get("message")
+                        .and_then(|m| m.as_str())
+                        .unwrap_or("unknown error");
+                    return Ok(ShareResult::Rejected(msg.to_string()));
+                }
+            }
+            let ok = resp.get("result")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true);
+            if ok {
+                return Ok(ShareResult::Accepted);
+            } else {
+                return Ok(ShareResult::Rejected("submit rejected".to_string()));
+            }
+        }
+
+        // Beam submit format:
+        //   {"method": "solution", "id": "JOB_ID", "nonce": "NONCE_HEX",
+        //    "output": "SOLUTION_HEX", "jsonrpc": "2.0"}
+        // nonce = 8-byte LE hex, output = 104-byte solution hex (100 bytes
+        // compressed indices + 4 bytes extra nonce).
+        if is_beam {
+            let nonce_hex = format!("{:016x}", nonce);
+            // mix_hash_hex carries the solution hex for BeamHash III
+            let solution_hex = mix_hash_hex.unwrap_or(_hash_hex);
+            let req = json!({
+                "method": "solution",
+                "id": job_id,
+                "nonce": nonce_hex,
+                "output": solution_hex,
+                "jsonrpc": "2.0"
             });
             let resp = self.send_request(&req).await?;
             if let Some(err) = resp.get("error") {
@@ -3428,6 +3606,7 @@ impl StratumProtocol {
             Self::ZcashStratum => "zcashstratum",
             Self::PearlStratum => "pearlstratum",
             Self::EpicStratum => "epicstratum",
+            Self::BeamStratum => "beamstratum",
         }
     }
 }

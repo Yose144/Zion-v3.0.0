@@ -27,6 +27,7 @@ pub enum ExternalCoin {
     EPIC,
     PRL,
     QUAI,
+    BEAM,
 }
 
 impl ExternalCoin {
@@ -47,6 +48,7 @@ impl ExternalCoin {
             Self::EPIC => "EPIC",
             Self::PRL => "PRL",
             Self::QUAI => "QUAI",
+            Self::BEAM => "BEAM",
         }
     }
 
@@ -67,6 +69,7 @@ impl ExternalCoin {
             Self::EPIC => "progpow",
             Self::PRL => "pearlhash",
             Self::QUAI => "kawpow",
+            Self::BEAM => "beamhash",
         }
     }
 
@@ -95,6 +98,7 @@ impl ExternalCoin {
             "epic" | "epiccash" => Some(Self::EPIC),
             "prl" | "pearl" => Some(Self::PRL),
             "quai" | "quainetwork" => Some(Self::QUAI),
+            "beam" => Some(Self::BEAM),
             _ => None,
         }
     }
@@ -116,6 +120,7 @@ impl ExternalCoin {
             Self::EPIC => "de.epicmine.io:3334",
             Self::PRL => "prl.2miners.com:1818",
             Self::QUAI => "quai.2miners.com:4848",
+            Self::BEAM => "beam.2miners.com:5252",
         }
     }
 
@@ -125,7 +130,7 @@ impl ExternalCoin {
         matches!(
             self,
             Self::KAS | Self::ERG | Self::RVN | Self::ETC
-                | Self::EVR | Self::MEWC | Self::QUAI
+                | Self::EVR | Self::MEWC | Self::QUAI | Self::BEAM
         )
     }
 
@@ -151,6 +156,7 @@ impl ExternalCoin {
             Self::EPIC,
             Self::PRL,
             Self::QUAI,
+            Self::BEAM,
         ]
     }
 
@@ -269,6 +275,7 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
         ProfitEntry { coin: ExternalCoin::VRSC, revenue_per_day_usd: 0.14, power_cost_usd: 0.03 },
         ProfitEntry { coin: ExternalCoin::EPIC, revenue_per_day_usd: 0.35, power_cost_usd: 0.10 },
         ProfitEntry { coin: ExternalCoin::QUAI, revenue_per_day_usd: 0.90, power_cost_usd: 0.12 },
+        ProfitEntry { coin: ExternalCoin::BEAM, revenue_per_day_usd: 0.25, power_cost_usd: 0.10 },
         // Pearl (PRL) — 22x more profitable than KAS (WhatToMine 2026-07-15).
         // RTX 4090: ~$4.33/day profit at 125 Th/s. Normalized per 100 MH/s
         // equivalent: very high revenue, moderate power (GPU MatMul).
