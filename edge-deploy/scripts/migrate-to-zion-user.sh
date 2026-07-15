@@ -21,9 +21,10 @@ if getent group docker >/dev/null 2>&1; then
 fi
 
 echo "[migrate] Preparing directories..."
-mkdir -p "${DATA_DIR}" "${LOGS_DIR}" "${BACKUP_DIR}"
-chown -R "${NEW_USER}:${NEW_GROUP}" "${NEW_HOME}"
+mkdir -p "${DATA_DIR}" "${LOGS_DIR}" "${BACKUP_DIR}" "${NEW_HOME}/logs" /etc/zion/keys
+chown -R "${NEW_USER}:${NEW_GROUP}" "${NEW_HOME}" /etc/zion/keys
 chmod 750 "${NEW_HOME}"
+chmod 700 /etc/zion/keys
 
 # Legacy repo locations that may still be in use
 LEGACY_PATHS=(
@@ -31,13 +32,18 @@ LEGACY_PATHS=(
     "/root/zion/2.9.6"
 )
 
-for legacy in "${LEGACY_PATHS[@]}"; do
-    if [[ -d "$legacy" ]]; then
-        echo "[migrate] Found legacy repo at ${legacy}. Copying to ${NEW_HOME} (excluding build artifacts)..."
-        rsync -a --exclude=target --exclude=.git "${legacy}/" "${NEW_HOME}/"
-        break
-    fi
-done
+# If /opt/zion already contains a valid V3 repo, do not overwrite it from legacy.
+if [[ -d "${NEW_HOME}/V3" && -d "${NEW_HOME}/edge-deploy" ]]; then
+    echo "[migrate] /opt/zion already contains a valid repo; skipping legacy copy."
+else
+    for legacy in "${LEGACY_PATHS[@]}"; do
+        if [[ -d "$legacy" ]]; then
+            echo "[migrate] Found legacy repo at ${legacy}. Copying to ${NEW_HOME} (excluding build artifacts)..."
+            rsync -a --exclude=target --exclude=.git "${legacy}/" "${NEW_HOME}/"
+            break
+        fi
+    done
+fi
 
 # Re-create the symlink /data/zion -> /opt/zion/data for compatibility
 if [[ -L /data/zion ]]; then

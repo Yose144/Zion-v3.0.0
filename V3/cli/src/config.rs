@@ -76,6 +76,12 @@ pub struct NodeConfig {
 pub struct PoolConfig {
     pub host: String,
     pub port: u16,
+    #[serde(default = "default_pool_metrics_port")]
+    pub metrics_port: u16,
+}
+
+fn default_pool_metrics_port() -> u16 {
+    8455
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -195,6 +201,7 @@ impl Default for PoolConfig {
         Self {
             host: "62.171.141.136".into(),
             port: 8444,
+            metrics_port: 8455,
         }
     }
 }
@@ -457,6 +464,9 @@ fn apply_env_overrides(cfg: &mut Config) {
     }
     if let Some(v) = parse_env::<u16>("ZION_POOL_PORT") {
         cfg.pool.port = v;
+    }
+    if let Some(v) = parse_env::<u16>("ZION_POOL_METRICS_PORT") {
+        cfg.pool.metrics_port = v;
     }
 
     if let Some(v) = env::var("ZION_MINER_WALLET").ok().filter(|s| !s.is_empty()) {

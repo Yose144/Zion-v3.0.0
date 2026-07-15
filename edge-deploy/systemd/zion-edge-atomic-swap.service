@@ -9,10 +9,7 @@ Type=simple
 User=zion
 Group=zion
 WorkingDirectory=/opt/zion
-EnvironmentFile=/opt/zion/edge-deploy/config/edge-environment.sh
-Environment="ZION_NODE_RPC_ADDR=127.0.0.1:8443"
-Environment="SWAP_API_BIND=0.0.0.0:8452"
-Environment="SWAP_METRICS_BIND=0.0.0.0:9103"
+EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="RUST_LOG=info,zion_atomic_swap=debug"
 ExecStart=/opt/zion/V3/target/release/zion-atomic-swap --config /opt/zion/V3/L2/atomic-swap/config/swap-mainnet.toml
 Restart=always

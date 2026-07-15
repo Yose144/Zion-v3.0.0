@@ -11,6 +11,7 @@
 
 pub mod auxpow_client;
 pub mod auxpow_scheduler;
+pub mod beamhash;
 pub mod dual_stratum;
 pub mod external_hashers;
 pub mod gpu_backend;

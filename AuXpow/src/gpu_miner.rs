@@ -180,6 +180,7 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         "zelhash" | "zelhash_flux" => Some(("zelhash_kernel.cl", "zelhash_mine")),
         "progpow" | "progpow_epic" => Some(("progpow_kernel.cl", "ethash_search")),
         "pearlhash" | "pearlhash_prl" => Some(("pearl_kernel.cl", "pearl_mine")),
+        "beamhash" | "beamhash_beam" => Some(("beamhash_kernel.cl", "beamhash_generate_hashes")),
         _ => None,
     }
 }
@@ -346,7 +347,7 @@ impl GpuMiner {
             .build()?;
         let output_solution_buf: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
-            .len(52)  // Equihash 125,4 compressed solution
+            .len(100)  // Max solution size: BeamHash III = 100 bytes (ZelHash = 52)
             .build()?;
         let found_flag_buf: Buffer<u32> = Buffer::builder()
             .queue(q.clone())
@@ -503,16 +504,28 @@ impl GpuMiner {
                 &output_solution_buf,
                 &found_flag_buf,
             )?,
+            "beamhash" | "beamhash_beam" => Self::build_beamhash_kernel(
+                pro_que,
+                kernel_name,
+                header,
+                target,
+                base_nonce,
+                &output_nonce_buf,
+                &output_hash_buf,
+                &output_solution_buf,
+                &found_flag_buf,
+            )?,
             other => anyhow::bail!("unsupported GPU algorithm: {other}"),
         };
 
         // Batch nonce scanning: optimized kernels scan multiple nonces per
         // work-item (8 for blake3/kheavyhash/zelhash, 4 for autolykos/ethash).
         // KawPow/ProgPow: 1 nonce per work-item (ProgPow uses 16 lanes per hash).
+        // BeamHash: 1 nonce per work-item (Equihash is memory-bound).
         let batch_factor = match algorithm {
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 4,
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-            | "progpow" | "progpow_epic" => 1,
+            | "progpow" | "progpow_epic" | "beamhash" | "beamhash_beam" => 1,
             _ => 8, // blake3, kheavyhash, zelhash
         };
         // Work-group size: MUST match GROUP_SIZE defined in the kernel build
@@ -522,6 +535,7 @@ impl GpuMiner {
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
             | "progpow" | "progpow_epic" => 128, // GROUP_SIZE=128 for ProgPow/KawPow
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 128,
+            "beamhash" | "beamhash_beam" => 256, // BeamHash: standard work-group
             _ => 256,
         };
         // Round global_work_size up to a multiple of wg_size (required by
@@ -567,9 +581,13 @@ impl GpuMiner {
             None
         };
 
-        // Read Equihash solution for ZelHash/FLUX (52 bytes).
+        // Read Equihash solution for ZelHash/FLUX (52 bytes) or BeamHash III (100 bytes).
         let solution = if matches!(algorithm, "zelhash" | "zelhash_flux") {
             let mut sol = vec![0u8; 52];
+            output_solution_buf.read(&mut sol).enq()?;
+            Some(sol)
+        } else if matches!(algorithm, "beamhash" | "beamhash_beam") {
+            let mut sol = vec![0u8; 100]; // BeamHash III: 32 indices × 25 bits = 100 bytes
             output_solution_buf.read(&mut sol).enq()?;
             Some(sol)
         } else {
@@ -1267,6 +1285,60 @@ impl GpuMiner {
             .arg(found_flag_buf)
             .build()
             .map_err(|e| anyhow!("ZelHash kernel build failed: {e}"))?;
+
+        Ok(kernel)
+    }
+
+    /// Build the BeamHash III kernel (Equihash 144,5 with SipHash-2-4).
+    ///
+    /// BeamHash III uses SipHash-2-4 as the hash function instead of BLAKE2b.
+    /// The GPU kernel generates initial Equihash hashes; the Wagner's algorithm
+    /// collision finding is done on the host side using the generated hashes.
+    ///
+    /// The `header` is the block header (without nonce/solution).
+    /// The kernel derives the SipHash key from SHA-256(header || nonce) and
+    /// generates M = 2^25 initial hashes.
+    #[allow(clippy::too_many_arguments)]
+    fn build_beamhash_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        output_solution_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        use sha2::{Digest, Sha256};
+
+        let q = pro_que.queue().clone();
+
+        // Derive SipHash key from SHA-256(header || nonce)
+        let nonce_bytes = base_nonce.to_le_bytes();
+        let mut hasher = Sha256::new();
+        hasher.update(header);
+        hasher.update(&nonce_bytes);
+        let key_result = hasher.finalize();
+        let sipkey0 = u64::from_le_bytes(key_result[..8].try_into().unwrap());
+        let sipkey1 = u64::from_le_bytes(key_result[8..16].try_into().unwrap());
+
+        // Target buffer
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .copy_host_slice(target)
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(sipkey0)
+            .arg(sipkey1)
+            .arg(output_hash_buf)
+            .arg(0u32) // start_index
+            .build()
+            .map_err(|e| anyhow!("BeamHash kernel build failed: {e}"))?;
 
         Ok(kernel)
     }

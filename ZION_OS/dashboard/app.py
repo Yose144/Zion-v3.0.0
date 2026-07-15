@@ -158,12 +158,10 @@ import hashlib as _hashlib
 def _sha256(s: str) -> str:
     return _hashlib.sha256(s.encode("utf-8")).hexdigest()
 
-# Default users (Yose + Issy) — hashed passwords
-# Intended for local-dev use only. Override via env for production.
-_DEFAULT_USERS = {
-    "Yose":  _sha256("3nityOne13"),
-    "Issy":  _sha256("3nityOne13"),
-}
+# Default users — intentionally empty in production.
+# Set DASHBOARD_USERS env var (or DASHBOARD_AUTH_USER / DASHBOARD_AUTH_PASS)
+# for any deployment reachable outside 127.0.0.1.
+_DEFAULT_USERS = {}
 
 # Parse optional env override: DASHBOARD_USERS="user1:hash1,user2:hash2"
 DASHBOARD_USERS_ENV = os.environ.get("DASHBOARD_USERS", "")

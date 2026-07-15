@@ -9,7 +9,7 @@ Type=simple
 User=zion
 Group=zion
 WorkingDirectory=/opt/zion
-EnvironmentFile=/opt/zion/edge-deploy/config/edge-environment.sh
+EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="DAO_API_PORT=8450"
 Environment="DAO_CONFIG=/opt/zion/V3/L2/dao/config/dao-mainnet.toml"
 Environment="DAO_DB_PATH=/opt/zion/data/edge-dao.db"

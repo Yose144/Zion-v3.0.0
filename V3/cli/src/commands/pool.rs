@@ -53,15 +53,15 @@ pub async fn run(cfg: &Config, cmd: PoolCmd) -> Result<()> {
             Ok(())
         }
         PoolCmd::Earnings { address, target } => {
-            let (pool_host, pool_port) = cfg.target_pool(&target);
+            let (pool_host, _) = cfg.target_pool(&target);
             ui::print_header("PPLNS Earnings");
             let addr = address.unwrap_or_else(|| cfg.miner.wallet.clone());
             if addr.is_empty() {
                 ui::print_warn("No address specified. Use --address <addr>");
                 return Ok(());
             }
-            // The pool exposes miner stats via HTTP, not via node JSON-RPC.
-            let base_url = format!("http://{}:{}", pool_host, pool_port);
+            // The pool exposes miner stats via HTTP on the metrics port, not the stratum port.
+            let base_url = format!("http://{}:{}", pool_host, cfg.pool.metrics_port);
             let path = format!("api/v1/miner/{}/stats", addr);
             match agent_rpc::get(&base_url, &path).await {
                 Ok(v) => println!("{}", serde_json::to_string_pretty(&v)?),

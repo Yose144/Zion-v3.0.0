@@ -49,7 +49,7 @@ log "Backing up node state databases..."
 NODE_BACKUP="${BACKUP_DIR}/daily/node_state_${TIMESTAMP}"
 mkdir -p "${NODE_BACKUP}"
 
-for db in "/opt/zion/data/state" "/opt/zion/data/state-node2"; do
+for db in "/opt/zion/data/edge-state.db" "/opt/zion/data/edge2-state.db"; do
     if [[ -f "$db" ]]; then
         cp "$db" "${NODE_BACKUP}/"
         log "${GREEN}  ✓ $(basename $db)${NC}"
@@ -80,6 +80,7 @@ CONFIG_BACKUP="${BACKUP_DIR}/daily/config_${TIMESTAMP}"
 mkdir -p "${CONFIG_BACKUP}"
 
 for cfg in \
+    "/etc/zion/edge-environment.sh" \
     "${REPO_ROOT}/edge-deploy/config/edge-environment.sh" \
     "${REPO_ROOT}/V3/L2/bridge/config/bridge-mainnet.toml" \
     "${REPO_ROOT}/V3/L2/atomic-swap/config/swap-mainnet.toml" \
