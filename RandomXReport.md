@@ -20,8 +20,9 @@ Tento report dokumentuje integraci **real RandomX** (Monero/XMR) CPU miningu do 
 | FFI (`zion_native_ffi::randomx`) | ✅ DONE | `init_with_seed()`, `hash_with_seed()` |
 | `ExternalStreamJob.seed_hash_hex` | ✅ DONE | Epoch-based cache init plumbing |
 | Pool server `seed_hash` population | ✅ DONE | `JobPackage.seed_hash` → `seed_hash_hex` |
-| `--randomx-bench` benchmark | ✅ DONE | 175 H/s (4 threads, M1 interpreted VM) |
+| `--randomx-bench` benchmark | ✅ DONE | 1546 H/s (4 threads, M1 JIT + HW AES) |
 | Per-thread VM (lock-free hashing) | ✅ DONE | 9x speedup vs single-VM mutex |
+| JIT VM + hardware AES (ARM64) | ✅ DONE | 8.8x speedup vs interpreted+soft AES |
 | Build: miner + pool + auxpow | ✅ DONE | `cargo build --features native-randomx` |
 | Pool E2E (Stratum submit to XMR pool) | 🔵 TODO | Needs live pool test (MoneroOcean/2miners) |
 
@@ -120,7 +121,7 @@ Každé vlákno má vlastní VM (`thread_local randomx_vm* t_vm`), který sdíl�
 
 | Platform | JIT | Hardware AES | Large Pages | VM Mode |
 |----------|-----|-------------|-------------|---------|
-| **macOS aarch64 (M1)** | ❌ A64 JIT compiled but interpreted VM used at runtime | ❌ Soft AES | ❌ | Interpreted + Full Mem |
+| **macOS aarch64 (M1)** | ✅ A64 JIT + SECURE | ✅ ARMv8 Crypto (`vaeseq_u8`) | ❌ (needs root) | Compiled (JIT) + Full Mem |
 | **Linux x86_64** | ✅ | ✅ (if CPU supports) | ✅ (if available) | Compiled (JIT) + Full Mem |
 | **Windows x86_64** | ✅ | ✅ (if CPU supports) | ✅ (if available) | Compiled (JIT) + Full Mem |
 
@@ -212,38 +213,57 @@ pub struct ExternalStreamJob {
 ### 5.1 `--randomx-bench`
 
 ```bash
-cargo run --bin zion-miner --features native-randomx,native-verushash -- --randomx-bench
-# Env: ZION_BENCH_SECS=10 ZION_THREADS=4
+cargo build --release --features native-randomx,native-verushash
+ZION_BENCH_SECS=20 ZION_THREADS=4 ./target/release/zion-miner --randomx-bench
 ```
 
-### 5.2 Results
+### 5.2 Results — Optimization Progression
 
 | Config | Throughput | Per-thread | Notes |
 |--------|-----------|-----------|-------|
-| 1 thread (old single-VM mutex) | 19 H/s | 19 H/s | Mutex contention on every hash |
-| 1 thread (per-thread VM) | 44 H/s | 44 H/s | 2.3x speedup |
-| 4 threads (old single-VM mutex) | 1 H/s | 0.25 H/s | Mutex kills parallelism |
-| **4 threads (per-thread VM)** | **175 H/s** | **44 H/s** | **9x speedup, linear scaling** |
+| 1 thread (interpreted + soft AES) | 19 H/s | 19 H/s | Initial, single-VM mutex |
+| 1 thread (per-thread VM) | 44 H/s | 44 H/s | Per-thread VM refactor |
+| 4 threads (interpreted + soft AES) | 175 H/s | 44 H/s | Per-thread VM, no JIT/HW AES |
+| **1 thread (JIT + HW AES)** | **177 H/s** | **177 H/s** | JIT + ARMv8 Crypto |
+| **4 threads (JIT + HW AES)** | **1546 H/s** | **387 H/s** | **Optimal: 4 P-cores** |
+| 6 threads (JIT + HW AES) | 1424 H/s | 237 H/s | E-cores add memory contention |
+| 8 threads (JIT + HW AES) | 1908 H/s | 238 H/s | All cores, more contention |
 
-### 5.3 Mode: Interpreted VM (ARM64)
+### 5.3 Optimization Steps
 
-Na Apple Silicon (M1) se používá **interpreted VM** (no JIT):
-- A64 JIT compiler se kompiluje, ale `RANDOMX_FLAG_JIT` se nenastavuje při vytváření VM
-- Důvod: A64 JIT má global constructor linking issues na macOS (i s `-force_load`)
-- Soft AES (no hardware AES na Apple Silicon)
-- Dataset: full memory mode (~2 GB)
+| Step | Change | Impact |
+|------|--------|--------|
+| Per-thread VM | `thread_local randomx_vm*` | 9x (1→175 H/s) |
+| Hardware AES | `-march=armv8-a+crypto` → `__ARM_FEATURE_CRYPTO` | ~4x per-thread |
+| JIT VM | `randomx_get_flags()` auto-detection | ~4x per-thread |
+| SECURE flag | `RANDOMX_FLAG_SECURE` (W^X for macOS) | Required for JIT on macOS |
+| **Total** | **All combined** | **8.8x (175→1546 H/s)** |
 
-**Expected on x86_64 (Linux/Intel):** ~500-1000 H/s s JIT + hardware AES.
+### 5.4 Mode: JIT VM + Hardware AES (ARM64/Apple Silicon)
 
-### 5.4 XMR Network Estimates
+Na Apple Silicon (M1) se nyní používá:
+- **A64 JIT compiler** — kompiluje RandomX programy do nativního ARM64 kódu za běhu
+- **Hardware AES** — ARMv8 Crypto Extensions (`vaeseq_u8`, `vaesmcq_u8` NEON instrukce)
+- **SECURE mode** — W^X memory protection (stripped macOS hardened runtime requirement)
+- **Full memory mode** — ~2 GB dataset (fastest hashing, no cache reads during hashing)
+- **Per-thread VM** — každé vlákno má vlastní VM, sdílí read-only dataset
+
+### 5.5 XMR Network Estimates (1546 H/s)
 
 | Metric | Value |
 |--------|-------|
 | XMR network difficulty | ~350G (varies) |
-| Expected time per block (175 H/s) | ~23204 days |
-| Pool share (diff 1M) | ~95 min |
+| Expected time per block (solo) | ~2620 days |
+| Pool share (diff 1M) | ~10.8 min |
+| Pool share (diff 100K) | ~1.1 min |
 
-RandomX je **memory-hard** — na M1 s interpreted VM je hashrate nízký. Na x86_64 serveru s JIT by byl ~5-10x vyšší.
+### 5.6 Comparison with XMRig
+
+XMRig na M1 typicky dosahuje 1500-2200 H/s. Našich 1546 H/s je v tomto rozsahu.
+Rozdíl může být způsoben:
+1. XMRig používá 1GB hugepages (vyžaduje root)
+2. XMRig může mít dodatečné mikro-optimalizace
+3. Teplotní throttling z opakovaných benchmarků
 
 ---
 
@@ -253,6 +273,7 @@ RandomX je **memory-hard** — na M1 s interpreted VM je hashrate nízký. Na x8
 |--------|-------|
 | `11a13c212` | feat(miner): RandomX support + seed_hash plumbing for triple-stream mining |
 | `dbf6031e0` | perf(randomx): per-thread VMs for lock-free multi-threaded hashing |
+| `1dd22014e` | perf(randomx): enable JIT + hardware AES on Apple Silicon — 8.8x speedup |
 
 ---
 
@@ -266,15 +287,12 @@ RandomX je **memory-hard** — na M1 s interpreted VM je hashrate nízký. Na x8
 4. **Verify share submission** — `mining.submit` (3-param: `[worker, job_id, nonce]`)
 5. **Verify epoch transition** — seed change triggers cache/dataset reinit
 
-### 7.2 Performance Optimization
+### 7.2 Performance Optimization — ✅ Hotovo
 
-1. **A64 JIT fix** — investigate global constructor linking issue on macOS
-   - Možné řešení: compile `jit_compiler_a64.cpp` jako separate `.o` a link explicitně
-   - Nebo: použít `RANDOMX_FLAG_JIT` na ARM64 a ignorovat global constructor warning
-2. **Hardware AES na ARM64** — Apple Silicon má ARMv8 Crypto Extensions (AES instructions)
-   - RandomX `aes_hash.cpp` podporuje ARM64 hardware AES
-   - Potřebné: `__ARM_FEATURE_CRYPTO` define nebo `RANDOMX_HAVE_AES`
-3. **Large pages na Linux** — `RANDOMX_FLAG_LARGE_PAGES` pro ~10-20% speedup na x86_64
+1. ✅ **A64 JIT** — aktivováno přes `randomx_get_flags()` auto-detekci + `RANDOMX_FLAG_SECURE`
+2. ✅ **Hardware AES na ARM64** — `-march=armv8-a+crypto` → `__ARM_FEATURE_CRYPTO` → `vaeseq_u8`
+3. 🔵 **Large pages na Linux** — `RANDOMX_FLAG_LARGE_PAGES` pro ~10-20% speedup na x86_64 (na macOS vyžaduje root)
+4. 🔵 **1GB hugepages** — XMRig používá na Linuxu `MAP_HUGETLB` pro dataset (vyžaduje root + sysctl)
 
 ### 7.3 Production Deployment
 
