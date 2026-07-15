@@ -5202,10 +5202,11 @@ def _resolve_auxpow_service_name() -> str:
 
 AUXPOW_SERVICE_NAME = _resolve_auxpow_service_name()
 
-# Coins the pool can force-switch to. Keep in sync with AuXpow/src/types.rs.
+# Coins the pool can force-switch to. Keep in sync with AuXpow/src/types.rs ExternalCoin.
 AUXPOW_SUPPORTED_COINS = [
     "DCR", "ALPH", "KAS", "ERG", "RVN", "ETC",
     "EVR", "MEWC", "FLUX", "CLORE", "XMR", "VRSC",
+    "EPIC", "PRL", "QUAI", "BEAM",
 ]
 
 AUXPOW_POOL_PREFERENCES = ["default", "nicehash", "herominers", "zpool"]
