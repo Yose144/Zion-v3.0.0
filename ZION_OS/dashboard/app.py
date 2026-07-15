@@ -1281,7 +1281,6 @@ def get_service(sid: str) -> dict:
 
 # ── Health checks ───────────────────────────────────────────────────────
 
-import socket
 import urllib.request as _urlreq
 HEALTH_CACHE = {}  # id -> {"alive": bool, "ts": int, "details": str}
 HEALTH_TTL = 10  # seconds
@@ -1405,7 +1404,7 @@ def check_service_health(svc: dict) -> dict:
                     proc_info = {"has_pid": True, "alive": True, "pid": -1}
                     details_parts_preview = f"Edge pool: {_active} active miner(s)"
                 else:
-                    details_parts_preview = f"Edge pool: 0 active miners"
+                    details_parts_preview = "Edge pool: 0 active miners"
         except Exception as _e:
             details_parts_preview = f"Edge pool check failed: {str(_e)[:40]}"
     else:
@@ -2530,7 +2529,6 @@ def _build_status_edge_primary() -> dict:
 
     # ── Parallel RPC probes ─────────────────────────────────────────────────
     edge_rpc_info = None
-    local_rpc_info = None
 
     def _edge_rpc_call():
         # When dashboard runs ON Edge, use localhost (RPC bound to 127.0.0.1 after security hardening)
@@ -2778,7 +2776,6 @@ def _build_status_edge_primary() -> dict:
         sync_gap = abs(n1["chain_height"] - edge_node1_status["chain_height"])
 
     # v3.0.4: No Tailscale — single server topology, not needed
-    tailscale_ok = True  # N/A, always "ok" (no VPN required)
 
     miner_status = parse_miner_log()
 
@@ -2806,7 +2803,6 @@ def _build_status_edge_primary() -> dict:
     # ── Build all_nodes list for the All Nodes panel ──────────────────────────
     # Combines our 3 known nodes + any external P2P peers discovered via getPeerInfo.
     all_nodes = []
-    _our_node_keys = set()
     for _label, _st, _role, _icon in [
         ("Edge Node 1 (Primary)", edge_node1_status, "primary", "🌍"),
         ("Edge Node 2 (Follower)", edge_node2_status, "follower", "🔶"),
@@ -3011,6 +3007,7 @@ def _build_status_local_dev() -> dict:
     sync_gap = None
     if n1.get("chain_height") and n2.get("chain_height"):
         sync_gap = abs(n1["chain_height"] - n2["chain_height"])
+        _ = sync_gap  # reserved for future alert threshold
 
     return {
         "timestamp": datetime.now().isoformat(),
@@ -3085,7 +3082,7 @@ def build_checklist(status: dict) -> dict:
             # Optional local services (not counted in score, shown for info)
             {"id": "node1",      "label": "Local Backup Node P2P synced",             "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
             {"id": "miner",      "label": "Local GPU miner (optional)",               "ok": True},
-            {"id": "edge-backup","label": "Edge database auto-backup (optional)",     "ok": True},
+            {"id": "edge-backup","label": "Edge database auto-backup (optional)",     "ok": edge_backup_ok},
         ]
     else:  # local-dev
         checks = [
@@ -3182,7 +3179,6 @@ def build_alerts(status: dict) -> list:
     n1, n2, pool, miner = status["node1"], status["node2"], status["pool"], status["miner"]
     edge_node1 = status.get("edge_node", {})
     edge_node2 = status.get("edge_node2", {})
-    local_backup = status.get("local_backup", {})
 
     def _sev(svc_id: str, default: str = "warning") -> str:
         svc = get_service(svc_id)
@@ -3347,7 +3343,6 @@ def persist_new_alerts(alerts: list):
 
 def scan_block_events():
     """Scan logs for newly discovered blocks and push to event feed."""
-    global BLOCK_EVENTS, LAST_BLOCK_EVENT_TIME
     for name in ("node1", "node2"):
         lines = tail_log(f"{name}.log", 500)
         for line in lines:
@@ -3672,7 +3667,6 @@ def build_wallets() -> dict:
     category_summary = {}
     for w in wallets:
         if w.get("category") == "premine":
-            cat = w.get("source", "premine")  # all premine have same category
             label = w.get("label", "")
             # Group by purpose
             if "OASIS" in label:
@@ -5523,7 +5517,7 @@ def restart_auxpow_pool_service() -> dict:
 
 def get_servers_setup() -> dict:
     """Return server setup, services, disk health, and automation status for the Servers Setup tab."""
-    import subprocess, re, os
+    import subprocess, os
 
     result: dict = {"ok": True}
 
@@ -5822,7 +5816,7 @@ def get_pool_miner_detail(address: str) -> dict:
                 for p in payouts:
                     p["amount_zion"] = flowers_to_zion(p.get("amount_atomic", 0) or 0)
                 result["payouts"] = payouts
-    except Exception as e:
+    except Exception:
         result["payouts"] = []
 
     return result
@@ -6680,7 +6674,7 @@ def get_network_topology() -> dict:
     except Exception:
         pass
     # Tailscale VPN check (quick TCP probe to edge RPC instead of ICMP ping)
-    tailscale_ok = True  # v3.0.4: No Tailscale needed
+    # v3.0.4: No Tailscale needed
     # Website
     web_alive = False
     try:
@@ -10468,14 +10462,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/terminal/open":
             # Open a native terminal window (W11/Ubuntu/macOS)
             svc_id = params.get("svc", [""])[0].strip()
-            _TERM_CMDS = {
-                "node1":         ("cargo run ... (node1)", "node status"),
-                "node2":         ("cargo run ... (node2)", ""),
-                "pool":          ("pool server",           "pool status"),
-                "miner":         ("miner",                 ""),
-                "hiranyagarbha": ("hiranyagarbha",         ""),
-                "hiran":         ("hiran-inference",       ""),
-            }
             # Determine the log file to tail — use SERVICE_LOG_MAP
             _log_name = SERVICE_LOG_MAP.get(svc_id, f"{svc_id}.log")
             log_file = str(LOG_DIR / _log_name)
@@ -11172,7 +11158,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     if db_dir.exists():
                         db_backup = backup_dir / "V3" / "data"
                         shutil.copytree(db_dir, db_backup, dirs_exist_ok=True)
-                        backup_log.append(f"✓ Backed up database directory")
+                        backup_log.append("✓ Backed up database directory")
                     
                     # Create backup manifest
                     manifest = {
@@ -11760,7 +11746,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     version = data_o.get("version")
                     active_agents = data_o.get("active_agents")
                     task_queue = data_o.get("task_queue_depth") or data_o.get("task_queue")
-            except Exception as e:
+            except Exception:
                 alive = False
             self._json({
                 "alive": alive,
@@ -11783,7 +11769,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"error": f"NCL backend unreachable: {str(e)[:80]}"})
         elif route == "/api/alerts/dismiss":
-            alert_id = payload.get("id", "").strip()
+            alert_id = params.get("id", [""])[0].strip()
             if not alert_id:
                 self._json({"ok": False, "error": "id required"})
                 return
