@@ -24,17 +24,17 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
-    slug: 'web-runtime-update-v3.0.6',
+    slug: 'preparing-v3.0.6-release-update',
     date: '2026-07-15',
     tag: { cs: 'Update', en: 'Update' },
     tagColor: 'text-zion-cyan',
     title: {
-      cs: 'Web a runtime přecházejí na v3.0.6 — opraveny peery, databáze a 2-uzlová topologie',
-      en: 'Website and runtime move to v3.0.6 — peers, database, and 2-node topology fixed',
+      cs: 'Připravujeme v3.0.6 release update',
+      en: 'Preparing v3.0.6 release update',
     },
     summary: {
-      cs: 'Veřejný web i dashboard reflektují aktuální v3.0.6 runtime. Opravili jsme nulové peer county, nefunkční Database Explorer a zastaralé 3-uzlové mesh copy — živá topologie je 2 uzly (Edge 1 + Edge 2), Local Backup Node je offline. Stav sítě a monitoring teď ukazují správná data.',
-      en: 'The public website and dashboard now reflect the current v3.0.6 runtime. We fixed zero peer counts, the broken Database Explorer, and stale 3-node mesh copy — the live topology is 2 nodes (Edge 1 + Edge 2), Local Backup Node is offline. Network status and monitoring now show correct data.',
+      cs: 'Webová prezentace i dashboard se postupně přesouvají na v3.0.6. Aktuálně ladíme peer counting, Database Explorer a všechny verzované texty, aby odpovídaly živému runtime. Veřejný launch zůstává naplánován na 31. prosince 2026.',
+      en: 'The website and dashboard are gradually moving to v3.0.6. We are currently tuning peer counting, the Database Explorer, and all versioned copy to match the live runtime. Public launch remains scheduled for 31 December 2026.',
     },
     href: '/network',
   },
