@@ -23,6 +23,7 @@ SERVICES=(
   zion-edge-dao
   zion-edge-atomic-swap
   zion-edge-warp
+  zion-edge-oasis
   zion-edge-watchdog
   zion-edge-backup
   zion-edge-miner
@@ -88,8 +89,31 @@ else
     echo "[INFO] ${LIVE_ENV} already exists; not overwriting."
 fi
 
+# ── Ensure node2 environment file exists (never overwrite) ──
+NODE2_ENV="/etc/zion/edge-node2-environment.sh"
+if [[ ! -f "$NODE2_ENV" ]]; then
+    echo "[INFO] Creating ${NODE2_ENV} (node2 follower env)..."
+    cat > "$NODE2_ENV" << 'NODE2EOF'
+# ZION Edge Node 2 (Follower) — Environment
+# Sourced by zion-edge-node2.service. Overrides ZION_NODE_ID, ports, state path.
+ZION_NODE_ID="zion-edge-follower"
+ZION_NODE_STATE_PATH="/data/zion/state-node2"
+ZION_P2P_BIND="0.0.0.0:8334"
+ZION_RPC_BIND="127.0.0.1:8448"
+ZION_WEBSOCKET_BIND="127.0.0.1:8449"
+ZION_METRICS_BIND="127.0.0.1:9116"
+ZION_SEED_PEERS="127.0.0.1:8333"
+ZION_MIGRATION_HEIGHT=1
+RUST_LOG="info"
+NODE2EOF
+    chmod 640 "$NODE2_ENV"
+    chown "${ZION_USER}:${ZION_GROUP}" "$NODE2_ENV"
+else
+    echo "[INFO] ${NODE2_ENV} already exists; not overwriting."
+fi
+
 # ── Build binaries if missing ──
-BINS=(node server zion-bridge zion-dao zion-atomic-swap zion-warp-server zion-miner)
+BINS=(node server zion-bridge zion-dao zion-atomic-swap zion-warp-server zion-miner zion-oasis)
 for bin in "${BINS[@]}"; do
     if [[ ! -f "$REPO_ROOT/V3/target/release/$bin" ]]; then
         echo "[WARN] Binary '$bin' not found. Building now..."

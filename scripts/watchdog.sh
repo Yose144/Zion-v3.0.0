@@ -24,16 +24,16 @@ MODE="${1:-${ZION_WATCHDOG_MODE:-edge}}"
 LOG_FILE="${ZION_WATCHDOG_LOG:-}"
 USE_USER_SYSTEMD=0
 
-NODE_RPC="http://127.0.0.1:8443/health"
-NODE_JSONRPC="http://127.0.0.1:8443/jsonrpc"
+NODE_RPC="http://127.0.0.1:9443/health"
+NODE_JSONRPC="http://127.0.0.1:9443/jsonrpc"
 POOL_HOST="127.0.0.1"
 POOL_PORT="8444"
 NODE_SERVICE="zion-edge-node1"
 POOL_SERVICE="zion-edge-pool"
 SSH_TUNNEL_SERVICE="zion-ssh-tunnel"
 BACKUP_NODE_SERVICE="zion-backup-node"
-DASHBOARD_SERVICE="zion-dashboard"
-SSH_TUNNEL_PORTS=(8443 8453 9101)
+DASHBOARD_SERVICE="zion-edge-python-dashboard"
+SSH_TUNNEL_PORTS=(9443 8453 9101)
 
 # Mode-specific defaults.
 case "$MODE" in
@@ -43,16 +43,16 @@ case "$MODE" in
   backup)
     USE_USER_SYSTEMD=1
     # Local backup node RPC; edge RPC used as sync reference.
-    NODE_RPC="http://127.0.0.1:8446/health"
-    NODE_JSONRPC="http://127.0.0.1:8446/jsonrpc"
-    EDGE_JSONRPC="http://127.0.0.1:8443/jsonrpc"
+    NODE_RPC="http://127.0.0.1:8448/health"
+    NODE_JSONRPC="http://127.0.0.1:8448/jsonrpc"
+    EDGE_JSONRPC="http://127.0.0.1:9443/jsonrpc"
     POOL_PORT="8445"
     NODE_SERVICE="zion-backup-node"
     POOL_SERVICE=""
     ;;
   new-server)
-    NODE_SERVICE="zion-node"
-    POOL_SERVICE="zion-pool"
+    NODE_SERVICE="zion-edge-node1"
+    POOL_SERVICE="zion-edge-pool"
     ;;
   *)
     echo "Unknown watchdog mode: $MODE" >&2

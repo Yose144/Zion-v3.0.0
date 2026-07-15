@@ -204,7 +204,7 @@ export default function Navigation() {
   return (
     <nav
       className={`fixed left-0 right-0 z-50 transition-all duration-300 ease-out ${
-        scrolled ? 'top-0 sm:top-0 md:top-0' : 'top-20 sm:top-24 md:top-28'
+        scrolled ? 'top-2' : 'top-20 sm:top-24 md:top-28'
       }`}
     >
       {/* Subtle ambient glow */}
@@ -214,7 +214,7 @@ export default function Navigation() {
             FLOOR 1 — MAIN BAR
             Logo | 4 HERO icons (rasta) | lang + GitHub + auth + dashboard
             ═══════════════════════════════════════════════════ */}
-        <div className={`relative rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl p-[1px] shadow-[0_16px_60px_rgba(0,0,0,0.35)] transition-all duration-300 ${scrolled ? 'rounded-b-none' : ''}`}>
+        <div className="relative rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl p-[1px] shadow-[0_16px_60px_rgba(0,0,0,0.35)] transition-all duration-300">
           {/* Rasta gradient top accent line — thicker and narrower */}
           <div className={`pointer-events-none absolute -top-px left-12 right-12 rounded-t-2xl bg-linear-to-r from-emerald-400/60 via-zion-gold/70 to-red-400/60 transition-all duration-300 ${scrolled ? 'h-0.5 left-8 right-8' : 'h-1'}`} />
           <div className={`relative flex items-center justify-between gap-1.5 rounded-[15px] bg-black/70 px-2 sm:px-3 transition-all duration-300 py-1.5`}
@@ -319,10 +319,9 @@ export default function Navigation() {
         </div>
 
         {/* ═══ FLOOR 2 — MINI ICONS + GROUP DROPDOWNS ═══ */}
-        <div className={`hidden md:flex items-center justify-between gap-2 relative rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl px-2 py-1.5 shadow-[0_16px_60px_rgba(0,0,0,0.35)] transition-all duration-300 ${scrolled ? 'mt-1 h-auto opacity-100 overflow-visible' : 'mt-1 h-auto opacity-100 overflow-visible'}`}>
-          {/* Icons + group dropdowns */}
-          <div className="flex items-center gap-0.5 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
-            {/* Secondary icons — medium */}
+        <div className={`hidden md:flex items-center justify-between gap-1.5 relative rounded-2xl border border-white/[0.07] bg-black/40 backdrop-blur-md px-2 py-1.5 transition-all duration-300 mt-1`}>
+          {/* Left: secondary icons (always visible on md+) */}
+          <div className="flex items-center gap-0.5 shrink-0">
             {secondaryIcons.map((ml) => {
               const isActive = navItemMatches(ml.href);
               return (
@@ -330,27 +329,24 @@ export default function Navigation() {
                   key={ml.href}
                   href={ml.href}
                   title={ml.label}
-                  className="group relative flex flex-col items-center justify-center w-8 h-8 rounded-md border transition-all hover:scale-110 shrink-0"
+                  className="group relative flex flex-col items-center justify-center w-8 h-8 rounded-lg border transition-all hover:scale-110 shrink-0"
                   style={{
                     borderColor: isActive ? `rgba(${ml.color}, 0.45)` : 'rgba(255,255,255,0.06)',
                     backgroundColor: isActive ? `rgba(${ml.color}, 0.11)` : 'rgba(0,0,0,0.3)',
                   }}
                 >
-                  <ml.icon
-                    className="w-4 h-4"
-                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.55)' }}
-                  />
-                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                  <ml.icon className="w-4 h-4" style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.55)' }} />
+                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded-md px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                     {ml.label}
                   </span>
                 </Link>
               );
             })}
+          </div>
 
-            {/* Divider */}
+          {/* Center: tertiary icons (xl only — prevents overflow on md/lg) */}
+          <div className="hidden xl:flex items-center gap-0.5 flex-1 justify-center min-w-0">
             <div className="mx-0.5 h-4 w-px bg-white/[0.08] shrink-0" />
-
-            {/* Tertiary icons — small */}
             {tertiaryIcons.map((ml) => {
               const isActive = navItemMatches(ml.href);
               return (
@@ -364,21 +360,18 @@ export default function Navigation() {
                     backgroundColor: isActive ? `rgba(${ml.color}, 0.09)` : 'transparent',
                   }}
                 >
-                  <ml.icon
-                    className="w-3.5 h-3.5"
-                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.35)' }}
-                  />
-                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                  <ml.icon className="w-3.5 h-3.5" style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.35)' }} />
+                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded-md px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                     {ml.label}
                   </span>
                 </Link>
               );
             })}
+          </div>
 
-            {/* Divider */}
+          {/* Right: group dropdown buttons */}
+          <div className="flex items-center gap-0.5 shrink-0">
             <div className="mx-0.5 h-4 w-px bg-white/[0.08] shrink-0" />
-
-            {/* Group dropdown buttons */}
             {navGroups.map((group) => {
               const isActive = openGroup === group.title;
               const groupHasActiveChild = group.items.some((item) => navItemMatches(item.href));
@@ -396,11 +389,8 @@ export default function Navigation() {
                     }`}
                     aria-expanded={isActive}
                   >
-                    <group.icon
-                      className="w-3.5 h-3.5"
-                      style={{ color: isActive ? `rgb(${group.color})` : `rgba(${group.color}, 0.7)` }}
-                    />
-                    <span className="group-hover:text-zion-gold transition-colors">{groupLabels[group.title] ?? group.title}</span>
+                    <group.icon className="w-3.5 h-3.5" style={{ color: isActive ? `rgb(${group.color})` : `rgba(${group.color}, 0.7)` }} />
+                    <span className="group-hover:text-zion-gold transition-colors hidden lg:inline">{groupLabels[group.title] ?? group.title}</span>
                     <ChevronDown className={`h-3 w-3 transition-transform ${isActive ? 'rotate-180' : ''}`} />
                   </button>
                 </div>
