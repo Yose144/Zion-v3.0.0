@@ -143,6 +143,8 @@ export ZION_POOL_ADDR=pool.zionterranova.com:8444
 
 ### Live Test Results (2026-07-15)
 
+#### Test 1: Safe mode (Stream 2 OFF) — initial verification
+
 ```
 SHARE_ACCEPTED  job=6622  height=6622  nonce=9840000000298  algo=deeksha_lite_v1  latency_ms=132
 shares 1/0 (100.0%)  hashes 331968  pool latency 132ms  uptime 01:25
@@ -153,6 +155,147 @@ hashrate 3.90 KH/s (Metal, work_size=1024)
 - ProgPow (EPIC) **safely skipped** — no DAG allocation, no freeze
 - VerusHash (VRSC) CPU mining active (target high, needs longer runtime)
 - System stable throughout test
+
+#### Test 2: Full triple-stream (optimal config, 8 min)
+
+Config: `work_size=65536`, `algorithm=deeksha_lite_fire`, `threads=4`, 3 streams ON
+
+```
+=== ZION Auto Mode ===
+  Stream 1 (ZION primary):  ON
+  Stream 2 (GPU external):  ON
+  Stream 3 (CPU external):  ON
+======================
+
+gpu_metal_init device="Apple M1" batch_size=14199 threads_per_tg=128 scratchpad_mib=3549
+gpu_init backend=metal device="Apple M1" work_size=65536 algorithm=deeksha_lite_fire streams=3
+
+# Stream 2: EPIC progpow → safely skipped
+ext_gpu_skip_unsupported algo=progpow backend=metal reason="DAG-based algorithm not safe on Metal"
+
+# Stream 1: ZION Deeksha — 6 shares ACCEPTED
+SHARE_ACCEPTED  job=6659  nonce=10725000000426  latency_ms=83
+SHARE_ACCEPTED  job=6663  nonce=10725001049034  latency_ms=59
+SHARE_ACCEPTED  job=6666  nonce=10725002097578  latency_ms=72
+SHARE_ACCEPTED  job=6674  nonce=10725005243306  latency_ms=56
+SHARE_ACCEPTED  job=6674  nonce=10725006291914  latency_ms=62
+SHARE_ACCEPTED  job=6689  nonce=11537000000426  latency_ms=65
+
+session_status iter=6/1000000 accepted=6 rejected=0 accept_pct=100.00
+  hps_overall=3451.62  gpu_hps=3451.62  pool latency 90/149ms  uptime 07:51
+
+# Stream 3: VRSC VerusHash CPU — mining active, no share yet
+external_stream_cpu job=6680 coin=VRSC algo=verushash target_hex=0000004000000000...
+ext_cpu_thread: new job coin=VRSC algo=verushash job_id=4ee0d5e nonce_base=1027382071
+```
+
+**Results:**
+| Metric | Value |
+|--------|-------|
+| ZION shares accepted | 6/6 (100%) |
+| ZION hashrate | 3.42-3.60 KH/s |
+| Share latency | 56-149ms (avg 90ms) |
+| Time per share | ~80s (avg) |
+| VRSC shares | 0 (target too high for CPU) |
+| System freezes | 0 |
+| ProgPow crashes | 0 (safely skipped) |
+
+#### Test 3: Workflow trace (3 iterations, verbose)
+
+Complete workflow verified:
+1. **Hardware init** → Metal backend on Apple M1, 256 MiB scratchpad
+2. **Pool connection** → `wire_hello` → `wire_welcome` (protocol zion-v3-stratum/0.2)
+3. **Difficulty set** → `pool_set_difficulty=1` (vardiff start)
+4. **Stream weights** → `zion:36.2,keccak_bonus:8.9,sha3_bonus:5.4,ncl_ai:17.3,deeksha_lite:27.3`
+5. **External GPU stream** → EPIC progpow job received → **safely skipped** (DAG guard)
+6. **External CPU stream** → VRSC verushash job received → mining started
+7. **GPU mining** → Deeksha batch scan → `GPU_CPU_MISMATCH` (GPU hash ≠ CPU hash, both meet target — expected for Deeksha)
+8. **Share submission** → `SHARE_ACCEPTED` by pool
+9. **Reconnect** → On `session_error`, automatic reconnect with backoff
+
+**Note:** `GPU_CPU_MISMATCH` is **expected behavior** for Deeksha — GPU and CPU
+produce different valid hashes (different nonces scanned). Both meet target,
+share is accepted. This is NOT a bug.
+
+### VerusHash CPU Analysis
+
+| Parameter | Value |
+|-----------|-------|
+| VRSC target | `0x0000004000000000...` (26-bit difficulty) |
+| Difficulty | 67,108,864 (2^26) |
+| M1 CPU hashrate (4 threads) | ~60 H/s |
+| Expected time per share | **~12.9 days** |
+| ZION_AUXPOW_EASY_TARGET | Not set on Edge server |
+
+**Why VRSC shares are not found:**
+The pool forwards the VRSC network target from upstream VerusPool. This is
+26-bit difficulty — designed for ASIC/GPU mining rigs, not M1 CPU. At ~60 H/s,
+finding a share takes ~13 days.
+
+**Options to enable VRSC CPU shares:**
+1. **`ZION_AUXPOW_EASY_TARGET=1`** on pool server → uses `0000ffff...` (16-bit)
+   target. Shares found in ~17 minutes. But upstream VRSC pool will reject them.
+2. **Add CPU vardiff** → pool adjusts CPU share difficulty independently of
+   upstream network target. Requires pool-side code change.
+3. **Use RandomX (XMR)** instead → designed for CPU, lower difficulty.
+
+**Current status:** VRSC CPU mining is **functional but impractical** on M1.
+The miner correctly hashes VerusHash and checks targets, but the difficulty
+is too high for CPU-only mining.
+
+### Triple-Stream Workflow Diagram (Metal)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    ZION POOL (Edge)                      │
+│  pool.zionterranova.com:8444                             │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐      │
+│  │ ZION job     │  │ EPIC job    │  │ VRSC job    │      │
+│  │ (Deeksha)    │  │ (ProgPow)   │  │ (VerusHash) │      │
+│  └──────┬───────┘  └──────┬──────┘  └──────┬──────┘      │
+└─────────┼─────────────────┼────────────────┼────────────┘
+          │                 │                │
+    ┌─────▼─────┐    ┌──────▼──────┐   ┌─────▼─────┐
+    │ Stream 1  │    │ Stream 2    │   │ Stream 3  │
+    │ ZION GPU  │    │ GPU External│   │ CPU Extern│
+    │ (Metal)   │    │ (Metal)     │   │ (4 threads│
+    │           │    │             │   │  NEON/AES)│
+    │ Deeksha   │    │ ✗ SKIP      │   │ VerusHash │
+    │ 3.4 KH/s  │    │ (DAG guard) │   │ ~60 H/s   │
+    └─────┬─────┘    └─────────────┘   └─────┬─────┘
+          │                                   │
+          ▼                                   ▼
+    ┌──────────┐                        ┌──────────┐
+    │ SHARE    │                        │ (13 days │
+    │ ACCEPTED │                        │  per     │
+    │ 6/6      │                        │  share)  │
+    │ 100%     │                        └──────────┘
+    └──────────┘
+```
+
+### Known Issues & Recommendations
+
+1. **ProgPow (EPIC) skipped on Metal** — by design. DAG allocation on unified
+   memory causes system freeze. Guard works correctly. To mine EPIC, use
+   OpenCL/CUDA GPU with dedicated VRAM.
+
+2. **VRSC target too high for CPU** — pool forwards upstream VerusPool network
+   target (26-bit). M1 CPU at 60 H/s needs ~13 days per share. Fix options:
+   - Set `ZION_AUXPOW_EASY_TARGET=1` on pool (for testing only)
+   - Implement CPU vardiff in pool (production fix)
+   - Switch to RandomX/XMR for CPU stream
+
+3. **`GPU_CPU_MISMATCH` log** — expected for Deeksha. GPU and CPU scan
+   different nonce ranges, producing different valid hashes. Both meet target.
+   Share is accepted. NOT a bug.
+
+4. **`ttl_guard_warning`** — scan takes ~80s but job TTL is 54s. Share is
+   submitted anyway (`submitting_anyway=true`). Pool accepts stale shares at
+   difficulty 1. For production, increase `ZION_VARDIFF_START_DIFF` or reduce
+   `work_size` for faster scans.
+
+5. **Session reconnect** — on `session_error`, miner reconnects automatically
+   with 1s backoff. Stream 2 and 3 threads are restarted. Works correctly.
 
 ---
 
