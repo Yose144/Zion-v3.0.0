@@ -1373,8 +1373,9 @@ fn run_remote_session(
     if dual_gpu_enabled {
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
+        let bk = config.gpu_backend;
         thread::spawn(move || {
-            external_gpu_thread(ext_gpu_rx, ext_gpu_share_tx, ws, hr);
+            external_gpu_thread(ext_gpu_rx, ext_gpu_share_tx, ws, hr, bk);
         });
         println!(
             "[{}] stream2_gpu_external_started work_size={}",
@@ -2326,7 +2327,7 @@ fn submit_external_share(
 
 /// Persistent external GPU miner thread for the single GPU profit coin.
 ///
-/// Runs in a separate thread with its own OpenCL context/command queue.
+/// Runs in a separate thread with its own GPU context/command queue.
 /// Receives external stream jobs via a channel, creates/switches the GPU
 /// backend on demand, scans nonces on GPU, and sends found shares back.
 fn external_gpu_thread(
@@ -2334,6 +2335,7 @@ fn external_gpu_thread(
     tx: std::sync::mpsc::Sender<ExternalShareResult>,
     work_size: usize,
     hashrate: Arc<HashrateTracker>,
+    backend_kind: gpu_backend::GpuBackendKind,
 ) {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
@@ -2343,6 +2345,8 @@ fn external_gpu_thread(
     let mut current_algo: Option<String> = None;
     let mut nonce_base: u64 = 0;
     let mut nonce_offset: u64 = 0;
+    let mut backend_init_failures: u32 = 0;
+    let mut skipped_algos: std::collections::HashSet<String> = std::collections::HashSet::new();
     // Use a large batch_size — mine_batch_raw caps it at the GPU's actual
     // work_size internally, so this is safe.
     let batch_size = 4_186_112u64;
@@ -2436,28 +2440,72 @@ fn external_gpu_thread(
         // Create or switch GPU backend when the algorithm changes.
         let algo = job.algorithm.as_str();
         if current_algo.as_deref() != Some(algo) {
+            // Skip algorithms that have already failed too many times
+            if skipped_algos.contains(algo) {
+                thread::sleep(Duration::from_millis(500));
+                continue;
+            }
+
+            // Safety guard: check if the backend can safely handle this algorithm.
+            // Metal on Apple Silicon cannot handle DAG-based algorithms (progpow,
+            // ethash, kawpow) because the ~2GB DAG allocation on unified memory
+            // causes system freezes.
+            if !gpu_backend::backend_supports_algorithm(backend_kind, algo) {
+                println!(
+                    "[{}] ext_gpu_skip_unsupported algo={} backend={} reason=\"DAG-based algorithm not safe on Metal (unified memory OOM risk)\"",
+                    log_timestamp(),
+                    algo,
+                    backend_kind.as_str(),
+                );
+                skipped_algos.insert(algo.to_string());
+                current_algo = None;
+                current_miner = None;
+                thread::sleep(Duration::from_millis(500));
+                continue;
+            }
             match gpu_backend::create_gpu_backend(
-                gpu_backend::GpuBackendKind::OpenCL,
+                backend_kind,
                 work_size,
                 algo,
             ) {
                 Ok(m) => {
                     println!(
-                        "[{}] ext_gpu_backend_init algo={} work_size={} device=\"{}\"",
+                        "[{}] ext_gpu_backend_init algo={} backend={} work_size={} device=\"{}\"",
                         log_timestamp(),
                         algo,
+                        backend_kind.as_str(),
                         work_size,
                         m.device_name()
                     );
                     current_miner = Some(m);
                     current_algo = Some(algo.to_string());
                     last_epoch = None;
+                    backend_init_failures = 0;
                 }
                 Err(e) => {
+                    backend_init_failures += 1;
+                    if backend_init_failures >= 3 {
+                        println!(
+                            "[{}] ext_gpu_backend_skip algo={} backend={} err=\"{e}\" — skipping after {} failures",
+                            log_timestamp(),
+                            algo,
+                            backend_kind.as_str(),
+                            backend_init_failures
+                        );
+                        skipped_algos.insert(algo.to_string());
+                        current_algo = None;
+                        current_miner = None;
+                        backend_init_failures = 0;
+                        thread::sleep(Duration::from_millis(500));
+                        continue;
+                    }
                     println!(
-                        "[{}] ext_gpu_backend_init_failed algo={} err=\"{e}\" — retrying",
+                        "[{}] ext_gpu_backend_init_failed algo={} backend={} err=\"{e}\" — retrying ({}/{})",
                         log_timestamp(),
-                        algo
+                        algo,
+                        backend_kind.as_str(),
+                        backend_init_failures,
+                        3
                     );
                     thread::sleep(Duration::from_secs(2));
                     continue;

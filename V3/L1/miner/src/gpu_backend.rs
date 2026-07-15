@@ -362,6 +362,56 @@ pub fn is_cpu_only_algorithm(algorithm: &str) -> bool {
     matches!(algorithm, "verushash" | "randomx")
 }
 
+/// DAG-based algorithms that require a large (~1-4 GB) DAG buffer on GPU.
+/// These are dangerous on Metal (Apple Silicon unified memory) because
+/// allocating a 2GB+ DAG can OOM the system and cause a kernel freeze.
+pub fn is_dag_based_algorithm(algorithm: &str) -> bool {
+    matches!(
+        algorithm,
+        "progpow"
+            | "progpow_epic"
+            | "ethash"
+            | "etchash"
+            | "ethash_etc"
+            | "kawpow"
+            | "kawpow_rvn"
+            | "kawpow_clore"
+            | "kawpow_evr"
+            | "kawpow_mewc"
+            | "kawpow_quai"
+            | "evrprogpow"
+            | "evrprogpow_evr"
+            | "meowpow"
+            | "meowpow_mewc"
+    )
+}
+
+/// Check if a GPU backend can safely handle an algorithm.
+///
+/// Metal (Apple Silicon) has unified memory — allocating a 2GB+ DAG buffer
+/// can cause system freezes. Skip DAG-based algorithms on Metal.
+pub fn backend_supports_algorithm(backend: GpuBackendKind, algorithm: &str) -> bool {
+    match backend {
+        GpuBackendKind::Metal => {
+            // Metal on Apple Silicon: skip DAG-based algorithms to prevent
+            // system freezes from unified memory OOM.
+            if is_dag_based_algorithm(algorithm) {
+                return false;
+            }
+            // Non-DAG algorithms are safe on Metal
+            true
+        }
+        GpuBackendKind::OpenCL | GpuBackendKind::Cuda | GpuBackendKind::Auto => {
+            // OpenCL and CUDA have dedicated VRAM — DAG-based algorithms are safe
+            true
+        }
+        GpuBackendKind::Cpu => {
+            // CPU backend doesn't support any GPU algorithms
+            false
+        }
+    }
+}
+
 /// Try to create the best available GPU backend.
 /// Selects the appropriate OpenCL miner based on the algorithm.
 pub fn create_gpu_backend(
