@@ -1014,15 +1014,6 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Follower node — P2P 8334, RPC 8448. Syncs from Node 1 for redundancy.",
      "child_says": "🔶 Follows Node 1 to keep a backup copy!",
      "depends_on": ["edge-node1"]},
-    {"id": "local-backup", "name": "Local Backup Node", "icon": "🔷", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8333, "rpc": 8446},
-     "host": "127.0.0.1",
-     "log": None, "start": None, "stop": None,
-     "health_method": "rpc", "severity": "warning", "autoheal": False,
-     "health_endpoint": "http://127.0.0.1:8446/health",
-     "purpose": "Local backup node — P2P 8333, RPC 8446. Seeds from both Edge nodes.",
-     "child_says": "🔷 Local backup — keeps a copy safe at home!",
-     "depends_on": ["edge-node1"]},
     {"id": "pool-edge", "name": "ZION Pool (Primary)", "icon": "🌐", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444},
      "host": "127.0.0.1",
@@ -2533,16 +2524,10 @@ def _build_status_edge_primary() -> dict:
         r = rpc_call("127.0.0.1", 8448, "getChainInfo", {}, timeout=2.0)
         return ("edge2", r if r and not r.get("_rpc_error") else None)
 
-    def _local_backup_rpc_call():
-        # Local backup node runs on port 8446 (RPC), P2P syncs from Edge
-        r = rpc_call("127.0.0.1", 8446, "getChainInfo", {}, timeout=2.0)
-        return ("local_backup", r if r and not r.get("_rpc_error") else None)
-
-    def _local_rpc_call():
-        # Also probe getNodeInfo for richer data (node_id, p2p_bind, etc.)
-        r = rpc_call("127.0.0.1", 8446, "getNodeInfo", {}, timeout=2.0)
-        return ("local", r if r and not r.get("_rpc_error") else None)
-
+    # NOTE: In edge-primary topology the dashboard runs on Edge itself. The
+    # "local backup node" (RPC 8446) is not co-located here; it lives on the
+    # operator's local PC. Probing 127.0.0.1:8446 just hits sshd and produces a
+    # false "Local Backup Node not reachable" alert, so we skip it.
     def _edge_node2_nodeinfo_call():
         r = rpc_call("127.0.0.1", 8448, "getNodeInfo", {}, timeout=2.0)
         return ("edge2_info", r if r and not r.get("_rpc_error") else None)
@@ -2555,17 +2540,14 @@ def _build_status_edge_primary() -> dict:
         r = rpc_call("127.0.0.1", 8443, "getNodeInfo", {}, timeout=2.0)
         return ("edge_info", r if r and not r.get("_rpc_error") else None)
 
-    local_backup_info = None
     edge_node2_info = None
     edge_node2_nodeinfo = None
     edge_peers = None
     edge_nodeinfo = None
-    with ThreadPoolExecutor(max_workers=7) as ex:
+    with ThreadPoolExecutor(max_workers=5) as ex:
         futures = {
             ex.submit(_edge_rpc_call),
             ex.submit(_edge_node2_rpc_call),
-            ex.submit(_local_backup_rpc_call),
-            ex.submit(_local_rpc_call),
             ex.submit(_edge_node2_nodeinfo_call),
             ex.submit(_edge_peerinfo_call),
             ex.submit(_edge_nodeinfo_call),
@@ -2584,10 +2566,6 @@ def _build_status_edge_primary() -> dict:
                         edge_peers = val
                     elif key == "edge_info":
                         edge_nodeinfo = val
-                    elif key == "local_backup":
-                        local_backup_info = val
-                    else:
-                        local_rpc_info = val
                 except Exception:
                     pass
         except TimeoutError:
@@ -2625,19 +2603,19 @@ def _build_status_edge_primary() -> dict:
         "host": "127.0.0.1:8448",
     }
     local_backup_status = {
-        "running": bool(local_backup_info),
-        "chain_height": local_backup_info.get("chain_height") if local_backup_info else None,
-        "tip_hash": local_backup_info.get("tip_hash") if local_backup_info else None,
-        "known_peers": (local_rpc_info or {}).get("known_peers", 0) if local_backup_info else 0,
-        "mempool_size": local_backup_info.get("mempool_transactions", 0) if local_backup_info else 0,
-        "network": local_backup_info.get("network") if local_backup_info else None,
-        "protocol_version": local_backup_info.get("protocol_version") if local_backup_info else None,
-        "consensus_profile": local_backup_info.get("consensus_profile") if local_backup_info else None,
-        "accepted_blocks": local_backup_info.get("accepted_blocks") if local_backup_info else None,
-        "node_id": (local_rpc_info or {}).get("node_id") if local_backup_info else None,
-        "p2p_bind": (local_rpc_info or {}).get("p2p_bind") if local_backup_info else None,
-        "rpc_bind": (local_rpc_info or {}).get("rpc_bind") if local_backup_info else None,
-        "host": "127.0.0.1:8446",
+        "running": False,
+        "chain_height": None,
+        "tip_hash": None,
+        "known_peers": 0,
+        "mempool_size": 0,
+        "network": None,
+        "protocol_version": None,
+        "consensus_profile": None,
+        "accepted_blocks": None,
+        "node_id": None,
+        "p2p_bind": None,
+        "rpc_bind": None,
+        "host": "127.0.0.1:8446 (not used on Edge)",
     }
 
     # ── Local Backup Node (n1) — uses local_backup_status ──────────────────
@@ -2811,9 +2789,8 @@ def _build_status_edge_primary() -> dict:
     for _label, _st, _role, _icon in [
         ("Edge Node 1 (Primary)", edge_node1_status, "primary", "🌍"),
         ("Edge Node 2 (Follower)", edge_node2_status, "follower", "🔶"),
-        ("Local Backup", local_backup_status, "backup", "🔷"),
     ]:
-        if _st:
+        if _st and _st.get("running"):
             all_nodes.append({
                 "name": _label,
                 "role": _role,
@@ -3219,32 +3196,8 @@ def build_alerts(status: dict) -> list:
                                "detail": f"Edge1@{edge_node1['chain_height']} vs Edge2@{edge_node2['chain_height']} — gap {gap}",
                                "action": None})
 
-        # Local Backup Node alerts
-        if not local_backup.get("running"):
-            alerts.append({"severity": _sev("node1", "warning"), "title": "Local Backup Node not reachable",
-                           "detail": "Backup node on 127.0.0.1:8446 is not responding. Check systemd: systemctl --user status zion-backup-node",
-                           "action": "restart-node1"})
-        elif local_backup.get("chain_height") == 0:
-            alerts.append({"severity": _sev("node1", "warning"), "title": "Local Backup Node chain stuck at height 0",
-                           "detail": "Backup node is up but no blocks have been synced yet. Check P2P connection to Edge.",
-                           "action": "restart-node1"})
-
-        # Sync gap: Edge primary vs local backup
-        if edge_node1.get("running") and local_backup.get("running") and edge_node1.get("chain_height") and local_backup.get("chain_height"):
-            gap = abs(edge_node1["chain_height"] - local_backup["chain_height"])
-            if gap > 10:
-                alerts.append({"severity": _sev("node1", "warning"), "title": "Backup node far behind Edge",
-                               "detail": f"Edge@{edge_node1['chain_height']} vs Local@{local_backup['chain_height']} — gap {gap}",
-                               "action": "restart-node1"})
-            elif gap <= 2:
-                # Positive alert: synced
-                pass  # No alert needed — all good
-
-        # Local Backup Node P2P peer check
-        if local_backup.get("running") and local_backup.get("known_peers", 0) == 0:
-            alerts.append({"severity": _sev("node1", "warning"), "title": "Backup node has no P2P peers",
-                           "detail": "Local backup node is running but has 0 peers. Check SSH tunnel and Edge P2P (62.171.141.136:8333).",
-                           "action": "restart-node1"})
+        # NOTE: Local backup node is intentionally not monitored on Edge (it lives
+        # on the operator's local PC, not on the Edge server), so no alerts here.
     else:  # local-dev
         # Node 1 (Genesis) alerts
         if not n1["running"]:
