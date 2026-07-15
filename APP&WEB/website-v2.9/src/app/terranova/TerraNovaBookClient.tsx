@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen,
@@ -814,6 +814,7 @@ export default function TerraNovaBookClient() {
   const [twRespText, setTwRespText] = useState('');
   const twRef = useRef({ cmdIdx: 0, charIdx: 0, phase: 'typing' as string, pauseTicks: 0 });
   const contentRef = useRef<HTMLDivElement>(null);
+  const overlayOpen = overlayMode !== null;
 
   const goTo = useCallback(
     (i: number) => {
@@ -930,7 +931,6 @@ export default function TerraNovaBookClient() {
   const sections = cs ? chapter.sectionsCs : chapter.sectionsEn;
   const chapterEpigraph = cs ? chapter.epigraphCs : chapter.epigraphEn;
   const progress = ((activeChapter + 1) / currentChapters.length) * 100;
-  const overlayOpen = overlayMode !== null;
   const chapterLabel =
     chapter.number === 'Prolog'
       ? cs
@@ -1660,7 +1660,7 @@ export default function TerraNovaBookClient() {
                 {cs ? 'Kompoziční mapa' : 'Compositional Map'}
               </p>
               <ol className="space-y-1.5 list-none pl-0">
-                {compositionLines.map((line, i) => (
+                {compositionLines.map((line: string, i: number) => (
                   <li key={i} className="text-sm text-gray-400 flex items-start gap-2">
                     <span className="text-zion-gold/60 font-mono text-xs mt-0.5">{i + 1}.</span>
                     <span>{line}</span>
@@ -1682,7 +1682,7 @@ export default function TerraNovaBookClient() {
             {cs ? 'Obsah' : 'Contents'}
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
-            {currentChapters.map((ch, i) => {
+            {currentChapters.map((ch: typeof currentChapters[number], i: number) => {
               const isActive = activeChapter === i;
               const isAppendix = APPENDIX_NUMBERS.has(ch.number);
               return (
@@ -1879,7 +1879,7 @@ export default function TerraNovaBookClient() {
 
               {/* Chapter body */}
               <div className="relative max-w-3xl space-y-7 md:space-y-8">
-                {sections.map((sec, si) => {
+                {sections.map((sec: typeof sections[number], si: number) => {
                   const isLeadSection = si === 0;
                   const leadCharacter = isLeadSection ? sec.body.charAt(0) : '';
                   const bodyRest = isLeadSection ? sec.body.slice(1) : sec.body;
@@ -2045,7 +2045,7 @@ export default function TerraNovaBookClient() {
               </div>
 
               <nav className="space-y-1">
-                {currentChapters.map((ch, i) => {
+                {currentChapters.map((ch: typeof currentChapters[number], i: number) => {
                   const isActive = activeChapter === i;
                   const isAppendix = APPENDIX_NUMBERS.has(ch.number);
                   return (
