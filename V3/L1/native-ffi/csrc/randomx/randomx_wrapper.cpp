@@ -17,8 +17,8 @@
  *  Memory model:
  *    - Full dataset mode (~2 GB) for maximum hashrate
  *    - Cache is reinitialized when seed_hash changes
- *    - VM is recreated after each cache/dataset update
- *    - Thread-safe via mutex on hash operations
+ *    - Per-thread VMs sharing the same dataset (no mutex contention)
+ *    - Thread-safe via thread_local VM + mutex only for seed updates
  * ============================================================================
  */
 
@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <mutex>
+#include <vector>
 
 #ifdef _WIN32
     #define EXPORT __declspec(dllexport)
@@ -38,18 +39,54 @@
 #include "randomx.h"
 
 /* ---- Global state ---- */
-static randomx_cache*  g_cache   = nullptr;
+static randomx_cache*   g_cache   = nullptr;
 static randomx_dataset* g_dataset = nullptr;
-static randomx_vm*     g_vm      = nullptr;
-static uint8_t         g_current_seed[32] = {0};
-static bool            g_initialized = false;
-static std::mutex      g_mutex;
+static uint8_t          g_current_seed[32] = {0};
+static bool             g_initialized = false;
+static std::mutex       g_init_mutex;  /* protects seed updates */
+
+/* Per-thread VM — each thread gets its own VM sharing the global dataset */
+static thread_local randomx_vm* t_vm = nullptr;
+static thread_local bool        t_vm_initialized = false;
 
 /* ---- Helpers ---- */
 
 static bool seed_matches(const uint8_t* seed, size_t len) {
     if (len != 32) return false;
     return memcmp(g_current_seed, seed, 32) == 0;
+}
+
+/* Determine VM flags based on architecture */
+static randomx_flags get_vm_flags() {
+#if defined(__aarch64__) || defined(_M_ARM64)
+    /* ARM64: interpreted VM only, no JIT, soft AES */
+    return (randomx_flags)(RANDOMX_FLAG_FULL_MEM);
+#else
+    return (randomx_flags)(RANDOMX_FLAG_JIT | RANDOMX_FLAG_HARD_AES | RANDOMX_FLAG_FULL_MEM);
+#endif
+}
+
+/* Create a per-thread VM */
+static randomx_vm* create_thread_vm() {
+    randomx_flags flags = get_vm_flags();
+    randomx_vm* vm = nullptr;
+    if (g_dataset) {
+        vm = randomx_create_vm(flags, g_cache, g_dataset);
+    }
+    if (!vm) {
+        /* Fallback: light mode (cache only) */
+        randomx_flags light_flags =
+#if defined(__aarch64__) || defined(_M_ARM64)
+            RANDOMX_FLAG_DEFAULT;
+#else
+            (randomx_flags)(RANDOMX_FLAG_JIT | RANDOMX_FLAG_HARD_AES);
+#endif
+        vm = randomx_create_vm(light_flags, g_cache, nullptr);
+    }
+    if (!vm) {
+        vm = randomx_create_vm(RANDOMX_FLAG_DEFAULT, g_cache, nullptr);
+    }
+    return vm;
 }
 
 static void update_seed(const uint8_t* seed, size_t len) {
@@ -62,21 +99,21 @@ static void update_seed(const uint8_t* seed, size_t len) {
     if (g_initialized && seed_matches(seed, len)) return;
 
     /* Destroy old state */
-    if (g_vm)      { randomx_destroy_vm(g_vm);       g_vm = nullptr; }
+    /* Note: per-thread VMs are destroyed lazily when threads exit or
+     * when they detect a seed change on next hash call */
     if (g_dataset) { randomx_release_dataset(g_dataset); g_dataset = nullptr; }
-    if (g_cache)   { randomx_release_cache(g_cache); g_cache = nullptr; }
+    if (g_cache)   { randomx_release_cache(g_cache);   g_cache = nullptr; }
 
     /* Allocate + init cache */
-    /* On ARM64 (Apple Silicon): no JIT, no hardware AES, no large pages */
-    #if defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__aarch64__) || defined(_M_ARM64)
     g_cache = randomx_alloc_cache(RANDOMX_FLAG_DEFAULT);
-    #else
+#else
     g_cache = randomx_alloc_cache(RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_JIT |
                                   RANDOMX_FLAG_HARD_AES);
     if (!g_cache) {
         g_cache = randomx_alloc_cache(RANDOMX_FLAG_DEFAULT);
     }
-    #endif
+#endif
     if (!g_cache) {
         fprintf(stderr, "randomx_zion: failed to allocate cache\n");
         return;
@@ -84,51 +121,40 @@ static void update_seed(const uint8_t* seed, size_t len) {
     randomx_init_cache(g_cache, seed, 32);
 
     /* Allocate + init dataset (full mode for max hashrate) */
-    #if defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__aarch64__) || defined(_M_ARM64)
     g_dataset = randomx_alloc_dataset(RANDOMX_FLAG_DEFAULT);
-    #else
+#else
     g_dataset = randomx_alloc_dataset(RANDOMX_FLAG_LARGE_PAGES);
     if (!g_dataset) {
         g_dataset = randomx_alloc_dataset(RANDOMX_FLAG_DEFAULT);
     }
-    #endif
+#endif
     if (g_dataset) {
         randomx_init_dataset(g_dataset, g_cache, 0, randomx_dataset_item_count());
     }
 
-    /* Create VM with dataset (fast mode) or cache (light mode) */
-    #if defined(__aarch64__) || defined(_M_ARM64)
-    /* ARM64: interpreted VM only, no JIT */
-    randomx_flags flags = RANDOMX_FLAG_FULL_MEM;
-    if (g_dataset) {
-        g_vm = randomx_create_vm(flags, g_cache, g_dataset);
-    }
-    if (!g_vm) {
-        g_vm = randomx_create_vm(RANDOMX_FLAG_DEFAULT, g_cache, nullptr);
-    }
-    #else
-    randomx_flags flags = RANDOMX_FLAG_LARGE_PAGES | RANDOMX_FLAG_JIT |
-                          RANDOMX_FLAG_HARD_AES | RANDOMX_FLAG_FULL_MEM;
-    if (g_dataset) {
-        g_vm = randomx_create_vm(flags, g_cache, g_dataset);
-    }
-    if (!g_vm) {
-        randomx_flags light_flags = RANDOMX_FLAG_JIT | RANDOMX_FLAG_HARD_AES;
-        g_vm = randomx_create_vm(light_flags, g_cache, nullptr);
-    }
-    if (!g_vm) {
-        g_vm = randomx_create_vm(RANDOMX_FLAG_DEFAULT, g_cache, nullptr);
-    }
-    #endif
-    if (!g_vm) {
-        fprintf(stderr, "randomx_zion: failed to create VM\n");
-        return;
-    }
-
     memcpy(g_current_seed, seed, 32);
     g_initialized = true;
-    fprintf(stderr, "randomx_zion: cache/dataset/VM initialized (full_mem=%s)\n",
+    fprintf(stderr, "randomx_zion: cache/dataset initialized (full_mem=%s)\n",
             g_dataset ? "yes" : "no (light mode)");
+}
+
+/* Ensure this thread has a VM */
+static randomx_vm* ensure_thread_vm() {
+    if (t_vm && t_vm_initialized) {
+        return t_vm;
+    }
+    /* Destroy old VM if it exists (seed may have changed) */
+    if (t_vm) {
+        randomx_destroy_vm(t_vm);
+        t_vm = nullptr;
+    }
+    t_vm = create_thread_vm();
+    t_vm_initialized = (t_vm != nullptr);
+    if (!t_vm) {
+        fprintf(stderr, "randomx_zion: failed to create VM for thread\n");
+    }
+    return t_vm;
 }
 
 /* ---- Public API ---- */
@@ -136,6 +162,7 @@ static void update_seed(const uint8_t* seed, size_t len) {
 extern "C" {
 
 EXPORT void randomx_zion_init(const uint8_t* seed, size_t seed_len) {
+    std::lock_guard<std::mutex> lock(g_init_mutex);
     /* If no seed provided, use a default zero seed (for benchmarking) */
     if (seed == nullptr || seed_len == 0) {
         uint8_t zero_seed[32] = {0};
@@ -151,25 +178,20 @@ EXPORT void randomx_zion_hash(
     uint64_t       nonce,
     uint8_t*       output)
 {
-    if (!g_initialized || !g_vm) {
+    if (!g_initialized) {
         memset(output, 0, 32);
         return;
     }
 
-    /* RandomX expects the nonce embedded in the hashing blob.
-     * The stratum blob already has the nonce field at a fixed offset.
-     * We write the nonce into the blob at offset 39 (standard Monero blob).
-     * If the blob is shorter, we just hash as-is. */
-    if (header_len >= 43) {
-        /* Make a mutable copy and inject nonce at offset 39 (LE 32-bit) */
-        /* Actually, for stratum mining, the nonce is already in the blob
-         * OR the miner is responsible for writing it. The parallel.rs
-         * scan loop writes nonce into the header before calling hash().
-         * So we just pass the blob through to randomx_calculate_hash. */
+    /* Ensure this thread has a VM (lock-free after first call) */
+    randomx_vm* vm = ensure_thread_vm();
+    if (!vm) {
+        memset(output, 0, 32);
+        return;
     }
 
-    std::lock_guard<std::mutex> lock(g_mutex);
-    randomx_calculate_hash(g_vm, header, header_len, output);
+    /* No mutex needed — each thread has its own VM sharing the read-only dataset */
+    randomx_calculate_hash(vm, header, header_len, output);
 }
 
 EXPORT int32_t randomx_zion_verify(
@@ -192,7 +214,7 @@ EXPORT int32_t randomx_zion_verify(
 EXPORT double randomx_zion_benchmark(int32_t iterations) {
     if (!g_initialized) {
         uint8_t zero_seed[32] = {0};
-        update_seed(zero_seed, 32);
+        randomx_zion_init(zero_seed, 32);
     }
 
     uint8_t header[76] = {0};
