@@ -337,11 +337,19 @@ pub fn is_external_algorithm(algorithm: &str) -> bool {
             | "kawpow_clore"
             | "kawpow_evr"
             | "kawpow_mewc"
+            | "evrprogpow"
+            | "evrprogpow_evr"
+            | "meowpow"
+            | "meowpow_mewc"
             | "ethash"
             | "etchash"
             | "ethash_etc"
+            | "zelhash"
+            | "zelhash_flux"
             | "progpow"
             | "progpow_epic"
+            | "beamhash"
+            | "beamhash_beam"
             | "verushash"
             | "randomx"
     )
@@ -3603,6 +3611,7 @@ pub mod opencl_external {
             if matches!(
                 self.algorithm.as_str(),
                 "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+                    | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
                     | "progpow" | "progpow_epic"
             ) {
                 self.miner.set_block_height(height);
@@ -3613,6 +3622,7 @@ pub mod opencl_external {
             } else if matches!(
                 self.algorithm.as_str(),
                 "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+                    | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
             ) {
                 Some((height / 7500) as u32)
             } else if matches!(self.algorithm.as_str(), "progpow" | "progpow_epic") {
@@ -3647,6 +3657,12 @@ pub mod opencl_external {
                 | "kawpow_clore"
                 | "kawpow_evr"
                 | "kawpow_mewc"
+                | "evrprogpow"
+                | "evrprogpow_evr"
+                | "meowpow"
+                | "meowpow_mewc"
+                | "zelhash"
+                | "zelhash_flux"
                 | "progpow"
                 | "progpow_epic" => self.miner.mine(
                     &self.algorithm,
@@ -3656,6 +3672,9 @@ pub mod opencl_external {
                     nonce_start,
                     actual_batch,
                 ),
+                "beamhash" | "beamhash_beam" => {
+                    anyhow::bail!("BeamHash III GPU kernel not implemented (algorithm: {})", self.algorithm);
+                }
                 "kheavyhash" | "kheavyhash_kas" => {
                     // KAS external jobs send a 32-byte pre_pow_hash in header_hex.
                     // The pool pads it to 80 bytes (MiningHeader); the pre_pow_hash
@@ -3717,15 +3736,21 @@ pub mod opencl_external {
                     )
                 })?;
 
+            // The AuXpow GpuMiner internally caps the global work size at
+            // its own work_size (detect_work_size), which may be smaller than
+            // actual_batch.  Report the real number of nonces tested so the
+            // caller advances nonce_offset correctly (no skipped nonces).
+            let real_nonces = actual_batch.min(self.miner.internal_work_size() as u64);
+
             if let Some(GpuFoundShare { nonce, hash, mix_hash, .. }) = found {
                 Ok(GpuBatchResult {
                     solutions: vec![(nonce, hash, mix_hash)],
-                    nonces_tested: actual_batch,
+                    nonces_tested: real_nonces,
                 })
             } else {
                 Ok(GpuBatchResult {
                     solutions: Vec::new(),
-                    nonces_tested: actual_batch,
+                    nonces_tested: real_nonces,
                 })
             }
         }
