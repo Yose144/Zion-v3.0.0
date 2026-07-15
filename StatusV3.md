@@ -195,9 +195,9 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | EVR | autolykos | EthStratum | protocol ✅ (R6), live E2E TODO |
 | MEWC | kawpow | EthStratum | protocol ✅ (R6), live E2E TODO |
 | CLORE | kawpow | EthStratum | protocol ✅ (R6), live E2E TODO |
-| XMR | randomx | Stratum | connect/auth/notify ✅, submit ⚠️ (needs RandomX rig miner) |
+| XMR | randomx | Stratum | connect/auth/notify ✅, submit ⚠️ (needs RandomX rig miner — next phase, see `VerusHashReport.md` §7.2) |
 | FLUX | zelhash | Stratum | TODO |
-| VRSC | verushash v2.2 | ZcashStratum | ✅ LIVE (LuckPool eu.luckpool.net:3956, pool mining VRSC) |
+| VRSC | verushash v2.2 | ZcashStratum | ⚠️ Native VerusHash ✅ (1.69 MH/s M1), target fix ✅, but LuckPool rejects shares (`low difficulty share` — header hash mismatch). Pool server rebuild needed. See `VerusHashReport.md` |
 | EPIC | progpow | Stratum (custom HTTP) | ✅ LIVE (GPU ProgPow kernel, epoch 120 DAG, triple parallel with ZION+VRSC) |
 | QUAI | kawpow | Stratum | ✅ Added (KawPoW GPU thread, 2miners pool, BTC payout, `ZION_POOL_AUXPOW_WALLET_QUAI` env var) |
 | BEAM | beamhash III (Equihash 144,5 + SipHash-2-4) | BeamStratum (TLS) | ✅ Implemented (CPU hasher `beamhash.rs` 13 tests + OpenCL kernel `beamhash_kernel.cl` + GPU dispatch wired, 2miners pool, BTC payout) |
