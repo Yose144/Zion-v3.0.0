@@ -12,6 +12,7 @@ import {
   Globe,
   Shield,
   TrendingUp,
+  AlertTriangle,
 } from 'lucide-react';
 import CrossChainSwapWidget from './CrossChainSwapWidget';
 import RecentSwaps from './RecentSwaps';
@@ -72,6 +73,21 @@ export default function ZionDexDashboard() {
               </div>
             </div>
           </motion.div>
+        </div>
+      </div>
+
+      {/* Under Construction / Early Beta Banner */}
+      <div className="border-b border-zinc-800/50 bg-amber-500/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+          <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+            <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-200">ZionDex — Under Construction / Early Beta</p>
+              <p className="text-xs text-amber-200/70 mt-1">
+                The ZionDex AMM and cross-chain router service are still being deployed. Current quotes may route through external liquidity. Use small amounts and expect changes.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

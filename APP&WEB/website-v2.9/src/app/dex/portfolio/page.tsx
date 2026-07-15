@@ -6,7 +6,7 @@
 
 import { useState, useEffect, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, Droplets, Activity, Loader2 } from 'lucide-react';
+import { Wallet, TrendingUp, Droplets, Activity, Loader2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
 const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://zionterranova.com/dex-api';
@@ -78,6 +78,21 @@ export default function PortfolioPage() {
             </div>
             <p className="text-zinc-400 text-sm">Your swap history and liquidity positions</p>
           </motion.div>
+        </div>
+      </div>
+
+      {/* Under Construction Notice */}
+      <div className="max-w-6xl mx-auto px-6 pt-6">
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-200">ZionDex Portfolio — Early Beta</p>
+              <p className="text-xs text-amber-200/70 mt-1">
+                Swap history is fetched from the ZionDex Router API. LP positions are not yet available because the ZionDex PoolManager is not deployed. Connect a wallet in the future to see on-chain positions.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

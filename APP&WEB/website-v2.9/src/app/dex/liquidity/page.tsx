@@ -7,7 +7,7 @@
 
 import { useState, useEffect, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
-import { Droplets, Plus, Minus, ExternalLink, Loader2 } from 'lucide-react';
+import { Droplets, Plus, Minus, ExternalLink, Loader2, AlertTriangle } from 'lucide-react';
 import ChainSelector from '@/components/dex/ChainSelector';
 import TokenSelector from '@/components/dex/TokenSelector';
 import Link from 'next/link';
@@ -71,7 +71,7 @@ export default function LiquidityPage() {
       // In production: call ZionDexRouter.addLiquidity() via ethers
       // For now: simulate
       await new Promise(r => setTimeout(r, 1500));
-      setResult(`Liquidity added: ${amountA} ${tokenA} + ${amountB} ${tokenB} on ${chain}`);
+      setResult(`[Simulation] Liquidity added: ${amountA} ${tokenA} + ${amountB} ${tokenB} on ${chain}. No real transaction was submitted — ZionDex AMM is not deployed yet.`);
     } catch (e: any) {
       setResult(`Error: ${e.message}`);
     } finally {
@@ -91,6 +91,21 @@ export default function LiquidityPage() {
             </div>
             <p className="text-zinc-400 text-sm">Provide liquidity to ZionDex AMM pools and earn ZDX rewards</p>
           </motion.div>
+        </div>
+      </div>
+
+      {/* Under Construction Notice */}
+      <div className="max-w-6xl mx-auto px-6 pt-6">
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-200">ZionDex Liquidity — Under Construction</p>
+              <p className="text-xs text-amber-200/70 mt-1">
+                Native ZionDex AMM pools are not deployed yet (addresses shown as 0x0). Adding liquidity here is currently simulated and will not create a real on-chain position. Use Uniswap V3 pools via /defi for real liquidity.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
