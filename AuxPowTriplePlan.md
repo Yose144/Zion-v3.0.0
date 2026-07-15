@@ -20,7 +20,7 @@ The multi-stream architecture is **functionally complete and canonical**. The co
 | 1 | Pool-Side Pearl | ✅ DONE (pool) / ⏸️ DISABLED (miner) | PearlSubmit msg, forward_pearl(), pearl_rx channel, PRL in profit rotation | Miner-side `pearl_gpu_thread()` not implemented; PRL jobs ignored in miner (`pearl_disabled`). Pool infra ready, awaiting miner implementation + debugging. |
 | 2 | Miner Pearl GPU Thread | ⏸️ DISABLED | Not implemented in v3.0.6 canonical. PRL jobs are explicitly ignored in `main.rs` routing (`reason=pearl_disabled`). Pearl PoUW GPU kernel + `pearl_gpu_thread()` + `submit_pearl_proof()` deferred — not yet debugged. | `pearl_gpu_thread()`, pearl_tx/pearl_proof_rx channels, submit_pearl_proof(), Pearl GPU kernel (`pearl_pouw_native.cl`) |
 | 3 | TriGpuManager | ✅ DONE | Simplified to a **primary-only** manager; the main Deeksha loop uses `tri_gpu.primary()`, external/Pearl threads create their own OpenCL contexts | — |
-| 4 | Clean Thread Arch | ✅ DONE | `blake3/progpow/kawpow/autolykos` GPU threads collapsed into one generic `external_gpu_thread()`; `ext_cpu_thread` persistent; `ensure_algorithm` spam removed | — |
+| 4 | Clean Thread Arch | ✅ DONE | `blake3/progpow/kawpow/autolykos` GPU threads collapsed into one generic `external_gpu_thread()`; `ext_cpu_thread` persistent; `ensure_algorithm` spam removed; `evrprogpow`/`meowpow`/`zelhash`/`beamhash` wired | Proper EVR/MEWC ProgPow parameters (currently KawPow fallback); BeamHash III GPU kernel |
 | 5 | Per-Stream Metrics | ✅ DONE | `draw_dashboard()` shows per-stream **hashrate + shares** for ZION / GPU-EXT / CPU-EXT; `HashrateTracker` records per-stream hashes (`zion_hashes`, `gpu_ext_hashes`, `cpu_ext_hashes`) | — |
 | 6 | Dashboard Integration | ✅ DONE | Triple Stream Mining panel in `dashboard.html`/`dashboard.js` wired to `/api/pool/miners-dashboard` routing sources; `app.py` `SUPPORTED_COINS` aligned with `ExternalCoin` enum | — |
 | 7 | Pool Routing Stats | ✅ DONE | `RoutingStats.snapshot_json()` / `snapshot_json_ext()` and `/stats` payload now include **all 18 revenue sources** defined in `ALL_REVENUE_SOURCES` | — |
@@ -117,7 +117,7 @@ This means:
 
 ## 2. Phase 4 — Clean Thread Architecture
 
-> **Implementation Note:** This phase is complete. The four near-identical GPU thread functions (`blake3_gpu_thread`, `progpow_gpu_thread`, `kawpow_gpu_thread`, `autolykos_gpu_thread`) were collapsed into a single generic `external_gpu_thread(name, backend_algo, epoch_divisor)` spawned four times. `mine_external_stream_cpu()` became a persistent `ext_cpu_thread()`. `ensure_algorithm()` spam was removed.
+> **Implementation Note:** This phase is complete. The four near-identical GPU thread functions (`blake3_gpu_thread`, `progpow_gpu_thread`, `kawpow_gpu_thread`, `autolykos_gpu_thread`) were collapsed into a single generic `external_gpu_thread()` that switches backends on the fly. `mine_external_stream_cpu()` became a persistent `ext_cpu_thread()`. `ensure_algorithm()` spam was removed. Added `evrprogpow`/`meowpow`/`zelhash`/`beamhash` to the `external_gpu_thread` dispatch; `evrprogpow`/`meowpow` currently fall back to the KawPow kernel, `zelhash` uses the existing ZelHash kernel, and `beamhash` is wired but returns a clear "kernel not implemented" error.
 
 ### Problem
 
@@ -125,7 +125,8 @@ This means:
 
 ### Current State
 
-- GPU external coins (Blake3/DCR/ALPH, ProgPow/EPIC, KawPow/RVN/CLORE/EVR/MEWC/QUAI, Autolykos/ERG, and also Kaspa/kheavyhash) are all handled by one generic `external_gpu_thread()` that switches backends on the fly.
+- GPU external coins (Blake3/DCR/ALPH, ProgPow/EPIC, KawPow/RVN/CLORE/EVR/MEWC/QUAI, Autolykos/ERG, ZelHash/FLUX, kHeavyHash/KAS, and also EvrProgPow/EVR and MeowPow/MEWC wired to KawPow fallback) are handled by one generic `external_gpu_thread()` that switches backends on the fly.
+- BeamHash/BEAM is wired to `external_gpu_thread()` but the GPU kernel is not yet implemented.
 - `mine_external_stream_cpu()` is wrapped in a persistent `ext_cpu_thread()` for VerusHash/RandomX/etc.
 - `ensure_algorithm()` has been removed from the main Deeksha loop; `TriGpuManager` keeps the primary Deeksha backend for the whole session.
 
@@ -318,6 +319,8 @@ Step 8: Phase 7 — Full build + deploy + verify
 | TriGpuManager OpenCL context conflict with thread-created backends | Medium | Each thread creates its own OpenCL context — already proven by external_gpu_thread |
 | VRAM exhaustion (multiple backends on single GPU) | Medium | External GPU thread is lazy-created; only 2 max at once (primary + one external). Pearl disabled — no 3rd backend. |
 | external_gpu_thread DAG load fails | Low | Already has error handling + retry loop in `external_gpu_thread()` |
+| EVR/MEWC fallback to KawPow kernel | Medium | Produces wrong hashes until EvrProgPow/MeowPow parameters are added to `progpow_codegen.rs`; shares rejected by upstream pool |
+| BeamHash III kernel missing | Medium | Wired but returns `GPU kernel not implemented` error; no real mining until `beamhash_kernel.cl` is added |
 | Per-stream hashrate tracking overhead | Low | AtomicU64 increments — negligible |
 | Dashboard template complexity | Low | Keep it simple — 3-line addition to existing layout |
 

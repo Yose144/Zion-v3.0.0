@@ -168,7 +168,12 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
             Some(("kheavyhash_kernel.cl", "kheavyhash_mine"))
         }
         "autolykos" | "autolykos_erg" => Some(("autolykos_kernel.cl", "autolykos_mine")),
-        "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
+        "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+        | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
+            // NOTE: EVR (EvrProgPow) and MEWC (MeowPow) have their own ProgPow
+            // parameters (different period/epoch length). They are currently
+            // wired to the KawPow kernel as a fallback — proper per-coin
+            // parameters should be added to progpow_codegen.rs for full correctness.
             Some(("kawpow_kernel.cl", "progpow_search"))
         }
         "ethash" | "etchash" | "ethash_etc" => Some(("ethash_kernel.cl", "ethash_mine")),
@@ -234,6 +239,13 @@ impl GpuMiner {
         })
     }
 
+    /// Returns the internal GPU work_size (max work-items per kernel enqueue).
+    /// This is the actual cap on nonces processed per batch, which may be
+    /// smaller than the V3 work_size passed to `mine_batch_raw`.
+    pub fn internal_work_size(&self) -> usize {
+        self.work_size
+    }
+
     /// Mine a batch of nonces for the requested algorithm.
     ///
     /// Scans `batch_size` nonces starting from `base_nonce`.  Returns the
@@ -265,7 +277,7 @@ impl GpuMiner {
         };
         let kawpow_dag = if matches!(
             algorithm,
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
         ) {
             self.kawpow_dag.clone()
         } else {
@@ -281,7 +293,7 @@ impl GpuMiner {
         // For all other algorithms, use the standard cached ProQue.
         let is_progpow = matches!(
             algorithm,
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
                 | "progpow" | "progpow_epic"
         );
 
@@ -306,7 +318,7 @@ impl GpuMiner {
             // 16x too large → massive out-of-bounds GPU read → GPU hang!
             let dag_entries = if matches!(
                 algorithm,
-                "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+                "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
             ) {
                 kawpow_dag.as_ref().map(|d| d.size_entries).unwrap_or(0)
             } else {
@@ -422,7 +434,7 @@ impl GpuMiner {
                     &found_flag_buf,
                 )?
             }
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
                 // KawPow requires the per-epoch DAG to be uploaded first.
                 let dag = kawpow_dag.ok_or_else(|| {
                     anyhow!(
@@ -499,7 +511,7 @@ impl GpuMiner {
         // KawPow/ProgPow: 1 nonce per work-item (ProgPow uses 16 lanes per hash).
         let batch_factor = match algorithm {
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 4,
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
             | "progpow" | "progpow_epic" => 1,
             _ => 8, // blake3, kheavyhash, zelhash
         };
@@ -507,7 +519,7 @@ impl GpuMiner {
         // options. ProgPow/KawPow use GROUP_SIZE=128 (see ensure_proque_progpow).
         // Mismatch causes out-of-bounds local memory access → GPU hang.
         let wg_size = match algorithm {
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
             | "progpow" | "progpow_epic" => 128, // GROUP_SIZE=128 for ProgPow/KawPow
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 128,
             _ => 256,
@@ -545,7 +557,7 @@ impl GpuMiner {
 
         // Read mix hash for Ethash/KawPow/ProgPow (needed for share submission).
         let mix_hash = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc"
-            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
             | "progpow" | "progpow_epic")
         {
             let mut mix = vec![0u8; 32];
@@ -1835,7 +1847,7 @@ impl DagManager {
     ) -> Result<()> {
         match algorithm {
             "ethash" | "etchash" | "ethash_etc" => self.ensure_ethash_dag(miner, epoch),
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
                 self.ensure_kawpow_dag(miner, epoch)
             }
             "progpow" | "progpow_epic" => {

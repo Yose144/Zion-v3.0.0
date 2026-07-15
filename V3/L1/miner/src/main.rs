@@ -1586,14 +1586,11 @@ fn run_remote_session(
         // start, receives jobs via channel, runs continuously.
         // ── Pearl stream already spawned at session start ──
 
-        // Send external stream job to the appropriate persistent thread:
-        // - PRL (pearlhash) → Stream 2: Pearl PoUW GPU thread (pool-routed)
-        // - Blake3 (DCR/ALPH) → Stream 3a: Blake3 GPU thread
-        // - EPIC (progpow) → Stream 3b: ProgPow GPU thread
-        // Route the single GPU external profit coin to the generic GPU thread.
+        // Send external stream job to the appropriate persistent thread.
+        // GPU-capable external algorithms go to the generic external GPU thread.
         // CPU-only algorithms (VerusHash, RandomX) go to the persistent CPU thread.
-        // Pearl (PRL) jobs are ignored because v3.0.6 canonical 3-stream mode is
-        // ZION + GPU external + Verus/RandomX CPU.
+        // Pearl (PRL) jobs are ignored in v3.0.6 canonical mode because the Pearl
+        // GPU thread is not yet debugged.
         if let Some(ref ext) = external_stream {
             if ext.coin.eq_ignore_ascii_case("PRL") || ext.algorithm.eq_ignore_ascii_case("pearlhash") {
                 if VERBOSE.load(Ordering::Relaxed) {
@@ -2337,8 +2334,13 @@ fn external_gpu_thread(
             | "kawpow_clore"
             | "kawpow_evr"
             | "kawpow_mewc"
-            | "kawpow_quai" => Some((height / 7500) as u32),
+            | "kawpow_quai"
+            | "evrprogpow"
+            | "evrprogpow_evr"
+            | "meowpow"
+            | "meowpow_mewc" => Some((height / 7500) as u32),
             "autolykos" | "autolykos_erg" => Some((height / 45000) as u32),
+            "zelhash" | "zelhash_flux" | "beamhash" | "beamhash_beam" => None,
             _ => None,
         }
     }
@@ -2347,12 +2349,21 @@ fn external_gpu_thread(
         // Check for new job (non-blocking)
         match rx.try_recv() {
             Ok(job) => {
-                // Random nonce base to avoid duplicates
-                let mut h = DefaultHasher::new();
-                job.job_id.hash(&mut h);
-                std::process::id().hash(&mut h);
-                nonce_base = (h.finish() as u32) as u64;
-                nonce_offset = 0;
+                // Only reset nonce_offset when the job actually changes
+                // (different job_id or height). The pool re-sends the same
+                // job every ~1s; resetting nonce_offset each time would cause
+                // the GPU to re-scan the same nonces endlessly.
+                let is_new_job = current_job.as_ref().map_or(true, |j| {
+                    j.job_id != job.job_id || j.height != job.height
+                });
+                if is_new_job {
+                    // Random nonce base to avoid duplicates
+                    let mut h = DefaultHasher::new();
+                    job.job_id.hash(&mut h);
+                    std::process::id().hash(&mut h);
+                    nonce_base = (h.finish() as u32) as u64;
+                    nonce_offset = 0;
+                }
                 // Note: do NOT reset last_epoch here — the pool re-sends the
                 // same job every ~1s, and resetting would cause DAG reload
                 // every second. last_epoch is reset only when the algorithm
@@ -2503,8 +2514,10 @@ fn external_gpu_thread(
             gpu_miner.mine_batch(header, target, nonce, batch_size)
         };
 
+        let actual_batch: u64;
         match result {
             Ok(br) => {
+                actual_batch = br.nonces_tested;
                 if let Some((found_nonce, hash, mix_hash)) = br.solutions.first() {
                     let share = ExternalShareResult {
                         coin: job.coin.clone(),
@@ -2527,16 +2540,15 @@ fn external_gpu_thread(
                 }
             }
             Err(e) => {
+                actual_batch = batch_size.min(work_size as u64);
                 println!("ext_gpu_batch_error algo={algo} nonce={nonce} err=\"{e}\"");
                 thread::sleep(Duration::from_millis(500));
             }
         }
 
-        // Advance nonce for next batch.
-        // Use the actual number of nonces scanned (capped by work_size in the
-        // GPU kernel), not the requested batch_size — otherwise we skip
-        // nonces between work_size and batch_size, missing potential shares.
-        let actual_batch = batch_size.min(work_size as u64);
+        // Advance nonce for next batch using the actual nonces tested
+        // as reported by the GPU backend. This accounts for the internal
+        // work_size cap in the AuXpow GpuMiner, preventing skipped nonces.
         nonce_offset = nonce_offset.wrapping_add(actual_batch);
         batch_count += 1;
         hashrate.record_gpu_ext_hashes(actual_batch);

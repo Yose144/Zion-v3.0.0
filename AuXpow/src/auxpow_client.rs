@@ -629,7 +629,8 @@ impl AuxPowClient {
                             let target_bytes = crate::external_hashers::parse_target_hex(
                                 target_hex.trim_start_matches("0x"),
                             ).unwrap_or([0xFFu8; 32]);
-                            let diff = target_to_difficulty(&target_bytes);
+                            let max_target = algorithm_max_target(&self.profile.algorithm);
+                            let diff = target_to_difficulty_with_max(&target_bytes, &max_target);
                             println!(
                                 "auxpow: {} set_target={} difficulty={:.2} parsed_bytes={}",
                                 self.profile.coin, target_hex, diff, hex::encode(target_bytes)
@@ -1496,16 +1497,16 @@ impl AuxPowClient {
                     }
                 }
                 "mining.set_target" => {
-                    // RVN/KawPow pools send mining.set_target with a 32-byte
-                    // hex target string instead of mining.set_difficulty.
+                    // RVN/KawPow and VRSC/LuckPool pools send mining.set_target
+                    // with a 32-byte hex target string instead of mining.set_difficulty.
                     if let Some(params) = msg.get("params") {
                         if let Some(target_hex) = params.get(0).and_then(|d| d.as_str()) {
                             println!("auxpow: RAW set_target full='{}' len={}", target_hex, target_hex.len());
                             let target_bytes = crate::external_hashers::parse_target_hex(
                                 target_hex.trim_start_matches("0x"),
                             ).unwrap_or([0xFFu8; 32]);
-                            // Convert target to difficulty: diff = 2^256 / target
-                            let diff = target_to_difficulty(&target_bytes);
+                            let max_target = algorithm_max_target(&self.profile.algorithm);
+                            let diff = target_to_difficulty_with_max(&target_bytes, &max_target);
                             println!(
                                 "auxpow: {} set_target parsed={} difficulty={:.2}",
                                 self.profile.coin,
@@ -3158,6 +3159,7 @@ impl AuxPowClient {
     /// Compute the share target implied by the current difficulty.
     ///
     /// Uses the coin-specific max target:
+    ///   - VerusHash (VRSC) `0x0007ffff...` (~1/8192 of full max)
     ///   - 224-bit for KAS and DCR (`0x00 x4 || 0xFF x28`)
     ///   - 226-bit for ALPH (`0x00 x3 || 0x03 || 0xFF x28`)
     ///   - 256-bit for everything else.
@@ -3165,9 +3167,13 @@ impl AuxPowClient {
     /// the easiest possible target.
     pub async fn share_target(&self) -> [u8; 32] {
         let difficulty = self.current_difficulty().await;
-        // The Kaspa stratum bridge (rusty-kaspa/bridge) uses a 224-bit max target
-        // (2^224 - 1) for converting Stratum difficulty to share target.
-        let max_target = if self.profile.algorithm.eq_ignore_ascii_case("kheavyhash") {
+        // VerusHash/VerusPoW uses a coin-specific "difficulty 1" target that is
+        // ~1/8192 of the full 2^256 - 1 maximum.  LuckPool's `mining.set_target`
+        // and the `shareDiff` math in node-stratum-pool-verus are computed
+        // against this base, so we must use it when deriving the share target.
+        let max_target = if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
+            VERUS_HASH_DIFF1
+        } else if self.profile.algorithm.eq_ignore_ascii_case("kheavyhash") {
             // 2^224 - 1 as a 32-byte big-endian number: 4 leading zero bytes
             // followed by 28 0xFF bytes.  This matches the Kaspa stratum bridge.
             let mut t = [0u8; 32];
@@ -3550,22 +3556,45 @@ pub fn target_bytes_to_decimal_string(target: &[u8; 32]) -> String {
     target_big.to_str_radix(10)
 }
 
-/// Convert a 32-byte big-endian target to a difficulty value.
-/// difficulty = 2^256 / (target + 1), approximated as 2^256 / target.
+/// VerusHash/VerusPoW uses a coin-specific "difficulty 1" target:
+/// `0x0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff`.
+/// LuckPool's `mining.set_target` and share difficulty math are computed
+/// against this base, not the full 2^256 - 1 maximum used by most coins.
+pub const VERUS_HASH_DIFF1: [u8; 32] = [
+    0x00, 0x07, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+];
+
+/// Return the base target used for difficulty↔target conversions for an
+/// algorithm.  VerusHash uses [`VERUS_HASH_DIFF1`]; everything else uses the
+/// full 256-bit maximum.
+pub fn algorithm_max_target(algorithm: &str) -> [u8; 32] {
+    if algorithm.eq_ignore_ascii_case("verushash") {
+        VERUS_HASH_DIFF1
+    } else {
+        [0xFFu8; 32]
+    }
+}
+
+/// Convert a 32-byte big-endian target to a difficulty value using the
+/// full 2^256 - 1 maximum as the base difficulty 1.
 pub fn target_to_difficulty(target: &[u8; 32]) -> f64 {
+    target_to_difficulty_with_max(target, &[0xFFu8; 32])
+}
+
+/// Convert a 32-byte big-endian target to a difficulty value against a
+/// supplied base target.  For VerusHash the base is [`VERUS_HASH_DIFF1`].
+pub fn target_to_difficulty_with_max(target: &[u8; 32], max_target: &[u8; 32]) -> f64 {
     use num_bigint::BigUint;
     let target_big: BigUint = BigUint::from_bytes_be(target);
     if target_big == BigUint::from(0u32) {
         return f64::INFINITY;
     }
-    // 2^256 as BigUint
-    let two_256: BigUint = BigUint::from(1u32) << 256;
-    // diff = 2^256 / target
-    let diff_big: BigUint = two_256 / target_big;
-    // Convert to f64 (may lose precision for very large values, but that's OK
-    // for difficulty display purposes)
+    let max_big: BigUint = BigUint::from_bytes_be(max_target);
+    let diff_big: BigUint = &max_big / target_big;
     let bytes = diff_big.to_bytes_be();
-    // Convert big-endian bytes to f64
     let mut result: f64 = 0.0;
     for &b in &bytes {
         result = result * 256.0 + b as f64;
@@ -4805,6 +4834,22 @@ mod tests {
         // At difficulty 2 the high byte should halve to 0x01.
         let target2 = difficulty_to_target_with_max(2.0, &max);
         assert_eq!(target2[3], 0x01);
+    }
+
+    #[test]
+    fn verus_hash_diff1_round_trip() {
+        // VerusHash uses a coin-specific difficulty-1 target. Difficulty 1
+        // should map to the base target, and converting that base target back
+        // should return difficulty 1.
+        let target1 = difficulty_to_target_with_max(1.0, &VERUS_HASH_DIFF1);
+        assert_eq!(target1, VERUS_HASH_DIFF1);
+
+        let diff1 = target_to_difficulty_with_max(&VERUS_HASH_DIFF1, &VERUS_HASH_DIFF1);
+        assert!((diff1 - 1.0).abs() < 1e-6);
+
+        // At difficulty 2 the high byte should halve to 0x03.
+        let target2 = difficulty_to_target_with_max(2.0, &VERUS_HASH_DIFF1);
+        assert_eq!(target2[1], 0x03);
     }
 
     // ── Pearl (PRL) PearlStratum tests ──────────────────────────────
