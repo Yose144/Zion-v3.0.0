@@ -2,6 +2,8 @@
   "network": "base",
   "chainId": 8453,
   "wzion": "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
+  "bridge": "0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467",
+  "bridgeValidator": "0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627",
   "governance": "0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8",
   "treasury": "0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD",
   "staking": "0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B",

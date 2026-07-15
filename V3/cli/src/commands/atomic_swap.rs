@@ -7,7 +7,7 @@ use crate::rpc::agent_rpc;
 use crate::ui;
 
 fn swap_url(cfg: &Config) -> String {
-    format!("http://{}:{}", cfg.node.rpc_host, cfg.atomic_swap.port)
+    format!("http://{}:{}", cfg.atomic_swap_host(), cfg.atomic_swap.port)
 }
 
 #[derive(Subcommand)]

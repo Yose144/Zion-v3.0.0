@@ -167,7 +167,7 @@ export default function ProRecentBlocks() {
                     </td>
                     <td className="px-3 py-3 text-right">
                       <span className={`text-xs font-medium tabular-nums ${block.num_txes > 0 ? "text-emerald-400" : "text-gray-500"}`}>
-                        {block.num_txes > 0 ? `${block.num_txes + 1}` : "1"}
+                        {block.num_txes}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-right hidden sm:table-cell">

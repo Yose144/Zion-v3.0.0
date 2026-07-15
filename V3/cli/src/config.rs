@@ -114,21 +114,33 @@ pub struct DeployConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BridgeConfig {
+    /// Optional host override; defaults to `node.rpc_host` if unset.
+    #[serde(default)]
+    pub host: Option<String>,
     pub port: u16,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DaoConfig {
+    /// Optional host override; defaults to `node.rpc_host` if unset.
+    #[serde(default)]
+    pub host: Option<String>,
     pub port: u16,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SwapConfig {
+    /// Optional host override; defaults to `node.rpc_host` if unset.
+    #[serde(default)]
+    pub host: Option<String>,
     pub port: u16,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AtomicSwapConfig {
+    /// Optional host override; defaults to `node.rpc_host` if unset.
+    #[serde(default)]
+    pub host: Option<String>,
     pub port: u16,
 }
 
@@ -256,25 +268,37 @@ impl Default for DeployConfig {
 
 impl Default for BridgeConfig {
     fn default() -> Self {
-        Self { port: 8888 }
+        Self {
+            host: None,
+            port: 8888,
+        }
     }
 }
 
 impl Default for DaoConfig {
     fn default() -> Self {
-        Self { port: 8450 }
+        Self {
+            host: None,
+            port: 8450,
+        }
     }
 }
 
 impl Default for SwapConfig {
     fn default() -> Self {
-        Self { port: 8889 }
+        Self {
+            host: None,
+            port: 8889,
+        }
     }
 }
 
 impl Default for AtomicSwapConfig {
     fn default() -> Self {
-        Self { port: 8452 }
+        Self {
+            host: None,
+            port: 8452,
+        }
     }
 }
 
@@ -353,6 +377,23 @@ impl Config {
             }
         }
     }
+
+    /// L2 service hosts default to `node.rpc_host` when not explicitly set.
+    pub fn bridge_host(&self) -> &str {
+        self.bridge.host.as_deref().unwrap_or(&self.node.rpc_host)
+    }
+
+    pub fn dao_host(&self) -> &str {
+        self.dao.host.as_deref().unwrap_or(&self.node.rpc_host)
+    }
+
+    pub fn swap_host(&self) -> &str {
+        self.swap.host.as_deref().unwrap_or(&self.node.rpc_host)
+    }
+
+    pub fn atomic_swap_host(&self) -> &str {
+        self.atomic_swap.host.as_deref().unwrap_or(&self.node.rpc_host)
+    }
 }
 
 pub fn config_path() -> Result<PathBuf> {
@@ -406,53 +447,36 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["miner", "algorithm"] => cfg.miner.algorithm = value.into(),
         ["agent", "url"] => cfg.agent.url = value.into(),
         ["agent", "model"] => cfg.agent.model = value.into(),
-        ["hiran", "model_path"] => {
-            if cfg.hiran.is_none() {
-                cfg.hiran = Some(HiranConfig::default());
+        ["hiran", "model_path"]
+        | ["hiran", "backend"]
+        | ["hiran", "device"]
+        | ["hiran", "port"]
+        | ["hiran", "max_context"]
+        | ["hiran", "temperature"]
+        | ["hiran", "top_p"] => {
+            let hiran = cfg.hiran.get_or_insert_with(HiranConfig::default);
+            match key {
+                ["hiran", "model_path"] => hiran.model_path = value.into(),
+                ["hiran", "backend"] => hiran.backend = value.into(),
+                ["hiran", "device"] => hiran.device = value.into(),
+                ["hiran", "port"] => hiran.port = value.parse()?,
+                ["hiran", "max_context"] => hiran.max_context = value.parse()?,
+                ["hiran", "temperature"] => hiran.temperature = value.parse()?,
+                ["hiran", "top_p"] => hiran.top_p = value.parse()?,
+                _ => unreachable!(),
             }
-            cfg.hiran.as_mut().unwrap().model_path = value.into();
-        }
-        ["hiran", "backend"] => {
-            if cfg.hiran.is_none() {
-                cfg.hiran = Some(HiranConfig::default());
-            }
-            cfg.hiran.as_mut().unwrap().backend = value.into();
-        }
-        ["hiran", "device"] => {
-            if cfg.hiran.is_none() {
-                cfg.hiran = Some(HiranConfig::default());
-            }
-            cfg.hiran.as_mut().unwrap().device = value.into();
-        }
-        ["hiran", "port"] => {
-            if cfg.hiran.is_none() {
-                cfg.hiran = Some(HiranConfig::default());
-            }
-            cfg.hiran.as_mut().unwrap().port = value.parse()?;
-        }
-        ["hiran", "max_context"] => {
-            if cfg.hiran.is_none() {
-                cfg.hiran = Some(HiranConfig::default());
-            }
-            cfg.hiran.as_mut().unwrap().max_context = value.parse()?;
-        }
-        ["hiran", "temperature"] => {
-            if cfg.hiran.is_none() {
-                cfg.hiran = Some(HiranConfig::default());
-            }
-            cfg.hiran.as_mut().unwrap().temperature = value.parse()?;
-        }
-        ["hiran", "top_p"] => {
-            if cfg.hiran.is_none() {
-                cfg.hiran = Some(HiranConfig::default());
-            }
-            cfg.hiran.as_mut().unwrap().top_p = value.parse()?;
         }
         ["deploy", "default_server"] => cfg.deploy.default_server = value.into(),
         ["deploy", "ssh_key"] => cfg.deploy.ssh_key = value.into(),
         ["deploy", "ssh_user"] => cfg.deploy.ssh_user = value.into(),
+        ["bridge", "host"] => cfg.bridge.host = Some(value.into()),
         ["bridge", "port"] => cfg.bridge.port = value.parse()?,
+        ["dao", "host"] => cfg.dao.host = Some(value.into()),
         ["dao", "port"] => cfg.dao.port = value.parse()?,
+        ["swap", "host"] => cfg.swap.host = Some(value.into()),
+        ["swap", "port"] => cfg.swap.port = value.parse()?,
+        ["atomic_swap", "host"] => cfg.atomic_swap.host = Some(value.into()),
+        ["atomic_swap", "port"] => cfg.atomic_swap.port = value.parse()?,
         ["cli", "auto_update_check"] => cfg.cli.auto_update_check = value.parse()?,
         // topology.core.*
         ["topology.core", "rpc_host"] => cfg.topology.core.rpc_host = value.into(),

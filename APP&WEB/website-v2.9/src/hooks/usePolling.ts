@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface PollingOptions {
   enabled?: boolean;
@@ -37,7 +37,8 @@ export function usePolling(
 ) {
   const { enabled = true, immediate = true, runWhenHidden = false } = options;
   const isVisible = usePageVisibility();
-  const onTick = useEffectEvent(callback);
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
 
   useEffect(() => {
     if (!enabled) {
@@ -49,7 +50,7 @@ export function usePolling(
         return;
       }
 
-      void onTick();
+      void callbackRef.current();
     };
 
     if (immediate) {

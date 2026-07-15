@@ -6,7 +6,7 @@ use crate::rpc::agent_rpc; // reuse HTTP client
 use crate::ui;
 
 fn bridge_url(cfg: &Config) -> String {
-    format!("http://{}:{}", cfg.node.rpc_host, cfg.bridge.port)
+    format!("http://{}:{}", cfg.bridge_host(), cfg.bridge.port)
 }
 
 #[derive(Subcommand)]

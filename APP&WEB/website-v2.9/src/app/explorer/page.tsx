@@ -25,18 +25,19 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-const ExplorerDashboard = dynamic(() => import("@/components/explorer/ExplorerDashboard"));
-const ProExplorerStats = dynamic(() => import("@/components/explorer/ProExplorerStats"));
-const ExplorerCharts = dynamic(() => import("@/components/explorer/ExplorerCharts"));
-const EmissionMonitor = dynamic(() => import("@/components/explorer/EmissionMonitor"));
-const MempoolFeed = dynamic(() => import("@/components/explorer/MempoolFeed"));
-const ProRecentBlocks = dynamic(() => import("@/components/explorer/ProRecentBlocks"));
-const ProRecentTransactions = dynamic(() => import("@/components/explorer/ProRecentTransactions"));
+const ExplorerDashboard = dynamic(() => import("@/components/explorer/ExplorerDashboard"), { ssr: false });
+const ProExplorerStats = dynamic(() => import("@/components/explorer/ProExplorerStats"), { ssr: false });
+const ExplorerCharts = dynamic(() => import("@/components/explorer/ExplorerCharts"), { ssr: false });
+const EmissionMonitor = dynamic(() => import("@/components/explorer/EmissionMonitor"), { ssr: false });
+const MempoolFeed = dynamic(() => import("@/components/explorer/MempoolFeed"), { ssr: false });
+const ProRecentBlocks = dynamic(() => import("@/components/explorer/ProRecentBlocks"), { ssr: false });
+const ProRecentTransactions = dynamic(() => import("@/components/explorer/ProRecentTransactions"), { ssr: false });
 const NetworkTicker = dynamic(() => import("@/components/explorer/NetworkTicker"), {
   loading: () => <div className="h-[92px] bg-black/60 animate-pulse" />,
+  ssr: false,
 });
-const NetworkPeers = dynamic(() => import("@/components/explorer/NetworkPeers"));
-const RichListClient = dynamic(() => import("./richlist/RichListClient"));
+const NetworkPeers = dynamic(() => import("@/components/explorer/NetworkPeers"), { ssr: false });
+const RichListClient = dynamic(() => import("./richlist/RichListClient"), { ssr: false });
 
 /* ═══════════════════════════════════════════════════════════
    EXPLORER PAGE — Redesigned to match Roadmap visual language
@@ -157,8 +158,8 @@ export default function ExplorerPage() {
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
                 {cs
-                  ? `Prozkoumejte bloky, transakce a adresy na živém mainnetu ZION TerraNova ${SITE_RELEASE_LABEL}. Kanonický runtime běží na ${SITE_RUNTIME_LABEL} — 3-uzlový P2P mesh, account-model transakce s memo polem, E2E testy potvrzené v bloku 752.`
-                  : `Search blocks, transactions, and addresses on the live ZION TerraNova ${SITE_RELEASE_LABEL} mainnet. Canonical runtime runs on ${SITE_RUNTIME_LABEL} — 3-node P2P mesh, account-model transactions with memo field, E2E tests confirmed in block 752.`}
+                  ? `Prozkoumejte bloky, transakce a adresy na živém mainnetu ZION TerraNova ${SITE_RELEASE_LABEL}. Kanonický runtime běží na ${SITE_RUNTIME_LABEL} — 2-uzlový P2P mesh (Edge 1 + Edge 2), account-model transakce s memo polem, E2E testy potvrzené v bloku 752.`
+                  : `Search blocks, transactions, and addresses on the live ZION TerraNova ${SITE_RELEASE_LABEL} mainnet. Canonical runtime runs on ${SITE_RUNTIME_LABEL} — 2-node P2P mesh (Edge 1 + Edge 2), account-model transactions with memo field, E2E tests confirmed in block 752.`}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="zion-badge zion-badge-gold">
@@ -168,7 +169,7 @@ export default function ExplorerPage() {
                   <Activity className="h-3 w-3" /> {cs ? 'Auto-refresh 15 s' : 'Auto-Refresh 15s'}
                 </span>
                 <span className="zion-badge text-zion-cyan border-zion-cyan/40 bg-zion-cyan/10">
-                  <Globe className="h-3 w-3" /> {cs ? '3-uzlový mesh' : '3-node mesh'}
+                  <Globe className="h-3 w-3" /> {cs ? '2-uzlový mesh' : '2-node mesh'}
                 </span>
                 <span className="zion-badge zion-badge-green">
                   {cs ? 'All Green · 11/11 služeb' : 'All Green · 11/11 services'}
@@ -292,10 +293,10 @@ export default function ExplorerPage() {
           transition={{ delay: 0.12 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v3.0.5 E2E</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v3.0.6 E2E</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Ledger v3.0.5' : 'v3.0.5 Ledger'}
+              {cs ? 'Ledger v3.0.6' : 'v3.0.6 Ledger'}
             </h2>
             <p className="text-sm text-gray-400">
               {cs
@@ -320,10 +321,10 @@ export default function ExplorerPage() {
                 accent: 'text-emerald-400',
               },
               {
-                title: cs ? '3-uzlový RPC mesh' : '3-node RPC mesh',
+                title: cs ? '2-uzlový RPC mesh' : '2-node RPC mesh',
                 detail: cs
-                  ? 'RPC auto-failover přes Edge 1 (8443), Edge 2 (8448), Backup (8446).'
-                  : 'RPC auto-failover across Edge 1 (8443), Edge 2 (8448), Backup (8446).',
+                  ? 'RPC auto-failover přes Edge 1 (8443) a Edge 2 (8448). Local Backup je offline.'
+                  : 'RPC auto-failover across Edge 1 (8443) and Edge 2 (8448). Local Backup is offline.',
                 accent: 'text-purple-400',
               },
               {
@@ -394,7 +395,7 @@ export default function ExplorerPage() {
               <Globe className="h-7 w-7 text-zion-cyan" />
               {cs ? 'Síťoví peeri' : 'Network Peers'}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Konektivita 3-uzlového P2P meshe — Edge 1, Edge 2 a Local Backup Node v reálném čase.' : 'Connectivity of the 3-node P2P mesh — Edge 1, Edge 2, and Local Backup Node in real time.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Konektivita 2-uzlového P2P meshe — Edge 1 a Edge 2 v reálném čase. Local Backup Node je offline.' : 'Connectivity of the 2-node P2P mesh — Edge 1 and Edge 2 in real time. Local Backup Node is offline.'}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[280px]" />}>
             <NetworkPeers />

@@ -9,20 +9,20 @@
 #   - Systemd service files (operational truth)
 #
 # Usage (manual):
-#   sudo /root/zion-2.9.6-main/edge-deploy/scripts/backup-edge.sh
+#   sudo /opt/zion/ZION_OS/infra/scripts/backup-edge.sh
 #
 # Usage (systemd timer):
 #   systemctl start zion-edge-backup.timer
 #   systemctl enable zion-edge-backup.timer
 #
 # Retention: 14 daily + 4 weekly backups
-# Backups go to: /root/zion-backups/
+# Backups go to: /opt/zion/backups/
 # ============================================================================
 
 set -euo pipefail
 
-REPO_ROOT="/root/zion/2.9.6"
-BACKUP_DIR="/root/zion-backups"
+REPO_ROOT="/opt/zion"
+BACKUP_DIR="/opt/zion/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 DAY_OF_WEEK=$(date +%u)  # 1=Monday, 7=Sunday
 
@@ -48,8 +48,8 @@ log "Backing up node state databases..."
 NODE_BACKUP="${BACKUP_DIR}/daily/node_state_${TIMESTAMP}"
 mkdir -p "${NODE_BACKUP}"
 
-# On the new Edge server, state DBs live in /data/zion/
-for db in "/data/zion/state" "/data/zion/state-node2"; do
+# On the new Edge server, state DBs live in /opt/zion/data/
+for db in "/opt/zion/data/state" "/opt/zion/data/state-node2"; do
     if [[ -f "$db" ]]; then
         cp "$db" "${NODE_BACKUP}/"
         log "${GREEN}  ✓ $(basename $db)${NC}"
@@ -58,20 +58,20 @@ for db in "/data/zion/state" "/data/zion/state-node2"; do
     fi
 done
 
-# ── 2. /data/zion databases (bridge, dao, warp, pool, swap) ──────────────────
-log "Backing up /data/zion databases..."
+# ── 2. /opt/zion/data databases (bridge, dao, warp, pool, swap) ──────────────────
+log "Backing up /opt/zion/data databases..."
 V3_BACKUP="${BACKUP_DIR}/daily/v3_data_${TIMESTAMP}"
 mkdir -p "${V3_BACKUP}"
 
-if [[ -d "/data/zion" ]]; then
-    for db in /data/zion/*.db /data/zion/pplns-state.json; do
+if [[ -d "/opt/zion/data" ]]; then
+    for db in /opt/zion/data/*.db /opt/zion/data/pplns-state.json; do
         if [[ -f "$db" ]]; then
             cp "$db" "${V3_BACKUP}/"
             log "${GREEN}  ✓ $(basename $db)${NC}"
         fi
     done
 else
-    log "${YELLOW}  ⚠  /data/zion directory not found${NC}"
+    log "${YELLOW}  ⚠  /opt/zion/data directory not found${NC}"
 fi
 
 # ── 3. Critical config files ───────────────────────────────────────────────
@@ -80,8 +80,6 @@ CONFIG_BACKUP="${BACKUP_DIR}/daily/config_${TIMESTAMP}"
 mkdir -p "${CONFIG_BACKUP}"
 
 for cfg in \
-    "/root/zion/edge-environment.sh" \
-    "/root/zion/edge-node2-environment.sh" \
     "${REPO_ROOT}/edge-deploy/config/edge-environment.sh" \
     "${REPO_ROOT}/V3/L2/bridge/config/bridge-mainnet.toml" \
     "${REPO_ROOT}/V3/L2/atomic-swap/config/swap-mainnet.toml" \

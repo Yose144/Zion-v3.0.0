@@ -6,7 +6,7 @@ use crate::rpc::agent_rpc;
 use crate::ui;
 
 fn dao_url(cfg: &Config) -> String {
-    format!("http://{}:{}/api/dao", cfg.node.rpc_host, cfg.dao.port)
+    format!("http://{}:{}/api/dao", cfg.dao_host(), cfg.dao.port)
 }
 
 #[derive(Subcommand)]

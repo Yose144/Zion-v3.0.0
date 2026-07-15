@@ -27,10 +27,10 @@ export type MiningPoolConfig = {
   lon: number;
 };
 
-// v3.0.5 E2E topology: 3-node P2P mesh (StatusV3.md).
+// v3.0.6 topology: 2-node P2P mesh (StatusV3.md).
 //   - Edge Node 1 (Primary / Genesis / Pool) — P2P 8333, RPC 8443, Stratum 8444, Pool API 8455
 //   - Edge Node 2 (Follower / P2P peer)        — P2P 8334, RPC 8448
-//   - Local Backup Node (Prague, via SSH tunnel reverse forwards 8446-8447)
+//   - Local Backup Node is currently offline and not included in the default seed list.
 // NOTE: These are built lazily (functions) so that env-var overrides in site.ts
 // (which use bracket notation to avoid Next.js build-time inlining) are read
 // at runtime, not at build time.
@@ -58,17 +58,6 @@ function buildDefaultSeedNodes(): SeedNodeConfig[] {
       lon: 14.44,
       ports: { p2p: 8334, rpc: 8448, stratum: 0, pool_api: 0 },
       rpcUrl: '127.0.0.1:8448',
-    },
-    {
-      id: 'local-backup',
-      name: 'Local Backup Node (Prague)',
-      host: 'zion-backup',
-      region: 'EU-CZ',
-      lat: 50.075,
-      lon: 14.43,
-      ports: { p2p: 8335, rpc: 8446, stratum: 0, pool_api: 0 },
-      // Reachable from the Edge server through reverse SSH tunnel forwards.
-      rpcUrl: '127.0.0.1:8446',
     },
   ];
 }

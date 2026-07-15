@@ -5,7 +5,12 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-User=root
-ExecStart=/root/zion/2.9.6/ZION_OS/infra/scripts/backup-edge.sh
+User=zion
+Group=zion
+ExecStart=/opt/zion/ZION_OS/infra/scripts/backup-edge.sh
 StandardOutput=journal
 StandardError=journal
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=yes

@@ -1,7 +1,7 @@
-export const SITE_VERSION = 'v3.0.5';
+export const SITE_VERSION = 'v3.0.6';
 export const SITE_RELEASE_NAME = 'All Green, Mainnet Beta';
 export const SITE_RELEASE_LABEL = `${SITE_VERSION} "${SITE_RELEASE_NAME}"`;
-export const SITE_RUNTIME_VERSION = 'v3.0.5';
+export const SITE_RUNTIME_VERSION = 'v3.0.6';
 export const SITE_RUNTIME_NAME = 'Deeksha/Ekam canonical · 6-decimal flowers';
 export const SITE_RUNTIME_LABEL = `${SITE_RUNTIME_VERSION} ${SITE_RUNTIME_NAME}`;
 export const SITE_ENVIRONMENT_LABEL = 'V3 Mainnet Beta';
@@ -23,7 +23,7 @@ export const SITE_PRIMARY_DAO_API_URL = process.env.ZION_DAO_API_URL || `http://
 export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:8444`;
 
 // Network topology descriptor (operational details are injected via environment variables only)
-export const SITE_NETWORK_TOPOLOGY = '3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)';
+export const SITE_NETWORK_TOPOLOGY = '2-node P2P mesh (Edge 1 + Edge 2; Local Backup offline)';
 export const EKAM_GOLDEN_EGG_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/8802b3-c826-05c7-bcd2-12b608d18d1_ABOUT-ONENESS.webp';
 export const EKAM_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/04/Ekam-Banner.jpg';
 export const EKAM_FOUNDERS_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/03/Sri-Amma-Bhagavan-1920x600-1.jpg';

@@ -46,6 +46,11 @@ const EXISTING_CONTRACTS = {
     contract: "sol/ZIONAtomicSwap.sol:ZIONAtomicSwap",
     constructorArguments: [DEPLOYER, DEPLOYER], // admin, guardian
   },
+  BridgeValidator: {
+    address: "0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627",
+    contract: "sol/BridgeValidator.sol:BridgeValidator",
+    constructorArguments: [5, 5], // threshold 5/5, maxGuardians=5
+  },
 };
 
 // ─── New 3.0.4 contracts (read from deployed JSON files) ─────────────────────
