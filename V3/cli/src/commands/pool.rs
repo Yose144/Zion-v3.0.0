@@ -1,6 +1,5 @@
 use anyhow::Result;
 use clap::Subcommand;
-use serde_json::json;
 use std::net::ToSocketAddrs;
 
 use crate::config::Config;

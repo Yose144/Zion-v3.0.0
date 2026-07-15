@@ -2,9 +2,7 @@
 # ZION Edge Watchdog - runs on Edge server (via cron or systemd timer)
 # Checks node + pool health and restarts if needed.
 #
-# NOTE: Service names differ between deployments:
-#   Old Edge (77.42.71.94): zion-edge-node1, zion-edge-pool
-#   New Edge (62.171.141.136): zion-node, zion-pool
+# Current deployment: 62.171.141.136
 # Set NODE_SERVICE and POOL_SERVICE below to match your deployment.
 
 set -uo pipefail
@@ -17,7 +15,7 @@ NODE_SERVICE="zion-edge-node1"
 POOL_SERVICE="zion-edge-pool"
 ALERT_WEBHOOK=""  # optional: Discord/Slack webhook URL
 
-LOG_FILE="/var/log/zion-edge-watchdog.log"
+LOG_FILE="/opt/zion/logs/zion-edge-watchdog.log"
 
 log_msg() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') $1" | tee -a "$LOG_FILE"

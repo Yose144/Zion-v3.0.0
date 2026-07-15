@@ -1301,8 +1301,8 @@ impl NodeRuntime {
         {
             self.known_peers.push(peer);
             // Cap known_peers to prevent unbounded growth from peer announcements
-            if self.known_peers.len() > 1000 {
-                self.known_peers.drain(0..self.known_peers.len() - 1000);
+            if self.known_peers.len() > 500 {
+                self.known_peers.drain(0..self.known_peers.len() - 500);
             }
         }
     }

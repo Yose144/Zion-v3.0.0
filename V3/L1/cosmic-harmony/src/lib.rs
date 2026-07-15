@@ -100,6 +100,11 @@ pub fn profile_name() -> &'static str {
 /// - height < 4500  → `deeksha_lite_v1` (current mainnet canonical)
 /// - 4500 ≤ h < 5000 → `deeksha_chv3` (unified alias, Phase A)
 /// - height ≥ 5000  → `deeksha_lite_fire` (Fire hard fork)
+///
+/// NOTE: The pool (`V3/L1/pool/src/lib.rs`) intentionally always advertises
+/// `deeksha_lite_v1` to miners after the 2026-07-13 chain-stall fix. The alias
+/// is bit-identical, so this internal name change is safe, but the pool override
+/// prevents older miner/CLI versions from seeing an unexpected algorithm name.
 pub fn profile_name_for_height(height: u64) -> &'static str {
     if height >= FIRE_FORK_HEIGHT {
         FIRE_PROFILE

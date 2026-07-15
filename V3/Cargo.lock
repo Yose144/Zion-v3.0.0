@@ -5141,7 +5141,7 @@ dependencies = [
 
 [[package]]
 name = "zion-ai-native"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5164,7 +5164,7 @@ dependencies = [
 
 [[package]]
 name = "zion-atomic-swap"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "anyhow",
  "axum",
@@ -5228,7 +5228,7 @@ dependencies = [
 
 [[package]]
 name = "zion-bridge"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "anyhow",
  "axum",
@@ -5256,7 +5256,7 @@ dependencies = [
 
 [[package]]
 name = "zion-cli"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -5285,7 +5285,7 @@ dependencies = [
 
 [[package]]
 name = "zion-core"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "anyhow",
  "bip39",
@@ -5315,7 +5315,7 @@ dependencies = [
 
 [[package]]
 name = "zion-cosmic-harmony"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "aes",
  "blake3",
@@ -5332,7 +5332,7 @@ dependencies = [
 
 [[package]]
 name = "zion-dao"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5357,7 +5357,7 @@ dependencies = [
 
 [[package]]
 name = "zion-free-world"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5379,7 +5379,7 @@ dependencies = [
 
 [[package]]
 name = "zion-issobella"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5401,7 +5401,7 @@ dependencies = [
 
 [[package]]
 name = "zion-l1-types"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "hex",
  "ripemd",
@@ -5412,7 +5412,7 @@ dependencies = [
 
 [[package]]
 name = "zion-miner"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "anyhow",
  "base64",
@@ -5437,7 +5437,7 @@ dependencies = [
 
 [[package]]
 name = "zion-native-ffi"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "cc",
 ]
@@ -5460,7 +5460,7 @@ dependencies = [
 
 [[package]]
 name = "zion-oasis"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5489,7 +5489,7 @@ dependencies = [
 
 [[package]]
 name = "zion-pool"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "anyhow",
  "ctrlc",
@@ -5508,7 +5508,7 @@ dependencies = [
 
 [[package]]
 name = "zion-sdk"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "bip39",
  "ed25519-dalek",
@@ -5522,7 +5522,7 @@ dependencies = [
 
 [[package]]
 name = "zion-swap-aggregator"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "anyhow",
  "axum",
@@ -5546,7 +5546,7 @@ dependencies = [
 
 [[package]]
 name = "zion-warp"
-version = "3.0.4"
+version = "3.0.6"
 dependencies = [
  "anyhow",
  "async-trait",
