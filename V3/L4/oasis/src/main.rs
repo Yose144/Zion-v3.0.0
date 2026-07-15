@@ -4,10 +4,11 @@
 //!   zion-oasis [--config path/to/oasis.toml]
 //!
 //! Environment variables:
-//!   OASIS_PORT    — override API port (default: 8094)
-//!   OASIS_DB      — path to SQLite database (default: ./oasis.db)
-//!   OASIS_BIND    — bind address (default: 0.0.0.0)
-//!   RUST_LOG      — log level (default: info)
+//!   OASIS_PORT         — override API port (default: 8094)
+//!   OASIS_DB           — path to SQLite database (default: ./oasis.db)
+//!   OASIS_BIND         — bind address (default: 0.0.0.0)
+//!   OASIS_METRICS_PORT — override metrics port (default: 9102)
+//!   RUST_LOG           — log level (default: info)
 
 use std::sync::Arc;
 use tracing::info;
@@ -40,6 +41,9 @@ async fn main() -> anyhow::Result<()> {
     }
     if let Ok(bind) = std::env::var("OASIS_BIND") {
         config.bind = bind;
+    }
+    if let Ok(port) = std::env::var("OASIS_METRICS_PORT") {
+        config.metrics_port = port.parse().unwrap_or(config.metrics_port);
     }
     if let Ok(url) = std::env::var("OASIS_HIRAN_URL") {
         config.hiran_endpoint = Some(url);

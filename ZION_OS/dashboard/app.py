@@ -199,7 +199,7 @@ def _is_edge_local() -> bool:
         if "edge" in hostname.lower() or "mainnet" in hostname.lower() or "vmi" in hostname.lower():
             return True
         # If hostname is something else (e.g. "zionserver-144"), we're NOT on edge
-        # even if 127.0.0.1:8443 is reachable (could be SSH tunnel)
+        # even if 127.0.0.1:9443 is reachable (could be SSH tunnel)
         return False
     except Exception:
         return False
@@ -1017,12 +1017,12 @@ def auto_backup_if_needed():
 SERVICE_REGISTRY_EDGE_PRIMARY = [
     # ── L1: Consensus (v3.0.4 — new server, all on 127.0.0.1) ──────────
     {"id": "edge-node1", "name": "ZION Node (Primary / Genesis)", "icon": "🌍", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8333, "rpc": 8443, "metrics": 9100},
+     "ports": {"p2p": 8333, "rpc": 9443, "metrics": 9100},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "rpc", "severity": "critical", "autoheal": False,
-     "health_endpoint": "http://127.0.0.1:8443/health",
-     "purpose": "Primary / Genesis node — P2P 8333, RPC 8443, metrics 9100. Fresh genesis v3.0.4.",
+     "health_endpoint": "http://127.0.0.1:9443/health",
+     "purpose": "Primary / Genesis node — P2P 8333, RPC 9443, metrics 9100. Fresh genesis v3.0.4.",
      "child_says": "🌍 The king node — source of chain truth!",
      "depends_on": []},
     {"id": "edge-node2", "name": "ZION Node 2 (Follower)", "icon": "🔶", "level": "L1", "kind": "node",
@@ -1135,10 +1135,10 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
 SERVICE_REGISTRY_LOCAL_DEV = [
     # ── L1: Consensus (Local-dev topology) ───────────────────────────────
     {"id": "node1", "name": "Node 1 (Genesis)", "icon": "🔷", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8333, "rpc": 8443, "metrics": 9115},
+     "ports": {"p2p": 8333, "rpc": 9443, "metrics": 9115},
      "log": "node1.log", "start": "start-node1", "stop": None,
      "health_method": "rpc", "severity": "critical", "autoheal": False,
-     "health_endpoint": "http://127.0.0.1:8443/health",
+     "health_endpoint": "http://127.0.0.1:9443/health",
      "purpose": "Genesis node — source of chain truth in local dev mode.",
      "child_says": "🔷 The genesis node starts the chain!",
      "depends_on": []},
@@ -2000,7 +2000,7 @@ def detect_nodes() -> dict:
             "id": node_id,
             "name": node_config.get("name", node_id),
             "host": node_config.get("host"),
-            "rpc_port": node_config.get("rpc_port", 8443),
+            "rpc_port": node_config.get("rpc_port", 9443),
             "p2p_port": node_config.get("p2p_port", 8333),
             "platform": node_config.get("platform"),
             "location": node_config.get("location"),
@@ -2269,7 +2269,7 @@ def load_dashboard_settings() -> dict:
         },
         "node": {
             "seed_peers": "62.171.141.136:8333",
-            "rpc_bind": "0.0.0.0:8443",
+            "rpc_bind": "0.0.0.0:9443",
             "p2p_bind": "0.0.0.0:8333",
             "node_id": "local-backup-node",
         },
@@ -2533,7 +2533,7 @@ def _build_status_edge_primary() -> dict:
     def _edge_rpc_call():
         # When dashboard runs ON Edge, use localhost (RPC bound to 127.0.0.1 after security hardening)
         host = "127.0.0.1" if EDGE_IS_LOCAL else "127.0.0.1"
-        r = rpc_call(host, 8443, "getChainInfo", {}, timeout=2.5)
+        r = rpc_call(host, 9443, "getChainInfo", {}, timeout=2.5)
         if r and not r.get("_rpc_error"):
             return ("edge", r)
         return ("edge", None)
@@ -2552,11 +2552,11 @@ def _build_status_edge_primary() -> dict:
         return ("edge2_info", r if r and not r.get("_rpc_error") else None)
 
     def _edge_peerinfo_call():
-        r = rpc_call("127.0.0.1", 8443, "getPeerInfo", {}, timeout=2.0)
+        r = rpc_call("127.0.0.1", 9443, "getPeerInfo", {}, timeout=2.0)
         return ("edge_peers", r if r and not r.get("_rpc_error") else None)
 
     def _edge_nodeinfo_call():
-        r = rpc_call("127.0.0.1", 8443, "getNodeInfo", {}, timeout=2.0)
+        r = rpc_call("127.0.0.1", 9443, "getNodeInfo", {}, timeout=2.0)
         return ("edge_info", r if r and not r.get("_rpc_error") else None)
 
     edge_node2_info = None
@@ -2604,7 +2604,7 @@ def _build_status_edge_primary() -> dict:
         "node_id": (edge_nodeinfo or {}).get("node_id") if edge_rpc_info else None,
         "p2p_bind": (edge_nodeinfo or {}).get("p2p_bind") if edge_rpc_info else None,
         "rpc_bind": (edge_nodeinfo or {}).get("rpc_bind") if edge_rpc_info else None,
-        "host": "127.0.0.1:8443",
+        "host": "127.0.0.1:9443",
     }
     edge_node2_status = {
         "running": bool(edge_node2_info),
@@ -3447,7 +3447,7 @@ def rpc_call(host: str, port: int, method: str, params: dict, timeout: float = 2
     except Exception as e:
         return {"_rpc_error": str(e)[:120]}
 
-def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 8443) -> list:
+def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 9443) -> list:
     """Extract premine addresses and amounts from the actual genesis block via RPC.
     This reflects the true on-chain state, which may differ from PREMINE_ADDRESSES_PUBLIC.txt
     after wallet rotation."""
@@ -3455,7 +3455,7 @@ def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 8443
     genesis = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": 0})
     if not genesis or not genesis.get("transactions"):
         # Fallback to Edge RPC
-        genesis = rpc_call(EDGE_HOST, 8443, "getBlockByHeight", {"height": 0})
+        genesis = rpc_call(EDGE_HOST, 9443, "getBlockByHeight", {"height": 0})
     if not genesis or not genesis.get("transactions"):
         # Final fallback to file if RPC unavailable
         return parse_premine_from_file()
@@ -3627,7 +3627,7 @@ def build_wallets() -> dict:
 
     # 4. Try to enrich with live balances — prefer local RPC, fallback to Edge
     rpc_host = "127.0.0.1"
-    rpc_port = 8443
+    rpc_port = 9443
     rpc_addr = os.environ.get("ZION_NODE_RPC_ADDR", "")
     if rpc_addr and ":" in rpc_addr:
         try:
@@ -3640,7 +3640,7 @@ def build_wallets() -> dict:
     # Test connectivity; fall back to Edge if local unavailable
     _ping = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
     if not _ping or _ping.get("_rpc_error"):
-        rpc_host, rpc_port = EDGE_HOST, 8443
+        rpc_host, rpc_port = EDGE_HOST, 9443
 
     for w in wallets:
         addr = w.get("address", "")
@@ -3749,7 +3749,7 @@ def get_block_detail(height: int = None, hash_hex: str = None) -> dict:
 @_ttl_cache_fn(2.0)
 def get_mempool_detail() -> dict:
     """Fetch mempool transactions and stats via getMempoolInfo RPC."""
-    rpc_host, rpc_port = "127.0.0.1", 8443
+    rpc_host, rpc_port = "127.0.0.1", 9443
     # Try getMempoolInfo first (richer data)
     info = rpc_call(rpc_host, rpc_port, "getMempoolInfo", {}, timeout=1.5)
     if info and not info.get("_rpc_error"):
@@ -3868,7 +3868,7 @@ def _estimate_circulating_supply_at_height(height: int) -> float:
 def _rpc_with_fallback(method: str, params: dict, timeout: float = 2.0):
     """Call RPC on the configured local endpoint, falling back to Edge.
     Returns (result, effective_host, effective_port)."""
-    rpc_host, rpc_port = "127.0.0.1", 8443
+    rpc_host, rpc_port = "127.0.0.1", 9443
     rpc_addr = os.environ.get("ZION_NODE_RPC_ADDR", "")
     if rpc_addr and ":" in rpc_addr:
         try:
@@ -3884,9 +3884,9 @@ def _rpc_with_fallback(method: str, params: dict, timeout: float = 2.0):
         return result, rpc_host, rpc_port
 
     # Fallback to Edge RPC
-    result = rpc_call(EDGE_HOST, 8443, method, params, timeout=timeout)
+    result = rpc_call(EDGE_HOST, 9443, method, params, timeout=timeout)
     if result and not result.get("_rpc_error"):
-        return result, EDGE_HOST, 8443
+        return result, EDGE_HOST, 9443
     return None, rpc_host, rpc_port
 
 
@@ -4574,7 +4574,7 @@ def get_pool_registered_miners() -> dict:
     balance_map = {}
     for addr in unique_addrs:
         try:
-            bal = rpc_call(EDGE_RPC_HOST, 8443, "getBalance", {"address": addr}, timeout=2.0)
+            bal = rpc_call(EDGE_RPC_HOST, 9443, "getBalance", {"address": addr}, timeout=2.0)
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
                 balance_map[addr] = flowers_to_zion(atomic)
@@ -4673,7 +4673,7 @@ def enrich_miner_balances(miners: list) -> list:
         addr = m.get("payout_address") or m.get("address") or ""
         if addr and isinstance(addr, str) and addr.startswith("zion1"):
             try:
-                bal = rpc_call(EDGE_RPC_HOST, 8443, "getBalance", {"address": addr}, timeout=2.0)
+                bal = rpc_call(EDGE_RPC_HOST, 9443, "getBalance", {"address": addr}, timeout=2.0)
                 if bal and not bal.get("_rpc_error"):
                     atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
                     m["on_chain_balance_zion"] = flowers_to_zion(atomic)
@@ -5798,7 +5798,7 @@ def get_pool_miner_detail(address: str) -> dict:
 
     # On-chain balance
     try:
-        bal = rpc_call(EDGE_RPC_HOST, 8443, "getBalance", {"address": address}, timeout=2.0)
+        bal = rpc_call(EDGE_RPC_HOST, 9443, "getBalance", {"address": address}, timeout=2.0)
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
             result["on_chain_balance_zion"] = flowers_to_zion(atomic)
@@ -6055,7 +6055,7 @@ def get_pool_wallet_status() -> dict:
     # ── Tertiary: RPC for pool wallet balance ────────────────────────────
     wallet = status["pool_wallet"]
     if wallet and wallet.startswith("zion1"):
-        bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": wallet})
+        bal = rpc_call("127.0.0.1", 9443, "getBalance", {"address": wallet})
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
             status["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else flowers_to_zion(atomic)
@@ -6228,8 +6228,8 @@ def build_payout_status() -> dict:
     # ── Topology-aware config discovery ───────────────────────────────
     is_edge = TOPOLOGY == "edge-primary"
     edge_host = "127.0.0.1"
-    local_rpc_alive = check_port_open("127.0.0.1", 8443, timeout=1.0)
-    edge_rpc_alive = check_port_open(edge_host, 8443, timeout=1.5) if is_edge else False
+    local_rpc_alive = check_port_open("127.0.0.1", 9443, timeout=1.0)
+    edge_rpc_alive = check_port_open(edge_host, 9443, timeout=1.5) if is_edge else False
     edge_stats_alive = check_port_open(edge_host, 8455, timeout=1.5) if is_edge else False
     tailscale_ok = True  # v3.0.4: No Tailscale needed
 
@@ -6462,13 +6462,13 @@ def build_payout_status() -> dict:
     # ── Wallet balances (RPC with Edge→local fallback) ────────────────
     rpc_host = edge_host if (is_edge and edge_rpc_alive) else "127.0.0.1"
     if status["pool_wallet"] and status["pool_wallet"].startswith("zion1"):
-        bal = rpc_call(rpc_host, 8443, "getBalance", {"address": status["pool_wallet"]}, timeout=2.5)
+        bal = rpc_call(rpc_host, 9443, "getBalance", {"address": status["pool_wallet"]}, timeout=2.5)
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
             status["pool_wallet_balance"] = atomic
         elif is_edge and local_rpc_alive:
             # Fallback to local backup node
-            bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": status["pool_wallet"]}, timeout=2)
+            bal = rpc_call("127.0.0.1", 9443, "getBalance", {"address": status["pool_wallet"]}, timeout=2)
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
                 status["pool_wallet_balance"] = atomic
@@ -6478,7 +6478,7 @@ def build_payout_status() -> dict:
                       ("humanitarian", status["humanitarian_wallet"]),
                       ("issobella", status["issobella_wallet"])]:
         if addr and addr.startswith("zion1"):
-            bal = rpc_call(rpc_host, 8443, "getBalance", {"address": addr}, timeout=2.5)
+            bal = rpc_call(rpc_host, 9443, "getBalance", {"address": addr}, timeout=2.5)
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
                 balances[key] = {"atomic": atomic, "zion": flowers_to_zion(atomic)}
@@ -6510,21 +6510,21 @@ def build_payout_status() -> dict:
     for m in miners:
         addr = m.get("payout_address")
         if addr and addr.startswith("zion1"):
-            bal = rpc_call(rpc_host, 8443, "getBalance", {"address": addr}, timeout=2.0)
+            bal = rpc_call(rpc_host, 9443, "getBalance", {"address": addr}, timeout=2.0)
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
                 m["on_chain_balance_zion"] = flowers_to_zion(atomic)
             elif is_edge and local_rpc_alive:
-                bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": addr}, timeout=2.0)
+                bal = rpc_call("127.0.0.1", 9443, "getBalance", {"address": addr}, timeout=2.0)
                 if bal and not bal.get("_rpc_error"):
                     atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
                     m["on_chain_balance_zion"] = flowers_to_zion(atomic)
 
     # ── Network-wide emission totals from block 0 (consensus schedule) ──
     try:
-        chain_info = rpc_call(rpc_host, 8443, "getChainInfo", {}, timeout=2.0)
+        chain_info = rpc_call(rpc_host, 9443, "getChainInfo", {}, timeout=2.0)
         if not chain_info or chain_info.get("_rpc_error"):
-            chain_info = rpc_call("127.0.0.1", 8443, "getChainInfo", {}, timeout=2.0) if (is_edge and local_rpc_alive) else None
+            chain_info = rpc_call("127.0.0.1", 9443, "getChainInfo", {}, timeout=2.0) if (is_edge and local_rpc_alive) else None
         if chain_info and not chain_info.get("_rpc_error"):
             status["network_emission"] = calculate_emission_totals(chain_info.get("chain_height", 0))
         else:
@@ -6667,7 +6667,7 @@ def get_network_topology() -> dict:
     edge_rpc_alive = False
     edge_height = None
     try:
-        info = rpc_call(EDGE_RPC_HOST, 8443, "getChainInfo", {}, timeout=2)
+        info = rpc_call(EDGE_RPC_HOST, 9443, "getChainInfo", {}, timeout=2)
         if info and not info.get("_rpc_error"):
             edge_rpc_alive = True
             edge_height = info.get("chain_height")
@@ -6683,7 +6683,7 @@ def get_network_topology() -> dict:
     except Exception:
         pass
     # Desktop agent (localhost RPC)
-    desktop_alive = check_port_open("127.0.0.1", 8443, timeout=0.8)
+    desktop_alive = check_port_open("127.0.0.1", 9443, timeout=0.8)
     # zion-cli version check (fast binary path probe, skip cargo run)
     cli_version = None
     cli_exe = REPO_ROOT / "V3" / "target" / "release" / "zion-cli.exe"
@@ -6703,7 +6703,7 @@ def get_network_topology() -> dict:
             "height": core_node.get("chain_height"),
             "peers": core_node.get("known_peers"),
             "p2p": "0.0.0.0:8333",
-            "rpc": "0.0.0.0:8443",
+            "rpc": "0.0.0.0:9443",
         },
         "edge": {
             "host": "127.0.0.1",
@@ -6711,19 +6711,19 @@ def get_network_topology() -> dict:
             "alive": edge_rpc_alive,
             "height": edge_height,
             "p2p": "0.0.0.0:8333",
-            "rpc": "0.0.0.0:8443",
+            "rpc": "0.0.0.0:9443",
             "pool": "0.0.0.0:8444",
         },
         "tailscale": {"vpn_ok": True, "edge_ip": "127.0.0.1", "note": "No Tailscale (v3.0.4)"},
         "apps": {
             "website": {"url": "https://zionterranova.com", "alive": web_alive},
-            "desktop_agent": {"rpc": "http://127.0.0.1:8443/jsonrpc", "alive": desktop_alive},
+            "desktop_agent": {"rpc": "http://127.0.0.1:9443/jsonrpc", "alive": desktop_alive},
             "mobile_app": {"status": "dev_build_ready", "alive": True},  # placeholder until health endpoint
             "cli": {"version": cli_version, "alive": cli_version is not None},
         },
         "ports": {
             "node_p2p": check_port_open("127.0.0.1", 8333),
-            "node_rpc": check_port_open("127.0.0.1", 8443),
+            "node_rpc": check_port_open("127.0.0.1", 9443),
             "pool_stratum": check_port_open("127.0.0.1", 8455),  # metrics port, not stratum 8444
             "dashboard": check_port_open("127.0.0.1", 8766),
             "hiranyagarbha": check_port_open("127.0.0.1", 8001),
@@ -7493,7 +7493,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
         <div class="text-xs text-gray-400 mb-1">Peers: <span id="val-edge-node-peers" class="text-white font-bold">—</span></div>
         <div class="text-xs text-gray-400 mb-2">Host: <span id="val-edge-node-host" class="font-mono">127.0.0.1</span></div>
         <div class="flex gap-1 mt-2">
-          <button onclick="window.open('http://127.0.0.1:8443/jsonrpc','_blank')" class="flex-1 text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded transition">🔗 RPC</button>
+          <button onclick="window.open('http://127.0.0.1:9443/jsonrpc','_blank')" class="flex-1 text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded transition">🔗 RPC</button>
         </div>
       </div>
 
@@ -9283,7 +9283,7 @@ async function renderWizard(){
   const isEdge = st.topology === 'edge-primary';
   const steps=[
     {n:1,title:'Prepare environment',desc:'Generate keys (gen-keys), assemble .env file with all wallets and ZION_POOL_PAYOUT_SK_HEX.',done:cl.checks.find(c=>c.id==='env')?.ok,actions:[{label:'View env files',cb:`switchTab('env')`}]},
-    {n:2,title:isEdge?'Start Local Backup Node':'Start Genesis Node',desc:isEdge?'Syncs from Edge primary via P2P. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).':'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).',done:cl.checks.find(c=>c.id==='node1')?.ok,actions:[{label:'▶ Start Node',cb:`controlAction('start-node1')`}]},
+    {n:2,title:isEdge?'Start Local Backup Node':'Start Genesis Node',desc:isEdge?'Syncs from Edge primary via P2P. 0.0.0.0:8333 (P2P) / 0.0.0.0:9443 (RPC).':'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:9443 (RPC).',done:cl.checks.find(c=>c.id==='node1')?.ok,actions:[{label:'▶ Start Node',cb:`controlAction('start-node1')`}]},
     isEdge?{n:3,title:'Connect to Edge Pool',desc:'Edge (127.0.0.1) runs the primary pool. Verify VPN connectivity.',done:cl.checks.find(c=>c.id==='pool-edge')?.ok,actions:[{label:'Check Edge Pool',cb:`switchTab('overview')`}]}:{n:3,title:'Start Local Pool',desc:'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).',done:cl.checks.find(c=>c.id==='pool')?.ok,actions:[{label:'▶ Start Pool',cb:`controlAction('start-pool')`}]},
     {n:4,title:'Start GPU Miner',desc:'Connects to pool, performs cosmic_harmony hashing on GPU.',done:cl.checks.find(c=>c.id==='miner')?.ok,actions:[{label:'▶ Start Miner',cb:`controlAction('start-miner')`}]},
     {n:5,title:'Verify chain progression',desc:'Confirm node syncs with network and chain height advances.',done:cl.checks.find(c=>c.id==='chain')?.ok,actions:[{label:'View events',cb:`switchTab('events')`}]},
@@ -9761,7 +9761,7 @@ def _rpc_get_balance(address: str) -> dict | None:
             "method": "getBalance", "params": {"address": address}
         }).encode("utf-8")
         req = urllib.request.Request(
-            "http://127.0.0.1:8443",
+            "http://127.0.0.1:9443",
             data=payload,
             headers={"Content-Type": "application/json"},
         )
@@ -10249,7 +10249,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             # v3.0.4: Edge server doesn't expose a unified API on 8888.
             # Build infra overview from individual service probes instead.
             try:
-                _ports = {"node_rpc": 8443, "pool_stratum": 8444, "dao": 8450,
+                _ports = {"node_rpc": 9443, "pool_stratum": 8444, "dao": 8450,
                           "warp": 8453, "bridge_metrics": 9101, "node_metrics": 9100,
                           "nginx": 443, "dashboard": 8766}
                 _infra = {}
@@ -10684,7 +10684,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
             with ThreadPoolExecutor(max_workers=3) as ex:
                 futs = {
-                    ex.submit(_probe_node, "Edge Node 1", "127.0.0.1", 8443),
+                    ex.submit(_probe_node, "Edge Node 1", "127.0.0.1", 9443),
                     ex.submit(_probe_node, "Edge Node 2", "127.0.0.1", 8448),
                     ex.submit(_probe_node, "Local Backup", "127.0.0.1", 8446),
                 }
@@ -10711,7 +10711,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
             # Port checks (via SSH tunnel to Edge)
             ports = {}
-            for name, port in [("node_p2p", 8333), ("node_rpc", 8443), ("pool_stratum", 8444),
+            for name, port in [("node_p2p", 8333), ("node_rpc", 9443), ("pool_stratum", 8444),
                                ("dashboard", 8766), ("hiran_inference", 8002), ("hiranyagarbha", 8001)]:
                 ports[name] = check_port_open("127.0.0.1", port, timeout=1.0)
 
@@ -10982,7 +10982,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             # Get current genesis hash from node
             genesis_hash = None
             try:
-                genesis = rpc_call("127.0.0.1", 8443, "getBlockByHeight", {"height": 0})
+                genesis = rpc_call("127.0.0.1", 9443, "getBlockByHeight", {"height": 0})
                 if genesis:
                     genesis_hash = genesis.get("hash_hex") or genesis.get("hash")
             except Exception:
@@ -10992,9 +10992,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             # instead of hardcoded values that may be stale after wallet rotation.
             tip_block = None
             try:
-                chain_info = rpc_call("127.0.0.1", 8443, "getChainInfo", {})
+                chain_info = rpc_call("127.0.0.1", 9443, "getChainInfo", {})
                 if chain_info and chain_info.get("chain_height") is not None:
-                    tip_block = rpc_call("127.0.0.1", 8443, "getBlockByHeight",
+                    tip_block = rpc_call("127.0.0.1", 9443, "getBlockByHeight",
                                          {"height": chain_info["chain_height"]})
             except Exception:
                 pass
@@ -11099,7 +11099,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 # Check current genesis
                 current_genesis_hash = None
                 try:
-                    genesis = rpc_call("127.0.0.1", 8443, "getBlockByHeight", {"height": 0})
+                    genesis = rpc_call("127.0.0.1", 9443, "getBlockByHeight", {"height": 0})
                     if genesis and genesis.get("hash"):
                         current_genesis_hash = genesis["hash"]
                 except Exception:
@@ -11124,7 +11124,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 # Fetch current genesis hash for the manifest
                 current_genesis_hash = None
                 try:
-                    genesis = rpc_call("127.0.0.1", 8443, "getBlockByHeight", {"height": 0}, timeout=3)
+                    genesis = rpc_call("127.0.0.1", 9443, "getBlockByHeight", {"height": 0}, timeout=3)
                     if genesis and genesis.get("hash"):
                         current_genesis_hash = genesis["hash"]
                 except Exception:
@@ -11238,7 +11238,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     status = build_status()
                     state_snapshot["current_height"] = status["node1"]["chain_height"]
                     
-                    genesis = rpc_call("127.0.0.1", 8443, "getBlockByHeight", {"height": 0})
+                    genesis = rpc_call("127.0.0.1", 9443, "getBlockByHeight", {"height": 0})
                     if genesis and genesis.get("hash"):
                         state_snapshot["current_genesis"] = genesis["hash"]
                 except Exception as e:

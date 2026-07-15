@@ -26,7 +26,7 @@ async fn main() -> anyhow::Result<()> {
     let pool_metrics = std::env::var("ZIONOS_POOL_METRICS")
         .unwrap_or_else(|_| "http://127.0.0.1:8455".into());
     let node_rpc = std::env::var("ZIONOS_NODE_RPC")
-        .unwrap_or_else(|_| "http://127.0.0.1:8443".into());
+        .unwrap_or_else(|_| "http://127.0.0.1:9443".into());
     let dao_api = std::env::var("ZIONOS_DAO_API")
         .unwrap_or_else(|_| "http://127.0.0.1:8450".into());
     let warp_api = std::env::var("ZIONOS_WARP_API")

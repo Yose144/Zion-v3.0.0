@@ -2,7 +2,7 @@
 
 This file provides operating guidance to Devin, WARP, Copilot, and future automated agents working in this repository.
 
-> **⚠️ SERVER MIGRATION 2026-07-07:** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** following the 3.0.4 hard genesis reset. New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. SSH: `ssh zion-new` (key: `~/.ssh/zion-new-server`). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) for current live topology (2 nodes active on Edge: primary + follower, both at height 6445+; local backup node currently offline as of 2026-07-15). Web: `https://zionterranova.com` (Next.js Docker, image 377 MB standalone). Dashboard: `https://dashboard.zionterranova.com` (Basic Auth). Pool: `62.171.141.136:8444`. RPC: `rpc.zionterranova.com:8443` (public, nginx HTTP proxy → `127.0.0.1:8447` read-only Python filter → `127.0.0.1:8443` node RPC). All L2 services (bridge, dao, warp, swap, dashboard) use `127.0.0.1:8443` internally.
+> **⚠️ SERVER MIGRATION 2026-07-07:** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** following the 3.0.4 hard genesis reset. New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. SSH: `ssh zion-new` (key: `~/.ssh/zion-new-server`). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) for current live topology (2 nodes active on Edge: primary + follower, both at height 6445+; local backup node currently offline as of 2026-07-15). Web: `https://zionterranova.com` (Next.js Docker, image 377 MB standalone). Dashboard: `https://dashboard.zionterranova.com` (Basic Auth). Pool: `62.171.141.136:8444`. RPC: `rpc.zionterranova.com:8443` (public, nginx TCP stream proxy → `127.0.0.1:9443` node RPC). All L2 services (bridge, dao, warp, swap, dashboard) use `127.0.0.1:9443` internally.
 
 ## Scope and working area
 
@@ -235,9 +235,9 @@ Run from repository root unless noted.
 ### Running core binaries from source
 
 - Node:
-  - `ZION_NODE_ID=local-node ZION_P2P_BIND=0.0.0.0:8333 ZION_RPC_BIND=0.0.0.0:8443 cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
+  - `ZION_NODE_ID=local-node ZION_P2P_BIND=0.0.0.0:8333 ZION_RPC_BIND=0.0.0.0:9443 cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
 - Pool server:
-  - `ZION_POOL_BIND=0.0.0.0:8444 ZION_NODE_RPC_ADDR=127.0.0.1:8443 cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server`
+  - `ZION_POOL_BIND=0.0.0.0:8444 ZION_NODE_RPC_ADDR=127.0.0.1:9443 cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server`
   - **Dual-algo:** The pool no longer enforces a single global algorithm. Each miner session advertises its algorithm in the `Hello` message, and the pool validates shares using the session's algorithm. Set `ZION_NONCE_COUNT_GPU=262144` for GPU miners (OpenCL/CUDA/Metal) while keeping `ZION_NONCE_COUNT=4096` for CPU miners.
 - Miner:
   - `ZION_POOL_ADDR=127.0.0.1:8444 ZION_WORKER_NAME=<name> ZION_MINER_ID=<id> cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`
@@ -252,10 +252,10 @@ Run from repository root unless noted.
 PowerShell equivalents for W11 development. Build first: `cargo build --release --manifest-path V3/Cargo.toml --workspace`.
 
 - Node (new server seed — local dev only, connects to new server):
-  - `$env:ZION_NODE_ID='local-dev-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='62.171.141.136:8333'; $env:ZION_NODE_STATE_PATH='V3/data/zion-node-state.db'; $env:ZION_MINER_ADDRESS='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'; $env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'; $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'; $env:ZION_MIGRATION_HEIGHT='1'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
+  - `$env:ZION_NODE_ID='local-dev-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:9443'; $env:ZION_SEED_PEERS='62.171.141.136:8333'; $env:ZION_NODE_STATE_PATH='V3/data/zion-node-state.db'; $env:ZION_MINER_ADDRESS='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'; $env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'; $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'; $env:ZION_MIGRATION_HEIGHT='1'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
   - **Note:** `ZION_MIGRATION_HEIGHT=1` is required for fresh chain (genesis reset). Set to actual migration height if syncing existing chain.
 - Pool server (local-dev only):
-  - `$env:ZION_POOL_BIND='0.0.0.0:8444'; $env:ZION_NODE_RPC_ADDR='127.0.0.1:8443'; $env:ZION_POOL_LOOP_COUNT='1000000'; $env:ZION_NONCE_COUNT='4096'; $env:ZION_NONCE_COUNT_GPU='262144'; $env:ZION_POOL_WALLET='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'; cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server`
+  - `$env:ZION_POOL_BIND='0.0.0.0:8444'; $env:ZION_NODE_RPC_ADDR='127.0.0.1:9443'; $env:ZION_POOL_LOOP_COUNT='1000000'; $env:ZION_NONCE_COUNT='4096'; $env:ZION_NONCE_COUNT_GPU='262144'; $env:ZION_POOL_WALLET='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'; cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server`
   - **IMPORTANT:** Pool and miner binaries must be compiled from the same source version — protocol is not backward compatible. Always recompile pool after `cargo build` on miner.
 - Miner (connects to new server pool):
   - `$env:ZION_POOL_ADDR='62.171.141.136:8444'; $env:ZION_WORKER_NAME='<name>'; $env:ZION_MINER_ID='<id>'; $env:ZION_LOOP_COUNT='1000000'; $env:ZION_GPU_BACKEND='opencl'; $env:ZION_PAYOUT_ADDRESS='<zion1...address>'; $env:ZION_MINER_ALGORITHM='deeksha_lite_v1'; cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`
@@ -479,8 +479,8 @@ Current live topology is **3-node P2P mesh** (Edge primary + Edge follower + Loc
 
 ```
 Edge Server (VPS) — 62.171.141.136
-    ├── Node 1 (primary, mining) — RPC 8443, P2P 8333
-    ├── Node 2 (follower) — RPC 8446, P2P sync from Node 1
+    ├── Node 1 (primary, mining) — RPC 9443, P2P 8333
+    ├── Node 2 (follower) — RPC 8448, P2P sync from Node 1
     ├── Pool (Stratum) — 8444
     ├── Bridge (L2) — 9101
     ├── DAO (L2) — 8450
@@ -491,7 +491,7 @@ Edge Server (VPS) — 62.171.141.136
     └── nginx — 80/443
 
 Local Machine — zionserver-144 (public IP 109.81.27.87)
-    ├── Backup Node — RPC 8446, P2P 8333 (peer to Edge)
+    ├── Backup Node — RPC 8448, P2P 8333 (peer to Edge)
     ├── Dashboard — 8766
     ├── Stack (L2/L3: free-world, ai-native-api, issobella, dao, oasis, atomic-swap, ollama)
     └── SSH Tunnel — 9 local + 2 reverse forwards to Edge
@@ -502,24 +502,27 @@ Dashboard: https://dashboard.zionterranova.com (nginx → Python)
 
 | Role | Host | Public IP | Ports |
 |------|------|-----------|-------|
-| Edge Node 1 (primary) | VPS (Ubuntu 24.04.4) | 62.171.141.136 | P2P: 8333, RPC: 8443 (localhost), Pool: 8444, WS: 8445, DAO: 8450, WARP: 8453, ZionDex: 8454 (live), OASIS: 8094, LND REST: 8080 (pending), LND gRPC: 10009 (pending), LND P2P: 9735 (pending), Web: 80/443, Dashboard: 8766 |
-| Edge Node 2 (follower) | VPS (same) | 62.171.141.136 | P2P: 8334, RPC: 8446 (localhost) |
-| Local Backup Node | zionserver-144 | 109.81.27.87 | RPC: 8446 (localhost), P2P: 8333 |
+| Edge Node 1 (primary) | VPS (Ubuntu 24.04.4) | 62.171.141.136 | P2P: 8333, RPC: 9443 (localhost), Pool: 8444, WS: 8445, DAO: 8450, WARP: 8453, ZionDex: 8454 (live), OASIS: 8094 (API) / 9102 (metrics), LND REST: 8080 (pending), LND gRPC: 10009 (pending), LND P2P: 9735 (pending), Web: 80/443, Dashboard: 8766 |
+| Edge Node 2 (follower) | VPS (same) | 62.171.141.136 | P2P: 8334, RPC: 8448 (localhost) |
+| Local Backup Node | zionserver-144 | 109.81.27.87 | RPC: 8448 (localhost), P2P: 8333 |
 
 ### Canonical Ports & Services (v3.0.4 — New Server)
 
 | Service | Port | Bind | Protocol | Notes |
 |---------|------|------|----------|-------|
 | Node 1 P2P | 8333 | 0.0.0.0 | TCP | Peer-to-peer sync (primary) |
-| Node 1 RPC | 8443 | 127.0.0.1 | TCP | JSON-RPC 2.0 (nginx proxies 8443 → 8443) |
+| Node 1 RPC | 9443 | 127.0.0.1 | TCP | JSON-RPC 2.0 (nginx TCP stream proxy 8443 → 9443) |
 | Node 2 P2P | 8334 | 0.0.0.0 | TCP | Follower P2P (seeds from Node 1) |
-| Node 2 RPC | 8446 | 127.0.0.1 | TCP | Follower node RPC |
+| Node 2 RPC | 8448 | 127.0.0.1 | TCP | Follower node RPC |
+| Node 2 WebSocket | 8449 | 127.0.0.1 | TCP | Follower node event stream |
 | Node 2 metrics | 9116 | 127.0.0.1 | HTTP | Follower node metrics |
 | Node WebSocket | 8445 | 127.0.0.1 | TCP | Node event stream |
 | Node metrics | 9100 | 127.0.0.1 | HTTP | Prometheus metrics |
 | Pool Stratum | 8444 | 0.0.0.0 | TCP | Miner connections (public) |
 | Pool stats HTTP | 8455 | 127.0.0.1 | HTTP | Pool routing metrics + /stats + /miners API |
 | Bridge metrics | 9101 | 127.0.0.1 | HTTP | Prometheus metrics (bridge) |
+| OASIS API | 8094 | 127.0.0.1 | HTTP | Avatar hub API |
+| OASIS metrics | 9102 | 127.0.0.1 | HTTP | Prometheus metrics (OASIS) |
 | DAO API | 8450 | 127.0.0.1 | HTTP | DAO daemon API (via nginx /api/dao) |
 | WARP Relay | 8453 | 0.0.0.0 | HTTP | Cross-chain relay API |
 | ZionDex Router | 8454 | 0.0.0.0 | HTTP | Cross-chain DEX router API (live, 7 chains) |
@@ -540,8 +543,8 @@ Dashboard: https://dashboard.zionterranova.com (nginx → Python)
 | Purpose | URL |
 |---------|-----|
 | **Pool (public mining)** | `62.171.141.136:8444` |
-| **RPC (server localhost only)** | `http://127.0.0.1:8443/jsonrpc` |
-| **RPC (via nginx proxy)** | `https://zionterranova.com/api/rpc` (nginx 8443 → 8443) |
+| **RPC (server localhost only)** | `http://127.0.0.1:9443/jsonrpc` |
+| **RPC (via nginx proxy)** | `https://zionterranova.com/api/rpc` (nginx 8443 → 9443) |
 | **DAO API (via nginx proxy)** | `https://zionterranova.com/api/dao` |
 | **WARP API** | `http://127.0.0.1:8453` (internal) / `http://62.171.141.136:8453` (external) |
 | **ZionDex Router API** | `http://127.0.0.1:8454` (live, 7 chains) |
@@ -559,14 +562,19 @@ Dashboard: https://dashboard.zionterranova.com (nginx → Python)
 
 The new server runs as the canonical primary node + pool + full stack. It must survive reboots without local PC intervention.
 
-**Systemd services** (installed via `V3/deploy/new-server/`):
-- `zion-node.service` — Core node (P2P:8333, RPC:8443)
-- `zion-pool.service` — Mining pool (Stratum:8444)
-- `zion-bridge.service` — Bridge relay (L2)
-- `zion-dao.service` — DAO scanner (L2)
-- `zion-warp.service` — WARP relay (L3)
+**Systemd services** (installed via `edge-deploy/systemd/`):
+- `zion-edge-node1.service` — Core node (P2P:8333, RPC:9443)
+- `zion-edge-node2.service` — Follower node (P2P:8334, RPC:8448)
+- `zion-edge-pool.service` — Mining pool (Stratum:8444)
+- `zion-edge-bridge.service` — Bridge relay (L2)
+- `zion-edge-dao.service` — DAO scanner (L2)
+- `zion-edge-atomic-swap.service` — Atomic swap (L2)
+- `zion-edge-warp.service` — WARP relay (L3)
+- `zion-edge-dex.service` — ZionDex router (L3)
+- `zion-edge-oasis.service` — OASIS avatar hub (L4)
 - `zion-edge-python-dashboard.service` — ZION V3 Dashboard (Python, port 8766)
-- `zion-watchdog.timer` — Health monitor (2-minute timer)
+- `zion-edge-watchdog.timer` — Health monitor (2-minute timer)
+- `zion-edge-backup.timer` — Database backup
 - `nginx` — Reverse proxy + SSL (ports 80/443)
 
 **Docker container:**
@@ -808,15 +816,17 @@ All ZION services on the new server run as systemd units:
 
 | Service | Unit file | Port(s) | Depends on |
 |---------|-----------|---------|------------|
-| Node | `zion-node.service` | 8333 (P2P), 8443 (RPC), 8445 (WS), 9100 (metrics) | network-online |
-| Pool | `zion-pool.service` | 8444 (Stratum) | zion-node |
-| Bridge | `zion-bridge.service` | 9101 (metrics) | zion-node |
-| DAO | `zion-dao.service` | 8450 (API) | zion-node |
-| WARP | `zion-warp.service` | 8453 | zion-node |
-| ZionDex Router | `zion-ziondex-router.service` | 8454 (pending) | zion-warp |
+| Node | `zion-edge-node1.service` | 8333 (P2P), 9443 (RPC), 8445 (WS), 9100 (metrics) | network-online |
+| Pool | `zion-edge-pool.service` | 8444 (Stratum) | zion-edge-node1 |
+| Bridge | `zion-edge-bridge.service` | 9101 (metrics) | zion-edge-node1 |
+| DAO | `zion-edge-dao.service` | 8450 (API) | zion-edge-node1 |
+| Atomic Swap | `zion-edge-atomic-swap.service` | 8452 (API) | zion-edge-node1 |
+| WARP | `zion-edge-warp.service` | 8453 | zion-edge-node1 |
+| ZionDex Router | `zion-edge-dex.service` | 8454 (live, 7 chains) | zion-edge-warp |
+| OASIS | `zion-edge-oasis.service` | 8094 (API), 9102 (metrics) | zion-edge-node1 |
 | LND (Lightning) | `zion-edge-lnd.service` | 8080, 10009, 9735 (pending) | docker |
-| Dashboard | `zion-edge-python-dashboard.service` | 8766 | zion-node |
-| Watchdog | `zion-watchdog.timer` | — (2-min interval) | — |
+| Dashboard | `zion-edge-python-dashboard.service` | 8766 | zion-edge-node1 |
+| Watchdog | `zion-edge-watchdog.timer` | — (2-min interval) | — |
 | Nginx | `nginx.service` | 80, 443 | — |
 | Docker (web) | `docker.service` + compose | 127.0.0.1:3000 | — |
 
@@ -837,7 +847,7 @@ All ZION services on the new server run as systemd units:
 
 If pool stops accepting connections:
 1. Check pool logs: `journalctl -u zion-pool.service -f`
-2. Verify node RPC is accessible: `curl http://127.0.0.1:8443/jsonrpc`
+2. Verify node RPC is accessible: `curl http://127.0.0.1:9443/jsonrpc`
 3. Check pool configuration: `V3/L1/pool/config/pool-mainnet.toml`
 4. Restart pool service: `systemctl restart zion-pool.service`
 5. Verify miners can reconnect
@@ -910,19 +920,19 @@ Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_F
 
 **System Status (new server 62.171.141.136):**
 - ✅ Hard Genesis Reset: Complete (2026-07-07) — new genesis hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
-- ✅ zion-node: Running (P2P 8333, RPC 127.0.0.1:8443, WS 127.0.0.1:8445, metrics 127.0.0.1:9100) — **height 4357+** (pool-mined blocks accepted)
-- ✅ zion-node2: Running (follower, P2P 8334, RPC 127.0.0.1:8446)
-- ✅ zion-pool: Running (Stratum 0.0.0.0:8444, metrics 127.0.0.1:8455, fee split 89/5/5/1) — 10+ mineri, ~336 KH/s, 146 blocks found, 100% accept rate
-- ✅ zion-bridge: Running (metrics 127.0.0.1:9101, EVM: OP, Base, ARB, AVAX)
-- ✅ zion-dao: Running (API 127.0.0.1:8450, scanner → 127.0.0.1:8443)
-- ✅ zion-warp: Running (0.0.0.0:8453, 499 tests, 13 chain adapters + Solana + Stellar)
-- ✅ zion-atomic-swap: Running (Base HTLC, scanner → 127.0.0.1:8443)
-- ✅ zion-dashboard: Running (127.0.0.1:8766, Basic Auth via DASHBOARD_USERS env) — Revenue System + R4 per-source report live
+- ✅ zion-edge-node1: Running (P2P 8333, RPC 127.0.0.1:9443, WS 127.0.0.1:8445, metrics 127.0.0.1:9100) — **height 4357+** (pool-mined blocks accepted)
+- ✅ zion-edge-node2: Running (follower, P2P 8334, RPC 127.0.0.1:8448)
+- ✅ zion-edge-pool: Running (Stratum 0.0.0.0:8444, metrics 127.0.0.1:8455, fee split 89/5/5/1) — 10+ mineri, ~336 KH/s, 146 blocks found, 100% accept rate
+- ✅ zion-edge-bridge: Running (metrics 127.0.0.1:9101, EVM: OP, Base, ARB, AVAX)
+- ✅ zion-edge-dao: Running (API 127.0.0.1:8450, scanner → 127.0.0.1:9443)
+- ✅ zion-edge-warp: Running (0.0.0.0:8453, 499 tests, 13 chain adapters + Solana + Stellar)
+- ✅ zion-edge-atomic-swap: Running (Base HTLC, scanner → 127.0.0.1:9443)
+- ✅ zion-edge-python-dashboard: Running (127.0.0.1:8766, Basic Auth via DASHBOARD_USERS env) — Revenue System + R4 per-source report live
 - ✅ zion-free-world: Running
 - ✅ zion-issobella: Running
-- ✅ zion-oasis: Running
-- ✅ zion-watchdog: Running (timer, 2 min interval, RPC → 127.0.0.1:8443)
-- ✅ zion-ziondex-router: Running (127.0.0.1:8454, 7 chains live, 28 tests, cross-chain AMM routing)
+- ✅ zion-edge-oasis: Running (API 127.0.0.1:8094, metrics 127.0.0.1:9102)
+- ✅ zion-edge-watchdog: Running (timer, 2 min interval, RPC → 127.0.0.1:9443)
+- ✅ zion-edge-dex: Running (127.0.0.1:8454, 7 chains live, 28 tests, cross-chain AMM routing)
 - 🔲 zion-edge-lnd: Pending deploy (Docker: LND 8080/10009/9735 + bitcoind 18332/18333)
 - ✅ nginx: Running (80/443, SSL Let's Encrypt, HTTP/2)
 - ✅ Website: Running (Docker `zion-web`, Next.js 16.2.9, 73+ routes, port 127.0.0.1:3000)
@@ -1379,7 +1389,7 @@ Key variables (no `export` prefix — systemd `EnvironmentFile` format):
 ZION_NODE_ID="zion-new-mainnet-primary"
 ZION_NODE_STATE_PATH="/data/zion/state"
 ZION_P2P_BIND="0.0.0.0:8333"
-ZION_RPC_BIND="127.0.0.1:8443"
+ZION_RPC_BIND="127.0.0.1:9443"
 ZION_WEBSOCKET_BIND="127.0.0.1:8445"
 ZION_METRICS_BIND="127.0.0.1:9100"
 ZION_SEED_PEERS="127.0.0.1:8333"
@@ -1427,7 +1437,7 @@ ZION_LOG_BLOCK_SUBMITTER=1
 |--------|----------|----------|
 | `zionterranova.com` | `127.0.0.1:3000` (Next.js) | Let's Encrypt (zionterranova.com + www) |
 | `dashboard.zionterranova.com` | `127.0.0.1:8766` (Dashboard) | Let's Encrypt (dashboard.zionterranova.com) |
-| `/api/rpc` | `127.0.0.1:8443` (node RPC, nginx 8443 → 8443) | (via main domain) |
+| `/api/rpc` | `127.0.0.1:9443` (node RPC, nginx 8443 → 9443) | (via main domain) |
 | `/api/dao` | `127.0.0.1:8450` (DAO API) | (via main domain) |
 
 **Security headers:** HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
@@ -1486,7 +1496,7 @@ ssh zion-new
 systemctl is-active zion-node zion-pool zion-bridge zion-dao zion-warp zion-dashboard nginx
 
 # Check chain height
-curl -s http://127.0.0.1:8443/jsonrpc -d '{"jsonrpc":"2.0","method":"getSupplyInfo","id":1}' | python3 -c "import sys,json; d=json.load(sys.stdin)['result']; print(f'height={d[\"height\"]} supply={d[\"circulating_supply_zion\"]:,}ZION')"
+curl -s http://127.0.0.1:9443/jsonrpc -d '{"jsonrpc":"2.0","method":"getSupplyInfo","id":1}' | python3 -c "import sys,json; d=json.load(sys.stdin)['result']; print(f'height={d[\"height\"]} supply={d[\"circulating_supply_zion\"]:,}ZION')"
 
 # Check genesis hash
 journalctl -u zion-node --no-pager -n 50 | grep tip_hash_hex | tail -1

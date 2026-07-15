@@ -49,7 +49,10 @@ log "Backing up node state databases..."
 NODE_BACKUP="${BACKUP_DIR}/daily/node_state_${TIMESTAMP}"
 mkdir -p "${NODE_BACKUP}"
 
-for db in "/opt/zion/data/edge-state.db" "/opt/zion/data/edge2-state.db"; do
+# On the live Edge server, state DBs live in /data/zion/ (per edge-environment.sh).
+# Also check /opt/zion/data/ for repo-local dev deployments.
+for db in "/data/zion/state" "/data/zion/state-node2" \
+          "/opt/zion/data/edge-state.db" "/opt/zion/data/edge2-state.db"; do
     if [[ -f "$db" ]]; then
         cp "$db" "${NODE_BACKUP}/"
         log "${GREEN}  ✓ $(basename $db)${NC}"
@@ -58,20 +61,24 @@ for db in "/opt/zion/data/edge-state.db" "/opt/zion/data/edge2-state.db"; do
     fi
 done
 
-# ── 2. V3/data databases (bridge, dao, warp, pool, swap) ────────────────────
-log "Backing up /opt/zion/data databases..."
+# ── 2. /data/zion databases (bridge, dao, warp, pool, swap) ──────────────────
+log "Backing up /data/zion databases..."
 V3_BACKUP="${BACKUP_DIR}/daily/v3_data_${TIMESTAMP}"
 mkdir -p "${V3_BACKUP}"
 
-if [[ -d "/opt/zion/data" ]]; then
-    for db in /opt/zion/data/*.db /opt/zion/data/pplns-state.json; do
-        if [[ -f "$db" ]]; then
-            cp "$db" "${V3_BACKUP}/"
-            log "${GREEN}  ✓ $(basename $db)${NC}"
-        fi
-    done
-else
-    log "${YELLOW}  ⚠  V3/data directory not found${NC}"
+# Live server uses /data/zion/ for all DBs; /opt/zion/data is the repo-local fallback.
+for data_dir in "/data/zion" "/opt/zion/data"; do
+    if [[ -d "$data_dir" ]]; then
+        for db in "$data_dir"/*.db "$data_dir"/pplns-state.json; do
+            if [[ -f "$db" ]]; then
+                cp "$db" "${V3_BACKUP}/"
+                log "${GREEN}  ✓ $(basename $db)${NC}"
+            fi
+        done
+    fi
+done
+if [[ ! -d "/data/zion" && ! -d "/opt/zion/data" ]]; then
+    log "${YELLOW}  ⚠  No data directory found${NC}"
 fi
 
 # ── 3. Critical config files ───────────────────────────────────────────────

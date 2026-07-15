@@ -12,7 +12,7 @@ EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="RUST_LOG=info"
 Environment="ZIONOS_BIND=127.0.0.1:8888"
 Environment="ZIONOS_DATA_DIR=/opt/zion/data/dashboard"
-Environment="ZIONOS_NODE_RPC=http://127.0.0.1:8443"
+Environment="ZIONOS_NODE_RPC=http://127.0.0.1:9443"
 Environment="ZIONOS_POOL_METRICS=http://127.0.0.1:8455"
 Environment="ZIONOS_DAO_API=http://127.0.0.1:8450"
 Environment="ZIONOS_WARP_API=http://127.0.0.1:8453"

@@ -100,7 +100,7 @@ impl Default for OasisConfig {
             ws_port: 8095,
             max_ws_connections: 1000,
 
-            metrics_port: 9101,
+            metrics_port: 9102,
         }
     }
 }

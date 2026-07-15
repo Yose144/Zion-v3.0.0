@@ -78,6 +78,7 @@ export default function RootLayout({
                   <ZionWalletProvider>
                     <AuthProvider>
                     <ClientBackgrounds />
+                    <BackgroundToggle />
                     <div className="relative z-10 overflow-x-clip w-full">
                       <AlohaOverlay />
                       <Navigation />
@@ -90,7 +91,6 @@ export default function RootLayout({
                       <div className="site-footer">
                         <Footer />
                       </div>
-                      <BackgroundToggle />
                     </div>
                     <script dangerouslySetInnerHTML={{__html: `
                       (function() {

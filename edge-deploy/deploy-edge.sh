@@ -169,7 +169,7 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
         sed -i '/\"L1\/native-ffi\",/d' Cargo.toml 2>/dev/null || true
         sed -i '/\"L3\/ai-native\",/d' Cargo.toml 2>/dev/null || true
     fi
-    cargo build --release --bin node --bin server --bin zion-bridge --bin zion-dao --bin zion-atomic-swap --bin zion-warp-server --bin zion-miner 2>&1
+    cargo build --release --bin node --bin server --bin zion-bridge --bin zion-dao --bin zion-atomic-swap --bin zion-warp-server --bin zion-miner --bin zion-oasis 2>&1
     # Build agent
     cd '${REMOTE_ROOT}/ZION_OS/agent'
     cargo build --release 2>&1
@@ -209,6 +209,7 @@ SERVICES=(
     zion-edge-dao
     zion-edge-atomic-swap
     zion-edge-warp
+    zion-edge-oasis
     zion-edge-watchdog
     zion-edge-backup
     zion-edge-miner
@@ -239,6 +240,21 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
 
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl daemon-reload"
 
+# Stop legacy zion-* services before starting the hardened zion-edge-* units
+# to avoid port conflicts (e.g. zion-node :8443 vs nginx :8443).
+log "Stopping legacy zion-* services..."
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
+    systemctl disable --now \
+        zion-node zion-node2 zion-pool zion-bridge zion-dao \
+        zion-atomic-swap zion-warp zion-dex zion-oasis \
+        zion-dashboard zion-watchdog.timer \
+        2>/dev/null || true
+    systemctl reset-failed zion-node zion-node2 zion-pool zion-bridge zion-dao \
+        zion-atomic-swap zion-warp zion-dex zion-oasis zion-dashboard \
+        zion-watchdog.timer \
+        2>/dev/null || true
+"
+
 for svc in "${SERVICES[@]}"; do
     ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl enable ${svc}.service 2>/dev/null || true"
     if [[ -f "${REPO_ROOT}/edge-deploy/systemd/${svc}.timer" ]]; then
@@ -258,7 +274,7 @@ sleep 3
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-pool"
 sleep 3
 
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp zion-edge-oasis || true"
 
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-miner || true"
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-agent || true"
@@ -277,7 +293,7 @@ sleep 10
 
 echo ""
 echo "=== Deployment Status ==="
-for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp zion-edge-miner zion-edge-agent zion-edge-dashboard zion-edge-dex zion-edge-python-dashboard; do
+for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp zion-edge-oasis zion-edge-miner zion-edge-agent zion-edge-dashboard zion-edge-dex zion-edge-python-dashboard; do
     STATUS=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl is-active ${svc}" 2>/dev/null || true)
     if [[ "$STATUS" == "active" ]]; then
         echo -e "${GREEN}  ${svc} : ACTIVE${NC}"

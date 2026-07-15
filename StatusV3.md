@@ -36,18 +36,18 @@
 
 | Service | Port(s) | Bind | Layer | Status |
 |---------|---------|------|-------|--------|
-| zion-node | 8333 (P2P), 8443 (RPC), 8445 (WS), 9100 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active |
-| zion-node2 | 8334 (P2P), 8446 (RPC), 9116 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active (follower) |
+| zion-edge-node1 | 8333 (P2P), 9443 (RPC), 8445 (WS), 9100 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active |
+| zion-edge-node2 | 8334 (P2P), 8448 (RPC), 8449 (WS), 9116 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active (follower) |
 | zion-pool | 8444 (Stratum), 8455 (stats/metrics HTTP) | 8444 0.0.0.0, 8455 127.0.0.1 | L1 | ✅ active (mining) |
 | zion-bridge | 9101 (metrics) | 127.0.0.1 | L2 | ✅ active |
 | zion-dao | 8450 (API) | 127.0.0.1 | L2 | ✅ active |
 | zion-atomic-swap | 8452 (API) | 0.0.0.0 | L2 | ✅ active |
 | zion-warp | 8453 (WARP API) | 0.0.0.0 | L3 | ✅ active |
 | zion-dex | 8454 (DEX Router API) | 0.0.0.0 | L3 | ✅ active |
-| zion-oasis | 8094 | 127.0.0.1 | L4 | ✅ active |
+| zion-edge-oasis | 8094 (API), 9102 (metrics) | 127.0.0.1 | L4 | ✅ active |
 | zion-free-world | — | — | L5 | ✅ active |
 | zion-issobella | — | — | L6 | ✅ active |
-| zion-dashboard | 8766 | 127.0.0.1 | — | ✅ active |
+| zion-edge-python-dashboard | 8766 | 127.0.0.1 | — | ✅ active |
 | zion-watchdog.timer | — | — | — | ✅ active (2 min) |
 | zion-web (Docker) | 3000 | 127.0.0.1 | — | ✅ Up (377 MB) |
 | nginx | 80, 443 | 0.0.0.0 | — | ✅ active |
