@@ -550,6 +550,25 @@ export default function DefiPage() {
         </motion.div>
       </section>
 
+      {/* ═══════ Early Beta Banner ═══════ */}
+      <section className="zion-container relative z-10 mb-6">
+        <div className="zion-rainbow-card p-4 border-amber-500/30 bg-amber-500/10" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-200">
+                {cs ? 'DeFi Hub — raná beta' : 'DeFi Hub — Early Beta'}
+              </p>
+              <p className="text-xs text-amber-200/70 mt-1">
+                {cs
+                  ? 'wZION kontrakty jsou nasazeny na Base mainnetu, ale likvidita je zatím nízká. Používejte malé částky a buďte opatrní při velkých swapech.'
+                  : 'wZION contracts are deployed on Base mainnet, but liquidity is still low. Use small amounts and be cautious with large swaps.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ═══════ DeFi SECTION TABS ═══════ */}
       <section className="zion-container relative z-10 mb-8">
         <motion.div

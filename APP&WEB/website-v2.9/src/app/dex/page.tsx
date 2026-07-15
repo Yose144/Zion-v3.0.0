@@ -7,7 +7,7 @@
 
 import { useState, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, Globe, Shield, TrendingUp, ArrowRight, Info, Layers } from 'lucide-react';
+import { Zap, Globe, Shield, TrendingUp, ArrowRight, Info, Layers, AlertTriangle } from 'lucide-react';
 import CrossChainSwapWidget from '@/components/dex/CrossChainSwapWidget';
 import RecentSwaps from '@/components/dex/RecentSwaps';
 import TransactionStatus from '@/components/dex/TransactionStatus';
@@ -58,6 +58,21 @@ export default function DexPage() {
               </div>
             </div>
           </motion.div>
+        </div>
+      </div>
+
+      {/* Early Beta / Under Construction Banner */}
+      <div className="max-w-6xl mx-auto px-6 pt-6">
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-200">ZionDex — Under Construction / Early Beta</p>
+              <p className="text-xs text-amber-200/70 mt-1">
+                Cross-chain routing and the ZionDex AMM pools are still being deployed. Swaps currently route via existing external liquidity (e.g. Uniswap V3 on Base). Expect changes and use small amounts.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -151,19 +166,11 @@ export default function DexPage() {
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
                 <Link
-                  href="/defi/staking"
+                  href="/defi"
                   className="zion-rainbow-sub flex items-center justify-between p-2"
                   style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
-                  <span className="text-sm text-zinc-300">Staking (12% APR)</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
-                </Link>
-                <Link
-                  href="/defi/farming"
-                  className="zion-rainbow-sub flex items-center justify-between p-2"
-                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
-                >
-                  <span className="text-sm text-zinc-300">Farming (1 wZION/s)</span>
+                  <span className="text-sm text-zinc-300">Staking & Farming (in DeFi Hub)</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
               </div>
