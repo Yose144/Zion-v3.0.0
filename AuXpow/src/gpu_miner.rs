@@ -325,7 +325,7 @@ impl GpuMiner {
                 progpow_dag.as_ref().map(|d| d.size_entries).unwrap_or(0)
             };
             let dag_elements = dag_entries / 2;
-            self.ensure_proque_progpow(kernel_file, self.block_height, dag_elements)?
+            self.ensure_proque_progpow(kernel_file, algorithm, self.block_height, dag_elements)?
         } else {
             self.ensure_proque(kernel_file)?
         };
@@ -1043,38 +1043,31 @@ impl GpuMiner {
     /// Ensure a ProQue for KawPow/ProgPow kernel with period-based random math.
     ///
     /// The kernel source is regenerated with new random math code every period
-    /// (10 blocks for KawPow, 50 for EPIC ProgPow) and recompiled.
-    /// Cached in `proques_progpow` keyed by `"kernel_file:period"`.
+    /// (10 blocks for KawPow, 3 for EvrProgPow, 6 for MeowPow, 50 for EPIC ProgPow)
+    /// and recompiled.
+    /// Cached in `proques_progpow` keyed by `"kernel_file:algo:period"`.
     fn ensure_proque_progpow(
         &mut self,
         kernel_file: &str,
+        algorithm: &str,
         block_height: u64,
         dag_elements: u64,
     ) -> Result<&ProQue> {
         use crate::progpow_codegen;
 
-        let (period, params) = match kernel_file {
-            "kawpow_kernel.cl" => (
-                block_height / progpow_codegen::KAWPOW_PARAMS.period as u64,
-                &progpow_codegen::KAWPOW_PARAMS,
-            ),
-            "progpow_kernel.cl" => (
-                block_height / progpow_codegen::EPIC_PROGPOW_PARAMS.period as u64,
-                &progpow_codegen::EPIC_PROGPOW_PARAMS,
-            ),
-            _ => return Err(anyhow!("Not a ProgPow/KawPow kernel: {kernel_file}")),
-        };
+        let params = progpow_codegen::select_progpow_params(algorithm);
+        let period = block_height / params.period as u64;
 
         // Cache key includes dag_elements so that the kernel is recompiled
         // with the correct PROGPOW_DAG_ELEMENTS when the DAG becomes available.
         let dag_elements_safe = dag_elements.max(1);
-        let cache_key = format!("{kernel_file}:period_{period}:dag_{dag_elements_safe}");
+        let cache_key = format!("{kernel_file}:algo_{algorithm}:period_{period}:dag_{dag_elements_safe}");
         if self.proques_progpow.contains_key(&cache_key) {
             return Ok(self.proques_progpow.get(&cache_key).unwrap());
         }
 
         // GC old period entries (keep only current + 1)
-        let prefix = format!("{kernel_file}:period_");
+        let prefix = format!("{kernel_file}:algo_{algorithm}:period_");
         let keys_to_remove: Vec<String> = self
             .proques_progpow
             .keys()
@@ -1110,10 +1103,10 @@ impl GpuMiner {
             }
         };
 
-        // Inject random math code
+        // Inject random math code — use algorithm-aware preparation for kawpow_kernel.cl
         let src = match kernel_file {
             "kawpow_kernel.cl" => {
-                progpow_codegen::prepare_kawpow_kernel_source(&base_src, block_height)
+                progpow_codegen::prepare_kawpow_kernel_source_for_algo(&base_src, algorithm, block_height)
             }
             "progpow_kernel.cl" => {
                 progpow_codegen::prepare_epic_progpow_kernel_source(&base_src, block_height)
@@ -1134,10 +1127,21 @@ impl GpuMiner {
         //   - With GROUP_SIZE=256, group_id goes 0..15, but share[0].uint64s
         //     only has 8 elements → out-of-bounds local memory access → GPU hang!
         let dag_bytes = dag_elements_safe * 16 * 16; // * PROGPOW_LANES(16) * sizeof(dag_t)
-        let build_opts = format!(
-            "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE=128",
-            dag_elements_safe, dag_bytes
-        );
+        // Pass algorithm-specific PROGPOW_REGS and PROGPOW_CNT_MATH as build defines
+        // so the kernel can use the correct register file size and math loop count.
+        // MeowPow uses REGS=16 and CNT_MATH=9 (halved vs KawPow's 32/18).
+        // EvrProgPow uses the same REGS/CNT_MATH as KawPow (32/18) but PERIOD=3.
+        let build_opts = if params.regs != 32 || params.cnt_math != 18 {
+            format!(
+                "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE=128 -DPROGPOW_REGS={} -DPROGPOW_CNT_MATH={}",
+                dag_elements_safe, dag_bytes, params.regs, params.cnt_math
+            )
+        } else {
+            format!(
+                "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE=128",
+                dag_elements_safe, dag_bytes
+            )
+        };
 
         let mut prog_builder = ProgramBuilder::new();
         prog_builder.src(src);

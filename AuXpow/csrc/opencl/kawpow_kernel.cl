@@ -32,11 +32,15 @@ typedef unsigned long      uint64_t;
 #define ROTR32(x, n) rotate((x), (uint32_t)(32-n))
 
 #define PROGPOW_LANES           16
+#ifndef PROGPOW_REGS
 #define PROGPOW_REGS            32
+#endif
 #define PROGPOW_DAG_LOADS       4
 #define PROGPOW_CACHE_WORDS     4096
 #define PROGPOW_CNT_DAG         64
+#ifndef PROGPOW_CNT_MATH
 #define PROGPOW_CNT_MATH        18
+#endif
 
 #define OPENCL_PLATFORM_UNKNOWN 0
 #define OPENCL_PLATFORM_NVIDIA 1
