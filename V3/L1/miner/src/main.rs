@@ -3006,6 +3006,7 @@ struct MinerConfig {
     /// Whether Stream 3 (CPU external coins) is enabled (default: true)
     stream3_enabled: bool,
     /// Whether auto-mode was requested (affects logging)
+    #[allow(dead_code)]
     auto_mode: bool,
 }
 
