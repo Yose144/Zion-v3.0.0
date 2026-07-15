@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { apiClient } from "@/lib/api";
 import { motion } from "framer-motion";
 import { useLang } from "@/contexts/LanguageContext";
-import { usePolling } from "@/hooks/usePolling";
+import { useBlockchainStats } from "@/hooks/useBlockchainStats";
 import {
   type LucideIcon,
   Banknote,
@@ -117,22 +115,9 @@ export default function ProExplorerStats() {
   const { lang } = useLang();
   const cs = lang === "cs";
   const locale = cs ? "cs-CZ" : "en-US";
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [error, setError] = useState(false);
+  const { data: stats, error, loading } = useBlockchainStats(15_000);
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const json = await apiClient<Stats>("/blockchain/stats");
-      setStats(json);
-      setError(false);
-    } catch {
-      setError(true);
-    }
-  }, []);
-
-  usePolling(fetchStats, 15_000);
-
-  if (!stats && !error) {
+  if (loading && !stats && !error) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
         {[...Array(12)].map((_, i) => (
@@ -151,7 +136,6 @@ export default function ProExplorerStats() {
       <div className="zion-rainbow-sub p-6 text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
         <Server className="h-8 w-8 text-red-400 mx-auto mb-2" />
         <p className="text-red-400 text-sm">{cs ? "Nepodařilo se připojit k síti ZION" : "Unable to connect to ZION network"}</p>
-        <button onClick={fetchStats} className="mt-3 text-xs text-gray-400 hover:text-white transition">{cs ? "Zkusit znovu →" : "Retry →"}</button>
       </div>
     );
   }

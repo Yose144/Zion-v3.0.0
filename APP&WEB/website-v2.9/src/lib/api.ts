@@ -126,8 +126,8 @@ export async function apiClient<T = any>(
   options?: RequestInit & { retries?: number; retryDelay?: number },
 ): Promise<T> {
   const url = getApiUrl(path);
-  const maxRetries = options?.retries ?? 2;
-  const baseDelay = options?.retryDelay ?? 800;
+  const maxRetries = options?.retries ?? 1;
+  const baseDelay = options?.retryDelay ?? 400;
 
   let lastError: Error | null = null;
 

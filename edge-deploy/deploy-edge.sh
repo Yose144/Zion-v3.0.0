@@ -55,11 +55,17 @@ fi
 if ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "test -d '${REMOTE_ROOT}'" 2>/dev/null; then
     log "Backing up current installation to ${BACKUP_PATH}..."
     ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
+        # Clean up old deploy backups (keep only the most recent 2)
+        ls -dt '${REMOTE_ROOT}/backups/'deploy-backup-* 2>/dev/null | tail -n +3 | xargs rm -rf 2>/dev/null || true
         mkdir -p '${BACKUP_PATH}'
+        # Only back up critical config + systemd files, not the entire repo
+        # (full repo backups fill the disk — repo is in git anyway)
         if command -v rsync >/dev/null 2>&1; then
-            rsync -a --exclude=target --exclude=.git --exclude=data --exclude=logs '${REMOTE_ROOT}/' '${BACKUP_PATH}/'
-        else
-            cp -r '${REMOTE_ROOT}' '${BACKUP_PATH}'
+            rsync -a '${REMOTE_ROOT}/edge-deploy/' '${BACKUP_PATH}/edge-deploy/' 2>/dev/null || true
+            rsync -a '${REMOTE_ROOT}/V3/L2/bridge/config/' '${BACKUP_PATH}/bridge-config/' 2>/dev/null || true
+            rsync -a '${REMOTE_ROOT}/V3/L2/dao/config/' '${BACKUP_PATH}/dao-config/' 2>/dev/null || true
+            rsync -a '${REMOTE_ROOT}/V3/L2/atomic-swap/config/' '${BACKUP_PATH}/swap-config/' 2>/dev/null || true
+            rsync -a '${REMOTE_ROOT}/V3/L3/warp/config/' '${BACKUP_PATH}/warp-config/' 2>/dev/null || true
         fi
     " 2>/dev/null || warn "Backup step failed (continuing anyway)"
 else
@@ -70,7 +76,7 @@ fi
 log "Syncing repository to Edge (${REMOTE_ROOT})..."
 RSYNC_EXCLUDES=(
     '--exclude=.git'
-    '--exclude=data'
+    '--exclude=/data'
     '--exclude=logs'
     '--exclude=target'
     '--exclude=node_modules'
@@ -121,18 +127,13 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
 
 # ── Step 3: Sync website code ──
 log "Syncing website code..."
-if command -v rsync &>/dev/null; then
-    rsync -avz --exclude='node_modules' --exclude='.next' --exclude='out' \
-        -e "ssh ${SSH_OPTS}" \
-        "${REPO_ROOT}/APP&WEB/website-v2.9/" \
-        "${EDGE_USER}@${EDGE_HOST}:${REMOTE_WEB}/"
-else
-    tar czf - \
-        --exclude='node_modules' --exclude='.next' --exclude='out' \
-        -C "${REPO_ROOT}/APP&WEB" website-v2.9/ 2>/dev/null | \
-        ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
-        "mkdir -p '${REMOTE_ROOT}/APP&WEB' && cd '${REMOTE_ROOT}/APP&WEB' && tar xzf -"
-fi
+# NOTE: The path contains '&' which breaks rsync on macOS (v2.x lacks --protect-args).
+# Using tar over SSH avoids shell interpretation issues with special characters.
+tar czf - \
+    --exclude='node_modules' --exclude='.next' --exclude='out' \
+    -C "${REPO_ROOT}/APP&WEB" website-v2.9/ 2>/dev/null | \
+    ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
+    "mkdir -p '${REMOTE_ROOT}/APP&WEB' && cd '${REMOTE_ROOT}/APP&WEB' && tar xzf -"
 
 # Ensure all files in /opt/zion are owned by zion after sync
 log "Fixing ownership of /opt/zion..."
@@ -147,9 +148,9 @@ scp ${SSH_OPTS} "${REPO_ROOT}/edge-deploy/config/edge-environment.sh" \
 
 # Verify live env file has real secrets (not placeholders)
 LIVE_ENV_CHECK=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
-    grep -c 'SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT' /etc/zion/edge-environment.sh 2>/dev/null || echo 0
-" 2>/dev/null || echo "ERR")
-if [[ "${LIVE_ENV_CHECK}" != "0" && "${LIVE_ENV_CHECK}" != "ERR" ]]; then
+    grep -c 'SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT' /etc/zion/edge-environment.sh 2>/dev/null || true
+" 2>/dev/null | tr -d '[:space:]')
+if [[ "${LIVE_ENV_CHECK}" != "0" && -n "${LIVE_ENV_CHECK}" ]]; then
     err "LIVE env /etc/zion/edge-environment.sh contains ${LIVE_ENV_CHECK} placeholder(s)!
         Pool payouts, atomic swap, dashboard auth, and/or DAO auth are BROKEN.
         Restore real secrets from backup before continuing:

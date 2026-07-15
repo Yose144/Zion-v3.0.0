@@ -384,17 +384,17 @@ pub fn meets_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
 /// Check if a hash meets the target when the hash is interpreted as a
 /// little-endian 256-bit integer.
 ///
-/// Decred BLAKE3 (DCP-0011) requires the PoW hash to be treated as a little
-/// endian unsigned integer when comparing against the target difficulty.  The
-/// target bytes themselves remain big-endian, as produced by
-/// `difficulty_to_target`.
+/// VerusHash v2.2 and Decred BLAKE3 (DCP-0011) return the PoW hash in
+/// little-endian byte order (as per Bitcoin's uint256 convention). The target
+/// bytes remain big-endian, as produced by `difficulty_to_target` or received
+/// from a stratum pool.
+///
+/// To compare correctly we reverse the hash bytes (converting LE → BE) and
+/// compare against the target as big-endian. Reversing the target too would
+/// yield an incorrect comparison (the target's high bytes would become low).
 #[inline]
 pub fn meets_target_little_endian(hash: &[u8; 32], target: &[u8; 32]) -> bool {
-    // Both hash and target are stored as big-endian byte arrays, but VerusHash
-    // and Decred BLAKE3 interpret the PoW result as a little-endian 256-bit
-    // integer. Compare the byte-reversed views so the least-significant byte
-    // of each value is examined first.
-    hash.iter().rev().cmp(target.iter().rev()).is_le()
+    hash.iter().rev().cmp(target.iter()).is_le()
 }
 
 /// Parse a hex target string (big-endian) into a 32-byte array.

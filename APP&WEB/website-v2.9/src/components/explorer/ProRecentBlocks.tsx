@@ -77,10 +77,10 @@ export default function ProRecentBlocks() {
     }
   }, []);
 
-  usePolling(fetchBlocks, 15_000);
+  usePolling(fetchBlocks, 30_000);
   usePolling(() => {
     setTick((t) => t + 1);
-  }, 15_000, { immediate: false });
+  }, 30_000, { immediate: false });
 
   return (
     <motion.div

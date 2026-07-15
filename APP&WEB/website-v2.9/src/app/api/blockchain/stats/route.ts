@@ -14,6 +14,105 @@ import { resolveSupplySnapshot } from '@/lib/supply';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
+/**
+ * In-memory response cache — deduplicates concurrent requests and serves
+ * stale-while-revalidate for up to CACHE_TTL ms.
+ * This is critical because 3+ explorer components all call /blockchain/stats
+ * simultaneously on page load and every 15s. Without this, each call triggers
+ * 6 parallel RPC requests (getInfo, getLastBlockHeader, getPoolStats, etc).
+ */
+const CACHE_TTL = 5_000; // 5 seconds
+let cachedResponse: { json: any; ts: number } | null = null;
+let inFlight: Promise<{ json: any; ts: number }> | null = null;
+
+async function computeStats(): Promise<{ json: any; ts: number }> {
+  const rpc = getZionRpc();
+
+  const [info, lastBlock, poolStats, prometheusStats, dbSize, avgBlockTime] = await Promise.all([
+    rpc.getInfo().catch(() => null),
+    rpc.getLastBlockHeader().catch(() => null),
+    rpc.getPoolStats().catch(() => null),
+    getPoolStatsFromPrometheus().catch(() => null),
+    getNodeDatabaseSize().catch(() => 0),
+    rpc.getAverageBlockTime(30).catch(() => 60),
+  ]);
+
+  if (!info) {
+    throw new Error('Cannot reach any ZION daemon');
+  }
+
+  const supply = await resolveSupplySnapshot(rpc, info.height);
+
+  const hashrate = poolStats?.hashrate?.pool || poolStats?.pool_hashrate || prometheusStats?.pool_hashrate || 0;
+  const miners   = poolStats?.miners?.active || poolStats?.active_miners || prometheusStats?.active_miners || 0;
+  const blocksF  = poolStats?.blocks?.found || poolStats?.blocks_found || prometheusStats?.blocks_found || 0;
+  const shares   = poolStats?.shares?.valid || poolStats?.valid_shares || prometheusStats?.valid_shares || 0;
+
+  const stats = {
+    block_height: info.height,
+    top_block_hash: info.top_block_hash || '',
+    difficulty: info.difficulty,
+    cumulative_difficulty: info.cumulative_difficulty || 0,
+    premine_supply: supply.premineSupply,
+    mined_supply: supply.minedSupply,
+    circulating_supply: supply.circulatingSupply,
+    total_supply: supply.maxSupply,
+    max_supply: supply.maxSupply,
+    remaining_supply: supply.remainingSupply,
+    emission_pct: supply.emissionPct.toFixed(6),
+    network_hashrate: info.difficulty / (info.target || 60),
+    network_hashrate_formatted: formatHashrate(info.difficulty / (info.target || 60)),
+    target_block_time: info.target || 60,
+    avg_block_time: avgBlockTime,
+    tx_count: info.tx_count || 0,
+    tx_pool_size: info.tx_pool_size || 0,
+    incoming_connections: info.incoming_connections_count || 0,
+    outgoing_connections: info.outgoing_connections || 0,
+    total_connections: (info.incoming_connections_count || 0) + (info.outgoing_connections || 0),
+    white_peerlist_size: info.white_peerlist_size || 0,
+    grey_peerlist_size: info.grey_peerlist_size || 0,
+    block_size_limit: info.block_size_limit || 0,
+    block_size_median: info.block_size_median || 0,
+    mainnet: info.mainnet ?? true,
+    testnet: info.testnet ?? false,
+    version: info.version || '',
+    status: info.status || 'OK',
+    start_time: info.start_time || 0,
+    database_size: dbSize || info.database_size || 0,
+    alt_blocks_count: info.alt_blocks_count || 0,
+    pool_hashrate: hashrate,
+    pool_hashrate_formatted: formatHashrate(hashrate),
+    active_miners: miners,
+    total_miners: poolStats?.miners?.total || poolStats?.total_miners || miners,
+    pool_blocks_found: blocksF,
+    valid_shares: shares,
+    pool_uptime_s: poolStats?.uptime_s || 0,
+    pool_pplns_window: poolStats?.pplns_window_size || 0,
+    pool_pending_payouts_atomic: poolStats?.payouts?.pending_total_atomic || 0,
+    pool_pending_miners: poolStats?.payouts?.pending_miners || 0,
+    connected: true,
+    last_block: lastBlock ? {
+      height: lastBlock.height,
+      hash: lastBlock.hash,
+      timestamp: lastBlock.timestamp,
+      difficulty: lastBlock.difficulty,
+      reward: lastBlock.reward / ATOMIC_UNITS_PER_ZION,
+      num_txes: lastBlock.num_txes || 0,
+      block_size: lastBlock.block_size || 0,
+    } : null,
+    latest_block: lastBlock ? {
+      height: lastBlock.height,
+      hash: lastBlock.hash,
+      timestamp: lastBlock.timestamp,
+    } : null,
+    mempool_size: info.tx_pool_size || 0,
+    total_blocks: info.height,
+    total_transactions: info.tx_count || info.height,
+  };
+
+  return { json: stats, ts: Date.now() };
+}
+
 /** Try to read the actual LMDB/JSON state file size for database_size */
 async function getNodeDatabaseSize(): Promise<number> {
   try {
@@ -65,119 +164,46 @@ async function getPoolStatsFromPrometheus(): Promise<any> {
 }
 
 export async function GET() {
-  const rpc = getZionRpc();
-
   try {
-    // Fetch from RPC daemon (authoritative source) + pool for mining stats
-    const [info, lastBlock, poolStats, prometheusStats, dbSize, avgBlockTime] = await Promise.all([
-      rpc.getInfo().catch(() => null),
-      rpc.getLastBlockHeader().catch(() => null),
-      rpc.getPoolStats().catch(() => null),
-      getPoolStatsFromPrometheus().catch(() => null),
-      getNodeDatabaseSize().catch(() => 0),
-      rpc.getAverageBlockTime(30).catch(() => 60),
-    ]);
+    const now = Date.now();
 
-    if (!info) {
-      throw new Error('Cannot reach any ZION daemon');
+    // Serve from cache if fresh
+    if (cachedResponse && now - cachedResponse.ts < CACHE_TTL) {
+      return NextResponse.json(cachedResponse.json, {
+        headers: { 'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=15' },
+      });
     }
 
-    const supply = await resolveSupplySnapshot(rpc, info.height);
+    // Deduplicate concurrent requests — if a fetch is in-flight, wait for it
+    if (!inFlight) {
+      inFlight = computeStats().catch((err) => {
+        throw err;
+      }).finally(() => {
+        // Store successful result in cache
+        // (done in the .then below, not here, so errors don't cache)
+      });
+    }
 
-    // Prefer Prometheus fallback when pool HTTP API is unavailable (V3 stratum pool)
-    const hashrate = poolStats?.hashrate?.pool || poolStats?.pool_hashrate || prometheusStats?.pool_hashrate || 0;
-    const miners   = poolStats?.miners?.active || poolStats?.active_miners || prometheusStats?.active_miners || 0;
-    const blocksF  = poolStats?.blocks?.found || poolStats?.blocks_found || prometheusStats?.blocks_found || 0;
-    const shares   = poolStats?.shares?.valid || poolStats?.valid_shares || prometheusStats?.valid_shares || 0;
-
-    const stats = {
-      // Chain
-      block_height: info.height,
-      top_block_hash: info.top_block_hash || '',
-      difficulty: info.difficulty,
-      cumulative_difficulty: info.cumulative_difficulty || 0,
-
-      // Supply
-      premine_supply: supply.premineSupply,
-      mined_supply: supply.minedSupply,
-      circulating_supply: supply.circulatingSupply,
-      total_supply: supply.maxSupply,
-      max_supply: supply.maxSupply,
-      remaining_supply: supply.remainingSupply,
-      emission_pct: supply.emissionPct.toFixed(6),
-
-      // Network
-      network_hashrate: info.difficulty / (info.target || 60),
-      network_hashrate_formatted: formatHashrate(info.difficulty / (info.target || 60)),
-      target_block_time: info.target || 60,
-      avg_block_time: avgBlockTime,
-
-      // Transactions
-      tx_count: info.tx_count || 0,
-      tx_pool_size: info.tx_pool_size || 0,
-
-      // Peers
-      incoming_connections: info.incoming_connections_count || 0,
-      outgoing_connections: info.outgoing_connections_count || 0,
-      total_connections: (info.incoming_connections_count || 0) + (info.outgoing_connections_count || 0),
-      white_peerlist_size: info.white_peerlist_size || 0,
-      grey_peerlist_size: info.grey_peerlist_size || 0,
-
-      // Block
-      block_size_limit: info.block_size_limit || 0,
-      block_size_median: info.block_size_median || 0,
-
-      // Node info
-      mainnet: info.mainnet ?? true,
-      testnet: info.testnet ?? false,
-      version: info.version || '',
-      status: info.status || 'OK',
-      start_time: info.start_time || 0,
-      database_size: dbSize || info.database_size || 0,
-
-      // Alt blocks (potential forks)
-      alt_blocks_count: info.alt_blocks_count || 0,
-
-      // Mining pool (supplementary) — supports both HTTP pool API + Prometheus fallback
-      pool_hashrate: hashrate,
-      pool_hashrate_formatted: formatHashrate(hashrate),
-      active_miners: miners,
-      total_miners: poolStats?.miners?.total || poolStats?.total_miners || miners,
-      pool_blocks_found: blocksF,
-      valid_shares: shares,
-      pool_uptime_s: poolStats?.uptime_s || 0,
-      pool_pplns_window: poolStats?.pplns_window_size || 0,
-      pool_pending_payouts_atomic: poolStats?.payouts?.pending_total_atomic || 0,
-      pool_pending_miners: poolStats?.payouts?.pending_miners || 0,
-      connected: true,
-
-      // Last block
-      last_block: lastBlock ? {
-        height: lastBlock.height,
-        hash: lastBlock.hash,
-        timestamp: lastBlock.timestamp,
-        difficulty: lastBlock.difficulty,
-        reward: lastBlock.reward / ATOMIC_UNITS_PER_ZION,
-        num_txes: lastBlock.num_txes || 0,
-        block_size: lastBlock.block_size || 0,
-      } : null,
-
-      // Legacy / frontend compatibility aliases
-      latest_block: lastBlock ? {
-        height: lastBlock.height,
-        hash: lastBlock.hash,
-        timestamp: lastBlock.timestamp,
-      } : null,
-      mempool_size: info.tx_pool_size || 0,
-      total_blocks: info.height,
-      total_transactions: info.tx_count || info.height,
-    };
-
-    return NextResponse.json(stats, {
-      headers: { 'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=15' },
-    });
+    try {
+      const result = await inFlight;
+      cachedResponse = result;
+      return NextResponse.json(result.json, {
+        headers: { 'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=15' },
+      });
+    } finally {
+      inFlight = null;
+    }
   } catch (error) {
+    inFlight = null;
     console.error('Failed to fetch blockchain stats:', error);
+
+    // Serve stale cache if available (better than nothing)
+    if (cachedResponse) {
+      return NextResponse.json(cachedResponse.json, {
+        headers: { 'Cache-Control': 'public, s-maxage=1, stale-while-revalidate=5' },
+      });
+    }
+
     return NextResponse.json(
       {
         block_height: 0, difficulty: 0, premine_supply: 16_280_000_000, mined_supply: 0,

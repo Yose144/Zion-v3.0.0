@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { apiClient } from "@/lib/api";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
@@ -15,7 +14,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import { usePolling } from "@/hooks/usePolling";
+import { useBlockchainStats } from "@/hooks/useBlockchainStats";
 
 interface TickerData {
   block_height: number;
@@ -55,30 +54,23 @@ const formatAge = (ts: number): string => {
 };
 
 export default function NetworkTicker() {
-  const [data, setData] = useState<TickerData | null>(null);
+  const { data: data, error } = useBlockchainStats(15_000);
   const [flash, setFlash] = useState(false);
   const prevHeightRef = useRef(0);
   const flashTimeoutRef = useRef<number | null>(null);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const json = await apiClient<any>("/blockchain/stats");
-      const nextHeight = json.block_height || 0;
-      if (nextHeight > prevHeightRef.current && prevHeightRef.current > 0) {
-        setFlash(true);
-        if (flashTimeoutRef.current != null) {
-          window.clearTimeout(flashTimeoutRef.current);
-        }
-        flashTimeoutRef.current = window.setTimeout(() => setFlash(false), 2000);
+  useEffect(() => {
+    if (!data) return;
+    const nextHeight = data.block_height || 0;
+    if (nextHeight > prevHeightRef.current && prevHeightRef.current > 0) {
+      setFlash(true);
+      if (flashTimeoutRef.current != null) {
+        window.clearTimeout(flashTimeoutRef.current);
       }
-      prevHeightRef.current = nextHeight;
-      setData(json);
-    } catch {
-      /* silent */
+      flashTimeoutRef.current = window.setTimeout(() => setFlash(false), 2000);
     }
-  }, []);
-
-  usePolling(fetchData, 15_000);
+    prevHeightRef.current = nextHeight;
+  }, [data]);
 
   useEffect(() => {
     return () => {

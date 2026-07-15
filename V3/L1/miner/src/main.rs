@@ -607,6 +607,109 @@ fn main() -> Result<()> {
         println!("======================");
     }
 
+    // ── VerusHash CPU benchmark: `zion-miner --verus-bench` ──
+    if std::env::args().any(|a| a == "--verus-bench") {
+        let secs: f64 = std::env::var("ZION_BENCH_SECS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(5.0);
+        let threads: usize = std::env::var("ZION_THREADS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(4);
+
+        println!("=== VerusHash v2.2 CPU Benchmark ===");
+        println!("threads={}", threads);
+        println!("duration={}s", secs);
+        println!();
+
+        // Initialize VerusHash lookup tables
+        #[cfg(any(feature = "native-verushash", feature = "native-hashers"))]
+        {
+            zion_auxpow::init_verushash();
+            println!("verushash_init: OK (native C++ sse2neon)");
+        }
+        #[cfg(not(any(feature = "native-verushash", feature = "native-hashers")))]
+        {
+            println!("verushash_init: WARNING — using Blake3 fallback (NOT real VerusHash!)");
+        }
+
+        // Simulate a 1487-byte VRSC header
+        let mut header = vec![0u8; 1487];
+        header[0..4].copy_from_slice(&0x02000000u32.to_le_bytes());
+        // Set solution version > 6 to trigger PBaaS path
+        header[143] = 0x07;
+
+        let total_hashes = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
+        let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let start = std::time::Instant::now();
+
+        let mut handles = Vec::new();
+        for t in 0..threads {
+            let hdr = header.clone();
+            let total = std::sync::Arc::clone(&total_hashes);
+            let stop = std::sync::Arc::clone(&stop);
+            handles.push(std::thread::spawn(move || {
+                let mut local_hdr = hdr;
+                let mut nonce: u64 = (t as u64) * 1_000_000_000;
+                let nonce_space_blob_offset = 1472usize;
+                loop {
+                    if stop.load(std::sync::atomic::Ordering::Relaxed) {
+                        break;
+                    }
+                    let nonce_le = (nonce as u32).to_le_bytes();
+                    if nonce_space_blob_offset + 4 <= local_hdr.len() {
+                        local_hdr[nonce_space_blob_offset..nonce_space_blob_offset + 4]
+                            .copy_from_slice(&nonce_le);
+                    }
+                    let _hash = zion_auxpow::hash_verushash_header(&local_hdr);
+                    total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    nonce += 1;
+                }
+            }));
+        }
+
+        std::thread::sleep(std::time::Duration::from_secs_f64(secs));
+        stop.store(true, std::sync::atomic::Ordering::Relaxed);
+
+        for h in handles {
+            let _ = h.join();
+        }
+
+        let elapsed = start.elapsed().as_secs_f64();
+        let hashes = total_hashes.load(std::sync::atomic::Ordering::Relaxed);
+        let hps = hashes as f64 / elapsed;
+
+        println!();
+        println!("=== Results ===");
+        println!("hashes={}", hashes);
+        println!("elapsed={:.2}s", elapsed);
+        println!("throughput={:.0} H/s", hps);
+        println!("throughput={:.2} KH/s", hps / 1000.0);
+        println!("throughput={:.4} MH/s", hps / 1_000_000.0);
+        println!("per_thread={:.0} H/s", hps / threads as f64);
+
+        // Estimate time to find a share at 26-bit difficulty
+        let diff_26bit = 67_108_864u64;
+        let secs_per_share = diff_26bit as f64 / hps;
+        println!();
+        println!("=== Share Estimate (VRSC 26-bit target) ===");
+        println!("difficulty={}", diff_26bit);
+        println!("expected_time={:.0}s = {:.1}min = {:.1}h = {:.1}days",
+            secs_per_share, secs_per_share / 60.0, secs_per_share / 3600.0, secs_per_share / 86400.0);
+
+        // At 16-bit difficulty (easy target)
+        let diff_16bit = 65_536u64;
+        let secs_per_share_easy = diff_16bit as f64 / hps;
+        println!();
+        println!("=== Share Estimate (easy 16-bit target) ===");
+        println!("difficulty={}", diff_16bit);
+        println!("expected_time={:.1}s = {:.1}min",
+            secs_per_share_easy, secs_per_share_easy / 60.0);
+
+        return Ok(());
+    }
+
     // ── Ekam Deeksha GPU benchmark: `zion-miner --ekam-bench` ──
     if std::env::args().any(|a| a == "--ekam-bench") {
         let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
@@ -2714,7 +2817,7 @@ fn ext_cpu_thread(
 
 fn mine_external_stream_cpu(
     ext: &ExternalStreamJob,
-    _threads: usize,
+    threads: usize,
     start_nonce: u64,
     nonce_count: u64,
 ) -> Option<ExternalShareResult> {
@@ -2775,6 +2878,59 @@ fn mine_external_stream_cpu(
         nonce_count,
     };
 
+    // ── Multi-threaded scan for VerusHash (CPU-bound, benefits from parallelism) ──
+    // VerusHash v2.2 is CPU-only and benefits greatly from parallel scanning.
+    // Split the nonce range across `threads` worker threads.
+    if ext.algorithm == "verushash" && threads > 1 {
+        use std::sync::Arc;
+        let job_arc = Arc::new(job_pkg);
+        let chunk = (nonce_count / threads as u64).max(1);
+        let found = Arc::new(std::sync::Mutex::new(None::<zion_auxpow::miner_harness::FoundShare>));
+        let stop = Arc::new(std::sync::atomic::AtomicBool::new(false));
+
+        let mut handles = Vec::new();
+        for t in 0..threads {
+            let job = Arc::clone(&job_arc);
+            let found = Arc::clone(&found);
+            let stop = Arc::clone(&stop);
+            let t_start = start_nonce.wrapping_add((t as u64) * chunk);
+            let t_end = if t == threads - 1 {
+                scan_end
+            } else {
+                t_start.wrapping_add(chunk)
+            };
+            handles.push(std::thread::spawn(move || {
+                let range = t_start..t_end;
+                match zion_auxpow::miner_harness::mine(&job, range) {
+                    Ok(Some(share)) => {
+                        let mut guard = found.lock().unwrap();
+                        if guard.is_none() {
+                            *guard = Some(share);
+                        }
+                        stop.store(true, std::sync::atomic::Ordering::Relaxed);
+                    }
+                    _ => {}
+                }
+            }));
+        }
+        for h in handles {
+            let _ = h.join();
+        }
+        if let Some(share) = found.lock().unwrap().take() {
+            return Some(ExternalShareResult {
+                coin: ext.coin.clone(),
+                algorithm: ext.algorithm.clone(),
+                external_job_id: share.external_job_id,
+                nonce: share.nonce,
+                hash: share.hash,
+                mix_hash: None,
+                extranonce1_hex: ext.extranonce1_hex.clone(),
+            });
+        }
+        return None;
+    }
+
+    // Single-threaded fallback for other algorithms
     match zion_auxpow::miner_harness::mine(&job_pkg, start_nonce..scan_end) {
         Ok(Some(share)) => Some(ExternalShareResult {
             coin: ext.coin.clone(),
@@ -3148,6 +3304,7 @@ impl MinerConfig {
                     println!();
                     println!("Benchmarks:");
                     println!("  --ekam-bench          Ekam Deeksha GPU benchmark (single algo)");
+                    println!("  --verus-bench         VerusHash v2.2 CPU benchmark (requires native-verushash)");
                     println!("  --gpu-benchmark-all   Benchmark all algorithms and pick best");
                     println!("  --gpu-bench           GPU Blake3 DCR benchmark");
                     println!("  --bench               CPU Blake3 benchmark");

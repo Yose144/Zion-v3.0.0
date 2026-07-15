@@ -72,7 +72,7 @@ export default function MempoolFeed() {
     }
   }, [cs]);
 
-  usePolling(fetchMempool, 15_000);
+  usePolling(fetchMempool, 20_000);
 
   return (
     <motion.div
