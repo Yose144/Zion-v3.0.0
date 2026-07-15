@@ -13,7 +13,7 @@
 //!   - `ethash`      — ETC (pure-Rust fallback; use `native-hashers` for real)
 //!   - `progpow`     — EPIC (simplified CPU fallback; use GPU kernel for real mining)
 //!
-//! `randomx` requires the RandomX VM and is not yet supported in the CPU harness.
+//! `randomx` (XMR) is supported via the `native-randomx` feature (tevador/RandomX C++).
 
 use anyhow::{anyhow, Result};
 
@@ -68,6 +68,7 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
         "verushash" => Ok(scan_verushash(job, start, end)),
         "progpow" | "progpow_epic" => Ok(scan_progpow(job, start, end)),
         "pearlhash" => Ok(scan_pearl(job, start, end)),
+        "randomx" => Ok(scan_randomx(job, start, end)),
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
 }
@@ -102,6 +103,7 @@ pub fn mine_best(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option
         "verushash" => Ok(scan_verushash_best(job, start, end)),
         "progpow" | "progpow_epic" => Ok(scan_progpow_best(job, start, end)),
         "pearlhash" => Ok(scan_pearl_best(job, start, end)),
+        "randomx" => Ok(scan_randomx_best(job, start, end)),
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
 }
@@ -335,6 +337,109 @@ fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> 
         }
     }
     None
+}
+
+// ── RandomX (XMR) ─────────────────────────────────────────────────────
+//
+// Monero stratum blob layout (76 bytes typical):
+//   offset 0:  version(4)
+//   offset 7:  nonce(4)  ← miner writes here
+//   rest:      hashing blob (passed to randomx_calculate_hash)
+//
+// The seed hash (from mining.notify) initializes the RandomX cache/dataset.
+// The nonce is a 32-bit LE value written at blob offset 39 (standard Monero).
+// RandomX target comparison: first 8 bytes of hash as LE u64 <= target LE u64.
+
+fn scan_randomx(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let target = &job.target_bytes;
+
+    // Decode seed hash for RandomX cache initialization
+    let seed: Vec<u8> = job.seed_hash.clone().unwrap_or_else(|| vec![0u8; 32]);
+
+    // Initialize RandomX with the seed (reinit only if seed changed)
+    #[cfg(feature = "native-randomx")]
+    {
+        zion_native_ffi::randomx::init_with_seed(&seed);
+    }
+
+    // Monero blob: nonce is at offset 39 (4 bytes LE)
+    // The blob from stratum already has the correct structure; we just
+    // overwrite the nonce field.
+    let nonce_offset = 39usize;
+    let mut work_blob = header.to_vec();
+
+    for nonce in start..end {
+        let nonce_le = (nonce as u32).to_le_bytes();
+
+        if nonce_offset + 4 <= work_blob.len() {
+            work_blob[nonce_offset..nonce_offset + 4].copy_from_slice(&nonce_le);
+        }
+
+        #[cfg(feature = "native-randomx")]
+        let hash = zion_native_ffi::randomx::hash(&work_blob, nonce);
+
+        #[cfg(not(feature = "native-randomx"))]
+        let hash = {
+            let _ = &seed; // suppress unused warning
+            crate::external_hashers::hash_blake3(&work_blob, 0, nonce)
+        };
+
+        // RandomX/Monero: compare first 8 bytes as LE u64
+        if crate::external_hashers::meets_randomx_target(&hash, target) {
+            eprintln!(
+                "XMR_SHARE_FOUND nonce={} hash={}",
+                nonce,
+                hex::encode(hash),
+            );
+            return Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    None
+}
+
+fn scan_randomx_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let _seed: Vec<u8> = job.seed_hash.clone().unwrap_or_else(|| vec![0u8; 32]);
+
+    #[cfg(feature = "native-randomx")]
+    {
+        zion_native_ffi::randomx::init_with_seed(&_seed);
+    }
+
+    let nonce_offset = 39usize;
+    let mut work_blob = header.to_vec();
+    let mut best: Option<FoundShare> = None;
+
+    for nonce in start..end {
+        let nonce_le = (nonce as u32).to_le_bytes();
+        if nonce_offset + 4 <= work_blob.len() {
+            work_blob[nonce_offset..nonce_offset + 4].copy_from_slice(&nonce_le);
+        }
+
+        #[cfg(feature = "native-randomx")]
+        let hash = zion_native_ffi::randomx::hash(&work_blob, nonce);
+
+        #[cfg(not(feature = "native-randomx"))]
+        let hash = crate::external_hashers::hash_blake3(&work_blob, 0, nonce);
+
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&hash, &b.hash, true)) // RandomX = LE
+            .unwrap_or(true)
+        {
+            best = Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    best
 }
 
 // ── Best-share scanners (return the share with the smallest hash) ─────
@@ -705,6 +810,7 @@ mod tests {
             extranonce1: Vec::new(),
             start_nonce: 0,
             nonce_count: 1_000_000,
+            seed_hash: None,
         }
     }
 
@@ -720,6 +826,7 @@ mod tests {
             extranonce1: Vec::new(),
             start_nonce: 0,
             nonce_count: 100,
+            seed_hash: None,
         }
     }
 
@@ -745,8 +852,8 @@ mod tests {
     fn harness_rejects_unknown_algorithm() {
         let job = JobPackage {
             external_coin: ExternalCoin::XMR,
-            external_job_id: "job_xmr".to_string(),
-            algorithm: "randomx".to_string(),
+            external_job_id: "job_unknown".to_string(),
+            algorithm: "unknownalgo".to_string(),
             header_bytes: vec![],
             target_bytes: [0xFFu8; 32],
             timestamp: 0,
@@ -754,9 +861,10 @@ mod tests {
             extranonce1: Vec::new(),
             start_nonce: 0,
             nonce_count: 10,
+            seed_hash: None,
         };
         let err = mine(&job, 0..10).unwrap_err();
-        assert!(err.to_string().contains("randomx"));
+        assert!(err.to_string().contains("unknownalgo"));
     }
 
     #[test]

@@ -710,6 +710,109 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
+    // ── RandomX CPU benchmark: `zion-miner --randomx-bench` ──
+    if std::env::args().any(|a| a == "--randomx-bench") {
+        let secs: f64 = std::env::var("ZION_BENCH_SECS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(10.0);
+        let threads: usize = std::env::var("ZION_THREADS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(num_cpus::get());
+
+        println!("=== RandomX (Monero/XMR) CPU Benchmark ===");
+        println!("threads={}", threads);
+        println!("duration={}s", secs);
+        println!();
+
+        // Initialize RandomX with a zero seed (epoch 0)
+        #[cfg(any(feature = "native-randomx", feature = "native-hashers"))]
+        {
+            let zero_seed = [0u8; 32];
+            zion_native_ffi::randomx::init_with_seed(&zero_seed);
+            println!("randomx_init: OK (tevador/RandomX real, seed=epoch0)");
+            #[cfg(target_arch = "aarch64")]
+            println!("mode: interpreted VM (no JIT on ARM64), soft AES");
+            #[cfg(not(target_arch = "aarch64"))]
+            println!("mode: JIT + hardware AES (if available)");
+        }
+        #[cfg(not(any(feature = "native-randomx", feature = "native-hashers")))]
+        {
+            println!("randomx_init: WARNING — native-randomx feature NOT enabled!");
+            println!("Rebuild with: cargo build --features native-randomx");
+            return Ok(());
+        }
+
+        // Monero block header is 76 bytes
+        let mut header = vec![0u8; 76];
+        header[0..4].copy_from_slice(&0x12000000u32.to_le_bytes()); // Monero version
+        // Rest is zeros (zero prev-hash, zero merkle root, etc.)
+
+        let total_hashes = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
+        let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let start = std::time::Instant::now();
+
+        let mut handles = Vec::new();
+        for t in 0..threads {
+            let hdr = header.clone();
+            let total = std::sync::Arc::clone(&total_hashes);
+            let stop = std::sync::Arc::clone(&stop);
+            handles.push(std::thread::spawn(move || {
+                let mut local_hdr = hdr;
+                let mut nonce: u64 = (t as u64) * 1_000_000_000;
+                loop {
+                    if stop.load(std::sync::atomic::Ordering::Relaxed) {
+                        break;
+                    }
+                    // Embed nonce in header (bytes 39..43 in Monero format)
+                    let nonce_le = (nonce as u32).to_le_bytes();
+                    local_hdr[39..43].copy_from_slice(&nonce_le);
+                    let _hash = zion_native_ffi::randomx::hash_with_seed(&[], &local_hdr, nonce);
+                    total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    nonce += 1;
+                }
+            }));
+        }
+
+        std::thread::sleep(std::time::Duration::from_secs_f64(secs));
+        stop.store(true, std::sync::atomic::Ordering::Relaxed);
+
+        for h in handles {
+            let _ = h.join();
+        }
+
+        let elapsed = start.elapsed().as_secs_f64();
+        let hashes = total_hashes.load(std::sync::atomic::Ordering::Relaxed);
+        let hps = hashes as f64 / elapsed;
+
+        println!();
+        println!("=== Results ===");
+        println!("hashes={}", hashes);
+        println!("elapsed={:.2}s", elapsed);
+        println!("throughput={:.0} H/s", hps);
+        println!("throughput={:.2} KH/s", hps / 1000.0);
+        println!("per_thread={:.0} H/s", hps / threads as f64);
+
+        // XMR network difficulty estimate (varies, ~350G as of 2024)
+        let xmr_diff = 350_000_000_000u64;
+        let secs_per_block = xmr_diff as f64 / hps;
+        println!();
+        println!("=== XMR Network Estimate (diff ~350G) ===");
+        println!("expected_time={:.0}s = {:.1}min = {:.1}h = {:.1}days",
+            secs_per_block, secs_per_block / 60.0, secs_per_block / 3600.0, secs_per_block / 86400.0);
+
+        // Pool share at 1M difficulty
+        let pool_diff = 1_000_000u64;
+        let secs_per_share = pool_diff as f64 / hps;
+        println!();
+        println!("=== Pool Share Estimate (diff 1M) ===");
+        println!("expected_time={:.1}s = {:.1}min",
+            secs_per_share, secs_per_share / 60.0);
+
+        return Ok(());
+    }
+
     // ── Ekam Deeksha GPU benchmark: `zion-miner --ekam-bench` ──
     if std::env::args().any(|a| a == "--ekam-bench") {
         let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
@@ -2876,6 +2979,11 @@ fn mine_external_stream_cpu(
         extranonce1,
         start_nonce,
         nonce_count,
+        seed_hash: if ext.seed_hash_hex.is_empty() {
+            None
+        } else {
+            hex::decode(ext.seed_hash_hex.trim_start_matches("0x")).ok()
+        },
     };
 
     // ── Multi-threaded scan for VerusHash (CPU-bound, benefits from parallelism) ──
@@ -3305,6 +3413,7 @@ impl MinerConfig {
                     println!("Benchmarks:");
                     println!("  --ekam-bench          Ekam Deeksha GPU benchmark (single algo)");
                     println!("  --verus-bench         VerusHash v2.2 CPU benchmark (requires native-verushash)");
+                    println!("  --randomx-bench       RandomX (Monero/XMR) CPU benchmark (requires native-randomx)");
                     println!("  --gpu-benchmark-all   Benchmark all algorithms and pick best");
                     println!("  --gpu-bench           GPU Blake3 DCR benchmark");
                     println!("  --bench               CPU Blake3 benchmark");

@@ -380,10 +380,19 @@ impl AuxPowScheduler {
                     crate::external_hashers::hash_ethash(header, nonce, job.timestamp.unwrap_or(0) as u32)
                 }
                 ExternalAlgorithm::RandomX => {
-                    // RandomX requires the RandomX VM — not yet implemented.
-                    // Fall back to blake3 as a placeholder so the scheduler
-                    // doesn't panic; shares will never meet a real target.
-                    hash_blake3(header, 0, nonce)
+                    // RandomX via native FFI (tevador/RandomX C++).
+                    // Falls back to blake3 if native-randomx feature is not enabled.
+                    #[cfg(feature = "native-randomx")]
+                    {
+                        let seed_bytes = job.seed_hash.as_ref()
+                            .and_then(|s| hex::decode(s.trim_start_matches("0x")).ok())
+                            .unwrap_or_else(|| vec![0u8; 32]);
+                        zion_native_ffi::randomx::hash_with_seed(&seed_bytes, header, nonce)
+                    }
+                    #[cfg(not(feature = "native-randomx"))]
+                    {
+                        hash_blake3(header, 0, nonce)
+                    }
                 }
                 ExternalAlgorithm::VerusHash => {
                     crate::external_hashers::hash_verushash(header, nonce)

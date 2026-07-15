@@ -1430,20 +1430,23 @@ pub mod verushash {
 pub mod randomx {
     //! # Safety / threading model
     //!
-    //! - **Thread-safe after init.** [`init`] is wrapped in a `std::sync::Once`
-    //!   and invoked transparently by every safe wrapper. After init returns,
-    //!   the C-side dataset/cache is treated as read-only and per-call
-    //!   hashing is re-entrant.
+    //! - **Seed-aware init.** [`init_with_seed`] reinitializes the RandomX
+    //!   cache/dataset when the seed hash changes (new epoch). [`init`]
+    //!   uses a zero seed for benchmarking.
+    //! - **Thread-safe hashing.** The C wrapper uses a mutex around
+    //!   `randomx_calculate_hash` so multiple threads can call [`hash`]
+    //!   concurrently.
     //! - The `*_version()` pointer is `'static` read-only memory.
     use super::safety::{self, FfiError};
 
     unsafe extern "C" {
-        /// Build the RandomX dataset / VM caches.
+        /// Build the RandomX dataset / VM caches from a seed hash.
+        /// Can be called multiple times — reinitializes only if seed changed.
         ///
         /// # Safety
-        /// May allocate large memory regions; thread-safety is provided
-        /// externally via the `Once` in this module.
-        pub fn randomx_zion_init();
+        /// - `seed` must be valid for `seed_len` readable bytes (typically 32).
+        /// - May allocate large memory regions (~2 GB for full dataset).
+        pub fn randomx_zion_init(seed: *const u8, seed_len: usize);
 
         /// Compute RandomX-Zion of `(header, nonce)` into 32 bytes.
         ///
@@ -1472,20 +1475,34 @@ pub mod randomx {
         pub fn randomx_zion_version() -> *const std::ffi::c_char;
     }
 
-    use std::sync::Once;
-    static INIT: Once = Once::new();
-
+    /// Initialize with a zero seed (for benchmarking / testing).
     pub fn init() {
-        INIT.call_once(|| {
-            // SAFETY: `Once` ensures the C-side init runs at most once.
-            unsafe {
-                randomx_zion_init();
-            }
-        });
+        let zero_seed = [0u8; 32];
+        init_with_seed(&zero_seed);
+    }
+
+    /// Initialize with a specific seed hash (from stratum mining.notify).
+    /// Reinitializes the cache/dataset only if the seed has changed.
+    pub fn init_with_seed(seed: &[u8]) {
+        // SAFETY: seed is a valid slice; C side handles reinit logic.
+        unsafe {
+            randomx_zion_init(seed.as_ptr(), seed.len());
+        }
     }
 
     pub fn hash(header: &[u8], nonce: u64) -> [u8; 32] {
         init();
+        let mut out = [0u8; 32];
+        // SAFETY: init has completed; slice + fresh 32-byte stack output.
+        unsafe {
+            randomx_zion_hash(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
+        }
+        out
+    }
+
+    /// Hash with a specific seed — reinitializes cache if seed changed.
+    pub fn hash_with_seed(seed: &[u8], header: &[u8], nonce: u64) -> [u8; 32] {
+        init_with_seed(seed);
         let mut out = [0u8; 32];
         // SAFETY: init has completed; slice + fresh 32-byte stack output.
         unsafe {

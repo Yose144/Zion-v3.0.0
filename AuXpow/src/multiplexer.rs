@@ -160,6 +160,7 @@ fn pack_job(coin: ExternalCoin, job: &ExternalJob) -> JobPackage {
         extranonce1: job.extranonce1.clone(),
         start_nonce: 0,
         nonce_count: u64::MAX,
+        seed_hash: job.seed_hash.as_ref().and_then(|s| hex::decode(s.trim_start_matches("0x")).ok()),
     }
 }
 
