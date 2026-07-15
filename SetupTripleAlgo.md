@@ -223,25 +223,32 @@ share is accepted. This is NOT a bug.
 |-----------|-------|
 | VRSC target | `0x0000004000000000...` (26-bit difficulty) |
 | Difficulty | 67,108,864 (2^26) |
-| M1 CPU hashrate (4 threads) | ~60 H/s |
-| Expected time per share | **~12.9 days** |
+| M1 CPU hashrate (Blake3 fallback) | ~60 H/s |
+| M1 CPU hashrate (native VerusHash v2.2, 4 threads) | **1.69 MH/s** |
+| M1 CPU hashrate (native VerusHash v2.2, 8 threads) | **2.59 MH/s** |
+| Expected time per share (native, 4 threads) | **~40 seconds** |
 | ZION_AUXPOW_EASY_TARGET | Not set on Edge server |
 
-**Why VRSC shares are not found:**
-The pool forwards the VRSC network target from upstream VerusPool. This is
-26-bit difficulty — designed for ASIC/GPU mining rigs, not M1 CPU. At ~60 H/s,
-finding a share takes ~13 days.
+**Native VerusHash v2.2 enabled (2026-07-15):**
+Real VerusHash v2.2 C++ (Haraka+CLHash) integrated via `zion-native-ffi` crate
+with `native-verushash` feature flag. SSE2NEON translation for Apple Silicon.
+**28000x speedup** vs Blake3 fallback. Shares now found in ~40 seconds on M1.
 
-**Options to enable VRSC CPU shares:**
-1. **`ZION_AUXPOW_EASY_TARGET=1`** on pool server → uses `0000ffff...` (16-bit)
-   target. Shares found in ~17 minutes. But upstream VRSC pool will reject them.
-2. **Add CPU vardiff** → pool adjusts CPU share difficulty independently of
-   upstream network target. Requires pool-side code change.
-3. **Use RandomX (XMR)** instead → designed for CPU, lower difficulty.
+**Target comparison fix (2026-07-15):**
+`meets_target_little_endian` bug fixed — was reversing BOTH hash AND target
+(incorrect). Fixed to reverse only hash (LE→BE), target stays BE. VerusHash
+now uses `meets_target` (plain BE comparison) matching C reference
+(`verushash_verify` in `ffi_wrapper_v3.cpp`).
 
-**Current status:** VRSC CPU mining is **functional but impractical** on M1.
-The miner correctly hashes VerusHash and checks targets, but the difficulty
-is too high for CPU-only mining.
+**Remaining issues:**
+1. **Pool server rebuild needed** — server binary has old `meets_target_little_endian`
+   for VRSC. Source syncnuto but rebuild fails (17 compile errors, server kód
+   behind). Shares rejected as `BelowTarget` locally on pool.
+2. **LuckPool hash mismatch** — shares that pass local check are rejected by
+   LuckPool as `[23,"low difficulty share"]`. Header rekonstrukce se liší —
+   MMR root restoration nebo PBaaS v7+ solution encoding může být špatný.
+
+**Full report:** [`VerusHashReport.md`](./VerusHashReport.md)
 
 ### Triple-Stream Workflow Diagram (Metal)
 
