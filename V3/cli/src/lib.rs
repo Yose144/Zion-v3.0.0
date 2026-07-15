@@ -1,3 +1,4 @@
+pub mod auto_detect;
 pub mod commands;
 pub mod config;
 pub mod menu;

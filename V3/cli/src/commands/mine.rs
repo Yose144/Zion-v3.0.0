@@ -28,6 +28,24 @@ pub enum MineCmd {
         #[arg(long)]
         algorithm: Option<String>,
     },
+    /// Auto-detect hardware and start mining with optimal triple-stream config
+    Auto {
+        /// Pool address host:port (default: from config)
+        #[arg(long)]
+        pool: Option<String>,
+        /// Wallet address (default: from config)
+        #[arg(long)]
+        wallet: Option<String>,
+        /// Override detected backend (skip auto-detection)
+        #[arg(long)]
+        backend: Option<String>,
+        /// Override CPU thread count
+        #[arg(long)]
+        threads: Option<usize>,
+        /// Dry-run: show detected hardware and config without starting miner
+        #[arg(long)]
+        dry_run: bool,
+    },
     /// Stop the mining process
     Stop,
     /// CPU Blake3 benchmark
@@ -151,6 +169,123 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
                 let child = cmd_proc.spawn()?;
                 ui::print_info(&format!("Miner started in background (PID {})", child.id()));
             }
+            Ok(())
+        }
+
+        MineCmd::Auto {
+            pool,
+            wallet,
+            backend,
+            threads,
+            dry_run,
+        } => {
+            use crate::auto_detect;
+
+            ui::print_header("Auto-Detect Hardware & Mine");
+
+            // Find miner binary for hardware detection
+            let miner_bin = find_miner_binary()?;
+
+            // 1. Detect hardware
+            let mut hw = auto_detect::detect_hardware(&miner_bin);
+
+            // Apply user overrides
+            if let Some(b) = &backend {
+                hw.best_backend = b.clone();
+                hw.has_gpu = b != "cpu";
+                if b == "cpu" {
+                    hw.gpu_devices.clear();
+                }
+            }
+            if let Some(t) = threads {
+                hw.cpu_cores = t;
+            }
+
+            // 2. Print hardware summary
+            auto_detect::print_hardware_summary(&hw);
+
+            // 3. Derive auto config
+            let auto_cfg = auto_detect::derive_auto_config(&hw);
+            auto_detect::print_mine_plan(&auto_cfg);
+
+            if dry_run {
+                ui::print_info("Dry-run mode: not starting miner.");
+                return Ok(());
+            }
+
+            // 4. Resolve pool + wallet
+            let pool_addr = pool.unwrap_or_else(|| {
+                let (host, port) = cfg.edge_pool();
+                format!("{}:{}", host, port)
+            });
+            let wallet_addr = wallet.unwrap_or_else(|| cfg.miner.wallet.clone());
+
+            if wallet_addr.is_empty() {
+                ui::print_warn("No wallet set. Run: zion config set miner.wallet <address>");
+                ui::print_warn("Or: zion wallet new");
+                return Ok(());
+            }
+            if !zion_core::crypto::is_valid_address(wallet_addr.trim()) {
+                anyhow::bail!(
+                    "Invalid mining wallet '{}'. Expected a valid zion1... address.",
+                    wallet_addr.trim()
+                );
+            }
+
+            ui::print_row("Pool", &pool_addr);
+            ui::print_row("Wallet", &wallet_addr);
+            ui::print_row("Mode", &auto_cfg.mode_name);
+            println!();
+
+            // 5. Build env vars for miner
+            let env_args = vec![
+                ("ZION_POOL_ADDR", pool_addr.clone()),
+                ("ZION_PROFILE", auto_cfg.profile.clone()),
+                ("ZION_MINER_ID", wallet_addr.clone()),
+                ("ZION_BACKEND", auto_cfg.backend.clone()),
+                ("ZION_THREADS", auto_cfg.cpu_threads.to_string()),
+                ("ZION_AUTO_MODE", "1".to_string()),
+                (
+                    "ZION_STREAM1_ENABLED",
+                    if auto_cfg.stream1_enabled { "1" } else { "0" }.to_string(),
+                ),
+                (
+                    "ZION_STREAM2_ENABLED",
+                    if auto_cfg.stream2_enabled { "1" } else { "0" }.to_string(),
+                ),
+                (
+                    "ZION_STREAM3_ENABLED",
+                    if auto_cfg.stream3_enabled { "1" } else { "0" }.to_string(),
+                ),
+            ];
+
+            // For GPU backend, pass --gpu CLI arg
+            let cli_gpu_arg = if auto_cfg.backend != "cpu" {
+                Some(auto_cfg.backend.clone())
+            } else {
+                None
+            };
+
+            ui::print_info(&format!("Running: {} (auto mode)", miner_bin));
+
+            let mut cmd_proc = std::process::Command::new(&miner_bin);
+            for (k, v) in &env_args {
+                cmd_proc.env(k, v);
+            }
+            if let Some(gpu) = &cli_gpu_arg {
+                cmd_proc.args(["--gpu", gpu]);
+            }
+
+            let interactive = std::env::var("ZION_INTERACTIVE")
+                .map(|v| v == "true" || v == "1")
+                .unwrap_or(true);
+            if interactive {
+                cmd_proc.status()?;
+            } else {
+                let child = cmd_proc.spawn()?;
+                ui::print_info(&format!("Miner started in background (PID {})", child.id()));
+            }
+
             Ok(())
         }
 

@@ -592,6 +592,21 @@ fn main() -> Result<()> {
         VERBOSE.store(true, Ordering::Relaxed);
     }
 
+    // ── Auto mode banner ──
+    let auto_mode = std::env::var("ZION_AUTO_MODE")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false);
+    if auto_mode {
+        let s1 = std::env::var("ZION_STREAM1_ENABLED").map(|v| v != "0").unwrap_or(true);
+        let s2 = std::env::var("ZION_STREAM2_ENABLED").map(|v| v != "0").unwrap_or(true);
+        let s3 = std::env::var("ZION_STREAM3_ENABLED").map(|v| v != "0").unwrap_or(true);
+        println!("=== ZION Auto Mode ===");
+        println!("  Stream 1 (ZION primary):  {}", if s1 { "ON" } else { "OFF" });
+        println!("  Stream 2 (GPU external):  {}", if s2 { "ON" } else { "OFF" });
+        println!("  Stream 3 (CPU external):  {}", if s3 { "ON" } else { "OFF" });
+        println!("======================");
+    }
+
     // ── Ekam Deeksha GPU benchmark: `zion-miner --ekam-bench` ──
     if std::env::args().any(|a| a == "--ekam-bench") {
         let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
@@ -869,7 +884,8 @@ fn run_local_session(
     };
 
     // ── GPU backend init (TriGpuManager — 3-stream Claymore-style) ──
-    let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
+    let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu
+        && config.stream1_enabled;
     let mut tri_gpu = match gpu_backend::TriGpuManager::with_work_sizes(
         config.gpu_backend,
         config.gpu_work_size,
@@ -1286,7 +1302,8 @@ fn run_remote_session(
     // ── GPU backend init (TriGpuManager — 3-stream Claymore-style) ──
     // Primary (Deeksha) is created immediately. Pearl + secondary are
     // lazy-created by their respective persistent threads on demand.
-    let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
+    let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu
+        && config.stream1_enabled;
     let mut tri_gpu = match gpu_backend::TriGpuManager::with_work_sizes(
         config.gpu_backend,
         config.gpu_work_size,
@@ -1351,7 +1368,8 @@ fn run_remote_session(
     let (ext_gpu_share_tx, ext_gpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
 
     let dual_gpu_enabled = gpu_available
-        && config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
+        && config.gpu_backend != gpu_backend::GpuBackendKind::Cpu
+        && config.stream2_enabled;
     if dual_gpu_enabled {
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
@@ -1372,16 +1390,23 @@ fn run_remote_session(
     // Receives CPU-only external jobs via channel, mines continuously.
     let (ext_cpu_tx, ext_cpu_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
     let (ext_cpu_share_tx, ext_cpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
-    let ext_cpu_threads = config.threads.max(1);
-    let hashrate_ext_cpu = Arc::clone(hashrate);
-    thread::spawn(move || {
-        ext_cpu_thread(ext_cpu_rx, ext_cpu_share_tx, ext_cpu_threads, hashrate_ext_cpu);
-    });
-    println!(
-        "[{}] stream3c_ext_cpu_started threads={}",
-        log_timestamp(),
-        config.threads
-    );
+    if config.stream3_enabled {
+        let ext_cpu_threads = config.threads.max(1);
+        let hashrate_ext_cpu = Arc::clone(hashrate);
+        thread::spawn(move || {
+            ext_cpu_thread(ext_cpu_rx, ext_cpu_share_tx, ext_cpu_threads, hashrate_ext_cpu);
+        });
+        println!(
+            "[{}] stream3c_ext_cpu_started threads={}",
+            log_timestamp(),
+            config.threads
+        );
+    } else {
+        println!(
+            "[{}] stream3c_ext_cpu_disabled (stream3_enabled=false)",
+            log_timestamp()
+        );
+    }
 
     sync_miner_metrics(
         metrics,
@@ -2974,6 +2999,14 @@ struct MinerConfig {
     secondary_gpu_work_size: usize,
     /// Algorithm advertised in hello and used if pool matches.
     algorithm: String,
+    /// Whether Stream 1 (ZION primary) is enabled (default: true)
+    stream1_enabled: bool,
+    /// Whether Stream 2 (GPU external coins) is enabled (default: true if GPU)
+    stream2_enabled: bool,
+    /// Whether Stream 3 (CPU external coins) is enabled (default: true)
+    stream3_enabled: bool,
+    /// Whether auto-mode was requested (affects logging)
+    auto_mode: bool,
 }
 
 impl MinerConfig {
@@ -3024,6 +3057,21 @@ impl MinerConfig {
                     // Spawns AuxPowClient with PearlStratum protocol in parallel.
                     std::env::set_var("ZION_PEARL_STREAM", &args[i + 1]);
                     i += 2;
+                }
+                "--detect-hardware" => {
+                    // Hardware detection mode for `zion mine auto` CLI command.
+                    // Prints detected GPU devices and exits.
+                    let gpus = gpu_backend::detect_gpus();
+                    if gpus.is_empty() {
+                        println!("gpu_detect: none");
+                    } else {
+                        for dev in &gpus {
+                            println!("gpu_detect: {}", dev);
+                        }
+                    }
+                    let cpu_cores = parallel::detect_threads();
+                    println!("cpu_cores: {}", cpu_cores);
+                    std::process::exit(0);
                 }
                 "--help" | "-h" => {
                     println!("Usage: zion-miner [OPTIONS]");
@@ -3125,6 +3173,10 @@ impl MinerConfig {
                 .unwrap_or(1 << 18), // 256K default
             algorithm: std::env::var("ZION_MINER_ALGORITHM")
                 .unwrap_or_else(|_| "deeksha_lite_v1".to_string()),
+            stream1_enabled: parse_bool_env("ZION_STREAM1_ENABLED", true),
+            stream2_enabled: parse_bool_env("ZION_STREAM2_ENABLED", true),
+            stream3_enabled: parse_bool_env("ZION_STREAM3_ENABLED", true),
+            auto_mode: parse_bool_env("ZION_AUTO_MODE", false),
         })
     }
 }
