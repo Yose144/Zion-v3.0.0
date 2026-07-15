@@ -7,12 +7,15 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "$ROOT_DIR/../.." && pwd)"
 LOG_PREFIX="[deploy]"
 
-REMOTE_HOST="${REMOTE_HOST:-mainnetedge}"
-REMOTE_USER="${REMOTE_USER:-deploy}"
-REMOTE_SRC="${REMOTE_SRC:-/opt/zion/web}"
-REMOTE_COMPOSE="${REMOTE_COMPOSE:-/opt/zion/docker}"
-SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
+REMOTE_HOST="${REMOTE_HOST:-zion-new}"
+REMOTE_USER="${REMOTE_USER:-root}"
+REMOTE_SRC="${REMOTE_SRC:-/opt/zion/website-v2.9}"
+REMOTE_COMPOSE="${REMOTE_COMPOSE:-/opt/zion/website-v2.9}"
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/zion-new-server}"
 COMPOSE_FILE="docker-compose.website.yml"
+DOCKERFILE="Dockerfile.production"
+IMAGE_TAG="${IMAGE_TAG:-zion-web:runtime}"
+CONTAINER_NAME="${CONTAINER_NAME:-zion-web}"
 SKIP_SYNC=0
 DRY_RUN=0
 
@@ -104,10 +107,16 @@ if [[ $SKIP_SYNC -ne 1 ]]; then
     -e "ssh $SSH_OPTS" \
     ./ "${REMOTE}:${REMOTE_SRC_RSYNC}/"
 
-  log "Syncing compose file to $REMOTE_HOST:$REMOTE_COMPOSE"
-  rsync -avz \
-    -e "ssh $SSH_OPTS" \
-    "$REPO_ROOT/docker/$COMPOSE_FILE" "$REMOTE:${REMOTE_COMPOSE_RSYNC}/"
+  # Optional compose file — only sync if it exists in this repo layout
+  compose_src="$REPO_ROOT/docker/$COMPOSE_FILE"
+  if [[ -f "$compose_src" ]]; then
+    log "Syncing compose file to $REMOTE_HOST:$REMOTE_COMPOSE"
+    rsync -avz \
+      -e "ssh $SSH_OPTS" \
+      "$compose_src" "$REMOTE:${REMOTE_COMPOSE_RSYNC}/"
+  else
+    log "No local compose file found at $compose_src — skipping compose sync"
+  fi
 else
   log "Skipping rsync (--skip-sync)"
 fi
@@ -119,24 +128,39 @@ fi
 
 # --- Docker rebuild & recreate on server ---
 log "Building Docker image on $REMOTE_HOST"
-ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_SH && docker compose -f '$COMPOSE_FILE' build website"
+ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_SRC_SH && docker build -f '$DOCKERFILE' -t '$IMAGE_TAG' ."
 
 log "Recreating container"
-ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_SH && docker compose -f '$COMPOSE_FILE' up -d website"
+ssh $SSH_OPTS "$REMOTE" "
+  docker rm -f $CONTAINER_NAME 2>/dev/null || true
+  docker run -d \\
+    --name $CONTAINER_NAME \\
+    --network host \\
+    --restart unless-stopped \\
+    --read-only \\
+    --tmpfs /tmp \\
+    --tmpfs /var/cache/nginx \\
+    --tmpfs /var/run \\
+    --shm-size 67108864 \\
+    -e NODE_ENV=production \\
+    -e NEXT_TELEMETRY_DISABLED=1 \\
+    -e PORT=3000 \\
+    -e HOSTNAME=127.0.0.1 \\
+    '$IMAGE_TAG'
+"
 
 # --- Health check ---
-log "Waiting for container health check (up to 60s)"
+log "Waiting for web server health check (up to 60s)"
 ssh $SSH_OPTS "$REMOTE" '
   for i in $(seq 1 12); do
-    STATUS=$(docker inspect --format="{{.State.Health.Status}}" zion-website 2>/dev/null || echo "missing")
-    if [ "$STATUS" = "healthy" ]; then
-      echo "Container healthy after ~$((i*5))s"
+    if curl -fsS http://127.0.0.1:3000/ >/dev/null 2>&1; then
+      echo "Website healthy after ~$((i*5))s"
       exit 0
     fi
     sleep 5
   done
-  echo "Warning: container not healthy after 60s (status: $STATUS)"
-  docker logs --tail 20 zion-website
+  echo "Warning: website not healthy after 60s"
+  docker logs --tail 30 "'"$CONTAINER_NAME"'"
   exit 1
 '
 
