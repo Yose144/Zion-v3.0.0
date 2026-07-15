@@ -5,8 +5,8 @@ use std::io::{self, IsTerminal};
 #[cfg(feature = "admin")]
 use zion_cli::commands::deploy;
 use zion_cli::commands::{
-    agent, atomic_swap, bridge, completions, compose, dao, doctor, explorer, free_world, hiran,
-    issobella, mine, monitor, ncl, node, onboard, pool, status, swap, topology, update, wallet,
+    agent, atomic_swap, auxpow, bridge, completions, compose, dao, doctor, explorer, free_world,
+    hiran, issobella, mine, monitor, ncl, node, onboard, pool, status, swap, topology, update, wallet,
     warp,
 };
 use zion_cli::config;
@@ -108,6 +108,7 @@ async fn dispatch(cli: Cli) -> Result<()> {
         Commands::Dao { cmd } => dao::run(&cfg, cmd).await,
         Commands::Swap { cmd } => swap::run(&cfg, cmd).await,
         Commands::AtomicSwap { cmd } => atomic_swap::run(&cfg, cmd).await,
+        Commands::Auxpow { cmd } => auxpow::run(cmd).await,
         Commands::Explorer => explorer::run(&cfg).await,
         Commands::Monitor => monitor::run(&cfg).await,
         Commands::Warp { cmd } => warp::run(&cfg, cmd).await,

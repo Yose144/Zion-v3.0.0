@@ -161,6 +161,23 @@ Operational notes:
 - `mine start` now maps the ZION wallet to `ZION_MINER_ID` and keeps `miner.btc_wallet` separate for dual DCR payout flow,
 - `dcr` belongs to miner diagnostics, not deployment.
 
+### `zion auxpow`
+
+Inspect AuxPow / merge-mining configuration and supported coins. The pool server reads all settings from environment variables on startup.
+
+```bash
+zion auxpow status
+zion auxpow coins
+zion auxpow explain
+```
+
+Operational notes:
+
+- `status` prints the effective AuxPow env vars from the current shell,
+- `coins` lists supported external coins and their `ZION_POOL_AUXPOW_WALLET_<COIN>` env var names,
+- `explain` describes the two AuxPow modes (scheduler revenue vs B2B bridge) and common workflow,
+- to change behavior, update the pool systemd `EnvironmentFile` and restart `zion-edge-pool.service`.
+
 ### `zion wallet`
 
 Use for local wallet and payment operations.

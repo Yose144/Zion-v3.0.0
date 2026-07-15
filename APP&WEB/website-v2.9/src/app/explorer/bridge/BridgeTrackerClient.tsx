@@ -22,6 +22,8 @@ import {
   TrendingUp,
   Unlock,
   Zap,
+  Search,
+  Loader2,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
@@ -31,6 +33,74 @@ import {
   BRIDGE_CONTRACTS,
   type BridgeStatus,
 } from "@/lib/bridge-api";
+
+// ─── Bridge Transaction Types ────────────────────────────────────────────────
+
+interface BridgeLockTx {
+  txid: string;
+  block_height: number;
+  sender: string;
+  recipient_chain: string;
+  recipient: string;
+  amount_zion: string;
+  amount_flowers: number;
+  memo: string;
+  confirmations: number;
+  finalized: boolean;
+  status: 'finalized' | 'pending';
+  direction: 'lock';
+}
+
+interface BridgeTxsResponse {
+  transactions: BridgeLockTx[];
+  chain_height: number;
+  total_detected: number;
+  finality_threshold: number;
+  error?: string;
+}
+
+/** Truncate a hex string: 0x1234...5678 */
+function truncateHash(hash: string, prefix = 10, suffix = 6): string {
+  if (!hash || hash.length <= prefix + suffix) return hash;
+  return `${hash.slice(0, prefix)}...${hash.slice(-suffix)}`;
+}
+
+/** Truncate a zion/bech32 address */
+function truncateAddr(addr: string, prefix = 12, suffix = 6): string {
+  if (!addr || addr.length <= prefix + suffix) return addr;
+  return `${addr.slice(0, prefix)}...${addr.slice(-suffix)}`;
+}
+
+/** Status badge color + label */
+function statusBadge(finalized: boolean, confirmations: number, threshold: number, cs: boolean) {
+  if (finalized) {
+    return {
+      label: cs ? "Finalizováno" : "Finalized",
+      className: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+      icon: CheckCircle2,
+    };
+  }
+  return {
+    label: cs ? `Čeká (${confirmations}/${threshold})` : `Pending (${confirmations}/${threshold})`,
+    className: "text-amber-400 bg-amber-400/10 border-amber-400/20",
+    icon: Clock,
+  };
+}
+
+/** Progress bar for finality (0 → threshold confirmations) */
+function FinalityProgress({ confirmations, threshold }: { confirmations: number; threshold: number }) {
+  const pct = Math.min(100, (confirmations / threshold) * 100);
+  return (
+    <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+      <div
+        className={`h-full rounded-full transition-all duration-500 ${
+          pct >= 100 ? "bg-emerald-400" : "bg-zion-gold"
+        }`}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}
 
 interface BridgeMetrics {
   online: boolean;
@@ -110,6 +180,12 @@ export default function BridgeTrackerClient() {
 
   const [data, setData] = useState<BridgeMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [txs, setTxs] = useState<BridgeLockTx[]>([]);
+  const [txsLoading, setTxsLoading] = useState(true);
+  const [txsError, setTxsError] = useState<string | null>(null);
+  const [chainHeight, setChainHeight] = useState(0);
+  const [finalityThreshold, setFinalityThreshold] = useState(60);
+  const [txFilter, setTxFilter] = useState<'all' | 'pending' | 'finalized'>('all');
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -122,7 +198,31 @@ export default function BridgeTrackerClient() {
     }
   }, []);
 
+  const fetchTxs = useCallback(async () => {
+    try {
+      setTxsError(null);
+      const res = await fetch('/api/bridge/transactions?limit=50&scan_depth=1000');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json: BridgeTxsResponse = await res.json();
+      setTxs(json.transactions ?? []);
+      setChainHeight(json.chain_height ?? 0);
+      setFinalityThreshold(json.finality_threshold ?? 60);
+    } catch (e) {
+      setTxsError(e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setTxsLoading(false);
+    }
+  }, []);
+
   usePolling(fetchStatus, 10_000);
+  usePolling(fetchTxs, 15_000);
+
+  // Filtered transactions
+  const filteredTxs = txs.filter((tx) => {
+    if (txFilter === 'pending') return !tx.finalized;
+    if (txFilter === 'finalized') return tx.finalized;
+    return true;
+  });
 
   const online = data?.online ?? false;
   const uptime = fmtUptime(data?.uptime_seconds ?? 0);
