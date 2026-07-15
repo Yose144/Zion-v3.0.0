@@ -647,8 +647,10 @@ class ZionRpcClient {
     const info = await this.getInfo();
     const chainHeight = info.height;
     const txs: any[] = [];
-    // Scan last 20 blocks for non-coinbase transactions
-    const startHeight = Math.max(0, chainHeight - 19);
+    // Scan last 200 blocks for non-coinbase transactions.
+    // Transfer TXs (pool payouts, user transfers) can be sparse — sometimes
+    // dozens of blocks apart — so a 20-block window misses them entirely.
+    const startHeight = Math.max(0, chainHeight - 199);
     for (let h = chainHeight; h >= startHeight && txs.length < limit; h--) {
       try {
         const block = await this.rpcCall<any>('getBlockByHeight', { height: h });
@@ -720,6 +722,41 @@ class ZionRpcClient {
       } catch { /* skip unavailable tx */ }
     }
     return results;
+  }
+
+  /** Get transaction history for an address via V3 getTransactionHistory RPC.
+   *  Returns confirmed on-chain transactions (both incoming and outgoing)
+   *  involving the given address, sorted newest-first. */
+  async getTransactionHistory(address: string, limit = 50, offset = 0): Promise<{
+    total: number; has_more: boolean; transactions: Array<{
+      tx_id: string; from: string; to: string; amount_zion: string;
+      fee_zion: number; nonce: number; block_height: number; timestamp: number;
+      confirmed: boolean; tx_model: string; signature: string; public_key: string;
+    }>;
+  }> {
+    const res = await this.rpcCall<any>('getTransactionHistory', { address, limit, offset });
+    const txs = (res?.transactions ?? []).map((entry: any) => {
+      const tx = entry?.transaction ?? {};
+      return {
+        tx_id: tx.tx_id ?? '',
+        from: tx.from ?? '',
+        to: tx.to ?? '',
+        amount_zion: tx.amount_zion ?? '0',
+        fee_zion: tx.fee_zion ?? 0,
+        nonce: tx.nonce ?? 0,
+        block_height: entry?.block_height ?? 0,
+        timestamp: entry?.timestamp ?? 0,
+        confirmed: entry?.confirmed ?? true,
+        tx_model: entry?.tx_model ?? 'account',
+        signature: tx.signature ?? '',
+        public_key: tx.public_key ?? '',
+      };
+    });
+    return {
+      total: res?.total ?? txs.length,
+      has_more: res?.has_more ?? false,
+      transactions: txs,
+    };
   }
 
   /** Get mempool info — V3 only returns count, not individual txs */

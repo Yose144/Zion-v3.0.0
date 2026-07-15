@@ -21,10 +21,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Address required' }, { status: 400 });
     }
 
-    // Fetch blockchain balance (authoritative) + pool mining stats in parallel
-    const [walletSnapshot, minerData] = await Promise.all([
+    // Fetch blockchain balance (authoritative) + pool mining stats + on-chain TXs in parallel
+    const [walletSnapshot, minerData, txHistory] = await Promise.all([
       rpc.getWalletSnapshot(address).catch(() => null),
       rpc.getMinerInfo(address).catch(() => null),
+      rpc.getTransactionHistory(address, 50, 0).catch(() => null),
     ]);
 
     // Build address info — chain balance is the real balance
@@ -45,20 +46,43 @@ export async function GET(request: NextRequest) {
     // UTXO list (for zion1 addresses)
     const utxoList = walletSnapshot?.utxos ?? [];
 
-    const payouts = minerData?.recent_payouts || [];
-    const transactions = payouts.map((p: any, idx: number) => ({
-      tx_hash: p.tx_id || `payout_${p.timestamp || idx}`,
-      type: 'payout',
-      sender: 'Pool',
-      receiver: address,
-      amount: p.amount_zion ?? p.amount ?? 0,
-      fee: 0,
-      timestamp: p.timestamp || 0,
-      status: p.status || 'confirmed',
-    }));
-
-    // Calculate totals
-    const totalReceived = transactions.reduce((sum: number, tx: any) => sum + tx.amount, 0);
+    // Use on-chain transaction history (authoritative) when available;
+    // fall back to pool payouts for legacy compatibility.
+    let transactions: any[];
+    let totalReceived: number;
+    if (txHistory && txHistory.transactions.length > 0) {
+      transactions = txHistory.transactions.map((tx) => {
+        const isCoinbase = tx.from === 'coinbase';
+        const amountZion = Number(tx.amount_zion) / 1_000_000;
+        return {
+          tx_hash: tx.tx_id,
+          type: isCoinbase ? 'coinbase' : 'transfer',
+          from: tx.from,
+          to: tx.to,
+          amount: amountZion,
+          fee: Number(tx.fee_zion) / 1_000_000,
+          timestamp: tx.timestamp,
+          block_height: tx.block_height,
+          status: tx.confirmed ? 'confirmed' : 'pending',
+        };
+      });
+      totalReceived = transactions
+        .filter((tx) => tx.to === address)
+        .reduce((sum, tx) => sum + tx.amount, 0);
+    } else {
+      const payouts = minerData?.recent_payouts || [];
+      transactions = payouts.map((p: any, idx: number) => ({
+        tx_hash: p.tx_id || `payout_${p.timestamp || idx}`,
+        type: 'payout',
+        sender: 'Pool',
+        receiver: address,
+        amount: p.amount_zion ?? p.amount ?? 0,
+        fee: 0,
+        timestamp: p.timestamp || 0,
+        status: p.status || 'confirmed',
+      }));
+      totalReceived = transactions.reduce((sum: number, tx: any) => sum + tx.amount, 0);
+    }
 
     const addressInfo = {
       address,
@@ -68,7 +92,7 @@ export async function GET(request: NextRequest) {
       total_received: minerData?.balance?.paid || totalReceived,
       total_sent: 0,
       net_balance: balanceZion,
-      transaction_count: transactions.length,
+      transaction_count: txHistory?.total ?? transactions.length,
       first_seen: minerData?.first_seen || 0,
       last_seen: minerData?.last_seen || 0,
 
