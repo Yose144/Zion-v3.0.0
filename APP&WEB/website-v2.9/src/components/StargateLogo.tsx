@@ -57,6 +57,8 @@ const ROTATE_LAYERS = [
 export default function StargateLogo({ className = '' }: { className?: string }) {
   return (
     <div className={`stargate-wrap ${className}`}>
+      {/* eslint-disable-next-line @next/next/no-css-tags */}
+      <link rel="stylesheet" href="/stargate/stargate.css" precedence="low" />
       <div className="gate">
         <div className="container">
           {ROTATE_LAYERS.map((layer, i) => (
