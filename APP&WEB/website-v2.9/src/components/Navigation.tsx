@@ -11,7 +11,6 @@ import {
   CircuitBoard, Github, Layers, Network as NetworkIcon, ArrowRightLeft,
 } from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
-import BackgroundToggle from './BackgroundToggle';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
@@ -305,9 +304,6 @@ export default function Navigation() {
               <LayoutDashboard className="text-white w-5 h-5 transition-all duration-300" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'dashboard', lang)}</span>
             </Link>
-            <div className="hidden lg:flex items-center">
-              <BackgroundToggle placement="nav" showLabel={false} />
-            </div>
           </div>
 
           {/* Mobile hamburger */}

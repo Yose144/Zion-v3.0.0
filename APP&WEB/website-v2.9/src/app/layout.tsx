@@ -14,6 +14,7 @@ import ClientBackgrounds from "@/components/ClientBackgrounds";
 import HeroSection from "@/components/HeroSection";
 import AlohaOverlay from "@/components/AlohaOverlay";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import BackgroundToggle from "@/components/BackgroundToggle";
 import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
 const inter = Inter({ 
@@ -89,6 +90,7 @@ export default function RootLayout({
                       <div className="site-footer">
                         <Footer />
                       </div>
+                      <BackgroundToggle />
                     </div>
                     <script dangerouslySetInnerHTML={{__html: `
                       (function() {
