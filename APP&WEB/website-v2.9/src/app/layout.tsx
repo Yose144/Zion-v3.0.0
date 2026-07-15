@@ -13,6 +13,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ClientBackgrounds from "@/components/ClientBackgrounds";
 import HeroSection from "@/components/HeroSection";
 import AlohaOverlay from "@/components/AlohaOverlay";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
 const inter = Inter({ 
@@ -50,6 +51,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
   },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -60,6 +62,7 @@ export default function RootLayout({
   return (
     <html lang="cs" className="dark" style={{ maxWidth: '100%', overflowX: 'hidden' }}>
       <body className={`${inter.variable} ${jetbrains.variable} antialiased text-white w-full`} style={{ maxWidth: '100%', overflowX: 'hidden', background: 'transparent' }}>
+        <ServiceWorkerRegistration />
         <GlobalErrorBoundary>
           <ThemeProvider>
             <ObservatoryProvider>
