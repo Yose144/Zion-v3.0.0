@@ -243,6 +243,11 @@ pub struct AuxPowClient {
     job_ntime: Arc<Mutex<HashMap<String, String>>>,
     /// ZcashStratum (VRSC): per-job header prefix (version|prevhash|merkle|reserved|ntime|nbits).
     job_header_prefix: Arc<Mutex<HashMap<String, String>>>,
+    /// ZcashStratum (VRSC): per-job extranonce1 used to build the header.
+    /// xnsub can change extranonce1 mid-session, so shares for an old job
+    /// must be submitted with the extranonce1 that was active when the job
+    /// was issued.
+    job_extranonce1: Arc<Mutex<HashMap<String, Vec<u8>>>>,
     /// ZcashStratum (VRSC): latest job_id from upstream (for stale share detection).
     latest_job_id: Arc<Mutex<Option<String>>>,
     /// GPU backend for PoUW mining (Metal on Apple Silicon).
@@ -294,6 +299,7 @@ impl AuxPowClient {
             job_solution: Arc::new(Mutex::new(HashMap::new())),
             job_ntime: Arc::new(Mutex::new(HashMap::new())),
             job_header_prefix: Arc::new(Mutex::new(HashMap::new())),
+            job_extranonce1: Arc::new(Mutex::new(HashMap::new())),
             latest_job_id: Arc::new(Mutex::new(None)),
             #[cfg(feature = "gpu-metal")]
             gpu_backend: Arc::new(Mutex::new(None)),
@@ -1166,6 +1172,7 @@ impl AuxPowClient {
     /// `pearl.set_mining_params` and `pearl.challenge` notifications.
     ///
     /// Sent fire-and-forget — AlphaPool doesn't respond with a matching JSON-RPC id.
+    #[allow(dead_code)]
     async fn pearl_configure(&self) -> Result<()> {
         let req = json!({
             "id": 0,
@@ -2103,6 +2110,11 @@ impl AuxPowClient {
                     let nbits = as_s(6);
                     let clean_jobs = arr.get(7).and_then(|v| v.as_bool()).unwrap_or(false);
                     let maybe_solution = as_s(8);
+                    // Some VRSC/LuckPool stratum servers send the daemon's fixed
+                    // block-header nonce as an extra param (index 9).  PBaaS v7+
+                    // ignores the miner's nonce field and uses this daemon nonce,
+                    // so we must hash with the same value the pool validates with.
+                    let daemon_nonce_hex = as_s(9);
 
                     if !job_id.is_empty() {
                         *self.latest_job_id.lock().await = Some(job_id.clone());
@@ -2144,6 +2156,7 @@ impl AuxPowClient {
                         let mut sol = self.job_solution.lock().await;
                         let mut nt = self.job_ntime.lock().await;
                         let mut hp = self.job_header_prefix.lock().await;
+                        let mut en1m = self.job_extranonce1.lock().await;
                         if sol.len() > 64 {
                             let mut keys: Vec<String> = sol.keys().cloned().collect();
                             keys.sort();
@@ -2152,9 +2165,14 @@ impl AuxPowClient {
                                 sol.remove(k);
                                 nt.remove(k);
                                 hp.remove(k);
+                                en1m.remove(k);
                             }
                         }
                     }
+
+                    // Snapshot the extranonce1 active for this job so the miner
+                    // hashes with the same value the submit path will later use.
+                    let job_en1 = self.extranonce1.lock().await.clone();
 
                     // Store per-job data for submit reconstruction.
                     if !job_id.is_empty() {
@@ -2166,23 +2184,26 @@ impl AuxPowClient {
                             self.job_header_prefix.lock().await.insert(job_id.clone(), header_prefix);
                         }
                         self.job_ntime.lock().await.insert(job_id.clone(), ntime.clone());
+                        self.job_extranonce1.lock().await.insert(job_id.clone(), job_en1.clone());
                     }
 
                     // Build the hashing blob:
                     // VerusCoin block header = version(4) + prevhash(32) + merkle(32)
                     //   + reserved(32) + ntime(4) + nbits(4) + nonce(32) + varint(3)
                     //   + solution(1344) = 1487 bytes total.
-                    // The nonce field (32 bytes at offset 108) = extranonce1 + nonce2.
-                    // The nonceSpace (15 bytes at solution offset 1329) = extranonce1
-                    //   + padding + miner_nonce (PBaaS v7+).
-                    // Both are initialized with extranonce1 + zeros; the miner
-                    // fills in the miner_nonce portion during scanning.
+                    // The nonce field (32 bytes at offset 108) is fixed by the daemon
+                    // for PBaaS v7+; the miner does NOT modify it.  The miner's unique
+                    // work is in the solution nonceSpace (last 15 bytes).
                     let blob = if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
-                        let en1 = hex::encode(self.extranonce1.lock().await.clone());
-                        // For PBaaS v7+: use extranonce1 in the nonce field.
-                        // The miner does NOT modify the nonce field during scanning.
-                        // The miner's unique work is in the solution nonceSpace only.
-                        let nonce_field = format!("{:0<64}", en1); // 64 hex chars = 32 bytes
+                        let en1 = hex::encode(&job_en1);
+                        // PBaaS v7+: use the daemon's nonce if the pool supplied it;
+                        // otherwise fall back to extranonce1 + zeros so the header
+                        // layout is still well-formed.
+                        let nonce_field = if daemon_nonce_hex.len() == 64 {
+                            daemon_nonce_hex.clone()
+                        } else {
+                            format!("{:0<64}", en1)
+                        };
                         // Embed extranonce1 into solution nonceSpace (last 15 bytes = 30 hex)
                         let mut sol_with_ns = effective_solution.clone();
                         if sol_with_ns.len() == 2688 && !en1.is_empty() {
@@ -2674,13 +2695,14 @@ impl AuxPowClient {
             };
 
             // Build nonce2: miner_nonce(LE 4B) + zero padding.
-            // For VRSC (VerusHash/PBaaS v7+): nonce field = 32 bytes total.
-            //   nonce2 = 32 - len(extranonce1) = 28 bytes (for en1=4)
-            //   The pool reconstructs nonce_field = extranonce1 + nonce2 (32 bytes).
-            //   nonce2 layout: [miner_nonce(4B)][padding(24B)] (miner_nonce at START)
-            // For standard Zcash (FLUX/Equihash): nonce field = 32 bytes total.
-            //   nonce2 = 32 - en_bytes
-            let en1_hex = hex::encode(self.extranonce1.lock().await.clone());
+            // Standard Zcash Stratum: nonce field = 32 bytes total.
+            //   nonce2 = 32 - len(extranonce1) (miner_nonce at START).
+            // Use the extranonce1 active for this job so xnsub updates don't
+            // break in-flight share submissions.
+            let job_en1_opt = self.job_extranonce1.lock().await.get(job_id).cloned();
+            let current_en1 = self.extranonce1.lock().await.clone();
+            let job_en1 = job_en1_opt.unwrap_or(current_en1);
+            let en1_hex = hex::encode(job_en1);
             let nonce2_4b = {
                 let padded = format!("{:0>8x}", nonce & 0xFFFFFFFF);
                 if let Ok(val) = u32::from_str_radix(&padded, 16) {
@@ -2691,13 +2713,11 @@ impl AuxPowClient {
             };
             let nonce2_str = {
                 let en_bytes = en1_hex.len() / 2;
-                // PBaaS v7+ (VerusHash/VRSC): nonceSpace = 15 bytes
-                // Standard Zcash (FLUX/Equihash): nonce field = 32 bytes
-                let nonce_field_total = if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
-                    15usize
-                } else {
-                    32usize
-                };
+                // Standard Zcash Stratum: nonce field = 32 bytes total.
+                // nonce2 is the part after extranonce1.  For PBaaS v7+ (VRSC)
+                // the pool ignores the nonce field in validation, but it still
+                // expects the parameter to be the full 32-byte (64 hex) nonce.
+                let nonce_field_total = 32usize;
                 let nonce2_bytes = nonce_field_total.saturating_sub(en_bytes);
                 let nonce2_hex_len = nonce2_bytes * 2;
                 // nonce2 = [miner_nonce][padding] (miner_nonce at START)
@@ -2770,7 +2790,8 @@ impl AuxPowClient {
             );
             // Detailed debug: print exact submit params (truncated for readability)
             println!(
-                "auxpow: VRSC submit DETAIL — nonce2={} sol_first20={} sol_last30={}",
+                "auxpow: VRSC submit DETAIL — en1_len={} nonce2={} sol_first20={} sol_last30={}",
+                en1_hex.len() / 2,
                 nonce2_str,
                 &solution_with_varint[..20.min(solution_with_varint.len())],
                 &solution_with_varint[solution_with_varint.len().saturating_sub(30)..],
