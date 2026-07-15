@@ -22,11 +22,14 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
-import { ZionDefense } from './games/ZionDefense';
-import { MiningSnake } from './games/MiningSnake';
-import { BlockBreaker } from './games/BlockBreaker';
-import { FlappyNode } from './games/FlappyNode';
-import { StarMiner } from './games/StarMiner';
+import dynamic from 'next/dynamic';
+
+const ZionDefense   = dynamic(() => import('./games/ZionDefense').then(m => ({ default: m.ZionDefense })), { ssr: false });
+const MiningSnake   = dynamic(() => import('./games/MiningSnake').then(m => ({ default: m.MiningSnake })), { ssr: false });
+const BlockBreaker  = dynamic(() => import('./games/BlockBreaker').then(m => ({ default: m.BlockBreaker })), { ssr: false });
+const FlappyNode    = dynamic(() => import('./games/FlappyNode').then(m => ({ default: m.FlappyNode })), { ssr: false });
+const StarMiner     = dynamic(() => import('./games/StarMiner').then(m => ({ default: m.StarMiner })), { ssr: false });
+
 import ShowdownHero from '@/components/ShowdownHero';
 import SpotifyBanner from '@/components/SpotifyBanner';
 import StargatePortal from '@/components/StargatePortal';

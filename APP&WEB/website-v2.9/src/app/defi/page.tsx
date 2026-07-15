@@ -34,13 +34,16 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
-import SwapWidget from '@/components/SwapWidget';
-import LiFiWidget from '@/components/LiFiWidget';
-import BridgeBurnWidget from '@/components/BridgeBurnWidget';
-import DefiBalances from '@/components/DefiBalances';
-import StakingPanel from '@/components/StakingPanel';
-import FarmingPanel from '@/components/FarmingPanel';
-import GovernancePanel from '@/components/GovernancePanel';
+import dynamic from 'next/dynamic';
+
+const SwapWidget      = dynamic(() => import('@/components/SwapWidget'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
+const LiFiWidget      = dynamic(() => import('@/components/LiFiWidget'), { ssr: false, loading: () => <div className="h-96 animate-pulse rounded-2xl bg-white/5" /> });
+const BridgeBurnWidget= dynamic(() => import('@/components/BridgeBurnWidget'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
+const DefiBalances    = dynamic(() => import('@/components/DefiBalances'), { ssr: false, loading: () => <div className="h-40 animate-pulse rounded-2xl bg-white/5" /> });
+const StakingPanel    = dynamic(() => import('@/components/StakingPanel'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
+const FarmingPanel    = dynamic(() => import('@/components/FarmingPanel'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
+const GovernancePanel = dynamic(() => import('@/components/GovernancePanel'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
+
 import { CONTRACTS, SEED_PRICE_USD, CCA_AUCTION_PARAMS, PANCAKE_V3 } from '@/lib/defi-contracts';
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
 

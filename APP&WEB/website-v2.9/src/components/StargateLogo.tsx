@@ -57,7 +57,6 @@ const ROTATE_LAYERS = [
 export default function StargateLogo({ className = '' }: { className?: string }) {
   return (
     <div className={`stargate-wrap ${className}`}>
-      <link rel="stylesheet" href="/stargate/stargate.css" />
       <div className="gate">
         <div className="container">
           {ROTATE_LAYERS.map((layer, i) => (

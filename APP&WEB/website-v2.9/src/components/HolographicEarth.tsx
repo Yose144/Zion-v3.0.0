@@ -816,10 +816,10 @@ export default function HolographicEarth({ className }: HolographicEarthProps) {
         {webglOk ? (
           <Canvas
             className="h-full w-full !block"
-            dpr={[1, 2]}
+            dpr={typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : [1, 1.5]}
             gl={{
               alpha: true,
-              antialias: true,
+              antialias: typeof window === 'undefined' || window.innerWidth >= 768,
               powerPreference: 'high-performance',
             }}
             onCreated={({ gl }) => {
