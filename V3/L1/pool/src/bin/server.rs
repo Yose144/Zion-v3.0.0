@@ -2215,8 +2215,8 @@ fn handle_client(
                         _ => "stratum".to_string(),
                     };
                     println!(
-                        "parallel_stream_cpu_embedded miner={} coin={} algo={} ext_job_id={} height={}",
-                        worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height
+                        "parallel_stream_cpu_embedded miner={} coin={} algo={} ext_job_id={} height={} ext_target_hex={:.64}",
+                        worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height, ext_target_hex
                     );
                     let easy_target_hex = if std::env::var("ZION_AUXPOW_EASY_TARGET")
                         .as_deref()
