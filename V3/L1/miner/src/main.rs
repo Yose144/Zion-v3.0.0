@@ -1578,11 +1578,20 @@ fn run_remote_session(
     let dual_gpu_enabled = gpu_available
         && config.gpu_backend != gpu_backend::GpuBackendKind::Cpu
         && config.stream2_enabled;
+    println!(
+        "[{}] dual_gpu_check gpu_available={} gpu_backend={:?} stream2_enabled={} => dual_gpu_enabled={}",
+        log_timestamp(),
+        gpu_available,
+        config.gpu_backend,
+        config.stream2_enabled,
+        dual_gpu_enabled
+    );
     if dual_gpu_enabled {
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
         let bk = config.gpu_backend;
         thread::spawn(move || {
+            println!("[{}] external_gpu_thread_spawned", log_timestamp());
             external_gpu_thread(ext_gpu_rx, ext_gpu_share_tx, ws, hr, bk);
         });
         println!(
@@ -2545,6 +2554,7 @@ fn external_gpu_thread(
     hashrate: Arc<HashrateTracker>,
     backend_kind: gpu_backend::GpuBackendKind,
 ) {
+    println!("[{}] external_gpu_thread_entered backend={}", log_timestamp(), backend_kind.as_str());
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
 
