@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     // Extract miner address from V3 block fields
     let minerAddress = block.miner_address || '';
-    let baseReward = block.miner_reward_zion ?? block.subsidy_zion ?? block.reward ?? 0;
+    let baseReward = (block as any).miner_reward_zion ?? (block as any).subsidy_zion ?? block.reward ?? 0;
 
     // Build transaction list from V3 transactions array (already in block response)
     const txs: any[] = [];

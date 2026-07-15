@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
+import { SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
 
 async function rpc(method: string, params: Record<string, any> = {}) {
   try {
@@ -10,9 +11,51 @@ async function rpc(method: string, params: Record<string, any> = {}) {
   }
 }
 
-// V3 pool doesn't expose per-miner data — return empty
-async function fetchPoolMiners() {
-  return {} as Record<string, { hashrate: number; pending: number; paid: number; shares: number }>;
+interface PoolMinerInfo {
+  address: string;
+  worker_name?: string;
+  hashrate: number;
+  pending: number;
+  paid: number;
+  shares: number;
+}
+
+// Fetch active/registered miners from the pool HTTP API.
+// PPLNS composite keys (miner_id/worker_name) are split by the pool; we key
+// the result by payout_address so the explorer can mark mining addresses.
+async function fetchPoolMiners(): Promise<Record<string, PoolMinerInfo>> {
+  const map: Record<string, PoolMinerInfo> = {};
+  try {
+    const res = await fetch(`${SITE_PRIMARY_POOL_API_URL}/miners?limit=500`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return map;
+    const data = await res.json() as any;
+    if (!data.ok || !Array.isArray(data.miners)) return map;
+
+    for (const m of data.miners) {
+      const addr = m.payout_address || m.address || '';
+      if (!addr || !addr.startsWith('zion1')) continue;
+      // Merge multiple workers pointing to the same payout address; keep the
+      // largest values so the address appears active in the leaderboard.
+      const existing = map[addr];
+      const pending = Number(m.pending_balance || 0) / 1_000_000;
+      const paid = Number(m.paid_total_atomic || m.paid_total || 0) / 1_000_000;
+      const info: PoolMinerInfo = {
+        address: addr,
+        worker_name: m.worker_name,
+        hashrate: Math.max(existing?.hashrate || 0, Number(m.hashrate || m.hashrate_1h || 0)),
+        pending: (existing?.pending || 0) + pending,
+        paid: (existing?.paid || 0) + paid,
+        shares: (existing?.shares || 0) + Number(m.valid_shares || 0),
+      };
+      map[addr] = info;
+    }
+  } catch {
+    /* ignore */
+  }
+  return map;
 }
 
 interface RichListEntry {
@@ -75,11 +118,32 @@ export async function GET(request: Request) {
         { rank: 4, address: 'zion1humanitarian...fund', balance: 1_530_000_000, balance_display: '1,530,000,000', type: 'premine', label: 'Humanitarian Fund', percentage: (1_530_000_000 / totalCirculating) * 100 },
       ];
       
-      // Add pool miners
-      const minerEntries: RichListEntry[] = Object.entries(poolMiners)
-        .filter(([_, info]) => info.paid > 0 || info.pending > 0)
-        .map(([addr, info]) => {
-          const balance = (info.paid + info.pending) / 1_000_000;
+      // Add real pool miners from the PPLNS pool API. Look up on-chain balance
+      // for each unique payout address so the leaderboard is sorted correctly.
+      const minerAddrs = Object.keys(poolMiners);
+      const balanceMap: Record<string, number> = {};
+      if (minerAddrs.length > 0) {
+        const client = getZionRpc();
+        await Promise.all(
+          minerAddrs.map(async (addr) => {
+            try {
+              const bal = await client.getAddressBalance(addr);
+              balanceMap[addr] = bal?.balance_zion || 0;
+            } catch {
+              balanceMap[addr] = 0;
+            }
+          })
+        );
+      }
+
+      const minerEntries: RichListEntry[] = minerAddrs
+        .filter((addr) => {
+          const info = poolMiners[addr];
+          return balanceMap[addr] > 0 || info.pending > 0 || info.paid > 0 || info.shares > 0;
+        })
+        .map((addr) => {
+          const info = poolMiners[addr];
+          const balance = balanceMap[addr] || info.pending || 0;
           return {
             rank: 0,
             address: addr,
@@ -90,7 +154,7 @@ export async function GET(request: Request) {
           };
         })
         .sort((a, b) => b.balance - a.balance);
-      
+
       richList = [...premineEntries, ...minerEntries]
         .sort((a, b) => b.balance - a.balance)
         .slice(0, limit)
