@@ -200,7 +200,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | VRSC | verushash v2.2 | ZcashStratum | ✅ LIVE (LuckPool eu.luckpool.net:3956, pool mining VRSC) |
 | EPIC | progpow | Stratum (custom HTTP) | ✅ LIVE (GPU ProgPow kernel, epoch 120 DAG, triple parallel with ZION+VRSC) |
 | QUAI | kawpow | Stratum | ✅ Added (KawPoW GPU thread, 2miners pool, BTC payout, `ZION_POOL_AUXPOW_WALLET_QUAI` env var) |
-| BEAM | beamhash (Equihash 150,5) | BeamStratum (TLS) | ✅ Added (BeamHash III, custom JSON-RPC 2.0 over TLS, 2miners pool, BTC payout, `ZION_POOL_AUXPOW_WALLET_BEAM` env var) |
+| BEAM | beamhash III (Equihash 144,5 + SipHash-2-4) | BeamStratum (TLS) | ✅ Implemented (CPU hasher `beamhash.rs` 13 tests + OpenCL kernel `beamhash_kernel.cl` + GPU dispatch wired, 2miners pool, BTC payout) |
 | PRL | pearlhash (PoUW MatMul) | PearlStratum (custom) | ★★★ PearlStratum ✅ + CPU hasher ✅ + GPU GEMM dispatch ✅ (`0bafbfe83`) + Merkle proof ✅ (`705bff572`) + pool-routed ✅ (`f524b7117`), full PoUW ZK TODO |
 
 ### AuXpow GPU Backend (2026-07-15)
@@ -218,7 +218,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | zelhash | FLUX | 495M | **19.5B** | ⚠️ kernel only |
 | progpow | EPIC | DAG ✅ (OpenMP) | — (needs DAG) | ⚠️ kernel only |
 | pearlhash | PRL | Placeholder | Placeholder | ❌ TODO (full PoUW) ★★★ |
-| beamhash | BEAM | — | — (Equihash 150,5) | ❌ TODO (BeamHash III GPU kernel) |
+| beamhash | BEAM | SipHash-2-4 ✅ | Equihash 144,5 ✅ | ✅ Implemented (`beamhash.rs` + `beamhash_kernel.cl`) |
 
 **Features:** `gpu-opencl`, `gpu-metal`, `gpu-cuda`, `gpu-all`
 **Benchmark:** `cargo run --example gpu_benchmark -p zion-auxpow --features gpu-metal`
@@ -326,6 +326,10 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 |------|-----------|-------------|
 | 07-15 | **QUAI (KawPoW) added** — 15th external coin. KawPoW GPU thread in miner (`kawpow_gpu_thread`), Stratum v1 protocol, 2miners pool (BTC payout). `ExternalCoin::QUAI` in AuXpow enum, pool server routing/algorithm/CH-coin mappings, miner channel+routing+share drain. Env vars: `ZION_POOL_AUXPOW_WALLET_QUAI`, `ZION_POOL_AUXPOW_PASSWORD_QUAI` | (this commit) |
 | 07-15 | **BEAM (BeamHash III) added** — 16th external coin. Custom `BeamStratum` protocol (JSON-RPC 2.0 over TLS) for beam.2miners.com:5252. `ExternalCoin::BEAM` in AuXpow enum, `StratumProtocol::BeamStratum` variant, `beam_login()`/`parse_beam_job()`/Beam submit block, `RevenueSource::BeamHashExternal` in cosmic-harmony, pool server routing/algorithm/CH-coin/stats mappings. Env var: `ZION_POOL_AUXPOW_WALLET_BEAM` | (this commit) |
+| 07-15 | **BeamHash III GPU kernel implemented** — SipHash-2-4 + Equihash 144,5 CPU hasher (`AuXpow/src/beamhash.rs`, 590 lines, 13 tests) + OpenCL kernel (`AuXpow/csrc/opencl/beamhash_kernel.cl`, SipHash-2-4 + hash generation) + GPU dispatch wired in `gpu_miner.rs` + `gpu_backend.rs` stub replaced with real `mine()` call. 159/159 AuXpow tests pass. | `525835d4e` |
+| 07-15 | **EvrProgPow/MeowPow correct params** — `EVR_PROGPOW_PARAMS` (PERIOD=3, REGS=32, CNT_CACHE=11, CNT_MATH=18) + `MEOWPOW_PARAMS` (PERIOD=6, REGS=16, CNT_CACHE=6, CNT_MATH=9) in `progpow_codegen.rs`. `select_progpow_params()` dispatcher. `kawpow_kernel.cl` #ifndef guards for PROGPOW_REGS/CNT_MATH. Algorithm-aware `ensure_proque_progpow()` in `gpu_miner.rs`. 5 new tests. Previously EVR/MEWC used KawPow fallback (PERIOD=10) → wrong random math → shares rejected. | `305f4821e` |
+| 07-15 | **GPU Benchmark M1 Metal** — blake3 24.7 GH/s, blake3_dcr 24.2 GH/s, kheavyhash 22.2 GH/s, autolykos 23.7 GH/s, zelhash 23.8 GH/s, pearlhash 25.2 GH/s, Pearl PoUW MatMul 1,516,269 tiles/s. `AuXpow/examples/gpu_benchmark.rs` | — |
+| 07-15 | **E2E Edge audit** — Pool active (44,950 ZION shares, 99.97% accepted), EPIC+VRSC streams embedded in jobs ✓, but `src_progpow=0, src_verushash=0` — miners not submitting external shares (old binary without external stream support). Deploy fix needed. | — |
 | 07-15 | **ERG (Autolykos v2) E2E complete** — `autolykos_gpu_thread()` (Stream 3e) added to miner. Uses existing `autolykos_kernel.cl` OpenCL kernel (BLAKE2b-256, memory-hard precomputed table, 4-nonce batch scanning, midstate precomputation). Routing: ERG/autolykos → `autolykos_tx` channel. Share collection + submit. Pool-side was already complete (`RevenueSource::AutolykosExternal`, Stratum v1, 2miners pool). Env var: `ZION_POOL_AUXPOW_WALLET_ERG` | `d4e03cb97` |
 | 07-15 | **Triple Parallel AuxPoW LIVE** — Claymore-style 3-stream parallel mining: ZION (GPU DeekshaChv3) + EPIC (GPU ProgPow) + VRSC (CPU VerusHash) simultaneously. Second AuxPow bridge (`cpu_auxpow_bridge`) for CPU-only coins. `external_stream_cpu` field in `PoolMessage::Job`. OpenMP-parallel DAG generation (19 threads, epoch 120 ~2GB in ~4 min). All 3 streams verified live on Edge (rx5600-test miner, 99.7% ZION accept rate, EPIC ProgPow kernel 7169+ batches, VRSC CPU thread hashing) | (this commit) |
 | 07-14 | **PPLNS payout bug fix** — composite `miner_id/worker_name` keys (all workers sharing same miner_id had payouts sent to last-registered address) + telemetry registry composite keys | `bd6f1dfb3`, `85250086d` |
