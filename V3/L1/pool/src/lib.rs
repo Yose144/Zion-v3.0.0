@@ -63,6 +63,10 @@ pub struct ExternalStreamJob {
     /// Pool protocol (stratum, ethstratum, zcashstratum)
     #[serde(default)]
     pub protocol: String,
+    /// Seed hash for RandomX (XMR) — 32-byte hex (64 chars).  Required for
+    /// RandomX cache/dataset initialization.  None for non-RandomX coins.
+    #[serde(default)]
+    pub seed_hash_hex: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

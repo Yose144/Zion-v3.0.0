@@ -267,6 +267,7 @@ mod tests {
             extranonce1: Vec::new(),
             start_nonce: 0,
             nonce_count: 1_000_000,
+            seed_hash: None,
         }
     }
 

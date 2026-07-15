@@ -478,6 +478,10 @@ pub struct JobPackage {
     pub extranonce1: Vec<u8>,
     pub start_nonce: u64,
     pub nonce_count: u64,
+    /// Seed hash for RandomX (XMR) — 32 bytes.  None for non-RandomX coins.
+    /// Used to initialize/reinitialize the RandomX cache/dataset.
+    #[serde(default)]
+    pub seed_hash: Option<Vec<u8>>,
 }
 
 /// Result of forwarding a share to the external pool.

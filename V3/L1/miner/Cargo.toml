@@ -40,7 +40,7 @@ native-kheavyhash     = ["dep:zion-native-ffi", "zion-native-ffi/native-kheavyha
 native-blake3-algo    = ["dep:zion-native-ffi", "zion-native-ffi/native-blake3-algo"]
 native-cosmic-harmony = ["dep:zion-native-ffi", "zion-native-ffi/native-cosmic-harmony"]
 native-verushash      = ["dep:zion-native-ffi", "zion-native-ffi/native-verushash", "zion-auxpow/native-verushash"]
-native-randomx        = ["dep:zion-native-ffi", "zion-native-ffi/native-randomx"]
+native-randomx        = ["dep:zion-native-ffi", "zion-native-ffi/native-randomx", "zion-auxpow/native-randomx"]
 native-all = [
     "native-etchash", "native-kawpow", "native-autolykos", "native-kheavyhash",
     "native-blake3-algo", "native-cosmic-harmony", "native-verushash", "native-randomx",

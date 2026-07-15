@@ -2185,6 +2185,9 @@ fn handle_client(
                         height: ext_height,
                         extranonce1_hex: ext_extranonce1_hex,
                         protocol: ext_protocol,
+                        seed_hash_hex: ext_job.seed_hash.as_ref()
+                            .map(|s| hex::encode(s))
+                            .unwrap_or_default(),
                     })
                 } else {
                     log_ch.log_verbose(format!(
@@ -2236,6 +2239,9 @@ fn handle_client(
                         height: ext_height,
                         extranonce1_hex: ext_extranonce1_hex,
                         protocol: ext_protocol,
+                        seed_hash_hex: ext_job.seed_hash.as_ref()
+                            .map(|s| hex::encode(s))
+                            .unwrap_or_default(),
                     })
             } else {
                 None
@@ -6217,6 +6223,7 @@ mod tests {
             extranonce1: vec![],
             start_nonce: 0,
             nonce_count: 1_000_000,
+            seed_hash: None,
         };
         auxpow_bridge
             .job_queue
@@ -6408,6 +6415,7 @@ mod tests {
             extranonce1: external_job.extranonce1.clone(),
             start_nonce: 0,
             nonce_count: 1_000_000,
+            seed_hash: None,
         };
 
         // 3) Build the bridge and a background tokio task that forwards shares.

@@ -274,5 +274,6 @@ fn build_package(
         extranonce1: job.extranonce1.clone(),
         start_nonce: 0,
         nonce_count: u64::MAX,
+        seed_hash: None,
     }
 }

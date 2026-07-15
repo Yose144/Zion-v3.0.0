@@ -317,15 +317,131 @@ fn main() {
 
     // -----------------------------------------------------------------------
     // RandomX  (XMR, ZEPH)
-    //   Portable stub; for production replace with a wrapper around the full
-    //   Tevador/randomx C++ library (see algorithms/randomx/README.md).
+    //   Real tevador/RandomX C++ library + ZION wrapper.
+    //   Source: csrc/randomx/randomx_src/ (cloned from github.com/tevador/RandomX)
     // -----------------------------------------------------------------------
     if feat("native-randomx") {
-        base_build(
-            "csrc/randomx/randomx_stub.c",
-            "randomx_zion",
-            &target_os,
-            is_msvc,
-        );
+        build_randomx(&target_os, is_msvc);
     }
+}
+
+/// Build the real tevador/RandomX C++ library + ZION wrapper.
+///
+/// RandomX is C++ (not C), so we use `.cpp(true)` and compile all .cpp
+/// source files from the randomx_src/src/ directory plus our wrapper.
+fn build_randomx(target_os: &str, is_msvc: bool) {
+    let rx_dir = "csrc/randomx/randomx_src/src";
+
+    // Core RandomX C++ source files (common to all platforms)
+    let mut core_sources = vec![
+        "aes_hash.cpp",
+        "allocator.cpp",
+        "blake2_generator.cpp",
+        "bytecode_machine.cpp",
+        "cpu.cpp",
+        "dataset.cpp",
+        "instruction.cpp",
+        "instructions_portable.cpp",
+        "randomx.cpp",
+        "soft_aes.cpp",
+        "superscalar.cpp",
+        "virtual_machine.cpp",
+        "vm_interpreted.cpp",
+        "vm_interpreted_light.cpp",
+    ];
+
+    // Argon2 (C sources, used for cache initialization)
+    let argon2_sources = [
+        "argon2_core.c",
+        "argon2_ref.c",
+        "argon2_avx2.c",
+        "argon2_ssse3.c",
+        "blake2/blake2b.c",
+        // Virtual memory management (provides allocMemoryPages, setPagesRW, etc.)
+        "virtual_memory.c",
+        // Reciprocal calculation (provides randomx_reciprocal)
+        "reciprocal.c",
+    ];
+
+    // Architecture-specific JIT compiler and assembly generator
+    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
+    if target_arch == "aarch64" {
+        core_sources.push("jit_compiler_a64.cpp");
+    } else {
+        core_sources.push("assembly_generator_x86.cpp");
+        core_sources.push("jit_compiler_x86.cpp");
+    }
+    // VM compiled (JIT) — needed for all architectures
+    core_sources.push("vm_compiled.cpp");
+    core_sources.push("vm_compiled_light.cpp");
+
+    let mut b = cc::Build::new();
+    b.cpp(true)
+        .opt_level(3)
+        .warnings(false)
+        .cargo_warnings(false)
+        .include("csrc/randomx/randomx_src/src")
+        .include("csrc/randomx/randomx_src/src/asm");
+
+    // Add all core source files
+    for src in &core_sources {
+        let path = format!("{}/{}", rx_dir, src);
+        if std::path::Path::new(&path).exists() {
+            b.file(&path);
+        } else {
+            println!("cargo:warning=RandomX source not found: {}", path);
+        }
+    }
+
+    // Add Argon2 C source files
+    for src in &argon2_sources {
+        let path = format!("{}/{}", rx_dir, src);
+        if std::path::Path::new(&path).exists() {
+            b.file(&path);
+        }
+    }
+
+    // Add our wrapper
+    b.file("csrc/randomx/randomx_wrapper.cpp");
+
+    // ARM64: add assembly file for dataset item calculation
+    if target_arch == "aarch64" {
+        let asm_path = format!("{}/jit_compiler_a64_static.S", rx_dir);
+        if std::path::Path::new(&asm_path).exists() {
+            b.file(&asm_path);
+        }
+    }
+
+    // Platform-specific flags
+    if !is_msvc {
+        b.flag_if_supported("-fPIC");
+        b.flag_if_supported("-std=c++17");
+        b.flag_if_supported("-funroll-loops");
+        b.flag_if_supported("-fomit-frame-pointer");
+    } else {
+        b.flag_if_supported("/std:c++17");
+        add_msvc_includes(&mut b);
+    }
+
+    // RandomX configuration
+    if target_arch == "aarch64" {
+        // ARM64: no hardware AES on Apple Silicon, use soft AES
+        b.define("RANDOMX_DEFAULT_ARM", "1");
+    }
+
+    b.compile("randomx_zion");
+
+    // On macOS ARM64, force-load the entire static library to ensure
+    // global constructors (from jit_compiler_a64.cpp) are included.
+    // Without this, the linker strips global constructors from static
+    // libraries, causing __GLOBAL__sub_I_* undefined symbol errors.
+    if target_os == "macos" {
+        let out_dir = env::var("OUT_DIR").unwrap_or_default();
+        let lib_path = format!("{}/librandomx_zion.a", out_dir);
+        println!("cargo:rustc-link-arg=-Wl,-force_load,{}", lib_path);
+    }
+
+    // Tell cargo to re-run if any RandomX source changes
+    println!("cargo:rerun-if-changed=csrc/randomx/randomx_wrapper.cpp");
+    println!("cargo:rerun-if-changed=csrc/randomx/randomx_src/src/randomx.h");
 }
