@@ -44,6 +44,11 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 - `native-hashers` feature enabled in miner build — `DagManager` + `generate_ethash_dag()` active
 - Share routing: VRSC → `cpu_auxpow_bridge.forward()`, EPIC → `auxpow_bridge.forward()`
 - Verified live: 99.7% ZION accept rate, EPIC ProgPow 7169+ batches, VRSC CPU VerusHash 4 threads
+- **BeamHash III implemented:** SipHash-2-4 + Equihash 144,5 CPU hasher (`beamhash.rs`, 13 tests) + OpenCL kernel (`beamhash_kernel.cl`) + GPU dispatch wired
+- **EvrProgPow/MeowPow correct params:** PERIOD=3 (EVR), PERIOD=6+REGS=16+CNT_MATH=9 (MEWC) — no longer using KawPow fallback
+- **GPU benchmark (M1 Metal):** blake3 24.7 GH/s, kheavyhash 22.2 GH/s, autolykos 23.7 GH/s, zelhash 23.8 GH/s, pearl 25.2 GH/s
+- **E2E Edge audit:** Pool embeds EPIC+VRSC streams ✓, but miners not submitting external shares (old binary) — deploy fix needed
+- **Tests:** 159 AuXpow + 38 miner + 38 pool + 562 core = 797 direct crate tests
 - Plan: [`AuxPowTriplePlan.md`](./AuxPowTriplePlan.md) §11 Live Verification
 
 ✅ **Done (3.0.4 and earlier)**
