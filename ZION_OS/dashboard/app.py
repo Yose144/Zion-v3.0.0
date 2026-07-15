@@ -24,6 +24,27 @@ from datetime import datetime
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+# ── TTL cache helper for expensive RPC/log scrapers ─────────────────────
+
+def _ttl_cache_fn(ttl_seconds: float):
+    def decorator(fn):
+        _cache = {}
+        _lock = threading.Lock()
+        def wrapper(*args, **kwargs):
+            key = (fn.__name__, args, tuple(sorted(kwargs.items())))
+            now = time.time()
+            with _lock:
+                if key in _cache:
+                    value, expires = _cache[key]
+                    if now < expires:
+                        return value
+            result = fn(*args, **kwargs)
+            with _lock:
+                _cache[key] = (result, now + ttl_seconds)
+            return result
+        return wrapper
+    return decorator
+
 # ── Config ──────────────────────────────────────────────────────────────
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -1493,6 +1514,7 @@ def _compute_derived_status(svc: dict, health_map: dict) -> dict:
     return h
 
 
+@_ttl_cache_fn(3.0)
 def all_services_health() -> list:
     # First pass: raw health (parallel to avoid serial TCP timeouts)
     raw = {}
@@ -3690,6 +3712,7 @@ def build_wallets() -> dict:
 
 # ── Block detail ────────────────────────────────────────────────────────
 
+@_ttl_cache_fn(5.0)
 def get_block_detail(height: int = None, hash_hex: str = None) -> dict:
     """Fetch full block details by height or hash."""
     blk = None
@@ -3730,6 +3753,7 @@ def get_block_detail(height: int = None, hash_hex: str = None) -> dict:
 
 # ── Mempool detail ────────────────────────────────────────────────────
 
+@_ttl_cache_fn(2.0)
 def get_mempool_detail() -> dict:
     """Fetch mempool transactions and stats via getMempoolInfo RPC."""
     rpc_host, rpc_port = "127.0.0.1", 8443
@@ -3875,6 +3899,7 @@ def _rpc_with_fallback(method: str, params: dict, timeout: float = 2.0):
 
 # ── Explorer data builder ──────────────────────────────────────────────
 
+@_ttl_cache_fn(5.0)
 def build_explorer() -> dict:
     """Fetch blockchain overview for the Explorer tab."""
     info, rpc_host, rpc_port = _rpc_with_fallback("getChainInfo", {}, timeout=2.5)
@@ -10100,6 +10125,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 body = v2_file.read_bytes()
                 self.send_response(200)
                 self.send_header("Content-Type", content_type)
+                self.send_header("Cache-Control", "public, max-age=31536000, immutable")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
