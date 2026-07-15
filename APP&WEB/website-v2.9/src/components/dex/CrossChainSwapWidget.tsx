@@ -10,6 +10,7 @@ import { ArrowDownUp, Loader2, Zap, AlertCircle, CheckCircle2, Settings } from '
 import ChainSelector from './ChainSelector';
 import TokenSelector from './TokenSelector';
 import SwapPathVisual from './SwapPathVisual';
+import { useWallet } from '@/contexts/WalletContext';
 
 const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://zionterranova.com/dex-api';
 
@@ -36,6 +37,7 @@ interface SwapResult {
 }
 
 export default function CrossChainSwapWidget() {
+  const { connected, account, connect } = useWallet();
   const [srcChain, setSrcChain] = useState('solana');
   const [destChain, setDestChain] = useState('base');
   const [srcToken, setSrcToken] = useState('USDC');
@@ -118,8 +120,8 @@ export default function CrossChainSwapWidget() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           quote_id: quote.quote_id,
-          sender: 'user', // TODO: real wallet address
-          recipient: recipient || 'user',
+          sender: account || 'user',
+          recipient: recipient || account || 'user',
           max_slippage_bps: slippageBps,
         }),
       });
@@ -136,7 +138,7 @@ export default function CrossChainSwapWidget() {
       setError(e.message || 'Swap execution failed');
       setPhase('error');
     }
-  }, [quote, recipient, slippageBps]);
+  }, [quote, recipient, slippageBps, account]);
 
   // Swap chains (reverse direction)
   const swapChains = () => {
@@ -299,19 +301,20 @@ export default function CrossChainSwapWidget() {
 
         {/* Execute button */}
         <button
-          onClick={executeSwap}
-          disabled={!quote || phase === 'quoting' || phase === 'executing'}
+          onClick={connected ? executeSwap : connect}
+          disabled={(!connected && !quote) || phase === 'quoting' || phase === 'executing'}
           className="zion-button-primary w-full mt-4"
           style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
         >
           {phase === 'quoting' && <Loader2 className="w-4 h-4 animate-spin" />}
           {phase === 'executing' && <Loader2 className="w-4 h-4 animate-spin" />}
+          {!connected && 'Connect Wallet to Swap'}
           {phase === 'quoting' && 'Getting quote...'}
           {phase === 'executing' && 'Executing swap...'}
-          {phase === 'quoted' && 'Swap'}
-          {phase === 'idle' && 'Enter amount'}
-          {phase === 'success' && 'Swap Again'}
-          {phase === 'error' && 'Retry'}
+          {connected && phase === 'quoted' && 'Swap'}
+          {connected && phase === 'idle' && 'Enter amount'}
+          {connected && phase === 'success' && 'Swap Again'}
+          {connected && phase === 'error' && 'Retry'}
         </button>
 
         {/* Footer */}
