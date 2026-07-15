@@ -120,111 +120,20 @@ This means:
 
 ### Problem
 
-- `progpow_gpu_thread()` (line 2547) is defined but **never spawned** — EPIC ProgPow jobs have no GPU handler
-- `mine_external_stream_cpu()` (line 2896) is spawned **per-iteration** (line 1592) — creates a new thread every mining cycle for VerusHash/etc
-- `ensure_algorithm()` is called in the main loop (lines 1297, 1523) causing log spam when algorithm doesn't change
+- The original code had four near-identical GPU thread functions and a per-iteration CPU external thread spawn, plus `ensure_algorithm()` calls in the main Deeksha loop that caused log spam.
 
-### Tasks
+### Current State
 
-#### 4.1 Spawn progpow_gpu_thread for EPIC jobs
+- GPU external coins (Blake3/DCR/ALPH, ProgPow/EPIC, KawPow/RVN/CLORE/EVR/MEWC/QUAI, Autolykos/ERG, and also Kaspa/kheavyhash) are all handled by one generic `external_gpu_thread()` that switches backends on the fly.
+- `mine_external_stream_cpu()` is wrapped in a persistent `ext_cpu_thread()` for VerusHash/RandomX/etc.
+- `ensure_algorithm()` has been removed from the main Deeksha loop; `TriGpuManager` keeps the primary Deeksha backend for the whole session.
 
-Add a persistent ProgPow GPU thread, similar to blake3_gpu_thread and pearl_gpu_thread.
+### Files to Verify
 
-**Near line 1355 (after pearl_gpu_thread spawn), add:**
-```rust
-// ── Persistent ProgPow GPU thread (EPIC) ──
-let (progpow_tx, progpow_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
-let (progpow_share_tx, progpow_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
-if dual_gpu_enabled {
-    let ws = config.secondary_gpu_work_size;
-    thread::spawn(move || {
-        progpow_gpu_thread(progpow_rx, progpow_share_tx, ws);
-    });
-    println!("[{}] progpow_gpu_thread_started work_size={}", log_timestamp(), ws);
-}
-```
+- `V3/L1/miner/src/main.rs` — `external_gpu_thread()` spawn, `ext_cpu_thread()` spawn, routing dispatch, `TriGpuManager::primary()` usage
+- `V3/L1/miner/src/gpu_backend.rs` — `is_external_algorithm()`, `is_cpu_only_algorithm()`
 
-**Update ext stream dispatch (line 1577) to route EPIC/ProgPow:**
-```rust
-if let Some(ref ext) = external_stream {
-    if ext.coin.eq_ignore_ascii_case("PRL") || ext.algorithm.eq_ignore_ascii_case("pearlhash") {
-        let _ = pearl_tx.send(ext.clone());
-    } else if matches!(ext.algorithm.as_str(), "blake3" | "blake3_dcr" | "blake3_alph") {
-        let _ = ext_gpu_tx.send(ext.clone());
-    } else if matches!(ext.algorithm.as_str(), "progpow" | "progpow_epic") {
-        let _ = progpow_tx.send(ext.clone());
-    }
-}
-```
-
-**Update CPU fallback condition (line 1588) to exclude ProgPow:**
-```rust
-let is_progpow = matches!(ext.algorithm.as_str(), "progpow" | "progpow_epic");
-if !is_pearl && !is_blake3 && !is_progpow {
-    // CPU parallel thread for VerusHash, RandomX, etc.
-    ...
-}
-```
-
-**Add progpow share drain in main loop** (near pearl_proof_rx drain at line 1665):
-```rust
-// Drain progpow shares
-while let Ok(share) = progpow_share_rx.try_recv() {
-    // Submit to pool as external share
-    ...
-}
-```
-
-#### 4.2 Make mine_external_stream_cpu persistent (VerusHash/RandomX)
-
-Currently a new thread is spawned every iteration (line 1592). Convert to a persistent thread like the others.
-
-**Add near line 1360:**
-```rust
-// ── Persistent CPU external thread (VerusHash, RandomX, etc.) ──
-let (ext_cpu_tx, ext_cpu_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
-let (ext_cpu_share_tx, ext_cpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
-thread::spawn(move || {
-    ext_cpu_thread(ext_cpu_rx, ext_cpu_share_tx, threads);
-});
-```
-
-**Create `ext_cpu_thread()` function** (replaces per-iteration spawn):
-```rust
-fn ext_cpu_thread(
-    rx: std::sync::mpsc::Receiver<zion_pool::ExternalStreamJob>,
-    tx: std::sync::mpsc::Sender<ExternalShareResult>,
-    threads: usize,
-) {
-    let mut current_job: Option<zion_pool::ExternalStreamJob> = None;
-    loop {
-        match rx.try_recv() {
-            Ok(job) => { current_job = Some(job); }
-            Err(std::sync::mpsc::TryRecvError::Disconnected) => return,
-            Err(std::sync::mpsc::TryRecvError::Empty) => {}
-        }
-        if let Some(ref ext) = current_job {
-            if let Some(result) = mine_external_stream_cpu(ext, threads) {
-                let _ = tx.send(result);
-                current_job = None; // Wait for next job
-            }
-        }
-        std::thread::sleep(std::time::Duration::from_millis(100));
-    }
-}
-```
-
-**Update dispatch (line 1588):** Route VerusHash/RandomX to `ext_cpu_tx` instead of spawning per-iteration.
-
-#### 4.3 Remove ensure_algorithm spam from main loop
-
-With TriGpuManager, the primary backend never switches. Remove the `ensure_algorithm` calls at lines 1297, 1523 in `run_remote_session()` and line 876 in `run_local_session()`. The primary is created at startup and stays Deeksha forever.
-
-### Files to Edit
-
-- `V3/L1/miner/src/main.rs` — spawn progpow_gpu_thread, create ext_cpu_thread, update dispatch routing, remove ensure_algorithm spam
-
-### Estimated Effort: 2h
+### Estimated Effort: done
 
 ---
 
@@ -307,42 +216,23 @@ pub ext_hps: f64,
 
 ### Problem
 
-`ZION_OS/dashboard/app.py` has PRL in `SUPPORTED_COINS` and `stream_profit` endpoint, but the dashboard UI doesn't show per-stream hashrate or 3-stream revenue breakdown.
+`ZION_OS/dashboard/app.py` had two drift issues relative to the canonical 16-coin `ExternalCoin` enum:
 
-### Tasks
+1. `AUXPOW_SUPPORTED_COINS` (used for force-switch validation and wallet env-var reads/writes) only listed 12 tickers and was missing `EPIC`, `PRL`, `QUAI`, and `BEAM`.
+2. The revenue/coin table `SUPPORTED_COINS` correctly reflects the 15-coin canonical 3-stream set (PRL is intentionally excluded from the live revenue table because Pearl runs as its own PoUW stream, not as an AuxPoW profit coin).
 
-#### 6.1 Add 3-stream hashrate to pool stats endpoint
+### Current State
 
-The pool already tracks per-stream routing stats (`src_pearl`, `src_zion`, `src_verushash`). Expose these in the dashboard API response.
+- `AUXPOW_SUPPORTED_COINS` now contains all 16 `ExternalCoin` tickers, matching `AuXpow/src/types.rs`.
+- The dashboard force-switch endpoint and wallet env-var I/O therefore cover `EPIC`, `QUAI`, `BEAM`, and `PRL` as well.
+- The revenue table `SUPPORTED_COINS` stays at 15 entries (no PRL), which is correct for the 3-stream UI.
 
-**In app.py (near line 5216 where stream_profit is added):**
-```python
-result["stream_hashrates"] = {
-    "zion": pool_rev.get("zion_hashrate_hps", 0),
-    "pearl": pool_rev.get("pearl_hashrate_hps", 0),
-    "ext": pool_rev.get("ext_hashrate_hps", 0),
-}
-result["stream_shares"] = {
-    "zion": {"accepted": ..., "rejected": ...},
-    "pearl": {"accepted": ..., "rejected": ...},
-    "ext": {"accepted": ..., "rejected": ...},
-}
-```
+### Files to Verify
 
-#### 6.2 Add 3-stream display to dashboard HTML template
+- `ZION_OS/dashboard/app.py` — `SUPPORTED_COINS` vs `AUXPOW_SUPPORTED_COINS`
+- `AuXpow/src/types.rs` — `ExternalCoin` enum
 
-Add a "Triple Stream" panel showing:
-- ZION Deeksha: hashrate + shares + revenue $/day
-- Pearl PoUW: hashrate + proofs + revenue $/day
-- External (current coin): hashrate + shares + revenue $/day
-
-This requires updating the dashboard HTML/JS template in app.py (or a separate template file if used).
-
-### Files to Edit
-
-- `ZION_OS/dashboard/app.py` — stream_hashrates/stream_shares in API response, HTML template update
-
-### Estimated Effort: 1h
+### Estimated Effort: done
 
 ---
 
@@ -355,7 +245,7 @@ This requires updating the dashboard HTML/JS template in app.py (or a separate t
 cargo build                          # zero errors
 cargo test -p zion-core              # 577+ tests pass
 cargo test -p zion-pool              # 73+ tests pass
-cargo test -p zion-auxpow            # 129+ tests pass
+cargo test -p zion-auxpow            # 140+ tests pass
 cargo build --release                # release binary
 ```
 
@@ -375,7 +265,7 @@ Verify: **zero dead-code warnings** for TriGpuManager fields (pearl_gpu_work_siz
 - [ ] routing_snapshot shows src_pearl, src_zion, src_ext
 - [ ] No gpu_switch_algorithm spam in logs
 - [ ] No per-iteration thread creation for CPU external stream
-- [ ] progpow_gpu_thread starts when EPIC job arrives
+- [ ] external_gpu_thread handles EPIC/ProgPow jobs
 
 ### Estimated Effort: 1h
 
@@ -390,11 +280,11 @@ Step 1: Phase 3.1 — Wire TriGpuManager into run_remote_session()
   ↓  (build + test)
 Step 2: Phase 3.2 — Wire TriGpuManager into run_local_session()
   ↓  (build + test)
-Step 3: Phase 4.1 — Spawn progpow_gpu_thread + route EPIC jobs
+Step 3: Phase 4.1 — Generic external_gpu_thread routes all GPU external coins (incl. EPIC)
   ↓  (build + test)
-Step 4: Phase 4.2 — Make ext_cpu_thread persistent
+Step 4: Phase 4.2 — ext_cpu_thread persistent for CPU-only coins
   ↓  (build + test)
-Step 5: Phase 4.3 — Remove ensure_algorithm spam
+Step 5: Phase 4.3 — ensure_algorithm removed from main Deeksha loop
   ↓  (build + test)
 Step 6: Phase 5.1-5.3 — Per-stream metrics display in draw_dashboard()
   ↓  (build + test)
@@ -411,7 +301,7 @@ Step 8: Phase 7 — Full build + deploy + verify
 
 | File | Changes | Lines |
 |------|---------|-------|
-| `V3/L1/miner/src/main.rs` | Wire TriGpuManager, spawn progpow_gpu_thread, ext_cpu_thread, update dispatch, remove ensure_algorithm spam | ~873, ~1294, ~1346, ~1577, ~1588, ~1592, ~1665, ~1297, ~1523 |
+| `V3/L1/miner/src/main.rs` | Wire TriGpuManager, spawn generic external_gpu_thread / ext_cpu_thread, update dispatch, remove ensure_algorithm spam | n/a (canonical) |
 | `V3/L1/miner/src/interactive.rs` | Per-stream dashboard display, per-stream hashrate fields, title version | ~340-360, ~378-497, ~396 |
 | `V3/L1/miner/src/gpu_backend.rs` | (No changes — TriGpuManager already complete) | — |
 | `ZION_OS/dashboard/app.py` | 3-stream API response + UI panel | ~4986, ~5216 |
@@ -425,7 +315,7 @@ Step 8: Phase 7 — Full build + deploy + verify
 |------|-----------|------------|
 | TriGpuManager OpenCL context conflict with thread-created backends | Medium | Each thread creates its own OpenCL context — already proven by blake3_gpu_thread |
 | VRAM exhaustion (3 backends on single GPU) | Medium | Pearl + secondary are lazy-created; only 2 max at once (primary + one secondary) |
-| progpow_gpu_thread DAG load fails | Low | Already has error handling + retry loop (line 2645) |
+| external_gpu_thread DAG load fails | Low | Already has error handling + retry loop in `external_gpu_thread()` |
 | Per-stream hashrate tracking overhead | Low | AtomicU64 increments — negligible |
 | Dashboard template complexity | Low | Keep it simple — 3-line addition to existing layout |
 
