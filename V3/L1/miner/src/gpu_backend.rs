@@ -3719,6 +3719,18 @@ pub mod opencl_external {
             // For Ethash/KawPow/ProgPow, derive epoch from block height and ensure DAG.
             // The pool sends the external block number as `height` for
             // EthStratum coins (ETC/RVN/CLORE/EPIC).
+
+            // Set block_height on the miner so that ensure_proque_progpow()
+            // generates the correct random math sequence for the current period.
+            // KawPow period = 10 blocks, EPIC ProgPow period = 50 blocks.
+            if matches!(
+                self.algorithm.as_str(),
+                "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+                    | "progpow" | "progpow_epic"
+            ) {
+                self.miner.set_block_height(height);
+            }
+
             let epoch = if matches!(self.algorithm.as_str(), "ethash" | "etchash" | "ethash_etc") {
                 Some((height / 30000) as u32)
             } else if matches!(
