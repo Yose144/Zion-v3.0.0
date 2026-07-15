@@ -1429,6 +1429,27 @@ fn run_remote_session(
         println!("[{}] stream3d_kawpow_gpu_disabled (gpu_available={})", log_timestamp(), gpu_available);
     }
 
+    // ── Persistent Autolykos GPU thread (Stream 3e: ERG external) ──
+    // Separate OpenCL context, runs SIMULTANEOUSLY with Deeksha + ProgPow + KawPoW.
+    // Uses autolykos_kernel.cl + precomputed Autolykos v2 table (memory-hard).
+    let (autolykos_tx, autolykos_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
+    let (autolykos_share_tx, autolykos_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
+
+    let autolykos_gpu_enabled = dual_gpu_enabled;
+    if autolykos_gpu_enabled {
+        let ws = config.secondary_gpu_work_size;
+        thread::spawn(move || {
+            autolykos_gpu_thread(autolykos_rx, autolykos_share_tx, ws);
+        });
+        println!(
+            "[{}] stream3e_autolykos_gpu_started work_size={} (secondary)",
+            log_timestamp(),
+            config.secondary_gpu_work_size
+        );
+    } else {
+        println!("[{}] stream3e_autolykos_gpu_disabled (gpu_available={})", log_timestamp(), gpu_available);
+    }
+
     // ── Persistent Pearl PoUW thread (Stream 2: pool-routed) ──
     // Receives PRL external stream jobs via channel from the main loop.
     // Mines PoUW using the real Pearl pipeline and sends proofs back.
@@ -1663,6 +1684,7 @@ fn run_remote_session(
         // - Blake3 (DCR/ALPH) → Stream 3a: Blake3 GPU thread
         // - EPIC (progpow) → Stream 3b: ProgPow GPU thread
         // - KawPoW (RVN/CLORE/QUAI) → Stream 3d: KawPoW GPU thread
+        // - ERG (autolykos) → Stream 3e: Autolykos GPU thread
         // - Other (VerusHash, RandomX) → Stream 3c: CPU persistent thread
         if let Some(ref ext) = external_stream {
             if ext.coin.eq_ignore_ascii_case("PRL") || ext.algorithm.eq_ignore_ascii_case("pearlhash") {
@@ -1680,6 +1702,11 @@ fn run_remote_session(
             {
                 // KawPoW (QUAI/RVN/CLORE) — DAG-based GPU algorithm
                 let _ = kawpow_tx.send(ext.clone());
+            } else if ext.coin.eq_ignore_ascii_case("ERG")
+                || matches!(ext.algorithm.as_str(), "autolykos" | "autolykos_erg")
+            {
+                // Autolykos v2 (ERG) — memory-hard, precomputed table
+                let _ = autolykos_tx.send(ext.clone());
             } else {
                 // CPU-only external stream → persistent CPU thread
                 let _ = ext_cpu_tx.send(ext.clone());
@@ -1736,6 +1763,12 @@ fn run_remote_session(
             Err(_) => None,
         };
 
+        // ── Collect Autolykos GPU share from persistent thread (non-blocking) ──
+        let autolykos_share = match autolykos_share_rx.try_recv() {
+            Ok(share) => Some(share),
+            Err(_) => None,
+        };
+
         // ── Collect CPU external share from persistent thread (non-blocking) ──
         let ext_cpu_share = match ext_cpu_share_rx.try_recv() {
             Ok(share) => Some(share),
@@ -1783,6 +1816,21 @@ fn run_remote_session(
         if let Some(share) = kawpow_share {
             println!(
                 "[{}] kawpow_gpu_share_found  coin={}  algo={}  job_id={}  nonce={}",
+                log_timestamp(),
+                share.coin,
+                share.algorithm,
+                share.external_job_id,
+                share.nonce,
+            );
+            submit_external_share(
+                &mut writer, &mut reader, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
+            );
+        }
+
+        // ── Submit Autolykos GPU share (if found by persistent thread) ─
+        if let Some(share) = autolykos_share {
+            println!(
+                "[{}] autolykos_gpu_share_found  coin={}  algo={}  job_id={}  nonce={}",
                 log_timestamp(),
                 share.coin,
                 share.algorithm,
@@ -2661,6 +2709,164 @@ fn blake3_gpu_thread(
             Err(e) => {
                 // Only log every 60s to avoid spam
                 println!("dual_gpu_blake3_batch_error nonce={} err=\"{e}\"", nonce);
+                thread::sleep(Duration::from_millis(500));
+            }
+        }
+
+        // Advance nonce for next batch
+        nonce_offset = nonce_offset.wrapping_add(batch_size);
+        batch_count += 1;
+    }
+}
+
+/// Persistent Autolykos v2 GPU miner thread (ERG parallel stream).
+///
+/// Similar to `blake3_gpu_thread` but for Autolykos v2 (ERG).  Uses the
+/// `autolykos_kernel.cl` OpenCL kernel with a precomputed memory-hard table.
+/// The table is generated and cached inside the AuXpow GPU backend
+/// (`gpu_miner.rs::ensure_autolykos_table`), keyed by `(height, table_size)`.
+fn autolykos_gpu_thread(
+    rx: std::sync::mpsc::Receiver<zion_pool::ExternalStreamJob>,
+    tx: std::sync::mpsc::Sender<ExternalShareResult>,
+    work_size: usize,
+) {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    // Create the Autolykos GPU miner (separate OpenCL context)
+    let mut gpu_miner = match gpu_backend::create_gpu_backend(
+        gpu_backend::GpuBackendKind::OpenCL,
+        work_size,
+        "autolykos",
+    ) {
+        Ok(m) => {
+            println!(
+                "[{}] autolykos_gpu_init work_size={} device=\"{}\"",
+                log_timestamp(),
+                work_size,
+                m.device_name()
+            );
+            m
+        }
+        Err(e) => {
+            println!(
+                "[{}] autolykos_gpu_init_failed err=\"{e}\" — ERG GPU stream disabled",
+                log_timestamp()
+            );
+            return;
+        }
+    };
+
+    let mut current_job: Option<zion_pool::ExternalStreamJob> = None;
+    let mut nonce_base: u64 = 0;
+    let mut nonce_offset: u64 = 0;
+    let batch_size = 4_186_112u64;
+    let mut batch_count: u64 = 0;
+    let mut last_heartbeat = std::time::Instant::now();
+
+    loop {
+        // Check for new job (non-blocking)
+        match rx.try_recv() {
+            Ok(job) => {
+                current_job = Some(job.clone());
+                let mut h = DefaultHasher::new();
+                job.job_id.hash(&mut h);
+                std::process::id().hash(&mut h);
+                nonce_base = (h.finish() as u32) as u64;
+                nonce_offset = 0;
+                println!(
+                    "[{}] autolykos_gpu_job_received coin={} algo={} job_id={} height={}",
+                    log_timestamp(),
+                    job.coin,
+                    job.algorithm,
+                    job.job_id,
+                    job.height,
+                );
+            }
+            Err(std::sync::mpsc::TryRecvError::Empty) => {}
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                println!("[{}] autolykos_gpu_channel_closed — exiting", log_timestamp());
+                return;
+            }
+        }
+
+        // Heartbeat every 15s
+        if last_heartbeat.elapsed().as_secs() >= 15 {
+            println!(
+                "[{}] autolykos_gpu_heartbeat batches={} nonce_offset={} has_job={}",
+                log_timestamp(),
+                batch_count,
+                nonce_offset,
+                current_job.is_some(),
+            );
+            last_heartbeat = std::time::Instant::now();
+        }
+
+        let job = match &current_job {
+            Some(j) => j,
+            None => {
+                thread::sleep(Duration::from_millis(50));
+                continue;
+            }
+        };
+
+        // Parse header and target
+        let header_bytes = match hex::decode(job.header_hex.trim_start_matches("0x")) {
+            Ok(b) => b,
+            Err(e) => {
+                println!("autolykos_gpu_header_error: {e}");
+                thread::sleep(Duration::from_millis(100));
+                continue;
+            }
+        };
+
+        let target_bytes = match zion_pool::parse_fixed_hex::<32>(&job.target_hex, "external target") {
+            Ok(t) => t,
+            Err(e) => {
+                println!("autolykos_gpu_target_error: {e}");
+                thread::sleep(Duration::from_millis(100));
+                continue;
+            }
+        };
+
+        let target = DifficultyTarget { bytes: target_bytes };
+        let nonce = nonce_base.wrapping_add(nonce_offset);
+
+        // Scan one batch on GPU
+        let result = if header_bytes.len() > 80 {
+            gpu_miner.mine_batch_raw(&header_bytes, target, nonce, batch_size)
+        } else {
+            let mut bytes = [0u8; 80];
+            let len = header_bytes.len().min(80);
+            bytes[..len].copy_from_slice(&header_bytes[..len]);
+            let header = MiningHeader::from_bytes(bytes);
+            gpu_miner.mine_batch(header, target, nonce, batch_size)
+        };
+
+        match result {
+            Ok(br) => {
+                if let Some((found_nonce, hash, mix_hash)) = br.solutions.first() {
+                    let share = ExternalShareResult {
+                        coin: job.coin.clone(),
+                        algorithm: job.algorithm.clone(),
+                        external_job_id: job.job_id.clone(),
+                        nonce: *found_nonce,
+                        hash: *hash,
+                        mix_hash: *mix_hash,
+                        extranonce1_hex: job.extranonce1_hex.clone(),
+                    };
+                    println!(
+                        "[{}] autolykos_gpu_share_found coin={} nonce={} hash={}",
+                        log_timestamp(),
+                        share.coin,
+                        share.nonce,
+                        hex::encode(share.hash)
+                    );
+                    let _ = tx.send(share);
+                }
+            }
+            Err(e) => {
+                println!("autolykos_gpu_batch_error nonce={} err=\"{e}\"", nonce);
                 thread::sleep(Duration::from_millis(500));
             }
         }
