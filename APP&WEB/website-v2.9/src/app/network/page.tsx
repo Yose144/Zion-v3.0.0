@@ -99,7 +99,7 @@ const LiveToast = dynamic(() => import('@/components/explorer/LiveToast'));
 const getHeroStats = (cs: boolean) => [
   {
     label: cs ? 'Veřejné nody' : 'Public Nodes',
-    value: '3',
+    value: '2',
     descriptor: cs
       ? '2-uzlový P2P mesh: Edge 1, Edge 2 (Local Backup offline)'
       : '2-node P2P mesh: Edge 1, Edge 2 (Local Backup offline)',
@@ -803,7 +803,7 @@ export default function NetworkPage() {
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Globe className="w-3.5 h-3.5 text-gray-500" />
-                    <span>{cs ? 'P2P mesh: 8333, 8334, 8335' : 'P2P mesh: 8333, 8334, 8335'}</span>
+                    <span>{cs ? 'P2P mesh: 8333, 8334 · backup 8335 offline' : 'P2P mesh: 8333, 8334 · backup 8335 offline'}</span>
                   </div>
                 </div>
               </div>
@@ -865,7 +865,7 @@ export default function NetworkPage() {
               {
                 icon: Server,
                 title: cs ? '2-uzlový mesh' : '2-node mesh',
-                detail: cs ? 'Edge 1, Edge 2, Local Backup — všechny v syncu ≤2 bloků.' : 'Edge 1, Edge 2, Local Backup — all within ≤2 block sync.',
+                detail: cs ? 'Edge 1 a Edge 2 v syncu ≤2 bloků · Local Backup offline.' : 'Edge 1 and Edge 2 within ≤2 block sync · Local Backup offline.',
               },
             ].map((item) => (
               <div key={item.title} className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
