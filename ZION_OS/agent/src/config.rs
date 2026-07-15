@@ -51,7 +51,7 @@ impl Default for AgentConfig {
     fn default() -> Self {
         Self {
             rig_id: None,
-            api_bind: "0.0.0.0:8767".to_string(),
+            api_bind: "127.0.0.1:8767".to_string(),
             autonomous_mode: true,
             auto_start_miner: false,
             auto_update: "stable".to_string(),
@@ -61,12 +61,12 @@ impl Default for AgentConfig {
                 interval_sec: 30,
             },
             miner: MinerConfig {
-                binary_path: "/usr/bin/zion-miner".to_string(),
+                binary_path: "/usr/local/bin/zion-miner".to_string(),
                 default_pool: "62.171.141.136:8444".to_string(),
                 default_wallet: "".to_string(),
                 default_worker: "zion-rig".to_string(),
                 default_gpu_backend: "auto".to_string(),
-                default_algorithm: "deeksha_lite_fire".to_string(),
+                default_algorithm: "deeksha_lite_v1".to_string(),
                 extra_args: vec![],
             },
             watchdog: WatchdogConfig {
@@ -85,16 +85,29 @@ impl Default for AgentConfig {
 }
 
 pub async fn load_config() -> anyhow::Result<AgentConfig> {
-    let paths = [
-        "/data/zion/config/agent.toml",
-        "/etc/zion/agent.toml",
-        "./agent.toml",
+    let mut paths = vec![
+        "/data/zion/config/agent.toml".to_string(),
+        "/etc/zion/agent.toml".to_string(),
+        "./agent.toml".to_string(),
     ];
+
+    // AGENT_CONFIG has highest priority; ZION_CONFIG_DIR is the legacy env var
+    // used by the systemd unit and older runbooks.
+    if let Ok(path) = std::env::var("AGENT_CONFIG") {
+        paths.insert(0, path);
+    } else if let Ok(dir) = std::env::var("ZION_CONFIG_DIR") {
+        paths.insert(0, format!("{}/agent.toml", dir.trim_end_matches('/')));
+    }
 
     for path in &paths {
         if Path::new(path).exists() {
             let content = tokio::fs::read_to_string(path).await?;
-            let config: AgentConfig = toml::from_str(&content)?;
+            let mut config: AgentConfig = toml::from_str(&content)?;
+            if let Ok(bind) = std::env::var("AGENT_API_BIND") {
+                if !bind.trim().is_empty() {
+                    config.api_bind = bind;
+                }
+            }
             tracing::info!("Konfigurace nactena z {}", path);
             return Ok(config);
         }
