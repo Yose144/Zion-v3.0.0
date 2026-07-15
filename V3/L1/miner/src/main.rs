@@ -3089,6 +3089,7 @@ impl MinerConfig {
                     println!("  --profile NAME      Profile: pool, solo, benchmark, dual");
                     println!("  --algorithm ALGO    Mining algorithm (see list below)");
                     println!("  --pearl H:P:W       Pearl PoUW stratum stream (host:port:wallet)");
+                    println!("  --detect-hardware   Detect GPU/CPU hardware and exit (for zion mine auto)");
                     println!();
                     println!("  ZION algorithms:  deeksha_lite_v1, cosmic_harmony_ekam_deeksha_v2, deeksha_lite_fire");
                     println!("  External GPU:      blake3 (ALPH/DCR), kheavyhash (KAS), autolykos (ERG),");
