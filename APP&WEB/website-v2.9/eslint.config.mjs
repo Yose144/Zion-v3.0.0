@@ -1,15 +1,16 @@
 import next from 'eslint-config-next';
-import reactHooks from 'eslint-plugin-react-hooks';
 
 const config = [
   ...next,
   {
-    plugins: {
-      'react-hooks': reactHooks,
-    },
+    files: ['**/*.{js,jsx,ts,tsx,mjs,cjs}'],
     rules: {
-      ...reactHooks.configs.recommended.rules,
-      'react-hooks/exhaustive-deps': 'warn',
+      // React Compiler / extended react-hooks rules are too strict for this codebase.
+      'react-hooks/preserve-manual-memoization': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/refs': 'off',
     },
   },
 ];

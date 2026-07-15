@@ -599,7 +599,7 @@ export default function WebTerminal() {
                     transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                     className="h-3 w-3 rounded-full border border-zion-cyan/30 border-t-zion-cyan"
                   />
-                  <span>Executing "{loadingCmd}"...</span>
+                  <span>Executing &quot;{loadingCmd}&quot;...</span>
                 </div>
               )}
             </div>

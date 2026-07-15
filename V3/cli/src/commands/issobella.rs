@@ -16,8 +16,8 @@ pub enum IssobellaCmd {
     Balance,
 }
 
-pub async fn run(_cfg: &Config, cmd: IssobellaCmd) -> Result<()> {
-    let base = "http://127.0.0.1:8096";
+pub async fn run(cfg: &Config, cmd: IssobellaCmd) -> Result<()> {
+    let base = &cfg.issobella.url;
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(15))
         .build()

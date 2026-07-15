@@ -38,7 +38,10 @@ export function usePolling(
   const { enabled = true, immediate = true, runWhenHidden = false } = options;
   const isVisible = usePageVisibility();
   const callbackRef = useRef(callback);
-  callbackRef.current = callback;
+
+  useEffect(() => {
+    callbackRef.current = callback;
+  });
 
   useEffect(() => {
     if (!enabled) {

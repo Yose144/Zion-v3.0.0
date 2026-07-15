@@ -53,6 +53,8 @@ The menu is intended as the operator-first entrypoint for routine flows. It now 
 It uses arrow keys plus Enter, then dispatches the same canonical commands that remain available in typed form.
 After a command finishes, the launcher now waits and returns you back into the menu instead of dropping straight to the shell.
 
+New operators should start with the dedicated onboarding guide: [`USER_ONBOARDING.md`](./USER_ONBOARDING.md).
+
 ## Top-Level Commands
 
 ```text

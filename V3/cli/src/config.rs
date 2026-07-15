@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use std::env;
 use std::path::PathBuf;
 
 pub struct ValidationReport {
@@ -35,6 +36,10 @@ pub struct Config {
     pub swap: SwapConfig,
     #[serde(default)]
     pub atomic_swap: AtomicSwapConfig,
+    #[serde(default)]
+    pub issobella: IssobellaConfig,
+    #[serde(default)]
+    pub free_world: FreeWorldConfig,
     #[serde(default)]
     pub cli: CliConfig,
     #[serde(default)]
@@ -142,6 +147,16 @@ pub struct AtomicSwapConfig {
     #[serde(default)]
     pub host: Option<String>,
     pub port: u16,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IssobellaConfig {
+    pub url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FreeWorldConfig {
+    pub url: String,
 }
 
 /// Host configuration for a single node in the core+edge topology.
@@ -302,6 +317,22 @@ impl Default for AtomicSwapConfig {
     }
 }
 
+impl Default for IssobellaConfig {
+    fn default() -> Self {
+        Self {
+            url: "http://127.0.0.1:8096".into(),
+        }
+    }
+}
+
+impl Default for FreeWorldConfig {
+    fn default() -> Self {
+        Self {
+            url: "http://127.0.0.1:8095".into(),
+        }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -315,6 +346,8 @@ impl Default for Config {
             dao: DaoConfig::default(),
             swap: SwapConfig::default(),
             atomic_swap: AtomicSwapConfig::default(),
+            issobella: IssobellaConfig::default(),
+            free_world: FreeWorldConfig::default(),
             cli: CliConfig::default(),
             topology: TopologyConfig::default(),
         }
@@ -408,13 +441,16 @@ pub fn load(override_path: Option<&str>) -> Result<Config> {
     };
 
     if !path.exists() {
-        return Ok(Config::default());
+        let mut cfg = Config::default();
+        apply_env_overrides(&mut cfg);
+        return Ok(cfg);
     }
 
     let text = std::fs::read_to_string(&path)
         .with_context(|| format!("Cannot read config: {}", path.display()))?;
-    let cfg: Config =
+    let mut cfg: Config =
         toml::from_str(&text).with_context(|| format!("Invalid config: {}", path.display()))?;
+    apply_env_overrides(&mut cfg);
     Ok(cfg)
 }
 
@@ -479,6 +515,8 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["swap", "port"] => cfg.swap.port = value.parse()?,
         ["atomic_swap", "host"] => cfg.atomic_swap.host = Some(value.into()),
         ["atomic_swap", "port"] => cfg.atomic_swap.port = value.parse()?,
+        ["issobella", "url"] => cfg.issobella.url = value.into(),
+        ["free_world", "url"] => cfg.free_world.url = value.into(),
         ["cli", "auto_update_check"] => cfg.cli.auto_update_check = value.parse()?,
         // topology.core.*
         ["topology.core", "rpc_host"] => cfg.topology.core.rpc_host = value.into(),
@@ -494,7 +532,7 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["topology.edge", "pool_host"] => cfg.topology.edge.pool_host = value.into(),
         ["topology.edge", "pool_port"] => cfg.topology.edge.pool_port = value.parse()?,
         ["topology.edge", "vpn_ip"] => cfg.topology.edge.vpn_ip = Some(value.into()),
-        _ => anyhow::bail!("Unknown config key: {}. Valid keys: node.rpc_host, node.rpc_port, node.p2p_port, node.websocket_port, pool.host, pool.port, miner.wallet, miner.btc_wallet, miner.threads, miner.backend, miner.profile, miner.algorithm, agent.url, agent.model, hiran.model_path, hiran.backend, hiran.device, hiran.port, hiran.max_context, hiran.temperature, hiran.top_p, deploy.ssh_key, deploy.ssh_user, deploy.default_server, bridge.port, dao.port, cli.auto_update_check, topology.core.rpc_host, topology.core.rpc_port, topology.core.p2p_port, topology.core.pool_host, topology.core.pool_port, topology.core.vpn_ip, topology.edge.rpc_host, topology.edge.rpc_port, topology.edge.p2p_port, topology.edge.pool_host, topology.edge.pool_port, topology.edge.vpn_ip", key),
+        _ => anyhow::bail!("Unknown config key: {}. Valid keys: node.rpc_host, node.rpc_port, node.p2p_port, node.websocket_port, pool.host, pool.port, miner.wallet, miner.btc_wallet, miner.threads, miner.backend, miner.profile, miner.algorithm, agent.url, agent.model, hiran.model_path, hiran.backend, hiran.device, hiran.port, hiran.max_context, hiran.temperature, hiran.top_p, deploy.ssh_key, deploy.ssh_user, deploy.default_server, bridge.host, bridge.port, dao.host, dao.port, swap.host, swap.port, atomic_swap.host, atomic_swap.port, issobella.url, free_world.url, cli.auto_update_check, topology.core.rpc_host, topology.core.rpc_port, topology.core.p2p_port, topology.core.pool_host, topology.core.pool_port, topology.core.vpn_ip, topology.edge.rpc_host, topology.edge.rpc_port, topology.edge.p2p_port, topology.edge.pool_host, topology.edge.pool_port, topology.edge.vpn_ip", key),
     }
     save(&cfg)?;
     println!("✓ {} = {}", key, value);
