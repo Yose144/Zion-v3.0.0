@@ -2353,7 +2353,10 @@ fn external_gpu_thread(
                 std::process::id().hash(&mut h);
                 nonce_base = (h.finish() as u32) as u64;
                 nonce_offset = 0;
-                last_epoch = None;
+                // Note: do NOT reset last_epoch here — the pool re-sends the
+                // same job every ~1s, and resetting would cause DAG reload
+                // every second. last_epoch is reset only when the algorithm
+                // changes (see algo switch below).
                 println!(
                     "[{}] ext_gpu_job_received coin={} algo={} job_id={} height={}",
                     log_timestamp(),
@@ -2560,17 +2563,28 @@ fn ext_cpu_thread(
     );
 
     let mut current_job: Option<zion_pool::ExternalStreamJob> = None;
+    let mut nonce_base: u64 = 0;
+    let mut nonce_offset: u64 = 0;
 
     loop {
         // Check for new job (non-blocking)
         match rx.try_recv() {
             Ok(job) => {
+                use std::collections::hash_map::DefaultHasher;
+                use std::hash::{Hash, Hasher};
+                let mut h = DefaultHasher::new();
+                job.job_id.hash(&mut h);
+                std::process::id().hash(&mut h);
+                std::thread::current().id().hash(&mut h);
+                nonce_base = (h.finish() as u32) as u64;
+                nonce_offset = 0;
                 println!(
-                    "[{}] ext_cpu_thread: new job coin={} algo={} job_id={}",
+                    "[{}] ext_cpu_thread: new job coin={} algo={} job_id={} nonce_base={}",
                     log_timestamp(),
                     job.coin,
                     job.algorithm,
                     job.job_id,
+                    nonce_base,
                 );
                 current_job = Some(job);
             }
@@ -2583,9 +2597,14 @@ fn ext_cpu_thread(
 
         // Mine current job (if any)
         if let Some(ref ext) = current_job {
-            if let Some(share) = mine_external_stream_cpu(ext, threads) {
+            let start_nonce = nonce_base.wrapping_add(nonce_offset);
+            if let Some(share) = mine_external_stream_cpu(ext, threads, start_nonce, NONCE_COUNT) {
+                let next_offset = nonce_offset.wrapping_add(share.nonce.wrapping_sub(start_nonce) + 1);
                 let _ = tx.send(share);
-                current_job = None; // Wait for next job
+                // Keep mining the same job, just advance past the share we found.
+                nonce_offset = next_offset;
+            } else {
+                nonce_offset = nonce_offset.wrapping_add(NONCE_COUNT);
             }
             hashrate.record_cpu_ext_hashes(NONCE_COUNT);
         } else {
@@ -2596,7 +2615,12 @@ fn ext_cpu_thread(
 }
 
 
-fn mine_external_stream_cpu(ext: &ExternalStreamJob, _threads: usize) -> Option<ExternalShareResult> {
+fn mine_external_stream_cpu(
+    ext: &ExternalStreamJob,
+    _threads: usize,
+    start_nonce: u64,
+    nonce_count: u64,
+) -> Option<ExternalShareResult> {
     // Parse external coin from ticker
     let coin = match zion_auxpow::types::ExternalCoin::from_str_loose(&ext.coin) {
         Some(c) => c,
@@ -2639,23 +2663,7 @@ fn mine_external_stream_cpu(ext: &ExternalStreamJob, _threads: usize) -> Option<
         zion_auxpow::external_hashers::init_verushash();
     }
 
-    // Use a random nonce base so concurrent miners don't all find the same
-    // low-nonce share and get "duplicate share" rejections from the upstream
-    // pool.  The DCR Blake3 nonce is 32-bit (offset 140, 4 bytes LE), so we
-    // pick a random u32 base and scan 5M nonces from there (wrapping at 2^32).
-    let nonce_base: u64 = if ext.algorithm == "blake3" {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        let mut h = DefaultHasher::new();
-        ext.job_id.hash(&mut h);
-        std::process::id().hash(&mut h);
-        std::thread::current().id().hash(&mut h);
-        (h.finish() as u32) as u64
-    } else {
-        0
-    };
-    let nonce_count: u64 = 5_000_000;
-    let scan_end = nonce_base.wrapping_add(nonce_count);
+    let scan_end = start_nonce.wrapping_add(nonce_count);
 
     let job_pkg = zion_auxpow::types::JobPackage {
         external_coin: coin,
@@ -2666,11 +2674,11 @@ fn mine_external_stream_cpu(ext: &ExternalStreamJob, _threads: usize) -> Option<
         timestamp: ext.height, // reused for height in some algorithms
         block_number: Some(ext.height),
         extranonce1,
-        start_nonce: nonce_base,
+        start_nonce,
         nonce_count,
     };
 
-    match zion_auxpow::miner_harness::mine(&job_pkg, nonce_base..scan_end) {
+    match zion_auxpow::miner_harness::mine(&job_pkg, start_nonce..scan_end) {
         Ok(Some(share)) => Some(ExternalShareResult {
             coin: ext.coin.clone(),
             algorithm: ext.algorithm.clone(),
