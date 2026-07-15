@@ -444,4 +444,35 @@ mod tests {
         assert!(!result.contains("PROGPOW_INCLUDE"), "Placeholder should be replaced");
         assert!(result.contains("progPowLoop"), "Should have progPowLoop function");
     }
+
+    #[test]
+    fn test_epic_kernel_no_duplicate_defs() {
+        // The generated progPowLoop code should NOT include typedef/define
+        // for uint32_t, uint64_t, ROTL32, ROTR32, GROUP_SIZE — those are
+        // already in the kernel header. Duplicates would cause compile errors.
+        let code = gen_epic_progpow_loop(&EPIC_PROGPOW_PARAMS, 0);
+        let uint32_count = code.matches("typedef unsigned int").count();
+        let rotl_count = code.matches("#define ROTL32").count();
+        let group_size_count = code.matches("#define GROUP_SIZE").count();
+        assert_eq!(uint32_count, 0, "Generated code should NOT redefine uint32_t");
+        assert_eq!(rotl_count, 0, "Generated code should NOT redefine ROTL32");
+        assert_eq!(group_size_count, 0, "Generated code should NOT redefine GROUP_SIZE");
+    }
+
+    #[test]
+    fn test_kawpow_random_math_has_cache_and_math() {
+        // KawPow: cnt_cache=11, cnt_math=18, so max_ops=18
+        // Should have 11 cache loads and 18 math operations
+        let code = gen_kawpow_random_math(&KAWPOW_PARAMS, 0);
+        let cache_loads = code.matches("c_dag[offset]").count();
+        assert_eq!(cache_loads, 11, "Should have exactly 11 cache loads (CNT_CACHE=11)");
+    }
+
+    #[test]
+    fn test_epic_progpow_loop_has_cache_and_math() {
+        // EPIC: cnt_cache=12, cnt_math=20, so max_ops=20
+        let code = gen_epic_progpow_loop(&EPIC_PROGPOW_PARAMS, 0);
+        let cache_loads = code.matches("c_dag[offset]").count();
+        assert_eq!(cache_loads, 12, "Should have exactly 12 cache loads (CNT_CACHE=12)");
+    }
 }
