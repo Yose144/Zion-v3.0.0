@@ -7,19 +7,22 @@ Wants=network-online.target
 Type=simple
 User=zion
 Group=zion
-WorkingDirectory=/root/zion-dashboard
-ExecStart=/usr/bin/python3 /root/zion-dashboard/app.py
+WorkingDirectory=/opt/zion/ZION_OS/dashboard
+ExecStart=/usr/bin/python3 /opt/zion/ZION_OS/dashboard/app.py
 Restart=always
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
 
+# Environment: DASHBOARD_USERS must be set in /etc/zion/edge-environment.sh
+EnvironmentFile=/etc/zion/edge-environment.sh
+
 # Security hardening (unprivileged zion user)
 NoNewPrivileges=true
 ProtectSystem=strict
-ProtectHome=false  # dashboard needs /root/zion-dashboard access
+ProtectHome=true
 PrivateTmp=yes
-ReadWritePaths=/root/zion-dashboard/logs /data/zion
+ReadWritePaths=/opt/zion/data /opt/zion/logs /opt/zion/ZION_OS/dashboard/logs
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 
 [Install]

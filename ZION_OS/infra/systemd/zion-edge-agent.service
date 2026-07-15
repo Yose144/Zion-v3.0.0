@@ -8,14 +8,25 @@ Type=simple
 ExecStart=/usr/local/bin/zion-agent
 Restart=always
 RestartSec=10
-User=root
+User=zion
+Group=zion
 
 # Working dir for config
-WorkingDirectory=/root/zion-2.9.6-main
+WorkingDirectory=/opt/zion
 
 # Env
+EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="RUST_LOG=info"
-Environment="ZION_CONFIG_DIR=/root/zion-2.9.6-main/ZION_OS/agent/config"
+Environment="AGENT_CONFIG=/opt/zion/ZION_OS/agent/config/edge-agent.toml"
+Environment="AGENT_API_BIND=127.0.0.1:8767"
+
+# Security hardening (unprivileged zion user)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=yes
+ReadWritePaths=/opt/zion/data /opt/zion/logs /opt/zion/ZION_OS/agent/config
+AmbientCapabilities=CAP_NET_BIND_SERVICE
 
 [Install]
 WantedBy=multi-user.target

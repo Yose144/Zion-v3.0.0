@@ -9,10 +9,8 @@ Type=simple
 User=zion
 Group=zion
 WorkingDirectory=/opt/zion
-EnvironmentFile=/opt/zion/edge-deploy/config/edge-environment.sh
+EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="ZION_NODE_RPC_ADDR=127.0.0.1:8443"
-Environment="BRIDGE_API_BIND=0.0.0.0:8451"
-Environment="BRIDGE_METRICS_BIND=0.0.0.0:9102"
 Environment="RUST_LOG=info,zion_bridge=debug"
 ExecStart=/opt/zion/V3/target/release/zion-bridge --config /opt/zion/V3/L2/bridge/config/bridge-mainnet.toml
 Restart=always

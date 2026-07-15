@@ -51,7 +51,7 @@ ZION_VARDIFF_TARGET_SECS=15
 ZION_VARDIFF_RETARGET_SHARES=6
 ZION_PPLNS_WINDOW_SIZE=500000
 ZION_PPLNS_STATE_PATH=/data/zion/pplns-state.json
-ZION_ROUTING_METRICS_BIND=0.0.0.0:8455
+ZION_ROUTING_METRICS_BIND=127.0.0.1:8455
 
 # ── AuxPow / Stream Profit Configuration ────────────────────────────────────
 # Required after chain-stall fix (2026-07-13). Without these the pool may
@@ -82,6 +82,22 @@ ZION_POOL_PAYOUT_SK_HEX=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
 
 # Atomic Swap escrow key (air-gapped — set via secure environment)
 ZION_SWAP_ESCROW_KEY=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
+
+# Atomic Swap API bearer token (mainnet requires this — C1)
+ZION_SWAP_BEARER_TOKEN=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
+
+# DAO API key for write endpoints (mainnet requires this — C1)
+ZION_DAO_API_KEY=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
+
+# ZIONOS Rust dashboard control token (POST / PUT / DELETE /mutating endpoints)
+ZIONOS_CONTROL_TOKEN=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
+
+# Python dashboard Basic Auth users (format: user:sha256hex,user2:sha256hex)
+# Generate hash: python3 -c "import hashlib; print(hashlib.sha256(b'password').hexdigest())"
+DASHBOARD_USERS=admin:<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
+
+# Bridge validator key file (path to the Ed25519/EVM validator private key file)
+ZION_BRIDGE_VALIDATOR_KEY_FILE=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
 
 # F4.7 max TX amount cap (active from height 1 on fresh chain)
 ZION_MAX_TX_AMOUNT_HEIGHT=1

@@ -588,6 +588,7 @@ mod tests {
             pool: PoolConfig {
                 host: "127.0.0.1".into(),
                 port: 3333,
+                metrics_port: 8455,
             },
             miner: MinerConfig {
                 wallet: "zion16853d8r885l4g4u8p8t7v5n8u6v7e0f445dr3f8".into(),

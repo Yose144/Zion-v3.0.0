@@ -8,12 +8,14 @@
 # Prerequisites:
 #   - Edge server reachable via SSH (62.171.141.136)
 #   - SSH key at ../ssh-key-zion-edge
+#   - /etc/zion/edge-environment.sh exists on the Edge with real secrets
 #
 # Deploys:
 #   - 2 P2P nodes (primary + follower)
 #   - Primary mining pool
-#   - L2/L3 services (DAO, WARP)
+#   - L2/L3 services (bridge, DAO, atomic-swap, WARP)
 #   - Next.js website (PM2)
+#   - Agent, dashboards, and DEX router
 
 set -euo pipefail
 
@@ -21,9 +23,9 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 EDGE_USER="root"
 EDGE_HOST="62.171.141.136"
 SSH_KEY="${REPO_ROOT}/ssh-key-zion-edge"
-REMOTE_ROOT="/root/zion-2.9.6-main"
-REMOTE_WEB="/root/APP\&WEB/website-v2.9"
-BACKUP_PATH="/root/zion-backup-$(date +%Y%m%d-%H%M%S)"
+REMOTE_ROOT="/opt/zion"
+REMOTE_WEB="${REMOTE_ROOT}/APP&WEB/website-v2.9"
+BACKUP_PATH="${REMOTE_ROOT}/backups/deploy-backup-$(date +%Y%m%d-%H%M%S)"
 
 # Colors
 RED='\033[0;31m'
@@ -39,43 +41,106 @@ err()  { echo -e "${RED}[err]${NC} $*"; exit 1; }
 
 SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10"
 
-# ── Step 0: Verify SSH ──
+# ── Step 0: Verify SSH and environment file ──
 log "Verifying SSH access to Edge..."
 if ! ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "echo 'SSH OK'" &>/dev/null; then
     err "Cannot SSH to Edge. Check key at ${SSH_KEY}"
 fi
 
-# ── Step 1: Backup current installation ──
-log "Backing up current installation to ${BACKUP_PATH}..."
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "mkdir -p ${BACKUP_PATH} && cp -r ${REMOTE_ROOT} ${BACKUP_PATH}/ 2>/dev/null || true"
-
-# ── Step 2: Sync V3 code ──
-if command -v rsync &>/dev/null; then
-    log "Syncing V3 code via rsync..."
-    rsync -avz --exclude='target' --exclude='.git' --exclude='data' --exclude='logs' \
-        -e "ssh ${SSH_OPTS}" \
-        "${REPO_ROOT}/V3/" \
-        "${EDGE_USER}@${EDGE_HOST}:${REMOTE_ROOT}/V3/"
-else
-    log "Syncing V3 code via tar+ssh..."
-    tar czf - -C "${REPO_ROOT}" V3/ 2>/dev/null | \
-        ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "cd ${REMOTE_ROOT} && tar xzf -"
+if ! ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "test -f /etc/zion/edge-environment.sh" &>/dev/null; then
+    err "Missing /etc/zion/edge-environment.sh on Edge. Run edge-deploy/setup-edge.sh first."
 fi
 
-# ── Step 3: Sync web code ──
-log "Syncing website code..."
-tar czf - \
-    --exclude='node_modules' --exclude='.next' --exclude='out' \
-    -C "${REPO_ROOT}/APP\&WEB" website-v2.9/ 2>/dev/null | \
-    ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
-    "mkdir -p /root/APP\&WEB && cd /root/APP\&WEB && tar xzf -"
+# ── Step 1: Backup current installation (excluding runtime state) ──
+if ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "test -d '${REMOTE_ROOT}'" 2>/dev/null; then
+    log "Backing up current installation to ${BACKUP_PATH}..."
+    ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
+        mkdir -p '${BACKUP_PATH}'
+        if command -v rsync >/dev/null 2>&1; then
+            rsync -a --exclude=target --exclude=.git --exclude=data --exclude=logs '${REMOTE_ROOT}/' '${BACKUP_PATH}/'
+        else
+            cp -r '${REMOTE_ROOT}' '${BACKUP_PATH}'
+        fi
+    " 2>/dev/null || warn "Backup step failed (continuing anyway)"
+else
+    log "No existing installation at ${REMOTE_ROOT}; skipping backup."
+fi
 
-# ── Step 4: Upload environment config (TEMPLATE ONLY — never overwrite live secrets) ──
-# The template at edge-deploy/config/edge-environment.sh contains PLACEHOLDERS for
-# ZION_POOL_PAYOUT_SK_HEX and ZION_SWAP_ESCROW_KEY. Uploading it to /etc/zion/ would
-# WIPE the real signing keys and break pool payouts + atomic swap escrow.
-# We upload the template to the repo path only (for reference), and verify the live
-# /etc/zion/edge-environment.sh still has real (non-placeholder) secrets.
+# ── Step 2: Sync code to /opt/zion ──
+log "Syncing repository to Edge (${REMOTE_ROOT})..."
+RSYNC_EXCLUDES=(
+    '--exclude=.git'
+    '--exclude=data'
+    '--exclude=logs'
+    '--exclude=target'
+    '--exclude=node_modules'
+    '--exclude=.next'
+    '--exclude=out'
+    '--exclude=public'
+    '--exclude=HiranV2.1'
+    '--exclude=HiranV2.2'
+    '--exclude=HiranV2.4'
+    '--exclude=PoC-lab'
+    '--exclude=ZionStart'
+    '--exclude=archive'
+    '--exclude=update-server'
+    '--exclude=zion-miner-smos'
+    '--exclude=APP&WEB'
+    '--exclude=config'
+)
+
+if command -v rsync &>/dev/null; then
+    rsync -avz "${RSYNC_EXCLUDES[@]}" \
+        -e "ssh ${SSH_OPTS}" \
+        "${REPO_ROOT}/" \
+        "${EDGE_USER}@${EDGE_HOST}:${REMOTE_ROOT}/"
+else
+    # Fallback: tar over ssh (slower, excludes some build artifacts)
+    tar czf - \
+        --exclude='.git' --exclude='data' --exclude='logs' --exclude='target' \
+        --exclude='node_modules' --exclude='.next' --exclude='out' \
+        -C "${REPO_ROOT}" \
+        V3/ ZION_OS/ ZionDex/ edge-deploy/ scripts/ 2>/dev/null | \
+        ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "mkdir -p '${REMOTE_ROOT}' && cd '${REMOTE_ROOT}' && tar xzf -"
+fi
+
+# ── Step 2b: Ensure zion user, directories, and permissions ──
+log "Running migration/user setup on Edge..."
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
+    if [[ -f '${REMOTE_ROOT}/edge-deploy/scripts/migrate-to-zion-user.sh' ]]; then
+        bash '${REMOTE_ROOT}/edge-deploy/scripts/migrate-to-zion-user.sh'
+    else
+        id -u zion >/dev/null 2>&1 || useradd --system --home-dir /opt/zion --create-home zion
+        mkdir -p /opt/zion/data /opt/zion/logs /opt/zion/backups /var/log/zion /etc/zion /etc/zion/keys
+        chmod 750 /opt/zion
+        chmod 700 /etc/zion/keys
+        chown -R zion:zion /opt/zion /var/log/zion /etc/zion
+        ln -sfn /opt/zion/data /data/zion || true
+    fi
+"
+
+# ── Step 3: Sync website code ──
+log "Syncing website code..."
+if command -v rsync &>/dev/null; then
+    rsync -avz --exclude='node_modules' --exclude='.next' --exclude='out' \
+        -e "ssh ${SSH_OPTS}" \
+        "${REPO_ROOT}/APP&WEB/website-v2.9/" \
+        "${EDGE_USER}@${EDGE_HOST}:${REMOTE_WEB}/"
+else
+    tar czf - \
+        --exclude='node_modules' --exclude='.next' --exclude='out' \
+        -C "${REPO_ROOT}/APP&WEB" website-v2.9/ 2>/dev/null | \
+        ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
+        "mkdir -p '${REMOTE_ROOT}/APP&WEB' && cd '${REMOTE_ROOT}/APP&WEB' && tar xzf -"
+fi
+
+# Ensure all files in /opt/zion are owned by zion after sync
+log "Fixing ownership of /opt/zion..."
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "chown -R zion:zion '${REMOTE_ROOT}'"
+
+# ── Step 4: Upload environment config template (reference only) ──
+# The live /etc/zion/edge-environment.sh is the single source of truth and
+# must NEVER be overwritten by a template. The template below is for reference.
 log "Uploading environment config template (reference only)..."
 scp ${SSH_OPTS} "${REPO_ROOT}/edge-deploy/config/edge-environment.sh" \
     "${EDGE_USER}@${EDGE_HOST}:${REMOTE_ROOT}/edge-deploy/config/edge-environment.sh" 2>/dev/null || true
@@ -86,41 +151,55 @@ LIVE_ENV_CHECK=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
 " 2>/dev/null || echo "ERR")
 if [[ "${LIVE_ENV_CHECK}" != "0" && "${LIVE_ENV_CHECK}" != "ERR" ]]; then
     err "LIVE env /etc/zion/edge-environment.sh contains ${LIVE_ENV_CHECK} placeholder(s)!
-        Pool payouts and/or atomic swap are BROKEN. Restore real secrets from backup before continuing:
+        Pool payouts, atomic swap, dashboard auth, and/or DAO auth are BROKEN.
+        Restore real secrets from backup before continuing:
         ssh ${EDGE_USER}@${EDGE_HOST} 'ls -la /etc/zion/edge-environment.sh.bak-*'
         Aborting deploy to prevent data loss."
 fi
 log "Live env file verified: no placeholders detected."
 
-# ── Step 5: Rebuild V3 binaries on Edge ──
+# ── Step 5: Rebuild binaries on Edge ──
 log "Rebuilding V3 binaries on Edge..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
-    . /root/.cargo/env
-    cd ${REMOTE_ROOT}/V3
-    # Fix workspace if needed
+    . /root/.cargo/env || . /opt/zion/.cargo/env
+    cd '${REMOTE_ROOT}/V3'
+    # Free-world / issobella / ai-native / native-ffi are not part of the Edge build set
     if [ ! -d L5/free-world ]; then
         sed -i '/\"L5\/free-world\",/d;/\"L6\/issobella\",/d;/\"L4\/oasis\",/d' Cargo.toml 2>/dev/null || true
         sed -i '/\"L1\/native-ffi\",/d' Cargo.toml 2>/dev/null || true
+        sed -i '/\"L3\/ai-native\",/d' Cargo.toml 2>/dev/null || true
     fi
     cargo build --release --bin node --bin server --bin zion-bridge --bin zion-dao --bin zion-atomic-swap --bin zion-warp-server --bin zion-miner 2>&1
     # Build agent
-    cd ${REMOTE_ROOT}/ZION_OS/agent
+    cd '${REMOTE_ROOT}/ZION_OS/agent'
     cargo build --release 2>&1
     # Build dashboard
-    cd ${REMOTE_ROOT}/ZION_OS/dashboard/infra
+    cd '${REMOTE_ROOT}/ZION_OS/dashboard/infra'
     cargo build --release 2>&1
+    # Build DEX router
+    cd '${REMOTE_ROOT}/ZionDex/router'
+    cargo build --release 2>&1
+"
+
+# ── Step 5b: Copy standalone binaries to /usr/local/bin ──
+log "Installing standalone binaries to /usr/local/bin..."
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
+    cp -f '${REMOTE_ROOT}/ZION_OS/agent/target/release/zion-agent' /usr/local/bin/zion-agent
+    cp -f '${REMOTE_ROOT}/ZION_OS/dashboard/infra/target/release/zionos-dashboard' /usr/local/bin/zionos-dashboard
+    cp -f '${REMOTE_ROOT}/ZionDex/router/target/release/ziondex-router' /usr/local/bin/ziondex-router
+    chmod 755 /usr/local/bin/zion-agent /usr/local/bin/zionos-dashboard /usr/local/bin/ziondex-router
 "
 
 # ── Step 6: Rebuild website on Edge ──
 log "Rebuilding website on Edge..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
-    cd ${REMOTE_WEB}
+    cd '${REMOTE_WEB}'
     rm -f package-lock.json
     npm install 2>&1 | tail -n 5
     npm run build 2>&1 | tail -n 20
 "
 
-# ── Step 7: Install systemd services ──
+# ── Step 7: Install systemd services and timers ──
 log "Installing systemd services..."
 SERVICES=(
     zion-edge-node1
@@ -131,27 +210,40 @@ SERVICES=(
     zion-edge-atomic-swap
     zion-edge-warp
     zion-edge-watchdog
+    zion-edge-backup
     zion-edge-miner
     zion-edge-agent
     zion-edge-dashboard
+    zion-edge-dex
+    zion-edge-python-dashboard
 )
+
 for svc in "${SERVICES[@]}"; do
     if [[ "$svc" == "zion-edge-agent" ]]; then
         ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
-            "cp ${REMOTE_ROOT}/ZION_OS/agent/systemd/${svc}.service /etc/systemd/system/ 2>/dev/null || true"
+            "cp -f '${REMOTE_ROOT}/ZION_OS/agent/systemd/${svc}.service' /etc/systemd/system/"
     else
         ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
-            "cp ${REMOTE_ROOT}/edge-deploy/systemd/${svc}.service /etc/systemd/system/ 2>/dev/null || true"
+            "cp -f '${REMOTE_ROOT}/edge-deploy/systemd/${svc}.service' /etc/systemd/system/"
+    fi
+    # Copy timer if it exists
+    if [[ -f "${REPO_ROOT}/edge-deploy/systemd/${svc}.timer" ]]; then
+        scp ${SSH_OPTS} "${REPO_ROOT}/edge-deploy/systemd/${svc}.timer" \
+            "${EDGE_USER}@${EDGE_HOST}:/etc/systemd/system/" 2>/dev/null || true
     fi
 done
 
-# Cleanup old/duplicate service
+# Cleanup old/duplicate service name
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
     "systemctl disable zion-edge-node 2>/dev/null || true; systemctl reset-failed zion-edge-node 2>/dev/null || true"
 
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl daemon-reload"
+
 for svc in "${SERVICES[@]}"; do
     ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl enable ${svc}.service 2>/dev/null || true"
+    if [[ -f "${REPO_ROOT}/edge-deploy/systemd/${svc}.timer" ]]; then
+        ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl enable ${svc}.timer 2>/dev/null || true"
+    fi
 done
 
 # ── Step 8: Restart services in order ──
@@ -170,11 +262,14 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-bridge zi
 
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-miner || true"
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-agent || true"
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-dashboard || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-dashboard zion-edge-dex zion-edge-python-dashboard || true"
+
+# Restart timers (will not start oneshot services, just activate timers)
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-watchdog.timer zion-edge-backup.timer || true"
 
 # ── Step 9: Restart website (PM2) ──
 log "Restarting website (PM2)..."
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "pm2 restart zion-website 2>/dev/null || pm2 start ${REMOTE_WEB}/node_modules/next/dist/bin/next --name zion-website -- start 2>/dev/null || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "pm2 restart zion-website 2>/dev/null || pm2 start '${REMOTE_WEB}/node_modules/next/dist/bin/next' --name zion-website -- start 2>/dev/null || true"
 
 # ── Step 10: Wait and verify ──
 log "Waiting for services to come up..."
@@ -182,7 +277,7 @@ sleep 10
 
 echo ""
 echo "=== Deployment Status ==="
-for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp zion-edge-miner zion-edge-agent zion-edge-dashboard; do
+for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp zion-edge-miner zion-edge-agent zion-edge-dashboard zion-edge-dex zion-edge-python-dashboard; do
     STATUS=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl is-active ${svc}" 2>/dev/null || true)
     if [[ "$STATUS" == "active" ]]; then
         echo -e "${GREEN}  ${svc} : ACTIVE${NC}"
