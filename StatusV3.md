@@ -185,7 +185,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | KAS | kheavyhash | Stratum | connect/auth/notify ✅, submit ⚠️ (CPU) |
 | ALPH | blake3 (double) | Stratum | connect/auth/notify ✅, submit ⚠️ (CPU) |
 | DCR | blake3 | Stratum | ✅ LIVE (embedded in pool stream, blake3 GPU kernel) |
-| ERG | autolykos | EthStratum | protocol ✅ (R6), live E2E TODO |
+| ERG | autolykos | Stratum | ✅ E2E (Autolykos v2 GPU thread, 2miners pool, `autolykos_kernel.cl` with memory-hard table, `ZION_POOL_AUXPOW_WALLET_ERG` env var) |
 | RVN | kawpow | Stratum | live E2E ✅ (GPU, shares forwarded to 2miners) |
 | ETC | ethash | Stratum | connect/auth/notify ✅, submit ⚠️ (CPU) |
 | EVR | autolykos | EthStratum | protocol ✅ (R6), live E2E TODO |
@@ -208,7 +208,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | blake3 | ALPH | 640M | **18.1B** | ⚠️ kernel only |
 | blake3_dcr | DCR | 650M | **23.3B** | ⚠️ kernel only |
 | kheavyhash | KAS | 320M | **21.1B** | ⚠️ kernel only |
-| autolykos | ERG | 82M | **18.4B** | ⚠️ kernel only |
+| autolykos | ERG | 82M | **18.4B** | ✅ E2E (OpenCL kernel + GPU thread) |
 | ethash | ETC | — | — (needs DAG) | ⚠️ kernel only |
 | kawpow | RVN | — | — (needs DAG) | ⚠️ kernel only |
 | zelhash | FLUX | 495M | **19.5B** | ⚠️ kernel only |
@@ -322,6 +322,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 |------|-----------|-------------|
 | 07-15 | **QUAI (KawPoW) added** — 16th external coin. KawPoW GPU thread in miner (`kawpow_gpu_thread`), Stratum v1 protocol, 2miners pool (BTC payout). `ExternalCoin::QUAI` in AuXpow enum, pool server routing/algorithm/CH-coin mappings, miner channel+routing+share drain. Env vars: `ZION_POOL_AUXPOW_WALLET_QUAI`, `ZION_POOL_AUXPOW_PASSWORD_QUAI` | (this commit) |
 | 07-15 | **BEAM (BeamHash III) added** — 17th external coin. Custom `BeamStratum` protocol (JSON-RPC 2.0 over TLS) for beam.2miners.com:5252. `ExternalCoin::BEAM` in AuXpow enum, `StratumProtocol::BeamStratum` variant, `beam_login()`/`parse_beam_job()`/Beam submit block, `RevenueSource::BeamHashExternal` in cosmic-harmony, pool server routing/algorithm/CH-coin/stats mappings. Env var: `ZION_POOL_AUXPOW_WALLET_BEAM` | (this commit) |
+| 07-15 | **ERG (Autolykos v2) E2E complete** — `autolykos_gpu_thread()` (Stream 3e) added to miner. Uses existing `autolykos_kernel.cl` OpenCL kernel (BLAKE2b-256, memory-hard precomputed table, 4-nonce batch scanning, midstate precomputation). Routing: ERG/autolykos → `autolykos_tx` channel. Share collection + submit. Pool-side was already complete (`RevenueSource::AutolykosExternal`, Stratum v1, 2miners pool). Env var: `ZION_POOL_AUXPOW_WALLET_ERG` | `d4e03cb97` |
 | 07-15 | **Triple Parallel AuxPoW LIVE** — Claymore-style 3-stream parallel mining: ZION (GPU DeekshaChv3) + EPIC (GPU ProgPow) + VRSC (CPU VerusHash) simultaneously. Second AuxPow bridge (`cpu_auxpow_bridge`) for CPU-only coins. `external_stream_cpu` field in `PoolMessage::Job`. OpenMP-parallel DAG generation (19 threads, epoch 120 ~2GB in ~4 min). All 3 streams verified live on Edge (rx5600-test miner, 99.7% ZION accept rate, EPIC ProgPow kernel 7169+ batches, VRSC CPU thread hashing) | (this commit) |
 | 07-14 | **PPLNS payout bug fix** — composite `miner_id/worker_name` keys (all workers sharing same miner_id had payouts sent to last-registered address) + telemetry registry composite keys | `bd6f1dfb3`, `85250086d` |
 | 07-14 | NoSolution reconnect cooldown — ban IP for 300s on rate-limit exceed | `49f8bfb57` |
