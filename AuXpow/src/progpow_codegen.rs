@@ -78,6 +78,34 @@ pub const EPIC_PROGPOW_PARAMS: ProgPowParams = ProgPowParams {
     period: 50,
 };
 
+/// EvrProgPow (Evrmore/EVR) parameters
+/// Based on ProgPoW 0.9.4 with PERIOD=3 (vs KawPow=10) for 1-minute block time.
+/// Epoch length: 12000 blocks (vs KawPow 7500). Starting DAG: 3 GB.
+/// All other parameters match KawPow.
+pub const EVR_PROGPOW_PARAMS: ProgPowParams = ProgPowParams {
+    lanes: 16,
+    regs: 32,
+    dag_loads: 4,
+    cnt_dag: 64,
+    cnt_cache: 11,
+    cnt_math: 18,
+    period: 3,
+};
+
+/// MeowPow (MeowCoin/MEWC) parameters
+/// Based on ProgPoW 0.9.4 with significantly reduced compute parameters.
+/// PERIOD=6, REGS=16 (halved), CNT_CACHE=6 (halved), CNT_MATH=9 (halved).
+/// Epoch length: 12000 blocks. Special DAG size transition at epoch 128.
+pub const MEOWPOW_PARAMS: ProgPowParams = ProgPowParams {
+    lanes: 16,
+    regs: 16,
+    dag_loads: 4,
+    cnt_dag: 64,
+    cnt_cache: 6,
+    cnt_math: 9,
+    period: 6,
+};
+
 // ── Code generation helpers ─────────────────────────────────────────
 
 fn merge_code(a: &str, b: &str, r: u32) -> String {
@@ -396,6 +424,37 @@ pub fn prepare_epic_progpow_kernel_source(
     base_source.replace("PROGPOW_INCLUDE_PROGPOW_LOOP", &loop_code)
 }
 
+/// Prepare the KawPow kernel source for a specific ProgPow variant.
+/// Uses the xmrig kawpow_kernel.cl with XMRIG_INCLUDE_PROGPOW_RANDOM_MATH
+/// and XMRIG_INCLUDE_PROGPOW_DATA_LOADS placeholders.
+/// Selects the correct params based on the algorithm name.
+pub fn prepare_kawpow_kernel_source_for_algo(
+    base_source: &str,
+    algorithm: &str,
+    block_height: u64,
+) -> String {
+    let params = select_progpow_params(algorithm);
+    let prog_seed = block_height / params.period as u64;
+    let random_math = gen_kawpow_random_math(params, prog_seed);
+    let data_loads = gen_kawpow_data_loads(params, prog_seed);
+
+    base_source
+        .replace("XMRIG_INCLUDE_PROGPOW_RANDOM_MATH", &random_math)
+        .replace("XMRIG_INCLUDE_PROGPOW_DATA_LOADS", &data_loads)
+}
+
+/// Select the correct ProgPow parameters for the given algorithm name.
+pub fn select_progpow_params(algorithm: &str) -> &'static ProgPowParams {
+    match algorithm {
+        "evrprogpow" | "evrprogpow_evr" => &EVR_PROGPOW_PARAMS,
+        "meowpow" | "meowpow_mewc" => &MEOWPOW_PARAMS,
+        "progpow" | "progpow_epic" => &EPIC_PROGPOW_PARAMS,
+        // All KawPow variants (kawpow, kawpow_rvn, kawpow_clore, kawpow_evr, kawpow_mewc)
+        // and fallback use standard KawPow params.
+        _ => &KAWPOW_PARAMS,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -510,5 +569,81 @@ mod tests {
         let code = gen_epic_progpow_loop(&EPIC_PROGPOW_PARAMS, 0);
         let cache_loads = code.matches("c_dag[offset]").count();
         assert_eq!(cache_loads, 12, "Should have exactly 12 cache loads (CNT_CACHE=12)");
+    }
+
+    #[test]
+    fn test_evr_progpow_params() {
+        // EvrProgPow: PERIOD=3, REGS=32, CNT_CACHE=11, CNT_MATH=18
+        assert_eq!(EVR_PROGPOW_PARAMS.period, 3, "EvrProgPow period should be 3");
+        assert_eq!(EVR_PROGPOW_PARAMS.regs, 32, "EvrProgPow regs should be 32");
+        assert_eq!(EVR_PROGPOW_PARAMS.cnt_cache, 11, "EvrProgPow cnt_cache should be 11");
+        assert_eq!(EVR_PROGPOW_PARAMS.cnt_math, 18, "EvrProgPow cnt_math should be 18");
+    }
+
+    #[test]
+    fn test_meowpow_params() {
+        // MeowPow: PERIOD=6, REGS=16, CNT_CACHE=6, CNT_MATH=9
+        assert_eq!(MEOWPOW_PARAMS.period, 6, "MeowPow period should be 6");
+        assert_eq!(MEOWPOW_PARAMS.regs, 16, "MeowPow regs should be 16");
+        assert_eq!(MEOWPOW_PARAMS.cnt_cache, 6, "MeowPow cnt_cache should be 6");
+        assert_eq!(MEOWPOW_PARAMS.cnt_math, 9, "MeowPow cnt_math should be 9");
+    }
+
+    #[test]
+    fn test_select_progpow_params() {
+        let evr = select_progpow_params("evrprogpow");
+        assert_eq!(evr.period, EVR_PROGPOW_PARAMS.period);
+        assert_eq!(evr.regs, EVR_PROGPOW_PARAMS.regs);
+        assert_eq!(evr.cnt_cache, EVR_PROGPOW_PARAMS.cnt_cache);
+        assert_eq!(evr.cnt_math, EVR_PROGPOW_PARAMS.cnt_math);
+
+        let evr2 = select_progpow_params("evrprogpow_evr");
+        assert_eq!(evr2.period, EVR_PROGPOW_PARAMS.period);
+
+        let mewc = select_progpow_params("meowpow");
+        assert_eq!(mewc.period, MEOWPOW_PARAMS.period);
+        assert_eq!(mewc.regs, MEOWPOW_PARAMS.regs);
+        assert_eq!(mewc.cnt_cache, MEOWPOW_PARAMS.cnt_cache);
+        assert_eq!(mewc.cnt_math, MEOWPOW_PARAMS.cnt_math);
+
+        let mewc2 = select_progpow_params("meowpow_mewc");
+        assert_eq!(mewc2.period, MEOWPOW_PARAMS.period);
+
+        let epic = select_progpow_params("progpow");
+        assert_eq!(epic.period, EPIC_PROGPOW_PARAMS.period);
+
+        let epic2 = select_progpow_params("progpow_epic");
+        assert_eq!(epic2.period, EPIC_PROGPOW_PARAMS.period);
+
+        let kawpow = select_progpow_params("kawpow");
+        assert_eq!(kawpow.period, KAWPOW_PARAMS.period);
+
+        let kawpow2 = select_progpow_params("kawpow_rvn");
+        assert_eq!(kawpow2.period, KAWPOW_PARAMS.period);
+
+        let unknown = select_progpow_params("unknown");
+        assert_eq!(unknown.period, KAWPOW_PARAMS.period);
+    }
+
+    #[test]
+    fn test_prepare_kawpow_for_evrprogpow() {
+        let base = "XMRIG_INCLUDE_PROGPOW_RANDOM_MATH\nXMRIG_INCLUDE_PROGPOW_DATA_LOADS";
+        let result = prepare_kawpow_kernel_source_for_algo(base, "evrprogpow", 100);
+        assert!(!result.contains("XMRIG_INCLUDE"), "Placeholders should be replaced");
+        // EvrProgPow: period=3, so prog_seed = 100/3 = 33
+        // Should have 11 cache loads (same as KawPow)
+        let cache_loads = result.matches("c_dag[offset]").count();
+        assert_eq!(cache_loads, 11, "EvrProgPow should have 11 cache loads");
+    }
+
+    #[test]
+    fn test_prepare_kawpow_for_meowpow() {
+        let base = "XMRIG_INCLUDE_PROGPOW_RANDOM_MATH\nXMRIG_INCLUDE_PROGPOW_DATA_LOADS";
+        let result = prepare_kawpow_kernel_source_for_algo(base, "meowpow", 100);
+        assert!(!result.contains("XMRIG_INCLUDE"), "Placeholders should be replaced");
+        // MeowPow: period=6, so prog_seed = 100/6 = 16
+        // Should have 6 cache loads (CNT_CACHE=6)
+        let cache_loads = result.matches("c_dag[offset]").count();
+        assert_eq!(cache_loads, 6, "MeowPow should have 6 cache loads");
     }
 }
