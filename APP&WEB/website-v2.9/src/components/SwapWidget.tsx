@@ -338,7 +338,7 @@ export default function SwapWidget() {
           <div className="flex items-center justify-between text-[10px] text-gray-500 pt-2">
             <span>Uniswap V3 · Base Mainnet · 0.3% fee</span>
             <a
-              href={`https://basescan.org/address/${CONTRACTS.UniV3Pool}`}
+              href={`https://basescan.org/address/${CONTRACTS.UniV3PoolUSDT}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 hover:text-gray-300 transition-colors"
