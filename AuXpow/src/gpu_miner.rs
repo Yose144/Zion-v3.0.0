@@ -286,9 +286,24 @@ impl GpuMiner {
         );
 
         let pro_que = if is_progpow {
-            // Calculate DAG elements for PROGPOW_DAG_ELEMENTS define.
+            // Calculate PROGPOW_DAG_ELEMENTS for the kernel build define.
+            //
             // dag_t = 4 × uint32 = 16 bytes. Each Ethash DAG node is 128 bytes
-            // = 8 dag_t elements. So PROGPOW_DAG_ELEMENTS = dag_entries * 8.
+            // = 8 dag_t elements. Total dag_t count = dag_entries * 8.
+            //
+            // In the kernel, the DAG access pattern is:
+            //   offset %= PROGPOW_DAG_ELEMENTS;
+            //   offset = offset * PROGPOW_LANES + (lane_id ^ loop) % PROGPOW_LANES;
+            //   data_dag = g_dag[offset];
+            //
+            // So g_dag must have at least PROGPOW_DAG_ELEMENTS * PROGPOW_LANES
+            // dag_t elements. Therefore:
+            //   PROGPOW_DAG_ELEMENTS = dag_t_count / PROGPOW_LANES
+            //                        = (dag_entries * 8) / 16
+            //                        = dag_entries / 2
+            //
+            // Setting it to dag_entries * 8 (as before) caused offset to be
+            // 16x too large → massive out-of-bounds GPU read → GPU hang!
             let dag_entries = if matches!(
                 algorithm,
                 "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
@@ -297,7 +312,7 @@ impl GpuMiner {
             } else {
                 progpow_dag.as_ref().map(|d| d.size_entries).unwrap_or(0)
             };
-            let dag_elements = dag_entries * 8;
+            let dag_elements = dag_entries / 2;
             self.ensure_proque_progpow(kernel_file, self.block_height, dag_elements)?
         } else {
             self.ensure_proque(kernel_file)?
@@ -488,11 +503,12 @@ impl GpuMiner {
             | "progpow" | "progpow_epic" => 1,
             _ => 8, // blake3, kheavyhash, zelhash
         };
-        // Work-group size: 256 for KawPow/ProgPow (GROUP_SIZE), 128 for other
-        // memory-bound algos, 256 for compute-bound.
+        // Work-group size: MUST match GROUP_SIZE defined in the kernel build
+        // options. ProgPow/KawPow use GROUP_SIZE=128 (see ensure_proque_progpow).
+        // Mismatch causes out-of-bounds local memory access → GPU hang.
         let wg_size = match algorithm {
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
-            | "progpow" | "progpow_epic" => 256, // GROUP_SIZE for ProgPow
+            | "progpow" | "progpow_epic" => 128, // GROUP_SIZE=128 for ProgPow/KawPow
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 128,
             _ => 256,
         };
@@ -1037,7 +1053,10 @@ impl GpuMiner {
             _ => return Err(anyhow!("Not a ProgPow/KawPow kernel: {kernel_file}")),
         };
 
-        let cache_key = format!("{kernel_file}:period_{period}");
+        // Cache key includes dag_elements so that the kernel is recompiled
+        // with the correct PROGPOW_DAG_ELEMENTS when the DAG becomes available.
+        let dag_elements_safe = dag_elements.max(1);
+        let cache_key = format!("{kernel_file}:period_{period}:dag_{dag_elements_safe}");
         if self.proques_progpow.contains_key(&cache_key) {
             return Ok(self.proques_progpow.get(&cache_key).unwrap());
         }
@@ -1090,10 +1109,22 @@ impl GpuMiner {
             _ => base_src,
         };
 
-        // Build options: define PROGPOW_DAG_ELEMENTS and GROUP_SIZE
+        // Build options: define PROGPOW_DAG_ELEMENTS, PROGPOW_DAG_BYTES and GROUP_SIZE.
+        //
+        // PROGPOW_DAG_ELEMENTS = dag_t_count / PROGPOW_LANES (see comment in mine()).
+        // PROGPOW_DAG_BYTES = total DAG bytes = dag_elements * PROGPOW_LANES * 16
+        //   (each dag_t = 16 bytes, and the kernel accesses g_dag[offset] where
+        //    offset can be up to dag_elements * PROGPOW_LANES - 1)
+        //
+        // GROUP_SIZE MUST be 128 (not 256!) for ProgPow/KawPow:
+        //   - HASHES_PER_GROUP = GROUP_SIZE / PROGPOW_LANES = 128 / 16 = 8
+        //   - share[0].uint64s has PROGPOW_LANES/2 = 8 elements
+        //   - With GROUP_SIZE=256, group_id goes 0..15, but share[0].uint64s
+        //     only has 8 elements → out-of-bounds local memory access → GPU hang!
+        let dag_bytes = dag_elements_safe * 16 * 16; // * PROGPOW_LANES(16) * sizeof(dag_t)
         let build_opts = format!(
-            "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DGROUP_SIZE=256",
-            dag_elements
+            "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE=128",
+            dag_elements_safe, dag_bytes
         );
 
         let mut prog_builder = ProgramBuilder::new();

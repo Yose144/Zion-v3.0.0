@@ -446,6 +446,42 @@ mod tests {
     }
 
     #[test]
+    fn test_epic_kernel_full_source_lines() {
+        let base = include_str!("../csrc/opencl/progpow_kernel.cl");
+        let result = prepare_epic_progpow_kernel_source(base, 3621120);
+        // Print first 20 lines for debugging
+        for (i, line) in result.lines().take(20).enumerate() {
+            println!("EPIC_SRC {:3}: {}", i + 1, line);
+        }
+        // Verify definitions appear before progPowLoop
+        let def_line = result.lines().position(|l| l.contains("typedef unsigned int       uint32_t;"));
+        let loop_line = result.lines().position(|l| l.contains("void progPowLoop"));
+        println!("uint32_t typedef at line: {:?}", def_line);
+        println!("progPowLoop at line: {:?}", loop_line);
+        assert!(def_line.is_some(), "uint32_t typedef must be present");
+        assert!(loop_line.is_some(), "progPowLoop must be present");
+        assert!(def_line.unwrap() < loop_line.unwrap(), "typedef must come before progPowLoop");
+    }
+
+    #[test]
+    fn test_kawpow_kernel_full_source_lines() {
+        let base = include_str!("../csrc/opencl/kawpow_kernel.cl");
+        let result = prepare_kawpow_kernel_source(base, 3621120);
+        // Verify definitions appear before progPowSearch
+        let def_line = result.lines().position(|l| l.contains("#define PROGPOW_LANES"));
+        let search_line = result.lines().position(|l| l.contains("progpow_search"));
+        println!("PROGPOW_LANES define at line: {:?}", def_line);
+        println!("progpow_search at line: {:?}", search_line);
+        assert!(def_line.is_some(), "PROGPOW_LANES define must be present");
+        assert!(search_line.is_some(), "progpow_search must be present");
+        assert!(def_line.unwrap() < search_line.unwrap(), "defines must come before kernel");
+        // Verify no placeholder leakage in comments
+        let placeholder_count = result.matches("XMRIG_INCLUDE_PROGPOW_RANDOM_MATH").count()
+            + result.matches("XMRIG_INCLUDE_PROGPOW_DATA_LOADS").count();
+        assert_eq!(placeholder_count, 0, "All placeholders should be replaced");
+    }
+
+    #[test]
     fn test_epic_kernel_no_duplicate_defs() {
         // The generated progPowLoop code should NOT include typedef/define
         // for uint32_t, uint64_t, ROTL32, ROTR32, GROUP_SIZE — those are

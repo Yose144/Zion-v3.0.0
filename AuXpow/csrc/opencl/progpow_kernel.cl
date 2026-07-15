@@ -7,7 +7,7 @@
 //
 // The progPowLoop function is generated at compile time by the host-side
 // random math generator (port of ProgPow::getKern from progpow-rust).
-// It is injected via the PROGPOW_INCLUDE_PROGPOW_LOOP placeholder below.
+// It is injected via the placeholder below (PROGPOW_INCLUDE tag).
 //
 // References:
 //   - https://github.com/EpicCash/progpow-rust (Epic Cash ProgPoW)
