@@ -44,12 +44,12 @@ Out of scope for the bootstrap:
 
 ## Current Status
 
-- workspace version: `3.0.4` (DeFi contracts deployed on Base Mainnet 2026-06-29; TX unification plan in [`../3.0.4.md`](../3.0.4.md))
+- workspace version: `3.0.6` (3.0.5/3.0.6 deployed to Edge 2026-07-15; see [`StatusV3.md`](../StatusV3.md))
 - **Unified `zion` CLI operator baseline (2026-04-23):** top-level gateway now spans L1/L2/L3 plus deploy, explorer, monitor, guided workflows, and checksum-verified local CLI auto-update; canonical operator docs published in `V3/docs/CLI_GUIDE.md` and `V3/docs/CLI_FAQ.md`.
-- **Phase 18 UTXO coinbase + pool payout E2E deployed (2026-04-01):** `getBalance` combines account+UTXO for zion1 addresses (previously returned 0). `build_template()` generates UTXO coinbase with 4 outputs (89/5/5/1 split). Pool payout pipeline deployed with Ed25519 UTXO signing. Chain height 6801, miner balance 14.12B ZION.
+- **Phase 18 UTXO coinbase + pool payout E2E deployed (2026-04-01):** `getBalance` combines account+UTXO for zion1 addresses (previously returned 0). `build_template()` generates UTXO coinbase with 4 outputs (89/5/5/1 split). Pool payout pipeline deployed with Ed25519 UTXO signing.
 - **Humanitarian tithe verified on-chain (2026-04-01):** Per-block fee split is exact to the flower: 89% miner, 5% humanitarian ([12] zion1m4v5z...), 5% issobella ([13] zion170a37...), 1% pool_fee ([14] zion1y5u65...). Cumulative balances consistent across all tithe wallets.
-- **BaseScan verification (2026-04-01 + 2026-07-02):** 6/7 Base mainnet contracts verified on BaseScan — wZION, ZIONAtomicSwap (2026-04-01), ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm (2026-07-02 via Etherscan V2 API). ZIONBridge ❌ — source changed post-deploy, bytecode mismatch. See [`BASESCAN_VERIFY_REPORT.md`](../docs/3.0.4/BASESCAN_VERIFY_REPORT.md).
-- **All bridge blockers resolved (2026-04-01):** Deterministic keyless vault address (`zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7`), crypto validator proof (secp256k1 ECDSA in `submitBridgeUnlock`), L1 wallet CLI (`wallet.rs`), bridge mainnet config enabled. Bridge relay deployed on Edge server (Hetzner VPS, Core + Edge topology) — 3/5 threshold, L1+EVM watchers active, scanning Base mainnet (chain 8453).
+- **BaseScan verification (2026-07-09):** 7/7 Base mainnet contracts verified on BaseScan — wZION, ZIONAtomicSwap, ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm, ZIONBridge. See [`BASESCAN_VERIFY_REPORT.md`](../docs/3.0.4/BASESCAN_VERIFY_REPORT.md).
+- **All bridge blockers resolved (2026-04-01):** Deterministic keyless vault address (`zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7`), crypto validator proof (secp256k1 ECDSA in `submitBridgeUnlock`), L1 wallet CLI (`wallet.rs`), bridge mainnet config enabled. Bridge relay deployed on Edge server (Hetzner Cloud, Core + Edge topology) — 5/5 threshold, L1+EVM watchers active, scanning Base mainnet (chain 8453).
 - **V3 mainnet fee-split rollout verified live (2026-03-28):** core now enforces deterministic on-chain reward split `89/5/5/1` to miner, humanitarian, issobella, and pool-fee wallets; first explicitly verified split-enabled block was height `465`, with subsequent confirmation on audited nodes at heights `471` and `472`
 - **Historical cross-node rollout evidence (2026-03-28):** Prague, USA, and Singapore accepted the fee-split rollout during the original rehearsal; the current operational topology has since been consolidated to **Core + Edge**.
 - canonical Ekam Deeksha consensus crate migrated into `L1/cosmic-harmony`
@@ -272,13 +272,14 @@ ssh root@SERVER "cd /opt/zion && docker compose -f docker/docker-compose.v3-main
 
 ### Live Topology (Core + Edge)
 
-- **Core** (Windows 11, Tailscale `100.86.102.5`) — local node + pool master + GPU miner
-- **Edge** (Hetzner VPS, Tailscale `100.76.16.108`) — public relay node + pool
-  - Public P2P: `77.42.71.94:8333`
-  - Public Pool: `77.42.71.94:8444`
+- **Edge** (Hetzner Cloud, `62.171.141.136`) — primary 24/7 node + pool + L2/L3 services
+  - Public P2P: `62.171.141.136:8333`
+  - Public Pool: `62.171.141.136:8444`
+- **Core** (Local backup, `109.81.27.87`) — backup node + dashboard + AI services
+  - RPC: `127.0.0.1:8446`
 - Website bridge status reaches the host-networked bridge via `host.docker.internal:9101`
 
-> Archive notice: the old Prague server (`91.98.122.165`) and multi-server topology (Prague, USA, Singapore, Helsinki) are historical. Current live topology is **Core + Edge only**.
+> Archive notice: the old Edge server (`77.42.71.94` / `100.76.16.108`) and multi-server topology (Prague, USA, Singapore, Helsinki) are historical. Current live topology is **Core + Edge only**.
 
 ## Wire Protocol
 

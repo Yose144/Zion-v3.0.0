@@ -2290,6 +2290,11 @@ async function updateConnectedMiners(){
 }
 
 // ── Triple Stream Mining panel (Claymore-style 3-stream) ──
+// v3.0.6 canonical 3 streams:
+//   Stream 1 — ZION (Deeksha + internal bonuses: keccak/sha3/profit/ncl/deeksha_lite/thermal_bonus)
+//   Stream 2 — GPU PROFIT (one GPU-capable AuxPoW coin: blake3/kheavyhash/ethash/kawpow/autolykos/zelhash/progpow/beamhash)
+//   Stream 3 — CPU PROFIT (Verus/RandomX: verushash/randomx)
+// Pearl (pearlhash) is intentionally ignored — Pearl thread was removed in v3.0.6.
 function updateTripleStream(data){
   if(!data||!data.routing||!data.routing.sources){
     const summary = document.getElementById('triple-stream-summary');
@@ -2297,39 +2302,44 @@ function updateTripleStream(data){
     return;
   }
   const src=data.routing.sources||{};
-  // Map routing sources to 3 streams
-  // src_zion → Stream 1, src_pearl → Stream 2, everything else → Stream 3
-  const zion=src.src_zion||src.zion||{accepted:0,rejected:0};
-  const pearl=src.src_pearl||src.pearlhash||{accepted:0,rejected:0};
-  // Aggregate all external sources into Stream 3
-  let extAcc=0,extRej=0,extCoin='AuxPow';
-  for(const[key,val]of Object.entries(src)){
-    if(key==='src_zion'||key==='src_pearl'||key==='zion'||key==='pearlhash')continue;
-    if(val&&typeof val==='object'){
-      extAcc+=val.accepted||0;
-      extRej+=val.rejected||0;
-      if((val.accepted>0||val.rejected>0)&&extCoin==='AuxPow'){
-        extCoin=key.replace('src_','').toUpperCase();
-      }
-    }
+  const get=(k)=>src[k]||{submits:0,accepted:0};
+  // Stream 1: ZION + internal bonus sources
+  const zionKeys=['zion','keccak','sha3','profit','ncl','deeksha_lite','thermal_bonus'];
+  let zionAcc=0,zionSub=0;
+  for(const k of zionKeys){const v=get(k);zionAcc+=v.accepted||0;zionSub+=v.submits||0;}
+  // Stream 2: GPU-capable external AuxPoW sources
+  const gpuKeys=['blake3','kheavyhash','ethash','kawpow','autolykos','zelhash','progpow','beamhash'];
+  let gpuAcc=0,gpuSub=0,gpuCoin='—';
+  for(const k of gpuKeys){
+    const v=get(k);
+    gpuAcc+=v.accepted||0;
+    gpuSub+=v.submits||0;
+    if((v.submits||0)>0&&gpuCoin==='—'){gpuCoin=k.toUpperCase();}
+  }
+  // Stream 3: CPU-only external sources (VerusHash, RandomX)
+  const cpuKeys=['verushash','randomx'];
+  let cpuAcc=0,cpuSub=0,cpuCoin='—';
+  for(const k of cpuKeys){
+    const v=get(k);
+    cpuAcc+=v.accepted||0;
+    cpuSub+=v.submits||0;
+    if((v.submits||0)>0&&cpuCoin==='—'){cpuCoin=k.toUpperCase();}
   }
   const setText=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt;};
   // Stream 1: ZION
-  setText('stream-zion-shares',(zion.accepted||0)+' / '+(zion.rejected||0));
-  const zTotal=(zion.accepted||0)+(zion.rejected||0);
-  setText('stream-zion-pct',zTotal>0?(100*zion.accepted/zTotal).toFixed(1)+'% accepted':'—');
-  // Stream 2: PRL
-  setText('stream-prl-shares',(pearl.accepted||0)+' / '+(pearl.rejected||0));
-  const pTotal=(pearl.accepted||0)+(pearl.rejected||0);
-  setText('stream-prl-pct',pTotal>0?(100*pearl.accepted/pTotal).toFixed(1)+'% accepted':'—');
-  // Stream 3: EXT
-  setText('stream-ext-shares',extAcc+' / '+extRej);
-  setText('stream-ext-coin',extCoin);
-  const eTotal=extAcc+extRej;
-  setText('stream-ext-pct',eTotal>0?(100*extAcc/eTotal).toFixed(1)+'% accepted':'—');
+  setText('stream-zion-shares',zionAcc+' / '+(zionSub-zionAcc));
+  setText('stream-zion-pct',zionSub>0?(100*zionAcc/zionSub).toFixed(1)+'% accepted':'—');
+  // Stream 2: GPU PROFIT
+  setText('stream-gpu-shares',gpuAcc+' / '+(gpuSub-gpuAcc));
+  setText('stream-gpu-coin',gpuCoin);
+  setText('stream-gpu-pct',gpuSub>0?(100*gpuAcc/gpuSub).toFixed(1)+'% accepted':'—');
+  // Stream 3: CPU PROFIT
+  setText('stream-cpu-shares',cpuAcc+' / '+(cpuSub-cpuAcc));
+  setText('stream-cpu-coin',cpuCoin);
+  setText('stream-cpu-pct',cpuSub>0?(100*cpuAcc/cpuSub).toFixed(1)+'% accepted':'—');
   // Summary
-  const totalAcc=(zion.accepted||0)+(pearl.accepted||0)+extAcc;
-  const totalRej=(zion.rejected||0)+(pearl.rejected||0)+extRej;
+  const totalAcc=zionAcc+gpuAcc+cpuAcc;
+  const totalRej=(zionSub-zionAcc)+(gpuSub-gpuAcc)+(cpuSub-cpuAcc);
   setText('triple-stream-summary',totalAcc+' acc / '+totalRej+' rej total');
 }
 
@@ -2551,15 +2561,49 @@ async function loadPoolMinersTab(){
       groupsEl.innerHTML = gh || '<div class="text-gray-500">No routing data</div>';
     }
 
-    // Routing sources
+    // Routing sources — iterate all canonical sources from the pool
     const sourcesEl = document.getElementById('pm-routing-sources');
     if(sourcesEl){
       const sources = routing.sources || {};
-      const srcNames = { zion: 'ZION (native)', blake3: 'BLAKE3 External', ncl: 'NCL AI' };
-      const srcColors = { zion: 'text-emerald-400', blake3: 'text-blue-400', ncl: 'text-purple-400' };
+      const srcNames = {
+        zion: 'ZION (native)',
+        keccak: 'Keccak Bonus',
+        sha3: 'SHA3 Bonus',
+        profit: 'Profit Switch',
+        blake3: 'BLAKE3 External',
+        ncl: 'NCL AI',
+        kheavyhash: 'KHeavyHash',
+        ethash: 'Ethash',
+        kawpow: 'KawPow',
+        autolykos: 'Autolykos',
+        randomx: 'RandomX',
+        zelhash: 'ZelHash',
+        deeksha_lite: 'Deeksha Lite',
+        thermal_bonus: 'Thermal Bonus',
+        verushash: 'VerusHash',
+        progpow: 'ProgPow',
+        pearlhash: 'Pearl PoUW (deprecated v3.0.6)',
+        beamhash: 'BeamHash'
+      };
+      const srcColors = {
+        zion: 'text-emerald-400',
+        pearlhash: 'text-fuchsia-400',
+        blake3: 'text-blue-400',
+        ncl: 'text-purple-400',
+        autolykos: 'text-amber-400',
+        kawpow: 'text-orange-400',
+        kheavyhash: 'text-cyan-400',
+        ethash: 'text-indigo-400',
+        progpow: 'text-lime-400',
+        verushash: 'text-yellow-400',
+        randomx: 'text-rose-400',
+        zelhash: 'text-teal-400',
+        beamhash: 'text-violet-400'
+      };
       let sh = '';
-      for(const [key, label] of Object.entries(srcNames)){
-        const s = sources[key] || {};
+      for(const [key, s] of Object.entries(sources)){
+        if(!s || typeof s !== 'object') continue;
+        const label = srcNames[key] || key.toUpperCase();
         const submits = s.submits || 0;
         const accepted = s.accepted || 0;
         const rate = submits > 0 ? ((accepted/submits)*100).toFixed(1) + '%' : '—';

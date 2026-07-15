@@ -1,13 +1,15 @@
 # Full Revenue AuxPow — Canonical Architecture
 
-> **Status:** Canonical design — 3-stream parallel mining (CPU Verus + GPU ZION + GPU Pearl)
-> **Date:** 2026-07-14
+> **Status:** Canonical design — multi-stream parallel mining (ZION Deeksha + Pearl PoUW + many external GPU/CPU coins)
+> **Date:** 2026-07-15
 > **Supersedes:** `PARALLEL_MINING_ARCHITECTURE.md` (merged here), `DUAL_ALGO_MINING.md` (extended here)
 > **Related:** `StatusV3.md`, `AGENTS.md`, `AuXpow/src/types.rs` (ExternalCoin enum)
+>
+> **Note:** The original design described a strict 3-stream layout (CPU Verus + GPU ZION + GPU Pearl). The live v3.0.6 implementation runs **multiple external streams simultaneously**; this document now reflects that canonical reality while preserving the "ZION pool as single hub" invariant.
 
-## 1. Vision — 3-Stream Full Revenue Mining
+## 1. Vision — Multi-Stream Full Revenue Mining
 
-**All 3 streams go through the ZION pool.** This is critical for revenue
+**All streams go through the ZION pool.** This is critical for revenue
 tracking, fee collection, PPLNS distribution, and dashboard integration.
 No miner ever connects directly to an external pool — the ZION pool is the
 single hub that bridges to all external pools via `AuxPowBridge`.
@@ -16,16 +18,16 @@ single hub that bridges to all external pools via `AuxPowBridge`.
 ┌──────────────────────────────────────────────────────────────────┐
 │                        zion-miner process                         │
 │                                                                  │
-│  STREAM 1 (GPU)          STREAM 2 (GPU)         STREAM 3 (CPU)   │
+│  STREAM 1 (GPU)          STREAM 2 (GPU)         EXTERNAL STREAMS   │
 │  ┌──────────────┐        ┌──────────────┐      ┌──────────────┐  │
-│  │ ZION Deeksha │        │ Pearl PoUW   │      │ Verus / XMR  │  │
-│  │ (primary)    │        │ (secondary)  │      │ (tertiary)   │  │
+│  │ ZION Deeksha │        │ Pearl PoUW   │      │ GPU + CPU    │  │
+│  │ (primary)    │        │ (secondary)  │      │ multi-coin   │  │
 │  │              │        │              │      │              │  │
-│  │ OpenCL ctx A │        │ OpenCL ctx B │      │ CPU threads  │  │
-│  │ deeksha_lite │        │ pearl_pouw   │      │ verushash /  │  │
-│  │ work_size    │        │ _native.cl   │      │ randomx      │  │
-│  │ 262144       │        │ work_size    │      │              │  │
-│  │              │        │ 262144       │      │              │  │
+│  │ OpenCL ctx A │        │ OpenCL ctx B │      │ Blake3/      │  │
+│  │ deeksha_lite │        │ pearl_pouw   │      │ ProgPow/     │  │
+│  │ work_size    │        │ _native.cl   │      │ KawPow/      │  │
+│  │ 262144       │        │ work_size    │      │ Autolykos/   │  │
+│  │              │        │ 262144       │      │ Verus/RandomX│  │
 │  └──────┬───────┘        └──────┬───────┘      └──────┬───────┘  │
 │         │                       │                     │          │
 │         │  All shares via ZION pool (single TCP conn) │          │
@@ -69,17 +71,24 @@ single hub that bridges to all external pools via `AuxPowBridge`.
 │  3. send Result or ExternalResult                                │
 │                                                                  │
 │  AuxPowBridge (background, connects to ALL external pools):      │
-│  ├── VRSC pool (e.g. LuckPool) → verushash jobs                 │
-│  ├── KAS pool (e.g. WoolyPool) → kheavyhash jobs                │
-│  ├── DCR pool (e.g. Luxor) → blake3 jobs                        │
-│  ├── PRL pool (AlphaPool) → pearl.challenge jobs  ← NEW         │
-│  ├── RVN pool (e.g. Suprnova) → kawpow jobs                     │
-│  ├── ERG pool (e.g. 2Miners) → autolykos jobs                   │
+│  ├── DCR / ALPH pools → blake3 jobs                             │
+│  ├── KAS pool         → kheavyhash jobs                         │
+│  ├── ERG pool         → autolykos jobs                          │
+│  ├── RVN / CLORE / QUAI pools → kawpow jobs                   │
+│  ├── EVR / MEWC pools → evrprogpow / meowpow jobs               │
+│  ├── FLUX pool        → zelhash jobs                            │
+│  ├── XMR / VRSC pools → randomx / verushash jobs (CPU bridge)   │
+│  ├── EPIC pool        → progpow jobs                            │
+│  ├── PRL pool (AlphaPool) → pearl.challenge jobs                │
+│  ├── BEAM pool        → beamhash jobs                           │
 │  └── ... (auto profit-switching)                                 │
 │                                                                  │
 │  Revenue tracking:                                               │
 │  - routing_snapshot: per-source share counts                    │
-│  - src_zion, src_pearl, src_verushash, src_blake3, etc.         │
+│  - 18 canonical sources in `ALL_REVENUE_SOURCES` (zion, keccak,  │
+│    sha3, profit, blake3, ncl, kheavyhash, ethash, kawpow,       │
+│    autolykos, randomx, zelhash, deeksha_lite, thermal_bonus,      │
+│    verushash, progpow, pearlhash, beamhash)                     │
 │  - Pool fee on ALL external revenue                             │
 │  - PPLNS distribution includes external revenue                 │
 │  - Dashboard reads from /stats endpoint                         │
@@ -102,7 +111,7 @@ single hub that bridges to all external pools via `AuxPowBridge`.
                     │ Revenue tab:       │
                     │  ZION: 45 MH/s    │
                     │  PRL:  943K tiles │
-                    │  VRSC: 2.1 MH/s   │
+                    │  EXT:  multi-coin │
                     │  Total: $X/day    │
                     │                    │
                     │ Pool fee: X% on   │
@@ -670,9 +679,11 @@ coin at a time per miner).
 | Pool fee on Pearl revenue | Reduced miner payout | Fee is configurable (`ZION_POOL_FEE_PCT`). Default 2%. Miner sees net revenue on dashboard. |
 | Profit switching PRL↔VRSC | GPU secondary switches algorithm | `TriGpuManager::pearl()` and `ensure_secondary()` handle lazy recreation. Only one external coin active at a time. |
 
-## 16. Implementation Status (2026-07-14)
+## 16. Implementation Status (2026-07-15)
 
-### 3-Stream Parallel Mining: LIVE
+> **Note:** The detailed per-coin implementation notes below are historical. The canonical v3.0.6 state — including the generic `external_gpu_thread()`, primary-only `TriGpuManager`, per-stream hashrate tracking, unified `routing.sources`, and aligned `ExternalCoin` / `SUPPORTED_COINS` — is documented in `AuxPowTriplePlan.md`.
+
+### Multi-Stream Parallel Mining: LIVE
 
 | Stream | Algorithm | GPU/CPU | Status | Verified |
 |--------|-----------|---------|--------|----------|

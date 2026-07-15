@@ -4587,9 +4587,9 @@ mod tests {
             assert_eq!(params.len(), 5, "VRSC submit must have 5 params");
             assert_eq!(params[1].as_str().unwrap(), job_id);
             assert_eq!(params[2].as_str().unwrap(), ntime);
-            // nonce2 = 15 bytes nonceSpace - extranonce1(4 bytes) = 11 bytes = 22 hex chars
+            // nonce2 = full 32-byte Zcash Stratum nonce field minus extranonce1(4 bytes) = 28 bytes = 56 hex chars
             let nonce2 = params[3].as_str().unwrap();
-            assert_eq!(nonce2.len(), 22, "nonce2 must be 11 bytes (22 hex chars) with 4-byte extranonce1 (PBaaS v7+ 15-byte nonceSpace)");
+            assert_eq!(nonce2.len(), 56, "nonce2 must be 28 bytes (56 hex chars) with 4-byte extranonce1 (standard 32-byte Zcash Stratum nonce field)");
             // solution_with_varint should start with fd4005 and be 2694 hex chars
             let solution = params[4].as_str().unwrap();
             assert!(solution.starts_with("fd4005"), "solution must start with varint fd4005");
