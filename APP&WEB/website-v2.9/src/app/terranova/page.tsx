@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import TerraNovaBookClient from './TerraNovaBookClient';
+import TerraNovaBookLoader from './TerraNovaBookLoader';
 
 export const metadata: Metadata = {
   title: 'Terra Nova — více edic knihy ZION · ZION',
@@ -13,5 +13,5 @@ export const metadata: Metadata = {
 };
 
 export default function TerraNovaPage() {
-  return <TerraNovaBookClient />;
+  return <TerraNovaBookLoader />;
 }
