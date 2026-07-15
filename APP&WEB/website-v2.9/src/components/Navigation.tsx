@@ -105,14 +105,17 @@ export default function Navigation() {
     { href: '/explorer', icon: Orbit, color: '16, 185, 129', label: tr('nav', 'explorer', lang) },       /* green */
     { href: '/pool', icon: Pickaxe, color: '251, 191, 36', label: tr('nav', 'pool', lang) },               /* gold */
     { href: '/network', icon: SignalHigh, color: '239, 68, 68', label: tr('nav', 'network', lang) },      /* red */
-    { href: '/docs', icon: BookOpen, color: '16, 185, 129', label: tr('nav', 'docs', lang) },             /* green */
+    { href: '/bridge', icon: ArrowLeftRight, color: '59, 130, 246', label: tr('nav', 'bridge', lang) }, /* blue */
     { href: '/wallet', icon: Wallet, color: '251, 191, 36', label: tr('nav', 'wallet', lang) },            /* gold */
+    { href: '/docs', icon: BookOpen, color: '16, 185, 129', label: tr('nav', 'docs', lang) },             /* green */
   ];
 
   /* ── Secondary icons — medium, core ecosystem ── */
   const secondaryIcons = [
     { href: '/mining', icon: HardHat, color: '245, 158, 11', label: tr('nav', 'mining', lang) },
     { href: '/defi', icon: Coins, color: '16, 185, 129', label: tr('nav', 'defi', lang) },
+    { href: '/ziondex', icon: ArrowRightLeft, color: '99, 102, 241', label: 'ZionDex' },
+    { href: '/dao', icon: Landmark, color: '147, 51, 234', label: tr('nav', 'dao', lang) },
     { href: '/download', icon: Download, color: '251, 191, 36', label: tr('nav', 'download', lang) },
   ];
 
@@ -302,6 +305,9 @@ export default function Navigation() {
               <LayoutDashboard className="text-white w-5 h-5 transition-all duration-300" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'dashboard', lang)}</span>
             </Link>
+            <div className="hidden lg:flex items-center">
+              <BackgroundToggle placement="nav" showLabel={false} />
+            </div>
           </div>
 
           {/* Mobile hamburger */}
@@ -316,8 +322,8 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* ═══ FLOOR 2 — MINI ICONS + GROUP DROPDOWNS + BACKGROUND TOGGLE ═══ */}
-        <div className={`hidden md:flex items-center justify-between gap-2 relative rounded-2xl border border-white/[0.07] bg-black/30 backdrop-blur-md px-2 py-1.5 shadow-none transition-all duration-300 ${scrolled ? 'mt-1 h-auto opacity-100 overflow-visible' : 'mt-1 h-auto opacity-100 overflow-visible'}`}>
+        {/* ═══ FLOOR 2 — MINI ICONS + GROUP DROPDOWNS ═══ */}
+        <div className={`hidden md:flex items-center justify-between gap-2 relative rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl px-2 py-1.5 shadow-[0_16px_60px_rgba(0,0,0,0.35)] transition-all duration-300 ${scrolled ? 'mt-1 h-auto opacity-100 overflow-visible' : 'mt-1 h-auto opacity-100 overflow-visible'}`}>
           {/* Icons + group dropdowns */}
           <div className="flex items-center gap-0.5 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
             {/* Secondary icons — medium */}
@@ -404,11 +410,6 @@ export default function Navigation() {
                 </div>
               );
             })}
-          </div>
-
-          {/* Background toggle */}
-          <div className="shrink-0">
-            <BackgroundToggle placement="nav" />
           </div>
         </div>
 
