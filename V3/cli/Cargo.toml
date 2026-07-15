@@ -43,3 +43,4 @@ aes-gcm = "0.10"
 pbkdf2 = "0.12"
 zion-core = { path = "../L1/core" }
 zion-sdk = { path = "../sdk" }
+num_cpus = "1.17.0"

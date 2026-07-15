@@ -5270,6 +5270,7 @@ dependencies = [
  "ed25519-dalek",
  "hex",
  "indicatif",
+ "num_cpus",
  "pbkdf2",
  "rand 0.8.6",
  "ratatui",
