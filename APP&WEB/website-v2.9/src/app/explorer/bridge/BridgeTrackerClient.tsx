@@ -469,6 +469,183 @@ export default function BridgeTrackerClient() {
           </div>
         </motion.section>
 
+        {/* ═══════ LIVE TRANSACTIONS ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
+              {cs ? "Live transakce" : "Live Transactions"}
+            </p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Activity className="h-7 w-7 text-zion-cyan" />
+              {cs ? "Bridge Lock transakce" : "Bridge Lock Transactions"}
+            </h2>
+            <p className="text-sm text-gray-400">
+              {cs
+                ? "Nedávné L1 lock transakce s finality progressem. Data z L1 RPC getBridgeLocks."
+                : "Recent L1 lock transactions with finality progress. Data from L1 RPC getBridgeLocks."}
+            </p>
+          </div>
+
+          {/* Filter buttons */}
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {([
+              { key: 'all', label: cs ? 'Vše' : 'All', count: txs.length },
+              { key: 'pending', label: cs ? 'Čekající' : 'Pending', count: txs.filter(t => !t.finalized).length },
+              { key: 'finalized', label: cs ? 'Finalizované' : 'Finalized', count: txs.filter(t => t.finalized).length },
+            ] as const).map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setTxFilter(f.key)}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg border transition ${
+                  txFilter === f.key
+                    ? 'border-zion-cyan/40 bg-zion-cyan/10 text-zion-cyan'
+                    : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'
+                }`}
+              >
+                {f.label}
+                <span className="tabular-nums opacity-60">{f.count}</span>
+              </button>
+            ))}
+            <span className="ml-auto text-[10px] text-gray-500">
+              {cs ? `Skenováno ${chainHeight} bloků` : `Scanned ${chainHeight} blocks`} · {cs ? 'Aktualizace každých 15s' : 'Updates every 15s'}
+            </span>
+          </div>
+
+          {/* Transaction table */}
+          <div className="zion-rainbow-card rounded-2xl overflow-hidden" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            {txsLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-6 w-6 text-zion-cyan animate-spin" />
+                <span className="ml-3 text-sm text-gray-400">
+                  {cs ? 'Načítání transakcí...' : 'Loading transactions...'}
+                </span>
+              </div>
+            ) : txsError ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <AlertCircle className="h-8 w-8 text-red-400 mb-3" />
+                <p className="text-sm text-red-300">{txsError}</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  {cs ? 'L1 RPC může být offline. Zkuste to později.' : 'L1 RPC may be offline. Try again later.'}
+                </p>
+              </div>
+            ) : filteredTxs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Search className="h-8 w-8 text-gray-600 mb-3" />
+                <p className="text-sm text-gray-400">
+                  {cs ? 'Žádné bridge transakce nenalezeny.' : 'No bridge transactions found.'}
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  {cs
+                    ? 'Lock transakce se objeví zde, když někdo pošle ZION na bridge adresu s BRIDGE memo.'
+                    : 'Lock transactions will appear here when someone sends ZION to the bridge address with a BRIDGE memo.'}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 text-[10px] uppercase tracking-wider text-gray-500">
+                      <th className="text-left px-4 py-3 font-medium">{cs ? 'TX Hash' : 'TX Hash'}</th>
+                      <th className="text-left px-4 py-3 font-medium">{cs ? 'Blok' : 'Block'}</th>
+                      <th className="text-left px-4 py-3 font-medium">{cs ? 'Odesílatel' : 'Sender'}</th>
+                      <th className="text-left px-4 py-3 font-medium">{cs ? 'Řetězec' : 'Chain'}</th>
+                      <th className="text-right px-4 py-3 font-medium">{cs ? 'Částka' : 'Amount'}</th>
+                      <th className="text-left px-4 py-3 font-medium min-w-[120px]">{cs ? 'Finalita' : 'Finality'}</th>
+                      <th className="text-center px-4 py-3 font-medium">{cs ? 'Stav' : 'Status'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredTxs.map((tx) => {
+                      const badge = statusBadge(tx.finalized, tx.confirmations, finalityThreshold, cs);
+                      const StatusIcon = badge.icon;
+                      return (
+                        <tr
+                          key={tx.txid}
+                          className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
+                        >
+                          {/* TX Hash */}
+                          <td className="px-4 py-3">
+                            <Link
+                              href={`/explorer/tx/${tx.txid}`}
+                              className="font-mono text-xs text-cyan-300 hover:text-cyan-200 transition-colors"
+                            >
+                              {truncateHash(tx.txid)}
+                            </Link>
+                          </td>
+                          {/* Block */}
+                          <td className="px-4 py-3">
+                            <Link
+                              href={`/explorer/blocks?height=${tx.block_height}`}
+                              className="font-mono text-xs text-gray-300 hover:text-white transition-colors tabular-nums"
+                            >
+                              {tx.block_height.toLocaleString()}
+                            </Link>
+                          </td>
+                          {/* Sender */}
+                          <td className="px-4 py-3">
+                            <Link
+                              href={`/explorer/address/${tx.sender}`}
+                              className="font-mono text-xs text-gray-400 hover:text-white transition-colors"
+                            >
+                              {truncateAddr(tx.sender)}
+                            </Link>
+                          </td>
+                          {/* Target Chain */}
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center gap-1.5 text-xs text-gray-300">
+                              <ArrowRight className="h-3 w-3 text-gray-600" />
+                              {tx.recipient_chain}
+                            </span>
+                          </td>
+                          {/* Amount */}
+                          <td className="px-4 py-3 text-right">
+                            <span className="font-mono text-xs font-semibold text-zion-gold tabular-nums">
+                              {tx.amount_zion}
+                            </span>
+                            <span className="text-[10px] text-gray-500 ml-1">ZION</span>
+                          </td>
+                          {/* Finality Progress */}
+                          <td className="px-4 py-3">
+                            <div className="space-y-1">
+                              <FinalityProgress
+                                confirmations={tx.confirmations}
+                                threshold={finalityThreshold}
+                              />
+                              <p className="text-[10px] text-gray-500 tabular-nums">
+                                {tx.confirmations}/{finalityThreshold} {cs ? 'konf.' : 'conf.'}
+                              </p>
+                            </div>
+                          </td>
+                          {/* Status */}
+                          <td className="px-4 py-3 text-center">
+                            <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full border text-[10px] font-medium ${badge.className}`}>
+                              <StatusIcon className="h-3 w-3" />
+                              {badge.label}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Recipient hint */}
+          {filteredTxs.length > 0 && (
+            <p className="text-[10px] text-gray-600 mt-3 text-center">
+              {cs
+                ? 'Klikněte na TX hash pro detail transakce v průzkumníku. EVM mint TX se zobrazí po finalitě (60 bloků).'
+                : 'Click TX hash for transaction detail in explorer. EVM mint TX appears after finality (60 blocks).'}
+            </p>
+          )}
+        </motion.section>
+
         {/* ═══════ CONTRACTS ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
@@ -550,8 +727,8 @@ export default function BridgeTrackerClient() {
 
         <p className="text-center text-xs text-gray-600">
           {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Bridge Tracker · Data z relay Prometheus metrik · Aktualizace každých 10 s`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} — Bridge Tracker · Data from relay Prometheus metrics · Updates every 10s`}
+            ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Bridge Tracker · Relay metriky (10s) + L1 lock TX (15s) · Finalita 60 bloků`
+            : `ZION TerraNova ${SITE_RELEASE_LABEL} — Bridge Tracker · Relay metrics (10s) + L1 lock TX (15s) · Finality 60 blocks`}
         </p>
       </div>
     </div>
