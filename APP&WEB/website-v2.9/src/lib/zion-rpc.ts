@@ -809,13 +809,14 @@ class ZionRpcClient {
       const peers = res?.peers ?? [];
       return peers.map((p: any) => {
         const incoming = p.inbound === true || p.is_inbound === true || p.direction === 'inbound';
+        const state = p.state ?? 'connected';
         return {
           host: p.host ?? '',
           port: p.port ?? 0,
           peer_id: p.address ?? `${p.host}:${p.port}`,
           recv_count: p.bytes_received ?? 0,
           send_count: p.bytes_sent ?? 0,
-          state: p.state ?? 'connected',
+          state,
           live_time: p.connection_time ?? 0,
           avg_download: p.avg_download ?? 0,
           current_download: p.current_download ?? 0,
@@ -824,6 +825,7 @@ class ZionRpcClient {
           connection_id: p.address ?? '',
           height: p.height ?? p.chain_height ?? 0,
           incoming,
+          connected: p.connected ?? state === 'connected',
           address: p.address ?? `${p.host}:${p.port}`,
         };
       });

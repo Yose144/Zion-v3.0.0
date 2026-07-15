@@ -1592,15 +1592,16 @@ import sqlite3
 
 DB_LOCATIONS = [
     # path, kind ("sqlite" or "json"), service_id, friendly name
-    (REPO_ROOT / "V3" / "data" / "zion-node-state.db",  "json",   "node1", "Node 1 state"),
-    (REPO_ROOT / "V3" / "data" / "zion-node2-state.db", "json",   "node2", "Node 2 state"),
-    (REPO_ROOT / "V3" / "data" / "pool.db",            "sqlite", "pool",  "Pool PPLNS"),
-    (REPO_ROOT / "V3" / "data" / "bridge.db",          "sqlite", "bridge","Bridge events"),
-    (REPO_ROOT / "V3" / "data" / "dao.db",             "sqlite", "dao",   "DAO governance"),
-    (REPO_ROOT / "V3" / "data" / "warp.db",            "sqlite", "warp",  "WARP relay"),
-    (REPO_ROOT / "V3" / "data" / "atomic-swap.db",     "sqlite", "atomic-swap", "Atomic Swap"),
-    (REPO_ROOT / "V3" / "data" / "ncl.db",             "sqlite", "ncl",   "NCL Gateway"),
-    (REPO_ROOT / "V3" / "data" / "oasis.db",           "sqlite", "oasis", "OASIS Avatar Hub"),
+    # Edge server stores live state under /data/zion (not under the repo tree).
+    (Path("/data/zion/state"),               "json",   "node1", "Node 1 state"),
+    (Path("/data/zion/state-node2"),           "json",   "node2", "Node 2 state"),
+    (Path("/data/zion/pplns-state.json"),      "json",   "pool",  "Pool PPLNS"),
+    (Path("/data/zion/bridge-mainnet.db"),     "sqlite", "bridge","Bridge events"),
+    (Path("/data/zion/dao-mainnet.db"),        "sqlite", "dao",   "DAO governance"),
+    (Path("/data/zion/warp-mainnet.db"),       "sqlite", "warp",  "WARP relay"),
+    (Path("/data/zion/atomic-swap.db"),        "sqlite", "atomic-swap", "Atomic Swap"),
+    (Path("/data/zion/ziondex-router.db"),     "sqlite", "ncl",   "NCL Gateway"),
+    (Path("/data/zion/oasis.db"),              "sqlite", "oasis", "OASIS Avatar Hub"),
 ]
 
 def list_databases() -> list:
@@ -2597,7 +2598,12 @@ def _build_status_edge_primary() -> dict:
         "running": bool(edge_rpc_info),
         "chain_height": edge_rpc_info.get("chain_height") if edge_rpc_info else None,
         "tip_hash": edge_rpc_info.get("tip_hash") if edge_rpc_info else None,
-        "known_peers": edge_rpc_info.get("known_peers", 0) if edge_rpc_info else 0,
+        "known_peers": (
+            edge_rpc_info.get("known_peers")
+            or (edge_nodeinfo or {}).get("known_peers")
+            or (edge_peers or {}).get("count", 0)
+            or 0
+        ) if edge_rpc_info else 0,
         "mempool_size": edge_rpc_info.get("mempool_transactions", 0) if edge_rpc_info else 0,
         "network": edge_rpc_info.get("network") if edge_rpc_info else None,
         "protocol_version": edge_rpc_info.get("protocol_version") if edge_rpc_info else None,
