@@ -286,15 +286,9 @@ pub fn gen_epic_progpow_loop(params: &ProgPowParams, block_height: u64) -> Strin
 
     let mut ret = String::new();
 
-    // OpenCL-specific defines
-    ret.push_str("#ifndef GROUP_SIZE\n");
-    ret.push_str("#define GROUP_SIZE 128\n");
-    ret.push_str("#endif\n");
-    ret.push_str("#define GROUP_SHARE (GROUP_SIZE / PROGPOW_LANES)\n\n");
-    ret.push_str("typedef unsigned int       uint32_t;\n");
-    ret.push_str("typedef unsigned long      uint64_t;\n");
-    ret.push_str("#define ROTL32(x, n) rotate((x), (uint32_t)(n))\n");
-    ret.push_str("#define ROTR32(x, n) rotate((x), (uint32_t)(32-n))\n\n");
+    // Note: GROUP_SIZE, GROUP_SHARE, uint32_t, uint64_t, ROTL32, ROTR32,
+    // dag_t, PROGPOW_* constants are already defined in the kernel header.
+    // The progPowLoop function is injected after those definitions.
 
     // progPowLoop function
     ret.push_str(&format!(
