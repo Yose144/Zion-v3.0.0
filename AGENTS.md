@@ -14,6 +14,7 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - If deployment behavior changes, update every source of operational truth together: compose files, Docker docs, runbooks, scripts, and status docs.
 - If docs disagree, use this order of truth: `StatusV3.md` → `ROADMAP.md` / `V3/README.md` / `V3/ROADMAP.md` → `V3/docs/**` → older `STATUS.md`, root README, and archived docs.
 - Root README / older plans may still mention historical multi-server topology. Verify live topology against `StatusV3.md` before making operational claims.
+- **Watchdog scripts:** the canonical unified script is [`scripts/watchdog.sh`](./scripts/watchdog.sh) with modes `edge` (default), `backup`, and `new-server`. `edge-deploy/watchdog.sh` and `V3/deploy/new-server/zion-watchdog.sh` are thin wrappers that dispatch to it.
 
 ## public/ — Open-source public repository (git subtree)
 
