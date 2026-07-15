@@ -602,7 +602,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
 
   const poolHash = data?.aggregate?.hashrate ?? 0;
   const netHash = data?.runtime?.network_hashrate ?? 0;
-  const recent = data?.recent_blocks ?? [];
+  const recent = useMemo(() => data?.recent_blocks ?? [], [data?.recent_blocks]);
 
   // Build day buckets from ONLY real recent_blocks (no synthetic generation).
   const rawBuckets = useMemo(() => buildRealBuckets(recent, days), [recent, days]);

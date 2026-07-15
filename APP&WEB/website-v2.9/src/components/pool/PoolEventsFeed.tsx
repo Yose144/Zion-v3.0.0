@@ -37,7 +37,7 @@ async function fetchPoolStats(): Promise<{
   }
 }
 
-function usePoolEvents(cs: boolean) {
+function usePoolEvents() {
   const [events, setEvents] = useState<PoolEvent[]>([]);
   const [lastBlocks, setLastBlocks] = useState(0);
   const [lastMiners, setLastMiners] = useState(0);
@@ -93,7 +93,7 @@ function usePoolEvents(cs: boolean) {
       });
       return unique.slice(0, 12);
     });
-  }, [cs, lastBlocks, lastMiners, lastPayouts]);
+  }, [lastBlocks, lastMiners, lastPayouts]);
 
   useEffect(() => {
     refresh();
@@ -120,7 +120,7 @@ function timeAgo(ts: number, cs: boolean): string {
 }
 
 export default function PoolEventsFeed({ cs }: { cs: boolean }) {
-  const { events, refresh } = usePoolEvents(cs);
+  const { events, refresh } = usePoolEvents();
 
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>

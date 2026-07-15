@@ -292,7 +292,6 @@ export default function NetworkTopology() {
     simNodes.current = builtGraph.nodes;
     simEdges.current = builtGraph.edges;
     // Sync graph structure to render state — required when topology changes
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRenderNodes(builtGraph.nodes.map((n) => ({ ...n })));
     setRenderEdges(builtGraph.edges.map((e) => ({ ...e })));
   }, [builtGraph]);
