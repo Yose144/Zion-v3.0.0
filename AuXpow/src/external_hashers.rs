@@ -1976,12 +1976,15 @@ mod tests {
         assert!(!meets_target(&hash, &target));
         assert!(meets_target_little_endian(&hash, &target));
 
-        // Hash [0x00, ..., 0x01] (BE) is below target in BE but greater when
-        // interpreted as LE.
+        // Hash [0x00, ..., 0x02] (BE: 2) is below target [0x02, 0x00, ...] (BE: 2^249)
+        // in BE comparison, but when interpreted as LE the hash (2^249) is greater
+        // than the target (2), so it does NOT meet the LE target.
+        let mut target2 = [0u8; 32];
+        target2[0] = 0x02;
         let mut hash2 = [0u8; 32];
-        hash2[31] = 0x01;
-        assert!(meets_target(&hash2, &target));
-        assert!(!meets_target_little_endian(&hash2, &target));
+        hash2[31] = 0x03;
+        assert!(meets_target(&hash2, &target2)); // 3 < 2^249 in BE
+        assert!(!meets_target_little_endian(&hash2, &target2)); // 2^249+ > 2 in LE
     }
 
     #[test]

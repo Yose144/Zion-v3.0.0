@@ -128,6 +128,43 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Read-only API responses can be cached briefly at the edge/CDN
+      {
+        source: "/api/blockchain/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=10, stale-while-revalidate=60",
+          },
+        ],
+      },
+      {
+        source: "/api/metrics",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=5, stale-while-revalidate=30",
+          },
+        ],
+      },
+      {
+        source: "/api/dashboard-metrics",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=5, stale-while-revalidate=30",
+          },
+        ],
+      },
+      {
+        source: "/api/health",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=30, stale-while-revalidate=300",
+          },
+        ],
+      },
       {
         source: "/(.*)",
         headers: [
