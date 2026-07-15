@@ -108,6 +108,9 @@ pub struct GpuMiner {
     /// Cached Pearl PoUW buffers (reused across nonces to avoid allocation overhead).
     #[cfg(feature = "gpu-opencl")]
     pearl_buffers: Option<PearlPouwBufferCache>,
+    /// Current block height for KawPow/ProgPow period calculation.
+    /// Must be set via `set_block_height()` before mining KawPow/ProgPow.
+    block_height: u64,
 }
 
 /// Cached OpenCL buffers for Pearl PoUW pipeline, reused across nonces.
@@ -227,6 +230,7 @@ impl GpuMiner {
             progpow_dag: None,
             #[cfg(feature = "gpu-opencl")]
             pearl_buffers: None,
+            block_height: 0,
         })
     }
 
@@ -273,7 +277,31 @@ impl GpuMiner {
             None
         };
 
-        let pro_que = self.ensure_proque(kernel_file)?;
+        // For KawPow/ProgPow, use period-based ProQue (recompiled per period).
+        // For all other algorithms, use the standard cached ProQue.
+        let is_progpow = matches!(
+            algorithm,
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+                | "progpow" | "progpow_epic"
+        );
+
+        let pro_que = if is_progpow {
+            // Calculate DAG elements for PROGPOW_DAG_ELEMENTS define.
+            // dag_t = 4 × uint32 = 16 bytes. Each Ethash DAG node is 128 bytes
+            // = 8 dag_t elements. So PROGPOW_DAG_ELEMENTS = dag_entries * 8.
+            let dag_entries = if matches!(
+                algorithm,
+                "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            ) {
+                kawpow_dag.as_ref().map(|d| d.size_entries).unwrap_or(0)
+            } else {
+                progpow_dag.as_ref().map(|d| d.size_entries).unwrap_or(0)
+            };
+            let dag_elements = dag_entries * 8;
+            self.ensure_proque_progpow(kernel_file, self.block_height, dag_elements)?
+        } else {
+            self.ensure_proque(kernel_file)?
+        };
         let q = pro_que.queue().clone();
 
         let output_nonce_buf: Buffer<u64> = Buffer::builder()
@@ -452,19 +480,20 @@ impl GpuMiner {
         };
 
         // Batch nonce scanning: optimized kernels scan multiple nonces per
-        // work-item (8 for blake3/kheavyhash/zelhash, 4 for autolykos/ethash/kawpow).
-        // Adjust global_work_size accordingly.
+        // work-item (8 for blake3/kheavyhash/zelhash, 4 for autolykos/ethash).
+        // KawPow/ProgPow: 1 nonce per work-item (ProgPow uses 16 lanes per hash).
         let batch_factor = match algorithm {
-            "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc"
-            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
-            | "progpow" | "progpow_epic" => 4,
+            "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 4,
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            | "progpow" | "progpow_epic" => 1,
             _ => 8, // blake3, kheavyhash, zelhash
         };
-        // Work-group size: 128 for memory-bound algos, 256 for compute-bound.
+        // Work-group size: 256 for KawPow/ProgPow (GROUP_SIZE), 128 for other
+        // memory-bound algos, 256 for compute-bound.
         let wg_size = match algorithm {
-            "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc"
-            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
-            | "progpow" | "progpow_epic" => 128,
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            | "progpow" | "progpow_epic" => 256, // GROUP_SIZE for ProgPow
+            "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 128,
             _ => 256,
         };
         // Round global_work_size up to a multiple of wg_size (required by
@@ -548,6 +577,13 @@ impl GpuMiner {
         self.mine(algorithm, header, &[], target, base_nonce, batch_size)
     }
 
+    /// Set the current block height for KawPow/ProgPow period calculation.
+    /// Must be called before mining KawPow/ProgPow so the correct random math
+    /// sequence is generated for the kernel.
+    pub fn set_block_height(&mut self, height: u64) {
+        self.block_height = height;
+    }
+
     /// Upload the per-epoch Ethash DAG to the GPU device.
     ///
     /// The DAG must be generated on the host (from the epoch seed hash via
@@ -612,7 +648,10 @@ impl GpuMiner {
         }
 
         let q = {
-            let pro_que = self.ensure_proque("kawpow_kernel.cl")?;
+            // Use ethash_kernel.cl for the queue — kawpow_kernel.cl has
+            // placeholders that require period-based injection and can't
+            // be compiled standalone.
+            let pro_que = self.ensure_proque("ethash_kernel.cl")?;
             pro_que.queue().clone()
         };
 
@@ -655,7 +694,9 @@ impl GpuMiner {
         }
 
         let q = {
-            let pro_que = self.ensure_proque("progpow_kernel.cl")?;
+            // Use ethash_kernel.cl for the queue — progpow_kernel.cl has
+            // placeholders that require period-based injection.
+            let pro_que = self.ensure_proque("ethash_kernel.cl")?;
             pro_que.queue().clone()
         };
 
@@ -1183,13 +1224,11 @@ impl GpuMiner {
         Ok(kernel)
     }
 
-    /// Build the KawPow kernel with a DAG buffer.
+    /// Build the KawPow kernel (xmrig progpow_search interface).
     ///
-    /// The `header` is the 32-byte header hash.  The `extra` buffer carries
-    /// the DAG data: the first 8 bytes are the number of DAG entries
-    /// (little-endian u64), followed by the DAG itself as an array of
-    /// `u64` lanes (16 lanes = 128 bytes per entry).  If `extra` is empty
-    /// or too small, a minimal 1-entry DAG is used (for testing only).
+    /// KawPow takes a raw 40-byte job_blob (NOT pre-hashed) and uses
+    /// keccak_f800 with "RAVENCOINKAWPOW" constant. The random math
+    /// code is injected at compile time via ensure_proque_progpow().
     #[allow(clippy::too_many_arguments)]
     fn build_kawpow_kernel(
         pro_que: &ProQue,
@@ -1207,7 +1246,100 @@ impl GpuMiner {
     ) -> Result<Kernel> {
         let q = pro_que.queue().clone();
 
-        // KawPow header_hash = keccak256(block_header).
+        // KawPow expects a raw 40-byte job_blob (10 uint32).
+        // The kernel overwrites job_blob[8] (uint32 at offset 32) with gid.
+        // Pad or truncate header to 40 bytes.
+        let mut job_blob = [0u32; 10]; // 40 bytes
+        let header_len = header.len().min(40);
+        for i in (0..header_len).step_by(4) {
+            let remaining = header_len - i;
+            if remaining >= 4 {
+                job_blob[i / 4] = u32::from_le_bytes([
+                    header[i],
+                    header[i + 1],
+                    header[i + 2],
+                    header[i + 3],
+                ]);
+            } else {
+                let mut bytes = [0u8; 4];
+                bytes[..remaining].copy_from_slice(&header[i..]);
+                job_blob[i / 4] = u32::from_le_bytes(bytes);
+            }
+        }
+
+        let job_blob_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(10)
+            .copy_host_slice(&job_blob)
+            .build()?;
+
+        // Convert 32-byte big-endian target to u64 (big-endian first 8 bytes).
+        let target_u64 = u64::from_be_bytes([
+            target[0], target[1], target[2], target[3],
+            target[4], target[5], target[6], target[7],
+        ]);
+
+        // xmrig-style results and stop buffers.
+        let results_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(16)
+            .fill_val(0u32)
+            .build()?;
+        let stop_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(2)
+            .fill_val(0u32)
+            .build()?;
+
+        let hack_false: u32 = 0;
+
+        // Kernel: progpow_search(g_dag, job_blob, target, hack_false, results, stop,
+        //                        output_nonce, output_mix, found)
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(dag_buf)           // 0: g_dag
+            .arg(&job_blob_buf)     // 1: job_blob
+            .arg(target_u64)        // 2: target
+            .arg(hack_false)        // 3: hack_false
+            .arg(&results_buf)      // 4: results
+            .arg(&stop_buf)         // 5: stop
+            .arg(output_nonce_buf)  // 6: output_nonce
+            .arg(output_mix_buf)    // 7: output_mix
+            .arg(found_flag_buf)    // 8: found
+            .build()
+            .map_err(|e| anyhow!("KawPow kernel build failed: {e}"))?;
+
+        let _ = (base_nonce, batch_size, dag_entries, output_hash_buf);
+
+        Ok(kernel)
+    }
+
+    /// Build the ProgPow (EPIC) kernel (ethash_search interface).
+    ///
+    /// EPIC ProgPow takes a 32-byte pre-hashed header (keccak256 of block
+    /// header) and uses keccak_f800 without "RAVENCOINKAWPOW" constant.
+    /// The progPowLoop function is injected at compile time via
+    /// ensure_proque_progpow().
+    #[allow(clippy::too_many_arguments)]
+    fn build_progpow_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        batch_size: u64,
+        dag_buf: &Buffer<u64>,
+        dag_entries: u64,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        output_mix_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        // ProgPow expects a 32-byte pre-hashed header (keccak256 of block header).
         // If header is already 32 bytes, use directly; otherwise hash it.
         let header_hash: [u8; 32] = if header.len() == 32 {
             let mut h = [0u8; 32];
@@ -1228,105 +1360,41 @@ impl GpuMiner {
             .len(32)
             .copy_host_slice(&header_hash)
             .build()?;
-        let target_buf: Buffer<u8> = Buffer::builder()
+
+        // Convert 32-byte big-endian target to u64.
+        let target_u64 = u64::from_be_bytes([
+            target[0], target[1], target[2], target[3],
+            target[4], target[5], target[6], target[7],
+        ]);
+
+        // EPIC-style g_output buffer (16 uint32).
+        let g_output_buf: Buffer<u32> = Buffer::builder()
             .queue(q.clone())
-            .len(32)
-            .copy_host_slice(target.as_slice())
+            .len(16)
+            .fill_val(0u32)
             .build()?;
 
+        let hack_false: u32 = 0;
+
+        // Kernel: ethash_search(g_output, g_header, g_dag, start_nonce, target,
+        //                        hack_false, output_nonce, output_mix, found)
         let kernel = Kernel::builder()
             .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
-            .arg(&header_buf)
-            .arg(&target_buf)
-            .arg(base_nonce)
-            .arg(dag_buf)
-            .arg(dag_entries)
-            .arg(output_nonce_buf)
-            .arg(output_hash_buf)
-            .arg(output_mix_buf)
-            .arg(found_flag_buf)
-            .build()
-            .map_err(|e| anyhow!("kernel build failed: {e}"))?;
-
-        let _ = batch_size;
-
-        Ok(kernel)
-    }
-
-    /// Build the ProgPow kernel with a DAG buffer.
-    ///
-    /// Similar to KawPow but with an additional `prog_seed` parameter
-    /// (height / PROGPOW_PERIOD) for the KISS99 RNG that drives the
-    /// random math sequence.
-    #[allow(clippy::too_many_arguments)]
-    fn build_progpow_kernel(
-        pro_que: &ProQue,
-        kernel_name: &str,
-        header: &[u8],
-        target: &[u8; 32],
-        base_nonce: u64,
-        batch_size: u64,
-        dag_buf: &Buffer<u64>,
-        dag_entries: u64,
-        output_nonce_buf: &Buffer<u64>,
-        output_hash_buf: &Buffer<u8>,
-        output_mix_buf: &Buffer<u8>,
-        found_flag_buf: &Buffer<u32>,
-    ) -> Result<Kernel> {
-        let q = pro_que.queue().clone();
-
-        // ProgPow expects a 32-byte header_hash = keccak256(full_block_header).
-        // If the header is already 32 bytes, use it directly; otherwise hash it.
-        let header_hash: [u8; 32] = if header.len() == 32 {
-            let mut h = [0u8; 32];
-            h.copy_from_slice(header);
-            h
-        } else {
-            use sha3::{Digest, Keccak256};
-            let mut hasher = Keccak256::new();
-            hasher.update(header);
-            let result = hasher.finalize();
-            let mut h = [0u8; 32];
-            h.copy_from_slice(&result);
-            h
-        };
-
-        let header_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone())
-            .len(32)
-            .copy_host_slice(&header_hash)
-            .build()?;
-        let target_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone())
-            .len(32)
-            .copy_host_slice(target.as_slice())
-            .build()?;
-
-        // ProgPow kernel signature:
-        //   progpow_mine(header, target, dag, dag_entries, prog_seed,
-        //               base_nonce, batch_size, out_nonce, out_hash, out_mix, found)
-        // prog_seed = 0 for now (simplified — no random math sequence)
-        let prog_seed: u32 = 0;
-
-        let kernel = Kernel::builder()
-            .queue(q.clone())
-            .program(pro_que.program())
-            .name(kernel_name)
-            .arg(&header_buf)
-            .arg(&target_buf)
-            .arg(dag_buf)
-            .arg(dag_entries)
-            .arg(prog_seed)
-            .arg(base_nonce)
-            .arg(batch_size)
-            .arg(output_nonce_buf)
-            .arg(output_hash_buf)
-            .arg(output_mix_buf)
-            .arg(found_flag_buf)
+            .arg(&g_output_buf)     // 0: g_output
+            .arg(&header_buf)       // 1: g_header
+            .arg(dag_buf)           // 2: g_dag
+            .arg(base_nonce)        // 3: start_nonce
+            .arg(target_u64)        // 4: target
+            .arg(hack_false)        // 5: hack_false
+            .arg(output_nonce_buf)  // 6: output_nonce
+            .arg(output_mix_buf)    // 7: output_mix
+            .arg(found_flag_buf)    // 8: found
             .build()
             .map_err(|e| anyhow!("ProgPow kernel build failed: {e}"))?;
+
+        let _ = (batch_size, dag_entries, output_hash_buf);
 
         Ok(kernel)
     }
@@ -1551,7 +1619,7 @@ use std::path::Path;
 #[cfg(feature = "native-hashers")]
 use std::io::{Read, Write};
 #[cfg(feature = "native-hashers")]
-use crate::native_ffi::generate_ethash_dag;
+use crate::native_ffi::{generate_ethash_dag, generate_kawpow_dag};
 
 /// Manages DAG generation and GPU upload for Ethash, KawPow, and ProgPow.
 #[cfg(feature = "native-hashers")]
@@ -1661,30 +1729,17 @@ impl DagManager {
             );
             miner.set_kawpow_dag(&dag_u64, dag_entries, epoch)?;
         } else {
-            // Generate the DAG on the GPU (no CPU generation, no readback).
-            miner.generate_kawpow_dag_on_gpu(epoch)?;
-
-            // Optionally save the DAG to disk for future startups.
-            // This requires reading the DAG back from the GPU, which is slow
-            // (~5.7 GB readback), so we skip it by default.  Set
-            // ZION_DAG_DISK_CACHE=1 to enable.
-            if std::env::var("ZION_DAG_DISK_CACHE").is_ok() {
-                eprintln!("dag_manager: ZION_DAG_DISK_CACHE=1, reading DAG back from GPU for disk cache...");
-                // Clone the buffer handle and size out first to avoid borrowing conflict
-                let (dag_size_entries, dag_buf) = miner.kawpow_dag.as_ref()
-                    .map(|d| (d.size_entries, d.buf.clone()))
-                    .ok_or_else(|| anyhow!("kawpow_dag not set after GPU generation"))?;
-                let q = {
-                    let pro_que = miner.ensure_proque("kawpow_kernel.cl")?;
-                    pro_que.queue().clone()
-                };
-                let total_ulongs = (dag_size_entries * 16) as usize;
-                let mut dag_u64 = vec![0u64; total_ulongs];
-                dag_buf.read(&mut dag_u64).enq()
-                    .map_err(|e| anyhow!("failed to read DAG from GPU: {e}"))?;
-                q.finish().map_err(|e| anyhow!("GPU read finish failed: {e}"))?;
-                self.save_dag_to_disk(&cache_path, &dag_u64, dag_size_entries)?;
-            }
+            // Generate the DAG on the CPU via FFI (same approach as ProgPow).
+            // The GPU DAG generation kernel in kawpow_dag.cl requires complex
+            // fast_mod parameter setup; CPU generation via OpenMP is fast enough
+            // (~15-20s on 12 cores) and simpler/more reliable.
+            eprintln!("dag_manager: generating KawPow DAG epoch={} via FFI...", epoch);
+            let dag = generate_kawpow_dag(epoch)
+                .ok_or_else(|| anyhow!("kawpow_generate_dag returned NULL for epoch {}", epoch))?;
+            let entries = dag.dag_size_entries;
+            let u64_slice = dag.as_u64_slice().to_vec();
+            self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
+            miner.set_kawpow_dag(&u64_slice, entries, epoch)?;
         }
 
         self.kawpow_epoch = Some(epoch);
@@ -2944,6 +2999,7 @@ pub mod opencl_backend {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::gpu_backend::gen_autolykos_element;
 
     #[test]
     fn kernel_sources_exist() {

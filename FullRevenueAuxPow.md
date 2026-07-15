@@ -565,6 +565,7 @@ the GPU secondary runs kheavyhash. The pool decides, the miner adapts.
 | 3 | FLUX | zelhash | GPU* | ZION pool → FLUX pool | src_zelhash ✅ |
 | 3 | EPIC | progpow | GPU* | ZION pool → EPIC pool | src_progpow ✅ |
 | 3 | QUAI | kawpow | GPU* | ZION pool → QUAI pool (2miners) | src_kawpow ✅ |
+| 3 | BEAM | beamhash | GPU* | ZION pool → BEAM pool (2miners TLS) | src_beamhash ✅ |
 
 **GPU*** = Uses GPU secondary slot (when Pearl is NOT active).
 When Pearl IS active (profit-switching selected PRL), GPU secondary is
@@ -732,6 +733,26 @@ coin at a time per miner).
 - ✅ `"QUAI"` in routing stats coin match
 - ✅ `ShareResult::NoShare` arm added to pearl proof forward match
 - ✅ Env vars: `ZION_POOL_AUXPOW_WALLET_QUAI`, `ZION_POOL_AUXPOW_PASSWORD_QUAI`
+
+### BeamHash III/BEAM: COMPLETE (Pool-Side)
+
+**Pool-side (fully implemented):**
+- ✅ `ExternalCoin::BEAM` in `AuXpow/src/types.rs` (ticker="BEAM", algorithm="beamhash", default_pool="beam.2miners.com:5252", supports_btc_payout=true)
+- ✅ `StratumProtocol::BeamStratum` variant in `auxpow_client.rs` — custom JSON-RPC 2.0 over TLS
+- ✅ `beam_login()` — sends `{"method":"login","api_key":"WALLET.WORKER","id":"login","jsonrpc":"2.0"}`
+- ✅ `parse_beam_job()` — parses `input` (hex header), `id` (job_id), `height`, `difficulty`, `nonceprefix` (extranonce1)
+- ✅ Beam submit block — sends `{"method":"solution","id":job_id,"nonce":nonce_hex,"output":solution_hex,"jsonrpc":"2.0"}`
+- ✅ TLS support in `connect_tcp()` for BeamStratum
+- ✅ Poll message routing: "job" → `parse_beam_job`, "cancel" → job cancel
+- ✅ Reconnect: BeamStratum login path
+- ✅ `RevenueSource::BeamHashExternal` in cosmic-harmony (`revenue.rs`)
+- ✅ `BeamHashExternal` in pool server: `source_index` (17), `revenue_source_name` ("beamhash"), `revenue_source_to_external_coin`, `external_coin_to_revenue_source`, `auxpow_to_ch_external_coin` (→ FLUX placeholder), `external_coin_to_algorithm` ("beamhash"), routing stats ("BEAM"), lane config (`ZION_STREAM_BEAMHASH_PCT`/`ZION_STREAM_BEAMHASH_USD`), auto-assign match, `ALL_REVENUE_SOURCES` array (18), array sizes [18]
+- ✅ Env var: `ZION_POOL_AUXPOW_WALLET_BEAM`
+
+**Miner-side (TODO):**
+- ❌ BeamHash III GPU kernel (Equihash 150,5 with SipHash mixing) — not yet implemented
+- ❌ `beam_gpu_thread()` in miner/main.rs — not yet implemented
+- ❌ BEAM share routing in miner — not yet implemented
 
 ### Build & Deploy Status
 

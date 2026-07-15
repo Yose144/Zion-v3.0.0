@@ -75,6 +75,9 @@ pub enum RevenueSource {
     /// Proof-of-Useful-Work: INT8 MatMul + BLAKE3. No DAG.
     /// 22x more profitable than KAS. Merge mining: PRL + MDL.
     PearlExternal,
+    /// Revenue from BeamHash III external coins (BEAM — Beam).
+    /// Equihash 150,5 variant, GPU-friendly, custom Beam Stratum over TLS.
+    BeamHashExternal,
     /// Revenue from DeekshaLite v1 simplified mining (GCN-friendly).
     DeekshaLite,
     /// Revenue from DeekshaLite Fire thermal-intensive mining (winter heating).
@@ -100,6 +103,7 @@ impl RevenueSource {
             Self::VerusHashExternal => "verushash_external",
             Self::ProgPowExternal => "progpow_external",
             Self::PearlExternal => "pearl_external",
+            Self::BeamHashExternal => "beamhash_external",
             Self::DeekshaLite => "deeksha_lite",
             Self::ThermalBonus => "thermal_bonus",
             Self::NclAi => "ncl_ai",
@@ -119,7 +123,8 @@ impl RevenueSource {
             | Self::ZelHashExternal
             | Self::VerusHashExternal
             | Self::ProgPowExternal
-            | Self::PearlExternal => BLAKE3_EXTERNAL_FEE,
+            | Self::PearlExternal
+            | Self::BeamHashExternal => BLAKE3_EXTERNAL_FEE,
             Self::DeekshaLite | Self::ThermalBonus => MERGED_MINING_FEE,
             Self::NclAi => NCL_FEE,
         }

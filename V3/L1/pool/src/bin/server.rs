@@ -356,6 +356,7 @@ fn revenue_source_to_external_coin(source: RevenueSource) -> Option<ExternalCoin
         RevenueSource::VerusHashExternal => Some(ExternalCoin::VRSC),
         RevenueSource::ProgPowExternal => Some(ExternalCoin::EPIC),
         RevenueSource::PearlExternal => Some(ExternalCoin::PRL),
+        RevenueSource::BeamHashExternal => Some(ExternalCoin::BEAM),
         _ => None,
     }
 }
@@ -376,6 +377,7 @@ fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
         ExternalCoin::VRSC => RevenueSource::VerusHashExternal,
         ExternalCoin::EPIC => RevenueSource::ProgPowExternal,
         ExternalCoin::PRL => RevenueSource::PearlExternal,
+        ExternalCoin::BEAM => RevenueSource::BeamHashExternal,
     }
 }
 
@@ -415,6 +417,7 @@ fn auxpow_to_ch_external_coin(coin: ExternalCoin) -> ChExternalCoin {
         ExternalCoin::EPIC => ChExternalCoin::VRSC, // placeholder — EPIC not in CH enum
         ExternalCoin::PRL => ChExternalCoin::PRL,
         ExternalCoin::QUAI => ChExternalCoin::RVN, // placeholder — QUAI maps to KawPoW (RVN)
+        ExternalCoin::BEAM => ChExternalCoin::FLUX, // placeholder — BEAM maps to Equihash (FLUX)
     }
 }
 
@@ -451,6 +454,7 @@ fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
         ExternalCoin::VRSC => "verushash",
         ExternalCoin::EPIC => "progpow",
         ExternalCoin::PRL => "pearlhash",
+        ExternalCoin::BEAM => "beamhash",
     }
 }
 
@@ -2419,6 +2423,7 @@ fn handle_client(
                             "VRSC" => RevenueSource::VerusHashExternal,
                             "EPIC" | "EPICCASH" => RevenueSource::ProgPowExternal,
                             "PRL" | "PEARL" => RevenueSource::PearlExternal,
+                            "BEAM" => RevenueSource::BeamHashExternal,
                             _ => RevenueSource::Blake3External,
                         };
                         {
@@ -3484,8 +3489,8 @@ struct RoutingStats {
     total_stale: u64,
     group_submits: [u64; 4],
     group_accepted: [u64; 4],
-    source_submits: [u64; 17],
-    source_accepted: [u64; 17],
+    source_submits: [u64; 18],
+    source_accepted: [u64; 18],
 }
 
 enum JobCompletion {
@@ -4163,6 +4168,14 @@ impl RevenueScheduler {
             0,
             default_value_usd,
         )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::BeamHashExternal,
+            "ZION_STREAM_BEAMHASH_PCT",
+            "ZION_STREAM_BEAMHASH_USD",
+            0,
+            default_value_usd,
+        )?;
 
         let total_weight: u32 = lanes.iter().map(|l| l.weight).sum();
         if total_weight == 0 {
@@ -4218,7 +4231,8 @@ impl RevenueScheduler {
                 | RevenueSource::ZelHashExternal
                 | RevenueSource::VerusHashExternal
                 | RevenueSource::ProgPowExternal
-                | RevenueSource::PearlExternal => {
+                | RevenueSource::PearlExternal
+                | RevenueSource::BeamHashExternal => {
                     choices.push((SessionGroup::Revenue, lane.weight))
                 }
                 RevenueSource::NclAi => choices.push((SessionGroup::Ncl, lane.weight)),
@@ -4292,6 +4306,7 @@ impl RevenueScheduler {
                                     | RevenueSource::VerusHashExternal
                                     | RevenueSource::ProgPowExternal
                                     | RevenueSource::PearlExternal
+                                    | RevenueSource::BeamHashExternal
                             )
                     })
                     .copied()
@@ -4410,8 +4425,8 @@ impl RoutingStats {
             total_stale: 0,
             group_submits: [0; 4],
             group_accepted: [0; 4],
-            source_submits: [0; 17],
-            source_accepted: [0; 17],
+            source_submits: [0; 18],
+            source_accepted: [0; 18],
         }
     }
 
@@ -4491,6 +4506,7 @@ impl RoutingStats {
             RevenueSource::VerusHashExternal,
             RevenueSource::ProgPowExternal,
             RevenueSource::PearlExternal,
+            RevenueSource::BeamHashExternal,
         ] {
             let idx = source_index(source);
             let submits = self.source_submits[idx];
@@ -5024,8 +5040,8 @@ fn build_stats_payload(
     json.to_string()
 }
 
-/// All 17 revenue sources in canonical order (matches `source_index`).
-const ALL_REVENUE_SOURCES: [RevenueSource; 17] = [
+/// All 18 revenue sources in canonical order (matches `source_index`).
+const ALL_REVENUE_SOURCES: [RevenueSource; 18] = [
     RevenueSource::Zion,
     RevenueSource::KeccakBonus,
     RevenueSource::Sha3Bonus,
@@ -5043,6 +5059,7 @@ const ALL_REVENUE_SOURCES: [RevenueSource; 17] = [
     RevenueSource::VerusHashExternal,
     RevenueSource::ProgPowExternal,
     RevenueSource::PearlExternal,
+    RevenueSource::BeamHashExternal,
 ];
 
 /// Build the comprehensive revenue report payload for `/api/v1/revenue/stats`.
@@ -5060,7 +5077,7 @@ fn build_revenue_stats_payload(
     let pplns = pplns_engine.stats();
     let fees = pplns_engine.fee_stats();
 
-    // Per-source breakdown — all 17 sources with submits, accepted, and
+    // Per-source breakdown — all 18 sources with submits, accepted, and
     // derived revenue estimates.
     let sources: Vec<_> = ALL_REVENUE_SOURCES
         .iter()
@@ -5416,6 +5433,7 @@ fn source_index(source: RevenueSource) -> usize {
         RevenueSource::VerusHashExternal => 14,
         RevenueSource::ProgPowExternal => 15,
         RevenueSource::PearlExternal => 16,
+        RevenueSource::BeamHashExternal => 17,
     }
 }
 
@@ -5438,6 +5456,7 @@ fn revenue_source_name(source: RevenueSource) -> &'static str {
         RevenueSource::VerusHashExternal => "verushash",
         RevenueSource::ProgPowExternal => "progpow",
         RevenueSource::PearlExternal => "pearlhash",
+        RevenueSource::BeamHashExternal => "beamhash",
     }
 }
 
@@ -5677,6 +5696,7 @@ fn parse_revenue_source(value: &str) -> Result<RevenueSource> {
         "verushash" | "vrsc" | "verus" => Ok(RevenueSource::VerusHashExternal),
         "progpow" | "epic" | "epiccash" => Ok(RevenueSource::ProgPowExternal),
         "pearlhash" | "pearl" | "prl" => Ok(RevenueSource::PearlExternal),
+        "beamhash" | "beam" => Ok(RevenueSource::BeamHashExternal),
         "ncl" | "ncl_ai" => Ok(RevenueSource::NclAi),
         "deeksha_lite" | "dl" => Ok(RevenueSource::DeekshaLite),
         "thermal_bonus" | "fire" | "thermal" => Ok(RevenueSource::ThermalBonus),

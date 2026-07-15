@@ -98,6 +98,15 @@ EXPORT void verushash_hash(
     vkeccak256(buf, copy + 8, output);
 }
 
+EXPORT void verushash_hash_raw(
+    const uint8_t* header,
+    size_t         header_len,
+    uint8_t*       output)
+{
+    /* Portable fallback: Keccak256(header) without nonce */
+    vkeccak256(header, header_len, output);
+}
+
 EXPORT int32_t verushash_verify(
     const uint8_t* header,
     size_t         header_len,
