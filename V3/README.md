@@ -113,6 +113,7 @@ Out of scope for the bootstrap:
 - `L1/miner` now supports DCR Blake3 runtime backends (`auto` / `cpu` / `gpu`) with OpenCL kernel dispatch and CPU fallback integrated into the live DCR worker path when built with `--features gpu`
 - `L1/miner` now supports DCR CPU hash implementation selection via `ZION_DCR_HASH_IMPL` (`rust` default, `native` when built with `--features native-blake3-algo`) for explicit native-ffi Blake3 runtime dispatch
 - `L1/native-libs` scaffold now exists for staged migration of native acceleration libraries (randomx, kawpow, autolykos) with platform build scripts and ABI header placeholders
+- `L1/native-ffi` now includes **real RandomX** (`tevador/RandomX` C++ library) via `native-randomx` feature — per-thread VM (lock-free), seed_hash epoch plumbing, `--randomx-bench` benchmark (175 H/s on M1 interpreted VM). See `../RandomXReport.md`
 - `DesktopApp` now exists as a fresh Electron shell under `V3/`, reusing the testnet operator UX direction while keeping V3 runtime control, wallet roles, and process supervision isolated from legacy desktop-agent ballast
 - live smoke coverage now includes two miner sessions against the same pool instance, mempool-seeded template rotation, node restart validation from a persisted chain snapshot, two-node P2P block export/import rehearsal, and startup catch-up from `ZION_SEED_PEERS`
 - whole V3 workspace currently builds and tests green (~1,300+ tests: 432 core, 95 cosmic-harmony, 59 miner, 29 pool, 4 native-ffi, 157 bridge, 65 dao, 15 atomic-swap, 43 ncl, 488 warp, 89 ai-native, plus doctests)

@@ -290,7 +290,7 @@ now uses `meets_target` (plain BE comparison) matching C reference
    target (26-bit). M1 CPU at 60 H/s needs ~13 days per share. Fix options:
    - Set `ZION_AUXPOW_EASY_TARGET=1` on pool (for testing only)
    - Implement CPU vardiff in pool (production fix)
-   - Switch to RandomX/XMR for CPU stream
+   - Switch to RandomX/XMR for CPU stream (✅ Native RandomX now available — see `RandomXReport.md`)
 
 3. **`GPU_CPU_MISMATCH` log** — expected for Deeksha. GPU and CPU scan
    different nonce ranges, producing different valid hashes. Both meet target.

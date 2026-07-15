@@ -255,14 +255,15 @@ Všechny VerusHash fixy jsou commitnuty a pushnuty na `origin/main`:
    - Validovat PBaaS v7+ solution encoding
 3. **CPU vardiff** — pool-side variable difficulty pro CPU stream (nezávislé na network target)
 
-### 7.2 RandomX / XMR — Další fáze
+### 7.2 RandomX / XMR — ✅ Hotovo
 
-RandomX je CPU-friendly PoW (na rozdíl od VerusHash, který je optimalizovaný pro GPU/ASIC):
-- **`monero-rs`** nebo **`randomx-rs`** crate pro nativní RandomX
-- **RandomX dataset:** ~2 GB scratchpad (na M1 16GB OK)
-- **Expected hashrate M1:** ~500-1000 H/s (vs VerusHash 1.69 MH/s, ale target je mnohem nižší)
-- **XMR pool:** Support2Fork, MoneroOcean, nebo 2miners
-- **Stratum:** Standard `mining.submit` s 3 parametry `[worker, job_id, nonce]`
+RandomX integrace je dokončena — viz [`RandomXReport.md`](./RandomXReport.md):
+- **`tevador/RandomX` C++ library** (ne `randomx-rs`) — nativní kompilace přes `zion-native-ffi`
+- **Per-thread VM** (lock-free, 175 H/s na M1 s 4 threads)
+- **Seed_hash epoch plumbing** — `ExternalStreamJob.seed_hash_hex` → FFI `init_with_seed()`
+- **`--randomx-bench`** benchmark
+- **Build:** miner + pool + auxpow — vše kompiluje s `native-randomx` feature
+- **Pool E2E:** TODO (connect to MoneroOcean/2miners, verify share submission)
 
 ---
 

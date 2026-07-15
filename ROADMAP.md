@@ -174,7 +174,7 @@ Goal: ship the user-facing stack (wallet, mobile, explorer, L4) before public la
 | 5.6 | **Explorer bridge tracker** | 🔵 Planned | Live lock → confirm → mint UI. |
 | 5.7 | **Security audit** | 🔵 Planned | External firm review of L1/L2/L3 contracts and node. |
 | 5.8 | **CoinGecko / CMC listing** | 🔵 Planned | `docs/listings/` prep ready. |
-| 5.9 | **RandomX / XMR CPU mining** | 🔵 Next | Native RandomX via `randomx-rs`/`monero-rs`, ~2 GB dataset on M1, expected 500-1000 H/s. Standard Stratum `mining.submit` (3-param). Pool: MoneroOcean/2miners. See `VerusHashReport.md` §7.2. |
+| 5.9 | **RandomX / XMR CPU mining** | ✅ Done | Native RandomX via `tevador/RandomX` C++ library (not `randomx-rs`), per-thread VM (lock-free), seed_hash epoch plumbing, `--randomx-bench` benchmark (175 H/s M1 interpreted VM, 44 H/s/thread). Build passes: miner + pool + auxpow. Pool E2E test TODO. See `RandomXReport.md`. |
 | 5.10 | **VRSC LuckPool fix** | 🔵 Pending | Pool server rebuild + header hash mismatch debug (MMR root restoration, PBaaS v7+ solution encoding). See `VerusHashReport.md` §5.2, §7.1. |
 
 ---
