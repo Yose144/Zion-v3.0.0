@@ -4976,19 +4976,25 @@ def get_revenue_dashboard() -> dict:
     daily_usd = aux_rev_per_day
 
     # ── Coin revenue table (live) ──────────────────────────────────────
+    # Aligned with AuXpow/src/types.rs ExternalCoin defaults.
+    # v3.0.6: Pearl (PRL) removed from canonical 3-stream mining.
+    #         The 3 streams are: ZION GPU, one GPU profit coin, CPU Verus/RandomX.
     SUPPORTED_COINS = [
+        ("DCR",  "blake3",      "pool.woolypooly.com:3152"),
+        ("ALPH", "blake3",      "pool.woolypooly.com:3106"),
         ("KAS",  "kheavyhash",  "kas.2miners.com:2020"),
-        ("ALPH", "blake3",      "alph.2miners.com:4545"),
-        ("DCR",  "blake3",      "dcr.suprnova.cc:3256"),
         ("ERG",  "autolykos",   "erg.2miners.com:8888"),
         ("RVN",  "kawpow",      "rvn.2miners.com:6060"),
         ("ETC",  "ethash",      "etc.2miners.com:1010"),
-        ("FLUX", "zelhash",     "flux.woolypooly.com:3000"),
-        ("CLORE","kawpow",      "clore.woolypooly.com:3090"),
         ("EVR",  "evrprogpow",  "evrprogpow.eu.mine.zpool.ca:1330"),
         ("MEWC", "meowpow",     "meowpow.eu.mine.zpool.ca:1327"),
+        ("FLUX", "zelhash",     "flux.woolypooly.com:3000"),
+        ("CLORE","kawpow",      "clore.woolypooly.com:3090"),
         ("XMR",  "randomx",     "gulf.moneroocean.stream:10001"),
         ("VRSC", "verushash",   "eu.luckpool.net:3956"),
+        ("EPIC", "progpow",     "de.epicmine.io:3334"),
+        ("QUAI", "kawpow",      "quai.2miners.com:4848"),
+        ("BEAM", "beamhash",    "beam.2miners.com:5252"),
     ]
     current_coin = auxpow.get("current_coin", "")
     coin_revenue = []
@@ -5082,7 +5088,7 @@ def get_revenue_dashboard() -> dict:
         "next_distribution_ts": None,  # no scheduled next — PPLNS pays per block
         "distribution_cycle": "Per-block (PPLNS)",
         "accumulated_usd": round(total_usd, 6),
-        "active_coins": [c[0] for c in SUPPORTED_COINS],  # 11 supported coins
+        "active_coins": [c[0] for c in SUPPORTED_COINS],  # 15 supported coins (PRL removed v3.0.6)
         "coin_revenue": coin_revenue,
         "distributions": distributions,
         # Stream profit (Deeksha Chv3 pipeline weights)

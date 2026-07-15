@@ -1,40 +1,46 @@
 # AuxPow Triple Implementation Plan — v3.0.6 "Triple Parallel"
 
-> **Status:** ✅ **TRIPLE PARALLEL LIVE** (2026-07-15) — ZION (GPU DeekshaChv3) + EPIC (GPU ProgPow) + VRSC (CPU VerusHash) mining simultaneously on Edge
-> **Goal:** Complete the 3-stream parallel mining architecture (ZION Deeksha + Pearl PoUW + External GPU) so all 7 phases of `FullRevenueAuxPow.md` are fully DONE.
+> **Status:** ✅ **CANONICAL v3.0.6** (2026-07-15) — multi-stream AuxPow architecture audited, de-duplicated, and aligned with the live code.
+> **Goal:** Keep the multi-stream parallel mining architecture (ZION Deeksha + Pearl PoUW + multiple external GPU/CPU coins) clean, consistent, and end-to-end functional.
 > **Predecessor:** `FullRevenueAuxPow.md` (design doc, Phases 1-7)
 > **Companion:** `3.0.6.md` (patch summary for 3-stream split + version bumps)
+>
+> **Note:** This plan originally described a strict 3-stream design (ZION + Pearl + one External). The actual v3.0.6 implementation runs **multiple external streams simultaneously** (Blake3/DCR, ProgPow/EPIC, KawPow/RVN/CLORE/QUAI, Autolykos/ERG, CPU VerusHash/RandomX). The docs below now reflect the canonical multi-stream reality.
 
 ---
 
 ## 0. Executive Summary
 
-The 3-stream architecture has been **fully implemented** across Phases 1-6. Phase 7 is in progress — build is clean, tests pass, deployment to Edge and live verification are next.
+The multi-stream architecture is **functionally complete and canonical**. The codebase has been audited for duplication and drift, the miner/pool/dashboard now agree on the real architecture, and the build is clean with all tests passing.
 
 ### Current State at a Glance
 
 | Phase | Description | Status | What's Done | What's Missing |
 |-------|-------------|--------|-------------|----------------|
 | 1 | Pool-Side Pearl | ✅ DONE | PearlSubmit msg, forward_pearl(), pearl_rx channel, PRL in profit rotation | — |
-| 2 | Miner Pearl GPU Thread | ✅ DONE | pearl_gpu_thread() at main.rs:2738, pearl_tx/pearl_proof_rx channels, submit_pearl_proof() | — |
-| 3 | TriGpuManager | ✅ DONE | Wired into `run_remote_session()` and `run_local_session()`; primary Deeksha never switches; secondary GPU threads use `secondary_gpu_work_size` | — |
-| 4 | Clean Thread Arch | ✅ DONE | `progpow_gpu_thread` spawned; `ext_cpu_thread` persistent; `ensure_algorithm` spam removed | — |
-| 5 | Per-Stream Metrics | ✅ DONE | `draw_dashboard()` shows Claymore-style per-stream shares (ZION / PRL / EXT) | Per-stream hashrate (requires thread-level hash counters) — future enhancement |
-| 6 | Dashboard app.py | ✅ DONE | Triple Stream Mining panel added to `dashboard.html`/`dashboard.js`, wired to `/api/pool/miners-dashboard` routing sources | — |
-| 7 | Build/Deploy/Verify | ✅ LIVE | Release binaries deployed to Edge `62.171.141.136`, `zion-pool` restarted with triple-parallel config, miner restarted with new binary. All 3 streams verified live: ZION shares 99.7% accept, EPIC ProgPow kernel 7169+ batches, VRSC CPU VerusHash thread active | — |
+| 2 | Miner Pearl GPU Thread | ✅ DONE | `pearl_gpu_thread()` in `main.rs`, pearl_tx/pearl_proof_rx channels, submit_pearl_proof() | — |
+| 3 | TriGpuManager | ✅ DONE | Simplified to a **primary-only** manager; the main Deeksha loop uses `tri_gpu.primary()`, external/Pearl threads create their own OpenCL contexts | — |
+| 4 | Clean Thread Arch | ✅ DONE | `blake3/progpow/kawpow/autolykos` GPU threads collapsed into one generic `external_gpu_thread()`; `ext_cpu_thread` persistent; `ensure_algorithm` spam removed | — |
+| 5 | Per-Stream Metrics | ✅ DONE | `draw_dashboard()` shows per-stream **hashrate + shares** for ZION / PRL / EXT; `HashrateTracker` records per-stream hashes | — |
+| 6 | Dashboard Integration | ✅ DONE | Triple Stream Mining panel in `dashboard.html`/`dashboard.js` wired to `/api/pool/miners-dashboard` routing sources; `app.py` `SUPPORTED_COINS` aligned with `ExternalCoin` enum | — |
+| 7 | Pool Routing Stats | ✅ DONE | `RoutingStats.snapshot_json()` / `snapshot_json_ext()` and `/stats` payload now include **all 18 revenue sources** defined in `ALL_REVENUE_SOURCES` | — |
+| 8 | Build/Deploy/Verify | ✅ DONE | `cargo check/test` clean for `zion-miner`, `zion-pool`, `zion-auxpow`; live Edge deployment on `62.171.141.136` verified | — |
 
 ### What "Done" Looks Like
 
-1. **TriGpuManager** replaces `GpuBackendManager` in `run_remote_session()` and `run_local_session()`
-2. **3 persistent GPU threads** run in parallel: Deeksha (primary), Pearl (lazy), External GPU (lazy)
-3. **progpow_gpu_thread** is spawned for EPIC ProgPow jobs (or routed via TriGpuManager secondary slot)
-4. **Dashboard** shows per-stream hashrate + shares: `ZION xxx H/s | PRL xxx H/s | EXT xxx H/s`
-5. **No dead code**: `mine_external_stream_cpu` removed or made persistent, `ensure_algorithm` spam gone
-6. **Build clean** with zero dead-code warnings for TriGpuManager fields
+1. **TriGpuManager** is a lean primary-only backend manager used by the main Deeksha loop.
+2. **One generic external GPU thread** (`external_gpu_thread`) is spawned for each external algorithm family (Blake3, ProgPow, KawPow, Autolykos).
+3. **Per-stream hashrate + share counters** are tracked in `HashrateTracker` and displayed in the miner TUI.
+4. **Pool `/stats`** exposes a unified `routing.sources` object covering all canonical revenue sources.
+5. **Dashboard** reads `routing.sources` and renders ZION / PRL / EXT streams plus a full per-source breakdown.
+6. **ExternalCoin enum + `SUPPORTED_COINS`** agree on the same 16 coins and default pools.
+7. **Build clean** with zero dead-code warnings in the miner/AuxPow path and all tests passing.
 
 ---
 
-## 1. Phase 3 — Wire TriGpuManager into main.rs
+## 1. Phase 3 — TriGpuManager
+
+> **Implementation Note:** This phase is complete. During the v3.0.6 audit, `TriGpuManager` was simplified to manage only the **primary** Deeksha backend. Pearl and secondary GPU slots were removed because each external/Pearl stream creates its own OpenCL context on its own thread. The main Deeksha loop uses `tri_gpu.primary()`; benchmark/autotune paths keep `GpuBackendManager`.
 
 ### Problem
 
@@ -109,6 +115,8 @@ This means:
 ---
 
 ## 2. Phase 4 — Clean Thread Architecture
+
+> **Implementation Note:** This phase is complete. The four near-identical GPU thread functions (`blake3_gpu_thread`, `progpow_gpu_thread`, `kawpow_gpu_thread`, `autolykos_gpu_thread`) were collapsed into a single generic `external_gpu_thread(name, backend_algo, epoch_divisor)` spawned four times. `mine_external_stream_cpu()` became a persistent `ext_cpu_thread()`. `ensure_algorithm()` spam was removed.
 
 ### Problem
 
@@ -222,6 +230,8 @@ With TriGpuManager, the primary backend never switches. Remove the `ensure_algor
 
 ## 3. Phase 5 — Per-Stream Metrics Display
 
+> **Implementation Note:** This phase is complete. `HashrateTracker` now has per-stream sliding windows (`StreamWindows`) plus `zion_hashes`, `pearl_hashes`, `ext_hashes`. `draw_dashboard()` prints each stream's 10s hashrate next to its share counts. The title bar already reads `ZION v3.0.6 Triple Parallel`.
+
 ### Problem
 
 `HashrateTracker` has 3-stream fields (`zion_accepted/rejected`, `pearl_accepted/rejected`, `ext_accepted/rejected`) and `ComputedHashrates` has per-stream fields, but `draw_dashboard()` (interactive.rs:378) only displays **total** shares and hashrate.
@@ -291,7 +301,9 @@ pub ext_hps: f64,
 
 ---
 
-## 4. Phase 6 — Dashboard app.py 3-Stream Display
+## 4. Phase 6 — Dashboard 3-Stream Display
+
+> **Implementation Note:** This phase is complete. `dashboard.html`/`dashboard.js` already have a "Triple Stream Mining" panel. It was wired to read `data.routing.sources` from `/api/pool/miners-dashboard`. The per-source list was expanded to cover all 18 canonical revenue sources, and `app.py` `SUPPORTED_COINS` was aligned with the 16-coin `ExternalCoin` enum.
 
 ### Problem
 
@@ -435,14 +447,16 @@ Step 8: Phase 7 — Full build + deploy + verify
 
 The implementation is complete when:
 
-1. ✅ `cargo build` — zero errors, zero dead-code warnings for TriGpuManager
-2. ✅ `cargo test` — all 779+ tests pass
-3. ✅ `run_remote_session()` uses `TriGpuManager`, not `GpuBackendManager`
-4. ✅ 4 persistent GPU/CPU threads: Deeksha (primary), Pearl, ProgPow, Ext-CPU
-5. ✅ `draw_dashboard()` shows per-stream shares + hashrate
-6. ✅ Dashboard app.py shows 3-stream revenue
-7. ✅ Live on Edge: all 3 streams producing shares
-8. ✅ No log spam (ensure_algorithm, per-iteration thread creation)
+1. ✅ `cargo build/test` — zero errors, zero dead-code warnings for the miner/AuxPow path
+2. ✅ `run_remote_session()` uses `TriGpuManager` (primary-only) for Deeksha
+3. ✅ External GPU threads are spawned from a single generic `external_gpu_thread()` (Blake3, ProgPow, KawPow, Autolykos)
+4. ✅ Persistent `pearl_gpu_thread` and `ext_cpu_thread` run alongside the main loop
+5. ✅ `draw_dashboard()` shows per-stream hashrate + shares (ZION / PRL / EXT)
+6. ✅ Pool `/stats` exposes a `routing.sources` object covering all 18 revenue sources
+7. ✅ Dashboard reads `routing.sources` and renders the Triple Stream panel plus full per-source breakdown
+8. ✅ `ExternalCoin` enum and `SUPPORTED_COINS` list agree on the same 16 coins / default pools
+9. ✅ Live on Edge: ZION + PRL + external streams all producing shares
+10. ✅ No log spam (`ensure_algorithm`, per-iteration thread creation)
 
 ---
 

@@ -414,10 +414,10 @@ fn auxpow_to_ch_external_coin(coin: ExternalCoin) -> ChExternalCoin {
         ExternalCoin::CLORE => ChExternalCoin::CLORE,
         ExternalCoin::XMR => ChExternalCoin::XMR,
         ExternalCoin::VRSC => ChExternalCoin::VRSC,
-        ExternalCoin::EPIC => ChExternalCoin::VRSC, // placeholder — EPIC not in CH enum
+        ExternalCoin::EPIC => ChExternalCoin::EPIC,
         ExternalCoin::PRL => ChExternalCoin::PRL,
-        ExternalCoin::QUAI => ChExternalCoin::RVN, // placeholder — QUAI maps to KawPoW (RVN)
-        ExternalCoin::BEAM => ChExternalCoin::FLUX, // placeholder — BEAM maps to Equihash (FLUX)
+        ExternalCoin::QUAI => ChExternalCoin::QUAI,
+        ExternalCoin::BEAM => ChExternalCoin::BEAM,
     }
 }
 
@@ -437,6 +437,9 @@ fn ch_to_auxpow_external_coin(coin: ChExternalCoin) -> ExternalCoin {
         ChExternalCoin::XMR => ExternalCoin::XMR,
         ChExternalCoin::VRSC => ExternalCoin::VRSC,
         ChExternalCoin::PRL => ExternalCoin::PRL,
+        ChExternalCoin::EPIC => ExternalCoin::EPIC,
+        ChExternalCoin::QUAI => ExternalCoin::QUAI,
+        ChExternalCoin::BEAM => ExternalCoin::BEAM,
     }
 }
 
@@ -4537,28 +4540,45 @@ impl RoutingStats {
             self.total_accepted as f64 * 100.0 / self.total_submits as f64
         };
 
-        format!(
-            "{{\"submits\":{},\"accepted\":{},\"rejected\":{},\"stale\":{},\"accept_rate_pct\":{:.2},\"groups\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"revenue\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}},\"auto\":{{\"submits\":{},\"accepted\":{}}}}},\"sources\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"blake3\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}}}}}}",
-            self.total_submits,
-            self.total_accepted,
-            total_rejected,
-            self.total_stale,
-            accept_rate,
-            self.group_submits[group_index(SessionGroup::Zion)],
-            self.group_accepted[group_index(SessionGroup::Zion)],
-            self.group_submits[group_index(SessionGroup::Revenue)],
-            self.group_accepted[group_index(SessionGroup::Revenue)],
-            self.group_submits[group_index(SessionGroup::Ncl)],
-            self.group_accepted[group_index(SessionGroup::Ncl)],
-            self.group_submits[group_index(SessionGroup::Auto)],
-            self.group_accepted[group_index(SessionGroup::Auto)],
-            self.source_submits[source_index(RevenueSource::Zion)],
-            self.source_accepted[source_index(RevenueSource::Zion)],
-            self.source_submits[source_index(RevenueSource::Blake3External)],
-            self.source_accepted[source_index(RevenueSource::Blake3External)],
-            self.source_submits[source_index(RevenueSource::NclAi)],
-            self.source_accepted[source_index(RevenueSource::NclAi)],
-        )
+        let mut groups = serde_json::Map::new();
+        for (group, label) in [
+            (SessionGroup::Zion, "zion"),
+            (SessionGroup::Revenue, "revenue"),
+            (SessionGroup::Ncl, "ncl"),
+            (SessionGroup::Auto, "auto"),
+        ] {
+            let idx = group_index(group);
+            let _ = groups.insert(
+                label.to_string(),
+                serde_json::json!({
+                    "submits": self.group_submits[idx],
+                    "accepted": self.group_accepted[idx],
+                }),
+            );
+        }
+
+        let mut sources = serde_json::Map::new();
+        for src in ALL_REVENUE_SOURCES {
+            let idx = source_index(src);
+            let _ = sources.insert(
+                revenue_source_name(src).to_string(),
+                serde_json::json!({
+                    "submits": self.source_submits[idx],
+                    "accepted": self.source_accepted[idx],
+                }),
+            );
+        }
+
+        serde_json::json!({
+            "submits": self.total_submits,
+            "accepted": self.total_accepted,
+            "rejected": total_rejected,
+            "stale": self.total_stale,
+            "accept_rate_pct": accept_rate,
+            "groups": groups,
+            "sources": sources,
+        })
+        .to_string()
     }
 
     fn snapshot_prometheus(&self) -> String {
@@ -4628,30 +4648,47 @@ impl RoutingStats {
             self.total_accepted as f64 * 100.0 / self.total_submits as f64
         };
 
-        format!(
-            "{{\"submits\":{},\"accepted\":{},\"rejected\":{},\"stale\":{},\"accept_rate_pct\":{:.2},\"active_sessions\":{},\"uptime_s\":{},\"groups\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"revenue\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}},\"auto\":{{\"submits\":{},\"accepted\":{}}}}},\"sources\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"blake3\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}}}}}}",
-            self.total_submits,
-            self.total_accepted,
-            total_rejected,
-            self.total_stale,
-            accept_rate,
-            active_sessions,
-            uptime_s,
-            self.group_submits[group_index(SessionGroup::Zion)],
-            self.group_accepted[group_index(SessionGroup::Zion)],
-            self.group_submits[group_index(SessionGroup::Revenue)],
-            self.group_accepted[group_index(SessionGroup::Revenue)],
-            self.group_submits[group_index(SessionGroup::Ncl)],
-            self.group_accepted[group_index(SessionGroup::Ncl)],
-            self.group_submits[group_index(SessionGroup::Auto)],
-            self.group_accepted[group_index(SessionGroup::Auto)],
-            self.source_submits[source_index(RevenueSource::Zion)],
-            self.source_accepted[source_index(RevenueSource::Zion)],
-            self.source_submits[source_index(RevenueSource::Blake3External)],
-            self.source_accepted[source_index(RevenueSource::Blake3External)],
-            self.source_submits[source_index(RevenueSource::NclAi)],
-            self.source_accepted[source_index(RevenueSource::NclAi)],
-        )
+        let mut groups = serde_json::Map::new();
+        for (group, label) in [
+            (SessionGroup::Zion, "zion"),
+            (SessionGroup::Revenue, "revenue"),
+            (SessionGroup::Ncl, "ncl"),
+            (SessionGroup::Auto, "auto"),
+        ] {
+            let idx = group_index(group);
+            let _ = groups.insert(
+                label.to_string(),
+                serde_json::json!({
+                    "submits": self.group_submits[idx],
+                    "accepted": self.group_accepted[idx],
+                }),
+            );
+        }
+
+        let mut sources = serde_json::Map::new();
+        for src in ALL_REVENUE_SOURCES {
+            let idx = source_index(src);
+            let _ = sources.insert(
+                revenue_source_name(src).to_string(),
+                serde_json::json!({
+                    "submits": self.source_submits[idx],
+                    "accepted": self.source_accepted[idx],
+                }),
+            );
+        }
+
+        serde_json::json!({
+            "submits": self.total_submits,
+            "accepted": self.total_accepted,
+            "rejected": total_rejected,
+            "stale": self.total_stale,
+            "accept_rate_pct": accept_rate,
+            "active_sessions": active_sessions,
+            "uptime_s": uptime_s,
+            "groups": groups,
+            "sources": sources,
+        })
+        .to_string()
     }
 
     fn snapshot_prometheus_ext(&self, active_sessions: u64, uptime_s: u64) -> String {
@@ -5100,6 +5137,45 @@ fn build_revenue_stats_payload(
         })
         .collect();
 
+    // Routing object shaped like legacy snapshot_json so dashboards can use
+    // routing.groups/sources without restructuring.
+    let total_rejected = stats
+        .total_submits
+        .saturating_sub(stats.total_accepted)
+        .saturating_sub(stats.total_stale);
+    let overall_accept_rate = if stats.total_submits == 0 {
+        0.0
+    } else {
+        stats.total_accepted as f64 * 100.0 / stats.total_submits as f64
+    };
+    let mut routing_groups = serde_json::Map::new();
+    for (group, label) in [
+        (SessionGroup::Zion, "zion"),
+        (SessionGroup::Revenue, "revenue"),
+        (SessionGroup::Ncl, "ncl"),
+        (SessionGroup::Auto, "auto"),
+    ] {
+        let idx = group_index(group);
+        let _ = routing_groups.insert(
+            label.to_string(),
+            serde_json::json!({
+                "submits": stats.group_submits[idx],
+                "accepted": stats.group_accepted[idx],
+            }),
+        );
+    }
+    let mut routing_sources = serde_json::Map::new();
+    for src in ALL_REVENUE_SOURCES {
+        let idx = source_index(src);
+        let _ = routing_sources.insert(
+            revenue_source_name(src).to_string(),
+            serde_json::json!({
+                "submits": stats.source_submits[idx],
+                "accepted": stats.source_accepted[idx],
+            }),
+        );
+    }
+
     // Stream weights breakdown
     let stream_weights: Vec<_> = revenue_scheduler
         .stream_weights
@@ -5139,6 +5215,15 @@ fn build_revenue_stats_payload(
             },
         },
         "sources": sources,
+        "routing": {
+            "submits": stats.total_submits,
+            "accepted": stats.total_accepted,
+            "rejected": total_rejected,
+            "stale": stats.total_stale,
+            "accept_rate_pct": overall_accept_rate,
+            "groups": routing_groups,
+            "sources": routing_sources,
+        },
         "auxpow": {
             "enabled": auxpow.enabled,
             "current_coin": auxpow.current_coin,

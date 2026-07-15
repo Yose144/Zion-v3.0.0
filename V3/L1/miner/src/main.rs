@@ -2532,10 +2532,14 @@ fn external_gpu_thread(
             }
         }
 
-        // Advance nonce for next batch
-        nonce_offset = nonce_offset.wrapping_add(batch_size);
+        // Advance nonce for next batch.
+        // Use the actual number of nonces scanned (capped by work_size in the
+        // GPU kernel), not the requested batch_size — otherwise we skip
+        // nonces between work_size and batch_size, missing potential shares.
+        let actual_batch = batch_size.min(work_size as u64);
+        nonce_offset = nonce_offset.wrapping_add(actual_batch);
         batch_count += 1;
-        hashrate.record_gpu_ext_hashes(batch_size);
+        hashrate.record_gpu_ext_hashes(actual_batch);
     }
 }
 
@@ -2563,6 +2567,7 @@ fn ext_cpu_thread(
     );
 
     let mut current_job: Option<zion_pool::ExternalStreamJob> = None;
+    let mut current_job_id = String::new();
     let mut nonce_base: u64 = 0;
     let mut nonce_offset: u64 = 0;
 
@@ -2570,22 +2575,29 @@ fn ext_cpu_thread(
         // Check for new job (non-blocking)
         match rx.try_recv() {
             Ok(job) => {
-                use std::collections::hash_map::DefaultHasher;
-                use std::hash::{Hash, Hasher};
-                let mut h = DefaultHasher::new();
-                job.job_id.hash(&mut h);
-                std::process::id().hash(&mut h);
-                std::thread::current().id().hash(&mut h);
-                nonce_base = (h.finish() as u32) as u64;
-                nonce_offset = 0;
-                println!(
-                    "[{}] ext_cpu_thread: new job coin={} algo={} job_id={} nonce_base={}",
-                    log_timestamp(),
-                    job.coin,
-                    job.algorithm,
-                    job.job_id,
-                    nonce_base,
-                );
+                // The pool re-sends the same job frequently.  Only reset the
+                // nonce scan when the job_id actually changes, otherwise the
+                // CPU thread would keep restarting from the same base and never
+                // cover enough nonces to find a share.
+                if job.job_id != current_job_id {
+                    use std::collections::hash_map::DefaultHasher;
+                    use std::hash::{Hash, Hasher};
+                    let mut h = DefaultHasher::new();
+                    job.job_id.hash(&mut h);
+                    std::process::id().hash(&mut h);
+                    std::thread::current().id().hash(&mut h);
+                    nonce_base = (h.finish() as u32) as u64;
+                    nonce_offset = 0;
+                    current_job_id = job.job_id.clone();
+                    println!(
+                        "[{}] ext_cpu_thread: new job coin={} algo={} job_id={} nonce_base={}",
+                        log_timestamp(),
+                        job.coin,
+                        job.algorithm,
+                        job.job_id,
+                        nonce_base,
+                    );
+                }
                 current_job = Some(job);
             }
             Err(std::sync::mpsc::TryRecvError::Empty) => {}

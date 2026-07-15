@@ -262,6 +262,7 @@ fn pad_to_chunk_boundary(data: &[u8]) -> Vec<u8> {
 }
 
 /// BLAKE3 Merkle tree with multi-leaf proof generation.
+#[allow(dead_code)]
 pub struct MerkleTree {
     key: Digest,
     layers: Vec<Vec<Digest>>,

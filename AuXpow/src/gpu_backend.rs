@@ -113,11 +113,11 @@ pub trait GpuBackend: Send {
 /// 3. OpenCL (cross-platform — works on AMD, NVIDIA, Intel)
 ///
 /// Returns the first backend that initializes successfully.
-pub fn detect_backend(work_size: usize) -> Result<Box<dyn GpuBackend>> {
+pub fn detect_backend(_work_size: usize) -> Result<Box<dyn GpuBackend>> {
     // Try CUDA first (best perf on NVIDIA)
     #[cfg(feature = "gpu-cuda")]
     {
-        match crate::gpu_cuda::CudaBackend::new(work_size) {
+        match crate::gpu_cuda::CudaBackend::new(_work_size) {
             Ok(backend) => {
                 println!(
                     "gpu_backend: using CUDA device: {}",
@@ -134,7 +134,7 @@ pub fn detect_backend(work_size: usize) -> Result<Box<dyn GpuBackend>> {
     // Try Metal (Apple Silicon)
     #[cfg(feature = "gpu-metal")]
     {
-        match crate::gpu_metal::MetalBackend::new(work_size) {
+        match crate::gpu_metal::MetalBackend::new(_work_size) {
             Ok(backend) => {
                 println!(
                     "gpu_backend: using Metal device: {}",
@@ -151,7 +151,7 @@ pub fn detect_backend(work_size: usize) -> Result<Box<dyn GpuBackend>> {
     // Try OpenCL (cross-platform fallback)
     #[cfg(feature = "gpu-opencl")]
     {
-        match crate::gpu_opencl::new_backend(work_size) {
+        match crate::gpu_opencl::new_backend(_work_size) {
             Ok(backend) => {
                 println!(
                     "gpu_backend: using OpenCL device: {}",
@@ -171,6 +171,7 @@ pub fn detect_backend(work_size: usize) -> Result<Box<dyn GpuBackend>> {
 }
 
 /// List all available GPU devices across all backends.
+#[allow(unused_mut)]
 pub fn list_devices() -> Vec<String> {
     let mut devices = Vec::new();
 

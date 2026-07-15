@@ -13,8 +13,8 @@ NODE_RPC="http://127.0.0.1:8443/health"
 NODE_JSONRPC="http://127.0.0.1:8443/jsonrpc"
 POOL_HOST="127.0.0.1"
 POOL_PORT="8444"
-NODE_SERVICE="zion-node"
-POOL_SERVICE="zion-pool"
+NODE_SERVICE="zion-edge-node1"
+POOL_SERVICE="zion-edge-pool"
 ALERT_WEBHOOK=""  # optional: Discord/Slack webhook URL
 
 LOG_FILE="/var/log/zion-edge-watchdog.log"

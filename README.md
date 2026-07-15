@@ -1,11 +1,11 @@
-# ZION TerraNova v3.0.5
+# ZION TerraNova v3.0.6
 
 > **Proof of Work Layer 1 for the next 100 years.**
 > From blockchain to the stars.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Status:** Mainnet Live · 3.0.5 "All Green" Complete · 11/11 Services Active · Chain Height 827+ · Web Image 377 MB (85% smaller) · Public Launch: 31 December 2026
+**Status:** Mainnet Beta · 3.0.6 "Triple Parallel" Live · 14/14 Services Active · Chain Height 5800+ · Web Image 377 MB (85% smaller) · Public Launch: 31 December 2026
 
 **DeekshaChv3 Parallel Streaming:** ZION Deeksha on GPU + external coins (VRSC, KAS, ALPH, DCR, ERG, ETC, RVN, FLUX) on CPU — all algorithms run **simultaneously**, not alternating. Deployed to Edge pool 2026-07-13.
 
@@ -82,7 +82,7 @@ cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help
 ### Mine
 
 **Pool:** `62.171.141.136:8444` (Edge — public)  
-**RPC:** `62.171.141.136:8443` (localhost only on server)
+**RPC:** `rpc.zionterranova.com:8443` (public via nginx TCP proxy)
 
 **DeekshaChv3 Parallel Streaming** — the pool sends ZION Deeksha jobs with embedded external coin jobs (VRSC, KAS, ALPH, etc.). The miner runs ZION on GPU and the external coin on CPU **simultaneously**. Both streams submit shares independently.
 
@@ -139,8 +139,8 @@ All other root `.md` files were archived to [`docs/3.0.3/`](docs/3.0.3/) as part
 ## Network Topology
 
 ```
-Edge Server (Contabo VPS)       Core (Local machine)
-62.171.141.136                  zionserver-144 (109.81.87.10)
+Edge Server (Hetzner Cloud)     Core (Local machine)
+62.171.141.136                  zionserver-144 (109.81.27.87)
     |                               |
 Node 1 (PRIMARY, mining)        Backup Node (P2P peer)
 Node 2 (Follower, P2P sync)     Dashboard + AI services
@@ -148,7 +148,7 @@ Pool (PRIMARY, Stratum)
 Bridge + DAO + WARP + Atomic Swap
 Oasis + Free World + Issobella
 Dashboard + Watchdog
-Web (Docker: zion-web-next)
+Web (Docker: zion-web)
 Public P2P: 8333
 Public Pool: 8444
 RPC: 127.0.0.1:8443 (localhost only)
@@ -156,12 +156,12 @@ RPC: 127.0.0.1:8443 (localhost only)
 
 | Role | Host | Public IP | Ports |
 |------|------|-----------|-------|
-| **Edge** | Contabo VPS | `62.171.141.136` | P2P: 8333, Pool: 8444, RPC: 8443 (localhost), Web: 80/443 |
-| **Core** | Local machine | `109.81.87.10` | P2P: 8333, RPC: 8446 |
+| **Edge** | Hetzner Cloud | `62.171.141.136` | P2P: 8333, Pool: 8444, RPC: 8443 (localhost), Web: 80/443 |
+| **Core** | Local machine | `109.81.27.87` | P2P: 8333, RPC: 8446 |
 
-- **Edge**: Primary 24/7 node + pool. Source of chain truth. Accepts public miner connections. 11 services + watchdog timer + web Docker container.
+- **Edge**: Primary 24/7 node + pool. Source of chain truth. Accepts public miner connections. 14 services + watchdog timer + web Docker container.
 - **Core**: Local backup node (P2P peer, same genesis) + Dashboard + AI services.
-- **Chain live since:** 2026-07-07 (hard genesis reset) · **Current protocol:** `zion-v3-node/3.0.5` · **Chain height:** 827+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+- **Chain live since:** 2026-07-07 (hard genesis reset) · **Current protocol:** `zion-v3-node/3.0.6` · **Chain height:** 5800+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 
 ---
 

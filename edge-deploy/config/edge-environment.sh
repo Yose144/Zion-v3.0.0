@@ -1,6 +1,6 @@
 # ZION Edge Server — Common Environment
-# Updated: 2026-07-14 - 3.0.6 "Triple Parallel" — 3-stream parallel mining
-#                        RPC addr fixed: 8443 (nginx proxy) → 9443 (direct node RPC)
+# Updated: 2026-07-15 - 3.0.6 "Triple Parallel" — 3-stream parallel mining
+#                        RPC addr corrected: direct node RPC is 127.0.0.1:8443
 #                        AuxPow enabled for 3-stream parallel mining
 #                        EPIC wallet added for ProgPow support
 # Updated: 2026-07-08 - Post 3.0.4 Hard Genesis Reset (new server 62.171.141.136)
@@ -12,10 +12,10 @@
 # in each systemd service via Environment= directives.
 #
 # Server runs:
-#   - Node (Primary / Genesis) — P2P 8333, RPC 9443 (localhost, direct)
-#   - Pool (Primary) — connects to Node RPC 9443, Stratum 8444 public
-#   - Bridge, DAO, Atomic-Swap, WARP — all connect to Node RPC 9443
-#   - nginx proxies 8443 → 9443 for public RPC (rpc.zionterranova.com:8443)
+#   - Node (Primary / Genesis) — P2P 8333, RPC 8443 (localhost, direct)
+#   - Pool (Primary) — connects to Node RPC 8443, Stratum 8444 public
+#   - Bridge, DAO, Atomic-Swap, WARP — all connect to Node RPC 8443
+#   - nginx proxies public 8443 → 8443 for public RPC (rpc.zionterranova.com:8443)
 
 # ── Canonical Fee Split Addresses (89/5/5/1 burn model — no pool fee wallet) ──
 # NOTE: ZION_MINER_ADDRESS = default_miner canonical wallet (89% coinbase).
@@ -33,7 +33,7 @@ ZION_POOL_FEE_PCT=0
 
 # ── Pool Configuration (PRIMARY — accepts all miners) ──
 ZION_POOL_BIND=0.0.0.0:8444
-ZION_NODE_RPC_ADDR=127.0.0.1:9443
+ZION_NODE_RPC_ADDR=127.0.0.1:8443
 ZION_POOL_LOOP_COUNT=1000000
 ZION_MAX_SESSIONS_PER_IP=10
 # GPU optimization: nonce_count tuned for RX 5700 XT @ ~19.25 KH/s (deeksha_lite_v1).

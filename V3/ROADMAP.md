@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: **2026-07-10** (3.0.5 "All Green" complete — 11/11 services active, protocol zion-v3-node/3.0.5, E2E memo tests verified in block 752 — see supplement below)
+Status date: **2026-07-15** (3.0.6 "Triple Parallel" live — 14/14 services active, protocol zion-v3-node/3.0.6, E2E memo tests verified in block 752 — see supplement below)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.

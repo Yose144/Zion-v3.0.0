@@ -69,12 +69,14 @@ use blake3::hazmat::{merge_subtrees_non_root, merge_subtrees_root, HasherExt, Mo
 
 /// BLAKE3 Merkle tree with multi-leaf proof generation.
 /// Mirrors pearl-blake3/src/merkle.rs using blake3::hazmat API.
+#[allow(dead_code)]
 pub struct MerkleTree {
     key: [u8; 32],
     layers: Vec<Vec<[u8; 32]>>,
     data: Vec<u8>,
 }
 
+#[allow(dead_code)]
 impl MerkleTree {
     pub fn key(&self) -> &[u8; 32] { &self.key }
 

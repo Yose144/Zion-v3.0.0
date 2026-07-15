@@ -73,6 +73,12 @@ pub enum ExternalCoin {
     /// GPU coin. AlphaPool/suprnova, 22x more profitable than KAS.
     /// Custom Stratum dialect (object params, no subscribe, plain_proof).
     PRL,
+    /// Epic Cash — ProgPow. GPU coin. EpicStratum (TLS) over de.epicmine.io.
+    EPIC,
+    /// Quai Network — KawPoW. GPU coin. 2miners pool, BTC payout.
+    QUAI,
+    /// Beam — BeamHash III (Equihash 150,5). GPU coin. BeamStratum (TLS) over 2miners.
+    BEAM,
 }
 
 impl ExternalCoin {
@@ -92,6 +98,9 @@ impl ExternalCoin {
             Self::XMR => "XMR",
             Self::VRSC => "VRSC",
             Self::PRL => "PRL",
+            Self::EPIC => "EPIC",
+            Self::QUAI => "QUAI",
+            Self::BEAM => "BEAM",
         }
     }
 
@@ -111,6 +120,9 @@ impl ExternalCoin {
             Self::XMR => "randomx",
             Self::VRSC => "verushash",
             Self::PRL => "pearlhash",
+            Self::EPIC => "progpow",
+            Self::QUAI => "kawpow",
+            Self::BEAM => "beamhash",
         }
     }
 
@@ -142,6 +154,9 @@ impl ExternalCoin {
             "xmr" | "monero" | "randomx" => Some(Self::XMR),
             "vrsc" | "verus" | "verushash" => Some(Self::VRSC),
             "prl" | "pearl" | "pearlhash" => Some(Self::PRL),
+            "epic" | "epiccash" => Some(Self::EPIC),
+            "quai" | "quainetwork" => Some(Self::QUAI),
+            "beam" => Some(Self::BEAM),
             _ => None,
         }
     }
@@ -153,7 +168,7 @@ impl ExternalCoin {
             Self::DCR => "pool.woolypooly.com:3152",
             Self::ALPH => "pool.woolypooly.com:3106",
             Self::KAS => "kas.2miners.com:2020",
-            Self::ERG => "erg.2miners.com:3056",
+            Self::ERG => "erg.2miners.com:8888",
             Self::RVN => "rvn.2miners.com:6060",
             Self::ETC => "etc.2miners.com:1010",
             Self::EVR => "evrprogpow.eu.mine.zpool.ca:1330",
@@ -163,6 +178,9 @@ impl ExternalCoin {
             Self::XMR => "gulf.moneroocean.stream:10001",
             Self::VRSC => "eu.luckpool.net:3956",
             Self::PRL => "us2.alphapool.tech:5566",
+            Self::EPIC => "de.epicmine.io:3334",
+            Self::QUAI => "quai.2miners.com:4848",
+            Self::BEAM => "beam.2miners.com:5252",
         }
     }
 
@@ -277,6 +295,9 @@ impl ExternalCoin {
             Self::XMR => StratumProtocol::Stratum,
             Self::VRSC => StratumProtocol::ZcashStratum,
             Self::PRL => StratumProtocol::PearlStratum,
+            Self::EPIC => StratumProtocol::EpicStratum,
+            Self::QUAI => StratumProtocol::EthStratum,
+            Self::BEAM => StratumProtocol::BeamStratum,
         }
     }
 
@@ -296,6 +317,9 @@ impl ExternalCoin {
             Self::XMR,
             Self::VRSC,
             Self::PRL,
+            Self::EPIC,
+            Self::QUAI,
+            Self::BEAM,
         ]
     }
 
@@ -318,6 +342,9 @@ impl ExternalCoin {
             Self::FLUX => RevenueSource::ZelHashExternal,
             Self::VRSC => RevenueSource::VerusHashExternal,
             Self::PRL => RevenueSource::PearlExternal,
+            Self::EPIC => RevenueSource::ProgPowExternal,
+            Self::QUAI => RevenueSource::KawPowExternal,
+            Self::BEAM => RevenueSource::BeamHashExternal,
         }
     }
 }
@@ -342,6 +369,10 @@ pub enum StratumProtocol {
     /// Pearl (PRL) custom Stratum dialect — object params (not arrays),
     /// no mining.subscribe, plain_proof base64 submit. Used by AlphaPool/suprnova.
     PearlStratum,
+    /// Epic Cash — custom JSON-RPC 2.0 over TLS used by epicmine.io.
+    EpicStratum,
+    /// Beam — BeamStratum (JSON-RPC 2.0 over TLS) used by beam.2miners.com.
+    BeamStratum,
 }
 
 impl StratumProtocol {
@@ -351,6 +382,8 @@ impl StratumProtocol {
             Self::EthStratum => "ethstratum",
             Self::ZcashStratum => "zcashstratum",
             Self::PearlStratum => "pearlstratum",
+            Self::EpicStratum => "epicstratum",
+            Self::BeamStratum => "beamstratum",
         }
     }
 }

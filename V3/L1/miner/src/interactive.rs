@@ -188,6 +188,37 @@ impl Window {
     }
 }
 
+/// Triple sliding windows (10s / 60s / 15m) for a single stream.
+struct StreamWindows {
+    w10s: Window,
+    w60s: Window,
+    w15m: Window,
+}
+
+impl StreamWindows {
+    fn new() -> Self {
+        Self {
+            w10s: Window::new(10),
+            w60s: Window::new(60),
+            w15m: Window::new(900),
+        }
+    }
+
+    fn push(&mut self, total: u64) {
+        self.w10s.push(total);
+        self.w60s.push(total);
+        self.w15m.push(total);
+    }
+
+    fn rates(&self) -> (f64, f64, f64) {
+        (
+            self.w10s.rate_hps(),
+            self.w60s.rate_hps(),
+            self.w15m.rate_hps(),
+        )
+    }
+}
+
 pub struct HashrateTracker {
     pub cpu_hashes: AtomicU64,
     pub gpu_hashes: AtomicU64,
@@ -199,20 +230,28 @@ pub struct HashrateTracker {
     pub zion_accepted: AtomicU64,
     /// Stream 1: ZION Deeksha rejected shares
     pub zion_rejected: AtomicU64,
-    /// Stream 2: Pearl PoUW accepted proofs
-    pub pearl_accepted: AtomicU64,
-    /// Stream 2: Pearl PoUW rejected proofs
-    pub pearl_rejected: AtomicU64,
-    /// Stream 3: External (Verus/Blake3/etc) accepted shares
-    pub ext_accepted: AtomicU64,
-    /// Stream 3: External (Verus/Blake3/etc) rejected shares
-    pub ext_rejected: AtomicU64,
+    /// Stream 2: GPU external profit coin accepted shares
+    pub gpu_ext_accepted: AtomicU64,
+    /// Stream 2: GPU external profit coin rejected shares
+    pub gpu_ext_rejected: AtomicU64,
+    /// Stream 3: CPU external (Verus/RandomX/etc) accepted shares
+    pub cpu_ext_accepted: AtomicU64,
+    /// Stream 3: CPU external (Verus/RandomX/etc) rejected shares
+    pub cpu_ext_rejected: AtomicU64,
+    // ── Per-stream hash counters ──
+    pub zion_hashes: AtomicU64,
+    pub gpu_ext_hashes: AtomicU64,
+    pub cpu_ext_hashes: AtomicU64,
     /// Pool height — updated by mining loop via set_pool_height()
     pub pool_height: AtomicU64,
     /// GPU device info set by mining loop after gpu_init (via set_gpu_info)
     pub gpu_info: Mutex<Vec<GpuInfoLine>>,
-    /// Windows protected by a single mutex
+    /// Aggregate windows protected by a single mutex
     windows: Mutex<(Window, Window, Window)>, // 10s, 60s, 15m
+    /// Per-stream windows
+    zion_windows: Mutex<StreamWindows>,
+    gpu_ext_windows: Mutex<StreamWindows>,
+    cpu_ext_windows: Mutex<StreamWindows>,
 }
 
 impl HashrateTracker {
@@ -225,13 +264,19 @@ impl HashrateTracker {
             rejected_shares: AtomicU64::new(0),
             zion_accepted: AtomicU64::new(0),
             zion_rejected: AtomicU64::new(0),
-            pearl_accepted: AtomicU64::new(0),
-            pearl_rejected: AtomicU64::new(0),
-            ext_accepted: AtomicU64::new(0),
-            ext_rejected: AtomicU64::new(0),
+            gpu_ext_accepted: AtomicU64::new(0),
+            gpu_ext_rejected: AtomicU64::new(0),
+            cpu_ext_accepted: AtomicU64::new(0),
+            cpu_ext_rejected: AtomicU64::new(0),
+            zion_hashes: AtomicU64::new(0),
+            gpu_ext_hashes: AtomicU64::new(0),
+            cpu_ext_hashes: AtomicU64::new(0),
             pool_height: AtomicU64::new(0),
             gpu_info: Mutex::new(Vec::new()),
             windows: Mutex::new((Window::new(10), Window::new(60), Window::new(900))),
+            zion_windows: Mutex::new(StreamWindows::new()),
+            gpu_ext_windows: Mutex::new(StreamWindows::new()),
+            cpu_ext_windows: Mutex::new(StreamWindows::new()),
         })
     }
 
@@ -258,6 +303,33 @@ impl HashrateTracker {
         self.push_windows(total);
     }
 
+    /// Stream 1 (ZION Deeksha) hash progress.
+    pub fn record_zion_hashes(&self, n: u64) {
+        self.zion_hashes.fetch_add(n, Ordering::Relaxed);
+        let total = self.zion_hashes.load(Ordering::Relaxed);
+        if let Ok(mut w) = self.zion_windows.lock() {
+            w.push(total);
+        }
+    }
+
+    /// Stream 2 (GPU external profit coin) hash progress.
+    pub fn record_gpu_ext_hashes(&self, n: u64) {
+        self.gpu_ext_hashes.fetch_add(n, Ordering::Relaxed);
+        let total = self.gpu_ext_hashes.load(Ordering::Relaxed);
+        if let Ok(mut w) = self.gpu_ext_windows.lock() {
+            w.push(total);
+        }
+    }
+
+    /// Stream 3 (CPU external Verus/RandomX/etc) hash progress.
+    pub fn record_cpu_ext_hashes(&self, n: u64) {
+        self.cpu_ext_hashes.fetch_add(n, Ordering::Relaxed);
+        let total = self.cpu_ext_hashes.load(Ordering::Relaxed);
+        if let Ok(mut w) = self.cpu_ext_windows.lock() {
+            w.push(total);
+        }
+    }
+
     pub fn record_share(&self, accepted: bool) {
         if accepted {
             self.accepted_shares.fetch_add(1, Ordering::Relaxed);
@@ -277,24 +349,24 @@ impl HashrateTracker {
         }
     }
 
-    /// Record a Stream 2 (Pearl PoUW) proof result.
-    pub fn record_pearl_share(&self, accepted: bool) {
+    /// Record a Stream 2 (GPU external profit coin) share result.
+    pub fn record_gpu_ext_share(&self, accepted: bool) {
         if accepted {
-            self.pearl_accepted.fetch_add(1, Ordering::Relaxed);
+            self.gpu_ext_accepted.fetch_add(1, Ordering::Relaxed);
             self.accepted_shares.fetch_add(1, Ordering::Relaxed);
         } else {
-            self.pearl_rejected.fetch_add(1, Ordering::Relaxed);
+            self.gpu_ext_rejected.fetch_add(1, Ordering::Relaxed);
             self.rejected_shares.fetch_add(1, Ordering::Relaxed);
         }
     }
 
-    /// Record a Stream 3 (external: Verus/Blake3/etc) share result.
-    pub fn record_ext_share(&self, accepted: bool) {
+    /// Record a Stream 3 (CPU external Verus/RandomX/etc) share result.
+    pub fn record_cpu_ext_share(&self, accepted: bool) {
         if accepted {
-            self.ext_accepted.fetch_add(1, Ordering::Relaxed);
+            self.cpu_ext_accepted.fetch_add(1, Ordering::Relaxed);
             self.accepted_shares.fetch_add(1, Ordering::Relaxed);
         } else {
-            self.ext_rejected.fetch_add(1, Ordering::Relaxed);
+            self.cpu_ext_rejected.fetch_add(1, Ordering::Relaxed);
             self.rejected_shares.fetch_add(1, Ordering::Relaxed);
         }
     }
@@ -317,6 +389,21 @@ impl HashrateTracker {
         } else {
             (0.0, 0.0, 0.0)
         };
+        let (z10, z60, z15m) = if let Ok(w) = self.zion_windows.lock() {
+            w.rates()
+        } else {
+            (0.0, 0.0, 0.0)
+        };
+        let (g10, g60, g15m) = if let Ok(w) = self.gpu_ext_windows.lock() {
+            w.rates()
+        } else {
+            (0.0, 0.0, 0.0)
+        };
+        let (c10, c60, c15m) = if let Ok(w) = self.cpu_ext_windows.lock() {
+            w.rates()
+        } else {
+            (0.0, 0.0, 0.0)
+        };
         ComputedHashrates {
             total_hps: r10, // "current" = most recent 10s window
             total_10s_hps: r10,
@@ -328,10 +415,22 @@ impl HashrateTracker {
             rejected: self.rejected_shares.load(Ordering::Relaxed),
             zion_accepted: self.zion_accepted.load(Ordering::Relaxed),
             zion_rejected: self.zion_rejected.load(Ordering::Relaxed),
-            pearl_accepted: self.pearl_accepted.load(Ordering::Relaxed),
-            pearl_rejected: self.pearl_rejected.load(Ordering::Relaxed),
-            ext_accepted: self.ext_accepted.load(Ordering::Relaxed),
-            ext_rejected: self.ext_rejected.load(Ordering::Relaxed),
+            gpu_ext_accepted: self.gpu_ext_accepted.load(Ordering::Relaxed),
+            gpu_ext_rejected: self.gpu_ext_rejected.load(Ordering::Relaxed),
+            cpu_ext_accepted: self.cpu_ext_accepted.load(Ordering::Relaxed),
+            cpu_ext_rejected: self.cpu_ext_rejected.load(Ordering::Relaxed),
+            zion_10s_hps: z10,
+            zion_60s_hps: z60,
+            zion_15m_hps: z15m,
+            gpu_ext_10s_hps: g10,
+            gpu_ext_60s_hps: g60,
+            gpu_ext_15m_hps: g15m,
+            cpu_ext_10s_hps: c10,
+            cpu_ext_60s_hps: c60,
+            cpu_ext_15m_hps: c15m,
+            zion_total: self.zion_hashes.load(Ordering::Relaxed),
+            gpu_ext_total: self.gpu_ext_hashes.load(Ordering::Relaxed),
+            cpu_ext_total: self.cpu_ext_hashes.load(Ordering::Relaxed),
         }
     }
 }
@@ -349,12 +448,25 @@ pub struct ComputedHashrates {
     /// Stream 1: ZION Deeksha
     pub zion_accepted: u64,
     pub zion_rejected: u64,
-    /// Stream 2: Pearl PoUW
-    pub pearl_accepted: u64,
-    pub pearl_rejected: u64,
-    /// Stream 3: External (Verus/Blake3/etc)
-    pub ext_accepted: u64,
-    pub ext_rejected: u64,
+    /// Stream 2: GPU external profit coin
+    pub gpu_ext_accepted: u64,
+    pub gpu_ext_rejected: u64,
+    /// Stream 3: CPU external Verus/RandomX/etc
+    pub cpu_ext_accepted: u64,
+    pub cpu_ext_rejected: u64,
+    /// Per-stream hashrates (10s / 60s / 15m)
+    pub zion_10s_hps: f64,
+    pub zion_60s_hps: f64,
+    pub zion_15m_hps: f64,
+    pub gpu_ext_10s_hps: f64,
+    pub gpu_ext_60s_hps: f64,
+    pub gpu_ext_15m_hps: f64,
+    pub cpu_ext_10s_hps: f64,
+    pub cpu_ext_60s_hps: f64,
+    pub cpu_ext_15m_hps: f64,
+    pub zion_total: u64,
+    pub gpu_ext_total: u64,
+    pub cpu_ext_total: u64,
 }
 
 /* ========================================================================= */
@@ -363,7 +475,7 @@ pub struct ComputedHashrates {
 
 /// Number of rows the dashboard always occupies.
 /// Must match the actual number of printed lines below.
-const DASHBOARD_ROWS: u16 = 22;
+const DASHBOARD_ROWS: u16 = 23;
 
 /// Short display names for algorithms
 fn algo_display(algo: &str) -> &str {
@@ -480,20 +592,21 @@ pub fn draw_dashboard(
     } else {
         100.0
     };
-    let pearl_total = rates.pearl_accepted + rates.pearl_rejected;
-    let pearl_pct = if pearl_total > 0 {
-        rates.pearl_accepted as f64 * 100.0 / pearl_total as f64
+    let gpu_ext_total = rates.gpu_ext_accepted + rates.gpu_ext_rejected;
+    let gpu_ext_pct = if gpu_ext_total > 0 {
+        rates.gpu_ext_accepted as f64 * 100.0 / gpu_ext_total as f64
     } else {
         100.0
     };
-    let ext_total = rates.ext_accepted + rates.ext_rejected;
-    let ext_pct = if ext_total > 0 {
-        rates.ext_accepted as f64 * 100.0 / ext_total as f64
+    let cpu_ext_total = rates.cpu_ext_accepted + rates.cpu_ext_rejected;
+    let cpu_ext_pct = if cpu_ext_total > 0 {
+        rates.cpu_ext_accepted as f64 * 100.0 / cpu_ext_total as f64
     } else {
         100.0
     };
 
     // Stream 1: ZION Deeksha
+    let (zion_hr, zion_unit) = ui::fmt_hashrate(rates.zion_10s_hps);
     queue!(
         out,
         Print("  Stream 1 "),
@@ -501,32 +614,34 @@ pub fn draw_dashboard(
         Print(format!("ZION")),
         ResetColor,
         Print(format!(
-            "  {:>5} acc / {:>3} rej ({:>5.1}%)",
-            rates.zion_accepted, rates.zion_rejected, zion_pct
+            "  {:>7.2}{:<3} {:>5} acc / {:>3} rej ({:>5.1}%)",
+            zion_hr, zion_unit, rates.zion_accepted, rates.zion_rejected, zion_pct
         )),
     )?;
-    // Stream 2: Pearl PoUW
+    // Stream 2: GPU external profit coin
+    let (gpu_ext_hr, gpu_ext_unit) = ui::fmt_hashrate(rates.gpu_ext_10s_hps);
     queue!(
         out,
         Print("  |  "),
         SetForegroundColor(Color::Magenta),
-        Print(format!("PRL")),
+        Print(format!("GPU PROFIT")),
         ResetColor,
         Print(format!(
-            "  {:>5} acc / {:>3} rej ({:>5.1}%)",
-            rates.pearl_accepted, rates.pearl_rejected, pearl_pct
+            "  {:>7.2}{:<3} {:>5} acc / {:>3} rej ({:>5.1}%)",
+            gpu_ext_hr, gpu_ext_unit, rates.gpu_ext_accepted, rates.gpu_ext_rejected, gpu_ext_pct
         )),
     )?;
-    // Stream 3: External
+    // Stream 3: CPU external Verus/RandomX/etc
+    let (cpu_ext_hr, cpu_ext_unit) = ui::fmt_hashrate(rates.cpu_ext_10s_hps);
     queue!(
         out,
         Print("  |  "),
         SetForegroundColor(Color::Yellow),
-        Print(format!("EXT")),
+        Print(format!("CPU PROFIT")),
         ResetColor,
         Print(format!(
-            "  {:>5} acc / {:>3} rej ({:>5.1}%)\n",
-            rates.ext_accepted, rates.ext_rejected, ext_pct
+            "  {:>7.2}{:<3} {:>5} acc / {:>3} rej ({:>5.1}%)\n",
+            cpu_ext_hr, cpu_ext_unit, rates.cpu_ext_accepted, rates.cpu_ext_rejected, cpu_ext_pct
         )),
     )?;
 
