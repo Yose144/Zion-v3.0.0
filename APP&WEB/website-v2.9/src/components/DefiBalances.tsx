@@ -139,7 +139,7 @@ export default function DefiBalances() {
             <span>Tick: {poolInfo.tick}</span>
             <span>Pool: Uniswap V3 ({poolInfo.poolFee})</span>
             <a
-              href={`https://basescan.org/address/${CONTRACTS.UniV3Pool}`}
+              href={`https://basescan.org/address/${CONTRACTS.UniV3PoolUSDT}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 hover:text-gray-300"
@@ -232,7 +232,7 @@ export default function DefiBalances() {
           wZION BaseScan <ExternalLink className="h-2.5 w-2.5" />
         </a>
         <a
-          href={`https://dexscreener.com/base/${CONTRACTS.UniV3Pool}`}
+          href={`https://dexscreener.com/base/${CONTRACTS.UniV3PoolUSDT}`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"

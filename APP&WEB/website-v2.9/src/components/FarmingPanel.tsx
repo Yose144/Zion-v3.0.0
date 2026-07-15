@@ -54,7 +54,8 @@ function poolName(lpToken: string, pid: number, onChainName?: string): string {
   if (onChainName && onChainName.length > 0) return onChainName;
   const t = lpToken.toLowerCase();
   if (t === CONTRACTS.wZION.toLowerCase()) return 'wZION Single';
-  if (t === CONTRACTS.UniV3Pool.toLowerCase()) return 'wZION/WETH LP';
+  if (t === CONTRACTS.UniV3PoolUSDT.toLowerCase()) return 'wZION/USDT LP';
+  if (t === CONTRACTS.UniV3PoolWETH.toLowerCase()) return 'wZION/WETH LP';
   if (t === CONTRACTS.WETH.toLowerCase()) return 'WETH Pool';
   return `Pool #${pid}`;
 }
