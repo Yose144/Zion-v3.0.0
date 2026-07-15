@@ -95,10 +95,12 @@ fn detect_gpus_via_miner(miner_bin: &str) -> Vec<String> {
             let stdout = String::from_utf8_lossy(&o.stdout);
             // Miner prints lines like: "gpu_detect: opencl:AMD Radeon RX 5700 XT"
             // or "gpu_detect: metal:Apple M1 Pro"
+            // or "gpu_detect: none" when no GPU is available
             stdout
                 .lines()
                 .filter(|l| l.starts_with("gpu_detect:"))
                 .map(|l| l.trim_start_matches("gpu_detect: ").to_string())
+                .filter(|dev| !dev.is_empty() && dev != "none")
                 .collect()
         }
         _ => {
@@ -179,6 +181,12 @@ pub fn derive_auto_config(hw: &HardwareProfile) -> AutoMineConfig {
         // Stream 1: ZION Deeksha (GPU primary)
         // Stream 2: External GPU coins (blake3, kheavyhash, kawpow, etc.)
         // Stream 3: External CPU coins (verushash, randomx)
+        let (mode_name, supported_coins) = if hw.best_backend == "metal" {
+            // Metal on Apple Silicon: skip DAG-based coins (EPIC, RVN, ETC, EVR, MEWC, CLORE, QUAI, BEAM)
+            ("Triple Parallel (Metal + CPU — DAG algos skipped)", METAL_COINS.to_vec())
+        } else {
+            ("Triple Parallel (GPU + CPU)", ALL_COINS.to_vec())
+        };
         AutoMineConfig {
             backend: hw.best_backend.clone(),
             cpu_threads: (hw.cpu_cores / 2).max(1), // Use half cores for CPU stream
@@ -186,8 +194,8 @@ pub fn derive_auto_config(hw: &HardwareProfile) -> AutoMineConfig {
             stream2_enabled: true,
             stream3_enabled: true,
             profile: "pool".to_string(),
-            mode_name: "Triple Parallel (GPU + CPU)".to_string(),
-            supported_coins: ALL_COINS.to_vec(),
+            mode_name: mode_name.to_string(),
+            supported_coins,
         }
     } else {
         // CPU-only mode
@@ -207,10 +215,16 @@ pub fn derive_auto_config(hw: &HardwareProfile) -> AutoMineConfig {
     }
 }
 
-/// All supported coins (GPU + CPU)
+/// All supported coins (GPU + CPU) — when OpenCL/CUDA backend is available
 static ALL_COINS: &[&str] = &[
     "ZION", "PRL", "VRSC", "XMR", "DCR", "KAS", "ALPH", "ERG", "RVN", "ETC",
     "EVR", "MEWC", "FLUX", "CLORE", "EPIC", "QUAI", "BEAM",
+];
+
+/// Coins supported on Metal (Apple Silicon) — excludes DAG-based algorithms
+/// (progpow/ethash/kawpow) to prevent unified memory OOM
+static METAL_COINS: &[&str] = &[
+    "ZION", "PRL", "VRSC", "XMR", "DCR", "KAS", "ALPH", "ERG", "FLUX",
 ];
 
 /// CPU-only mineable coins
@@ -354,5 +368,11 @@ mod tests {
         let cfg = derive_auto_config(&hw);
         assert_eq!(cfg.backend, "metal");
         assert!(cfg.stream2_enabled, "Metal GPU should enable Stream 2");
+        // Metal should NOT support DAG-based coins (EPIC, RVN, ETC)
+        assert!(!cfg.supported_coins.contains(&"EPIC"), "Metal should skip EPIC (DAG-based)");
+        assert!(!cfg.supported_coins.contains(&"RVN"), "Metal should skip RVN (DAG-based)");
+        // Metal SHOULD support non-DAG coins (KAS, ALPH, DCR)
+        assert!(cfg.supported_coins.contains(&"KAS"), "Metal should support KAS");
+        assert!(cfg.supported_coins.contains(&"ALPH"), "Metal should support ALPH");
     }
 }

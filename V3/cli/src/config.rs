@@ -68,8 +68,13 @@ impl Default for CliConfig {
 pub struct NodeConfig {
     pub rpc_host: String,
     pub rpc_port: u16,
+    #[serde(default = "default_p2p_port")]
     pub p2p_port: u16,
     pub websocket_port: Option<u16>,
+}
+
+fn default_p2p_port() -> u16 {
+    8333
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -87,12 +92,28 @@ fn default_pool_metrics_port() -> u16 {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MinerConfig {
     pub wallet: String,
+    #[serde(default)]
     pub btc_wallet: String,
+    #[serde(default = "default_threads")]
     pub threads: String,
+    #[serde(default = "default_backend")]
     pub backend: String,
+    #[serde(default = "default_profile")]
     pub profile: String,
     #[serde(default = "default_algorithm")]
     pub algorithm: String,
+}
+
+fn default_threads() -> String {
+    "auto".into()
+}
+
+fn default_backend() -> String {
+    "auto".into()
+}
+
+fn default_profile() -> String {
+    "pool".into()
 }
 
 fn default_algorithm() -> String {
