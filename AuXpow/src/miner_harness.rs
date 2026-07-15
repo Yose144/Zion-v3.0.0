@@ -18,8 +18,9 @@
 use anyhow::{anyhow, Result};
 
 use crate::external_hashers::{
-    hash_autolykos, hash_blake3, hash_blake3_alph, hash_ethash, hash_kawpow, hash_kheavyhash,
-    hash_kheavyhash_extranonce, hash_progpow, meets_target, meets_target_little_endian,
+    clear_verushash_pbaas, hash_autolykos, hash_blake3, hash_blake3_alph, hash_ethash, hash_kawpow,
+    hash_kheavyhash, hash_kheavyhash_extranonce, hash_progpow, meets_target,
+    meets_target_little_endian,
 };
 use crate::types::{ExternalCoin, JobPackage};
 
@@ -284,58 +285,32 @@ fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> 
     //   offset 68:  reserved(32)
     //   offset 100: ntime(4)
     //   offset 104: nbits(4)
-    //   offset 108: nonce(32)        ← miner_nonce goes here
+    //   offset 108: nonce(32)        ← daemon nonce for PBaaS v7+; ignored
     //   offset 140: varint(3)
     //   offset 143: solution(1344)
-    //     solution offset 1329 (= blob offset 1472): nonceSpace(15) ← also miner_nonce
+    //     solution offset 1329 (= blob offset 1472): nonceSpace(15) ← miner nonce
     //
-    // The extranonce1 is already embedded at the START of both the nonce
-    // field and nonceSpace by the pool's notify parser.  The miner writes
-    // its 4-byte LE nonce immediately AFTER extranonce1 in both places,
-    // matching the standard Zcash stratum submit format where
-    // nonce2 = [miner_nonce][padding] and the pool reconstructs
-    // nonce_field = [en1][nonce2] = [en1][miner_nonce][padding].
-    //
-    // For a 4-byte extranonce1 (typical for LuckPool), miner_nonce goes at:
-    //   - nonce field offset 108 + 4 = 112
-    //   - nonceSpace offset 1472 + 4 = 1476
+    // PBaaS v7+ zeroes the non-canonical header fields before hashing, so the
+    // miner's 4-byte LE nonce is written only into the solution nonceSpace.
+    // The upstream pool (LuckPool) interprets the resulting hash as a
+    // little-endian 256-bit integer when checking the target.
 
     let en1_len = job.extranonce1.len();
     let nonce_space_blob_offset = 143 + 1329 + en1_len; // = 1472 + en1_len
 
     let mut work_header = header.to_vec();
 
-    // One-time test: check if nonce field affects hash
-    {
-        let mut test_header = work_header.clone();
-        // Set nonce field to extranonce1
-        let en1 = &job.extranonce1;
-        if en1.len() <= 32 && 108 + en1.len() <= test_header.len() {
-            test_header[108..108 + en1.len()].copy_from_slice(en1);
-        }
-        let hash_with_en1 = crate::external_hashers::hash_verushash_header(&test_header);
-        // Set nonce field to zeros
-        let mut test_header2 = work_header.clone();
-        for b in &mut test_header2[108..140] {
-            *b = 0;
-        }
-        let hash_with_zeros = crate::external_hashers::hash_verushash_header(&test_header2);
-        eprintln!(
-            "NONCE_FIELD_TEST: en1_hash={} zeros_hash={} same={}",
-            hex::encode(hash_with_en1),
-            hex::encode(hash_with_zeros),
-            hash_with_en1 == hash_with_zeros
-        );
-    }
+    // Normalize the header exactly like LuckPool/verushash-node does for
+    // PBaaS v7+ merge-mining. Without this step the miner's hash differs from
+    // the pool's and every share is rejected as low difficulty.
+    clear_verushash_pbaas(&mut work_header);
 
     for nonce in start..end {
         let nonce_le = (nonce as u32).to_le_bytes();
 
         // PBaaS v7+: Only write miner_nonce into the solution nonceSpace.
-        // The nonce field (offset 108) is NOT modified — for PBaaS v7+,
-        // the pool uses the daemon's nonce (or zeros) and ignores the
-        // miner's nonce field. The miner's unique work is solely in the
-        // solution nonceSpace.
+        // The nonce field (offset 108) is NOT modified — the pool zeroes it
+        // internally before hashing and ignores the miner's nonce2 field.
         if nonce_space_blob_offset + 4 <= work_header.len() {
             work_header[nonce_space_blob_offset..nonce_space_blob_offset + 4]
                 .copy_from_slice(&nonce_le);
@@ -344,10 +319,16 @@ fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> 
         let hash = crate::external_hashers::hash_verushash_header(&work_header);
         // Debug: log first 3 hashes to verify VerusHash is working
         if nonce - start < 3 {
-            eprintln!("DEBUG verushash: nonce={} header_len={} hash={} target={} meets={}",
-                nonce, work_header.len(), hex::encode(hash), hex::encode(target), meets_target(&hash, target));
+            eprintln!(
+                "DEBUG verushash: nonce={} header_len={} hash={} target={} meets={}",
+                nonce,
+                work_header.len(),
+                hex::encode(hash),
+                hex::encode(target),
+                meets_target_little_endian(&hash, target)
+            );
         }
-        if meets_target(&hash, target) {
+        if meets_target_little_endian(&hash, target) {
             eprintln!(
                 "SHARE_FOUND nonce={} hash={} nonce_field={} nonceSpace={}",
                 nonce,
@@ -628,6 +609,10 @@ fn scan_verushash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
     let nonce_space_blob_offset = 143 + 1329 + en1_len;
     let mut work_header = header.to_vec();
 
+    // Normalize PBaaS v7+ header before scanning so best-share selection
+    // matches the upstream pool's validation hash.
+    clear_verushash_pbaas(&mut work_header);
+
     let mut best: Option<FoundShare> = None;
     for nonce in start..end {
         let nonce_le = (nonce as u32).to_le_bytes();
@@ -639,7 +624,7 @@ fn scan_verushash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
         let hash = crate::external_hashers::hash_verushash_header(&work_header);
         if best
             .as_ref()
-            .map(|b| is_hash_better(&hash, &b.hash, false))
+            .map(|b| is_hash_better(&hash, &b.hash, true))
             .unwrap_or(true)
         {
             best = Some(FoundShare {

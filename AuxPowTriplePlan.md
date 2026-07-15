@@ -1,7 +1,7 @@
 # AuxPow Triple Implementation Plan — v3.0.6 "Triple Parallel"
 
-> **Status:** ✅ **CANONICAL v3.0.6** (2026-07-15) — multi-stream AuxPow architecture audited, de-duplicated, and aligned with the live code.
-> **Goal:** Keep the multi-stream parallel mining architecture (ZION Deeksha + Pearl PoUW + multiple external GPU/CPU coins) clean, consistent, and end-to-end functional.
+> **Status:** ✅ **CANONICAL v3.0.6** (2026-07-15) — multi-stream AuxPow architecture audited, de-duplicated, and aligned with the live code. Pearl (PRL) stream is **disabled** (not yet debugged).
+> **Goal:** Keep the multi-stream parallel mining architecture (ZION Deeksha + multiple external GPU/CPU coins) clean, consistent, and end-to-end functional. Pearl PoUW stream deferred until debugged.
 > **Predecessor:** `FullRevenueAuxPow.md` (design doc, Phases 1-7)
 > **Companion:** `3.0.6.md` (patch summary for 3-stream split + version bumps)
 >
@@ -11,17 +11,17 @@
 
 ## 0. Executive Summary
 
-The multi-stream architecture is **functionally complete and canonical**. The codebase has been audited for duplication and drift, the miner/pool/dashboard now agree on the real architecture, and the build is clean with all tests passing.
+The multi-stream architecture is **functionally complete and canonical**. The codebase has been audited for duplication and drift, the miner/pool/dashboard now agree on the real architecture, and the build is clean with all tests passing. **Pearl (PRL) PoUW stream is disabled** in v3.0.6 — pool-side infra is ready but the miner-side GPU thread is not yet implemented/debugged.
 
 ### Current State at a Glance
 
 | Phase | Description | Status | What's Done | What's Missing |
 |-------|-------------|--------|-------------|----------------|
-| 1 | Pool-Side Pearl | ✅ DONE | PearlSubmit msg, forward_pearl(), pearl_rx channel, PRL in profit rotation | — |
-| 2 | Miner Pearl GPU Thread | ✅ DONE | `pearl_gpu_thread()` in `main.rs`, pearl_tx/pearl_proof_rx channels, submit_pearl_proof() | — |
+| 1 | Pool-Side Pearl | ✅ DONE (pool) / ⏸️ DISABLED (miner) | PearlSubmit msg, forward_pearl(), pearl_rx channel, PRL in profit rotation | Miner-side `pearl_gpu_thread()` not implemented; PRL jobs ignored in miner (`pearl_disabled`). Pool infra ready, awaiting miner implementation + debugging. |
+| 2 | Miner Pearl GPU Thread | ⏸️ DISABLED | Not implemented in v3.0.6 canonical. PRL jobs are explicitly ignored in `main.rs` routing (`reason=pearl_disabled`). Pearl PoUW GPU kernel + `pearl_gpu_thread()` + `submit_pearl_proof()` deferred — not yet debugged. | `pearl_gpu_thread()`, pearl_tx/pearl_proof_rx channels, submit_pearl_proof(), Pearl GPU kernel (`pearl_pouw_native.cl`) |
 | 3 | TriGpuManager | ✅ DONE | Simplified to a **primary-only** manager; the main Deeksha loop uses `tri_gpu.primary()`, external/Pearl threads create their own OpenCL contexts | — |
 | 4 | Clean Thread Arch | ✅ DONE | `blake3/progpow/kawpow/autolykos` GPU threads collapsed into one generic `external_gpu_thread()`; `ext_cpu_thread` persistent; `ensure_algorithm` spam removed | — |
-| 5 | Per-Stream Metrics | ✅ DONE | `draw_dashboard()` shows per-stream **hashrate + shares** for ZION / PRL / EXT; `HashrateTracker` records per-stream hashes | — |
+| 5 | Per-Stream Metrics | ✅ DONE | `draw_dashboard()` shows per-stream **hashrate + shares** for ZION / GPU-EXT / CPU-EXT; `HashrateTracker` records per-stream hashes (`zion_hashes`, `gpu_ext_hashes`, `cpu_ext_hashes`) | — |
 | 6 | Dashboard Integration | ✅ DONE | Triple Stream Mining panel in `dashboard.html`/`dashboard.js` wired to `/api/pool/miners-dashboard` routing sources; `app.py` `SUPPORTED_COINS` aligned with `ExternalCoin` enum | — |
 | 7 | Pool Routing Stats | ✅ DONE | `RoutingStats.snapshot_json()` / `snapshot_json_ext()` and `/stats` payload now include **all 18 revenue sources** defined in `ALL_REVENUE_SOURCES` | — |
 | 8 | Build/Deploy/Verify | ✅ DONE | `cargo check/test` clean for `zion-miner`, `zion-pool`, `zion-auxpow`; live Edge deployment on `62.171.141.136` verified | — |
@@ -30,17 +30,18 @@ The multi-stream architecture is **functionally complete and canonical**. The co
 
 1. **TriGpuManager** is a lean primary-only backend manager used by the main Deeksha loop.
 2. **One generic external GPU thread** (`external_gpu_thread`) is spawned for each external algorithm family (Blake3, ProgPow, KawPow, Autolykos).
-3. **Per-stream hashrate + share counters** are tracked in `HashrateTracker` and displayed in the miner TUI.
+3. **Per-stream hashrate + share counters** are tracked in `HashrateTracker` and displayed in the miner TUI (ZION / GPU-EXT / CPU-EXT).
 4. **Pool `/stats`** exposes a unified `routing.sources` object covering all canonical revenue sources.
-5. **Dashboard** reads `routing.sources` and renders ZION / PRL / EXT streams plus a full per-source breakdown.
+5. **Dashboard** reads `routing.sources` and renders ZION / GPU-EXT / CPU-EXT streams plus a full per-source breakdown.
 6. **ExternalCoin enum + `SUPPORTED_COINS`** agree on the same 16 coins and default pools.
-7. **Build clean** with zero dead-code warnings in the miner/AuxPow path and all tests passing.
+7. **Pearl (PRL) is DISABLED** in v3.0.6 canonical — pool-side infra exists but miner ignores PRL jobs (`pearl_disabled`). Deferred until debugged.
+8. **Build clean** with zero dead-code warnings in the miner/AuxPow path and all tests passing.
 
 ---
 
 ## 1. Phase 3 — TriGpuManager
 
-> **Implementation Note:** This phase is complete. During the v3.0.6 audit, `TriGpuManager` was simplified to manage only the **primary** Deeksha backend. Pearl and secondary GPU slots were removed because each external/Pearl stream creates its own OpenCL context on its own thread. The main Deeksha loop uses `tri_gpu.primary()`; benchmark/autotune paths keep `GpuBackendManager`.
+> **Implementation Note:** This phase is complete. During the v3.0.6 audit, `TriGpuManager` was simplified to manage only the **primary** Deeksha backend. Pearl and secondary GPU slots were removed because each external stream creates its own OpenCL context on its own thread. The main Deeksha loop uses `tri_gpu.primary()`; benchmark/autotune paths keep `GpuBackendManager`. (Pearl stream is disabled — see §11.)
 
 ### Problem
 
@@ -93,13 +94,13 @@ These are benchmark-only paths that test all algorithms. `GpuBackendManager.benc
 
 The 3 persistent GPU threads need access to the TriGpuManager slots. Since `TriGpuManager` is not `Send` (OpenCL contexts are thread-local), each thread must create its own backend independently.
 
-**Architecture decision:** Each persistent thread creates its own `GpuMiner` directly via `create_gpu_backend()` — this is already how `blake3_gpu_thread` and `pearl_gpu_thread` work. `TriGpuManager` is used in the **main thread** for the primary Deeksha mining loop, while the secondary threads are independent.
+**Architecture decision:** Each persistent thread creates its own `GpuMiner` directly via `create_gpu_backend()` — this is already how `external_gpu_thread` and `ext_cpu_thread` work. `TriGpuManager` is used in the **main thread** for the primary Deeksha mining loop, while the secondary threads are independent. (Pearl thread disabled — see §11.)
 
 This means:
 - **Main thread** (run_remote_session): uses `tri_gpu.primary()` for Deeksha mining
-- **blake3_gpu_thread**: already creates its own backend (line 2384) — no change
-- **pearl_gpu_thread**: already creates its own backend (line 2738) — no change
-- **progpow_gpu_thread**: already creates its own backend (line 2547) — needs to be SPAWNED
+- **external_gpu_thread**: creates its own backend — handles Blake3/ProgPow/KawPow/Autolykos
+- **ext_cpu_thread**: creates its own backend — handles VerusHash/RandomX
+- **pearl_gpu_thread**: **DISABLED** in v3.0.6 — not implemented; PRL jobs ignored in miner routing
 
 `TriGpuManager` in the main thread is primarily for:
 1. Clean primary backend management (no algorithm switching)
@@ -139,11 +140,11 @@ This means:
 
 ## 3. Phase 5 — Per-Stream Metrics Display
 
-> **Implementation Note:** This phase is complete. `HashrateTracker` now has per-stream sliding windows (`StreamWindows`) plus `zion_hashes`, `pearl_hashes`, `ext_hashes`. `draw_dashboard()` prints each stream's 10s hashrate next to its share counts. The title bar already reads `ZION v3.0.6 Triple Parallel`.
+> **Implementation Note:** This phase is complete. `HashrateTracker` now has per-stream sliding windows (`StreamWindows`) plus `zion_hashes`, `gpu_ext_hashes`, `cpu_ext_hashes`. `draw_dashboard()` prints each stream's 10s hashrate next to its share counts. The title bar already reads `ZION v3.0.6 Triple Parallel`. The 3-stream split in code is **ZION / GPU-EXT / CPU-EXT** (not ZION / PRL / EXT — Pearl is disabled).
 
 ### Problem
 
-`HashrateTracker` has 3-stream fields (`zion_accepted/rejected`, `pearl_accepted/rejected`, `ext_accepted/rejected`) and `ComputedHashrates` has per-stream fields, but `draw_dashboard()` (interactive.rs:378) only displays **total** shares and hashrate.
+`HashrateTracker` has 3-stream fields (`zion_accepted/rejected`, `gpu_ext_accepted/rejected`, `cpu_ext_accepted/rejected`) and `ComputedHashrates` has per-stream fields, but `draw_dashboard()` (interactive.rs:378) only displays **total** shares and hashrate.
 
 ### Tasks
 
@@ -153,7 +154,7 @@ This means:
 
 **Replace with 3-stream breakdown:**
 ```
-  Shares    ZION  1234 acc / 12 rej  (99.0%)  |  PRL  567 acc / 3 rej  (99.5%)  |  EXT  89 acc / 1 rej  (98.9%)
+  Shares    ZION  1234 acc / 12 rej  (99.0%)  |  GPU-EXT  567 acc / 3 rej  (99.5%)  |  CPU-EXT  89 acc / 1 rej  (98.9%)
   Total     1890 accepted / 16 rejected (99.2%)
 ```
 
@@ -163,10 +164,10 @@ Implementation:
 queue!(out, Print("  Shares    "))?;
 // ZION
 queue!(out, SetForegroundColor(Color::Cyan), Print(format!("ZION {:>5} acc / {:>3} rej", rates.zion_accepted, rates.zion_rejected)), ResetColor)?;
-// PRL
-queue!(out, Print("  |  "), SetForegroundColor(Color::Magenta), Print(format!("PRL {:>5} acc / {:>3} rej", rates.pearl_accepted, rates.pearl_rejected)), ResetColor)?;
-// EXT
-queue!(out, Print("  |  "), SetForegroundColor(Color::Yellow), Print(format!("EXT {:>5} acc / {:>3} rej", rates.ext_accepted, rates.ext_rejected)), ResetColor)?;
+// GPU-EXT
+queue!(out, Print("  |  "), SetForegroundColor(Color::Magenta), Print(format!("GPU-EXT {:>5} acc / {:>3} rej", rates.gpu_ext_accepted, rates.gpu_ext_rejected)), ResetColor)?;
+// CPU-EXT
+queue!(out, Print("  |  "), SetForegroundColor(Color::Yellow), Print(format!("CPU-EXT {:>5} acc / {:>3} rej", rates.cpu_ext_accepted, rates.cpu_ext_rejected)), ResetColor)?;
 queue!(out, Print("\n"))?;
 // Total
 let acc = rates.accepted;
@@ -180,26 +181,26 @@ let rej = rates.rejected;
 
 **Add per-stream hashrate line after the total:**
 ```
-  Stream    ZION  45.2 MH/s  |  PRL  1.20 GH/s  |  EXT  128 MH/s
+  Stream    ZION  45.2 MH/s  |  GPU-EXT  128 MH/s  |  CPU-EXT  2.1 MH/s
 ```
 
 This requires per-stream hashrate tracking in `HashrateTracker`. Currently only total hashes are tracked per-window. We need:
-- `zion_hashes: AtomicU64` (already exists as `zion_accepted` for shares, but need hash count)
-- `pearl_hashes: AtomicU64`
-- `ext_hashes: AtomicU64`
+- `zion_hashes: AtomicU64` (already exists)
+- `gpu_ext_hashes: AtomicU64`
+- `cpu_ext_hashes: AtomicU64`
 
-Add `record_zion_hash()`, `record_pearl_hash()`, `record_ext_hash()` methods that increment both the stream-specific and total counters.
+Add `record_zion_hashes()`, `record_gpu_ext_hashes()`, `record_cpu_ext_hashes()` methods that increment both the stream-specific and total counters.
 
 Update `ComputedHashrates` with:
 ```rust
 pub zion_hps: f64,
-pub pearl_hps: f64,
-pub ext_hps: f64,
+pub gpu_ext_hps: f64,
+pub cpu_ext_hps: f64,
 ```
 
 #### 5.3 Update title bar version
 
-**Current (interactive.rs:396):** `" ZION v3.0.1  GPU Miner"` — should be `" ZION v3.0.6  Triple Parallel"`.
+**Current (interactive.rs:508):** `" ZION v3.0.6  Triple Parallel  |  {}"` — ✅ already updated.
 
 ### Files to Edit
 
@@ -219,7 +220,7 @@ pub ext_hps: f64,
 `ZION_OS/dashboard/app.py` had two drift issues relative to the canonical 16-coin `ExternalCoin` enum:
 
 1. `AUXPOW_SUPPORTED_COINS` (used for force-switch validation and wallet env-var reads/writes) only listed 12 tickers and was missing `EPIC`, `PRL`, `QUAI`, and `BEAM`.
-2. The revenue/coin table `SUPPORTED_COINS` correctly reflects the 15-coin canonical 3-stream set (PRL is intentionally excluded from the live revenue table because Pearl runs as its own PoUW stream, not as an AuxPoW profit coin).
+2. The revenue/coin table `SUPPORTED_COINS` correctly reflects the 15-coin canonical 3-stream set (PRL is intentionally excluded from the live revenue table because Pearl is disabled in v3.0.6 — not yet debugged).
 
 ### Current State
 
@@ -255,17 +256,18 @@ Verify: **zero dead-code warnings** for TriGpuManager fields (pearl_gpu_work_siz
 - Build release binary on server
 - Restart zion-pool service with new binary
 - Restart zion-miner with 3-stream config
-- Verify edge-environment.sh has AuxPow enabled (AUXPOW_ENABLED=1, PRL wallet, EPIC wallet)
+- Verify edge-environment.sh has AuxPow enabled (AUXPOW_ENABLED=1, EPIC wallet; PRL wallet optional — Pearl disabled)
 
 #### 7.3 Live verification checklist
-- [ ] ZION Deeksha shares accepted (Stream 1)
-- [ ] PRL PoUW proofs accepted via pool → AlphaPool (Stream 2)
-- [ ] External coin shares accepted (Stream 3 — VRSC or EPIC)
-- [ ] Dashboard shows all 3 revenue streams
-- [ ] routing_snapshot shows src_pearl, src_zion, src_ext
-- [ ] No gpu_switch_algorithm spam in logs
-- [ ] No per-iteration thread creation for CPU external stream
-- [ ] external_gpu_thread handles EPIC/ProgPow jobs
+- [x] ZION Deeksha shares accepted (Stream 1)
+- [ ] ~~PRL PoUW proofs accepted via pool → AlphaPool (Stream 2)~~ — **DISABLED in v3.0.6** (not yet debugged; miner ignores PRL jobs)
+- [x] External GPU coin shares accepted (EPIC ProgPow)
+- [x] External CPU coin shares accepted (VRSC VerusHash)
+- [x] Dashboard shows all 3 active revenue streams (ZION / GPU-EXT / CPU-EXT)
+- [x] routing_snapshot shows src_zion, src_progpow, src_verushash
+- [x] No gpu_switch_algorithm spam in logs
+- [x] No per-iteration thread creation for CPU external stream
+- [x] external_gpu_thread handles EPIC/ProgPow jobs
 
 ### Estimated Effort: 1h
 
@@ -313,8 +315,8 @@ Step 8: Phase 7 — Full build + deploy + verify
 
 | Risk | Likelihood | Mitigation |
 |------|-----------|------------|
-| TriGpuManager OpenCL context conflict with thread-created backends | Medium | Each thread creates its own OpenCL context — already proven by blake3_gpu_thread |
-| VRAM exhaustion (3 backends on single GPU) | Medium | Pearl + secondary are lazy-created; only 2 max at once (primary + one secondary) |
+| TriGpuManager OpenCL context conflict with thread-created backends | Medium | Each thread creates its own OpenCL context — already proven by external_gpu_thread |
+| VRAM exhaustion (multiple backends on single GPU) | Medium | External GPU thread is lazy-created; only 2 max at once (primary + one external). Pearl disabled — no 3rd backend. |
 | external_gpu_thread DAG load fails | Low | Already has error handling + retry loop in `external_gpu_thread()` |
 | Per-stream hashrate tracking overhead | Low | AtomicU64 increments — negligible |
 | Dashboard template complexity | Low | Keep it simple — 3-line addition to existing layout |
@@ -324,8 +326,8 @@ Step 8: Phase 7 — Full build + deploy + verify
 ## 9. Backward Compatibility
 
 - `GpuBackendManager` remains for benchmark/autotune modes (lines 650, 681)
-- `--pearl` flag still works as direct AlphaPool fallback
-- Old miner binaries can still connect to updated pool (PearlSubmit is ignored by old miners)
+- `--pearl` flag still parsed but Pearl stream is **disabled** in v3.0.6 (PRL jobs ignored in miner routing; not yet debugged)
+- Old miner binaries can still connect to updated pool (PearlSubmit is ignored by all miners — no Pearl GPU thread exists)
 - `ZION_MINER_ALGORITHM` env var still works (maps to primary)
 - `ZION_GPU_WORK_SIZE` env var still works (maps to primary work size)
 - `ZION_PROFILE=pool` still works
@@ -340,12 +342,12 @@ The implementation is complete when:
 1. ✅ `cargo build/test` — zero errors, zero dead-code warnings for the miner/AuxPow path
 2. ✅ `run_remote_session()` uses `TriGpuManager` (primary-only) for Deeksha
 3. ✅ External GPU threads are spawned from a single generic `external_gpu_thread()` (Blake3, ProgPow, KawPow, Autolykos)
-4. ✅ Persistent `pearl_gpu_thread` and `ext_cpu_thread` run alongside the main loop
-5. ✅ `draw_dashboard()` shows per-stream hashrate + shares (ZION / PRL / EXT)
+4. ✅ Persistent `ext_cpu_thread` runs alongside the main loop; `pearl_gpu_thread` is **disabled** in v3.0.6 (PRL jobs ignored, not yet debugged)
+5. ✅ `draw_dashboard()` shows per-stream hashrate + shares (ZION / GPU-EXT / CPU-EXT)
 6. ✅ Pool `/stats` exposes a `routing.sources` object covering all 18 revenue sources
 7. ✅ Dashboard reads `routing.sources` and renders the Triple Stream panel plus full per-source breakdown
 8. ✅ `ExternalCoin` enum and `SUPPORTED_COINS` list agree on the same 16 coins / default pools
-9. ✅ Live on Edge: ZION + PRL + external streams all producing shares
+9. ✅ Live on Edge: ZION + GPU external (EPIC) + CPU external (VRSC) streams all producing shares; Pearl (PRL) stream disabled
 10. ✅ No log spam (`ensure_algorithm`, per-iteration thread creation)
 
 ---
@@ -392,3 +394,14 @@ stream3c_ext_cpu_started threads=4
 8. **Session group fix**: Removed `SessionGroup::Zion` check that blocked EPIC stream for Zion-group miners (Claymore triple-parallel always provides GPU external stream)
 9. **OpenMP DAG generation**: Parallelized Ethash/ProgPow DAG generation with `#pragma omp parallel for` (19 threads, epoch 120 ~2GB in ~4 min)
 10. **native-hashers feature**: Miner built with `--features gpu-opencl,native-hashers` to enable `DagManager` and `generate_ethash_dag()`
+
+### Pearl (PRL) Stream — DISABLED
+
+> **Status:** ⏸️ DISABLED in v3.0.6 canonical — not yet debugged.
+
+- Pool-side Pearl infrastructure is **complete** (`PearlSubmit` message, `forward_pearl()`, `pearl_rx` channel, `submit_pearl_proof()`, `PearlExternal` revenue source in `ALL_REVENUE_SOURCES`).
+- Miner-side Pearl is **not implemented**: no `pearl_gpu_thread()`, no `pearl_tx`/`pearl_proof_rx` channels, no `submit_pearl_proof()`.
+- PRL jobs are explicitly **ignored** in miner routing (`main.rs` ~line 1598): `external_stream_ignore coin=PRL algo=pearlhash reason=pearl_disabled`.
+- `ExternalCoin::PRL` exists in the enum and `AUXPOW_SUPPORTED_COINS` (for force-switch validation), but `SUPPORTED_COINS` (revenue table) excludes PRL.
+- Pearl GPU kernel (`AuXpow/csrc/opencl/pearl_pouw_native.cl`) is in development but not wired.
+- **To re-enable:** implement `pearl_gpu_thread()` in `main.rs`, wire `pearl_tx`/`pearl_proof_rx` channels, add PRL routing in the external stream dispatch, debug end-to-end with AlphaPool.
