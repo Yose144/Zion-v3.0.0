@@ -53,6 +53,28 @@ ZION_PPLNS_WINDOW_SIZE=500000
 ZION_PPLNS_STATE_PATH=/data/zion/pplns-state.json
 ZION_ROUTING_METRICS_BIND=0.0.0.0:8455
 
+# ── AuxPow / Stream Profit Configuration ────────────────────────────────────
+# Required after chain-stall fix (2026-07-13). Without these the pool may
+# issue only external jobs or omit ZION from the work assignment.
+ZION_BACKEND_AUTO_INCLUDE_ZION=1
+ZION_POOL_AUXPOW_ENABLED=1
+ZION_POOL_AUXPOW_COIN=RVN
+ZION_POOL_AUXPOW_SPLIT_ZION=4
+ZION_POOL_AUXPOW_SPLIT_EXTERNAL=1
+ZION_POOL_AUXPOW_WALLET=bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh
+ZION_POOL_AUXPOW_WORKER_NAME=zion-pool
+ZION_POOL_AUXPOW_POOL_PREFERENCE=default
+ZION_POOL_AUXPOW_REGION=eu
+ZION_POOL_AUXPOW_PROFIT_CHECK_INTERVAL=60
+ZION_POOL_AUXPOW_HYSTERESIS_PCT=15.0
+
+# Stream profit weights used by the Deeksha Chv3 pipeline.
+ZION_STREAM_PROFIT_SWITCH=true
+ZION_STREAM_PROFIT_API_PROVIDER=whattomine
+ZION_STREAM_PROFIT_INTERVAL=120
+ZION_STREAM_HYSTERESIS_PCT=15.0
+ZION_STREAM_PROFIT_SOURCES=zion,keccak_bonus,sha3_bonus,ncl_ai,deeksha_lite,thermal_bonus
+
 # Pool wallet (Edge primary — handles all payouts)
 # Address: zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2 (pool_payout canonical wallet)
 ZION_POOL_WALLET=zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2

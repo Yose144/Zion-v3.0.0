@@ -4,7 +4,7 @@ use serde_json::json;
 use std::net::ToSocketAddrs;
 
 use crate::config::Config;
-use crate::rpc::node_rpc;
+use crate::rpc::{agent_rpc, node_rpc};
 use crate::ui;
 
 #[derive(Subcommand)]
@@ -54,22 +54,17 @@ pub async fn run(cfg: &Config, cmd: PoolCmd) -> Result<()> {
             Ok(())
         }
         PoolCmd::Earnings { address, target } => {
-            let (rpc_host, rpc_port) = cfg.target_rpc(&target);
+            let (pool_host, pool_port) = cfg.target_pool(&target);
             ui::print_header("PPLNS Earnings");
             let addr = address.unwrap_or_else(|| cfg.miner.wallet.clone());
             if addr.is_empty() {
                 ui::print_warn("No address specified. Use --address <addr>");
                 return Ok(());
             }
-            // Query pool stats endpoint on node RPC for now
-            let result = node_rpc::call(
-                rpc_host,
-                rpc_port,
-                "get_miner_stats",
-                json!({ "address": addr }),
-            )
-            .await;
-            match result {
+            // The pool exposes miner stats via HTTP, not via node JSON-RPC.
+            let base_url = format!("http://{}:{}", pool_host, pool_port);
+            let path = format!("api/v1/miner/{}/stats", addr);
+            match agent_rpc::get(&base_url, &path).await {
                 Ok(v) => println!("{}", serde_json::to_string_pretty(&v)?),
                 Err(e) => ui::print_warn(&format!("Pool earnings not available: {}", e)),
             }

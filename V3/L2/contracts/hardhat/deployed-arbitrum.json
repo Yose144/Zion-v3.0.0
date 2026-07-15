@@ -4,6 +4,7 @@
   "chainName": "Arbitrum One",
   "wzion": "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
   "bridge": "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721",
+  "bridgeValidator": null,
   "config": {
     "validators": [
       "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",

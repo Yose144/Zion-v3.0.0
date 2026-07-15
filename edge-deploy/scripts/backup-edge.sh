@@ -9,20 +9,21 @@
 #   - Systemd service files (operational truth)
 #
 # Usage (manual):
-#   sudo /root/zion-2.9.6-main/edge-deploy/scripts/backup-edge.sh
+#   sudo /opt/zion/edge-deploy/scripts/backup-edge.sh  (legacy copy, kept for reference)
+#   Prefer the canonical script: /opt/zion/ZION_OS/infra/scripts/backup-edge.sh
 #
 # Usage (systemd timer):
 #   systemctl start zion-edge-backup.timer
 #   systemctl enable zion-edge-backup.timer
 #
 # Retention: 14 daily + 4 weekly backups
-# Backups go to: /root/zion-backups/
+# Backups go to: /opt/zion/backups/
 # ============================================================================
 
 set -euo pipefail
 
-REPO_ROOT="/root/zion-2.9.6-main"
-BACKUP_DIR="/root/zion-backups"
+REPO_ROOT="/opt/zion"
+BACKUP_DIR="/opt/zion/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 DAY_OF_WEEK=$(date +%u)  # 1=Monday, 7=Sunday
 
@@ -48,7 +49,7 @@ log "Backing up node state databases..."
 NODE_BACKUP="${BACKUP_DIR}/daily/node_state_${TIMESTAMP}"
 mkdir -p "${NODE_BACKUP}"
 
-for db in "${REPO_ROOT}/data/edge-state.db" "${REPO_ROOT}/data/edge2-state.db"; do
+for db in "/opt/zion/data/state" "/opt/zion/data/state-node2"; do
     if [[ -f "$db" ]]; then
         cp "$db" "${NODE_BACKUP}/"
         log "${GREEN}  ✓ $(basename $db)${NC}"
@@ -58,12 +59,12 @@ for db in "${REPO_ROOT}/data/edge-state.db" "${REPO_ROOT}/data/edge2-state.db"; 
 done
 
 # ── 2. V3/data databases (bridge, dao, warp, pool, swap) ────────────────────
-log "Backing up V3/data databases..."
+log "Backing up /opt/zion/data databases..."
 V3_BACKUP="${BACKUP_DIR}/daily/v3_data_${TIMESTAMP}"
 mkdir -p "${V3_BACKUP}"
 
-if [[ -d "${REPO_ROOT}/V3/data" ]]; then
-    for db in "${REPO_ROOT}/V3/data"/*.db; do
+if [[ -d "/opt/zion/data" ]]; then
+    for db in /opt/zion/data/*.db /opt/zion/data/pplns-state.json; do
         if [[ -f "$db" ]]; then
             cp "$db" "${V3_BACKUP}/"
             log "${GREEN}  ✓ $(basename $db)${NC}"

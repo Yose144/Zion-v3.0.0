@@ -12,7 +12,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **Height** | 5801+ (3-node P2P mesh, all synced) |
+| **Height** | 6445+ (2-node P2P mesh on Edge; local backup offline) |
 | **Protocol** | `zion-v3-node/3.0.6` (v2) |
 | **Genesis** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
 | **Decimals** | 6 (1 ZION = 1,000,000 flowers, post-3.0.3 fork) |
@@ -36,7 +36,7 @@
 
 | Service | Port(s) | Bind | Layer | Status |
 |---------|---------|------|-------|--------|
-| zion-node | 8333 (P2P), 8443 (RPC), 8445 (WS), 9100 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active |
+| zion-node | 8333 (P2P), 9443 (RPC), 8445 (WS), 9100 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active |
 | zion-node2 | 8334 (P2P), 8446 (RPC), 9116 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active (follower) |
 | zion-pool | 8444 (Stratum), 8455 (stats/metrics HTTP) | 8444 0.0.0.0, 8455 127.0.0.1 | L1 | ✅ active (mining) |
 | zion-bridge | 9101 (metrics) | 127.0.0.1 | L2 | ✅ active |
@@ -54,12 +54,16 @@
 
 ### Local Backup Node: `zionserver-144` (109.81.27.87)
 
+> **⚠️ OFFLINE (2026-07-15):** Dashboard reports `local_backup: running=false`. All services below are listed for reference but are currently down. Restart pending.
+
 | Service | Port(s) | Status |
 |---------|---------|--------|
-| zion-backup-node | 8446 (RPC), 8333 (P2P) | ✅ active |
-| zion-dashboard | 8766 | ✅ active |
-| zion-stack | L2/L3 services | ✅ active |
-| zion-ssh-tunnel | 9 local + 2 reverse SSH forwards to Edge | ✅ active |
+| zion-backup-node | 8446 (RPC), 8333 (P2P) | ❌ offline |
+| zion-dashboard | 8766 | ❌ offline |
+| zion-stack | L2/L3 services | ❌ offline |
+| zion-ssh-tunnel | 9 local + 2 reverse SSH forwards to Edge | ❌ offline |
+
+> **Backup node seed peers:** `ZION_SEED_PEERS='62.171.141.136:8333,62.171.141.136:8334'` (`scripts/start-backup-node.sh:25`). Current outage explains `known_peers=1` on Edge primary.
 
 ### Public Endpoints
 
@@ -67,7 +71,7 @@
 |----------|-----|-------|
 | Web | `https://zionterranova.com` | Next.js Docker, 377 MB standalone |
 | Dashboard | `https://dashboard.zionterranova.com` | Basic Auth |
-| RPC | `rpc.zionterranova.com:8443` | nginx TCP stream proxy → 127.0.0.1:8443 |
+| RPC | `http://rpc.zionterranova.com:8443` | nginx TCP stream proxy → `127.0.0.1:9443` (**plain HTTP**, no TLS) |
 | Pool | `62.171.141.136:8444` | Stratum |
 
 ### Resource Usage
@@ -116,7 +120,7 @@
 | ZIONTreasury (3/3 multisig) | `0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD` | ✅ Verified |
 | ZIONStaking (12% APR) | `0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B` | ✅ Verified |
 | ZIONFarm (1 wZION/s) | `0x167B2753F5D8D9F8e62875cc9e379d7804308B08` | ✅ Verified |
-| ZIONAtomicSwap | (escrow funded 100K ZION) | ✅ Verified |
+| ZIONAtomicSwap | `0x3DE9Ad42716854083ab837706E3961d10B0e63Eb` (escrow funded 100K ZION) | ✅ Verified |
 
 ### Uniswap V3 Pools (Base)
 | Pair | Fee | Pool Address |

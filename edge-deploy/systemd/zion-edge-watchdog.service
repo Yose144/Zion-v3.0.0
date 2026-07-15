@@ -3,6 +3,12 @@ Description=ZION Edge Watchdog (healthcheck + auto-restart)
 
 [Service]
 Type=oneshot
-ExecStart=/root/zion-2.9.6-main/edge-deploy/watchdog.sh
+User=zion
+Group=zion
+ExecStart=/opt/zion/edge-deploy/watchdog.sh
 StandardOutput=journal
 StandardError=journal
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=yes

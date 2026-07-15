@@ -23,21 +23,22 @@ export async function GET(request: NextRequest) {
     const resolution = parseInt(searchParams.get('resolution') || '0');
 
     // Determine how many blocks to fetch based on range
-    // Assume ~60s block time
+    // Assume ~60s block time; cap "all" so the API stays fast as the chain grows.
+    const MAX_HISTORY_BLOCKS = 100_000;
     const rangeBlocks: Record<string, number> = {
       '1h': 60,
       '6h': 360,
       '24h': 1440,
       '7d': 10080,
       '30d': 43200,
-      'all': 0, // Will use full chain
+      'all': MAX_HISTORY_BLOCKS,
     };
 
     const info = await rpc.getInfo();
     const chainHeight = info.height;
 
     let blocksToFetch = rangeBlocks[rangeParam] || 1440;
-    if (rangeParam === 'all') blocksToFetch = chainHeight;
+    if (rangeParam === 'all') blocksToFetch = Math.min(blocksToFetch, chainHeight);
     blocksToFetch = Math.min(blocksToFetch, chainHeight);
 
     // Apply resolution (sample every Nth block for large ranges)
@@ -113,7 +114,7 @@ export async function GET(request: NextRequest) {
       case 'txcount':
         data = {
           labels: sampledHeaders.map(h => new Date(h.timestamp * 1000).toISOString()),
-          values: sampledHeaders.map(h => (h.num_txes || 0) + 1), // +1 for coinbase
+          values: sampledHeaders.map(h => h.num_txes || 0),
         };
         break;
 

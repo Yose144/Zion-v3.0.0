@@ -6,8 +6,10 @@ Requires=docker.service
 
 [Service]
 Type=simple
-User=root
-WorkingDirectory=/root/zion-2.9.6-main/V3/L3/warp/docker/lightning
+User=zion
+Group=zion
+SupplementaryGroups=docker
+WorkingDirectory=/opt/zion/V3/L3/warp/docker/lightning
 ExecStart=/usr/bin/docker compose up lnd
 ExecStop=/usr/bin/docker compose stop lnd
 Restart=always
@@ -17,10 +19,11 @@ TimeoutStopSec=60
 StandardOutput=journal
 StandardError=journal
 
-# Security hardening
-NoNewPrivileges=false
-ProtectSystem=false
-ProtectHome=false
+# Security hardening (runs as zion; docker access via SupplementaryGroups=docker)
+NoNewPrivileges=true
+PrivateTmp=yes
+ProtectHome=true
+# ProtectSystem is intentionally relaxed because docker compose needs host paths
 
 [Install]
 WantedBy=multi-user.target

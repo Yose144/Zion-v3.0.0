@@ -69,12 +69,13 @@ export async function GET() {
 
   try {
     // Fetch from RPC daemon (authoritative source) + pool for mining stats
-    const [info, lastBlock, poolStats, prometheusStats, dbSize] = await Promise.all([
+    const [info, lastBlock, poolStats, prometheusStats, dbSize, avgBlockTime] = await Promise.all([
       rpc.getInfo().catch(() => null),
       rpc.getLastBlockHeader().catch(() => null),
       rpc.getPoolStats().catch(() => null),
       getPoolStatsFromPrometheus().catch(() => null),
       getNodeDatabaseSize().catch(() => 0),
+      rpc.getAverageBlockTime(30).catch(() => 60),
     ]);
 
     if (!info) {
@@ -82,9 +83,6 @@ export async function GET() {
     }
 
     const supply = await resolveSupplySnapshot(rpc, info.height);
-
-    // Average block time: use daemon target (no extra block fetches)
-    const avgBlockTime = info.target || 60;
 
     // Prefer Prometheus fallback when pool HTTP API is unavailable (V3 stratum pool)
     const hashrate = poolStats?.hashrate?.pool || poolStats?.pool_hashrate || prometheusStats?.pool_hashrate || 0;

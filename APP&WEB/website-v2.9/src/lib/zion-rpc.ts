@@ -19,6 +19,7 @@
 
 import { getSeedNodesConfig, type SeedNodeConfig } from './network-config';
 import { SITE_PRIMARY_POOL_API_URL } from './site';
+import { BLOCK_REWARD_ZION, estimateMinedSupplyAtHeight } from './constants';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -314,14 +315,14 @@ function mapV3BlockToHeader(block: any): ZionBlockHeader {
   return {
     height: block.height ?? 0,
     hash: block.hash_hex ?? '',
-    prev_hash: block.previous_hash_hex ?? '',
+    prev_hash: block.previous_hash_hex ?? block.prev_hash_hex ?? '',
     timestamp: block.timestamp ?? 0,
     difficulty: block.difficulty ?? 0,
     nonce: block.nonce ?? 0,
     reward: Math.round(rewardZion * ATOMIC_PER_ZION),
     miner_tx_hash: '',
-    num_txes: Math.max(0, txCount - 1),
-    block_size: 0,
+    num_txes: Math.max(0, txCount),
+    block_size: block.block_size ?? block.size ?? 0,
     orphan_status: false,
     depth: 0,
     major_version: 1,
@@ -554,13 +555,19 @@ class ZionRpcClient {
       this.rpcCall<any>('getPeerInfo').catch(() => null),
     ]);
 
-    // Get tip block for difficulty
+    // Get tip block for difficulty and real TX count
     let difficulty = 0;
+    let txCount = 0;
     const tipHeight = chainInfo.chain_height || 0;
     if (tipHeight >= 0) {
       try {
         const tip = await this.rpcCall<any>('getBlockByHeight', { height: tipHeight });
         difficulty = tip?.difficulty ?? 0;
+        txCount = Array.isArray(tip?.transaction_ids)
+          ? tip.transaction_ids.length
+          : Array.isArray(tip?.transactions)
+            ? tip.transactions.length
+            : 0;
       } catch { /* use 0 */ }
     }
 
@@ -572,7 +579,7 @@ class ZionRpcClient {
       top_block_hash: chainInfo.tip_hash ?? '',
       difficulty,
       target: 60,
-      tx_count: chainInfo.accepted_blocks ?? chainInfo.chain_height ?? 0,
+      tx_count: txCount,
       tx_pool_size: chainInfo.mempool_transactions ?? 0,
       alt_blocks_count: 0,
       outgoing_connections_count: peerCount,
@@ -592,6 +599,30 @@ class ZionRpcClient {
       status: 'OK',
       version: chainInfo.protocol_version ?? '',
     } as ZionNetworkInfo;
+  }
+
+  /** Estimate average block time from the last N blocks */
+  async getAverageBlockTime(blocks = 30): Promise<number> {
+    try {
+      const info = await this.getInfo();
+      const tip = info.height;
+      if (tip <= 0) return 60;
+      const count = Math.min(blocks, tip + 1);
+      const headers = await this.getBlockHeaders(tip - count + 1, tip);
+      if (headers.length < 2) return 60;
+      let totalDelta = 0;
+      let pairs = 0;
+      for (let i = 1; i < headers.length; i++) {
+        const delta = headers[i].timestamp - headers[i - 1].timestamp;
+        if (delta > 0) {
+          totalDelta += delta;
+          pairs++;
+        }
+      }
+      return pairs > 0 ? Math.round((totalDelta / pairs) * 10) / 10 : 60;
+    } catch {
+      return 60;
+    }
   }
 
   /** Get last block header using chain height from getChainInfo */
@@ -776,38 +807,39 @@ class ZionRpcClient {
     try {
       const res = await this.rpcCall<any>('getPeerInfo');
       const peers = res?.peers ?? [];
-      return peers.map((p: any) => ({
-        host: p.host ?? '',
-        port: p.port ?? 0,
-        peer_id: p.address ?? `${p.host}:${p.port}`,
-        recv_count: 0,
-        send_count: 0,
-        state: 'connected',
-        live_time: 0,
-        avg_download: 0,
-        current_download: 0,
-        avg_upload: 0,
-        current_upload: 0,
-        connection_id: p.address ?? '',
-        height: 0,
-        incoming: false,
-        address: p.address ?? `${p.host}:${p.port}`,
-      }));
+      return peers.map((p: any) => {
+        const incoming = p.inbound === true || p.is_inbound === true || p.direction === 'inbound';
+        return {
+          host: p.host ?? '',
+          port: p.port ?? 0,
+          peer_id: p.address ?? `${p.host}:${p.port}`,
+          recv_count: p.bytes_received ?? 0,
+          send_count: p.bytes_sent ?? 0,
+          state: p.state ?? 'connected',
+          live_time: p.connection_time ?? 0,
+          avg_download: p.avg_download ?? 0,
+          current_download: p.current_download ?? 0,
+          avg_upload: p.avg_upload ?? 0,
+          current_upload: p.current_upload ?? 0,
+          connection_id: p.address ?? '',
+          height: p.height ?? p.chain_height ?? 0,
+          incoming,
+          address: p.address ?? `${p.host}:${p.port}`,
+        };
+      });
     } catch {
       return [];
     }
   }
 
-  /** Estimate emission from block reward × height (V3 has no dedicated supply RPC) */
+  /** Estimate emission using Decade Decay model (V3 has no dedicated supply RPC) */
   async getCoinbaseTxSum(height: number, count: number): Promise<ZionEmission> {
     const chainInfo = await this.rpcCall<any>('getChainInfo');
     const chainHeight = chainInfo.chain_height ?? 0;
     // Post-3.0.3: 1 ZION = 1,000,000 flowers (6 decimals).
-    // BLOCK_REWARD_ATOMIC = 5,400,067,000 flowers (5400.067 ZION).
-    // Pre-3.0.3 used 12 decimals (5,400,067,000,000,000) — do NOT use that here.
-    const BLOCK_REWARD_ATOMIC = 5_400_067_000;
+    const minedZion = estimateMinedSupplyAtHeight(chainHeight);
     return {
-      emission_amount: chainHeight * BLOCK_REWARD_ATOMIC,
+      emission_amount: minedZion * ATOMIC_PER_ZION,
       fee_amount: 0,
       status: 'OK',
     };

@@ -1,12 +1,15 @@
 {
   "network": "base",
   "chainId": 8453,
+  "chainName": "Base Mainnet",
   "wzion": "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
   "bridge": "0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467",
   "bridgeValidator": "0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627",
+  "atomicSwap": "0x3DE9Ad42716854083ab837706E3961d10B0e63Eb",
   "governance": "0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8",
   "treasury": "0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD",
   "staking": "0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B",
+  "farm": "0x167B2753F5D8D9F8e62875cc9e379d7804308B08",
   "config": {
     "stakingAprBps": 1200,
     "cooldownSeconds": 604800,
@@ -18,5 +21,13 @@
     "treasuryThreshold": 3,
     "guardian": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186"
   },
+  "validators": [
+    "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
+    "0x24d986841E56e5571489B25951eE8C1Ae761FA82",
+    "0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0",
+    "0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6",
+    "0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2"
+  ],
+  "validatorThreshold": 5,
   "deployedAt": "2026-06-29T21:04:22.920Z"
 }
