@@ -19,7 +19,7 @@
 
 import { getSeedNodesConfig, type SeedNodeConfig } from './network-config';
 import { SITE_PRIMARY_POOL_API_URL } from './site';
-import { BLOCK_REWARD_ZION, estimateMinedSupplyAtHeight } from './constants';
+import { estimateMinedSupplyAtHeight } from './supply';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

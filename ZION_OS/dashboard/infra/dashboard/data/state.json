@@ -5,7 +5,7 @@
       "name": "ZionRig-Vega64",
       "wallet": "zion1n7n5t28663h3f3d8s8y596h5f3z582z8638d073",
       "worker": "vega64-smos",
-      "pool_addr": "77.42.71.94:8444",
+      "pool_addr": "62.171.141.136:8444",
       "status": "offline",
       "gpu": {
         "name": "AMD RX Vega 64",
@@ -42,7 +42,7 @@
       "name": "DevRig-RX5600",
       "wallet": "zion1n7n5t28663h3f3d8s8y596h5f3z582z8638d073",
       "worker": "rx5600-local",
-      "pool_addr": "77.42.71.94:8444",
+      "pool_addr": "62.171.141.136:8444",
       "status": "stopped",
       "gpu": {
         "name": "AMD RX 5600 XT",
@@ -2912,5 +2912,5 @@
       "name": "ZION — Default CPU",
       "coin": "ZION",
       "algo": "Ekam Deeksha v2",
-      "pool_addr": "77.42.71.94:8444",
+      "pool_addr": "62.171.141.136:8444",
       "wallet":

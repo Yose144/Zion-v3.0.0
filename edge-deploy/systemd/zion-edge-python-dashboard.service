@@ -1,0 +1,26 @@
+[Unit]
+Description=ZION V3 Dashboard (Python, zero-dep, port 8766)
+After=network-online.target zion-edge-node1.service zion-edge-pool.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/root/zion-dashboard
+ExecStart=/usr/bin/python3 /root/zion-dashboard/app.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening (unprivileged zion user)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=false  # dashboard needs /root/zion-dashboard access
+PrivateTmp=yes
+ReadWritePaths=/root/zion-dashboard/logs /data/zion
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

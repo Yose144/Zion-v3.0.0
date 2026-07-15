@@ -89,7 +89,7 @@ export default function LoginPage() {
         {/* No wallet? */}
         {zionWallet.initialized && zionWallet.wallets.length === 0 && (
           <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500 mb-3">Don't have a ZION wallet yet?</p>
+            <p className="text-xs text-gray-500 mb-3">Don&apos;t have a ZION wallet yet?</p>
             <a
               href="/wallet"
               className="inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-zion-cyan/80 transition-colors"

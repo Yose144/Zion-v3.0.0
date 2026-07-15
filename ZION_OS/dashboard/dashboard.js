@@ -62,6 +62,21 @@ function escapeHtml(s){
   return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
 
+function safePortFromAddr(addr){
+  if(!addr) return null;
+  const s = String(addr);
+  if(!s.includes(':')) return null;
+  const parts = s.split(':');
+  return parts[parts.length - 1];
+}
+
+function safeHostPort(addr, defaultHost='127.0.0.1', defaultPort='8444'){
+  if(!addr || typeof addr !== 'string') return { host: defaultHost, port: defaultPort };
+  const idx = addr.lastIndexOf(':');
+  if(idx <= 0 || idx === addr.length - 1) return { host: defaultHost, port: defaultPort };
+  return { host: addr.slice(0, idx), port: addr.slice(idx + 1) };
+}
+
 function fmtNum(n){
   if(n === null || n === undefined) return '—';
   if(n >= 1e9) return (n/1e9).toFixed(2) + 'B';
@@ -480,7 +495,7 @@ function updateServiceCards(s){
     const hostEl = document.getElementById('val-pool-edge-host');
     const portEl = document.getElementById('val-pool-edge-port');
     if(hostEl) hostEl.textContent = pe.host ?? '—';
-    if(portEl) portEl.textContent = pe.ports_open?.[0]?.split(':')[1] ?? '8444';
+    if(portEl) portEl.textContent = safePortFromAddr(pe.ports_open?.[0]) ?? '8444';
   }
   // Extended Edge Pool details
   const peMiners = document.getElementById('val-pool-edge-miners');
@@ -891,7 +906,7 @@ async function updateServiceTelemetryDetails(s){
       ['Hashrate', d?.hashrate ? (typeof d.hashrate === 'number' ? d.hashrate.toFixed(2)+' KH/s' : d.hashrate) : '—'],
       ['Miners', d?.active_miners ?? '—'],
       ['Blocks', d?.blocks_found ?? '—'],
-      ['Port', d?.bind_addr ? d.bind_addr.split(':')[1] : '8444'],
+      ['Port', safePortFromAddr(d?.bind_addr) ?? '8444'],
       ['Wallet', d?.pool_wallet ? d.pool_wallet.slice(0,16)+'…' : '—'],
       ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))]] : []),
     ],
@@ -1062,7 +1077,9 @@ async function updateLayerServices(){
   try{
     const res = await fetch('/api/services').then(r => r.json());
     const services = res.services || [];
-    const isEdgePrimary = window.currentStatus?.topology === 'edge-primary';
+    const status = window.currentStatus || await fetch('/api/status').then(r => r.json()).catch(() => ({}));
+    window.currentStatus = status;
+    const isEdgePrimary = status?.topology === 'edge-primary';
     const map = {
       'bridge': 'val-bridge-status',
       'dao': 'val-dao-status',
@@ -5734,7 +5751,9 @@ async function loadLayerFull(layer){
 
 async function populateL1(){
   const [status, events, collector] = await Promise.all([
-    fetch('/api/status').then(r=>r.json()),
+    fetch('/api/status').then(r=>r.json()).catch(() => ({
+      node1:{}, edge_node:{}, pool:{}, miner:{}, pool_edge:{}, topology:'edge-primary'
+    })),
     fetch('/api/events').then(r=>r.json()).catch(()=>({events:[]})),
     fetch('/api/metrics/collector').then(r=>r.json()).catch(()=>null)
   ]);
@@ -6548,7 +6567,7 @@ async function checkAiStatus(){
 
 async function loadOrchestratorStats(){
   try{
-    const r = await fetch('http://127.0.0.1:8001/orchestrator/status');
+    const r = await fetch('/api/hiran/proxy/orchestrator/status');
     if(!r.ok) return;
     const d = await r.json();
     const s = d.status || d;
@@ -6587,7 +6606,7 @@ async function registerAgent(){
   const res = document.getElementById('agent-action-result');
   if(res) res.textContent = 'Registering agent…';
   try{
-    const r = await fetch('http://127.0.0.1:8001/agents',{
+    const r = await fetch('/api/hiran/proxy/agents',{
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({name:'DashboardAgent-'+Date.now(), capabilities:['Compute','Memory'], consciousness_level:1})
@@ -6604,10 +6623,10 @@ async function elevateConsciousness(){
   const res = document.getElementById('agent-action-result');
   if(res) res.textContent = 'Elevating consciousness…';
   try{
-    const r1 = await fetch('http://127.0.0.1:8001/agents');
+    const r1 = await fetch('/api/hiran/proxy/agents');
     const d1 = await r1.json();
     if(!d1.total && !d1.active){ if(res) res.textContent = 'No agents to elevate'; return; }
-    const r3 = await fetch('http://127.0.0.1:8001/agents/00000000-0000-0000-0000-000000000001/consciousness',{
+    const r3 = await fetch('/api/hiran/proxy/agents/00000000-0000-0000-0000-000000000001/consciousness',{
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({level:2})
@@ -6624,7 +6643,7 @@ async function grantCapability(){
   const res = document.getElementById('agent-action-result');
   if(res) res.textContent = 'Granting capability…';
   try{
-    const r = await fetch('http://127.0.0.1:8001/agents/00000000-0000-0000-0000-000000000001/capabilities',{
+    const r = await fetch('/api/hiran/proxy/agents/00000000-0000-0000-0000-000000000001/capabilities',{
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({capability:'RAG'})
@@ -6640,7 +6659,7 @@ async function dispatchTask(){
   const res = document.getElementById('agent-action-result');
   if(res) res.textContent = 'Dispatching task…';
   try{
-    const r = await fetch('http://127.0.0.1:8001/tasks/dispatch',{
+    const r = await fetch('/api/hiran/proxy/tasks/dispatch',{
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({task_type:'QueryKnowledge', model_id:'hiran-v2.2', submitter:'dashboard', description:'Dashboard test task', input:'What is ZION?'})
@@ -7323,7 +7342,8 @@ async function overviewLogSwitch(svcId){
 // DAO Governance Tab
 // ─────────────────────────────────────────────────────────────────────
 
-const DAO_API = 'http://127.0.0.1:8450';
+// DAO calls are proxied through /api/dao/* on the same origin.
+const DAO_API = '';
 const DAO_PAGE_SIZE = 10;
 let _daoPage = 0;
 let _daoTotalProposals = 0;

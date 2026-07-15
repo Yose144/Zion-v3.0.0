@@ -3692,12 +3692,14 @@ def build_wallets() -> dict:
 
 def get_block_detail(height: int = None, hash_hex: str = None) -> dict:
     """Fetch full block details by height or hash."""
-    rpc_host, rpc_port = "127.0.0.1", 8443
     blk = None
     if height is not None:
-        blk = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": height}, timeout=2)
+        blk, _, _ = _rpc_with_fallback("getBlockByHeight", {"height": height}, timeout=2)
     elif hash_hex:
-        blk = rpc_call(rpc_host, rpc_port, "getBlockByHash", {"hash": hash_hex}, timeout=2)
+        # Try canonical V3 method first, fall back to legacy getBlockByHash.
+        blk, _, _ = _rpc_with_fallback("getBlock", {"hash": hash_hex}, timeout=2)
+        if not blk or blk.get("_rpc_error"):
+            blk, _, _ = _rpc_with_fallback("getBlockByHash", {"hash": hash_hex}, timeout=2)
     if not blk or blk.get("_rpc_error"):
         return {"found": False, "error": blk.get("_rpc_error") if blk else "RPC unavailable"}
     tx_list = []
@@ -3804,10 +3806,51 @@ def get_dependency_graph() -> dict:
             edges.append({"from": dep, "to": sid})
     return {"nodes": nodes, "edges": edges}
 
-# ── Explorer data builder ──────────────────────────────────────────────
+# ── Decade Decay helpers (mirror src/lib/constants.ts + src/lib/supply.ts) ──
 
-def build_explorer() -> dict:
-    """Fetch blockchain overview for the Explorer tab."""
+_BLOCK_REWARD_ZION_PY = 5_400.067
+_DECAY_FACTOR_PY = 0.8
+_BLOCKS_PER_DECADE_PY = 5_256_000
+_MAX_DECAY_DECADES_PY = 10
+_TAIL_REWARD_ZION_PY = 724.785
+_TOTAL_SUPPLY_ZION_PY = 144_000_000_000
+_GENESIS_PREMINE_ZION_PY = 16_780_000_000
+
+
+def _block_reward_at_height(height: int) -> float:
+    if height <= 0:
+        return 0.0
+    decade = (height - 1) // _BLOCKS_PER_DECADE_PY
+    if decade >= _MAX_DECAY_DECADES_PY:
+        return _TAIL_REWARD_ZION_PY
+    return _BLOCK_REWARD_ZION_PY * (_DECAY_FACTOR_PY ** decade)
+
+
+def _estimate_mined_supply_at_height(height: int) -> float:
+    remaining = max(0, int(height))
+    mined = 0.0
+    decade = 0
+    while remaining > 0 and decade < _MAX_DECAY_DECADES_PY:
+        blocks_this_decade = min(remaining, _BLOCKS_PER_DECADE_PY)
+        mined += blocks_this_decade * _block_reward_at_height(max(1, decade * _BLOCKS_PER_DECADE_PY + 1))
+        remaining -= blocks_this_decade
+        decade += 1
+    if remaining > 0:
+        mined += remaining * _TAIL_REWARD_ZION_PY
+    max_mineable = max(0.0, _TOTAL_SUPPLY_ZION_PY - _GENESIS_PREMINE_ZION_PY)
+    return max(0.0, min(mined, max_mineable))
+
+
+def _estimate_circulating_supply_at_height(height: int) -> float:
+    return min(
+        _GENESIS_PREMINE_ZION_PY + _estimate_mined_supply_at_height(height),
+        _TOTAL_SUPPLY_ZION_PY,
+    )
+
+
+def _rpc_with_fallback(method: str, params: dict, timeout: float = 2.0):
+    """Call RPC on the configured local endpoint, falling back to Edge.
+    Returns (result, effective_host, effective_port)."""
     rpc_host, rpc_port = "127.0.0.1", 8443
     rpc_addr = os.environ.get("ZION_NODE_RPC_ADDR", "")
     if rpc_addr and ":" in rpc_addr:
@@ -3819,29 +3862,40 @@ def build_explorer() -> dict:
     elif rpc_addr:
         rpc_host = rpc_addr
 
-    info = rpc_call(rpc_host, rpc_port, "getChainInfo", {})
-    # Fallback to Edge RPC if local is unavailable
-    if not info or info.get("_rpc_error"):
-        info = rpc_call(EDGE_HOST, 8443, "getChainInfo", {})
-        if info and not info.get("_rpc_error"):
-            rpc_host, rpc_port = EDGE_HOST, 8443
-        else:
-            info = None
-    genesis = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": 0})
+    result = rpc_call(rpc_host, rpc_port, method, params, timeout=timeout)
+    if result and not result.get("_rpc_error"):
+        return result, rpc_host, rpc_port
 
-    # Recent blocks: grab last 10 from events / history
+    # Fallback to Edge RPC
+    result = rpc_call(EDGE_HOST, 8443, method, params, timeout=timeout)
+    if result and not result.get("_rpc_error"):
+        return result, EDGE_HOST, 8443
+    return None, rpc_host, rpc_port
+
+
+# ── Explorer data builder ──────────────────────────────────────────────
+
+def build_explorer() -> dict:
+    """Fetch blockchain overview for the Explorer tab."""
+    info, rpc_host, rpc_port = _rpc_with_fallback("getChainInfo", {}, timeout=2.5)
+    chain_height = info.get("chain_height", 0) if info else 0
+
+    # Genesis block with fallback
+    genesis, _, _ = _rpc_with_fallback("getBlockByHeight", {"height": 0}, timeout=1.5)
+
+    # Recent blocks: grab last 10 with short timeouts
     recent_blocks = []
     try:
-        # Try to get last 10 blocks via RPC (getBlockByHeight)
-        chain_height = info.get("chain_height", 0) if info else 0
         for h in range(max(0, chain_height - 9), chain_height + 1):
-            blk = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": h}, timeout=0.8)
-            if blk:
+            blk = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": h}, timeout=0.5)
+            if blk and not blk.get("_rpc_error"):
+                tx_ids = blk.get("transaction_ids", [])
+                transactions = blk.get("transactions", [])
                 recent_blocks.append({
                     "height": h,
                     "hash": blk.get("hash_hex", "")[:24] + "…",
                     "timestamp": blk.get("timestamp", 0),
-                    "tx_count": len(blk.get("transaction_ids", [])),
+                    "tx_count": len(tx_ids) if tx_ids else len(transactions),
                     "difficulty": blk.get("difficulty", 0),
                 })
     except Exception:
@@ -3851,12 +3905,9 @@ def build_explorer() -> dict:
     mempool_size = info.get("mempool_transactions", 0) if info else 0
     template_txs = info.get("active_template_transactions", 0) if info else 0
 
-    # Supply estimate
-    chain_height = info.get("chain_height", 0) if info else 0
-    block_reward = 5400.067
-    estimated_mined = chain_height * block_reward
-    total_premine = 16_780_000_000
-    circulating_estimate = total_premine + estimated_mined
+    # Supply estimate using Decade Decay
+    block_reward = _block_reward_at_height(max(1, chain_height))
+    circulating_estimate = _estimate_circulating_supply_at_height(chain_height)
 
     # Peer count from getChainInfo (field varies by node version)
     peer_count = 0
@@ -3872,10 +3923,10 @@ def build_explorer() -> dict:
         "accepted_blocks": info.get("accepted_blocks", 0) if info else 0,
         "mempool_size": mempool_size,
         "template_txs": template_txs,
-        "block_reward_zion": block_reward,
+        "block_reward_zion": round(block_reward, 6),
         "estimated_circulating_zion": round(circulating_estimate, 2),
-        "total_supply_zion": 144_000_000_000,
-        "premine_zion": total_premine,
+        "total_supply_zion": _TOTAL_SUPPLY_ZION_PY,
+        "premine_zion": _GENESIS_PREMINE_ZION_PY,
         "genesis_hash": genesis.get("hash_hex", "")[:24] + "…" if genesis else "—",
         "recent_blocks": recent_blocks,
         "peer_count": peer_count,
@@ -4037,19 +4088,19 @@ def run_edge_action(action: str) -> dict:
     Executes locally when on Edge, via SSH otherwise."""
     # Map action → command
     ACTION_MAP = {
-        "restart-node1":          "systemctl restart zion-node",
+        "restart-node1":          "sudo systemctl restart zion-node",
         "restart-node2":          "echo 'node2 not deployed on v3.0.4 single-server topology'",
-        "restart-pool":           "systemctl restart zion-pool",
-        "restart-dao":            "systemctl restart zion-dao",
-        "restart-warp":           "systemctl restart zion-warp",
-        "restart-dashboard":      "systemctl restart zion-dashboard",
-        "restart-hiran":          "systemctl restart zion-hiran-inference 2>/dev/null || echo 'hiran not deployed'",
-        "restart-hiranyagarbha":  "systemctl restart zion-hiranyagarbha 2>/dev/null || echo 'hiranyagarbha not deployed'",
-        "restart-bridge":         "systemctl restart zion-bridge",
-        "restart-website":        "systemctl restart zion-web-next 2>/dev/null || docker restart zion-web-next 2>/dev/null || echo 'web in maintenance mode'",
+        "restart-pool":           "sudo systemctl restart zion-pool",
+        "restart-dao":            "sudo systemctl restart zion-dao",
+        "restart-warp":           "sudo systemctl restart zion-warp",
+        "restart-dashboard":      "sudo systemctl restart zion-dashboard",
+        "restart-hiran":          "sudo systemctl restart zion-hiran-inference 2>/dev/null || echo 'hiran not deployed'",
+        "restart-hiranyagarbha":  "sudo systemctl restart zion-hiranyagarbha 2>/dev/null || echo 'hiranyagarbha not deployed'",
+        "restart-bridge":         "sudo systemctl restart zion-bridge",
+        "restart-website":        "sudo systemctl restart zion-web-next 2>/dev/null || docker restart zion-web-next 2>/dev/null || echo 'web in maintenance mode'",
         "clean-docker":           "docker builder prune -af 2>&1; docker image prune -af 2>&1; docker container prune -f 2>&1",
         "security-audit":         "echo 'Security audit placeholder — run manually'",
-        "full-health":            "systemctl is-active zion-node zion-pool zion-dao zion-warp zion-bridge nginx 2>&1",
+        "full-health":            "sudo systemctl is-active zion-node zion-pool zion-dao zion-warp zion-bridge nginx 2>&1",
         "memory-limit":           "echo 'Memory limits configured in systemd unit files'",
     }
 
@@ -5442,12 +5493,12 @@ def update_auxpow_config(payload: dict) -> dict:
 def restart_auxpow_pool_service() -> dict:
     """Reload systemd and restart the Edge pool so new AuxPow env vars take effect."""
     try:
-        cmd = f"systemctl daemon-reload && systemctl restart {AUXPOW_SERVICE_NAME}"
+        cmd = f"sudo systemctl daemon-reload && sudo systemctl restart {AUXPOW_SERVICE_NAME}"
         out = _run_edge_cmd(cmd, timeout=30)
         if out.returncode != 0:
             return {
                 "ok": False,
-                "error": out.stderr.strip() or f"systemctl restart {AUXPOW_SERVICE_NAME} failed",
+                "error": out.stderr.strip() or f"sudo systemctl restart {AUXPOW_SERVICE_NAME} failed",
             }
         return {
             "ok": True,
@@ -8023,7 +8074,6 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
               <select id="ncl-job-model" class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-500 transition">
                 <option value="hiran-v2.2">Hiran v2.2 (Q4_K_M)</option>
                 <option value="hiran-v2.2-f16">Hiran v2.2 (F16)</option>
-                <option value="hiran-v2.1">Hiran v2.1 (Legacy)</option>
               </select>
             </div>
             <!-- Priority -->
@@ -9575,8 +9625,8 @@ def _build_health_map() -> dict:
             alive = False
         health[sid] = "up" if alive else "down"
     # Nginx + web-next: check via SSH on Edge server (not tunneled locally)
-    for sid, cmd in [("nginx", "systemctl is-active nginx 2>/dev/null"),
-                     ("web-next", "systemctl is-active zion-web-next 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web-next 2>/dev/null")]:
+    for sid, cmd in [("nginx", "sudo systemctl is-active nginx 2>/dev/null"),
+                     ("web-next", "sudo systemctl is-active zion-web-next 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web-next 2>/dev/null")]:
         try:
             result = _run_edge_cmd(cmd, timeout=3)
             alive = result.returncode == 0 and "active" in (result.stdout or "").strip() or "true" in (result.stdout or "").strip()
@@ -9918,6 +9968,32 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(data, e.code)
         except Exception as e:
             self._json({"success": False, "error": f"DAO daemon unreachable: {str(e)[:120]}", "offline": True})
+
+    def _proxy_to_hiran(self, method, route, body, req_headers):
+        """Proxy a request to the Hiranyagarbha orchestrator on port 8001.
+        Route /api/hiran/proxy/<path> is forwarded to http://127.0.0.1:8001/<path>."""
+        HIRAN_PORT = 8001
+        proxy_prefix = "/api/hiran/proxy"
+        full_path = self.path if self.path.startswith(proxy_prefix) else route
+        upstream_path = full_path[len(proxy_prefix):] or "/"
+        url = f"http://127.0.0.1:{HIRAN_PORT}{upstream_path}"
+        try:
+            fwd_headers = {"Accept": "application/json"}
+            ct = req_headers.get("Content-Type") or req_headers.get("content-type")
+            if ct:
+                fwd_headers["Content-Type"] = ct
+            req = urllib.request.Request(url, data=body if body else None, headers=fwd_headers, method=method)
+            with urllib.request.urlopen(req, timeout=10) as r:
+                data = json.loads(r.read())
+            self._json(data)
+        except urllib.error.HTTPError as e:
+            try:
+                data = json.loads(e.read())
+            except Exception:
+                data = {"success": False, "error": f"Hiran HTTP {e.code}"}
+            self._json(data, e.code)
+        except Exception as e:
+            self._json({"success": False, "error": f"Hiran orchestrator unreachable: {str(e)[:120]}", "offline": True})
 
     def _get_service_log(self, svc_name, lines=50):
         """Read last N lines from a service's log file."""
@@ -10785,6 +10861,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._json(get_mempool_detail())
             except Exception as e:
                 self._json({"ok": False, "tx_count": 0, "transactions": [], "error": str(e)[:80]})
+        elif route.startswith("/api/hiran/proxy"):
+            # Proxy all /api/hiran/proxy/* requests to Hiranyagarbha on port 8001
+            self._proxy_to_hiran("GET", route, None, dict(self.headers))
         elif route.startswith("/api/dao"):
             # Proxy all /api/dao/* requests to DAO daemon on port 8450
             self._proxy_to_dao("GET", route, None, dict(self.headers))
@@ -11875,6 +11954,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         elif route == "/api/hiran/chat":
             self._handle_hiran_chat_post(payload)
+            return
+        elif route.startswith("/api/hiran/proxy"):
+            self._proxy_to_hiran("POST", route, raw, dict(self.headers))
             return
         elif route == "/api/ncl/jobs":
             # Forward NCL job submission to Hiranyagarbha

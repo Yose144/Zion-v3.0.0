@@ -1,0 +1,27 @@
+[Unit]
+Description=ZION ZionDex Router — Cross-Chain DEX Router (port 8454)
+After=network.target zion-edge-warp.service
+Wants=network.target zion-edge-warp.service
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/data/zion
+EnvironmentFile=/etc/zion/edge-environment.sh
+Environment=RUST_LOG=info,ziondex_router=debug
+ExecStart=/usr/local/bin/ziondex-router
+Restart=on-failure
+RestartSec=10
+LimitNOFILE=65536
+
+# Security hardening (unprivileged zion user)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=yes
+ReadWritePaths=/data/zion
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

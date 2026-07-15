@@ -31,6 +31,15 @@ function pad(n: number) {
   return n.toString().padStart(2, '0');
 }
 
+function Wrap({ embedded, children }: { embedded: boolean; children: React.ReactNode }) {
+  if (embedded) return <>{children}</>;
+  return (
+    <section className="py-6 px-4">
+      <div className="zion-container">{children}</div>
+    </section>
+  );
+}
+
 export default function MainnetCountdown({ embedded = false }: { embedded?: boolean }) {
   const { lang } = useLang();
   const cs = lang === 'cs';
@@ -55,29 +64,17 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
   const tMinus = time.total > 0 ? `T-${time.days}` : 'LIVE';
   const isLive = time.total <= 0;
 
-  // Wrapper: skip section/container when embedded in Hero
-  const Wrap = ({ children }: { children: React.ReactNode }) =>
-    embedded ? <>{children}</> : (
-      <section className="py-6 px-4">
-        <div className="zion-container">{children}</div>
-      </section>
-    );
-
   if (!mounted) {
-    return embedded ? (
-      <div className="zion-panel-soft zion-panel-hover p-6 min-h-[140px]" />
-    ) : (
-      <section className="py-8 px-4">
-        <div className="zion-container">
-          <div className="zion-panel-soft zion-panel-hover p-6 min-h-[140px]" />
-        </div>
-      </section>
+    return (
+      <Wrap embedded={embedded}>
+        <div className="zion-panel-soft zion-panel-hover p-6 min-h-[140px]" />
+      </Wrap>
     );
   }
 
   if (isLive) {
     return (
-      <Wrap>
+      <Wrap embedded={embedded}>
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -116,7 +113,7 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
   }
 
   return (
-    <Wrap>
+    <Wrap embedded={embedded}>
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

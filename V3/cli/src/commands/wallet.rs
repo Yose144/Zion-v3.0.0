@@ -49,6 +49,7 @@ pub enum WalletCmd {
         set_default: bool,
 
         /// Read the wallet encryption password from this environment variable.
+        /// If omitted and ZION_WALLET_PASSWORD is set, that variable is used.
         #[arg(long)]
         password_env: Option<String>,
     },
@@ -79,6 +80,7 @@ pub enum WalletCmd {
         set_default: bool,
 
         /// Read the wallet encryption password from this environment variable.
+        /// If omitted and ZION_WALLET_PASSWORD is set, that variable is used.
         #[arg(long)]
         password_env: Option<String>,
     },
@@ -105,6 +107,7 @@ pub enum WalletCmd {
         set_default: bool,
 
         /// Read the wallet encryption password from this environment variable.
+        /// If omitted and ZION_WALLET_PASSWORD is set, that variable is used.
         #[arg(long)]
         password_env: Option<String>,
     },
@@ -127,6 +130,7 @@ pub enum WalletCmd {
         wallet: PathBuf,
 
         /// Read the wallet decryption password from this environment variable.
+        /// If omitted and ZION_WALLET_PASSWORD is set, that variable is used.
         #[arg(long)]
         password_env: Option<String>,
     },
@@ -150,6 +154,7 @@ pub enum WalletCmd {
         #[arg(short, long, default_value = "zion-wallet.json")]
         wallet: PathBuf,
         /// Environment variable holding the wallet decryption password.
+        /// If omitted and ZION_WALLET_PASSWORD is set, that variable is used.
         #[arg(long)]
         password_env: Option<String>,
     },
@@ -700,20 +705,23 @@ fn ensure_output_path(out: &Path, force: bool) -> Result<()> {
 }
 
 fn maybe_encrypt_wallet_file(wallet: WalletFile, password_env: Option<&str>) -> Result<WalletFile> {
-    let Some(password_env) = password_env else {
+    let password = if let Some(env_name) = password_env {
+        env::var(env_name).with_context(|| {
+            format!(
+                "Environment variable {} is required for wallet encryption",
+                env_name
+            )
+        })?
+    } else if let Ok(p) = env::var("ZION_WALLET_PASSWORD") {
+        p
+    } else {
         return Ok(wallet);
     };
 
-    let password = env::var(password_env).with_context(|| {
-        format!(
-            "Environment variable {} is required for wallet encryption",
-            password_env
-        )
-    })?;
     if password.is_empty() {
         return Err(anyhow!(
             "Environment variable {} is set but empty",
-            password_env
+            password_env.unwrap_or("ZION_WALLET_PASSWORD")
         ));
     }
 
@@ -776,19 +784,24 @@ fn resolve_wallet_secrets(
         .encryption
         .as_ref()
         .ok_or_else(|| anyhow!("wallet file has neither plaintext nor encrypted secrets"))?;
-    let password_env = password_env.ok_or_else(|| {
-        anyhow!("wallet file is encrypted; pass --password-env <ENV_VAR> to reveal secrets")
-    })?;
-    let password = env::var(password_env).with_context(|| {
-        format!(
-            "Environment variable {} is required for wallet decryption",
-            password_env
-        )
-    })?;
+    let password = if let Some(env_name) = password_env {
+        env::var(env_name).with_context(|| {
+            format!(
+                "Environment variable {} is required for wallet decryption",
+                env_name
+            )
+        })?
+    } else if let Ok(p) = env::var("ZION_WALLET_PASSWORD") {
+        p
+    } else {
+        return Err(anyhow!(
+            "wallet file is encrypted; pass --password-env <ENV_VAR> or set ZION_WALLET_PASSWORD"
+        ));
+    };
     if password.is_empty() {
         return Err(anyhow!(
             "Environment variable {} is set but empty",
-            password_env
+            password_env.unwrap_or("ZION_WALLET_PASSWORD")
         ));
     }
 
