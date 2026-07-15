@@ -61,6 +61,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="cs" className="dark" style={{ maxWidth: '100%', overflowX: 'hidden' }}>
+      <head>
+        <link rel="preconnect" href="https://prod.spline.design" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://widget.li.fi" />
+        <link rel="dns-prefetch" href="https://open.spotify.com" />
+        <link rel="dns-prefetch" href="https://api.spotify.com" />
+      </head>
       <body className={`${inter.variable} ${jetbrains.variable} antialiased text-white w-full`} style={{ maxWidth: '100%', overflowX: 'hidden', background: 'transparent' }}>
         <ServiceWorkerRegistration />
         <GlobalErrorBoundary>

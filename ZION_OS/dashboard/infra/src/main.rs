@@ -11,7 +11,6 @@ use axum::{
     Router,
 };
 use std::sync::Arc;
-use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
 use state::*;
@@ -23,7 +22,7 @@ struct AuthConfig {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let bind_addr = std::env::var("ZIONOS_BIND").unwrap_or_else(|_| "0.0.0.0:8888".into());
+    let bind_addr = std::env::var("ZIONOS_BIND").unwrap_or_else(|_| "127.0.0.1:8888".into());
     let pool_metrics = std::env::var("ZIONOS_POOL_METRICS")
         .unwrap_or_else(|_| "http://127.0.0.1:8455".into());
     let node_rpc = std::env::var("ZIONOS_NODE_RPC")
@@ -279,7 +278,6 @@ async fn main() -> anyhow::Result<()> {
 
     let app = api
         .fallback_service(ServeDir::new(&static_dir).append_index_html_on_directories(true))
-        .layer(CorsLayer::permissive())
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
@@ -302,7 +300,15 @@ async fn require_control_token(
     }
 
     let Some(expected) = auth.control_token.as_deref() else {
-        return next.run(req).await;
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({
+                "ok": false,
+                "error": "unauthorized",
+                "hint": "ZIONOS_CONTROL_TOKEN is not configured"
+            })),
+        )
+            .into_response();
     };
 
     let bearer_token = req

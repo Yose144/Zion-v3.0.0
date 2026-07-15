@@ -107,6 +107,10 @@ function PriceSparkline({
 
 // ─── Stat Card helper (matches /pool) ───────────────────────────────────────
 
+function SkeletonValue({ className = 'h-4 w-16' }: { className?: string }) {
+  return <span className={`inline-block animate-pulse rounded bg-white/10 ${className}`} />;
+}
+
 function StatCard({
   icon,
   colorClass,
@@ -115,6 +119,7 @@ function StatCard({
   value,
   sub,
   tip,
+  loading = false,
 }: {
   icon: React.ReactNode;
   colorClass: string;
@@ -123,6 +128,7 @@ function StatCard({
   value: string;
   sub?: string;
   tip?: string;
+  loading?: boolean;
 }) {
   return (
     <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
@@ -140,8 +146,10 @@ function StatCard({
           </div>
         )}
       </div>
-      <p className="text-lg font-bold text-white font-mono mt-0.5">{value}</p>
-      {sub && <p className="text-[11px] text-gray-500 mt-0.5">{sub}</p>}
+      <p className="text-lg font-bold text-white font-mono mt-0.5">
+        {loading ? <SkeletonValue className="h-6 w-20" /> : value}
+      </p>
+      {sub && !loading && <p className="text-[11px] text-gray-500 mt-0.5">{sub}</p>}
     </div>
   );
 }
@@ -169,6 +177,7 @@ export default function DefiPage() {
   const [activeTab, setActiveTab] = useState<SectionTab>('overview');
   const [wZIONSupply, setWZIONSupply] = useState<string | null>(null);
   const [wZIONPrice, setWZIONPrice] = useState<{ wzion_per_weth: number; usd_per_wzion: number } | null>(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
   // Chart data from GeckoTerminal OHLCV (loaded immediately, refreshed every 60s)
   const [chartPrices, setChartPrices] = useState<number[]>([]);
   const [chartLoading, setChartLoading] = useState(true);
@@ -365,6 +374,19 @@ export default function DefiPage() {
     };
     void refreshAuction();
 
+    const loadAll = async () => {
+      await Promise.all([
+        refreshSupply(),
+        refreshPrice(),
+        refreshBridge(),
+        refreshPools(),
+        refreshChart(),
+        refreshAuction(),
+      ]).catch(() => {});
+      if (!cancelled) setDataLoaded(true);
+    };
+    void loadAll();
+
     const interval = setInterval(() => {
       void refreshSupply();
       void refreshPrice();
@@ -453,23 +475,35 @@ export default function DefiPage() {
                       <BarChart3 className="h-4 w-4 text-amber-400" />
                       {cs ? 'Cena' : 'Price'}
                     </div>
-                    <span className="font-mono text-white">
-                      ${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(5)}
-                    </span>
+                    {dataLoaded ? (
+                      <span className="font-mono text-white">
+                        ${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(5)}
+                      </span>
+                    ) : (
+                      <SkeletonValue />
+                    )}
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Droplets className="h-4 w-4 text-amber-400" />
                       TVL
                     </div>
-                    <span className="font-mono text-white">${(poolStats?.tvl_usd ?? 0).toFixed(2)}</span>
+                    {dataLoaded ? (
+                      <span className="font-mono text-white">${(poolStats?.tvl_usd ?? 0).toFixed(2)}</span>
+                    ) : (
+                      <SkeletonValue />
+                    )}
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Activity className="h-4 w-4 text-amber-400" />
                       {cs ? 'Supply' : 'Supply'}
                     </div>
-                    <span className="font-mono text-white">{wZIONSupply ?? '—'}</span>
+                    {dataLoaded ? (
+                      <span className="font-mono text-white">{wZIONSupply ?? '—'}</span>
+                    ) : (
+                      <SkeletonValue />
+                    )}
                   </div>
                   {connected ? (
                     <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
@@ -503,12 +537,12 @@ export default function DefiPage() {
                   )}
                 </div>
                 <a
-                  href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${CONTRACTS.wZION}`}
+                  href={`https://app.uniswap.org/swap?chain=base&inputCurrency=${CONTRACTS.USDT}&outputCurrency=${CONTRACTS.wZION}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-3 inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors"
                 >
-                  {cs ? 'Otevřít Uniswap' : 'Open Uniswap'} <ExternalLink className="h-3.5 w-3.5" />
+                  {cs ? 'Otevřít Uniswap (USDT)' : 'Open Uniswap (USDT)'} <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               </div>
             </div>
@@ -613,6 +647,7 @@ export default function DefiPage() {
                 value={`$${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}`}
                 sub="USDT / wZION"
                 tip={cs ? 'Aktuální cena z primárního wZION/USDT poolu nebo seed cena.' : 'Current price from the primary wZION/USDT pool or seed price.'}
+                loading={!dataLoaded}
               />
               <StatCard
                 icon={<Droplets className="h-5 w-5" />}
@@ -622,6 +657,7 @@ export default function DefiPage() {
                 label="TVL"
                 value={`$${(poolStats?.tvl_usd ?? 0).toFixed(2)}`}
                 sub={cs ? 'celkem v poolech' : 'total in pools'}
+                loading={!dataLoaded}
               />
               <StatCard
                 icon={<Activity className="h-5 w-5" />}
@@ -631,6 +667,7 @@ export default function DefiPage() {
                 label={cs ? 'Likvidita' : 'Liquidity'}
                 value={`${(poolStats?.total_wzion_liquidity ?? 0).toFixed(0)}`}
                 sub="wZION"
+                loading={!dataLoaded}
               />
               <StatCard
                 icon={<Layers className="h-5 w-5" />}
@@ -640,6 +677,7 @@ export default function DefiPage() {
                 label={cs ? 'Pooly' : 'Pools'}
                 value={String(poolStats?.active_pools ?? 0)}
                 sub={cs ? 'aktivní' : 'active'}
+                loading={!dataLoaded}
               />
               <StatCard
                 icon={<Wallet className="h-5 w-5" />}
@@ -649,6 +687,7 @@ export default function DefiPage() {
                 label={cs ? 'wZION Supply' : 'wZION Supply'}
                 value={wZIONSupply ?? '—'}
                 sub={cs ? 'celkový oběh' : 'total circulating'}
+                loading={!dataLoaded}
               />
               <StatCard
                 icon={<ArrowLeftRight className="h-5 w-5" />}
@@ -658,6 +697,7 @@ export default function DefiPage() {
                 label={cs ? 'Bridge' : 'Bridge'}
                 value={bridgeStatus?.online ? (cs ? 'Online' : 'Online') : (cs ? 'Offline' : 'Offline')}
                 sub={cs ? '5/5 validátorů' : '5/5 validators'}
+                loading={!dataLoaded}
               />
               <StatCard
                 icon={<ShieldCheck className="h-5 w-5" />}
@@ -667,6 +707,7 @@ export default function DefiPage() {
                 label={cs ? 'Validátoři' : 'Validators'}
                 value="5/5"
                 sub={cs ? 'Guardian relay' : 'Guardian relay'}
+                loading={!dataLoaded}
               />
               <StatCard
                 icon={<Gavel className="h-5 w-5" />}
@@ -676,6 +717,7 @@ export default function DefiPage() {
                 label={cs ? 'Aukce' : 'Auction'}
                 value={`${(auctionData?.pctSold ?? 0).toFixed(2)}%`}
                 sub={cs ? 'prodáno CCA' : 'CCA sold'}
+                loading={!dataLoaded}
               />
             </div>
           </motion.div>
@@ -911,7 +953,7 @@ export default function DefiPage() {
               </div>
 
               <Link
-                href="https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+                href={`https://app.uniswap.org/swap?chain=base&inputCurrency=${CONTRACTS.USDT}&outputCurrency=${CONTRACTS.wZION}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="zion-rainbow-card p-5 transition-transform duration-200 hover:scale-[1.01] block"
