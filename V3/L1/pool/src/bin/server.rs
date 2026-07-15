@@ -4973,7 +4973,7 @@ fn build_stats_payload(
         "uptime_s": uptime_s,
         "pool": {
             "uptime_secs": uptime_s,
-            "version": "3.0.0"
+            "version": "3.0.5"
         },
         "fee_split": {
             "miner_pct": fees.miner_pct,
