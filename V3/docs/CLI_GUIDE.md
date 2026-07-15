@@ -72,6 +72,7 @@ dashboard    Open web dashboard in browser
 node         L1 core node commands
 pool         L1 pool commands
 mine         L1 miner commands
+auxpow       AuxPow / merge-mining configuration helper
 wallet       Wallet operations
 agent        L3 Hiranyagarbha AI Native agent gateway
 deploy       Server deployment

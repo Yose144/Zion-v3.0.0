@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, Atom, BookOpen, Brain, Cpu, Download, Eye, Globe, Heart, Sparkles, Zap } from 'lucide-react';
 
 /* ── Original book chapter map ── */
@@ -133,13 +134,13 @@ export default function QuantumRevolution() {
               rel="noopener noreferrer"
               className="block shrink-0 mx-auto lg:mx-0"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+                <Image
                 src="https://newearth.cz/images/Zion.jpg"
                 alt="Kvantová Revoluce — obálka knihy"
                 width={220}
                 height={310}
                 className="rounded-2xl border border-zion-gold/30 shadow-[0_8px_40px_rgba(251,191,36,0.15)] transition-transform hover:scale-[1.03]"
+                loading="lazy"
               />
             </a>
             {/* Amenti info */}
