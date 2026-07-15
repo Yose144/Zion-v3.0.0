@@ -85,6 +85,6 @@ export const NETWORK_PARAMS = [
   { label: 'Supply', value: '144 billion ZION (144,000,000,000)' },
   { label: 'Decimals', value: '6 (1 ZION = 1,000,000 flowers)' },
   { label: 'Emission split', value: '89% miner / 5% humanitarian / 5% issobella / 1% burn' },
-  { label: 'Pool', value: '62.171.141.136:8444', mono: true },
+  { label: 'Pool', value: 'stratum.zionterranova.com:8444', mono: true },
   { label: 'RPC (localhost)', value: '127.0.0.1:8443', mono: true },
 ];
