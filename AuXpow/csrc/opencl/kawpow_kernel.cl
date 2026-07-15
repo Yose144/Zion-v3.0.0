@@ -9,8 +9,7 @@
 //
 // The random math code is generated at compile time by the host-side
 // random math generator (port of xmrig's KawPowBuilder::getSource).
-// It is injected via XMRIG_INCLUDE_PROGPOW_RANDOM_MATH and
-// XMRIG_INCLUDE_PROGPOW_DATA_LOADS placeholders.
+// It is injected via the XMRIG_INCLUDE tags below (random math + data loads).
 //
 // References:
 //   - https://github.com/xmrig/xmrig (src/backend/opencl/cl/kawpow/kawpow.cl)
@@ -23,7 +22,7 @@
 #endif
 
 #ifndef GROUP_SIZE
-#define GROUP_SIZE 256
+#define GROUP_SIZE 128
 #endif
 #define GROUP_SHARE (GROUP_SIZE / 16)
 
