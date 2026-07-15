@@ -1376,7 +1376,10 @@ impl NodeRuntime {
             node_id: self.node_id.clone(),
             network: self.config.network,
             protocol_version: node_protocol_version().to_string(),
-            consensus_profile: self.core.consensus_profile().to_string(),
+            consensus_profile: self
+                .core
+                .consensus_profile_for_height(self.chain_state.height)
+                .to_string(),
             chain_height: self.chain_state.height,
             tip_hash_hex: hex(&self.chain_state.tip_hash),
             active_template_id: self.chain_state.active_template.template_id,
@@ -1521,7 +1524,10 @@ impl NodeRuntime {
                 Ok(P2pMessage::Welcome {
                     node_id: self.node_id.clone(),
                     protocol_version: node_protocol_version().to_string(),
-                    profile: self.core.consensus_profile().to_string(),
+                    profile: self
+                        .core
+                        .consensus_profile_for_height(self.chain_state.height)
+                        .to_string(),
                     peers: self.known_peers.clone(),
                 })
             }

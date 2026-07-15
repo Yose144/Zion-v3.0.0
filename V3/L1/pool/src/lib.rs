@@ -8,9 +8,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use zion_core::{
-    consensus_profile, consensus_profile_for_height, BlockCandidate, BlockTemplate, CoreRuntime,
-    DifficultyTarget, MiningHeader, MiningJob, MiningSolution, RevenueSnapshot, RevenueSource,
-    SealedBlock,
+    consensus_profile, BlockCandidate, BlockTemplate, CoreRuntime, DifficultyTarget, MiningHeader,
+    MiningJob, MiningSolution, RevenueSnapshot, RevenueSource, SealedBlock,
 };
 
 pub const PROTOCOL_VERSION: &str = "zion-v3-stratum/0.2";
@@ -21,18 +20,17 @@ pub fn advertised_algorithm() -> &'static str {
 
 /// Height-aware advertised algorithm name.
 ///
-/// Always advertise `deeksha_lite_v1` to miners and node.  Although
-/// `deeksha_chv3` is a bit-identical alias, the CHV3 fork at height 4500
-/// broke block production because:
-///   1. The Edge node binary was not rebuilt with CHV3 support, so it
-///      fell back to `cosmic_harmony_with_height` (wrong hash) for
-///      validation.
-///   2. External miners do not recognise `deeksha_chv3` and fall back
-///      to a wrong hash function, causing hash_mismatch in the pool.
+/// As of 3.0.6 the Edge node and pool binary fully support height-aware
+/// dispatch (`deeksha_lite_v1` → `deeksha_chv3` alias → `deeksha_lite_fire`).
+/// However, this function keeps advertising `deeksha_lite_v1` to miners as a
+/// compatibility workaround for the 2026-07-13 incident at block 4502, when
+/// external miners/nodes did not yet recognise `deeksha_chv3` and computed
+/// the wrong hash (569 `hash_mismatch` events in 24 h).
 ///
-/// Reverting to `deeksha_lite_v1` is safe — both names map to the same
-/// `deeksha_lite` hash function.  The CHV3 name can be re-enabled once
-/// all nodes and miners are updated.
+/// The workaround is safe because `deeksha_chv3` is a bit-identical alias of
+/// `deeksha_lite_v1`, and the pool validates shares against the canonical
+/// height-aware profile internally.  It can be removed once the majority of
+/// public hashrate is confirmed to run 3.0.5+.
 pub fn advertised_algorithm_for_height(_height: u64) -> &'static str {
     "deeksha_lite_v1"
 }
@@ -1146,6 +1144,7 @@ mod tests {
                 height: 10,
                 stream_weights: String::new(),
                 external_stream: None,
+                external_stream_cpu: None,
             },
             PoolMessage::Submit {
                 job_id: 42,

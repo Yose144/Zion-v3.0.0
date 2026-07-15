@@ -1,7 +1,7 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
 > **Datum poslední aktualizace:** 2026-07-15
-> **Protokol:** `zion-v3-node/3.0.5`
+> **Protokol:** `zion-v3-node/3.0.6`
 > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
 > **Předchozí archiv:** [`docs/3.0.5/StatusV3_archive_2026-07-13.md`](./docs/3.0.5/StatusV3_archive_2026-07-13.md) (5239 řádků, historické incident reporty)
@@ -13,7 +13,7 @@
 | Metric | Value |
 |--------|-------|
 | **Height** | 5801+ (3-node P2P mesh, all synced) |
-| **Protocol** | `zion-v3-node/3.0.5` (v2) |
+| **Protocol** | `zion-v3-node/3.0.6` (v2) |
 | **Genesis** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
 | **Decimals** | 6 (1 ZION = 1,000,000 flowers, post-3.0.3 fork) |
 | **Total Supply** | 144B ZION (144e15 flowers) |
@@ -21,10 +21,10 @@
 | **Block Reward** | 5400.067 ZION |
 | **Fee Split** | 89% miner / 5% treasury / 5% community / 1% burn |
 | **Difficulty** | LWMA-60 (integer, ±25% clamp, 30–120s solve) |
-| **Primary Algo** | `deeksha_lite_v1` (256 KiB scratchpad, 64 reads, 4 AES rounds) |
-| **Winter Algo** | `deeksha_lite_fire` (65536 thermal iterations) |
-| **Full Algo** | `cosmic_harmony_ekam_deeksha_v2` (~256 KiB + NPU) |
-| **Canonical alias** | `deeksha_chv3` = `deeksha_lite_v1` (bit-identical) |
+| **Consensus Algo (height-aware)** | `deeksha_lite_v1` (h 0–4499) → `deeksha_chv3` (h 4500–4999, bit-identical alias) → `deeksha_lite_fire` (h ≥ 5000, 65536 thermal iterations) |
+| **Pool Advertised Algo** | `deeksha_lite_v1` (compatibility workaround; see incident 4502) |
+| **Full/Ekam Algo** | `cosmic_harmony_ekam_deeksha_v2` (~256 KiB + NPU; future-gated) |
+| **CHv4.2 Merkabah Dual-Spin** | Implemented; fork height `u64::MAX` — dormant, pending governance vote |
 
 ---
 
@@ -36,8 +36,8 @@
 
 | Service | Port(s) | Bind | Layer | Status |
 |---------|---------|------|-------|--------|
-| zion-node | 8333 (P2P), 9443 (RPC), 8445 (WS), 9100 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active |
-| zion-node2 | 8334 (P2P), 8448 (RPC), 9116 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active (follower) |
+| zion-node | 8333 (P2P), 8443 (RPC), 8445 (WS), 9100 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active |
+| zion-node2 | 8334 (P2P), 8446 (RPC), 9116 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active (follower) |
 | zion-pool | 8444 (Stratum), 8455 (stats/metrics HTTP) | 8444 0.0.0.0, 8455 127.0.0.1 | L1 | ✅ active (mining) |
 | zion-bridge | 9101 (metrics) | 127.0.0.1 | L2 | ✅ active |
 | zion-dao | 8450 (API) | 127.0.0.1 | L2 | ✅ active |
@@ -67,7 +67,7 @@
 |----------|-----|-------|
 | Web | `https://zionterranova.com` | Next.js Docker, 377 MB standalone |
 | Dashboard | `https://dashboard.zionterranova.com` | Basic Auth |
-| RPC | `rpc.zionterranova.com:8443` | nginx TCP stream proxy → 127.0.0.1:9443 |
+| RPC | `rpc.zionterranova.com:8443` | nginx TCP stream proxy → 127.0.0.1:8443 |
 | Pool | `62.171.141.136:8444` | Stratum |
 
 ### Resource Usage
@@ -178,7 +178,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | R7 | B2b VRSC revenue (ZcashStratum, LuckPool) | ✅ DONE | `bb7d5407b` |
 | R8 | True AuxPow consensus | 🔮 Future | — |
 
-### Supported External Coins (17 total)
+### Supported External Coins (16 total)
 
 | Coin | Algorithm | Protocol | E2E Status |
 |------|-----------|----------|------------|
@@ -320,8 +320,8 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 
 | Date | Milestone | Key Commits |
 |------|-----------|-------------|
-| 07-15 | **QUAI (KawPoW) added** — 16th external coin. KawPoW GPU thread in miner (`kawpow_gpu_thread`), Stratum v1 protocol, 2miners pool (BTC payout). `ExternalCoin::QUAI` in AuXpow enum, pool server routing/algorithm/CH-coin mappings, miner channel+routing+share drain. Env vars: `ZION_POOL_AUXPOW_WALLET_QUAI`, `ZION_POOL_AUXPOW_PASSWORD_QUAI` | (this commit) |
-| 07-15 | **BEAM (BeamHash III) added** — 17th external coin. Custom `BeamStratum` protocol (JSON-RPC 2.0 over TLS) for beam.2miners.com:5252. `ExternalCoin::BEAM` in AuXpow enum, `StratumProtocol::BeamStratum` variant, `beam_login()`/`parse_beam_job()`/Beam submit block, `RevenueSource::BeamHashExternal` in cosmic-harmony, pool server routing/algorithm/CH-coin/stats mappings. Env var: `ZION_POOL_AUXPOW_WALLET_BEAM` | (this commit) |
+| 07-15 | **QUAI (KawPoW) added** — 15th external coin. KawPoW GPU thread in miner (`kawpow_gpu_thread`), Stratum v1 protocol, 2miners pool (BTC payout). `ExternalCoin::QUAI` in AuXpow enum, pool server routing/algorithm/CH-coin mappings, miner channel+routing+share drain. Env vars: `ZION_POOL_AUXPOW_WALLET_QUAI`, `ZION_POOL_AUXPOW_PASSWORD_QUAI` | (this commit) |
+| 07-15 | **BEAM (BeamHash III) added** — 16th external coin. Custom `BeamStratum` protocol (JSON-RPC 2.0 over TLS) for beam.2miners.com:5252. `ExternalCoin::BEAM` in AuXpow enum, `StratumProtocol::BeamStratum` variant, `beam_login()`/`parse_beam_job()`/Beam submit block, `RevenueSource::BeamHashExternal` in cosmic-harmony, pool server routing/algorithm/CH-coin/stats mappings. Env var: `ZION_POOL_AUXPOW_WALLET_BEAM` | (this commit) |
 | 07-15 | **ERG (Autolykos v2) E2E complete** — `autolykos_gpu_thread()` (Stream 3e) added to miner. Uses existing `autolykos_kernel.cl` OpenCL kernel (BLAKE2b-256, memory-hard precomputed table, 4-nonce batch scanning, midstate precomputation). Routing: ERG/autolykos → `autolykos_tx` channel. Share collection + submit. Pool-side was already complete (`RevenueSource::AutolykosExternal`, Stratum v1, 2miners pool). Env var: `ZION_POOL_AUXPOW_WALLET_ERG` | `d4e03cb97` |
 | 07-15 | **Triple Parallel AuxPoW LIVE** — Claymore-style 3-stream parallel mining: ZION (GPU DeekshaChv3) + EPIC (GPU ProgPow) + VRSC (CPU VerusHash) simultaneously. Second AuxPow bridge (`cpu_auxpow_bridge`) for CPU-only coins. `external_stream_cpu` field in `PoolMessage::Job`. OpenMP-parallel DAG generation (19 threads, epoch 120 ~2GB in ~4 min). All 3 streams verified live on Edge (rx5600-test miner, 99.7% ZION accept rate, EPIC ProgPow kernel 7169+ batches, VRSC CPU thread hashing) | (this commit) |
 | 07-14 | **PPLNS payout bug fix** — composite `miner_id/worker_name` keys (all workers sharing same miner_id had payouts sent to last-registered address) + telemetry registry composite keys | `bd6f1dfb3`, `85250086d` |
