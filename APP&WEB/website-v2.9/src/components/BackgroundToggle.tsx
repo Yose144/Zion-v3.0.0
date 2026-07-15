@@ -14,7 +14,7 @@ const backgroundConfig: Record<ObservatoryMode, { icon: typeof Sparkles; label: 
   'warp-speed': { icon: Orbit, label: 'Warp', description: 'Warp tunnel effect', color: '111, 255, 240' },
 };
 
-export default function BackgroundToggle({ placement = 'fixed' }: { placement?: BackgroundTogglePlacement }) {
+export default function BackgroundToggle({ placement = 'fixed', showLabel = true }: { placement?: BackgroundTogglePlacement; showLabel?: boolean }) {
   const { mode, setMode } = useObservatory();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -92,10 +92,11 @@ export default function BackgroundToggle({ placement = 'fixed' }: { placement?: 
         <CurrentIcon className="w-6 h-6" style={{ color: `rgb(${currentColor})` }} />
       </motion.button>
 
-      {/* Debug label to verify mode actually changes */}
-      <span className="text-[10px] uppercase tracking-wider text-white/70 font-medium hidden sm:inline">
-        {currentLabel}
-      </span>
+      {showLabel && (
+        <span className="text-[10px] uppercase tracking-wider text-white/70 font-medium hidden sm:inline">
+          {currentLabel}
+        </span>
+      )}
 
       <AnimatePresence>
         {isOpen && (
