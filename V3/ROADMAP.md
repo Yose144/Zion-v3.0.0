@@ -145,9 +145,9 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - [ ] Deploy wZION NEAR contract
 - [ ] Deploy wZION Sui package
 - [ ] Deploy wZION TON jetton
-- [ ] Deploy wZION SPL token on Solana
+- [x] Deploy wZION SPL token on Solana (`HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H`)
 - [ ] Deploy wZION TRC-20 on Tron
-- [ ] Issue wZION asset on Stellar
+- [x] Issue wZION asset on Stellar (`ZION:GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT`)
 - [ ] Mint wZION native token on Cardano
 - [ ] Deploy wZION CW20 on Cosmos
 - [ ] Set relay key env vars for each chain on Edge

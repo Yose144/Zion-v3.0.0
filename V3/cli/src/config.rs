@@ -447,24 +447,26 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["miner", "algorithm"] => cfg.miner.algorithm = value.into(),
         ["agent", "url"] => cfg.agent.url = value.into(),
         ["agent", "model"] => cfg.agent.model = value.into(),
-        ["hiran", "model_path"]
-        | ["hiran", "backend"]
-        | ["hiran", "device"]
-        | ["hiran", "port"]
-        | ["hiran", "max_context"]
-        | ["hiran", "temperature"]
-        | ["hiran", "top_p"] => {
-            let hiran = cfg.hiran.get_or_insert_with(HiranConfig::default);
-            match key {
-                ["hiran", "model_path"] => hiran.model_path = value.into(),
-                ["hiran", "backend"] => hiran.backend = value.into(),
-                ["hiran", "device"] => hiran.device = value.into(),
-                ["hiran", "port"] => hiran.port = value.parse()?,
-                ["hiran", "max_context"] => hiran.max_context = value.parse()?,
-                ["hiran", "temperature"] => hiran.temperature = value.parse()?,
-                ["hiran", "top_p"] => hiran.top_p = value.parse()?,
-                _ => unreachable!(),
-            }
+        ["hiran", "model_path"] => {
+            cfg.hiran.get_or_insert_with(HiranConfig::default).model_path = value.into();
+        }
+        ["hiran", "backend"] => {
+            cfg.hiran.get_or_insert_with(HiranConfig::default).backend = value.into();
+        }
+        ["hiran", "device"] => {
+            cfg.hiran.get_or_insert_with(HiranConfig::default).device = value.into();
+        }
+        ["hiran", "port"] => {
+            cfg.hiran.get_or_insert_with(HiranConfig::default).port = value.parse()?;
+        }
+        ["hiran", "max_context"] => {
+            cfg.hiran.get_or_insert_with(HiranConfig::default).max_context = value.parse()?;
+        }
+        ["hiran", "temperature"] => {
+            cfg.hiran.get_or_insert_with(HiranConfig::default).temperature = value.parse()?;
+        }
+        ["hiran", "top_p"] => {
+            cfg.hiran.get_or_insert_with(HiranConfig::default).top_p = value.parse()?;
         }
         ["deploy", "default_server"] => cfg.deploy.default_server = value.into(),
         ["deploy", "ssh_key"] => cfg.deploy.ssh_key = value.into(),
