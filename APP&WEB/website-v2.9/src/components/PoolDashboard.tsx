@@ -511,7 +511,8 @@ export default function PoolDashboard() {
               </div>
               <button
                 type="submit"
-                className="rounded-xl bg-linear-to-r from-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity whitespace-nowrap"
+                className="zion-button-primary text-sm whitespace-nowrap"
+                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
               >
                 {cs ? 'Najít minera' : 'Search Miner'}
               </button>
@@ -1465,17 +1466,18 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
               : '89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · v3.0.5 All Green · Public launch 31 December 2026'}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <a href="#start-mining" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-cyan to-zion-purple px-6 py-3 text-sm font-semibold text-black">
+            <a href="#start-mining" className="zion-button-primary group text-sm" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <Zap className="h-4 w-4" /> {cs ? 'Začít těžit' : 'Start Mining'}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
-            <Link href="/explorer" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
+            <Link href="/explorer" className="zion-button-secondary text-sm">
               <Layers className="h-4 w-4" /> Explorer
             </Link>
             <a
               href="https://github.com/Zion-TerraNova"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10"
+              className="zion-button-secondary text-sm"
             >
               <ExternalLink className="h-4 w-4" /> GitHub
             </a>

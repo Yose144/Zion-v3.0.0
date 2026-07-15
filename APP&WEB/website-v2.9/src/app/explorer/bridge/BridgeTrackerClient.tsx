@@ -716,10 +716,11 @@ export default function BridgeTrackerClient() {
               : "Bridge between ZION L1 and Base Mainnet. Lock/Mint and Burn/Unlock with full transparency."}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/bridge" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
+            <Link href="/bridge" className="zion-button-primary group text-sm" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <Lock className="h-4 w-4" /> {cs ? "Bridge UI" : "Bridge UI"}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
-            <Link href="/explorer/mempool" className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10">
+            <Link href="/explorer/mempool" className="zion-button-secondary text-sm">
               <Flame className="h-4 w-4" /> Mempool
             </Link>
           </div>

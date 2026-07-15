@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from 'react';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Activity, TrendingUp, Award, Zap, Clock, Users } from 'lucide-react';
@@ -141,7 +142,8 @@ export default function MinerStatsClient() {
             <button
               type="submit"
               disabled={loading}
-              className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-xl font-semibold hover:from-purple-700 hover:to-cyan-700 transition-all disabled:opacity-50"
+              className="absolute right-2 top-1/2 -translate-y-1/2 zion-button-primary text-sm disabled:opacity-50"
+              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
             >
               {loading ? 'Searching...' : 'Search'}
             </button>

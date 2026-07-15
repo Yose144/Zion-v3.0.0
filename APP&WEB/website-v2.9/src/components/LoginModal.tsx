@@ -222,7 +222,8 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
                   <button
                     type="submit"
                     disabled={loading || !password}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-zion-cyan/30 bg-gradient-to-r from-zion-cyan/20 to-zion-purple/20 px-4 py-2.5 text-sm font-medium text-white transition-all hover:from-zion-cyan/30 hover:to-zion-purple/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="zion-button-primary w-full text-sm"
+                    style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                   >
                     {loading ? (
                       <>

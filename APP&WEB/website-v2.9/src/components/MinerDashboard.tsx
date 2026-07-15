@@ -718,13 +718,15 @@ export default function MinerDashboard({ address }: { address: string }) {
               <div className="flex flex-wrap justify-center gap-4">
                 <Link
                   href="/pool"
-                  className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-purple to-zion-cyan px-8 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+                  className="zion-button-primary group text-sm"
+                  style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
                 >
                   <Pickaxe className="h-4 w-4" /> {cs ? 'Prehled poolu' : 'Pool Dashboard'}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 <Link
                   href="/explorer"
-                  className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-8 py-3 text-sm font-semibold text-gray-200 hover:bg-white/10 transition-colors"
+                  className="zion-button-secondary text-sm"
                 >
                   <ExternalLink className="h-4 w-4" /> {cs ? 'Explorer' : 'Explorer'}
                 </Link>

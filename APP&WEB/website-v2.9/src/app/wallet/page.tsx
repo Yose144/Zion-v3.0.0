@@ -601,7 +601,8 @@ export default function WalletPage() {
                     <button
                       onClick={handleCreate}
                       disabled={loading}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-zion-gold to-amber-500 px-6 py-3 text-sm font-semibold text-black shadow-lg shadow-zion-gold/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                      className="zion-button-primary text-sm"
+                      style={{ '--rc': '251, 191, 36' } as CSSProperties}
                     >
                       {loading ? (cs ? 'Vytváření...' : 'Creating...') : (cs ? 'Vytvořit peněženku' : 'Create Wallet')}
                     </button>
@@ -635,7 +636,8 @@ export default function WalletPage() {
                         <button
                           onClick={handleImportMnemonic}
                           disabled={loading}
-                          className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                          className="zion-button-primary text-sm"
+                          style={{ '--rc': '6, 182, 212' } as CSSProperties}
                         >
                           {loading ? (cs ? 'Importování...' : 'Importing...') : (cs ? 'Importovat z Mnemonic' : 'Import from Mnemonic')}
                         </button>
@@ -661,7 +663,8 @@ export default function WalletPage() {
                         <button
                           onClick={handleImportPrivateKey}
                           disabled={loading}
-                          className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                          className="zion-button-primary text-sm"
+                          style={{ '--rc': '6, 182, 212' } as CSSProperties}
                         >
                           {loading ? (cs ? 'Importování...' : 'Importing...') : (cs ? 'Importovat z Private Key' : 'Import from Private Key')}
                         </button>
@@ -674,14 +677,16 @@ export default function WalletPage() {
                         <button
                           onClick={handleImportTrezor}
                           disabled={loading}
-                          className="inline-flex items-center gap-2 rounded-2xl border border-green-500/30 bg-green-500/10 px-5 py-3 text-sm font-semibold text-green-300 transition hover:bg-green-500/20 disabled:opacity-50"
+                          className="zion-button-secondary text-sm"
+                          style={{ '--rc': '34, 197, 94' } as CSSProperties}
                         >
                           {loading ? (cs ? 'Připojování...' : 'Connecting...') : 'Trezor'}
                         </button>
                         <button
                           onClick={handleImportLedger}
                           disabled={loading}
-                          className="inline-flex items-center gap-2 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-5 py-3 text-sm font-semibold text-purple-300 transition hover:bg-purple-500/20 disabled:opacity-50"
+                          className="zion-button-secondary text-sm"
+                          style={{ '--rc': '147, 51, 234' } as CSSProperties}
                         >
                           {loading ? (cs ? 'Připojování...' : 'Connecting...') : 'Ledger'}
                         </button>
@@ -750,7 +755,8 @@ export default function WalletPage() {
                       <button
                         onClick={handleSend}
                         disabled={loading}
-                        className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                        className="zion-button-primary text-sm"
+                        style={{ '--rc': '16, 185, 129' } as CSSProperties}
                       >
                         {loading ? (cs ? 'Odesílání...' : 'Sending...') : (cs ? 'Odeslat ZION' : 'Send ZION')}
                       </button>
@@ -785,15 +791,17 @@ export default function WalletPage() {
                       <div className="flex flex-wrap gap-3">
                         <button
                           onClick={handleExportMnemonic}
-                          className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+                          className="zion-button-secondary text-sm"
+                          style={{ '--rc': '251, 191, 36' } as CSSProperties}
                         >
-                          <KeyRound className="h-4 w-4 text-zion-gold" /> {cs ? 'Exportovat Mnemonic' : 'Export Mnemonic'}
+                          <KeyRound className="h-4 w-4" /> {cs ? 'Exportovat Mnemonic' : 'Export Mnemonic'}
                         </button>
                         <button
                           onClick={handleExportPrivateKey}
-                          className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+                          className="zion-button-secondary text-sm"
+                          style={{ '--rc': '6, 182, 212' } as CSSProperties}
                         >
-                          <Fingerprint className="h-4 w-4 text-cyan-400" /> {cs ? 'Exportovat Private Key' : 'Export Private Key'}
+                          <Fingerprint className="h-4 w-4" /> {cs ? 'Exportovat Private Key' : 'Export Private Key'}
                         </button>
                       </div>
                       {exportedSecret && (
@@ -834,14 +842,17 @@ export default function WalletPage() {
               {cs ? 'Více o ZION Wallet' : 'Learn more about ZION Wallet'}
             </h2>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/explorer" className="zion-button-secondary inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white">
+              <Link href="/explorer" className="zion-button-secondary group text-sm" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                 <Globe2 className="h-4 w-4" /> Explorer
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
-              <Link href="/download" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
-                <Download className="h-4 w-4 text-zion-gold" /> {cs ? 'Stáhnout' : 'Download'}
+              <Link href="/download" className="zion-button-secondary group text-sm" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                <Download className="h-4 w-4" /> {cs ? 'Stáhnout' : 'Download'}
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
-              <Link href="/docs" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
-                <BookOpen className="h-4 w-4 text-zion-gold" /> {cs ? 'Dokumentace' : 'Documentation'}
+              <Link href="/docs" className="zion-button-secondary group text-sm" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                <BookOpen className="h-4 w-4" /> {cs ? 'Dokumentace' : 'Documentation'}
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>
           </motion.div>

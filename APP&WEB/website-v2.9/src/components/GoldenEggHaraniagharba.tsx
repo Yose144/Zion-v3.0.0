@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, Orbit, Sparkles, Stars } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
@@ -167,18 +168,20 @@ export default function GoldenEggHaraniagharba() {
               <div className="flex flex-wrap gap-3">
                 <Link
                   href="/ekam"
-                  className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-amber-300 via-zion-gold to-orange-400 px-5 py-2.5 text-sm font-semibold text-black"
+                  className="zion-button-primary group text-sm"
+                  style={{ '--rc': '251, 191, 36' } as CSSProperties}
                 >
                   <Stars className="h-4 w-4" />
                   {tr('goldenEgg', 'cta_museum', lang)}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 <Link
                   href="/network"
-                  className="zion-rainbow-sub inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white hover:border-white/30"
-                  style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+                  className="zion-button-secondary group text-sm"
+                  style={{ '--rc': '251, 191, 36' } as CSSProperties}
                 >
                   {tr('goldenEgg', 'cta_network', lang)}
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </div>
             </div>

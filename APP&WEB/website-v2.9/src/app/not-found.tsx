@@ -1,8 +1,9 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Home, Orbit, Search, Rocket } from 'lucide-react';
+import { Home, Orbit, Search, Rocket, ArrowRight } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 
@@ -32,26 +33,30 @@ export default function NotFound() {
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-black shadow-[0_10px_30px_rgba(147,51,234,0.35)] hover:shadow-[0_15px_40px_rgba(147,51,234,0.5)] transition-shadow"
+            className="zion-button-primary group text-sm"
+            style={{ '--rc': '255, 215, 0' } as CSSProperties}
           >
             <Home className="w-4 h-4" />
             {tr('notFound', 'btn_home', lang)}
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
           <Link
             href="/dashboard"
-            className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
-            style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
+            className="zion-button-secondary group text-sm"
+            style={{ '--rc': '6, 182, 212' } as CSSProperties}
           >
             <Rocket className="w-4 h-4" />
             {tr('notFound', 'btn_dashboard', lang)}
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
           <Link
             href="/explorer"
-            className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
-            style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
+            className="zion-button-secondary group text-sm"
+            style={{ '--rc': '147, 51, 234' } as CSSProperties}
           >
             <Search className="w-4 h-4" />
             {tr('notFound', 'btn_explorer', lang)}
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
 
