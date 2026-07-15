@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
+    const offset = parseInt(searchParams.get('offset') || '0');
     const address = searchParams.get('address') || '';
     const txHash = normalizeTxHash(searchParams.get('hash') || searchParams.get('tx_hash') || '');
 
@@ -79,28 +80,38 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // ── Address-specific transactions (from pool) ──
+    // ── Address-specific transactions (from on-chain RPC) ──
     if (address) {
       try {
-        const minerData = await rpc.getMinerInfo(address);
-        const payouts = minerData.recent_payouts || [];
-
-        const transactions = payouts.map((payout: any, index: number) => ({
-          tx_hash: payout.tx_id || `payout_${payout.timestamp || index}`,
-          type: 'payout',
-          sender: 'Pool',
-          receiver: address,
-          amount: payout.amount_zion ?? payout.amount ?? 0,
-          fee: 0,
-          timestamp: payout.timestamp || 0,
-          block_height: null,
-          status: payout.status || 'confirmed',
-        }));
+        const history = await rpc.getTransactionHistory(address, limit, offset);
+        const transactions = history.transactions.map((tx) => {
+          const isCoinbase = tx.from === 'coinbase';
+          const amountZion = Number(tx.amount_zion) / ATOMIC_UNITS_PER_ZION;
+          const feeZion = Number(tx.fee_zion) / ATOMIC_UNITS_PER_ZION;
+          return {
+            tx_hash: tx.tx_id,
+            type: isCoinbase ? 'coinbase' : 'transfer',
+            from: tx.from,
+            to: tx.to,
+            amount: amountZion,
+            amount_zion: tx.amount_zion,
+            fee: feeZion,
+            fee_zion: tx.fee_zion,
+            nonce: tx.nonce,
+            block_height: tx.block_height,
+            timestamp: tx.timestamp,
+            status: tx.confirmed ? 'confirmed' : 'pending',
+            confirmations: tx.block_height > 0 ? 1 : 0, // approx; chain height not fetched here
+            transaction_model: tx.tx_model,
+          };
+        });
 
         return NextResponse.json({
           transactions,
           items: transactions,
           count: transactions.length,
+          total: history.total,
+          has_more: history.has_more,
         });
       } catch {
         return NextResponse.json({ transactions: [], items: [], count: 0 });
