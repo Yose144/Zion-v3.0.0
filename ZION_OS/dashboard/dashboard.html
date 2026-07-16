@@ -2623,7 +2623,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
       <div class="zion-panel p-3 text-center">
         <div class="text-lg font-bold text-zion-gold" id="rev-kpi-zion-paid">—</div>
-        <div class="text-[10px] text-gray-400 mt-1">ZION Paid (PPLNS)</div>
+        <div class="text-[10px] text-gray-400 mt-1">ZION Paid (All-time PPLNS)</div>
       </div>
       <div class="zion-panel p-3 text-center">
         <div class="text-lg font-bold text-amber-400" id="rev-kpi-zion-day">—</div>
@@ -2730,10 +2730,12 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <div class="zion-panel p-4">
         <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🧭 Active Strategies</h3>
         <div class="space-y-2 text-xs">
-          <div class="flex justify-between"><span class="text-gray-400">Merge Mining</span><span id="rev-strat-merge" class="font-mono text-emerald-400">—</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">Swap Aggregator</span><span id="rev-strat-swap" class="font-mono text-emerald-400">—</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">Staking Yield</span><span id="rev-strat-stake" class="font-mono text-gray-500">—</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">Bridge Fees</span><span id="rev-strat-bridge" class="font-mono text-gray-500">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Merge Mining (AuxPow)</span><span id="rev-strat-merge" class="font-mono text-emerald-400">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Bridge (L2)</span><span id="rev-strat-bridge" class="font-mono text-emerald-400">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">DAO Governance</span><span id="rev-strat-dao" class="font-mono text-emerald-400">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">WARP Relay (L3)</span><span id="rev-strat-warp" class="font-mono text-emerald-400">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Atomic Swap</span><span id="rev-strat-swap" class="font-mono text-emerald-400">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Stream Profit</span><span id="rev-strat-stream" class="font-mono text-emerald-400">—</span></div>
         </div>
       </div>
     </div>
@@ -2852,7 +2854,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <!-- Revenue by Coin -->
       <div class="zion-panel p-4">
-        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🪙 Revenue by Coin</h3>
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🪙 Supported Coins <span class="text-[10px] text-gray-500 font-normal">(15 merge-minable — active coin highlighted)</span></h3>
         <div class="overflow-x-auto max-h-64 overflow-y-auto">
           <table class="w-full text-xs text-left">
             <thead>
@@ -2893,8 +2895,8 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
     </div>
 
-    <!-- PPLNS + Fee Split Detail -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- PPLNS + Fee Split + Block Economics -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <!-- PPLNS State -->
       <div class="zion-panel p-4">
         <h3 class="text-sm font-bold mb-3 flex items-center gap-2">📊 PPLNS State</h3>
@@ -2925,15 +2927,29 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           <div class="space-y-1">
             <div class="text-gray-400">Humanitarian</div>
             <div id="rev-fee-human" class="font-mono text-purple-400">—</div>
+            <div id="rev-wallet-human" class="font-mono text-[9px] text-gray-600 truncate">—</div>
           </div>
           <div class="space-y-1">
             <div class="text-gray-400">Issobella (DAO)</div>
             <div id="rev-fee-issobella" class="font-mono text-amber-400">—</div>
+            <div id="rev-wallet-issobella" class="font-mono text-[9px] text-gray-600 truncate">—</div>
           </div>
           <div class="space-y-1">
             <div class="text-gray-400">Pool Fee</div>
             <div id="rev-fee-pool" class="font-mono text-gray-300">—</div>
+            <div id="rev-wallet-pool" class="font-mono text-[9px] text-gray-600 truncate">—</div>
           </div>
+        </div>
+      </div>
+
+      <!-- Block Economics -->
+      <div class="zion-panel p-4">
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">⛏️ Block Economics</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Block Reward</span><span id="rev-block-reward" class="font-mono text-emerald-400">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Target Block Time</span><span id="rev-block-time" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Max Blocks / Day</span><span id="rev-max-blocks" class="font-mono text-white">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Current Blocks / Day</span><span id="rev-blocks-per-day" class="font-mono text-cyan-400">—</span></div>
         </div>
       </div>
     </div>

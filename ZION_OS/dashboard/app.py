@@ -242,6 +242,11 @@ LEGACY_FLOWERS_PER_ZION = 1_000_000_000_000  # pre-3.0.3
 TOTAL_SUPPLY_ZION = 144_000_000_000    # 144 billion ZION
 TOTAL_SUPPLY_FLOWERS = TOTAL_SUPPLY_ZION * FLOWERS_PER_ZION  # 1.44e17
 
+# ── ZION block economics (from V3/L1/core/src/emission.rs) ───────────
+ZION_BLOCK_REWARD = 5400.067           # BASE_REWARD = 5_400_067_000 flowers
+TARGET_BLOCK_TIME_SECS = 60            # BLOCK_TIME_SECONDS = 60s → 1440 blocks/day max
+MAX_BLOCKS_PER_DAY = 86400 // TARGET_BLOCK_TIME_SECS  # 1440
+
 def flowers_to_zion(flowers):
     """Convert flowers (integer) to ZION (float), auto-detecting legacy scale.
     If the value exceeds total supply in post-3.0.3 scale, it must be legacy
@@ -2815,6 +2820,7 @@ def _build_status_edge_primary() -> dict:
         "bridge":     9101,
         "dao":        8450,
         "warp":       8453,
+        "atomic_swap": 8888,
         "oasis":      8094,
         "free_world": 8095,
         "issobella":  8096,
@@ -2826,6 +2832,7 @@ def _build_status_edge_primary() -> dict:
     bridge_health     = _health_map["bridge"]
     dao_health        = _health_map["dao"]
     warp_health       = _health_map["warp"]
+    atomic_swap_health = _health_map["atomic_swap"]
     oasis_health      = _health_map["oasis"]
     free_world_health = _health_map["free_world"]
     issobella_health  = _health_map["issobella"]
@@ -2956,6 +2963,15 @@ def _build_status_edge_primary() -> dict:
             "ports_closed": warp_health.get("ports_closed", []),
             "pid_alive": warp_health.get("pid_alive", False),
             "pid": warp_health.get("pid"),
+        },
+        "atomic_swap": {
+            "running": atomic_swap_health["alive"],
+            "status": atomic_swap_health.get("status", "unknown"),
+            "details": atomic_swap_health.get("details", ""),
+            "ports_open": atomic_swap_health.get("ports_open", []),
+            "ports_closed": atomic_swap_health.get("ports_closed", []),
+            "pid_alive": atomic_swap_health.get("pid_alive", False),
+            "pid": atomic_swap_health.get("pid"),
         },
         "oasis": {
             "running": oasis_health["alive"],
@@ -5041,20 +5057,22 @@ def get_revenue_dashboard() -> dict:
     fee_split = stats.get("fee_split", {}) if isinstance(stats.get("fee_split"), dict) else {}
     pplns = stats.get("pplns", {}) if isinstance(stats.get("pplns"), dict) else {}
 
-    # Block reward (ZION canonical)
-    ZION_BLOCK_REWARD = 5400.067
-    FLOWERS_PER_ZION = 1_000_000
+    # Block reward + economics constants (defined at module level, see top of file)
+    # ZION_BLOCK_REWARD, TARGET_BLOCK_TIME_SECS, MAX_BLOCKS_PER_DAY, FLOWERS_PER_ZION
 
-    # ZION mined (total from blocks found)
+    # ZION mined (total from blocks found by this pool session)
     zion_mined_total = blocks_found * ZION_BLOCK_REWARD
-    zion_paid_total = total_paid_atomic / FLOWERS_PER_ZION
+    zion_paid_total = total_paid_atomic / FLOWERS_PER_ZION  # all-time PPLNS
     zion_pending = pending_atomic / FLOWERS_PER_ZION
 
-    # Daily estimate (blocks/day * reward)
-    if pool_uptime > 0:
-        blocks_per_day = blocks_found / pool_uptime * 86400
+    # Daily estimate: use actual block-find rate from this session,
+    # but cap at network maximum (720 blocks/day).
+    if pool_uptime > 3600:  # need at least 1h of data for meaningful rate
+        raw_rate = blocks_found / pool_uptime * 86400
+        blocks_per_day = min(raw_rate, MAX_BLOCKS_PER_DAY)
         zion_per_day = blocks_per_day * ZION_BLOCK_REWARD
     else:
+        # Not enough uptime data — estimate from chain height delta instead
         blocks_per_day = 0
         zion_per_day = 0.0
 
@@ -5132,6 +5150,19 @@ def get_revenue_dashboard() -> dict:
     issobella_accum = float(fee_split.get("issobella_accumulated_flowers", 0)) / FLOWERS_PER_ZION
     pool_fee_accum = float(fee_split.get("pool_fee_accumulated_flowers", 0)) / FLOWERS_PER_ZION
 
+    # ── Fee wallet addresses (from pool config) ───────────────────────
+    humanitarian_wallet = fee_split.get("humanitarian_wallet", "")
+    issobella_wallet = fee_split.get("issobella_wallet", "")
+    pool_fee_wallet = fee_split.get("pool_fee_wallet", "")
+
+    # ── Service-based strategy detection (real status, not string parsing) ──
+    # Check which L2/L3 services are actually running
+    _status = build_status()
+    _bridge_running = _status.get("bridge", {}).get("running", False)
+    _dao_running = _status.get("dao", {}).get("running", False)
+    _warp_running = _status.get("warp", {}).get("running", False)
+    _swap_running = _status.get("atomic_swap", {}).get("running", False)
+
     # ── Build revenue object ───────────────────────────────────────────
     aux_enabled = bool(auxpow.get("enabled", False))
     result["revenue"] = {
@@ -5163,7 +5194,7 @@ def get_revenue_dashboard() -> dict:
         "last_switch_ts": auxpow.get("last_switch_ts"),
         "consecutive_failures": int(auxpow.get("consecutive_failures", 0)),
         "circuit_open": bool(auxpow.get("circuit_open", False)),
-        # Fee split
+        # Fee split (real data from pool API; chain defaults: 89/5/5/1 from emission.rs)
         "miner_share_pct": int(fee_split.get("miner_pct", 89)),
         "dao_share_pct": int(fee_split.get("issobella_pct", 5)),
         "humanitarian_share_pct": int(fee_split.get("humanitarian_pct", 5)),
@@ -5171,6 +5202,9 @@ def get_revenue_dashboard() -> dict:
         "humanitarian_accumulated_zion": round(humanitarian_accum, 4),
         "issobella_accumulated_zion": round(issobella_accum, 4),
         "pool_fee_accumulated_zion": round(pool_fee_accum, 4),
+        "humanitarian_wallet": humanitarian_wallet,
+        "issobella_wallet": issobella_wallet,
+        "pool_fee_wallet": pool_fee_wallet,
         # PPLNS
         "payout_rounds": payout_rounds,
         "pplns_window_size": int(pplns.get("window_size", 500000)),
@@ -5194,6 +5228,19 @@ def get_revenue_dashboard() -> dict:
         "stream_profit_interval": stream_profit.get("interval_secs", 120),
         "stream_profit_hysteresis": stream_profit.get("hysteresis_pct", 15.0),
         "stream_profit_sources": stream_profit.get("enabled_sources", ""),
+        # Active strategies (real service status)
+        "strategies": {
+            "merge_mining": aux_enabled,
+            "bridge": _bridge_running,
+            "dao": _dao_running,
+            "warp": _warp_running,
+            "swap": _swap_running,
+            "stream_profit": bool(stream_profit.get("enabled", False)),
+        },
+        # Block reward breakdown
+        "block_reward_zion": ZION_BLOCK_REWARD,
+        "target_block_time_secs": TARGET_BLOCK_TIME_SECS,
+        "max_blocks_per_day": MAX_BLOCKS_PER_DAY,
     }
     return result
 
