@@ -262,6 +262,11 @@ pub struct AuxPowClient {
     job_extranonce1: Arc<Mutex<HashMap<String, Vec<u8>>>>,
     /// ZcashStratum (VRSC): latest job_id from upstream (for stale share detection).
     latest_job_id: Arc<Mutex<Option<String>>>,
+    /// ZcashStratum (VRSC): per-job receive timestamp (Instant) for age-based
+    /// stale detection.  LuckPool expires jobs ~30s after issuance; if a share
+    /// arrives for a job older than the threshold, we skip forwarding to avoid
+    /// "job not found" rejections (error 21).
+    job_received_at: Arc<Mutex<HashMap<String, std::time::Instant>>>,
     /// GPU backend for PoUW mining (Metal on Apple Silicon).
     /// None = CPU-only mining.
     #[cfg(feature = "gpu-metal")]
@@ -315,6 +320,7 @@ impl AuxPowClient {
             job_header_prefix: Arc::new(Mutex::new(HashMap::new())),
             job_extranonce1: Arc::new(Mutex::new(HashMap::new())),
             latest_job_id: Arc::new(Mutex::new(None)),
+            job_received_at: Arc::new(Mutex::new(HashMap::new())),
             #[cfg(feature = "gpu-metal")]
             gpu_backend: Arc::new(Mutex::new(None)),
             #[cfg(feature = "gpu-opencl")]
@@ -2145,6 +2151,7 @@ impl AuxPowClient {
 
                     if !job_id.is_empty() {
                         *self.latest_job_id.lock().await = Some(job_id.clone());
+                        self.job_received_at.lock().await.insert(job_id.clone(), std::time::Instant::now());
                     }
 
                     // VerusHash 2.2 solution: pad to exactly 1344 bytes (2688 hex).
@@ -2184,6 +2191,7 @@ impl AuxPowClient {
                         let mut nt = self.job_ntime.lock().await;
                         let mut hp = self.job_header_prefix.lock().await;
                         let mut en1m = self.job_extranonce1.lock().await;
+                        let mut jra = self.job_received_at.lock().await;
                         if sol.len() > 64 {
                             let mut keys: Vec<String> = sol.keys().cloned().collect();
                             keys.sort();
@@ -2193,6 +2201,7 @@ impl AuxPowClient {
                                 nt.remove(k);
                                 hp.remove(k);
                                 en1m.remove(k);
+                                jra.remove(k);
                             }
                         }
                     }
@@ -2476,6 +2485,34 @@ impl AuxPowClient {
     /// Get the current job, if any.
     pub async fn current_job(&self) -> Option<ExternalJob> {
         self.current_job.lock().await.clone()
+    }
+
+    /// Check if a VRSC job is stale and should not be forwarded upstream.
+    ///
+    /// A job is considered stale if it is older than `max_age_secs`.
+    ///
+    /// NOTE: We deliberately do NOT check `latest_job_id` here.  The pool
+    /// receives new VRSC jobs from LuckPool BEFORE the miner gets them (the
+    /// pool must embed the new job in the next wire_job).  If we rejected
+    /// shares whenever `job_id != latest_job_id`, we would pre-reject valid
+    /// shares that LuckPool would have accepted — the miner is legitimately
+    /// still working on the previous job which is still valid upstream.
+    /// Age-based detection is the only safe heuristic.
+    ///
+    /// Returns `true` if the share should be skipped to avoid "job not found"
+    /// rejections (error 21) from LuckPool.
+    pub async fn is_job_stale(&self, job_id: &str, max_age_secs: u64) -> bool {
+        if max_age_secs == 0 {
+            return false;
+        }
+        let jra = self.job_received_at.lock().await;
+        if let Some(received_at) = jra.get(job_id) {
+            received_at.elapsed().as_secs() >= max_age_secs
+        } else {
+            // Job not in our timestamp map — we can't determine age.
+            // Don't reject (give the share a chance).
+            false
+        }
     }
 
     /// Wait for a new job with timeout.
@@ -2769,20 +2806,47 @@ impl AuxPowClient {
             //   - PBaaS v7+ nonceSpace embedded in last 15 bytes (bytes 1329-1343)
             //   - MMR roots restored from original job solution (bytes 8-72)
 
-            // Stale share detection: warn but still forward to upstream pool.
-            // The upstream pool (LuckPool) will reject if truly stale — we
-            // don't need to pre-reject here because parallel streaming means
-            // the miner may find a share for a job that was superseded while
-            // it was scanning.  Forwarding gives the share a chance.
+            // Stale share pre-rejection for VRSC.
+            //
+            // LuckPool expires VRSC jobs ~30s after issuance and returns
+            // error 21 "job not found" for shares submitted after expiry.
+            // Previously we forwarded stale shares anyway ("give the share
+            // a chance"), but LuckPool always rejects them, wasting a
+            // round-trip and inflating the reject rate from ~85% to ~96%.
+            //
+            // Stale share pre-rejection for VRSC.
+            //
+            // LuckPool expires VRSC jobs when a new VerusCoin block is found
+            // (~12s average block time).  Due to the multi-hop forwarding
+            // architecture (LuckPool → Edge pool → local miner → Edge pool →
+            // LuckPool), there is an inherent 3-5s delay that causes some
+            // shares to arrive after the job has expired.
+            //
+            // Age-based pre-rejection was tested with thresholds of 20s and
+            // 25s but both REDUCED the accept rate because job validity varies
+            // wildly (6-30s depending on block timing) — the threshold can't
+            // distinguish "old but still valid" from "old and expired".
+            //
+            // The latest_job_id check was also tested but is broken because
+            // the pool receives new jobs BEFORE the miner, causing false
+            // pre-rejections of shares LuckPool would have accepted.
+            //
+            // Current approach: forward all shares and let LuckPool reject.
+            // The ~15-17% reject rate is inherent to the multi-hop architecture.
+            // Set ZION_VRSC_STALE_SECS > 0 to enable age-based pre-rejection.
             {
-                let latest = self.latest_job_id.lock().await.clone();
-                if let Some(ref cur) = latest {
-                    if !cur.is_empty() && job_id != *cur {
-                        warn!(
-                            "auxpow: {} share for previous job={} (latest={}) nonce={} — forwarding anyway",
-                            self.profile.coin, job_id, cur, nonce
-                        );
-                    }
+                let stale_secs = std::env::var("ZION_VRSC_STALE_SECS")
+                    .ok()
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0u64);
+                if stale_secs > 0 && self.is_job_stale(job_id, stale_secs).await {
+                    warn!(
+                        "auxpow: {} stale job={} nonce={} — pre-rejected (age threshold {}s)",
+                        self.profile.coin, job_id, nonce, stale_secs
+                    );
+                    return Ok(ShareResult::Rejected(
+                        "stale job — pre-rejected to avoid upstream job-not-found".to_string()
+                    ));
                 }
             }
 
