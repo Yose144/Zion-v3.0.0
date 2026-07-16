@@ -51,8 +51,22 @@ fn main() {
         build
             .warnings(false) // C code may have unused-parameter warnings
             .opt_level(3)
-            .flag("-march=x86-64") // Ensure compatibility with CPUs without AVX (e.g. Pentium G4560)
             .compile("auxpow_native");
+
+        // Apply CPU baseline (XMRig-style): respect ZION_CPU_TARGET env var.
+        // Default is "native" (optimal for build machine). Set to "x86-64"
+        // for portable/distribution builds (e.g. SMOS rigs with Pentium G4560).
+        // The flag is applied via flag_if_supported to avoid errors on
+        // compilers that don't understand -march.
+        {
+            let cpu_target = std::env::var("ZION_CPU_TARGET").unwrap_or_else(|_| "native".to_string());
+            if cpu_target == "native" {
+                build.flag_if_supported("-march=native");
+            } else if !cpu_target.is_empty() {
+                build.flag_if_supported(&format!("-march={}", cpu_target));
+            }
+            println!("cargo:warning=ZION AuXpow build: cpu_target={}", cpu_target);
+        }
 
         // Link OpenMP runtime library (libgomp on Linux).
         // NOTE: Disabled on Linux to avoid SIGILL on CPUs without AVX.

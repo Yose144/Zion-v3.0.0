@@ -80,6 +80,76 @@ fn add_msvc_includes(b: &mut cc::Build) {
     b.flag_if_supported("/FIzion_time_compat.h");
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// CPU baseline control (XMRig-style)
+//
+// ZION_CPU_TARGET env var controls the C/C++ compilation target:
+//   - "native"    (default): use -march=native (optimal for the build machine)
+//   - "x86-64"  : baseline x86-64 (portable, for distribution / SMOS rigs)
+//   - "x86-64-v2":  SSE4.2 + POPCNT (most modern CPUs, 2009+)
+//   - "x86-64-v3":  AVX2 + BMI1/2 + FMA (2013+ Intel Haswell, 2015+ AMD Zen)
+//   - any other  : passed directly as -march=<value>
+//
+// When ZION_CPU_TARGET is NOT "native", AVX2/BMI2 flags are NOT applied
+// globally — only to specific files that have runtime dispatch (like
+// RandomX argon2_avx2.c). This prevents SIGILL on CPUs like Pentium G4560
+// (Kaby Lake, has AES-NI + SSE4.2 but NOT AVX/BMI2).
+//
+// Additionally, ZION_CPU_NO_AVX=1 and ZION_CPU_NO_BMI2=1 can be set to
+// selectively disable AVX or BMI2 even with ZION_CPU_TARGET=native.
+// ─────────────────────────────────────────────────────────────────────────
+
+fn cpu_target() -> String {
+    env::var("ZION_CPU_TARGET").unwrap_or_else(|_| "native".to_string())
+}
+
+/// Returns true if we're building for a portable target (not native).
+fn is_portable() -> bool {
+    let t = cpu_target();
+    t != "native" && !t.is_empty()
+}
+
+/// Returns true if AVX2 should be enabled globally.
+fn enable_avx2() -> bool {
+    if env::var("ZION_CPU_NO_AVX").is_ok() {
+        return false;
+    }
+    if !is_portable() {
+        return true; // native
+    }
+    // Portable: only enable for v3+ targets
+    let t = cpu_target();
+    t == "x86-64-v3" || t == "x86-64-v4"
+}
+
+/// Returns true if BMI2 should be enabled globally.
+fn enable_bmi2() -> bool {
+    if env::var("ZION_CPU_NO_BMI2").is_ok() {
+        return false;
+    }
+    if is_portable() {
+        // Only enable for v3+ targets
+        let t = cpu_target();
+        return t == "x86-64-v3" || t == "x86-64-v4";
+    }
+    true // native
+}
+
+/// Apply the CPU baseline march flag to a cc::Build.
+fn apply_cpu_baseline(b: &mut cc::Build, is_msvc: bool) {
+    if is_msvc {
+        return;
+    }
+    let target = cpu_target();
+    if target == "native" {
+        b.flag_if_supported("-march=native");
+    } else if !target.is_empty() {
+        // Use -march=<target> for portable builds
+        let flag = format!("-march={}", target);
+        b.flag_if_supported(&flag);
+    }
+}
+
 /// Apply flags shared across all plain-C algorithm builds.
 fn base_build(src: &str, lib: &str, target_os: &str, is_msvc: bool) {
     let mut b = cc::Build::new();
@@ -92,6 +162,7 @@ fn base_build(src: &str, lib: &str, target_os: &str, is_msvc: bool) {
         b.flag_if_supported("-fPIC");
         b.flag_if_supported("-funroll-loops");
         b.flag_if_supported("-fomit-frame-pointer");
+        apply_cpu_baseline(&mut b, is_msvc);
         if target_os == "linux" {
             b.define("_POSIX_C_SOURCE", "200112L");
         }
@@ -106,6 +177,15 @@ fn main() {
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
     let is_msvc = env::var("CARGO_CFG_TARGET_ENV").unwrap_or_default() == "msvc";
+
+    // Log the CPU target for debugging
+    println!(
+        "cargo:warning=ZION native-ffi build: target={}, portable={}, avx2={}, bmi2={}",
+        cpu_target(),
+        is_portable(),
+        enable_avx2(),
+        enable_bmi2()
+    );
 
     // -----------------------------------------------------------------------
     // Etchash / Ethash  (ETC, ETCPoW)
@@ -192,7 +272,9 @@ fn main() {
         if !is_msvc {
             b.flag_if_supported("-fPIC");
             b.flag_if_supported("-funroll-loops");
-            if target_arch == "x86_64" {
+            apply_cpu_baseline(&mut b, is_msvc);
+            // Only enable AVX2 globally if the target supports it
+            if target_arch == "x86_64" && enable_avx2() {
                 b.flag_if_supported("-mavx2");
             }
             if target_os == "linux" {
@@ -200,7 +282,9 @@ fn main() {
             }
         } else {
             b.flag_if_supported("/std:c11");
-            b.flag_if_supported("/arch:AVX2");
+            if enable_avx2() {
+                b.flag_if_supported("/arch:AVX2");
+            }
             add_msvc_includes(&mut b);
         }
         b.compile("cosmic_harmony_zion");
@@ -231,18 +315,29 @@ fn main() {
                 .flag_if_supported("-fomit-frame-pointer")
                 .flag_if_supported("-fPIC");
             if !is_msvc {
+                apply_cpu_baseline(&mut c_build, is_msvc);
                 if target_arch == "x86_64" {
+                    // Haraka needs PCLMUL + AES-NI + SSE4 — these are baseline
+                    // on all x86-64 CPUs from ~2008+ (including Pentium G4560).
+                    // AVX/BMI2 are NOT required and cause SIGILL on older CPUs.
                     c_build
                         .flag_if_supported("-mpclmul")
                         .flag_if_supported("-msse4")
                         .flag_if_supported("-msse4.1")
                         .flag_if_supported("-msse4.2")
                         .flag_if_supported("-mssse3")
-                        .flag_if_supported("-maes")
-                        .flag_if_supported("-mavx")
-                        .flag_if_supported("-mavx2")
-                        .flag_if_supported("-mbmi")
-                        .flag_if_supported("-mbmi2");
+                        .flag_if_supported("-maes");
+                    // Only enable AVX/BMI2 if the target supports them
+                    if enable_avx2() {
+                        c_build
+                            .flag_if_supported("-mavx")
+                            .flag_if_supported("-mavx2");
+                    }
+                    if enable_bmi2() {
+                        c_build
+                            .flag_if_supported("-mbmi")
+                            .flag_if_supported("-mbmi2");
+                    }
                 } else if target_arch == "aarch64" {
                     c_build
                         .flag_if_supported("-march=armv8-a+crypto")
@@ -274,18 +369,27 @@ fn main() {
                 .flag_if_supported("-fomit-frame-pointer")
                 .flag_if_supported("-fPIC");
             if !is_msvc {
+                apply_cpu_baseline(&mut cpp_build, is_msvc);
                 if target_arch == "x86_64" {
+                    // Same as C build: PCLMUL + AES + SSE4 are baseline.
+                    // AVX/BMI2 only when target supports them.
                     cpp_build
                         .flag_if_supported("-mpclmul")
                         .flag_if_supported("-msse4")
                         .flag_if_supported("-msse4.1")
                         .flag_if_supported("-msse4.2")
                         .flag_if_supported("-mssse3")
-                        .flag_if_supported("-maes")
-                        .flag_if_supported("-mavx")
-                        .flag_if_supported("-mavx2")
-                        .flag_if_supported("-mbmi")
-                        .flag_if_supported("-mbmi2");
+                        .flag_if_supported("-maes");
+                    if enable_avx2() {
+                        cpp_build
+                            .flag_if_supported("-mavx")
+                            .flag_if_supported("-mavx2");
+                    }
+                    if enable_bmi2() {
+                        cpp_build
+                            .flag_if_supported("-mbmi")
+                            .flag_if_supported("-mbmi2");
+                    }
                 } else if target_arch == "aarch64" {
                     cpp_build
                         .flag_if_supported("-march=armv8-a+crypto")
@@ -432,6 +536,7 @@ fn build_randomx(target_os: &str, is_msvc: bool) {
         b.flag_if_supported("-std=c++17");
         b.flag_if_supported("-funroll-loops");
         b.flag_if_supported("-fomit-frame-pointer");
+        apply_cpu_baseline(&mut b, is_msvc);
 
         // ARM64: enable hardware AES (ARMv8 Crypto Extensions)
         // Apple M1 supports ARMv8.0-A with AES extensions.
@@ -443,23 +548,68 @@ fn build_randomx(target_os: &str, is_msvc: bool) {
             b.flag_if_supported("-march=armv8-a+crypto");
             b.flag_if_supported("-mcpu=apple-m1");
         } else if target_arch == "x86_64" {
-            // x86_64: enable hardware AES-NI + AVX2 for maximum RandomX performance.
+            // x86_64 baseline: AES-NI + SSE4.2 (supported by all x86-64 CPUs
+            // from ~2008+, including Pentium G4560).
             //   -maes        → AES-NI instructions (aesenc/aesdec) → hard_aes=yes
             //                  Without this, RandomX falls back to soft AES (~10x slower)
             //   -msse4.2     → SSE4.2 (required by RandomX for _mm_crc32_u64)
-            //   -mavx -mavx2 → 256-bit vectors for argon2_avx2.c (~2x faster cache init)
-            //   -mbmi -mbmi2 → BMI instructions (ANDN, PEXT, PDEP) for faster bit ops
-            // XMRig uses all of these; without them we get ~7 H/s instead of ~200+ H/s
+            // AVX2/BMI2 are only enabled when the target supports them.
+            // argon2_avx2.c is compiled separately with AVX2 (see below).
             b.flag_if_supported("-maes");
             b.flag_if_supported("-msse4.2");
-            b.flag_if_supported("-mavx");
-            b.flag_if_supported("-mavx2");
-            b.flag_if_supported("-mbmi");
-            b.flag_if_supported("-mbmi2");
+            if enable_avx2() {
+                b.flag_if_supported("-mavx");
+                b.flag_if_supported("-mavx2");
+            }
+            if enable_bmi2() {
+                b.flag_if_supported("-mbmi");
+                b.flag_if_supported("-mbmi2");
+            }
         }
     } else {
         b.flag_if_supported("/std:c++17");
         add_msvc_includes(&mut b);
+    }
+
+    // ── XMRig-style: compile argon2 AVX2/SSSE3 sources separately ──
+    // These files use AVX2/SSSE3 intrinsics and must be compiled with
+    // the corresponding flags. They are only included if the target
+    // supports AVX2. RandomX does runtime dispatch via function pointers.
+    if target_arch == "x86_64" && !is_msvc && enable_avx2() {
+        // argon2_avx2.c — compiled with -mavx2
+        let mut avx2_build = cc::Build::new();
+        avx2_build
+            .file(&format!("{}/argon2_avx2.c", rx_dir))
+            .include("csrc/randomx/randomx_src/src")
+            .opt_level(3)
+            .warnings(false)
+            .cargo_warnings(false)
+            .flag_if_supported("-fPIC")
+            .flag_if_supported("-std=c++17")
+            .flag_if_supported("-mavx2")
+            .flag_if_supported("-maes");
+        avx2_build.compile("randomx_argon2_avx2");
+
+        // argon2_ssse3.c — compiled with -mssse3
+        let mut ssse3_build = cc::Build::new();
+        ssse3_build
+            .file(&format!("{}/argon2_ssse3.c", rx_dir))
+            .include("csrc/randomx/randomx_src/src")
+            .opt_level(3)
+            .warnings(false)
+            .cargo_warnings(false)
+            .flag_if_supported("-fPIC")
+            .flag_if_supported("-std=c++17")
+            .flag_if_supported("-mssse3");
+        ssse3_build.compile("randomx_argon2_ssse3");
+
+        // Force-link these archives
+        let out_dir = env::var("OUT_DIR").unwrap_or_default();
+        if !out_dir.is_empty() {
+            println!("cargo:rustc-link-search=native={}", out_dir);
+            println!("cargo:rustc-link-lib=static=randomx_argon2_avx2");
+            println!("cargo:rustc-link-lib=static=randomx_argon2_ssse3");
+        }
     }
 
     b.compile("randomx_zion");

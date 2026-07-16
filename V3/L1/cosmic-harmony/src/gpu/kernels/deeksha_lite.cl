@@ -292,6 +292,7 @@ void fill_scratchpad(
     for (int i = 0; i < 32; i++) state[i] = seed[i];
     for (int i = 32; i < 64; i++) state[i] = 0;
 
+    #pragma unroll 2
     for (uint blk = 0; blk < BLOCK_COUNT; blk++) {
         uchar inp[65];
         /* Vectorized 64-byte copy from state */
