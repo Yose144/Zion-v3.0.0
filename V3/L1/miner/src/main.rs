@@ -1200,22 +1200,30 @@ fn run_local_session(
     // ── GPU memory budget auto-tune (must run before any GPU backend init) ──
     // On Apple Silicon (unified memory), this detects actual available memory
     // and calculates a safe GPU budget, preventing OOM system freezes.
-    gpu_backend::init_gpu_memory_budget_with_threads(config.threads);
+    // Reset on each session entry to clear claimed bytes from previous session.
+    gpu_backend::reset_gpu_memory_budget();
+    let gpu_safe = gpu_backend::init_gpu_memory_budget_with_threads(config.threads);
 
     // Spawn memory pressure watchdog (advisory logging every 30s)
     spawn_memory_watchdog();
 
-    // ── Stream 2: algorithm-aware guard ──
-    // Stream 2 is enabled by default. Per-algorithm checks in
-    // external_gpu_thread handle safety: DAG/memory-hard algorithms are
-    // skipped on Metal, lightweight algorithms (Blake3, kHeavyHash) run fine.
+    // ── Auto-tune kill switch: if available memory < 200 MB, disable GPU ──
     let sys_ram = gpu_backend::detect_system_memory_bytes();
     let resolved_backend = match config.gpu_backend {
         gpu_backend::GpuBackendKind::Auto => gpu_backend::resolve_auto_backend(),
         other => other,
     };
     let _is_unified_memory = resolved_backend == gpu_backend::GpuBackendKind::Metal;
-    if _is_unified_memory {
+
+    if !gpu_safe {
+        // Auto-tune killed GPU — CPU only mode
+        println!(
+            "gpu_disabled_by_autotune sys_ram_mib={} backend={} — switching to CPU only mode \
+             (available memory too low for safe GPU mining)",
+            sys_ram / (1024 * 1024),
+            resolved_backend.as_str(),
+        );
+    } else if _is_unified_memory {
         println!(
             "gpu_stream2_info sys_ram_mib={} backend={} — Stream 2 enabled, per-algorithm guard active",
             sys_ram / (1024 * 1024),
@@ -1223,8 +1231,12 @@ fn run_local_session(
         );
     }
 
-    // GPU stays enabled — non-DAG algorithms (ZION deeksha, Blake3, etc.) are safe
-    let effective_gpu_backend = config.gpu_backend;
+    // If auto-tune killed GPU, force CPU backend
+    let effective_gpu_backend = if !gpu_safe {
+        gpu_backend::GpuBackendKind::Cpu
+    } else {
+        config.gpu_backend
+    };
 
     // ── GPU backend init (TriGpuManager — 3-stream Claymore-style) ──
     let mut gpu_available = effective_gpu_backend != gpu_backend::GpuBackendKind::Cpu
@@ -1651,27 +1663,29 @@ fn run_remote_session(
     // ── GPU memory budget auto-tune (must run before any GPU backend init) ──
     // On Apple Silicon (unified memory), this detects actual available memory
     // and calculates a safe GPU budget, preventing OOM system freezes.
-    gpu_backend::init_gpu_memory_budget_with_threads(config.threads);
+    // Reset on each session entry to clear claimed bytes from previous session.
+    gpu_backend::reset_gpu_memory_budget();
+    let gpu_safe = gpu_backend::init_gpu_memory_budget_with_threads(config.threads);
 
     // Spawn memory pressure watchdog (advisory logging every 30s)
     spawn_memory_watchdog();
 
-    // ── Stream 2: algorithm-aware guard ──
-    // Stream 2 (external GPU) is enabled by default. The external_gpu_thread
-    // checks `backend_supports_algorithm()` for EACH algorithm the pool sends.
-    // DAG-based (ProgPow, Ethash, KawPow) and memory-hard (ZelHash, BeamHash)
-    // algorithms are automatically skipped on Metal (unified memory).
-    // Lightweight algorithms (Blake3, kHeavyHash, Autolykos) run fine on Metal
-    // even on 8 GB systems — they need <100 MB extra GPU memory.
-    //
-    // No blanket disable — let the per-algorithm check decide.
+    // ── Auto-tune kill switch + Stream 2 info ──
     let sys_ram = gpu_backend::detect_system_memory_bytes();
     let resolved_backend = match config.gpu_backend {
         gpu_backend::GpuBackendKind::Auto => gpu_backend::resolve_auto_backend(),
         other => other,
     };
     let is_unified_memory = resolved_backend == gpu_backend::GpuBackendKind::Metal;
-    if is_unified_memory {
+
+    if !gpu_safe {
+        println!(
+            "gpu_disabled_by_autotune sys_ram_mib={} backend={} — switching to CPU only mode \
+             (available memory too low for safe GPU mining)",
+            sys_ram / (1024 * 1024),
+            resolved_backend.as_str(),
+        );
+    } else if is_unified_memory {
         println!(
             "gpu_stream2_info sys_ram_mib={} backend={} — Stream 2 enabled, per-algorithm guard active (DAG/memory-hard algo will be skipped on Metal)",
             sys_ram / (1024 * 1024),
@@ -1679,9 +1693,13 @@ fn run_remote_session(
         );
     }
 
-    // GPU stays enabled — non-DAG algorithms (ZION deeksha, Blake3, etc.) are safe
-    let effective_gpu_backend = config.gpu_backend;
-    let stream2_effective = config.stream2_enabled;
+    // If auto-tune killed GPU, force CPU backend
+    let effective_gpu_backend = if !gpu_safe {
+        gpu_backend::GpuBackendKind::Cpu
+    } else {
+        config.gpu_backend
+    };
+    let stream2_effective = config.stream2_enabled && gpu_safe;
 
     // ── GPU backend init (TriGpuManager — 3-stream Claymore-style) ──
     // Primary (Deeksha) is created immediately. Pearl + secondary are
@@ -2020,7 +2038,15 @@ fn run_remote_session(
             } else if gpu_backend::is_cpu_only_algorithm(&ext.algorithm) {
                 let _ = ext_cpu_tx.send(ext.clone());
             } else if gpu_backend::is_external_algorithm(&ext.algorithm) {
-                let _ = ext_gpu_tx.send(ext.clone());
+                let send_result = ext_gpu_tx.send(ext.clone());
+                println!(
+                    "[{}] ext_gpu_tx_send coin={} algo={} job_id={} result={:?}",
+                    log_timestamp(),
+                    ext.coin,
+                    ext.algorithm,
+                    ext.job_id,
+                    send_result
+                );
             } else {
                 println!(
                     "external_stream_unknown_routing coin={} algo={}",
@@ -2819,7 +2845,12 @@ fn external_gpu_thread(
                 hashrate.set_gpu_ext_job(&job.coin, &job.algorithm);
                 current_job = Some(job);
             }
-            Err(std::sync::mpsc::TryRecvError::Empty) => {}
+            Err(std::sync::mpsc::TryRecvError::Empty) => {
+                // Debug: log first few empty receives to confirm thread is alive
+                if batch_count == 0 && last_heartbeat.elapsed().as_secs() < 3 {
+                    println!("[{}] ext_gpu_rx_empty (no job yet, thread alive)", log_timestamp());
+                }
+            }
             Err(std::sync::mpsc::TryRecvError::Disconnected) => {
                 println!("[{}] ext_gpu_channel_closed — exiting", log_timestamp());
                 return;
