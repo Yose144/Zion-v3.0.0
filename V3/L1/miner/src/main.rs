@@ -770,7 +770,7 @@ fn main() -> Result<()> {
                     // Embed nonce in header (bytes 39..43 in Monero format)
                     let nonce_le = (nonce as u32).to_le_bytes();
                     local_hdr[39..43].copy_from_slice(&nonce_le);
-                    let _hash = zion_native_ffi::randomx::hash_with_seed(&[], &local_hdr, nonce);
+                    let _hash = zion_native_ffi::randomx::hash(&local_hdr, nonce);
                     total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     nonce += 1;
                 }

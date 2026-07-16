@@ -68,6 +68,11 @@ static randomx_flags get_vm_flags() {
     randomx_flags flags = randomx_get_flags();
     /* Add FULL_MEM for dataset mode (fastest hashing) */
     flags |= RANDOMX_FLAG_FULL_MEM;
+    /* Add LARGE_PAGES for dataset + cache (2MB huge pages on Linux)
+     * This gives ~20-30% speedup by reducing TLB misses on the 2GB dataset.
+     * Requires vm.nr_hugepages >= 1250 (set in /etc/sysctl.conf or at runtime).
+     * If huge pages are not available, alloc falls back to regular pages. */
+    flags |= RANDOMX_FLAG_LARGE_PAGES;
     /* On macOS, use SECURE mode (W^X) for JIT — required by hardened runtime */
 #if defined(__APPLE__) && defined(__aarch64__)
     flags |= RANDOMX_FLAG_SECURE;
@@ -109,8 +114,8 @@ static void update_seed(const uint8_t* seed, size_t len) {
     if (g_dataset) { randomx_release_dataset(g_dataset); g_dataset = nullptr; }
     if (g_cache)   { randomx_release_cache(g_cache);   g_cache = nullptr; }
 
-    /* Allocate + init cache using auto-detected flags (JIT + HARD_AES) */
-    randomx_flags alloc_flags = randomx_get_flags();
+    /* Allocate + init cache using auto-detected flags (JIT + HARD_AES + LARGE_PAGES) */
+    randomx_flags alloc_flags = get_vm_flags();
     g_cache = randomx_alloc_cache(alloc_flags);
     if (!g_cache) {
         g_cache = randomx_alloc_cache(RANDOMX_FLAG_DEFAULT);
@@ -135,10 +140,11 @@ static void update_seed(const uint8_t* seed, size_t len) {
 
     /* Log active flags for debugging */
     randomx_flags vm_flags = get_vm_flags();
-    fprintf(stderr, "randomx_zion: initialized (full_mem=%s, jit=%s, hard_aes=%s, secure=%s)\n",
+    fprintf(stderr, "randomx_zion: initialized (full_mem=%s, jit=%s, hard_aes=%s, large_pages=%s, secure=%s)\n",
             g_dataset ? "yes" : "no (light mode)",
             (vm_flags & RANDOMX_FLAG_JIT) ? "yes" : "no",
             (vm_flags & RANDOMX_FLAG_HARD_AES) ? "yes" : "no",
+            (vm_flags & RANDOMX_FLAG_LARGE_PAGES) ? "yes" : "no",
             (vm_flags & RANDOMX_FLAG_SECURE) ? "yes" : "no");
 }
 
@@ -166,14 +172,18 @@ static randomx_vm* ensure_thread_vm() {
 extern "C" {
 
 EXPORT void randomx_zion_init(const uint8_t* seed, size_t seed_len) {
-    std::lock_guard<std::mutex> lock(g_init_mutex);
     /* If no seed provided, use a default zero seed (for benchmarking) */
     if (seed == nullptr || seed_len == 0) {
-        uint8_t zero_seed[32] = {0};
-        update_seed(zero_seed, 32);
-    } else {
-        update_seed(seed, seed_len);
+        if (!g_initialized) {
+            std::lock_guard<std::mutex> lock(g_init_mutex);
+            uint8_t zero_seed[32] = {0};
+            update_seed(zero_seed, 32);
+        }
+        /* If already initialized, keep current dataset (no reinit) */
+        return;
     }
+    std::lock_guard<std::mutex> lock(g_init_mutex);
+    update_seed(seed, seed_len);
 }
 
 EXPORT void randomx_zion_hash(
