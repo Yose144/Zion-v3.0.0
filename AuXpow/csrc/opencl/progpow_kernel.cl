@@ -62,7 +62,7 @@ typedef unsigned long      uint64_t;
 // __builtin_amdgcn_ds_bpermute(byte_offset, value) reads `value` from the
 // lane at byte_offset/4 within the wavefront — no barrier needed.
 // Only enabled on AMD platforms; NVIDIA/Clover fall back to share+barrier.
-#if PLATFORM == OPENCL_PLATFORM_AMD
+#if defined(PLATFORM) && PLATFORM == OPENCL_PLATFORM_AMD
 #define USE_AMD_BPERMUTE 1
 // ds_bpermute intrinsic: reads from lane (offset/4) within wavefront.
 // offset is in bytes, so multiply lane index by 4 for 32-bit values.
@@ -254,12 +254,13 @@ __kernel void ethash_search(
     barrier(CLK_LOCAL_MEM_FENCE);
 
     // Wavefront-relative group base: identifies which 16-lane hash group
-    // we belong to within the current wavefront. Uses __builtin_amdgcn_wavefrontsize()
-    // to correctly handle both wave64 (GCN/Vega: 4 groups per wave) and
-    // wave32 (RDNA1+: 2 groups per wave). The mask clears the lower log2(LANES)
-    // bits to align to the start of the current hash group within the wavefront.
+    // we belong to within the current wavefront. Hardcoded to 64 (wave64)
+    // for GCN/Vega compatibility — the SMOS OpenCL compiler does not support
+    // __builtin_amdgcn_wavefrontsize(). RDNA1+ (wave32) GPUs have newer
+    // drivers that support the builtin natively. The mask clears the lower
+    // log2(LANES) bits to align to the start of the current hash group.
 #if defined(USE_AMD_BPERMUTE)
-    const uint32_t wave_size = __builtin_amdgcn_wavefrontsize();
+    const uint32_t wave_size = 64;
     const uint32_t wave_lane = lid % wave_size;
     const uint32_t wave_group_base = wave_lane & ~(uint32_t)(PROGPOW_LANES - 1);
 #else
