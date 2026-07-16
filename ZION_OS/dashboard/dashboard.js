@@ -4174,7 +4174,7 @@ function connectPayoutSse(){
         if(hist){
           const div = document.createElement('div');
           div.className = 'flex items-start gap-2 p-2 bg-black/20 rounded border border-white/5';
-          div.innerHTML = `<div class="w-1.5 h-1.5 rounded-full mt-1.5 bg-emerald-500"></div><div class="text-xs text-emerald-300">Block #${h} found — ${new Date().toLocaleTimeString()}</div>`;
+          div.innerHTML = `<div class="w-1.5 h-1.5 rounded-full mt-1.5 bg-emerald-500"></div><div class="text-xs text-emerald-300">Block #${escapeHtml(String(h))} found — ${new Date().toLocaleTimeString()}</div>`;
           hist.insertBefore(div, hist.firstChild);
           // Trim old
           while(hist.children.length > 30) hist.removeChild(hist.lastChild);
@@ -8244,7 +8244,7 @@ async function logSearchAll() {
       const lvlClass = /error|ERROR/i.test(h.line) ? 'text-red-400' : /warn|WARN/i.test(h.line) ? 'text-amber-400' : /info|INFO/i.test(h.line) ? 'text-emerald-300/80' : 'text-gray-300';
       return `<div class="flex gap-2"><span class="text-gray-600 shrink-0 w-24">${h.svc}:${h.lineno}</span><span class="${lvlClass}">${escapeHtml(h.line)}</span></div>`;
     }).join('');
-  } catch(e) { resEl.innerHTML = `<div class="text-red-400 text-[11px]">Error: ${e.message}</div>`; }
+  } catch(e) { resEl.innerHTML = `<div class="text-red-400 text-[11px]">Error: ${escapeHtml(e.message)}</div>`; }
 }
 
 // ── Disk log file list ───────────────────────────────────────────────────
@@ -8264,7 +8264,7 @@ async function refreshLogFiles() {
         <button data-log-open="${escapeHtml(f.svc_id || f.name)}"
           class="logopen-btn text-[10px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">View</button>
       </div>`).join('');
-  } catch(e) { el.innerHTML = `<div class="text-red-400 text-xs">Error: ${e.message}</div>`; }
+  } catch(e) { el.innerHTML = `<div class="text-red-400 text-xs">Error: ${escapeHtml(e.message)}</div>`; }
 }
 
 function logSelectAndOpen(svcId) {
@@ -9018,7 +9018,7 @@ async function refreshNodes(){
     const data = await fetch('/api/nodes').then(r => r.json());
     renderNodes(data);
   } catch(e) {
-    document.getElementById('nodes-container').innerHTML = `<div class="text-red-400 text-sm">Error loading nodes: ${e.message}</div>`;
+    document.getElementById('nodes-container').innerHTML = `<div class="text-red-400 text-sm">Error loading nodes: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -10546,7 +10546,7 @@ async function pocRunSim(){
     }
     pocRenderResults(d, area);
   }catch(e){
-    area.innerHTML = `<div class="text-red-400 text-sm p-4 bg-red-500/10 rounded">Fetch error: ${e.message}</div>`;
+    area.innerHTML = `<div class="text-red-400 text-sm p-4 bg-red-500/10 rounded">Fetch error: ${escapeHtml(e.message)}</div>`;
   }finally{
     btn.disabled = false; btn.textContent = '▶ Run Simulation';
   }

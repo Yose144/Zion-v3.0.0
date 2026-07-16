@@ -1649,6 +1649,7 @@ def inspect_database(path_str: str, limit: int = 50) -> dict:
             return {"error": f"JSON parse error: {e}", "kind": "json"}
 
     if kind == "sqlite":
+        con = None
         try:
             con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
             con.row_factory = sqlite3.Row
@@ -1665,10 +1666,12 @@ def inspect_database(path_str: str, limit: int = 50) -> dict:
                 cur.execute(f'SELECT * FROM "{tname}" LIMIT {limit}')
                 rows = [dict(r) for r in cur.fetchall()]
                 tables_info.append({"name": tname, "rows": count, "columns": cols, "sample": rows})
-            con.close()
             return {"kind": "sqlite", "name": friendly, "path": str(path), "tables": tables_info}
         except Exception as e:
             return {"error": f"SQLite error: {e}", "kind": "sqlite"}
+        finally:
+            if con is not None:
+                con.close()
 
     return {"error": f"Unknown kind: {kind}"}
 
@@ -3097,7 +3100,7 @@ def build_checklist(status: dict) -> dict:
             {"id": "keys",      "label": "Offline key generation complete",         "ok": True},
             {"id": "env",       "label": "Env file assembled (.env.mainnet)",       "ok": True},
             {"id": "node1",     "label": "Node 1 (Genesis) running",               "ok": status["node1"]["running"] and status["node1"]["p2p_bind"] is not None},
-            {"id": "node2",     "label": "Node 2 (Follower) running & synced",    "ok": not status["node2"]["running"] or status["node2"]["known_peers"] > 0},
+            {"id": "node2",     "label": "Node 2 (Follower) synced if running",    "ok": not status["node2"]["running"] or status["node2"]["known_peers"] > 0},
             {"id": "pool",      "label": "Local Pool running & accepting miners",  "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "miner",     "label": "GPU miner connected & hashing",         "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
             {"id": "chain",     "label": "Chain height advancing",                 "ok": status["node1"]["chain_height"] is not None and status["node1"]["chain_height"] > 0},
@@ -3396,11 +3399,16 @@ def list_env_files() -> list:
 
 def load_env_file(name: str) -> dict:
     """Load a specific env file and return validated key=value pairs."""
-    path = REPO_ROOT / name
+    # Security: strip any path components — only allow filenames in REPO_ROOT
+    safe_name = Path(name).name
+    if not safe_name.startswith(".env"):
+        return {"error": "Only .env* files are allowed", "vars": []}
+    path = REPO_ROOT / safe_name
     if not path.exists() or not path.is_file():
         return {"error": "File not found", "vars": []}
-    if not name.startswith(".env"):
-        return {"error": "Only .env* files are allowed", "vars": []}
+    # Double-check resolved path is within REPO_ROOT
+    if not path.resolve().is_relative_to(REPO_ROOT.resolve()):
+        return {"error": "Access denied", "vars": []}
 
     REQUIRED = {
         "ZION_NODE_ID", "ZION_P2P_BIND", "ZION_RPC_BIND",
@@ -3423,7 +3431,7 @@ def load_env_file(name: str) -> dict:
                     v = v.strip().strip('"').strip("'")
                     is_required = k in REQUIRED
                     is_sensitive = k in SENSITIVE or "PRIVKEY" in k or "SK_HEX" in k
-                    display_value = "***REDACTED***" if is_sensitive and v else v
+                    display_value = "***REDACTED***" if is_sensitive else v
                     variables.append({
                         "key": k, "value": display_value,
                         "required": is_required, "sensitive": is_sensitive,
@@ -9911,12 +9919,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except Exception:
                 pass
         # Not authorized — send 401 challenge
+        body = b"401 Unauthorized - authentication required\n"
         self.send_response(401)
         self.send_header("WWW-Authenticate", 'Basic realm="ZION Dashboard"')
         self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         try:
-            self.wfile.write(b"401 Unauthorized - authentication required\n")
+            self.wfile.write(body)
         except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
             pass
         return False
@@ -10950,9 +10960,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
             try:
                 import collections
                 p = Path(log_path)
-                if not p.exists() and not p.is_absolute():
+                if not p.is_absolute():
                     p = REPO_ROOT / log_path
-                if not p.exists():
+                p = p.resolve()
+                # Security: prevent path traversal — only allow reads within
+                # LOG_DIR, REPO_ROOT, or /tmp (for rotated/temp logs)
+                allowed_roots = [LOG_DIR.resolve(), REPO_ROOT.resolve(), Path("/tmp")]
+                if not any(p.is_relative_to(r) for r in allowed_roots):
+                    self._json({"ok": False, "error": "Access denied: path outside allowed directories"})
+                    return
+                if not p.exists() or not p.is_file():
                     self._json({"ok": False, "error": f"Log not found: {log_path}"})
                     return
                 with open(p, "r", encoding="utf-8", errors="replace") as f:
