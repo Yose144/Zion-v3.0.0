@@ -153,10 +153,10 @@ impl ExternalCoin {
             Self::PRL => "prl.2miners.com:1818",
             Self::QUAI => "quaikawpow.2miners.com:4545",
             Self::BEAM => "beam.2miners.com:5252",
-            Self::KLS => "woolypooly.com:3132",
+            Self::KLS => "pool.woolypooly.com:3132",
             Self::ZCL => "equihash192.eu.mine.zpool.ca:2144",
             Self::QTC => "qtc.suprnova.cc:5555",
-            Self::VTC => "woolypooly.com:3102",
+            Self::VTC => "verthash.eu.mine.zpool.ca:4533",
             Self::IRON => "de.ironfish.herominers.com:1145",
             Self::NEXA => "nexa.2miners.com:5050",
             Self::RTM => "ghostrider.eu.mine.zpool.ca:5354",
@@ -171,13 +171,16 @@ impl ExternalCoin {
             self,
             Self::KAS | Self::ERG | Self::RVN | Self::ETC
                 | Self::EVR | Self::MEWC | Self::QUAI | Self::BEAM
-                | Self::ZCL | Self::NEXA | Self::RTM
+                | Self::ZCL | Self::NEXA | Self::RTM | Self::VTC
         )
     }
 
     /// Whether this coin's default pool is on zpool (requires c=BTC password).
     pub fn is_zpool(self) -> bool {
-        matches!(self, Self::EVR | Self::MEWC | Self::ZCL | Self::NEXA | Self::RTM)
+        matches!(
+            self,
+            Self::EVR | Self::MEWC | Self::ZCL | Self::NEXA | Self::RTM | Self::VTC
+        )
     }
 
     pub fn all() -> &'static [ExternalCoin] {
@@ -814,7 +817,7 @@ mod tests {
         assert!(ExternalCoin::RTM.is_zpool());
         assert!(!ExternalCoin::KLS.is_zpool());
         assert!(!ExternalCoin::QTC.is_zpool());
-        assert!(!ExternalCoin::VTC.is_zpool());
+        assert!(ExternalCoin::VTC.is_zpool());
         assert!(!ExternalCoin::IRON.is_zpool());
         assert!(!ExternalCoin::DNX.is_zpool());
     }
@@ -826,17 +829,17 @@ mod tests {
         assert!(ExternalCoin::RTM.supports_btc_payout());
         assert!(!ExternalCoin::KLS.supports_btc_payout());
         assert!(!ExternalCoin::QTC.supports_btc_payout());
-        assert!(!ExternalCoin::VTC.supports_btc_payout());
+        assert!(ExternalCoin::VTC.supports_btc_payout());
         assert!(!ExternalCoin::IRON.supports_btc_payout());
         assert!(!ExternalCoin::DNX.supports_btc_payout());
     }
 
     #[test]
     fn new_coin_default_pools() {
-        assert_eq!(ExternalCoin::KLS.default_pool(), "woolypooly.com:3132");
+        assert_eq!(ExternalCoin::KLS.default_pool(), "pool.woolypooly.com:3132");
         assert_eq!(ExternalCoin::ZCL.default_pool(), "equihash192.eu.mine.zpool.ca:2144");
         assert_eq!(ExternalCoin::QTC.default_pool(), "qtc.suprnova.cc:5555");
-        assert_eq!(ExternalCoin::VTC.default_pool(), "woolypooly.com:3102");
+        assert_eq!(ExternalCoin::VTC.default_pool(), "verthash.eu.mine.zpool.ca:4533");
         assert_eq!(ExternalCoin::IRON.default_pool(), "de.ironfish.herominers.com:1145");
         assert_eq!(ExternalCoin::NEXA.default_pool(), "nexa.2miners.com:5050");
         assert_eq!(ExternalCoin::RTM.default_pool(), "ghostrider.eu.mine.zpool.ca:5354");
