@@ -347,7 +347,7 @@ pub fn gen_epic_progpow_loop(params: &ProgPowParams, block_height: u64) -> Strin
     // On non-AMD platforms, fall back to share+barrier.
     ret.push_str("// global load\n");
     ret.push_str("#if defined(USE_AMD_BPERMUTE)\n");
-    ret.push_str("offset = amd_wave_shuffle(mix[0], ((get_local_id(0) % __builtin_amdgcn_wavefrontsize()) & ~(uint32_t)(PROGPOW_LANES - 1)) + (loop % PROGPOW_LANES));\n");
+    ret.push_str("offset = amd_wave_shuffle(mix[0], ((get_local_id(0) % 64) & ~(uint32_t)(PROGPOW_LANES - 1)) + (loop % PROGPOW_LANES));\n");
     ret.push_str("#else\n");
     ret.push_str("if(lane_id == (loop % PROGPOW_LANES))\n");
     ret.push_str("    share[group_id] = mix[0];\n");
