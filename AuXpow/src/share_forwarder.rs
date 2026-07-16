@@ -41,10 +41,13 @@ impl ShareForwarder {
             // Decred BLAKE3 (DCP-0011) interprets the PoW hash as a
             // little-endian integer when comparing against the target.
             meets_target_little_endian(hash, target)
+        } else if self.client.profile().coin == ExternalCoin::VRSC {
+            // VerusHash v2.2: professional pools (node-stratum-pool-verus /
+            // LuckPool) interpret the 32-byte hash as a little-endian integer.
+            meets_target_little_endian(hash, target)
         } else {
-            // VerusHash v2.2 and most other external algorithms compare hash
-            // and target as big-endian 256-bit integers (see verushash_verify
-            // in ffi_wrapper_v3.cpp — direct BE byte-by-byte comparison).
+            // Most other external algorithms compare hash and target as
+            // big-endian 256-bit integers.
             meets_target(hash, target)
         };
         if !meets {

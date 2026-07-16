@@ -2730,22 +2730,25 @@ impl AuxPowClient {
             let nonce2_str = {
                 let en_bytes = en1_hex.len() / 2;
                 // Standard Zcash Stratum: nonce field = 32 bytes total.
-                // nonce2 is the part after extranonce1.  For PBaaS v7+ (VRSC)
-                // the pool ignores the nonce field in validation, but it still
-                // expects the parameter to be the full 32-byte (64 hex) nonce.
+                // nonce2 is the part after extranonce1.
+                //
+                // PBaaS v7+ (VRSC) CRITICAL FIX:
+                // LuckPool's verusHashV2b2 checks a preHeaderHash (blake2b)
+                // stored in the solution against the header's non-canonical
+                // fields (including nNonce).  If the pool writes en1+nonce2
+                // into the nonce field, nNonce changes → preHeaderHash
+                // mismatch → pool returns 0xFF → "low difficulty share".
+                //
+                // Fix: send nonce2 = all zeros so the pool writes en1+zeros
+                // into the nonce field (same as the original job).  The
+                // preHeaderHash then matches, the pool clears non-canonical
+                // data and hashes normally.  The miner's actual nonce is in
+                // the solution nonceSpace, which is what determines the hash
+                // after clearing.
                 let nonce_field_total = 32usize;
                 let nonce2_bytes = nonce_field_total.saturating_sub(en_bytes);
                 let nonce2_hex_len = nonce2_bytes * 2;
-                // nonce2 = [miner_nonce][padding] (miner_nonce at START)
-                let mut out = nonce2_4b.clone();
-                let pad_len = nonce2_hex_len.saturating_sub(out.len());
-                if pad_len > 0 {
-                    out.push_str(&"0".repeat(pad_len));
-                }
-                if out.len() > nonce2_hex_len {
-                    out.truncate(nonce2_hex_len);
-                }
-                out
+                "0".repeat(nonce2_hex_len)
             };
 
             // Build solution_with_varint for VerusHash 2.2.
