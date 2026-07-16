@@ -86,6 +86,7 @@ struct ProgpowDag {
 /// Cached FishHash DAG buffer (used by FishHash/IRON and KarlsenHashV2/KLS).
 /// The DAG is ~4.6GB (37,748,717 items × 128 bytes), generated with Blake3
 /// and 512 parent elements per item (vs Ethash's 256).
+#[derive(Clone)]
 struct FishhashDag {
     /// DAG buffer on GPU — stored as uint8 elements (128 bytes = 16 uint8 per item).
     buf: Buffer<u8>,
