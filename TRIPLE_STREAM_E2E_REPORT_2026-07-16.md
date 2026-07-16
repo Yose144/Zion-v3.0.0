@@ -1,8 +1,8 @@
 # Triple-stream E2E verification report — SMOS Vega rig
 
 **Date:** 2026-07-16  
-**SMOS package:** `zion-miner-v3.1.9-triple-fixed5.zip`  
-**URL:** `https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed5.zip`  
+**SMOS package:** `zion-miner-v3.1.9-triple-fixed7.zip`  
+**URL:** `https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed7.zip`  
 **DAG cache:** `https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin`  
 **SimpleMining group:** `ZionLiteFire` (ID 1773590)  
 **Rig:** `ZionRig` (ID 518837, IP 109.81.31.210)  
@@ -145,9 +145,9 @@ docker run --rm \
 
 Produces `https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin` (≈ 2 GB).
 
-3. Update SimpleMining group 1773590 to the `fixed5` zip and reload rig 518837 via the REST API (`/rig-groups/{id}` PUT, `/rigs/execute-reload` PATCH).
+3. Update SimpleMining group 1773590 to the `fixed7` zip and reload rig 518837 via the REST API (`/rig-groups/{id}` PUT, `/rigs/execute-reload` PATCH).
 
-The `fixed5` SMOS wrapper now auto-downloads the pre-built DAG into `/home/miner/.zion/dag-cache/progpow_epoch120.bin` before starting the miner, so the manual `curl` step is no longer required. If the download fails, the miner falls back to local DAG generation.
+The `fixed7` SMOS wrapper downloads the pre-built EPIC ProgPow DAG in 50 MB chunks (with HTTP/1.1, retries and a short pause between chunks) and assembles it into `/home/miner/.zion/dag-cache/progpow_epoch120.bin` before starting the miner. If the download fails, the miner falls back to local DAG generation.
 
 ## 4. Live verification
 
@@ -234,24 +234,19 @@ parallel_stream_embedded miner=vega-smos coin=EPIC algo=progpow ext_job_id=2 hei
 | Stream   | Status                                   | Evidence                                        |
 |----------|------------------------------------------|-------------------------------------------------|
 | ZION     | Green — shares accepted                  | `SHARE_ACCEPTED` + pool `valid_share`           |
-| VRSC CPU | Yellow-green — submit format correct, target comparison fixed | `VRSC_SHARE_FOUND` + upstream replies; local/forwarder now use LE target check |
-| EPIC GPU | Yellow — DAG pre-generated externally  | Jobs received, DAG generated on build server, pending rig test |
+| VRSC CPU | Yellow-green — pool-side target check fixed, upstream now receives shares | `VRSC_SHARE_FOUND`; rejects changed from `below_target` to upstream `low difficulty share` / `job not found`. With `ZION_AUXPOW_EASY_TARGET` disabled the miner now receives the real upstream target. |
+| EPIC GPU | Yellow — jobs received, DAG download unreliable from rig network, miner falling back to local generation | `external_stream job=... coin=EPIC` present; DAG transfer from server drops after ~130 MB, so wrapper falls back to local generation. |
 
 ## 6. Recommended next steps
 
-1. **Deploy and test the fixed4 package + DAG on the Vega rig**
-   - Update SimpleMining group 1773590 to `zion-miner-v3.1.9-triple-fixed4.zip`.
-   - Copy the pre-generated DAG to the rig:
-     ```bash
-     mkdir -p /home/miner/.zion/dag-cache
-     curl -C - -o /home/miner/.zion/dag-cache/progpow_epoch120.bin \
-       https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin
-     ```
-   - Reload rig 518837 and monitor for `dag_manager: ProgPow DAG epoch=120 ready`, `ext_gpu_share_found`, and `external_share_result accepted=true` for EPIC.
+1. **EPIC DAG**
+   - The chunked download improves reliability but the rig’s internet path to the server still drops the connection after roughly 130 MB of cumulative transfer. The current fallback is local DAG generation on the rig, which is slow.
+   - Best immediate fix: copy `progpow_epoch120.bin` to `/home/miner/.zion/dag-cache/` manually (USB/SCP if you have local access to the rig) so the miner loads it instantly.
+   - Alternatively, host the DAG on a CDN/HTTP server that does not hit the same transfer limit, or bump the chunk pause/timeout further in `scripts/edge-package-smos.sh`.
 
 2. **VRSC acceptance**
-   - With the LE target fix, the forwarded VRSC shares should now match the upstream validator’s expectation. Watch for `external_share_result` `accepted=true`.
-   - Once acceptance is confirmed, consider disabling `ZION_AUXPOW_EASY_TARGET` so the miner searches directly against the real upstream target, eliminating stale/low-diff rejections.
+   - `ZION_AUXPOW_EASY_TARGET` has been disabled in `/etc/zion/edge-environment.sh` and the pool was restarted, so the rig now receives the real upstream target.
+   - Monitor `external_share_result coin=VRSC accepted=true`. If shares remain stale (`job not found`), the CPU scan is taking longer than the upstream Verus job interval; reducing `nonce_count` for external CPU jobs or aborting the scan on a new job would help.
 
 3. **Production packaging**
    - Once all three streams show accepted shares, bump the SMOS package version to a clean `v3.1.9-triple` and update the SimpleMining group accordingly.
@@ -266,7 +261,9 @@ parallel_stream_embedded miner=vega-smos coin=EPIC algo=progpow ext_job_id=2 hei
 - `V3/L1/native-ffi/build.rs` — RandomX x86_64 static assembly.
 - `V3/L1/miner/src/main.rs` — Extra Stream 2 startup / external GPU thread logging.
 - `scripts/edge-docker-build-smos.sh` — Build base image and feature set.
-- `scripts/edge-package-smos.sh` — `ZION_AUXPOW_EASY_TARGET=1`; auto-download pre-built EPIC ProgPow DAG before miner start (`fixed5`).
+- `scripts/edge-package-smos.sh` — SMOS wrapper: removed `ZION_AUXPOW_EASY_TARGET`; downloads EPIC ProgPow DAG in chunks before miner start (`fixed7`).
+- `scripts/deploy_smos_triple_fixed7.py` — SMOS deploy helper that preserves existing `minerOptions` and only updates the zip URL.
+- `/etc/zion/edge-environment.sh` (server) — disabled `ZION_AUXPOW_EASY_TARGET` and restarted `zion-edge-pool.service`.
 
 ---
 

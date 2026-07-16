@@ -46,7 +46,7 @@ export ZION_IGNORE_GPU_SELF_TEST_FAIL="${ZION_IGNORE_GPU_SELF_TEST_FAIL:-1}"
 export ZION_VERBOSE=1
 export ZION_INTERACTIVE=0
 export ZION_MINER_ALGORITHM=deeksha_lite_v1
-export ZION_AUXPOW_EASY_TARGET=1
+# ZION_AUXPOW_EASY_TARGET intentionally NOT set; pool server uses real upstream targets.
 
 # Pre-fetch EPIC ProgPow DAG if missing. Generating the ~2 GB DAG on a
 # low-end rig CPU is slow; downloading a pre-built cache lets the miner
@@ -56,14 +56,39 @@ EPIC_DAG_URL="https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bi
 EPIC_DAG_FILE="${DAG_CACHE_DIR}/progpow_epoch120.bin"
 EPIC_DAG_SIZE=2080374792
 if [ ! -f "$EPIC_DAG_FILE" ] || [ "$(stat -c%s "$EPIC_DAG_FILE" 2>/dev/null || echo 0)" != "$EPIC_DAG_SIZE" ]; then
-    echo "[smos-wrapper] downloading EPIC ProgPow DAG (~2 GB) to $EPIC_DAG_FILE ..."
+    echo "[smos-wrapper] fetching EPIC ProgPow DAG (~2 GB) to $EPIC_DAG_FILE ..."
     mkdir -p "$DAG_CACHE_DIR"
-    if curl -C - -fsSL -o "${EPIC_DAG_FILE}.tmp" "$EPIC_DAG_URL"; then
-        mv "${EPIC_DAG_FILE}.tmp" "$EPIC_DAG_FILE"
-        echo "[smos-wrapper] EPIC DAG ready"
+    cd "$DAG_CACHE_DIR" || exit 1
+    rm -f progpow_epoch120.bin.tmp progpow_epoch120.bin.part*.part
+    ok=true
+    for i in $(seq -w 0 39); do
+        part="progpow_epoch120.bin.part${i}.part"
+        part_url="${EPIC_DAG_URL}.part${i}.part"
+        echo "[smos-wrapper] downloading $part ..."
+        # --http1.1 avoids some HTTP/2 long-download stalls; --retry handles transient drops
+        if ! curl --http1.1 --retry 20 --retry-delay 5 --connect-timeout 30 --max-time 0 -C - -fsSL -o "$part" "$part_url"; then
+            echo "[smos-wrapper] failed to download $part"
+            ok=false
+            break
+        fi
+        # Short pause between chunks to avoid tripping any per-connection transfer limit
+        sleep 5
+    done
+    if $ok; then
+        echo "[smos-wrapper] assembling DAG ..."
+        cat progpow_epoch120.bin.part*.part > progpow_epoch120.bin.tmp
+        actual=$(stat -c%s progpow_epoch120.bin.tmp 2>/dev/null || echo 0)
+        if [ "$actual" = "$EPIC_DAG_SIZE" ]; then
+            mv progpow_epoch120.bin.tmp progpow_epoch120.bin
+            rm -f progpow_epoch120.bin.part*.part
+            echo "[smos-wrapper] EPIC DAG ready"
+        else
+            echo "[smos-wrapper] assembled DAG size $actual != expected $EPIC_DAG_SIZE; miner will generate locally"
+            rm -f progpow_epoch120.bin.tmp progpow_epoch120.bin.part*.part
+        fi
     else
-        echo "[smos-wrapper] EPIC DAG download failed; miner will generate it locally"
-        rm -f "${EPIC_DAG_FILE}.tmp"
+        echo "[smos-wrapper] EPIC DAG chunk download failed; miner will generate it locally"
+        rm -f progpow_epoch120.bin.tmp progpow_epoch120.bin.part*.part
     fi
 fi
 
