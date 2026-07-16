@@ -334,4 +334,117 @@ void verushash_mining_reset(void) {
     /* Don't delete tl_hasher — it's reused across jobs. */
 }
 
+/* ====================================================================
+ * Batch nonce scan — the entire nonce loop runs in C++, eliminating
+ * per-nonce Rust→C++ FFI overhead (~2 calls/hash saved).
+ *
+ * verushash_scan_nonces() takes a nonce range and target, returns the
+ * winning nonce + hash, or -1 if none found.
+ *
+ * Prerequisites: hash_half + prepare_key must have been called for this
+ * job on this thread.
+ * ==================================================================== */
+
+/* Target comparison: VerusHash v2.2 returns hash in LE byte order.
+ * Target is BE. We compare hash_reversed (→BE) vs target (BE).
+ * Returns 1 if hash <= target, 0 otherwise. */
+static inline __attribute__((always_inline)) int meets_target_le(
+    const uint8_t hash[32], const uint8_t target[32])
+{
+    /* Compare reversed hash (LE→BE) against target (BE) */
+    for (int i = 31; i >= 0; i--) {
+        if (hash[i] < target[31 - i]) return 1;
+        if (hash[i] > target[31 - i]) return 0;
+    }
+    return 1; /* equal */
+}
+
+int64_t verushash_scan_nonces(
+    const uint8_t* intermediate64,
+    const uint8_t* nonceSpace15_template,  /* 15 bytes: en1 + zeros */
+    uint32_t       nonce_offset,            /* offset of 4-byte miner nonce in nonceSpace */
+    uint64_t       start_nonce,
+    uint64_t       end_nonce,
+    const uint8_t  target[32],
+    uint8_t*       out_hash,                /* 32 bytes — winning hash */
+    uint64_t*      out_nonce)               /* winning nonce */
+{
+    if (!tl_key_prepared) {
+        return -1;
+    }
+
+    u128* key = (u128*)verusclhasher_key.get();
+    if (!key) return -1;
+
+    verusclhash_descr* pdesc = (verusclhash_descr*)verusclhasher_descr.get();
+    size_t keySize = pdesc ? pdesc->keySizeInBytes : 8832;
+    uint64_t keyMask = tl_hasher->vclh.keyMask;
+    uint64_t keyrefreshsize = keyMask + 1;
+    __m128i** pMoveScratch = (__m128i**)((uint8_t*)key + keySize + keyrefreshsize);
+
+    /* Pre-compute constant shuf masks */
+    const __m128i lengthvector = _mm_set_epi64x(1024, 64);
+    const __m128i C = _mm_cvtsi64_si128((1U<<4)+(1U<<3)+(1U<<1)+(1U<<0));
+    const __m128i shuf3 = _mm_setr_epi8(0, 27, 54, 45, 108, 119, 90, 65,
+                                        (char)216, (char)195, (char)238, (char)245,
+                                        (char)180, (char)175, (char)130, (char)153);
+
+    /* Local nonceSpace — copy template, update 4 bytes per nonce */
+    uint8_t ns[15];
+    memcpy(ns, nonceSpace15_template, 15);
+
+    alignas(32) uint8_t hash[32];
+
+    for (uint64_t nonce = start_nonce; nonce < end_nonce; nonce++) {
+        /* Update miner nonce in nonceSpace */
+        uint32_t n32 = (uint32_t)nonce;
+        if (nonce_offset + 4 <= 15) {
+            memcpy(ns + nonce_offset, &n32, 4);
+        }
+
+        /* fixupkey — restore modified key blocks from refresh area */
+        fixupkey_opt(pMoveScratch, pdesc);
+
+        /* Restore curBuf[47..63] from pre-computed fill1/ch */
+        _mm_store_si128((__m128i*)(tl_curBuf + 48), tl_fill1);
+        tl_curBuf[47] = tl_ch;
+
+        /* Copy nonceSpace to curBuf[32..46] */
+        memcpy(tl_curBuf + 32, ns, 15);
+
+        /* CLHash v2.2 */
+        __m128i acc = __verusclmulwithoutreduction64alignedrepeat_sv2_2(
+            (__m128i*)key, (const __m128i*)tl_curBuf, keyMask, pMoveScratch);
+
+        /* Reduction + GF(2^128) division */
+        const __m128i clprod1 = _mm_clmulepi64_si128(lengthvector, lengthvector, 0x10);
+        acc = _mm_xor_si128(acc, clprod1);
+
+        __m128i Q2 = _mm_clmulepi64_si128(acc, C, 0x01);
+        __m128i Q3 = _mm_shuffle_epi8(shuf3, _mm_srli_si128(Q2, 8));
+        __m128i Q4 = _mm_xor_si128(Q2, acc);
+        acc = _mm_xor_si128(Q3, Q4);
+        uint64_t intermediate = _mm_cvtsi128_si64(acc);
+
+        /* FillExtra with CLHash result */
+        __m128i intVec = _mm_loadl_epi64((const __m128i*)&intermediate);
+        __m128i fill2 = _mm_shuffle_epi8(intVec, tl_shuf2);
+        _mm_store_si128((__m128i*)(tl_curBuf + 48), fill2);
+        tl_curBuf[47] = ((const uint8_t*)&intermediate)[0];
+
+        /* Final keyed Haraka512 */
+        uint64_t keyOffset = intermediate & (keyMask >> 4);
+        (*CVerusHashV2::haraka512KeyedFunction)(hash, tl_curBuf, key + keyOffset);
+
+        /* Target check — LE hash vs BE target */
+        if (meets_target_le(hash, target)) {
+            memcpy(out_hash, hash, 32);
+            *out_nonce = nonce;
+            return 0; /* found */
+        }
+    }
+
+    return -1; /* not found */
+}
+
 } /* extern "C" */

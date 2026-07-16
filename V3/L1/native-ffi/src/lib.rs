@@ -1373,6 +1373,19 @@ pub mod verushash {
 
         /// Reset thread-local two-stage state (call on new job).
         pub fn verushash_mining_reset();
+
+        /// Batch nonce scan — entire loop in C++ (no per-nonce FFI overhead).
+        /// Returns 0 if found (out_hash + out_nonce populated), -1 if not found.
+        pub fn verushash_scan_nonces(
+            intermediate64: *const u8,
+            nonceSpace15_template: *const u8,
+            nonce_offset: u32,
+            start_nonce: u64,
+            end_nonce: u64,
+            target: *const u8,
+            out_hash: *mut u8,
+            out_nonce: *mut u64,
+        ) -> i64;
     }
 
     use std::sync::Once;
@@ -1452,6 +1465,39 @@ pub mod verushash {
     pub fn mining_reset() {
         unsafe {
             verushash_mining_reset();
+        }
+    }
+
+    /// Batch nonce scan — entire loop runs in C++ (no per-nonce FFI overhead).
+    /// Prerequisites: `hash_half` + `prepare_key` must have been called on this thread.
+    /// Returns `Some((nonce, hash))` if a winning nonce is found, `None` otherwise.
+    pub fn scan_nonces(
+        intermediate64: &[u8; 64],
+        nonce_space_template: &[u8; 15],
+        nonce_offset: u32,
+        start_nonce: u64,
+        end_nonce: u64,
+        target: &[u8; 32],
+    ) -> Option<(u64, [u8; 32])> {
+        let mut out_hash = [0u8; 32];
+        let mut out_nonce: u64 = 0;
+        // SAFETY: all pointers are valid, sizes are correct.
+        let rc = unsafe {
+            verushash_scan_nonces(
+                intermediate64.as_ptr(),
+                nonce_space_template.as_ptr(),
+                nonce_offset,
+                start_nonce,
+                end_nonce,
+                target.as_ptr(),
+                out_hash.as_mut_ptr(),
+                &mut out_nonce as *mut u64,
+            )
+        };
+        if rc == 0 {
+            Some((out_nonce, out_hash))
+        } else {
+            None
         }
     }
 
