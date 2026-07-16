@@ -33,7 +33,7 @@ typedef unsigned long      uint64_t;
 #define ROTR32(x, n) rotate((x), (uint32_t)(32-n))
 
 #ifndef GROUP_SIZE
-#define GROUP_SIZE 128
+#define GROUP_SIZE 256
 #endif
 #define GROUP_SHARE (GROUP_SIZE / PROGPOW_LANES)
 
@@ -52,6 +52,24 @@ typedef unsigned long      uint64_t;
 
 #ifdef cl_clang_storage_class_specifiers
 #pragma OPENCL EXTENSION cl_clang_storage_class_specifiers : enable
+#endif
+
+// Enable AMD hardware lane shuffle for barrier elimination in progPowLoop.
+// This uses __builtin_amdgcn_ds_bpermute (LLVM intrinsic for ds_bpermute
+// instruction) which works on ALL AMD architectures: GCN (wave64), RDNA1
+// (wave32), RDNA2/3 (wave32). It eliminates expensive barriers by using
+// wavefront-level lane-to-lane communication instead of local memory + barrier.
+// __builtin_amdgcn_ds_bpermute(byte_offset, value) reads `value` from the
+// lane at byte_offset/4 within the wavefront — no barrier needed.
+// Only enabled on AMD platforms; NVIDIA/Clover fall back to share+barrier.
+#if PLATFORM == OPENCL_PLATFORM_AMD
+#define USE_AMD_BPERMUTE 1
+// ds_bpermute intrinsic: reads from lane (offset/4) within wavefront.
+// offset is in bytes, so multiply lane index by 4 for 32-bit values.
+static inline uint amd_wave_shuffle(uint val, uint src_lane)
+{
+    return __builtin_amdgcn_ds_bpermute(src_lane * 4, val);
+}
 #endif
 
 #define HASHES_PER_GROUP (GROUP_SIZE / PROGPOW_LANES)
@@ -128,7 +146,7 @@ void keccak_f800_round(uint32_t st[25], const int r)
 // Keccak - implemented as a variant of SHAKE
 // The width is 800, with a bitrate of 576, a capacity of 224, and no padding
 // Only need 64 bits of output for mining
-uint64_t keccak_f800(__global hash32_t const* g_header, uint64_t seed, hash32_t digest)
+uint64_t keccak_f800(__constant hash32_t const* g_header, uint64_t seed, hash32_t digest)
 {
     uint32_t st[25];
 	#pragma unroll
@@ -199,7 +217,7 @@ __attribute__((reqd_work_group_size(GROUP_SIZE, 1, 1)))
 #endif
 __kernel void ethash_search(
     __global volatile uint* restrict g_output,
-    __global hash32_t const* g_header,
+    __constant hash32_t const* g_header,
     __global dag_t const* g_dag,
     ulong start_nonce,
     ulong target,
@@ -235,20 +253,41 @@ __kernel void ethash_search(
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
+    // Wavefront-relative group base: identifies which 16-lane hash group
+    // we belong to within the current wavefront. Uses __builtin_amdgcn_wavefrontsize()
+    // to correctly handle both wave64 (GCN/Vega: 4 groups per wave) and
+    // wave32 (RDNA1+: 2 groups per wave). The mask clears the lower log2(LANES)
+    // bits to align to the start of the current hash group within the wavefront.
+#if defined(USE_AMD_BPERMUTE)
+    const uint32_t wave_size = __builtin_amdgcn_wavefrontsize();
+    const uint32_t wave_lane = lid % wave_size;
+    const uint32_t wave_group_base = wave_lane & ~(uint32_t)(PROGPOW_LANES - 1);
+#else
+    const uint32_t wave_group_base = lid & (PROGPOW_LANES * (64 / PROGPOW_LANES - 1));
+#endif
+
     #pragma unroll 1
     for (uint32_t h = 0; h < PROGPOW_LANES; h++)
     {
         uint32_t mix[PROGPOW_REGS];
 
-        // share the hash's seed across all lanes
-        //uint64_t hash_seed = __shfl_sync(0xFFFFFFFF, seed, h, PROGPOW_LANES);
+        // Broadcast seed from lane h to all lanes in the hash group.
+        // amd_bpermute = AMD hardware lane shuffle (no barrier needed).
+        // Non-AMD falls back to share+barrier.
+        uint64_t hash_seed;
+#if defined(USE_AMD_BPERMUTE)
+        {
+            uint src_lane = wave_group_base + h;
+            uint seed_lo = amd_wave_shuffle((uint)seed, src_lane);
+            uint seed_hi = amd_wave_shuffle((uint)(seed >> 32), src_lane);
+            hash_seed = (uint64_t)seed_hi << 32 | seed_lo;
+        }
+#else
         if (lane_id == h)
-		{
             share[group_id].uint64s[0] = seed;
-		}
-
         barrier(CLK_LOCAL_MEM_FENCE);
-        uint64_t hash_seed = share[group_id].uint64s[0];
+        hash_seed = share[group_id].uint64s[0];
+#endif
 
         // initialize mix for all lanes
         fill_mix(hash_seed, lane_id, mix);
@@ -276,14 +315,23 @@ __kernel void ethash_search(
             digest_temp.uint32s[i] = 0x811c9dc5;
 		}
 
+#if defined(USE_AMD_BPERMUTE)
+        #pragma unroll
+        for (int i = 0; i < PROGPOW_LANES; i++)
+        {
+            uint src_lane = wave_group_base + i;
+            uint val = amd_wave_shuffle(mix_hash, src_lane);
+            fnv1a(digest_temp.uint32s[i % 8], val);
+        }
+#else
         share[group_id].uint32s[lane_id] = mix_hash;
         barrier(CLK_LOCAL_MEM_FENCE);
-        
-		#pragma unroll
+        #pragma unroll
         for (int i = 0; i < PROGPOW_LANES; i++)
         {
 		    fnv1a(digest_temp.uint32s[i % 8], share[group_id].uint32s[i]);
  		}
+#endif
 
 		if (h == lane_id)
 		{
