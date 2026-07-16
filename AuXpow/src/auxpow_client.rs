@@ -1806,9 +1806,14 @@ impl AuxPowClient {
         // 32-byte hex strings (without 0x prefix), target is 32-byte hex,
         // clean_jobs is a bool, height is the block number, nbits is hex.
         // KawPow epoch = height / 7500.
+        // This format is used by RVN, CLORE, EVR, MEWC, and QUAI on 2miners.
         if let Some(arr) = params.as_array() {
             if arr.len() >= 6
-                && self.profile.coin == ExternalCoin::RVN
+                && matches!(
+                    self.profile.coin,
+                    ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::EVR
+                        | ExternalCoin::MEWC | ExternalCoin::QUAI
+                )
                 && arr[0].as_str().map(|s| !s.starts_with("0x") && s.len() <= 20).unwrap_or(false)
                 && arr[1].as_str().map(|s| s.len() == 64).unwrap_or(false)
                 && arr[2].as_str().map(|s| s.len() == 64).unwrap_or(false)
@@ -1832,7 +1837,8 @@ impl AuxPowClient {
                 let epoch = height.map(|h| (h / epoch_length) as u32);
 
                 println!(
-                    "auxpow: RVN notify — job={} seed={}.. header={}.. epoch={:?} height={:?}",
+                    "auxpow: KawPow notify — coin={} job={} seed={}.. header={}.. epoch={:?} height={:?}",
+                    self.profile.coin.ticker(),
                     job_id,
                     &seed_hash[..16.min(seed_hash.len())],
                     &header_hex[..16.min(header_hex.len())],
@@ -2603,12 +2609,17 @@ impl AuxPowClient {
             let full_nonce = u64::from_le_bytes(full);
             let hex = format!("{:016x}", full_nonce);
             ("mining.submit", json!([worker, job_id, hex]))
-        } else if self.profile.coin == ExternalCoin::RVN {
-            // RVN on 2miners uses Stratum v1 mining.submit with 5 params:
+        } else if matches!(
+            self.profile.coin,
+            ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::EVR
+                | ExternalCoin::MEWC | ExternalCoin::QUAI
+        ) {
+            // KawPow coins on 2miners use Stratum v1 mining.submit with 5 params:
             //   [worker, job_id, nonce_hex, header_hash_hex, mix_hash_hex]
             // job_id = short job_id from notify, nonce = 0x-prefixed 8-byte hex,
             // header_hash = 0x-prefixed 32-byte block header hash from notify,
             // mix_hash = 0x-prefixed 32-byte PoW mix hash from KawPow GPU kernel.
+            // This format is used by RVN, CLORE, EVR, MEWC, and QUAI.
             let wallet = self.payout_wallet.lock().await.clone();
             let worker = format!("{}.{}", wallet, self.profile.worker_name);
             let nonce_hex = format!("0x{:016x}", nonce);
