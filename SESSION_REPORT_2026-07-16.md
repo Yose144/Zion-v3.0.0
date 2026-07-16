@@ -50,8 +50,39 @@ Dnešní session rozšířila `ExternalCoin` enum o 8 nových no-DAG GPU-mineabl
 - `ZION_OS/dashboard/dashboard.js` — auxCoins fallback array, newAuxCoins config, srcNames, srcColors
 - `ZION_OS/dashboard/app.py` — SUPPORTED_COINS list, AUXPOW_SUPPORTED_COINS list
 
-### OpenCL kernels
-Nové coiny nemají zatím OpenCL kernels — `kernel_info()` vrací `None` (disabled/placeholder). Coiny jsou v systému registrovány pro future use, jakmile budou kernels napsány.
+### OpenCL kernels — implementováno (3 commity)
+
+Všechny 8 algoritmů má OpenCL kernel zdrojový kód (5 plně integrovaných, 2 kernel-ready s host-side TODO, 3 dokumentované placeholdery):
+
+| Coin | Algorithm | Kernel File | Lines | Status | Commit |
+|------|-----------|-------------|-------|--------|--------|
+| **IRON** | FishHash | `fishhash_kernel.cl` | 532 | **Fully integrated** — DAG + mine() dispatch | `f6df75b64` |
+| **KLS** | KarlsenHashV2 | `karlsenhash_kernel.cl` | 608 | **Fully integrated** — FishHashPlus + DAG | `f6df75b64` |
+| **VTC** | Verthash | `verthash_kernel.cl` + SHA3 | 289+ | Kernel ready, host-side 1.2GB data file loader TODO | `646d14f59` |
+| **ZCL** | Equihash 192,7 | `equihash_kernel.cl` + param.h | 851+ | Kernel ready, multi-kernel Wagner dispatch TODO | `646d14f59` |
+| **NEXA** | NexaPow | `nexapow_kernel.cl` | 6164 | **Fully integrated** — secp256k1 Schnorr from UltrafastSecp256k1 | `77613ad50` |
+| **RTM** | GhostRider | `ghostrider_kernel.cl` | 46 | Placeholder — 15 algos + 6 CN variants needed | `77613ad50` |
+| **QTC** | Qhash | `qhash_kernel.cl` | 42 | Placeholder — quantum circuit sim needed | `77613ad50` |
+| **DNX** | DynexSolve | `dynexsolve_kernel.cl` | 47 | Placeholder — neuromorphic ODE solver needed | `77613ad50` |
+
+**Zdrojové repozitáře:**
+- FishHashMiner (Lolliedieb): `kernels/fishhash.cl` → IRON kernel
+- karlsend (Go reference): FishHashPlus address calc → KLS kernel
+- VerthashMiner (CryptoGraphics, GPL): `verthash.cl` + SHA3 → VTC kernel
+- silentarmy (mbevand): `input.cl` Equihash 200,9 → adapted to 192,7 for ZCL
+- UltrafastSecp256k1 (shrec, MIT): secp256k1 field/point/scalar + BIP-340 Schnorr → NEXA kernel
+- xmrig (SChernykh): GhostRider C++ reference → RTM documentation
+- QubitCoin (super-quantum): qPoW spec → QTC documentation
+- DynexSolve (dynexcoin): CUDA reference → DNX documentation
+
+**gpu_miner.rs integrace:**
+- `kernel_info()` — 5 nových Some() mappings (IRON, KLS, VTC, ZCL, NEXA)
+- Embedded kernel list — 9 nových .cl souborů (include_str!)
+- `mine()` dispatch — 3 plně integrované (IRON, KLS, NEXA) + 2 bail! stubs (VTC, ZCL)
+- `build_fishhash_kernel()` — DAG buffer + 192-byte header padding
+- `build_nexapow_kernel()` — 32-byte candidateHash + target + single-kernel dispatch
+- `batch_factor` a `wg_size` match arms — 5 nových algoritmů
+- Test `fishhash_karlsenhash_kernel_info_correct` — aktualizován pro 5 nových mappings
 
 ## 2. Dynamické čtení stream configu z poolu (miner)
 
