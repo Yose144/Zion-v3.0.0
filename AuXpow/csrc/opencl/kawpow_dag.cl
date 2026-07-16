@@ -259,20 +259,39 @@ static uint fast_mod(uint a, uint4 d)
     return a - q * d.w;
 }
 
-__kernel void ethash_calculate_dag_item(uint start, __global hash64_t const* g_light, __global hash64_t* g_dag, uint isolate, uint dag_words, uint4 light_words)
+// Modified version with separate uint args instead of uint4 (easier to call from Rust)
+__kernel void ethash_calculate_dag_item_mod(uint start, __global hash64_t const* g_light, __global hash64_t* g_dag, uint isolate, uint dag_words, uint light_items, uint fast_mod_mul, uint fast_mod_shift, uint light_divisor)
 {
     uint const node_index = start + get_global_id(0);
     if (node_index >= dag_words)
         return;
 
+    // Build uint4 for fast_mod: (mul, add, shift, divisor)
+    // If fast_mod_mul == 0, fall back to direct modulo
+    uint4 light_words;
+    light_words.x = fast_mod_mul;
+    light_words.y = 0;
+    light_words.z = fast_mod_shift;
+    light_words.w = light_divisor;
+
     hash200_t dag_node;
-    copy(dag_node.uint4s, g_light[fast_mod(node_index, light_words)].uint4s, 4);
+    if (fast_mod_mul == 0) {
+        // Direct modulo fallback
+        copy(dag_node.uint4s, g_light[node_index % light_items].uint4s, 4);
+    } else {
+        copy(dag_node.uint4s, g_light[fast_mod(node_index, light_words)].uint4s, 4);
+    }
     dag_node.words[0] ^= node_index;
     SHA3_512(dag_node.uint2s, isolate);
 
     for (uint i = 0; i != ETHASH_DATASET_PARENTS; ++i)
     {
-        uint parent_index = fast_mod(fnv(node_index ^ i, dag_node.words[i % NODE_WORDS]), light_words);
+        uint parent_index;
+        if (fast_mod_mul == 0) {
+            parent_index = fnv(node_index ^ i, dag_node.words[i % NODE_WORDS]) % light_items;
+        } else {
+            parent_index = fast_mod(fnv(node_index ^ i, dag_node.words[i % NODE_WORDS]), light_words);
+        }
 
         for (uint w = 0; w != 4; ++w)
             dag_node.uint4s[w] = fnv4(dag_node.uint4s[w], g_light[parent_index].uint4s[w]);

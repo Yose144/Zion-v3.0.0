@@ -9,7 +9,23 @@
 #![allow(clippy::type_complexity)]
 
 use std::io::{self, Write};
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
+
+/* ========================================================================= */
+/* libc FFI declarations (minimal — just what we need for stdout redirect)   */
+/* ========================================================================= */
+
+#[cfg(target_family = "unix")]
+extern "C" {
+    fn dup(oldfd: i32) -> i32;
+    fn dup2(oldfd: i32, newfd: i32) -> i32;
+    fn close(fd: i32) -> i32;
+    fn open(path: *const i8, flags: i32, ...) -> i32;
+    fn write(fd: i32, buf: *const u8, count: usize) -> isize;
+}
+
+#[cfg(target_family = "unix")]
+const O_WRONLY: i32 = 1;
 
 /* ========================================================================= */
 /* Sticky header state (Claymore-style fixed metrics + scrolling logs)       */
@@ -18,9 +34,15 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 static STICKY_ACTIVE: AtomicBool = AtomicBool::new(false);
 static STICKY_LINES: AtomicUsize = AtomicUsize::new(0);
 
+/// File descriptor for /dev/tty — used to write UI directly to the terminal,
+/// bypassing stdout (which is redirected to /dev/null in sticky mode).
+/// This prevents ALL println! calls from other threads from corrupting the display.
+static TTY_FD: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(-1);
+
+/// Original stdout fd (saved before redirect) — restored on exit.
+static SAVED_STDOUT_FD: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(-1);
+
 /// Ring buffer for recent log lines (displayed below the sticky header).
-/// This allows us to redraw the full screen (header + logs) on each update,
-/// which works in ALL terminals including `screen` (no DECSTBM needed).
 static LOG_RING: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
 const LOG_RING_MAX: usize = 200;
 
@@ -43,6 +65,84 @@ pub fn reset_sticky_header() {
     STICKY_LINES.store(0, Ordering::SeqCst);
     if let Ok(mut buf) = LOG_RING.lock() {
         buf.clear();
+    }
+}
+
+/// Write directly to /dev/tty (bypasses redirected stdout).
+/// Falls back to stdout if /dev/tty is not available.
+fn tty_write(s: &str) {
+    let fd = TTY_FD.load(Ordering::SeqCst);
+    if fd >= 0 {
+        // SAFETY: write() is a simple syscall, fd is valid (opened once)
+        unsafe {
+            write(fd, s.as_ptr(), s.len());
+        }
+    } else {
+        // Fallback: use stdout
+        let _ = io::stdout().write_all(s.as_bytes());
+        let _ = io::stdout().flush();
+    }
+}
+
+/// Redirect stdout (fd 1) to /dev/null so that ALL println! calls from
+/// any thread go nowhere and cannot corrupt the sticky header display.
+/// UI output is written directly to /dev/tty via `tty_write()`.
+fn redirect_stdout_to_null() {
+    #[cfg(target_family = "unix")]
+    {
+        // Save original stdout
+        let saved = unsafe { dup(1) };
+        SAVED_STDOUT_FD.store(saved, Ordering::SeqCst);
+
+        // Open /dev/null for writing
+        let null_fd = unsafe {
+            open(b"/dev/null\0".as_ptr() as *const i8, O_WRONLY)
+        };
+        if null_fd >= 0 {
+            // Redirect fd 1 (stdout) to /dev/null
+            unsafe {
+                dup2(null_fd, 1);
+                close(null_fd);
+            }
+        }
+    }
+}
+
+/// Restore original stdout (call on exit to restore normal terminal behavior).
+fn restore_stdout() {
+    #[cfg(target_family = "unix")]
+    {
+        let saved = SAVED_STDOUT_FD.swap(-1, Ordering::SeqCst);
+        if saved >= 0 {
+            unsafe {
+                dup2(saved, 1);
+                close(saved);
+            }
+        }
+    }
+}
+
+/// Open /dev/tty for direct UI output.
+fn open_tty() {
+    #[cfg(target_family = "unix")]
+    {
+        let fd = unsafe {
+            open(b"/dev/tty\0".as_ptr() as *const i8, O_WRONLY)
+        };
+        TTY_FD.store(fd, Ordering::SeqCst);
+    }
+}
+
+/// Close /dev/tty fd.
+fn close_tty() {
+    #[cfg(target_family = "unix")]
+    {
+        let fd = TTY_FD.swap(-1, Ordering::SeqCst);
+        if fd >= 0 {
+            unsafe {
+                close(fd);
+            }
+        }
     }
 }
 
@@ -95,8 +195,23 @@ pub const RESET_SCROLL_REGION: &str = "\x1B[r"; // full screen scroll region
 /* ========================================================================= */
 
 fn print_flush(s: &str) {
-    let _ = io::stdout().write_all(s.as_bytes());
-    let _ = io::stdout().flush();
+    if STICKY_ACTIVE.load(Ordering::SeqCst) {
+        // In sticky mode: write to /dev/tty (stdout is redirected to /dev/null)
+        tty_write(s);
+    } else {
+        let _ = io::stdout().write_all(s.as_bytes());
+        let _ = io::stdout().flush();
+    }
+}
+
+/// Log a line: in sticky mode, push to ring buffer; otherwise print directly.
+/// Use this for ALL log/event functions (shares, jobs, connections, etc.)
+fn log_or_sticky(s: &str) {
+    if STICKY_ACTIVE.load(Ordering::SeqCst) {
+        push_log_line(s);
+    } else {
+        print_flush(s);
+    }
 }
 
 /// Auto-scale hashrate: pick best unit (H/s, KH/s, MH/s, GH/s, TH/s)
@@ -157,7 +272,13 @@ pub fn log_accepted(job_id: u64, height: u64, nonce: u64, latency_ms: u64) {
     s.push_str(RESET);
     s.push_str(&latency_ms.to_string());
     s.push_str("ms\n");
-    print_flush(&s);
+    // In sticky mode: push to ring buffer (displayed below header on next redraw)
+    // Otherwise: print directly
+    if STICKY_ACTIVE.load(Ordering::SeqCst) {
+        push_log_line(&s);
+    } else {
+        print_flush(&s);
+    }
 }
 
 /// Print a rejected share line (red -)
@@ -192,7 +313,11 @@ pub fn log_rejected(job_id: u64, height: u64, nonce: u64, latency_ms: u64, reaso
     s.push_str(RESET);
     s.push_str(reason);
     s.push('\n');
-    print_flush(&s);
+    if STICKY_ACTIVE.load(Ordering::SeqCst) {
+        push_log_line(&s);
+    } else {
+        print_flush(&s);
+    }
 }
 
 /// Print an accepted external share (Claymore-style, per-stream)
@@ -232,7 +357,11 @@ pub fn log_ext_accepted(stream_label: &str, coin: &str, algorithm: &str, latency
     s.push_str("ACCEPTED");
     s.push_str(RESET);
     s.push('\n');
-    print_flush(&s);
+    if STICKY_ACTIVE.load(Ordering::SeqCst) {
+        push_log_line(&s);
+    } else {
+        print_flush(&s);
+    }
 }
 
 /// Print a rejected external share (Claymore-style, per-stream)
@@ -271,7 +400,11 @@ pub fn log_ext_rejected(stream_label: &str, coin: &str, algorithm: &str, reason:
     s.push_str(RESET);
     s.push_str(reason);
     s.push('\n');
-    print_flush(&s);
+    if STICKY_ACTIVE.load(Ordering::SeqCst) {
+        push_log_line(&s);
+    } else {
+        print_flush(&s);
+    }
 }
 
 /// Print a block found celebration with ASCII art flag
@@ -297,7 +430,11 @@ pub fn log_block_found(height: u64, nonce: u64, hash_prefix: &str) {
     s.push_str(&flag_formatted);
     s.push_str(RESET);
     s.push('\n');
-    print_flush(&s);
+    if STICKY_ACTIVE.load(Ordering::SeqCst) {
+        push_log_line(&s);
+    } else {
+        print_flush(&s);
+    }
 }
 
 /// Print a new-job notification (blue arrow)
@@ -331,7 +468,11 @@ pub fn log_new_job(job_id: u64, height: u64, algorithm: &str, difficulty: u64) {
     s.push_str(RESET);
     s.push_str(&difficulty.to_string());
     s.push('\n');
-    print_flush(&s);
+    if STICKY_ACTIVE.load(Ordering::SeqCst) {
+        push_log_line(&s);
+    } else {
+        print_flush(&s);
+    }
 }
 
 /// Print GPU epoch update
@@ -355,7 +496,7 @@ pub fn log_epoch_update(epoch: u64, height: u64) {
     s.push_str(RESET);
     s.push_str(&height.to_string());
     s.push('\n');
-    print_flush(&s);
+    log_or_sticky(&s);
 }
 
 /// Print connection status
@@ -371,7 +512,7 @@ pub fn log_connecting(pool: &str) {
     s.push(' ');
     s.push_str(pool);
     s.push_str(" …\n");
-    print_flush(&s);
+    log_or_sticky(&s);
 }
 
 pub fn log_connected(pool: &str, latency_ms: u64) {
@@ -391,7 +532,7 @@ pub fn log_connected(pool: &str, latency_ms: u64) {
     s.push_str(RESET);
     s.push_str(&latency_ms.to_string());
     s.push_str("ms\n");
-    print_flush(&s);
+    log_or_sticky(&s);
 }
 
 pub fn log_disconnected(pool: &str) {
@@ -406,7 +547,7 @@ pub fn log_disconnected(pool: &str) {
     s.push(' ');
     s.push_str(pool);
     s.push('\n');
-    print_flush(&s);
+    log_or_sticky(&s);
 }
 
 /* ========================================================================= */
@@ -965,24 +1106,29 @@ pub fn print_triple_stream_stats_sticky(
 
     let line_count = box_str.matches('\n').count();
 
+    // ── First-time initialization ──
     if !STICKY_ACTIVE.load(Ordering::SeqCst) {
-        // ── First time: enter alternate screen, hide cursor ──
-        STICKY_LINES.store(line_count, Ordering::SeqCst);
+        // Open /dev/tty for direct UI output (bypasses redirected stdout)
+        open_tty();
+        // Redirect stdout to /dev/null — ALL println! from any thread
+        // will now go to /dev/null and cannot corrupt the display.
+        // UI output goes to /dev/tty via tty_write().
+        redirect_stdout_to_null();
+        // Activate sticky mode
         STICKY_ACTIVE.store(true, Ordering::SeqCst);
-    }
-
-    // ── Full screen redraw (works in all terminals) ──
-    let mut out = String::with_capacity(4096);
-
-    if STICKY_ACTIVE.load(Ordering::SeqCst) {
-        // First call: enter alt screen
-        let was_first = STICKY_LINES.swap(0, Ordering::SeqCst) != 0;
-        if was_first {
-            out.push_str(ENTER_ALT_SCREEN);
-            out.push_str(CURSOR_HIDE);
-        }
         STICKY_LINES.store(line_count, Ordering::SeqCst);
+
+        // Enter alternate screen + hide cursor (written to /dev/tty)
+        let mut init = String::new();
+        init.push_str(ENTER_ALT_SCREEN);
+        init.push_str(CURSOR_HIDE);
+        tty_write(&init);
     }
+
+    STICKY_LINES.store(line_count, Ordering::SeqCst);
+
+    // ── Full screen redraw (written to /dev/tty) ──
+    let mut out = String::with_capacity(4096);
 
     // Clear screen and go home
     out.push_str(CLEAR_SCREEN);
@@ -1011,14 +1157,21 @@ pub fn print_triple_stream_stats_sticky(
 
     // Move cursor to bottom-left (out of the way)
     out.push_str("\x1B[999;1H");
-    print_flush(&out);
+    tty_write(&out);
 }
 
 /// Exit the alternate screen buffer (call on shutdown).
 pub fn exit_sticky_header() {
     if STICKY_ACTIVE.load(Ordering::SeqCst) {
-        print_flush(EXIT_ALT_SCREEN);
-        print_flush(CURSOR_SHOW);
+        // Leave alt screen + show cursor (to /dev/tty)
+        let mut out = String::new();
+        out.push_str(EXIT_ALT_SCREEN);
+        out.push_str(CURSOR_SHOW);
+        tty_write(&out);
+        // Close /dev/tty
+        close_tty();
+        // Restore original stdout
+        restore_stdout();
         STICKY_ACTIVE.store(false, Ordering::SeqCst);
     }
 }

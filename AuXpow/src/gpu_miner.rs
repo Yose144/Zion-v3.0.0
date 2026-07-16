@@ -804,15 +804,65 @@ impl GpuMiner {
             (dag_nodes as f64 * 64.0) / (1024.0 * 1024.0 * 1024.0)
         );
 
-        // Get the ProQue for kawpow_kernel.cl (which now has both kawpow_mine
-        // and kawpow_generate_dag kernels).
-        // Copy work_size before borrowing self for ensure_proque.
+        // Build a dedicated ProQue for the DAG generation kernel.
+        // kawpow_dag.cl contains ethash_calculate_dag_item which generates
+        // DAG nodes on the GPU from the light cache. We inline the defs.h
+        // content (FNV_PRIME, PLATFORM defines) since the file doesn't exist.
+        let dag_kernel_src = {
+            let base = include_str!("../csrc/opencl/kawpow_dag.cl");
+            // Replace #include "defs.h" with inline definitions
+            let defs = r#"
+#define FNV_PRIME 0x01000193
+#define OPENCL_PLATFORM_UNKNOWN 0
+#define OPENCL_PLATFORM_NVIDIA  1
+#define OPENCL_PLATFORM_AMD     2
+#define OPENCL_PLATFORM_CLOVER  3
+#ifndef PLATFORM
+#define PLATFORM OPENCL_PLATFORM_AMD
+#endif
+#ifndef COMPUTE
+#define COMPUTE 0
+#endif
+typedef unsigned int uint;
+typedef unsigned long ulong;
+"#;
+            base.replace("#include \"defs.h\"", defs)
+        };
+
         let batch_size = self.work_size;
-        let pro_que = self.ensure_proque("kawpow_kernel.cl")?;
-        let q = pro_que.queue().clone();
+        // Get a queue from any existing ProQue, or build one fresh.
+        let q = if let Some(pq) = self.proques.values().next() {
+            pq.queue().clone()
+        } else {
+            // No existing ProQue — create a minimal one just for the queue.
+            let mut dummy_prog = ProgramBuilder::new();
+            dummy_prog.src("__kernel void dummy() {}");
+            let dummy_pq = ProQue::builder()
+                .platform(self.platform)
+                .device(self.device)
+                .prog_bldr(dummy_prog)
+                .dims(1)
+                .build()
+                .map_err(|e| anyhow!("failed to create queue: {e}"))?;
+            dummy_pq.queue().clone()
+        };
+
+        let mut prog_builder = ProgramBuilder::new();
+        prog_builder.src(dag_kernel_src);
+        prog_builder.cmplr_opt("-cl-std=CL1.2 -cl-mad-enable");
+
+        let dag_pro_que = ProQue::builder()
+            .platform(self.platform)
+            .device(self.device)
+            .prog_bldr(prog_builder)
+            .dims(batch_size)
+            .build()
+            .map_err(|e| anyhow!("OpenCL compile failed for kawpow_dag.cl: {e}"))?;
 
         // Upload the light cache to the GPU.
         // The cache is stored as bytes; we need it as u64 words for the kernel.
+        // But ethash_calculate_dag_item expects hash64_t (uint2 array), not u64.
+        // We upload as u64 and reinterpret in the kernel via __global hash64_t*.
         let cache_bytes = light_cache.as_slice();
         let cache_u64_count = cache_bytes.len() / 8;
         let cache_u64: Vec<u64> = (0..cache_u64_count)
@@ -847,32 +897,48 @@ impl GpuMiner {
             .build()
             .map_err(|e| anyhow!("failed to allocate GPU DAG buffer: {e}"))?;
 
-        // Run the GenerateDAG kernel in batches.
-        // Each work-item generates one 64-byte node.
-        // Batch size = work_size (typically 4M+ for Vega).
+        // Run the ethash_calculate_dag_item kernel in batches.
+        // Each work-item generates one 64-byte node (hash64_t).
+        // Kernel signature: (uint start, __global hash64_t const* g_light,
+        //   __global hash64_t* g_dag, uint isolate, uint dag_words, uint4 light_words)
+        // We pass dag_nodes as dag_words, and compute light_words from cache.
         let total_nodes = dag_nodes as usize;
         let num_batches = (total_nodes + batch_size - 1) / batch_size;
+        // We modify the kernel to accept 4 separate uint args instead of uint4:
+        //   light_items, fast_mod_mul, fast_mod_shift, light_items_divisor
+        // For simplicity, fast_mod_mul=0 and fast_mod_shift=0 so fast_mod
+        // falls back to direct modulo (correct but slower).
+        let light_items = light_cache.cache_items;
 
         eprintln!(
-            "dag_manager: generating DAG on GPU ({} batches of {} nodes)...",
-            num_batches, batch_size
+            "dag_manager: generating DAG on GPU ({} batches of {} nodes, light_words={})...",
+            num_batches, batch_size, light_cache.cache_items
         );
 
         let start_time = std::time::Instant::now();
 
         for batch in 0..num_batches {
-            let start_node = (batch * batch_size) as u64;
+            let start_node = (batch * batch_size) as u32;
             let nodes_this_batch = std::cmp::min(batch_size, total_nodes - batch * batch_size);
 
+            // ethash_calculate_dag_item_mod(uint start, __global hash64_t const* g_light,
+            //   __global hash64_t* g_dag, uint isolate, uint dag_words,
+            //   uint light_items, uint fast_mod_mul, uint fast_mod_shift, uint light_divisor)
+            // We pass cache_buf and dag_buf as u64 buffers — the kernel reinterprets
+            // them as hash64_t (which is a union of uint[16], so 64 bytes = 8 u64).
             let dag_kernel = Kernel::builder()
                 .queue(q.clone())
-                .program(pro_que.program())
-                .name("kawpow_generate_dag")
-                .arg(&cache_buf)
-                .arg(cache_items)
-                .arg(&dag_buf)
-                .arg(dag_nodes)
+                .program(dag_pro_que.program())
+                .name("ethash_calculate_dag_item_mod")
                 .arg(start_node)
+                .arg(&cache_buf)
+                .arg(&dag_buf)
+                .arg(0u32) // isolate (debug flag, 0 = normal)
+                .arg(dag_nodes as u32) // dag_words
+                .arg(light_items) // light_items
+                .arg(0u32) // fast_mod_mul (0 = use direct modulo)
+                .arg(0u32) // fast_mod_shift
+                .arg(light_items) // light_divisor
                 .build()
                 .map_err(|e| anyhow!("DAG kernel build failed (batch {}): {e}", batch))?;
 
@@ -1884,17 +1950,13 @@ impl DagManager {
                 }
             }
         } else {
-            // Generate the DAG on the CPU via FFI (same approach as ProgPow).
-            // The GPU DAG generation kernel in kawpow_dag.cl requires complex
-            // fast_mod parameter setup; CPU generation via OpenMP is fast enough
-            // (~15-20s on 12 cores) and simpler/more reliable.
-            eprintln!("dag_manager: generating KawPow DAG epoch={} via FFI...", epoch);
-            let dag = generate_kawpow_dag(epoch)
-                .ok_or_else(|| anyhow!("kawpow_generate_dag returned NULL for epoch {}", epoch))?;
-            let entries = dag.dag_size_entries;
-            let u64_slice = dag.as_u64_slice().to_vec();
-            self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
-            miner.set_kawpow_dag(&u64_slice, entries, epoch)?;
+            // Generate the DAG directly on the GPU using the kawpow_generate_dag
+            // kernel. This is much faster than CPU FFI generation (seconds vs
+            // minutes for large epochs) and avoids host→GPU transfer of multi-GB
+            // data. The light cache (~16-64 MB) is generated on CPU and uploaded,
+            // then the GPU kernel fills the full DAG buffer in-place.
+            eprintln!("dag_manager: generating KawPow DAG epoch={} on GPU...", epoch);
+            miner.generate_kawpow_dag_on_gpu(epoch)?;
         }
 
         self.kawpow_epoch = Some(epoch);
