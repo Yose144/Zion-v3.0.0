@@ -323,6 +323,7 @@ pub fn gen_epic_progpow_loop(params: &ProgPowParams, block_height: u64) -> Strin
         "// Inner loop for prog_seed {}\n",
         prog_seed
     ));
+    ret.push_str("static inline __attribute__((always_inline))\n");
     ret.push_str("void progPowLoop(const uint32_t loop,\n");
     ret.push_str("        uint32_t mix[PROGPOW_REGS],\n");
     ret.push_str("        __global const dag_t *g_dag,\n");
