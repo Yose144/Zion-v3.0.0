@@ -205,7 +205,7 @@ export default function Navigation() {
       }`}
     >
       {/* Subtle ambient glow */}
-      <div className={`pointer-events-none absolute inset-x-0 top-0 bg-linear-to-r from-emerald-500/10 via-zion-gold/12 to-amber-600/10 blur-2xl opacity-60 transition-all duration-300 ${scrolled ? 'h-10' : 'h-16'}`} />
+      <div className={`pointer-events-none absolute inset-x-0 top-0 bg-linear-to-r from-emerald-500/10 via-zion-gold/12 to-amber-600/10 blur-2xl opacity-60 transition-all duration-300 ${scrolled ? 'hidden' : 'h-16'}`} />
       <div className={`relative mx-auto w-[min(96vw,1080px)] transition-all duration-300 ${scrolled ? 'py-0' : 'py-1'}`} data-nav-desktop>
         {/* ═══════════════════════════════════════════════════
             FLOOR 1 — MAIN BAR
@@ -213,8 +213,8 @@ export default function Navigation() {
             ═══════════════════════════════════════════════════ */}
         <div className="relative rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl p-[1px] shadow-[0_16px_60px_rgba(0,0,0,0.35)] transition-all duration-300">
           {/* Rasta gradient top accent line — thicker and narrower */}
-          <div className={`pointer-events-none absolute -top-px left-12 right-12 rounded-t-2xl bg-linear-to-r from-emerald-400/60 via-zion-gold/70 to-red-400/60 transition-all duration-300 ${scrolled ? 'h-0.5 left-8 right-8' : 'h-1'}`} />
-          <div className={`relative flex items-center justify-between gap-1.5 rounded-[15px] bg-black/70 px-2 sm:px-3 transition-all duration-300 py-1.5`}
+          <div className={`pointer-events-none absolute -top-px left-12 right-12 rounded-t-2xl bg-linear-to-r from-emerald-400/60 via-zion-gold/70 to-red-400/60 transition-all duration-300 ${scrolled ? 'hidden' : 'h-1'}`} />
+          <div className={`relative flex items-center justify-between gap-1.5 rounded-[15px] bg-black/70 px-2 sm:px-3 transition-all duration-300 ${scrolled ? 'py-1' : 'py-1.5'}`}
             style={{
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
             }}
@@ -316,7 +316,7 @@ export default function Navigation() {
         </div>
 
         {/* ═══ FLOOR 2 — MINI ICONS + GROUP DROPDOWNS ═══ */}
-        <div className={`hidden md:flex items-center justify-between gap-1.5 relative rounded-2xl border border-white/[0.07] bg-black/40 backdrop-blur-md px-2 py-1.5 transition-all duration-300 mt-1`}>
+        <div className={`hidden md:flex ${scrolled ? 'md:hidden' : ''} items-center justify-between gap-1.5 relative rounded-2xl border border-white/[0.07] bg-black/40 backdrop-blur-md px-2 py-1.5 transition-all duration-300 mt-1`}>
           {/* Left: secondary icons (always visible on md+) */}
           <div className="flex items-center gap-0.5 shrink-0">
             {secondaryIcons.map((ml) => {
