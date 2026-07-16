@@ -57,6 +57,7 @@ __constant ulong KC_RC[24] = {
     0x0000000080000001UL, 0x8000000080008008UL,
 };
 
+__attribute__((always_inline))
 void keccak_f1600(__private ulong *st)
 {
     ulong bc0, bc1, bc2, bc3, bc4, t;
@@ -134,6 +135,49 @@ void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
     for (int i = 0; i < 64; i++) out[i] = s.b[i];
 }
 
+/* SHA3-512 specialized for 65-byte input (used by fill_scratchpad).
+ * Input always fits in one keccak block (rate=72 > 65), so no
+ * mid-absorption permutation needed. Eliminates 65 conditional
+ * branches per call and vectorizes the state zero + copy. */
+inline void sha3_512_65(__private const uchar *in, __private uchar out[64])
+{
+    keccak_st_t s;
+    /* Vectorized zero: 25 u64s = 3x ulong4 + 1x ulong */
+    s.u[0]=0; s.u[1]=0; s.u[2]=0; s.u[3]=0;
+    s.u[4]=0; s.u[5]=0; s.u[6]=0; s.u[7]=0;
+    s.u[8]=0; s.u[9]=0; s.u[10]=0; s.u[11]=0;
+    s.u[12]=0; s.u[13]=0; s.u[14]=0; s.u[15]=0;
+    s.u[16]=0; s.u[17]=0; s.u[18]=0; s.u[19]=0;
+    s.u[20]=0; s.u[21]=0; s.u[22]=0; s.u[23]=0; s.u[24]=0;
+    /* Absorb 65 bytes directly (no loop, no pos check) */
+    s.b[0]  ^= in[0];  s.b[1]  ^= in[1];  s.b[2]  ^= in[2];  s.b[3]  ^= in[3];
+    s.b[4]  ^= in[4];  s.b[5]  ^= in[5];  s.b[6]  ^= in[6];  s.b[7]  ^= in[7];
+    s.b[8]  ^= in[8];  s.b[9]  ^= in[9];  s.b[10] ^= in[10]; s.b[11] ^= in[11];
+    s.b[12] ^= in[12]; s.b[13] ^= in[13]; s.b[14] ^= in[14]; s.b[15] ^= in[15];
+    s.b[16] ^= in[16]; s.b[17] ^= in[17]; s.b[18] ^= in[18]; s.b[19] ^= in[19];
+    s.b[20] ^= in[20]; s.b[21] ^= in[21]; s.b[22] ^= in[22]; s.b[23] ^= in[23];
+    s.b[24] ^= in[24]; s.b[25] ^= in[25]; s.b[26] ^= in[26]; s.b[27] ^= in[27];
+    s.b[28] ^= in[28]; s.b[29] ^= in[29]; s.b[30] ^= in[30]; s.b[31] ^= in[31];
+    s.b[32] ^= in[32]; s.b[33] ^= in[33]; s.b[34] ^= in[34]; s.b[35] ^= in[35];
+    s.b[36] ^= in[36]; s.b[37] ^= in[37]; s.b[38] ^= in[38]; s.b[39] ^= in[39];
+    s.b[40] ^= in[40]; s.b[41] ^= in[41]; s.b[42] ^= in[42]; s.b[43] ^= in[43];
+    s.b[44] ^= in[44]; s.b[45] ^= in[45]; s.b[46] ^= in[46]; s.b[47] ^= in[47];
+    s.b[48] ^= in[48]; s.b[49] ^= in[49]; s.b[50] ^= in[50]; s.b[51] ^= in[51];
+    s.b[52] ^= in[52]; s.b[53] ^= in[53]; s.b[54] ^= in[54]; s.b[55] ^= in[55];
+    s.b[56] ^= in[56]; s.b[57] ^= in[57]; s.b[58] ^= in[58]; s.b[59] ^= in[59];
+    s.b[60] ^= in[60]; s.b[61] ^= in[61]; s.b[62] ^= in[62]; s.b[63] ^= in[63];
+    s.b[64] ^= in[64];
+    /* Pad (0x06 at byte 65, 0x80 at byte 71) */
+    s.b[65] ^= 0x06;
+    s.b[71] ^= 0x80;
+    keccak_f1600(s.u);
+    /* Vectorized 64-byte output copy */
+    ulong4 o0 = vload4(0, (__private ulong*)s.b);
+    ulong4 o1 = vload4(1, (__private ulong*)s.b);
+    vstore4(o0, 0, (__private ulong*)out);
+    vstore4(o1, 1, (__private ulong*)out);
+}
+
 /* ========================================================================== */
 /* AES-128 helpers — identical to v1                                          */
 /* ========================================================================== */
@@ -207,7 +251,7 @@ void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
         // 8-byte aligned output buffer
         __private ulong out64_aligned[8];  // 8 * 8 = 64 bytes, 8-byte aligned
         __private uchar *out64 = (__private uchar*)out64_aligned;
-        sha3_512(inp, 65, out64);
+        sha3_512_65(inp, out64);
         uint off=blk*BLOCK_SIZE;
         ulong4 v=vload4(0,out64_aligned);  // Use aligned pointer
         vstore4(v,0,(__global ulong*)(pad+off));
@@ -217,18 +261,22 @@ void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
 
 void sequential_passes(__global uchar *pad)
 {
+    // Forward pass: XOR each block with previous (wrap-around)
+    ulong4 prev_v = vload4(0,(__global ulong*)(pad+(BLOCK_COUNT-1)*BLOCK_SIZE));
     for (uint i=0;i<BLOCK_COUNT;i++) {
-        uint prev=(i==0)?(BLOCK_COUNT-1):(i-1);
-        ulong4 cv=vload4(0,(__global ulong*)(pad+i*BLOCK_SIZE));
-        ulong4 pv=vload4(0,(__global ulong*)(pad+prev*BLOCK_SIZE));
-        cv^=pv; vstore4(cv,0,(__global ulong*)(pad+i*BLOCK_SIZE));
+        ulong4 cv = vload4(0,(__global ulong*)(pad+i*BLOCK_SIZE));
+        cv ^= prev_v;
+        vstore4(cv,0,(__global ulong*)(pad+i*BLOCK_SIZE));
+        prev_v = cv;
     }
+    // Backward pass: XOR each block with next (wrap-around)
+    ulong4 next_v = vload4(0,(__global ulong*)(pad+0));
     for (uint i=BLOCK_COUNT;i>0;i--) {
         uint idx=i-1;
-        uint next=(idx+1==BLOCK_COUNT)?0:(idx+1);
-        ulong4 cv=vload4(0,(__global ulong*)(pad+idx*BLOCK_SIZE));
-        ulong4 nv=vload4(0,(__global ulong*)(pad+next*BLOCK_SIZE));
-        cv^=nv; vstore4(cv,0,(__global ulong*)(pad+idx*BLOCK_SIZE));
+        ulong4 cv = vload4(0,(__global ulong*)(pad+idx*BLOCK_SIZE));
+        cv ^= next_v;
+        vstore4(cv,0,(__global ulong*)(pad+idx*BLOCK_SIZE));
+        next_v = cv;
     }
 }
 
