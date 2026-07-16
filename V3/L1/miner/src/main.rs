@@ -23,6 +23,7 @@ mod gpu_backend;
 mod gpu_guard;
 mod interactive;
 mod parallel;
+mod thread_affinity;
 mod ui;
 
 use interactive::{HashrateTracker, MinerControl, TUI_ACTIVE};
@@ -825,6 +826,8 @@ fn main() -> Result<()> {
             let total = std::sync::Arc::clone(&total_hashes);
             let stop = std::sync::Arc::clone(&stop);
             handles.push(std::thread::spawn(move || {
+                // Pin thread to physical core for VerusHash
+                thread_affinity::maybe_pin_thread(t, threads, "verushash");
                 let mut local_hdr = hdr;
                 let mut nonce: u64 = (t as u64) * 1_000_000_000;
                 let nonce_space_blob_offset = 1472usize;
@@ -938,6 +941,8 @@ fn main() -> Result<()> {
             let total = std::sync::Arc::clone(&total_hashes);
             let stop = std::sync::Arc::clone(&stop);
             handles.push(std::thread::spawn(move || {
+                // Pin thread to physical core for RandomX (cache-sensitive)
+                thread_affinity::maybe_pin_thread(t, threads, "randomx");
                 let mut local_hdr = hdr;
                 let mut nonce: u64 = (t as u64) * 1_000_000_000;
                 loop {
@@ -3470,12 +3475,14 @@ fn mine_external_stream_cpu(
         let chunk = (nonce_count / threads as u64).max(1);
         let found = Arc::new(std::sync::Mutex::new(None::<zion_auxpow::miner_harness::FoundShare>));
         let stop = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let algo = ext.algorithm.clone(); // clone for thread closure
 
         let mut handles = Vec::new();
         for t in 0..threads {
             let job = Arc::clone(&job_arc);
             let found = Arc::clone(&found);
             let stop = Arc::clone(&stop);
+            let algo = algo.clone(); // clone per-iteration for closure
             let t_start = start_nonce.wrapping_add((t as u64) * chunk);
             let t_end = if t == threads - 1 {
                 scan_end
@@ -3483,6 +3490,8 @@ fn mine_external_stream_cpu(
                 t_start.wrapping_add(chunk)
             };
             handles.push(std::thread::spawn(move || {
+                // Pin thread to physical core for RandomX (cache-sensitive)
+                thread_affinity::maybe_pin_thread(t, threads, &algo);
                 let range = t_start..t_end;
                 match zion_auxpow::miner_harness::mine(&job, range) {
                     Ok(Some(share)) => {
