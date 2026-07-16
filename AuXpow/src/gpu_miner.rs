@@ -203,7 +203,12 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
             // Full integration needs host-side Wagner's algorithm orchestration
             Some(("equihash_kernel.cl", "kernel_init_ht"))
         }
-        "qhash" | "qhash_qtc" => None, // Qhash: quantum circuit sim, needs custom OpenCL
+        "qhash" | "qhash_qtc" => {
+            // Qhash: 16-qubit quantum circuit simulation (qPoW)
+            // State vector: 2^16 = 65536 complex amplitudes (float2)
+            // Each work-item needs 512KB state vector in global memory
+            Some(("qhash_kernel.cl", "qhash_mine"))
+        }
         "verthash" | "verthash_vtc" => {
             // Verthash: I/O-bound, needs 1.2GB data file + SHA3 precompute
             // Kernel ready, but host-side data file loading not yet implemented
@@ -215,8 +220,17 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
             // Uses UltrafastSecp256k1 OpenCL kernels (MIT licensed)
             Some(("nexapow_kernel.cl", "nexapow_mine"))
         }
-        "ghostrider" | "ghostrider_rtm" => None, // GhostRider: 15 algos + 6 CN variants, very complex
-        "dynexsolve" | "dynexsolve_dnx" => None, // DynexSolve: neuromorphic PoUW, needs custom OpenCL
+        "ghostrider" | "ghostrider_rtm" => {
+            // GhostRider: 15 x16r hash algorithms + 6 CryptoNight variants
+            // 18-step hash chain: core[0..4]→cn[0]→core[5..9]→cn[1]→core[10..14]→cn[2]
+            // Each work-item needs 1MB scratchpad in global memory
+            Some(("ghostrider_kernel.cl", "ghostrider_mine"))
+        }
+        "dynexsolve" | "dynexsolve_dnx" => {
+            // DynexSolve: neuromorphic PoUW, solves Boolean SAT via RK4 ODE integration
+            // Each work-item needs clause array + variable array + temp arrays
+            Some(("dynexsolve_kernel.cl", "dynexsolve_mine"))
+        }
         _ => None,
     }
 }
@@ -609,6 +623,51 @@ impl GpuMiner {
                     &found_flag_buf,
                 )?
             }
+            "qhash" | "qhash_qtc" => {
+                // Qhash: 16-qubit quantum circuit simulation (qPoW)
+                // Each work-item needs 512KB state vector in global memory
+                Self::build_qhash_kernel(
+                    pro_que,
+                    kernel_name,
+                    header,
+                    target,
+                    base_nonce,
+                    batch_size,
+                    &output_nonce_buf,
+                    &output_hash_buf,
+                    &found_flag_buf,
+                )?
+            }
+            "ghostrider" | "ghostrider_rtm" => {
+                // GhostRider: 15 x16r hash algos + 6 CryptoNight variants
+                // Each work-item needs 1MB scratchpad in global memory
+                Self::build_ghostrider_kernel(
+                    pro_que,
+                    kernel_name,
+                    header,
+                    target,
+                    base_nonce,
+                    batch_size,
+                    &output_nonce_buf,
+                    &output_hash_buf,
+                    &found_flag_buf,
+                )?
+            }
+            "dynexsolve" | "dynexsolve_dnx" => {
+                // DynexSolve: neuromorphic PoUW, solves Boolean SAT via RK4 ODE
+                // Each work-item needs clause/var/temp arrays (~30KB)
+                Self::build_dynexsolve_kernel(
+                    pro_que,
+                    kernel_name,
+                    header,
+                    target,
+                    base_nonce,
+                    batch_size,
+                    &output_nonce_buf,
+                    &output_hash_buf,
+                    &found_flag_buf,
+                )?
+            }
             other => anyhow::bail!("unsupported GPU algorithm: {other}"),
         };
 
@@ -624,6 +683,9 @@ impl GpuMiner {
             "verthash" | "verthash_vtc" => 1, // Verthash: 4-way kernel, 1 nonce per 4 work-items
             "equihashzero" | "equihashzero_zcl" => 1, // Equihash: memory-bound, 1 nonce per work-item
             "nexapow" | "nexapow_nexa" => 1, // NexaPow: secp256k1 Schnorr per nonce
+            "qhash" | "qhash_qtc" => 1, // Qhash: 512KB state vector per nonce
+            "ghostrider" | "ghostrider_rtm" => 1, // GhostRider: 1MB scratchpad per nonce
+            "dynexsolve" | "dynexsolve_dnx" => 1, // DynexSolve: SAT solver per nonce
             _ => 8, // blake3, kheavyhash, zelhash
         };
         // Work-group size: MUST match GROUP_SIZE defined in the kernel build
@@ -639,6 +701,9 @@ impl GpuMiner {
             "verthash" | "verthash_vtc" => 64, // WORK_SIZE=64 for Verthash 4-way kernel
             "equihashzero" | "equihashzero_zcl" => 64, // Equihash: reqd_work_group_size(64,1,1)
             "nexapow" | "nexapow_nexa" => 64, // NexaPow: secp256k1 operations, 64 for register pressure
+            "qhash" | "qhash_qtc" => 64, // Qhash: state vector ops, 64 for register pressure
+            "ghostrider" | "ghostrider_rtm" => 64, // GhostRider: hash + CN, 64 for register pressure
+            "dynexsolve" | "dynexsolve_dnx" => 64, // DynexSolve: ODE solver, 64 for register pressure
             _ => 256,
         };
         // Round global_work_size up to a multiple of wg_size (required by
@@ -648,6 +713,14 @@ impl GpuMiner {
             .max(1);
         let global_work_size = ((raw_gws + wg_size - 1) / wg_size) * wg_size;
         let start = Instant::now();
+        // Log before enqueue so we can see if the kernel hangs
+        if is_progpow {
+            eprintln!(
+                "auxpow_gpu_kernel_enqueue algo={} gws={} lws={} batch_factor={} dag_elements={}",
+                algorithm, global_work_size, wg_size, batch_factor,
+                if is_progpow { "set" } else { "n/a" }
+            );
+        }
         unsafe {
             kernel
                 .cmd()
@@ -656,7 +729,19 @@ impl GpuMiner {
                 .enq()
                 .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
         }
+        // Wait for kernel with a timeout — if the GPU hangs, we don't want
+        // to block forever.  q.finish() is blocking with no timeout in ocl,
+        // so we use a simple approach: just call finish and log if it took
+        // unusually long.  The real fix for hangs is in the kernel code
+        // (always_inline for progPowLoop).
         q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+        let elapsed_ms = start.elapsed().as_millis();
+        if elapsed_ms > 5000 {
+            eprintln!(
+                "auxpow_gpu_kernel_slow algo={} elapsed_ms={} gws={} — kernel took unusually long",
+                algorithm, elapsed_ms, global_work_size
+            );
+        }
 
         let mut found_flag = vec![0u32; 1];
         found_flag_buf.read(&mut found_flag).enq()?;
@@ -1656,16 +1741,16 @@ typedef unsigned long ulong;
         //   (each dag_t = 16 bytes, and the kernel accesses g_dag[offset] where
         //    offset can be up to dag_elements * PROGPOW_LANES - 1)
         //
-        // GROUP_SIZE=256 for EPIC ProgPow (matches reference epic-miner):
-        //   - HASHES_PER_GROUP = 256 / 16 = 16 hashes per work-group
-        //   - Better latency hiding through more wavefronts per group
-        //   - amd_bpermute handles the share broadcast without barriers,
-        //     so the out-of-bounds share[] concern is eliminated on AMD.
-        //     On non-AMD (share+barrier fallback), the share[] writes for
-        //     group_id 8..15 alias into share[1].uint32s, which is safe
-        //     because the data is overwritten before being read.
+        // GROUP_SIZE=128 for EPIC ProgPow (share+barrier fallback on SMOS):
+        //   - HASHES_PER_GROUP = 128 / 16 = 8 hashes per work-group
+        //   - 2 wavefronts per work-group on Vega (wave64)
+        //   - share+barrier fallback requires barriers in progPowLoop,
+        //     which MUST be always_inline to avoid barrier deadlock on
+        //     SMOS OpenCL compiler (see progpow_codegen.rs).
+        //   - GROUP_SIZE=256 deadlocks on SMOS with share+barrier (4
+        //     wavefronts per work-group exceeds barrier capacity).
         //
-        // KawPow still uses GROUP_SIZE=128 (its kernel has different share layout).
+        // KawPow also uses GROUP_SIZE=128.
         let dag_bytes = dag_elements_safe * 16 * 16; // * PROGPOW_LANES(16) * sizeof(dag_t)
         // Pass algorithm-specific PROGPOW_REGS and PROGPOW_CNT_MATH as build defines
         // so the kernel can use the correct register file size and math loop count.
@@ -2002,6 +2087,229 @@ typedef unsigned long ulong;
     }
 
     // -----------------------------------------------------------------
+    // Qhash (QTC) — 16-qubit quantum circuit simulation
+    // -----------------------------------------------------------------
+
+    /// State vector size: 2^16 = 65536 complex amplitudes (float2 = 8 bytes each)
+    const QHASH_STATE_SIZE: usize = 65536;
+    /// Bytes per work-item state vector: 65536 * 8 = 512 KB
+    const QHASH_STATE_BYTES: usize = Self::QHASH_STATE_SIZE * 8;
+
+    fn build_qhash_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        batch_size: u64,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        // Cap batch by VRAM: each work-item needs 512KB state vector
+        // With 6GB VRAM, max ~12000 work-items. Use min(batch_size, 4096).
+        let effective_batch = batch_size.min(4096) as usize;
+
+        let mut hdr = [0u8; 80];
+        let copy_len = header.len().min(80);
+        hdr[..copy_len].copy_from_slice(&header[..copy_len]);
+
+        let header_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(80)
+            .copy_host_slice(&hdr[..])
+            .build()?;
+
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target.as_slice())
+            .build()?;
+
+        // State vector pool: effective_batch * STATE_SIZE float2 elements
+        // ocl Buffer<u8> with byte length = effective_batch * 512KB
+        let state_pool_bytes = effective_batch * Self::QHASH_STATE_BYTES;
+        let state_vec_pool: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(state_pool_bytes)
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(&header_buf)           // 0: header (80 bytes)
+            .arg(80u32)                 // 1: header_len
+            .arg(base_nonce)            // 2: base_nonce
+            .arg(output_hash_buf)       // 3: output_hash (32 bytes)
+            .arg(found_flag_buf)        // 4: found_flag
+            .arg(output_nonce_buf)      // 5: output_nonce
+            .arg(&target_buf)           // 6: target (32 bytes)
+            .arg(&state_vec_pool)       // 7: state_vec_pool
+            .build()
+            .map_err(|e| anyhow!("Qhash kernel build failed: {e}"))?;
+
+        Ok(kernel)
+    }
+
+    // -----------------------------------------------------------------
+    // GhostRider (RTM) — 15 hash algos + 6 CryptoNight variants
+    // -----------------------------------------------------------------
+
+    /// CryptoNight scratchpad: 1MB per work-item = 262144 uint32 words
+    const GHOSTRIDER_SCRATCH_U32: usize = 262144;
+    const GHOSTRIDER_SCRATCH_BYTES: usize = Self::GHOSTRIDER_SCRATCH_U32 * 4;
+
+    fn build_ghostrider_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        batch_size: u64,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        // Cap batch by VRAM: each work-item needs 1MB scratchpad
+        // With 6GB VRAM, max ~6000 work-items. Use min(batch_size, 2048).
+        let effective_batch = batch_size.min(2048) as usize;
+
+        let mut hdr = [0u8; 80];
+        let copy_len = header.len().min(80);
+        hdr[..copy_len].copy_from_slice(&header[..copy_len]);
+
+        let header_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(80)
+            .copy_host_slice(&hdr[..])
+            .build()?;
+
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target.as_slice())
+            .build()?;
+
+        // Scratchpad pool: effective_batch * 1MB
+        let scratch_bytes = effective_batch * Self::GHOSTRIDER_SCRATCH_BYTES;
+        let scratchpad_pool: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(scratch_bytes)
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(&header_buf)           // 0: header (80 bytes)
+            .arg(80u32)                 // 1: header_len
+            .arg(base_nonce)            // 2: base_nonce
+            .arg(output_hash_buf)       // 3: output_hash (32 bytes)
+            .arg(found_flag_buf)        // 4: found_flag
+            .arg(output_nonce_buf)      // 5: output_nonce
+            .arg(&target_buf)           // 6: target (32 bytes)
+            .arg(&scratchpad_pool)      // 7: scratchpad_pool
+            .build()
+            .map_err(|e| anyhow!("GhostRider kernel build failed: {e}"))?;
+
+        Ok(kernel)
+    }
+
+    // -----------------------------------------------------------------
+    // DynexSolve (DNX) — neuromorphic SAT solver via RK4 ODE integration
+    // -----------------------------------------------------------------
+
+    const DYNEX_MAX_VARS: usize = 256;
+    const DYNEX_MAX_CLAUSES: usize = 1024;
+    const DYNEX_MAX_LITERALS: usize = 3;
+    /// Clause struct: 3 literals * (int var_idx + int negated) = 24 bytes
+    const DYNEX_CLAUSE_BYTES: usize = Self::DYNEX_MAX_LITERALS * 8;
+    /// Per work-item: clauses(24KB) + vars(1KB) + tmp_k(4KB) + tmp_x(1KB) + meta(8B) ≈ 30KB
+    const DYNEX_PER_ITEM_BYTES: usize =
+        Self::DYNEX_MAX_CLAUSES * Self::DYNEX_CLAUSE_BYTES
+        + Self::DYNEX_MAX_VARS * 4       // vars
+        + 4 * Self::DYNEX_MAX_VARS * 4   // tmp_k (k1-k4)
+        + Self::DYNEX_MAX_VARS * 4       // tmp_x
+        + 8;                              // meta
+
+    fn build_dynexsolve_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        batch_size: u64,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        // DynexSolve is memory-light (~30KB per work-item), can use large batch
+        let effective_batch = batch_size.min(8192) as usize;
+
+        let mut hdr = [0u8; 80];
+        let copy_len = header.len().min(80);
+        hdr[..copy_len].copy_from_slice(&header[..copy_len]);
+
+        let header_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(80)
+            .copy_host_slice(&hdr[..])
+            .build()?;
+
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target.as_slice())
+            .build()?;
+
+        // Allocate per-work-item buffers as byte pools
+        let clauses_bytes = effective_batch * Self::DYNEX_MAX_CLAUSES * Self::DYNEX_CLAUSE_BYTES;
+        let vars_bytes = effective_batch * Self::DYNEX_MAX_VARS * 4;
+        let tmp_bytes = effective_batch * 4 * Self::DYNEX_MAX_VARS * 4;
+        let tmp_x_bytes = effective_batch * Self::DYNEX_MAX_VARS * 4;
+        let meta_bytes = effective_batch * 2 * 4;
+
+        let clauses_pool: Buffer<u8> = Buffer::builder()
+            .queue(q.clone()).len(clauses_bytes).build()?;
+        let vars_pool: Buffer<u8> = Buffer::builder()
+            .queue(q.clone()).len(vars_bytes).build()?;
+        let tmp_pool: Buffer<u8> = Buffer::builder()
+            .queue(q.clone()).len(tmp_bytes).build()?;
+        let tmp_x_pool: Buffer<u8> = Buffer::builder()
+            .queue(q.clone()).len(tmp_x_bytes).build()?;
+        let meta_pool: Buffer<u8> = Buffer::builder()
+            .queue(q.clone()).len(meta_bytes).build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(&header_buf)           // 0: header (80 bytes)
+            .arg(80u32)                 // 1: header_len
+            .arg(base_nonce)            // 2: base_nonce
+            .arg(output_hash_buf)       // 3: output_hash (32 bytes)
+            .arg(found_flag_buf)        // 4: found_flag
+            .arg(output_nonce_buf)      // 5: output_nonce
+            .arg(&target_buf)           // 6: target (32 bytes)
+            .arg(&clauses_pool)         // 7: clauses_pool
+            .arg(&vars_pool)            // 8: vars_pool
+            .arg(&tmp_pool)             // 9: tmp_pool (k1-k4)
+            .arg(&tmp_x_pool)           // 10: tmp_x_pool
+            .arg(&meta_pool)            // 11: meta_pool
+            .build()
+            .map_err(|e| anyhow!("DynexSolve kernel build failed: {e}"))?;
+
+        Ok(kernel)
+    }
+
+    // -----------------------------------------------------------------
     // Equihash 192,7 (ZCL) — multi-kernel Wagner's algorithm dispatch
     // -----------------------------------------------------------------
 
@@ -2140,7 +2448,7 @@ typedef unsigned long ulong;
     /// 4. Read back solutions, verify with double-SHA256
     /// 5. Return first solution under target as GpuFoundShare
     ///
-    /// Requires ≥12 GB GPU VRAM (two 6GB hash tables for NR_ROWS_LOG=20).
+    /// Requires ≥8 GB GPU VRAM (two 2GB hash tables with OVERHEAD=2).
     fn mine_equihash(
         &mut self,
         header: &[u8],
@@ -2151,9 +2459,9 @@ typedef unsigned long ulong;
         const PARAM_K: u32 = 7;
         const PREFIX: u32 = 24;
         const NR_ROWS: usize = 1 << 20; // 2^20 = 1,048,576
-        const NR_SLOTS: usize = 192;
+        const NR_SLOTS: usize = 64;     // OVERHEAD=2: 32 * 2 = 64 (fits 8GB GPUs)
         const SLOT_LEN: usize = 32;
-        const HT_SIZE: usize = NR_ROWS * NR_SLOTS * SLOT_LEN; // ~6 GB
+        const HT_SIZE: usize = NR_ROWS * NR_SLOTS * SLOT_LEN; // ~2 GB
         const ROWS_PER_UINT: usize = 4; // BITS_PER_ROW=8 → ROWS_PER_UINT=4
         const ROW_COUNTERS_SIZE: usize = NR_ROWS / ROWS_PER_UINT; // 262,144 u32s
         const MAX_SOLS: usize = 10;
@@ -4462,7 +4770,6 @@ mod tests {
             Some(("nexapow_kernel.cl", "nexapow_mine"))
         );
         // Still-unimplemented algorithms should return None
-        assert_eq!(kernel_info("qhash"), None);
         assert_eq!(kernel_info("ghostrider"), None);
         assert_eq!(kernel_info("dynexsolve"), None);
     }
