@@ -1,8 +1,8 @@
 # Triple-stream E2E verification report — SMOS Vega rig
 
 **Date:** 2026-07-16  
-**SMOS package:** `zion-miner-v3.1.9-triple-fixed4.zip`  
-**URL:** `https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed4.zip`  
+**SMOS package:** `zion-miner-v3.1.9-triple-fixed5.zip`  
+**URL:** `https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed5.zip`  
 **DAG cache:** `https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin`  
 **SimpleMining group:** `ZionLiteFire` (ID 1773590)  
 **Rig:** `ZionRig` (ID 518837, IP 109.81.31.210)  
@@ -127,10 +127,10 @@ The generated `progpow_epoch120.bin` can be placed in `/home/miner/.zion/dag-cac
 # 1. Build and package (done on zion-new)
 ssh zion-new
 cd /opt/zion
-bash scripts/edge-docker-build-smos.sh v3.1.9-triple-fixed4
+bash scripts/edge-docker-build-smos.sh v3.1.9-triple-fixed5
 ```
 
-This produces `https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed4.zip`.
+This produces `https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed5.zip`.
 
 ```bash
 # 2. Generate EPIC ProgPow DAG epoch 120 on a fast host (done)
@@ -145,16 +145,9 @@ docker run --rm \
 
 Produces `https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin` (≈ 2 GB).
 
-3. Copy the DAG to the Vega rig before/after the miner starts:
+3. Update SimpleMining group 1773590 to the `fixed5` zip and reload rig 518837 via the REST API (`/rig-groups/{id}` PUT, `/rigs/execute-reload` PATCH).
 
-```bash
-# On the rig (or via SMOS shell)
-mkdir -p /home/miner/.zion/dag-cache
-curl -C - -o /home/miner/.zion/dag-cache/progpow_epoch120.bin \
-  https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin
-```
-
-4. Update SimpleMining group 1773590 to the `fixed4` zip and reload rig 518837 via the REST API (`/rig-groups/{id}` PUT, `/rigs/execute-reload` PATCH).
+The `fixed5` SMOS wrapper now auto-downloads the pre-built DAG into `/home/miner/.zion/dag-cache/progpow_epoch120.bin` before starting the miner, so the manual `curl` step is no longer required. If the download fails, the miner falls back to local DAG generation.
 
 ## 4. Live verification
 
@@ -273,7 +266,7 @@ parallel_stream_embedded miner=vega-smos coin=EPIC algo=progpow ext_job_id=2 hei
 - `V3/L1/native-ffi/build.rs` — RandomX x86_64 static assembly.
 - `V3/L1/miner/src/main.rs` — Extra Stream 2 startup / external GPU thread logging.
 - `scripts/edge-docker-build-smos.sh` — Build base image and feature set.
-- `scripts/edge-package-smos.sh` — `ZION_AUXPOW_EASY_TARGET=1`.
+- `scripts/edge-package-smos.sh` — `ZION_AUXPOW_EASY_TARGET=1`; auto-download pre-built EPIC ProgPow DAG before miner start (`fixed5`).
 
 ---
 

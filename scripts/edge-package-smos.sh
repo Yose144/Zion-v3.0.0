@@ -48,6 +48,25 @@ export ZION_INTERACTIVE=0
 export ZION_MINER_ALGORITHM=deeksha_lite_v1
 export ZION_AUXPOW_EASY_TARGET=1
 
+# Pre-fetch EPIC ProgPow DAG if missing. Generating the ~2 GB DAG on a
+# low-end rig CPU is slow; downloading a pre-built cache lets the miner
+# start hashing EPIC immediately on the first run.
+DAG_CACHE_DIR="${ZION_DAG_CACHE_DIR:-/home/miner/.zion/dag-cache}"
+EPIC_DAG_URL="https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin"
+EPIC_DAG_FILE="${DAG_CACHE_DIR}/progpow_epoch120.bin"
+EPIC_DAG_SIZE=2080374792
+if [ ! -f "$EPIC_DAG_FILE" ] || [ "$(stat -c%s "$EPIC_DAG_FILE" 2>/dev/null || echo 0)" != "$EPIC_DAG_SIZE" ]; then
+    echo "[smos-wrapper] downloading EPIC ProgPow DAG (~2 GB) to $EPIC_DAG_FILE ..."
+    mkdir -p "$DAG_CACHE_DIR"
+    if curl -C - -fsSL -o "${EPIC_DAG_FILE}.tmp" "$EPIC_DAG_URL"; then
+        mv "${EPIC_DAG_FILE}.tmp" "$EPIC_DAG_FILE"
+        echo "[smos-wrapper] EPIC DAG ready"
+    else
+        echo "[smos-wrapper] EPIC DAG download failed; miner will generate it locally"
+        rm -f "${EPIC_DAG_FILE}.tmp"
+    fi
+fi
+
 # Allow overriding the miner binary path
 MINER_BIN="${MINER_BIN:-${SCRIPT_DIR}/zion-miner}"
 
