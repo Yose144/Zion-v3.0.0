@@ -19,7 +19,9 @@
  * No Blake3 — SHA3-512 is used for scratchpad fill (GPU-friendly).
  */
 
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
+/* cl_khr_int64_base_atomics NOT needed — this kernel uses no atomics.
+ * Enabling it on SMOS AMD OpenCL driver 22.40.6 (gfx900) causes the
+ * compiler to generate broken code that hangs the GPU. */
 
 /* ========================================================================== */
 /* Constants                                                                   */
@@ -33,11 +35,12 @@
 
 /* ========================================================================== */
 /* Keccak — canonical implementation from cosmic_harmony_deeksha.cl           */
-/* Uses rotate(long,long) per AMD GCN/RDNA workaround recommendation.         */
+/* Uses manual bit-shift rotation (rotate(long,long) hangs on SMOS gfx900).   */
 /* ========================================================================== */
 
-/* AMD Vega/GCN/RDNA: use rotate(long,long) — correct on all AMD targets */
-#define ROL64(x, n) rotate((long)((ulong)(x)), (long)((ulong)(n)))
+/* Manual rotation — safe for all keccak rotation amounts (1..62, compile-time).
+ * Avoids AMD OpenCL compiler bug with rotate(long,long) on gfx900/SMOS. */
+#define ROL64(x, n) (((ulong)(x) << (n)) | ((ulong)(x) >> (64 - (n))))
 
 /* Chi macro: one 5-element row, no temp array */
 #define CHI_ROW(b) \
@@ -190,11 +193,8 @@ inline void sha3_512_65(__private const uchar *in, __private uchar out[64])
     s.b[65] ^= 0x06;
     s.b[71] ^= 0x80;
     keccak_f1600(s.u);
-    /* Vectorized 64-byte output copy */
-    ulong4 o0 = vload4(0, (__private ulong*)s.b);
-    ulong4 o1 = vload4(1, (__private ulong*)s.b);
-    vstore4(o0, 0, (__private ulong*)out);
-    vstore4(o1, 1, (__private ulong*)out);
+    /* Scalar 64-byte output copy (vload4/vstore4 with __private* hangs on gfx900) */
+    for (int i = 0; i < 64; i++) out[i] = s.b[i];
 }
 
 /* ========================================================================== */
@@ -295,11 +295,8 @@ void fill_scratchpad(
     #pragma unroll 2
     for (uint blk = 0; blk < BLOCK_COUNT; blk++) {
         uchar inp[65];
-        /* Vectorized 64-byte copy from state */
-        ulong4 s0 = vload4(0, (__private ulong*)state);
-        ulong4 s1 = vload4(1, (__private ulong*)state);
-        vstore4(s0, 0, (__private ulong*)inp);
-        vstore4(s1, 1, (__private ulong*)inp);
+        /* Scalar 64-byte copy from state (vload4 with __private* hangs on gfx900) */
+        for (int i = 0; i < 64; i++) inp[i] = state[i];
         /* Only low byte of blk index — matches &input[..65] in CPU */
         inp[64] = (uchar)(blk & 0xFF);
 
@@ -307,10 +304,11 @@ void fill_scratchpad(
         sha3_512_65(inp, out64);
 
         uint off = blk * BLOCK_SIZE;
-        /* Vectorized 32-byte write to global + update state */
-        ulong4 v = vload4(0, (__private ulong*)out64);
-        vstore4(v, 0, (__global ulong*)(pad + off));
-        vstore4(v, 0, (__private ulong*)state);
+        /* Scalar 32-byte write to global + update state */
+        for (int i = 0; i < 32; i++) {
+            pad[off + i] = out64[i];
+            state[i] = out64[i];
+        }
     }
 }
 
@@ -365,11 +363,8 @@ void random_read_mix(
     ulong pos = 0;
     for (ulong r = 0; r < RANDOM_READS; r++) {
         uint off = (uint)(pos * BLOCK_SIZE);
-        /* Vectorized 32-byte XOR */
-        ulong4 acc_v = vload4(0, (__private ulong*)acc);
-        ulong4 pad_v = vload4(0, (__global const ulong*)(pad + off));
-        acc_v ^= pad_v;
-        vstore4(acc_v, 0, (__private ulong*)acc);
+        /* Scalar 32-byte XOR (vload4 with __private* hangs on gfx900) */
+        for (int i = 0; i < 32; i++) acc[i] ^= pad[off + i];
 
         /* Read 8 bytes for idx — matches u64 in CPU */
         ulong idx_val = 0;
@@ -457,8 +452,7 @@ void stream_byproduct_keccak(__private const uchar in[32], int iters, __global u
     for (int i = 0; i < iters; i++) {
         keccak_f1600(s.u);
     }
-    ulong4 h = vload4(0, (__private ulong*)s.b);
-    vstore4(h, 0, (__global ulong*)pad);
+    for (int i = 0; i < 32; i++) pad[i] = s.b[i];
 }
 
 void stream_byproduct_sha3(__private const uchar in[32], int iters, __global uchar *pad)
@@ -470,8 +464,7 @@ void stream_byproduct_sha3(__private const uchar in[32], int iters, __global uch
     for (int i = 0; i < iters; i++) {
         sha3_512(tmp, 32, tmp);
     }
-    ulong4 h = vload4(0, (__private ulong*)tmp);
-    vstore4(h, 0, (__global ulong*)pad);
+    for (int i = 0; i < 32; i++) pad[i] = tmp[i];
 }
 
 void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters, __global uchar *pad)
@@ -482,8 +475,7 @@ void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters, 
     for (int i = 0; i < iters; i++) {
         aes128_mix(tmp, nonce + (ulong)i, tmp);
     }
-    ulong4 h = vload4(0, (__private ulong*)tmp);
-    vstore4(h, 0, (__global ulong*)pad);
+    for (int i = 0; i < 32; i++) pad[i] = tmp[i];
 }
 
 /* ========================================================================== */
@@ -530,9 +522,8 @@ __kernel void deeksha_lite_mine(
     for (int i = 0; i < 32; i++) hash[i] = s.b[i];
 
     __global uchar *slot = output_hashes + (ulong)tid * 32;
-    /* Vectorized 32-byte write */
-    ulong4 h = vload4(0, (__private ulong*)hash);
-    vstore4(h, 0, (__global ulong*)slot);
+    /* Scalar 32-byte write (vload4 with __private* hangs on gfx900) */
+    for (int i = 0; i < 32; i++) slot[i] = hash[i];
 
     /* Stream-profit byproduct work (does not affect PoW hash) */
     if (stream_weights) {

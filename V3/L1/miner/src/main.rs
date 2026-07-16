@@ -4164,9 +4164,13 @@ impl MinerConfig {
             nonce_count: parse_env_u64("ZION_NONCE_COUNT", nonce_count_default)?,
             nonce_autotune: parse_bool_env("ZION_NONCE_AUTOTUNE", true),
             nonce_count_min: parse_env_u64("ZION_NONCE_COUNT_MIN", {
-                // For GPU mining, min must be ≥ work_size to keep GPU busy
+                // For GPU mining, min must be ≥ 2× work_size to keep
+                // double-buffered async readback active at all times.
+                // double-buffering requires nonce_count > work_size, so
+                // the minimum must be at least work_size + 1, but we use
+                // 2× for safety margin (autotune shrinks by 50%).
                 if gpu_backend_kind != gpu_backend::GpuBackendKind::Cpu && gpu_work_size > 0 {
-                    (gpu_work_size as u64).max(10_000)
+                    (gpu_work_size as u64).saturating_mul(2).max(10_000)
                 } else {
                     10_000
                 }
