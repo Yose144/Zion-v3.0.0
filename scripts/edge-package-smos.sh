@@ -59,23 +59,49 @@ if [ ! -f "$EPIC_DAG_FILE" ] || [ "$(stat -c%s "$EPIC_DAG_FILE" 2>/dev/null || e
     echo "[smos-wrapper] fetching EPIC ProgPow DAG (~2 GB) to $EPIC_DAG_FILE ..."
     mkdir -p "$DAG_CACHE_DIR"
     cd "$DAG_CACHE_DIR" || exit 1
-    rm -f progpow_epoch120.bin.tmp progpow_epoch120.bin.part*.part
+    rm -f progpow_epoch120.bin.tmp
+
+    # Download the DAG in 10 MB chunks. The rig's internet path drops sustained
+    # HTTP transfers after ~130 MB, so we keep the rate low and resume across
+    # miner restarts using the already-downloaded parts.
     ok=true
-    # 10 MB chunks + 20 s pause keeps the average download rate well below the
-    # rig-side ~130 MB transfer throttle, avoiding mid-download connection drops.
-    for i in $(seq -w 0 198); do
+    for i in $(seq -f '%03g' 0 198); do
         part="progpow_epoch120.bin.part${i}.part"
         part_url="${EPIC_DAG_URL}.part${i}.part"
-        echo "[smos-wrapper] downloading $part ..."
+
+        # Last chunk is smaller than 10 MB.
+        if [ "$i" = "198" ]; then
+            expected_size=4194312
+        else
+            expected_size=10485760
+        fi
+
+        actual_size=$(stat -c%s "$part" 2>/dev/null || echo 0)
+        if [ "$actual_size" = "$expected_size" ]; then
+            echo "[smos-wrapper] $part already complete ($expected_size bytes), skipping"
+            continue
+        fi
+
+        echo "[smos-wrapper] downloading $part (chunk $i/198) ..."
         if ! curl --http1.1 --retry 20 --retry-delay 5 --connect-timeout 30 \
                   --speed-time 120 --speed-limit 50000 \
                   -C - -fsSL -o "$part" "$part_url"; then
-            echo "[smos-wrapper] failed to download $part"
+            echo "[smos-wrapper] failed to download $part; will resume on next start"
             ok=false
             break
         fi
-        sleep 20
+
+        actual_size=$(stat -c%s "$part" 2>/dev/null || echo 0)
+        if [ "$actual_size" != "$expected_size" ]; then
+            echo "[smos-wrapper] $part size $actual_size != expected $expected_size; will resume on next start"
+            ok=false
+            break
+        fi
+
+        # Short pause to stay below the rig-side transfer throttle.
+        sleep 10
     done
+
     if $ok; then
         echo "[smos-wrapper] assembling DAG ..."
         cat progpow_epoch120.bin.part*.part > progpow_epoch120.bin.tmp
@@ -85,12 +111,8 @@ if [ ! -f "$EPIC_DAG_FILE" ] || [ "$(stat -c%s "$EPIC_DAG_FILE" 2>/dev/null || e
             rm -f progpow_epoch120.bin.part*.part
             echo "[smos-wrapper] EPIC DAG ready"
         else
-            echo "[smos-wrapper] assembled DAG size $actual != expected $EPIC_DAG_SIZE; miner will generate locally"
-            rm -f progpow_epoch120.bin.tmp progpow_epoch120.bin.part*.part
+            echo "[smos-wrapper] assembled DAG size $actual != expected $EPIC_DAG_SIZE; leaving parts for resume"
         fi
-    else
-        echo "[smos-wrapper] EPIC DAG chunk download failed; miner will generate it locally"
-        rm -f progpow_epoch120.bin.tmp progpow_epoch120.bin.part*.part
     fi
 fi
 
