@@ -945,9 +945,9 @@ export default function NetworkPage() {
                   <h3 className="text-lg font-semibold text-white">{block.title}</h3>
                 </div>
                 <p className="text-sm text-gray-400">{block.description}</p>
-                <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-4 space-y-1 overflow-x-auto" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                   {block.items.map((line) => (
-                    <code key={line} className="block text-sm font-mono text-zion-gold">{line}</code>
+                    <code key={line} className="block text-sm font-mono text-zion-gold whitespace-nowrap">{line}</code>
                   ))}
                 </div>
               </div>

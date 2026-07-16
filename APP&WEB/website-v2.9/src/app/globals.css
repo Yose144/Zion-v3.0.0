@@ -54,6 +54,20 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  /* Prevent long URLs / mono content from blowing out narrow viewports */
+  h1, h2, h3, h4, h5, h6, p, li, a, code, pre, td, th {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    min-width: 0;
+    -webkit-hyphens: auto;
+    hyphens: auto;
   }
 
   ::selection {
@@ -836,6 +850,15 @@ body.menu-open {
   overflow-x: auto;
   text-align: left;
   position: relative;
+  max-width: 100%;
+}
+
+/* Allow horizontal scroll for wide tables instead of squashing columns */
+.zion-docs-prose table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .zion-docs-prose pre::before {
