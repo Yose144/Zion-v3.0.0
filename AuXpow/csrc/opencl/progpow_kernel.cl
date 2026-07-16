@@ -76,7 +76,11 @@ typedef unsigned long      uint64_t;
 #ifndef OPENCL_PLATFORM_UNKNOWN
 #define OPENCL_PLATFORM_UNKNOWN 0
 #endif
-#if defined(PLATFORM) && PLATFORM == OPENCL_PLATFORM_AMD
+// NOTE: USE_AMD_BPERMUTE disabled on SMOS — __builtin_amdgcn_ds_bpermute
+// causes GPU hangs on the SMOS OpenCL compiler (code object manager).
+// The share+barrier fallback is slower but reliable.
+// To re-enable: #if defined(PLATFORM) && PLATFORM == OPENCL_PLATFORM_AMD
+#if 0
 #define USE_AMD_BPERMUTE 1
 // ds_bpermute intrinsic: reads from lane (offset/4) within wavefront.
 // offset is in bytes, so multiply lane index by 4 for 32-bit values.

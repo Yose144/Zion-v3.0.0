@@ -634,7 +634,7 @@ impl GpuMiner {
         // KawPow and variants use GROUP_SIZE=128.
         // Mismatch causes out-of-bounds local memory access → GPU hang.
         let wg_size = match algorithm {
-            "progpow" | "progpow_epic" => 256, // GROUP_SIZE=256 for EPIC ProgPow
+            "progpow" | "progpow_epic" => 128, // GROUP_SIZE=128 for EPIC ProgPow (share+barrier)
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => 128, // GROUP_SIZE=128 for KawPow
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 128,
             "beamhash" | "beamhash_beam" => 256, // BeamHash: standard work-group
@@ -1675,18 +1675,18 @@ typedef unsigned long ulong;
         // MeowPow uses REGS=16 and CNT_MATH=9 (halved vs KawPow's 32/18).
         // EvrProgPow uses the same REGS/CNT_MATH as KawPow (32/18) but PERIOD=3.
         let group_size = if algorithm == "progpow" || algorithm == "progpow_epic" {
-            256 // EPIC ProgPow: GROUP_SIZE=256 (matches reference epic-miner)
+            128 // EPIC ProgPow: GROUP_SIZE=128 (share+barrier fallback — 256 deadlocks on SMOS)
         } else {
             128 // KawPow and variants: GROUP_SIZE=128
         };
         let build_opts = if params.regs != 32 || params.cnt_math != 18 {
             format!(
-                "-cl-std=CL1.2 -cl-mad-enable -DPLATFORM=1 -DOPENCL_PLATFORM_AMD=1 -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={} -DPROGPOW_REGS={} -DPROGPOW_CNT_MATH={}",
+                "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={} -DPROGPOW_REGS={} -DPROGPOW_CNT_MATH={}",
                 dag_elements_safe, dag_bytes, group_size, params.regs, params.cnt_math
             )
         } else {
             format!(
-                "-cl-std=CL1.2 -cl-mad-enable -DPLATFORM=1 -DOPENCL_PLATFORM_AMD=1 -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={}",
+                "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={}",
                 dag_elements_safe, dag_bytes, group_size
             )
         };
