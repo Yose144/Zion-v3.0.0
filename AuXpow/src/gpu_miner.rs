@@ -4769,9 +4769,15 @@ mod tests {
             kernel_info("nexapow_nexa"),
             Some(("nexapow_kernel.cl", "nexapow_mine"))
         );
-        // Still-unimplemented algorithms should return None
-        assert_eq!(kernel_info("ghostrider"), None);
-        assert_eq!(kernel_info("dynexsolve"), None);
+        // All 8 new coin algorithms now have kernel implementations
+        assert_eq!(
+            kernel_info("ghostrider"),
+            Some(("ghostrider_kernel.cl", "ghostrider_mine"))
+        );
+        assert_eq!(
+            kernel_info("dynexsolve"),
+            Some(("dynexsolve_kernel.cl", "dynexsolve_mine"))
+        );
     }
 
     /// Test Equihash 192,7 Blake2b state computation.
