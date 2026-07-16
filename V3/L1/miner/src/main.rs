@@ -3119,7 +3119,10 @@ fn ext_cpu_thread(
     threads: usize,
     hashrate: Arc<HashrateTracker>,
 ) {
-    const NONCE_COUNT: u64 = 5_000_000;
+    let nonce_count: u64 = std::env::var("ZION_EXT_CPU_NONCE_COUNT")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10_000_000);
 
     println!(
         "[{}] ext_cpu_thread: started (persistent, threads={})",
@@ -3173,15 +3176,15 @@ fn ext_cpu_thread(
         // Mine current job (if any)
         if let Some(ref ext) = current_job {
             let start_nonce = nonce_base.wrapping_add(nonce_offset);
-            if let Some(share) = mine_external_stream_cpu(ext, threads, start_nonce, NONCE_COUNT) {
+            if let Some(share) = mine_external_stream_cpu(ext, threads, start_nonce, nonce_count) {
                 let next_offset = nonce_offset.wrapping_add(share.nonce.wrapping_sub(start_nonce) + 1);
                 let _ = tx.send(share);
                 // Keep mining the same job, just advance past the share we found.
                 nonce_offset = next_offset;
             } else {
-                nonce_offset = nonce_offset.wrapping_add(NONCE_COUNT);
+                nonce_offset = nonce_offset.wrapping_add(nonce_count);
             }
-            hashrate.record_cpu_ext_hashes(NONCE_COUNT);
+            hashrate.record_cpu_ext_hashes(nonce_count);
         } else {
             // No job — brief sleep to avoid busy-loop
             std::thread::sleep(std::time::Duration::from_millis(200));
