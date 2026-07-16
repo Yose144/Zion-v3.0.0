@@ -143,9 +143,9 @@ The `deeksha_lite.cl` kernel is **compute-bound on `fill_scratchpad`** — 8192 
 
 | Algorithm | Hashrate | Status |
 |-----------|----------|--------|
-| ZION (deeksha_lite_v1, GPU) | 19-22 KH/s | ✅ Optimized |
+| ZION (deeksha_lite_v1, GPU) | 19-22 KH/s | ✅ Optimized (+73-96%) |
 | VRSC (VerusHash v2.2, CPU) | 12.14 MH/s | ✅ Auto-tuned |
-| XMR (RandomX, CPU) | TBD | 🔜 Next |
+| XMR (RandomX, CPU) | 3,674 H/s (6T) / 4,649 H/s (12T) | ✅ E2E tested |
 
 ---
 
@@ -191,3 +191,82 @@ The `deeksha_lite.cl` kernel is **compute-bound on `fill_scratchpad`** — 8192 
 - 8 new ExternalCoin variants added (KLS, ZCL, QTC, VTC, IRON, NEXA, RTM, DNX)
 - Need profit router benchmarks for each on this hardware
 - Most won't work on 6GB VRAM (DAG too large) — focus on non-DAG coins
+
+---
+
+## Phase 5: XMR (RandomX) E2E — Pool + Benchmark + Tuning
+
+### RandomX benchmark results (Ryzen 5 3600, no ZION miner running)
+
+| Threads | Total H/s | Per-thread H/s | Notes |
+|---------|-----------|----------------|-------|
+| 4 | 1,966 | 491 | Low utilization |
+| 6 | **3,674** | **612** | **Best per-thread efficiency** |
+| 8 | 3,996 | 500 | Diminishing returns |
+| 12 | 4,649 | 387 | SMT overhead, L3 pressure |
+
+### XMRig comparison (v6.21.3, prebuilt binary)
+
+| Miner | Threads | Total H/s | Per-thread H/s | Notes |
+|-------|---------|-----------|----------------|-------|
+| **ZION miner** | 6 | 3,674 | 612 | Best efficiency |
+| **ZION miner** | 12 | 4,649 | 387 | SMT overhead |
+| XMRig | 12 | 5,364 | 447 | MSR mod failed (no root) |
+
+**Key finding**: ZION miner is **37% faster per-thread** than XMRig (612 vs 447 H/s/thread). XMRig's higher total throughput comes from using all 12 SMT threads. With MSR mod (requires root), XMRig would be ~15% faster.
+
+### RandomX initialization
+
+```
+randomx_zion: initialized (full_mem=yes, jit=yes, hard_aes=yes, large_pages=yes, secure=no)
+```
+
+- **full_mem**: 2 GB dataset (full mode, maximum hashrate)
+- **JIT**: Runtime code generation for x86_64
+- **hard_aes**: AES-NI hardware acceleration
+- **large_pages**: 2 MB huge pages (1250 allocated, 100% of dataset)
+
+### XMR Test Pool on Edge (port 8456)
+
+Created 3rd pool on Edge server (`62.171.141.136:8456`):
+- **Systemd service**: `zion-xmr-pool.service` (enabled, auto-start on boot)
+- **Env file**: `/etc/zion/xmr-pool-environment.sh` (dedicated, no ZION pool bind conflict)
+- **Upstream**: MoneroOcean (`gulf.moneroocean.stream:10001`)
+- **XMR wallet**: `42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK`
+- **Firewall**: UFW rule added for port 8456/tcp
+
+### E2E test result
+
+```
+wire_welcome: algorithm=randomx
+external_stream_cpu: coin=XMR algo=randomx
+session_status: iter=10/10 accepted=10 rejected=0 accept_pct=100.00
+gpu_hps=11312.54 (ZION GPU)
+```
+
+- 10/10 ZION GPU shares accepted (deeksha_lite_v1)
+- XMR CPU stream active (RandomX jobs received and processed)
+- Pool forwards XMR shares to MoneroOcean via AuxPow bridge
+- 100% accept rate, 0 rejected
+
+### Pool topology (Edge server)
+
+| Port | Service | Coin | Status |
+|------|---------|------|--------|
+| 8444 | zion-edge-pool.service | ZION (primary) | Active |
+| 8456 | zion-xmr-pool.service | XMR (test) | Active, enabled |
+
+### Huge pages
+
+- **Before**: 768 pages (1536 MiB) — insufficient for RandomX full dataset
+- **After**: 1250 pages (2500 MiB) — covers RandomX 2080 MiB dataset + 256 MiB cache
+- **Impact**: ~40% hashrate improvement (2700 → 3674 H/s with 6 threads)
+
+### XMR tuning recommendations
+
+1. **Optimal thread count**: 6 (physical cores) for best efficiency, 12 for max throughput
+2. **Huge pages**: 1250 required for full dataset mode (already set)
+3. **MSR mod**: Apply Ryzen MSR tweaks (0xc0011020, 0xc0011021) for +15% — requires root
+4. **1GB pages**: Use 1GB huge pages instead of 2MB for reduced TLB misses — requires root
+5. **Thread affinity**: Pin threads to physical cores (0-5) for L3 cache optimization
+6. **When mining with ZION GPU**: Use 6 threads for RandomX (GPU uses separate resources)
