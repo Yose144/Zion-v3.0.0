@@ -94,6 +94,21 @@ struct FishhashDag {
     size_items: u32,
 }
 
+/// Cached Verthash data file buffer (used by Verthash/VTC).
+/// The verthash.dat file is ~1.2GB and is static (can be copied between machines).
+/// SHA256 hash: a55531e843cd56b010114aaf6325b0d529ecf88f8ad47639b6ededafd721aa48
+#[derive(Clone)]
+struct VerthashData {
+    /// verthash.dat uploaded to GPU — stored as raw bytes.
+    buf: Buffer<u8>,
+    /// MDIV value computed from data file size:
+    ///   mdiv = ((data_size - 32) / 16) + 1
+    /// Used as a kernel build option (-DMDIV=<mdiv>).
+    mdiv: u32,
+    /// Raw data size in bytes.
+    data_size: usize,
+}
+
 /// OpenCL GPU miner for external PoW algorithms.
 pub struct GpuMiner {
     platform: Platform,
@@ -118,6 +133,8 @@ pub struct GpuMiner {
     progpow_dag: Option<ProgpowDag>,
     /// Cached FishHash DAG buffer (set via `set_fishhash_dag` before mining IRON/KLS).
     fishhash_dag: Option<FishhashDag>,
+    /// Cached Verthash data file (set via `set_verthash_data` before mining VTC).
+    verthash_data: Option<VerthashData>,
     /// Cached Pearl PoUW buffers (reused across nonces to avoid allocation overhead).
     #[cfg(feature = "gpu-opencl")]
     pearl_buffers: Option<PearlPouwBufferCache>,
@@ -285,6 +302,7 @@ impl GpuMiner {
             kawpow_dag: None,
             progpow_dag: None,
             fishhash_dag: None,
+            verthash_data: None,
             #[cfg(feature = "gpu-opencl")]
             pearl_buffers: None,
             block_height: 0,
@@ -593,14 +611,12 @@ impl GpuMiner {
             }
             "verthash" | "verthash_vtc" => {
                 // Verthash: I/O-bound algorithm requiring 1.2GB data file
-                // and precomputed SHA3 states. Full host-side integration
-                // needs: data file loader, SHA3 precompute kernel dispatch,
-                // and verthash_4w kernel with memory + kStates buffers.
-                // TODO: implement build_verthash_kernel() with data file loading
-                anyhow::bail!(
-                    "Verthash mining not yet implemented: requires 1.2GB data file \
-                     + SHA3 precompute. Kernel source is ready in verthash_kernel.cl"
-                )
+                // and precomputed SHA3 states. Delegated to mine_verthash()
+                // which handles the 3-kernel dispatch:
+                //   1. sha3_512_precompute → 8 Keccak states from header
+                //   2. sha3_512_256 → initial 256-bit hash per nonce
+                //   3. verthash_4w → 4096 memory seeks + target check
+                return self.mine_verthash(header, target, base_nonce);
             }
             "equihashzero" | "equihashzero_zcl" => {
                 // Equihash 192,7: multi-kernel Wagner's algorithm
@@ -996,6 +1012,79 @@ impl GpuMiner {
     /// Returns the number of items in the currently uploaded FishHash DAG, if any.
     pub fn fishhash_dag_size(&self) -> Option<u32> {
         self.fishhash_dag.as_ref().map(|d| d.size_items)
+    }
+
+    /// Upload the Verthash data file (verthash.dat) to the GPU.
+    ///
+    /// The verthash.dat file is ~1.2GB and is static (can be copied between
+    /// machines).  It must be generated once using VerthashMiner
+    /// (`--gen-verthash-data`) or the Vertcoin wallet.
+    ///
+    /// SHA256 of valid verthash.dat:
+    ///   a55531e843cd56b010114aaf6325b0d529ecf88f8ad47639b6ededafd721aa48
+    ///
+    /// MDIV is computed from the data size:
+    ///   mdiv = ((data_size - 32) / 16) + 1
+    pub fn set_verthash_data(&mut self, data: &[u8]) -> Result<()> {
+        if data.len() < 32 {
+            return Err(anyhow!(
+                "Verthash data file too small: {} bytes (minimum 32)",
+                data.len()
+            ));
+        }
+
+        // Compute MDIV from data size
+        let mdiv = (((data.len() - 32) / 16) + 1) as u32;
+
+        // Verify SHA256 (optional — warn on mismatch, don't fail)
+        use sha2::{Digest, Sha256};
+        let hash = Sha256::digest(data);
+        let expected: [u8; 32] = [
+            0xa5, 0x55, 0x31, 0xe8, 0x43, 0xcd, 0x56, 0xb0, 0x10, 0x11, 0x4a,
+            0xaf, 0x63, 0x25, 0xb0, 0xd5, 0x29, 0xec, 0xf8, 0x8f, 0x8a, 0xd4,
+            0x76, 0x39, 0xb6, 0xed, 0xed, 0xaf, 0xd7, 0x21, 0xaa, 0x48,
+        ];
+        if hash.as_slice() != expected {
+            eprintln!(
+                "auxpow_gpu_verthash WARNING: data file SHA256 mismatch — \
+                 got {:x?}, expected {:x?}. Mining may produce invalid shares.",
+                hash.as_slice(),
+                &expected[..]
+            );
+        }
+
+        let q = {
+            let pro_que = self.ensure_proque("sha3_512_precompute.cl")?;
+            pro_que.queue().clone()
+        };
+
+        let buf: Buffer<u8> = Buffer::builder()
+            .queue(q)
+            .len(data.len())
+            .copy_host_slice(data)
+            .build()
+            .map_err(|e| anyhow!("failed to allocate Verthash data buffer ({} bytes): {e}", data.len()))?;
+
+        let data_size = data.len();
+        self.verthash_data = Some(VerthashData {
+            buf,
+            mdiv,
+            data_size,
+        });
+
+        println!(
+            "auxpow_gpu_verthash data loaded: {} bytes ({:.2} GB), MDIV={}",
+            data_size,
+            data_size as f64 / 1e9,
+            mdiv
+        );
+
+        Ok(())
+    }
+
+    /// Returns the MDIV value of the currently loaded Verthash data, if any.
+    pub fn verthash_mdiv(&self) -> Option<u32> {
+        self.verthash_data.as_ref().map(|d| d.mdiv)
     }
 
     /// Generate the KawPow DAG **on the GPU** from a light cache.
@@ -1658,6 +1747,56 @@ typedef unsigned long ulong;
 
         self.proques.insert(kernel_file.to_string(), pro_que);
         Ok(self.proques.get(kernel_file).unwrap())
+    }
+
+    /// Like `ensure_proque` but with extra compiler options (e.g. `-DMDIV=...`).
+    /// Cached under a composite key `"kernel_file:extra_opts"` so that different
+    /// build options get separate ProQue instances.
+    fn ensure_proque_with_opts(
+        &mut self,
+        kernel_file: &str,
+        extra_opts: &str,
+    ) -> Result<&ProQue> {
+        let cache_key = format!("{kernel_file}:{extra_opts}");
+        if self.proques.contains_key(&cache_key) {
+            return Ok(self.proques.get(&cache_key).unwrap());
+        }
+
+        // Load kernel source (disk or embedded)
+        let src = match Self::kernel_dir() {
+            Ok(dir) => {
+                let path = dir.join(kernel_file);
+                std::fs::read_to_string(&path)
+                    .with_context(|| format!("reading OpenCL kernel {:?}", path))?
+            }
+            Err(_) => {
+                let embedded = match kernel_file {
+                    "verthash_kernel.cl" => include_str!("../csrc/opencl/verthash_kernel.cl"),
+                    "sha3_512_precompute.cl" => include_str!("../csrc/opencl/sha3_512_precompute.cl"),
+                    "sha3_512_256.cl" => include_str!("../csrc/opencl/sha3_512_256.cl"),
+                    _ => return Err(anyhow!("Unknown kernel file for opts: {kernel_file}")),
+                };
+                embedded.to_string()
+            }
+        };
+
+        let build_opts = format!("-cl-std=CL1.2 -cl-mad-enable {extra_opts}");
+        let mut prog_builder = ProgramBuilder::new();
+        prog_builder.src(src);
+        prog_builder.cmplr_opt(&build_opts);
+
+        let pro_que = ProQue::builder()
+            .platform(self.platform)
+            .device(self.device)
+            .prog_bldr(prog_builder)
+            .dims(self.work_size)
+            .build()
+            .map_err(|e| anyhow!("OpenCL compile failed for {kernel_file} ({build_opts}): {e}"))?;
+
+        self.proques.insert(cache_key, pro_que);
+        // Return reference — can't use the key variable because borrow checker
+        let key = format!("{kernel_file}:{extra_opts}");
+        Ok(self.proques.get(&key).unwrap())
     }
 
     /// Ensure a ProQue for KawPow/ProgPow kernel with period-based random math.
@@ -2821,6 +2960,278 @@ typedef unsigned long ulong;
         }
 
         println!("auxpow_gpu_equihash {nr_sols_capped} solutions checked, none under target");
+        Ok(None)
+    }
+
+    // -----------------------------------------------------------------
+    // Verthash (VTC) — 3-kernel dispatch: precompute → sha3_256 → verthash_4w
+    // -----------------------------------------------------------------
+
+    /// Verthash constants (from vertcoin-core/src/crypto/verthash.cpp).
+    /// The algorithm: SHA3-256(header) → 8×SHA3-512(header[0]++) → 4096 FNV1a
+    /// memory seeks into a 1.2GB data file → 256-bit output.
+    ///
+    /// GPU implementation uses 3 kernels:
+    ///   1. `sha3_512_precompute` — 8 work-items, LWS=1: precomputes 8 Keccak
+    ///      states from header[0..17] (72 bytes). Output: 8 × 25 ulong = 1600 bytes.
+    ///   2. `sha3_512_256` — batch_size work-items, LWS=256: generates the
+    ///      initial 256-bit hash (io_hashes) for each nonce.
+    ///   3. `verthash_4w` — batch_size×4 work-items, LWS=64: 4-way kernel that
+    ///      performs 4096 memory seeks into verthash.dat and checks the target.
+    ///
+    /// The 4-way kernel means 4 work-items collaborate on one nonce (each lane
+    /// handles 8 bytes of the 32-byte hash). The target check is done by lane 3
+    /// (gr4e == 3) which handles the most significant 8 bytes.
+    fn mine_verthash(
+        &mut self,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+    ) -> Result<Option<GpuFoundShare>> {
+        // --- Get verthash data (must be loaded via set_verthash_data) ---
+        let verthash = self.verthash_data.clone().ok_or_else(|| {
+            anyhow!(
+                "Verthash data file not loaded; call GpuMiner::set_verthash_data() \
+                 before mining VTC"
+            )
+        })?;
+        let mdiv = verthash.mdiv;
+        // Read work_size before any mutable borrow via ensure_proque
+        let work_size = self.work_size;
+
+        // --- Compile 3 kernels ---
+        // sha3_512_precompute.cl and sha3_512_256.cl: no special build options
+        // verthash_kernel.cl: needs -DWORK_SIZE=64 -DMDIV=<mdiv>
+        // We extract queue + program from each ProQue to avoid holding
+        // multiple mutable borrows of self simultaneously.
+        let verthash_opts = format!("-DWORK_SIZE=64 -DMDIV={mdiv}");
+        let q = self.ensure_proque("sha3_512_precompute.cl")?.queue().clone();
+        let precompute_program = self.ensure_proque("sha3_512_precompute.cl")?.program().clone();
+        let sha3_256_program = self.ensure_proque("sha3_512_256.cl")?.program().clone();
+        let verthash_program = self.ensure_proque_with_opts("verthash_kernel.cl", &verthash_opts)?.program().clone();
+
+        // --- Prepare header (big-endian uint32 array, like VerthashMiner) ---
+        // The header is 80 bytes = 20 uint32s. VerthashMiner does:
+        //   be32enc(&uheader[i], workInfo.data[i])  // big-endian encode
+        // So uheader[i] = u32::from_be_bytes(header[i*4..i*4+4])
+        let mut uheader = [0u32; 20];
+        let header_len = header.len().min(80);
+        for i in 0..20 {
+            let off = i * 4;
+            if off + 4 <= header_len {
+                uheader[i] = u32::from_be_bytes([
+                    header[off],
+                    header[off + 1],
+                    header[off + 2],
+                    header[off + 3],
+                ]);
+            }
+        }
+        // uheader[19] = nonce, set to 0 for precompute (kernel overwrites it)
+        uheader[19] = 0;
+        let in18 = uheader[18]; // 19th uint32 (big-endian), passed as kernel arg
+
+        // Only header[0..17] (72 bytes = 18 uint32s) are written to the header buffer
+        let header_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(18)
+            .copy_host_slice(&uheader[0..18])
+            .build()?;
+
+        // --- Target: most significant 32 bits (target[7] in LE = bytes 28-31) ---
+        let target_u32 = u32::from_le_bytes([
+            target[28], target[29], target[30], target[31],
+        ]);
+
+        // --- Batch size ---
+        // sha3_512_256 requires GWS multiple of 256 (reqd_work_group_size(256,1,1))
+        // verthash_4w requires GWS multiple of 64 (reqd_work_group_size(64,1,1))
+        // Since verthash_4w GWS = batch*4, batch must be multiple of 16.
+        // Since sha3_512_256 GWS = batch, batch must be multiple of 256.
+        // Use a reasonable batch size capped by VRAM.
+        // io_hashes: batch * 32 bytes. targetResults: (batch+1) * 4 bytes.
+        // With 8GB VRAM and 1.2GB for verthash.dat, ~6.8GB remains.
+        // 6.8GB / 36 bytes ≈ 189M. Cap at 1M for reasonable kernel time.
+        let batch_size = {
+            let raw = work_size.min(1_048_576).max(256);
+            // Round up to multiple of 256
+            ((raw + 255) / 256) * 256
+        };
+        let batch_u32 = batch_size as u32;
+        let verthash_gws = batch_size * 4; // 4-way kernel
+
+        println!(
+            "auxpow_gpu_verthash batch={} verthash_gws={} mdiv={} in18=0x{:08x} target_hi=0x{:08x}",
+            batch_size, verthash_gws, mdiv, in18, target_u32
+        );
+
+        // --- Allocate GPU buffers ---
+        // kStates: 8 precomputed Keccak states × 25 ulong = 200 ulong = 1600 bytes
+        // Stored as Buffer<u64> with 200 elements
+        let kstates_buf: Buffer<u64> = Buffer::builder()
+            .queue(q.clone())
+            .len(200) // 8 × 25
+            .build()?;
+
+        // io_hashes: batch_size × 32 bytes = batch_size × 8 uint32
+        // Stored as Buffer<u32> with batch_size * 8 elements
+        let io_hashes_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(batch_size * 8)
+            .build()?;
+
+        // targetResults: (batch_size + 1) uint32
+        // [0] = result count, [1..] = nonce indices (gr4id values)
+        let target_results_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(batch_size + 1)
+            .fill_val(0u32)
+            .build()?;
+
+        // --- Kernel 1: sha3_512_precompute ---
+        // GWS=8, LWS=1. Generates 8 Keccak states from header[0..17].
+        let k_precompute = Kernel::builder()
+            .queue(q.clone())
+            .program(&precompute_program)
+            .name("sha3_512_precompute")
+            .arg(&kstates_buf)   // 0: output (8 × 25 ulong)
+            .arg(&header_buf)    // 1: header (18 uint32 = 72 bytes)
+            .build()
+            .map_err(|e| anyhow!("Verthash precompute kernel build failed: {e}"))?;
+
+        // --- Kernel 2: sha3_512_256 ---
+        // GWS=batch_size, LWS=256. Generates initial 256-bit hash per nonce.
+        let k_sha3_256 = Kernel::builder()
+            .queue(q.clone())
+            .program(&sha3_256_program)
+            .name("sha3_512_256")
+            .arg(&io_hashes_buf)  // 0: output (batch × 8 uint32)
+            .arg(&header_buf)     // 1: header (18 uint32)
+            .arg(in18)            // 2: in18 (header[18])
+            .arg(batch_u32)       // 3: firstNonce (will be updated per batch)
+            .build()
+            .map_err(|e| anyhow!("Verthash sha3_256 kernel build failed: {e}"))?;
+
+        // --- Kernel 3: verthash_4w ---
+        // GWS=batch_size*4, LWS=64. 4-way memory seeks + target check.
+        let k_verthash = Kernel::builder()
+            .queue(q.clone())
+            .program(&verthash_program)
+            .name("verthash_4w")
+            .arg(&io_hashes_buf)       // 0: io_hashes (batch × 8 uint32)
+            .arg(&kstates_buf)         // 1: kStates (200 ulong)
+            .arg(&verthash.buf)        // 2: memory (verthash.dat)
+            .arg(in18)                 // 3: in18
+            .arg(batch_u32)            // 4: firstNonce (will be updated per batch)
+            .arg(&target_results_buf)  // 5: targetResults
+            .arg(target_u32)           // 6: target (high 32 bits)
+            .build()
+            .map_err(|e| anyhow!("Verthash verthash_4w kernel build failed: {e}"))?;
+
+        // --- Dispatch ---
+        let start = Instant::now();
+
+        // 1. Precompute 8 Keccak states (GWS=8, LWS=1)
+        unsafe {
+            k_precompute
+                .cmd()
+                .global_work_size(8)
+                .local_work_size(1)
+                .enq()
+                .map_err(|e| anyhow!("Verthash precompute enqueue failed: {e}"))?;
+        }
+        q.finish()?;
+
+        // 2. SHA3-256: generate initial hashes (GWS=batch_size, LWS=256)
+        unsafe {
+            k_sha3_256
+                .cmd()
+                .global_work_size(batch_size)
+                .local_work_size(256)
+                .enq()
+                .map_err(|e| anyhow!("Verthash sha3_256 enqueue failed: {e}"))?;
+        }
+
+        // 3. Verthash 4-way: memory seeks + target check (GWS=batch*4, LWS=64)
+        unsafe {
+            k_verthash
+                .cmd()
+                .global_work_size(verthash_gws)
+                .local_work_size(64)
+                .enq()
+                .map_err(|e| anyhow!("Verthash verthash_4w enqueue failed: {e}"))?;
+        }
+        q.finish()?;
+
+        let elapsed_ms = start.elapsed().as_millis();
+        println!(
+            "auxpow_gpu_verthash kernels completed in {elapsed_ms} ms (batch={batch_size})"
+        );
+
+        // --- Read target results ---
+        // targetResults[0] = count of found nonces
+        // targetResults[1] = first found nonce index (gr4id)
+        let mut test_result = vec![0u32; 2];
+        target_results_buf.read(&mut test_result).enq()?;
+
+        let result_count = test_result[0];
+        if result_count == 0 {
+            return Ok(None);
+        }
+
+        let potential_gr4id = test_result[1];
+        let found_nonce = base_nonce + potential_gr4id as u64;
+
+        println!(
+            "auxpow_gpu_verthash SHARE FOUND gr4id={} nonce={} count={}",
+            potential_gr4id, found_nonce, result_count
+        );
+
+        // --- Read full 32-byte hash for the found nonce ---
+        // io_hashes[potential_gr4id * 8 .. potential_gr4id * 8 + 8] = 8 uint32 = 32 bytes
+        let mut hash_u32 = [0u32; 8];
+        let hash_offset = potential_gr4id as usize * 8;
+        // Read the 8 uint32 values for this nonce's hash
+        let mut all_hashes = vec![0u32; batch_size * 8];
+        io_hashes_buf.read(&mut all_hashes).enq()?;
+        hash_u32.copy_from_slice(&all_hashes[hash_offset..hash_offset + 8]);
+
+        // Convert to bytes (little-endian, as stored by the kernel)
+        let mut hash_bytes = [0u8; 32];
+        for i in 0..8 {
+            hash_bytes[i * 4..i * 4 + 4].copy_from_slice(&hash_u32[i].to_le_bytes());
+        }
+
+        // Full target comparison: hash (LE) <= target (LE) as 256-bit integers
+        let meets_target = {
+            let mut meets = true;
+            for i in (0..32).rev() {
+                if hash_bytes[i] != target[i] {
+                    meets = hash_bytes[i] < target[i];
+                    break;
+                }
+            }
+            meets
+        };
+
+        if meets_target {
+            println!(
+                "auxpow_gpu_verthash SHARE CONFIRMED nonce={} hash_first8={:016x}",
+                found_nonce,
+                u64::from_le_bytes(hash_bytes[0..8].try_into().unwrap())
+            );
+            return Ok(Some(GpuFoundShare {
+                nonce: found_nonce,
+                hash: hash_bytes,
+                mix_hash: None,
+                solution: None,
+            }));
+        }
+
+        println!(
+            "auxpow_gpu_verthash potential nonce {} above target, skipping",
+            found_nonce
+        );
         Ok(None)
     }
 
