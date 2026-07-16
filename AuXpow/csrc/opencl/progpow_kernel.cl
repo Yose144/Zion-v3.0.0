@@ -62,6 +62,20 @@ typedef unsigned long      uint64_t;
 // __builtin_amdgcn_ds_bpermute(byte_offset, value) reads `value` from the
 // lane at byte_offset/4 within the wavefront — no barrier needed.
 // Only enabled on AMD platforms; NVIDIA/Clover fall back to share+barrier.
+// Detect AMD platform automatically (like kawpow_kernel.cl does)
+#ifndef PLATFORM
+#ifdef cl_amd_media_ops
+#define PLATFORM OPENCL_PLATFORM_AMD
+#else
+#define PLATFORM OPENCL_PLATFORM_UNKNOWN
+#endif
+#endif
+#ifndef OPENCL_PLATFORM_AMD
+#define OPENCL_PLATFORM_AMD 1
+#endif
+#ifndef OPENCL_PLATFORM_UNKNOWN
+#define OPENCL_PLATFORM_UNKNOWN 0
+#endif
 #if defined(PLATFORM) && PLATFORM == OPENCL_PLATFORM_AMD
 #define USE_AMD_BPERMUTE 1
 // ds_bpermute intrinsic: reads from lane (offset/4) within wavefront.
