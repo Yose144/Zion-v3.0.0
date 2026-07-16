@@ -25,6 +25,7 @@ fn main() {
 
 #[cfg(target_os = "linux")]
 fn main() -> anyhow::Result<()> {
+    use std::fs;
     let args: Vec<String> = std::env::args().collect();
     let epoch: u32 = args
         .get(1)
