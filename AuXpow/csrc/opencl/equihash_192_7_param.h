@@ -12,8 +12,14 @@
 #define COLL_DATA_SIZE_PER_TH           (NR_SLOTS * 5)
 
 #define NR_ROWS                         (1 << NR_ROWS_LOG)
+// OVERHEAD controls the hash table slot multiplier. With Poisson mean
+// λ=32 elements/row (2^24 inputs / 2^20 rows), P(X > 64) ≈ 1.5e-9, so
+// OVERHEAD=2 (64 slots) captures essentially all elements.
+// NR_SLOTS must be ≤ 64 for NR_ROWS_LOG=20 (ENCODE_INPUTS packs row(20b)
+// + 2 slots(6b each) into 32 bits). OVERHEAD=2 → NR_SLOTS=64 → fits.
+// VRAM: 2 × (2^20 × 64 × 32) = 2 × 2GB = 4GB total (fits 8GB GPUs).
 #if NR_ROWS_LOG == 20 && OPTIM_SIMPLIFY_ROUND
-#define OVERHEAD                        6
+#define OVERHEAD                        2
 #else
 #define OVERHEAD                        9
 #endif

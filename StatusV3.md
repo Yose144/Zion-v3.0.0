@@ -231,10 +231,10 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | karlsenhash | KLS | Kernel ✅ (604 lines) | TODO | TODO — FishHashPlus+Blake3, `karlsenhash_kernel.cl` (`f6df75b64`) |
 | nexapow | NEXA | Kernel ✅ (6164 lines) | TODO | TODO — secp256k1 Schnorr, `nexapow_kernel.cl` (`77613ad50`) |
 | verthash | VTC | Kernel ✅ (289 lines) | TODO | TODO — 1.2GB data file, `verthash_kernel.cl` (`646d14f59`) |
-| equihash192_7 | ZCL | Kernel ✅ (851 lines) | Host ✅ | ✅ Implemented — multi-kernel Wagner dispatch + Blake2b state + double-SHA256 verify (`f6df75b64`) |
-| ghostrider | RTM | Placeholder | Placeholder | TODO — 15 algos + 6 CN variants (`77613ad50`) |
-| qhash | QTC | Placeholder | Placeholder | TODO — quantum circuit sim (`77613ad50`) |
-| dynexsolve | DNX | Placeholder | Placeholder | TODO — neuromorphic PoUW (`77613ad50`) |
+| equihash192_7 | ZCL | Kernel ✅ (851 lines) | Host ✅ | ✅ Implemented — multi-kernel Wagner dispatch + Blake2b state + double-SHA256 verify + 28-byte extranonce2 + fd9001 varint submit format. OVERHEAD=2 (4GB VRAM, fits 8GB GPUs) |
+| ghostrider | RTM | Kernel ✅ | Host ✅ | ✅ Implemented — 15 algos + 6 CN variants |
+| qhash | QTC | Kernel ✅ | Host ✅ | ✅ Implemented — quantum circuit sim |
+| dynexsolve | DNX | Kernel ✅ | Host ✅ | ✅ Implemented — neuromorphic PoUW |
 
 **Features:** `gpu-opencl`, `gpu-metal`, `gpu-cuda`, `gpu-all`
 **Benchmark:** `cargo run --example gpu_benchmark -p zion-auxpow --features gpu-metal`

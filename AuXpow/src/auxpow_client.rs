@@ -2703,8 +2703,8 @@ impl AuxPowClient {
                 if let Some(ref cur) = latest {
                     if !cur.is_empty() && job_id != *cur {
                         warn!(
-                            "auxpow: VRSC share for previous job={} (latest={}) nonce={} — forwarding anyway",
-                            job_id, cur, nonce
+                            "auxpow: {} share for previous job={} (latest={}) nonce={} — forwarding anyway",
+                            self.profile.coin, job_id, cur, nonce
                         );
                     }
                 }
@@ -2748,24 +2748,35 @@ impl AuxPowClient {
                 let en_bytes = en1_hex.len() / 2;
                 // Standard Zcash Stratum: nonce field = 32 bytes total.
                 // nonce2 is the part after extranonce1.
-                //
-                // PBaaS v7+ (VRSC) CRITICAL FIX:
-                // LuckPool's verusHashV2b2 checks a preHeaderHash (blake2b)
-                // stored in the solution against the header's non-canonical
-                // fields (including nNonce).  If the pool writes en1+nonce2
-                // into the nonce field, nNonce changes → preHeaderHash
-                // mismatch → pool returns 0xFF → "low difficulty share".
-                //
-                // Fix: send nonce2 = all zeros so the pool writes en1+zeros
-                // into the nonce field (same as the original job).  The
-                // preHeaderHash then matches, the pool clears non-canonical
-                // data and hashes normally.  The miner's actual nonce is in
-                // the solution nonceSpace, which is what determines the hash
-                // after clearing.
                 let nonce_field_total = 32usize;
                 let nonce2_bytes = nonce_field_total.saturating_sub(en_bytes);
                 let nonce2_hex_len = nonce2_bytes * 2;
-                "0".repeat(nonce2_hex_len)
+
+                if self.profile.coin == ExternalCoin::ZCL {
+                    // ZCL Equihash 192,7: the miner's nonce is encoded as
+                    // little-endian bytes at the START of extranonce2, padded
+                    // with zeros to fill the remaining nonce2 bytes.
+                    // E.g. en1=4B → nonce2=28B → nonce_le(4B) + 24B zeros.
+                    let nonce_le = (nonce & 0xFFFFFFFF) as u32;
+                    let nonce_hex = hex::encode(nonce_le.to_le_bytes());
+                    let padding = nonce2_hex_len.saturating_sub(nonce_hex.len());
+                    format!("{}{}", nonce_hex, "0".repeat(padding))
+                } else {
+                    // PBaaS v7+ (VRSC) CRITICAL FIX:
+                    // LuckPool's verusHashV2b2 checks a preHeaderHash (blake2b)
+                    // stored in the solution against the header's non-canonical
+                    // fields (including nNonce).  If the pool writes en1+nonce2
+                    // into the nonce field, nNonce changes → preHeaderHash
+                    // mismatch → pool returns 0xFF → "low difficulty share".
+                    //
+                    // Fix: send nonce2 = all zeros so the pool writes en1+zeros
+                    // into the nonce field (same as the original job).  The
+                    // preHeaderHash then matches, the pool clears non-canonical
+                    // data and hashes normally.  The miner's actual nonce is in
+                    // the solution nonceSpace, which is what determines the hash
+                    // after clearing.
+                    "0".repeat(nonce2_hex_len)
+                }
             };
 
             // Build solution_with_varint for VerusHash 2.2.
@@ -2809,6 +2820,27 @@ impl AuxPowClient {
 
                 // Prepend varint: fd4005 = 1344 in ZCash compact varint.
                 format!("fd4005{}", sol)
+            } else if self.profile.coin == ExternalCoin::ZCL {
+                // ZCL Equihash 192,7 — solution is 400 bytes (800 hex chars).
+                // Varint for 400 = fd9001 (Zcash compact: 0xfd + LE 2-byte len).
+                // The solution comes from the GPU miner's GpuFoundShare.solution,
+                // passed via mix_hash_hex as hex-encoded 400 bytes.
+                //
+                // Nonce2: 28 bytes = 32 (full nonce field) - 4 (extranonce1).
+                // The miner's nonce is encoded as LE bytes at the start of
+                // extranonce2, padded with zeros to 28 bytes.
+                let sol_hex = mix_hash_hex.unwrap_or(_hash_hex);
+                let sol_hex = sol_hex.trim_start_matches("0x");
+                // Ensure solution is exactly 400 bytes (800 hex chars).
+                let sol_padded = if sol_hex.len() == 800 {
+                    sol_hex.to_string()
+                } else if sol_hex.len() < 800 {
+                    format!("{}{}", sol_hex, "0".repeat(800 - sol_hex.len()))
+                } else {
+                    sol_hex[..800].to_string()
+                };
+                // Prepend varint: fd9001 = 400 in Zcash compact varint.
+                format!("fd9001{}", sol_padded)
             } else {
                 // Non-VerusHash ZcashStratum (FLUX / ZelHash / Equihash 125,4):
                 // The miner sends the Equihash solution in mix_hash_hex.
@@ -2826,7 +2858,8 @@ impl AuxPowClient {
             );
             // Detailed debug: print exact submit params (truncated for readability)
             println!(
-                "auxpow: VRSC submit DETAIL — en1_len={} nonce2={} sol_first20={} sol_last30={}",
+                "auxpow: {} submit DETAIL — en1_len={} nonce2={} sol_first20={} sol_last30={}",
+                self.profile.coin,
                 en1_hex.len() / 2,
                 nonce2_str,
                 &solution_with_varint[..20.min(solution_with_varint.len())],
@@ -2834,8 +2867,8 @@ impl AuxPowClient {
             );
             // Full reconstruction data for parity checks against the miner header.
             println!(
-                "auxpow: VRSC submit FULL — job={} ntime={} en1={} nonce2={} solution={}",
-                job_id, ntime, en1_hex, nonce2_str, solution_with_varint
+                "auxpow: {} submit FULL — job={} ntime={} en1={} nonce2={} solution={}",
+                self.profile.coin, job_id, ntime, en1_hex, nonce2_str, solution_with_varint
             );
 
             // Zcash Stratum Protocol (ZIP 301) — 5 params:
@@ -4815,6 +4848,138 @@ mod tests {
 
         // Submit a share with a mock Equihash solution in mix_hash_hex
         let mock_solution = "ee".repeat(52); // 52-byte solution
+        let result = client.submit_share(job_id, 0x1234abcd, "deadbeef", Some(&mock_solution)).await.unwrap();
+        assert_eq!(result, ShareResult::Accepted);
+
+        client.disconnect().await.unwrap();
+        server_task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn zcl_zcashstratum_notify_and_submit() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let (host, port) = addr.rsplit_once(':').unwrap();
+        let port: u16 = port.parse().unwrap();
+
+        // ZCL ZcashStratum notify params (Equihash 192,7):
+        // [job_id, version, prevhash, merkle, reserved, ntime, nbits, clean_jobs, solution]
+        let job_id = "zcl_job_001";
+        let version = "20000000";
+        let prevhash = "ab".repeat(32);
+        let merkle = "cd".repeat(32);
+        let reserved = "00".repeat(32);
+        let ntime = "65a3f1c0";
+        let nbits = "1d00ffff";
+        // ZCL Equihash 192,7 solution: 400 bytes = 800 hex chars
+        let solution_hex = "ee".repeat(400);
+
+        let server_task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (mut reader, mut writer) = socket.split();
+            let mut buf = vec![0u8; 65536];
+
+            async fn read_json(
+                reader: &mut tokio::net::tcp::ReadHalf<'_>,
+                buf: &mut [u8],
+            ) -> Value {
+                let n = reader.read(buf).await.unwrap();
+                serde_json::from_slice::<Value>(&buf[..n]).unwrap()
+            }
+
+            async fn write_json(writer: &mut tokio::net::tcp::WriteHalf<'_>, v: Value) {
+                writer
+                    .write_all((serde_json::to_string(&v).unwrap() + "\n").as_bytes())
+                    .await
+                    .unwrap();
+                writer.flush().await.unwrap();
+            }
+
+            // mining.subscribe (ZcashStratum: 4 params with host/port)
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.subscribe");
+            write_json(
+                &mut writer,
+                json!({"id": 1, "result": [["mining.notify", "session"], "a1b2c3d4"], "error": null}),
+            )
+            .await;
+
+            // mining.authorize
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.authorize");
+            assert_eq!(req["params"][1].as_str().unwrap(), "d=0.01");
+            write_json(&mut writer, json!({"id": 2, "result": true, "error": null})).await;
+
+            // mining.extranonce.subscribe
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.extranonce.subscribe");
+            write_json(&mut writer, json!({"id": 3, "result": true, "error": null})).await;
+
+            // mining.set_difficulty
+            write_json(
+                &mut writer,
+                json!({"id": null, "method": "mining.set_difficulty", "params": [0.01]}),
+            )
+            .await;
+
+            // mining.notify (ZcashStratum format with 9 params)
+            write_json(
+                &mut writer,
+                json!({
+                    "id": null,
+                    "method": "mining.notify",
+                    "params": [
+                        job_id, version, prevhash, merkle, reserved,
+                        ntime, nbits, true, solution_hex
+                    ]
+                }),
+            )
+            .await;
+
+            // mining.submit (5 params: worker, job_id, ntime, nonce2, solution)
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.submit");
+            let params = req["params"].as_array().unwrap();
+            assert_eq!(params.len(), 5, "ZCL submit must have 5 params");
+            assert_eq!(params[1].as_str().unwrap(), job_id);
+            assert_eq!(params[2].as_str().unwrap(), ntime);
+
+            // nonce2 = 32 bytes total - extranonce1(4 bytes) = 28 bytes = 56 hex chars
+            let nonce2 = params[3].as_str().unwrap();
+            assert_eq!(nonce2.len(), 56, "ZCL nonce2 must be 28 bytes (56 hex chars) with 4-byte extranonce1");
+
+            // For nonce=0x1234abcd, nonce2 should start with LE-encoded nonce (cdab3412)
+            assert_eq!(&nonce2[..8], "cdab3412", "ZCL nonce2 must start with LE-encoded miner nonce");
+
+            // solution_with_varint should start with "fd9001" (varint for 400 bytes)
+            let solution = params[4].as_str().unwrap();
+            assert!(solution.starts_with("fd9001"), "ZCL solution must start with varint fd9001 (400 bytes)");
+            // Total: 6 (varint) + 800 (400 bytes hex) = 806 hex chars
+            assert_eq!(solution.len(), 806, "ZCL solution_with_varint must be 806 hex chars (6 varint + 800 solution)");
+
+            write_json(
+                &mut writer,
+                json!({"id": req["id"].as_i64().unwrap(), "result": true, "error": null}),
+            )
+            .await;
+
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        });
+
+        let mut profile = CoinProfile::default_for(ExternalCoin::ZCL);
+        profile.pool_host = host.to_string();
+        profile.pool_port = port;
+
+        let client = Arc::new(AuxPowClient::new(profile));
+        client.connect("t1ZCLtestWallet123").await.unwrap();
+
+        let job = client.wait_for_job(5000).await.unwrap().unwrap();
+        assert_eq!(job.job_id, job_id);
+        assert_eq!(job.external_coin, ExternalCoin::ZCL);
+        assert_eq!(job.algorithm, "equihashzero");
+
+        // Submit a share with a mock 400-byte Equihash solution in mix_hash_hex
+        let mock_solution = "ee".repeat(400); // 400-byte solution
         let result = client.submit_share(job_id, 0x1234abcd, "deadbeef", Some(&mock_solution)).await.unwrap();
         assert_eq!(result, ShareResult::Accepted);
 
