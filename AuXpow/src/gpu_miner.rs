@@ -209,7 +209,11 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
             Some(("verthash_kernel.cl", "verthash_4w"))
         }
         "fishhash" | "fishhash_iron" => Some(("fishhash_kernel.cl", "fishhash_mine")),
-        "nexapow" | "nexapow_nexa" => None, // NexaPow: secp256k1 Schnorr, needs custom OpenCL
+        "nexapow" | "nexapow_nexa" => {
+            // NexaPow: double-SHA256 → secp256k1 Schnorr sign → SHA256
+            // Uses UltrafastSecp256k1 OpenCL kernels (MIT licensed)
+            Some(("nexapow_kernel.cl", "nexapow_mine"))
+        }
         "ghostrider" | "ghostrider_rtm" => None, // GhostRider: 15 algos + 6 CN variants, very complex
         "dynexsolve" | "dynexsolve_dnx" => None, // DynexSolve: neuromorphic PoUW, needs custom OpenCL
         _ => None,
@@ -593,6 +597,20 @@ impl GpuMiner {
                      Wagner's algorithm dispatch. Kernel source is ready in equihash_kernel.cl"
                 )
             }
+            "nexapow" | "nexapow_nexa" => {
+                // NexaPow: double-SHA256 → secp256k1 Schnorr sign → SHA256
+                // Single-kernel dispatch, no DAG or data file needed
+                Self::build_nexapow_kernel(
+                    pro_que,
+                    kernel_name,
+                    header,
+                    target,
+                    base_nonce,
+                    &output_nonce_buf,
+                    &output_hash_buf,
+                    &found_flag_buf,
+                )?
+            }
             other => anyhow::bail!("unsupported GPU algorithm: {other}"),
         };
 
@@ -607,6 +625,7 @@ impl GpuMiner {
             | "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => 1,
             "verthash" | "verthash_vtc" => 1, // Verthash: 4-way kernel, 1 nonce per 4 work-items
             "equihashzero" | "equihashzero_zcl" => 1, // Equihash: memory-bound, 1 nonce per work-item
+            "nexapow" | "nexapow_nexa" => 1, // NexaPow: secp256k1 Schnorr per nonce
             _ => 8, // blake3, kheavyhash, zelhash
         };
         // Work-group size: MUST match GROUP_SIZE defined in the kernel build
@@ -621,6 +640,7 @@ impl GpuMiner {
             "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => 128, // WORKSIZE=128 in fishhash/karlsenhash kernels
             "verthash" | "verthash_vtc" => 64, // WORK_SIZE=64 for Verthash 4-way kernel
             "equihashzero" | "equihashzero_zcl" => 64, // Equihash: reqd_work_group_size(64,1,1)
+            "nexapow" | "nexapow_nexa" => 64, // NexaPow: secp256k1 operations, 64 for register pressure
             _ => 256,
         };
         // Round global_work_size up to a multiple of wg_size (required by
@@ -1532,6 +1552,7 @@ typedef unsigned long ulong;
                     "sha3_512_precompute.cl" => include_str!("../csrc/opencl/sha3_512_precompute.cl"),
                     "sha3_512_256.cl" => include_str!("../csrc/opencl/sha3_512_256.cl"),
                     "equihash_kernel.cl" => include_str!("../csrc/opencl/equihash_kernel.cl"),
+                    "nexapow_kernel.cl" => include_str!("../csrc/opencl/nexapow_kernel.cl"),
                     _ => return Err(anyhow!("Unknown kernel file: {kernel_file} (not on disk and not embedded)")),
                 };
                 println!("auxpow_gpu_opencl using embedded kernel={kernel_file}");
@@ -1927,6 +1948,57 @@ typedef unsigned long ulong;
             .arg(&target_buf)           // 7: target_buf
             .build()
             .map_err(|e| anyhow!("FishHash kernel build failed: {e}"))?;
+
+        Ok(kernel)
+    }
+
+    /// Build the NexaPow kernel for NEXA mining.
+    ///
+    /// NexaPow: double-SHA256(candidateHash || nonce) → secp256k1 Schnorr sign → SHA256
+    /// The kernel takes a 32-byte candidateHash (block header hash without nonce)
+    /// and tries nonces starting from base_nonce.
+    #[allow(clippy::too_many_arguments)]
+    fn build_nexapow_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        // NexaPow expects a 32-byte candidateHash
+        let mut candidate_hash = [0u8; 32];
+        let copy_len = header.len().min(32);
+        candidate_hash[..copy_len].copy_from_slice(&header[..copy_len]);
+
+        let header_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(&candidate_hash)
+            .build()?;
+
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target.as_slice())
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(&header_buf)           // 0: header (candidateHash, 32 bytes)
+            .arg(&target_buf)           // 1: target_buf (32 bytes, big-endian)
+            .arg(base_nonce)            // 2: base_nonce
+            .arg(output_nonce_buf)      // 3: output_nonce
+            .arg(output_hash_buf)       // 4: output_hash (32 bytes)
+            .arg(found_flag_buf)        // 5: found_flag
+            .build()
+            .map_err(|e| anyhow!("NexaPow kernel build failed: {e}"))?;
 
         Ok(kernel)
     }
@@ -3867,9 +3939,17 @@ mod tests {
             kernel_info("equihashzero_zcl"),
             Some(("equihash_kernel.cl", "kernel_init_ht"))
         );
+        // NexaPow: secp256k1 Schnorr signing kernel from UltrafastSecp256k1
+        assert_eq!(
+            kernel_info("nexapow"),
+            Some(("nexapow_kernel.cl", "nexapow_mine"))
+        );
+        assert_eq!(
+            kernel_info("nexapow_nexa"),
+            Some(("nexapow_kernel.cl", "nexapow_mine"))
+        );
         // Still-unimplemented algorithms should return None
         assert_eq!(kernel_info("qhash"), None);
-        assert_eq!(kernel_info("nexapow"), None);
         assert_eq!(kernel_info("ghostrider"), None);
         assert_eq!(kernel_info("dynexsolve"), None);
     }
