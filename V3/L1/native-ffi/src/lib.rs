@@ -1349,6 +1349,30 @@ pub mod verushash {
 
         /// `'static` read-only version literal; must not be freed.
         pub fn verushash_version() -> *const std::ffi::c_char;
+
+        // ── Two-stage mining hash (50-100x faster per nonce) ──────────
+        // Each thread must call hash_half + prepare_key once per job,
+        // then hash_with_nonce for each nonce.
+
+        /// Stage 1: Haraka512 chain → 64-byte intermediate (ONCE per job).
+        pub fn verushash_hash_half(
+            data: *const u8,
+            data_len: usize,
+            intermediate64: *mut u8,
+        );
+
+        /// Stage 2: GenNewCLKey from intermediate (ONCE per job).
+        pub fn verushash_prepare_key(intermediate64: *const u8);
+
+        /// Stage 3: CLHash + final Haraka512 (PER NONCE).
+        pub fn verushash_hash_with_nonce(
+            intermediate64: *const u8,
+            nonce_space15: *const u8,
+            output: *mut u8,
+        );
+
+        /// Reset thread-local two-stage state (call on new job).
+        pub fn verushash_mining_reset();
     }
 
     use std::sync::Once;
@@ -1384,6 +1408,51 @@ pub mod verushash {
             verushash_hash_raw(header.as_ptr(), header.len(), out.as_mut_ptr());
         }
         out
+    }
+
+    // ── Two-stage mining hash (optimized path) ───────────────────────
+    // 50-100x faster per nonce than `hash_raw` for VRSC mining.
+    // Each thread: hash_half → prepare_key (once per job) → hash_with_nonce (per nonce).
+
+    /// Stage 1: Compute 64-byte intermediate state from full block data.
+    /// Call once per job. Returns 64-byte intermediate.
+    pub fn hash_half(data: &[u8]) -> [u8; 64] {
+        init();
+        let mut intermediate = [0u8; 64];
+        unsafe {
+            verushash_hash_half(data.as_ptr(), data.len(), intermediate.as_mut_ptr());
+        }
+        intermediate
+    }
+
+    /// Stage 2: Generate CLHash key from intermediate.
+    /// Call once per job after `hash_half`. Thread-local.
+    pub fn prepare_key(intermediate64: &[u8; 64]) {
+        init();
+        unsafe {
+            verushash_prepare_key(intermediate64.as_ptr());
+        }
+    }
+
+    /// Stage 3: Compute final 32-byte hash from intermediate + 15-byte nonceSpace.
+    /// Call per nonce. `prepare_key` must have been called first.
+    pub fn hash_with_nonce(intermediate64: &[u8; 64], nonce_space15: &[u8; 15]) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        unsafe {
+            verushash_hash_with_nonce(
+                intermediate64.as_ptr(),
+                nonce_space15.as_ptr(),
+                out.as_mut_ptr(),
+            );
+        }
+        out
+    }
+
+    /// Reset thread-local two-stage state. Call on new job.
+    pub fn mining_reset() {
+        unsafe {
+            verushash_mining_reset();
+        }
     }
 
     /// Fallible variant of [`hash`] that rejects empty / oversized inputs.

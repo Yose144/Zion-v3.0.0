@@ -238,7 +238,11 @@ fn main() {
                         .flag_if_supported("-msse4.1")
                         .flag_if_supported("-msse4.2")
                         .flag_if_supported("-mssse3")
-                        .flag_if_supported("-maes");
+                        .flag_if_supported("-maes")
+                        .flag_if_supported("-mavx")
+                        .flag_if_supported("-mavx2")
+                        .flag_if_supported("-mbmi")
+                        .flag_if_supported("-mbmi2");
                 } else if target_arch == "aarch64" {
                     c_build
                         .flag_if_supported("-march=armv8-a+crypto")
@@ -277,7 +281,11 @@ fn main() {
                         .flag_if_supported("-msse4.1")
                         .flag_if_supported("-msse4.2")
                         .flag_if_supported("-mssse3")
-                        .flag_if_supported("-maes");
+                        .flag_if_supported("-maes")
+                        .flag_if_supported("-mavx")
+                        .flag_if_supported("-mavx2")
+                        .flag_if_supported("-mbmi")
+                        .flag_if_supported("-mbmi2");
                 } else if target_arch == "aarch64" {
                     cpp_build
                         .flag_if_supported("-march=armv8-a+crypto")
