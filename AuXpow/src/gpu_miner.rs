@@ -197,15 +197,21 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
             Some(("karlsenhash_kernel.cl", "karlsenhash_mine"))
         }
         "equihashzero" | "equihashzero_zcl" => {
-            // Equihash 192,7 — memory-hard, needs dedicated kernel
-            None
+            // Equihash 192,7 — kernel adapted from silentarmy
+            // NOTE: Requires multi-kernel dispatch (init + rounds + sort + solution)
+            // Full integration needs host-side Wagner's algorithm orchestration
+            Some(("equihash_kernel.cl", "kernel_init_ht"))
         }
-        "qhash" | "qhash_qtc" => None, // placeholder — needs kernel
-        "verthash" | "verthash_vtc" => None, // placeholder — needs kernel + data file
+        "qhash" | "qhash_qtc" => None, // Qhash: quantum circuit sim, needs custom OpenCL
+        "verthash" | "verthash_vtc" => {
+            // Verthash: I/O-bound, needs 1.2GB data file + SHA3 precompute
+            // Kernel ready, but host-side data file loading not yet implemented
+            Some(("verthash_kernel.cl", "verthash_4w"))
+        }
         "fishhash" | "fishhash_iron" => Some(("fishhash_kernel.cl", "fishhash_mine")),
-        "nexapow" | "nexapow_nexa" => None, // placeholder — needs kernel
-        "ghostrider" | "ghostrider_rtm" => None, // placeholder — needs kernel
-        "dynexsolve" | "dynexsolve_dnx" => None, // placeholder — needs kernel
+        "nexapow" | "nexapow_nexa" => None, // NexaPow: secp256k1 Schnorr, needs custom OpenCL
+        "ghostrider" | "ghostrider_rtm" => None, // GhostRider: 15 algos + 6 CN variants, very complex
+        "dynexsolve" | "dynexsolve_dnx" => None, // DynexSolve: neuromorphic PoUW, needs custom OpenCL
         _ => None,
     }
 }
@@ -566,6 +572,27 @@ impl GpuMiner {
                     &found_flag_buf,
                 )?
             }
+            "verthash" | "verthash_vtc" => {
+                // Verthash: I/O-bound algorithm requiring 1.2GB data file
+                // and precomputed SHA3 states. Full host-side integration
+                // needs: data file loader, SHA3 precompute kernel dispatch,
+                // and verthash_4w kernel with memory + kStates buffers.
+                // TODO: implement build_verthash_kernel() with data file loading
+                anyhow::bail!(
+                    "Verthash mining not yet implemented: requires 1.2GB data file \
+                     + SHA3 precompute. Kernel source is ready in verthash_kernel.cl"
+                )
+            }
+            "equihashzero" | "equihashzero_zcl" => {
+                // Equihash 192,7: multi-kernel Wagner's algorithm
+                // Requires sequential dispatch of: kernel_init_ht → kernel_round0
+                // → kernel_round1..7 → kernel_round8 → kernel_sols
+                // TODO: implement build_equihash_kernel() with round orchestration
+                anyhow::bail!(
+                    "Equihash 192,7 mining not yet implemented: requires multi-kernel \
+                     Wagner's algorithm dispatch. Kernel source is ready in equihash_kernel.cl"
+                )
+            }
             other => anyhow::bail!("unsupported GPU algorithm: {other}"),
         };
 
@@ -578,6 +605,8 @@ impl GpuMiner {
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
             | "progpow" | "progpow_epic" | "beamhash" | "beamhash_beam"
             | "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => 1,
+            "verthash" | "verthash_vtc" => 1, // Verthash: 4-way kernel, 1 nonce per 4 work-items
+            "equihashzero" | "equihashzero_zcl" => 1, // Equihash: memory-bound, 1 nonce per work-item
             _ => 8, // blake3, kheavyhash, zelhash
         };
         // Work-group size: MUST match GROUP_SIZE defined in the kernel build
@@ -590,6 +619,8 @@ impl GpuMiner {
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 128,
             "beamhash" | "beamhash_beam" => 256, // BeamHash: standard work-group
             "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => 128, // WORKSIZE=128 in fishhash/karlsenhash kernels
+            "verthash" | "verthash_vtc" => 64, // WORK_SIZE=64 for Verthash 4-way kernel
+            "equihashzero" | "equihashzero_zcl" => 64, // Equihash: reqd_work_group_size(64,1,1)
             _ => 256,
         };
         // Round global_work_size up to a multiple of wg_size (required by
@@ -1497,6 +1528,10 @@ typedef unsigned long ulong;
                     "pearl_pouw_native.cl" => include_str!("../csrc/opencl/pearl_pouw_native.cl"),
                     "fishhash_kernel.cl" => include_str!("../csrc/opencl/fishhash_kernel.cl"),
                     "karlsenhash_kernel.cl" => include_str!("../csrc/opencl/karlsenhash_kernel.cl"),
+                    "verthash_kernel.cl" => include_str!("../csrc/opencl/verthash_kernel.cl"),
+                    "sha3_512_precompute.cl" => include_str!("../csrc/opencl/sha3_512_precompute.cl"),
+                    "sha3_512_256.cl" => include_str!("../csrc/opencl/sha3_512_256.cl"),
+                    "equihash_kernel.cl" => include_str!("../csrc/opencl/equihash_kernel.cl"),
                     _ => return Err(anyhow!("Unknown kernel file: {kernel_file} (not on disk and not embedded)")),
                 };
                 println!("auxpow_gpu_opencl using embedded kernel={kernel_file}");
@@ -3814,10 +3849,26 @@ mod tests {
             kernel_info("karlsenhash_kls"),
             Some(("karlsenhash_kernel.cl", "karlsenhash_mine"))
         );
-        // Unimplemented algorithms should return None
-        assert_eq!(kernel_info("equihashzero"), None);
+        // Verthash: kernel source ready, host-side integration pending
+        assert_eq!(
+            kernel_info("verthash"),
+            Some(("verthash_kernel.cl", "verthash_4w"))
+        );
+        assert_eq!(
+            kernel_info("verthash_vtc"),
+            Some(("verthash_kernel.cl", "verthash_4w"))
+        );
+        // Equihash 192,7: kernel source ready, multi-kernel dispatch pending
+        assert_eq!(
+            kernel_info("equihashzero"),
+            Some(("equihash_kernel.cl", "kernel_init_ht"))
+        );
+        assert_eq!(
+            kernel_info("equihashzero_zcl"),
+            Some(("equihash_kernel.cl", "kernel_init_ht"))
+        );
+        // Still-unimplemented algorithms should return None
         assert_eq!(kernel_info("qhash"), None);
-        assert_eq!(kernel_info("verthash"), None);
         assert_eq!(kernel_info("nexapow"), None);
         assert_eq!(kernel_info("ghostrider"), None);
         assert_eq!(kernel_info("dynexsolve"), None);
