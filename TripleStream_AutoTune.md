@@ -228,7 +228,7 @@ sudo apt install ocl-icd-opencl-dev
 
 # Build
 cd V3
-cargo build --release -p zion-miner --features native-verushash,native-randomx,gpu-opencl
+cargo build --release -p zion-miner --features native-verushash,native-randomx,gpu-opencl,native-hashers
 
 # Binary
 ./target/release/zion-miner --pool 62.171.141.136:8444 --wallet <wallet> --threads <N> --no-tui
@@ -473,13 +473,13 @@ cd V3
 cargo build --release -p zion-miner --features native-verushash,native-randomx,gpu-metal
 
 # Linux x86_64 s OpenCL (Ryzen + AMD/NVIDIA GPU)
-cargo build --release -p zion-miner --features native-verushash,native-randomx,gpu-opencl
+cargo build --release -p zion-miner --features native-verushash,native-randomx,gpu-opencl,native-hashers
 
 # Linux x86_64 s CUDA (Ryzen + NVIDIA GPU)
-cargo build --release -p zion-miner --features native-verushash,native-randomx,gpu-cuda
+cargo build --release -p zion-miner --features native-verushash,native-randomx,gpu-cuda,native-hashers
 
 # Linux x86_64 s OpenCL + CUDA
-cargo build --release -p zion-miner --features native-verushash,native-randomx,gpu-opencl,gpu-cuda
+cargo build --release -p zion-miner --features native-verushash,native-randomx,gpu-opencl,gpu-cuda,native-hashers
 
 # CPU only (no GPU)
 cargo build --release -p zion-miner --features native-verushash,native-randomx

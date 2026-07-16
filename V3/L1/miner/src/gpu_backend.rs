@@ -4366,6 +4366,28 @@ pub mod opencl_external {
                 {
                     self.dag_manager.ensure_dag(&mut self.miner, &self.algorithm, ep)?;
                 }
+                #[cfg(not(feature = "native-hashers"))]
+                {
+                    // Without native-hashers, the DagManager and C FFI for DAG
+                    // generation are not compiled.  DAG-based algorithms
+                    // (ethash/kawpow/progpow) cannot mine without a DAG, so
+                    // return a clear error instead of silently succeeding and
+                    // failing later with a confusing "DAG not set" message.
+                    if matches!(
+                        self.algorithm.as_str(),
+                        "ethash" | "etchash" | "ethash_etc"
+                            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+                            | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
+                            | "progpow" | "progpow_epic"
+                    ) {
+                        anyhow::bail!(
+                            "DAG-based algorithm '{}' requires the 'native-hashers' feature \
+                             to generate the per-epoch DAG.  Rebuild with: \
+                             --features native-hashers",
+                            self.algorithm
+                        );
+                    }
+                }
             }
             Ok(())
         }
