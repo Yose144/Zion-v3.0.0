@@ -280,6 +280,13 @@ impl TriGpuManager {
     /// Create a new TriGpuManager with the given GPU backend kind.
     /// The primary (Deeksha) backend is created immediately.
     pub fn new(kind: GpuBackendKind, primary_work_size: usize) -> Result<Self> {
+        // CPU-only mode: no GPU backend, return a dummy manager.
+        if kind == GpuBackendKind::Cpu {
+            return Ok(Self {
+                primary: None,
+                kind,
+            });
+        }
         let primary_algo = "deeksha_lite_v1";
         let primary = create_gpu_backend(kind, primary_work_size, primary_algo)?;
 
