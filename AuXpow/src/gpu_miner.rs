@@ -83,6 +83,16 @@ struct ProgpowDag {
     epoch: u32,
 }
 
+/// Cached FishHash DAG buffer (used by FishHash/IRON and KarlsenHashV2/KLS).
+/// The DAG is ~4.6GB (37,748,717 items × 128 bytes), generated with Blake3
+/// and 512 parent elements per item (vs Ethash's 256).
+struct FishhashDag {
+    /// DAG buffer on GPU — stored as uint8 elements (128 bytes = 16 uint8 per item).
+    buf: Buffer<u8>,
+    /// Number of DAG items (37,748,717 for FishHash/KarlsenHashV2).
+    size_items: u32,
+}
+
 /// OpenCL GPU miner for external PoW algorithms.
 pub struct GpuMiner {
     platform: Platform,
@@ -105,6 +115,8 @@ pub struct GpuMiner {
     kawpow_dag: Option<KawpowDag>,
     /// Cached ProgPow DAG buffer (set via `set_progpow_dag` before mining EPIC).
     progpow_dag: Option<ProgpowDag>,
+    /// Cached FishHash DAG buffer (set via `set_fishhash_dag` before mining IRON/KLS).
+    fishhash_dag: Option<FishhashDag>,
     /// Cached Pearl PoUW buffers (reused across nonces to avoid allocation overhead).
     #[cfg(feature = "gpu-opencl")]
     pearl_buffers: Option<PearlPouwBufferCache>,
@@ -182,9 +194,7 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         "pearlhash" | "pearlhash_prl" => Some(("pearl_kernel.cl", "pearl_mine")),
         "beamhash" | "beamhash_beam" => Some(("beamhash_kernel.cl", "beamhash_generate_hashes")),
         "karlsenhash" | "karlsenhash_kls" => {
-            // KarlsenHashV2 — similar to kheavyhash but distinct kernel needed
-            // TODO: write OpenCL kernel
-            None
+            Some(("karlsenhash_kernel.cl", "karlsenhash_mine"))
         }
         "equihashzero" | "equihashzero_zcl" => {
             // Equihash 192,7 — memory-hard, needs dedicated kernel
@@ -192,7 +202,7 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         }
         "qhash" | "qhash_qtc" => None, // placeholder — needs kernel
         "verthash" | "verthash_vtc" => None, // placeholder — needs kernel + data file
-        "fishhash" | "fishhash_iron" => None, // placeholder — needs kernel
+        "fishhash" | "fishhash_iron" => Some(("fishhash_kernel.cl", "fishhash_mine")),
         "nexapow" | "nexapow_nexa" => None, // placeholder — needs kernel
         "ghostrider" | "ghostrider_rtm" => None, // placeholder — needs kernel
         "dynexsolve" | "dynexsolve_dnx" => None, // placeholder — needs kernel
@@ -249,6 +259,7 @@ impl GpuMiner {
             ethash_dag: None,
             kawpow_dag: None,
             progpow_dag: None,
+            fishhash_dag: None,
             #[cfg(feature = "gpu-opencl")]
             pearl_buffers: None,
             block_height: 0,
@@ -301,6 +312,11 @@ impl GpuMiner {
         };
         let progpow_dag = if matches!(algorithm, "progpow" | "progpow_epic") {
             self.progpow_dag.clone()
+        } else {
+            None
+        };
+        let fishhash_dag = if matches!(algorithm, "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls") {
+            self.fishhash_dag.clone()
         } else {
             None
         };
@@ -530,6 +546,26 @@ impl GpuMiner {
                 &output_solution_buf,
                 &found_flag_buf,
             )?,
+            "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => {
+                let dag = fishhash_dag.ok_or_else(|| {
+                    anyhow!(
+                        "FishHash DAG not set; call GpuMiner::set_fishhash_dag() \
+                         before mining IRON/KLS"
+                    )
+                })?;
+                Self::build_fishhash_kernel(
+                    pro_que,
+                    kernel_name,
+                    header,
+                    target,
+                    base_nonce,
+                    &dag.buf,
+                    dag.size_items,
+                    &output_nonce_buf,
+                    &output_hash_buf,
+                    &found_flag_buf,
+                )?
+            }
             other => anyhow::bail!("unsupported GPU algorithm: {other}"),
         };
 
@@ -540,7 +576,8 @@ impl GpuMiner {
         let batch_factor = match algorithm {
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 4,
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-            | "progpow" | "progpow_epic" | "beamhash" | "beamhash_beam" => 1,
+            | "progpow" | "progpow_epic" | "beamhash" | "beamhash_beam"
+            | "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => 1,
             _ => 8, // blake3, kheavyhash, zelhash
         };
         // Work-group size: MUST match GROUP_SIZE defined in the kernel build
@@ -552,6 +589,7 @@ impl GpuMiner {
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => 128, // GROUP_SIZE=128 for KawPow
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 128,
             "beamhash" | "beamhash_beam" => 256, // BeamHash: standard work-group
+            "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => 128, // WORKSIZE=128 in fishhash/karlsenhash kernels
             _ => 256,
         };
         // Round global_work_size up to a multiple of wg_size (required by
@@ -781,6 +819,49 @@ impl GpuMiner {
     /// Returns the epoch of the currently uploaded ProgPow DAG, if any.
     pub fn progpow_dag_epoch(&self) -> Option<u32> {
         self.progpow_dag.as_ref().map(|d| d.epoch)
+    }
+
+    /// Upload the FishHash DAG to the GPU device.
+    ///
+    /// The DAG must be generated on the host (Blake3-based, 512 parents per item)
+    /// and passed here as a byte slice (128 bytes per item × 37,748,717 items).
+    /// Used by both FishHash (IRON) and KarlsenHashV2 (KLS).
+    pub fn set_fishhash_dag(&mut self, dag: &[u8], size_items: u32) -> Result<()> {
+        let expected_len = (size_items as usize)
+            .checked_mul(128)
+            .ok_or_else(|| anyhow!("fishhash dag size_items overflow"))?;
+        if dag.len() != expected_len {
+            return Err(anyhow!(
+                "FishHash DAG length mismatch: got {} bytes, expected {} (128 * {} items)",
+                dag.len(),
+                expected_len,
+                size_items
+            ));
+        }
+
+        let q = {
+            let pro_que = self.ensure_proque("fishhash_kernel.cl")?;
+            pro_que.queue().clone()
+        };
+
+        let buf: Buffer<u8> = Buffer::builder()
+            .queue(q)
+            .len(dag.len())
+            .copy_host_slice(dag)
+            .build()
+            .map_err(|e| anyhow!("failed to allocate FishHash DAG buffer: {e}"))?;
+
+        self.fishhash_dag = Some(FishhashDag {
+            buf,
+            size_items,
+        });
+
+        Ok(())
+    }
+
+    /// Returns the number of items in the currently uploaded FishHash DAG, if any.
+    pub fn fishhash_dag_size(&self) -> Option<u32> {
+        self.fishhash_dag.as_ref().map(|d| d.size_items)
     }
 
     /// Generate the KawPow DAG **on the GPU** from a light cache.
@@ -1414,6 +1495,8 @@ typedef unsigned long ulong;
                     "zelhash_kernel.cl" => include_str!("../csrc/opencl/zelhash_kernel.cl"),
                     "pearl_kernel.cl" => include_str!("../csrc/opencl/pearl_kernel.cl"),
                     "pearl_pouw_native.cl" => include_str!("../csrc/opencl/pearl_pouw_native.cl"),
+                    "fishhash_kernel.cl" => include_str!("../csrc/opencl/fishhash_kernel.cl"),
+                    "karlsenhash_kernel.cl" => include_str!("../csrc/opencl/karlsenhash_kernel.cl"),
                     _ => return Err(anyhow!("Unknown kernel file: {kernel_file} (not on disk and not embedded)")),
                 };
                 println!("auxpow_gpu_opencl using embedded kernel={kernel_file}");
@@ -1729,6 +1812,86 @@ typedef unsigned long ulong;
             .arg(0u32) // start_index
             .build()
             .map_err(|e| anyhow!("BeamHash kernel build failed: {e}"))?;
+
+        Ok(kernel)
+    }
+
+    /// Build the FishHash/KarlsenHashV2 kernel for IRON/KLS mining.
+    ///
+    /// Both algorithms use the same DAG-based memory-hard PoW with Blake3.
+    /// The kernel takes a block header (padded to 192 bytes for IRON = 3×64,
+    /// or 128 bytes for KLS = 2×64) and the DAG buffer.
+    ///
+    /// For IRON (FishHash): header = 180-byte IronFish block header (3 Blake3 passes)
+    /// For KLS (KarlsenHashV2): header = prePoWHash(32) || timestamp(8) || zeros(32) = 72 bytes
+    ///   (2 Blake3 passes, nonce appended by kernel)
+    #[allow(clippy::too_many_arguments)]
+    fn build_fishhash_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        dag_buf: &Buffer<u8>,
+        dag_size_items: u32,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        // Pad header to 192 bytes (3 × uint16 = 3 × 64 bytes).
+        // IRON uses 180 bytes (3 passes), KLS uses 72 bytes (2 passes, 2nd chunk
+        // gets nonce injected by kernel). Unused bytes are zero-padded.
+        let header_len = header.len().min(192);
+        let mut header_padded = vec![0u8; 192];
+        header_padded[..header_len].copy_from_slice(&header[..header_len]);
+
+        // Reinterpret as uint16 array (3 × 64 bytes).
+        // OpenCL uint16 = 16 × uint32 = 64 bytes.
+        let mut block_header_u32 = vec![0u32; 48]; // 3 × 16 uint32s
+        for i in (0..header_len).step_by(4) {
+            let remaining = header_len - i;
+            if remaining >= 4 {
+                block_header_u32[i / 4] = u32::from_le_bytes([
+                    header_padded[i],
+                    header_padded[i + 1],
+                    header_padded[i + 2],
+                    header_padded[i + 3],
+                ]);
+            } else {
+                let mut bytes = [0u8; 4];
+                bytes[..remaining].copy_from_slice(&header_padded[i..header_len]);
+                block_header_u32[i / 4] = u32::from_le_bytes(bytes);
+            }
+        }
+
+        let block_header_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(48)
+            .copy_host_slice(&block_header_u32)
+            .build()?;
+
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target.as_slice())
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(dag_buf)               // 0: dag (__global uint8 *)
+            .arg(&block_header_buf)     // 1: blockHeader (__global uint16 *)
+            .arg(output_nonce_buf)      // 2: output_nonce
+            .arg(output_hash_buf)       // 3: output_hash
+            .arg(found_flag_buf)        // 4: found_flag
+            .arg(dag_size_items)        // 5: dagSize
+            .arg(base_nonce)            // 6: startNonce
+            .arg(&target_buf)           // 7: target_buf
+            .build()
+            .map_err(|e| anyhow!("FishHash kernel build failed: {e}"))?;
 
         Ok(kernel)
     }
@@ -3630,6 +3793,34 @@ mod tests {
             Some(("zelhash_kernel.cl", "zelhash_mine"))
         );
         assert_eq!(kernel_info("unknown_algo"), None);
+    }
+
+    /// Verify kernel_info maps fishhash and karlsenhash correctly.
+    #[test]
+    fn fishhash_karlsenhash_kernel_info_correct() {
+        assert_eq!(
+            kernel_info("fishhash"),
+            Some(("fishhash_kernel.cl", "fishhash_mine"))
+        );
+        assert_eq!(
+            kernel_info("fishhash_iron"),
+            Some(("fishhash_kernel.cl", "fishhash_mine"))
+        );
+        assert_eq!(
+            kernel_info("karlsenhash"),
+            Some(("karlsenhash_kernel.cl", "karlsenhash_mine"))
+        );
+        assert_eq!(
+            kernel_info("karlsenhash_kls"),
+            Some(("karlsenhash_kernel.cl", "karlsenhash_mine"))
+        );
+        // Unimplemented algorithms should return None
+        assert_eq!(kernel_info("equihashzero"), None);
+        assert_eq!(kernel_info("qhash"), None);
+        assert_eq!(kernel_info("verthash"), None);
+        assert_eq!(kernel_info("nexapow"), None);
+        assert_eq!(kernel_info("ghostrider"), None);
+        assert_eq!(kernel_info("dynexsolve"), None);
     }
 
     /// Verify the host BLAKE2b-256 (used by Autolykos v2 table generation)
