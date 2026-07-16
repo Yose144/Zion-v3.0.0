@@ -52,7 +52,7 @@ export ZION_MINER_ALGORITHM=deeksha_lite_v1
 # low-end rig CPU is slow; downloading a pre-built cache lets the miner
 # start hashing EPIC immediately on the first run.
 DAG_CACHE_DIR="${ZION_DAG_CACHE_DIR:-/home/miner/.zion/dag-cache}"
-EPIC_DAG_URL="https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin"
+EPIC_DAG_URL="http://62.171.141.136/zion-miner/dag-cache/progpow_epoch120.bin"
 EPIC_DAG_FILE="${DAG_CACHE_DIR}/progpow_epoch120.bin"
 EPIC_DAG_SIZE=2080374792
 if [ ! -f "$EPIC_DAG_FILE" ] || [ "$(stat -c%s "$EPIC_DAG_FILE" 2>/dev/null || echo 0)" != "$EPIC_DAG_SIZE" ]; then
@@ -71,8 +71,9 @@ if [ ! -f "$EPIC_DAG_FILE" ] || [ "$(stat -c%s "$EPIC_DAG_FILE" 2>/dev/null || e
             ok=false
             break
         fi
-        # Short pause between chunks to avoid tripping any per-connection transfer limit
-        sleep 5
+        # Pause between chunks to avoid tripping the rig-side transfer throttle
+        # that drops the connection after roughly 130 MB of continuous traffic.
+        sleep 30
     done
     if $ok; then
         echo "[smos-wrapper] assembling DAG ..."
