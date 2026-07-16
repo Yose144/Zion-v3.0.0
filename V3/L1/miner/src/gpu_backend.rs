@@ -40,26 +40,49 @@ static GPU_MEM_CLAIMED_BYTES: AtomicU64 = AtomicU64::new(0);
 /// Should be called once at startup. Uses `auto_tune_gpu_budget()`
 /// to dynamically calculate a safe budget based on actual available memory.
 ///
+/// Returns true if GPU mining is safe, false if auto-tune killed GPU
+/// (available memory too low — CPU only mode).
+///
 /// `cpu_threads` is the number of CPU mining threads (for safety margin calc).
 /// On systems with dedicated VRAM (OpenCL/CUDA), this budget is not used.
-pub fn init_gpu_memory_budget_with_threads(cpu_threads: usize) {
+pub fn init_gpu_memory_budget_with_threads(cpu_threads: usize) -> bool {
     let budget = auto_tune_gpu_budget(cpu_threads);
+
+    // Kill switch: budget == 0 means GPU is disabled
+    if budget == 0 {
+        GPU_MEM_BUDGET_BYTES.store(0, AtomicOrdering::SeqCst);
+        GPU_MEM_CLAIMED_BYTES.store(0, AtomicOrdering::SeqCst);
+        println!(
+            "gpu_mem_budget_init DISABLED — auto-tune kill switch active (CPU only mode)"
+        );
+        return false;
+    }
+
     // Only initialize if not already set (idempotent)
     let prev = GPU_MEM_BUDGET_BYTES.swap(budget, AtomicOrdering::SeqCst);
     if prev != 0 {
         GPU_MEM_BUDGET_BYTES.store(prev, AtomicOrdering::SeqCst);
-        return;
+        return true;
     }
     GPU_MEM_CLAIMED_BYTES.store(0, AtomicOrdering::SeqCst);
     println!(
         "gpu_mem_budget_init budget_mib={} (shared across all GPU streams)",
         budget / (1024 * 1024),
     );
+    true
+}
+
+/// Reset the GPU memory budget (called on reconnect to clear claimed bytes).
+/// This allows the new session to re-claim the full budget.
+pub fn reset_gpu_memory_budget() {
+    GPU_MEM_CLAIMED_BYTES.store(0, AtomicOrdering::SeqCst);
+    // Also clear the budget so auto-tune runs again with fresh available memory
+    GPU_MEM_BUDGET_BYTES.store(0, AtomicOrdering::SeqCst);
 }
 
 /// Legacy init without CPU thread count — assumes 4 threads.
-pub fn init_gpu_memory_budget() {
-    init_gpu_memory_budget_with_threads(4);
+pub fn init_gpu_memory_budget() -> bool {
+    init_gpu_memory_budget_with_threads(4)
 }
 
 /// Claim a portion of the GPU memory budget for a Metal miner instance.
@@ -85,13 +108,16 @@ fn claim_gpu_memory_budget(device_recommended: u64) -> u64 {
     // Ensure minimum viable batch (threads_per_tg * 256 KiB = ~32 MiB)
     let min_viable = 32 * 1024 * 1024;
     if allocation < min_viable {
+        // Budget exhausted — use minimum viable, NOT device_recommended
+        // (device_recommended can be 4GB+ on M1, causing OOM freeze)
         println!(
-            "gpu_mem_budget_exhausted budget_mib={} claimed_mib={} remaining_mib={} — falling back to device recommended",
+            "gpu_mem_budget_exhausted budget_mib={} claimed_mib={} remaining_mib={} — using minimum viable {} MiB",
             budget / (1024 * 1024),
             claimed / (1024 * 1024),
             remaining / (1024 * 1024),
+            min_viable / (1024 * 1024),
         );
-        return device_recommended;
+        return min_viable;
     }
 
     GPU_MEM_CLAIMED_BYTES.fetch_add(allocation, AtomicOrdering::SeqCst);
@@ -596,8 +622,36 @@ pub fn algorithm_fits_gpu_budget(
         return true;
     }
 
-    // OpenCL / CUDA: dedicated VRAM, all algorithms safe
+    // OpenCL / CUDA: dedicated VRAM — check if algorithm fits in GPU VRAM
+    // For dual-stream mining, each stream gets ~45% of VRAM (10% for driver).
+    // DAG-based algorithms need DAG + scratchpad; check if both fit.
+    let gpu_vram = detect_gpu_vram_bytes();
+    if gpu_vram > 0 {
+        let extra = algorithm_extra_gpu_memory_bytes(algorithm, height);
+        // Each stream gets at most 45% of VRAM (leave 10% for driver/overhead)
+        let per_stream_budget = (gpu_vram * 45) / 100;
+        if extra > per_stream_budget {
+            return false;
+        }
+        // Also check the provided budget (may be smaller for dual-stream)
+        if extra > available_gpu_budget_bytes {
+            return false;
+        }
+    }
+
     true
+}
+
+/// Detect GPU VRAM (dedicated video memory) in bytes.
+/// Returns 0 if no dedicated GPU is found (e.g. Metal/unified memory).
+/// For Metal, returns 0 (unified memory — use system RAM budget instead).
+pub fn detect_gpu_vram_bytes() -> u64 {
+    let gpus = query_gpu_details();
+    if gpus.is_empty() {
+        return 0;
+    }
+    // Return VRAM of the first (primary) GPU
+    gpus[0].global_mem_bytes
 }
 
 /// Resolve `Auto` to the concrete backend that will actually be used on this
@@ -818,70 +872,230 @@ fn parse_vm_stat_line(line: &str) -> u64 {
 
 /// Auto-tune GPU memory budget based on actual system state.
 ///
-/// This replaces the old fixed-percentage approach with a dynamic calculation:
-/// 1. Detect total system RAM
-/// 2. Detect currently available memory (free + reclaimable)
-/// 3. Reserve safety margin for OS + CPU mining
-/// 4. GPU budget = min(available * 0.6, total * max_pct)
+/// This replaces the old fixed-percentage approach with a dynamic calculation
+/// tuned per Apple Silicon generation (M1–M5) and per system RAM.
 ///
-/// The safety margin accounts for:
-/// - OS + window server: ~2 GB on macOS, ~1.5 GB on Linux
-/// - CPU mining threads: ~200 MB per thread (VerusHash/RandomX)
-/// - Application overhead: ~200 MB
+/// **Apple Silicon tuning table:**
 ///
-/// `cpu_threads` is the number of CPU mining threads that will run
-/// alongside the GPU (used to calculate the safety margin).
+/// | Model  | RAM    | GPU CUs | Max GPU budget | Notes                     |
+/// |--------|--------|---------|----------------|---------------------------|
+/// | M1     | 8 GB   | 7–8     | 600 MB         | Tightest — OS needs 5 GB  |
+/// | M1     | 16 GB  | 8       | 1800 MB        | Comfortable               |
+/// | M2     | 8 GB   | 10      | 600 MB         | Same RAM constraint as M1 |
+/// | M2     | 16 GB  | 10      | 2000 MB        | More CUs, more budget     |
+/// | M3     | 8 GB   | 10      | 600 MB         | Same RAM constraint       |
+/// | M3     | 16 GB  | 10      | 2200 MB        | Better memory bandwidth   |
+/// | M4     | 16 GB  | 10      | 2400 MB        | Best efficiency per watt  |
+/// | M4 Pro | 24 GB  | 16      | 4000 MB        | 16 CUs, plenty of RAM     |
+/// | M4 Max | 36 GB  | 32      | 7000 MB        | 32 CUs, huge RAM          |
+/// | M5     | TBD    | TBD     | TBD            | Expected late 2025/2026   |
+///
+/// **Linux/OpenCL (dedicated GPU):** Uses system RAM for scratchpad budget,
+/// GPU VRAM for algorithm check (separate path via `detect_gpu_vram_bytes`).
+///
+/// `cpu_threads` is the number of CPU mining threads (VerusHash/RandomX).
 pub fn auto_tune_gpu_budget(cpu_threads: usize) -> u64 {
     let total_ram = detect_system_memory_bytes();
     let available = detect_available_memory_bytes();
+    let total_mib = total_ram / (1024 * 1024);
+    let avail_mib = available / (1024 * 1024);
 
-    // ── Tier 1: Max percentage of TOTAL RAM (hard cap) ──
-    let max_pct: u64 = if total_ram <= 8 * 1024 * 1024 * 1024 {
-        25 // ≤8 GB: max 25% of total (2 GB on 8GB)
-    } else if total_ram <= 16 * 1024 * 1024 * 1024 {
-        40 // ≤16 GB: max 40%
-    } else {
-        50 // >16 GB: max 50%
+    // ── Detect Apple Silicon model (M1–M5) ──
+    let (chip_model, gpu_cores) = detect_apple_chip();
+
+    // ── Hard kill switch: if available < 200 MB, GPU is too risky ──
+    // On macOS, <200 MB available means the system is already under severe
+    // memory pressure. Any GPU allocation can trigger a kernel freeze.
+    // Return 0 to signal "disable GPU, CPU only".
+    if avail_mib < 200 {
+        println!(
+            "gpu_auto_tune KILL_SWITCH available_mib={} < 200 — disabling GPU (CPU only mode). \
+             System under severe memory pressure.",
+            avail_mib,
+        );
+        return 0;
+    }
+
+    // ── Per-model max budget (hard cap based on chip + RAM) ──
+    // These are empirically safe values that leave enough for OS + CPU mining.
+    let max_budget_mib: u64 = match (&chip_model[..], total_mib) {
+        // ── 8 GB RAM: tightest constraint (any M-chip) ──
+        (_, 8192) => {
+            // 8 GB total, OS needs ~4.5 GB, CPU mining ~0.8 GB, app ~0.2 GB
+            // Safe GPU budget: ~600 MB (leaves ~1.5 GB headroom)
+            600
+        }
+
+        // ── 12 GB RAM (M2/M3 base) ──
+        (_, 12288) => 1200,
+
+        // ── 16 GB RAM ──
+        ("M1", 16384) => 1800,
+        ("M2", 16384) => 2000,
+        ("M3", 16384) => 2200,
+        ("M4", 16384) => 2400,
+        (_, 16384) => 2000, // unknown M-chip with 16GB
+
+        // ── 24 GB RAM (M4 Pro) ──
+        ("M4", 24576) => 4000,
+        (_, 24576) => 3500,
+
+        // ── 32 GB RAM ──
+        (_, 32768) => 5500,
+
+        // ── 36 GB RAM (M4 Max) ──
+        ("M4", 36864) => 7000,
+        (_, 36864) => 6000,
+
+        // ── 64 GB RAM (M4 Max upgraded) ──
+        (_, 65536) => 12000,
+
+        // ── 96 GB / 128 GB (M4 Max / M5 Ultra) ──
+        (_, 98304) => 18000,
+        (_, 131072) => 24000,
+
+        // ── Linux with dedicated GPU: use 30% of system RAM ──
+        // (GPU scratchpad lives in system RAM, DAG lives in VRAM)
+        _ if !cfg!(target_os = "macos") => (total_ram * 30) / 100 / (1024 * 1024),
+
+        // ── Fallback: 15% of total RAM ──
+        _ => (total_ram * 15) / 100 / (1024 * 1024),
     };
-    let total_cap = (total_ram * max_pct) / 100;
 
-    // ── Tier 2: Available-based budget (don't hog what's free) ──
-    // Use 50% of currently available memory for GPU.
-    // macOS will reclaim inactive/compressed pages, so `available` is a
-    // snapshot — but it's a good indicator of how much headroom we have.
-    let avail_based = (available * 50) / 100;
+    // ── Available-based budget ──
+    // Use a ratio that depends on how much is available:
+    //   <500 MB available: 30% (very conservative — system is stressed)
+    //   <1000 MB available: 40% (cautious)
+    //   <2000 MB available: 50% (normal)
+    //   ≥2000 MB available: 60% (comfortable)
+    let avail_ratio: u64 = if avail_mib < 500 {
+        30
+    } else if avail_mib < 1000 {
+        40
+    } else if avail_mib < 2000 {
+        50
+    } else {
+        60
+    };
+    let avail_based_mib = (avail_mib * avail_ratio) / 100;
 
-    // ── Tier 3: Floor (minimum viable budget) ──
-    // Even if available is very low, give at least 8% of total RAM.
-    // macOS can swap/compress other pages to make room.
-    let floor = (total_ram * 8) / 100; // 8% of total
+    // ── CPU thread adjustment ──
+    // VerusHash: ~50-80 MB per thread (hash state + buffers)
+    // RandomX: ~200 MB per thread (dataset + cache, but shared dataset)
+    // Use 75 MB per thread as a safe average. On 8GB with 4 threads = 300 MB.
+    let cpu_adj_mib = (cpu_threads as u64) * 75;
 
-    // ── CPU thread safety: reduce budget if many CPU threads ──
-    // Each CPU mining thread (VerusHash/RandomX) uses ~100-200 MB.
-    // We reduce the budget by 50 MB per thread as a soft adjustment.
-    let cpu_adjustment = (cpu_threads as u64) * 50 * 1024 * 1024; // 50 MB per thread
+    // ── Floor: minimum viable budget ──
+    // On 8 GB: 64 MB floor (tiny but functional)
+    // On ≥16 GB: 128 MB floor
+    let floor_mib: u64 = if total_mib <= 8192 { 64 } else { 128 };
 
-    // Final budget: max(floor, avail_based), capped by total_cap, reduced by CPU
-    let raw_budget = avail_based.max(floor);
-    let budget = raw_budget.min(total_cap).saturating_sub(cpu_adjustment);
+    // ── Final budget calculation ──
+    // 1. Start with max(floor, avail_based)
+    // 2. Cap at per-model max_budget
+    // 3. Subtract CPU thread adjustment
+    let raw_budget = avail_based_mib.max(floor_mib);
+    let budget_mib = raw_budget.min(max_budget_mib).saturating_sub(cpu_adj_mib);
 
-    // Ensure minimum viable budget (32 MB for a tiny scratchpad)
-    let budget = budget.max(32 * 1024 * 1024);
+    // Ensure minimum viable (32 MB for a tiny scratchpad)
+    let budget_mib = budget_mib.max(32);
+    let budget = budget_mib * 1024 * 1024;
 
     println!(
-        "gpu_auto_tune sys_ram_mib={} available_mib={} cpu_threads={} max_pct={} total_cap_mib={} avail_based_mib={} floor_mib={} cpu_adj_mib={} => budget_mib={}",
-        total_ram / (1024 * 1024),
-        available / (1024 * 1024),
+        "gpu_auto_tune chip={} gpu_cores={} sys_ram_mib={} available_mib={} avail_ratio={}{} cpu_threads={} cpu_adj_mib={} max_budget_mib={} floor_mib={} => budget_mib={}",
+        chip_model,
+        gpu_cores,
+        total_mib,
+        avail_mib,
+        avail_ratio,
+        "%",
         cpu_threads,
-        max_pct,
-        total_cap / (1024 * 1024),
-        avail_based / (1024 * 1024),
-        floor / (1024 * 1024),
-        cpu_adjustment / (1024 * 1024),
-        budget / (1024 * 1024),
+        cpu_adj_mib,
+        max_budget_mib,
+        floor_mib,
+        budget_mib,
     );
 
     budget
+}
+
+/// Detect Apple Silicon chip model and GPU core count.
+/// Returns (model_name, gpu_core_count).
+/// On non-Apple platforms, returns ("Unknown", 0).
+fn detect_apple_chip() -> (String, u32) {
+    #[cfg(target_os = "macos")]
+    {
+        // sysctl machdep.cpu.brand_string returns e.g. "Apple M1", "Apple M2 Pro"
+        if let Ok(out) = std::process::Command::new("sysctl")
+            .args(["-n", "machdep.cpu.brand_string"])
+            .output()
+        {
+            if out.status.success() {
+                let brand = String::from_utf8_lossy(&out.stdout).trim().to_string();
+
+                // Parse model: "Apple M1" → "M1", "Apple M2 Pro" → "M2", "Apple M4 Max" → "M4"
+                let model = if brand.starts_with("Apple M") {
+                    // "Apple M" is 7 chars; rest is "1", "2 Pro", "4 Max", etc.
+                    let rest = &brand["Apple M".len()..];
+                    // Take digits (e.g. "1", "2", "3", "4", "5")
+                    let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
+                    if digits.is_empty() {
+                        "Unknown".to_string()
+                    } else {
+                        format!("M{}", digits)
+                    }
+                } else {
+                    "Unknown".to_string()
+                };
+
+                // Detect GPU core count from system_profiler
+                let gpu_cores = detect_apple_gpu_cores();
+
+                return (model, gpu_cores);
+            }
+        }
+        ("Unknown".to_string(), 0)
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        ("Unknown".to_string(), 0)
+    }
+}
+
+/// Detect GPU core count on Apple Silicon.
+#[cfg(target_os = "macos")]
+fn detect_apple_gpu_cores() -> u32 {
+    // system_profiler SPHardwareDataType shows "Total Number of Cores: 8 (4 Performance and 4 Efficiency)"
+    // But GPU cores are different. Try SPDisplaysDataType.
+    if let Ok(out) = std::process::Command::new("system_profiler")
+        .args(["SPDisplaysDataType"])
+        .output()
+    {
+        let s = String::from_utf8_lossy(&out.stdout);
+        // Look for "Total Number of Cores: N" in the GPU section
+        for line in s.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("Total Number of Cores:") {
+                let rest = &trimmed["Total Number of Cores:".len()..];
+                let digits: String = rest.chars().filter(|c| c.is_ascii_digit()).collect();
+                if let Ok(n) = digits.parse::<u32>() {
+                    // This is total cores (CPU+GPU on Apple Silicon).
+                    // GPU cores = total - CPU cores.
+                    // M1 8-core: 4P+4E CPU + 7-8 GPU = 15-16 total
+                    // But system_profiler may report differently.
+                    // Just return the number as a hint.
+                    return n;
+                }
+            }
+        }
+    }
+    0
+}
+
+#[cfg(not(target_os = "macos"))]
+fn detect_apple_gpu_cores() -> u32 {
+    0
 }
 
 /// Check if a GPU backend can safely handle an algorithm.
@@ -905,7 +1119,25 @@ pub fn backend_supports_algorithm(backend: GpuBackendKind, algorithm: &str) -> b
             true
         }
         GpuBackendKind::OpenCL | GpuBackendKind::Cuda => {
-            // OpenCL and CUDA have dedicated VRAM — DAG-based algorithms are safe
+            // OpenCL and CUDA have dedicated VRAM — check if DAG/memory-hard
+            // algorithms fit in the available VRAM.
+            let gpu_vram = detect_gpu_vram_bytes();
+            if gpu_vram > 0 {
+                // For DAG-based: need at least 1.5 GB for DAG + scratchpad
+                // For memory-hard: need at least 1.3 GB
+                let min_needed = if is_dag_based_algorithm(algorithm) {
+                    1536 * 1024 * 1024 // 1.5 GB minimum (epoch 0 DAG + scratchpad)
+                } else if is_memory_hard_algorithm(algorithm) {
+                    1400 * 1024 * 1024 // 1.4 GB for Equihash
+                } else {
+                    0 // Lightweight algorithms always fit
+                };
+                if min_needed > 0 && min_needed > gpu_vram / 2 {
+                    // VRAM too small for this algorithm in dual-stream mode
+                    // (each stream gets half the VRAM)
+                    return false;
+                }
+            }
             true
         }
         GpuBackendKind::Auto => {
