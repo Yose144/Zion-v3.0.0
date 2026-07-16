@@ -1,23 +1,23 @@
 #!/bin/bash
 # E2E connect/auth/notify test for 8 new GPU-mineable coins
 # Tests stratum protocol layer: connect, subscribe, authorize, receive job
-set -euo pipefail
+set -uo pipefail
 
 BIN="/home/zionserver/2.9.6-main/target/release/examples/e2e_pool_test"
 WALLET="bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh"
 RESULTS_DIR="/tmp/e2e_results"
 mkdir -p "$RESULTS_DIR"
 
-# Coin configs: coin|password|timeout_label
+# Coin configs: coin|password|pool
 COINS=(
   "ZCL|c=BTC|equihash192.eu.mine.zpool.ca:2144"
   "VTC|c=BTC|verthash.eu.mine.zpool.ca:4533"
   "QTC|x|qtc.suprnova.cc:5555"
   "RTM|c=BTC|ghostrider.eu.mine.zpool.ca:5354"
-  "IRON|x|de.ironfish.herominers.com:1145"
-  "KLS|x|pool.woolypooly.com:3132"
+  "IRON|x|fr.grandpool.io:2027"
+  "KLS|x|karlsencoin.cedric-crispin.com:4154"
   "NEXA|x|nexa.2miners.com:5050"
-  "DNX|x|dynex.herominers.com:1030"
+  "DNX|x|pool.deepminerz.com:3333"
 )
 
 echo "============================================"
@@ -41,6 +41,7 @@ for entry in "${COINS[@]}"; do
     AUXPOW_E2E_COIN="$COIN" \
     AUXPOW_E2E_WALLET="$WALLET" \
     AUXPOW_E2E_PASSWORD="$PASSWD" \
+    AUXPOW_E2E_POOL="$POOL" \
     AUXPOW_E2E_MINE_SECS=0 \
     AUXPOW_E2E_SUBMIT=0 \
     AUXPOW_E2E_JOB_TIMEOUT_MS=30000 \

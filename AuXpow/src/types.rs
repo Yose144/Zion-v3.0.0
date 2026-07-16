@@ -157,10 +157,10 @@ impl ExternalCoin {
             Self::ZCL => "equihash192.eu.mine.zpool.ca:2144",
             Self::QTC => "qtc.suprnova.cc:5555",
             Self::VTC => "verthash.eu.mine.zpool.ca:4533",
-            Self::IRON => "de.ironfish.herominers.com:1145",
+            Self::IRON => "fr.grandpool.io:2027",
             Self::NEXA => "nexa.2miners.com:5050",
             Self::RTM => "ghostrider.eu.mine.zpool.ca:5354",
-            Self::DNX => "dynex.herominers.com:1200",
+            Self::DNX => "pool.deepminerz.com:3333",
         }
     }
 
@@ -840,10 +840,10 @@ mod tests {
         assert_eq!(ExternalCoin::ZCL.default_pool(), "equihash192.eu.mine.zpool.ca:2144");
         assert_eq!(ExternalCoin::QTC.default_pool(), "qtc.suprnova.cc:5555");
         assert_eq!(ExternalCoin::VTC.default_pool(), "verthash.eu.mine.zpool.ca:4533");
-        assert_eq!(ExternalCoin::IRON.default_pool(), "de.ironfish.herominers.com:1145");
+        assert_eq!(ExternalCoin::IRON.default_pool(), "fr.grandpool.io:2027");
         assert_eq!(ExternalCoin::NEXA.default_pool(), "nexa.2miners.com:5050");
         assert_eq!(ExternalCoin::RTM.default_pool(), "ghostrider.eu.mine.zpool.ca:5354");
-        assert_eq!(ExternalCoin::DNX.default_pool(), "dynex.herominers.com:1200");
+        assert_eq!(ExternalCoin::DNX.default_pool(), "pool.deepminerz.com:3333");
     }
 
     #[test]

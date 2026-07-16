@@ -83,6 +83,28 @@ pub enum StratumProtocol {
     ///   - Solution = 104 bytes (100 bytes compressed indices + 4 bytes extra nonce)
     ///   - Nonce = 8 bytes (pool nonce prefix + miner nonce)
     BeamStratum,
+    /// Cryptonote Stratum — JSON-RPC 2.0 for cryptonote-nodejs-pool based pools.
+    ///
+    /// Used by DNX (DynexSolve) pools like deepminerz.com, neuropool.net, etc.
+    /// Protocol:
+    ///   - `login` with {login, pass, agent} → returns {id, job, status}
+    ///   - Server pushes `job` notifications with {blob, job_id, target, height, seed_hash, ...}
+    ///   - `submit` with {id, job_id, nonce, result} — submit share
+    ///   - `keepalived` for connection maintenance
+    ///   - Error codes: -1 (invalid method/address), -2 (wrong job), -3 (low diff)
+    CryptonoteStratum,
+    /// IronFish Stratum — custom JSON-RPC for IronFish (IRON) fishhash mining.
+    ///
+    /// Used by herominers, grandpool, kryptex, etc.
+    /// Protocol (v2):
+    ///   - `mining.subscribe` with body {version:2, agent, publicAddress, name}
+    ///     → response `mining.subscribed` with body {clientId, xn}
+    ///   - `mining.set_target` notification with body {target}
+    ///   - `mining.notify` notification with body {miningRequestId, header}
+    ///   - `mining.submit` with body {miningRequestId, randomness, graffiti}
+    ///     → response `mining.submitted` with body {id, result, message?}
+    ///   - No separate authorize — subscribe IS the auth
+    IronFishStratum,
 }
 
 impl ExternalCoin {
@@ -128,11 +150,14 @@ impl ExternalCoin {
             Self::BEAM => {
                 StratumProtocol::BeamStratum
             }
-            // New coins — all use standard Stratum v1 except ZCL (Equihash).
-            Self::KLS | Self::QTC | Self::VTC | Self::IRON
-            | Self::NEXA | Self::RTM | Self::DNX => {
+            // New coins — all use standard Stratum v1 except ZCL (Equihash),
+            // DNX (cryptonote-nodejs-pool protocol), and IRON (IronFish stratum v2).
+            Self::KLS | Self::QTC | Self::VTC
+            | Self::NEXA | Self::RTM => {
                 StratumProtocol::Stratum
             }
+            Self::DNX => StratumProtocol::CryptonoteStratum,
+            Self::IRON => StratumProtocol::IronFishStratum,
             Self::ZCL => StratumProtocol::ZcashStratum,
         }
     }
@@ -278,6 +303,9 @@ pub struct AuxPowClient {
     /// Pearl mining parameters received from pool via `pearl.set_mining_params`.
     /// None = use defaults (m=512, n=512, k=4096, rank=256).
     pearl_mining_params: Arc<Mutex<Option<PearlMiningParams>>>,
+    /// CryptonoteStratum (DNX): session ID from login response.
+    /// Used for submit and keepalived requests.
+    cryptonote_session_id: Arc<Mutex<Option<String>>>,
 }
 
 /// Pearl mining parameters received from the pool via `pearl.set_mining_params`.
@@ -326,6 +354,7 @@ impl AuxPowClient {
             #[cfg(feature = "gpu-opencl")]
             gpu_opencl_backend: Arc::new(Mutex::new(None)),
             pearl_mining_params: Arc::new(Mutex::new(None)),
+            cryptonote_session_id: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -393,6 +422,18 @@ impl AuxPowClient {
             self.beam_login(payout_wallet).await?;
         }
 
+        // For CryptonoteStratum (DNX), perform login BEFORE spawning the poll loop.
+        if self.protocol == StratumProtocol::CryptonoteStratum {
+            self.cryptonote_login(payout_wallet).await?;
+            self.start_cryptonote_keepalived().await;
+        }
+
+        // For IronFishStratum (IRON), perform subscribe BEFORE spawning the poll loop.
+        // IronFish subscribe IS the auth — no separate authorize step.
+        if self.protocol == StratumProtocol::IronFishStratum {
+            self.ironfish_subscribe(payout_wallet).await?;
+        }
+
         // Spawn the background reader with auto-reconnect
         let client_clone = Arc::new(self.clone());
         let profile_clone = self.profile.clone();
@@ -436,9 +477,10 @@ impl AuxPowClient {
             }
         });
 
-        // Subscribe + Authorize (non-EPIC protocols — EPIC already handled above)
+        // Subscribe + Authorize (non-EPIC/Beam/Cryptonote protocols — already handled above)
         if self.protocol != StratumProtocol::EpicStratum
             && self.protocol != StratumProtocol::BeamStratum
+            && self.protocol != StratumProtocol::CryptonoteStratum
         {
             if self.protocol == StratumProtocol::PearlStratum {
                 // Pearl plain stratum (port 5571): NO mining.subscribe or
@@ -529,6 +571,10 @@ impl AuxPowClient {
             self.epic_getjobtemplate().await?;
         } else if self.protocol == StratumProtocol::BeamStratum {
             self.beam_login(payout_wallet).await?;
+        } else if self.protocol == StratumProtocol::CryptonoteStratum {
+            self.cryptonote_login(payout_wallet).await?;
+        } else if self.protocol == StratumProtocol::IronFishStratum {
+            self.ironfish_subscribe(payout_wallet).await?;
         } else {
             // PearlStratum: straight to mining.authorize (no subscribe/configure).
             // See https://prl.suprnova.cc/stratum-spec.html §4.1
@@ -1027,6 +1073,215 @@ impl AuxPowClient {
         })
     }
 
+    /// Cryptonote login — used by DNX (DynexSolve) pools based on
+    /// cryptonote-nodejs-pool (deepminerz.com, neuropool.net, etc.).
+    ///
+    /// Sends `{"jsonrpc":"2.0","id":1,"method":"login","params":{"login","pass","agent"}}`
+    /// The login response includes a session `id` and an initial `job`.
+    async fn cryptonote_login(&self, payout_wallet: &str) -> Result<()> {
+        let login = format!("{}.{}", payout_wallet, self.profile.worker_name);
+        let password = if !self.profile.password.is_empty() {
+            self.profile.password.as_str()
+        } else {
+            "x"
+        };
+        let req = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "login",
+            "params": {
+                "login": login,
+                "pass": password,
+                "agent": "zion-auxpow/0.1",
+            }
+        });
+        println!(
+            "auxpow: DNX cryptonote login as {} on {} (protocol={})",
+            login, self.profile.coin, self.protocol.as_str()
+        );
+        let resp = self.send_request_inline(&req).await?;
+        if let Some(err) = resp.get("error") {
+            if !err.is_null() {
+                bail!("DNX login failed: {:?}", err);
+            }
+        }
+
+        // Extract session ID from login response.
+        if let Some(id) = resp.get("result").and_then(|r| r.get("id")).and_then(|v| v.as_str()) {
+            *self.cryptonote_session_id.lock().await = Some(id.to_string());
+        }
+
+        *self.authorized.lock().await = true;
+        *self.subscribed.lock().await = true;
+        println!("auxpow: DNX cryptonote login successful for {}", self.profile.coin);
+
+        // The login response may include an initial job.
+        if let Some(job_obj) = resp.get("result").and_then(|r| r.get("job")) {
+            if let Ok(job) = self.parse_cryptonote_job(job_obj).await {
+                *self.current_job.lock().await = Some(job);
+                self.job_notify.notify_waiters();
+            }
+        }
+        Ok(())
+    }
+
+    /// Parse a cryptonote-nodejs-pool `job` notification.
+    /// Format: {"blob":"<hex>", "job_id":"<hex>", "target":"<hex>",
+    ///          "height":<num>, "seed_hash":"<hex>", "algo":"dynexsolve", ...}
+    async fn parse_cryptonote_job(&self, msg: &Value) -> Result<ExternalJob> {
+        let job = msg.get("params").unwrap_or(msg);
+
+        let blob_hex = job.get("blob").and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("DNX job: missing 'blob' field"))?;
+        let header_bytes = hex::decode(blob_hex)
+            .context("DNX job: invalid hex in 'blob'")?;
+
+        let job_id = job.get("job_id").and_then(|v| v.as_str())
+            .unwrap_or("unknown").to_string();
+
+        // Target is a compact hex string (8 or 16 hex chars, little-endian).
+        let target_hex = job.get("target").and_then(|v| v.as_str())
+            .unwrap_or("ffffffffffffffff");
+        let mut target_vec = hex::decode(target_hex).unwrap_or_else(|_| vec![0xff; 32]);
+        // Pad to 32 bytes.
+        while target_vec.len() < 32 {
+            target_vec.push(0);
+        }
+        target_vec.resize(32, 0);
+        let mut target_bytes = [0u8; 32];
+        target_bytes.copy_from_slice(&target_vec);
+
+        let height = job.get("height").and_then(|v| v.as_u64()).unwrap_or(0);
+        let seed_hash = job.get("seed_hash").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+
+        println!(
+            "auxpow: DNX job parsed height={} job_id={} blob_len={} target={}",
+            height, job_id, header_bytes.len(), &target_hex[..target_hex.len().min(16)],
+        );
+
+        Ok(ExternalJob {
+            job_id,
+            header_hex: blob_hex.to_string(),
+            target_hex: hex::encode(&target_bytes),
+            seed_hash,
+            block_number: Some(height),
+            algorithm: self.profile.algorithm.clone(),
+            header_bytes,
+            target_bytes,
+            timestamp: Some(now),
+            nbits: None,
+            external_coin: self.profile.coin,
+            from_group: 0,
+            to_group: 0,
+            extranonce1: Vec::new(),
+            extranonce2: String::new(),
+            epoch: None,
+        })
+    }
+
+    /// IronFish stratum v2 subscribe — sends mining.subscribe with body
+    /// containing version, agent, publicAddress, and name.
+    /// The pool responds with mining.subscribed containing clientId and xn (extranonce).
+    async fn ironfish_subscribe(&self, payout_wallet: &str) -> Result<()> {
+        let req = json!({
+            "id": 1,
+            "method": "mining.subscribe",
+            "body": {
+                "version": 2,
+                "agent": "rigel/1.4.2",
+                "publicAddress": payout_wallet,
+                "name": self.profile.worker_name,
+            }
+        });
+        println!(
+            "auxpow: IRON IronFish subscribe as {} on {} (protocol={})",
+            payout_wallet, self.profile.coin, self.protocol.as_str()
+        );
+        let resp = self.send_request_inline(&req).await?;
+        if let Some(err) = resp.get("error") {
+            if !err.is_null() {
+                bail!("IRON subscribe failed: {:?}", err);
+            }
+        }
+
+        // Extract extranonce (xn) from mining.subscribed response.
+        // The response method is "mining.subscribed" with body {clientId, xn}.
+        if let Some(body) = resp.get("body").or_else(|| resp.get("result")) {
+            if let Some(xn) = body.get("xn").and_then(|v| v.as_str()) {
+                let xn_bytes = hex::decode(xn).unwrap_or_default();
+                *self.extranonce1.lock().await = xn_bytes;
+                println!("auxpow: IRON subscribed, xn={}", xn);
+            }
+            if let Some(client_id) = body.get("clientId") {
+                println!("auxpow: IRON clientId={}", client_id);
+            }
+        }
+
+        *self.authorized.lock().await = true;
+        *self.subscribed.lock().await = true;
+        println!("auxpow: IRON IronFish subscribe successful for {}", self.profile.coin);
+        Ok(())
+    }
+
+    /// Parse an IronFish mining.notify body into an ExternalJob.
+    /// Format: {"miningRequestId": <num>, "header": "<hex>"}
+    async fn parse_ironfish_job(&self, body: &Value) -> Result<ExternalJob> {
+        let header_hex = body.get("header").and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("IRON job: missing 'header' field"))?;
+        let header_bytes = hex::decode(header_hex)
+            .context("IRON job: invalid hex in 'header'")?;
+
+        let mining_request_id = body.get("miningRequestId")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+
+        // Target may come from a separate mining.set_target notification,
+        // or we use a default. The target is stored in current_job's target.
+        let target_hex = body.get("target").and_then(|v| v.as_str())
+            .unwrap_or("00000000ffff0000000000000000000000000000000000000000000000000000");
+        let mut target_vec = hex::decode(target_hex).unwrap_or_else(|_| vec![0xff; 32]);
+        target_vec.resize(32, 0);
+        let mut target_bytes = [0u8; 32];
+        target_bytes.copy_from_slice(&target_vec);
+
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+
+        // job_id = miningRequestId as string (used for submit)
+        let job_id = mining_request_id.to_string();
+
+        println!(
+            "auxpow: IRON job parsed miningRequestId={} header_len={} target={}",
+            mining_request_id, header_bytes.len(), &target_hex[..target_hex.len().min(16)],
+        );
+
+        Ok(ExternalJob {
+            job_id,
+            header_hex: header_hex.to_string(),
+            target_hex: hex::encode(&target_bytes),
+            seed_hash: None,
+            block_number: Some(mining_request_id),
+            algorithm: self.profile.algorithm.clone(),
+            header_bytes,
+            target_bytes,
+            timestamp: Some(now),
+            nbits: None,
+            external_coin: self.profile.coin,
+            from_group: 0,
+            to_group: 0,
+            extranonce1: self.extranonce1.lock().await.clone(),
+            extranonce2: String::new(),
+            epoch: None,
+        })
+    }
+
     /// Request a job template from the EPIC pool.
     /// Sent fire-and-forget — the server responds with a `job` notification
     /// that is handled by the poll_messages loop.  We don't use
@@ -1076,6 +1331,38 @@ impl AuxPowClient {
                         break;
                     }
                     debug!("auxpow: EPIC keepalive sent for {}", client.profile.coin);
+                }
+            }
+        });
+    }
+
+    /// Start a background keepalived timer for CryptonoteStratum (DNX).
+    /// cryptonote-nodejs-pool expects `{"method":"keepalived","params":{"id":"<session_id>"}}`.
+    async fn start_cryptonote_keepalived(&self) {
+        let client = Arc::new(self.clone());
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(30));
+            interval.tick().await; // skip first immediate tick
+            loop {
+                interval.tick().await;
+                if !*client.connected.lock().await {
+                    break;
+                }
+                let sid = client.cryptonote_session_id.lock().await.clone();
+                let sid = sid.unwrap_or_else(|| "unknown".to_string());
+                let req = json!({
+                    "jsonrpc": "2.0",
+                    "id": 0,
+                    "method": "keepalived",
+                    "params": { "id": sid }
+                });
+                let req_line = format!("{}\n", serde_json::to_string(&req).unwrap());
+                let mut stream = client.stream.lock().await;
+                if let Some(w) = stream.as_mut() {
+                    if w.write_all(req_line.as_bytes()).await.is_err() {
+                        break;
+                    }
+                    debug!("auxpow: DNX keepalived sent for {}", client.profile.coin);
                 }
             }
         });
@@ -1479,7 +1766,7 @@ impl AuxPowClient {
         // Otherwise treat it as a notification.
         if let Some(method) = msg.get("method").and_then(|m| m.as_str()) {
             match method {
-                "mining.notify" => {
+                "mining.notify" if self.protocol != StratumProtocol::IronFishStratum => {
                     if let Some(params) = msg.get("params") {
                         // 2miners ETC sends a top-level "height" field in
                         // mining.notify — extract it for DAG epoch derivation.
@@ -1521,7 +1808,7 @@ impl AuxPowClient {
                         }
                     }
                 }
-                "mining.set_target" => {
+                "mining.set_target" if self.protocol != StratumProtocol::IronFishStratum => {
                     // RVN/KawPow and VRSC/LuckPool pools send mining.set_target
                     // with a 32-byte hex target string instead of mining.set_difficulty.
                     if let Some(params) = msg.get("params") {
@@ -1579,7 +1866,7 @@ impl AuxPowClient {
                     warn!("AuxPow: {} requested client.reconnect", self.profile.coin);
                     bail!("client.reconnect requested by pool");
                 }
-                "job" => {
+                "job" if self.protocol == StratumProtocol::EpicStratum => {
                     // EPIC Stratum: server pushes `job` notifications with
                     // pre_pow, height, job_id, difficulty, epochs, algorithm.
                     // The job data may be in "params" or at the top level.
@@ -1615,6 +1902,56 @@ impl AuxPowClient {
                             Err(e) => {
                                 warn!("AuxPow: EPIC getjobtemplate parse error for {}: {}", self.profile.coin, e);
                             }
+                        }
+                    }
+                }
+                "job" if self.protocol == StratumProtocol::CryptonoteStratum => {
+                    // CryptonoteStratum (DNX): server pushes `job` notifications
+                    // with blob, job_id, target, height, seed_hash.
+                    let job_val = msg.get("params").unwrap_or(&msg);
+                    match self.parse_cryptonote_job(job_val).await {
+                        Ok(job) => {
+                            debug!(
+                                "AuxPow: received DNX job {} height={} for {}",
+                                job.job_id, job.block_number.unwrap_or(0), self.profile.coin
+                            );
+                            *self.current_job.lock().await = Some(job);
+                            self.job_notify.notify_waiters();
+                        }
+                        Err(e) => {
+                            warn!("AuxPow: DNX job parse error for {}: {}", self.profile.coin, e);
+                        }
+                    }
+                }
+                // IronFish stratum v2: mining.notify with body {miningRequestId, header}
+                "mining.notify" if self.protocol == StratumProtocol::IronFishStratum => {
+                    let body = msg.get("body").unwrap_or(&msg);
+                    match self.parse_ironfish_job(body).await {
+                        Ok(job) => {
+                            debug!(
+                                "AuxPow: received IRON job {} (miningRequestId={}) for {}",
+                                job.job_id, job.block_number.unwrap_or(0), self.profile.coin
+                            );
+                            *self.current_job.lock().await = Some(job);
+                            self.job_notify.notify_waiters();
+                        }
+                        Err(e) => {
+                            warn!("AuxPow: IRON job parse error for {}: {}", self.profile.coin, e);
+                        }
+                    }
+                }
+                // IronFish stratum v2: mining.set_target with body {target}
+                "mining.set_target" if self.protocol == StratumProtocol::IronFishStratum => {
+                    if let Some(body) = msg.get("body") {
+                        if let Some(target_hex) = body.get("target").and_then(|v| v.as_str()) {
+                            println!("auxpow: IRON set_target target={}", &target_hex[..target_hex.len().min(16)]);
+                            let target_bytes = crate::external_hashers::parse_target_hex(
+                                target_hex.trim_start_matches("0x"),
+                            ).unwrap_or([0xFFu8; 32]);
+                            let max_target = algorithm_max_target(&self.profile.algorithm);
+                            let diff = target_to_difficulty_with_max(&target_bytes, &max_target);
+                            *self.current_target_bytes.lock().await = Some(target_bytes);
+                            *self.current_difficulty.lock().await = diff;
                         }
                     }
                 }
@@ -2304,7 +2641,7 @@ impl AuxPowClient {
             }
         }
 
-        // Standard Stratum v1 (zpool/suprnova) for RTM, VTC, QTC, IRON, KLS, DNX, NEXA:
+        // Standard Stratum v1 (zpool/suprnova) for RTM, VTC, QTC, KLS, DNX, NEXA:
         // mining.notify params = [job_id, prevhash, coinbase1, coinbase2,
         //   merkle_branches, version, nbits, ntime, clean_jobs]
         // ntime is at index [7], nbits at [6], version at [5].
@@ -2312,7 +2649,7 @@ impl AuxPowClient {
         if matches!(
             self.profile.coin,
             ExternalCoin::RTM | ExternalCoin::VTC | ExternalCoin::QTC
-                | ExternalCoin::IRON | ExternalCoin::KLS | ExternalCoin::DNX
+                | ExternalCoin::KLS | ExternalCoin::DNX
                 | ExternalCoin::NEXA
         ) {
             if let Some(arr) = params.as_array() {
@@ -2573,6 +2910,7 @@ impl AuxPowClient {
         let is_ethstratum = self.protocol == StratumProtocol::EthStratum;
         let is_epic = self.protocol == StratumProtocol::EpicStratum;
         let is_beam = self.protocol == StratumProtocol::BeamStratum;
+        let is_cryptonote = self.protocol == StratumProtocol::CryptonoteStratum;
 
         // EPIC submit format:
         //   {"id": N, "method": "submit", "params": {
@@ -2663,6 +3001,119 @@ impl AuxPowClient {
                 return Ok(ShareResult::Accepted);
             } else {
                 return Ok(ShareResult::Rejected("submit rejected".to_string()));
+            }
+        }
+
+        // CryptonoteStratum (DNX) submit format:
+        //   {"jsonrpc":"2.0","id":N,"method":"submit",
+        //    "params":{"id":"<session_id>","job_id":"<job_id>",
+        //              "nonce":"<nonce_hex>","result":"<hash_hex>"}}
+        // nonce = 4-byte LE hex (cryptonote nonce in block header),
+        // result = hash of the modified block blob (hex).
+        if is_cryptonote {
+            let session_id = self.cryptonote_session_id.lock().await.clone();
+            let sid = session_id.unwrap_or_else(|| "unknown".to_string());
+            // Cryptonote nonce is 4 bytes, little-endian hex.
+            let nonce_hex = format!("{:08x}", (nonce & 0xFFFF_FFFF) as u32);
+            // result hash — use mix_hash_hex if provided, else _hash_hex.
+            let result_hex = mix_hash_hex.unwrap_or(_hash_hex);
+            let req = json!({
+                "jsonrpc": "2.0",
+                "id": 20,
+                "method": "submit",
+                "params": {
+                    "id": sid,
+                    "job_id": job_id,
+                    "nonce": nonce_hex,
+                    "result": result_hex,
+                }
+            });
+            let resp = self.send_request(&req).await?;
+            if let Some(err) = resp.get("error") {
+                if !err.is_null() {
+                    let msg = err.get("message")
+                        .and_then(|m| m.as_str())
+                        .unwrap_or("unknown error");
+                    return Ok(ShareResult::Rejected(msg.to_string()));
+                }
+            }
+            let ok = resp.get("result")
+                .and_then(|v| v.get("status"))
+                .and_then(|s| s.as_str())
+                .map(|s| s == "OK")
+                .unwrap_or_else(|| {
+                    resp.get("result")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(true)
+                });
+            if ok {
+                return Ok(ShareResult::Accepted);
+            } else {
+                return Ok(ShareResult::Rejected("submit rejected".to_string()));
+            }
+        }
+
+        // IronFishStratum (IRON) submit format:
+        //   {"id":N,"method":"mining.submit","body":{
+        //     "miningRequestId":<id>, "randomness":"<hex>", "graffiti":"<hex>"}}
+        // randomness = 8-byte LE hex (extranonce + scanned nonce)
+        // graffiti = 32-byte hex (arbitrary, we use zeros)
+        if self.protocol == StratumProtocol::IronFishStratum {
+            let job = self.current_job().await;
+            let mining_request_id: u64 = job
+                .as_ref()
+                .and_then(|j| j.block_number)
+                .unwrap_or(0);
+            // randomness: extranonce (xn) + scanned nonce, 8 bytes LE hex
+            let xn = self.extranonce1.lock().await.clone();
+            let mut randomness_bytes = [0u8; 8];
+            let xn_len = xn.len().min(8);
+            randomness_bytes[..xn_len].copy_from_slice(&xn[..xn_len]);
+            // Fill remaining bytes with the nonce (LE)
+            let nonce_bytes = nonce.to_le_bytes();
+            let remaining = 8 - xn_len;
+            randomness_bytes[xn_len..].copy_from_slice(&nonce_bytes[..remaining]);
+            let randomness_hex = hex::encode(randomness_bytes);
+            // graffiti: 32 bytes of zeros (printable chars preferred, but zeros work)
+            let graffiti_hex = "0".repeat(64);
+
+            let req = json!({
+                "id": 20,
+                "method": "mining.submit",
+                "body": {
+                    "miningRequestId": mining_request_id,
+                    "randomness": randomness_hex,
+                    "graffiti": graffiti_hex,
+                }
+            });
+            let resp = self.send_request(&req).await?;
+            // IronFish pools respond with mining.submitted: {id, result, message?}
+            // or generic error: {error: {id, message}}
+            if let Some(err) = resp.get("error") {
+                if !err.is_null() {
+                    let msg = err.get("message")
+                        .and_then(|m| m.as_str())
+                        .unwrap_or("unknown error");
+                    return Ok(ShareResult::Rejected(msg.to_string()));
+                }
+            }
+            // Check mining.submitted body
+            let ok = resp.get("body")
+                .and_then(|b| b.get("result"))
+                .and_then(|v| v.as_bool())
+                .unwrap_or_else(|| {
+                    resp.get("result")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(true)
+                });
+            if ok {
+                return Ok(ShareResult::Accepted);
+            } else {
+                let msg = resp.get("body")
+                    .and_then(|b| b.get("message"))
+                    .and_then(|m| m.as_str())
+                    .unwrap_or("submit rejected");
+                return Ok(ShareResult::Rejected(msg.to_string()));
             }
         }
 
@@ -3235,7 +3686,7 @@ impl AuxPowClient {
         } else if matches!(
             self.profile.coin,
             ExternalCoin::RTM | ExternalCoin::VTC | ExternalCoin::QTC
-                | ExternalCoin::IRON | ExternalCoin::KLS | ExternalCoin::DNX
+                | ExternalCoin::KLS | ExternalCoin::DNX
                 | ExternalCoin::NEXA
         ) {
             // Standard Stratum v1 with 5 params for zpool/suprnova/herominers:
@@ -3928,6 +4379,8 @@ impl StratumProtocol {
             Self::PearlStratum => "pearlstratum",
             Self::EpicStratum => "epicstratum",
             Self::BeamStratum => "beamstratum",
+            Self::CryptonoteStratum => "cryptonotestratum",
+            Self::IronFishStratum => "ironfishstratum",
         }
     }
 }
