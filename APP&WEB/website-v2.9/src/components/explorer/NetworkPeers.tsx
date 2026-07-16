@@ -144,8 +144,8 @@ export default function NetworkPeers() {
           {!loading && (!data?.peers || data.peers.length === 0) && (
             <div className="text-center py-8">
               <WifiOff className="h-8 w-8 text-gray-600 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">Žádní známí peerové.</p>
-              <p className="text-xs text-gray-600 mt-1">Daemon ještě neregistroval žádné P2P připojení.</p>
+              <p className="text-sm text-gray-500">{cs ? 'Žádní známí peerové.' : 'No known peers.'}</p>
+              <p className="text-xs text-gray-600 mt-1">{cs ? 'Daemon ještě neregistroval žádné P2P připojení.' : 'Daemon has not registered any P2P connections yet.'}</p>
             </div>
           )}
 

@@ -192,7 +192,7 @@ export default function ExplorerCharts() {
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-6 h-6 border-2 border-white/10 border-t-white/40 rounded-full animate-spin" />
             </div>
-          ) : chartData[activeChart] && chartData[activeChart]!.data.values.length > 0 ? (
+          ) : chartData[activeChart] && (chartData[activeChart]?.data.values.length ?? 0) > 0 ? (
             chartConfig[activeChart].kind === "bar" ? (
               <FullBarChart
                 values={chartData[activeChart]!.data.values}
@@ -220,7 +220,7 @@ export default function ExplorerCharts() {
       )}
 
       {/* Summary bar (single view only) */}
-      {!multiView && chartData[activeChart] && chartData[activeChart]!.data.values.length > 0 && (
+      {!multiView && chartData[activeChart] && (chartData[activeChart]?.data.values.length ?? 0) > 0 && (
         <div className="grid grid-cols-3 border-t border-white/[0.06]">
           {[
             { label: cs ? "Min" : "Min", value: Math.min(...chartData[activeChart]!.data.values), color: "text-cyan-400" },
