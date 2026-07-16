@@ -529,11 +529,12 @@ impl GpuMiner {
             _ => 8, // blake3, kheavyhash, zelhash
         };
         // Work-group size: MUST match GROUP_SIZE defined in the kernel build
-        // options. ProgPow/KawPow use GROUP_SIZE=128 (see ensure_proque_progpow).
+        // options. EPIC ProgPow uses GROUP_SIZE=256 (matches reference epic-miner).
+        // KawPow and variants use GROUP_SIZE=128.
         // Mismatch causes out-of-bounds local memory access → GPU hang.
         let wg_size = match algorithm {
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-            | "progpow" | "progpow_epic" => 128, // GROUP_SIZE=128 for ProgPow/KawPow
+            "progpow" | "progpow_epic" => 256, // GROUP_SIZE=256 for EPIC ProgPow
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => 128, // GROUP_SIZE=128 for KawPow
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 128,
             "beamhash" | "beamhash_beam" => 256, // BeamHash: standard work-group
             _ => 256,
@@ -1139,25 +1140,35 @@ impl GpuMiner {
         //   (each dag_t = 16 bytes, and the kernel accesses g_dag[offset] where
         //    offset can be up to dag_elements * PROGPOW_LANES - 1)
         //
-        // GROUP_SIZE MUST be 128 (not 256!) for ProgPow/KawPow:
-        //   - HASHES_PER_GROUP = GROUP_SIZE / PROGPOW_LANES = 128 / 16 = 8
-        //   - share[0].uint64s has PROGPOW_LANES/2 = 8 elements
-        //   - With GROUP_SIZE=256, group_id goes 0..15, but share[0].uint64s
-        //     only has 8 elements → out-of-bounds local memory access → GPU hang!
+        // GROUP_SIZE=256 for EPIC ProgPow (matches reference epic-miner):
+        //   - HASHES_PER_GROUP = 256 / 16 = 16 hashes per work-group
+        //   - Better latency hiding through more wavefronts per group
+        //   - amd_bpermute handles the share broadcast without barriers,
+        //     so the out-of-bounds share[] concern is eliminated on AMD.
+        //     On non-AMD (share+barrier fallback), the share[] writes for
+        //     group_id 8..15 alias into share[1].uint32s, which is safe
+        //     because the data is overwritten before being read.
+        //
+        // KawPow still uses GROUP_SIZE=128 (its kernel has different share layout).
         let dag_bytes = dag_elements_safe * 16 * 16; // * PROGPOW_LANES(16) * sizeof(dag_t)
         // Pass algorithm-specific PROGPOW_REGS and PROGPOW_CNT_MATH as build defines
         // so the kernel can use the correct register file size and math loop count.
         // MeowPow uses REGS=16 and CNT_MATH=9 (halved vs KawPow's 32/18).
         // EvrProgPow uses the same REGS/CNT_MATH as KawPow (32/18) but PERIOD=3.
+        let group_size = if algorithm == "progpow" || algorithm == "progpow_epic" {
+            256 // EPIC ProgPow: GROUP_SIZE=256 (matches reference epic-miner)
+        } else {
+            128 // KawPow and variants: GROUP_SIZE=128
+        };
         let build_opts = if params.regs != 32 || params.cnt_math != 18 {
             format!(
-                "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE=128 -DPROGPOW_REGS={} -DPROGPOW_CNT_MATH={}",
-                dag_elements_safe, dag_bytes, params.regs, params.cnt_math
+                "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={} -DPROGPOW_REGS={} -DPROGPOW_CNT_MATH={}",
+                dag_elements_safe, dag_bytes, group_size, params.regs, params.cnt_math
             )
         } else {
             format!(
-                "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE=128",
-                dag_elements_safe, dag_bytes
+                "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={}",
+                dag_elements_safe, dag_bytes, group_size
             )
         };
 

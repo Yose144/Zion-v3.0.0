@@ -335,12 +335,25 @@ pub fn gen_epic_progpow_loop(params: &ProgPowParams, block_height: u64) -> Strin
     ret.push_str("const uint32_t lane_id = get_local_id(0) & (PROGPOW_LANES-1);\n");
     ret.push_str("const uint32_t group_id = get_local_id(0) / PROGPOW_LANES;\n\n");
 
-    // Global memory access
+    // Global memory access — broadcast mix[0] from lane (loop % PROGPOW_LANES)
+    // to all lanes in the hash group.
+    //
+    // OPTIMIZATION: Use __builtin_amdgcn_ds_bpermute (AMD hardware lane
+    // shuffle via LLVM intrinsic) instead of share[] + barrier. This
+    // eliminates one barrier per loop iteration (64 iterations × 16 hashes
+    // = 1024 barriers eliminated per work-item). The intrinsic works on all
+    // AMD architectures (GCN wave64, RDNA1+ wave32). We use the
+    // amd_wave_shuffle() wrapper defined in the kernel header.
+    // On non-AMD platforms, fall back to share+barrier.
     ret.push_str("// global load\n");
+    ret.push_str("#if defined(USE_AMD_BPERMUTE)\n");
+    ret.push_str("offset = amd_wave_shuffle(mix[0], ((get_local_id(0) % __builtin_amdgcn_wavefrontsize()) & ~(uint32_t)(PROGPOW_LANES - 1)) + (loop % PROGPOW_LANES));\n");
+    ret.push_str("#else\n");
     ret.push_str("if(lane_id == (loop % PROGPOW_LANES))\n");
     ret.push_str("    share[group_id] = mix[0];\n");
     ret.push_str("barrier(CLK_LOCAL_MEM_FENCE);\n");
     ret.push_str("offset = share[group_id];\n");
+    ret.push_str("#endif\n");
     ret.push_str("offset %= PROGPOW_DAG_ELEMENTS;\n");
     ret.push_str("offset = offset * PROGPOW_LANES + (lane_id ^ loop) % PROGPOW_LANES;\n");
     ret.push_str("data_dag = g_dag[offset];\n");
