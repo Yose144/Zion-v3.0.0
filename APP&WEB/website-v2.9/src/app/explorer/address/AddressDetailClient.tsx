@@ -313,7 +313,7 @@ export default function AddressDetailClient() {
                 title={isWatched ? (cs ? 'Přestat sledovat' : 'Unwatch') : (cs ? 'Sledovat' : 'Watch')}
               >
                 <Star className={`w-3.5 h-3.5 ${isWatched ? "fill-current" : ""}`} />
-                {isWatched ? (cs ? 'Unwatch' : 'Unwatch') : (cs ? 'Watch' : 'Watch')}
+                {isWatched ? (cs ? 'Přestat sledovat' : 'Unwatch') : (cs ? 'Sledovat' : 'Watch')}
               </button>
             </div>
             {showLabelInput && !isWatched && (
@@ -421,8 +421,8 @@ export default function AddressDetailClient() {
             <InfoRow label={cs ? 'Pool (čeká)' : 'Pool Pending'} value={`${data.balance.pool_pending.toFixed(4)} ZION`} color="text-amber-400" />
             <InfoRow label={cs ? 'Pool (vyplaceno)' : 'Pool Paid'} value={`${data.balance.pool_paid.toFixed(4)} ZION`} color="text-zion-gold" />
             <InfoRow label={cs ? 'Transakce' : 'Transactions'} value={String(data.transaction_count)} />
-            {data.first_seen > 0 && <InfoRow label={cs ? 'První výskyt' : 'First Seen'} value={formatDate(data.first_seen, locale)} />}
-            {data.last_seen > 0 && <InfoRow label={cs ? 'Naposledy aktivní' : 'Last Active'} value={formatDate(data.last_seen, locale)} />}
+            {data.first_seen && data.first_seen > 0 && <InfoRow label={cs ? 'První výskyt' : 'First Seen'} value={formatDate(data.first_seen, locale)} />}
+            {data.last_seen && data.last_seen > 0 && <InfoRow label={cs ? 'Naposledy aktivní' : 'Last Active'} value={formatDate(data.last_seen, locale)} />}
           </div>
 
           {/* ── Mining Stats card (or placeholder) ──────────── */}
@@ -466,9 +466,9 @@ export default function AddressDetailClient() {
         <div ref={txListRef} className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden scroll-mt-8" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white/70">
-              {cs ? 'Transakce' : 'Transactions'} ({data.transactions.length})
+              {cs ? 'Transakce' : 'Transactions'} ({data.transactions?.length ?? 0})
             </h2>
-            {data.transactions.length > 0 && (
+            {(data.transactions?.length ?? 0) > 0 && (
               <Link
                 href={`/explorer/transactions?address=${encodeURIComponent(addr)}`}
                 className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors"

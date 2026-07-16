@@ -570,7 +570,7 @@ export default function BridgeTrackerClient() {
                           {/* TX Hash */}
                           <td className="px-4 py-3">
                             <Link
-                              href={`/explorer/tx/${tx.txid}`}
+                              href={`/explorer/tx?hash=${encodeURIComponent(tx.txid)}`}
                               className="font-mono text-xs text-cyan-300 hover:text-cyan-200 transition-colors"
                             >
                               {truncateHash(tx.txid)}
@@ -579,7 +579,7 @@ export default function BridgeTrackerClient() {
                           {/* Block */}
                           <td className="px-4 py-3">
                             <Link
-                              href={`/explorer/blocks?height=${tx.block_height}`}
+                              href={`/explorer/block?id=${tx.block_height}`}
                               className="font-mono text-xs text-gray-300 hover:text-white transition-colors tabular-nums"
                             >
                               {tx.block_height.toLocaleString()}
@@ -588,7 +588,7 @@ export default function BridgeTrackerClient() {
                           {/* Sender */}
                           <td className="px-4 py-3">
                             <Link
-                              href={`/explorer/address/${tx.sender}`}
+                              href={`/explorer/address?addr=${encodeURIComponent(tx.sender)}`}
                               className="font-mono text-xs text-gray-400 hover:text-white transition-colors"
                             >
                               {truncateAddr(tx.sender)}
