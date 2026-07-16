@@ -469,6 +469,7 @@ def find_process_by_name(name: str) -> int | None:
 # ── Resource monitoring ─────────────────────────────────────────────────
 RESOURCE_CACHE = {"ts": 0, "data": {}}
 RESOURCE_LOCK = threading.Lock()
+RESOURCE_CPU_PREV = {"total": None, "idle": None}
 
 def get_resource_usage() -> dict:
     """Return CPU, RAM, and disk usage (cross-platform, stdlib only)."""
@@ -536,7 +537,7 @@ def get_resource_usage() -> dict:
             except Exception:
                 pass
         else:
-            # Linux: /proc/meminfo + statvfs
+            # Linux: /proc/meminfo + /proc/stat (CPU) + statvfs
             try:
                 with open("/proc/meminfo") as f:
                     meminfo = {k.strip(): int(v.split()[0]) for k, v in (line.split(":") for line in f if ":" in line)}
@@ -546,6 +547,24 @@ def get_resource_usage() -> dict:
                 result["ram_total_gb"] = round(total_gb, 2)
                 result["ram_used_gb"] = round(total_gb - avail_kb / (1024**2), 2)
                 result["ram_percent"] = round((total_kb - avail_kb) / total_kb * 100, 1) if total_kb > 0 else 0
+            except Exception:
+                pass
+            # CPU usage via /proc/stat delta (global aggregate, all cores)
+            try:
+                with open("/proc/stat") as f:
+                    line1 = f.readline()
+                fields1 = list(map(int, line1.split()[1:]))
+                idle1 = fields1[3] + (fields1[4] if len(fields1) > 4 else 0)
+                total1 = sum(fields1)
+                with RESOURCE_LOCK:
+                    prev = RESOURCE_CPU_PREV.get("total"), RESOURCE_CPU_PREV.get("idle")
+                if prev[0] is not None and total1 > prev[0]:
+                    dt = total1 - prev[0]
+                    di = idle1 - prev[1]
+                    result["cpu_percent"] = round(max(0, (dt - di) / dt * 100), 1)
+                with RESOURCE_LOCK:
+                    RESOURCE_CPU_PREV["total"] = total1
+                    RESOURCE_CPU_PREV["idle"] = idle1
             except Exception:
                 pass
             try:
