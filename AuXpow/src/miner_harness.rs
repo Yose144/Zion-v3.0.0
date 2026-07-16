@@ -385,27 +385,21 @@ fn scan_verushash_full(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
 /// Based on the ccminer/bloxminer approach:
 ///   1. `hash_half` — Haraka512 chain over bytes 0..1472 → 64-byte intermediate (ONCE)
 ///   2. `prepare_key` — GenNewCLKey from intermediate (ONCE)
-///   3. `hash_with_nonce` — CLHash + final Haraka512 with 15-byte nonceSpace (PER NONCE)
+///   3. `scan_nonces` — CLHash + final Haraka512 with 15-byte nonceSpace (PER NONCE, in C++)
 ///
-/// The 1487-byte VRSC header = 46 × 32 + 15 remaining bytes.
-/// The 15 remaining bytes are the nonceSpace (en1 + miner_nonce + zeros).
-/// `hash_half` processes the first 1472 bytes and leaves the last 15 bytes
-/// in the intermediate. `hash_with_nonce` overwrites those 15 bytes with
-/// the actual nonce and does only the final CLHash + Haraka512.
+/// The entire nonce loop runs in C++ via `verushash_scan_nonces`, eliminating
+/// per-nonce Rust→C++ FFI overhead.
 #[cfg(feature = "native-verushash")]
 fn scan_verushash_two_stage(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
     let header = &job.header_bytes;
     let target = &job.target_bytes;
 
     let en1_len = job.extranonce1.len();
-    let nonce_space_blob_offset = 143 + 1329 + en1_len; // = 1472 + en1_len
 
     let mut work_header = header.to_vec();
     clear_verushash_pbaas(&mut work_header);
 
     // Stage 1: Compute 64-byte intermediate state (ONCE per job).
-    // hash_half processes all 1487 bytes; the last 15 bytes (nonceSpace)
-    // end up in intermediate[32..47] but will be overwritten by hash_with_nonce.
     let intermediate = zion_native_ffi::verushash::hash_half(&work_header);
 
     // Stage 2: Generate CLHash key from intermediate (ONCE per job).
@@ -417,48 +411,27 @@ fn scan_verushash_two_stage(job: &JobPackage, start: u64, end: u64) -> Option<Fo
     //   [en1_len+4..15] = zeros
     let mut nonce_space = [0u8; 15];
     nonce_space[..en1_len].copy_from_slice(&job.extranonce1);
-    // The miner nonce goes right after en1
-    let nonce_offset = en1_len;
+    let nonce_offset = en1_len as u32;
 
-    // Stage 3: Scan nonces — only CLHash + Haraka512 per nonce (fast!)
-    for nonce in start..end {
-        let nonce_le = (nonce as u32).to_le_bytes();
-        if nonce_offset + 4 <= 15 {
-            nonce_space[nonce_offset..nonce_offset + 4].copy_from_slice(&nonce_le);
-        }
-
-        let hash = zion_native_ffi::verushash::hash_with_nonce(&intermediate, &nonce_space);
-
-        if meets_target_little_endian(&hash, target) {
-            println!(
-                "VRSC_SHARE_FOUND nonce={} hash={} (two-stage)",
-                nonce,
-                hex::encode(hash),
-            );
-            // Also update work_header for the debug dump
-            if nonce_space_blob_offset + 4 <= work_header.len() {
-                work_header[nonce_space_blob_offset..nonce_space_blob_offset + 4]
-                    .copy_from_slice(&nonce_le);
-            }
-            println!(
-                "VRSC_DEBUG header_len={} version={} ntime={} nbits={} nonce_field={} varint={} sol_ver={} sol_numPBAAS={} mmr_first8={} ns_full={}",
-                work_header.len(),
-                hex::encode(&work_header[0..4]),
-                hex::encode(&work_header[100..104]),
-                hex::encode(&work_header[104..108]),
-                hex::encode(&work_header[108..140]),
-                hex::encode(&work_header[140..143]),
-                hex::encode(&work_header[143..147]),
-                work_header[148],
-                hex::encode(&work_header[151..159]),
-                hex::encode(&nonce_space),
-            );
-            return Some(FoundShare {
-                external_job_id: job.external_job_id.clone(),
-                nonce,
-                hash,
-            });
-        }
+    // Stage 3: Batch nonce scan — entire loop in C++ (no per-nonce FFI overhead)
+    if let Some((nonce, hash)) = zion_native_ffi::verushash::scan_nonces(
+        &intermediate,
+        &nonce_space,
+        nonce_offset,
+        start,
+        end,
+        target,
+    ) {
+        println!(
+            "VRSC_SHARE_FOUND nonce={} hash={} (batch-scan)",
+            nonce,
+            hex::encode(hash),
+        );
+        return Some(FoundShare {
+            external_job_id: job.external_job_id.clone(),
+            nonce,
+            hash,
+        });
     }
     None
 }
