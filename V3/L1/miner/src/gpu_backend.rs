@@ -1772,10 +1772,22 @@ pub fn gpu_scan_job(
         && !algorithm.starts_with("kheavyhash")
         && raw_header_bytes.len() > 80;
 
+    // Cap the batch size to avoid stale jobs.  When the pool sends a large
+    // nonce_count (e.g. 262144), the GPU may take 10+ seconds to process it.
+    // By that time, the pool may have moved to a new block height, making
+    // the share stale.  Capping the batch to ZION_GPU_MAX_BATCH (default
+    // 32768 = 4× work_size) keeps each batch under ~2 seconds, well within
+    // the job TTL.  The miner loops back to get a fresh job after each batch.
+    let max_batch = std::env::var("ZION_GPU_MAX_BATCH")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(32_768);
+    let effective_batch = job.nonce_count.min(max_batch);
+
     let result = if use_raw {
-        gpu.mine_batch_raw(raw_header_bytes, job.target, job.start_nonce, job.nonce_count)
+        gpu.mine_batch_raw(raw_header_bytes, job.target, job.start_nonce, effective_batch)
     } else {
-        gpu.mine_batch(effective_header, job.target, job.start_nonce, job.nonce_count)
+        gpu.mine_batch(effective_header, job.target, job.start_nonce, effective_batch)
     };
 
     match result {
@@ -3121,13 +3133,20 @@ pub mod opencl_deeksha_lite {
                 .max(64)
                 .next_power_of_two();
 
+            // Allow ZION_OCL_LOCAL_SIZE to override auto-tuned local_ws
+            let local_ws = std::env::var("ZION_OCL_LOCAL_SIZE")
+                .ok()
+                .and_then(|v| v.trim().parse::<usize>().ok())
+                .map(|v| v.clamp(32, 512))
+                .unwrap_or(tuning.local_ws);
+
             println!(
                 "gpu_opencl_lite_init family={:?} device=\"{}\" vram={}MiB tuned_ws={} local_ws={} build_opts=\"{}\"",
                 family,
                 device_name,
                 vram / (1024 * 1024),
                 actual_work_size,
-                tuning.local_ws,
+                local_ws,
                 tuning.build_opts,
             );
 
@@ -3193,7 +3212,7 @@ pub mod opencl_deeksha_lite {
                 "gpu_opencl_lite_init device=\"{}\" work_size={} local_ws={} scratchpad_mib={}",
                 device_name,
                 actual_work_size,
-                tuning.local_ws,
+                local_ws,
                 actual_work_size * DL_SCRATCHPAD_BYTES / (1024 * 1024)
             );
             Ok(Self {
@@ -3206,7 +3225,7 @@ pub mod opencl_deeksha_lite {
                 read_queue,
                 stream_weights_buf,
                 work_size: actual_work_size,
-                local_work_size: tuning.local_ws,
+                local_work_size: local_ws,
                 device_name_cached: device_name,
                 device_family: family,
                 tuning,
@@ -3384,14 +3403,14 @@ pub mod opencl_deeksha_lite {
                             }
                         }
                         total_tested += prev_chunk as u64;
-                        if !all_solutions.is_empty() {
-                            // Drain remaining queue to avoid stale events
-                            let _ = self.read_queue.finish();
-                            return Ok(GpuBatchResult {
-                                nonces_tested: total_tested,
-                                solutions: all_solutions,
-                            });
-                        }
+                        // NOTE: Do NOT return early when a solution is found.
+                        // Continue processing all chunks so the double-buffering
+                        // pipeline stays full and the GPU is never idle.  With
+                        // low pool difficulty (e.g. vardiff start diff=1), every
+                        // nonce may be a valid solution — breaking early would
+                        // only process one chunk per batch (8192 nonces) and
+                        // waste the remaining 31/32 of the batch.  By processing
+                        // the full batch, effective hashrate increases ~30×.
                     }
 
                     prev_read_event = Some(r_event);
@@ -3484,13 +3503,11 @@ pub mod opencl_deeksha_lite {
                         if target.allows(&hash) {
                             let nonce = current_nonce.wrapping_add(i as u64);
                             all_solutions.push((nonce, hash, None));
-                            break; // first match wins
+                            break; // first match in this chunk
                         }
                     }
                     total_tested += chunk as u64;
-                    if !all_solutions.is_empty() {
-                        break;
-                    }
+                    // NOTE: Do NOT break — process all chunks for full batch throughput.
                     current_nonce = current_nonce.wrapping_add(chunk as u64);
                     left -= chunk as u64;
                 }
@@ -3674,13 +3691,20 @@ pub mod opencl_deeksha_lite_fire {
                 .max(64)
                 .next_power_of_two();
 
+            // Allow ZION_OCL_LOCAL_SIZE to override auto-tuned local_ws
+            let local_ws = std::env::var("ZION_OCL_LOCAL_SIZE")
+                .ok()
+                .and_then(|v| v.trim().parse::<usize>().ok())
+                .map(|v| v.clamp(32, 512))
+                .unwrap_or(tuning.local_ws);
+
             println!(
                 "gpu_opencl_fire_init family={:?} device=\"{}\" vram={}MiB tuned_ws={} local_ws={} build_opts=\"{}\"",
                 family,
                 device_name,
                 vram / (1024 * 1024),
                 actual_work_size,
-                tuning.local_ws,
+                local_ws,
                 tuning.build_opts,
             );
 
@@ -3743,7 +3767,7 @@ pub mod opencl_deeksha_lite_fire {
                 "gpu_opencl_fire_init device=\"{}\" work_size={} local_ws={} scratchpad_mib={}",
                 device_name,
                 actual_work_size,
-                tuning.local_ws,
+                local_ws,
                 actual_work_size * DLF_SCRATCHPAD_BYTES / (1024 * 1024)
             );
             Ok(Self {
@@ -3756,7 +3780,7 @@ pub mod opencl_deeksha_lite_fire {
                 read_queue,
                 stream_weights_buf,
                 work_size: actual_work_size,
-                local_work_size: tuning.local_ws,
+                local_work_size: local_ws,
                 device_name_cached: device_name,
                 device_family: family,
                 tuning,
@@ -3919,13 +3943,8 @@ pub mod opencl_deeksha_lite_fire {
                             }
                         }
                         total_tested += prev_chunk as u64;
-                        if !all_solutions.is_empty() {
-                            let _ = self.read_queue.finish();
-                            return Ok(GpuBatchResult {
-                                nonces_tested: total_tested,
-                                solutions: all_solutions,
-                            });
-                        }
+                        // NOTE: Do NOT return early — process full batch for max
+                        // GPU utilization (same fix as OpenClDeekshaLiteMiner).
                     }
 
                     prev_read_event = Some(r_event);
@@ -4031,9 +4050,7 @@ pub mod opencl_deeksha_lite_fire {
                         }
                     }
                     total_tested += chunk as u64;
-                    if !all_solutions.is_empty() {
-                        break;
-                    }
+                    // NOTE: Do NOT break — process all chunks for full batch throughput.
                     current_nonce = current_nonce.wrapping_add(chunk as u64);
                     left -= chunk as u64;
                 }

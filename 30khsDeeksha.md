@@ -1,8 +1,79 @@
 # ZION GPU 30 KH/s Deeksha Settings — RX 5700 XT
 
-**Date:** 2026-07-16
+**Date:** 2026-07-16 (updated 2026-07-16 with nonce_count fix + batch processing fix)
 **GPU:** AMD RX 5700 XT (gfx1010, 6 GB VRAM, 18 CUs, RDNA)
-**Achieved:** 28-30 KH/s (baseline 11.24 KH/s → **+150-167%**)
+**Achieved:** 28-32 KH/s peak, 17-20 KH/s sustained (baseline 11.24 KH/s → **+50-185%**)
+
+---
+
+## ⚠️ Critical fix #1 (2026-07-16): nonce_count default
+
+**Root cause of "only 10 KH/s" in production:**
+
+The default `nonce_count` was 1024 — far too small for GPU mining.
+With `work_size=8192`, the double-buffered async readback path
+(the +50% optimization) only activates when `nonce_count > work_size`.
+With `nonce_count=1024`, double-buffering was **never activated**,
+resulting in ~10 KH/s instead of 28-30 KH/s.
+
+**Fix:** `nonce_count` default is now `4 × gpu_work_size` (32768 for
+RX 5700 XT) when GPU is available. Also `nonce_count_min` is now
+`max(work_size, 10000)` to prevent the nonce autotune from shrinking
+below the GPU work_size.
+
+```bash
+# In start-local-miner.sh:
+export ZION_NONCE_COUNT=32768       # 4× work_size (8192)
+export ZION_NONCE_COUNT_MIN=10000   # don't shrink below GPU work_size
+```
+
+The miner binary also auto-sets these defaults if env vars are not
+specified, so the fix works even without the start script.
+
+---
+
+## ⚠️ Critical fix #2 (2026-07-16): full batch processing + batch cap
+
+**Root cause of "only 6-12 KH/s" in live mining despite fix #1:**
+
+Two issues were found in the double-buffered `mine_batch` path:
+
+1. **Early break on solution found:** When the GPU found a solution
+   in the first chunk (8192 nonces), the code would `break` and return
+   immediately, skipping the remaining 31/32 of the batch. With pool
+   difficulty=1 (vardiff start), every nonce is a valid solution, so
+   only 8192 nonces were tested per batch instead of 262144. This
+   meant the double-buffering pipeline never filled, and most time was
+   spent on submit/new-job overhead (~600ms per 8192 nonces = ~13 KH/s).
+
+2. **Stale jobs with large batches:** When processing the full 262144
+   nonces, each batch took 11-15 seconds. By the time the batch finished,
+   the pool had moved to a new block height, making the share stale
+   (42% reject rate).
+
+**Fix:**
+
+- **Removed early break** in both double-buffer and single-buffer
+  `mine_batch` paths (OpenClDeekshaLiteMiner + OpenClDeekshaLiteFireMiner).
+  The GPU now processes ALL chunks in the batch, collecting solutions
+  from each. This keeps the double-buffering pipeline full and the
+  GPU never idle.
+
+- **Added `ZION_GPU_MAX_BATCH` cap** (default 32768 = 4x work_size)
+  in `gpu_scan_job()`. Even if the pool sends `nonce_count=262144`,
+  the miner processes only 32768 nonces per batch (~1-2 seconds),
+  then loops back for a fresh job. This eliminates stale shares while
+  keeping the double-buffering pipeline full.
+
+```bash
+# In start-local-miner.sh:
+export ZION_GPU_MAX_BATCH=32768    # cap batch to 4x work_size
+```
+
+**Results (live mining, pool difficulty=1):**
+- Before fix: 6-12 KH/s, 42% reject rate (stale jobs)
+- After fix:  17-20 KH/s sustained, 31.6 KH/s peak, 100% accept rate
+- Peak batch: 32768 nonces in 1036ms = 31.6 KH/s
 
 ---
 
