@@ -723,6 +723,8 @@ pub struct AutoTuneResult {
     pub secondary_gpu_work_size: usize,
     /// CPU thread count for VerusHash/RandomX (Stream 3)
     pub threads: usize,
+    /// Optimal nonce batch size for VerusHash CPU mining
+    pub verushash_nonce_count: u64,
     /// Detected GPU name (for logging)
     pub gpu_name: String,
     /// Detected GPU compute units
@@ -733,8 +735,259 @@ pub struct AutoTuneResult {
     pub sys_ram_bytes: u64,
     /// Detected CPU logical cores
     pub cpu_cores: usize,
+    /// Detected CPU physical cores
+    pub cpu_physical_cores: usize,
+    /// Detected CPU vendor string
+    pub cpu_vendor: String,
+    /// Detected CPU model string
+    pub cpu_model: String,
     /// Whether a dedicated GPU was detected
     pub has_gpu: bool,
+}
+
+// ── CPU detection ─────────────────────────────────────────────────────
+
+/// Detect CPU vendor and model string.
+/// On Linux reads /proc/cpuinfo. On macOS uses sysctl. On Windows uses wmic.
+fn detect_cpu_info() -> (String, String, usize, usize) {
+    let logical = num_cpus::get().max(1);
+
+    // Physical cores: try to detect, fallback to logical/2 (typical SMT)
+    let physical = detect_physical_cores().unwrap_or((logical + 1) / 2).max(1);
+
+    #[cfg(target_os = "linux")]
+    {
+        let mut detected_vendor = String::new();
+        let mut detected_model = String::new();
+        if let Ok(content) = std::fs::read_to_string("/proc/cpuinfo") {
+            for line in content.lines() {
+                if let Some(val) = line.strip_prefix("vendor_id\t: ") {
+                    if detected_vendor.is_empty() {
+                        detected_vendor = val.to_string();
+                    }
+                } else if let Some(val) = line.strip_prefix("model name\t: ") {
+                    if detected_model.is_empty() {
+                        detected_model = val.to_string();
+                    }
+                }
+            }
+        }
+        if !detected_vendor.is_empty() || !detected_model.is_empty() {
+            return (detected_vendor, detected_model, physical, logical);
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let vendor = "Apple".to_string();
+        let model = std::process::Command::new("sysctl")
+            .arg("-n")
+            .arg("machdep.cpu.brand_string")
+            .output()
+            .ok()
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .map(|s| s.trim().to_string())
+            .unwrap_or_else(|| "Apple Silicon".to_string());
+        return (vendor, model, physical, logical);
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let model = std::process::Command::new("wmic")
+            .args(&["cpu", "get", "name"])
+            .output()
+            .ok()
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .map(|s| s.lines().nth(1).unwrap_or("").trim().to_string())
+            .unwrap_or_default();
+        let vendor = if model.contains("Intel") {
+            "GenuineIntel".to_string()
+        } else if model.contains("AMD") {
+            "AuthenticAMD".to_string()
+        } else if model.contains("Apple") {
+            "Apple".to_string()
+        } else {
+            "unknown".to_string()
+        };
+        return (vendor, model, physical, logical);
+    }
+
+    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+    {
+        let _ = physical; // suppress unused on non-target platforms
+        return ("unknown".to_string(), "unknown".to_string(), physical, logical);
+    }
+
+    // Fallback (only reached on Linux if /proc/cpuinfo parsing failed)
+    ("unknown".to_string(), "unknown".to_string(), physical, logical)
+}
+
+/// Detect physical CPU cores (not logical/SMT threads).
+fn detect_physical_cores() -> Option<usize> {
+    #[cfg(target_os = "linux")]
+    {
+        // Read /proc/cpuinfo and count unique "core id" values per "physical id"
+        if let Ok(content) = std::fs::read_to_string("/proc/cpuinfo") {
+            use std::collections::HashSet;
+            let mut cores: HashSet<(String, String)> = HashSet::new();
+            let mut current_physical = String::new();
+            let mut current_core = String::new();
+            for line in content.lines() {
+                if line.is_empty() {
+                    // New CPU entry
+                    if !current_physical.is_empty() && !current_core.is_empty() {
+                        cores.insert((current_physical.clone(), current_core.clone()));
+                    }
+                    current_physical.clear();
+                    current_core.clear();
+                } else if let Some(val) = line.strip_prefix("physical id\t: ") {
+                    current_physical = val.to_string();
+                } else if let Some(val) = line.strip_prefix("core id\t: ") {
+                    current_core = val.to_string();
+                }
+            }
+            // Last entry
+            if !current_physical.is_empty() && !current_core.is_empty() {
+                cores.insert((current_physical, current_core));
+            }
+            if !cores.is_empty() {
+                return Some(cores.len());
+            }
+        }
+        // Fallback: lscpu
+        if let Ok(output) = std::process::Command::new("lscpu")
+            .args(&["-p=Core"])
+            .output()
+        {
+            if let Ok(text) = String::from_utf8(output.stdout) {
+                use std::collections::HashSet as StdHashSet;
+                let count = text
+                    .lines()
+                    .filter(|l| !l.starts_with('#'))
+                    .filter(|l| !l.trim().is_empty())
+                    .collect::<StdHashSet<_>>()
+                    .len();
+                if count > 0 {
+                    return Some(count);
+                }
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(output) = std::process::Command::new("sysctl")
+            .args(&["-n", "hw.physicalcpu"])
+            .output()
+        {
+            if let Ok(text) = String::from_utf8(output.stdout) {
+                if let Ok(n) = text.trim().parse::<usize>() {
+                    return Some(n);
+                }
+            }
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(output) = std::process::Command::new("wmic")
+            .args(&["cpu", "get", "NumberOfCores"])
+            .output()
+        {
+            if let Ok(text) = String::from_utf8(output.stdout) {
+                if let Some(n) = text.lines().nth(1).and_then(|s| s.trim().parse::<usize>().ok()) {
+                    return Some(n);
+                }
+            }
+        }
+    }
+
+    None
+}
+
+/// CPU architecture profile for VerusHash tuning.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CpuArch {
+    /// AMD Zen (Ryzen/EPYC) — SMT, high IPC, AES-NI + CLMUL
+    AmdZen,
+    /// Intel Core (Sandy Bridge through Raptor Lake) — HT, AES-NI + CLMUL
+    IntelCore,
+    /// Apple Silicon (M1-M5) — unified memory, ARM AES
+    AppleSilicon,
+    /// Other/unknown — conservative defaults
+    Other,
+}
+
+/// Auto-tune VerusHash CPU parameters based on detected CPU.
+///
+/// Returns (threads, nonce_count) optimized for VerusHash v2.2 two-stage mining.
+///
+/// Benchmarks (2026-07-16, fixupkey + batch C++ scan):
+///   Ryzen 5 3600 (6C/12T):  T=12, N=5M → 13.0 MH/s peak
+///   Ryzen 5 3600 (6C/12T):  T=10, N=1M → 11.9 MH/s
+///   T=6 (physical only):    ~4.1 MH/s (SMT helps a lot for VerusHash)
+///   T=14+ (oversubscribe):  degrades (cache contention)
+///
+/// Rules:
+///   - VerusHash benefits from SMT (logical > physical) — use all logical cores
+///   - But not more than physical+6 (oversubscription degrades due to 8.8KB key per thread)
+///   - nonce_count: 5M for ≥8 threads, 2M for 4-7, 1M for ≤3
+///   - Apple Silicon: fewer threads (unified memory with GPU)
+fn auto_tune_verushash(physical: usize, logical: usize, arch: CpuArch, has_gpu: bool) -> (usize, u64) {
+    let (threads, nonce_count) = match arch {
+        CpuArch::AmdZen => {
+            // AMD Zen: SMT helps, use all logical cores but cap at physical+6
+            // to avoid L3 cache thrashing (each thread needs ~8.8KB CLHash key)
+            let t = logical.min(physical + 6).max(1);
+            let n = if t >= 8 { 5_000_000 } else if t >= 4 { 2_000_000 } else { 1_000_000 };
+            (t, n)
+        }
+        CpuArch::IntelCore => {
+            // Intel HT also helps, similar to AMD SMT
+            let t = logical.min(physical + 4).max(1);
+            let n = if t >= 8 { 5_000_000 } else if t >= 4 { 2_000_000 } else { 1_000_000 };
+            (t, n)
+        }
+        CpuArch::AppleSilicon => {
+            // Apple Silicon: unified memory, GPU competes for bandwidth
+            // Use physical cores - 1 (leave 1 for OS + GPU driver)
+            let t = if has_gpu { physical.saturating_sub(1).max(2) } else { physical };
+            let n = if t >= 6 { 5_000_000 } else if t >= 3 { 2_000_000 } else { 1_000_000 };
+            (t, n)
+        }
+        CpuArch::Other => {
+            // Conservative: use physical cores only
+            let t = physical.max(1);
+            let n = if t >= 8 { 5_000_000 } else if t >= 4 { 2_000_000 } else { 1_000_000 };
+            (t, n)
+        }
+    };
+    (threads.min(64), nonce_count)
+}
+
+/// Classify CPU based on vendor and model string.
+fn classify_cpu(vendor: &str, model: &str) -> CpuArch {
+    let v = vendor.to_lowercase();
+    let m = model.to_lowercase();
+
+    if v.contains("apple") || m.contains("apple m") || m.contains("apple silicon") {
+        return CpuArch::AppleSilicon;
+    }
+    if v.contains("amd") || m.contains("amd ryzen") || m.contains("amd epic")
+        || m.contains("ryzen") || m.contains("epyc")
+    {
+        // Check for Zen architecture (all modern AMD CPUs are Zen)
+        if m.contains("ryzen") || m.contains("epyc") || m.contains("threadripper") {
+            return CpuArch::AmdZen;
+        }
+        return CpuArch::AmdZen; // default AMD = Zen
+    }
+    if v.contains("intel") || m.contains("intel") || m.contains("core i")
+        || m.contains("xeon") || m.contains("pentium") || m.contains("celeron")
+    {
+        return CpuArch::IntelCore;
+    }
+    CpuArch::Other
 }
 
 /// Auto-detect hardware and compute optimal mining parameters.
@@ -744,7 +997,10 @@ pub struct AutoTuneResult {
 pub fn auto_tune_work_sizes() -> AutoTuneResult {
     let gpus = query_gpu_details();
     let sys_ram = detect_system_memory_bytes();
-    let cpu_cores = num_cpus::get().max(1);
+
+    // ── CPU detection ──
+    let (cpu_vendor, cpu_model, cpu_physical_cores, cpu_cores) = detect_cpu_info();
+    let cpu_arch = classify_cpu(&cpu_vendor, &cpu_model);
 
     let has_gpu = !gpus.is_empty();
     let gpu_info = gpus.first();
@@ -784,19 +1040,30 @@ pub fn auto_tune_work_sizes() -> AutoTuneResult {
         1 << 18
     };
 
-    // ── threads: CPU mining (Stream 3) ──
-    // Benchmark: T=12 (all threads) wins for total throughput
-    let threads = cpu_cores.min(64);
+    // ── threads + nonce_count: CPU mining (Stream 3, VerusHash) ──
+    // Auto-tuned per CPU architecture (AMD Zen, Intel, Apple Silicon, Other)
+    let (threads, verushash_nonce_count) =
+        auto_tune_verushash(cpu_physical_cores, cpu_cores, cpu_arch, has_gpu);
+
+    // Log CPU detection for diagnostics
+    eprintln!(
+        "[auto-tune] CPU: {} \"{}\" | physical={} logical={} arch={:?} | threads={} nonce_count={}",
+        cpu_vendor, cpu_model, cpu_physical_cores, cpu_cores, cpu_arch, threads, verushash_nonce_count
+    );
 
     AutoTuneResult {
         gpu_work_size,
         secondary_gpu_work_size,
         threads,
+        verushash_nonce_count,
         gpu_name,
         gpu_compute_units,
         gpu_vram_bytes,
         sys_ram_bytes: sys_ram,
         cpu_cores,
+        cpu_physical_cores,
+        cpu_vendor,
+        cpu_model,
         has_gpu,
     }
 }
