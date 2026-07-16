@@ -79,21 +79,21 @@ pub enum ExternalCoin {
     QUAI,
     /// Beam — BeamHash III (Equihash 150,5). GPU coin. BeamStratum (TLS) over 2miners.
     BEAM,
-    /// Karlsen — KarlsenHash. GPU coin. WoolyPooly.
+    /// Karlsen — KarlsenHash. GPU coin. Cedric-Crispin pool.
     KLS,
     /// Zclassic — EquihashZero (Equihash 192,7). GPU coin. ZPool.
     ZCL,
     /// Qubitcoin — Qhash. GPU coin. Suprnova.
     QTC,
-    /// Vertcoin — Verthash. GPU coin. WoolyPooly.
+    /// Vertcoin — Verthash. GPU coin. ZPool.
     VTC,
-    /// IronFish — FishHash. GPU coin. HeroMiners.
+    /// IronFish — FishHash. GPU coin. Grandpool (IronFish stratum v2).
     IRON,
     /// Nexa — NexaPow. GPU coin. 2miners.
     NEXA,
     /// Raptoreum — GhostRider. GPU coin. ZPool.
     RTM,
-    /// Dynex — DynexSolve. GPU coin. HeroMiners.
+    /// Dynex — DynexSolve. GPU coin. DeepMinerz (Cryptonote stratum).
     DNX,
 }
 
@@ -361,14 +361,14 @@ impl ExternalCoin {
             Self::EPIC => "de.epicmine.io:3334",
             Self::QUAI => "quai.2miners.com:4848",
             Self::BEAM => "beam.2miners.com:5252",
-            Self::KLS => "woolypooly.com:3132",
+            Self::KLS => "karlsencoin.cedric-crispin.com:4154",
             Self::ZCL => "equihash192.eu.mine.zpool.ca:2144",
             Self::QTC => "qtc.suprnova.cc:5555",
-            Self::VTC => "woolypooly.com:3102",
-            Self::IRON => "de.ironfish.herominers.com:1145",
+            Self::VTC => "verthash.eu.mine.zpool.ca:4533",
+            Self::IRON => "fr.grandpool.io:2027",
             Self::NEXA => "nexa.2miners.com:5050",
             Self::RTM => "ghostrider.eu.mine.zpool.ca:5354",
-            Self::DNX => "dynex.herominers.com:1030",
+            Self::DNX => "pool.deepminerz.com:3333",
         }
     }
 
@@ -736,6 +736,47 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
             coin: ExternalCoin::VRSC,
             revenue_per_day_usd: 0.08,
             power_cost_usd: 0.01,
+        },
+        // ── 8 new no-DAG GPU-mineable coins (2026-07-16) ──
+        ProfitEntry {
+            coin: ExternalCoin::KLS,
+            revenue_per_day_usd: 0.21,
+            power_cost_usd: 0.22,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::ZCL,
+            revenue_per_day_usd: 0.15,
+            power_cost_usd: 0.18,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::QTC,
+            revenue_per_day_usd: 0.10,
+            power_cost_usd: 0.15,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::VTC,
+            revenue_per_day_usd: 0.12,
+            power_cost_usd: 0.18,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::IRON,
+            revenue_per_day_usd: 0.18,
+            power_cost_usd: 0.22,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::NEXA,
+            revenue_per_day_usd: 0.08,
+            power_cost_usd: 0.20,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::RTM,
+            revenue_per_day_usd: 0.06,
+            power_cost_usd: 0.20,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::DNX,
+            revenue_per_day_usd: 0.02,
+            power_cost_usd: 0.22,
         },
     ]
 }
