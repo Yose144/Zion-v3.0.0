@@ -39,6 +39,10 @@
     --color-fg: 230 255 240;
   }
   
+  :root {
+    --nav-height: 12rem;
+  }
+
   html, body {
     max-width: 100%;
     overflow-x: hidden;
@@ -91,15 +95,10 @@
   .zion-page {
     min-height: 100vh;
     position: relative;
-    padding-top: 7rem;      /* pt-28 */
+    padding-top: var(--nav-height);
     padding-bottom: 6rem;   /* pb-24 */
     overflow-x: hidden;
     isolation: isolate;
-  }
-  @media (min-width: 768px) {
-    .zion-page {
-      padding-top: 8rem;    /* md:pt-32 */
-    }
   }
 
   .zion-shell {
@@ -107,6 +106,12 @@
     position: relative;
     background: transparent;
     isolation: isolate;
+    padding-top: var(--nav-height) !important;
+  }
+
+  /* Root layout wrapper already sits inside <body>; its top padding is handled by the page shell */
+  .zion-shell.site-main {
+    padding-top: 0 !important;
   }
 
   .zion-shell::before {
