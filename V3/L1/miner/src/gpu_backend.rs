@@ -21,6 +21,90 @@ use crate::gpu_guard::{GpuAlgorithm, GpuDeviceFamily, GpuGuard, GpuTuning};
 #[cfg(feature = "gpu-opencl")]
 use rayon::prelude::*;
 
+// ── Global GPU memory budget tracker ──────────────────────────────────
+// On Apple Silicon (unified memory), GPU and CPU share the same physical
+// RAM. Multiple Metal miner instances (Stream 1 + Stream 2) each allocate
+// large scratchpad buffers. Without a global budget, two instances can
+// together consume >90% of system RAM, causing kernel panics and system
+// freezes.
+//
+// This static atomic tracks the remaining GPU memory budget. Each Metal
+// init claims a portion; the budget is computed once at startup from
+// total system RAM.
+use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
+
+static GPU_MEM_BUDGET_BYTES: AtomicU64 = AtomicU64::new(0);
+static GPU_MEM_CLAIMED_BYTES: AtomicU64 = AtomicU64::new(0);
+
+/// Initialize the global GPU memory budget using auto-tune.
+/// Should be called once at startup. Uses `auto_tune_gpu_budget()`
+/// to dynamically calculate a safe budget based on actual available memory.
+///
+/// `cpu_threads` is the number of CPU mining threads (for safety margin calc).
+/// On systems with dedicated VRAM (OpenCL/CUDA), this budget is not used.
+pub fn init_gpu_memory_budget_with_threads(cpu_threads: usize) {
+    let budget = auto_tune_gpu_budget(cpu_threads);
+    // Only initialize if not already set (idempotent)
+    let prev = GPU_MEM_BUDGET_BYTES.swap(budget, AtomicOrdering::SeqCst);
+    if prev != 0 {
+        GPU_MEM_BUDGET_BYTES.store(prev, AtomicOrdering::SeqCst);
+        return;
+    }
+    GPU_MEM_CLAIMED_BYTES.store(0, AtomicOrdering::SeqCst);
+    println!(
+        "gpu_mem_budget_init budget_mib={} (shared across all GPU streams)",
+        budget / (1024 * 1024),
+    );
+}
+
+/// Legacy init without CPU thread count — assumes 4 threads.
+pub fn init_gpu_memory_budget() {
+    init_gpu_memory_budget_with_threads(4);
+}
+
+/// Claim a portion of the GPU memory budget for a Metal miner instance.
+/// Returns the maximum scratchpad bytes this instance may allocate.
+/// If no budget was initialized, falls back to the device's recommended
+/// working set size (legacy behavior).
+fn claim_gpu_memory_budget(device_recommended: u64) -> u64 {
+    let budget = GPU_MEM_BUDGET_BYTES.load(AtomicOrdering::SeqCst);
+    if budget == 0 {
+        // Budget not initialized — use legacy per-device calculation
+        return device_recommended;
+    }
+
+    let claimed = GPU_MEM_CLAIMED_BYTES.load(AtomicOrdering::SeqCst);
+    let remaining = budget.saturating_sub(claimed);
+
+    // Each instance gets at most 50% of the total budget.
+    // On a two-stream system, each gets half. If only one stream runs,
+    // it can use up to 50% (not the full budget — leave headroom).
+    let max_per_instance = budget / 2;
+    let allocation = remaining.min(max_per_instance);
+
+    // Ensure minimum viable batch (threads_per_tg * 256 KiB = ~32 MiB)
+    let min_viable = 32 * 1024 * 1024;
+    if allocation < min_viable {
+        println!(
+            "gpu_mem_budget_exhausted budget_mib={} claimed_mib={} remaining_mib={} — falling back to device recommended",
+            budget / (1024 * 1024),
+            claimed / (1024 * 1024),
+            remaining / (1024 * 1024),
+        );
+        return device_recommended;
+    }
+
+    GPU_MEM_CLAIMED_BYTES.fetch_add(allocation, AtomicOrdering::SeqCst);
+    println!(
+        "gpu_mem_budget_claim budget_mib={} previously_claimed_mib={} this_claim_mib={} total_claimed_mib={}",
+        budget / (1024 * 1024),
+        claimed / (1024 * 1024),
+        allocation / (1024 * 1024),
+        (claimed + allocation) / (1024 * 1024),
+    );
+    allocation
+}
+
 /// Which GPU backend to use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GpuBackendKind {
@@ -410,23 +494,422 @@ pub fn is_dag_based_algorithm(algorithm: &str) -> bool {
     )
 }
 
+/// Memory-hard algorithms that are NOT DAG-based but still need large GPU
+/// memory buffers (Equihash variants). These are unsafe on Metal with
+/// limited unified memory, just like DAG-based algorithms.
+pub fn is_memory_hard_algorithm(algorithm: &str) -> bool {
+    matches!(
+        algorithm,
+        "zelhash" | "zelhash_flux" | "beamhash" | "beamhash_beam"
+    )
+}
+
+/// Estimate the GPU memory (in bytes) needed for an algorithm, beyond the
+/// standard scratchpad allocation. This includes DAG buffers, Equihash
+/// state, Autolykos tables, etc.
+///
+/// Returns 0 for lightweight algorithms (blake3, kheavyhash) that only
+/// need the standard per-thread scratchpad.
+pub fn algorithm_extra_gpu_memory_bytes(algorithm: &str, height: u64) -> u64 {
+    // DAG-based: DAG size = 1 GB + epoch × 8 MB
+    if is_dag_based_algorithm(algorithm) {
+        let epoch_divisor = match algorithm {
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr"
+            | "kawpow_mewc" | "kawpow_quai"
+            | "evrprogpow" | "evrprogpow_evr"
+            | "meowpow" | "meowpow_mewc" => 7500u64,
+            "progpow" | "progpow_epic"
+            | "ethash" | "etchash" | "ethash_etc" => 30000u64,
+            _ => 30000u64,
+        };
+        let epoch = height / epoch_divisor;
+        return 1024 * 1024 * 1024 + epoch * 8 * 1024 * 1024;
+    }
+
+    // Memory-hard (Equihash): ~1.3 GB for zelhash, ~1 GB for beamhash
+    if is_memory_hard_algorithm(algorithm) {
+        return match algorithm {
+            "zelhash" | "zelhash_flux" => 1300 * 1024 * 1024, // ~1.3 GB
+            "beamhash" | "beamhash_beam" => 1024 * 1024 * 1024, // ~1 GB
+            _ => 1024 * 1024 * 1024,
+        };
+    }
+
+    // Autolykos: 64 MB default, 512 MB mainnet (based on epoch)
+    if algorithm == "autolykos" || algorithm == "autolykos_erg" {
+        let epoch = height / 45000;
+        // Table size grows: 2^23 (64MB) at epoch 0, up to 2^26 (512MB)
+        let table_size = if epoch < 10 {
+            64 * 1024 * 1024 // 64 MB
+        } else {
+            512 * 1024 * 1024 // 512 MB mainnet
+        };
+        return table_size;
+    }
+
+    // Lightweight: blake3, kheavyhash — no extra memory needed
+    0
+}
+
+/// Check if an algorithm is safe to run on a given GPU backend with a given
+/// memory budget. This is a per-algorithm, per-system check that replaces
+/// the old blanket "disable Stream 2 on ≤8GB" guard.
+///
+/// `available_gpu_budget_bytes` is the remaining GPU memory budget after
+/// Stream 1 has claimed its share.
+pub fn algorithm_fits_gpu_budget(
+    backend: GpuBackendKind,
+    algorithm: &str,
+    height: u64,
+    available_gpu_budget_bytes: u64,
+) -> bool {
+    let resolved = match backend {
+        GpuBackendKind::Auto => resolve_auto_backend(),
+        other => other,
+    };
+
+    // CPU backend: no GPU algorithms
+    if resolved == GpuBackendKind::Cpu {
+        return false;
+    }
+
+    // CPU-only algorithms (verushash, randomx) — never on GPU
+    if is_cpu_only_algorithm(algorithm) {
+        return false;
+    }
+
+    // On Metal (unified memory): check if algorithm's memory needs fit
+    if resolved == GpuBackendKind::Metal {
+        // DAG-based and memory-hard algorithms are always blocked on Metal
+        // (they need 1+ GB extra which is too much for unified memory)
+        if is_dag_based_algorithm(algorithm) || is_memory_hard_algorithm(algorithm) {
+            return false;
+        }
+
+        // Autolykos: check if the table fits in the remaining budget
+        let extra = algorithm_extra_gpu_memory_bytes(algorithm, height);
+        if extra > available_gpu_budget_bytes {
+            return false;
+        }
+
+        // Lightweight algorithms (blake3, kheavyhash): always safe
+        return true;
+    }
+
+    // OpenCL / CUDA: dedicated VRAM, all algorithms safe
+    true
+}
+
+/// Resolve `Auto` to the concrete backend that will actually be used on this
+/// platform. This is critical for memory safety: on macOS with only
+/// `gpu-metal` compiled, `Auto` falls through OpenCL → CUDA → Metal, so it
+/// effectively IS Metal. Without this resolution, the DAG-algorithm guard
+/// would be bypassed (Auto was grouped with OpenCL/CUDA), causing system
+/// freezes from unified-memory OOM.
+#[allow(unreachable_code)]
+pub fn resolve_auto_backend() -> GpuBackendKind {
+    // Check which GPU features are compiled, in priority order
+    #[cfg(feature = "gpu-opencl")]
+    {
+        // On macOS, OpenCL is deprecated and often unavailable even if compiled
+        #[cfg(target_os = "macos")]
+        {
+            // Try to detect if OpenCL is actually available
+            // On Apple Silicon, OpenCL is not available — fall through to Metal
+            if !std::env::var("ZION_FORCE_OPENCL").is_ok() {
+                #[cfg(feature = "gpu-metal")]
+                {
+                    return GpuBackendKind::Metal;
+                }
+            }
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            return GpuBackendKind::OpenCL;
+        }
+    }
+
+    #[cfg(feature = "gpu-cuda")]
+    {
+        return GpuBackendKind::Cuda;
+    }
+
+    #[cfg(feature = "gpu-metal")]
+    {
+        return GpuBackendKind::Metal;
+    }
+
+    GpuBackendKind::Cpu
+}
+
+/// Detect total system physical memory in bytes.
+/// Used to compute a safe GPU memory budget on unified-memory systems
+/// (Apple Silicon) where GPU and CPU share the same RAM.
+pub fn detect_system_memory_bytes() -> u64 {
+    #[cfg(target_os = "macos")]
+    {
+        // sysctl hw.memsize returns total physical RAM on macOS
+        if let Ok(out) = std::process::Command::new("sysctl")
+            .args(["-n", "hw.memsize"])
+            .output()
+        {
+            if out.status.success() {
+                let s = String::from_utf8_lossy(&out.stdout);
+                if let Ok(bytes) = s.trim().parse::<u64>() {
+                    return bytes;
+                }
+            }
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        // /proc/meminfo → MemTotal (kB)
+        if let Ok(content) = std::fs::read_to_string("/proc/meminfo") {
+            for line in content.lines() {
+                if let Some(rest) = line.strip_prefix("MemTotal:") {
+                    let kb: String = rest.chars().filter(|c| c.is_ascii_digit()).collect();
+                    if let Ok(kb_val) = kb.parse::<u64>() {
+                        return kb_val * 1024;
+                    }
+                }
+            }
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        // Use GlobalMemoryStatusEx via std::process on Windows
+        if let Ok(out) = std::process::Command::new("wmic")
+            .args(["ComputerSystem", "get", "TotalPhysicalMemory", "/value"])
+            .output()
+        {
+            let s = String::from_utf8_lossy(&out.stdout);
+            for line in s.lines() {
+                if let Some(rest) = line.strip_prefix("TotalPhysicalMemory=") {
+                    if let Ok(bytes) = rest.trim().parse::<u64>() {
+                        return bytes;
+                    }
+                }
+            }
+        }
+    }
+
+    // Fallback: assume 8 GB if detection fails
+    8 * 1024 * 1024 * 1024
+}
+
+/// Detect currently AVAILABLE memory (free + inactive/purgeable + cached).
+/// This is the memory that can actually be allocated without causing
+/// swap storms or OOM freezes. Critical for unified-memory systems.
+///
+/// On macOS: uses `vm_stat` to compute free + inactive + purgeable pages.
+/// On Linux: reads `/proc/meminfo` → MemAvailable.
+/// On Windows: uses `wmic OS get FreePhysicalMemory`.
+pub fn detect_available_memory_bytes() -> u64 {
+    #[cfg(target_os = "macos")]
+    {
+        // vm_stat reports page counts; page size is typically 16384 on Apple Silicon
+        let page_size = get_macos_page_size();
+        if let Ok(out) = std::process::Command::new("vm_stat")
+            .output()
+        {
+            if out.status.success() {
+                let s = String::from_utf8_lossy(&out.stdout);
+                let mut free: u64 = 0;
+                let mut inactive: u64 = 0;
+                let mut purgeable: u64 = 0;
+                let mut speculative: u64 = 0;
+                for line in s.lines() {
+                    let count = parse_vm_stat_line(line);
+                    if line.starts_with("Pages free:") {
+                        free = count;
+                    } else if line.starts_with("Pages inactive:") {
+                        inactive = count;
+                    } else if line.starts_with("Pages purgeable:") {
+                        purgeable = count;
+                    } else if line.starts_with("Pages speculative:") {
+                        speculative = count;
+                    }
+                }
+                // Available = free + inactive + purgeable + speculative
+                // (inactive pages can be reclaimed, purgeable can be discarded)
+                let avail_pages = free + inactive + purgeable + speculative;
+                return avail_pages * page_size;
+            }
+        }
+        // Fallback: assume 25% of total is available
+        return detect_system_memory_bytes() / 4;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(content) = std::fs::read_to_string("/proc/meminfo") {
+            for line in content.lines() {
+                if let Some(rest) = line.strip_prefix("MemAvailable:") {
+                    let kb: String = rest.chars().filter(|c| c.is_ascii_digit()).collect();
+                    if let Ok(kb_val) = kb.parse::<u64>() {
+                        return kb_val * 1024;
+                    }
+                }
+            }
+        }
+        return detect_system_memory_bytes() / 4;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(out) = std::process::Command::new("wmic")
+            .args(["OS", "get", "FreePhysicalMemory", "/value"])
+            .output()
+        {
+            let s = String::from_utf8_lossy(&out.stdout);
+            for line in s.lines() {
+                if let Some(rest) = line.strip_prefix("FreePhysicalMemory=") {
+                    if let Ok(kb) = rest.trim().parse::<u64>() {
+                        return kb * 1024;
+                    }
+                }
+            }
+        }
+        return detect_system_memory_bytes() / 4;
+    }
+
+    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+    {
+        detect_system_memory_bytes() / 4
+    }
+}
+
+/// Get macOS VM page size (typically 16384 on Apple Silicon, 4096 on Intel)
+#[cfg(target_os = "macos")]
+fn get_macos_page_size() -> u64 {
+    if let Ok(out) = std::process::Command::new("vm_stat")
+        .output()
+    {
+        let s = String::from_utf8_lossy(&out.stdout);
+        // First line: "Mach Virtual Memory Statistics: (page size of 16384 bytes)"
+        if let Some(start) = s.find("page size of ") {
+            let rest = &s[start + 13..];
+            if let Some(end) = rest.find(" bytes") {
+                if let Ok(ps) = rest[..end].parse::<u64>() {
+                    return ps;
+                }
+            }
+        }
+    }
+    16384 // Default for Apple Silicon
+}
+
+/// Parse a vm_stat line and extract the page count.
+/// Lines look like: "Pages free:                             73652."
+#[cfg(target_os = "macos")]
+fn parse_vm_stat_line(line: &str) -> u64 {
+    // Find the number after the colon
+    if let Some(colon_pos) = line.find(':') {
+        let rest = &line[colon_pos + 1..];
+        let digits: String = rest.chars().filter(|c| c.is_ascii_digit()).collect();
+        if let Ok(n) = digits.parse::<u64>() {
+            return n;
+        }
+    }
+    0
+}
+
+/// Auto-tune GPU memory budget based on actual system state.
+///
+/// This replaces the old fixed-percentage approach with a dynamic calculation:
+/// 1. Detect total system RAM
+/// 2. Detect currently available memory (free + reclaimable)
+/// 3. Reserve safety margin for OS + CPU mining
+/// 4. GPU budget = min(available * 0.6, total * max_pct)
+///
+/// The safety margin accounts for:
+/// - OS + window server: ~2 GB on macOS, ~1.5 GB on Linux
+/// - CPU mining threads: ~200 MB per thread (VerusHash/RandomX)
+/// - Application overhead: ~200 MB
+///
+/// `cpu_threads` is the number of CPU mining threads that will run
+/// alongside the GPU (used to calculate the safety margin).
+pub fn auto_tune_gpu_budget(cpu_threads: usize) -> u64 {
+    let total_ram = detect_system_memory_bytes();
+    let available = detect_available_memory_bytes();
+
+    // ── Tier 1: Max percentage of TOTAL RAM (hard cap) ──
+    let max_pct: u64 = if total_ram <= 8 * 1024 * 1024 * 1024 {
+        25 // ≤8 GB: max 25% of total (2 GB on 8GB)
+    } else if total_ram <= 16 * 1024 * 1024 * 1024 {
+        40 // ≤16 GB: max 40%
+    } else {
+        50 // >16 GB: max 50%
+    };
+    let total_cap = (total_ram * max_pct) / 100;
+
+    // ── Tier 2: Available-based budget (don't hog what's free) ──
+    // Use 50% of currently available memory for GPU.
+    // macOS will reclaim inactive/compressed pages, so `available` is a
+    // snapshot — but it's a good indicator of how much headroom we have.
+    let avail_based = (available * 50) / 100;
+
+    // ── Tier 3: Floor (minimum viable budget) ──
+    // Even if available is very low, give at least 8% of total RAM.
+    // macOS can swap/compress other pages to make room.
+    let floor = (total_ram * 8) / 100; // 8% of total
+
+    // ── CPU thread safety: reduce budget if many CPU threads ──
+    // Each CPU mining thread (VerusHash/RandomX) uses ~100-200 MB.
+    // We reduce the budget by 50 MB per thread as a soft adjustment.
+    let cpu_adjustment = (cpu_threads as u64) * 50 * 1024 * 1024; // 50 MB per thread
+
+    // Final budget: max(floor, avail_based), capped by total_cap, reduced by CPU
+    let raw_budget = avail_based.max(floor);
+    let budget = raw_budget.min(total_cap).saturating_sub(cpu_adjustment);
+
+    // Ensure minimum viable budget (32 MB for a tiny scratchpad)
+    let budget = budget.max(32 * 1024 * 1024);
+
+    println!(
+        "gpu_auto_tune sys_ram_mib={} available_mib={} cpu_threads={} max_pct={} total_cap_mib={} avail_based_mib={} floor_mib={} cpu_adj_mib={} => budget_mib={}",
+        total_ram / (1024 * 1024),
+        available / (1024 * 1024),
+        cpu_threads,
+        max_pct,
+        total_cap / (1024 * 1024),
+        avail_based / (1024 * 1024),
+        floor / (1024 * 1024),
+        cpu_adjustment / (1024 * 1024),
+        budget / (1024 * 1024),
+    );
+
+    budget
+}
+
 /// Check if a GPU backend can safely handle an algorithm.
 ///
-/// Metal (Apple Silicon) has unified memory — allocating a 2GB+ DAG buffer
-/// can cause system freezes. Skip DAG-based algorithms on Metal.
+/// Metal (Apple Silicon) has unified memory — allocating large buffers
+/// (DAG, Equihash state) can cause system freezes. Skip unsafe algorithms.
+/// `Auto` is resolved to its concrete backend before checking.
 pub fn backend_supports_algorithm(backend: GpuBackendKind, algorithm: &str) -> bool {
-    match backend {
+    let resolved = match backend {
+        GpuBackendKind::Auto => resolve_auto_backend(),
+        other => other,
+    };
+    match resolved {
         GpuBackendKind::Metal => {
-            // Metal on Apple Silicon: skip DAG-based algorithms to prevent
-            // system freezes from unified memory OOM.
-            if is_dag_based_algorithm(algorithm) {
+            // Metal on Apple Silicon: skip DAG-based AND memory-hard algorithms
+            // to prevent system freezes from unified memory OOM.
+            if is_dag_based_algorithm(algorithm) || is_memory_hard_algorithm(algorithm) {
                 return false;
             }
             // Non-DAG algorithms are safe on Metal
             true
         }
-        GpuBackendKind::OpenCL | GpuBackendKind::Cuda | GpuBackendKind::Auto => {
+        GpuBackendKind::OpenCL | GpuBackendKind::Cuda => {
             // OpenCL and CUDA have dedicated VRAM — DAG-based algorithms are safe
+            true
+        }
+        GpuBackendKind::Auto => {
+            // Should not reach here after resolve_auto_backend, but be safe
             true
         }
         GpuBackendKind::Cpu => {
@@ -2982,20 +3465,14 @@ pub mod metal_deeksha {
             }
             .min(max_tpg);
 
-            // Auto-cap batch_size based on device memory.
+            // Auto-cap batch_size based on GLOBAL GPU memory budget.
+            // On Apple Silicon (unified memory), multiple Metal instances
+            // share the same physical RAM. We use a global budget tracker
+            // to prevent OOM system freezes.
             // Each thread needs 256 KiB scratchpad.
-            // Apple Silicon uses unified memory — we can be more aggressive than
-            // the old 58% limit, but must leave headroom for OS + other apps.
-            // Pro/Max/Ultra (16-192 GB): can use 75%+.
-            // M1/M2 base (8 GB): 65% is safe and still 2× the old default.
-            let recommended = device.recommended_max_working_set_size();
-            let pct = if recommended > 12_000_000_000 {
-                75 // Pro/Max/Ultra: plenty of unified memory
-            } else {
-                65 // M1/M2 base: unified memory, but stay safe
-            };
-            let max_scratch_bytes = (recommended / 100) * pct;
-            let max_threads_by_mem = (max_scratch_bytes / 262_144) as usize;
+            let device_recommended = device.recommended_max_working_set_size();
+            let budget_bytes = claim_gpu_memory_budget(device_recommended);
+            let max_threads_by_mem = (budget_bytes / 262_144) as usize;
             let batch_size = work_size
                 .max(threads_per_tg)
                 .min(max_threads_by_mem.max(threads_per_tg));
@@ -3021,10 +3498,11 @@ pub mod metal_deeksha {
                 }
                 if batch_size <= threads_per_tg {
                     anyhow::bail!(
-                        "scratchpad allocation failed: need {} MiB, got {} bytes (device recommended {} MiB)",
+                        "scratchpad allocation failed: need {} MiB, got {} bytes (budget {} MiB, device recommended {} MiB)",
                         scratch_bytes / (1024 * 1024),
                         scratchpad_buf.length(),
-                        recommended / (1024 * 1024),
+                        budget_bytes / (1024 * 1024),
+                        device_recommended / (1024 * 1024),
                     );
                 }
                 batch_size = (batch_size * 9 / 10).max(threads_per_tg);
@@ -3375,10 +3853,9 @@ pub mod metal_deeksha_lite_fire {
             }
             .min(max_tpg);
 
-            let recommended = device.recommended_max_working_set_size();
-            let pct = if recommended > 12_000_000_000 { 75 } else { 65 };
-            let max_scratch_bytes = (recommended / 100) * pct;
-            let max_threads_by_mem = (max_scratch_bytes / 262_144) as usize;
+            let device_recommended = device.recommended_max_working_set_size();
+            let budget_bytes = claim_gpu_memory_budget(device_recommended);
+            let max_threads_by_mem = (budget_bytes / 262_144) as usize;
             let batch_size = work_size
                 .max(threads_per_tg)
                 .min(max_threads_by_mem.max(threads_per_tg));
@@ -3401,9 +3878,10 @@ pub mod metal_deeksha_lite_fire {
                 }
                 if batch_size <= threads_per_tg {
                     anyhow::bail!(
-                        "Fire scratchpad allocation failed: need {} MiB, got {} bytes",
+                        "Fire scratchpad allocation failed: need {} MiB, got {} bytes (budget {} MiB)",
                         scratch_bytes / (1024 * 1024),
                         scratchpad_buf.length(),
+                        budget_bytes / (1024 * 1024),
                     );
                 }
                 batch_size = (batch_size * 9 / 10).max(threads_per_tg);

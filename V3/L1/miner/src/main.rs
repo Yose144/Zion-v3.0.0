@@ -555,6 +555,112 @@ fn log_timestamp() -> String {
     format!("{y:04}-{m:02}-{d:02} {hours:02}:{mins:02}:{secs:02}")
 }
 
+/// Check current system memory pressure.
+/// Returns (free_bytes, total_bytes) by querying the OS.
+/// On macOS, uses `vm_stat` and `sysctl`. On Linux, reads `/proc/meminfo`.
+fn check_memory_pressure() -> (u64, u64) {
+    let total = gpu_backend::detect_system_memory_bytes();
+
+    #[cfg(target_os = "macos")]
+    {
+        // vm_stat gives page counts; page size is typically 4096 on macOS
+        if let Ok(out) = std::process::Command::new("vm_stat")
+            .output()
+        {
+            let s = String::from_utf8_lossy(&out.stdout);
+            let page_size = 4096u64;
+            let mut free_pages: u64 = 0;
+            let mut inactive_pages: u64 = 0;
+            let mut purgeable_pages: u64 = 0;
+            for line in s.lines() {
+                if let Some(rest) = line.strip_prefix("Pages free:") {
+                    let n: String = rest.chars().filter(|c| c.is_ascii_digit()).collect();
+                    if let Ok(n) = n.parse::<u64>() { free_pages = n; }
+                }
+                if let Some(rest) = line.strip_prefix("Pages inactive:") {
+                    let n: String = rest.chars().filter(|c| c.is_ascii_digit()).collect();
+                    if let Ok(n) = n.parse::<u64>() { inactive_pages = n; }
+                }
+                if let Some(rest) = line.strip_prefix("Pages purgeable:") {
+                    let n: String = rest.chars().filter(|c| c.is_ascii_digit()).collect();
+                    if let Ok(n) = n.parse::<u64>() { purgeable_pages = n; }
+                }
+            }
+            let available = (free_pages + inactive_pages + purgeable_pages) * page_size;
+            return (available, total);
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(content) = std::fs::read_to_string("/proc/meminfo") {
+            let mut mem_available: u64 = 0;
+            for line in content.lines() {
+                if let Some(rest) = line.strip_prefix("MemAvailable:") {
+                    let kb: String = rest.chars().filter(|c| c.is_ascii_digit()).collect();
+                    if let Ok(kb_val) = kb.parse::<u64>() {
+                        mem_available = kb_val * 1024;
+                    }
+                }
+            }
+            if mem_available > 0 {
+                return (mem_available, total);
+            }
+        }
+    }
+
+    // Fallback: assume 50% available
+    (total / 2, total)
+}
+
+/// Spawn a memory pressure watchdog thread.
+/// Monitors system memory every 30 seconds. If available memory drops
+/// below a critical threshold, logs a warning. The watchdog is advisory
+/// only — it logs warnings but does not kill GPU streams (the budget
+/// system handles prevention). This helps diagnose OOM issues post-mortem.
+///
+/// Note: On macOS, "free" memory is typically very low (<500 MiB) even
+/// under normal load because macOS aggressively caches file data in
+/// "inactive" pages. We include inactive + purgeable pages in our
+/// "available" calculation. The thresholds are set lower for macOS.
+fn spawn_memory_watchdog() {
+    std::thread::spawn(move || {
+        let check_interval = std::time::Duration::from_secs(30);
+
+        // Platform-specific thresholds
+        // macOS: inactive/purgeable pages are counted as available, so
+        //   the "available" number is more accurate. But macOS still caches
+        //   aggressively, so we use lower thresholds.
+        // Linux: MemAvailable is accurate (includes reclaimable slab).
+        #[cfg(target_os = "macos")]
+        let (critical_mib, warning_mib) = (128, 256); // 128 MiB / 256 MiB
+        #[cfg(not(target_os = "macos"))]
+        let (critical_mib, warning_mib) = (512, 1024); // 512 MiB / 1 GiB
+
+        loop {
+            std::thread::sleep(check_interval);
+            let (available, total) = check_memory_pressure();
+            let avail_mib = available / (1024 * 1024);
+            let total_mib = total / (1024 * 1024);
+            if avail_mib < critical_mib {
+                eprintln!(
+                    "[{}] MEMORY_CRITICAL available_mib={} total_mib={} — system may freeze! Consider reducing GPU batch size or disabling GPU streams",
+                    log_timestamp(),
+                    avail_mib,
+                    total_mib,
+                );
+            } else if avail_mib < warning_mib {
+                eprintln!(
+                    "[{}] MEMORY_WARNING available_mib={} total_mib={} — low memory, GPU mining may be unstable",
+                    log_timestamp(),
+                    avail_mib,
+                    total_mib,
+                );
+            }
+        }
+    });
+}
+
 fn days_to_ymd(days_since_epoch: u64) -> (u64, u64, u64) {
     // Civil from days algorithm (Howard Hinnant)
     let z = days_since_epoch as i64 + 719468;
@@ -1091,11 +1197,40 @@ fn run_local_session(
         c.algorithm.clone()
     };
 
+    // ── GPU memory budget auto-tune (must run before any GPU backend init) ──
+    // On Apple Silicon (unified memory), this detects actual available memory
+    // and calculates a safe GPU budget, preventing OOM system freezes.
+    gpu_backend::init_gpu_memory_budget_with_threads(config.threads);
+
+    // Spawn memory pressure watchdog (advisory logging every 30s)
+    spawn_memory_watchdog();
+
+    // ── Stream 2: algorithm-aware guard ──
+    // Stream 2 is enabled by default. Per-algorithm checks in
+    // external_gpu_thread handle safety: DAG/memory-hard algorithms are
+    // skipped on Metal, lightweight algorithms (Blake3, kHeavyHash) run fine.
+    let sys_ram = gpu_backend::detect_system_memory_bytes();
+    let resolved_backend = match config.gpu_backend {
+        gpu_backend::GpuBackendKind::Auto => gpu_backend::resolve_auto_backend(),
+        other => other,
+    };
+    let _is_unified_memory = resolved_backend == gpu_backend::GpuBackendKind::Metal;
+    if _is_unified_memory {
+        println!(
+            "gpu_stream2_info sys_ram_mib={} backend={} — Stream 2 enabled, per-algorithm guard active",
+            sys_ram / (1024 * 1024),
+            resolved_backend.as_str(),
+        );
+    }
+
+    // GPU stays enabled — non-DAG algorithms (ZION deeksha, Blake3, etc.) are safe
+    let effective_gpu_backend = config.gpu_backend;
+
     // ── GPU backend init (TriGpuManager — 3-stream Claymore-style) ──
-    let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu
+    let mut gpu_available = effective_gpu_backend != gpu_backend::GpuBackendKind::Cpu
         && config.stream1_enabled;
     let mut tri_gpu = match gpu_backend::TriGpuManager::with_work_sizes(
-        config.gpu_backend,
+        effective_gpu_backend,
         config.gpu_work_size,
         config.pearl_gpu_work_size,
         config.secondary_gpu_work_size,
@@ -1211,7 +1346,7 @@ fn run_local_session(
         // Skip GPU for CPU-only algorithms (verushash, randomx) — they have no
         // GPU kernel and must use CPU mining.
         let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
-        if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu
+        if effective_gpu_backend != gpu_backend::GpuBackendKind::Cpu
             && !gpu_backend::is_cpu_only_algorithm(&current_algorithm)
         {
             match tri_gpu.primary() {
@@ -1301,6 +1436,7 @@ fn run_local_session(
                 true,
                 "running",
             );
+            let stream_stats = hashrate.build_stream_stats(&telemetry.algorithm);
             telemetry.maybe_print_status(
                 iteration + 1,
                 config.loop_count,
@@ -1310,6 +1446,8 @@ fn run_local_session(
                 None,
                 config.stats_file.as_deref(),
                 metrics,
+                "local",
+                &stream_stats,
             );
             continue;
         };
@@ -1425,6 +1563,7 @@ fn run_local_session(
             "running",
         );
 
+        let stream_stats = hashrate.build_stream_stats(&telemetry.algorithm);
         telemetry.maybe_print_status(
             iteration + 1,
             config.loop_count,
@@ -1434,6 +1573,8 @@ fn run_local_session(
             None,
             config.stats_file.as_deref(),
             metrics,
+            "local",
+            &stream_stats,
         );
     }
 
@@ -1507,13 +1648,48 @@ fn run_remote_session(
         c.algorithm.clone()
     };
 
+    // ── GPU memory budget auto-tune (must run before any GPU backend init) ──
+    // On Apple Silicon (unified memory), this detects actual available memory
+    // and calculates a safe GPU budget, preventing OOM system freezes.
+    gpu_backend::init_gpu_memory_budget_with_threads(config.threads);
+
+    // Spawn memory pressure watchdog (advisory logging every 30s)
+    spawn_memory_watchdog();
+
+    // ── Stream 2: algorithm-aware guard ──
+    // Stream 2 (external GPU) is enabled by default. The external_gpu_thread
+    // checks `backend_supports_algorithm()` for EACH algorithm the pool sends.
+    // DAG-based (ProgPow, Ethash, KawPow) and memory-hard (ZelHash, BeamHash)
+    // algorithms are automatically skipped on Metal (unified memory).
+    // Lightweight algorithms (Blake3, kHeavyHash, Autolykos) run fine on Metal
+    // even on 8 GB systems — they need <100 MB extra GPU memory.
+    //
+    // No blanket disable — let the per-algorithm check decide.
+    let sys_ram = gpu_backend::detect_system_memory_bytes();
+    let resolved_backend = match config.gpu_backend {
+        gpu_backend::GpuBackendKind::Auto => gpu_backend::resolve_auto_backend(),
+        other => other,
+    };
+    let is_unified_memory = resolved_backend == gpu_backend::GpuBackendKind::Metal;
+    if is_unified_memory {
+        println!(
+            "gpu_stream2_info sys_ram_mib={} backend={} — Stream 2 enabled, per-algorithm guard active (DAG/memory-hard algo will be skipped on Metal)",
+            sys_ram / (1024 * 1024),
+            resolved_backend.as_str(),
+        );
+    }
+
+    // GPU stays enabled — non-DAG algorithms (ZION deeksha, Blake3, etc.) are safe
+    let effective_gpu_backend = config.gpu_backend;
+    let stream2_effective = config.stream2_enabled;
+
     // ── GPU backend init (TriGpuManager — 3-stream Claymore-style) ──
     // Primary (Deeksha) is created immediately. Pearl + secondary are
     // lazy-created by their respective persistent threads on demand.
-    let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu
+    let mut gpu_available = effective_gpu_backend != gpu_backend::GpuBackendKind::Cpu
         && config.stream1_enabled;
     let mut tri_gpu = match gpu_backend::TriGpuManager::with_work_sizes(
-        config.gpu_backend,
+        effective_gpu_backend,
         config.gpu_work_size,
         config.pearl_gpu_work_size,
         config.secondary_gpu_work_size,
@@ -1576,20 +1752,22 @@ fn run_remote_session(
     let (ext_gpu_share_tx, ext_gpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
 
     let dual_gpu_enabled = gpu_available
-        && config.gpu_backend != gpu_backend::GpuBackendKind::Cpu
-        && config.stream2_enabled;
+        && effective_gpu_backend != gpu_backend::GpuBackendKind::Cpu
+        && stream2_effective;
     println!(
-        "[{}] dual_gpu_check gpu_available={} gpu_backend={:?} stream2_enabled={} => dual_gpu_enabled={}",
+        "[{}] dual_gpu_check gpu_available={} gpu_backend={:?} effective_backend={:?} stream2_enabled={} stream2_effective={} => dual_gpu_enabled={}",
         log_timestamp(),
         gpu_available,
         config.gpu_backend,
+        effective_gpu_backend,
         config.stream2_enabled,
+        stream2_effective,
         dual_gpu_enabled
     );
     if dual_gpu_enabled {
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
-        let bk = config.gpu_backend;
+        let bk = effective_gpu_backend;
         thread::spawn(move || {
             println!("[{}] external_gpu_thread_spawned", log_timestamp());
             external_gpu_thread(ext_gpu_rx, ext_gpu_share_tx, ws, hr, bk);
@@ -1978,6 +2156,7 @@ fn run_remote_session(
             }
             let total_accepted = hashrate.accepted_shares.load(Ordering::Relaxed);
             let total_rejected = hashrate.rejected_shares.load(Ordering::Relaxed);
+            let stream_stats = hashrate.build_stream_stats(&telemetry.algorithm);
             telemetry.maybe_print_status(
                 iteration + 1,
                 config.loop_count,
@@ -1987,6 +2166,8 @@ fn run_remote_session(
                 Some(remote_job_ttl_ms),
                 config.stats_file.as_deref(),
                 metrics,
+                pool_addr,
+                &stream_stats,
             );
             sync_miner_metrics(
                 metrics,
@@ -2132,6 +2313,7 @@ fn run_remote_session(
             true,
             "running",
         );
+        let stream_stats = hashrate.build_stream_stats(&telemetry.algorithm);
         telemetry.maybe_print_status(
             iteration + 1,
             config.loop_count,
@@ -2141,6 +2323,8 @@ fn run_remote_session(
             Some(remote_job_ttl_ms),
             config.stats_file.as_deref(),
             metrics,
+            pool_addr,
+            &stream_stats,
         );
     }
 
@@ -2363,6 +2547,8 @@ impl SessionTelemetry {
         remote_job_ttl_ms: Option<u64>,
         stats_file: Option<&str>,
         metrics: &Arc<Mutex<MinerMetricsSnapshot>>,
+        pool_addr: &str,
+        stream_stats: &[ui::StreamStats],
     ) {
         let now = Instant::now();
         let is_final = loop_count > 0 && iteration_done >= loop_count;
@@ -2435,7 +2621,7 @@ impl SessionTelemetry {
         );
 
         if !TUI_ACTIVE.load(Ordering::Relaxed) {
-            // ── Professional colored UI table ──
+            // ── Claymore-style triple-stream stats block ──
             let uptime_secs = uptime as u64;
             let gpu_ui: Vec<(String, u32, u64, u32, Option<u32>, Option<u32>)> = self
                 .gpu_infos
@@ -2451,20 +2637,15 @@ impl SessionTelemetry {
                     )
                 })
                 .collect();
-            ui::print_speed_table(
+            ui::print_triple_stream_stats(
                 uptime_secs,
-                hr_10s,
-                hr_60s,
-                hr_15m,
-                self.hashrate_max,
+                stream_stats,
                 accepted,
                 rejected,
-                attempted_hashes,
+                pool_addr,
+                self.pool_height,
                 submit_avg,
                 self.submit_max_latency_ms,
-                self.pool_height,
-                self.current_epoch,
-                &self.algorithm,
                 &gpu_ui,
             );
         }
@@ -2528,9 +2709,20 @@ fn submit_external_share(
                 }
                 if let PoolMessage::ExternalResult { accepted, status, coin } = msg {
                     record(accepted);
+                    let stream_label = if share.algorithm == "verushash" || share.algorithm == "randomx" {
+                        "CPU PROFIT"
+                    } else {
+                        "GPU PROFIT"
+                    };
                     if accepted {
+                        if !TUI_ACTIVE.load(Ordering::Relaxed) {
+                            ui::log_ext_accepted(stream_label, &coin, &share.algorithm, 0);
+                        }
                         println!("[{}] external_share_accepted coin={} status={}", log_timestamp(), coin, status);
                     } else {
+                        if !TUI_ACTIVE.load(Ordering::Relaxed) {
+                            ui::log_ext_rejected(stream_label, &coin, &share.algorithm, &status);
+                        }
                         println!("[{}] external_share_rejected coin={} status={}", log_timestamp(), coin, status);
                     }
                 }
@@ -2623,6 +2815,8 @@ fn external_gpu_thread(
                     job.job_id,
                     job.height,
                 );
+                // Update hashrate tracker for triple-stream display
+                hashrate.set_gpu_ext_job(&job.coin, &job.algorithm);
                 current_job = Some(job);
             }
             Err(std::sync::mpsc::TryRecvError::Empty) => {}
@@ -2670,7 +2864,7 @@ fn external_gpu_thread(
             // causes system freezes.
             if !gpu_backend::backend_supports_algorithm(backend_kind, algo) {
                 println!(
-                    "[{}] ext_gpu_skip_unsupported algo={} backend={} reason=\"DAG-based algorithm not safe on Metal (unified memory OOM risk)\"",
+                    "[{}] ext_gpu_skip_unsupported algo={} backend={} reason=\"DAG-based or memory-hard algorithm not safe on Metal (unified memory OOM risk)\"",
                     log_timestamp(),
                     algo,
                     backend_kind.as_str(),
@@ -2900,6 +3094,8 @@ fn ext_cpu_thread(
                         job.job_id,
                         nonce_base,
                     );
+                    // Update hashrate tracker for triple-stream display
+                    hashrate.set_cpu_ext_job(&job.coin, &job.algorithm);
                 }
                 current_job = Some(job);
             }
