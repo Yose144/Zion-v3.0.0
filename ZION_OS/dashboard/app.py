@@ -2532,6 +2532,15 @@ _STATUS_CACHE_TIME: float = 0.0
 _STATUS_CACHE_LOCK = threading.Lock()
 STATUS_CACHE_TTL_SEC: float = 15.0
 
+# ── Backup node beacon cache ──────────────────────────────────────────────
+# The operator's local machine POSTs its backup node status here every 15s.
+# We cache it and use it in _build_status_edge_primary() so the dashboard
+# shows the remote backup node as online/offline with real data.
+_BACKUP_BEACON: dict = {}
+_BACKUP_BEACON_TIME: float = 0.0
+_BACKUP_BEACON_LOCK = threading.Lock()
+BACKUP_BEACON_TTL_SEC: float = 90.0  # offline if no beacon for 90s
+
 def build_status() -> dict:
     global _STATUS_CACHE, _STATUS_CACHE_TIME
     now = time.time()
@@ -2573,10 +2582,10 @@ def _build_status_edge_primary() -> dict:
         r = rpc_call("127.0.0.1", 8448, "getChainInfo", {}, timeout=2.0)
         return ("edge2", r if r and not r.get("_rpc_error") else None)
 
-    # NOTE: In edge-primary topology the dashboard runs on Edge itself. The
-    # "local backup node" (RPC 8446) is not co-located here; it lives on the
-    # operator's local PC. Probing 127.0.0.1:8446 just hits sshd and produces a
-    # false "Local Backup Node not reachable" alert, so we skip it.
+    # Local backup node status is received via /api/backup-beacon POST from
+    # the operator's local machine (where the backup node actually runs).
+    # The beacon is cached with a 60s TTL — if no beacon arrives, the node
+    # is shown as offline.
     def _edge_node2_nodeinfo_call():
         r = rpc_call("127.0.0.1", 8448, "getNodeInfo", {}, timeout=2.0)
         return ("edge2_info", r if r and not r.get("_rpc_error") else None)
@@ -2656,21 +2665,49 @@ def _build_status_edge_primary() -> dict:
         "rpc_bind": (edge_node2_nodeinfo or {}).get("rpc_bind") if edge_node2_info else None,
         "host": "127.0.0.1:8448",
     }
-    local_backup_status = {
-        "running": False,
-        "chain_height": None,
-        "tip_hash": None,
-        "known_peers": 0,
-        "mempool_size": 0,
-        "network": None,
-        "protocol_version": None,
-        "consensus_profile": None,
-        "accepted_blocks": None,
-        "node_id": None,
-        "p2p_bind": None,
-        "rpc_bind": None,
-        "host": "127.0.0.1:8446 (not used on Edge)",
-    }
+    # ── Local Backup Node — from beacon cache ───────────────────────────────
+    # The operator's local machine pushes status via /api/backup-beacon every
+    # 15s. If the beacon is fresh (< 90s), we show the node as online.
+    now_ts = time.time()
+    beacon = {}
+    with _BACKUP_BEACON_LOCK:
+        beacon_age = now_ts - _BACKUP_BEACON_TIME
+        if beacon_age < BACKUP_BEACON_TTL_SEC:
+            beacon = dict(_BACKUP_BEACON)
+    if beacon:
+        local_backup_status = {
+            "running": True,
+            "chain_height": beacon.get("chain_height"),
+            "tip_hash": beacon.get("tip_hash"),
+            "known_peers": beacon.get("known_peers", 0),
+            "mempool_size": beacon.get("mempool_size", 0),
+            "network": beacon.get("network"),
+            "protocol_version": beacon.get("protocol_version"),
+            "consensus_profile": beacon.get("consensus_profile"),
+            "accepted_blocks": beacon.get("accepted_blocks"),
+            "node_id": beacon.get("node_id", "local-backup-node"),
+            "p2p_bind": beacon.get("p2p_bind", "0.0.0.0:8333"),
+            "rpc_bind": beacon.get("rpc_bind", "127.0.0.1:8446"),
+            "host": beacon.get("host", "local-pc"),
+            "uptime_seconds": beacon.get("uptime_seconds"),
+            "last_beacon_age_s": round(beacon_age, 1),
+        }
+    else:
+        local_backup_status = {
+            "running": False,
+            "chain_height": None,
+            "tip_hash": None,
+            "known_peers": 0,
+            "mempool_size": 0,
+            "network": None,
+            "protocol_version": None,
+            "consensus_profile": None,
+            "accepted_blocks": None,
+            "node_id": None,
+            "p2p_bind": None,
+            "rpc_bind": None,
+            "host": "local-pc (no beacon received)",
+        }
 
     # ── Local Backup Node (n1) — uses local_backup_status ──────────────────
     n1 = parse_node_log("node1")
@@ -12548,6 +12585,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json(json.loads(r.read()))
             except Exception as e:
                 self._json({"ok": False, "offline": True, "error": str(e)[:120]})
+        elif route == "/api/backup-beacon":
+            # Receive backup node status from operator's local machine.
+            # The beacon is cached and used in _build_status_edge_primary().
+            global _BACKUP_BEACON, _BACKUP_BEACON_TIME
+            with _BACKUP_BEACON_LOCK:
+                _BACKUP_BEACON = payload
+                _BACKUP_BEACON_TIME = time.time()
+            self._json({"ok": True, "received_at": datetime.now().isoformat()})
         else:
             self.send_error(404)
 
