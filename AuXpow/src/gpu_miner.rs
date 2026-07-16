@@ -782,14 +782,14 @@ impl GpuMiner {
     /// **Requires** the `native-hashers` feature (for light cache generation).
     #[cfg(feature = "native-hashers")]
     pub fn generate_kawpow_dag_on_gpu(&mut self, epoch: u32) -> Result<()> {
-        use crate::native_ffi::generate_kawpow_light_cache;
+        use crate::native_ffi::generate_kawpow_light_cache_rust;
 
         eprintln!(
-            "dag_manager: generating KawPow light cache epoch={} on CPU...",
+            "dag_manager: generating KawPow light cache epoch={} on CPU (pure-Rust)...",
             epoch
         );
-        let light_cache = generate_kawpow_light_cache(epoch)
-            .ok_or_else(|| anyhow!("kawpow_generate_light_cache returned NULL for epoch {}", epoch))?;
+        let light_cache = generate_kawpow_light_cache_rust(epoch)
+            .ok_or_else(|| anyhow!("kawpow_generate_light_cache_rust returned NULL for epoch {}", epoch))?;
 
         let cache_items = light_cache.cache_items;
         let dag_size_entries = light_cache.dag_size_entries;
@@ -1203,14 +1203,14 @@ typedef unsigned long ulong;
     /// **Requires** the `native-hashers` feature (for light cache generation).
     #[cfg(feature = "native-hashers")]
     pub fn generate_ethash_dag_on_gpu(&mut self, epoch: u32) -> Result<()> {
-        use crate::native_ffi::generate_ethash_light_cache;
+        use crate::native_ffi::generate_ethash_light_cache_rust;
 
         eprintln!(
-            "dag_manager: generating Ethash light cache epoch={} on CPU...",
+            "dag_manager: generating Ethash light cache epoch={} on CPU (pure-Rust)...",
             epoch
         );
-        let light_cache = generate_ethash_light_cache(epoch)
-            .ok_or_else(|| anyhow!("ethash_generate_light_cache returned NULL for epoch {}", epoch))?;
+        let light_cache = generate_ethash_light_cache_rust(epoch)
+            .ok_or_else(|| anyhow!("ethash_generate_light_cache_rust returned NULL for epoch {}", epoch))?;
 
         eprintln!(
             "dag_manager: light cache ready ({} items = {:.1} MB)",
@@ -1247,14 +1247,14 @@ typedef unsigned long ulong;
     /// **Requires** the `native-hashers` feature (for light cache generation).
     #[cfg(feature = "native-hashers")]
     pub fn generate_progpow_dag_on_gpu(&mut self, epoch: u32) -> Result<()> {
-        use crate::native_ffi::generate_ethash_light_cache;
+        use crate::native_ffi::generate_ethash_light_cache_rust;
 
         eprintln!(
-            "dag_manager: generating ProgPow light cache epoch={} on CPU...",
+            "dag_manager: generating ProgPow light cache epoch={} on CPU (pure-Rust)...",
             epoch
         );
-        let light_cache = generate_ethash_light_cache(epoch)
-            .ok_or_else(|| anyhow!("ethash_generate_light_cache returned NULL for epoch {}", epoch))?;
+        let light_cache = generate_ethash_light_cache_rust(epoch)
+            .ok_or_else(|| anyhow!("ethash_generate_light_cache_rust returned NULL for epoch {}", epoch))?;
 
         eprintln!(
             "dag_manager: light cache ready ({} items = {:.1} MB)",

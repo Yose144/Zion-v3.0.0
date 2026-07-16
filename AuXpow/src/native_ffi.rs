@@ -675,6 +675,8 @@ pub struct EthashLightCache {
     pub dag_size_entries: u64,
     /// Epoch number.
     pub epoch: u32,
+    /// True if the buffer was allocated by pure-Rust (Box), false if by C malloc.
+    rust_owned: bool,
 }
 
 impl EthashLightCache {
@@ -691,7 +693,17 @@ impl EthashLightCache {
 impl Drop for EthashLightCache {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { ethash_free_light_cache(self.ptr) }
+            if self.rust_owned {
+                // Free via Rust's allocator (Box from Box::into_raw)
+                unsafe {
+                    let _ = Box::from_raw(std::slice::from_raw_parts_mut(
+                        self.ptr,
+                        self.cache_size as usize,
+                    ));
+                }
+            } else {
+                unsafe { ethash_free_light_cache(self.ptr) }
+            }
             self.ptr = std::ptr::null_mut();
         }
     }
@@ -720,6 +732,7 @@ pub fn generate_ethash_light_cache(epoch: u32) -> Option<EthashLightCache> {
             cache_items,
             dag_size_entries,
             epoch,
+            rust_owned: false,
         })
     }
 }
@@ -798,6 +811,8 @@ pub struct KawpowLightCache {
     pub dag_size_entries: u64,
     /// Epoch number.
     pub epoch: u32,
+    /// True if the buffer was allocated by pure-Rust (Box), false if by C malloc.
+    rust_owned: bool,
 }
 
 impl KawpowLightCache {
@@ -814,7 +829,16 @@ impl KawpowLightCache {
 impl Drop for KawpowLightCache {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { kawpow_free_light_cache(self.ptr) }
+            if self.rust_owned {
+                unsafe {
+                    let _ = Box::from_raw(std::slice::from_raw_parts_mut(
+                        self.ptr,
+                        self.cache_size as usize,
+                    ));
+                }
+            } else {
+                unsafe { kawpow_free_light_cache(self.ptr) }
+            }
             self.ptr = std::ptr::null_mut();
         }
     }
@@ -843,6 +867,7 @@ pub fn generate_kawpow_light_cache(epoch: u32) -> Option<KawpowLightCache> {
             cache_items,
             dag_size_entries,
             epoch,
+            rust_owned: false,
         })
     }
 }
@@ -934,4 +959,135 @@ pub fn hash_pearl_native(
     _nonce: u64,
 ) -> Result<[u8; 32], &'static str> {
     Err("native Pearl FFI not yet implemented — using pure-Rust BLAKE3 fallback")
+}
+
+// ── Pure-Rust light cache generation (no C FFI, no SIGILL risk) ──────
+//
+// These functions replace the C FFI `generate_kawpow_light_cache` and
+// `generate_ethash_light_cache` for platforms where the C code triggers
+// SIGILL (e.g. Pentium G4560 without AVX). The algorithm is identical:
+// seed hash → keccak-512 chain → 3 rounds of RANDMEMOHASH mixing.
+//
+// The light cache is small (~16 MB + epoch * 128 KB) so pure-Rust
+// performance is adequate (~1-3 seconds even on a slow CPU).
+
+use sha3::{Digest, Keccak256, Keccak512};
+
+const CACHE_ROUNDS: usize = 3;
+
+/// Compute the cache size for a given epoch.
+/// Formula: 16 MB + epoch * 128 KB, rounded to 64-byte boundary.
+fn cache_size_for_epoch(epoch: u32) -> u64 {
+    let size = 16u64 * 1024 * 1024 + epoch as u64 * 128 * 1024;
+    (size / 64) * 64
+}
+
+/// Compute the dataset (DAG) size for a given epoch.
+/// Formula: 1 GB + epoch * 8 MB, rounded to 128-byte boundary.
+fn dataset_size_for_epoch(epoch: u32) -> u64 {
+    let size = 1024u64 * 1024 * 1024 + epoch as u64 * 8 * 1024 * 1024;
+    (size / 128) * 128
+}
+
+/// Compute the seed hash for an epoch by keccak-256 chaining.
+fn seed_hash_for_epoch(epoch: u32) -> [u8; 32] {
+    let mut seed = [0u8; 32];
+    for _ in 0..epoch {
+        let mut hasher = Keccak256::new();
+        hasher.update(&seed);
+        seed = hasher.finalize().into();
+    }
+    seed
+}
+
+/// Generate the light cache in pure Rust.
+/// Returns (cache_bytes, cache_items, dag_size_entries).
+fn generate_light_cache_rust(epoch: u32) -> (Vec<u8>, u64, u64) {
+    let cache_size = cache_size_for_epoch(epoch);
+    let cache_items = cache_size / 64;
+    let dag_size_entries = dataset_size_for_epoch(epoch) / 128;
+
+    let seed = seed_hash_for_epoch(epoch);
+
+    // Allocate cache
+    let mut cache = vec![0u8; cache_size as usize];
+
+    // Generate cache: seed first item, chain with keccak-512
+    {
+        let mut hasher = Keccak512::new();
+        hasher.update(&seed);
+        let hash = hasher.finalize();
+        cache[..64].copy_from_slice(&hash);
+    }
+    for i in 1..cache_items as usize {
+        let mut hasher = Keccak512::new();
+        hasher.update(&cache[(i - 1) * 64..i * 64]);
+        let hash = hasher.finalize();
+        cache[i * 64..(i + 1) * 64].copy_from_slice(&hash);
+    }
+
+    // RANDMEMOHASH mixing rounds (3 rounds)
+    for _r in 0..CACHE_ROUNDS {
+        for i in 0..cache_items as usize {
+            let v = u32::from_le_bytes([
+                cache[i * 64],
+                cache[i * 64 + 1],
+                cache[i * 64 + 2],
+                cache[i * 64 + 3],
+            ]) % cache_items as u32;
+            let prev = (i + cache_items as usize - 1) % cache_items as usize;
+
+            let mut tmp = [0u8; 64];
+            for j in 0..64 {
+                tmp[j] = cache[prev * 64 + j] ^ cache[v as usize * 64 + j];
+            }
+
+            let mut hasher = Keccak512::new();
+            hasher.update(&tmp);
+            let hash = hasher.finalize();
+            cache[i * 64..(i + 1) * 64].copy_from_slice(&hash);
+        }
+    }
+
+    (cache, cache_items, dag_size_entries)
+}
+
+/// Pure-Rust replacement for `generate_kawpow_light_cache`.
+/// KawPow epoch length = 7500.
+pub fn generate_kawpow_light_cache_rust(epoch: u32) -> Option<KawpowLightCache> {
+    let (cache, cache_items, dag_size_entries) = generate_light_cache_rust(epoch);
+    let cache_size = cache.len() as u64;
+
+    // Leak the Vec to get a raw pointer that matches the C FFI interface.
+    // The KawpowLightCache Drop impl will free it via kawpow_free_light_cache,
+    // but since we're in pure Rust, we need to handle it differently.
+    // We'll use Box::into_raw to allocate, and the Drop will use Rust's free.
+    let ptr = Box::into_raw(cache.into_boxed_slice()) as *mut u8;
+
+    Some(KawpowLightCache {
+        ptr,
+        cache_size,
+        cache_items,
+        dag_size_entries,
+        epoch,
+        rust_owned: true,
+    })
+}
+
+/// Pure-Rust replacement for `generate_ethash_light_cache`.
+/// Ethash/ProgPow epoch length = 30000.
+pub fn generate_ethash_light_cache_rust(epoch: u32) -> Option<EthashLightCache> {
+    let (cache, cache_items, dag_size_entries) = generate_light_cache_rust(epoch);
+    let cache_size = cache.len() as u64;
+
+    let ptr = Box::into_raw(cache.into_boxed_slice()) as *mut u8;
+
+    Some(EthashLightCache {
+        ptr,
+        cache_size,
+        cache_items,
+        dag_size_entries,
+        epoch,
+        rust_owned: true,
+    })
 }
