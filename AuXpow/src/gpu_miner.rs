@@ -851,13 +851,22 @@ typedef unsigned long ulong;
         prog_builder.src(dag_kernel_src);
         prog_builder.cmplr_opt("-cl-std=CL1.2 -cl-mad-enable");
 
-        let dag_pro_que = ProQue::builder()
+        let dag_pro_que = match ProQue::builder()
             .platform(self.platform)
             .device(self.device)
             .prog_bldr(prog_builder)
             .dims(batch_size)
             .build()
-            .map_err(|e| anyhow!("OpenCL compile failed for kawpow_dag.cl: {e}"))?;
+        {
+            Ok(pq) => {
+                eprintln!("dag_manager: kawpow_dag.cl compiled successfully");
+                pq
+            }
+            Err(e) => {
+                eprintln!("dag_manager: OpenCL compile FAILED for kawpow_dag.cl: {e}");
+                return Err(anyhow!("OpenCL compile failed for kawpow_dag.cl: {e}"));
+            }
+        };
 
         // Upload the light cache to the GPU.
         // The cache is stored as bytes; we need it as u64 words for the kernel.
@@ -891,11 +900,27 @@ typedef unsigned long ulong;
             (dag_ulongs * 8) as f64 / (1024.0 * 1024.0 * 1024.0)
         );
 
-        let dag_buf: Buffer<u64> = Buffer::builder()
+        let dag_buf: Buffer<u64> = match Buffer::builder()
             .queue(q.clone())
             .len(dag_ulongs as usize)
             .build()
-            .map_err(|e| anyhow!("failed to allocate GPU DAG buffer: {e}"))?;
+        {
+            Ok(b) => {
+                eprintln!(
+                    "dag_manager: DAG buffer allocated successfully ({} ulongs)",
+                    dag_ulongs
+                );
+                b
+            }
+            Err(e) => {
+                eprintln!(
+                    "dag_manager: FAILED to allocate GPU DAG buffer ({} ulongs = {:.1} GB): {e}",
+                    dag_ulongs,
+                    (dag_ulongs * 8) as f64 / (1024.0 * 1024.0 * 1024.0)
+                );
+                return Err(anyhow!("failed to allocate GPU DAG buffer ({} ulongs): {e}", dag_ulongs));
+            }
+        };
 
         // Run the ethash_calculate_dag_item kernel in batches.
         // Each work-item generates one 64-byte node (hash64_t).
@@ -981,6 +1006,279 @@ typedef unsigned long ulong;
             start_time.elapsed().as_secs_f64()
         );
 
+        Ok(())
+    }
+
+    /// Internal helper: generate a DAG on the GPU from a light cache.
+    ///
+    /// This is the shared implementation used by `generate_kawpow_dag_on_gpu`,
+    /// `generate_ethash_dag_on_gpu`, and `generate_progpow_dag_on_gpu`.
+    /// The light cache is generated on CPU (small, ~16-100 MB) and uploaded,
+    /// then the full DAG is computed in parallel on the GPU using the
+    /// `ethash_calculate_dag_item_mod` OpenCL kernel.  The DAG stays on the
+    /// GPU — no multi-GB readback is needed.
+    ///
+    /// Returns `(dag_buffer, dag_size_entries)`.
+    #[cfg(feature = "native-hashers")]
+    fn generate_dag_on_gpu_impl(
+        &mut self,
+        cache_bytes: &[u8],
+        cache_items: u64,
+        dag_size_entries: u64,
+        algorithm_label: &str,
+    ) -> Result<(Buffer<u64>, u64)> {
+        let dag_nodes = dag_size_entries * 2; // each 128-byte entry = 2 nodes
+        let dag_ulongs = dag_nodes * 8;       // each 64-byte node = 8 ulongs
+
+        eprintln!(
+            "dag_manager: {} DAG will be {} nodes = {:.2} GB",
+            algorithm_label,
+            dag_nodes,
+            (dag_nodes as f64 * 64.0) / (1024.0 * 1024.0 * 1024.0)
+        );
+
+        // Build a dedicated ProQue for the DAG generation kernel.
+        // kawpow_dag.cl contains ethash_calculate_dag_item which generates
+        // DAG nodes on the GPU from the light cache. We inline the defs.h
+        // content (FNV_PRIME, PLATFORM defines) since the file doesn't exist.
+        let dag_kernel_src = {
+            let base = include_str!("../csrc/opencl/kawpow_dag.cl");
+            // Replace #include "defs.h" with inline definitions
+            let defs = r#"
+#define FNV_PRIME 0x01000193
+#define OPENCL_PLATFORM_UNKNOWN 0
+#define OPENCL_PLATFORM_NVIDIA  1
+#define OPENCL_PLATFORM_AMD     2
+#define OPENCL_PLATFORM_CLOVER  3
+#ifndef PLATFORM
+#define PLATFORM OPENCL_PLATFORM_AMD
+#endif
+#ifndef COMPUTE
+#define COMPUTE 0
+#endif
+typedef unsigned int uint;
+typedef unsigned long ulong;
+"#;
+            base.replace("#include \"defs.h\"", defs)
+        };
+
+        let batch_size = self.work_size;
+        // Get a queue from any existing ProQue, or build one fresh.
+        let q = if let Some(pq) = self.proques.values().next() {
+            pq.queue().clone()
+        } else {
+            // No existing ProQue — create a minimal one just for the queue.
+            let mut dummy_prog = ProgramBuilder::new();
+            dummy_prog.src("__kernel void dummy() {}");
+            let dummy_pq = ProQue::builder()
+                .platform(self.platform)
+                .device(self.device)
+                .prog_bldr(dummy_prog)
+                .dims(1)
+                .build()
+                .map_err(|e| anyhow!("failed to create queue: {e}"))?;
+            dummy_pq.queue().clone()
+        };
+
+        let mut prog_builder = ProgramBuilder::new();
+        prog_builder.src(dag_kernel_src);
+        prog_builder.cmplr_opt("-cl-std=CL1.2 -cl-mad-enable");
+
+        let dag_pro_que = ProQue::builder()
+            .platform(self.platform)
+            .device(self.device)
+            .prog_bldr(prog_builder)
+            .dims(batch_size)
+            .build()
+            .map_err(|e| anyhow!("OpenCL compile failed for DAG kernel: {e}"))?;
+
+        // Upload the light cache to the GPU.
+        let cache_u64_count = cache_bytes.len() / 8;
+        let cache_u64: Vec<u64> = (0..cache_u64_count)
+            .map(|i| {
+                u64::from_le_bytes(cache_bytes[i*8..i*8+8].try_into().unwrap())
+            })
+            .collect();
+
+        eprintln!(
+            "dag_manager: uploading light cache to GPU ({} ulongs = {:.1} MB)...",
+            cache_u64.len(),
+            (cache_u64.len() * 8) as f64 / (1024.0 * 1024.0)
+        );
+
+        let cache_buf: Buffer<u64> = Buffer::builder()
+            .queue(q.clone())
+            .len(cache_u64.len())
+            .copy_host_slice(&cache_u64)
+            .build()
+            .map_err(|e| anyhow!("failed to allocate light cache buffer: {e}"))?;
+
+        // Allocate the DAG buffer on the GPU (no host data — will be filled by kernel).
+        eprintln!(
+            "dag_manager: allocating DAG buffer on GPU ({} ulongs = {:.2} GB)...",
+            dag_ulongs,
+            (dag_ulongs * 8) as f64 / (1024.0 * 1024.0 * 1024.0)
+        );
+
+        let dag_buf: Buffer<u64> = Buffer::builder()
+            .queue(q.clone())
+            .len(dag_ulongs as usize)
+            .build()
+            .map_err(|e| anyhow!("failed to allocate GPU DAG buffer: {e}"))?;
+
+        // Run the ethash_calculate_dag_item_mod kernel in batches.
+        let total_nodes = dag_nodes as usize;
+        let num_batches = (total_nodes + batch_size - 1) / batch_size;
+        let light_items = cache_items;
+
+        eprintln!(
+            "dag_manager: generating {} DAG on GPU ({} batches of {} nodes, light_items={})...",
+            algorithm_label, num_batches, batch_size, light_items
+        );
+
+        let start_time = std::time::Instant::now();
+
+        for batch in 0..num_batches {
+            let start_node = (batch * batch_size) as u32;
+            let nodes_this_batch = std::cmp::min(batch_size, total_nodes - batch * batch_size);
+
+            let dag_kernel = Kernel::builder()
+                .queue(q.clone())
+                .program(dag_pro_que.program())
+                .name("ethash_calculate_dag_item_mod")
+                .arg(start_node)
+                .arg(&cache_buf)
+                .arg(&dag_buf)
+                .arg(0u32) // isolate (debug flag, 0 = normal)
+                .arg(dag_nodes as u32) // dag_words
+                .arg(light_items as u32) // light_items
+                .arg(0u32) // fast_mod_mul (0 = use direct modulo)
+                .arg(0u32) // fast_mod_shift
+                .arg(light_items as u32) // light_divisor
+                .build()
+                .map_err(|e| anyhow!("DAG kernel build failed (batch {}): {e}", batch))?;
+
+            unsafe {
+                dag_kernel
+                    .cmd()
+                    .global_work_size(nodes_this_batch)
+                    .enq()
+                    .map_err(|e| anyhow!("DAG kernel enqueue failed (batch {}): {e}", batch))?;
+            }
+            q.finish()
+                .map_err(|e| anyhow!("DAG kernel finish failed (batch {}): {e}", batch))?;
+
+            // Progress report every 10% or on the last batch
+            let pct = ((batch + 1) * 100) / num_batches;
+            if pct % 10 == 0 || batch + 1 == num_batches {
+                let elapsed = start_time.elapsed().as_secs_f64();
+                let eta = if batch > 0 {
+                    (elapsed / (batch + 1) as f64) * (num_batches - batch - 1) as f64
+                } else {
+                    0.0
+                };
+                eprintln!(
+                    "dag_manager: {} DAG generation {}% (batch {}/{}, {:.1}s elapsed, ~{:.0}s ETA)",
+                    algorithm_label, pct, batch + 1, num_batches, elapsed, eta
+                );
+            }
+        }
+
+        eprintln!(
+            "dag_manager: {} DAG ready on GPU ({:.1}s total)",
+            algorithm_label,
+            start_time.elapsed().as_secs_f64()
+        );
+
+        Ok((dag_buf, dag_size_entries))
+    }
+
+    /// Generate the Ethash DAG **on the GPU** from a light cache.
+    ///
+    /// Same approach as `generate_kawpow_dag_on_gpu`: the light cache (~16-100 MB)
+    /// is generated on the CPU and uploaded, then the full DAG (~1-6 GB) is
+    /// computed in parallel on the GPU.  The DAG stays on the GPU — no
+    /// multi-GB readback is needed.
+    ///
+    /// **Requires** the `native-hashers` feature (for light cache generation).
+    #[cfg(feature = "native-hashers")]
+    pub fn generate_ethash_dag_on_gpu(&mut self, epoch: u32) -> Result<()> {
+        use crate::native_ffi::generate_ethash_light_cache;
+
+        eprintln!(
+            "dag_manager: generating Ethash light cache epoch={} on CPU...",
+            epoch
+        );
+        let light_cache = generate_ethash_light_cache(epoch)
+            .ok_or_else(|| anyhow!("ethash_generate_light_cache returned NULL for epoch {}", epoch))?;
+
+        eprintln!(
+            "dag_manager: light cache ready ({} items = {:.1} MB)",
+            light_cache.cache_items,
+            light_cache.cache_size as f64 / (1024.0 * 1024.0)
+        );
+
+        let cache_bytes = light_cache.as_slice();
+        let dag_size_entries = light_cache.dag_size_entries;
+
+        let (dag_buf, dag_size_entries) = self.generate_dag_on_gpu_impl(
+            cache_bytes,
+            light_cache.cache_items,
+            dag_size_entries,
+            "Ethash",
+        )?;
+
+        self.ethash_dag = Some(EthashDag {
+            buf: dag_buf,
+            size_entries: dag_size_entries,
+            epoch,
+        });
+
+        eprintln!("dag_manager: Ethash DAG epoch={} ready on GPU", epoch);
+        Ok(())
+    }
+
+    /// Generate the ProgPow DAG **on the GPU** from a light cache.
+    ///
+    /// ProgPow uses the same DAG format as Ethash (epoch length 30000, 128-byte
+    /// entries).  The light cache is generated on CPU and uploaded, then the
+    /// full DAG is computed in parallel on the GPU.
+    ///
+    /// **Requires** the `native-hashers` feature (for light cache generation).
+    #[cfg(feature = "native-hashers")]
+    pub fn generate_progpow_dag_on_gpu(&mut self, epoch: u32) -> Result<()> {
+        use crate::native_ffi::generate_ethash_light_cache;
+
+        eprintln!(
+            "dag_manager: generating ProgPow light cache epoch={} on CPU...",
+            epoch
+        );
+        let light_cache = generate_ethash_light_cache(epoch)
+            .ok_or_else(|| anyhow!("ethash_generate_light_cache returned NULL for epoch {}", epoch))?;
+
+        eprintln!(
+            "dag_manager: light cache ready ({} items = {:.1} MB)",
+            light_cache.cache_items,
+            light_cache.cache_size as f64 / (1024.0 * 1024.0)
+        );
+
+        let cache_bytes = light_cache.as_slice();
+        let dag_size_entries = light_cache.dag_size_entries;
+
+        let (dag_buf, dag_size_entries) = self.generate_dag_on_gpu_impl(
+            cache_bytes,
+            light_cache.cache_items,
+            dag_size_entries,
+            "ProgPow",
+        )?;
+
+        self.progpow_dag = Some(ProgpowDag {
+            buf: dag_buf,
+            size_entries: dag_size_entries,
+            epoch,
+        });
+
+        eprintln!("dag_manager: ProgPow DAG epoch={} ready on GPU", epoch);
         Ok(())
     }
 
@@ -1815,7 +2113,10 @@ use std::path::Path;
 #[cfg(feature = "native-hashers")]
 use std::io::{Read, Write};
 #[cfg(feature = "native-hashers")]
-use crate::native_ffi::{generate_ethash_dag, generate_kawpow_dag};
+// CPU FFI DAG generation (generate_ethash_dag, generate_kawpow_dag) is NO LONGER
+// used by DagManager — all DAG generation now happens on the GPU via
+// generate_*_dag_on_gpu().  The CPU functions remain in native_ffi.rs for
+// external test/benchmark code but are not imported here.
 
 /// Manages DAG generation and GPU upload for Ethash, KawPow, and ProgPow.
 #[cfg(feature = "native-hashers")]
@@ -1849,8 +2150,13 @@ impl DagManager {
     }
 
     /// Ensure the GPU miner has the correct Ethash DAG loaded for `epoch`.
-    /// If the epoch changed (or no DAG is loaded), generates or loads from
-    /// cache, then uploads to the GPU via `set_ethash_dag`.
+    ///
+    /// **DAG is always generated on the GPU**, never on the CPU.  The light
+    /// cache (~16-100 MB) is generated on CPU and uploaded, then the full DAG
+    /// is computed in parallel on the GPU using the OpenCL
+    /// `ethash_calculate_dag_item_mod` kernel.  If a disk cache exists (from a
+    /// previous GPU generation that was saved), it is loaded and uploaded
+    /// instead — this is just a host→GPU transfer, not CPU generation.
     pub fn ensure_ethash_dag(
         &mut self,
         miner: &mut GpuMiner,
@@ -1865,40 +2171,35 @@ impl DagManager {
             epoch, self.cache_dir.display()
         );
 
-        // Try disk cache first
+        // Try disk cache first (from a previous GPU-generated DAG that was saved)
         let cache_path = self.cache_dir.join(format!("ethash_epoch{}.bin", epoch));
-        let (dag_u64, dag_entries) = if cache_path.exists() {
+        if cache_path.exists() {
             eprintln!("dag_manager: loading Ethash DAG from disk cache: {}", cache_path.display());
             match Self::load_dag_from_disk(&cache_path) {
-                Ok(d) => d,
+                Ok((dag_u64, dag_entries)) => {
+                    eprintln!(
+                        "dag_manager: uploading Ethash DAG to GPU ({} entries = {:.1} MB)",
+                        dag_entries,
+                        dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
+                    );
+                    miner.set_ethash_dag(&dag_u64, dag_entries, epoch)?;
+                }
                 Err(e) => {
-                    eprintln!("dag_manager: corrupt Ethash DAG cache, regenerating: {e}");
+                    eprintln!("dag_manager: corrupt Ethash DAG cache, regenerating on GPU: {e}");
                     let _ = std::fs::remove_file(&cache_path);
-                    let dag = generate_ethash_dag(epoch)
-                        .ok_or_else(|| anyhow!("ethash_generate_dag returned NULL for epoch {}", epoch))?;
-                    let entries = dag.dag_size_entries;
-                    let u64_slice = dag.as_u64_slice().to_vec();
-                    self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
-                    (u64_slice, entries)
+                    // Generate DAG on GPU (NEVER on CPU)
+                    miner.generate_ethash_dag_on_gpu(epoch)?;
                 }
             }
         } else {
-            eprintln!("dag_manager: generating Ethash DAG epoch={} via FFI...", epoch);
-            let dag = generate_ethash_dag(epoch)
-                .ok_or_else(|| anyhow!("ethash_generate_dag returned NULL for epoch {}", epoch))?;
-            let entries = dag.dag_size_entries;
-            let u64_slice = dag.as_u64_slice().to_vec();
-            // Persist to disk
-            self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
-            (u64_slice, entries)
-        };
+            // No disk cache — generate DAG directly on the GPU.
+            // The light cache (~16-100 MB) is generated on CPU and uploaded,
+            // then the full DAG is computed in parallel on the GPU.
+            // This is the standard approach used by ethminer/kawpowminer.
+            eprintln!("dag_manager: generating Ethash DAG epoch={} on GPU...", epoch);
+            miner.generate_ethash_dag_on_gpu(epoch)?;
+        }
 
-        eprintln!(
-            "dag_manager: uploading Ethash DAG to GPU ({} entries = {:.1} MB)",
-            dag_entries,
-            dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
-        );
-        miner.set_ethash_dag(&dag_u64, dag_entries, epoch)?;
         self.ethash_epoch = Some(epoch);
         eprintln!("dag_manager: Ethash DAG epoch={} ready", epoch);
         Ok(())
@@ -1906,10 +2207,12 @@ impl DagManager {
 
     /// Ensure the GPU miner has the correct KawPow DAG loaded for `epoch`.
     ///
-    /// Uses on-GPU DAG generation (the standard approach used by kawpowminer/
-    /// ethminer): the light cache is generated on CPU and uploaded, then the
-    /// full DAG is computed in parallel on the GPU.  This avoids the
-    /// multi-minute CPU DAG generation that was the previous bottleneck.
+    /// **DAG is always generated on the GPU**, never on the CPU.  The light
+    /// cache (~16-100 MB) is generated on CPU and uploaded, then the full DAG
+    /// is computed in parallel on the GPU using the OpenCL
+    /// `ethash_calculate_dag_item_mod` kernel.  If a disk cache exists (from a
+    /// previous GPU generation that was saved), it is loaded and uploaded
+    /// instead — this is just a host→GPU transfer, not CPU generation.
     pub fn ensure_kawpow_dag(
         &mut self,
         miner: &mut GpuMiner,
@@ -1925,7 +2228,6 @@ impl DagManager {
         );
 
         // Try disk cache first (for subsequent startups).
-        // The first time, we generate on GPU and optionally save to disk.
         let cache_path = self.cache_dir.join(format!("kawpow_epoch{}.bin", epoch));
         if cache_path.exists() {
             eprintln!("dag_manager: loading KawPow DAG from disk cache: {}", cache_path.display());
@@ -1939,21 +2241,15 @@ impl DagManager {
                     miner.set_kawpow_dag(&dag_u64, dag_entries, epoch)?;
                 }
                 Err(e) => {
-                    eprintln!("dag_manager: corrupt KawPow DAG cache, regenerating: {e}");
+                    eprintln!("dag_manager: corrupt KawPow DAG cache, regenerating on GPU: {e}");
                     let _ = std::fs::remove_file(&cache_path);
-                    let dag = generate_kawpow_dag(epoch)
-                        .ok_or_else(|| anyhow!("kawpow_generate_dag returned NULL for epoch {}", epoch))?;
-                    let entries = dag.dag_size_entries;
-                    let u64_slice = dag.as_u64_slice().to_vec();
-                    self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
-                    miner.set_kawpow_dag(&u64_slice, entries, epoch)?;
+                    // Generate DAG on GPU (NEVER on CPU)
+                    miner.generate_kawpow_dag_on_gpu(epoch)?;
                 }
             }
         } else {
-            // Generate the DAG directly on the GPU using the kawpow_generate_dag
-            // kernel. This is much faster than CPU FFI generation (seconds vs
-            // minutes for large epochs) and avoids host→GPU transfer of multi-GB
-            // data. The light cache (~16-64 MB) is generated on CPU and uploaded,
+            // Generate the DAG directly on the GPU.
+            // The light cache (~16-64 MB) is generated on CPU and uploaded,
             // then the GPU kernel fills the full DAG buffer in-place.
             eprintln!("dag_manager: generating KawPow DAG epoch={} on GPU...", epoch);
             miner.generate_kawpow_dag_on_gpu(epoch)?;
@@ -1966,11 +2262,12 @@ impl DagManager {
 
     /// Ensure the GPU miner has the correct ProgPow DAG loaded for `epoch`.
     ///
-    /// ProgPow uses the same DAG format as Ethash (128-byte entries, 16 u64
-    /// words per entry, epoch length 30000).  The DAG is generated via the
-    /// same C FFI (`ethash_generate_dag`) and cached on disk under
-    /// `progpow_epoch{N}.bin` (separate from the Ethash cache so that
-    /// switching coins doesn't invalidate each other's cache).
+    /// **DAG is always generated on the GPU**, never on the CPU.  ProgPow uses
+    /// the same DAG format as Ethash (128-byte entries, 16 u64 words per entry,
+    /// epoch length 30000).  The light cache is generated on CPU and uploaded,
+    /// then the full DAG is computed in parallel on the GPU.  If a disk cache
+    /// exists (from a previous GPU generation), it is loaded and uploaded
+    /// instead.
     pub fn ensure_progpow_dag(
         &mut self,
         miner: &mut GpuMiner,
@@ -1987,37 +2284,30 @@ impl DagManager {
 
         // Try disk cache first (separate file from Ethash)
         let cache_path = self.cache_dir.join(format!("progpow_epoch{}.bin", epoch));
-        let (dag_u64, dag_entries) = if cache_path.exists() {
+        if cache_path.exists() {
             eprintln!("dag_manager: loading ProgPow DAG from disk cache: {}", cache_path.display());
             match Self::load_dag_from_disk(&cache_path) {
-                Ok(d) => d,
+                Ok((dag_u64, dag_entries)) => {
+                    eprintln!(
+                        "dag_manager: uploading ProgPow DAG to GPU ({} entries = {:.1} MB)",
+                        dag_entries,
+                        dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
+                    );
+                    miner.set_progpow_dag(&dag_u64, dag_entries, epoch)?;
+                }
                 Err(e) => {
-                    eprintln!("dag_manager: corrupt ProgPow DAG cache, regenerating: {e}");
+                    eprintln!("dag_manager: corrupt ProgPow DAG cache, regenerating on GPU: {e}");
                     let _ = std::fs::remove_file(&cache_path);
-                    let dag = generate_ethash_dag(epoch)
-                        .ok_or_else(|| anyhow!("ethash_generate_dag returned NULL for epoch {}", epoch))?;
-                    let entries = dag.dag_size_entries;
-                    let u64_slice = dag.as_u64_slice().to_vec();
-                    self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
-                    (u64_slice, entries)
+                    // Generate DAG on GPU (NEVER on CPU)
+                    miner.generate_progpow_dag_on_gpu(epoch)?;
                 }
             }
         } else {
-            eprintln!("dag_manager: generating ProgPow DAG epoch={} via FFI...", epoch);
-            let dag = generate_ethash_dag(epoch)
-                .ok_or_else(|| anyhow!("ethash_generate_dag returned NULL for epoch {}", epoch))?;
-            let entries = dag.dag_size_entries;
-            let u64_slice = dag.as_u64_slice().to_vec();
-            self.save_dag_to_disk(&cache_path, &u64_slice, entries)?;
-            (u64_slice, entries)
-        };
+            // No disk cache — generate DAG directly on the GPU.
+            eprintln!("dag_manager: generating ProgPow DAG epoch={} on GPU...", epoch);
+            miner.generate_progpow_dag_on_gpu(epoch)?;
+        }
 
-        eprintln!(
-            "dag_manager: uploading ProgPow DAG to GPU ({} entries = {:.1} MB)",
-            dag_entries,
-            dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
-        );
-        miner.set_progpow_dag(&dag_u64, dag_entries, epoch)?;
         self.progpow_epoch = Some(epoch);
         eprintln!("dag_manager: ProgPow DAG epoch={} ready", epoch);
         Ok(())
