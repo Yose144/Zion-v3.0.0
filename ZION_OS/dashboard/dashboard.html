@@ -598,6 +598,9 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 .zion-hero-card .zhc-title{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#9ca3af;margin-bottom:0.35rem;}
 .zion-hero-card .zhc-value{font-size:1.65rem;font-weight:800;color:#fff;font-family:'JetBrains Mono',monospace;margin-bottom:0.25rem;}
 .zion-hero-card .zhc-sub{font-size:0.75rem;color:#9ca3af;}
+.zion-hero-card .zhc-extra .zhc-mini{display:inline-flex;align-items:center;gap:0.25rem;font-size:0.7rem;font-weight:600;color:#d1d5db;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:0.4rem;padding:0.15rem 0.45rem;}
+.zion-hero-card .zhc-extra .zhc-mini .zhc-mini-label{color:#6b7280;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.05em;}
+.zion-hero-card .zhc-extra .zhc-mini .zhc-mini-val{color:#f3f4f6;font-family:'JetBrains Mono',monospace;font-size:0.72rem;}
 
 /* ═══ ZION Website-style components (pool page) ═══ */
 .zion-rainbow-card{
@@ -872,26 +875,30 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     <div class="zion-hero-card" style="--rc:6 182 212;">
       <div class="zhc-icon">🌐</div>
       <div class="zhc-title">Network Status</div>
-      <div class="zhc-value" id="hero-network-status">Live</div>
-      <div class="zhc-sub" id="hero-network-sub">v3.0.6 · 2 nodes</div>
+      <div class="zhc-value" id="hero-network-status">—</div>
+      <div class="zhc-sub" id="hero-network-sub">—</div>
+      <div class="zhc-extra" id="hero-network-extra" style="margin-top:0.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;"></div>
     </div>
     <div class="zion-hero-card" style="--rc:147 51 234;">
       <div class="zhc-icon">⛏</div>
       <div class="zhc-title">Pool</div>
       <div class="zhc-value" id="hero-pool-sessions">—</div>
       <div class="zhc-sub" id="hero-pool-sub">active sessions</div>
+      <div class="zhc-extra" id="hero-pool-extra" style="margin-top:0.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;"></div>
     </div>
     <div class="zion-hero-card" style="--rc:251 191 36;">
       <div class="zhc-icon">🔗</div>
       <div class="zhc-title">Latest Block</div>
       <div class="zhc-value" id="hero-chain-height">—</div>
       <div class="zhc-sub" id="hero-block-sub">chain height</div>
+      <div class="zhc-extra" id="hero-block-extra" style="margin-top:0.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;"></div>
     </div>
     <div class="zion-hero-card" style="--rc:16 185 129;">
       <div class="zhc-icon">⚡</div>
       <div class="zhc-title">Active Miners</div>
       <div class="zhc-value" id="hero-active-miners">—</div>
       <div class="zhc-sub" id="hero-miner-sub">connected workers</div>
+      <div class="zhc-extra" id="hero-miner-extra" style="margin-top:0.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;"></div>
     </div>
   </section>
 
@@ -2807,6 +2814,29 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
             <label class="text-gray-400 block">External Coin</label>
             <select id="rev-auxpow-coin" class="w-full bg-black/30 border border-white/10 rounded px-2 py-1 text-white focus:border-zion-gold outline-none" disabled>
               <option value="">— select coin —</option>
+              <option value="DCR">DCR</option>
+              <option value="ALPH">ALPH</option>
+              <option value="KAS">KAS</option>
+              <option value="ERG">ERG</option>
+              <option value="RVN">RVN</option>
+              <option value="ETC">ETC</option>
+              <option value="EVR">EVR</option>
+              <option value="MEWC">MEWC</option>
+              <option value="FLUX">FLUX</option>
+              <option value="CLORE">CLORE</option>
+              <option value="XMR">XMR</option>
+              <option value="VRSC">VRSC</option>
+              <option value="EPIC">EPIC</option>
+              <option value="QUAI">QUAI</option>
+              <option value="BEAM">BEAM</option>
+              <option value="KLS">KLS</option>
+              <option value="ZCL">ZCL</option>
+              <option value="QTC">QTC</option>
+              <option value="VTC">VTC</option>
+              <option value="IRON">IRON</option>
+              <option value="NEXA">NEXA</option>
+              <option value="RTM">RTM</option>
+              <option value="DNX">DNX</option>
             </select>
           </div>
           <div class="space-y-1">
@@ -6933,8 +6963,14 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
   </div>
 </div>
 
-<script src="/dashboard.min.js?v=110" defer></script>
+<script src="/dashboard.js?v=111" defer></script>
 <script>
+// ═══ Supported AuxPoW coin tickers (keep in sync with app.py AUXPOW_SUPPORTED_COINS) ═══
+const STREAM_COIN_TICKERS = [
+  "DCR","ALPH","KAS","ERG","RVN","ETC","EVR","MEWC","FLUX","CLORE","XMR","VRSC",
+  "EPIC","PRL","QUAI","BEAM",
+  "KLS","ZCL","QTC","VTC","IRON","NEXA","RTM","DNX"
+];
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){
   const PANE_ACCENTS = {

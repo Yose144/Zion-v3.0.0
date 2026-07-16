@@ -375,9 +375,93 @@ function _renderCriticalUI(statusData){
     : [statusData.node1, statusData.node2, statusData.pool, statusData.miner].filter(x => x && x.running).length;
   const heroUp = document.getElementById('hero-services-up');
   if(heroUp) heroUp.textContent = live;
+
+  // ── Hero Card 1: Network Status ──
+  const allNodes = statusData.all_nodes || [];
+  const runningNodes = allNodes.filter(n => n.running).length;
+  const totalNodes = allNodes.length;
+  const protoVer = isEdge
+    ? (statusData.edge_node?.protocol_version || statusData.edge_node2?.protocol_version || '—')
+    : (statusData.node1?.protocol_version || '—');
+  const netStatus = document.getElementById('hero-network-status');
+  if(netStatus) netStatus.textContent = runningNodes > 0 ? 'Live' : 'Down';
+  const netSub = document.getElementById('hero-network-sub');
+  if(netSub) netSub.textContent = `${protoVer} · ${runningNodes}/${totalNodes} nodes`;
+  const netExtra = document.getElementById('hero-network-extra');
+  if(netExtra){
+    const allInSync = statusData.all_in_sync;
+    const mempool = isEdge
+      ? (statusData.edge_node?.mempool_size ?? 0)
+      : (statusData.node1?.mempool_size ?? 0);
+    const peers = isEdge
+      ? (statusData.edge_node?.known_peers ?? 0)
+      : (statusData.node1?.known_peers ?? 0);
+    netExtra.innerHTML = [
+      `<span class="zhc-mini"><span class="zhc-mini-label">Sync</span><span class="zhc-mini-val">${allInSync ? '✅' : '⚠️'}</span></span>`,
+      `<span class="zhc-mini"><span class="zhc-mini-label">Peers</span><span class="zhc-mini-val">${peers}</span></span>`,
+      `<span class="zhc-mini"><span class="zhc-mini-label">Mempool</span><span class="zhc-mini-val">${mempool}</span></span>`,
+    ].join('');
+  }
+
+  // ── Hero Card 2: Pool ──
+  const pool = statusData.pool || {};
+  const poolEdge = statusData.pool_edge || {};
+  const poolSessions = document.getElementById('hero-pool-sessions');
+  if(poolSessions) poolSessions.textContent = pool.active_sessions ?? poolEdge.active_miners ?? '—';
+  const poolSub = document.getElementById('hero-pool-sub');
+  if(poolSub) poolSub.textContent = pool.running ? 'active sessions' : 'pool offline';
+  const poolExtra = document.getElementById('hero-pool-extra');
+  if(poolExtra){
+    const hashrate = poolEdge.hashrate ?? pool.hashrate_khs;
+    const blocks = pool.blocks_found ?? poolEdge.blocks_found ?? 0;
+    const acceptRate = poolEdge.accept_rate_pct ?? (pool.shares_accepted && pool.shares_rejected
+      ? ((pool.shares_accepted / (pool.shares_accepted + pool.shares_rejected)) * 100).toFixed(2)
+      : null);
+    const fee = pool.fee_split || '—';
+    poolExtra.innerHTML = [
+      `<span class="zhc-mini"><span class="zhc-mini-label">HR</span><span class="zhc-mini-val">${hashrate != null ? (hashrate >= 1000 ? (hashrate/1000).toFixed(2) + ' MH/s' : hashrate.toFixed(1) + ' kH/s') : '—'}</span></span>`,
+      `<span class="zhc-mini"><span class="zhc-mini-label">Blocks</span><span class="zhc-mini-val">${blocks}</span></span>`,
+      `<span class="zhc-mini"><span class="zhc-mini-label">Accept</span><span class="zhc-mini-val">${acceptRate != null ? acceptRate + '%' : '—'}</span></span>`,
+      `<span class="zhc-mini"><span class="zhc-mini-label">Fee</span><span class="zhc-mini-val">${fee}</span></span>`,
+    ].join('');
+  }
+
+  // ── Hero Card 3: Latest Block ──
   const heroHeight = isEdge ? (statusData.edge_node?.chain_height ?? statusData.node1?.chain_height) : statusData.node1?.chain_height;
   const heroH = document.getElementById('hero-chain-height');
-  if(heroH) heroH.textContent = heroHeight ?? '—';
+  if(heroH) heroH.textContent = heroHeight != null ? Number(heroHeight).toLocaleString() : '—';
+  const blockSub = document.getElementById('hero-block-sub');
+  if(blockSub) blockSub.textContent = heroHeight != null ? 'chain height · ' + (statusData.edge_node?.consensus_profile || 'mainnet') : 'chain height';
+  const blockExtra = document.getElementById('hero-block-extra');
+  if(blockExtra){
+    const tipHash = isEdge ? (statusData.edge_node?.tip_hash) : (statusData.node1?.tip_hash);
+    const consensus = isEdge ? (statusData.edge_node?.consensus_profile) : (statusData.node1?.consensus_profile);
+    const net = isEdge ? (statusData.edge_node?.network) : (statusData.node1?.network);
+    blockExtra.innerHTML = [
+      `<span class="zhc-mini"><span class="zhc-mini-label">Tip</span><span class="zhc-mini-val">${tipHash ? tipHash.substring(0,10) + '…' : '—'}</span></span>`,
+      `<span class="zhc-mini"><span class="zhc-mini-label">Net</span><span class="zhc-mini-val">${net || '—'}</span></span>`,
+      `<span class="zhc-mini"><span class="zhc-mini-label">Algo</span><span class="zhc-mini-val">${consensus || '—'}</span></span>`,
+    ].join('');
+  }
+
+  // ── Hero Card 4: Active Miners ──
+  const activeMiners = pool.active_sessions ?? poolEdge.active_miners ?? 0;
+  const minersVal = document.getElementById('hero-active-miners');
+  if(minersVal) minersVal.textContent = activeMiners;
+  const minerSub = document.getElementById('hero-miner-sub');
+  if(minerSub) minerSub.textContent = activeMiners > 0 ? 'connected workers' : 'no miners';
+  const minerExtra = document.getElementById('hero-miner-extra');
+  if(minerExtra){
+    const sharesAcc = pool.shares_accepted ?? poolEdge.shares_accepted ?? 0;
+    const sharesRej = pool.shares_rejected ?? 0;
+    const registered = pool.pplns_registered_miners ?? 0;
+    const rounds = pool.pplns_rounds ?? 0;
+    minerExtra.innerHTML = [
+      `<span class="zhc-mini"><span class="zhc-mini-label">Shares</span><span class="zhc-mini-val">${sharesAcc.toLocaleString()}/${sharesRej}</span></span>`,
+      `<span class="zhc-mini"><span class="zhc-mini-label">Registered</span><span class="zhc-mini-val">${registered}</span></span>`,
+      `<span class="zhc-mini"><span class="zhc-mini-label">Rounds</span><span class="zhc-mini-val">${rounds.toLocaleString()}</span></span>`,
+    ].join('');
+  }
 
   // Render All Nodes immediately if on nodes tab
   if(currentTab === 'nodes') renderAllNodes();
@@ -2600,7 +2684,15 @@ async function loadPoolMinersTab(){
         verushash: 'VerusHash',
         progpow: 'ProgPow',
         pearlhash: 'Pearl PoUW (deprecated v3.0.6)',
-        beamhash: 'BeamHash'
+        beamhash: 'BeamHash',
+        karlsenhash: 'KarlsenHash',
+        equihashzero: 'EquihashZero',
+        qhash: 'QHash',
+        verthash: 'VertHash',
+        fishhash: 'FishHash',
+        nexapow: 'NexaPoW',
+        ghostrider: 'GhostRider',
+        dynexsolve: 'DynexSolve'
       };
       const srcColors = {
         zion: 'text-emerald-400',
@@ -2615,7 +2707,15 @@ async function loadPoolMinersTab(){
         verushash: 'text-yellow-400',
         randomx: 'text-rose-400',
         zelhash: 'text-teal-400',
-        beamhash: 'text-violet-400'
+        beamhash: 'text-violet-400',
+        karlsenhash: 'text-sky-400',
+        equihashzero: 'text-indigo-400',
+        qhash: 'text-cyan-400',
+        verthash: 'text-green-400',
+        fishhash: 'text-blue-400',
+        nexapow: 'text-purple-400',
+        ghostrider: 'text-orange-400',
+        dynexsolve: 'text-pink-400'
       };
       let sh = '';
       for(const [key, s] of Object.entries(sources)){
@@ -2694,8 +2794,20 @@ async function loadPoolMinersTab(){
     const auxSharesMin = auxUptime > 0 ? (auxSubmitted / auxUptime * 60) : 0;
     set('pm-auxpow-shares-min', auxSharesMin > 0 ? auxSharesMin.toFixed(1) : '—');
 
-    // Supported coins (12 coins — KAS, ALPH, DCR, ERG, RVN, ETC, FLUX, CLORE, EVR, MEWC, XMR, VRSC)
-    const auxCoins = auxEnabled ? (auxpow.supported_coins || ['KAS', 'ALPH', 'DCR', 'ERG', 'RVN', 'ETC', 'FLUX', 'CLORE', 'EVR', 'MEWC', 'XMR', 'VRSC']) : [];
+    // Supported coins (20 coins — KAS, ALPH, DCR, ERG, RVN, ETC, FLUX, CLORE, EVR, MEWC, XMR, VRSC,
+    //   KLS, ZCL, QTC, VTC, IRON, NEXA, RTM, DNX)
+    const auxCoins = auxEnabled ? (auxpow.supported_coins || ['KAS', 'ALPH', 'DCR', 'ERG', 'RVN', 'ETC', 'FLUX', 'CLORE', 'EVR', 'MEWC', 'XMR', 'VRSC', 'KLS', 'ZCL', 'QTC', 'VTC', 'IRON', 'NEXA', 'RTM', 'DNX']) : [];
+    // New coin → algorithm mapping (v3.0.6 additions)
+    const newAuxCoins = [
+      { ticker: "KLS", algorithm: "karlsenhash" },
+      { ticker: "ZCL", algorithm: "equihashzero" },
+      { ticker: "QTC", algorithm: "qhash" },
+      { ticker: "VTC", algorithm: "verthash" },
+      { ticker: "IRON", algorithm: "fishhash" },
+      { ticker: "NEXA", algorithm: "nexapow" },
+      { ticker: "RTM", algorithm: "ghostrider" },
+      { ticker: "DNX", algorithm: "dynexsolve" },
+    ];
     set('pm-auxpow-coins', auxCoins.length > 0 ? auxCoins.join(' · ') : '—');
 
     // Bridge queue depth (from pool stats if available)
@@ -9022,7 +9134,13 @@ function renderAllNodes(){
             </div>
           </div>
         ` : `
-          <div class="text-xs text-red-400/70 py-2">Node offline or unreachable</div>
+          <div class="space-y-1.5 text-xs">
+            <div class="text-red-400/70 py-1 text-[11px]">🔴 Node offline or unreachable</div>
+            ${node.host ? `<div class="flex justify-between"><span class="text-gray-500">Host</span><span class="text-gray-400 font-mono text-[10px]">${node.host}</span></div>` : ''}
+            ${p2p !== '—' ? `<div class="flex justify-between"><span class="text-gray-500">P2P</span><span class="text-gray-400 font-mono text-[10px]">${p2p}</span></div>` : ''}
+            ${rpcBind !== '—' ? `<div class="flex justify-between"><span class="text-gray-500">RPC</span><span class="text-gray-400 font-mono text-[10px]">${rpcBind}</span></div>` : ''}
+            ${node_id !== '—' ? `<div class="flex justify-between"><span class="text-gray-500">Node ID</span><span class="text-gray-400 font-mono text-[10px]">${node_id}</span></div>` : ''}
+          </div>
         `}
       </div>
     `;

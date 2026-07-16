@@ -2843,27 +2843,30 @@ def _build_status_edge_primary() -> dict:
     for _label, _st, _role, _icon in [
         ("Edge Node 1 (Primary)", edge_node1_status, "primary", "🌍"),
         ("Edge Node 2 (Follower)", edge_node2_status, "follower", "🔶"),
+        ("Local Backup Node", local_backup_status, "backup", "💾"),
     ]:
-        if _st and _st.get("running"):
-            all_nodes.append({
-                "name": _label,
-                "role": _role,
-                "icon": _icon,
-                "running": _st.get("running", False),
-                "chain_height": _st.get("chain_height"),
-                "tip_hash": _st.get("tip_hash"),
-                "node_id": _st.get("node_id"),
-                "p2p_bind": _st.get("p2p_bind"),
-                "rpc_bind": _st.get("rpc_bind"),
-                "host": _st.get("host", ""),
-                "known_peers": _st.get("known_peers", 0),
-                "mempool_size": _st.get("mempool_size", 0),
-                "protocol_version": _st.get("protocol_version"),
-                "network": _st.get("network"),
-                "consensus_profile": _st.get("consensus_profile"),
-                "accepted_blocks": _st.get("accepted_blocks"),
-                "is_external": False,
-            })
+        # Always include all known nodes — even offline ones — so the overview
+        # shows the full topology.  Running nodes get full stats; offline ones
+        # show "offline" state but are still visible.
+        all_nodes.append({
+            "name": _label,
+            "role": _role,
+            "icon": _icon,
+            "running": (_st or {}).get("running", False),
+            "chain_height": (_st or {}).get("chain_height"),
+            "tip_hash": (_st or {}).get("tip_hash"),
+            "node_id": (_st or {}).get("node_id"),
+            "p2p_bind": (_st or {}).get("p2p_bind"),
+            "rpc_bind": (_st or {}).get("rpc_bind"),
+            "host": (_st or {}).get("host", ""),
+            "known_peers": (_st or {}).get("known_peers", 0),
+            "mempool_size": (_st or {}).get("mempool_size", 0),
+            "protocol_version": (_st or {}).get("protocol_version"),
+            "network": (_st or {}).get("network"),
+            "consensus_profile": (_st or {}).get("consensus_profile"),
+            "accepted_blocks": (_st or {}).get("accepted_blocks"),
+            "is_external": False,
+        })
 
     # Add external P2P peers from getPeerInfo (these are nodes connecting from outside)
     p2p_peer_list = []
