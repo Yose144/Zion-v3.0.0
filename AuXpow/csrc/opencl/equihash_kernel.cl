@@ -686,7 +686,11 @@ part2:
 }
 
 /*
-** This defines kernel_round1, kernel_round2, ..., kernel_round7.
+** This defines kernel_round1 through kernel_round5 (collision finding rounds
+** that do NOT need the sols argument). For Equihash 192,7 (K=7), the loop
+** runs rounds 0..K-1 = 0..6. Round 0 is kernel_round0 (Blake2b), rounds 1-5
+** are the macro-generated collision rounds, and round 6 is the final round
+** (kernel_round6_final below) that takes the extra sols argument.
 */
 #define KERNEL_ROUND(N) \
 __kernel __attribute__((reqd_work_group_size(64, 1, 1))) \
@@ -705,12 +709,11 @@ KERNEL_ROUND(2)
 KERNEL_ROUND(3)
 KERNEL_ROUND(4)
 KERNEL_ROUND(5)
-KERNEL_ROUND(6)
-KERNEL_ROUND(7)
 
-// kernel_round8 takes an extra argument, "sols"
+// kernel_round6 is the final round for K=7 (round K-1 = 6).
+// It takes an extra argument "sols" and initializes sols->nr = 0.
 __kernel __attribute__((reqd_work_group_size(64, 1, 1)))
-void kernel_round8(__global char *ht_src, __global char *ht_dst,
+void kernel_round6(__global char *ht_src, __global char *ht_dst,
 	__global uint *rowCountersSrc, __global uint *rowCountersDst,
 	__global uint *debug, __global sols_t *sols)
 {
@@ -718,7 +721,7 @@ void kernel_round8(__global char *ht_src, __global char *ht_dst,
     __local uchar	first_words_data[(NR_SLOTS+2)*64];
     __local uint	collisionsData[COLL_DATA_SIZE_PER_TH * 64];
     __local uint	collisionsNum;
-    equihash_round(8, ht_src, ht_dst, debug, first_words_data, collisionsData,
+    equihash_round(6, ht_src, ht_dst, debug, first_words_data, collisionsData,
 	    &collisionsNum, rowCountersSrc, rowCountersDst);
     if (!tid)
 	sols->nr = sols->likely_invalids = 0;

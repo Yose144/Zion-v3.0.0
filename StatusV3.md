@@ -203,7 +203,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | BEAM | beamhash III (Equihash 144,5 + SipHash-2-4) | BeamStratum (TLS) | ✅ Implemented (CPU hasher `beamhash.rs` 13 tests + OpenCL kernel `beamhash_kernel.cl` + GPU dispatch wired, 2miners pool, BTC payout) |
 | PRL | pearlhash (PoUW MatMul) | PearlStratum (custom) | ★★★ PearlStratum ✅ + CPU hasher ✅ + GPU GEMM dispatch ✅ (`0bafbfe83`) + Merkle proof ✅ (`705bff572`) + pool-routed ✅ (`f524b7117`), full PoUW ZK TODO |
 | **KLS** | KarlsenHashV2 (FishHashPlus+Blake3) | Stratum | ✅ OpenCL kernel `karlsenhash_kernel.cl` (604 lines) + DAG + GPU dispatch wired (`f6df75b64`) |
-| **ZCL** | EquihashZero 192,7 | ZcashStratum | ✅ OpenCL kernel `equihash_kernel.cl` (851 lines, adapted from silentarmy) — host-side multi-kernel Wagner dispatch TODO (`646d14f59`) |
+| **ZCL** | EquihashZero 192,7 | ZcashStratum | ✅ OpenCL kernel `equihash_kernel.cl` (851 lines, adapted from silentarmy) + host-side multi-kernel Wagner dispatch (Blake2b state, 10-kernel sequence, double-SHA256 verification) (`f6df75b64`, host-side integration) |
 | **QTC** | Qhash (quantum circuit sim) | Stratum | ⚠️ Placeholder — requires quantum circuit simulation in OpenCL (cuQuantum is CUDA-only) (`77613ad50`) |
 | **VTC** | Verthash (I/O-bound, 1.2GB dat) | Stratum | ✅ OpenCL kernel `verthash_kernel.cl` (289 lines) + SHA3 kernels — host-side 1.2GB data file loader TODO (`646d14f59`) |
 | **IRON** | FishHash (Blake3 DAG) | Stratum | ✅ OpenCL kernel `fishhash_kernel.cl` (580 lines) + DAG + GPU dispatch wired (`f6df75b64`) |
@@ -231,7 +231,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | karlsenhash | KLS | Kernel ✅ (604 lines) | TODO | TODO — FishHashPlus+Blake3, `karlsenhash_kernel.cl` (`f6df75b64`) |
 | nexapow | NEXA | Kernel ✅ (6164 lines) | TODO | TODO — secp256k1 Schnorr, `nexapow_kernel.cl` (`77613ad50`) |
 | verthash | VTC | Kernel ✅ (289 lines) | TODO | TODO — 1.2GB data file, `verthash_kernel.cl` (`646d14f59`) |
-| equihash192_7 | ZCL | Kernel ✅ (851 lines) | TODO | TODO — multi-kernel Wagner, `equihash_kernel.cl` (`646d14f59`) |
+| equihash192_7 | ZCL | Kernel ✅ (851 lines) | Host ✅ | ✅ Implemented — multi-kernel Wagner dispatch + Blake2b state + double-SHA256 verify (`f6df75b64`) |
 | ghostrider | RTM | Placeholder | Placeholder | TODO — 15 algos + 6 CN variants (`77613ad50`) |
 | qhash | QTC | Placeholder | Placeholder | TODO — quantum circuit sim (`77613ad50`) |
 | dynexsolve | DNX | Placeholder | Placeholder | TODO — neuromorphic PoUW (`77613ad50`) |
