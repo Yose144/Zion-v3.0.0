@@ -237,3 +237,32 @@ ZION_AUTOTUNE=0 zion-miner ...
 ```bash
 ZION_NO_STICKY=1 zion-miner ...
 ```
+
+---
+
+## 7. Post-Release Fixes (2026-07-16)
+
+### 7.1 DAG Generation Exclusively on GPU
+
+**All DAG-based algorithms (Ethash, KawPow, ProgPow) now generate their DAGs
+exclusively on the GPU.** Previously Ethash and ProgPow used CPU FFI generation
+(minutes of CPU time + multi-GB host→GPU transfer). Now all three use the same
+OpenCL `ethash_calculate_dag_item_mod` kernel — CPU only generates the small
+light cache (~16-100 MB), GPU computes the full DAG in parallel.
+
+See [`MINER_FIXES_REPORT_2026-07-16.md`](./MINER_FIXES_REPORT_2026-07-16.md) §1
+for full details.
+
+### 7.2 VRSC/VerusHash Share Accept Bug Fix
+
+**Bug:** `read_next_result()` only accepted `PoolMessage::Result`, but external
+stream shares (VRSC, QUAI) receive `PoolMessage::ExternalResult` from the pool.
+Every external share was logged as `external_result_read_error` even though the
+pool had accepted it. Shares were not counted in the hashrate tracker.
+
+**Fix:** Added `PoolMessage::ExternalResult` to the match arms in
+`read_next_result()`.
+
+See [`MINER_FIXES_REPORT_2026-07-16.md`](./MINER_FIXES_REPORT_2026-07-16.md) §2
+for full details.
+
