@@ -1570,8 +1570,11 @@ pub mod randomx {
     }
 
     /// Hash with a specific seed — reinitializes cache if seed changed.
+    /// If seed is empty, uses the currently initialized dataset (no reinit).
     pub fn hash_with_seed(seed: &[u8], header: &[u8], nonce: u64) -> [u8; 32] {
-        init_with_seed(seed);
+        if !seed.is_empty() {
+            init_with_seed(seed);
+        }
         let mut out = [0u8; 32];
         // SAFETY: init has completed; slice + fresh 32-byte stack output.
         unsafe {

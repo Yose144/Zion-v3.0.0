@@ -442,6 +442,20 @@ fn build_randomx(target_os: &str, is_msvc: bool) {
             // On Apple Silicon, -march may not work, so also try -mcpu=apple-m1
             b.flag_if_supported("-march=armv8-a+crypto");
             b.flag_if_supported("-mcpu=apple-m1");
+        } else if target_arch == "x86_64" {
+            // x86_64: enable hardware AES-NI + AVX2 for maximum RandomX performance.
+            //   -maes        → AES-NI instructions (aesenc/aesdec) → hard_aes=yes
+            //                  Without this, RandomX falls back to soft AES (~10x slower)
+            //   -msse4.2     → SSE4.2 (required by RandomX for _mm_crc32_u64)
+            //   -mavx -mavx2 → 256-bit vectors for argon2_avx2.c (~2x faster cache init)
+            //   -mbmi -mbmi2 → BMI instructions (ANDN, PEXT, PDEP) for faster bit ops
+            // XMRig uses all of these; without them we get ~7 H/s instead of ~200+ H/s
+            b.flag_if_supported("-maes");
+            b.flag_if_supported("-msse4.2");
+            b.flag_if_supported("-mavx");
+            b.flag_if_supported("-mavx2");
+            b.flag_if_supported("-mbmi");
+            b.flag_if_supported("-mbmi2");
         }
     } else {
         b.flag_if_supported("/std:c++17");
