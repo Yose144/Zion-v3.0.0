@@ -3416,6 +3416,7 @@ fn read_next_result(reader: &mut impl BufRead) -> Result<(String, PoolMessage)> 
         let (line, message) = read_wire_message(reader)?;
         match message {
             PoolMessage::Result { .. } => return Ok((line, message)),
+            PoolMessage::ExternalResult { .. } => return Ok((line, message)),
             PoolMessage::Stale { .. } => println!("wire_stale={line}"),
             PoolMessage::Cancel { .. } => println!("wire_cancel={line}"),
             PoolMessage::SetDifficulty { difficulty, .. } => {
