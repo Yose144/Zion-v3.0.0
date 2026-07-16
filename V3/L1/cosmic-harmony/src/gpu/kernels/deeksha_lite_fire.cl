@@ -15,7 +15,9 @@
  * Compatible with: AMD GCN (Vega, Polaris), AMD RDNA, NVIDIA, Intel.
  */
 
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
+/* cl_khr_int64_base_atomics NOT needed — this kernel uses no atomics.
+ * Enabling it on SMOS AMD OpenCL driver 22.40.6 (gfx900) causes the
+ * compiler to generate broken code that hangs the GPU. */
 
 /* ========================================================================== */
 /* Constants — identical to v1 for memory management                          */
@@ -32,7 +34,9 @@
 /* Keccak — identical to deeksha_lite.cl                                      */
 /* ========================================================================== */
 
-#define ROL64(x, n) rotate((long)((ulong)(x)), (long)((ulong)(n)))
+/* Manual rotation — safe for all keccak rotation amounts (1..62, compile-time).
+ * Avoids AMD OpenCL compiler bug with rotate(long,long) on gfx900/SMOS. */
+#define ROL64(x, n) (((ulong)(x) << (n)) | ((ulong)(x) >> (64 - (n))))
 
 #define CHI_ROW(b) \
 { ulong _a=st[(b)],_b=st[(b)+1],_c=st[(b)+2],_d=st[(b)+3],_e=st[(b)+4]; \

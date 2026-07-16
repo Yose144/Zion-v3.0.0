@@ -26,7 +26,9 @@
  * deeksha_chv3::tests::chv3_kat_known_vector.
  */
 
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
+/* cl_khr_int64_base_atomics NOT needed — this kernel uses no atomics.
+ * Enabling it on SMOS AMD OpenCL driver 22.40.6 (gfx900) causes the
+ * compiler to generate broken code that hangs the GPU. */
 
 /* ========================================================================== */
 /* Constants                                                                   */
@@ -40,11 +42,12 @@
 
 /* ========================================================================== */
 /* Keccak — canonical implementation from cosmic_harmony_deeksha.cl           */
-/* Uses rotate(long,long) per AMD GCN/RDNA workaround recommendation.         */
+/* Uses manual bit-shift rotation (rotate(long,long) hangs on SMOS gfx900).   */
 /* ========================================================================== */
 
-/* AMD Vega/GCN/RDNA: use rotate(long,long) — correct on all AMD targets */
-#define ROL64(x, n) rotate((long)((ulong)(x)), (long)((ulong)(n)))
+/* Manual rotation — safe for all keccak rotation amounts (1..62, compile-time).
+ * Avoids AMD OpenCL compiler bug with rotate(long,long) on gfx900/SMOS. */
+#define ROL64(x, n) (((ulong)(x) << (n)) | ((ulong)(x) >> (64 - (n))))
 
 /* Chi macro: one 5-element row, no temp array */
 #define CHI_ROW(b) \
