@@ -193,9 +193,12 @@ export default function Navigation() {
   useEffect(() => {
     const setHeight = () => {
       const md = window.innerWidth >= 768;
+      const xl = window.innerWidth >= 1280;
+      /* Not scrolled: Floor 1 + Floor 2 (xl has tertiary row too but same floor) */
+      /* Scrolled: only Floor 1, compact */
       const height = scrolled
-        ? (md ? '4.5rem' : '4rem')
-        : (md ? '13rem' : '9rem');
+        ? '3.5rem'
+        : (xl ? '7rem' : md ? '6.5rem' : '4rem');
       document.documentElement.style.setProperty('--nav-height', height);
     };
     setHeight();
@@ -205,13 +208,11 @@ export default function Navigation() {
 
   return (
     <nav
-      className={`fixed left-0 right-0 z-50 transition-all duration-300 ease-out ${
-        scrolled ? 'top-2' : 'top-20 sm:top-24 md:top-28'
-      }`}
+      className="fixed left-0 right-0 top-0 z-50"
     >
       {/* Subtle ambient glow */}
-      <div className={`pointer-events-none absolute inset-x-0 top-0 bg-linear-to-r from-emerald-500/10 via-zion-gold/12 to-amber-600/10 blur-2xl opacity-60 transition-all duration-300 ${scrolled ? 'hidden' : 'h-16'}`} />
-      <div className={`relative mx-auto w-[min(96vw,1080px)] transition-all duration-300 ${scrolled ? 'py-0' : 'py-1'}`} data-nav-desktop>
+      <div className={`pointer-events-none absolute inset-x-0 top-0 bg-linear-to-r from-emerald-500/10 via-zion-gold/12 to-amber-600/10 blur-2xl opacity-60 transition-all duration-300 ${scrolled ? 'hidden' : 'h-8'}`} />
+      <div className={`relative mx-auto w-[min(96vw,1080px)] transition-all duration-300 ${scrolled ? 'py-0.5' : 'py-1'}`} data-nav-desktop>
         {/* ═══════════════════════════════════════════════════
             FLOOR 1 — MAIN BAR
             Logo | 4 HERO icons (rasta) | lang + GitHub + auth + dashboard
@@ -332,7 +333,7 @@ export default function Navigation() {
         </div>
 
         {/* ═══ FLOOR 2 — MINI ICONS + GROUP DROPDOWNS ═══ */}
-        <div className={`${scrolled ? 'hidden' : 'hidden md:flex'} items-center justify-between gap-1.5 relative rounded-2xl border border-white/[0.07] bg-black/40 backdrop-blur-md px-2 py-1.5 transition-all duration-300 mt-1`}>
+        <div className={`${scrolled ? 'hidden' : 'hidden md:flex'} items-center justify-between gap-1.5 relative rounded-2xl border border-white/[0.07] bg-black/40 backdrop-blur-md px-2 py-1 transition-all duration-300`}>
           {/* Left: secondary icons (always visible on md+) */}
           <div className="flex items-center gap-0.5 shrink-0">
             {secondaryIcons.map((ml) => {
@@ -414,7 +415,7 @@ export default function Navigation() {
 
         {/* ═══ GROUP DROPDOWN PANEL ═══ */}
         {activeGroup && !scrolled && (
-          <div className="mt-1 hidden md:block absolute left-1/2 -translate-x-1/2 w-[min(20rem,90vw)] rounded-2xl border border-white/10 bg-black/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl z-50">
+          <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-full w-[min(20rem,90vw)] rounded-2xl border border-white/10 bg-black/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl z-50">
             <div className="mb-2 h-0.5 w-full rounded-full bg-linear-to-r from-emerald-500/50 via-zion-gold/60 to-red-500/40" />
             <div className="flex items-center gap-2 mb-3">
               <activeGroup.icon className="w-4 h-4" style={{ color: `rgb(${activeGroup.color})` }} />
