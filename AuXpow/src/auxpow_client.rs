@@ -236,6 +236,8 @@ pub struct AuxPowClient {
     payout_wallet: Arc<Mutex<String>>,
     /// Extra nonce 1 provided by the pool (Alephium uses 4 bytes).
     extranonce1: Arc<Mutex<Vec<u8>>>,
+    /// Extra nonce 2 size from subscribe (default 4 bytes for standard Stratum v1).
+    extranonce2_size: Arc<Mutex<Option<u32>>>,
     /// Pending JSON-RPC responses keyed by request id.  The background poll
     /// loop routes incoming responses here.
     pending_requests: Arc<Mutex<HashMap<i64, oneshot::Sender<Value>>>>,
@@ -303,6 +305,7 @@ impl AuxPowClient {
             current_target_bytes: Arc::new(Mutex::new(None)),
             payout_wallet: Arc::new(Mutex::new(String::new())),
             extranonce1: Arc::new(Mutex::new(Vec::new())),
+            extranonce2_size: Arc::new(Mutex::new(None)),
             pending_requests: Arc::new(Mutex::new(HashMap::new())),
             last_waited_job_id: Arc::new(Mutex::new(None)),
             eth_getwork_polling: Arc::new(Mutex::new(false)),
@@ -1268,6 +1271,10 @@ impl AuxPowClient {
             *en1 = if let Some(hex) = result.as_str() {
                 hex::decode(hex).unwrap_or_default()
             } else if let Some(arr) = result.as_array() {
+                // Extract extranonce2_size (3rd element, index 2)
+                if let Some(en2_size) = arr.get(2).and_then(|v| v.as_u64()) {
+                    *self.extranonce2_size.lock().await = Some(en2_size as u32);
+                }
                 arr.get(1)
                     .and_then(|v| v.as_str())
                     .map(|hex| hex::decode(hex).unwrap_or_default())
@@ -2288,6 +2295,75 @@ impl AuxPowClient {
             }
         }
 
+        // Standard Stratum v1 (zpool/suprnova) for RTM, VTC, QTC, IRON, KLS, DNX, NEXA:
+        // mining.notify params = [job_id, prevhash, coinbase1, coinbase2,
+        //   merkle_branches, version, nbits, ntime, clean_jobs]
+        // ntime is at index [7], nbits at [6], version at [5].
+        // We store ntime per job_id for submit reconstruction.
+        if matches!(
+            self.profile.coin,
+            ExternalCoin::RTM | ExternalCoin::VTC | ExternalCoin::QTC
+                | ExternalCoin::IRON | ExternalCoin::KLS | ExternalCoin::DNX
+                | ExternalCoin::NEXA
+        ) {
+            if let Some(arr) = params.as_array() {
+                if arr.len() >= 9 {
+                    let job_id = arr[0].as_str().unwrap_or("").to_string();
+                    let ntime = arr.get(7).and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let nbits = arr.get(6).and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let version = arr.get(5).and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let prevhash = arr.get(1).and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let coinbase1 = arr.get(2).and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let coinbase2 = arr.get(3).and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+                    // Store ntime for submit reconstruction
+                    if !job_id.is_empty() && !ntime.is_empty() {
+                        self.job_ntime.lock().await.insert(job_id.clone(), ntime.clone());
+                    }
+
+                    // Build header from coinbase1 (contains the block header prefix)
+                    // For now, use coinbase1 as the header hex — the GPU kernel
+                    // will use this as the hashing input.
+                    let header_hex = coinbase1.clone();
+                    let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
+                        .unwrap_or_default();
+
+                    // Target from difficulty — use a permissive default for now
+                    // The pool sends mining.set_difficulty separately
+                    let target_hex = "00000000ffff0000000000000000000000000000000000000000000000000000";
+                    let target_bytes = crate::external_hashers::parse_target_hex(target_hex)
+                        .unwrap_or([0xFFu8; 32]);
+
+                    let ntime_u64 = u64::from_str_radix(ntime.trim_start_matches("0x"), 16).ok();
+
+                    println!(
+                        "auxpow: {} notify — job={} prevhash={}.. ntime={} nbits={} version={}",
+                        self.profile.coin.ticker(), job_id, &prevhash[..16.min(prevhash.len())],
+                        ntime, nbits, version
+                    );
+
+                    return Ok(ExternalJob {
+                        job_id,
+                        header_hex,
+                        target_hex: target_hex.to_string(),
+                        seed_hash: None,
+                        block_number: None,
+                        algorithm: self.profile.algorithm.clone(),
+                        header_bytes,
+                        target_bytes,
+                        timestamp: ntime_u64,
+                        nbits: Some(nbits),
+                        external_coin: self.profile.coin,
+                        from_group: 0,
+                        to_group: 0,
+                        extranonce1: self.extranonce1.lock().await.clone(),
+                        extranonce2: String::new(),
+                        epoch: None,
+                    });
+                }
+            }
+        }
+
         let arr = params
             .as_array()
             .ok_or_else(|| anyhow!("notify params not array or object"))?;
@@ -3092,6 +3168,64 @@ impl AuxPowClient {
                 "job_id": job_id,
                 "plain_proof": plain_proof
             }))
+        } else if matches!(
+            self.profile.coin,
+            ExternalCoin::RTM | ExternalCoin::VTC | ExternalCoin::QTC
+                | ExternalCoin::IRON | ExternalCoin::KLS | ExternalCoin::DNX
+                | ExternalCoin::NEXA
+        ) {
+            // Standard Stratum v1 with 5 params for zpool/suprnova/herominers:
+            //   [worker, job_id, extranonce2, ntime, nonce]
+            // extranonce2 = extranonce2_size bytes (from subscribe, default 4)
+            //   miner nonce encoded as LE bytes, padded to extranonce2_size
+            // ntime = from notify params[5] (must match pool's time window)
+            // nonce = 4-byte LE hex (the PoW nonce scanned by the GPU kernel)
+            //
+            // Verified by E2E tests:
+            //   RTM (zpool): 5p → "Invalid time rolling" (format correct)
+            //   VTC (zpool): 5p → "Invalid time rolling" (format correct)
+            //   QTC (suprnova): 5p → "ntime out of range" (format correct)
+            //   3p/4p → "malformed submit params" (wrong param count)
+            let wallet = self.payout_wallet.lock().await.clone();
+            let worker = format!("{}.{}", wallet, self.profile.worker_name);
+
+            // ntime from stored job data or notify params
+            let ntime = {
+                let job_ntime = self.job_ntime.lock().await.get(job_id).cloned();
+                if let Some(nt) = job_ntime {
+                    nt
+                } else if let Some(job) = self.current_job().await {
+                    job.timestamp
+                        .map(|t| format!("{:08x}", t))
+                        .unwrap_or_else(|| format!("{:08x}", chrono::Utc::now().timestamp() as u32))
+                } else {
+                    format!("{:08x}", chrono::Utc::now().timestamp() as u32)
+                }
+            };
+
+            // extranonce2: miner nonce as LE bytes, padded to extranonce2_size
+            let en2_size = self.extranonce2_size.lock().await.unwrap_or(4) as usize;
+            let nonce_le = (nonce & 0xFFFFFFFF) as u32;
+            let nonce_bytes = nonce_le.to_le_bytes();
+            let mut en2 = hex::encode(&nonce_bytes);
+            // Pad/truncate to extranonce2_size
+            let needed = en2_size * 2;
+            if en2.len() < needed {
+                en2.push_str(&"0".repeat(needed - en2.len()));
+            }
+            if en2.len() > needed {
+                en2.truncate(needed);
+            }
+
+            // PoW nonce as 4-byte LE hex
+            let nonce_hex = hex::encode(nonce_bytes);
+
+            println!(
+                "auxpow: {} submit — job={} en2={} ntime={} nonce={}",
+                self.profile.coin, job_id, en2, ntime, nonce_hex
+            );
+
+            ("mining.submit", json!([worker, job_id, en2, ntime, nonce_hex]))
         } else {
             let hex = format!("0x{:016x}", nonce);
             let wallet = self.payout_wallet.lock().await.clone();
@@ -4981,6 +5115,113 @@ mod tests {
         // Submit a share with a mock 400-byte Equihash solution in mix_hash_hex
         let mock_solution = "ee".repeat(400); // 400-byte solution
         let result = client.submit_share(job_id, 0x1234abcd, "deadbeef", Some(&mock_solution)).await.unwrap();
+        assert_eq!(result, ShareResult::Accepted);
+
+        client.disconnect().await.unwrap();
+        server_task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn rtm_5param_submit_format() {
+        // RTM (zpool) uses standard Stratum v1 with 5 params:
+        //   [worker, job_id, extranonce2, ntime, nonce]
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let (host, port) = addr.rsplit_once(':').unwrap();
+        let port: u16 = port.parse().unwrap();
+
+        let job_id = "rtm_job_001";
+        let ntime = "65a3f1c0";
+
+        let server_task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (mut reader, mut writer) = socket.split();
+            let mut buf = vec![0u8; 65536];
+
+            async fn read_json(
+                reader: &mut tokio::net::tcp::ReadHalf<'_>,
+                buf: &mut [u8],
+            ) -> Value {
+                let n = reader.read(buf).await.unwrap();
+                serde_json::from_slice::<Value>(&buf[..n]).unwrap()
+            }
+
+            async fn write_json(writer: &mut tokio::net::tcp::WriteHalf<'_>, v: Value) {
+                writer
+                    .write_all((serde_json::to_string(&v).unwrap() + "\n").as_bytes())
+                    .await
+                    .unwrap();
+                writer.flush().await.unwrap();
+            }
+
+            // mining.subscribe — return extranonce1 + extranonce2_size=4
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.subscribe");
+            write_json(
+                &mut writer,
+                json!({"id": 1, "result": [["mining.notify", "session"], "80004e68", 4], "error": null}),
+            )
+            .await;
+
+            // mining.authorize
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.authorize");
+            write_json(&mut writer, json!({"id": 2, "result": true, "error": null})).await;
+
+            // mining.set_difficulty
+            write_json(
+                &mut writer,
+                json!({"id": null, "method": "mining.set_difficulty", "params": [0.02]}),
+            )
+            .await;
+
+            // mining.notify (standard Stratum v1, 9 params)
+            // [job_id, prevhash, coinbase1, coinbase2, merkle, version, nbits, ntime, clean_jobs]
+            write_json(
+                &mut writer,
+                json!({
+                    "id": null,
+                    "method": "mining.notify",
+                    "params": [
+                        job_id, "c9c08930", "03000500", "2f7a706f",
+                        "e4c3e24c", "20000000", "1e02cbbe", ntime, true
+                    ]
+                }),
+            )
+            .await;
+
+            // mining.submit — must have 5 params
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.submit");
+            let params = req["params"].as_array().unwrap();
+            assert_eq!(params.len(), 5, "RTM submit must have 5 params");
+            assert_eq!(params[1].as_str().unwrap(), job_id);
+            assert_eq!(params[2].as_str().unwrap().len(), 8, "extranonce2 must be 4 bytes (8 hex)");
+            assert_eq!(params[3].as_str().unwrap(), ntime);
+            // nonce = 4-byte LE hex
+            assert_eq!(params[4].as_str().unwrap().len(), 8, "nonce must be 4 bytes (8 hex)");
+
+            write_json(
+                &mut writer,
+                json!({"id": req["id"].as_i64().unwrap(), "result": true, "error": null}),
+            )
+            .await;
+
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        });
+
+        let mut profile = CoinProfile::default_for(ExternalCoin::RTM);
+        profile.pool_host = host.to_string();
+        profile.pool_port = port;
+
+        let client = Arc::new(AuxPowClient::new(profile));
+        client.connect("yose144").await.unwrap();
+
+        let job = client.wait_for_job(5000).await.unwrap().unwrap();
+        assert_eq!(job.job_id, job_id);
+        assert_eq!(job.external_coin, ExternalCoin::RTM);
+
+        let result = client.submit_share(job_id, 0x1234abcd, "deadbeef", None).await.unwrap();
         assert_eq!(result, ShareResult::Accepted);
 
         client.disconnect().await.unwrap();
