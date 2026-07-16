@@ -252,6 +252,16 @@ pub struct HashrateTracker {
     zion_windows: Mutex<StreamWindows>,
     gpu_ext_windows: Mutex<StreamWindows>,
     cpu_ext_windows: Mutex<StreamWindows>,
+    /// Current external GPU coin/algorithm (updated by external_gpu_thread)
+    gpu_ext_coin: Mutex<String>,
+    gpu_ext_algorithm: Mutex<String>,
+    /// Current external CPU coin/algorithm (updated by external_cpu_thread)
+    cpu_ext_coin: Mutex<String>,
+    cpu_ext_algorithm: Mutex<String>,
+    /// Whether external GPU stream is active (has a job)
+    gpu_ext_active: AtomicU64,
+    /// Whether external CPU stream is active (has a job)
+    cpu_ext_active: AtomicU64,
 }
 
 impl HashrateTracker {
@@ -277,6 +287,12 @@ impl HashrateTracker {
             zion_windows: Mutex::new(StreamWindows::new()),
             gpu_ext_windows: Mutex::new(StreamWindows::new()),
             cpu_ext_windows: Mutex::new(StreamWindows::new()),
+            gpu_ext_coin: Mutex::new(String::new()),
+            gpu_ext_algorithm: Mutex::new(String::new()),
+            cpu_ext_coin: Mutex::new(String::new()),
+            cpu_ext_algorithm: Mutex::new(String::new()),
+            gpu_ext_active: AtomicU64::new(0),
+            cpu_ext_active: AtomicU64::new(0),
         })
     }
 
@@ -289,6 +305,101 @@ impl HashrateTracker {
 
     pub fn get_gpu_info(&self) -> Vec<GpuInfoLine> {
         self.gpu_info.lock().map(|g| g.clone()).unwrap_or_default()
+    }
+
+    /// Set current external GPU coin/algorithm (called by external_gpu_thread)
+    pub fn set_gpu_ext_job(&self, coin: &str, algorithm: &str) {
+        if let Ok(mut c) = self.gpu_ext_coin.lock() {
+            *c = coin.to_string();
+        }
+        if let Ok(mut a) = self.gpu_ext_algorithm.lock() {
+            *a = algorithm.to_string();
+        }
+        self.gpu_ext_active.store(1, Ordering::Relaxed);
+    }
+
+    /// Mark external GPU stream as idle (no job)
+    pub fn clear_gpu_ext_job(&self) {
+        self.gpu_ext_active.store(0, Ordering::Relaxed);
+    }
+
+    /// Set current external CPU coin/algorithm (called by external_cpu_thread)
+    pub fn set_cpu_ext_job(&self, coin: &str, algorithm: &str) {
+        if let Ok(mut c) = self.cpu_ext_coin.lock() {
+            *c = coin.to_string();
+        }
+        if let Ok(mut a) = self.cpu_ext_algorithm.lock() {
+            *a = algorithm.to_string();
+        }
+        self.cpu_ext_active.store(1, Ordering::Relaxed);
+    }
+
+    /// Mark external CPU stream as idle (no job)
+    pub fn clear_cpu_ext_job(&self) {
+        self.cpu_ext_active.store(0, Ordering::Relaxed);
+    }
+
+    /// Build per-stream stats for the triple-stream display.
+    /// `zion_algorithm` is the current ZION algorithm (from control/telemetry).
+    pub fn build_stream_stats(&self, zion_algorithm: &str) -> Vec<crate::ui::StreamStats> {
+        let (z10, z60, z15m) = if let Ok(w) = self.zion_windows.lock() {
+            w.rates()
+        } else {
+            (0.0, 0.0, 0.0)
+        };
+        let (g10, g60, _g15m) = if let Ok(w) = self.gpu_ext_windows.lock() {
+            w.rates()
+        } else {
+            (0.0, 0.0, 0.0)
+        };
+        let (c10, c60, _c15m) = if let Ok(w) = self.cpu_ext_windows.lock() {
+            w.rates()
+        } else {
+            (0.0, 0.0, 0.0)
+        };
+
+        let gpu_coin = self.gpu_ext_coin.lock().map(|c| c.clone()).unwrap_or_default();
+        let gpu_algo = self.gpu_ext_algorithm.lock().map(|a| a.clone()).unwrap_or_default();
+        let cpu_coin = self.cpu_ext_coin.lock().map(|c| c.clone()).unwrap_or_default();
+        let cpu_algo = self.cpu_ext_algorithm.lock().map(|a| a.clone()).unwrap_or_default();
+        let gpu_active = self.gpu_ext_active.load(Ordering::Relaxed) == 1;
+        let cpu_active = self.cpu_ext_active.load(Ordering::Relaxed) == 1;
+
+        vec![
+            crate::ui::StreamStats {
+                label: "ZION",
+                coin: "ZION".to_string(),
+                algorithm: zion_algorithm.to_string(),
+                hashrate_10s: z10,
+                hashrate_60s: z60,
+                hashrate_15m: z15m,
+                accepted: self.zion_accepted.load(Ordering::Relaxed),
+                rejected: self.zion_rejected.load(Ordering::Relaxed),
+                active: true, // ZION is always active
+            },
+            crate::ui::StreamStats {
+                label: "GPU PROFIT",
+                coin: gpu_coin,
+                algorithm: gpu_algo,
+                hashrate_10s: g10,
+                hashrate_60s: g60,
+                hashrate_15m: 0.0,
+                accepted: self.gpu_ext_accepted.load(Ordering::Relaxed),
+                rejected: self.gpu_ext_rejected.load(Ordering::Relaxed),
+                active: gpu_active,
+            },
+            crate::ui::StreamStats {
+                label: "CPU PROFIT",
+                coin: cpu_coin,
+                algorithm: cpu_algo,
+                hashrate_10s: c10,
+                hashrate_60s: c60,
+                hashrate_15m: 0.0,
+                accepted: self.cpu_ext_accepted.load(Ordering::Relaxed),
+                rejected: self.cpu_ext_rejected.load(Ordering::Relaxed),
+                active: cpu_active,
+            },
+        ]
     }
 
     pub fn record_cpu_hashes(&self, n: u64) {

@@ -147,6 +147,85 @@ pub fn log_rejected(job_id: u64, height: u64, nonce: u64, latency_ms: u64, reaso
     print_flush(&s);
 }
 
+/// Print an accepted external share (Claymore-style, per-stream)
+/// stream_label: "GPU PROFIT" or "CPU PROFIT"
+pub fn log_ext_accepted(stream_label: &str, coin: &str, algorithm: &str, latency_ms: u64) {
+    let color = match stream_label {
+        "GPU PROFIT" => BRIGHT_YELLOW,
+        "CPU PROFIT" => BRIGHT_GREEN,
+        _ => GREEN,
+    };
+    let mut s = String::new();
+    s.push_str(GREEN);
+    s.push('+');
+    s.push_str(RESET);
+    s.push(' ');
+    s.push_str(color);
+    s.push_str(BOLD);
+    s.push_str(&format!("[{}]", stream_label));
+    s.push_str(RESET);
+    s.push(' ');
+    s.push_str(CYAN);
+    s.push_str("coin=");
+    s.push_str(RESET);
+    s.push_str(coin);
+    s.push(' ');
+    s.push_str(DIM);
+    s.push_str("algo=");
+    s.push_str(RESET);
+    s.push_str(algorithm);
+    s.push(' ');
+    s.push_str(MAGENTA);
+    s.push_str("latency=");
+    s.push_str(RESET);
+    s.push_str(&latency_ms.to_string());
+    s.push_str("ms ");
+    s.push_str(GREEN);
+    s.push_str("ACCEPTED");
+    s.push_str(RESET);
+    s.push('\n');
+    print_flush(&s);
+}
+
+/// Print a rejected external share (Claymore-style, per-stream)
+pub fn log_ext_rejected(stream_label: &str, coin: &str, algorithm: &str, reason: &str) {
+    let color = match stream_label {
+        "GPU PROFIT" => BRIGHT_YELLOW,
+        "CPU PROFIT" => BRIGHT_GREEN,
+        _ => RED,
+    };
+    let mut s = String::new();
+    s.push_str(RED);
+    s.push('-');
+    s.push_str(RESET);
+    s.push(' ');
+    s.push_str(color);
+    s.push_str(BOLD);
+    s.push_str(&format!("[{}]", stream_label));
+    s.push_str(RESET);
+    s.push(' ');
+    s.push_str(CYAN);
+    s.push_str("coin=");
+    s.push_str(RESET);
+    s.push_str(coin);
+    s.push(' ');
+    s.push_str(DIM);
+    s.push_str("algo=");
+    s.push_str(RESET);
+    s.push_str(algorithm);
+    s.push(' ');
+    s.push_str(RED);
+    s.push_str("REJECTED");
+    s.push_str(RESET);
+    s.push(' ');
+    s.push_str(RED);
+    s.push_str("reason=");
+    s.push_str(RESET);
+    s.push_str(reason);
+    s.push('\n');
+    print_flush(&s);
+}
+
 /// Print a block found celebration with ASCII art flag
 pub fn log_block_found(height: u64, nonce: u64, hash_prefix: &str) {
     let flag = r#"
@@ -475,6 +554,283 @@ pub fn print_speed_table(
 }
 
 /* ========================================================================= */
+/* Claymore-style Triple Stream stats (no-TUI mode)                          */
+/* ========================================================================= */
+
+/// Per-stream data for the triple-stream stats display.
+pub struct StreamStats {
+    pub label: &'static str,      // "ZION", "GPU PROFIT", "CPU PROFIT"
+    pub coin: String,             // "ZION", "EPIC", "VRSC", etc.
+    pub algorithm: String,        // "deeksha_lite_v1", "progpow", "verushash"
+    pub hashrate_10s: f64,
+    pub hashrate_60s: f64,
+    pub hashrate_15m: f64,
+    pub accepted: u64,
+    pub rejected: u64,
+    pub active: bool,             // is this stream currently mining?
+}
+
+/// Print a Claymore-style triple-stream stats block.
+///
+/// Example output:
+/// ```
+/// ┌─────────────────────────────────────────────────────────────────────────┐
+/// │  ZION v3.0.6 Triple Stream                              uptime 01:23:45 │
+/// ├─────────────────────────────────────────────────────────────────────────┤
+/// │  STREAM 1  ZION       deeksha_lite_v1     12.34 MH/s  ████░░░  45/0  ✓  │
+/// │  STREAM 2  GPU PROFIT EPIC / progpow      SKIPPED (DAG-based on Metal)   │
+/// │  STREAM 3  CPU PROFIT VRSC / verushash    234.5 H/s  ██░░░░░  12/0  ✓  │
+/// ├─────────────────────────────────────────────────────────────────────────┤
+/// │  TOTAL      12.57 MH/s    57 accepted / 0 rejected  (100.0%)            │
+/// │  pool 62.171.141.136:8444   height 3623114   latency 12/45 ms           │
+/// └─────────────────────────────────────────────────────────────────────────┘
+/// ```
+pub fn print_triple_stream_stats(
+    uptime_secs: u64,
+    streams: &[StreamStats],
+    total_accepted: u64,
+    total_rejected: u64,
+    pool_addr: &str,
+    pool_height: u64,
+    submit_avg_ms: f64,
+    submit_max_ms: u64,
+    gpu_infos: &[(String, u32, u64, u32, Option<u32>, Option<u32>)],
+) {
+    let uptime = fmt_uptime(uptime_secs);
+    let total = total_accepted + total_rejected;
+    let accept_pct = if total > 0 {
+        total_accepted as f64 * 100.0 / total as f64
+    } else {
+        100.0
+    };
+
+    // Sum active hashrates (10s window)
+    let total_hps: f64 = streams.iter().filter(|s| s.active).map(|s| s.hashrate_10s).sum();
+    let (tv, tu) = fmt_hashrate(total_hps);
+
+    let w = 73; // inner width
+
+    // ── Top border + title ──
+    let mut s = String::new();
+    s.push_str(CYAN);
+    s.push_str(&format!("┌{}┐\n", "─".repeat(w)));
+    s.push_str("│");
+    s.push_str(BOLD);
+    s.push_str(WHITE);
+    s.push_str(&format!("  ZION v3.0.6 Triple Stream"));
+    s.push_str(RESET);
+    let title_pad = w - 26 - 7 - uptime.len();
+    s.push_str(&" ".repeat(title_pad));
+    s.push_str(DIM);
+    s.push_str("uptime ");
+    s.push_str(RESET);
+    s.push_str(&uptime);
+    s.push_str(" │\n");
+    s.push_str(&format!("├{}┤\n", "─".repeat(w)));
+
+    // ── Per-stream lines ──
+    for stream in streams {
+        s.push_str("│");
+        if !stream.active {
+            // Inactive stream
+            s.push_str(BRIGHT_BLACK);
+            s.push_str(&format!("  {:<10}", stream.label));
+            s.push_str(RESET);
+            s.push_str(DIM);
+            let detail = format!("{} / {}", stream.coin, stream.algorithm);
+            s.push_str(&format!(" {:<22}", detail));
+            s.push_str(RESET);
+            s.push_str(BRIGHT_BLACK);
+            // Reason for inactive
+            let reason = if stream.coin.is_empty() {
+                "IDLE (no job from pool)"
+            } else if stream.algorithm.contains("progpow")
+                || stream.algorithm.contains("ethash")
+                || stream.algorithm.contains("kawpow")
+            {
+                "SKIPPED (DAG-based on Metal)"
+            } else if stream.algorithm.contains("zelhash")
+                || stream.algorithm.contains("beamhash")
+            {
+                "SKIPPED (memory-hard on Metal)"
+            } else {
+                "IDLE"
+            };
+            let remaining = w - 10 - 23 - 2;
+            s.push_str(&format!(" {:<width$}", reason, width = remaining));
+            s.push_str(RESET);
+            s.push_str(" │\n");
+            continue;
+        }
+
+        // Active stream
+        let (hv, hu) = fmt_hashrate(stream.hashrate_10s);
+        let (h60v, h60u) = fmt_hashrate(stream.hashrate_60s);
+        let stream_total = stream.accepted + stream.rejected;
+        let stream_pct = if stream_total > 0 {
+            stream.accepted as f64 * 100.0 / stream_total as f64
+        } else {
+            100.0
+        };
+
+        // Stream label with color
+        let label_color = match stream.label {
+            "ZION" => BRIGHT_CYAN,
+            "GPU PROFIT" => BRIGHT_YELLOW,
+            "CPU PROFIT" => BRIGHT_GREEN,
+            _ => WHITE,
+        };
+        s.push_str(label_color);
+        s.push_str(BOLD);
+        s.push_str(&format!("  {:<10}", stream.label));
+        s.push_str(RESET);
+
+        // Coin / algorithm
+        let detail = format!("{} / {}", stream.coin, stream.algorithm);
+        s.push_str(DIM);
+        s.push_str(&format!(" {:<22}", &detail[..detail.len().min(22)]));
+        s.push_str(RESET);
+
+        // Hashrate
+        s.push_str(" ");
+        s.push_str(WHITE);
+        s.push_str(&format!("{:>8}", hv));
+        s.push(' ');
+        s.push_str(DIM);
+        s.push_str(hu);
+        s.push_str(RESET);
+
+        // Mini bar chart (10 chars, based on 60s hashrate relative to max)
+        let bar_max = streams.iter().filter(|s2| s2.active).map(|s2| s2.hashrate_60s).fold(0.0f64, f64::max).max(1.0);
+        let bar_len = ((stream.hashrate_60s / bar_max) * 7.0).round() as usize;
+        let bar_len = bar_len.min(7);
+        s.push_str(DIM);
+        s.push_str("  ");
+        s.push_str(GREEN);
+        s.push_str(&"█".repeat(bar_len));
+        s.push_str(RESET);
+        s.push_str(BRIGHT_BLACK);
+        s.push_str(&"░".repeat(7 - bar_len));
+        s.push_str(RESET);
+
+        // Shares
+        s.push_str("  ");
+        s.push_str(GREEN);
+        s.push_str(&stream.accepted.to_string());
+        s.push_str(RESET);
+        s.push_str(DIM);
+        s.push('/');
+        s.push_str(RESET);
+        let rej_color = if stream.rejected > 0 { BRIGHT_RED } else { DIM };
+        s.push_str(rej_color);
+        s.push_str(&stream.rejected.to_string());
+        s.push_str(RESET);
+
+        // Trailing space to fill
+        let used = 10 + 23 + 1 + 8 + 1 + 2 + 2 + 7 + 2 + stream.accepted.to_string().len() + 1 + stream.rejected.to_string().len();
+        let pad = w.saturating_sub(used + 2);
+        s.push_str(&" ".repeat(pad));
+        s.push_str(" │\n");
+    }
+
+    // ── Separator ──
+    s.push_str(&format!("├{}┤\n", "─".repeat(w)));
+
+    // ── Total line ──
+    s.push_str("│");
+    s.push_str(BOLD);
+    s.push_str(WHITE);
+    s.push_str("  TOTAL");
+    s.push_str(RESET);
+    s.push_str("     ");
+    s.push_str(CYAN);
+    s.push_str(BOLD);
+    s.push_str(&format!("{:>8}", tv));
+    s.push(' ');
+    s.push_str(tu);
+    s.push_str(RESET);
+    s.push_str("    ");
+    s.push_str(GREEN);
+    s.push_str(&total_accepted.to_string());
+    s.push_str(RESET);
+    s.push_str(DIM);
+    s.push_str(" accepted / ");
+    s.push_str(RESET);
+    let rej_col = if total_rejected > 0 { BRIGHT_RED } else { DIM };
+    s.push_str(rej_col);
+    s.push_str(&total_rejected.to_string());
+    s.push_str(RESET);
+    s.push_str(DIM);
+    s.push_str(" rejected  (");
+    s.push_str(RESET);
+    s.push_str(if accept_pct >= 99.0 { GREEN } else if accept_pct >= 95.0 { YELLOW } else { RED });
+    s.push_str(BOLD);
+    s.push_str(&format!("{:.1}%", accept_pct));
+    s.push_str(RESET);
+    s.push_str(DIM);
+    s.push_str(")");
+    s.push_str(RESET);
+    let total_used = 8 + 8 + 1 + 2 + 4 + total_accepted.to_string().len() + 12 + total_rejected.to_string().len() + 13 + 4;
+    let total_pad = w.saturating_sub(total_used);
+    s.push_str(&" ".repeat(total_pad));
+    s.push_str(" │\n");
+
+    // ── Pool info line ──
+    s.push_str("│");
+    s.push_str(DIM);
+    s.push_str("  pool ");
+    s.push_str(RESET);
+    s.push_str(&pool_addr);
+    s.push_str(DIM);
+    s.push_str("   height ");
+    s.push_str(RESET);
+    s.push_str(&pool_height.to_string());
+    s.push_str(DIM);
+    s.push_str("   latency ");
+    s.push_str(RESET);
+    s.push_str(&format!("{:.0}/{} ms", submit_avg_ms, submit_max_ms));
+    let pool_used = 6 + pool_addr.len() + 10 + pool_height.to_string().len() + 10 + format!("{:.0}", submit_avg_ms).len() + 1 + submit_max_ms.to_string().len() + 4;
+    let pool_pad = w.saturating_sub(pool_used);
+    s.push_str(&" ".repeat(pool_pad));
+    s.push_str(" │\n");
+
+    // ── GPU info line (if available) ──
+    if !gpu_infos.is_empty() {
+        for (i, (name, cu, vram, clock, temp, power)) in gpu_infos.iter().enumerate() {
+            let vram_gb = *vram as f64 / 1024.0 / 1024.0 / 1024.0;
+            let temp_str = match temp {
+                Some(t) => format!("{}°C", t),
+                None => "n/a".to_string(),
+            };
+            let power_str = match power {
+                Some(p) => format!("{}W", p),
+                None => "n/a".to_string(),
+            };
+            s.push_str("│");
+            s.push_str(DIM);
+            s.push_str(&format!("  GPU#{} ", i));
+            s.push_str(RESET);
+            s.push_str(GREEN);
+            s.push_str(name);
+            s.push_str(RESET);
+            s.push_str(DIM);
+            let gpu_info = format!("  {}CU  {:.1}GiB  {}MHz  {}  {}", cu, vram_gb, clock, temp_str, power_str);
+            s.push_str(&gpu_info);
+            s.push_str(RESET);
+            let gpu_used = 7 + i.to_string().len() + name.len() + gpu_info.len();
+            let gpu_pad = w.saturating_sub(gpu_used);
+            s.push_str(&" ".repeat(gpu_pad));
+            s.push_str(" │\n");
+        }
+    }
+
+    // ── Bottom border ──
+    s.push_str(&format!("└{}┘\n", "─".repeat(w)));
+    s.push_str(RESET);
+    print_flush(&s);
+}
+
+/* ========================================================================= */
 /* Banner                                                                    */
 /* ========================================================================= */
 
@@ -500,9 +856,9 @@ pub fn print_fancy_banner(threads: usize, version: &str, backend: &str) {
     s.push_str(RESET);
     s.push_str("  ");
     s.push_str(DIM);
-    s.push_str("GPU Miner");
+    s.push_str("Triple Stream");
     s.push_str(RESET);
-    s.push_str("           ║\n");
+    s.push_str("         ║\n");
     s.push_str("║  ");
     s.push_str(BOLD);
     s.push_str(WHITE);

@@ -68,7 +68,7 @@ download_miner() {
     echo "[smos-wrapper] miner binary ready ($(stat -c%s "${LOCAL_MINER}") bytes)"
 }
 
-if [ ! -x "${LOCAL_MINER}" ] || [ "$(stat -c%s "${LOCAL_MINER}" 2>/dev/null || echo 0)" -lt 3000000 ]; then
+if [ ! -x "${LOCAL_MINER}" ] || [ "$(stat -c%s "${LOCAL_MINER}" 2>/dev/null || echo 0)" -lt 500000 ]; then
     download_miner || {
         echo "[smos-wrapper] FATAL: could not download miner binary"
         exit 1
