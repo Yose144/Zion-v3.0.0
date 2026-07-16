@@ -10241,10 +10241,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.send_error(404)
                 return
         elif route in ("/dashboard.js", "/dashboard.min.js"):
-            # Prefer minified build; serve pre-compressed .gz when client accepts it.
-            min_path = SCRIPT_DIR / "dashboard.min.js"
-            gz_path = SCRIPT_DIR / "dashboard.min.js.gz"
-            js_path = min_path if min_path.exists() else SCRIPT_DIR / "dashboard.js"
+            # Serve the exact file requested — /dashboard.js → dashboard.js,
+            # /dashboard.min.js → dashboard.min.js (with .gz when accepted).
+            if route == "/dashboard.min.js":
+                js_path = SCRIPT_DIR / "dashboard.min.js"
+                gz_path = SCRIPT_DIR / "dashboard.min.js.gz"
+            else:
+                js_path = SCRIPT_DIR / "dashboard.js"
+                gz_path = SCRIPT_DIR / "dashboard.js.gz"
             if js_path.exists():
                 accepts_gzip = "gzip" in (self.headers.get("Accept-Encoding", "").lower())
                 if accepts_gzip and gz_path.exists():
@@ -10253,7 +10257,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self.send_header("Content-Type", "application/javascript; charset=utf-8")
                     self.send_header("Content-Encoding", "gzip")
                     self.send_header("Vary", "Accept-Encoding")
-                    self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+                    self.send_header("Cache-Control", "public, max-age=300")
                     self.send_header("Content-Length", str(len(body)))
                     self.end_headers()
                     self.wfile.write(body)
@@ -10261,7 +10265,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     body = js_path.read_bytes()
                     self.send_response(200)
                     self.send_header("Content-Type", "application/javascript; charset=utf-8")
-                    self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+                    self.send_header("Cache-Control", "public, max-age=300")
                     self.send_header("Content-Length", str(len(body)))
                     self.end_headers()
                     self.wfile.write(body)
