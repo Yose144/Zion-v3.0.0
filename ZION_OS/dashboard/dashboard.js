@@ -2819,6 +2819,7 @@ async function loadRevenueTab(){
     set('rev-kpi-blocks', rev.blocks_found != null ? rev.blocks_found.toLocaleString() : '—');
     set('rev-kpi-zion-mined', rev.zion_mined_total != null ? Number(rev.zion_mined_total).toLocaleString(undefined, {maximumFractionDigits: 2}) : '—');
     set('rev-kpi-zion-paid', rev.zion_paid_total != null ? Number(rev.zion_paid_total).toLocaleString(undefined, {maximumFractionDigits: 2}) : '—');
+    // Note: zion_paid_total is all-time PPLNS cumulative, not just current session
     set('rev-kpi-zion-day', rev.zion_per_day != null ? Number(rev.zion_per_day).toFixed(2) : '—');
     const hashrate = rev.pool_hashrate || 0;
     set('rev-kpi-hashrate', hashrate > 0 ? (hashrate > 1e6 ? (hashrate/1e6).toFixed(2) + ' MH/s' : hashrate > 1e3 ? (hashrate/1e3).toFixed(2) + ' KH/s' : hashrate.toFixed(0) + ' H/s') : '—');
@@ -2835,7 +2836,7 @@ async function loadRevenueTab(){
     const uptime = rev.uptime_secs || auxpow.uptime_secs || 0;
     set('rev-uptime', uptime > 0 ? Math.floor(uptime/3600) + 'h ' + Math.floor((uptime%3600)/60) + 'm' : '—');
 
-    // Split bars
+    // Split bars (real data from pool API)
     const minerPct = rev.miner_share_pct != null ? rev.miner_share_pct : 89;
     const daoPct = rev.dao_share_pct != null ? rev.dao_share_pct : 5;
     const humanPct = rev.humanitarian_share_pct != null ? rev.humanitarian_share_pct : 5;
@@ -2853,6 +2854,17 @@ async function loadRevenueTab(){
     if(barHuman) barHuman.style.width = humanPct + '%';
     if(barPool) barPool.style.width = poolPct + '%';
 
+    // Fee wallet addresses
+    set('rev-wallet-human', rev.humanitarian_wallet ? rev.humanitarian_wallet.substring(0, 20) + '…' : '—');
+    set('rev-wallet-issobella', rev.issobella_wallet ? rev.issobella_wallet.substring(0, 20) + '…' : '—');
+    set('rev-wallet-pool', rev.pool_fee_wallet ? rev.pool_fee_wallet.substring(0, 20) + '…' : '—');
+
+    // Block reward economics
+    set('rev-block-reward', rev.block_reward_zion != null ? Number(rev.block_reward_zion).toFixed(3) + ' ZION' : '—');
+    set('rev-block-time', rev.target_block_time_secs != null ? rev.target_block_time_secs + 's' : '—');
+    set('rev-max-blocks', rev.max_blocks_per_day != null ? rev.max_blocks_per_day : '—');
+    set('rev-blocks-per-day', rev.blocks_per_day != null ? Number(rev.blocks_per_day).toFixed(1) : '—');
+
     // Distribution
     set('rev-last-dist', rev.last_distribution_ts ? new Date(rev.last_distribution_ts).toLocaleString() : '—');
     set('rev-next-dist', rev.next_distribution_ts ? new Date(rev.next_distribution_ts).toLocaleString() : '—');
@@ -2869,14 +2881,14 @@ async function loadRevenueTab(){
     set('rev-switches', rev.coin_switches != null ? rev.coin_switches : '—');
     set('rev-last-switch', rev.last_switch_ts ? new Date(rev.last_switch_ts).toLocaleString() : '—');
 
-    const mergeEnabled = rev.strategy && rev.strategy.toLowerCase().includes('merge');
-    const swapEnabled = rev.strategy && rev.strategy.toLowerCase().includes('swap');
-    const stakeEnabled = rev.strategy && rev.strategy.toLowerCase().includes('stake');
-    const bridgeEnabled = rev.strategy && rev.strategy.toLowerCase().includes('bridge');
-    set('rev-strat-merge', mergeEnabled ? '✅ Active' : '—');
-    set('rev-strat-swap', swapEnabled ? '✅ Active' : '—');
-    set('rev-strat-stake', stakeEnabled ? '✅ Active' : '—');
-    set('rev-strat-bridge', bridgeEnabled ? '✅ Active' : '—');
+    // Active strategies — real service status from build_status()
+    const strat = rev.strategies || {};
+    set('rev-strat-merge', strat.merge_mining ? '✅ Active' : '⚪ Inactive');
+    set('rev-strat-swap', strat.swap ? '✅ Active' : '⚪ Inactive');
+    set('rev-strat-bridge', strat.bridge ? '✅ Active' : '⚪ Inactive');
+    set('rev-strat-dao', strat.dao ? '✅ Active' : '⚪ Inactive');
+    set('rev-strat-warp', strat.warp ? '✅ Active' : '⚪ Inactive');
+    set('rev-strat-stream', strat.stream_profit ? '✅ Active' : '⚪ Inactive');
 
     // PPLNS state
     set('rev-pplns-rounds', rev.payout_rounds != null ? rev.payout_rounds.toLocaleString() : '—');
@@ -2891,20 +2903,26 @@ async function loadRevenueTab(){
     set('rev-fee-issobella', rev.issobella_accumulated_zion != null ? Number(rev.issobella_accumulated_zion).toFixed(4) : '—');
     set('rev-fee-pool', rev.pool_fee_accumulated_zion != null ? Number(rev.pool_fee_accumulated_zion).toFixed(4) : '—');
 
-    // Coin revenue table (live)
+    // Coin revenue table (live) — active coins first, then supported
     const coinTbody = document.getElementById('rev-coin-tbody');
     if(coinTbody){
       const coins = rev.coin_revenue || [];
       if(coins.length === 0){
         coinTbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-4">No coin data</td></tr>';
       } else {
-        coinTbody.innerHTML = coins.map(c => `<tr class="border-b border-white/5">
+        // Sort: active first, then by coin name
+        const sorted = coins.slice().sort((a, b) => {
+          if(a.active && !b.active) return -1;
+          if(!a.active && b.active) return 1;
+          return (a.coin || '').localeCompare(b.coin || '');
+        });
+        coinTbody.innerHTML = sorted.map(c => `<tr class="border-b border-white/5 ${c.active ? 'bg-emerald-500/5' : ''}">
           <td class="py-2 px-2 font-bold ${c.active ? 'text-white' : 'text-gray-500'}">${escapeHtml(c.coin || '—')}</td>
           <td class="py-2 px-2 text-gray-300">${escapeHtml(c.algorithm || '—')}</td>
           <td class="py-2 px-2 text-gray-400 text-[10px] truncate max-w-[120px]">${escapeHtml(c.pool || '—')}</td>
-          <td class="py-2 px-2 text-right font-mono text-white">${(c.shares || 0).toLocaleString()}</td>
-          <td class="py-2 px-2 text-right font-mono text-zion-gold">$${Number(c.revenue_usd || 0).toFixed(4)}</td>
-          <td class="py-2 px-2"><span class="${c.active ? 'text-emerald-400' : 'text-gray-500'}">${c.active ? '🟢 Active' : '⚪ Inactive'}</span></td>
+          <td class="py-2 px-2 text-right font-mono ${c.active ? 'text-white' : 'text-gray-600'}">${c.active ? (c.shares || 0).toLocaleString() : '—'}</td>
+          <td class="py-2 px-2 text-right font-mono ${c.active ? 'text-zion-gold' : 'text-gray-600'}">${c.active ? '$' + Number(c.revenue_usd || 0).toFixed(4) : '—'}</td>
+          <td class="py-2 px-2"><span class="${c.active ? 'text-emerald-400' : 'text-gray-500'}">${c.active ? '🟢 Mining' : '⚪ Available'}</span></td>
         </tr>`).join('');
       }
     }
