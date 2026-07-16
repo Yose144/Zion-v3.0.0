@@ -4131,6 +4131,25 @@ impl MinerConfig {
                 }
             });
 
+        // ── Nonce count default ──
+        // For GPU mining, nonce_count must be ≥ work_size to fill the GPU
+        // pipeline, and ≥ 4× work_size to activate double-buffered async
+        // readback (the key optimization for 28-30 KH/s on RX 5700 XT).
+        // The old default of 1024 was far too small — it caused the GPU to
+        // process only 1024 nonces per batch with no double-buffering,
+        // resulting in ~10 KH/s instead of 28-30 KH/s.
+        // If ZION_NONCE_COUNT is explicitly set, respect it. Otherwise:
+        //   - GPU available: 4× gpu_work_size (e.g. 4×8192 = 32768)
+        //   - CPU only: 1024 (original default)
+        let gpu_backend_kind = gpu_backend::GpuBackendKind::from_env();
+        let nonce_count_default = if gpu_backend_kind != gpu_backend::GpuBackendKind::Cpu
+            && gpu_work_size > 0
+        {
+            gpu_work_size.saturating_mul(4) as u64
+        } else {
+            1024
+        };
+
         Ok(Self {
             miner_id,
             worker_name: env_or_default("ZION_WORKER_NAME", "cpu-rig-0"),
@@ -4142,9 +4161,16 @@ impl MinerConfig {
             job_ttl_ms: parse_env_u64("ZION_JOB_TTL_MS", 15_000)?,
             nonce_stride: parse_env_u64("ZION_NONCE_STRIDE", 1_024)?,
             start_nonce: parse_env_u64("ZION_START_NONCE", 42)?,
-            nonce_count: parse_env_u64("ZION_NONCE_COUNT", 1024)?,
+            nonce_count: parse_env_u64("ZION_NONCE_COUNT", nonce_count_default)?,
             nonce_autotune: parse_bool_env("ZION_NONCE_AUTOTUNE", true),
-            nonce_count_min: parse_env_u64("ZION_NONCE_COUNT_MIN", 10_000)?,
+            nonce_count_min: parse_env_u64("ZION_NONCE_COUNT_MIN", {
+                // For GPU mining, min must be ≥ work_size to keep GPU busy
+                if gpu_backend_kind != gpu_backend::GpuBackendKind::Cpu && gpu_work_size > 0 {
+                    (gpu_work_size as u64).max(10_000)
+                } else {
+                    10_000
+                }
+            })?,
             nonce_count_max: parse_env_u64("ZION_NONCE_COUNT_MAX", 5_000_000)?,
             nonce_adjust_percent: parse_env_u64("ZION_NONCE_ADJUST_PCT", 50)?,
             remote_ttl_guard_percent: parse_env_u64("ZION_REMOTE_TTL_GUARD_PCT", 90)?
@@ -4164,7 +4190,7 @@ impl MinerConfig {
             )?,
             revenue_value_usd: parse_env_f64("ZION_REVENUE_USD", 1.25)?,
             threads,
-            gpu_backend: gpu_backend::GpuBackendKind::from_env(),
+            gpu_backend: gpu_backend_kind,
             gpu_work_size,
             pearl_gpu_work_size,
             secondary_gpu_work_size,

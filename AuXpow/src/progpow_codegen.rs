@@ -282,10 +282,141 @@ pub fn gen_kawpow_data_loads(params: &ProgPowParams, prog_seed: u64) -> String {
 
 // ── EPIC ProgPow code generation ────────────────────────────────────
 //
-// Generates the complete progPowLoop function for the EPIC kernel.
-// Replaces PROGPOW_INCLUDE_PROGPOW_LOOP.
+// Generates inline random math and data load code for the EPIC kernel.
+// Replaces PROGPOW_INCLUDE_RANDOM_MATH and PROGPOW_INCLUDE_DATA_LOADS.
+// This mirrors the kawpow approach (inline code via placeholders) instead
+// of a separate progPowLoop function — the SMOS OpenCL compiler may not
+// inline functions containing barriers, causing GPU deadlock.
+
+/// Generate the random math + cache load code for EPIC ProgPow (inline).
+/// Replaces PROGPOW_INCLUDE_RANDOM_MATH.
+pub fn gen_epic_progpow_random_math(params: &ProgPowParams, block_height: u64) -> String {
+    let prog_seed = block_height / params.period as u64;
+    let seed0 = prog_seed as u32;
+    let seed1 = (prog_seed >> 32) as u32;
+
+    let mut fnv_hash = 0x811c9dc5u32;
+    let mut rng = Kiss99::new(
+        fnv1a(&mut fnv_hash, seed0),
+        fnv1a(&mut fnv_hash, seed1),
+        fnv1a(&mut fnv_hash, seed0),
+        fnv1a(&mut fnv_hash, seed1),
+    );
+
+    let regs = params.regs as usize;
+    let mut mix_seq_dst: Vec<u32> = (0..regs as u32).collect();
+    let mut mix_seq_cache: Vec<u32> = (0..regs as u32).collect();
+    let mut mix_seq_dst_cnt = 0usize;
+    let mut mix_seq_cache_cnt = 0usize;
+
+    for i in (1..regs).rev() {
+        let j = (rng.next() % (i as u32 + 1)) as usize;
+        mix_seq_dst.swap(i, j);
+        let j = (rng.next() % (i as u32 + 1)) as usize;
+        mix_seq_cache.swap(i, j);
+    }
+
+    let mut ret = String::new();
+
+    // Cache accesses + random math (inline, not in a function)
+    let max_ops = params.cnt_cache.max(params.cnt_math);
+    for i in 0..max_ops {
+        if i < params.cnt_cache {
+            let src = format!("mix[{}]", mix_seq_cache[mix_seq_cache_cnt % regs]);
+            mix_seq_cache_cnt += 1;
+            let dest = format!("mix[{}]", mix_seq_dst[mix_seq_dst_cnt % regs]);
+            mix_seq_dst_cnt += 1;
+            let r = rng.next();
+            ret.push_str(&format!("// cache load {}\n", i));
+            ret.push_str(&format!("offset = {} % PROGPOW_CACHE_WORDS;\n", src));
+            ret.push_str("data = c_dag[offset];\n");
+            ret.push_str(&merge_code(&dest, "data", r));
+        }
+        if i < params.cnt_math {
+            let src_rnd = rng.next() % ((params.regs - 1) * params.regs);
+            let src1 = src_rnd % params.regs;
+            let mut src2 = src_rnd / params.regs;
+            if src2 >= src1 {
+                src2 += 1;
+            }
+            let src1_str = format!("mix[{}]", src1);
+            let src2_str = format!("mix[{}]", src2);
+            let r1 = rng.next();
+            let dest = format!("mix[{}]", mix_seq_dst[mix_seq_dst_cnt % regs]);
+            mix_seq_dst_cnt += 1;
+            let r2 = rng.next();
+            ret.push_str(&format!("// random math {}\n", i));
+            ret.push_str(&math_code("data", &src1_str, &src2_str, r1));
+            ret.push_str(&merge_code(&dest, "data", r2));
+        }
+    }
+
+    ret
+}
+
+/// Generate the data load (consume global load) code for EPIC ProgPow (inline).
+/// Replaces PROGPOW_INCLUDE_DATA_LOADS.
+pub fn gen_epic_progpow_data_loads(params: &ProgPowParams, block_height: u64) -> String {
+    let prog_seed = block_height / params.period as u64;
+    let seed0 = prog_seed as u32;
+    let seed1 = (prog_seed >> 32) as u32;
+
+    let mut fnv_hash = 0x811c9dc5u32;
+    let mut rng = Kiss99::new(
+        fnv1a(&mut fnv_hash, seed0),
+        fnv1a(&mut fnv_hash, seed1),
+        fnv1a(&mut fnv_hash, seed0),
+        fnv1a(&mut fnv_hash, seed1),
+    );
+
+    let regs = params.regs as usize;
+    let mut mix_seq_dst: Vec<u32> = (0..regs as u32).collect();
+    let mut mix_seq_cache: Vec<u32> = (0..regs as u32).collect();
+    let mut mix_seq_dst_cnt = 0usize;
+    let mut mix_seq_cache_cnt = 0usize;
+
+    for i in (1..regs).rev() {
+        let j = (rng.next() % (i as u32 + 1)) as usize;
+        mix_seq_dst.swap(i, j);
+        let j = (rng.next() % (i as u32 + 1)) as usize;
+        mix_seq_cache.swap(i, j);
+    }
+
+    // Advance the RNG past the random math section to maintain the same
+    // sequence as the original gen_epic_progpow_loop.
+    let max_ops = params.cnt_cache.max(params.cnt_math);
+    for i in 0..max_ops {
+        if i < params.cnt_cache {
+            let _ = mix_seq_cache[mix_seq_cache_cnt % regs];
+            mix_seq_cache_cnt += 1;
+            let _ = mix_seq_dst[mix_seq_dst_cnt % regs];
+            mix_seq_dst_cnt += 1;
+            let _ = rng.next();
+        }
+        if i < params.cnt_math {
+            let _ = rng.next();
+            let _ = mix_seq_dst[mix_seq_dst_cnt % regs];
+            mix_seq_dst_cnt += 1;
+            let _ = rng.next();
+            let _ = rng.next();
+        }
+    }
+
+    // Consume global load data (inline)
+    let mut ret = String::new();
+    ret.push_str(&merge_code("mix[0]", "data_dag.s[0]", rng.next()));
+    for i in 1..params.dag_loads {
+        let dest = format!("mix[{}]", mix_seq_dst[mix_seq_dst_cnt % regs]);
+        mix_seq_dst_cnt += 1;
+        let r = rng.next();
+        ret.push_str(&merge_code(&dest, &format!("data_dag.s[{}]", i), r));
+    }
+
+    ret
+}
 
 /// Generate the complete progPowLoop function for EPIC ProgPow.
+/// Kept for backward compatibility / testing.
 pub fn gen_epic_progpow_loop(params: &ProgPowParams, block_height: u64) -> String {
     let prog_seed = block_height / params.period as u64;
     let seed0 = prog_seed as u32;
@@ -336,16 +467,6 @@ pub fn gen_epic_progpow_loop(params: &ProgPowParams, block_height: u64) -> Strin
     ret.push_str("const uint32_t lane_id = get_local_id(0) & (PROGPOW_LANES-1);\n");
     ret.push_str("const uint32_t group_id = get_local_id(0) / PROGPOW_LANES;\n\n");
 
-    // Global memory access — broadcast mix[0] from lane (loop % PROGPOW_LANES)
-    // to all lanes in the hash group.
-    //
-    // OPTIMIZATION: Use __builtin_amdgcn_ds_bpermute (AMD hardware lane
-    // shuffle via LLVM intrinsic) instead of share[] + barrier. This
-    // eliminates one barrier per loop iteration (64 iterations × 16 hashes
-    // = 1024 barriers eliminated per work-item). The intrinsic works on all
-    // AMD architectures (GCN wave64, RDNA1+ wave32). We use the
-    // amd_wave_shuffle() wrapper defined in the kernel header.
-    // On non-AMD platforms, fall back to share+barrier.
     ret.push_str("// global load\n");
     ret.push_str("#if defined(USE_AMD_BPERMUTE)\n");
     ret.push_str("offset = amd_wave_shuffle(mix[0], ((get_local_id(0) % 64) & ~(uint32_t)(PROGPOW_LANES - 1)) + (loop % PROGPOW_LANES));\n");
@@ -361,7 +482,6 @@ pub fn gen_epic_progpow_loop(params: &ProgPowParams, block_height: u64) -> Strin
     ret.push_str("// hack to prevent compiler from reordering LD and usage\n");
     ret.push_str("if (hack_false) barrier(CLK_LOCAL_MEM_FENCE);\n\n");
 
-    // Cache accesses + random math
     let max_ops = params.cnt_cache.max(params.cnt_math);
     for i in 0..max_ops {
         if i < params.cnt_cache {
@@ -394,7 +514,6 @@ pub fn gen_epic_progpow_loop(params: &ProgPowParams, block_height: u64) -> Strin
         }
     }
 
-    // Consume global load data
     ret.push_str("// consume global load data\n");
     ret.push_str("// hack to prevent compiler from reordering LD and usage\n");
     ret.push_str("if (hack_false) barrier(CLK_LOCAL_MEM_FENCE);\n");
@@ -428,14 +547,21 @@ pub fn prepare_kawpow_kernel_source(
         .replace("XMRIG_INCLUDE_PROGPOW_DATA_LOADS", &data_loads)
 }
 
-/// Prepare the EPIC ProgPow kernel source by injecting the progPowLoop function.
-/// Replaces PROGPOW_INCLUDE_PROGPOW_LOOP.
+/// Prepare the EPIC ProgPow kernel source by injecting inline random math
+/// and data load code. Replaces PROGPOW_INCLUDE_RANDOM_MATH and
+/// PROGPOW_INCLUDE_DATA_LOADS. Also replaces PROGPOW_INCLUDE_PROGPOW_LOOP
+/// (for backward compat — emits nothing since the loop is now inline in the kernel).
 pub fn prepare_epic_progpow_kernel_source(
     base_source: &str,
     block_height: u64,
 ) -> String {
-    let loop_code = gen_epic_progpow_loop(&EPIC_PROGPOW_PARAMS, block_height);
-    base_source.replace("PROGPOW_INCLUDE_PROGPOW_LOOP", &loop_code)
+    let random_math = gen_epic_progpow_random_math(&EPIC_PROGPOW_PARAMS, block_height);
+    let data_loads = gen_epic_progpow_data_loads(&EPIC_PROGPOW_PARAMS, block_height);
+
+    base_source
+        .replace("PROGPOW_INCLUDE_PROGPOW_LOOP", "")
+        .replace("PROGPOW_INCLUDE_RANDOM_MATH", &random_math)
+        .replace("PROGPOW_INCLUDE_DATA_LOADS", &data_loads)
 }
 
 /// Prepare the KawPow kernel source for a specific ProgPow variant.

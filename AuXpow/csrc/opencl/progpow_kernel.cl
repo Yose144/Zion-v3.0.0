@@ -316,7 +316,28 @@ __kernel void ethash_search(
         #pragma unroll 1
         for (uint32_t l = 0; l < PROGPOW_CNT_DAG; l++)
 		{
-            progPowLoop(l, mix, g_dag, c_dag, share[0].uint64s, hack_false);
+            // Global load — broadcast mix[0] from lane (l % PROGPOW_LANES)
+            // to all lanes in the hash group via share+barrier.
+            // (USE_AMD_BPERMUTE is disabled on SMOS — ds_bpermute hangs.)
+            if(lane_id == (l % PROGPOW_LANES))
+                share[group_id].uint64s[0] = mix[0];
+            barrier(CLK_LOCAL_MEM_FENCE);
+            uint32_t offset = share[group_id].uint64s[0];
+            offset %= PROGPOW_DAG_ELEMENTS;
+            offset = offset * PROGPOW_LANES + (lane_id ^ l) % PROGPOW_LANES;
+            dag_t data_dag = g_dag[offset];
+
+            // hack to prevent compiler from reordering LD and usage
+            if (hack_false) barrier(CLK_LOCAL_MEM_FENCE);
+
+            uint32_t data;
+            PROGPOW_INCLUDE_RANDOM_MATH
+
+            // consume global load data
+            // hack to prevent compiler from reordering LD and usage
+            if (hack_false) barrier(CLK_LOCAL_MEM_FENCE);
+
+            PROGPOW_INCLUDE_DATA_LOADS
 		}
 
         // Reduce mix data to a per-lane 32-bit digest
