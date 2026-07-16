@@ -5106,6 +5106,14 @@ def get_revenue_dashboard() -> dict:
         ("EPIC", "progpow",     "de.epicmine.io:3334"),
         ("QUAI", "kawpow",      "quai.2miners.com:4848"),
         ("BEAM", "beamhash",    "beam.2miners.com:5252"),
+        ("KLS",  "karlsenhash", "karlsen.2miners.com:4232"),
+        ("ZCL",  "equihashzero","zcl.2miners.com:2020"),
+        ("QTC",  "qhash",       "qtc.2miners.com:8888"),
+        ("VTC",  "verthash",    "vtc.2miners.com:9232"),
+        ("IRON", "fishhash",    "iron.2miners.com:4444"),
+        ("NEXA", "nexapow",     "nexa.2miners.com:7272"),
+        ("RTM",  "ghostrider",  "rtm.2miners.com:6464"),
+        ("DNX",  "dynexsolve",  "dnx.2miners.com:4848"),
     ]
     current_coin = auxpow.get("current_coin", "")
     coin_revenue = []
@@ -5215,7 +5223,7 @@ def get_revenue_dashboard() -> dict:
         "next_distribution_ts": None,  # no scheduled next — PPLNS pays per block
         "distribution_cycle": "Per-block (PPLNS)",
         "accumulated_usd": round(total_usd, 6),
-        "active_coins": [c[0] for c in SUPPORTED_COINS],  # 15 supported coins (PRL removed v3.0.6)
+        "active_coins": [c[0] for c in SUPPORTED_COINS],  # 23 supported coins (PRL removed v3.0.6, 8 new added)
         "coin_revenue": coin_revenue,
         "distributions": distributions,
         # Stream profit (Deeksha Chv3 pipeline weights)
@@ -5347,6 +5355,7 @@ AUXPOW_SUPPORTED_COINS = [
     "DCR", "ALPH", "KAS", "ERG", "RVN", "ETC",
     "EVR", "MEWC", "FLUX", "CLORE", "XMR", "VRSC",
     "EPIC", "PRL", "QUAI", "BEAM",
+    "KLS", "ZCL", "QTC", "VTC", "IRON", "NEXA", "RTM", "DNX",
 ]
 
 AUXPOW_POOL_PREFERENCES = ["default", "nicehash", "herominers", "zpool"]

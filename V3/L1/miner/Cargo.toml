@@ -72,6 +72,7 @@ hex = "0.4"
 base64 = "0.22"
 ocl = { version = "0.19", optional = true }
 serde_json.workspace = true
+serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["rt-multi-thread", "time", "sync"] }
 zion-core = { path = "../core" }
 zion-pool = { path = "../pool" }

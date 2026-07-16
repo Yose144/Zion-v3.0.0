@@ -128,6 +128,12 @@ impl ExternalCoin {
             Self::BEAM => {
                 StratumProtocol::BeamStratum
             }
+            // New coins — all use standard Stratum v1 except ZCL (Equihash).
+            Self::KLS | Self::QTC | Self::VTC | Self::IRON
+            | Self::NEXA | Self::RTM | Self::DNX => {
+                StratumProtocol::Stratum
+            }
+            Self::ZCL => StratumProtocol::ZcashStratum,
         }
     }
 

@@ -28,6 +28,14 @@ pub enum ExternalCoin {
     PRL,
     QUAI,
     BEAM,
+    KLS,
+    ZCL,
+    QTC,
+    VTC,
+    IRON,
+    NEXA,
+    RTM,
+    DNX,
 }
 
 impl ExternalCoin {
@@ -49,6 +57,14 @@ impl ExternalCoin {
             Self::PRL => "PRL",
             Self::QUAI => "QUAI",
             Self::BEAM => "BEAM",
+            Self::KLS => "KLS",
+            Self::ZCL => "ZCL",
+            Self::QTC => "QTC",
+            Self::VTC => "VTC",
+            Self::IRON => "IRON",
+            Self::NEXA => "NEXA",
+            Self::RTM => "RTM",
+            Self::DNX => "DNX",
         }
     }
 
@@ -70,6 +86,14 @@ impl ExternalCoin {
             Self::PRL => "pearlhash",
             Self::QUAI => "kawpow",
             Self::BEAM => "beamhash",
+            Self::KLS => "karlsenhash",
+            Self::ZCL => "equihashzero",
+            Self::QTC => "qhash",
+            Self::VTC => "verthash",
+            Self::IRON => "fishhash",
+            Self::NEXA => "nexapow",
+            Self::RTM => "ghostrider",
+            Self::DNX => "dynexsolve",
         }
     }
 
@@ -99,6 +123,14 @@ impl ExternalCoin {
             "prl" | "pearl" => Some(Self::PRL),
             "quai" | "quainetwork" => Some(Self::QUAI),
             "beam" => Some(Self::BEAM),
+            "kls" | "karlsen" => Some(Self::KLS),
+            "zcl" | "zclassic" => Some(Self::ZCL),
+            "qtc" | "qubitcoin" => Some(Self::QTC),
+            "vtc" | "vertcoin" => Some(Self::VTC),
+            "iron" | "ironfish" => Some(Self::IRON),
+            "nexa" => Some(Self::NEXA),
+            "rtm" | "raptoreum" => Some(Self::RTM),
+            "dnx" | "dynex" => Some(Self::DNX),
             _ => None,
         }
     }
@@ -121,6 +153,14 @@ impl ExternalCoin {
             Self::PRL => "prl.2miners.com:1818",
             Self::QUAI => "quaikawpow.2miners.com:4545",
             Self::BEAM => "beam.2miners.com:5252",
+            Self::KLS => "woolypooly.com:3132",
+            Self::ZCL => "equihash192.eu.mine.zpool.ca:2144",
+            Self::QTC => "qtc.suprnova.cc:5555",
+            Self::VTC => "woolypooly.com:3102",
+            Self::IRON => "de.ironfish.herominers.com:1145",
+            Self::NEXA => "nexa.2miners.com:5050",
+            Self::RTM => "ghostrider.eu.mine.zpool.ca:5354",
+            Self::DNX => "dynex.herominers.com:1030",
         }
     }
 
@@ -131,12 +171,13 @@ impl ExternalCoin {
             self,
             Self::KAS | Self::ERG | Self::RVN | Self::ETC
                 | Self::EVR | Self::MEWC | Self::QUAI | Self::BEAM
+                | Self::ZCL | Self::NEXA | Self::RTM
         )
     }
 
     /// Whether this coin's default pool is on zpool (requires c=BTC password).
     pub fn is_zpool(self) -> bool {
-        matches!(self, Self::EVR | Self::MEWC)
+        matches!(self, Self::EVR | Self::MEWC | Self::ZCL | Self::NEXA | Self::RTM)
     }
 
     pub fn all() -> &'static [ExternalCoin] {
@@ -157,6 +198,14 @@ impl ExternalCoin {
             Self::PRL,
             Self::QUAI,
             Self::BEAM,
+            Self::KLS,
+            Self::ZCL,
+            Self::QTC,
+            Self::VTC,
+            Self::IRON,
+            Self::NEXA,
+            Self::RTM,
+            Self::DNX,
         ]
     }
 
@@ -280,6 +329,14 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
         // RTX 4090: ~$4.33/day profit at 125 Th/s. Normalized per 100 MH/s
         // equivalent: very high revenue, moderate power (GPU MatMul).
         ProfitEntry { coin: ExternalCoin::PRL, revenue_per_day_usd: 4.33, power_cost_usd: 0.67 },
+        ProfitEntry { coin: ExternalCoin::KLS, revenue_per_day_usd: 0.21, power_cost_usd: 0.22 },
+        ProfitEntry { coin: ExternalCoin::ZCL, revenue_per_day_usd: 0.20, power_cost_usd: 0.26 },
+        ProfitEntry { coin: ExternalCoin::QTC, revenue_per_day_usd: 0.10, power_cost_usd: 0.26 },
+        ProfitEntry { coin: ExternalCoin::VTC, revenue_per_day_usd: 0.04, power_cost_usd: 0.26 },
+        ProfitEntry { coin: ExternalCoin::IRON, revenue_per_day_usd: 0.04, power_cost_usd: 0.26 },
+        ProfitEntry { coin: ExternalCoin::NEXA, revenue_per_day_usd: 0.03, power_cost_usd: 0.24 },
+        ProfitEntry { coin: ExternalCoin::RTM, revenue_per_day_usd: 0.03, power_cost_usd: 0.24 },
+        ProfitEntry { coin: ExternalCoin::DNX, revenue_per_day_usd: 0.02, power_cost_usd: 0.22 },
     ]
 }
 
@@ -667,5 +724,137 @@ mod tests {
         let est = fallback_estimates();
         assert!(!est.is_empty());
         assert!(est.len() >= 11);
+    }
+
+    // ── New coin (KLS, ZCL, QTC, VTC, IRON, NEXA, RTM, DNX) tests ───────
+
+    #[test]
+    fn from_str_loose_parses_kls() {
+        assert_eq!(ExternalCoin::from_str_loose("kls"), Some(ExternalCoin::KLS));
+        assert_eq!(ExternalCoin::from_str_loose("KLS"), Some(ExternalCoin::KLS));
+        assert_eq!(ExternalCoin::from_str_loose("karlsen"), Some(ExternalCoin::KLS));
+    }
+
+    #[test]
+    fn from_str_loose_parses_zcl() {
+        assert_eq!(ExternalCoin::from_str_loose("zcl"), Some(ExternalCoin::ZCL));
+        assert_eq!(ExternalCoin::from_str_loose("ZCL"), Some(ExternalCoin::ZCL));
+        assert_eq!(ExternalCoin::from_str_loose("zclassic"), Some(ExternalCoin::ZCL));
+    }
+
+    #[test]
+    fn from_str_loose_parses_qtc() {
+        assert_eq!(ExternalCoin::from_str_loose("qtc"), Some(ExternalCoin::QTC));
+        assert_eq!(ExternalCoin::from_str_loose("QTC"), Some(ExternalCoin::QTC));
+        assert_eq!(ExternalCoin::from_str_loose("qubitcoin"), Some(ExternalCoin::QTC));
+    }
+
+    #[test]
+    fn from_str_loose_parses_vtc() {
+        assert_eq!(ExternalCoin::from_str_loose("vtc"), Some(ExternalCoin::VTC));
+        assert_eq!(ExternalCoin::from_str_loose("VTC"), Some(ExternalCoin::VTC));
+        assert_eq!(ExternalCoin::from_str_loose("vertcoin"), Some(ExternalCoin::VTC));
+    }
+
+    #[test]
+    fn from_str_loose_parses_iron() {
+        assert_eq!(ExternalCoin::from_str_loose("iron"), Some(ExternalCoin::IRON));
+        assert_eq!(ExternalCoin::from_str_loose("IRON"), Some(ExternalCoin::IRON));
+        assert_eq!(ExternalCoin::from_str_loose("ironfish"), Some(ExternalCoin::IRON));
+    }
+
+    #[test]
+    fn from_str_loose_parses_nexa() {
+        assert_eq!(ExternalCoin::from_str_loose("nexa"), Some(ExternalCoin::NEXA));
+        assert_eq!(ExternalCoin::from_str_loose("NEXA"), Some(ExternalCoin::NEXA));
+    }
+
+    #[test]
+    fn from_str_loose_parses_rtm() {
+        assert_eq!(ExternalCoin::from_str_loose("rtm"), Some(ExternalCoin::RTM));
+        assert_eq!(ExternalCoin::from_str_loose("RTM"), Some(ExternalCoin::RTM));
+        assert_eq!(ExternalCoin::from_str_loose("raptoreum"), Some(ExternalCoin::RTM));
+    }
+
+    #[test]
+    fn from_str_loose_parses_dnx() {
+        assert_eq!(ExternalCoin::from_str_loose("dnx"), Some(ExternalCoin::DNX));
+        assert_eq!(ExternalCoin::from_str_loose("DNX"), Some(ExternalCoin::DNX));
+        assert_eq!(ExternalCoin::from_str_loose("dynex"), Some(ExternalCoin::DNX));
+    }
+
+    #[test]
+    fn new_coin_algorithms() {
+        assert_eq!(ExternalCoin::KLS.algorithm(), "karlsenhash");
+        assert_eq!(ExternalCoin::ZCL.algorithm(), "equihashzero");
+        assert_eq!(ExternalCoin::QTC.algorithm(), "qhash");
+        assert_eq!(ExternalCoin::VTC.algorithm(), "verthash");
+        assert_eq!(ExternalCoin::IRON.algorithm(), "fishhash");
+        assert_eq!(ExternalCoin::NEXA.algorithm(), "nexapow");
+        assert_eq!(ExternalCoin::RTM.algorithm(), "ghostrider");
+        assert_eq!(ExternalCoin::DNX.algorithm(), "dynexsolve");
+    }
+
+    #[test]
+    fn new_coin_tickers() {
+        assert_eq!(ExternalCoin::KLS.ticker(), "KLS");
+        assert_eq!(ExternalCoin::ZCL.ticker(), "ZCL");
+        assert_eq!(ExternalCoin::QTC.ticker(), "QTC");
+        assert_eq!(ExternalCoin::VTC.ticker(), "VTC");
+        assert_eq!(ExternalCoin::IRON.ticker(), "IRON");
+        assert_eq!(ExternalCoin::NEXA.ticker(), "NEXA");
+        assert_eq!(ExternalCoin::RTM.ticker(), "RTM");
+        assert_eq!(ExternalCoin::DNX.ticker(), "DNX");
+    }
+
+    #[test]
+    fn new_coin_is_zpool() {
+        assert!(ExternalCoin::ZCL.is_zpool());
+        assert!(ExternalCoin::NEXA.is_zpool());
+        assert!(ExternalCoin::RTM.is_zpool());
+        assert!(!ExternalCoin::KLS.is_zpool());
+        assert!(!ExternalCoin::QTC.is_zpool());
+        assert!(!ExternalCoin::VTC.is_zpool());
+        assert!(!ExternalCoin::IRON.is_zpool());
+        assert!(!ExternalCoin::DNX.is_zpool());
+    }
+
+    #[test]
+    fn new_coin_supports_btc_payout() {
+        assert!(ExternalCoin::ZCL.supports_btc_payout());
+        assert!(ExternalCoin::NEXA.supports_btc_payout());
+        assert!(ExternalCoin::RTM.supports_btc_payout());
+        assert!(!ExternalCoin::KLS.supports_btc_payout());
+        assert!(!ExternalCoin::QTC.supports_btc_payout());
+        assert!(!ExternalCoin::VTC.supports_btc_payout());
+        assert!(!ExternalCoin::IRON.supports_btc_payout());
+        assert!(!ExternalCoin::DNX.supports_btc_payout());
+    }
+
+    #[test]
+    fn new_coin_default_pools() {
+        assert_eq!(ExternalCoin::KLS.default_pool(), "woolypooly.com:3132");
+        assert_eq!(ExternalCoin::ZCL.default_pool(), "equihash192.eu.mine.zpool.ca:2144");
+        assert_eq!(ExternalCoin::QTC.default_pool(), "qtc.suprnova.cc:5555");
+        assert_eq!(ExternalCoin::VTC.default_pool(), "woolypooly.com:3102");
+        assert_eq!(ExternalCoin::IRON.default_pool(), "de.ironfish.herominers.com:1145");
+        assert_eq!(ExternalCoin::NEXA.default_pool(), "nexa.2miners.com:5050");
+        assert_eq!(ExternalCoin::RTM.default_pool(), "ghostrider.eu.mine.zpool.ca:5354");
+        assert_eq!(ExternalCoin::DNX.default_pool(), "dynex.herominers.com:1030");
+    }
+
+    #[test]
+    fn new_coin_all_array_complete() {
+        let all = ExternalCoin::all();
+        // 16 original + 8 new = 24
+        assert_eq!(all.len(), 24);
+        assert!(all.contains(&ExternalCoin::KLS));
+        assert!(all.contains(&ExternalCoin::ZCL));
+        assert!(all.contains(&ExternalCoin::QTC));
+        assert!(all.contains(&ExternalCoin::VTC));
+        assert!(all.contains(&ExternalCoin::IRON));
+        assert!(all.contains(&ExternalCoin::NEXA));
+        assert!(all.contains(&ExternalCoin::RTM));
+        assert!(all.contains(&ExternalCoin::DNX));
     }
 }

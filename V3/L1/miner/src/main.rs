@@ -6,7 +6,7 @@
 use anyhow::{anyhow, Context, Result};
 use std::collections::VecDeque;
 use std::fmt::Write as _;
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -25,6 +25,55 @@ mod parallel;
 mod ui;
 
 use interactive::{HashrateTracker, MinerControl, TUI_ACTIVE};
+
+// ── Crash protection: signal handler for SIGABRT/SIGSEGV ──────────────────
+// AMD OpenCL driver crashes on Linux manifest as SIGABRT (exit 134) or
+// SIGSEGV (exit 139). We install a handler that logs the crash to a file
+// so the watchdog script can detect it and restart the miner.
+#[cfg(unix)]
+mod crash_handler {
+    use std::os::raw::c_int;
+
+    const SIGABRT: c_int = 6;
+    const SIGSEGV: c_int = 11;
+    const SIG_DFL: usize = 0;
+
+    extern "C" {
+        fn signal(signum: c_int, handler: usize) -> usize;
+        fn raise(signum: c_int) -> c_int;
+    }
+
+    extern "C" fn handler(sig: c_int) {
+        let crash_file = std::env::var("ZION_CRASH_LOG")
+            .unwrap_or_else(|_| "/tmp/zion-miner-crash.log".to_string());
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        let msg = format!(
+            "CRASH signal={} pid={} timestamp={}\n",
+            sig, std::process::id(), timestamp,
+        );
+        let _ = std::fs::write(&crash_file, &msg);
+        eprintln!("[CRASH] signal={} — miner will exit. Watchdog should restart.", sig);
+        unsafe {
+            signal(sig, SIG_DFL);
+            raise(sig);
+        }
+    }
+
+    pub fn install() {
+        unsafe {
+            signal(SIGABRT, handler as *const () as usize);
+            signal(SIGSEGV, handler as *const () as usize);
+        }
+    }
+}
+
+#[cfg(not(unix))]
+mod crash_handler {
+    pub fn install() {}
+}
 
 fn flush_stdout() {
     use std::io::Write;
@@ -707,6 +756,9 @@ fn format_hashrate(hps: f64) -> String {
 }
 
 fn main() -> Result<()> {
+    // Install crash handler (SIGABRT/SIGSEGV from AMD OpenCL driver)
+    crash_handler::install();
+
     // Enable verbose logging via env var or --verbose flag
     if std::env::var("ZION_MINER_VERBOSE").map(|v| v == "1" || v == "true").unwrap_or(false)
         || std::env::args().any(|a| a == "--verbose")
@@ -1659,6 +1711,120 @@ fn run_local_session(
     })
 }
 
+// ── Pool stream config fetch (dynamic config from pool HTTP API) ──────────
+
+/// Simplified stream config snapshot received from the pool's HTTP API.
+#[derive(Debug, Clone, serde::Deserialize)]
+struct PoolStreamConfig {
+    gpu: PoolGpuStreamConfig,
+    cpu: PoolCpuStreamConfig,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct PoolGpuStreamConfig {
+    enabled: bool,
+    #[serde(default)]
+    coin: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct PoolCpuStreamConfig {
+    enabled: bool,
+    #[serde(default)]
+    coin: String,
+}
+
+/// Fetch the pool's stream config via HTTP GET `/api/v1/config/streams`.
+/// API address from ZION_POOL_API_ADDR env var, or derived from stratum
+/// address by adding 11 to the port (8444 → 8455, Edge convention).
+/// Returns None if unreachable (non-fatal, falls back to env vars).
+fn fetch_pool_stream_config(pool_addr: &str) -> Option<PoolStreamConfig> {
+    let api_addr = std::env::var("ZION_POOL_API_ADDR")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| {
+            if let Some(colon) = pool_addr.rfind(':') {
+                let host = &pool_addr[..colon];
+                if let Ok(port) = pool_addr[colon + 1..].parse::<u16>() {
+                    format!("{}:{}", host, port.saturating_add(11))
+                } else {
+                    format!("{}:8455", host)
+                }
+            } else {
+                format!("{}:8455", pool_addr)
+            }
+        });
+
+    let socket_addrs: Vec<std::net::SocketAddr> = std::net::ToSocketAddrs::to_socket_addrs(&api_addr)
+        .ok()?
+        .collect();
+    if socket_addrs.is_empty() { return None; }
+
+    let mut stream = match std::net::TcpStream::connect_timeout(
+        &socket_addrs[0],
+        std::time::Duration::from_secs(3),
+    ) {
+        Ok(s) => s,
+        Err(_) => return None,
+    };
+
+    let request = format!(
+        "GET /api/v1/config/streams HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
+        api_addr
+    );
+    if stream.write_all(request.as_bytes()).is_err() { return None; }
+
+    let mut response = Vec::new();
+    let mut buf = [0u8; 4096];
+    loop {
+        match stream.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => response.extend_from_slice(&buf[..n]),
+            Err(_) => break,
+        }
+        if response.len() > 65536 { break; }
+    }
+
+    let response_str = String::from_utf8_lossy(&response);
+    let body_start = response_str.find("\r\n\r\n").map(|p| p + 4)
+        .or_else(|| response_str.find("\n\n").map(|p| p + 2))?;
+    let body = &response_str[body_start..];
+
+    serde_json::from_str::<PoolStreamConfig>(body).ok()
+}
+
+/// Periodically poll the pool's stream config and log changes.
+fn spawn_pool_config_poller(pool_addr: String, stop_flag: std::sync::Arc<std::sync::atomic::AtomicBool>) {
+    let poll_interval = std::env::var("ZION_POOL_CONFIG_POLL_SECS")
+        .ok().and_then(|v| v.parse::<u64>().ok()).unwrap_or(30);
+
+    std::thread::spawn(move || {
+        let mut last_gpu_enabled: Option<bool> = None;
+        let mut last_gpu_coin: Option<String> = None;
+        let mut last_cpu_enabled: Option<bool> = None;
+        let mut last_cpu_coin: Option<String> = None;
+
+        while !stop_flag.load(std::sync::atomic::Ordering::Relaxed) {
+            if let Some(cfg) = fetch_pool_stream_config(&pool_addr) {
+                let gpu_coin = cfg.gpu.coin.clone().unwrap_or_else(|| "auto".to_string());
+                let changed = last_gpu_enabled != Some(cfg.gpu.enabled)
+                    || last_gpu_coin.as_deref() != Some(gpu_coin.as_str())
+                    || last_cpu_enabled != Some(cfg.cpu.enabled)
+                    || last_cpu_coin.as_deref() != Some(cfg.cpu.coin.as_str());
+                if changed {
+                    println!("[{}] pool_config_update gpu_enabled={} gpu_coin={} cpu_enabled={} cpu_coin={}",
+                        log_timestamp(), cfg.gpu.enabled, gpu_coin, cfg.cpu.enabled, cfg.cpu.coin);
+                    last_gpu_enabled = Some(cfg.gpu.enabled);
+                    last_gpu_coin = Some(gpu_coin);
+                    last_cpu_enabled = Some(cfg.cpu.enabled);
+                    last_cpu_coin = Some(cfg.cpu.coin.clone());
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_secs(poll_interval));
+        }
+    });
+}
+
 #[allow(unused_assignments)] // gpu_available / current_algorithm carry fallback state
 fn run_remote_session(
     config: &MinerConfig,
@@ -1676,6 +1842,35 @@ fn run_remote_session(
     let mut telemetry = SessionTelemetry::new(config.metrics_report_every_secs);
     let mut threads = config.threads;
     let mut remote_nonce_window = config.nonce_count;
+
+    // ── Fetch pool stream config (dynamic auto-configuration) ──────────
+    let mut stream2_enabled = config.stream2_enabled;
+    let mut stream3_enabled = config.stream3_enabled;
+
+    if let Some(pool_cfg) = fetch_pool_stream_config(pool_addr) {
+        println!(
+            "[{}] pool_config_received gpu_enabled={} gpu_coin={} cpu_enabled={} cpu_coin={}",
+            log_timestamp(),
+            pool_cfg.gpu.enabled,
+            pool_cfg.gpu.coin.as_deref().unwrap_or("auto"),
+            pool_cfg.cpu.enabled,
+            pool_cfg.cpu.coin,
+        );
+        if config.stream2_enabled && !pool_cfg.gpu.enabled {
+            println!("[{}] pool_config_override stream2=disabled (pool GPU stream disabled)", log_timestamp());
+            stream2_enabled = false;
+        }
+        if config.stream3_enabled && !pool_cfg.cpu.enabled {
+            println!("[{}] pool_config_override stream3=disabled (pool CPU stream disabled)", log_timestamp());
+            stream3_enabled = false;
+        }
+    } else {
+        println!("[{}] pool_config_unreachable — using env-var stream config (stream2={} stream3={})",
+            log_timestamp(), stream2_enabled, stream3_enabled);
+    }
+
+    let config_stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    spawn_pool_config_poller(pool_addr.to_string(), std::sync::Arc::clone(&config_stop));
 
     // ── Read initial algorithm from interactive control ──
     let initial_algorithm = {
@@ -1723,7 +1918,7 @@ fn run_remote_session(
     } else {
         config.gpu_backend
     };
-    let stream2_effective = config.stream2_enabled && gpu_safe;
+    let stream2_effective = stream2_enabled && gpu_safe;
 
     // ── GPU backend init (TriGpuManager — 3-stream Claymore-style) ──
     // Primary (Deeksha) is created immediately. Pearl + secondary are
@@ -1802,7 +1997,7 @@ fn run_remote_session(
         gpu_available,
         config.gpu_backend,
         effective_gpu_backend,
-        config.stream2_enabled,
+        stream2_enabled,
         stream2_effective,
         dual_gpu_enabled
     );
@@ -1828,7 +2023,7 @@ fn run_remote_session(
     // Receives CPU-only external jobs via channel, mines continuously.
     let (ext_cpu_tx, ext_cpu_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
     let (ext_cpu_share_tx, ext_cpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
-    if config.stream3_enabled {
+    if stream3_enabled {
         let ext_cpu_threads = config.threads.max(1);
         let ext_cpu_nonce_count = config.verushash_nonce_count;
         let hashrate_ext_cpu = Arc::clone(hashrate);
@@ -2401,6 +2596,9 @@ fn run_remote_session(
         false,
         "complete",
     );
+
+    // Stop the pool config poller thread
+    config_stop.store(true, std::sync::atomic::Ordering::Relaxed);
 
     Ok(SessionOutcome {
         last_job_id,

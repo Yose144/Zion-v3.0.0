@@ -79,6 +79,22 @@ pub enum ExternalCoin {
     QUAI,
     /// Beam — BeamHash III (Equihash 150,5). GPU coin. BeamStratum (TLS) over 2miners.
     BEAM,
+    /// Karlsen — KarlsenHash. GPU coin. WoolyPooly.
+    KLS,
+    /// Zclassic — EquihashZero (Equihash 192,7). GPU coin. ZPool.
+    ZCL,
+    /// Qubitcoin — Qhash. GPU coin. Suprnova.
+    QTC,
+    /// Vertcoin — Verthash. GPU coin. WoolyPooly.
+    VTC,
+    /// IronFish — FishHash. GPU coin. HeroMiners.
+    IRON,
+    /// Nexa — NexaPow. GPU coin. 2miners.
+    NEXA,
+    /// Raptoreum — GhostRider. GPU coin. ZPool.
+    RTM,
+    /// Dynex — DynexSolve. GPU coin. HeroMiners.
+    DNX,
 }
 
 impl ExternalCoin {
@@ -101,6 +117,14 @@ impl ExternalCoin {
             Self::EPIC => "EPIC",
             Self::QUAI => "QUAI",
             Self::BEAM => "BEAM",
+            Self::KLS => "KLS",
+            Self::ZCL => "ZCL",
+            Self::QTC => "QTC",
+            Self::VTC => "VTC",
+            Self::IRON => "IRON",
+            Self::NEXA => "NEXA",
+            Self::RTM => "RTM",
+            Self::DNX => "DNX",
         }
     }
 
@@ -123,6 +147,14 @@ impl ExternalCoin {
             Self::EPIC => "progpow",
             Self::QUAI => "kawpow",
             Self::BEAM => "beamhash",
+            Self::KLS => "karlsenhash",
+            Self::ZCL => "equihashzero",
+            Self::QTC => "qhash",
+            Self::VTC => "verthash",
+            Self::IRON => "fishhash",
+            Self::NEXA => "nexapow",
+            Self::RTM => "ghostrider",
+            Self::DNX => "dynexsolve",
         }
     }
 
@@ -157,6 +189,14 @@ impl ExternalCoin {
             "epic" | "epiccash" => Some(Self::EPIC),
             "quai" | "quainetwork" => Some(Self::QUAI),
             "beam" => Some(Self::BEAM),
+            "kls" | "karlsen" | "karlsenhash" => Some(Self::KLS),
+            "zcl" | "zclassic" | "equihashzero" => Some(Self::ZCL),
+            "qtc" | "qubitcoin" | "qhash" => Some(Self::QTC),
+            "vtc" | "vertcoin" | "verthash" => Some(Self::VTC),
+            "iron" | "ironfish" | "fishhash" => Some(Self::IRON),
+            "nexa" | "nexapow" => Some(Self::NEXA),
+            "rtm" | "raptoreum" | "ghostrider" => Some(Self::RTM),
+            "dnx" | "dynex" | "dynexsolve" => Some(Self::DNX),
             _ => None,
         }
     }
@@ -181,6 +221,14 @@ impl ExternalCoin {
             Self::EPIC => "de.epicmine.io:3334",
             Self::QUAI => "quai.2miners.com:4848",
             Self::BEAM => "beam.2miners.com:5252",
+            Self::KLS => "woolypooly.com:3132",
+            Self::ZCL => "equihash192.eu.mine.zpool.ca:2144",
+            Self::QTC => "qtc.suprnova.cc:5555",
+            Self::VTC => "woolypooly.com:3102",
+            Self::IRON => "de.ironfish.herominers.com:1145",
+            Self::NEXA => "nexa.2miners.com:5050",
+            Self::RTM => "ghostrider.eu.mine.zpool.ca:5354",
+            Self::DNX => "dynex.herominers.com:1030",
         }
     }
 
@@ -214,6 +262,8 @@ impl ExternalCoin {
             Self::ALPH => ("alephium", 1220),
             Self::ERG => ("ergo", 1180),
             Self::RVN => ("ravencoin", 1140),
+            Self::IRON => ("ironfish", 1145),
+            Self::DNX => ("dynex", 1030),
             _ => return None,
         };
 
@@ -235,6 +285,8 @@ impl ExternalCoin {
         let (algo, port): (&str, u16) = match self {
             Self::EVR => ("evrprogpow", 1330),
             Self::MEWC => ("meowpow", 1327),
+            Self::ZCL => ("equihash192", 2144),
+            Self::RTM => ("ghostrider", 5354),
             _ => return None,
         };
         let zp_region = match region.to_ascii_lowercase().as_str() {
@@ -298,6 +350,14 @@ impl ExternalCoin {
             Self::EPIC => StratumProtocol::EpicStratum,
             Self::QUAI => StratumProtocol::EthStratum,
             Self::BEAM => StratumProtocol::BeamStratum,
+            Self::KLS => StratumProtocol::Stratum,
+            Self::ZCL => StratumProtocol::ZcashStratum,
+            Self::QTC => StratumProtocol::Stratum,
+            Self::VTC => StratumProtocol::Stratum,
+            Self::IRON => StratumProtocol::Stratum,
+            Self::NEXA => StratumProtocol::Stratum,
+            Self::RTM => StratumProtocol::Stratum,
+            Self::DNX => StratumProtocol::Stratum,
         }
     }
 
@@ -320,6 +380,14 @@ impl ExternalCoin {
             Self::EPIC,
             Self::QUAI,
             Self::BEAM,
+            Self::KLS,
+            Self::ZCL,
+            Self::QTC,
+            Self::VTC,
+            Self::IRON,
+            Self::NEXA,
+            Self::RTM,
+            Self::DNX,
         ]
     }
 
@@ -345,6 +413,14 @@ impl ExternalCoin {
             Self::EPIC => RevenueSource::ProgPowExternal,
             Self::QUAI => RevenueSource::KawPowExternal,
             Self::BEAM => RevenueSource::BeamHashExternal,
+            Self::KLS => RevenueSource::KarlsenHashExternal,
+            Self::ZCL => RevenueSource::EquihashZeroExternal,
+            Self::QTC => RevenueSource::QhashExternal,
+            Self::VTC => RevenueSource::VerthashExternal,
+            Self::IRON => RevenueSource::FishHashExternal,
+            Self::NEXA => RevenueSource::NexaPowExternal,
+            Self::RTM => RevenueSource::GhostRiderExternal,
+            Self::DNX => RevenueSource::DynexSolveExternal,
         }
     }
 }

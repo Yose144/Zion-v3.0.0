@@ -357,6 +357,14 @@ fn revenue_source_to_external_coin(source: RevenueSource) -> Option<ExternalCoin
         RevenueSource::ProgPowExternal => Some(ExternalCoin::EPIC),
         RevenueSource::PearlExternal => Some(ExternalCoin::PRL),
         RevenueSource::BeamHashExternal => Some(ExternalCoin::BEAM),
+        RevenueSource::KarlsenHashExternal => Some(ExternalCoin::KLS),
+        RevenueSource::EquihashZeroExternal => Some(ExternalCoin::ZCL),
+        RevenueSource::QhashExternal => Some(ExternalCoin::QTC),
+        RevenueSource::VerthashExternal => Some(ExternalCoin::VTC),
+        RevenueSource::FishHashExternal => Some(ExternalCoin::IRON),
+        RevenueSource::NexaPowExternal => Some(ExternalCoin::NEXA),
+        RevenueSource::GhostRiderExternal => Some(ExternalCoin::RTM),
+        RevenueSource::DynexSolveExternal => Some(ExternalCoin::DNX),
         _ => None,
     }
 }
@@ -378,6 +386,14 @@ fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
         ExternalCoin::EPIC => RevenueSource::ProgPowExternal,
         ExternalCoin::PRL => RevenueSource::PearlExternal,
         ExternalCoin::BEAM => RevenueSource::BeamHashExternal,
+        ExternalCoin::KLS => RevenueSource::KarlsenHashExternal,
+        ExternalCoin::ZCL => RevenueSource::EquihashZeroExternal,
+        ExternalCoin::QTC => RevenueSource::QhashExternal,
+        ExternalCoin::VTC => RevenueSource::VerthashExternal,
+        ExternalCoin::IRON => RevenueSource::FishHashExternal,
+        ExternalCoin::NEXA => RevenueSource::NexaPowExternal,
+        ExternalCoin::RTM => RevenueSource::GhostRiderExternal,
+        ExternalCoin::DNX => RevenueSource::DynexSolveExternal,
     }
 }
 
@@ -418,6 +434,14 @@ fn auxpow_to_ch_external_coin(coin: ExternalCoin) -> ChExternalCoin {
         ExternalCoin::PRL => ChExternalCoin::PRL,
         ExternalCoin::QUAI => ChExternalCoin::QUAI,
         ExternalCoin::BEAM => ChExternalCoin::BEAM,
+        ExternalCoin::KLS => ChExternalCoin::KLS,
+        ExternalCoin::ZCL => ChExternalCoin::ZCL,
+        ExternalCoin::QTC => ChExternalCoin::QTC,
+        ExternalCoin::VTC => ChExternalCoin::VTC,
+        ExternalCoin::IRON => ChExternalCoin::IRON,
+        ExternalCoin::NEXA => ChExternalCoin::NEXA,
+        ExternalCoin::RTM => ChExternalCoin::RTM,
+        ExternalCoin::DNX => ChExternalCoin::DNX,
     }
 }
 
@@ -440,6 +464,14 @@ fn ch_to_auxpow_external_coin(coin: ChExternalCoin) -> ExternalCoin {
         ChExternalCoin::EPIC => ExternalCoin::EPIC,
         ChExternalCoin::QUAI => ExternalCoin::QUAI,
         ChExternalCoin::BEAM => ExternalCoin::BEAM,
+        ChExternalCoin::KLS => ExternalCoin::KLS,
+        ChExternalCoin::ZCL => ExternalCoin::ZCL,
+        ChExternalCoin::QTC => ExternalCoin::QTC,
+        ChExternalCoin::VTC => ExternalCoin::VTC,
+        ChExternalCoin::IRON => ExternalCoin::IRON,
+        ChExternalCoin::NEXA => ExternalCoin::NEXA,
+        ChExternalCoin::RTM => ExternalCoin::RTM,
+        ChExternalCoin::DNX => ExternalCoin::DNX,
     }
 }
 
@@ -458,6 +490,14 @@ fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
         ExternalCoin::EPIC => "progpow",
         ExternalCoin::PRL => "pearlhash",
         ExternalCoin::BEAM => "beamhash",
+        ExternalCoin::KLS => "karlsenhash",
+        ExternalCoin::ZCL => "equihashzero",
+        ExternalCoin::QTC => "qhash",
+        ExternalCoin::VTC => "verthash",
+        ExternalCoin::IRON => "fishhash",
+        ExternalCoin::NEXA => "nexapow",
+        ExternalCoin::RTM => "ghostrider",
+        ExternalCoin::DNX => "dynexsolve",
     }
 }
 
@@ -2433,6 +2473,14 @@ fn handle_client(
                             "EPIC" | "EPICCASH" => RevenueSource::ProgPowExternal,
                             "PRL" | "PEARL" => RevenueSource::PearlExternal,
                             "BEAM" => RevenueSource::BeamHashExternal,
+                            "KLS" => RevenueSource::KarlsenHashExternal,
+                            "ZCL" => RevenueSource::EquihashZeroExternal,
+                            "QTC" => RevenueSource::QhashExternal,
+                            "VTC" => RevenueSource::VerthashExternal,
+                            "IRON" => RevenueSource::FishHashExternal,
+                            "NEXA" => RevenueSource::NexaPowExternal,
+                            "RTM" => RevenueSource::GhostRiderExternal,
+                            "DNX" => RevenueSource::DynexSolveExternal,
                             _ => RevenueSource::Blake3External,
                         };
                         {
@@ -3498,8 +3546,8 @@ struct RoutingStats {
     total_stale: u64,
     group_submits: [u64; 4],
     group_accepted: [u64; 4],
-    source_submits: [u64; 18],
-    source_accepted: [u64; 18],
+    source_submits: [u64; 26],
+    source_accepted: [u64; 26],
 }
 
 enum JobCompletion {
@@ -4185,6 +4233,14 @@ impl RevenueScheduler {
             0,
             default_value_usd,
         )?;
+        push_lane_from_env(&mut lanes, RevenueSource::KarlsenHashExternal, "ZION_STREAM_KARLSENHASH_PCT", "ZION_STREAM_KARLSENHASH_USD", 0, default_value_usd)?;
+        push_lane_from_env(&mut lanes, RevenueSource::EquihashZeroExternal, "ZION_STREAM_EQUIHASHZERO_PCT", "ZION_STREAM_EQUIHASHZERO_USD", 0, default_value_usd)?;
+        push_lane_from_env(&mut lanes, RevenueSource::QhashExternal, "ZION_STREAM_QHASH_PCT", "ZION_STREAM_QHASH_USD", 0, default_value_usd)?;
+        push_lane_from_env(&mut lanes, RevenueSource::VerthashExternal, "ZION_STREAM_VERTHASH_PCT", "ZION_STREAM_VERTHASH_USD", 0, default_value_usd)?;
+        push_lane_from_env(&mut lanes, RevenueSource::FishHashExternal, "ZION_STREAM_FISHHASH_PCT", "ZION_STREAM_FISHHASH_USD", 0, default_value_usd)?;
+        push_lane_from_env(&mut lanes, RevenueSource::NexaPowExternal, "ZION_STREAM_NEXAPOW_PCT", "ZION_STREAM_NEXAPOW_USD", 0, default_value_usd)?;
+        push_lane_from_env(&mut lanes, RevenueSource::GhostRiderExternal, "ZION_STREAM_GHOSTRIDER_PCT", "ZION_STREAM_GHOSTRIDER_USD", 0, default_value_usd)?;
+        push_lane_from_env(&mut lanes, RevenueSource::DynexSolveExternal, "ZION_STREAM_DYNEXSOLVE_PCT", "ZION_STREAM_DYNEXSOLVE_USD", 0, default_value_usd)?;
 
         let total_weight: u32 = lanes.iter().map(|l| l.weight).sum();
         if total_weight == 0 {
@@ -4241,7 +4297,15 @@ impl RevenueScheduler {
                 | RevenueSource::VerusHashExternal
                 | RevenueSource::ProgPowExternal
                 | RevenueSource::PearlExternal
-                | RevenueSource::BeamHashExternal => {
+                | RevenueSource::BeamHashExternal
+                | RevenueSource::KarlsenHashExternal
+                | RevenueSource::EquihashZeroExternal
+                | RevenueSource::QhashExternal
+                | RevenueSource::VerthashExternal
+                | RevenueSource::FishHashExternal
+                | RevenueSource::NexaPowExternal
+                | RevenueSource::GhostRiderExternal
+                | RevenueSource::DynexSolveExternal => {
                     choices.push((SessionGroup::Revenue, lane.weight))
                 }
                 RevenueSource::NclAi => choices.push((SessionGroup::Ncl, lane.weight)),
@@ -4316,6 +4380,14 @@ impl RevenueScheduler {
                                     | RevenueSource::ProgPowExternal
                                     | RevenueSource::PearlExternal
                                     | RevenueSource::BeamHashExternal
+                                    | RevenueSource::KarlsenHashExternal
+                                    | RevenueSource::EquihashZeroExternal
+                                    | RevenueSource::QhashExternal
+                                    | RevenueSource::VerthashExternal
+                                    | RevenueSource::FishHashExternal
+                                    | RevenueSource::NexaPowExternal
+                                    | RevenueSource::GhostRiderExternal
+                                    | RevenueSource::DynexSolveExternal
                             )
                     })
                     .copied()
@@ -4434,8 +4506,8 @@ impl RoutingStats {
             total_stale: 0,
             group_submits: [0; 4],
             group_accepted: [0; 4],
-            source_submits: [0; 18],
-            source_accepted: [0; 18],
+            source_submits: [0; 26],
+            source_accepted: [0; 26],
         }
     }
 
@@ -4516,6 +4588,14 @@ impl RoutingStats {
             RevenueSource::ProgPowExternal,
             RevenueSource::PearlExternal,
             RevenueSource::BeamHashExternal,
+            RevenueSource::KarlsenHashExternal,
+            RevenueSource::EquihashZeroExternal,
+            RevenueSource::QhashExternal,
+            RevenueSource::VerthashExternal,
+            RevenueSource::FishHashExternal,
+            RevenueSource::NexaPowExternal,
+            RevenueSource::GhostRiderExternal,
+            RevenueSource::DynexSolveExternal,
         ] {
             let idx = source_index(source);
             let submits = self.source_submits[idx];
@@ -5083,8 +5163,8 @@ fn build_stats_payload(
     json.to_string()
 }
 
-/// All 18 revenue sources in canonical order (matches `source_index`).
-const ALL_REVENUE_SOURCES: [RevenueSource; 18] = [
+/// All 26 revenue sources in canonical order (matches `source_index`).
+const ALL_REVENUE_SOURCES: [RevenueSource; 26] = [
     RevenueSource::Zion,
     RevenueSource::KeccakBonus,
     RevenueSource::Sha3Bonus,
@@ -5103,6 +5183,14 @@ const ALL_REVENUE_SOURCES: [RevenueSource; 18] = [
     RevenueSource::ProgPowExternal,
     RevenueSource::PearlExternal,
     RevenueSource::BeamHashExternal,
+    RevenueSource::KarlsenHashExternal,
+    RevenueSource::EquihashZeroExternal,
+    RevenueSource::QhashExternal,
+    RevenueSource::VerthashExternal,
+    RevenueSource::FishHashExternal,
+    RevenueSource::NexaPowExternal,
+    RevenueSource::GhostRiderExternal,
+    RevenueSource::DynexSolveExternal,
 ];
 
 /// Build the comprehensive revenue report payload for `/api/v1/revenue/stats`.
@@ -5525,6 +5613,14 @@ fn source_index(source: RevenueSource) -> usize {
         RevenueSource::ProgPowExternal => 15,
         RevenueSource::PearlExternal => 16,
         RevenueSource::BeamHashExternal => 17,
+        RevenueSource::KarlsenHashExternal => 18,
+        RevenueSource::EquihashZeroExternal => 19,
+        RevenueSource::QhashExternal => 20,
+        RevenueSource::VerthashExternal => 21,
+        RevenueSource::FishHashExternal => 22,
+        RevenueSource::NexaPowExternal => 23,
+        RevenueSource::GhostRiderExternal => 24,
+        RevenueSource::DynexSolveExternal => 25,
     }
 }
 
