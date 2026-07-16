@@ -189,14 +189,19 @@ export default function Navigation() {
     };
   }, [openGroup]);
 
-  /* Close on resize from mobile to desktop */
+  /* Publish current nav height so page shells can keep content clear of the fixed nav */
   useEffect(() => {
-    const onResize = () => {
-      if (window.innerWidth >= 768) setIsOpen(false);
+    const setHeight = () => {
+      const md = window.innerWidth >= 768;
+      const height = scrolled
+        ? (md ? '4.5rem' : '4rem')
+        : (md ? '13rem' : '9rem');
+      document.documentElement.style.setProperty('--nav-height', height);
     };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
+    setHeight();
+    window.addEventListener('resize', setHeight);
+    return () => window.removeEventListener('resize', setHeight);
+  }, [scrolled]);
 
   return (
     <nav
@@ -302,6 +307,17 @@ export default function Navigation() {
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'dashboard', lang)}</span>
             </Link>
           </div>
+
+          {/* Desktop menu trigger when scrolled (Floor 2 is hidden) */}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className={`${scrolled ? 'hidden md:flex' : 'hidden'} items-center justify-center rounded-xl border border-white/20 bg-white/5 text-white hover:border-white/40 hover:bg-white/10 active:scale-95 transition-all min-w-[44px] min-h-[44px] ml-1`}
+            aria-label={isOpen ? tr('nav', 'close_menu', lang) : tr('nav', 'open_menu', lang)}
+            aria-expanded={isOpen}
+            title={tr('nav', 'open_menu', lang)}
+          >
+            {isOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
 
           {/* Mobile hamburger */}
           <button
@@ -440,12 +456,12 @@ export default function Navigation() {
           <>
             {/* Backdrop */}
             <div
-              className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
               onClick={() => setIsOpen(false)}
               aria-hidden="true"
             />
             {/* Slide-in panel */}
-            <div className="md:hidden fixed top-0 right-0 bottom-0 w-[min(320px,85vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(16,185,129,0.4), rgba(251,191,36,0.5), rgba(239,68,68,0.4)) 1' }}>
+            <div className="fixed top-0 right-0 bottom-0 w-[min(360px,85vw)] md:w-[min(420px,40vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(16,185,129,0.4), rgba(251,191,36,0.5), rgba(239,68,68,0.4)) 1' }}>
               <div className="flex items-center justify-between p-4 border-b border-white/10">
                 <span className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button
