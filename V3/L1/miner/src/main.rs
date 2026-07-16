@@ -18,6 +18,7 @@ use zion_pool::{
 };
 
 mod banner;
+mod cpu_features;
 mod gpu_backend;
 mod gpu_guard;
 mod interactive;
@@ -1102,6 +1103,7 @@ fn main() -> Result<()> {
 
     // ── Startup banner + hardware detection ──
     banner::print_banner(config.threads);
+    cpu_features::log_features();
     println!("miner_id={}", config.miner_id);
     println!("worker_name={}", config.worker_name);
     println!("loop_count={}", config.loop_count);
