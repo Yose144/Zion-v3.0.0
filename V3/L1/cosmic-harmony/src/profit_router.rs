@@ -237,10 +237,9 @@ impl ExternalCoin {
     ///   ethash (ETC), zelhash (FLUX), progpow (EPIC),
     ///   pearlhash (PRL), beamhash (BEAM), karlsenhash (KLS),
     ///   fishhash (IRON), verthash (VTC), equihashzero (ZCL),
-    ///   nexapow (NEXA)
+    ///   nexapow (NEXA), qhash (QTC), ghostrider (RTM), dynexsolve (DNX)
     ///
-    /// NOT implemented (returns false):
-    ///   qhash (QTC), ghostrider (RTM), dynexsolve (DNX)
+    /// All 22 supported coins now have OpenCL GPU kernels.
     pub fn gpu_kernel_available(self, backend: &str) -> bool {
         match backend {
             "opencl" => matches!(
@@ -260,8 +259,10 @@ impl ExternalCoin {
                 Self::IRON |                       // fishhash
                 Self::VTC |                        // verthash
                 Self::ZCL |                        // equihashzero
-                Self::NEXA                         // nexapow
-                // QTC (qhash), RTM (ghostrider), DNX (dynexsolve) — no kernel
+                Self::NEXA |                       // nexapow
+                Self::QTC |                        // qhash (quantum circuit sim)
+                Self::RTM |                        // ghostrider (15 algos + CN)
+                Self::DNX                          // dynexsolve (neuromorphic SAT)
             ),
             "cuda" => matches!(
                 self,
