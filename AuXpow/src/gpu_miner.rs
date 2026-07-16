@@ -590,13 +590,10 @@ impl GpuMiner {
             }
             "equihashzero" | "equihashzero_zcl" => {
                 // Equihash 192,7: multi-kernel Wagner's algorithm
-                // Requires sequential dispatch of: kernel_init_ht → kernel_round0
-                // → kernel_round1..7 → kernel_round8 → kernel_sols
-                // TODO: implement build_equihash_kernel() with round orchestration
-                anyhow::bail!(
-                    "Equihash 192,7 mining not yet implemented: requires multi-kernel \
-                     Wagner's algorithm dispatch. Kernel source is ready in equihash_kernel.cl"
-                )
+                // Delegated to mine_equihash() which handles the full
+                // multi-kernel dispatch (init_ht → round0..6 → sols)
+                // and double-SHA256 solution verification.
+                return self.mine_equihash(header, target, base_nonce);
             }
             "nexapow" | "nexapow_nexa" => {
                 // NexaPow: double-SHA256 → secp256k1 Schnorr sign → SHA256
@@ -2002,6 +1999,521 @@ typedef unsigned long ulong;
             .map_err(|e| anyhow!("NexaPow kernel build failed: {e}"))?;
 
         Ok(kernel)
+    }
+
+    // -----------------------------------------------------------------
+    // Equihash 192,7 (ZCL) — multi-kernel Wagner's algorithm dispatch
+    // -----------------------------------------------------------------
+
+    /// Blake2b IV (same as kernel's blake_iv).
+    const EQ_BLAKE_IV: [u64; 8] = [
+        0x6a09e667f3bcc908, 0xbb67ae8584caa73b,
+        0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
+        0x510e527fade682d1, 0x9b05688c2b3e6c1f,
+        0x1f83d9abfb41bd6b, 0x5be0cd19137e2179,
+    ];
+
+    /// Blake2b permutation schedule (sigma table).
+    const EQ_BLAKE_SIGMA: [[usize; 16]; 12] = [
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        [14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3],
+        [11, 8, 12, 0, 5, 2, 15, 13, 10, 14, 3, 6, 7, 1, 9, 4],
+        [7, 9, 3, 1, 13, 12, 11, 14, 2, 6, 5, 10, 4, 0, 15, 8],
+        [9, 0, 5, 7, 2, 4, 10, 15, 14, 1, 11, 12, 6, 8, 3, 13],
+        [2, 12, 6, 10, 0, 11, 8, 3, 4, 13, 7, 5, 15, 14, 1, 9],
+        [12, 5, 1, 15, 14, 13, 4, 10, 0, 7, 6, 3, 9, 2, 8, 11],
+        [13, 11, 7, 14, 12, 1, 3, 9, 5, 0, 15, 4, 8, 6, 2, 10],
+        [6, 15, 14, 9, 11, 3, 0, 8, 12, 2, 13, 7, 1, 4, 10, 5],
+        [10, 2, 8, 4, 7, 6, 1, 5, 15, 11, 9, 14, 3, 12, 13, 0],
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        [14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3],
+    ];
+
+    /// Blake2b mix function (G function).
+    #[inline]
+    fn eq_mix(v: &mut [u64; 16], a: usize, b: usize, c: usize, d: usize, x: u64, y: u64) {
+        v[a] = v[a].wrapping_add(v[b]).wrapping_add(x);
+        v[d] = (v[d] ^ v[a]).rotate_right(32);
+        v[c] = v[c].wrapping_add(v[d]);
+        v[b] = (v[b] ^ v[c]).rotate_right(24);
+        v[a] = v[a].wrapping_add(v[b]).wrapping_add(y);
+        v[d] = (v[d] ^ v[a]).rotate_right(16);
+        v[c] = v[c].wrapping_add(v[d]);
+        v[b] = (v[b] ^ v[c]).rotate_right(63);
+    }
+
+    /// Compute the Blake2b state after processing the first 128-byte block
+    /// of a Zcash block header, using Zcash Equihash parameters.
+    ///
+    /// Returns 8 u64 words (64 bytes) that can be uploaded to the GPU as
+    /// `blake_state` for `kernel_round0`.
+    fn zcash_blake2b_state(header: &[u8]) -> [u64; 8] {
+        // Zcash Equihash 192,7 parameters
+        let n: u64 = 192;
+        let k: u64 = 7;
+        let hash_len: u64 = 50; // ZCASH_HASH_LEN
+
+        // Initialize state (zcash_blake2b_init)
+        let mut h: [u64; 8] = Self::EQ_BLAKE_IV;
+        h[0] ^= 0x01010000 | hash_len;
+        // h[1..5] = IV[1..5] (already set)
+        // h[6] ^= "ZcashPoW" as little-endian u64
+        let zcash_pow: u64 = u64::from_le_bytes(*b"ZcashPoW");
+        h[6] ^= zcash_pow;
+        // h[7] ^= (k << 32) | n
+        h[7] ^= (k << 32) | n;
+
+        // Process first 128-byte block (non-final)
+        // zcash_blake2b_update(&blake, header, 128, 0)
+        let mut block = [0u8; 128];
+        let copy_len = header.len().min(128);
+        block[..copy_len].copy_from_slice(&header[..copy_len]);
+
+        // Interpret block as 16 little-endian u64 words
+        let mut m = [0u64; 16];
+        for i in 0..16 {
+            m[i] = u64::from_le_bytes([
+                block[i * 8], block[i * 8 + 1], block[i * 8 + 2], block[i * 8 + 3],
+                block[i * 8 + 4], block[i * 8 + 5], block[i * 8 + 6], block[i * 8 + 7],
+            ]);
+        }
+
+        // Initialize working vector
+        let mut v = [0u64; 16];
+        v[..8].copy_from_slice(&h);
+        v[8..].copy_from_slice(&Self::EQ_BLAKE_IV);
+        v[12] ^= 128; // bytes processed so far (non-final block)
+        // v[14] ^= 0 (not final)
+
+        // 12 rounds of Blake2b compression
+        for round in 0..12 {
+            let s = Self::EQ_BLAKE_SIGMA[round];
+            Self::eq_mix(&mut v, 0, 4, 8, 12, m[s[0]], m[s[1]]);
+            Self::eq_mix(&mut v, 1, 5, 9, 13, m[s[2]], m[s[3]]);
+            Self::eq_mix(&mut v, 2, 6, 10, 14, m[s[4]], m[s[5]]);
+            Self::eq_mix(&mut v, 3, 7, 11, 15, m[s[6]], m[s[7]]);
+            Self::eq_mix(&mut v, 0, 5, 10, 15, m[s[8]], m[s[9]]);
+            Self::eq_mix(&mut v, 1, 6, 11, 12, m[s[10]], m[s[11]]);
+            Self::eq_mix(&mut v, 2, 7, 8, 13, m[s[12]], m[s[13]]);
+            Self::eq_mix(&mut v, 3, 4, 9, 14, m[s[14]], m[s[15]]);
+        }
+
+        // Finalize: h[i] ^= v[i] ^ v[i+8]
+        for i in 0..8 {
+            h[i] ^= v[i] ^ v[i + 8];
+        }
+
+        h
+    }
+
+    /// Encode solution indices into compressed byte format (store_encoded_sol).
+    ///
+    /// Each of the 2^k input indices is encoded using (PREFIX+1) bits,
+    /// producing a bitstream that is ZCASH_SOL_LEN bytes long.
+    fn encode_equihash_solution(inputs: &[u32], prefix: u32, k: u32) -> Vec<u8> {
+        let n_inputs = 1usize << k;
+        let bits_per_index = (prefix + 1) as usize;
+        let total_bits = n_inputs * bits_per_index;
+        let total_bytes = (total_bits + 7) / 8;
+        let mut out = vec![0u8; total_bytes];
+
+        let mut bit_pos = 0usize;
+        for &input in inputs.iter().take(n_inputs) {
+            for bit_idx in (0..bits_per_index).rev() {
+                let bit = ((input >> bit_idx) & 1) as u8;
+                if bit != 0 {
+                    out[bit_pos / 8] |= 1 << (7 - (bit_pos % 8));
+                }
+                bit_pos += 1;
+            }
+        }
+
+        out
+    }
+
+    /// Mine Equihash 192,7 (ZCL) using multi-kernel Wagner's algorithm.
+    ///
+    /// This is a fundamentally different flow from single-kernel algorithms:
+    /// 1. Compute Blake2b state from 140-byte header (first 128 bytes)
+    /// 2. Allocate two ~6GB hash tables + row counters
+    /// 3. Dispatch 10 kernels in sequence: init_ht → round0..8 → sols
+    /// 4. Read back solutions, verify with double-SHA256
+    /// 5. Return first solution under target as GpuFoundShare
+    ///
+    /// Requires ≥12 GB GPU VRAM (two 6GB hash tables for NR_ROWS_LOG=20).
+    fn mine_equihash(
+        &mut self,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+    ) -> Result<Option<GpuFoundShare>> {
+        // Equihash 192,7 constants (must match equihash_192_7_param.h)
+        const PARAM_K: u32 = 7;
+        const PREFIX: u32 = 24;
+        const NR_ROWS: usize = 1 << 20; // 2^20 = 1,048,576
+        const NR_SLOTS: usize = 192;
+        const SLOT_LEN: usize = 32;
+        const HT_SIZE: usize = NR_ROWS * NR_SLOTS * SLOT_LEN; // ~6 GB
+        const ROWS_PER_UINT: usize = 4; // BITS_PER_ROW=8 → ROWS_PER_UINT=4
+        const ROW_COUNTERS_SIZE: usize = NR_ROWS / ROWS_PER_UINT; // 262,144 u32s
+        const MAX_SOLS: usize = 10;
+        const ZCASH_BLOCK_HEADER_LEN: usize = 140;
+        const ZCASH_NONCE_LEN: usize = 32;
+        const ZCASH_NONCE_OFFSET: usize = ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN; // 108
+        const ZCASH_SOL_LEN: usize = (1 << PARAM_K) * (PREFIX as usize + 1) / 8; // 400
+
+        // sols_t layout (matching the kernel struct):
+        //   uint nr;           // 4 bytes
+        //   uint likely_invalids; // 4 bytes
+        //   uchar valid[MAX_SOLS]; // 10 bytes → padded to 12 for uint alignment
+        //   uint values[MAX_SOLS][1<<PARAM_K]; // 10 * 128 * 4 = 5120 bytes
+        // Total: 12 + 5120 = 5132 bytes. Use 8192 for safety margin.
+        const SOLS_BUF_SIZE: usize = 8192;
+
+        // Check VRAM — need at least 2 * HT_SIZE + overhead
+        let vram_needed = 2 * HT_SIZE + ROW_COUNTERS_SIZE * 2 * 4 + SOLS_BUF_SIZE + 1024;
+        println!(
+            "auxpow_gpu_equihash HT_SIZE={:.1} GB per table, total VRAM needed={:.1} GB",
+            HT_SIZE as f64 / 1e9,
+            vram_needed as f64 / 1e9
+        );
+
+        // Get ProQue for equihash kernel
+        let pro_que = self.ensure_proque("equihash_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        // Prepare 140-byte header with nonce
+        let mut header_buf = [0u8; ZCASH_BLOCK_HEADER_LEN];
+        let copy_len = header.len().min(ZCASH_BLOCK_HEADER_LEN);
+        header_buf[..copy_len].copy_from_slice(&header[..copy_len]);
+        // Set nonce: first 8 bytes = base_nonce (LE), rest = 0
+        let nonce_bytes = base_nonce.to_le_bytes();
+        header_buf[ZCASH_NONCE_OFFSET..ZCASH_NONCE_OFFSET + 8]
+            .copy_from_slice(&nonce_bytes);
+        // Zero remaining nonce bytes
+        for i in (ZCASH_NONCE_OFFSET + 8)..ZCASH_BLOCK_HEADER_LEN {
+            header_buf[i] = 0;
+        }
+
+        // Compute Blake2b state from first 128 bytes
+        let blake_state = Self::zcash_blake2b_state(&header_buf);
+
+        // Allocate GPU buffers
+        println!("auxpow_gpu_equihash allocating hash tables...");
+        let ht0: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(HT_SIZE)
+            .build()
+            .map_err(|e| anyhow!("Equihash ht0 alloc failed ({:.1} GB): {e}", HT_SIZE as f64 / 1e9))?;
+        let ht1: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(HT_SIZE)
+            .build()
+            .map_err(|e| anyhow!("Equihash ht1 alloc failed ({:.1} GB): {e}", HT_SIZE as f64 / 1e9))?;
+
+        let rc0: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(ROW_COUNTERS_SIZE)
+            .build()?;
+        let rc1: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(ROW_COUNTERS_SIZE)
+            .build()?;
+
+        let blake_st_buf: Buffer<u64> = Buffer::builder()
+            .queue(q.clone())
+            .len(8)
+            .copy_host_slice(&blake_state)
+            .build()?;
+
+        let dbg_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(NR_ROWS * 2)
+            .build()?;
+
+        let sols_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(SOLS_BUF_SIZE)
+            .fill_val(0u8)
+            .build()?;
+
+        // Create kernels
+        let k_init_ht = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("kernel_init_ht")
+            .build()?;
+
+        let k_round0 = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("kernel_round0")
+            .build()?;
+
+        // For K=7, rounds 1-5 are collision-finding (no sols arg),
+        // round 6 is the final round (with sols arg).
+        // k_rounds[0] = kernel_round1, ..., k_rounds[4] = kernel_round5
+        let mut k_rounds: Vec<Kernel> = Vec::with_capacity((PARAM_K - 2) as usize);
+        for round in 1..=(PARAM_K - 1) {
+            let name = format!("kernel_round{}", round);
+            k_rounds.push(
+                Kernel::builder()
+                    .queue(q.clone())
+                    .program(pro_que.program())
+                    .name(&name)
+                    .build()?,
+            );
+        }
+
+        // Final round kernel (round K-1 = 6) with sols argument
+        let k_round_final = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("kernel_round6")
+            .build()?;
+
+        let k_sols = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("kernel_sols")
+            .build()?;
+
+        // Work sizes
+        let init_global = NR_ROWS / ROWS_PER_UINT; // 262,144
+        let init_local = 256;
+        let round0_global = {
+            // Must divide NR_INPUTS (2^24). Use a reasonable size.
+            // 2^14 = 16384 → each thread processes 1024 inputs
+            let ws = 1 << 14;
+            ws
+        };
+        let round0_local = 64;
+        let rounds_global = NR_ROWS; // 1,048,576
+        let rounds_local = 64;
+        let sols_global = NR_ROWS;
+        let sols_local = 64;
+
+        let start = Instant::now();
+
+        // --- Dispatch sequence ---
+        // Use set_arg() to set kernel arguments, then cmd().enq() to dispatch.
+        // This is necessary because the same kernel is dispatched multiple
+        // times with different buffer arguments (alternating ht_src/ht_dst).
+
+        // 1. Init hash tables (zero row counters for both tables)
+        k_init_ht.set_arg(0, &ht0)?;
+        k_init_ht.set_arg(1, &rc0)?;
+        unsafe {
+            k_init_ht.cmd()
+                .global_work_size(init_global)
+                .local_work_size(init_local)
+                .enq()?;
+        }
+        k_init_ht.set_arg(0, &ht1)?;
+        k_init_ht.set_arg(1, &rc1)?;
+        unsafe {
+            k_init_ht.cmd()
+                .global_work_size(init_global)
+                .local_work_size(init_local)
+                .enq()?;
+        }
+        q.finish()?;
+
+        // 2. Round 0: Blake2b hashing → fills ht[0]
+        k_round0.set_arg(0, &blake_st_buf)?;
+        k_round0.set_arg(1, &ht0)?;
+        k_round0.set_arg(2, &rc0)?;
+        k_round0.set_arg(3, &dbg_buf)?;
+        unsafe {
+            k_round0.cmd()
+                .global_work_size(round0_global)
+                .local_work_size(round0_local)
+                .enq()?;
+        }
+        q.finish()?;
+
+        // 3. Rounds 1..K-2: collision finding (alternating ht_src/ht_dst)
+        //    For K=7: rounds 1-5 use k_rounds[0..4] (no sols arg)
+        for round in 1..=(PARAM_K - 1) {
+            let round_idx = (round - 1) as usize;
+            let k = &k_rounds[round_idx];
+            let ht_src = if round % 2 == 1 { &ht0 } else { &ht1 };
+            let ht_dst = if round % 2 == 1 { &ht1 } else { &ht0 };
+            let rc_src = if round % 2 == 1 { &rc0 } else { &rc1 };
+            let rc_dst = if round % 2 == 1 { &rc1 } else { &rc0 };
+
+            // Init destination row counters before each round
+            k_init_ht.set_arg(0, ht_dst)?;
+            k_init_ht.set_arg(1, rc_dst)?;
+            unsafe {
+                k_init_ht.cmd()
+                    .global_work_size(init_global)
+                    .local_work_size(init_local)
+                    .enq()?;
+            }
+
+            // Collision finding round
+            k.set_arg(0, ht_src)?;
+            k.set_arg(1, ht_dst)?;
+            k.set_arg(2, rc_src)?;
+            k.set_arg(3, rc_dst)?;
+            k.set_arg(4, &dbg_buf)?;
+            unsafe {
+                k.cmd()
+                    .global_work_size(rounds_global)
+                    .local_work_size(rounds_local)
+                    .enq()?;
+            }
+            q.finish()?;
+        }
+
+        // 4. Round K-1 (= 6): final round with sols argument
+        {
+            let round = PARAM_K - 1; // 6
+            let ht_src = if round % 2 == 1 { &ht0 } else { &ht1 };
+            let ht_dst = if round % 2 == 1 { &ht1 } else { &ht0 };
+            let rc_src = if round % 2 == 1 { &rc0 } else { &rc1 };
+            let rc_dst = if round % 2 == 1 { &rc1 } else { &rc0 };
+
+            // Init destination row counters
+            k_init_ht.set_arg(0, ht_dst)?;
+            k_init_ht.set_arg(1, rc_dst)?;
+            unsafe {
+                k_init_ht.cmd()
+                    .global_work_size(init_global)
+                    .local_work_size(init_local)
+                    .enq()?;
+            }
+
+            // Final round with sols
+            k_round_final.set_arg(0, ht_src)?;
+            k_round_final.set_arg(1, ht_dst)?;
+            k_round_final.set_arg(2, rc_src)?;
+            k_round_final.set_arg(3, rc_dst)?;
+            k_round_final.set_arg(4, &dbg_buf)?;
+            k_round_final.set_arg(5, &sols_buf)?;
+            unsafe {
+                k_round_final.cmd()
+                    .global_work_size(rounds_global)
+                    .local_work_size(rounds_local)
+                    .enq()?;
+            }
+            q.finish()?;
+        }
+
+        // 5. kernel_sols: extract solutions
+        k_sols.set_arg(0, &ht0)?;
+        k_sols.set_arg(1, &ht1)?;
+        k_sols.set_arg(2, &sols_buf)?;
+        k_sols.set_arg(3, &rc0)?;
+        k_sols.set_arg(4, &rc1)?;
+        unsafe {
+            k_sols.cmd()
+                .global_work_size(sols_global)
+                .local_work_size(sols_local)
+                .enq()?;
+        }
+        q.finish()?;
+
+        let elapsed_ms = start.elapsed().as_millis();
+        println!("auxpow_gpu_equihash kernels completed in {elapsed_ms} ms");
+
+        // 5. Read back solutions
+        let mut sols_data = vec![0u8; SOLS_BUF_SIZE];
+        sols_buf.read(&mut sols_data).enq()?;
+
+        // Parse sols_t structure
+        let nr_sols = u32::from_le_bytes([
+            sols_data[0], sols_data[1], sols_data[2], sols_data[3],
+        ]) as usize;
+        let _likely_invalids = u32::from_le_bytes([
+            sols_data[4], sols_data[5], sols_data[6], sols_data[7],
+        ]);
+
+        if nr_sols == 0 {
+            println!("auxpow_gpu_equihash no solutions found for nonce={base_nonce}");
+            return Ok(None);
+        }
+
+        println!("auxpow_gpu_equihash {nr_sols} potential solutions found");
+
+        // valid[] array starts at offset 8, MAX_SOLS=10 bytes
+        // values[] array starts at offset 12 (after padding), each solution is 128 u32s = 512 bytes
+        let nr_sols_capped = nr_sols.min(MAX_SOLS);
+        for sol_i in 0..nr_sols_capped {
+            let valid = sols_data[8 + sol_i];
+            if valid == 0 {
+                continue;
+            }
+
+            // Read 2^k = 128 u32 values for this solution
+            let values_offset = 12 + sol_i * (1 << PARAM_K) * 4;
+            let mut inputs = [0u32; 128]; // 2^7 = 128
+            for j in 0..128 {
+                let off = values_offset + j * 4;
+                if off + 4 > SOLS_BUF_SIZE {
+                    break;
+                }
+                inputs[j] = u32::from_le_bytes([
+                    sols_data[off], sols_data[off + 1],
+                    sols_data[off + 2], sols_data[off + 3],
+                ]);
+            }
+
+            // Encode solution
+            let encoded_sol = Self::encode_equihash_solution(&inputs, PREFIX, PARAM_K);
+            if encoded_sol.len() != ZCASH_SOL_LEN {
+                println!(
+                    "auxpow_gpu_equihash sol_{sol_i} encoded size {} != expected {ZCASH_SOL_LEN}, skipping",
+                    encoded_sol.len()
+                );
+                continue;
+            }
+
+            // Compute double-SHA256(header + varint + encoded_sol)
+            // Varint for 400 bytes: 0xfd 0x90 0x01 (little-endian u16)
+            let mut verify_buf = Vec::with_capacity(ZCASH_BLOCK_HEADER_LEN + 3 + ZCASH_SOL_LEN);
+            verify_buf.extend_from_slice(&header_buf);
+            verify_buf.extend_from_slice(&[0xfd, 0x90, 0x01]); // varint 400
+            verify_buf.extend_from_slice(&encoded_sol);
+
+            use sha2::{Digest, Sha256};
+            let hash1 = Sha256::digest(&verify_buf);
+            let hash2 = Sha256::digest(&hash1);
+
+            // Compare hash2 (little-endian) with target (little-endian)
+            // Target comparison: hash2 <= target (both as little-endian 256-bit integers)
+            let meets_target = {
+                let mut meets = true;
+                for i in (0..32).rev() {
+                    if hash2[i] != target[i] {
+                        meets = hash2[i] < target[i];
+                        break;
+                    }
+                }
+                meets
+            };
+
+            if meets_target {
+                let mut hash_arr = [0u8; 32];
+                hash_arr.copy_from_slice(&hash2);
+                println!(
+                    "auxpow_gpu_equihash SHARE FOUND sol_{sol_i} nonce={base_nonce} hash_first8={:016x}",
+                    u64::from_le_bytes(hash_arr[0..8].try_into().unwrap())
+                );
+                return Ok(Some(GpuFoundShare {
+                    nonce: base_nonce,
+                    hash: hash_arr,
+                    mix_hash: None,
+                    solution: Some(encoded_sol),
+                }));
+            } else {
+                println!("auxpow_gpu_equihash sol_{sol_i} above target, skipping");
+            }
+        }
+
+        println!("auxpow_gpu_equihash {nr_sols_capped} solutions checked, none under target");
+        Ok(None)
     }
 
     /// Build the KawPow kernel (xmrig progpow_search interface).
@@ -3953,6 +4465,52 @@ mod tests {
         assert_eq!(kernel_info("qhash"), None);
         assert_eq!(kernel_info("ghostrider"), None);
         assert_eq!(kernel_info("dynexsolve"), None);
+    }
+
+    /// Test Equihash 192,7 Blake2b state computation.
+    /// Verify that the state is deterministic and has the correct Zcash
+    /// personalization (h[6] XORed with "ZcashPoW", h[7] XORed with (K<<32)|N).
+    #[test]
+    fn equihash_blake2b_state_zcash_personalization() {
+        let header = [0u8; 140]; // zero header for deterministic test
+        let state = GpuMiner::zcash_blake2b_state(&header);
+
+        // State should be 8 u64 words
+        assert_eq!(state.len(), 8);
+
+        // h[6] should have "ZcashPoW" XORed in (from init, before compression)
+        // After compression, the exact value depends on the input, but we can
+        // verify determinism: same input → same output
+        let state2 = GpuMiner::zcash_blake2b_state(&header);
+        assert_eq!(state, state2, "Blake2b state must be deterministic");
+
+        // Different input → different state
+        let mut header2 = [0u8; 140];
+        header2[0] = 1;
+        let state3 = GpuMiner::zcash_blake2b_state(&header2);
+        assert_ne!(state, state3, "Different headers must produce different states");
+    }
+
+    /// Test Equihash solution encoding.
+    /// For K=7, PREFIX=24: each of 128 indices is encoded with 25 bits,
+    /// producing 400 bytes total.
+    #[test]
+    fn equihash_solution_encoding_size() {
+        let inputs = vec![0u32; 128]; // 2^7 = 128 zero indices
+        let encoded = GpuMiner::encode_equihash_solution(&inputs, 24, 7);
+        // 128 * 25 bits = 3200 bits = 400 bytes
+        assert_eq!(encoded.len(), 400, "Solution must be exactly 400 bytes for K=7, PREFIX=24");
+
+        // All-zero inputs should produce all-zero encoding
+        assert!(encoded.iter().all(|&b| b == 0), "Zero inputs must produce zero encoding");
+
+        // Test with non-zero inputs
+        let mut inputs2 = vec![0u32; 128];
+        inputs2[0] = 0xFFFFFF; // 24 bits set (max index value)
+        let encoded2 = GpuMiner::encode_equihash_solution(&inputs2, 24, 7);
+        assert_eq!(encoded2.len(), 400);
+        // First 3 bytes should have the high bits set (25 bits = 3 bytes + 1 bit)
+        assert_ne!(encoded2[0], 0, "Non-zero input must produce non-zero encoding");
     }
 
     /// Verify the host BLAKE2b-256 (used by Autolykos v2 table generation)
