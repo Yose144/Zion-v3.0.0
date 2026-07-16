@@ -502,36 +502,43 @@ function updateServiceCards(s){
   if(enp) enp.textContent = en ? (en.known_peers ?? '—') : '—';
 
   // Local Backup Node (node1 card in edge-primary)
+  const n1kicker = document.querySelector('#card-node1 .zion-kicker');
+  if(n1kicker) n1kicker.textContent = isEdgePrimary ? '💾 Local Backup' : '🔷 Node 1';
   setBadge('badge-node1', n1data && n1data.running); setCardLive('node1', n1data && n1data.running);
   const n1h = document.getElementById('val-node1-height');
-  if(n1h) n1h.textContent = n1data ? (n1data.chain_height ?? '—') : '—';
+  if(n1h) n1h.textContent = n1data ? (n1data.chain_height != null ? n1data.chain_height.toLocaleString() : (n1data.running ? '—' : 'Offline')) : 'Offline';
   const n1id = document.getElementById('val-node1-id');
-  if(n1id) n1id.textContent = n1data ? (n1data.node_id ?? '—') : '—';
+  if(n1id) n1id.textContent = n1data ? (n1data.node_id ?? 'local-backup-node') : 'local-backup-node';
   const n1p = document.getElementById('val-node1-peers');
-  if(n1p) n1p.textContent = n1data ? (n1data.known_peers ?? '—') : '—';
+  if(n1p) n1p.textContent = n1data ? (n1data.known_peers ?? 0) : 0;
   const n1p2p = document.getElementById('val-node1-p2p');
-  if(n1p2p) n1p2p.textContent = n1data ? (n1data.p2p_bind ?? '—') : '—';
+  if(n1p2p) n1p2p.textContent = n1data ? (n1data.p2p_bind ?? '0.0.0.0:8333') : '0.0.0.0:8333';
   const n1m = document.getElementById('val-node1-mempool');
-  if(n1m) n1m.textContent = n1data ? (n1data.mempool_size ?? '—') : '—';
+  if(n1m) n1m.textContent = n1data ? (n1data.mempool_size ?? 0) : 0;
   const n1u = document.getElementById('val-node1-uptime');
   if(n1u) n1u.textContent = formatUptime(n1data ? n1data.uptime_seconds : null);
   // Sync status for Local Backup Node
   const n1syncEl = document.getElementById('val-node1-sync');
   if(n1syncEl){
-    const refHeight = isEdgePrimary ? (en ? (en.chain_height ?? 0) : 0) : (n2 ? (n2.chain_height ?? 0) : 0);
-    const localH = n1data ? (n1data.chain_height ?? 0) : 0;
-    const gap = refHeight > 0 && localH > 0 ? Math.abs(refHeight - localH) : null;
-    const serverGap = n1data ? (n1data.sync_gap ?? gap) : gap;
-    const synced = serverGap !== null && serverGap !== undefined && serverGap <= 5;
-    if(serverGap === null || serverGap === undefined){
-      n1syncEl.textContent = localH > 0 ? 'Syncing…' : 'No data';
-      n1syncEl.className = 'text-gray-400';
-    } else if(synced){
-      n1syncEl.textContent = '✓ Synced (gap: ' + serverGap + ')';
-      n1syncEl.className = 'text-emerald-400 font-bold text-xs';
+    if(n1data && n1data.running){
+      const refHeight = isEdgePrimary ? (en ? (en.chain_height ?? 0) : 0) : (n2 ? (n2.chain_height ?? 0) : 0);
+      const localH = n1data ? (n1data.chain_height ?? 0) : 0;
+      const gap = refHeight > 0 && localH > 0 ? Math.abs(refHeight - localH) : null;
+      const serverGap = n1data ? (n1data.sync_gap ?? gap) : gap;
+      const synced = serverGap !== null && serverGap !== undefined && serverGap <= 5;
+      if(serverGap === null || serverGap === undefined){
+        n1syncEl.textContent = localH > 0 ? 'Syncing…' : 'No data';
+        n1syncEl.className = 'text-gray-400';
+      } else if(synced){
+        n1syncEl.textContent = '✓ Synced (gap: ' + serverGap + ')';
+        n1syncEl.className = 'text-emerald-400 font-bold text-xs';
+      } else {
+        n1syncEl.textContent = '⚠ Behind (gap: ' + serverGap + ')';
+        n1syncEl.className = 'text-amber-400 text-xs';
+      }
     } else {
-      n1syncEl.textContent = '⚠ Behind (gap: ' + serverGap + ')';
-      n1syncEl.className = 'text-amber-400 text-xs';
+      n1syncEl.textContent = '🔴 Offline (on local PC)';
+      n1syncEl.className = 'text-red-400 text-xs';
     }
   }
 
