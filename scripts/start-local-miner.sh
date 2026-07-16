@@ -15,6 +15,24 @@ ZION_POOL_ADDR="${ZION_POOL_ADDR:-62.171.141.136:8444}"
 ZION_MINER_WORKER="${ZION_MINER_WORKER:-local-gpu}"
 ZION_MINER_LOOPS="${ZION_MINER_LOOPS:-999999}"
 
+# ── Triple-Stream tuning ────────────────────────────────────────────────────
+# Hardware autotuning is now built into the miner binary!
+# The miner auto-detects GPU CUs, VRAM, CPU cores, and RAM, then computes
+# optimal work sizes and thread count. No manual tuning needed.
+#
+# Formula (benchmark-derived):
+#   gpu_work_size      = nearest_pow2(CUs * 512), clamped [1024, 65536]
+#   secondary_gpu_ws   = clamp(VRAM_MiB * 0.75 / 1024, 1, 8) * 1M
+#   threads            = all logical cores (up to 64)
+#
+# To override: set ZION_GPU_WORK_SIZE, ZION_SECONDARY_GPU_WORK_SIZE, ZION_THREADS
+# To disable autotune: set ZION_AUTOTUNE=0
+export ZION_AUTOTUNE="${ZION_AUTOTUNE:-1}"
+export ZION_STREAM1_ENABLED="${ZION_STREAM1_ENABLED:-1}"
+export ZION_STREAM2_ENABLED="${ZION_STREAM2_ENABLED:-1}"
+export ZION_STREAM3_ENABLED="${ZION_STREAM3_ENABLED:-1}"
+export ZION_METRICS_REPORT_SECS="${ZION_METRICS_REPORT_SECS:-15}"
+
 # ── Wallet resolution ──────────────────────────────────────────────────────
 # 1. Use WALLET_ADDRESS env var if set
 # 2. Find newest zion-miner-wallet-backup-*.json on Desktop and read address
@@ -42,7 +60,7 @@ fi
 if [[ ! -x "$MINER_BIN" ]]; then
     echo "[BUILD] Miner binary missing, building release with OpenCL GPU support..."
     cd "$REPO_ROOT/V3"
-    cargo build --release --bin zion-miner --features gpu-opencl
+    cargo build --release --bin zion-miner --features full,native-hashers
     echo "[OK] Miner built: $MINER_BIN"
 fi
 
@@ -59,8 +77,16 @@ echo "  ZION Local Miner  |  Pool: $ZION_POOL_ADDR"
 echo "  Wallet: $WALLET_ADDRESS"
 echo "  Worker: $ZION_MINER_WORKER"
 echo "  GPU:    $BACKEND"
+echo "  Tuning: AUTO (hardware autodetect — GPU CUs/VRAM, CPU cores, RAM)"
 echo "  Started: $(date)"
 echo "==========================================================="
+
+# ── Huge pages check (for RandomX/VerusHash performance) ────────────────────
+HUGE_PAGES=$(grep HugePages_Total /proc/meminfo | awk '{print $2}')
+if [[ "$HUGE_PAGES" -lt 768 ]]; then
+    echo "[WARN] Huge pages: $HUGE_PAGES (recommended: 768 for 6 threads)"
+    echo "       Run: sudo sysctl -w vm.nr_hugepages=768"
+fi
 
 # ── Launch miner inside screen so it survives terminal close ────────────────
 SCREEN_NAME="zion-miner"
@@ -74,6 +100,7 @@ exec './target/release/zion-miner' \\
     --wallet '$WALLET_ADDRESS' \\
     --worker '$ZION_MINER_WORKER' \\
     --gpu '$BACKEND' \\
+    --no-tui \\
     --profile pool \\
     --loops '$ZION_MINER_LOOPS'
 "

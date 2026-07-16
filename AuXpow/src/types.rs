@@ -119,7 +119,7 @@ impl ExternalCoin {
             Self::VRSC => "eu.luckpool.net:3956",
             Self::EPIC => "de.epicmine.io:3334",
             Self::PRL => "prl.2miners.com:1818",
-            Self::QUAI => "quai.2miners.com:4848",
+            Self::QUAI => "quaikawpow.2miners.com:4545",
             Self::BEAM => "beam.2miners.com:5252",
         }
     }

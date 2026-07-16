@@ -9,6 +9,42 @@
 #![allow(clippy::type_complexity)]
 
 use std::io::{self, Write};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
+/* ========================================================================= */
+/* Sticky header state (Claymore-style fixed metrics + scrolling logs)       */
+/* ========================================================================= */
+
+static STICKY_ACTIVE: AtomicBool = AtomicBool::new(false);
+static STICKY_LINES: AtomicUsize = AtomicUsize::new(0);
+
+/// Ring buffer for recent log lines (displayed below the sticky header).
+/// This allows us to redraw the full screen (header + logs) on each update,
+/// which works in ALL terminals including `screen` (no DECSTBM needed).
+static LOG_RING: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+const LOG_RING_MAX: usize = 200;
+
+/// Add a log line to the ring buffer (called from println interceptor).
+pub fn push_log_line(line: &str) {
+    if !STICKY_ACTIVE.load(Ordering::SeqCst) {
+        return;
+    }
+    if let Ok(mut buf) = LOG_RING.lock() {
+        if buf.len() >= LOG_RING_MAX {
+            buf.remove(0);
+        }
+        buf.push(line.to_string());
+    }
+}
+
+/// Reset sticky header state (call on reconnect / new session).
+pub fn reset_sticky_header() {
+    STICKY_ACTIVE.store(false, Ordering::SeqCst);
+    STICKY_LINES.store(0, Ordering::SeqCst);
+    if let Ok(mut buf) = LOG_RING.lock() {
+        buf.clear();
+    }
+}
 
 /* ========================================================================= */
 /* ANSI color codes                                                          */
@@ -41,6 +77,18 @@ pub const CLEAR_LINE: &str = "\x1B[2K";
 pub const CURSOR_UP: &str = "\x1B[1A";
 pub const CURSOR_HIDE: &str = "\x1B[?25l";
 pub const CURSOR_SHOW: &str = "\x1B[?25h";
+
+// Alternate screen buffer (smcup/rmcup) — full screen takeover like Claymore
+pub const ENTER_ALT_SCREEN: &str = "\x1B[?1049h";
+pub const EXIT_ALT_SCREEN: &str = "\x1B[?1049l";
+
+// Scroll region / cursor save-restore (DECSTBM + DECSC/DECRC)
+pub const SAVE_CURSOR: &str = "\x1B7";      // DECSC — save cursor + attributes
+pub const RESTORE_CURSOR: &str = "\x1B8";   // DECRC — restore cursor + attributes
+pub const CLEAR_SCREEN: &str = "\x1B[2J";
+pub const CLEAR_FROM_CURSOR: &str = "\x1B[J"; // clear from cursor to end of screen
+pub const HOME: &str = "\x1B[H";              // cursor to top-left
+pub const RESET_SCROLL_REGION: &str = "\x1B[r"; // full screen scroll region
 
 /* ========================================================================= */
 /* Helpers                                                                   */
@@ -596,6 +644,33 @@ pub fn print_triple_stream_stats(
     submit_max_ms: u64,
     gpu_infos: &[(String, u32, u64, u32, Option<u32>, Option<u32>)],
 ) {
+    let s = build_triple_stream_box(
+        uptime_secs,
+        streams,
+        total_accepted,
+        total_rejected,
+        pool_addr,
+        pool_height,
+        submit_avg_ms,
+        submit_max_ms,
+        gpu_infos,
+    );
+    print_flush(&s);
+}
+
+/// Build the triple-stream stats box as a string (no printing).
+/// Returns (box_string, line_count).
+fn build_triple_stream_box(
+    uptime_secs: u64,
+    streams: &[StreamStats],
+    total_accepted: u64,
+    total_rejected: u64,
+    pool_addr: &str,
+    pool_height: u64,
+    submit_avg_ms: f64,
+    submit_max_ms: u64,
+    gpu_infos: &[(String, u32, u64, u32, Option<u32>, Option<u32>)],
+) -> String {
     let uptime = fmt_uptime(uptime_secs);
     let total = total_accepted + total_rejected;
     let accept_pct = if total > 0 {
@@ -827,7 +902,125 @@ pub fn print_triple_stream_stats(
     // ── Bottom border ──
     s.push_str(&format!("└{}┘\n", "─".repeat(w)));
     s.push_str(RESET);
-    print_flush(&s);
+    s
+}
+
+/* ========================================================================= */
+/* Claymore-style sticky header (alternate screen + full redraw)             */
+/* ========================================================================= */
+
+/// Print the triple-stream stats box as a **sticky header** at the top of the
+/// terminal.  Uses the **alternate screen buffer** (like Claymore/GMiner) so
+/// the header stays fixed while recent log lines are shown below it.
+///
+/// This approach works in ALL terminals including `screen` — no DECSTBM
+/// scroll region needed.  On each update, the entire screen is redrawn:
+///   1. Header box (metrics) at top — always visible
+///   2. Recent log lines below — scrolling ring buffer
+///
+/// Log lines are captured via `push_log_line()` and kept in a ring buffer.
+///
+/// Disable with `ZION_NO_STICKY=1`.
+pub fn print_triple_stream_stats_sticky(
+    uptime_secs: u64,
+    streams: &[StreamStats],
+    total_accepted: u64,
+    total_rejected: u64,
+    pool_addr: &str,
+    pool_height: u64,
+    submit_avg_ms: f64,
+    submit_max_ms: u64,
+    gpu_infos: &[(String, u32, u64, u32, Option<u32>, Option<u32>)],
+) {
+    // Allow disabling sticky mode via env var
+    if std::env::var("ZION_NO_STICKY")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false)
+    {
+        print_triple_stream_stats(
+            uptime_secs,
+            streams,
+            total_accepted,
+            total_rejected,
+            pool_addr,
+            pool_height,
+            submit_avg_ms,
+            submit_max_ms,
+            gpu_infos,
+        );
+        return;
+    }
+
+    let box_str = build_triple_stream_box(
+        uptime_secs,
+        streams,
+        total_accepted,
+        total_rejected,
+        pool_addr,
+        pool_height,
+        submit_avg_ms,
+        submit_max_ms,
+        gpu_infos,
+    );
+
+    let line_count = box_str.matches('\n').count();
+
+    if !STICKY_ACTIVE.load(Ordering::SeqCst) {
+        // ── First time: enter alternate screen, hide cursor ──
+        STICKY_LINES.store(line_count, Ordering::SeqCst);
+        STICKY_ACTIVE.store(true, Ordering::SeqCst);
+    }
+
+    // ── Full screen redraw (works in all terminals) ──
+    let mut out = String::with_capacity(4096);
+
+    if STICKY_ACTIVE.load(Ordering::SeqCst) {
+        // First call: enter alt screen
+        let was_first = STICKY_LINES.swap(0, Ordering::SeqCst) != 0;
+        if was_first {
+            out.push_str(ENTER_ALT_SCREEN);
+            out.push_str(CURSOR_HIDE);
+        }
+        STICKY_LINES.store(line_count, Ordering::SeqCst);
+    }
+
+    // Clear screen and go home
+    out.push_str(CLEAR_SCREEN);
+    out.push_str(HOME);
+
+    // Print the metrics box at top
+    out.push_str(&box_str);
+
+    // Print recent log lines below the header
+    let log_start_row = line_count + 2; // blank line after header
+    if let Ok(buf) = LOG_RING.lock() {
+        // Show last N lines that fit (assume 50 rows available for logs)
+        let max_log_rows = 50;
+        let start = if buf.len() > max_log_rows {
+            buf.len() - max_log_rows
+        } else {
+            0
+        };
+        for (i, line) in buf.iter().enumerate().skip(start) {
+            let row = log_start_row + i - start;
+            // Move to row, clear line, print log line (truncated to 80 chars)
+            let truncated: String = line.chars().take(80).collect();
+            out.push_str(&format!("\x1B[{};1H\x1B[2K{}", row, truncated));
+        }
+    }
+
+    // Move cursor to bottom-left (out of the way)
+    out.push_str("\x1B[999;1H");
+    print_flush(&out);
+}
+
+/// Exit the alternate screen buffer (call on shutdown).
+pub fn exit_sticky_header() {
+    if STICKY_ACTIVE.load(Ordering::SeqCst) {
+        print_flush(EXIT_ALT_SCREEN);
+        print_flush(CURSOR_SHOW);
+        STICKY_ACTIVE.store(false, Ordering::SeqCst);
+    }
 }
 
 /* ========================================================================= */

@@ -33,8 +33,24 @@ fn flush_stdout() {
 
 /// Gate verbose wire_* / iteration= debug output (--verbose or ZION_MINER_VERBOSE=1).
 static VERBOSE: AtomicBool = AtomicBool::new(false);
+/// Suppress verbose log lines when sticky header is active (Claymore-style clean display).
+/// Only status box + share notifications are shown.
+static QUIET: AtomicBool = AtomicBool::new(false);
 static CURRENT_POOL_DIFFICULTY: AtomicU64 = AtomicU64::new(1);
 mod reconnect;
+
+/// Log a line only if not in quiet mode (sticky header active).
+fn log_line(msg: &str) {
+    if QUIET.load(Ordering::Relaxed) {
+        return;
+    }
+    println!("{}", msg);
+}
+
+/// Log a line always (even in quiet mode) — for important events like shares.
+fn log_always(msg: &str) {
+    println!("{}", msg);
+}
 
 #[derive(Debug, Clone)]
 struct MinerMetricsSnapshot {
@@ -1173,6 +1189,9 @@ fn main() -> Result<()> {
         println!("wire_bye_parsed={parsed:?}");
     }
 
+    // Exit sticky header (leave alternate screen buffer)
+    ui::exit_sticky_header();
+
     Ok(())
 }
 
@@ -1205,6 +1224,7 @@ fn run_local_session(
     // and calculates a safe GPU budget, preventing OOM system freezes.
     // Reset on each session entry to clear claimed bytes from previous session.
     gpu_backend::reset_gpu_memory_budget();
+    ui::reset_sticky_header();
     let gpu_safe = gpu_backend::init_gpu_memory_budget_with_threads(config.threads);
 
     // Spawn memory pressure watchdog (advisory logging every 30s)
@@ -1668,6 +1688,7 @@ fn run_remote_session(
     // and calculates a safe GPU budget, preventing OOM system freezes.
     // Reset on each session entry to clear claimed bytes from previous session.
     gpu_backend::reset_gpu_memory_budget();
+    ui::reset_sticky_header();
     let gpu_safe = gpu_backend::init_gpu_memory_budget_with_threads(config.threads);
 
     // Spawn memory pressure watchdog (advisory logging every 30s)
@@ -1927,7 +1948,9 @@ fn run_remote_session(
                     break;
                 }
             };
-        println!(">> new job #{} height={} algo={}", job.job_id, job.height, algorithm);
+        if !QUIET.load(Ordering::Relaxed) {
+            println!(">> new job #{} height={} algo={}", job.job_id, job.height, algorithm);
+        }
         let current_diff = CURRENT_POOL_DIFFICULTY.load(Ordering::Relaxed);
         // Only override target for ZION jobs. External AuxPoW jobs carry
         // their own share target from the external pool (e.g. KAS).
@@ -2009,14 +2032,16 @@ fn run_remote_session(
                 let _ = ext_cpu_tx.send(ext.clone());
             } else if gpu_backend::is_external_algorithm(&ext.algorithm) {
                 let send_result = ext_gpu_tx.send(ext.clone());
-                println!(
-                    "[{}] ext_gpu_tx_send coin={} algo={} job_id={} result={:?}",
-                    log_timestamp(),
-                    ext.coin,
-                    ext.algorithm,
-                    ext.job_id,
-                    send_result
-                );
+                if !QUIET.load(Ordering::Relaxed) {
+                    println!(
+                        "[{}] ext_gpu_tx_send coin={} algo={} job_id={} result={:?}",
+                        log_timestamp(),
+                        ext.coin,
+                        ext.algorithm,
+                        ext.job_id,
+                        send_result
+                    );
+                }
             } else {
                 println!(
                     "external_stream_unknown_routing coin={} algo={}",
@@ -2619,7 +2644,9 @@ impl SessionTelemetry {
         // Always print session_status for external parsers (SMOS, agents) even when TUI is active.
         // print_speed_table is suppressed during TUI to avoid screen corruption.
         // ── Machine-parseable status line (for desktop agent / SMOS stdout parser) ──
-        println!(
+        // In QUIET/sticky mode: write to stderr so external parsers still work
+        //   (alt screen buffer would hide stdout from pipe readers)
+        let status_line = format!(
             "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} hps_15m={:.2} attempted_hashes={} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={} gpu_backend={} gpu_hps={:.2} epoch={} pool_height={} best_batch_ms={}",
             iteration_done,
             loop_count,
@@ -2643,9 +2670,17 @@ impl SessionTelemetry {
             self.pool_height,
             self.best_batch_ms,
         );
+        if QUIET.load(Ordering::Relaxed) {
+            eprintln!("{status_line}");
+        } else {
+            println!("{status_line}");
+        }
 
         if !TUI_ACTIVE.load(Ordering::Relaxed) {
-            // ── Claymore-style triple-stream stats block ──
+            // ── Claymore-style sticky triple-stream stats (alt screen + full redraw) ──
+            // Activate quiet mode to suppress verbose log lines (clean metrics display)
+            QUIET.store(true, Ordering::Relaxed);
+            std::env::set_var("ZION_QUIET", "1");
             let uptime_secs = uptime as u64;
             let gpu_ui: Vec<(String, u32, u64, u32, Option<u32>, Option<u32>)> = self
                 .gpu_infos
@@ -2661,7 +2696,7 @@ impl SessionTelemetry {
                     )
                 })
                 .collect();
-            ui::print_triple_stream_stats(
+            ui::print_triple_stream_stats_sticky(
                 uptime_secs,
                 stream_stats,
                 accepted,
@@ -3323,20 +3358,24 @@ fn read_next_job(
                 external_stream_cpu,
             } => {
                 // Log stream weights if present (Deeksha Chv3 pipeline parameterisation).
-                if !stream_weights.is_empty() {
+                if !stream_weights.is_empty() && !QUIET.load(Ordering::Relaxed) {
                     println!("stream_weights job={} weights={}", job_id, stream_weights);
                 }
                 if let Some(ref ext) = external_stream {
-                    println!(
-                        "external_stream job={} coin={} algo={}",
-                        job_id, ext.coin, ext.algorithm
-                    );
+                    if !QUIET.load(Ordering::Relaxed) {
+                        println!(
+                            "external_stream job={} coin={} algo={}",
+                            job_id, ext.coin, ext.algorithm
+                        );
+                    }
                 }
                 if let Some(ref ext_cpu) = external_stream_cpu {
-                    println!(
-                        "external_stream_cpu job={} coin={} algo={} target_hex={:.64}",
-                        job_id, ext_cpu.coin, ext_cpu.algorithm, ext_cpu.target_hex
-                    );
+                    if !QUIET.load(Ordering::Relaxed) {
+                        println!(
+                            "external_stream_cpu job={} coin={} algo={} target_hex={:.64}",
+                            job_id, ext_cpu.coin, ext_cpu.algorithm, ext_cpu.target_hex
+                        );
+                    }
                 }
                 // Keep raw header bytes for external algorithms that may
                 // use headers longer than 80 bytes (e.g. DCR = 180 bytes).
@@ -3426,21 +3465,24 @@ fn log_solution<T: std::fmt::Debug>(
     hash: &[u8; 32],
     status: T,
 ) {
-    println!("iteration={iteration}");
-    println!("job_id={}", job.job_id);
-    println!(
-        "nonce_range={}..{}",
-        job.start_nonce,
-        job.start_nonce + job.nonce_count
-    );
-    println!("found_nonce={found_nonce}");
-    println!("hash={}", hex(hash));
+    let quiet = QUIET.load(Ordering::Relaxed);
+    if !quiet {
+        println!("iteration={iteration}");
+        println!("job_id={}", job.job_id);
+        println!(
+            "nonce_range={}..{}",
+            job.start_nonce,
+            job.start_nonce + job.nonce_count
+        );
+        println!("found_nonce={found_nonce}");
+        println!("hash={}", hex(hash));
+    }
     let status_str = format!("{status:?}");
     if status_str.contains("Accepted") {
         ui::log_accepted(job.job_id, job.height, found_nonce, 0);
     } else if status_str.contains("Rejected") {
         ui::log_rejected(job.job_id, job.height, found_nonce, 0, &status_str);
-    } else {
+    } else if !quiet {
         println!("share_status={status_str}");
     }
 }
@@ -3625,6 +3667,55 @@ impl MinerConfig {
                     println!("cpu_cores: {}", cpu_cores);
                     std::process::exit(0);
                 }
+                "--auto-tune" => {
+                    // Hardware autotuning mode: detect hardware, print
+                    // recommended settings, and exit (no mining).
+                    let result = gpu_backend::auto_tune_work_sizes();
+                    println!("=== ZION Hardware Autotune ===");
+                    println!();
+                    println!("Detected Hardware:");
+                    println!(
+                        "  GPU:  {} ({} CUs, {} MB VRAM)",
+                        result.gpu_name,
+                        result.gpu_compute_units,
+                        result.gpu_vram_bytes / (1024 * 1024),
+                    );
+                    println!(
+                        "  CPU:  {} logical cores",
+                        result.cpu_cores,
+                    );
+                    println!(
+                        "  RAM:  {} MB",
+                        result.sys_ram_bytes / (1024 * 1024),
+                    );
+                    println!();
+                    println!("Recommended Settings:");
+                    println!(
+                        "  ZION_GPU_WORK_SIZE={}",
+                        result.gpu_work_size,
+                    );
+                    println!(
+                        "  ZION_SECONDARY_GPU_WORK_SIZE={}",
+                        result.secondary_gpu_work_size,
+                    );
+                    println!(
+                        "  ZION_THREADS={}",
+                        result.threads,
+                    );
+                    println!();
+                    println!(
+                        "  (GPU WS formula: nearest_pow2(CUs * 512) = nearest_pow2({} * 512) = {})",
+                        result.gpu_compute_units,
+                        result.gpu_work_size,
+                    );
+                    let vram_mib = result.gpu_vram_bytes / (1024 * 1024);
+                    println!(
+                        "  (Secondary WS formula: clamp({}MiB * 0.75 / 1024, 1, 8) * 1M = {})",
+                        vram_mib,
+                        result.secondary_gpu_work_size,
+                    );
+                    std::process::exit(0);
+                }
                 "--help" | "-h" => {
                     println!("Usage: zion-miner [OPTIONS]");
                     println!();
@@ -3641,6 +3732,7 @@ impl MinerConfig {
                     println!("  --algorithm ALGO    Mining algorithm (see list below)");
                     println!("  --pearl H:P:W       Pearl PoUW stratum stream (host:port:wallet)");
                     println!("  --detect-hardware   Detect GPU/CPU hardware and exit (for zion mine auto)");
+                    println!("  --auto-tune         Detect hardware, print recommended settings, and exit");
                     println!();
                     println!("  ZION algorithms:  deeksha_lite_v1, cosmic_harmony_ekam_deeksha_v2, deeksha_lite_fire");
                     println!("  External GPU:      blake3 (ALPH/DCR), kheavyhash (KAS), autolykos (ERG),");
@@ -3669,16 +3761,79 @@ impl MinerConfig {
         // Apply profile defaults first — env vars still override.
         apply_profile_defaults();
 
+        // ── Hardware autotuning ──
+        // Detect GPU VRAM, compute units, CPU cores, and system RAM.
+        // Compute optimal work sizes and thread count for this hardware.
+        // Env vars always override autotuned values.
+        let autotune = gpu_backend::auto_tune_work_sizes();
+        let autotune_enabled = parse_bool_env("ZION_AUTOTUNE", true);
+        if autotune_enabled {
+            println!("=== Hardware Autotune ===");
+            println!(
+                "  GPU: {} ({} CUs, {} MB VRAM)",
+                autotune.gpu_name,
+                autotune.gpu_compute_units,
+                autotune.gpu_vram_bytes / (1024 * 1024),
+            );
+            println!(
+                "  CPU: {} logical cores, {} MB RAM",
+                autotune.cpu_cores,
+                autotune.sys_ram_bytes / (1024 * 1024),
+            );
+            println!(
+                "  Recommended: gpu_work_size={} secondary_gpu_work_size={} threads={}",
+                autotune.gpu_work_size,
+                autotune.secondary_gpu_work_size,
+                autotune.threads,
+            );
+            println!("  (Set ZION_AUTOTUNE=0 to disable)");
+            println!("=========================");
+        }
+
         let threads = std::env::var("ZION_THREADS")
             .ok()
             .and_then(|v| v.parse().ok())
-            .unwrap_or_else(parallel::detect_threads);
+            .unwrap_or_else(|| {
+                if autotune_enabled {
+                    autotune.threads
+                } else {
+                    parallel::detect_threads()
+                }
+            });
 
         let miner_id = env_or_default("ZION_MINER_ID", "local-miner");
         let payout_address = std::env::var("ZION_PAYOUT_ADDRESS")
             .ok()
             .filter(|value| !value.trim().is_empty())
             .unwrap_or_else(|| miner_id.clone());
+
+        // ── Work size autotuning ──
+        // If env var is set, use it. Otherwise use autotuned value (if enabled)
+        // or fall back to 256K default.
+        let gpu_work_size = std::env::var("ZION_GPU_WORK_SIZE")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or_else(|| {
+                if autotune_enabled {
+                    autotune.gpu_work_size
+                } else {
+                    1 << 18 // 256K default
+                }
+            });
+        let pearl_gpu_work_size = std::env::var("ZION_PEARL_GPU_WORK_SIZE")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(gpu_work_size);
+        let secondary_gpu_work_size = std::env::var("ZION_SECONDARY_GPU_WORK_SIZE")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or_else(|| {
+                if autotune_enabled {
+                    autotune.secondary_gpu_work_size
+                } else {
+                    1 << 18 // 256K default
+                }
+            });
 
         Ok(Self {
             miner_id,
@@ -3714,18 +3869,9 @@ impl MinerConfig {
             revenue_value_usd: parse_env_f64("ZION_REVENUE_USD", 1.25)?,
             threads,
             gpu_backend: gpu_backend::GpuBackendKind::from_env(),
-            gpu_work_size: std::env::var("ZION_GPU_WORK_SIZE")
-                .ok()
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(1 << 18), // 256K default
-            pearl_gpu_work_size: std::env::var("ZION_PEARL_GPU_WORK_SIZE")
-                .ok()
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(1 << 18), // 256K default
-            secondary_gpu_work_size: std::env::var("ZION_SECONDARY_GPU_WORK_SIZE")
-                .ok()
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(1 << 18), // 256K default
+            gpu_work_size,
+            pearl_gpu_work_size,
+            secondary_gpu_work_size,
             algorithm: std::env::var("ZION_MINER_ALGORITHM")
                 .unwrap_or_else(|_| "deeksha_lite_v1".to_string()),
             stream1_enabled: parse_bool_env("ZION_STREAM1_ENABLED", true),

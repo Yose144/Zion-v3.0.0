@@ -654,6 +654,153 @@ pub fn detect_gpu_vram_bytes() -> u64 {
     gpus[0].global_mem_bytes
 }
 
+/// Detect GPU compute units (CUs) of the primary GPU.
+/// Returns 0 if no GPU is detected.
+pub fn detect_gpu_compute_units() -> u32 {
+    let gpus = query_gpu_details();
+    if gpus.is_empty() {
+        return 0;
+    }
+    gpus[0].compute_units
+}
+
+/// Round `n` up to the next power of two (or itself if already a power of two).
+fn next_pow2(n: usize) -> usize {
+    if n <= 1 {
+        return 1;
+    }
+    let p = (n as u64).next_power_of_two() as usize;
+    if p / 2 >= n {
+        p / 2 // round to nearest, preferring lower
+    } else {
+        p
+    }
+}
+
+/// Round `n` to the nearest power of two.
+fn nearest_pow2(n: usize) -> usize {
+    if n <= 1 {
+        return 1;
+    }
+    let up = (n as u64).next_power_of_two() as usize;
+    let down = up / 2;
+    if n - down <= up - n {
+        down
+    } else {
+        up
+    }
+}
+
+/// Hardware-autotuned mining parameters.
+///
+/// Detects GPU compute units, GPU VRAM, CPU cores, and system RAM, then
+/// computes optimal work sizes and thread count for maximum throughput.
+///
+/// ## Benchmark-derived heuristics
+///
+/// **gpu_work_size** (ZION deeksha, Stream 1):
+///   - Scales with GPU compute units: `nearest_pow2(CUs * 512)`
+///   - 18 CUs (RX 5700 XT) → 8192 ✓ (benchmarked optimal)
+///   - 10 CUs (M2) → 4096
+///   - 32 CUs (M4 Max) → 16384
+///   - Clamped to [1024, 65536]
+///
+/// **secondary_gpu_work_size** (ProgPow/KawPow/Ethash, Stream 2):
+///   - Scales with GPU VRAM: `clamp(VRAM_GB * 0.75M, 1M, 8M)`
+///   - 6 GB (RX 5700 XT) → 4M ✓ (benchmarked optimal)
+///   - 8 GB → 6M
+///   - 16 GB → 8M (capped)
+///   - Unified memory → 2M (conservative)
+///
+/// **threads** (CPU mining, Stream 3 VerusHash/RandomX):
+///   - Use all logical cores (benchmarks show T=all wins for total throughput)
+///   - On systems with ≥8 cores, reserve 0 threads (GPU driver has spare cycles)
+///   - Minimum 1, maximum 64
+pub struct AutoTuneResult {
+    /// GPU work size for ZION deeksha (Stream 1)
+    pub gpu_work_size: usize,
+    /// GPU work size for ProgPow/KawPow (Stream 2)
+    pub secondary_gpu_work_size: usize,
+    /// CPU thread count for VerusHash/RandomX (Stream 3)
+    pub threads: usize,
+    /// Detected GPU name (for logging)
+    pub gpu_name: String,
+    /// Detected GPU compute units
+    pub gpu_compute_units: u32,
+    /// Detected GPU VRAM in bytes (0 = unified memory / no GPU)
+    pub gpu_vram_bytes: u64,
+    /// Detected system RAM in bytes
+    pub sys_ram_bytes: u64,
+    /// Detected CPU logical cores
+    pub cpu_cores: usize,
+    /// Whether a dedicated GPU was detected
+    pub has_gpu: bool,
+}
+
+/// Auto-detect hardware and compute optimal mining parameters.
+///
+/// This is the main entry point for hardware-based autotuning.
+/// Called at miner startup when env vars are not explicitly set.
+pub fn auto_tune_work_sizes() -> AutoTuneResult {
+    let gpus = query_gpu_details();
+    let sys_ram = detect_system_memory_bytes();
+    let cpu_cores = num_cpus::get().max(1);
+
+    let has_gpu = !gpus.is_empty();
+    let gpu_info = gpus.first();
+    let gpu_name = gpu_info
+        .map(|g| g.name.clone())
+        .unwrap_or_else(|| "none".to_string());
+    let gpu_compute_units = gpu_info.map(|g| g.compute_units).unwrap_or(0);
+    let gpu_vram_bytes = gpu_info.map(|g| g.global_mem_bytes).unwrap_or(0);
+
+    // ── gpu_work_size: ZION deeksha (Stream 1) ──
+    // Formula: nearest_pow2(CUs * 512), clamped to [1024, 65536]
+    // Benchmark: 18 CUs → 8192 (optimal on RX 5700 XT)
+    let gpu_work_size = if gpu_compute_units > 0 {
+        let raw = (gpu_compute_units as usize) * 512;
+        nearest_pow2(raw).clamp(1024, 65536)
+    } else {
+        // No GPU — CPU mode, use default 256K
+        1 << 18
+    };
+
+    // ── secondary_gpu_work_size: ProgPow/KawPow (Stream 2) ──
+    // Formula: clamp(round(VRAM_MiB * 0.75 / 1024) * 1M, 1M, 8M)
+    // Benchmark: 6128 MiB → 4596 → 4596/1024 = 4 → 4M (optimal on RX 5700 XT)
+    let secondary_gpu_work_size = if gpu_vram_bytes > 0 {
+        let vram_mib = gpu_vram_bytes / (1024 * 1024);
+        // 0.75 of VRAM in MiB, then convert to M-units (1M = 1<<20 bytes)
+        // vram_mib / 1024 ≈ vram_gb, then * 3/4 = 0.75 * vram_gb
+        // Benchmark: 6128 MiB → 6128*3/(4*1024) = 4 → 4M (optimal on RX 5700 XT)
+        let target_m_units = (vram_mib * 3) / (4 * 1024);
+        let m_units = (target_m_units as usize).clamp(1, 8);
+        m_units * (1 << 20)
+    } else if has_gpu {
+        // Unified memory (Metal) — conservative 2M
+        2 << 20
+    } else {
+        // No GPU — CPU mode, use default 256K
+        1 << 18
+    };
+
+    // ── threads: CPU mining (Stream 3) ──
+    // Benchmark: T=12 (all threads) wins for total throughput
+    let threads = cpu_cores.min(64);
+
+    AutoTuneResult {
+        gpu_work_size,
+        secondary_gpu_work_size,
+        threads,
+        gpu_name,
+        gpu_compute_units,
+        gpu_vram_bytes,
+        sys_ram_bytes: sys_ram,
+        cpu_cores,
+        has_gpu,
+    }
+}
+
 /// Resolve `Auto` to the concrete backend that will actually be used on this
 /// platform. This is critical for memory safety: on macOS with only
 /// `gpu-metal` compiled, `Auto` falls through OpenCL → CUDA → Metal, so it
@@ -2807,7 +2954,11 @@ pub mod opencl_deeksha_lite {
             let arr = stream_weights_f32(weights);
             self.stream_weights_buf.write(&arr[..]).enq()?;
             self.pro_que.queue().finish()?;
-            println!("gpu_opencl_lite_stream_weights {}", weights.describe());
+            if std::env::var("ZION_QUIET").map(|v| v == "1").unwrap_or(false) {
+                // suppressed in quiet/sticky mode
+            } else {
+                println!("gpu_opencl_lite_stream_weights {}", weights.describe());
+            }
             Ok(())
         }
 
