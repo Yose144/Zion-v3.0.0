@@ -64,6 +64,7 @@ __constant ulong KC_RC[24] = {
 };
 
 /* keccak_f1600: canonical Rho+Pi via 23-element swap chain (no arrays) */
+__attribute__((always_inline))
 void keccak_f1600(__private ulong *st)
 {
     ulong bc0, bc1, bc2, bc3, bc4, t;
@@ -322,26 +323,24 @@ void fill_scratchpad(
 
 void sequential_passes(__global uchar *pad)
 {
-    /* Pass 0 — forward */
+    /* Pass 0 — forward: cache previous block in register to halve global reads */
+    ulong4 prev_v = vload4(0, (__global ulong*)(pad + (BLOCK_COUNT - 1) * BLOCK_SIZE));
     for (uint i = 0; i < BLOCK_COUNT; i++) {
-        uint prev = (i == 0) ? (BLOCK_COUNT - 1) : (i - 1);
-        uint cur  = i * BLOCK_SIZE;
-        uint prv  = prev * BLOCK_SIZE;
+        uint cur = i * BLOCK_SIZE;
         ulong4 cur_v = vload4(0, (__global ulong*)(pad + cur));
-        ulong4 prv_v = vload4(0, (__global ulong*)(pad + prv));
-        cur_v ^= prv_v;
+        cur_v ^= prev_v;
         vstore4(cur_v, 0, (__global ulong*)(pad + cur));
+        prev_v = cur_v;
     }
-    /* Pass 1 — backward */
+    /* Pass 1 — backward: cache next block in register to halve global reads */
+    ulong4 next_v = vload4(0, (__global ulong*)(pad));
     for (uint i = BLOCK_COUNT; i > 0; i--) {
-        uint idx  = i - 1;
-        uint next = (idx + 1 == BLOCK_COUNT) ? 0 : (idx + 1);
-        uint cur  = idx  * BLOCK_SIZE;
-        uint nxt  = next * BLOCK_SIZE;
+        uint idx = i - 1;
+        uint cur = idx * BLOCK_SIZE;
         ulong4 cur_v = vload4(0, (__global ulong*)(pad + cur));
-        ulong4 nxt_v = vload4(0, (__global ulong*)(pad + nxt));
-        cur_v ^= nxt_v;
+        cur_v ^= next_v;
         vstore4(cur_v, 0, (__global ulong*)(pad + cur));
+        next_v = cur_v;
     }
 }
 
