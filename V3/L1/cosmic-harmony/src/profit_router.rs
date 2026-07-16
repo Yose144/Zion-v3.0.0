@@ -227,15 +227,41 @@ impl ExternalCoin {
     }
 
     /// Whether this coin's algorithm has a GPU kernel implementation
-    /// for the given backend. Currently all GPU coins have OpenCL kernels
-    /// in the AuXpow module, but some may not compile on certain GPUs.
+    /// for the given backend. This must be kept in sync with the actual
+    /// kernel implementations in `AuXpow/src/gpu_miner.rs` (the
+    /// `kernel_info()` / `ensure_proque()` dispatch).
+    ///
+    /// OpenCL kernels implemented (as of 2026-07-16):
+    ///   blake3 (DCR/ALPH), kheavyhash (KAS), autolykos (ERG),
+    ///   kawpow (RVN/CLORE/QUAI), evrprogpow (EVR), meowpow (MEWC),
+    ///   ethash (ETC), zelhash (FLUX), progpow (EPIC),
+    ///   pearlhash (PRL), beamhash (BEAM), karlsenhash (KLS),
+    ///   fishhash (IRON), verthash (VTC), equihashzero (ZCL),
+    ///   nexapow (NEXA)
+    ///
+    /// NOT implemented (returns false):
+    ///   qhash (QTC), ghostrider (RTM), dynexsolve (DNX)
     pub fn gpu_kernel_available(self, backend: &str) -> bool {
         match backend {
             "opencl" => matches!(
                 self,
-                Self::DCR | Self::ALPH | Self::KAS | Self::ERG |
-                Self::RVN | Self::ETC | Self::FLUX | Self::CLORE |
-                Self::PRL | Self::IRON | Self::KLS
+                Self::DCR | Self::ALPH |          // blake3
+                Self::KAS |                        // kheavyhash
+                Self::ERG |                        // autolykos
+                Self::RVN | Self::CLORE | Self::QUAI |  // kawpow
+                Self::EVR |                        // evrprogpow (kawpow family)
+                Self::MEWC |                       // meowpow (kawpow family)
+                Self::ETC |                        // ethash
+                Self::FLUX |                       // zelhash
+                Self::EPIC |                       // progpow
+                Self::PRL |                        // pearlhash
+                Self::BEAM |                       // beamhash
+                Self::KLS |                        // karlsenhash (fishhash path)
+                Self::IRON |                       // fishhash
+                Self::VTC |                        // verthash
+                Self::ZCL |                        // equihashzero
+                Self::NEXA                         // nexapow
+                // QTC (qhash), RTM (ghostrider), DNX (dynexsolve) — no kernel
             ),
             "cuda" => matches!(
                 self,
