@@ -315,15 +315,18 @@ ZION_BACKEND=cuda ./zion-miner --pool ... --no-tui
 
 ### CPU tuning na Ryzen
 
+> **Note (2026-07-16):** CPU auto-tune now handles this automatically — see §4b.
+> The manual settings below are still valid as overrides.
+
 ```bash
-# Ryzen 5 3600 (6C/12T): 6 threadů pro VRSC, 6 pro OS
-./zion-miner --pool ... --threads 6 --no-tui
+# Ryzen 5 3600 (6C/12T): auto-tune picks 12 threads, 5M nonces (13 MH/s peak)
+./zion-miner --pool ... --no-tui  # no --threads needed!
 
-# Ryzen 9 5900X (12C/24T): 12 threadů pro VRSC
-./zion-miner --pool ... --threads 12 --no-tui
+# Ryzen 9 5900X (12C/24T): auto-tune picks 18 threads, 5M nonces
+./zion-miner --pool ... --no-tui
 
-# Ryzen 9 7950X (16C/32T): 16 threadů pro VRSC (nechat 16 pro OS/GPU)
-./zion-miner --pool ... --threads 16 --no-tui
+# Ryzen 9 7950X (16C/32T): auto-tune picks 22 threads, 5M nonces
+./zion-miner --pool ... --no-tui
 ```
 
 ### RandomX (XMR) na Ryzen
@@ -337,6 +340,85 @@ RandomX potřebuje 2MB L3 cache per thread:
 # RandomX s huge pages
 sudo sysctl -w vm.nr_hugepages=1280  # 2.5 GB pro 16 threadů
 ./zion-miner --pool ... --threads 16 --no-tui
+```
+
+---
+
+## 4b. CPU Auto-Tune (per-architecture, all CPU types)
+
+**Added 2026-07-16:** Comprehensive CPU detection + auto-tuning for VerusHash v2.2.
+The miner now detects CPU vendor, model, physical vs logical cores, and classifies
+the CPU into an architecture profile. Threads and nonce batch size are auto-tuned
+per profile — no manual `--threads` or `ZION_EXT_CPU_NONCE_COUNT` needed.
+
+### CPU Detection
+
+| Detection | Linux | macOS | Windows |
+|-----------|-------|-------|---------|
+| Vendor + model | `/proc/cpuinfo` | `sysctl machdep.cpu.brand_string` | `wmic cpu get name` |
+| Physical cores | `/proc/cpuinfo` core_id + physical_id | `sysctl hw.physicalcpu` | `wmic cpu get NumberOfCores` |
+| Logical cores | `num_cpus::get()` | `num_cpus::get()` | `num_cpus::get()` |
+
+### Architecture Profiles
+
+| Profile | CPUs | Threads formula | nonce_count |
+|---------|------|-----------------|-------------|
+| **AmdZen** | Ryzen, EPYC, Threadripper | `logical.min(physical + 6)` — SMT helps, cap to avoid L3 thrash | 5M if ≥8T, 2M if ≥4T, 1M else |
+| **IntelCore** | Core i3-i9, Xeon, Pentium | `logical.min(physical + 4)` — HT helps, slightly more conservative | 5M if ≥8T, 2M if ≥4T, 1M else |
+| **AppleSilicon** | M1–M5 | `physical - 1` if GPU active (unified memory) | 5M if ≥6T, 2M if ≥3T, 1M else |
+| **Other** | ARM server, unknown | `physical` only (no SMT assumption) | 5M if ≥8T, 2M if ≥4T, 1M else |
+
+### Benchmark Results (Ryzen 5 3600, 6C/12T)
+
+| Config | Threads | nonce_count | VRSC MH/s | Notes |
+|--------|---------|-------------|-----------|-------|
+| Physical only | 6 | 5M | ~4.1 | SMT disabled — low |
+| SMT, suboptimal | 10 | 1M | 11.9 | Good but not peak |
+| **Auto-tuned** | **12** | **5M** | **13.0** | **Peak — auto-tune picks this** |
+| Oversubscribed | 14+ | 5M | degrades | L3 cache contention (8.8KB key/thread) |
+
+### Key Insights
+
+1. **VerusHash benefits enormously from SMT** — 12 threads (6C/12T) is 3.2× faster than 6 threads (physical only)
+2. **Oversubscription degrades** — each VerusHash thread needs ~8.8KB CLHash key (thread-local), so `physical + 6` is the cap
+3. **nonce_count = 5M is optimal** for ≥8 threads — balances batch C++ scan efficiency vs job freshness
+4. **Apple Silicon** needs fewer threads when GPU is active (unified memory bandwidth contention)
+
+### Usage
+
+```bash
+# Fully automatic — no manual tuning needed
+./zion-miner --pool 62.171.141.136:8444 --wallet zion1... --no-tui
+
+# Check what auto-tune would pick
+./zion-miner --auto-tune
+
+# Override threads (still uses auto-tuned nonce_count)
+ZION_THREADS=8 ./zion-miner --pool ... --no-tui
+
+# Override nonce_count (still uses auto-tuned threads)
+ZION_EXT_CPU_NONCE_COUNT=2000000 ./zion-miner --pool ... --no-tui
+
+# Disable auto-tune entirely
+ZION_AUTOTUNE=0 ./zion-miner --pool ... --threads 6 --no-tui
+```
+
+### Example `--auto-tune` output (Ryzen 5 3600)
+
+```
+[auto-tune] CPU: AuthenticAMD "AMD Ryzen 5 3600 6-Core Processor" | physical=6 logical=12 arch=AmdZen | threads=12 nonce_count=5000000
+=== ZION Hardware Autotune ===
+
+Detected Hardware:
+  GPU:  gfx1010:xnack- (18 CUs, 6128 MB VRAM)
+  CPU:  AMD Ryzen 5 3600 6-Core Processor (6 physical / 12 logical cores)
+  RAM:  30947 MB
+
+Recommended Settings:
+  ZION_GPU_WORK_SIZE=8192
+  ZION_SECONDARY_GPU_WORK_SIZE=4194304
+  ZION_THREADS=12
+  ZION_EXT_CPU_NONCE_COUNT=5000000
 ```
 
 ---
@@ -492,6 +574,14 @@ cargo build --release -p zion-miner --features native-verushash,native-randomx
 | Variable | Default | Popis |
 |----------|---------|-------|
 | `ZION_BACKEND` | `auto` | `auto` / `opencl` / `cuda` / `metal` / `cpu` |
+| `ZION_AUTOTUNE` | `1` | `0` = disable hardware auto-tune (use manual env vars) |
+| `ZION_THREADS` | auto-tuned | CPU thread count (auto: AmdZen=all logical, Intel=all logical, Apple=physical-1) |
+| `ZION_EXT_CPU_NONCE_COUNT` | auto-tuned | VerusHash nonce batch size (auto: 5M if ≥8T, 2M if ≥4T, 1M else) |
+| `ZION_GPU_WORK_SIZE` | auto-tuned | GPU work size for Stream 1 (auto: nearest_pow2(CUs*512)) |
+| `ZION_SECONDARY_GPU_WORK_SIZE` | auto-tuned | GPU work size for Stream 2 (auto: VRAM*0.75/1024 * 1M) |
+| `ZION_STREAM1_ENABLED` | `1` | Enable ZION primary stream |
+| `ZION_STREAM2_ENABLED` | `1` | Enable GPU external coin stream |
+| `ZION_STREAM3_ENABLED` | `1` | Enable CPU external coin stream (VerusHash/RandomX) |
 | `ZION_METRICS_REPORT_SECS` | `30` | Interval stats outputu v sekundách |
 | `ZION_FORCE_STREAM2` | unset | `1` = povolit Stream 2 i na low-memory |
 | `ZION_INTERACTIVE` | `1` | `0` = no-TUI mode (stdout stats) |

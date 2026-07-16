@@ -1830,9 +1830,10 @@ fn run_remote_session(
     let (ext_cpu_share_tx, ext_cpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
     if config.stream3_enabled {
         let ext_cpu_threads = config.threads.max(1);
+        let ext_cpu_nonce_count = config.verushash_nonce_count;
         let hashrate_ext_cpu = Arc::clone(hashrate);
         thread::spawn(move || {
-            ext_cpu_thread(ext_cpu_rx, ext_cpu_share_tx, ext_cpu_threads, hashrate_ext_cpu);
+            ext_cpu_thread(ext_cpu_rx, ext_cpu_share_tx, ext_cpu_threads, ext_cpu_nonce_count, hashrate_ext_cpu);
         });
         println!(
             "[{}] stream3c_ext_cpu_started threads={}",
@@ -3117,17 +3118,14 @@ fn ext_cpu_thread(
     rx: std::sync::mpsc::Receiver<zion_pool::ExternalStreamJob>,
     tx: std::sync::mpsc::Sender<ExternalShareResult>,
     threads: usize,
+    nonce_count: u64,
     hashrate: Arc<HashrateTracker>,
 ) {
-    let nonce_count: u64 = std::env::var("ZION_EXT_CPU_NONCE_COUNT")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(10_000_000);
-
     println!(
-        "[{}] ext_cpu_thread: started (persistent, threads={})",
+        "[{}] ext_cpu_thread: started (persistent, threads={}, nonce_count={})",
         log_timestamp(),
-        threads
+        threads,
+        nonce_count,
     );
 
     let mut current_job: Option<zion_pool::ExternalStreamJob> = None;
@@ -3602,6 +3600,8 @@ struct MinerConfig {
     stream2_enabled: bool,
     /// Whether Stream 3 (CPU external coins) is enabled (default: true)
     stream3_enabled: bool,
+    /// Auto-tuned nonce batch size for VerusHash CPU mining (Stream 3)
+    verushash_nonce_count: u64,
     /// Whether auto-mode was requested (affects logging)
     #[allow(dead_code)]
     auto_mode: bool,
@@ -3685,7 +3685,9 @@ impl MinerConfig {
                         result.gpu_vram_bytes / (1024 * 1024),
                     );
                     println!(
-                        "  CPU:  {} logical cores",
+                        "  CPU:  {} ({} physical / {} logical cores)",
+                        result.cpu_model,
+                        result.cpu_physical_cores,
                         result.cpu_cores,
                     );
                     println!(
@@ -3705,6 +3707,10 @@ impl MinerConfig {
                     println!(
                         "  ZION_THREADS={}",
                         result.threads,
+                    );
+                    println!(
+                        "  ZION_EXT_CPU_NONCE_COUNT={}",
+                        result.verushash_nonce_count,
                     );
                     println!();
                     println!(
@@ -3780,15 +3786,21 @@ impl MinerConfig {
                 autotune.gpu_vram_bytes / (1024 * 1024),
             );
             println!(
-                "  CPU: {} logical cores, {} MB RAM",
+                "  CPU: {} ({} physical / {} logical cores)",
+                autotune.cpu_model,
+                autotune.cpu_physical_cores,
                 autotune.cpu_cores,
+            );
+            println!(
+                "  RAM: {} MB",
                 autotune.sys_ram_bytes / (1024 * 1024),
             );
             println!(
-                "  Recommended: gpu_work_size={} secondary_gpu_work_size={} threads={}",
+                "  Recommended: gpu_work_size={} secondary_gpu_work_size={} threads={} verushash_nonce_count={}",
                 autotune.gpu_work_size,
                 autotune.secondary_gpu_work_size,
                 autotune.threads,
+                autotune.verushash_nonce_count,
             );
             println!("  (Set ZION_AUTOTUNE=0 to disable)");
             println!("=========================");
@@ -3881,6 +3893,16 @@ impl MinerConfig {
             stream1_enabled: parse_bool_env("ZION_STREAM1_ENABLED", true),
             stream2_enabled: parse_bool_env("ZION_STREAM2_ENABLED", true),
             stream3_enabled: parse_bool_env("ZION_STREAM3_ENABLED", true),
+            verushash_nonce_count: std::env::var("ZION_EXT_CPU_NONCE_COUNT")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or_else(|| {
+                    if autotune_enabled {
+                        autotune.verushash_nonce_count
+                    } else {
+                        10_000_000
+                    }
+                }),
             auto_mode: parse_bool_env("ZION_AUTO_MODE", false),
         })
     }
