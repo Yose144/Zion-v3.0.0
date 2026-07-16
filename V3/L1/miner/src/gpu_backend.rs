@@ -5132,8 +5132,49 @@ pub mod opencl_external {
 
     impl OpenClExternalMiner {
         pub fn new(algorithm: &str, work_size: usize) -> Result<Self> {
-            let miner = AuxPowGpuMiner::new()
+            let mut miner = AuxPowGpuMiner::new()
                 .map_err(|e| anyhow::anyhow!("auxpow_gpu_init_failed algorithm={algorithm} err={e}"))?;
+
+            // Verthash (VTC) requires a ~1.2GB data file (verthash.dat).
+            // Try to load it from common locations. If not found, the miner
+            // will still initialize but mine() will return an error when VTC
+            // is attempted (clear "data file not loaded" message).
+            if matches!(algorithm, "verthash" | "verthash_vtc") {
+                let dat_path = std::env::var("ZION_VERTHASH_DAT")
+                    .unwrap_or_else(|_| "verthash.dat".to_string());
+                let candidates = [
+                    std::path::PathBuf::from(&dat_path),
+                    std::path::PathBuf::from("AuXpow/verthash.dat"),
+                    std::path::PathBuf::from("verthash.dat"),
+                ];
+                let mut loaded = false;
+                for path in &candidates {
+                    if path.exists() {
+                        eprintln!("auxpow_gpu_verthash loading data file: {:?}", path);
+                        match std::fs::read(path) {
+                            Ok(data) => {
+                                if let Err(e) = miner.set_verthash_data(&data) {
+                                    eprintln!("auxpow_gpu_verthash data load failed: {e}");
+                                } else {
+                                    loaded = true;
+                                }
+                                break;
+                            }
+                            Err(e) => {
+                                eprintln!("auxpow_gpu_verthash read error {:?}: {e}", path);
+                            }
+                        }
+                    }
+                }
+                if !loaded {
+                    eprintln!(
+                        "auxpow_gpu_verthash WARNING: verthash.dat not found in any location. \
+                         Set ZION_VERTHASH_DAT env var or place verthash.dat in the working \
+                         directory. VTC mining will fail until the data file is loaded."
+                    );
+                }
+            }
+
             Ok(Self {
                 algorithm: algorithm.to_string(),
                 miner,
@@ -5258,15 +5299,25 @@ pub mod opencl_external {
                 | "zelhash"
                 | "zelhash_flux"
                 | "progpow"
-                | "progpow_epic" => self.miner.mine(
-                    &self.algorithm,
-                    &header_bytes,
-                    &[],
-                    &target.bytes,
-                    nonce_start,
-                    actual_batch,
-                ),
-                "beamhash" | "beamhash_beam" => self.miner.mine(
+                | "progpow_epic"
+                | "beamhash"
+                | "beamhash_beam"
+                | "fishhash"
+                | "fishhash_iron"
+                | "karlsenhash"
+                | "karlsenhash_kls"
+                | "verthash"
+                | "verthash_vtc"
+                | "equihashzero"
+                | "equihashzero_zcl"
+                | "nexapow"
+                | "nexapow_nexa"
+                | "qhash"
+                | "qhash_qtc"
+                | "ghostrider"
+                | "ghostrider_rtm"
+                | "dynexsolve"
+                | "dynexsolve_dnx" => self.miner.mine(
                     &self.algorithm,
                     &header_bytes,
                     &[],

@@ -205,7 +205,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | **KLS** | KarlsenHashV2 (FishHashPlus+Blake3) | Stratum | ✅ OpenCL kernel `karlsenhash_kernel.cl` (604 lines) + DAG + GPU dispatch wired (`f6df75b64`) |
 | **ZCL** | EquihashZero 192,7 | ZcashStratum | ✅ OpenCL kernel `equihash_kernel.cl` (851 lines, adapted from silentarmy) + host-side multi-kernel Wagner dispatch (Blake2b state, 10-kernel sequence, double-SHA256 verification) (`f6df75b64`, host-side integration) |
 | **QTC** | Qhash (quantum circuit sim) | Stratum | ✅ OpenCL kernel `qhash_kernel.cl` (370 lines, 16-qubit quantum circuit sim with RY/RZ/CNOT gates, 65536 complex amplitudes, 512KB state vector per work-item) + GPU dispatch wired (`0e5ef6c40`) |
-| **VTC** | Verthash (I/O-bound, 1.2GB dat) | Stratum | ✅ OpenCL kernel `verthash_kernel.cl` (289 lines) + SHA3 kernels — host-side 1.2GB data file loader TODO (`646d14f59`) |
+| **VTC** | Verthash (I/O-bound, 1.2GB dat) | Stratum | ✅ OpenCL kernel `verthash_kernel.cl` (289 lines) + SHA3 kernels + host-side 3-kernel dispatch (precompute→sha3_256→verthash_4w) + verthash.dat loader + MDIV computation (`646d14f59`, `e8e237448`) |
 | **IRON** | FishHash (Blake3 DAG) | Stratum | ✅ OpenCL kernel `fishhash_kernel.cl` (580 lines) + DAG + GPU dispatch wired (`f6df75b64`) |
 | **NEXA** | NexaPow (secp256k1 Schnorr) | Stratum | ✅ OpenCL kernel `nexapow_kernel.cl` (6164 lines, UltrafastSecp256k1 MIT) + GPU dispatch wired (`77613ad50`) |
 | **RTM** | GhostRider (15 algos + 6 CN) | Stratum | ✅ OpenCL kernel `ghostrider_kernel.cl` (580 lines, 15 x16r hash algos + 6 CryptoNight variants, 18-step hash chain, 1MB scratchpad per work-item) + GPU dispatch wired (`0e5ef6c40`) |
