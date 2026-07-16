@@ -38,10 +38,9 @@ fn main() {
         // all CPU cores, reducing epoch-120 DAG generation from ~3 minutes
         // (single-threaded) to ~15-20 seconds on a 12-core box.
         // On Windows, MSVC requires /openmp instead.
-        #[cfg(target_os = "linux")]
-        {
-            build.flag("-fopenmp");
-        }
+        // NOTE: OpenMP disabled for cross-compilation to older CPUs (Pentium G4560)
+        // because libgomp may contain AVX instructions that cause SIGILL.
+        // The DAG generation falls back to single-threaded (still works, just slower).
         #[cfg(target_os = "macos")]
         {
             // Apple clang supports -Xpreprocessor -fopenmp + -lomp
@@ -52,12 +51,14 @@ fn main() {
         build
             .warnings(false) // C code may have unused-parameter warnings
             .opt_level(3)
+            .flag("-march=x86-64") // Ensure compatibility with CPUs without AVX (e.g. Pentium G4560)
             .compile("auxpow_native");
 
         // Link OpenMP runtime library (libgomp on Linux).
-        #[cfg(target_os = "linux")]
+        // NOTE: Disabled on Linux to avoid SIGILL on CPUs without AVX.
+        #[cfg(target_os = "macos")]
         {
-            println!("cargo:rustc-link-lib=gomp");
+            println!("cargo:rustc-link-lib=omp");
         }
 
         // Tell cargo to rerun if any C source changes

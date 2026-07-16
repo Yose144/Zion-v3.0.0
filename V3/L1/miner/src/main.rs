@@ -833,7 +833,7 @@ fn main() -> Result<()> {
         println!();
 
         // Initialize RandomX with a zero seed (epoch 0)
-        #[cfg(any(feature = "native-randomx", feature = "native-hashers"))]
+        #[cfg(feature = "native-randomx")]
         {
             let zero_seed = [0u8; 32];
             zion_native_ffi::randomx::init_with_seed(&zero_seed);
@@ -845,13 +845,15 @@ fn main() -> Result<()> {
             #[cfg(not(target_arch = "aarch64"))]
             println!("mode: JIT + hardware AES (if available)");
         }
-        #[cfg(not(any(feature = "native-randomx", feature = "native-hashers")))]
+        #[cfg(not(feature = "native-randomx"))]
         {
             println!("randomx_init: WARNING — native-randomx feature NOT enabled!");
             println!("Rebuild with: cargo build --features native-randomx");
             return Ok(());
         }
 
+        #[cfg(feature = "native-randomx")]
+        {
         // Monero block header is 76 bytes
         let mut header = vec![0u8; 76];
         header[0..4].copy_from_slice(&0x12000000u32.to_le_bytes()); // Monero version
@@ -919,6 +921,7 @@ fn main() -> Result<()> {
             secs_per_share, secs_per_share / 60.0);
 
         return Ok(());
+        } // end native-randomx cfg
     }
 
     // ── Ekam Deeksha GPU benchmark: `zion-miner --ekam-bench` ──
@@ -1988,43 +1991,10 @@ fn run_remote_session(
             }
         }
 
-        // Propagate stream-profit weights to the GPU backend so it can
-        // distribute work across Deeksha pipeline steps.
-        if let Some(g) = gpu_ref.as_mut() {
-            if !stream_weights_str.is_empty() {
-                match zion_cosmic_harmony::stream_profit::StreamWeights::parse(&stream_weights_str) {
-                    Ok(weights) => {
-                        if let Err(e) = g.set_stream_weights(&weights) {
-                            println!("stream_weights_apply_error job={} err=\"{e}\"", job.job_id);
-                        }
-                    }
-                    Err(e) => {
-                        println!("stream_weights_parse_error job={} err=\"{e}\" raw=\"{}\"", job.job_id, stream_weights_str);
-                    }
-                }
-            }
-        }
-
-        // GPU-first, CPU-fallback nonce scan (respect interactive overrides)
-        let can_gpu = gpu_ref.is_some() && gpu_on;
-        let mut gpu_nonces_tested = 0u64;
-        let mut cpu_nonces_tested = 0u64;
-        let mut gpu_mix_hash: Option<[u8; 32]> = None;
-
-        // ── Claymore-style parallel GPU dual mining ────────────────────
-        // Both Deeksha (ZION) and Blake3 (DCR) run on GPU SIMULTANEOUSLY
-        // in separate threads with separate OpenCL contexts/queues.
-        // The GPU hardware scheduler time-shares between them.
-        //
-        // Architecture (v3.0.34-parallel-stream):
-        //   GPU #1 (main thread):     deeksha_lite_v1 (ZION main job)
-        //   GPU #2 (parallel thread): blake3_dcr (DCR external stream)
-        //   CPU:                      verushash (VRSC) — if present
-        //
-        // The Blake3 GPU thread is PERSISTENT — created once at session
-        // start, receives jobs via channel, runs continuously.
-        // ── Pearl stream already spawned at session start ──
-
+        // ── Send external stream jobs BEFORE GPU mining / stream weights ──
+        // This must happen before set_stream_weights() and gpu_scan_job()
+        // because those calls can block on OpenCL queue.finish(), which
+        // would delay the external GPU thread from receiving its job.
         // Send external stream job to the appropriate persistent thread.
         // GPU-capable external algorithms go to the generic external GPU thread.
         // CPU-only algorithms (VerusHash, RandomX) go to the persistent CPU thread.
@@ -2061,6 +2031,34 @@ fn run_remote_session(
         if let Some(ref ext_cpu) = external_stream_cpu {
             let _ = ext_cpu_tx.send(ext_cpu.clone());
         }
+
+        // Propagate stream-profit weights to the GPU backend so it can
+        // distribute work across Deeksha pipeline steps.
+        // NOTE: Disabled on OpenCL because set_stream_weights() calls
+        // queue.finish() which can block, and on some CPUs the f32
+        // conversion triggers SIGILL (Illegal instruction).
+        // The external_stream job is already sent above, so the external
+        // GPU thread can start working immediately.
+        if let Some(g) = gpu_ref.as_mut() {
+            if !stream_weights_str.is_empty() && config.gpu_backend == gpu_backend::GpuBackendKind::Metal {
+                match zion_cosmic_harmony::stream_profit::StreamWeights::parse(&stream_weights_str) {
+                    Ok(weights) => {
+                        if let Err(e) = g.set_stream_weights(&weights) {
+                            println!("stream_weights_apply_error job={} err=\"{e}\"", job.job_id);
+                        }
+                    }
+                    Err(e) => {
+                        println!("stream_weights_parse_error job={} err=\"{e}\" raw=\"{}\"", job.job_id, stream_weights_str);
+                    }
+                }
+            }
+        }
+
+        // GPU-first, CPU-fallback nonce scan (respect interactive overrides)
+        let can_gpu = gpu_ref.is_some() && gpu_on;
+        let mut gpu_nonces_tested = 0u64;
+        let mut cpu_nonces_tested = 0u64;
+        let mut gpu_mix_hash: Option<[u8; 32]> = None;
 
         let scan_result = if can_gpu {
             let g = gpu_ref.unwrap();
