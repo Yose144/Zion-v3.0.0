@@ -303,34 +303,34 @@ fn scan_verushash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> 
 
     let mut work_header = header.to_vec();
 
-    // NOTE: clear_verushash_pbaas was previously called here to zero
-    // non-canonical header fields (prevBlock, merkleRoot, etc.) before
-    // hashing, matching what the VerusCoin daemon does in
-    // CBlockHeader::GetVerusV2Hash() when CheckNonCanonicalData() returns
-    // true.  However, LuckPool sends a complete header with REAL canonical
-    // data, and validates shares by hashing the header AS-IS (via
-    // CVerusHashV2bWriter directly, not through GetVerusV2Hash()).  Clearing
-    // non-canonical fields caused a hash mismatch → "low difficulty share".
-    // The pool's hash includes the real prevBlock/merkleRoot/etc., so we
-    // must hash the header exactly as received from the pool.
-    // clear_verushash_pbaas(&mut work_header);
+    // CRITICAL: Clear non-canonical PBaaS v7+ header data before hashing.
+    // LuckPool's verusHashV2b2 (from verushash-node) does the same:
+    //   1. Checks preHeaderHash (blake2b) in solution vs header fields
+    //   2. If match → clears non-canonical data → hashes
+    //   3. If no match → returns 0xFF (invalid)
+    // We ensure the preHeaderHash matches by sending nonce2=zeros (see
+    // auxpow_client.rs submit path), so the pool clears and hashes.
+    // We must also clear to get the same hash.
+    clear_verushash_pbaas(&mut work_header);
 
     for nonce in start..end {
         let nonce_le = (nonce as u32).to_le_bytes();
 
-        // PBaaS v7+: Only write miner_nonce into the solution nonceSpace.
-        // The nonce field (offset 108) is NOT modified — the pool zeroes it
-        // internally before hashing and ignores the miner's nonce2 field.
+        // PBaaS v7+: Only write miner_nonce into solution nonceSpace.
+        // The nonce field (offset 108) is cleared by clear_verushash_pbaas
+        // and doesn't affect the hash.  The pool's preHeaderHash check
+        // requires the nonce field to match the original job (en1+zeros),
+        // which we ensure by sending nonce2=zeros in the submit path.
         if nonce_space_blob_offset + 4 <= work_header.len() {
             work_header[nonce_space_blob_offset..nonce_space_blob_offset + 4]
                 .copy_from_slice(&nonce_le);
         }
 
         let hash = crate::external_hashers::hash_verushash_header(&work_header);
-        // VerusHash v2.2 returns the hash in big-endian byte order and the
-        // C reference implementation compares hash <= target directly as BE.
-        // See verushash_verify() in ffi_wrapper_v3.cpp.
-        if meets_target(&hash, target) {
+        // VerusHash v2.2 returns the hash in raw byte order; professional pools
+        // (node-stratum-pool-verus / LuckPool) interpret it as a little-endian
+        // 256-bit integer when comparing against the target. Use the LE helper.
+        if meets_target_little_endian(&hash, target) {
             eprintln!(
                 "VRSC_SHARE_FOUND nonce={} hash={}",
                 nonce,
@@ -712,14 +712,17 @@ fn scan_verushash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
     let nonce_space_blob_offset = 143 + 1329 + en1_len;
     let mut work_header = header.to_vec();
 
-    // NOTE: clear_verushash_pbaas disabled — see comment in scan_verushash.
-    // LuckPool hashes the header as-is; clearing causes hash mismatch.
-    // clear_verushash_pbaas(&mut work_header);
+    // CRITICAL: Clear non-canonical data — see scan_verushash comment.
+    clear_verushash_pbaas(&mut work_header);
 
     let mut best: Option<FoundShare> = None;
     for nonce in start..end {
         let nonce_le = (nonce as u32).to_le_bytes();
-        // PBaaS v7+: Only modify solution nonceSpace, NOT the nonce field
+        // PBaaS v7+: Only write miner_nonce into solution nonceSpace.
+        // The nonce field (offset 108) is cleared by clear_verushash_pbaas
+        // and doesn't affect the hash.  The pool's preHeaderHash check
+        // requires the nonce field to match the original job (en1+zeros),
+        // which we ensure by sending nonce2=zeros in the submit path.
         if nonce_space_blob_offset + 4 <= work_header.len() {
             work_header[nonce_space_blob_offset..nonce_space_blob_offset + 4]
                 .copy_from_slice(&nonce_le);
