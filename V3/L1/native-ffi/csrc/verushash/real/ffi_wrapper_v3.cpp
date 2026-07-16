@@ -142,9 +142,29 @@ const char* verushash_version(void) {
  * then hash_with_nonce for each nonce. */
 static thread_local CVerusHashV2* tl_hasher = nullptr;
 static thread_local bool tl_key_prepared = false;
-/* Pristine key backup — restored before each hash_with_nonce */
-static thread_local u128* tl_pristine_key = nullptr;
-static thread_local size_t tl_pristine_key_size = 0;
+
+/* Pre-computed curBuf constants (computed once in prepare_key, reused per nonce).
+ * curBuf layout: [0..31]=intermediate, [32..46]=nonceSpace, [47]=ch, [48..63]=fill1
+ * Only [32..46] varies per nonce; [47..63] is overwritten by FillExtra after CLHash
+ * and restored from fill1/ch at the start of each hash_with_nonce call. */
+alignas(32) static thread_local uint8_t tl_curBuf[64];
+static thread_local __m128i tl_fill1;
+static thread_local uint8_t tl_ch;
+static thread_local __m128i tl_shuf2;
+
+/* fixupkey: restore only the ~64 modified 16-byte key blocks from the refresh area.
+ * This replaces the old 8832-byte memcpy per nonce with ~1024 bytes of restores.
+ * Matches the VerusCoin reference miner (verus_clhash.cpp mine_verus_v2). */
+static inline __attribute__((always_inline)) void fixupkey_opt(
+    __m128i **pMoveScratch, verusclhash_descr *pdesc)
+{
+    uint32_t ofs = pdesc->keySizeInBytes >> 4;
+    for (__m128i *pfixup = *pMoveScratch; pfixup; pfixup = *++pMoveScratch)
+    {
+        const __m128i fixup = _mm_load_si128((__m128i *)(pfixup + ofs));
+        _mm_store_si128((__m128i *)pfixup, fixup);
+    }
+}
 
 /* Stage 1: Compute 64-byte intermediate state from full block data.
  * Matches ccminer's VerusHashHalf / bloxminer's hash_half().
@@ -195,46 +215,54 @@ void verushash_hash_half(
 
 /* Stage 2: Generate CLHash key from intermediate state.
  * Must be called once per job after hash_half.
- * Allocates/replaces the thread-local pristine key backup. */
+ * Pre-computes curBuf constants (fill1, ch, shuf2) for reuse per nonce. */
 void verushash_prepare_key(const uint8_t* intermediate64)
 {
     if (!tl_hasher) {
         tl_hasher = new CVerusHashV2(SOLUTION_VERUSHHASH_V2_2);
     }
 
-    /* GenNewCLKey uses the first 32 bytes of intermediate as seed */
+    /* GenNewCLKey uses the first 32 bytes of intermediate as seed.
+     * This also sets up the refresh area (key+keySize has a copy of the
+     * first keyrefreshsize bytes) and zeroes the pMoveScratch area. */
     u128* key = CVerusHashV2::GenNewCLKey((unsigned char*)intermediate64);
 
-    /* Save pristine copy for restoration before each hash_with_nonce */
-    verusclhash_descr* pdesc = (verusclhash_descr*)verusclhasher_descr.get();
-    size_t keySize = pdesc ? pdesc->keySizeInBytes : 8832;
+    /* Pre-compute curBuf constant parts from intermediate:
+     *   curBuf[0..31]  = intermediate[0..31]  (constant across nonces)
+     *   curBuf[47]     = intermediate[0]      (ch, constant)
+     *   curBuf[48..63] = shuffle(intermediate[0..15], shuf1)  (fill1, constant)
+     *   curBuf[32..46] = nonceSpace (varies per nonce, set in hash_with_nonce) */
+    memcpy(tl_curBuf, intermediate64, 64);
 
-    if (!tl_pristine_key || tl_pristine_key_size < keySize) {
-        if (tl_pristine_key) free(tl_pristine_key);
-        /* Over-allocate to avoid reallocation on key size changes */
-        tl_pristine_key = (u128*)alloc_aligned_buffer(keySize);
-        tl_pristine_key_size = keySize;
-    }
-    if (tl_pristine_key && key) {
-        memcpy(tl_pristine_key, key, keySize);
-    }
-    tl_key_prepared = (tl_pristine_key != nullptr && key != nullptr);
+    const __m128i shuf1 = _mm_setr_epi8(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0);
+    tl_shuf2 = _mm_setr_epi8(1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7, 0);
+
+    __m128i src = _mm_load_si128((const __m128i*)tl_curBuf);
+    tl_fill1 = _mm_shuffle_epi8(src, shuf1);
+    tl_ch = tl_curBuf[0];
+
+    /* Store fill1 and ch into curBuf (will be overwritten by FillExtra after
+     * CLHash, then restored at the start of each hash_with_nonce call) */
+    _mm_store_si128((__m128i*)(tl_curBuf + 48), tl_fill1);
+    tl_curBuf[47] = tl_ch;
+
+    tl_key_prepared = (key != nullptr);
 }
 
 /* Stage 3: Compute final 32-byte hash from intermediate + 15-byte nonceSpace.
  * Called for each nonce iteration. prepare_key must have been called first.
  *
- * The nonceSpace15 is the 15-byte region at solution offset 1472 (after
- * en1 + miner_nonce). The caller embeds the mining nonce there.
+ * Uses fixupkey() to restore only the ~64 modified key blocks (1024 bytes)
+ * from the refresh area, instead of a full 8832-byte memcpy per nonce.
+ * Also uses pre-computed curBuf constants from prepare_key.
  *
- * Matches ccminer's Verus2hash / bloxminer's hash_with_nonce(). */
+ * Matches the VerusCoin reference miner (verus_clhash.cpp mine_verus_v2). */
 void verushash_hash_with_nonce(
     const uint8_t* intermediate64,
     const uint8_t* nonceSpace15,
     uint8_t*       output)
 {
-    if (!tl_key_prepared || !tl_pristine_key) {
-        /* Fallback: full hash */
+    if (!tl_key_prepared) {
         memset(output, 0, 32);
         return;
     }
@@ -250,35 +278,25 @@ void verushash_hash_with_nonce(
     size_t keySize = pdesc ? pdesc->keySizeInBytes : 8832;
     uint64_t keyMask = tl_hasher->vclh.keyMask;
 
-    /* Restore pristine key (CLHash modifies the key during hashing) */
-    memcpy(key, tl_pristine_key, keySize);
-
-    /* Work on a copy of the intermediate */
-    alignas(32) uint8_t curBuf[64];
-    memcpy(curBuf, intermediate64, 64);
-
-    /* FillExtra — shuffle and fill BEFORE copying nonce.
-     * Matches ccminer's Verus2hash order:
-     *   shuf1 = setr_epi8(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0)
-     *   fill1 = shuffle(curBuf[0..15], shuf1)
-     *   store(curBuf+48, fill1)
-     *   curBuf[47] = curBuf[0] */
-    __m128i src = _mm_load_si128((const __m128i*)curBuf);
-    const __m128i shuf1 = _mm_setr_epi8(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0);
-    __m128i fill1 = _mm_shuffle_epi8(src, shuf1);
-    uint8_t ch = curBuf[0];
-    _mm_store_si128((__m128i*)(curBuf + 48), fill1);
-    curBuf[47] = ch;
-
-    /* Copy the 15-byte nonceSpace to positions 32-46 */
-    memcpy(curBuf + 32, nonceSpace15, 15);
-
-    /* Run CLHash v2.2 */
+    /* Restore key using fixupkey — only ~64 modified 16-byte blocks from
+     * the refresh area (1024 bytes) vs full 8832-byte memcpy.
+     * On the first call after prepare_key, pMoveScratch is all zeros
+     * (zeroed by GenNewCLKey), so fixupkey is a no-op. */
     uint64_t keyrefreshsize = keyMask + 1;
     __m128i** pMoveScratch = (__m128i**)((uint8_t*)key + keySize + keyrefreshsize);
+    fixupkey_opt(pMoveScratch, pdesc);
 
+    /* Restore curBuf[47..63] from pre-computed fill1/ch (overwritten by
+     * the previous call's FillExtra with CLHash result) */
+    _mm_store_si128((__m128i*)(tl_curBuf + 48), tl_fill1);
+    tl_curBuf[47] = tl_ch;
+
+    /* Copy the 15-byte nonceSpace to positions 32-46 */
+    memcpy(tl_curBuf + 32, nonceSpace15, 15);
+
+    /* Run CLHash v2.2 */
     __m128i acc = __verusclmulwithoutreduction64alignedrepeat_sv2_2(
-        (__m128i*)key, (const __m128i*)curBuf, keyMask, pMoveScratch);
+        (__m128i*)key, (const __m128i*)tl_curBuf, keyMask, pMoveScratch);
 
     /* Finish CLHash — reduction + GF(2^128) division */
     const __m128i lengthvector = _mm_set_epi64x(1024, 64);
@@ -297,25 +315,23 @@ void verushash_hash_with_nonce(
     uint64_t intermediate = _mm_cvtsi128_si64(acc);
 
     /* FillExtra with CLHash result */
-    const __m128i shuf2 = _mm_setr_epi8(1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7, 0);
     __m128i intVec = _mm_loadl_epi64((const __m128i*)&intermediate);
-    __m128i fill2 = _mm_shuffle_epi8(intVec, shuf2);
-    _mm_store_si128((__m128i*)(curBuf + 48), fill2);
-    curBuf[47] = ((const uint8_t*)&intermediate)[0];
+    __m128i fill2 = _mm_shuffle_epi8(intVec, tl_shuf2);
+    _mm_store_si128((__m128i*)(tl_curBuf + 48), fill2);
+    tl_curBuf[47] = ((const uint8_t*)&intermediate)[0];
 
     /* Mask for key offset */
     uint64_t keyOffset = intermediate & (keyMask >> 4);
 
     /* Final keyed Haraka512 */
-    (*CVerusHashV2::haraka512KeyedFunction)(output, curBuf, key + keyOffset);
+    (*CVerusHashV2::haraka512KeyedFunction)(output, tl_curBuf, key + keyOffset);
 }
 
 /* Cleanup thread-local two-stage state (called when thread exits or
  * when a new job requires re-initialization). */
 void verushash_mining_reset(void) {
     tl_key_prepared = false;
-    /* Don't delete tl_hasher — it's reused across jobs.
-     * Don't free tl_pristine_key — it's reused. */
+    /* Don't delete tl_hasher — it's reused across jobs. */
 }
 
 } /* extern "C" */
