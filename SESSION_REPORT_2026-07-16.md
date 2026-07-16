@@ -117,3 +117,39 @@ Všechny 8 algoritmů má OpenCL kernel zdrojový kód (5 plně integrovaných, 
 ## Profitabilita (WhatToMine July 2026, $0.10/kWh, RX 5600 XT)
 
 KLS a ZCL jsou nejprofitabilnější nové no-DAG coiny (~$0.20-0.21/day revenue), ale všechny jsou near break-even nebo mírně negativní při $0.10/kWh. ALPH (Blake3) zůstává nejlepší existující no-DAG option na $0.22/day.
+
+## 4. Stratum E2E testy (2026-07-16 19:46–19:52)
+
+Testy stratum protokolu z Edge serveru (62.171.141.136) pro všech 8 nových coinů.
+Měřeno: TCP connect → mining.subscribe → mining.authorize → mining.notify.
+
+### Výsledky
+
+| Coin | Pool | Connect | Subscribe | Auth | Notify | Difficulty | Status |
+|------|------|---------|-----------|------|--------|------------|--------|
+| **NEXA** | nexa.2miners.com:5050 | ✅ | ✅ | ✅ | ✅ | 1 | ✅ E2E |
+| **ZCL** | equihash192.eu.mine.zpool.ca:2144 | ✅ | ✅ | ✅ | ✅ | — | ✅ E2E |
+| **RTM** | ghostrider.eu.mine.zpool.ca:5354 | ✅ | ✅ | ✅ | ✅ | 0.02 | ✅ E2E |
+| **QTC** | qtc.suprnova.cc:5555 | ✅ | ✅ | ✅ | ✅ | 0.5 | ✅ E2E |
+| **VTC** | verthash.eu.mine.zpool.ca:4533 | ✅ | ✅ | ✅ | ✅ | 128 | ✅ E2E |
+| **IRON** | de.ironfish.herominers.com:1145 | ✅ | ❌ | ❌ | ❌ | — | ⚠️ server nepouští data |
+| **KLS** | pool.woolypooly.com:3132 | ✅ | ✅ | ❌ | ❌ | — | ⚠️ EthStratum auth bez odpovědi |
+| **DNX** | dynex.herominers.com:1030 | ❌ | ❌ | ❌ | ❌ | — | ⚠️ všechny pooly blokované |
+
+**5/8 coinů má full E2E stratum connection** (connect + subscribe + authorize + notify).
+
+### Opravy v kódu na základě testů
+
+- **VTC default pool**: `woolypooly.com:3102` → `verthash.eu.mine.zpool.ca:4533`
+  - Woolypooly blokuje datacenter IP adresy (connection timeout)
+  - Zpool funguje z Edge serveru, podporuje BTC payout
+  - VTC přidán do `is_zpool()` a `supports_btc_payout()`
+- **KLS default pool**: `woolypooly.com:3132` → `pool.woolypooly.com:3132`
+  - Správný hostname (bez `pool.` prefixu nefunguje DNS)
+  - Pool používá EthereumStratum/1.0.0 protokol (subscribe OK, auth čeká na valid KLS wallet)
+
+### Nedostupné coiny z Edge datacenter
+
+- **IRON**: Herominers server přijímá TCP spojení ale neodpovídá na `mining.subscribe` (30s timeout, zkoušeno plain TCP i TLS na portu 1145 i 11145). Pravděpodobně server-side filtr nebo custom protokol.
+- **KLS**: Woolypooly používá EthStratum protokol. Subscribe funguje (`[true, "EthereumStratum/1.0.0"]`), ale `mining.authorize` nevrací odpověď. Pravděpodobně pool tiše odmítá nevalidní KLS wallet adresy (vyžaduje `karlsen:` prefix).
+- **DNX**: Všechny pooly (herominers, f2pool, neuropool) jsou nedostupné z datacenter IP adresy (DNS fail nebo connection timeout). DNX mining pravděpodobně vyžaduje residential IP nebo VPN.
