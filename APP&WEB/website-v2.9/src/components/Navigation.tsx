@@ -316,7 +316,7 @@ export default function Navigation() {
         </div>
 
         {/* ═══ FLOOR 2 — MINI ICONS + GROUP DROPDOWNS ═══ */}
-        <div className={`hidden md:flex ${scrolled ? 'md:hidden' : ''} items-center justify-between gap-1.5 relative rounded-2xl border border-white/[0.07] bg-black/40 backdrop-blur-md px-2 py-1.5 transition-all duration-300 mt-1`}>
+        <div className={`${scrolled ? 'hidden' : 'hidden md:flex'} items-center justify-between gap-1.5 relative rounded-2xl border border-white/[0.07] bg-black/40 backdrop-blur-md px-2 py-1.5 transition-all duration-300 mt-1`}>
           {/* Left: secondary icons (always visible on md+) */}
           <div className="flex items-center gap-0.5 shrink-0">
             {secondaryIcons.map((ml) => {
@@ -397,7 +397,7 @@ export default function Navigation() {
         </div>
 
         {/* ═══ GROUP DROPDOWN PANEL ═══ */}
-        {activeGroup && (
+        {activeGroup && !scrolled && (
           <div className="mt-1 hidden md:block absolute left-1/2 -translate-x-1/2 w-[min(20rem,90vw)] rounded-2xl border border-white/10 bg-black/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl z-50">
             <div className="mb-2 h-0.5 w-full rounded-full bg-linear-to-r from-emerald-500/50 via-zion-gold/60 to-red-500/40" />
             <div className="flex items-center gap-2 mb-3">
