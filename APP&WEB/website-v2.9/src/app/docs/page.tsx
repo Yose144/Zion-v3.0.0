@@ -541,7 +541,7 @@ export default function DocsPage() {
               <BookOpen className="w-4 h-4 text-zion-cyan" />
               <span className="text-sm text-zion-cyan font-semibold">{tx(docsPageCopy.badge, currentLang)}</span>
             </div>
-            <h1 className="text-6xl md:text-7xl font-bold mb-6 text-gradient">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gradient">
               {tr('docs', 'title', lang)}
             </h1>
             <p className="text-xl text-gray-400 mb-4">
@@ -553,7 +553,7 @@ export default function DocsPage() {
             >
               {tx(docsPageCopy.overviewNotice, currentLang)}
             </div>
-            <div className="flex items-center justify-center gap-3 mb-8">
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
               {primaryVersions.map(v => (
                 <button
                   key={v.id}
@@ -618,9 +618,9 @@ export default function DocsPage() {
             className="w-full flex items-center justify-between px-4 py-3 zion-rainbow-sub text-white transition-colors"
             style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
           >
-            <div className="flex items-center gap-2">
-              <GitBranch className="w-5 h-5 text-zion-cyan" />
-              <span className="font-semibold">{currentVersion.label} — {getVersionDescription(currentVersion)}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <GitBranch className="w-5 h-5 text-zion-cyan shrink-0" />
+              <span className="font-semibold min-w-0 break-words">{currentVersion.label} — {getVersionDescription(currentVersion)}</span>
             </div>
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -868,7 +868,7 @@ export default function DocsPage() {
           </aside>
 
           {/* ═══ Content ═══ */}
-          <div className="flex-1 max-w-3xl xl:max-w-4xl mx-auto">
+          <div className="flex-1 min-w-0 max-w-3xl xl:max-w-4xl mx-auto">
             {selectedDoc === 'philosophy' ? (
               <PhilosophyContent />
             ) : (
