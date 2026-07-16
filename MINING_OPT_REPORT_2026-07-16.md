@@ -144,6 +144,7 @@ The `deeksha_lite.cl` kernel is **compute-bound on `fill_scratchpad`** — 8192 
 | Algorithm | Hashrate | Status |
 |-----------|----------|--------|
 | ZION (deeksha_lite_v1, GPU) | 28-30 KH/s | ✅ Optimized (+150-167%) |
+| ZION (deeksha_lite_fire, GPU) | 30 KH/s | ✅ Optimized (same kernel opts) |
 | VRSC (VerusHash v2.2, CPU) | 12.14 MH/s | ✅ Auto-tuned |
 | XMR (RandomX, CPU) | 3,674 H/s (6T) / 4,649 H/s (12T) | ✅ E2E tested |
 
@@ -341,3 +342,30 @@ Expected +15-25%, got +50%. The larger-than-expected gain is because:
 
 - `V3/L1/miner/src/gpu_backend.rs` — `OpenClDeekshaLiteMiner` struct (added `output_hashes_buf_b`, `read_queue`), `new()` (allocate second buffer + read queue), `mine_batch()` (double-buffered async path), `benchmark()` (4× batch size)
 - `AuXpow/src/gpu_miner.rs` — `#[derive(Clone)]` on `FishhashDag` (fix pre-existing build error from external commit)
+
+---
+
+## Phase 7: DeekshaLite Fire Kernel Optimization — 30 KH/s
+
+### What was done
+
+Applied the same 3 optimizations from Phase 3 + Phase 6 to the `deeksha_lite_fire.cl` kernel:
+
+1. **`sha3_512_65()` specialization** — eliminates 65 conditional branches per `fill_scratchpad` call
+2. **`sequential_passes` register caching** — cache prev/next block in register, halve global memory reads
+3. **`keccak_f1600` always_inline** — consistent inlining across all call sites
+4. **Double-buffered async readback** — same ping-pong A/B buffer + dedicated read queue as v1
+
+### Benchmark
+
+| Algorithm | KH/s | Notes |
+|-----------|------|-------|
+| deeksha_lite_fire (before) | ~11 | Same baseline as v1 |
+| **deeksha_lite_fire (after)** | **30.00** | Same optimizations as v1 |
+
+Fire algorithm matches v1 hashrate — expected since both use identical scratchpad fill + sequential passes. The Fire variant adds extra AES-128 rounds but these are compute-light relative to SHA3-512.
+
+### Files modified
+
+- `V3/L1/cosmic-harmony/src/gpu/kernels/deeksha_lite_fire.cl` — `sha3_512_65()`, `fill_scratchpad` update, `sequential_passes` register cache, `keccak_f1600` always_inline
+- `V3/L1/miner/src/gpu_backend.rs` — `OpenClDeekshaLiteFireMiner` struct (added `output_hashes_buf_b`, `read_queue`), `new()` (2nd buffer + read queue), `mine_batch()` (double-buffered async path), `benchmark()` (4× batch)

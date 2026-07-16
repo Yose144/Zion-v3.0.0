@@ -3542,7 +3542,7 @@ pub mod opencl_deeksha_lite {
 pub mod opencl_deeksha_lite_fire {
     use super::*;
     use ocl::builders::ProgramBuilder;
-    use ocl::{Buffer, Device, Kernel, Platform, ProQue};
+    use ocl::{Buffer, Device, Event, Kernel, Platform, ProQue, Queue};
     use std::time::Instant;
     use zion_cosmic_harmony::gpu::opencl_kernel;
 
@@ -3557,6 +3557,10 @@ pub mod opencl_deeksha_lite_fire {
         header_state_buf: Buffer<u64>,
         scratchpad_buf: Buffer<u8>,
         output_hashes_buf: Buffer<u8>,
+        /// Second output buffer for double-buffered async readback.
+        output_hashes_buf_b: Buffer<u8>,
+        /// Dedicated read queue for async readback overlap.
+        read_queue: Queue,
         stream_weights_buf: Buffer<f32>,
         work_size: usize,
         local_work_size: usize,
@@ -3710,6 +3714,15 @@ pub mod opencl_deeksha_lite_fire {
                 .queue(q.clone())
                 .len(actual_work_size * 32)
                 .build()?;
+            let output_hashes_buf_b = Buffer::<u8>::builder()
+                .queue(q.clone())
+                .len(actual_work_size * 32)
+                .build()?;
+            let read_queue = Queue::new(
+                &pro_que.context(),
+                pro_que.queue().device(),
+                None,
+            )?;
             let stream_weights_zero = [0.0f32; 6];
             let stream_weights_buf = Buffer::<f32>::builder()
                 .queue(q.clone())
@@ -3739,6 +3752,8 @@ pub mod opencl_deeksha_lite_fire {
                 header_state_buf,
                 scratchpad_buf,
                 output_hashes_buf,
+                output_hashes_buf_b,
+                read_queue,
                 stream_weights_buf,
                 work_size: actual_work_size,
                 local_work_size: tuning.local_ws,
@@ -3803,83 +3818,230 @@ pub mod opencl_deeksha_lite_fire {
                 }
             }
 
+            let double_buffer_disabled = std::env::var("ZION_GPU_NO_DOUBLE_BUFFER")
+                .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+                .unwrap_or(false);
+
             let mut all_solutions = Vec::new();
             let mut total_tested = 0u64;
             let mut current_nonce = nonce_start;
             let mut left = batch_size;
-            while left > 0 {
-                let chunk = (left as usize).min(self.work_size);
-                let local_size = self.local_work_size.min(chunk);
-                let global_size = ((chunk + local_size - 1) / local_size) * local_size;
 
-                // Set nonce parameters via scalar args (same as Lite miner)
-                {
-                    let guard = GpuGuard::new();
+            // ── Double-buffered async readback path ──────────────────────
+            if !double_buffer_disabled && left > self.work_size as u64 {
+                let out_bufs = [&self.output_hashes_buf, &self.output_hashes_buf_b];
+                let mut host_a = vec![0u8; self.work_size * 32];
+                let mut host_b = vec![0u8; self.work_size * 32];
+                let mut buf_idx = 0usize;
+
+                let mut prev_read_event: Option<Event> = None;
+                let mut prev_chunk = 0usize;
+                let mut prev_nonce = 0u64;
+                let mut prev_buf_idx = 0usize;
+
+                while left > 0 {
+                    let chunk = (left as usize).min(self.work_size);
+                    let local_size = self.local_work_size.min(chunk);
+                    let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+                    let out_buf = out_bufs[buf_idx];
+
                     self.kernel.set_arg(1, current_nonce)?;
                     self.kernel.set_arg(2, chunk as u32)?;
-                    if guard.was_caught() {
-                        self.recovery_attempts += 1;
-                        anyhow::bail!(
-                            "GPU access violation during nonce arg set (attempt {}/{}).",
-                            self.recovery_attempts,
-                            self.max_recovery_attempts
-                        );
+                    self.kernel.set_arg(3, out_buf)?;
+
+                    let mut k_event = Event::empty();
+                    {
+                        let guard = GpuGuard::new();
+                        unsafe {
+                            self.kernel
+                                .cmd()
+                                .global_work_size(global_size)
+                                .local_work_size(local_size)
+                                .enew(&mut k_event)
+                                .enq()?;
+                        }
+                        if guard.was_caught() {
+                            self.recovery_attempts += 1;
+                            anyhow::bail!(
+                                "GPU access violation during kernel enqueue (attempt {}/{}). AMD driver crash detected.",
+                                self.recovery_attempts,
+                                self.max_recovery_attempts
+                            );
+                        }
                     }
+
+                    let mut r_event = Event::empty();
+                    {
+                        let guard = GpuGuard::new();
+                        let dst = if buf_idx == 0 { &mut host_a[..] } else { &mut host_b[..] };
+                        unsafe {
+                            out_buf
+                                .read(&mut dst[..chunk * 32])
+                                .queue(&self.read_queue)
+                                .ewait(&k_event)
+                                .enew(&mut r_event)
+                                .block(false)
+                                .enq()?;
+                        }
+                        if guard.was_caught() {
+                            self.recovery_attempts += 1;
+                            anyhow::bail!(
+                                "GPU access violation during async hash buffer read (attempt {}/{}). AMD driver crash detected.",
+                                self.recovery_attempts,
+                                self.max_recovery_attempts
+                            );
+                        }
+                    }
+
+                    let _ = self.pro_que.queue().flush();
+
+                    if let Some(prev_ev) = prev_read_event.take() {
+                        {
+                            let guard = GpuGuard::new();
+                            prev_ev.wait_for()?;
+                            if guard.was_caught() {
+                                self.recovery_attempts += 1;
+                                anyhow::bail!(
+                                    "GPU access violation during read event wait (attempt {}/{}). AMD driver crash detected.",
+                                    self.recovery_attempts,
+                                    self.max_recovery_attempts
+                                );
+                            }
+                        }
+                        let prev_host = if prev_buf_idx == 0 { &host_a[..] } else { &host_b[..] };
+                        for i in 0..prev_chunk {
+                            let hash: [u8; 32] =
+                                prev_host[i * 32..(i + 1) * 32].try_into().unwrap();
+                            if target.allows(&hash) {
+                                let nonce = prev_nonce.wrapping_add(i as u64);
+                                all_solutions.push((nonce, hash, None));
+                                break;
+                            }
+                        }
+                        total_tested += prev_chunk as u64;
+                        if !all_solutions.is_empty() {
+                            let _ = self.read_queue.finish();
+                            return Ok(GpuBatchResult {
+                                nonces_tested: total_tested,
+                                solutions: all_solutions,
+                            });
+                        }
+                    }
+
+                    prev_read_event = Some(r_event);
+                    prev_chunk = chunk;
+                    prev_nonce = current_nonce;
+                    prev_buf_idx = buf_idx;
+                    current_nonce = current_nonce.wrapping_add(chunk as u64);
+                    left -= chunk as u64;
+                    buf_idx = 1 - buf_idx;
                 }
 
-                {
-                    let guard = GpuGuard::new();
-                    unsafe {
-                        self.kernel
-                            .cmd()
-                            .global_work_size(global_size)
-                            .local_work_size(local_size)
-                            .enq()?;
+                if let Some(prev_ev) = prev_read_event.take() {
+                    {
+                        let guard = GpuGuard::new();
+                        prev_ev.wait_for()?;
+                        if guard.was_caught() {
+                            self.recovery_attempts += 1;
+                            anyhow::bail!(
+                                "GPU access violation during final read event wait (attempt {}/{}). AMD driver crash detected.",
+                                self.recovery_attempts,
+                                self.max_recovery_attempts
+                            );
+                        }
                     }
-                    if guard.was_caught() {
-                        self.recovery_attempts += 1;
-                        anyhow::bail!(
-                            "GPU access violation during kernel enqueue (attempt {}/{}). AMD driver crash detected — try reducing ZION_GPU_WORK_SIZE or switching to CPU backend.",
-                            self.recovery_attempts,
-                            self.max_recovery_attempts
-                        );
+                    let prev_host = if prev_buf_idx == 0 { &host_a[..] } else { &host_b[..] };
+                    for i in 0..prev_chunk {
+                        let hash: [u8; 32] =
+                            prev_host[i * 32..(i + 1) * 32].try_into().unwrap();
+                        if target.allows(&hash) {
+                            let nonce = prev_nonce.wrapping_add(i as u64);
+                            all_solutions.push((nonce, hash, None));
+                            break;
+                        }
                     }
+                    total_tested += prev_chunk as u64;
                 }
 
-                let mut hashes = vec![0u8; chunk * 32];
-                {
-                    let guard = GpuGuard::new();
-                    self.output_hashes_buf.read(&mut hashes).enq()?;
-                    self.pro_que.queue().finish()?;
-                    if guard.was_caught() {
-                        self.recovery_attempts += 1;
-                        anyhow::bail!(
-                            "GPU access violation during hash buffer read (attempt {}/{}). AMD driver crash detected.",
-                            self.recovery_attempts,
-                            self.max_recovery_attempts
-                        );
-                    }
-                }
+                Ok(GpuBatchResult {
+                    nonces_tested: total_tested,
+                    solutions: all_solutions,
+                })
+            } else {
+                // ── Simple single-buffer path ──
+                while left > 0 {
+                    let chunk = (left as usize).min(self.work_size);
+                    let local_size = self.local_work_size.min(chunk);
+                    let global_size = ((chunk + local_size - 1) / local_size) * local_size;
 
-                for i in 0..chunk {
-                    let hash: [u8; 32] = hashes[i * 32..(i + 1) * 32].try_into().unwrap();
-                    if target.allows(&hash) {
-                        let nonce = current_nonce.wrapping_add(i as u64);
-                        all_solutions.push((nonce, hash, None));
+                    {
+                        let guard = GpuGuard::new();
+                        self.kernel.set_arg(1, current_nonce)?;
+                        self.kernel.set_arg(2, chunk as u32)?;
+                        if guard.was_caught() {
+                            self.recovery_attempts += 1;
+                            anyhow::bail!(
+                                "GPU access violation during nonce arg set (attempt {}/{}).",
+                                self.recovery_attempts,
+                                self.max_recovery_attempts
+                            );
+                        }
+                    }
+
+                    {
+                        let guard = GpuGuard::new();
+                        unsafe {
+                            self.kernel
+                                .cmd()
+                                .global_work_size(global_size)
+                                .local_work_size(local_size)
+                                .enq()?;
+                        }
+                        if guard.was_caught() {
+                            self.recovery_attempts += 1;
+                            anyhow::bail!(
+                                "GPU access violation during kernel enqueue (attempt {}/{}). AMD driver crash detected — try reducing ZION_GPU_WORK_SIZE or switching to CPU backend.",
+                                self.recovery_attempts,
+                                self.max_recovery_attempts
+                            );
+                        }
+                    }
+
+                    let mut hashes = vec![0u8; chunk * 32];
+                    {
+                        let guard = GpuGuard::new();
+                        self.output_hashes_buf.read(&mut hashes).enq()?;
+                        self.pro_que.queue().finish()?;
+                        if guard.was_caught() {
+                            self.recovery_attempts += 1;
+                            anyhow::bail!(
+                                "GPU access violation during hash buffer read (attempt {}/{}). AMD driver crash detected.",
+                                self.recovery_attempts,
+                                self.max_recovery_attempts
+                            );
+                        }
+                    }
+
+                    for i in 0..chunk {
+                        let hash: [u8; 32] = hashes[i * 32..(i + 1) * 32].try_into().unwrap();
+                        if target.allows(&hash) {
+                            let nonce = current_nonce.wrapping_add(i as u64);
+                            all_solutions.push((nonce, hash, None));
+                            break;
+                        }
+                    }
+                    total_tested += chunk as u64;
+                    if !all_solutions.is_empty() {
                         break;
                     }
+                    current_nonce = current_nonce.wrapping_add(chunk as u64);
+                    left -= chunk as u64;
                 }
-                total_tested += chunk as u64;
-                if !all_solutions.is_empty() {
-                    break;
-                }
-                current_nonce = current_nonce.wrapping_add(chunk as u64);
-                left -= chunk as u64;
+                Ok(GpuBatchResult {
+                    nonces_tested: total_tested,
+                    solutions: all_solutions,
+                })
             }
-            Ok(GpuBatchResult {
-                nonces_tested: total_tested,
-                solutions: all_solutions,
-            })
         }
 
         fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
@@ -3891,13 +4053,18 @@ pub mod opencl_deeksha_lite_fire {
                 difficulty_bits: 0x1f00ffff,
             };
             let target = DifficultyTarget { bytes: [0; 32] };
+            let batch_multiplier: u64 = std::env::var("ZION_GPU_BENCH_BATCH")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(4);
+            let batch_size = self.work_size as u64 * batch_multiplier;
             let start = Instant::now();
             let mut total_hashes = 0u64;
             let mut nonce_start = 0u64;
             while start.elapsed().as_secs_f64() < secs {
-                let result = self.mine_batch(header, target, nonce_start, self.work_size as u64)?;
+                let result = self.mine_batch(header, target, nonce_start, batch_size)?;
                 total_hashes += result.nonces_tested;
-                nonce_start = nonce_start.wrapping_add(self.work_size as u64);
+                nonce_start = nonce_start.wrapping_add(batch_size);
             }
             let elapsed = start.elapsed().as_secs_f64();
             let khps = if elapsed > 0.0 {
