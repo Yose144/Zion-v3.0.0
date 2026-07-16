@@ -153,14 +153,14 @@ impl ExternalCoin {
             Self::PRL => "prl.2miners.com:1818",
             Self::QUAI => "quaikawpow.2miners.com:4545",
             Self::BEAM => "beam.2miners.com:5252",
-            Self::KLS => "pool.woolypooly.com:3132",
+            Self::KLS => "karlsencoin.cedric-crispin.com:4154",
             Self::ZCL => "equihash192.eu.mine.zpool.ca:2144",
             Self::QTC => "qtc.suprnova.cc:5555",
             Self::VTC => "verthash.eu.mine.zpool.ca:4533",
             Self::IRON => "de.ironfish.herominers.com:1145",
             Self::NEXA => "nexa.2miners.com:5050",
             Self::RTM => "ghostrider.eu.mine.zpool.ca:5354",
-            Self::DNX => "dynex.herominers.com:1030",
+            Self::DNX => "dynex.herominers.com:1200",
         }
     }
 
@@ -836,14 +836,14 @@ mod tests {
 
     #[test]
     fn new_coin_default_pools() {
-        assert_eq!(ExternalCoin::KLS.default_pool(), "pool.woolypooly.com:3132");
+        assert_eq!(ExternalCoin::KLS.default_pool(), "karlsencoin.cedric-crispin.com:4154");
         assert_eq!(ExternalCoin::ZCL.default_pool(), "equihash192.eu.mine.zpool.ca:2144");
         assert_eq!(ExternalCoin::QTC.default_pool(), "qtc.suprnova.cc:5555");
         assert_eq!(ExternalCoin::VTC.default_pool(), "verthash.eu.mine.zpool.ca:4533");
         assert_eq!(ExternalCoin::IRON.default_pool(), "de.ironfish.herominers.com:1145");
         assert_eq!(ExternalCoin::NEXA.default_pool(), "nexa.2miners.com:5050");
         assert_eq!(ExternalCoin::RTM.default_pool(), "ghostrider.eu.mine.zpool.ca:5354");
-        assert_eq!(ExternalCoin::DNX.default_pool(), "dynex.herominers.com:1030");
+        assert_eq!(ExternalCoin::DNX.default_pool(), "dynex.herominers.com:1200");
     }
 
     #[test]
