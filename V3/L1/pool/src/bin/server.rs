@@ -2117,6 +2117,9 @@ fn handle_client(
 
     let mut last_template_height: u64 = 0;
     let mut consecutive_no_solution: u64 = 0;
+    // Autonomous miner coin preferences (set by CoinPreference messages)
+    let mut miner_gpu_coin_pref: Option<String> = None;
+    let mut miner_cpu_coin_pref: Option<String> = None;
 
     for iteration in 0..config.loop_count {
         let stale_job_ids = pool.lock().expect("pool lock poisoned").expire_stale_jobs();
@@ -2156,9 +2159,13 @@ fn handle_client(
             // (EPIC/ProgPow) alongside ZION, regardless of session group.
             // The session group controls the PRIMARY work assignment (always
             // ZION for Zion group), not the parallel external streams.
-            config
-                .auxpow_config
-                .force_coin
+            //
+            // Autonomous miner preference (CoinPreference) takes priority,
+            // then pool config force_coin, then revenue-source-based selection.
+            miner_gpu_coin_pref
+                .as_deref()
+                .and_then(ExternalCoin::from_str_loose)
+                .or_else(|| config.auxpow_config.force_coin)
                 .or_else(|| revenue_source_to_external_coin(revenue_source))
         } else {
             None
@@ -2559,6 +2566,26 @@ fn handle_client(
                         zion_line = line;
                         zion_msg = Some(msg);
                         got_zion_response = true;
+                    }
+                    PoolMessage::CoinPreference {
+                        miner_id: pref_miner_id,
+                        gpu_coin,
+                        cpu_coin,
+                        gpu_profit_usd_day,
+                        cpu_profit_usd_day,
+                    } => {
+                        // Autonomous miner coin preference — log and store for
+                        // use when constructing the next Job's external_stream.
+                        println!(
+                            "coin_preference_received miner={} gpu_coin={} cpu_coin={} gpu_profit={:.2}/day cpu_profit={:.2}/day",
+                            pref_miner_id, gpu_coin, cpu_coin, gpu_profit_usd_day, cpu_profit_usd_day
+                        );
+                        // Store preferences in session-scoped variables for
+                        // the job construction logic to reference.
+                        miner_gpu_coin_pref = if gpu_coin.is_empty() { None } else { Some(gpu_coin) };
+                        miner_cpu_coin_pref = if cpu_coin.is_empty() { None } else { Some(cpu_coin) };
+                        // Continue reading — CoinPreference is not a submit
+                        continue;
                     }
                     other => return Err(anyhow!("expected submit from miner, got {other:?}")),
                 }

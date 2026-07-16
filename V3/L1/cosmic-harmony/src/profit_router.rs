@@ -169,6 +169,119 @@ impl ExternalCoin {
         matches!(self, Self::XMR | Self::VRSC)
     }
 
+    /// Whether this coin is GPU-minable (requires GPU).
+    pub fn is_gpu(self) -> bool {
+        !self.is_cpu()
+    }
+
+    /// DAG size in bytes, or `None` if the coin doesn't use a DAG.
+    /// Used for VRAM compatibility checking.
+    /// Values are approximate epoch-0 sizes; real DAG grows over time.
+    pub fn dag_size(self) -> Option<u64> {
+        match self {
+            Self::DCR => None,           // Blake3 — no DAG
+            Self::ALPH => None,          // Blake3 — no DAG
+            Self::KAS => None,           // kHeavyHash — no DAG
+            Self::ERG => None,           // Autolykos — no DAG (uses PK table ~1GB but not DAG)
+            Self::RVN => Some(4_294_967_296),    // KawPow ~4 GB
+            Self::ETC => Some(2_684_354_560),    // Ethash ~2.5 GB
+            Self::EVR => Some(2_684_354_560),    // EvrProgPow ~2.5 GB
+            Self::MEWC => Some(4_294_967_296),   // MeowPow ~4 GB
+            Self::FLUX => Some(6_000_000_000),   // ZelHash ~6 GB
+            Self::CLORE => Some(4_294_967_296),  // KawPow ~4 GB
+            Self::XMR => None,           // RandomX — CPU only, no DAG
+            Self::VRSC => None,          // VerusHash — CPU only, no DAG
+            Self::PRL => None,           // PearlHash — no DAG
+            Self::EPIC => Some(2_684_354_560),   // ProgPow ~2.5 GB
+            Self::QUAI => Some(4_294_967_296),   // KawPow ~4 GB
+            Self::BEAM => Some(2_147_483_648),   // BeamHash III ~2 GB
+            Self::KLS => None,           // KarlsenHash — no DAG
+            Self::ZCL => Some(1_073_741_824),    // Equihash 192,7 ~1 GB
+            Self::QTC => None,           // Qhash — no DAG
+            Self::VTC => Some(1_073_741_824),    // Verthash ~1 GB
+            Self::IRON => Some(4_800_000_000),   // FishHash ~4.6 GB
+            Self::NEXA => Some(5_000_000_000),   // NexaPow ~5 GB
+            Self::RTM => Some(2_147_483_648),    // GhostRider ~2 GB
+            Self::DNX => None,           // DynexSolve — no DAG (uses chip model)
+        }
+    }
+
+    /// Check if this coin's DAG fits in the given GPU VRAM.
+    /// Non-DAG coins always fit. DAG coins need DAG + 512 MB overhead.
+    pub fn fits_vram(self, vram_bytes: u64) -> bool {
+        match self.dag_size() {
+            None => true,
+            Some(dag) => dag + 512_000_000 < vram_bytes,
+        }
+    }
+
+    /// Whether this coin's algorithm is CPU-compatible given CPU features.
+    /// `has_aes` = AES-NI support (required for RandomX).
+    /// `has_avx2` = AVX2 support (beneficial for VerusHash but not required).
+    pub fn cpu_compatible(self, has_aes: bool, _has_avx2: bool) -> bool {
+        match self {
+            Self::VRSC => true,          // VerusHash always works
+            Self::XMR => has_aes,        // RandomX needs AES-NI
+            _ => false,                  // GPU-only algorithms
+        }
+    }
+
+    /// Whether this coin's algorithm has a GPU kernel implementation
+    /// for the given backend. Currently all GPU coins have OpenCL kernels
+    /// in the AuXpow module, but some may not compile on certain GPUs.
+    pub fn gpu_kernel_available(self, backend: &str) -> bool {
+        match backend {
+            "opencl" => matches!(
+                self,
+                Self::DCR | Self::ALPH | Self::KAS | Self::ERG |
+                Self::RVN | Self::ETC | Self::FLUX | Self::CLORE |
+                Self::PRL | Self::IRON | Self::KLS
+            ),
+            "cuda" => matches!(
+                self,
+                Self::DCR | Self::ALPH | Self::KAS | Self::ERG |
+                Self::RVN | Self::ETC
+            ),
+            "metal" => matches!(
+                self,
+                Self::DCR | Self::ALPH | Self::KAS
+            ),
+            _ => false,
+        }
+    }
+
+    /// Estimated GPU power draw (TDP) in watts for this coin's algorithm.
+    /// Memory-hard algorithms (DAG-based) use more power than compute-only.
+    pub fn estimated_gpu_power_watts(self) -> f64 {
+        match self {
+            Self::DCR | Self::ALPH => 180.0,        // Blake3 — compute-bound, high power
+            Self::KAS => 200.0,                      // kHeavyHash — moderate
+            Self::ERG => 160.0,                      // Autolykos — memory-light
+            Self::RVN | Self::CLORE | Self::QUAI => 220.0,  // KawPow — memory-hard
+            Self::ETC | Self::EVR | Self::MEWC => 210.0,    // Ethash/ProgPow — memory-hard
+            Self::FLUX => 200.0,                     // ZelHash
+            Self::PRL => 190.0,                      // PearlHash
+            Self::EPIC => 210.0,                     // ProgPow
+            Self::BEAM => 180.0,                     // BeamHash
+            Self::KLS => 190.0,                      // KarlsenHash
+            Self::ZCL | Self::QTC | Self::VTC => 170.0,  // Equihash variants
+            Self::IRON => 220.0,                     // FishHash — memory-hard
+            Self::NEXA => 210.0,                     // NexaPow
+            Self::RTM => 200.0,                      // GhostRider
+            Self::DNX => 150.0,                      // DynexSolve — different paradigm
+            Self::XMR | Self::VRSC => 0.0,           // CPU coins — no GPU power
+        }
+    }
+
+    /// Estimated CPU power draw (watts) for this coin's algorithm.
+    pub fn estimated_cpu_power_watts(self) -> f64 {
+        match self {
+            Self::XMR => 85.0,    // RandomX — high CPU usage, ~85W on Ryzen 5 3600
+            Self::VRSC => 65.0,   // VerusHash — moderate, ~65W
+            _ => 0.0,             // GPU coins — no CPU power
+        }
+    }
+
     /// Parse from a case-insensitive string. Accepts ticker, full name, and
     /// common aliases.
     pub fn from_str_loose(s: &str) -> Option<Self> {
