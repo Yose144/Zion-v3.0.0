@@ -1,8 +1,9 @@
 # Triple-stream E2E verification report — SMOS Vega rig
 
 **Date:** 2026-07-16  
-**SMOS package:** `zion-miner-v3.1.9-triple-fixed3.zip`  
-**URL:** `https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed3.zip`  
+**SMOS package:** `zion-miner-v3.1.9-triple-fixed4.zip`  
+**URL:** `https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed4.zip`  
+**DAG cache:** `https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin`  
 **SimpleMining group:** `ZionLiteFire` (ID 1773590)  
 **Rig:** `ZionRig` (ID 518837, IP 109.81.31.210)  
 **Pool:** `62.171.141.136:8444`
@@ -84,19 +85,76 @@ external_gpu_thread_entered backend=opencl
 
 This was necessary because the SimpleMining console buffer is very small (~3 KB) and startup logs are quickly evicted by later output.
 
+### 2.7 VRSC share target comparison fix
+**Files:** `AuXpow/src/miner_harness.rs`, `AuXpow/src/share_forwarder.rs`
+
+Professional Verus pools (node-stratum-pool-verus / LuckPool) interpret the 32-byte VerusHash v2.2 result as a little-endian 256-bit integer when comparing against the target. The local miner and pool-side forwarder were using a big-endian comparison, so many shares that passed local checks did not actually meet the upstream target and were rejected as `low difficulty share`.
+
+Fix:
+
+- `scan_verushash` now calls `meets_target_little_endian(&hash, target)`.
+- `ShareForwarder::try_forward` for `ExternalCoin::VRSC` also uses `meets_target_little_endian`.
+
+This ensures only shares that will pass upstream validation are forwarded, eliminating the false low-difficulty rejects.
+
+### 2.8 Standalone EPIC ProgPow DAG pre-generation helper
+**File:** `AuXpow/examples/gen_dag.rs`
+
+Added `gen_dag`, a small helper that generates an Ethash/ProgPow DAG for a given epoch and writes it in the exact on-disk cache format the miner's `DagManager` expects:
+
+```text
+[8 bytes: dag_size_entries LE u64][DAG data LE bytes]
+```
+
+Usage on a Linux build host (uses the OpenMP-parallel C generator):
+
+```bash
+cd /opt/zion
+docker run --rm \
+  -v /opt/zion:/src:ro \
+  -v /var/www/zion-miner/dag-cache:/out \
+  rust:1.97.0-bullseye bash -c '
+    cp -a /src /build && cd /build/AuXpow && \
+    cargo run --release -j 2 --example gen_dag --features native-hashers -- 120 /out/progpow_epoch120.bin
+  '
+```
+
+The generated `progpow_epoch120.bin` can be placed in `/home/miner/.zion/dag-cache/` on the Vega rig, bypassing slow on-device DAG generation.
+
 ## 3. Deployment steps
 
 ```bash
-# 1. Build and package
+# 1. Build and package (done on zion-new)
 ssh zion-new
 cd /opt/zion
-bash scripts/edge-docker-build-smos.sh v3.1.9-triple-fixed
-
-# 2. Re-package with unique filename to force SMOS re-download
-bash scripts/edge-package-smos.sh v3.1.9-triple-fixed2 /tmp/zion-docker-out/zion-miner
+bash scripts/edge-docker-build-smos.sh v3.1.9-triple-fixed4
 ```
 
-Updated SimpleMining group 1773590 to the new zip and reloaded rig 518837 via the REST API (`/rig-groups/{id}` PUT, `/rigs/execute-reload` PATCH).
+This produces `https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed4.zip`.
+
+```bash
+# 2. Generate EPIC ProgPow DAG epoch 120 on a fast host (done)
+docker run --rm \
+  -v /opt/zion:/src:ro \
+  -v /var/www/zion-miner/dag-cache:/out \
+  rust:1.97.0-bullseye bash -c '
+    cp -a /src /build && cd /build/AuXpow && \
+    cargo run --release -j 2 --example gen_dag --features native-hashers -- 120 /out/progpow_epoch120.bin
+  '
+```
+
+Produces `https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin` (≈ 2 GB).
+
+3. Copy the DAG to the Vega rig before/after the miner starts:
+
+```bash
+# On the rig (or via SMOS shell)
+mkdir -p /home/miner/.zion/dag-cache
+curl -C - -o /home/miner/.zion/dag-cache/progpow_epoch120.bin \
+  https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin
+```
+
+4. Update SimpleMining group 1773590 to the `fixed4` zip and reload rig 518837 via the REST API (`/rig-groups/{id}` PUT, `/rigs/execute-reload` PATCH).
 
 ## 4. Live verification
 
@@ -180,30 +238,38 @@ parallel_stream_embedded miner=vega-smos coin=EPIC algo=progpow ext_job_id=2 hei
 
 ## 5. Current state
 
-| Stream   | Status                              | Evidence                                        |
-|----------|-------------------------------------|-------------------------------------------------|
-| ZION     | Green — shares accepted             | `SHARE_ACCEPTED` + pool `valid_share`           |
-| VRSC CPU | Yellow — shares forwarded upstream  | `VRSC_SHARE_FOUND` + upstream replies received  |
-| EPIC GPU | Red — not verified                  | Jobs received, no shares/acceptance observed    |
+| Stream   | Status                                   | Evidence                                        |
+|----------|------------------------------------------|-------------------------------------------------|
+| ZION     | Green — shares accepted                  | `SHARE_ACCEPTED` + pool `valid_share`           |
+| VRSC CPU | Yellow-green — submit format correct, target comparison fixed | `VRSC_SHARE_FOUND` + upstream replies; local/forwarder now use LE target check |
+| EPIC GPU | Yellow — DAG pre-generated externally  | Jobs received, DAG generated on build server, pending rig test |
 
 ## 6. Recommended next steps
 
-1. **EPIC verification (priority)**
-   - Get shell/SSH or local monitor access to the Vega rig.
-   - Check whether `/home/miner/.zion/dag-cache/progpow_epoch120.bin` exists and is growing.
-   - Run the miner manually with output redirected to a persistent file so startup/panic logs survive console truncation.
-   - If the rig CPU is too slow to generate the 2 GB DAG in a reasonable time, consider generating it once on a faster host (or a Docker container with `zion_auxpow::native_ffi::generate_ethash_dag`) and copying the cached `progpow_epoch120.bin` to `/home/miner/.zion/dag-cache/` on the rig. Subsequent miner starts will then load the DAG instantly.
+1. **Deploy and test the fixed4 package + DAG on the Vega rig**
+   - Update SimpleMining group 1773590 to `zion-miner-v3.1.9-triple-fixed4.zip`.
+   - Copy the pre-generated DAG to the rig:
+     ```bash
+     mkdir -p /home/miner/.zion/dag-cache
+     curl -C - -o /home/miner/.zion/dag-cache/progpow_epoch120.bin \
+       https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin
+     ```
+   - Reload rig 518837 and monitor for `dag_manager: ProgPow DAG epoch=120 ready`, `ext_gpu_share_found`, and `external_share_result accepted=true` for EPIC.
 
 2. **VRSC acceptance**
-   - Disable `ZION_AUXPOW_EASY_TARGET` once EPIC is verified so only real-difficulty shares are forwarded, reducing stale/low-diff rejections.
-   - Confirm at least one upstream `accepted=true` result from `external_share_result`.
+   - With the LE target fix, the forwarded VRSC shares should now match the upstream validator’s expectation. Watch for `external_share_result` `accepted=true`.
+   - Once acceptance is confirmed, consider disabling `ZION_AUXPOW_EASY_TARGET` so the miner searches directly against the real upstream target, eliminating stale/low-diff rejections.
 
 3. **Production packaging**
-   - Once all three streams are confirmed, bump the SMOS package version to a clean `v3.1.9-triple` (drop the `-fixed2` suffix) and update the SimpleMining group accordingly.
+   - Once all three streams show accepted shares, bump the SMOS package version to a clean `v3.1.9-triple` and update the SimpleMining group accordingly.
 
 ## 7. Files changed
 
 - `AuXpow/src/gpu_miner.rs` — DAG cache validation/regeneration.
+- `AuXpow/src/auxpow_client.rs` — PBaaS v7+ VRSC submit: send `nonce2=zeros` so upstream preHeaderHash matches.
+- `AuXpow/src/miner_harness.rs` — VRSC VerusHash v2.2 target comparison now little-endian; keep PBaaS non-canonical clearing.
+- `AuXpow/src/share_forwarder.rs` — VRSC share forwarder target comparison now little-endian.
+- `AuXpow/examples/gen_dag.rs` — New standalone DAG pre-generation helper.
 - `V3/L1/native-ffi/build.rs` — RandomX x86_64 static assembly.
 - `V3/L1/miner/src/main.rs` — Extra Stream 2 startup / external GPU thread logging.
 - `scripts/edge-docker-build-smos.sh` — Build base image and feature set.
