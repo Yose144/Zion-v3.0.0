@@ -1,7 +1,7 @@
 # Vega Rig (SMOS) — Complete Configuration & Architecture Guide
 
-**Last updated:** 2026-07-16
-**Status:** Stream 2 (EPIC ProgPow) disabled; Deeksha GPU + VRSC CPU streams active
+**Last updated:** 2026-07-17
+**Status:** ✅ Deeksha GPU 20 KH/s + VRSC CPU 1.1 MH/s — E2E working on i066d
 **Goal:** Triple-stream mining (ZION GPU + EPIC GPU + VRSC CPU) on AMD RX Vega 64
 
 ---
@@ -17,8 +17,8 @@
 | **Motherboard** | ASRock H110 Pro BTC+, BIOS P1.60 |
 | **RAM** | 8 GB |
 | **Disk** | SanDisk Ultra 15 GB (~1 GB free) |
-| **OS** | Ubuntu 22.04.5 LTS, SMOS kernel 6.9.12-sm6 |
-| **AMD Driver** | 22.40.6r6.10.8 (AMDGPROpenCL) |
+| **OS** | Ubuntu 22.04.5 LTS, SMOS kernel 5.15.80-sm#066d |
+| **AMD Driver** | amd21.50.2r5.16.16 (ROCm 5.x) — **i066d image** |
 
 ### Network
 
@@ -51,23 +51,31 @@ Key endpoints:
 
 ## 2. Overclock Settings (SMOS)
 
-| Parameter | Value |
-|-----------|-------|
-| Core Clock | 1250 MHz |
-| Memory Clock | 950 MHz |
-| Power Limit | 3 |
-| Vddc | 900 mV |
-| Fan | 40% |
-| Temp Target | 65°C |
+**Current (i066d, stable, 20 KH/s):**
 
-### OC Profile History (from `scripts/vega_autopilot.py`)
+| Parameter | Value | Notes |
+|-----------|-------|-------|
+| Core Clock | 1500 MHz | GPU boosts to 1630MHz (DPM auto-boost) |
+| Memory Clock | 950 MHz | Max stable on i066d (>=1000 crashes MC to 800) |
+| Power Limit | **100** | **100% TDP** — NOT 1-7 (DPM stage, crashes MC!) |
+| Vddc | 950 mV | Stable at ~198W |
+| Fan | 60% | GPU temp 53-54C |
+| Temp Target | 65C | |
 
-| Phase | Core | Memory | Vddc | PowerLimit | Notes |
-|-------|------|--------|------|------------|-------|
-| UltraSafe | 1050 | 800 | 900 | 1 | Baseline stable |
-| Balanced | 1100 | 900 | 920 | 1 | |
-| Optimized | 1150 | 945 | 940 | 2 | |
-| **TuneUp (current)** | **1250** | **950** | **900** | **3** | Production |
+> **CRITICAL:** PL values 1-7 = DPM power stage (crashes MC to 800 MHz on i066d).
+> PL=100 = 100% TDP percentage (correct for Vega 64).
+> Full reboot required after each OC change (reload alone doesn't reset DPM table).
+
+### OC Profile History
+
+| Phase | Core | Memory | Vddc | PowerLimit | KH/s | Notes |
+|-------|------|--------|------|------------|------|-------|
+| UltraSafe | 1050 | 800 | 900 | 1 | - | Baseline stable |
+| Balanced | 1100 | 900 | 920 | 1 | - | |
+| Optimized | 1150 | 945 | 940 | 2 | - | |
+| TuneUp (old, i088) | 1250 | 950 | 900 | 3 | 0 | GPU hung (driver bug) |
+| i066d v1 | 1400 | 950 | 950 | 100 | 20.4 | First working |
+| **i066d v2 (current)** | **1500** | **950** | **950** | **100** | **20.0** | Stable, 100% accept |
 
 ---
 
