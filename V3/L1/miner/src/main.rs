@@ -17,6 +17,7 @@ use zion_pool::{
     decode_message, encode_message, ExternalStreamJob, MiningPool, PoolMessage, ShareStatus,
 };
 
+mod autonomous;
 mod banner;
 mod cpu_features;
 mod gpu_backend;
@@ -620,6 +621,17 @@ fn log_timestamp() -> String {
     // Simple date from days since epoch (good enough for logging)
     let (y, m, d) = days_to_ymd(days);
     format!("{y:04}-{m:02}-{d:02} {hours:02}:{mins:02}:{secs:02}")
+}
+
+/// Return the backend label string for the autonomous router.
+fn effective_gpu_backend_label(backend: gpu_backend::GpuBackendKind) -> &'static str {
+    match backend {
+        gpu_backend::GpuBackendKind::OpenCL => "opencl",
+        gpu_backend::GpuBackendKind::Cuda => "cuda",
+        gpu_backend::GpuBackendKind::Metal => "metal",
+        gpu_backend::GpuBackendKind::Cpu => "cpu",
+        gpu_backend::GpuBackendKind::Auto => "auto",
+    }
 }
 
 /// Check current system memory pressure.
@@ -1879,6 +1891,30 @@ fn run_remote_session(
     let config_stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
     spawn_pool_config_poller(pool_addr.to_string(), std::sync::Arc::clone(&config_stop));
 
+    // ── Autonomous profit router ──
+    // When ZION_AUTONOMOUS=1, auto-selects Stream 2 (GPU) and Stream 3 (CPU)
+    // coins based on hardware compatibility and profitability data.
+    let cpu_feats = cpu_features::detect();
+    let hw_profile = autonomous::HardwareProfile {
+        gpu_vram_bytes: config.gpu_vram_bytes,
+        gpu_backend: effective_gpu_backend_label(config.gpu_backend).to_string(),
+        has_gpu: config.gpu_backend != gpu_backend::GpuBackendKind::Cpu,
+        cpu_has_aes: cpu_feats.has_aes,
+        cpu_has_avx2: cpu_feats.has_avx2,
+        cpu_threads: config.threads,
+    };
+    let mut profit_router = autonomous::AutonomousProfitRouter::new(hw_profile);
+    let mut last_s2_coin: Option<zion_cosmic_harmony::profit_router::ExternalCoin> = None;
+    let mut last_s3_coin: Option<zion_cosmic_harmony::profit_router::ExternalCoin> = None;
+    if profit_router.is_enabled() {
+        println!("[{}] autonomous_mode_enabled — running initial coin selection", log_timestamp());
+        profit_router.initial_selection();
+        profit_router.print_log();
+        println!("[{}] {}", log_timestamp(), profit_router.summary());
+        last_s2_coin = profit_router.stream2_coin;
+        last_s3_coin = profit_router.stream3_coin;
+    }
+
     // ── Read initial algorithm from interactive control ──
     let initial_algorithm = {
         let c = control.lock().unwrap();
@@ -2117,6 +2153,15 @@ fn run_remote_session(
 
     let mut current_algorithm = String::new();
 
+    // ── Send initial CoinPreference to pool (autonomous mode) ──
+    if let Some(pref_msg) = profit_router.build_coin_preference(&config.miner_id) {
+        let pref_line = zion_pool::encode_message(&pref_msg)
+            .map_err(|e| anyhow!("failed to encode CoinPreference: {e}"))?;
+        writer.write_all(pref_line.as_bytes())?;
+        writer.flush()?;
+        println!("[{}] autonomous_coin_preference_sent {}", log_timestamp(), pref_line.trim());
+    }
+
     for iteration in 0..config.loop_count {
         // ── Check interactive control state at top of iteration ──
         {
@@ -2131,6 +2176,30 @@ fn run_remote_session(
                 threads = t;
             }
             VERBOSE.store(c.verbose, Ordering::Relaxed);
+        }
+
+        // ── Autonomous profit router: periodic re-evaluation ──
+        if profit_router.should_reevaluate() {
+            profit_router.reevaluate();
+            profit_router.print_log();
+            println!("[{}] {}", log_timestamp(), profit_router.summary());
+
+            // Send CoinPreference to pool if selection changed
+            if profit_router.coins_changed(last_s2_coin, last_s3_coin) {
+                if let Some(pref_msg) = profit_router.build_coin_preference(&config.miner_id) {
+                    if let Ok(pref_line) = zion_pool::encode_message(&pref_msg) {
+                        let _ = writer.write_all(pref_line.as_bytes());
+                        let _ = writer.flush();
+                        println!(
+                            "[{}] autonomous_coin_preference_updated {}",
+                            log_timestamp(),
+                            pref_line.trim()
+                        );
+                    }
+                }
+                last_s2_coin = profit_router.stream2_coin;
+                last_s3_coin = profit_router.stream3_coin;
+            }
         }
 
         let (job_line, mut job, algorithm, raw_header_bytes, stream_weights_str, external_stream, external_stream_cpu) =
@@ -3814,6 +3883,8 @@ struct MinerConfig {
     /// Whether auto-mode was requested (affects logging)
     #[allow(dead_code)]
     auto_mode: bool,
+    /// Detected GPU VRAM in bytes (from autotune, used by autonomous router)
+    gpu_vram_bytes: u64,
 }
 
 impl MinerConfig {
@@ -4113,6 +4184,7 @@ impl MinerConfig {
                     }
                 }),
             auto_mode: parse_bool_env("ZION_AUTO_MODE", false),
+            gpu_vram_bytes: autotune.gpu_vram_bytes,
         })
     }
 }

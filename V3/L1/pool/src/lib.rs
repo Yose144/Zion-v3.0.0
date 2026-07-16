@@ -69,7 +69,7 @@ pub struct ExternalStreamJob {
     pub seed_hash_hex: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum PoolMessage {
     Hello {
@@ -239,6 +239,28 @@ pub enum PoolMessage {
         accepted: bool,
         status: String,
         coin: String,
+    },
+    /// Miner → pool: coin preference for autonomous profit routing.
+    ///
+    /// Sent by the miner when `ZION_AUTONOMOUS=1` to tell the pool which
+    /// external coins it wants to mine on Stream 2 (GPU) and Stream 3 (CPU).
+    /// The pool should respect this preference when constructing Job messages.
+    /// If the pool cannot serve the requested coin, it falls back to its own
+    /// selection.
+    CoinPreference {
+        miner_id: String,
+        /// Preferred GPU coin ticker (e.g. "KAS", "ALPH"), or empty for pool default.
+        #[serde(default)]
+        gpu_coin: String,
+        /// Preferred CPU coin ticker (e.g. "VRSC", "XMR"), or empty for pool default.
+        #[serde(default)]
+        cpu_coin: String,
+        /// Net profit estimate for GPU coin (USD/day) — for pool-side logging.
+        #[serde(default)]
+        gpu_profit_usd_day: f64,
+        /// Net profit estimate for CPU coin (USD/day) — for pool-side logging.
+        #[serde(default)]
+        cpu_profit_usd_day: f64,
     },
 }
 
