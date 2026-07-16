@@ -26,7 +26,7 @@ import urllib.request
 API = "https://api.simplemining.net"
 RIG = 518837
 GROUP = 1773590
-MINER_URL = "https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed7.zip"
+MINER_URL = "https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed9.zip"
 
 
 def token():

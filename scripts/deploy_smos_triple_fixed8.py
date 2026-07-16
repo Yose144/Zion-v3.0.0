@@ -26,7 +26,7 @@ import urllib.request
 API = "https://api.simplemining.net"
 RIG = 518837
 GROUP = 1773590
-MINER_URL = "https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed5.zip"
+MINER_URL = "https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed8.zip"
 
 
 def token():
@@ -68,10 +68,14 @@ if __name__ == "__main__":
 
     print(f">> fetch current config for group {GROUP}")
     group = api("GET", f"/rig-groups/{GROUP}")
-    print(f"   current customMiner: {group.get('customMiner')}")
+    opts = group.get("minerOptions", "")
+    print(f"   current minerOptions: {opts[:120]}...")
 
-    print(f">> update group {GROUP} customMiner only")
-    api("PUT", f"/rig-groups/{GROUP}", {"customMiner": MINER_URL})
+    # The first token in minerOptions is the custom miner zip URL.
+    new_opts = " ".join([MINER_URL] + (opts.split()[1:] if opts else []))
+
+    print(f">> update group {GROUP} minerOptions")
+    api("PUT", f"/rig-groups/{GROUP}", {"customMiner": MINER_URL, "minerOptions": new_opts})
 
     print(">> clear cached miner on rig")
     api(
