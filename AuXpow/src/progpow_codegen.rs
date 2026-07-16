@@ -547,19 +547,20 @@ pub fn prepare_kawpow_kernel_source(
         .replace("XMRIG_INCLUDE_PROGPOW_DATA_LOADS", &data_loads)
 }
 
-/// Prepare the EPIC ProgPow kernel source by injecting inline random math
-/// and data load code. Replaces PROGPOW_INCLUDE_RANDOM_MATH and
-/// PROGPOW_INCLUDE_DATA_LOADS. Also replaces PROGPOW_INCLUDE_PROGPOW_LOOP
-/// (for backward compat — emits nothing since the loop is now inline in the kernel).
+/// Prepare the EPIC ProgPow kernel source by injecting inline random math,
+/// data load code, and the progPowLoop function. Replaces
+/// PROGPOW_INCLUDE_PROGPOW_LOOP with the generated loop code,
+/// PROGPOW_INCLUDE_RANDOM_MATH and PROGPOW_INCLUDE_DATA_LOADS.
 pub fn prepare_epic_progpow_kernel_source(
     base_source: &str,
     block_height: u64,
 ) -> String {
     let random_math = gen_epic_progpow_random_math(&EPIC_PROGPOW_PARAMS, block_height);
     let data_loads = gen_epic_progpow_data_loads(&EPIC_PROGPOW_PARAMS, block_height);
+    let progpow_loop = gen_epic_progpow_loop(&EPIC_PROGPOW_PARAMS, block_height);
 
     base_source
-        .replace("PROGPOW_INCLUDE_PROGPOW_LOOP", "")
+        .replace("PROGPOW_INCLUDE_PROGPOW_LOOP", &progpow_loop)
         .replace("PROGPOW_INCLUDE_RANDOM_MATH", &random_math)
         .replace("PROGPOW_INCLUDE_DATA_LOADS", &data_loads)
 }
