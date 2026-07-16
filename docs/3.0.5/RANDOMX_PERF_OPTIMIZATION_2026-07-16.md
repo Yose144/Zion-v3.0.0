@@ -239,4 +239,43 @@ cat /proc/meminfo | grep HugePages
 | Scratchpad huge pages | +10% | TODO — potřeba `randomx_alloc_dataset` s huge pages pro scratchpad |
 | Optimized assembly (ryzen profile) | +15% | TODO — would require hand-tuned ASM |
 | 1GB pages (pdpe1gb) | +5% | TODO — requires `--1gb-pages` XMRig-style |
-| XMR pool E2E | — | TODO — connect to MoneroOcean/2miners, verify share acceptance |
+| XMR pool E2E | — | ❌ BLOCKED — MoneroOcean auto-switches to KawPow; all pure-RandomX pools unreachable from Edge server (datacenter IP blocking) |
+
+---
+
+## 9. XMR Pool E2E Investigation (2026-07-16)
+
+Po optimalizaci RandomX hashrate (161 H/s) jsme se pokusili o XMR pool E2E — připojení k reálnému XMR poolu a verifikace share acceptance.
+
+### 9.1 MoneroOcean (gulf.moneroocean.stream:10001)
+
+- **Connect:** ✅ Pool client se připojil a autorizoval s XMR wallet adresou
+- **Problem:** MoneroOcean má **auto-algo switching** — automaticky přepíná mezi algoritmy podle profitability
+- **Výsledek:** Pool posílá **KawPow** jobs (RVN mining), ne RandomX jobs
+- **Password variants tried:** `x,d=4`, `x,d=4,a=rx-0`, `x,a=rx/0`, `a=rx-0`, `a=rx/0`, `a=randomx`, `algo=rx/0`, `algo=randomx`
+- **Všechny varianty:** MoneroOcean ignoruje password parametr a posílá KawPow
+- **Root cause:** KawPow (RVN) je aktuálně více profitable než RandomX (XMR), takže MoneroOcean přepnul na KawPow
+
+### 9.2 Pure-RandomX Pools (všechny nedostupné)
+
+| Pool | Port(s) | Výsledek |
+|------|---------|----------|
+| xmr.2miners.com | 2222, 3333, 4444, 5555 | Timeout (datacenter IP blocking) |
+| xmr.2miners.com (TLS) | 12222, 14444 | Timeout |
+| pool.supportxmr.com | 3333, 5555, 7777, 9000 | Connects but NO DATA |
+| xmr.nanopool.org | 14443, 14444 | Timeout |
+| xmr.kryptex.network | 7777 | Connects but NO DATA |
+| xmr.k1pool.com | 3500 | DNS not found |
+| pool.minexmr.com | 4444 | DNS not found |
+| pool.hashvault.to | 3333 | DNS not found |
+
+### 9.3 Root Cause
+
+Edge server (62.171.141.136) je VPS/datacenter IP. Mnoho XMR poolů blokuje datacenter IP adresy jako anti-bot/anti-malware ochranu. MoneroOcean je výjimka (povoluje datacenter IP), ale používá auto-algo switching.
+
+### 9.4 Možná Řešení
+
+1. **Počkat na MoneroOcean switch** — když RandomX (XMR) bude více profitable než KawPow (RVN), MoneroOcean automaticky přepne zpět
+2. **Proxy/VPN** — nastavit SOCKS proxy nebo VPN pro přístup k blokovaným poolům
+3. **Residential IP** — spustit XMR mining z residential IP (ne datacenter)
+4. **Vlastní pool** — postavit vlastní RandomX stratum pool (komplexní úkol)
