@@ -1,6 +1,6 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-07-15
+> **Datum poslední aktualizace:** 2026-07-16
 > **Protokol:** `zion-v3-node/3.0.6`
 > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
@@ -197,7 +197,7 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | CLORE | kawpow | EthStratum | protocol ✅ (R6), live E2E TODO |
 | XMR | randomx | Stratum | ✅ Native RandomX (tevador/RandomX, JIT + HW AES, per-thread VM, 1546 H/s M1, seed_hash epoch plumbing). Pool E2E TODO. See `RandomXReport.md` |
 | FLUX | zelhash | Stratum | TODO |
-| VRSC | verushash v2.2 | ZcashStratum | ⚠️ Native VerusHash ✅ (1.69 MH/s M1), target fix ✅, but LuckPool rejects shares (`low difficulty share` — header hash mismatch). Pool server rebuild needed. See `VerusHashReport.md` |
+| VRSC | verushash v2.2 | ZcashStratum | ✅ LIVE (LuckPool EU, CPU-only, shares accepted 4/4 — `clear_verushash_pbaas` fix deployed 2026-07-16). See [`docs/3.0.5/VRSC_SHARE_ACCEPTANCE_FIX_2026-07-16.md`](./docs/3.0.5/VRSC_SHARE_ACCEPTANCE_FIX_2026-07-16.md) |
 | EPIC | progpow | Stratum (custom HTTP) | ✅ LIVE (GPU ProgPow kernel, epoch 120 DAG, triple parallel with ZION+VRSC) |
 | QUAI | kawpow | Stratum | ✅ Added (KawPoW GPU thread, 2miners pool, BTC payout, `ZION_POOL_AUXPOW_WALLET_QUAI` env var) |
 | BEAM | beamhash III (Equihash 144,5 + SipHash-2-4) | BeamStratum (TLS) | ✅ Implemented (CPU hasher `beamhash.rs` 13 tests + OpenCL kernel `beamhash_kernel.cl` + GPU dispatch wired, 2miners pool, BTC payout) |
@@ -324,6 +324,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 
 | Date | Milestone | Key Commits |
 |------|-----------|-------------|
+| 07-16 | **VRSC shares ACCEPTED by LuckPool** — `clear_verushash_pbaas()` fix deployed. Root cause: outdated binary missing PBaaS v7+ header normalization (zeroing non-canonical fields before VerusHash). TriGpuManager Cpu kind bug fixed (miner couldn't start in CPU-only mode). Legacy `zion-pool.service` disabled (port 8444 conflict). 4/4 VRSC shares accepted, 0 rejections. See [`docs/3.0.5/VRSC_SHARE_ACCEPTANCE_FIX_2026-07-16.md`](./docs/3.0.5/VRSC_SHARE_ACCEPTANCE_FIX_2026-07-16.md) | `071c50ebf`, `09217752a` |
 | 07-15 | **QUAI (KawPoW) added** — 15th external coin. KawPoW GPU thread in miner (`kawpow_gpu_thread`), Stratum v1 protocol, 2miners pool (BTC payout). `ExternalCoin::QUAI` in AuXpow enum, pool server routing/algorithm/CH-coin mappings, miner channel+routing+share drain. Env vars: `ZION_POOL_AUXPOW_WALLET_QUAI`, `ZION_POOL_AUXPOW_PASSWORD_QUAI` | (this commit) |
 | 07-15 | **BEAM (BeamHash III) added** — 16th external coin. Custom `BeamStratum` protocol (JSON-RPC 2.0 over TLS) for beam.2miners.com:5252. `ExternalCoin::BEAM` in AuXpow enum, `StratumProtocol::BeamStratum` variant, `beam_login()`/`parse_beam_job()`/Beam submit block, `RevenueSource::BeamHashExternal` in cosmic-harmony, pool server routing/algorithm/CH-coin/stats mappings. Env var: `ZION_POOL_AUXPOW_WALLET_BEAM` | (this commit) |
 | 07-15 | **BeamHash III GPU kernel implemented** — SipHash-2-4 + Equihash 144,5 CPU hasher (`AuXpow/src/beamhash.rs`, 590 lines, 13 tests) + OpenCL kernel (`AuXpow/csrc/opencl/beamhash_kernel.cl`, SipHash-2-4 + hash generation) + GPU dispatch wired in `gpu_miner.rs` + `gpu_backend.rs` stub replaced with real `mine()` call. 159/159 AuXpow tests pass. | `525835d4e` |
@@ -373,7 +374,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 6. R3: ALPH + KAS E2E (2miners)
 7. R4: Stream telemetry revenue report (dashboard + API) — ✅ DONE (`d189712a7`)
 8. R5: SMOS deploy + GPU mining (done — Vega rig `vega-smos` live on `zion-miner-v3.0.5-gpu-r6.zip`)
-9. R7: VRSC live E2E deploy (LuckPool, needs ZION_VRSC_WALLET — VerusHash C++ native build ✅ DONE)
+9. R7: VRSC live E2E deploy — ✅ DONE (LuckPool shares accepted, `clear_verushash_pbaas` fix deployed 2026-07-16)
 10. R8: True AuxPow consensus (future, 20-40h)
 
 ---
@@ -396,3 +397,4 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 | AuxPow integration report | `docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md` | Pool+dashboard integration |
 | Pool perf report | `docs/3.0.5/POOL_PERF_REPORT_2026-07-11.md` | F1-F6 optimizations |
 | 3.0.5 all-green report | `docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md` | Protocol upgrade verification |
+| **VRSC share fix** | `docs/3.0.5/VRSC_SHARE_ACCEPTANCE_FIX_2026-07-16.md` | LuckPool `low difficulty share` root cause + fix (clear_verushash_pbaas) |
