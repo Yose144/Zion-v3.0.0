@@ -181,6 +181,21 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         "progpow" | "progpow_epic" => Some(("progpow_kernel.cl", "ethash_search")),
         "pearlhash" | "pearlhash_prl" => Some(("pearl_kernel.cl", "pearl_mine")),
         "beamhash" | "beamhash_beam" => Some(("beamhash_kernel.cl", "beamhash_generate_hashes")),
+        "karlsenhash" | "karlsenhash_kls" => {
+            // KarlsenHashV2 — similar to kheavyhash but distinct kernel needed
+            // TODO: write OpenCL kernel
+            None
+        }
+        "equihashzero" | "equihashzero_zcl" => {
+            // Equihash 192,7 — memory-hard, needs dedicated kernel
+            None
+        }
+        "qhash" | "qhash_qtc" => None, // placeholder — needs kernel
+        "verthash" | "verthash_vtc" => None, // placeholder — needs kernel + data file
+        "fishhash" | "fishhash_iron" => None, // placeholder — needs kernel
+        "nexapow" | "nexapow_nexa" => None, // placeholder — needs kernel
+        "ghostrider" | "ghostrider_rtm" => None, // placeholder — needs kernel
+        "dynexsolve" | "dynexsolve_dnx" => None, // placeholder — needs kernel
         _ => None,
     }
 }

@@ -78,6 +78,22 @@ pub enum RevenueSource {
     /// Revenue from BeamHash III external coins (BEAM — Beam).
     /// Equihash 150,5 variant, GPU-friendly, custom Beam Stratum over TLS.
     BeamHashExternal,
+    /// Revenue from KarlsenHash external coins (KLS — Karlsen).
+    KarlsenHashExternal,
+    /// Revenue from EquihashZero external coins (ZCL — Zclassic).
+    EquihashZeroExternal,
+    /// Revenue from Qhash external coins (QTC — Qubitcoin).
+    QhashExternal,
+    /// Revenue from Verthash external coins (VTC — Vertcoin).
+    VerthashExternal,
+    /// Revenue from FishHash external coins (IRON — IronFish).
+    FishHashExternal,
+    /// Revenue from NexaPow external coins (NEXA — Nexa).
+    NexaPowExternal,
+    /// Revenue from GhostRider external coins (RTM — Raptoreum).
+    GhostRiderExternal,
+    /// Revenue from DynexSolve external coins (DNX — Dynex).
+    DynexSolveExternal,
     /// Revenue from DeekshaLite v1 simplified mining (GCN-friendly).
     DeekshaLite,
     /// Revenue from DeekshaLite Fire thermal-intensive mining (winter heating).
@@ -104,6 +120,14 @@ impl RevenueSource {
             Self::ProgPowExternal => "progpow_external",
             Self::PearlExternal => "pearl_external",
             Self::BeamHashExternal => "beamhash_external",
+            Self::KarlsenHashExternal => "karlsenhash_external",
+            Self::EquihashZeroExternal => "equihashzero_external",
+            Self::QhashExternal => "qhash_external",
+            Self::VerthashExternal => "verthash_external",
+            Self::FishHashExternal => "fishhash_external",
+            Self::NexaPowExternal => "nexapow_external",
+            Self::GhostRiderExternal => "ghostrider_external",
+            Self::DynexSolveExternal => "dynexsolve_external",
             Self::DeekshaLite => "deeksha_lite",
             Self::ThermalBonus => "thermal_bonus",
             Self::NclAi => "ncl_ai",
@@ -124,7 +148,15 @@ impl RevenueSource {
             | Self::VerusHashExternal
             | Self::ProgPowExternal
             | Self::PearlExternal
-            | Self::BeamHashExternal => BLAKE3_EXTERNAL_FEE,
+            | Self::BeamHashExternal
+            | Self::KarlsenHashExternal
+            | Self::EquihashZeroExternal
+            | Self::QhashExternal
+            | Self::VerthashExternal
+            | Self::FishHashExternal
+            | Self::NexaPowExternal
+            | Self::GhostRiderExternal
+            | Self::DynexSolveExternal => BLAKE3_EXTERNAL_FEE,
             Self::DeekshaLite | Self::ThermalBonus => MERGED_MINING_FEE,
             Self::NclAi => NCL_FEE,
         }
