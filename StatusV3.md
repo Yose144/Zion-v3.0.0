@@ -202,11 +202,11 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | QUAI | kawpow | Stratum | ✅ Added (KawPoW GPU thread, 2miners pool, BTC payout, `ZION_POOL_AUXPOW_WALLET_QUAI` env var) |
 | BEAM | beamhash III (Equihash 144,5 + SipHash-2-4) | BeamStratum (TLS) | ✅ Implemented (CPU hasher `beamhash.rs` 13 tests + OpenCL kernel `beamhash_kernel.cl` + GPU dispatch wired, 2miners pool, BTC payout) |
 | PRL | pearlhash (PoUW MatMul) | PearlStratum (custom) | ★★★ PearlStratum ✅ + CPU hasher ✅ + GPU GEMM dispatch ✅ (`0bafbfe83`) + Merkle proof ✅ (`705bff572`) + pool-routed ✅ (`f524b7117`), full PoUW ZK TODO |
-| **KLS** | KarlsenHashV2 (FishHashPlus+Blake3) | Stratum | ✅ OpenCL kernel `karlsenhash_kernel.cl` (608 lines) + DAG + GPU dispatch wired (`f6df75b64`) |
+| **KLS** | KarlsenHashV2 (FishHashPlus+Blake3) | Stratum | ✅ OpenCL kernel `karlsenhash_kernel.cl` (604 lines) + DAG + GPU dispatch wired (`f6df75b64`) |
 | **ZCL** | EquihashZero 192,7 | ZcashStratum | ✅ OpenCL kernel `equihash_kernel.cl` (851 lines, adapted from silentarmy) — host-side multi-kernel Wagner dispatch TODO (`646d14f59`) |
 | **QTC** | Qhash (quantum circuit sim) | Stratum | ⚠️ Placeholder — requires quantum circuit simulation in OpenCL (cuQuantum is CUDA-only) (`77613ad50`) |
 | **VTC** | Verthash (I/O-bound, 1.2GB dat) | Stratum | ✅ OpenCL kernel `verthash_kernel.cl` (289 lines) + SHA3 kernels — host-side 1.2GB data file loader TODO (`646d14f59`) |
-| **IRON** | FishHash (Blake3 DAG) | Stratum | ✅ OpenCL kernel `fishhash_kernel.cl` (532 lines) + DAG + GPU dispatch wired (`f6df75b64`) |
+| **IRON** | FishHash (Blake3 DAG) | Stratum | ✅ OpenCL kernel `fishhash_kernel.cl` (580 lines) + DAG + GPU dispatch wired (`f6df75b64`) |
 | **NEXA** | NexaPow (secp256k1 Schnorr) | Stratum | ✅ OpenCL kernel `nexapow_kernel.cl` (6164 lines, UltrafastSecp256k1 MIT) + GPU dispatch wired (`77613ad50`) |
 | **RTM** | GhostRider (15 algos + 6 CN) | Stratum | ⚠️ Placeholder — 15 hash algorithms + 6 CryptoNight variants, ~72K lines to port (`77613ad50`) |
 | **DNX** | DynexSolve (neuromorphic PoUW) | Stratum | ⚠️ Placeholder — neuromorphic ODE solver, CUDA-only reference (`77613ad50`) |
@@ -227,8 +227,8 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 | progpow | EPIC | DAG ✅ (OpenMP) | — (needs DAG) | ⚠️ kernel only |
 | pearlhash | PRL | Placeholder | Placeholder | ❌ TODO (full PoUW) ★★★ |
 | beamhash | BEAM | SipHash-2-4 ✅ | Equihash 144,5 ✅ | ✅ Implemented (`beamhash.rs` + `beamhash_kernel.cl`) |
-| fishhash | IRON | Kernel ✅ (532 lines) | TODO | TODO — DAG-based, `fishhash_kernel.cl` (`f6df75b64`) |
-| karlsenhash | KLS | Kernel ✅ (608 lines) | TODO | TODO — FishHashPlus+Blake3, `karlsenhash_kernel.cl` (`f6df75b64`) |
+| fishhash | IRON | Kernel ✅ (580 lines) | TODO | TODO — DAG-based, `fishhash_kernel.cl` (`f6df75b64`) |
+| karlsenhash | KLS | Kernel ✅ (604 lines) | TODO | TODO — FishHashPlus+Blake3, `karlsenhash_kernel.cl` (`f6df75b64`) |
 | nexapow | NEXA | Kernel ✅ (6164 lines) | TODO | TODO — secp256k1 Schnorr, `nexapow_kernel.cl` (`77613ad50`) |
 | verthash | VTC | Kernel ✅ (289 lines) | TODO | TODO — 1.2GB data file, `verthash_kernel.cl` (`646d14f59`) |
 | equihash192_7 | ZCL | Kernel ✅ (851 lines) | TODO | TODO — multi-kernel Wagner, `equihash_kernel.cl` (`646d14f59`) |
@@ -340,7 +340,7 @@ WARP_STELLAR_RPC=https://horizon.stellar.org
 
 | Date | Milestone | Key Commits |
 |------|-----------|-------------|
-| 07-16 | **8 new no-DAG GPU-mineable coins OpenCL kernels** — IRON (FishHash, 532 lines), KLS (KarlsenHashV2, 608 lines), NEXA (NexaPow secp256k1 Schnorr, 6164 lines from UltrafastSecp256k1 MIT), VTC (Verthash, 289 lines + SHA3), ZCL (Equihash 192,7, 851 lines from silentarmy) fully integrated or kernel-ready. RTM/QTC/DNX documented placeholders. 3 commits, 9292 lines of OpenCL kernel code. 173/173 tests pass. See [`SESSION_REPORT_2026-07-16.md`](./SESSION_REPORT_2026-07-16.md) | `f6df75b64`, `646d14f59`, `77613ad50` |
+| 07-16 | **8 new no-DAG GPU-mineable coins OpenCL kernels** — IRON (FishHash, 580 lines), KLS (KarlsenHashV2, 604 lines), NEXA (NexaPow secp256k1 Schnorr, 6164 lines from UltrafastSecp256k1 MIT), VTC (Verthash, 289 lines + SHA3 277 lines), ZCL (Equihash 192,7, 851 lines from silentarmy) fully integrated or kernel-ready. RTM/QTC/DNX documented placeholders. 3 commits, 9292 lines of OpenCL kernel code. 173/173 tests pass. Comprehensive report: [`GPU_KERNEL_INTEGRATION_REPORT_2026-07-16.md`](./GPU_KERNEL_INTEGRATION_REPORT_2026-07-16.md) | `f6df75b64`, `646d14f59`, `77613ad50` |
 | 07-16 | **Stratum E2E tests for 8 new coins** — Live stratum connection tests from Edge server: 5/8 full E2E (NEXA✅, ZCL✅, RTM✅, QTC✅, VTC✅), 3/8 issues (IRON: herominers no response, KLS: EthStratum auth pending, DNX: all pools blocked from datacenter). VTC default pool changed to zpool (verthash.eu.mine.zpool.ca:4533), added to is_zpool()+supports_btc_payout(). KLS pool hostname fixed. | `1126bacca` |
 | 07-16 | **8 new ExternalCoin variants + pool/profit routing** — KLS, ZCL, QTC, VTC, IRON, NEXA, RTM, DNX added to ExternalCoin enum, cosmic-harmony RevenueSource, pool server routing (26 sources), miner config, dashboard. Dynamic pool stream config polling. | (prior commits) |
 | 07-16 | **Comprehensive share verification** — ZION: 178 shares, 100% accept rate (0 rejected). VRSC: 6 accepted, 4 stale (post-optimization, two-stage AVX2 path). XMR: E2E BLOCKED — MoneroOcean auto-switches to KawPow (more profitable than RandomX), all pure-RandomX pools (2miners, SupportXMR, Nanopool, Kryptex) unreachable from Edge server (datacenter IP blocking). XMR wallet configured (`ZION_POOL_AUXPOW_WALLET_XMR`), pool client connects and authorizes on MoneroOcean, but no RandomX jobs received. | (this commit) |

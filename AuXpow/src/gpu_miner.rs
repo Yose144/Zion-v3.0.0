@@ -1681,12 +1681,12 @@ typedef unsigned long ulong;
         };
         let build_opts = if params.regs != 32 || params.cnt_math != 18 {
             format!(
-                "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={} -DPROGPOW_REGS={} -DPROGPOW_CNT_MATH={}",
+                "-cl-std=CL1.2 -cl-mad-enable -DPLATFORM=1 -DOPENCL_PLATFORM_AMD=1 -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={} -DPROGPOW_REGS={} -DPROGPOW_CNT_MATH={}",
                 dag_elements_safe, dag_bytes, group_size, params.regs, params.cnt_math
             )
         } else {
             format!(
-                "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={}",
+                "-cl-std=CL1.2 -cl-mad-enable -DPLATFORM=1 -DOPENCL_PLATFORM_AMD=1 -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={}",
                 dag_elements_safe, dag_bytes, group_size
             )
         };
