@@ -61,19 +61,20 @@ if [ ! -f "$EPIC_DAG_FILE" ] || [ "$(stat -c%s "$EPIC_DAG_FILE" 2>/dev/null || e
     cd "$DAG_CACHE_DIR" || exit 1
     rm -f progpow_epoch120.bin.tmp progpow_epoch120.bin.part*.part
     ok=true
-    for i in $(seq -w 0 39); do
+    # 10 MB chunks + 20 s pause keeps the average download rate well below the
+    # rig-side ~130 MB transfer throttle, avoiding mid-download connection drops.
+    for i in $(seq -w 0 198); do
         part="progpow_epoch120.bin.part${i}.part"
         part_url="${EPIC_DAG_URL}.part${i}.part"
         echo "[smos-wrapper] downloading $part ..."
-        # --http1.1 avoids some HTTP/2 long-download stalls; --retry handles transient drops
-        if ! curl --http1.1 --retry 20 --retry-delay 5 --connect-timeout 30 --max-time 0 -C - -fsSL -o "$part" "$part_url"; then
+        if ! curl --http1.1 --retry 20 --retry-delay 5 --connect-timeout 30 \
+                  --speed-time 120 --speed-limit 50000 \
+                  -C - -fsSL -o "$part" "$part_url"; then
             echo "[smos-wrapper] failed to download $part"
             ok=false
             break
         fi
-        # Pause between chunks to avoid tripping the rig-side transfer throttle
-        # that drops the connection after roughly 130 MB of continuous traffic.
-        sleep 30
+        sleep 20
     done
     if $ok; then
         echo "[smos-wrapper] assembling DAG ..."

@@ -1,8 +1,8 @@
 # Triple-stream E2E verification report — SMOS Vega rig
 
 **Date:** 2026-07-16  
-**SMOS package:** `zion-miner-v3.1.9-triple-fixed7.zip`  
-**URL:** `https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed7.zip`  
+**SMOS package:** `zion-miner-v3.1.9-triple-fixed10.zip`  
+**URL:** `https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed10.zip`  
 **DAG cache:** `https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin`  
 **SimpleMining group:** `ZionLiteFire` (ID 1773590)  
 **Rig:** `ZionRig` (ID 518837, IP 109.81.31.210)  
@@ -127,10 +127,10 @@ The generated `progpow_epoch120.bin` can be placed in `/home/miner/.zion/dag-cac
 # 1. Build and package (done on zion-new)
 ssh zion-new
 cd /opt/zion
-bash scripts/edge-docker-build-smos.sh v3.1.9-triple-fixed5
+bash scripts/edge-docker-build-smos.sh v3.1.9-triple-fixed10
 ```
 
-This produces `https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed5.zip`.
+This produces `https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed10.zip`.
 
 ```bash
 # 2. Generate EPIC ProgPow DAG epoch 120 on a fast host (done)
@@ -145,9 +145,9 @@ docker run --rm \
 
 Produces `https://zionterranova.com/zion-miner/dag-cache/progpow_epoch120.bin` (≈ 2 GB).
 
-3. Update SimpleMining group 1773590 to the `fixed7` zip and reload rig 518837 via the REST API (`/rig-groups/{id}` PUT, `/rigs/execute-reload` PATCH).
+3. Update SimpleMining group 1773590 to the `fixed10` zip and reload rig 518837 via the REST API (`/rig-groups/{id}` PUT, `/rigs/execute-reload` PATCH).
 
-The `fixed7` SMOS wrapper downloads the pre-built EPIC ProgPow DAG in 50 MB chunks (with HTTP/1.1, retries and a short pause between chunks) and assembles it into `/home/miner/.zion/dag-cache/progpow_epoch120.bin` before starting the miner. If the download fails, the miner falls back to local DAG generation.
+The `fixed10` SMOS wrapper downloads the pre-built EPIC ProgPow DAG in 10 MB chunks with HTTP/1.1, retries, a 20 s pause between chunks, and a speed floor. This keeps the average transfer rate below the rig-side ~130 MB throttle. If the download fails, the miner falls back to local DAG generation.
 
 ## 4. Live verification
 
@@ -234,7 +234,7 @@ parallel_stream_embedded miner=vega-smos coin=EPIC algo=progpow ext_job_id=2 hei
 | Stream   | Status                                   | Evidence                                        |
 |----------|------------------------------------------|-------------------------------------------------|
 | ZION     | Green — shares accepted                  | `SHARE_ACCEPTED` + pool `valid_share`           |
-| VRSC CPU | Yellow-green — pool-side target check fixed, upstream now receives shares | `VRSC_SHARE_FOUND`; rejects changed from `below_target` to upstream `low difficulty share` / `job not found`. With `ZION_AUXPOW_EASY_TARGET` disabled the miner now receives the real upstream target. |
+| VRSC CPU | Green — LuckPool accepts VRSC shares | `external_share_result ... coin=VRSC accepted=true` (4/4 in verification); see `docs/3.0.5/VRSC_SHARE_ACCEPTANCE_FIX_2026-07-16.md`. |
 | EPIC GPU | Yellow — jobs received, DAG download unreliable from rig network, miner falling back to local generation | `external_stream job=... coin=EPIC` present; DAG transfer from server drops after ~130 MB, so wrapper falls back to local generation. |
 
 ## 6. Recommended next steps
@@ -261,8 +261,8 @@ parallel_stream_embedded miner=vega-smos coin=EPIC algo=progpow ext_job_id=2 hei
 - `V3/L1/native-ffi/build.rs` — RandomX x86_64 static assembly.
 - `V3/L1/miner/src/main.rs` — Extra Stream 2 startup / external GPU thread logging.
 - `scripts/edge-docker-build-smos.sh` — Build base image and feature set.
-- `scripts/edge-package-smos.sh` — SMOS wrapper: removed `ZION_AUXPOW_EASY_TARGET`; downloads EPIC ProgPow DAG in chunks before miner start (`fixed7`).
-- `scripts/deploy_smos_triple_fixed7.py` — SMOS deploy helper that preserves existing `minerOptions` and only updates the zip URL.
+- `scripts/edge-package-smos.sh` — SMOS wrapper: removed `ZION_AUXPOW_EASY_TARGET`; downloads EPIC ProgPow DAG in 10 MB chunks over direct edge IP before miner start (`fixed10`).
+- `scripts/deploy_smos_triple_fixed10.py` — SMOS deploy helper that preserves existing `minerOptions` and only updates the zip URL.
 - `/etc/zion/edge-environment.sh` (server) — disabled `ZION_AUXPOW_EASY_TARGET` and restarted `zion-edge-pool.service`.
 
 ---
