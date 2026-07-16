@@ -45,6 +45,16 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 - Share routing: VRSC → `cpu_auxpow_bridge.forward()`, EPIC → `auxpow_bridge.forward()`
 - Verified live: 99.7% ZION accept rate, EPIC ProgPow 7169+ batches, VRSC CPU VerusHash 4 threads
 - **BeamHash III implemented:** SipHash-2-4 + Equihash 144,5 CPU hasher (`beamhash.rs`, 13 tests) + OpenCL kernel (`beamhash_kernel.cl`) + GPU dispatch wired
+- **8 new no-DAG GPU-mineable coins OpenCL kernels (2026-07-16):**
+  - IRON (FishHash) — `fishhash_kernel.cl` (532 lines), DAG-based, fully integrated
+  - KLS (KarlsenHashV2) — `karlsenhash_kernel.cl` (608 lines), FishHashPlus+Blake3, fully integrated
+  - NEXA (NexaPow) — `nexapow_kernel.cl` (6164 lines), secp256k1 Schnorr from UltrafastSecp256k1 (MIT), fully integrated
+  - VTC (Verthash) — `verthash_kernel.cl` (289 lines) + SHA3 kernels, kernel ready, host-side 1.2GB data file loader TODO
+  - ZCL (Equihash 192,7) — `equihash_kernel.cl` (851 lines) from silentarmy, kernel ready, multi-kernel Wagner dispatch TODO
+  - RTM (GhostRider) — placeholder, 15 algos + 6 CN variants (~72K lines to port)
+  - QTC (Qhash) — placeholder, quantum circuit simulation (cuQuantum is CUDA-only)
+  - DNX (DynexSolve) — placeholder, neuromorphic PoUW (CUDA-only reference)
+  - 24 total external coins, 173/173 AuXpow tests pass, 3 commits (`f6df75b64`, `646d14f59`, `77613ad50`)
 - **EvrProgPow/MeowPow correct params:** PERIOD=3 (EVR), PERIOD=6+REGS=16+CNT_MATH=9 (MEWC) — no longer using KawPow fallback
 - **GPU benchmark (M1 Metal):** blake3 24.7 GH/s, kheavyhash 22.2 GH/s, autolykos 23.7 GH/s, zelhash 23.8 GH/s, pearl 25.2 GH/s
 - **E2E Edge audit:** Pool embeds EPIC+VRSC streams ✓, but miners not submitting external shares (old binary) — deploy fix needed
