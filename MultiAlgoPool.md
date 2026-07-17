@@ -199,9 +199,9 @@ Fixed DAG buffer allocation to share the same OpenCL context as the main mining 
 
 ---
 
-## 5. Current Issue: EPIC Share Submission Timeout
+## 5. EPIC Share Submission Timeout — FIXED
 
-### Root cause identified
+### Root cause
 
 EPIC ProgPow shares ARE being found by the GPU kernel (5 submitted), but ALL are rejected with `status=unknown`. The pool logs reveal the cause:
 
@@ -224,14 +224,15 @@ Additionally, the EPIC pool connection drops frequently (every ~5 min), causing 
 login OK → getjobtemplate → mining for ~5 min → connection drops → reconnect → login OK → ...
 ```
 
-### Fix needed
+### Fix applied (2026-07-17, commit `92cb18bc8` + `49789b418`)
 
-The `send_request` / `poll_messages` race needs to be resolved. Options:
-1. **Insert `pending_requests` BEFORE sending the request** (already done — the race is elsewhere)
-2. **Use `send_request_inline` for EPIC submits** — bypass the poll loop entirely by locking the reader mutex and reading the response directly. This is what `epic_login` and `epic_getjobtemplate` already do, but `submit_share` uses `send_request` (the async channel-based path).
-3. **Pause the poll loop during submit** — temporarily signal the poll loop to yield
+Two fixes deployed on Edge server:
 
-The cleanest fix is option 2: use `send_request_inline` for EPIC share submission, same as login/getjobtemplate. This avoids the race entirely since the submit path holds the reader mutex exclusively.
+**1. EPIC submit race (commit `49789b418`):** `submit_share()` EPIC path switched from `send_request` (async channel) to `send_request_inline` (exclusive reader mutex). Same approach as `epic_login` and `epic_getjobtemplate`. The submit path now holds the reader mutex exclusively, preventing the poll loop from stealing the response.
+
+**2. EPIC connection stability (commit `92cb18bc8`):** Root cause of 5-min disconnects: keepalive timer was sending bare `keepalive` requests, but EPIC server doesn't respond to those with any data. The `poll_messages` 300s read timeout fired every 5 min, triggering unnecessary reconnects. Fix: keepalive timer now sends `getjobtemplate` (fire-and-forget) every 60s — server responds with a new job, which the poll loop picks up and resets the 300s read timeout.
+
+Verified on Edge: EPIC bridge stable, no `read timeout` reconnects after fix.
 
 ---
 
@@ -294,12 +295,13 @@ cargo build --release
 
 ## 9. Next Steps
 
-1. **Fix EPIC submit race condition** — switch `submit_share` EPIC path from `send_request` to `send_request_inline` to avoid poll-loop response stealing
-2. **Investigate EPIC connection stability** — connection drops every ~5 min; may need TCP keepalive tuning or TLS session resumption
-3. **Investigate XMR stale share rate** — 1.8% accept rate suggests shares are computed on stale jobs; may need faster job refresh or lower nonce count per batch
-4. **Autotune GPU scheduling** — ProgPow hashrate is ~5 MH/s vs expected ~30 MH/s (GPU shared with Deeksha); investigate time-slicing or dual-kernel scheduling
+1. ~~**Fix EPIC submit race condition** — switch `submit_share` EPIC path from `send_request` to `send_request_inline`~~ ✅ DONE (commit `49789b418`, deployed on Edge)
+2. ~~**Investigate EPIC connection stability** — connection drops every ~5 min~~ ✅ DONE (commit `92cb18bc8`, root cause: bare `keepalive` doesn't generate response → 300s read timeout; fix: `getjobtemplate` as keepalive)
+3. **Investigate XMR stale share rate** — 1.8% accept rate suggests shares are computed on stale jobs; may need faster job refresh or lower nonce count per batch. Note: XMR bridge is active on Edge (jobs queued), but no miner is currently mining XMR (Vega has stream3 disabled). Re-enable XMR mining to collect fresh data.
+4. **Autotune GPU scheduling** — ProgPow hashrate is ~5 MH/s vs expected ~30 MH/s (GPU shared with Deeksha); investigate time-slicing or dual-kernel scheduling. Note: ProgPow kernel hangs on Vega 64/SMOS (see VegaRig.md §4) — needs separate OpenCL compiler investigation.
 5. **Enable more coins** — add wallets for KAS, ALPH, ERG, RVN, ETC etc. in `/etc/zion/edge-environment.sh` to open more bridges
 6. **Profit router integration** — `AutonomousProfitRouter` in `V3/L1/miner/src/autonomous.rs` can auto-select the most profitable GPU coin based on live estimates
+7. **Deploy EPIC submit fix on Vega rig** — miner binary on Vega needs rebuild with EPIC `send_request_inline` fix. Currently blocked by ProgPow kernel hang on SMOS (stream2 disabled). Fix is already in pool binary on Edge.
 
 ---
 
