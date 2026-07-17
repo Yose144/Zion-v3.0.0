@@ -1,0 +1,4 @@
+# ZION Edge — allow dashboard (zion user) to run maintenance script via sudo
+# Drop-in: /etc/sudoers.d/zion-maintenance
+# Only the maintenance script — no broad sudo access.
+zion ALL=(root) NOPASSWD: /opt/zion/scripts/edge-maintenance.sh

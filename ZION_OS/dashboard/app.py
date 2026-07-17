@@ -4211,6 +4211,14 @@ def run_edge_action(action: str) -> dict:
         "security-audit":         "echo 'Security audit placeholder — run manually'",
         "full-health":            "sudo systemctl is-active zion-node zion-pool zion-dao zion-warp zion-bridge nginx 2>&1",
         "memory-limit":           "echo 'Memory limits configured in systemd unit files'",
+        # ── Edge maintenance (scripts/edge-maintenance.sh) ───────────────
+        # Safe: never touches critical services (node/pool/bridge/dao/warp).
+        # See scripts/edge-maintenance.sh for full documentation.
+        "maint-disk":             "sudo /opt/zion/scripts/edge-maintenance.sh disk --force 2>&1",
+        "maint-ram":              "sudo /opt/zion/scripts/edge-maintenance.sh ram --force 2>&1",
+        "maint-all":              "sudo /opt/zion/scripts/edge-maintenance.sh all --force 2>&1",
+        "maint-dry-run":          "sudo /opt/zion/scripts/edge-maintenance.sh all --dry-run --verbose 2>&1",
+        "maint-status":           "/opt/zion/scripts/edge-maintenance.sh status 2>&1 || echo 'maintenance script not installed'",
     }
 
     cmd = ACTION_MAP.get(action)
@@ -4218,14 +4226,22 @@ def run_edge_action(action: str) -> dict:
         return {"ok": False, "error": f"Unknown action: {action}"}
 
     try:
-        result = _run_edge_cmd(cmd, timeout=30)
+        # Maintenance actions can take several minutes (docker prune, apt clean).
+        # Other actions stay at 30s.
+        if action.startswith("maint-"):
+            timeout = 300
+            output_cap = 4000
+        else:
+            timeout = 30
+            output_cap = 300
+        result = _run_edge_cmd(cmd, timeout=timeout)
         output = (result.stdout + "\n" + result.stderr).strip()
         ok = result.returncode == 0
-        # Invalidate edge status cache after restarts
-        if action.startswith("restart-") or action == "clean-docker":
+        # Invalidate edge status cache after restarts or maintenance (disk/ram freed)
+        if action.startswith("restart-") or action == "clean-docker" or action.startswith("maint-"):
             _edge_status_cache["data"] = None
             _edge_status_cache["ts"] = 0
-        return {"ok": ok, "result": output[-300:] if output else "OK", "action": action}
+        return {"ok": ok, "result": output[-output_cap:] if output else "OK", "action": action}
     except subprocess.TimeoutExpired:
         return {"ok": False, "error": "Command timeout", "action": action}
     except FileNotFoundError as e:
@@ -7418,6 +7434,11 @@ def run_control(action: str, env_overrides: dict = None) -> dict:
     Manifest-backed services (services.json) are launched directly; everything
     else falls back to an allowed .ps1/.sh script in scripts/.
     Optional env_overrides merges into the subprocess environment."""
+    # ── Edge maintenance actions: synchronous, return full output ────────
+    # These run the edge-maintenance.sh script on the Edge server and return
+    # the captured output (not fire-and-forget like service starts).
+    if action.startswith("maint-"):
+        return run_edge_action(action)
     manifest_result = _manifest_dispatch(action, env_overrides)
     if manifest_result is not None:
         return manifest_result
@@ -7688,6 +7709,52 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       <div id="mainnet-status-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <!-- Dynamically populated by JavaScript -->
         <div class="text-gray-500 text-xs italic">Loading mainnet status...</div>
+      </div>
+    </div>
+
+    <!-- Edge Maintenance (disk + RAM optimization) -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">
+          🧹 Edge Maintenance
+          <span class="tooltip text-gray-500">ⓘ<span class="tip">Reclaims disk (docker prune, apt clean, journal vacuum, old logs) and optimizes RAM (drop_caches). Safe — never touches critical services. Runs daily at 04:17 UTC via zion-edge-maintenance.timer.</span></span>
+        </h2>
+        <div class="flex items-center gap-2">
+          <span id="maint-status-badge" class="text-xs px-2 py-0.5 rounded bg-zion-700 text-gray-300">—</span>
+          <button onclick="loadMaintStatus()" class="text-xs px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">🔄 Status</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+        <div class="bg-zion-900/60 rounded-lg p-2 border border-zion-700">
+          <div class="text-xs text-gray-400">Disk Used</div>
+          <div class="text-lg font-bold text-amber-400" id="maint-disk-pct">—</div>
+          <div class="text-[10px] text-gray-500" id="maint-disk-free">— GB free</div>
+        </div>
+        <div class="bg-zion-900/60 rounded-lg p-2 border border-zion-700">
+          <div class="text-xs text-gray-400">RAM Used</div>
+          <div class="text-lg font-bold text-amber-400" id="maint-ram-pct">—</div>
+          <div class="text-[10px] text-gray-500" id="maint-ram-avail">— GB avail</div>
+        </div>
+        <div class="bg-zion-900/60 rounded-lg p-2 border border-zion-700">
+          <div class="text-xs text-gray-400">Journal</div>
+          <div class="text-lg font-bold text-emerald-400" id="maint-journal">—</div>
+          <div class="text-[10px] text-gray-500">cap 200M</div>
+        </div>
+        <div class="bg-zion-900/60 rounded-lg p-2 border border-zion-700">
+          <div class="text-xs text-gray-400">Next Auto-Run</div>
+          <div class="text-sm font-bold text-emerald-400" id="maint-next-run">—</div>
+          <div class="text-[10px] text-gray-500">04:17 UTC daily</div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2 mb-3">
+        <button onclick="runMaintenance('maint-dry-run')" class="text-xs px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition font-medium">👁️ Dry Run</button>
+        <button onclick="runMaintenance('maint-disk')" class="text-xs px-3 py-1.5 bg-blue-700 hover:bg-blue-600 rounded-lg transition font-medium">💾 Clean Disk</button>
+        <button onclick="runMaintenance('maint-ram')" class="text-xs px-3 py-1.5 bg-purple-700 hover:bg-purple-600 rounded-lg transition font-medium">🧠 Optimize RAM</button>
+        <button onclick="runMaintenance('maint-all')" class="text-xs px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 rounded-lg transition font-medium">🧹 Full Maintenance</button>
+        <span class="text-[10px] text-gray-500 self-center">Actions run with --force; may take 1–5 min</span>
+      </div>
+      <div id="maint-log" class="bg-black/40 rounded-lg p-3 max-h-48 overflow-y-auto log-tail text-[11px] font-mono text-gray-400 border border-zion-700">
+        <div class="text-gray-600 italic">Maintenance log will appear here…</div>
       </div>
     </div>
 
@@ -8441,7 +8508,7 @@ function switchTab(name){
   if(name==='services')loadServices();
   if(name==='database')loadDatabases();
   if(name==='metrics')renderMetricsButtons();
-  if(name==='overview')loadMainnetStatus();
+  if(name==='overview'){loadMainnetStatus();loadMaintStatus();}
   if(name==='hiran'){loadHiranHealth();loadAgentList();loadOrchestratorStats();loadNclStatus();}
   if(name==='payout')refreshPayout();
 }
@@ -9459,6 +9526,72 @@ async function controlAction(action){
     if(log){log.insertAdjacentHTML('afterbegin','<div class="text-red-400">['+ts+'] ✗ '+e.message+'</div>');}
     toast('Error: '+e.message,'error');
   }
+}
+
+// ── Edge Maintenance (disk + RAM optimization) ──────────────────────────
+// Calls /api/control with maint-* actions. Shows live status + log output.
+async function runMaintenance(action){
+  const log=document.getElementById('maint-log');
+  const badge=document.getElementById('maint-status-badge');
+  const ts=new Date().toLocaleTimeString();
+  const labels={ 'maint-dry-run':'Dry Run','maint-disk':'Clean Disk','maint-ram':'Optimize RAM','maint-all':'Full Maintenance','maint-status':'Status' };
+  const label=labels[action]||action;
+  if(badge){badge.textContent='RUNNING…';badge.className='text-xs px-2 py-0.5 rounded bg-amber-500 text-white animate-pulse';}
+  if(log){log.insertAdjacentHTML('afterbegin','<div class="text-amber-400">['+ts+'] ⏳ '+label+' — dispatching (may take 1–5 min)…</div>');}
+  toast('🧹 '+label+' started…','');
+  try{
+    const res=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})}).then(r=>r.json());
+    const lines=(res.result||res.error||'OK').split('\n').filter(l=>l.trim());
+    const color=res.ok?'text-emerald-400':'text-red-400';
+    const mark=res.ok?'✓':'✗';
+    if(log){
+      log.insertAdjacentHTML('afterbegin','<div class="'+color+'">['+ts+'] '+mark+' '+label+' ('+(res.ok?'ok':'failed')+')</div>');
+      // Show last ~30 lines of script output (newest first)
+      lines.slice(0,30).forEach(l=>{
+        const lc = l.includes('WARN')?'text-yellow-400':l.includes('ERROR')?'text-red-400':l.includes('reclaimed')||l.includes('after')?'text-emerald-400':'text-gray-400';
+        log.insertAdjacentHTML('afterbegin','<div class="'+lc+'">'+escapeHtml(l)+'</div>');
+      });
+    }
+    if(badge){badge.textContent=res.ok?'DONE':'ERROR';badge.className='text-xs px-2 py-0.5 rounded '+(res.ok?'bg-emerald-600 text-white':'bg-red-700 text-white');}
+    toast(res.ok?('✓ '+label+' complete'):('✗ '+label+': '+(res.error||'failed')),res.ok?'success':'error');
+    // Refresh status metrics after any maint action
+    setTimeout(()=>loadMaintStatus(),1500);
+  }catch(e){
+    if(log){log.insertAdjacentHTML('afterbegin','<div class="text-red-400">['+ts+'] ✗ '+e.message+'</div>');}
+    if(badge){badge.textContent='ERROR';badge.className='text-xs px-2 py-0.5 rounded bg-red-700 text-white';}
+    toast('Error: '+e.message,'error');
+  }
+}
+
+async function loadMaintStatus(){
+  // Pull maintenance status (disk/ram %) from the maint-status action.
+  // maint-status doesn't need sudo (script runs status mode without --force).
+  try{
+    const res=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'maint-status'})}).then(r=>r.json());
+    if(res.ok && res.result){
+      // Output format: "[ts] [INFO] [maint] status: ram=NN% disk=NN% disk_free=NGB"
+      const m=res.result.match(/ram=(\\d+)%\\s+disk=(\\d+)%\\s+disk_free=(\\d+)GB/);
+      if(m){
+        const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+        set('maint-ram-pct',m[1]+'%');
+        set('maint-disk-pct',m[2]+'%');
+        set('maint-disk-free',m[3]+' GB free');
+        const ramPct=parseInt(m[1]), diskPct=parseInt(m[2]);
+        const ramEl=document.getElementById('maint-ram-pct');
+        const diskEl=document.getElementById('maint-disk-pct');
+        if(ramEl)ramEl.className='text-lg font-bold '+(ramPct>=92?'text-red-400':ramPct>=80?'text-amber-400':'text-emerald-400');
+        if(diskEl)diskEl.className='text-lg font-bold '+(diskPct>=85?'text-red-400':diskPct>=70?'text-amber-400':'text-emerald-400');
+        const badge=document.getElementById('maint-status-badge');
+        if(badge){
+          const worst=Math.max(ramPct,diskPct);
+          badge.textContent=worst>=92?'CRITICAL':worst>=80?'WARN':'OK';
+          badge.className='text-xs px-2 py-0.5 rounded '+(worst>=92?'bg-red-700 text-white':worst>=80?'bg-amber-600 text-white':'bg-emerald-600 text-white');
+        }
+      }
+    }
+  }catch(e){/* ignore — status is best-effort */}
+  const next=document.getElementById('maint-next-run');
+  if(next) next.textContent='04:17 UTC';
 }
 
 // ── Friendly mode ──
