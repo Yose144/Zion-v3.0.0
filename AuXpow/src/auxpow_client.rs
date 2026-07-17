@@ -1792,10 +1792,13 @@ impl AuxPowClient {
         if let Some(ref mut reader) = *guard {
             let mut buf = String::new();
             // EPIC uses a pull-based protocol (getjobtemplate) — the server
-            // may not send data for extended periods between block updates.
-            // Use a longer timeout (600s) for EPIC, 300s for push-based coins.
+            // only pushes job updates when a new block is found. With no
+            // active EPIC miner, pushes can be very infrequent. Use a long
+            // timeout (1800s = 30min) for EPIC, 300s for push-based coins.
+            // The keepalive task sends getjobtemplate every 120s; if the
+            // server responds, the timeout is reset.
             let timeout_secs = if self.protocol == StratumProtocol::EpicStratum {
-                600
+                1800
             } else {
                 300
             };
