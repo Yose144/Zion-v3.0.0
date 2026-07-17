@@ -3256,6 +3256,18 @@ pub mod opencl_deeksha_lite {
             &mut self,
             weights: &zion_cosmic_harmony::stream_profit::StreamWeights,
         ) -> Result<()> {
+            // ZION_GPU_NO_STREAM_BYPRODUCT=1 disables the stream byproduct work
+            // in the kernel (extra keccak/AES/SHA3 calls per hash). This can
+            // improve hashrate by 20-30% on GPUs where the byproduct work is
+            // a significant overhead relative to the base hash.
+            let weights = if std::env::var("ZION_GPU_NO_STREAM_BYPRODUCT")
+                .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+                .unwrap_or(false)
+            {
+                &zion_cosmic_harmony::stream_profit::StreamWeights::default()
+            } else {
+                weights
+            };
             let arr = stream_weights_f32(weights);
             self.stream_weights_buf.write(&arr[..]).enq()?;
             self.pro_que.queue().finish()?;
@@ -3297,10 +3309,31 @@ pub mod opencl_deeksha_lite {
                 .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
                 .unwrap_or(false);
 
+            // Early-break: return after the first chunk that finds a solution.
+            // On GCN/Vega, each kernel launch has ~200ms driver overhead. With
+            // low pool difficulty, every chunk finds a solution, so processing
+            // the full batch wastes 7×200ms=1.4s of overhead. Early-break
+            // launches only 1 kernel (8192 nonces in ~400ms = 20 KH/s) instead
+            // of 8 kernels (65536 nonces in ~4900ms = 13 KH/s).
+            // Default: true (optimal for GCN/Vega with low-difficulty pools).
+            // Set ZION_GPU_EARLY_BREAK=0 to disable.
+            let early_break = std::env::var("ZION_GPU_EARLY_BREAK")
+                .map(|v| !(v == "0" || v.eq_ignore_ascii_case("false")))
+                .unwrap_or(true);
+
             let mut all_solutions = Vec::new();
             let mut total_tested = 0u64;
             let mut current_nonce = nonce_start;
-            let mut left = batch_size;
+            // Cap batch to single chunk when early_break is enabled.
+            // This forces the single-buffer path, which is safe (no
+            // pending DMA events to drop). The double-buffered path
+            // with early_break causes heap corruption (use-after-free
+            // when pending read events/buffers are dropped on return).
+            let mut left = if early_break {
+                batch_size.min(self.work_size as u64)
+            } else {
+                batch_size
+            };
 
             // ── Double-buffered async readback path ──────────────────────
             // Uses two output buffers (A/B) and a dedicated read queue.
@@ -3403,14 +3436,17 @@ pub mod opencl_deeksha_lite {
                             }
                         }
                         total_tested += prev_chunk as u64;
-                        // NOTE: Do NOT return early when a solution is found.
-                        // Continue processing all chunks so the double-buffering
-                        // pipeline stays full and the GPU is never idle.  With
-                        // low pool difficulty (e.g. vardiff start diff=1), every
-                        // nonce may be a valid solution — breaking early would
-                        // only process one chunk per batch (8192 nonces) and
-                        // waste the remaining 31/32 of the batch.  By processing
-                        // the full batch, effective hashrate increases ~30×.
+                        // Early-break: wait for the pending chunk 1 read
+                        // to complete before returning, to avoid
+                        // use-after-free (the GPU DMA is writing to
+                        // host_b which would be dropped on return).
+                        if early_break {
+                            r_event.wait_for()?;
+                            return Ok(GpuBatchResult {
+                                nonces_tested: total_tested,
+                                solutions: all_solutions,
+                            });
+                        }
                     }
 
                     prev_read_event = Some(r_event);
@@ -3507,7 +3543,9 @@ pub mod opencl_deeksha_lite {
                         }
                     }
                     total_tested += chunk as u64;
-                    // NOTE: Do NOT break — process all chunks for full batch throughput.
+                    if early_break {
+                        break;
+                    }
                     current_nonce = current_nonce.wrapping_add(chunk as u64);
                     left -= chunk as u64;
                 }
@@ -3811,6 +3849,14 @@ pub mod opencl_deeksha_lite_fire {
             &mut self,
             weights: &zion_cosmic_harmony::stream_profit::StreamWeights,
         ) -> Result<()> {
+            let weights = if std::env::var("ZION_GPU_NO_STREAM_BYPRODUCT")
+                .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+                .unwrap_or(false)
+            {
+                &zion_cosmic_harmony::stream_profit::StreamWeights::default()
+            } else {
+                weights
+            };
             let arr = stream_weights_f32(weights);
             self.stream_weights_buf.write(&arr[..]).enq()?;
             self.pro_que.queue().finish()?;
@@ -3846,10 +3892,19 @@ pub mod opencl_deeksha_lite_fire {
                 .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
                 .unwrap_or(false);
 
+            let early_break = std::env::var("ZION_GPU_EARLY_BREAK")
+                .map(|v| !(v == "0" || v.eq_ignore_ascii_case("false")))
+                .unwrap_or(true);
+
             let mut all_solutions = Vec::new();
             let mut total_tested = 0u64;
             let mut current_nonce = nonce_start;
-            let mut left = batch_size;
+            // Cap batch to single chunk when early_break is enabled (safe path).
+            let mut left = if early_break {
+                batch_size.min(self.work_size as u64)
+            } else {
+                batch_size
+            };
 
             // ── Double-buffered async readback path ──────────────────────
             if !double_buffer_disabled && left > self.work_size as u64 {
@@ -3943,8 +3998,14 @@ pub mod opencl_deeksha_lite_fire {
                             }
                         }
                         total_tested += prev_chunk as u64;
-                        // NOTE: Do NOT return early — process full batch for max
-                        // GPU utilization (same fix as OpenClDeekshaLiteMiner).
+                        // Early-break: wait for pending read to avoid use-after-free
+                        if early_break {
+                            r_event.wait_for()?;
+                            return Ok(GpuBatchResult {
+                                nonces_tested: total_tested,
+                                solutions: all_solutions,
+                            });
+                        }
                     }
 
                     prev_read_event = Some(r_event);
@@ -4050,7 +4111,9 @@ pub mod opencl_deeksha_lite_fire {
                         }
                     }
                     total_tested += chunk as u64;
-                    // NOTE: Do NOT break — process all chunks for full batch throughput.
+                    if early_break {
+                        break;
+                    }
                     current_nonce = current_nonce.wrapping_add(chunk as u64);
                     left -= chunk as u64;
                 }

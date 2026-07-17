@@ -2411,6 +2411,14 @@ fn run_remote_session(
 
         // ── Submit CPU external share (VerusHash/RandomX, if found) ────
         if let Some(share) = ext_cpu_share {
+            println!(
+                "[{}] external_cpu_share_found  coin={}  algo={}  job_id={}  nonce={}",
+                log_timestamp(),
+                share.coin,
+                share.algorithm,
+                share.external_job_id,
+                share.nonce,
+            );
             submit_external_share(
                 &mut writer, &mut reader, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
                 |accepted| hashrate.record_cpu_ext_share(accepted),
@@ -3395,11 +3403,33 @@ fn ext_cpu_thread(
     nonce_count: u64,
     hashrate: Arc<HashrateTracker>,
 ) {
+    // RandomX is ~1000× slower than VerusHash per hash.  Use a much smaller
+    // nonce batch for RandomX so that hashrate updates frequently and the
+    // thread stays responsive to new jobs.
+    //   VerusHash: ~5 MH/s per thread → 2M nonces ≈ 0.4s per batch
+    //   RandomX:   ~500 H/s per thread → 2M nonces ≈ 4000s per batch (!)
+    // With randomx_nonce_count=10000 and 4 threads, each thread gets ~2500
+    // nonces, taking ~5s per batch at 500 H/s — reasonable update frequency.
+    let randomx_nonce_count = parse_env_u64("ZION_EXT_CPU_RANDOMX_NONCE_COUNT", 10_000)
+        .unwrap_or(10_000);
+
+    // RandomX is memory-bandwidth bound.  Using all logical cores (HT) for
+    // RandomX starves the main mining loop (GPU share submission, TUI, etc.)
+    // causing 10× slowdown from scheduler contention.  Use fewer threads:
+    // default = threads/3 (e.g. 4 for 12T), leaving 8 logical cores for the
+    // main loop.  Override with ZION_EXT_CPU_RANDOMX_THREADS.
+    let randomx_threads = std::env::var("ZION_EXT_CPU_RANDOMX_THREADS")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or((threads / 3).max(2));
+
     println!(
-        "[{}] ext_cpu_thread: started (persistent, threads={}, nonce_count={})",
+        "[{}] ext_cpu_thread: started (persistent, threads={}, randomx_threads={}, verushash_nonce_count={}, randomx_nonce_count={})",
         log_timestamp(),
         threads,
+        randomx_threads,
         nonce_count,
+        randomx_nonce_count,
     );
 
     let mut current_job: Option<zion_pool::ExternalStreamJob> = None;
@@ -3408,55 +3438,81 @@ fn ext_cpu_thread(
     let mut nonce_offset: u64 = 0;
 
     loop {
-        // Check for new job (non-blocking)
-        match rx.try_recv() {
-            Ok(job) => {
-                // The pool re-sends the same job frequently.  Only reset the
-                // nonce scan when the job_id actually changes, otherwise the
-                // CPU thread would keep restarting from the same base and never
-                // cover enough nonces to find a share.
-                if job.job_id != current_job_id {
-                    use std::collections::hash_map::DefaultHasher;
-                    use std::hash::{Hash, Hasher};
-                    let mut h = DefaultHasher::new();
-                    job.job_id.hash(&mut h);
-                    std::process::id().hash(&mut h);
-                    std::thread::current().id().hash(&mut h);
-                    nonce_base = (h.finish() as u32) as u64;
-                    nonce_offset = 0;
-                    current_job_id = job.job_id.clone();
-                    println!(
-                        "[{}] ext_cpu_thread: new job coin={} algo={} job_id={} nonce_base={}",
-                        log_timestamp(),
-                        job.coin,
-                        job.algorithm,
-                        job.job_id,
-                        nonce_base,
-                    );
-                    // Update hashrate tracker for triple-stream display
-                    hashrate.set_cpu_ext_job(&job.coin, &job.algorithm);
+        // Check for new job (non-blocking).
+        // Drain ALL pending messages and keep only the latest one.
+        // The main loop sends external_stream_cpu every ~1s, but a RandomX
+        // batch takes ~3s, so the channel can accumulate many stale copies.
+        // Without draining, the ext_cpu_thread would read hours-old jobs.
+        let mut latest_job: Option<zion_pool::ExternalStreamJob> = None;
+        loop {
+            match rx.try_recv() {
+                Ok(job) => {
+                    latest_job = Some(job);
                 }
-                current_job = Some(job);
+                Err(std::sync::mpsc::TryRecvError::Empty) => break,
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    println!("[{}] ext_cpu_thread: channel closed, exiting", log_timestamp());
+                    return;
+                }
             }
-            Err(std::sync::mpsc::TryRecvError::Empty) => {}
-            Err(std::sync::mpsc::TryRecvError::Disconnected) => {
-                println!("[{}] ext_cpu_thread: channel closed, exiting", log_timestamp());
-                return;
+        }
+        if let Some(job) = latest_job {
+            // Only reset the nonce scan when the job_id actually changes,
+            // otherwise the CPU thread would keep restarting from the same
+            // base and never cover enough nonces to find a share.
+            if job.job_id != current_job_id {
+                use std::collections::hash_map::DefaultHasher;
+                use std::hash::{Hash, Hasher};
+                let mut h = DefaultHasher::new();
+                job.job_id.hash(&mut h);
+                std::process::id().hash(&mut h);
+                std::thread::current().id().hash(&mut h);
+                nonce_base = (h.finish() as u32) as u64;
+                nonce_offset = 0;
+                current_job_id = job.job_id.clone();
+                println!(
+                    "[{}] ext_cpu_thread: new job coin={} algo={} job_id={} nonce_base={}",
+                    log_timestamp(),
+                    job.coin,
+                    job.algorithm,
+                    job.job_id,
+                    nonce_base,
+                );
+                // Update hashrate tracker for triple-stream display
+                hashrate.set_cpu_ext_job(&job.coin, &job.algorithm);
             }
+            current_job = Some(job);
         }
 
         // Mine current job (if any)
         if let Some(ref ext) = current_job {
+            // Use smaller nonce batches and fewer threads for RandomX
+            // (memory-bandwidth bound, HT doesn't help, and we need to leave
+            // CPU cores for the main GPU mining loop).
+            let (effective_threads, effective_nonce_count) = if ext.algorithm == "randomx" {
+                (randomx_threads, randomx_nonce_count)
+            } else {
+                (threads, nonce_count)
+            };
+
             let start_nonce = nonce_base.wrapping_add(nonce_offset);
-            if let Some(share) = mine_external_stream_cpu(ext, threads, start_nonce, nonce_count) {
+            if let Some(share) = mine_external_stream_cpu(ext, effective_threads, start_nonce, effective_nonce_count) {
+                println!(
+                    "[{}] ext_cpu_thread: share found, sending via channel  coin={}  algo={}  job_id={}  nonce={}",
+                    log_timestamp(),
+                    share.coin,
+                    share.algorithm,
+                    share.external_job_id,
+                    share.nonce,
+                );
                 let next_offset = nonce_offset.wrapping_add(share.nonce.wrapping_sub(start_nonce) + 1);
                 let _ = tx.send(share);
                 // Keep mining the same job, just advance past the share we found.
                 nonce_offset = next_offset;
             } else {
-                nonce_offset = nonce_offset.wrapping_add(nonce_count);
+                nonce_offset = nonce_offset.wrapping_add(effective_nonce_count);
             }
-            hashrate.record_cpu_ext_hashes(nonce_count);
+            hashrate.record_cpu_ext_hashes(effective_nonce_count);
         } else {
             // No job — brief sleep to avoid busy-loop
             std::thread::sleep(std::time::Duration::from_millis(200));

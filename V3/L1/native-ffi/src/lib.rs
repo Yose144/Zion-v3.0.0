@@ -1606,9 +1606,12 @@ pub mod randomx {
     }
 
     pub fn hash(header: &[u8], nonce: u64) -> [u8; 32] {
-        init();
+        // NOTE: Do NOT call init() here — it would reinitialize with a zero
+        // seed on every hash, overriding the correct epoch seed set by
+        // init_with_seed(). The caller MUST call init() or init_with_seed()
+        // before calling hash(). See scan_randomx in miner_harness.rs.
         let mut out = [0u8; 32];
-        // SAFETY: init has completed; slice + fresh 32-byte stack output.
+        // SAFETY: init has been called by the caller; slice + fresh 32-byte output.
         unsafe {
             randomx_zion_hash(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
         }
@@ -1863,6 +1866,7 @@ pub fn runtime_self_test() -> Vec<AlgoTestResult> {
     {
         let name = "randomx";
         let header = [0xA8u8; 76];
+        randomx::init();
         let h1 = randomx::hash(&header, 1);
         let h2 = randomx::hash(&header, 1);
         let ok = h1 != [0u8; 32] && h1 == h2;
@@ -2027,6 +2031,7 @@ mod tests {
     #[test]
     fn randomx_smoke() {
         let header = [0x08u8; 76];
+        randomx::init(); // ensure dataset is initialized before hashing
         let h1 = randomx::hash(&header, 0);
         let h2 = randomx::hash(&header, 0);
         assert_eq!(h1, h2, "randomx must be deterministic");
