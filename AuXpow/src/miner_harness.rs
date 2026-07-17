@@ -454,6 +454,19 @@ fn scan_randomx(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
     // Decode seed hash for RandomX cache initialization
     let seed: Vec<u8> = job.seed_hash.clone().unwrap_or_else(|| vec![0u8; 32]);
 
+    // Debug: log blob/seed/target info for XMR share diagnosis
+    let target_le = u64::from_le_bytes(target[..8].try_into().unwrap_or([0u8; 8]));
+    eprintln!(
+        "scan_randomx: job_id={} blob_len={} blob[:43]={} seed={:.16}... target_le=0x{:016x} nonce_range=[{},{})",
+        job.external_job_id,
+        header.len(),
+        hex::encode(&header[..header.len().min(43)]),
+        hex::encode(&seed[..seed.len().min(16)]),
+        target_le,
+        start,
+        end,
+    );
+
     // Initialize RandomX with the seed (reinit only if seed changed)
     #[cfg(feature = "native-randomx")]
     {
@@ -482,12 +495,17 @@ fn scan_randomx(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
             crate::external_hashers::hash_blake3(&work_blob, 0, nonce)
         };
 
-        // RandomX/Monero: compare first 8 bytes as LE u64
+        // RandomX/Monero: compare MSB 64 bits (bytes 24-31) of 256-bit LE hash
         if crate::external_hashers::meets_randomx_target(&hash, target) {
+            let hash_msb = u64::from_le_bytes(hash[24..32].try_into().unwrap());
             eprintln!(
-                "XMR_SHARE_FOUND nonce={} hash={}",
+                "XMR_SHARE_FOUND nonce={} nonce_hex={} hash={} hash_msb=0x{:016x} target_le=0x{:016x} blob_with_nonce={}",
                 nonce,
+                hex::encode((nonce as u32).to_le_bytes()),
                 hex::encode(hash),
+                hash_msb,
+                target_le,
+                hex::encode(&work_blob),
             );
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),

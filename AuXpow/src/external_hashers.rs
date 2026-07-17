@@ -431,12 +431,18 @@ pub fn parse_randomx_target_hex(hex: &str) -> Option<[u8; 32]> {
 
 /// Check whether a RandomX hash meets the upstream pool target.
 ///
-/// xmrig-compatible pools compare only the first 8 bytes of the hash
-/// (interpreted as little-endian) against the 8-byte little-endian target.
+/// Monero/xmrig compare the hash as a 256-bit LITTLE-ENDIAN number against
+/// the target.  In a 256-bit LE value, the MOST significant 64 bits are at
+/// bytes 24-31.  For Monero's difficulty range (target < 2^64), only the
+/// MSB 64 bits need to be checked: if MSB_64 < target_64, the hash is valid.
+///
+/// This matches xmrig's check:
+///   `*reinterpret_cast<uint64_t*>(m_hash + 24) < job.target()`
+/// and Monero's `check_hash_64` which starts from `((uint64_t*)&hash)[3]`.
 pub fn meets_randomx_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
-    let hash_le = u64::from_le_bytes(hash[..8].try_into().unwrap());
+    let hash_msb = u64::from_le_bytes(hash[24..32].try_into().unwrap());
     let target_le = u64::from_le_bytes(target[..8].try_into().unwrap());
-    hash_le <= target_le
+    hash_msb < target_le
 }
 
 /// Convert a 32-byte hash to a hex string (big-endian display).
@@ -2018,13 +2024,14 @@ mod tests {
         assert_eq!(target[..8], [0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00]);
         assert!(target[8..].iter().all(|b| *b == 0x00));
 
-        // A hash whose low 64 bits (LE) are below the target passes.
+        // Monero/xmrig compare bytes 24-31 (MSB of 256-bit LE hash) against target.
+        // A hash whose MSB 64 bits (bytes 24-31 LE) are below the target passes.
         let mut hash = [0xFFu8; 32];
-        hash[..8].copy_from_slice(&[0x00, 0x00, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00]);
+        hash[24..32].copy_from_slice(&[0x00, 0x00, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00]);
         assert!(meets_randomx_target(&hash, &target));
 
-        // A hash whose low 64 bits are above the target fails.
-        hash[..8].copy_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]);
+        // A hash whose MSB 64 bits are above the target fails.
+        hash[24..32].copy_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]);
         assert!(!meets_randomx_target(&hash, &target));
     }
 
