@@ -36,6 +36,12 @@ impl ShareForwarder {
         mix_hash: Option<&[u8; 32]>,
     ) -> Result<ShareForwardResult> {
         let meets = if self.client.profile().coin == ExternalCoin::XMR {
+            let h_msb = u64::from_le_bytes(hash[24..32].try_into().unwrap());
+            let t_le = u64::from_le_bytes(target[..8].try_into().unwrap());
+            println!(
+                "auxpow: XMR try_forward job_id={} nonce={} hash_msb=0x{:016x} target_le=0x{:016x} meets={}",
+                job_id, nonce, h_msb, t_le, h_msb < t_le
+            );
             meets_randomx_target(hash, target)
         } else if self.client.profile().coin == ExternalCoin::DCR {
             // Decred BLAKE3 (DCP-0011) interprets the PoW hash as a
