@@ -8284,7 +8284,11 @@ fn execute_pool_payout(
         let pk_hex = hex::encode(signing_key.verifying_key().as_bytes());
         for (i, payout) in payouts.iter().enumerate() {
             if payout.address == pool_wallet_addr {
-                continue; // skip self-send; node rejects account-model tx where from == to
+                // Self-send: pool wallet paying itself (e.g. miner configured with
+                // pool wallet as payout address). No TX needed — mark as executed
+                // so it doesn't get deferred/rolled back in an infinite loop.
+                executed.push(payout.clone());
+                continue;
             }
             let nonce = base_nonce + i as u64;
             let net_amount = (payout.amount as u128).saturating_sub(min_tx_fee);

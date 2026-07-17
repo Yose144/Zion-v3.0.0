@@ -3013,7 +3013,7 @@ impl AuxPowClient {
                     }
                 }
             });
-            let resp = self.send_request(&req).await?;
+            let resp = self.send_request_inline(&req).await?;
             if let Some(err) = resp.get("error") {
                 if !err.is_null() {
                     let msg = err.get("message")
