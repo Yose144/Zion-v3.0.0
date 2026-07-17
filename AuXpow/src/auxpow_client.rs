@@ -1361,21 +1361,29 @@ impl AuxPowClient {
     }
 
     /// Start a background keepalive timer for the EPIC connection.
+    /// EPIC uses a pull-based protocol — the server doesn't push jobs.
+    /// We periodically send `getjobtemplate` (fire-and-forget) which
+    /// triggers the server to respond with a new job, resetting the
+    /// poll_messages 300s read timeout. A bare `keepalive` does NOT
+    /// generate a response, so the poll loop would time out every 5 min.
     async fn start_epic_keepalive(&self) {
         let client = Arc::new(self.clone());
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_secs(30));
+            let mut interval = tokio::time::interval(Duration::from_secs(60));
             interval.tick().await; // skip first immediate tick
             loop {
                 interval.tick().await;
                 if !*client.connected.lock().await {
                     break;
                 }
+                // Send getjobtemplate (fire-and-forget) — server responds
+                // with a job that the poll loop picks up, resetting the
+                // 300s read timeout. Also sends keepalive for TCP keepalive.
                 let req = json!({
                     "jsonrpc": "2.0",
-                    "id": 0,
-                    "method": "keepalive",
-                    "params": {}
+                    "id": 10,
+                    "method": "getjobtemplate",
+                    "params": {"algorithm": "progpow"}
                 });
                 let req_line = format!("{}\n", serde_json::to_string(&req).unwrap());
                 let mut stream = client.stream.lock().await;
@@ -1384,7 +1392,8 @@ impl AuxPowClient {
                         // Connection is dead — the poll loop will handle reconnect
                         break;
                     }
-                    debug!("auxpow: EPIC keepalive sent for {}", client.profile.coin);
+                    let _ = w.flush().await;
+                    debug!("auxpow: EPIC getjobtemplate keepalive sent for {}", client.profile.coin);
                 }
             }
         });
