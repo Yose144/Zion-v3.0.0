@@ -114,10 +114,14 @@ impl ExternalCoin {
             // mining.authorize + mining.notify), NOT EthStratum.
             // ETC notify: [seed_hash, header_hash, boundary, target, clean]
             // RVN notify: [job_id, seed_hash, header_hash, target, clean, height, nbits]
-            Self::DCR | Self::XMR | Self::KAS | Self::ALPH
+            Self::DCR | Self::KAS | Self::ALPH
             | Self::ETC | Self::RVN | Self::QUAI => {
                 StratumProtocol::Stratum
             }
+            // XMR (Monero) uses CryptoNote stratum (login/getjob/submit) on
+            // MoneroOcean. Standard stratum sends a 32-byte non-blob; CryptoNote
+            // stratum sends the full 76-byte RandomX blob with seed_hash.
+            Self::XMR => StratumProtocol::CryptonoteStratum,
             // FLUX uses ZcashStratum (Equihash 125,4 / ZelHash) with solution
             // field in mining.notify and 5-param mining.submit.
             Self::FLUX => {
@@ -460,6 +464,16 @@ impl AuxPowClient {
                                 backoff_secs = 5;
                             }
                             Err(re_err) => {
+                                let err_str = format!("{}", re_err);
+                                // Detect MoneroOcean IP suspension and jump
+                                // backoff to 660s (11 min) so the 10-min
+                                // suspension timer can expire without being
+                                // reset by another reconnect attempt.
+                                if err_str.contains("temporarily suspended") {
+                                    backoff_secs = 660;
+                                } else {
+                                    backoff_secs = (backoff_secs * 2).min(600);
+                                }
                                 println!(
                                     "auxpow_client: reconnect to {} failed: {} — retry in {}s",
                                     profile_clone.coin, re_err, backoff_secs
@@ -469,7 +483,6 @@ impl AuxPowClient {
                                 *client_clone.reader.lock().await = None;
                                 *client_clone.stream.lock().await = None;
                                 *client_clone.connected.lock().await = false;
-                                backoff_secs = (backoff_secs * 2).min(60);
                             }
                         }
                     }
@@ -1096,13 +1109,13 @@ impl AuxPowClient {
             }
         });
         println!(
-            "auxpow: DNX cryptonote login as {} on {} (protocol={})",
+            "auxpow: cryptonote login as {} on {} (protocol={})",
             login, self.profile.coin, self.protocol.as_str()
         );
         let resp = self.send_request_inline(&req).await?;
         if let Some(err) = resp.get("error") {
             if !err.is_null() {
-                bail!("DNX login failed: {:?}", err);
+                bail!("cryptonote login failed for {}: {:?}", self.profile.coin, err);
             }
         }
 
@@ -1113,7 +1126,12 @@ impl AuxPowClient {
 
         *self.authorized.lock().await = true;
         *self.subscribed.lock().await = true;
-        println!("auxpow: DNX cryptonote login successful for {}", self.profile.coin);
+        println!("auxpow: cryptonote login successful for {}", self.profile.coin);
+
+        // Debug: log raw login response for XMR
+        if self.profile.coin == ExternalCoin::XMR {
+            println!("auxpow: XMR RAW login response: {}", serde_json::to_string(&resp).unwrap_or_default());
+        }
 
         // The login response may include an initial job.
         if let Some(job_obj) = resp.get("result").and_then(|r| r.get("job")) {
@@ -1132,24 +1150,58 @@ impl AuxPowClient {
         let job = msg.get("params").unwrap_or(msg);
 
         let blob_hex = job.get("blob").and_then(|v| v.as_str())
-            .ok_or_else(|| anyhow!("DNX job: missing 'blob' field"))?;
+            .ok_or_else(|| anyhow!("cryptonote job: missing 'blob' field"))?;
         let header_bytes = hex::decode(blob_hex)
-            .context("DNX job: invalid hex in 'blob'")?;
+            .context("cryptonote job: invalid hex in 'blob'")?;
 
         let job_id = job.get("job_id").and_then(|v| v.as_str())
             .unwrap_or("unknown").to_string();
 
-        // Target is a compact hex string (8 or 16 hex chars, little-endian).
+        // Target is a compact hex string. In Monero/CryptoNote stratum,
+        // the target hex string is raw hex-encoded bytes (NOT a big-endian
+        // integer).  xmrig parses it as follows:
+        //   - 4-byte target (8 hex chars): hex-decode to 4 bytes, interpret
+        //     as LE u32, then convert to 64-bit target via:
+        //       target_64 = u64::MAX / (u32::MAX / le_u32)
+        //     This preserves the difficulty ratio when expanding from 32
+        //     to 64 bits.
+        //   - 8-byte target (16 hex chars): hex-decode to 8 bytes, interpret
+        //     as LE u64 directly.
+        // The 64-bit target is then stored as 32 bytes in little-endian
+        // order for hash comparison (only first 8 bytes matter).
         let target_hex = job.get("target").and_then(|v| v.as_str())
             .unwrap_or("ffffffffffffffff");
-        let mut target_vec = hex::decode(target_hex).unwrap_or_else(|_| vec![0xff; 32]);
-        // Pad to 32 bytes.
-        while target_vec.len() < 32 {
-            target_vec.push(0);
-        }
-        target_vec.resize(32, 0);
+        let target_u64: u64 = if target_hex.len() <= 8 {
+            // 4-byte target: hex decode to raw bytes, interpret as LE u32,
+            // then expand to 64-bit target (matching xmrig's formula).
+            let raw = hex::decode(target_hex).unwrap_or_else(|_| vec![0xff; 4]);
+            let mut buf = [0u8; 4];
+            let len = raw.len().min(4);
+            buf[..len].copy_from_slice(&raw[..len]);
+            let le_u32 = u32::from_le_bytes(buf);
+            if le_u32 == 0 {
+                u64::MAX
+            } else {
+                u64::MAX / (u32::MAX as u64 / le_u32 as u64)
+            }
+        } else if target_hex.len() <= 16 {
+            // 8-byte target: hex decode to raw bytes, interpret as LE u64.
+            let raw = hex::decode(target_hex).unwrap_or_else(|_| vec![0xff; 8]);
+            let mut buf = [0u8; 8];
+            let len = raw.len().min(8);
+            buf[..len].copy_from_slice(&raw[..len]);
+            u64::from_le_bytes(buf)
+        } else {
+            // Full 32-byte target hex — take first 8 bytes as LE u64
+            let raw = hex::decode(target_hex).unwrap_or_else(|_| vec![0xff; 32]);
+            let mut buf = [0u8; 8];
+            let len = raw.len().min(8);
+            buf[..len].copy_from_slice(&raw[..len]);
+            u64::from_le_bytes(buf)
+        };
+        // Convert u64 target to 32-byte LE target
         let mut target_bytes = [0u8; 32];
-        target_bytes.copy_from_slice(&target_vec);
+        target_bytes[..8].copy_from_slice(&target_u64.to_le_bytes());
 
         let height = job.get("height").and_then(|v| v.as_u64()).unwrap_or(0);
         let seed_hash = job.get("seed_hash").and_then(|v| v.as_str()).map(|s| s.to_string());
@@ -1160,8 +1212,10 @@ impl AuxPowClient {
             .as_secs();
 
         println!(
-            "auxpow: DNX job parsed height={} job_id={} blob_len={} target={}",
-            height, job_id, header_bytes.len(), &target_hex[..target_hex.len().min(16)],
+            "auxpow: {} cryptonote job parsed height={} job_id={} blob_len={} seed_hash={} target={}",
+            self.profile.coin, height, job_id, header_bytes.len(),
+            seed_hash.as_ref().map(|s| &s[..16.min(s.len())]).unwrap_or("none"),
+            &target_hex[..target_hex.len().min(16)],
         );
 
         Ok(ExternalJob {
@@ -1336,7 +1390,7 @@ impl AuxPowClient {
         });
     }
 
-    /// Start a background keepalived timer for CryptonoteStratum (DNX).
+    /// Start a background keepalived timer for CryptonoteStratum (DNX/XMR).
     /// cryptonote-nodejs-pool expects `{"method":"keepalived","params":{"id":"<session_id>"}}`.
     async fn start_cryptonote_keepalived(&self) {
         let client = Arc::new(self.clone());
@@ -1362,7 +1416,7 @@ impl AuxPowClient {
                     if w.write_all(req_line.as_bytes()).await.is_err() {
                         break;
                     }
-                    debug!("auxpow: DNX keepalived sent for {}", client.profile.coin);
+                    debug!("auxpow: cryptonote keepalived sent for {}", client.profile.coin);
                 }
             }
         });
@@ -1906,20 +1960,24 @@ impl AuxPowClient {
                     }
                 }
                 "job" if self.protocol == StratumProtocol::CryptonoteStratum => {
-                    // CryptonoteStratum (DNX): server pushes `job` notifications
+                    // CryptonoteStratum (DNX/XMR): server pushes `job` notifications
                     // with blob, job_id, target, height, seed_hash.
                     let job_val = msg.get("params").unwrap_or(&msg);
+                    // Debug: log raw JSON for XMR to diagnose share rejection
+                    if self.profile.coin == ExternalCoin::XMR {
+                        println!("auxpow: XMR RAW job notification: {}", serde_json::to_string(job_val).unwrap_or_default());
+                    }
                     match self.parse_cryptonote_job(job_val).await {
                         Ok(job) => {
                             debug!(
-                                "AuxPow: received DNX job {} height={} for {}",
+                                "AuxPow: received cryptonote job {} height={} for {}",
                                 job.job_id, job.block_number.unwrap_or(0), self.profile.coin
                             );
                             *self.current_job.lock().await = Some(job);
                             self.job_notify.notify_waiters();
                         }
                         Err(e) => {
-                            warn!("AuxPow: DNX job parse error for {}: {}", self.profile.coin, e);
+                            warn!("AuxPow: cryptonote job parse error for {}: {}", self.profile.coin, e);
                         }
                     }
                 }
@@ -3014,7 +3072,10 @@ impl AuxPowClient {
             let session_id = self.cryptonote_session_id.lock().await.clone();
             let sid = session_id.unwrap_or_else(|| "unknown".to_string());
             // Cryptonote nonce is 4 bytes, little-endian hex.
-            let nonce_hex = format!("{:08x}", (nonce & 0xFFFF_FFFF) as u32);
+            // xmrig submits nonce as hex::encode(&nonce.to_le_bytes()),
+            // e.g. nonce=0x12345678 → "78563412" (not "12345678").
+            let nonce_le = (nonce & 0xFFFF_FFFF) as u32;
+            let nonce_hex = hex::encode(nonce_le.to_le_bytes());
             // result hash — use mix_hash_hex if provided, else _hash_hex.
             let result_hex = mix_hash_hex.unwrap_or(_hash_hex);
             let req = json!({
@@ -3028,7 +3089,17 @@ impl AuxPowClient {
                     "result": result_hex,
                 }
             });
+            // Debug: log the exact submit payload for XMR share diagnosis
+            println!(
+                "auxpow: XMR submit sid={} job_id={} nonce_hex={} result_hex={} full_req={}",
+                sid, job_id, nonce_hex, result_hex, serde_json::to_string(&req).unwrap_or_default()
+            );
             let resp = self.send_request(&req).await?;
+            // Debug: log the response
+            println!(
+                "auxpow: XMR submit response job_id={} resp={}",
+                job_id, serde_json::to_string(&resp).unwrap_or_default()
+            );
             if let Some(err) = resp.get("error") {
                 if !err.is_null() {
                     let msg = err.get("message")
@@ -5753,7 +5824,7 @@ mod tests {
         assert_eq!(ExternalCoin::ETC.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::RVN.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::FLUX.protocol(), StratumProtocol::ZcashStratum);
-        assert_eq!(ExternalCoin::XMR.protocol(), StratumProtocol::Stratum);
+        assert_eq!(ExternalCoin::XMR.protocol(), StratumProtocol::CryptonoteStratum);
         assert_eq!(ExternalCoin::ERG.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::EVR.protocol(), StratumProtocol::EthStratum);
         assert_eq!(ExternalCoin::MEWC.protocol(), StratumProtocol::EthStratum);

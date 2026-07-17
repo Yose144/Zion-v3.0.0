@@ -159,8 +159,10 @@ impl Window {
     fn push(&mut self, total: u64) {
         let now = Instant::now();
         self.samples.push_back(Sample { ts: now, total });
-        // Prune samples older than window
-        while self.samples.len() > 1 {
+        // Prune samples older than window, but always keep at least 2
+        // so rate_hps() can compute a delta (important for slow-hash
+        // algorithms like RandomX where batch completions are infrequent).
+        while self.samples.len() > 2 {
             let age = now
                 .duration_since(self.samples.front().unwrap().ts)
                 .as_secs();
