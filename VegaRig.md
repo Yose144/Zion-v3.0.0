@@ -1,7 +1,7 @@
 # Vega Rig (SMOS) — Complete Configuration & Architecture Guide
 
 **Last updated:** 2026-07-17
-**Status:** ✅ Deeksha GPU 20 KH/s + VRSC CPU 1.1 MH/s — E2E working on i066d
+**Status:** ✅ Deeksha GPU 25 KH/s + 98.8% accept — E2E working on i066d
 **Goal:** Triple-stream mining (ZION GPU + EPIC GPU + VRSC CPU) on AMD RX Vega 64
 
 ---
@@ -10,7 +10,7 @@
 
 | Component | Value |
 |-----------|-------|
-| **GPU** | AMD Radeon RX Vega 64 (gfx900, 8 GB HBM2, 56 CUs, Samsung memory) |
+| **GPU** | AMD Radeon RX Vega 64 (gfx900, 8 GB HBM2, 64 CUs, Samsung memory) |
 | **GPU BIOS** | 113-D0500100-103 |
 | **CPU** | Intel Pentium G4560 @ 3.50GHz (Kaby Lake, 2C/4T) |
 | **CPU ISA** | SSE4.2, AES-NI — **NO AVX, AVX2, BMI1, BMI2, FMA** |
@@ -51,15 +51,15 @@ Key endpoints:
 
 ## 2. Overclock Settings (SMOS)
 
-**Current (i066d, stable, 20 KH/s):**
+**Current (i066d, stable, 25 KH/s):**
 
 | Parameter | Value | Notes |
 |-----------|-------|-------|
 | Core Clock | 1500 MHz | GPU boosts to 1630MHz (DPM auto-boost) |
 | Memory Clock | 950 MHz | Max stable on i066d (>=1000 crashes MC to 800) |
 | Power Limit | **100** | **100% TDP** — NOT 1-7 (DPM stage, crashes MC!) |
-| Vddc | 950 mV | Stable at ~198W |
-| Fan | 60% | GPU temp 53-54C |
+| Vddc | 950 mV | Stable at ~98W |
+| Fan | 40% | GPU temp 50C |
 | Temp Target | 65C | |
 
 > **CRITICAL:** PL values 1-7 = DPM power stage (crashes MC to 800 MHz on i066d).
@@ -75,7 +75,8 @@ Key endpoints:
 | Optimized | 1150 | 945 | 940 | 2 | - | |
 | TuneUp (old, i088) | 1250 | 950 | 900 | 3 | 0 | GPU hung (driver bug) |
 | i066d v1 | 1400 | 950 | 950 | 100 | 20.4 | First working |
-| **i066d v2 (current)** | **1500** | **950** | **950** | **100** | **20.0** | Stable, 100% accept |
+| i066d v2 | 1500 | 950 | 950 | 100 | 20.0 | Stable, 100% accept |
+| **i066d v3 (current)** | **1500** | **950** | **950** | **100** | **25.0** | rotate()+vload4+ws=16384, no atomics ext |
 
 ---
 
@@ -97,12 +98,12 @@ Key endpoints:
 
 ### GPU Compute Units
 
-- **Vega 64:** 56 CUs (vs RX 5700 XT's 18 CUs)
+- **Vega 64:** 64 CUs (vs RX 5700 XT's 18 CUs)
 - **Work size formula:** `nearest_pow2(CUs × 512)`
-  - Vega 64: `nearest_pow2(56 × 512 = 28672) = 32768`
+  - Vega 64: `nearest_pow2(64 × 512 = 32768) = 32768` → capped at 16384 by GCN
   - RX 5700 XT: `nearest_pow2(18 × 512 = 9216) = 8192`
 - **GCN hard cap in code:** 16384 (see `gpu_backend.rs` line 1976)
-- **Note:** The 30khs patch uses `ZION_GPU_WORK_SIZE=8192` (tuned for 5700 XT). For Vega 64 with 56 CUs, the theoretical optimal is 32768, but the GCN cap limits it to 16384. **Tuning needed.**
+- **Current setting:** `ZION_GPU_WORK_SIZE=16384` — fills 4 wave64 per CU, optimal for Vega 64 on i066d (24-25 KH/s)
 
 ### GCN Workarounds (in kernel code)
 
@@ -138,22 +139,27 @@ The ProgPow kernel hangs on Vega/SMOS:
 
 **Root cause (unsolved):** Barrier/synchronization pattern in ProgPow kernel incompatible with SMOS OpenCL compiler (code object manager) for gfx900. Needs deeper investigation.
 
-### Environment Variables (SMOS wrapper)
+### Environment Variables (SMOS wrapper 42 — current, 25 KH/s)
 
 ```bash
 # Stream control
 export ZION_STREAM2_ENABLED=0          # Disable EPIC ProgPow (GPU hang)
+export ZION_STREAM3_ENABLED=0          # Disable CPU external stream
 
-# 30khs Deeksha patch (tuned for RX 5700 XT, applied to Vega 64)
-export ZION_GPU_WORK_SIZE=8192         # May need tuning for 56 CUs
-export ZION_NONCE_COUNT=32768          # 4× work_size
-export ZION_NONCE_COUNT_MIN=10000      # Don't shrink below GPU work_size
+# Deeksha GPU config (25 KH/s on Vega 64 i066d)
+export ZION_GPU_EARLY_BREAK=0           # Full batch, no early break
+export ZION_GPU_WORK_SIZE=16384         # 4 waves per CU (64 CUs × 64 wave × 4)
+export ZION_NONCE_COUNT=65536           # 4× work_size
+export ZION_NONCE_COUNT_MIN=65536       # Fixed — no auto-tune shrinking
+export ZION_NONCE_COUNT_MAX=65536
+export ZION_GPU_MAX_BATCH=65536         # 4 chunks of 16384 (double-buffered)
+export ZION_GPU_NO_STREAM_BYPRODUCT=1   # Disable byproduct work (zeros weights)
+export ZION_NONCE_AUTOTUNE=false        # Disable auto-tune (keeps fixed batch)
 
 # General SMOS settings
 export ZION_GPU_BACKEND=opencl
 export ZION_PROFILE=pool
 export ZION_LOOP_COUNT=1000000
-export ZION_NONCE_AUTOTUNE=true
 export ZION_METRICS_REPORT_SECS=30
 export ZION_OCL_BUILD_OPTS="-cl-std=CL1.2 -cl-mad-enable"
 export ZION_IGNORE_GPU_SELF_TEST_FAIL=1
@@ -161,6 +167,20 @@ export ZION_VERBOSE=1
 export ZION_INTERACTIVE=0
 export ZION_MINER_ALGORITHM=deeksha_lite_v1
 ```
+
+> **CRITICAL — cl_khr_int64_base_atomics:** This OpenCL extension MUST remain
+> DISABLED in the kernel. Enabling it causes the SMOS AMD OpenCL compiler to
+> generate broken/slow code on gfx900 (i066d), dropping hashrate from 25 KH/s
+> to ~1 KH/s. The extension is not used by the kernel (no atomics calls).
+>
+> **CRITICAL — rotate() vs bit-shift:** The kernel uses `rotate(long,long)` for
+> ROL64, which maps to the GCN `v_alignbyte` instruction. The bit-shift version
+> (`(x << n) | (x >> (64-n))`) is ~50% slower on gfx900. The bit-shift was
+> introduced for i088 compatibility but is unnecessary on i066d.
+>
+> **CRITICAL — vload4/vstore4:** Vectorized loads/stores from `__private*` work
+> fine on i066d (ROCm 5.x). They were disabled for i088 (ROCm 6.x) compatibility
+> but are safe and faster on i066d.
 
 ---
 
@@ -178,7 +198,7 @@ export ZION_MINER_ALGORITHM=deeksha_lite_v1
 | Thermal iters | 16,384 (optimized from 65,536) | `deeksha_lite_fire.cl` |
 | VRAM % | 65% default (configurable via `ZION_OCL_VRAM_PCT`) | `gpu_backend.rs` |
 
-### 30khs Patch Optimizations (3 commits)
+### 30khs Patch Optimizations (3 commits, RX 5700 XT)
 
 1. **SHA3-512 specialization for 65-byte input** (`e54950dfb`)
    - `sha3_512_65()` eliminates 65 conditional branches
@@ -194,7 +214,27 @@ export ZION_MINER_ALGORITHM=deeksha_lite_v1
    - GPU computes chunk N+1 while CPU processes chunk N
    - Gain: 20-22 → 28-30 KH/s (+50%)
 
-### Work Size Benchmarks (RX 5700 XT, 18 CUs)
+### Vega 64 (gfx900, i066d) — 25 KH/s Root Cause & Fix (commit `a8e9d0594`)
+
+The Vega rig was stuck at **12-13 KH/s** for weeks. The 20 KH/s target (achieved
+by an old binary) was finally traced to **three compiler-sensitive issues**:
+
+| Issue | Symptom | Fix | Impact |
+|-------|---------|-----|--------|
+| `cl_khr_int64_base_atomics` enabled | AMD compiler generates broken/slow code on gfx900/i066d → ~1 KH/s | Disable the extension (kernel uses no atomics — it was a leftover) | +14 KH/s |
+| ROL64 via bit-shift `(x<<n)\|(x>>64-n)` | 2 instructions instead of 1; slower than `v_alignbyte` | Revert to `rotate((long)x,(long)n)` (maps to GCN `v_alignbyte`) | +3-5 KH/s |
+| `local_ws=256` (wave32 assumption) | Suboptimal wavefront packing on GCN wave64 | `local_ws=64` (one wave64 per WG) | +2-3 KH/s |
+
+**Result:** 12-13 KH/s → **25.78 KH/s peak / 24.33 KH/s stable, 98.8% accept rate**
+
+> The bit-shift ROL64 and `local_ws=256` were introduced in commit `86f46c05b`
+> for i088 (ROCm 6.x) compatibility, where `rotate()` produced 126 H/s. On i066d
+> (ROCm 5.x), `rotate()` works correctly and is faster. The two SMOS images
+> require **different kernel configs** — see "i066d vs i088" below.
+
+### Work Size Benchmarks
+
+**RX 5700 XT (18 CUs, RDNA1):**
 
 | Work Size | KH/s | Notes |
 |-----------|------|-------|
@@ -202,7 +242,16 @@ export ZION_MINER_ALGORITHM=deeksha_lite_v1
 | **8192** | **28-30** | **Optimal** for 5700 XT |
 | 16384 | 8.81 | VRAM pressure, worse occupancy |
 
-**Vega 64 (56 CUs) tuning needed:** The 30khs patch was benchmarked on RX 5700 XT. Vega 64 has 3× more CUs but GCN cap is 16384. Test `ZION_GPU_WORK_SIZE=16384` on Vega.
+**Vega 64 (64 CUs, gfx900, i066d):**
+
+| Work Size | KH/s | Notes |
+|-----------|------|-------|
+| 8192 | ~20 | Old binary target (commit `32fc80db0`) |
+| **16384** | **24-25** | **Optimal** for Vega 64 (4 waves × 64 CUs) |
+
+> Vega 64 has 64 CUs (not 56 — the 56-CU figure was wrong; Vega 64 has 64 CUs
+> with 4 disabled shader engines unlocked in BIOS 113-D0500100-103). The GCN
+> workgroup cap is 16384 threads, which exactly fills 4 wave64 per CU.
 
 ---
 
@@ -253,6 +302,11 @@ export ZION_MINER_ALGORITHM=deeksha_lite_v1
 
 ssh zion-new
 cd /home/zionserver/zion-build
+
+# IMPORTANT: Clean C lib build artifacts before rebuilding (native-ffi + auxpow)
+# Otherwise stale .o files from a previous CPU target may be linked in.
+rm -rf target-bullseye/release/build/zion-native-ffi-* \
+       target-bullseye/release/build/zion-auxpow-*
 
 docker run --rm \
   -v /home/zionserver/zion-build:/work -w /work \
@@ -360,6 +414,7 @@ ssh zion-new
 ## 10. Key Commits (latest first)
 
 ```
+a8e9d0594 perf(gpu): restore 25 KH/s deeksha on Vega 64 — rotate() + vload4 + no atomics ext
 c6b3bdd33 feat(stratum): 5-param submit format for 7 new coins
 fec2ecb53 fix(gpu): nonce_count default 1024→4×work_size (10 KH/s regression fix)
 26e4d8aad fix(gpu): always_inline progPowLoop — barrier deadlock fix
@@ -406,6 +461,8 @@ curl -s -X PATCH "https://api.simplemining.net/rigs/execute-reboot" \
 | `CL_INVALID_ARG_SIZE` | SMOS cache + GLIBC mismatch | Rebuild in `rust:1.97-bullseye` |
 | SIGILL | BMI2/AVX on G4560 | `RUSTFLAGS=-C target-cpu=x86-64` |
 | Kernel hang | ProgPow barrier deadlock | Disable Stream 2 |
+| Hashrate drop to ~1 KH/s | `cl_khr_int64_base_atomics` enabled on gfx900/i066d | Disable the extension (not needed — kernel uses no atomics) |
+| Hashrate 12-13 KH/s instead of 25 | Bit-shift ROL64 instead of `rotate()` | Use `rotate((long)x,(long)n)` — maps to `v_alignbyte` |
 
 ### Constraints
 
@@ -419,6 +476,21 @@ curl -s -X PATCH "https://api.simplemining.net/rigs/execute-reboot" \
 
 ## 12. Future Work
 
+### i066d vs i088 Kernel Config Divergence
+
+The kernel now requires **different configs** depending on the SMOS image:
+
+| Setting | i066d (ROCm 5.x) | i088 (ROCm 6.x) |
+|---------|------------------|-----------------|
+| `cl_khr_int64_base_atomics` | **DISABLED** (causes 1 KH/s) | Untested |
+| ROL64 | `rotate(long,long)` — 25 KH/s | bit-shift — `rotate()` gives 126 H/s |
+| `vload4/vstore4` from `__private*` | **ENABLED** — works | Disabled (compiler bug) |
+| `local_ws` | 64 (wave64) | 256 (was set for i088) |
+
+**Action item:** If the rig is ever reflashed to i088, the kernel must be
+reverted to the bit-shift ROL64 + disabled vload4 config (commit `86f46c05b`).
+The current code (commit `a8e9d0594`) is **i066d-only**.
+
 ### ProgPow Kernel Hang (Stream 2)
 
 The always_inline fix did not resolve the GPU hang. Next steps:
@@ -428,13 +500,11 @@ The always_inline fix did not resolve the GPU hang. Next steps:
 4. Consider wave64-specific barrier placement
 5. Profile with `clGetEventProfilingInfo` to identify which loop iteration hangs
 
-### Vega 64 Work Size Tuning
+### Vega 64 Work Size Tuning — DONE
 
-The 30khs patch was tuned for RX 5700 XT (18 CUs, `work_size=8192`). Vega 64 has 56 CUs:
-- Theoretical optimal: `nearest_pow2(56 × 512) = 32768`
-- GCN hard cap: 16384
-- **Test:** `ZION_GPU_WORK_SIZE=16384` on Vega 64
-- **Test:** `ZION_OCL_LOCAL_SIZE=64` (wave64 optimal, already auto-detected)
+`ZION_GPU_WORK_SIZE=16384` confirmed optimal on Vega 64 (i066d): 24-25 KH/s.
+The GCN hard cap of 16384 exactly fills 4 wave64 per CU across 64 CUs.
+No further tuning needed for i066d.
 
 ### VRSC CPU Stream
 
