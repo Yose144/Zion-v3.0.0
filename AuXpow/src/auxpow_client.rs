@@ -1361,24 +1361,29 @@ impl AuxPowClient {
     }
 
     /// Start a background keepalive timer for the EPIC connection.
-    /// EPIC uses a pull-based protocol — the server doesn't push jobs.
-    /// We periodically send `getjobtemplate` (fire-and-forget) which
-    /// triggers the server to respond with a new job, resetting the
-    /// poll_messages 300s read timeout. A bare `keepalive` does NOT
-    /// generate a response, so the poll loop would time out every 5 min.
+    /// EPIC uses a pull-based protocol — the server doesn't push jobs
+    /// unsolicited. We periodically send `getjobtemplate` (fire-and-forget)
+    /// which triggers the server to respond with a new job, resetting the
+    /// poll_messages read timeout. A bare `keepalive` does NOT generate a
+    /// response, so the poll loop would time out every 5 min.
     async fn start_epic_keepalive(&self) {
         let client = Arc::new(self.clone());
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_secs(60));
+            // Use 120s interval — EPIC block time is ~60s, so this gives
+            // the server time to generate a new job template without
+            // rate-limiting our requests.
+            let mut interval = tokio::time::interval(Duration::from_secs(120));
             interval.tick().await; // skip first immediate tick
+            println!("auxpow: EPIC keepalive task started for {} (interval=120s)", client.profile.coin);
             loop {
                 interval.tick().await;
                 if !*client.connected.lock().await {
+                    println!("auxpow: EPIC keepalive task stopping for {} (disconnected)", client.profile.coin);
                     break;
                 }
                 // Send getjobtemplate (fire-and-forget) — server responds
                 // with a job that the poll loop picks up, resetting the
-                // 300s read timeout. Also sends keepalive for TCP keepalive.
+                // read timeout.
                 let req = json!({
                     "jsonrpc": "2.0",
                     "id": 10,
@@ -1388,12 +1393,16 @@ impl AuxPowClient {
                 let req_line = format!("{}\n", serde_json::to_string(&req).unwrap());
                 let mut stream = client.stream.lock().await;
                 if let Some(w) = stream.as_mut() {
-                    if w.write_all(req_line.as_bytes()).await.is_err() {
-                        // Connection is dead — the poll loop will handle reconnect
-                        break;
+                    match w.write_all(req_line.as_bytes()).await {
+                        Ok(_) => {
+                            let _ = w.flush().await;
+                            println!("auxpow: EPIC keepalive getjobtemplate sent for {}", client.profile.coin);
+                        }
+                        Err(e) => {
+                            println!("auxpow: EPIC keepalive write failed for {}: {} — stopping", client.profile.coin, e);
+                            break;
+                        }
                     }
-                    let _ = w.flush().await;
-                    debug!("auxpow: EPIC getjobtemplate keepalive sent for {}", client.profile.coin);
                 }
             }
         });
@@ -1782,10 +1791,15 @@ impl AuxPowClient {
         let mut guard = self.reader.lock().await;
         if let Some(ref mut reader) = *guard {
             let mut buf = String::new();
-            // 300s read timeout — some coins (e.g. DCR) have ~5 minute block
-            // times, so the pool may not send data for several minutes.  A
-            // shorter timeout would trigger spurious reconnects.
-            match timeout(Duration::from_secs(300), reader.read_line(&mut buf)).await {
+            // EPIC uses a pull-based protocol (getjobtemplate) — the server
+            // may not send data for extended periods between block updates.
+            // Use a longer timeout (600s) for EPIC, 300s for push-based coins.
+            let timeout_secs = if self.protocol == StratumProtocol::EpicStratum {
+                600
+            } else {
+                300
+            };
+            match timeout(Duration::from_secs(timeout_secs), reader.read_line(&mut buf)).await {
                 Ok(Ok(_)) => {
                     if buf.is_empty() {
                         bail!("connection closed by remote");
@@ -1793,7 +1807,7 @@ impl AuxPowClient {
                     Ok(buf.trim().to_string())
                 }
                 Ok(Err(e)) => bail!("read error: {e}"),
-                Err(_) => bail!("read timeout (300s, no data from pool)"),
+                Err(_) => bail!("read timeout ({}s, no data from pool)", timeout_secs),
             }
         } else {
             bail!("no reader available");
