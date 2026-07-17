@@ -1,0 +1,27 @@
+[Unit]
+Description=ZION Edge Maintenance (disk + RAM optimization)
+# Runs daily; safe by default — never touches critical services data.
+# Reclaims disk (docker prune, apt clean, journal vacuum, old logs) and
+# optimizes RAM (drop_caches, journal vacuum, non-critical service restart
+# only when RAM >= ZION_RAM_CRIT_PCT and --force is set).
+
+[Service]
+Type=oneshot
+# Runs as root: docker prune, apt clean, drop_caches, journalctl vacuum
+User=root
+ExecStart=/opt/zion/scripts/edge-maintenance.sh all --force
+StandardOutput=journal
+StandardError=journal
+
+# Timeout — maintenance should finish well under 10 min
+TimeoutStartSec=600
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=yes
+# Note: cannot use ProtectSystem=strict because we write to /var/log, /tmp,
+# /proc/sys/vm, and call docker/apt. Keep broad but root-only.
+
+# Resource limits — maintenance itself should be light
+MemoryMax=512M
+CPUQuota=50%
