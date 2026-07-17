@@ -1810,7 +1810,12 @@ impl AuxPowClient {
         }
 
         // If the message has an id matching a pending request, route it there.
-        if let Some(id) = msg.get("id").and_then(|v| v.as_i64()) {
+        // EPIC pool sends ids as strings ("0", "1", "20", etc.), so we check
+        // both integer and string representations (same logic as
+        // send_request_inline).
+        if let Some(id) = msg.get("id").and_then(|v| {
+            v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+        }) {
             if let Some(tx) = self.pending_requests.lock().await.remove(&id) {
                 let _ = tx.send(msg);
                 return Ok(());

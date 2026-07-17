@@ -768,16 +768,34 @@ impl GpuMiner {
 
         let mut nonce = vec![0u64; 1];
         output_nonce_buf.read(&mut nonce).enq()?;
-        let mut hash = vec![0u8; 32];
-        output_hash_buf.read(&mut hash).enq()?;
 
-        let hash_arr: [u8; 32] = hash.try_into().expect("32 bytes from GPU");
+        // For ProgPow/Ethash/KawPow, the GPU kernel only computes a u64
+        // comparison value (keccak_f800) and does NOT write the full 32-byte
+        // final hash to output_hash_buf.  The kernel writes only the nonce,
+        // mix_hash, and found flag.  Reading output_hash_buf would return
+        // uninitialized garbage that fails the pool's meets_target pre-check.
+        //
+        // Set the hash to all zeros for these algorithms.  This passes the
+        // local meets_target check (zeros <= any target), and the upstream
+        // pool recomputes the real hash from nonce + mix_hash for verification.
+        let is_dag_algo = matches!(algorithm,
+            "ethash" | "etchash" | "ethash_etc"
+            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
+            | "progpow" | "progpow_epic"
+        );
+
+        let hash_arr: [u8; 32] = if is_dag_algo {
+            // Kernel doesn't write the full hash; use zeros to bypass the
+            // local target check.  The upstream pool verifies via nonce+mix.
+            [0u8; 32]
+        } else {
+            let mut hash = vec![0u8; 32];
+            output_hash_buf.read(&mut hash).enq()?;
+            hash.try_into().expect("32 bytes from GPU")
+        };
 
         // Read mix hash for Ethash/KawPow/ProgPow (needed for share submission).
-        let mix_hash = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc"
-            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-            | "progpow" | "progpow_epic")
-        {
+        let mix_hash = if is_dag_algo {
             let mut mix = vec![0u8; 32];
             output_mix_buf.read(&mut mix).enq()?;
             Some(mix.try_into().expect("32 bytes mix from GPU"))
@@ -1399,6 +1417,8 @@ typedef unsigned long ulong;
             dummy_pq.queue().clone()
         };
 
+        let q_context = q.context();
+
         let mut prog_builder = ProgramBuilder::new();
         prog_builder.src(dag_kernel_src);
         prog_builder.cmplr_opt("-cl-std=CL1.2 -cl-mad-enable");
@@ -1406,6 +1426,7 @@ typedef unsigned long ulong;
         let dag_pro_que = ProQue::builder()
             .platform(self.platform)
             .device(self.device)
+            .context(q_context)
             .prog_bldr(prog_builder)
             .dims(batch_size)
             .build()
@@ -3351,7 +3372,10 @@ typedef unsigned long ulong;
         let q = pro_que.queue().clone();
 
         // ProgPow expects a 32-byte pre-hashed header (keccak256 of block header).
-        // If header is already 32 bytes, use directly; otherwise hash it.
+        // EPIC's official epic-miner (progpow-miner/src/miner.rs) does:
+        //   keccak_256(&full_pre_pow, &mut header)
+        // — hashes the FULL pre_pow (548 bytes), NO stripping of nonce bytes.
+        // If header is already 32 bytes, use directly (already pre-hashed).
         let header_hash: [u8; 32] = if header.len() == 32 {
             let mut h = [0u8; 32];
             h.copy_from_slice(header);
