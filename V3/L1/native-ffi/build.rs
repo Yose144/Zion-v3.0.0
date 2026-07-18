@@ -687,7 +687,9 @@ fn build_ghostrider(target_os: &str, is_msvc: bool) {
 
     let mut b = cc::Build::new();
     // Compile as C (NOT C++ — sphlib uses implicit void* casts)
-    b.opt_level(3)
+    // NOTE: opt_level(1) — O3 causes UB in CryptoNight alloca path on ARM64 M1.
+    // O1 is sufficient for correctness while still optimizing hot loops.
+    b.opt_level(1)
         .warnings(false)
         .cargo_warnings(false)
         .include(dir)

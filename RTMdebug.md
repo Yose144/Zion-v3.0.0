@@ -69,6 +69,15 @@ End-to-end RTM mining na zpool.ca s reálným GhostRider hashem a share acceptan
 - **Soubor**: `oaes_lib.c` — `oaes_alloc()`, `oaes_set_option()`
 - **Výsledek**: 8 vláken → **SHARE ACCEPTED** v 3.7s!
 
+### Bug 10: -O3 UB v CryptoNight alloca path na ARM64 M1 (CRITICAL FIX)
+- **Problém**: `cc` crate `opt_level(3)` + `alloca(2MB)` na ARM64 M1 → undefined behavior
+- **Příznak**: Po `cargo clean -p zion-native-ffi` a recompile → hash 6x rychlejší ale **špatný** (83K H/s, "Invalid share")
+- **Před**: `-O3` → hash `be6cd571...` (špatný, 126ms) → "Invalid share"
+- **Po**: `-O1` → hash `8675dbbf...` (správný, 13.1s) → **SHARE ACCEPTED**
+- **Proč**: `-O3` na ARM64 s `alloca` pro 2MB CryptoNight scratchpad způsobuje UB — kompilátor optimalizuje paměťové operace které nejsou well-defined
+- **Soubor**: `build.rs` — `build_ghostrider()` — `b.opt_level(1)` místo `b.opt_level(3)`
+- **Výsledek**: Správný hash, **SHARE ACCEPTED**, ~170 H/s (8 threads, M1 Pro)
+
 ## Live test výsledky
 
 ### Test 1: Mock server (unit test)
@@ -165,3 +174,6 @@ cargo build --features native-ghostrider
    - version/ntime/nbits byte order fix (BE hex → LE bytes)
    - oaes rand() thread-safety fix (deterministic IV, no srand)
    - Result: 8-thread CPU, 13.5 KH/s, SHARE ACCEPTED in 3.7s
+4. (pending) — fix(rtm): -O3 UB on ARM64 M1 → -O1 for ghostrider C build
+   - -O3 causes undefined behavior in CryptoNight alloca path on ARM64
+   - -O1 produces correct hashes, SHARE ACCEPTED confirmed
