@@ -365,7 +365,7 @@ __device__ __forceinline__ void sequential_passes(
 
 __device__ __forceinline__ void random_read_mix(
     const uint64_t seed_u64[4],
-    const uint64_t * __restrict__ pad_pool,
+    uint64_t * __restrict__ pad_pool,
     uint32_t tid,
     uint32_t total_threads,
     uint64_t out_u64[4])
