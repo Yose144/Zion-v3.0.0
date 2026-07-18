@@ -14,7 +14,7 @@ use std::sync::Arc;
 use tracing::{info, warn};
 
 use crate::auxpow_client::{AuxPowClient, ExternalJob};
-use crate::types::{CoinProfile, ExternalCoin, JobPackage, PoolPreference};
+use crate::types::{split_host_port, CoinProfile, ExternalCoin, JobPackage, PoolPreference};
 
 /// Manages a single active external connection and exposes the current job
 /// as a ZION-compatible [`JobPackage`].
@@ -85,8 +85,11 @@ impl JobMultiplexer {
                 profile.password = password.trim().to_string();
             }
         }
-        // TODO: apply preference/region mapping when multiple pools per coin exist
-        let _ = (self.preference, &self.region);
+        // Apply pool preference: NiceHash → use nicehash_pool() if supported,
+        // otherwise fall back to default pool for this coin.
+        let (pref_host, pref_port) = split_host_port(coin.best_pool(self.preference));
+        profile.pool_host = pref_host.to_string();
+        profile.pool_port = pref_port;
 
         info!(
             "JobMultiplexer: connecting to {} at {}:{} as worker={}",

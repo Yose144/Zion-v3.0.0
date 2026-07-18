@@ -374,9 +374,10 @@ fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
     match coin {
         ExternalCoin::DCR | ExternalCoin::ALPH => RevenueSource::Blake3External,
         ExternalCoin::KAS => RevenueSource::KHeavyHashExternal,
-        ExternalCoin::ETC => RevenueSource::EthashExternal,
-        ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::EVR | ExternalCoin::MEWC
-        | ExternalCoin::QUAI => {
+        ExternalCoin::ETC | ExternalCoin::EVR | ExternalCoin::MEWC => {
+            RevenueSource::EthashExternal
+        }
+        ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::QUAI => {
             RevenueSource::KawPowExternal
         }
         ExternalCoin::ERG => RevenueSource::AutolykosExternal,
@@ -512,10 +513,16 @@ async fn run_auxpow_bridge(
     let mut mux = JobMultiplexer::new(&cfg.payout_wallet, &cfg.worker_name)
         .with_preference(cfg.pool_preference, &cfg.region);
 
-    // Helper closure: select the wallet for a given coin (per-coin override
-    // takes precedence over the default payout_wallet).
+    // Helper closure: select the wallet for a given coin.
+    // For NiceHash preference: if the coin has a NiceHash endpoint, use the
+    // default payout_wallet (BTC address). If the coin falls back to a
+    // non-NiceHash pool (e.g. DCR/EPIC), use the per-coin wallet override.
     let coin_wallets = cfg.coin_wallets.clone();
-    let select_wallet = |coin: ExternalCoin| -> String {
+    let is_nicehash = cfg.pool_preference == zion_auxpow::PoolPreference::NiceHash;
+    let select_wallet = move |coin: ExternalCoin| -> String {
+        if is_nicehash && coin.nicehash_pool().is_some() {
+            return cfg.payout_wallet.clone();
+        }
         coin_wallets
             .get(coin.ticker())
             .cloned()
@@ -909,11 +916,20 @@ fn main() -> Result<()> {
         );
 
         for coin in coins_to_start {
-            // Select wallet: per-coin override > default payout_wallet
-            let wallet = config.auxpow_config.coin_wallets
-                .get(coin.ticker())
-                .cloned()
-                .unwrap_or_else(|| config.auxpow_config.payout_wallet.clone());
+            // Select wallet: per-coin override > default payout_wallet.
+            // For NiceHash preference: if the coin has a NiceHash endpoint,
+            // use the default payout_wallet (BTC address). If the coin falls
+            // back to a non-NiceHash pool (e.g. DCR/EPIC), use per-coin wallet.
+            let wallet = if config.auxpow_config.pool_preference == zion_auxpow::PoolPreference::NiceHash
+                && coin.nicehash_pool().is_some()
+            {
+                config.auxpow_config.payout_wallet.clone()
+            } else {
+                config.auxpow_config.coin_wallets
+                    .get(coin.ticker())
+                    .cloned()
+                    .unwrap_or_else(|| config.auxpow_config.payout_wallet.clone())
+            };
 
             // Build a per-coin config with force_coin set to this specific coin
             let coin_cfg = AuxPowIntegrationConfig {
@@ -2230,13 +2246,7 @@ fn handle_client(
                     let ext_target_hex = to_hex(&ext_job.target_bytes);
                     let ext_header_hex = to_hex(&ext_job.header_bytes);
                     let ext_extranonce1_hex = to_hex(&ext_job.extranonce1);
-                    let ext_protocol = match ext_job.external_coin {
-                        zion_auxpow::ExternalCoin::VRSC => "zcashstratum".to_string(),
-                        zion_auxpow::ExternalCoin::PRL => "pearlstratum".to_string(),
-                        zion_auxpow::ExternalCoin::KAS => "stratum".to_string(),
-                        zion_auxpow::ExternalCoin::ALPH => "stratum".to_string(),
-                        _ => "stratum".to_string(),
-                    };
+                    let ext_protocol = ext_job.external_coin.protocol_name().to_string();
                     println!(
                         "parallel_stream_embedded miner={} coin={} algo={} ext_job_id={} height={}",
                         worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height
@@ -2315,11 +2325,7 @@ fn handle_client(
                     let ext_target_hex = to_hex(&ext_job.target_bytes);
                     let ext_header_hex = to_hex(&ext_job.header_bytes);
                     let ext_extranonce1_hex = to_hex(&ext_job.extranonce1);
-                    let ext_protocol = match ext_job.external_coin {
-                        zion_auxpow::ExternalCoin::VRSC => "zcashstratum".to_string(),
-                        zion_auxpow::ExternalCoin::XMR => "cryptonotestratum".to_string(),
-                        _ => "stratum".to_string(),
-                    };
+                    let ext_protocol = ext_job.external_coin.protocol_name().to_string();
                     println!(
                         "parallel_stream_cpu_embedded miner={} coin={} algo={} ext_job_id={} height={} ext_target_hex={:.64}",
                         worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height, ext_target_hex

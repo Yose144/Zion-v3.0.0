@@ -166,6 +166,23 @@ impl ExternalCoin {
         }
     }
 
+    /// Lowercase string name of the stratum protocol, for pool→miner job
+    /// embedding (`ext_protocol` field in wire jobs).  This is the single
+    /// source of truth — the pool server and any other callers should use
+    /// this instead of hand-rolling match arms that can drift out of sync.
+    pub fn protocol_name(self) -> &'static str {
+        match self.protocol() {
+            StratumProtocol::Stratum => "stratum",
+            StratumProtocol::EthStratum => "ethstratum",
+            StratumProtocol::ZcashStratum => "zcashstratum",
+            StratumProtocol::PearlStratum => "pearlstratum",
+            StratumProtocol::EpicStratum => "epicstratum",
+            StratumProtocol::BeamStratum => "beamstratum",
+            StratumProtocol::CryptonoteStratum => "cryptonotestratum",
+            StratumProtocol::IronFishStratum => "ironfishstratum",
+        }
+    }
+
     /// Epoch length for DAG-based coins.
     /// Ethash/ETC: 30000 blocks per epoch.
     /// KawPow/RVN: 7500 blocks per epoch.
@@ -1626,6 +1643,26 @@ impl AuxPowClient {
             })
         };
         let resp = self.send_request(&req).await?;
+
+        // NiceHash KHeavyHash responds to mining.subscribe with a
+        // set_extranonce notification instead of a standard result:
+        //   {"id":1,"method":"set_extranonce","params":["79e0",6]}
+        // Treat this as a successful subscribe with extranonce1 from params.
+        if resp.get("method").and_then(|v| v.as_str()) == Some("set_extranonce") {
+            *self.subscribed.lock().await = true;
+            if let Some(params) = resp.get("params").and_then(|v| v.as_array()) {
+                if let Some(en1_hex) = params.get(0).and_then(|v| v.as_str()) {
+                    *self.extranonce1.lock().await = hex::decode(en1_hex).unwrap_or_default();
+                }
+                if let Some(en2_size) = params.get(1).and_then(|v| v.as_u64()) {
+                    *self.extranonce2_size.lock().await = Some(en2_size as u32);
+                }
+            }
+            println!("auxpow: subscribed to {} (NiceHash set_extranonce) — extranonce1={:?}",
+                self.profile.coin, self.extranonce1.try_lock().map(|v| hex::encode(&*v)).unwrap_or_default());
+            return Ok(());
+        }
+
         if let Some(result) = resp.get("result") {
             *self.subscribed.lock().await = true;
             println!("auxpow: subscribed to {} — result={}", self.profile.coin, result);
