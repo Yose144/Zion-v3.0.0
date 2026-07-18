@@ -33,8 +33,7 @@ const AUTOLYKOS_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/autolykos_
 const ZELHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/zelhash_kernel.cu");
 
 /// Preprocess kernel source: strip #pragma once and #include lines,
-/// prepend standard typedefs. NVRTC may support some includes but
-/// stripping is safer for cross-platform compatibility.
+/// prepend standard typedefs, fix NVRTC-incompatible constructs.
 fn preprocess_kernel(src: &str) -> String {
     let mut out = String::new();
     // Prepend typedefs that the kernels need
@@ -53,7 +52,13 @@ fn preprocess_kernel(src: &str) -> String {
         {
             continue;
         }
-        out.push_str(line);
+        // Fix: __constant__ cannot be used as a function parameter qualifier in NVRTC
+        // Remove it from parameter declarations (it's only valid for global variables)
+        let line = line.replace(
+            "__constant__ const unsigned char *custom",
+            "const unsigned char *custom",
+        );
+        out.push_str(&line);
         out.push('\n');
     }
     out
