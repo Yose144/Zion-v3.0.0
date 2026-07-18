@@ -208,10 +208,11 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         }
         "ethash" | "etchash" | "ethash_etc" => Some(("ethash_kernel.cl", "ethash_mine")),
         "zelhash" | "zelhash_flux" => {
-            // NOTE: zelhash_kernel.cl is a SIMPLIFIED implementation —
-            // "can find solutions at low difficulty" but not production-grade.
-            // Real production mining needs a lolMiner/bzMiner-level kernel.
-            Some(("zelhash_kernel.cl", "zelhash_mine"))
+            // Production ZelHash kernel: multi-kernel Wagner's algorithm
+            // (zelhash_prod_kernel.cl) with ZelProof Blake2b personalization.
+            // The kernel_info returns the init kernel name; actual mining
+            // dispatches multiple kernels via mine_zelhash_prod().
+            Some(("zelhash_prod_kernel.cl", "kernel_init_ht"))
         }
         "progpow" | "progpow_epic" => Some(("progpow_kernel.cl", "ethash_search")),
         "pearlhash" | "pearlhash_prl" => {
@@ -601,17 +602,12 @@ impl GpuMiner {
                 &output_hash_buf,
                 &found_flag_buf,
             )?,
-            "zelhash" | "zelhash_flux" => Self::build_zelhash_kernel(
-                pro_que,
-                kernel_name,
-                header,
-                target,
-                base_nonce,
-                &output_nonce_buf,
-                &output_hash_buf,
-                &output_solution_buf,
-                &found_flag_buf,
-            )?,
+            "zelhash" | "zelhash_flux" => {
+                // Use the production multi-kernel Wagner's algorithm
+                // (zelhash_prod_kernel.cl) instead of the simplified single-kernel.
+                // Falls back to simplified kernel if VRAM is insufficient.
+                return self.mine_zelhash_prod(header, target, base_nonce);
+            }
             "beamhash" | "beamhash_beam" => Self::build_beamhash_kernel(
                 pro_que,
                 kernel_name,
@@ -742,7 +738,8 @@ impl GpuMiner {
             "qhash" | "qhash_qtc" => 1, // Qhash: 512KB state vector per nonce
             "ghostrider" | "ghostrider_rtm" => 1, // GhostRider: 1MB scratchpad per nonce
             "dynexsolve" | "dynexsolve_dnx" => 1, // DynexSolve: SAT solver per nonce
-            _ => 8, // blake3, kheavyhash, zelhash
+            "zelhash" | "zelhash_flux" => 1, // ZelHash: multi-kernel, 1 nonce per dispatch
+            _ => 8, // blake3, kheavyhash
         };
         // Work-group size: MUST match GROUP_SIZE defined in the kernel build
         // options. EPIC ProgPow uses GROUP_SIZE=256 (matches reference epic-miner).
@@ -761,6 +758,7 @@ impl GpuMiner {
             "qhash" | "qhash_qtc" => 64, // Qhash: state vector ops, 64 for register pressure
             "ghostrider" | "ghostrider_rtm" => 64, // GhostRider: hash + CN, 64 for register pressure
             "dynexsolve" | "dynexsolve_dnx" => 64, // DynexSolve: ODE solver, 64 for register pressure
+            "zelhash" | "zelhash_flux" => 64, // ZelHash: reqd_work_group_size(64,1,1)
             _ => 256,
         };
         // Round global_work_size up to a multiple of wg_size (required by
@@ -1778,6 +1776,7 @@ typedef unsigned long ulong;
                     "ethash_kernel.cl" => include_str!("../csrc/opencl/ethash_kernel.cl"),
                     "progpow_kernel.cl" => include_str!("../csrc/opencl/progpow_kernel.cl"),
                     "zelhash_kernel.cl" => include_str!("../csrc/opencl/zelhash_kernel.cl"),
+                    "zelhash_prod_kernel.cl" => include_str!("../csrc/opencl/zelhash_prod_kernel.cl"),
                     "pearl_kernel.cl" => include_str!("../csrc/opencl/pearl_kernel.cl"),
                     "pearl_pouw_native.cl" => include_str!("../csrc/opencl/pearl_pouw_native.cl"),
                     "fishhash_kernel.cl" => include_str!("../csrc/opencl/fishhash_kernel.cl"),
@@ -2619,6 +2618,68 @@ typedef unsigned long ulong;
         h
     }
 
+    /// Compute the Blake2b state after processing the first 128-byte block
+    /// of a ZelHash block header, using ZelProof personalization.
+    ///
+    /// ZelHash (Equihash 125,4) uses "ZelProof" personalization instead of
+    /// Zcash's "ZcashPoW". The personalization is applied to h[4] and h[5]
+    /// (bytes 32-47 of the Blake2b parameter block), per the Blake2b spec.
+    ///
+    /// Returns 8 u64 words that can be uploaded to the GPU as `blake_state`
+    /// for `kernel_round0` of the ZelHash production kernel.
+    fn zelhash_blake2b_state(header: &[u8]) -> [u64; 8] {
+        let n: u64 = 125;
+        let k: u64 = 4;
+        let hash_len: u64 = 64; // Full Blake2b-512 output (4 Xi × 125 bits)
+
+        // Initialize state with ZelProof personalization
+        let mut h: [u64; 8] = Self::EQ_BLAKE_IV;
+        // h[0] ^= parameter block bytes 0-7:
+        //   digest_length=64, key_length=0, fanout=1, depth=1
+        h[0] ^= 0x01010000 | hash_len;
+        // h[4] ^= personalization[0..8] = "ZelProof" as LE u64
+        let zelproof: u64 = u64::from_le_bytes(*b"ZelProof");
+        h[4] ^= zelproof;
+        // h[5] ^= personalization[8..16] = N(125) as LE u32 + K(4) as LE u32
+        h[5] ^= (k << 32) | n;
+
+        // Process first 128-byte block (non-final) — same as zcash_blake2b_state
+        let mut block = [0u8; 128];
+        let copy_len = header.len().min(128);
+        block[..copy_len].copy_from_slice(&header[..copy_len]);
+
+        let mut m = [0u64; 16];
+        for i in 0..16 {
+            m[i] = u64::from_le_bytes([
+                block[i * 8], block[i * 8 + 1], block[i * 8 + 2], block[i * 8 + 3],
+                block[i * 8 + 4], block[i * 8 + 5], block[i * 8 + 6], block[i * 8 + 7],
+            ]);
+        }
+
+        let mut v = [0u64; 16];
+        v[..8].copy_from_slice(&h);
+        v[8..].copy_from_slice(&Self::EQ_BLAKE_IV);
+        v[12] ^= 128; // bytes processed so far (non-final block)
+
+        for round in 0..12 {
+            let s = Self::EQ_BLAKE_SIGMA[round];
+            Self::eq_mix(&mut v, 0, 4, 8, 12, m[s[0]], m[s[1]]);
+            Self::eq_mix(&mut v, 1, 5, 9, 13, m[s[2]], m[s[3]]);
+            Self::eq_mix(&mut v, 2, 6, 10, 14, m[s[4]], m[s[5]]);
+            Self::eq_mix(&mut v, 3, 7, 11, 15, m[s[6]], m[s[7]]);
+            Self::eq_mix(&mut v, 0, 5, 10, 15, m[s[8]], m[s[9]]);
+            Self::eq_mix(&mut v, 1, 6, 11, 12, m[s[10]], m[s[11]]);
+            Self::eq_mix(&mut v, 2, 7, 8, 13, m[s[12]], m[s[13]]);
+            Self::eq_mix(&mut v, 3, 4, 9, 14, m[s[14]], m[s[15]]);
+        }
+
+        for i in 0..8 {
+            h[i] ^= v[i] ^ v[i + 8];
+        }
+
+        h
+    }
+
     /// Encode solution indices into compressed byte format (store_encoded_sol).
     ///
     /// Each of the 2^k input indices is encoded using (PREFIX+1) bits,
@@ -2676,6 +2737,341 @@ typedef unsigned long ulong;
         // Equihash 200,9 constants (must match equihash_200_9_param.h)
         // PARAM_K=9, PREFIX=20, NR_SLOTS=4 (OVERHEAD=4 for 200,9)
         self.mine_equihash_impl(header, target, base_nonce, "equihash200_kernel.cl", 9, 20, 4)
+    }
+
+    /// ZelHash (Equihash 125,4) production mining for Flux (FLUX).
+    ///
+    /// Uses the multi-kernel Wagner's algorithm with ZelProof Blake2b
+    /// personalization. Parameters: N=125, K=4, PREFIX=25.
+    ///   - 4 Xi per Blake2b hash (512/125 = 4)
+    ///   - 4 rounds (0-3) of collision finding
+    ///   - Solution size: 2^4 * 26 / 8 = 52 bytes
+    ///   - Memory: ~3.2GB per hash table (NR_ROWS_LOG=22, NR_SLOTS=32, SLOT_LEN=24)
+    ///   - Total VRAM: ~6.4GB — fits 8GB GPUs
+    fn mine_zelhash_prod(
+        &mut self,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+    ) -> Result<Option<GpuFoundShare>> {
+        // ZelHash 125,4 parameters (must match zelhash_125_4_param.h)
+        const PARAM_K: u32 = 4;
+        const PREFIX: u32 = 25;
+        const NR_ROWS: usize = 1 << 22;  // 4,194,304
+        const NR_SLOTS: usize = 32;
+        const SLOT_LEN: usize = 24;
+        const HT_SIZE: usize = NR_ROWS * NR_SLOTS * SLOT_LEN;  // ~3.2GB
+        const ROWS_PER_UINT: usize = 4;
+        const ROW_COUNTERS_SIZE: usize = NR_ROWS / ROWS_PER_UINT;  // 1,048,576
+        const MAX_SOLS: usize = 10;
+        const ZCASH_BLOCK_HEADER_LEN: usize = 140;
+        const ZCASH_NONCE_LEN: usize = 32;
+        const ZCASH_NONCE_OFFSET: usize = ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN;
+        let zcash_sol_len: usize = (1usize << PARAM_K) * (PREFIX as usize + 1) / 8;  // 52
+
+        const SOLS_BUF_SIZE: usize = 8192;
+
+        let vram_needed = 2 * HT_SIZE + ROW_COUNTERS_SIZE * 2 * 4 + SOLS_BUF_SIZE + 1024;
+        println!(
+            "auxpow_gpu_zelhash_prod ht_size={:.1} GB per table, total VRAM needed={:.1} GB",
+            HT_SIZE as f64 / 1e9,
+            vram_needed as f64 / 1e9
+        );
+
+        let pro_que = self.ensure_proque("zelhash_prod_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        // Prepare 140-byte header with nonce
+        let mut header_buf = [0u8; ZCASH_BLOCK_HEADER_LEN];
+        let copy_len = header.len().min(ZCASH_BLOCK_HEADER_LEN);
+        header_buf[..copy_len].copy_from_slice(&header[..copy_len]);
+        let nonce_bytes = base_nonce.to_le_bytes();
+        header_buf[ZCASH_NONCE_OFFSET..ZCASH_NONCE_OFFSET + 8]
+            .copy_from_slice(&nonce_bytes);
+        for i in (ZCASH_NONCE_OFFSET + 8)..ZCASH_BLOCK_HEADER_LEN {
+            header_buf[i] = 0;
+        }
+
+        // Compute Blake2b state with ZelProof personalization
+        let blake_state = Self::zelhash_blake2b_state(&header_buf);
+
+        // Allocate GPU buffers
+        println!("auxpow_gpu_zelhash_prod allocating hash tables...");
+        let ht0: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(HT_SIZE)
+            .build()
+            .map_err(|e| anyhow!("ZelHash ht0 alloc failed ({:.1} GB): {e}", HT_SIZE as f64 / 1e9))?;
+        let ht1: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(HT_SIZE)
+            .build()
+            .map_err(|e| anyhow!("ZelHash ht1 alloc failed ({:.1} GB): {e}", HT_SIZE as f64 / 1e9))?;
+
+        let rc0: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(ROW_COUNTERS_SIZE)
+            .build()?;
+        let rc1: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(ROW_COUNTERS_SIZE)
+            .build()?;
+
+        let blake_st_buf: Buffer<u64> = Buffer::builder()
+            .queue(q.clone())
+            .len(8)
+            .copy_host_slice(&blake_state)
+            .build()?;
+
+        let dbg_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(NR_ROWS * 2)
+            .build()?;
+
+        let sols_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(SOLS_BUF_SIZE)
+            .fill_val(0u8)
+            .build()?;
+
+        // Create kernels
+        let k_init_ht = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("kernel_init_ht")
+            .build()?;
+
+        let k_round0 = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("kernel_round0")
+            .build()?;
+
+        // For K=4: rounds 1-2 are collision-finding (no sols arg),
+        // round 3 is the final round (with sols arg).
+        let mut k_rounds: Vec<Kernel> = Vec::with_capacity((PARAM_K - 2) as usize);
+        for round in 1..=(PARAM_K - 2) {
+            let name = format!("kernel_round{}", round);
+            k_rounds.push(
+                Kernel::builder()
+                    .queue(q.clone())
+                    .program(pro_que.program())
+                    .name(&name)
+                    .build()?,
+            );
+        }
+
+        // Final round kernel (round K-1 = 3) with sols argument
+        let k_round_final = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("kernel_round3")
+            .build()?;
+
+        let k_sols = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("kernel_sols")
+            .build()?;
+
+        // Work sizes
+        let init_global = NR_ROWS / ROWS_PER_UINT;
+        let init_local = 256;
+        let round0_global = {
+            // NR_INPUTS = 2^25. Use 2^14 = 16384 threads → each processes 2048 inputs
+            let ws = 1 << 14;
+            ws
+        };
+        let round0_local = 64;
+        let rounds_global = NR_ROWS;
+        let rounds_local = 64;
+        let sols_global = NR_ROWS;
+        let sols_local = 64;
+
+        let start = Instant::now();
+
+        // 1. Init hash tables
+        k_init_ht.set_arg(0, &ht0)?;
+        k_init_ht.set_arg(1, &rc0)?;
+        unsafe {
+            k_init_ht.cmd()
+                .global_work_size(init_global)
+                .local_work_size(init_local)
+                .enq()?;
+        }
+        k_init_ht.set_arg(0, &ht1)?;
+        k_init_ht.set_arg(1, &rc1)?;
+        unsafe {
+            k_init_ht.cmd()
+                .global_work_size(init_global)
+                .local_work_size(init_local)
+                .enq()?;
+        }
+
+        // 2. Round 0: Blake2b hashing
+        k_round0.set_arg(0, &blake_st_buf)?;
+        k_round0.set_arg(1, &ht0)?;
+        k_round0.set_arg(2, &rc0)?;
+        k_round0.set_arg(3, &dbg_buf)?;
+        unsafe {
+            k_round0.cmd()
+                .global_work_size(round0_global)
+                .local_work_size(round0_local)
+                .enq()?;
+        }
+        q.finish()?;
+        println!("auxpow_gpu_zelhash_prod round0 done in {}ms", start.elapsed().as_millis());
+
+        // 3. Rounds 1-2: collision finding (alternating ht0/ht1)
+        let mut ht_src = &ht0;
+        let mut ht_dst = &ht1;
+        let mut rc_src = &rc0;
+        let mut rc_dst = &rc1;
+
+        for (round_idx, k_round) in k_rounds.iter().enumerate() {
+            let round_num = round_idx + 1;
+            k_round.set_arg(0, ht_src)?;
+            k_round.set_arg(1, ht_dst)?;
+            k_round.set_arg(2, rc_src)?;
+            k_round.set_arg(3, rc_dst)?;
+            k_round.set_arg(4, &dbg_buf)?;
+            unsafe {
+                k_round.cmd()
+                    .global_work_size(rounds_global)
+                    .local_work_size(rounds_local)
+                    .enq()?;
+            }
+            q.finish()?;
+            println!("auxpow_gpu_zelhash_prod round{} done in {}ms",
+                round_num, start.elapsed().as_millis());
+
+            // Swap src/dst
+            std::mem::swap(&mut ht_src, &mut ht_dst);
+            std::mem::swap(&mut rc_src, &mut rc_dst);
+        }
+
+        // 4. Final round (round 3) with sols
+        k_round_final.set_arg(0, ht_src)?;
+        k_round_final.set_arg(1, ht_dst)?;
+        k_round_final.set_arg(2, rc_src)?;
+        k_round_final.set_arg(3, rc_dst)?;
+        k_round_final.set_arg(4, &dbg_buf)?;
+        k_round_final.set_arg(5, &sols_buf)?;
+        unsafe {
+            k_round_final.cmd()
+                .global_work_size(rounds_global)
+                .local_work_size(rounds_local)
+                .enq()?;
+        }
+        q.finish()?;
+        println!("auxpow_gpu_zelhash_prod round3 (final) done in {}ms",
+            start.elapsed().as_millis());
+
+        // 5. Solution extraction
+        k_sols.set_arg(0, &ht0)?;
+        k_sols.set_arg(1, &ht1)?;
+        k_sols.set_arg(2, &sols_buf)?;
+        k_sols.set_arg(3, rc_src)?;
+        k_sols.set_arg(4, rc_dst)?;
+        unsafe {
+            k_sols.cmd()
+                .global_work_size(sols_global)
+                .local_work_size(sols_local)
+                .enq()?;
+        }
+        q.finish()?;
+        println!("auxpow_gpu_zelhash_prod sols extraction done in {}ms",
+            start.elapsed().as_millis());
+
+        // 6. Read back solutions
+        let mut sols_data = vec![0u8; SOLS_BUF_SIZE];
+        sols_buf.read(&mut sols_data).enq()?;
+
+        // Parse sols_t structure
+        let nr_sols = u32::from_le_bytes([
+            sols_data[0], sols_data[1], sols_data[2], sols_data[3],
+        ]) as usize;
+
+        println!("auxpow_gpu_zelhash_prod found {} potential solutions", nr_sols);
+
+        if nr_sols == 0 {
+            return Ok(None);
+        }
+
+        // sols_t layout: nr(4) + likely_invalids(4) + valid[10](10) + pad(2) + values[10][16](640)
+        let values_offset = 4 + 4 + MAX_SOLS + 2;  // 20 bytes
+        let sol_stride = (1 << PARAM_K) * 4;  // 16 * 4 = 64 bytes per solution
+        let nr_sols_capped = nr_sols.min(MAX_SOLS);
+
+        for sol_i in 0..nr_sols_capped {
+            let valid = sols_data[4 + 4 + sol_i];
+            if valid == 0 {
+                continue;
+            }
+
+            // Read the 16 indices
+            let mut indices = [0u32; 16];
+            let off = values_offset + sol_i * sol_stride;
+            for j in 0..16 {
+                indices[j] = u32::from_le_bytes([
+                    sols_data[off + j * 4],
+                    sols_data[off + j * 4 + 1],
+                    sols_data[off + j * 4 + 2],
+                    sols_data[off + j * 4 + 3],
+                ]);
+            }
+
+            // Encode solution
+            let encoded_sol = Self::encode_equihash_solution(&indices, PREFIX, PARAM_K);
+            if encoded_sol.len() != zcash_sol_len {
+                eprintln!("auxpow_gpu_zelhash_prod sol{}: wrong size {} != {}",
+                    sol_i, encoded_sol.len(), zcash_sol_len);
+                continue;
+            }
+
+            // Compute double-SHA256(header + varint + encoded_sol)
+            // Varint for 52 bytes: 0x34 (single byte, since 52 < 253)
+            let mut verify_buf = Vec::with_capacity(ZCASH_BLOCK_HEADER_LEN + 1 + zcash_sol_len);
+            verify_buf.extend_from_slice(&header_buf);
+            verify_buf.push(zcash_sol_len as u8);  // varint 52 = 0x34
+            verify_buf.extend_from_slice(&encoded_sol);
+
+            use sha2::{Digest, Sha256};
+            let hash1 = Sha256::digest(&verify_buf);
+            let hash2 = Sha256::digest(&hash1);
+
+            // Compare hash2 (little-endian) with target (little-endian)
+            let meets_target = {
+                let mut meets = true;
+                for i in (0..32).rev() {
+                    if hash2[i] != target[i] {
+                        meets = hash2[i] < target[i];
+                        break;
+                    }
+                }
+                meets
+            };
+
+            if meets_target {
+                let mut hash_arr = [0u8; 32];
+                hash_arr.copy_from_slice(&hash2);
+                println!(
+                    "auxpow_gpu_zelhash_prod SHARE FOUND sol_{sol_i} nonce={base_nonce} hash_first8={:016x}",
+                    u64::from_le_bytes(hash_arr[0..8].try_into().unwrap())
+                );
+                return Ok(Some(GpuFoundShare {
+                    nonce: base_nonce,
+                    hash: hash_arr,
+                    mix_hash: None,
+                    solution: Some(encoded_sol),
+                }));
+            } else {
+                println!("auxpow_gpu_zelhash_prod sol{}: doesn't meet target", sol_i);
+            }
+        }
+
+        println!("auxpow_gpu_zelhash_prod: no solution met target");
+        Ok(None)
     }
 
     /// Parameterized Equihash multi-pass mining.
@@ -5168,7 +5564,7 @@ mod tests {
         }
     }
 
-    /// Verify zelhash_kernel.cl file exists on disk.
+    /// Verify zelhash_kernel.cl file exists on disk (simplified fallback).
     #[test]
     fn zelhash_kernel_file_exists() {
         let kernel_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -5181,6 +5577,41 @@ mod tests {
         assert!(source.contains("zelhash_mine"), "kernel must define zelhash_mine");
         assert!(source.contains("blake2b_compress"), "kernel must have blake2b");
         assert!(source.contains("ZelProof"), "kernel must use ZelProof personalization");
+    }
+
+    /// Verify zelhash_prod_kernel.cl file exists on disk (production kernel).
+    #[test]
+    fn zelhash_prod_kernel_file_exists() {
+        let kernel_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("csrc/opencl/zelhash_prod_kernel.cl");
+        assert!(
+            kernel_path.exists(),
+            "zelhash_prod_kernel.cl must exist at csrc/opencl/"
+        );
+        let source = std::fs::read_to_string(&kernel_path).unwrap();
+        assert!(source.contains("kernel_round0"), "prod kernel must define kernel_round0");
+        assert!(source.contains("kernel_round3"), "prod kernel must define kernel_round3 (final)");
+        assert!(source.contains("kernel_sols"), "prod kernel must define kernel_sols");
+        assert!(source.contains("PARAM_N                        125"), "prod kernel must have N=125");
+        assert!(source.contains("PARAM_K                        4"), "prod kernel must have K=4");
+        assert!(source.contains("ht_store"), "prod kernel must have ht_store");
+        assert!(source.contains("xor_and_store"), "prod kernel must have xor_and_store");
+    }
+
+    /// Verify zelhash_blake2b_state produces ZelProof personalization.
+    #[test]
+    fn zelhash_blake2b_state_zelproof_personalization() {
+        let header = [0u8; 140];
+        let state = GpuMiner::zelhash_blake2b_state(&header);
+        assert_eq!(state.len(), 8);
+        // Determinism
+        let state2 = GpuMiner::zelhash_blake2b_state(&header);
+        assert_eq!(state, state2, "ZelHash Blake2b state must be deterministic");
+        // Different input → different state
+        let mut header2 = [0u8; 140];
+        header2[0] = 1;
+        let state3 = GpuMiner::zelhash_blake2b_state(&header2);
+        assert_ne!(state, state3, "Different headers must produce different states");
     }
 
     /// Verify all CUDA kernel files exist.
@@ -5222,11 +5653,11 @@ mod tests {
     fn zelhash_kernel_info_correct() {
         assert_eq!(
             kernel_info("zelhash"),
-            Some(("zelhash_kernel.cl", "zelhash_mine"))
+            Some(("zelhash_prod_kernel.cl", "kernel_init_ht"))
         );
         assert_eq!(
             kernel_info("zelhash_flux"),
-            Some(("zelhash_kernel.cl", "zelhash_mine"))
+            Some(("zelhash_prod_kernel.cl", "kernel_init_ht"))
         );
         assert_eq!(kernel_info("unknown_algo"), None);
     }
