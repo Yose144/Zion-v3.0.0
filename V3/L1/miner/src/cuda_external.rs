@@ -253,10 +253,12 @@ impl CudaExternalMiner {
             .htod_copy_into(vec![SENTINEL_NONCE], &mut self.output_nonce)
             .map_err(|e| anyhow::anyhow!("reset nonce: {e}"))?;
 
-        // Upload header
+        // Upload header (pad to buffer size — htod_copy_into requires matching lengths)
         let header_len = header.len().min(256);
+        let mut header_padded = vec![0u8; 256];
+        header_padded[..header_len].copy_from_slice(&header[..header_len]);
         self.dev
-            .htod_copy_into(header[..header_len].to_vec(), &mut self.header_buf)
+            .htod_copy_into(header_padded, &mut self.header_buf)
             .map_err(|e| anyhow::anyhow!("header upload: {e}"))?;
 
         // Upload target
