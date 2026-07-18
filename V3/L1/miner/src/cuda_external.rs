@@ -16,9 +16,32 @@
 
 use anyhow::{Context, Result};
 use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
+use cudarc::driver::sys::CUdevice_attribute;
 use cudarc::nvrtc::{compile_ptx_with_opts, CompileOptions};
 use std::sync::Arc;
 use std::time::Instant;
+
+/// Detect the GPU's compute capability and return an NVRTC-compatible arch string
+/// (e.g. "sm_61" for Pascal, "sm_86" for Ampere, "sm_89" for Ada).
+/// Falls back to the ZION_CUDA_ARCH env var, then to "sm_86" if detection fails.
+fn detect_cuda_arch(dev: &CudaDevice) -> String {
+    if let Ok(arch) = std::env::var("ZION_CUDA_ARCH") {
+        return arch;
+    }
+    let major = dev.attribute(CUdevice_attribute::CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR);
+    let minor = dev.attribute(CUdevice_attribute::CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR);
+    match (major, minor) {
+        (Ok(maj), Ok(min)) => {
+            let arch = format!("sm_{}{}", maj, min);
+            eprintln!("cuda_arch_detect: compute_capability={}.{} => arch={}", maj, min, arch);
+            arch
+        }
+        _ => {
+            eprintln!("cuda_arch_detect: failed to query compute capability, falling back to sm_86");
+            "sm_86".to_string()
+        }
+    }
+}
 
 use crate::gpu_backend::{GpuBatchResult, GpuMiner, GpuBackendKind};
 use zion_core::{DifficultyTarget, MiningHeader};
@@ -205,9 +228,8 @@ impl CudaExternalMiner {
             .name()
             .unwrap_or_else(|_| "unknown CUDA device".to_string());
 
-        // Compile kernel via NVRTC
-        let arch = std::env::var("ZION_CUDA_ARCH")
-            .unwrap_or_else(|_| "sm_86".to_string());
+        // Compile kernel via NVRTC — auto-detect GPU compute capability
+        let arch = detect_cuda_arch(&dev);
         let processed = preprocess_kernel(algo.kernel_source());
         let ptx = compile_ptx_with_opts(
             &processed,
@@ -438,8 +460,7 @@ impl CudaExternalMiner {
 
         // Step 4: Compile and load DAG generation kernel if not already loaded
         if !self.dag_gen_loaded {
-            let arch = std::env::var("ZION_CUDA_ARCH")
-                .unwrap_or_else(|_| "sm_86".to_string());
+            let arch = detect_cuda_arch(&self.dev);
             let processed = preprocess_kernel(ETHASH_DAG_GEN_CU);
             let ptx = compile_ptx_with_opts(
                 &processed,

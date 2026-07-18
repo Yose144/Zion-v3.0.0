@@ -4480,6 +4480,29 @@ pub mod opencl_deeksha_lite_fire {
 
 // ─── CUDA Backend ───────────────────────────────────────────────────────────
 
+/// Detect GPU compute capability for NVRTC arch flag.
+/// Falls back to ZION_CUDA_ARCH env var, then "sm_86".
+#[cfg(feature = "gpu-cuda")]
+fn detect_cuda_arch(dev: &cudarc::driver::CudaDevice) -> String {
+    use cudarc::driver::sys::CUdevice_attribute;
+    if let Ok(arch) = std::env::var("ZION_CUDA_ARCH") {
+        return arch;
+    }
+    let major = dev.attribute(CUdevice_attribute::CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR);
+    let minor = dev.attribute(CUdevice_attribute::CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR);
+    match (major, minor) {
+        (Ok(maj), Ok(min)) => {
+            let arch = format!("sm_{}{}", maj, min);
+            eprintln!("cuda_arch_detect: compute_capability={}.{} => arch={}", maj, min, arch);
+            arch
+        }
+        _ => {
+            eprintln!("cuda_arch_detect: failed to query compute capability, falling back to sm_86");
+            "sm_86".to_string()
+        }
+    }
+}
+
 #[cfg(feature = "gpu-cuda")]
 pub mod cuda_deeksha {
     use super::*;
@@ -4533,8 +4556,7 @@ pub mod cuda_deeksha {
             // Note: cosmic_harmony kernel is 1187 lines with complex NPU code.
             // --ptxas-options=-O3 and -lineinfo both cause ptxas to hang.
             // Use minimal flags for this kernel.
-            let arch = std::env::var("ZION_CUDA_ARCH")
-                .unwrap_or_else(|_| "sm_86".to_string());
+            let arch = detect_cuda_arch(&dev);
             let ptx = compile_ptx_with_opts(
                 CUDA_KERNEL_SRC,
                 CompileOptions {
@@ -4872,9 +4894,8 @@ pub mod cuda_deeksha_lite_fire {
                 .unwrap_or_else(|_| "unknown CUDA device".to_string());
 
             // Compile PTX with fast-math + arch-specific optimization
-            // RTX 3090 = sm_86 (Ampere). Default to sm_86 but allow override.
-            let arch = std::env::var("ZION_CUDA_ARCH")
-                .unwrap_or_else(|_| "sm_86".to_string());
+            // Auto-detect GPU compute capability (sm_61 Pascal, sm_86 Ampere, etc.)
+            let arch = detect_cuda_arch(&dev);
             let mut opts = vec![
                 "--use_fast_math".to_string(),
                 format!("-arch={}", arch),
@@ -5289,8 +5310,7 @@ pub mod cuda_deeksha_lite {
                 .name()
                 .unwrap_or_else(|_| "unknown CUDA device".to_string());
 
-            let arch = std::env::var("ZION_CUDA_ARCH")
-                .unwrap_or_else(|_| "sm_86".to_string());
+            let arch = detect_cuda_arch(&dev);
             let mut opts = vec![
                 "--use_fast_math".to_string(),
                 format!("-arch={}", arch),
