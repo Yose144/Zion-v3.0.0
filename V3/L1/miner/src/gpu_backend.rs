@@ -4520,6 +4520,8 @@ pub mod cuda_deeksha {
                 .unwrap_or_else(|_| "unknown CUDA device".to_string());
 
             // Compile PTX with fast-math + arch-specific optimization
+            // Note: --ptxas-options=-O3 omitted for cosmic_harmony — ptxas hangs
+            // on the complex NPU code (1187-line kernel). Default ptxas -O2 is used.
             let arch = std::env::var("ZION_CUDA_ARCH")
                 .unwrap_or_else(|_| "sm_86".to_string());
             let ptx = compile_ptx_with_opts(
@@ -4530,7 +4532,6 @@ pub mod cuda_deeksha {
                         format!("-arch={}", arch),
                         "--std=c++14".to_string(),
                         "-lineinfo".to_string(),
-                        "--ptxas-options=-O3".to_string(),
                     ],
                     ..Default::default()
                 },
