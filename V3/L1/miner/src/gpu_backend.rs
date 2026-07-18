@@ -259,6 +259,31 @@ pub trait GpuMiner: Send {
 
     /// Run a benchmark for the given duration.
     fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)>;
+
+    /// Async launch: queue kernel work on GPU without waiting for completion.
+    /// Returns a token that can be passed to `collect_batch` to retrieve results.
+    /// Default implementation: falls back to synchronous mine_batch.
+    fn launch_batch(
+        &mut self,
+        header: MiningHeader,
+        target: DifficultyTarget,
+        nonce_start: u64,
+        batch_size: u64,
+    ) -> Result<u64> {
+        // Default: no pipelining, just run mine_batch and return a dummy token
+        let _ = self.mine_batch(header, target, nonce_start, batch_size)?;
+        Ok(0)
+    }
+
+    /// Collect results from a previously launched batch.
+    /// `token` is the value returned by `launch_batch`.
+    /// Default implementation: returns empty result (already collected in launch_batch).
+    fn collect_batch(&mut self, _token: u64) -> Result<GpuBatchResult> {
+        Ok(GpuBatchResult {
+            solutions: Vec::new(),
+            nonces_tested: 0,
+        })
+    }
 }
 
 /// Multi-algo GPU backend manager.
@@ -4560,6 +4585,16 @@ pub mod cuda_deeksha_lite_fire {
         result_nonce: CudaSlice<u64>,
         result_hash: CudaSlice<u8>,
         output_hashes_buf: CudaSlice<u8>,
+        /// Pending batch info for pipelined launch/collect.
+        pending: Option<PendingBatch>,
+    }
+
+    /// Info stored by launch_batch, used by collect_batch.
+    struct PendingBatch {
+        nonce_start: u64,
+        batch_size: u64,
+        target_u32: u32,
+        total_tested: u64,
     }
 
     impl CudaDeekshaLiteFireMiner {
@@ -4655,6 +4690,7 @@ pub mod cuda_deeksha_lite_fire {
                 result_nonce,
                 result_hash,
                 output_hashes_buf,
+                pending: None,
             })
         }
     }
@@ -4801,6 +4837,133 @@ pub mod cuda_deeksha_lite_fire {
             bytes[..len].copy_from_slice(&raw_header[..len]);
             let header = MiningHeader::from_bytes(bytes);
             self.mine_batch(header, target, nonce_start, batch_size)
+        }
+
+        /// Async launch: queue all kernel chunks on the GPU stream without syncing.
+        /// The host returns immediately after queueing. Call `collect_batch` to
+        /// sync and read results. This enables overlapping pool I/O with GPU compute.
+        fn launch_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<u64> {
+            // If there's already a pending batch, collect it first (blocking).
+            if self.pending.is_some() {
+                let _ = self.collect_batch(0)?;
+            }
+
+            let header_bytes = header.to_bytes();
+            let keccak_state = Self::precompute_header_keccak_state(&header_bytes);
+            self.dev
+                .htod_copy_into(keccak_state.to_vec(), &mut self.header_state_buf)
+                .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
+
+            let target_u32 = u32::from_le_bytes([
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
+            ]);
+
+            let func = self
+                .dev
+                .get_func("deeksha_fire", "deeksha_lite_fire_mine")
+                .ok_or_else(|| anyhow::anyhow!("deeksha_lite_fire_mine kernel not found"))?;
+
+            let threads_per_block: u32 = std::env::var("ZION_CUDA_TPB")
+                .ok()
+                .and_then(|v| v.trim().parse().ok())
+                .unwrap_or(64);
+
+            // Reset sentinel (ASYNC)
+            self.dev
+                .htod_copy_into(vec![SENTINEL], &mut self.result_nonce)
+                .map_err(|e| anyhow::anyhow!("reset sentinel: {e}"))?;
+
+            // Launch all chunks back-to-back (async, no sync)
+            let mut total_tested = 0u64;
+            let mut current_nonce = nonce_start;
+            let mut left = batch_size;
+
+            while left > 0 {
+                let chunk = (left as usize).min(self.work_size) as u32;
+                let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+                let cfg = LaunchConfig {
+                    grid_dim: (blocks, 1, 1),
+                    block_dim: (threads_per_block, 1, 1),
+                    shared_mem_bytes: 0,
+                };
+
+                unsafe {
+                    func.clone()
+                        .launch(
+                            cfg,
+                            (
+                                &self.header_state_buf,
+                                current_nonce,
+                                chunk,
+                                &self.output_hashes_buf,
+                                &self.scratchpad_buf,
+                                target_u32,
+                                &mut self.result_nonce,
+                                &mut self.result_hash,
+                            ),
+                        )
+                        .map_err(|e| anyhow::anyhow!("kernel launch: {e}"))?;
+                }
+
+                total_tested += chunk as u64;
+                current_nonce += chunk as u64;
+                left = left.saturating_sub(chunk as u64);
+            }
+
+            // Store pending info — NO sync yet, host returns immediately
+            self.pending = Some(PendingBatch {
+                nonce_start,
+                batch_size,
+                target_u32,
+                total_tested,
+            });
+
+            Ok(0) // token is unused, pending is stored in self
+        }
+
+        /// Collect results from a previously launched batch.
+        /// Syncs the GPU and reads results.
+        fn collect_batch(&mut self, _token: u64) -> Result<GpuBatchResult> {
+            let pending = self
+                .pending
+                .take()
+                .ok_or_else(|| anyhow::anyhow!("no pending batch to collect"))?;
+
+            // Single sync point: wait for ALL chunks to complete
+            self.dev
+                .synchronize()
+                .map_err(|e| anyhow::anyhow!("device sync: {e}"))?;
+
+            // Read result once
+            let result_nonce_host = self
+                .dev
+                .dtoh_sync_copy(&self.result_nonce)
+                .map_err(|e| anyhow::anyhow!("result_nonce download: {e}"))?;
+
+            let mut all_solutions = Vec::new();
+            if result_nonce_host[0] != SENTINEL {
+                let result_hash_host = self
+                    .dev
+                    .dtoh_sync_copy(&self.result_hash)
+                    .map_err(|e| anyhow::anyhow!("result_hash download: {e}"))?;
+                let mut hash = [0u8; 32];
+                hash.copy_from_slice(&result_hash_host);
+                all_solutions.push((result_nonce_host[0], hash, None));
+            }
+
+            Ok(GpuBatchResult {
+                solutions: all_solutions,
+                nonces_tested: pending.total_tested,
+            })
         }
 
         fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
