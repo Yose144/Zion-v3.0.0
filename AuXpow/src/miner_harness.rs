@@ -70,8 +70,15 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
         "pearlhash" => Ok(scan_pearl(job, start, end)),
         "randomx" => Ok(scan_randomx(job, start, end)),
         "ghostrider" => Ok(scan_ghostrider(job, start, end)),
+        // Qhash (QTC) — full Rust CPU implementation (quantum circuit sim).
+        "qhash" | "qhash_qtc" => Ok(scan_qhash(job, start, end)),
+        // KLS (KarlsenHash) / ZCL (Equihash 192,7) — DAG/Wagner based.
+        // CPU fallback uses blake3 placeholder until native FFI is implemented.
+        "karlsenhash" | "karlsenhash_kls"
+        | "equihashzero" | "equihashzero_zcl" => {
+            Ok(scan(job, start, end, hash_blake3))
+        }
         // Eaglesong/Octopus/Equihash/NeoScrypt — GPU-only, no CPU harness yet.
-        // CPU mining for these requires native FFI (future work).
         "eaglesong" | "octopus" | "equihash" | "neoscrypt" => {
             Err(anyhow!("algorithm '{}' requires GPU mining (no CPU harness)", algo))
         }
@@ -111,6 +118,11 @@ pub fn mine_best(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option
         "pearlhash" => Ok(scan_pearl_best(job, start, end)),
         "randomx" => Ok(scan_randomx_best(job, start, end)),
         "ghostrider" => Ok(scan_ghostrider_best(job, start, end)),
+        "qhash" | "qhash_qtc" => Ok(scan_qhash_best(job, start, end)),
+        "karlsenhash" | "karlsenhash_kls"
+        | "equihashzero" | "equihashzero_zcl" => {
+            Ok(scan_best(job, start, end, hash_blake3, false))
+        }
         "eaglesong" | "octopus" | "equihash" | "neoscrypt" => {
             Err(anyhow!("algorithm '{}' requires GPU mining (no CPU harness)", algo))
         }
@@ -982,6 +994,49 @@ fn scan_pearl_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare>
     let mut best: Option<FoundShare> = None;
     for nonce in start..end {
         let hash = crate::external_hashers::hash_pearl(&h32, nonce);
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&hash, &b.hash, false))
+            .unwrap_or(true)
+        {
+            best = Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    best
+}
+
+// ── Qhash (QubitCoin quantum PoW) ────────────────────────────────────
+
+/// CPU scan for Qhash shares.
+/// Uses the full Rust quantum circuit simulation (16 qubits, 65536 amplitudes).
+fn scan_qhash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let target = &job.target_bytes;
+
+    for nonce in start..end {
+        let hash = crate::external_hashers::hash_qhash(header, nonce);
+        if meets_target(&hash, target) {
+            return Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    None
+}
+
+/// CPU scan for the best Qhash share (lowest hash) in the range.
+fn scan_qhash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let mut best: Option<FoundShare> = None;
+
+    for nonce in start..end {
+        let hash = crate::external_hashers::hash_qhash(header, nonce);
         if best
             .as_ref()
             .map(|b| is_hash_better(&hash, &b.hash, false))

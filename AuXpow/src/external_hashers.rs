@@ -1785,11 +1785,238 @@ pub fn mine_pearl(
     None
 }
 
+// ── Qhash (QubitCoin quantum PoW) ────────────────────────────────────
+
+/// Qhash constants (matching qhash_kernel.cl).
+const QHASH_NUM_QUBITS: usize = 16;
+const QHASH_NUM_LAYERS: usize = 2;
+const QHASH_STATE_SIZE: usize = 1 << QHASH_NUM_QUBITS; // 65536
+
+/// Complex number (f32 pair) for quantum state vector.
+#[derive(Clone, Copy)]
+struct Complex {
+    re: f32,
+    im: f32,
+}
+
+impl Complex {
+    #[inline]
+    fn new(re: f32, im: f32) -> Self {
+        Self { re, im }
+    }
+
+    #[inline]
+    fn norm_sq(self) -> f32 {
+        self.re * self.re + self.im * self.im
+    }
+}
+
+/// Apply RY rotation on qubit `q` by angle `theta`.
+/// RY(theta) = [[cos(theta/2), -sin(theta/2)], [sin(theta/2), cos(theta/2)]]
+fn apply_ry(state: &mut [Complex], q: usize, theta: f32) {
+    let c = (theta * 0.5).cos();
+    let s = (theta * 0.5).sin();
+    let stride = 1usize << q;
+    let mut i = 0;
+    while i < QHASH_STATE_SIZE {
+        for j in i..(i + stride) {
+            let idx0 = j;
+            let idx1 = j + stride;
+            let a0 = state[idx0];
+            let a1 = state[idx1];
+            state[idx0] = Complex::new(c * a0.re - s * a1.re, c * a0.im - s * a1.im);
+            state[idx1] = Complex::new(s * a0.re + c * a1.re, s * a0.im + c * a1.im);
+        }
+        i += stride << 1;
+    }
+}
+
+/// Apply RZ rotation on qubit `q` by angle `theta`.
+/// RZ(theta) = diag(exp(-i*theta/2), exp(+i*theta/2))
+fn apply_rz(state: &mut [Complex], q: usize, theta: f32) {
+    let c = (theta * 0.5).cos();
+    let s = (theta * 0.5).sin();
+    let stride = 1usize << q;
+    let mut i = 0;
+    while i < QHASH_STATE_SIZE {
+        for j in i..(i + stride) {
+            let idx0 = j;
+            let idx1 = j + stride;
+            let a0 = state[idx0];
+            let a1 = state[idx1];
+            // exp(-i*theta/2) = cos - i*sin
+            state[idx0] = Complex::new(c * a0.re + s * a0.im, c * a0.im - s * a0.re);
+            // exp(+i*theta/2) = cos + i*sin
+            state[idx1] = Complex::new(c * a1.re - s * a1.im, c * a1.im + s * a1.re);
+        }
+        i += stride << 1;
+    }
+}
+
+/// Apply CNOT gate: control=q_ctrl, target=q_tgt.
+/// If bit q_ctrl is 1, flip bit q_tgt (swap amplitudes).
+fn apply_cnot(state: &mut [Complex], q_ctrl: usize, q_tgt: usize) {
+    let s_ctrl = 1usize << q_ctrl;
+    let s_tgt = 1usize << q_tgt;
+    for i in 0..QHASH_STATE_SIZE {
+        if (i & s_ctrl) != 0 && (i & s_tgt) == 0 {
+            let j = i | s_tgt;
+            state.swap(i, j);
+        }
+    }
+}
+
+/// Compute Z-basis expectation for qubit `q`:
+/// <Z_q> = sum(|amp[j]|^2 - |amp[j^(1<<q)]|^2) for j where bit q=0
+fn compute_expectation(state: &[Complex], q: usize) -> f32 {
+    let stride = 1usize << q;
+    let mut exp_val = 0.0f32;
+    let mut i = 0;
+    while i < QHASH_STATE_SIZE {
+        for j in i..(i + stride) {
+            let idx0 = j;
+            let idx1 = j + stride;
+            exp_val += state[idx0].norm_sq() - state[idx1].norm_sq();
+        }
+        i += stride << 1;
+    }
+    exp_val
+}
+
+/// Compute Qhash (QubitCoin quantum PoW) for an 80-byte header + nonce.
+///
+/// Algorithm (matching qhash_kernel.cl):
+/// 1. SHA-256(80-byte header with nonce at bytes 0-3) → 32-byte initial_hash
+/// 2. Split into 64 nibbles (4-bit values)
+/// 3. Quantum circuit: 16 qubits, 2 layers (RY → RZ → CNOT chain)
+/// 4. Extract 16 Z-basis expectations → 16 float values
+/// 5. Convert to fixed-point int16 (× 32768)
+/// 6. SHA-256([initial_hash(32) | expectations(32)]) → 32-byte final hash
+pub fn hash_qhash(header: &[u8], nonce: u64) -> [u8; 32] {
+    use sha2::{Sha256, Digest};
+
+    // Step 1: SHA-256 of 80-byte header with nonce at bytes 0-3 (LE)
+    let mut hdr = [0u8; 80];
+    let copy_len = header.len().min(80);
+    hdr[..copy_len].copy_from_slice(&header[..copy_len]);
+    hdr[0] = (nonce & 0xFF) as u8;
+    hdr[1] = ((nonce >> 8) & 0xFF) as u8;
+    hdr[2] = ((nonce >> 16) & 0xFF) as u8;
+    hdr[3] = ((nonce >> 24) & 0xFF) as u8;
+
+    let initial_hash: [u8; 32] = Sha256::digest(&hdr).into();
+
+    // Step 2: Split into 64 nibbles
+    let mut nibbles = [0u8; 64];
+    for i in 0..32 {
+        nibbles[2 * i] = (initial_hash[i] >> 4) & 0xF;
+        nibbles[2 * i + 1] = initial_hash[i] & 0xF;
+    }
+
+    // Step 3: Initialize state vector to |00...0>
+    let mut state = vec![Complex::new(0.0, 0.0); QHASH_STATE_SIZE];
+    state[0] = Complex::new(1.0, 0.0);
+
+    // Step 3b: Apply quantum circuit (2 layers)
+    let pi = std::f32::consts::PI;
+    for l in 0..QHASH_NUM_LAYERS {
+        // RY rotations
+        for i in 0..QHASH_NUM_QUBITS {
+            let idx = (2 * l * QHASH_NUM_QUBITS + i) % 64;
+            let angle = -(nibbles[idx] as f32) * pi / 16.0;
+            apply_ry(&mut state, i, angle);
+        }
+        // RZ rotations
+        for i in 0..QHASH_NUM_QUBITS {
+            let idx = ((2 * l + 1) * QHASH_NUM_QUBITS + i) % 64;
+            let angle = -(nibbles[idx] as f32) * pi / 16.0;
+            apply_rz(&mut state, i, angle);
+        }
+        // CNOT chain on adjacent qubits
+        for i in 0..(QHASH_NUM_QUBITS - 1) {
+            apply_cnot(&mut state, i, i + 1);
+        }
+    }
+
+    // Step 4: Extract Z-basis expectations
+    let mut expectations = [0.0f32; QHASH_NUM_QUBITS];
+    for i in 0..QHASH_NUM_QUBITS {
+        expectations[i] = compute_expectation(&state, i);
+    }
+
+    // Step 5: Convert to fixed-point int16 and build 64-byte buffer
+    let mut buf = [0u8; 64];
+    buf[..32].copy_from_slice(&initial_hash);
+    for i in 0..QHASH_NUM_QUBITS {
+        let scaled = expectations[i] * 32768.0;
+        let fixed: i16 = if scaled >= 0.0 {
+            (scaled + 0.5) as i16
+        } else {
+            (scaled - 0.5) as i16
+        };
+        buf[32 + i * 2] = (fixed & 0xFF) as u8;
+        buf[32 + i * 2 + 1] = ((fixed >> 8) & 0xFF) as u8;
+    }
+
+    // Step 6: SHA-256 of 64-byte buffer → final hash
+    Sha256::digest(&buf).into()
+}
+
+/// Mine Qhash (CPU scan — slow, for testing only).
+pub fn mine_qhash(
+    header: &[u8],
+    start_nonce: u64,
+    count: u64,
+    target: &[u8; 32],
+) -> Option<(u64, [u8; 32])> {
+    for nonce in start_nonce..start_nonce + count {
+        let hash = hash_qhash(header, nonce);
+        if meets_target(&hash, target) {
+            return Some((nonce, hash));
+        }
+    }
+    None
+}
+
 // ── Tests ────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── Qhash ───────────────────────────────────────────────────────
+
+    #[test]
+    fn qhash_deterministic() {
+        let header = [0x42u8; 80];
+        let h1 = hash_qhash(&header, 12345);
+        let h2 = hash_qhash(&header, 12345);
+        assert_eq!(h1, h2);
+    }
+
+    #[test]
+    fn qhash_changes_with_nonce() {
+        let header = [0x42u8; 80];
+        let h1 = hash_qhash(&header, 12345);
+        let h2 = hash_qhash(&header, 12346);
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn qhash_changes_with_header() {
+        let mut header = [0x42u8; 80];
+        let h1 = hash_qhash(&header, 12345);
+        header[4] = 0xFF;
+        let h2 = hash_qhash(&header, 12345);
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn qhash_nonzero() {
+        let header = [0u8; 80];
+        let h = hash_qhash(&header, 0);
+        assert!(h.iter().any(|&b| b != 0));
+    }
 
     // ── ProgPow ─────────────────────────────────────────────────────
 
