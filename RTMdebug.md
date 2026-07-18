@@ -79,7 +79,7 @@ rtm_e2e_ghostrider_mine_and_submit ... ok
 - All 3 RTM tests pass
 ```
 
-### Test 2: zpool.ca:5354 (live)
+### Test 2: zpool.ca:5354 (live, single-thread, pre-fix)
 ```
 Connecting to zpool RTM...
 subscribed — extranonce1=80005b50, en2_size=4
@@ -97,6 +97,26 @@ Submitting share nonce=00004b0a (BE hex)
 - ✅ Hash splňuje target
 - ✅ Header konstrukce je správná
 - ❌ Job expiroval (394s CPU mining je příliš pomalý pro difficulty 0.020)
+
+### Test 3: zpool.ca:5354 (live, multi-thread, post-fix) — *** SHARE ACCEPTED ***
+```
+=== RTM Live E2E Test (zpool.ca:5354) — Multi-threaded (8MB stack) ===
+Connecting to zpool RTM (ghostrider.eu.mine.zpool.ca:5354)...
+auxpow: subscribed to RTM — extranonce1=80005be3, en2_size=4
+auxpow: authorized as bc1qxy...test_rig
+Got job: id=548da header_len=80 target=00063fff9bffffff.. difficulty=0.01
+Mining with GhostRider (8 threads, 8MB stack each)...
+Header hex: 0000002090c0d88469857fffd82821fa338468a5d4cbda1193dd4cb72b09b7da...
+FOUND valid nonce=25257 in 3.732098s hash=85eb3446e36fa438f8137c2a119fa82c...
+Hash verified OK (thread == main)
+Submitting share job=548da nonce=25257...
+auxpow: RTM submit — job=548da en2=00000000 ntime=6a5b9670 nonce=000062a9
+→ Pool response: *** SHARE ACCEPTED! ***
+```
+
+**Výkon**: 50,000 nonces in 3.7s = ~13,500 H/s (8 threads, M1 Pro)
+**Difficulty**: 0.01 (zpool minimum)
+**Čas do share**: 3.7s (průměr ~21s pro diff 0.01)
 
 ## Co funguje
 - [x] Stratum v1 subscribe/authorize
@@ -141,3 +161,7 @@ cargo build --features native-ghostrider
 ## Commity
 1. `de6c36a1c` — feat: RTM GhostRider E2E mining with share acceptance
 2. `dfca8f876` — fix: RTM share acceptance — target, nonce format, hash comparison
+3. `77f491673` — fix(rtm): multi-threaded GhostRider mining — SHARE ACCEPTED
+   - version/ntime/nbits byte order fix (BE hex → LE bytes)
+   - oaes rand() thread-safety fix (deterministic IV, no srand)
+   - Result: 8-thread CPU, 13.5 KH/s, SHARE ACCEPTED in 3.7s
