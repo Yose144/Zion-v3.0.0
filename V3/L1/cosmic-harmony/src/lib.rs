@@ -55,7 +55,8 @@ pub use ncl_integration::{
     NCLScheduler, NPURuntime,
 };
 pub use profit_router::{
-    fallback_estimates, fetch_live_profit_estimates, select_best_coin, CoinProfile, ExternalCoin,
+    fallback_estimates, fetch_live_profit_estimates, fetch_live_profit_estimates_with_nicehash,
+    select_best_coin, CoinProfile, ExternalCoin,
     ProfitEntry, StratumProtocol,
 };
 pub use revenue::{

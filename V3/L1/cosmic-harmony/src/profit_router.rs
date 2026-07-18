@@ -977,8 +977,14 @@ fn fetch_nicehash_paying_rates() -> Vec<(ExternalCoin, f64)> {
 ///
 /// On any error (network, parse, empty), falls back to `fallback_estimates()`.
 pub fn fetch_live_profit_estimates() -> Vec<ProfitEntry> {
-    // Fetch NiceHash paying rates for monitoring (logged but not merged
-    // into profit estimates — units vary per algorithm).
+    let (entries, _) = fetch_live_profit_estimates_with_nicehash();
+    entries
+}
+
+/// Fetch live profit estimates + NiceHash paying rates.
+/// Returns (estimates, nicehash_rates) so callers can expose both.
+pub fn fetch_live_profit_estimates_with_nicehash() -> (Vec<ProfitEntry>, Vec<(ExternalCoin, f64)>) {
+    // Fetch NiceHash paying rates for monitoring.
     let nh_rates = fetch_nicehash_paying_rates();
     for (coin, paying) in &nh_rates {
         eprintln!(
@@ -989,13 +995,19 @@ pub fn fetch_live_profit_estimates() -> Vec<ProfitEntry> {
 
     // Fetch WhatToMine estimates (USD/day per coin) — primary source.
     let url = "https://whattomine.com/coins.json";
-    match fetch_url_blocking_internal(url, 10) {
-        Ok(body) => parse_whattomine_for_external_coins(&body),
+    let entries = match fetch_url_blocking_internal(url, 10) {
+        Ok(body) => {
+            eprintln!("profit_router: whattomine fetched {} bytes", body.len());
+            let entries = parse_whattomine_for_external_coins(&body);
+            eprintln!("profit_router: whattomine parsed {} entries", entries.len());
+            entries
+        }
         Err(e) => {
             eprintln!("profit_router: whattomine fetch error: {e}");
             fallback_estimates()
         }
-    }
+    };
+    (entries, nh_rates)
 }
 
 /// Parse WhatToMine coins.json response into `Vec<ProfitEntry>`.
@@ -1015,6 +1027,7 @@ fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
 
     // Fetch BTC price for converting btc_revenue → USD.
     let btc_price = fetch_btc_price_usd().unwrap_or(0.0);
+    eprintln!("profit_router: btc_price=${}", btc_price);
 
     if let Some(coins) = json.get("coins").and_then(|c| c.as_object()) {
         for (_id, coin_data) in coins {
@@ -1053,6 +1066,7 @@ fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
                     .find(|e| e.coin == coin)
                     .map(|e| e.power_cost_usd)
                     .unwrap_or(0.10);
+                eprintln!("profit_router: whattomine {} revenue=${:.4}/day", tag, revenue_usd);
                 entries.push(ProfitEntry {
                     coin,
                     revenue_per_day_usd: revenue_usd.max(0.01),
@@ -1060,6 +1074,8 @@ fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
                 });
             }
         }
+    } else {
+        eprintln!("profit_router: whattomine 'coins' key not found or not object");
     }
 
     // If we got fewer entries than fallback, merge in any missing coins.
