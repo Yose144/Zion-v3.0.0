@@ -146,15 +146,31 @@ impl AutonomousProfitRouter {
             .collect()
     }
 
-    /// Fetch fallback profit estimates for all compatible coins.
-    /// In a full implementation, this would call whattomine/coingecko APIs.
-    /// For now, uses hardcoded estimates based on typical values.
+    /// Fetch profit estimates for all compatible coins.
+    ///
+    /// Tries the live WhatToMine API first (via cosmic-harmony's
+    /// `fetch_live_profit_estimates()`), then falls back to hardcoded
+    /// estimates for any coins not covered by the API.
     pub fn fetch_profits(&mut self) {
         let gpu_coins = self.gpu_compatible_coins();
         let cpu_coins = self.cpu_compatible_coins();
 
+        // Fetch live estimates from WhatToMine API. This is a blocking
+        // call with a 10s timeout; on any error it falls back to
+        // hardcoded estimates for all coins.
+        let live_estimates = zion_cosmic_harmony::profit_router::fetch_live_profit_estimates();
+
+        let live_count = live_estimates.len();
+        let mut used_live = 0u32;
+
         for coin in gpu_coins.iter().chain(cpu_coins.iter()) {
-            let revenue = fallback_revenue_usd_per_day(*coin);
+            // Try live estimate first, fall back to hardcoded.
+            let revenue = if let Some(entry) = live_estimates.iter().find(|e| e.coin == *coin) {
+                used_live += 1;
+                entry.revenue_per_day_usd
+            } else {
+                fallback_revenue_usd_per_day(*coin)
+            };
             let power = if coin.is_gpu() {
                 coin.estimated_gpu_power_watts()
             } else {
@@ -177,10 +193,12 @@ impl AutonomousProfitRouter {
         self.last_fetch = Some(Instant::now());
 
         self.log.push(format!(
-            "profit_fetch: {} coins evaluated ({} GPU + {} CPU compatible)",
+            "profit_fetch: {} coins evaluated ({} GPU + {} CPU compatible), {}/{} live estimates from WhatToMine",
             gpu_coins.len() + cpu_coins.len(),
             gpu_coins.len(),
-            cpu_coins.len()
+            cpu_coins.len(),
+            used_live,
+            live_count,
         ));
     }
 
