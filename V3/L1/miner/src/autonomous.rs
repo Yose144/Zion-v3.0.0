@@ -332,6 +332,15 @@ impl AutonomousProfitRouter {
         self.select_stream2();
         self.select_stream3();
 
+        // Override with forced coin if env var is set
+        if let Some(forced) = forced_stream2_coin() {
+            self.stream2_coin = Some(forced);
+            self.log.push(format!(
+                "stream2_forced: {} (ZION_STREAM2_FORCE_COIN)",
+                forced.ticker()
+            ));
+        }
+
         self.log.push(format!(
             "selection: stream2={:?}, stream3={:?}",
             self.stream2_coin.map(|c| c.ticker()),
@@ -359,6 +368,11 @@ impl AutonomousProfitRouter {
         self.fetch_profits();
         self.select_stream2();
         self.select_stream3();
+
+        // Override with forced coin if env var is set
+        if let Some(forced) = forced_stream2_coin() {
+            self.stream2_coin = Some(forced);
+        }
     }
 
     /// Print the decision log.
@@ -456,4 +470,13 @@ fn fallback_revenue_usd_per_day(coin: ExternalCoin) -> f64 {
         ExternalCoin::ZEC => 0.25,
         ExternalCoin::PHX => 0.10,
     }
+}
+
+/// Read ZION_STREAM2_FORCE_COIN env var to force a specific Stream 2 coin.
+/// Useful for testing CUDA kernels for specific algorithms.
+/// Valid values: KAS, ALPH, DCR, ERG, FLUX, ETC, RVN, CLORE, VRSC, etc.
+fn forced_stream2_coin() -> Option<ExternalCoin> {
+    let raw = std::env::var("ZION_STREAM2_FORCE_COIN").ok()?;
+    let upper = raw.trim().to_uppercase();
+    ExternalCoin::all().iter().copied().find(|c| c.ticker() == upper)
 }
