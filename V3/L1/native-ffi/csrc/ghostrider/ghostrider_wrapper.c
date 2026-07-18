@@ -99,3 +99,26 @@ EXPORT const char* ghostrider_zion_version(void)
 {
     return "ghostrider-zion-1.0.0 (sphlib + cryptonote, npq7721/gr_hash)";
 }
+
+/*
+ * Debug function: print selected algorithms for a given header.
+ * Writes 15 core algo indices + 14 CN algo indices into output (29 bytes).
+ */
+EXPORT void ghostrider_zion_debug_algos(const uint8_t* header, size_t header_len,
+                                         uint64_t nonce, uint8_t* output)
+{
+    uint8_t buf[80];
+    memset(buf, 0, sizeof(buf));
+    size_t copy_len = header_len < RTM_HEADER_SIZE ? header_len : RTM_HEADER_SIZE;
+    memcpy(buf, header, copy_len);
+    uint32_t nonce32 = (uint32_t)(nonce & 0xFFFFFFFF);
+    memcpy(buf + RTM_NONCE_OFFSET, &nonce32, RTM_NONCE_SIZE);
+
+    uint8_t selectedAlgoOutput[15] = {0};
+    uint8_t selectedCNAlgoOutput[14] = {0};
+    getAlgoString(&buf[4], 64, selectedAlgoOutput, 15);
+    getAlgoString(&buf[4], 64, selectedCNAlgoOutput, 14);
+
+    memcpy(output, selectedAlgoOutput, 15);
+    memcpy(output + 15, selectedCNAlgoOutput, 14);
+}

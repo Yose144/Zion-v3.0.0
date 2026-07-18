@@ -5417,6 +5417,7 @@ version = "3.0.6"
 dependencies = [
  "anyhow",
  "base64",
+ "blake2",
  "blake3",
  "block",
  "crossterm 0.28.1",
@@ -5429,6 +5430,8 @@ dependencies = [
  "rayon",
  "serde",
  "serde_json",
+ "sha2",
+ "sha3",
  "tokio",
  "zion-auxpow",
  "zion-core",

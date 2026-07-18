@@ -1,412 +1,91 @@
 // =============================================================================
-// GhostRider OpenCL kernel for Raptoreum (RTM) mining.
+// GhostRider OpenCL kernel for Raptoreum (RTM) GPU mining.
 //
-// GhostRider combines 15 hash algorithms (x16r-style) with 6 CryptoNight
-// variants in an 18-step chain:
-//   core[0..4] → cn[0] → core[5..9] → cn[1] → core[10..14] → cn[2]
+// This file is the MAIN kernel entry point. It expects to be concatenated
+// AFTER ghostrider_sph.cl (15 SPH core hash algorithms) and ghostrider_cn.cl
+// (CryptoNight implementation with AES + extra hashes).
 //
-// The 15 core algorithms: blake, bmw, groestl, jh, keccak, skein, luffa,
-// cubehash, shavite, simd, echo, hamsi, fugue, shabal, whirlpool
+// GhostRider algorithm:
+//   1. Select 15 core algos + 14 CN algos from header bytes 4-67
+//   2. 18-step hash chain:
+//      core[0..4] → CN[0] → core[5..9] → CN[1] → core[10..14] → CN[2]
+//   3. After each CN step: zero bytes 8-31 of the 64-byte hash
+//   4. First step uses 80-byte input, subsequent steps use 64-byte hash
+//   5. Output: first 32 bytes of final hash
 //
-// The 6 CN variants: cn_fast, cn_lite, cn_heavy, cn_fast_v2, cn_lite_v2,
-// cn_heavy_v2 (all use 1MB scratchpad, differ in iterations/mixing)
-//
-// Algorithm selection: SHA-256(header) → seed → Fisher-Yates shuffle of 15
-// algos + 3 CN variant selections from seed bytes.
-//
-// Each work-item processes ONE nonce. 1MB scratchpad per work-item in global.
+// Block header layout (80 bytes):
+//   bytes 0-3:   version
+//   bytes 4-35:  previous block hash
+//   bytes 36-67: merkle root
+//   bytes 68-71: timestamp
+//   bytes 72-75: bits (difficulty target)
+//   bytes 76-79: nonce (miner varies this)
 // =============================================================================
 
-#define HASH_SIZE 32      // 256-bit output
-#define INPUT_SIZE 80     // block header
-#define SCRATCH_SIZE 262144  // 1MB / 4 bytes = 262144 uint32 words
-#define CN_ITERATIONS 524288   // cn_fast: 524288 iterations
-#define CN_LITE_ITER 262144    // cn_lite: 0.5x
-#define CN_HEAVY_ITER 1048576  // cn_heavy: 2x
+// ── Algorithm selection (Fisher-Yates style from header nibbles) ────────────
 
-#define PI 3.14159265358979323846f
-
-// ── SHA-256 (for seed generation) ───────────────────────────────────────────
-
-__constant uint K256[64] = {
-    0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u, 0x3956c25bu, 0x59f111f1u, 0x923f82a4u, 0xab1c5ed5u,
-    0xd807aa98u, 0x12835b01u, 0x243185beu, 0x550c7dc3u, 0x72be5d74u, 0x80deb1feu, 0x9bdc06a7u, 0xc19bf174u,
-    0xe49b69c1u, 0xefbe4786u, 0x0fc19dc6u, 0x240ca1ccu, 0x2de92c6fu, 0x4a7484aau, 0x5cb0a9dcu, 0x76f988dau,
-    0x983e5152u, 0xa831c66du, 0xb00327c8u, 0xbf597fc7u, 0xc6e00bf3u, 0xd5a79147u, 0x06ca6351u, 0x14292967u,
-    0x27b70a85u, 0x2e1b2138u, 0x4d2c6dfcu, 0x53380d13u, 0x650a7354u, 0x766a0abbu, 0x81c2c92eu, 0x92722c85u,
-    0xa2bfe8a1u, 0xa81a664bu, 0xc24b8b70u, 0xc76c51a3u, 0xd192e819u, 0xd6990624u, 0xf40e3585u, 0x106aa070u,
-    0x19a4c116u, 0x1e376c08u, 0x2748774cu, 0x34b0bcb5u, 0x391c0cb3u, 0x4ed8aa4au, 0x5b9cca4fu, 0x682e6ff3u,
-    0x748f82eeu, 0x78a5636fu, 0x84c87814u, 0x8cc70208u, 0x90befffau, 0xa4506cebu, 0xbef9a3f7u, 0xc67178f2u
-};
-
-inline uint sha256_rotr(uint x, uint n) { return (x >> n) | (x << (32 - n)); }
-inline uint sha256_ch(uint x, uint y, uint z)  { return (x & y) ^ (~x & z); }
-inline uint sha256_maj(uint x, uint y, uint z) { return (x & y) ^ (x & z) ^ (y & z); }
-inline uint sha256_bsig0(uint x) { return sha256_rotr(x,2) ^ sha256_rotr(x,13) ^ sha256_rotr(x,22); }
-inline uint sha256_bsig1(uint x) { return sha256_rotr(x,6) ^ sha256_rotr(x,11) ^ sha256_rotr(x,25); }
-inline uint sha256_ssig0(uint x) { return sha256_rotr(x,7) ^ sha256_rotr(x,18) ^ (x >> 3); }
-inline uint sha256_ssig1(uint x) { return sha256_rotr(x,17) ^ sha256_rotr(x,19) ^ (x >> 10); }
-
-inline void sha256_compress_8(uint h[8], const uchar block[64]) {
-    uint w[64];
-    for (int i = 0; i < 16; i++)
-        w[i] = ((uint)block[i*4] << 24) | ((uint)block[i*4+1] << 16)
-             | ((uint)block[i*4+2] << 8) | (uint)block[i*4+3];
-    for (int i = 16; i < 64; i++)
-        w[i] = sha256_ssig1(w[i-2]) + w[i-7] + sha256_ssig0(w[i-15]) + w[i-16];
-    uint a=h[0], b=h[1], c=h[2], d=h[3], e=h[4], f=h[5], g=h[6], hh=h[7];
-    for (int i = 0; i < 64; i++) {
-        uint t1 = hh + sha256_bsig1(e) + sha256_ch(e,f,g) + K256[i] + w[i];
-        uint t2 = sha256_bsig0(a) + sha256_maj(a,b,c);
-        hh=g; g=f; f=e; e=d+t1; d=c; c=b; b=a; a=t1+t2;
+inline void select_algo(uchar nibble, __private bool* selectedAlgos,
+                        __private uchar* selectedIndex, int algoCount,
+                        __private int* currentCount) {
+    uchar algoDigit = (nibble & 0x0F) % algoCount;
+    if (!selectedAlgos[algoDigit]) {
+        selectedAlgos[algoDigit] = true;
+        selectedIndex[currentCount[0]] = algoDigit;
+        currentCount[0] = currentCount[0] + 1;
     }
-    h[0]+=a; h[1]+=b; h[2]+=c; h[3]+=d; h[4]+=e; h[5]+=f; h[6]+=g; h[7]+=hh;
-}
-
-inline void sha256_hash(const uchar* data, uint len, uchar out[32]) {
-    uint h[8] = {0x6a09e667u, 0xbb67ae85u, 0x3c6ef372u, 0xa54ff53au,
-                 0x510e527fu, 0x9b05688cu, 0x1f83d9abu, 0x5be0cd19u};
-    uchar buf[128];
-    uint i = 0;
-    while (i + 64 <= len) { sha256_compress_8(h, data + i); i += 64; }
-    uint rem = len - i;
-    for (uint j = 0; j < rem; j++) buf[j] = data[i + j];
-    buf[rem] = 0x80;
-    uint pad_len = (rem < 56) ? 64 : 128;
-    for (uint j = rem + 1; j < pad_len; j++) buf[j] = 0;
-    if (pad_len == 128) { sha256_compress_8(h, buf); for (uint j = 0; j < 56; j++) buf[j] = 0; }
-    ulong bits = (ulong)len * 8;
-    for (int j = 0; j < 8; j++) buf[56 + j] = (uchar)(bits >> (56 - j*8));
-    sha256_compress_8(h, buf);
-    for (int j = 0; j < 8; j++) {
-        out[j*4] = (uchar)(h[j] >> 24); out[j*4+1] = (uchar)(h[j] >> 16);
-        out[j*4+2] = (uchar)(h[j] >> 8); out[j*4+3] = (uchar)(h[j]);
+    algoDigit = (nibble >> 4) % algoCount;
+    if (!selectedAlgos[algoDigit]) {
+        selectedAlgos[algoDigit] = true;
+        selectedIndex[currentCount[0]] = algoDigit;
+        currentCount[0] = currentCount[0] + 1;
     }
 }
 
-// ── Keccak-256 (for CryptoNight) ────────────────────────────────────────────
-
-__constant ulong keccak_rc[24] = {
-    0x0000000000000001UL, 0x0000000000008082UL, 0x800000000000808aUL, 0x8000000080008000UL,
-    0x000000000000808bUL, 0x0000000080000001UL, 0x8000000080008081UL, 0x8000000000008009UL,
-    0x000000000000008aUL, 0x0000000000000088UL, 0x0000000080008009UL, 0x000000008000000aUL,
-    0x000000008000808bUL, 0x800000000000008bUL, 0x8000000000008089UL, 0x8000000000008003UL,
-    0x8000000000008002UL, 0x8000000000000080UL, 0x000000000000800aUL, 0x800000008000000aUL,
-    0x8000000080008081UL, 0x8000000000008080UL, 0x0000000080000001UL, 0x8000000080008008UL
-};
-
-inline ulong rotl64(ulong x, int n) { return (x << n) | (x >> (64 - n)); }
-
-inline void keccak_f1600(ulong st[25]) {
-    for (int round = 0; round < 24; round++) {
-        // Theta
-        ulong bc[5];
-        for (int i = 0; i < 5; i++)
-            bc[i] = st[i] ^ st[i+5] ^ st[i+10] ^ st[i+15] ^ st[i+20];
-        for (int i = 0; i < 5; i++) {
-            ulong t = bc[(i+4)%5] ^ rotl64(bc[(i+1)%5], 1);
-            for (int j = 0; j < 25; j += 5) st[j+i] ^= t;
+inline void get_algo_string(__private const uchar* mem, uint size,
+                            __private uchar* selectedAlgoOutput, int algoCount) {
+    uint len = size / 2;
+    __private bool selectedAlgo[15]; // max 15 algos
+    for (int z = 0; z < algoCount; z++) {
+        selectedAlgo[z] = false;
+    }
+    int selectedCount = 0;
+    for (uint i = 0; i < len; i++) {
+        select_algo(mem[i], selectedAlgo, selectedAlgoOutput, algoCount, &selectedCount);
+        if (selectedCount == algoCount) {
+            break;
         }
-        // Rho + Pi
-        ulong t = st[1];
-        int rho_pi[24] = {10,20,2,7,9,11,15,21,17,19,3,6,14,4,13,0,12,5,18,8,23,16,1,22};
-        int shifts[24] = {1,3,6,10,15,21,28,36,3,4,5,7,9,11,13,18,1,25,2,21,14,8,23,15};
-        for (int i = 0; i < 24; i++) {
-            int p = rho_pi[i];
-            ulong tmp = st[p];
-            st[p] = rotl64(t, shifts[i]);
-            t = tmp;
+    }
+    if (selectedCount < algoCount) {
+        for (uchar i = 0; i < algoCount; i++) {
+            if (!selectedAlgo[i]) {
+                selectedAlgoOutput[selectedCount] = i;
+                selectedCount++;
+            }
         }
-        // Chi
-        for (int j = 0; j < 25; j += 5) {
-            ulong tmp[5];
-            for (int i = 0; i < 5; i++) tmp[i] = st[j+i];
-            for (int i = 0; i < 5; i++) st[j+i] = tmp[i] ^ ((~tmp[(i+1)%5]) & tmp[(i+2)%5]);
-        }
-        // Iota
-        st[0] ^= keccak_rc[round];
     }
-}
-
-inline void keccak256(const uchar* data, uint len, uchar out[32]) {
-    ulong st[25];
-    for (int i = 0; i < 25; i++) st[i] = 0;
-    uint i = 0;
-    while (i + 136 <= len) {
-        for (int j = 0; j < 17; j++) {
-            ulong v = 0;
-            for (int k = 0; k < 8; k++) v |= ((ulong)data[i + j*8 + k]) << (k*8);
-            st[j] ^= v;
-        }
-        keccak_f1600(st);
-        i += 136;
-    }
-    // Final block with padding
-    uchar buf[136];
-    uint rem = len - i;
-    for (uint j = 0; j < rem; j++) buf[j] = data[i + j];
-    buf[rem] = 0x01;  // Keccak padding
-    for (uint j = rem + 1; j < 136; j++) buf[j] = 0;
-    for (int j = 0; j < 17; j++) {
-        ulong v = 0;
-        for (int k = 0; k < 8; k++) v |= ((ulong)buf[j*8 + k]) << (k*8);
-        st[j] ^= v;
-    }
-    keccak_f1600(st);
-    for (int j = 0; j < 4; j++) {
-        for (int k = 0; k < 8; k++) out[j*8 + k] = (uchar)(st[j] >> (k*8));
-    }
-}
-
-// ── 15 Core Hash Algorithms (x16r) ──────────────────────────────────────────
-// Each takes 80-byte input, produces 32-byte output.
-// Simplified but functional implementations.
-
-// 0: BLAKE-256 (simplified — uses SHA-256 compression as base with BLAKE constants)
-inline void hash_blake(const uchar input[80], uchar out[32]) {
-    // BLAKE-256: 14 rounds, but we use a simplified version
-    // that chains SHA-256 twice for compatibility
-    sha256_hash(input, 80, out);
-    sha256_hash(out, 32, out);
-}
-
-// 1: BMW (Blue Midnight Wish) — simplified
-inline void hash_bmw(const uchar input[80], uchar out[32]) {
-    sha256_hash(input, 80, out);
-    // BMW adds expansion + finalization, simplified as double-hash
-    uchar tmp[64];
-    for (int i = 0; i < 32; i++) tmp[i] = out[i];
-    for (int i = 32; i < 64; i++) tmp[i] = out[i-32] ^ out[(i-1)%32];
-    sha256_hash(tmp, 64, out);
-}
-
-// 2: Groestl — simplified (uses AES-like substitution)
-inline void hash_groestl(const uchar input[80], uchar out[32]) {
-    uchar state[64];
-    for (int i = 0; i < 64; i++) state[i] = (i < 80) ? input[i] : 0;
-    // Simplified: 10 rounds of XOR + rotate
-    for (int r = 0; r < 10; r++) {
-        for (int i = 0; i < 64; i++) state[i] ^= (uchar)(r * 17 + i);
-        // Rotate rows
-        uchar tmp = state[0];
-        for (int i = 0; i < 63; i++) state[i] = state[i+1];
-        state[63] = tmp;
-    }
-    for (int i = 0; i < 32; i++) out[i] = state[i] ^ state[i+32];
-}
-
-// 3: JH — simplified
-inline void hash_jh(const uchar input[80], uchar out[32]) {
-    sha256_hash(input, 80, out);
-    for (int i = 0; i < 32; i++) out[i] ^= input[i % 80];
-    sha256_hash(out, 32, out);
-}
-
-// 4: Keccak-256
-inline void hash_keccak(const uchar input[80], uchar out[32]) {
-    keccak256(input, 80, out);
-}
-
-// 5: Skein — simplified (uses Threefish-like mixing)
-inline void hash_skein(const uchar input[80], uchar out[32]) {
-    sha256_hash(input, 80, out);
-    // Skein uses UBI chaining, simplified as hash + rotate
-    uchar tmp[32];
-    for (int i = 0; i < 32; i++) tmp[i] = out[(i + 7) % 32];
-    sha256_hash(tmp, 32, out);
-}
-
-// 6: Luffa — simplified
-inline void hash_luffa(const uchar input[80], uchar out[32]) {
-    sha256_hash(input, 80, out);
-    for (int i = 0; i < 16; i++) out[i] ^= out[31-i];
-    sha256_hash(out, 32, out);
-}
-
-// 7: CubeHash — simplified
-inline void hash_cubehash(const uchar input[80], uchar out[32]) {
-    uchar state[32];
-    for (int i = 0; i < 32; i++) state[i] = input[i];
-    // 16 rounds of mixing
-    for (int r = 0; r < 16; r++) {
-        for (int i = 0; i < 16; i++) state[i] += state[16+i];
-        uchar tmp = state[0];
-        for (int i = 0; i < 31; i++) state[i] = state[i+1];
-        state[31] = tmp;
-        for (int i = 0; i < 32; i++) state[i] ^= (uchar)(r + 1);
-    }
-    sha256_hash(state, 32, out);
-}
-
-// 8: SHAvite-3 — simplified
-inline void hash_shavite(const uchar input[80], uchar out[32]) {
-    sha256_hash(input, 80, out);
-    uchar tmp[48];
-    for (int i = 0; i < 32; i++) tmp[i] = out[i];
-    for (int i = 0; i < 16; i++) tmp[32+i] = input[i] ^ out[i];
-    sha256_hash(tmp, 48, out);
-}
-
-// 9: SIMD — simplified
-inline void hash_simd(const uchar input[80], uchar out[32]) {
-    sha256_hash(input, 80, out);
-    // SIMD uses parallel addition, simplified
-    for (int i = 0; i < 8; i++) {
-        out[i] = (out[i] + out[i+8] + out[i+16] + out[i+24]) & 0xFF;
-    }
-    sha256_hash(out, 32, out);
-}
-
-// 10: ECHO — simplified (uses SHA-256 internally)
-inline void hash_echo(const uchar input[80], uchar out[32]) {
-    uchar tmp[160];
-    for (int i = 0; i < 80; i++) tmp[i] = input[i];
-    sha256_hash(input, 80, tmp + 80);
-    sha256_hash(tmp, 160, out);
-}
-
-// 11: HAMSI — simplified
-inline void hash_hamsi(const uchar input[80], uchar out[32]) {
-    sha256_hash(input, 80, out);
-    for (int i = 0; i < 32; i++) out[i] = (out[i] << 3) | (out[i] >> 5);
-    sha256_hash(out, 32, out);
-}
-
-// 12: Fugue — simplified
-inline void hash_fugue(const uchar input[80], uchar out[32]) {
-    sha256_hash(input, 80, out);
-    for (int r = 0; r < 4; r++) {
-        for (int i = 0; i < 16; i++) out[i] ^= out[31-i];
-        sha256_hash(out, 32, out);
-    }
-}
-
-// 13: SHABAL — simplified
-inline void hash_shabal(const uchar input[80], uchar out[32]) {
-    sha256_hash(input, 80, out);
-    uchar tmp[112];
-    for (int i = 0; i < 80; i++) tmp[i] = input[i];
-    for (int i = 0; i < 32; i++) tmp[80+i] = out[i];
-    sha256_hash(tmp, 112, out);
-}
-
-// 14: Whirlpool — simplified
-inline void hash_whirlpool(const uchar input[80], uchar out[32]) {
-    // Whirlpool uses 512-bit state, simplified as double SHA-512→256
-    sha256_hash(input, 80, out);
-    sha256_hash(out, 32, out);
-    for (int i = 0; i < 16; i++) {
-        uchar t = out[i]; out[i] = out[31-i]; out[31-i] = t;
-    }
-    sha256_hash(out, 32, out);
 }
 
 // ── Core hash dispatch ──────────────────────────────────────────────────────
 
-inline void core_hash(int algo, const uchar input[80], uchar out[32]) {
+inline void core_hash_dispatch(int algo, hash_t* hash, uint size) {
     switch (algo) {
-        case 0:  hash_blake(input, out); break;
-        case 1:  hash_bmw(input, out); break;
-        case 2:  hash_groestl(input, out); break;
-        case 3:  hash_jh(input, out); break;
-        case 4:  hash_keccak(input, out); break;
-        case 5:  hash_skein(input, out); break;
-        case 6:  hash_luffa(input, out); break;
-        case 7:  hash_cubehash(input, out); break;
-        case 8:  hash_shavite(input, out); break;
-        case 9:  hash_simd(input, out); break;
-        case 10: hash_echo(input, out); break;
-        case 11: hash_hamsi(input, out); break;
-        case 12: hash_fugue(input, out); break;
-        case 13: hash_shabal(input, out); break;
-        case 14: hash_whirlpool(input, out); break;
-        default: sha256_hash(input, 80, out); break;
+        case 0:  gr_core_0(hash, size); break;
+        case 1:  gr_core_1(hash, size); break;
+        case 2:  gr_core_2(hash, size); break;
+        case 3:  gr_core_3(hash, size); break;
+        case 4:  gr_core_4(hash, size); break;
+        case 5:  gr_core_5(hash, size); break;
+        case 6:  gr_core_6(hash, size); break;
+        case 7:  gr_core_7(hash, size); break;
+        case 8:  gr_core_8(hash, size); break;
+        case 9:  gr_core_9(hash, size); break;
+        case 10: gr_core_10(hash, size); break;
+        case 11: gr_core_11(hash, size); break;
+        case 12: gr_core_12(hash, size); break;
+        case 13: gr_core_13(hash, size); break;
+        case 14: gr_core_14(hash, size); break;
+        default: break; // algo=16: skip
     }
-}
-
-// ── CryptoNight (simplified GPU version) ────────────────────────────────────
-// Uses 1MB scratchpad in global memory per work-item.
-
-inline void cryptonight_hash(
-    const uchar input[80],
-    uchar out[32],
-    __global uint* scratchpad,  // SCRATCH_SIZE uint32 words = 1MB
-    int variant,                // 0=fast, 1=lite, 2=heavy, 3=fast_v2, 4=lite_v2, 5=heavy_v2
-    int version                 // 1 or 2
-)
-{
-    // Step 1: Keccak-1600 of input → 200 bytes, take first 32 as key
-    uchar keccak_out[200];
-    keccak256(input, 80, keccak_out);
-    // We only compute 32 bytes from keccak; use as key + init
-    uchar key[32];
-    for (int i = 0; i < 32; i++) key[i] = keccak_out[i];
-
-    // Step 2: Fill scratchpad using simplified AES-like expansion
-    // Use key to seed a PRNG that fills 1MB scratchpad
-    uint state = 0;
-    for (int i = 0; i < 32; i++) state = state * 31 + key[i] + 1;
-    for (int i = 0; i < SCRATCH_SIZE; i++) {
-        state = state * 1103515245u + 12345u;
-        scratchpad[i] = state;
-    }
-
-    // Step 3: Main memory-hard loop
-    int iterations = CN_ITERATIONS;
-    if (variant == 1 || variant == 4) iterations = CN_LITE_ITER;      // lite
-    if (variant == 2 || variant == 5) iterations = CN_HEAVY_ITER;     // heavy
-
-    uint a = ((uint)key[0] | ((uint)key[1] << 8) | ((uint)key[2] << 16) | ((uint)key[3] << 24));
-    uint b = ((uint)key[4] | ((uint)key[5] << 8) | ((uint)key[6] << 16) | ((uint)key[7] << 24));
-
-    for (int i = 0; i < iterations; i++) {
-        uint addr = a % SCRATCH_SIZE;
-        uint val = scratchpad[addr];
-        // Simplified AES round: SubBytes + MixColumns approximation
-        val ^= a;
-        val = ((val << 13) | (val >> 19));  // rotate
-        val *= 0x01000193u;  // FNV prime
-        scratchpad[addr] = val;
-        a = val ^ b;
-        b = scratchpad[(b ^ val) % SCRATCH_SIZE];
-    }
-
-    // Step 4: Final Keccak hash
-    uchar final_input[112];
-    for (int i = 0; i < 32; i++) final_input[i] = key[i];
-    for (int i = 0; i < 80; i++) final_input[32+i] = input[i];
-    keccak256(final_input, 112, out);
-
-    // v2: additional mixing
-    if (version == 2) {
-        for (int i = 0; i < 32; i++) out[i] ^= key[i];
-        keccak256(out, 32, out);
-    }
-}
-
-// ── Algorithm selection (Fisher-Yates shuffle from seed) ────────────────────
-
-inline void select_algorithms(const uchar seed[32], int core_order[15], int cn_variants[3]) {
-    // Initialize core order: 0,1,2,...,14
-    for (int i = 0; i < 15; i++) core_order[i] = i;
-
-    // Fisher-Yates shuffle using seed bytes
-    for (int i = 14; i > 0; i--) {
-        int j = seed[i % 32] % (i + 1);
-        int tmp = core_order[i];
-        core_order[i] = core_order[j];
-        core_order[j] = tmp;
-    }
-
-    // Select 3 CN variants from 6 available
-    cn_variants[0] = seed[15] % 6;
-    cn_variants[1] = seed[16] % 6;
-    cn_variants[2] = seed[17] % 6;
-}
-
-inline int cn_version(int variant) {
-    // variants 0-2 = v1, variants 3-5 = v2
-    return (variant >= 3) ? 2 : 1;
 }
 
 // ── Main GhostRider mining kernel ───────────────────────────────────────────
@@ -419,170 +98,468 @@ __kernel void ghostrider_mine(
     __global uint* found_flag,
     __global ulong* output_nonce,
     __global const uchar* target,
-    __global uint* scratchpad_pool  // SCRATCH_SIZE * batch_size
+    __global uchar* scratchpad_pool  // max 2MB per work-item
 )
 {
     uint gid = get_global_id(0);
+
+    // Populate AES lookup tables in local memory (shared across work-group)
+    __local uint AES0[256], AES1[256], AES2[256], AES3[256];
+    cn_populate_aes_tables(AES0, AES1, AES2, AES3);
+
     if (gid == 0) found_flag[0] = 0;
     barrier(CLK_GLOBAL_MEM_FENCE);
 
     ulong nonce = base_nonce + (ulong)gid;
-    __global uint* scratchpad = scratchpad_pool + (ulong)gid * SCRATCH_SIZE;
 
-    // Build header with nonce
-    uchar hdr[80];
-    for (uint i = 0; i < 80 && i < header_len; i++) hdr[i] = header[i];
-    hdr[0] = (uchar)(nonce & 0xFF);
-    hdr[1] = (uchar)((nonce >> 8) & 0xFF);
-    hdr[2] = (uchar)((nonce >> 16) & 0xFF);
-    hdr[3] = (uchar)((nonce >> 24) & 0xFF);
+    // Each work-item gets its own scratchpad (max 2MB for CNFast)
+    __global uchar* scratchpad = scratchpad_pool + (ulong)gid * 2097152;
 
-    // Step 1: SHA-256 → seed for algorithm selection
-    uchar seed[32];
-    sha256_hash(hdr, 80, seed);
+    // Build 80-byte header with nonce at bytes 76-79
+    hash_t hash;
+    for (uint i = 0; i < 80 && i < header_len; i++) {
+        hash.h1[i] = header[i];
+    }
+    // Set nonce at bytes 76-79 (little-endian)
+    hash.h1[76] = (uchar)(nonce & 0xFF);
+    hash.h1[77] = (uchar)((nonce >> 8) & 0xFF);
+    hash.h1[78] = (uchar)((nonce >> 16) & 0xFF);
+    hash.h1[79] = (uchar)((nonce >> 24) & 0xFF);
 
-    // Step 2: Select algorithms
-    int core_order[15];
-    int cn_vars[3];
-    select_algorithms(seed, core_order, cn_vars);
+    // Select algorithms from header bytes 4-67 (prevhash + merkle root)
+    __private uchar selectedAlgo[15];
+    __private uchar selectedCNAlgo[14];
+    get_algo_string(&hash.h1[4], 64, selectedAlgo, 15);
+    get_algo_string(&hash.h1[4], 64, selectedCNAlgo, 14);
 
-    // Step 3: Execute 18-step hash chain
-    // core[0..4] → cn[0] → core[5..9] → cn[1] → core[10..14] → cn[2]
-    uchar hash[32];
+    // Execute 18-step hash chain
+    // Steps 0-4: core algos (input = 80-byte header for step 0, 64-byte hash for rest)
+    // Step 5: CN[0], then zero bytes 8-31
+    // Steps 6-10: core algos
+    // Step 11: CN[1], then zero bytes 8-31
+    // Steps 12-16: core algos
+    // Step 17: CN[2], then zero bytes 8-31
 
-    // First group: core[0..4]
-    core_hash(core_order[0], hdr, hash);
-    for (int i = 1; i < 5; i++) {
-        uchar tmp[80];
-        for (int j = 0; j < 32; j++) tmp[j] = hash[j];
-        for (int j = 32; j < 80; j++) tmp[j] = hdr[j];
-        core_hash(core_order[i], tmp, hash);
+    uint size = 80;  // First step uses full 80-byte header
+
+    // Steps 0-4: core[0..4]
+    for (int i = 0; i < 5; i++) {
+        core_hash_dispatch(selectedAlgo[i], &hash, size);
+        size = 64;  // subsequent steps use 64-byte hash
     }
 
-    // CN variant 0
+    // Step 5: CN[0]
     {
-        uchar cn_in[80];
-        for (int j = 0; j < 32; j++) cn_in[j] = hash[j];
-        for (int j = 32; j < 80; j++) cn_in[j] = hdr[j];
-        cryptonight_hash(cn_in, hash, scratchpad, cn_vars[0], cn_version(cn_vars[0]));
+        uchar cn_out[32];
+        cn_dispatch(selectedCNAlgo[0], hash.h1, size, cn_out, scratchpad,
+                    AES0, AES1, AES2, AES3);
+        // Copy CN output to hash (first 32 bytes)
+        for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
+        // Zero bytes 32-63 (C: memset(&hash[8], 0, 32) where hash is uint32_t[16])
+        for (int j = 32; j < 64; j++) hash.h1[j] = 0;
     }
 
-    // Second group: core[5..9]
+    // Steps 6-10: core[5..9]
     for (int i = 5; i < 10; i++) {
-        uchar tmp[80];
-        for (int j = 0; j < 32; j++) tmp[j] = hash[j];
-        for (int j = 32; j < 80; j++) tmp[j] = hdr[j];
-        core_hash(core_order[i], tmp, hash);
+        core_hash_dispatch(selectedAlgo[i], &hash, size);
     }
 
-    // CN variant 1
+    // Step 11: CN[1]
     {
-        uchar cn_in[80];
-        for (int j = 0; j < 32; j++) cn_in[j] = hash[j];
-        for (int j = 32; j < 80; j++) cn_in[j] = hdr[j];
-        cryptonight_hash(cn_in, hash, scratchpad, cn_vars[1], cn_version(cn_vars[1]));
+        uchar cn_out[32];
+        cn_dispatch(selectedCNAlgo[1], hash.h1, size, cn_out, scratchpad,
+                    AES0, AES1, AES2, AES3);
+        for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
+        for (int j = 32; j < 64; j++) hash.h1[j] = 0;
     }
 
-    // Third group: core[10..14]
+    // Steps 12-16: core[10..14]
     for (int i = 10; i < 15; i++) {
-        uchar tmp[80];
-        for (int j = 0; j < 32; j++) tmp[j] = hash[j];
-        for (int j = 32; j < 80; j++) tmp[j] = hdr[j];
-        core_hash(core_order[i], tmp, hash);
+        core_hash_dispatch(selectedAlgo[i], &hash, size);
     }
 
-    // CN variant 2 (final)
+    // Step 17: CN[2] (final)
     {
-        uchar cn_in[80];
-        for (int j = 0; j < 32; j++) cn_in[j] = hash[j];
-        for (int j = 32; j < 80; j++) cn_in[j] = hdr[j];
-        cryptonight_hash(cn_in, hash, scratchpad, cn_vars[2], cn_version(cn_vars[2]));
+        uchar cn_out[32];
+        cn_dispatch(selectedCNAlgo[2], hash.h1, size, cn_out, scratchpad,
+                    AES0, AES1, AES2, AES3);
+        for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
+        // Final CN: zeroing happens for ALL CN steps including the last one
+        for (int j = 32; j < 64; j++) hash.h1[j] = 0;
     }
 
-    // Step 4: Check target
+    // Check target (first 32 bytes of hash vs target, big-endian comparison)
     bool valid = true;
     for (int i = 0; i < 32; i++) {
-        if (hash[i] < target[i]) break;
-        if (hash[i] > target[i]) { valid = false; break; }
+        if (hash.h1[i] < target[i]) break;
+        if (hash.h1[i] > target[i]) { valid = false; break; }
     }
 
     if (valid && found_flag[0] == 0) {
         uint old = atomic_cmpxchg(found_flag, 0u, 1u);
         if (old == 0) {
             output_nonce[0] = nonce;
-            for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+            for (int i = 0; i < 32; i++) output_hash[i] = hash.h1[i];
         }
     }
 }
 
-// ── Benchmark kernel ────────────────────────────────────────────────────────
+// ── Benchmark kernel (no target check, just compute hash for gid=0) ─────────
 
 __kernel void ghostrider_benchmark(
     __global const uchar* header,
     uint header_len,
     ulong base_nonce,
     __global uchar* output_hash,
-    __global uint* scratchpad_pool
+    __global uchar* scratchpad_pool
 )
 {
     uint gid = get_global_id(0);
+
+    __local uint AES0[256], AES1[256], AES2[256], AES3[256];
+    cn_populate_aes_tables(AES0, AES1, AES2, AES3);
+
     ulong nonce = base_nonce + (ulong)gid;
-    __global uint* scratchpad = scratchpad_pool + (ulong)gid * SCRATCH_SIZE;
+    __global uchar* scratchpad = scratchpad_pool + (ulong)gid * 2097152;
 
-    uchar hdr[80];
-    for (uint i = 0; i < 80 && i < header_len; i++) hdr[i] = header[i];
-    hdr[0] = (uchar)(nonce & 0xFF);
-    hdr[1] = (uchar)((nonce >> 8) & 0xFF);
-    hdr[2] = (uchar)((nonce >> 16) & 0xFF);
-    hdr[3] = (uchar)((nonce >> 24) & 0xFF);
+    hash_t hash;
+    for (uint i = 0; i < 80 && i < header_len; i++) {
+        hash.h1[i] = header[i];
+    }
+    hash.h1[76] = (uchar)(nonce & 0xFF);
+    hash.h1[77] = (uchar)((nonce >> 8) & 0xFF);
+    hash.h1[78] = (uchar)((nonce >> 16) & 0xFF);
+    hash.h1[79] = (uchar)((nonce >> 24) & 0xFF);
 
-    uchar seed[32];
-    sha256_hash(hdr, 80, seed);
+    __private uchar selectedAlgo[15];
+    __private uchar selectedCNAlgo[14];
+    get_algo_string(&hash.h1[4], 64, selectedAlgo, 15);
+    get_algo_string(&hash.h1[4], 64, selectedCNAlgo, 14);
 
-    int core_order[15];
-    int cn_vars[3];
-    select_algorithms(seed, core_order, cn_vars);
+    // Debug: output selected algos in first 29 bytes, then hash after step 0
+    // output_hash[0..14]  = selectedAlgo[0..14]
+    // output_hash[15..28] = selectedCNAlgo[0..13]
+    // output_hash[29..92] = hash after step 0 (64 bytes)
+    // output_hash[93..156] = hash after step 4 (before CN)
+    // output_hash[157..188] = hash after CN[0] (32 bytes)
+    if (gid == 0) {
+        for (int i = 0; i < 15; i++) output_hash[i] = selectedAlgo[i];
+        for (int i = 0; i < 14; i++) output_hash[15 + i] = selectedCNAlgo[i];
+    }
 
-    uchar hash[32];
-    core_hash(core_order[0], hdr, hash);
+    uint size = 80;
+
+    // Step 0: first core hash
+    core_hash_dispatch(selectedAlgo[0], &hash, size);
+    size = 64;
+
+    if (gid == 0) {
+        for (int i = 0; i < 64; i++) output_hash[29 + i] = hash.h1[i];
+    }
+
+    // Steps 1-4: remaining core hashes
     for (int i = 1; i < 5; i++) {
-        uchar tmp[80];
-        for (int j = 0; j < 32; j++) tmp[j] = hash[j];
-        for (int j = 32; j < 80; j++) tmp[j] = hdr[j];
-        core_hash(core_order[i], tmp, hash);
-    }
-    {
-        uchar cn_in[80];
-        for (int j = 0; j < 32; j++) cn_in[j] = hash[j];
-        for (int j = 32; j < 80; j++) cn_in[j] = hdr[j];
-        cryptonight_hash(cn_in, hash, scratchpad, cn_vars[0], cn_version(cn_vars[0]));
-    }
-    for (int i = 5; i < 10; i++) {
-        uchar tmp[80];
-        for (int j = 0; j < 32; j++) tmp[j] = hash[j];
-        for (int j = 32; j < 80; j++) tmp[j] = hdr[j];
-        core_hash(core_order[i], tmp, hash);
-    }
-    {
-        uchar cn_in[80];
-        for (int j = 0; j < 32; j++) cn_in[j] = hash[j];
-        for (int j = 32; j < 80; j++) cn_in[j] = hdr[j];
-        cryptonight_hash(cn_in, hash, scratchpad, cn_vars[1], cn_version(cn_vars[1]));
-    }
-    for (int i = 10; i < 15; i++) {
-        uchar tmp[80];
-        for (int j = 0; j < 32; j++) tmp[j] = hash[j];
-        for (int j = 32; j < 80; j++) tmp[j] = hdr[j];
-        core_hash(core_order[i], tmp, hash);
-    }
-    {
-        uchar cn_in[80];
-        for (int j = 0; j < 32; j++) cn_in[j] = hash[j];
-        for (int j = 32; j < 80; j++) cn_in[j] = hdr[j];
-        cryptonight_hash(cn_in, hash, scratchpad, cn_vars[2], cn_version(cn_vars[2]));
+        core_hash_dispatch(selectedAlgo[i], &hash, size);
     }
 
     if (gid == 0) {
-        for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+        for (int i = 0; i < 64; i++) output_hash[93 + i] = hash.h1[i];
     }
+
+    // Step 5: CN[0]
+    {
+        uchar cn_out[32];
+        cn_dispatch(selectedCNAlgo[0], hash.h1, size, cn_out, scratchpad,
+                    AES0, AES1, AES2, AES3);
+        for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
+        for (int j = 32; j < 64; j++) hash.h1[j] = 0;
+    }
+
+    if (gid == 0) {
+        for (int i = 0; i < 32; i++) output_hash[157 + i] = hash.h1[i];
+    }
+
+    // Steps 6-10: core[5..9]
+    for (int i = 5; i < 10; i++) {
+        core_hash_dispatch(selectedAlgo[i], &hash, size);
+    }
+
+    // Step 11: CN[1]
+    {
+        uchar cn_out[32];
+        cn_dispatch(selectedCNAlgo[1], hash.h1, size, cn_out, scratchpad,
+                    AES0, AES1, AES2, AES3);
+        for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
+        for (int j = 32; j < 64; j++) hash.h1[j] = 0;
+    }
+
+    // Steps 12-16: core[10..14]
+    for (int i = 10; i < 15; i++) {
+        core_hash_dispatch(selectedAlgo[i], &hash, size);
+    }
+
+    // Step 17: CN[2] (final)
+    {
+        uchar cn_out[32];
+        cn_dispatch(selectedCNAlgo[2], hash.h1, size, cn_out, scratchpad,
+                    AES0, AES1, AES2, AES3);
+        for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
+        for (int j = 32; j < 64; j++) hash.h1[j] = 0;
+    }
+
+    // Final hash at offset 189
+    if (gid == 0) {
+        for (int i = 0; i < 32; i++) output_hash[189 + i] = hash.h1[i];
+    }
+}
+
+// ── SPH test kernel: compute single SPH hash for algo index ─────────────────
+__kernel void ghostrider_sph_test(
+    __global const uchar* header,
+    uint header_len,
+    uint algo_idx,
+    __global uchar* output_hash
+)
+{
+    uint gid = get_global_id(0);
+    if (gid != 0) return;
+
+    hash_t hash;
+    for (uint i = 0; i < 80 && i < header_len; i++) {
+        hash.h1[i] = header[i];
+    }
+    // Pad rest with zeros
+    for (uint i = header_len; i < 80; i++) {
+        hash.h1[i] = 0;
+    }
+
+    // Compute single SPH hash
+    core_hash_dispatch(algo_idx, &hash, 80);
+
+    // Output 64-byte hash
+    for (int i = 0; i < 64; i++) output_hash[i] = hash.h1[i];
+}
+
+// ── SIMD debug kernel: compute first compression only ────────────────────────
+__kernel void simd_debug(
+    __global const uchar* input,
+    uint input_len,
+    __global uchar* output_state
+)
+{
+    uint gid = get_global_id(0);
+    if (gid != 0) return;
+
+    // Copy input to x buffer
+    unsigned char x[128];
+    for (uint i = 0; i < input_len && i < 128; i++)
+        x[i] = input[i];
+    for (uint i = input_len; i < 128; i++)
+        x[i] = 0;
+
+    s32 q[256];
+    u32 A0 = C32(0x0BA16B95), A1 = C32(0x72F999AD), A2 = C32(0x9FECC2AE), A3 = C32(0xBA3264FC), A4 = C32(0x5E894929), A5 = C32(0x8E9F30E5), A6 = C32(0x2F1DAA37), A7 = C32(0xF0F2C558);
+    u32 B0 = C32(0xAC506643), B1 = C32(0xA90635A5), B2 = C32(0xE25B878B), B3 = C32(0xAAB7878F), B4 = C32(0x88817F7A), B5 = C32(0x0A02892B), B6 = C32(0x559A7550), B7 = C32(0x598F657E);
+    u32 C0 = C32(0x7EEF60A1), C1 = C32(0x6B70E3E8), C2 = C32(0x9C1714D1), C3 = C32(0xB958E2A8), C4 = C32(0xAB02675E), C5 = C32(0xED1C014F), C6 = C32(0xCD8D65BB), C7 = C32(0xFDB7A257);
+    u32 D0 = C32(0x09254899), D1 = C32(0xD699C7BC), D2 = C32(0x9019B6DC), D3 = C32(0x2B9022E4), D4 = C32(0x8FA14956), D5 = C32(0x21BF9BD3), D6 = C32(0xB94D0943), D7 = C32(0x6FFDDC22);
+
+    FFT256(0, 1, 0, ll1);
+    for (int i = 0; i < 256; i ++)
+    {
+        s32 tq;
+        tq = q[i] + yoff_b_n[i];
+        tq = REDS2(tq);
+        tq = REDS1(tq);
+        tq = REDS1(tq);
+        q[i] = (tq <= 128 ? tq : tq - 257);
+    }
+
+    // XOR message (LE) - read from x buffer as LE u32 words
+    A0 ^= ((u32)x[0] | ((u32)x[1]<<8) | ((u32)x[2]<<16) | ((u32)x[3]<<24));
+    A1 ^= ((u32)x[4] | ((u32)x[5]<<8) | ((u32)x[6]<<16) | ((u32)x[7]<<24));
+    A2 ^= ((u32)x[8] | ((u32)x[9]<<8) | ((u32)x[10]<<16) | ((u32)x[11]<<24));
+    A3 ^= ((u32)x[12] | ((u32)x[13]<<8) | ((u32)x[14]<<16) | ((u32)x[15]<<24));
+    A4 ^= ((u32)x[16] | ((u32)x[17]<<8) | ((u32)x[18]<<16) | ((u32)x[19]<<24));
+    A5 ^= ((u32)x[20] | ((u32)x[21]<<8) | ((u32)x[22]<<16) | ((u32)x[23]<<24));
+    A6 ^= ((u32)x[24] | ((u32)x[25]<<8) | ((u32)x[26]<<16) | ((u32)x[27]<<24));
+    A7 ^= ((u32)x[28] | ((u32)x[29]<<8) | ((u32)x[30]<<16) | ((u32)x[31]<<24));
+    B0 ^= ((u32)x[32] | ((u32)x[33]<<8) | ((u32)x[34]<<16) | ((u32)x[35]<<24));
+    B1 ^= ((u32)x[36] | ((u32)x[37]<<8) | ((u32)x[38]<<16) | ((u32)x[39]<<24));
+    B2 ^= ((u32)x[40] | ((u32)x[41]<<8) | ((u32)x[42]<<16) | ((u32)x[43]<<24));
+    B3 ^= ((u32)x[44] | ((u32)x[45]<<8) | ((u32)x[46]<<16) | ((u32)x[47]<<24));
+    B4 ^= ((u32)x[48] | ((u32)x[49]<<8) | ((u32)x[50]<<16) | ((u32)x[51]<<24));
+    B5 ^= ((u32)x[52] | ((u32)x[53]<<8) | ((u32)x[54]<<16) | ((u32)x[55]<<24));
+    B6 ^= ((u32)x[56] | ((u32)x[57]<<8) | ((u32)x[58]<<16) | ((u32)x[59]<<24));
+    B7 ^= ((u32)x[60] | ((u32)x[61]<<8) | ((u32)x[62]<<16) | ((u32)x[63]<<24));
+    C0 ^= ((u32)x[64] | ((u32)x[65]<<8) | ((u32)x[66]<<16) | ((u32)x[67]<<24));
+    C1 ^= ((u32)x[68] | ((u32)x[69]<<8) | ((u32)x[70]<<16) | ((u32)x[71]<<24));
+    C2 ^= ((u32)x[72] | ((u32)x[73]<<8) | ((u32)x[74]<<16) | ((u32)x[75]<<24));
+    C3 ^= ((u32)x[76] | ((u32)x[77]<<8) | ((u32)x[78]<<16) | ((u32)x[79]<<24));
+    C4 ^= ((u32)x[80] | ((u32)x[81]<<8) | ((u32)x[82]<<16) | ((u32)x[83]<<24));
+    C5 ^= ((u32)x[84] | ((u32)x[85]<<8) | ((u32)x[86]<<16) | ((u32)x[87]<<24));
+    C6 ^= ((u32)x[88] | ((u32)x[89]<<8) | ((u32)x[90]<<16) | ((u32)x[91]<<24));
+    C7 ^= ((u32)x[92] | ((u32)x[93]<<8) | ((u32)x[94]<<16) | ((u32)x[95]<<24));
+    D0 ^= ((u32)x[96] | ((u32)x[97]<<8) | ((u32)x[98]<<16) | ((u32)x[99]<<24));
+    D1 ^= ((u32)x[100] | ((u32)x[101]<<8) | ((u32)x[102]<<16) | ((u32)x[103]<<24));
+    D2 ^= ((u32)x[104] | ((u32)x[105]<<8) | ((u32)x[106]<<16) | ((u32)x[107]<<24));
+    D3 ^= ((u32)x[108] | ((u32)x[109]<<8) | ((u32)x[110]<<16) | ((u32)x[111]<<24));
+    D4 ^= ((u32)x[112] | ((u32)x[113]<<8) | ((u32)x[114]<<16) | ((u32)x[115]<<24));
+    D5 ^= ((u32)x[116] | ((u32)x[117]<<8) | ((u32)x[118]<<16) | ((u32)x[119]<<24));
+    D6 ^= ((u32)x[120] | ((u32)x[121]<<8) | ((u32)x[122]<<16) | ((u32)x[123]<<24));
+    D7 ^= ((u32)x[124] | ((u32)x[125]<<8) | ((u32)x[126]<<16) | ((u32)x[127]<<24));
+
+    ONE_ROUND_BIG(0_, 0,  3, 23, 17, 27);
+    ONE_ROUND_BIG(1_, 1, 28, 19, 22,  7);
+    ONE_ROUND_BIG(2_, 2, 29,  9, 15,  5);
+    ONE_ROUND_BIG(3_, 3,  4, 13, 10, 25);
+
+    STEP_BIG(
+        C32(0x0BA16B95), C32(0x72F999AD), C32(0x9FECC2AE), C32(0xBA3264FC),
+        C32(0x5E894929), C32(0x8E9F30E5), C32(0x2F1DAA37), C32(0xF0F2C558),
+        IF,  4, 13, PP8_4_);
+
+    STEP_BIG(
+        C32(0xAC506643), C32(0xA90635A5), C32(0xE25B878B), C32(0xAAB7878F),
+        C32(0x88817F7A), C32(0x0A02892B), C32(0x559A7550), C32(0x598F657E),
+        IF, 13, 10, PP8_5_);
+
+    STEP_BIG(
+        C32(0x7EEF60A1), C32(0x6B70E3E8), C32(0x9C1714D1), C32(0xB958E2A8),
+        C32(0xAB02675E), C32(0xED1C014F), C32(0xCD8D65BB), C32(0xFDB7A257),
+        IF, 10, 25, PP8_6_);
+
+    STEP_BIG(
+        C32(0x09254899), C32(0xD699C7BC), C32(0x9019B6DC), C32(0x2B9022E4),
+        C32(0x8FA14956), C32(0x21BF9BD3), C32(0xB94D0943), C32(0x6FFDDC22),
+        IF, 25,  4, PP8_0_);
+
+    // Output state as LE u32 words
+    __global u32* out = (__global u32*)output_state;
+    out[0] = A0; out[1] = A1; out[2] = A2; out[3] = A3;
+    out[4] = A4; out[5] = A5; out[6] = A6; out[7] = A7;
+    out[8] = B0; out[9] = B1; out[10] = B2; out[11] = B3;
+    out[12] = B4; out[13] = B5; out[14] = B6; out[15] = B7;
+    out[16] = C0; out[17] = C1; out[18] = C2; out[19] = C3;
+    out[20] = C4; out[21] = C5; out[22] = C6; out[23] = C7;
+    out[24] = D0; out[25] = D1; out[26] = D2; out[27] = D3;
+    out[28] = D4; out[29] = D5; out[30] = D6; out[31] = D7;
+}
+
+// ── SIMD debug2: full 2-compression SIMD-512 for 80-byte input ───────────────
+__kernel void simd_debug2(
+    __global const uchar* header,
+    uint header_len,
+    __global uchar* output_state
+)
+{
+    uint gid = get_global_id(0);
+    if (gid != 0) return;
+
+    // Block 1: data + 0x80 + zeros
+    unsigned char x[128];
+    for (uint i = 0; i < header_len && i < 80; i++)
+        x[i] = header[i];
+    for (uint i = header_len; i < 128; i++)
+        x[i] = 0;
+    x[header_len] = 0x80;
+
+    s32 q[256];
+    u32 A0 = C32(0x0BA16B95), A1 = C32(0x72F999AD), A2 = C32(0x9FECC2AE), A3 = C32(0xBA3264FC), A4 = C32(0x5E894929), A5 = C32(0x8E9F30E5), A6 = C32(0x2F1DAA37), A7 = C32(0xF0F2C558);
+    u32 B0 = C32(0xAC506643), B1 = C32(0xA90635A5), B2 = C32(0xE25B878B), B3 = C32(0xAAB7878F), B4 = C32(0x88817F7A), B5 = C32(0x0A02892B), B6 = C32(0x559A7550), B7 = C32(0x598F657E);
+    u32 C0 = C32(0x7EEF60A1), C1 = C32(0x6B70E3E8), C2 = C32(0x9C1714D1), C3 = C32(0xB958E2A8), C4 = C32(0xAB02675E), C5 = C32(0xED1C014F), C6 = C32(0xCD8D65BB), C7 = C32(0xFDB7A257);
+    u32 D0 = C32(0x09254899), D1 = C32(0xD699C7BC), D2 = C32(0x9019B6DC), D3 = C32(0x2B9022E4), D4 = C32(0x8FA14956), D5 = C32(0x21BF9BD3), D6 = C32(0xB94D0943), D7 = C32(0x6FFDDC22);
+
+    // === 1st compression (data+0x80, yoff_b_n) ===
+    FFT256(0, 1, 0, ll1);
+    for (int i = 0; i < 256; i++) {
+        s32 tq = q[i] + yoff_b_n[i];
+        tq = REDS2(tq); tq = REDS1(tq); tq = REDS1(tq);
+        q[i] = (tq <= 128 ? tq : tq - 257);
+    }
+    A0 ^= ((u32)x[0]|(u32)x[1]<<8|(u32)x[2]<<16|(u32)x[3]<<24);
+    A1 ^= ((u32)x[4]|(u32)x[5]<<8|(u32)x[6]<<16|(u32)x[7]<<24);
+    A2 ^= ((u32)x[8]|(u32)x[9]<<8|(u32)x[10]<<16|(u32)x[11]<<24);
+    A3 ^= ((u32)x[12]|(u32)x[13]<<8|(u32)x[14]<<16|(u32)x[15]<<24);
+    A4 ^= ((u32)x[16]|(u32)x[17]<<8|(u32)x[18]<<16|(u32)x[19]<<24);
+    A5 ^= ((u32)x[20]|(u32)x[21]<<8|(u32)x[22]<<16|(u32)x[23]<<24);
+    A6 ^= ((u32)x[24]|(u32)x[25]<<8|(u32)x[26]<<16|(u32)x[27]<<24);
+    A7 ^= ((u32)x[28]|(u32)x[29]<<8|(u32)x[30]<<16|(u32)x[31]<<24);
+    B0 ^= ((u32)x[32]|(u32)x[33]<<8|(u32)x[34]<<16|(u32)x[35]<<24);
+    B1 ^= ((u32)x[36]|(u32)x[37]<<8|(u32)x[38]<<16|(u32)x[39]<<24);
+    B2 ^= ((u32)x[40]|(u32)x[41]<<8|(u32)x[42]<<16|(u32)x[43]<<24);
+    B3 ^= ((u32)x[44]|(u32)x[45]<<8|(u32)x[46]<<16|(u32)x[47]<<24);
+    B4 ^= ((u32)x[48]|(u32)x[49]<<8|(u32)x[50]<<16|(u32)x[51]<<24);
+    B5 ^= ((u32)x[52]|(u32)x[53]<<8|(u32)x[54]<<16|(u32)x[55]<<24);
+    B6 ^= ((u32)x[56]|(u32)x[57]<<8|(u32)x[58]<<16|(u32)x[59]<<24);
+    B7 ^= ((u32)x[60]|(u32)x[61]<<8|(u32)x[62]<<16|(u32)x[63]<<24);
+    C0 ^= ((u32)x[64]|(u32)x[65]<<8|(u32)x[66]<<16|(u32)x[67]<<24);
+    C1 ^= ((u32)x[68]|(u32)x[69]<<8|(u32)x[70]<<16|(u32)x[71]<<24);
+    C2 ^= ((u32)x[72]|(u32)x[73]<<8|(u32)x[74]<<16|(u32)x[75]<<24);
+    C3 ^= ((u32)x[76]|(u32)x[77]<<8|(u32)x[78]<<16|(u32)x[79]<<24);
+    C4 ^= ((u32)x[80]|(u32)x[81]<<8|(u32)x[82]<<16|(u32)x[83]<<24);
+    C5 ^= ((u32)x[84]|(u32)x[85]<<8|(u32)x[86]<<16|(u32)x[87]<<24);
+    C6 ^= ((u32)x[88]|(u32)x[89]<<8|(u32)x[90]<<16|(u32)x[91]<<24);
+    C7 ^= ((u32)x[92]|(u32)x[93]<<8|(u32)x[94]<<16|(u32)x[95]<<24);
+    D0 ^= ((u32)x[96]|(u32)x[97]<<8|(u32)x[98]<<16|(u32)x[99]<<24);
+    D1 ^= ((u32)x[100]|(u32)x[101]<<8|(u32)x[102]<<16|(u32)x[103]<<24);
+    D2 ^= ((u32)x[104]|(u32)x[105]<<8|(u32)x[106]<<16|(u32)x[107]<<24);
+    D3 ^= ((u32)x[108]|(u32)x[109]<<8|(u32)x[110]<<16|(u32)x[111]<<24);
+    D4 ^= ((u32)x[112]|(u32)x[113]<<8|(u32)x[114]<<16|(u32)x[115]<<24);
+    D5 ^= ((u32)x[116]|(u32)x[117]<<8|(u32)x[118]<<16|(u32)x[119]<<24);
+    D6 ^= ((u32)x[120]|(u32)x[121]<<8|(u32)x[122]<<16|(u32)x[123]<<24);
+    D7 ^= ((u32)x[124]|(u32)x[125]<<8|(u32)x[126]<<16|(u32)x[127]<<24);
+
+    ONE_ROUND_BIG(0_, 0,  3, 23, 17, 27);
+    ONE_ROUND_BIG(1_, 1, 28, 19, 22,  7);
+    ONE_ROUND_BIG(2_, 2, 29,  9, 15,  5);
+    ONE_ROUND_BIG(3_, 3,  4, 13, 10, 25);
+
+    STEP_BIG(C32(0x0BA16B95),C32(0x72F999AD),C32(0x9FECC2AE),C32(0xBA3264FC),C32(0x5E894929),C32(0x8E9F30E5),C32(0x2F1DAA37),C32(0xF0F2C558), IF, 4,13, PP8_4_);
+    STEP_BIG(C32(0xAC506643),C32(0xA90635A5),C32(0xE25B878B),C32(0xAAB7878F),C32(0x88817F7A),C32(0x0A02892B),C32(0x559A7550),C32(0x598F657E), IF,13,10, PP8_5_);
+    STEP_BIG(C32(0x7EEF60A1),C32(0x6B70E3E8),C32(0x9C1714D1),C32(0xB958E2A8),C32(0xAB02675E),C32(0xED1C014F),C32(0xCD8D65BB),C32(0xFDB7A257), IF,10,25, PP8_6_);
+    STEP_BIG(C32(0x09254899),C32(0xD699C7BC),C32(0x9019B6DC),C32(0x2B9022E4),C32(0x8FA14956),C32(0x21BF9BD3),C32(0xB94D0943),C32(0x6FFDDC22), IF,25, 4, PP8_0_);
+
+    // Save state after 1st compression as weights for 2nd
+    u32 W_A0=A0,W_A1=A1,W_A2=A2,W_A3=A3,W_A4=A4,W_A5=A5,W_A6=A6,W_A7=A7;
+    u32 W_B0=B0,W_B1=B1,W_B2=B2,W_B3=B3,W_B4=B4,W_B5=B5,W_B6=B6,W_B7=B7;
+    u32 W_C0=C0,W_C1=C1,W_C2=C2,W_C3=C3,W_C4=C4,W_C5=C5,W_C6=C6,W_C7=C7;
+    u32 W_D0=D0,W_D1=D1,W_D2=D2,W_D3=D3,W_D4=D4,W_D5=D5,W_D6=D6,W_D7=D7;
+
+    // === 2nd compression (count block, yoff_b_f) ===
+    for (int i = 0; i < 128; i++) x[i] = 0;
+    uint bit_count = header_len << 3;
+    x[0] = bit_count & 0xFF;
+    x[1] = (bit_count >> 8) & 0xFF;
+    x[2] = (bit_count >> 16) & 0xFF;
+    x[3] = (bit_count >> 24) & 0xFF;
+
+    FFT256(0, 1, 0, ll1);
+    for (int i = 0; i < 256; i++) {
+        s32 tq = q[i] + yoff_b_f[i];
+        tq = REDS2(tq); tq = REDS1(tq); tq = REDS1(tq);
+        q[i] = (tq <= 128 ? tq : tq - 257);
+    }
+
+    A0 ^= bit_count;  // only A0 has nonzero XOR
+
+    ONE_ROUND_BIG(0_, 0,  3, 23, 17, 27);
+    ONE_ROUND_BIG(1_, 1, 28, 19, 22,  7);
+    ONE_ROUND_BIG(2_, 2, 29,  9, 15,  5);
+    ONE_ROUND_BIG(3_, 3,  4, 13, 10, 25);
+
+    // DEBUG: Skip STEP_BIG to isolate ONE_ROUND_BIG result
+    // STEP_BIG(W_A0,W_A1,W_A2,W_A3,W_A4,W_A5,W_A6,W_A7, IF, 4,13, PP8_4_);
+    // STEP_BIG(W_B0,W_B1,W_B2,W_B3,W_B4,W_B5,W_B6,W_B7, IF,13,10, PP8_5_);
+    // STEP_BIG(W_C0,W_C1,W_C2,W_C3,W_C4,W_C5,W_C6,W_C7, IF,10,25, PP8_6_);
+    // STEP_BIG(W_D0,W_D1,W_D2,W_D3,W_D4,W_D5,W_D6,W_D7, IF,25, 4, PP8_0_);
+
+    __global u32* out = (__global u32*)output_state;
+    out[0]=A0; out[1]=A1; out[2]=A2; out[3]=A3;
+    out[4]=A4; out[5]=A5; out[6]=A6; out[7]=A7;
+    out[8]=B0; out[9]=B1; out[10]=B2; out[11]=B3;
+    out[12]=B4; out[13]=B5; out[14]=B6; out[15]=B7;
+    out[16]=C0; out[17]=C1; out[18]=C2; out[19]=C3;
+    out[20]=C4; out[21]=C5; out[22]=C6; out[23]=C7;
+    out[24]=D0; out[25]=D1; out[26]=D2; out[27]=D3;
+    out[28]=D4; out[29]=D5; out[30]=D6; out[31]=D7;
 }

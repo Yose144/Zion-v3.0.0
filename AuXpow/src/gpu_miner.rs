@@ -254,11 +254,10 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         }
         "ghostrider" | "ghostrider_rtm" => {
             // GhostRider (RTM) — OpenCL kernel for GPU mining.
-            // NOTE: The kernel (ghostrider_kernel.cl) currently uses simplified
-            // hash functions. Real sphlib implementations are being ported from
-            // hacash/x16rs OpenCL kernels. CryptoNight uses a simplified LCG
-            // version — real CN implementation from xmrig-amd is being ported.
-            // The kernel structure and GPU infrastructure are functional.
+            // Uses real SPH core algorithms (ghostrider_sph.cl) + CryptoNight
+            // with AES (ghostrider_cn.cl). Three files are concatenated at
+            // load time into a single OpenCL program.
+            // Each work-item needs up to 2MB scratchpad (CNFast variant).
             Some(("ghostrider_kernel.cl", "ghostrider_mine"))
         }
         "dynexsolve" | "dynexsolve_dnx" => {
@@ -349,6 +348,225 @@ impl GpuMiner {
     /// smaller than the V3 work_size passed to `mine_batch_raw`.
     pub fn internal_work_size(&self) -> usize {
         self.work_size
+    }
+
+    /// Compute GhostRider hash for a single nonce using the benchmark kernel.
+    /// Returns the 32-byte hash. This is primarily for testing/debugging
+    /// to compare GPU output against CPU reference implementation.
+    #[cfg(feature = "gpu-opencl")]
+    pub fn ghostrider_single_hash(
+        &mut self,
+        header: &[u8],
+        nonce: u64,
+    ) -> Result<[u8; 221]> {
+        use ocl::{Buffer, Kernel};
+
+        let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        let mut hdr = [0u8; 80];
+        let copy_len = header.len().min(80);
+        hdr[..copy_len].copy_from_slice(&header[..copy_len]);
+
+        let header_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(80)
+            .copy_host_slice(&hdr[..])
+            .build()?;
+
+        let output_hash_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(221)
+            .build()?;
+
+        let scratch_bytes = 1 * Self::GHOSTRIDER_SCRATCH_BYTES;
+        let scratchpad_pool: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(scratch_bytes)
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("ghostrider_benchmark")
+            .arg(&header_buf)
+            .arg(80u32)
+            .arg(nonce)
+            .arg(&output_hash_buf)
+            .arg(&scratchpad_pool)
+            .build()
+            .map_err(|e| anyhow!("GhostRider benchmark kernel build failed: {e}"))?;
+
+        // Run with work-group size 1, just 1 work-item
+        unsafe {
+            kernel
+                .cmd()
+                .global_work_size(1)
+                .local_work_size(1)
+                .enq()
+                .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
+        }
+        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+
+        let mut hash = vec![0u8; 221];
+        output_hash_buf.read(&mut hash).enq()?;
+        Ok(hash.try_into().expect("221 bytes from GPU"))
+    }
+
+    /// Test a single SPH hash function on GPU. Returns 64-byte hash.
+    #[cfg(feature = "gpu-opencl")]
+    pub fn ghostrider_sph_test(
+        &mut self,
+        header: &[u8],
+        algo_idx: u32,
+    ) -> Result<[u8; 64]> {
+        use ocl::{Buffer, Kernel};
+
+        let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        let mut hdr = [0u8; 80];
+        let copy_len = header.len().min(80);
+        hdr[..copy_len].copy_from_slice(&header[..copy_len]);
+
+        let header_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(80)
+            .copy_host_slice(&hdr[..])
+            .build()?;
+
+        let output_hash_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(64)
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("ghostrider_sph_test")
+            .arg(&header_buf)
+            .arg(80u32)
+            .arg(algo_idx)
+            .arg(&output_hash_buf)
+            .build()
+            .map_err(|e| anyhow!("SPH test kernel build failed: {e}"))?;
+
+        unsafe {
+            kernel
+                .cmd()
+                .global_work_size(1)
+                .local_work_size(1)
+                .enq()
+                .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
+        }
+        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+
+        let mut hash = vec![0u8; 64];
+        output_hash_buf.read(&mut hash).enq()?;
+        Ok(hash.try_into().expect("64 bytes from GPU"))
+    }
+
+    /// SIMD debug: compute first compression only, return 32 u32 words.
+    #[cfg(feature = "gpu-opencl")]
+    pub fn simd_debug(
+        &mut self,
+        input: &[u8],
+    ) -> Result<[u32; 32]> {
+        use ocl::{Buffer, Kernel};
+
+        let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        let mut hdr = [0u8; 128];
+        let copy_len = input.len().min(128);
+        hdr[..copy_len].copy_from_slice(&input[..copy_len]);
+
+        let input_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(128)
+            .copy_host_slice(&hdr[..])
+            .build()?;
+
+        let output_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("simd_debug")
+            .arg(&input_buf)
+            .arg(input.len() as u32)
+            .arg(&output_buf)
+            .build()
+            .map_err(|e| anyhow!("SIMD debug kernel build failed: {e}"))?;
+
+        unsafe {
+            kernel
+                .cmd()
+                .global_work_size(1)
+                .local_work_size(1)
+                .enq()
+                .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
+        }
+        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+
+        let mut state = vec![0u32; 32];
+        output_buf.read(&mut state).enq()?;
+        Ok(state.try_into().expect("32 u32 from GPU"))
+    }
+
+    /// SIMD debug2: full 2-compression SIMD-512, return 32 u32 words.
+    #[cfg(feature = "gpu-opencl")]
+    pub fn simd_debug2(
+        &mut self,
+        header: &[u8],
+        header_len: u32,
+    ) -> Result<[u32; 32]> {
+        use ocl::{Buffer, Kernel};
+
+        let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        let mut hdr = [0u8; 80];
+        let copy_len = header.len().min(80);
+        hdr[..copy_len].copy_from_slice(&header[..copy_len]);
+
+        let input_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(80)
+            .copy_host_slice(&hdr[..])
+            .build()?;
+
+        let output_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("simd_debug2")
+            .arg(&input_buf)
+            .arg(header_len)
+            .arg(&output_buf)
+            .build()
+            .map_err(|e| anyhow!("SIMD debug2 kernel build failed: {e}"))?;
+
+        unsafe {
+            kernel
+                .cmd()
+                .global_work_size(1)
+                .local_work_size(1)
+                .enq()
+                .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
+        }
+        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+
+        let mut state = vec![0u32; 32];
+        output_buf.read(&mut state).enq()?;
+        Ok(state.try_into().expect("32 u32 from GPU"))
     }
 
     /// Mine a batch of nonces for the requested algorithm.
@@ -690,8 +908,8 @@ impl GpuMiner {
                 )?
             }
             "ghostrider" | "ghostrider_rtm" => {
-                // GhostRider: 15 x16r hash algos + 6 CryptoNight variants
-                // Each work-item needs 1MB scratchpad in global memory
+                // GhostRider: 15 SPH core algos + 14 CryptoNight variants
+                // Each work-item needs up to 2MB scratchpad in global memory
                 Self::build_ghostrider_kernel(
                     pro_que,
                     kernel_name,
@@ -736,7 +954,7 @@ impl GpuMiner {
             "equihash" | "equihash_zec" => 1, // Equihash 200,9: same memory-bound pattern
             "nexapow" | "nexapow_nexa" => 1, // NexaPow: secp256k1 Schnorr per nonce
             "qhash" | "qhash_qtc" => 1, // Qhash: 512KB state vector per nonce
-            "ghostrider" | "ghostrider_rtm" => 1, // GhostRider: 1MB scratchpad per nonce
+            "ghostrider" | "ghostrider_rtm" => 1, // GhostRider: 2MB scratchpad per nonce
             "dynexsolve" | "dynexsolve_dnx" => 1, // DynexSolve: SAT solver per nonce
             "zelhash" | "zelhash_flux" => 1, // ZelHash: multi-kernel, 1 nonce per dispatch
             _ => 8, // blake3, kheavyhash
@@ -1759,41 +1977,69 @@ typedef unsigned long ulong;
             return Ok(self.proques.get(kernel_file).unwrap());
         }
 
+        // GhostRider uses a multi-file kernel: ghostrider_sph.cl + ghostrider_cn.cl + ghostrider_kernel.cl
+        // They are concatenated into a single OpenCL program.
+        let is_ghostrider = kernel_file == "ghostrider_kernel.cl";
+
         // Try disk first (dev mode), then fall back to embedded kernels (deployed binary)
         let src = match Self::kernel_dir() {
             Ok(dir) => {
-                let path = dir.join(kernel_file);
-                std::fs::read_to_string(&path)
-                    .with_context(|| format!("reading OpenCL kernel {:?}", path))?
+                if is_ghostrider {
+                    // Concatenate SPH + CN + main kernel
+                    let sph = std::fs::read_to_string(&dir.join("ghostrider_sph.cl"))
+                        .with_context(|| format!("reading OpenCL kernel {:?}", dir.join("ghostrider_sph.cl")))?;
+                    let cn = std::fs::read_to_string(&dir.join("ghostrider_cn.cl"))
+                        .with_context(|| format!("reading OpenCL kernel {:?}", dir.join("ghostrider_cn.cl")))?;
+                    let main = std::fs::read_to_string(&dir.join(kernel_file))
+                        .with_context(|| format!("reading OpenCL kernel {:?}", dir.join(kernel_file)))?;
+                    println!("auxpow_gpu_opencl ghostrider concatenated: sph={}B cn={}B main={}B total={}B",
+                        sph.len(), cn.len(), main.len(), sph.len() + cn.len() + main.len());
+                    format!("{sph}\n{cn}\n{main}")
+                } else {
+                    let path = dir.join(kernel_file);
+                    std::fs::read_to_string(&path)
+                        .with_context(|| format!("reading OpenCL kernel {:?}", path))?
+                }
             }
             Err(_) => {
                 // Embedded kernel sources (compiled into the binary)
-                let embedded = match kernel_file {
-                    "kheavyhash_kernel.cl" => include_str!("../csrc/opencl/kheavyhash_kernel.cl"),
-                    "blake3_kernel.cl" => include_str!("../csrc/opencl/blake3_kernel.cl"),
-                    "autolykos_kernel.cl" => include_str!("../csrc/opencl/autolykos_kernel.cl"),
-                    "kawpow_kernel.cl" => include_str!("../csrc/opencl/kawpow_kernel.cl"),
-                    "ethash_kernel.cl" => include_str!("../csrc/opencl/ethash_kernel.cl"),
-                    "progpow_kernel.cl" => include_str!("../csrc/opencl/progpow_kernel.cl"),
-                    "zelhash_kernel.cl" => include_str!("../csrc/opencl/zelhash_kernel.cl"),
-                    "zelhash_prod_kernel.cl" => include_str!("../csrc/opencl/zelhash_prod_kernel.cl"),
-                    "pearl_kernel.cl" => include_str!("../csrc/opencl/pearl_kernel.cl"),
-                    "pearl_pouw_native.cl" => include_str!("../csrc/opencl/pearl_pouw_native.cl"),
-                    "fishhash_kernel.cl" => include_str!("../csrc/opencl/fishhash_kernel.cl"),
-                    "karlsenhash_kernel.cl" => include_str!("../csrc/opencl/karlsenhash_kernel.cl"),
-                    "verthash_kernel.cl" => include_str!("../csrc/opencl/verthash_kernel.cl"),
-                    "sha3_512_precompute.cl" => include_str!("../csrc/opencl/sha3_512_precompute.cl"),
-                    "sha3_512_256.cl" => include_str!("../csrc/opencl/sha3_512_256.cl"),
-                    "equihash_kernel.cl" => include_str!("../csrc/opencl/equihash_kernel.cl"),
-                    "equihash200_kernel.cl" => include_str!("../csrc/opencl/equihash200_kernel.cl"),
-                    "eaglesong_kernel.cl" => include_str!("../csrc/opencl/eaglesong_kernel.cl"),
-                    "octopus_kernel.cl" => include_str!("../csrc/opencl/octopus_kernel.cl"),
-                    "neoscrypt_kernel.cl" => include_str!("../csrc/opencl/neoscrypt_kernel.cl"),
-                    "nexapow_kernel.cl" => include_str!("../csrc/opencl/nexapow_kernel.cl"),
+                let embedded: String = match kernel_file {
+                    "kheavyhash_kernel.cl" => include_str!("../csrc/opencl/kheavyhash_kernel.cl").to_string(),
+                    "blake3_kernel.cl" => include_str!("../csrc/opencl/blake3_kernel.cl").to_string(),
+                    "autolykos_kernel.cl" => include_str!("../csrc/opencl/autolykos_kernel.cl").to_string(),
+                    "kawpow_kernel.cl" => include_str!("../csrc/opencl/kawpow_kernel.cl").to_string(),
+                    "ethash_kernel.cl" => include_str!("../csrc/opencl/ethash_kernel.cl").to_string(),
+                    "progpow_kernel.cl" => include_str!("../csrc/opencl/progpow_kernel.cl").to_string(),
+                    "zelhash_kernel.cl" => include_str!("../csrc/opencl/zelhash_kernel.cl").to_string(),
+                    "zelhash_prod_kernel.cl" => include_str!("../csrc/opencl/zelhash_prod_kernel.cl").to_string(),
+                    "pearl_kernel.cl" => include_str!("../csrc/opencl/pearl_kernel.cl").to_string(),
+                    "pearl_pouw_native.cl" => include_str!("../csrc/opencl/pearl_pouw_native.cl").to_string(),
+                    "fishhash_kernel.cl" => include_str!("../csrc/opencl/fishhash_kernel.cl").to_string(),
+                    "karlsenhash_kernel.cl" => include_str!("../csrc/opencl/karlsenhash_kernel.cl").to_string(),
+                    "verthash_kernel.cl" => include_str!("../csrc/opencl/verthash_kernel.cl").to_string(),
+                    "sha3_512_precompute.cl" => include_str!("../csrc/opencl/sha3_512_precompute.cl").to_string(),
+                    "sha3_512_256.cl" => include_str!("../csrc/opencl/sha3_512_256.cl").to_string(),
+                    "equihash_kernel.cl" => include_str!("../csrc/opencl/equihash_kernel.cl").to_string(),
+                    "equihash200_kernel.cl" => include_str!("../csrc/opencl/equihash200_kernel.cl").to_string(),
+                    "eaglesong_kernel.cl" => include_str!("../csrc/opencl/eaglesong_kernel.cl").to_string(),
+                    "octopus_kernel.cl" => include_str!("../csrc/opencl/octopus_kernel.cl").to_string(),
+                    "neoscrypt_kernel.cl" => include_str!("../csrc/opencl/neoscrypt_kernel.cl").to_string(),
+                    "nexapow_kernel.cl" => include_str!("../csrc/opencl/nexapow_kernel.cl").to_string(),
+                    "ghostrider_kernel.cl" => {
+                        // Concatenate embedded SPH + CN + main kernel
+                        let sph = include_str!("../csrc/opencl/ghostrider_sph.cl");
+                        let cn = include_str!("../csrc/opencl/ghostrider_cn.cl");
+                        let main = include_str!("../csrc/opencl/ghostrider_kernel.cl");
+                        println!("auxpow_gpu_opencl using embedded ghostrider: sph={}B cn={}B main={}B",
+                            sph.len(), cn.len(), main.len());
+                        format!("{sph}\n{cn}\n{main}")
+                    },
                     _ => return Err(anyhow!("Unknown kernel file: {kernel_file} (not on disk and not embedded)")),
                 };
-                println!("auxpow_gpu_opencl using embedded kernel={kernel_file}");
-                embedded.to_string()
+                if !is_ghostrider {
+                    println!("auxpow_gpu_opencl using embedded kernel={kernel_file}");
+                }
+                embedded
             }
         };
 
@@ -2359,12 +2605,12 @@ typedef unsigned long ulong;
     }
 
     // -----------------------------------------------------------------
-    // GhostRider (RTM) — 15 hash algos + 6 CryptoNight variants
+    // GhostRider (RTM) — 15 SPH core algos + 14 CryptoNight variants
     // -----------------------------------------------------------------
 
-    /// CryptoNight scratchpad: 1MB per work-item = 262144 uint32 words
-    const GHOSTRIDER_SCRATCH_U32: usize = 262144;
-    const GHOSTRIDER_SCRATCH_BYTES: usize = Self::GHOSTRIDER_SCRATCH_U32 * 4;
+    /// CryptoNight scratchpad: max 2MB per work-item (CNFast variant)
+    /// CN variants: 256KB (turtle), 512KB (dark), 1MB (lite), 2MB (fast)
+    const GHOSTRIDER_SCRATCH_BYTES: usize = 2 * 1024 * 1024; // 2MB max
 
     fn build_ghostrider_kernel(
         pro_que: &ProQue,
@@ -2379,9 +2625,9 @@ typedef unsigned long ulong;
     ) -> Result<Kernel> {
         let q = pro_que.queue().clone();
 
-        // Cap batch by VRAM: each work-item needs 1MB scratchpad
-        // With 6GB VRAM, max ~6000 work-items. Use min(batch_size, 2048).
-        let effective_batch = batch_size.min(2048) as usize;
+        // Cap batch by VRAM: each work-item needs 2MB scratchpad (max CN variant)
+        // With 16GB unified memory (M1), max ~8000 work-items. Use min(batch_size, 512) for safety.
+        let effective_batch = batch_size.min(512) as usize;
 
         let mut hdr = [0u8; 80];
         let copy_len = header.len().min(80);
@@ -2399,7 +2645,7 @@ typedef unsigned long ulong;
             .copy_host_slice(target.as_slice())
             .build()?;
 
-        // Scratchpad pool: effective_batch * 1MB
+        // Scratchpad pool: effective_batch * 2MB (max CN variant scratchpad)
         let scratch_bytes = effective_batch * Self::GHOSTRIDER_SCRATCH_BYTES;
         let scratchpad_pool: Buffer<u8> = Buffer::builder()
             .queue(q.clone())

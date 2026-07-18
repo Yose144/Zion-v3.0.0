@@ -447,4 +447,26 @@ int64_t verushash_scan_nonces(
     return -1; /* not found */
 }
 
+/* Extract the precomputed VerusHash key (8832 bytes) and blockhash_half (64 bytes)
+ * for GPU kernel upload. Must be called after verushash_prepare_key().
+ * key_out must be 8832 bytes; blockhash_half_out must be 64 bytes.
+ * Returns 0 on success, -1 if key not prepared. */
+int32_t verushash_get_gpu_keydata(
+    uint8_t* key_out,
+    uint8_t* blockhash_half_out)
+{
+    if (!tl_key_prepared) {
+        return -1;
+    }
+    u128* key = (u128*)verusclhasher_key.get();
+    if (!key) {
+        return -1;
+    }
+    verusclhash_descr* pdesc = (verusclhash_descr*)verusclhasher_descr.get();
+    size_t keySize = pdesc ? pdesc->keySizeInBytes : 8832;
+    memcpy(key_out, key, keySize);
+    memcpy(blockhash_half_out, tl_curBuf, 64);
+    return 0;
+}
+
 } /* extern "C" */

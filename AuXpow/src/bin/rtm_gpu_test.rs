@@ -1,6 +1,6 @@
 // RTM GPU Mining Test — OpenCL GhostRider on M1
-// Tests GPU mining infrastructure with the ghostrider OpenCL kernel.
-// NOTE: The kernel currently uses simplified hashes — real sphlib port in progress.
+// Tests GPU mining with real SPH core algorithms + CryptoNight (AES-based).
+// Kernel: ghostrider_sph.cl + ghostrider_cn.cl + ghostrider_kernel.cl (concatenated)
 //
 // Usage: cargo run --features gpu-opencl --bin rtm_gpu_test
 
@@ -70,7 +70,7 @@ async fn main() {
     let start = Instant::now();
     let mut current_job = initial_job;
     let mut nonce_base: u64 = 0;
-    let batch_size: u64 = 1024; // Start small for testing
+    let batch_size: u64 = 512; // Capped at 512 (2MB scratchpad per work-item = 1GB total)
     let mut total_hashes: u64 = 0;
     let mut shares_found: u64 = 0;
     let mut shares_accepted: u64 = 0;
