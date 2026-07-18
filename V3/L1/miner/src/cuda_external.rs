@@ -770,6 +770,24 @@ impl GpuMiner for CudaExternalMiner {
     }
 
     fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
+        // For DAG-based algorithms, use mine_batch_raw which calls ensure_dag(0)
+        if self.algo.needs_dag() {
+            self.ensure_dag(0)?;
+            let start = Instant::now();
+            let mut total: u64 = 0;
+            let mut nonce: u64 = 0;
+            let header = [0xAAu8; 32];
+            let target = DifficultyTarget { bytes: [0xFFu8; 32] };
+            while start.elapsed().as_secs_f64() < secs {
+                let result = self.run_kernel(&header, &target.bytes, nonce, self.work_size as u64)?;
+                total += result.nonces_tested;
+                nonce = nonce.wrapping_add(self.work_size as u64);
+            }
+            let elapsed = start.elapsed().as_secs_f64();
+            let hps = if elapsed > 0.0 { total as f64 / elapsed } else { 0.0 };
+            return Ok((total, elapsed, hps));
+        }
+
         let start = Instant::now();
         let mut total: u64 = 0;
         let mut nonce: u64 = 0;
