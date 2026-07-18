@@ -36,6 +36,10 @@ pub enum ExternalCoin {
     NEXA,
     RTM,
     DNX,
+    CKB,
+    CFX,
+    ZEC,
+    PHX,
 }
 
 impl ExternalCoin {
@@ -65,6 +69,10 @@ impl ExternalCoin {
             Self::NEXA => "NEXA",
             Self::RTM => "RTM",
             Self::DNX => "DNX",
+            Self::CKB => "CKB",
+            Self::CFX => "CFX",
+            Self::ZEC => "ZEC",
+            Self::PHX => "PHX",
         }
     }
 
@@ -94,6 +102,10 @@ impl ExternalCoin {
             Self::NEXA => "nexapow",
             Self::RTM => "ghostrider",
             Self::DNX => "dynexsolve",
+            Self::CKB => "eaglesong",
+            Self::CFX => "octopus",
+            Self::ZEC => "equihash",
+            Self::PHX => "neoscrypt",
         }
     }
 
@@ -131,6 +143,10 @@ impl ExternalCoin {
             "nexa" => Some(Self::NEXA),
             "rtm" | "raptoreum" => Some(Self::RTM),
             "dnx" | "dynex" => Some(Self::DNX),
+            "ckb" | "nervos" | "nervos-network" => Some(Self::CKB),
+            "cfx" | "conflux" => Some(Self::CFX),
+            "zec" | "zcash" => Some(Self::ZEC),
+            "phx" | "phoenixcoin" | "phoenix-coin" => Some(Self::PHX),
             _ => None,
         }
     }
@@ -161,6 +177,10 @@ impl ExternalCoin {
             Self::NEXA => "nexa.2miners.com:5050",
             Self::RTM => "ghostrider.eu.mine.zpool.ca:5354",
             Self::DNX => "pool.deepminerz.com:3333",
+            Self::CKB => "ckb.2miners.com:6464",
+            Self::CFX => "cfx.2miners.com:6565",
+            Self::ZEC => "zec.2miners.com:7070",
+            Self::PHX => "neoscrypt.eu.mine.zpool.ca:4233",
         }
     }
 
@@ -171,7 +191,8 @@ impl ExternalCoin {
     /// works for all algorithms.
     ///
     /// Returns `None` for coins not supported by NiceHash (Blake3, ProgPow,
-    /// PearlHash, GhostRider, DynexSolve, KarlsenHash, Qhash, Verthash).
+    /// PearlHash, GhostRider, DynexSolve, KarlsenHash, Qhash, Verthash,
+    /// ZelHash/FLUX — NiceHash ZHash is 144,5, not 125,4).
     pub fn nicehash_pool(self) -> Option<&'static str> {
         Some(match self {
             Self::ETC => "etchash.auto.nicehash.com:9200",
@@ -184,12 +205,19 @@ impl ExternalCoin {
             Self::IRON => "fishhash.auto.nicehash.com:9200",
             Self::ALPH => "alephium.auto.nicehash.com:9200",
             Self::ZCL => "equihash192.auto.nicehash.com:9200",
-            Self::FLUX => "zhash.auto.nicehash.com:9200",
+            Self::CKB => "eaglesong.auto.nicehash.com:9200",
+            Self::CFX => "octopus.auto.nicehash.com:9200",
+            Self::ZEC => "equihash.auto.nicehash.com:9200",
+            Self::PHX => "neoscrypt.auto.nicehash.com:9200",
+            // FLUX (ZelHash = Equihash 125,4) is NOT on NiceHash.
+            // NiceHash ZHash = Equihash 144,5 (BTG/ANON/BTCZ) — different algo.
             // Not on NiceHash: XMR (requires KYC), DCR (Blake3), EPIC (ProgPow),
             // EVR (EvrProgPow), MEWC (MeowPow), PRL (PearlHash), RTM (GhostRider),
-            // DNX (DynexSolve), KLS (KarlsenHash), QTC (Qhash), VTC (Verthash)
+            // DNX (DynexSolve), KLS (KarlsenHash), QTC (Qhash), VTC (Verthash),
+            // FLUX (ZelHash 125,4 ≠ NiceHash ZHash 144,5)
             Self::XMR | Self::DCR | Self::EPIC | Self::EVR | Self::MEWC | Self::PRL
-            | Self::KLS | Self::QTC | Self::VTC | Self::RTM | Self::DNX => return None,
+            | Self::KLS | Self::QTC | Self::VTC | Self::RTM | Self::DNX | Self::FLUX
+            => return None,
         })
     }
 
@@ -212,6 +240,7 @@ impl ExternalCoin {
             Self::KAS | Self::ERG | Self::RVN | Self::ETC
                 | Self::EVR | Self::MEWC | Self::QUAI | Self::BEAM
                 | Self::ZCL | Self::NEXA | Self::RTM | Self::VTC
+                | Self::CKB | Self::CFX | Self::ZEC | Self::PHX
         )
     }
 
@@ -220,6 +249,7 @@ impl ExternalCoin {
         matches!(
             self,
             Self::EVR | Self::MEWC | Self::ZCL | Self::NEXA | Self::RTM | Self::VTC
+                | Self::PHX
         )
     }
 
@@ -249,6 +279,10 @@ impl ExternalCoin {
             Self::NEXA,
             Self::RTM,
             Self::DNX,
+            Self::CKB,
+            Self::CFX,
+            Self::ZEC,
+            Self::PHX,
         ]
     }
 
@@ -380,6 +414,10 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
         ProfitEntry { coin: ExternalCoin::NEXA, revenue_per_day_usd: 0.03, power_cost_usd: 0.24 },
         ProfitEntry { coin: ExternalCoin::RTM, revenue_per_day_usd: 0.03, power_cost_usd: 0.24 },
         ProfitEntry { coin: ExternalCoin::DNX, revenue_per_day_usd: 0.02, power_cost_usd: 0.22 },
+        ProfitEntry { coin: ExternalCoin::CKB, revenue_per_day_usd: 0.08, power_cost_usd: 0.25 },
+        ProfitEntry { coin: ExternalCoin::CFX, revenue_per_day_usd: 0.15, power_cost_usd: 0.31 },
+        ProfitEntry { coin: ExternalCoin::ZEC, revenue_per_day_usd: 0.10, power_cost_usd: 0.25 },
+        ProfitEntry { coin: ExternalCoin::PHX, revenue_per_day_usd: 0.03, power_cost_usd: 0.27 },
     ]
 }
 
@@ -889,8 +927,8 @@ mod tests {
     #[test]
     fn new_coin_all_array_complete() {
         let all = ExternalCoin::all();
-        // 16 original + 8 new = 24
-        assert_eq!(all.len(), 24);
+        // 16 original + 8 new + 4 NiceHash = 28
+        assert_eq!(all.len(), 28);
         assert!(all.contains(&ExternalCoin::KLS));
         assert!(all.contains(&ExternalCoin::ZCL));
         assert!(all.contains(&ExternalCoin::QTC));
@@ -899,5 +937,9 @@ mod tests {
         assert!(all.contains(&ExternalCoin::NEXA));
         assert!(all.contains(&ExternalCoin::RTM));
         assert!(all.contains(&ExternalCoin::DNX));
+        assert!(all.contains(&ExternalCoin::CKB));
+        assert!(all.contains(&ExternalCoin::CFX));
+        assert!(all.contains(&ExternalCoin::ZEC));
+        assert!(all.contains(&ExternalCoin::PHX));
     }
 }

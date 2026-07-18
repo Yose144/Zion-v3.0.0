@@ -91,10 +91,18 @@ pub enum ExternalCoin {
     IRON,
     /// Nexa — NexaPow. GPU coin. 2miners.
     NEXA,
-    /// Raptoreum — GhostRider. GPU coin. ZPool.
+    /// Raptoreum — GhostRider. CPU-only coin. ZPool.
     RTM,
     /// Dynex — DynexSolve. GPU coin. DeepMinerz (Cryptonote stratum).
     DNX,
+    /// Nervos Network — Eaglesong. GPU coin. 2miners, NiceHash.
+    CKB,
+    /// Conflux — Octopus. GPU coin. 2miners, NiceHash.
+    CFX,
+    /// Zcash — Equihash 200,9. GPU coin. 2miners, NiceHash.
+    ZEC,
+    /// PhoenixCoin — NeoScrypt. GPU coin. ZPool, NiceHash.
+    PHX,
 }
 
 impl ExternalCoin {
@@ -125,6 +133,10 @@ impl ExternalCoin {
             Self::NEXA => "NEXA",
             Self::RTM => "RTM",
             Self::DNX => "DNX",
+            Self::CKB => "CKB",
+            Self::CFX => "CFX",
+            Self::ZEC => "ZEC",
+            Self::PHX => "PHX",
         }
     }
 
@@ -155,6 +167,10 @@ impl ExternalCoin {
             Self::NEXA => "nexapow",
             Self::RTM => "ghostrider",
             Self::DNX => "dynexsolve",
+            Self::CKB => "eaglesong",
+            Self::CFX => "octopus",
+            Self::ZEC => "equihash",
+            Self::PHX => "neoscrypt",
         }
     }
 
@@ -203,6 +219,10 @@ impl ExternalCoin {
             Self::NEXA => Some(5_000_000_000),   // NexaPow ~5 GB
             Self::RTM => None,           // GhostRider — CPU-only, no DAG (CN scratchpad 128KB-2MB)
             Self::DNX => None,           // DynexSolve — no DAG (uses chip model)
+            Self::CKB => None,           // Eaglesong — no DAG (sponge hash)
+            Self::CFX => Some(4_294_967_296),    // Octopus ~4 GB (Ethash-like DAG)
+            Self::ZEC => Some(1_073_741_824),    // Equihash 200,9 ~1 GB
+            Self::PHX => None,           // NeoScrypt — no DAG (scrypt-based, memory-hard)
         }
     }
 
@@ -261,7 +281,11 @@ impl ExternalCoin {
                 Self::ZCL |                        // equihashzero
                 Self::NEXA |                       // nexapow
                 Self::QTC |                        // qhash (quantum circuit sim)
-                Self::DNX                          // dynexsolve (neuromorphic SAT)
+                Self::DNX |                        // dynexsolve (neuromorphic SAT)
+                Self::CKB |                        // eaglesong (sponge hash)
+                Self::CFX |                        // octopus (Ethash-like DAG)
+                Self::ZEC |                        // equihash 200,9
+                Self::PHX                          // neoscrypt (scrypt-based)
             ),
             "cuda" => matches!(
                 self,
@@ -294,6 +318,10 @@ impl ExternalCoin {
             Self::IRON => 220.0,                     // FishHash — memory-hard
             Self::NEXA => 210.0,                     // NexaPow
             Self::DNX => 150.0,                      // DynexSolve — different paradigm
+            Self::CKB => 170.0,                      // Eaglesong — moderate
+            Self::CFX => 210.0,                      // Octopus — DAG-based, memory-hard
+            Self::ZEC => 170.0,                      // Equihash 200,9 — memory-hard
+            Self::PHX => 180.0,                      // NeoScrypt — memory-hard
             Self::RTM => 0.0,                        // CPU-only (was 200W GPU placeholder)
             Self::XMR | Self::VRSC => 0.0,           // CPU coins — no GPU power
         }
@@ -337,6 +365,10 @@ impl ExternalCoin {
             "nexa" | "nexapow" => Some(Self::NEXA),
             "rtm" | "raptoreum" | "ghostrider" => Some(Self::RTM),
             "dnx" | "dynex" | "dynexsolve" => Some(Self::DNX),
+            "ckb" | "nervos" | "nervos-network" | "eaglesong" => Some(Self::CKB),
+            "cfx" | "conflux" | "octopus" => Some(Self::CFX),
+            "zec" | "zcash" | "equihash" => Some(Self::ZEC),
+            "phx" | "phoenixcoin" | "neoscrypt" => Some(Self::PHX),
             _ => None,
         }
     }
@@ -369,6 +401,10 @@ impl ExternalCoin {
             Self::NEXA => "nexa.2miners.com:5050",
             Self::RTM => "ghostrider.eu.mine.zpool.ca:5354",
             Self::DNX => "pool.deepminerz.com:3333",
+            Self::CKB => "ckb.2miners.com:6464",
+            Self::CFX => "cfx.2miners.com:6565",
+            Self::ZEC => "zec.2miners.com:7070",
+            Self::PHX => "neoscrypt.eu.mine.zpool.ca:4233",
         }
     }
 
@@ -392,10 +428,17 @@ impl ExternalCoin {
             Self::IRON => "fishhash",
             Self::ALPH => "alephium",
             Self::ZCL => "equihash192",
-            Self::FLUX => "zhash",
+            Self::CKB => "eaglesong",
+            Self::CFX => "octopus",
+            Self::ZEC => "equihash",
+            Self::PHX => "neoscrypt",
+            // FLUX (ZelHash = Equihash 125,4) is NOT on NiceHash.
+            // NiceHash ZHash = Equihash 144,5 (BTG/ANON/BTCZ) — different algo.
+            // Sending FLUX work to ZHash endpoint would produce invalid shares.
             // Not on NiceHash: XMR (requires KYC), DCR (Blake3), EPIC (ProgPow),
             // EVR (EvrProgPow), MEWC (MeowPow), PRL (PearlHash), RTM (GhostRider),
-            // DNX (DynexSolve), KLS (KarlsenHash), QTC (Qhash), VTC (Verthash)
+            // DNX (DynexSolve), KLS (KarlsenHash), QTC (Qhash), VTC (Verthash),
+            // FLUX (ZelHash 125,4 ≠ NiceHash ZHash 144,5)
             _ => return None,
         };
         // NiceHash uses auto.nicehash.com:9200 for all algos.
@@ -414,6 +457,9 @@ impl ExternalCoin {
             Self::RVN => ("ravencoin", 1140),
             Self::IRON => ("ironfish", 1145),
             Self::DNX => ("dynex", 1030),
+            Self::CKB => ("nervos", 1160),
+            Self::CFX => ("conflux", 1170),
+            Self::ZEC => ("zcash", 1156),
             _ => return None,
         };
 
@@ -437,6 +483,8 @@ impl ExternalCoin {
             Self::MEWC => ("meowpow", 1327),
             Self::ZCL => ("equihash192", 2144),
             Self::RTM => ("ghostrider", 5354),
+            Self::PHX => ("neoscrypt", 4233),
+            Self::ZEC => ("equihash", 1080),
             _ => return None,
         };
         let zp_region = match region.to_ascii_lowercase().as_str() {
@@ -508,6 +556,10 @@ impl ExternalCoin {
             Self::NEXA => StratumProtocol::Stratum,
             Self::RTM => StratumProtocol::Stratum,
             Self::DNX => StratumProtocol::Stratum,
+            Self::CKB => StratumProtocol::Stratum,
+            Self::CFX => StratumProtocol::Stratum,
+            Self::ZEC => StratumProtocol::ZcashStratum,
+            Self::PHX => StratumProtocol::Stratum,
         }
     }
 
@@ -538,6 +590,10 @@ impl ExternalCoin {
             Self::NEXA,
             Self::RTM,
             Self::DNX,
+            Self::CKB,
+            Self::CFX,
+            Self::ZEC,
+            Self::PHX,
         ]
     }
 
@@ -571,6 +627,10 @@ impl ExternalCoin {
             Self::NEXA => RevenueSource::NexaPowExternal,
             Self::RTM => RevenueSource::GhostRiderExternal,
             Self::DNX => RevenueSource::DynexSolveExternal,
+            Self::CKB => RevenueSource::EaglesongExternal,
+            Self::CFX => RevenueSource::OctopusExternal,
+            Self::ZEC => RevenueSource::EquihashExternal,
+            Self::PHX => RevenueSource::NeoScryptExternal,
         }
     }
 }
@@ -788,6 +848,26 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
             revenue_per_day_usd: 0.02,
             power_cost_usd: 0.22,
         },
+        ProfitEntry {
+            coin: ExternalCoin::CKB,
+            revenue_per_day_usd: 0.08,
+            power_cost_usd: 0.25,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::CFX,
+            revenue_per_day_usd: 0.15,
+            power_cost_usd: 0.31,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::ZEC,
+            revenue_per_day_usd: 0.10,
+            power_cost_usd: 0.25,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::PHX,
+            revenue_per_day_usd: 0.03,
+            power_cost_usd: 0.27,
+        },
     ]
 }
 
@@ -816,7 +896,13 @@ fn nicehash_algo_to_external_coin(algo: &str) -> Option<ExternalCoin> {
         "BEAMV3" => Some(ExternalCoin::BEAM),
         "FISHHASH" => Some(ExternalCoin::IRON),
         "ALEPHIUM" => Some(ExternalCoin::ALPH),
-        "ZHASH" => Some(ExternalCoin::FLUX),
+        "EAGLESONG" => Some(ExternalCoin::CKB),
+        "OCTOPUS" => Some(ExternalCoin::CFX),
+        "EQUIHASH" => Some(ExternalCoin::ZEC),
+        "NEOSCRYPT" => Some(ExternalCoin::PHX),
+        // ZHASH (Equihash 144,5) is NOT FLUX (ZelHash = Equihash 125,4).
+        // NiceHash ZHash is for BTG/ANON/BTCZ — we don't mine those.
+        // FLUX must use alternative pools (WoolyPooly, etc.).
         // EQUIHASH192 not directly listed; ZCL uses equihash192
         _ => None,
     }

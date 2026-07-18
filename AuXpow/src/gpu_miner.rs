@@ -265,6 +265,23 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
             // Each work-item needs clause array + variable array + temp arrays
             Some(("dynexsolve_kernel.cl", "dynexsolve_mine"))
         }
+        "eaglesong" | "eaglesong_ckb" => {
+            // Eaglesong: sponge-based hash for Nervos Network (CKB)
+            Some(("eaglesong_kernel.cl", "eaglesong_mine"))
+        }
+        "octopus" | "octopus_cfx" => {
+            // Octopus: Ethash-like DAG-based PoW for Conflux (CFX)
+            Some(("octopus_kernel.cl", "octopus_mine"))
+        }
+        "equihash" | "equihash_zec" => {
+            // Equihash 200,9: memory-hard PoW for Zcash (ZEC)
+            // Multi-pass kernel: init → round0 → round1..round_k → final
+            Some(("equihash200_kernel.cl", "kernel_init_ht"))
+        }
+        "neoscrypt" | "neoscrypt_phx" => {
+            // NeoScrypt: scrypt-based memory-hard PoW for PhoenixCoin (PHX)
+            Some(("neoscrypt_kernel.cl", "neoscrypt_mine"))
+        }
         _ => None,
     }
 }
@@ -642,6 +659,11 @@ impl GpuMiner {
                 // and double-SHA256 solution verification.
                 return self.mine_equihash(header, target, base_nonce);
             }
+            "equihash" | "equihash_zec" => {
+                // Equihash 200,9: multi-kernel Wagner's algorithm (Zcash)
+                // Same multi-pass approach as 192,7 but with N=200, K=9.
+                return self.mine_equihash200(header, target, base_nonce);
+            }
             "nexapow" | "nexapow_nexa" => {
                 // NexaPow: double-SHA256 → secp256k1 Schnorr sign → SHA256
                 // Single-kernel dispatch, no DAG or data file needed
@@ -715,6 +737,7 @@ impl GpuMiner {
             | "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => 1,
             "verthash" | "verthash_vtc" => 1, // Verthash: 4-way kernel, 1 nonce per 4 work-items
             "equihashzero" | "equihashzero_zcl" => 1, // Equihash: memory-bound, 1 nonce per work-item
+            "equihash" | "equihash_zec" => 1, // Equihash 200,9: same memory-bound pattern
             "nexapow" | "nexapow_nexa" => 1, // NexaPow: secp256k1 Schnorr per nonce
             "qhash" | "qhash_qtc" => 1, // Qhash: 512KB state vector per nonce
             "ghostrider" | "ghostrider_rtm" => 1, // GhostRider: 1MB scratchpad per nonce
@@ -733,6 +756,7 @@ impl GpuMiner {
             "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => 128, // WORKSIZE=128 in fishhash/karlsenhash kernels
             "verthash" | "verthash_vtc" => 64, // WORK_SIZE=64 for Verthash 4-way kernel
             "equihashzero" | "equihashzero_zcl" => 64, // Equihash: reqd_work_group_size(64,1,1)
+            "equihash" | "equihash_zec" => 64, // Equihash 200,9: same kernel structure
             "nexapow" | "nexapow_nexa" => 64, // NexaPow: secp256k1 operations, 64 for register pressure
             "qhash" | "qhash_qtc" => 64, // Qhash: state vector ops, 64 for register pressure
             "ghostrider" | "ghostrider_rtm" => 64, // GhostRider: hash + CN, 64 for register pressure
@@ -1762,6 +1786,10 @@ typedef unsigned long ulong;
                     "sha3_512_precompute.cl" => include_str!("../csrc/opencl/sha3_512_precompute.cl"),
                     "sha3_512_256.cl" => include_str!("../csrc/opencl/sha3_512_256.cl"),
                     "equihash_kernel.cl" => include_str!("../csrc/opencl/equihash_kernel.cl"),
+                    "equihash200_kernel.cl" => include_str!("../csrc/opencl/equihash200_kernel.cl"),
+                    "eaglesong_kernel.cl" => include_str!("../csrc/opencl/eaglesong_kernel.cl"),
+                    "octopus_kernel.cl" => include_str!("../csrc/opencl/octopus_kernel.cl"),
+                    "neoscrypt_kernel.cl" => include_str!("../csrc/opencl/neoscrypt_kernel.cl"),
                     "nexapow_kernel.cl" => include_str!("../csrc/opencl/nexapow_kernel.cl"),
                     _ => return Err(anyhow!("Unknown kernel file: {kernel_file} (not on disk and not embedded)")),
                 };
@@ -2594,7 +2622,7 @@ typedef unsigned long ulong;
     /// Encode solution indices into compressed byte format (store_encoded_sol).
     ///
     /// Each of the 2^k input indices is encoded using (PREFIX+1) bits,
-    /// producing a bitstream that is ZCASH_SOL_LEN bytes long.
+    /// producing a bitstream that is zcash_sol_len bytes long.
     fn encode_equihash_solution(inputs: &[u32], prefix: u32, k: u32) -> Vec<u8> {
         let n_inputs = 1usize << k;
         let bits_per_index = (prefix + 1) as usize;
@@ -2632,20 +2660,47 @@ typedef unsigned long ulong;
         target: &[u8; 32],
         base_nonce: u64,
     ) -> Result<Option<GpuFoundShare>> {
-        // Equihash 192,7 constants (must match equihash_192_7_param.h)
-        const PARAM_K: u32 = 7;
-        const PREFIX: u32 = 24;
+        // Delegate to the parameterized implementation with 192,7 constants.
+        self.mine_equihash_impl(header, target, base_nonce, "equihash_kernel.cl", 7, 24, 64)
+    }
+
+    /// Equihash 200,9 mining (Zcash / ZEC).
+    /// Same Wagner's algorithm as 192,7 but with N=200, K=9 parameters.
+    /// Solution size: 2^9 * 21 / 8 = 1344 bytes. Memory: ~256MB per table.
+    fn mine_equihash200(
+        &mut self,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+    ) -> Result<Option<GpuFoundShare>> {
+        // Equihash 200,9 constants (must match equihash_200_9_param.h)
+        // PARAM_K=9, PREFIX=20, NR_SLOTS=4 (OVERHEAD=4 for 200,9)
+        self.mine_equihash_impl(header, target, base_nonce, "equihash200_kernel.cl", 9, 20, 4)
+    }
+
+    /// Parameterized Equihash multi-pass mining.
+    /// Handles the full Wagner's algorithm: init_ht → round0..k → sols.
+    fn mine_equihash_impl(
+        &mut self,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        kernel_file: &str,
+        param_k: u32,
+        prefix: u32,
+        nr_slots: usize,
+    ) -> Result<Option<GpuFoundShare>> {
+        // Use parameterized values (passed from mine_equihash / mine_equihash200)
         const NR_ROWS: usize = 1 << 20; // 2^20 = 1,048,576
-        const NR_SLOTS: usize = 64;     // OVERHEAD=2: 32 * 2 = 64 (fits 8GB GPUs)
         const SLOT_LEN: usize = 32;
-        const HT_SIZE: usize = NR_ROWS * NR_SLOTS * SLOT_LEN; // ~2 GB
+        let ht_size: usize = NR_ROWS * nr_slots * SLOT_LEN;
         const ROWS_PER_UINT: usize = 4; // BITS_PER_ROW=8 → ROWS_PER_UINT=4
         const ROW_COUNTERS_SIZE: usize = NR_ROWS / ROWS_PER_UINT; // 262,144 u32s
         const MAX_SOLS: usize = 10;
         const ZCASH_BLOCK_HEADER_LEN: usize = 140;
         const ZCASH_NONCE_LEN: usize = 32;
         const ZCASH_NONCE_OFFSET: usize = ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN; // 108
-        const ZCASH_SOL_LEN: usize = (1 << PARAM_K) * (PREFIX as usize + 1) / 8; // 400
+        let zcash_sol_len: usize = (1usize << param_k) * (prefix as usize + 1) / 8;
 
         // sols_t layout (matching the kernel struct):
         //   uint nr;           // 4 bytes
@@ -2655,16 +2710,16 @@ typedef unsigned long ulong;
         // Total: 12 + 5120 = 5132 bytes. Use 8192 for safety margin.
         const SOLS_BUF_SIZE: usize = 8192;
 
-        // Check VRAM — need at least 2 * HT_SIZE + overhead
-        let vram_needed = 2 * HT_SIZE + ROW_COUNTERS_SIZE * 2 * 4 + SOLS_BUF_SIZE + 1024;
+        // Check VRAM — need at least 2 * ht_size + overhead
+        let vram_needed = 2 * ht_size + ROW_COUNTERS_SIZE * 2 * 4 + SOLS_BUF_SIZE + 1024;
         println!(
-            "auxpow_gpu_equihash HT_SIZE={:.1} GB per table, total VRAM needed={:.1} GB",
-            HT_SIZE as f64 / 1e9,
+            "auxpow_gpu_equihash ht_size={:.1} GB per table, total VRAM needed={:.1} GB",
+            ht_size as f64 / 1e9,
             vram_needed as f64 / 1e9
         );
 
         // Get ProQue for equihash kernel
-        let pro_que = self.ensure_proque("equihash_kernel.cl")?;
+        let pro_que = self.ensure_proque(kernel_file)?;
         let q = pro_que.queue().clone();
 
         // Prepare 140-byte header with nonce
@@ -2687,14 +2742,14 @@ typedef unsigned long ulong;
         println!("auxpow_gpu_equihash allocating hash tables...");
         let ht0: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
-            .len(HT_SIZE)
+            .len(ht_size)
             .build()
-            .map_err(|e| anyhow!("Equihash ht0 alloc failed ({:.1} GB): {e}", HT_SIZE as f64 / 1e9))?;
+            .map_err(|e| anyhow!("Equihash ht0 alloc failed ({:.1} GB): {e}", ht_size as f64 / 1e9))?;
         let ht1: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
-            .len(HT_SIZE)
+            .len(ht_size)
             .build()
-            .map_err(|e| anyhow!("Equihash ht1 alloc failed ({:.1} GB): {e}", HT_SIZE as f64 / 1e9))?;
+            .map_err(|e| anyhow!("Equihash ht1 alloc failed ({:.1} GB): {e}", ht_size as f64 / 1e9))?;
 
         let rc0: Buffer<u32> = Buffer::builder()
             .queue(q.clone())
@@ -2738,8 +2793,8 @@ typedef unsigned long ulong;
         // For K=7, rounds 1-5 are collision-finding (no sols arg),
         // round 6 is the final round (with sols arg).
         // k_rounds[0] = kernel_round1, ..., k_rounds[4] = kernel_round5
-        let mut k_rounds: Vec<Kernel> = Vec::with_capacity((PARAM_K - 2) as usize);
-        for round in 1..=(PARAM_K - 1) {
+        let mut k_rounds: Vec<Kernel> = Vec::with_capacity((param_k - 2) as usize);
+        for round in 1..=(param_k - 1) {
             let name = format!("kernel_round{}", round);
             k_rounds.push(
                 Kernel::builder()
@@ -2819,7 +2874,7 @@ typedef unsigned long ulong;
 
         // 3. Rounds 1..K-2: collision finding (alternating ht_src/ht_dst)
         //    For K=7: rounds 1-5 use k_rounds[0..4] (no sols arg)
-        for round in 1..=(PARAM_K - 1) {
+        for round in 1..=(param_k - 1) {
             let round_idx = (round - 1) as usize;
             let k = &k_rounds[round_idx];
             let ht_src = if round % 2 == 1 { &ht0 } else { &ht1 };
@@ -2854,7 +2909,7 @@ typedef unsigned long ulong;
 
         // 4. Round K-1 (= 6): final round with sols argument
         {
-            let round = PARAM_K - 1; // 6
+            let round = param_k - 1; // 6
             let ht_src = if round % 2 == 1 { &ht0 } else { &ht1 };
             let ht_dst = if round % 2 == 1 { &ht1 } else { &ht0 };
             let rc_src = if round % 2 == 1 { &rc0 } else { &rc1 };
@@ -2931,10 +2986,11 @@ typedef unsigned long ulong;
                 continue;
             }
 
-            // Read 2^k = 128 u32 values for this solution
-            let values_offset = 12 + sol_i * (1 << PARAM_K) * 4;
-            let mut inputs = [0u32; 128]; // 2^7 = 128
-            for j in 0..128 {
+            // Read 2^k u32 values for this solution
+            let n_inputs = 1usize << param_k;
+            let values_offset = 12 + sol_i * n_inputs * 4;
+            let mut inputs = vec![0u32; n_inputs];
+            for j in 0..n_inputs {
                 let off = values_offset + j * 4;
                 if off + 4 > SOLS_BUF_SIZE {
                     break;
@@ -2946,10 +3002,10 @@ typedef unsigned long ulong;
             }
 
             // Encode solution
-            let encoded_sol = Self::encode_equihash_solution(&inputs, PREFIX, PARAM_K);
-            if encoded_sol.len() != ZCASH_SOL_LEN {
+            let encoded_sol = Self::encode_equihash_solution(&inputs, prefix, param_k);
+            if encoded_sol.len() != zcash_sol_len {
                 println!(
-                    "auxpow_gpu_equihash sol_{sol_i} encoded size {} != expected {ZCASH_SOL_LEN}, skipping",
+                    "auxpow_gpu_equihash sol_{sol_i} encoded size {} != expected {zcash_sol_len}, skipping",
                     encoded_sol.len()
                 );
                 continue;
@@ -2957,7 +3013,7 @@ typedef unsigned long ulong;
 
             // Compute double-SHA256(header + varint + encoded_sol)
             // Varint for 400 bytes: 0xfd 0x90 0x01 (little-endian u16)
-            let mut verify_buf = Vec::with_capacity(ZCASH_BLOCK_HEADER_LEN + 3 + ZCASH_SOL_LEN);
+            let mut verify_buf = Vec::with_capacity(ZCASH_BLOCK_HEADER_LEN + 3 + zcash_sol_len);
             verify_buf.extend_from_slice(&header_buf);
             verify_buf.extend_from_slice(&[0xfd, 0x90, 0x01]); // varint 400
             verify_buf.extend_from_slice(&encoded_sol);

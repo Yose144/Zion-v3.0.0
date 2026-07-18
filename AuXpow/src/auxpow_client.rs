@@ -163,6 +163,10 @@ impl ExternalCoin {
             Self::DNX => StratumProtocol::CryptonoteStratum,
             Self::IRON => StratumProtocol::IronFishStratum,
             Self::ZCL => StratumProtocol::ZcashStratum,
+            // CKB (Eaglesong), CFX (Octopus), PHX (NeoScrypt) — standard Stratum v1.
+            Self::CKB | Self::CFX | Self::PHX => StratumProtocol::Stratum,
+            // ZEC (Equihash 200,9) — Zcash stratum with solution field.
+            Self::ZEC => StratumProtocol::ZcashStratum,
         }
     }
 

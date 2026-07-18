@@ -70,6 +70,11 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
         "pearlhash" => Ok(scan_pearl(job, start, end)),
         "randomx" => Ok(scan_randomx(job, start, end)),
         "ghostrider" => Ok(scan_ghostrider(job, start, end)),
+        // Eaglesong/Octopus/Equihash/NeoScrypt — GPU-only, no CPU harness yet.
+        // CPU mining for these requires native FFI (future work).
+        "eaglesong" | "octopus" | "equihash" | "neoscrypt" => {
+            Err(anyhow!("algorithm '{}' requires GPU mining (no CPU harness)", algo))
+        }
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
 }
@@ -106,6 +111,9 @@ pub fn mine_best(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option
         "pearlhash" => Ok(scan_pearl_best(job, start, end)),
         "randomx" => Ok(scan_randomx_best(job, start, end)),
         "ghostrider" => Ok(scan_ghostrider_best(job, start, end)),
+        "eaglesong" | "octopus" | "equihash" | "neoscrypt" => {
+            Err(anyhow!("algorithm '{}' requires GPU mining (no CPU harness)", algo))
+        }
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
 }
