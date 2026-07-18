@@ -1,26 +1,19 @@
 /*
- * DeekshaLite Fire — Native CUDA GPU Mining Kernel (OPTIMIZED v2)
+ * DeekshaLite Fire — Native CUDA GPU Mining Kernel (OPTIMIZED v3)
  *
  * Ported from the canonical OpenCL kernel (deeksha_lite_fire.cl).
  * Every operation is bit-exact with Rust reference and OpenCL production kernel.
  *
- * Pipeline:
- *   1. Keccak256(header || nonce)  — host precomputed state
- *   2. Memory-hard scratchpad (256 KiB, 8192 blocks, 2 passes, 64 reads)
- *   3. AES-128 CTR mix (3 full rounds + 1 final)
- *   4. Thermal loop (16384 iters, 8 ulong chains) — extra heat, no float
- *   5. Keccak256(s3_after_thermal) → final hash
- *
- * Compatible with: NVIDIA CUDA (Compute Capability 7.0+)
- * Optimized for:   RTX 3090 (82 SMs, 24GB VRAM, Ampere)
- *
- * v2 optimizations:
- *   - __launch_bounds__(256, 4) for 4 blocks/SM occupancy
- *   - keccak_f1600 fully unrolled 24 rounds, __forceinline__
- *   - fill_scratchpad uses u64 state directly (no byte aliasing)
- *   - sequential_passes uses __restrict__ + volatile stores
- *   - thermal_loop unrolled 4x for instruction cache
- *   - sha3_512_65 inlined with minimal register footprint
+ * v3 optimizations:
+ *   - INTERLEAVED scratchpad layout: block N of all threads is contiguous
+ *     in memory → perfect memory coalescing for fill_scratchpad and
+ *     sequential_passes (16K+ coalesced reads vs 16K strided reads)
+ *   - __launch_bounds__(128, 2): 256 registers/thread, eliminates keccak
+ *     state register spilling to local memory
+ *   - AES S-box in __shared__ memory (256 bytes, 1-cycle access vs ~20 for const)
+ *   - __ldg() for read-only header_keccak_state (texture cache)
+ *   - Simple keccak loop (no unrolling) for smaller instruction footprint
+ *   - All scratchpad I/O via u64 coalesced 128-byte transactions
  */
 
 typedef unsigned char      uint8_t;
@@ -30,20 +23,20 @@ typedef unsigned long long uint64_t;
 typedef long long          int64_t;
 
 /* ========================================================================== */
-/* Constants — identical to OpenCL kernel                                      */
+/* Constants                                                                   */
 /* ========================================================================== */
 
 #define SCRATCHPAD_SIZE  262144   /* 256 KiB = 8192 * 32 */
-#define BLOCK_SIZE       32
+#define BLOCK_SIZE       32       /* bytes per block */
 #define BLOCK_COUNT      8192
-#define PASSES           2
 #define RANDOM_READS     64
 #define THERMAL_ITERS    16384
+#define TPB              128      /* threads per block (must match launch config) */
 
 #define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
 
 /* ========================================================================== */
-/* Keccak-f1600 round constants                                                */
+/* Keccak-f1600 round constants (in constant memory)                           */
 /* ========================================================================== */
 
 __constant__ uint64_t KC_RC[24] = {
@@ -62,114 +55,17 @@ __constant__ uint64_t KC_RC[24] = {
 };
 
 /* ========================================================================== */
-/* Keccak-f1600 — fully unrolled, __forceinline__                              */
+/* Keccak-f1600 — simple loop, NOT inlined (called 8194+ times)                */
+/* State is passed as pointer — compiler keeps it in registers if it fits      */
 /* ========================================================================== */
 
-__device__ __forceinline__ void keccak_f1600(uint64_t *st)
+__device__ void keccak_f1600(uint64_t st[25])
 {
     uint64_t bc0, bc1, bc2, bc3, bc4, t;
 
-    /* Round 0 */
-    bc0 = st[0]^st[5]^st[10]^st[15]^st[20];
-    bc1 = st[1]^st[6]^st[11]^st[16]^st[21];
-    bc2 = st[2]^st[7]^st[12]^st[17]^st[22];
-    bc3 = st[3]^st[8]^st[13]^st[18]^st[23];
-    bc4 = st[4]^st[9]^st[14]^st[19]^st[24];
-    t=bc4^ROL64(bc1,1); st[0]^=t;st[5]^=t;st[10]^=t;st[15]^=t;st[20]^=t;
-    t=bc0^ROL64(bc2,1); st[1]^=t;st[6]^=t;st[11]^=t;st[16]^=t;st[21]^=t;
-    t=bc1^ROL64(bc3,1); st[2]^=t;st[7]^=t;st[12]^=t;st[17]^=t;st[22]^=t;
-    t=bc2^ROL64(bc4,1); st[3]^=t;st[8]^=t;st[13]^=t;st[18]^=t;st[23]^=t;
-    t=bc3^ROL64(bc0,1); st[4]^=t;st[9]^=t;st[14]^=t;st[19]^=t;st[24]^=t;
-    t=st[1];
-    bc0=st[10];st[10]=ROL64(t, 1);t=bc0;
-    bc0=st[ 7];st[ 7]=ROL64(t, 3);t=bc0;
-    bc0=st[11];st[11]=ROL64(t, 6);t=bc0;
-    bc0=st[17];st[17]=ROL64(t,10);t=bc0;
-    bc0=st[18];st[18]=ROL64(t,15);t=bc0;
-    bc0=st[ 3];st[ 3]=ROL64(t,21);t=bc0;
-    bc0=st[ 5];st[ 5]=ROL64(t,28);t=bc0;
-    bc0=st[16];st[16]=ROL64(t,36);t=bc0;
-    bc0=st[ 8];st[ 8]=ROL64(t,45);t=bc0;
-    bc0=st[21];st[21]=ROL64(t,55);t=bc0;
-    bc0=st[24];st[24]=ROL64(t, 2);t=bc0;
-    bc0=st[ 4];st[ 4]=ROL64(t,14);t=bc0;
-    bc0=st[15];st[15]=ROL64(t,27);t=bc0;
-    bc0=st[23];st[23]=ROL64(t,41);t=bc0;
-    bc0=st[19];st[19]=ROL64(t,56);t=bc0;
-    bc0=st[13];st[13]=ROL64(t, 8);t=bc0;
-    bc0=st[12];st[12]=ROL64(t,25);t=bc0;
-    bc0=st[ 2];st[ 2]=ROL64(t,43);t=bc0;
-    bc0=st[20];st[20]=ROL64(t,62);t=bc0;
-    bc0=st[14];st[14]=ROL64(t,18);t=bc0;
-    bc0=st[22];st[22]=ROL64(t,39);t=bc0;
-    bc0=st[ 9];st[ 9]=ROL64(t,61);t=bc0;
-    bc0=st[ 6];st[ 6]=ROL64(t,20);t=bc0;
-               st[ 1]=ROL64(t,44);
-    bc0=st[0],bc1=st[1],bc2=st[2],bc3=st[3],bc4=st[4];
-    st[0]=bc0^((~bc1)&bc2); st[1]=bc1^((~bc2)&bc3); st[2]=bc2^((~bc3)&bc4); st[3]=bc3^((~bc4)&bc0); st[4]=bc4^((~bc0)&bc1);
-    bc0=st[5],bc1=st[6],bc2=st[7],bc3=st[8],bc4=st[9];
-    st[5]=bc0^((~bc1)&bc2); st[6]=bc1^((~bc2)&bc3); st[7]=bc2^((~bc3)&bc4); st[8]=bc3^((~bc4)&bc0); st[9]=bc4^((~bc0)&bc1);
-    bc0=st[10],bc1=st[11],bc2=st[12],bc3=st[13],bc4=st[14];
-    st[10]=bc0^((~bc1)&bc2); st[11]=bc1^((~bc2)&bc3); st[12]=bc2^((~bc3)&bc4); st[13]=bc3^((~bc4)&bc0); st[14]=bc4^((~bc0)&bc1);
-    bc0=st[15],bc1=st[16],bc2=st[17],bc3=st[18],bc4=st[19];
-    st[15]=bc0^((~bc1)&bc2); st[16]=bc1^((~bc2)&bc3); st[17]=bc2^((~bc3)&bc4); st[18]=bc3^((~bc4)&bc0); st[19]=bc4^((~bc0)&bc1);
-    bc0=st[20],bc1=st[21],bc2=st[22],bc3=st[23],bc4=st[24];
-    st[20]=bc0^((~bc1)&bc2); st[21]=bc1^((~bc2)&bc3); st[22]=bc2^((~bc3)&bc4); st[23]=bc3^((~bc4)&bc0); st[24]=bc4^((~bc0)&bc1);
-    st[0] ^= KC_RC[0];
-
-    /* Round 1 */
-    bc0 = st[0]^st[5]^st[10]^st[15]^st[20];
-    bc1 = st[1]^st[6]^st[11]^st[16]^st[21];
-    bc2 = st[2]^st[7]^st[12]^st[17]^st[22];
-    bc3 = st[3]^st[8]^st[13]^st[18]^st[23];
-    bc4 = st[4]^st[9]^st[14]^st[19]^st[24];
-    t=bc4^ROL64(bc1,1); st[0]^=t;st[5]^=t;st[10]^=t;st[15]^=t;st[20]^=t;
-    t=bc0^ROL64(bc2,1); st[1]^=t;st[6]^=t;st[11]^=t;st[16]^=t;st[21]^=t;
-    t=bc1^ROL64(bc3,1); st[2]^=t;st[7]^=t;st[12]^=t;st[17]^=t;st[22]^=t;
-    t=bc2^ROL64(bc4,1); st[3]^=t;st[8]^=t;st[13]^=t;st[18]^=t;st[23]^=t;
-    t=bc3^ROL64(bc0,1); st[4]^=t;st[9]^=t;st[14]^=t;st[19]^=t;st[24]^=t;
-    t=st[1];
-    bc0=st[10];st[10]=ROL64(t, 1);t=bc0;
-    bc0=st[ 7];st[ 7]=ROL64(t, 3);t=bc0;
-    bc0=st[11];st[11]=ROL64(t, 6);t=bc0;
-    bc0=st[17];st[17]=ROL64(t,10);t=bc0;
-    bc0=st[18];st[18]=ROL64(t,15);t=bc0;
-    bc0=st[ 3];st[ 3]=ROL64(t,21);t=bc0;
-    bc0=st[ 5];st[ 5]=ROL64(t,28);t=bc0;
-    bc0=st[16];st[16]=ROL64(t,36);t=bc0;
-    bc0=st[ 8];st[ 8]=ROL64(t,45);t=bc0;
-    bc0=st[21];st[21]=ROL64(t,55);t=bc0;
-    bc0=st[24];st[24]=ROL64(t, 2);t=bc0;
-    bc0=st[ 4];st[ 4]=ROL64(t,14);t=bc0;
-    bc0=st[15];st[15]=ROL64(t,27);t=bc0;
-    bc0=st[23];st[23]=ROL64(t,41);t=bc0;
-    bc0=st[19];st[19]=ROL64(t,56);t=bc0;
-    bc0=st[13];st[13]=ROL64(t, 8);t=bc0;
-    bc0=st[12];st[12]=ROL64(t,25);t=bc0;
-    bc0=st[ 2];st[ 2]=ROL64(t,43);t=bc0;
-    bc0=st[20];st[20]=ROL64(t,62);t=bc0;
-    bc0=st[14];st[14]=ROL64(t,18);t=bc0;
-    bc0=st[22];st[22]=ROL64(t,39);t=bc0;
-    bc0=st[ 9];st[ 9]=ROL64(t,61);t=bc0;
-    bc0=st[ 6];st[ 6]=ROL64(t,20);t=bc0;
-               st[ 1]=ROL64(t,44);
-    bc0=st[0],bc1=st[1],bc2=st[2],bc3=st[3],bc4=st[4];
-    st[0]=bc0^((~bc1)&bc2); st[1]=bc1^((~bc2)&bc3); st[2]=bc2^((~bc3)&bc4); st[3]=bc3^((~bc4)&bc0); st[4]=bc4^((~bc0)&bc1);
-    bc0=st[5],bc1=st[6],bc2=st[7],bc3=st[8],bc4=st[9];
-    st[5]=bc0^((~bc1)&bc2); st[6]=bc1^((~bc2)&bc3); st[7]=bc2^((~bc3)&bc4); st[8]=bc3^((~bc4)&bc0); st[9]=bc4^((~bc0)&bc1);
-    bc0=st[10],bc1=st[11],bc2=st[12],bc3=st[13],bc4=st[14];
-    st[10]=bc0^((~bc1)&bc2); st[11]=bc1^((~bc2)&bc3); st[12]=bc2^((~bc3)&bc4); st[13]=bc3^((~bc4)&bc0); st[14]=bc4^((~bc0)&bc1);
-    bc0=st[15],bc1=st[16],bc2=st[17],bc3=st[18],bc4=st[19];
-    st[15]=bc0^((~bc1)&bc2); st[16]=bc1^((~bc2)&bc3); st[17]=bc2^((~bc3)&bc4); st[18]=bc3^((~bc4)&bc0); st[19]=bc4^((~bc0)&bc1);
-    bc0=st[20],bc1=st[21],bc2=st[22],bc3=st[23],bc4=st[24];
-    st[20]=bc0^((~bc1)&bc2); st[21]=bc1^((~bc2)&bc3); st[22]=bc2^((~bc3)&bc4); st[23]=bc3^((~bc4)&bc0); st[24]=bc4^((~bc0)&bc1);
-    st[0] ^= KC_RC[1];
-
-    /* The remaining 22 rounds use a compact loop to balance code size vs perf.
-       The first 2 rounds are fully unrolled above for critical-path latency.
-       The loop body is identical — compiler will optimize register scheduling. */
-    #pragma unroll 2
-    for (int rnd = 2; rnd < 24; rnd++) {
+    #pragma unroll 1
+    for (int rnd = 0; rnd < 24; rnd++) {
+        /* Theta */
         bc0 = st[0]^st[5]^st[10]^st[15]^st[20];
         bc1 = st[1]^st[6]^st[11]^st[16]^st[21];
         bc2 = st[2]^st[7]^st[12]^st[17]^st[22];
@@ -180,6 +76,7 @@ __device__ __forceinline__ void keccak_f1600(uint64_t *st)
         t=bc1^ROL64(bc3,1); st[2]^=t;st[7]^=t;st[12]^=t;st[17]^=t;st[22]^=t;
         t=bc2^ROL64(bc4,1); st[3]^=t;st[8]^=t;st[13]^=t;st[18]^=t;st[23]^=t;
         t=bc3^ROL64(bc0,1); st[4]^=t;st[9]^=t;st[14]^=t;st[19]^=t;st[24]^=t;
+        /* Rho + Pi */
         t=st[1];
         bc0=st[10];st[10]=ROL64(t, 1);t=bc0;
         bc0=st[ 7];st[ 7]=ROL64(t, 3);t=bc0;
@@ -205,6 +102,7 @@ __device__ __forceinline__ void keccak_f1600(uint64_t *st)
         bc0=st[ 9];st[ 9]=ROL64(t,61);t=bc0;
         bc0=st[ 6];st[ 6]=ROL64(t,20);t=bc0;
                    st[ 1]=ROL64(t,44);
+        /* Chi */
         bc0=st[0],bc1=st[1],bc2=st[2],bc3=st[3],bc4=st[4];
         st[0]=bc0^((~bc1)&bc2); st[1]=bc1^((~bc2)&bc3); st[2]=bc2^((~bc3)&bc4); st[3]=bc3^((~bc4)&bc0); st[4]=bc4^((~bc0)&bc1);
         bc0=st[5],bc1=st[6],bc2=st[7],bc3=st[8],bc4=st[9];
@@ -215,22 +113,21 @@ __device__ __forceinline__ void keccak_f1600(uint64_t *st)
         st[15]=bc0^((~bc1)&bc2); st[16]=bc1^((~bc2)&bc3); st[17]=bc2^((~bc3)&bc4); st[18]=bc3^((~bc4)&bc0); st[19]=bc4^((~bc0)&bc1);
         bc0=st[20],bc1=st[21],bc2=st[22],bc3=st[23],bc4=st[24];
         st[20]=bc0^((~bc1)&bc2); st[21]=bc1^((~bc2)&bc3); st[22]=bc2^((~bc3)&bc4); st[23]=bc3^((~bc4)&bc0); st[24]=bc4^((~bc0)&bc1);
+        /* Iota */
         st[0] ^= KC_RC[rnd];
     }
 }
 
 /* ========================================================================== */
-/* SHA3-512 specialized for 65-byte input (used by fill_scratchpad)            */
+/* SHA3-512 for 65-byte input (used by fill_scratchpad)                        */
+/* Takes 8 u64s of state + 1 byte block index, outputs 8 u64s                  */
 /* ========================================================================== */
 
 __device__ __forceinline__ void sha3_512_65_u64(
-    const uint64_t state_in[8],   /* 64 bytes of state (first 8 u64s) */
-    uint8_t  blk_byte,            /* byte 64 = block index low byte */
-    uint64_t out_u64[8])          /* 64 bytes output as 8 u64s */
+    const uint64_t state_in[8],
+    uint8_t  blk_byte,
+    uint64_t out_u64[8])
 {
-    /* Keccak state: 25 u64s = 200 bytes
-       Absorb 65 bytes: state_in[0..7] (64 bytes) + blk_byte (1 byte)
-       Rate = 72 bytes, so 65 < 72 → single permutation */
     uint64_t st[25];
     st[0]=state_in[0]; st[1]=state_in[1]; st[2]=state_in[2]; st[3]=state_in[3];
     st[4]=state_in[4]; st[5]=state_in[5]; st[6]=state_in[6]; st[7]=state_in[7];
@@ -240,85 +137,57 @@ __device__ __forceinline__ void sha3_512_65_u64(
 
     /* XOR byte 64 into low byte of st[8] */
     st[8] ^= (uint64_t)blk_byte;
-
-    /* Pad: 0x06 at byte 65, 0x80 at byte 71
-       byte 65 = st[8] byte 1, byte 71 = st[8] byte 7 */
+    /* Pad: 0x06 at byte 65 (st[8] byte 1), 0x80 at byte 71 (st[8] byte 7) */
     st[8] ^= (0x06ULL << 8) | (0x80ULL << 56);
 
     keccak_f1600(st);
 
-    /* Extract 64 bytes = 8 u64s */
     out_u64[0]=st[0]; out_u64[1]=st[1]; out_u64[2]=st[2]; out_u64[3]=st[3];
     out_u64[4]=st[4]; out_u64[5]=st[5]; out_u64[6]=st[6]; out_u64[7]=st[7];
 }
 
 /* ========================================================================== */
-/* Keccak256 from precomputed header state                                     */
+/* Keccak256 from precomputed header state → 4 u64s (32 bytes)                 */
 /* ========================================================================== */
 
 __device__ __forceinline__ void keccak256_from_state(
-    const uint64_t *pre_state,
+    const uint64_t * __restrict__ pre_state,
     uint64_t nonce,
-    uint64_t out_u64[4])  /* 32 bytes = 4 u64s */
+    uint64_t out_u64[4])
 {
     uint64_t st[25];
-    st[0]=pre_state[0]; st[1]=pre_state[1]; st[2]=pre_state[2]; st[3]=pre_state[3];
-    st[4]=pre_state[4]; st[5]=pre_state[5]; st[6]=pre_state[6]; st[7]=pre_state[7];
-    st[8]=pre_state[8]; st[9]=pre_state[9]; st[10]=pre_state[10]; st[11]=pre_state[11];
-    st[12]=pre_state[12]; st[13]=pre_state[13]; st[14]=pre_state[14]; st[15]=pre_state[15];
-    st[16]=pre_state[16]; st[17]=pre_state[17]; st[18]=pre_state[18]; st[19]=pre_state[19];
-    st[20]=pre_state[20]; st[21]=pre_state[21]; st[22]=pre_state[22]; st[23]=pre_state[23];
-    st[24]=pre_state[24];
+    /* Use __ldg for read-only data through texture cache */
+    #pragma unroll
+    for (int i = 0; i < 25; i++) st[i] = __ldg(pre_state + i);
 
-    /* XOR nonce into bytes 80..87 = st[10] (bytes 80-87) */
+    /* XOR nonce into bytes 80..87 = st[10] */
     st[10] ^= nonce;
-
-    /* Pad: 0x01 at byte 88 = st[11] byte 0, 0x80 at byte 135 = st[16] byte 7 */
+    /* Pad: 0x01 at byte 88 (st[11] byte 0), 0x80 at byte 135 (st[16] byte 7) */
     st[11] ^= 0x01ULL;
     st[16] ^= (0x80ULL << 56);
 
     keccak_f1600(st);
 
-    /* Extract 32 bytes = 4 u64s */
     out_u64[0]=st[0]; out_u64[1]=st[1]; out_u64[2]=st[2]; out_u64[3]=st[3];
 }
 
 /* ========================================================================== */
-/* AES-128 helpers                                                             */
+/* AES-128 helpers — S-box in shared memory                                    */
 /* ========================================================================== */
-
-__constant__ uint8_t AES_SBOX[256] = {
-    0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
-    0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
-    0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
-    0x04,0xc7,0x23,0xc3,0x18,0x96,0x05,0x9a,0x07,0x12,0x80,0xe2,0xeb,0x27,0xb2,0x75,
-    0x09,0x83,0x2c,0x1a,0x1b,0x6e,0x5a,0xa0,0x52,0x3b,0xd6,0xb3,0x29,0xe3,0x2f,0x84,
-    0x53,0xd1,0x00,0xed,0x20,0xfc,0xb1,0x5b,0x6a,0xcb,0xbe,0x39,0x4a,0x4c,0x58,0xcf,
-    0xd0,0xef,0xaa,0xfb,0x43,0x4d,0x33,0x85,0x45,0xf9,0x02,0x7f,0x50,0x3c,0x9f,0xa8,
-    0x51,0xa3,0x40,0x8f,0x92,0x9d,0x38,0xf5,0xbc,0xb6,0xda,0x21,0x10,0xff,0xf3,0xd2,
-    0xcd,0x0c,0x13,0xec,0x5f,0x97,0x44,0x17,0xc4,0xa7,0x7e,0x3d,0x64,0x5d,0x19,0x73,
-    0x60,0x81,0x4f,0xdc,0x22,0x2a,0x90,0x88,0x46,0xee,0xb8,0x14,0xde,0x5e,0x0b,0xdb,
-    0xe0,0x32,0x3a,0x0a,0x49,0x06,0x24,0x5c,0xc2,0xd3,0xac,0x62,0x91,0x95,0xe4,0x79,
-    0xe7,0xc8,0x37,0x6d,0x8d,0xd5,0x4e,0xa9,0x6c,0x56,0xf4,0xea,0x65,0x7a,0xae,0x08,
-    0xba,0x78,0x25,0x2e,0x1c,0xa6,0xb4,0xc6,0xe8,0xdd,0x74,0x1f,0x4b,0xbd,0x8b,0x8a,
-    0x70,0x3e,0xb5,0x66,0x48,0x03,0xf6,0x0e,0x61,0x35,0x57,0xb9,0x86,0xc1,0x1d,0x9e,
-    0xe1,0xf8,0x98,0x11,0x69,0xd9,0x8e,0x94,0x9b,0x1e,0x87,0xe9,0xce,0x55,0x28,0xdf,
-    0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16,
-};
 
 __device__ __forceinline__ uint8_t aes_xtime(uint8_t a) {
     return (uint8_t)((a << 1) ^ (((a >> 7) & 1) * 0x1b));
 }
 
 __device__ __forceinline__ void aes128_mix(
-    const uint64_t seed_u64[4],  /* 32 bytes = 4 u64s */
+    const uint64_t seed_u64[4],
     uint64_t nonce,
-    uint64_t out_u64[4])         /* 32 bytes = 4 u64s */
+    uint64_t out_u64[4],
+    const uint8_t * __restrict__ sbox)  /* shared memory S-box */
 {
-    /* Extract key (first 16 bytes) and counter (nonce + seed[16..23]) */
+    const uint8_t *seed = (const uint8_t*)seed_u64;
     uint8_t key[16];
     uint8_t counter[16];
-    const uint8_t *seed = (const uint8_t*)seed_u64;
 
     #pragma unroll
     for (int i = 0; i < 16; i++) key[i] = seed[i];
@@ -326,7 +195,6 @@ __device__ __forceinline__ void aes128_mix(
     #pragma unroll
     for (int i = 0; i < 8; i++) counter[8+i] = seed[16+i];
 
-    /* Two blocks: counter, counter+1 */
     uint8_t b0[16], b1[16];
     #pragma unroll
     for (int i = 0; i < 16; i++) { b0[i] = counter[i]; b1[i] = counter[i]; }
@@ -338,11 +206,10 @@ __device__ __forceinline__ void aes128_mix(
         if (carry == 0) break;
     }
 
-    /* 3 full rounds + 1 final round for each block */
     for (int r = 0; r < 3; r++) {
-        /* SubBytes */
+        /* SubBytes (from shared memory) */
         #pragma unroll
-        for (int i = 0; i < 16; i++) { b0[i] = AES_SBOX[b0[i]]; b1[i] = AES_SBOX[b1[i]]; }
+        for (int i = 0; i < 16; i++) { b0[i] = sbox[b0[i]]; b1[i] = sbox[b1[i]]; }
         /* ShiftRows */
         uint8_t t;
         t=b0[1]; b0[1]=b0[5]; b0[5]=b0[9]; b0[9]=b0[13]; b0[13]=t;
@@ -375,7 +242,7 @@ __device__ __forceinline__ void aes128_mix(
     }
     /* Final round */
     #pragma unroll
-    for (int i = 0; i < 16; i++) { b0[i] = AES_SBOX[b0[i]]; b1[i] = AES_SBOX[b1[i]]; }
+    for (int i = 0; i < 16; i++) { b0[i] = sbox[b0[i]]; b1[i] = sbox[b1[i]]; }
     uint8_t t;
     t=b0[1]; b0[1]=b0[5]; b0[5]=b0[9]; b0[9]=b0[13]; b0[13]=t;
     t=b0[2]; b0[2]=b0[10]; b0[10]=t;
@@ -388,25 +255,43 @@ __device__ __forceinline__ void aes128_mix(
     #pragma unroll
     for (int i = 0; i < 16; i++) { b0[i] ^= key[i]; b1[i] ^= key[i]; }
 
-    /* XOR with seed to produce output */
+    /* XOR with seed → output */
     #pragma unroll
     for (int i = 0; i < 16; i++) { b0[i] ^= seed[i]; b1[i] ^= seed[16+i]; }
-
-    /* Convert back to u64 */
     uint8_t *out = (uint8_t*)out_u64;
     #pragma unroll
     for (int i = 0; i < 16; i++) { out[i] = b0[i]; out[16+i] = b1[i]; }
 }
 
 /* ========================================================================== */
-/* Step 2A: fill_scratchpad — 8192 SHA3-512 calls                              */
+/* INTERLEAVED scratchpad access helpers                                       */
+/*                                                                             */
+/* Layout: block blk of thread tid is at:                                      */
+/*   pad_u64[(blk * total_threads + tid) * 4]                                 */
+/*                                                                             */
+/* This means all threads in a warp access consecutive u64s for the same       */
+/* block → 128-byte coalesced memory transactions.                             */
+/* ========================================================================== */
+
+__device__ __forceinline__ uint64_t* pad_block(
+    uint64_t * __restrict__ pad_pool,
+    uint32_t blk,
+    uint32_t tid,
+    uint32_t total_threads)
+{
+    return pad_pool + ((uint64_t)blk * total_threads + tid) * 4;
+}
+
+/* ========================================================================== */
+/* Step 2A: fill_scratchpad — 8192 SHA3-512 calls (INTERLEAVED)                */
 /* ========================================================================== */
 
 __device__ __forceinline__ void fill_scratchpad(
-    const uint64_t seed_u64[4],   /* 32 bytes = 4 u64s */
-    uint64_t * __restrict__ pad)  /* 256 KiB = 8192 * 4 u64s */
+    const uint64_t seed_u64[4],
+    uint64_t * __restrict__ pad_pool,
+    uint32_t tid,
+    uint32_t total_threads)
 {
-    /* State = 64 bytes = 8 u64s, initialized from seed (32 bytes) + zeros (32 bytes) */
     uint64_t state[8];
     state[0] = seed_u64[0]; state[1] = seed_u64[1];
     state[2] = seed_u64[2]; state[3] = seed_u64[3];
@@ -416,14 +301,11 @@ __device__ __forceinline__ void fill_scratchpad(
         uint64_t out[8];
         sha3_512_65_u64(state, (uint8_t)(blk & 0xFF), out);
 
-        /* Write first 4 u64s (32 bytes) to pad */
-        uint32_t off = blk * 4;  /* 4 u64s per block */
-        pad[off]     = out[0];
-        pad[off + 1] = out[1];
-        pad[off + 2] = out[2];
-        pad[off + 3] = out[3];
+        /* Write to interleaved position — coalesced across warp */
+        uint64_t *pb = pad_block(pad_pool, blk, tid, total_threads);
+        pb[0] = out[0]; pb[1] = out[1]; pb[2] = out[2]; pb[3] = out[3];
 
-        /* Update state: first 4 u64s from output, last 4 u64s = 0 */
+        /* Chain state: first 4 u64s from output, rest zero */
         state[0] = out[0]; state[1] = out[1];
         state[2] = out[2]; state[3] = out[3];
         state[4] = 0; state[5] = 0; state[6] = 0; state[7] = 0;
@@ -431,62 +313,61 @@ __device__ __forceinline__ void fill_scratchpad(
 }
 
 /* ========================================================================== */
-/* Step 2B: sequential_passes — forward + backward XOR chains                  */
+/* Step 2B: sequential_passes — forward + backward XOR (INTERLEAVED)           */
 /* ========================================================================== */
 
-__device__ __forceinline__ void sequential_passes(uint64_t * __restrict__ pad)
+__device__ __forceinline__ void sequential_passes(
+    uint64_t * __restrict__ pad_pool,
+    uint32_t tid,
+    uint32_t total_threads)
 {
     /* Forward pass: XOR each block with previous (wrap-around) */
     uint64_t prev[4];
-    prev[0] = pad[(BLOCK_COUNT - 1) * 4];
-    prev[1] = pad[(BLOCK_COUNT - 1) * 4 + 1];
-    prev[2] = pad[(BLOCK_COUNT - 1) * 4 + 2];
-    prev[3] = pad[(BLOCK_COUNT - 1) * 4 + 3];
+    {
+        uint64_t *pb = pad_block(pad_pool, BLOCK_COUNT - 1, tid, total_threads);
+        prev[0] = pb[0]; prev[1] = pb[1]; prev[2] = pb[2]; prev[3] = pb[3];
+    }
 
     for (uint32_t i = 0; i < BLOCK_COUNT; i++) {
-        uint32_t off = i * 4;
+        uint64_t *pb = pad_block(pad_pool, i, tid, total_threads);
         uint64_t cv[4];
-        cv[0] = pad[off]     ^ prev[0];
-        cv[1] = pad[off + 1] ^ prev[1];
-        cv[2] = pad[off + 2] ^ prev[2];
-        cv[3] = pad[off + 3] ^ prev[3];
-        pad[off]     = cv[0];
-        pad[off + 1] = cv[1];
-        pad[off + 2] = cv[2];
-        pad[off + 3] = cv[3];
+        cv[0] = pb[0] ^ prev[0];
+        cv[1] = pb[1] ^ prev[1];
+        cv[2] = pb[2] ^ prev[2];
+        cv[3] = pb[3] ^ prev[3];
+        pb[0] = cv[0]; pb[1] = cv[1]; pb[2] = cv[2]; pb[3] = cv[3];
         prev[0] = cv[0]; prev[1] = cv[1]; prev[2] = cv[2]; prev[3] = cv[3];
     }
 
     /* Backward pass: XOR each block with next (wrap-around) */
     uint64_t nxt[4];
-    nxt[0] = pad[0];
-    nxt[1] = pad[1];
-    nxt[2] = pad[2];
-    nxt[3] = pad[3];
+    {
+        uint64_t *pb = pad_block(pad_pool, 0, tid, total_threads);
+        nxt[0] = pb[0]; nxt[1] = pb[1]; nxt[2] = pb[2]; nxt[3] = pb[3];
+    }
 
     for (uint32_t i = BLOCK_COUNT; i > 0; i--) {
         uint32_t idx = i - 1;
-        uint32_t off = idx * 4;
+        uint64_t *pb = pad_block(pad_pool, idx, tid, total_threads);
         uint64_t cv[4];
-        cv[0] = pad[off]     ^ nxt[0];
-        cv[1] = pad[off + 1] ^ nxt[1];
-        cv[2] = pad[off + 2] ^ nxt[2];
-        cv[3] = pad[off + 3] ^ nxt[3];
-        pad[off]     = cv[0];
-        pad[off + 1] = cv[1];
-        pad[off + 2] = cv[2];
-        pad[off + 3] = cv[3];
+        cv[0] = pb[0] ^ nxt[0];
+        cv[1] = pb[1] ^ nxt[1];
+        cv[2] = pb[2] ^ nxt[2];
+        cv[3] = pb[3] ^ nxt[3];
+        pb[0] = cv[0]; pb[1] = cv[1]; pb[2] = cv[2]; pb[3] = cv[3];
         nxt[0] = cv[0]; nxt[1] = cv[1]; nxt[2] = cv[2]; nxt[3] = cv[3];
     }
 }
 
 /* ========================================================================== */
-/* Step 2C: random_read_mix — 64 random reads from scratchpad                  */
+/* Step 2C: random_read_mix — 64 random reads (INTERLEAVED)                    */
 /* ========================================================================== */
 
 __device__ __forceinline__ void random_read_mix(
     const uint64_t seed_u64[4],
-    const uint64_t * __restrict__ pad,
+    const uint64_t * __restrict__ pad_pool,
+    uint32_t tid,
+    uint32_t total_threads,
     uint64_t out_u64[4])
 {
     uint64_t acc[4];
@@ -495,12 +376,11 @@ __device__ __forceinline__ void random_read_mix(
 
     uint64_t pos = 0;
     for (uint64_t r = 0; r < RANDOM_READS; r++) {
-        uint32_t off = (uint32_t)(pos * 4);  /* 4 u64s per block */
-        acc[0] ^= pad[off];
-        acc[1] ^= pad[off + 1];
-        acc[2] ^= pad[off + 2];
-        acc[3] ^= pad[off + 3];
-        /* Compute next position from acc */
+        const uint64_t *pb = pad_block(pad_pool, (uint32_t)pos, tid, total_threads);
+        acc[0] ^= pb[0];
+        acc[1] ^= pb[1];
+        acc[2] ^= pb[2];
+        acc[3] ^= pb[3];
         uint64_t idx_val = acc[0] ^ pos ^ r;
         pos = idx_val % BLOCK_COUNT;
     }
@@ -544,7 +424,7 @@ __device__ __forceinline__ void thermal_loop(uint64_t data_u64[4], uint64_t nonc
         g ^= (uint64_t)data[(i + 2) & 0x1F];
         h ^= (uint64_t)data[(i + 6) & 0x1F];
     }
-    /* Fold back — prevents compiler from eliminating the loop */
+    /* Fold back */
     data[ 0] ^= (uint8_t)(a);       data[ 1] ^= (uint8_t)(a>>8);
     data[ 2] ^= (uint8_t)(b);       data[ 3] ^= (uint8_t)(b>>8);
     data[ 4] ^= (uint8_t)(c);       data[ 5] ^= (uint8_t)(c>>8);
@@ -564,60 +444,92 @@ __device__ __forceinline__ void thermal_loop(uint64_t data_u64[4], uint64_t nonc
 }
 
 /* ========================================================================== */
-/* Main kernel — __launch_bounds__ for 4 blocks/SM occupancy                   */
+/* AES S-box data (loaded into shared memory at kernel start)                  */
 /* ========================================================================== */
 
-extern "C" __launch_bounds__(128, 8)
+__constant__ uint8_t AES_SBOX_DATA[256] = {
+    0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
+    0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
+    0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
+    0x04,0xc7,0x23,0xc3,0x18,0x96,0x05,0x9a,0x07,0x12,0x80,0xe2,0xeb,0x27,0xb2,0x75,
+    0x09,0x83,0x2c,0x1a,0x1b,0x6e,0x5a,0xa0,0x52,0x3b,0xd6,0xb3,0x29,0xe3,0x2f,0x84,
+    0x53,0xd1,0x00,0xed,0x20,0xfc,0xb1,0x5b,0x6a,0xcb,0xbe,0x39,0x4a,0x4c,0x58,0xcf,
+    0xd0,0xef,0xaa,0xfb,0x43,0x4d,0x33,0x85,0x45,0xf9,0x02,0x7f,0x50,0x3c,0x9f,0xa8,
+    0x51,0xa3,0x40,0x8f,0x92,0x9d,0x38,0xf5,0xbc,0xb6,0xda,0x21,0x10,0xff,0xf3,0xd2,
+    0xcd,0x0c,0x13,0xec,0x5f,0x97,0x44,0x17,0xc4,0xa7,0x7e,0x3d,0x64,0x5d,0x19,0x73,
+    0x60,0x81,0x4f,0xdc,0x22,0x2a,0x90,0x88,0x46,0xee,0xb8,0x14,0xde,0x5e,0x0b,0xdb,
+    0xe0,0x32,0x3a,0x0a,0x49,0x06,0x24,0x5c,0xc2,0xd3,0xac,0x62,0x91,0x95,0xe4,0x79,
+    0xe7,0xc8,0x37,0x6d,0x8d,0xd5,0x4e,0xa9,0x6c,0x56,0xf4,0xea,0x65,0x7a,0xae,0x08,
+    0xba,0x78,0x25,0x2e,0x1c,0xa6,0xb4,0xc6,0xe8,0xdd,0x74,0x1f,0x4b,0xbd,0x8b,0x8a,
+    0x70,0x3e,0xb5,0x66,0x48,0x03,0xf6,0x0e,0x61,0x35,0x57,0xb9,0x86,0xc1,0x1d,0x9e,
+    0xe1,0xf8,0x98,0x11,0x69,0xd9,0x8e,0x94,0x9b,0x1e,0x87,0xe9,0xce,0x55,0x28,0xdf,
+    0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16,
+};
+
+/* ========================================================================== */
+/* Main kernel — INTERLEAVED + shared memory S-box + high register budget      */
+/* ========================================================================== */
+
+extern "C" __launch_bounds__(128, 2)
 __global__ void deeksha_lite_fire_mine(
-    const uint64_t *header_keccak_state,  /* host precomputed 25 u64s */
+    const uint64_t *header_keccak_state,
     uint64_t nonce_base,
     uint32_t nonce_count,
-    uint8_t *output_hashes,               /* nonce_count * 32 bytes */
-    uint8_t *scratchpad_pool,             /* nonce_count * SCRATCHPAD_SIZE */
-    uint32_t target_u32,                  /* LE target — 0 means "no early exit" */
-    uint64_t *result_nonce,               /* atomic sentinel for solution */
-    uint8_t *result_hash)                 /* 32 bytes for solution hash */
+    uint8_t *output_hashes,
+    uint8_t *scratchpad_pool,    /* INTERLEAVED: (blk * total_threads + tid) * 32 */
+    uint32_t target_u32,
+    uint64_t *result_nonce,
+    uint8_t *result_hash)
 {
+    /* Shared memory: AES S-box (256 bytes) */
+    __shared__ uint8_t sbox[256];
+    {
+        /* Cooperative load of S-box into shared memory */
+        uint32_t tid_local = threadIdx.x;
+        if (tid_local < 256) {
+            sbox[tid_local] = AES_SBOX_DATA[tid_local];
+        }
+        __syncthreads();
+    }
+
     uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid >= nonce_count) return;
 
-    /* Early exit if a solution was already found by another thread */
+    /* Early exit if solution already found */
     if (target_u32 != 0 && atomicAdd(result_nonce, 0ULL) != 0xFFFFFFFFFFFFFFFFULL) return;
 
-    /* Scratchpad as u64 array — 256 KiB / 8 = 32768 u64s = 8192 * 4 */
-    uint64_t *pad = (uint64_t*)(scratchpad_pool + (uint64_t)tid * SCRATCHPAD_SIZE);
+    uint32_t total_threads = nonce_count;  /* grid covers exactly nonce_count threads */
     uint64_t nonce = nonce_base + (uint64_t)tid;
 
-    /* Step 1: Keccak256(header || nonce) → 32 bytes = 4 u64s */
+    /* Step 1: Keccak256(header || nonce) → 4 u64s */
     uint64_t s1[4];
     keccak256_from_state(header_keccak_state, nonce, s1);
 
-    /* Step 2: Memory-hard scratchpad */
-    fill_scratchpad(s1, pad);
-    sequential_passes(pad);
+    /* Step 2: Memory-hard scratchpad (INTERLEAVED layout) */
+    uint64_t *pad_pool = (uint64_t*)scratchpad_pool;
+    fill_scratchpad(s1, pad_pool, tid, total_threads);
+    sequential_passes(pad_pool, tid, total_threads);
     uint64_t s2[4];
-    random_read_mix(s1, pad, s2);
+    random_read_mix(s1, pad_pool, tid, total_threads, s2);
 
-    /* Step 3: AES-128 CTR mix */
+    /* Step 3: AES-128 CTR mix (S-box from shared memory) */
     uint64_t s3[4];
-    aes128_mix(s2, nonce, s3);
+    aes128_mix(s2, nonce, s3, sbox);
 
     /* Step 4: Thermal loop */
     thermal_loop(s3, nonce);
 
-    /* Step 5: Keccak256 final — absorb 32 bytes, pad, permute */
+    /* Step 5: Keccak256 final */
     uint64_t st[25];
     st[0]=s3[0]; st[1]=s3[1]; st[2]=s3[2]; st[3]=s3[3];
     st[4]=0; st[5]=0; st[6]=0; st[7]=0; st[8]=0; st[9]=0;
     st[10]=0; st[11]=0; st[12]=0; st[13]=0; st[14]=0; st[15]=0;
     st[16]=0; st[17]=0; st[18]=0; st[19]=0; st[20]=0; st[21]=0;
     st[22]=0; st[23]=0; st[24]=0;
-    /* Pad: 0x01 at byte 32 = st[4] byte 0, 0x80 at byte 135 = st[16] byte 7 */
     st[4] ^= 0x01ULL;
     st[16] ^= (0x80ULL << 56);
     keccak_f1600(st);
 
-    /* Extract 32 bytes = 4 u64s */
     uint64_t hash[4];
     hash[0] = st[0]; hash[1] = st[1]; hash[2] = st[2]; hash[3] = st[3];
 
@@ -625,7 +537,7 @@ __global__ void deeksha_lite_fire_mine(
     uint64_t *slot = (uint64_t*)(output_hashes + (uint64_t)tid * 32);
     slot[0] = hash[0]; slot[1] = hash[1]; slot[2] = hash[2]; slot[3] = hash[3];
 
-    /* Target check: compare first 4 bytes of hash (LE) against target */
+    /* Target check */
     if (target_u32 != 0) {
         uint32_t hash_le = (uint32_t)(hash[0] & 0xFFFFFFFFULL);
         if (hash_le <= target_u32) {
@@ -650,15 +562,65 @@ extern "C" __global__ void deeksha_lite_fire_debug(
     uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid != 0) return;
 
+    /* For debug, use non-interleaved layout (single thread) */
     uint64_t *pad = (uint64_t*)scratchpad;
     uint64_t s1[4];
     keccak256_from_state(header_keccak_state, nonce, s1);
-    fill_scratchpad(s1, pad);
-    sequential_passes(pad);
-    uint64_t s2[4];
-    random_read_mix(s1, pad, s2);
+
+    /* Simple non-interleaved fill for single thread */
+    uint64_t state[8];
+    state[0] = s1[0]; state[1] = s1[1]; state[2] = s1[2]; state[3] = s1[3];
+    state[4] = 0; state[5] = 0; state[6] = 0; state[7] = 0;
+    for (uint32_t blk = 0; blk < BLOCK_COUNT; blk++) {
+        uint64_t out[8];
+        sha3_512_65_u64(state, (uint8_t)(blk & 0xFF), out);
+        pad[blk*4]   = out[0]; pad[blk*4+1] = out[1];
+        pad[blk*4+2] = out[2]; pad[blk*4+3] = out[3];
+        state[0]=out[0]; state[1]=out[1]; state[2]=out[2]; state[3]=out[3];
+        state[4]=0; state[5]=0; state[6]=0; state[7]=0;
+    }
+
+    /* Sequential passes (non-interleaved) */
+    uint64_t prev[4];
+    prev[0]=pad[(BLOCK_COUNT-1)*4]; prev[1]=pad[(BLOCK_COUNT-1)*4+1];
+    prev[2]=pad[(BLOCK_COUNT-1)*4+2]; prev[3]=pad[(BLOCK_COUNT-1)*4+3];
+    for (uint32_t i=0; i<BLOCK_COUNT; i++) {
+        uint64_t cv[4];
+        cv[0]=pad[i*4]^prev[0]; cv[1]=pad[i*4+1]^prev[1];
+        cv[2]=pad[i*4+2]^prev[2]; cv[3]=pad[i*4+3]^prev[3];
+        pad[i*4]=cv[0]; pad[i*4+1]=cv[1]; pad[i*4+2]=cv[2]; pad[i*4+3]=cv[3];
+        prev[0]=cv[0]; prev[1]=cv[1]; prev[2]=cv[2]; prev[3]=cv[3];
+    }
+    uint64_t nxt[4];
+    nxt[0]=pad[0]; nxt[1]=pad[1]; nxt[2]=pad[2]; nxt[3]=pad[3];
+    for (uint32_t i=BLOCK_COUNT; i>0; i--) {
+        uint32_t idx=i-1;
+        uint64_t cv[4];
+        cv[0]=pad[idx*4]^nxt[0]; cv[1]=pad[idx*4+1]^nxt[1];
+        cv[2]=pad[idx*4+2]^nxt[2]; cv[3]=pad[idx*4+3]^nxt[3];
+        pad[idx*4]=cv[0]; pad[idx*4+1]=cv[1]; pad[idx*4+2]=cv[2]; pad[idx*4+3]=cv[3];
+        nxt[0]=cv[0]; nxt[1]=cv[1]; nxt[2]=cv[2]; nxt[3]=cv[3];
+    }
+
+    /* Random read mix (non-interleaved) */
+    uint64_t acc[4];
+    acc[0]=s1[0]; acc[1]=s1[1]; acc[2]=s1[2]; acc[3]=s1[3];
+    uint64_t pos=0;
+    for (uint64_t r=0; r<RANDOM_READS; r++) {
+        uint32_t off=(uint32_t)pos*4;
+        acc[0]^=pad[off]; acc[1]^=pad[off+1]; acc[2]^=pad[off+2]; acc[3]^=pad[off+3];
+        uint64_t idx_val=acc[0]^pos^r;
+        pos=idx_val%BLOCK_COUNT;
+    }
+
+    /* AES mix (load S-box to shared first) */
+    __shared__ uint8_t sbox[256];
+    if (threadIdx.x < 256) sbox[threadIdx.x] = AES_SBOX_DATA[threadIdx.x];
+    __syncthreads();
+
     uint64_t s3[4];
-    aes128_mix(s2, nonce, s3);
+    aes128_mix(acc, nonce, s3, sbox);
+
     thermal_loop(s3, nonce);
 
     uint64_t st[25];
