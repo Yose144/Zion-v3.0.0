@@ -793,6 +793,16 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
 
 // ── NiceHash profitability ───────────────────────────────────────────
 
+/// Fetch current BTC price in USD from CoinGecko.
+fn fetch_btc_price_usd() -> Option<f64> {
+    let url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
+    let body = fetch_url_blocking_internal(url, 10).ok()?;
+    let json: serde_json::Value = serde_json::from_str(&body).ok()?;
+    json.get("bitcoin")
+        .and_then(|b| b.get("usd"))
+        .and_then(|u| u.as_f64())
+}
+
 /// Map a NiceHash algorithm name (uppercase, from API) to our `ExternalCoin`.
 fn nicehash_algo_to_external_coin(algo: &str) -> Option<ExternalCoin> {
     match algo.to_uppercase().as_str() {
@@ -812,44 +822,18 @@ fn nicehash_algo_to_external_coin(algo: &str) -> Option<ExternalCoin> {
     }
 }
 
-/// Reference hashrate (in H/s) for each algorithm — represents a typical
-/// single-GPU (Vega 64 class) hashrate. Used to convert NiceHash `paying`
-/// (BTC per H/s per day) into comparable USD/day revenue estimates.
-fn reference_hashrate_hps(coin: ExternalCoin) -> f64 {
-    match coin {
-        ExternalCoin::KAS => 1_000_000_000.0,        // 1 GH/s kheavyhash
-        ExternalCoin::RVN => 30_000_000.0,           // 30 MH/s kawpow
-        ExternalCoin::ETC => 30_000_000.0,           // 30 MH/s etchash
-        ExternalCoin::ERG => 50_000_000.0,           // 50 MH/s autolykos
-        ExternalCoin::VRSC => 100_000.0,             // 100 KH/s verushash (CPU)
-        ExternalCoin::XMR => 2_000.0,                // 2 KH/s randomx (CPU)
-        ExternalCoin::NEXA => 10_000_000.0,          // 10 MH/s nexapow
-        ExternalCoin::BEAM => 30.0,                  // 30 Sol/s beamv3
-        ExternalCoin::IRON => 10_000_000_000.0,      // 10 GH/s fishhash
-        ExternalCoin::ALPH => 100_000_000_000.0,     // 100 GH/s alephium (blake3)
-        ExternalCoin::FLUX => 50.0,                  // 50 Sol/s zhash
-        _ => 1.0,
-    }
-}
-
-/// Fetch current BTC price in USD from CoinGecko.
-fn fetch_btc_price_usd() -> Option<f64> {
-    let url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
-    let body = fetch_url_blocking_internal(url, 10).ok()?;
-    let json: serde_json::Value = serde_json::from_str(&body).ok()?;
-    json.get("bitcoin")
-        .and_then(|b| b.get("usd"))
-        .and_then(|u| u.as_f64())
-}
-
-/// Fetch profitability estimates from NiceHash `simplemultialgo/info` API.
+/// Fetch NiceHash `paying` rates from `simplemultialgo/info` API.
 ///
-/// NiceHash returns `paying` = BTC per day per 1 H/s (base unit). We convert
-/// to USD/day using a reference GPU hashrate and current BTC price.
+/// Returns a map of ExternalCoin → paying rate (BTC per unit hashrate per day).
+/// The units vary per algorithm (per the `displayMiningFactor` field from
+/// `/mining/algorithms`), so these values are **not directly comparable**
+/// across algorithms. They are useful for:
+/// - Monitoring NiceHash market rates over time
+/// - Detecting sudden spikes in demand for a specific algorithm
+/// - Relative comparison within the same algorithm
 ///
-/// Returns `Vec<ProfitEntry>` for all NiceHash-supported coins. On any error
-/// returns an empty vec (caller should merge with WhatToMine/fallback).
-fn fetch_nicehash_profit_estimates() -> Vec<ProfitEntry> {
+/// On any error returns an empty map.
+fn fetch_nicehash_paying_rates() -> Vec<(ExternalCoin, f64)> {
     let url = "https://api2.nicehash.com/main/api/v2/public/simplemultialgo/info";
     let body = match fetch_url_blocking_internal(url, 10) {
         Ok(b) => b,
@@ -867,16 +851,7 @@ fn fetch_nicehash_profit_estimates() -> Vec<ProfitEntry> {
         }
     };
 
-    let btc_price = match fetch_btc_price_usd() {
-        Some(p) if p > 0.0 => p,
-        _ => {
-            eprintln!("profit_router: btc price fetch failed, skipping nicehash estimates");
-            return Vec::new();
-        }
-    };
-
-    let fallback = fallback_estimates();
-    let mut entries = Vec::new();
+    let mut rates = Vec::new();
 
     if let Some(algos) = json.get("miningAlgorithms").and_then(|a| a.as_array()) {
         for algo_entry in algos {
@@ -884,102 +859,64 @@ fn fetch_nicehash_profit_estimates() -> Vec<ProfitEntry> {
                 .get("algorithm")
                 .and_then(|a| a.as_str())
                 .unwrap_or("");
-            let paying_btc = algo_entry
+            let paying = algo_entry
                 .get("paying")
                 .and_then(|p| p.as_f64())
                 .unwrap_or(0.0);
 
             if let Some(coin) = nicehash_algo_to_external_coin(algo_name) {
-                let ref_hashrate = reference_hashrate_hps(coin);
-                let revenue_btc_day = paying_btc * ref_hashrate;
-                let revenue_usd_day = revenue_btc_day * btc_price;
-
-                // Use fallback power cost for this coin.
-                let power_cost = fallback
-                    .iter()
-                    .find(|e| e.coin == coin)
-                    .map(|e| e.power_cost_usd)
-                    .unwrap_or(0.10);
-
-                entries.push(ProfitEntry {
-                    coin,
-                    revenue_per_day_usd: revenue_usd_day.max(0.01),
-                    power_cost_usd: power_cost,
-                });
+                rates.push((coin, paying));
             }
         }
     }
 
     eprintln!(
-        "profit_router: nicehash estimates: {} coins, btc_price=${:.0}",
-        entries.len(),
-        btc_price
+        "profit_router: nicehash paying rates fetched for {} algorithms",
+        rates.len()
     );
-    entries
+    rates
 }
 
 // ── Live profit fetching ─────────────────────────────────────────────
 
-/// Fetch live profitability estimates, merging WhatToMine and NiceHash data.
+/// Fetch live profitability estimates from WhatToMine API.
 ///
 /// WhatToMine provides `https://whattomine.com/coins.json` with per-coin
 /// revenue estimates in USD per GH/s-day.  We map the coin tags to our
 /// `ExternalCoin` enum and return `Vec<ProfitEntry>`.
 ///
-/// NiceHash provides `simplemultialgo/info` with BTC/day per H/s per algo.
-/// We convert to USD/day using BTC price and reference GPU hashrates.
+/// Also fetches NiceHash paying rates for monitoring/logging purposes.
+/// The NiceHash rates are not merged into the profit estimates because
+/// the units vary per algorithm and are not directly comparable.
 ///
-/// When both sources provide data for the same coin, we take the **higher**
-/// estimate (best case revenue). On any error, falls back to `fallback_estimates()`.
+/// On any error (network, parse, empty), falls back to `fallback_estimates()`.
 pub fn fetch_live_profit_estimates() -> Vec<ProfitEntry> {
-    // Fetch WhatToMine estimates (USD/day per coin).
-    let wtm_entries = {
-        let url = "https://whattomine.com/coins.json";
-        match fetch_url_blocking_internal(url, 10) {
-            Ok(body) => parse_whattomine_for_external_coins(&body),
-            Err(e) => {
-                eprintln!("profit_router: whattomine fetch error: {e}");
-                Vec::new()
-            }
-        }
-    };
-
-    // Fetch NiceHash estimates (BTC/day per algo → USD/day).
-    let nh_entries = fetch_nicehash_profit_estimates();
-
-    // Merge: for each coin, take the higher revenue estimate (best case).
-    // Start with WhatToMine, then overlay NiceHash if higher.
-    let mut merged: Vec<ProfitEntry> = wtm_entries;
-
-    for nh in &nh_entries {
-        if let Some(existing) = merged.iter_mut().find(|e| e.coin == nh.coin) {
-            // Take the higher revenue estimate.
-            if nh.revenue_per_day_usd > existing.revenue_per_day_usd {
-                existing.revenue_per_day_usd = nh.revenue_per_day_usd;
-            }
-        } else {
-            merged.push(nh.clone());
-        }
+    // Fetch NiceHash paying rates for monitoring (logged but not merged
+    // into profit estimates — units vary per algorithm).
+    let nh_rates = fetch_nicehash_paying_rates();
+    for (coin, paying) in &nh_rates {
+        eprintln!(
+            "profit_router: nicehash {} paying={:.15}",
+            coin, paying
+        );
     }
 
-    // Merge in fallback estimates for any missing coins.
-    let fallback = fallback_estimates();
-    for fb in &fallback {
-        if !merged.iter().any(|e| e.coin == fb.coin) {
-            merged.push(fb.clone());
+    // Fetch WhatToMine estimates (USD/day per coin) — primary source.
+    let url = "https://whattomine.com/coins.json";
+    match fetch_url_blocking_internal(url, 10) {
+        Ok(body) => parse_whattomine_for_external_coins(&body),
+        Err(e) => {
+            eprintln!("profit_router: whattomine fetch error: {e}");
+            fallback_estimates()
         }
-    }
-
-    if merged.is_empty() {
-        fallback_estimates()
-    } else {
-        merged
     }
 }
 
 /// Parse WhatToMine coins.json response into `Vec<ProfitEntry>`.
 ///
-/// WhatToMine returns: `{ "coins": { "1": { "tag": "DCR", "revenue": "0.45", ... } } }`
+/// WhatToMine returns: `{ "coins": { "1": { "tag": "RVN", "btc_revenue": "0.00000689", ... } } }`
+/// The `btc_revenue` field is BTC/day at the reference hashrate for that coin.
+/// We convert to USD/day using the current BTC price from CoinGecko.
 fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
     let parsed: Option<serde_json::Value> = serde_json::from_str(body).ok();
     let Some(json) = parsed else {
@@ -990,17 +927,37 @@ fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
     let mut entries = Vec::new();
     let fallback = fallback_estimates();
 
+    // Fetch BTC price for converting btc_revenue → USD.
+    let btc_price = fetch_btc_price_usd().unwrap_or(0.0);
+
     if let Some(coins) = json.get("coins").and_then(|c| c.as_object()) {
         for (_id, coin_data) in coins {
             let tag = coin_data
                 .get("tag")
                 .and_then(|t| t.as_str())
                 .unwrap_or("");
-            let revenue = coin_data
+
+            // WhatToMine now provides `btc_revenue` (BTC/day per reference hashrate).
+            // Older API had `revenue` (USD/day). Try both for backwards compat.
+            let btc_rev = coin_data
+                .get("btc_revenue")
+                .and_then(|r| r.as_str())
+                .and_then(|s| s.parse::<f64>().ok())
+                .unwrap_or(0.0);
+            let usd_rev = coin_data
                 .get("revenue")
                 .and_then(|r| r.as_str())
                 .and_then(|s| s.parse::<f64>().ok())
                 .unwrap_or(0.0);
+
+            // Prefer USD revenue if present (older API), otherwise convert BTC.
+            let revenue_usd = if usd_rev > 0.0 {
+                usd_rev
+            } else if btc_rev > 0.0 && btc_price > 0.0 {
+                btc_rev * btc_price
+            } else {
+                0.0
+            };
 
             // Map WhatToMine coin tags to our ExternalCoin enum.
             if let Some(coin) = tag_to_external_coin(tag) {
@@ -1012,7 +969,7 @@ fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
                     .unwrap_or(0.10);
                 entries.push(ProfitEntry {
                     coin,
-                    revenue_per_day_usd: revenue.max(0.01),
+                    revenue_per_day_usd: revenue_usd.max(0.01),
                     power_cost_usd: power_cost,
                 });
             }
