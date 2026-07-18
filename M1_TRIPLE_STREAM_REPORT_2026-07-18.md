@@ -102,15 +102,30 @@ Same as KAS — blake3 Metal kernel works with batch_size=1024, but 2.99 KH/s vs
 
 ALPH uses identical blake3 Metal kernel as DCR. Not separately tested — same outcome expected (kernel init OK, no shares due to difficulty).
 
-### 3.5 XMR (RandomX) — Shares Found, Stale Upstream
+### 3.5 XMR (RandomX) — Hardware AES Active, Share Forwarded (below_target)
+
+**ARM AES fix applied:** `cpu_features.rs` now detects ARM AES via `cfg!(target_feature = "aes")` on aarch64. RandomX C++ already used `__ARM_FEATURE_CRYPTO` for hardware AES (confirmed by benchmark).
 
 ```
-XMR_SHARE_FOUND nonce=3200443117 hash=c5cdc784... hash_msb=0x00023747 target_le=0x00068db8
+cpu_features: brand=Apple M1 cores=8
+cpu_features: aes=true sse42=true popcnt=true  ← FIXED (was aes=false)
+randomx_zion: initialized (full_mem=yes, jit=yes, hard_aes=yes, large_pages=yes, secure=yes)
+mode: JIT + hardware AES + secure (Apple Silicon, auto-detected)
 ```
 
-Pool routing: `src_randomx: submits=5 accepted=0`
+**RandomX benchmark (8 threads, 10s):**
+```
+hashes=2357  elapsed=10.04s  throughput=235 H/s  per_thread=29 H/s
+Pool share estimate (diff 1M): ~71 minutes per share
+```
 
-5 shares forwarded to 2miners.com XMR pool, all rejected (stale). M1 soft AES too slow.
+Pool log:
+```
+external_share_received miner=local-miner coin=XMR job_id=258754913 nonce=1143854552
+external_share_result accepted=false status=below_target
+```
+
+1 XMR share forwarded to upstream pool, rejected as `below_target` (hash didn't meet XMR pool difficulty). With 235 H/s, an accepted XMR share takes ~71 minutes at diff 1M. The M1 is hashing with hardware AES — no longer soft AES.
 
 ### 3.6 VRSC (VerusHash) — Shares Forwarded, All Stale
 
@@ -222,10 +237,10 @@ This single change provides **9.8x hashrate improvement** on M1 by allowing batc
 
 ## 8. Issues
 
-1. **Auto-tune CPU adjustment too aggressive on 8 GB** — 8 threads × 75 MB = 600 MB eats entire 600 MB budget. Fixed by env override.
-2. **ARM AES not detected** — `cpu_features.rs` only checks x86 CPUID. M1 has ARM AESE/AESD but reports `aes=false`.
+1. **Auto-tune CPU adjustment too aggressive on 8 GB** — 8 threads × 75 MB = 600 MB eats entire 600 MB budget. Fixed by `ZION_GPU_MEM_BUDGET_MIB` env override.
+2. **ARM AES detection FIXED** — `cpu_features.rs` now uses `cfg!(target_feature = "aes")` on aarch64. RandomX C++ already had `__ARM_FEATURE_CRYPTO` support. Benchmark confirms 235 H/s with hardware AES.
 3. **External GPU shares impossible on M1** — 2.94 KH/s (KAS) / 2.99 KH/s (DCR) vs TH/s network difficulty. Need M2 Pro+ or lower-difficulty pools.
-4. **External CPU shares stale** — soft AES RandomX + slow VerusHash can't meet upstream job windows.
+4. **XMR shares below_target** — 235 H/s with hardware AES is functional but slow. Accepted XMR share takes ~71 min at diff 1M. Need longer run or lower-difficulty XMR pool.
 
 ---
 
