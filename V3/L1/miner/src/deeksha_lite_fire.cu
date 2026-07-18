@@ -59,7 +59,7 @@ __constant__ uint64_t KC_RC[24] = {
 /* State is passed as pointer — compiler keeps it in registers if it fits      */
 /* ========================================================================== */
 
-__device__ __noinline__ void keccak_f1600(uint64_t st[25])
+__device__ __forceinline__ void keccak_f1600(uint64_t st[25])
 {
     uint64_t bc0, bc1, bc2, bc3, bc4, t;
 
