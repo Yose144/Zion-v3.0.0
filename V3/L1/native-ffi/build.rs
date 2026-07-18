@@ -435,6 +435,29 @@ fn main() {
     if feat("native-randomx") {
         build_randomx(&target_os, is_msvc);
     }
+
+    // -----------------------------------------------------------------------
+    // GhostRider  (RTM — Raptoreum)
+    //   Standalone C implementation from npq7721/gr_hash.
+    //   15 sphlib core hash functions + 6 CryptoNight variants.
+    //   Source: csrc/ghostrider/real/ (sph/ + cryptonote/ + gr.c)
+    //   Falls back to portable stub if real sources are not present.
+    // -----------------------------------------------------------------------
+    if feat("native-ghostrider") {
+        let real_dir = "csrc/ghostrider/real";
+        let has_real = std::path::Path::new(real_dir).join("gr.c").exists();
+
+        if has_real {
+            build_ghostrider(&target_os, is_msvc);
+        } else {
+            base_build(
+                "csrc/ghostrider/ghostrider_stub.c",
+                "ghostrider_zion",
+                &target_os,
+                is_msvc,
+            );
+        }
+    }
 }
 
 /// Build the real tevador/RandomX C++ library + ZION wrapper.
@@ -627,4 +650,105 @@ fn build_randomx(target_os: &str, is_msvc: bool) {
     // Tell cargo to re-run if any RandomX source changes
     println!("cargo:rerun-if-changed=csrc/randomx/randomx_wrapper.cpp");
     println!("cargo:rerun-if-changed=csrc/randomx/randomx_src/src/randomx.h");
+}
+
+/// Build the standalone GhostRider C implementation + ZION wrapper.
+///
+/// GhostRider is pure C (sphlib + cryptonote). All sources compiled as C.
+/// The wrapper (ghostrider_wrapper.c) injects the nonce into the 80-byte
+/// header and calls gr_hash().
+fn build_ghostrider(target_os: &str, is_msvc: bool) {
+    let dir = "csrc/ghostrider/real";
+
+    // sphlib source files (exclude helpers that are #included by other .c files)
+    let sph_sources: &[&str] = &[
+        "blake.c", "bmw.c", "cubehash.c", "echo.c", "extra.c",
+        "fugue.c", "gost_streebog.c", "groestl.c", "hamsi.c",
+        "haval.c", "jh.c", "keccak.c", "luffa.c", "lyra2.c",
+        "sha2.c", "shabal.c", "shavite.c", "simd.c", "skein.c",
+        "sph_sha2.c", "sph_sha2big.c", "sponge.c", "tiger.c",
+        "whirlpool.c",
+        // NOTE: aes_helper.c, hamsi_helper.c, haval_helper.c, md_helper.c
+        // are #included by other .c files — do NOT compile separately.
+    ];
+
+    // CryptoNight variant source files
+    let cn_sources: &[&str] = &[
+        "cryptonight.c", "cryptonight_dark.c", "cryptonight_dark_lite.c",
+        "cryptonight_fast.c", "cryptonight_lite.c", "cryptonight_soft_shell.c",
+        "cryptonight_turtle.c", "cryptonight_turtle_lite.c",
+    ];
+
+    // CryptoNight crypto helper sources
+    let cn_crypto_sources: &[&str] = &[
+        "aesb.c", "c_blake256.c", "c_groestl.c", "c_jh.c",
+        "c_keccak.c", "c_skein.c", "hash.c", "oaes_lib.c",
+    ];
+
+    let mut b = cc::Build::new();
+    // Compile as C (NOT C++ — sphlib uses implicit void* casts)
+    b.opt_level(3)
+        .warnings(false)
+        .cargo_warnings(false)
+        .include(dir)
+        .include(format!("{}/sph", dir))
+        .include(format!("{}/cryptonote", dir))
+        .include(format!("{}/cryptonote/crypto", dir));
+
+    // Add sphlib sources
+    for src in sph_sources {
+        let path = format!("{}/sph/{}", dir, src);
+        if std::path::Path::new(&path).exists() {
+            b.file(&path);
+        }
+    }
+
+    // Add CryptoNight variant sources
+    for src in cn_sources {
+        let path = format!("{}/cryptonote/{}", dir, src);
+        if std::path::Path::new(&path).exists() {
+            b.file(&path);
+        }
+    }
+
+    // Add CryptoNight crypto helper sources
+    for src in cn_crypto_sources {
+        let path = format!("{}/cryptonote/crypto/{}", dir, src);
+        if std::path::Path::new(&path).exists() {
+            b.file(&path);
+        }
+    }
+
+    // Add the main gr.c (GhostRider algorithm)
+    b.file(format!("{}/gr.c", dir));
+
+    // Add our FFI wrapper (pure C)
+    b.file("csrc/ghostrider/ghostrider_wrapper.c");
+
+    // Platform-specific flags
+    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
+
+    if is_msvc {
+        add_msvc_includes(&mut b);
+    } else {
+        b.flag_if_supported("-std=c11");
+        b.flag_if_supported("-fPIC");
+        b.flag_if_supported("-funroll-loops");
+        b.flag_if_supported("-fomit-frame-pointer");
+
+        // ARM64: no SSE2 intrinsics — the variant2_int_sqrt.h SSE2 macro
+        // is not used by the CN variants in this codebase (they use FP64 path)
+        if target_arch == "aarch64" {
+            b.define("__ARM_NEON", None);
+        }
+
+        if target_os == "macos" {
+            // No special flags needed for C on macOS
+        }
+    }
+
+    b.compile("ghostrider_zion");
+
+    println!("cargo:rerun-if-changed=csrc/ghostrider/ghostrider_wrapper.c");
+    println!("cargo:rerun-if-changed=csrc/ghostrider/real/gr.c");
 }

@@ -3807,7 +3807,7 @@ impl MultiAuxPowBridge {
         let mut s = std::collections::HashSet::new();
         s.insert(ExternalCoin::XMR);   // RandomX
         s.insert(ExternalCoin::VRSC);  // VerusHash
-        s.insert(ExternalCoin::RTM);   // GhostRider (CPU+GPU hybrid, but primarily CPU)
+        s.insert(ExternalCoin::RTM);   // GhostRider (CPU-only: 15 sphlib + 6 CryptoNight)
         s
     }
 

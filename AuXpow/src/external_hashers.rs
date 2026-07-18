@@ -28,6 +28,7 @@ pub enum ExternalAlgorithm {
     ZelHash,
     ProgPow,
     PearlHash,
+    GhostRider,
 }
 
 impl ExternalAlgorithm {
@@ -43,6 +44,7 @@ impl ExternalAlgorithm {
             Self::ZelHash => "zelhash",
             Self::ProgPow => "progpow",
             Self::PearlHash => "pearlhash",
+            Self::GhostRider => "ghostrider",
         }
     }
 
@@ -58,6 +60,7 @@ impl ExternalAlgorithm {
             "zelhash" | "zel" => Some(Self::ZelHash),
             "progpow" => Some(Self::ProgPow),
             "pearlhash" | "pearl" => Some(Self::PearlHash),
+            "ghostrider" | "gr" => Some(Self::GhostRider),
             _ => None,
         }
     }

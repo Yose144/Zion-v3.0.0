@@ -166,7 +166,7 @@ impl ExternalCoin {
 
     /// Whether this coin is CPU-minable (no GPU required).
     pub fn is_cpu(self) -> bool {
-        matches!(self, Self::XMR | Self::VRSC)
+        matches!(self, Self::XMR | Self::VRSC | Self::RTM)
     }
 
     /// Whether this coin is GPU-minable (requires GPU).
@@ -201,7 +201,7 @@ impl ExternalCoin {
             Self::VTC => Some(1_073_741_824),    // Verthash ~1 GB
             Self::IRON => Some(4_800_000_000),   // FishHash ~4.6 GB
             Self::NEXA => Some(5_000_000_000),   // NexaPow ~5 GB
-            Self::RTM => Some(2_147_483_648),    // GhostRider ~2 GB
+            Self::RTM => None,           // GhostRider — CPU-only, no DAG (CN scratchpad 128KB-2MB)
             Self::DNX => None,           // DynexSolve — no DAG (uses chip model)
         }
     }
@@ -261,7 +261,6 @@ impl ExternalCoin {
                 Self::ZCL |                        // equihashzero
                 Self::NEXA |                       // nexapow
                 Self::QTC |                        // qhash (quantum circuit sim)
-                Self::RTM |                        // ghostrider (15 algos + CN)
                 Self::DNX                          // dynexsolve (neuromorphic SAT)
             ),
             "cuda" => matches!(
@@ -294,8 +293,8 @@ impl ExternalCoin {
             Self::ZCL | Self::QTC | Self::VTC => 170.0,  // Equihash variants
             Self::IRON => 220.0,                     // FishHash — memory-hard
             Self::NEXA => 210.0,                     // NexaPow
-            Self::RTM => 200.0,                      // GhostRider
             Self::DNX => 150.0,                      // DynexSolve — different paradigm
+            Self::RTM => 0.0,                        // CPU-only (was 200W GPU placeholder)
             Self::XMR | Self::VRSC => 0.0,           // CPU coins — no GPU power
         }
     }
@@ -305,6 +304,7 @@ impl ExternalCoin {
         match self {
             Self::XMR => 85.0,    // RandomX — high CPU usage, ~85W on Ryzen 5 3600
             Self::VRSC => 65.0,   // VerusHash — moderate, ~65W
+            Self::RTM => 90.0,    // GhostRider — high CPU + memory-hard CN, ~90W
             _ => 0.0,             // GPU coins — no CPU power
         }
     }

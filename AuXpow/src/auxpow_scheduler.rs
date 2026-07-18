@@ -426,6 +426,19 @@ impl AuxPowScheduler {
                     h32[..len].copy_from_slice(&header[..len]);
                     crate::external_hashers::hash_pearl(&h32, nonce)
                 }
+                ExternalAlgorithm::GhostRider => {
+                    // GhostRider (RTM) — 15 sphlib core hashes + 6 CryptoNight
+                    // variants. CPU-only algorithm via native FFI.
+                    // Falls back to blake3 if native-ghostrider feature is not enabled.
+                    #[cfg(feature = "native-ghostrider")]
+                    {
+                        zion_native_ffi::ghostrider::hash(header, nonce)
+                    }
+                    #[cfg(not(feature = "native-ghostrider"))]
+                    {
+                        hash_blake3(header, 0, nonce)
+                    }
+                }
             };
 
             let meets = if job.external_coin == ExternalCoin::DCR {

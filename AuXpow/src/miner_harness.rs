@@ -69,6 +69,7 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
         "progpow" | "progpow_epic" => Ok(scan_progpow(job, start, end)),
         "pearlhash" => Ok(scan_pearl(job, start, end)),
         "randomx" => Ok(scan_randomx(job, start, end)),
+        "ghostrider" => Ok(scan_ghostrider(job, start, end)),
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
 }
@@ -104,6 +105,7 @@ pub fn mine_best(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option
         "progpow" | "progpow_epic" => Ok(scan_progpow_best(job, start, end)),
         "pearlhash" => Ok(scan_pearl_best(job, start, end)),
         "randomx" => Ok(scan_randomx_best(job, start, end)),
+        "ghostrider" => Ok(scan_ghostrider_best(job, start, end)),
         other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
     }
 }
@@ -545,6 +547,87 @@ fn scan_randomx_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShar
         if best
             .as_ref()
             .map(|b| is_hash_better(&hash, &b.hash, true)) // RandomX = LE
+            .unwrap_or(true)
+        {
+            best = Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    best
+}
+
+// ── GhostRider (Raptoreum / RTM) ──────────────────────────────────────
+//
+// GhostRider is a CPU-only algorithm: 15 sphlib core hashes + 6 CryptoNight
+// variants, selected by previous block hash. The nonce is a 4-byte LE value
+// at offset 39 in the 80-byte block header (same as X16r/Monero).
+//
+// Requires `native-ghostrider` feature for real hashing. Without it, falls
+// back to Blake3 placeholder (invalid shares, for pipeline testing only).
+
+fn scan_ghostrider(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let target = &job.target_bytes;
+
+    // GhostRider is stateless — no seed/init needed
+    #[cfg(feature = "native-ghostrider")]
+    zion_native_ffi::ghostrider::init();
+
+    let nonce_offset = 39usize;
+    let mut work_blob = header.to_vec();
+
+    for nonce in start..end {
+        let nonce_le = (nonce as u32).to_le_bytes();
+        if nonce_offset + 4 <= work_blob.len() {
+            work_blob[nonce_offset..nonce_offset + 4].copy_from_slice(&nonce_le);
+        }
+
+        #[cfg(feature = "native-ghostrider")]
+        let hash = zion_native_ffi::ghostrider::hash(&work_blob, nonce);
+
+        #[cfg(not(feature = "native-ghostrider"))]
+        let hash = crate::external_hashers::hash_blake3(&work_blob, 0, nonce);
+
+        // GhostRider/RTM: LE target comparison (same as Monero)
+        if crate::external_hashers::meets_randomx_target(&hash, target) {
+            return Some(FoundShare {
+                external_job_id: job.external_job_id.clone(),
+                nonce,
+                hash,
+            });
+        }
+    }
+    None
+}
+
+fn scan_ghostrider_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+
+    #[cfg(feature = "native-ghostrider")]
+    zion_native_ffi::ghostrider::init();
+
+    let nonce_offset = 39usize;
+    let mut work_blob = header.to_vec();
+    let mut best: Option<FoundShare> = None;
+
+    for nonce in start..end {
+        let nonce_le = (nonce as u32).to_le_bytes();
+        if nonce_offset + 4 <= work_blob.len() {
+            work_blob[nonce_offset..nonce_offset + 4].copy_from_slice(&nonce_le);
+        }
+
+        #[cfg(feature = "native-ghostrider")]
+        let hash = zion_native_ffi::ghostrider::hash(&work_blob, nonce);
+
+        #[cfg(not(feature = "native-ghostrider"))]
+        let hash = crate::external_hashers::hash_blake3(&work_blob, 0, nonce);
+
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&hash, &b.hash, true)) // GhostRider = LE
             .unwrap_or(true)
         {
             best = Some(FoundShare {

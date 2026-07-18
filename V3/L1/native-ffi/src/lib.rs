@@ -1669,6 +1669,96 @@ pub mod randomx {
 }
 
 // ---------------------------------------------------------------------------
+// GhostRider (Raptoreum / RTM) — 15 sphlib core hashes + 6 CryptoNight variants
+// ---------------------------------------------------------------------------
+
+/// GhostRider FFI bindings for Raptoreum (RTM) CPU mining.
+///
+/// GhostRider is a stateless algorithm (no VM/dataset like RandomX), so
+/// `init()` is a no-op. The hash function injects a 4-byte LE nonce at
+/// offset 39 in the 80-byte block header before calling `gr_hash`.
+///
+/// Requires `native-ghostrider` feature.
+#[cfg(feature = "native-ghostrider")]
+pub mod ghostrider {
+    use super::safety::{self, FfiError};
+
+    unsafe extern "C" {
+        /// No-op — GhostRider is stateless.
+        pub fn ghostrider_zion_init();
+
+        /// Compute GhostRider hash of (header, nonce) into 32 bytes.
+        ///
+        /// # Safety
+        /// - `header` must be valid for `header_len` readable bytes.
+        /// - `output` must be valid for 32 writable bytes, non-aliasing.
+        pub fn ghostrider_zion_hash(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            output: *mut u8,
+        );
+
+        /// Verify GhostRider hash against 32-byte target. Returns 1/0.
+        pub fn ghostrider_zion_verify(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            target: *const u8,
+        ) -> i32;
+
+        /// `'static` version literal; must not be freed.
+        pub fn ghostrider_zion_version() -> *const std::ffi::c_char;
+    }
+
+    /// Initialize GhostRider (no-op — algorithm is stateless).
+    pub fn init() {
+        unsafe {
+            ghostrider_zion_init();
+        }
+    }
+
+    /// Compute GhostRider hash of `(header, nonce)` → 32 bytes.
+    ///
+    /// The nonce is a 4-byte LE value injected at offset 39 in the 80-byte
+    /// Raptoreum block header. If `header` is shorter than 80 bytes, it is
+    /// zero-padded; if longer, only the first 80 bytes are used.
+    pub fn hash(header: &[u8], nonce: u64) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        // SAFETY: slice valid for read; fresh 32-byte stack output.
+        unsafe {
+            ghostrider_zion_hash(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
+        }
+        out
+    }
+
+    /// Fallible variant of [`hash`].
+    pub fn try_hash(header: &[u8], nonce: u64) -> Result<[u8; 32], FfiError> {
+        safety::validate_input_len(header)?;
+        Ok(hash(header, nonce))
+    }
+
+    /// Verify GhostRider hash meets the 32-byte target (LE comparison).
+    pub fn verify(header: &[u8], nonce: u64, target: &[u8; 32]) -> bool {
+        // SAFETY: slice + fixed-size target.
+        unsafe { ghostrider_zion_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) == 1 }
+    }
+
+    /// Strict variant of [`verify`] surfacing unexpected C return codes.
+    pub fn try_verify(header: &[u8], nonce: u64, target: &[u8; 32]) -> Result<bool, FfiError> {
+        safety::validate_input_len(header)?;
+        let code =
+            unsafe { ghostrider_zion_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) };
+        safety::parse_c_bool("ghostrider_zion_verify", code)
+    }
+
+    /// Return the C library's version string.
+    pub fn version() -> Result<String, FfiError> {
+        unsafe { safety::read_c_version_string(ghostrider_zion_version()) }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Algorithm registry  — enumerate which features are compiled in
 // ---------------------------------------------------------------------------
 
@@ -1707,6 +1797,10 @@ pub fn compiled_algorithms() -> Vec<&'static str> {
     #[cfg(feature = "native-randomx")]
     {
         v.push("randomx");
+    }
+    #[cfg(feature = "native-ghostrider")]
+    {
+        v.push("ghostrider");
     }
     v
 }
@@ -1869,6 +1963,25 @@ pub fn runtime_self_test() -> Vec<AlgoTestResult> {
         randomx::init();
         let h1 = randomx::hash(&header, 1);
         let h2 = randomx::hash(&header, 1);
+        let ok = h1 != [0u8; 32] && h1 == h2;
+        results.push(AlgoTestResult {
+            name,
+            passed: ok,
+            detail: if ok {
+                "deterministic, non-zero".into()
+            } else {
+                "FAILED: zero or non-deterministic".into()
+            },
+        });
+    }
+
+    #[cfg(feature = "native-ghostrider")]
+    {
+        let name = "ghostrider";
+        let header = [0xA9u8; 80];
+        ghostrider::init();
+        let h1 = ghostrider::hash(&header, 1);
+        let h2 = ghostrider::hash(&header, 1);
         let ok = h1 != [0u8; 32] && h1 == h2;
         results.push(AlgoTestResult {
             name,
