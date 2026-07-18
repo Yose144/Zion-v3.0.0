@@ -4709,7 +4709,7 @@ pub mod cuda_deeksha_lite_fire {
             let threads_per_block: u32 = std::env::var("ZION_CUDA_TPB")
                 .ok()
                 .and_then(|v| v.trim().parse().ok())
-                .unwrap_or(128);
+                .unwrap_or(64);
 
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size) as u32;
