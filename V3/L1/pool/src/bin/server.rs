@@ -24,7 +24,7 @@ use zion_auxpow::{
     ShareForwarder, ShareResult, SplitConfig,
 };
 use zion_cosmic_harmony::{
-    fetch_live_profit_estimates, select_best_coin, ExternalCoin as ChExternalCoin,
+    fetch_live_profit_estimates, fetch_live_profit_estimates_with_nicehash, select_best_coin, ExternalCoin as ChExternalCoin,
 };
 use zion_cosmic_harmony::stream_profit::{
     fetch_profit_snapshot, StreamProfitConfig, StreamProfitSnapshot, StreamWeights,
@@ -2332,7 +2332,7 @@ fn handle_client(
                     >= Duration::from_secs(pool_profit_interval_secs)
             {
                 pool_profit_last_check = Instant::now();
-                let estimates = fetch_live_profit_estimates();
+                let (estimates, nh_rates) = fetch_live_profit_estimates_with_nicehash();
                 let gpu_estimates: Vec<_> = estimates
                     .iter()
                     .filter(|e| {
@@ -2416,6 +2416,13 @@ fn handle_client(
                         .duration_since(std::time::UNIX_EPOCH)
                         .map(|d| d.as_secs()).unwrap_or(0);
                     state.estimates = estimate_entries;
+                    state.nicehash_rates = nh_rates.iter().map(|(coin, paying)| {
+                        NiceHashRateEntry {
+                            coin: coin.to_string(),
+                            algorithm: coin.algorithm().to_string(),
+                            paying: *paying,
+                        }
+                    }).collect();
                 }
             }
 
