@@ -1088,6 +1088,57 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
+    // ── CUDA external kernel test: `zion-miner --test-cuda-kernel <algo>` ──
+    #[cfg(feature = "gpu-cuda")]
+    {
+        use gpu_backend::GpuMiner;
+        let args: Vec<String> = std::env::args().collect();
+        if let Some(pos) = args.iter().position(|a| a == "--test-cuda-kernel") {
+            let algo = args.get(pos + 1).cloned().unwrap_or_else(|| {
+                eprintln!("Usage: zion-miner --test-cuda-kernel <algorithm>");
+                eprintln!("Algorithms: kheavyhash, blake3_alph, blake3_dcr, autolykos, zelhash");
+                std::process::exit(1);
+            });
+            let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(262144);
+            let secs: f64 = std::env::var("ZION_BENCH_SECS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(5.0);
+
+            println!("=== CUDA External Kernel Test ===");
+            println!("algorithm={} work_size={} bench_secs={}", algo, work_size, secs);
+
+            match cuda_external::CudaExternalMiner::new(&algo, work_size) {
+                Ok(mut miner) => {
+                    println!("init_ok device=\"{}\" algorithm={}", miner.device_name(), algo);
+                    println!("running_benchmark...");
+                    match miner.benchmark(secs) {
+                        Ok((total, elapsed, hps)) => {
+                            println!("benchmark_result algorithm={} total_nonces={} elapsed={:.2}s hps={:.2}", algo, total, elapsed, hps);
+                            if hps > 0.0 {
+                                println!("status=PASS");
+                            } else {
+                                println!("status=WARN (zero hashrate — kernel may not be producing solutions)");
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("benchmark_failed algorithm={} error=\"{}\"", algo, e);
+                            println!("status=FAIL");
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("init_failed algorithm={} error=\"{}\"", algo, e);
+                    println!("status=FAIL");
+                }
+            }
+            return Ok(());
+        }
+    }
+
     let mut config = MinerConfig::from_env_and_args()?;
 
     // ── Autotune: if algorithm=auto, benchmark and pick best ──
