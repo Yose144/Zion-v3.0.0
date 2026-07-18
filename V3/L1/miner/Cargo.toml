@@ -66,6 +66,9 @@ testnet_fork_rehearsal = ["zion-core/testnet_fork_rehearsal", "zion-pool/testnet
 [dependencies]
 anyhow.workspace = true
 blake3.workspace = true
+sha3.workspace = true
+sha2.workspace = true
+blake2.workspace = true
 num_cpus = "1"
 rayon = "1"
 hex = "0.4"
