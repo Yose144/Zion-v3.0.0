@@ -1709,12 +1709,12 @@ pub fn create_gpu_backend(
                         anyhow::bail!("External algorithm '{}' on CUDA requires native-kheavyhash feature", algorithm);
                     }
                 }
-                let miner = if algorithm == "deeksha_lite_fire" {
-                    cuda_deeksha_lite_fire::CudaDeekshaLiteFireMiner::new(work_size)?
+                let miner: Box<dyn GpuMiner> = if algorithm == "deeksha_lite_fire" {
+                    Box::new(cuda_deeksha_lite_fire::CudaDeekshaLiteFireMiner::new(work_size)?)
                 } else {
-                    cuda_deeksha::CudaDeekshaMiner::new(work_size)?
+                    Box::new(cuda_deeksha::CudaDeekshaMiner::new(work_size)?)
                 };
-                return Ok(Box::new(miner));
+                return Ok(miner);
             }
             #[cfg(not(feature = "gpu-cuda"))]
             anyhow::bail!("CUDA support not compiled — rebuild with --features gpu-cuda");
@@ -4361,6 +4361,10 @@ pub mod cuda_deeksha {
             GpuBackendKind::Cuda
         }
 
+        fn algorithm(&self) -> String {
+            "cosmic_harmony_ekam_deeksha_v2".to_string()
+        }
+
         fn update_epoch(&mut self, height: u64) -> Result<()> {
             let epoch = zion_cosmic_harmony::algorithms_npu::epoch_from_height(height);
             if epoch == self.current_epoch {
@@ -4730,11 +4734,7 @@ pub mod cuda_deeksha_lite_fire {
                         .map_err(|e| anyhow::anyhow!("kernel launch: {e}"))?;
                 }
 
-                // Sync and check results
-                self.dev
-                    .sync()
-                    .map_err(|e| anyhow::anyhow!("device sync: {e}"))?;
-
+                // Sync read result (dtoh_sync_copy is synchronous)
                 let result_nonce_host = self
                     .dev
                     .dtoh_sync_copy(&self.result_nonce)
@@ -4769,18 +4769,21 @@ pub mod cuda_deeksha_lite_fire {
             batch_size: u64,
         ) -> Result<GpuBatchResult> {
             // For deeksha_lite_fire, raw header is the 80-byte mining header
-            let header = MiningHeader::from_bytes(raw_header);
+            let mut bytes = [0u8; 80];
+            let len = raw_header.len().min(80);
+            bytes[..len].copy_from_slice(&raw_header[..len]);
+            let header = MiningHeader::from_bytes(bytes);
             self.mine_batch(header, target, nonce_start, batch_size)
         }
 
         fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
             let start = Instant::now();
             let mut total: u64 = 0;
-            let header = MiningHeader::from_bytes(&[0u8; 80]);
-            let target = DifficultyTarget { bytes: [0xFFu8; 32] };
             let mut nonce: u64 = 0;
             while start.elapsed().as_secs_f64() < secs {
-                let result = self.mine_batch(header.clone(), target.clone(), nonce, 4096)?;
+                let header = MiningHeader::from_bytes([0u8; 80]);
+                let target = DifficultyTarget { bytes: [0xFFu8; 32] };
+                let result = self.mine_batch(header, target, nonce, 4096)?;
                 total += result.nonces_tested;
                 nonce += 4096;
             }
