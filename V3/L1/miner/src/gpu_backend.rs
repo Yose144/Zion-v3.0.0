@@ -4859,6 +4859,7 @@ pub mod cuda_deeksha_lite_fire {
                 format!("-arch={}", arch),
                 "--std=c++14".to_string(),
                 "-lineinfo".to_string(),
+                "--ptxas-options=-O3".to_string(),
             ];
             // Allow override of max registers per thread
             if let Ok(maxreg) = std::env::var("ZION_CUDA_MAXREG") {
