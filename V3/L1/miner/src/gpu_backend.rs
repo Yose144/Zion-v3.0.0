@@ -4590,15 +4590,20 @@ pub mod cuda_deeksha_lite_fire {
             // RTX 3090 = sm_86 (Ampere). Default to sm_86 but allow override.
             let arch = std::env::var("ZION_CUDA_ARCH")
                 .unwrap_or_else(|_| "sm_86".to_string());
+            let mut opts = vec![
+                "--use_fast_math".to_string(),
+                format!("-arch={}", arch),
+                "--std=c++14".to_string(),
+                "-lineinfo".to_string(),
+            ];
+            // Allow override of max registers per thread
+            if let Ok(maxreg) = std::env::var("ZION_CUDA_MAXREG") {
+                opts.push(format!("--maxrregcount={}", maxreg));
+            }
             let ptx = compile_ptx_with_opts(
                 CUDA_KERNEL_SRC,
                 CompileOptions {
-                    options: vec![
-                        "--use_fast_math".to_string(),
-                        format!("-arch={}", arch),
-                        "--std=c++14".to_string(),
-                        "-lineinfo".to_string(),
-                    ],
+                    options: opts,
                     ..Default::default()
                 },
             )
