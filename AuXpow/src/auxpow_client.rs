@@ -2177,34 +2177,39 @@ fn build_stratum_v1_header(
     // Build 80-byte header
     let mut header = Vec::with_capacity(80);
 
-    // version (4 bytes) — pool sends hex, cpuminer stores bytes directly (no reverse)
+    // version (4 bytes) — pool sends BE hex string like "20000000".
+    // cpuminer parses as uint32_t (0x20000000) and stores as LE bytes.
+    // We must reverse the hex bytes to get LE order.
     let mut ver = [0u8; 4];
     let vlen = version_bytes.len().min(4);
     ver[..vlen].copy_from_slice(&version_bytes[..vlen]);
+    ver.reverse();
     header.extend_from_slice(&ver);
 
-    // prevhash (32 bytes) — internal byte order, pad if short
+    // prevhash (32 bytes) — internal byte order (already reversed above)
     let mut prev = [0u8; 32];
     let plen = prevhash_internal.len().min(32);
     prev[..plen].copy_from_slice(&prevhash_internal[..plen]);
     header.extend_from_slice(&prev);
 
-    // merkle_root (32 bytes) — pad if short
+    // merkle_root (32 bytes) — sha256d output, stored as-is (matches cpuminer)
     let mut mr = [0u8; 32];
     let mlen = merkle_root.len().min(32);
     mr[..mlen].copy_from_slice(&merkle_root[..mlen]);
     header.extend_from_slice(&mr);
 
-    // ntime (4 bytes) — pool sends hex, store bytes directly (no reverse, matching cpuminer)
+    // ntime (4 bytes) — pool sends BE hex, cpuminer stores as LE uint32
     let mut nt = [0u8; 4];
     let tlen = ntime_bytes.len().min(4);
     nt[..tlen].copy_from_slice(&ntime_bytes[..tlen]);
+    nt.reverse();
     header.extend_from_slice(&nt);
 
-    // nbits (4 bytes) — pool sends hex, store bytes directly (no reverse, matching cpuminer)
+    // nbits (4 bytes) — pool sends BE hex, cpuminer stores as LE uint32
     let mut nb = [0u8; 4];
     let blen = nbits_bytes.len().min(4);
     nb[..blen].copy_from_slice(&nbits_bytes[..blen]);
+    nb.reverse();
     header.extend_from_slice(&nb);
 
     // nonce (4 bytes = 0, miner will fill)
@@ -2970,9 +2975,10 @@ impl AuxPowClient {
                     let ntime_u64 = u64::from_str_radix(ntime.trim_start_matches("0x"), 16).ok();
 
                     println!(
-                        "auxpow: {} notify — job={} prevhash={}.. ntime={} nbits={} version={} header_len={} target={}..",
+                        "auxpow: {} notify — job={} prevhash={}.. ntime={} nbits={} version={} header_len={} target={} difficulty={}",
                         self.profile.coin.ticker(), job_id, &prevhash[..16.min(prevhash.len())],
-                        ntime, nbits, version, header_bytes.len(), &target_hex[..16.min(target_hex.len())]
+                        ntime, nbits, version, header_bytes.len(), &target_hex,
+                        *self.current_difficulty.lock().await
                     );
 
                     return Ok(ExternalJob {
@@ -4660,8 +4666,6 @@ pub fn difficulty_to_target_rtm(difficulty: f64) -> [u8; 32] {
 
     let max = BigUint::from_bytes_be(&RTM_POW_LIMIT);
 
-    // difficulty = significand * 2^(exponent - 52)
-    // target = max / difficulty = max * 2^(52 - exponent) / significand
     let bits = difficulty.to_bits();
     let mantissa = bits & 0x000F_FFFF_FFFF_FFFF;
     let exponent = ((bits >> 52) & 0x7FF) as i32 - 1023;
@@ -4675,9 +4679,6 @@ pub fn difficulty_to_target_rtm(difficulty: f64) -> [u8; 32] {
         return [0xFFu8; 32];
     }
 
-    // Compute target = max * 2^(52 - exponent) / significand
-    // For exponent < 52 (difficulty < 2^52), we left-shift max
-    // For exponent >= 52, we right-shift (but this won't happen for share diff)
     let mut target = max;
     let shift = 52 - exponent;
     if shift >= 0 {
@@ -4689,7 +4690,6 @@ pub fn difficulty_to_target_rtm(difficulty: f64) -> [u8; 32] {
 
     let bytes = target.to_bytes_be();
 
-    // Cap at 2^256 (32 bytes of 0xFF)
     if bytes.len() > 32 {
         return [0xFFu8; 32];
     }

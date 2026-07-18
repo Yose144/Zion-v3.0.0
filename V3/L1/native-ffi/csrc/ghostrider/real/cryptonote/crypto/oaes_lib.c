@@ -855,32 +855,13 @@ OAES_RET oaes_key_import_data( OAES_CTX * ctx,
 OAES_CTX * oaes_alloc(void)
 {
 	oaes_ctx * _ctx = (oaes_ctx *) calloc( sizeof( oaes_ctx ), 1 );
-	
+
 	if( NULL == _ctx )
 		return NULL;
 
-#ifdef OAES_HAVE_ISAAC
-	{
-	  ub4 _i = 0;
-		char _seed[RANDSIZ + 1];
-		
-		_ctx->rctx = (randctx *) calloc( sizeof( randctx ), 1 );
-
-		if( NULL == _ctx->rctx )
-		{
-			free( _ctx );
-			return NULL;
-		}
-
-		oaes_get_seed( _seed );
-		memset( _ctx->rctx->randrsl, 0, RANDSIZ );
-		memcpy( _ctx->rctx->randrsl, _seed, RANDSIZ );
-		randinit( _ctx->rctx, TRUE);
-	}
-#else
-		srand( oaes_get_seed() );
-#endif // OAES_HAVE_ISAAC
-
+	/* Thread-safety: No srand() or rand() calls — IV is set to zeros
+	 * in oaes_set_option. The AES key is imported via
+	 * oaes_key_import_data(), not generated randomly. */
 	_ctx->key = NULL;
 	oaes_set_option( _ctx, OAES_OPTION_CBC, NULL );
 
@@ -941,12 +922,11 @@ OAES_RET oaes_set_option( OAES_CTX * ctx,
 				memcpy( _ctx->iv, value, OAES_BLOCK_SIZE );
 			else
 			{
-				for( _i = 0; _i < OAES_BLOCK_SIZE; _i++ )
-#ifdef OAES_HAVE_ISAAC
-					_ctx->iv[_i] = (uint8_t) rand( _ctx->rctx );
-#else
-					_ctx->iv[_i] = (uint8_t) rand();
-#endif // OAES_HAVE_ISAAC
+				/* Thread-safety: Use deterministic IV instead of rand().
+				 * The IV is NOT used by CryptoNight (which uses ECB-style
+				 * aesb_pseudo_round/aesb_single_round directly). This just
+				 * needs to be a valid 16-byte value. */
+				memset( _ctx->iv, 0, OAES_BLOCK_SIZE );
 			}
 			break;
 

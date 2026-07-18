@@ -206,7 +206,7 @@ struct cryptonightdark_ctx {
 
 void cryptonightdark_hash(const char* input, char* output, uint32_t len, int variant) {
 #if defined(_MSC_VER)
-    struct cryptonightdark_ctx *ctx = _malloca(sizeof(struct cryptonightdark_ctx));
+    struct cryptonightdark_ctx *ctx = alloca(sizeof(struct cryptonightdark_ctx));
 #else
     struct cryptonightdark_ctx *ctx = alloca(sizeof(struct cryptonightdark_ctx));
 #endif

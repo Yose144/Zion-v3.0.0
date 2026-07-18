@@ -52,10 +52,22 @@ End-to-end RTM mining na zpool.ca s reálným GhostRider hashem a share acceptan
 - **Miner** musí reverse zpět na internal byte order pro header
 - **Testováno**: Bez reversingu → "Invalid share". S reversingu → "Invalid job id" (správně)
 
-### Bug 8: ntime/nbits/version byte order
-- **Pools** posílají ntime/nbits/version jako BE hex string
-- **cpuminer** ukládá byty přímo (BE → LE na LE systémech přes uint32_t)
-- **Rust sha2** produkuje BE byty — ukládáme přímo bez reversingu (matches cpuminer)
+### Bug 8: ntime/nbits/version byte order (CRITICAL FIX)
+- **Pools** posílají ntime/nbits/version jako BE hex string (např. `20000000`)
+- **cpuminer** parsuje jako `uint32_t` (`strtol → 0x20000000`) a ukládá jako LE byty (`[0x00, 0x00, 0x00, 0x20]`)
+- **Před**: Ukládali jsme raw hex byty (`[0x20, 0x00, 0x00, 0x00]`) — **špatně!**
+- **Po**: Reversing bytů před uložením do headeru (`[0x00, 0x00, 0x00, 0x20]`) — **správně**
+- **Soubor**: `auxpow_client.rs` — `build_stratum_v1_header()` — `ver.reverse()`, `nt.reverse()`, `nb.reverse()`
+- **Dopad**: Bez tohoto fixu pool vždy říkal "Invalid share" (hash počítán na špatném headeru)
+
+### Bug 9: oaes rand() thread-safety (CRITICAL FIX)
+- **Problém**: `oaes_alloc()` volá `srand(oaes_get_seed())` a `oaes_set_option()` volá `rand()` pro IV
+- **srand()/rand()** modifikují **global state** → nebezpečné v multi-threaded prostředí
+- **Před**: 8 vláken → "Invalid share" (hash corruption z concurrent rand() access)
+- **Po**: `oaes_alloc()` nevolá `srand()`, `oaes_set_option()` používá `memset(iv, 0)` místo `rand()`
+- **Proč funguje**: CryptoNight nepoužívá CBC IV (používá `aesb_pseudo_round` přímo). IV je irrelevantní.
+- **Soubor**: `oaes_lib.c` — `oaes_alloc()`, `oaes_set_option()`
+- **Výsledek**: 8 vláken → **SHARE ACCEPTED** v 3.7s!
 
 ## Live test výsledky
 
@@ -92,17 +104,20 @@ Submitting share nonce=00004b0a (BE hex)
 - [x] 80-byte header construction (build_stratum_v1_header)
 - [x] Merkle root computation (sha256d + branches)
 - [x] prevhash reversing (display → internal)
+- [x] version/ntime/nbits byte reversal (BE hex → LE bytes)
 - [x] GhostRider hash (native-ghostrider FFI)
 - [x] Target computation (RTM pow_limit)
 - [x] Hash comparison (LE hash vs BE target)
 - [x] Nonce format (BE hex)
 - [x] Share submission (5 params, en2=00000000)
-- [x] Pool přijímá share jako validní (formát + hash)
+- [x] Multi-threaded CPU mining (8 threads, 8MB stack each)
+- [x] Thread-safe oaes (no srand/rand global state)
+- [x] Job switching během miningu
+- [x] **SHARE ACCEPTED zpool.ca** (3.7s, 8 threads, difficulty 0.01)
 
 ## Co chybí
-- [ ] Rychlejší mining (GPU) — CPU ~400s/share je příliš pomalé
-- [ ] Job switching během miningu (při novém notify aktualizovat header)
-- [ ] M1 GPU (Metal) GhostRider kernel
+- [ ] M1 GPU (Metal) GhostRider kernel (CPU ~13000 H/s je funkční, GPU by bylo 10-100x rychlejší)
+- [ ] Persistent mining loop (aktuálně test najde 1 share a skončí)
 
 ## Soubory
 - `AuXpow/src/auxpow_client.rs` — build_stratum_v1_header, submit_share, difficulty_to_target_rtm

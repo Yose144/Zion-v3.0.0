@@ -206,7 +206,7 @@ struct cryptonightlite_ctx {
 
 void cryptonightlite_hash(const char* input, char* output, uint32_t len, int variant) {
 #if defined(_MSC_VER)
-    struct cryptonightlite_ctx *ctx = _malloca(sizeof(struct cryptonightlite_ctx));
+    struct cryptonightlite_ctx *ctx = alloca(sizeof(struct cryptonightlite_ctx));
 #else
     struct cryptonightlite_ctx *ctx = alloca(sizeof(struct cryptonightlite_ctx));
 #endif

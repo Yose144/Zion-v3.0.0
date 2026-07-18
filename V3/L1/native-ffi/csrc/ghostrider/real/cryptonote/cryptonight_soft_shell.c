@@ -290,6 +290,7 @@ void cryptonight_soft_shell_hash(const char* input, char* output, uint32_t len, 
     /*memcpy(hash, &state, 32);*/
     extra_hashes[state.hs.b[0] & 3](&state, 200, output);
     oaes_free((OAES_CTX **) &aes_ctx);
+    free(long_state);
 }
 
 void cryptonight_soft_shell_fast_hash(const char* input, char* output, uint32_t len) {

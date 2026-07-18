@@ -206,7 +206,7 @@ struct cryptonightturtlelite_ctx {
 
 void cryptonightturtlelite_hash(const char* input, char* output, uint32_t len, int variant) {
 #if defined(_MSC_VER)
-    struct cryptonightturtlelite_ctx *ctx = _malloca(sizeof(struct cryptonightturtlelite_ctx));
+    struct cryptonightturtlelite_ctx *ctx = alloca(sizeof(struct cryptonightturtlelite_ctx));
 #else
     struct cryptonightturtlelite_ctx *ctx = alloca(sizeof(struct cryptonightturtlelite_ctx));
 #endif
