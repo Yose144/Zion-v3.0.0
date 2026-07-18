@@ -567,7 +567,7 @@ __device__ __forceinline__ void thermal_loop(uint64_t data_u64[4], uint64_t nonc
 /* Main kernel — __launch_bounds__ for 4 blocks/SM occupancy                   */
 /* ========================================================================== */
 
-extern "C" __launch_bounds__(256, 4)
+extern "C" __launch_bounds__(128, 8)
 __global__ void deeksha_lite_fire_mine(
     const uint64_t *header_keccak_state,  /* host precomputed 25 u64s */
     uint64_t nonce_base,
