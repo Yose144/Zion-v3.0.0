@@ -1721,9 +1721,19 @@ pub fn create_gpu_backend(
         GpuBackendKind::Cuda => {
             #[cfg(feature = "gpu-cuda")]
             {
-                // External AuxPoW algorithms (kheavyhash, blake3, etc.) have
-                // no CUDA kernel. Fall back to CPU via native-ffi.
+                // External AuxPoW algorithms — try CUDA kernel first, then CPU fallback
                 if is_external_algorithm(algorithm) {
+                    // Algorithms with dedicated CUDA kernels
+                    if crate::cuda_external::CudaExtAlgo::from_name(algorithm).is_some() {
+                        match crate::cuda_external::CudaExternalMiner::new(algorithm, work_size) {
+                            Ok(miner) => return Ok(Box::new(miner)),
+                            Err(e) => {
+                                eprintln!("[gpu_backend] CUDA external kernel failed for {}: {} — falling back to CPU", algorithm, e);
+                            }
+                        }
+                    }
+                    // Fall back to CPU for algorithms without CUDA kernels
+                    // (ethash, kawpow, progpow, beamhash, eaglesong, octopus, equihash, neoscrypt)
                     #[cfg(feature = "native-kheavyhash")]
                     {
                         eprintln!("[gpu_backend] CUDA CPU fallback for algorithm={}", algorithm);

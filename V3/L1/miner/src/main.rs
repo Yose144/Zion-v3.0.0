@@ -20,6 +20,8 @@ use zion_pool::{
 mod autonomous;
 mod banner;
 mod cpu_features;
+#[cfg(feature = "gpu-cuda")]
+mod cuda_external;
 mod gpu_backend;
 mod gpu_guard;
 mod interactive;
