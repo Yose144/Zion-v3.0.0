@@ -52,12 +52,18 @@ fn preprocess_kernel(src: &str) -> String {
         {
             continue;
         }
-        // Fix: __constant__ cannot be used as a function parameter qualifier in NVRTC
-        // Remove it from parameter declarations (it's only valid for global variables)
-        let line = line.replace(
-            "__constant__ const unsigned char *custom",
-            "const unsigned char *custom",
-        );
+        // Fix: __constant__ cannot be used as a function parameter qualifier
+        // or local variable qualifier in NVRTC — only for global declarations.
+        // Remove __constant__ from function parameters and local variables.
+        let line = line
+            .replace(
+                "__constant__ const unsigned char *custom",
+                "const unsigned char *custom",
+            )
+            .replace(
+                "__constant__ const unsigned char *s =",
+                "const unsigned char *s =",
+            );
         out.push_str(&line);
         out.push('\n');
     }
@@ -127,6 +133,7 @@ pub struct CudaExternalMiner {
     target_buf: CudaSlice<u8>,
     output_nonce: CudaSlice<u64>,
     output_hash: CudaSlice<u8>,
+    output_solution: CudaSlice<u8>, // 52-byte Equihash solution (zelhash only)
     found_flag: CudaSlice<u32>,
     // Algorithm-specific buffers
     kheavy_matrix: Option<CudaSlice<u16>>,
@@ -183,6 +190,9 @@ impl CudaExternalMiner {
         let output_hash = dev
             .alloc_zeros::<u8>(32)
             .map_err(|e| anyhow::anyhow!("output_hash alloc: {e}"))?;
+        let output_solution = dev
+            .alloc_zeros::<u8>(52)
+            .map_err(|e| anyhow::anyhow!("output_solution alloc: {e}"))?;
         let found_flag = dev
             .htod_copy(vec![SENTINEL_FOUND])
             .map_err(|e| anyhow::anyhow!("found_flag alloc: {e}"))?;
@@ -217,6 +227,7 @@ impl CudaExternalMiner {
             target_buf,
             output_nonce,
             output_hash,
+            output_solution,
             found_flag,
             kheavy_matrix,
             autolykos_table,
@@ -384,6 +395,7 @@ impl CudaExternalMiner {
                                     current_nonce,
                                     &mut self.output_nonce,
                                     &mut self.output_hash,
+                                    &mut self.output_solution,
                                     &mut self.found_flag,
                                 ),
                             )
