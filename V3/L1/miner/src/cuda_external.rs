@@ -1,4 +1,5 @@
-/// CUDA miner for external AuxPoW algorithms (kheavyhash, blake3, autolykos, zelhash).
+/// CUDA miner for external AuxPoW algorithms (kheavyhash, blake3, autolykos, zelhash,
+/// ethash, kawpow).
 ///
 /// Uses the existing CUDA kernels from AuXpow/csrc/cuda/ and compiles them
 /// via NVRTC at runtime. This eliminates the CPU fallback for external
@@ -10,9 +11,8 @@
 ///   - blake3_dcr (Decred)
 ///   - autolykos / autolykos_erg (Ergo)
 ///   - zelhash / zelhash_flux (FLUX)
-///
-/// Ethash/KawPow/ProgPow still fall back to CPU (DAG management is complex
-/// and those coins are less profitable on RTX 3090 vs dedicated ASICs).
+///   - ethash / ethash_etc (Ethereum Classic / ETHW)
+///   - kawpow / kawpow_rvn (Ravencoin / CLORE / EVR / MEWC)
 
 use anyhow::{Context, Result};
 use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
@@ -31,6 +31,8 @@ const KHEAVYHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/kheavyhas
 const BLAKE3_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/blake3_kernel.cu");
 const AUTOLYKOS_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/autolykos_kernel.cu");
 const ZELHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/zelhash_kernel.cu");
+const ETHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/ethash_kernel.cu");
+const KAWPOW_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/kawpow_kernel.cu");
 
 /// Preprocess kernel source: strip #pragma once and #include lines,
 /// prepend standard typedefs, fix NVRTC-incompatible constructs.
@@ -78,6 +80,8 @@ pub enum CudaExtAlgo {
     Blake3Dcr,
     Autolykos,
     Zelhash,
+    Ethash,
+    Kawpow,
 }
 
 impl CudaExtAlgo {
@@ -88,6 +92,8 @@ impl CudaExtAlgo {
             "blake3_dcr" => Some(Self::Blake3Dcr),
             "autolykos" | "autolykos_erg" => Some(Self::Autolykos),
             "zelhash" | "zelhash_flux" => Some(Self::Zelhash),
+            "ethash" | "ethash_etc" | "ethash_ethw" => Some(Self::Ethash),
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => Some(Self::Kawpow),
             _ => None,
         }
     }
@@ -99,6 +105,8 @@ impl CudaExtAlgo {
             Self::Blake3Dcr => "blake3_dcr_mine",
             Self::Autolykos => "autolykos_mine",
             Self::Zelhash => "zelhash_mine",
+            Self::Ethash => "ethash_mine",
+            Self::Kawpow => "kawpow_mine",
         }
     }
 
@@ -109,6 +117,8 @@ impl CudaExtAlgo {
             Self::Blake3Dcr => "blake3_dcr",
             Self::Autolykos => "autolykos",
             Self::Zelhash => "zelhash",
+            Self::Ethash => "ethash",
+            Self::Kawpow => "kawpow",
         }
     }
 
@@ -118,6 +128,22 @@ impl CudaExtAlgo {
             Self::Blake3Alph | Self::Blake3Dcr => BLAKE3_CU,
             Self::Autolykos => AUTOLYKOS_CU,
             Self::Zelhash => ZELHASH_CU,
+            Self::Ethash => ETHASH_CU,
+            Self::Kawpow => KAWPOW_CU,
+        }
+    }
+
+    /// Returns true if this algorithm requires a DAG buffer.
+    fn needs_dag(&self) -> bool {
+        matches!(self, Self::Ethash | Self::Kawpow)
+    }
+
+    /// Epoch length for DAG-based algorithms.
+    fn epoch_length(&self) -> u32 {
+        match self {
+            Self::Ethash => 30000,
+            Self::Kawpow => 7500,
+            _ => 0,
         }
     }
 }
@@ -134,11 +160,16 @@ pub struct CudaExternalMiner {
     output_nonce: CudaSlice<u64>,
     output_hash: CudaSlice<u8>,
     output_solution: CudaSlice<u8>, // 52-byte Equihash solution (zelhash only)
+    output_mix: CudaSlice<u8>,      // 32-byte mix hash (ethash/kawpow)
     found_flag: CudaSlice<u32>,
     // Algorithm-specific buffers
     kheavy_matrix: Option<CudaSlice<u16>>,
     autolykos_table: Option<CudaSlice<u64>>,
     autolykos_table_size: u32,
+    // DAG buffer for ethash/kawpow
+    dag_buf: Option<CudaSlice<u64>>,
+    dag_size_entries: u64,
+    dag_epoch: u32, // 0xFFFFFFFF = no DAG loaded
     // Cached timestamp for kheavyhash
     kheavy_timestamp: u64,
 }
@@ -193,6 +224,9 @@ impl CudaExternalMiner {
         let output_solution = dev
             .alloc_zeros::<u8>(52)
             .map_err(|e| anyhow::anyhow!("output_solution alloc: {e}"))?;
+        let output_mix = dev
+            .alloc_zeros::<u8>(32)
+            .map_err(|e| anyhow::anyhow!("output_mix alloc: {e}"))?;
         let found_flag = dev
             .htod_copy(vec![SENTINEL_FOUND])
             .map_err(|e| anyhow::anyhow!("found_flag alloc: {e}"))?;
@@ -228,10 +262,14 @@ impl CudaExternalMiner {
             output_nonce,
             output_hash,
             output_solution,
+            output_mix,
             found_flag,
             kheavy_matrix,
             autolykos_table,
             autolykos_table_size: 0,
+            dag_buf: None,
+            dag_size_entries: 0,
+            dag_epoch: 0xFFFFFFFF,
             kheavy_timestamp: 0,
         })
     }
@@ -246,6 +284,62 @@ impl CudaExternalMiner {
             .htod_copy(table)
             .map_err(|e| anyhow::anyhow!("autolykos_table upload: {e}"))?;
         self.autolykos_table = Some(table_buf);
+        Ok(())
+    }
+
+    /// Ensure the DAG for the current epoch is loaded on the GPU.
+    /// Generates the light cache on CPU, then computes the full DAG on CPU
+    /// and uploads it. This is slow (~30-120s for 2-4GB DAG) but only runs
+    /// once per epoch.
+    fn ensure_dag(&mut self, epoch: u32) -> Result<()> {
+        if self.dag_epoch == epoch && self.dag_buf.is_some() {
+            return Ok(());
+        }
+
+        let algo_name = self.algo.module_name();
+        eprintln!(
+            "dag_manager: generating {} DAG epoch={} on CPU (this may take 30-120s)...",
+            algo_name, epoch,
+        );
+        let start = Instant::now();
+
+        // Generate light cache
+        let cache = generate_light_cache(epoch);
+        let cache_items = cache.len() / 64;
+        let dag_size_entries = dataset_size_for_epoch(epoch) / 128;
+
+        eprintln!(
+            "dag_manager: light cache ready ({} items = {:.1} MB), DAG will be {} entries = {:.2} GB",
+            cache_items,
+            cache.len() as f64 / (1024.0 * 1024.0),
+            dag_size_entries,
+            (dag_size_entries as f64 * 128.0) / (1024.0 * 1024.0 * 1024.0),
+        );
+
+        // Generate full DAG on CPU from light cache
+        let dag_u64 = generate_full_dag(&cache, cache_items as u64, dag_size_entries);
+
+        eprintln!(
+            "dag_manager: DAG generated on CPU in {:.1}s, uploading to GPU...",
+            start.elapsed().as_secs_f64(),
+        );
+
+        // Upload to GPU
+        let dag_buf = self
+            .dev
+            .htod_copy(dag_u64)
+            .map_err(|e| anyhow::anyhow!("DAG upload to GPU: {e}"))?;
+
+        self.dag_buf = Some(dag_buf);
+        self.dag_size_entries = dag_size_entries;
+        self.dag_epoch = epoch;
+
+        eprintln!(
+            "dag_manager: {} DAG epoch={} ready on GPU ({:.1}s total)",
+            algo_name, epoch,
+            start.elapsed().as_secs_f64(),
+        );
+
         Ok(())
     }
 
@@ -401,6 +495,55 @@ impl CudaExternalMiner {
                             )
                             .map_err(|e| anyhow::anyhow!("zelhash launch: {e}"))?;
                     }
+                    CudaExtAlgo::Ethash => {
+                        let dag = self
+                            .dag_buf
+                            .as_ref()
+                            .ok_or_else(|| anyhow::anyhow!("ethash DAG not loaded"))?;
+                        let dag_size = self.dag_size_entries;
+                        func
+                            .clone()
+                            .launch(
+                                cfg,
+                                (
+                                    &self.header_buf,
+                                    &self.target_buf,
+                                    current_nonce,
+                                    1u64, // stride
+                                    dag,
+                                    dag_size,
+                                    &mut self.output_nonce,
+                                    &mut self.output_hash,
+                                    &mut self.output_mix,
+                                    &mut self.found_flag,
+                                ),
+                            )
+                            .map_err(|e| anyhow::anyhow!("ethash launch: {e}"))?;
+                    }
+                    CudaExtAlgo::Kawpow => {
+                        let dag = self
+                            .dag_buf
+                            .as_ref()
+                            .ok_or_else(|| anyhow::anyhow!("kawpow DAG not loaded"))?;
+                        let dag_entries = self.dag_size_entries;
+                        func
+                            .clone()
+                            .launch(
+                                cfg,
+                                (
+                                    &self.header_buf,
+                                    &self.target_buf,
+                                    current_nonce,
+                                    dag,
+                                    dag_entries,
+                                    &mut self.output_nonce,
+                                    &mut self.output_hash,
+                                    &mut self.output_mix,
+                                    &mut self.found_flag,
+                                ),
+                            )
+                            .map_err(|e| anyhow::anyhow!("kawpow launch: {e}"))?;
+                    }
                 }
             }
 
@@ -456,7 +599,11 @@ impl GpuMiner for CudaExternalMiner {
         self.algorithm.clone()
     }
 
-    fn update_epoch(&mut self, _height: u64) -> Result<()> {
+    fn update_epoch(&mut self, height: u64) -> Result<()> {
+        if self.algo.needs_dag() {
+            let epoch = (height / self.algo.epoch_length() as u64) as u32;
+            self.ensure_dag(epoch)?;
+        }
         Ok(())
     }
 
@@ -480,6 +627,15 @@ impl GpuMiner for CudaExternalMiner {
             self.ensure_autolykos_table(&header_bytes, height)?;
         }
 
+        // Ethash/Kawpow: header is 32-byte block header hash, epoch from height
+        if self.algo.needs_dag() {
+            let epoch = (header.timestamp as u64 / self.algo.epoch_length() as u64) as u32;
+            self.ensure_dag(epoch)?;
+            // For ethash/kawpow, only the first 32 bytes (header hash) are used
+            let header_hash = &header_bytes[..32.min(header_bytes.len())];
+            return self.run_kernel(header_hash, &target.bytes, nonce_start, batch_size);
+        }
+
         self.run_kernel(&header_bytes, &target.bytes, nonce_start, batch_size)
     }
 
@@ -499,6 +655,13 @@ impl GpuMiner for CudaExternalMiner {
         if self.algo == CudaExtAlgo::Autolykos {
             let height = 0u32;
             self.ensure_autolykos_table(raw_header, height)?;
+        }
+
+        // Ethash/Kawpow: ensure DAG for epoch 0 (benchmark mode)
+        if self.algo.needs_dag() {
+            self.ensure_dag(0)?;
+            let header_hash = &raw_header[..32.min(raw_header.len())];
+            return self.run_kernel(header_hash, &target.bytes, nonce_start, batch_size);
         }
 
         self.run_kernel(raw_header, &target.bytes, nonce_start, batch_size)
@@ -667,4 +830,186 @@ fn mod_inv_15(a: u32) -> u32 {
         }
     }
     1
+}
+
+// ── Ethash/Kawpow DAG generation (CPU-side) ────────────────────────────────
+//
+// These functions implement the Ethash light cache + full DAG generation
+// in pure Rust, matching the algorithm in AuXpow/src/native_ffi.rs.
+// The DAG is generated on the CPU and uploaded to the GPU as a u64 buffer.
+
+const DAG_CACHE_ROUNDS: usize = 3;
+
+/// Compute the cache size for a given epoch.
+/// Formula: 16 MB + epoch * 128 KB, rounded to 64-byte boundary.
+fn cache_size_for_epoch(epoch: u32) -> u64 {
+    let size = 16u64 * 1024 * 1024 + epoch as u64 * 128 * 1024;
+    (size / 64) * 64
+}
+
+/// Compute the dataset (DAG) size for a given epoch.
+/// Formula: 1 GB + epoch * 8 MB, rounded to 128-byte boundary.
+fn dataset_size_for_epoch(epoch: u32) -> u64 {
+    let size = 1024u64 * 1024 * 1024 + epoch as u64 * 8 * 1024 * 1024;
+    (size / 128) * 128
+}
+
+/// Compute the seed hash for an epoch by keccak-256 chaining.
+fn seed_hash_for_epoch(epoch: u32) -> [u8; 32] {
+    use sha3::{Digest, Keccak256};
+    let mut seed = [0u8; 32];
+    for _ in 0..epoch {
+        let mut hasher = Keccak256::new();
+        hasher.update(&seed);
+        seed = hasher.finalize().into();
+    }
+    seed
+}
+
+/// Generate the Ethash/Kawpow light cache for a given epoch.
+/// Returns a Vec<u8> of size cache_size_for_epoch(epoch).
+fn generate_light_cache(epoch: u32) -> Vec<u8> {
+    use sha3::{Digest, Keccak512};
+
+    let cache_size = cache_size_for_epoch(epoch) as usize;
+    let cache_items = cache_size / 64;
+    let seed = seed_hash_for_epoch(epoch);
+
+    let mut cache = vec![0u8; cache_size];
+
+    // First item = keccak512(seed)
+    {
+        let mut hasher = Keccak512::new();
+        hasher.update(&seed);
+        let hash = hasher.finalize();
+        cache[..64].copy_from_slice(&hash);
+    }
+
+    // Chain: each item = keccak512(prev_item)
+    for i in 1..cache_items {
+        let mut hasher = Keccak512::new();
+        hasher.update(&cache[(i - 1) * 64..i * 64]);
+        let hash = hasher.finalize();
+        cache[i * 64..(i + 1) * 64].copy_from_slice(&hash);
+    }
+
+    // RANDMEMOHASH mixing rounds
+    for _r in 0..DAG_CACHE_ROUNDS {
+        for i in 0..cache_items {
+            let v = u32::from_le_bytes([
+                cache[i * 64],
+                cache[i * 64 + 1],
+                cache[i * 64 + 2],
+                cache[i * 64 + 3],
+            ]) % cache_items as u32;
+            let prev = (i + cache_items - 1) % cache_items;
+
+            let mut tmp = [0u8; 64];
+            for j in 0..64 {
+                tmp[j] = cache[prev * 64 + j] ^ cache[v as usize * 64 + j];
+            }
+
+            let mut hasher = Keccak512::new();
+            hasher.update(&tmp);
+            let hash = hasher.finalize();
+            cache[i * 64..(i + 1) * 64].copy_from_slice(&hash);
+        }
+    }
+
+    cache
+}
+
+/// FNV-1a hash for u32 pairs.
+fn fnv1a_u32(a: u32, b: u32) -> u32 {
+    a.wrapping_mul(0x01000193) ^ b
+}
+
+/// Compute a single DAG node (128 bytes = 16 u64) from the light cache.
+/// This is the `calc_dataset_item` function from the Ethash spec.
+fn calc_dataset_item(cache: &[u8], cache_items: u64, i: u64) -> [u64; 16] {
+    use sha3::{Digest, Keccak512};
+
+    // Each cache item is 64 bytes. We work with u64 words (8 per cache item).
+    let cache_u64s = cache_items * 8; // 8 u64 per 64-byte cache item
+
+    // Initialize mix = cache[i % cache_items] with the index mixed in
+    let mut mix = [0u64; 8];
+    let cache_idx = (i % cache_items) as usize;
+    for j in 0..8 {
+        mix[j] = u64::from_le_bytes(
+            cache[cache_idx * 64 + j * 8..cache_idx * 64 + (j + 1) * 8]
+                .try_into()
+                .unwrap(),
+        );
+    }
+    mix[0] ^= i;
+
+    // keccak512 the mix
+    let mut buf = [0u8; 64];
+    for j in 0..8 {
+        buf[j * 8..(j + 1) * 8].copy_from_slice(&mix[j].to_le_bytes());
+    }
+    let mut hasher = Keccak512::new();
+    hasher.update(&buf);
+    let hash = hasher.finalize();
+    for j in 0..8 {
+        mix[j] = u64::from_le_bytes(hash[j * 8..(j + 1) * 8].try_into().unwrap());
+    }
+
+    // 256 parent lookups with FNV mixing
+    const ETHASH_DATASET_PARENTS: usize = 256;
+    for parent in 0..ETHASH_DATASET_PARENTS {
+        let mix_word = (mix[0] & 0xFFFFFFFF) as u32;
+        let parent_index = fnv1a_u32(i as u32 ^ parent as u32, mix_word) % cache_items as u32;
+        let pidx = parent_index as usize;
+
+        // FNV-mix each u64 word with the corresponding cache word
+        for j in 0..8 {
+            let cache_word = u64::from_le_bytes(
+                cache[pidx * 64 + j * 8..pidx * 64 + (j + 1) * 8]
+                    .try_into()
+                    .unwrap(),
+            );
+            // FNV on each 32-bit half
+            let low = fnv1a_u32((mix[j] & 0xFFFFFFFF) as u32, (cache_word & 0xFFFFFFFF) as u32);
+            let high = fnv1a_u32((mix[j] >> 32) as u32, (cache_word >> 32) as u32);
+            mix[j] = (high as u64) << 32 | (low as u64);
+        }
+    }
+
+    // Final keccak512
+    for j in 0..8 {
+        buf[j * 8..(j + 1) * 8].copy_from_slice(&mix[j].to_le_bytes());
+    }
+    let mut hasher = Keccak512::new();
+    hasher.update(&buf);
+    let hash = hasher.finalize();
+
+    // Return as 16 u64 (128 bytes = 2 nodes of 64 bytes each)
+    let mut node = [0u64; 16];
+    for j in 0..8 {
+        node[j] = u64::from_le_bytes(hash[j * 8..(j + 1) * 8].try_into().unwrap());
+        // Duplicate for the second half (each DAG entry = 2 nodes)
+        node[j + 8] = node[j];
+    }
+    node
+}
+
+/// Generate the full DAG from the light cache.
+/// Returns a Vec<u64> of size dag_size_entries * 16 (16 u64 per 128-byte entry).
+fn generate_full_dag(cache: &[u8], cache_items: u64, dag_size_entries: u64) -> Vec<u64> {
+    let total_u64s = dag_size_entries as usize * 16;
+    let mut dag = vec![0u64; total_u64s];
+
+    // Each DAG entry is 128 bytes = 16 u64 = 2 nodes of 64 bytes.
+    // We compute each node separately.
+    let total_nodes = dag_size_entries * 2;
+    for i in 0..total_nodes {
+        let node = calc_dataset_item(cache, cache_items, i);
+        // Each node is 8 u64 (64 bytes), stored at offset i * 8
+        let offset = i as usize * 8;
+        dag[offset..offset + 8].copy_from_slice(&node[..8]);
+    }
+
+    dag
 }
