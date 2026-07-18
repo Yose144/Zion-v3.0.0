@@ -33,6 +33,7 @@ const AUTOLYKOS_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/autolykos_
 const ZELHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/zelhash_kernel.cu");
 const ETHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/ethash_kernel.cu");
 const KAWPOW_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/kawpow_kernel.cu");
+const ETHASH_DAG_GEN_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/ethash_dag_gen.cu");
 
 /// Preprocess kernel source: strip #pragma once and #include lines,
 /// prepend standard typedefs, fix NVRTC-incompatible constructs.
@@ -170,6 +171,11 @@ pub struct CudaExternalMiner {
     dag_buf: Option<CudaSlice<u64>>,
     dag_size_entries: u64,
     dag_epoch: u32, // 0xFFFFFFFF = no DAG loaded
+    // Light cache for DAG generation (uploaded to GPU for on-GPU DAG gen)
+    light_cache_buf: Option<CudaSlice<u64>>,
+    light_cache_items: u64,
+    // DAG generation kernel module (separate from mining kernel)
+    dag_gen_loaded: bool,
     // Cached timestamp for kheavyhash
     kheavy_timestamp: u64,
 }
@@ -270,6 +276,9 @@ impl CudaExternalMiner {
             dag_buf: None,
             dag_size_entries: 0,
             dag_epoch: 0xFFFFFFFF,
+            light_cache_buf: None,
+            light_cache_items: 0,
+            dag_gen_loaded: false,
             kheavy_timestamp: 0,
         })
     }
@@ -288,9 +297,9 @@ impl CudaExternalMiner {
     }
 
     /// Ensure the DAG for the current epoch is loaded on the GPU.
-    /// Generates the light cache on CPU, then computes the full DAG on CPU
-    /// and uploads it. This is slow (~30-120s for 2-4GB DAG) but only runs
-    /// once per epoch.
+    /// Generates the light cache on CPU (~16-100MB, fast), uploads it,
+    /// then computes the full DAG (1-6GB) IN PARALLEL ON THE GPU using
+    /// the ethash_calculate_dag kernel. No multi-GB CPU→GPU transfer.
     fn ensure_dag(&mut self, epoch: u32) -> Result<()> {
         if self.dag_epoch == epoch && self.dag_buf.is_some() {
             return Ok(());
@@ -298,37 +307,130 @@ impl CudaExternalMiner {
 
         let algo_name = self.algo.module_name();
         eprintln!(
-            "dag_manager: generating {} DAG epoch={} on CPU (this may take 30-120s)...",
+            "dag_manager: generating {} DAG epoch={} on GPU...",
             algo_name, epoch,
         );
         let start = Instant::now();
 
-        // Generate light cache
-        let cache = generate_light_cache(epoch);
-        let cache_items = cache.len() / 64;
+        // Step 1: Generate light cache on CPU (small, ~16-100MB, fast)
+        let cache_bytes = generate_light_cache(epoch);
+        let cache_items = cache_bytes.len() / 64;
         let dag_size_entries = dataset_size_for_epoch(epoch) / 128;
+        let dag_nodes = dag_size_entries * 2; // each 128-byte entry = 2 nodes
+        let dag_u64s = dag_nodes * 8;         // each 64-byte node = 8 u64
 
         eprintln!(
-            "dag_manager: light cache ready ({} items = {:.1} MB), DAG will be {} entries = {:.2} GB",
+            "dag_manager: light cache ready ({} items = {:.1} MB), DAG will be {} nodes = {:.2} GB",
             cache_items,
-            cache.len() as f64 / (1024.0 * 1024.0),
-            dag_size_entries,
-            (dag_size_entries as f64 * 128.0) / (1024.0 * 1024.0 * 1024.0),
+            cache_bytes.len() as f64 / (1024.0 * 1024.0),
+            dag_nodes,
+            (dag_u64s as f64 * 8.0) / (1024.0 * 1024.0 * 1024.0),
         );
 
-        // Generate full DAG on CPU from light cache
-        let dag_u64 = generate_full_dag(&cache, cache_items as u64, dag_size_entries);
+        // Step 2: Convert cache to u64 array and upload to GPU
+        let cache_u64s = cache_items * 8;
+        let mut cache_u64 = Vec::with_capacity(cache_u64s as usize);
+        for i in 0..cache_u64s as usize {
+            let off = i * 8;
+            cache_u64.push(u64::from_le_bytes(
+                cache_bytes[off..off + 8].try_into().unwrap(),
+            ));
+        }
+        let light_cache_buf = self
+            .dev
+            .htod_copy(cache_u64)
+            .map_err(|e| anyhow::anyhow!("light cache upload: {e}"))?;
+        self.light_cache_buf = Some(light_cache_buf);
+        self.light_cache_items = cache_items as u64;
 
+        // Step 3: Allocate DAG buffer on GPU (zero-initialized)
         eprintln!(
-            "dag_manager: DAG generated on CPU in {:.1}s, uploading to GPU...",
-            start.elapsed().as_secs_f64(),
+            "dag_manager: allocating DAG buffer on GPU ({:.2} GB)...",
+            (dag_u64s as f64 * 8.0) / (1024.0 * 1024.0 * 1024.0),
         );
-
-        // Upload to GPU
         let dag_buf = self
             .dev
-            .htod_copy(dag_u64)
-            .map_err(|e| anyhow::anyhow!("DAG upload to GPU: {e}"))?;
+            .alloc_zeros::<u64>(dag_u64s as usize)
+            .map_err(|e| anyhow::anyhow!("DAG alloc on GPU: {e}"))?;
+
+        // Step 4: Compile and load DAG generation kernel if not already loaded
+        if !self.dag_gen_loaded {
+            let arch = std::env::var("ZION_CUDA_ARCH")
+                .unwrap_or_else(|_| "sm_86".to_string());
+            let processed = preprocess_kernel(ETHASH_DAG_GEN_CU);
+            let ptx = compile_ptx_with_opts(
+                &processed,
+                CompileOptions {
+                    options: vec![
+                        "--use_fast_math".to_string(),
+                        format!("-arch={}", arch),
+                        "--std=c++14".to_string(),
+                    ],
+                    ..Default::default()
+                },
+            )
+            .map_err(|e| anyhow::anyhow!("NVRTC compile failed for dag_gen: {e}"))?;
+            self.dev
+                .load_ptx(ptx, "dag_gen", &["ethash_calculate_dag"])
+                .map_err(|e| anyhow::anyhow!("PTX load failed for dag_gen: {e}"))?;
+            self.dag_gen_loaded = true;
+        }
+
+        // Step 5: Launch DAG generation kernel in batches
+        let dag_gen_func = self
+            .dev
+            .get_func("dag_gen", "ethash_calculate_dag")
+            .ok_or_else(|| anyhow::anyhow!("dag_gen kernel not found"))?;
+
+        let threads_per_block: u32 = 256;
+        let batch_nodes: u32 = 8192; // nodes per kernel launch
+        let light_cache_ref = self.light_cache_buf.as_ref().unwrap();
+
+        eprintln!(
+            "dag_manager: computing DAG on GPU ({} nodes in batches of {})...",
+            dag_nodes, batch_nodes,
+        );
+
+        let mut node_start: u64 = 0;
+        while node_start < dag_nodes {
+            let chunk = (dag_nodes - node_start).min(batch_nodes as u64);
+            let blocks = ((chunk as u32) + threads_per_block - 1) / threads_per_block;
+            let cfg = LaunchConfig {
+                grid_dim: (blocks, 1, 1),
+                block_dim: (threads_per_block, 1, 1),
+                shared_mem_bytes: 0,
+            };
+
+            unsafe {
+                dag_gen_func
+                    .clone()
+                    .launch(
+                        cfg,
+                        (
+                            node_start,
+                            light_cache_ref,
+                            self.light_cache_items,
+                            &dag_buf,
+                        ),
+                    )
+                    .map_err(|e| anyhow::anyhow!("dag_gen launch: {e}"))?;
+            }
+
+            self.dev
+                .synchronize()
+                .map_err(|e| anyhow::anyhow!("dag_gen sync: {e}"))?;
+
+            node_start += chunk;
+
+            let pct = (node_start * 100 / dag_nodes).min(100);
+            if pct % 10 == 0 || node_start == dag_nodes {
+                eprintln!(
+                    "dag_manager: DAG generation {}% ({}/{}, {:.1}s)",
+                    pct, node_start, dag_nodes,
+                    start.elapsed().as_secs_f64(),
+                );
+            }
+        }
 
         self.dag_buf = Some(dag_buf);
         self.dag_size_entries = dag_size_entries;
@@ -919,97 +1021,7 @@ fn generate_light_cache(epoch: u32) -> Vec<u8> {
     cache
 }
 
-/// FNV-1a hash for u32 pairs.
+/// FNV-1a hash for u32 pairs (used in light cache generation only).
 fn fnv1a_u32(a: u32, b: u32) -> u32 {
     a.wrapping_mul(0x01000193) ^ b
-}
-
-/// Compute a single DAG node (128 bytes = 16 u64) from the light cache.
-/// This is the `calc_dataset_item` function from the Ethash spec.
-fn calc_dataset_item(cache: &[u8], cache_items: u64, i: u64) -> [u64; 16] {
-    use sha3::{Digest, Keccak512};
-
-    // Each cache item is 64 bytes. We work with u64 words (8 per cache item).
-    let cache_u64s = cache_items * 8; // 8 u64 per 64-byte cache item
-
-    // Initialize mix = cache[i % cache_items] with the index mixed in
-    let mut mix = [0u64; 8];
-    let cache_idx = (i % cache_items) as usize;
-    for j in 0..8 {
-        mix[j] = u64::from_le_bytes(
-            cache[cache_idx * 64 + j * 8..cache_idx * 64 + (j + 1) * 8]
-                .try_into()
-                .unwrap(),
-        );
-    }
-    mix[0] ^= i;
-
-    // keccak512 the mix
-    let mut buf = [0u8; 64];
-    for j in 0..8 {
-        buf[j * 8..(j + 1) * 8].copy_from_slice(&mix[j].to_le_bytes());
-    }
-    let mut hasher = Keccak512::new();
-    hasher.update(&buf);
-    let hash = hasher.finalize();
-    for j in 0..8 {
-        mix[j] = u64::from_le_bytes(hash[j * 8..(j + 1) * 8].try_into().unwrap());
-    }
-
-    // 256 parent lookups with FNV mixing
-    const ETHASH_DATASET_PARENTS: usize = 256;
-    for parent in 0..ETHASH_DATASET_PARENTS {
-        let mix_word = (mix[0] & 0xFFFFFFFF) as u32;
-        let parent_index = fnv1a_u32(i as u32 ^ parent as u32, mix_word) % cache_items as u32;
-        let pidx = parent_index as usize;
-
-        // FNV-mix each u64 word with the corresponding cache word
-        for j in 0..8 {
-            let cache_word = u64::from_le_bytes(
-                cache[pidx * 64 + j * 8..pidx * 64 + (j + 1) * 8]
-                    .try_into()
-                    .unwrap(),
-            );
-            // FNV on each 32-bit half
-            let low = fnv1a_u32((mix[j] & 0xFFFFFFFF) as u32, (cache_word & 0xFFFFFFFF) as u32);
-            let high = fnv1a_u32((mix[j] >> 32) as u32, (cache_word >> 32) as u32);
-            mix[j] = (high as u64) << 32 | (low as u64);
-        }
-    }
-
-    // Final keccak512
-    for j in 0..8 {
-        buf[j * 8..(j + 1) * 8].copy_from_slice(&mix[j].to_le_bytes());
-    }
-    let mut hasher = Keccak512::new();
-    hasher.update(&buf);
-    let hash = hasher.finalize();
-
-    // Return as 16 u64 (128 bytes = 2 nodes of 64 bytes each)
-    let mut node = [0u64; 16];
-    for j in 0..8 {
-        node[j] = u64::from_le_bytes(hash[j * 8..(j + 1) * 8].try_into().unwrap());
-        // Duplicate for the second half (each DAG entry = 2 nodes)
-        node[j + 8] = node[j];
-    }
-    node
-}
-
-/// Generate the full DAG from the light cache.
-/// Returns a Vec<u64> of size dag_size_entries * 16 (16 u64 per 128-byte entry).
-fn generate_full_dag(cache: &[u8], cache_items: u64, dag_size_entries: u64) -> Vec<u64> {
-    let total_u64s = dag_size_entries as usize * 16;
-    let mut dag = vec![0u64; total_u64s];
-
-    // Each DAG entry is 128 bytes = 16 u64 = 2 nodes of 64 bytes.
-    // We compute each node separately.
-    let total_nodes = dag_size_entries * 2;
-    for i in 0..total_nodes {
-        let node = calc_dataset_item(cache, cache_items, i);
-        // Each node is 8 u64 (64 bytes), stored at offset i * 8
-        let offset = i as usize * 8;
-        dag[offset..offset + 8].copy_from_slice(&node[..8]);
-    }
-
-    dag
 }
