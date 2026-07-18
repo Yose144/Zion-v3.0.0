@@ -162,6 +162,30 @@ interface PoolData {
   servers: PoolServer[];
   miners: Miner[];
   recent_blocks: Block[];
+  profit_switcher?: {
+    enabled: boolean;
+    interval_secs: number;
+    hysteresis_pct: number;
+    best_gpu_coin: string | null;
+    best_cpu_coin: string | null;
+    best_gpu_profit_usd: number;
+    best_cpu_profit_usd: number;
+    last_check_unix: number;
+    estimates: Array<{
+      coin: string;
+      algorithm: string;
+      revenue_usd_per_day: number;
+      power_cost_usd: number;
+      profit_usd_per_day: number;
+      is_cpu: boolean;
+      is_nicehash: boolean;
+    }>;
+    nicehash_rates: Array<{
+      coin: string;
+      algorithm: string;
+      paying: number;
+    }>;
+  } | null;
 }
 
 /* ═══════════════════════ HELPERS ═══════════════════════ */
