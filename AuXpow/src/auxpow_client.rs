@@ -2153,6 +2153,7 @@ fn build_stratum_v1_header(
     };
 
     // Combine with merkle branches (left concatenation: hash = sha256d(hash || branch))
+    // Branches are in display (reversed) order — use as-is, matching cpuminer.
     for branch_hex in merkle_branches {
         let branch = parse_hex(branch_hex);
         let mut combined = Vec::with_capacity(merkle_root.len() + branch.len());
@@ -2163,23 +2164,29 @@ fn build_stratum_v1_header(
         merkle_root = h2.to_vec();
     }
 
-    // Reverse prevhash (stratum sends in display/reversed order)
-    let mut prevhash_reversed = prevhash_bytes.clone();
-    prevhash_reversed.reverse();
+    // NOTE: cpuminer stores sha256d output bytes directly into header without
+    // reversing. sha2 crate also returns bytes in the same order. So we do NOT
+    // reverse — the merkle_root bytes go directly into the header as-is.
+    // (Both cpuminer and Rust sha2 produce the same byte sequence.)
+
+    // prevhash: Stratum v1 pools send prevhash in **reversed** (display) byte order.
+    // cpuminer reverses it back to internal byte order for the block header.
+    let mut prevhash_internal = prevhash_bytes.clone();
+    prevhash_internal.reverse();
 
     // Build 80-byte header
     let mut header = Vec::with_capacity(80);
 
-    // version (4 bytes LE) — pad/truncate to 4 bytes
+    // version (4 bytes) — pool sends hex, cpuminer stores bytes directly (no reverse)
     let mut ver = [0u8; 4];
     let vlen = version_bytes.len().min(4);
     ver[..vlen].copy_from_slice(&version_bytes[..vlen]);
     header.extend_from_slice(&ver);
 
-    // prevhash (32 bytes) — pad if short
+    // prevhash (32 bytes) — internal byte order, pad if short
     let mut prev = [0u8; 32];
-    let plen = prevhash_reversed.len().min(32);
-    prev[..plen].copy_from_slice(&prevhash_reversed[..plen]);
+    let plen = prevhash_internal.len().min(32);
+    prev[..plen].copy_from_slice(&prevhash_internal[..plen]);
     header.extend_from_slice(&prev);
 
     // merkle_root (32 bytes) — pad if short
@@ -2188,13 +2195,13 @@ fn build_stratum_v1_header(
     mr[..mlen].copy_from_slice(&merkle_root[..mlen]);
     header.extend_from_slice(&mr);
 
-    // ntime (4 bytes LE) — pad/truncate
+    // ntime (4 bytes) — pool sends hex, store bytes directly (no reverse, matching cpuminer)
     let mut nt = [0u8; 4];
     let tlen = ntime_bytes.len().min(4);
     nt[..tlen].copy_from_slice(&ntime_bytes[..tlen]);
     header.extend_from_slice(&nt);
 
-    // nbits (4 bytes LE) — pad/truncate
+    // nbits (4 bytes) — pool sends hex, store bytes directly (no reverse, matching cpuminer)
     let mut nb = [0u8; 4];
     let blen = nbits_bytes.len().min(4);
     nb[..blen].copy_from_slice(&nbits_bytes[..blen]);
@@ -2936,18 +2943,26 @@ impl AuxPowClient {
 
                     // Target from current_difficulty (set by mining.set_difficulty)
                     // or from current_target_bytes (set by mining.set_target).
-                    // Fall back to a permissive default (difficulty 1).
+                    // For RTM (Dash fork), use RTM pow_limit instead of [0xFF; 32].
                     let (target_bytes, target_hex) = {
                         let cached_target = *self.current_target_bytes.lock().await;
                         let cached_diff = *self.current_difficulty.lock().await;
                         if let Some(t) = cached_target {
                             (t, hex::encode(&t))
                         } else if cached_diff > 0.0 {
-                            let t = difficulty_to_target(cached_diff);
+                            let t = if self.profile.coin == ExternalCoin::RTM {
+                                difficulty_to_target_rtm(cached_diff)
+                            } else {
+                                difficulty_to_target(cached_diff)
+                            };
                             (t, hex::encode(&t))
                         } else {
                             // Default: difficulty 0.001 = very easy target
-                            let t = difficulty_to_target(0.001);
+                            let t = if self.profile.coin == ExternalCoin::RTM {
+                                difficulty_to_target_rtm(0.001)
+                            } else {
+                                difficulty_to_target(0.001)
+                            };
                             (t, hex::encode(&t))
                         }
                     };
@@ -4026,8 +4041,9 @@ impl AuxPowClient {
                 e
             };
 
-            // PoW nonce as 4-byte LE hex
-            let nonce_hex = hex::encode(nonce_bytes);
+            // PoW nonce as BE hex string (cpuminer: sprintf "%08x", nonce)
+            // Pool interprets this as a BE uint32 and stores as LE in header
+            let nonce_hex = format!("{:08x}", nonce_le);
 
             println!(
                 "auxpow: {} submit — job={} en2={} ntime={} nonce={}",
@@ -4620,6 +4636,68 @@ pub fn target_to_difficulty_with_max(target: &[u8; 32], max_target: &[u8; 32]) -
 
 pub fn difficulty_to_target(difficulty: f64) -> [u8; 32] {
     difficulty_to_target_with_max(difficulty, &[0xFFu8; 32])
+}
+
+/// RTM (Raptoreum) pow_limit target — same as Dash.
+/// Dash pow_limit = 0x00000fffff000000000000000000000000000000000000000000000000000000
+/// (from nbits 0x1e0fffff)
+pub const RTM_POW_LIMIT: [u8; 32] = [
+    0x00, 0x00, 0x0f, 0xff, 0xff, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+];
+
+/// Convert a Stratum difficulty value to a 32-byte big-endian target
+/// using RTM's pow_limit (Dash fork).
+/// For share difficulties < 1.0, the target can exceed pow_limit (easier).
+pub fn difficulty_to_target_rtm(difficulty: f64) -> [u8; 32] {
+    use num_bigint::BigUint;
+
+    if !difficulty.is_finite() || difficulty.is_nan() || difficulty <= 0.0 {
+        return [0xFFu8; 32];
+    }
+
+    let max = BigUint::from_bytes_be(&RTM_POW_LIMIT);
+
+    // difficulty = significand * 2^(exponent - 52)
+    // target = max / difficulty = max * 2^(52 - exponent) / significand
+    let bits = difficulty.to_bits();
+    let mantissa = bits & 0x000F_FFFF_FFFF_FFFF;
+    let exponent = ((bits >> 52) & 0x7FF) as i32 - 1023;
+    let significand = if exponent == -1023 {
+        BigUint::from(mantissa)
+    } else {
+        BigUint::from(mantissa | 0x0010_0000_0000_0000u64)
+    };
+
+    if significand == BigUint::from(0u32) {
+        return [0xFFu8; 32];
+    }
+
+    // Compute target = max * 2^(52 - exponent) / significand
+    // For exponent < 52 (difficulty < 2^52), we left-shift max
+    // For exponent >= 52, we right-shift (but this won't happen for share diff)
+    let mut target = max;
+    let shift = 52 - exponent;
+    if shift >= 0 {
+        target <<= shift as usize;
+    } else {
+        target >>= (-shift) as usize;
+    }
+    target /= significand;
+
+    let bytes = target.to_bytes_be();
+
+    // Cap at 2^256 (32 bytes of 0xFF)
+    if bytes.len() > 32 {
+        return [0xFFu8; 32];
+    }
+
+    let mut out = [0u8; 32];
+    let start = out.len().saturating_sub(bytes.len());
+    out[start..].copy_from_slice(&bytes);
+    out
 }
 
 /// Convert a Stratum difficulty value to a 32-byte big-endian target using
@@ -6232,7 +6310,7 @@ mod tests {
 
                 let hash = zion_native_ffi::ghostrider::hash(&work_blob, nonce);
 
-                if crate::external_hashers::meets_randomx_target(&hash, target) {
+                if crate::external_hashers::meets_target_little_endian(&hash, target) {
                     found_nonce = Some(nonce);
                     println!("rtm_e2e: Found valid nonce={} in {:?} hash={}",
                         nonce, start.elapsed(), hex::encode(&hash));
