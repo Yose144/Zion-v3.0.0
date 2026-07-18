@@ -4550,7 +4550,7 @@ pub mod cuda_deeksha_lite_fire {
     const CUDA_KERNEL_SRC: &str = include_str!("deeksha_lite_fire.cu");
     const SCRATCHPAD_BYTES: usize = 262_144; // 256 KiB per thread
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
-    const DEFAULT_WORK_SIZE_CAP: usize = 32_768;
+    const DEFAULT_WORK_SIZE_CAP: usize = 65_536; // 16GB VRAM for 24GB GPU
 
     pub struct CudaDeekshaLiteFireMiner {
         dev: Arc<CudaDevice>,
@@ -4586,11 +4586,19 @@ pub mod cuda_deeksha_lite_fire {
                 .name()
                 .unwrap_or_else(|_| "unknown CUDA device".to_string());
 
-            // Compile PTX with fast-math
+            // Compile PTX with fast-math + arch-specific optimization
+            // RTX 3090 = sm_86 (Ampere). Default to sm_86 but allow override.
+            let arch = std::env::var("ZION_CUDA_ARCH")
+                .unwrap_or_else(|_| "sm_86".to_string());
             let ptx = compile_ptx_with_opts(
                 CUDA_KERNEL_SRC,
                 CompileOptions {
-                    options: vec!["--use_fast_math".to_string()],
+                    options: vec![
+                        "--use_fast_math".to_string(),
+                        format!("-arch={}", arch),
+                        "--std=c++14".to_string(),
+                        "-lineinfo".to_string(),
+                    ],
                     ..Default::default()
                 },
             )
@@ -4701,7 +4709,7 @@ pub mod cuda_deeksha_lite_fire {
             let threads_per_block: u32 = std::env::var("ZION_CUDA_TPB")
                 .ok()
                 .and_then(|v| v.trim().parse().ok())
-                .unwrap_or(128);
+                .unwrap_or(256);
 
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size) as u32;
