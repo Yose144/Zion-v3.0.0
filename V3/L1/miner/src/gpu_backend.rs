@@ -4691,7 +4691,7 @@ pub mod cuda_deeksha_lite_fire {
             // ASYNC copy: queued on default stream, kernel will wait for it.
             // This eliminates a host sync point — host can proceed immediately.
             self.dev
-                .htod_copy_into(keccak_state, &mut self.header_state_buf)
+                .htod_copy_into(keccak_state.to_vec(), &mut self.header_state_buf)
                 .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
 
             // Target: LE u32 from first 4 bytes of target
