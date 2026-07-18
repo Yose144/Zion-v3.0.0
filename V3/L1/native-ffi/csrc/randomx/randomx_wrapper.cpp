@@ -66,13 +66,26 @@ static bool seed_matches(const uint8_t* seed, size_t len) {
 static randomx_flags get_vm_flags() {
     /* Use randomx_get_flags() for auto-detection of JIT + HARD_AES */
     randomx_flags flags = randomx_get_flags();
-    /* Add FULL_MEM for dataset mode (fastest hashing) */
-    flags |= RANDOMX_FLAG_FULL_MEM;
-    /* Add LARGE_PAGES for dataset + cache (2MB huge pages on Linux)
-     * This gives ~20-30% speedup by reducing TLB misses on the 2GB dataset.
-     * Requires vm.nr_hugepages >= 1250 (set in /etc/sysctl.conf or at runtime).
-     * If huge pages are not available, alloc falls back to regular pages. */
+    /* FULL_MEM: dataset mode (~2 GB) for maximum hashrate.
+     * On macOS with 8 GB RAM under memory pressure, the 2 GB dataset may
+     * get swapped out, making hashing 100x slower. Allow light mode override
+     * via ZION_RANDOMX_LIGHT_MODE=1 env var (uses ~256 MB cache only). */
+    static int light_mode = -1;
+    if (light_mode == -1) {
+        const char* env = getenv("ZION_RANDOMX_LIGHT_MODE");
+        light_mode = (env && (env[0] == '1' || env[0] == 't' || env[0] == 'T')) ? 1 : 0;
+    }
+    if (!light_mode) {
+        flags |= RANDOMX_FLAG_FULL_MEM;
+    }
+    /* LARGE_PAGES: 2MB huge pages on Linux (requires vm.nr_hugepages).
+     * On macOS Apple Silicon, superpages are NOT available — mach_vm_allocate
+     * with VM_FLAGS_SUPERPAGE_SIZE_2MB returns KERN_INVALID_ARGUMENT.
+     * M1 already uses 16KB native pages (4x larger than x86's 4KB), providing
+     * some TLB benefit. Skip LARGE_PAGES on macOS to avoid failed allocations. */
+#if !defined(__APPLE__)
     flags |= RANDOMX_FLAG_LARGE_PAGES;
+#endif
     /* On macOS, use SECURE mode (W^X) for JIT — required by hardened runtime */
 #if defined(__APPLE__) && defined(__aarch64__)
     flags |= RANDOMX_FLAG_SECURE;
@@ -84,12 +97,22 @@ static randomx_flags get_vm_flags() {
 static randomx_vm* create_thread_vm() {
     randomx_flags flags = get_vm_flags();
     randomx_vm* vm = nullptr;
+
+    /* On macOS, boost thread QoS to user-interactive for max performance.
+     * This schedules the thread on performance cores (P-cores) on M1. */
+#if defined(__APPLE__)
+    pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
+#endif
+
     if (g_dataset) {
         vm = randomx_create_vm(flags, g_cache, g_dataset);
     }
     if (!vm) {
         /* Fallback: light mode (cache only, still JIT+HARD_AES if available) */
         randomx_flags light_flags = randomx_get_flags();
+#if defined(__APPLE__) && defined(__aarch64__)
+        light_flags |= RANDOMX_FLAG_SECURE;
+#endif
         vm = randomx_create_vm(light_flags, g_cache, nullptr);
     }
     if (!vm) {
@@ -126,13 +149,18 @@ static void update_seed(const uint8_t* seed, size_t len) {
     }
     randomx_init_cache(g_cache, seed, 32);
 
-    /* Allocate + init dataset (full mode for max hashrate) */
-    g_dataset = randomx_alloc_dataset(alloc_flags);
-    if (!g_dataset) {
-        g_dataset = randomx_alloc_dataset(RANDOMX_FLAG_DEFAULT);
-    }
-    if (g_dataset) {
-        randomx_init_dataset(g_dataset, g_cache, 0, randomx_dataset_item_count());
+    /* Allocate + init dataset (full mode for max hashrate).
+     * Skip in light mode (ZION_RANDOMX_LIGHT_MODE=1) to save 2 GB RAM. */
+    if (alloc_flags & RANDOMX_FLAG_FULL_MEM) {
+        g_dataset = randomx_alloc_dataset(alloc_flags);
+        if (!g_dataset) {
+            g_dataset = randomx_alloc_dataset(RANDOMX_FLAG_DEFAULT);
+        }
+        if (g_dataset) {
+            randomx_init_dataset(g_dataset, g_cache, 0, randomx_dataset_item_count());
+        }
+    } else {
+        g_dataset = nullptr; /* light mode — cache only */
     }
 
     memcpy(g_current_seed, seed, 32);
@@ -144,7 +172,11 @@ static void update_seed(const uint8_t* seed, size_t len) {
             g_dataset ? "yes" : "no (light mode)",
             (vm_flags & RANDOMX_FLAG_JIT) ? "yes" : "no",
             (vm_flags & RANDOMX_FLAG_HARD_AES) ? "yes" : "no",
+#if defined(__APPLE__)
+            "n/a (16KB native pages)",
+#else
             (vm_flags & RANDOMX_FLAG_LARGE_PAGES) ? "yes" : "no",
+#endif
             (vm_flags & RANDOMX_FLAG_SECURE) ? "yes" : "no");
 }
 
