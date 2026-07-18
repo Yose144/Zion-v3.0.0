@@ -9,7 +9,7 @@
 
 **DeekshaChv3 Parallel Streaming:** ZION Deeksha on GPU + external coins (VRSC, KAS, ALPH, DCR, ERG, ETC, RVN, FLUX) on CPU — all algorithms run **simultaneously**, not alternating. Deployed to Edge pool 2026-07-13.
 
-**CUDA Backend (NEW 2026-07-18):** Native CUDA kernel for `deeksha_lite_fire` achieving **295.6 KH/s on RTX 3090** (45.6x faster than OpenCL port). Async host-device copies + pool I/O pipelining. See [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md) for full optimization report.
+**CUDA Backend (NEW 2026-07-18):** Native CUDA kernel for `deeksha_lite_fire` achieving **303.8 KH/s on RTX 3090** (46.7x faster than OpenCL port). Async host-device copies + pool I/O pipelining + PTXAS O3. See [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md) for full optimization report.
 
 **Canonical documentation for 3.0.5:** [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) — full Czech report.  
 **Runbook:** [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) — canonical 7-phase runbook.  
@@ -145,7 +145,7 @@ export ZION_GPU_MAX_BATCH=262144
 | v1 (OpenCL port) | 6.5 KH/s | baseline |
 | v4 (batched launch) | 49.3 KH/s | 7.5x |
 | v5 (async htod copies) | 245.8 KH/s | 37.9x |
-| v6 (pool I/O pipelining) | **295.6 KH/s** | **45.6x** |
+| v6 (pipelining + PTXAS O3) | **303.8 KH/s** | **46.7x** |
 
 Full optimization report: [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md)
 
@@ -207,4 +207,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-07-18 · Version: v3.0.6 "Triple Parallel" + CUDA Backend (295.6 KH/s RTX 3090) · Report: [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md)*
+*Last updated: 2026-07-18 · Version: v3.0.6 "Triple Parallel" + CUDA Backend (303.8 KH/s RTX 3090) · Report: [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md)*
