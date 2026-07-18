@@ -6,7 +6,7 @@
 //! to stderr so the operator can save it.
 //!
 //! Usage:
-//!   ZION_OLD_ESCROW_SK_HEX=<hex> ZION_RPC_ADDR=127.0.0.1:8443 \
+//!   ZION_OLD_ESCROW_SK_HEX=<hex> ZION_RPC_ADDR=127.0.0.1:9443 \
 //!     cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin migrate-escrow
 
 use std::io::{BufRead, BufReader, Write};
@@ -83,7 +83,7 @@ fn main() {
     };
 
     // ── 4. Submit via RPC ───────────────────────────────────────────────
-    let rpc_addr = std::env::var("ZION_RPC_ADDR").unwrap_or_else(|_| "127.0.0.1:8443".into());
+    let rpc_addr = std::env::var("ZION_RPC_ADDR").unwrap_or_else(|_| "127.0.0.1:9443".into());
     let payload = json!({
         "jsonrpc": "2.0",
         "id": 1,

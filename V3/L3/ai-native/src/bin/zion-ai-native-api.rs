@@ -239,7 +239,7 @@ impl AppState {
             request_count: AtomicU64::new(0),
             session_count: AtomicU64::new(0),
             node_rpc_addr: std::env::var("ZION_NODE_RPC_ADDR")
-                .unwrap_or_else(|_| "127.0.0.1:8443".to_string()),
+                .unwrap_or_else(|_| "127.0.0.1:9443".to_string()),
             pool_api_url: std::env::var("ZION_POOL_API_URL")
                 .unwrap_or_else(|_| "http://127.0.0.1:8080".to_string()),
             orchestrator: Mutex::new(Orchestrator::new(max_agents)),

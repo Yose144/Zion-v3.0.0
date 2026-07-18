@@ -134,6 +134,40 @@ impl RevenueSource {
         }
     }
 
+    /// Parse a RevenueSource from its canonical `as_str()` name (case-insensitive).
+    /// Also accepts short aliases (e.g. "keccak" for "keccak_bonus").
+    pub fn from_str_ci(s: &str) -> Option<Self> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "zion" => Some(Self::Zion),
+            "keccak_bonus" | "keccak" => Some(Self::KeccakBonus),
+            "sha3_bonus" | "sha3" => Some(Self::Sha3Bonus),
+            "profit_switch" => Some(Self::ProfitSwitch),
+            "blake3_external" | "blake3" => Some(Self::Blake3External),
+            "kheavyhash_external" | "kheavyhash" => Some(Self::KHeavyHashExternal),
+            "ethash_external" | "ethash" => Some(Self::EthashExternal),
+            "kawpow_external" | "kawpow" => Some(Self::KawPowExternal),
+            "autolykos_external" | "autolykos" => Some(Self::AutolykosExternal),
+            "randomx_external" | "randomx" => Some(Self::RandomXExternal),
+            "zelhash_external" | "zelhash" => Some(Self::ZelHashExternal),
+            "verushash_external" | "verushash" => Some(Self::VerusHashExternal),
+            "progpow_external" | "progpow" => Some(Self::ProgPowExternal),
+            "pearl_external" | "pearl" => Some(Self::PearlExternal),
+            "beamhash_external" | "beamhash" => Some(Self::BeamHashExternal),
+            "karlsenhash_external" | "karlsenhash" => Some(Self::KarlsenHashExternal),
+            "equihashzero_external" | "equihashzero" => Some(Self::EquihashZeroExternal),
+            "qhash_external" | "qhash" => Some(Self::QhashExternal),
+            "verthash_external" | "verthash" => Some(Self::VerthashExternal),
+            "fishhash_external" | "fishhash" => Some(Self::FishHashExternal),
+            "nexapow_external" | "nexapow" => Some(Self::NexaPowExternal),
+            "ghostrider_external" | "ghostrider" => Some(Self::GhostRiderExternal),
+            "dynexsolve_external" | "dynexsolve" => Some(Self::DynexSolveExternal),
+            "deeksha_lite" | "lite" => Some(Self::DeekshaLite),
+            "thermal_bonus" | "thermal" => Some(Self::ThermalBonus),
+            "ncl_ai" | "ncl" => Some(Self::NclAi),
+            _ => None,
+        }
+    }
+
     pub fn fee_rate(self) -> f64 {
         match self {
             Self::Zion | Self::KeccakBonus | Self::Sha3Bonus => MERGED_MINING_FEE,
@@ -631,12 +665,9 @@ impl RevenueCollector {
             return;
         }
         for (source_name, units) in &telemetry.stream_breakdown {
-            let source = match source_name.as_str() {
-                "zion" => RevenueSource::Zion,
-                "keccak_bonus" => RevenueSource::KeccakBonus,
-                "sha3_bonus" => RevenueSource::Sha3Bonus,
-                "ncl_ai" => RevenueSource::NclAi,
-                _ => continue,
+            let source = match RevenueSource::from_str_ci(source_name) {
+                Some(s) => s,
+                None => continue,
             };
             let share = total_value_usd * (*units as f64 / telemetry.total_work as f64);
             self.track_event(RevenueEvent {
@@ -870,20 +901,9 @@ impl RevenueCollector {
             Ok(events) => {
                 for event in &events {
                     self.replay_event(
-                        match event.source.as_str() {
-                            "zion" => RevenueSource::Zion,
-                            "keccak_bonus" => RevenueSource::KeccakBonus,
-                            "sha3_bonus" => RevenueSource::Sha3Bonus,
-                            "profit_switch" => RevenueSource::ProfitSwitch,
-                            "blake3_external" => RevenueSource::Blake3External,
-                            "kheavyhash_external" => RevenueSource::KHeavyHashExternal,
-                            "ethash_external" => RevenueSource::EthashExternal,
-                            "kawpow_external" => RevenueSource::KawPowExternal,
-                            "autolykos_external" => RevenueSource::AutolykosExternal,
-                            "randomx_external" => RevenueSource::RandomXExternal,
-                            "zelhash_external" => RevenueSource::ZelHashExternal,
-                            "ncl_ai" => RevenueSource::NclAi,
-                            _ => continue,
+                        match RevenueSource::from_str_ci(&event.source) {
+                            Some(s) => s,
+                            None => continue,
                         },
                         event.value_usd,
                         event.qualifies,

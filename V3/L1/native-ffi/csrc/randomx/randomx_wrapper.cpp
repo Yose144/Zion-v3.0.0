@@ -29,10 +29,11 @@
 #include <mutex>
 #include <vector>
 
-/* macOS: thread QoS for performance cores */
+/* macOS: thread QoS for performance cores + mlockall */
 #if defined(__APPLE__)
 #include <pthread.h>
 #include <sys/qos.h>
+#include <sys/mman.h>
 #endif
 
 #ifdef _WIN32
@@ -165,6 +166,14 @@ static void update_seed(const uint8_t* seed, size_t len) {
 
     memcpy(g_current_seed, seed, 32);
     g_initialized = true;
+
+#if defined(__APPLE__)
+    /* mlockall: lock all current and future pages in RAM (no swap).
+     * macOS has unlimited RLIMIT_MEMLOCK by default, so this always succeeds.
+     * This prevents the 256MB cache + 2MB/thread scratchpads from being
+     * swapped out, which would cause 100x slowdown on 8GB M1. */
+    (void)mlockall(MCL_CURRENT | MCL_FUTURE);
+#endif
 
     /* Log active flags for debugging */
     randomx_flags vm_flags = get_vm_flags();

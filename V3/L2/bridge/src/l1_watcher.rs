@@ -505,7 +505,7 @@ mod tests {
 
     fn test_watcher() -> L1Watcher {
         let config = L1Config {
-            rpc_url: "127.0.0.1:8443".into(),
+            rpc_url: "127.0.0.1:9443".into(),
             rpc_url_backup: None,
             bridge_address: "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7".into(),
             finality_blocks: 60,
@@ -609,7 +609,7 @@ mod tests {
     #[test]
     fn test_watcher_initial_height() {
         let config = L1Config {
-            rpc_url: "127.0.0.1:8443".into(),
+            rpc_url: "127.0.0.1:9443".into(),
             rpc_url_backup: None,
             bridge_address: "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7".into(),
             finality_blocks: 60,

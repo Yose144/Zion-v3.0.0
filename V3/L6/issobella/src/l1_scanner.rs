@@ -24,7 +24,7 @@ pub struct ScannerConfig {
 impl Default for ScannerConfig {
     fn default() -> Self {
         Self {
-            rpc_url: "127.0.0.1:8443".to_string(),
+            rpc_url: "127.0.0.1:9443".to_string(),
             poll_interval: Duration::from_secs(30),
             fund_address: "zion1issobella000000000000000000000000".to_string(),
             finality_blocks: 6,
