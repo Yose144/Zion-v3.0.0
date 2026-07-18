@@ -63,7 +63,7 @@ __device__ __forceinline__ void keccak_f1600(uint64_t st[25])
 {
     uint64_t bc0, bc1, bc2, bc3, bc4, t;
 
-    #pragma unroll 24
+    #pragma unroll 1
     for (int rnd = 0; rnd < 24; rnd++) {
         /* Theta */
         bc0 = st[0]^st[5]^st[10]^st[15]^st[20];
