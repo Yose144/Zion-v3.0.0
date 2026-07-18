@@ -983,6 +983,21 @@ fn main() -> Result<()> {
         println!("multi_bridge: disabled (set ZION_POOL_AUXPOW_ENABLED=1 to enable)");
     }
 
+    // ── Pool-side profit switcher (startup log) ───────────────────────
+    if std::env::var("ZION_POOL_PROFIT_SWITCH")
+        .map(|v| v.trim().eq_ignore_ascii_case("1") || v.trim().eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+    {
+        let interval: u64 = std::env::var("ZION_POOL_PROFIT_INTERVAL")
+            .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(300);
+        let hysteresis: f64 = std::env::var("ZION_POOL_PROFIT_HYSTERESIS")
+            .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(15.0);
+        println!(
+            "pool_profit_switch: enabled interval={}s hysteresis={}%",
+            interval, hysteresis,
+        );
+    }
+
     if let Some(metrics_bind) = config.routing_metrics_bind.as_deref() {
         println!("routing_metrics_bind={metrics_bind}");
         let routing_stats = Arc::clone(&routing_stats);
@@ -1995,6 +2010,18 @@ fn handle_client(
     let session_started = Instant::now();
     let session_id = session_id_counter.fetch_add(1, Ordering::Relaxed);
 
+    // ── Pool-side profit switcher state ──────────────────────────────
+    let pool_profit_switch_enabled = std::env::var("ZION_POOL_PROFIT_SWITCH")
+        .map(|v| v.trim().eq_ignore_ascii_case("1") || v.trim().eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+    let pool_profit_interval_secs: u64 = std::env::var("ZION_POOL_PROFIT_INTERVAL")
+        .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(300);
+    let pool_profit_hysteresis: f64 = std::env::var("ZION_POOL_PROFIT_HYSTERESIS")
+        .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(15.0);
+    let mut pool_profit_best_gpu: Option<ExternalCoin> = None;
+    let mut pool_profit_best_cpu: Option<ExternalCoin> = None;
+    let mut pool_profit_last_check = Instant::now();
+
     let reader_stream = stream.try_clone().context("failed to clone tcp stream")?;
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
@@ -2200,19 +2227,81 @@ fn handle_client(
             .stream_weights_string();
 
         let desired_external_coin = if config.auxpow_config.enabled {
-            // Multi-bridge: miner preference takes priority, then any
-            // available GPU coin from the multi-bridge, then force_coin,
-            // then revenue-source-based selection.
+            // ── Pool-side profit switcher ────────────────────────────────
+            // Periodically fetch live profit estimates and select the best
+            // GPU/CPU coins. Only runs when ZION_POOL_PROFIT_SWITCH=1 and
+            // no miner CoinPreference has been received.
+            if pool_profit_switch_enabled
+                && miner_gpu_coin_pref.is_none()
+                && pool_profit_last_check.elapsed()
+                    >= Duration::from_secs(pool_profit_interval_secs)
+            {
+                pool_profit_last_check = Instant::now();
+                let estimates = fetch_live_profit_estimates();
+                let gpu_estimates: Vec<_> = estimates
+                    .iter()
+                    .filter(|e| {
+                        let aux = ch_to_auxpow_external_coin(e.coin);
+                        multi_bridge.contains(&aux) && !multi_bridge.is_cpu_coin(&aux)
+                    })
+                    .cloned()
+                    .collect();
+                let cpu_estimates: Vec<_> = estimates
+                    .iter()
+                    .filter(|e| {
+                        let aux = ch_to_auxpow_external_coin(e.coin);
+                        multi_bridge.contains(&aux) && multi_bridge.is_cpu_coin(&aux)
+                    })
+                    .cloned()
+                    .collect();
+
+                let current_gpu = pool_profit_best_gpu.map(auxpow_to_ch_external_coin);
+                if let Some(best) = select_best_coin(
+                    &gpu_estimates, current_gpu, pool_profit_hysteresis,
+                ) {
+                    let new_aux = ch_to_auxpow_external_coin(best);
+                    if pool_profit_best_gpu != Some(new_aux) {
+                        let profit = gpu_estimates.iter()
+                            .find(|e| e.coin == best)
+                            .map(|e| e.profit_per_day_usd()).unwrap_or(0.0);
+                        println!(
+                            "pool_profit_switch: GPU {:?} → {} profit=${:.4}/day",
+                            pool_profit_best_gpu, new_aux, profit,
+                        );
+                        pool_profit_best_gpu = Some(new_aux);
+                    }
+                }
+
+                let current_cpu = pool_profit_best_cpu.map(auxpow_to_ch_external_coin);
+                if let Some(best) = select_best_coin(
+                    &cpu_estimates, current_cpu, pool_profit_hysteresis,
+                ) {
+                    let new_aux = ch_to_auxpow_external_coin(best);
+                    if pool_profit_best_cpu != Some(new_aux) {
+                        let profit = cpu_estimates.iter()
+                            .find(|e| e.coin == best)
+                            .map(|e| e.profit_per_day_usd()).unwrap_or(0.0);
+                        println!(
+                            "pool_profit_switch: CPU {:?} → {} profit=${:.4}/day",
+                            pool_profit_best_cpu, new_aux, profit,
+                        );
+                        pool_profit_best_cpu = Some(new_aux);
+                    }
+                }
+            }
+
+            // Multi-bridge: miner preference takes priority, then pool
+            // profit switcher, then force_coin, then revenue-source, then any.
             let pref_coin = miner_gpu_coin_pref
                 .as_deref()
                 .and_then(ExternalCoin::from_str_loose)
                 .filter(|c| multi_bridge.contains(c) && !multi_bridge.is_cpu_coin(c));
 
             pref_coin
+                .or_else(|| pool_profit_best_gpu.filter(|c| multi_bridge.contains(c)))
                 .or_else(|| config.auxpow_config.force_coin.filter(|c| multi_bridge.contains(c)))
                 .or_else(|| revenue_source_to_external_coin(revenue_source).filter(|c| multi_bridge.contains(c)))
                 .or_else(|| {
-                    // Fallback: pick any available GPU coin from the multi-bridge
                     multi_bridge.enabled_coins().into_iter().find(|c| !multi_bridge.is_cpu_coin(c))
                 })
         } else {
@@ -2299,6 +2388,10 @@ fn handle_client(
                 .as_deref()
                 .and_then(ExternalCoin::from_str_loose)
                 .filter(|c| multi_bridge.contains(c) && multi_bridge.is_cpu_coin(c))
+                .or_else(|| {
+                    // Pool-side profit switcher: best CPU coin
+                    pool_profit_best_cpu.filter(|c| multi_bridge.contains(c) && multi_bridge.is_cpu_coin(c))
+                })
                 .or_else(|| {
                     // Fallback: use ZION_POOL_AUXPOW_CPU_COIN env var
                     std::env::var("ZION_POOL_AUXPOW_CPU_COIN")
