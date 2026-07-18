@@ -309,7 +309,12 @@ inline void eaglesong_hash_80(
 
     // ── Absorb block 2: input bytes 64..79 + delimiter + padding ──
     // 16 bytes of input (4 words) + delimiter 0x06 at byte 80 + zeros.
-    // The delimiter goes into the MSB of word 4: 0x06000000.
+    //
+    // The reference implementation loads bytes big-endian but does NOT
+    // shift the integer for positions beyond the delimiter.  So the
+    // delimiter byte 0x06 at position 80 (first byte of word 4) becomes
+    // 0x00000006, not 0x06000000.  Bytes 81..95 are simply not loaded
+    // (the integer stays at 0x06 for word 4, and 0 for words 5..7).
     state[0] ^= ((uint)input[64] << 24) | ((uint)input[65] << 16)
               | ((uint)input[66] <<  8) |  (uint)input[67];
     state[1] ^= ((uint)input[68] << 24) | ((uint)input[69] << 16)
@@ -318,8 +323,8 @@ inline void eaglesong_hash_80(
               | ((uint)input[74] <<  8) |  (uint)input[75];
     state[3] ^= ((uint)input[76] << 24) | ((uint)input[77] << 16)
               | ((uint)input[78] <<  8) |  (uint)input[79];
-    state[4] ^= EAGLESONG_DELIMITER << 24;  // 0x06000000
-    // state[5..7] remain 0 (zero padding)
+    state[4] ^= EAGLESONG_DELIMITER;  // 0x06 — delimiter at first byte of word, no shift
+    // state[5..7] remain 0 (no bytes loaded beyond delimiter)
     eaglesong_permutation(state);
 
     // ── Squeeze: read 32 bytes from state[0..7] (little-endian) ──
@@ -361,27 +366,28 @@ void eaglesong_mine(
 
     ulong nonce = base_nonce + (ulong)get_global_id(0);
 
-    // ── Load header into private memory ──
+    // ── Load header into private memory with inline nonce injection ──
     // The CKB block header is 80 bytes.  We copy the template and inject
-    // the nonce at offset 32 (8 bytes, little-endian).
+    // the nonce at offset 32 (8 bytes, little-endian) in a single pass.
+    //
+    // The nonce is injected during the copy loop (single write per byte)
+    // rather than copy-then-modify.  This works around a bug in some
+    // OpenCL compilers (notably macOS) where writing to a private array
+    // after a copy loop causes incorrect optimization, corrupting the
+    // subsequent hash computation.
     uchar hdr[80];
     uint copy_len = header_len < 80u ? header_len : 80u;
     #pragma unroll
-    for (uint i = 0; i < copy_len; i++)
-        hdr[i] = header[i];
-    // Zero-fill any remaining bytes if header_len < 80
-    for (uint i = copy_len; i < 80u; i++)
-        hdr[i] = 0;
-
-    // Inject the 8-byte little-endian nonce at offset 32.
-    hdr[32] = (uchar)((nonce >> 0) & 0xFF);
-    hdr[33] = (uchar)((nonce >> 8) & 0xFF);
-    hdr[34] = (uchar)((nonce >> 16) & 0xFF);
-    hdr[35] = (uchar)((nonce >> 24) & 0xFF);
-    hdr[36] = (uchar)((nonce >> 32) & 0xFF);
-    hdr[37] = (uchar)((nonce >> 40) & 0xFF);
-    hdr[38] = (uchar)((nonce >> 48) & 0xFF);
-    hdr[39] = (uchar)((nonce >> 56) & 0xFF);
+    for (uint i = 0; i < 80u; i++) {
+        if (i >= 32u && i < 40u) {
+            // Inject nonce byte (little-endian) at offset 32..39
+            hdr[i] = (uchar)((nonce >> ((uint)(i - 32u) * 8u)) & 0xFFu);
+        } else if (i < copy_len) {
+            hdr[i] = header[i];
+        } else {
+            hdr[i] = 0;
+        }
+    }
 
     // ── Compute Eaglesong hash of the 80-byte header ──
     uchar hash[32];
