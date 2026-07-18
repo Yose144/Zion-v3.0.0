@@ -132,6 +132,31 @@ export async function GET() {
     }>;
   }>('/miners?limit=200');
 
+  const profitSwitcher = await fetchPoolApiJson<{
+    enabled: boolean;
+    interval_secs: number;
+    hysteresis_pct: number;
+    best_gpu_coin: string | null;
+    best_cpu_coin: string | null;
+    best_gpu_profit_usd: number;
+    best_cpu_profit_usd: number;
+    last_check_unix: number;
+    estimates: Array<{
+      coin: string;
+      algorithm: string;
+      revenue_usd_per_day: number;
+      power_cost_usd: number;
+      profit_usd_per_day: number;
+      is_cpu: boolean;
+      is_nicehash: boolean;
+    }>;
+    nicehash_rates: Array<{
+      coin: string;
+      algorithm: string;
+      paying: number;
+    }>;
+  }>('/api/v1/profit/switcher');
+
   const promQueries = [
     'zion_chain_height',
     'zion_pool_active_sessions',
@@ -320,6 +345,7 @@ export async function GET() {
       total_paid_zion: pplnsTotalPaidZion,
       payout_rounds: pplnsPayoutRounds,
     },
+    profit_switcher: profitSwitcher ?? null,
     runtime: {
       chain_height: chainHeight,
       difficulty: info?.difficulty ?? 0,

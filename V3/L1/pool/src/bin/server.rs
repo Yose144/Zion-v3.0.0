@@ -151,6 +151,59 @@ struct DeferredPayout {
 type DeferredPayoutQueue = Arc<Mutex<Vec<DeferredPayout>>>;
 
 // ---------------------------------------------------------------------------
+// PoolProfitSwitchState — shared state for pool-side profit switcher
+// ---------------------------------------------------------------------------
+
+/// Shared state for the pool-side profit switcher, accessible from both
+/// the miner handler thread (which updates it) and the HTTP API thread
+/// (which reads it for the dashboard).
+#[derive(Debug, Clone, serde::Serialize)]
+struct PoolProfitSwitchState {
+    /// Whether the profit switcher is enabled.
+    enabled: bool,
+    /// Check interval in seconds.
+    interval_secs: u64,
+    /// Hysteresis percentage for switching.
+    hysteresis_pct: f64,
+    /// Currently selected best GPU coin (ticker string).
+    best_gpu_coin: Option<String>,
+    /// Currently selected best CPU coin (ticker string).
+    best_cpu_coin: Option<String>,
+    /// Profit estimate for best GPU coin (USD/day).
+    best_gpu_profit_usd: f64,
+    /// Profit estimate for best CPU coin (USD/day).
+    best_cpu_profit_usd: f64,
+    /// Unix timestamp of last profit check.
+    last_check_unix: u64,
+    /// All profit estimates from the last fetch.
+    estimates: Vec<ProfitEstimateEntry>,
+    /// NiceHash paying rates from the last fetch.
+    nicehash_rates: Vec<NiceHashRateEntry>,
+}
+
+/// A single profit estimate entry for the API payload.
+#[derive(Debug, Clone, serde::Serialize)]
+struct ProfitEstimateEntry {
+    coin: String,
+    algorithm: String,
+    revenue_usd_per_day: f64,
+    power_cost_usd: f64,
+    profit_usd_per_day: f64,
+    is_cpu: bool,
+    is_nicehash: bool,
+}
+
+/// A NiceHash paying rate entry for the API payload.
+#[derive(Debug, Clone, serde::Serialize)]
+struct NiceHashRateEntry {
+    coin: String,
+    algorithm: String,
+    paying: f64,
+}
+
+type PoolProfitSwitchStateArc = Arc<Mutex<PoolProfitSwitchState>>;
+
+// ---------------------------------------------------------------------------
 // TemplateCache — shared block-template cache to reduce node RPC load
 // ---------------------------------------------------------------------------
 // Without this cache every miner thread calls `get_template` on every loop
@@ -395,6 +448,10 @@ fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
         ExternalCoin::NEXA => RevenueSource::NexaPowExternal,
         ExternalCoin::RTM => RevenueSource::GhostRiderExternal,
         ExternalCoin::DNX => RevenueSource::DynexSolveExternal,
+        ExternalCoin::CKB => RevenueSource::EaglesongExternal,
+        ExternalCoin::CFX => RevenueSource::OctopusExternal,
+        ExternalCoin::ZEC => RevenueSource::EquihashExternal,
+        ExternalCoin::PHX => RevenueSource::NeoScryptExternal,
     }
 }
 
@@ -443,6 +500,10 @@ fn auxpow_to_ch_external_coin(coin: ExternalCoin) -> ChExternalCoin {
         ExternalCoin::NEXA => ChExternalCoin::NEXA,
         ExternalCoin::RTM => ChExternalCoin::RTM,
         ExternalCoin::DNX => ChExternalCoin::DNX,
+        ExternalCoin::CKB => ChExternalCoin::CKB,
+        ExternalCoin::CFX => ChExternalCoin::CFX,
+        ExternalCoin::ZEC => ChExternalCoin::ZEC,
+        ExternalCoin::PHX => ChExternalCoin::PHX,
     }
 }
 
@@ -473,6 +534,10 @@ fn ch_to_auxpow_external_coin(coin: ChExternalCoin) -> ExternalCoin {
         ChExternalCoin::NEXA => ExternalCoin::NEXA,
         ChExternalCoin::RTM => ExternalCoin::RTM,
         ChExternalCoin::DNX => ExternalCoin::DNX,
+        ChExternalCoin::CKB => ExternalCoin::CKB,
+        ChExternalCoin::CFX => ExternalCoin::CFX,
+        ChExternalCoin::ZEC => ExternalCoin::ZEC,
+        ChExternalCoin::PHX => ExternalCoin::PHX,
     }
 }
 
@@ -499,6 +564,10 @@ fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
         ExternalCoin::NEXA => "nexapow",
         ExternalCoin::RTM => "ghostrider",
         ExternalCoin::DNX => "dynexsolve",
+        ExternalCoin::CKB => "eaglesong",
+        ExternalCoin::CFX => "octopus",
+        ExternalCoin::ZEC => "equihash",
+        ExternalCoin::PHX => "neoscrypt",
     }
 }
 
@@ -998,6 +1067,26 @@ fn main() -> Result<()> {
         );
     }
 
+    // ── Pool-side profit switcher shared state ─────────────────────────
+    let profit_switch_state: PoolProfitSwitchStateArc = Arc::new(Mutex::new(
+        PoolProfitSwitchState {
+            enabled: std::env::var("ZION_POOL_PROFIT_SWITCH")
+                .map(|v| v.trim().eq_ignore_ascii_case("1") || v.trim().eq_ignore_ascii_case("true"))
+                .unwrap_or(false),
+            interval_secs: std::env::var("ZION_POOL_PROFIT_INTERVAL")
+                .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(300),
+            hysteresis_pct: std::env::var("ZION_POOL_PROFIT_HYSTERESIS")
+                .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(15.0),
+            best_gpu_coin: None,
+            best_cpu_coin: None,
+            best_gpu_profit_usd: 0.0,
+            best_cpu_profit_usd: 0.0,
+            last_check_unix: 0,
+            estimates: Vec::new(),
+            nicehash_rates: Vec::new(),
+        },
+    ));
+
     if let Some(metrics_bind) = config.routing_metrics_bind.as_deref() {
         println!("routing_metrics_bind={metrics_bind}");
         let routing_stats = Arc::clone(&routing_stats);
@@ -1006,6 +1095,7 @@ fn main() -> Result<()> {
         let pplns_ref = Arc::clone(&pplns_engine);
         let auxpow_ref = Arc::clone(&auxpow_scheduler);
         let revenue_scheduler_ref = Arc::clone(&revenue_scheduler);
+        let profit_switch_ref = Arc::clone(&profit_switch_state);
         let metrics_bind = metrics_bind.to_string();
         thread::spawn(move || {
             if let Err(error) = serve_routing_metrics(
@@ -1017,6 +1107,7 @@ fn main() -> Result<()> {
                 pplns_ref,
                 auxpow_ref,
                 revenue_scheduler_ref,
+                profit_switch_ref,
             ) {
                 eprintln!("routing_metrics_error={error:#}");
             }
@@ -1185,6 +1276,7 @@ fn main() -> Result<()> {
     // rolled back.  A background thread retries every 2 s until the balance
     // is sufficient or max retries (300 = 10 min) is reached.
     let deferred_payouts: DeferredPayoutQueue = Arc::new(Mutex::new(Vec::new()));
+
     {
         let deferred_ref = Arc::clone(&deferred_payouts);
         let pplns_ref = Arc::clone(&pplns_engine);
@@ -1544,6 +1636,7 @@ fn main() -> Result<()> {
         let multi_bridge = multi_bridge.clone();
         let banned_ips_ref = Arc::clone(&no_solution_banned_ips);
         let config = config.clone();
+        let profit_switch_ref = Arc::clone(&profit_switch_state);
         handles.push(thread::spawn(move || {
             let _ip_guard = ip_guard;
             handle_client(
@@ -1562,6 +1655,7 @@ fn main() -> Result<()> {
                 &log_ch,
                 peer_ip,
                 banned_ips_ref,
+                profit_switch_ref,
             )
         }));
         accepted = accepted.saturating_add(1);
@@ -2006,6 +2100,7 @@ fn handle_client(
     log_ch: &LogChannel,
     peer_ip: IpAddr,
     no_solution_banned_ips: Arc<Mutex<HashMap<IpAddr, Instant>>>,
+    profit_switch_state: PoolProfitSwitchStateArc,
 ) -> Result<()> {
     let session_started = Instant::now();
     let session_id = session_id_counter.fetch_add(1, Ordering::Relaxed);
@@ -2287,6 +2382,40 @@ fn handle_client(
                         );
                         pool_profit_best_cpu = Some(new_aux);
                     }
+                }
+
+                // ── Update shared state for dashboard API ───────────────
+                let estimate_entries: Vec<ProfitEstimateEntry> = estimates.iter().map(|e| {
+                    let aux = ch_to_auxpow_external_coin(e.coin);
+                    let is_cpu = multi_bridge.is_cpu_coin(&aux);
+                    let is_nicehash = aux.nicehash_pool().is_some();
+                    ProfitEstimateEntry {
+                        coin: e.coin.to_string(),
+                        algorithm: e.coin.algorithm().to_string(),
+                        revenue_usd_per_day: e.revenue_per_day_usd,
+                        power_cost_usd: e.power_cost_usd,
+                        profit_usd_per_day: e.profit_per_day_usd(),
+                        is_cpu,
+                        is_nicehash,
+                    }
+                }).collect();
+
+                let gpu_profit = pool_profit_best_gpu
+                    .and_then(|c| gpu_estimates.iter().find(|e| ch_to_auxpow_external_coin(e.coin) == c))
+                    .map(|e| e.profit_per_day_usd()).unwrap_or(0.0);
+                let cpu_profit = pool_profit_best_cpu
+                    .and_then(|c| cpu_estimates.iter().find(|e| ch_to_auxpow_external_coin(e.coin) == c))
+                    .map(|e| e.profit_per_day_usd()).unwrap_or(0.0);
+
+                if let Ok(mut state) = profit_switch_state.lock() {
+                    state.best_gpu_coin = pool_profit_best_gpu.map(|c| c.ticker().to_string());
+                    state.best_cpu_coin = pool_profit_best_cpu.map(|c| c.ticker().to_string());
+                    state.best_gpu_profit_usd = gpu_profit;
+                    state.best_cpu_profit_usd = cpu_profit;
+                    state.last_check_unix = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map(|d| d.as_secs()).unwrap_or(0);
+                    state.estimates = estimate_entries;
                 }
             }
 
@@ -5108,6 +5237,7 @@ fn serve_routing_metrics(
     pplns_engine: Arc<Mutex<PplnsEngine>>,
     auxpow_scheduler: Arc<AuxPowScheduler>,
     revenue_scheduler: Arc<Mutex<RevenueScheduler>>,
+    profit_switch_state: PoolProfitSwitchStateArc,
 ) -> Result<()> {
     let listener = TcpListener::bind(bind_addr)
         .with_context(|| format!("failed to bind routing metrics listener on {bind_addr}"))?;
@@ -5196,6 +5326,11 @@ fn serve_routing_metrics(
                 let stats = routing_stats.lock().expect("routing stats lock poisoned");
                 let rev_sched = revenue_scheduler.lock().expect("revenue scheduler lock poisoned");
                 let body = build_revenue_streams_payload(&stats, &rev_sched);
+                ("200 OK", "application/json", body)
+            }
+            "/api/v1/profit/switcher" => {
+                let state = profit_switch_state.lock().expect("profit switch state lock poisoned");
+                let body = serde_json::to_string(&*state).unwrap_or_else(|_| "{}".to_string());
                 ("200 OK", "application/json", body)
             }
             _ => (
@@ -5430,7 +5565,8 @@ fn build_stats_payload(
             "miner_payouts": "/api/v1/miner/:address/payouts",
             "metrics": "/metrics",
             "revenue_stats": "/api/v1/revenue/stats",
-            "revenue_streams": "/api/v1/revenue/streams"
+            "revenue_streams": "/api/v1/revenue/streams",
+            "profit_switcher": "/api/v1/profit/switcher"
         },
         "auxpow": {
             "enabled": auxpow.enabled,
@@ -5925,6 +6061,10 @@ fn source_index(source: RevenueSource) -> usize {
         RevenueSource::NexaPowExternal => 23,
         RevenueSource::GhostRiderExternal => 24,
         RevenueSource::DynexSolveExternal => 25,
+        RevenueSource::EaglesongExternal => 26,
+        RevenueSource::OctopusExternal => 27,
+        RevenueSource::EquihashExternal => 28,
+        RevenueSource::NeoScryptExternal => 29,
     }
 }
 
@@ -5956,6 +6096,10 @@ fn revenue_source_name(source: RevenueSource) -> &'static str {
         RevenueSource::NexaPowExternal => "nexapow",
         RevenueSource::GhostRiderExternal => "ghostrider",
         RevenueSource::DynexSolveExternal => "dynexsolve",
+        RevenueSource::EaglesongExternal => "eaglesong",
+        RevenueSource::OctopusExternal => "octopus",
+        RevenueSource::EquihashExternal => "equihash",
+        RevenueSource::NeoScryptExternal => "neoscrypt",
     }
 }
 
@@ -6360,6 +6504,18 @@ mod tests {
                 &log_ch,
                 "127.0.0.1".parse().unwrap(),
                 Arc::new(Mutex::new(HashMap::new())),
+                Arc::new(Mutex::new(PoolProfitSwitchState {
+                    enabled: false,
+                    interval_secs: 300,
+                    hysteresis_pct: 15.0,
+                    best_gpu_coin: None,
+                    best_cpu_coin: None,
+                    best_gpu_profit_usd: 0.0,
+                    best_cpu_profit_usd: 0.0,
+                    last_check_unix: 0,
+                    estimates: Vec::new(),
+                    nicehash_rates: Vec::new(),
+                })),
             )
         });
 

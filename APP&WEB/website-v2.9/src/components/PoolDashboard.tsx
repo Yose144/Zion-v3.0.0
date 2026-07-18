@@ -801,6 +801,125 @@ export default function PoolDashboard() {
           </div>
         </motion.section>
 
+        {/* ═══════ PROFIT SWITCHER ═══════ */}
+        {data?.profit_switcher?.enabled && (
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+          className="zion-rainbow-card p-6 md:p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Profit Router' : 'Profit Router'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <TrendingUp className="h-7 w-7 text-zion-cyan" />
+              {cs ? 'Přepínač profitability' : 'Profit Switcher'}
+            </h2>
+            <p className="text-sm text-gray-400">
+              {cs
+                ? `Pool automaticky vybírá nejprofitabilnější GPU a CPU coiny z dostupných bridge. Kontrola každých ${data.profit_switcher.interval_secs}s, hysteresis ${data.profit_switcher.hysteresis_pct}%. Zdroj: WhatToMine (USD) + NiceHash (monitoring).`
+                : `Pool automatically selects the most profitable GPU and CPU coins from available bridges. Check every ${data.profit_switcher.interval_secs}s, hysteresis ${data.profit_switcher.hysteresis_pct}%. Source: WhatToMine (USD) + NiceHash (monitoring).`}
+            </p>
+          </div>
+
+          {/* ── Best coins ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            {/* GPU */}
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="h-5 w-5 text-emerald-400" />
+                <span className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'Nejlepší GPU coin' : 'Best GPU Coin'}</span>
+              </div>
+              <div className="text-3xl font-bold text-white">
+                {data.profit_switcher.best_gpu_coin ?? '—'}
+              </div>
+              <div className="text-sm text-emerald-400 mt-1">
+                ${data.profit_switcher.best_gpu_profit_usd.toFixed(4)}/day
+              </div>
+            </div>
+            {/* CPU */}
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <div className="flex items-center gap-2 mb-2">
+                <Cpu className="h-5 w-5 text-purple-400" />
+                <span className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'Nejlepší CPU coin' : 'Best CPU Coin'}</span>
+              </div>
+              <div className="text-3xl font-bold text-white">
+                {data.profit_switcher.best_cpu_coin ?? '—'}
+              </div>
+              <div className="text-sm text-purple-400 mt-1">
+                ${data.profit_switcher.best_cpu_profit_usd.toFixed(4)}/day
+              </div>
+            </div>
+          </div>
+
+          {/* ── Last check ── */}
+          <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+            <RefreshCw className="h-3 w-3" />
+            {cs ? 'Poslední kontrola: ' : 'Last check: '}
+            {data.profit_switcher.last_check_unix > 0
+              ? new Date(data.profit_switcher.last_check_unix * 1000).toLocaleTimeString()
+              : (cs ? 'proběhne za ~5 min' : 'in ~5 min')}
+          </div>
+
+          {/* ── Profit estimates table ── */}
+          {data.profit_switcher.estimates?.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-gray-500">
+                    <th className="text-left py-2 px-3">{cs ? 'Coin' : 'Coin'}</th>
+                    <th className="text-left py-2 px-3">{cs ? 'Algoritmus' : 'Algorithm'}</th>
+                    <th className="text-right py-2 px-3">{cs ? 'Příjem USD/den' : 'Revenue USD/day'}</th>
+                    <th className="text-right py-2 px-3">{cs ? 'Zisk USD/den' : 'Profit USD/day'}</th>
+                    <th className="text-center py-2 px-3">{cs ? 'Typ' : 'Type'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.profit_switcher.estimates
+                    .sort((a, b) => b.profit_usd_per_day - a.profit_usd_per_day)
+                    .map((est) => (
+                      <tr key={est.coin} className="border-b border-white/5 hover:bg-white/5 transition">
+                        <td className="py-2 px-3 font-semibold text-white">{est.coin}</td>
+                        <td className="py-2 px-3 text-gray-400 font-mono text-xs">{est.algorithm}</td>
+                        <td className="py-2 px-3 text-right text-gray-300">${est.revenue_usd_per_day.toFixed(4)}</td>
+                        <td className="py-2 px-3 text-right font-semibold text-emerald-400">${est.profit_usd_per_day.toFixed(4)}</td>
+                        <td className="py-2 px-3 text-center">
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${
+                            est.is_cpu
+                              ? 'bg-purple-400/10 text-purple-400'
+                              : 'bg-emerald-400/10 text-emerald-400'
+                          }`}>
+                            {est.is_cpu ? <Cpu className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
+                            {est.is_cpu ? 'CPU' : 'GPU'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* ── NiceHash rates (collapsible) ── */}
+          {data.profit_switcher.nicehash_rates?.length > 0 && (
+            <details className="mt-4">
+              <summary className="cursor-pointer text-xs uppercase tracking-wider text-gray-500 hover:text-gray-300 transition">
+                {cs ? `NiceHash paying rates (${data.profit_switcher.nicehash_rates.length})` : `NiceHash paying rates (${data.profit_switcher.nicehash_rates.length})`}
+              </summary>
+              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                {data.profit_switcher.nicehash_rates.map((nh) => (
+                  <div key={nh.coin} className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 px-3 py-2 text-xs">
+                    <span className="font-semibold text-white">{nh.coin}</span>
+                    <span className="font-mono text-gray-400">{nh.paying.toExponential(3)}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+        </motion.section>
+        )}
+
         {/* ═══════ POOL SERVERS ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
