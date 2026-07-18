@@ -193,7 +193,7 @@ function switchTab(name){
   });
 
   // ── Auto-refresh timers ─────────────────────────────────────────────
-  if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); updateBlockRewardBreakdown(); updateNetworkGrowth(); updateMinerLeaderboard(); updatePoolConnectionHistory(); updateDifficultyForecast(); }
+  if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); updateBlockRewardBreakdown(); updateNetworkGrowth(); updateMinerLeaderboard(); updatePoolConnectionHistory(); updateDifficultyForecast(); loadMaintStatus(); }
   if(name === 'alerts'){ clearTabTimers('alerts'); loadAlertHistory(); if(!_alertsTimer) _alertsTimer = setInterval(loadAlertHistory, 8000); }
   else if(name === 'services'){ clearTabTimers('services'); loadServices(); if(!_servicesTimer) _servicesTimer = setInterval(loadServices, 5000); }
   else if(name === 'nodes'){ clearTabTimers('nodes'); renderAllNodes(); loadCliNodeStatus(); if(!_nodesTimer) _nodesTimer = setInterval(()=>{renderAllNodes(); loadCliNodeStatus();}, 6000); }
@@ -5583,6 +5583,65 @@ async function controlAction(action){
     if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400">[' + ts + '] ✗ ' + e.message + '</div>');
     toast('Error: ' + e.message, 'error');
   }
+}
+
+// ── Edge Maintenance (disk + RAM optimization) ──────────────────────────
+// Calls /api/control with maint-* actions. Shows live status + log output.
+async function runMaintenance(action){
+  const log = document.getElementById('maint-log');
+  const badge = document.getElementById('maint-status-badge');
+  const ts = new Date().toLocaleTimeString();
+  const labels = { 'maint-dry-run':'Dry Run', 'maint-disk':'Clean Disk', 'maint-ram':'Optimize RAM', 'maint-all':'Full Maintenance', 'maint-status':'Status' };
+  const label = labels[action] || action;
+  if(badge){ badge.textContent = 'RUNNING…'; badge.className = 'text-xs px-2.5 py-1 rounded-full bg-amber-500 text-white animate-pulse'; }
+  if(log){ log.insertAdjacentHTML('afterbegin', '<div class="text-amber-400">[' + ts + '] ⏳ ' + escapeHtml(label) + ' — dispatching (may take 1–5 min)…</div>'); }
+  toast('🧹 ' + label + ' started…', 'info');
+  try {
+    const res = await fetch('/api/control', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action}) }).then(r => r.json());
+    const lines = (res.result || res.error || 'OK').split('\n').filter(l => l.trim());
+    const color = res.ok ? 'text-emerald-400' : 'text-red-400';
+    const mark = res.ok ? '✓' : '✗';
+    if(log){
+      log.insertAdjacentHTML('afterbegin', '<div class="' + color + '">[' + ts + '] ' + mark + ' ' + escapeHtml(label) + ' (' + (res.ok ? 'ok' : 'failed') + ')</div>');
+      lines.slice(0, 40).forEach(l => {
+        const lc = l.includes('WARN') ? 'text-yellow-400' : l.includes('ERROR') ? 'text-red-400' : (l.includes('reclaimed') || l.includes('after')) ? 'text-emerald-400' : 'text-gray-400';
+        log.insertAdjacentHTML('afterbegin', '<div class="' + lc + '">' + escapeHtml(l) + '</div>');
+      });
+    }
+    if(badge){ badge.textContent = res.ok ? 'DONE' : 'ERROR'; badge.className = 'text-xs px-2.5 py-1 rounded-full ' + (res.ok ? 'bg-emerald-600 text-white' : 'bg-red-700 text-white'); }
+    toast(res.ok ? ('✓ ' + label + ' complete') : ('✗ ' + label + ': ' + (res.error || 'failed')), res.ok ? 'success' : 'error');
+    setTimeout(() => loadMaintStatus(), 1500);
+  } catch(e) {
+    if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400">[' + ts + '] ✗ ' + escapeHtml(e.message) + '</div>');
+    if(badge){ badge.textContent = 'ERROR'; badge.className = 'text-xs px-2.5 py-1 rounded-full bg-red-700 text-white'; }
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+async function loadMaintStatus(){
+  try {
+    const res = await fetch('/api/control', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'maint-status'}) }).then(r => r.json());
+    if(res.ok && res.result){
+      const m = res.result.match(/ram=(\d+)%\s+disk=(\d+)%\s+disk_free=(\d+)GB/);
+      if(m){
+        const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+        set('maint-ram-pct', m[1] + '%');
+        set('maint-disk-pct', m[2] + '%');
+        set('maint-disk-free', m[3] + ' GB free');
+        const ramPct = parseInt(m[1]), diskPct = parseInt(m[2]);
+        const ramEl = document.getElementById('maint-ram-pct');
+        const diskEl = document.getElementById('maint-disk-pct');
+        if(ramEl) ramEl.className = 'text-xl font-bold ' + (ramPct >= 92 ? 'text-red-400' : ramPct >= 80 ? 'text-amber-400' : 'text-emerald-400');
+        if(diskEl) diskEl.className = 'text-xl font-bold ' + (diskPct >= 85 ? 'text-red-400' : diskPct >= 70 ? 'text-amber-400' : 'text-emerald-400');
+        const badge = document.getElementById('maint-status-badge');
+        if(badge){
+          const worst = Math.max(ramPct, diskPct);
+          badge.textContent = worst >= 92 ? 'CRITICAL' : worst >= 80 ? 'WARN' : 'OK';
+          badge.className = 'text-xs px-2.5 py-1 rounded-full ' + (worst >= 92 ? 'bg-red-700 text-white' : worst >= 80 ? 'bg-amber-600 text-white' : 'bg-emerald-600 text-white');
+        }
+      }
+    }
+  } catch(e) { /* best-effort */ }
 }
 
 // ── CLI Console ──

@@ -1251,6 +1251,52 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
     </div>
 
+    <!-- 🧹 Edge Maintenance (disk + RAM optimization) -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">
+          🧹 Edge Maintenance
+          <span class="text-xs text-gray-500 font-normal" title="Reclaims disk (docker prune, apt clean, journal vacuum, old logs) and optimizes RAM (drop_caches). Safe — never touches critical services. Auto-runs daily 04:17 UTC.">ⓘ</span>
+        </h2>
+        <div class="flex items-center gap-2">
+          <span id="maint-status-badge" class="text-xs px-2.5 py-1 rounded-full bg-zinc-700 text-gray-300">—</span>
+          <button onclick="loadMaintStatus()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-semibold transition">🔄 Status</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div class="bg-black/20 rounded-lg p-3 border border-white/5">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider">Disk Used</div>
+          <div class="text-xl font-bold text-amber-400" id="maint-disk-pct">—</div>
+          <div class="text-[10px] text-gray-500" id="maint-disk-free">— GB free</div>
+        </div>
+        <div class="bg-black/20 rounded-lg p-3 border border-white/5">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider">RAM Used</div>
+          <div class="text-xl font-bold text-amber-400" id="maint-ram-pct">—</div>
+          <div class="text-[10px] text-gray-500" id="maint-ram-avail">— GB avail</div>
+        </div>
+        <div class="bg-black/20 rounded-lg p-3 border border-white/5">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider">Journal</div>
+          <div class="text-xl font-bold text-emerald-400" id="maint-journal">—</div>
+          <div class="text-[10px] text-gray-500">cap 200M</div>
+        </div>
+        <div class="bg-black/20 rounded-lg p-3 border border-white/5">
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider">Next Auto-Run</div>
+          <div class="text-sm font-bold text-emerald-400 pt-1" id="maint-next-run">04:17 UTC</div>
+          <div class="text-[10px] text-gray-500">daily</div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button onclick="runMaintenance('maint-dry-run')" class="text-xs px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-semibold transition flex items-center gap-1.5"><i class="fas fa-eye"></i> Dry Run</button>
+        <button onclick="runMaintenance('maint-disk')" class="text-xs px-3.5 py-2 bg-blue-700/50 hover:bg-blue-600 border border-blue-500/20 rounded-lg font-semibold transition flex items-center gap-1.5"><i class="fas fa-hard-drive"></i> Clean Disk</button>
+        <button onclick="runMaintenance('maint-ram')" class="text-xs px-3.5 py-2 bg-purple-700/50 hover:bg-purple-600 border border-purple-500/20 rounded-lg font-semibold transition flex items-center gap-1.5"><i class="fas fa-microchip"></i> Optimize RAM</button>
+        <button onclick="runMaintenance('maint-all')" class="text-xs px-3.5 py-2 bg-emerald-700/50 hover:bg-emerald-600 border border-emerald-500/20 rounded-lg font-semibold transition flex items-center gap-1.5"><i class="fas fa-broom"></i> Full Maintenance</button>
+        <span class="text-[10px] text-gray-500 self-center ml-1">Actions run with --force; may take 1–5 min</span>
+      </div>
+      <div id="maint-log" class="bg-black/40 rounded-lg p-3 max-h-56 overflow-y-auto text-[11px] font-mono border border-white/5">
+        <div class="text-gray-600 italic">Maintenance log will appear here…</div>
+      </div>
+    </div>
+
     <!-- Live Metrics + Edge Pool -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <!-- Built-in Metrics Charts -->
@@ -6963,7 +7009,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
   </div>
 </div>
 
-<script src="/dashboard.js?v=112" defer></script>
+<script src="/dashboard.js?v=113" defer></script>
 <script>
 // ═══ Supported AuxPoW coin tickers (keep in sync with app.py AUXPOW_SUPPORTED_COINS) ═══
 const STREAM_COIN_TICKERS = [
