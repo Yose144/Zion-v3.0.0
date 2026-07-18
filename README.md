@@ -9,6 +9,8 @@
 
 **DeekshaChv3 Parallel Streaming:** ZION Deeksha on GPU + external coins (VRSC, KAS, ALPH, DCR, ERG, ETC, RVN, FLUX) on CPU — all algorithms run **simultaneously**, not alternating. Deployed to Edge pool 2026-07-13.
 
+**CUDA Backend (NEW 2026-07-18):** Native CUDA kernel for `deeksha_lite_fire` achieving **295.6 KH/s on RTX 3090** (45.6x faster than OpenCL port). Async host-device copies + pool I/O pipelining. See [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md) for full optimization report.
+
 **Canonical documentation for 3.0.5:** [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) — full Czech report.  
 **Runbook:** [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) — canonical 7-phase runbook.  
 **3.0.4 release overview:** [`3.0.4.md`](3.0.4.md) — DeFi deploy + TX unification.
@@ -37,6 +39,7 @@
 | **W11 / Ubuntu launchers** | [`ZionStart/README.md`](ZionStart/README.md) |
 | **Agent rules** | [`AGENTS.md`](AGENTS.md) |
 | **Genesis regeneration** | [`docs/GENESIS_REGENERATION_RUNBOOK.md`](docs/GENESIS_REGENERATION_RUNBOOK.md) |
+| **CUDA tuning report** | [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md) |
 | **Historical 3.0.3 docs** | [`docs/3.0.3/`](docs/3.0.3/) |
 
 ---
@@ -114,6 +117,38 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner --features full 
 - **External CPU:** verushash (VRSC), randomx (XMR)
 - **Special:** `auto` (autotune — benchmark all and pick best)
 
+### CUDA Backend (NVIDIA RTX 3090+)
+
+Native CUDA kernel for `deeksha_lite_fire` — **45.6x faster** than OpenCL port.
+
+```bash
+# Linux — CUDA miner (RTX 3090, 295.6 KH/s)
+cargo run --release --manifest-path V3/Cargo.toml -p zion-miner \
+  --features "gpu-cuda,native-randomx,native-kheavyhash,native-verushash,native-hashers" -- \
+  --pool 62.171.141.136:8444 \
+  --wallet zion1<your-address> \
+  --worker rtx3090 \
+  --gpu cuda \
+  --algorithm deeksha_lite_fire
+```
+
+**Optimal CUDA config (RTX 3090):**
+```bash
+export ZION_GPU_WORK_SIZE=32768
+export ZION_CUDA_TPB=128
+export ZION_CUDA_ARCH=sm_86
+export ZION_GPU_MAX_BATCH=262144
+```
+
+| Optimization | Hashrate | Improvement |
+|--------------|----------|-------------|
+| v1 (OpenCL port) | 6.5 KH/s | baseline |
+| v4 (batched launch) | 49.3 KH/s | 7.5x |
+| v5 (async htod copies) | 245.8 KH/s | 37.9x |
+| v6 (pool I/O pipelining) | **295.6 KH/s** | **45.6x** |
+
+Full optimization report: [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md)
+
 > **Note:** `ZION_PAYOUT_ADDRESS` is required — pool rejects connections with missing or invalid address. Must be a valid 44-char `zion1...` address.
 
 ---
@@ -130,6 +165,7 @@ This repository has exactly one source of truth per topic:
 | **Agent operating rules** | [`AGENTS.md`](AGENTS.md) |
 | **V3 code + architecture** | [`V3/README.md`](V3/README.md) |
 | **Engineering roadmap** | [`V3/ROADMAP.md`](V3/ROADMAP.md) |
+| **CUDA tuning report** | [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md) |
 | **Historical 3.0.3 docs** | [`docs/3.0.3/`](docs/3.0.3/) |
 
 All other root `.md` files were archived to [`docs/3.0.3/`](docs/3.0.3/) as part of the 3.0.4 documentation cleanup. If you need a 3.0.3-era document, look there first.
@@ -171,4 +207,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-07-13 · Version: v3.0.5 "All Green" + DeekshaChv3 Parallel Streaming · Report: [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)*
+*Last updated: 2026-07-18 · Version: v3.0.6 "Triple Parallel" + CUDA Backend (295.6 KH/s RTX 3090) · Report: [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md)*
