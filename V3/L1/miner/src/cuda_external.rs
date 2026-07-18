@@ -274,118 +274,130 @@ impl CudaExternalMiner {
             })?;
 
         let threads_per_block: u32 = 256;
-        let actual_batch = batch_size.min(self.work_size as u64) as u32;
-        let blocks = (actual_batch + threads_per_block - 1) / threads_per_block;
-        let cfg = LaunchConfig {
-            grid_dim: (blocks, 1, 1),
-            block_dim: (threads_per_block, 1, 1),
-            shared_mem_bytes: 0,
-        };
+        // Run multiple kernel launches to cover the full batch_size.
+        // Each launch covers at most self.work_size nonces.
+        let mut total_tested: u64 = 0;
+        let mut current_nonce = nonce_start;
+        let mut left = batch_size;
 
-        unsafe {
-            match self.algo {
-                CudaExtAlgo::Kheavyhash => {
-                    let matrix = self.kheavy_matrix.as_ref().unwrap();
-                    func
-                        .clone()
-                        .launch(
-                            cfg,
-                            (
-                                &self.header_buf,
-                                self.kheavy_timestamp,
-                                &self.target_buf,
-                                nonce_start,
-                                matrix,
-                                &mut self.output_nonce,
-                                &mut self.output_hash,
-                                &mut self.found_flag,
-                            ),
-                        )
-                        .map_err(|e| anyhow::anyhow!("kheavyhash launch: {e}"))?;
-                }
-                CudaExtAlgo::Blake3Alph => {
-                    let header_len_u32 = header_len as u32;
-                    func
-                        .clone()
-                        .launch(
-                            cfg,
-                            (
-                                &self.header_buf,
-                                header_len_u32,
-                                &self.target_buf,
-                                nonce_start,
-                                &mut self.output_nonce,
-                                &mut self.output_hash,
-                                &mut self.found_flag,
-                            ),
-                        )
-                        .map_err(|e| anyhow::anyhow!("blake3_alph launch: {e}"))?;
-                }
-                CudaExtAlgo::Blake3Dcr => {
-                    let header_len_u32 = header_len as u32;
-                    func
-                        .clone()
-                        .launch(
-                            cfg,
-                            (
-                                &self.header_buf,
-                                header_len_u32,
-                                &self.target_buf,
-                                nonce_start,
-                                &mut self.output_nonce,
-                                &mut self.output_hash,
-                                &mut self.found_flag,
-                            ),
-                        )
-                        .map_err(|e| anyhow::anyhow!("blake3_dcr launch: {e}"))?;
-                }
-                CudaExtAlgo::Autolykos => {
-                    let table = self
-                        .autolykos_table
-                        .as_ref()
-                        .ok_or_else(|| anyhow::anyhow!("autolykos table not generated"))?;
-                    let header_len_u32 = header_len as u32;
-                    let table_size_u32 = self.autolykos_table_size;
-                    func
-                        .clone()
-                        .launch(
-                            cfg,
-                            (
-                                &self.header_buf,
-                                header_len_u32,
-                                &self.target_buf,
-                                nonce_start,
-                                table,
-                                table_size_u32,
-                                &mut self.output_nonce,
-                                &mut self.output_hash,
-                                &mut self.found_flag,
-                            ),
-                        )
-                        .map_err(|e| anyhow::anyhow!("autolykos launch: {e}"))?;
-                }
-                CudaExtAlgo::Zelhash => {
-                    let header_len_u32 = header_len as u32;
-                    func
-                        .clone()
-                        .launch(
-                            cfg,
-                            (
-                                &self.header_buf,
-                                header_len_u32,
-                                &self.target_buf,
-                                nonce_start,
-                                &mut self.output_nonce,
-                                &mut self.output_hash,
-                                &mut self.found_flag,
-                            ),
-                        )
-                        .map_err(|e| anyhow::anyhow!("zelhash launch: {e}"))?;
+        while left > 0 {
+            let chunk = (left as u32).min(self.work_size as u32);
+            let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+            let cfg = LaunchConfig {
+                grid_dim: (blocks, 1, 1),
+                block_dim: (threads_per_block, 1, 1),
+                shared_mem_bytes: 0,
+            };
+
+            unsafe {
+                match self.algo {
+                    CudaExtAlgo::Kheavyhash => {
+                        let matrix = self.kheavy_matrix.as_ref().unwrap();
+                        func
+                            .clone()
+                            .launch(
+                                cfg,
+                                (
+                                    &self.header_buf,
+                                    self.kheavy_timestamp,
+                                    &self.target_buf,
+                                    current_nonce,
+                                    matrix,
+                                    &mut self.output_nonce,
+                                    &mut self.output_hash,
+                                    &mut self.found_flag,
+                                ),
+                            )
+                            .map_err(|e| anyhow::anyhow!("kheavyhash launch: {e}"))?;
+                    }
+                    CudaExtAlgo::Blake3Alph => {
+                        let header_len_u32 = header_len as u32;
+                        func
+                            .clone()
+                            .launch(
+                                cfg,
+                                (
+                                    &self.header_buf,
+                                    header_len_u32,
+                                    &self.target_buf,
+                                    current_nonce,
+                                    &mut self.output_nonce,
+                                    &mut self.output_hash,
+                                    &mut self.found_flag,
+                                ),
+                            )
+                            .map_err(|e| anyhow::anyhow!("blake3_alph launch: {e}"))?;
+                    }
+                    CudaExtAlgo::Blake3Dcr => {
+                        let header_len_u32 = header_len as u32;
+                        func
+                            .clone()
+                            .launch(
+                                cfg,
+                                (
+                                    &self.header_buf,
+                                    header_len_u32,
+                                    &self.target_buf,
+                                    current_nonce,
+                                    &mut self.output_nonce,
+                                    &mut self.output_hash,
+                                    &mut self.found_flag,
+                                ),
+                            )
+                            .map_err(|e| anyhow::anyhow!("blake3_dcr launch: {e}"))?;
+                    }
+                    CudaExtAlgo::Autolykos => {
+                        let table = self
+                            .autolykos_table
+                            .as_ref()
+                            .ok_or_else(|| anyhow::anyhow!("autolykos table not generated"))?;
+                        let header_len_u32 = header_len as u32;
+                        let table_size_u32 = self.autolykos_table_size;
+                        func
+                            .clone()
+                            .launch(
+                                cfg,
+                                (
+                                    &self.header_buf,
+                                    header_len_u32,
+                                    &self.target_buf,
+                                    current_nonce,
+                                    table,
+                                    table_size_u32,
+                                    &mut self.output_nonce,
+                                    &mut self.output_hash,
+                                    &mut self.found_flag,
+                                ),
+                            )
+                            .map_err(|e| anyhow::anyhow!("autolykos launch: {e}"))?;
+                    }
+                    CudaExtAlgo::Zelhash => {
+                        let header_len_u32 = header_len as u32;
+                        func
+                            .clone()
+                            .launch(
+                                cfg,
+                                (
+                                    &self.header_buf,
+                                    header_len_u32,
+                                    &self.target_buf,
+                                    current_nonce,
+                                    &mut self.output_nonce,
+                                    &mut self.output_hash,
+                                    &mut self.found_flag,
+                                ),
+                            )
+                            .map_err(|e| anyhow::anyhow!("zelhash launch: {e}"))?;
+                    }
                 }
             }
+
+            total_tested += chunk as u64;
+            current_nonce += chunk as u64;
+            left = left.saturating_sub(chunk as u64);
         }
 
-        // Sync and read results
+        // Single sync point: wait for ALL chunks to complete
         self.dev
             .synchronize()
             .map_err(|e| anyhow::anyhow!("device sync: {e}"))?;
@@ -408,12 +420,12 @@ impl CudaExternalMiner {
             hash.copy_from_slice(&hash_host);
             Ok(GpuBatchResult {
                 solutions: vec![(nonce_host[0], hash, None)],
-                nonces_tested: actual_batch as u64,
+                nonces_tested: total_tested,
             })
         } else {
             Ok(GpuBatchResult {
                 solutions: Vec::new(),
-                nonces_tested: actual_batch as u64,
+                nonces_tested: total_tested,
             })
         }
     }
