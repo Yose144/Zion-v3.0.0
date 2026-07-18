@@ -2094,6 +2094,124 @@ impl AuxPowClient {
         Ok(())
     }
 
+    // ── Block header builder for Stratum v1 (RTM, VTC, etc.) ────────────
+}
+
+/// Build an 80-byte block header from Stratum v1 notify params.
+///
+/// Header layout (Dash/Raptoreum style, same as Bitcoin):
+///   version(4 LE) + prevhash(32) + merkle_root(32) + ntime(4 LE) + nbits(4 LE) + nonce(4 LE=0)
+///
+/// `prevhash` from stratum is in reversed byte order (display order).
+/// We reverse it back to internal byte order for the header.
+///
+/// Merkle root is computed as:
+///   1. coinbase_tx = coinbase1 + extranonce1 + extranonce2 + coinbase2
+///   2. hash0 = double_sha256(coinbase_tx)
+///   3. For each branch: hash0 = double_sha256(hash0 || branch)  (left-concatenation)
+fn build_stratum_v1_header(
+    version_hex: &str,
+    prevhash_hex: &str,
+    coinbase1_hex: &str,
+    coinbase2_hex: &str,
+    merkle_branches: &[String],
+    ntime_hex: &str,
+    nbits_hex: &str,
+    extranonce1_hex: &str,
+    extranonce2_hex: &str,
+) -> Vec<u8> {
+    use sha2::{Digest, Sha256};
+
+    // Parse hex strings to bytes
+    let parse_hex = |h: &str| -> Vec<u8> {
+        hex::decode(h.trim_start_matches("0x")).unwrap_or_default()
+    };
+
+    let version_bytes = parse_hex(version_hex);
+    let prevhash_bytes = parse_hex(prevhash_hex);
+    let coinbase1 = parse_hex(coinbase1_hex);
+    let coinbase2 = parse_hex(coinbase2_hex);
+    let extranonce1 = parse_hex(extranonce1_hex);
+    let extranonce2 = parse_hex(extranonce2_hex);
+    let ntime_bytes = parse_hex(ntime_hex);
+    let nbits_bytes = parse_hex(nbits_hex);
+
+    // Build coinbase transaction: coinbase1 + extranonce1 + extranonce2 + coinbase2
+    let mut coinbase_tx = Vec::with_capacity(
+        coinbase1.len() + extranonce1.len() + extranonce2.len() + coinbase2.len()
+    );
+    coinbase_tx.extend_from_slice(&coinbase1);
+    coinbase_tx.extend_from_slice(&extranonce1);
+    coinbase_tx.extend_from_slice(&extranonce2);
+    coinbase_tx.extend_from_slice(&coinbase2);
+
+    // Compute merkle root: double_sha256(coinbase_tx), then combine with branches
+    let mut merkle_root = {
+        let h1 = Sha256::digest(&coinbase_tx);
+        let h2 = Sha256::digest(&h1);
+        h2.to_vec()
+    };
+
+    // Combine with merkle branches (left concatenation: hash = sha256d(hash || branch))
+    for branch_hex in merkle_branches {
+        let branch = parse_hex(branch_hex);
+        let mut combined = Vec::with_capacity(merkle_root.len() + branch.len());
+        combined.extend_from_slice(&merkle_root);
+        combined.extend_from_slice(&branch);
+        let h1 = Sha256::digest(&combined);
+        let h2 = Sha256::digest(&h1);
+        merkle_root = h2.to_vec();
+    }
+
+    // Reverse prevhash (stratum sends in display/reversed order)
+    let mut prevhash_reversed = prevhash_bytes.clone();
+    prevhash_reversed.reverse();
+
+    // Build 80-byte header
+    let mut header = Vec::with_capacity(80);
+
+    // version (4 bytes LE) — pad/truncate to 4 bytes
+    let mut ver = [0u8; 4];
+    let vlen = version_bytes.len().min(4);
+    ver[..vlen].copy_from_slice(&version_bytes[..vlen]);
+    header.extend_from_slice(&ver);
+
+    // prevhash (32 bytes) — pad if short
+    let mut prev = [0u8; 32];
+    let plen = prevhash_reversed.len().min(32);
+    prev[..plen].copy_from_slice(&prevhash_reversed[..plen]);
+    header.extend_from_slice(&prev);
+
+    // merkle_root (32 bytes) — pad if short
+    let mut mr = [0u8; 32];
+    let mlen = merkle_root.len().min(32);
+    mr[..mlen].copy_from_slice(&merkle_root[..mlen]);
+    header.extend_from_slice(&mr);
+
+    // ntime (4 bytes LE) — pad/truncate
+    let mut nt = [0u8; 4];
+    let tlen = ntime_bytes.len().min(4);
+    nt[..tlen].copy_from_slice(&ntime_bytes[..tlen]);
+    header.extend_from_slice(&nt);
+
+    // nbits (4 bytes LE) — pad/truncate
+    let mut nb = [0u8; 4];
+    let blen = nbits_bytes.len().min(4);
+    nb[..blen].copy_from_slice(&nbits_bytes[..blen]);
+    header.extend_from_slice(&nb);
+
+    // nonce (4 bytes = 0, miner will fill)
+    header.extend_from_slice(&[0u8; 4]);
+
+    // Ensure exactly 80 bytes
+    if header.len() < 80 {
+        header.resize(80, 0);
+    }
+    header.truncate(80);
+    header
+}
+
+impl AuxPowClient {
     /// Parse `mining.notify` params into an `ExternalJob`.
     ///
     /// Supports two Stratum v1 variants:
@@ -2791,37 +2909,61 @@ impl AuxPowClient {
                     let prevhash = arr.get(1).and_then(|v| v.as_str()).unwrap_or("").to_string();
                     let coinbase1 = arr.get(2).and_then(|v| v.as_str()).unwrap_or("").to_string();
                     let coinbase2 = arr.get(3).and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let merkle_branches: Vec<String> = arr.get(4)
+                        .and_then(|v| v.as_array())
+                        .map(|a| a.iter()
+                            .filter_map(|b| b.as_str().map(|s| s.to_string()))
+                            .collect())
+                        .unwrap_or_default();
 
                     // Store ntime for submit reconstruction
                     if !job_id.is_empty() && !ntime.is_empty() {
                         self.job_ntime.lock().await.insert(job_id.clone(), ntime.clone());
                     }
 
-                    // Build header from coinbase1 (contains the block header prefix)
-                    // For now, use coinbase1 as the header hex — the GPU kernel
-                    // will use this as the hashing input.
-                    let header_hex = coinbase1.clone();
-                    let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
-                        .unwrap_or_default();
+                    let extranonce1 = self.extranonce1.lock().await.clone();
+                    let extranonce1_hex = hex::encode(&extranonce1);
+                    let extranonce2_hex = format!("{:08x}", 0u32); // placeholder, miner fills real value
 
-                    // Target from difficulty — use a permissive default for now
-                    // The pool sends mining.set_difficulty separately
-                    let target_hex = "00000000ffff0000000000000000000000000000000000000000000000000000";
-                    let target_bytes = crate::external_hashers::parse_target_hex(target_hex)
-                        .unwrap_or([0xFFu8; 32]);
+                    // Build 80-byte block header for RTM/Dash-style coins:
+                    // version(4) + prevhash(32) + merkle_root(32) + ntime(4) + nbits(4) + nonce(4)
+                    let header_bytes = build_stratum_v1_header(
+                        &version, &prevhash, &coinbase1, &coinbase2,
+                        &merkle_branches, &ntime, &nbits, &extranonce1_hex, &extranonce2_hex,
+                    );
+
+                    let header_hex = hex::encode(&header_bytes);
+
+                    // Target from current_difficulty (set by mining.set_difficulty)
+                    // or from current_target_bytes (set by mining.set_target).
+                    // Fall back to a permissive default (difficulty 1).
+                    let (target_bytes, target_hex) = {
+                        let cached_target = *self.current_target_bytes.lock().await;
+                        let cached_diff = *self.current_difficulty.lock().await;
+                        if let Some(t) = cached_target {
+                            (t, hex::encode(&t))
+                        } else if cached_diff > 0.0 {
+                            let t = difficulty_to_target(cached_diff);
+                            (t, hex::encode(&t))
+                        } else {
+                            // Default: difficulty 0.001 = very easy target
+                            let t = difficulty_to_target(0.001);
+                            (t, hex::encode(&t))
+                        }
+                    };
 
                     let ntime_u64 = u64::from_str_radix(ntime.trim_start_matches("0x"), 16).ok();
 
                     println!(
-                        "auxpow: {} notify — job={} prevhash={}.. ntime={} nbits={} version={}",
+                        "auxpow: {} notify — job={} prevhash={}.. ntime={} nbits={} version={} header_len={} target={}..",
                         self.profile.coin.ticker(), job_id, &prevhash[..16.min(prevhash.len())],
-                        ntime, nbits, version
+                        ntime, nbits, version, header_bytes.len(), &target_hex[..16.min(target_hex.len())]
                     );
 
                     return Ok(ExternalJob {
                         job_id,
                         header_hex,
-                        target_hex: target_hex.to_string(),
+                        target_hex,
                         seed_hash: None,
                         block_number: None,
                         algorithm: self.profile.algorithm.clone(),
@@ -2832,8 +2974,8 @@ impl AuxPowClient {
                         external_coin: self.profile.coin,
                         from_group: 0,
                         to_group: 0,
-                        extranonce1: self.extranonce1.lock().await.clone(),
-                        extranonce2: String::new(),
+                        extranonce1,
+                        extranonce2: extranonce2_hex,
                         epoch: None,
                     });
                 }
@@ -3861,19 +4003,28 @@ impl AuxPowClient {
                 }
             };
 
-            // extranonce2: miner nonce as LE bytes, padded to extranonce2_size
+            // extranonce2: for RTM CPU mining, extranonce2 is fixed at 0
+            // (header is built with extranonce2=0 in build_stratum_v1_header).
+            // For GPU coins (VTC, KLS, etc.), extranonce2 = miner nonce as LE bytes.
             let en2_size = self.extranonce2_size.lock().await.unwrap_or(4) as usize;
             let nonce_le = (nonce & 0xFFFFFFFF) as u32;
             let nonce_bytes = nonce_le.to_le_bytes();
-            let mut en2 = hex::encode(&nonce_bytes);
-            // Pad/truncate to extranonce2_size
-            let needed = en2_size * 2;
-            if en2.len() < needed {
-                en2.push_str(&"0".repeat(needed - en2.len()));
-            }
-            if en2.len() > needed {
-                en2.truncate(needed);
-            }
+
+            let en2 = if self.profile.coin == ExternalCoin::RTM {
+                // RTM CPU mining: extranonce2 is fixed at 0 (header built with en2=0)
+                "00000000".to_string()
+            } else {
+                // GPU coins: extranonce2 = miner nonce as LE bytes
+                let mut e = hex::encode(&nonce_bytes);
+                let needed = en2_size * 2;
+                if e.len() < needed {
+                    e.push_str(&"0".repeat(needed - e.len()));
+                }
+                if e.len() > needed {
+                    e.truncate(needed);
+                }
+                e
+            };
 
             // PoW nonce as 4-byte LE hex
             let nonce_hex = hex::encode(nonce_bytes);
@@ -5886,6 +6037,229 @@ mod tests {
 
         client.disconnect().await.unwrap();
         server_task.await.unwrap();
+    }
+
+    /// E2E test: RTM GhostRider mining with real hash + share acceptance.
+    ///
+    /// This test:
+    /// 1. Starts a mock stratum server
+    /// 2. Connects RTM client (subscribe + authorize)
+    /// 3. Server sends mining.set_difficulty (very low = easy target)
+    /// 4. Server sends mining.notify with a valid 80-byte header
+    /// 5. Client builds header from notify params (build_stratum_v1_header)
+    /// 6. Client mines with real GhostRider hash (native-ghostrider feature)
+    /// 7. When hash meets target, client submits share
+    /// 8. Server verifies submit format (5 params, en2=00000000, nonce=4-byte LE)
+    /// 9. Server accepts share
+    #[tokio::test]
+    async fn rtm_e2e_ghostrider_mine_and_submit() {
+        // This test requires native-ghostrider feature for real hashing.
+        // Without it, blake3 fallback won't produce valid GhostRider hashes.
+        #[cfg(not(feature = "native-ghostrider"))]
+        {
+            println!("Skipping RTM E2E test — requires native-ghostrider feature");
+            return;
+        }
+
+        use std::sync::{Arc, Mutex as StdMutex};
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let (host, port) = addr.rsplit_once(':').unwrap();
+        let port: u16 = port.parse().unwrap();
+
+        let job_id = "rtm_e2e_001";
+        let ntime_hex = format!("{:08x}", chrono::Utc::now().timestamp() as u32);
+        let nbits_hex = "1e02cbbe"; // low difficulty bits
+
+        // Valid RTM block header components (from zpool-style notify)
+        // version=20000000, prevhash=32 bytes, coinbase1/coinbase2 = coinbase tx parts
+        let version_hex = "20000000";
+        let prevhash_hex = "c9c08930a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8";
+        let coinbase1_hex = "030005000100000000000000000000000000000000000000000000000000000000000000ffffffff0a4d696e6564206279205a494f4effffffff";
+        let coinbase2_hex = "2f7a706f6f6c00000000";
+        let extranonce1_hex = "80004e68"; // 4-byte extranonce1
+
+        // Very easy target: difficulty 0.0001 → target = 2^256 / 0.0001 ≈ huge
+        // Use a target that GhostRider can meet in a few hundred nonces
+        let share_difficulty = 0.0001_f64;
+
+        // Track whether share was submitted
+        let share_submitted = Arc::new(StdMutex::new(false));
+        let share_submitted_clone = share_submitted.clone();
+
+        let server_task = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (mut reader, mut writer) = socket.split();
+            let mut buf = vec![0u8; 65536];
+
+            async fn read_json(
+                reader: &mut tokio::net::tcp::ReadHalf<'_>,
+                buf: &mut [u8],
+            ) -> Value {
+                let n = reader.read(buf).await.unwrap();
+                serde_json::from_slice::<Value>(&buf[..n]).unwrap()
+            }
+
+            async fn write_json(
+                writer: &mut tokio::net::tcp::WriteHalf<'_>,
+                v: Value,
+            ) {
+                writer
+                    .write_all((serde_json::to_string(&v).unwrap() + "\n").as_bytes())
+                    .await
+                    .unwrap();
+                writer.flush().await.unwrap();
+            }
+
+            // mining.subscribe
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.subscribe");
+            write_json(
+                &mut writer,
+                json!({
+                    "id": req["id"],
+                    "result": [["mining.notify", "session"], extranonce1_hex, 4],
+                    "error": null
+                }),
+            )
+            .await;
+
+            // mining.authorize
+            let req = read_json(&mut reader, &mut buf).await;
+            assert_eq!(req["method"], "mining.authorize");
+            write_json(&mut writer, json!({"id": req["id"], "result": true, "error": null})).await;
+
+            // mining.set_difficulty — very low difficulty = easy target
+            write_json(
+                &mut writer,
+                json!({"id": null, "method": "mining.set_difficulty", "params": [share_difficulty]}),
+            )
+            .await;
+
+            // mining.notify — 9 params (standard Stratum v1)
+            write_json(
+                &mut writer,
+                json!({
+                    "id": null,
+                    "method": "mining.notify",
+                    "params": [
+                        job_id,
+                        prevhash_hex,
+                        coinbase1_hex,
+                        coinbase2_hex,
+                        [], // no merkle branches
+                        version_hex,
+                        nbits_hex,
+                        ntime_hex,
+                        true
+                    ]
+                }),
+            )
+            .await;
+
+            // Wait for mining.submit (with timeout)
+            let submit_req = tokio::time::timeout(
+                Duration::from_secs(60),
+                read_json(&mut reader, &mut buf),
+            )
+            .await;
+
+            match submit_req {
+                Ok(req) => {
+                    assert_eq!(req["method"], "mining.submit");
+                    let params = req["params"].as_array().unwrap();
+                    assert_eq!(params.len(), 5, "RTM submit must have 5 params");
+                    assert_eq!(params[1].as_str().unwrap(), job_id);
+                    // extranonce2 must be "00000000" (fixed for CPU mining)
+                    assert_eq!(params[2].as_str().unwrap(), "00000000",
+                        "extranonce2 must be 00000000 for RTM CPU mining");
+                    // ntime must match notify
+                    assert_eq!(params[3].as_str().unwrap(), ntime_hex);
+                    // nonce must be 4-byte LE hex (8 chars)
+                    assert_eq!(params[4].as_str().unwrap().len(), 8,
+                        "nonce must be 4 bytes (8 hex chars)");
+
+                    *share_submitted_clone.lock().unwrap() = true;
+
+                    // Accept the share
+                    write_json(
+                        &mut writer,
+                        json!({"id": req["id"], "result": true, "error": null}),
+                    )
+                    .await;
+                }
+                Err(_) => panic!("Timeout waiting for mining.submit (60s)"),
+            }
+
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        });
+
+        let mut profile = CoinProfile::default_for(ExternalCoin::RTM);
+        profile.pool_host = host.to_string();
+        profile.pool_port = port;
+
+        let client = Arc::new(AuxPowClient::new(profile));
+        client.connect("yose144").await.unwrap();
+
+        // Wait for job
+        let job = client.wait_for_job(5000).await.unwrap().unwrap();
+        assert_eq!(job.job_id, job_id);
+        assert_eq!(job.external_coin, ExternalCoin::RTM);
+        assert_eq!(job.header_bytes.len(), 80, "Header must be 80 bytes");
+
+        // Mine with real GhostRider hash
+        // The header is built with extranonce2=0, so we just scan PoW nonces
+        #[cfg(feature = "native-ghostrider")]
+        {
+            zion_native_ffi::ghostrider::init();
+
+            let header = &job.header_bytes;
+            let target = &job.target_bytes;
+            let nonce_offset = 76usize;
+            let mut work_blob = header.clone();
+
+            println!("rtm_e2e: header={} target={}..",
+                hex::encode(&header[..16.min(header.len())]),
+                hex::encode(&target[..8.min(target.len())]));
+
+            let mut found_nonce: Option<u64> = None;
+            let start = std::time::Instant::now();
+
+            for nonce in 0u64..1_000_000 {
+                let nonce_le = (nonce as u32).to_le_bytes();
+                work_blob[nonce_offset..nonce_offset + 4].copy_from_slice(&nonce_le);
+
+                let hash = zion_native_ffi::ghostrider::hash(&work_blob, nonce);
+
+                if crate::external_hashers::meets_randomx_target(&hash, target) {
+                    found_nonce = Some(nonce);
+                    println!("rtm_e2e: Found valid nonce={} in {:?} hash={}",
+                        nonce, start.elapsed(), hex::encode(&hash));
+                    break;
+                }
+
+                if nonce % 10000 == 0 && nonce > 0 {
+                    println!("rtm_e2e: scanned {} nonces in {:?}...", nonce, start.elapsed());
+                }
+            }
+
+            assert!(found_nonce.is_some(), "Should find valid nonce within 1M attempts");
+
+            // Submit the share
+            let nonce = found_nonce.unwrap();
+            let hash_hex = "deadbeef".to_string(); // pool doesn't verify hash in submit
+            let result = client.submit_share(job_id, nonce, &hash_hex, None).await.unwrap();
+            assert_eq!(result, ShareResult::Accepted, "Share should be accepted");
+        }
+
+        client.disconnect().await.unwrap();
+
+        // Verify share was submitted
+        assert!(*share_submitted.lock().unwrap(), "Share should have been submitted");
+
+        // Don't await server_task — it may have already finished
+        drop(server_task);
     }
 
     #[test]
