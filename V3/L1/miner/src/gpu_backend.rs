@@ -492,8 +492,13 @@ pub fn is_external_algorithm(algorithm: &str) -> bool {
 /// CPU-only algorithms that have no GPU kernel and must use CPU mining.
 /// VerusHash v2.2 is designed to be GPU-resistant (AES-NI + CLHash).
 /// RandomX is designed to be GPU/ASIC-resistant.
+/// GhostRider (RTM) OpenCL kernel is a placeholder — real hashing via
+/// native-ghostrider FFI (sphlib + CryptoNight) on CPU only.
 pub fn is_cpu_only_algorithm(algorithm: &str) -> bool {
-    matches!(algorithm, "verushash" | "randomx")
+    matches!(
+        algorithm,
+        "verushash" | "randomx" | "ghostrider" | "ghostrider_rtm"
+    )
 }
 
 /// DAG-based algorithms that require a large (~1-4 GB) DAG buffer on GPU.
@@ -5534,8 +5539,6 @@ pub mod opencl_external {
                 | "nexapow_nexa"
                 | "qhash"
                 | "qhash_qtc"
-                | "ghostrider"
-                | "ghostrider_rtm"
                 | "dynexsolve"
                 | "dynexsolve_dnx" => self.miner.mine(
                     &self.algorithm,

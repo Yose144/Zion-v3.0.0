@@ -207,9 +207,23 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
             Some(("kawpow_kernel.cl", "progpow_search"))
         }
         "ethash" | "etchash" | "ethash_etc" => Some(("ethash_kernel.cl", "ethash_mine")),
-        "zelhash" | "zelhash_flux" => Some(("zelhash_kernel.cl", "zelhash_mine")),
+        "zelhash" | "zelhash_flux" => {
+            // NOTE: zelhash_kernel.cl is a SIMPLIFIED implementation —
+            // "can find solutions at low difficulty" but not production-grade.
+            // Real production mining needs a lolMiner/bzMiner-level kernel.
+            Some(("zelhash_kernel.cl", "zelhash_mine"))
+        }
         "progpow" | "progpow_epic" => Some(("progpow_kernel.cl", "ethash_search")),
-        "pearlhash" | "pearlhash_prl" => Some(("pearl_kernel.cl", "pearl_mine")),
+        "pearlhash" | "pearlhash_prl" => {
+            // NOTE: pearl_kernel.cl is a BLAKE3-based PLACEHOLDER for pipeline
+            // testing only. The real Pearl PoUW GPU kernel is
+            // pearl_pouw_native.cl (1185 lines, full MatMul + noise + BLAKE3
+            // proof), dispatched via pearl_pouw.rs::mine_gpu_native_opencl()
+            // which calls pearl_pouw_mine_native() with matrix input — NOT
+            // through this simple kernel_info() path.
+            // Stream 2 (Pearl PoUW) is disabled in 3.0.6 (ZION_STREAM2_ENABLED=0).
+            Some(("pearl_kernel.cl", "pearl_mine"))
+        }
         "beamhash" | "beamhash_beam" => Some(("beamhash_kernel.cl", "beamhash_generate_hashes")),
         "karlsenhash" | "karlsenhash_kls" => {
             Some(("karlsenhash_kernel.cl", "karlsenhash_mine"))
@@ -238,10 +252,13 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
             Some(("nexapow_kernel.cl", "nexapow_mine"))
         }
         "ghostrider" | "ghostrider_rtm" => {
-            // GhostRider: 15 x16r hash algorithms + 6 CryptoNight variants
-            // 18-step hash chain: core[0..4]→cn[0]→core[5..9]→cn[1]→core[10..14]→cn[2]
-            // Each work-item needs 1MB scratchpad in global memory
-            Some(("ghostrider_kernel.cl", "ghostrider_mine"))
+            // GhostRider (RTM) is CPU-only — the OpenCL kernel
+            // (ghostrider_kernel.cl) is a PLACEHOLDER that uses SHA-256
+            // wrappers instead of real sphlib hashes and LCG PRNG instead
+            // of real CryptoNight. It does NOT produce valid RTM hashes.
+            // Real CPU hashing is via native-ghostrider FFI (sphlib + CN).
+            // Return None to prevent GPU dispatch from sending invalid shares.
+            None
         }
         "dynexsolve" | "dynexsolve_dnx" => {
             // DynexSolve: neuromorphic PoUW, solves Boolean SAT via RK4 ODE integration
