@@ -28,7 +28,7 @@ rand = "0.8"
 anyhow = "1"
 
 # EVM transaction signing (secp256k1 + keccak256 + RLP)
-k256 = { version = "0.13", features = ["ecdsa"] }
+k256 = { version = "0.14", features = ["ecdsa"] }
 sha3 = "0.10"
 rlp = "0.5"
 

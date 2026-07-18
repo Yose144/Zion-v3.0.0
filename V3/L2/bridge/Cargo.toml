@@ -28,7 +28,7 @@ sha2 = "0.10"
 ripemd = "0.1"
 hex = "0.4"
 # secp256k1 signing for EVM transactions (submitLockProof)
-k256 = { version = "0.13", features = ["ecdsa"] }
+k256 = { version = "0.14", features = ["ecdsa"] }
 
 # Database (bridge state persistence)
 rusqlite = { version = "0.31", features = ["bundled"] }
