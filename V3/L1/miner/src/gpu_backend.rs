@@ -1695,6 +1695,20 @@ pub fn create_gpu_backend(
         GpuBackendKind::Metal => {
             #[cfg(feature = "gpu-metal")]
             {
+                // External AuxPoW algorithms (kheavyhash, blake3, etc.) have
+                // no Metal kernel. Fall back to CPU via native-ffi.
+                if is_external_algorithm(algorithm) {
+                    #[cfg(feature = "native-kheavyhash")]
+                    {
+                        eprintln!("[gpu_backend] Metal CPU fallback for algorithm={}", algorithm);
+                        let miner = crate::gpu_backend::cpu_external_fallback::CpuExternalMiner::new(algorithm, work_size)?;
+                        return Ok(Box::new(miner));
+                    }
+                    #[cfg(not(feature = "native-kheavyhash"))]
+                    {
+                        anyhow::bail!("External algorithm '{}' on Metal requires native-kheavyhash feature", algorithm);
+                    }
+                }
                 if algorithm == "deeksha_lite_fire" {
                     let miner = metal_deeksha_lite_fire::MetalDeekshaLiteFireMiner::new(work_size)?;
                     return Ok(Box::new(miner));
@@ -4886,6 +4900,136 @@ pub mod metal_deeksha {
             };
             Ok((total, elapsed, khps))
         }
+    }
+}
+
+// ─── CPU Fallback for External Algos on Metal (kheavyhash, blake3, etc.) ─────
+// On macOS Apple Silicon, OpenCL is unavailable. External AuxPoW algorithms
+// (kheavyhash, blake3) have no Metal kernel. This module provides a CPU-based
+// fallback that implements the GpuMiner trait using native-ffi hashers.
+
+#[cfg(all(feature = "gpu-metal", feature = "native-kheavyhash"))]
+pub mod cpu_external_fallback {
+    use super::*;
+    use std::time::Instant;
+
+    pub struct CpuExternalMiner {
+        algorithm: String,
+        work_size: usize,
+        device_name_cached: String,
+    }
+
+    impl CpuExternalMiner {
+        pub fn new(algorithm: &str, work_size: usize) -> Result<Self> {
+            Ok(Self {
+                algorithm: algorithm.to_string(),
+                work_size,
+                device_name_cached: format!("Apple M1 (CPU fallback for {})", algorithm),
+            })
+        }
+    }
+
+    impl GpuMiner for CpuExternalMiner {
+        fn device_name(&self) -> String {
+            self.device_name_cached.clone()
+        }
+
+        fn backend_kind(&self) -> GpuBackendKind {
+            GpuBackendKind::Metal
+        }
+
+        fn algorithm(&self) -> String {
+            self.algorithm.clone()
+        }
+
+        fn update_epoch(&mut self, _height: u64) -> Result<()> {
+            Ok(())
+        }
+
+        fn mine_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            let actual_batch = batch_size.min(self.work_size as u64).min(65536);
+            let pre_pow_hash = &header.to_bytes()[..32];
+            match self.algorithm.as_str() {
+                "kheavyhash" | "kheavyhash_kas" => {
+                    for i in 0..actual_batch {
+                        let nonce = nonce_start.wrapping_add(i);
+                        let hash = zion_native_ffi::kheavyhash::mine(pre_pow_hash, nonce, 0);
+                        if hash_le_meets_target(&hash, &target.bytes)? {
+                            return Ok(GpuBatchResult {
+                                solutions: vec![(nonce, hash, None)],
+                                nonces_tested: i + 1,
+                            });
+                        }
+                    }
+                    Ok(GpuBatchResult { solutions: Vec::new(), nonces_tested: actual_batch })
+                }
+                other => anyhow::bail!("cpu_external_fallback: unsupported algorithm '{}'", other),
+            }
+        }
+
+        fn mine_batch_raw(
+            &mut self,
+            raw_header: &[u8],
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            let actual_batch = batch_size.min(self.work_size as u64).min(65536);
+            match self.algorithm.as_str() {
+                "kheavyhash" | "kheavyhash_kas" => {
+                    let pre_pow_hash = &raw_header[..32.min(raw_header.len())];
+                    for i in 0..actual_batch {
+                        let nonce = nonce_start.wrapping_add(i);
+                        let hash = zion_native_ffi::kheavyhash::mine(pre_pow_hash, nonce, 0);
+                        if hash_le_meets_target(&hash, &target.bytes)? {
+                            return Ok(GpuBatchResult {
+                                solutions: vec![(nonce, hash, None)],
+                                nonces_tested: i + 1,
+                            });
+                        }
+                    }
+                    Ok(GpuBatchResult { solutions: Vec::new(), nonces_tested: actual_batch })
+                }
+                other => anyhow::bail!("cpu_external_fallback: unsupported algorithm '{}'", other),
+            }
+        }
+
+        fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
+            let start = Instant::now();
+            let mut total: u64 = 0;
+            let header = [0xA4u8; 32];
+            let mut nonce: u64 = 0;
+            while start.elapsed().as_secs_f64() < secs {
+                for _ in 0..1000 {
+                    let _ = zion_native_ffi::kheavyhash::mine(&header, nonce, 0);
+                    nonce += 1;
+                    total += 1;
+                }
+            }
+            let elapsed = start.elapsed().as_secs_f64();
+            let khps = if elapsed > 0.0 { total as f64 / elapsed / 1000.0 } else { 0.0 };
+            Ok((total, elapsed, khps))
+        }
+    }
+
+    /// Compare little-endian hash against big-endian target bytes.
+    fn hash_le_meets_target(hash: &[u8; 32], target: &[u8]) -> Result<bool> {
+        if target.len() < 32 {
+            anyhow::bail!("target too short: {} bytes", target.len());
+        }
+        for i in 0..32 {
+            let h = hash[31 - i];
+            let t = target[i];
+            if h < t { return Ok(true); }
+            if h > t { return Ok(false); }
+        }
+        Ok(true)
     }
 }
 
