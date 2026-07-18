@@ -54,14 +54,14 @@ fn preprocess_kernel(src: &str) -> String {
         }
         // Fix: __constant__ cannot be used as a function parameter qualifier
         // or local variable qualifier in NVRTC — only for global declarations.
-        // Strategy: remove __constant__ from indented lines (local variables
-        // inside functions) and from function parameters. Keep it on
-        // unindented lines (global declarations like arrays).
-        let line = if trimmed.starts_with("__constant__") {
-            // Global declaration — keep as-is
+        // Strategy: keep __constant__ only on unindented lines (global
+        // declarations like arrays). Remove it from all indented lines
+        // (local variables inside device functions) and function parameters.
+        let line = if line.starts_with("__constant__") {
+            // Global declaration (no indentation) — keep as-is
             line.to_string()
         } else {
-            // Local variable or function parameter — strip __constant__
+            // Indented line or function parameter — strip __constant__
             line.replace("__constant__ ", "")
         };
         out.push_str(&line);
