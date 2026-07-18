@@ -103,7 +103,28 @@ fn detect_impl() -> CpuFeatures {
     f
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(target_arch = "aarch64")]
+fn detect_impl() -> CpuFeatures {
+    let mut f = CpuFeatures {
+        cores: num_logical_cores(),
+        brand: cpu_brand(),
+        ..CpuFeatures::default()
+    };
+
+    // On aarch64 (Apple Silicon, ARM servers), NEON is always available.
+    // ARM AES (AESE/AESD) and SHA (SHA256) are available on all Apple M-series
+    // chips and most modern ARMv8.0a+ CPUs with crypto extensions.
+    // We detect at compile time via cfg(target_feature).
+    f.has_aes = cfg!(target_feature = "aes");
+    f.has_sse42 = cfg!(target_feature = "neon"); // NEON is aarch64 baseline
+    f.has_popcnt = cfg!(target_feature = "neon");
+
+    // Apple Silicon does not have AVX/BMI/FMA (x86-only SIMD).
+    // These remain false; algorithms check has_avx2_bmi2() for x86-64-v3.
+    f
+}
+
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 fn detect_impl() -> CpuFeatures {
     CpuFeatures {
         cores: num_logical_cores(),
@@ -134,7 +155,43 @@ fn cpu_brand() -> String {
         .unwrap_or_else(|| "unknown".to_string())
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+fn cpu_brand() -> String {
+    // On Apple Silicon, sysctlbyname returns the chip model (e.g. "Apple M1").
+    use std::ffi::CStr;
+    extern "C" {
+        fn sysctlbyname(
+            name: *const std::os::raw::c_char,
+            oldp: *mut std::os::raw::c_void,
+            oldlenp: *mut std::os::raw::c_ulong,
+            newp: *const std::os::raw::c_void,
+            newlen: std::os::raw::c_ulong,
+        ) -> std::os::raw::c_int;
+    }
+    let name = b"machdep.cpu.brand_string\0";
+    let mut buf = [0u8; 64];
+    let mut len = buf.len() as std::os::raw::c_ulong;
+    let ret = unsafe {
+        sysctlbyname(
+            name.as_ptr() as *const _,
+            buf.as_mut_ptr() as *mut _,
+            &mut len,
+            std::ptr::null(),
+            0,
+        )
+    };
+    if ret == 0 {
+        CStr::from_bytes_until_nul(&buf)
+            .ok()
+            .and_then(|c| c.to_str().ok())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| "Apple Silicon".to_string())
+    } else {
+        "Apple Silicon".to_string()
+    }
+}
+
+#[cfg(not(any(target_os = "linux", all(target_os = "macos", target_arch = "aarch64"))))]
 fn cpu_brand() -> String {
     "unknown".to_string()
 }
@@ -162,7 +219,7 @@ pub fn log_features() {
     }
     if !f.has_aes {
         eprintln!(
-            "cpu_features: WARNING — CPU lacks AES-NI, RandomX will use soft AES (~10x slower)"
+            "cpu_features: WARNING — CPU lacks hardware AES, RandomX will use soft AES (~10x slower)"
         );
     }
 }
