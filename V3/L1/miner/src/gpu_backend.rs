@@ -1413,10 +1413,22 @@ pub fn auto_tune_gpu_budget(cpu_threads: usize) -> u64 {
 
     // Ensure minimum viable (32 MB for a tiny scratchpad)
     let budget_mib = budget_mib.max(32);
+
+    // ── Manual override ──
+    // ZION_GPU_MEM_BUDGET_MIB allows the user to bypass the auto-tune
+    // calculation entirely. Useful on Apple Silicon where the auto-tune
+    // is too conservative (e.g. 8 GB M1 with 8 CPU threads → 32 MiB).
+    // The override is still capped at max_budget_mib for safety.
+    let budget_mib = std::env::var("ZION_GPU_MEM_BUDGET_MIB")
+        .ok()
+        .and_then(|s| s.parse::<u64>().ok())
+        .map(|v| v.min(max_budget_mib).max(32))
+        .unwrap_or(budget_mib);
+
     let budget = budget_mib * 1024 * 1024;
 
     println!(
-        "gpu_auto_tune chip={} gpu_cores={} sys_ram_mib={} available_mib={} avail_ratio={}{} cpu_threads={} cpu_adj_mib={} max_budget_mib={} floor_mib={} => budget_mib={}",
+        "gpu_auto_tune chip={} gpu_cores={} sys_ram_mib={} available_mib={} avail_ratio={}{} cpu_threads={} cpu_adj_mib={} max_budget_mib={} floor_mib={} => budget_mib={}{}",
         chip_model,
         gpu_cores,
         total_mib,
@@ -1428,6 +1440,7 @@ pub fn auto_tune_gpu_budget(cpu_threads: usize) -> u64 {
         max_budget_mib,
         floor_mib,
         budget_mib,
+        std::env::var("ZION_GPU_MEM_BUDGET_MIB").ok().map(|_| " (override)").unwrap_or(""),
     );
 
     budget
