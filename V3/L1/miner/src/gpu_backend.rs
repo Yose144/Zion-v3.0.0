@@ -4519,11 +4519,19 @@ pub mod cuda_deeksha {
                 .name()
                 .unwrap_or_else(|_| "unknown CUDA device".to_string());
 
-            // Compile PTX with fast-math (integer-safe; helps sqrtf in NPU LayerNorm)
+            // Compile PTX with fast-math + arch-specific optimization
+            let arch = std::env::var("ZION_CUDA_ARCH")
+                .unwrap_or_else(|_| "sm_86".to_string());
             let ptx = compile_ptx_with_opts(
                 CUDA_KERNEL_SRC,
                 CompileOptions {
-                    options: vec!["--use_fast_math".to_string()],
+                    options: vec![
+                        "--use_fast_math".to_string(),
+                        format!("-arch={}", arch),
+                        "--std=c++14".to_string(),
+                        "-lineinfo".to_string(),
+                        "--ptxas-options=-O3".to_string(),
+                    ],
                     ..Default::default()
                 },
             )
