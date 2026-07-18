@@ -589,15 +589,51 @@ fn scan_randomx_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShar
 // back to Blake3 placeholder (invalid shares, for pipeline testing only).
 
 fn scan_ghostrider(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
-    let header = &job.header_bytes;
-    let target = &job.target_bytes;
+    if start >= end {
+        return None;
+    }
 
     // GhostRider is stateless — no seed/init needed
     #[cfg(feature = "native-ghostrider")]
     zion_native_ffi::ghostrider::init();
 
-    // RTM block header (80 bytes): version(4) + prevhash(32) + merkle(32) + ntime(4) + nbits(4) + nonce(4)
-    // Nonce is at offset 76 (last 4 bytes)
+    // Multi-threaded: use all available CPU cores (8 on M1)
+    let cpus = std::thread::available_parallelism()
+        .map(|n| n.get() as u64)
+        .unwrap_or(1);
+    let range = end - start;
+    let threads = cpus.min(range);
+    let chunk = (range + threads - 1) / threads;
+
+    let mut per_thread: Vec<Option<FoundShare>> = vec![None; threads as usize];
+
+    std::thread::scope(|s| {
+        for (idx, slot) in per_thread.iter_mut().enumerate() {
+            let idx = idx as u64;
+            let chunk_start = start + idx * chunk;
+            let chunk_end = chunk_start.saturating_add(chunk).min(end);
+            if chunk_start >= chunk_end {
+                continue;
+            }
+            let package = job.clone();
+            s.spawn(move || {
+                *slot = scan_ghostrider_single(&package, chunk_start, chunk_end);
+            });
+        }
+    });
+
+    // Return first found share
+    for candidate in per_thread.into_iter().flatten() {
+        return Some(candidate);
+    }
+    None
+}
+
+fn scan_ghostrider_single(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
+    let target = &job.target_bytes;
+
+    // RTM block header (80 bytes): nonce at offset 76 (last 4 bytes)
     let nonce_offset = 76usize;
     let mut work_blob = header.to_vec();
     if work_blob.len() < 80 {
@@ -616,8 +652,8 @@ fn scan_ghostrider(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare>
         #[cfg(not(feature = "native-ghostrider"))]
         let hash = crate::external_hashers::hash_blake3(&work_blob, 0, nonce);
 
-        // GhostRider/RTM: LE target comparison (same as Monero)
-        if crate::external_hashers::meets_randomx_target(&hash, target) {
+        // GhostRider: LE hash, BE target → reverse hash to BE and compare
+        if crate::external_hashers::meets_target_little_endian(&hash, target) {
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
                 nonce,
@@ -629,10 +665,53 @@ fn scan_ghostrider(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare>
 }
 
 fn scan_ghostrider_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
-    let header = &job.header_bytes;
+    if start >= end {
+        return None;
+    }
 
     #[cfg(feature = "native-ghostrider")]
     zion_native_ffi::ghostrider::init();
+
+    // Multi-threaded: use all available CPU cores (8 on M1)
+    let cpus = std::thread::available_parallelism()
+        .map(|n| n.get() as u64)
+        .unwrap_or(1);
+    let range = end - start;
+    let threads = cpus.min(range);
+    let chunk = (range + threads - 1) / threads;
+
+    let mut per_thread: Vec<Option<FoundShare>> = vec![None; threads as usize];
+
+    std::thread::scope(|s| {
+        for (idx, slot) in per_thread.iter_mut().enumerate() {
+            let idx = idx as u64;
+            let chunk_start = start + idx * chunk;
+            let chunk_end = chunk_start.saturating_add(chunk).min(end);
+            if chunk_start >= chunk_end {
+                continue;
+            }
+            let package = job.clone();
+            s.spawn(move || {
+                *slot = scan_ghostrider_best_single(&package, chunk_start, chunk_end);
+            });
+        }
+    });
+
+    let mut best: Option<FoundShare> = None;
+    for candidate in per_thread.into_iter().flatten() {
+        if best
+            .as_ref()
+            .map(|b| is_hash_better(&candidate.hash, &b.hash, true))
+            .unwrap_or(true)
+        {
+            best = Some(candidate);
+        }
+    }
+    best
+}
+
+fn scan_ghostrider_best_single(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
+    let header = &job.header_bytes;
 
     // RTM block header: nonce at offset 76 (last 4 bytes of 80-byte header)
     let nonce_offset = 76usize;
