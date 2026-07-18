@@ -1827,16 +1827,15 @@ pub fn gpu_scan_job(
         && !algorithm.starts_with("kheavyhash")
         && raw_header_bytes.len() > 80;
 
-    // Cap the batch size to avoid stale jobs.  When the pool sends a large
-    // nonce_count (e.g. 262144), the GPU may take 10+ seconds to process it.
-    // By that time, the pool may have moved to a new block height, making
-    // the share stale.  Capping the batch to ZION_GPU_MAX_BATCH (default
-    // 32768 = 4× work_size) keeps each batch under ~2 seconds, well within
-    // the job TTL.  The miner loops back to get a fresh job after each batch.
+    // Cap the batch size to avoid stale jobs.  With the batched launch
+    // optimization (all chunks launched back-to-back, single sync at end),
+    // we can safely process larger batches.  Default 262144 = 8× work_size
+    // for deeksha_lite_fire, which takes ~3s on RTX 3090 — well within the
+    // 60s job TTL.  Override with ZION_GPU_MAX_BATCH env var.
     let max_batch = std::env::var("ZION_GPU_MAX_BATCH")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(32_768);
+        .unwrap_or(262_144);
     let effective_batch = job.nonce_count.min(max_batch);
 
     let result = if use_raw {

@@ -56,6 +56,21 @@
   - Added `ZION_CUDA_MAXREG` env var for `--maxrregcount` override
   - TPB tested: 64, 128, 256 — all same hashrate
 
+### v4 — Batched Launch + MAX_BATCH=262144 (BREAKTHROUGH)
+- **Hashrate:** **49.3 KH/s** (7.5x improvement!)
+- **hps_60s:** 64.8 KH/s
+- **Kernel speed:** 89.9 KH/s (best_batch_ms=2917 for 262144 nonces)
+- **Changes:**
+  - **Batched launch:** reset sentinel ONCE, launch ALL chunks back-to-back, sync ONCE at end
+  - Eliminates N-1 sync points per batch (was 256 sync points, now 2)
+  - `ZION_GPU_MAX_BATCH` default: 32768 → 262144 (8× work_size)
+  - With batched launch, 262144 nonces takes ~3s on RTX 3090 — well within 60s job TTL
+- **Root cause of previous bottleneck:** Host-side sync overhead was 50% of wall time.
+  Each chunk had 2 sync points (htod + dtoh). With 1 chunk per batch (MAX_BATCH=32768),
+  the kernel ran for 365ms but the total batch took 1876ms — 80% overhead!
+  With 8 chunks per batch (MAX_BATCH=262144), overhead is amortized: 2917ms total,
+  365ms per chunk = 20% overhead.
+
 ### Work Size Sweep
 | Work Size | TPB | Hashrate (KH/s) | Scratchpad VRAM |
 |-----------|-----|-----------------|-----------------|
@@ -70,29 +85,29 @@
 
 ## Key Findings
 
-### 1. Kernel is Compute-Bound, Not Memory-Bound
+### 1. Host-Side Overhead Was the #1 Bottleneck (NOT compute!)
+- **Before v4:** Kernel ran for 365ms but total batch took 1876ms — **80% overhead!**
+- **Root cause:** Synchronous htod/dtoh copies for every chunk (256 sync points per batch)
+- **Fix:** Batched launch — reset sentinel once, launch all chunks, sync once (2 sync points)
+- **Result:** 6.5 KH/s → 49.3 KH/s (7.5x improvement)
+
+### 2. Kernel is Fast — 89.9 KH/s on RTX 3090
+- `best_batch_ms=2917` for 262144 nonces = 89.9 KH/s kernel speed
+- Actual kernel time per 32768-nonce chunk: ~365ms
+- The 1876ms "batch time" before v4 was mostly host overhead, not kernel time
+
+### 3. Memory Optimizations Had No Effect (Compute-Bound)
 - Interleaved memory layout (perfect coalescing) gave **0% improvement**
 - Shared memory S-box gave **0% improvement**
 - All memory optimizations are irrelevant — keccak compute dominates
 
-### 2. Host-Side Overhead is 50% of Wall Time
-- `best_batch_ms=2469` for 32768 nonces → **13.3 KH/s kernel speed**
-- `hps_overall=6551` → **6.5 KH/s effective hashrate**
-- **Gap: 50%** — host spends equal time preparing/submitting vs GPU computing
-- Root cause: synchronous host→device copies, no batch pipelining
-
-### 3. Keccak f1600 Dominates Execution Time
+### 4. Keccak f1600 Dominates Kernel Execution
 - 8194 keccak calls per hash × 24 rounds = 196,656 rounds
 - Each round: ~50 64-bit integer ops (XOR, ROL, AND)
 - Total: ~10M 64-bit ops per hash
 - RTX 3090 64-bit integer throughput: ~8.9 TOPS (Ampere, 1/2 rate of 32-bit)
 - Theoretical max: 8.9T / 10M = ~890 KH/s (if perfectly utilized)
-- Current: 6.5 KH/s = **0.7% of theoretical** → massive room for improvement
-
-### 4. Low Occupancy
-- 32768 threads / 82 SMs = 400 threads/SM = 12.5 warps/SM
-- Ampere supports up to 48 warps/SM → **26% occupancy**
-- More threads = more warps to hide latency, but scratchpad memory limits thread count
+- Current kernel: 89.9 KH/s = **10.1% of theoretical** → still room for improvement
 
 ---
 
