@@ -397,7 +397,8 @@ impl TriGpuManager {
                 kind,
             });
         }
-        let primary_algo = "deeksha_lite_v1";
+        let primary_algo = std::env::var("ZION_MINER_ALGORITHM")
+            .unwrap_or_else(|_| "deeksha_lite_fire".to_string());
         let primary = create_gpu_backend(kind, primary_work_size, primary_algo)?;
 
         Ok(Self {
@@ -4255,8 +4256,10 @@ pub mod cuda_deeksha {
 
     impl CudaDeekshaMiner {
         pub fn new(work_size: usize) -> Result<Self> {
+            eprintln!("[cuda_deeksha] CudaDevice::new(0)...");
             let dev =
                 CudaDevice::new(0).map_err(|e| anyhow::anyhow!("CUDA device init failed: {e}"))?;
+            eprintln!("[cuda_deeksha] CudaDevice OK, name={}", dev.name().unwrap_or_default());
 
             let device_name = dev
                 .name()
