@@ -102,7 +102,7 @@ impl ExternalCoin {
     }
 
     pub fn is_cpu(self) -> bool {
-        matches!(self, Self::XMR | Self::VRSC)
+        matches!(self, Self::XMR | Self::VRSC | Self::RTM)
     }
 
     pub fn from_str_loose(s: &str) -> Option<Self> {

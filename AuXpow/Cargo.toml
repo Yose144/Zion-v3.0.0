@@ -57,6 +57,8 @@ native-hashers = []
 native-verushash = ["dep:zion-native-ffi", "zion-native-ffi/native-verushash"]
 # Real RandomX via zion-native-ffi C++ (tevador/RandomX for XMR/ZEPH)
 native-randomx = ["dep:zion-native-ffi", "zion-native-ffi/native-randomx"]
+# Real GhostRider via zion-native-ffi C++ (sphlib + CryptoNight for RTM)
+native-ghostrider = ["dep:zion-native-ffi", "zion-native-ffi/native-ghostrider"]
 # OpenCL GPU acceleration (AMD + NVIDIA via OpenCL runtime)
 gpu-opencl = ["dep:ocl"]
 # NVIDIA CUDA GPU acceleration (native CUDA, best perf on RTX/Ampere)
