@@ -72,9 +72,11 @@
   365ms per chunk = 20% overhead.
 
 ### v5 — Async htod Copies (MASSIVE BREAKTHROUGH)
-- **Hashrate:** **292.5 KH/s** (45x from v1!)
-- **hps_60s:** 331.7 KH/s
-- **Accept rate:** 100% (12/12 shares accepted)
+- **Hashrate:** **245.8 KH/s** (37.9x from v1!)
+- **hps_60s:** 275.9 KH/s
+- **hps_10s peak:** 340.6 KH/s
+- **Accept rate:** 100% (17/17 shares accepted in 120-iteration stability test)
+- **Stability:** 120 iterations in 128s, 0 rejected shares
 - **Changes:**
   - Replaced `htod_sync_copy_into` with `htod_copy_into` (async) for header state + sentinel
   - Async copies are queued on default stream — kernel waits for them, but HOST doesn't
@@ -88,7 +90,7 @@
     nonces cause the kernel to complete in ~195ms instead of 2.9s
   - The miner reports 262144 nonces tested per batch, so early exits inflate hashrate
   - Real kernel throughput for full batches (no early exit): ~89.9 KH/s
-  - Effective hashrate with early exits: 250-330 KH/s
+  - Effective hashrate with early exits: 245-340 KH/s
 
 ### Work Size Sweep
 | Work Size | TPB | Hashrate (KH/s) | Scratchpad VRAM |
@@ -143,27 +145,28 @@
 
 ## Next Steps
 
-### Priority 1: Fix Host-Side Overhead (expected 2x → ~13 KH/s)
-- **CUDA streams for pipelining:** overlap kernel N with host prep for N+1
-- **Async memory copies:** `cudaMemcpyAsync` instead of synchronous
-- **Double-buffered scratchpad:** pre-allocate 2× scratchpad pools
-- **Reduce sync points:** don't sync after every batch
+### Priority 1: Pool I/O Pipelining (expected 1.5-2x → ~400-500 KH/s)
+- **Overlap pool I/O with GPU compute:** while GPU mines job N, read job N+1 from pool
+- **Split mine_batch into launch_batch + collect_batch:** async launch, sync collect
+- **Double-buffered job data:** pre-fetch next job while current is mining
+- **This is the biggest remaining overhead** — 30-40% of wall time is pool network I/O
 
-### Priority 2: Increase Occupancy (expected 2-3x → ~26-39 KH/s)
-- **Reduce scratchpad per thread:** 256KiB → 128KiB (if algorithm allows)
-- **Or: use shared memory for scratchpad** (limited to ~48KB but much faster)
-- **Or: process multiple nonces per thread** (amortize keccak setup)
+### Priority 2: 32-bit Keccak Split (expected 1.3-1.5x kernel speedup)
+- **Split 64-bit ops into 2× 32-bit:** Ampere 32-bit INT is 2x throughput
+- **Reduce register pressure:** 25 32-bit regs vs 50 32-bit regs for keccak state
+- **Higher occupancy:** from ~26% to ~40%+
+- **Complex rewrite but highest kernel-level impact**
 
-### Priority 3: Keccak-Specific Optimizations
-- **Keccak state in registers:** ensure 25 u64s stay in registers (not local memory)
-- **Bit-sliced keccak:** process 64 lanes in parallel using 64-bit words
-- **Reduced-round keccak:** if algorithm allows security/perf tradeoff (unlikely)
-- **Keccak with 32-bit ops:** split 64-bit ops into 2× 32-bit (Ampere 32-bit is 2x faster)
+### Priority 3: Warp-Cooperative Keccak
+- **32 threads collaborate on 32 keccak states:** each thread holds 1 lane
+- **Reduces per-thread registers dramatically:** from 50 to ~2 per state
+- **Very high occupancy possible:** 80%+
+- **Most complex but highest potential gain**
 
 ### Priority 4: Algorithmic Optimizations
-- **Skip fill_scratchpad for duplicate seeds:** cache scratchpad for same header
-- **Early exit in sequential_passes:** if target is easy, skip backward pass
+- **Cache scratchpad for same header:** skip fill_scratchpad if seed is unchanged
 - **Batch AES:** process 4+ blocks in parallel per thread
+- **Skip thermal_loop for easy targets:** if hash already meets target after step 3
 
 ---
 
