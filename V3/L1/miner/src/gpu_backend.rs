@@ -1737,6 +1737,8 @@ pub fn create_gpu_backend(
                 }
                 let miner: Box<dyn GpuMiner> = if algorithm == "deeksha_lite_fire" {
                     Box::new(cuda_deeksha_lite_fire::CudaDeekshaLiteFireMiner::new(work_size)?)
+                } else if algorithm == "deeksha_lite_v1" || algorithm == "deeksha_chv3" {
+                    Box::new(cuda_deeksha_lite::CudaDeekshaLiteMiner::new(work_size)?)
                 } else {
                     Box::new(cuda_deeksha::CudaDeekshaMiner::new(work_size)?)
                 };
@@ -5175,6 +5177,391 @@ pub mod cuda_deeksha_lite_fire {
                 .map_err(|e| anyhow::anyhow!("device sync: {e}"))?;
 
             // Read result once
+            let result_nonce_host = self
+                .dev
+                .dtoh_sync_copy(&self.result_nonce)
+                .map_err(|e| anyhow::anyhow!("result_nonce download: {e}"))?;
+
+            let mut all_solutions = Vec::new();
+            if result_nonce_host[0] != SENTINEL {
+                let result_hash_host = self
+                    .dev
+                    .dtoh_sync_copy(&self.result_hash)
+                    .map_err(|e| anyhow::anyhow!("result_hash download: {e}"))?;
+                let mut hash = [0u8; 32];
+                hash.copy_from_slice(&result_hash_host);
+                all_solutions.push((result_nonce_host[0], hash, None));
+            }
+
+            Ok(GpuBatchResult {
+                solutions: all_solutions,
+                nonces_tested: pending.total_tested,
+            })
+        }
+
+        fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
+            let start = Instant::now();
+            let mut total: u64 = 0;
+            let mut nonce: u64 = 0;
+            while start.elapsed().as_secs_f64() < secs {
+                let header = MiningHeader::from_bytes([0u8; 80]);
+                let target = DifficultyTarget { bytes: [0xFFu8; 32] };
+                let result = self.mine_batch(header, target, nonce, 4096)?;
+                total += result.nonces_tested;
+                nonce += 4096;
+            }
+            let elapsed = start.elapsed().as_secs_f64();
+            let hps = if elapsed > 0.0 { total as f64 / elapsed } else { 0.0 };
+            Ok((total, elapsed, hps))
+        }
+    }
+}
+
+// ─── CUDA Backend: deeksha_lite_v1 / deeksha_chv3 (no thermal loop) ─────────
+
+#[cfg(feature = "gpu-cuda")]
+pub mod cuda_deeksha_lite {
+    use super::*;
+    use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
+    use cudarc::nvrtc::{compile_ptx_with_opts, CompileOptions};
+    use std::sync::Arc;
+    use std::time::Instant;
+
+    const CUDA_KERNEL_SRC: &str = include_str!("deeksha_lite.cu");
+    const SCRATCHPAD_BYTES: usize = 262_144; // 256 KiB per thread
+    const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
+    const DEFAULT_WORK_SIZE_CAP: usize = 65_536; // 16GB VRAM for 24GB GPU
+
+    pub struct CudaDeekshaLiteMiner {
+        dev: Arc<CudaDevice>,
+        work_size: usize,
+        device_name_cached: String,
+        header_state_buf: CudaSlice<u64>,
+        scratchpad_buf: CudaSlice<u8>,
+        result_nonce: CudaSlice<u64>,
+        result_hash: CudaSlice<u8>,
+        output_hashes_buf: CudaSlice<u8>,
+        pending: Option<PendingBatch>,
+    }
+
+    struct PendingBatch {
+        nonce_start: u64,
+        batch_size: u64,
+        target_u32: u32,
+        total_tested: u64,
+    }
+
+    impl CudaDeekshaLiteMiner {
+        fn precompute_header_keccak_state(header_80: &[u8]) -> [u64; 25] {
+            let mut state = [0u64; 25];
+            for (i, &b) in header_80.iter().enumerate() {
+                let word_idx = i / 8;
+                let shift = (i % 8) * 8;
+                state[word_idx] ^= (b as u64) << shift;
+            }
+            state
+        }
+
+        pub fn new(work_size: usize) -> Result<Self> {
+            let dev =
+                CudaDevice::new(0).map_err(|e| anyhow::anyhow!("CUDA device init failed: {e}"))?;
+
+            let device_name = dev
+                .name()
+                .unwrap_or_else(|_| "unknown CUDA device".to_string());
+
+            let arch = std::env::var("ZION_CUDA_ARCH")
+                .unwrap_or_else(|_| "sm_86".to_string());
+            let mut opts = vec![
+                "--use_fast_math".to_string(),
+                format!("-arch={}", arch),
+                "--std=c++14".to_string(),
+                "-lineinfo".to_string(),
+                "--ptxas-options=-O3".to_string(),
+            ];
+            if let Ok(maxreg) = std::env::var("ZION_CUDA_MAXREG") {
+                opts.push(format!("--maxrregcount={}", maxreg));
+            }
+            let ptx = compile_ptx_with_opts(
+                CUDA_KERNEL_SRC,
+                CompileOptions {
+                    options: opts,
+                    ..Default::default()
+                },
+            )
+            .map_err(|e| anyhow::anyhow!("NVRTC compile failed: {e}"))?;
+            dev.load_ptx(
+                ptx,
+                "deeksha_lite",
+                &["deeksha_lite_mine", "deeksha_lite_debug"],
+            )
+            .map_err(|e| anyhow::anyhow!("PTX load failed: {e}"))?;
+
+            let work_cap = std::env::var("ZION_CUDA_WORK_CAP")
+                .ok()
+                .and_then(|v| v.trim().parse::<usize>().ok())
+                .unwrap_or(DEFAULT_WORK_SIZE_CAP)
+                .max(64);
+            let actual_work_size = work_size.min(work_cap).max(64);
+
+            let header_state_buf = dev
+                .alloc_zeros::<u64>(25)
+                .map_err(|e| anyhow::anyhow!("header_state alloc: {e}"))?;
+            let scratchpad_buf = dev
+                .alloc_zeros::<u8>(actual_work_size * SCRATCHPAD_BYTES)
+                .map_err(|e| anyhow::anyhow!("scratchpad alloc: {e}"))?;
+            let result_nonce = dev
+                .htod_copy(vec![SENTINEL])
+                .map_err(|e| anyhow::anyhow!("result_nonce alloc: {e}"))?;
+            let result_hash = dev
+                .alloc_zeros::<u8>(32)
+                .map_err(|e| anyhow::anyhow!("result_hash alloc: {e}"))?;
+            let output_hashes_buf = dev
+                .alloc_zeros::<u8>(actual_work_size * 32)
+                .map_err(|e| anyhow::anyhow!("output_hashes alloc: {e}"))?;
+
+            println!(
+                "gpu_cuda_lite_init device=\"{}\" work_size={} scratchpad_mb={}",
+                device_name,
+                actual_work_size,
+                actual_work_size * SCRATCHPAD_BYTES / (1024 * 1024),
+            );
+
+            Ok(Self {
+                dev,
+                work_size: actual_work_size,
+                device_name_cached: device_name,
+                header_state_buf,
+                scratchpad_buf,
+                result_nonce,
+                result_hash,
+                output_hashes_buf,
+                pending: None,
+            })
+        }
+    }
+
+    impl GpuMiner for CudaDeekshaLiteMiner {
+        fn device_name(&self) -> String {
+            self.device_name_cached.clone()
+        }
+
+        fn backend_kind(&self) -> GpuBackendKind {
+            GpuBackendKind::Cuda
+        }
+
+        fn algorithm(&self) -> String {
+            "deeksha_lite_v1".to_string()
+        }
+
+        fn update_epoch(&mut self, _height: u64) -> Result<()> {
+            Ok(())
+        }
+
+        fn mine_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            let header_bytes = header.to_bytes();
+            let keccak_state = Self::precompute_header_keccak_state(&header_bytes);
+            self.dev
+                .htod_copy_into(keccak_state.to_vec(), &mut self.header_state_buf)
+                .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
+
+            let target_u32 = u32::from_le_bytes([
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
+            ]);
+
+            let mut all_solutions = Vec::new();
+            let mut total_tested = 0u64;
+            let mut current_nonce = nonce_start;
+            let mut left = batch_size;
+
+            let func = self
+                .dev
+                .get_func("deeksha_lite", "deeksha_lite_mine")
+                .ok_or_else(|| anyhow::anyhow!("deeksha_lite_mine kernel not found"))?;
+
+            let threads_per_block: u32 = std::env::var("ZION_CUDA_TPB")
+                .ok()
+                .and_then(|v| v.trim().parse().ok())
+                .unwrap_or(64);
+
+            self.dev
+                .htod_copy_into(vec![SENTINEL], &mut self.result_nonce)
+                .map_err(|e| anyhow::anyhow!("reset sentinel: {e}"))?;
+
+            while left > 0 {
+                let chunk = (left as usize).min(self.work_size) as u32;
+                let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+                let cfg = LaunchConfig {
+                    grid_dim: (blocks, 1, 1),
+                    block_dim: (threads_per_block, 1, 1),
+                    shared_mem_bytes: 0,
+                };
+
+                unsafe {
+                    func.clone()
+                        .launch(
+                            cfg,
+                            (
+                                &self.header_state_buf,
+                                current_nonce,
+                                chunk,
+                                &self.output_hashes_buf,
+                                &self.scratchpad_buf,
+                                target_u32,
+                                &mut self.result_nonce,
+                                &mut self.result_hash,
+                            ),
+                        )
+                        .map_err(|e| anyhow::anyhow!("kernel launch: {e}"))?;
+                }
+
+                total_tested += chunk as u64;
+                current_nonce += chunk as u64;
+                left = left.saturating_sub(chunk as u64);
+            }
+
+            self.dev
+                .synchronize()
+                .map_err(|e| anyhow::anyhow!("device sync: {e}"))?;
+
+            let result_nonce_host = self
+                .dev
+                .dtoh_sync_copy(&self.result_nonce)
+                .map_err(|e| anyhow::anyhow!("result_nonce download: {e}"))?;
+
+            if result_nonce_host[0] != SENTINEL {
+                let result_hash_host = self
+                    .dev
+                    .dtoh_sync_copy(&self.result_hash)
+                    .map_err(|e| anyhow::anyhow!("result_hash download: {e}"))?;
+                let mut hash = [0u8; 32];
+                hash.copy_from_slice(&result_hash_host);
+                all_solutions.push((result_nonce_host[0], hash, None));
+            }
+
+            Ok(GpuBatchResult {
+                solutions: all_solutions,
+                nonces_tested: total_tested,
+            })
+        }
+
+        fn mine_batch_raw(
+            &mut self,
+            raw_header: &[u8],
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            let mut bytes = [0u8; 80];
+            let len = raw_header.len().min(80);
+            bytes[..len].copy_from_slice(&raw_header[..len]);
+            let header = MiningHeader::from_bytes(bytes);
+            self.mine_batch(header, target, nonce_start, batch_size)
+        }
+
+        fn launch_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<u64> {
+            if self.pending.is_some() {
+                let _ = self.collect_batch(0)?;
+            }
+
+            let header_bytes = header.to_bytes();
+            let keccak_state = Self::precompute_header_keccak_state(&header_bytes);
+            self.dev
+                .htod_copy_into(keccak_state.to_vec(), &mut self.header_state_buf)
+                .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
+
+            let target_u32 = u32::from_le_bytes([
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
+            ]);
+
+            let func = self
+                .dev
+                .get_func("deeksha_lite", "deeksha_lite_mine")
+                .ok_or_else(|| anyhow::anyhow!("deeksha_lite_mine kernel not found"))?;
+
+            let threads_per_block: u32 = std::env::var("ZION_CUDA_TPB")
+                .ok()
+                .and_then(|v| v.trim().parse().ok())
+                .unwrap_or(64);
+
+            self.dev
+                .htod_copy_into(vec![SENTINEL], &mut self.result_nonce)
+                .map_err(|e| anyhow::anyhow!("reset sentinel: {e}"))?;
+
+            let mut total_tested = 0u64;
+            let mut current_nonce = nonce_start;
+            let mut left = batch_size;
+
+            while left > 0 {
+                let chunk = (left as usize).min(self.work_size) as u32;
+                let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+                let cfg = LaunchConfig {
+                    grid_dim: (blocks, 1, 1),
+                    block_dim: (threads_per_block, 1, 1),
+                    shared_mem_bytes: 0,
+                };
+
+                unsafe {
+                    func.clone()
+                        .launch(
+                            cfg,
+                            (
+                                &self.header_state_buf,
+                                current_nonce,
+                                chunk,
+                                &self.output_hashes_buf,
+                                &self.scratchpad_buf,
+                                target_u32,
+                                &mut self.result_nonce,
+                                &mut self.result_hash,
+                            ),
+                        )
+                        .map_err(|e| anyhow::anyhow!("kernel launch: {e}"))?;
+                }
+
+                total_tested += chunk as u64;
+                current_nonce += chunk as u64;
+                left = left.saturating_sub(chunk as u64);
+            }
+
+            self.pending = Some(PendingBatch {
+                nonce_start,
+                batch_size,
+                target_u32,
+                total_tested,
+            });
+
+            Ok(0)
+        }
+
+        fn collect_batch(&mut self, _token: u64) -> Result<GpuBatchResult> {
+            let pending = self
+                .pending
+                .take()
+                .ok_or_else(|| anyhow::anyhow!("no pending batch to collect"))?;
+
+            self.dev
+                .synchronize()
+                .map_err(|e| anyhow::anyhow!("device sync: {e}"))?;
+
             let result_nonce_host = self
                 .dev
                 .dtoh_sync_copy(&self.result_nonce)
