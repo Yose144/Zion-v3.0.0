@@ -59,7 +59,7 @@ __constant__ uint64_t KC_RC[24] = {
 /* State is passed as pointer — compiler keeps it in registers if it fits      */
 /* ========================================================================== */
 
-__device__ void keccak_f1600(uint64_t st[25])
+__device__ __forceinline__ void keccak_f1600(uint64_t st[25])
 {
     uint64_t bc0, bc1, bc2, bc3, bc4, t;
 
@@ -470,7 +470,7 @@ __constant__ uint8_t AES_SBOX_DATA[256] = {
 /* Main kernel — INTERLEAVED + shared memory S-box + high register budget      */
 /* ========================================================================== */
 
-extern "C" __launch_bounds__(128, 2)
+extern "C" __launch_bounds__(64, 2)
 __global__ void deeksha_lite_fire_mine(
     const uint64_t *header_keccak_state,
     uint64_t nonce_base,
