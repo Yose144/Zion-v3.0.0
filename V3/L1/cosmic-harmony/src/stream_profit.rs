@@ -330,21 +330,8 @@ impl StreamWeights {
             let (name, value) = part.split_once(':').ok_or_else(|| {
                 format!("invalid stream weight segment (expected name:value): {}", part)
             })?;
-            let source = match name.trim().to_ascii_lowercase().as_str() {
-                "zion" => RevenueSource::Zion,
-                "keccak_bonus" | "keccak" => RevenueSource::KeccakBonus,
-                "sha3_bonus" | "sha3" => RevenueSource::Sha3Bonus,
-                "ncl_ai" | "ncl" => RevenueSource::NclAi,
-                "deeksha_lite" | "lite" => RevenueSource::DeekshaLite,
-                "thermal_bonus" | "thermal" => RevenueSource::ThermalBonus,
-                "profit_switch" => RevenueSource::ProfitSwitch,
-                "blake3_external" | "blake3" => RevenueSource::Blake3External,
-                "kheavyhash_external" | "kheavyhash" => RevenueSource::KHeavyHashExternal,
-                "autolykos_external" | "autolykos" => RevenueSource::AutolykosExternal,
-                "kawpow_external" | "kawpow" => RevenueSource::KawPowExternal,
-                "ethash_external" | "ethash" => RevenueSource::EthashExternal,
-                other => return Err(format!("unknown revenue source: {}", other)),
-            };
+            let source = RevenueSource::from_str_ci(name)
+                .ok_or_else(|| format!("unknown revenue source: {}", name))?;
             let raw: f64 = value
                 .trim()
                 .parse()

@@ -14,7 +14,7 @@ network = "testnet"
 
 # ── ZION L1 Connection ──────────────────────────────────────
 [l1]
-rpc_url        = "http://127.0.0.1:8443"
+rpc_url        = "http://127.0.0.1:9443"
 rpc_url_backup = "http://62.171.141.136:8443"
 bridge_address = "zion1s6y6h7k6l033f2n7e0y0r8t6a8h474t0x5398d0"
 finality_blocks     = 60

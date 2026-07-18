@@ -12,7 +12,7 @@ WorkingDirectory=/opt/zion
 
 Environment=ZION_NODE_ID=local-node
 Environment=ZION_P2P_BIND=0.0.0.0:8333
-Environment=ZION_RPC_BIND=0.0.0.0:8443
+Environment=ZION_RPC_BIND=0.0.0.0:9443
 Environment=ZION_NODE_STATE_PATH=/opt/zion/data/zion-node-state.db
 Environment=ZION_MINER_ADDRESS=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
 Environment=ZION_HUMANITARIAN_WALLET=zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4

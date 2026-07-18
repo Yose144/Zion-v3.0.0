@@ -5,7 +5,7 @@
 //! permanently locked.
 //!
 //! Usage:
-//!   ZION_BURN_SK_HEX=<hex> ZION_RPC_ADDR=127.0.0.1:8443 \
+//!   ZION_BURN_SK_HEX=<hex> ZION_RPC_ADDR=127.0.0.1:9443 \
 //!     cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin burn-funds
 
 use std::io::{BufRead, BufReader, Write};
@@ -72,7 +72,7 @@ fn main() {
         memo: Some("burn_inflationary_funds".to_string()),
     };
 
-    let rpc_addr = std::env::var("ZION_RPC_ADDR").unwrap_or_else(|_| "127.0.0.1:8443".into());
+    let rpc_addr = std::env::var("ZION_RPC_ADDR").unwrap_or_else(|_| "127.0.0.1:9443".into());
     let payload = json!({
         "jsonrpc": "2.0",
         "id": 1,
