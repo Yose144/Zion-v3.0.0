@@ -2024,6 +2024,12 @@ fn run_remote_session(
         }
     }
 
+    // ── GPU pipeline state for overlapping pool I/O with GPU compute ──
+    // When the CUDA backend supports async launch_batch/collect_batch,
+    // this enables overlapping the previous batch's solution submission
+    // (network I/O) with the current batch's GPU computation.
+    let mut gpu_pipeline = gpu_backend::GpuPipelineState::new();
+
     // ── Persistent GPU external thread (Stream 2: one GPU profit coin) ──
     // The pool sends jobs for exactly one GPU-capable AuxPoW coin at a time.
     // The thread creates the appropriate OpenCL backend on demand and switches

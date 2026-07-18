@@ -1981,7 +1981,233 @@ pub fn gpu_scan_job(
     }
 }
 
-// ─── OpenCL Backend ─────────────────────────────────────────────────────────
+// ─── Pipeline State for overlapping pool I/O with GPU compute ──────────────
+
+/// State for pipelined GPU mining: collect previous batch while launching next.
+///
+/// Usage:
+/// ```ignore
+/// let mut pipeline = GpuPipelineState::new();
+/// loop {
+///     let job = read_next_job();
+///     // Collect previous batch results (if any), launch new batch (async)
+///     let prev_result = pipeline.step(gpu, job, algorithm, &raw_header_bytes);
+///     // Submit previous solution (overlaps with GPU computing current batch)
+///     if let Some(outcome) = prev_result {
+///         submit_solution(outcome);
+///     }
+/// }
+/// // After loop: collect final batch
+/// let final_result = pipeline.collect(gpu, algorithm, &raw_header_bytes);
+/// ```
+pub struct GpuPipelineState {
+    /// Previous job's data, needed to process collected results.
+    prev_job: Option<MiningJob>,
+    prev_raw_header: Option<Vec<u8>>,
+    /// Whether a batch is currently pending on the GPU.
+    has_pending: bool,
+}
+
+impl GpuPipelineState {
+    pub fn new() -> Self {
+        Self {
+            prev_job: None,
+            prev_raw_header: None,
+            has_pending: false,
+        }
+    }
+
+    /// Collect previous batch (if any) and launch new batch (async).
+    /// Returns the previous batch's GpuScanOutcome, or None if first iteration.
+    pub fn step(
+        &mut self,
+        gpu: &mut dyn GpuMiner,
+        job: MiningJob,
+        algorithm: &str,
+        raw_header_bytes: &[u8],
+    ) -> Option<GpuScanOutcome> {
+        let prev_outcome = if self.has_pending {
+            // Collect previous batch results
+            let prev_job = self.prev_job.take()?;
+            let prev_raw = self.prev_raw_header.take().unwrap_or_default();
+            let collect_result = gpu.collect_batch(0);
+
+            // Process collected results using previous job's data
+            let outcome = match collect_result {
+                Ok(result) => {
+                    let nonces_tested = result.nonces_tested;
+                    if let Some((nonce, gpu_hash, mix_hash)) = result.solutions.first() {
+                        let mix_hash = *mix_hash;
+                        let candidate = zion_core::BlockCandidate {
+                            header: prev_job.header,
+                            nonce: *nonce,
+                            height: prev_job.height,
+                        };
+                        let cpu_hash = candidate.hash_with_algorithm(algorithm);
+                        let is_mismatch = cpu_hash != *gpu_hash;
+                        let gpu_above_target = !prev_job.target.allows(gpu_hash);
+
+                        if gpu_above_target {
+                            GpuScanOutcome {
+                                solution: None,
+                                mix_hash,
+                                nonces_tested,
+                                candidates_found: 1,
+                                candidates_verified: 0,
+                                candidates_hash_mismatch: if is_mismatch { 1 } else { 0 },
+                                candidates_above_target: 1,
+                            }
+                        } else {
+                            GpuScanOutcome {
+                                solution: Some(MiningSolution {
+                                    job_id: prev_job.job_id,
+                                    candidate,
+                                    hash: *gpu_hash,
+                                }),
+                                mix_hash,
+                                nonces_tested,
+                                candidates_found: 1,
+                                candidates_verified: 1,
+                                candidates_hash_mismatch: if is_mismatch { 1 } else { 0 },
+                                candidates_above_target: 0,
+                            }
+                        }
+                    } else {
+                        GpuScanOutcome {
+                            solution: None,
+                            mix_hash: None,
+                            nonces_tested,
+                            candidates_found: 0,
+                            candidates_verified: 0,
+                            candidates_hash_mismatch: 0,
+                            candidates_above_target: 0,
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("gpu_pipeline_collect_error: {e}");
+                    GpuScanOutcome {
+                        solution: None,
+                        mix_hash: None,
+                        nonces_tested: 0,
+                        candidates_found: 0,
+                        candidates_verified: 0,
+                        candidates_hash_mismatch: 0,
+                        candidates_above_target: 0,
+                    }
+                }
+            };
+            Some(outcome)
+        } else {
+            None
+        };
+
+        // Launch new batch (async)
+        let max_batch = std::env::var("ZION_GPU_MAX_BATCH")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(262_144);
+        let effective_batch = job.nonce_count.min(max_batch);
+
+        let mut effective_header = job.header;
+        if is_external_algorithm(algorithm) {
+            effective_header.timestamp = job.height;
+        }
+
+        let use_raw = is_external_algorithm(algorithm)
+            && !algorithm.starts_with("kheavyhash")
+            && raw_header_bytes.len() > 80;
+
+        let launch_result = if use_raw {
+            // For raw headers, we need to use mine_batch_raw which is synchronous.
+            // Fall back to synchronous mine_batch for raw algorithms.
+            gpu.mine_batch_raw(raw_header_bytes, job.target, job.start_nonce, effective_batch)
+        } else {
+            gpu.launch_batch(effective_header, job.target, job.start_nonce, effective_batch)
+        };
+
+        if let Err(e) = launch_result {
+            eprintln!("gpu_pipeline_launch_error: {e}");
+            self.has_pending = false;
+        } else {
+            self.has_pending = true;
+            self.prev_job = Some(job);
+            self.prev_raw_header = Some(raw_header_bytes.to_vec());
+        }
+
+        prev_outcome
+    }
+
+    /// Collect the final pending batch (call after the loop ends).
+    pub fn collect(
+        &mut self,
+        gpu: &mut dyn GpuMiner,
+        algorithm: &str,
+    ) -> Option<GpuScanOutcome> {
+        if !self.has_pending {
+            return None;
+        }
+        self.has_pending = false;
+        let prev_job = self.prev_job.take()?;
+        let prev_raw = self.prev_raw_header.take().unwrap_or_default();
+        let _ = prev_raw; // unused for non-raw algorithms
+
+        let collect_result = gpu.collect_batch(0);
+
+        match collect_result {
+            Ok(result) => {
+                let nonces_tested = result.nonces_tested;
+                if let Some((nonce, gpu_hash, mix_hash)) = result.solutions.first() {
+                    let mix_hash = *mix_hash;
+                    let candidate = zion_core::BlockCandidate {
+                        header: prev_job.header,
+                        nonce: *nonce,
+                        height: prev_job.height,
+                    };
+                    let gpu_above_target = !prev_job.target.allows(gpu_hash);
+                    if gpu_above_target {
+                        return Some(GpuScanOutcome {
+                            solution: None,
+                            mix_hash,
+                            nonces_tested,
+                            candidates_found: 1,
+                            candidates_verified: 0,
+                            candidates_hash_mismatch: 0,
+                            candidates_above_target: 1,
+                        });
+                    }
+                    Some(GpuScanOutcome {
+                        solution: Some(MiningSolution {
+                            job_id: prev_job.job_id,
+                            candidate,
+                            hash: *gpu_hash,
+                        }),
+                        mix_hash,
+                        nonces_tested,
+                        candidates_found: 1,
+                        candidates_verified: 1,
+                        candidates_hash_mismatch: 0,
+                        candidates_above_target: 0,
+                    })
+                } else {
+                    Some(GpuScanOutcome {
+                        solution: None,
+                        mix_hash: None,
+                        nonces_tested,
+                        candidates_found: 0,
+                        candidates_verified: 0,
+                        candidates_hash_mismatch: 0,
+                        candidates_above_target: 0,
+                    })
+                }
+            }
+            Err(e) => {
+                eprintln!("gpu_pipeline_final_collect_error: {e}");
+                None
+            }
+        }
+    }
+}
 
 #[cfg(feature = "gpu-opencl")]
 pub mod opencl_deeksha {
