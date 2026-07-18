@@ -4688,8 +4688,10 @@ pub mod cuda_deeksha_lite_fire {
 
             // Precompute Keccak state on host (same as OpenCL)
             let keccak_state = Self::precompute_header_keccak_state(&header_bytes);
+            // ASYNC copy: queued on default stream, kernel will wait for it.
+            // This eliminates a host sync point — host can proceed immediately.
             self.dev
-                .htod_sync_copy_into(&keccak_state, &mut self.header_state_buf)
+                .htod_copy_into(keccak_state, &mut self.header_state_buf)
                 .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
 
             // Target: LE u32 from first 4 bytes of target
@@ -4721,9 +4723,9 @@ pub mod cuda_deeksha_lite_fire {
             // across all chunks will be recorded. Subsequent chunks early-exit if
             // target_u32 != 0 and a solution was already found.
 
-            // Reset sentinel once for the entire batch
+            // Reset sentinel once for the entire batch (ASYNC)
             self.dev
-                .htod_sync_copy_into(&[SENTINEL], &mut self.result_nonce)
+                .htod_copy_into(vec![SENTINEL], &mut self.result_nonce)
                 .map_err(|e| anyhow::anyhow!("reset sentinel: {e}"))?;
 
             // Launch all chunks back-to-back without syncing between them
