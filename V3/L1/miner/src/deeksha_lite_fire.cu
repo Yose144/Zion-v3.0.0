@@ -470,7 +470,8 @@ __constant__ uint8_t AES_SBOX_DATA[256] = {
 /* Main kernel — INTERLEAVED + shared memory S-box + high register budget      */
 /* ========================================================================== */
 
-extern "C" __global__ void deeksha_lite_fire_mine(
+extern "C" __launch_bounds__(128, 4)
+__global__ void deeksha_lite_fire_mine(
     const uint64_t *header_keccak_state,
     uint64_t nonce_base,
     uint32_t nonce_count,
