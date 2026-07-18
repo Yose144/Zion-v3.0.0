@@ -2373,10 +2373,29 @@ fn run_remote_session(
                 cpu_nonces_tested = job.nonce_count;
                 parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
             } else {
-                let result = gpu_backend::gpu_scan_job(g, job, &current_algorithm, &raw_header_bytes);
-                gpu_nonces_tested = result.nonces_tested;
-                gpu_mix_hash = result.mix_hash;
-                result.solution
+                // ── PIPELINED GPU SCAN ──
+                // step() collects the PREVIOUS batch's results (if any) and
+                // launches the CURRENT batch asynchronously. This overlaps
+                // GPU compute with the pool I/O that follows (external share
+                // collection, solution submission, reading next job).
+                //
+                // On the first iteration, step() returns None (no previous batch)
+                // but STILL launches the current batch. The solution (if any)
+                // will be collected on the NEXT iteration.
+                // This means the first iteration always has scan_result=None,
+                // which triggers a NoSolution message to the pool — correct behavior.
+                let prev_outcome = gpu_pipeline.step(g, job, &current_algorithm, &raw_header_bytes);
+
+                if let Some(outcome) = prev_outcome {
+                    // Use previous batch's results
+                    gpu_nonces_tested = outcome.nonces_tested;
+                    gpu_mix_hash = outcome.mix_hash;
+                    outcome.solution
+                } else {
+                    // First iteration: batch launched but no results yet
+                    gpu_nonces_tested = 0;
+                    None
+                }
             }
         } else if cpu_on {
             cpu_nonces_tested = job.nonce_count;
