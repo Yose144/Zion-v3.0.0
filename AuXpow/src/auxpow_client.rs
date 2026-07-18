@@ -3490,12 +3490,17 @@ impl AuxPowClient {
             ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::EVR
                 | ExternalCoin::MEWC | ExternalCoin::QUAI
         ) {
-            // KawPow coins on 2miners use Stratum v1 mining.submit with 5 params:
+            // KawPow coins on 2miners/NiceHash use Stratum v1 mining.submit with 5 params:
             //   [worker, job_id, nonce_hex, header_hash_hex, mix_hash_hex]
             // job_id = short job_id from notify, nonce = 0x-prefixed 8-byte hex,
             // header_hash = 0x-prefixed 32-byte block header hash from notify,
             // mix_hash = 0x-prefixed 32-byte PoW mix hash from KawPow GPU kernel.
-            // This format is used by RVN, CLORE, EVR, MEWC, and QUAI.
+            //
+            // NiceHash nonce format: extranonce1 || miner_nonce (big-endian).
+            // The miner already embeds extranonce1 in the high bits of the
+            // nonce, so we just send the full nonce value as hex.
+            // For 2miners (no extranonce1), extranonce1 is empty and we send
+            // just the miner nonce.
             let wallet = self.payout_wallet.lock().await.clone();
             let worker = format!("{}.{}", wallet, self.profile.worker_name);
             let nonce_hex = format!("0x{:016x}", nonce);

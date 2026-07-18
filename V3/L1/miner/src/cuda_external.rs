@@ -34,6 +34,7 @@ const ZELHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/zelhash_kern
 const ETHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/ethash_kernel.cu");
 const KAWPOW_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/kawpow_kernel.cu");
 const ETHASH_DAG_GEN_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/ethash_dag_gen.cu");
+const VERUSHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/verushash_kernel.cu");
 
 /// Preprocess kernel source: strip #pragma once and #include lines,
 /// prepend standard typedefs, fix NVRTC-incompatible constructs.
@@ -83,6 +84,7 @@ pub enum CudaExtAlgo {
     Zelhash,
     Ethash,
     Kawpow,
+    Verushash,
 }
 
 impl CudaExtAlgo {
@@ -95,6 +97,7 @@ impl CudaExtAlgo {
             "zelhash" | "zelhash_flux" => Some(Self::Zelhash),
             "ethash" | "ethash_etc" | "ethash_ethw" => Some(Self::Ethash),
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => Some(Self::Kawpow),
+            "verushash" | "verushash_vrsc" | "verus" => Some(Self::Verushash),
             _ => None,
         }
     }
@@ -108,6 +111,7 @@ impl CudaExtAlgo {
             Self::Zelhash => "zelhash_mine",
             Self::Ethash => "ethash_mine",
             Self::Kawpow => "kawpow_mine",
+            Self::Verushash => "verus_mine",
         }
     }
 
@@ -120,6 +124,7 @@ impl CudaExtAlgo {
             Self::Zelhash => "zelhash",
             Self::Ethash => "ethash",
             Self::Kawpow => "kawpow",
+            Self::Verushash => "verushash",
         }
     }
 
@@ -131,6 +136,7 @@ impl CudaExtAlgo {
             Self::Zelhash => ZELHASH_CU,
             Self::Ethash => ETHASH_CU,
             Self::Kawpow => KAWPOW_CU,
+            Self::Verushash => VERUSHASH_CU,
         }
     }
 
@@ -178,6 +184,13 @@ pub struct CudaExternalMiner {
     dag_gen_loaded: bool,
     // Cached timestamp for kheavyhash
     kheavy_timestamp: u64,
+    // Verushash: precomputed key (552 uint4 = 8832 bytes) and blockhash_half (4 uint4 = 64 bytes)
+    verus_vkey: Option<CudaSlice<u32>>,
+    verus_blockhash_half: Option<CudaSlice<u32>>,
+    // Verushash: per-thread scratch buffer for key workspace
+    // TOTAL_MAX (0x10000) * VERUS_KEY_SIZE128 (552) uint4 = 0x10000 * 552 * 16 bytes = ~578 MB
+    // This is too large — use a smaller buffer that covers threads_per_block * blocks
+    verus_scratch: Option<CudaSlice<u32>>,
 }
 
 impl CudaExternalMiner {
@@ -280,6 +293,9 @@ impl CudaExternalMiner {
             light_cache_items: 0,
             dag_gen_loaded: false,
             kheavy_timestamp: 0,
+            verus_vkey: None,
+            verus_blockhash_half: None,
+            verus_scratch: None,
         })
     }
 
@@ -293,6 +309,73 @@ impl CudaExternalMiner {
             .htod_copy(table)
             .map_err(|e| anyhow::anyhow!("autolykos_table upload: {e}"))?;
         self.autolykos_table = Some(table_buf);
+        Ok(())
+    }
+
+    /// Precompute the Verushash key and blockhash_half from the block header,
+    /// then upload to GPU. Uses the native-ffi VerusHash CPU implementation
+    /// for key generation (haraka256 chain hashing).
+    fn ensure_verus_key(&mut self, header: &[u8]) -> Result<()> {
+        // The Verushash V2.2 key is derived from the block header via:
+        //   1. hash_half: Haraka512 chain → 64-byte intermediate
+        //   2. prepare_key: GenNewCLKey from intermediate → 8832-byte key
+        //   3. get_gpu_keydata: extract key + blockhash_half
+        //
+        // This must be called on the mining thread (thread-local state).
+        #[cfg(feature = "native-verushash")]
+        {
+            // Use at most 64 bytes of header for hash_half
+            let header_padded = {
+                let mut buf = vec![0u8; 64];
+                let len = header.len().min(64);
+                buf[..len].copy_from_slice(&header[..len]);
+                buf
+            };
+            let intermediate = zion_native_ffi::verushash::hash_half(&header_padded);
+            zion_native_ffi::verushash::prepare_key(&intermediate);
+            let (key_bytes, blockhash_half_bytes) =
+                zion_native_ffi::verushash::get_gpu_keydata()
+                    .ok_or_else(|| anyhow::anyhow!("verus key precomputation failed"))?;
+
+            // Upload key as u32 array (552 uint4 = 2208 uint32 = 8832 bytes)
+            let key_u32: Vec<u32> = key_bytes
+                .chunks_exact(4)
+                .map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+                .collect();
+            let blockhash_half_u32: Vec<u32> = blockhash_half_bytes
+                .chunks_exact(4)
+                .map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+                .collect();
+
+            let key_buf = self
+                .dev
+                .htod_copy(key_u32)
+                .map_err(|e| anyhow::anyhow!("verus vkey upload: {e}"))?;
+            let blockhash_buf = self
+                .dev
+                .htod_copy(blockhash_half_u32)
+                .map_err(|e| anyhow::anyhow!("verus blockhash_half upload: {e}"))?;
+
+            // Allocate scratch buffer: TOTAL_MAX (4096) * VERUS_KEY_SIZE128 (552) uint4
+            // = 4096 * 552 * 4 uint32 = 9,043,968 uint32 = ~36MB
+            let scratch_size = 4096 * 552 * 4; // uint32 elements
+            let scratch_zeros = vec![0u32; scratch_size];
+            let scratch_buf = self
+                .dev
+                .htod_copy(scratch_zeros)
+                .map_err(|e| anyhow::anyhow!("verus scratch alloc: {e}"))?;
+
+            self.verus_vkey = Some(key_buf);
+            self.verus_blockhash_half = Some(blockhash_buf);
+            self.verus_scratch = Some(scratch_buf);
+        }
+
+        #[cfg(not(feature = "native-verushash"))]
+        {
+            let _ = header;
+            anyhow::bail!("Verushash CUDA kernel requires native-verushash feature for key precomputation");
+        }
+
         Ok(())
     }
 
@@ -480,7 +563,11 @@ impl CudaExternalMiner {
                 anyhow::anyhow!("kernel {} not found", self.algo.kernel_name())
             })?;
 
-        let threads_per_block: u32 = 256;
+        let threads_per_block: u32 = if self.algo == CudaExtAlgo::Verushash {
+            128 // Verushash kernel uses __launch_bounds__(128)
+        } else {
+            256
+        };
         // Run multiple kernel launches to cover the full batch_size.
         // Each launch covers at most self.work_size nonces.
         let mut total_tested: u64 = 0;
@@ -646,6 +733,33 @@ impl CudaExternalMiner {
                             )
                             .map_err(|e| anyhow::anyhow!("kawpow launch: {e}"))?;
                     }
+                    CudaExtAlgo::Verushash => {
+                        let vkey = self.verus_vkey.as_ref().ok_or_else(|| {
+                            anyhow::anyhow!("verus vkey not precomputed")
+                        })?;
+                        let blockhash_half = self.verus_blockhash_half.as_ref().ok_or_else(|| {
+                            anyhow::anyhow!("verus blockhash_half not set")
+                        })?;
+                        let scratch = self.verus_scratch.as_ref().ok_or_else(|| {
+                            anyhow::anyhow!("verus scratch not allocated")
+                        })?;
+                        func
+                            .clone()
+                            .launch(
+                                cfg,
+                                (
+                                    vkey,
+                                    blockhash_half,
+                                    &self.target_buf,
+                                    scratch,
+                                    current_nonce,
+                                    &mut self.output_nonce,
+                                    &mut self.output_hash,
+                                    &mut self.found_flag,
+                                ),
+                            )
+                            .map_err(|e| anyhow::anyhow!("verushash launch: {e}"))?;
+                    }
                 }
             }
 
@@ -675,8 +789,24 @@ impl CudaExternalMiner {
                 .map_err(|e| anyhow::anyhow!("hash download: {e}"))?;
             let mut hash = [0u8; 32];
             hash.copy_from_slice(&hash_host);
+
+            // Read mix hash for ethash/kawpow (needed for pool submission)
+            let mix_hash = if self.algo == CudaExtAlgo::Ethash
+                || self.algo == CudaExtAlgo::Kawpow
+            {
+                let mix_host = self
+                    .dev
+                    .dtoh_sync_copy(&self.output_mix)
+                    .map_err(|e| anyhow::anyhow!("mix download: {e}"))?;
+                let mut mix = [0u8; 32];
+                mix.copy_from_slice(&mix_host);
+                Some(mix)
+            } else {
+                None
+            };
+
             Ok(GpuBatchResult {
-                solutions: vec![(nonce_host[0], hash, None)],
+                solutions: vec![(nonce_host[0], hash, mix_hash)],
                 nonces_tested: total_tested,
             })
         } else {
@@ -729,10 +859,23 @@ impl GpuMiner for CudaExternalMiner {
             self.ensure_autolykos_table(&header_bytes, height)?;
         }
 
+        // Verushash: precompute key from block header
+        if self.algo == CudaExtAlgo::Verushash {
+            self.ensure_verus_key(&header_bytes)?;
+        }
+
         // Ethash/Kawpow: header is 32-byte block header hash, epoch from height
         if self.algo.needs_dag() {
-            let epoch = (header.timestamp as u64 / self.algo.epoch_length() as u64) as u32;
-            self.ensure_dag(epoch)?;
+            // NOTE: update_epoch(height) is called by the external GPU thread
+            // before mine_batch, which loads the correct DAG for the block's
+            // epoch. Do NOT recompute epoch from header.timestamp here — for
+            // external ethash/kawpow jobs, the header is just a 32-byte hash
+            // padded to 80 bytes, so timestamp=0 → epoch=0, which would
+            // overwrite the correct DAG with the wrong one.
+            // Only call ensure_dag if no DAG is loaded yet (e.g. benchmark).
+            if self.dag_epoch == 0xFFFFFFFF {
+                self.ensure_dag(0)?;
+            }
             // For ethash/kawpow, only the first 32 bytes (header hash) are used
             let header_hash = &header_bytes[..32.min(header_bytes.len())];
             return self.run_kernel(header_hash, &target.bytes, nonce_start, batch_size);
@@ -757,6 +900,11 @@ impl GpuMiner for CudaExternalMiner {
         if self.algo == CudaExtAlgo::Autolykos {
             let height = 0u32;
             self.ensure_autolykos_table(raw_header, height)?;
+        }
+
+        // Verushash: precompute key from raw header
+        if self.algo == CudaExtAlgo::Verushash {
+            self.ensure_verus_key(raw_header)?;
         }
 
         // Ethash/Kawpow: ensure DAG for epoch 0 (benchmark mode)

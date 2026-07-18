@@ -3220,7 +3220,37 @@ fn external_gpu_thread(
                     let mut h = DefaultHasher::new();
                     job.job_id.hash(&mut h);
                     std::process::id().hash(&mut h);
-                    nonce_base = (h.finish() as u32) as u64;
+                    let random_base = (h.finish() as u32) as u64;
+
+                    // NiceHash nonce format: extranonce1 occupies high bits
+                    // of the nonce. The miner must only iterate over the low
+                    // bits. Parse extranonce1_hex and embed it in nonce_base.
+                    let en1_bytes = if job.extranonce1_hex.is_empty() {
+                        Vec::new()
+                    } else {
+                        hex::decode(job.extranonce1_hex.trim_start_matches("0x")).unwrap_or_default()
+                    };
+                    let en1_len = en1_bytes.len();
+                    if en1_len > 0 && en1_len <= 4 {
+                        // Embed extranonce1 in the high bits of the nonce.
+                        // extranonce1 is big-endian; shift it left to occupy
+                        // the top en1_len bytes of the 8-byte nonce.
+                        let mut en1_val: u64 = 0;
+                        for &b in &en1_bytes {
+                            en1_val = (en1_val << 8) | (b as u64);
+                        }
+                        let shift = (8 - en1_len) * 8;
+                        nonce_base = (en1_val << shift) | (random_base & ((1u64 << shift) - 1));
+                        println!(
+                            "[{}] ext_gpu_nicehash_nonce en1_hex={} en1_len={} nonce_base=0x{:016x}",
+                            log_timestamp(),
+                            job.extranonce1_hex,
+                            en1_len,
+                            nonce_base,
+                        );
+                    } else {
+                        nonce_base = random_base;
+                    }
                     nonce_offset = 0;
                 }
                 // Note: do NOT reset last_epoch here — the pool re-sends the

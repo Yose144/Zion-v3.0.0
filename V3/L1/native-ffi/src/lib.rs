@@ -1386,6 +1386,14 @@ pub mod verushash {
             out_hash: *mut u8,
             out_nonce: *mut u64,
         ) -> i64;
+
+        /// Extract precomputed key (8832 bytes) and blockhash_half (64 bytes)
+        /// for GPU kernel upload. Must be called after prepare_key.
+        /// Returns 0 on success, -1 if key not prepared.
+        pub fn verushash_get_gpu_keydata(
+            key_out: *mut u8,
+            blockhash_half_out: *mut u8,
+        ) -> i32;
     }
 
     use std::sync::Once;
@@ -1444,6 +1452,22 @@ pub mod verushash {
         init();
         unsafe {
             verushash_prepare_key(intermediate64.as_ptr());
+        }
+    }
+
+    /// Extract the precomputed GPU key data (8832 bytes) and blockhash_half (64 bytes).
+    /// Must be called after `prepare_key`. Returns None if key not prepared.
+    pub fn get_gpu_keydata() -> Option<([u8; 8832], [u8; 64])> {
+        init();
+        let mut key = [0u8; 8832];
+        let mut blockhash_half = [0u8; 64];
+        let ret = unsafe {
+            verushash_get_gpu_keydata(key.as_mut_ptr(), blockhash_half.as_mut_ptr())
+        };
+        if ret == 0 {
+            Some((key, blockhash_half))
+        } else {
+            None
         }
     }
 
