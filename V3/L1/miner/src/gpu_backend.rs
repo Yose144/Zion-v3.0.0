@@ -4716,6 +4716,18 @@ pub mod cuda_deeksha_lite_fire {
                 .and_then(|v| v.trim().parse().ok())
                 .unwrap_or(64);
 
+            // === BATCHED LAUNCH: reset sentinel ONCE, launch ALL chunks, sync ONCE ===
+            // This eliminates N-1 synchronous host↔device copies per batch.
+            // The kernel uses atomicExch for result_nonce, so only the first solution
+            // across all chunks will be recorded. Subsequent chunks early-exit if
+            // target_u32 != 0 and a solution was already found.
+
+            // Reset sentinel once for the entire batch
+            self.dev
+                .htod_sync_copy_into(&[SENTINEL], &mut self.result_nonce)
+                .map_err(|e| anyhow::anyhow!("reset sentinel: {e}"))?;
+
+            // Launch all chunks back-to-back without syncing between them
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size) as u32;
                 let blocks = (chunk + threads_per_block - 1) / threads_per_block;
@@ -4724,11 +4736,6 @@ pub mod cuda_deeksha_lite_fire {
                     block_dim: (threads_per_block, 1, 1),
                     shared_mem_bytes: 0,
                 };
-
-                // Reset sentinel
-                self.dev
-                    .htod_sync_copy_into(&[SENTINEL], &mut self.result_nonce)
-                    .map_err(|e| anyhow::anyhow!("reset sentinel: {e}"))?;
 
                 unsafe {
                     func.clone()
@@ -4748,25 +4755,30 @@ pub mod cuda_deeksha_lite_fire {
                         .map_err(|e| anyhow::anyhow!("kernel launch: {e}"))?;
                 }
 
-                // Sync read result (dtoh_sync_copy is synchronous)
-                let result_nonce_host = self
-                    .dev
-                    .dtoh_sync_copy(&self.result_nonce)
-                    .map_err(|e| anyhow::anyhow!("result_nonce download: {e}"))?;
-
-                if result_nonce_host[0] != SENTINEL {
-                    let result_hash_host = self
-                        .dev
-                        .dtoh_sync_copy(&self.result_hash)
-                        .map_err(|e| anyhow::anyhow!("result_hash download: {e}"))?;
-                    let mut hash = [0u8; 32];
-                    hash.copy_from_slice(&result_hash_host);
-                    all_solutions.push((result_nonce_host[0], hash, None));
-                }
-
                 total_tested += chunk as u64;
                 current_nonce += chunk as u64;
                 left = left.saturating_sub(chunk as u64);
+            }
+
+            // Single sync point: wait for ALL chunks to complete
+            self.dev
+                .synchronize()
+                .map_err(|e| anyhow::anyhow!("device sync: {e}"))?;
+
+            // Read result once
+            let result_nonce_host = self
+                .dev
+                .dtoh_sync_copy(&self.result_nonce)
+                .map_err(|e| anyhow::anyhow!("result_nonce download: {e}"))?;
+
+            if result_nonce_host[0] != SENTINEL {
+                let result_hash_host = self
+                    .dev
+                    .dtoh_sync_copy(&self.result_hash)
+                    .map_err(|e| anyhow::anyhow!("result_hash download: {e}"))?;
+                let mut hash = [0u8; 32];
+                hash.copy_from_slice(&result_hash_host);
+                all_solutions.push((result_nonce_host[0], hash, None));
             }
 
             Ok(GpuBatchResult {
