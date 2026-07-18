@@ -39,7 +39,7 @@
 
 /* ---- Constants ---- */
 #define RTM_HEADER_SIZE 80
-#define RTM_NONCE_OFFSET 39
+#define RTM_NONCE_OFFSET 76   /* nonce is last 4 bytes of 80-byte header */
 #define RTM_NONCE_SIZE 4
 #define HASH_OUTPUT_SIZE 32
 

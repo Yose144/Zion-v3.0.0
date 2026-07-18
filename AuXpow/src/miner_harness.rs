@@ -596,8 +596,13 @@ fn scan_ghostrider(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare>
     #[cfg(feature = "native-ghostrider")]
     zion_native_ffi::ghostrider::init();
 
-    let nonce_offset = 39usize;
+    // RTM block header (80 bytes): version(4) + prevhash(32) + merkle(32) + ntime(4) + nbits(4) + nonce(4)
+    // Nonce is at offset 76 (last 4 bytes)
+    let nonce_offset = 76usize;
     let mut work_blob = header.to_vec();
+    if work_blob.len() < 80 {
+        work_blob.resize(80, 0);
+    }
 
     for nonce in start..end {
         let nonce_le = (nonce as u32).to_le_bytes();
@@ -629,8 +634,12 @@ fn scan_ghostrider_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundS
     #[cfg(feature = "native-ghostrider")]
     zion_native_ffi::ghostrider::init();
 
-    let nonce_offset = 39usize;
+    // RTM block header: nonce at offset 76 (last 4 bytes of 80-byte header)
+    let nonce_offset = 76usize;
     let mut work_blob = header.to_vec();
+    if work_blob.len() < 80 {
+        work_blob.resize(80, 0);
+    }
     let mut best: Option<FoundShare> = None;
 
     for nonce in start..end {

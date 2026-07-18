@@ -452,6 +452,9 @@ impl AuxPowScheduler {
 
             let meets = if job.external_coin == ExternalCoin::DCR {
                 meets_target_little_endian(&hash, target)
+            } else if job.external_coin == ExternalCoin::RTM {
+                // GhostRider/RTM: LE target comparison (same as Monero)
+                crate::external_hashers::meets_randomx_target(&hash, target)
             } else {
                 meets_target(&hash, target)
             };
