@@ -92,6 +92,25 @@
   - Real kernel throughput for full batches (no early exit): ~89.9 KH/s
   - Effective hashrate with early exits: 245-340 KH/s
 
+### v6 — Pool I/O Pipelining (20% improvement)
+- **Hashrate:** **295.6 KH/s** (45.6x from v1!)
+- **hps_60s:** 305.8 KH/s
+- **hps_10s peak:** 396.3 KH/s
+- **Accept rate:** 100% (20/20 shares accepted in 120-iteration stability test)
+- **Stability:** 120 iterations in 105.5s, 0 rejected shares
+- **Changes:**
+  - Added `launch_batch` / `collect_batch` to GpuMiner trait (async launch, sync collect)
+  - `GpuPipelineState` manages collect/launch cycle in main mining loop
+  - `step()`: collect previous batch (sync) + launch new batch (async) in one call
+  - GPU compute overlaps with pool I/O (external shares, solution submission, next job read)
+  - First iteration: launches batch, returns None (NoSolution to pool)
+  - Subsequent iterations: returns previous batch's solution
+- **Why it works:**
+  - GPU compute (~195ms with early exit) overlaps with pool network I/O (~300-500ms)
+  - By the time we collect, GPU is already done → collect is instant
+  - `best_batch_ms=6` (vs 194ms without pipelining) — GPU finishes during pool I/O
+  - Iteration time: 105.5s / 120 = 0.88s (vs 1.07s without pipelining) = 18% faster
+
 ### Work Size Sweep
 | Work Size | TPB | Hashrate (KH/s) | Scratchpad VRAM |
 |-----------|-----|-----------------|-----------------|
@@ -109,7 +128,8 @@
 ### 1. Host-Side Sync Was the #1 Bottleneck (NOT compute!)
 - **v1-v3:** 6.5 KH/s — thought kernel was compute-bound
 - **v4:** 49.3 KH/s — batched launch eliminated sync points (7.5x)
-- **v5:** 292.5 KH/s — async htod copies eliminated remaining syncs (45x from v1)
+- **v5:** 245.8 KH/s — async htod copies eliminated remaining syncs (37.9x from v1)
+- **v6:** 295.6 KH/s — pool I/O pipelining overlaps GPU with network (45.6x from v1)
 - **Root cause:** `htod_sync_copy_into` calls `self.synchronize()` which waits for ALL stream work
 - Even tiny 200-byte copies were causing full device synchronization
 
