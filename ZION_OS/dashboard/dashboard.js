@@ -5622,22 +5622,35 @@ async function loadMaintStatus(){
   try {
     const res = await fetch('/api/control', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'maint-status'}) }).then(r => r.json());
     if(res.ok && res.result){
-      const m = res.result.match(/ram=(\d+)%\s+disk=(\d+)%\s+disk_free=(\d+)GB/);
+      const m = res.result.match(/ram=(\d+)%\s+disk=(\d+)%\s+disk_free=(\d+)GB\s+swap=(\d+)%\s+swap_total=([\d.]+)GB\s+swap_used=([\d.]+)GB/);
       if(m){
         const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
         set('maint-ram-pct', m[1] + '%');
         set('maint-disk-pct', m[2] + '%');
         set('maint-disk-free', m[3] + ' GB free');
-        const ramPct = parseInt(m[1]), diskPct = parseInt(m[2]);
+        // Swap info into the journal card (repurpose as "Swap" when swap data available)
+        const journalEl = document.getElementById('maint-journal');
+        if(journalEl) journalEl.textContent = m[6] + '/' + m[5] + 'GB';
+        const ramPct = parseInt(m[1]), diskPct = parseInt(m[2]), swapPct = parseInt(m[4]);
         const ramEl = document.getElementById('maint-ram-pct');
         const diskEl = document.getElementById('maint-disk-pct');
         if(ramEl) ramEl.className = 'text-xl font-bold ' + (ramPct >= 92 ? 'text-red-400' : ramPct >= 80 ? 'text-amber-400' : 'text-emerald-400');
         if(diskEl) diskEl.className = 'text-xl font-bold ' + (diskPct >= 85 ? 'text-red-400' : diskPct >= 70 ? 'text-amber-400' : 'text-emerald-400');
+        if(journalEl) journalEl.className = 'text-xl font-bold ' + (swapPct >= 90 ? 'text-red-400' : swapPct >= 70 ? 'text-amber-400' : 'text-emerald-400');
         const badge = document.getElementById('maint-status-badge');
         if(badge){
-          const worst = Math.max(ramPct, diskPct);
+          const worst = Math.max(ramPct, diskPct, swapPct);
           badge.textContent = worst >= 92 ? 'CRITICAL' : worst >= 80 ? 'WARN' : 'OK';
           badge.className = 'text-xs px-2.5 py-1 rounded-full ' + (worst >= 92 ? 'bg-red-700 text-white' : worst >= 80 ? 'bg-amber-600 text-white' : 'bg-emerald-600 text-white');
+        }
+      } else {
+        // Fallback: old format without swap
+        const m2 = res.result.match(/ram=(\d+)%\s+disk=(\d+)%\s+disk_free=(\d+)GB/);
+        if(m2){
+          const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+          set('maint-ram-pct', m2[1] + '%');
+          set('maint-disk-pct', m2[2] + '%');
+          set('maint-disk-free', m2[3] + ' GB free');
         }
       }
     }
