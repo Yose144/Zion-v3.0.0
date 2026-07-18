@@ -2118,12 +2118,16 @@ impl GpuPipelineState {
             && !algorithm.starts_with("kheavyhash")
             && raw_header_bytes.len() > 80;
 
-        let launch_result = if use_raw {
+        let launch_result: Result<(), String> = if use_raw {
             // For raw headers, we need to use mine_batch_raw which is synchronous.
             // Fall back to synchronous mine_batch for raw algorithms.
             gpu.mine_batch_raw(raw_header_bytes, job.target, job.start_nonce, effective_batch)
+                .map(|_| ())
+                .map_err(|e| e.to_string())
         } else {
             gpu.launch_batch(effective_header, job.target, job.start_nonce, effective_batch)
+                .map(|_| ())
+                .map_err(|e| e.to_string())
         };
 
         if let Err(e) = launch_result {
