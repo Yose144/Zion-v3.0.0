@@ -152,6 +152,14 @@ void* allocMemoryPages(size_t bytes) {
 		pthread_jit_write_protect_np(0);
 	}
 #endif
+	/* mlock: prevent swap-out of critical RandomX memory (cache, scratchpad).
+	 * On macOS, mlock requires no special privileges for small allocations
+	 * (up to RLIMIT_MEMLOCK, default ~unlimited on macOS). This keeps the
+	 * 256 MB cache and 2 MB per-thread scratchpads in RAM, avoiding the
+	 * 100x slowdown when pages are swapped to disk. */
+	if (mem) {
+		(void)mlock(mem, bytes);
+	}
 #endif
 	return mem;
 }
@@ -237,6 +245,7 @@ void freePagedMemory(void* ptr, size_t bytes) {
 #else
 	// some munmap implementations can crash on null pointer, despite what the manpage says
 	if (ptr) {
+		(void)munlock(ptr, bytes);
 		munmap(ptr, bytes);
 	}
 #endif
