@@ -164,6 +164,46 @@ impl ExternalCoin {
         }
     }
 
+    /// NiceHash stratum endpoint for supported algorithms.
+    ///
+    /// NiceHash uses `auto.nicehash.com:9200` for all algorithms — the
+    /// algorithm name is the subdomain prefix.  One BTC wallet address
+    /// works for all algorithms.
+    ///
+    /// Returns `None` for coins not supported by NiceHash (Blake3, ProgPow,
+    /// PearlHash, GhostRider, DynexSolve, KarlsenHash, Qhash, Verthash).
+    pub fn nicehash_pool(self) -> Option<&'static str> {
+        Some(match self {
+            Self::ETC => "etchash.auto.nicehash.com:9200",
+            Self::RVN | Self::QUAI | Self::CLORE => "kawpow.auto.nicehash.com:9200",
+            Self::ERG => "autolykos.auto.nicehash.com:9200",
+            Self::KAS => "kheavyhash.auto.nicehash.com:9200",
+            Self::VRSC => "verushash.auto.nicehash.com:9200",
+            Self::NEXA => "nexapow.auto.nicehash.com:9200",
+            Self::BEAM => "beamv3.auto.nicehash.com:9200",
+            Self::IRON => "fishhash.auto.nicehash.com:9200",
+            Self::ALPH => "alephium.auto.nicehash.com:9200",
+            Self::ZCL => "equihash192.auto.nicehash.com:9200",
+            Self::FLUX => "zhash.auto.nicehash.com:9200",
+            // Not on NiceHash: XMR (requires KYC), DCR (Blake3), EPIC (ProgPow),
+            // EVR (EvrProgPow), MEWC (MeowPow), PRL (PearlHash), RTM (GhostRider),
+            // DNX (DynexSolve), KLS (KarlsenHash), QTC (Qhash), VTC (Verthash)
+            Self::XMR | Self::DCR | Self::EPIC | Self::EVR | Self::MEWC | Self::PRL
+            | Self::KLS | Self::QTC | Self::VTC | Self::RTM | Self::DNX => return None,
+        })
+    }
+
+    /// Best pool endpoint based on preference.
+    /// NiceHash → default_pool (fallback if NiceHash doesn't support the coin).
+    pub fn best_pool(self, preference: PoolPreference) -> &'static str {
+        match preference {
+            PoolPreference::NiceHash => {
+                self.nicehash_pool().unwrap_or_else(|| self.default_pool())
+            }
+            _ => self.default_pool(),
+        }
+    }
+
     /// Whether this coin's default pool supports BTC wallet payout.
     /// 2miners and zpool both support BTC payout. Others may not.
     pub fn supports_btc_payout(self) -> bool {
@@ -284,7 +324,7 @@ impl CoinProfile {
     }
 }
 
-fn split_host_port(addr: &str) -> (String, u16) {
+pub fn split_host_port(addr: &str) -> (String, u16) {
     if let Some(pos) = addr.rfind(':') {
         let host = addr[..pos].to_string();
         let port = addr[pos + 1..].parse::<u16>().unwrap_or(3333);

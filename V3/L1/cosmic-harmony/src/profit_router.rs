@@ -374,24 +374,34 @@ impl ExternalCoin {
 
     /// NiceHash endpoint for supported algos.
     ///
-    /// Note: NiceHash currently does not expose Blake3 endpoints, so DCR/ALPH
-    /// return `None` and should fall back to HeroMiners/ZPool/default.
+    /// NiceHash uses `auto.nicehash.com:9200` for all algorithms — the
+    /// algorithm name is the subdomain prefix.  NiceHash automatically
+    /// routes to the closest stratum server.
+    ///
+    /// Coins not supported by NiceHash return `None` and should fall back
+    /// to HeroMiners/ZPool/default.
     pub fn nicehash_pool(self, region: &str) -> Option<String> {
-        let (algo, port): (&str, u16) = match self {
-            Self::ETC => ("etchash", 9013),
-            Self::RVN => ("kawpow", 9017),
-            Self::ERG => ("autolykos", 9018),
-            Self::KAS => ("kheavyhash", 9024),
-            // NH does not provide Blake3 stratum endpoints for these at present.
-            Self::DCR | Self::ALPH => return None,
+        let algo: &str = match self {
+            Self::ETC => "etchash",
+            Self::RVN | Self::QUAI | Self::CLORE => "kawpow",
+            Self::ERG => "autolykos",
+            Self::KAS => "kheavyhash",
+            Self::VRSC => "verushash",
+            Self::NEXA => "nexapow",
+            Self::BEAM => "beamv3",
+            Self::IRON => "fishhash",
+            Self::ALPH => "alephium",
+            Self::ZCL => "equihash192",
+            Self::FLUX => "zhash",
+            // Not on NiceHash: XMR (requires KYC), DCR (Blake3), EPIC (ProgPow),
+            // EVR (EvrProgPow), MEWC (MeowPow), PRL (PearlHash), RTM (GhostRider),
+            // DNX (DynexSolve), KLS (KarlsenHash), QTC (Qhash), VTC (Verthash)
             _ => return None,
         };
-        let nh_region = match region.to_ascii_lowercase().as_str() {
-            "eu" => "eu",
-            "na" | "us" => "usa",
-            _ => "auto",
-        };
-        Some(format!("{}.{}.nicehash.com:{}", algo, nh_region, port))
+        // NiceHash uses auto.nicehash.com:9200 for all algos.
+        // Region-specific endpoints are deprecated; auto handles routing.
+        let _ = region; // auto.nicehash.com handles region routing
+        Some(format!("{}.auto.nicehash.com:9200", algo))
     }
 
     /// HeroMiners endpoints for supported coins.
@@ -1120,7 +1130,7 @@ mod tests {
     #[test]
     fn nicehash_supported_coin_gets_nh_endpoint() {
         let pool = ExternalCoin::KAS.best_pool(PoolPreference::NiceHash, "eu");
-        assert_eq!(pool, "kheavyhash.eu.nicehash.com:9024");
+        assert_eq!(pool, "kheavyhash.auto.nicehash.com:9200");
     }
 
     #[test]
@@ -1133,7 +1143,7 @@ mod tests {
     fn profile_for_preference_uses_selected_pool() {
         let profile =
             CoinProfile::for_preference(ExternalCoin::KAS, PoolPreference::NiceHash, "eu");
-        assert_eq!(profile.pool_host, "kheavyhash.eu.nicehash.com");
-        assert_eq!(profile.pool_port, 9024);
+        assert_eq!(profile.pool_host, "kheavyhash.auto.nicehash.com");
+        assert_eq!(profile.pool_port, 9200);
     }
 }

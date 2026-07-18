@@ -87,15 +87,37 @@ The pool reads environment variables to determine which coins to activate. Each 
 ```bash
 ZION_POOL_AUXPOW_ENABLED=1
 ZION_POOL_AUXPOW_COIN=EPIC              # Default GPU coin
+ZION_POOL_AUXPOW_POOL_PREFERENCE=nicehash  # Route to NiceHash where supported
+ZION_POOL_AUXPOW_WALLET=3QydNRmKkdcZYnQdTRN22yVTY3hZY88gTk  # BTC payout (NiceHash)
 ZION_POOL_AUXPOW_WALLET_EPIC=yose144
 ZION_POOL_AUXPOW_PASSWORD_EPIC=x3nityOne
 ZION_POOL_AUXPOW_WALLET_DCR=DsdVsPZpXTCtNFNnHN68L6ajYTabxDcEmMp
 ZION_POOL_AUXPOW_WALLET_XMR=42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK
 ZION_POOL_AUXPOW_WALLET_VRSC=RLFQYsdd8wGGUgMgk17WrqdGNtkAVSCfDQ
 ZION_POOL_AUXPOW_WALLET_QUAI=0x004b0015A5a719765d2CeBF08dE8cfb965593F17
+ZION_POOL_AUXPOW_WALLET_KAS=kaspa:qqtg8a...
+ZION_POOL_AUXPOW_WALLET_RVN=RBv3HUypznKQ8gHnATNiDu145hs7pZj6DZ
 ZION_POOL_AUXPOW_CPU_COIN=XMR           # CPU bridge coin
 ZION_POOL_AUXPOW_CPU_WALLET=RLFQYsdd8wGGUgMgk17WrqdGNtkAVSCfDQ
 ```
+
+### NiceHash integration (2026-07-18)
+
+`ZION_POOL_AUXPOW_POOL_PREFERENCE=nicehash` routes supported coins to NiceHash
+stratum endpoints (`<algo>.auto.nicehash.com:9200`). All NiceHash bridges use
+the BTC payout wallet (`ZION_POOL_AUXPOW_WALLET`) instead of per-coin wallets.
+
+**Coins on NiceHash (BTC payout):** KAS, RVN, QUAI, VRSC (+ ETC, ERG, ALPH, BEAM,
+FLUX, IRON, NEXA, ZCL, CLORE when wallets are added)
+
+**Coins NOT on NiceHash (fallback to default pool, per-coin wallet):**
+- DCR (Blake3) → WoolyPooly
+- EPIC (ProgPow) → epicmine.io
+- XMR (RandomXmonero — NiceHash requires KYC) → MoneroOcean
+
+**NiceHash stratum quirk:** KHeavyHash (KAS) responds to `mining.subscribe` with
+a `set_extranonce` notification instead of a standard result. The `subscribe()`
+function in `auxpow_client.rs` handles this case explicitly.
 
 ### Enabling additional coins
 
@@ -302,6 +324,7 @@ cargo build --release
 5. ~~**Enable more coins** — add wallets for KAS, ALPH, ERG, RVN, ETC etc. in `/etc/zion/edge-environment.sh` to open more bridges~~ ✅ RVN DONE — wallet `RBv3HUypznKQ8gHnATNiDu145hs7pZj6DZ` added to `/etc/zion/edge-environment.sh`, pool restarted, RVN bridge connected to `rvn.2miners.com:6060` (KawPow). E2E verified: CoinPreference(gpu_coin=RVN) → pool embeds RVN job → external_submit → external_result(accepted=false, below_target — expected with fake hash). 7 bridges now active: KAS, EPIC, QUAI, RVN, VRSC, RTM, XMR. Remaining coins (ALPH, ERG, ETC, EVR, MEWC, FLUX, CLORE, PRL, BEAM, KLS, ZCL, QTC, VTC, IRON, NEXA, DNX) need wallets.
 6. ~~**Profit router integration** — `AutonomousProfitRouter` in `V3/L1/miner/src/autonomous.rs` can auto-select the most profitable GPU coin based on live estimates~~ ✅ DONE (commit `8c9701a09`) — wired live WhatToMine API into `fetch_profits()`, verified end-to-end on Edge: VRSC selected for CPU stream, CoinPreference sent to pool, pool embedded VRSC job. Env vars: `ZION_AUTONOMOUS=1`, `ZION_PROFIT_INTERVAL=300`, `ZION_PROFIT_HYSTERESIS=15`, `ZION_ELECTRICITY_PRICE=0.12`.
 7. **Deploy EPIC submit fix on Vega rig** — miner binary on Vega needs rebuild with EPIC `send_request_inline` fix. Currently blocked by ProgPow kernel hang on SMOS (stream2 disabled). Fix is already in pool binary on Edge.
+8. ~~**NiceHash integration** — route supported coins to NiceHash for BTC payout~~ ✅ DONE (2026-07-18) — `ZION_POOL_AUXPOW_POOL_PREFERENCE=nicehash` set on Edge, BTC wallet `3QydNRmKkdcZYnQdTRN22yVTY3hZY88gTk`. 4 coins live on NiceHash (KAS, RVN, QUAI, VRSC), 3 coins fallback to default pools (DCR→WoolyPooly, EPIC→epicmine.io, XMR→MoneroOcean due to KYC requirement). NiceHash `set_extranonce` subscribe quirk handled in `auxpow_client.rs`. 11 more coins can be enabled by adding wallets (ETC, ERG, ALPH, BEAM, FLUX, IRON, NEXA, ZCL, CLORE + non-NiceHash: EVR, MEWC, PRL, KLS, QTC, VTC, RTM, DNX).
 
 ---
 
