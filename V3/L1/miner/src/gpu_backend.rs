@@ -4256,10 +4256,8 @@ pub mod cuda_deeksha {
 
     impl CudaDeekshaMiner {
         pub fn new(work_size: usize) -> Result<Self> {
-            eprintln!("[cuda_deeksha] CudaDevice::new(0)...");
             let dev =
                 CudaDevice::new(0).map_err(|e| anyhow::anyhow!("CUDA device init failed: {e}"))?;
-            eprintln!("[cuda_deeksha] CudaDevice OK, name={}", dev.name().unwrap_or_default());
 
             let device_name = dev
                 .name()
@@ -4581,18 +4579,14 @@ pub mod cuda_deeksha_lite_fire {
         }
 
         pub fn new(work_size: usize) -> Result<Self> {
-            eprintln!("[cuda_fire] CudaDevice::new(0)...");
             let dev =
                 CudaDevice::new(0).map_err(|e| anyhow::anyhow!("CUDA device init failed: {e}"))?;
-            eprintln!("[cuda_fire] CudaDevice OK");
 
             let device_name = dev
                 .name()
                 .unwrap_or_else(|_| "unknown CUDA device".to_string());
-            eprintln!("[cuda_fire] device_name={}", device_name);
 
             // Compile PTX with fast-math
-            eprintln!("[cuda_fire] compiling PTX ({} bytes)...", CUDA_KERNEL_SRC.len());
             let ptx = compile_ptx_with_opts(
                 CUDA_KERNEL_SRC,
                 CompileOptions {
@@ -4601,7 +4595,6 @@ pub mod cuda_deeksha_lite_fire {
                 },
             )
             .map_err(|e| anyhow::anyhow!("NVRTC compile failed: {e}"))?;
-            eprintln!("[cuda_fire] PTX compiled OK");
             dev.load_ptx(
                 ptx,
                 "deeksha_fire",
