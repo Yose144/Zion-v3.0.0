@@ -1709,7 +1709,11 @@ pub fn create_gpu_backend(
                         anyhow::bail!("External algorithm '{}' on CUDA requires native-kheavyhash feature", algorithm);
                     }
                 }
-                let miner = cuda_deeksha::CudaDeekshaMiner::new(work_size)?;
+                let miner = if algorithm == "deeksha_lite_fire" {
+                    cuda_deeksha_lite_fire::CudaDeekshaLiteFireMiner::new(work_size)?
+                } else {
+                    cuda_deeksha::CudaDeekshaMiner::new(work_size)?
+                };
                 return Ok(Box::new(miner));
             }
             #[cfg(not(feature = "gpu-cuda"))]
@@ -4524,6 +4528,265 @@ pub mod cuda_deeksha {
             };
 
             Ok((total_hashes, elapsed, khps))
+        }
+    }
+}
+
+// ─── CUDA Backend: DeekshaLite Fire ──────────────────────────────────────────
+
+#[cfg(feature = "gpu-cuda")]
+pub mod cuda_deeksha_lite_fire {
+    use super::*;
+    use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
+    use cudarc::nvrtc::{compile_ptx_with_opts, CompileOptions};
+    use std::sync::Arc;
+    use std::time::Instant;
+
+    const CUDA_KERNEL_SRC: &str = include_str!("deeksha_lite_fire.cu");
+    const SCRATCHPAD_BYTES: usize = 262_144; // 256 KiB per thread
+    const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
+    const DEFAULT_WORK_SIZE_CAP: usize = 32_768;
+
+    pub struct CudaDeekshaLiteFireMiner {
+        dev: Arc<CudaDevice>,
+        work_size: usize,
+        device_name_cached: String,
+        header_state_buf: CudaSlice<u64>,
+        scratchpad_buf: CudaSlice<u8>,
+        result_nonce: CudaSlice<u64>,
+        result_hash: CudaSlice<u8>,
+        output_hashes_buf: CudaSlice<u8>,
+    }
+
+    impl CudaDeekshaLiteFireMiner {
+        /// Precompute Keccak256 state after absorbing the 80-byte header.
+        /// The state is 25 u64s (200 bytes). Each thread will then only
+        /// XOR the nonce bytes (80..88), apply padding, and run f1600.
+        /// Identical to OpenCL v1's implementation — guarantees CPU/GPU hash agreement.
+        fn precompute_header_keccak_state(header_80: &[u8]) -> [u64; 25] {
+            let mut state = [0u64; 25];
+            for (i, &b) in header_80.iter().enumerate() {
+                let word_idx = i / 8;
+                let shift = (i % 8) * 8;
+                state[word_idx] ^= (b as u64) << shift;
+            }
+            state
+        }
+
+        pub fn new(work_size: usize) -> Result<Self> {
+            let dev =
+                CudaDevice::new(0).map_err(|e| anyhow::anyhow!("CUDA device init failed: {e}"))?;
+
+            let device_name = dev
+                .name()
+                .unwrap_or_else(|_| "unknown CUDA device".to_string());
+
+            // Compile PTX with fast-math
+            let ptx = compile_ptx_with_opts(
+                CUDA_KERNEL_SRC,
+                CompileOptions {
+                    options: vec!["--use_fast_math".to_string()],
+                    ..Default::default()
+                },
+            )
+            .map_err(|e| anyhow::anyhow!("NVRTC compile failed: {e}"))?;
+            dev.load_ptx(
+                ptx,
+                "deeksha_fire",
+                &["deeksha_lite_fire_mine", "deeksha_lite_fire_debug"],
+            )
+            .map_err(|e| anyhow::anyhow!("PTX load failed: {e}"))?;
+
+            // Conservative work size cap
+            let work_cap = std::env::var("ZION_CUDA_WORK_CAP")
+                .ok()
+                .and_then(|v| v.trim().parse::<usize>().ok())
+                .unwrap_or(DEFAULT_WORK_SIZE_CAP)
+                .max(64);
+            let actual_work_size = work_size.min(work_cap).max(64);
+
+            // Allocate buffers
+            let header_state_buf = dev
+                .alloc_zeros::<u64>(25)
+                .map_err(|e| anyhow::anyhow!("header_state alloc: {e}"))?;
+            let scratchpad_buf = dev
+                .alloc_zeros::<u8>(actual_work_size * SCRATCHPAD_BYTES)
+                .map_err(|e| anyhow::anyhow!("scratchpad alloc: {e}"))?;
+            let result_nonce = dev
+                .htod_copy(vec![SENTINEL])
+                .map_err(|e| anyhow::anyhow!("result_nonce alloc: {e}"))?;
+            let result_hash = dev
+                .alloc_zeros::<u8>(32)
+                .map_err(|e| anyhow::anyhow!("result_hash alloc: {e}"))?;
+            let output_hashes_buf = dev
+                .alloc_zeros::<u8>(actual_work_size * 32)
+                .map_err(|e| anyhow::anyhow!("output_hashes alloc: {e}"))?;
+
+            println!(
+                "gpu_cuda_fire_init device=\"{}\" work_size={} scratchpad_mb={}",
+                device_name,
+                actual_work_size,
+                actual_work_size * SCRATCHPAD_BYTES / (1024 * 1024),
+            );
+
+            Ok(Self {
+                dev,
+                work_size: actual_work_size,
+                device_name_cached: device_name,
+                header_state_buf,
+                scratchpad_buf,
+                result_nonce,
+                result_hash,
+                output_hashes_buf,
+            })
+        }
+    }
+
+    impl GpuMiner for CudaDeekshaLiteFireMiner {
+        fn device_name(&self) -> String {
+            self.device_name_cached.clone()
+        }
+
+        fn backend_kind(&self) -> GpuBackendKind {
+            GpuBackendKind::Cuda
+        }
+
+        fn algorithm(&self) -> String {
+            "deeksha_lite_fire".to_string()
+        }
+
+        fn update_epoch(&mut self, _height: u64) -> Result<()> {
+            // deeksha_lite_fire has no epoch-based NPU weights
+            Ok(())
+        }
+
+        fn mine_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            let header_bytes = header.to_bytes();
+
+            // Precompute Keccak state on host (same as OpenCL)
+            let keccak_state = Self::precompute_header_keccak_state(&header_bytes);
+            self.dev
+                .htod_sync_copy_into(&keccak_state, &mut self.header_state_buf)
+                .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
+
+            // Target: LE u32 from first 4 bytes of target
+            let target_u32 = u32::from_le_bytes([
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
+            ]);
+
+            let mut all_solutions = Vec::new();
+            let mut total_tested = 0u64;
+            let mut current_nonce = nonce_start;
+            let mut left = batch_size;
+
+            let func = self
+                .dev
+                .get_func("deeksha_fire", "deeksha_lite_fire_mine")
+                .ok_or_else(|| anyhow::anyhow!("deeksha_lite_fire_mine kernel not found"))?;
+
+            let threads_per_block: u32 = std::env::var("ZION_CUDA_TPB")
+                .ok()
+                .and_then(|v| v.trim().parse().ok())
+                .unwrap_or(128);
+
+            while left > 0 {
+                let chunk = (left as usize).min(self.work_size) as u32;
+                let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+                let cfg = LaunchConfig {
+                    grid_dim: (blocks, 1, 1),
+                    block_dim: (threads_per_block, 1, 1),
+                    shared_mem_bytes: 0,
+                };
+
+                // Reset sentinel
+                self.dev
+                    .htod_sync_copy_into(&[SENTINEL], &mut self.result_nonce)
+                    .map_err(|e| anyhow::anyhow!("reset sentinel: {e}"))?;
+
+                unsafe {
+                    func.clone()
+                        .launch(
+                            cfg,
+                            (
+                                &self.header_state_buf,
+                                current_nonce,
+                                chunk,
+                                &self.output_hashes_buf,
+                                &self.scratchpad_buf,
+                                target_u32,
+                                &mut self.result_nonce,
+                                &mut self.result_hash,
+                            ),
+                        )
+                        .map_err(|e| anyhow::anyhow!("kernel launch: {e}"))?;
+                }
+
+                // Sync and check results
+                self.dev
+                    .sync()
+                    .map_err(|e| anyhow::anyhow!("device sync: {e}"))?;
+
+                let result_nonce_host = self
+                    .dev
+                    .dtoh_sync_copy(&self.result_nonce)
+                    .map_err(|e| anyhow::anyhow!("result_nonce download: {e}"))?;
+
+                if result_nonce_host[0] != SENTINEL {
+                    let result_hash_host = self
+                        .dev
+                        .dtoh_sync_copy(&self.result_hash)
+                        .map_err(|e| anyhow::anyhow!("result_hash download: {e}"))?;
+                    let mut hash = [0u8; 32];
+                    hash.copy_from_slice(&result_hash_host);
+                    all_solutions.push((result_nonce_host[0], hash, None));
+                }
+
+                total_tested += chunk as u64;
+                current_nonce += chunk as u64;
+                left = left.saturating_sub(chunk as u64);
+            }
+
+            Ok(GpuBatchResult {
+                solutions: all_solutions,
+                nonces_tested: total_tested,
+            })
+        }
+
+        fn mine_batch_raw(
+            &mut self,
+            raw_header: &[u8],
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            // For deeksha_lite_fire, raw header is the 80-byte mining header
+            let header = MiningHeader::from_bytes(raw_header);
+            self.mine_batch(header, target, nonce_start, batch_size)
+        }
+
+        fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
+            let start = Instant::now();
+            let mut total: u64 = 0;
+            let header = MiningHeader::from_bytes(&[0u8; 80]);
+            let target = DifficultyTarget { bytes: [0xFFu8; 32] };
+            let mut nonce: u64 = 0;
+            while start.elapsed().as_secs_f64() < secs {
+                let result = self.mine_batch(header.clone(), target.clone(), nonce, 4096)?;
+                total += result.nonces_tested;
+                nonce += 4096;
+            }
+            let elapsed = start.elapsed().as_secs_f64();
+            let hps = if elapsed > 0.0 { total as f64 / elapsed } else { 0.0 };
+            Ok((total, elapsed, hps))
         }
     }
 }
