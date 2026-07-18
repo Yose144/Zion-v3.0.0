@@ -486,6 +486,10 @@ pub fn is_external_algorithm(algorithm: &str) -> bool {
             | "beamhash_beam"
             | "verushash"
             | "randomx"
+            | "eaglesong" | "eaglesong_ckb"
+            | "octopus" | "octopus_cfx"
+            | "equihash" | "equihash_zec"
+            | "neoscrypt" | "neoscrypt_phx"
     )
 }
 
@@ -1691,6 +1695,20 @@ pub fn create_gpu_backend(
         GpuBackendKind::Cuda => {
             #[cfg(feature = "gpu-cuda")]
             {
+                // External AuxPoW algorithms (kheavyhash, blake3, etc.) have
+                // no CUDA kernel. Fall back to CPU via native-ffi.
+                if is_external_algorithm(algorithm) {
+                    #[cfg(feature = "native-kheavyhash")]
+                    {
+                        eprintln!("[gpu_backend] CUDA CPU fallback for algorithm={}", algorithm);
+                        let miner = crate::gpu_backend::cpu_external_fallback::CpuExternalMiner::new(algorithm, work_size)?;
+                        return Ok(Box::new(miner));
+                    }
+                    #[cfg(not(feature = "native-kheavyhash"))]
+                    {
+                        anyhow::bail!("External algorithm '{}' on CUDA requires native-kheavyhash feature", algorithm);
+                    }
+                }
                 let miner = cuda_deeksha::CudaDeekshaMiner::new(work_size)?;
                 return Ok(Box::new(miner));
             }
@@ -4908,12 +4926,12 @@ pub mod metal_deeksha {
     }
 }
 
-// ─── CPU Fallback for External Algos on Metal (kheavyhash, blake3, etc.) ─────
-// On macOS Apple Silicon, OpenCL is unavailable. External AuxPoW algorithms
-// (kheavyhash, blake3) have no Metal kernel. This module provides a CPU-based
-// fallback that implements the GpuMiner trait using native-ffi hashers.
+// ─── CPU Fallback for External Algos (kheavyhash, blake3, etc.) ──────────────
+// On platforms without OpenCL (macOS Metal, CUDA-only), external AuxPoW
+// algorithms have no GPU kernel. This module provides a CPU-based fallback
+// that implements the GpuMiner trait using native-ffi hashers.
 
-#[cfg(all(feature = "gpu-metal", feature = "native-kheavyhash"))]
+#[cfg(feature = "native-kheavyhash")]
 pub mod cpu_external_fallback {
     use super::*;
     use std::time::Instant;

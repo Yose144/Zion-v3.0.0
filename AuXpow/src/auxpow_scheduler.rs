@@ -439,6 +439,15 @@ impl AuxPowScheduler {
                         hash_blake3(header, 0, nonce)
                     }
                 }
+                // Eaglesong/Octopus/Equihash/NeoScrypt — GPU-only algorithms.
+                // CPU scheduler fallback uses blake3 placeholder until native
+                // FFI is implemented. Real mining requires OpenCL kernel.
+                ExternalAlgorithm::Eaglesong
+                | ExternalAlgorithm::Octopus
+                | ExternalAlgorithm::Equihash
+                | ExternalAlgorithm::NeoScrypt => {
+                    hash_blake3(header, 0, nonce)
+                }
             };
 
             let meets = if job.external_coin == ExternalCoin::DCR {

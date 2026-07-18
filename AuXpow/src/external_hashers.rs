@@ -29,6 +29,10 @@ pub enum ExternalAlgorithm {
     ProgPow,
     PearlHash,
     GhostRider,
+    Eaglesong,
+    Octopus,
+    Equihash,
+    NeoScrypt,
 }
 
 impl ExternalAlgorithm {
@@ -45,6 +49,10 @@ impl ExternalAlgorithm {
             Self::ProgPow => "progpow",
             Self::PearlHash => "pearlhash",
             Self::GhostRider => "ghostrider",
+            Self::Eaglesong => "eaglesong",
+            Self::Octopus => "octopus",
+            Self::Equihash => "equihash",
+            Self::NeoScrypt => "neoscrypt",
         }
     }
 
@@ -61,6 +69,10 @@ impl ExternalAlgorithm {
             "progpow" => Some(Self::ProgPow),
             "pearlhash" | "pearl" => Some(Self::PearlHash),
             "ghostrider" | "gr" => Some(Self::GhostRider),
+            "eaglesong" => Some(Self::Eaglesong),
+            "octopus" => Some(Self::Octopus),
+            "equihash" => Some(Self::Equihash),
+            "neoscrypt" => Some(Self::NeoScrypt),
             _ => None,
         }
     }

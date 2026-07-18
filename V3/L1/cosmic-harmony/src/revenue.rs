@@ -94,6 +94,14 @@ pub enum RevenueSource {
     GhostRiderExternal,
     /// Revenue from DynexSolve external coins (DNX — Dynex).
     DynexSolveExternal,
+    /// Revenue from Eaglesong external coins (CKB — Nervos Network).
+    EaglesongExternal,
+    /// Revenue from Octopus external coins (CFX — Conflux).
+    OctopusExternal,
+    /// Revenue from Equihash external coins (ZEC — Zcash).
+    EquihashExternal,
+    /// Revenue from NeoScrypt external coins (PHX — PhoenixCoin).
+    NeoScryptExternal,
     /// Revenue from DeekshaLite v1 simplified mining (GCN-friendly).
     DeekshaLite,
     /// Revenue from DeekshaLite Fire thermal-intensive mining (winter heating).
@@ -128,6 +136,10 @@ impl RevenueSource {
             Self::NexaPowExternal => "nexapow_external",
             Self::GhostRiderExternal => "ghostrider_external",
             Self::DynexSolveExternal => "dynexsolve_external",
+            Self::EaglesongExternal => "eaglesong_external",
+            Self::OctopusExternal => "octopus_external",
+            Self::EquihashExternal => "equihash_external",
+            Self::NeoScryptExternal => "neoscrypt_external",
             Self::DeekshaLite => "deeksha_lite",
             Self::ThermalBonus => "thermal_bonus",
             Self::NclAi => "ncl_ai",
@@ -161,6 +173,10 @@ impl RevenueSource {
             "nexapow_external" | "nexapow" => Some(Self::NexaPowExternal),
             "ghostrider_external" | "ghostrider" => Some(Self::GhostRiderExternal),
             "dynexsolve_external" | "dynexsolve" => Some(Self::DynexSolveExternal),
+            "eaglesong_external" | "eaglesong" => Some(Self::EaglesongExternal),
+            "octopus_external" | "octopus" => Some(Self::OctopusExternal),
+            "equihash_external" | "equihash" => Some(Self::EquihashExternal),
+            "neoscrypt_external" | "neoscrypt" => Some(Self::NeoScryptExternal),
             "deeksha_lite" | "lite" => Some(Self::DeekshaLite),
             "thermal_bonus" | "thermal" => Some(Self::ThermalBonus),
             "ncl_ai" | "ncl" => Some(Self::NclAi),
@@ -190,7 +206,11 @@ impl RevenueSource {
             | Self::FishHashExternal
             | Self::NexaPowExternal
             | Self::GhostRiderExternal
-            | Self::DynexSolveExternal => BLAKE3_EXTERNAL_FEE,
+            | Self::DynexSolveExternal
+            | Self::EaglesongExternal
+            | Self::OctopusExternal
+            | Self::EquihashExternal
+            | Self::NeoScryptExternal => BLAKE3_EXTERNAL_FEE,
             Self::DeekshaLite | Self::ThermalBonus => MERGED_MINING_FEE,
             Self::NclAi => NCL_FEE,
         }
