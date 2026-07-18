@@ -109,6 +109,27 @@ _ram_used_pct() {
   echo $(( used * 100 / total ))
 }
 
+_swap_used_pct() {
+  local meminfo total used
+  meminfo="$(cat /proc/meminfo)"
+  total="$(awk '/^SwapTotal:/{print $2}' <<<"$meminfo")"
+  used="$(awk '/^SwapFree:/{print $2}' <<<"$meminfo")"
+  if [[ -z "$total" ]] || [[ "$total" == "0" ]]; then echo 0; return; fi
+  used=$(( total - used ))
+  echo $(( used * 100 / total ))
+}
+
+_swap_total_gb() {
+  awk '/^SwapTotal:/{printf "%.1f", $2/1048576}' /proc/meminfo
+}
+
+_swap_used_gb() {
+  local total free
+  total="$(awk '/^SwapTotal:/{print $2}' /proc/meminfo)"
+  free="$(awk '/^SwapFree:/{print $2}' /proc/meminfo)"
+  printf "%.1f" "$(echo "scale=1; ($total - $free) / 1048576" | bc)"
+}
+
 _disk_used_pct() {
   local pct
   pct="$(df -P / | awk 'NR==2{gsub(/%/,""); print $5}')"
@@ -218,18 +239,18 @@ do_disk() {
 # ============================================================================
 do_ram() {
   info "=== RAM optimization start ==="
-  local used before_used after_used
+  local used before_used after_used swap_pct swap_total swap_used
   used="$(_ram_used_pct)"
   before_used="$used"
+  swap_pct="$(_swap_used_pct)"
+  swap_total="$(_swap_total_gb)"
+  swap_used="$(_swap_used_gb)"
   info "ram before: ${used}% used (warn=${RAM_WARN_PCT}% crit=${RAM_CRIT_PCT}%)"
-
-  if [[ "$used" -lt "$RAM_WARN_PCT" ]]; then
-    info "ram: below warn threshold, no action needed"
-    info "=== RAM optimization done (no-op) ==="
-    return 0
-  fi
+  info "swap before: ${swap_used}/${swap_total} GB (${swap_pct}% used)"
 
   # 1. Drop kernel caches (pagecache + dentries + inodes) — safe, kernel re-fills
+  #    Always do this in --force mode (even below warn threshold) because it's
+  #    cheap and frees 200-500 MB of pagecache on this server.
   info "ram: dropping kernel caches (echo 3 > /proc/sys/vm/drop_caches)"
   if [[ "$DRY_RUN" == "1" ]]; then
     info "exec: sync && echo 3 > /proc/sys/vm/drop_caches"
@@ -251,7 +272,11 @@ do_ram() {
   fi
 
   after_used="$(_ram_used_pct)"
+  local swap_after_pct swap_after_used
+  swap_after_pct="$(_swap_used_pct)"
+  swap_after_used="$(_swap_used_gb)"
   info "ram after drop_caches: ${after_used}% (was ${before_used}%)"
+  info "swap after: ${swap_after_used}/${swap_total} GB (${swap_after_pct}%)"
 
   # 4. Critical threshold — restart non-critical heavy services
   #    NEVER touch CRITICAL_SERVICES. Only candidates: prometheus, pm2, etc.
@@ -289,7 +314,7 @@ case "$MODE" in
   ram)  do_ram  ;;
   all)  do_disk; do_ram ;;
   status)
-    info "status: ram=$(_ram_used_pct)% disk=$(_disk_used_pct)% disk_free=$(_disk_free_gb)GB"
+    info "status: ram=$(_ram_used_pct)% disk=$(_disk_used_pct)% disk_free=$(_disk_free_gb)GB swap=$(_swap_used_pct)% swap_total=$(_swap_total_gb)GB swap_used=$(_swap_used_gb)GB"
     ;;
   *)
     echo "Usage: $0 [disk|ram|all|status] [--dry-run] [--force] [--verbose]"

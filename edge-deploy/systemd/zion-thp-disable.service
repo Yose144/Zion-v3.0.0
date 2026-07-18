@@ -1,0 +1,16 @@
+# ZION Edge — disable Transparent Huge Pages at boot
+# Drop-in: /etc/systemd/system/zion-thp-disable.service
+# THP causes latency spikes + memory fragmentation on memory-pressured
+# servers running Rust workloads. Disable both enabled + defrag.
+[Unit]
+Description=Disable Transparent Huge Pages (ZION Edge RAM optimization)
+After=local-fs.target
+Before=zion-edge-node1.service zion-edge-node2.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'echo never > /sys/kernel/mm/transparent_hugepage/enabled && echo never > /sys/kernel/mm/transparent_hugepage/defrag'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
