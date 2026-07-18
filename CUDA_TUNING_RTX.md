@@ -92,12 +92,12 @@
   - Real kernel throughput for full batches (no early exit): ~89.9 KH/s
   - Effective hashrate with early exits: 245-340 KH/s
 
-### v6 — Pool I/O Pipelining (20% improvement)
-- **Hashrate:** **295.6 KH/s** (45.6x from v1!)
-- **hps_60s:** 305.8 KH/s
-- **hps_10s peak:** 396.3 KH/s
-- **Accept rate:** 100% (20/20 shares accepted in 120-iteration stability test)
-- **Stability:** 120 iterations in 105.5s, 0 rejected shares
+### v6 — Pool I/O Pipelining + PTXAS O3 (20% + 3% improvement)
+- **Hashrate:** **303.8 KH/s** (46.7x from v1!)
+- **hps_60s:** 332.2 KH/s
+- **hps_10s peak:** 396.5 KH/s
+- **Accept rate:** 100% (17/17 shares accepted in 120-iteration stability test)
+- **Stability:** 120 iterations in 102.7s, 0 rejected shares
 - **Changes:**
   - Added `launch_batch` / `collect_batch` to GpuMiner trait (async launch, sync collect)
   - `GpuPipelineState` manages collect/launch cycle in main mining loop
@@ -105,11 +105,13 @@
   - GPU compute overlaps with pool I/O (external shares, solution submission, next job read)
   - First iteration: launches batch, returns None (NoSolution to pool)
   - Subsequent iterations: returns previous batch's solution
+  - Added `--ptxas-options=-O3` to NVRTC compile options for aggressive ptxas optimization
 - **Why it works:**
   - GPU compute (~195ms with early exit) overlaps with pool network I/O (~300-500ms)
   - By the time we collect, GPU is already done → collect is instant
   - `best_batch_ms=6` (vs 194ms without pipelining) — GPU finishes during pool I/O
-  - Iteration time: 105.5s / 120 = 0.88s (vs 1.07s without pipelining) = 18% faster
+  - Iteration time: 102.7s / 120 = 0.86s (vs 1.07s without pipelining) = 20% faster
+  - PTXAS O3: 3% additional improvement from better instruction scheduling
 
 ### Work Size Sweep
 | Work Size | TPB | Hashrate (KH/s) | Scratchpad VRAM |
@@ -129,7 +131,7 @@
 - **v1-v3:** 6.5 KH/s — thought kernel was compute-bound
 - **v4:** 49.3 KH/s — batched launch eliminated sync points (7.5x)
 - **v5:** 245.8 KH/s — async htod copies eliminated remaining syncs (37.9x from v1)
-- **v6:** 295.6 KH/s — pool I/O pipelining overlaps GPU with network (45.6x from v1)
+- **v6:** 303.8 KH/s — pool I/O pipelining + PTXAS O3 (46.7x from v1)
 - **Root cause:** `htod_sync_copy_into` calls `self.synchronize()` which waits for ALL stream work
 - Even tiny 200-byte copies were causing full device synchronization
 
