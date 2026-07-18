@@ -1720,12 +1720,17 @@ pub mod ghostrider {
 
     /// Compute GhostRider hash of `(header, nonce)` → 32 bytes.
     ///
-    /// The nonce is a 4-byte LE value injected at offset 39 in the 80-byte
+    /// The nonce is a 4-byte LE value injected at offset 76 in the 80-byte
     /// Raptoreum block header. If `header` is shorter than 80 bytes, it is
     /// zero-padded; if longer, only the first 80 bytes are used.
+    ///
+    /// **Thread-safety**: The C code is thread-safe — no global mutable state.
+    /// `oaes_alloc()` does NOT call srand()/rand() (IV is deterministic zeros).
+    /// All sphlib static tables are read-only. CryptoNight scratchpads use
+    /// alloca (per-thread stack). Safe to call from multiple threads.
     pub fn hash(header: &[u8], nonce: u64) -> [u8; 32] {
         let mut out = [0u8; 32];
-        // SAFETY: slice valid for read; fresh 32-byte stack output.
+        // SAFETY: Thread-safe — no global mutable state in gr_hash path.
         unsafe {
             ghostrider_zion_hash(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
         }
