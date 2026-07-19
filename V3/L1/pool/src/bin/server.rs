@@ -707,7 +707,7 @@ async fn run_auxpow_bridge(
             let started = Instant::now();
             let result = if let Some(client) = mux.client() {
                 let forwarder = ShareForwarder::new(client);
-                match forwarder.try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target, req.mix_hash.as_ref()).await {
+                match forwarder.try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target, req.mix_hash.as_ref(), &req.algorithm, &req.header_bytes).await {
                     Ok(r) => {
                         println!(
                             "auxpow_bridge: share_forwarded job_id={} nonce={} result={:?} elapsed_ms={}",
@@ -2031,6 +2031,8 @@ fn handle_external_share(
         hash: *hash,
         target: external_job.target_bytes,
         mix_hash,
+        algorithm: external_job.algorithm.clone(),
+        header_bytes: external_job.header_bytes.clone(),
     };
 
     match multi_bridge.forward_for_coin(&external_job.external_coin, forward_req) {
@@ -2677,7 +2679,7 @@ fn handle_client(
                         miner_id: sub_miner_id,
                         worker_name: sub_worker_name,
                         coin,
-                        algorithm: _,
+                        algorithm: submit_algorithm,
                         external_job_id,
                         nonce,
                         hash_hex,
@@ -2737,12 +2739,30 @@ fn handle_client(
                         let mix_hash = mix_hash_hex
                             .as_deref()
                             .and_then(|h| zion_pool::parse_fixed_hex::<32>(h, "mix hash").ok());
+                        // Recover the original header_bytes (pre_pow) from the
+                        // external stream job we sent to the miner.  This is
+                        // needed for DAG algorithms (ProgPow/Ethash/KawPow)
+                        // where the GPU kernel only returns a u64 pre-check
+                        // value and the hash field is all zeros — the forwarder
+                        // recomputes the real final hash from header + nonce +
+                        // mix_hash before submitting upstream.
+                        let header_bytes_for_forward = if is_cpu_share {
+                            external_stream_cpu_job.as_ref()
+                                .and_then(|ext| hex::decode(&ext.header_hex).ok())
+                                .unwrap_or_default()
+                        } else {
+                            external_stream_job.as_ref()
+                                .and_then(|ext| hex::decode(&ext.header_hex).ok())
+                                .unwrap_or_default()
+                        };
                         let forward_req = ShareForwardRequest {
                             external_job_id: external_job_id.clone(),
                             nonce,
                             hash: hash_bytes,
                             target: target_bytes,
                             mix_hash,
+                            algorithm: submit_algorithm.clone(),
+                            header_bytes: header_bytes_for_forward,
                         };
                         // Route to the correct bridge via multi-bridge lookup.
                         let bridge_result = multi_bridge.forward_by_ticker(&coin, forward_req);
@@ -3918,6 +3938,14 @@ struct ShareForwardRequest {
     target: [u8; 32],
     /// Mix hash for Ethash/KawPow (eth_submitWork).  None for other algorithms.
     mix_hash: Option<[u8; 32]>,
+    /// Algorithm name (e.g. "progpow_epic", "kawpow_rvn", "kheavyhash").
+    /// Used by the forwarder to compute the real final hash for DAG algorithms
+    /// whose GPU kernel only produces a u64 pre-check value.
+    algorithm: String,
+    /// Full block header bytes (pre_pow) for DAG algorithms.  Used to compute
+    /// the real ProgPow/Ethash final hash via keccak256/512 when the GPU kernel
+    /// only returned a u64 pre-check value (hash field is all zeros).
+    header_bytes: Vec<u8>,
 }
 
 /// Request to forward a pre-built Pearl PlainProof to AlphaPool.
@@ -7062,7 +7090,7 @@ mod tests {
             };
             let started = std::time::Instant::now();
             let result = match forwarder
-                .try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target, req.mix_hash.as_ref())
+                .try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target, req.mix_hash.as_ref(), &req.algorithm, &req.header_bytes)
                 .await
             {
                 Ok(r) => r,
