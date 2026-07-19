@@ -3441,7 +3441,7 @@ pub mod opencl_deeksha {
 pub mod opencl_deeksha_lite {
     use super::*;
     use ocl::builders::ProgramBuilder;
-    use ocl::{Buffer, Device, Event, Kernel, Platform, ProQue, Queue};
+    use ocl::{Buffer, Device, Event, Kernel, MemFlags, Platform, ProQue, Queue};
     use std::time::Instant;
     use zion_cosmic_harmony::gpu::opencl_kernel;
 
@@ -3637,7 +3637,11 @@ pub mod opencl_deeksha_lite {
                     .map_err(|e| anyhow::anyhow!("OpenCL build failed: {e}"))?
             };
             let q = pro_que.queue().clone();
-            let header_state_buf = Buffer::<u64>::builder().queue(q.clone()).len(25).build()?;
+            let header_state_buf = Buffer::<u64>::builder()
+                .queue(q.clone())
+                .flags(MemFlags::READ_ONLY)
+                .len(25)
+                .build()?;
             let scratchpad_buf = Buffer::<u8>::builder()
                 .queue(q.clone())
                 .len(actual_work_size * DL_SCRATCHPAD_BYTES)
@@ -3667,6 +3671,7 @@ pub mod opencl_deeksha_lite {
             let stream_weights_zero = [0.0f32; 6];
             let stream_weights_buf = Buffer::<f32>::builder()
                 .queue(q.clone())
+                .flags(MemFlags::READ_ONLY)
                 .len(6)
                 .copy_host_slice(&stream_weights_zero[..])
                 .build()?;
@@ -4239,7 +4244,7 @@ pub mod opencl_deeksha_lite {
 pub mod opencl_deeksha_lite_fire {
     use super::*;
     use ocl::builders::ProgramBuilder;
-    use ocl::{Buffer, Device, Event, Kernel, Platform, ProQue, Queue};
+    use ocl::{Buffer, Device, Event, Kernel, MemFlags, Platform, ProQue, Queue};
     use std::time::Instant;
     use zion_cosmic_harmony::gpu::opencl_kernel;
 
@@ -4425,7 +4430,11 @@ pub mod opencl_deeksha_lite_fire {
                     .map_err(|e| anyhow::anyhow!("OpenCL build failed: {e}"))?
             };
             let q = pro_que.queue().clone();
-            let header_state_buf = Buffer::<u64>::builder().queue(q.clone()).len(25).build()?;
+            let header_state_buf = Buffer::<u64>::builder()
+                .queue(q.clone())
+                .flags(MemFlags::READ_ONLY)
+                .len(25)
+                .build()?;
             let scratchpad_buf = Buffer::<u8>::builder()
                 .queue(q.clone())
                 .len(actual_work_size * DLF_SCRATCHPAD_BYTES)
@@ -4452,6 +4461,7 @@ pub mod opencl_deeksha_lite_fire {
             let stream_weights_zero = [0.0f32; 6];
             let stream_weights_buf = Buffer::<f32>::builder()
                 .queue(q.clone())
+                .flags(MemFlags::READ_ONLY)
                 .len(6)
                 .copy_host_slice(&stream_weights_zero[..])
                 .build()?;

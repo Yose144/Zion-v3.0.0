@@ -28,6 +28,11 @@
 #define RANDOM_READS     64
 #define THERMAL_ITERS    16384 // OPTIMIZED: reduced from 65536 (4x less) for better efficiency
 
+/* Local work group size — overridden via build options for the real miner. */
+#ifndef LOCAL_SIZE
+#define LOCAL_SIZE 64
+#endif
+
 /* ========================================================================== */
 /* Keccak — identical to deeksha_lite.cl                                      */
 /* ========================================================================== */
@@ -63,6 +68,7 @@ __attribute__((always_inline))
 void keccak_f1600(__private ulong *st)
 {
     ulong bc0, bc1, bc2, bc3, bc4, t;
+    #pragma unroll 1
     for (int rnd = 0; rnd < 24; rnd++) {
         bc0 = st[0]^st[5]^st[10]^st[15]^st[20];
         bc1 = st[1]^st[6]^st[11]^st[16]^st[21];
@@ -107,8 +113,9 @@ void keccak_f1600(__private ulong *st)
 typedef union { ulong u[25]; uchar b[200]; } keccak_st_t;
 
 /* Same as v1: host precomputes keccak state after absorbing header[0..80] */
+__attribute__((always_inline))
 void keccak256_from_state(
-    __global const ulong *pre_state,
+    __constant const ulong * restrict pre_state,
     ulong nonce,
     __private uchar out[32])
 {
@@ -127,9 +134,11 @@ void keccak256_from_state(
     out_u64[0] = st[0]; out_u64[1] = st[1]; out_u64[2] = st[2]; out_u64[3] = st[3];
 }
 
-void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
+__attribute__((always_inline))
+void sha3_512(__private const uchar * restrict in, uint inlen, __private uchar * restrict out)
 {
     keccak_st_t s;
+    #pragma unroll
     for (int i = 0; i < 25; i++) s.u[i] = 0;
     uint pos = 0;
     for (uint i = 0; i < inlen; i++) {
@@ -139,6 +148,7 @@ void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
     s.b[pos] ^= 0x06;
     s.b[71]  ^= 0x80;
     keccak_f1600(s.u);
+    #pragma unroll
     for (int i = 0; i < 64; i++) out[i] = s.b[i];
 }
 
@@ -150,10 +160,11 @@ void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
  * u64-optimized version: takes 8 u64s of state + 1 byte block index,
  * outputs 8 u64s. Matches CUDA sha3_512_65_u64 — avoids 65 byte-by-byte
  * XOR operations that cause high register pressure on AMD. */
+__attribute__((always_inline))
 inline void sha3_512_65_u64(
-    __private const ulong state_in[8],
+    __private const ulong * restrict state_in,
     uchar blk_byte,
-    __private ulong out_u64[8])
+    __private ulong * restrict out_u64)
 {
     __private ulong st[25];
     st[0]=state_in[0]; st[1]=state_in[1]; st[2]=state_in[2]; st[3]=state_in[3];
@@ -197,8 +208,14 @@ __constant uchar AES_SBOX[256] = {
     0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16,
 };
 
-void aes_sub_bytes(__private uchar s[16])   { for (int i=0;i<16;i++) s[i]=AES_SBOX[s[i]]; }
+__attribute__((always_inline))
+void aes_sub_bytes(__private uchar s[16])
+{
+    #pragma unroll
+    for (int i=0;i<16;i++) s[i]=AES_SBOX[s[i]];
+}
 
+__attribute__((always_inline))
 void aes_shift_rows(__private uchar s[16])
 {
     uchar t;
@@ -208,10 +225,13 @@ void aes_shift_rows(__private uchar s[16])
     t=s[15]; s[15]=s[11]; s[11]=s[7];  s[7] =s[3];  s[3] =t;
 }
 
+__attribute__((always_inline))
 uchar aes_xtime(uchar a) { return (uchar)((a<<1)^(((a>>7)&1)*0x1b)); }
 
+__attribute__((always_inline))
 void aes_mix_columns(__private uchar s[16])
 {
+    #pragma unroll
     for (int i=0;i<4;i++) {
         uchar a=s[i*4],b=s[i*4+1],c=s[i*4+2],d=s[i*4+3];
         uchar e=a^b^c^d;
@@ -220,12 +240,18 @@ void aes_mix_columns(__private uchar s[16])
     }
 }
 
+__attribute__((always_inline))
 void aes_add_round_key(__private uchar s[16], __private const uchar k[16])
-{ for (int i=0;i<16;i++) s[i]^=k[i]; }
+{
+    #pragma unroll
+    for (int i=0;i<16;i++) s[i]^=k[i];
+}
 
+__attribute__((always_inline))
 void aes_round(__private uchar s[16], __private const uchar k[16])
 { aes_sub_bytes(s); aes_shift_rows(s); aes_mix_columns(s); aes_add_round_key(s,k); }
 
+__attribute__((always_inline))
 void aes_final_round(__private uchar s[16], __private const uchar k[16])
 { aes_sub_bytes(s); aes_shift_rows(s); aes_add_round_key(s,k); }
 
@@ -238,7 +264,8 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16])
 /* but AMD RDNA benefits from strided (L2 cache locality).                     */
 /* ========================================================================== */
 
-void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
+__attribute__((always_inline))
+void fill_scratchpad(__private const uchar seed[32], __global uchar * restrict pad)
 {
     __private ulong state[8];
     state[0] = ((__private ulong*)seed)[0];
@@ -263,7 +290,8 @@ void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
     }
 }
 
-void sequential_passes(__global uchar *pad)
+__attribute__((always_inline))
+void sequential_passes(__global uchar * restrict pad)
 {
     /* Forward pass: XOR each block with previous (wrap-around) */
     __global ulong *prev_pb = (__global ulong*)(pad + (BLOCK_COUNT-1)*BLOCK_SIZE);
@@ -286,7 +314,8 @@ void sequential_passes(__global uchar *pad)
     }
 }
 
-void random_read_mix(__private const uchar seed[32], __global const uchar *pad, __private uchar out[32])
+__attribute__((always_inline))
+void random_read_mix(__private const uchar seed[32], __global const uchar * restrict pad, __private uchar out[32])
 {
     __private ulong acc[4];
     acc[0] = ((__private ulong*)seed)[0];
@@ -294,6 +323,7 @@ void random_read_mix(__private const uchar seed[32], __global const uchar *pad, 
     acc[2] = ((__private ulong*)seed)[2];
     acc[3] = ((__private ulong*)seed)[3];
     ulong pos=0;
+    #pragma unroll 4
     for (ulong r=0;r<RANDOM_READS;r++) {
         uint off=(uint)(pos*BLOCK_SIZE);
         __global const ulong *pb = (__global const ulong*)(pad + off);
@@ -310,16 +340,20 @@ void random_read_mix(__private const uchar seed[32], __global const uchar *pad, 
 /* Step 3: AES-128 CTR mix — identical to v1                                  */
 /* ========================================================================== */
 
+__attribute__((always_inline))
 void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out[32])
 {
     // 8-byte aligned buffers to prevent GPU_CPU_MISMATCH (Metal fix)
     __private ulong key_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
     __private uchar *key = (__private uchar*)key_aligned;
+    #pragma unroll
     for (int i=0;i<16;i++) key[i]=seed[i];
     
     __private ulong counter_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
     __private uchar *counter = (__private uchar*)counter_aligned;
+    #pragma unroll
     for (int i=0;i<8;i++) counter[i]    =(uchar)(nonce>>(i*8));
+    #pragma unroll
     for (int i=0;i<8;i++) counter[8+i]  =seed[16+i];
     
     __private ulong block0_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
@@ -327,17 +361,21 @@ void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out
     __private ulong block1_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
     __private uchar *block1 = (__private uchar*)block1_aligned;
     
+    #pragma unroll
     for (int i=0;i<16;i++) { block0[i]=counter[i]; block1[i]=counter[i]; }
     uint carry=1;
+    #pragma unroll
     for (int i=0;i<16;i++) {
         uint s=(uint)block1[i]+carry;
         block1[i]=(uchar)(s&0xFF);
         carry=s>>8;
         if (carry==0) break;
     }
+    #pragma unroll
     for (int r=0;r<3;r++) { aes_round(block0,key); aes_round(block1,key); }
     aes_final_round(block0,key);
     aes_final_round(block1,key);
+    #pragma unroll
     for (int i=0;i<16;i++) { out[i]=block0[i]^seed[i]; out[16+i]=block1[i]^seed[16+i]; }
 }
 
@@ -350,6 +388,7 @@ void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out
 /* Identical logic in deeksha_lite_fire.rs (CPU reference).                   */
 /* ========================================================================== */
 
+__attribute__((always_inline))
 void thermal_loop(__private uchar data[32] __attribute__((aligned(8))), ulong nonce)
 {
     ulong a = nonce ^ 0x9E3779B97F4A7C15UL;
@@ -361,6 +400,7 @@ void thermal_loop(__private uchar data[32] __attribute__((aligned(8))), ulong no
     ulong g = nonce ^ 0xBADC0FFEE0DDF00DUL;
     ulong h = nonce ^ 0xFEEDFACECAFEBEEFUL;
 
+    #pragma unroll 4
     for (int i = 0; i < THERMAL_ITERS; i++) {
         a = ROL64(a,17) + b;  b = ROL64(b,31) ^ a;
         c = ROL64(c,13) + d;  d = ROL64(d,47) ^ c;
@@ -414,11 +454,14 @@ void thermal_loop(__private uchar data[32] __attribute__((aligned(8))), ulong no
 
 #define STREAM_ITERS_SCALE 16.0f
 
-void stream_byproduct_keccak(__private const uchar in[32], int iters, __global uchar *pad)
+__attribute__((always_inline))
+void stream_byproduct_keccak(__private const uchar in[32], int iters, __global uchar * restrict pad)
 {
     if (iters <= 0) return;
     keccak_st_t s;
+    #pragma unroll
     for (int i = 0; i < 25; i++) s.u[i] = 0;
+    #pragma unroll
     for (int i = 0; i < 32; i++) s.b[i] ^= in[i];
     s.b[32] ^= 0x01;
     s.b[135] ^= 0x80;
@@ -429,11 +472,14 @@ void stream_byproduct_keccak(__private const uchar in[32], int iters, __global u
     vstore4(h, 0, (__global ulong*)pad);
 }
 
-void stream_byproduct_sha3(__private const uchar in[32], int iters, __global uchar *pad)
+__attribute__((always_inline))
+void stream_byproduct_sha3(__private const uchar in[32], int iters, __global uchar * restrict pad)
 {
     if (iters <= 0) return;
     uchar tmp[64];
+    #pragma unroll
     for (int i = 0; i < 32; i++) tmp[i] = in[i];
+    #pragma unroll
     for (int i = 32; i < 64; i++) tmp[i] = 0;
     for (int i = 0; i < iters; i++) {
         sha3_512(tmp, 32, tmp);
@@ -442,10 +488,12 @@ void stream_byproduct_sha3(__private const uchar in[32], int iters, __global uch
     vstore4(h, 0, (__global ulong*)pad);
 }
 
-void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters, __global uchar *pad)
+__attribute__((always_inline))
+void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters, __global uchar * restrict pad)
 {
     if (iters <= 0) return;
     uchar tmp[32];
+    #pragma unroll
     for (int i = 0; i < 32; i++) tmp[i] = in[i];
     for (int i = 0; i < iters; i++) {
         aes128_mix(tmp, nonce + (ulong)i, tmp);
@@ -458,13 +506,14 @@ void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters, 
 /* Main kernel                                                                  */
 /* ========================================================================== */
 
-__kernel void deeksha_lite_fire_mine(
-    __global const ulong *header_keccak_state,  /* same as v1: host precomputed */
+__kernel __attribute__((work_group_size_hint(LOCAL_SIZE, 1, 1)))
+void deeksha_lite_fire_mine(
+    __constant const ulong * restrict header_keccak_state,  /* same as v1: host precomputed */
     ulong  nonce_base,
     uint   nonce_count,
-    __global uchar *output_hashes,
-    __global uchar *scratchpad_pool,
-    __constant float *stream_weights)
+    __global uchar * restrict output_hashes,
+    __global uchar * restrict scratchpad_pool,
+    __constant float * restrict stream_weights)
 {
     uint tid = get_global_id(0);
     if (tid >= nonce_count) return;
@@ -472,18 +521,18 @@ __kernel void deeksha_lite_fire_mine(
     ulong nonce = nonce_base + (ulong)tid;
 
     /* Step 1: Keccak256(header || nonce) — same as v1 */
-    uchar s1[32];
+    uchar s1[32] __attribute__((aligned(8)));
     keccak256_from_state(header_keccak_state, nonce, s1);
 
     /* Step 2: Memory-hard scratchpad — STRIDED (per-thread 256KiB contiguous) */
-    __global uchar *pad = scratchpad_pool + (ulong)tid * (ulong)SCRATCHPAD_SIZE;
+    __global uchar * restrict pad = scratchpad_pool + (ulong)tid * (ulong)SCRATCHPAD_SIZE;
     fill_scratchpad(s1, pad);
     sequential_passes(pad);
-    uchar s2[32];
+    uchar s2[32] __attribute__((aligned(8)));
     random_read_mix(s1, pad, s2);
 
     /* Step 3: AES-128 CTR mix — same as v1 */
-    uchar s3[32];
+    uchar s3[32] __attribute__((aligned(8)));
     aes128_mix(s2, nonce, s3);
 
     /* Step 4: Thermal loop — extra heat, not in v1 */
@@ -501,14 +550,14 @@ __kernel void deeksha_lite_fire_mine(
     st[16] ^= (0x80UL << 56); /* 0x80 at byte 135 = st[16] byte 7 */
     keccak_f1600(st);
 
-    __global uchar *slot = output_hashes + (ulong)tid * 32;
-    __global ulong *slot_u64 = (__global ulong*)slot;
+    __global uchar * restrict slot = output_hashes + (ulong)tid * 32;
+    __global ulong * restrict slot_u64 = (__global ulong*)slot;
     slot_u64[0] = st[0]; slot_u64[1] = st[1]; slot_u64[2] = st[2]; slot_u64[3] = st[3];
 
     /* hash is st[0..3] — use for stream byproduct */
     __private ulong hash_u64[4];
     hash_u64[0] = st[0]; hash_u64[1] = st[1]; hash_u64[2] = st[2]; hash_u64[3] = st[3];
-    __private uchar *hash = (__private uchar*)hash_u64;
+    __private uchar * restrict hash = (__private uchar*)hash_u64;
 
     /* Stream-profit byproduct work (does not affect PoW hash).
      * NOTE: stream_byproduct_* write to pad[0..16] which is already consumed
