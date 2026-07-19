@@ -125,7 +125,7 @@ if [[ -x "$MINER_BIN" ]]; then
 else
     echo "[BUILD] Miner binary missing, building..."
     cd "$REPO_ROOT/V3"
-    cargo build --release --bin zion-miner --features full,native-hashers
+    cargo build --release --bin zion-miner --features gpu-opencl,native-hashers,native-verushash,native-randomx
     cp "$MINER_BIN" "$DESKTOP_BIN"
     chmod +x "$DESKTOP_BIN"
 fi
