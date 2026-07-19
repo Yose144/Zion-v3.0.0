@@ -67,6 +67,10 @@ pub struct ExternalStreamJob {
     /// RandomX cache/dataset initialization.  None for non-RandomX coins.
     #[serde(default)]
     pub seed_hash_hex: String,
+    /// Timestamp from upstream pool notify (KAS kheavyhash needs this for
+    /// PoW hash computation).  Stored as little-endian u64.  0 if not provided.
+    #[serde(default)]
+    pub timestamp: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

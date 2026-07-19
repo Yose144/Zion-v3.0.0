@@ -2520,6 +2520,7 @@ fn handle_client(
                         seed_hash_hex: ext_job.seed_hash.as_ref()
                             .map(|s| hex::encode(s))
                             .unwrap_or_default(),
+                        timestamp: ext_job.timestamp,
                     })
                 } else {
                     log_ch.log_verbose(format!(
@@ -2600,6 +2601,7 @@ fn handle_client(
                         seed_hash_hex: ext_job.seed_hash.as_ref()
                             .map(|s| hex::encode(s))
                             .unwrap_or_default(),
+                        timestamp: ext_job.timestamp,
                     })
                 } else {
                     None

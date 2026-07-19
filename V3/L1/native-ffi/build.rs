@@ -84,8 +84,8 @@ fn add_msvc_includes(b: &mut cc::Build) {
 // CPU baseline control (XMRig-style)
 //
 // ZION_CPU_TARGET env var controls the C/C++ compilation target:
-//   - "native"    (default): use -march=native (optimal for the build machine)
-//   - "x86-64"  : baseline x86-64 (portable, for distribution / SMOS rigs)
+//   - "x86-64"  (default): baseline x86-64 (portable, for distribution / SMOS rigs)
+//   - "native"    : use -march=native (optimal for the build machine, NOT portable)
 //   - "x86-64-v2":  SSE4.2 + POPCNT (most modern CPUs, 2009+)
 //   - "x86-64-v3":  AVX2 + BMI1/2 + FMA (2013+ Intel Haswell, 2015+ AMD Zen)
 //   - any other  : passed directly as -march=<value>
@@ -100,7 +100,12 @@ fn add_msvc_includes(b: &mut cc::Build) {
 // ─────────────────────────────────────────────────────────────────────────
 
 fn cpu_target() -> String {
-    env::var("ZION_CPU_TARGET").unwrap_or_else(|_| "native".to_string())
+    // Default to "x86-64" (baseline SSE2) for portable distribution builds.
+    // This prevents SIGILL on older CPUs (e.g. Intel Pentium G4560/G5420
+    // which have AES-NI + SSE4.2 but NOT AVX/BMI2).
+    // Users who want maximum performance on their own machine can set
+    // ZION_CPU_TARGET=native for a local build.
+    env::var("ZION_CPU_TARGET").unwrap_or_else(|_| "x86-64".to_string())
 }
 
 /// Returns true if we're building for a portable target (not native).

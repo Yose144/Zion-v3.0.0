@@ -48,18 +48,18 @@ fn main() {
             build.flag("-fopenmp");
         }
 
-        build
-            .warnings(false) // C code may have unused-parameter warnings
-            .opt_level(3)
-            .compile("auxpow_native");
-
         // Apply CPU baseline (XMRig-style): respect ZION_CPU_TARGET env var.
-        // Default is "native" (optimal for build machine). Set to "x86-64"
-        // for portable/distribution builds (e.g. SMOS rigs with Pentium G4560).
+        // Default is "x86-64" (baseline SSE2) for portable distribution builds.
+        // This prevents SIGILL on older CPUs (e.g. Intel Pentium G4560/G5420
+        // which have AES-NI + SSE4.2 but NOT AVX/BMI2).
+        // Users who want maximum performance on their own machine can set
+        // ZION_CPU_TARGET=native for a local build.
         // The flag is applied via flag_if_supported to avoid errors on
         // compilers that don't understand -march.
+        // NOTE: Must be called BEFORE compile() — flags added after compile()
+        // have no effect (cc::Build::compile consumes the builder).
         {
-            let cpu_target = std::env::var("ZION_CPU_TARGET").unwrap_or_else(|_| "native".to_string());
+            let cpu_target = std::env::var("ZION_CPU_TARGET").unwrap_or_else(|_| "x86-64".to_string());
             if cpu_target == "native" {
                 build.flag_if_supported("-march=native");
             } else if !cpu_target.is_empty() {
@@ -67,6 +67,11 @@ fn main() {
             }
             println!("cargo:warning=ZION AuXpow build: cpu_target={}", cpu_target);
         }
+
+        build
+            .warnings(false) // C code may have unused-parameter warnings
+            .opt_level(3)
+            .compile("auxpow_native");
 
         // Link OpenMP runtime library (libgomp on Linux).
         // NOTE: Disabled on Linux to avoid SIGILL on CPUs without AVX.
