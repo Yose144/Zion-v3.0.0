@@ -5,15 +5,16 @@ Status date: **2026-07-15** (3.0.6 "Triple Parallel" live — 14/14 services act
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
 
-## Supplement — V3.1 Architecture Reorganization (planned)
+## Supplement — V3.1 Migration to a clean `V31/` tree (planned, post-3.0.9)
 
-Target layout for **3.1.0 Mainnet Alpha**:
+The 3.1.0 structural work is a **migration into a brand-new, clean `V31/` directory** (on a dedicated branch) — not an in-place reorg of `V3/`. Target layout:
 
 - **L1** — `core`, `cosmic-harmony`, `miner` (with AuxPoW merged in), `pool`, `native-ffi`, `types`.
-- **L2** — `bridge`, `warp` (moved from L3), `dao`, `atomic-swap`, `swap-aggregator`, `ziondex` (moved from root `ZionDex/`).
-- **L3** — `ai-native`, `ncl`, `hiran`, `orchestrator`, `automation`, `poc`, plus former `L4/L5/L6` modules folded into `ai/oasis`, `ai/free-world`, `ai/issobella`.
+- **L2** — `bridge`, `warp` (moved from L3), `ziondex` (moved from root `ZionDex/`), `dao`, `atomic-swap`, `swap-aggregator`.
+- **L3** — `ai-native`, `ncl`, `hiran`, `orchestrator`, `automation`, `poc` (AI / orchestration / automation / research only).
+- **L4** — `oasis` · **L5** — `free-world` · **L6** — `issobella` — **superstructures (nadstavby) that keep their own top-level layer identity.**
 
-See full plan: [`V3.1_ARCHITECTURE_REORG_PLAN.md`](../V3.1_ARCHITECTURE_REORG_PLAN.md).
+Migration begins only after 3.0.9 is complete. See full plan: [`V3.1_MIGRATION_PLAN.md`](../V3.1_MIGRATION_PLAN.md).
 
 ---
 
