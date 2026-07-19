@@ -1651,6 +1651,17 @@ pub fn create_gpu_backend_with_cuda_device(
     create_gpu_backend_inner(kind, work_size, algorithm, shared_dev)
 }
 
+/// No-CUDA fallback: accepts the shared_dev argument but ignores it.
+#[cfg(not(feature = "gpu-cuda"))]
+pub fn create_gpu_backend_with_cuda_device(
+    kind: GpuBackendKind,
+    work_size: usize,
+    algorithm: &str,
+    _shared_dev: Option<()>,
+) -> Result<Box<dyn GpuMiner>> {
+    create_gpu_backend_inner(kind, work_size, algorithm, None)
+}
+
 #[allow(unused_variables)]
 fn create_gpu_backend_inner(
     kind: GpuBackendKind,

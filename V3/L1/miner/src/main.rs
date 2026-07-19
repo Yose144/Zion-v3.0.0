@@ -3293,7 +3293,10 @@ fn external_gpu_thread(
     work_size: usize,
     hashrate: Arc<HashrateTracker>,
     backend_kind: gpu_backend::GpuBackendKind,
+    #[cfg(feature = "gpu-cuda")]
     shared_cuda_dev: Option<std::sync::Arc<cudarc::driver::CudaDevice>>,
+    #[cfg(not(feature = "gpu-cuda"))]
+    shared_cuda_dev: Option<()>,
 ) {
     println!("[{}] external_gpu_thread_entered backend={} shared_cuda={}", log_timestamp(), backend_kind.as_str(), shared_cuda_dev.is_some());
     use std::collections::hash_map::DefaultHasher;
