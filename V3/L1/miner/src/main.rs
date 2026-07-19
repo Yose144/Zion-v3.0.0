@@ -1109,6 +1109,7 @@ fn main() -> Result<()> {
             },
             work_size,
             &bench_algorithm,
+            "",
         )?;
         println!("device={}", gpu.device_name());
         println!("backend={}", gpu.backend_kind().as_str());
@@ -3752,6 +3753,7 @@ fn external_gpu_thread(
                 backend_kind,
                 work_size,
                 algo,
+                &job.coin,
                 shared_cuda_dev.clone(),
             ) {
                 Ok(m) => {
