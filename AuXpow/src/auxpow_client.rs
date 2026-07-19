@@ -3578,6 +3578,28 @@ impl AuxPowClient {
                 }
             }
 
+            // ── Solution lookup pre-check ──────────────────────────────────
+            // After a VRSC bridge reconnect (client.reconnect from LuckPool),
+            // a NEW AuxPowClient is created with an EMPTY job_solution HashMap.
+            // Shares for job_ids from BEFORE the reconnect would get an
+            // all-zeros solution → LuckPool rejects with "Nonce not found in
+            // solution vector".  Pre-reject these locally to avoid wasting
+            // a round-trip and inflating the reject rate.
+            //
+            // Also catches shares for evicted job_ids (64-job rolling window).
+            {
+                let has_solution = self.job_solution.lock().await.contains_key(job_id);
+                if !has_solution {
+                    warn!(
+                        "auxpow: {} stale job={} nonce={} — pre-rejected (job_id not in job_solution, likely post-reconnect)",
+                        self.profile.coin, job_id, nonce
+                    );
+                    return Ok(ShareResult::Rejected(
+                        "stale job — post-reconnect, solution unavailable".to_string()
+                    ));
+                }
+            }
+
             let wallet = self.payout_wallet.lock().await.clone();
             let worker = format!("{}.{}", wallet, self.profile.worker_name);
 

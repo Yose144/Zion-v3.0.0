@@ -452,6 +452,7 @@ fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
         ExternalCoin::CFX => RevenueSource::OctopusExternal,
         ExternalCoin::ZEC => RevenueSource::EquihashExternal,
         ExternalCoin::PHX => RevenueSource::NeoScryptExternal,
+        ExternalCoin::KRX => RevenueSource::KeryxHashExternal,
     }
 }
 
@@ -504,6 +505,7 @@ fn auxpow_to_ch_external_coin(coin: ExternalCoin) -> ChExternalCoin {
         ExternalCoin::CFX => ChExternalCoin::CFX,
         ExternalCoin::ZEC => ChExternalCoin::ZEC,
         ExternalCoin::PHX => ChExternalCoin::PHX,
+        ExternalCoin::KRX => ChExternalCoin::KRX,
     }
 }
 
@@ -538,6 +540,7 @@ fn ch_to_auxpow_external_coin(coin: ChExternalCoin) -> ExternalCoin {
         ChExternalCoin::CFX => ExternalCoin::CFX,
         ChExternalCoin::ZEC => ExternalCoin::ZEC,
         ChExternalCoin::PHX => ExternalCoin::PHX,
+        ChExternalCoin::KRX => ExternalCoin::KRX,
     }
 }
 
@@ -568,6 +571,7 @@ fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
         ExternalCoin::CFX => "octopus",
         ExternalCoin::ZEC => "equihash",
         ExternalCoin::PHX => "neoscrypt",
+        ExternalCoin::KRX => "keryxhash",
     }
 }
 
@@ -2120,6 +2124,20 @@ fn handle_client(
     let mut pool_profit_last_check = Instant::now();
 
     let reader_stream = stream.try_clone().context("failed to clone tcp stream")?;
+    // ── Read timeout for session thread ──────────────────────────────────
+    // Without a read timeout, a miner that stops responding (crashed GPU,
+    // hung OpenCL kernel, etc.) leaves the session thread blocked forever
+    // on read_wire_message.  The TCP connection stays ESTAB but no data
+    // flows, and the miner keeps submitting stale external shares that the
+    // pool can't read.  Set a generous timeout (default 120s) so stuck
+    // sessions are cleaned up and the miner can reconnect.
+    let session_read_timeout_secs: u64 = std::env::var("ZION_POOL_SESSION_TIMEOUT")
+        .ok()
+        .and_then(|s| s.trim().parse().ok())
+        .unwrap_or(120);
+    let _ = reader_stream.set_read_timeout(Some(
+        std::time::Duration::from_secs(session_read_timeout_secs),
+    ));
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
 
@@ -5578,7 +5596,7 @@ fn build_stats_payload(
         "uptime_s": uptime_s,
         "pool": {
             "uptime_secs": uptime_s,
-            "version": "3.0.5"
+            "version": "3.0.6"
         },
         "fee_split": {
             "miner_pct": fees.miner_pct,
@@ -6146,6 +6164,7 @@ fn source_index(source: RevenueSource) -> usize {
         RevenueSource::OctopusExternal => 27,
         RevenueSource::EquihashExternal => 28,
         RevenueSource::NeoScryptExternal => 29,
+        RevenueSource::KeryxHashExternal => 30,
     }
 }
 
@@ -6181,6 +6200,7 @@ fn revenue_source_name(source: RevenueSource) -> &'static str {
         RevenueSource::OctopusExternal => "octopus",
         RevenueSource::EquihashExternal => "equihash",
         RevenueSource::NeoScryptExternal => "neoscrypt",
+        RevenueSource::KeryxHashExternal => "keryxhash",
     }
 }
 
