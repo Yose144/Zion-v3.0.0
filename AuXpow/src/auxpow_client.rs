@@ -620,6 +620,23 @@ impl AuxPowClient {
             }
             self.authorize_inline(payout_wallet).await?;
         }
+        // ── Clear per-job state on reconnect ──────────────────────────────
+        // After reconnect, the upstream pool has a NEW session.  Old job_ids
+        // are invalid — LuckPool will reject them with "Job not found".
+        // Clearing these HashMaps ensures that shares for old job_ids are
+        // pre-rejected by the job_solution lookup check in submit_share(),
+        // rather than being forwarded upstream and wasting a round-trip.
+        // This is critical for ZcashStratum (VRSC) where the pool issues a
+        // client.reconnect every ~5-10 minutes.
+        {
+            self.job_solution.lock().await.clear();
+            self.job_ntime.lock().await.clear();
+            self.job_header_prefix.lock().await.clear();
+            self.job_extranonce1.lock().await.clear();
+            self.job_received_at.lock().await.clear();
+            *self.latest_job_id.lock().await = None;
+            warn!("AuxPow: cleared per-job state after reconnect for {}", self.profile.coin);
+        }
         info!("AuxPow: reconnected and authorized for {}", self.profile.coin);
         Ok(())
     }
