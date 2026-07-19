@@ -9,8 +9,36 @@ use anyhow::Result;
 use std::sync::Arc;
 
 use crate::auxpow_client::{AuxPowClient, ShareResult};
-use crate::external_hashers::{hash_blake3, hash_to_hex, meets_randomx_target, meets_target, meets_target_little_endian};
+use crate::external_hashers::{
+    ethash_final_hash, ethash_header_hash, hash_blake3, hash_to_hex, meets_randomx_target,
+    meets_target, meets_target_little_endian,
+};
 use crate::types::{ExternalCoin, ShareForwardResult};
+
+/// DAG-based algorithms whose GPU kernel only produces a u64 pre-check value
+/// (keccak_f800) and does NOT write the full 32-byte final hash.  For these
+/// algorithms the miner sets the hash field to all zeros and the pool must
+/// recompute the real final hash from header + nonce + mix_hash before
+/// submitting upstream.
+fn is_dag_algorithm(algo: &str) -> bool {
+    matches!(
+        algo,
+        "ethash"
+            | "etchash"
+            | "ethash_etc"
+            | "kawpow"
+            | "kawpow_rvn"
+            | "kawpow_clore"
+            | "kawpow_evr"
+            | "kawpow_mewc"
+            | "evrprogpow"
+            | "evrprogpow_evr"
+            | "meowpow"
+            | "meowpow_mewc"
+            | "progpow"
+            | "progpow_epic"
+    )
+}
 
 /// Forwards shares to the external pool currently selected by the multiplexer.
 pub struct ShareForwarder {
@@ -27,6 +55,13 @@ impl ShareForwarder {
     ///
     /// If `hash` does not meet `target`, the share is discarded as
     /// `BelowTarget`.  Otherwise the hash is submitted to the external pool.
+    ///
+    /// For DAG algorithms (ProgPow/Ethash/KawPow) the GPU kernel only produces
+    /// a u64 pre-check value and the `hash` field is all zeros.  When
+    /// `algorithm` is a DAG algo, `header_bytes` and `mix_hash` are used to
+    /// recompute the real final hash via `keccak256(keccak512(header || nonce)
+    /// || mix_hash)` and that real hash is what gets verified against the
+    /// target and submitted upstream.
     pub async fn try_forward(
         &self,
         job_id: &str,
@@ -34,29 +69,71 @@ impl ShareForwarder {
         hash: &[u8; 32],
         target: &[u8; 32],
         mix_hash: Option<&[u8; 32]>,
+        algorithm: &str,
+        header_bytes: &[u8],
     ) -> Result<ShareForwardResult> {
+        // For DAG algorithms, recompute the real final hash from
+        // header + nonce + mix_hash.  The GPU kernel's u64 pre-check
+        // (keccak_f800) can produce false positives, so we verify the full
+        // 32-byte hash here before submitting upstream.  This eliminates
+        // "low difficulty" rejections from the upstream pool.
+        let (effective_hash, recomputed) = if is_dag_algorithm(algorithm) {
+            if let Some(mix) = mix_hash {
+                if !header_bytes.is_empty() {
+                    let header_hash = ethash_header_hash(header_bytes);
+                    let real_hash = ethash_final_hash(&header_hash, nonce, mix);
+                    if real_hash != *hash {
+                        println!(
+                            "auxpow: dag_hash_recomputed algo={} nonce={} kernel_hash={:.16} real_hash={:.16} mix={:.16}",
+                            algorithm, nonce,
+                            hash_to_hex(hash),
+                            hash_to_hex(&real_hash),
+                            hash_to_hex(mix),
+                        );
+                    }
+                    (real_hash, true)
+                } else {
+                    // No header bytes available — fall back to the kernel hash.
+                    (*hash, false)
+                }
+            } else {
+                // No mix hash — can't recompute.  Fall back to the kernel hash.
+                (*hash, false)
+            }
+        } else {
+            (*hash, false)
+        };
+
         let meets = if self.client.profile().coin == ExternalCoin::XMR {
-            let h_msb = u64::from_le_bytes(hash[24..32].try_into().unwrap());
+            let h_msb = u64::from_le_bytes(effective_hash[24..32].try_into().unwrap());
             let t_le = u64::from_le_bytes(target[..8].try_into().unwrap());
             println!(
                 "auxpow: XMR try_forward job_id={} nonce={} hash_msb=0x{:016x} target_le=0x{:016x} meets={}",
                 job_id, nonce, h_msb, t_le, h_msb < t_le
             );
-            meets_randomx_target(hash, target)
+            meets_randomx_target(&effective_hash, target)
         } else if self.client.profile().coin == ExternalCoin::DCR {
             // Decred BLAKE3 (DCP-0011) interprets the PoW hash as a
             // little-endian integer when comparing against the target.
-            meets_target_little_endian(hash, target)
+            meets_target_little_endian(&effective_hash, target)
         } else if self.client.profile().coin == ExternalCoin::VRSC {
             // VerusHash v2.2: professional pools (node-stratum-pool-verus /
             // LuckPool) interpret the 32-byte hash as a little-endian integer.
-            meets_target_little_endian(hash, target)
+            meets_target_little_endian(&effective_hash, target)
         } else {
             // Most other external algorithms compare hash and target as
             // big-endian 256-bit integers.
-            meets_target(hash, target)
+            meets_target(&effective_hash, target)
         };
         if !meets {
+            if recomputed {
+                println!(
+                    "auxpow: dag_share_below_real_target algo={} nonce={} real_hash={:.16} target={:.16} — GPU kernel u64 pre-check false positive, dropping",
+                    algorithm, nonce,
+                    hash_to_hex(&effective_hash),
+                    hash_to_hex(target),
+                );
+            }
             // For testing: bypass target check if ZION_AUXPOW_BYPASS_TARGET=1
             if !std::env::var("ZION_AUXPOW_BYPASS_TARGET")
                 .as_deref()
@@ -66,7 +143,9 @@ impl ShareForwarder {
                 return Ok(ShareForwardResult::BelowTarget);
             }
         }
-        let hash_hex = hash_to_hex(hash);
+        // For DAG algorithms, submit the real recomputed hash (not zeros) so
+        // the upstream pool's own verification matches our pre-check.
+        let hash_hex = hash_to_hex(&effective_hash);
         let mix_hash_hex = mix_hash.map(hash_to_hex);
         match self.client.submit_share(job_id, nonce, &hash_hex, mix_hash_hex.as_deref()).await {
             Ok(ShareResult::Accepted) => Ok(ShareForwardResult::Accepted),
@@ -86,7 +165,7 @@ impl ShareForwarder {
         target: &[u8; 32],
     ) -> Result<ShareForwardResult> {
         let hash = hash_blake3(header, 0, nonce);
-        self.try_forward(job_id, nonce, &hash, target, None).await
+        self.try_forward(job_id, nonce, &hash, target, None, "blake3", &[]).await
     }
 }
 
@@ -176,7 +255,7 @@ mod tests {
         let hash = [0xFFu8; 32]; // definitely above target
         let mut target = [0x00u8; 32];
         target[31] = 0x01; // very hard target
-        let result = forwarder.try_forward("job_forward", 0, &hash, &target, None).await.unwrap();
+        let result = forwarder.try_forward("job_forward", 0, &hash, &target, None, "blake3", &[]).await.unwrap();
         assert_eq!(result, ShareForwardResult::BelowTarget);
     }
 
@@ -195,7 +274,7 @@ mod tests {
         let forwarder = ShareForwarder::new(client);
         let target = [0xFFu8; 32]; // trivial target
         let hash = hash_blake3(b"header", 0, 42);
-        let result = forwarder.try_forward("job_forward", 42, &hash, &target, None).await.unwrap();
+        let result = forwarder.try_forward("job_forward", 42, &hash, &target, None, "blake3", &[]).await.unwrap();
         assert_eq!(result, ShareForwardResult::Accepted);
     }
 
@@ -212,7 +291,7 @@ mod tests {
         let forwarder = ShareForwarder::new(client);
         let target = [0xFFu8; 32];
         let hash = hash_blake3(b"header", 0, 7);
-        let result = forwarder.try_forward("job_forward", 7, &hash, &target, None).await.unwrap();
+        let result = forwarder.try_forward("job_forward", 7, &hash, &target, None, "blake3", &[]).await.unwrap();
         assert_eq!(result, ShareForwardResult::Rejected("low diff".to_string()));
     }
 }
