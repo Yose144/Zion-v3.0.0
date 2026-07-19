@@ -24,7 +24,7 @@
 
 // ── Algorithm selection (Fisher-Yates style from header nibbles) ────────────
 
-inline void select_algo(uchar nibble, __private bool* selectedAlgos,
+void select_algo(uchar nibble, __private bool* selectedAlgos,
                         __private uchar* selectedIndex, int algoCount,
                         __private int* currentCount) {
     uchar algoDigit = (nibble & 0x0F) % algoCount;
@@ -41,7 +41,7 @@ inline void select_algo(uchar nibble, __private bool* selectedAlgos,
     }
 }
 
-inline void get_algo_string(__private const uchar* mem, uint size,
+void get_algo_string(__private const uchar* mem, uint size,
                             __private uchar* selectedAlgoOutput, int algoCount) {
     uint len = size / 2;
     __private bool selectedAlgo[15]; // max 15 algos
@@ -67,7 +67,7 @@ inline void get_algo_string(__private const uchar* mem, uint size,
 
 // ── Core hash dispatch ──────────────────────────────────────────────────────
 
-inline void core_hash_dispatch(int algo, hash_t* hash, uint size) {
+void core_hash_dispatch(int algo, hash_t* hash, uint size) {
     switch (algo) {
         case 0:  gr_core_0(hash, size); break;
         case 1:  gr_core_1(hash, size); break;
