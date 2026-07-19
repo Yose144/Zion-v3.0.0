@@ -236,10 +236,25 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16])
 { aes_sub_bytes(s); aes_shift_rows(s); aes_add_round_key(s,k); }
 
 /* ========================================================================== */
-/* Steps 2A/2B/2C: scratchpad — identical to v1                               */
+/* Steps 2A/2B/2C: scratchpad — INTERLEAVED layout (OPTIMIZED)                */
+/*                                                                             */
+/* Layout: block blk of thread tid is at:                                      */
+/*   pad_pool + (blk * total_threads + tid) * BLOCK_SIZE                      */
+/*                                                                             */
+/* This means all threads in a wavefront access consecutive 32-byte blocks     */
+/* for the same block index → 128-byte coalesced memory transactions.          */
+/* The strided layout (pad = pool + tid * 256KiB) caused ~1200x slowdown      */
+/* vs CUDA because every wavefront access was a non-coalesced strided read.    */
 /* ========================================================================== */
 
-void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
+/* Interleaved pad block accessor — returns pointer to 32-byte block (4 u64s). */
+inline __global ulong* pad_block(__global uchar *pool, uint blk, uint tid, uint total_threads)
+{
+    return (__global ulong*)(pool + (ulong)(blk * total_threads + tid) * BLOCK_SIZE);
+}
+
+void fill_scratchpad(__private const uchar seed[32], __global uchar *pool,
+                     uint tid, uint total_threads)
 {
     // 8-byte aligned state to prevent GPU_CPU_MISMATCH (Metal fix)
     __private ulong state_aligned[8];  // 8 * 8 = 64 bytes, 8-byte aligned
@@ -254,35 +269,41 @@ void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
         __private ulong out64_aligned[8];  // 8 * 8 = 64 bytes, 8-byte aligned
         __private uchar *out64 = (__private uchar*)out64_aligned;
         sha3_512_65(inp, out64);
-        uint off=blk*BLOCK_SIZE;
-        ulong4 v=vload4(0,out64_aligned);  // Use aligned pointer
-        vstore4(v,0,(__global ulong*)(pad+off));
-        vstore4(v,0,state_aligned);  // Use aligned pointer
+        // Write to INTERLEAVED position — coalesced across wavefront
+        __global ulong *pb = pad_block(pool, blk, tid, total_threads);
+        ulong4 v=vload4(0,out64_aligned);
+        vstore4(v,0,pb);
+        vstore4(v,0,state_aligned);
     }
 }
 
-void sequential_passes(__global uchar *pad)
+void sequential_passes(__global uchar *pool, uint tid, uint total_threads)
 {
     // Forward pass: XOR each block with previous (wrap-around)
-    ulong4 prev_v = vload4(0,(__global ulong*)(pad+(BLOCK_COUNT-1)*BLOCK_SIZE));
+    __global ulong *prev_pb = pad_block(pool, BLOCK_COUNT-1, tid, total_threads);
+    ulong4 prev_v = vload4(0, prev_pb);
     for (uint i=0;i<BLOCK_COUNT;i++) {
-        ulong4 cv = vload4(0,(__global ulong*)(pad+i*BLOCK_SIZE));
+        __global ulong *pb = pad_block(pool, i, tid, total_threads);
+        ulong4 cv = vload4(0, pb);
         cv ^= prev_v;
-        vstore4(cv,0,(__global ulong*)(pad+i*BLOCK_SIZE));
+        vstore4(cv, 0, pb);
         prev_v = cv;
     }
     // Backward pass: XOR each block with next (wrap-around)
-    ulong4 next_v = vload4(0,(__global ulong*)(pad+0));
+    __global ulong *next_pb = pad_block(pool, 0, tid, total_threads);
+    ulong4 next_v = vload4(0, next_pb);
     for (uint i=BLOCK_COUNT;i>0;i--) {
         uint idx=i-1;
-        ulong4 cv = vload4(0,(__global ulong*)(pad+idx*BLOCK_SIZE));
+        __global ulong *pb = pad_block(pool, idx, tid, total_threads);
+        ulong4 cv = vload4(0, pb);
         cv ^= next_v;
-        vstore4(cv,0,(__global ulong*)(pad+idx*BLOCK_SIZE));
+        vstore4(cv, 0, pb);
         next_v = cv;
     }
 }
 
-void random_read_mix(__private const uchar seed[32], __global const uchar *pad, __private uchar out[32])
+void random_read_mix(__private const uchar seed[32], __global const uchar *pool,
+                     uint tid, uint total_threads, __private uchar out[32])
 {
     // 8-byte aligned accumulator to prevent GPU_CPU_MISMATCH (Metal fix)
     __private ulong acc_aligned[4];  // 4 * 8 = 32 bytes, 8-byte aligned
@@ -290,10 +311,10 @@ void random_read_mix(__private const uchar seed[32], __global const uchar *pad, 
     for (int i=0;i<32;i++) acc[i]=seed[i];
     ulong pos=0;
     for (ulong r=0;r<RANDOM_READS;r++) {
-        uint off=(uint)(pos*BLOCK_SIZE);
-        ulong4 av=vload4(0,acc_aligned);  // Use aligned pointer
-        ulong4 pv=vload4(0,(__global const ulong*)(pad+off));
-        av^=pv; vstore4(av,0,acc_aligned);  // Use aligned pointer
+        __global const ulong *pb = pad_block((__global const uchar*)pool, (uint)pos, tid, total_threads);
+        ulong4 av=vload4(0,acc_aligned);
+        ulong4 pv=vload4(0,pb);
+        av^=pv; vstore4(av,0,acc_aligned);
         ulong idx_val=0;
         for (int i=0;i<8;i++) idx_val|=((ulong)acc[i])<<(i*8);
         pos=(idx_val^pos^r)%BLOCK_COUNT;
@@ -464,18 +485,19 @@ __kernel void deeksha_lite_fire_mine(
     uint tid = get_global_id(0);
     if (tid >= nonce_count) return;
 
-    __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
+    /* INTERLEAVED layout: total_threads = nonce_count (grid covers exactly nonce_count) */
+    uint total_threads = nonce_count;
     ulong nonce = nonce_base + (ulong)tid;
 
     /* Step 1: Keccak256(header || nonce) — same as v1 */
     uchar s1[32];
     keccak256_from_state(header_keccak_state, nonce, s1);
 
-    /* Step 2: Memory-hard scratchpad — same as v1 */
-    fill_scratchpad(s1, pad);
-    sequential_passes(pad);
+    /* Step 2: Memory-hard scratchpad — INTERLEAVED (coalesced) */
+    fill_scratchpad(s1, scratchpad_pool, tid, total_threads);
+    sequential_passes(scratchpad_pool, tid, total_threads);
     uchar s2[32];
-    random_read_mix(s1, pad, s2);
+    random_read_mix(s1, scratchpad_pool, tid, total_threads, s2);
 
     /* Step 3: AES-128 CTR mix — same as v1 */
     uchar s3[32];
@@ -498,19 +520,25 @@ __kernel void deeksha_lite_fire_mine(
     ulong4 hv = vload4(0, (__private ulong*)hash);
     vstore4(hv, 0, (__global ulong*)slot);
 
-    /* Stream-profit byproduct work (does not affect PoW hash) */
+    /* Stream-profit byproduct work (does not affect PoW hash).
+     * NOTE: stream_byproduct_* write to pad which is now interleaved.
+     * The byproduct writes a single 16-byte ulong4 to pad_block(pool, 0, tid, total_threads).
+     * This is safe — it overwrites block 0 of this thread's interleaved region,
+     * which is already consumed by random_read_mix. The compiler cannot DCE
+     * because it's a global memory write with a dependency on hash. */
     if (stream_weights) {
+        __global ulong *pad = pad_block(scratchpad_pool, 0, tid, total_threads);
         int keccak_iters = (int)(stream_weights[SW_KECCAK_BONUS] * STREAM_ITERS_SCALE);
-        stream_byproduct_keccak(hash, keccak_iters, pad);
+        stream_byproduct_keccak(hash, keccak_iters, (__global uchar*)pad);
 
         int sha3_iters = (int)(stream_weights[SW_SHA3_BONUS] * STREAM_ITERS_SCALE);
-        stream_byproduct_sha3(hash, sha3_iters, pad);
+        stream_byproduct_sha3(hash, sha3_iters, (__global uchar*)pad);
 
         float aes_weight = stream_weights[SW_NCL_AI] + stream_weights[SW_DEEKSHA_LITE] + stream_weights[SW_THERMAL];
         int aes_iters = (int)(aes_weight * STREAM_ITERS_SCALE);
-        stream_byproduct_aes(hash, nonce, aes_iters, pad);
+        stream_byproduct_aes(hash, nonce, aes_iters, (__global uchar*)pad);
 
         int zion_iters = (int)(stream_weights[SW_ZION] * STREAM_ITERS_SCALE);
-        stream_byproduct_keccak(hash, zion_iters, pad);
+        stream_byproduct_keccak(hash, zion_iters, (__global uchar*)pad);
     }
 }
