@@ -219,7 +219,28 @@ void cryptonightdarklite_hash(const char* input, char* output, uint32_t len, int
     VARIANT1_INIT();
     VARIANT2_INIT(ctx->b, ctx->state);
 
+    // Debug: print tweak1_2 and its components
+    {
+        uint64_t input_part = *(const uint64_t*)(((const uint8_t*)input)+35);
+        uint64_t state_part = ctx->state.hs.w[24];
+        printf("CPU_TWEAK1_2: %016llx\n", (unsigned long long)tweak1_2);
+        printf("CPU_INPUT_PART: %016llx\n", (unsigned long long)input_part);
+        printf("CPU_STATE_PART: %016llx\n", (unsigned long long)state_part);
+        // Also print state bytes 192..199
+        printf("CPU_STATE_192_199: ");
+        for (int z = 192; z < 200; z++) printf("%02x", ctx->state.hs.b[z]);
+        printf("\n");
+    }
+
     oaes_key_import_data(ctx->aes_ctx, ctx->aes_key, AES_KEY_SIZE);
+    // Debug: print state after Keccak (first 64 bytes)
+    printf("CPU_KECCAK_STATE: ");
+    for (int z = 0; z < 64; z++) printf("%02x", ctx->state.hs.b[z]);
+    printf("\n");
+    // Debug: print expanded key (first 64 bytes = 16 uint32s)
+    printf("CPU_EXPANDED_KEY: ");
+    for (int z = 0; z < 64; z++) printf("%02x", ctx->aes_ctx->key->exp_data[z]);
+    printf("\n");
     for (i = 0; i < CN_INIT; i++) {
         for (j = 0; j < INIT_SIZE_BLK; j++) {
             aesb_pseudo_round(&ctx->text[AES_BLOCK_SIZE * j],
@@ -228,19 +249,37 @@ void cryptonightdarklite_hash(const char* input, char* output, uint32_t len, int
         }
         memcpy(&ctx->long_state[i * INIT_SIZE_BYTE], ctx->text, INIT_SIZE_BYTE);
     }
+    // Debug: print first 64 bytes of scratchpad
+    printf("CPU_SCRATCHPAD_FIRST64: ");
+    for (int z = 0; z < 64; z++) printf("%02x", ctx->long_state[z]);
+    printf("\n");
 
     for (i = 0; i < 16; i++) {
         ctx->a[i] = ctx->state.k[i] ^ ctx->state.k[32 + i];
         ctx->b[i] = ctx->state.k[16 + i] ^ ctx->state.k[48 + i];
     }
+    // Debug: print a and b
+    printf("CPU_A: ");
+    for (int z = 0; z < 16; z++) printf("%02x", ctx->a[z]);
+    printf("\n");
+    printf("CPU_B: ");
+    for (int z = 0; z < 32; z++) printf("%02x", ctx->b[z]);
+    printf("\n");
 
-    for (i = 0; i < ITER_DIV; i++) {
+    for (i = 0; i < 164; i++) { // DEBUG: only 164 iterations
         /* Dependency chain: address -> read value ------+
          * written value <-+ hard function (AES or MUL) <+
          * next address  <-+
          */
         /* Iteration 1 */
         j = e2i(ctx->a);
+        // Debug: dump j1 and scratchpad at iteration 163
+        if (i == 163) {
+            printf("CPU_ITER163_J1: %zu\n", j);
+            printf("CPU_ITER163_SP: ");
+            for (int z = 0; z < 16; z++) printf("%02x", ctx->long_state[j * AES_BLOCK_SIZE + z]);
+            printf("\n");
+        }
         aesb_single_round(&ctx->long_state[j * AES_BLOCK_SIZE], ctx->c, ctx->a);
         VARIANT2_SHUFFLE_ADD(ctx->long_state, j * AES_BLOCK_SIZE, ctx->a, ctx->b);
         xor_blocks_dst(ctx->c, ctx->b, &ctx->long_state[j * AES_BLOCK_SIZE]);
@@ -259,6 +298,21 @@ void cryptonightdarklite_hash(const char* input, char* output, uint32_t len, int
         uint64_t hi;
         uint64_t lo = mul128(((uint64_t*)ctx->c)[0], t[0], &hi);
 
+        // Debug: dump state at iteration 163 (the 164th, 0-indexed)
+        if (i == 163) {
+            printf("CPU_ITER163_A: ");
+            for (int z = 0; z < 16; z++) printf("%02x", ctx->a[z]);
+            printf("\n");
+            printf("CPU_ITER163_C: ");
+            for (int z = 0; z < 16; z++) printf("%02x", ctx->c[z]);
+            printf("\n");
+            printf("CPU_ITER163_J2: %zu\n", j);
+            printf("CPU_ITER163_T0: %016llx\n", (unsigned long long)t[0]);
+            printf("CPU_ITER163_T1: %016llx\n", (unsigned long long)t[1]);
+            printf("CPU_ITER163_HI: %016llx\n", (unsigned long long)hi);
+            printf("CPU_ITER163_LO: %016llx\n", (unsigned long long)lo);
+        }
+
         VARIANT2_2();
         VARIANT2_SHUFFLE_ADD(ctx->long_state, j * AES_BLOCK_SIZE, ctx->a, ctx->b);
 
@@ -275,6 +329,16 @@ void cryptonightdarklite_hash(const char* input, char* output, uint32_t len, int
         copy_block(ctx->b + AES_BLOCK_SIZE, ctx->b);
         copy_block(ctx->b, ctx->c);
     }
+    // Debug: print a, b, c after main loop
+    printf("CPU_A_AFTER_LOOP: ");
+    for (int z = 0; z < 16; z++) printf("%02x", ctx->a[z]);
+    printf("\n");
+    printf("CPU_B_AFTER_LOOP: ");
+    for (int z = 0; z < 16; z++) printf("%02x", ctx->b[z]);
+    printf("\n");
+    printf("CPU_C_AFTER_LOOP: ");
+    for (int z = 0; z < 16; z++) printf("%02x", ctx->c[z]);
+    printf("\n");
 
     memcpy(ctx->text, ctx->state.init, INIT_SIZE_BYTE);
     oaes_key_import_data(ctx->aes_ctx, &ctx->state.hs.b[32], AES_KEY_SIZE);
@@ -289,6 +353,11 @@ void cryptonightdarklite_hash(const char* input, char* output, uint32_t len, int
     }
     memcpy(ctx->state.init, ctx->text, INIT_SIZE_BYTE);
     hash_permutation(&ctx->state.hs);
+    // Debug: print state after final keccak
+    printf("STATE_AFTER_KECCAK: ");
+    for (int z = 0; z < 200; z++) printf("%02x", ctx->state.hs.b[z]);
+    printf("\n");
+    printf("EXTRA_HASH_SEL: %d\n", ctx->state.hs.b[0] & 3);
     /*memcpy(hash, &state, 32);*/
     extra_hashes[ctx->state.hs.b[0] & 3](&ctx->state, 200, output);
     oaes_free((OAES_CTX **) &ctx->aes_ctx);

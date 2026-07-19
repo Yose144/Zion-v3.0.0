@@ -4712,6 +4712,7 @@ def get_pool_registered_miners() -> dict:
         last_seen = active.get("last_seen", 0) if active else 0
         last_share = active.get("last_share", 0) if active else 0
         worker_name = display_worker or (active.get("worker_name", "") if active else "")
+        streams = active.get("streams", {}) if active else {}
         m = {
             "miner_id": display_miner_id,
             "worker_name": worker_name,
@@ -4731,6 +4732,7 @@ def get_pool_registered_miners() -> dict:
             "last_share": last_share,
             "on_chain_balance_zion": on_chain,
             "active": bool(active),
+            "streams": streams,
         }
         miners.append(m)
 

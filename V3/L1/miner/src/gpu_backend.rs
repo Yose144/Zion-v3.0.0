@@ -284,6 +284,14 @@ pub trait GpuMiner: Send {
             nonces_tested: 0,
         })
     }
+
+    /// Return a shared CUDA device handle, if this backend uses CUDA.
+    /// Used by the external GPU thread to avoid creating a second CUDA
+    /// context on the same GPU (which causes deadlocks on consumer GPUs).
+    #[cfg(feature = "gpu-cuda")]
+    fn shared_cuda_device(&self) -> Option<std::sync::Arc<cudarc::driver::CudaDevice>> {
+        None
+    }
 }
 
 /// Multi-algo GPU backend manager.
@@ -478,6 +486,13 @@ impl TriGpuManager {
             g.set_stream_weights(weights)?;
         }
         Ok(())
+    }
+
+    /// Return a shared CUDA device handle from the primary backend, if available.
+    /// Used by the external GPU thread to avoid creating a second CUDA context.
+    #[cfg(feature = "gpu-cuda")]
+    pub fn shared_cuda_device(&self) -> Option<std::sync::Arc<cudarc::driver::CudaDevice>> {
+        self.primary.as_ref().and_then(|g| g.shared_cuda_device())
     }
 }
 
@@ -1620,6 +1635,30 @@ pub fn create_gpu_backend(
     work_size: usize,
     algorithm: &str,
 ) -> Result<Box<dyn GpuMiner>> {
+    create_gpu_backend_inner(kind, work_size, algorithm, None)
+}
+
+/// Create a GPU backend with an optional shared CUDA device.
+/// When a shared device is provided, the external CUDA miner reuses it
+/// instead of creating a new CUDA context (avoids deadlocks on consumer GPUs).
+#[cfg(feature = "gpu-cuda")]
+pub fn create_gpu_backend_with_cuda_device(
+    kind: GpuBackendKind,
+    work_size: usize,
+    algorithm: &str,
+    shared_dev: Option<std::sync::Arc<cudarc::driver::CudaDevice>>,
+) -> Result<Box<dyn GpuMiner>> {
+    create_gpu_backend_inner(kind, work_size, algorithm, shared_dev)
+}
+
+#[allow(unused_variables)]
+fn create_gpu_backend_inner(
+    kind: GpuBackendKind,
+    work_size: usize,
+    algorithm: &str,
+    #[cfg(feature = "gpu-cuda")] shared_dev: Option<std::sync::Arc<cudarc::driver::CudaDevice>>,
+    #[cfg(not(feature = "gpu-cuda"))] shared_dev: Option<()>,
+) -> Result<Box<dyn GpuMiner>> {
     let _ = algorithm;
     let _ = work_size;
     match kind {
@@ -1725,7 +1764,12 @@ pub fn create_gpu_backend(
                 if is_external_algorithm(algorithm) {
                     // Algorithms with dedicated CUDA kernels
                     if crate::cuda_external::CudaExtAlgo::from_name(algorithm).is_some() {
-                        match crate::cuda_external::CudaExternalMiner::new(algorithm, work_size) {
+                        let miner_result = if let Some(ref dev) = shared_dev {
+                            crate::cuda_external::CudaExternalMiner::new_with_device(algorithm, work_size, std::sync::Arc::clone(dev))
+                        } else {
+                            crate::cuda_external::CudaExternalMiner::new(algorithm, work_size)
+                        };
+                        match miner_result {
                             Ok(miner) => return Ok(Box::new(miner)),
                             Err(e) => {
                                 eprintln!("[gpu_backend] CUDA external kernel failed for {}: {} — falling back to CPU", algorithm, e);
@@ -5345,10 +5389,13 @@ pub mod cuda_deeksha_lite_fire {
             let hps = if elapsed > 0.0 { total as f64 / elapsed } else { 0.0 };
             Ok((total, elapsed, hps))
         }
+
+        #[cfg(feature = "gpu-cuda")]
+        fn shared_cuda_device(&self) -> Option<std::sync::Arc<cudarc::driver::CudaDevice>> {
+            Some(std::sync::Arc::clone(&self.dev))
+        }
     }
 }
-
-// ─── CUDA Backend: deeksha_lite_v1 / deeksha_chv3 (no thermal loop) ─────────
 
 #[cfg(feature = "gpu-cuda")]
 pub mod cuda_deeksha_lite {

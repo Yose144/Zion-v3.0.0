@@ -1672,9 +1672,22 @@ async function updateMinerLeaderboard(){
       const blocks = m.blocks_found || 0;
       const statusDot = m.active ? '<span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1"></span>' : '<span class="inline-block w-2 h-2 rounded-full bg-gray-600 mr-1"></span>';
       const rankColor = i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-orange-400' : 'text-gray-400';
+      // Triple Stream badges
+      const streams = m.streams || {};
+      const streamBadges = Object.entries(streams).filter(([k,v]) => (v.valid_shares||0)+(v.invalid_shares||0) > 0).map(([k,v]) => {
+        const sValid = v.valid_shares || 0;
+        const sInvalid = v.invalid_shares || 0;
+        const sTotal = sValid + sInvalid;
+        const sPct = sTotal > 0 ? ((sValid/sTotal)*100).toFixed(0)+'%' : '—';
+        const colors = {zion:'text-emerald-400',kheavyhash:'text-cyan-400',verushash:'text-yellow-400',blake3:'text-blue-400',ethash:'text-purple-400',kawpow:'text-pink-400',randomx:'text-orange-400',autolykos:'text-red-400'};
+        const labels = {zion:'ZION',kheavyhash:'KAS',verushash:'VRSC',blake3:'BLAKE3',ethash:'ETC',kawpow:'KAWPOW',randomx:'XMR',autolykos:'ERG'};
+        const color = colors[k] || 'text-gray-400';
+        const label = labels[k] || k.toUpperCase().slice(0,6);
+        return `<span class="text-[9px] ${color} mr-1">${label}:${sValid}/${sPct}</span>`;
+      }).join('');
       return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
         <td class="py-1.5 px-2 font-bold ${rankColor}">${i + 1}</td>
-        <td class="py-1.5 px-2 text-white">${statusDot}${escapeHtml(name)}${blocks > 0 ? ' <span class="text-[9px] text-emerald-400">('+blocks+' blk)</span>' : ''}</td>
+        <td class="py-1.5 px-2 text-white">${statusDot}${escapeHtml(name)}${blocks > 0 ? ' <span class="text-[9px] text-emerald-400">('+blocks+' blk)</span>' : ''}<div class="text-[9px] mt-0.5">${streamBadges}</div></td>
         <td class="py-1.5 px-2 text-right text-emerald-400 font-mono">${hrStr}</td>
         <td class="py-1.5 px-2 text-right text-white font-mono">${validShares.toLocaleString()}</td>
         <td class="py-1.5 px-2 text-right text-cyan-400 font-mono">${acceptPct}</td>
@@ -2530,9 +2543,22 @@ async function updatePoolLeaderboard(){
       const onChainStr = onChain > 0 ? _zionFmt(onChain) : '—';
       const rankColor = i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-orange-400' : 'text-gray-400';
       const statusDot = m.active ? '<span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1"></span>' : '<span class="inline-block w-2 h-2 rounded-full bg-gray-600 mr-1"></span>';
+      // Triple Stream badges
+      const streams = m.streams || {};
+      const streamBadges = Object.entries(streams).filter(([k,v]) => (v.valid_shares||0)+(v.invalid_shares||0) > 0).map(([k,v]) => {
+        const sValid = v.valid_shares || 0;
+        const sInvalid = v.invalid_shares || 0;
+        const sTotal = sValid + sInvalid;
+        const sPct = sTotal > 0 ? ((sValid/sTotal)*100).toFixed(0)+'%' : '—';
+        const colors = {zion:'text-emerald-400',kheavyhash:'text-cyan-400',verushash:'text-yellow-400',blake3:'text-blue-400',ethash:'text-purple-400',kawpow:'text-pink-400',randomx:'text-orange-400',autolykos:'text-red-400'};
+        const labels = {zion:'ZION',kheavyhash:'KAS',verushash:'VRSC',blake3:'BLAKE3',ethash:'ETC',kawpow:'KAWPOW',randomx:'XMR',autolykos:'ERG'};
+        const color = colors[k] || 'text-gray-400';
+        const label = labels[k] || k.toUpperCase().slice(0,6);
+        return `<span class="text-[9px] ${color} mr-1">${label}:${sValid}/${sPct}</span>`;
+      }).join('');
       return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
         <td class="py-2 px-2 font-bold ${rankColor}">${m.rank || i + 1}</td>
-        <td class="py-2 px-2 text-white">${statusDot}${escapeHtml(name)}${blocks > 0 ? ' <span class="text-[9px] text-emerald-400">('+blocks+' blk)</span>' : ''}</td>
+        <td class="py-2 px-2 text-white">${statusDot}${escapeHtml(name)}${blocks > 0 ? ' <span class="text-[9px] text-emerald-400">('+blocks+' blk)</span>' : ''}<div class="text-[9px] mt-0.5">${streamBadges}</div></td>
         <td class="py-2 px-2 text-right text-emerald-400 font-mono">${hrStr}</td>
         <td class="py-2 px-2 text-right text-white font-mono">${valid.toLocaleString()}</td>
         <td class="py-2 px-2 text-right text-zion-gold font-mono">${blocks}</td>

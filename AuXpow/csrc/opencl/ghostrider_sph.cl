@@ -11902,40 +11902,43 @@ void gr_core_3(hash_t* hash, uint size)
         h7l ^= hash->h8[7];
     }
 
-    // Block 1: remaining data + 0x80 + zeros
+    // Block 1: remaining data + 0x80 + zeros + 128-bit BE length
+    // For size=80: msg[64..79] + 0x80 + zeros + length (spans 2 JH blocks)
+    // For size=64: 0x80 + zeros + length (fits in 1 JH block)
     {
         if (size == 80) {
+            // Block 1: msg[64..79] + 0x80 + zeros (first part of padding)
             h0h ^= hash->h8[8];
             h0l ^= hash->h8[9];
             h1h ^= SPH_C64(0x0000000000000080);
-        } else {
-            h0h ^= SPH_C64(0x0000000000000080);
-        }
 
-        E8;
+            E8;
 
-        if (size == 80) {
             h4h ^= hash->h8[8];
             h4l ^= hash->h8[9];
             h5h ^= SPH_C64(0x0000000000000080);
+
+            // Block 2: zeros + 128-bit BE length (l1=0, l0=bit_length)
+            sph_u64 l0_be = C64e(0x0000000000000280);
+            h3l ^= l0_be;
+
+            E8;
+
+            h7l ^= l0_be;
         } else {
+            // size == 64: single padding block
+            // 0x80 + 47 zeros + l1(0) + l0(0x200) = 64 bytes
+            // word 0: 0x8000000000000000 (0x80 in big-endian)
+            // word 6: 0x0000000000000000 (l1 = 0)
+            // word 7: 0x0000000000000200 (l0 = 512 bits, big-endian)
+            h0h ^= SPH_C64(0x0000000000000080);
+            h3l ^= C64e(0x0000000000000200);
+
+            E8;
+
             h4h ^= SPH_C64(0x0000000000000080);
+            h7l ^= C64e(0x0000000000000200);
         }
-    }
-
-    // Block 2: zeros + 128-bit BE length (l1=0, l0=bit_length)
-    {
-        sph_u64 l0_be;
-        if (size == 80) {
-            l0_be = C64e(0x0000000000000280);
-        } else {
-            l0_be = C64e(0x0000000000000200);
-        }
-        h3l ^= l0_be;
-
-        E8;
-
-        h7l ^= l0_be;
     }
 
     hash->h8[0] = h4h;
@@ -12025,16 +12028,13 @@ void gr_core_5(hash_t* hash, uint size)
     m7 = hash->h8[7];
 
     bcount = 0;
-    UBI_BIG(224, 64);
-
-    m0 = 0; m1 = 0; m2 = 0; m3 = 0;
-    m4 = 0; m5 = 0; m6 = 0; m7 = 0;
     if (size == 80) {
+        UBI_BIG(224, 64);
         m0 = hash->h8[8];
         m1 = hash->h8[9];
         UBI_BIG(352, 80);
     } else {
-        UBI_BIG(352, 64);
+        UBI_BIG(480, 64);
     }
 
     bcount = 0;
@@ -12326,9 +12326,9 @@ void gr_core_9(hash_t* hash, uint size)
   unsigned char x[128];
   for(unsigned int i = 0; i < size; i++)
     x[i] = hash->h1[i];
-  // Padding: 0x80 at byte size, zeros after
-  x[size] = 0x80;
-  for(unsigned int i = size + 1; i < 128; i++)
+  // SIMD padding: zero-fill rest of buffer (no 0x80 byte — unlike SHA-2,
+  // SIMD uses a separate count block instead of Merkle-Damgard padding)
+  for(unsigned int i = size; i < 128; i++)
     x[i] = 0;
 
   u32 A0 = C32(0x0BA16B95), A1 = C32(0x72F999AD), A2 = C32(0x9FECC2AE), A3 = C32(0xBA3264FC), A4 = C32(0x5E894929), A5 = C32(0x8E9F30E5), A6 = C32(0x2F1DAA37), A7 = C32(0xF0F2C558);
@@ -12336,7 +12336,7 @@ void gr_core_9(hash_t* hash, uint size)
   u32 C0 = C32(0x7EEF60A1), C1 = C32(0x6B70E3E8), C2 = C32(0x9C1714D1), C3 = C32(0xB958E2A8), C4 = C32(0xAB02675E), C5 = C32(0xED1C014F), C6 = C32(0xCD8D65BB), C7 = C32(0xFDB7A257);
   u32 D0 = C32(0x09254899), D1 = C32(0xD699C7BC), D2 = C32(0x9019B6DC), D3 = C32(0x2B9022E4), D4 = C32(0x8FA14956), D5 = C32(0x21BF9BD3), D6 = C32(0xB94D0943), D7 = C32(0x6FFDDC22);
 
-  // === First compression (data + 0x80 padding, not last) ===
+  // === First compression (data + zero padding, not last) ===
   FFT256(0, 1, 0, ll1);
   for (int i = 0; i < 256; i ++)
   {
@@ -12348,37 +12348,39 @@ void gr_core_9(hash_t* hash, uint size)
     q[i] = (tq <= 128 ? tq : tq - 257);
   }
 
-  // XOR message (LE) into state
-  A0 ^= hash->h4[0];
-  A1 ^= hash->h4[1];
-  A2 ^= hash->h4[2];
-  A3 ^= hash->h4[3];
-  A4 ^= hash->h4[4];
-  A5 ^= hash->h4[5];
-  A6 ^= hash->h4[6];
-  A7 ^= hash->h4[7];
-  B0 ^= hash->h4[8];
-  B1 ^= hash->h4[9];
-  B2 ^= hash->h4[10];
-  B3 ^= hash->h4[11];
-  B4 ^= hash->h4[12];
-  B5 ^= hash->h4[13];
-  B6 ^= hash->h4[14];
-  B7 ^= hash->h4[15];
-  // C and D XOR with padding (0x80 at byte size, rest zeros)
-  {
-    uint word_idx = size / 4;
-    uint byte_idx = size % 4;
-    u32 pad_val = SPH_C32(0x80) << (byte_idx * 8);
-    if (word_idx == 16) C0 ^= pad_val;
-    else if (word_idx == 17) C1 ^= pad_val;
-    else if (word_idx == 18) C2 ^= pad_val;
-    else if (word_idx == 19) C3 ^= pad_val;
-    else if (word_idx == 20) C4 ^= pad_val;
-    else if (word_idx == 21) C5 ^= pad_val;
-    else if (word_idx == 22) C6 ^= pad_val;
-    else if (word_idx == 23) C7 ^= pad_val;
-  }
+  // XOR message (LE) into state — XOR all 32 state words with x[0..127]
+  A0 ^= ((u32)x[0]|(u32)x[1]<<8|(u32)x[2]<<16|(u32)x[3]<<24);
+  A1 ^= ((u32)x[4]|(u32)x[5]<<8|(u32)x[6]<<16|(u32)x[7]<<24);
+  A2 ^= ((u32)x[8]|(u32)x[9]<<8|(u32)x[10]<<16|(u32)x[11]<<24);
+  A3 ^= ((u32)x[12]|(u32)x[13]<<8|(u32)x[14]<<16|(u32)x[15]<<24);
+  A4 ^= ((u32)x[16]|(u32)x[17]<<8|(u32)x[18]<<16|(u32)x[19]<<24);
+  A5 ^= ((u32)x[20]|(u32)x[21]<<8|(u32)x[22]<<16|(u32)x[23]<<24);
+  A6 ^= ((u32)x[24]|(u32)x[25]<<8|(u32)x[26]<<16|(u32)x[27]<<24);
+  A7 ^= ((u32)x[28]|(u32)x[29]<<8|(u32)x[30]<<16|(u32)x[31]<<24);
+  B0 ^= ((u32)x[32]|(u32)x[33]<<8|(u32)x[34]<<16|(u32)x[35]<<24);
+  B1 ^= ((u32)x[36]|(u32)x[37]<<8|(u32)x[38]<<16|(u32)x[39]<<24);
+  B2 ^= ((u32)x[40]|(u32)x[41]<<8|(u32)x[42]<<16|(u32)x[43]<<24);
+  B3 ^= ((u32)x[44]|(u32)x[45]<<8|(u32)x[46]<<16|(u32)x[47]<<24);
+  B4 ^= ((u32)x[48]|(u32)x[49]<<8|(u32)x[50]<<16|(u32)x[51]<<24);
+  B5 ^= ((u32)x[52]|(u32)x[53]<<8|(u32)x[54]<<16|(u32)x[55]<<24);
+  B6 ^= ((u32)x[56]|(u32)x[57]<<8|(u32)x[58]<<16|(u32)x[59]<<24);
+  B7 ^= ((u32)x[60]|(u32)x[61]<<8|(u32)x[62]<<16|(u32)x[63]<<24);
+  C0 ^= ((u32)x[64]|(u32)x[65]<<8|(u32)x[66]<<16|(u32)x[67]<<24);
+  C1 ^= ((u32)x[68]|(u32)x[69]<<8|(u32)x[70]<<16|(u32)x[71]<<24);
+  C2 ^= ((u32)x[72]|(u32)x[73]<<8|(u32)x[74]<<16|(u32)x[75]<<24);
+  C3 ^= ((u32)x[76]|(u32)x[77]<<8|(u32)x[78]<<16|(u32)x[79]<<24);
+  C4 ^= ((u32)x[80]|(u32)x[81]<<8|(u32)x[82]<<16|(u32)x[83]<<24);
+  C5 ^= ((u32)x[84]|(u32)x[85]<<8|(u32)x[86]<<16|(u32)x[87]<<24);
+  C6 ^= ((u32)x[88]|(u32)x[89]<<8|(u32)x[90]<<16|(u32)x[91]<<24);
+  C7 ^= ((u32)x[92]|(u32)x[93]<<8|(u32)x[94]<<16|(u32)x[95]<<24);
+  D0 ^= ((u32)x[96]|(u32)x[97]<<8|(u32)x[98]<<16|(u32)x[99]<<24);
+  D1 ^= ((u32)x[100]|(u32)x[101]<<8|(u32)x[102]<<16|(u32)x[103]<<24);
+  D2 ^= ((u32)x[104]|(u32)x[105]<<8|(u32)x[106]<<16|(u32)x[107]<<24);
+  D3 ^= ((u32)x[108]|(u32)x[109]<<8|(u32)x[110]<<16|(u32)x[111]<<24);
+  D4 ^= ((u32)x[112]|(u32)x[113]<<8|(u32)x[114]<<16|(u32)x[115]<<24);
+  D5 ^= ((u32)x[116]|(u32)x[117]<<8|(u32)x[118]<<16|(u32)x[119]<<24);
+  D6 ^= ((u32)x[120]|(u32)x[121]<<8|(u32)x[122]<<16|(u32)x[123]<<24);
+  D7 ^= ((u32)x[124]|(u32)x[125]<<8|(u32)x[126]<<16|(u32)x[127]<<24);
 
   ONE_ROUND_BIG(0_, 0,  3, 23, 17, 27);
   ONE_ROUND_BIG(1_, 1, 28, 19, 22,  7);
@@ -12680,13 +12682,11 @@ void gr_core_12(hash_t* hash, uint size)
         FUGUE512_two(SWAP4(hash->h4[19]));
         FUGUE512_trd((0));
         FUGUE512_one((SPH_C32(0x00000280)));
+        ROR12;
     } else {
-        FUGUE512_trd((0));
-        FUGUE512_one((SPH_C32(0x00000200)));
+        FUGUE512_two((0));
+        FUGUE512_trd((SPH_C32(0x00000200)));
     }
-
-
-    ROR12;
 
   // apply round shift if necessary
   int i;

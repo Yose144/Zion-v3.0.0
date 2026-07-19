@@ -351,14 +351,13 @@ impl GpuMiner {
     }
 
     /// Compute GhostRider hash for a single nonce using the benchmark kernel.
-    /// Returns the 32-byte hash. This is primarily for testing/debugging
-    /// to compare GPU output against CPU reference implementation.
+    /// Returns 1181 bytes: [0..15] algos, [15..29] CN algos, [29..1181] 18 steps × 64 bytes.
     #[cfg(feature = "gpu-opencl")]
     pub fn ghostrider_single_hash(
         &mut self,
         header: &[u8],
         nonce: u64,
-    ) -> Result<[u8; 221]> {
+    ) -> Result<[u8; 1181]> {
         use ocl::{Buffer, Kernel};
 
         let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
@@ -376,7 +375,7 @@ impl GpuMiner {
 
         let output_hash_buf: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
-            .len(221)
+            .len(1181)
             .build()?;
 
         let scratch_bytes = 1 * Self::GHOSTRIDER_SCRATCH_BYTES;
@@ -408,9 +407,9 @@ impl GpuMiner {
         }
         q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
 
-        let mut hash = vec![0u8; 221];
+        let mut hash = vec![0u8; 1181];
         output_hash_buf.read(&mut hash).enq()?;
-        Ok(hash.try_into().expect("221 bytes from GPU"))
+        Ok(hash.try_into().expect("1181 bytes from GPU"))
     }
 
     /// Test a single SPH hash function on GPU. Returns 64-byte hash.
@@ -445,7 +444,7 @@ impl GpuMiner {
             .program(pro_que.program())
             .name("ghostrider_sph_test")
             .arg(&header_buf)
-            .arg(80u32)
+            .arg(header.len() as u32)
             .arg(algo_idx)
             .arg(&output_hash_buf)
             .build()
@@ -466,12 +465,194 @@ impl GpuMiner {
         Ok(hash.try_into().expect("64 bytes from GPU"))
     }
 
-    /// SIMD debug: compute first compression only, return 32 u32 words.
+    /// Test cn_hash_fast on GPU. Returns 32-byte hash.
+    #[cfg(feature = "gpu-opencl")]
+    pub fn cn_test(
+        &mut self,
+        input: &[u8],
+    ) -> Result<[u8; 32]> {
+        use ocl::{Buffer, Kernel};
+
+        let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        let input_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(200)
+            .copy_host_slice(&{
+                let mut buf = vec![0u8; 200];
+                let copy_len = input.len().min(200);
+                buf[..copy_len].copy_from_slice(&input[..copy_len]);
+                buf
+            })
+            .build()?;
+
+        let output_hash_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("cn_test")
+            .arg(&input_buf)
+            .arg(input.len() as u32)
+            .arg(&output_hash_buf)
+            .build()
+            .map_err(|e| anyhow!("CN test kernel build failed: {e}"))?;
+
+        unsafe {
+            kernel
+                .cmd()
+                .global_work_size(1)
+                .local_work_size(1)
+                .enq()
+                .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
+        }
+        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+
+        let mut hash = vec![0u8; 32];
+        output_hash_buf.read(&mut hash).enq()?;
+        Ok(hash.try_into().expect("32 bytes from GPU"))
+    }
+
+    /// Test cn_hash_full on GPU. Returns 32-byte hash.
+    #[cfg(feature = "gpu-opencl")]
+    pub fn ghostrider_cn_full_test(
+        &mut self,
+        input: &[u8],
+        input_len: u32,
+        memory: u32,
+        iter_div: u32,
+        cn_aes_init: u32,
+    ) -> Result<([u8; 32], [u8; 200])> {
+        use ocl::{Buffer, Kernel};
+
+        let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        let input_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(200)
+            .copy_host_slice(&{
+                let mut buf = vec![0u8; 200];
+                let copy_len = input.len().min(200);
+                buf[..copy_len].copy_from_slice(&input[..copy_len]);
+                buf
+            })
+            .build()?;
+
+        let output_hash_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .build()?;
+
+        let debug_state_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(200)
+            .copy_host_slice(&vec![0xAAu8; 200])
+            .build()?;
+
+        let scratchpad_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(2097152) // 2MB max
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("cn_full_test")
+            .arg(&input_buf)
+            .arg(input_len)
+            .arg(memory)
+            .arg(iter_div)
+            .arg(cn_aes_init)
+            .arg(&scratchpad_buf)
+            .arg(&output_hash_buf)
+            .arg(&debug_state_buf)
+            .build()
+            .map_err(|e| anyhow!("CN full test kernel build failed: {e}"))?;
+
+        unsafe {
+            kernel
+                .cmd()
+                .global_work_size(1)
+                .local_work_size(1)
+                .enq()
+                .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
+        }
+        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+
+        let mut hash = vec![0u8; 32];
+        output_hash_buf.read(&mut hash).enq()?;
+        let mut debug_state = vec![0u8; 200];
+        debug_state_buf.read(&mut debug_state).enq()?;
+        Ok((
+            hash.try_into().expect("32 bytes from GPU"),
+            debug_state.try_into().expect("200 bytes from GPU"),
+        ))
+    }
+
+    /// Test extra hash (blake/groestl/jh/skein) on a 200-byte state. Returns 32-byte hash.
+    #[cfg(feature = "gpu-opencl")]
+    pub fn extra_hash_test(
+        &mut self,
+        state: &[u8],
+        hash_sel: u32,
+    ) -> Result<[u8; 32]> {
+        use ocl::{Buffer, Kernel};
+
+        let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        let state_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(200)
+            .copy_host_slice(&{
+                let mut buf = vec![0u8; 200];
+                let copy_len = state.len().min(200);
+                buf[..copy_len].copy_from_slice(&state[..copy_len]);
+                buf
+            })
+            .build()?;
+
+        let output_hash_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("extra_hash_test")
+            .arg(&state_buf)
+            .arg(hash_sel)
+            .arg(&output_hash_buf)
+            .build()
+            .map_err(|e| anyhow!("Extra hash test kernel build failed: {e}"))?;
+
+        unsafe {
+            kernel
+                .cmd()
+                .global_work_size(1)
+                .local_work_size(1)
+                .enq()
+                .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
+        }
+        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+
+        let mut hash = vec![0u8; 32];
+        output_hash_buf.read(&mut hash).enq()?;
+        Ok(hash.try_into().expect("32 bytes from GPU"))
+    }
+
+    /// SIMD debug: compute first compression only, return 256 u32 words.
     #[cfg(feature = "gpu-opencl")]
     pub fn simd_debug(
         &mut self,
         input: &[u8],
-    ) -> Result<[u32; 32]> {
+    ) -> Result<[u32; 256]> {
         use ocl::{Buffer, Kernel};
 
         let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
@@ -489,7 +670,7 @@ impl GpuMiner {
 
         let output_buf: Buffer<u32> = Buffer::builder()
             .queue(q.clone())
-            .len(32)
+            .len(256)
             .build()?;
 
         let kernel = Kernel::builder()
@@ -512,9 +693,9 @@ impl GpuMiner {
         }
         q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
 
-        let mut state = vec![0u32; 32];
+        let mut state = vec![0u32; 256];
         output_buf.read(&mut state).enq()?;
-        Ok(state.try_into().expect("32 u32 from GPU"))
+        Ok(state.try_into().expect("256 u32 from GPU"))
     }
 
     /// SIMD debug2: full 2-compression SIMD-512, return 32 u32 words.
@@ -523,7 +704,7 @@ impl GpuMiner {
         &mut self,
         header: &[u8],
         header_len: u32,
-    ) -> Result<[u32; 32]> {
+    ) -> Result<[u32; 256]> {
         use ocl::{Buffer, Kernel};
 
         let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
@@ -541,7 +722,7 @@ impl GpuMiner {
 
         let output_buf: Buffer<u32> = Buffer::builder()
             .queue(q.clone())
-            .len(32)
+            .len(256)
             .build()?;
 
         let kernel = Kernel::builder()
@@ -564,9 +745,9 @@ impl GpuMiner {
         }
         q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
 
-        let mut state = vec![0u32; 32];
+        let mut state = vec![0u32; 256];
         output_buf.read(&mut state).enq()?;
-        Ok(state.try_into().expect("32 u32 from GPU"))
+        Ok(state.try_into().expect("256 u32 from GPU"))
     }
 
     /// Mine a batch of nonces for the requested algorithm.
@@ -1994,6 +2175,12 @@ typedef unsigned long ulong;
                         .with_context(|| format!("reading OpenCL kernel {:?}", dir.join(kernel_file)))?;
                     println!("auxpow_gpu_opencl ghostrider concatenated: sph={}B cn={}B main={}B total={}B",
                         sph.len(), cn.len(), main.len(), sph.len() + cn.len() + main.len());
+                    // Debug: check if the CN source has our new debug code
+                    if cn.contains("save input immediately") {
+                        println!("auxpow_gpu_opencl DEBUG: CN source has new debug code (save input immediately)");
+                    } else {
+                        println!("auxpow_gpu_opencl DEBUG: CN source MISSING new debug code!");
+                    }
                     format!("{sph}\n{cn}\n{main}")
                 } else {
                     let path = dir.join(kernel_file);
@@ -2046,7 +2233,9 @@ typedef unsigned long ulong;
         let mut prog_builder = ProgramBuilder::new();
         prog_builder.src(src);
         // Conservative build options; fast-relaxed-math can break integer hashing.
-        prog_builder.cmplr_opt("-cl-std=CL1.2 -cl-mad-enable");
+        // Include a unique timestamp to force OpenCL driver to recompile (avoid cached binaries)
+        let force_recompile = format!("-cl-std=CL1.2 -cl-mad-enable -DFORCE_RECOMPILE={}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_nanos());
+        prog_builder.cmplr_opt(&force_recompile);
 
         let pro_que = ProQue::builder()
             .platform(self.platform)

@@ -236,12 +236,10 @@ __kernel void ghostrider_benchmark(
     get_algo_string(&hash.h1[4], 64, selectedAlgo, 15);
     get_algo_string(&hash.h1[4], 64, selectedCNAlgo, 14);
 
-    // Debug: output selected algos in first 29 bytes, then hash after step 0
+    // Debug: output all 18 steps × 64 bytes = 1152 bytes + 29 bytes algos = 1181
     // output_hash[0..14]  = selectedAlgo[0..14]
     // output_hash[15..28] = selectedCNAlgo[0..13]
-    // output_hash[29..92] = hash after step 0 (64 bytes)
-    // output_hash[93..156] = hash after step 4 (before CN)
-    // output_hash[157..188] = hash after CN[0] (32 bytes)
+    // output_hash[29 + step*64 .. 29 + (step+1)*64] = hash after step
     if (gid == 0) {
         for (int i = 0; i < 15; i++) output_hash[i] = selectedAlgo[i];
         for (int i = 0; i < 14; i++) output_hash[15 + i] = selectedCNAlgo[i];
@@ -249,67 +247,36 @@ __kernel void ghostrider_benchmark(
 
     uint size = 80;
 
-    // Step 0: first core hash
-    core_hash_dispatch(selectedAlgo[0], &hash, size);
-    size = 64;
+    // 18-step hash chain with debug output after each step
+    for (int step = 0; step < 18; step++) {
+        int coreSelection;
+        int cnSelection = -1;
+        if (step < 5) {
+            coreSelection = step;
+        } else if (step < 11) {
+            coreSelection = step - 1;
+        } else {
+            coreSelection = step - 2;
+        }
+        if (step == 5) { coreSelection = -1; cnSelection = 0; }
+        if (step == 11) { coreSelection = -1; cnSelection = 1; }
+        if (step == 17) { coreSelection = -1; cnSelection = 2; }
 
-    if (gid == 0) {
-        for (int i = 0; i < 64; i++) output_hash[29 + i] = hash.h1[i];
-    }
+        if (coreSelection >= 0) {
+            core_hash_dispatch(selectedAlgo[coreSelection], &hash, size);
+        }
+        if (cnSelection >= 0) {
+            uchar cn_out[32];
+            cn_dispatch(selectedCNAlgo[cnSelection], hash.h1, size, cn_out, scratchpad,
+                        AES0, AES1, AES2, AES3);
+            for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
+            for (int j = 32; j < 64; j++) hash.h1[j] = 0;
+        }
+        size = 64;
 
-    // Steps 1-4: remaining core hashes
-    for (int i = 1; i < 5; i++) {
-        core_hash_dispatch(selectedAlgo[i], &hash, size);
-    }
-
-    if (gid == 0) {
-        for (int i = 0; i < 64; i++) output_hash[93 + i] = hash.h1[i];
-    }
-
-    // Step 5: CN[0]
-    {
-        uchar cn_out[32];
-        cn_dispatch(selectedCNAlgo[0], hash.h1, size, cn_out, scratchpad,
-                    AES0, AES1, AES2, AES3);
-        for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
-        for (int j = 32; j < 64; j++) hash.h1[j] = 0;
-    }
-
-    if (gid == 0) {
-        for (int i = 0; i < 32; i++) output_hash[157 + i] = hash.h1[i];
-    }
-
-    // Steps 6-10: core[5..9]
-    for (int i = 5; i < 10; i++) {
-        core_hash_dispatch(selectedAlgo[i], &hash, size);
-    }
-
-    // Step 11: CN[1]
-    {
-        uchar cn_out[32];
-        cn_dispatch(selectedCNAlgo[1], hash.h1, size, cn_out, scratchpad,
-                    AES0, AES1, AES2, AES3);
-        for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
-        for (int j = 32; j < 64; j++) hash.h1[j] = 0;
-    }
-
-    // Steps 12-16: core[10..14]
-    for (int i = 10; i < 15; i++) {
-        core_hash_dispatch(selectedAlgo[i], &hash, size);
-    }
-
-    // Step 17: CN[2] (final)
-    {
-        uchar cn_out[32];
-        cn_dispatch(selectedCNAlgo[2], hash.h1, size, cn_out, scratchpad,
-                    AES0, AES1, AES2, AES3);
-        for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
-        for (int j = 32; j < 64; j++) hash.h1[j] = 0;
-    }
-
-    // Final hash at offset 189
-    if (gid == 0) {
-        for (int i = 0; i < 32; i++) output_hash[189 + i] = hash.h1[i];
+        if (gid == 0) {
+            for (int i = 0; i < 64; i++) output_hash[29 + step * 64 + i] = hash.h1[i];
+        }
     }
 }
 
@@ -333,8 +300,8 @@ __kernel void ghostrider_sph_test(
         hash.h1[i] = 0;
     }
 
-    // Compute single SPH hash
-    core_hash_dispatch(algo_idx, &hash, 80);
+    // Compute single SPH hash with actual size
+    core_hash_dispatch(algo_idx, &hash, header_len);
 
     // Output 64-byte hash
     for (int i = 0; i < 64; i++) output_hash[i] = hash.h1[i];
@@ -374,75 +341,10 @@ __kernel void simd_debug(
         q[i] = (tq <= 128 ? tq : tq - 257);
     }
 
-    // XOR message (LE) - read from x buffer as LE u32 words
-    A0 ^= ((u32)x[0] | ((u32)x[1]<<8) | ((u32)x[2]<<16) | ((u32)x[3]<<24));
-    A1 ^= ((u32)x[4] | ((u32)x[5]<<8) | ((u32)x[6]<<16) | ((u32)x[7]<<24));
-    A2 ^= ((u32)x[8] | ((u32)x[9]<<8) | ((u32)x[10]<<16) | ((u32)x[11]<<24));
-    A3 ^= ((u32)x[12] | ((u32)x[13]<<8) | ((u32)x[14]<<16) | ((u32)x[15]<<24));
-    A4 ^= ((u32)x[16] | ((u32)x[17]<<8) | ((u32)x[18]<<16) | ((u32)x[19]<<24));
-    A5 ^= ((u32)x[20] | ((u32)x[21]<<8) | ((u32)x[22]<<16) | ((u32)x[23]<<24));
-    A6 ^= ((u32)x[24] | ((u32)x[25]<<8) | ((u32)x[26]<<16) | ((u32)x[27]<<24));
-    A7 ^= ((u32)x[28] | ((u32)x[29]<<8) | ((u32)x[30]<<16) | ((u32)x[31]<<24));
-    B0 ^= ((u32)x[32] | ((u32)x[33]<<8) | ((u32)x[34]<<16) | ((u32)x[35]<<24));
-    B1 ^= ((u32)x[36] | ((u32)x[37]<<8) | ((u32)x[38]<<16) | ((u32)x[39]<<24));
-    B2 ^= ((u32)x[40] | ((u32)x[41]<<8) | ((u32)x[42]<<16) | ((u32)x[43]<<24));
-    B3 ^= ((u32)x[44] | ((u32)x[45]<<8) | ((u32)x[46]<<16) | ((u32)x[47]<<24));
-    B4 ^= ((u32)x[48] | ((u32)x[49]<<8) | ((u32)x[50]<<16) | ((u32)x[51]<<24));
-    B5 ^= ((u32)x[52] | ((u32)x[53]<<8) | ((u32)x[54]<<16) | ((u32)x[55]<<24));
-    B6 ^= ((u32)x[56] | ((u32)x[57]<<8) | ((u32)x[58]<<16) | ((u32)x[59]<<24));
-    B7 ^= ((u32)x[60] | ((u32)x[61]<<8) | ((u32)x[62]<<16) | ((u32)x[63]<<24));
-    C0 ^= ((u32)x[64] | ((u32)x[65]<<8) | ((u32)x[66]<<16) | ((u32)x[67]<<24));
-    C1 ^= ((u32)x[68] | ((u32)x[69]<<8) | ((u32)x[70]<<16) | ((u32)x[71]<<24));
-    C2 ^= ((u32)x[72] | ((u32)x[73]<<8) | ((u32)x[74]<<16) | ((u32)x[75]<<24));
-    C3 ^= ((u32)x[76] | ((u32)x[77]<<8) | ((u32)x[78]<<16) | ((u32)x[79]<<24));
-    C4 ^= ((u32)x[80] | ((u32)x[81]<<8) | ((u32)x[82]<<16) | ((u32)x[83]<<24));
-    C5 ^= ((u32)x[84] | ((u32)x[85]<<8) | ((u32)x[86]<<16) | ((u32)x[87]<<24));
-    C6 ^= ((u32)x[88] | ((u32)x[89]<<8) | ((u32)x[90]<<16) | ((u32)x[91]<<24));
-    C7 ^= ((u32)x[92] | ((u32)x[93]<<8) | ((u32)x[94]<<16) | ((u32)x[95]<<24));
-    D0 ^= ((u32)x[96] | ((u32)x[97]<<8) | ((u32)x[98]<<16) | ((u32)x[99]<<24));
-    D1 ^= ((u32)x[100] | ((u32)x[101]<<8) | ((u32)x[102]<<16) | ((u32)x[103]<<24));
-    D2 ^= ((u32)x[104] | ((u32)x[105]<<8) | ((u32)x[106]<<16) | ((u32)x[107]<<24));
-    D3 ^= ((u32)x[108] | ((u32)x[109]<<8) | ((u32)x[110]<<16) | ((u32)x[111]<<24));
-    D4 ^= ((u32)x[112] | ((u32)x[113]<<8) | ((u32)x[114]<<16) | ((u32)x[115]<<24));
-    D5 ^= ((u32)x[116] | ((u32)x[117]<<8) | ((u32)x[118]<<16) | ((u32)x[119]<<24));
-    D6 ^= ((u32)x[120] | ((u32)x[121]<<8) | ((u32)x[122]<<16) | ((u32)x[123]<<24));
-    D7 ^= ((u32)x[124] | ((u32)x[125]<<8) | ((u32)x[126]<<16) | ((u32)x[127]<<24));
-
-    ONE_ROUND_BIG(0_, 0,  3, 23, 17, 27);
-    ONE_ROUND_BIG(1_, 1, 28, 19, 22,  7);
-    ONE_ROUND_BIG(2_, 2, 29,  9, 15,  5);
-    ONE_ROUND_BIG(3_, 3,  4, 13, 10, 25);
-
-    STEP_BIG(
-        C32(0x0BA16B95), C32(0x72F999AD), C32(0x9FECC2AE), C32(0xBA3264FC),
-        C32(0x5E894929), C32(0x8E9F30E5), C32(0x2F1DAA37), C32(0xF0F2C558),
-        IF,  4, 13, PP8_4_);
-
-    STEP_BIG(
-        C32(0xAC506643), C32(0xA90635A5), C32(0xE25B878B), C32(0xAAB7878F),
-        C32(0x88817F7A), C32(0x0A02892B), C32(0x559A7550), C32(0x598F657E),
-        IF, 13, 10, PP8_5_);
-
-    STEP_BIG(
-        C32(0x7EEF60A1), C32(0x6B70E3E8), C32(0x9C1714D1), C32(0xB958E2A8),
-        C32(0xAB02675E), C32(0xED1C014F), C32(0xCD8D65BB), C32(0xFDB7A257),
-        IF, 10, 25, PP8_6_);
-
-    STEP_BIG(
-        C32(0x09254899), C32(0xD699C7BC), C32(0x9019B6DC), C32(0x2B9022E4),
-        C32(0x8FA14956), C32(0x21BF9BD3), C32(0xB94D0943), C32(0x6FFDDC22),
-        IF, 25,  4, PP8_0_);
-
-    // Output state as LE u32 words
+    // DEBUG: output all 256 q values
     __global u32* out = (__global u32*)output_state;
-    out[0] = A0; out[1] = A1; out[2] = A2; out[3] = A3;
-    out[4] = A4; out[5] = A5; out[6] = A6; out[7] = A7;
-    out[8] = B0; out[9] = B1; out[10] = B2; out[11] = B3;
-    out[12] = B4; out[13] = B5; out[14] = B6; out[15] = B7;
-    out[16] = C0; out[17] = C1; out[18] = C2; out[19] = C3;
-    out[20] = C4; out[21] = C5; out[22] = C6; out[23] = C7;
-    out[24] = D0; out[25] = D1; out[26] = D2; out[27] = D3;
-    out[28] = D4; out[29] = D5; out[30] = D6; out[31] = D7;
+    for (int i = 0; i < 256; i++) out[i] = (u32)q[i];
+    return;
 }
 
 // ── SIMD debug2: full 2-compression SIMD-512 for 80-byte input ───────────────
@@ -455,13 +357,12 @@ __kernel void simd_debug2(
     uint gid = get_global_id(0);
     if (gid != 0) return;
 
-    // Block 1: data + 0x80 + zeros
+    // Block 1: data + zero padding (SIMD padding: no 0x80 byte)
     unsigned char x[128];
     for (uint i = 0; i < header_len && i < 80; i++)
         x[i] = header[i];
     for (uint i = header_len; i < 128; i++)
         x[i] = 0;
-    x[header_len] = 0x80;
 
     s32 q[256];
     u32 A0 = C32(0x0BA16B95), A1 = C32(0x72F999AD), A2 = C32(0x9FECC2AE), A3 = C32(0xBA3264FC), A4 = C32(0x5E894929), A5 = C32(0x8E9F30E5), A6 = C32(0x2F1DAA37), A7 = C32(0xF0F2C558);
@@ -540,26 +441,122 @@ __kernel void simd_debug2(
         q[i] = (tq <= 128 ? tq : tq - 257);
     }
 
-    A0 ^= bit_count;  // only A0 has nonzero XOR
+    // Reset state to W_* (result of 1st compression) before XOR
+    A0=W_A0; A1=W_A1; A2=W_A2; A3=W_A3; A4=W_A4; A5=W_A5; A6=W_A6; A7=W_A7;
+    B0=W_B0; B1=W_B1; B2=W_B2; B3=W_B3; B4=W_B4; B5=W_B5; B6=W_B6; B7=W_B7;
+    C0=W_C0; C1=W_C1; C2=W_C2; C3=W_C3; C4=W_C4; C5=W_C5; C6=W_C6; C7=W_C7;
+    D0=W_D0; D1=W_D1; D2=W_D2; D3=W_D3; D4=W_D4; D5=W_D5; D6=W_D6; D7=W_D7;
+
+    A0 ^= bit_count;
 
     ONE_ROUND_BIG(0_, 0,  3, 23, 17, 27);
     ONE_ROUND_BIG(1_, 1, 28, 19, 22,  7);
     ONE_ROUND_BIG(2_, 2, 29,  9, 15,  5);
     ONE_ROUND_BIG(3_, 3,  4, 13, 10, 25);
 
-    // DEBUG: Skip STEP_BIG to isolate ONE_ROUND_BIG result
-    // STEP_BIG(W_A0,W_A1,W_A2,W_A3,W_A4,W_A5,W_A6,W_A7, IF, 4,13, PP8_4_);
-    // STEP_BIG(W_B0,W_B1,W_B2,W_B3,W_B4,W_B5,W_B6,W_B7, IF,13,10, PP8_5_);
-    // STEP_BIG(W_C0,W_C1,W_C2,W_C3,W_C4,W_C5,W_C6,W_C7, IF,10,25, PP8_6_);
-    // STEP_BIG(W_D0,W_D1,W_D2,W_D3,W_D4,W_D5,W_D6,W_D7, IF,25, 4, PP8_0_);
+    // STEP_BIG uses W_* (1st compression output) as weights
+    STEP_BIG(W_A0,W_A1,W_A2,W_A3,W_A4,W_A5,W_A6,W_A7, IF, 4,13, PP8_4_);
+    STEP_BIG(W_B0,W_B1,W_B2,W_B3,W_B4,W_B5,W_B6,W_B7, IF,13,10, PP8_5_);
+    STEP_BIG(W_C0,W_C1,W_C2,W_C3,W_C4,W_C5,W_C6,W_C7, IF,10,25, PP8_6_);
+    STEP_BIG(W_D0,W_D1,W_D2,W_D3,W_D4,W_D5,W_D6,W_D7, IF,25, 4, PP8_0_);
 
-    __global u32* out = (__global u32*)output_state;
-    out[0]=A0; out[1]=A1; out[2]=A2; out[3]=A3;
-    out[4]=A4; out[5]=A5; out[6]=A6; out[7]=A7;
-    out[8]=B0; out[9]=B1; out[10]=B2; out[11]=B3;
-    out[12]=B4; out[13]=B5; out[14]=B6; out[15]=B7;
-    out[16]=C0; out[17]=C1; out[18]=C2; out[19]=C3;
-    out[20]=C4; out[21]=C5; out[22]=C6; out[23]=C7;
-    out[24]=D0; out[25]=D1; out[26]=D2; out[27]=D3;
-    out[28]=D4; out[29]=D5; out[30]=D6; out[31]=D7;
+    // Output final state (16 u32 = 64 bytes)
+    __global u32* out2 = (__global u32*)output_state;
+    out2[0]=A0; out2[1]=A1; out2[2]=A2; out2[3]=A3;
+    out2[4]=A4; out2[5]=A5; out2[6]=A6; out2[7]=A7;
+    out2[8]=B0; out2[9]=B1; out2[10]=B2; out2[11]=B3;
+    out2[12]=B4; out2[13]=B5; out2[14]=B6; out2[15]=B7;
+}
+
+// ── CN test kernel: compute cn_hash_fast for a given input ──────────────────
+__kernel void cn_test(
+    __global const uchar* input,
+    uint input_len,
+    __global uchar* output_hash
+)
+{
+    uint gid = get_global_id(0);
+    if (gid != 0) return;
+
+    __private uchar in_buf[200];
+    for (uint i = 0; i < input_len && i < 200; i++) in_buf[i] = input[i];
+
+    __private uchar out_buf[32];
+    cn_hash_fast(in_buf, input_len, out_buf);
+
+    for (int i = 0; i < 32; i++) output_hash[i] = out_buf[i];
+}
+
+// ── CN full test kernel: compute cn_hash_full for a given input ──────────────
+__kernel void cn_full_test(
+    __global const uchar* input,
+    uint input_len,
+    uint memory,
+    uint iter_div,
+    uint cn_aes_init,
+    __global uchar* scratchpad_pool,
+    __global uchar* output_hash,
+    __global uchar* debug_state
+)
+{
+    uint gid = get_global_id(0);
+    if (gid != 0) return;
+
+    // Debug marker: write unique values to debug_state to verify kernel recompilation
+    if (debug_state) {
+        debug_state[196] = 0xCC;
+        debug_state[197] = 0xDD;
+        debug_state[198] = 0xEE;
+        debug_state[199] = 0xFF;
+        // Save individual input bytes to debug_state[112..119] for verification
+        // (use offsets that cn_hash_full won't overwrite)
+        debug_state[112] = input[0];
+        debug_state[113] = input[1];
+        debug_state[114] = input[34];
+        debug_state[115] = input[35];
+        debug_state[116] = input[36];
+        debug_state[117] = input[42];
+        debug_state[118] = input[43];
+        debug_state[119] = input[63];
+    }
+
+    __local uint AES0[256], AES1[256], AES2[256], AES3[256];
+    cn_populate_aes_tables(AES0, AES1, AES2, AES3);
+
+    __private uchar in_buf[200];
+    for (uint i = 0; i < input_len && i < 200; i++) in_buf[i] = input[i];
+
+    __private uchar out_buf[32];
+    __global uchar* scratchpad = scratchpad_pool + (ulong)gid * 2097152;
+    cn_hash_full(in_buf, input_len, out_buf, scratchpad, memory, iter_div, cn_aes_init,
+                 AES0, AES1, AES2, AES3, debug_state, input);
+
+    for (int i = 0; i < 32; i++) output_hash[i] = out_buf[i];
+}
+
+// ── Extra hash test kernel: test blake/groestl/jh/skein on 200-byte state ───
+__kernel void extra_hash_test(
+    __global const uchar* state_in,
+    uint hash_sel,
+    __global uchar* output_hash
+)
+{
+    uint gid = get_global_id(0);
+    if (gid != 0) return;
+
+    __private uchar state[200];
+    for (int i = 0; i < 200; i++) state[i] = state_in[i];
+
+    __private uchar out_buf[32];
+    if (hash_sel == 0) {
+        blake256_hash(out_buf, state, 200);
+    } else if (hash_sel == 1) {
+        groestl256_hash(out_buf, state, 200);
+    } else if (hash_sel == 2) {
+        jh256_hash(out_buf, state, 200);
+    } else {
+        skein256_hash(out_buf, state, 200);
+    }
+
+    for (int i = 0; i < 32; i++) output_hash[i] = out_buf[i];
 }

@@ -155,51 +155,48 @@ static const __constant ulong keccakf_rndc[24] = {
     0x8000000000008080UL, 0x0000000080000001UL, 0x8000000080008008UL
 };
 
+static const __constant int keccakf_rotc[24] = {
+    1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14,
+    27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44
+};
+
+static const __constant int keccakf_piln[24] = {
+    10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4,
+    15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1
+};
+
 inline void keccakf1600(__private ulong *s)
 {
-    for (int i = 0; i < 24; ++i) {
-        ulong bc[5], tmp1, tmp2;
-        bc[0] = s[0] ^ s[5] ^ s[10] ^ s[15] ^ s[20] ^ rotate(s[2] ^ s[7] ^ s[12] ^ s[17] ^ s[22], 1UL);
-        bc[1] = s[1] ^ s[6] ^ s[11] ^ s[16] ^ s[21] ^ rotate(s[3] ^ s[8] ^ s[13] ^ s[18] ^ s[23], 1UL);
-        bc[2] = s[2] ^ s[7] ^ s[12] ^ s[17] ^ s[22] ^ rotate(s[4] ^ s[9] ^ s[14] ^ s[19] ^ s[24], 1UL);
-        bc[3] = s[3] ^ s[8] ^ s[13] ^ s[18] ^ s[23] ^ rotate(s[0] ^ s[5] ^ s[10] ^ s[15] ^ s[20], 1UL);
-        bc[4] = s[4] ^ s[9] ^ s[14] ^ s[19] ^ s[24] ^ rotate(s[1] ^ s[6] ^ s[11] ^ s[16] ^ s[21], 1UL);
+    for (int round = 0; round < 24; round++) {
+        // Theta
+        ulong bc[5];
+        for (int i = 0; i < 5; i++)
+            bc[i] = s[i] ^ s[i + 5] ^ s[i + 10] ^ s[i + 15] ^ s[i + 20];
+        for (int i = 0; i < 5; i++) {
+            ulong t = bc[(i + 4) % 5] ^ rotate(bc[(i + 1) % 5], 1UL);
+            for (int j = 0; j < 25; j += 5)
+                s[j + i] ^= t;
+        }
 
-        tmp1 = s[1] ^ bc[0];
+        // Rho Pi
+        ulong t = s[1];
+        for (int i = 0; i < 24; i++) {
+            int j = keccakf_piln[i];
+            ulong tmp = s[j];
+            s[j] = rotate(t, (ulong)keccakf_rotc[i]);
+            t = tmp;
+        }
 
-        s[0] ^= bc[4];
-        s[1] = rotate(s[6] ^ bc[0], 44UL);
-        s[6] = rotate(s[9] ^ bc[3], 20UL);
-        s[9] = rotate(s[22] ^ bc[1], 61UL);
-        s[22] = rotate(s[14] ^ bc[3], 39UL);
-        s[14] = rotate(s[20] ^ bc[4], 18UL);
-        s[20] = rotate(s[2] ^ bc[1], 62UL);
-        s[2] = rotate(s[12] ^ bc[1], 43UL);
-        s[12] = rotate(s[13] ^ bc[2], 25UL);
-        s[13] = rotate(s[19] ^ bc[3], 8UL);
-        s[19] = rotate(s[23] ^ bc[2], 56UL);
-        s[23] = rotate(s[15] ^ bc[4], 41UL);
-        s[15] = rotate(s[4] ^ bc[3], 27UL);
-        s[4] = rotate(s[24] ^ bc[3], 14UL);
-        s[24] = rotate(s[21] ^ bc[0], 2UL);
-        s[21] = rotate(s[8] ^ bc[2], 55UL);
-        s[8] = rotate(s[16] ^ bc[0], 35UL);
-        s[16] = rotate(s[5] ^ bc[4], 36UL);
-        s[5] = rotate(s[3] ^ bc[2], 28UL);
-        s[3] = rotate(s[18] ^ bc[2], 21UL);
-        s[18] = rotate(s[17] ^ bc[1], 15UL);
-        s[17] = rotate(s[11] ^ bc[0], 10UL);
-        s[11] = rotate(s[7] ^ bc[1], 6UL);
-        s[7] = rotate(s[10] ^ bc[4], 3UL);
-        s[10] = rotate(tmp1, 1UL);
+        // Chi
+        for (int j = 0; j < 25; j += 5) {
+            for (int i = 0; i < 5; i++)
+                bc[i] = s[j + i];
+            for (int i = 0; i < 5; i++)
+                s[j + i] ^= (~bc[(i + 1) % 5]) & bc[(i + 2) % 5];
+        }
 
-        tmp1 = s[0]; tmp2 = s[1]; s[0] = bitselect(s[0] ^ s[2], s[0], s[1]); s[1] = bitselect(s[1] ^ s[3], s[1], s[2]); s[2] = bitselect(s[2] ^ s[4], s[2], s[3]); s[3] = bitselect(s[3] ^ tmp1, s[3], s[4]); s[4] = bitselect(s[4] ^ tmp2, s[4], tmp1);
-        tmp1 = s[5]; tmp2 = s[6]; s[5] = bitselect(s[5] ^ s[7], s[5], s[6]); s[6] = bitselect(s[6] ^ s[8], s[6], s[7]); s[7] = bitselect(s[7] ^ s[9], s[7], s[8]); s[8] = bitselect(s[8] ^ tmp1, s[8], s[9]); s[9] = bitselect(s[9] ^ tmp2, s[9], tmp1);
-        tmp1 = s[10]; tmp2 = s[11]; s[10] = bitselect(s[10] ^ s[12], s[10], s[11]); s[11] = bitselect(s[11] ^ s[13], s[11], s[12]); s[12] = bitselect(s[12] ^ s[14], s[12], s[13]); s[13] = bitselect(s[13] ^ tmp1, s[13], s[14]); s[14] = bitselect(s[14] ^ tmp2, s[14], tmp1);
-        tmp1 = s[15]; tmp2 = s[16]; s[15] = bitselect(s[15] ^ s[17], s[15], s[16]); s[16] = bitselect(s[16] ^ s[18], s[16], s[17]); s[17] = bitselect(s[17] ^ s[19], s[17], s[18]); s[18] = bitselect(s[18] ^ tmp1, s[18], s[19]); s[19] = bitselect(s[19] ^ tmp2, s[19], tmp1);
-        tmp1 = s[20]; tmp2 = s[21]; s[20] = bitselect(s[20] ^ s[22], s[20], s[21]); s[21] = bitselect(s[21] ^ s[23], s[21], s[22]); s[22] = bitselect(s[22] ^ s[24], s[22], s[23]); s[23] = bitselect(s[23] ^ tmp1, s[23], s[24]); s[24] = bitselect(s[24] ^ tmp2, s[24], tmp1);
-
-        s[0] ^= keccakf_rndc[i];
+        // Iota
+        s[0] ^= keccakf_rndc[round];
     }
 }
 
@@ -522,6 +519,10 @@ static const __constant ulong T4_G[] =
 #define GROESTL_PC64(j, r)  ((ulong)((j) + (r)))
 #define GROESTL_QC64(j, r)  (((ulong)(r) << 56) ^ (~((ulong)(j) << 56)))
 
+#define GROESTL_R8(x)  rotate((x),  8UL)
+#define GROESTL_R16(x) rotate((x), 16UL)
+#define GROESTL_R24(x) rotate((x), 24UL)
+
 #define GROESTL_ROUND_SMALL_P(a, r) do { \
     ulong t[8]; \
     a[0] ^= GROESTL_PC64(0x00, r); \
@@ -532,14 +533,14 @@ static const __constant ulong T4_G[] =
     a[5] ^= GROESTL_PC64(0x50, r); \
     a[6] ^= GROESTL_PC64(0x60, r); \
     a[7] ^= GROESTL_PC64(0x70, r); \
-    t[0] = T0_G[GROESTL_B64_0(a[0])] ^ T4_G[GROESTL_B64_1(a[1])] ^ T0_G[GROESTL_B64_2(a[2])] ^ T4_G[GROESTL_B64_3(a[3])] ^ T0_G[GROESTL_B64_4(a[4])] ^ T4_G[GROESTL_B64_5(a[5])] ^ T0_G[GROESTL_B64_6(a[6])] ^ T4_G[GROESTL_B64_7(a[7])]; \
-    t[1] = T0_G[GROESTL_B64_0(a[1])] ^ T4_G[GROESTL_B64_1(a[2])] ^ T0_G[GROESTL_B64_2(a[3])] ^ T4_G[GROESTL_B64_3(a[4])] ^ T0_G[GROESTL_B64_4(a[5])] ^ T4_G[GROESTL_B64_5(a[6])] ^ T0_G[GROESTL_B64_6(a[7])] ^ T4_G[GROESTL_B64_7(a[0])]; \
-    t[2] = T0_G[GROESTL_B64_0(a[2])] ^ T4_G[GROESTL_B64_1(a[3])] ^ T0_G[GROESTL_B64_2(a[4])] ^ T4_G[GROESTL_B64_3(a[5])] ^ T0_G[GROESTL_B64_4(a[6])] ^ T4_G[GROESTL_B64_5(a[7])] ^ T0_G[GROESTL_B64_6(a[0])] ^ T4_G[GROESTL_B64_7(a[1])]; \
-    t[3] = T0_G[GROESTL_B64_0(a[3])] ^ T4_G[GROESTL_B64_1(a[4])] ^ T0_G[GROESTL_B64_2(a[5])] ^ T4_G[GROESTL_B64_3(a[6])] ^ T0_G[GROESTL_B64_4(a[7])] ^ T4_G[GROESTL_B64_5(a[0])] ^ T0_G[GROESTL_B64_6(a[1])] ^ T4_G[GROESTL_B64_7(a[2])]; \
-    t[4] = T0_G[GROESTL_B64_0(a[4])] ^ T4_G[GROESTL_B64_1(a[5])] ^ T0_G[GROESTL_B64_2(a[6])] ^ T4_G[GROESTL_B64_3(a[7])] ^ T0_G[GROESTL_B64_4(a[0])] ^ T4_G[GROESTL_B64_5(a[1])] ^ T0_G[GROESTL_B64_6(a[2])] ^ T4_G[GROESTL_B64_7(a[3])]; \
-    t[5] = T0_G[GROESTL_B64_0(a[5])] ^ T4_G[GROESTL_B64_1(a[6])] ^ T0_G[GROESTL_B64_2(a[7])] ^ T4_G[GROESTL_B64_3(a[0])] ^ T0_G[GROESTL_B64_4(a[1])] ^ T4_G[GROESTL_B64_5(a[2])] ^ T0_G[GROESTL_B64_6(a[3])] ^ T4_G[GROESTL_B64_7(a[4])]; \
-    t[6] = T0_G[GROESTL_B64_0(a[6])] ^ T4_G[GROESTL_B64_1(a[7])] ^ T0_G[GROESTL_B64_2(a[0])] ^ T4_G[GROESTL_B64_3(a[1])] ^ T0_G[GROESTL_B64_4(a[2])] ^ T4_G[GROESTL_B64_5(a[3])] ^ T0_G[GROESTL_B64_6(a[4])] ^ T4_G[GROESTL_B64_7(a[5])]; \
-    t[7] = T0_G[GROESTL_B64_0(a[7])] ^ T4_G[GROESTL_B64_1(a[0])] ^ T0_G[GROESTL_B64_2(a[1])] ^ T4_G[GROESTL_B64_3(a[2])] ^ T0_G[GROESTL_B64_4(a[3])] ^ T4_G[GROESTL_B64_5(a[4])] ^ T0_G[GROESTL_B64_6(a[5])] ^ T4_G[GROESTL_B64_7(a[6])]; \
+    t[0] = T0_G[GROESTL_B64_0(a[0])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[1])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[2])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[3])]) ^ T4_G[GROESTL_B64_4(a[4])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[5])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[6])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[7])]); \
+    t[1] = T0_G[GROESTL_B64_0(a[1])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[2])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[3])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[4])]) ^ T4_G[GROESTL_B64_4(a[5])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[6])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[7])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[0])]); \
+    t[2] = T0_G[GROESTL_B64_0(a[2])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[3])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[4])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[5])]) ^ T4_G[GROESTL_B64_4(a[6])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[7])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[0])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[1])]); \
+    t[3] = T0_G[GROESTL_B64_0(a[3])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[4])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[5])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[6])]) ^ T4_G[GROESTL_B64_4(a[7])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[0])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[1])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[2])]); \
+    t[4] = T0_G[GROESTL_B64_0(a[4])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[5])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[6])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[7])]) ^ T4_G[GROESTL_B64_4(a[0])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[1])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[2])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[3])]); \
+    t[5] = T0_G[GROESTL_B64_0(a[5])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[6])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[7])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[0])]) ^ T4_G[GROESTL_B64_4(a[1])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[2])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[3])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[4])]); \
+    t[6] = T0_G[GROESTL_B64_0(a[6])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[7])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[0])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[1])]) ^ T4_G[GROESTL_B64_4(a[2])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[3])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[4])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[5])]); \
+    t[7] = T0_G[GROESTL_B64_0(a[7])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[0])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[1])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[2])]) ^ T4_G[GROESTL_B64_4(a[3])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[4])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[5])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[6])]); \
     a[0] = t[0]; a[1] = t[1]; a[2] = t[2]; a[3] = t[3]; \
     a[4] = t[4]; a[5] = t[5]; a[6] = t[6]; a[7] = t[7]; \
 } while (0)
@@ -554,14 +555,14 @@ static const __constant ulong T4_G[] =
     a[5] ^= GROESTL_QC64(0x50, r); \
     a[6] ^= GROESTL_QC64(0x60, r); \
     a[7] ^= GROESTL_QC64(0x70, r); \
-    t[0] = T0_G[GROESTL_B64_0(a[0])] ^ T4_G[GROESTL_B64_1(a[1])] ^ T0_G[GROESTL_B64_2(a[2])] ^ T4_G[GROESTL_B64_3(a[3])] ^ T0_G[GROESTL_B64_4(a[4])] ^ T4_G[GROESTL_B64_5(a[5])] ^ T0_G[GROESTL_B64_6(a[6])] ^ T4_G[GROESTL_B64_7(a[7])]; \
-    t[1] = T0_G[GROESTL_B64_0(a[1])] ^ T4_G[GROESTL_B64_1(a[2])] ^ T0_G[GROESTL_B64_2(a[3])] ^ T4_G[GROESTL_B64_3(a[4])] ^ T0_G[GROESTL_B64_4(a[5])] ^ T4_G[GROESTL_B64_5(a[6])] ^ T0_G[GROESTL_B64_6(a[7])] ^ T4_G[GROESTL_B64_7(a[0])]; \
-    t[2] = T0_G[GROESTL_B64_0(a[2])] ^ T4_G[GROESTL_B64_1(a[3])] ^ T0_G[GROESTL_B64_2(a[4])] ^ T4_G[GROESTL_B64_3(a[5])] ^ T0_G[GROESTL_B64_4(a[6])] ^ T4_G[GROESTL_B64_5(a[7])] ^ T0_G[GROESTL_B64_6(a[0])] ^ T4_G[GROESTL_B64_7(a[1])]; \
-    t[3] = T0_G[GROESTL_B64_0(a[3])] ^ T4_G[GROESTL_B64_1(a[4])] ^ T0_G[GROESTL_B64_2(a[5])] ^ T4_G[GROESTL_B64_3(a[6])] ^ T0_G[GROESTL_B64_4(a[7])] ^ T4_G[GROESTL_B64_5(a[0])] ^ T0_G[GROESTL_B64_6(a[1])] ^ T4_G[GROESTL_B64_7(a[2])]; \
-    t[4] = T0_G[GROESTL_B64_0(a[4])] ^ T4_G[GROESTL_B64_1(a[5])] ^ T0_G[GROESTL_B64_2(a[6])] ^ T4_G[GROESTL_B64_3(a[7])] ^ T0_G[GROESTL_B64_4(a[0])] ^ T4_G[GROESTL_B64_5(a[1])] ^ T0_G[GROESTL_B64_6(a[2])] ^ T4_G[GROESTL_B64_7(a[3])]; \
-    t[5] = T0_G[GROESTL_B64_0(a[5])] ^ T4_G[GROESTL_B64_1(a[6])] ^ T0_G[GROESTL_B64_2(a[7])] ^ T4_G[GROESTL_B64_3(a[0])] ^ T0_G[GROESTL_B64_4(a[1])] ^ T4_G[GROESTL_B64_5(a[2])] ^ T0_G[GROESTL_B64_6(a[3])] ^ T4_G[GROESTL_B64_7(a[4])]; \
-    t[6] = T0_G[GROESTL_B64_0(a[6])] ^ T4_G[GROESTL_B64_1(a[7])] ^ T0_G[GROESTL_B64_2(a[0])] ^ T4_G[GROESTL_B64_3(a[1])] ^ T0_G[GROESTL_B64_4(a[2])] ^ T4_G[GROESTL_B64_5(a[3])] ^ T0_G[GROESTL_B64_6(a[4])] ^ T4_G[GROESTL_B64_7(a[5])]; \
-    t[7] = T0_G[GROESTL_B64_0(a[7])] ^ T4_G[GROESTL_B64_1(a[0])] ^ T0_G[GROESTL_B64_2(a[1])] ^ T4_G[GROESTL_B64_3(a[2])] ^ T0_G[GROESTL_B64_4(a[3])] ^ T4_G[GROESTL_B64_5(a[4])] ^ T0_G[GROESTL_B64_6(a[5])] ^ T4_G[GROESTL_B64_7(a[6])]; \
+    t[0] = T0_G[GROESTL_B64_0(a[1])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[3])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[5])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[7])]) ^ T4_G[GROESTL_B64_4(a[0])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[2])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[4])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[6])]); \
+    t[1] = T0_G[GROESTL_B64_0(a[2])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[4])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[6])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[0])]) ^ T4_G[GROESTL_B64_4(a[1])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[3])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[5])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[7])]); \
+    t[2] = T0_G[GROESTL_B64_0(a[3])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[5])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[7])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[1])]) ^ T4_G[GROESTL_B64_4(a[2])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[4])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[6])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[0])]); \
+    t[3] = T0_G[GROESTL_B64_0(a[4])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[6])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[0])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[2])]) ^ T4_G[GROESTL_B64_4(a[3])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[5])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[7])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[1])]); \
+    t[4] = T0_G[GROESTL_B64_0(a[5])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[7])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[1])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[3])]) ^ T4_G[GROESTL_B64_4(a[4])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[6])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[0])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[2])]); \
+    t[5] = T0_G[GROESTL_B64_0(a[6])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[0])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[2])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[4])]) ^ T4_G[GROESTL_B64_4(a[5])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[7])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[1])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[3])]); \
+    t[6] = T0_G[GROESTL_B64_0(a[7])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[1])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[3])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[5])]) ^ T4_G[GROESTL_B64_4(a[6])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[0])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[2])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[4])]); \
+    t[7] = T0_G[GROESTL_B64_0(a[0])] ^ GROESTL_R8(T0_G[GROESTL_B64_1(a[2])]) ^ GROESTL_R16(T0_G[GROESTL_B64_2(a[4])]) ^ GROESTL_R24(T0_G[GROESTL_B64_3(a[6])]) ^ T4_G[GROESTL_B64_4(a[7])] ^ GROESTL_R8(T4_G[GROESTL_B64_5(a[1])]) ^ GROESTL_R16(T4_G[GROESTL_B64_6(a[3])]) ^ GROESTL_R24(T4_G[GROESTL_B64_7(a[5])]); \
     a[0] = t[0]; a[1] = t[1]; a[2] = t[2]; a[3] = t[3]; \
     a[4] = t[4]; a[5] = t[5]; a[6] = t[6]; a[7] = t[7]; \
 } while (0)
@@ -614,7 +615,7 @@ inline void groestl256_hash(__private uchar *output, __private const uchar *inpu
         State[i] ^= tmp[i];
 
     for (int i = 0; i < 32; ++i)
-        output[i] = ((__private uchar*)State)[i];
+        output[i] = ((__private uchar*)State)[32 + i];
 }
 
 #undef GROESTL_B64_0
@@ -627,6 +628,9 @@ inline void groestl256_hash(__private uchar *output, __private const uchar *inpu
 #undef GROESTL_B64_7
 #undef GROESTL_PC64
 #undef GROESTL_QC64
+#undef GROESTL_R8
+#undef GROESTL_R16
+#undef GROESTL_R24
 #undef GROESTL_ROUND_SMALL_P
 #undef GROESTL_ROUND_SMALL_Q
 #undef GROESTL_PERM_SMALL_P
@@ -1010,13 +1014,31 @@ inline void cn_sum_half_blocks(__private uchar* a, __private const uchar* b)
 
 inline void cn_hash_full(
     __private const uchar *input, uint len, __private uchar *output,
-    __global uchar *scratchpad, uint memory, uint iter_div,
+    __global uchar *scratchpad, uint memory, uint iter_div, uint cn_aes_init,
     __local const uint *AES0, __local const uint *AES1,
-    __local const uint *AES2, __local const uint *AES3)
+    __local const uint *AES2, __local const uint *AES3,
+    __global uchar *debug_state,
+    __global const uchar *global_input)
 {
+    // Debug: save input and input[35..42] to debug_state (global) immediately.
+    // Private arrays can clobber the input array due to private memory reuse.
+    if (debug_state) {
+        for (int i = 0; i < 64; i++) debug_state[i] = input[i];
+        // Save input[35..42] byte-by-byte to debug_state[96..103]
+        for (int i = 0; i < 8; i++) debug_state[96 + i] = input[35 + i];
+    }
+
+    // VARIANT1_INIT: Save input[35..42] to global memory (scratchpad) BEFORE
+    // declaring any private arrays. Use byte-by-byte copy to avoid alignment issues.
+    __global uchar *tweak_tmp = scratchpad + memory;
+    for (int i = 0; i < 8; i++) tweak_tmp[i] = input[35 + i];
+
     // 1. Keccak-1600 of input → 200-byte state
     __private uchar state[200];
     keccak1600(input, len, state);
+
+    // Save state[192..199] to global memory byte-by-byte.
+    for (int i = 0; i < 8; i++) tweak_tmp[8 + i] = state[192 + i];
 
     // 2. Extract key and init from state
     __private uchar text[CN_INIT_SIZE_BYTE];  // state[64..191]
@@ -1034,11 +1056,21 @@ inline void cn_hash_full(
 
     // 4. VARIANT1_INIT: tweak1_2 = *(ulong*)(input+35) ^ state.w[24]
     // state.w[24] = state bytes 192..199
-    ulong tweak1_2 = *((__private const ulong*)(input + 35)) ^ ((__private const ulong*)state)[24];
+    // Both parts were saved to global memory (scratchpad) byte-by-byte.
+    ulong input_part = 0, state_part = 0;
+    for (int i = 0; i < 8; i++) input_part |= ((ulong)tweak_tmp[i]) << (i * 8);
+    for (int i = 0; i < 8; i++) state_part |= ((ulong)tweak_tmp[8 + i]) << (i * 8);
+    ulong tweak1_2 = input_part ^ state_part;
+
+    // Debug: save tweak1_2 at [64..71], input_part at [72..79], state_part at [80..87]
+    if (debug_state) {
+        for (int z = 0; z < 8; z++) debug_state[64 + z] = ((__private uchar*)&tweak1_2)[z];
+        for (int z = 0; z < 8; z++) debug_state[72 + z] = ((__private uchar*)&input_part)[z];
+        for (int z = 0; z < 8; z++) debug_state[80 + z] = ((__private uchar*)&state_part)[z];
+    }
 
     // 5. Fill scratchpad
     uint cn_init = memory / CN_INIT_SIZE_BYTE;  // number of 128-byte blocks
-    uint cn_aes_init = memory / CN_AES_BLOCK_SIZE;  // number of 16-byte blocks
 
     for (uint i = 0; i < cn_init; ++i) {
         // 8 AES pseudo-rounds on text (8 × 16 bytes = 128 bytes)
@@ -1062,6 +1094,14 @@ inline void cn_hash_full(
         b[i] = state[16 + i] ^ state[48 + i];
     }
 
+    // Debug: save first scratchpad block [0..63], a[0..15], b[0..15], b[16..31]
+    if (debug_state) {
+        for (int i = 0; i < 64; i++) debug_state[64 + i] = scratchpad[i];
+        for (int i = 0; i < 16; i++) debug_state[128 + i] = a[i];
+        for (int i = 0; i < 16; i++) debug_state[144 + i] = b[i];
+        for (int i = 0; i < 16; i++) debug_state[160 + i] = b[16 + i];
+    }
+
     // 7. Main loop
     __private uchar c[16];
     for (uint i = 0; i < iter_div; ++i) {
@@ -1074,6 +1114,17 @@ inline void cn_hash_full(
         uint4 a_key = vload4(0, (__private const uint*)a);
         uint4 c_block = AES_Round(AES0, AES1, AES2, AES3, sp_block, a_key);
         vstore4(c_block, 0, (__private uint*)c);
+
+        // Debug: dump iteration 1 state at iteration 163
+        if (debug_state && i == 163) {
+            // j1 at [176..179], sp_block at [180..195] (we'll pack as bytes)
+            debug_state[176] = j & 0xFF;
+            debug_state[177] = (j >> 8) & 0xFF;
+            debug_state[178] = (j >> 16) & 0xFF;
+            debug_state[179] = (j >> 24) & 0xFF;
+            // sp_block (16 bytes) at [32..47] - reuse input area since we don't need it anymore
+            for (int z = 0; z < 16; z++) debug_state[32 + z] = sptr[z];
+        }
 
         // scratchpad[j] = c XOR b
         cn_xor_blocks_dst_g(c, b, sptr);
@@ -1097,6 +1148,26 @@ inline void cn_hash_full(
         // lo, hi = mul128(c[0], t[0])
         ulong hi, lo;
         lo = cn_mul128(((__private const ulong*)c)[0], t0, &hi);
+
+        // Debug: dump state at iteration 163 (the 164th, 0-indexed)
+        if (debug_state && i == 163) {
+            // Save a, c, j2, t, hi, lo
+            for (int z = 0; z < 16; z++) debug_state[128 + z] = a[z];
+            for (int z = 0; z < 16; z++) debug_state[144 + z] = c[z];
+            // j2 at [160..163]
+            debug_state[160] = j & 0xFF;
+            debug_state[161] = (j >> 8) & 0xFF;
+            debug_state[162] = (j >> 16) & 0xFF;
+            debug_state[163] = (j >> 24) & 0xFF;
+            // t0 at [180..187]
+            for (int z = 0; z < 8; z++) debug_state[180 + z] = ((__private uchar*)&t0)[z];
+            // t1 at [188..195]
+            for (int z = 0; z < 8; z++) debug_state[188 + z] = ((__private uchar*)&t1)[z];
+            // hi at [48..55] - reuse input area
+            for (int z = 0; z < 8; z++) debug_state[48 + z] = ((__private uchar*)&hi)[z];
+            // lo at [56..63] - reuse input area
+            for (int z = 0; z < 8; z++) debug_state[56 + z] = ((__private uchar*)&lo)[z];
+        }
 
         // a[0] += hi; a[1] += lo
         ((__private ulong*)a)[0] += hi;
@@ -1150,6 +1221,7 @@ inline void cn_hash_full(
     keccakf1600((__private ulong*)state);
 
     // 11. Extra hash: state[0] & 3 selects which hash
+    // (pre-extra-hash state debug output removed to avoid overwriting earlier debug data)
     uint hash_sel = state[0] & 3;
     if (hash_sel == 0) {
         blake256_hash(output, state, 200);
@@ -1182,19 +1254,19 @@ inline void cn_dispatch(
     __local const uint *AES2, __local const uint *AES3)
 {
     switch (cn_algo) {
-        case 0:  cn_hash_full(input, len, output, scratchpad, 524288,  131072, AES0, AES1, AES2, AES3); break; // CNDark
+        case 0:  cn_hash_full(input, len, output, scratchpad, 524288,  131072, 32768,  AES0, AES1, AES2, AES3, 0, 0); break; // CNDark
         case 1:  cn_hash_fast(input, len, output); break; // CNDarkf
-        case 2:  cn_hash_full(input, len, output, scratchpad, 524288,  131072, AES0, AES1, AES2, AES3); break; // CNDarklite
+        case 2:  cn_hash_full(input, len, output, scratchpad, 524288,  131072, 16384,  AES0, AES1, AES2, AES3, 0, 0); break; // CNDarklite
         case 3:  cn_hash_fast(input, len, output); break; // CNDarklitef
-        case 4:  cn_hash_full(input, len, output, scratchpad, 2097152, 262144, AES0, AES1, AES2, AES3); break; // CNFast
+        case 4:  cn_hash_full(input, len, output, scratchpad, 2097152, 262144, 131072, AES0, AES1, AES2, AES3, 0, 0); break; // CNFast
         case 5:  cn_hash_fast(input, len, output); break; // CNFastf
         case 6:  cn_hash_fast(input, len, output); break; // CNF
-        case 7:  cn_hash_full(input, len, output, scratchpad, 1048576, 262144, AES0, AES1, AES2, AES3); break; // CNLite
+        case 7:  cn_hash_full(input, len, output, scratchpad, 1048576, 262144, 65536,  AES0, AES1, AES2, AES3, 0, 0); break; // CNLite
         case 8:  cn_hash_fast(input, len, output); break; // CNLitef
         case 9:  cn_hash_fast(input, len, output); break; // CNSoftshellf
-        case 10: cn_hash_full(input, len, output, scratchpad, 262144,  65536,  AES0, AES1, AES2, AES3); break; // CNTurtle
+        case 10: cn_hash_full(input, len, output, scratchpad, 262144,  65536,  16384,  AES0, AES1, AES2, AES3, 0, 0); break; // CNTurtle
         case 11: cn_hash_fast(input, len, output); break; // CNTurtlef
-        case 12: cn_hash_full(input, len, output, scratchpad, 262144,  65536,  AES0, AES1, AES2, AES3); break; // CNTurtlelite
+        case 12: cn_hash_full(input, len, output, scratchpad, 262144,  65536,  8192,   AES0, AES1, AES2, AES3, 0, 0); break; // CNTurtlelite
         case 13: cn_hash_fast(input, len, output); break; // CNTurtlelitef
         default: cn_hash_fast(input, len, output); break;
     }

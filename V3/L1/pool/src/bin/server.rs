@@ -2796,6 +2796,20 @@ fn handle_client(
                                 println!("routing_snapshot {}", stats.snapshot_line());
                             }
                         }
+                        // Per-stream telemetry for external shares
+                        {
+                            let mut telemetry = miner_telemetry
+                                .lock()
+                                .expect("miner telemetry lock poisoned");
+                            telemetry.record_job_result_stream(
+                                &miner_id,
+                                &worker_name,
+                                accepted,
+                                0,
+                                0,
+                                revenue_source_name(ext_source),
+                            );
+                        }
                     }
                     PoolMessage::PearlSubmit {
                         miner_id: sub_miner_id,
@@ -3394,12 +3408,13 @@ fn handle_client(
                     let mut telemetry = miner_telemetry
                         .lock()
                         .expect("miner telemetry lock poisoned");
-                    telemetry.record_job_result(
+                    telemetry.record_job_result_stream(
                         &miner_id,
                         &worker_name,
                         matches!(decision.status, ShareStatus::Accepted),
                         attempted_hashes,
                         elapsed_ms,
+                        revenue_source_name(routed_source),
                     );
                 }
 
@@ -4133,6 +4148,13 @@ struct MinerPayoutRecord {
     error: Option<String>,
 }
 
+#[derive(Debug, Clone, Default, serde::Serialize)]
+struct StreamStats {
+    valid_shares: u64,
+    invalid_shares: u64,
+    last_share_time_s: u64,
+}
+
 #[derive(Debug, Clone)]
 struct MinerTelemetry {
     worker_name: String,
@@ -4151,6 +4173,8 @@ struct MinerTelemetry {
     paid_total_atomic: u64,
     samples: VecDeque<WorkSample>,
     payouts: VecDeque<MinerPayoutRecord>,
+    /// Per-stream share counters keyed by stream name ("zion", "kheavyhash", "verushash", etc.)
+    streams: HashMap<String, StreamStats>,
 }
 
 #[derive(Debug, Default)]
@@ -4182,6 +4206,7 @@ impl MinerTelemetry {
             paid_total_atomic: 0,
             samples: VecDeque::new(),
             payouts: VecDeque::new(),
+            streams: HashMap::new(),
         }
     }
 
@@ -4258,6 +4283,18 @@ impl MinerTelemetryRegistry {
         attempted_hashes: u64,
         elapsed_ms: u64,
     ) {
+        self.record_job_result_stream(miner_id, worker_name, accepted, attempted_hashes, elapsed_ms, "zion");
+    }
+
+    fn record_job_result_stream(
+        &mut self,
+        miner_id: &str,
+        worker_name: &str,
+        accepted: bool,
+        attempted_hashes: u64,
+        elapsed_ms: u64,
+        stream: &str,
+    ) {
         let now_s = now_unix_seconds();
         let key = format!("{miner_id}/{worker_name}");
         let miner = self
@@ -4272,6 +4309,14 @@ impl MinerTelemetryRegistry {
             miner.last_share_time_s = now_s;
         } else {
             miner.invalid_shares = miner.invalid_shares.saturating_add(1);
+        }
+        // Per-stream tracking
+        let stats = miner.streams.entry(stream.to_string()).or_default();
+        if accepted {
+            stats.valid_shares = stats.valid_shares.saturating_add(1);
+            stats.last_share_time_s = now_s;
+        } else {
+            stats.invalid_shares = stats.invalid_shares.saturating_add(1);
         }
     }
 
@@ -5893,7 +5938,8 @@ fn build_miners_payload(
                 "blocks_found": miner.blocks_found,
                 "valid_shares": miner.valid_shares,
                 "invalid_shares": miner.invalid_shares,
-                "pending_balance": pplns_engine.unpaid_balance(key)
+                "pending_balance": pplns_engine.unpaid_balance(key),
+                "streams": miner.streams
             })
         })
         .collect::<Vec<_>>();
