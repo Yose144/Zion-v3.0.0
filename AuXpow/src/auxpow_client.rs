@@ -4436,6 +4436,13 @@ impl AuxPowClient {
             let mut t = [0u8; 32];
             t[4..].fill(0xFF);
             t
+        } else if self.profile.algorithm.eq_ignore_ascii_case("ghostrider")
+            || self.profile.coin == ExternalCoin::RTM
+        {
+            // Raptoreum (Dash fork) uses a PoW limit of 0x00000FFFFF000...
+            // Using the full 256-bit max would overflow for diff < 1.0,
+            // producing an all-FF target that the upstream pool rejects.
+            RTM_POW_LIMIT
         } else if self.profile.coin == ExternalCoin::DCR {
             // Decred mainnet PoW limit is 2^224 - 1 (same byte pattern as KAS).
             // This matches gominer/dcrpool DiffToTarget(net.PowLimit, difficulty).
@@ -4466,6 +4473,14 @@ impl AuxPowClient {
         } else {
             [0xFFu8; 32]
         };
+        // Allow operator override of share target for coins that do not
+        // receive mining.set_difficulty (e.g. ALPH on Herominers).
+        if let Ok(target_hex) = std::env::var(format!("ZION_AUXPOW_{}_SHARE_TARGET_HEX", self.profile.coin.ticker())) {
+            if let Some(t) = crate::external_hashers::parse_target_hex(&target_hex) {
+                println!("auxpow: {} share_target override hex={} -> {}", self.profile.coin, target_hex, hex::encode(t));
+                return t;
+            }
+        }
         difficulty_to_target_with_max(difficulty, &max_target)
     }
 

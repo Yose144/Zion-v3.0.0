@@ -692,8 +692,9 @@ async fn run_auxpow_bridge(
                     job.external_job_id, job.external_coin, job.algorithm
                 );
                 let mut q = bridge.job_queue.lock().expect("auxpow job queue lock poisoned");
-                // Keep at most 2 jobs per algorithm to avoid stale work.
-                while q.len() >= 2 {
+                // Keep at most 5 jobs per algorithm to tolerate frequent
+                // job updates (e.g. ALPH Herominers sends new jobs every ~5s).
+                while q.len() >= 5 {
                     q.pop_back();
                 }
                 q.push_front(job);
@@ -2750,6 +2751,40 @@ fn handle_client(
                             "external_share_received miner={} coin={} job_id={} nonce={}",
                             sub_miner_id, coin, external_job_id, nonce
                         );
+                        // ── Stale job check ──────────────────────────────
+                        // If the share's job_id doesn't match any job in the
+                        // multi_bridge queue (which holds the current + prev
+                        // job), reject locally as "stale_job" instead of
+                        // forwarding to the upstream pool (which would reject
+                        // with "Invalid job id"). The queue holds at most 2
+                        // jobs, so we tolerate the miner being one job behind
+                        // (common with RTM/XMR which update every ~30s).
+                        let valid_job_ids = ExternalCoin::from_str_loose(&coin)
+                            .map(|c| multi_bridge.job_ids_for_coin(&c))
+                            .unwrap_or_default();
+                        if !valid_job_ids.is_empty() && !valid_job_ids.contains(&external_job_id) {
+                            println!(
+                                "external_share_stale miner={} coin={} share_job_id={} valid_ids={} — rejecting locally",
+                                sub_miner_id, coin, external_job_id, valid_job_ids.join(",")
+                            );
+                            let ext_result = PoolMessage::ExternalResult {
+                                accepted: false,
+                                status: "stale_job".to_string(),
+                                coin: coin.clone(),
+                            };
+                            let _ = write_wire_message(&mut writer, &ext_result);
+                            let ext_source = match coin.to_ascii_uppercase().as_str() {
+                                "XMR" => RevenueSource::RandomXExternal,
+                                "VRSC" => RevenueSource::VerusHashExternal,
+                                "RTM" => RevenueSource::GhostRiderExternal,
+                                _ => RevenueSource::Blake3External,
+                            };
+                            {
+                                let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
+                                stats.record(session_group, ext_source, false);
+                            }
+                            continue;
+                        }
                         // Parse hash bytes
                         let hash_bytes = match zion_pool::parse_fixed_hex::<32>(&hash_hex, "external share hash") {
                             Ok(h) => h,
@@ -4189,6 +4224,17 @@ impl MultiAuxPowBridge {
             }
         }
         None
+    }
+
+    /// Get all job_ids currently in the queue for a coin (for stale check).
+    /// Returns all job_ids in the queue (most recent first). The queue
+    /// holds at most 5 jobs, covering the current + recent jobs.
+    fn job_ids_for_coin(&self, coin: &ExternalCoin) -> Vec<String> {
+        let bridges = self.bridges.lock().expect("multi_bridge lock poisoned");
+        bridges.get(coin).map(|b| {
+            let q = b.job_queue.lock().expect("auxpow job queue lock poisoned");
+            q.iter().map(|j| j.external_job_id.clone()).collect()
+        }).unwrap_or_default()
     }
 
     /// Forward a share to the bridge for the given coin.
