@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRightLeft, ChevronRight, Copy, Check, Loader2, X, Download } from "lucide-react";
+import { ArrowRightLeft, ChevronRight, Copy, Check, Loader2, X, Download, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/api";
@@ -78,6 +78,7 @@ export default function TransactionsPageClient() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
 
   usePolling(() => setNow(Date.now()), 1000);
@@ -109,7 +110,8 @@ export default function TransactionsPageClient() {
       if (append) setTransactions((prev) => [...prev, ...newTxs]);
       else setTransactions(newTxs);
       setHasMore(newTxs.length === 50);
-    } catch {
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load transactions');
       setHasMore(false);
     } finally {
       setLoading(false);
@@ -176,6 +178,23 @@ export default function TransactionsPageClient() {
             <span className="text-[11px] text-white/40">{cs ? 'Filtr adresy:' : 'Address filter:'}</span>
             <span className="text-[11px] text-cyan-300 font-mono">{addressFilter}</span>
             <Link href="/explorer/transactions" className="text-white/30 hover:text-white/60"><X className="w-3 h-3" /></Link>
+          </div>
+        )}
+
+        {/* error banner */}
+        {error && (
+          <div className="mt-4 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-red-300 font-medium">{cs ? 'Chyba načítání transakcí' : 'Failed to load transactions'}</p>
+              <p className="text-xs text-white/40 font-mono break-all">{error}</p>
+            </div>
+            <button
+              onClick={() => { setError(null); setLoading(true); setPage(1); loadTransactions(1, false); }}
+              className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/70 hover:bg-white/10 hover:text-white transition shrink-0"
+            >
+              {cs ? 'Zkusit znovu' : 'Retry'}
+            </button>
           </div>
         )}
 
