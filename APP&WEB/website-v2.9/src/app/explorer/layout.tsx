@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
+import ExplorerV4LayoutWrapper from './ExplorerV4LayoutWrapper';
+import SseOverlayWrapper from '@/components/explorer/v4/dashboard/SseOverlayWrapper';
 
 export const metadata: Metadata = {
   title: `Explorer · ZION ${SITE_RELEASE_LABEL}`,
@@ -7,5 +9,12 @@ export const metadata: Metadata = {
 };
 
 export default function ExplorerLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      <ExplorerV4LayoutWrapper>
+        {children}
+      </ExplorerV4LayoutWrapper>
+      <SseOverlayWrapper />
+    </>
+  );
 }

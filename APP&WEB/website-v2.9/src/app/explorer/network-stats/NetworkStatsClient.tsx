@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   Activity,
-  ArrowLeft,
   BarChart3,
   Blocks,
   Clock,
@@ -192,20 +191,14 @@ export default function NetworkStatsClient() {
   ];
 
   return (
-    <div className="zion-shell zion-page">
+    <div className="relative min-h-screen pb-24 overflow-x-hidden">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-purple-500/8" />
         <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-cyan-500/6" />
         <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-purple-500/15 to-transparent" />
       </div>
 
-      <div className="relative z-10 zion-container max-w-7xl space-y-14">
-        {/* Back link */}
-        <Link href="/explorer" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-          <ArrowLeft className="h-4 w-4" />
-          {cs ? "Zpět do průzkumníka" : "Back to Explorer"}
-        </Link>
-
+      <div className="relative z-10 zion-container max-w-7xl space-y-14 pt-6">
         {/* ═══════ HERO ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">

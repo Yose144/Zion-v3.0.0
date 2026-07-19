@@ -457,7 +457,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
 
   /* ── Full-page mode: wrapper + background + breadcrumb + hero ── */
   return (
-    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
+    <div className="relative min-h-screen pb-24 overflow-x-hidden">
       {/* ── Background glows ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-gold/8" />
@@ -465,7 +465,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
         <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-gold/15 to-transparent" />
       </div>
 
-      <div className="relative z-10 zion-container max-w-7xl space-y-10">
+      <div className="relative z-10 zion-container max-w-7xl space-y-10 pt-6">
         {/* ── Breadcrumb ── */}
         <div className="flex items-center gap-2 text-sm text-white/40">
           <Link

@@ -138,10 +138,10 @@ export default function TransactionsPageClient() {
   /* ── render ──────────────────────────────────────────────── */
 
   return (
-    <div className="zion-shell min-h-screen relative">
+    <div className="relative min-h-screen pb-24 overflow-x-hidden">
       <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-zion-purple/10 via-transparent to-transparent" />
 
-      <div className="relative z-10 zion-container max-w-[1400px] py-8">
+      <div className="relative z-10 zion-container max-w-[1400px] py-8 pt-6">
 
         {/* breadcrumb */}
         <nav className="flex items-center gap-1.5 text-[11px] text-white/40 mb-6">

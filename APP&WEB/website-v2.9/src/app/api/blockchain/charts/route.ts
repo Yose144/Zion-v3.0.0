@@ -13,6 +13,10 @@ import { getZionRpc } from '@/lib/zion-rpc';
 
 type ChartType = 'difficulty' | 'blocktime' | 'hashrate' | 'emission' | 'blocksize' | 'txcount';
 
+// In-memory cache — charts are expensive (hundreds of RPC calls)
+const CACHE_TTL = 10_000; // 10 seconds
+const chartCache = new Map<string, { json: any; ts: number }>();
+
 export async function GET(request: NextRequest) {
   const rpc = getZionRpc();
 
@@ -21,6 +25,15 @@ export async function GET(request: NextRequest) {
     const chart = (searchParams.get('type') || 'difficulty') as ChartType;
     const rangeParam = searchParams.get('range') || '24h';
     const resolution = parseInt(searchParams.get('resolution') || '0');
+
+    // Check cache
+    const cacheKey = `${chart}:${rangeParam}:${resolution}`;
+    const cached = chartCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      return NextResponse.json(cached.json, {
+        headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=60' },
+      });
+    }
 
     // Determine how many blocks to fetch based on range
     // Assume ~60s block time; cap "all" so the API stays fast as the chain grows.
@@ -122,15 +135,20 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: `Unknown chart type: ${chart}` }, { status: 400 });
     }
 
-    return NextResponse.json({
+    const responseBody = {
       chart,
       range: rangeParam,
       resolution: step,
       data_points: data.values.length,
       chain_height: chainHeight,
       data,
-    }, {
-      headers: { 'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=60' },
+    };
+
+    // Store in cache
+    chartCache.set(cacheKey, { json: responseBody, ts: Date.now() });
+
+    return NextResponse.json(responseBody, {
+      headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=60' },
     });
   } catch (error) {
     console.error('Failed to generate chart data:', error);

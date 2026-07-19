@@ -5148,34 +5148,43 @@ def get_revenue_dashboard() -> dict:
     # Aligned with AuXpow/src/types.rs ExternalCoin defaults.
     # v3.0.6: Pearl (PRL) removed from canonical 3-stream mining.
     #         The 3 streams are: ZION GPU, one GPU profit coin, CPU Verus/RandomX.
+    # Pool addresses aligned with AuXpow/src/types.rs default_pool()
+    # E2E stratum test status from 2026-07-16 testing (commit b39f5cae8)
+    # e2e: "ok" = full stratum E2E, "warn" = connectivity issues, "ok" (legacy) = previously tested
     SUPPORTED_COINS = [
-        ("DCR",  "blake3",      "pool.woolypooly.com:3152"),
-        ("ALPH", "blake3",      "pool.woolypooly.com:3106"),
-        ("KAS",  "kheavyhash",  "kas.2miners.com:2020"),
-        ("ERG",  "autolykos",   "erg.2miners.com:8888"),
-        ("RVN",  "kawpow",      "rvn.2miners.com:6060"),
-        ("ETC",  "ethash",      "etc.2miners.com:1010"),
-        ("EVR",  "evrprogpow",  "evrprogpow.eu.mine.zpool.ca:1330"),
-        ("MEWC", "meowpow",     "meowpow.eu.mine.zpool.ca:1327"),
-        ("FLUX", "zelhash",     "flux.woolypooly.com:3000"),
-        ("CLORE","kawpow",      "clore.woolypooly.com:3090"),
-        ("XMR",  "randomx",     "gulf.moneroocean.stream:10001"),
-        ("VRSC", "verushash",   "eu.luckpool.net:3956"),
-        ("EPIC", "progpow",     "de.epicmine.io:3334"),
-        ("QUAI", "kawpow",      "quai.2miners.com:4848"),
-        ("BEAM", "beamhash",    "beam.2miners.com:5252"),
-        ("KLS",  "karlsenhash", "karlsen.2miners.com:4232"),
-        ("ZCL",  "equihashzero","zcl.2miners.com:2020"),
-        ("QTC",  "qhash",       "qtc.2miners.com:8888"),
-        ("VTC",  "verthash",    "vtc.2miners.com:9232"),
-        ("IRON", "fishhash",    "iron.2miners.com:4444"),
-        ("NEXA", "nexapow",     "nexa.2miners.com:7272"),
-        ("RTM",  "ghostrider",  "rtm.2miners.com:6464"),
-        ("DNX",  "dynexsolve",  "dnx.2miners.com:4848"),
+        ("DCR",  "blake3",      "pool.woolypooly.com:3152",            "ok"),
+        ("ALPH", "blake3",      "pool.woolypooly.com:3106",            "ok"),
+        ("KAS",  "kheavyhash",  "kas.2miners.com:2020",                "ok"),
+        ("ERG",  "autolykos",   "erg.2miners.com:8888",                "ok"),
+        ("RVN",  "kawpow",      "rvn.2miners.com:6060",                "ok"),
+        ("ETC",  "ethash",      "etc.2miners.com:1010",                "ok"),
+        ("EVR",  "evrprogpow",  "evrprogpow.eu.mine.zpool.ca:1330",    "ok"),
+        ("MEWC", "meowpow",     "meowpow.eu.mine.zpool.ca:1327",       "ok"),
+        ("FLUX", "zelhash",     "flux.woolypooly.com:3000",            "ok"),
+        ("CLORE","kawpow",      "clore.woolypooly.com:3090",           "ok"),
+        ("XMR",  "randomx",     "gulf.moneroocean.stream:10001",       "ok"),
+        ("VRSC", "verushash",   "eu.luckpool.net:3956",                "ok"),
+        ("EPIC", "progpow",     "de.epicmine.io:3334",                 "ok"),
+        ("QUAI", "kawpow",      "quaikawpow.2miners.com:4545",         "ok"),
+        ("BEAM", "beamhash",    "beam.2miners.com:5252",               "ok"),
+        ("KLS",  "karlsenhash", "pool.woolypooly.com:3132",            "warn"),
+        ("ZCL",  "equihashzero","equihash192.eu.mine.zpool.ca:2144",   "ok"),
+        ("QTC",  "qhash",       "qtc.suprnova.cc:5555",                "ok"),
+        ("VTC",  "verthash",    "verthash.eu.mine.zpool.ca:4533",      "ok"),
+        ("IRON", "fishhash",    "de.ironfish.herominers.com:1145",     "warn"),
+        ("NEXA", "nexapow",     "nexa.2miners.com:5050",               "ok"),
+        ("RTM",  "ghostrider",  "ghostrider.eu.mine.zpool.ca:5354",    "ok"),
+        ("DNX",  "dynexsolve",  "dynex.herominers.com:1030",           "warn"),
     ]
+    # E2E status notes for the 3 problematic coins
+    COIN_E2E_NOTES = {
+        "KLS":  "EthStratum auth pending — pool requires valid KLS wallet",
+        "IRON": "Herominers TCP OK but no stratum response (30s timeout)",
+        "DNX":  "All pools unreachable from datacenter IP",
+    }
     current_coin = auxpow.get("current_coin", "")
     coin_revenue = []
-    for coin, algo, pool_addr in SUPPORTED_COINS:
+    for coin, algo, pool_addr, e2e_status in SUPPORTED_COINS:
         is_active = (coin == current_coin) and auxpow.get("enabled", False)
         coin_revenue.append({
             "coin": coin,
@@ -5184,6 +5193,8 @@ def get_revenue_dashboard() -> dict:
             "shares": int(auxpow.get("shares_submitted", 0)) if is_active else 0,
             "revenue_usd": float(auxpow.get("revenue_usd", 0.0)) if is_active else 0.0,
             "active": is_active,
+            "e2e_status": e2e_status,
+            "e2e_note": COIN_E2E_NOTES.get(coin, ""),
         })
 
     # ── Distributions table (from PPLNS payouts) ───────────────────────
@@ -5452,10 +5463,13 @@ def _write_edge_env_vars(updates: dict) -> dict:
             existing_lines = ["# ZION Edge Server — shared environment\n"]
         else:
             existing_lines = EDGE_ENV_FILE.read_text(encoding="utf-8").splitlines(keepends=True)
-            backup = EDGE_ENV_FILE.with_suffix(
-                EDGE_ENV_FILE.suffix + f".bak-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-            )
-            shutil.copy2(str(EDGE_ENV_FILE), str(backup))
+            try:
+                backup = EDGE_ENV_FILE.with_suffix(
+                    EDGE_ENV_FILE.suffix + f".bak-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+                )
+                shutil.copy2(str(EDGE_ENV_FILE), str(backup))
+            except Exception:
+                backup = None  # Skip backup if permission denied (read-only fs)
 
         parsed = {}
         for idx, line in enumerate(existing_lines):
@@ -5662,6 +5676,361 @@ def restart_auxpow_pool_service() -> dict:
         }
     except Exception as e:
         return {"ok": False, "error": f"Restart failed: {e}"}
+
+
+# ── Pool Setup: 3-stream configuration ────────────────────────────────
+# Stream 1: ZION Deeksha (GPU primary, always native)
+# Stream 2: GPU external coin (auto-switch or forced)
+# Stream 3: CPU external coin (VRSC/XMR, auto-switch or forced)
+
+# Supported coins (ticker, algorithm, pool_address, e2e_status)
+# Aligned with AuXpow/src/types.rs ExternalCoin defaults.
+# v3.0.6: 23 coins total (15 original + 8 new GPU-mineable)
+POOL_SETUP_SUPPORTED_COINS = [
+    ("DCR",  "blake3",      "pool.woolypooly.com:3152",            "ok"),
+    ("ALPH", "blake3",      "pool.woolypooly.com:3106",            "ok"),
+    ("KAS",  "kheavyhash",  "kas.2miners.com:2020",                "ok"),
+    ("ERG",  "autolykos",   "erg.2miners.com:8888",                "ok"),
+    ("RVN",  "kawpow",      "rvn.2miners.com:6060",                "ok"),
+    ("ETC",  "ethash",      "etc.2miners.com:1010",                "ok"),
+    ("EVR",  "evrprogpow",  "evrprogpow.eu.mine.zpool.ca:1330",    "ok"),
+    ("MEWC", "meowpow",     "meowpow.eu.mine.zpool.ca:1327",       "ok"),
+    ("FLUX", "zelhash",     "flux.woolypooly.com:3000",            "ok"),
+    ("CLORE","kawpow",      "clore.woolypooly.com:3090",           "ok"),
+    ("XMR",  "randomx",     "gulf.moneroocean.stream:10001",       "ok"),
+    ("VRSC", "verushash",   "eu.luckpool.net:3956",                "ok"),
+    ("EPIC", "progpow",     "de.epicmine.io:3334",                 "ok"),
+    ("QUAI", "kawpow",      "quaikawpow.2miners.com:4545",         "ok"),
+    ("BEAM", "beamhash",    "beam.2miners.com:5252",               "ok"),
+    ("KLS",  "karlsenhash", "pool.woolypooly.com:3132",            "warn"),
+    ("ZCL",  "equihashzero","equihash192.eu.mine.zpool.ca:2144",   "ok"),
+    ("QTC",  "qhash",       "qtc.suprnova.cc:5555",                "ok"),
+    ("VTC",  "verthash",    "verthash.eu.mine.zpool.ca:4533",      "ok"),
+    ("IRON", "fishhash",    "de.ironfish.herominers.com:1145",     "warn"),
+    ("NEXA", "nexapow",     "nexa.2miners.com:5050",               "ok"),
+    ("RTM",  "ghostrider",  "ghostrider.eu.mine.zpool.ca:5354",    "ok"),
+    ("DNX",  "dynexsolve",  "dynex.herominers.com:1030",           "warn"),
+]
+
+POOL_SETUP_COIN_E2E_NOTES = {
+    "KLS":  "EthStratum auth pending — pool requires valid KLS wallet",
+    "IRON": "Herominers TCP OK but no stratum response (30s timeout)",
+    "DNX":  "All pools unreachable from datacenter IP",
+}
+
+# Coins suitable for each stream
+STREAM2_GPU_COINS = [
+    "DCR", "ALPH", "KAS", "ERG", "RVN", "ETC", "EVR", "MEWC",
+    "FLUX", "CLORE", "EPIC", "QUAI", "BEAM", "KLS", "ZCL", "QTC",
+    "VTC", "IRON", "NEXA", "RTM", "DNX",
+]
+STREAM3_CPU_COINS = ["VRSC", "XMR"]
+
+# Algorithm → hardware type mapping
+COIN_HARDWARE = {
+    "VRSC": "CPU", "XMR": "CPU",
+    "DCR": "GPU", "ALPH": "GPU", "KAS": "GPU", "ERG": "GPU",
+    "RVN": "GPU", "ETC": "GPU", "EVR": "GPU", "MEWC": "GPU",
+    "FLUX": "GPU", "CLORE": "GPU", "EPIC": "GPU", "QUAI": "GPU",
+    "BEAM": "GPU", "KLS": "GPU", "ZCL": "GPU", "QTC": "GPU",
+    "VTC": "GPU", "IRON": "GPU", "NEXA": "GPU", "RTM": "GPU", "DNX": "GPU",
+}
+
+# Algorithm → DAG requirement (None = no DAG, always fits VRAM)
+COIN_DAG_SIZE = {
+    "RVN": 4_294_967_296, "ETC": 2_684_354_560, "FLUX": 6_000_000_000,
+    "CLORE": 4_294_967_296, "QUAI": 4_294_967_296, "EPIC": 2_684_354_560,
+    "NEXA": 8_000_000_000, "RTM": 4_294_967_296,
+}
+
+
+def get_pool_setup_config() -> dict:
+    """Return comprehensive 3-stream pool setup configuration."""
+    # ── Stream 1: ZION (always native) ──
+    s1_enabled = _read_edge_env_var("ZION_STREAM1_ENABLED", "1").lower() in ("1", "true", "yes")
+    s1_algorithm = _read_edge_env_var("ZION_PRIMARY_ALGORITHM", "deeksha_lite_v1")
+    s1_gpu_backend = _read_edge_env_var("ZION_PRIMARY_GPU_BACKEND", "opencl")
+    s1_gpu_work_size = _read_edge_env_var("ZION_PRIMARY_GPU_WORK_SIZE", "262144")
+
+    # ── Stream 2: GPU external ──
+    s2_enabled = _read_edge_env_var("ZION_STREAM2_ENABLED", "1").lower() in ("1", "true", "yes")
+    s2_coin = _read_edge_env_var("ZION_STREAM2_COIN", "").upper()
+    s2_gpu_work_size = _read_edge_env_var("ZION_SECONDARY_GPU_WORK_SIZE", "4194304")
+    s2_pearl_backend = _read_edge_env_var("ZION_PEARL_GPU_BACKEND", "opencl")
+    s2_pearl_work_size = _read_edge_env_var("ZION_PEARL_GPU_WORK_SIZE", "262144")
+
+    # ── Stream 3: CPU external ──
+    s3_enabled = _read_edge_env_var("ZION_STREAM3_ENABLED", "1").lower() in ("1", "true", "yes")
+    s3_coin = _read_edge_env_var("ZION_STREAM3_COIN", "").upper()
+    s3_threads = _read_edge_env_var("ZION_THREADS", "4")
+    # CPU bridge config (pool-side)
+    cpu_coin = _read_edge_env_var("ZION_POOL_AUXPOW_CPU_COIN", "VRSC").upper()
+    cpu_wallet = _read_edge_env_var("ZION_POOL_AUXPOW_CPU_WALLET", "")
+    cpu_worker = _read_edge_env_var("ZION_POOL_AUXPOW_CPU_WORKER_NAME", "zion_triple")
+    cpu_region = _read_edge_env_var("ZION_POOL_AUXPOW_CPU_REGION", "eu")
+
+    # ── Pool-side AuxPow config ──
+    aux_enabled = _read_edge_env_var("ZION_POOL_AUXPOW_ENABLED", "0").lower() in ("1", "true", "yes")
+    aux_coin = _read_edge_env_var("ZION_POOL_AUXPOW_COIN", "").upper()
+    aux_pool_pref = _read_edge_env_var("ZION_POOL_AUXPOW_POOL_PREFERENCE", "default")
+    aux_region = _read_edge_env_var("ZION_POOL_AUXPOW_REGION", "eu")
+    aux_split_zion = _read_edge_env_var("ZION_POOL_AUXPOW_SPLIT_ZION", "50")
+    aux_split_ext = _read_edge_env_var("ZION_POOL_AUXPOW_SPLIT_EXTERNAL", "50")
+    aux_wallet = _read_edge_env_var("ZION_POOL_AUXPOW_WALLET", "")
+    aux_worker = _read_edge_env_var("ZION_POOL_AUXPOW_WORKER_NAME", "zion-pool")
+
+    # ── Per-coin wallets ──
+    coin_wallets = {}
+    for ticker in AUXPOW_SUPPORTED_COINS:
+        v = _read_edge_env_var(f"ZION_POOL_AUXPOW_WALLET_{ticker}", "")
+        if v:
+            coin_wallets[ticker] = v
+
+    # ── Stream profit (Deeksha Chv3) ──
+    sp_enabled = _read_edge_env_var("ZION_STREAM_PROFIT_SWITCH", "false").lower() in ("1", "true", "yes")
+    sp_provider = _read_edge_env_var("ZION_STREAM_PROFIT_API_PROVIDER", "fallback")
+    sp_interval = _read_edge_env_var("ZION_STREAM_PROFIT_INTERVAL", "120")
+    sp_hysteresis = _read_edge_env_var("ZION_STREAM_HYSTERESIS_PCT", "15.0")
+    sp_sources = _read_edge_env_var("ZION_STREAM_PROFIT_SOURCES", "zion,keccak_bonus,sha3_bonus,ncl_ai")
+
+    # ── Autonomous mode ──
+    autonomous = _read_edge_env_var("ZION_AUTONOMOUS", "0").lower() in ("1", "true", "yes")
+    auto_mode = _read_edge_env_var("ZION_AUTO_MODE", "manual")
+    profit_interval = _read_edge_env_var("ZION_PROFIT_INTERVAL", "300")
+    profit_hysteresis = _read_edge_env_var("ZION_PROFIT_HYSTERESIS", "15")
+    profit_api = _read_edge_env_var("ZION_PROFIT_API", "whattomine")
+    elec_price = _read_edge_env_var("ZION_ELECTRICITY_PRICE", "0.12")
+    gpu_tdp = _read_edge_env_var("ZION_GPU_TDP", "225")
+    cpu_tdp = _read_edge_env_var("ZION_CPU_TDP", "65")
+
+    # ── Pool failover ──
+    pool_addrs = _read_edge_env_var("ZION_POOL_ADDR", "62.171.141.136:8444")
+
+    # ── Build coin list with metadata ──
+    coins_meta = []
+    for coin, algo, pool_addr, e2e_status in POOL_SETUP_SUPPORTED_COINS:
+        hw = COIN_HARDWARE.get(coin, "GPU")
+        dag = COIN_DAG_SIZE.get(coin, None)
+        coins_meta.append({
+            "coin": coin,
+            "algorithm": algo,
+            "pool": pool_addr,
+            "e2e_status": e2e_status,
+            "e2e_note": POOL_SETUP_COIN_E2E_NOTES.get(coin, ""),
+            "hardware": hw,
+            "dag_size": dag,
+            "wallet": coin_wallets.get(coin, ""),
+            "stream": 2 if hw == "GPU" else 3,
+        })
+
+    return {
+        "ok": True,
+        "streams": {
+            "stream1": {
+                "name": "ZION Deeksha",
+                "enabled": s1_enabled,
+                "algorithm": s1_algorithm,
+                "gpu_backend": s1_gpu_backend,
+                "gpu_work_size": s1_gpu_work_size,
+                "always_native": True,
+                "coin": "ZION",
+            },
+            "stream2": {
+                "name": "GPU External",
+                "enabled": s2_enabled,
+                "coin": s2_coin or aux_coin or "",
+                "mode": "auto" if not (s2_coin or aux_coin) else "force",
+                "gpu_work_size": s2_gpu_work_size,
+                "pearl_backend": s2_pearl_backend,
+                "pearl_work_size": s2_pearl_work_size,
+                "candidate_coins": STREAM2_GPU_COINS,
+            },
+            "stream3": {
+                "name": "CPU External",
+                "enabled": s3_enabled,
+                "coin": s3_coin or cpu_coin or "VRSC",
+                "mode": "auto" if not (s3_coin or cpu_coin) else "force",
+                "threads": s3_threads,
+                "cpu_wallet": cpu_wallet,
+                "cpu_worker": cpu_worker,
+                "cpu_region": cpu_region,
+                "candidate_coins": STREAM3_CPU_COINS,
+            },
+        },
+        "auxpow": {
+            "enabled": aux_enabled,
+            "coin": aux_coin,
+            "pool_preference": aux_pool_pref,
+            "region": aux_region,
+            "split_zion": aux_split_zion,
+            "split_external": aux_split_ext,
+            "wallet": aux_wallet,
+            "worker_name": aux_worker,
+        },
+        "coin_wallets": coin_wallets,
+        "stream_profit": {
+            "enabled": sp_enabled,
+            "provider": sp_provider,
+            "interval": sp_interval,
+            "hysteresis": sp_hysteresis,
+            "sources": sp_sources,
+        },
+        "autonomous": {
+            "enabled": autonomous,
+            "auto_mode": auto_mode,
+            "profit_interval": profit_interval,
+            "profit_hysteresis": profit_hysteresis,
+            "profit_api": profit_api,
+            "electricity_price": elec_price,
+            "gpu_tdp": gpu_tdp,
+            "cpu_tdp": cpu_tdp,
+        },
+        "pool_failover": pool_addrs,
+        "coins": coins_meta,
+        "supported_coins": AUXPOW_SUPPORTED_COINS,
+        "supported_preferences": AUXPOW_POOL_PREFERENCES,
+        "supported_stream_sources": ["zion", "keccak_bonus", "sha3_bonus", "ncl_ai", "deeksha_lite", "thermal_bonus"],
+        "supported_stream_providers": ["fallback", "nicehash", "whattomine", "coingecko"],
+        "env_file": str(EDGE_ENV_FILE),
+        "env_file_exists": EDGE_ENV_FILE.exists(),
+    }
+
+
+def update_pool_setup_config(payload: dict) -> dict:
+    """Validate and persist 3-stream pool setup to the Edge environment file."""
+    updates = {}
+
+    # ── Stream 1 ──
+    s1 = payload.get("stream1") or {}
+    if "enabled" in s1:
+        updates["ZION_STREAM1_ENABLED"] = "1" if s1["enabled"] else "0"
+    if s1.get("algorithm"):
+        updates["ZION_PRIMARY_ALGORITHM"] = s1["algorithm"]
+    if s1.get("gpu_backend"):
+        updates["ZION_PRIMARY_GPU_BACKEND"] = s1["gpu_backend"]
+    if s1.get("gpu_work_size"):
+        updates["ZION_PRIMARY_GPU_WORK_SIZE"] = str(s1["gpu_work_size"])
+
+    # ── Stream 2 ──
+    s2 = payload.get("stream2") or {}
+    if "enabled" in s2:
+        updates["ZION_STREAM2_ENABLED"] = "1" if s2["enabled"] else "0"
+    s2_mode = s2.get("mode", "auto")
+    s2_coin = (s2.get("coin") or "").upper().strip()
+    if s2_mode == "force" and s2_coin:
+        if s2_coin not in STREAM2_GPU_COINS:
+            return {"ok": False, "error": f"Stream 2 coin {s2_coin} not a GPU coin"}
+        updates["ZION_STREAM2_COIN"] = s2_coin
+    elif s2_mode == "auto":
+        updates["ZION_STREAM2_COIN"] = ""
+    if s2.get("gpu_work_size"):
+        updates["ZION_SECONDARY_GPU_WORK_SIZE"] = str(s2["gpu_work_size"])
+    if s2.get("pearl_backend"):
+        updates["ZION_PEARL_GPU_BACKEND"] = s2["pearl_backend"]
+    if s2.get("pearl_work_size"):
+        updates["ZION_PEARL_GPU_WORK_SIZE"] = str(s2["pearl_work_size"])
+
+    # ── Stream 3 ──
+    s3 = payload.get("stream3") or {}
+    if "enabled" in s3:
+        updates["ZION_STREAM3_ENABLED"] = "1" if s3["enabled"] else "0"
+    s3_mode = s3.get("mode", "auto")
+    s3_coin = (s3.get("coin") or "").upper().strip()
+    if s3_mode == "force" and s3_coin:
+        if s3_coin not in STREAM3_CPU_COINS:
+            return {"ok": False, "error": f"Stream 3 coin {s3_coin} not a CPU coin"}
+        updates["ZION_STREAM3_COIN"] = s3_coin
+        updates["ZION_POOL_AUXPOW_CPU_COIN"] = s3_coin
+    elif s3_mode == "auto":
+        updates["ZION_STREAM3_COIN"] = ""
+    if s3.get("threads"):
+        updates["ZION_THREADS"] = str(s3["threads"])
+    if s3.get("cpu_wallet"):
+        updates["ZION_POOL_AUXPOW_CPU_WALLET"] = s3["cpu_wallet"]
+    if s3.get("cpu_worker"):
+        updates["ZION_POOL_AUXPOW_CPU_WORKER_NAME"] = s3["cpu_worker"]
+    if s3.get("cpu_region"):
+        updates["ZION_POOL_AUXPOW_CPU_REGION"] = s3["cpu_region"]
+
+    # ── AuxPow global ──
+    aux = payload.get("auxpow") or {}
+    if "enabled" in aux:
+        updates["ZION_POOL_AUXPOW_ENABLED"] = "1" if aux["enabled"] else "0"
+    if aux.get("coin") is not None:
+        coin = (aux["coin"] or "").upper().strip()
+        if coin and coin not in AUXPOW_SUPPORTED_COINS:
+            return {"ok": False, "error": f"Unsupported coin: {coin}"}
+        updates["ZION_POOL_AUXPOW_COIN"] = coin
+    if aux.get("pool_preference"):
+        updates["ZION_POOL_AUXPOW_POOL_PREFERENCE"] = aux["pool_preference"]
+    if aux.get("region"):
+        updates["ZION_POOL_AUXPOW_REGION"] = aux["region"]
+    if "split_zion" in aux:
+        updates["ZION_POOL_AUXPOW_SPLIT_ZION"] = str(max(0, min(100, int(aux["split_zion"]))))
+    if "split_external" in aux:
+        updates["ZION_POOL_AUXPOW_SPLIT_EXTERNAL"] = str(max(0, min(100, int(aux["split_external"]))))
+    if aux.get("wallet") is not None:
+        updates["ZION_POOL_AUXPOW_WALLET"] = aux["wallet"]
+    if aux.get("worker_name"):
+        updates["ZION_POOL_AUXPOW_WORKER_NAME"] = aux["worker_name"]
+
+    # ── Per-coin wallets ──
+    coin_wallets = payload.get("coin_wallets") or {}
+    for ticker in AUXPOW_SUPPORTED_COINS:
+        if ticker in coin_wallets:
+            updates[f"ZION_POOL_AUXPOW_WALLET_{ticker}"] = str(coin_wallets.get(ticker, "")).strip()
+
+    # ── Stream profit ──
+    sp = payload.get("stream_profit") or {}
+    if "enabled" in sp:
+        updates["ZION_STREAM_PROFIT_SWITCH"] = "true" if sp["enabled"] else "false"
+    if sp.get("provider"):
+        updates["ZION_STREAM_PROFIT_API_PROVIDER"] = sp["provider"]
+    if sp.get("interval"):
+        updates["ZION_STREAM_PROFIT_INTERVAL"] = str(sp["interval"])
+    if sp.get("hysteresis"):
+        updates["ZION_STREAM_HYSTERESIS_PCT"] = str(sp["hysteresis"])
+    if sp.get("sources"):
+        updates["ZION_STREAM_PROFIT_SOURCES"] = str(sp["sources"])
+
+    # ── Autonomous ──
+    auto = payload.get("autonomous") or {}
+    if "enabled" in auto:
+        updates["ZION_AUTONOMOUS"] = "1" if auto["enabled"] else "0"
+    if auto.get("auto_mode"):
+        updates["ZION_AUTO_MODE"] = auto["auto_mode"]
+    if auto.get("profit_interval"):
+        updates["ZION_PROFIT_INTERVAL"] = str(auto["profit_interval"])
+    if auto.get("profit_hysteresis"):
+        updates["ZION_PROFIT_HYSTERESIS"] = str(auto["profit_hysteresis"])
+    if auto.get("profit_api"):
+        updates["ZION_PROFIT_API"] = auto["profit_api"]
+    if auto.get("electricity_price"):
+        updates["ZION_ELECTRICITY_PRICE"] = str(auto["electricity_price"])
+    if auto.get("gpu_tdp"):
+        updates["ZION_GPU_TDP"] = str(auto["gpu_tdp"])
+    if auto.get("cpu_tdp"):
+        updates["ZION_CPU_TDP"] = str(auto["cpu_tdp"])
+
+    # ── Pool failover ──
+    if payload.get("pool_failover"):
+        updates["ZION_POOL_ADDR"] = payload["pool_failover"]
+
+    if not updates:
+        return {"ok": False, "error": "No fields to update"}
+
+    write_result = _write_edge_env_vars(updates)
+    if not write_result.get("ok"):
+        return write_result
+
+    return {
+        "ok": True,
+        "message": "Pool setup configuration saved to Edge environment file.",
+        "updated_keys": write_result.get("updated_keys", []),
+        "backup": write_result.get("backup"),
+        "config": get_pool_setup_config(),
+        "env_file": str(EDGE_ENV_FILE),
+    }
 
 
 def get_servers_setup() -> dict:
@@ -10576,6 +10945,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_revenue_streams())
         elif route == "/api/pool/auxpow":
             self._json(get_auxpow_config())
+        elif route == "/api/pool/setup":
+            self._json(get_pool_setup_config())
         elif route == "/api/servers-setup":
             self._json(get_servers_setup())
         elif route.startswith("/api/pool/miner-detail/"):
@@ -12360,6 +12731,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(run_control("restart-pool"))
         elif route == "/api/pool/auxpow":
             self._json(update_auxpow_config(payload))
+        elif route == "/api/pool/setup":
+            self._json(update_pool_setup_config(payload))
         elif route == "/api/pool/auxpow/restart":
             self._json(restart_auxpow_pool_service())
         # ── Miner ────────────────────────────────────────────────────────────

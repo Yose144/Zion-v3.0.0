@@ -41,7 +41,7 @@
   };
 })();
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','pool-miners','revenue','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','pool-miners','pool-setup','revenue','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
@@ -210,6 +210,7 @@ function switchTab(name){
   else if(name === 'warp-swap'){ clearTabTimers(null); loadWarpSwapPanel(); }
   else if(name === 'payout'){ clearTabTimers(null); loadPayoutTab(); connectPayoutSse(); if(!_payoutTimer) _payoutTimer = setInterval(loadPayoutTab, 10000); }
   else if(name === 'pool-miners'){ clearTabTimers(null); loadPoolMinersTab(); if(!_poolMinersTimer) _poolMinersTimer = setInterval(loadPoolMinersTab, 10000); }
+  else if(name === 'pool-setup'){ clearTabTimers(null); loadPoolSetupTab(); }
   else if(name === 'revenue'){ clearTabTimers(null); loadRevenueTab(); if(!_revenueTimer) _revenueTimer = setInterval(loadRevenueTab, 15000); }
   else if(name === 'servers-setup'){ clearTabTimers(null); loadServersSetup(); }
   else { clearTabTimers(null); disconnectPayoutSse(); }
@@ -2598,6 +2599,65 @@ function _poolMinersSet(id, value){
   if(el) el.textContent = value;
 }
 
+// ── Coin Grid: render 23 AuxPoW coins as cards with algorithm, pool, E2E status ──
+const COIN_GRID_DATA = [
+  {ticker:"DCR", algo:"blake3",       pool:"pool.woolypooly.com:3152",            e2e:"ok",   type:"GPU"},
+  {ticker:"ALPH",algo:"blake3",       pool:"pool.woolypooly.com:3106",            e2e:"ok",   type:"GPU"},
+  {ticker:"KAS", algo:"kheavyhash",   pool:"kas.2miners.com:2020",                e2e:"ok",   type:"GPU"},
+  {ticker:"ERG", algo:"autolykos",    pool:"erg.2miners.com:8888",                e2e:"ok",   type:"GPU"},
+  {ticker:"RVN", algo:"kawpow",       pool:"rvn.2miners.com:6060",                e2e:"ok",   type:"GPU"},
+  {ticker:"ETC", algo:"ethash",       pool:"etc.2miners.com:1010",                e2e:"ok",   type:"GPU"},
+  {ticker:"EVR", algo:"evrprogpow",   pool:"evrprogpow.eu.mine.zpool.ca:1330",    e2e:"ok",   type:"GPU"},
+  {ticker:"MEWC",algo:"meowpow",      pool:"meowpow.eu.mine.zpool.ca:1327",       e2e:"ok",   type:"GPU"},
+  {ticker:"FLUX",algo:"zelhash",      pool:"flux.woolypooly.com:3000",            e2e:"ok",   type:"GPU"},
+  {ticker:"CLORE",algo:"kawpow",      pool:"clore.woolypooly.com:3090",           e2e:"ok",   type:"GPU"},
+  {ticker:"XMR", algo:"randomx",      pool:"gulf.moneroocean.stream:10001",       e2e:"ok",   type:"CPU"},
+  {ticker:"VRSC",algo:"verushash",    pool:"eu.luckpool.net:3956",                e2e:"ok",   type:"CPU"},
+  {ticker:"EPIC",algo:"progpow",      pool:"de.epicmine.io:3334",                 e2e:"ok",   type:"GPU"},
+  {ticker:"QUAI",algo:"kawpow",       pool:"quaikawpow.2miners.com:4545",         e2e:"ok",   type:"GPU"},
+  {ticker:"BEAM",algo:"beamhash",     pool:"beam.2miners.com:5252",               e2e:"ok",   type:"GPU"},
+  {ticker:"KLS", algo:"karlsenhash",  pool:"pool.woolypooly.com:3132",            e2e:"warn", type:"GPU", note:"EthStratum auth pending"},
+  {ticker:"ZCL", algo:"equihashzero", pool:"equihash192.eu.mine.zpool.ca:2144",   e2e:"ok",   type:"GPU"},
+  {ticker:"QTC", algo:"qhash",        pool:"qtc.suprnova.cc:5555",                e2e:"ok",   type:"GPU"},
+  {ticker:"VTC", algo:"verthash",     pool:"verthash.eu.mine.zpool.ca:4533",      e2e:"ok",   type:"GPU"},
+  {ticker:"IRON",algo:"fishhash",     pool:"de.ironfish.herominers.com:1145",     e2e:"warn", type:"GPU", note:"No stratum response (30s timeout)"},
+  {ticker:"NEXA",algo:"nexapow",      pool:"nexa.2miners.com:5050",               e2e:"ok",   type:"GPU"},
+  {ticker:"RTM", algo:"ghostrider",   pool:"ghostrider.eu.mine.zpool.ca:5354",    e2e:"ok",   type:"GPU"},
+  {ticker:"DNX", algo:"dynexsolve",   pool:"dynex.herominers.com:1030",           e2e:"warn", type:"GPU", note:"Pools unreachable from datacenter"},
+];
+
+function renderCoinGrid(auxpow, auxEnabled){
+  const grid = document.getElementById('pm-coin-grid');
+  if(!grid) return;
+  const currentCoin = auxpow?.current_coin || '';
+  const okCount = COIN_GRID_DATA.filter(c => c.e2e === 'ok').length;
+  const warnCount = COIN_GRID_DATA.filter(c => c.e2e === 'warn').length;
+  const summary = document.getElementById('coin-grid-summary');
+  if(summary) summary.textContent = `${okCount} E2E ✅ · ${warnCount} ⚠️ · ${COIN_GRID_DATA.length} total`;
+
+  grid.innerHTML = COIN_GRID_DATA.map(c => {
+    const isActive = auxEnabled && c.ticker === currentCoin;
+    const e2eIcon = c.e2e === 'ok' ? '✅' : '⚠️';
+    const e2eColor = c.e2e === 'ok' ? 'text-emerald-400' : 'text-amber-400';
+    const typeColor = c.type === 'CPU' ? 'text-rose-400' : 'text-sky-400';
+    const cardBg = isActive ? 'bg-emerald-500/10 border-emerald-500/40' : 'bg-white/5 border-white/10';
+    const tickerColor = isActive ? 'text-white' : 'text-gray-300';
+    return `<div class="rounded-lg border ${cardBg} p-2 transition hover:bg-white/10" title="${c.note || ''}">
+      <div class="flex items-center justify-between mb-1">
+        <span class="font-bold text-xs ${tickerColor}">${c.ticker}</span>
+        <span class="text-[9px] ${e2eColor}" title="${c.note || 'Stratum E2E tested'}">${e2eIcon}</span>
+      </div>
+      <div class="text-[9px] text-gray-500 font-mono truncate">${c.algo}</div>
+      <div class="text-[9px] text-gray-600 font-mono truncate" title="${c.pool}">${c.pool}</div>
+      <div class="flex items-center justify-between mt-1">
+        <span class="text-[8px] ${typeColor} font-semibold">${c.type}</span>
+        ${isActive ? '<span class="text-[8px] text-emerald-400 font-bold">🟢 MINING</span>' : ''}
+      </div>
+      ${c.note ? `<div class="text-[8px] text-amber-400/70 mt-1 truncate" title="${c.note}">${c.note}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
 async function loadPoolMinersTab(){
   const set = _poolMinersSet;
   const tbody = document.getElementById('pool-miners-tbody');
@@ -2827,21 +2887,12 @@ async function loadPoolMinersTab(){
     const auxSharesMin = auxUptime > 0 ? (auxSubmitted / auxUptime * 60) : 0;
     set('pm-auxpow-shares-min', auxSharesMin > 0 ? auxSharesMin.toFixed(1) : '—');
 
-    // Supported coins (20 coins — KAS, ALPH, DCR, ERG, RVN, ETC, FLUX, CLORE, EVR, MEWC, XMR, VRSC,
-    //   KLS, ZCL, QTC, VTC, IRON, NEXA, RTM, DNX)
-    const auxCoins = auxEnabled ? (auxpow.supported_coins || ['KAS', 'ALPH', 'DCR', 'ERG', 'RVN', 'ETC', 'FLUX', 'CLORE', 'EVR', 'MEWC', 'XMR', 'VRSC', 'KLS', 'ZCL', 'QTC', 'VTC', 'IRON', 'NEXA', 'RTM', 'DNX']) : [];
-    // New coin → algorithm mapping (v3.0.6 additions)
-    const newAuxCoins = [
-      { ticker: "KLS", algorithm: "karlsenhash" },
-      { ticker: "ZCL", algorithm: "equihashzero" },
-      { ticker: "QTC", algorithm: "qhash" },
-      { ticker: "VTC", algorithm: "verthash" },
-      { ticker: "IRON", algorithm: "fishhash" },
-      { ticker: "NEXA", algorithm: "nexapow" },
-      { ticker: "RTM", algorithm: "ghostrider" },
-      { ticker: "DNX", algorithm: "dynexsolve" },
-    ];
+    // Supported coins (23 coins — PRL removed v3.0.6, 8 new added)
+    const auxCoins = auxEnabled ? (auxpow.supported_coins || ['KAS', 'ALPH', 'DCR', 'ERG', 'RVN', 'ETC', 'FLUX', 'CLORE', 'EVR', 'MEWC', 'XMR', 'VRSC', 'EPIC', 'QUAI', 'BEAM', 'KLS', 'ZCL', 'QTC', 'VTC', 'IRON', 'NEXA', 'RTM', 'DNX']) : [];
     set('pm-auxpow-coins', auxCoins.length > 0 ? auxCoins.join(' · ') : '—');
+
+    // ── Render coin grid with algorithm, pool, E2E status ──
+    renderCoinGrid(auxpow, auxEnabled);
 
     // Bridge queue depth (from pool stats if available)
     const auxBridgeQueue = auxpow.bridge_queue_depth;
@@ -3064,10 +3115,11 @@ async function loadRevenueTab(){
         coinTbody.innerHTML = sorted.map(c => `<tr class="border-b border-white/5 ${c.active ? 'bg-emerald-500/5' : ''}">
           <td class="py-2 px-2 font-bold ${c.active ? 'text-white' : 'text-gray-500'}">${escapeHtml(c.coin || '—')}</td>
           <td class="py-2 px-2 text-gray-300">${escapeHtml(c.algorithm || '—')}</td>
-          <td class="py-2 px-2 text-gray-400 text-[10px] truncate max-w-[120px]">${escapeHtml(c.pool || '—')}</td>
+          <td class="py-2 px-2 text-gray-400 text-[10px] truncate max-w-[120px]" title="${escapeHtml(c.pool || '')}">${escapeHtml(c.pool || '—')}</td>
           <td class="py-2 px-2 text-right font-mono ${c.active ? 'text-white' : 'text-gray-600'}">${c.active ? (c.shares || 0).toLocaleString() : '—'}</td>
           <td class="py-2 px-2 text-right font-mono ${c.active ? 'text-zion-gold' : 'text-gray-600'}">${c.active ? '$' + Number(c.revenue_usd || 0).toFixed(4) : '—'}</td>
           <td class="py-2 px-2"><span class="${c.active ? 'text-emerald-400' : 'text-gray-500'}">${c.active ? '🟢 Mining' : '⚪ Available'}</span></td>
+          <td class="py-2 px-2 text-[10px]">${c.e2e_status === 'ok' ? '<span class="text-emerald-400">✅</span>' : c.e2e_status === 'warn' ? '<span class="text-amber-400" title="' + escapeHtml(c.e2e_note || '') + '">⚠️</span>' : '—'}</td>
         </tr>`).join('');
       }
     }
@@ -11068,5 +11120,293 @@ function _setBadge(id, active){
   }else{
     el.textContent = '❌ Inactive';
     el.className = 'font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// POOL SETUP TAB — 3-Stream Configuration
+// ═══════════════════════════════════════════════════════════════════════
+
+let _poolSetupData = null;
+
+async function loadPoolSetupTab(){
+  try{
+    const res = await fetch('/api/pool/setup', { headers: authHeaders() });
+    const data = await res.json();
+    if(!data.ok){
+      const el = document.getElementById('ps-env-info');
+      if(el) el.textContent = 'Error: ' + (data.error || 'unknown');
+      return;
+    }
+    _poolSetupData = data;
+    renderPoolSetup(data);
+  }catch(e){
+    const el = document.getElementById('ps-env-info');
+    if(el) el.textContent = 'Failed to load: ' + e.message;
+  }
+}
+
+function renderPoolSetup(data){
+  const s = data.streams || {};
+  const s1 = s.stream1 || {}, s2 = s.stream2 || {}, s3 = s.stream3 || {};
+  const aux = data.auxpow || {};
+  const sp = data.stream_profit || {};
+  const auto = data.autonomous || {};
+  const coins = data.coins || [];
+
+  // Stream 1
+  const e1 = document.getElementById('ps-s1-enabled'); if(e1) e1.checked = s1.enabled !== false;
+  _setSelect('ps-s1-algo', s1.algorithm || 'deeksha_lite_v1');
+  _setSelect('ps-s1-backend', s1.gpu_backend || 'opencl');
+  const ws1 = document.getElementById('ps-s1-worksize'); if(ws1) ws1.value = s1.gpu_work_size || '262144';
+
+  // Stream 2
+  const e2 = document.getElementById('ps-s2-enabled'); if(e2) e2.checked = s2.enabled !== false;
+  _setSelect('ps-s2-mode', s2.mode || 'auto');
+  const s2coinSel = document.getElementById('ps-s2-coin');
+  if(s2coinSel){
+    s2coinSel.innerHTML = '';
+    (s2.candidate_coins || []).forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      s2coinSel.appendChild(opt);
+    });
+    if(s2.coin) s2coinSel.value = s2.coin;
+  }
+  const ws2 = document.getElementById('ps-s2-worksize'); if(ws2) ws2.value = s2.gpu_work_size || '4194304';
+  _setSelect('ps-s2-pearl-backend', s2.pearl_backend || 'opencl');
+  const pw2 = document.getElementById('ps-s2-pearl-worksize'); if(pw2) pw2.value = s2.pearl_work_size || '262144';
+  poolSetupStream2Mode();
+
+  // Stream 3
+  const e3 = document.getElementById('ps-s3-enabled'); if(e3) e3.checked = s3.enabled !== false;
+  _setSelect('ps-s3-mode', s3.mode || 'auto');
+  const s3coin = document.getElementById('ps-s3-coin'); if(s3coin && s3.coin) s3coin.value = s3.coin;
+  const t3 = document.getElementById('ps-s3-threads'); if(t3) t3.value = s3.threads || '4';
+  const w3 = document.getElementById('ps-s3-wallet'); if(w3) w3.value = s3.cpu_wallet || '';
+  const wk3 = document.getElementById('ps-s3-worker'); if(wk3) wk3.value = s3.cpu_worker || 'zion_triple';
+  poolSetupStream3Mode();
+
+  // AuxPow global
+  const ae = document.getElementById('ps-aux-enabled'); if(ae) ae.checked = aux.enabled || false;
+  _setSelect('ps-aux-pref', aux.pool_preference || 'default');
+  const ar = document.getElementById('ps-aux-region'); if(ar) ar.value = aux.region || 'eu';
+  const sz = document.getElementById('ps-aux-split-zion'); if(sz) sz.value = aux.split_zion || '50';
+  const se = document.getElementById('ps-aux-split-ext'); if(se) se.value = aux.split_external || '50';
+  const aw = document.getElementById('ps-aux-worker'); if(aw) aw.value = aux.worker_name || 'zion-pool';
+  const awl = document.getElementById('ps-aux-wallet'); if(awl) awl.value = aux.wallet || '';
+
+  // Per-coin wallets grid
+  renderCoinWalletsGrid(coins, data.coin_wallets || {});
+
+  // Stream profit
+  const spe = document.getElementById('ps-sp-enabled'); if(spe) spe.checked = sp.enabled || false;
+  _setSelect('ps-sp-provider', sp.provider || 'fallback');
+  const spi = document.getElementById('ps-sp-interval'); if(spi) spi.value = sp.interval || '120';
+  const sph = document.getElementById('ps-sp-hysteresis'); if(sph) sph.value = sp.hysteresis || '15.0';
+  const sps = document.getElementById('ps-sp-sources'); if(sps) sps.value = sp.sources || 'zion,keccak_bonus,sha3_bonus,ncl_ai';
+
+  // Autonomous
+  const aue = document.getElementById('ps-auto-enabled'); if(aue) aue.checked = auto.enabled || false;
+  _setSelect('ps-auto-mode', auto.auto_mode || 'manual');
+  const aui = document.getElementById('ps-auto-interval'); if(aui) aui.value = auto.profit_interval || '300';
+  const auh = document.getElementById('ps-auto-hysteresis'); if(auh) auh.value = auto.profit_hysteresis || '15';
+  _setSelect('ps-auto-api', auto.profit_api || 'whattomine');
+  const auel = document.getElementById('ps-auto-elec'); if(auel) auel.value = auto.electricity_price || '0.12';
+  const augt = document.getElementById('ps-auto-gpu-tdp'); if(augt) augt.value = auto.gpu_tdp || '225';
+  const auct = document.getElementById('ps-auto-cpu-tdp'); if(auct) auct.value = auto.cpu_tdp || '65';
+
+  // Pool failover
+  const pf = document.getElementById('ps-pool-failover'); if(pf) pf.value = data.pool_failover || '62.171.141.136:8444';
+
+  // Env info
+  const envEl = document.getElementById('ps-env-info');
+  if(envEl){
+    const envExists = data.env_file_exists ? '✅' : '❌';
+    envEl.innerHTML = 'Env file: ' + envExists + ' <code>' + (data.env_file || '—') + '</code>';
+  }
+}
+
+function renderCoinWalletsGrid(coins, coinWallets){
+  const grid = document.getElementById('ps-coin-wallets-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  coins.forEach(c => {
+    const wallet = coinWallets[c.coin] || c.wallet || '';
+    const e2eIcon = c.e2e_status === 'ok' ? '✅' : (c.e2e_status === 'warn' ? '⚠️' : '⚪');
+    const hwBadge = c.hardware === 'CPU' ?
+      '<span class="text-xs bg-orange-900/50 text-orange-300 px-1 rounded">CPU</span>' :
+      '<span class="text-xs bg-purple-900/50 text-purple-300 px-1 rounded">GPU</span>';
+    const dagNote = c.dag_size ? ' <span class="text-xs text-yellow-500" title="' + (c.dag_size/1e9).toFixed(1) + 'GB DAG">DAG</span>' : '';
+    const div = document.createElement('div');
+    div.className = 'bg-gray-700/40 rounded p-2 border border-gray-600/20';
+    div.innerHTML = '<div class="flex items-center gap-1.5 mb-1">' +
+      '<span class="font-bold text-sm text-gray-200">' + c.coin + '</span>' +
+      hwBadge + dagNote +
+      '<span class="text-xs text-gray-500">' + c.algorithm + '</span>' +
+      '<span class="ml-auto">' + e2eIcon + '</span></div>' +
+      '<input type="text" id="ps-wallet-' + c.coin + '" class="w-full bg-gray-800 text-gray-200 text-xs rounded px-2 py-1" placeholder="' + c.coin + ' wallet" value="' + (wallet || '') + '">' +
+      '<div class="text-xs text-gray-500 mt-0.5 truncate">' + (c.pool || '') + '</div>';
+    grid.appendChild(div);
+  });
+}
+
+function poolSetupStream2Mode(){
+  const mode = document.getElementById('ps-s2-mode');
+  if(!mode) return;
+  const coinRow = document.getElementById('ps-s2-coin-row');
+  const badge = document.getElementById('ps-s2-mode-badge');
+  if(mode.value === 'force'){
+    if(coinRow) coinRow.classList.remove('hidden');
+    if(badge){ badge.textContent = 'Force'; badge.className = 'text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded'; }
+  }else{
+    if(coinRow) coinRow.classList.add('hidden');
+    if(badge){ badge.textContent = 'Auto-Switch'; badge.className = 'text-xs bg-blue-900/50 text-blue-300 px-2 py-0.5 rounded'; }
+  }
+}
+
+function poolSetupStream3Mode(){
+  const mode = document.getElementById('ps-s3-mode');
+  if(!mode) return;
+  const coinRow = document.getElementById('ps-s3-coin-row');
+  const badge = document.getElementById('ps-s3-mode-badge');
+  if(mode.value === 'force'){
+    if(coinRow) coinRow.classList.remove('hidden');
+    if(badge){ badge.textContent = 'Force'; badge.className = 'text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded'; }
+  }else{
+    if(coinRow) coinRow.classList.add('hidden');
+    if(badge){ badge.textContent = 'Auto-Switch'; badge.className = 'text-xs bg-blue-900/50 text-blue-300 px-2 py-0.5 rounded'; }
+  }
+}
+
+function _setSelect(id, val){
+  const el = document.getElementById(id);
+  if(el){
+    for(let i = 0; i < el.options.length; i++){
+      if(el.options[i].value === val){ el.selectedIndex = i; break; }
+    }
+  }
+}
+
+function _psBanner(msg, type){
+  const el = document.getElementById('ps-status-banner');
+  if(!el) return;
+  el.classList.remove('hidden');
+  if(type === 'error'){
+    el.className = 'p-3 rounded text-sm bg-red-900/40 text-red-300 border border-red-500/30';
+  }else if(type === 'success'){
+    el.className = 'p-3 rounded text-sm bg-green-900/40 text-green-300 border border-green-500/30';
+  }else{
+    el.className = 'p-3 rounded text-sm bg-blue-900/40 text-blue-300 border border-blue-500/30';
+  }
+  el.innerHTML = msg;
+  setTimeout(function(){ el.classList.add('hidden'); }, 8000);
+}
+
+async function poolSetupSave(){
+  const btn = document.getElementById('ps-save-btn');
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; }
+
+  var coinWallets = {};
+  if(_poolSetupData && _poolSetupData.coins){
+    _poolSetupData.coins.forEach(function(c){
+      const el = document.getElementById('ps-wallet-' + c.coin);
+      if(el) coinWallets[c.coin] = el.value.trim();
+    });
+  }
+
+  const payload = {
+    stream1: {
+      enabled: document.getElementById('ps-s1-enabled').checked,
+      algorithm: document.getElementById('ps-s1-algo').value,
+      gpu_backend: document.getElementById('ps-s1-backend').value,
+      gpu_work_size: document.getElementById('ps-s1-worksize').value,
+    },
+    stream2: {
+      enabled: document.getElementById('ps-s2-enabled').checked,
+      mode: document.getElementById('ps-s2-mode').value,
+      coin: document.getElementById('ps-s2-coin').value,
+      gpu_work_size: document.getElementById('ps-s2-worksize').value,
+      pearl_backend: document.getElementById('ps-s2-pearl-backend').value,
+      pearl_work_size: document.getElementById('ps-s2-pearl-worksize').value,
+    },
+    stream3: {
+      enabled: document.getElementById('ps-s3-enabled').checked,
+      mode: document.getElementById('ps-s3-mode').value,
+      coin: document.getElementById('ps-s3-coin').value,
+      threads: document.getElementById('ps-s3-threads').value,
+      cpu_wallet: document.getElementById('ps-s3-wallet').value,
+      cpu_worker: document.getElementById('ps-s3-worker').value,
+    },
+    auxpow: {
+      enabled: document.getElementById('ps-aux-enabled').checked,
+      pool_preference: document.getElementById('ps-aux-pref').value,
+      region: document.getElementById('ps-aux-region').value,
+      split_zion: parseInt(document.getElementById('ps-aux-split-zion').value) || 50,
+      split_external: parseInt(document.getElementById('ps-aux-split-ext').value) || 50,
+      wallet: document.getElementById('ps-aux-wallet').value,
+      worker_name: document.getElementById('ps-aux-worker').value,
+    },
+    coin_wallets: coinWallets,
+    stream_profit: {
+      enabled: document.getElementById('ps-sp-enabled').checked,
+      provider: document.getElementById('ps-sp-provider').value,
+      interval: document.getElementById('ps-sp-interval').value,
+      hysteresis: document.getElementById('ps-sp-hysteresis').value,
+      sources: document.getElementById('ps-sp-sources').value,
+    },
+    autonomous: {
+      enabled: document.getElementById('ps-auto-enabled').checked,
+      auto_mode: document.getElementById('ps-auto-mode').value,
+      profit_interval: document.getElementById('ps-auto-interval').value,
+      profit_hysteresis: document.getElementById('ps-auto-hysteresis').value,
+      profit_api: document.getElementById('ps-auto-api').value,
+      electricity_price: document.getElementById('ps-auto-elec').value,
+      gpu_tdp: document.getElementById('ps-auto-gpu-tdp').value,
+      cpu_tdp: document.getElementById('ps-auto-cpu-tdp').value,
+    },
+    pool_failover: document.getElementById('ps-pool-failover').value,
+  };
+
+  try{
+    const res = await fetch('/api/pool/setup', {
+      method: 'POST',
+      headers: Object.assign({}, authHeaders(), {'Content-Type': 'application/json'}),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if(data.ok){
+      const keys = (data.updated_keys || []).length;
+      _psBanner('<i class="fas fa-check"></i> Saved! ' + keys + ' env vars updated.' + (data.backup ? ' Backup: ' + data.backup.split('/').pop() : ''), 'success');
+      if(data.config) renderPoolSetup(data.config);
+    }else{
+      _psBanner('<i class="fas fa-exclamation-triangle"></i> Error: ' + (data.error || 'unknown'), 'error');
+    }
+  }catch(e){
+    _psBanner('<i class="fas fa-exclamation-triangle"></i> Save failed: ' + e.message, 'error');
+  }finally{
+    if(btn){ btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Config'; }
+  }
+}
+
+async function poolSetupRestart(){
+  const btn = document.getElementById('ps-restart-btn');
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Restarting...'; }
+  try{
+    const res = await fetch('/api/pool/auxpow/restart', {
+      method: 'POST',
+      headers: Object.assign({}, authHeaders(), {'Content-Type': 'application/json'}),
+      body: '{}',
+    });
+    const data = await res.json();
+    if(data.ok){
+      _psBanner('<i class="fas fa-check"></i> Pool restarted successfully. New config is now active.', 'success');
+    }else{
+      _psBanner('<i class="fas fa-exclamation-triangle"></i> Restart failed: ' + (data.error || 'unknown'), 'error');
+    }
+  }catch(e){
+    _psBanner('<i class="fas fa-exclamation-triangle"></i> Restart failed: ' + e.message, 'error');
+  }finally{
+    if(btn){ btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> Restart Pool'; }
   }
 }

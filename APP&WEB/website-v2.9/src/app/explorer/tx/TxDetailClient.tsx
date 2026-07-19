@@ -101,8 +101,8 @@ export default function TxDetailClient() {
 
   if (loading) {
     return (
-      <div className="zion-shell min-h-screen">
-        <div className="zion-container py-20 max-w-6xl">
+      <div className="relative min-h-screen pb-24">
+        <div className="zion-container py-20 pt-6 max-w-6xl">
           <div className="animate-pulse space-y-6">
             <div className="h-8 w-48 bg-white/5 rounded" />
             <div className="h-12 w-96 bg-white/5 rounded" />
@@ -119,7 +119,7 @@ export default function TxDetailClient() {
 
   if (error || !tx) {
     return (
-      <div className="zion-shell min-h-screen flex items-center justify-center">
+      <div className="relative min-h-screen pb-24 flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <ArrowRightLeft className="h-16 w-16 text-red-400/50 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white mb-2">{cs ? 'Transakce nenalezena' : 'Transaction Not Found'}</h1>
@@ -138,10 +138,10 @@ export default function TxDetailClient() {
   const isV3Account = !!(tx.from && tx.to);
 
   return (
-    <div className="zion-shell min-h-screen">
+    <div className="relative min-h-screen pb-24 overflow-x-hidden">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-zion-cyan/15 via-transparent to-transparent" />
 
-      <div className="relative z-10 zion-container py-10 max-w-6xl space-y-6">
+      <div className="relative z-10 zion-container py-10 pt-6 max-w-6xl space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm">
           <Link href="/explorer" className="text-gray-500 hover:text-white transition">Explorer</Link>

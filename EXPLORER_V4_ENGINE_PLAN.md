@@ -397,16 +397,152 @@ src/lib/explorer/
 
 ---
 
-## 12. Open Questions / Next Steps
+## 12. Open Questions — RESOLVED (2026-07-16 audit)
 
-1. Does the node RPC already expose `getrawtransaction` and `getblock` with full TX data, or do we need to extend the Rust node?
-2. Should we preserve the old `/explorer` routes as redirects, or replace them outright?
-3. Do we want a public WebSocket endpoint, or is SSE sufficient?
-4. Should the explorer expose a public GraphQL layer in addition to REST?
-5. Which known addresses should be labeled in the rich list / address views (pool, bridge, DAO treasury, etc.)?
+1. **Does the node RPC expose `getrawtransaction` and `getblock`?** → **YES.** RPC methods confirmed live on Edge:
+   - `getChainInfo` — chain overview (height, tip, mempool, protocol, consensus_profile)
+   - `getBlockByHeight` — full block with `v3_transactions[]` array (account-model TXs inline)
+   - `getBlock` — by hash
+   - `getTransaction` — full TX by hash (returns `from`, `to`, `amount_zion`, `fee_zion`, `nonce`, `public_key`, `signature`, `tx_id`, `block_hash`, `block_height`, `confirmed`)
+   - `getTransactionHistory` — paginated address TX history
+   - `getMempoolInfo` — pending TXs
+   - `getPeerInfo` — connected peers
+   - `submitTransaction` / `submitAccountTransaction` — broadcast (accepts transaction payload, returns `accepted` + `tx_id`)
+   - `getAddressBalance` / `getWalletSnapshot` — address balance + UTXO count
+   - **No `verifyMessage` RPC method** — signature verification must be done client-side via `@noble/ed25519` (already in `package.json`).
+
+2. **Preserve old `/explorer` routes as redirects?** → **YES.** Old detail URLs (`/explorer/block?height=X`) → redirect to clean URLs (`/explorer/block/X`). List pages (`/explorer/blocks`, `/explorer/transactions`) keep their paths. V4 content replaces in-place, not under `/v4/` prefix — avoids breaking existing links and SEO.
+
+3. **WebSocket vs SSE?** → **SSE is sufficient.** Node RPC has no WS push; current polling is 15s. SSE will poll internally and stream `new_block` + `mempool_update` events. A `ZionWebSocketClient` class exists in `zion-rpc.ts` (line 1191) targeting `ws://localhost:8445`, but the node's WS port (8445) is bound to `127.0.0.1` and not exposed publicly — SSE over HTTP is the right public transport.
+
+4. **Public GraphQL?** → **NO.** Overkill for current scope. REST + SSE covers all explorer needs. Can revisit post-launch if third-party integrators request it.
+
+5. **Known address labels?** → **Already implemented.** `src/lib/constants.ts` exports `KNOWN_ADDRESS_LABELS` (Record of address → `{ label, type }`) and `POOL_WALLET`. Richlist API already labels premine addresses (`ZION Oasis + Winners Golden Egg/XP`, `DAO Treasury`, `Infrastructure & Dev`, `humanitarian fund`). Block API labels `miner_label` and `is_pool_block`. Address API returns `known_label` + `known_type`.
 
 ---
 
-## 13. First Concrete Task
+## 13. Implementation Audit (2026-07-16)
 
-Start **Phase 1**: create the two missing endpoints `/api/blockchain/block` and `/api/blockchain/tx`, plus the SSE stream. Then build the dashboard page using the new endpoints and verify mobile responsiveness before moving to detail pages.
+### What already exists (no V4 work needed)
+
+| Layer | Item | Location | Quality |
+|-------|------|----------|---------|
+| API | `/api/blockchain/stats` | `src/app/api/blockchain/stats/route.ts` | ✅ Full (height, hashrate, difficulty, supply, pool, mempool, peers) with 5s in-memory cache |
+| API | `/api/blockchain/blocks` | `src/app/api/blockchain/blocks/route.ts` | ✅ Paginated recent blocks |
+| API | `/api/blockchain/block` | `src/app/api/blockchain/block/route.ts` | ✅ Full block detail by height or hash, with V3 account-model TXs, miner labels, confirmations |
+| API | `/api/blockchain/transactions` | `src/app/api/blockchain/transactions/route.ts` | ✅ Recent TXs + single TX by `?hash=` + address-specific `?address=` |
+| API | `/api/blockchain/address` | `src/app/api/blockchain/address/route.ts` | ✅ Balance, total received/sent, TX history, mining stats, known labels |
+| API | `/api/blockchain/search` | `src/app/api/blockchain/search/route.ts` | ✅ Unified search (block/tx/address) |
+| API | `/api/blockchain/mempool` | `src/app/api/blockchain/mempool/route.ts` | ✅ Pending TXs + fee stats |
+| API | `/api/blockchain/richlist` | `src/app/api/blockchain/richlist/route.ts` | ✅ Top holders with premine labels + % supply |
+| API | `/api/blockchain/charts` | `src/app/api/blockchain/charts/route.ts` | ✅ Historical chart data |
+| API | `/api/blockchain/emission` | `src/app/api/blockchain/emission/route.ts` | ✅ Supply / emission data |
+| API | `/api/blockchain/peers` | `src/app/api/blockchain/peers/route.ts` | ✅ Peer list |
+| Page | `/explorer` (dashboard) | `src/app/explorer/page.tsx` (469 lines) | ✅ Network ticker, stat grid, recent blocks/TXs, quick links, charts, rich list, peers |
+| Page | `/explorer/block` | `src/app/explorer/block/BlockDetailClient.tsx` (461 lines) | ✅ Block detail with metadata grid + TX list |
+| Page | `/explorer/tx` | `src/app/explorer/tx/TxDetailClient.tsx` (372 lines) | ✅ TX detail with from/to/amount/memo/confirmations |
+| Page | `/explorer/address` | `src/app/explorer/address/AddressDetailClient.tsx` (647 lines) | ✅ Balance, QR, TX history, mining stats |
+| Page | `/explorer/blocks` | `src/app/explorer/blocks/page.tsx` | ✅ Block list |
+| Page | `/explorer/transactions` | `src/app/explorer/transactions/` | ✅ TX list (but not the paginated `txs` page from plan) |
+| Page | `/explorer/richlist` | `src/app/explorer/richlist/` | ✅ Rich list |
+| Page | `/explorer/mempool` | `src/app/explorer/mempool/` | ✅ Mempool feed |
+| Page | `/explorer/search` | `src/app/explorer/search/` | ✅ Search results |
+| Page | `/explorer/api-docs` | `src/app/explorer/api-docs/` | ✅ API documentation |
+| Page | `/explorer/bridge` | `src/app/explorer/bridge/` | ✅ Bridge tracker (bonus, not in plan) |
+| Page | `/explorer/consensus` | `src/app/explorer/consensus/` | ✅ Consensus view (bonus) |
+| Page | `/explorer/fee-estimator` | `src/app/explorer/fee-estimator/` | ✅ Fee estimator (bonus) |
+| Page | `/explorer/miners` | `src/app/explorer/miners/` | ✅ Miner leaderboard (bonus) |
+| Page | `/explorer/supply` | `src/app/explorer/supply/` | ✅ Supply dashboard (bonus) |
+| Page | `/explorer/network-stats` | `src/app/explorer/network-stats/` | ✅ Network stats (bonus, covers plan's `status` route) |
+| RPC | `zion-rpc.ts` (1383 lines) | `src/lib/zion-rpc.ts` | ✅ Full RPC client with failover, WS client, 20+ methods |
+| Lib | `KNOWN_ADDRESS_LABELS` | `src/lib/constants.ts` | ✅ Address labeling |
+
+### What's missing (V4 work needed)
+
+| Layer | Item | Plan ref | Priority |
+|-------|------|----------|----------|
+| API | `/api/blockchain/tx` (dedicated, not via `/transactions?hash=`) | §4 | Phase 1 |
+| API | `/api/blockchain/sse` (Server-Sent Events) | §4 | Phase 1 |
+| API | `/api/blockchain/broadcast` (expose `submitSignedTransaction`) | §4 | Phase 1 |
+| API | `/api/blockchain/verify-message` (client-side Ed25519 verify via `@noble/ed25519`) | §4 | Phase 1 |
+| Page | `/explorer/txs` (paginated TX list — distinct from `transactions`) | §3 | Phase 3 |
+| Page | `/explorer/charts` (standalone charts page) | §3 | Phase 3 |
+| Page | `/explorer/status` (or alias `network-stats` → `status`) | §3 | Phase 3 |
+| Page | `/explorer/broadcast` (broadcast raw TX form) | §3 | Phase 3 |
+| Page | `/explorer/verify-message` (verify signed message form) | §3 | Phase 3 |
+| Lib | `src/lib/explorer/` (typed API client, adapters, SSE helper) | §9 | Phase 2 |
+| Components | `src/components/explorer/v4/` (shared: `ZionDataTable`, `HashChip`, `CopyButton`, `ExplorerTicker`, `LiveBadge`) | §5 | Phase 2 |
+| State | SWR hooks (`useStats`, `useBlocks`, `useTxs`, etc.) | §6 | Phase 2 |
+| Polish | SSE wiring to dashboard tables, CSV/PNG export, loading skeletons | §8 Phase 4 | Phase 4 |
+
+### Key findings
+
+- **`/api/blockchain/block` already exists** and is fully functional (live-tested: returns block 8394 with 4 TXs, miner labels, confirmations). Plan §13 said to create it — **already done**.
+- **TX lookup works via `/api/blockchain/transactions?hash=<hash>`** — but a dedicated `/api/blockchain/tx` endpoint is cleaner for the V4 component layer.
+- **`block_size: 0`** in API responses — the V3 RPC doesn't populate `block_size` in `getBlockByHeight`. This is a node-side gap, not an API bug. Explorer UI should handle `0` gracefully (show "—" or omit).
+- **Account-model TXs** have `from`/`to`/`amount_zion`/`fee_zion`/`nonce`/`signature`/`public_key` — not UTXO `vin`/`vout`. The existing `BlockDetailClient` and `TxDetailClient` already handle this hybrid model. V4 components should preserve this dual-model support.
+- **No SWR** — all explorer components use `useEffect` + `fetch` with manual polling. Plan §6 recommends SWR; this is a Phase 2 refactor.
+- **No SSE** — confirmed no `EventSource` or `text/event-stream` usage anywhere in the codebase.
+- **`@noble/ed25519` v3.1.0** is already a dependency — can be used for `verify-message` without adding packages.
+- **`submitTransaction` / `submitAccountTransaction`** RPC methods exist and accept transaction payloads — `broadcast` endpoint just needs to proxy through.
+
+---
+
+## 14. Revised Implementation Plan
+
+Based on the audit, the original 4-phase plan is adjusted. Phase 1 scope is reduced (block endpoint already exists), and work focuses on the 4 missing API endpoints.
+
+### Phase 1 — Missing API endpoints (this session)
+
+1. ✅ `/api/blockchain/block` — already exists, no work needed
+2. **`/api/blockchain/tx`** — dedicated TX detail endpoint (cleaner than `/transactions?hash=`)
+3. **`/api/blockchain/broadcast`** — proxy to `submitSignedTransaction` / `submitAccountTransaction`
+4. **`/api/blockchain/verify-message`** — client-side Ed25519 verification via `@noble/ed25519`
+5. **`/api/blockchain/sse`** — SSE stream polling `getChainInfo` + `getMempoolInfo` every 15s
+
+### Phase 2 — Shared components + SWR (future)
+
+1. Create `src/lib/explorer/` (typed API client, types, SSE helper)
+2. Build shared components in `src/components/explorer/v4/`
+3. Migrate components from `useEffect`+`fetch` to SWR hooks
+4. Wire SSE to dashboard for real-time block/mempool updates
+
+### Phase 3 — Missing pages ✅ COMPLETED (2026-07-16)
+
+1. ✅ `/explorer/txs` — paginated TX list with SSE live badge, type/address filters, CSV export, load-more pagination
+2. ✅ `/explorer/charts` — standalone charts page with 4 chart types (hashrate, difficulty, block time, TX count), 3 time ranges (24h/7d/30d), SVG area charts, CSV export per chart
+3. ✅ `/explorer/status` — comprehensive node/network status with health checks, node info, network metrics, peer table, pool metrics, last block, SSE live height
+4. ✅ `/explorer/broadcast` — broadcast raw TX form with JSON/hex mode selector, account/utxo model selector, example loader, result display with tx_id link
+5. ✅ `/explorer/verify-message` — Ed25519 signature verifier with public key, message, signature, optional address match check, result grid with derived address display
+
+**Phase 3 verification (2026-07-16):**
+- TypeScript: 0 errors across entire project
+- Webpack dev server: all 5 pages return HTTP 200 with correct titles and rendered content
+- All pages use ZION theme design language (zion-rainbow-card, zion-rainbow-sub, text-gradient, zion-badge, background glows, motion animations, i18n CS/EN)
+- All pages integrate V4 shared components (LiveBadge, CopyButton, useExplorerSSE, format utilities)
+- No dev server errors or warnings
+
+**Files created (Phase 3):**
+- `src/app/explorer/txs/page.tsx` + `TxsPageClient.tsx`
+- `src/app/explorer/charts/page.tsx` + `ChartsPageClient.tsx`
+- `src/app/explorer/status/page.tsx` + `StatusPageClient.tsx`
+- `src/app/explorer/broadcast/page.tsx` + `BroadcastPageClient.tsx`
+- `src/app/explorer/verify-message/page.tsx` + `VerifyMessagePageClient.tsx`
+
+### Phase 4 — Polish (future)
+
+1. Redirect old detail URLs to clean URLs (`/explorer/block?height=X` → `/explorer/block/X`)
+2. CSV/PNG export on tables/charts (CSV already on txs + charts pages)
+3. Loading skeletons and error states (skeletons already on txs + charts)
+4. Responsive QA on mobile
+5. SEO: static params for block/tx/address where possible
+6. Wire SSE to all table pages for real-time row updates
+7. Add `/explorer/v4/` sub-nav to all Phase 3 pages (ExplorerV4Layout)
+
+---
+
+## 15. First Concrete Task
+
+Start **Phase 1**: implement the 4 missing API endpoints (`/tx`, `/broadcast`, `/verify-message`, `/sse`). The `/block` endpoint already exists and is live. Then verify all endpoints with live build/test before moving to Phase 2.
+
+**✅ Phases 1–3 COMPLETE.** Next: Phase 4 polish or deploy to Edge server (Docker rebuild).

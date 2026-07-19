@@ -152,6 +152,18 @@ The `deeksha_lite.cl` kernel is **compute-bound on `fill_scratchpad`** — 8192 
 
 ## Next steps plan
 
+### ✅ COMPLETED: Double-buffered async readback + nonce_count fix
+
+- **Double-buffered async readback** (commit `a6d8ad35d`): implemented and
+  benchmarked at 28-30 KH/s. Two output buffers (A/B) + dedicated read queue.
+  GPU computes chunk N+1 while CPU processes chunk N's results.
+- **nonce_count fix** (2026-07-16): critical regression fixed. Default
+  `nonce_count` was 1024 — too small for GPU (work_size=8192), so
+  double-buffering was never activated in production. Fix: nonce_count
+  default = 4× gpu_work_size (32768) when GPU available. This was the
+  root cause of "only 10 KH/s" in production despite 28-30 KH/s in
+  benchmarks. See [`30khsDeeksha.md`](./30khsDeeksha.md) for full details.
+
 ### 1. XMR (Monero/RandomX) tuning — PRIORITY
 
 - Benchmark current RandomX hashrate on Ryzen 5 3600

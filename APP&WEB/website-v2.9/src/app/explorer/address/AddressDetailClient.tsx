@@ -223,7 +223,7 @@ export default function AddressDetailClient() {
   /* ── loading ─────────────────────────────────────────────── */
   if (loading) {
     return (
-      <div className="zion-shell min-h-screen flex items-center justify-center">
+      <div className="relative min-h-screen pb-24 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-white/30 animate-spin" />
       </div>
     );
@@ -232,9 +232,9 @@ export default function AddressDetailClient() {
   /* ── error ───────────────────────────────────────────────── */
   if (error || !data) {
     return (
-      <div className="zion-shell min-h-screen relative">
+      <div className="relative min-h-screen pb-24 overflow-x-hidden">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-red-500/5 via-transparent to-transparent" />
-        <div className="relative z-10 zion-container max-w-3xl py-12">
+        <div className="relative z-10 zion-container max-w-3xl py-12 pt-6">
           <nav className="flex items-center gap-1.5 text-[11px] text-white/40 mb-6">
             <Link href="/explorer" className="hover:text-white/70 transition-colors">Explorer</Link>
             <ChevronRight className="w-3 h-3" />
@@ -258,10 +258,10 @@ export default function AddressDetailClient() {
   const CIcon = cStyle.icon;
 
   return (
-    <div className="zion-shell min-h-screen relative">
+    <div className="relative min-h-screen pb-24 overflow-x-hidden">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-zion-purple/10 via-transparent to-transparent" />
 
-      <div className="relative z-10 zion-container max-w-[1200px] py-8">
+      <div className="relative z-10 zion-container max-w-[1200px] py-8 pt-6">
 
         {/* breadcrumb */}
         <nav className="flex items-center gap-1.5 text-[11px] text-white/40 mb-6">

@@ -23,6 +23,7 @@ import {
   SearchCode,
   Sparkles,
   TrendingUp,
+  Zap,
 } from "lucide-react";
 
 const ExplorerDashboard = dynamic(() => import("@/components/explorer/ExplorerDashboard"), { ssr: false });
@@ -32,12 +33,9 @@ const EmissionMonitor = dynamic(() => import("@/components/explorer/EmissionMoni
 const MempoolFeed = dynamic(() => import("@/components/explorer/MempoolFeed"), { ssr: false });
 const ProRecentBlocks = dynamic(() => import("@/components/explorer/ProRecentBlocks"), { ssr: false });
 const ProRecentTransactions = dynamic(() => import("@/components/explorer/ProRecentTransactions"), { ssr: false });
-const NetworkTicker = dynamic(() => import("@/components/explorer/NetworkTicker"), {
-  loading: () => <div className="h-[92px] bg-black/60 animate-pulse" />,
-  ssr: false,
-});
 const NetworkPeers = dynamic(() => import("@/components/explorer/NetworkPeers"), { ssr: false });
 const RichListClient = dynamic(() => import("./richlist/RichListClient"), { ssr: false });
+const SseBlockFeed = dynamic(() => import("@/components/explorer/v4/dashboard/SseBlockFeed"), { ssr: false });
 
 /* ═══════════════════════════════════════════════════════════
    EXPLORER PAGE — Redesigned to match Roadmap visual language
@@ -122,7 +120,7 @@ export default function ExplorerPage() {
   const quickLinks = getQuickLinks(cs);
 
   return (
-    <div className="zion-page">
+    <div className="relative min-h-screen pb-24 overflow-x-hidden">
       {/* ── Subtle background glows ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/8" />
@@ -130,12 +128,7 @@ export default function ExplorerPage() {
         <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-purple/15 to-transparent" />
       </div>
 
-      <div className="relative z-10 zion-container max-w-7xl space-y-14">
-
-        {/* ── Live network ticker ── */}
-        <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-          <NetworkTicker />
-        </div>
+      <div className="relative z-10 zion-container max-w-7xl space-y-14 pt-6">
 
         {/* ═══════ HERO ═══════ */}
         <motion.section
@@ -399,6 +392,25 @@ export default function ExplorerPage() {
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[280px]" />}>
             <NetworkPeers />
+          </Suspense>
+        </motion.section>
+
+        {/* ═══════ SSE LIVE BLOCK FEED ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.24 }}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Real-time' : 'Real-time'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Zap className="h-7 w-7 text-zion-gold" />
+              {cs ? 'Živý feed bloků' : 'Live Block Feed'}
+            </h2>
+            <p className="text-sm text-gray-400">{cs ? 'Nové bloky doručené přes Server-Sent Events — okamžitě po potvrzení.' : 'New blocks delivered via Server-Sent Events — instantly upon confirmation.'}</p>
+          </div>
+          <Suspense fallback={<div className="zion-section animate-pulse h-[200px]" />}>
+            <SseBlockFeed />
           </Suspense>
         </motion.section>
 
