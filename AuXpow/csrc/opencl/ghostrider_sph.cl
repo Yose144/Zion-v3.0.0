@@ -30,8 +30,8 @@ typedef int sph_s32;
 #define SPH_ROTR32(x, n)   SPH_ROTL32(x, (32 - (n)))
 
 #define SPH_C64(x)    ((sph_u64)(x ## UL))
-#define SPH_T64(x) (as_ulong(x))
-#define SPH_ROTL64(x, n) rotate(as_ulong(x), (n) & 0xFFFFFFFFFFFFFFFFUL)
+#define SPH_T64(x) ((sph_u64)(x))
+#define SPH_ROTL64(x, n) rotate((sph_u64)(x), (sph_u64)((n) & 63))
 #define SPH_ROTR64(x, n)   SPH_ROTL64(x, (64 - (n)))
 
 #define SPH_ECHO_64 1
@@ -12032,6 +12032,7 @@ void gr_core_5(hash_t* hash, uint size)
         UBI_BIG(224, 64);
         m0 = hash->h8[8];
         m1 = hash->h8[9];
+        m2 = m3 = m4 = m5 = m6 = m7 = 0;
         UBI_BIG(352, 80);
     } else {
         UBI_BIG(480, 64);
