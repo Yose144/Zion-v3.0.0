@@ -3605,9 +3605,31 @@ fn external_gpu_thread(
     }
 
     loop {
-        // Check for new job (non-blocking)
-        match rx.try_recv() {
-            Ok(job) => {
+        // Check for new job (non-blocking). Drain the channel to get the
+        // LATEST job — the pool sends wire_job every ~1s and the channel
+        // can accumulate many stale jobs while the GPU batch is running.
+        // Without draining, the miner would process old jobs FIFO and
+        // always be behind (observed: 15+ jobs stale on ALPH).
+        let mut latest_job: Option<zion_pool::ExternalStreamJob> = None;
+        let mut channel_disconnected = false;
+        loop {
+            match rx.try_recv() {
+                Ok(job) => {
+                    latest_job = Some(job);
+                }
+                Err(std::sync::mpsc::TryRecvError::Empty) => break,
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    channel_disconnected = true;
+                    break;
+                }
+            }
+        }
+        if channel_disconnected && latest_job.is_none() {
+            println!("[{}] ext_gpu_channel_closed — exiting", log_timestamp());
+            return;
+        }
+        match latest_job {
+            Some(job) => {
                 // Only reset nonce_offset when the job actually changes
                 // (different job_id or height). The pool re-sends the same
                 // job every ~1s; resetting nonce_offset each time would cause
@@ -3669,15 +3691,11 @@ fn external_gpu_thread(
                 hashrate.set_gpu_ext_job(&job.coin, &job.algorithm);
                 current_job = Some(job);
             }
-            Err(std::sync::mpsc::TryRecvError::Empty) => {
-                // Debug: log first few empty receives to confirm thread is alive
+            None => {
+                // No job in channel — debug: log first few empty receives
                 if batch_count == 0 && last_heartbeat.elapsed().as_secs() < 3 {
                     println!("[{}] ext_gpu_rx_empty (no job yet, thread alive)", log_timestamp());
                 }
-            }
-            Err(std::sync::mpsc::TryRecvError::Disconnected) => {
-                println!("[{}] ext_gpu_channel_closed — exiting", log_timestamp());
-                return;
             }
         }
 

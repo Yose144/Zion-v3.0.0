@@ -6624,14 +6624,16 @@ pub mod cpu_external_fallback {
 
     pub struct CpuExternalMiner {
         algorithm: String,
+        coin: String,
         work_size: usize,
         device_name_cached: String,
     }
 
     impl CpuExternalMiner {
-        pub fn new(algorithm: &str, work_size: usize) -> Result<Self> {
+        pub fn new(algorithm: &str, coin: &str, work_size: usize) -> Result<Self> {
             Ok(Self {
                 algorithm: algorithm.to_string(),
+                coin: coin.to_string(),
                 work_size,
                 device_name_cached: format!("Apple M1 (CPU fallback for {})", algorithm),
             })
@@ -6682,9 +6684,10 @@ pub mod cpu_external_fallback {
                 #[cfg(feature = "native-blake3-algo")]
                 "blake3" | "blake3_alph" | "blake3_dcr" => {
                     let header_bytes = header.to_bytes();
+                    let is_alph = self.algorithm == "blake3_alph" || self.coin.eq_ignore_ascii_case("ALPH");
                     for i in 0..actual_batch {
                         let nonce = nonce_start.wrapping_add(i);
-                        let hash = if self.algorithm == "blake3_alph" {
+                        let hash = if is_alph {
                             zion_native_ffi::blake3_algo::mine_alph_simple(&header_bytes, nonce)
                         } else {
                             zion_native_ffi::blake3_algo::mine(&header_bytes, nonce)
@@ -6728,9 +6731,10 @@ pub mod cpu_external_fallback {
                 }
                 #[cfg(feature = "native-blake3-algo")]
                 "blake3" | "blake3_alph" | "blake3_dcr" => {
+                    let is_alph = self.algorithm == "blake3_alph" || self.coin.eq_ignore_ascii_case("ALPH");
                     for i in 0..actual_batch {
                         let nonce = nonce_start.wrapping_add(i);
-                        let hash = if self.algorithm == "blake3_alph" {
+                        let hash = if is_alph {
                             zion_native_ffi::blake3_algo::mine_alph_simple(raw_header, nonce)
                         } else {
                             zion_native_ffi::blake3_algo::mine(raw_header, nonce)

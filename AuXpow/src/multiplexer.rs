@@ -148,7 +148,7 @@ impl JobMultiplexer {
     pub async fn current_job(&self) -> Option<JobPackage> {
         let client = self.active_client.as_ref()?;
         let job = client.current_job().await?;
-        let share_target = client.share_target().await;
+        let share_target = effective_share_target(client, &job).await;
         Some(pack_job(client.profile().coin, &job, share_target))
     }
 
@@ -157,7 +157,7 @@ impl JobMultiplexer {
         let client = self.active_client.as_ref().ok_or_else(|| anyhow!("not connected"))?;
         match client.wait_for_job(timeout_ms).await? {
             Some(job) => {
-                let share_target = client.share_target().await;
+                let share_target = effective_share_target(client, &job).await;
                 Ok(Some(pack_job(client.profile().coin, &job, share_target)))
             }
             None => Ok(None),
@@ -169,6 +169,22 @@ impl Drop for JobMultiplexer {
     fn drop(&mut self) {
         // AuxPowClient::connect spawns the poll loop internally; dropping the
         // Arc client will eventually stop it when the stream is closed.
+    }
+}
+
+/// Compute the effective share target for a job.
+///
+/// For RandomX (XMR) and GhostRider (RTM), the upstream pool sends the
+/// share target directly in the job notification (not via mining.set_difficulty).
+/// In that case, use the job's target_bytes instead of computing from difficulty.
+/// For other coins, use the client's share_target() which computes from difficulty.
+async fn effective_share_target(client: &AuxPowClient, job: &ExternalJob) -> [u8; 32] {
+    let algo = client.profile().algorithm.to_ascii_lowercase();
+    if algo == "randomx" || algo == "ghostrider" {
+        // Use the target from the job notification directly
+        job.target_bytes
+    } else {
+        client.share_target().await
     }
 }
 
