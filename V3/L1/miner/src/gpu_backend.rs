@@ -5820,14 +5820,15 @@ pub mod cuda_deeksha_lite_fire {
             let mut nonce: u64 = 0;
             while start.elapsed().as_secs_f64() < secs {
                 let header = MiningHeader::from_bytes([0u8; 80]);
-                let target = DifficultyTarget { bytes: [0xFFu8; 32] };
+                // Use impossible target to force full-batch compute (no early exit).
+                let target = DifficultyTarget { bytes: [0u8; 32] };
                 let result = self.mine_batch(header, target, nonce, 4096)?;
                 total += result.nonces_tested;
                 nonce += 4096;
             }
             let elapsed = start.elapsed().as_secs_f64();
-            let hps = if elapsed > 0.0 { total as f64 / elapsed } else { 0.0 };
-            Ok((total, elapsed, hps))
+            let khps = if elapsed > 0.0 { total as f64 / elapsed / 1_000.0 } else { 0.0 };
+            Ok((total, elapsed, khps))
         }
 
         #[cfg(feature = "gpu-cuda")]
@@ -6207,14 +6208,15 @@ pub mod cuda_deeksha_lite {
             let mut nonce: u64 = 0;
             while start.elapsed().as_secs_f64() < secs {
                 let header = MiningHeader::from_bytes([0u8; 80]);
-                let target = DifficultyTarget { bytes: [0xFFu8; 32] };
+                // Use impossible target to force full-batch compute (no early exit).
+                let target = DifficultyTarget { bytes: [0u8; 32] };
                 let result = self.mine_batch(header, target, nonce, 4096)?;
                 total += result.nonces_tested;
                 nonce += 4096;
             }
             let elapsed = start.elapsed().as_secs_f64();
-            let hps = if elapsed > 0.0 { total as f64 / elapsed } else { 0.0 };
-            Ok((total, elapsed, hps))
+            let khps = if elapsed > 0.0 { total as f64 / elapsed / 1_000.0 } else { 0.0 };
+            Ok((total, elapsed, khps))
         }
     }
 }
