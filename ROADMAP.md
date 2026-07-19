@@ -1,8 +1,8 @@
 # ZION Roadmap — From 3.0.5 to Public Mainnet Launch
 
-> **Version:** 3.0.6 "Triple Parallel" canonical  
-> **Last updated:** 2026-07-15
-> **One source of truth:** [`3.0.4.md`](./docs/3.0.4/3.0.4.md) + [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./docs/3.0.4/SecurityFirst.md)  
+> **Version:** 3.0.7 "Triple Stream All Green" planning  
+> **Last updated:** 2026-07-19
+> **One source of truth:** [`3.0.7.md`](./3.0.7.md) + [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](./TRIPLE_STREAM_ALL_GREEN_PLAN.md) · Previous: [`docs/3.0.6/3.0.6.md`](./docs/3.0.6/3.0.6.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./docs/3.0.4/SecurityFirst.md)  
 > **Engineering detail:** [`V3/ROADMAP.md`](./V3/ROADMAP.md)
 
 ---
@@ -59,7 +59,8 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 - **GPU benchmark (M1 Metal):** blake3 24.7 GH/s, kheavyhash 22.2 GH/s, autolykos 23.7 GH/s, zelhash 23.8 GH/s, pearl 25.2 GH/s
 - **E2E Edge audit:** Pool embeds EPIC+VRSC streams ✓, but miners not submitting external shares (old binary) — deploy fix needed
 - **Tests:** 159 AuXpow + 38 miner + 38 pool + 562 core = 797 direct crate tests
-- Plan: [`AuxPowTriplePlan.md`](./AuxPowTriplePlan.md) §11 Live Verification
+- Plan: [`docs/3.0.6/AuxPowTriplePlan.md`](./docs/3.0.6/AuxPowTriplePlan.md) §11 Live Verification
+- Next milestone: [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](./TRIPLE_STREAM_ALL_GREEN_PLAN.md)
 
 ✅ **Done (3.0.4 and earlier)**
 - DeFi contracts deployed on Base Mainnet: ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm

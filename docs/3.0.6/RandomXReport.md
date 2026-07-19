@@ -214,7 +214,7 @@ pub struct ExternalStreamJob {
 
 ```bash
 cargo build --release --features native-randomx,native-verushash
-ZION_BENCH_SECS=20 ZION_THREADS=4 ./target/release/zion-miner --randomx-bench
+ZION_BENCH_SECS=20 ZION_THREADS=4 ../../target/release/zion-miner --randomx-bench
 ```
 
 ### 5.2 Results — Optimization Progression

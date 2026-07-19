@@ -231,7 +231,7 @@ cd V3
 cargo build --release -p zion-miner --features native-verushash,native-randomx,gpu-opencl,native-hashers
 
 # Binary
-./target/release/zion-miner --pool 62.171.141.136:8444 --wallet <wallet> --threads <N> --no-tui
+../../target/release/zion-miner --pool 62.171.141.136:8444 --wallet <wallet> --threads <N> --no-tui
 ```
 
 ### Dedicated GPU VRAM detection

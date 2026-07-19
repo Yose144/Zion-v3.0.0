@@ -171,7 +171,7 @@ ZION_GPU_MEM_BUDGET_MIB=512 \
 ZION_GPU_WORK_SIZE=2048 \
 ZION_STREAM2_ENABLED=0 \
 ZION_STREAM3_ENABLED=0 \
-./target/release/zion-miner \
+../../target/release/zion-miner \
   --pool 62.171.141.136:8444 \
   --wallet <wallet> \
   --worker mac-m1 \
@@ -191,7 +191,7 @@ ZION_GPU_WORK_SIZE=2048 \
 ZION_EXT_CPU_RANDOMX_THREADS=2 \
 ZION_EXT_CPU_RANDOMX_NONCE_COUNT=2500 \
 ZION_EXT_CPU_RANDOMX_FULL_MEM=0 \
-./target/release/zion-miner \
+../../target/release/zion-miner \
   --pool 62.171.141.136:8444 \
   --wallet <wallet> \
   --worker mac-m1-triple \

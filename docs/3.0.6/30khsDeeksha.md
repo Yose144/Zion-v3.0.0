@@ -126,12 +126,12 @@ cargo build --release --bin zion-miner --features full,native-hashers
 
 ### Run command
 ```bash
-./target/release/zion-miner --pool 62.171.141.136:8444 --wallet zion1l5q4q4s3s5r6p3f6a568z5f75787d8d7c5kq0g4
+../../target/release/zion-miner --pool 62.171.141.136:8444 --wallet zion1l5q4q4s3s5r6p3f6a568z5f75787d8d7c5kq0g4
 ```
 
 ### Benchmark command
 ```bash
-ZION_GPU_WORK_SIZE=8192 ZION_BENCH_SECS=10 ./target/release/zion-miner --ekam-bench
+ZION_GPU_WORK_SIZE=8192 ZION_BENCH_SECS=10 ../../target/release/zion-miner --ekam-bench
 ```
 
 ---

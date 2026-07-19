@@ -27,8 +27,8 @@ cargo build --release --features gpu-metal -p zion-miner
 
 ```bash
 # Auto-detect hardware and configure triple stream
-./target/release/zion mine auto --dry-run    # preview
-./target/release/zion mine auto              # launch
+../../target/release/zion mine auto --dry-run    # preview
+../../target/release/zion mine auto              # launch
 
 # Or manual:
 ZION_BACKEND=metal \
@@ -39,7 +39,7 @@ ZION_AUTO_MODE=1 \
 ZION_STREAM1_ENABLED=1 \
 ZION_STREAM2_ENABLED=1 \
 ZION_STREAM3_ENABLED=1 \
-./target/release/zion-miner --gpu metal --no-tui \
+../../target/release/zion-miner --gpu metal --no-tui \
   --pool pool.zionterranova.com:8444 \
   --wallet zion1... \
   --worker m1-rig
