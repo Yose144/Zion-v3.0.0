@@ -140,16 +140,17 @@ void keccak256_from_state(
     keccak_st_t s;
     #pragma unroll
     for (int i = 0; i < 25; i++) s.u[i] = pre_state[i];
-    /* XOR nonce into bytes 80..87 */
-    #pragma unroll
-    for (int i = 0; i < 8; i++)
-        s.b[80 + i] ^= (uchar)(nonce >> (i * 8));
-    /* Apply padding */
-    s.b[88]  ^= 0x01;
-    s.b[135] ^= 0x80;
+    /* XOR nonce into bytes 80..87 = u64[10] */
+    s.u[10] ^= nonce;
+    /* Apply padding: 0x01 at byte 88 (u64[11] byte 0), 0x80 at byte 135 (u64[16] byte 7) */
+    s.u[11] ^= 0x01UL;
+    s.u[16] ^= 0x80UL << 56;
     keccak_f1600(s.u);
-    #pragma unroll
-    for (int i = 0; i < 32; i++) out[i] = s.b[i];
+    /* Vectorized 32-byte output copy */
+    ((__private ulong*)out)[0] = s.u[0];
+    ((__private ulong*)out)[1] = s.u[1];
+    ((__private ulong*)out)[2] = s.u[2];
+    ((__private ulong*)out)[3] = s.u[3];
 }
 
 /* SHA3-512 (NIST, padding 0x06, rate=72) */
@@ -173,46 +174,33 @@ void sha3_512(__private const uchar * restrict in, uint inlen, __private uchar *
 
 /* SHA3-512 specialized for 65-byte input (used by fill_scratchpad).
  * Input always fits in one keccak block (rate=72 > 65), so no
- * mid-absorption permutation needed. Eliminates 65 conditional
- * branches per call and vectorizes the state zero + copy. */
+ * mid-absorption permutation needed.
+ *
+ * u64-optimized version: takes 8 u64s of state + 1 byte block index,
+ * outputs 8 u64s. Avoids 65 byte-by-byte XOR operations that cause
+ * high register pressure on AMD. Matches fire kernel sha3_512_65_u64. */
 __attribute__((always_inline))
-inline void sha3_512_65(__private const uchar * restrict in, __private uchar * restrict out)
+inline void sha3_512_65_u64(
+    __private const ulong * restrict state_in,
+    uchar blk_byte,
+    __private ulong * restrict out_u64)
 {
-    keccak_st_t s;
-    /* Vectorized zero: 25 u64s = 3x ulong4 + 1x ulong */
-    s.u[0]=0; s.u[1]=0; s.u[2]=0; s.u[3]=0;
-    s.u[4]=0; s.u[5]=0; s.u[6]=0; s.u[7]=0;
-    s.u[8]=0; s.u[9]=0; s.u[10]=0; s.u[11]=0;
-    s.u[12]=0; s.u[13]=0; s.u[14]=0; s.u[15]=0;
-    s.u[16]=0; s.u[17]=0; s.u[18]=0; s.u[19]=0;
-    s.u[20]=0; s.u[21]=0; s.u[22]=0; s.u[23]=0; s.u[24]=0;
-    /* Absorb 65 bytes directly (no loop, no pos check) */
-    s.b[0]  ^= in[0];  s.b[1]  ^= in[1];  s.b[2]  ^= in[2];  s.b[3]  ^= in[3];
-    s.b[4]  ^= in[4];  s.b[5]  ^= in[5];  s.b[6]  ^= in[6];  s.b[7]  ^= in[7];
-    s.b[8]  ^= in[8];  s.b[9]  ^= in[9];  s.b[10] ^= in[10]; s.b[11] ^= in[11];
-    s.b[12] ^= in[12]; s.b[13] ^= in[13]; s.b[14] ^= in[14]; s.b[15] ^= in[15];
-    s.b[16] ^= in[16]; s.b[17] ^= in[17]; s.b[18] ^= in[18]; s.b[19] ^= in[19];
-    s.b[20] ^= in[20]; s.b[21] ^= in[21]; s.b[22] ^= in[22]; s.b[23] ^= in[23];
-    s.b[24] ^= in[24]; s.b[25] ^= in[25]; s.b[26] ^= in[26]; s.b[27] ^= in[27];
-    s.b[28] ^= in[28]; s.b[29] ^= in[29]; s.b[30] ^= in[30]; s.b[31] ^= in[31];
-    s.b[32] ^= in[32]; s.b[33] ^= in[33]; s.b[34] ^= in[34]; s.b[35] ^= in[35];
-    s.b[36] ^= in[36]; s.b[37] ^= in[37]; s.b[38] ^= in[38]; s.b[39] ^= in[39];
-    s.b[40] ^= in[40]; s.b[41] ^= in[41]; s.b[42] ^= in[42]; s.b[43] ^= in[43];
-    s.b[44] ^= in[44]; s.b[45] ^= in[45]; s.b[46] ^= in[46]; s.b[47] ^= in[47];
-    s.b[48] ^= in[48]; s.b[49] ^= in[49]; s.b[50] ^= in[50]; s.b[51] ^= in[51];
-    s.b[52] ^= in[52]; s.b[53] ^= in[53]; s.b[54] ^= in[54]; s.b[55] ^= in[55];
-    s.b[56] ^= in[56]; s.b[57] ^= in[57]; s.b[58] ^= in[58]; s.b[59] ^= in[59];
-    s.b[60] ^= in[60]; s.b[61] ^= in[61]; s.b[62] ^= in[62]; s.b[63] ^= in[63];
-    s.b[64] ^= in[64];
-    /* Pad (0x06 at byte 65, 0x80 at byte 71) */
-    s.b[65] ^= 0x06;
-    s.b[71] ^= 0x80;
-    keccak_f1600(s.u);
-    /* Vectorized 64-byte output copy */
-    ulong4 o0 = vload4(0, (__private ulong*)s.b);
-    ulong4 o1 = vload4(1, (__private ulong*)s.b);
-    vstore4(o0, 0, (__private ulong*)out);
-    vstore4(o1, 1, (__private ulong*)out);
+    __private ulong st[25];
+    st[0]=state_in[0]; st[1]=state_in[1]; st[2]=state_in[2]; st[3]=state_in[3];
+    st[4]=state_in[4]; st[5]=state_in[5]; st[6]=state_in[6]; st[7]=state_in[7];
+    st[8]=0; st[9]=0; st[10]=0; st[11]=0; st[12]=0; st[13]=0; st[14]=0; st[15]=0;
+    st[16]=0; st[17]=0; st[18]=0; st[19]=0; st[20]=0; st[21]=0; st[22]=0; st[23]=0;
+    st[24]=0;
+
+    /* XOR byte 64 into low byte of st[8] */
+    st[8] ^= (ulong)blk_byte;
+    /* Pad: 0x06 at byte 65 (st[8] byte 1), 0x80 at byte 71 (st[8] byte 7) */
+    st[8] ^= (0x06UL << 8) | (0x80UL << 56);
+
+    keccak_f1600(st);
+
+    out_u64[0]=st[0]; out_u64[1]=st[1]; out_u64[2]=st[2]; out_u64[3]=st[3];
+    out_u64[4]=st[4]; out_u64[5]=st[5]; out_u64[6]=st[6]; out_u64[7]=st[7];
 }
 
 /* ========================================================================== */
@@ -317,31 +305,26 @@ void fill_scratchpad(
     __private const uchar seed[32],
     __global uchar * restrict pad)
 {
-    uchar state[64] __attribute__((aligned(8)));
-    #pragma unroll
-    for (int i = 0; i < 32; i++) state[i] = seed[i];
-    #pragma unroll
-    for (int i = 32; i < 64; i++) state[i] = 0;
+    __private ulong state[8];
+    state[0] = ((__private ulong*)seed)[0];
+    state[1] = ((__private ulong*)seed)[1];
+    state[2] = ((__private ulong*)seed)[2];
+    state[3] = ((__private ulong*)seed)[3];
+    state[4] = 0; state[5] = 0; state[6] = 0; state[7] = 0;
 
     #pragma unroll 1
     for (uint blk = 0; blk < BLOCK_COUNT; blk++) {
-        uchar inp[65];
-        /* Vectorized 64-byte copy from state */
-        ulong4 s0 = vload4(0, (__private ulong*)state);
-        ulong4 s1 = vload4(1, (__private ulong*)state);
-        vstore4(s0, 0, (__private ulong*)inp);
-        vstore4(s1, 1, (__private ulong*)inp);
-        /* Only low byte of blk index — matches &input[..65] in CPU */
-        inp[64] = (uchar)(blk & 0xFF);
-
-        uchar out64[64];
-        sha3_512_65(inp, out64);
+        __private ulong out[8];
+        sha3_512_65_u64(state, (uchar)(blk & 0xFF), out);
 
         uint off = blk * BLOCK_SIZE;
-        /* Vectorized 32-byte write to global + update state */
-        ulong4 v = vload4(0, (__private ulong*)out64);
-        vstore4(v, 0, (__global ulong*)(pad + off));
-        vstore4(v, 0, (__private ulong*)state);
+        __global ulong *pb = (__global ulong*)(pad + off);
+        pb[0] = out[0]; pb[1] = out[1]; pb[2] = out[2]; pb[3] = out[3];
+
+        /* Chain state: first 4 u64s from output, rest zero */
+        state[0] = out[0]; state[1] = out[1];
+        state[2] = out[2]; state[3] = out[3];
+        state[4] = 0; state[5] = 0; state[6] = 0; state[7] = 0;
     }
 }
 
@@ -356,26 +339,26 @@ void fill_scratchpad(
 __attribute__((always_inline))
 void sequential_passes(__global uchar * restrict pad)
 {
-    /* Pass 0 — forward: cache previous block in register to halve global reads */
-    ulong4 prev_v = vload4(0, (__global ulong*)(pad + (BLOCK_COUNT - 1) * BLOCK_SIZE));
+    /* Forward pass: XOR each block with previous (wrap-around) */
+    __global ulong *prev_pb = (__global ulong*)(pad + (BLOCK_COUNT-1)*BLOCK_SIZE);
+    ulong prev0 = prev_pb[0], prev1 = prev_pb[1], prev2 = prev_pb[2], prev3 = prev_pb[3];
     #pragma unroll 1
     for (uint i = 0; i < BLOCK_COUNT; i++) {
-        uint cur = i * BLOCK_SIZE;
-        ulong4 cur_v = vload4(0, (__global ulong*)(pad + cur));
-        cur_v ^= prev_v;
-        vstore4(cur_v, 0, (__global ulong*)(pad + cur));
-        prev_v = cur_v;
+        __global ulong *pb = (__global ulong*)(pad + i*BLOCK_SIZE);
+        ulong cv0 = pb[0] ^ prev0, cv1 = pb[1] ^ prev1, cv2 = pb[2] ^ prev2, cv3 = pb[3] ^ prev3;
+        pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
+        prev0 = cv0; prev1 = cv1; prev2 = cv2; prev3 = cv3;
     }
-    /* Pass 1 — backward: cache next block in register to halve global reads */
-    ulong4 next_v = vload4(0, (__global ulong*)(pad));
+    /* Backward pass: XOR each block with next (wrap-around) */
+    __global ulong *next_pb = (__global ulong*)(pad + 0);
+    ulong next0 = next_pb[0], next1 = next_pb[1], next2 = next_pb[2], next3 = next_pb[3];
     #pragma unroll 1
     for (uint i = BLOCK_COUNT; i > 0; i--) {
         uint idx = i - 1;
-        uint cur = idx * BLOCK_SIZE;
-        ulong4 cur_v = vload4(0, (__global ulong*)(pad + cur));
-        cur_v ^= next_v;
-        vstore4(cur_v, 0, (__global ulong*)(pad + cur));
-        next_v = cur_v;
+        __global ulong *pb = (__global ulong*)(pad + idx*BLOCK_SIZE);
+        ulong cv0 = pb[0] ^ next0, cv1 = pb[1] ^ next1, cv2 = pb[2] ^ next2, cv3 = pb[3] ^ next3;
+        pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
+        next0 = cv0; next1 = cv1; next2 = cv2; next3 = cv3;
     }
 }
 
@@ -394,31 +377,23 @@ void random_read_mix(
     __global const uchar * restrict pad,
     __private uchar out[32])
 {
-    uchar acc[32] __attribute__((aligned(8)));
-    #pragma unroll
-    for (int i = 0; i < 32; i++) acc[i] = seed[i];
-
+    __private ulong acc[4];
+    acc[0] = ((__private ulong*)seed)[0];
+    acc[1] = ((__private ulong*)seed)[1];
+    acc[2] = ((__private ulong*)seed)[2];
+    acc[3] = ((__private ulong*)seed)[3];
     ulong pos = 0;
     #pragma unroll 4
     for (ulong r = 0; r < RANDOM_READS; r++) {
         uint off = (uint)(pos * BLOCK_SIZE);
-        /* Vectorized 32-byte XOR */
-        ulong4 acc_v = vload4(0, (__private ulong*)acc);
-        ulong4 pad_v = vload4(0, (__global const ulong*)(pad + off));
-        acc_v ^= pad_v;
-        vstore4(acc_v, 0, (__private ulong*)acc);
-
-        /* Read 8 bytes for idx — matches u64 in CPU */
-        ulong idx_val = 0;
-        #pragma unroll
-        for (int i = 0; i < 8; i++)
-            idx_val |= ((ulong)acc[i]) << (i * 8);
-
-        pos = (idx_val ^ pos ^ r) % BLOCK_COUNT;
+        __global const ulong *pb = (__global const ulong*)(pad + off);
+        acc[0] ^= pb[0]; acc[1] ^= pb[1]; acc[2] ^= pb[2]; acc[3] ^= pb[3];
+        pos = (acc[0] ^ pos ^ r) % BLOCK_COUNT;
     }
-
-    #pragma unroll
-    for (int i = 0; i < 32; i++) out[i] = acc[i];
+    ((__private ulong*)out)[0] = acc[0];
+    ((__private ulong*)out)[1] = acc[1];
+    ((__private ulong*)out)[2] = acc[2];
+    ((__private ulong*)out)[3] = acc[3];
 }
 
 /* ========================================================================== */
