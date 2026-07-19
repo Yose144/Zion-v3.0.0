@@ -41,8 +41,9 @@
 | **BEAM** | beamhash III | 2 | ✅ Green | Implemented (CPU+GPU), 2miners TLS | Commit `525835d4e` |
 | **QUAI** | kawpow | 2 | ✅ Green | E2E, 2miners BTC payout | StatusV3 §5 |
 | **KAS / ALPH** | kheavyhash / blake3 | 2 | 🟡 0 shares | Kernel OK, hashrate insufficient on test rigs (TH/s difficulty) — needs long run or stronger GPU | M1 report §3.2-3.4 |
-| **FLUX** | zelhash | 2 | 🟡 Code ready | Pool routing in code, E2E not live-tested | `server.rs` line 408, 438 |
-| **EVR / MEWC / CLORE** | evrprogpow / meowpow / kawpow | 2 | 🟡 Code ready | Protocol switched from EthStratum to standard Stratum — E2E not live-tested | `auxpow_client.rs` line 133 |
+| **FLUX** | zelhash | 2 | ⏸️ Deprecated | FLUX switched to PoUW v2 (Oct 2025), mining pools disabled. WoolyPooly NXDOMAIN, minerpool.org unreachable. | Web search 2026-07-19 |
+| **EVR / MEWC** | evrprogpow / meowpow | 2 | ✅ Green | Protocol fixed: EthStratum → Stratum v1. Authorized + KawPow notify on Edge test pool. | `auxpow_client.rs` line 135, Edge test pool 2026-07-19 |
+| **CLORE** | kawpow | 2 | ✅ Green | Pool moved to 2miners:5050 (WoolyPooly NXDOMAIN). Authorized + job queued on Edge test pool. | `types.rs` line 169, Edge test pool 2026-07-19 |
 | **VRSC** | verushash | 3 | 🟡 ~92% accept | 3 hotfixes committed (`0609f8102`), needs 1h soak test | Pool stats: 148 valid, 45 invalid |
 | **XMR** | randomx | 3 | 🔴 Blocked | All pure-RandomX pools unreachable from Edge (datacenter IP blocking) | `RandomXReport.md` |
 | **IRON** | fishhash | 2 | 🟡 Auth OK | Subscribe OK, needs 64-char IronFish wallet | StatusV3 §5 |
