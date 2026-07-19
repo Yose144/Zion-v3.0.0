@@ -48,7 +48,7 @@
 | **IRON** | fishhash | 2 | 🟡 Auth OK | Subscribe OK, needs 64-char IronFish wallet | StatusV3 §5 |
 | **KLS** | karlsenhash | 2 | 🟡 Auth OK | E2E PASS, needs native Karlsen wallet | StatusV3 §5 |
 | **DNX** | dynexsolve | 2 | 🟡 Auth OK | Login OK, needs native DNX wallet | StatusV3 §5 |
-| **PRL** | pearlhash | 2 | 🔴 Disabled | PoUW ZK kernels TODO — **recommend defer to 3.1.0** | — |
+| **PRL** | pearlhash | 2 | ⏸️ Deferred | PoUW ZK kernels TODO — **officially deferred to 3.1.0** (2026-07-19) | — |
 | **ETC** | ethash | 2 | 🔴 Unverified | CPU reference exists (`hash_ethash`), GPU kernel exists (`ethash_kernel.cl`), pool-side verify exists (`ethash_final_hash`) — but no live E2E test | — |
 | **CKB / CFX / ZEC / PHX / KRX** | various | 2 | 🟡 Code ready | ExternalCoin variants in enum, profit router entries — E2E not tested | `profit_router.rs` |
 
@@ -121,12 +121,17 @@
 
 ### Phase 5 — Pearl PoUW decision (Week 2)
 
-| Option | Decision | Consequence |
-|--------|----------|-------------|
-| A — Enable | Implement `pearl_gpu_thread()` and `submit_pearl_proof()` | Adds PoUW revenue stream; increases complexity |
-| B — Defer officially | Keep PRL jobs ignored in miner; document in `3.0.7.md` | Simpler scope; Pearl remains pool-only infra |
+> **Decision 2026-07-19:** **Option B — Defer to 3.1.0.**
+> Pearl PoUW requires ZK proof generation on GPU (PearlGPU kernels), which is
+> a significant research/engineering effort. Deferring to 3.1.0 avoids scope
+> creep in 3.0.7. PRL jobs remain ignored in the miner; Pearl stays pool-only infra.
 
-**Recommendation:** Choose **B** for 3.0.7 to avoid scope creep. Revisit in 3.1.0.
+| Option | Decision | Status |
+|--------|----------|--------|
+| A — Enable | Implement `pearl_gpu_thread()` and `submit_pearl_proof()` | ❌ Rejected — too much scope for 3.0.7 |
+| **B — Defer officially** | Keep PRL jobs ignored in miner; document in `3.0.7.md` | ✅ **Chosen** — revisit in 3.1.0 |
+
+**Action taken:** Pearl marked as `deferred_3.1.0` in state matrix and `3.0.7.md`.
 
 ---
 

@@ -294,4 +294,75 @@ mod tests {
         let result = forwarder.try_forward("job_forward", 7, &hash, &target, None, "blake3", &[]).await.unwrap();
         assert_eq!(result, ShareForwardResult::Rejected("low diff".to_string()));
     }
+
+    /// ETC (Ethash) DAG share forwarding: verify that the pool-side
+    /// `ethash_final_hash` recompute path works for ETC headers.
+    ///
+    /// When the GPU kernel produces a false positive (hash=zeros that
+    /// passes the u64 pre-check), the share forwarder should:
+    /// 1. Recompute the real final hash from header + nonce + mix_hash
+    /// 2. Compare the real hash against the target
+    /// 3. Drop the share as BelowTarget if the real hash doesn't meet target
+    #[tokio::test]
+    async fn etc_dag_false_positive_dropped() {
+        let server = MockStratumServer::bind().await;
+        let addr = server.addr();
+        tokio::spawn(server.run(true));
+
+        let profile = profile_for_mock(ExternalCoin::ETC, &addr);
+        let client = Arc::new(AuxPowClient::new(profile));
+        client.connect("bc1qtest").await.unwrap();
+        let _ = client.wait_for_job(200).await;
+
+        let forwarder = ShareForwarder::new(client);
+
+        // Simulate a GPU kernel false positive:
+        // - kernel hash = all zeros (passes u64 pre-check trivially)
+        // - mix_hash = some value
+        // - header_bytes = 32-byte ETC header hash
+        // The real ethash_final_hash will be computed from these, and if
+        // it doesn't meet the target, the share should be dropped.
+        let kernel_hash = [0u8; 32]; // GPU kernel false positive
+        let mix_hash = [0x42u8; 32];
+        let header_bytes = [0x11u8; 32]; // ETC header hash
+        let mut target = [0x00u8; 32];
+        target[31] = 0x01; // very hard target — real hash won't meet it
+
+        let result = forwarder
+            .try_forward("etc_job_001", 0x1234, &kernel_hash, &target, Some(&mix_hash), "ethash", &header_bytes)
+            .await
+            .unwrap();
+
+        // The real hash won't meet the hard target → BelowTarget
+        assert_eq!(result, ShareForwardResult::BelowTarget);
+    }
+
+    /// ETC (Ethash) DAG share with trivial target: the recomputed hash
+    /// should be submitted upstream (not the kernel zeros).
+    #[tokio::test]
+    async fn etc_dag_real_hash_forwarded() {
+        let server = MockStratumServer::bind().await;
+        let addr = server.addr();
+        tokio::spawn(server.run(true));
+
+        let profile = profile_for_mock(ExternalCoin::ETC, &addr);
+        let client = Arc::new(AuxPowClient::new(profile));
+        client.connect("bc1qtest").await.unwrap();
+        let _ = client.wait_for_job(200).await;
+
+        let forwarder = ShareForwarder::new(client);
+
+        let kernel_hash = [0u8; 32]; // GPU kernel false positive (zeros)
+        let mix_hash = [0x42u8; 32];
+        let header_bytes = [0x11u8; 32];
+        let target = [0xFFu8; 32]; // trivial target — any hash meets it
+
+        let result = forwarder
+            .try_forward("etc_job_001", 0x1234, &kernel_hash, &target, Some(&mix_hash), "ethash", &header_bytes)
+            .await
+            .unwrap();
+
+        // With trivial target, the recomputed hash should be accepted
+        assert_eq!(result, ShareForwardResult::Accepted);
+    }
 }
