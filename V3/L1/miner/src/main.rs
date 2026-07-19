@@ -2192,6 +2192,21 @@ fn run_remote_session(
         PoolMessage::Welcome { job_ttl_ms, .. } => job_ttl_ms,
         other => return Err(anyhow!("expected welcome from pool, got {other:?}")),
     };
+
+    // ── Spawn pool I/O thread ──────────────────────────────────────
+    // The I/O thread owns the reader and continuously reads from the pool,
+    // routing Job messages to job_rx and Result/ExternalResult to result_rx.
+    // This eliminates both GPU idle gaps:
+    //   1. Job pre-fetch (~400ms → ~0ms): jobs are already queued when needed
+    //   2. Async submit response (~297ms → ~0ms): results are already queued
+    // The main thread keeps the writer for sending submit/no-solution messages.
+    let (job_tx, job_rx) = std::sync::mpsc::channel::<PoolIncoming>();
+    let (result_tx, result_rx) = std::sync::mpsc::channel::<PoolIncoming>();
+    std::thread::Builder::new()
+        .name("pool-io".to_string())
+        .spawn(move || pool_io_thread(reader, job_tx, result_tx))
+        .context("failed to spawn pool I/O thread")?;
+    println!("[{}] pool_io_thread_started — job pre-fetch + async submit enabled", log_timestamp());
     sync_miner_metrics(
         metrics,
         &telemetry,
@@ -2262,20 +2277,19 @@ fn run_remote_session(
         }
 
         let (job_line, mut job, algorithm, raw_header_bytes, stream_weights_str, external_stream, external_stream_cpu) =
-            match read_next_job(&mut reader) {
-                Ok(result) => result,
-                Err(e) => {
-                    let err_str = format!("{e:#}");
-                    // Parse errors (bad header/target) → skip and continue
-                    // Connection errors (EOF, broken pipe) → reconnect
-                    if err_str.contains("invalid hex")
-                        || err_str.contains("must be exactly")
-                        || err_str.contains("slice")
-                    {
-                        println!("read_job_parse_error: {err_str} — skipping job");
-                        continue;
-                    }
-                    println!("read_job_error: {err_str} — reconnecting");
+            match job_rx.recv() {
+                Ok(PoolIncoming::Job(line, j, algo, raw, sw, ext, ext_cpu)) => {
+                    (line, j, algo, raw, sw, ext, ext_cpu)
+                }
+                Ok(PoolIncoming::Result(line, msg)) => {
+                    // Unexpected: a result arrived while we were waiting for a job.
+                    // This can happen if the pool sends a late result from a previous
+                    // submit. Log and continue waiting for the next job.
+                    println!("pool_unexpected_result_while_waiting_for_job: {line}");
+                    continue;
+                }
+                Err(_) => {
+                    println!("pool_io_channel_closed — reconnecting");
                     break;
                 }
             };
@@ -2315,7 +2329,7 @@ fn run_remote_session(
                 elapsed_ms: Some(0),
             };
             let _ = write_wire_message(&mut writer, &no_solution_message);
-            let _ = read_next_result(&mut reader);
+            let _ = result_rx.recv();
             thread::sleep(Duration::from_millis(100));
             continue;
         }
@@ -2482,7 +2496,7 @@ fn run_remote_session(
                 share.nonce,
             );
             submit_external_share(
-                &mut writer, &mut reader, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
+                &mut writer, &result_rx, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
                 |accepted| hashrate.record_gpu_ext_share(accepted),
             );
         }
@@ -2498,7 +2512,7 @@ fn run_remote_session(
                 share.nonce,
             );
             submit_external_share(
-                &mut writer, &mut reader, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
+                &mut writer, &result_rx, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
                 |accepted| hashrate.record_cpu_ext_share(accepted),
             );
         }
@@ -2544,7 +2558,16 @@ fn run_remote_session(
                 elapsed_ms: Some(job_started_at.elapsed().as_millis() as u64),
             };
             let no_solution_line = write_wire_message(&mut writer, &no_solution_message)?;
-            let (result_line_raw, result_message) = read_next_result(&mut reader)?;
+            // ── FIX #8: Drain late ExternalResult if present (from timed-out submit_external_share) ──
+            let (result_line_raw, result_message) = loop {
+                match result_rx.recv() {
+                    Ok(PoolIncoming::Result(line, msg)) => break (line, msg),
+                    Ok(PoolIncoming::Job(line, _, _, _, _, _, _)) => {
+                        return Err(anyhow!("expected result from pool, got Job: {line}"));
+                    }
+                    Err(_) => return Err(anyhow!("pool I/O channel closed during no_solution result")),
+                }
+            };
             last_result_line = Some(result_line_raw.clone());
             if VERBOSE.load(Ordering::Relaxed) {
                 println!("wire_no_solution={no_solution_line}");
@@ -2557,6 +2580,32 @@ fn run_remote_session(
                     }
                     if VERBOSE.load(Ordering::Relaxed) {
                         println!("pool_status={status}");
+                    }
+                }
+                // Late ExternalResult from a timed-out submit_external_share — log and continue
+                PoolMessage::ExternalResult { accepted, status, coin } => {
+                    println!(
+                        "[{}] late_external_result_drained coin={} accepted={} status={} — waiting for no_solution result",
+                        log_timestamp(), coin, accepted, status,
+                    );
+                    // Recv again for the actual no_solution result
+                    let (line2, msg2) = match result_rx.recv() {
+                        Ok(PoolIncoming::Result(l, m)) => (l, m),
+                        Ok(PoolIncoming::Job(l, _, _, _, _, _, _)) => {
+                            return Err(anyhow!("expected result from pool, got Job: {l}"));
+                        }
+                        Err(_) => return Err(anyhow!("pool I/O channel closed during no_solution result (after late external)")),
+                    };
+                    last_result_line = Some(line2.clone());
+                    if let PoolMessage::Result { accepted, status } = msg2 {
+                        if accepted {
+                            accepted_iterations += 1;
+                        }
+                        if VERBOSE.load(Ordering::Relaxed) {
+                            println!("pool_status={status}");
+                        }
+                    } else {
+                        return Err(anyhow!("expected Result after late ExternalResult, got {msg2:?}"));
                     }
                 }
                 other => return Err(anyhow!("expected result from pool, got {other:?}")),
@@ -2646,7 +2695,16 @@ fn run_remote_session(
             mix_hash_hex,
         };
         let submit_line = write_wire_message(&mut writer, &submit_message)?;
-        let (result_line_raw, result_message) = read_next_result(&mut reader)?;
+        // ── FIX #8: Drain late ExternalResult if present (from timed-out submit_external_share) ──
+        let (result_line_raw, result_message) = loop {
+            match result_rx.recv() {
+                Ok(PoolIncoming::Result(line, msg)) => break (line, msg),
+                Ok(PoolIncoming::Job(line, _, _, _, _, _, _)) => {
+                    return Err(anyhow!("expected result from pool, got Job: {line}"));
+                }
+                Err(_) => return Err(anyhow!("pool I/O channel closed during submit result")),
+            }
+        };
         telemetry.record_submit_latency(submit_started_at.elapsed());
         last_result_line = Some(result_line_raw.clone());
 
@@ -2689,6 +2747,44 @@ fn run_remote_session(
                     );
                 }
                 status
+            }
+            // Late ExternalResult from a timed-out submit_external_share — drain and recv again
+            PoolMessage::ExternalResult { accepted, status: ext_status, coin } => {
+                println!(
+                    "[{}] late_external_result_drained coin={} accepted={} status={} — waiting for submit result",
+                    log_timestamp(), coin, accepted, ext_status,
+                );
+                let (line2, msg2) = match result_rx.recv() {
+                    Ok(PoolIncoming::Result(l, m)) => (l, m),
+                    Ok(PoolIncoming::Job(l, _, _, _, _, _, _)) => {
+                        return Err(anyhow!("expected result from pool, got Job: {l}"));
+                    }
+                    Err(_) => return Err(anyhow!("pool I/O channel closed during submit result (after late external)")),
+                };
+                last_result_line = Some(line2.clone());
+                if let PoolMessage::Result { accepted, status } = msg2 {
+                    let latency_ms = submit_started_at.elapsed().as_millis();
+                    if accepted {
+                        accepted_iterations += 1;
+                        hashrate.record_zion_share(true);
+                        ui::log_accepted(job.job_id, job.height, solution.candidate.nonce, latency_ms as u64);
+                        println!(
+                            "[{}] SHARE_ACCEPTED  job={}  height={}  nonce={}  algo={}  latency_ms={}",
+                            log_timestamp(), job.job_id, job.height, solution.candidate.nonce, current_algorithm, latency_ms,
+                        );
+                    } else {
+                        rejected_iterations += 1;
+                        hashrate.record_zion_share(false);
+                        ui::log_rejected(job.job_id, job.height, solution.candidate.nonce, latency_ms as u64, &status);
+                        println!(
+                            "[{}] SHARE_REJECTED  job={}  height={}  nonce={}  algo={}  reason=\"{}\"  hash={}",
+                            log_timestamp(), job.job_id, job.height, solution.candidate.nonce, current_algorithm, status, hex(&solution.hash),
+                        );
+                    }
+                    status
+                } else {
+                    return Err(anyhow!("expected Result after late ExternalResult, got {msg2:?}"));
+                }
             }
             other => return Err(anyhow!("expected result from pool, got {other:?}")),
         };
@@ -3101,7 +3197,7 @@ struct ExternalShareResult {
 /// Used by both CPU (VerusHash) and GPU external stream paths.
 fn submit_external_share(
     writer: &mut impl Write,
-    reader: &mut impl BufRead,
+    result_rx: &std::sync::mpsc::Receiver<PoolIncoming>,
     config: &MinerConfig,
     share: &ExternalShareResult,
     _hashrate: &HashrateTracker,
@@ -3121,35 +3217,61 @@ fn submit_external_share(
     };
     if let Err(e) = write_wire_message(writer, &ext_submit) {
         println!("external_submit_write_error: {e}");
-    } else {
-        match read_next_result(reader) {
-            Ok((line, msg)) => {
-                if verbose {
-                    println!("wire_external_result={line}");
-                }
-                if let PoolMessage::ExternalResult { accepted, status, coin } = msg {
-                    record(accepted);
-                    let stream_label = if share.algorithm == "verushash" || share.algorithm == "randomx" {
-                        "CPU PROFIT"
-                    } else {
-                        "GPU PROFIT"
-                    };
-                    if accepted {
-                        if !TUI_ACTIVE.load(Ordering::Relaxed) {
-                            ui::log_ext_accepted(stream_label, &coin, &share.algorithm, 0);
-                        }
-                        println!("[{}] external_share_accepted coin={} status={}", log_timestamp(), coin, status);
-                    } else {
-                        if !TUI_ACTIVE.load(Ordering::Relaxed) {
-                            ui::log_ext_rejected(stream_label, &coin, &share.algorithm, &status);
-                        }
-                        println!("[{}] external_share_rejected coin={} status={}", log_timestamp(), coin, status);
+        return;
+    }
+
+    // ── FIX #8: Don't block main loop on external share result ──
+    // The pool forwards external shares to upstream pools (NiceHash, 2miners)
+    // and may take 10-15 seconds to respond. Blocking here starves the GPU
+    // (observed: 14.3s main loop iteration, gpu_hps=0.00 on AMD RX 5600 XT).
+    // Use a short timeout: if the pool responds quickly, process the result.
+    // If not, log and move on — the late result will be drained below.
+    let ext_timeout_ms = std::env::var("ZION_EXT_SUBMIT_TIMEOUT_MS")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(500);
+    match result_rx.recv_timeout(Duration::from_millis(ext_timeout_ms)) {
+        Ok(PoolIncoming::Result(line, msg)) => {
+            if verbose {
+                println!("wire_external_result={line}");
+            }
+            if let PoolMessage::ExternalResult { accepted, status, coin } = msg {
+                record(accepted);
+                let stream_label = if share.algorithm == "verushash" || share.algorithm == "randomx" {
+                    "CPU PROFIT"
+                } else {
+                    "GPU PROFIT"
+                };
+                if accepted {
+                    if !TUI_ACTIVE.load(Ordering::Relaxed) {
+                        ui::log_ext_accepted(stream_label, &coin, &share.algorithm, 0);
                     }
+                    println!("[{}] external_share_accepted coin={} status={}", log_timestamp(), coin, status);
+                } else {
+                    if !TUI_ACTIVE.load(Ordering::Relaxed) {
+                        ui::log_ext_rejected(stream_label, &coin, &share.algorithm, &status);
+                    }
+                    println!("[{}] external_share_rejected coin={} status={}", log_timestamp(), coin, status);
                 }
             }
-            Err(e) => {
-                println!("external_result_read_error: {e}");
-            }
+        }
+        Ok(PoolIncoming::Job(line, _, _, _, _, _, _)) => {
+            println!("external_result_unexpected_job: {line}");
+        }
+        Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+            // Pool didn't respond within timeout — don't block the main loop.
+            // The late ExternalResult will arrive in result_rx and be drained
+            // by the next result_rx.recv() call (handled gracefully below).
+            println!(
+                "[{}] external_share_submitted_no_response coin={} algo={} timeout_ms={} — continuing without blocking",
+                log_timestamp(),
+                share.coin,
+                share.algorithm,
+                ext_timeout_ms,
+            );
+        }
+        Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+            println!("external_result_read_error: channel disconnected");
         }
     }
 }
@@ -3492,6 +3614,34 @@ fn external_gpu_thread(
         nonce_offset = nonce_offset.wrapping_add(actual_batch);
         batch_count += 1;
         hashrate.record_gpu_ext_hashes(actual_batch);
+
+        // ── FIX #7: Duty-cycle yield to Stream 1 (ZION) on single-GPU rigs ──
+        // On single-GPU machines, Stream 1 (ZION deeksha) and Stream 2
+        // (external GPU coin) share the same physical GPU via separate
+        // OpenCL/CUDA contexts. Without yielding, this tight loop hogs
+        // the GPU and starves Stream 1 (observed: gpu_hps=0.00,
+        // best_batch_ms=14849 on AMD RX 5600 XT).
+        //
+        // Duty-cycle approach: run N batches (burst), then sleep M ms
+        // (gap) to give Stream 1 a guaranteed GPU window. The gap must
+        // be long enough for Stream 1 to complete one deeksha batch
+        // (~270ms on RX 5600 XT at work_size=8192).
+        //
+        // Defaults: burst=3 batches, gap=300ms → ~75% Stream2 duty cycle.
+        // Tuning:
+        //   ZION_EXT_GPU_BURST=N  (batches per burst, 0=no limit)
+        //   ZION_EXT_GPU_GAP_MS=M (sleep after burst, 0=disabled)
+        let burst = std::env::var("ZION_EXT_GPU_BURST")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(3);
+        let gap_ms = std::env::var("ZION_EXT_GPU_GAP_MS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(300);
+        if burst > 0 && gap_ms > 0 && batch_count % burst == 0 {
+            thread::sleep(Duration::from_millis(gap_ms));
+        }
     }
 }
 
@@ -3772,6 +3922,138 @@ fn mine_external_stream_cpu(
             None
         }
     }
+}
+
+/// Routed pool message from the I/O thread to the main mining loop.
+enum PoolIncoming {
+    Job(
+        String,
+        MiningJob,
+        String,
+        Vec<u8>,
+        String,
+        Option<zion_pool::ExternalStreamJob>,
+        Option<zion_pool::ExternalStreamJob>,
+    ),
+    Result(String, PoolMessage),
+}
+
+/// Background pool I/O thread — owns the reader, routes messages to channels.
+///
+/// Continuously reads from the pool socket and routes:
+/// - `Job` → `job_tx` (parsed, with external stream fields)
+/// - `Result`/`ExternalResult` → `result_tx`
+/// - `Stale`/`Cancel` → printed inline
+/// - `SetDifficulty` → stored in `CURRENT_POOL_DIFFICULTY` atomic
+///
+/// When the pool disconnects or an error occurs, the thread exits and drops
+/// both senders, causing `recv()` on the main thread to return `Err` — which
+/// triggers reconnect logic.
+///
+/// This eliminates both GPU idle gaps:
+/// - **Job pre-fetch**: jobs are read continuously, so `job_rx.recv()` is
+///   non-blocking when a job is already queued (eliminates ~400ms job wait)
+/// - **Async submit response**: submit results are read continuously, so
+///   `result_rx.recv()` is non-blocking when the response is already queued
+///   (eliminates ~297ms submit wait)
+fn pool_io_thread(
+    mut reader: std::io::BufReader<std::net::TcpStream>,
+    job_tx: std::sync::mpsc::Sender<PoolIncoming>,
+    result_tx: std::sync::mpsc::Sender<PoolIncoming>,
+) {
+    loop {
+        let (line, message) = match read_wire_message(&mut reader) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("[{}] pool_io_thread_error: {e}", log_timestamp());
+                break;
+            }
+        };
+        match message {
+            PoolMessage::Job {
+                job_id,
+                algorithm,
+                start_nonce,
+                nonce_count,
+                target_hex,
+                header_hex,
+                height,
+                stream_weights,
+                external_stream,
+                external_stream_cpu,
+            } => {
+                if !stream_weights.is_empty() && !QUIET.load(Ordering::Relaxed) {
+                    println!("stream_weights job={} weights={}", job_id, stream_weights);
+                }
+                if let Some(ref ext) = external_stream {
+                    if !QUIET.load(Ordering::Relaxed) {
+                        println!(
+                            "external_stream job={} coin={} algo={}",
+                            job_id, ext.coin, ext.algorithm
+                        );
+                    }
+                }
+                if let Some(ref ext_cpu) = external_stream_cpu {
+                    if !QUIET.load(Ordering::Relaxed) {
+                        println!(
+                            "external_stream_cpu job={} coin={} algo={} target_hex={:.64}",
+                            job_id, ext_cpu.coin, ext_cpu.algorithm, ext_cpu.target_hex
+                        );
+                    }
+                }
+                let raw_header_bytes =
+                    hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
+                let job = match parse_header_hex(&header_hex) {
+                    Ok(h) => h,
+                    Err(e) => {
+                        eprintln!("pool_io_job_parse_error job={job_id}: {e} — skipping");
+                        continue;
+                    }
+                };
+                let target = match parse_fixed_hex::<32>(&target_hex, "job target") {
+                    Ok(t) => t,
+                    Err(e) => {
+                        eprintln!("pool_io_target_parse_error job={job_id}: {e} — skipping");
+                        continue;
+                    }
+                };
+                let incoming = PoolIncoming::Job(
+                    line,
+                    MiningJob {
+                        job_id,
+                        header: job,
+                        target: DifficultyTarget { bytes: target },
+                        start_nonce,
+                        nonce_count,
+                        height,
+                    },
+                    algorithm,
+                    raw_header_bytes,
+                    stream_weights,
+                    external_stream,
+                    external_stream_cpu,
+                );
+                if job_tx.send(incoming).is_err() {
+                    break; // Main thread dropped the receiver — exit
+                }
+            }
+            PoolMessage::Result { .. } | PoolMessage::ExternalResult { .. } => {
+                if result_tx.send(PoolIncoming::Result(line, message)).is_err() {
+                    break;
+                }
+            }
+            PoolMessage::Stale { .. } => println!("wire_stale={line}"),
+            PoolMessage::Cancel { .. } => println!("wire_cancel={line}"),
+            PoolMessage::SetDifficulty { difficulty, .. } => {
+                println!("pool_set_difficulty={difficulty}");
+                CURRENT_POOL_DIFFICULTY.store(difficulty, Ordering::Relaxed);
+            }
+            other => {
+                eprintln!("[{}] pool_io_unexpected_message: {other:?}", log_timestamp());
+            }
+        }
+    }
+    // Dropping senders signals the main thread to reconnect
 }
 
 fn read_next_job(
