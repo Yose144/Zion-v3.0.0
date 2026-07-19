@@ -125,7 +125,7 @@ inline uint4 AES_Round(__local const uint *AES0, __local const uint *AES1,
     return key;
 }
 
-inline void cn_populate_aes_tables(__local uint *AES0, __local uint *AES1,
+void cn_populate_aes_tables(__local uint *AES0, __local uint *AES1,
                                    __local uint *AES2, __local uint *AES3)
 {
     uint lid = get_local_id(0);
@@ -290,7 +290,7 @@ static const __constant uint c_u256[16] = {
     v[b] = rotate(v[b], 25U); \
 }
 
-inline void blake256_hash(__private uchar *output, __private const uchar *input, int len)
+void blake256_hash(__private uchar *output, __private const uchar *input, int len)
 {
     __private uint m[16];
     __private uint v[16];
@@ -575,7 +575,7 @@ static const __constant ulong T4_G[] =
     for (int r = 0; r < 10; r++) GROESTL_ROUND_SMALL_Q(a, r); \
 } while (0)
 
-inline void groestl256_hash(__private uchar *output, __private const uchar *input, int len)
+void groestl256_hash(__private uchar *output, __private const uchar *input, int len)
 {
     __private ulong State[8] = { 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0x0001000000000000UL };
     __private ulong H[8], M[8];
@@ -776,7 +776,7 @@ static const __constant ulong JH_C[] = {
     h7h ^= input[6]; h7l ^= input[7]; \
 } while (0)
 
-inline void jh256_hash(__private uchar *output, __private const uchar *input, int len)
+void jh256_hash(__private uchar *output, __private const uchar *input, int len)
 {
     ulong h0h = 0xEBD3202C41A398EBUL, h0l = 0xC145B29C7BBECD92UL;
     ulong h1h = 0xFAC7D4609151931CUL, h1l = 0x038A507ED6820026UL;
@@ -930,7 +930,7 @@ inline ulong8 Skein512Block(ulong8 p, ulong8 h, ulong h8, const ulong *t)
     return p;
 }
 
-inline void skein256_hash(__private uchar *output, __private const uchar *input, int len)
+void skein256_hash(__private uchar *output, __private const uchar *input, int len)
 {
     ulong8 h = vload8(0, SKEIN256_IV);
     ulong t[3] = { 0x00UL, 0x7000000000000000UL, 0x00UL };
@@ -1012,7 +1012,7 @@ inline void cn_sum_half_blocks(__private uchar* a, __private const uchar* b)
 // Section 5: CN hash functions
 // =============================================================================
 
-inline void cn_hash_full(
+void cn_hash_full(
     __private const uchar *input, uint len, __private uchar *output,
     __global uchar *scratchpad, uint memory, uint iter_div, uint cn_aes_init,
     __local const uint *AES0, __local const uint *AES1,
@@ -1182,7 +1182,7 @@ inline void cn_hash_full(
     }
 }
 
-inline void cn_hash_fast(__private const uchar *input, uint len, __private uchar *output)
+void cn_hash_fast(__private const uchar *input, uint len, __private uchar *output)
 {
     __private uchar state[200];
     keccak1600(input, len, state);
@@ -1194,7 +1194,7 @@ inline void cn_hash_fast(__private const uchar *input, uint len, __private uchar
 // Section 6: CN variant dispatch
 // =============================================================================
 
-inline void cn_dispatch(
+void cn_dispatch(
     int cn_algo,
     __private const uchar *input, uint len, __private uchar *output,
     __global uchar *scratchpad,
