@@ -13,7 +13,7 @@
 |--------|-------------------|---------------|
 | **Stream 1 — ZION Deeksha** | ≥99% share accept rate on live pool for ≥1 hour | Pool log `valid_share` vs `invalid_share` |
 | **Stream 2 — External GPU** | Each **active** external coin submits ≥1 accepted share on a reference rig within a bounded test window | Upstream pool response `accepted` |
-| **Stream 3 — External CPU** | VRSC E2E share verify PASS ✅ (LuckPool, 37ms). RTM E2E share verify PASS ✅ (zpool.ca, accepted). XMR shares rejected as "Low difficulty share" — under investigation. | Edge test pool 2026-07-19: `share_forwarded result=Accepted` |
+| **Stream 3 — External CPU** | VRSC E2E share verify PASS ✅ (LuckPool, 37ms). RTM E2E share verify PASS ✅ (zpool.ca, accepted). XMR RandomX hash verify OK (native-randomx); stale job_id fix pending. | Edge test pool 2026-07-19: `share_forwarded result=Accepted` |
 | **Infrastructure** | No SIGILL/GPU hang/reconnect storms; SMOS packages build and run on reference rigs | 24h soak test |
 
 **Important:** Coins marked as placeholders or intentionally disabled (Pearl, RTM/QTC/DNX GPU kernels until implemented) are out of scope for the GPU all-green gate unless explicitly enabled.
@@ -45,7 +45,7 @@
 | **EVR / MEWC** | evrprogpow / meowpow | 2 | ✅ Green | Protocol fixed: EthStratum → Stratum v1. Authorized + KawPow notify on Edge test pool. | `auxpow_client.rs` line 135, Edge test pool 2026-07-19 |
 | **CLORE** | kawpow | 2 | ✅ Green | Pool moved to 2miners:5050 (WoolyPooly NXDOMAIN). Authorized + job queued on Edge test pool. | `types.rs` line 169, Edge test pool 2026-07-19 |
 | **VRSC** | verushash | 3 | ✅ Green | **E2E share verify PASS** — CPU miner → ZION pool → LuckPool upstream → **accepted** (37ms). Full pipeline verified on Edge test pool 2026-07-19. | Edge test pool log: `share_forwarded result=Accepted elapsed_ms=37` |
-| **XMR** | randomx | 3 | 🟡 Connected | Pool reachable (MoneroOcean), login + authorize + job received OK. Shares rejected as "Low difficulty share" — target/difficulty mismatch under investigation. | Edge test pool 2026-07-19 |
+| **XMR** | randomx | 3 | 🟡 Hash OK | RandomX hash verify OK (native-randomx, shares pass pool-side target check). Remaining issue: stale job_id — pool receives new jobs from MoneroOcean every ~15-30s but miner submits with old job_id → "Invalid job id" reject. Job propagation pipeline fix needed. | Edge test pool 2026-07-19 |
 | **IRON** | fishhash | 2 | 🟡 Auth OK | Subscribe OK, needs 64-char IronFish wallet | StatusV3 §5 |
 | **KLS** | karlsenhash | 2 | 🟡 Auth OK | E2E PASS, needs native Karlsen wallet | StatusV3 §5 |
 | **DNX** | dynexsolve | 2 | 🟡 Auth OK | Login OK, needs native DNX wallet | StatusV3 §5 |
@@ -95,11 +95,11 @@
 |------|------|------|---------|
 | 3.1 | ~~Reduce VRSC stale rate below 5%~~ ✅ DONE | VRSC | E2E share verify PASS — accepted by LuckPool upstream (37ms round-trip). 3 hotfixes + protocol fix deployed. |
 | 3.2 | ~~RTM GhostRider CPU E2E share verify~~ ✅ DONE | RTM | 3 root causes fixed: (1) target check LE not BE, (2) hash output BE→LE reversal, (3) prevhash per-word reversal. Share ACCEPTED by zpool.ca. Commit `51a34409a`. |
-| 3.3 | XMR RandomX share verify | XMR | Pool reachable (MoneroOcean), login+authorize+job OK. Shares rejected "Low difficulty share" — investigate target/difficulty mismatch (pool-side vs miner-side target interpretation). |
+| 3.3 | XMR RandomX share verify | XMR | **Hash verify OK** (native-randomx, shares pass target check). Root cause of "Low difficulty share" was blake3 fallback (miner binary not built with native-randomx). Fixed: miner binary deployed with native-randomx. `parse_randomx_target_hex` now accepts 4-byte targets. Remaining: stale job_id rejects — pool receives new jobs every ~15-30s but miner submits with old job_id. Job propagation pipeline fix needed. |
 | 3.4 | CPU feature guard | CPU | Ensure miner skips RandomX on CPUs without AES-NI; fallback to VerusHash |
 | 3.5 | Stale pre-rejection tunable | VRSC | Keep `ZION_VRSC_STALE_SECS=0` default; add metric for forwarded-vs-rejected age distribution |
 
-**Exit criteria:** ~~VRSC accept rate ≥95% over 1h~~ ✅ DONE (E2E accepted by LuckPool). ~~RTM CPU E2E~~ ✅ DONE (accepted by zpool.ca). XMR share verify in progress (connected, target mismatch under investigation).
+**Exit criteria:** ~~VRSC accept rate ≥95% over 1h~~ ✅ DONE (E2E accepted by LuckPool). ~~RTM CPU E2E~~ ✅ DONE (accepted by zpool.ca). XMR RandomX hash verify OK (native-randomx); stale job_id fix pending.
 
 ---
 
