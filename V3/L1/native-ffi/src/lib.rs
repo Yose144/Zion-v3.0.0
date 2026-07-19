@@ -1733,6 +1733,13 @@ pub mod ghostrider {
 
         /// `'static` version literal; must not be freed.
         pub fn ghostrider_zion_version() -> *const std::ffi::c_char;
+
+        /// Debug: call cryptonightdarklite_hash directly.
+        pub fn ghostrider_zion_cn_darklite_debug(
+            input: *const u8,
+            input_len: usize,
+            output: *mut u8,
+        );
     }
 
     /// Initialize GhostRider (no-op — algorithm is stateless).
@@ -1771,6 +1778,15 @@ pub mod ghostrider {
     pub fn verify(header: &[u8], nonce: u64, target: &[u8; 32]) -> bool {
         // SAFETY: slice + fixed-size target.
         unsafe { ghostrider_zion_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) == 1 }
+    }
+
+    /// Debug: call cryptonightdarklite_hash directly with given input.
+    pub fn cn_darklite_debug(input: &[u8]) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        unsafe {
+            ghostrider_zion_cn_darklite_debug(input.as_ptr(), input.len(), out.as_mut_ptr());
+        }
+        out
     }
 
     /// Strict variant of [`verify`] surfacing unexpected C return codes.

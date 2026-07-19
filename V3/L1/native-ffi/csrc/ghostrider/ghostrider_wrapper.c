@@ -36,6 +36,7 @@
 
 /* GhostRider core function from gr.c */
 #include "gr.h"
+#include "cryptonote/cryptonight_dark_lite.h"
 
 /* ---- Constants ---- */
 #define RTM_HEADER_SIZE 80
@@ -121,4 +122,10 @@ EXPORT void ghostrider_zion_debug_algos(const uint8_t* header, size_t header_len
 
     memcpy(output, selectedAlgoOutput, 15);
     memcpy(output + 15, selectedCNAlgoOutput, 14);
+}
+
+/* Debug: call cryptonightdarklite_hash directly with given input */
+EXPORT void ghostrider_zion_cn_darklite_debug(const uint8_t* input, size_t input_len, uint8_t* output)
+{
+    cryptonightdarklite_hash((const char*)input, (char*)output, (uint32_t)input_len, 1);
 }

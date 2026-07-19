@@ -85,7 +85,7 @@ static void selectAlgo(unsigned char nibble, bool* selectedAlgos, uint8_t* selec
 	}
 }
 
-static void getAlgoString(void *mem, unsigned int size, uint8_t* selectedAlgoOutput, int algoCount) {
+void getAlgoString(void *mem, unsigned int size, uint8_t* selectedAlgoOutput, int algoCount) {
   int i;
   unsigned char *p = (unsigned char *)mem;
   unsigned int len = size/2;

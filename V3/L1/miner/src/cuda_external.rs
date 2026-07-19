@@ -218,11 +218,18 @@ pub struct CudaExternalMiner {
 
 impl CudaExternalMiner {
     pub fn new(algorithm: &str, work_size: usize) -> Result<Self> {
-        let algo = CudaExtAlgo::from_name(algorithm)
-            .ok_or_else(|| anyhow::anyhow!("unsupported CUDA external algorithm: {}", algorithm))?;
-
         let dev = CudaDevice::new(0)
             .map_err(|e| anyhow::anyhow!("CUDA device init failed: {e}"))?;
+        Self::new_with_device(algorithm, work_size, dev)
+    }
+
+    /// Create a CudaExternalMiner using a shared CUDA device (e.g. the same
+    /// device used by the main ZION deeksha miner). This avoids creating a
+    /// second CUDA context on the same GPU, which causes deadlocks on
+    /// consumer GPUs (GTX 1080, etc.) that don't support MPS.
+    pub fn new_with_device(algorithm: &str, work_size: usize, dev: Arc<CudaDevice>) -> Result<Self> {
+        let algo = CudaExtAlgo::from_name(algorithm)
+            .ok_or_else(|| anyhow::anyhow!("unsupported CUDA external algorithm: {}", algorithm))?;
 
         let device_name = dev
             .name()

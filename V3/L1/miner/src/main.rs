@@ -2107,9 +2107,15 @@ fn run_remote_session(
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
         let bk = effective_gpu_backend;
+        // Share the CUDA device with the external GPU thread to avoid
+        // creating a second CUDA context (deadlock on consumer GPUs).
+        #[cfg(feature = "gpu-cuda")]
+        let shared_cuda = tri_gpu.shared_cuda_device();
+        #[cfg(not(feature = "gpu-cuda"))]
+        let shared_cuda: Option<()> = None;
         thread::spawn(move || {
             println!("[{}] external_gpu_thread_spawned", log_timestamp());
-            external_gpu_thread(ext_gpu_rx, ext_gpu_share_tx, ws, hr, bk);
+            external_gpu_thread(ext_gpu_rx, ext_gpu_share_tx, ws, hr, bk, shared_cuda);
         });
         println!(
             "[{}] stream2_gpu_external_started work_size={}",
@@ -3287,8 +3293,9 @@ fn external_gpu_thread(
     work_size: usize,
     hashrate: Arc<HashrateTracker>,
     backend_kind: gpu_backend::GpuBackendKind,
+    shared_cuda_dev: Option<std::sync::Arc<cudarc::driver::CudaDevice>>,
 ) {
-    println!("[{}] external_gpu_thread_entered backend={}", log_timestamp(), backend_kind.as_str());
+    println!("[{}] external_gpu_thread_entered backend={} shared_cuda={}", log_timestamp(), backend_kind.as_str(), shared_cuda_dev.is_some());
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
 
@@ -3452,10 +3459,11 @@ fn external_gpu_thread(
                 thread::sleep(Duration::from_millis(500));
                 continue;
             }
-            match gpu_backend::create_gpu_backend(
+            match gpu_backend::create_gpu_backend_with_cuda_device(
                 backend_kind,
                 work_size,
                 algo,
+                shared_cuda_dev.clone(),
             ) {
                 Ok(m) => {
                     println!(
@@ -3580,6 +3588,16 @@ fn external_gpu_thread(
         match result {
             Ok(br) => {
                 actual_batch = br.nonces_tested;
+                if batch_count < 5 || batch_count % 100 == 0 {
+                    println!(
+                        "[{}] ext_gpu_batch_done batch={} nonces_tested={} solutions={} header_len={}",
+                        log_timestamp(),
+                        batch_count,
+                        br.nonces_tested,
+                        br.solutions.len(),
+                        header_bytes.len(),
+                    );
+                }
                 if let Some((found_nonce, hash, mix_hash)) = br.solutions.first() {
                     let share = ExternalShareResult {
                         coin: job.coin.clone(),

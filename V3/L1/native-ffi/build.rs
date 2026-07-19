@@ -753,4 +753,12 @@ fn build_ghostrider(target_os: &str, is_msvc: bool) {
 
     println!("cargo:rerun-if-changed=csrc/ghostrider/ghostrider_wrapper.c");
     println!("cargo:rerun-if-changed=csrc/ghostrider/real/gr.c");
+    println!("cargo:rerun-if-changed=csrc/ghostrider/real/gr.h");
+    // Track all CN source files
+    for src in cn_sources.iter() {
+        println!("cargo:rerun-if-changed=csrc/ghostrider/real/cryptonote/{}", src);
+    }
+    for src in cn_crypto_sources.iter() {
+        println!("cargo:rerun-if-changed=csrc/ghostrider/real/cryptonote/crypto/{}", src);
+    }
 }
