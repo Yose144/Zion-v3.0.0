@@ -14,7 +14,7 @@ The 3.1.0 structural work is a **migration into a brand-new, clean `V31/` direct
 - **L3** — `ai-native`, `ncl`, `hiran`, `orchestrator`, `automation`, `poc` (AI / orchestration / automation / research only).
 - **L4** — `oasis` · **L5** — `free-world` · **L6** — `issobella` — **superstructures (nadstavby) that keep their own top-level layer identity.**
 
-Migration begins only after 3.0.9 is complete. See full plan: [`V3.1_MIGRATION_PLAN.md`](../V3.1_MIGRATION_PLAN.md).
+Migration begins only after 3.0.9 is complete. See full plan: [`V3.1_MIGRATION_PLAN.md`](../V3.1_MIGRATION_PLAN.md). Native integration seams (Bridge↔WARP, AuxPoW→Miner, ZionDex→L2): [`V3.1_INTEGRATION_PLAN.md`](../V3.1_INTEGRATION_PLAN.md).
 
 ---
 

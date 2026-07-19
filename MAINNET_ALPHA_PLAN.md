@@ -116,7 +116,7 @@ Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyči
 
 ### 4.3 Repo purification — „pure code“
 
-> Detailed V3.1 migration into a clean `V31/` tree (post-3.0.9): [`V3.1_MIGRATION_PLAN.md`](./V3.1_MIGRATION_PLAN.md) — WARP → L2, ZionDex → L2, AuxPoW → miner, L3 → AI/orchestration/automation/NCL/PoC; L4 Oasis / L5 Free World / L6 Issobella stay as superstructures.
+> Detailed V3.1 migration into a clean `V31/` tree (post-3.0.9): [`V3.1_MIGRATION_PLAN.md`](./V3.1_MIGRATION_PLAN.md) — WARP → L2, ZionDex → L2, AuxPoW → miner, L3 → AI/orchestration/automation/NCL/PoC; L4 Oasis / L5 Free World / L6 Issobella stay as superstructures. Native integration seams for the four moves: [`V3.1_INTEGRATION_PLAN.md`](./V3.1_INTEGRATION_PLAN.md).
 
 | # | Úkol | Akce |
 |------|------|------|
@@ -208,6 +208,7 @@ Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyči
 ├── MAINNET_ALPHA_PLAN.md     # tento dokument
 ├── TRIPLE_STREAM_ALL_GREEN_PLAN.md
 ├── V3.1_MIGRATION_PLAN.md    # migrace do V31/ (po 3.0.9)
+├── V3.1_INTEGRATION_PLAN.md  # nativní propojení 4 integrací (Bridge↔WARP, AuxPoW→Miner, ZionDex→L2)
 ├── LAUNCH_CHECKLIST.md       # TODO vytvořit
 ├── V31/                      # čistý mainnet-track kód (cíl migrace; ZionDex → L2/ziondex)
 ├── ZionStart/                # bootstrap / launchery
