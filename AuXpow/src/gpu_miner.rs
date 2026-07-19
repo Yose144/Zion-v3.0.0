@@ -1175,20 +1175,69 @@ impl GpuMiner {
                 if is_progpow { "set" } else { "n/a" }
             );
         }
+        // Use an OpenCL event to track kernel completion with a timeout.
+        // q.finish() is blocking with no timeout — if the GPU hangs (e.g.
+        // ProgPow barrier deadlock on RDNA1), the thread blocks forever.
+        // Event-based polling lets us detect hangs and abort gracefully.
+        let mut kernel_event = ocl::Event::empty();
         unsafe {
             kernel
                 .cmd()
                 .global_work_size(global_work_size)
                 .local_work_size(wg_size)
+                .enew(&mut kernel_event)
                 .enq()
                 .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
         }
-        // Wait for kernel with a timeout — if the GPU hangs, we don't want
-        // to block forever.  q.finish() is blocking with no timeout in ocl,
-        // so we use a simple approach: just call finish and log if it took
-        // unusually long.  The real fix for hangs is in the kernel code
-        // (always_inline for progPowLoop).
-        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+        // Poll event status with timeout. ProgPow kernels on RX 5700 XT
+        // typically take 1-2s per batch. Allow up to 30s before declaring
+        // a hang (generous margin for GPU contention from Stream 1).
+        use ocl::enums::EventInfo;
+        use ocl::enums::EventInfoResult;
+        use ocl::enums::CommandExecutionStatus;
+        let kernel_timeout_secs: u64 = std::env::var("ZION_GPU_KERNEL_TIMEOUT_SECS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(30);
+        let deadline = start + std::time::Duration::from_secs(kernel_timeout_secs);
+        loop {
+            match kernel_event.info(EventInfo::CommandExecutionStatus) {
+                Ok(EventInfoResult::CommandExecutionStatus(CommandExecutionStatus::Complete)) => break,
+                Ok(EventInfoResult::CommandExecutionStatus(_)) => {
+                    // Queued / Submitted / Running — keep polling
+                    if Instant::now() > deadline {
+                        eprintln!(
+                            "auxpow_gpu_kernel_hang algo={} elapsed_ms={} gws={} timeout={}s — aborting batch",
+                            algorithm, start.elapsed().as_millis(), global_work_size, kernel_timeout_secs
+                        );
+                        // Flush the queue to release pending commands, then
+                        // return an error. The caller will retry with a fresh
+                        // kernel build. The hung kernel may still be on the GPU
+                        // but the queue flush prevents new commands from being
+                        // blocked by it.
+                        let _ = q.flush();
+                        return Err(anyhow!(
+                            "OpenCL kernel hang: algo={} elapsed_ms={} timeout={}s",
+                            algorithm, start.elapsed().as_millis(), kernel_timeout_secs
+                        ));
+                    }
+                    // Short sleep to avoid burning CPU. Poll every 10ms.
+                    std::thread::sleep(std::time::Duration::from_millis(10));
+                }
+                Ok(other) => {
+                    // Unexpected info result — fall back to q.finish()
+                    eprintln!("auxpow_gpu_kernel_event_unexpected_status algo={} result={:?} — falling back to q.finish()", algorithm, other);
+                    q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+                    break;
+                }
+                Err(e) => {
+                    // Event status query failed — fall back to q.finish()
+                    eprintln!("auxpow_gpu_kernel_event_query_failed algo={} err={e} — falling back to q.finish()", algorithm);
+                    q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+                    break;
+                }
+            }
+        }
         let elapsed_ms = start.elapsed().as_millis();
         if elapsed_ms > 5000 {
             eprintln!(
