@@ -22,6 +22,21 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 
 ---
 
+## 0.5 Next Milestones — 3.0.7 → 3.1.0
+
+The project is now driving toward **Mainnet Alpha (3.1.0)** in three planned steps:
+
+| Version | Name | Goal | Plan |
+|---------|------|------|------|
+| **3.0.7** | Triple Stream All Green | Every active mining stream has verified accepted shares | [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](./TRIPLE_STREAM_ALL_GREEN_PLAN.md) / [`3.0.7.md`](./3.0.7.md) |
+| **3.0.8** | Full Stack Stable | All active components work; no placeholders in hot paths | [`3.0.8.md`](./3.0.8.md) |
+| **3.0.9** | Pre-Alpha Hardening | Security audit, chaos tests, repo purification, public sync | [`3.0.9.md`](./3.0.9.md) |
+| **3.1.0** | Mainnet Alpha | Clean repo, feature freeze, release ready | [`3.1.0.md`](./3.1.0.md) |
+
+Overall coordination: [`MAINNET_ALPHA_PLAN.md`](./MAINNET_ALPHA_PLAN.md).
+
+---
+
 ## 1. Current State — 3.0.5 "All Green" (2026-07-09)
 
 ✅ **3.0.5 Done (2026-07-09)**
