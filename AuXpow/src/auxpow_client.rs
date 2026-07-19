@@ -168,6 +168,8 @@ impl ExternalCoin {
             Self::CKB | Self::CFX | Self::PHX => StratumProtocol::Stratum,
             // ZEC (Equihash 200,9) — Zcash stratum with solution field.
             Self::ZEC => StratumProtocol::ZcashStratum,
+            // KRX (KeryxHash / pre-PoM stratum) — standard stratum v1 protocol.
+            Self::KRX => StratumProtocol::Stratum,
         }
     }
 
