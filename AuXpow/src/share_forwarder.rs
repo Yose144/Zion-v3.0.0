@@ -107,9 +107,10 @@ impl ShareForwarder {
         let meets = if self.client.profile().coin == ExternalCoin::XMR {
             let h_msb = u64::from_le_bytes(effective_hash[24..32].try_into().unwrap());
             let t_le = u64::from_le_bytes(target[..8].try_into().unwrap());
+            let hash_hex_full = hash_to_hex(&effective_hash);
             println!(
-                "auxpow: XMR try_forward job_id={} nonce={} hash_msb=0x{:016x} target_le=0x{:016x} meets={}",
-                job_id, nonce, h_msb, t_le, h_msb < t_le
+                "auxpow: XMR try_forward job_id={} nonce={} hash_msb=0x{:016x} target_le=0x{:016x} meets={} hash_hex={}",
+                job_id, nonce, h_msb, t_le, h_msb < t_le, hash_hex_full
             );
             meets_randomx_target(&effective_hash, target)
         } else if self.client.profile().coin == ExternalCoin::DCR {

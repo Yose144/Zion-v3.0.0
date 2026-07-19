@@ -3306,6 +3306,10 @@ impl AuxPowClient {
             let nonce_hex = hex::encode(nonce_le.to_le_bytes());
             // result hash — use mix_hash_hex if provided, else _hash_hex.
             let result_hex = mix_hash_hex.unwrap_or(_hash_hex);
+            println!(
+                "auxpow: XMR submit_hash_check sid={} job_id={} nonce={} _hash_hex={} mix_hash_hex={:?} result_hex={}",
+                sid, job_id, nonce, _hash_hex, mix_hash_hex, result_hex
+            );
             let req = json!({
                 "jsonrpc": "2.0",
                 "id": 20,
