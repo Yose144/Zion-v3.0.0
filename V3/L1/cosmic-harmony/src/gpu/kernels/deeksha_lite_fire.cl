@@ -112,14 +112,19 @@ void keccak256_from_state(
     ulong nonce,
     __private uchar out[32])
 {
-    keccak_st_t s;
-    for (int i = 0; i < 25; i++) s.u[i] = pre_state[i];
-    for (int i = 0; i < 8; i++)
-        s.b[80 + i] ^= (uchar)(nonce >> (i * 8));
-    s.b[88]  ^= 0x01;
-    s.b[135] ^= 0x80;
-    keccak_f1600(s.u);
-    for (int i = 0; i < 32; i++) out[i] = s.b[i];
+    /* u64-optimized: matches CUDA keccak256_from_state.
+     * Avoids byte-by-byte nonce XOR (8 ops → 1 op). */
+    __private ulong st[25];
+    for (int i = 0; i < 25; i++) st[i] = pre_state[i];
+    /* XOR nonce into bytes 80..87 = st[10] */
+    st[10] ^= nonce;
+    /* Pad: 0x01 at byte 88 (st[11] byte 0), 0x80 at byte 135 (st[16] byte 7) */
+    st[11] ^= 0x01UL;
+    st[16] ^= (0x80UL << 56);
+    keccak_f1600(st);
+    /* Output first 32 bytes = 4 u64s */
+    __private ulong *out_u64 = (__private ulong*)out;
+    out_u64[0] = st[0]; out_u64[1] = st[1]; out_u64[2] = st[2]; out_u64[3] = st[3];
 }
 
 void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
@@ -140,45 +145,34 @@ void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
 /* SHA3-512 specialized for 65-byte input (used by fill_scratchpad).
  * Input always fits in one keccak block (rate=72 > 65), so no
  * mid-absorption permutation needed. Eliminates 65 conditional
- * branches per call and vectorizes the state zero + copy. */
-inline void sha3_512_65(__private const uchar *in, __private uchar out[64])
+ * branches per call and vectorizes the state zero + copy.
+ *
+ * u64-optimized version: takes 8 u64s of state + 1 byte block index,
+ * outputs 8 u64s. Matches CUDA sha3_512_65_u64 — avoids 65 byte-by-byte
+ * XOR operations that cause high register pressure on AMD. */
+inline void sha3_512_65_u64(
+    __private const ulong state_in[8],
+    uchar blk_byte,
+    __private ulong out_u64[8])
 {
-    keccak_st_t s;
-    /* Vectorized zero: 25 u64s = 3x ulong4 + 1x ulong */
-    s.u[0]=0; s.u[1]=0; s.u[2]=0; s.u[3]=0;
-    s.u[4]=0; s.u[5]=0; s.u[6]=0; s.u[7]=0;
-    s.u[8]=0; s.u[9]=0; s.u[10]=0; s.u[11]=0;
-    s.u[12]=0; s.u[13]=0; s.u[14]=0; s.u[15]=0;
-    s.u[16]=0; s.u[17]=0; s.u[18]=0; s.u[19]=0;
-    s.u[20]=0; s.u[21]=0; s.u[22]=0; s.u[23]=0; s.u[24]=0;
-    /* Absorb 65 bytes directly (no loop, no pos check) */
-    s.b[0]  ^= in[0];  s.b[1]  ^= in[1];  s.b[2]  ^= in[2];  s.b[3]  ^= in[3];
-    s.b[4]  ^= in[4];  s.b[5]  ^= in[5];  s.b[6]  ^= in[6];  s.b[7]  ^= in[7];
-    s.b[8]  ^= in[8];  s.b[9]  ^= in[9];  s.b[10] ^= in[10]; s.b[11] ^= in[11];
-    s.b[12] ^= in[12]; s.b[13] ^= in[13]; s.b[14] ^= in[14]; s.b[15] ^= in[15];
-    s.b[16] ^= in[16]; s.b[17] ^= in[17]; s.b[18] ^= in[18]; s.b[19] ^= in[19];
-    s.b[20] ^= in[20]; s.b[21] ^= in[21]; s.b[22] ^= in[22]; s.b[23] ^= in[23];
-    s.b[24] ^= in[24]; s.b[25] ^= in[25]; s.b[26] ^= in[26]; s.b[27] ^= in[27];
-    s.b[28] ^= in[28]; s.b[29] ^= in[29]; s.b[30] ^= in[30]; s.b[31] ^= in[31];
-    s.b[32] ^= in[32]; s.b[33] ^= in[33]; s.b[34] ^= in[34]; s.b[35] ^= in[35];
-    s.b[36] ^= in[36]; s.b[37] ^= in[37]; s.b[38] ^= in[38]; s.b[39] ^= in[39];
-    s.b[40] ^= in[40]; s.b[41] ^= in[41]; s.b[42] ^= in[42]; s.b[43] ^= in[43];
-    s.b[44] ^= in[44]; s.b[45] ^= in[45]; s.b[46] ^= in[46]; s.b[47] ^= in[47];
-    s.b[48] ^= in[48]; s.b[49] ^= in[49]; s.b[50] ^= in[50]; s.b[51] ^= in[51];
-    s.b[52] ^= in[52]; s.b[53] ^= in[53]; s.b[54] ^= in[54]; s.b[55] ^= in[55];
-    s.b[56] ^= in[56]; s.b[57] ^= in[57]; s.b[58] ^= in[58]; s.b[59] ^= in[59];
-    s.b[60] ^= in[60]; s.b[61] ^= in[61]; s.b[62] ^= in[62]; s.b[63] ^= in[63];
-    s.b[64] ^= in[64];
-    /* Pad (0x06 at byte 65, 0x80 at byte 71) */
-    s.b[65] ^= 0x06;
-    s.b[71] ^= 0x80;
-    keccak_f1600(s.u);
-    /* Vectorized 64-byte output copy */
-    ulong4 o0 = vload4(0, (__private ulong*)s.b);
-    ulong4 o1 = vload4(1, (__private ulong*)s.b);
-    vstore4(o0, 0, (__private ulong*)out);
-    vstore4(o1, 1, (__private ulong*)out);
+    __private ulong st[25];
+    st[0]=state_in[0]; st[1]=state_in[1]; st[2]=state_in[2]; st[3]=state_in[3];
+    st[4]=state_in[4]; st[5]=state_in[5]; st[6]=state_in[6]; st[7]=state_in[7];
+    st[8]=0; st[9]=0; st[10]=0; st[11]=0; st[12]=0; st[13]=0; st[14]=0; st[15]=0;
+    st[16]=0; st[17]=0; st[18]=0; st[19]=0; st[20]=0; st[21]=0; st[22]=0; st[23]=0;
+    st[24]=0;
+
+    /* XOR byte 64 into low byte of st[8] */
+    st[8] ^= (ulong)blk_byte;
+    /* Pad: 0x06 at byte 65 (st[8] byte 1), 0x80 at byte 71 (st[8] byte 7) */
+    st[8] ^= (0x06UL << 8) | (0x80UL << 56);
+
+    keccak_f1600(st);
+
+    out_u64[0]=st[0]; out_u64[1]=st[1]; out_u64[2]=st[2]; out_u64[3]=st[3];
+    out_u64[4]=st[4]; out_u64[5]=st[5]; out_u64[6]=st[6]; out_u64[7]=st[7];
 }
+
 
 /* ========================================================================== */
 /* AES-128 helpers — identical to v1                                          */
@@ -236,90 +230,80 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16])
 { aes_sub_bytes(s); aes_shift_rows(s); aes_add_round_key(s,k); }
 
 /* ========================================================================== */
-/* Steps 2A/2B/2C: scratchpad — INTERLEAVED layout (OPTIMIZED)                */
+/* Steps 2A/2B/2C: scratchpad — STRIDED layout (best on AMD RDNA)              */
 /*                                                                             */
-/* Layout: block blk of thread tid is at:                                      */
-/*   pad_pool + (blk * total_threads + tid) * BLOCK_SIZE                      */
-/*                                                                             */
-/* This means all threads in a wavefront access consecutive 32-byte blocks     */
-/* for the same block index → 128-byte coalesced memory transactions.          */
-/* The strided layout (pad = pool + tid * 256KiB) caused ~1200x slowdown      */
-/* vs CUDA because every wavefront access was a non-coalesced strided read.    */
+/* Each thread's 256KiB scratchpad is contiguous → fits in L2 cache (RDNA1    */
+/* has 4MiB L2). Interleaved layout spreads each thread's data across 2GiB    */
+/* → no cache locality on AMD. NVIDIA benefits from interleaved (coalescing)  */
+/* but AMD RDNA benefits from strided (L2 cache locality).                     */
 /* ========================================================================== */
 
-/* Interleaved pad block accessor — returns pointer to 32-byte block (4 u64s). */
-inline __global ulong* pad_block(__global uchar *pool, uint blk, uint tid, uint total_threads)
+void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
 {
-    return (__global ulong*)(pool + (ulong)(blk * total_threads + tid) * BLOCK_SIZE);
-}
+    __private ulong state[8];
+    state[0] = ((__private ulong*)seed)[0];
+    state[1] = ((__private ulong*)seed)[1];
+    state[2] = ((__private ulong*)seed)[2];
+    state[3] = ((__private ulong*)seed)[3];
+    state[4] = 0; state[5] = 0; state[6] = 0; state[7] = 0;
 
-void fill_scratchpad(__private const uchar seed[32], __global uchar *pool,
-                     uint tid, uint total_threads)
-{
-    // 8-byte aligned state to prevent GPU_CPU_MISMATCH (Metal fix)
-    __private ulong state_aligned[8];  // 8 * 8 = 64 bytes, 8-byte aligned
-    __private uchar *state = (__private uchar*)state_aligned;
-    for (int i=0;i<32;i++) state[i]=seed[i];
-    for (int i=32;i<64;i++) state[i]=0;
     for (uint blk=0;blk<BLOCK_COUNT;blk++) {
-        uchar inp[65];
-        for (int i=0;i<64;i++) inp[i]=state[i];
-        inp[64]=(uchar)(blk&0xFF);
-        // 8-byte aligned output buffer
-        __private ulong out64_aligned[8];  // 8 * 8 = 64 bytes, 8-byte aligned
-        __private uchar *out64 = (__private uchar*)out64_aligned;
-        sha3_512_65(inp, out64);
-        // Write to INTERLEAVED position — coalesced across wavefront
-        __global ulong *pb = pad_block(pool, blk, tid, total_threads);
-        ulong4 v=vload4(0,out64_aligned);
-        vstore4(v,0,pb);
-        vstore4(v,0,state_aligned);
+        __private ulong out[8];
+        sha3_512_65_u64(state, (uchar)(blk & 0xFF), out);
+
+        /* Write 32 bytes (4 u64s) to scratchpad — strided layout */
+        uint off = blk * BLOCK_SIZE;
+        __global ulong *pb = (__global ulong*)(pad + off);
+        pb[0] = out[0]; pb[1] = out[1]; pb[2] = out[2]; pb[3] = out[3];
+
+        /* Chain state: first 4 u64s from output, rest zero */
+        state[0] = out[0]; state[1] = out[1];
+        state[2] = out[2]; state[3] = out[3];
+        state[4] = 0; state[5] = 0; state[6] = 0; state[7] = 0;
     }
 }
 
-void sequential_passes(__global uchar *pool, uint tid, uint total_threads)
+void sequential_passes(__global uchar *pad)
 {
-    // Forward pass: XOR each block with previous (wrap-around)
-    __global ulong *prev_pb = pad_block(pool, BLOCK_COUNT-1, tid, total_threads);
-    ulong4 prev_v = vload4(0, prev_pb);
+    /* Forward pass: XOR each block with previous (wrap-around) */
+    __global ulong *prev_pb = (__global ulong*)(pad + (BLOCK_COUNT-1)*BLOCK_SIZE);
+    ulong prev0 = prev_pb[0], prev1 = prev_pb[1], prev2 = prev_pb[2], prev3 = prev_pb[3];
     for (uint i=0;i<BLOCK_COUNT;i++) {
-        __global ulong *pb = pad_block(pool, i, tid, total_threads);
-        ulong4 cv = vload4(0, pb);
-        cv ^= prev_v;
-        vstore4(cv, 0, pb);
-        prev_v = cv;
+        __global ulong *pb = (__global ulong*)(pad + i*BLOCK_SIZE);
+        ulong cv0 = pb[0] ^ prev0, cv1 = pb[1] ^ prev1, cv2 = pb[2] ^ prev2, cv3 = pb[3] ^ prev3;
+        pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
+        prev0 = cv0; prev1 = cv1; prev2 = cv2; prev3 = cv3;
     }
-    // Backward pass: XOR each block with next (wrap-around)
-    __global ulong *next_pb = pad_block(pool, 0, tid, total_threads);
-    ulong4 next_v = vload4(0, next_pb);
+    /* Backward pass: XOR each block with next (wrap-around) */
+    __global ulong *next_pb = (__global ulong*)(pad + 0);
+    ulong next0 = next_pb[0], next1 = next_pb[1], next2 = next_pb[2], next3 = next_pb[3];
     for (uint i=BLOCK_COUNT;i>0;i--) {
         uint idx=i-1;
-        __global ulong *pb = pad_block(pool, idx, tid, total_threads);
-        ulong4 cv = vload4(0, pb);
-        cv ^= next_v;
-        vstore4(cv, 0, pb);
-        next_v = cv;
+        __global ulong *pb = (__global ulong*)(pad + idx*BLOCK_SIZE);
+        ulong cv0 = pb[0] ^ next0, cv1 = pb[1] ^ next1, cv2 = pb[2] ^ next2, cv3 = pb[3] ^ next3;
+        pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
+        next0 = cv0; next1 = cv1; next2 = cv2; next3 = cv3;
     }
 }
 
-void random_read_mix(__private const uchar seed[32], __global const uchar *pool,
-                     uint tid, uint total_threads, __private uchar out[32])
+void random_read_mix(__private const uchar seed[32], __global const uchar *pad, __private uchar out[32])
 {
-    // 8-byte aligned accumulator to prevent GPU_CPU_MISMATCH (Metal fix)
-    __private ulong acc_aligned[4];  // 4 * 8 = 32 bytes, 8-byte aligned
-    __private uchar *acc = (__private uchar*)acc_aligned;
-    for (int i=0;i<32;i++) acc[i]=seed[i];
+    __private ulong acc[4];
+    acc[0] = ((__private ulong*)seed)[0];
+    acc[1] = ((__private ulong*)seed)[1];
+    acc[2] = ((__private ulong*)seed)[2];
+    acc[3] = ((__private ulong*)seed)[3];
     ulong pos=0;
     for (ulong r=0;r<RANDOM_READS;r++) {
-        __global const ulong *pb = pad_block((__global const uchar*)pool, (uint)pos, tid, total_threads);
-        ulong4 av=vload4(0,acc_aligned);
-        ulong4 pv=vload4(0,pb);
-        av^=pv; vstore4(av,0,acc_aligned);
-        ulong idx_val=0;
-        for (int i=0;i<8;i++) idx_val|=((ulong)acc[i])<<(i*8);
-        pos=(idx_val^pos^r)%BLOCK_COUNT;
+        uint off=(uint)(pos*BLOCK_SIZE);
+        __global const ulong *pb = (__global const ulong*)(pad + off);
+        acc[0] ^= pb[0]; acc[1] ^= pb[1]; acc[2] ^= pb[2]; acc[3] ^= pb[3];
+        pos=(acc[0] ^ pos ^ r) % BLOCK_COUNT;
     }
-    for (int i=0;i<32;i++) out[i]=acc[i];
+    ((__private ulong*)out)[0] = acc[0];
+    ((__private ulong*)out)[1] = acc[1];
+    ((__private ulong*)out)[2] = acc[2];
+    ((__private ulong*)out)[3] = acc[3];
 }
 
 /* ========================================================================== */
@@ -485,19 +469,18 @@ __kernel void deeksha_lite_fire_mine(
     uint tid = get_global_id(0);
     if (tid >= nonce_count) return;
 
-    /* INTERLEAVED layout: total_threads = nonce_count (grid covers exactly nonce_count) */
-    uint total_threads = nonce_count;
     ulong nonce = nonce_base + (ulong)tid;
 
     /* Step 1: Keccak256(header || nonce) — same as v1 */
     uchar s1[32];
     keccak256_from_state(header_keccak_state, nonce, s1);
 
-    /* Step 2: Memory-hard scratchpad — INTERLEAVED (coalesced) */
-    fill_scratchpad(s1, scratchpad_pool, tid, total_threads);
-    sequential_passes(scratchpad_pool, tid, total_threads);
+    /* Step 2: Memory-hard scratchpad — STRIDED (per-thread 256KiB contiguous) */
+    __global uchar *pad = scratchpad_pool + (ulong)tid * (ulong)SCRATCHPAD_SIZE;
+    fill_scratchpad(s1, pad);
+    sequential_passes(pad);
     uchar s2[32];
-    random_read_mix(s1, scratchpad_pool, tid, total_threads, s2);
+    random_read_mix(s1, pad, s2);
 
     /* Step 3: AES-128 CTR mix — same as v1 */
     uchar s3[32];
@@ -506,39 +489,43 @@ __kernel void deeksha_lite_fire_mine(
     /* Step 4: Thermal loop — extra heat, not in v1 */
     thermal_loop(s3, nonce);
 
-    /* Step 5: Keccak256 final — same as v1 */
-    uchar hash[32];
-    keccak_st_t s;
-    for (int i=0;i<25;i++) s.u[i]=0;
-    for (int i=0;i<32;i++) s.b[i]^=s3[i];
-    s.b[32] ^= 0x01;
-    s.b[135] ^= 0x80;
-    keccak_f1600(s.u);
-    for (int i=0;i<32;i++) hash[i]=s.b[i];
+    /* Step 5: Keccak256 final — u64-optimized, matches CUDA */
+    __private ulong st[25];
+    st[0]=((__private ulong*)s3)[0]; st[1]=((__private ulong*)s3)[1];
+    st[2]=((__private ulong*)s3)[2]; st[3]=((__private ulong*)s3)[3];
+    st[4]=0; st[5]=0; st[6]=0; st[7]=0; st[8]=0; st[9]=0;
+    st[10]=0; st[11]=0; st[12]=0; st[13]=0; st[14]=0; st[15]=0;
+    st[16]=0; st[17]=0; st[18]=0; st[19]=0; st[20]=0; st[21]=0;
+    st[22]=0; st[23]=0; st[24]=0;
+    st[4] ^= 0x01UL;          /* 0x01 at byte 32 = st[4] byte 0 */
+    st[16] ^= (0x80UL << 56); /* 0x80 at byte 135 = st[16] byte 7 */
+    keccak_f1600(st);
 
     __global uchar *slot = output_hashes + (ulong)tid * 32;
-    ulong4 hv = vload4(0, (__private ulong*)hash);
-    vstore4(hv, 0, (__global ulong*)slot);
+    __global ulong *slot_u64 = (__global ulong*)slot;
+    slot_u64[0] = st[0]; slot_u64[1] = st[1]; slot_u64[2] = st[2]; slot_u64[3] = st[3];
+
+    /* hash is st[0..3] — use for stream byproduct */
+    __private ulong hash_u64[4];
+    hash_u64[0] = st[0]; hash_u64[1] = st[1]; hash_u64[2] = st[2]; hash_u64[3] = st[3];
+    __private uchar *hash = (__private uchar*)hash_u64;
 
     /* Stream-profit byproduct work (does not affect PoW hash).
-     * NOTE: stream_byproduct_* write to pad which is now interleaved.
-     * The byproduct writes a single 16-byte ulong4 to pad_block(pool, 0, tid, total_threads).
-     * This is safe — it overwrites block 0 of this thread's interleaved region,
-     * which is already consumed by random_read_mix. The compiler cannot DCE
-     * because it's a global memory write with a dependency on hash. */
+     * NOTE: stream_byproduct_* write to pad[0..16] which is already consumed
+     * by random_read_mix. The compiler cannot DCE because it's a global
+     * memory write with a dependency on hash. */
     if (stream_weights) {
-        __global ulong *pad = pad_block(scratchpad_pool, 0, tid, total_threads);
-        int keccak_iters = (int)(stream_weights[SW_KECCAK_BONUS] * STREAM_ITERS_SCALE);
-        stream_byproduct_keccak(hash, keccak_iters, (__global uchar*)pad);
+        int keccak_iter = (int)(stream_weights[SW_KECCAK_BONUS] * STREAM_ITERS_SCALE);
+        stream_byproduct_keccak(hash, keccak_iter, pad);
 
-        int sha3_iters = (int)(stream_weights[SW_SHA3_BONUS] * STREAM_ITERS_SCALE);
-        stream_byproduct_sha3(hash, sha3_iters, (__global uchar*)pad);
+        int sha3_iter = (int)(stream_weights[SW_SHA3_BONUS] * STREAM_ITERS_SCALE);
+        stream_byproduct_sha3(hash, sha3_iter, pad);
 
         float aes_weight = stream_weights[SW_NCL_AI] + stream_weights[SW_DEEKSHA_LITE] + stream_weights[SW_THERMAL];
-        int aes_iters = (int)(aes_weight * STREAM_ITERS_SCALE);
-        stream_byproduct_aes(hash, nonce, aes_iters, (__global uchar*)pad);
+        int aes_iter = (int)(aes_weight * STREAM_ITERS_SCALE);
+        stream_byproduct_aes(hash, nonce, aes_iter, pad);
 
-        int zion_iters = (int)(stream_weights[SW_ZION] * STREAM_ITERS_SCALE);
-        stream_byproduct_keccak(hash, zion_iters, (__global uchar*)pad);
+        int zion_iter = (int)(stream_weights[SW_ZION] * STREAM_ITERS_SCALE);
+        stream_byproduct_keccak(hash, zion_iter, pad);
     }
 }
