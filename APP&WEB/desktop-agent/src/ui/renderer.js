@@ -1,4 +1,4 @@
-// ZION V3 Mainnet Ready v3.0.5 "All Green" - Renderer Process
+// ZION V3 Mainnet Ready v3.0.6 "Triple Parallel" - Renderer Process
 // UI logic and state management
 
 // ── Logging: only user-visible events + errors in console.log.
@@ -1508,7 +1508,7 @@ function setupEventListeners() {
     addLogEntry('Mining started successfully', 'info');
     // Mining Console banner
     appendMiningConsole('─'.repeat(60));
-    appendMiningConsole(' * ZION V3 Mainnet Ready v3.0.5 — Mining started');
+    appendMiningConsole(' * ZION V3 Mainnet Ready v3.0.6 — Mining started');
     appendMiningConsole('─'.repeat(60));
   });
   
