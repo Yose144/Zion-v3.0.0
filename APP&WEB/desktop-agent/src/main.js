@@ -1,4 +1,4 @@
-// ZION V3 Mainnet Ready v3.0.5 "All Green" - Main Process
+// ZION V3 Mainnet Ready v3.0.6 "Triple Parallel" - Main Process
 // Electron main process with system tray, auto-start, GPU mining, IPC
 
 const { app, BrowserWindow, Tray, Menu, ipcMain, dialog, shell } = require('electron');
@@ -1791,7 +1791,7 @@ function createWindow() {
     height: 800,
     minWidth: 800,
     minHeight: 600,
-    title: 'ZION Native Awakening v3.0.5',
+    title: 'ZION Native Awakening v3.0.6',
     backgroundColor: '#000000',
     ...(windowIcon ? { icon: windowIcon } : {}),
     show: true, // Always show window on manual start; startMinimized only applies to auto-start
@@ -1987,7 +1987,7 @@ function createTray() {
   
   trayMenu = Menu.buildFromTemplate([
     {
-      label: 'ZION Miner v3.0.5 Ekam Deeksha',
+      label: 'ZION Miner v3.0.6 Ekam Deeksha',
       enabled: false
     },
     { type: 'separator' },
@@ -2041,7 +2041,7 @@ function createTray() {
   ]);
 
   tray.setContextMenu(trayMenu);
-  tray.setToolTip('ZION Miner v3.0.5 Ekam Deeksha');
+  tray.setToolTip('ZION Miner v3.0.6 Ekam Deeksha');
   
   tray.on('click', () => {
     showWindow();
@@ -3449,7 +3449,7 @@ function parseMinerOutput(output) {
     minerStats.last_job_height = v3MiningMatch[2];
   }
 
-  // ─── V3 version banner: "version=3.0.5-dev" ───
+  // ─── V3 version banner: "version=3.0.6-dev" ───
   const v3VersionMatch = output.match(/^version=([\d.]+(?:-\w+)?)/m);
   if (v3VersionMatch) {
     minerStats.miner_version = v3VersionMatch[1];
@@ -5646,7 +5646,7 @@ function _isNewerVersion(latest, current) {
 
 // App lifecycle
 app.whenReady().then(async () => {
-  console.log('ZION Native Awakening v3.0.5 started');
+  console.log('ZION Native Awakening v3.0.6 started');
 
   // Initialize auto-tuner
 
