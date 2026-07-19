@@ -40,6 +40,7 @@ pub enum ExternalCoin {
     CFX,
     ZEC,
     PHX,
+    KRX,
 }
 
 impl ExternalCoin {
@@ -73,6 +74,7 @@ impl ExternalCoin {
             Self::CFX => "CFX",
             Self::ZEC => "ZEC",
             Self::PHX => "PHX",
+            Self::KRX => "KRX",
         }
     }
 
@@ -106,6 +108,7 @@ impl ExternalCoin {
             Self::CFX => "octopus",
             Self::ZEC => "equihash",
             Self::PHX => "neoscrypt",
+            Self::KRX => "keryxhash",
         }
     }
 
@@ -147,6 +150,7 @@ impl ExternalCoin {
             "cfx" | "conflux" => Some(Self::CFX),
             "zec" | "zcash" => Some(Self::ZEC),
             "phx" | "phoenixcoin" | "phoenix-coin" => Some(Self::PHX),
+            "krx" | "keryx" | "keryxhash" => Some(Self::KRX),
             _ => None,
         }
     }
@@ -181,6 +185,7 @@ impl ExternalCoin {
             Self::CFX => "cfx.2miners.com:6565",
             Self::ZEC => "zec.2miners.com:7070",
             Self::PHX => "neoscrypt.eu.mine.zpool.ca:4233",
+            Self::KRX => "keryxhash.eu.mine.zpool.ca:4233",
         }
     }
 
@@ -206,6 +211,7 @@ impl ExternalCoin {
             Self::CFX => "octopus.auto.nicehash.com:9200",
             Self::ZEC => "equihash.auto.nicehash.com:9200",
             Self::PHX => "neoscrypt.auto.nicehash.com:9200",
+            Self::KRX => "keryxhash.auto.nicehash.com:9200",
             // FLUX (ZelHash = Equihash 125,4) is NOT on NiceHash.
             // NiceHash ZHash = Equihash 144,5 (BTG/ANON/BTCZ) — different algo.
             // Not on NiceHash: XMR (requires KYC), DCR (Blake3), EPIC (ProgPow),
@@ -287,6 +293,7 @@ impl ExternalCoin {
             Self::CFX,
             Self::ZEC,
             Self::PHX,
+            Self::KRX,
         ]
     }
 

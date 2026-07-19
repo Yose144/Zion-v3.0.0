@@ -103,6 +103,8 @@ pub enum ExternalCoin {
     ZEC,
     /// PhoenixCoin — NeoScrypt. GPU coin. ZPool, NiceHash.
     PHX,
+    /// Keryx — KeryxHash. GPU+CPU coin.
+    KRX,
 }
 
 impl ExternalCoin {
@@ -137,6 +139,7 @@ impl ExternalCoin {
             Self::CFX => "CFX",
             Self::ZEC => "ZEC",
             Self::PHX => "PHX",
+            Self::KRX => "KRX",
         }
     }
 
@@ -171,6 +174,7 @@ impl ExternalCoin {
             Self::CFX => "octopus",
             Self::ZEC => "equihash",
             Self::PHX => "neoscrypt",
+            Self::KRX => "keryxhash",
         }
     }
 
@@ -223,6 +227,7 @@ impl ExternalCoin {
             Self::CFX => Some(4_294_967_296),    // Octopus ~4 GB (Ethash-like DAG)
             Self::ZEC => Some(1_073_741_824),    // Equihash 200,9 ~1 GB
             Self::PHX => None,           // NeoScrypt — no DAG (scrypt-based, memory-hard)
+            Self::KRX => None,           // KeryxHash — no DAG
         }
     }
 
@@ -285,7 +290,8 @@ impl ExternalCoin {
                 Self::CKB |                        // eaglesong (sponge hash)
                 Self::CFX |                        // octopus (Ethash-like DAG)
                 Self::ZEC |                        // equihash 200,9
-                Self::PHX                          // neoscrypt (scrypt-based)
+                Self::PHX |                        // neoscrypt (scrypt-based)
+                Self::KRX                          // keryxhash
             ),
             "cuda" => matches!(
                 self,
@@ -322,6 +328,7 @@ impl ExternalCoin {
             Self::CFX => 210.0,                      // Octopus — DAG-based, memory-hard
             Self::ZEC => 170.0,                      // Equihash 200,9 — memory-hard
             Self::PHX => 180.0,                      // NeoScrypt — memory-hard
+            Self::KRX => 180.0,                      // KeryxHash — memory-hard
             Self::RTM => 0.0,                        // CPU-only (was 200W GPU placeholder)
             Self::XMR | Self::VRSC => 0.0,           // CPU coins — no GPU power
         }
@@ -369,6 +376,7 @@ impl ExternalCoin {
             "cfx" | "conflux" | "octopus" => Some(Self::CFX),
             "zec" | "zcash" | "equihash" => Some(Self::ZEC),
             "phx" | "phoenixcoin" | "neoscrypt" => Some(Self::PHX),
+            "krx" | "keryx" | "keryxhash" => Some(Self::KRX),
             _ => None,
         }
     }
@@ -405,6 +413,7 @@ impl ExternalCoin {
             Self::CFX => "cfx.2miners.com:6565",
             Self::ZEC => "zec.2miners.com:7070",
             Self::PHX => "neoscrypt.eu.mine.zpool.ca:4233",
+            Self::KRX => "keryxhash.eu.mine.zpool.ca:4233",
         }
     }
 
@@ -432,6 +441,7 @@ impl ExternalCoin {
             Self::CFX => "octopus",
             Self::ZEC => "equihash",
             Self::PHX => "neoscrypt",
+            Self::KRX => "keryxhash",
             // FLUX (ZelHash = Equihash 125,4) is NOT on NiceHash.
             // NiceHash ZHash = Equihash 144,5 (BTG/ANON/BTCZ) — different algo.
             // Sending FLUX work to ZHash endpoint would produce invalid shares.
@@ -484,6 +494,7 @@ impl ExternalCoin {
             Self::ZCL => ("equihash192", 2144),
             Self::RTM => ("ghostrider", 5354),
             Self::PHX => ("neoscrypt", 4233),
+            Self::KRX => ("keryxhash", 4233),
             Self::ZEC => ("equihash", 1080),
             _ => return None,
         };
@@ -560,6 +571,7 @@ impl ExternalCoin {
             Self::CFX => StratumProtocol::Stratum,
             Self::ZEC => StratumProtocol::ZcashStratum,
             Self::PHX => StratumProtocol::Stratum,
+            Self::KRX => StratumProtocol::Stratum,
         }
     }
 
@@ -594,6 +606,7 @@ impl ExternalCoin {
             Self::CFX,
             Self::ZEC,
             Self::PHX,
+            Self::KRX,
         ]
     }
 
@@ -631,6 +644,7 @@ impl ExternalCoin {
             Self::CFX => RevenueSource::OctopusExternal,
             Self::ZEC => RevenueSource::EquihashExternal,
             Self::PHX => RevenueSource::NeoScryptExternal,
+            Self::KRX => RevenueSource::KeryxHashExternal,
         }
     }
 }
@@ -868,6 +882,11 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
             revenue_per_day_usd: 0.03,
             power_cost_usd: 0.27,
         },
+        ProfitEntry {
+            coin: ExternalCoin::KRX,
+            revenue_per_day_usd: 0.03,
+            power_cost_usd: 0.27,
+        },
     ]
 }
 
@@ -900,6 +919,7 @@ fn nicehash_algo_to_external_coin(algo: &str) -> Option<ExternalCoin> {
         "OCTOPUS" => Some(ExternalCoin::CFX),
         "EQUIHASH" => Some(ExternalCoin::ZEC),
         "NEOSCRYPT" => Some(ExternalCoin::PHX),
+        "KERYXHASH" => Some(ExternalCoin::KRX),
         // ZHASH (Equihash 144,5) is NOT FLUX (ZelHash = Equihash 125,4).
         // NiceHash ZHash is for BTG/ANON/BTCZ — we don't mine those.
         // FLUX must use alternative pools (WoolyPooly, etc.).

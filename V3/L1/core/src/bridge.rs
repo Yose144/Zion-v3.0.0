@@ -56,23 +56,20 @@ pub(crate) fn bridge_unlock_scale_fix_active(block_height: u64) -> bool {
 
 /// Return the post-migration (1e6 flower) value of a bridge-vault UTXO.
 ///
-/// Pre-migration UTXOs are divided by [`migration::MIGRATION_DIVISOR`].
-/// Post-migration UTXOs are normally returned as-is, but an output that
-/// mistakenly stored a legacy-scale amount (greater than the entire ZION
-/// supply) is also normalized so it cannot be re-spent at inflated value.
-pub(crate) fn bridge_vault_utxo_scaled_amount(amount: u64, height: u64) -> u64 {
-    if migration::is_post_migration(height) {
-        // Total supply in flowers is far below u64::MAX. A post-migration
-        // bridge-vault output can legitimately hold at most the 100M ZION seed
-        // (1e14 flowers). Anything larger is a legacy-scale amount left
-        // unconverted by the pre-fix builder.
-        if amount > emission::TOTAL_SUPPLY as u64 {
-            amount / migration::MIGRATION_DIVISOR
-        } else {
-            amount
-        }
-    } else {
+/// On the v3.0.4 hard-reset chain, genesis UTXOs are already in 1e6 scale
+/// even though they sit at height 0 (pre-migration). Dividing them by
+/// `MIGRATION_DIVISOR` would incorrectly shrink them 1e6×.
+///
+/// The reliable signal for a legacy-scale (1e12) amount is magnitude: if
+/// the amount exceeds `TOTAL_SUPPLY` (144M ZION = 1.44e14 flowers), it must
+/// be a legacy-scale value and is divided. Otherwise it is already in 1e6
+/// scale and returned as-is. This check works for both pre- and
+/// post-migration heights.
+pub(crate) fn bridge_vault_utxo_scaled_amount(amount: u64, _height: u64) -> u64 {
+    if amount > emission::TOTAL_SUPPLY as u64 {
         amount / migration::MIGRATION_DIVISOR
+    } else {
+        amount
     }
 }
 
