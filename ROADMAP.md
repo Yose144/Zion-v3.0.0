@@ -33,7 +33,8 @@ The project is now driving toward **Mainnet Alpha (3.1.0)** in three planned ste
 | **3.0.9** | Pre-Alpha Hardening | Security audit, chaos tests, repo purification, public sync | [`3.0.9.md`](./3.0.9.md) |
 | **3.1.0** | Mainnet Alpha | Clean repo, feature freeze, release ready | [`3.1.0.md`](./3.1.0.md) |
 
-Overall coordination: [`MAINNET_ALPHA_PLAN.md`](./MAINNET_ALPHA_PLAN.md).
+Overall coordination: [`MAINNET_ALPHA_PLAN.md`](./MAINNET_ALPHA_PLAN.md).  
+**V3.1 tree reorganization:** [`V3.1_ARCHITECTURE_REORG_PLAN.md`](./V3.1_ARCHITECTURE_REORG_PLAN.md) — WARP → L2, ZionDex → L2, AuxPoW → miner, L3 → AI/orchestration/automation/NCL/PoC.
 
 ---
 
