@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   Activity,
-  ArrowLeft,
   BarChart3,
   Coins,
   Crown,
@@ -421,7 +420,7 @@ export default function SupplyPageClient() {
   const issobellaPct = 100 - rewardDist.miner_pct - rewardDist.humanitarian_pct - rewardDist.pool_fee_pct;
 
   return (
-    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
+    <div className="relative min-h-screen pb-24 overflow-x-hidden">
       {/* background glows */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-gold/8" />
@@ -429,16 +428,7 @@ export default function SupplyPageClient() {
         <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-gold/15 to-transparent" />
       </div>
 
-      <div className="relative z-10 zion-container max-w-7xl space-y-14">
-        {/* ── Back link ── */}
-        <Link
-          href="/explorer"
-          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {cs ? "Zpět do průzkumníka" : "Back to Explorer"}
-        </Link>
-
+      <div className="relative z-10 zion-container max-w-7xl space-y-14 pt-6">
         {/* ═══════ HERO ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
@@ -754,9 +744,6 @@ export default function SupplyPageClient() {
               : "All numbers are derived from current chain height and on-chain RPC. Decade Decay ensures long-term sustainability."}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/explorer" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
-              <ArrowLeft className="h-4 w-4" /> {cs ? "Zpět" : "Back"}
-            </Link>
             <Link href="/explorer/mempool" className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10">
               <Flame className="h-4 w-4" /> Mempool
             </Link>

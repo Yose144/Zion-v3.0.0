@@ -806,6 +806,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           <button onclick="switchTab('pool-miners')" id="tab-pool-miners"><i class="fas fa-users"></i> Miners</button>
           <button onclick="switchTab('payout')" id="tab-payout"><i class="fas fa-money-bill"></i> Payouts</button>
           <button onclick="switchTab('revenue')" id="tab-revenue"><i class="fas fa-chart-line"></i> Revenue</button>
+          <button onclick="switchTab('pool-setup')" id="tab-pool-setup"><i class="fas fa-sliders-h"></i> Setup</button>
           <button onclick="switchTab('miner-live')" id="tab-miner-live"><i class="fas fa-tower-broadcast"></i> Live Miner</button>
         </div>
       </div>
@@ -2558,6 +2559,17 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
     </div>
 
+    <!-- Supported Coin Grid — 23 AuxPoW coins with algorithm, pool, E2E status -->
+    <div class="zion-panel p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold flex items-center gap-2">🪙 Supported AuxPoW Coins <span class="text-xs px-2 py-0.5 rounded bg-amber-600/30 text-amber-300">23 coins</span></h3>
+        <span class="text-xs text-gray-500" id="coin-grid-summary">—</span>
+      </div>
+      <div id="pm-coin-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+        <div class="text-gray-500 text-xs col-span-full text-center py-4">Loading coin data…</div>
+      </div>
+    </div>
+
     <!-- Search + Miners Table -->
     <div class="zion-panel p-4">
       <div class="flex items-center justify-between mb-3">
@@ -2628,6 +2640,304 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ═════════ TAB: Pool Setup (3-Stream Config) ═════════ -->
+  <div id="pane-pool-setup" class="hidden space-y-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-cyan-300">Pool Setup — 3-Stream Configuration</h2>
+        <p class="text-xs text-gray-400 mt-1">Configure Stream 1 (ZION GPU), Stream 2 (GPU External), Stream 3 (CPU External) + autonomous profit switching</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="ps-restart-btn" onclick="poolSetupRestart()" class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded font-semibold transition">
+          <i class="fas fa-sync-alt"></i> Restart Pool
+        </button>
+        <button id="ps-save-btn" onclick="poolSetupSave()" class="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-sm rounded font-semibold transition">
+          <i class="fas fa-save"></i> Save Config
+        </button>
+      </div>
+    </div>
+
+    <!-- Status banner -->
+    <div id="ps-status-banner" class="hidden p-3 rounded text-sm"></div>
+
+    <!-- ═══════ 3 Stream Cards ═══════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+      <!-- ── Stream 1: ZION GPU ── -->
+      <div class="bg-gray-800/60 border border-cyan-500/30 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg font-bold text-cyan-300">Stream 1</span>
+            <span class="text-xs bg-cyan-900/50 text-cyan-300 px-2 py-0.5 rounded">ZION GPU</span>
+            <span class="text-xs bg-green-900/50 text-green-300 px-2 py-0.5 rounded">Always Native</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="ps-s1-enabled" class="sr-only peer" checked>
+            <div class="w-9 h-5 bg-gray-600 peer-checked:bg-cyan-500 rounded-full peer peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+          </label>
+        </div>
+        <div class="space-y-2 text-sm">
+          <div>
+            <label class="text-xs text-gray-400">Algorithm</label>
+            <select id="ps-s1-algo" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5">
+              <option value="deeksha_lite_v1">deeksha_lite_v1</option>
+              <option value="deeksha_lite_fire">deeksha_lite_fire</option>
+              <option value="deeksha_chv3">deeksha_chv3</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">GPU Backend</label>
+            <select id="ps-s1-backend" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5">
+              <option value="opencl">OpenCL</option>
+              <option value="cuda">CUDA</option>
+              <option value="metal">Metal</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">GPU Work Size</label>
+            <input id="ps-s1-worksize" type="number" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="262144">
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Stream 2: GPU External ── -->
+      <div class="bg-gray-800/60 border border-purple-500/30 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg font-bold text-purple-300">Stream 2</span>
+            <span class="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded">GPU External</span>
+            <span id="ps-s2-mode-badge" class="text-xs bg-blue-900/50 text-blue-300 px-2 py-0.5 rounded">Auto-Switch</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="ps-s2-enabled" class="sr-only peer" checked>
+            <div class="w-9 h-5 bg-gray-600 peer-checked:bg-purple-500 rounded-full peer peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+          </label>
+        </div>
+        <div class="space-y-2 text-sm">
+          <div>
+            <label class="text-xs text-gray-400">Mode</label>
+            <select id="ps-s2-mode" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" onchange="poolSetupStream2Mode()">
+              <option value="auto">Auto-Switch (profit-based)</option>
+              <option value="force">Force Coin</option>
+            </select>
+          </div>
+          <div id="ps-s2-coin-row" class="hidden">
+            <label class="text-xs text-gray-400">Force Coin</label>
+            <select id="ps-s2-coin" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5">
+              <!-- populated by JS -->
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">Secondary GPU Work Size</label>
+            <input id="ps-s2-worksize" type="number" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="4194304">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">Pearl GPU Backend (PoUW fallback)</label>
+            <select id="ps-s2-pearl-backend" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5">
+              <option value="opencl">OpenCL</option>
+              <option value="cuda">CUDA</option>
+              <option value="metal">Metal</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">Pearl GPU Work Size</label>
+            <input id="ps-s2-pearl-worksize" type="number" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="262144">
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Stream 3: CPU External ── -->
+      <div class="bg-gray-800/60 border border-orange-500/30 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg font-bold text-orange-300">Stream 3</span>
+            <span class="text-xs bg-orange-900/50 text-orange-300 px-2 py-0.5 rounded">CPU External</span>
+            <span id="ps-s3-mode-badge" class="text-xs bg-blue-900/50 text-blue-300 px-2 py-0.5 rounded">Auto-Switch</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="ps-s3-enabled" class="sr-only peer" checked>
+            <div class="w-9 h-5 bg-gray-600 peer-checked:bg-orange-500 rounded-full peer peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+          </label>
+        </div>
+        <div class="space-y-2 text-sm">
+          <div>
+            <label class="text-xs text-gray-400">Mode</label>
+            <select id="ps-s3-mode" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" onchange="poolSetupStream3Mode()">
+              <option value="auto">Auto-Switch (profit-based)</option>
+              <option value="force">Force Coin</option>
+            </select>
+          </div>
+          <div id="ps-s3-coin-row" class="hidden">
+            <label class="text-xs text-gray-400">Force Coin</label>
+            <select id="ps-s3-coin" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5">
+              <option value="VRSC">VRSC (VerusHash)</option>
+              <option value="XMR">XMR (RandomX)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">CPU Threads</label>
+            <input id="ps-s3-threads" type="number" min="1" max="64" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="4">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">CPU Wallet</label>
+            <input id="ps-s3-wallet" type="text" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" placeholder="Wallet address for CPU coin">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">CPU Worker Name</label>
+            <input id="ps-s3-worker" type="text" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="zion_triple">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ AuxPow Global Config ═══════ -->
+    <div class="bg-gray-800/40 border border-gray-600/30 rounded-lg p-4">
+      <h3 class="text-sm font-bold text-gray-300 mb-3"><i class="fas fa-cog text-gray-400"></i> AuxPow Global Config</h3>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-sm">
+        <div>
+          <label class="text-xs text-gray-400">AuxPow Enabled</label>
+          <label class="relative inline-flex items-center cursor-pointer mt-1">
+            <input type="checkbox" id="ps-aux-enabled" class="sr-only peer">
+            <div class="w-9 h-5 bg-gray-600 peer-checked:bg-green-500 rounded-full peer peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+          </label>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">Pool Preference</label>
+          <select id="ps-aux-pref" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5">
+            <option value="default">default</option>
+            <option value="nicehash">nicehash</option>
+            <option value="herominers">herominers</option>
+            <option value="zpool">zpool</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">Region</label>
+          <input id="ps-aux-region" type="text" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="eu">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">Split ZION %</label>
+          <input id="ps-aux-split-zion" type="number" min="0" max="100" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="50">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">Split External %</label>
+          <input id="ps-aux-split-ext" type="number" min="0" max="100" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="50">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">Worker Name</label>
+          <input id="ps-aux-worker" type="text" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="zion-pool">
+        </div>
+      </div>
+      <div class="mt-3">
+        <label class="text-xs text-gray-400">Default Payout Wallet (BTC for zpool)</label>
+        <input id="ps-aux-wallet" type="text" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" placeholder="bc1q...">
+      </div>
+    </div>
+
+    <!-- ═══════ Per-Coin Wallets Grid ═══════ -->
+    <div class="bg-gray-800/40 border border-gray-600/30 rounded-lg p-4">
+      <h3 class="text-sm font-bold text-gray-300 mb-3"><i class="fas fa-wallet text-gray-400"></i> Per-Coin Wallets <span class="text-xs text-gray-500">(23 coins — wallet for each external coin)</span></h3>
+      <div id="ps-coin-wallets-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 text-sm">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- ═══════ Stream Profit (Deeksha Chv3) ═══════ -->
+    <div class="bg-gray-800/40 border border-gray-600/30 rounded-lg p-4">
+      <h3 class="text-sm font-bold text-gray-300 mb-3"><i class="fas fa-bolt text-yellow-400"></i> Stream Profit (Deeksha Chv3 Pipeline)</h3>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 text-sm">
+        <div>
+          <label class="text-xs text-gray-400">Enabled</label>
+          <label class="relative inline-flex items-center cursor-pointer mt-1">
+            <input type="checkbox" id="ps-sp-enabled" class="sr-only peer">
+            <div class="w-9 h-5 bg-gray-600 peer-checked:bg-yellow-500 rounded-full peer peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+          </label>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">API Provider</label>
+          <select id="ps-sp-provider" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5">
+            <option value="fallback">fallback</option>
+            <option value="nicehash">nicehash</option>
+            <option value="whattomine">whattomine</option>
+            <option value="coingecko">coingecko</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">Interval (sec)</label>
+          <input id="ps-sp-interval" type="number" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="120">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">Hysteresis %</label>
+          <input id="ps-sp-hysteresis" type="text" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="15.0">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">Sources (comma-sep)</label>
+          <input id="ps-sp-sources" type="text" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="zion,keccak_bonus,sha3_bonus,ncl_ai">
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ Autonomous Mode ═══════ -->
+    <div class="bg-gray-800/40 border border-green-600/30 rounded-lg p-4">
+      <h3 class="text-sm font-bold text-green-300 mb-3"><i class="fas fa-robot text-green-400"></i> Autonomous Mode <span class="text-xs text-gray-500">(auto-detect HW → auto-tune → auto-select coins → auto-adapt every 5 min)</span></h3>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 text-sm">
+        <div>
+          <label class="text-xs text-gray-400">Autonomous Enabled</label>
+          <label class="relative inline-flex items-center cursor-pointer mt-1">
+            <input type="checkbox" id="ps-auto-enabled" class="sr-only peer">
+            <div class="w-9 h-5 bg-gray-600 peer-checked:bg-green-500 rounded-full peer peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+          </label>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">Auto Mode</label>
+          <select id="ps-auto-mode" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5">
+            <option value="manual">manual</option>
+            <option value="auto">auto</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">Profit Interval (sec)</label>
+          <input id="ps-auto-interval" type="number" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="300">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">Profit Hysteresis %</label>
+          <input id="ps-auto-hysteresis" type="number" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="15">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">Profit API</label>
+          <select id="ps-auto-api" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5">
+            <option value="whattomine">whattomine</option>
+            <option value="coingecko">coingecko</option>
+            <option value="fallback">fallback</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm mt-3">
+        <div>
+          <label class="text-xs text-gray-400">Electricity Price (USD/kWh)</label>
+          <input id="ps-auto-elec" type="text" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="0.12">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">GPU TDP (Watts)</label>
+          <input id="ps-auto-gpu-tdp" type="number" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="225">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">CPU TDP (Watts)</label>
+          <input id="ps-auto-cpu-tdp" type="number" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 mt-0.5" value="65">
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ Pool Failover ═══════ -->
+    <div class="bg-gray-800/40 border border-gray-600/30 rounded-lg p-4">
+      <h3 class="text-sm font-bold text-gray-300 mb-3"><i class="fas fa-shield-alt text-blue-400"></i> Pool Failover <span class="text-xs text-gray-500">(comma-separated, tried in order)</span></h3>
+      <input id="ps-pool-failover" type="text" class="w-full bg-gray-700 text-gray-200 text-sm rounded px-2 py-1.5" value="62.171.141.136:8444" placeholder="62.171.141.136:8444,backup.example.com:8444">
+    </div>
+
+    <!-- Env file info -->
+    <div id="ps-env-info" class="text-xs text-gray-500"></div>
   </div>
 
   <!-- ═════════ TAB: Revenue System ═════════ -->
@@ -2930,7 +3240,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <!-- Revenue by Coin -->
       <div class="zion-panel p-4">
-        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🪙 Supported Coins <span class="text-[10px] text-gray-500 font-normal">(15 merge-minable — active coin highlighted)</span></h3>
+        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">🪙 Supported Coins <span class="text-[10px] text-gray-500 font-normal">(23 merge-minable — active coin highlighted)</span></h3>
         <div class="overflow-x-auto max-h-64 overflow-y-auto">
           <table class="w-full text-xs text-left">
             <thead>
@@ -2941,10 +3251,11 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
                 <th class="py-2 px-2 text-right">Shares</th>
                 <th class="py-2 px-2 text-right">Revenue</th>
                 <th class="py-2 px-2">Status</th>
+                <th class="py-2 px-2">E2E</th>
               </tr>
             </thead>
             <tbody id="rev-coin-tbody">
-              <tr><td colspan="6" class="text-gray-500 text-center py-4">Loading…</td></tr>
+              <tr><td colspan="7" class="text-gray-500 text-center py-4">Loading…</td></tr>
             </tbody>
           </table>
         </div>
@@ -7009,7 +7320,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
   </div>
 </div>
 
-<script src="/dashboard.js?v=114" defer></script>
+<script src="/dashboard.js?v=115" defer></script>
 <script>
 // ═══ Supported AuxPoW coin tickers (keep in sync with app.py AUXPOW_SUPPORTED_COINS) ═══
 const STREAM_COIN_TICKERS = [

@@ -94,10 +94,10 @@ export default function BlocksPage() {
   };
 
   return (
-    <div className="">
+    <div className="relative min-h-screen pb-24 overflow-x-hidden">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-linear-to-b from-zion-gold/10 via-transparent to-transparent" />
 
-      <div className="relative z-10 zion-container py-10 max-w-6xl space-y-6">
+      <div className="relative z-10 zion-container py-10 pt-6 max-w-6xl space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm">
           <Link href="/explorer" className="text-gray-500 hover:text-white transition">Explorer</Link>

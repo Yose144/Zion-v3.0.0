@@ -471,14 +471,14 @@ export default function ApiDocsClient() {
   const cs = lang === "cs";
 
   return (
-    <div className="pt-28 md:pt-32 pb-24 overflow-x-hidden">
+    <div className="relative min-h-screen pb-24 overflow-x-hidden">
       {/* background glow */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-purple-500/8" />
         <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-cyan/6" />
       </div>
 
-      <div className="relative z-10 zion-container max-w-5xl space-y-8">
+      <div className="relative z-10 zion-container max-w-5xl space-y-8 pt-6">
         {/* breadcrumb */}
         <nav className="flex items-center gap-1.5 text-[11px] text-white/40">
           <Link href="/explorer" className="hover:text-white/70 transition-colors">Explorer</Link>

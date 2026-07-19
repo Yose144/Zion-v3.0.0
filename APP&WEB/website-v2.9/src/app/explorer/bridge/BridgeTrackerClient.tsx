@@ -7,7 +7,6 @@ import {
   Activity,
   AlertCircle,
   ArrowDown,
-  ArrowLeft,
   ArrowLeftRight,
   ArrowRight,
   CheckCircle2,
@@ -232,7 +231,7 @@ export default function BridgeTrackerClient() {
       : 100;
 
   return (
-    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
+    <div className="relative min-h-screen pb-24 overflow-x-hidden">
       {/* background glows */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-cyan/8" />
@@ -240,16 +239,7 @@ export default function BridgeTrackerClient() {
         <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-cyan/15 to-transparent" />
       </div>
 
-      <div className="relative z-10 zion-container max-w-7xl space-y-14">
-        {/* ── Back link ── */}
-        <Link
-          href="/explorer"
-          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {cs ? "Zpět do průzkumníka" : "Back to Explorer"}
-        </Link>
-
+      <div className="relative z-10 zion-container max-w-7xl space-y-14 pt-6">
         {/* ═══════ HERO ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}

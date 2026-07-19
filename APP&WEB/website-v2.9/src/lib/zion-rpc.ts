@@ -644,19 +644,25 @@ class ZionRpcClient {
     return mapV3BlockToHeader(block);
   }
 
-  /** Get range of block headers (inclusive) — sequential V3 getBlockByHeight calls */
+  /** Get range of block headers (inclusive) — concurrency-limited V3 getBlockByHeight calls */
   async getBlockHeaders(startHeight: number, endHeight: number): Promise<ZionBlockHeader[]> {
     // Allow up to 500 blocks per call (needed for miner block scanning).
-    // The V3 RPC is fast enough for this batch size over localhost.
     const MAX_BLOCKS = 500;
     const clampedStart = Math.max(0, endHeight - (MAX_BLOCKS - 1));
     const start = Math.max(startHeight, clampedStart);
 
-    const promises: Promise<ZionBlockHeader | null>[] = [];
-    for (let h = start; h <= endHeight; h++) {
-      promises.push(this.getBlockHeaderByHeight(h).catch(() => null));
+    // Concurrency-limited: process in chunks of 50 to avoid exhausting TCP connections
+    const CONCURRENCY = 50;
+    const results: (ZionBlockHeader | null)[] = [];
+    for (let i = start; i <= endHeight; i += CONCURRENCY) {
+      const chunkEnd = Math.min(i + CONCURRENCY - 1, endHeight);
+      const promises: Promise<ZionBlockHeader | null>[] = [];
+      for (let h = i; h <= chunkEnd; h++) {
+        promises.push(this.getBlockHeaderByHeight(h).catch(() => null));
+      }
+      const chunk = await Promise.all(promises);
+      results.push(...chunk);
     }
-    const results = await Promise.all(promises);
     return results.filter((b): b is ZionBlockHeader => b !== null);
   }
 
