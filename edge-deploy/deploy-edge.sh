@@ -82,17 +82,18 @@ RSYNC_EXCLUDES=(
     '--exclude=node_modules'
     '--exclude=.next'
     '--exclude=out'
-    '--exclude=public'
-    '--exclude=HiranV2.1'
-    '--exclude=HiranV2.2'
-    '--exclude=HiranV2.4'
-    '--exclude=PoC-lab'
-    '--exclude=ZionStart'
-    '--exclude=archive'
-    '--exclude=update-server'
-    '--exclude=zion-miner-smos'
-    '--exclude=APP&WEB'
-    '--exclude=config'
+    '--exclude=/public'
+    '--exclude=/HiranV2.1'
+    '--exclude=/HiranV2.2'
+    '--exclude=/HiranV2.4'
+    '--exclude=/PoC-lab'
+    '--exclude=/ZionStart'
+    '--exclude=/archive'
+    '--exclude=/update-server'
+    '--exclude=/zion-miner-smos'
+    '--exclude=/APP&WEB'
+    '--exclude=/config'
+    '--exclude=/V3/config'
 )
 
 if command -v rsync &>/dev/null; then
@@ -102,9 +103,11 @@ if command -v rsync &>/dev/null; then
         "${EDGE_USER}@${EDGE_HOST}:${REMOTE_ROOT}/"
 else
     # Fallback: tar over ssh (slower, excludes some build artifacts)
+    # NOTE: V3/config contains stale templates; live L2 configs are in V3/L2/*/config.
     tar czf - \
         --exclude='.git' --exclude='data' --exclude='logs' --exclude='target' \
         --exclude='node_modules' --exclude='.next' --exclude='out' \
+        --exclude='V3/config' \
         -C "${REPO_ROOT}" \
         V3/ ZION_OS/ ZionDex/ edge-deploy/ scripts/ 2>/dev/null | \
         ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "mkdir -p '${REMOTE_ROOT}' && cd '${REMOTE_ROOT}' && tar xzf -"
@@ -182,7 +185,13 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     cargo build --release 2>&1
 "
 
-# ── Step 5b: Copy standalone binaries to /usr/local/bin ──
+# ── Step 5b: Stop standalone services and copy binaries to /usr/local/bin ──
+# Stop first so cp -f does not hit "Text file busy" on a running executable.
+log "Stopping standalone services before binary update..."
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
+    systemctl stop zion-edge-agent zion-edge-dashboard zion-edge-dex 2>/dev/null || true
+"
+
 log "Installing standalone binaries to /usr/local/bin..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     cp -f '${REMOTE_ROOT}/ZION_OS/agent/target/release/zion-agent' /usr/local/bin/zion-agent
@@ -194,6 +203,7 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
 # ── Step 6: Rebuild website on Edge ──
 log "Rebuilding website on Edge..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
+    set -euo pipefail
     cd '${REMOTE_WEB}'
     rm -f package-lock.json
     npm install 2>&1 | tail -n 5
@@ -213,6 +223,7 @@ SERVICES=(
     zion-edge-oasis
     zion-edge-watchdog
     zion-edge-backup
+    zion-edge-maintenance
     zion-edge-miner
     zion-edge-agent
     zion-edge-dashboard
@@ -235,11 +246,40 @@ for svc in "${SERVICES[@]}"; do
     fi
 done
 
+# ── Install systemd drop-ins (memory limits, OOM, maintenance overrides) ──
+log "Installing systemd drop-ins..."
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
+    mkdir -p /etc/systemd/system/zion-edge-node1.service.d
+    mkdir -p /etc/systemd/system/zion-edge-node2.service.d
+    mkdir -p /etc/systemd/system/zion-edge-python-dashboard.service.d
+    mkdir -p /etc/systemd/system/docker.service.d
+    cp -f '${REMOTE_ROOT}/edge-deploy/systemd/zion-edge-node1-ram-limits.conf'       /etc/systemd/system/zion-edge-node1.service.d/ram-limits.conf
+    cp -f '${REMOTE_ROOT}/edge-deploy/systemd/zion-edge-node2-ram-limits.conf'       /etc/systemd/system/zion-edge-node2.service.d/ram-limits.conf
+    cp -f '${REMOTE_ROOT}/edge-deploy/systemd/zion-edge-dashboard-maintenance.conf'  /etc/systemd/system/zion-edge-python-dashboard.service.d/maintenance.conf
+    cp -f '${REMOTE_ROOT}/edge-deploy/systemd/docker-ram-limits.conf'                /etc/systemd/system/docker.service.d/ram-limits.conf
+"
+
 # Cleanup old/duplicate service name
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
     "systemctl disable zion-edge-node 2>/dev/null || true; systemctl reset-failed zion-edge-node 2>/dev/null || true"
 
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl daemon-reload"
+
+# ── Install/refresh logrotate, journald, rsyslog and cleanup automation ──
+log "Installing log automation configs..."
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
+    cp -f '${REMOTE_ROOT}/edge-deploy/config/logrotate-zion-edge'      /etc/logrotate.d/zion-edge
+    mkdir -p /etc/systemd/journald.conf.d
+    cp -f '${REMOTE_ROOT}/edge-deploy/config/journald-zion-edge.conf'   /etc/systemd/journald.conf.d/zion-edge.conf
+    cp -f '${REMOTE_ROOT}/edge-deploy/config/rsyslog-zion-edge.conf'  /etc/rsyslog.d/10-zion-edge.conf
+    cp -f '${REMOTE_ROOT}/edge-deploy/scripts/edge-log-cleanup.sh'    /usr/local/bin/edge-log-cleanup.sh
+    chmod +x /usr/local/bin/edge-log-cleanup.sh
+    cp -f '${REMOTE_ROOT}/edge-deploy/config/edge-log-cleanup.service' /etc/systemd/system/edge-log-cleanup.service
+    cp -f '${REMOTE_ROOT}/edge-deploy/config/edge-log-cleanup.timer'  /etc/systemd/system/edge-log-cleanup.timer
+    systemctl restart systemd-journald rsyslog
+    systemctl daemon-reload
+    systemctl enable --now edge-log-cleanup.timer
+"
 
 # Stop legacy zion-* services before starting the hardened zion-edge-* units
 # to avoid port conflicts (e.g. zion-node :8443 vs nginx :8443).
@@ -282,7 +322,7 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-agent || 
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-dashboard zion-edge-dex zion-edge-python-dashboard || true"
 
 # Restart timers (will not start oneshot services, just activate timers)
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-watchdog.timer zion-edge-backup.timer || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-watchdog.timer zion-edge-backup.timer zion-edge-maintenance.timer || true"
 
 # ── Step 9: Restart website (PM2) ──
 log "Restarting website (PM2)..."

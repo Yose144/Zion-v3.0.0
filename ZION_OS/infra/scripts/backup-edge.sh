@@ -37,6 +37,34 @@ NC='\033[0m'
 
 log() { echo -e "[$(date '+%Y-%m-%d %H:%M:%S')] $1"; }
 
+# Copy a database file safely.
+# - SQLite .db files are backed up with the sqlite3 .backup command so the
+#   copy is consistent even if the DB is open with WAL. If sqlite3 is not
+#   available, fall back to cp and also copy -wal/-shm sidecar files.
+# - Other files are copied directly.
+backup_db() {
+    local src="$1"
+    local dest_dir="$2"
+    local basename_src
+    basename_src=$(basename "$src")
+
+    if [[ "$src" == *.db ]]; then
+        if command -v sqlite3 >/dev/null 2>&1; then
+            sqlite3 "$src" ".backup '${dest_dir}/${basename_src}'" 2>/dev/null || true
+            if [[ -f "${dest_dir}/${basename_src}" ]]; then
+                return 0
+            fi
+            log "${YELLOW}  ⚠ sqlite3 .backup failed for ${basename_src}, falling back to cp${NC}"
+        fi
+        # Fallback: copy DB + WAL/shm files as a set (best effort)
+        cp "$src" "${dest_dir}/"
+        if [[ -f "${src}-wal" ]]; then cp "${src}-wal" "${dest_dir}/" 2>/dev/null || true; fi
+        if [[ -f "${src}-shm" ]]; then cp "${src}-shm" "${dest_dir}/" 2>/dev/null || true; fi
+    else
+        cp "$src" "${dest_dir}/"
+    fi
+}
+
 mkdir -p "${BACKUP_DIR}/daily" "${BACKUP_DIR}/weekly"
 
 log "${GREEN}=== ZION Edge Backup Started ===${NC}"
@@ -53,7 +81,7 @@ mkdir -p "${NODE_BACKUP}"
 for db in "/data/zion/state" "/data/zion/state-node2" \
           "/opt/zion/data/edge-state.db" "/opt/zion/data/edge2-state.db"; do
     if [[ -f "$db" ]]; then
-        cp "$db" "${NODE_BACKUP}/"
+        backup_db "$db" "${NODE_BACKUP}"
         log "${GREEN}  ✓ $(basename $db)${NC}"
     else
         log "${YELLOW}  ⚠  $(basename $db) not found${NC}"
@@ -70,7 +98,7 @@ for data_dir in "/data/zion" "/opt/zion/data"; do
     if [[ -d "$data_dir" ]]; then
         for db in "$data_dir"/*.db "$data_dir"/pplns-state.json; do
             if [[ -f "$db" ]]; then
-                cp "$db" "${V3_BACKUP}/"
+                backup_db "$db" "${V3_BACKUP}"
                 log "${GREEN}  ✓ $(basename $db)${NC}"
             fi
         done
@@ -112,18 +140,16 @@ fi
 
 # ── 5. Compress daily backup ──────────────────────────────────────────────
 DAILY_TAR="${BACKUP_DIR}/daily/zion-edge-${TIMESTAMP}.tar.gz"
-tar -czf "${DAILY_TAR}" -C "${BACKUP_DIR}/daily" \
-    "node_state_${TIMESTAMP}" "v3_data_${TIMESTAMP}" \
-    "config_${TIMESTAMP}" "systemd_${TIMESTAMP}" 2>/dev/null || true
-
-# Cleanup uncompressed dirs
-rm -rf "${NODE_BACKUP}" "${V3_BACKUP}" "${CONFIG_BACKUP}" "${SYSTEMD_BACKUP}"
-
-if [[ -f "${DAILY_TAR}" ]]; then
+if tar -czf "${DAILY_TAR}" -C "${BACKUP_DIR}/daily" \
+       "node_state_${TIMESTAMP}" "v3_data_${TIMESTAMP}" \
+       "config_${TIMESTAMP}" "systemd_${TIMESTAMP}"; then
+    # Cleanup uncompressed dirs only after successful tar
+    rm -rf "${NODE_BACKUP}" "${V3_BACKUP}" "${CONFIG_BACKUP}" "${SYSTEMD_BACKUP}"
     SIZE=$(du -sh "${DAILY_TAR}" | cut -f1)
     log "${GREEN}  ✓ Daily backup: ${DAILY_TAR} (${SIZE})${NC}"
 else
     log "${RED}  ✗ Failed to create daily backup${NC}"
+    exit 1
 fi
 
 # ── 6. Weekly snapshot (Sunday) ───────────────────────────────────────────

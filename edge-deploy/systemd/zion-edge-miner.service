@@ -1,17 +1,20 @@
 [Unit]
 Description=ZION CPU Miner (Edge)
 After=network.target zion-edge-pool.service
+Wants=zion-edge-pool.service
 
 [Service]
 Type=simple
 User=zion
 Group=zion
+EnvironmentFile=/etc/zion/edge-environment.sh
 Environment=ZION_POOL_ADDR=127.0.0.1:8444
 Environment=ZION_WORKER_NAME=edge-cpu-miner
 Environment=ZION_MINER_ID=edge-cpu-1
 Environment=ZION_LOOP_COUNT=1000000
 Environment=ZION_THREADS=2
-ExecStart=/opt/zion/V3/target/release/zion-miner --pool 127.0.0.1:8444 --worker edge-cpu-miner --threads 2 --loops 1000000 --cpu
+Environment=ZION_GPU_BACKEND=cpu
+ExecStart=/opt/zion/V3/target/release/zion-miner --pool 127.0.0.1:8444 --worker edge-cpu-miner --threads 2 --loops 1000000
 Restart=always
 RestartSec=30
 

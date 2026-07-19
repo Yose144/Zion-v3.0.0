@@ -169,7 +169,9 @@ do_disk() {
     _run docker image prune -af >/dev/null 2>&1 || true
     _run docker builder prune -af >/dev/null 2>&1 || true
     _run docker container prune -f >/dev/null 2>&1 || true
-    _run docker volume prune -f >/dev/null 2>&1 || true
+    # Only prune dangling (anonymous) volumes; named volumes used by ZION
+    # services (e.g. LND) must never be removed even when a container is down.
+    _run docker volume prune -f --filter dangling=true >/dev/null 2>&1 || true
   else
     info "docker: not installed, skipping"
   fi
@@ -265,10 +267,11 @@ do_ram() {
     _run journalctl --vacuum-size="$JOURNAL_MAX" >/dev/null 2>&1 || true
   fi
 
-  # 3. Docker — prune to free daemon memory
+  # 3. Docker — prune to free daemon memory.
+  # Do NOT prune volumes here; volumes are handled by the daily disk cleanup.
   if command -v docker >/dev/null 2>&1; then
-    info "ram: docker prune (frees dockerd memory)"
-    _run docker system prune -f --volumes >/dev/null 2>&1 || true
+    info "ram: docker system prune (containers/images/networks, no volumes)"
+    _run docker system prune -f >/dev/null 2>&1 || true
   fi
 
   after_used="$(_ram_used_pct)"

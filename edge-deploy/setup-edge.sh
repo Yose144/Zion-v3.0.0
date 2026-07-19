@@ -26,6 +26,7 @@ SERVICES=(
   zion-edge-oasis
   zion-edge-watchdog
   zion-edge-backup
+  zion-edge-maintenance
   zion-edge-miner
   zion-edge-agent
   zion-edge-dashboard
@@ -162,9 +163,55 @@ for svc in "${SERVICES[@]}"; do
     fi
 done
 
+# ── Install service drop-ins (memory limits, OOM, maintenance overrides) ──
+echo "[INFO] Installing systemd drop-ins..."
+install_dropin() {
+    local src="$1"
+    local dest_dir="$2"
+    if [[ -f "$src" ]]; then
+        mkdir -p "$dest_dir"
+        cp "$src" "$dest_dir/"
+        echo "  + ${dest_dir}/$(basename "$src")"
+    fi
+}
+install_dropin "$REPO_ROOT/edge-deploy/systemd/zion-edge-node1-ram-limits.conf"       "$SERVICE_DIR/zion-edge-node1.service.d"
+install_dropin "$REPO_ROOT/edge-deploy/systemd/zion-edge-node2-ram-limits.conf"       "$SERVICE_DIR/zion-edge-node2.service.d"
+install_dropin "$REPO_ROOT/edge-deploy/systemd/zion-edge-dashboard-maintenance.conf"  "$SERVICE_DIR/zion-edge-python-dashboard.service.d"
+install_dropin "$REPO_ROOT/edge-deploy/systemd/docker-ram-limits.conf"                "$SERVICE_DIR/docker.service.d"
+
+# ── Install log/journald/rsyslog automation ──
+echo "[INFO] Installing logrotate, journald, rsyslog and cleanup automation..."
+if [[ -f "$REPO_ROOT/edge-deploy/config/logrotate-zion-edge" ]]; then
+    cp "$REPO_ROOT/edge-deploy/config/logrotate-zion-edge" /etc/logrotate.d/zion-edge
+    echo "  + /etc/logrotate.d/zion-edge"
+fi
+mkdir -p /etc/systemd/journald.conf.d
+if [[ -f "$REPO_ROOT/edge-deploy/config/journald-zion-edge.conf" ]]; then
+    cp "$REPO_ROOT/edge-deploy/config/journald-zion-edge.conf" /etc/systemd/journald.conf.d/zion-edge.conf
+    echo "  + /etc/systemd/journald.conf.d/zion-edge.conf"
+fi
+if [[ -f "$REPO_ROOT/edge-deploy/config/rsyslog-zion-edge.conf" ]]; then
+    cp "$REPO_ROOT/edge-deploy/config/rsyslog-zion-edge.conf" /etc/rsyslog.d/10-zion-edge.conf
+    echo "  + /etc/rsyslog.d/10-zion-edge.conf"
+fi
+if [[ -f "$REPO_ROOT/edge-deploy/scripts/edge-log-cleanup.sh" ]]; then
+    cp "$REPO_ROOT/edge-deploy/scripts/edge-log-cleanup.sh" /usr/local/bin/edge-log-cleanup.sh
+    chmod +x /usr/local/bin/edge-log-cleanup.sh
+    echo "  + /usr/local/bin/edge-log-cleanup.sh"
+fi
+if [[ -f "$REPO_ROOT/edge-deploy/config/edge-log-cleanup.service" ]]; then
+    cp "$REPO_ROOT/edge-deploy/config/edge-log-cleanup.service" "$SERVICE_DIR/"
+    echo "  + $SERVICE_DIR/edge-log-cleanup.service"
+fi
+if [[ -f "$REPO_ROOT/edge-deploy/config/edge-log-cleanup.timer" ]]; then
+    cp "$REPO_ROOT/edge-deploy/config/edge-log-cleanup.timer" "$SERVICE_DIR/"
+    echo "  + $SERVICE_DIR/edge-log-cleanup.timer"
+fi
+
 # ── Reload systemd ──
 echo "[INFO] Reloading systemd daemon..."
 systemctl daemon-reload
+systemctl restart systemd-journald rsyslog || true
 
 # ── Enable auto-start on boot ──
 echo "[INFO] Enabling auto-start on boot..."
@@ -174,21 +221,8 @@ for svc in "${SERVICES[@]}"; do
         systemctl enable "${svc}.timer" 2>/dev/null || echo "  ! ${svc}.timer (not found)"
     fi
 done
-
-# ── (Optional) Logrotate for journal ──
-if [[ ! -f "/etc/logrotate.d/zion-edge" ]]; then
-    echo "[INFO] Installing logrotate config..."
-    cat > /etc/logrotate.d/zion-edge << 'EOF'
-/var/log/journal/zion-edge*.log {
-    daily
-    rotate 7
-    compress
-    delaycompress
-    missingok
-    notifempty
-    create 0644 root root
-}
-EOF
+if [[ -f "$SERVICE_DIR/edge-log-cleanup.timer" ]]; then
+    systemctl enable edge-log-cleanup.timer 2>/dev/null || echo "  ! edge-log-cleanup.timer (not found)"
 fi
 
 # ── Status ──
