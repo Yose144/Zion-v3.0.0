@@ -938,8 +938,8 @@ mod tests {
     #[test]
     fn new_coin_all_array_complete() {
         let all = ExternalCoin::all();
-        // 16 original + 8 new + 4 NiceHash = 28
-        assert_eq!(all.len(), 28);
+        // 16 original + 8 new + 4 NiceHash + 1 Keryx = 29
+        assert_eq!(all.len(), 29);
         assert!(all.contains(&ExternalCoin::KLS));
         assert!(all.contains(&ExternalCoin::ZCL));
         assert!(all.contains(&ExternalCoin::QTC));
