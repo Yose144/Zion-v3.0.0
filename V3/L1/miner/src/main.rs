@@ -2216,9 +2216,11 @@ fn run_remote_session(
     // The main thread keeps the writer for sending submit/no-solution messages.
     let (job_tx, job_rx) = std::sync::mpsc::channel::<PoolIncoming>();
     let (result_tx, result_rx) = std::sync::mpsc::channel::<PoolIncoming>();
+    let ext_gpu_tx_for_io = ext_gpu_tx.clone();
+    let ext_cpu_tx_for_io = ext_cpu_tx.clone();
     std::thread::Builder::new()
         .name("pool-io".to_string())
-        .spawn(move || pool_io_thread(reader, job_tx, result_tx))
+        .spawn(move || pool_io_thread(reader, job_tx, result_tx, ext_gpu_tx_for_io, ext_cpu_tx_for_io))
         .context("failed to spawn pool I/O thread")?;
     println!("[{}] pool_io_thread_started — job pre-fetch + async submit enabled", log_timestamp());
     sync_miner_metrics(
@@ -4003,6 +4005,8 @@ fn pool_io_thread(
     mut reader: std::io::BufReader<std::net::TcpStream>,
     job_tx: std::sync::mpsc::Sender<PoolIncoming>,
     result_tx: std::sync::mpsc::Sender<PoolIncoming>,
+    ext_gpu_tx: std::sync::mpsc::Sender<zion_pool::ExternalStreamJob>,
+    ext_cpu_tx: std::sync::mpsc::Sender<zion_pool::ExternalStreamJob>,
 ) {
     loop {
         let (line, message) = match read_wire_message(&mut reader) {
@@ -4035,6 +4039,25 @@ fn pool_io_thread(
                             job_id, ext.coin, ext.algorithm
                         );
                     }
+                    // Forward external stream jobs DIRECTLY to the GPU/CPU
+                    // thread here, without waiting for the main loop. The main
+                    // loop processes one job per iteration (~10-15s), which is
+                    // too slow for EPIC ProgPow — the EPIC pool's job window
+                    // is ~10-15s, so shares for old jobs are rejected as
+                    // "submitted too late". Forwarding here ensures the
+                    // external GPU thread gets new jobs immediately.
+                    // The external GPU thread handles duplicates gracefully
+                    // (checks is_new_job), so the main loop's forwarding is
+                    // still safe as a fallback.
+                    if !ext.coin.eq_ignore_ascii_case("PRL")
+                        && !ext.algorithm.eq_ignore_ascii_case("pearlhash")
+                    {
+                        if gpu_backend::is_cpu_only_algorithm(&ext.algorithm) {
+                            let _ = ext_cpu_tx.send(ext.clone());
+                        } else if gpu_backend::is_external_algorithm(&ext.algorithm) {
+                            let _ = ext_gpu_tx.send(ext.clone());
+                        }
+                    }
                 }
                 if let Some(ref ext_cpu) = external_stream_cpu {
                     if !QUIET.load(Ordering::Relaxed) {
@@ -4043,6 +4066,9 @@ fn pool_io_thread(
                             job_id, ext_cpu.coin, ext_cpu.algorithm, ext_cpu.target_hex
                         );
                     }
+                    // Forward CPU external stream jobs directly too (same
+                    // rationale as above — avoid main-loop latency).
+                    let _ = ext_cpu_tx.send(ext_cpu.clone());
                 }
                 let raw_header_bytes =
                     hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
