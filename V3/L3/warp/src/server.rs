@@ -56,7 +56,7 @@ impl WarpState {
     pub fn new(config: WarpConfig) -> Self {
         let registry = ChainRegistry::with_defaults();
         let fee_engine = FeeEngine::with_defaults();
-        let validator_set = WarpValidatorSet::new(config.quorum);
+        let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(config.quorum)));
         let router = WarpRouter::new(registry, fee_engine, validator_set);
 
         Self {
@@ -71,7 +71,7 @@ impl WarpState {
         let db = TransferDb::open(db_path)?;
         let registry = ChainRegistry::with_defaults();
         let fee_engine = FeeEngine::with_defaults();
-        let validator_set = WarpValidatorSet::new(config.quorum);
+        let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(config.quorum)));
         let router = WarpRouter::new(registry, fee_engine, validator_set);
         Ok(Self {
             router: Arc::new(Mutex::new(router)),
