@@ -434,6 +434,38 @@ impl HashrateTracker {
         }
     }
 
+    /// Stream 1 (ZION Deeksha) hashrate over the 60s window (H/s).
+    /// Used by the adaptive GPU duty-cycle scheduler to balance Stream 1
+    /// vs Stream 2 GPU time-slicing based on actual hashrate.
+    pub fn zion_hps_60s(&self) -> f64 {
+        if let Ok(w) = self.zion_windows.lock() {
+            let (_, h60, _) = w.rates();
+            h60
+        } else {
+            0.0
+        }
+    }
+
+    /// Stream 2 (GPU external profit coin) hashrate over the 60s window (H/s).
+    pub fn gpu_ext_hps_60s(&self) -> f64 {
+        if let Ok(w) = self.gpu_ext_windows.lock() {
+            let (_, h60, _) = w.rates();
+            h60
+        } else {
+            0.0
+        }
+    }
+
+    /// Stream 3 (CPU external Verus/RandomX) hashrate over the 60s window (H/s).
+    pub fn cpu_ext_hps_60s(&self) -> f64 {
+        if let Ok(w) = self.cpu_ext_windows.lock() {
+            let (_, h60, _) = w.rates();
+            h60
+        } else {
+            0.0
+        }
+    }
+
     /// Stream 3 (CPU external Verus/RandomX/etc) hash progress.
     pub fn record_cpu_ext_hashes(&self, n: u64) {
         self.cpu_ext_hashes.fetch_add(n, Ordering::Relaxed);
