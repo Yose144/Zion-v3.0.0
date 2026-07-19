@@ -3213,97 +3213,17 @@ impl AuxPowClient {
         //   }}
         // The mix_hash is the ProgPow mix hash (32 bytes).
         if is_epic {
-            let job = self.current_job().await;
-            let height = job
-                .as_ref()
-                .and_then(|j| j.block_number)
-                .unwrap_or(0);
-            let job_id_num: u64 = job_id.parse().unwrap_or(0);
-
-            // Convert mix_hash_hex to array of 32 bytes for ProgPow pow field.
-            // EPIC expects the mix hash as a JSON array of integers [0, 255, ...].
-            let mix_hex = mix_hash_hex.unwrap_or(_hash_hex);
-            let mix_bytes = hex::decode(mix_hex.trim_start_matches("0x"))
-                .unwrap_or_else(|_| vec![0u8; 32]);
-            // Pad/truncate to 32 bytes
-            let mut mix_arr = [0u8; 32];
-            let len = mix_bytes.len().min(32);
-            mix_arr[..len].copy_from_slice(&mix_bytes[..len]);
-            let mix_json: Vec<i64> = mix_arr.iter().map(|&b| b as i64).collect();
-
-            let req = json!({
-                "jsonrpc": "2.0",
-                "id": 20,
-                "method": "submit",
-                "params": {
-                    "height": height,
-                    "job_id": job_id_num,
-                    "nonce": nonce,
-                    "pow": {
-                        "ProgPow": mix_json
-                    }
-                }
-            });
             // EPIC upstream pool closes the TLS connection every ~10-15s
-            // (normal for EpicStratum). If the share arrives during the
-            // reconnect window, send_request_inline fails with a TLS EOF
-            // error. Retry up to 3 times, waiting for the poll loop to
-            // reconnect between attempts.
-            let mut resp: Option<Value> = None;
-            for attempt in 0..3u32 {
-                if attempt > 0 {
-                    // Wait for the poll loop to set connected=true
-                    let mut waited_ms = 0u64;
-                    while waited_ms < 8000 {
-                        if *self.connected.lock().await {
-                            break;
-                        }
-                        tokio::time::sleep(Duration::from_millis(200)).await;
-                        waited_ms += 200;
-                    }
-                    if waited_ms >= 8000 {
-                        eprintln!(
-                            "auxpow: EPIC submit: connection not restored after 8s, aborting (attempt={})",
-                            attempt
-                        );
-                        return Ok(ShareResult::Unknown);
-                    }
-                    // Small extra delay to let the poll loop start reading
-                    tokio::time::sleep(Duration::from_millis(100)).await;
-                }
-                match self.send_request_inline(&req).await {
-                    Ok(r) => {
-                        resp = Some(r);
-                        break;
-                    }
-                    Err(e) => {
-                        eprintln!(
-                            "auxpow: EPIC submit attempt={} failed: {e}",
-                            attempt + 1
-                        );
-                    }
-                }
-            }
-            let resp = match resp {
-                Some(r) => r,
-                None => return Ok(ShareResult::Unknown),
-            };
-            if let Some(err) = resp.get("error") {
-                if !err.is_null() {
-                    let msg = err.get("message")
-                        .and_then(|m| m.as_str())
-                        .unwrap_or("unknown error");
-                    return Ok(ShareResult::Rejected(msg.to_string()));
-                }
-            }
-            let ok = resp.get("result")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(true);
-            if ok {
-                return Ok(ShareResult::Accepted);
-            } else {
-                return Ok(ShareResult::Rejected("submit rejected".to_string()));
-            }
+            // (normal for EpicStratum). The poll loop owns the shared reader,
+            // so send_request_inline races with both the poll loop AND the
+            // connection-close timer, causing TLS EOF on every submit attempt.
+            //
+            // Fix: use a DEDICATED one-shot TLS connection for each share
+            // submission. We open a fresh connection, login, submit, read
+            // the response, and close — all within our own controlled
+            // lifecycle. EPIC shares are ~14 min apart, so the extra TLS
+            // handshake (~100ms) is negligible.
+            return self.epic_submit_dedicated(job_id, nonce, mix_hash_hex, _hash_hex).await;
         }
 
         // Beam submit format:
@@ -4152,6 +4072,205 @@ impl AuxPowClient {
         }
     }
 
+    /// EPIC ProgPow share submission via a DEDICATED one-shot TLS connection.
+    ///
+    /// The EPIC upstream pool aggressively closes TLS connections every
+    /// ~10-15s. The shared poll-loop connection races with this close timer,
+    /// causing TLS EOF on nearly every submit attempt. This method opens a
+    /// fresh TLS connection, logs in, submits the share, reads the response,
+    /// and closes — all within a controlled lifecycle that doesn't compete
+    /// with the poll loop.
+    ///
+    /// Returns `ShareResult::Accepted` on success, `Rejected` on an explicit
+    /// error response, or `Unknown` if we can't get a definitive response
+    /// after 3 connection attempts.
+    async fn epic_submit_dedicated(
+        &self,
+        job_id: &str,
+        nonce: u64,
+        mix_hash_hex: Option<&str>,
+        _hash_hex: &str,
+    ) -> Result<ShareResult> {
+        let job = self.current_job().await;
+        let height = job.as_ref().and_then(|j| j.block_number).unwrap_or(0);
+        let job_id_num: u64 = job_id.parse().unwrap_or(0);
+
+        // Convert mix_hash_hex to array of 32 bytes for ProgPow pow field.
+        // EPIC expects the mix hash as a JSON array of integers [0, 255, ...].
+        let mix_hex = mix_hash_hex.unwrap_or(_hash_hex);
+        let mix_bytes = hex::decode(mix_hex.trim_start_matches("0x"))
+            .unwrap_or_else(|_| vec![0u8; 32]);
+        let mut mix_arr = [0u8; 32];
+        let len = mix_bytes.len().min(32);
+        mix_arr[..len].copy_from_slice(&mix_bytes[..len]);
+        let mix_json: Vec<i64> = mix_arr.iter().map(|&b| b as i64).collect();
+
+        let submit_req = json!({
+            "jsonrpc": "2.0",
+            "id": 20,
+            "method": "submit",
+            "params": {
+                "height": height,
+                "job_id": job_id_num,
+                "nonce": nonce,
+                "pow": {
+                    "ProgPow": mix_json
+                }
+            }
+        });
+
+        // Build the login request (same logic as epic_login, but using
+        // local connection state instead of self.stream/self.reader).
+        let worker = &self.profile.worker_name;
+        let max_wallet_len = 20usize.saturating_sub(worker.len() + 1);
+        let payout = self.payout_wallet.lock().await.clone();
+        let wallet_short = if payout.len() <= max_wallet_len {
+            payout.clone()
+        } else {
+            "ziontest".to_string()
+        };
+        let login_str = format!("{}.{}", wallet_short, worker);
+        let password = if self.profile.password.len() >= 8 {
+            self.profile.password.clone()
+        } else {
+            "zion1234567".to_string()
+        };
+        let login_req = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "login",
+            "params": {
+                "login": login_str,
+                "pass": password,
+                "agent": "zion-auxpow/0.1",
+            }
+        });
+
+        let addr = self.profile.pool_address();
+
+        for attempt in 0..3u32 {
+            eprintln!(
+                "auxpow: EPIC dedicated submit attempt={} (job_id={} nonce={} height={})",
+                attempt + 1, job_id_num, nonce, height
+            );
+
+            // 1. Open fresh TCP+TLS connection
+            let tcp_stream = match timeout(Duration::from_secs(15), TcpStream::connect(&addr)).await {
+                Ok(Ok(s)) => s,
+                Ok(Err(e)) => {
+                    eprintln!("auxpow: EPIC dedicated submit attempt={} TCP connect failed: {e}", attempt + 1);
+                    tokio::time::sleep(Duration::from_secs(2)).await;
+                    continue;
+                }
+                Err(_) => {
+                    eprintln!("auxpow: EPIC dedicated submit attempt={} TCP connect timeout", attempt + 1);
+                    tokio::time::sleep(Duration::from_secs(2)).await;
+                    continue;
+                }
+            };
+
+            let provider = std::sync::Arc::new(
+                tokio_rustls::rustls::crypto::ring::default_provider()
+            );
+            let roots = RootCertStore {
+                roots: webpki_roots::TLS_SERVER_ROOTS.iter().cloned().collect(),
+            };
+            let config = match tokio_rustls::rustls::ClientConfig::builder_with_provider(provider)
+                .with_safe_default_protocol_versions()
+            {
+                Ok(c) => c.with_root_certificates(roots).with_no_client_auth(),
+                Err(e) => {
+                    eprintln!("auxpow: EPIC dedicated submit TLS config failed: {e}");
+                    return Ok(ShareResult::Unknown);
+                }
+            };
+            let connector = tokio_rustls::TlsConnector::from(std::sync::Arc::new(config));
+            let domain = match rustls_pki_types::ServerName::try_from(self.profile.pool_host.clone()) {
+                Ok(d) => d,
+                Err(e) => {
+                    eprintln!("auxpow: EPIC dedicated submit invalid TLS server name: {e}");
+                    return Ok(ShareResult::Unknown);
+                }
+            };
+            let tls_stream = match connector.connect(domain, tcp_stream).await {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("auxpow: EPIC dedicated submit attempt={} TLS handshake failed: {e}", attempt + 1);
+                    tokio::time::sleep(Duration::from_secs(2)).await;
+                    continue;
+                }
+            };
+
+            let (reader_half, writer_half) = tokio::io::split(tls_stream);
+            let mut sock_writer: Box<dyn AsyncWrite + Unpin + Send> = Box::new(writer_half);
+            let mut sock_reader = BufReader::new(Box::new(reader_half) as Box<dyn AsyncRead + Unpin + Send>);
+
+            // 2. Login on the dedicated connection
+            let login_resp = match epic_dedicated_request(&mut sock_writer, &mut sock_reader, &login_req, 1).await {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("auxpow: EPIC dedicated submit attempt={} login failed: {e}", attempt + 1);
+                    let _ = sock_writer.shutdown().await;
+                    tokio::time::sleep(Duration::from_secs(2)).await;
+                    continue;
+                }
+            };
+            if let Some(err) = login_resp.get("error") {
+                if !err.is_null() {
+                    let msg = err.get("message").and_then(|m| m.as_str()).unwrap_or("login error");
+                    eprintln!("auxpow: EPIC dedicated submit login rejected: {msg}");
+                    let _ = sock_writer.shutdown().await;
+                    return Ok(ShareResult::Rejected(format!("EPIC login: {msg}")));
+                }
+            }
+
+            // 3. Submit the share on the dedicated connection
+            match epic_dedicated_request(&mut sock_writer, &mut sock_reader, &submit_req, 20).await {
+                Ok(resp) => {
+                    let _ = sock_writer.shutdown().await;
+                    if let Some(err) = resp.get("error") {
+                        if !err.is_null() {
+                            let msg = err.get("message")
+                                .and_then(|m| m.as_str())
+                                .unwrap_or("unknown error");
+                            eprintln!("auxpow: EPIC dedicated submit rejected: {msg}");
+                            return Ok(ShareResult::Rejected(msg.to_string()));
+                        }
+                    }
+                    let ok = resp.get("result")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(true);
+                    eprintln!(
+                        "auxpow: EPIC dedicated submit accepted={} (attempt={})",
+                        ok, attempt + 1
+                    );
+                    if ok {
+                        return Ok(ShareResult::Accepted);
+                    } else {
+                        return Ok(ShareResult::Rejected("submit rejected".to_string()));
+                    }
+                }
+                Err(e) => {
+                    eprintln!(
+                        "auxpow: EPIC dedicated submit attempt={} submit failed: {e}",
+                        attempt + 1
+                    );
+                    let _ = sock_writer.shutdown().await;
+                    // If the submit write succeeded but the read failed (TLS
+                    // EOF), the pool may have processed the share but closed
+                    // before responding. Retry on a fresh connection.
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    continue;
+                }
+            }
+        }
+
+        eprintln!(
+            "auxpow: EPIC dedicated submit exhausted 3 attempts — returning Unknown"
+        );
+        Ok(ShareResult::Unknown)
+    }
+
     /// Submit a pre-built Pearl PlainProof to AlphaPool.
     ///
     /// Unlike `submit_share()` which mines the PoUW internally, this method
@@ -4803,6 +4922,70 @@ impl StratumProtocol {
             Self::CryptonoteStratum => "cryptonotestratum",
             Self::IronFishStratum => "ironfishstratum",
         }
+    }
+}
+
+/// Free-standing helper for `epic_submit_dedicated`: send a JSON-RPC request
+/// on a dedicated TLS connection and read the matching response (skipping
+/// notifications). This avoids the shared `self.reader`/`self.stream` mutexes
+/// that race with the poll loop.
+async fn epic_dedicated_request(
+    writer: &mut Box<dyn AsyncWrite + Unpin + Send>,
+    reader: &mut BufReader<Box<dyn AsyncRead + Unpin + Send>>,
+    req: &Value,
+    req_id: i64,
+) -> Result<Value> {
+    let mut line = serde_json::to_string(req)?;
+    line.push('\n');
+    writer.write_all(line.as_bytes()).await?;
+    writer.flush().await?;
+    let deadline = Instant::now() + Duration::from_secs(30);
+    loop {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            bail!("dedicated submit: timeout waiting for response");
+        }
+        let mut buf = String::new();
+        match timeout(remaining, reader.read_line(&mut buf)).await {
+            Ok(Ok(0)) => bail!("dedicated submit: connection closed by remote"),
+            Ok(Ok(_)) => {}
+            Ok(Err(e)) => bail!("dedicated submit: read error: {e}"),
+            Err(_) => bail!("dedicated submit: read timeout"),
+        }
+        let trimmed = buf.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        let parsed: Value = match serde_json::from_str(trimmed) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        // Check for matching response id
+        let resp_id = parsed.get("id").and_then(|v| {
+            v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+        });
+        if let Some(id) = resp_id {
+            if id == req_id {
+                return Ok(parsed);
+            }
+        }
+        // EPIC: accept error/result with matching method
+        if let Some(method) = parsed.get("method").and_then(|m| m.as_str()) {
+            let req_method = req.get("method").and_then(|m| m.as_str()).unwrap_or("");
+            if method == req_method {
+                if let Some(err) = parsed.get("error") {
+                    if !err.is_null() {
+                        return Ok(parsed);
+                    }
+                }
+                if let Some(result) = parsed.get("result") {
+                    if !result.is_null() {
+                        return Ok(parsed);
+                    }
+                }
+            }
+        }
+        // Otherwise it's a notification — skip it
     }
 }
 
