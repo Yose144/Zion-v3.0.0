@@ -4052,9 +4052,28 @@ pub mod opencl_deeksha_lite_fire {
         tuning: GpuTuning,
         recovery_attempts: u32,
         max_recovery_attempts: u32,
-        /// FIX #9: Pending batch result from launch_batch, returned by collect_batch.
-        /// Without this, the trait default discards mine_batch results → gpu_hps=0, tested=0.
-        pending: Option<GpuBatchResult>,
+        /// Optimization #2: Pending async batch state for pipelined launch/collect.
+        /// launch_batch queues kernels + async reads (no sync), stores state here.
+        /// collect_batch waits for reads and scans hashes. This enables overlapping
+        /// pool I/O (solution submission) with GPU compute of the next batch.
+        pending: Option<PendingAsyncBatch>,
+    }
+
+    /// Async batch state stored by launch_batch, consumed by collect_batch.
+    /// Holds the host buffers and read events needed to retrieve results
+    /// without blocking the host during launch.
+    struct PendingAsyncBatch {
+        /// Double-buffered host storage for hash readback.
+        host_a: Vec<u8>,
+        host_b: Vec<u8>,
+        /// One read event per chunk, in launch order.
+        read_events: Vec<Event>,
+        /// Per-chunk metadata: (chunk_size, nonce_start, buf_idx) for scanning.
+        chunk_meta: Vec<(usize, u64, usize)>,
+        /// Target difficulty for solution scanning.
+        target: DifficultyTarget,
+        /// Total nonces tested across all chunks.
+        total_tested: u64,
     }
 
     impl OpenClDeekshaLiteFireMiner {
@@ -4587,10 +4606,14 @@ pub mod opencl_deeksha_lite_fire {
             Ok((total_hashes, elapsed, khps))
         }
 
-        /// FIX #9: Override default launch_batch which discards mine_batch results.
-        /// Store the synchronous mine_batch result in `pending` for collect_batch to return.
-        /// This is synchronous (no true overlap) but CORRECT — nonces_tested and solutions
-        /// are preserved instead of being dropped by the trait default.
+        /// Optimization #2: True async launch — queue all kernel chunks + async
+        /// reads on the GPU without syncing. The host returns immediately after
+        /// queueing, enabling overlap of pool I/O (solution submission for the
+        /// previous batch) with GPU compute of this batch.
+        ///
+        /// Uses the existing double-buffered read infrastructure (output_hashes_buf
+        /// and output_hashes_buf_b alternate per chunk) with the dedicated read_queue.
+        /// collect_batch waits for the read events and scans the host buffers.
         fn launch_batch(
             &mut self,
             header: MiningHeader,
@@ -4598,21 +4621,188 @@ pub mod opencl_deeksha_lite_fire {
             nonce_start: u64,
             batch_size: u64,
         ) -> Result<u64> {
-            // If a previous batch is still pending (collect_batch not called), drop it.
-            // This shouldn't happen in normal pipeline usage but guards against state corruption.
+            // If a previous batch is still pending (collect_batch not called),
+            // drop it. Its events will be released when the PendingAsyncBatch
+            // is dropped — the OpenCL runtime handles cleanup.
             if self.pending.is_some() {
                 self.pending = None;
             }
-            let result = self.mine_batch(header, target, nonce_start, batch_size)?;
-            self.pending = Some(result);
-            Ok(0)
+
+            let header_bytes = header.to_bytes();
+            let header_80 = &header_bytes[..80.min(header_bytes.len())];
+            let precomputed_state = Self::precompute_header_keccak_state(header_80);
+
+            // Upload header state (synchronous small write — negligible cost)
+            {
+                let guard = GpuGuard::new();
+                self.header_state_buf.write(&precomputed_state[..]).enq()?;
+                if guard.was_caught() {
+                    self.recovery_attempts += 1;
+                    anyhow::bail!(
+                        "GPU access violation during header state buffer write (attempt {}/{}). AMD driver crash detected — try reducing ZION_GPU_WORK_SIZE or ZION_OCL_VRAM_PCT.",
+                        self.recovery_attempts,
+                        self.max_recovery_attempts
+                    );
+                }
+            }
+
+            let out_bufs = [&self.output_hashes_buf, &self.output_hashes_buf_b];
+            let mut host_a = vec![0u8; self.work_size * 32];
+            let mut host_b = vec![0u8; self.work_size * 32];
+
+            let mut read_events: Vec<Event> = Vec::new();
+            let mut chunk_meta: Vec<(usize, u64, usize)> = Vec::new();
+            let mut total_tested = 0u64;
+            let mut current_nonce = nonce_start;
+            let mut left = batch_size;
+            let mut buf_idx = 0usize;
+
+            // Track the last read event per output buffer (0 and 1) so that
+            // when we reuse a buffer for a later chunk, the kernel waits for
+            // the previous read on that buffer to complete. This prevents
+            // a write-after-read hazard between chunks sharing a buffer.
+            let mut last_read_per_buf: [Option<Event>; 2] = [None, None];
+
+            // Queue all chunks back-to-back with async reads — NO host sync points.
+            // Each chunk's read depends on its kernel event (ewait), ensuring
+            // the read only starts after the kernel for that chunk completes.
+            // When reusing a buffer (chunk N+2), the kernel waits for chunk N's
+            // read event, preventing write-after-read hazards.
+            while left > 0 {
+                let chunk = (left as usize).min(self.work_size);
+                let local_size = self.local_work_size.min(chunk);
+                let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+                let out_buf = out_bufs[buf_idx];
+
+                self.kernel.set_arg(1, current_nonce)?;
+                self.kernel.set_arg(2, chunk as u32)?;
+                self.kernel.set_arg(3, out_buf)?;
+
+                let mut k_event = Event::empty();
+                // If this buffer was used before, take the previous read event
+                // so the kernel waits for it before overwriting the buffer.
+                let prev_read_for_buf = last_read_per_buf[buf_idx].take();
+                {
+                    let guard = GpuGuard::new();
+                    unsafe {
+                        let mut cmd = self.kernel
+                            .cmd()
+                            .global_work_size(global_size)
+                            .local_work_size(local_size)
+                            .enew(&mut k_event);
+                        if let Some(ref prev_read) = prev_read_for_buf {
+                            cmd = cmd.ewait(prev_read);
+                        }
+                        cmd.enq()?;
+                    }
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during kernel enqueue (attempt {}/{}). AMD driver crash detected.",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                }
+
+                let mut r_event = Event::empty();
+                {
+                    let guard = GpuGuard::new();
+                    let dst = if buf_idx == 0 { &mut host_a[..] } else { &mut host_b[..] };
+                    unsafe {
+                        out_buf
+                            .read(&mut dst[..chunk * 32])
+                            .queue(&self.read_queue)
+                            .ewait(&k_event)
+                            .enew(&mut r_event)
+                            .block(false)
+                            .enq()?;
+                    }
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during async hash buffer read (attempt {}/{}). AMD driver crash detected.",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                }
+
+                let _ = self.pro_que.queue().flush();
+
+                // Remember this read event for the next time this buffer is reused.
+                last_read_per_buf[buf_idx] = Some(r_event.clone());
+
+                read_events.push(r_event);
+                chunk_meta.push((chunk, current_nonce, buf_idx));
+                total_tested += chunk as u64;
+                current_nonce = current_nonce.wrapping_add(chunk as u64);
+                left -= chunk as u64;
+                buf_idx = 1 - buf_idx;
+            }
+
+            // Store pending state — NO sync yet, host returns immediately.
+            // The host buffers (host_a, host_b) are moved into pending and live
+            // until collect_batch processes them.
+            self.pending = Some(PendingAsyncBatch {
+                host_a,
+                host_b,
+                read_events,
+                chunk_meta,
+                target,
+                total_tested,
+            });
+
+            Ok(0) // token unused, pending stored in self
         }
 
-        /// FIX #9: Return the pending batch result stored by launch_batch.
+        /// Optimization #2: Collect results from a previously launched async batch.
+        /// Waits for all read events to complete, then scans host buffers for
+        /// solutions matching the target. This is the only sync point — the GPU
+        /// has been computing in parallel with host pool I/O since launch_batch.
         fn collect_batch(&mut self, _token: u64) -> Result<GpuBatchResult> {
-            self.pending
+            let pending = self
+                .pending
                 .take()
-                .ok_or_else(|| anyhow::anyhow!("no pending OpenCL fire batch to collect"))
+                .ok_or_else(|| anyhow::anyhow!("no pending OpenCL fire batch to collect"))?;
+
+            let mut all_solutions = Vec::new();
+            let mut total_tested = 0u64;
+
+            // Wait for each chunk's read event and scan the corresponding host buffer.
+            // Events are in launch order, matching chunk_meta order.
+            for (i, r_event) in pending.read_events.into_iter().enumerate() {
+                let (chunk, nonce_base, buf_idx) = pending.chunk_meta[i];
+
+                {
+                    let guard = GpuGuard::new();
+                    r_event.wait_for()?;
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during read event wait (attempt {}/{}). AMD driver crash detected.",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                }
+
+                let host = if buf_idx == 0 { &pending.host_a[..] } else { &pending.host_b[..] };
+                for j in 0..chunk {
+                    let hash: [u8; 32] = host[j * 32..(j + 1) * 32].try_into().unwrap();
+                    if pending.target.allows(&hash) {
+                        let nonce = nonce_base.wrapping_add(j as u64);
+                        all_solutions.push((nonce, hash, None));
+                        break;
+                    }
+                }
+                total_tested += chunk as u64;
+            }
+
+            Ok(GpuBatchResult {
+                solutions: all_solutions,
+                nonces_tested: total_tested,
+            })
         }
     }
 }
