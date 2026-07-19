@@ -120,6 +120,10 @@ impl ShareForwarder {
             // VerusHash v2.2: professional pools (node-stratum-pool-verus /
             // LuckPool) interpret the 32-byte hash as a little-endian integer.
             meets_target_little_endian(&effective_hash, target)
+        } else if self.client.profile().coin == ExternalCoin::RTM {
+            // GhostRider (Raptoreum): Bitcoin/Dash-style LE hash, BE target.
+            // Miner uses meets_target_little_endian — pool must match.
+            meets_target_little_endian(&effective_hash, target)
         } else {
             // Most other external algorithms compare hash and target as
             // big-endian 256-bit integers.

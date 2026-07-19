@@ -74,8 +74,13 @@ EXPORT void ghostrider_zion_hash(const uint8_t* header, size_t header_len,
     uint32_t nonce32 = (uint32_t)(nonce & 0xFFFFFFFF);
     memcpy(buf + RTM_NONCE_OFFSET, &nonce32, RTM_NONCE_SIZE);
 
-    /* Compute GhostRider hash */
-    gr_hash((const char*)buf, (char*)output);
+    /* Compute GhostRider hash (sphlib outputs in BE/display order) */
+    uint8_t hash_be[32];
+    gr_hash((const char*)buf, (char*)hash_be);
+
+    /* Reverse to LE (Bitcoin internal) order — yiimp/zpool expect hash_bin[31]=MSB */
+    for (int i = 0; i < 32; ++i)
+        output[i] = hash_be[31 - i];
 }
 
 /*

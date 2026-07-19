@@ -738,6 +738,7 @@ fn build_ghostrider(target_os: &str, is_msvc: bool) {
     if is_msvc {
         add_msvc_includes(&mut b);
     } else {
+        b.define("_GNU_SOURCE", None);
         b.flag_if_supported("-std=c11");
         b.flag_if_supported("-fPIC");
         b.flag_if_supported("-funroll-loops");
