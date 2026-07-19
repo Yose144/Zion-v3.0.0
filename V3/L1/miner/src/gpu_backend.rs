@@ -1846,15 +1846,15 @@ fn create_gpu_backend_inner(
                     }
                     // Fall back to CPU for algorithms without CUDA kernels
                     // (ethash, kawpow, progpow, beamhash, eaglesong, octopus, equihash, neoscrypt)
-                    #[cfg(feature = "native-kheavyhash")]
+                    #[cfg(any(feature = "native-kheavyhash", feature = "native-blake3-algo"))]
                     {
                         eprintln!("[gpu_backend] CUDA CPU fallback for algorithm={}", algorithm);
                         let miner = crate::gpu_backend::cpu_external_fallback::CpuExternalMiner::new(algorithm, work_size)?;
                         return Ok(Box::new(miner));
                     }
-                    #[cfg(not(feature = "native-kheavyhash"))]
+                    #[cfg(not(any(feature = "native-kheavyhash", feature = "native-blake3-algo")))]
                     {
-                        anyhow::bail!("External algorithm '{}' on CUDA requires native-kheavyhash feature", algorithm);
+                        anyhow::bail!("External algorithm '{}' on CUDA requires native-kheavyhash or native-blake3-algo feature", algorithm);
                     }
                 }
                 let miner: Box<dyn GpuMiner> = if algorithm == "deeksha_lite_fire" {
@@ -1875,15 +1875,15 @@ fn create_gpu_backend_inner(
                 // External AuxPoW algorithms (kheavyhash, blake3, etc.) have
                 // no Metal kernel. Fall back to CPU via native-ffi.
                 if is_external_algorithm(algorithm) {
-                    #[cfg(feature = "native-kheavyhash")]
+                    #[cfg(any(feature = "native-kheavyhash", feature = "native-blake3-algo"))]
                     {
                         eprintln!("[gpu_backend] Metal CPU fallback for algorithm={}", algorithm);
                         let miner = crate::gpu_backend::cpu_external_fallback::CpuExternalMiner::new(algorithm, work_size)?;
                         return Ok(Box::new(miner));
                     }
-                    #[cfg(not(feature = "native-kheavyhash"))]
+                    #[cfg(not(any(feature = "native-kheavyhash", feature = "native-blake3-algo")))]
                     {
-                        anyhow::bail!("External algorithm '{}' on Metal requires native-kheavyhash feature", algorithm);
+                        anyhow::bail!("External algorithm '{}' on Metal requires native-kheavyhash or native-blake3-algo feature", algorithm);
                     }
                 }
                 if algorithm == "deeksha_lite_fire" {
@@ -6617,7 +6617,7 @@ pub mod metal_deeksha {
 // algorithms have no GPU kernel. This module provides a CPU-based fallback
 // that implements the GpuMiner trait using native-ffi hashers.
 
-#[cfg(feature = "native-kheavyhash")]
+#[cfg(any(feature = "native-kheavyhash", feature = "native-blake3-algo"))]
 pub mod cpu_external_fallback {
     use super::*;
     use std::time::Instant;
@@ -6665,10 +6665,30 @@ pub mod cpu_external_fallback {
             let actual_batch = batch_size.min(self.work_size as u64).min(65536);
             let pre_pow_hash = &header.to_bytes()[..32];
             match self.algorithm.as_str() {
+                #[cfg(feature = "native-kheavyhash")]
                 "kheavyhash" | "kheavyhash_kas" => {
                     for i in 0..actual_batch {
                         let nonce = nonce_start.wrapping_add(i);
                         let hash = zion_native_ffi::kheavyhash::mine(pre_pow_hash, nonce, 0);
+                        if hash_le_meets_target(&hash, &target.bytes)? {
+                            return Ok(GpuBatchResult {
+                                solutions: vec![(nonce, hash, None)],
+                                nonces_tested: i + 1,
+                            });
+                        }
+                    }
+                    Ok(GpuBatchResult { solutions: Vec::new(), nonces_tested: actual_batch })
+                }
+                #[cfg(feature = "native-blake3-algo")]
+                "blake3" | "blake3_alph" | "blake3_dcr" => {
+                    let header_bytes = header.to_bytes();
+                    for i in 0..actual_batch {
+                        let nonce = nonce_start.wrapping_add(i);
+                        let hash = if self.algorithm == "blake3_alph" {
+                            zion_native_ffi::blake3_algo::mine_alph_simple(&header_bytes, nonce)
+                        } else {
+                            zion_native_ffi::blake3_algo::mine(&header_bytes, nonce)
+                        };
                         if hash_le_meets_target(&hash, &target.bytes)? {
                             return Ok(GpuBatchResult {
                                 solutions: vec![(nonce, hash, None)],
@@ -6691,11 +6711,30 @@ pub mod cpu_external_fallback {
         ) -> Result<GpuBatchResult> {
             let actual_batch = batch_size.min(self.work_size as u64).min(65536);
             match self.algorithm.as_str() {
+                #[cfg(feature = "native-kheavyhash")]
                 "kheavyhash" | "kheavyhash_kas" => {
                     let pre_pow_hash = &raw_header[..32.min(raw_header.len())];
                     for i in 0..actual_batch {
                         let nonce = nonce_start.wrapping_add(i);
                         let hash = zion_native_ffi::kheavyhash::mine(pre_pow_hash, nonce, 0);
+                        if hash_le_meets_target(&hash, &target.bytes)? {
+                            return Ok(GpuBatchResult {
+                                solutions: vec![(nonce, hash, None)],
+                                nonces_tested: i + 1,
+                            });
+                        }
+                    }
+                    Ok(GpuBatchResult { solutions: Vec::new(), nonces_tested: actual_batch })
+                }
+                #[cfg(feature = "native-blake3-algo")]
+                "blake3" | "blake3_alph" | "blake3_dcr" => {
+                    for i in 0..actual_batch {
+                        let nonce = nonce_start.wrapping_add(i);
+                        let hash = if self.algorithm == "blake3_alph" {
+                            zion_native_ffi::blake3_algo::mine_alph_simple(raw_header, nonce)
+                        } else {
+                            zion_native_ffi::blake3_algo::mine(raw_header, nonce)
+                        };
                         if hash_le_meets_target(&hash, &target.bytes)? {
                             return Ok(GpuBatchResult {
                                 solutions: vec![(nonce, hash, None)],
@@ -6716,7 +6755,21 @@ pub mod cpu_external_fallback {
             let mut nonce: u64 = 0;
             while start.elapsed().as_secs_f64() < secs {
                 for _ in 0..1000 {
-                    let _ = zion_native_ffi::kheavyhash::mine(&header, nonce, 0);
+                    match self.algorithm.as_str() {
+                        #[cfg(feature = "native-kheavyhash")]
+                        "kheavyhash" | "kheavyhash_kas" => {
+                            let _ = zion_native_ffi::kheavyhash::mine(&header, nonce, 0);
+                        }
+                        #[cfg(feature = "native-blake3-algo")]
+                        "blake3" | "blake3_alph" | "blake3_dcr" => {
+                            if self.algorithm == "blake3_alph" {
+                                let _ = zion_native_ffi::blake3_algo::mine_alph_simple(&header, nonce);
+                            } else {
+                                let _ = zion_native_ffi::blake3_algo::mine(&header, nonce);
+                            }
+                        }
+                        _ => break,
+                    }
                     nonce += 1;
                     total += 1;
                 }

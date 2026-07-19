@@ -617,6 +617,12 @@ pub struct JobPackage {
     pub algorithm: String,
     pub header_bytes: Vec<u8>,
     pub target_bytes: [u8; 32],
+    /// Share target bytes (easier than target_bytes for share submission).
+    /// For coins that receive mining.set_difficulty, this is derived from
+    /// the pool's share difficulty.  For coins that don't (ALPH, DCR, KAS),
+    /// this equals target_bytes (block target).
+    #[serde(default)]
+    pub share_target_bytes: [u8; 32],
     /// Block timestamp (Unix seconds) required by kHeavyHash/KAS PowHash.
     pub timestamp: u64,
     /// Block number (height) from the external pool notify.  Used by

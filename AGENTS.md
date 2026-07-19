@@ -1601,3 +1601,246 @@ CPU hash-rate reference on a Ryzen 5 3600 (12 threads, release build):
 - DCR Blake3: ~6-7 MH/s.
 - ALPH Blake3: ~14 MH/s.
 - KAS kHeavyHash: ~0.35 MH/s.
+
+---
+
+## SMOS Rig Deployment — CANONICAL RULES (2026-07-19)
+
+> **⚠️ ČTI TUTO SEKCI PŘED KAŽDÝM DEPLOY NA SMOS.** Tyto pravidla existují protože jsme opakovaně narazili na stejné chyby. Nedodržení = ztracený čas.
+
+### SMOS Rig Info
+
+- **Rig name:** `ZionRig` (SMOS ID `518837`)
+- **IP:** `109.81.31.210` (behind NAT — **nelze SSH inbound**, jen outbound)
+- **Hardware:** AMD Vega 64 (gfx900, 64CU, 8GB, OpenCL)
+- **OS:** SimpleMining OS (SMOS), GLIBC **2.31** (Ubuntu 20.04 based)
+- **SMOS API key:** `api-17a2bf581f1cf8f451e568d063c42f0cc3461516abbded073110b8486773adca` (prefix `api-` je povinný v headeru `X-AUTH-TOKEN`)
+- **SMOS Group:** `ZionLiteFire` (ID `1773590`)
+- **Miner binary URL:** `http://62.171.141.136/zion-miner/zion-miner` (served by Edge nginx)
+- **Pool:** `62.171.141.136:8444` (Edge)
+
+### SMOS API — WORKING ENDPOINTS (2026-07-19)
+
+```
+GET  /rigs/518837                     — rig details (IP, uptime, errors, group)
+GET  /rigs/518837/console             — console output (base64 encoded, HTML tags)
+PUT  /rigs/518837                     — update rig (body: {"execute":"reload"} to reload miner)
+GET  /rig-groups/1773590              — group config (minerOptions = zip URL)
+PUT  /rig-groups/1773590              — update group (body: {"name","description","minerOptions"})
+```
+
+**Reload rig:** `PUT /rigs/518837` s `{"execute":"reload"}` — rig stáhne nový zip a restartuje miner.
+**Update group config:** `PUT /rig-groups/1773590` s `{"minerOptions":"http://...new-zip..."}`.
+
+**Endpointy co NEFUNGUJÍ:** `/groups`, `/rigGroups`, `/rigs/518837/reload`, `/rigs/518837/restart` (všechno 404).
+
+### Build pravidla pro SMOS miner binary
+
+#### 1. GLIBC kompatibilita — KŘITICKÉ
+
+SMOS má **GLIBC 2.31**. Edge server má Ubuntu 24.04 s **GLIBC 2.39**. Build na Edge přímo = binary nefunguje na SMOS (`GLIBC_2.32 not found` nebo `GLIBC_2.34 not found`).
+
+**Řešení:** Build v Dockeru s Ubuntu 20.04 (GLIBC 2.31):
+
+```bash
+# Docker image (jednorázově)
+docker build -t zion-build-focal -f - . << 'EOF'
+FROM ubuntu:20.04
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    curl build-essential pkg-config libssl-dev ocl-icd-opencl-dev gcc-10 g++-10 \
+    && update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-10 100 \
+    && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-10 100 \
+    && curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    --default-toolchain 1.77.2
+ENV PATH="/root/.cargo/bin:$PATH"
+WORKDIR /build
+EOF
+
+# Build (čistý target v Docker volume, nesdílet s host!)
+docker volume rm zion-build-target-old 2>/dev/null
+docker run --rm \
+  -v /opt/zion/V3:/build/V3:ro \
+  -v /opt/zion/AuXpow:/build/AuXpow:ro \
+  -v /root/.cargo/registry:/root/.cargo/registry \
+  -v zion-build-target-old:/build/V3/target \
+  -w /build/V3 \
+  zion-build-focal \
+  bash -c 'export PATH=/root/.cargo/bin:$PATH && cargo build --release -p zion-miner --features gpu-opencl 2>&1'
+
+# Kopírovat binary z Docker volume na Edge
+docker run --rm -v zion-build-target-old:/target -v /var/www/zion-miner:/deploy \
+  zion-build-focal bash -c 'cp /target/release/zion-miner /deploy/zion-miner && chmod +x /deploy/zion-miner'
+```
+
+**Ověřit GLIBC verzi:**
+```bash
+docker run --rm -v zion-build-target-old:/target zion-build-focal \
+  bash -c 'objdump -T /target/release/zion-miner | grep GLIBC | sort -t_ -k2 -V | tail -3'
+# Musí být max GLIBC_2.30 nebo GLIBC_2.31. Pokud je GLIBC_2.34+, build je špatný.
+```
+
+#### 2. Cargo features — KŘITICKÉ
+
+Miner `Cargo.toml` má `default = []` (žádné default features). **Bez `--features gpu-opencl` miner nemá OpenCL podporu** a spadne na `backend: "cpu"` s `gpu_primary_error: primary GPU backend not initialized`.
+
+**SPRÁVNĚ:** `cargo build --release -p zion-miner --features gpu-opencl`
+**ŠPATNĚ:** `cargo build --release -p zion-miner` (bez features → CPU only!)
+
+Pro nativní algoritmy (volitelné): `--features "gpu-opencl,native-kheavyhash,native-verushash,native-randomx"`
+
+#### 3. Rust toolchain verze
+
+- **Rust 1.78+** vyžaduje GLIBC_2.34 (pthread_setname_np, __libc_start_main) → **nelze použít pro SMOS**
+- **Rust 1.77.2** je poslední verze kompatibilní s GLIBC 2.31 → **používat pro SMOS buildy**
+- `aws-lc-sys` crate může odmítnout GCC 9.x (memcmp bug) — použít `gcc-10` nebo novější
+
+#### 3b. CPU instrukce — KŘITICKÉ (Illegal instruction)
+
+SMOS rig CPU = **Intel Pentium G4560** (Kaby Lake, 2 cores/4 threads, 3.5 GHz). **NEMÁ AVX2, BMI2, FMA** — jen SSE4.1, SSE4.2, AES-NI, PCLMUL.
+
+`aws-lc-sys` (závislost `rustls` → `tokio-rustls`) obsahuje ** assembly kód který používá AVX2/BMI2 instrukce** a **ignoruje `CFLAGS="-march=x86-64"`**! Build projde, ale runtime crashne s `Illegal instruction` při inicializaci TLS (při připojení k poolu přes HTTPS/WSS).
+
+**Symptom:** Miner nastartuje, OpenCL se inicializuje (`auxpow_gpu_opencl using embedded kernel=kheavyhash_kernel.cl`), pak `Illegal instruction` crash.
+
+**Řešení — vynutit `ring` crypto provider místo `aws-lc-rs`:**
+
+```toml
+# AuXpow/Cargo.toml — přidat explicitní rustls s ring providerem:
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+```
+
+**NEBO** pokud nelze změnit Cargo.toml, build s:
+```bash
+# CFLAGS pro C/C++ code (aws-lc-sys assembly stále ignoruje!)
+export CFLAGS="-march=x86-64 -O2"
+export CXXFLAGS="-march=x86-64 -O2"
+export RUSTFLAGS="-C target-cpu=x86-64"
+# POZOR: toto NEřeší aws-lc-sys assembly — musí se použít ring provider!
+```
+
+**Ověření:** `strings zion-miner | grep -c aws_lc` — pokud > 0, aws-lc-rs je linknutý a pravděpodobně crashne.
+**Ověření CPU:** Miner vypíše `cpu_features: avx=false avx2=false bmi1=false bmi2=false fma=false` — pokud false, nepoužívat aws-lc-rs.
+
+#### 4. Pool binary — build na Edge (ne v Dockeru)
+
+Pool `server` běží na Edge (Ubuntu 24.04, GLIBC 2.39) — **build přímo na Edge**:
+```bash
+ssh zion-new 'export PATH=/root/.cargo/bin:$PATH; cd /opt/zion/V3 && cargo build --release -p zion-pool'
+```
+
+### Wrapper script pravidla
+
+SMOS používá custom miner package = ZIP soubor obsahující složku s `miner` bash skriptem (wrapper). Wrapper:
+1. Stáhne skutečný binary z Edge (`curl http://62.171.141.136/zion-miner/zion-miner`)
+2. Nastaví env vars (GPU backend, threads, stream config)
+3. `exec` miner s `--pool`, `--wallet`, `--worker`
+
+**Wrapper template** (vždy použít):
+```bash
+#!/bin/bash
+set -euo pipefail
+WALLET_ADDR="zion1s6m204400290l660k622r3r0c6u040g5j6cu2x5"
+WORKER_NAME="vega-smos"
+export ZION_GPU_BACKEND="${ZION_GPU_BACKEND:-opencl}"
+export ZION_PROFILE="${ZION_PROFILE:-pool}"
+export ZION_THREADS=2          # VRSC CPU threads (1-4; 2 = balanc GPU+CPU)
+export ZION_STREAM2_ENABLED=1  # KAS GPU stream
+export ZION_STREAM3_ENABLED=1  # VRSC CPU stream
+export ZION_GPU_WORK_SIZE=16384
+export ZION_NONCE_COUNT=65536
+export ZION_GPU_MAX_BATCH=65536
+export ZION_IGNORE_GPU_SELF_TEST_FAIL=1
+export ZION_VERBOSE=1
+export ZION_INTERACTIVE=0
+LOCAL_MINER="/tmp/zion-miner-real"
+EDGE_BASE="http://62.171.141.136/zion-miner"
+curl --http1.1 --retry 20 --retry-delay 5 --connect-timeout 30 \
+     -fsSL -o "${LOCAL_MINER}.tmp" "${EDGE_BASE}/zion-miner" || exit 1
+chmod +x "${LOCAL_MINER}.tmp" && mv "${LOCAL_MINER}.tmp" "${LOCAL_MINER}"
+exec "${LOCAL_MINER}" --pool "62.171.141.136:8444" \
+  --wallet "${WALLET_ADDR}" --worker "${WORKER_NAME}" --profile "${ZION_PROFILE}" "$@"
+```
+
+**ZIP struktura** (SMOS vyžaduje):
+```
+teamredminer-zionNN.zip
+  └── zion-miner-v3.1.9-vega-triple-NN/
+      └── miner          (wrapper script, executable)
+```
+
+**Vytvořit ZIP:**
+```bash
+ssh zion-new 'mkdir -p /tmp/zionNN/zion-miner-v3.1.9-vega-triple-NN'
+# vytvořit wrapper...
+ssh zion-new 'cd /tmp/zionNN && zip -r /var/www/zion-miner/teamredminer-zionNN.zip zion-miner-v3.1.9-vega-triple-NN/'
+```
+
+### Deploy workflow (krok za krokem)
+
+1. **Sync kódu na Edge:** `rsync -avz --rsync-path="sudo rsync" <file> zion-new:/opt/zion/...`
+2. **Build pool na Edge:** `cargo build --release -p zion-pool` (přímo, GLIBC 2.39 ok)
+3. **Build miner v Dockeru:** `docker run ... zion-build-focal ... cargo build --release -p zion-miner --features gpu-opencl`
+4. **Ověřit GLIBC:** `objdump -T ... | grep GLIBC | tail -3` — musí být ≤ 2.31
+5. **Kopírovat binary:** `cp /target/release/zion-miner /var/www/zion-miner/zion-miner`
+6. **Vytvořit ZIP** s wrapperem (vždy nové číslo — SMOS cachuje podle filename!)
+7. **Update SMOS group:** `PUT /rig-groups/1773590` s novým `minerOptions` URL
+8. **Reload rig:** `PUT /rigs/518837` s `{"execute":"reload"}`
+9. **Počkat 60-90s** na restart mineru
+10. **Zkontrolovat console:** `GET /rigs/518837/console` — hledat `backend: "opencl"` (ne cpu!), `threads=2`, hashrate
+
+### Časté chyby a řešení
+
+| Chyba | Příčina | Řešení |
+|-------|---------|--------|
+| `GLIBC_2.32 not found` / `GLIBC_2.34 not found` | Build na Edge (GLIBC 2.39) místo Dockeru | Build v `zion-build-focal` (Ubuntu 20.04, GLIBC 2.31) |
+| `backend: "cpu"` / `gpu_primary_error: primary GPU backend not initialized` | Build bez `--features gpu-opencl` | `cargo build --features gpu-opencl` |
+| `OpenCL support not compiled — rebuild with --features gpu-opencl` | `default = []` v Cargo.toml | Vždy přidat `--features gpu-opencl` |
+| `Illegal instruction` crash po OpenCL init | `aws-lc-sys` assembly používá AVX2/BMI2 (Intel Pentium G4560 nemá) | Vynutit `ring` provider: `rustls = { default-features = false, features = ["ring"] }` |
+| KAS `Malformed PoW result` (Herominers reject) | Timestamp=0 (ExternalStreamJob neměl timestamp field) | Fix: `timestamp` field v ExternalStreamJob + předání do MiningHeader bytes[68..76] |
+| VRSC `Job not found` (LuckPool reject) | Stale job (multi-hop latency) | Stale job pre-rejection + clear HashMaps on reconnect |
+| Miner stále běží stará verze po reload | SMOS cachuje ZIP podle filename | Vždy nové číslo ZIPu (zion46, zion47, ...) |
+| SSH nelze na SMOS rig | Rig behind NAT, inbound blokován | Pouze SMOS API + Edge served binary |
+| SMOS API `Access Denied` (403) | API key bez `api-` prefixu | Header: `X-AUTH-TOKEN: api-17a2bf58...` |
+
+### Pool config (Edge) — AuxPoW env vars
+
+Klíčové env vars v `/etc/zion/edge-environment.sh`:
+
+```bash
+ZION_POOL_AUXPOW_ENABLED=1
+ZION_POOL_AUXPOW_COIN=KAS                    # GPU external coin
+ZION_POOL_AUXPOW_CPU_COIN="VRSC"             # CPU external coin
+ZION_POOL_AUXPOW_POOL_PREFERENCE="herominers" # nebo "nicehash"
+ZION_POOL_AUXPOW_WALLET_KAS="kaspa:qqtg8as88udptxcqt69w85mq27ls4tzj498w2pqw73fkxfqv3xttw69jamc8z"
+ZION_POOL_AUXPOW_WALLET_VRSC="RLFQYsdd8wGGUgMgk17WrqdGNtkAVSCfDQ"
+ZION_POOL_AUXPOW_POOL_HOST_KAS=de.kaspa.herominers.com
+ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
+```
+
+### External coin pool endpoints (defaults v AuXpow/src/types.rs)
+
+| Coin | Default Pool | NiceHash Pool |
+|------|-------------|---------------|
+| KAS | `kas.2miners.com:2020` | `kheavyhash.auto.nicehash.com:9200` |
+| VRSC | `eu.luckpool.net:3956` | `verushash.auto.nicehash.com:9200` |
+| DCR | `decred.cedric-crispin.com:4494` | — |
+| ALPH | `alephium.herominers.com:2056` | — |
+
+### KAS kheavyhash — technické poznámky
+
+- **Stratum format (Herominers):** `[jobId, [u64_le x 4], timestamp_ms]` — Kaspa variant, parsuje se v `auxpow_client.rs` `parse_notify_params()`
+- **Timestamp:** v **milisekundách** (ne sekundy!), předává se jako u64 do kernelu
+- **PowHash input:** `pre_pow_hash(32) ‖ timestamp_le(8) ‖ 32 zero bytes ‖ nonce_le(8)` = 80 bytes
+- **Kernel:** `kheavyhash_kernel.cl` — cSHAKE256("ProofOfWorkHash") → matrix multiply → cSHAKE256("HeavyHash")
+- **Share target:** `000000003fff...` = ~2^222, při 50 MH/s ≈ share každých ~6 min
+- **Submit format:** `["worker", "job_id", "nonce_hex"]` (3 params, big-endian hex nonce)
+- **ExternalStreamJob.timestamp:** přidáno 2026-07-19 — bez tohoto fieldu timestamp=0 → `Malformed PoW result`
+
+### VRSC verushash — technické poznámky
+
+- **Pool:** LuckPool `eu.luckpool.net:3956`, protocol = zcashstratum
+- **Wallet:** `RLFQYsdd8wGGUgMgk17WrqdGNtkAVSCfDQ`, worker `pool-vrsc`, password `d=0.01`
+- **Threads:** `ZION_THREADS=2` (2 CPU threads pro VRSC, zbytek pro GPU)
+- **Stale jobs:** LuckPool posílá nové joby každých ~30s, multi-hop latency (miner→pool→LuckPool) může způsobit `Job not found` rejects — řeší se stale pre-rejection v pool server.rs

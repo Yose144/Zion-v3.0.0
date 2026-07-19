@@ -2519,7 +2519,7 @@ fn handle_client(
                     let ext_algorithm = ext_job.external_coin.algorithm().to_string();
                     let ext_job_id = ext_job.external_job_id.clone();
                     let ext_height = ext_job.block_number.unwrap_or(0);
-                    let ext_target_hex = to_hex(&ext_job.target_bytes);
+                    let ext_target_hex = to_hex(&ext_job.share_target_bytes);
                     let ext_header_hex = to_hex(&ext_job.header_bytes);
                     let ext_extranonce1_hex = to_hex(&ext_job.extranonce1);
                     let ext_protocol = ext_job.external_coin.protocol_name().to_string();
@@ -2611,7 +2611,7 @@ fn handle_client(
                     let ext_algorithm = ext_job.external_coin.algorithm().to_string();
                     let ext_job_id = ext_job.external_job_id.clone();
                     let ext_height = ext_job.block_number.unwrap_or(0);
-                    let ext_target_hex = to_hex(&ext_job.target_bytes);
+                    let ext_target_hex = to_hex(&ext_job.share_target_bytes);
                     let ext_header_hex = to_hex(&ext_job.header_bytes);
                     let ext_extranonce1_hex = to_hex(&ext_job.extranonce1);
                     let ext_protocol = ext_job.external_coin.protocol_name().to_string();

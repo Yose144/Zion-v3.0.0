@@ -717,6 +717,12 @@ function setupControls() {
   const algoStatusEl = document.getElementById('algo-status');
   const gpuCheckbox = document.getElementById('gpu-checkbox');
   const backendStatusEl = document.getElementById('backend-status');
+  // ── Triple Stream coin selectors ──
+  const gpuCoinSelect = document.getElementById('gpu-coin-select');
+  const gpuCoinSelectDashboard = document.getElementById('gpu-coin-select-dashboard');
+  const cpuCoinSelect = document.getElementById('cpu-coin-select');
+  const cpuCoinSelectDashboard = document.getElementById('cpu-coin-select-dashboard');
+  const tripleStreamCheckbox = document.getElementById('triple-stream-checkbox');
 
   const updateBackendStatus = (value) => {
     const labels = {
@@ -821,6 +827,36 @@ function setupControls() {
     // init from persisted config
     if (config.algorithm && algoSelectDashboard.querySelector(`option[value="${config.algorithm}"]`)) {
       algoSelectDashboard.value = config.algorithm;
+    }
+  }
+
+  // ═══ Triple Stream coin selectors — bind to config ═══
+  // GPU coin (Stream 2) and CPU coin (Stream 3) are persisted in config and
+  // forwarded to the V3 miner as --gpu-coin / --cpu-coin CLI flags. "auto"
+  // means the pool's profit router decides.
+  const syncCoinSelect = (selectEl, configKey, mirrorEl) => {
+    if (!selectEl) return;
+    selectEl.addEventListener('change', () => {
+      config[configKey] = selectEl.value;
+      if (mirrorEl) mirrorEl.value = selectEl.value;
+    });
+    // init from persisted config
+    const persisted = config[configKey];
+    if (persisted && selectEl.querySelector(`option[value="${persisted}"]`)) {
+      selectEl.value = persisted;
+    }
+  };
+  syncCoinSelect(gpuCoinSelect, 'gpuCoin', gpuCoinSelectDashboard);
+  syncCoinSelect(gpuCoinSelectDashboard, 'gpuCoin', gpuCoinSelect);
+  syncCoinSelect(cpuCoinSelect, 'cpuCoin', cpuCoinSelectDashboard);
+  syncCoinSelect(cpuCoinSelectDashboard, 'cpuCoin', cpuCoinSelect);
+
+  if (tripleStreamCheckbox) {
+    tripleStreamCheckbox.addEventListener('change', () => {
+      config.tripleStream = tripleStreamCheckbox.checked;
+    });
+    if (typeof config.tripleStream === 'boolean') {
+      tripleStreamCheckbox.checked = config.tripleStream;
     }
   }
 
@@ -1769,6 +1805,9 @@ function updateStats(stats) {
   // ---- CH3 Stream / GPU / Revenue ----
   updateCH3Dashboard(stats);
 
+  // ---- Triple Stream per-stream telemetry ----
+  updateTripleStreamPanel(stats);
+
   // ---- Mining Console status dot ----
   updateConsoleDot(!!stats?.isRunning);
   
@@ -1824,6 +1863,13 @@ function computeStatsPollDelay() {
 
 function buildStatsSignature(stats) {
   if (!stats) return '';
+  // Include a compact signature of the streams array so the UI refreshes
+  // when per-stream hashrate/shares/coin/active state changes.
+  const streamsSig = Array.isArray(stats.streams)
+    ? stats.streams.map(s =>
+        `${s.index}:${s.coin}:${s.algorithm}:${s.hashrate_10s}:${s.hashrate_60s}:${s.accepted}:${s.rejected}:${s.active ? 1 : 0}`
+      ).join(',')
+    : '';
   return [
     stats.hashrate,
     stats.hashrate_10s,
@@ -1840,6 +1886,7 @@ function buildStatsSignature(stats) {
     stats.blocks_found,
     stats.pool_latency_ms,
     stats.stream_algorithm,
+    streamsSig,
   ].join('|');
 }
 
@@ -2770,6 +2817,106 @@ function updateCH3Dashboard(stats) {
       } else {
         badge.className = 'gpu-badge cpu-only';
         badgeText.textContent = 'CPU-Only Mode';
+      }
+    }
+  }
+}
+
+// ═══ Triple Stream panel renderer (DeekshaChv3 parallel streaming) ═══
+// Renders per-stream hashrate, shares, coin, and algorithm for the 3-stream
+// dashboard cards. Reads `stats.streams` — an array of:
+//   {index, label, coin, algorithm, hashrate_10s, hashrate_60s,
+//    hashrate_15m, accepted, rejected, active}
+// When `streams` is empty/absent, the panel shows an idle state.
+function updateTripleStreamPanel(stats) {
+  const panel = document.getElementById('triple-stream-panel');
+  if (!panel) return;
+
+  // Local hashrate formatter (mirrors the one in updateStats)
+  const fmtHr = (v) => {
+    if (!v || !Number.isFinite(v) || v <= 0) return '—';
+    if (v >= 1e12) return (v / 1e12).toFixed(2) + ' TH/s';
+    if (v >= 1e9) return (v / 1e9).toFixed(2) + ' GH/s';
+    if (v >= 1e6) return (v / 1e6).toFixed(2) + ' MH/s';
+    if (v >= 1e3) return (v / 1e3).toFixed(2) + ' kH/s';
+    return v.toFixed(1) + ' H/s';
+  };
+
+  const streams = Array.isArray(stats.streams) ? stats.streams : [];
+  const statusEl = document.getElementById('triple-stream-status');
+
+  // Panel visibility: always show, but reflect idle/active state
+  if (statusEl) {
+    if (!stats.isRunning) {
+      statusEl.textContent = 'Idle';
+      statusEl.className = 'pill pill-compact';
+    } else if (streams.length === 0) {
+      statusEl.textContent = 'Single Stream';
+      statusEl.className = 'pill pill-compact';
+    } else {
+      const activeCount = streams.filter(s => s.active).length;
+      statusEl.textContent = `${activeCount}/${streams.length} active`;
+      statusEl.className = 'pill pill-compact';
+    }
+  }
+
+  // Render each stream card (1-indexed: stream-1, stream-2, stream-3)
+  for (let i = 1; i <= 3; i++) {
+    const stream = streams.find(s => Number(s.index) === i);
+    const card = document.getElementById(`stream-card-${i}`);
+    if (!card) continue;
+
+    const coinEl = document.getElementById(`stream-${i}-coin`);
+    const hrEl = document.getElementById(`stream-${i}-hashrate`);
+    const algoEl = document.getElementById(`stream-${i}-algo`);
+    const sharesEl = document.getElementById(`stream-${i}-shares`);
+    const statusBadge = document.getElementById(`stream-${i}-status`);
+
+    if (!stream) {
+      // No telemetry for this stream — show idle placeholder
+      card.classList.remove('active');
+      card.classList.add('inactive');
+      if (coinEl) coinEl.textContent = i === 1 ? 'ZION' : '—';
+      if (hrEl) hrEl.textContent = '—';
+      if (algoEl) algoEl.textContent = '—';
+      if (sharesEl) sharesEl.textContent = '0 / 0';
+      if (statusBadge) {
+        statusBadge.textContent = 'inactive';
+        statusBadge.className = 'stream-status inactive';
+      }
+      continue;
+    }
+
+    // Active/inactive styling
+    if (stream.active) {
+      card.classList.add('active');
+      card.classList.remove('inactive');
+    } else {
+      card.classList.remove('active');
+      card.classList.add('inactive');
+    }
+
+    if (coinEl) coinEl.textContent = stream.coin || '—';
+    if (hrEl) {
+      // Prefer 10s window, fallback to 60s
+      const hr = Number(stream.hashrate_10s) || Number(stream.hashrate_60s) || 0;
+      hrEl.textContent = fmtHr(hr);
+    }
+    if (algoEl) algoEl.textContent = stream.algorithm || '—';
+    if (sharesEl) {
+      const acc = Number(stream.accepted) || 0;
+      const rej = Number(stream.rejected) || 0;
+      sharesEl.textContent = `${acc} / ${rej}`;
+    }
+    if (statusBadge) {
+      if (stream.active) {
+        statusBadge.textContent = 'active';
+        statusBadge.className = 'stream-status active';
+      } else {
+        // Distinguish "skipped" (e.g. DAG-based algo on Metal) from "inactive"
+        const hasCoin = stream.coin && stream.coin !== '—' && stream.coin !== '';
+        statusBadge.textContent = hasCoin ? 'skipped' : 'inactive';
+        statusBadge.className = `stream-status ${hasCoin ? 'skipped' : 'inactive'}`;
       }
     }
   }

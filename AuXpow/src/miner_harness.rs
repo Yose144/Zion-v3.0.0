@@ -1157,6 +1157,7 @@ mod tests {
             algorithm: "blake3".to_string(),
             header_bytes: b"harness_header".to_vec(),
             target_bytes: target,
+            share_target_bytes: target,
             timestamp: 0,
             block_number: None,
             extranonce1: Vec::new(),
@@ -1173,6 +1174,7 @@ mod tests {
             algorithm: "kheavyhash".to_string(),
             header_bytes: b"harness_header".to_vec(),
             target_bytes: [0x00u8; 32], // impossible
+            share_target_bytes: [0x00u8; 32],
             timestamp: 0,
             block_number: None,
             extranonce1: Vec::new(),
@@ -1208,6 +1210,7 @@ mod tests {
             algorithm: "unknownalgo".to_string(),
             header_bytes: vec![],
             target_bytes: [0xFFu8; 32],
+            share_target_bytes: [0xFFu8; 32],
             timestamp: 0,
             block_number: None,
             extranonce1: Vec::new(),
