@@ -5,7 +5,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Status:** Mainnet Beta · 3.0.7 "Triple Stream All Green" planning · 15/15 Services Active · Chain Height 10911+ · Public Launch: 31 December 2026
+**Status:** Mainnet Beta · 3.0.7 "Triple Stream All Green" planning · 15/15 Services Active · Chain Height 10911+ · Mainnet Alpha target: 3.1.0 — [`MAINNET_ALPHA_PLAN.md`](MAINNET_ALPHA_PLAN.md) · Public Launch: 31 December 2026
 
 **Current plan:** [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](TRIPLE_STREAM_ALL_GREEN_PLAN.md) · **Version overview:** [`3.0.7.md`](3.0.7.md) · **Previous 3.0.6 archive:** [`docs/3.0.6/`](docs/3.0.6/)
 
@@ -16,9 +16,6 @@
 **Canonical documentation for 3.0.5:** [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) — full Czech report.  
 **Runbook:** [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) — canonical 7-phase runbook.  
 **3.0.4 release overview:** [`docs/3.0.4/3.0.4.md`](docs/3.0.4/3.0.4.md) — DeFi deploy + TX unification.
-| **3.0.7 plan** | [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](TRIPLE_STREAM_ALL_GREEN_PLAN.md) |
-| **3.0.7 overview** | [`3.0.7.md`](3.0.7.md) |
-| **3.0.6 archive** | [`docs/3.0.6/`](docs/3.0.6/) |
 
 **Operational status:** [`StatusV3.md`](StatusV3.md)  
 **Agent rules:** [`AGENTS.md`](AGENTS.md)  
@@ -34,6 +31,13 @@
 | **3.0.5 All Green report (CZ)** | [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) |
 | **3.0.5 runbook** | [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) |
 | **3.0.4 release overview** | [`docs/3.0.4/3.0.4.md`](docs/3.0.4/3.0.4.md) |
+| **3.0.7 plan** | [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](TRIPLE_STREAM_ALL_GREEN_PLAN.md) |
+| **3.0.7 overview** | [`3.0.7.md`](3.0.7.md) |
+| **3.0.8 overview** | [`3.0.8.md`](3.0.8.md) |
+| **3.0.9 overview** | [`3.0.9.md`](3.0.9.md) |
+| **3.1.0 overview** | [`3.1.0.md`](3.1.0.md) |
+| **Mainnet Alpha roadmap** | [`MAINNET_ALPHA_PLAN.md`](MAINNET_ALPHA_PLAN.md) |
+| **3.0.6 archive** | [`docs/3.0.6/`](docs/3.0.6/) |
 | **Live status + blockers** | [`StatusV3.md`](StatusV3.md) |
 | **V3 workspace code** | [`V3/`](V3/) |
 | **Forward roadmap** | [`ROADMAP.md`](ROADMAP.md) |
