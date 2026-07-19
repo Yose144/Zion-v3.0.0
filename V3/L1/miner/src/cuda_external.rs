@@ -587,7 +587,15 @@ impl CudaExternalMiner {
         let threads_per_block: u32 = if self.algo == CudaExtAlgo::Verushash {
             128 // Verushash kernel uses __launch_bounds__(128)
         } else {
-            256
+            // Configurable via ZION_CUDA_BLOCK_SIZE env var.
+            // Default 256 (optimal for Ampere/Ada). For Pascal/Turing (GTX 1080, etc.),
+            // 128 or 192 may give better occupancy due to smaller register file.
+            // The kernel __launch_bounds__(256) allows up to 256; lower values are safe.
+            std::env::var("ZION_CUDA_BLOCK_SIZE")
+                .ok()
+                .and_then(|v| v.trim().parse::<u32>().ok())
+                .filter(|&v| v > 0 && v <= 256)
+                .unwrap_or(256)
         };
         // Run multiple kernel launches to cover the full batch_size.
         // Each launch covers at most self.work_size nonces.

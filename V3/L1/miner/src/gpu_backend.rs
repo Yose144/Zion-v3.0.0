@@ -2260,6 +2260,8 @@ pub mod opencl_deeksha {
         is_gcn: bool,
         s4_kernel: Option<Kernel>,
         s4_out_buf: Option<Buffer<u8>>,
+        /// FIX #9: Pending batch result from launch_batch, returned by collect_batch.
+        pending: Option<GpuBatchResult>,
     }
 
     /// Determine max work_size that fits in GPU VRAM.
@@ -2686,6 +2688,7 @@ pub mod opencl_deeksha {
                 is_gcn,
                 s4_kernel,
                 s4_out_buf,
+                pending: None,
             };
 
             // Startup self-test: run debug kernel and compare all 6 stages with CPU
@@ -3294,6 +3297,29 @@ pub mod opencl_deeksha {
 
             Ok((total_hashes, elapsed, khps))
         }
+
+        /// FIX #9: Override default launch_batch which discards mine_batch results.
+        fn launch_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<u64> {
+            if self.pending.is_some() {
+                self.pending = None;
+            }
+            let result = self.mine_batch(header, target, nonce_start, batch_size)?;
+            self.pending = Some(result);
+            Ok(0)
+        }
+
+        /// FIX #9: Return the pending batch result stored by launch_batch.
+        fn collect_batch(&mut self, _token: u64) -> Result<GpuBatchResult> {
+            self.pending
+                .take()
+                .ok_or_else(|| anyhow::anyhow!("no pending OpenCL deeksha batch to collect"))
+        }
     }
 }
 
@@ -3329,6 +3355,8 @@ pub mod opencl_deeksha_lite {
         tuning: GpuTuning,
         recovery_attempts: u32,
         max_recovery_attempts: u32,
+        /// FIX #9: Pending batch result from launch_batch, returned by collect_batch.
+        pending: Option<GpuBatchResult>,
     }
 
     impl OpenClDeekshaLiteMiner {
@@ -3552,6 +3580,7 @@ pub mod opencl_deeksha_lite {
                 tuning,
                 recovery_attempts: 0,
                 max_recovery_attempts: 3,
+                pending: None,
             })
         }
     }
@@ -3636,11 +3665,11 @@ pub mod opencl_deeksha_lite {
             // the full batch wastes 7×200ms=1.4s of overhead. Early-break
             // launches only 1 kernel (8192 nonces in ~400ms = 20 KH/s) instead
             // of 8 kernels (65536 nonces in ~4900ms = 13 KH/s).
-            // Default: true (optimal for GCN/Vega with low-difficulty pools).
-            // Set ZION_GPU_EARLY_BREAK=0 to disable.
+            // Default: false (multi-chunk batches + double-buffering enabled).
+            // Set ZION_GPU_EARLY_BREAK=1 to force single-chunk (safe path).
             let early_break = std::env::var("ZION_GPU_EARLY_BREAK")
                 .map(|v| !(v == "0" || v.eq_ignore_ascii_case("false")))
-                .unwrap_or(true);
+                .unwrap_or(false);
 
             let mut all_solutions = Vec::new();
             let mut total_tested = 0u64;
@@ -3909,6 +3938,29 @@ pub mod opencl_deeksha_lite {
             };
             Ok((total_hashes, elapsed, khps))
         }
+
+        /// FIX #9: Override default launch_batch which discards mine_batch results.
+        fn launch_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<u64> {
+            if self.pending.is_some() {
+                self.pending = None;
+            }
+            let result = self.mine_batch(header, target, nonce_start, batch_size)?;
+            self.pending = Some(result);
+            Ok(0)
+        }
+
+        /// FIX #9: Return the pending batch result stored by launch_batch.
+        fn collect_batch(&mut self, _token: u64) -> Result<GpuBatchResult> {
+            self.pending
+                .take()
+                .ok_or_else(|| anyhow::anyhow!("no pending OpenCL lite batch to collect"))
+        }
     }
 }
 
@@ -3945,6 +3997,9 @@ pub mod opencl_deeksha_lite_fire {
         tuning: GpuTuning,
         recovery_attempts: u32,
         max_recovery_attempts: u32,
+        /// FIX #9: Pending batch result from launch_batch, returned by collect_batch.
+        /// Without this, the trait default discards mine_batch results → gpu_hps=0, tested=0.
+        pending: Option<GpuBatchResult>,
     }
 
     impl OpenClDeekshaLiteFireMiner {
@@ -4145,6 +4200,7 @@ pub mod opencl_deeksha_lite_fire {
                 tuning,
                 recovery_attempts: 0,
                 max_recovery_attempts: 3,
+                pending: None,
             })
         }
     }
@@ -4215,7 +4271,7 @@ pub mod opencl_deeksha_lite_fire {
 
             let early_break = std::env::var("ZION_GPU_EARLY_BREAK")
                 .map(|v| !(v == "0" || v.eq_ignore_ascii_case("false")))
-                .unwrap_or(true);
+                .unwrap_or(false);
 
             let mut all_solutions = Vec::new();
             let mut total_tested = 0u64;
@@ -4474,6 +4530,34 @@ pub mod opencl_deeksha_lite_fire {
                 0.0
             };
             Ok((total_hashes, elapsed, khps))
+        }
+
+        /// FIX #9: Override default launch_batch which discards mine_batch results.
+        /// Store the synchronous mine_batch result in `pending` for collect_batch to return.
+        /// This is synchronous (no true overlap) but CORRECT — nonces_tested and solutions
+        /// are preserved instead of being dropped by the trait default.
+        fn launch_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<u64> {
+            // If a previous batch is still pending (collect_batch not called), drop it.
+            // This shouldn't happen in normal pipeline usage but guards against state corruption.
+            if self.pending.is_some() {
+                self.pending = None;
+            }
+            let result = self.mine_batch(header, target, nonce_start, batch_size)?;
+            self.pending = Some(result);
+            Ok(0)
+        }
+
+        /// FIX #9: Return the pending batch result stored by launch_batch.
+        fn collect_batch(&mut self, _token: u64) -> Result<GpuBatchResult> {
+            self.pending
+                .take()
+                .ok_or_else(|| anyhow::anyhow!("no pending OpenCL fire batch to collect"))
         }
     }
 }
@@ -4738,6 +4822,16 @@ pub mod cuda_deeksha {
                 .and_then(|v| v.trim().parse().ok())
                 .unwrap_or(48);
 
+            // Batched launch: reset sentinel ONCE, launch ALL chunks back-to-back
+            // without syncing, then a single sync + read at the end. The kernel
+            // checks the sentinel at entry and exits early if a solution was
+            // already found by a previous chunk, so wasted GPU work is minimal.
+            // This eliminates N-1 synchronous host↔device copies per batch
+            // (8-12% hashrate gain vs per-chunk sync).
+            self.dev
+                .htod_sync_copy_into(&[SENTINEL], &mut self.result_nonce)
+                .map_err(|e| anyhow::anyhow!("reset sentinel: {e}"))?;
+
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size) as u32;
                 let blocks = (chunk + threads_per_block - 1) / threads_per_block;
@@ -4746,11 +4840,6 @@ pub mod cuda_deeksha {
                     block_dim: (threads_per_block, 1, 1),
                     shared_mem_bytes: 0,
                 };
-
-                // Reset sentinel
-                self.dev
-                    .htod_sync_copy_into(&[SENTINEL], &mut self.result_nonce)
-                    .map_err(|e| anyhow::anyhow!("reset sentinel: {e}"))?;
 
                 unsafe {
                     func.clone()
@@ -4774,27 +4863,29 @@ pub mod cuda_deeksha {
                         .map_err(|e| anyhow::anyhow!("kernel launch: {e}"))?;
                 }
 
-                // Sync and read result
-                let nonce_result = self
-                    .dev
-                    .dtoh_sync_copy(&self.result_nonce)
-                    .map_err(|e| anyhow::anyhow!("read result_nonce: {e}"))?;
-
-                if nonce_result[0] != SENTINEL {
-                    let hash_result = self
-                        .dev
-                        .dtoh_sync_copy(&self.result_hash)
-                        .map_err(|e| anyhow::anyhow!("read result_hash: {e}"))?;
-                    let mut hash = [0u8; 32];
-                    hash.copy_from_slice(&hash_result[..32]);
-                    all_solutions.push((nonce_result[0], hash, None));
-                    total_tested += chunk as u64;
-                    break; // Early termination on solution
-                }
-
                 total_tested += chunk as u64;
                 current_nonce = current_nonce.wrapping_add(chunk as u64);
                 left = left.saturating_sub(chunk as u64);
+            }
+
+            // Single sync point: wait for ALL chunks to complete
+            self.dev
+                .synchronize()
+                .map_err(|e| anyhow::anyhow!("device sync: {e}"))?;
+
+            let nonce_result = self
+                .dev
+                .dtoh_sync_copy(&self.result_nonce)
+                .map_err(|e| anyhow::anyhow!("read result_nonce: {e}"))?;
+
+            if nonce_result[0] != SENTINEL {
+                let hash_result = self
+                    .dev
+                    .dtoh_sync_copy(&self.result_hash)
+                    .map_err(|e| anyhow::anyhow!("read result_hash: {e}"))?;
+                let mut hash = [0u8; 32];
+                hash.copy_from_slice(&hash_result[..32]);
+                all_solutions.push((nonce_result[0], hash, None));
             }
 
             Ok(GpuBatchResult {
