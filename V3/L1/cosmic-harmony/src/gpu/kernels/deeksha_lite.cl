@@ -33,6 +33,11 @@
 #define PASSES           2
 #define RANDOM_READS     64
 
+/* Local work group size — overridden via build options for the real miner. */
+#ifndef LOCAL_SIZE
+#define LOCAL_SIZE 64
+#endif
+
 /* ========================================================================== */
 /* Keccak — canonical implementation from cosmic_harmony_deeksha.cl           */
 /* Uses rotate(long,long) per AMD GCN/RDNA workaround recommendation.         */
@@ -73,6 +78,7 @@ void keccak_f1600(__private ulong *st)
 {
     ulong bc0, bc1, bc2, bc3, bc4, t;
 
+    #pragma unroll 1
     for (int rnd = 0; rnd < 24; rnd++) {
         /* Theta */
         bc0 = st[0]^st[5]^st[10]^st[15]^st[20];
@@ -125,27 +131,33 @@ void keccak_f1600(__private ulong *st)
 typedef union { ulong u[25]; uchar b[200]; } keccak_st_t;
 
 /* Keccak256 (Ethereum variant, padding 0x01) — precomputed state variant */
+__attribute__((always_inline))
 void keccak256_from_state(
-    __global const ulong *pre_state,
+    __constant const ulong * restrict pre_state,
     ulong nonce,
     __private uchar out[32])
 {
     keccak_st_t s;
+    #pragma unroll
     for (int i = 0; i < 25; i++) s.u[i] = pre_state[i];
     /* XOR nonce into bytes 80..87 */
+    #pragma unroll
     for (int i = 0; i < 8; i++)
         s.b[80 + i] ^= (uchar)(nonce >> (i * 8));
     /* Apply padding */
     s.b[88]  ^= 0x01;
     s.b[135] ^= 0x80;
     keccak_f1600(s.u);
+    #pragma unroll
     for (int i = 0; i < 32; i++) out[i] = s.b[i];
 }
 
 /* SHA3-512 (NIST, padding 0x06, rate=72) */
-void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
+__attribute__((always_inline))
+void sha3_512(__private const uchar * restrict in, uint inlen, __private uchar * restrict out)
 {
     keccak_st_t s;
+    #pragma unroll
     for (int i = 0; i < 25; i++) s.u[i] = 0;
     uint pos = 0;
     for (uint i = 0; i < inlen; i++) {
@@ -155,6 +167,7 @@ void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
     s.b[pos] ^= 0x06;
     s.b[71]  ^= 0x80;
     keccak_f1600(s.u);
+    #pragma unroll
     for (int i = 0; i < 64; i++) out[i] = s.b[i];
 }
 
@@ -162,7 +175,8 @@ void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
  * Input always fits in one keccak block (rate=72 > 65), so no
  * mid-absorption permutation needed. Eliminates 65 conditional
  * branches per call and vectorizes the state zero + copy. */
-inline void sha3_512_65(__private const uchar *in, __private uchar out[64])
+__attribute__((always_inline))
+inline void sha3_512_65(__private const uchar * restrict in, __private uchar * restrict out)
 {
     keccak_st_t s;
     /* Vectorized zero: 25 u64s = 3x ulong4 + 1x ulong */
@@ -224,11 +238,14 @@ __constant uchar AES_SBOX[256] = {
     0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16,
 };
 
+__attribute__((always_inline))
 void aes_sub_bytes(__private uchar s[16])
 {
+    #pragma unroll
     for (int i = 0; i < 16; i++) s[i] = AES_SBOX[s[i]];
 }
 
+__attribute__((always_inline))
 void aes_shift_rows(__private uchar s[16])
 {
     uchar t;
@@ -238,13 +255,16 @@ void aes_shift_rows(__private uchar s[16])
     t = s[15]; s[15] = s[11]; s[11] = s[7];   s[7]  = s[3];  s[3]  = t;
 }
 
+__attribute__((always_inline))
 uchar aes_xtime(uchar a)
 {
     return (uchar)((a << 1) ^ (((a >> 7) & 1) * 0x1b));
 }
 
+__attribute__((always_inline))
 void aes_mix_columns(__private uchar s[16])
 {
+    #pragma unroll
     for (int i = 0; i < 4; i++) {
         uchar a = s[i*4], b = s[i*4+1], c = s[i*4+2], d = s[i*4+3];
         uchar e = a ^ b ^ c ^ d;
@@ -255,11 +275,14 @@ void aes_mix_columns(__private uchar s[16])
     }
 }
 
+__attribute__((always_inline))
 void aes_add_round_key(__private uchar s[16], __private const uchar k[16])
 {
+    #pragma unroll
     for (int i = 0; i < 16; i++) s[i] ^= k[i];
 }
 
+__attribute__((always_inline))
 void aes_round(__private uchar s[16], __private const uchar k[16])
 {
     aes_sub_bytes(s);
@@ -268,6 +291,7 @@ void aes_round(__private uchar s[16], __private const uchar k[16])
     aes_add_round_key(s, k);
 }
 
+__attribute__((always_inline))
 void aes_final_round(__private uchar s[16], __private const uchar k[16])
 {
     aes_sub_bytes(s);
@@ -288,15 +312,18 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16])
 /*     state[0..32] = out[0..32]                                               */
 /* ========================================================================== */
 
+__attribute__((always_inline))
 void fill_scratchpad(
     __private const uchar seed[32],
-    __global uchar *pad)
+    __global uchar * restrict pad)
 {
-    uchar state[64];
+    uchar state[64] __attribute__((aligned(8)));
+    #pragma unroll
     for (int i = 0; i < 32; i++) state[i] = seed[i];
+    #pragma unroll
     for (int i = 32; i < 64; i++) state[i] = 0;
 
-    #pragma unroll 2
+    #pragma unroll 1
     for (uint blk = 0; blk < BLOCK_COUNT; blk++) {
         uchar inp[65];
         /* Vectorized 64-byte copy from state */
@@ -326,10 +353,12 @@ void fill_scratchpad(
 /*   pass 1 (backward): for i in 4095..=0: pad[i] ^= pad[i+1==4096 ? 0: i+1]*/
 /* ========================================================================== */
 
-void sequential_passes(__global uchar *pad)
+__attribute__((always_inline))
+void sequential_passes(__global uchar * restrict pad)
 {
     /* Pass 0 — forward: cache previous block in register to halve global reads */
     ulong4 prev_v = vload4(0, (__global ulong*)(pad + (BLOCK_COUNT - 1) * BLOCK_SIZE));
+    #pragma unroll 1
     for (uint i = 0; i < BLOCK_COUNT; i++) {
         uint cur = i * BLOCK_SIZE;
         ulong4 cur_v = vload4(0, (__global ulong*)(pad + cur));
@@ -339,6 +368,7 @@ void sequential_passes(__global uchar *pad)
     }
     /* Pass 1 — backward: cache next block in register to halve global reads */
     ulong4 next_v = vload4(0, (__global ulong*)(pad));
+    #pragma unroll 1
     for (uint i = BLOCK_COUNT; i > 0; i--) {
         uint idx = i - 1;
         uint cur = idx * BLOCK_SIZE;
@@ -358,15 +388,18 @@ void sequential_passes(__global uchar *pad)
 /*   pos = ((idx_val ^ pos as u64 ^ r as u64) as usize) % BLOCK_COUNT;        */
 /* ========================================================================== */
 
+__attribute__((always_inline))
 void random_read_mix(
     __private const uchar seed[32],
-    __global const uchar *pad,
+    __global const uchar * restrict pad,
     __private uchar out[32])
 {
-    uchar acc[32];
+    uchar acc[32] __attribute__((aligned(8)));
+    #pragma unroll
     for (int i = 0; i < 32; i++) acc[i] = seed[i];
 
     ulong pos = 0;
+    #pragma unroll 4
     for (ulong r = 0; r < RANDOM_READS; r++) {
         uint off = (uint)(pos * BLOCK_SIZE);
         /* Vectorized 32-byte XOR */
@@ -377,12 +410,14 @@ void random_read_mix(
 
         /* Read 8 bytes for idx — matches u64 in CPU */
         ulong idx_val = 0;
+        #pragma unroll
         for (int i = 0; i < 8; i++)
             idx_val |= ((ulong)acc[i]) << (i * 8);
 
         pos = (idx_val ^ pos ^ r) % BLOCK_COUNT;
     }
 
+    #pragma unroll
     for (int i = 0; i < 32; i++) out[i] = acc[i];
 }
 
@@ -394,23 +429,30 @@ void random_read_mix(
 /*   for i in 0..16 { sum = block1[i] + carry; block1[i]=sum&0xFF; carry=sum>>8; if carry==0 break } */
 /* ========================================================================== */
 
+__attribute__((always_inline))
 void aes128_mix(
     __private const uchar seed[32],
     ulong nonce,
     __private uchar out[32])
 {
-    uchar key[16];
+    uchar key[16] __attribute__((aligned(8)));
+    #pragma unroll
     for (int i = 0; i < 16; i++) key[i] = seed[i];
 
-    uchar counter[16];
+    uchar counter[16] __attribute__((aligned(8)));
+    #pragma unroll
     for (int i = 0; i < 8; i++) counter[i]     = (uchar)(nonce >> (i * 8));
+    #pragma unroll
     for (int i = 0; i < 8; i++) counter[8 + i] = seed[16 + i];
 
-    uchar block0[16], block1[16];
+    uchar block0[16] __attribute__((aligned(8)));
+    uchar block1[16] __attribute__((aligned(8)));
+    #pragma unroll
     for (int i = 0; i < 16; i++) { block0[i] = counter[i]; block1[i] = counter[i]; }
 
     /* Proper carry propagation for counter+1 */
     uint carry = 1;
+    #pragma unroll
     for (int i = 0; i < 16; i++) {
         uint s = (uint)block1[i] + carry;
         block1[i] = (uchar)(s & 0xFF);
@@ -418,6 +460,7 @@ void aes128_mix(
         if (carry == 0) break;
     }
 
+    #pragma unroll
     for (int r = 0; r < 3; r++) {
         aes_round(block0, key);
         aes_round(block1, key);
@@ -425,6 +468,7 @@ void aes128_mix(
     aes_final_round(block0, key);
     aes_final_round(block1, key);
 
+    #pragma unroll
     for (int i = 0; i < 16; i++) {
         out[i]      = block0[i] ^ seed[i];
         out[16 + i] = block1[i] ^ seed[16 + i];
@@ -450,11 +494,14 @@ void aes128_mix(
 
 #define STREAM_ITERS_SCALE 16.0f
 
-void stream_byproduct_keccak(__private const uchar in[32], int iters, __global uchar *pad)
+__attribute__((always_inline))
+void stream_byproduct_keccak(__private const uchar in[32], int iters, __global uchar * restrict pad)
 {
     if (iters <= 0) return;
     keccak_st_t s;
+    #pragma unroll
     for (int i = 0; i < 25; i++) s.u[i] = 0;
+    #pragma unroll
     for (int i = 0; i < 32; i++) s.b[i] ^= in[i];
     s.b[32] ^= 0x01;
     s.b[135] ^= 0x80;
@@ -465,11 +512,14 @@ void stream_byproduct_keccak(__private const uchar in[32], int iters, __global u
     vstore4(h, 0, (__global ulong*)pad);
 }
 
-void stream_byproduct_sha3(__private const uchar in[32], int iters, __global uchar *pad)
+__attribute__((always_inline))
+void stream_byproduct_sha3(__private const uchar in[32], int iters, __global uchar * restrict pad)
 {
     if (iters <= 0) return;
     uchar tmp[64];
+    #pragma unroll
     for (int i = 0; i < 32; i++) tmp[i] = in[i];
+    #pragma unroll
     for (int i = 32; i < 64; i++) tmp[i] = 0;
     for (int i = 0; i < iters; i++) {
         sha3_512(tmp, 32, tmp);
@@ -478,10 +528,12 @@ void stream_byproduct_sha3(__private const uchar in[32], int iters, __global uch
     vstore4(h, 0, (__global ulong*)pad);
 }
 
-void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters, __global uchar *pad)
+__attribute__((always_inline))
+void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters, __global uchar * restrict pad)
 {
     if (iters <= 0) return;
     uchar tmp[32];
+    #pragma unroll
     for (int i = 0; i < 32; i++) tmp[i] = in[i];
     for (int i = 0; i < iters; i++) {
         aes128_mix(tmp, nonce + (ulong)i, tmp);
@@ -494,46 +546,50 @@ void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters, 
 /* Main kernel                                                                  */
 /* ========================================================================== */
 
-__kernel void deeksha_lite_mine(
-    __global const ulong *header_keccak_state,
+__kernel __attribute__((work_group_size_hint(LOCAL_SIZE, 1, 1)))
+void deeksha_lite_mine(
+    __constant const ulong * restrict header_keccak_state,
     ulong  nonce_base,
     uint   nonce_count,
-    __global uchar *output_hashes,
-    __global uchar *scratchpad_pool,
-    __constant float *stream_weights)
+    __global uchar * restrict output_hashes,
+    __global uchar * restrict scratchpad_pool,
+    __constant float * restrict stream_weights)
 {
     uint tid = get_global_id(0);
     if (tid >= nonce_count) return;
 
-    __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
+    __global uchar * restrict pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
     ulong nonce = nonce_base + (ulong)tid;
 
     /* Step 1: Keccak256(header || nonce) using host-precomputed state */
-    uchar s1[32];
+    uchar s1[32] __attribute__((aligned(8)));
     keccak256_from_state(header_keccak_state, nonce, s1);
 
     /* Step 2: Memory-hard scratchpad */
     fill_scratchpad(s1, pad);
     sequential_passes(pad);
-    uchar s2[32];
+    uchar s2[32] __attribute__((aligned(8)));
     random_read_mix(s1, pad, s2);
 
     /* Step 3: AES-128 CTR mix */
-    uchar s3[32];
+    uchar s3[32] __attribute__((aligned(8)));
     aes128_mix(s2, nonce, s3);
 
     /* Step 4: Keccak256 final */
-    uchar hash[32];
+    uchar hash[32] __attribute__((aligned(8)));
     /* Reuse sha3_512 path: 32B fits in single rate block, padding at byte 32 */
     keccak_st_t s;
+    #pragma unroll
     for (int i = 0; i < 25; i++) s.u[i] = 0;
+    #pragma unroll
     for (int i = 0; i < 32; i++) s.b[i] ^= s3[i];
     s.b[32] ^= 0x01;
     s.b[135] ^= 0x80;
     keccak_f1600(s.u);
+    #pragma unroll
     for (int i = 0; i < 32; i++) hash[i] = s.b[i];
 
-    __global uchar *slot = output_hashes + (ulong)tid * 32;
+    __global uchar * restrict slot = output_hashes + (ulong)tid * 32;
     /* Vectorized 32-byte write */
     ulong4 h = vload4(0, (__private ulong*)hash);
     vstore4(h, 0, (__global ulong*)slot);
