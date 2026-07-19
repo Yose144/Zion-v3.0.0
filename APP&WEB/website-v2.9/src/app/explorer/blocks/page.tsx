@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { Box, ChevronDown, Copy, Check, ArrowLeft, Download } from "lucide-react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Box, ChevronDown, Copy, Check, ArrowLeft, Download, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from "@/hooks/usePolling";
 import { exportToCsv } from "@/lib/csv-export";
+import { useExplorerSSE } from "@/components/explorer/v4/hooks/useExplorerSSE";
+import LiveBadge from "@/components/explorer/v4/shared/LiveBadge";
 
 interface Block {
   height: number;
@@ -59,19 +61,74 @@ export default function BlocksPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [, setTick] = useState(0);
+
+  // SSE for real-time new block notifications
+  const sse = useExplorerSSE({ interval: 15 });
+  const knownHeights = useRef<Set<number>>(new Set());
+
+  // When SSE reports a new block height higher than our top block, fetch + prepend it
+  useEffect(() => {
+    if (!sse.stats) return;
+    const sseHeight = sse.stats.height;
+    if (sseHeight <= 0) return;
+    setBlocks(prev => {
+      if (prev.length === 0) return prev; // wait for initial load
+      const topHeight = prev[0]?.height ?? 0;
+      if (sseHeight <= topHeight) return prev;
+      // Collect heights we need to fetch (between topHeight+1 and sseHeight)
+      const missing: number[] = [];
+      for (let h = sseHeight; h > topHeight; h--) {
+        if (!knownHeights.current.has(h)) missing.push(h);
+      }
+      if (missing.length === 0) return prev;
+      // Fetch missing blocks asynchronously
+      (async () => {
+        try {
+          // Fetch the most recent missing block (others will come on next tick)
+          const h = missing[0];
+          const data = await apiClient<any>(`/blockchain/block?height=${h}`);
+          if (data && data.height) {
+            const newBlock: Block = {
+              height: data.height,
+              hash: data.hash,
+              timestamp: data.timestamp,
+              num_txes: (data.num_txes ?? data.tx_count ?? 0) - 1,
+              transactions: data.num_txes ?? data.tx_count ?? 0,
+              reward: data.reward ?? 0,
+              difficulty: data.difficulty ?? 0,
+              block_size: data.block_size ?? 0,
+              miner: data.miner ?? data.miner_address ?? '',
+            };
+            knownHeights.current.add(data.height);
+            setBlocks(cur => {
+              if (cur.some(b => b.height === newBlock.height)) return cur;
+              const next = [newBlock, ...cur];
+              return next.slice(0, 500); // cap at 500 rows
+            });
+          }
+        } catch { /* ignore — next SSE tick will retry */ }
+      })();
+      return prev;
+    });
+  }, [sse.stats?.height]);
 
   const loadBlocks = useCallback(async (pageNum: number, append: boolean) => {
     try {
+      setError(null);
       if (append) setLoadingMore(true);
       const offset = (pageNum - 1) * 50;
       const data = await apiClient<any[]>(`/blockchain/blocks?limit=50&offset=${offset}`);
       const arr = Array.isArray(data) ? data : [];
       if (append) setBlocks(prev => [...prev, ...arr]);
       else setBlocks(arr);
+      arr.forEach(b => knownHeights.current.add(b.height));
       setHasMore(arr.length === 50);
-    } catch { setHasMore(false); }
-    finally { setLoading(false); setLoadingMore(false); }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load blocks');
+      setHasMore(false);
+    } finally { setLoading(false); setLoadingMore(false); }
   }, []);
 
   useEffect(() => { loadBlocks(1, false); }, [loadBlocks]);
@@ -106,15 +163,49 @@ export default function BlocksPage() {
         </nav>
 
         {/* Header */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <div className="h-12 w-12 rounded-2xl bg-zion-gold/10 flex items-center justify-center shrink-0">
             <Box className="h-6 w-6 text-zion-gold" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="text-2xl md:text-3xl font-bold text-white">{cs ? 'Archiv bloku' : 'Block Archive'}</h1>
             <p className="text-sm text-gray-500">{cs ? 'Kompletní historie blockchainových bloků ZION' : 'Complete history of ZION blockchain blocks'}</p>
           </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {sse.connected ? (
+              <LiveBadge label={cs ? 'Živě' : 'Live'} />
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-gray-500" />
+                </span>
+                <span className="text-xs font-bold text-gray-500 tracking-wider">{cs ? 'Offline' : 'Offline'}</span>
+              </span>
+            )}
+            {sse.blockCount > 0 && (
+              <span className="text-[10px] text-emerald-400 tabular-nums">
+                {cs ? `+${sse.blockCount} nové` : `+${sse.blockCount} new`}
+              </span>
+            )}
+          </div>
         </div>
+
+        {/* Error banner */}
+        {error && (
+          <div className="zion-rainbow-sub px-4 py-3 flex items-center gap-3" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
+            <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-red-300 font-medium">{cs ? 'Chyba načítání' : 'Failed to load'}</p>
+              <p className="text-xs text-gray-500 font-mono break-all">{error}</p>
+            </div>
+            <button
+              onClick={() => { setError(null); setLoading(true); loadBlocks(1, false); }}
+              className="zion-button-secondary text-xs py-1.5 px-3 shrink-0"
+            >
+              {cs ? 'Zkusit znovu' : 'Retry'}
+            </button>
+          </div>
+        )}
 
         {/* Table */}
         <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
