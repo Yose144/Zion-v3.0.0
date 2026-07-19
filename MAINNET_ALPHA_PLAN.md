@@ -116,7 +116,7 @@ Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyči
 
 ### 4.3 Repo purification — „pure code“
 
-> Detailed V3 tree reorganization: [`V3.1_ARCHITECTURE_REORG_PLAN.md`](./V3.1_ARCHITECTURE_REORG_PLAN.md) — WARP → L2, ZionDex → L2, AuxPoW → miner, L3 → AI/orchestration/automation/NCL/PoC.
+> Detailed V3.1 migration into a clean `V31/` tree (post-3.0.9): [`V3.1_MIGRATION_PLAN.md`](./V3.1_MIGRATION_PLAN.md) — WARP → L2, ZionDex → L2, AuxPoW → miner, L3 → AI/orchestration/automation/NCL/PoC; L4 Oasis / L5 Free World / L6 Issobella stay as superstructures.
 
 | # | Úkol | Akce |
 |------|------|------|
@@ -207,9 +207,9 @@ Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyči
 ├── 3.1.0.md
 ├── MAINNET_ALPHA_PLAN.md     # tento dokument
 ├── TRIPLE_STREAM_ALL_GREEN_PLAN.md
+├── V3.1_MIGRATION_PLAN.md    # migrace do V31/ (po 3.0.9)
 ├── LAUNCH_CHECKLIST.md       # TODO vytvořit
-├── V3/                       # aktivní mainnet-track kód
-├── ZionDex/                  # standalone DEX backend
+├── V31/                      # čistý mainnet-track kód (cíl migrace; ZionDex → L2/ziondex)
 ├── ZionStart/                # bootstrap / launchery
 ├── edge-deploy/              # server deploy configs
 ├── scripts/                  # ops utility
