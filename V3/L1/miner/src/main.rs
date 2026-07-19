@@ -2471,6 +2471,43 @@ fn run_remote_session(
             }
         }
 
+        // ── Pre-scan external share drain ────────────────────────────────
+        // Submit any external shares that were found by the persistent
+        // ext_cpu/ext_gpu threads DURING the previous iteration's GPU scan.
+        // Without this, shares sit in the channel for up to ~10s (one full
+        // iteration) before being submitted, causing LuckPool to reject them
+        // as "Job not found" because the VRSC job has already expired.
+        // Submitting here reduces the lag from ~10s to ~0s for shares that
+        // were found while the main loop was busy with the GPU scan.
+        if let Some(share) = ext_gpu_share_rx.try_recv().ok() {
+            println!(
+                "[{}] external_gpu_share_found  coin={}  algo={}  job_id={}  nonce={}",
+                log_timestamp(),
+                share.coin,
+                share.algorithm,
+                share.external_job_id,
+                share.nonce,
+            );
+            submit_external_share(
+                &mut writer, &result_rx, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
+                |accepted| hashrate.record_gpu_ext_share(accepted),
+            );
+        }
+        if let Some(share) = ext_cpu_share_rx.try_recv().ok() {
+            println!(
+                "[{}] external_cpu_share_found  coin={}  algo={}  job_id={}  nonce={}",
+                log_timestamp(),
+                share.coin,
+                share.algorithm,
+                share.external_job_id,
+                share.nonce,
+            );
+            submit_external_share(
+                &mut writer, &result_rx, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
+                |accepted| hashrate.record_cpu_ext_share(accepted),
+            );
+        }
+
         // GPU-first, CPU-fallback nonce scan (respect interactive overrides)
         let can_gpu = gpu_ref.is_some() && gpu_on;
         let mut gpu_nonces_tested = 0u64;

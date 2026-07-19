@@ -469,6 +469,7 @@ fn fallback_revenue_usd_per_day(coin: ExternalCoin) -> f64 {
         ExternalCoin::CFX => 0.35,
         ExternalCoin::ZEC => 0.25,
         ExternalCoin::PHX => 0.10,
+        ExternalCoin::KRX => 0.03,
     }
 }
 
