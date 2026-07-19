@@ -165,8 +165,8 @@ impl ExternalCoin {
             Self::ETC => "etc.2miners.com:1010",
             Self::EVR => "evrprogpow.eu.mine.zpool.ca:1330",
             Self::MEWC => "meowpow.eu.mine.zpool.ca:1327",
-            Self::FLUX => "flux.woolypooly.com:3000",
-            Self::CLORE => "clore.woolypooly.com:3090",
+            Self::FLUX => "flux-eu.minerpool.org:2033",
+            Self::CLORE => "clore.2miners.com:5050",
             Self::XMR => "gulf.moneroocean.stream:10001",
             Self::VRSC => "eu.luckpool.net:3956",
             Self::EPIC => "de.epicmine.io:3334",
@@ -721,8 +721,8 @@ mod tests {
     }
 
     #[test]
-    fn clore_pool_is_woolypooly() {
-        assert_eq!(ExternalCoin::CLORE.default_pool(), "clore.woolypooly.com:3090");
+    fn clore_pool_is_2miners() {
+        assert_eq!(ExternalCoin::CLORE.default_pool(), "clore.2miners.com:5050");
     }
 
     #[test]
