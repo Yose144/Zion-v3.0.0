@@ -201,10 +201,7 @@ impl ExternalCoin {
             Self::KAS => "kheavyhash.auto.nicehash.com:9200",
             Self::VRSC => "verushash.auto.nicehash.com:9200",
             Self::NEXA => "nexapow.auto.nicehash.com:9200",
-            Self::BEAM => "beamv3.auto.nicehash.com:9200",
-            Self::IRON => "fishhash.auto.nicehash.com:9200",
             Self::ALPH => "alephium.auto.nicehash.com:9200",
-            Self::ZCL => "equihash192.auto.nicehash.com:9200",
             Self::CKB => "eaglesong.auto.nicehash.com:9200",
             Self::CFX => "octopus.auto.nicehash.com:9200",
             Self::ZEC => "equihash.auto.nicehash.com:9200",
@@ -215,8 +212,15 @@ impl ExternalCoin {
             // EVR (EvrProgPow), MEWC (MeowPow), PRL (PearlHash), RTM (GhostRider),
             // DNX (DynexSolve), KLS (KarlsenHash), QTC (Qhash), VTC (Verthash),
             // FLUX (ZelHash 125,4 ≠ NiceHash ZHash 144,5)
+            // BEAM (BeamStratum TLS protocol incompatible with NiceHash beamv3 endpoint —
+            //   TLS handshake fails with rustls; NiceHash uses standard stratum, not BeamStratum)
+            // IRON (IronFishStratum v2 protocol incompatible with NiceHash fishhash endpoint —
+            //   connection closed by remote; NiceHash uses standard stratum, not IronFish v2)
+            // ZCL (equihash192.auto.nicehash.com does not resolve — NiceHash has no equihash192 endpoint;
+            //   ZCL falls back to zpool.ca which supports BTC payout)
             Self::XMR | Self::DCR | Self::EPIC | Self::EVR | Self::MEWC | Self::PRL
             | Self::KLS | Self::QTC | Self::VTC | Self::RTM | Self::DNX | Self::FLUX
+            | Self::BEAM | Self::IRON | Self::ZCL
             => return None,
         })
     }

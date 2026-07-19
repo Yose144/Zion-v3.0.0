@@ -128,9 +128,10 @@ impl ExternalCoin {
                 StratumProtocol::ZcashStratum
             }
             // ERG (Autolykos v2) uses standard Stratum v1 on 2miners.
-            // CLORE/EVR/MEWC (KawPow/ProgPow) use EthStratum on WoolyPooly/ZPool.
-            Self::ERG => StratumProtocol::Stratum,
-            Self::EVR | Self::MEWC | Self::CLORE => {
+            // CLORE uses Stratum v1 on NiceHash kawpow (same as RVN/QUAI).
+            // EVR/MEWC (KawPow/ProgPow) use EthStratum on WoolyPooly/ZPool.
+            Self::ERG | Self::CLORE => StratumProtocol::Stratum,
+            Self::EVR | Self::MEWC => {
                 StratumProtocol::EthStratum
             }
             // VRSC (Verus) uses Zcash/Equihash Stratum with solution field
@@ -6357,7 +6358,7 @@ mod tests {
         assert_eq!(ExternalCoin::ERG.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::EVR.protocol(), StratumProtocol::EthStratum);
         assert_eq!(ExternalCoin::MEWC.protocol(), StratumProtocol::EthStratum);
-        assert_eq!(ExternalCoin::CLORE.protocol(), StratumProtocol::EthStratum);
+        assert_eq!(ExternalCoin::CLORE.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::VRSC.protocol(), StratumProtocol::ZcashStratum);
     }
 
