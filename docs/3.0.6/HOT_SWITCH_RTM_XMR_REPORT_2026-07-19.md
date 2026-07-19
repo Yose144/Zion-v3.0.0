@@ -69,12 +69,16 @@ async fn effective_share_target(client: &AuxPowClient, job: &ExternalJob) -> [u8
 ## Test results
 
 ### RTM (Raptoreum / GhostRider) — VERIFIKOVÁNO
-- Pool: `zpool.io` (stratum)
-- Target: `00031fffcdfffffffb50004b...` (správný, z job notifikace)
-- Výsledek: **4 RTM shares accepted** upstream poolem (23:57:28–23:57:40)
-  - První shares byly rejectnuty jako "Invalid job id" (stale) a "Invalid share" (hash se teprve srovnal po job transition)
-  - Po stabilizaci job queue: 4 consecutive accepted shares
+- Pool: `ghostrider.eu.mine.zpool.ca:5354` (stratum, zpool)
+- Target: `00031fffcdfffffffb50004b...` (správný, odvozen z `mining.set_difficulty=0.02` pomocí `RTM_POW_LIMIT`)
+- Výsledky:
+  - **4 RTM shares accepted** upstream poolem (23:57:28–23:57:40)
+  - **1 RTM share accepted** v dalším testu (01:20:53) po návratu na zpool
+  - První shares jsou rejectnuty jako "Invalid job id" (stale job transition) a "Invalid share" (miner se synchronizuje s novým jobem)
+  - Po stabilizaci job queue: shares accepted
+- MiningBoard (`stratum.miningboard.com:4444`) odmítal vše jako `low difficulty share` — pravděpodobně nepodporuje `mining.set_difficulty < 1.0` a používá block target z `nbits` (mnohem těžší). Zůstáváme na zpool.
 - GhostRider hash je správný (native C impl na ARM64, sphlib + CryptoNight)
+- `share_forwarder.rs`: `meets_target_little_endian` pro RTM (hash LE od wrapperu, target BE) — po pokusu s `meets_target` vráceno zpět, jinak všechny shares `below_target`
 - **Status: RTM share acceptance VERIFIED**
 
 ### XMR (Monero / RandomX) — ČEKÁ NA TEST
@@ -90,9 +94,10 @@ async fn effective_share_target(client: &AuxPowClient, job: &ExternalJob) -> [u8
 
 | Soubor | Změna |
 |--------|-------|
+| `AuXpow/src/types.rs` | RTM default pool vrácen na zpool (`ghostrider.eu.mine.zpool.ca:5354`) |
 | `AuXpow/src/auxpow_client.rs` | `share_target()` používá `RTM_POW_LIMIT` pro GhostRider; debug logging pro XMR submit |
 | `AuXpow/src/multiplexer.rs` | `effective_share_target()` — používá job target pro randomx/ghostrider |
-| `AuXpow/src/share_forwarder.rs` | Debug logging — full hash_hex v try_forward pro XMR |
+| `AuXpow/src/share_forwarder.rs` | Debug logging — full hash_hex v try_forward pro XMR; RTM target check `meets_target_little_endian` |
 | `V3/L1/pool/src/bin/server.rs` | Stale job check + `job_ids_for_coin()` helper |
 | `V3/L1/miner/src/main.rs` | Miner job handling pro multi-coin CPU stream |
 | `V3/L1/miner/src/gpu_backend.rs` | GPU backend minor fixes |
@@ -118,4 +123,5 @@ cargo build --release -p zion-pool
 ## Historie commitů
 
 - `aa47652f6` — fix(auxpow+pool): RTM/XMR share acceptance — stale job check + correct share target
-- Následující commit — RTM verified (4 shares accepted), XMR debug logging
+- `cf24049e4` — feat(auxpow): RTM share acceptance verified + XMR debug logging
+- Nový commit — RTM zůstává na zpool, MiningBoard nepodporuje `difficulty < 1.0`, zaznamenáno v reportu
