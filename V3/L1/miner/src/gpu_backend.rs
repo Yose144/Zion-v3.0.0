@@ -2150,6 +2150,16 @@ impl GpuPipelineState {
         algorithm: &str,
         raw_header_bytes: &[u8],
     ) -> Option<GpuScanOutcome> {
+        // Capture the current job's target before `job` is moved into
+        // prev_job below.  When vardiff retargets between iterations, the
+        // pool's current share_target is harder than the previous batch's
+        // target.  Since the pool reuses template_id as job_id (same across
+        // iterations when the block template hasn't changed), the stale
+        // check passes and the pool validates against the NEW (harder)
+        // target.  We must therefore check the previous batch's hash against
+        // the CURRENT target, not the old one, to avoid "share_below_target"
+        // rejections.
+        let current_target = job.target;
         let prev_outcome = if self.has_pending {
             // Collect previous batch results
             let prev_job = self.prev_job.take()?;
@@ -2169,7 +2179,7 @@ impl GpuPipelineState {
                         };
                         let cpu_hash = candidate.hash_with_algorithm(algorithm);
                         let is_mismatch = cpu_hash != *gpu_hash;
-                        let gpu_above_target = !prev_job.target.allows(gpu_hash);
+                        let gpu_above_target = !current_target.allows(gpu_hash);
 
                         if gpu_above_target {
                             GpuScanOutcome {
