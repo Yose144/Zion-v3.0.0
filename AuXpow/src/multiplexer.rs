@@ -91,6 +91,23 @@ impl JobMultiplexer {
         profile.pool_host = pref_host.to_string();
         profile.pool_port = pref_port;
 
+        // Per-coin pool host/port override (e.g. ZION_POOL_AUXPOW_POOL_HOST_KAS).
+        // Takes precedence over pool preference and global overrides, allowing
+        // routing a specific coin to a different pool (e.g. KAS → Herominers
+        // for fixed-difficulty PPLNS instead of 2miners EthereumStratum vardiff).
+        let coin_host_key = format!("ZION_POOL_AUXPOW_POOL_HOST_{}", coin.ticker());
+        if let Ok(host) = std::env::var(&coin_host_key) {
+            if !host.trim().is_empty() {
+                profile.pool_host = host.trim().to_string();
+            }
+        }
+        let coin_port_key = format!("ZION_POOL_AUXPOW_POOL_PORT_{}", coin.ticker());
+        if let Ok(port) = std::env::var(&coin_port_key) {
+            if let Ok(p) = port.trim().parse::<u16>() {
+                profile.pool_port = p;
+            }
+        }
+
         info!(
             "JobMultiplexer: connecting to {} at {}:{} as worker={}",
             coin, profile.pool_host, profile.pool_port, profile.worker_name
