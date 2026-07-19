@@ -21,6 +21,9 @@
 # NOTE: ZION_MINER_ADDRESS = default_miner canonical wallet (89% coinbase).
 # Local miners should set their own ZION_MINER_ADDRESS in launch scripts.
 ZION_MINER_ADDRESS=zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3
+
+# Edge CPU miner payout address (must be a valid 44-char zion1 address)
+ZION_PAYOUT_ADDRESS=zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3
 ZION_HUMANITARIAN_WALLET=zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7
 ZION_ISSOBELLA_WALLET=zion1f7y7l5k678y0v408e8s654d2282346k375526t2
 # Network configuration
@@ -61,6 +64,11 @@ ZION_POOL_AUXPOW_ENABLED=1
 ZION_POOL_AUXPOW_COIN=RVN
 ZION_POOL_AUXPOW_SPLIT_ZION=4
 ZION_POOL_AUXPOW_SPLIT_EXTERNAL=1
+# ZION_POOL_AUXPOW_WALLET is the fallback wallet for external AuxPoW pools.
+# It must match the payout currency of the pool you actually connect to.
+# The default below is a BTC address (suitable for NiceHash-style BTC-payout
+# pools). If you mine a coin that pays out in that coin (e.g. RVN → RVN
+# address), set ZION_POOL_AUXPOW_WALLET_RVN securely on the server, NOT here.
 ZION_POOL_AUXPOW_WALLET=bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh
 ZION_POOL_AUXPOW_WORKER_NAME=zion-pool
 ZION_POOL_AUXPOW_POOL_PREFERENCE=default

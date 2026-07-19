@@ -60,10 +60,22 @@ if [ "$DISK_USAGE" -ge "$THRESHOLD_CRIT" ]; then
 fi
 
 # ── 3. Vacuum journald to 500MB if above 1GB ──────────────────────────────────
-JOURNAL_SIZE=$(journalctl --disk-usage 2>/dev/null | grep -oP '\d+' | head -1 || echo "0")
-if [ "$JOURNAL_SIZE" -gt 1024 ]; then
-    log "Journal is ${JOURNAL_SIZE}M — vacuuming to 500M"
-    journalctl --vacuum-size=500M 2>/dev/null || true
+# Parse systemd's human-readable size (e.g. "3.5G", "500M") instead of only the
+# leading digits, which caused the threshold to be effectively unreachable.
+# Normalize to remove any whitespace between number and unit.
+JOURNAL_USAGE=$(journalctl --disk-usage 2>/dev/null | grep -oP '[0-9]+(\.[0-9]+)?\s*[KMGTP]?' | head -1 | tr -d '[:space:]' || echo "0")
+JOURNAL_MB=0
+if [[ -n "$JOURNAL_USAGE" && "$JOURNAL_USAGE" != "0" ]]; then
+    JOURNAL_MB=$(echo "$JOURNAL_USAGE" | awk '{
+        u=$1; gsub(/[0-9.]+/,"",u);
+        n=$1; gsub(/[KMGTP]/,"",n);
+        if (u=="G") n*=1024; else if (u=="T") n*=1024*1024; else if (u=="K") n/=1024;
+        print int(n)
+    }')
+fi
+if [ "$JOURNAL_MB" -gt 1024 ]; then
+    log "Journal is ${JOURNAL_USAGE} — vacuuming to 500M"
+    journalctl --vacuum-size=500M >/dev/null 2>&1 || true
 fi
 
 # ── 4. Check for runaway log files (>5GB) and rotate them safely ──────────────

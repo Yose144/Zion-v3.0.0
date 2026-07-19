@@ -17,7 +17,7 @@
 
 set -euo pipefail
 
-REPO_ROOT="/root/zion-2.9.6-main"
+REPO_ROOT="/opt/zion"
 DEPLOY_DIR="${REPO_ROOT}/edge-deploy"
 TIMESTAMP=$(date -u '+%Y%m%d%H%M%S')
 BACKUP_DIR="/root/zion-backups/config-backup-${TIMESTAMP}"
