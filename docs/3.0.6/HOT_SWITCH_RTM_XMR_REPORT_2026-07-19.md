@@ -68,25 +68,31 @@ async fn effective_share_target(client: &AuxPowClient, job: &ExternalJob) -> [u8
 
 ## Test results
 
-### RTM (Raptoreum / GhostRider)
+### RTM (Raptoreum / GhostRider) — VERIFIKOVÁNO
 - Pool: `zpool.io` (stratum)
 - Target: `00031fffcdfffffffb50004b...` (správný, z job notifikace)
-- Výsledek: **2/13 shares accepted** (zbytek stale_job — stale check funguje, miner se přepne na nový job)
-- GhostRider hash je správný (native C impl na ARM64)
+- Výsledek: **4 RTM shares accepted** upstream poolem (23:57:28–23:57:40)
+  - První shares byly rejectnuty jako "Invalid job id" (stale) a "Invalid share" (hash se teprve srovnal po job transition)
+  - Po stabilizaci job queue: 4 consecutive accepted shares
+- GhostRider hash je správný (native C impl na ARM64, sphlib + CryptoNight)
+- **Status: RTM share acceptance VERIFIED**
 
-### XMR (Monero / RandomX)
+### XMR (Monero / RandomX) — ČEKÁ NA TEST
 - Pool: `moneroocean.stream` (cryptonote stratum)
 - Target: `b88d0600` (LE 64-bit, ~difficulty 10000)
 - Výsledek: **Pool IP ban** (10 min) kvůli příliš mnoha reconnectům během debugging.
-- RandomX hash je správný (verifikováno benchmarkem).
-- Po vypršení banu očekáváme accepted shares.
+- RandomX hash je správný (verifikováno benchmarkem — 1696 H/s na M1).
+- Podezření na bug: `submit_share()` pro cryptonote používá `mix_hash_hex.unwrap_or(_hash_hex)` — pokud miner pošle `mix_hash_hex`, použije se místo skutečného hashe. Pro XMR by `mix_hash` mělo být vždy `None`.
+- Přidán debug logging v `share_forwarder.rs` (full hash_hex) a `auxpow_client.rs` (submit_hash_check) pro diagnostiku.
+- **Status: ČEKÁ — po vypršení IP banu otestovat s debug loggingem**
 
 ## Změněné soubory
 
 | Soubor | Změna |
 |--------|-------|
-| `AuXpow/src/auxpow_client.rs` | `share_target()` používá `RTM_POW_LIMIT` pro GhostRider |
+| `AuXpow/src/auxpow_client.rs` | `share_target()` používá `RTM_POW_LIMIT` pro GhostRider; debug logging pro XMR submit |
 | `AuXpow/src/multiplexer.rs` | `effective_share_target()` — používá job target pro randomx/ghostrider |
+| `AuXpow/src/share_forwarder.rs` | Debug logging — full hash_hex v try_forward pro XMR |
 | `V3/L1/pool/src/bin/server.rs` | Stale job check + `job_ids_for_coin()` helper |
 | `V3/L1/miner/src/main.rs` | Miner job handling pro multi-coin CPU stream |
 | `V3/L1/miner/src/gpu_backend.rs` | GPU backend minor fixes |
@@ -103,8 +109,13 @@ cargo build --release -p zion-pool
 
 ## Další kroky
 
-1. **XMR test** — po vypršení IP banu (~10 min) znovu nastavit `cpu-coin=XMR` a verifikovat accepted shares.
+1. **XMR test** — po vypršení IP banu (~10 min) znovu nastavit `cpu-coin=XMR` a verifikovat accepted shares s debug loggingem.
 2. **RTM stale job tolerance** — miner se stuckne na starém jobu 3+ minuty. Možná řešení:
    - Pool by měl posílat `wire_job` update i během `while !got_zion_response` (nejen na začátku iterace).
    - Nebo miner by měl periodicky žádat o nový job.
-3. **Commit + push** — dnešní změny commitnout a pushnout do `origin`.
+3. ~~Commit + push~~ — hotovo.
+
+## Historie commitů
+
+- `aa47652f6` — fix(auxpow+pool): RTM/XMR share acceptance — stale job check + correct share target
+- Následující commit — RTM verified (4 shares accepted), XMR debug logging
