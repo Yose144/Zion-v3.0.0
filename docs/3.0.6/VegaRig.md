@@ -523,4 +523,4 @@ No further tuning needed for i066d.
 - [`docs/3.0.6/PROGPOW_KERNEL_OPTIMIZATION_REPORT.md`](./docs/3.0.6/PROGPOW_KERNEL_OPTIMIZATION_REPORT.md) — ProgPow optimization
 - [`docs/3.0.1Genesis/SMOS_VEGA64_FIRE_TUNING_POSTMORTEM.md`](./docs/3.0.1Genesis/SMOS_VEGA64_FIRE_TUNING_POSTMORTEM.md) — Vega tuning history
 - [`docs/3.0.1Genesis/VEGA64_S4_MEMHARD_DEBUG_GUIDE.md`](./docs/3.0.1Genesis/VEGA64_S4_MEMHARD_DEBUG_GUIDE.md) — GCN vs RDNA details
-- [`V3/SMOS_DEPLOY.md`](./V3/SMOS_DEPLOY.md) — SMOS deployment guide
+- [`V3/SMOS_DEPLOY.md`](../../V3/SMOS_DEPLOY.md) — SMOS deployment guide

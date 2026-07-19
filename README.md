@@ -1,19 +1,24 @@
-# ZION TerraNova v3.0.6
+# ZION TerraNova v3.0.7
 
 > **Proof of Work Layer 1 for the next 100 years.**
 > From blockchain to the stars.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Status:** Mainnet Beta · 3.0.6 "Triple Parallel" Live · 14/14 Services Active · Chain Height 5800+ · Web Image 377 MB (85% smaller) · Public Launch: 31 December 2026
+**Status:** Mainnet Beta · 3.0.7 "Triple Stream All Green" planning · 15/15 Services Active · Chain Height 10911+ · Public Launch: 31 December 2026
+
+**Current plan:** [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](TRIPLE_STREAM_ALL_GREEN_PLAN.md) · **Version overview:** [`3.0.7.md`](3.0.7.md) · **Previous 3.0.6 archive:** [`docs/3.0.6/`](docs/3.0.6/)
 
 **DeekshaChv3 Parallel Streaming:** ZION Deeksha on GPU + external coins (VRSC, KAS, ALPH, DCR, ERG, ETC, RVN, FLUX) on CPU — all algorithms run **simultaneously**, not alternating. Deployed to Edge pool 2026-07-13.
 
-**CUDA Backend (NEW 2026-07-18):** Native CUDA kernel for `deeksha_lite_fire` achieving **303.8 KH/s on RTX 3090** (46.7x faster than OpenCL port). Async host-device copies + pool I/O pipelining + PTXAS O3. See [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md) for full optimization report.
+**CUDA Backend (NEW 2026-07-18):** Native CUDA kernel for `deeksha_lite_fire` achieving **303.8 KH/s on RTX 3090** (46.7x faster than OpenCL port). Async host-device copies + pool I/O pipelining + PTXAS O3. See [`CUDA_TUNING_RTX.md`](docs/3.0.6/CUDA_TUNING_RTX.md) for full optimization report.
 
 **Canonical documentation for 3.0.5:** [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) — full Czech report.  
 **Runbook:** [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) — canonical 7-phase runbook.  
-**3.0.4 release overview:** [`3.0.4.md`](3.0.4.md) — DeFi deploy + TX unification.
+**3.0.4 release overview:** [`docs/3.0.4/3.0.4.md`](docs/3.0.4/3.0.4.md) — DeFi deploy + TX unification.
+| **3.0.7 plan** | [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](TRIPLE_STREAM_ALL_GREEN_PLAN.md) |
+| **3.0.7 overview** | [`3.0.7.md`](3.0.7.md) |
+| **3.0.6 archive** | [`docs/3.0.6/`](docs/3.0.6/) |
 
 **Operational status:** [`StatusV3.md`](StatusV3.md)  
 **Agent rules:** [`AGENTS.md`](AGENTS.md)  
@@ -28,7 +33,7 @@
 |------|-------|
 | **3.0.5 All Green report (CZ)** | [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) |
 | **3.0.5 runbook** | [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) |
-| **3.0.4 release overview** | [`3.0.4.md`](3.0.4.md) |
+| **3.0.4 release overview** | [`docs/3.0.4/3.0.4.md`](docs/3.0.4/3.0.4.md) |
 | **Live status + blockers** | [`StatusV3.md`](StatusV3.md) |
 | **V3 workspace code** | [`V3/`](V3/) |
 | **Forward roadmap** | [`ROADMAP.md`](ROADMAP.md) |
@@ -39,7 +44,7 @@
 | **W11 / Ubuntu launchers** | [`ZionStart/README.md`](ZionStart/README.md) |
 | **Agent rules** | [`AGENTS.md`](AGENTS.md) |
 | **Genesis regeneration** | [`docs/GENESIS_REGENERATION_RUNBOOK.md`](docs/GENESIS_REGENERATION_RUNBOOK.md) |
-| **CUDA tuning report** | [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md) |
+| **CUDA tuning report** | [`docs/3.0.6/CUDA_TUNING_RTX.md`](docs/3.0.6/CUDA_TUNING_RTX.md) |
 | **Historical 3.0.3 docs** | [`docs/3.0.3/`](docs/3.0.3/) |
 
 ---
@@ -147,7 +152,7 @@ export ZION_GPU_MAX_BATCH=262144
 | v5 (async htod copies) | 245.8 KH/s | 37.9x |
 | v6 (pipelining + PTXAS O3) | **303.8 KH/s** | **46.7x** |
 
-Full optimization report: [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md)
+Full optimization report: [`docs/3.0.6/CUDA_TUNING_RTX.md`](docs/3.0.6/CUDA_TUNING_RTX.md)
 
 > **Note:** `ZION_PAYOUT_ADDRESS` is required — pool rejects connections with missing or invalid address. Must be a valid 44-char `zion1...` address.
 
@@ -160,12 +165,12 @@ This repository has exactly one source of truth per topic:
 | Topic | Canonical Doc |
 |-------|---------------|
 | **3.0.5 All Green report (CZ)** | [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) |
-| **3.0.4 release overview** | [`3.0.4.md`](3.0.4.md) |
+| **3.0.4 release overview** | [`docs/3.0.4/3.0.4.md`](docs/3.0.4/3.0.4.md) |
 | **Live operational status** | [`StatusV3.md`](StatusV3.md) |
 | **Agent operating rules** | [`AGENTS.md`](AGENTS.md) |
 | **V3 code + architecture** | [`V3/README.md`](V3/README.md) |
 | **Engineering roadmap** | [`V3/ROADMAP.md`](V3/ROADMAP.md) |
-| **CUDA tuning report** | [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md) |
+| **CUDA tuning report** | [`docs/3.0.6/CUDA_TUNING_RTX.md`](docs/3.0.6/CUDA_TUNING_RTX.md) |
 | **Historical 3.0.3 docs** | [`docs/3.0.3/`](docs/3.0.3/) |
 
 All other root `.md` files were archived to [`docs/3.0.3/`](docs/3.0.3/) as part of the 3.0.4 documentation cleanup. If you need a 3.0.3-era document, look there first.
@@ -197,7 +202,7 @@ RPC: 127.0.0.1:8443 (localhost only)
 
 - **Edge**: Primary 24/7 node + pool. Source of chain truth. Accepts public miner connections. 14 services + watchdog timer + web Docker container.
 - **Core**: Local backup node (P2P peer, same genesis) + Dashboard + AI services.
-- **Chain live since:** 2026-07-07 (hard genesis reset) · **Current protocol:** `zion-v3-node/3.0.6` · **Chain height:** 5800+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+- **Chain live since:** 2026-07-07 (hard genesis reset) · **Current protocol:** `zion-v3-node/3.0.6` · **Chain height:** 10911+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` · **Next milestone:** 3.0.7 "Triple Stream All Green" — [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](TRIPLE_STREAM_ALL_GREEN_PLAN.md)
 
 ---
 
@@ -207,4 +212,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-07-18 · Version: v3.0.6 "Triple Parallel" + CUDA Backend (303.8 KH/s RTX 3090) · Report: [`CUDA_TUNING_RTX.md`](CUDA_TUNING_RTX.md)*
+*Last updated: 2026-07-18 · Version: v3.0.6 "Triple Parallel" + CUDA Backend (303.8 KH/s RTX 3090) · Report: [`docs/3.0.6/CUDA_TUNING_RTX.md`](docs/3.0.6/CUDA_TUNING_RTX.md)*
