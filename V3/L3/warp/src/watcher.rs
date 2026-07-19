@@ -231,7 +231,7 @@ mod tests {
     fn make_router() -> Arc<Mutex<WarpRouter>> {
         let registry = ChainRegistry::with_defaults();
         let fee_engine = FeeEngine::with_defaults();
-        let validator_set = WarpValidatorSet::new(1);
+        let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(1)));
         Arc::new(Mutex::new(WarpRouter::new(
             registry,
             fee_engine,

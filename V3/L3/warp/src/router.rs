@@ -9,6 +9,8 @@ use crate::validator::WarpValidatorSet;
 use crate::xp_bridge::WarpXpEvent;
 
 use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tracing::info;
 use uuid::Uuid;
 
@@ -16,7 +18,7 @@ use uuid::Uuid;
 pub struct WarpRouter {
     pub registry: ChainRegistry,
     pub fee_engine: FeeEngine,
-    pub validator_set: WarpValidatorSet,
+    pub validator_set: Arc<Mutex<WarpValidatorSet>>,
     pub metrics: WarpMetrics,
     transfers: HashMap<Uuid, WarpTransfer>,
     state_machines: HashMap<Uuid, TransferStateMachine>,
@@ -34,7 +36,7 @@ impl WarpRouter {
     pub fn new(
         registry: ChainRegistry,
         fee_engine: FeeEngine,
-        validator_set: WarpValidatorSet,
+        validator_set: Arc<Mutex<WarpValidatorSet>>,
     ) -> Self {
         Self {
             registry,
@@ -180,6 +182,11 @@ impl WarpRouter {
         self.transfers.get(id)
     }
 
+    /// Get mutable reference to a transfer (for updating dest_tx_hash, etc.)
+    pub fn get_transfer_mut(&mut self, id: &Uuid) -> Option<&mut WarpTransfer> {
+        self.transfers.get_mut(id)
+    }
+
     /// List all transfers, most recent first.
     pub fn list_transfers(&self) -> Vec<WarpTransfer> {
         let mut v: Vec<WarpTransfer> = self.transfers.values().cloned().collect();
@@ -224,12 +231,15 @@ mod tests {
     use super::*;
     use crate::fees::FeeEngine;
     use crate::validator::WarpValidatorSet;
+    use std::sync::Arc;
+    use tokio::sync::Mutex;
 
     fn test_router() -> WarpRouter {
+        let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(3)));
         WarpRouter::new(
             ChainRegistry::with_defaults(),
             FeeEngine::with_defaults(),
-            WarpValidatorSet::new(3),
+            validator_set,
         )
     }
 

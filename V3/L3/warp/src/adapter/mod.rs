@@ -10,6 +10,7 @@ pub mod stellar;
 pub mod sui;
 pub mod ton;
 pub mod tron;
+pub mod zion_l1;
 
 use crate::error::WarpResult;
 use crate::protocol::{DepositProof, MintInstruction};
@@ -58,6 +59,7 @@ pub fn create_adapter(chain_name: &str) -> Option<Box<dyn ChainAdapter>> {
         "near" => Some(Box::new(near::NearAdapter::new())),
         "ton" => Some(Box::new(ton::TonAdapter::new())),
         "lightning" => Some(Box::new(lightning::LightningAdapter::new())),
+        "zion-l1" => Some(Box::new(zion_l1::ZionL1Adapter::from_config(&crate::config::WarpConfig::default()))),
         _ => None,
     }
 }
@@ -98,5 +100,11 @@ mod tests {
     fn test_create_adapter_unknown() {
         assert!(create_adapter("fantom").is_none());
         assert!(create_adapter("").is_none());
+    }
+
+    #[test]
+    fn test_create_adapter_zion_l1() {
+        // Note: this may return None if env vars not set, but should not panic
+        let _ = create_adapter("zion-l1");
     }
 }
