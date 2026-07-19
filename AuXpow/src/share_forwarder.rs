@@ -122,9 +122,16 @@ impl ShareForwarder {
             // LuckPool) interpret the 32-byte hash as a little-endian integer.
             meets_target_little_endian(&effective_hash, target)
         } else if self.client.profile().coin == ExternalCoin::RTM {
-            // GhostRider (Raptoreum): Bitcoin/Dash-style LE hash, BE target.
-            // Miner uses meets_target_little_endian — pool must match.
-            meets_target_little_endian(&effective_hash, target)
+            // GhostRider (Raptoreum): wrapper outputs hash in LE, target from pool is BE.
+            // Compare hash reversed to BE against BE target.
+            let meets_rtm = meets_target_little_endian(&effective_hash, target);
+            println!(
+                "auxpow: RTM try_forward job_id={} nonce={} meets={} hash_hex={:.16} target_hex={:.16}",
+                job_id, nonce, meets_rtm,
+                hash_to_hex(&effective_hash),
+                hash_to_hex(target),
+            );
+            meets_rtm
         } else {
             // Most other external algorithms compare hash and target as
             // big-endian 256-bit integers.
