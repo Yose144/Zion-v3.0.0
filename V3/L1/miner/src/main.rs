@@ -1500,7 +1500,15 @@ fn run_local_session(
                 job.job_id, job.nonce_count, job.start_nonce, current_algorithm
             );
         }
-        // Primary GPU backend (Deeksha) — never switches algorithm.
+        // Optimization #3: Ensure GPU backend matches the current algorithm.
+        // In local mode, the user may switch algorithms interactively.
+        if let Err(e) = tri_gpu.ensure_primary_algorithm(&current_algorithm) {
+            eprintln!(
+                "gpu_primary_algorithm_switch_error algo={} reason=\"{e}\" — continuing with existing backend",
+                current_algorithm
+            );
+        }
+        // Primary GPU backend (Deeksha) — switches algorithm when needed.
         // TriGpuManager keeps the primary backend alive for the entire session.
         // Skip GPU for CPU-only algorithms (verushash, randomx) — they have no
         // GPU kernel and must use CPU mining.
@@ -2316,6 +2324,20 @@ fn run_remote_session(
         telemetry.current_epoch = job.height / 100;
         // BUG #1 fix: propagate pool_height to HashrateTracker so dashboard can display it
         hashrate.set_pool_height(job.height);
+
+        // Optimization #3: Ensure the primary GPU backend matches the pool's
+        // algorithm. If the pool sends deeksha_lite_v1 but the miner initialized
+        // with deeksha_lite_fire, switch the GPU backend to v1 to produce
+        // correct hashes (fire includes a thermal loop that v1 doesn't have).
+        // Only switches for Deeksha-family algorithms; ignores external/CPU-only.
+        if let Err(e) = tri_gpu.ensure_primary_algorithm(&current_algorithm) {
+            eprintln!(
+                "[{}] gpu_primary_algorithm_switch_error algo={} reason=\"{e}\" — continuing with existing backend",
+                log_timestamp(),
+                current_algorithm
+            );
+        }
+
         ui::log_new_job(
             job.job_id,
             job.height,
@@ -2346,8 +2368,8 @@ fn run_remote_session(
             (c.cpu_enabled, c.gpu_enabled, c.dual_mode)
         };
 
-        // Primary GPU backend (Deeksha) — never switches algorithm.
-        // TriGpuManager keeps the primary backend alive for the entire session.
+        // Primary GPU backend (Deeksha) — algorithm switched above via
+        // ensure_primary_algorithm() to match the pool's requested algorithm.
         // Skip GPU for CPU-only algorithms (verushash, randomx) — they have no
         // GPU kernel and must use CPU mining.
         let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
