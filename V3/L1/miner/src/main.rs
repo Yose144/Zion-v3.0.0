@@ -2199,7 +2199,10 @@ fn run_remote_session(
         .context("failed to set pool socket read timeout")?;
     let reader_stream = stream.try_clone().context("failed to clone pool stream")?;
     let mut reader = BufReader::new(reader_stream);
-    let mut writer = stream;
+    // Writer is shared between the main loop and the dedicated ext-share
+    // submission thread.  Arc<Mutex> prevents interleaved writes.
+    let writer = Arc::new(Mutex::new(stream));
+    let writer_ext = Arc::clone(&writer);
 
     let backend_str = tri_gpu.primary_backend_kind().as_str();
     // BUG #2 fix: use current control.algorithm (user may have pressed 'a' to switch)
@@ -2214,7 +2217,7 @@ fn run_remote_session(
         payout_address: config.payout_address.clone(),
         backend: backend_str.to_string(),
     };
-    let hello_line = write_wire_message(&mut writer, &hello_message)?;
+    let hello_line = write_wire_message(&mut *writer.lock().unwrap(), &hello_message)?;
     println!("wire_hello={hello_line}");
 
     let (welcome_line_raw, welcome_message) = read_wire_message(&mut reader)?;
@@ -2240,6 +2243,23 @@ fn run_remote_session(
         .spawn(move || pool_io_thread(reader, job_tx, result_tx, ext_gpu_tx_for_io, ext_cpu_tx_for_io))
         .context("failed to spawn pool I/O thread")?;
     println!("[{}] pool_io_thread_started — job pre-fetch + async submit enabled", log_timestamp());
+
+    // ── Dedicated external share submission thread ──────────────────────
+    // Reads from ext_cpu_share_rx and ext_gpu_share_rx and submits shares
+    // IMMEDIATELY via the shared writer, without waiting for the main loop.
+    // This eliminates the ~10s main-loop lag that caused LuckPool "Job not
+    // found" rejects on VRSC (VerusHash) shares.
+    //
+    // The pool's ExternalResult response comes back through pool_io_thread
+    // → result_rx, and is handled by the main loop as "late_external_result".
+    let config_for_ext = config.clone();
+    std::thread::Builder::new()
+        .name("ext-submit".to_string())
+        .spawn(move || {
+            ext_share_submitter_thread(writer_ext, ext_gpu_share_rx, ext_cpu_share_rx, &config_for_ext);
+        })
+        .context("failed to spawn ext-share submitter thread")?;
+    println!("[{}] ext_share_submitter_thread_started — immediate ext share submission", log_timestamp());
     sync_miner_metrics(
         metrics,
         &telemetry,
@@ -2264,8 +2284,8 @@ fn run_remote_session(
     if let Some(pref_msg) = profit_router.build_coin_preference(&config.miner_id) {
         let pref_line = zion_pool::encode_message(&pref_msg)
             .map_err(|e| anyhow!("failed to encode CoinPreference: {e}"))?;
-        writer.write_all(pref_line.as_bytes())?;
-        writer.flush()?;
+        writer.lock().unwrap().write_all(pref_line.as_bytes())?;
+        writer.lock().unwrap().flush()?;
         println!("[{}] autonomous_coin_preference_sent {}", log_timestamp(), pref_line.trim());
     }
 
@@ -2295,8 +2315,8 @@ fn run_remote_session(
             if profit_router.coins_changed(last_s2_coin, last_s3_coin) {
                 if let Some(pref_msg) = profit_router.build_coin_preference(&config.miner_id) {
                     if let Ok(pref_line) = zion_pool::encode_message(&pref_msg) {
-                        let _ = writer.write_all(pref_line.as_bytes());
-                        let _ = writer.flush();
+                        let _ = writer.lock().unwrap().write_all(pref_line.as_bytes());
+                        let _ = writer.lock().unwrap().flush();
                         println!(
                             "[{}] autonomous_coin_preference_updated {}",
                             log_timestamp(),
@@ -2375,7 +2395,7 @@ fn run_remote_session(
                 attempted_hashes: Some(0),
                 elapsed_ms: Some(0),
             };
-            let _ = write_wire_message(&mut writer, &no_solution_message);
+            let _ = write_wire_message(&mut *writer.lock().unwrap(), &no_solution_message);
             let _ = result_rx.recv();
             thread::sleep(Duration::from_millis(100));
             continue;
@@ -2471,42 +2491,11 @@ fn run_remote_session(
             }
         }
 
-        // ── Pre-scan external share drain ────────────────────────────────
-        // Submit any external shares that were found by the persistent
-        // ext_cpu/ext_gpu threads DURING the previous iteration's GPU scan.
-        // Without this, shares sit in the channel for up to ~10s (one full
-        // iteration) before being submitted, causing LuckPool to reject them
-        // as "Job not found" because the VRSC job has already expired.
-        // Submitting here reduces the lag from ~10s to ~0s for shares that
-        // were found while the main loop was busy with the GPU scan.
-        if let Some(share) = ext_gpu_share_rx.try_recv().ok() {
-            println!(
-                "[{}] external_gpu_share_found  coin={}  algo={}  job_id={}  nonce={}",
-                log_timestamp(),
-                share.coin,
-                share.algorithm,
-                share.external_job_id,
-                share.nonce,
-            );
-            submit_external_share(
-                &mut writer, &result_rx, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
-                |accepted| hashrate.record_gpu_ext_share(accepted),
-            );
-        }
-        if let Some(share) = ext_cpu_share_rx.try_recv().ok() {
-            println!(
-                "[{}] external_cpu_share_found  coin={}  algo={}  job_id={}  nonce={}",
-                log_timestamp(),
-                share.coin,
-                share.algorithm,
-                share.external_job_id,
-                share.nonce,
-            );
-            submit_external_share(
-                &mut writer, &result_rx, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
-                |accepted| hashrate.record_cpu_ext_share(accepted),
-            );
-        }
+        // NOTE: External share submission is now handled by the dedicated
+        // ext_share_submitter_thread (spawned below), which reads from
+        // ext_cpu_share_rx and ext_gpu_share_rx and submits immediately
+        // via the shared writer.  This eliminates the ~10s main-loop lag
+        // that caused LuckPool "Job not found" rejects.
 
         // GPU-first, CPU-fallback nonce scan (respect interactive overrides)
         let can_gpu = gpu_ref.is_some() && gpu_on;
@@ -2557,49 +2546,10 @@ fn run_remote_session(
             None
         };
 
-        // ── Collect GPU external share from persistent thread (non-blocking) ──
-        let ext_gpu_share = match ext_gpu_share_rx.try_recv() {
-            Ok(share) => Some(share),
-            Err(_) => None,
-        };
-
-        // ── Collect CPU external share from persistent thread (non-blocking) ──
-        let ext_cpu_share = match ext_cpu_share_rx.try_recv() {
-            Ok(share) => Some(share),
-            Err(_) => None,
-        };
-
-        // ── Submit GPU external share (if found by persistent thread) ────
-        if let Some(share) = ext_gpu_share {
-            println!(
-                "[{}] external_gpu_share_found  coin={}  algo={}  job_id={}  nonce={}",
-                log_timestamp(),
-                share.coin,
-                share.algorithm,
-                share.external_job_id,
-                share.nonce,
-            );
-            submit_external_share(
-                &mut writer, &result_rx, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
-                |accepted| hashrate.record_gpu_ext_share(accepted),
-            );
-        }
-
-        // ── Submit CPU external share (VerusHash/RandomX, if found) ────
-        if let Some(share) = ext_cpu_share {
-            println!(
-                "[{}] external_cpu_share_found  coin={}  algo={}  job_id={}  nonce={}",
-                log_timestamp(),
-                share.coin,
-                share.algorithm,
-                share.external_job_id,
-                share.nonce,
-            );
-            submit_external_share(
-                &mut writer, &result_rx, &config, &share, &hashrate, VERBOSE.load(Ordering::Relaxed),
-                |accepted| hashrate.record_cpu_ext_share(accepted),
-            );
-        }
+        // NOTE: External share collection and submission is now handled by
+        // the dedicated ext_share_submitter_thread.  The main loop no longer
+        // collects or submits ext shares — it only handles ZION share
+        // submission and drains late ExternalResult responses from result_rx.
 
         hashrate.record_gpu_hashes(gpu_nonces_tested);
         hashrate.record_cpu_hashes(cpu_nonces_tested);
@@ -2641,7 +2591,7 @@ fn run_remote_session(
                 attempted_hashes: Some(tested),
                 elapsed_ms: Some(job_started_at.elapsed().as_millis() as u64),
             };
-            let no_solution_line = write_wire_message(&mut writer, &no_solution_message)?;
+            let no_solution_line = write_wire_message(&mut *writer.lock().unwrap(), &no_solution_message)?;
             // ── FIX #8: Drain late ExternalResult if present (from timed-out submit_external_share) ──
             let (result_line_raw, result_message) = loop {
                 match result_rx.recv() {
@@ -2666,8 +2616,22 @@ fn run_remote_session(
                         println!("pool_status={status}");
                     }
                 }
-                // Late ExternalResult from a timed-out submit_external_share — log and continue
+                // Late ExternalResult from ext_share_submitter_thread — log and continue
                 PoolMessage::ExternalResult { accepted, status, coin } => {
+                    // Record hashrate for the ext share result
+                    let is_cpu = coin.eq_ignore_ascii_case("VRSC")
+                        || coin.eq_ignore_ascii_case("XMR")
+                        || coin.eq_ignore_ascii_case("RTM");
+                    if is_cpu {
+                        hashrate.record_cpu_ext_share(accepted);
+                    } else {
+                        hashrate.record_gpu_ext_share(accepted);
+                    }
+                    if accepted {
+                        println!("[{}] external_share_accepted coin={} status={}", log_timestamp(), coin, status);
+                    } else {
+                        println!("[{}] external_share_rejected coin={} status={}", log_timestamp(), coin, status);
+                    }
                     println!(
                         "[{}] late_external_result_drained coin={} accepted={} status={} — waiting for no_solution result",
                         log_timestamp(), coin, accepted, status,
@@ -2812,7 +2776,7 @@ fn run_remote_session(
             elapsed_ms: Some(job_started_at.elapsed().as_millis() as u64),
             mix_hash_hex,
         };
-        let submit_line = write_wire_message(&mut writer, &submit_message)?;
+        let submit_line = write_wire_message(&mut *writer.lock().unwrap(), &submit_message)?;
         // ── FIX #8: Drain late ExternalResult if present (from timed-out submit_external_share) ──
         let (result_line_raw, result_message) = loop {
             match result_rx.recv() {
@@ -2866,8 +2830,22 @@ fn run_remote_session(
                 }
                 status
             }
-            // Late ExternalResult from a timed-out submit_external_share — drain and recv again
+            // Late ExternalResult from ext_share_submitter_thread — drain and recv again
             PoolMessage::ExternalResult { accepted, status: ext_status, coin } => {
+                // Record hashrate for the ext share result
+                let is_cpu = coin.eq_ignore_ascii_case("VRSC")
+                    || coin.eq_ignore_ascii_case("XMR")
+                    || coin.eq_ignore_ascii_case("RTM");
+                if is_cpu {
+                    hashrate.record_cpu_ext_share(accepted);
+                } else {
+                    hashrate.record_gpu_ext_share(accepted);
+                }
+                if accepted {
+                    println!("[{}] external_share_accepted coin={} status={}", log_timestamp(), coin, ext_status);
+                } else {
+                    println!("[{}] external_share_rejected coin={} status={}", log_timestamp(), coin, ext_status);
+                }
                 println!(
                     "[{}] late_external_result_drained coin={} accepted={} status={} — waiting for submit result",
                     log_timestamp(), coin, accepted, ext_status,
@@ -3771,6 +3749,14 @@ fn external_gpu_thread(
             let mut bytes = [0u8; 80];
             let len = header_bytes.len().min(80);
             bytes[..len].copy_from_slice(&header_bytes[..len]);
+            // For KAS kheavyhash: the pool sends timestamp in the
+            // ExternalStreamJob.timestamp field.  Store it in the MiningHeader
+            // timestamp slot (bytes 68..76) so the GPU kernel picks it up.
+            // For other algorithms, header.timestamp is already set from the
+            // header bytes (if present) or remains 0 (which is fine).
+            if algo == "kheavyhash" || algo == "kheavyhash_kas" {
+                bytes[68..76].copy_from_slice(&job.timestamp.to_le_bytes());
+            }
             let header = MiningHeader::from_bytes(bytes);
             gpu_miner.mine_batch(header, target, nonce, batch_size)
         };
@@ -4189,6 +4175,108 @@ enum PoolIncoming {
 /// triggers reconnect logic.
 ///
 /// This eliminates both GPU idle gaps:
+/// Dedicated external share submission thread.
+///
+/// Reads from `ext_gpu_share_rx` and `ext_cpu_share_rx` and submits shares
+/// IMMEDIATELY to the pool via the shared writer, without waiting for the
+/// main loop.  This is critical for VRSC (VerusHash) where LuckPool expires
+/// jobs ~12s after issuance — the main loop's ~10s iteration would cause
+/// shares to arrive too late.
+///
+/// The pool's `ExternalResult` response comes back through `pool_io_thread`
+/// → `result_rx`, and is handled by the main loop as `late_external_result`.
+fn ext_share_submitter_thread(
+    writer: Arc<Mutex<std::net::TcpStream>>,
+    ext_gpu_share_rx: std::sync::mpsc::Receiver<ExternalShareResult>,
+    ext_cpu_share_rx: std::sync::mpsc::Receiver<ExternalShareResult>,
+    config: &MinerConfig,
+) {
+    println!("[{}] ext_share_submitter_thread: started", log_timestamp());
+    loop {
+        // Check CPU channel first (VerusHash shares are time-critical)
+        let share = match ext_cpu_share_rx.recv_timeout(Duration::from_millis(500)) {
+            Ok(s) => Some(s),
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                // Check GPU channel (non-blocking)
+                match ext_gpu_share_rx.try_recv() {
+                    Ok(s) => Some(s),
+                    Err(_) => None,
+                }
+            }
+            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                println!("[{}] ext_share_submitter_thread: CPU channel closed, exiting", log_timestamp());
+                return;
+            }
+        };
+
+        if let Some(share) = share {
+            let ext_submit = PoolMessage::ExternalSubmit {
+                miner_id: config.miner_id.clone(),
+                worker_name: config.worker_name.clone(),
+                coin: share.coin.clone(),
+                algorithm: share.algorithm.clone(),
+                external_job_id: share.external_job_id.clone(),
+                nonce: share.nonce,
+                hash_hex: hex::encode(&share.hash),
+                mix_hash_hex: share.mix_hash.map(|m| hex::encode(&m)),
+                extranonce1_hex: share.extranonce1_hex.clone(),
+            };
+            // Lock writer, send share, flush, unlock — all within the lock scope
+            let send_result = {
+                let mut w = writer.lock().unwrap();
+                match zion_pool::encode_message(&ext_submit) {
+                    Ok(line) => {
+                        let r1 = w.write_all(line.as_bytes());
+                        let r2 = w.flush();
+                        if r1.is_err() || r2.is_err() {
+                            Err("write/flush failed")
+                        } else {
+                            Ok(())
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("[{}] ext_share_submitter: encode error: {}", log_timestamp(), e);
+                        Err("encode failed")
+                    }
+                }
+            };
+            if let Err(e) = send_result {
+                eprintln!("[{}] ext_share_submitter: send error: {}", log_timestamp(), e);
+            } else {
+                println!(
+                    "[{}] ext_share_submitted  coin={}  algo={}  job_id={}  nonce={}",
+                    log_timestamp(),
+                    share.coin,
+                    share.algorithm,
+                    share.external_job_id,
+                    share.nonce,
+                );
+            }
+            // Also drain any GPU share that might be pending (non-blocking)
+            if let Ok(gpu_share) = ext_gpu_share_rx.try_recv() {
+                let ext_submit = PoolMessage::ExternalSubmit {
+                    miner_id: config.miner_id.clone(),
+                    worker_name: config.worker_name.clone(),
+                    coin: gpu_share.coin.clone(),
+                    algorithm: gpu_share.algorithm.clone(),
+                    external_job_id: gpu_share.external_job_id.clone(),
+                    nonce: gpu_share.nonce,
+                    hash_hex: hex::encode(&gpu_share.hash),
+                    mix_hash_hex: gpu_share.mix_hash.map(|m| hex::encode(&m)),
+                    extranonce1_hex: gpu_share.extranonce1_hex.clone(),
+                };
+                let mut w = writer.lock().unwrap();
+                if let Ok(line) = zion_pool::encode_message(&ext_submit) {
+                    let _ = w.write_all(line.as_bytes());
+                    let _ = w.flush();
+                }
+            }
+        }
+    }
+}
+
+/// Pool I/O thread — reads messages from the pool TCP stream and routes them.
+///
 /// - **Job pre-fetch**: jobs are read continuously, so `job_rx.recv()` is
 ///   non-blocking when a job is already queued (eliminates ~400ms job wait)
 /// - **Async submit response**: submit results are read continuously, so

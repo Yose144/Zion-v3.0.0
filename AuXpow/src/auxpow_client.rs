@@ -129,11 +129,10 @@ impl ExternalCoin {
             }
             // ERG (Autolykos v2) uses standard Stratum v1 on 2miners.
             // CLORE uses Stratum v1 on NiceHash kawpow (same as RVN/QUAI).
-            // EVR/MEWC (KawPow/ProgPow) use EthStratum on WoolyPooly/ZPool.
-            Self::ERG | Self::CLORE => StratumProtocol::Stratum,
-            Self::EVR | Self::MEWC => {
-                StratumProtocol::EthStratum
-            }
+            // EVR/MEWC use Stratum v1 on ZPool (kawpow ports) — same as RVN/CLORE.
+            // Previously used EthStratum but zpool rejects eth_submitLogin with
+            // error 20 "Not supported" — standard Stratum v1 is correct.
+            Self::ERG | Self::CLORE | Self::EVR | Self::MEWC => StratumProtocol::Stratum,
             // VRSC (Verus) uses Zcash/Equihash Stratum with solution field
             // and 5-param submit: [worker, job_id, ntime, nonce2, solution]
             Self::VRSC => {
@@ -2251,6 +2250,13 @@ impl AuxPowClient {
     ///     branches, version, nbits, ntime, clean_jobs]
     ///   - Simplified: [job_id, header_hex, target_hex]
     async fn parse_notify_params(&self, params: &Value, notify_height: Option<u64>) -> Result<ExternalJob> {
+        // Debug: log raw notify params for KAS to diagnose timestamp issues.
+        if self.profile.coin == ExternalCoin::KAS {
+            println!(
+                "auxpow: KAS raw notify params: {}",
+                serde_json::to_string(params).unwrap_or_default()
+            );
+        }
         // Debug: log raw notify params for DCR to diagnose format issues.
         if self.profile.coin == ExternalCoin::DCR {
             println!(
@@ -6529,8 +6535,8 @@ mod tests {
         assert_eq!(ExternalCoin::FLUX.protocol(), StratumProtocol::ZcashStratum);
         assert_eq!(ExternalCoin::XMR.protocol(), StratumProtocol::CryptonoteStratum);
         assert_eq!(ExternalCoin::ERG.protocol(), StratumProtocol::Stratum);
-        assert_eq!(ExternalCoin::EVR.protocol(), StratumProtocol::EthStratum);
-        assert_eq!(ExternalCoin::MEWC.protocol(), StratumProtocol::EthStratum);
+        assert_eq!(ExternalCoin::EVR.protocol(), StratumProtocol::Stratum);
+        assert_eq!(ExternalCoin::MEWC.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::CLORE.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::VRSC.protocol(), StratumProtocol::ZcashStratum);
     }
