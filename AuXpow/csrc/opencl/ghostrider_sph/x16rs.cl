@@ -1160,7 +1160,7 @@ void hash_x16rs_func_11(hash_t* hash)
     sph_u32 T512_L[1024];
 
     for (int i = 0; i < 1024; i += 1)
-      T512_L[i] = T512[i];
+      T512_L[i] = T512[i >> 4][i & 15];
 
 
   sph_u32 c0 = HAMSI_IV512[0], c1 = HAMSI_IV512[1], c2 = HAMSI_IV512[2], c3 = HAMSI_IV512[3];
