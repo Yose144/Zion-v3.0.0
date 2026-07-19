@@ -262,6 +262,7 @@ mod tests {
             algorithm: "blake3".to_string(),
             header_bytes: b"external_header".to_vec(),
             target_bytes: easy_target(),
+            share_target_bytes: easy_target(),
             timestamp: 0,
             block_number: None,
             extranonce1: Vec::new(),

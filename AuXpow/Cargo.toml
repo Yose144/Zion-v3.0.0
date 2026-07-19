@@ -25,8 +25,11 @@ sha2 = "0.10"
 sha3 = "0.10"
 tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "time", "sync", "macros"] }
 # TLS support for EPIC stratum (de.epicmine.io:3334 requires TLS)
-# Enable "ring" feature so rustls has a crypto provider available.
-tokio-rustls = { version = "0.26", features = ["ring"] }
+# Use "ring" crypto provider (NOT aws-lc-rs) — aws-lc-sys assembly uses AVX2/BMI2
+# instructions that crash on CPUs without AVX2 (e.g. Intel Pentium G4560 on SMOS rig).
+# default-features = false disables the aws-lc-rs default provider.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
 webpki-roots = "1"
 rustls-pki-types = "1"
 tracing = "0.1"

@@ -148,14 +148,18 @@ impl JobMultiplexer {
     pub async fn current_job(&self) -> Option<JobPackage> {
         let client = self.active_client.as_ref()?;
         let job = client.current_job().await?;
-        Some(pack_job(client.profile().coin, &job))
+        let share_target = client.share_target().await;
+        Some(pack_job(client.profile().coin, &job, share_target))
     }
 
     /// Wait for a new external job (or the first job) up to `timeout_ms`.
     pub async fn wait_for_job(&self, timeout_ms: u64) -> Result<Option<JobPackage>> {
         let client = self.active_client.as_ref().ok_or_else(|| anyhow!("not connected"))?;
         match client.wait_for_job(timeout_ms).await? {
-            Some(job) => Ok(Some(pack_job(client.profile().coin, &job))),
+            Some(job) => {
+                let share_target = client.share_target().await;
+                Ok(Some(pack_job(client.profile().coin, &job, share_target)))
+            }
             None => Ok(None),
         }
     }
@@ -168,13 +172,14 @@ impl Drop for JobMultiplexer {
     }
 }
 
-fn pack_job(coin: ExternalCoin, job: &ExternalJob) -> JobPackage {
+fn pack_job(coin: ExternalCoin, job: &ExternalJob, share_target: [u8; 32]) -> JobPackage {
     JobPackage {
         external_coin: coin,
         external_job_id: job.job_id.clone(),
         algorithm: job.algorithm.clone(),
         header_bytes: job.header_bytes.clone(),
         target_bytes: job.target_bytes,
+        share_target_bytes: share_target,
         timestamp: job.timestamp.unwrap_or(0),
         block_number: job.block_number,
         extranonce1: job.extranonce1.clone(),
@@ -274,7 +279,7 @@ mod tests {
 
         // Wait for the notify to arrive.
         let job = client.wait_for_job(2000).await.unwrap().expect("no job received");
-        let package = pack_job(ExternalCoin::DCR, &job);
+        let package = pack_job(ExternalCoin::DCR, &job, [0xFFu8; 32]);
         assert_eq!(package.external_coin, ExternalCoin::DCR);
         assert_eq!(package.external_job_id, "job_dcr_001");
         assert_eq!(package.algorithm, "blake3");

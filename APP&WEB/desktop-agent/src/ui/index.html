@@ -1082,6 +1082,121 @@
       background-clip: text;
     }
 
+    /* ═══ Triple Stream Panel (DeekshaChv3 parallel streaming) ═══ */
+    .triple-stream-panel {
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 24px;
+      padding: 20px 24px;
+      margin-top: 18px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+    .triple-stream-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .triple-stream-header h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .triple-stream-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .stream-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.25s ease, background 0.25s ease;
+    }
+    .stream-card.stream-zion { border-left: 3px solid #10b981; }
+    .stream-card.stream-gpu  { border-left: 3px solid #6366f1; }
+    .stream-card.stream-cpu  { border-left: 3px solid #f59e0b; }
+    .stream-card.active {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.12);
+    }
+    .stream-card.inactive { opacity: 0.55; }
+    .stream-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+    .stream-label {
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+    .stream-coin {
+      font-weight: 700;
+      color: #e5e7eb;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+    }
+    .stream-zion .stream-coin { color: #10b981; background: rgba(16,185,129,0.12); }
+    .stream-gpu  .stream-coin { color: #818cf8; background: rgba(99,102,241,0.12); }
+    .stream-cpu  .stream-coin { color: #fbbf24; background: rgba(245,158,11,0.12); }
+    .stream-card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .stream-hashrate {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .stream-algo {
+      font-size: 11px;
+      color: #9ca3af;
+      font-family: 'SF Mono', 'Menlo', monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stream-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #9ca3af;
+    }
+    .stream-shares { font-variant-numeric: tabular-nums; }
+    .stream-status {
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.04em;
+    }
+    .stream-status.active   { color: #10b981; background: rgba(16,185,129,0.12); }
+    .stream-status.inactive { color: #6b7280; background: rgba(107,114,128,0.12); }
+    .stream-status.skipped  { color: #f59e0b; background: rgba(245,158,11,0.12); }
+    @media (max-width: 900px) {
+      .triple-stream-grid { grid-template-columns: 1fr; }
+    }
+
     /* Control Panel — pool-style glass */
     .control-panel {
       background: rgba(0, 0, 0, 0.28);
@@ -4012,6 +4127,26 @@
                 <option value="cosmic_harmony_ekam_deeksha_v2">Cosmic Harmony Ekam v2</option>
                 <option value="deeksha_lite_fire">Deeksha Lite Fire</option>
               </select>
+              <select id="gpu-coin-select-dashboard" class="algo-select" style="width: auto; min-width: 130px; padding: 6px 28px 6px 12px; font-size: 11px;" title="Stream 2 — GPU external coin (triple stream)">
+                <option value="auto">GPU: Auto</option>
+                <option value="KAS">GPU: KAS</option>
+                <option value="ALPH">GPU: ALPH</option>
+                <option value="DCR">GPU: DCR</option>
+                <option value="ERG">GPU: ERG</option>
+                <option value="ETC">GPU: ETC</option>
+                <option value="RVN">GPU: RVN</option>
+                <option value="CLORE">GPU: CLORE</option>
+                <option value="MEWC">GPU: MEWC</option>
+                <option value="EVR">GPU: EVR</option>
+                <option value="FLUX">GPU: FLUX</option>
+                <option value="EPIC">GPU: EPIC</option>
+              </select>
+              <select id="cpu-coin-select-dashboard" class="algo-select" style="width: auto; min-width: 120px; padding: 6px 28px 6px 12px; font-size: 11px;" title="Stream 3 — CPU external coin (triple stream)">
+                <option value="auto">CPU: Auto</option>
+                <option value="VRSC">CPU: VRSC</option>
+                <option value="XMR">CPU: XMR</option>
+                <option value="RTM">CPU: RTM</option>
+              </select>
               <span id="algo-status" class="view-hidden"></span>
               <span id="backend-pill" class="pill pill-compact">Backend: Auto</span>
             </div>
@@ -4098,6 +4233,61 @@
             </div>
           </div>
 
+        </div>
+
+        <!-- ═══ Triple Stream Panel (DeekshaChv3 parallel streaming) ═══ -->
+        <div id="triple-stream-panel" class="triple-stream-panel">
+          <div class="triple-stream-header">
+            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Triple Stream</h3>
+            <span id="triple-stream-status" class="pill pill-compact">Idle</span>
+          </div>
+          <div class="triple-stream-grid">
+            <!-- Stream 1: ZION (GPU/CPU primary) -->
+            <div class="stream-card stream-zion" id="stream-card-1">
+              <div class="stream-card-header">
+                <span class="stream-label">Stream 1 · ZION</span>
+                <span class="stream-coin" id="stream-1-coin">ZION</span>
+              </div>
+              <div class="stream-card-body">
+                <div class="stream-hashrate" id="stream-1-hashrate">—</div>
+                <div class="stream-algo" id="stream-1-algo">—</div>
+              </div>
+              <div class="stream-card-footer">
+                <span class="stream-shares" id="stream-1-shares">0 / 0</span>
+                <span class="stream-status" id="stream-1-status">inactive</span>
+              </div>
+            </div>
+            <!-- Stream 2: GPU external profit -->
+            <div class="stream-card stream-gpu" id="stream-card-2">
+              <div class="stream-card-header">
+                <span class="stream-label">Stream 2 · GPU Profit</span>
+                <span class="stream-coin" id="stream-2-coin">—</span>
+              </div>
+              <div class="stream-card-body">
+                <div class="stream-hashrate" id="stream-2-hashrate">—</div>
+                <div class="stream-algo" id="stream-2-algo">—</div>
+              </div>
+              <div class="stream-card-footer">
+                <span class="stream-shares" id="stream-2-shares">0 / 0</span>
+                <span class="stream-status" id="stream-2-status">inactive</span>
+              </div>
+            </div>
+            <!-- Stream 3: CPU external profit -->
+            <div class="stream-card stream-cpu" id="stream-card-3">
+              <div class="stream-card-header">
+                <span class="stream-label">Stream 3 · CPU Profit</span>
+                <span class="stream-coin" id="stream-3-coin">—</span>
+              </div>
+              <div class="stream-card-body">
+                <div class="stream-hashrate" id="stream-3-hashrate">—</div>
+                <div class="stream-algo" id="stream-3-algo">—</div>
+              </div>
+              <div class="stream-card-footer">
+                <span class="stream-shares" id="stream-3-shares">0 / 0</span>
+                <span class="stream-status" id="stream-3-status">inactive</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -5065,6 +5255,55 @@
                 </label>
               </div>
               <div class="slider-hint">Enable GPU mining if a compatible device is detected</div>
+            </section>
+
+            <section class="settings-card">
+              <div class="card-heading">
+                <div class="card-icon gradient-cyan">
+                  <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+                </div>
+                <div>
+                  <p class="card-kicker">Triple Stream</p>
+                  <h3>Parallel Coin Mining</h3>
+                </div>
+              </div>
+              <label class="wizard-label-sm">Stream 2 — GPU external coin</label>
+              <select id="gpu-coin-select" class="algo-select">
+                <option value="auto" selected>Auto (pool profit router)</option>
+                <option value="KAS">KAS — kheavyhash</option>
+                <option value="ALPH">ALPH — blake3</option>
+                <option value="DCR">DCR — blake3</option>
+                <option value="ERG">ERG — autolykos</option>
+                <option value="ETC">ETC — ethash</option>
+                <option value="RVN">RVN — kawpow</option>
+                <option value="CLORE">CLORE — kawpow</option>
+                <option value="MEWC">MEWC — kawpow</option>
+                <option value="EVR">EVR — kawpow</option>
+                <option value="FLUX">FLUX — zelhash</option>
+                <option value="EPIC">EPIC — progpow</option>
+              </select>
+              <div class="slider-hint">ZION on GPU + external GPU coin simultaneously. "Auto" lets the pool pick the most profitable coin.</div>
+
+              <div class="section-divider">CPU Stream</div>
+
+              <label class="wizard-label-sm">Stream 3 — CPU external coin</label>
+              <select id="cpu-coin-select" class="algo-select">
+                <option value="auto" selected>Auto (pool profit router)</option>
+                <option value="VRSC">VRSC — verushash</option>
+                <option value="XMR">XMR — randomx</option>
+                <option value="RTM">RTM — ghosstrider</option>
+              </select>
+              <div class="slider-hint">CPU-only external coin mined in parallel with ZION GPU stream.</div>
+
+              <div class="section-divider">Toggle</div>
+              <label class="mode-pill" style="cursor:pointer">
+                <input type="checkbox" id="triple-stream-checkbox" style="width:18px;height:18px" checked />
+                <div>
+                  <div class="mode-title">Enable Triple Stream</div>
+                  <p>Run ZION + GPU coin + CPU coin simultaneously</p>
+                </div>
+              </label>
+              <div class="slider-hint">When disabled, the miner runs ZION-only (legacy single-stream mode).</div>
             </section>
           </div>
         </div>
