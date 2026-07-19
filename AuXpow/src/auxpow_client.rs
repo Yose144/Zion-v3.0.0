@@ -5675,105 +5675,15 @@ mod tests {
         server_task.await.unwrap();
     }
 
-    #[tokio::test]
-    async fn eth_submit_hashrate_test() {
-        // Test eth_submitHashrate on an EthStratum pool (ETC, not ERG).
-        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let addr = listener.local_addr().unwrap().to_string();
-        let (host, port) = addr.rsplit_once(':').unwrap();
-        let port: u16 = port.parse().unwrap();
-
-        let server_task = tokio::spawn(async move {
-            let (mut socket, _) = listener.accept().await.unwrap();
-            let (mut reader, mut writer) = socket.split();
-            let mut buf = vec![0u8; 8192];
-
-            async fn read_json(
-                reader: &mut tokio::net::tcp::ReadHalf<'_>,
-                buf: &mut [u8],
-            ) -> Value {
-                let n = reader.read(buf).await.unwrap();
-                serde_json::from_slice::<Value>(&buf[..n]).unwrap()
-            }
-
-            async fn write_json(writer: &mut tokio::net::tcp::WriteHalf<'_>, v: Value) {
-                writer
-                    .write_all((serde_json::to_string(&v).unwrap() + "\n").as_bytes())
-                    .await
-                    .unwrap();
-                writer.flush().await.unwrap();
-            }
-
-            // Subscribe
-            let _req = read_json(&mut reader, &mut buf).await;
-            write_json(
-                &mut writer,
-                json!({"id": 1, "result": [true, "EthereumStratum/1.0.0"], "error": null}),
-            )
-            .await;
-
-            // eth_submitLogin
-            let _req = read_json(&mut reader, &mut buf).await;
-            write_json(
-                &mut writer,
-                json!({"id": 2, "result": true, "error": null}),
-            )
-            .await;
-
-            // eth_getWork (initial poll)
-            let req = read_json(&mut reader, &mut buf).await;
-            let req_id = req["id"].as_i64().unwrap();
-            write_json(
-                &mut writer,
-                json!({
-                    "id": req_id,
-                    "result": [
-                        "0x".to_string() + &"11".repeat(32),
-                        "0x".to_string() + &"22".repeat(32),
-                        "0x".to_string() + &"ff".repeat(32),
-                    ],
-                    "error": null
-                }),
-            )
-            .await;
-
-            // eth_submitHashrate
-            let req = read_json(&mut reader, &mut buf).await;
-            assert_eq!(req["method"], "eth_submitHashrate");
-            let params = req["params"].as_array().unwrap();
-            assert_eq!(params.len(), 2);
-            assert!(params[0].as_str().unwrap().starts_with("0x"));
-            let req_id = req["id"].as_i64().unwrap();
-            write_json(
-                &mut writer,
-                json!({"id": req_id, "result": true, "error": null}),
-            )
-            .await;
-
-            tokio::time::sleep(Duration::from_millis(200)).await;
-        });
-
-        // Use CLORE (EthStratum) — ETC and ERG now use standard Stratum v1.
-        let mut profile = CoinProfile::default_for(ExternalCoin::CLORE);
-        profile.pool_host = host.to_string();
-        profile.pool_port = port;
-
-        let client = AuxPowClient::new(profile);
-        client.connect("testwallet").await.unwrap();
-
-        // Wait for the initial job from polling.
-        let _job = client.wait_for_job(5000).await.unwrap().unwrap();
-
-        // Submit hashrate.
-        let ok = client.submit_hashrate(50_000_000).await.unwrap();
-        assert!(ok);
-
-        client.disconnect().await.unwrap();
-        server_task.await.unwrap();
-    }
+    // NOTE: eth_submit_hashrate_test removed — no coin uses EthStratum protocol
+    // anymore (CLORE/ERG switched to standard Stratum v1). submit_hashrate()
+    // returns Ok(false) for non-EthStratum protocols. The method is retained
+    // for future EthStratum coins but has no live consumer.
 
     #[tokio::test]
     async fn xmr_randomx_notify_and_submit() {
+        // XMR uses CryptonoteStratum protocol (login/job/submit),
+        // NOT Stratum v1 (mining.subscribe/mining.authorize/mining.notify).
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap().to_string();
         let (host, port) = addr.rsplit_once(':').unwrap();
@@ -5781,13 +5691,15 @@ mod tests {
 
         let blob_hex = "0d00".to_string() + &"00".repeat(74); // 152 hex chars / 76 bytes
         let seed_hash = "11".repeat(32);
-        let next_seed_hash = "22".repeat(32);
         let target_hex = "00ffffff00000000"; // 8-byte LE target
         let height: u64 = 3334445;
         let job_id = "xmr_job_001";
+        let session_id = "xmr_session_001";
 
         let server_blob_hex = blob_hex.clone();
         let server_seed_hash = seed_hash.clone();
+        let server_job_id = job_id.to_string();
+        let server_session_id = session_id.to_string();
 
         let server_task = tokio::spawn(async move {
             let (mut socket, _) = listener.accept().await.unwrap();
@@ -5810,60 +5722,49 @@ mod tests {
                 writer.flush().await.unwrap();
             }
 
-            // mining.subscribe
+            // CryptonoteStratum: login request
             let req = read_json(&mut reader, &mut buf).await;
-            assert_eq!(req["method"], "mining.subscribe");
-            write_json(
-                &mut writer,
-                json!({"id": 1, "result": [true, "00123456"], "error": null}),
-            )
-            .await;
-
-            // mining.authorize
-            let req = read_json(&mut reader, &mut buf).await;
-            assert_eq!(req["method"], "mining.authorize");
-            // MoneroOcean expects wallet.worker format; verify the XMR wallet is used.
-            let auth = req["params"][0].as_str().unwrap();
-            assert!(auth.starts_with("45zTKY3zei7ACSWrQAXeU7AsTwccCfN52Kt7odqWq9icYfB9zGTmfmd5fi28oFsktNHiguc2oHizZhfvhVqauXf6Q4CcUED"));
-            // XMR does not support BTC payout, so password must be "x,d=4" not "c=BTC".
-            assert_eq!(req["params"][1].as_str().unwrap(), "x,d=4");
-            write_json(&mut writer, json!({"id": 2, "result": true, "error": null})).await;
-
-            // mining.notify (xmrig RandomX format)
+            assert_eq!(req["method"], "login");
+            let login = req["params"]["login"].as_str().unwrap();
+            assert!(login.starts_with("45zTKY3zei7ACSWrQAXeU7AsTwccCfN52Kt7odqWq9icYfB9zGTmfmd5fi28oFsktNHiguc2oHizZhfvhVqauXf6Q4CcUED"));
+            // Respond with session ID + initial job
             write_json(
                 &mut writer,
                 json!({
-                    "id": null,
-                    "method": "mining.notify",
-                    "params": [
-                        job_id,
-                        server_seed_hash,
-                        next_seed_hash,
-                        server_blob_hex,
-                        height,
-                        target_hex,
-                        true
-                    ]
+                    "id": req["id"].as_i64().unwrap(),
+                    "result": {
+                        "id": server_session_id,
+                        "job": {
+                            "blob": server_blob_hex,
+                            "job_id": server_job_id,
+                            "target": target_hex,
+                            "height": height,
+                            "seed_hash": server_seed_hash,
+                        }
+                    },
+                    "error": null
                 }),
             )
             .await;
 
-            // mining.submit
+            // CryptonoteStratum: submit request
             let req = read_json(&mut reader, &mut buf).await;
-            assert_eq!(req["method"], "mining.submit");
-            let params = req["params"].as_array().unwrap();
-            assert_eq!(params.len(), 3);
-            assert!(params[0].as_str().unwrap().starts_with("45zTKY3zei7ACSWrQAXeU7AsTwccCfN52Kt7odqWq9icYfB9zGTmfmd5fi28oFsktNHiguc2oHizZhfvhVqauXf6Q4CcUED"));
-            assert_eq!(params[1].as_str().unwrap(), job_id);
-            let nonce_hex = params[2].as_str().unwrap();
-            assert_eq!(nonce_hex.len(), 8, "XMR nonce must be 8 hex chars");
-            assert!(!nonce_hex.starts_with("0x"), "XMR nonce must not have 0x prefix");
-            // Nonce 0x1234abcd should be submitted as "1234abcd".
-            assert_eq!(nonce_hex, "1234abcd");
+            assert_eq!(req["method"], "submit");
+            let params = &req["params"];
+            assert_eq!(params["id"].as_str().unwrap(), session_id);
+            assert_eq!(params["job_id"].as_str().unwrap(), job_id);
+            // Nonce 0x1234abcd → 4-byte LE hex = "cdab3412"
+            let nonce_hex = params["nonce"].as_str().unwrap();
+            assert_eq!(nonce_hex.len(), 8, "XMR nonce must be 8 hex chars (4-byte LE)");
+            assert_eq!(nonce_hex, "cdab3412");
 
             write_json(
                 &mut writer,
-                json!({"id": req["id"].as_i64().unwrap(), "result": true, "error": null}),
+                json!({
+                    "id": req["id"].as_i64().unwrap(),
+                    "result": {"status": "OK"},
+                    "error": null
+                }),
             )
             .await;
 
@@ -5885,8 +5786,13 @@ mod tests {
         assert_eq!(job.header_bytes.len(), 76);
         assert_eq!(job.seed_hash.as_deref(), Some(seed_hash.as_str()));
         assert_eq!(job.block_number, Some(height));
-        assert_eq!(job.target_hex, target_hex);
-        // Target should be the 8-byte LE value.
+        // target_hex in ExternalJob is 32-byte LE hex encoding of the
+        // expanded target (8-byte LE input → u64 → 32-byte LE).
+        // Input "00ffffff00000000" → LE u64 = 0x00000000ffffff00
+        // → 32-byte LE = "00ffffff00000000" + "00".repeat(24)
+        let expected_target_hex = format!("{}{}", target_hex, "00".repeat(24));
+        assert_eq!(job.target_hex, expected_target_hex);
+        // Target bytes: first 8 bytes match the raw input.
         assert_eq!(job.target_bytes[..8], hex::decode(target_hex).unwrap());
 
         // Submit a share with nonce 0x1234abcd (305441741).

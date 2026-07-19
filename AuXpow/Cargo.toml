@@ -46,6 +46,22 @@ zion-native-ffi = { path = "../V3/L1/native-ffi", optional = true }
 [dev-dependencies]
 tempfile = "3"
 
+# Debug/test binaries that require GPU features — excluded from default workspace build
+[[bin]]
+name = "rtm_gpu_test"
+path = "src/bin/rtm_gpu_test.rs"
+required-features = ["gpu-opencl"]
+
+[[bin]]
+name = "rtm_hash_cmp"
+path = "src/bin/rtm_hash_cmp.rs"
+required-features = ["gpu-opencl"]
+
+[[bin]]
+name = "simd_cmp"
+path = "src/bin/simd_cmp.rs"
+required-features = ["gpu-opencl"]
+
 [build-dependencies]
 cc = "1.0"
 
