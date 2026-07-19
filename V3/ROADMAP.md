@@ -5,6 +5,18 @@ Status date: **2026-07-15** (3.0.6 "Triple Parallel" live — 14/14 services act
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
 
+## Supplement — V3.1 Architecture Reorganization (planned)
+
+Target layout for **3.1.0 Mainnet Alpha**:
+
+- **L1** — `core`, `cosmic-harmony`, `miner` (with AuxPoW merged in), `pool`, `native-ffi`, `types`.
+- **L2** — `bridge`, `warp` (moved from L3), `dao`, `atomic-swap`, `swap-aggregator`, `ziondex` (moved from root `ZionDex/`).
+- **L3** — `ai-native`, `ncl`, `hiran`, `orchestrator`, `automation`, `poc`, plus former `L4/L5/L6` modules folded into `ai/oasis`, `ai/free-world`, `ai/issobella`.
+
+See full plan: [`V3.1_ARCHITECTURE_REORG_PLAN.md`](../V3.1_ARCHITECTURE_REORG_PLAN.md).
+
+---
+
 ## Supplement — 2026-07-01 (3.0.4 Closure — Account Memo Hard Fork Implemented)
 
 ### 3.0.3 Closure — kanonický stav

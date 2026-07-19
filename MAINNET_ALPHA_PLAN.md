@@ -116,6 +116,8 @@ Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyči
 
 ### 4.3 Repo purification — „pure code“
 
+> Detailed V3 tree reorganization: [`V3.1_ARCHITECTURE_REORG_PLAN.md`](./V3.1_ARCHITECTURE_REORG_PLAN.md) — WARP → L2, ZionDex → L2, AuxPoW → miner, L3 → AI/orchestration/automation/NCL/PoC.
+
 | # | Úkol | Akce |
 |------|------|------|
 | 3.1 | Legacy root trees | `L1/`, `L2/`, `L3/` → `archive/legacy-code/` a následně smazat z mainu |

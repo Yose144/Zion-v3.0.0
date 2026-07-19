@@ -7,6 +7,8 @@ reuse audited source material during migration, while remaining isolated from th
 
 Active planning for `V3/` now lives in `V3/ROADMAP.md`.
 
+**Planned V3.1 tree reorganization:** [`V3.1_ARCHITECTURE_REORG_PLAN.md`](../V3.1_ARCHITECTURE_REORG_PLAN.md) — WARP and ZionDex move to `L2`, AuxPow merges into the miner, and `L3` becomes dedicated to AI/orchestration/automation/NCL/PoC.
+
 Comprehensive mainnet completion plan (L1 finish + L2/L3 migration): `V3/PLAN.md`.
 
 Production upgrade plan (miner hardening, monitoring, infra, public release): `V3/docs/UPGRADE_PLAN.md`.
