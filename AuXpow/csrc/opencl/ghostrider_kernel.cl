@@ -502,24 +502,6 @@ __kernel void cn_full_test(
     uint gid = get_global_id(0);
     if (gid != 0) return;
 
-    // Debug marker: write unique values to debug_state to verify kernel recompilation
-    if (debug_state) {
-        debug_state[196] = 0xCC;
-        debug_state[197] = 0xDD;
-        debug_state[198] = 0xEE;
-        debug_state[199] = 0xFF;
-        // Save individual input bytes to debug_state[112..119] for verification
-        // (use offsets that cn_hash_full won't overwrite)
-        debug_state[112] = input[0];
-        debug_state[113] = input[1];
-        debug_state[114] = input[34];
-        debug_state[115] = input[35];
-        debug_state[116] = input[36];
-        debug_state[117] = input[42];
-        debug_state[118] = input[43];
-        debug_state[119] = input[63];
-    }
-
     __local uint AES0[256], AES1[256], AES2[256], AES3[256];
     cn_populate_aes_tables(AES0, AES1, AES2, AES3);
 
@@ -528,6 +510,15 @@ __kernel void cn_full_test(
 
     __private uchar out_buf[32];
     __global uchar* scratchpad = scratchpad_pool + (ulong)gid * 2097152;
+
+    // Save input[35..42] to scratchpad (global memory) BEFORE calling cn_hash_full.
+    // This is needed for VARIANT1_INIT (tweak1_2) because the OpenCL compiler on M1
+    // reorders reads from private arrays, causing input[35..42] to be read after
+    // other private arrays (state, text, aes_key, expanded_key) clobber it.
+    // Use scratchpad[memory..memory+7] as temporary storage (beyond used area).
+    __global uchar *tweak_src = scratchpad + memory;
+    for (int i = 0; i < 8; i++) tweak_src[i] = input[35 + i];
+
     cn_hash_full(in_buf, input_len, out_buf, scratchpad, memory, iter_div, cn_aes_init,
                  AES0, AES1, AES2, AES3, debug_state, input);
 

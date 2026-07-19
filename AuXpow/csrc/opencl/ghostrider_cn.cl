@@ -1020,18 +1020,12 @@ inline void cn_hash_full(
     __global uchar *debug_state,
     __global const uchar *global_input)
 {
-    // Debug: save input and input[35..42] to debug_state (global) immediately.
-    // Private arrays can clobber the input array due to private memory reuse.
-    if (debug_state) {
-        for (int i = 0; i < 64; i++) debug_state[i] = input[i];
-        // Save input[35..42] byte-by-byte to debug_state[96..103]
-        for (int i = 0; i < 8; i++) debug_state[96 + i] = input[35 + i];
-    }
-
-    // VARIANT1_INIT: Save input[35..42] to global memory (scratchpad) BEFORE
-    // declaring any private arrays. Use byte-by-byte copy to avoid alignment issues.
+    // VARIANT1_INIT: input[35..42] was already saved to scratchpad[memory..memory+7]
+    // by the caller BEFORE this function was called, because the OpenCL compiler
+    // on M1 reorders reads from private arrays, causing input[35..42] to be read
+    // after other private arrays (state, text, aes_key, expanded_key) clobber it.
+    // scratchpad[memory+8..memory+15] will be used for state[192..199].
     __global uchar *tweak_tmp = scratchpad + memory;
-    for (int i = 0; i < 8; i++) tweak_tmp[i] = input[35 + i];
 
     // 1. Keccak-1600 of input → 200-byte state
     __private uchar state[200];
@@ -1062,13 +1056,6 @@ inline void cn_hash_full(
     for (int i = 0; i < 8; i++) state_part |= ((ulong)tweak_tmp[8 + i]) << (i * 8);
     ulong tweak1_2 = input_part ^ state_part;
 
-    // Debug: save tweak1_2 at [64..71], input_part at [72..79], state_part at [80..87]
-    if (debug_state) {
-        for (int z = 0; z < 8; z++) debug_state[64 + z] = ((__private uchar*)&tweak1_2)[z];
-        for (int z = 0; z < 8; z++) debug_state[72 + z] = ((__private uchar*)&input_part)[z];
-        for (int z = 0; z < 8; z++) debug_state[80 + z] = ((__private uchar*)&state_part)[z];
-    }
-
     // 5. Fill scratchpad
     uint cn_init = memory / CN_INIT_SIZE_BYTE;  // number of 128-byte blocks
 
@@ -1094,14 +1081,6 @@ inline void cn_hash_full(
         b[i] = state[16 + i] ^ state[48 + i];
     }
 
-    // Debug: save first scratchpad block [0..63], a[0..15], b[0..15], b[16..31]
-    if (debug_state) {
-        for (int i = 0; i < 64; i++) debug_state[64 + i] = scratchpad[i];
-        for (int i = 0; i < 16; i++) debug_state[128 + i] = a[i];
-        for (int i = 0; i < 16; i++) debug_state[144 + i] = b[i];
-        for (int i = 0; i < 16; i++) debug_state[160 + i] = b[16 + i];
-    }
-
     // 7. Main loop
     __private uchar c[16];
     for (uint i = 0; i < iter_div; ++i) {
@@ -1114,17 +1093,6 @@ inline void cn_hash_full(
         uint4 a_key = vload4(0, (__private const uint*)a);
         uint4 c_block = AES_Round(AES0, AES1, AES2, AES3, sp_block, a_key);
         vstore4(c_block, 0, (__private uint*)c);
-
-        // Debug: dump iteration 1 state at iteration 163
-        if (debug_state && i == 163) {
-            // j1 at [176..179], sp_block at [180..195] (we'll pack as bytes)
-            debug_state[176] = j & 0xFF;
-            debug_state[177] = (j >> 8) & 0xFF;
-            debug_state[178] = (j >> 16) & 0xFF;
-            debug_state[179] = (j >> 24) & 0xFF;
-            // sp_block (16 bytes) at [32..47] - reuse input area since we don't need it anymore
-            for (int z = 0; z < 16; z++) debug_state[32 + z] = sptr[z];
-        }
 
         // scratchpad[j] = c XOR b
         cn_xor_blocks_dst_g(c, b, sptr);
@@ -1148,26 +1116,6 @@ inline void cn_hash_full(
         // lo, hi = mul128(c[0], t[0])
         ulong hi, lo;
         lo = cn_mul128(((__private const ulong*)c)[0], t0, &hi);
-
-        // Debug: dump state at iteration 163 (the 164th, 0-indexed)
-        if (debug_state && i == 163) {
-            // Save a, c, j2, t, hi, lo
-            for (int z = 0; z < 16; z++) debug_state[128 + z] = a[z];
-            for (int z = 0; z < 16; z++) debug_state[144 + z] = c[z];
-            // j2 at [160..163]
-            debug_state[160] = j & 0xFF;
-            debug_state[161] = (j >> 8) & 0xFF;
-            debug_state[162] = (j >> 16) & 0xFF;
-            debug_state[163] = (j >> 24) & 0xFF;
-            // t0 at [180..187]
-            for (int z = 0; z < 8; z++) debug_state[180 + z] = ((__private uchar*)&t0)[z];
-            // t1 at [188..195]
-            for (int z = 0; z < 8; z++) debug_state[188 + z] = ((__private uchar*)&t1)[z];
-            // hi at [48..55] - reuse input area
-            for (int z = 0; z < 8; z++) debug_state[48 + z] = ((__private uchar*)&hi)[z];
-            // lo at [56..63] - reuse input area
-            for (int z = 0; z < 8; z++) debug_state[56 + z] = ((__private uchar*)&lo)[z];
-        }
 
         // a[0] += hi; a[1] += lo
         ((__private ulong*)a)[0] += hi;
@@ -1253,20 +1201,26 @@ inline void cn_dispatch(
     __local const uint *AES0, __local const uint *AES1,
     __local const uint *AES2, __local const uint *AES3)
 {
+    // For variant 1 algorithms (cn_hash_full), save input[35..42] to scratchpad
+    // BEFORE calling cn_hash_full. The OpenCL compiler on M1 reorders reads from
+    // private arrays, causing input[35..42] to be read after other private arrays
+    // (state, text, aes_key, expanded_key) clobber it.
+    // Use scratchpad[memory..memory+7] as temp storage (beyond used area).
+    // Only needed for variant 1 algos (case 0,2,7,10,12) - all use < 2MB scratchpad.
     switch (cn_algo) {
-        case 0:  cn_hash_full(input, len, output, scratchpad, 524288,  131072, 32768,  AES0, AES1, AES2, AES3, 0, 0); break; // CNDark
+        case 0:  { __global uchar *t = scratchpad + 524288;  for (int i = 0; i < 8; i++) t[i] = input[35+i]; cn_hash_full(input, len, output, scratchpad, 524288,  131072, 32768,  AES0, AES1, AES2, AES3, 0, 0); break; } // CNDark
         case 1:  cn_hash_fast(input, len, output); break; // CNDarkf
-        case 2:  cn_hash_full(input, len, output, scratchpad, 524288,  131072, 16384,  AES0, AES1, AES2, AES3, 0, 0); break; // CNDarklite
+        case 2:  { __global uchar *t = scratchpad + 524288;  for (int i = 0; i < 8; i++) t[i] = input[35+i]; cn_hash_full(input, len, output, scratchpad, 524288,  131072, 16384,  AES0, AES1, AES2, AES3, 0, 0); break; } // CNDarklite
         case 3:  cn_hash_fast(input, len, output); break; // CNDarklitef
-        case 4:  cn_hash_full(input, len, output, scratchpad, 2097152, 262144, 131072, AES0, AES1, AES2, AES3, 0, 0); break; // CNFast
+        case 4:  cn_hash_full(input, len, output, scratchpad, 2097152, 262144, 131072, AES0, AES1, AES2, AES3, 0, 0); break; // CNFast (variant 2, no tweak1_2)
         case 5:  cn_hash_fast(input, len, output); break; // CNFastf
         case 6:  cn_hash_fast(input, len, output); break; // CNF
-        case 7:  cn_hash_full(input, len, output, scratchpad, 1048576, 262144, 65536,  AES0, AES1, AES2, AES3, 0, 0); break; // CNLite
+        case 7:  { __global uchar *t = scratchpad + 1048576; for (int i = 0; i < 8; i++) t[i] = input[35+i]; cn_hash_full(input, len, output, scratchpad, 1048576, 262144, 65536,  AES0, AES1, AES2, AES3, 0, 0); break; } // CNLite
         case 8:  cn_hash_fast(input, len, output); break; // CNLitef
         case 9:  cn_hash_fast(input, len, output); break; // CNSoftshellf
-        case 10: cn_hash_full(input, len, output, scratchpad, 262144,  65536,  16384,  AES0, AES1, AES2, AES3, 0, 0); break; // CNTurtle
+        case 10: { __global uchar *t = scratchpad + 262144;  for (int i = 0; i < 8; i++) t[i] = input[35+i]; cn_hash_full(input, len, output, scratchpad, 262144,  65536,  16384,  AES0, AES1, AES2, AES3, 0, 0); break; } // CNTurtle
         case 11: cn_hash_fast(input, len, output); break; // CNTurtlef
-        case 12: cn_hash_full(input, len, output, scratchpad, 262144,  65536,  8192,   AES0, AES1, AES2, AES3, 0, 0); break; // CNTurtlelite
+        case 12: { __global uchar *t = scratchpad + 262144;  for (int i = 0; i < 8; i++) t[i] = input[35+i]; cn_hash_full(input, len, output, scratchpad, 262144,  65536,  8192,   AES0, AES1, AES2, AES3, 0, 0); break; } // CNTurtlelite
         case 13: cn_hash_fast(input, len, output); break; // CNTurtlelitef
         default: cn_hash_fast(input, len, output); break;
     }
