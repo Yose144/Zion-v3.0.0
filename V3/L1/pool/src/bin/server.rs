@@ -202,6 +202,11 @@ struct NiceHashRateEntry {
 }
 
 type PoolProfitSwitchStateArc = Arc<Mutex<PoolProfitSwitchState>>;
+/// Runtime coin overrides — set via HTTP API `/api/v1/cpu-coin` and
+/// `/api/v1/gpu-coin` (POST). When set, take priority over env vars
+/// `ZION_POOL_AUXPOW_CPU_COIN` / `ZION_STREAM2_COIN` but below miner
+/// CoinPreference. Allows dashboard hot-switch without pool restart.
+type CoinOverrideArc = Arc<Mutex<Option<String>>>;
 
 // ---------------------------------------------------------------------------
 // TemplateCache — shared block-template cache to reduce node RPC load
@@ -1091,6 +1096,13 @@ fn main() -> Result<()> {
         },
     ));
 
+    // ── Runtime coin overrides (dashboard hot-switch) ─────────────────
+    // Set via POST /api/v1/cpu-coin and /api/v1/gpu-coin on the pool's
+    // HTTP metrics endpoint. Priority: miner CoinPreference > pool profit
+    // switch > this override > env var > any available coin.
+    let cpu_coin_override: CoinOverrideArc = Arc::new(Mutex::new(None));
+    let gpu_coin_override: CoinOverrideArc = Arc::new(Mutex::new(None));
+
     if let Some(metrics_bind) = config.routing_metrics_bind.as_deref() {
         println!("routing_metrics_bind={metrics_bind}");
         let routing_stats = Arc::clone(&routing_stats);
@@ -1100,6 +1112,8 @@ fn main() -> Result<()> {
         let auxpow_ref = Arc::clone(&auxpow_scheduler);
         let revenue_scheduler_ref = Arc::clone(&revenue_scheduler);
         let profit_switch_ref = Arc::clone(&profit_switch_state);
+        let cpu_coin_override_ref = Arc::clone(&cpu_coin_override);
+        let gpu_coin_override_ref = Arc::clone(&gpu_coin_override);
         let metrics_bind = metrics_bind.to_string();
         thread::spawn(move || {
             if let Err(error) = serve_routing_metrics(
@@ -1112,6 +1126,8 @@ fn main() -> Result<()> {
                 auxpow_ref,
                 revenue_scheduler_ref,
                 profit_switch_ref,
+                cpu_coin_override_ref,
+                gpu_coin_override_ref,
             ) {
                 eprintln!("routing_metrics_error={error:#}");
             }
@@ -1641,6 +1657,8 @@ fn main() -> Result<()> {
         let banned_ips_ref = Arc::clone(&no_solution_banned_ips);
         let config = config.clone();
         let profit_switch_ref = Arc::clone(&profit_switch_state);
+        let cpu_coin_override_ref = Arc::clone(&cpu_coin_override);
+        let gpu_coin_override_ref = Arc::clone(&gpu_coin_override);
         handles.push(thread::spawn(move || {
             let _ip_guard = ip_guard;
             handle_client(
@@ -1660,6 +1678,8 @@ fn main() -> Result<()> {
                 peer_ip,
                 banned_ips_ref,
                 profit_switch_ref,
+                cpu_coin_override_ref,
+                gpu_coin_override_ref,
             )
         }));
         accepted = accepted.saturating_add(1);
@@ -2107,6 +2127,8 @@ fn handle_client(
     peer_ip: IpAddr,
     no_solution_banned_ips: Arc<Mutex<HashMap<IpAddr, Instant>>>,
     profit_switch_state: PoolProfitSwitchStateArc,
+    cpu_coin_override: CoinOverrideArc,
+    gpu_coin_override: CoinOverrideArc,
 ) -> Result<()> {
     let session_started = Instant::now();
     let session_id = session_id_counter.fetch_add(1, Ordering::Relaxed);
@@ -2447,7 +2469,8 @@ fn handle_client(
             }
 
             // Multi-bridge: miner preference takes priority, then pool
-            // profit switcher, then force_coin, then revenue-source, then any.
+            // profit switcher, then runtime override, then force_coin,
+            // then revenue-source, then any.
             let pref_coin = miner_gpu_coin_pref
                 .as_deref()
                 .and_then(ExternalCoin::from_str_loose)
@@ -2455,6 +2478,14 @@ fn handle_client(
 
             pref_coin
                 .or_else(|| pool_profit_best_gpu.filter(|c| multi_bridge.contains(c)))
+                .or_else(|| {
+                    // Runtime override (dashboard hot-switch via POST /api/v1/gpu-coin)
+                    gpu_coin_override
+                        .lock().expect("gpu coin override lock poisoned")
+                        .as_deref()
+                        .and_then(ExternalCoin::from_str_loose)
+                        .filter(|c| multi_bridge.contains(c) && !multi_bridge.is_cpu_coin(c))
+                })
                 .or_else(|| config.auxpow_config.force_coin.filter(|c| multi_bridge.contains(c)))
                 .or_else(|| revenue_source_to_external_coin(revenue_source).filter(|c| multi_bridge.contains(c)))
                 .or_else(|| {
@@ -2548,6 +2579,14 @@ fn handle_client(
                 .or_else(|| {
                     // Pool-side profit switcher: best CPU coin
                     pool_profit_best_cpu.filter(|c| multi_bridge.contains(c) && multi_bridge.is_cpu_coin(c))
+                })
+                .or_else(|| {
+                    // Runtime override (dashboard hot-switch via POST /api/v1/cpu-coin)
+                    cpu_coin_override
+                        .lock().expect("cpu coin override lock poisoned")
+                        .as_deref()
+                        .and_then(ExternalCoin::from_str_loose)
+                        .filter(|c| multi_bridge.contains(c) && multi_bridge.is_cpu_coin(c))
                 })
                 .or_else(|| {
                     // Fallback: use ZION_POOL_AUXPOW_CPU_COIN env var
@@ -5338,6 +5377,8 @@ fn serve_routing_metrics(
     auxpow_scheduler: Arc<AuxPowScheduler>,
     revenue_scheduler: Arc<Mutex<RevenueScheduler>>,
     profit_switch_state: PoolProfitSwitchStateArc,
+    cpu_coin_override: CoinOverrideArc,
+    gpu_coin_override: CoinOverrideArc,
 ) -> Result<()> {
     let listener = TcpListener::bind(bind_addr)
         .with_context(|| format!("failed to bind routing metrics listener on {bind_addr}"))?;
@@ -5351,13 +5392,39 @@ fn serve_routing_metrics(
             }
         };
 
-        // Read the HTTP request line to determine the path.
+        // Read the HTTP request line to determine method + path.
         let mut request_reader = BufReader::new(&stream);
         let mut request_line = String::new();
         if request_reader.read_line(&mut request_line).is_err() {
             continue;
         }
-        let path = request_line.split_whitespace().nth(1).unwrap_or("/stats");
+        let parts: Vec<&str> = request_line.split_whitespace().collect();
+        let method = *parts.first().unwrap_or(&"GET");
+        let path = *parts.get(1).unwrap_or(&"/stats");
+
+        // For POST requests, read headers + body.
+        let mut post_body = String::new();
+        if method == "POST" {
+            let mut content_length = 0usize;
+            loop {
+                let mut header = String::new();
+                if request_reader.read_line(&mut header).is_err() {
+                    break;
+                }
+                if header.trim().is_empty() {
+                    break; // end of headers
+                }
+                if let Some(val) = header.strip_prefix("Content-Length:").or_else(|| header.strip_prefix("content-length:")) {
+                    content_length = val.trim().parse().unwrap_or(0);
+                }
+            }
+            if content_length > 0 {
+                let mut buf = vec![0u8; content_length];
+                if request_reader.read_exact(&mut buf).is_ok() {
+                    post_body = String::from_utf8_lossy(&buf).to_string();
+                }
+            }
+        }
 
         let (status, content_type, body) = match path {
             "/health" => {
@@ -5432,6 +5499,50 @@ fn serve_routing_metrics(
                 let state = profit_switch_state.lock().expect("profit switch state lock poisoned");
                 let body = serde_json::to_string(&*state).unwrap_or_else(|_| "{}".to_string());
                 ("200 OK", "application/json", body)
+            }
+            // ── Runtime coin hot-switch endpoints (dashboard) ──
+            // GET  /api/v1/cpu-coin → {"coin":"RTM"} or {"coin":null}
+            // POST /api/v1/cpu-coin {"coin":"RTM"} → set override
+            // POST /api/v1/cpu-coin {"coin":""}     → clear override (revert to env/profit)
+            "/api/v1/cpu-coin" => {
+                if method == "POST" {
+                    let parsed: serde_json::Value = serde_json::from_str(&post_body).unwrap_or(serde_json::Value::Null);
+                    let coin = parsed.get("coin").and_then(|v| v.as_str()).unwrap_or("");
+                    let mut guard = cpu_coin_override.lock().expect("cpu coin override lock poisoned");
+                    if coin.is_empty() {
+                        *guard = None;
+                        println!("cpu_coin_override: cleared (revert to env/profit)");
+                    } else {
+                        *guard = Some(coin.to_uppercase());
+                        println!("cpu_coin_override: set to {coin}");
+                    }
+                    let body = format!("{{\"ok\":true,\"coin\":{:?}}}", guard.as_deref().unwrap_or(""));
+                    ("200 OK", "application/json", body)
+                } else {
+                    let guard = cpu_coin_override.lock().expect("cpu coin override lock poisoned");
+                    let body = format!("{{\"coin\":{:?}}}", guard.as_deref().unwrap_or(""));
+                    ("200 OK", "application/json", body)
+                }
+            }
+            "/api/v1/gpu-coin" => {
+                if method == "POST" {
+                    let parsed: serde_json::Value = serde_json::from_str(&post_body).unwrap_or(serde_json::Value::Null);
+                    let coin = parsed.get("coin").and_then(|v| v.as_str()).unwrap_or("");
+                    let mut guard = gpu_coin_override.lock().expect("gpu coin override lock poisoned");
+                    if coin.is_empty() {
+                        *guard = None;
+                        println!("gpu_coin_override: cleared (revert to env/profit)");
+                    } else {
+                        *guard = Some(coin.to_uppercase());
+                        println!("gpu_coin_override: set to {coin}");
+                    }
+                    let body = format!("{{\"ok\":true,\"coin\":{:?}}}", guard.as_deref().unwrap_or(""));
+                    ("200 OK", "application/json", body)
+                } else {
+                    let guard = gpu_coin_override.lock().expect("gpu coin override lock poisoned");
+                    let body = format!("{{\"coin\":{:?}}}", guard.as_deref().unwrap_or(""));
+                    ("200 OK", "application/json", body)
+                }
             }
             _ => (
                 "404 Not Found",
@@ -6619,6 +6730,8 @@ mod tests {
                     estimates: Vec::new(),
                     nicehash_rates: Vec::new(),
                 })),
+                Arc::new(Mutex::new(None)), // cpu_coin_override
+                Arc::new(Mutex::new(None)), // gpu_coin_override
             )
         });
 

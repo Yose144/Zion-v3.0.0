@@ -11173,6 +11173,16 @@ function renderPoolSetup(data){
     });
     if(s2.coin) s2coinSel.value = s2.coin;
   }
+  // Populate GPU hot-switch dropdown
+  const s2hs = document.getElementById('ps-s2-hotswitch-coin');
+  if(s2hs){
+    s2hs.innerHTML = '';
+    (s2.candidate_coins || []).forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      s2hs.appendChild(opt);
+    });
+  }
   const ws2 = document.getElementById('ps-s2-worksize'); if(ws2) ws2.value = s2.gpu_work_size || '4194304';
   _setSelect('ps-s2-pearl-backend', s2.pearl_backend || 'opencl');
   const pw2 = document.getElementById('ps-s2-pearl-worksize'); if(pw2) pw2.value = s2.pearl_work_size || '262144';
@@ -11186,6 +11196,29 @@ function renderPoolSetup(data){
   const w3 = document.getElementById('ps-s3-wallet'); if(w3) w3.value = s3.cpu_wallet || '';
   const wk3 = document.getElementById('ps-s3-worker'); if(wk3) wk3.value = s3.cpu_worker || 'zion_triple';
   poolSetupStream3Mode();
+
+  // ── Runtime override badges ──
+  const ro = data.runtime_overrides || {};
+  const s2badge = document.getElementById('ps-s2-override-badge');
+  if(s2badge){
+    if(ro.gpu_coin){
+      s2badge.textContent = ro.gpu_coin;
+      s2badge.className = 'text-xs px-2 py-0.5 rounded bg-purple-900 text-purple-300';
+    } else {
+      s2badge.textContent = 'none';
+      s2badge.className = 'text-xs px-2 py-0.5 rounded bg-gray-700 text-gray-400';
+    }
+  }
+  const s3badge = document.getElementById('ps-s3-override-badge');
+  if(s3badge){
+    if(ro.cpu_coin){
+      s3badge.textContent = ro.cpu_coin;
+      s3badge.className = 'text-xs px-2 py-0.5 rounded bg-orange-900 text-orange-300';
+    } else {
+      s3badge.textContent = 'none';
+      s3badge.className = 'text-xs px-2 py-0.5 rounded bg-gray-700 text-gray-400';
+    }
+  }
 
   // AuxPow global
   const ae = document.getElementById('ps-aux-enabled'); if(ae) ae.checked = aux.enabled || false;
@@ -11409,4 +11442,32 @@ async function poolSetupRestart(){
   }finally{
     if(btn){ btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> Restart Pool'; }
   }
+}
+
+// ── Coin Hot-Switch (runtime, no pool restart) ──
+async function hotSwitchCoin(stream, coin){
+  const label = stream === 'cpu' ? 'CPU' : 'GPU';
+  const coinLabel = coin || 'Auto';
+  try{
+    const res = await fetch(`/api/pool/${stream}-coin`, {
+      method: 'POST',
+      headers: Object.assign({}, authHeaders(), {'Content-Type': 'application/json'}),
+      body: JSON.stringify({coin: coin}),
+    });
+    const data = await res.json();
+    if(data.ok !== undefined && data.ok){
+      _psBanner(`<i class="fas fa-bolt"></i> ${label} hot-switch → ${coinLabel} (runtime, no restart)`, 'success');
+      // Refresh badges
+      loadPoolSetupTab();
+    } else {
+      _psBanner(`<i class="fas fa-exclamation-triangle"></i> ${label} hot-switch failed: ` + (data.error || 'unknown'), 'error');
+    }
+  }catch(e){
+    _psBanner(`<i class="fas fa-exclamation-triangle"></i> ${label} hot-switch failed: ` + e.message, 'error');
+  }
+}
+
+function hotSwitchGpuFromDropdown(){
+  const sel = document.getElementById('ps-s2-hotswitch-coin');
+  if(sel) hotSwitchCoin('gpu', sel.value);
 }

@@ -5333,6 +5333,37 @@ def _fetch_pool_revenue_stats() -> dict:
         return {}
 
 
+def _pool_coin_override_get(stream: str) -> dict:
+    """GET current coin override from pool HTTP API. stream='cpu' or 'gpu'."""
+    host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    port = 8455
+    try:
+        import urllib.request
+        with urllib.request.urlopen(f"http://{host}:{port}/api/v1/{stream}-coin", timeout=3) as r:
+            return json.loads(r.read().decode())
+    except Exception as e:
+        return {"coin": None, "error": str(e)}
+
+
+def _pool_coin_override_set(stream: str, coin: str) -> dict:
+    """POST coin override to pool HTTP API. stream='cpu' or 'gpu'. Empty coin clears."""
+    host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    port = 8455
+    try:
+        import urllib.request
+        body = json.dumps({"coin": coin}).encode()
+        req = urllib.request.Request(
+            f"http://{host}:{port}/api/v1/{stream}-coin",
+            data=body,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=3) as r:
+            return json.loads(r.read().decode())
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 def _fetch_pool_revenue_streams() -> dict:
     """Fetch stream telemetry from pool /api/v1/revenue/streams endpoint."""
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
@@ -5722,9 +5753,9 @@ POOL_SETUP_COIN_E2E_NOTES = {
 STREAM2_GPU_COINS = [
     "DCR", "ALPH", "KAS", "ERG", "RVN", "ETC", "EVR", "MEWC",
     "FLUX", "CLORE", "EPIC", "QUAI", "BEAM", "KLS", "ZCL", "QTC",
-    "VTC", "IRON", "NEXA", "RTM", "DNX",
+    "VTC", "IRON", "NEXA", "DNX",
 ]
-STREAM3_CPU_COINS = ["VRSC", "XMR"]
+STREAM3_CPU_COINS = ["VRSC", "XMR", "RTM"]
 
 # Algorithm → hardware type mapping
 COIN_HARDWARE = {
@@ -5733,7 +5764,7 @@ COIN_HARDWARE = {
     "RVN": "GPU", "ETC": "GPU", "EVR": "GPU", "MEWC": "GPU",
     "FLUX": "GPU", "CLORE": "GPU", "EPIC": "GPU", "QUAI": "GPU",
     "BEAM": "GPU", "KLS": "GPU", "ZCL": "GPU", "QTC": "GPU",
-    "VTC": "GPU", "IRON": "GPU", "NEXA": "GPU", "RTM": "GPU", "DNX": "GPU",
+    "VTC": "GPU", "IRON": "GPU", "NEXA": "GPU", "RTM": "CPU", "DNX": "GPU",
 }
 
 # Algorithm → DAG requirement (None = no DAG, always fits VRAM)
@@ -5823,8 +5854,16 @@ def get_pool_setup_config() -> dict:
             "stream": 2 if hw == "GPU" else 3,
         })
 
+    # ── Runtime coin overrides (hot-switch via pool HTTP API) ──
+    cpu_override = _pool_coin_override_get("cpu")
+    gpu_override = _pool_coin_override_get("gpu")
+
     return {
         "ok": True,
+        "runtime_overrides": {
+            "cpu_coin": cpu_override.get("coin") or None,
+            "gpu_coin": gpu_override.get("coin") or None,
+        },
         "streams": {
             "stream1": {
                 "name": "ZION Deeksha",
@@ -10947,6 +10986,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_auxpow_config())
         elif route == "/api/pool/setup":
             self._json(get_pool_setup_config())
+        elif route == "/api/pool/cpu-coin":
+            self._json(_pool_coin_override_get("cpu"))
+        elif route == "/api/pool/gpu-coin":
+            self._json(_pool_coin_override_get("gpu"))
         elif route == "/api/servers-setup":
             self._json(get_servers_setup())
         elif route.startswith("/api/pool/miner-detail/"):
@@ -12735,6 +12778,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(update_pool_setup_config(payload))
         elif route == "/api/pool/auxpow/restart":
             self._json(restart_auxpow_pool_service())
+        # ── Coin hot-switch (runtime, no pool restart) ──
+        elif route == "/api/pool/cpu-coin":
+            coin = (payload or {}).get("coin", "")
+            self._json(_pool_coin_override_set("cpu", coin))
+        elif route == "/api/pool/gpu-coin":
+            coin = (payload or {}).get("coin", "")
+            self._json(_pool_coin_override_set("gpu", coin))
         # ── Miner ────────────────────────────────────────────────────────────
         elif route == "/api/miner/start":
             self._json(run_control("start-miner"))
