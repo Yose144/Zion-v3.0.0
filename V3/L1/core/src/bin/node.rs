@@ -109,6 +109,18 @@ fn main() -> Result<()> {
         }
     }
 
+    // Bridge-unlock UTXO amount scaling fix (ZION-2026-006).
+    // Default is active from genesis (0). For existing mainnet, set this to a
+    // future block height before restarting all nodes — blocks below the height
+    // keep the legacy raw-input validation so the existing chain history is not
+    // invalidated.
+    if let Ok(h_str) = std::env::var("ZION_BRIDGE_UNLOCK_SCALE_FIX_HEIGHT") {
+        if let Ok(h) = h_str.parse::<u64>() {
+            zion_core::bridge::set_bridge_unlock_scale_fix_height(h);
+            eprintln!("bridge_unlock_scale_fix_height={h} (runtime override for bridge scaling hard fork)");
+        }
+    }
+
     let config = NodeServerConfig::from_env()?;
 
     // Guard: migration height should be set for non-dev networks.

@@ -8,6 +8,10 @@
 
 use k256::ecdsa::{signature::Verifier as _, Signature as EcdsaSignature, VerifyingKey};
 use std::collections::HashSet;
+use std::sync::atomic::{AtomicU64, Ordering};
+
+use crate::emission;
+use crate::migration;
 
 const BRIDGE_UNLOCK_MEMO_PREFIX: &str = "BRIDGE_UNLOCK:";
 /// Separator between the replay-key body and the multisig proofs payload in a
@@ -30,6 +34,47 @@ pub(crate) const BRIDGE_MAX_MEMO_LEN: usize = 8192;
 /// The runtime threshold may be raised via
 /// [`required_bridge_validator_threshold`] but never lowered below this.
 pub const BRIDGE_MIN_VALIDATOR_PROOFS: usize = 3;
+
+/// Block height at which the bridge-unlock UTXO scaling fix becomes active.
+/// Default is 0 (active from genesis), which is correct for tests and fresh
+/// chains. For a coordinated hard fork on an existing mainnet, call
+/// [`set_bridge_unlock_scale_fix_height`] before starting the node.
+static BRIDGE_UNLOCK_SCALE_FIX_HEIGHT: AtomicU64 = AtomicU64::new(0);
+
+/// Override the bridge-unlock scaling fix activation height. Mainnet operators
+/// set this to a future block height for a coordinated hard fork; blocks below
+/// the height keep the legacy raw-input validation so existing history is not
+/// invalidated.
+pub fn set_bridge_unlock_scale_fix_height(height: u64) {
+    BRIDGE_UNLOCK_SCALE_FIX_HEIGHT.store(height, Ordering::Relaxed);
+}
+
+/// Returns true if the bridge-unlock scaling fix is active at `block_height`.
+pub(crate) fn bridge_unlock_scale_fix_active(block_height: u64) -> bool {
+    block_height >= BRIDGE_UNLOCK_SCALE_FIX_HEIGHT.load(Ordering::Relaxed)
+}
+
+/// Return the post-migration (1e6 flower) value of a bridge-vault UTXO.
+///
+/// Pre-migration UTXOs are divided by [`migration::MIGRATION_DIVISOR`].
+/// Post-migration UTXOs are normally returned as-is, but an output that
+/// mistakenly stored a legacy-scale amount (greater than the entire ZION
+/// supply) is also normalized so it cannot be re-spent at inflated value.
+pub(crate) fn bridge_vault_utxo_scaled_amount(amount: u64, height: u64) -> u64 {
+    if migration::is_post_migration(height) {
+        // Total supply in flowers is far below u64::MAX. A post-migration
+        // bridge-vault output can legitimately hold at most the 100M ZION seed
+        // (1e14 flowers). Anything larger is a legacy-scale amount left
+        // unconverted by the pre-fix builder.
+        if amount > emission::TOTAL_SUPPLY as u64 {
+            amount / migration::MIGRATION_DIVISOR
+        } else {
+            amount
+        }
+    } else {
+        amount / migration::MIGRATION_DIVISOR
+    }
+}
 
 /// A single validator multisig proof carried by a bridge unlock transaction.
 ///
@@ -387,6 +432,7 @@ pub struct BridgeUnlockRequest {
 pub(crate) fn validate_bridge_unlock_transaction_shape_with_utxos(
     transaction: &crate::tx::Transaction,
     utxos: &std::collections::HashMap<(String, u32), crate::SpendableUtxo>,
+    block_height: u64,
 ) -> Result<Option<String>, String> {
     let Some(replay_key) = bridge_unlock_replay_key_from_transaction(transaction) else {
         return Ok(None);
@@ -495,8 +541,16 @@ pub(crate) fn validate_bridge_unlock_transaction_shape_with_utxos(
         if utxo.address != crate::fee::BRIDGE_VAULT_ADDRESS {
             return Err("bridge unlock may only spend UTXOs owned by the bridge vault".to_string());
         }
+        // Convert pre-migration (and anomalous legacy-scale post-migration)
+        // bridge-vault UTXOs to post-3.0.3 1e6 flowers before checking value
+        // conservation. Historical blocks below the fork height keep raw summation.
+        let input_value = if bridge_unlock_scale_fix_active(block_height) {
+            bridge_vault_utxo_scaled_amount(utxo.amount, utxo.height)
+        } else {
+            utxo.amount
+        };
         total_input = total_input
-            .checked_add(utxo.amount)
+            .checked_add(input_value)
             .ok_or_else(|| "bridge unlock input sum overflowed".to_string())?;
     }
 

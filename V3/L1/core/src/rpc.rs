@@ -21,6 +21,7 @@ use crate::migration;
 use crate::{
     bridge_operation_message, BridgeValidatorProof, NodeRuntime, BRIDGE_MIN_VALIDATOR_PROOFS,
 };
+use crate::bridge::bridge_vault_utxo_scaled_amount;
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -60,6 +61,9 @@ fn scaled_amount(amount: u128, block_height: u64) -> u128 {
 /// and applying scaled_amount() per block height. This ensures pre-migration
 /// UTXO outputs (stored in 1e12 flowers) are normalised to 1e6 flowers before
 /// being summed — unlike rt.utxo_balance() which sums raw amounts.
+///
+/// For the bridge vault address, also normalise the anomalous legacy-scale
+/// post-migration UTXO created by the pre-fix bridge unlock builder.
 fn scaled_utxo_balance(rt: &NodeRuntime, address: &str) -> u128 {
     // Replay the UTXO set block-by-block so we know each output's block height.
     let mut utxo_map: std::collections::HashMap<(String, u32), (u64, u64)> =
@@ -79,9 +83,16 @@ fn scaled_utxo_balance(rt: &NodeRuntime, address: &str) -> u128 {
             }
         }
     }
+    let is_bridge_vault = address == fee::BRIDGE_VAULT_ADDRESS;
     utxo_map
         .values()
-        .map(|&(amount, height)| scaled_amount(amount as u128, height))
+        .map(|&(amount, height)| {
+            if is_bridge_vault {
+                bridge_vault_utxo_scaled_amount(amount, height) as u128
+            } else {
+                scaled_amount(amount as u128, height)
+            }
+        })
         .sum()
 }
 
@@ -940,10 +951,20 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 let utxos = rt.spendable_utxos(address);
                 // Scale UTXO amounts: pre-migration blocks (height <= MIGRATION_HEIGHT)
                 // store amounts in 1e12 flowers; normalise to 1e6 for all callers.
+                // Bridge vault UTXOs may also include the anomalous legacy-scale
+                // post-migration change output from pre-fix bridge-unlock txs.
+                let is_bridge_vault = address == fee::BRIDGE_VAULT_ADDRESS;
+                let scale = |amount: u64, height: u64| -> u128 {
+                    if is_bridge_vault {
+                        bridge_vault_utxo_scaled_amount(amount, height) as u128
+                    } else {
+                        scaled_amount(amount as u128, height)
+                    }
+                };
                 let utxo_list: Vec<Value> = utxos
                     .iter()
                     .map(|u| {
-                        let amount = scaled_amount(u.amount as u128, u.height);
+                        let amount = scale(u.amount, u.height);
                         json!({
                             "tx_hash": u.tx_hash,
                             "output_index": u.output_index,
@@ -953,10 +974,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                         })
                     })
                     .collect();
-                let total_scaled: u128 = utxos
-                    .iter()
-                    .map(|u| scaled_amount(u.amount as u128, u.height))
-                    .sum();
+                let total_scaled: u128 = utxos.iter().map(|u| scale(u.amount, u.height)).sum();
                 Ok(json!({
                     "address": address,
                     "utxos": utxo_list,
@@ -1057,7 +1075,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 let rt = rt
                     .lock()
                     .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-                let balance = rt.utxo_balance(fee::BRIDGE_VAULT_ADDRESS);
+                let balance = scaled_utxo_balance(&rt, fee::BRIDGE_VAULT_ADDRESS);
                 Ok(json!({
                     "address": fee::BRIDGE_VAULT_ADDRESS,
                     "balance_flowers": balance.to_string(),
@@ -2585,8 +2603,11 @@ mod tests {
         // Hard reset 2026-07-06: bridge vault UTXO seed (100M ZION) is now
         // on the same keyless address as fee::BRIDGE_VAULT_ADDRESS.
         assert_eq!(result["address"], fee::BRIDGE_VAULT_ADDRESS);
-        // Genesis seeds 100M ZION = 100_000_000_000_000_000_000 flowers
-        assert_eq!(result["balance_flowers"], "100000000000000000000");
+        // Genesis seeds 100M ZION in legacy 1e12 scale. After migration
+        // scale normalisation the bridge vault balance is the raw UTXO sum
+        // (six outputs totalling 100_000_000_000_000_000_000 flowers) divided
+        // by MIGRATION_DIVISOR = 1_000_000.
+        assert_eq!(result["balance_flowers"], "99999999999996");
     }
 
     #[test]

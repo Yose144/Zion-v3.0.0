@@ -2236,9 +2236,10 @@ impl ChainState {
     fn validate_bridge_unlock_transaction_shape(
         &self,
         transaction: &tx::Transaction,
+        block_height: u64,
     ) -> Result<Option<String>, String> {
         let utxos = self.utxo_set();
-        validate_bridge_unlock_transaction_shape_with_utxos(transaction, &utxos)
+        validate_bridge_unlock_transaction_shape_with_utxos(transaction, &utxos, block_height)
     }
 
     /// Check whether a specific outpoint exists as an unspent UTXO on chain.
@@ -2425,12 +2426,23 @@ impl ChainState {
                 .then(left.output_index.cmp(&right.output_index))
         });
 
+        let pending_height = self.height.saturating_add(1);
+        let scale_fix_active = crate::bridge::bridge_unlock_scale_fix_active(pending_height);
+
         let mut selected = Vec::new();
         let mut total_input = 0u64;
         let mut required_fee = fee::minimum_fee_for_size(fee::estimate_tx_size(1, 2));
         for utxo in spendable {
+            // Normalize legacy-scale bridge-vault UTXOs to post-migration 1e6 flowers
+            // once the scaling hard fork is active. Before the fork the legacy raw
+            // summation is preserved for consensus compatibility.
+            let scaled_amount = if scale_fix_active {
+                crate::bridge::bridge_vault_utxo_scaled_amount(utxo.amount, utxo.height)
+            } else {
+                utxo.amount
+            };
             total_input = total_input
-                .checked_add(utxo.amount)
+                .checked_add(scaled_amount)
                 .ok_or_else(|| "bridge unlock input sum overflowed".to_string())?;
             selected.push(utxo);
             required_fee = fee::minimum_fee_for_size(fee::estimate_tx_size(selected.len(), 2));
@@ -2474,7 +2486,6 @@ impl ChainState {
             });
         }
 
-        let pending_height = self.height.saturating_add(1);
         let bridge_utxo_ver = if tx_hash_v2_active(pending_height) {
             tx::TX_HASH_V2_VERSION
         } else {
@@ -3199,7 +3210,7 @@ impl ChainState {
                     hex(&utxo_tx.id)
                 ));
             }
-            match self.validate_bridge_unlock_transaction_shape(utxo_tx)? {
+            match self.validate_bridge_unlock_transaction_shape(utxo_tx, block.height)? {
                 Some(replay_key) => {
                     if !seen_bridge_unlock_replay_keys.insert(replay_key.clone()) {
                         return Err(format!(
@@ -3418,16 +3429,17 @@ impl ChainState {
         if transaction.id != transaction.calculate_hash() {
             return Err("UTXO transaction id does not match calculated hash".to_string());
         }
-        let bridge_unlock_replay_key =
-            match self.validate_bridge_unlock_transaction_shape(&transaction)? {
-                Some(replay_key) => Some(replay_key),
-                None => {
-                    if !transaction.verify_signatures() {
-                        return Err("UTXO transaction signature verification failed".to_string());
-                    }
-                    None
+        let bridge_unlock_replay_key = match self
+            .validate_bridge_unlock_transaction_shape(&transaction, pending_height)?
+        {
+            Some(replay_key) => Some(replay_key),
+            None => {
+                if !transaction.verify_signatures() {
+                    return Err("UTXO transaction signature verification failed".to_string());
                 }
-            };
+                None
+            }
+        };
         if self.mempool.len() >= MAX_MEMPOOL_TRANSACTIONS {
             return Err(format!(
                 "mempool capacity reached: {MAX_MEMPOOL_TRANSACTIONS}"
@@ -3692,7 +3704,12 @@ impl ChainState {
                     return false;
                 }
 
-                match validate_bridge_unlock_transaction_shape_with_utxos(utxo, &utxos) {
+                let pending_height = self.height.saturating_add(1);
+                match validate_bridge_unlock_transaction_shape_with_utxos(
+                    utxo,
+                    &utxos,
+                    pending_height,
+                ) {
                     Ok(Some(replay_key)) => seen_bridge_unlock_replay_keys.insert(replay_key),
                     Ok(None) => utxo.verify_signatures(),
                     Err(_) => false,
@@ -7525,7 +7542,7 @@ mod tests {
             fee: 100,
             timestamp: 0,
         };
-        let err = validate_bridge_unlock_transaction_shape_with_utxos(&tx, &utxos).unwrap_err();
+        let err = validate_bridge_unlock_transaction_shape_with_utxos(&tx, &utxos, 0).unwrap_err();
         assert!(
             err.contains("missing required validator proofs"),
             "expected proofs-missing rejection, got: {err}",
