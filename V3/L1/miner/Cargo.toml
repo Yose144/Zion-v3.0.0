@@ -54,6 +54,7 @@ native-hashers = ["zion-auxpow/native-hashers"]
 full = [
     "gpu-opencl",
     "native-all",
+    "native-hashers",
 ]
 
 # Hard-fork rehearsal: same consensus gates as node/pool (`V3/docs/operational/AUDIT_CLOSEOUT_1_THROUGH_6.md`).
