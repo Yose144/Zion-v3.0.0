@@ -2097,6 +2097,23 @@ fn run_remote_session(
     // when the profit coin changes.
     let (ext_gpu_tx, ext_gpu_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
     let (ext_gpu_share_tx, ext_gpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
+    // Adaptive duty-cycle channel: main loop sends (burst, gap_ms) updates
+    // to the external GPU thread. Enabled when ZION_ADAPTIVE_DUTY_CYCLE=1
+    // (default ON). The scheduler rebalances Stream 1 (Deeksha) vs Stream 2
+    // (ProgPow/KawPow) GPU time-slicing every ZION_ADAPTIVE_UPDATE_INTERVAL_S
+    // seconds based on observed hashrates.
+    let adaptive_enabled = std::env::var("ZION_ADAPTIVE_DUTY_CYCLE")
+        .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
+        .unwrap_or(true);
+    let (adaptive_tx, adaptive_rx) = if adaptive_enabled {
+        let (tx, rx) = std::sync::mpsc::channel::<(u64, u64)>();
+        (Some(tx), Some(rx))
+    } else {
+        (None, None)
+    };
+    // Timestamp of last adaptive duty-cycle update sent to the external GPU
+    // thread. Used to throttle recomputation to ZION_ADAPTIVE_UPDATE_INTERVAL_S.
+    let last_adaptive_update = std::sync::Mutex::new(std::time::Instant::now());
 
     let dual_gpu_enabled = gpu_available
         && effective_gpu_backend != gpu_backend::GpuBackendKind::Cpu
@@ -2123,7 +2140,7 @@ fn run_remote_session(
         let shared_cuda: Option<()> = None;
         thread::spawn(move || {
             println!("[{}] external_gpu_thread_spawned", log_timestamp());
-            external_gpu_thread(ext_gpu_rx, ext_gpu_share_tx, ws, hr, bk, shared_cuda);
+            external_gpu_thread(ext_gpu_rx, ext_gpu_share_tx, ws, hr, bk, adaptive_rx, shared_cuda);
         });
         println!(
             "[{}] stream2_gpu_external_started work_size={}",
@@ -2668,6 +2685,40 @@ fn run_remote_session(
                 true,
                 "running",
             );
+
+            // ── Adaptive GPU duty-cycle scheduler (Fáze 4) ──
+            // Every ZION_ADAPTIVE_UPDATE_INTERVAL_S seconds, recompute the
+            // optimal (burst, gap_ms) for the external GPU thread based on
+            // observed Stream 1 (Deeksha) vs Stream 2 (ProgPow) hashrates.
+            // The scheduler targets equal expected share rates between the
+            // two streams, weighted by their respective share difficulties.
+            if let Some(ref atx) = adaptive_tx {
+                let now = std::time::Instant::now();
+                let update_interval = std::env::var("ZION_ADAPTIVE_UPDATE_INTERVAL_S")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .unwrap_or(30);
+                let last = last_adaptive_update.lock().unwrap();
+                if now.duration_since(*last).as_secs() >= update_interval {
+                    drop(last);
+                    *last_adaptive_update.lock().unwrap() = now;
+                    let zion_hps = hashrate.zion_hps_60s();
+                    let ext_hps = hashrate.gpu_ext_hps_60s();
+                    let (burst, gap_ms) = compute_adaptive_duty_cycle(zion_hps, ext_hps);
+                    let _ = atx.send((burst, gap_ms));
+                    println!(
+                        "[{}] adaptive_duty_cycle_computed zion_hps={:.1} ext_hps={:.1} burst={} gap_ms={} duty={:.0}%",
+                        log_timestamp(),
+                        zion_hps,
+                        ext_hps,
+                        burst,
+                        gap_ms,
+                        if burst > 0 { 100.0 * burst as f64 / (burst as f64 + gap_ms as f64 / 50.0) } else { 0.0 }
+                    );
+                } else {
+                    drop(last);
+                }
+            }
             continue;
         };
         let search_depth = solution.candidate.nonce.saturating_sub(job.start_nonce) + 1;
@@ -3306,6 +3357,71 @@ fn submit_external_share(
     }
 }
 
+/// Compute an adaptive (burst, gap_ms) duty-cycle for the external GPU
+/// thread (Stream 2 = ProgPow/KawPow) based on observed hashrates of the
+/// two GPU streams.
+///
+/// - `zion_hps`: Stream 1 (Deeksha) hashrate over the last 60 s (H/s).
+/// - `ext_hps`:  Stream 2 (ProgPow/KawPow) hashrate over the last 60 s (H/s).
+///
+/// The scheduler targets a balanced share rate between the two streams.
+/// Because Stream 1 runs in the main loop and only gets GPU time during
+/// the "gap" of Stream 2's duty cycle, while Stream 2 runs during the
+/// "burst", the duty cycle fraction is derived from the ratio of the
+/// two hashrates. Higher Stream 2 hashrate → shorter bursts / longer
+/// gaps (Stream 1 needs relatively more time to match share output).
+/// Lower Stream 2 hashrate → longer bursts / shorter gaps.
+///
+/// Bounds are enforced via env vars (with safe defaults) so the
+/// scheduler can never starve either stream.
+fn compute_adaptive_duty_cycle(zion_hps: f64, ext_hps: f64) -> (u64, u64) {
+    let min_burst = std::env::var("ZION_ADAPTIVE_MIN_BURST")
+        .ok().and_then(|v| v.parse::<u64>().ok()).unwrap_or(1);
+    let max_burst = std::env::var("ZION_ADAPTIVE_MAX_BURST")
+        .ok().and_then(|v| v.parse::<u64>().ok()).unwrap_or(10);
+    let min_gap_ms = std::env::var("ZION_ADAPTIVE_MIN_GAP_MS")
+        .ok().and_then(|v| v.parse::<u64>().ok()).unwrap_or(50);
+    let max_gap_ms = std::env::var("ZION_ADAPTIVE_MAX_GAP_MS")
+        .ok().and_then(|v| v.parse::<u64>().ok()).unwrap_or(2000);
+
+    // Default static duty cycle when either stream has no observed hashrate.
+    let default_burst = std::env::var("ZION_EXT_GPU_BURST")
+        .ok().and_then(|v| v.parse::<u64>().ok()).unwrap_or(3);
+    let default_gap_ms = std::env::var("ZION_EXT_GPU_GAP_MS")
+        .ok().and_then(|v| v.parse::<u64>().ok()).unwrap_or(300);
+
+    if zion_hps <= 0.0 && ext_hps <= 0.0 {
+        return (default_burst, default_gap_ms);
+    }
+    if zion_hps <= 0.0 {
+        // Stream 1 idle — give all GPU time to Stream 2.
+        return (max_burst, min_gap_ms);
+    }
+    if ext_hps <= 0.0 {
+        // Stream 2 idle — give minimal time to it, prioritize Stream 1.
+        return (min_burst, max_gap_ms);
+    }
+
+    // Target duty fraction for Stream 2:
+    //   f2 = zion_hps / (zion_hps + ext_hps)
+    // This gives each stream a share of GPU time proportional to the
+    // other stream's hashrate (so the slower stream gets more time).
+    // Combined with burst+gap timing where burst ≈ f2 * (burst + gap/50ms)
+    // we solve for gap given a fixed burst unit:
+    //   burst / (burst + gap_ms/50) = f2
+    //   gap_ms = 50 * burst * (1 - f2) / f2
+    let f2 = zion_hps / (zion_hps + ext_hps);
+    let burst = default_burst.clamp(min_burst, max_burst);
+    let gap_ms = if f2 >= 0.999 {
+        min_gap_ms
+    } else {
+        let g = 50.0 * burst as f64 * (1.0 - f2) / f2;
+        (g as u64).clamp(min_gap_ms, max_gap_ms)
+    };
+
+    (burst, gap_ms)
+}
+
 /// Persistent external GPU miner thread for the single GPU profit coin.
 ///
 /// Runs in a separate thread with its own GPU context/command queue.
@@ -3317,12 +3433,17 @@ fn external_gpu_thread(
     work_size: usize,
     hashrate: Arc<HashrateTracker>,
     backend_kind: gpu_backend::GpuBackendKind,
+    // Adaptive duty-cycle update channel. The main loop sends new (burst,
+    // gap_ms) tuples here every ZION_ADAPTIVE_UPDATE_INTERVAL_S seconds
+    // based on observed Stream 1 vs Stream 2 hashrates. When None (no
+    // adaptive scheduler), falls back to env-var defaults.
+    adaptive_rx: Option<std::sync::mpsc::Receiver<(u64, u64)>>,
     #[cfg(feature = "gpu-cuda")]
     shared_cuda_dev: Option<std::sync::Arc<cudarc::driver::CudaDevice>>,
     #[cfg(not(feature = "gpu-cuda"))]
     shared_cuda_dev: Option<()>,
 ) {
-    println!("[{}] external_gpu_thread_entered backend={} shared_cuda={}", log_timestamp(), backend_kind.as_str(), shared_cuda_dev.is_some());
+    println!("[{}] external_gpu_thread_entered backend={} shared_cuda={} adaptive={}", log_timestamp(), backend_kind.as_str(), shared_cuda_dev.is_some(), adaptive_rx.is_some());
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
 
@@ -3339,6 +3460,12 @@ fn external_gpu_thread(
     let mut batch_count: u64 = 0;
     let mut last_heartbeat = std::time::Instant::now();
     let mut last_epoch: Option<u32> = None;
+
+    // Adaptive duty-cycle state. Updated from the main loop via the
+    // adaptive_rx channel. Falls back to env-var defaults until the
+    // first adaptive update arrives.
+    let mut adaptive_burst: u64 = 0;
+    let mut adaptive_gap_ms: u64 = 0;
 
     fn epoch_for_algorithm(algorithm: &str, height: u64) -> Option<u32> {
         match algorithm {
@@ -3672,18 +3799,47 @@ fn external_gpu_thread(
         // be long enough for Stream 1 to complete one deeksha batch
         // (~270ms on RX 5600 XT at work_size=8192).
         //
-        // Defaults: burst=3 batches, gap=300ms → ~75% Stream2 duty cycle.
-        // Tuning:
-        //   ZION_EXT_GPU_BURST=N  (batches per burst, 0=no limit)
-        //   ZION_EXT_GPU_GAP_MS=M (sleep after burst, 0=disabled)
-        let burst = std::env::var("ZION_EXT_GPU_BURST")
-            .ok()
-            .and_then(|v| v.parse::<u64>().ok())
-            .unwrap_or(3);
-        let gap_ms = std::env::var("ZION_EXT_GPU_GAP_MS")
-            .ok()
-            .and_then(|v| v.parse::<u64>().ok())
-            .unwrap_or(300);
+        // Two modes:
+        //   1. ADAPTIVE (default when ZION_ADAPTIVE_DUTY_CYCLE=1):
+        //      Main loop computes optimal burst/gap from observed
+        //      Stream 1 vs Stream 2 hashrates and sends updates via
+        //      the adaptive_rx channel. Falls back to env defaults
+        //      if no update has been received yet.
+        //   2. STATIC (env vars):
+        //      ZION_EXT_GPU_BURST=N  (batches per burst, 0=no limit)
+        //      ZION_EXT_GPU_GAP_MS=M (sleep after burst, 0=disabled)
+        // Check for adaptive scheduler update (non-blocking)
+        if let Some(ref arx) = adaptive_rx {
+            while let Ok((new_burst, new_gap_ms)) = arx.try_recv() {
+                adaptive_burst = new_burst;
+                adaptive_gap_ms = new_gap_ms;
+                println!(
+                    "[{}] ext_gpu_adaptive_update burst={} gap_ms={} (duty_cycle={:.0}%)",
+                    log_timestamp(),
+                    new_burst,
+                    new_gap_ms,
+                    if new_burst > 0 {
+                        100.0 * new_burst as f64
+                            / (new_burst as f64 + new_gap_ms as f64 / 50.0)
+                    } else { 0.0 }
+                );
+            }
+        }
+        let (burst, gap_ms) = if adaptive_burst > 0 || adaptive_gap_ms > 0 {
+            (adaptive_burst, adaptive_gap_ms)
+        } else {
+            // Fall back to env defaults until first adaptive update
+            (
+                std::env::var("ZION_EXT_GPU_BURST")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .unwrap_or(3),
+                std::env::var("ZION_EXT_GPU_GAP_MS")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .unwrap_or(300),
+            )
+        };
         if burst > 0 && gap_ms > 0 && batch_count % burst == 0 {
             thread::sleep(Duration::from_millis(gap_ms));
         }
@@ -4900,6 +5056,90 @@ mod tests {
             .get_or_init(|| Mutex::new(()))
             .lock()
             .expect("env test lock")
+    }
+
+    #[test]
+    fn adaptive_duty_cycle_both_idle_uses_defaults() {
+        let _g = env_test_guard();
+        std::env::remove_var("ZION_ADAPTIVE_MIN_BURST");
+        std::env::remove_var("ZION_ADAPTIVE_MAX_BURST");
+        std::env::remove_var("ZION_ADAPTIVE_MIN_GAP_MS");
+        std::env::remove_var("ZION_ADAPTIVE_MAX_GAP_MS");
+        std::env::remove_var("ZION_EXT_GPU_BURST");
+        std::env::remove_var("ZION_EXT_GPU_GAP_MS");
+        let (burst, gap_ms) = compute_adaptive_duty_cycle(0.0, 0.0);
+        assert_eq!(burst, 3);
+        assert_eq!(gap_ms, 300);
+    }
+
+    #[test]
+    fn adaptive_duty_cycle_zion_idle_max_burst() {
+        let _g = env_test_guard();
+        std::env::remove_var("ZION_ADAPTIVE_MIN_BURST");
+        std::env::remove_var("ZION_ADAPTIVE_MAX_BURST");
+        std::env::remove_var("ZION_ADAPTIVE_MIN_GAP_MS");
+        std::env::remove_var("ZION_ADAPTIVE_MAX_GAP_MS");
+        let (burst, _) = compute_adaptive_duty_cycle(0.0, 5_000_000.0);
+        assert_eq!(burst, 10); // max_burst default
+    }
+
+    #[test]
+    fn adaptive_duty_cycle_ext_idle_min_burst() {
+        let _g = env_test_guard();
+        std::env::remove_var("ZION_ADAPTIVE_MIN_BURST");
+        std::env::remove_var("ZION_ADAPTIVE_MAX_BURST");
+        std::env::remove_var("ZION_ADAPTIVE_MIN_GAP_MS");
+        std::env::remove_var("ZION_ADAPTIVE_MAX_GAP_MS");
+        let (burst, gap_ms) = compute_adaptive_duty_cycle(5_000_000.0, 0.0);
+        assert_eq!(burst, 1); // min_burst default
+        // max_gap_ms default = 2000
+        assert_eq!(gap_ms, 2000);
+    }
+
+    #[test]
+    fn adaptive_duty_cycle_balanced_hashrates_yields_moderate_gap() {
+        let _g = env_test_guard();
+        std::env::remove_var("ZION_ADAPTIVE_MIN_BURST");
+        std::env::remove_var("ZION_ADAPTIVE_MAX_BURST");
+        std::env::remove_var("ZION_ADAPTIVE_MIN_GAP_MS");
+        std::env::remove_var("ZION_ADAPTIVE_MAX_GAP_MS");
+        std::env::remove_var("ZION_EXT_GPU_BURST");
+        std::env::remove_var("ZION_EXT_GPU_GAP_MS");
+        // Equal hashrates → f2 = 0.5 → gap = 50 * 3 * 0.5/0.5 = 150 ms
+        let (burst, gap_ms) = compute_adaptive_duty_cycle(1_000_000.0, 1_000_000.0);
+        assert_eq!(burst, 3);
+        assert_eq!(gap_ms, 150);
+    }
+
+    #[test]
+    fn adaptive_duty_cycle_higher_zion_hps_yields_longer_gap() {
+        let _g = env_test_guard();
+        std::env::remove_var("ZION_ADAPTIVE_MIN_BURST");
+        std::env::remove_var("ZION_ADAPTIVE_MAX_BURST");
+        std::env::remove_var("ZION_ADAPTIVE_MIN_GAP_MS");
+        std::env::remove_var("ZION_ADAPTIVE_MAX_GAP_MS");
+        std::env::remove_var("ZION_EXT_GPU_BURST");
+        std::env::remove_var("ZION_EXT_GPU_GAP_MS");
+        // zion_hps = 4x ext_hps → f2 = 4/5 = 0.8 → gap = 50*3*0.2/0.8 = 37.5 → clamped to min_gap_ms=50
+        let (burst, gap_ms) = compute_adaptive_duty_cycle(4_000_000.0, 1_000_000.0);
+        assert_eq!(burst, 3);
+        // gap_ms = 37 → clamped to min_gap_ms = 50
+        assert_eq!(gap_ms, 50);
+    }
+
+    #[test]
+    fn adaptive_duty_cycle_lower_zion_hps_yields_shorter_burst_relative() {
+        let _g = env_test_guard();
+        std::env::remove_var("ZION_ADAPTIVE_MIN_BURST");
+        std::env::remove_var("ZION_ADAPTIVE_MAX_BURST");
+        std::env::remove_var("ZION_ADAPTIVE_MIN_GAP_MS");
+        std::env::remove_var("ZION_ADAPTIVE_MAX_GAP_MS");
+        std::env::remove_var("ZION_EXT_GPU_BURST");
+        std::env::remove_var("ZION_EXT_GPU_GAP_MS");
+        // zion_hps = 1/4 ext_hps → f2 = 1/5 = 0.2 → gap = 50*3*0.8/0.2 = 600 ms
+        let (burst, gap_ms) = compute_adaptive_duty_cycle(1_000_000.0, 4_000_000.0);
+        assert_eq!(burst, 3);
+        assert_eq!(gap_ms, 600);
     }
 
     #[test]
