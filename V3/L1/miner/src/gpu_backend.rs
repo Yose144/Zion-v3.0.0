@@ -327,7 +327,7 @@ impl GpuBackendManager {
             "gpu_switch_algorithm from={} to={}",
             self.current_algo, algorithm
         );
-        let backend = create_gpu_backend(self.kind, self.work_size, algorithm)?;
+        let backend = create_gpu_backend(self.kind, self.work_size, algorithm, "")?;
         self.current_algo = algorithm.to_string();
         self.current = Some(backend);
         Ok(self.current.as_mut().unwrap().as_mut())
@@ -439,7 +439,7 @@ impl TriGpuManager {
         }
         let primary_algo = std::env::var("ZION_MINER_ALGORITHM")
             .unwrap_or_else(|_| "deeksha_lite_fire".to_string());
-        let primary = create_gpu_backend(kind, primary_work_size, &primary_algo)?;
+        let primary = create_gpu_backend(kind, primary_work_size, &primary_algo, "")?;
 
         Ok(Self {
             primary: Some(primary),
@@ -509,7 +509,7 @@ impl TriGpuManager {
         // Drop the old backend first (releases GPU resources).
         self.primary = None;
         // Create the new backend with the pool's algorithm.
-        let new_backend = create_gpu_backend(self.kind, self.primary_work_size, algorithm)?;
+        let new_backend = create_gpu_backend(self.kind, self.primary_work_size, algorithm, "")?;
         self.primary = Some(new_backend);
         self.primary_algo = algorithm.to_string();
 
@@ -1691,8 +1691,9 @@ pub fn create_gpu_backend(
     kind: GpuBackendKind,
     work_size: usize,
     algorithm: &str,
+    coin: &str,
 ) -> Result<Box<dyn GpuMiner>> {
-    create_gpu_backend_inner(kind, work_size, algorithm, None)
+    create_gpu_backend_inner(kind, work_size, algorithm, coin, None)
 }
 
 /// Create a GPU backend with an optional shared CUDA device.
@@ -1703,9 +1704,10 @@ pub fn create_gpu_backend_with_cuda_device(
     kind: GpuBackendKind,
     work_size: usize,
     algorithm: &str,
+    coin: &str,
     shared_dev: Option<std::sync::Arc<cudarc::driver::CudaDevice>>,
 ) -> Result<Box<dyn GpuMiner>> {
-    create_gpu_backend_inner(kind, work_size, algorithm, shared_dev)
+    create_gpu_backend_inner(kind, work_size, algorithm, coin, shared_dev)
 }
 
 /// No-CUDA fallback: accepts the shared_dev argument but ignores it.
@@ -1714,9 +1716,10 @@ pub fn create_gpu_backend_with_cuda_device(
     kind: GpuBackendKind,
     work_size: usize,
     algorithm: &str,
+    coin: &str,
     _shared_dev: Option<()>,
 ) -> Result<Box<dyn GpuMiner>> {
-    create_gpu_backend_inner(kind, work_size, algorithm, None)
+    create_gpu_backend_inner(kind, work_size, algorithm, coin, None)
 }
 
 #[allow(unused_variables)]
@@ -1724,11 +1727,13 @@ fn create_gpu_backend_inner(
     kind: GpuBackendKind,
     work_size: usize,
     algorithm: &str,
+    coin: &str,
     #[cfg(feature = "gpu-cuda")] shared_dev: Option<std::sync::Arc<cudarc::driver::CudaDevice>>,
     #[cfg(not(feature = "gpu-cuda"))] shared_dev: Option<()>,
 ) -> Result<Box<dyn GpuMiner>> {
     let _ = algorithm;
     let _ = work_size;
+    let _ = coin;
     match kind {
         GpuBackendKind::Cpu => {
             anyhow::bail!("GPU backend requested but kind=cpu — use CPU mining path instead");
@@ -1849,7 +1854,7 @@ fn create_gpu_backend_inner(
                     #[cfg(any(feature = "native-kheavyhash", feature = "native-blake3-algo"))]
                     {
                         eprintln!("[gpu_backend] CUDA CPU fallback for algorithm={}", algorithm);
-                        let miner = crate::gpu_backend::cpu_external_fallback::CpuExternalMiner::new(algorithm, work_size)?;
+                        let miner = crate::gpu_backend::cpu_external_fallback::CpuExternalMiner::new(algorithm, coin, work_size)?;
                         return Ok(Box::new(miner));
                     }
                     #[cfg(not(any(feature = "native-kheavyhash", feature = "native-blake3-algo")))]
@@ -1878,7 +1883,7 @@ fn create_gpu_backend_inner(
                     #[cfg(any(feature = "native-kheavyhash", feature = "native-blake3-algo"))]
                     {
                         eprintln!("[gpu_backend] Metal CPU fallback for algorithm={}", algorithm);
-                        let miner = crate::gpu_backend::cpu_external_fallback::CpuExternalMiner::new(algorithm, work_size)?;
+                        let miner = crate::gpu_backend::cpu_external_fallback::CpuExternalMiner::new(algorithm, coin, work_size)?;
                         return Ok(Box::new(miner));
                     }
                     #[cfg(not(any(feature = "native-kheavyhash", feature = "native-blake3-algo")))]
