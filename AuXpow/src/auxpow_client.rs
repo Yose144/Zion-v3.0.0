@@ -3244,7 +3244,50 @@ impl AuxPowClient {
                     }
                 }
             });
-            let resp = self.send_request_inline(&req).await?;
+            // EPIC upstream pool closes the TLS connection every ~10-15s
+            // (normal for EpicStratum). If the share arrives during the
+            // reconnect window, send_request_inline fails with a TLS EOF
+            // error. Retry up to 3 times, waiting for the poll loop to
+            // reconnect between attempts.
+            let mut resp: Option<Value> = None;
+            for attempt in 0..3u32 {
+                if attempt > 0 {
+                    // Wait for the poll loop to set connected=true
+                    let mut waited_ms = 0u64;
+                    while waited_ms < 8000 {
+                        if *self.connected.lock().await {
+                            break;
+                        }
+                        tokio::time::sleep(Duration::from_millis(200)).await;
+                        waited_ms += 200;
+                    }
+                    if waited_ms >= 8000 {
+                        eprintln!(
+                            "auxpow: EPIC submit: connection not restored after 8s, aborting (attempt={})",
+                            attempt
+                        );
+                        return Ok(ShareResult::Unknown);
+                    }
+                    // Small extra delay to let the poll loop start reading
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                }
+                match self.send_request_inline(&req).await {
+                    Ok(r) => {
+                        resp = Some(r);
+                        break;
+                    }
+                    Err(e) => {
+                        eprintln!(
+                            "auxpow: EPIC submit attempt={} failed: {e}",
+                            attempt + 1
+                        );
+                    }
+                }
+            }
+            let resp = match resp {
+                Some(r) => r,
+                None => return Ok(ShareResult::Unknown),
+            };
             if let Some(err) = resp.get("error") {
                 if !err.is_null() {
                     let msg = err.get("message")
