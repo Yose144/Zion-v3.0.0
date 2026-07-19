@@ -484,21 +484,41 @@ pub fn parse_target_hex(hex: &str) -> Option<[u8; 32]> {
     Some(target)
 }
 
-/// Parse a Monero/RandomX 64-bit little-endian target (16 hex chars) into a
+/// Parse a Monero/RandomX target (4 or 8 bytes, little-endian) into a
 /// 32-byte target array.
 ///
-/// RandomX pools (xmrig-compatible Stratum) send the target as an 8-byte
-/// little-endian value.  Only the first 8 bytes of the returned array are
-/// populated; the remaining bytes are zero.  Use `meets_randomx_target`
-/// for the corresponding partial comparison.
+/// RandomX pools (xmrig-compatible Stratum) send the target as either:
+///   - 8 bytes (16 hex chars) — 64-bit LE target (most pools)
+///   - 4 bytes (8 hex chars)  — 32-bit LE target (MoneroOcean, some pools)
+///
+/// For 4-byte targets, the value is a 32-bit LE uint.  Following xmrig's
+/// `Job::setTarget` logic: `0xFFFFFFFFFFFFFFFFULL / (0xFFFFFFFFULL / u32(target))`
+/// converts the 32-bit target to a 64-bit target.
+///
+/// Only the first 8 bytes of the returned array are populated; the remaining
+/// bytes are zero.  Use `meets_randomx_target` for the corresponding partial
+/// comparison.
 pub fn parse_randomx_target_hex(hex: &str) -> Option<[u8; 32]> {
     let hex = hex.trim_start_matches("0x");
     let bytes = hex::decode(hex).ok()?;
-    if bytes.len() != 8 {
-        return None;
-    }
     let mut target = [0u8; 32];
-    target[..8].copy_from_slice(&bytes);
+    match bytes.len() {
+        8 => {
+            // 64-bit LE target — copy directly
+            target[..8].copy_from_slice(&bytes);
+        }
+        4 => {
+            // 32-bit LE target — convert to 64-bit via xmrig's formula:
+            //   target_64 = 0xFFFFFFFFFFFFFFFF / (0xFFFFFFFF / target_32)
+            let target_32 = u32::from_le_bytes(bytes[..4].try_into().ok()?);
+            if target_32 == 0 {
+                return None;
+            }
+            let target_64 = u64::MAX / (0xFFFF_FFFFu64 / target_32 as u64);
+            target[..8].copy_from_slice(&target_64.to_le_bytes());
+        }
+        _ => return None,
+    }
     Some(target)
 }
 
