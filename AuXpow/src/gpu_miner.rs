@@ -2224,12 +2224,6 @@ typedef unsigned long ulong;
                         .with_context(|| format!("reading OpenCL kernel {:?}", dir.join(kernel_file)))?;
                     println!("auxpow_gpu_opencl ghostrider concatenated: sph={}B cn={}B main={}B total={}B",
                         sph.len(), cn.len(), main.len(), sph.len() + cn.len() + main.len());
-                    // Debug: check if the CN source has our new debug code
-                    if cn.contains("save input immediately") {
-                        println!("auxpow_gpu_opencl DEBUG: CN source has new debug code (save input immediately)");
-                    } else {
-                        println!("auxpow_gpu_opencl DEBUG: CN source MISSING new debug code!");
-                    }
                     format!("{sph}\n{cn}\n{main}")
                 } else {
                     let path = dir.join(kernel_file);
