@@ -2188,10 +2188,14 @@ fn build_stratum_v1_header(
     // reverse — the merkle_root bytes go directly into the header as-is.
     // (Both cpuminer and Rust sha2 produce the same byte sequence.)
 
-    // prevhash: Stratum v1 pools send prevhash in **reversed** (display) byte order.
-    // cpuminer reverses it back to internal byte order for the block header.
+    // prevhash: Stratum v1 pools send prevhash in display (BE) byte order.
+    // yiimp uses ser_string_be which reverses each 4-byte word (BE→LE per word),
+    // NOT a full 32-byte reversal.  We must match yiimp's convention exactly,
+    // otherwise the ghostrider hash will differ and shares will be rejected.
     let mut prevhash_internal = prevhash_bytes.clone();
-    prevhash_internal.reverse();
+    for chunk in prevhash_internal.chunks_exact_mut(4) {
+        chunk.reverse();
+    }
 
     // Build 80-byte header
     let mut header = Vec::with_capacity(80);
