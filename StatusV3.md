@@ -1,6 +1,6 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-07-16
+> **Datum poslední aktualizace:** 2026-07-19
 > **Protokol:** `zion-v3-node/3.0.6`
 > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
@@ -12,7 +12,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **Height** | 6445+ (2-node P2P mesh on Edge; local backup offline) |
+| **Height** | 10911+ (2026-07-19, 2-node P2P mesh on Edge; local backup offline) |
 | **Protocol** | `zion-v3-node/3.0.6` (v2) |
 | **Genesis** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
 | **Decimals** | 6 (1 ZION = 1,000,000 flowers, post-3.0.3 fork) |
@@ -32,7 +32,13 @@
 
 ### Edge Server (Primary): `62.171.141.136`
 
-**Hardware:** Hetzner Cloud, 4× AMD EPYC, 7.8 GB RAM, 145 GB disk, Ubuntu 24.04.4 LTS
+**Hardware:** Contabo VPS (`vmi3425821.contaboserver.net`), 4× AMD EPYC, 7.8 GB RAM, 145 GB disk, Ubuntu 24.04.4 LTS
+
+**IPv6 (fallback when IPv4 SSH refused):** `2a02:c207:2342:5821::1` (AAAA record of `vmi3425821.contaboserver.net`)
+
+**SSH:** port `22` (default) + port `2222` (alias), IPv4 + IPv6 — `ssh zion-new` (key `~/.ssh/zion-new-server`, ed25519). **Incident 2026-07-19 (SSH + fail2ban):** Po rebootu sshd naslouchalo jen na `[::]:2222` (IPv6-only) kvůli `ssh.socket.d/override.conf` s `ListenStream=2222` bez IP specifikace → IPv4 SSH `Connection refused`. Opraveno: override.conf upraven na `0.0.0.0:2222` + `[::]:2222`, přidán `port22.conf` drop-in pro alias na default port 22. Root heslo resetnuto přes Contabo panel (uložit do 1Password). **fail2ban `zion-p2p` jail** (maxretry=50/10min, bantime=24h) banoval IPv4 `109.81.31.210` (Mac) při spuštění lokálního backup node — backup node dělal rychlé P2P connect/disconnect cykly na porty 8333/8334, fail2ban to vyhodnotil jako port scan. Opraveno: `ignoreip` v `/etc/fail2ban/jail.d/zion-p2p.conf` rozšířeno o `109.81.31.210` (Mac) + `109.81.27.87` (backup node) — **perzistentní, přežije reboot** (fail2ban enabled at boot). UFW pravidla `22/tcp` + `2222/tcp` ALLOW přidána do `/etc/ufw/user.rules` + `user6.rules` (perzistentní). VNC fallback: `95.111.232.25:63061` (RFB, password `h4neV76S`).
+
+**fail2ban ignoreip whitelist (perzistentní v `/etc/fail2ban/jail.d/zion-p2p.conf`):** `127.0.0.1/8 ::1 109.81.31.210 109.81.27.87` — Mac a backup node IP jsou vyřazeny z P2P jail banování. Pokud se změní veřejná IP Macu nebo backup node, je třeba aktualizovat tento soubor a `systemctl reload fail2ban`.
 
 | Service | Port(s) | Bind | Layer | Status |
 |---------|---------|------|-------|--------|
