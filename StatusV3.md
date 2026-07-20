@@ -104,7 +104,7 @@
 | zion-atomic-swap | 18 | ✅ |
 | zion-warp | 499 | ✅ |
 | zion-ncl | 42 | ✅ |
-| zion-ai-native | 195 (+2 ignored) | ✅ |
+| zion-ai-native | 337 (+2 ignored) + 8 doc = 345 ✅ (v2.4 Maestro MVP: 6 komponent, 55 tools, 32 sub-agents, 14 intents, 26 health services) | ✅ |
 | zion-cli | 21 | ✅ |
 | zion-miner | 59 | ✅ |
 | zion-native-ffi | 13/28 | ✅ |
