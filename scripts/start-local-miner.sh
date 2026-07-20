@@ -37,10 +37,12 @@ export ZION_TUI_WIDTH="${ZION_TUI_WIDTH:-60}"
 # To disable autotune: set ZION_AUTOTUNE=0
 export ZION_AUTOTUNE="${ZION_AUTOTUNE:-1}"
 export ZION_STREAM1_ENABLED="${ZION_STREAM1_ENABLED:-1}"
-# Stream 2 (GPU external/KawPow) disabled — KawPow DAG (5.6 GB) too large for 6 GB VRAM.
-# Re-enable with ZION_STREAM2_ENABLED=1 if VRAM permits.
-# In autonomous mode (ZION_AUTONOMOUS=1), Stream 2 is auto-selected based on VRAM compat.
-export ZION_STREAM2_ENABLED="${ZION_STREAM2_ENABLED:-0}"
+# Stream 2 (GPU external) — ZANO (ProgPoWZ, DAG ~2.5 GB).
+# Fits in 6 GB VRAM alongside deeksha (~2 GB scratchpad): ~4.5 GB total.
+# KawPow (RVN) was 5.6 GB and OOM'd — ZANO is much smaller.
+# ZION_STREAM2_FORCE_COIN pins Stream 2 to ZANO regardless of autonomous router.
+export ZION_STREAM2_ENABLED="${ZION_STREAM2_ENABLED:-1}"
+export ZION_STREAM2_FORCE_COIN="${ZION_STREAM2_FORCE_COIN:-ZANO}"
 export ZION_STREAM3_ENABLED="${ZION_STREAM3_ENABLED:-1}"
 export ZION_METRICS_REPORT_SECS="${ZION_METRICS_REPORT_SECS:-15}"
 export ZION_STATS_FILE="${ZION_STATS_FILE:-/tmp/zion-miner-stats.json}"
@@ -74,15 +76,30 @@ fi
 # With 6 threads at ~5 MH/s, 2M nonces takes ~0.4s per scan vs ~2s for 10M.
 export ZION_EXT_CPU_NONCE_COUNT="${ZION_EXT_CPU_NONCE_COUNT:-2000000}"
 
+# ── CPU external coin (Stream 3) ───────────────────────────────────────────
+# VRSC (VerusHash v2.2) — LuckPool, ASIC/GPU-resistant, PBaaS merge mining.
+# Pool already has VRSC bridge active (ZION_POOL_AUXPOW_CPU_COIN=VRSC).
+# Alternatives: XMR (RandomX, MoneroOcean), RTM (GhostRider, ZPool).
+export ZION_MINER_CPU_COIN="${ZION_MINER_CPU_COIN:-VRSC}"
+
 # ── Autotune: GPU memory budget auto-tune is always ON.
-#  Algorithm autotune (--algorithm auto) benchmarks all GPU algorithms and
-#  picks the fastest.  NOTE: on ROCm OpenCL, ProgPow/KawPow kernels use
-#  amd_bpermute which fails to compile — those benchmarks error out and are
-#  skipped, so autotune still works for ZION algorithms.
-#  Default: deeksha_lite_v1 (best for RX 5700 XT).
-#  Set ZION_MINER_ALGORITHM=auto to enable full algorithm autotune.
+#  Algorithm: deeksha_lite_v1 (pool sends deeksha_lite_v1 job headers — other
+#  deeksha variants like chv3 cannot find ZION blocks because the pool fixes
+#  the algorithm to deeksha_lite_v1 in the job template).
+#  Benchmark results on RX 5700 XT: deeksha_chv3=35.5 KH/s, deeksha_lite_fire=34.1 KH/s,
+#  deeksha_lite_v1=37 KH/s (real-world, with optimized batching).
+#  To re-benchmark: zion-miner --gpu-benchmark-all
 export ZION_MINER_ALGORITHM="${ZION_MINER_ALGORITHM:-deeksha_lite_v1}"
 export ZION_AUTOTUNE_SECS="${ZION_AUTOTUNE_SECS:-3}"
+
+# ── GPU duty-cycle: 50/50 split between Stream 1 (deeksha) and Stream 2 (ZANO) ──
+#  Static mode: ZION_EXT_GPU_BURST=N batches for Stream 2, then
+#  ZION_EXT_GPU_GAP_MS=M ms for Stream 1, repeat.
+#  burst=3, gap_ms=150 → ~50/50 split (3 batches ≈ 150ms ZANO, 150ms deeksha).
+#  Disable adaptive scheduler (which gives ZANO 97% based on raw hashrate).
+export ZION_ADAPTIVE_DUTY_CYCLE="${ZION_ADAPTIVE_DUTY_CYCLE:-0}"
+export ZION_EXT_GPU_BURST="${ZION_EXT_GPU_BURST:-3}"
+export ZION_EXT_GPU_GAP_MS="${ZION_EXT_GPU_GAP_MS:-150}"
 
 # ── GPU nonce batch size ────────────────────────────────────────────────────
 # Must be ≥ 4× GPU work_size (8192) to activate double-buffered async readback.
@@ -90,17 +107,35 @@ export ZION_AUTOTUNE_SECS="${ZION_AUTOTUNE_SECS:-3}"
 # but we set it here too for clarity and to ensure it survives restarts.
 # nonce_count_min must be ≥ 2× work_size (16384) so autotune never shrinks
 # below the double-buffering threshold.
+#
+# CRITICAL: nonce_count must be small enough that one batch completes BEFORE
+# the pool rotates to the next iteration.  Pool rotates every ~2s, deeksha
+# hashrate ~28 KH/s (with 50/50 ZANO split):
+#   32768 / 28000 = ~1.2s per batch  ← OK (under 2s)
+#   262144 / 28000 = ~9.4s per batch ← STALE (pool 4-5 iterations ahead)
+# ZION_NONCE_AUTOTUNE is DISABLED to prevent grow from 32768 → 5M (which
+# causes massive stale rejects).  ZION_NONCE_COUNT_MAX caps the ceiling.
 export ZION_NONCE_COUNT="${ZION_NONCE_COUNT:-32768}"
 export ZION_NONCE_COUNT_MIN="${ZION_NONCE_COUNT_MIN:-16384}"
+export ZION_NONCE_COUNT_MAX="${ZION_NONCE_COUNT_MAX:-65536}"
+export ZION_NONCE_AUTOTUNE="${ZION_NONCE_AUTOTUNE:-0}"
 
 # ── GPU max batch cap ───────────────────────────────────────────────────────
 # Caps the GPU batch size to avoid stale jobs.  The pool may send a large
 # nonce_count (e.g. 262144), but processing that many nonces in one batch
 # takes 10+ seconds, by which time the pool may have moved to a new block
 # height (stale share).  Capping to 32768 (4× work_size) keeps each batch
-# under ~2 seconds, well within the job TTL.  The miner loops back to get
-# a fresh job after each batch.
+# under ~1.2 seconds, well within the 2s pool iteration window.
 export ZION_GPU_MAX_BATCH="${ZION_GPU_MAX_BATCH:-32768}"
+
+# ── GPU pipelining ──────────────────────────────────────────────────────────
+# ZION_GPU_PIPELINE=0 (default) — synchronous mine_batch: blocks until batch
+# is done, then submits immediately with the CURRENT job_id. No staleness.
+# ZION_GPU_PIPELINE=1 — pipelined launch_batch/collect_batch: overlaps GPU
+# compute with pool I/O BUT introduces a 1-iteration lag (submit happens
+# after the next job arrives → pool already rotated → StaleJob rejects).
+# Keep DISABLED for pools that rotate job_id every few seconds.
+export ZION_GPU_PIPELINE="${ZION_GPU_PIPELINE:-0}"
 
 # ── Wallet resolution ──────────────────────────────────────────────────────
 WALLET_ADDRESS="${WALLET_ADDRESS:-}"
@@ -155,7 +190,7 @@ if [[ "${ZION_AUTONOMOUS:-0}" == "1" ]]; then
     echo "  Autonomous: ON (auto-selects profit coins | electricity=\$${ZION_ELECTRICITY_PRICE}/kWh)"
     echo "  Triple Stream: ZION GPU + AUTO GPU coin + AUTO CPU coin"
 else
-    echo "  Triple Stream: ZION GPU + VRSC CPU (Stream 2/KawPow OFF — 6GB VRAM)"
+    echo "  Triple Stream: ZION GPU (Deeksha) + ${ZION_STREAM2_FORCE_COIN:-ZANO} GPU + ${ZION_MINER_CPU_COIN:-VRSC} CPU"
 fi
 echo "  Tuning: AUTO (detects GPU CUs/VRAM, CPU cores, RAM)"
 echo "  Sticky Header: ON (Claymore-style fixed metrics)"

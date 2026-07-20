@@ -61,14 +61,15 @@ ZION_ROUTING_METRICS_BIND=127.0.0.1:8455
 # issue only external jobs or omit ZION from the work assignment.
 ZION_BACKEND_AUTO_INCLUDE_ZION=1
 ZION_POOL_AUXPOW_ENABLED=1
-ZION_POOL_AUXPOW_COIN=RVN
+ZION_POOL_AUXPOW_COIN=ZANO
+ZION_POOL_AUXPOW_WALLET_ZANO=ZxCj5kQhNdW7xtt4hDTotBPGUsWYKRdtdPTFXjzFpPpf6q42rCVXcYnTtHRYGj3pzz2LUqCnvVoRzFn9zfZdCSzC1CkBiHYrg
 ZION_POOL_AUXPOW_SPLIT_ZION=4
 ZION_POOL_AUXPOW_SPLIT_EXTERNAL=1
 # ZION_POOL_AUXPOW_WALLET is the fallback wallet for external AuxPoW pools.
 # It must match the payout currency of the pool you actually connect to.
 # The default below is a BTC address (suitable for NiceHash-style BTC-payout
-# pools). If you mine a coin that pays out in that coin (e.g. RVN → RVN
-# address), set ZION_POOL_AUXPOW_WALLET_RVN securely on the server, NOT here.
+# pools). If you mine a coin that pays out in that coin (e.g. ZANO → ZANO
+# address), set ZION_POOL_AUXPOW_WALLET_ZANO securely on the server, NOT here.
 ZION_POOL_AUXPOW_WALLET=bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh
 ZION_POOL_AUXPOW_WORKER_NAME=zion-pool
 ZION_POOL_AUXPOW_POOL_PREFERENCE=default
@@ -126,10 +127,15 @@ ZION_BLOCK_RETENTION=10000
 # Set them securely on the server (e.g. in the systemd EnvironmentFile override)
 # and never commit pool passwords or private payout addresses to git.
 
+# ── GPU AuxPow Bridge (ZANO / ProgPoWZ) ──
+# Zano uses ProgPoWZ (ProgPow 0.9.2 with permuted math ops) on HeroMiners.
+# ZANO pays in ZANO, not BTC. Wallet set above and on Edge server.
+# ZION_POOL_AUXPOW_WALLET_ZANO is set at line 65 (local) + /etc/zion/edge-environment.sh (Edge).
+#
 # ── CPU AuxPow Bridge (VRSC / VerusHash — Claymore triple parallel) ──
 # Second AuxPow bridge for CPU-only coins. Connects to LuckPool (VRSC)
 # and embeds jobs as `external_stream_cpu` in Job messages.
-# Miner runs ZION (GPU) + EPIC (GPU) + VRSC (CPU) simultaneously.
+# Miner runs ZION (GPU) + EPIC/ZANO (GPU) + VRSC (CPU) simultaneously.
 ZION_POOL_AUXPOW_CPU_COIN="VRSC"
 ZION_POOL_AUXPOW_CPU_WALLET="RLFQYsdd8wGGUgMgk17WrqdGNtkAVSCfDQ"
 ZION_POOL_AUXPOW_CPU_WORKER_NAME="zion_triple"

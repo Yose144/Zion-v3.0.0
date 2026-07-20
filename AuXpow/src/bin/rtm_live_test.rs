@@ -126,7 +126,8 @@ async fn main() {
                             let nonce_le = (nonce as u32).to_le_bytes();
                             work[nonce_offset..nonce_offset + 4].copy_from_slice(&nonce_le);
                             let hash = zion_native_ffi::ghostrider::hash(&work, nonce);
-                            if meets_target_little_endian(&hash, &target) {
+                            let pfx = hash[30] | hash[31];
+                            if pfx == 0 && meets_target_little_endian(&hash, &target) {
                                 found_flag.store(true, Ordering::Relaxed);
                                 found_nonce.store(nonce, Ordering::Relaxed);
                                 *found_hash.lock().unwrap() = hash;

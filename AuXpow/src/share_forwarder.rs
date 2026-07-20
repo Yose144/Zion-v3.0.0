@@ -11,7 +11,7 @@ use std::sync::Arc;
 use crate::auxpow_client::{AuxPowClient, ShareResult};
 use crate::external_hashers::{
     ethash_final_hash, ethash_header_hash, hash_blake3, hash_to_hex, meets_randomx_target,
-    meets_target, meets_target_little_endian,
+    meets_target, meets_target_little_endian, progpow_final_hash,
 };
 use crate::types::{ExternalCoin, ShareForwardResult};
 
@@ -37,7 +37,16 @@ fn is_dag_algorithm(algo: &str) -> bool {
             | "meowpow_mewc"
             | "progpow"
             | "progpow_epic"
+            | "progpowz"
+            | "progpow_zano"
     )
+}
+
+/// ProgPow variants that use keccak-f800 for the final hash (instead of
+/// Ethash's keccak-512/256). EPIC and Zano share the 0.9.2 structure but
+/// Zano uses a permuted math op table.
+fn is_progpow_algorithm(algo: &str) -> bool {
+    matches!(algo, "progpow" | "progpow_epic" | "progpowz" | "progpow_zano")
 }
 
 /// Forwards shares to the external pool currently selected by the multiplexer.
@@ -81,7 +90,11 @@ impl ShareForwarder {
             if let Some(mix) = mix_hash {
                 if !header_bytes.is_empty() {
                     let header_hash = ethash_header_hash(header_bytes);
-                    let real_hash = ethash_final_hash(&header_hash, nonce, mix);
+                    let real_hash = if is_progpow_algorithm(algorithm) {
+                        progpow_final_hash(&header_hash, nonce, mix)
+                    } else {
+                        ethash_final_hash(&header_hash, nonce, mix)
+                    };
                     if real_hash != *hash {
                         println!(
                             "auxpow: dag_hash_recomputed algo={} nonce={} kernel_hash={:.16} real_hash={:.16} mix={:.16}",
@@ -122,12 +135,19 @@ impl ShareForwarder {
             // LuckPool) interpret the 32-byte hash as a little-endian integer.
             meets_target_little_endian(&effective_hash, target)
         } else if self.client.profile().coin == ExternalCoin::RTM {
-            // GhostRider (Raptoreum): wrapper outputs hash in LE, target from pool is BE.
-            // Compare hash reversed to BE against BE target.
-            let meets_rtm = meets_target_little_endian(&effective_hash, target);
+            // GhostRider (Raptoreum): wrapper outputs hash in LE (gr_hash order,
+            // same as yiimp's hash_bin), target from pool is BE.
+            // yiimp's validation has two checks:
+            //   1. Error 25 sanity: hash[30] | hash[31] must be 0 (hash < 2^240)
+            //   2. Target: get_hash_difficulty(hash) <= get_hash_difficulty(target)
+            //      where get_hash_difficulty reads bytes 22-29 as LE uint64.
+            // A full 256-bit LE<=BE comparison is equivalent when both top bytes
+            // of the hash are zero (which check 1 enforces).
+            let pfx = effective_hash[30] | effective_hash[31];
+            let meets_rtm = pfx == 0 && meets_target_little_endian(&effective_hash, target);
             println!(
-                "auxpow: RTM try_forward job_id={} nonce={} meets={} hash_hex={:.16} target_hex={:.16}",
-                job_id, nonce, meets_rtm,
+                "auxpow: RTM try_forward job_id={} nonce={} meets={} pfx=0x{:02x} hash_hex={:.16} target_hex={:.16}",
+                job_id, nonce, meets_rtm, pfx,
                 hash_to_hex(&effective_hash),
                 hash_to_hex(target),
             );

@@ -1065,8 +1065,8 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
     </div>
 
-    <!-- Service Cards (top 4) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Service Cards (top 3) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div id="card-node1" class="zion-panel zion-panel-hover svc-card p-5">
         <div class="flex items-center justify-between mb-3 relative z-10">
           <span class="zion-kicker">🔷 Node 1</span>
@@ -1119,55 +1119,177 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         </div>
       </div>
 
-      <div id="card-pool" class="zion-panel zion-panel-hover svc-card p-5">
-        <div class="flex items-center justify-between mb-3 relative z-10">
-          <span class="zion-kicker">⚡ Pool</span>
-          <span id="badge-pool" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
-        </div>
-        <div class="text-4xl font-bold mb-1 text-emerald-400 relative z-10" id="val-pool-sessions">—</div>
-        <div class="text-xs text-gray-400 mb-3 relative z-10">Active Sessions</div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">Blocks: <span id="val-pool-blocks" class="text-emerald-400 font-semibold">—</span></div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">Shares: <span id="val-pool-shares" class="text-white font-semibold">—</span></div>
-        <div class="text-xs text-amber-400 mb-3 relative z-10 font-mono" id="val-pool-fee">—</div>
-        <div class="flex gap-1.5 relative z-10">
-          <button onclick="controlAction('start-pool')" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">▶ Start</button>
-        </div>
-      </div>
-
     </div>
 
-    <!-- Connected Miners (Edge Pool) -->
-    <div id="card-connected-miners" class="zion-panel p-5 mb-4">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-base font-bold flex items-center gap-2">
-          ⛏️ Connected Miners
-          <span id="connected-miners-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300">—</span>
-        </h2>
-        <div class="flex gap-3 text-xs text-gray-400">
-          <span>Hashrate: <strong id="cm-total-hashrate" class="text-amber-400">—</strong></span>
-          <span>Active: <strong id="cm-active-count" class="text-emerald-400">—</strong></span>
-          <span>Tracked: <strong id="cm-tracked-count" class="text-gray-300">—</strong></span>
+    <!-- ═══════ Pool Command Center (unified) ═══════ -->
+    <div id="card-pool-command" class="zion-panel p-5 mb-4 border border-zion-700/50">
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <h2 class="text-lg font-bold flex items-center gap-2">🌐 ZION Pool Command Center</h2>
+          <span id="badge-pool-cc" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+          <span id="pool-cc-uptime" class="text-[10px] text-gray-500 font-mono">—</span>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="loadPoolMinersTab()" class="text-[10px] px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md font-semibold transition">📋 Miners Tab</button>
+          <button onclick="restartEdgePool()" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart Pool</button>
+          <a href="http://62.171.141.136:8455" target="_blank" class="text-[10px] px-2.5 py-1 bg-teal-700/40 hover:bg-teal-600 rounded-md font-semibold transition text-teal-300">📈 Metrics</a>
         </div>
       </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-xs text-left">
-          <thead>
-            <tr class="text-gray-500 border-b border-white/10">
-              <th class="py-2 px-2">Miner ID</th>
-              <th class="py-2 px-2">Worker</th>
-              <th class="py-2 px-2 text-right">Hashrate</th>
-              <th class="py-2 px-2 text-right">Valid</th>
-              <th class="py-2 px-2 text-right">Invalid</th>
-              <th class="py-2 px-2 text-right">Blocks</th>
-              <th class="py-2 px-2 text-right">Paid (ZION)</th>
-              <th class="py-2 px-2 text-right">On-Chain (ZION)</th>
-              <th class="py-2 px-2 text-right">Status / Last Seen</th>
-            </tr>
-          </thead>
-          <tbody id="connected-miners-tbody">
-            <tr><td colspan="9" class="text-gray-500 text-center py-4">Loading miners from Edge pool…</td></tr>
-          </tbody>
-        </table>
+
+      <!-- KPI Row (6 metrics) -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+        <div class="bg-black/30 rounded-lg p-3 text-center border border-white/5">
+          <div class="text-2xl font-bold text-amber-400" id="pcc-hashrate">—</div>
+          <div class="text-[10px] text-gray-400">Hashrate</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center border border-white/5">
+          <div class="text-2xl font-bold text-emerald-400" id="pcc-miners">—</div>
+          <div class="text-[10px] text-gray-400">Active Miners</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center border border-white/5">
+          <div class="text-2xl font-bold text-zion-gold" id="pcc-blocks">—</div>
+          <div class="text-[10px] text-gray-400">Blocks Found</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center border border-white/5">
+          <div class="text-2xl font-bold text-cyan-400" id="pcc-shares">—</div>
+          <div class="text-[10px] text-gray-400">Shares Acc/Rej</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center border border-white/5">
+          <div class="text-2xl font-bold text-purple-400" id="pcc-accept-rate">—</div>
+          <div class="text-[10px] text-gray-400">Accept Rate</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center border border-white/5">
+          <div class="text-2xl font-bold text-blue-400" id="pcc-pplns-window">—</div>
+          <div class="text-[10px] text-gray-400">PPLNS Window</div>
+        </div>
+      </div>
+
+      <!-- Two-column: Config + Fee Distribution -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <!-- Pool Config -->
+        <div class="bg-black/20 rounded-lg p-4 border border-white/5">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-3">⚙️ Pool Configuration</h3>
+          <div class="space-y-1.5 text-xs">
+            <div class="flex justify-between"><span class="text-gray-400">Stratum</span><span id="pcc-stratum" class="font-mono text-white">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Public IP</span><span id="pcc-public-ip" class="font-mono text-white">62.171.141.136</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">RPC Port</span><span class="font-mono text-white">8443</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Metrics Port</span><span class="font-mono text-white">8455</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Pool Wallet</span><span id="pcc-wallet" class="font-mono text-white truncate max-w-[200px]" title="">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Payout</span><span id="pcc-payout" class="text-emerald-400">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Registered Miners</span><span id="pcc-registered" class="text-white">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Open Ports</span><span id="pcc-ports" class="text-emerald-400 text-[10px]">—</span></div>
+          </div>
+        </div>
+
+        <!-- Fee Distribution (89/5/5/1 burn model) -->
+        <div class="bg-black/20 rounded-lg p-4 border border-white/5">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-3">💰 Fee Distribution <span id="pcc-fee-split" class="text-amber-400">—</span></h3>
+          <div class="space-y-2.5">
+            <!-- Miner 89% -->
+            <div>
+              <div class="flex justify-between text-[10px] mb-0.5">
+                <span class="text-gray-400">Miners</span>
+                <span id="pcc-fee-miner-pct" class="text-emerald-400 font-bold">89%</span>
+              </div>
+              <div class="h-2 bg-black/40 rounded-full overflow-hidden">
+                <div id="pcc-bar-miner" class="h-full bg-emerald-500/70 transition-all duration-500" style="width:89%"></div>
+              </div>
+            </div>
+            <!-- Humanitarian 5% -->
+            <div>
+              <div class="flex justify-between text-[10px] mb-0.5">
+                <span class="text-gray-400">Humanitarian (L5)</span>
+                <span id="pcc-fee-human-pct" class="text-blue-400 font-bold">5%</span>
+              </div>
+              <div class="h-2 bg-black/40 rounded-full overflow-hidden">
+                <div id="pcc-bar-human" class="h-full bg-blue-500/70 transition-all duration-500" style="width:5%"></div>
+              </div>
+            </div>
+            <!-- Issobella 5% -->
+            <div>
+              <div class="flex justify-between text-[10px] mb-0.5">
+                <span class="text-gray-400">Issobella (L6)</span>
+                <span id="pcc-fee-issobella-pct" class="text-purple-400 font-bold">5%</span>
+              </div>
+              <div class="h-2 bg-black/40 rounded-full overflow-hidden">
+                <div id="pcc-bar-issobella" class="h-full bg-purple-500/70 transition-all duration-500" style="width:5%"></div>
+              </div>
+            </div>
+            <!-- Pool 1% -->
+            <div>
+              <div class="flex justify-between text-[10px] mb-0.5">
+                <span class="text-gray-400">Pool Fee</span>
+                <span id="pcc-fee-pool-pct" class="text-amber-400 font-bold">1%</span>
+              </div>
+              <div class="h-2 bg-black/40 rounded-full overflow-hidden">
+                <div id="pcc-bar-pool" class="h-full bg-amber-500/70 transition-all duration-500" style="width:1%"></div>
+              </div>
+            </div>
+            <!-- Burned totals -->
+            <div class="pt-2 border-t border-white/5 text-[10px] space-y-1">
+              <div class="flex justify-between"><span class="text-gray-500">Humanitarian burned</span><span id="pcc-burned-human" class="text-blue-400 font-mono">0 ZION</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">Issobella burned</span><span id="pcc-burned-issobella" class="text-purple-400 font-mono">0 ZION</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">Pool fee collected</span><span id="pcc-burned-pool" class="text-amber-400 font-mono">0 ZION</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PPLNS Round Stats -->
+      <div class="bg-black/20 rounded-lg p-4 mb-4 border border-white/5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300">⛏️ PPLNS Round Stats</h3>
+          <span id="pcc-pplns-rounds" class="text-[10px] text-gray-500">— rounds</span>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Window Size</span><span id="pcc-pplns-size" class="text-white font-mono">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Window Used</span><span id="pcc-pplns-used" class="text-cyan-400 font-mono">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Total Paid</span><span id="pcc-pplns-paid" class="text-emerald-400 font-mono">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Payout Rounds</span><span id="pcc-pplns-rounds-count" class="text-amber-400 font-mono">—</span></div>
+        </div>
+        <!-- PPLNS window progress bar -->
+        <div class="mt-3">
+          <div class="h-1.5 bg-black/40 rounded-full overflow-hidden">
+            <div id="pcc-pplns-bar" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500" style="width:0%"></div>
+          </div>
+          <div class="text-[10px] text-gray-500 mt-1" id="pcc-pplns-bar-label">—</div>
+        </div>
+      </div>
+
+      <!-- Connected Miners Table (inline) -->
+      <div class="bg-black/20 rounded-lg p-4 border border-white/5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">
+            ⛏️ Connected Miners
+            <span id="connected-miners-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300">—</span>
+          </h3>
+          <div class="flex gap-3 text-xs text-gray-400">
+            <span>Hashrate: <strong id="cm-total-hashrate" class="text-amber-400">—</strong></span>
+            <span>Active: <strong id="cm-active-count" class="text-emerald-400">—</strong></span>
+            <span>Tracked: <strong id="cm-tracked-count" class="text-gray-300">—</strong></span>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead>
+              <tr class="text-gray-500 border-b border-white/10">
+                <th class="py-2 px-2">Miner ID</th>
+                <th class="py-2 px-2">Worker</th>
+                <th class="py-2 px-2 text-right">Hashrate</th>
+                <th class="py-2 px-2 text-right">Valid</th>
+                <th class="py-2 px-2 text-right">Invalid</th>
+                <th class="py-2 px-2 text-right">Blocks</th>
+                <th class="py-2 px-2 text-right">Paid (ZION)</th>
+                <th class="py-2 px-2 text-right">On-Chain (ZION)</th>
+                <th class="py-2 px-2 text-right">Status / Last Seen</th>
+              </tr>
+            </thead>
+            <tbody id="connected-miners-tbody">
+              <tr><td colspan="9" class="text-gray-500 text-center py-4">Loading miners from pool…</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -1298,58 +1420,31 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
     </div>
 
-    <!-- Live Metrics + Edge Pool -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <!-- Built-in Metrics Charts -->
-      <div class="zion-panel p-5 lg:col-span-2 overflow-hidden">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-base font-bold flex items-center gap-2">📊 Live Metrics</h2>
-          <div class="flex gap-2 items-center">
-            <span id="grafana-status" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/40 text-emerald-300">Built-in</span>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <div class="text-[10px] text-gray-400 uppercase mb-1">Block Height (Core vs Edge)</div>
-            <div style="position:relative;height:120px;"><canvas id="chart-overview-height"></canvas></div>
-          </div>
-          <div>
-            <div class="text-[10px] text-gray-400 uppercase mb-1">Shares Accepted/Rejected</div>
-            <div style="position:relative;height:120px;"><canvas id="chart-overview-shares"></canvas></div>
-          </div>
-          <div>
-            <div class="text-[10px] text-gray-400 uppercase mb-1">Active Pool Sessions</div>
-            <div style="position:relative;height:120px;"><canvas id="chart-overview-sessions"></canvas></div>
-          </div>
-          <div>
-            <div class="text-[10px] text-gray-400 uppercase mb-1">Resource Usage (%)</div>
-            <div style="position:relative;height:120px;"><canvas id="chart-overview-resources"></canvas></div>
-          </div>
+    <!-- Live Metrics (full width — Edge Pool panel merged into Pool Command Center) -->
+    <div class="zion-panel p-5 overflow-hidden">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">📊 Live Metrics</h2>
+        <div class="flex gap-2 items-center">
+          <span id="grafana-status" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/40 text-emerald-300">Built-in</span>
         </div>
       </div>
-
-      <!-- Edge Pool Detail Panel -->
-      <div class="zion-panel p-5">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-base font-bold flex items-center gap-2">🌐 Edge Pool</h2>
-          <span id="badge-pool-edge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <div class="text-[10px] text-gray-400 uppercase mb-1">Block Height (Core vs Edge)</div>
+          <div style="position:relative;height:120px;"><canvas id="chart-overview-height"></canvas></div>
         </div>
-        <div class="text-center mb-3">
-          <div class="text-3xl font-bold mb-1" id="val-pool-edge-status">—</div>
-          <div class="text-xs text-gray-400">Status</div>
+        <div>
+          <div class="text-[10px] text-gray-400 uppercase mb-1">Shares Accepted/Rejected</div>
+          <div style="position:relative;height:120px;"><canvas id="chart-overview-shares"></canvas></div>
         </div>
-        <div class="space-y-2 text-xs">
-          <div class="flex justify-between"><span class="text-gray-400">Host</span><span id="val-pool-edge-host" class="font-mono text-white">—</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">Public IP</span><span class="font-mono text-white">62.171.141.136</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">Pool Port</span><span id="val-pool-edge-port" class="font-mono text-white">—</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">RPC Port</span><span class="font-mono text-white">8443</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">Miners</span><span id="val-pool-edge-miners" class="text-emerald-400 font-bold">—</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">Hashrate</span><span id="val-pool-edge-hashrate" class="text-amber-400 font-bold">—</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">Blocks</span><span id="val-pool-edge-blocks" class="text-zion-gold font-bold">—</span></div>
+        <div>
+          <div class="text-[10px] text-gray-400 uppercase mb-1">Active Pool Sessions</div>
+          <div style="position:relative;height:120px;"><canvas id="chart-overview-sessions"></canvas></div>
         </div>
-        <hr class="zion-divider my-3">
-        <div class="text-[10px] text-gray-500 mb-1">Open Ports</div>
-        <div id="val-pool-edge-ports" class="flex flex-wrap gap-1"></div>
+        <div>
+          <div class="text-[10px] text-gray-400 uppercase mb-1">Resource Usage (%)</div>
+          <div style="position:relative;height:120px;"><canvas id="chart-overview-resources"></canvas></div>
+        </div>
       </div>
     </div>
 

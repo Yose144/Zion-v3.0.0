@@ -14,16 +14,16 @@
 //! Linux (the same environment used for SMOS builds). On other platforms it
 //! compiles to a stub that prints this message.
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(all(target_os = "linux", feature = "native-hashers")))]
 fn main() {
     eprintln!(
-        "gen_dag helper is only supported on Linux (OpenMP runtime required). \
+        "gen_dag helper is only supported on Linux with the native-hashers feature. \
          Run it on the build server with: cargo run --release -p zion-auxpow --example gen_dag --features native-hashers -- <epoch> <out.bin>"
     );
     std::process::exit(1);
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", feature = "native-hashers"))]
 fn main() -> anyhow::Result<()> {
     use std::fs;
     let args: Vec<String> = std::env::args().collect();

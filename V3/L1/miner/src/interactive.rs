@@ -1494,11 +1494,505 @@ pub(crate) fn draw_dashboard(
     Ok(())
 }
 
+struct DashboardFrame<'a> {
+    out: &'a mut TtyWriter,
+    width: usize,
+    lines: usize,
+}
+
+impl<'a> DashboardFrame<'a> {
+    fn new(out: &'a mut TtyWriter, width: usize) -> Self {
+        Self { out, width, lines: 0 }
+    }
+
+    fn top(&mut self) -> io::Result<()> {
+        queue!(
+            self.out,
+            SetForegroundColor(Color::DarkGrey),
+            Print(format!("\r┌{}┐\n", "─".repeat(self.width))),
+            ResetColor,
+        )?;
+        self.lines += 1;
+        Ok(())
+    }
+
+    fn title(&mut self, text: &str) -> io::Result<()> {
+        let title = dashboard_center(text, self.width);
+        queue!(
+            self.out,
+            SetBackgroundColor(Color::Rgb { r: 0, g: 42, b: 78 }),
+            SetForegroundColor(Color::White),
+            Print(format!("\r│{}│\n", title)),
+            ResetColor,
+        )?;
+        self.lines += 1;
+        Ok(())
+    }
+
+    fn rule(&mut self, label: &str, accent: Color) -> io::Result<()> {
+        let label = format!(" {} ", dashboard_clip(label, self.width.saturating_sub(3)));
+        let fill_len = self.width.saturating_sub(1 + label.chars().count());
+        queue!(
+            self.out,
+            SetForegroundColor(Color::DarkGrey),
+            Print("\r├─"),
+            SetForegroundColor(accent),
+            Print(label),
+            SetForegroundColor(Color::DarkGrey),
+            Print(format!("{}┤\n", "─".repeat(fill_len))),
+            ResetColor,
+        )?;
+        self.lines += 1;
+        Ok(())
+    }
+
+    fn plain(&mut self, text: &str, color: Color) -> io::Result<()> {
+        self.parts(&[(color, text.to_string())])
+    }
+
+    fn parts(&mut self, parts: &[(Color, String)]) -> io::Result<()> {
+        queue!(self.out, Print("\r│"))?;
+        let mut used = 0usize;
+        for (color, text) in parts {
+            if used >= self.width {
+                break;
+            }
+            let clipped = dashboard_clip(text, self.width - used);
+            if clipped.is_empty() {
+                continue;
+            }
+            used += clipped.chars().count();
+            queue!(
+                self.out,
+                SetForegroundColor(color.clone()),
+                Print(clipped),
+            )?;
+        }
+        if used < self.width {
+            queue!(
+                self.out,
+                ResetColor,
+                Print(" ".repeat(self.width - used)),
+            )?;
+        }
+        queue!(self.out, ResetColor, Print("│\n"))?;
+        self.lines += 1;
+        Ok(())
+    }
+
+    fn bottom(&mut self) -> io::Result<()> {
+        queue!(
+            self.out,
+            SetForegroundColor(Color::DarkGrey),
+            Print(format!("\r└{}┘", "─".repeat(self.width))),
+            ResetColor,
+        )?;
+        self.lines += 1;
+        Ok(())
+    }
+}
+
+fn dashboard_clip(text: &str, width: usize) -> String {
+    text.chars().take(width).collect()
+}
+
+fn dashboard_pad(text: &str, width: usize) -> String {
+    let clipped = dashboard_clip(text, width);
+    format!("{}{}", clipped, " ".repeat(width.saturating_sub(clipped.chars().count())))
+}
+
+fn dashboard_center(text: &str, width: usize) -> String {
+    let clipped = dashboard_clip(text, width);
+    let padding = width.saturating_sub(clipped.chars().count());
+    let left = padding / 2;
+    format!("{}{}{}", " ".repeat(left), clipped, " ".repeat(padding - left))
+}
+
+fn dashboard_rate(hps: f64) -> String {
+    let (value, unit) = ui::fmt_hashrate(hps);
+    format!("{} {}", value, unit)
+}
+
+fn dashboard_short_algo(algo: &str) -> &str {
+    match algo.to_ascii_lowercase().as_str() {
+        "ghostrider" => "Ghostrider",
+        "randomx" => "RandomX",
+        "verushash" => "VerusHash",
+        "kawpow" => "KawPow",
+        "autolykos" => "Autolykos",
+        "kheavyhash" => "KHeavyHash",
+        _ => algo_display(algo),
+    }
+}
+
+fn dashboard_efficiency(accepted: u64, rejected: u64) -> String {
+    let total = accepted.saturating_add(rejected);
+    if total == 0 {
+        "-".to_string()
+    } else {
+        format!("{:.0}%", accepted as f64 * 100.0 / total as f64)
+    }
+}
+
+fn dashboard_share_reason(reason: &str) -> String {
+    let lower = reason.to_ascii_lowercase();
+    if lower.contains("invalid share") {
+        "invalid".to_string()
+    } else if lower.contains("stale") {
+        "stale".to_string()
+    } else if lower.contains("job not found") {
+        "job missing".to_string()
+    } else {
+        dashboard_clip(reason.trim(), 14)
+    }
+}
+
+fn dashboard_stream_row(
+    frame: &mut DashboardFrame<'_>,
+    number: usize,
+    label: &str,
+    description: &str,
+    rate_hps: f64,
+    active: bool,
+    accepted: u64,
+    rejected: u64,
+    label_color: Color,
+) -> io::Result<()> {
+    let prefix = format!(" {}  {:<9} ", number, label);
+    let description = dashboard_pad(description, 18);
+    let rate = dashboard_pad(
+        &format!("{:>11}", if active { dashboard_rate(rate_hps) } else { "-".to_string() }),
+        11,
+    );
+    let shares = format!("{:>5}", format!("{}/{}", accepted, rejected));
+    let efficiency = format!("{:>5}", dashboard_efficiency(accepted, rejected));
+    let share_color = if rejected > 0 { Color::Red } else if accepted > 0 { Color::Green } else { Color::DarkGrey };
+    frame.parts(&[
+        (label_color, prefix),
+        (Color::DarkGrey, format!("{} ", description)),
+        (if active { Color::White } else { Color::DarkGrey }, rate),
+        (Color::DarkGrey, " ".to_string()),
+        (share_color.clone(), shares),
+        (Color::DarkGrey, " ".to_string()),
+        (share_color, efficiency),
+    ])
+}
+
+pub(crate) fn draw_dashboard_redesign(
+    control: &MinerControl,
+    rates: &ComputedHashrates,
+    uptime_secs: u64,
+    pool_height: u64,
+    gpu_info: &[GpuInfoLine],
+    metrics: &Arc<Mutex<crate::MinerMetricsSnapshot>>,
+    hashrate: &Arc<HashrateTracker>,
+) -> io::Result<()> {
+    let mut out = tty();
+    let previous_lines = PREV_FRAME_LINES.load(Ordering::Relaxed);
+    if previous_lines > 0 {
+        write!(out, "\x1b[{}A\r\x1b[J", previous_lines)?;
+    } else {
+        write!(out, "\x1b[2J\x1b[H")?;
+    }
+
+    let (term_cols, term_rows) = {
+        let override_w = std::env::var("ZION_TUI_WIDTH")
+            .ok()
+            .and_then(|s| s.parse::<u16>().ok())
+            .filter(|&w| w >= 40);
+        if let Some(width) = override_w {
+            let height = terminal::size().map(|(_, h)| h).unwrap_or(24);
+            (width, height)
+        } else {
+            let mut ws = libc_winsize {
+                ws_row: 0,
+                ws_col: 0,
+                ws_xpixel: 0,
+                ws_ypixel: 0,
+            };
+            let tty_fd = std::fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .open("/dev/tty")
+                .ok();
+            let got_size = tty_fd.as_ref().map(|file| {
+                use std::os::unix::io::AsRawFd;
+                unsafe { ioctl_tiocgwinsz(file.as_raw_fd(), &mut ws) == 0 }
+            }).unwrap_or(false);
+            if got_size && ws.ws_col > 0 && ws.ws_row > 0 {
+                (ws.ws_col, ws.ws_row)
+            } else {
+                terminal::size().unwrap_or((80, 24))
+            }
+        }
+    };
+    let width = (term_cols as usize).clamp(40, 80).saturating_sub(2);
+    let available_rows = term_rows as usize;
+    let show_metrics = control.show_metrics && available_rows >= 24;
+    let show_online = control.show_online
+        && available_rows >= 24
+        && (!show_metrics || available_rows >= 32);
+    let compact_panel = show_metrics || show_online;
+    let show_sparkline = !compact_panel && available_rows >= 24;
+    let show_gpu = !compact_panel && (!gpu_info.is_empty() || available_rows >= 27);
+    let max_log_entries = if compact_panel {
+        1
+    } else if available_rows >= 40 {
+        5
+    } else if available_rows >= 32 {
+        4
+    } else if available_rows >= 27 {
+        3
+    } else {
+        2
+    };
+    let tui_metrics = metrics.lock().map(|snapshot| snapshot.as_tui()).unwrap_or_default();
+    let peak_hashrate = if tui_metrics.hashrate_max > 0.0 {
+        tui_metrics.hashrate_max
+    } else {
+        rates.total_10s_hps
+    };
+
+    let gpu_actual = hashrate.gpu_ext_coin.lock().map(|coin| coin.clone()).unwrap_or_default();
+    let cpu_actual = hashrate.cpu_ext_coin.lock().map(|coin| coin.clone()).unwrap_or_default();
+    let gpu_algo = hashrate.gpu_ext_algorithm.lock().map(|algo| algo.clone()).unwrap_or_default();
+    let cpu_algo = hashrate.cpu_ext_algorithm.lock().map(|algo| algo.clone()).unwrap_or_default();
+    let gpu_coin = if gpu_actual.is_empty() {
+        if control.gpu_coin.is_empty() { "AUTO".to_string() } else { control.gpu_coin.clone() }
+    } else {
+        gpu_actual
+    };
+    let cpu_coin = if cpu_actual.is_empty() {
+        if control.cpu_coin.is_empty() { "AUTO".to_string() } else { control.cpu_coin.clone() }
+    } else {
+        cpu_actual
+    };
+    let gpu_active = hashrate.gpu_ext_active.load(Ordering::Relaxed) == 1;
+    let cpu_active = hashrate.cpu_ext_active.load(Ordering::Relaxed) == 1;
+    let online = hashrate.online_snapshot.lock().map(|snapshot| snapshot.clone()).unwrap_or_default();
+
+    let mut frame = DashboardFrame::new(&mut out, width);
+    frame.top()?;
+    frame.title(&format!(
+        "ZION MINER  |  TRIPLE STREAM  |  {}",
+        algo_display(&control.algorithm),
+    ))?;
+
+    let (status, status_color) = if control.pause {
+        ("o PAUSED", Color::Yellow)
+    } else {
+        ("* RUNNING", Color::Green)
+    };
+    let mode = match control.mode {
+        MiningMode::CpuOnly => "CPU",
+        MiningMode::GpuOnly => "GPU",
+        MiningMode::Dual => "DUAL",
+    };
+    let backend = if control.gpu_enabled && !gpu_info.is_empty() {
+        "OPENCL"
+    } else if control.gpu_enabled {
+        "GPU"
+    } else {
+        "CPU"
+    };
+    frame.parts(&[
+        (status_color, format!(" {}", status)),
+        (Color::DarkGrey, format!("  {}  {}  UP {}", mode, backend, fmt_hms(uptime_secs))),
+    ])?;
+
+    frame.rule("HASHRATE", Color::Cyan)?;
+    frame.parts(&[
+        (Color::DarkGrey, "  10s ".to_string()),
+        (Color::White, format!("{:>10}", dashboard_rate(rates.total_10s_hps))),
+        (Color::DarkGrey, "   60s ".to_string()),
+        (Color::White, format!("{:>10}", dashboard_rate(rates.total_60s_hps))),
+        (Color::DarkGrey, "   peak ".to_string()),
+        (Color::Green, format!("{:>10}", dashboard_rate(peak_hashrate))),
+    ])?;
+    if show_sparkline {
+        let spark = render_sparkline(&hashrate.get_hr_history(), width.saturating_sub(8));
+        frame.parts(&[(Color::DarkGrey, "  trend ".to_string()), (Color::Green, spark)])?;
+    }
+
+    frame.rule("STREAMS", Color::Magenta)?;
+    frame.plain(
+        &format!(" #  {:<9} {:<18} {:>11} {:>5} {:>5}", "STREAM", "ALGORITHM", "RATE", "A/R", "EFF"),
+        Color::DarkGrey,
+    )?;
+    let zion_desc = algo_display(&control.algorithm).to_string();
+    dashboard_stream_row(
+        &mut frame,
+        1,
+        "ZION",
+        &zion_desc,
+        rates.zion_10s_hps,
+        true,
+        rates.zion_accepted,
+        rates.zion_rejected,
+        Color::White,
+    )?;
+    let gpu_desc = if gpu_active {
+        format!("{} / {}", gpu_coin, dashboard_short_algo(&gpu_algo))
+    } else {
+        "idle".to_string()
+    };
+    dashboard_stream_row(
+        &mut frame,
+        2,
+        "GPU",
+        &gpu_desc,
+        rates.gpu_ext_10s_hps,
+        gpu_active,
+        rates.gpu_ext_accepted,
+        rates.gpu_ext_rejected,
+        Color::Magenta,
+    )?;
+    let cpu_desc = if cpu_active {
+        format!("{} / {}", cpu_coin, dashboard_short_algo(&cpu_algo))
+    } else {
+        "idle".to_string()
+    };
+    dashboard_stream_row(
+        &mut frame,
+        3,
+        "CPU",
+        &cpu_desc,
+        rates.cpu_ext_10s_hps,
+        cpu_active,
+        rates.cpu_ext_accepted,
+        rates.cpu_ext_rejected,
+        Color::Yellow,
+    )?;
+
+    frame.rule("SHARES", Color::Yellow)?;
+    let share_total = rates.accepted.saturating_add(rates.rejected);
+    let share_efficiency = if share_total > 0 {
+        format!("{:.1}%", rates.accepted as f64 * 100.0 / share_total as f64)
+    } else {
+        "-".to_string()
+    };
+    frame.parts(&[
+        (Color::DarkGrey, "  ".to_string()),
+        (Color::Green, format!("ACCEPT {:>3}", rates.accepted)),
+        (Color::DarkGrey, "   ".to_string()),
+        (Color::Red, format!("REJECT {:>3}", rates.rejected)),
+        (Color::DarkGrey, format!("   EFF {:>5}   UP {}", share_efficiency, fmt_hms(uptime_secs))),
+    ])?;
+
+    let share_log = hashrate.get_share_log();
+    for entry in share_log.iter().rev().take(max_log_entries) {
+        let symbol = if entry.accepted { "+" } else { "x" };
+        let word = if entry.accepted { "OK" } else { "REJ" };
+        let reason = dashboard_share_reason(&entry.reason);
+        let tail = format!(
+            " {} {:<4} job={:<5} {:>4}ms {}",
+            word,
+            dashboard_clip(&entry.stream, 4),
+            entry.job_id,
+            entry.latency_ms,
+            reason,
+        );
+        frame.parts(&[
+            (Color::DarkGrey, format!("  [{}] ", fmt_time(entry.timestamp))),
+            (if entry.accepted { Color::Green } else { Color::Red }, symbol.to_string()),
+            (Color::DarkGrey, tail),
+        ])?;
+    }
+    if share_log.is_empty() {
+        frame.plain("  waiting for first share...", Color::DarkGrey)?;
+    }
+
+    frame.rule("POOL", Color::Blue)?;
+    let (pool_rate, pool_unit) = ui::fmt_hashrate(online.pool_hashrate);
+    frame.parts(&[
+        (Color::DarkGrey, "  HEIGHT ".to_string()),
+        (Color::White, pool_height.to_string()),
+        (Color::DarkGrey, "   MINERS ".to_string()),
+        (Color::White, format!("{}/{}", online.active_miners, online.total_miners)),
+        (Color::DarkGrey, "   POOL ".to_string()),
+        (Color::White, format!("{} {}", pool_rate, pool_unit)),
+        (Color::DarkGrey, format!("   UP {}", fmt_hms(uptime_secs))),
+    ])?;
+
+    if show_gpu {
+        frame.rule("HARDWARE", Color::Magenta)?;
+        if gpu_info.is_empty() {
+            frame.plain("  GPU  no device detected", Color::DarkGrey)?;
+        } else {
+            for gpu in gpu_info.iter().take(2) {
+                frame.parts(&[
+                    (Color::Magenta, format!("  GPU #{}  ", gpu.index)),
+                    (Color::DarkGrey, dashboard_clip(&gpu.info, width.saturating_sub(10))),
+                ])?;
+            }
+        }
+    }
+
+    if show_metrics {
+        frame.rule("METRICS", Color::Cyan)?;
+        frame.plain(
+            &format!(
+                "  latency {:>4}/{:<4}ms   batch {:>4}ms   ttl {:>5}ms",
+                tui_metrics.submit_avg_ms.round() as u64,
+                tui_metrics.submit_max_ms,
+                tui_metrics.best_batch_ms,
+                tui_metrics.remote_ttl_ms,
+            ),
+            Color::DarkGrey,
+        )?;
+        frame.plain(
+            &format!(
+                "  iter {:>5}   nonce {:>8}   backend {:<6}   status {}",
+                tui_metrics.current_iteration,
+                tui_metrics.nonce_window,
+                dashboard_clip(&tui_metrics.backend, 6),
+                dashboard_clip(&tui_metrics.status, 12),
+            ),
+            Color::DarkGrey,
+        )?;
+    }
+
+    if show_online {
+        frame.rule("ONLINE BEST", Color::Blue)?;
+        if online.top_miners.is_empty() {
+            frame.plain("  waiting for pool telemetry...", Color::DarkGrey)?;
+        } else {
+            frame.plain("  #  WORKER          RATE       COIN  ALGO", Color::DarkGrey)?;
+            for (index, miner) in online.top_miners.iter().take(3).enumerate() {
+                let (value, unit) = ui::fmt_hashrate(miner.hashrate);
+                frame.plain(
+                    &format!(
+                        "  {:>1}  {:<14} {:>7.2} {:<3}  {:<5} {}",
+                        index + 1,
+                        dashboard_clip(&miner.worker, 14),
+                        value,
+                        unit,
+                        dashboard_clip(&miner.coin, 5),
+                        dashboard_clip(&miner.algorithm, width.saturating_sub(39)),
+                    ),
+                    Color::DarkGrey,
+                )?;
+            }
+        }
+    }
+
+    frame.rule("CONTROLS", Color::DarkGrey)?;
+    frame.plain("  [a]algo [p]pause [r]reconnect [q]quit", Color::DarkGrey)?;
+    frame.plain("  [c/g]cpu/gpu [d]dual [C/G]coins [m/o]panels [1-9]threads", Color::DarkGrey)?;
+    frame.bottom()?;
+
+    let lines_this_frame = frame.lines;
+    drop(frame);
+    out.flush()?;
+    PREV_FRAME_LINES.store(lines_this_frame, Ordering::Relaxed);
+    Ok(())
+}
+
 /* ========================================================================= */
 /* Pro-style dashboard helpers                                               */
 /* ========================================================================= */
 
-const SPARK_CHARS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+const SPARK_CHARS: &[char] = &['.', ':', '-', '=', '+', '*', '#', '@'];
 
 fn render_sparkline(history: &[f64], width: usize) -> String {
     if history.is_empty() || width == 0 {
@@ -1709,7 +2203,7 @@ pub(crate) fn run_interactive(
 
             // Sample hashrate history for sparkline graph
             dashboard_hashrate.sample_hr_history();
-            let _ = draw_dashboard(
+            let _ = draw_dashboard_redesign(
                 &control_snapshot,
                 &rates,
                 uptime,

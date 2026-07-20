@@ -369,16 +369,43 @@ EXPORT uint32_t ethash_get_epoch(uint32_t block_number) {
     return block_number / ETHASH_EPOCH_LENGTH;
 }
 
-/* Get cache size for epoch (light-mode fallback) */
-EXPORT uint64_t ethash_get_cache_size(uint32_t epoch) {
-    uint64_t size = 16 * 1024 * 1024 + (uint64_t)epoch * 128 * 1024;
-    return (size / 64) * 64;
+/* Simple primality test for 64-bit integers.
+ * Cache/dataset item counts are < 2^64 and their square roots are small,
+ * so trial division is fast enough. */
+static int ethash_is_prime(uint64_t n) {
+    if (n < 2) return 0;
+    if (n % 2 == 0) return n == 2;
+    if (n % 3 == 0) return n == 3;
+    uint64_t i = 5;
+    while (i * i <= n) {
+        if (n % i == 0 || n % (i + 2) == 0) return 0;
+        i += 6;
+    }
+    return 1;
 }
 
-/* Get dataset size for epoch */
+/* Get cache size for epoch (light-mode fallback).
+ *
+ * Follows the Ethash/ProgPoW spec: linear growth rounded down to the
+ * largest size whose number of 64-byte items is prime. */
+EXPORT uint64_t ethash_get_cache_size(uint32_t epoch) {
+    uint64_t items = (16ULL * 1024 * 1024 + (uint64_t)epoch * 128 * 1024 - 64) / 64;
+    while (!ethash_is_prime(items)) {
+        items = items > 2 ? items - 2 : 1;
+    }
+    return items * 64;
+}
+
+/* Get dataset size for epoch.
+ *
+ * Follows the Ethash/ProgPoW spec: linear growth rounded down to the
+ * largest size whose number of 128-byte items is prime. */
 EXPORT uint64_t ethash_get_dataset_size(uint32_t epoch) {
-    uint64_t size = 1024ULL * 1024 * 1024 + (uint64_t)epoch * 8 * 1024 * 1024;
-    return (size / 128) * 128;
+    uint64_t items = (1024ULL * 1024 * 1024 + (uint64_t)epoch * 8 * 1024 * 1024 - 128) / 128;
+    while (!ethash_is_prime(items)) {
+        items = items > 2 ? items - 2 : 1;
+    }
+    return items * 128;
 }
 
 /* Generate seed hash for epoch by keccak256-chaining */

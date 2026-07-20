@@ -974,19 +974,57 @@ pub fn hash_pearl_native(
 use sha3::{Digest, Keccak256, Keccak512};
 
 const CACHE_ROUNDS: usize = 3;
+const CACHE_BYTES_INIT: u64 = 1 << 24;       // 16 MB
+const CACHE_BYTES_GROWTH: u64 = 1 << 17;     // 128 KB
+const HASH_BYTES: u64 = 64;
+const DATASET_BYTES_INIT: u64 = 1 << 30;     // 1 GB
+const DATASET_BYTES_GROWTH: u64 = 1 << 23;   // 8 MB
+const MIX_BYTES: u64 = 128;
+
+/// Primality test for u64 using trial division (sufficient for cache/dataset
+/// item counts, which are < 2^64 and whose square roots are small).
+fn is_prime_u64(n: u64) -> bool {
+    if n < 2 {
+        return false;
+    }
+    if n % 2 == 0 {
+        return n == 2;
+    }
+    if n % 3 == 0 {
+        return n == 3;
+    }
+    let mut i = 5u64;
+    while i * i <= n {
+        if n % i == 0 || n % (i + 2) == 0 {
+            return false;
+        }
+        i += 6;
+    }
+    true
+}
 
 /// Compute the cache size for a given epoch.
-/// Formula: 16 MB + epoch * 128 KB, rounded to 64-byte boundary.
+///
+/// Follows the Ethash/ProgPoW spec: linear growth rounded down to the largest
+/// size whose number of 64-byte items is prime.
 fn cache_size_for_epoch(epoch: u32) -> u64 {
-    let size = 16u64 * 1024 * 1024 + epoch as u64 * 128 * 1024;
-    (size / 64) * 64
+    let mut items = (CACHE_BYTES_INIT + (epoch as u64) * CACHE_BYTES_GROWTH - HASH_BYTES) / HASH_BYTES;
+    while !is_prime_u64(items) {
+        items = items.saturating_sub(2).max(1);
+    }
+    items * HASH_BYTES
 }
 
 /// Compute the dataset (DAG) size for a given epoch.
-/// Formula: 1 GB + epoch * 8 MB, rounded to 128-byte boundary.
+///
+/// Follows the Ethash/ProgPoW spec: linear growth rounded down to the largest
+/// size whose number of 128-byte items is prime.
 fn dataset_size_for_epoch(epoch: u32) -> u64 {
-    let size = 1024u64 * 1024 * 1024 + epoch as u64 * 8 * 1024 * 1024;
-    (size / 128) * 128
+    let mut items = (DATASET_BYTES_INIT + (epoch as u64) * DATASET_BYTES_GROWTH - MIX_BYTES) / MIX_BYTES;
+    while !is_prime_u64(items) {
+        items = items.saturating_sub(2).max(1);
+    }
+    items * MIX_BYTES
 }
 
 /// Compute the seed hash for an epoch by keccak-256 chaining.

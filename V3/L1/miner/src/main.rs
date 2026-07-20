@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
-use zion_core::{CoreRuntime, DifficultyTarget, MiningHeader, MiningJob, RevenueSource};
+use zion_core::{CoreRuntime, DifficultyTarget, MiningHeader, MiningJob, MiningSolution, RevenueSource};
 use zion_pool::{
     decode_message, encode_message, ExternalStreamJob, MiningPool, PoolMessage, ShareStatus,
 };
@@ -2693,28 +2693,90 @@ fn run_remote_session(
                 cpu_nonces_tested = job.nonce_count;
                 parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
             } else {
-                // ── PIPELINED GPU SCAN ──
-                // step() collects the PREVIOUS batch's results (if any) and
-                // launches the CURRENT batch asynchronously. This overlaps
-                // GPU compute with the pool I/O that follows (external share
-                // collection, solution submission, reading next job).
-                //
-                // On the first iteration, step() returns None (no previous batch)
-                // but STILL launches the current batch. The solution (if any)
-                // will be collected on the NEXT iteration.
-                // This means the first iteration always has scan_result=None,
-                // which triggers a NoSolution message to the pool — correct behavior.
-                let prev_outcome = gpu_pipeline.step(g, job, &current_algorithm, &raw_header_bytes);
+                // ── GPU SCAN MODE ──
+                // ZION_GPU_PIPELINE=1 enables pipelined scan (launch async,
+                // collect on next iteration). Default is 0 (synchronous) because
+                // the pipeline introduces a 1-iteration lag: the miner blocks on
+                // job_rx.recv() waiting for the next job, and only then collects
+                // the previous batch's results. By the time the submit happens,
+                // the pool has already rotated to the next job_id → StaleJob.
+                // Synchronous mine_batch() blocks until the batch is done, then
+                // submits immediately with the CURRENT job_id → no staleness.
+                let pipeline_enabled = std::env::var("ZION_GPU_PIPELINE")
+                    .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+                    .unwrap_or(false);
 
-                if let Some(outcome) = prev_outcome {
-                    // Use previous batch's results
-                    gpu_nonces_tested = outcome.nonces_tested;
-                    gpu_mix_hash = outcome.mix_hash;
-                    outcome.solution
+                if pipeline_enabled {
+                    // ── PIPELINED GPU SCAN (lag-prone, kept for opt-in) ──
+                    let prev_outcome = gpu_pipeline.step(g, job, &current_algorithm, &raw_header_bytes);
+                    if let Some(outcome) = prev_outcome {
+                        gpu_nonces_tested = outcome.nonces_tested;
+                        gpu_mix_hash = outcome.mix_hash;
+                        outcome.solution
+                    } else {
+                        gpu_nonces_tested = 0;
+                        None
+                    }
                 } else {
-                    // First iteration: batch launched but no results yet
-                    gpu_nonces_tested = 0;
-                    None
+                    // ── SYNCHRONOUS GPU SCAN (default, no lag) ──
+                    let max_batch = std::env::var("ZION_GPU_MAX_BATCH")
+                        .ok()
+                        .and_then(|v| v.parse::<u64>().ok())
+                        .unwrap_or(262_144);
+                    let effective_batch = job.nonce_count.min(max_batch);
+
+                    let mut effective_header = job.header;
+                    if gpu_backend::is_external_algorithm(&current_algorithm) {
+                        effective_header.timestamp = job.height;
+                    }
+
+                    let use_raw = gpu_backend::is_external_algorithm(&current_algorithm)
+                        && !current_algorithm.starts_with("kheavyhash")
+                        && raw_header_bytes.len() > 80;
+
+                    let batch_result = if use_raw {
+                        g.mine_batch_raw(&raw_header_bytes, job.target, job.start_nonce, effective_batch)
+                    } else {
+                        g.mine_batch(effective_header, job.target, job.start_nonce, effective_batch)
+                    };
+
+                    match batch_result {
+                        Ok(result) => {
+                            gpu_nonces_tested = result.nonces_tested;
+                            if let Some((nonce, gpu_hash, mix_hash)) = result.solutions.first() {
+                                gpu_mix_hash = *mix_hash;
+                                let candidate = zion_core::BlockCandidate {
+                                    header: job.header,
+                                    nonce: *nonce,
+                                    height: job.height,
+                                };
+                                // Verify GPU hash against CPU hash (debug check)
+                                let cpu_hash = candidate.hash_with_algorithm(&current_algorithm);
+                                let is_mismatch = cpu_hash != *gpu_hash;
+                                if is_mismatch && VERBOSE.load(Ordering::Relaxed) {
+                                    eprintln!("[{}] gpu_hash_mismatch nonce={} gpu={} cpu={}",
+                                        log_timestamp(), nonce,
+                                        hex(&gpu_hash[..8]), hex(&cpu_hash[..8]));
+                                }
+                                // Check if hash meets target
+                                if job.target.allows(gpu_hash) {
+                                    Some(MiningSolution {
+                                        job_id: job.job_id,
+                                        candidate,
+                                        hash: *gpu_hash,
+                                    })
+                                } else {
+                                    None
+                                }
+                            } else {
+                                None
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("[{}] gpu_batch_error job={} reason=\"{e}\"", log_timestamp(), job.job_id);
+                            None
+                        }
+                    }
                 }
             }
         } else if cpu_on {

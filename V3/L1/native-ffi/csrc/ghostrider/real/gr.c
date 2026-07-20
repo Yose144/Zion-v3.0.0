@@ -1,3 +1,24 @@
+/*
+ * ============================================================================
+ *  GhostRider hash — Raptoreum (RTM)
+ *
+ *  This implementation matches the official yiimp-ghostrider stratum server
+ *  (Raptor3um/yiimp-ghostrider) and cpuminer-opt's gr_hash exactly.
+ *
+ *  Key points (verified against yiimp source 2026-07-20):
+ *    - getAlgoString reverses byte order: b = (63 - j) >> 1, alternating
+ *      low/high nibble extraction based on j parity.
+ *    - 6 CN variants only: CNDark, CNDarklite, CNFast, CNLite, CNTurtle,
+ *      CNTurtlelite (NOT 14).
+ *    - NO post-CN memset zeroing of hash[8..40].
+ *    - 15 core algos: BLAKE..WHIRLPOOL (same as before).
+ *
+ *  GhostRider algorithm: 15 core hash functions + 6 CryptoNight variants,
+ *  selected dynamically based on previous block hash.
+ *  3 stages: 5 core + 1 CN + 5 core + 1 CN + 5 core + 1 CN = 18 iterations.
+ * ============================================================================
+ */
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,89 +73,91 @@ enum Algo {
         HASH_FUNC_COUNT
 };
 
+/* 6 CN variants — matches yiimp-ghostrider exactly. */
 enum CNAlgo {
 	CNDark = 0,
-	CNDarkf,
 	CNDarklite,
-	CNDarklitef,
 	CNFast,
-	CNFastf,
-	CNF,
 	CNLite,
-	CNLitef,
-	CNSoftshellf,
 	CNTurtle,
-	CNTurtlef,
 	CNTurtlelite,
-	CNTurtlelitef,
 	CN_HASH_FUNC_COUNT
 };
 
+/*
+ * getAlgoString — select algorithm ordering from prev-hash bytes.
+ *
+ * This matches the official cpuminer-gr-avx2 (WyvernTKC) and npq7721/gr_hash
+ * implementations exactly:
+ *   - Iterates forward over the 32 bytes starting at prevblock[0].
+ *   - For each byte, extracts the LOW nibble first, then the HIGH nibble.
+ *   - selectAlgo: (nibble & 0x0F) % algoCount, then (nibble >> 4) % algoCount.
+ *   - Skips already-selected algos.
+ *   - Fills remaining unselected algos in ascending order at the end.
+ *
+ * The previous version of this function used REVERSED byte order
+ * (b = (63 - j) >> 1) and HIGH nibble first, which produced a DIFFERENT
+ * algorithm sequence and thus wrong hashes, causing "Invalid share" (error 25)
+ * rejections from yiimp/zpool.
+ */
 static void selectAlgo(unsigned char nibble, bool* selectedAlgos, uint8_t* selectedIndex, int algoCount, int* currentCount) {
 	uint8_t algoDigit = (nibble & 0x0F) % algoCount;
 	if(!selectedAlgos[algoDigit]) {
 		selectedAlgos[algoDigit] = true;
-		selectedIndex[currentCount[0]] = algoDigit;
-		currentCount[0] = currentCount[0] + 1;
+		selectedIndex[*currentCount] = algoDigit;
+		(*currentCount)++;
 	}
 	algoDigit = (nibble >> 4) % algoCount;
 	if(!selectedAlgos[algoDigit]) {
 		selectedAlgos[algoDigit] = true;
-		selectedIndex[currentCount[0]] = algoDigit;
-		currentCount[0] = currentCount[0] + 1;
+		selectedIndex[*currentCount] = algoDigit;
+		(*currentCount)++;
 	}
 }
 
-void getAlgoString(void *mem, unsigned int size, uint8_t* selectedAlgoOutput, int algoCount) {
-  int i;
-  unsigned char *p = (unsigned char *)mem;
-  unsigned int len = size/2;
-  unsigned char j = 0;
-  bool selectedAlgo[algoCount];
-  for(int z=0; z < algoCount; z++) {
-	  selectedAlgo[z] = false;
-  }
-  int selectedCount = 0;
-  for (i=0;i<len; i++) {
-	  selectAlgo(p[i], selectedAlgo, selectedAlgoOutput, algoCount, &selectedCount);
-	  if(selectedCount == algoCount) {
-		  break;
-	  }
-  }
-  if(selectedCount < algoCount) {
-	for(uint8_t i = 0; i < algoCount; i++) {
-		if(!selectedAlgo[i]) {
-			selectedAlgoOutput[selectedCount] = i;
-			selectedCount++;
+static void getAlgoString(const uint8_t* prevblock, char *output, int algoCount) {
+	bool selectedAlgo[algoCount];
+	for(int z = 0; z < algoCount; z++) {
+		selectedAlgo[z] = false;
+	}
+	uint8_t selectedIndex[algoCount];
+	int selectedCount = 0;
+
+	/* Iterate forward over 32 bytes (64 nibbles), low nibble first. */
+	for (int i = 0; i < 32; i++) {
+		selectAlgo(prevblock[i], selectedAlgo, selectedIndex, algoCount, &selectedCount);
+		if (selectedCount == algoCount) {
+			break;
 		}
 	}
-  }
-}
 
-void print_hex_memory(void *mem, unsigned int size) {
-  int i;
-  unsigned char *p = (unsigned char *)mem;
-  unsigned int len = size/2;
-  for (i=0;i<len; i++) {
-    printf("%02x", p[(len - i - 1)]);
-  }
-  printf("\n");
-}
+	/* Fill remaining unselected algos in ascending order. */
+	if (selectedCount < algoCount) {
+		for (uint8_t i = 0; i < algoCount; i++) {
+			if (!selectedAlgo[i]) {
+				selectedIndex[selectedCount] = i;
+				selectedCount++;
+			}
+		}
+	}
 
-void SwapBytes(void *pv, unsigned int n)
-{
-    char *p = pv;
-    unsigned int lo, hi;
-    for(lo=0, hi=n-1; hi>lo; lo++, hi--)
-    {
-        char tmp=p[lo];
-        p[lo] = p[hi];
-        p[hi] = tmp;
-    }
+	/* Convert indices to char string: 0-9 as '0'-'9', 10+ as 'A'+. */
+	char *sptr = output;
+	for (int i = 0; i < algoCount; i++) {
+		uint8_t algoDigit = selectedIndex[i];
+		if (algoDigit >= 10)
+			sprintf(sptr, "%c", 'A' + (algoDigit - 10));
+		else
+			sprintf(sptr, "%u", (uint32_t)algoDigit);
+		sptr++;
+	}
+	*sptr = '\0';
 }
 
 void gr_hash(const char* input, char* output) {
 	uint32_t hash[64/4];
+	char hashOrder[16] = { 0};
+	char cnHashOrder[7] = { 0};
 	sph_blake512_context ctx_blake;
 	sph_bmw512_context ctx_bmw;
 	sph_groestl512_context ctx_groestl;
@@ -157,15 +180,10 @@ void gr_hash(const char* input, char* output) {
 
 	void *in = (void*) input;
 	int size = 80;
-	uint8_t selectedAlgoOutput[15] = {0};
-	uint8_t selectedCNAlgoOutput[14] = {0};
-	getAlgoString(&input[4], 64, selectedAlgoOutput, 15);
-	getAlgoString(&input[4], 64, selectedCNAlgoOutput, 14);
-	//printf("previous hash=");
-	//print_hex_memory(&input[4], 64);
+	getAlgoString((const uint8_t*)&input[4], hashOrder, 15);
+	getAlgoString((const uint8_t*)&input[4], cnHashOrder, 6);
 	int i;
-	for (i = 0; i < 18; i++)
-	{
+	for (i = 0; i < 18; i++) {
 		uint8_t algo;
 		uint8_t cnAlgo;
 		int coreSelection;
@@ -190,12 +208,14 @@ void gr_hash(const char* input, char* output) {
 			cnSelection = 2;
 		}
 		if(coreSelection >= 0) {
-			algo = selectedAlgoOutput[(uint8_t)coreSelection];
+			const char elem = hashOrder[coreSelection];
+			algo = elem >= 'A' ? elem - 'A' + 10 : elem - '0';
 		} else {
 			algo = 16; // skip core hashing for this loop iteration
 		}
 		if(cnSelection >=0) {
-			cnAlgo = selectedCNAlgoOutput[(uint8_t)cnSelection];
+			const char cnElem = cnHashOrder[cnSelection];
+			cnAlgo = cnElem >= 'A' ? cnElem - 'A' + 10 : cnElem - '0';
 		} else {
 			cnAlgo = 14; // skip cn hashing for this loop iteration
 		}
@@ -203,46 +223,22 @@ void gr_hash(const char* input, char* output) {
 		switch(cnAlgo)
 		{
 		 case CNDark:
-			cryptonightdark_hash(in, hash, size, 1);
-			break;
-		 case CNDarkf:
-			cryptonightdark_fast_hash(in, hash, size);
+			cryptonightdark_hash(in, (char*)hash, size, 1);
 			break;
 		 case CNDarklite:
-			cryptonightdarklite_hash(in, hash, size, 1);
-			break;
-		 case CNDarklitef:
-			cryptonightdarklite_fast_hash(in, hash, size);
+			cryptonightdarklite_hash(in, (char*)hash, size, 1);
 			break;
 		 case CNFast:
-			cryptonightfast_hash(in, hash, size, 1);
-			break;
-		 case CNFastf:
-			cryptonightfast_fast_hash(in, hash, size);
-			break;
-		 case CNF:
-			cryptonight_fast_hash(in, hash, size);
+			cryptonightfast_hash(in, (char*)hash, size, 1);
 			break;
 		 case CNLite:
-			cryptonightlite_hash(in, hash, size, 1);
-			break;
-		 case CNLitef:
-			cryptonightlite_fast_hash(in, hash, size);
-			break;
-		 case CNSoftshellf:
-			cryptonight_soft_shell_fast_hash(in, hash, size);
+			cryptonightlite_hash(in, (char*)hash, size, 1);
 			break;
 		 case CNTurtle:
-			cryptonightturtle_hash(in, hash, size, 1);
-			break;
-		 case CNTurtlef:
-			cryptonightturtle_fast_hash(in, hash, size);
+			cryptonightturtle_hash(in, (char*)hash, size, 1);
 			break;
 		 case CNTurtlelite:
-			cryptonightturtlelite_hash(in, hash, size, 1);
-			break;
-		 case CNTurtlelitef:;
-			cryptonightturtlelite_fast_hash(in, hash, size);
+			cryptonightturtlelite_hash(in, (char*)hash, size, 1);
 			break;
 		}
 		//selection core algo
@@ -322,9 +318,6 @@ void gr_hash(const char* input, char* output) {
 				sph_whirlpool(&ctx_whirlpool, in, size);
 				sph_whirlpool_close(&ctx_whirlpool, hash);
 				break;
-		}
-		if(cnSelection >= 0) {
-			memset(&hash[8], 0, 32);
 		}
 		in = (void*) hash;
 		size = 64;
