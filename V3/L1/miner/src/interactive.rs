@@ -16,7 +16,8 @@
 #![allow(dead_code)]
 
 use std::collections::VecDeque;
-use std::io::{self, stdout, Write};
+use std::io::{self, stdout, Read, Write};
+use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -57,10 +58,23 @@ pub struct MinerControl {
     pub requested_reconnect: bool,
     pub requested_quit: bool,
     pub thread_override: Option<usize>,
+    /// Stream 3 CPU external coin (empty = pool/auto)
+    pub cpu_coin: String,
+    /// Stream 2 GPU external coin (empty = pool/auto)
+    pub gpu_coin: String,
+    /// Show extended metrics panel
+    pub show_metrics: bool,
+    /// Show online best miners panel
+    pub show_online: bool,
 }
 
+const CPU_COIN_OPTIONS: &[&str] = &["auto", "VRSC", "XMR", "RTM"];
+const GPU_COIN_OPTIONS: &[&str] = &[
+    "auto", "RVN", "KAS", "ALPH", "DCR", "ERG", "ETC", "CLORE", "MEWC", "EVR", "FLUX", "EPIC",
+];
+
 impl MinerControl {
-    pub fn new(algorithm: &str, threads: usize, gpu: bool) -> Self {
+    pub fn new(algorithm: &str, threads: usize, gpu: bool, cpu_coin: &str, gpu_coin: &str) -> Self {
         Self {
             pause: false,
             algorithm: algorithm.to_string(),
@@ -78,6 +92,10 @@ impl MinerControl {
             requested_reconnect: false,
             requested_quit: false,
             thread_override: None,
+            cpu_coin: cpu_coin.to_uppercase(),
+            gpu_coin: gpu_coin.to_uppercase(),
+            show_metrics: true,
+            show_online: true,
         }
     }
 
@@ -108,6 +126,32 @@ impl MinerControl {
             self.gpu_enabled = true;
         }
         self.recompute_mode();
+    }
+
+    pub fn cycle_cpu_coin(&mut self) {
+        let current = self.cpu_coin.as_str();
+        let idx = CPU_COIN_OPTIONS
+            .iter()
+            .position(|&c| c.eq_ignore_ascii_case(current))
+            .unwrap_or(0);
+        self.cpu_coin = CPU_COIN_OPTIONS[(idx + 1) % CPU_COIN_OPTIONS.len()].to_uppercase();
+    }
+
+    pub fn cycle_gpu_coin(&mut self) {
+        let current = self.gpu_coin.as_str();
+        let idx = GPU_COIN_OPTIONS
+            .iter()
+            .position(|&c| c.eq_ignore_ascii_case(current))
+            .unwrap_or(0);
+        self.gpu_coin = GPU_COIN_OPTIONS[(idx + 1) % GPU_COIN_OPTIONS.len()].to_uppercase();
+    }
+
+    pub fn toggle_metrics(&mut self) {
+        self.show_metrics = !self.show_metrics;
+    }
+
+    pub fn toggle_online(&mut self) {
+        self.show_online = !self.show_online;
     }
 
     fn recompute_mode(&mut self) {
@@ -221,6 +265,24 @@ impl StreamWindows {
     }
 }
 
+/// One online miner entry from the pool telemetry endpoint.
+#[derive(Clone, Debug, Default)]
+pub struct OnlineMiner {
+    pub worker: String,
+    pub coin: String,
+    pub algorithm: String,
+    pub hashrate: f64,
+}
+
+/// Snapshot of pool-side online miners + aggregate pool info.
+#[derive(Clone, Debug, Default)]
+pub struct OnlineMinerSnapshot {
+    pub pool_hashrate: f64,
+    pub active_miners: u64,
+    pub total_miners: u64,
+    pub top_miners: Vec<OnlineMiner>,
+}
+
 pub struct HashrateTracker {
     pub cpu_hashes: AtomicU64,
     pub gpu_hashes: AtomicU64,
@@ -264,6 +326,8 @@ pub struct HashrateTracker {
     gpu_ext_active: AtomicU64,
     /// Whether external CPU stream is active (has a job)
     cpu_ext_active: AtomicU64,
+    /// Pool-side online miner snapshot (updated by TUI poller thread)
+    pub online_snapshot: Mutex<OnlineMinerSnapshot>,
 }
 
 impl HashrateTracker {
@@ -295,6 +359,7 @@ impl HashrateTracker {
             cpu_ext_algorithm: Mutex::new(String::new()),
             gpu_ext_active: AtomicU64::new(0),
             cpu_ext_active: AtomicU64::new(0),
+            online_snapshot: Mutex::new(OnlineMinerSnapshot::default()),
         })
     }
 
@@ -615,12 +680,141 @@ pub struct ComputedHashrates {
 }
 
 /* ========================================================================= */
-/* Dashboard renderer                                                        */
+/* Pool API helpers for online best miners                                   */
 /* ========================================================================= */
 
-/// Number of rows the dashboard always occupies.
-/// Must match the actual number of printed lines below.
-const DASHBOARD_ROWS: u16 = 23;
+fn derive_pool_api_addr(pool_addr: &str) -> String {
+    std::env::var("ZION_POOL_API_ADDR")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| {
+            if let Some(colon) = pool_addr.rfind(':') {
+                let host = &pool_addr[..colon];
+                if let Ok(port) = pool_addr[colon + 1..].parse::<u16>() {
+                    format!("{}:{}", host, port.saturating_add(11))
+                } else {
+                    format!("{}:8455", host)
+                }
+            } else {
+                format!("{}:8455", pool_addr)
+            }
+        })
+}
+
+fn http_get_json(api_addr: &str, path: &str) -> Option<serde_json::Value> {
+    let socket_addrs: Vec<std::net::SocketAddr> = api_addr.to_socket_addrs().ok()?.collect();
+    if socket_addrs.is_empty() {
+        return None;
+    }
+    let mut stream = TcpStream::connect_timeout(&socket_addrs[0], Duration::from_secs(3)).ok()?;
+    let request = format!(
+        "GET {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
+        path, api_addr
+    );
+    stream.write_all(request.as_bytes()).ok()?;
+    let mut response = Vec::new();
+    let mut buf = [0u8; 4096];
+    loop {
+        match stream.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => response.extend_from_slice(&buf[..n]),
+            Err(_) => break,
+        }
+        if response.len() > 262144 {
+            break;
+        }
+    }
+    let response_str = String::from_utf8_lossy(&response);
+    let body_start = response_str
+        .find("\r\n\r\n")
+        .map(|p| p + 4)
+        .or_else(|| response_str.find("\n\n").map(|p| p + 2))?;
+    let body = &response_str[body_start..];
+    serde_json::from_str::<serde_json::Value>(body).ok()
+}
+
+fn parse_online_miner(v: &serde_json::Value) -> Option<OnlineMiner> {
+    let obj = v.as_object()?;
+    let worker = obj
+        .get("worker_name")
+        .and_then(|x| x.as_str())
+        .unwrap_or("?")
+        .to_string();
+    let hashrate = obj.get("hashrate").and_then(|x| x.as_f64()).unwrap_or(0.0);
+    let mut coin = obj
+        .get("streams")
+        .and_then(|s| s.as_array())
+        .and_then(|arr| arr.first())
+        .and_then(|s| s.as_object())
+        .and_then(|s| s.get("coin"))
+        .and_then(|c| c.as_str())
+        .unwrap_or("")
+        .to_string();
+    let mut algorithm = obj
+        .get("streams")
+        .and_then(|s| s.as_array())
+        .and_then(|arr| arr.first())
+        .and_then(|s| s.as_object())
+        .and_then(|s| s.get("algorithm"))
+        .and_then(|c| c.as_str())
+        .unwrap_or("")
+        .to_string();
+    if coin.is_empty() {
+        coin = obj.get("algorithm").and_then(|x| x.as_str()).unwrap_or("?").to_string();
+    }
+    if algorithm.is_empty() {
+        algorithm = obj.get("backend").and_then(|x| x.as_str()).unwrap_or("?").to_string();
+    }
+    Some(OnlineMiner {
+        worker,
+        coin,
+        algorithm,
+        hashrate,
+    })
+}
+
+pub fn fetch_online_snapshot(pool_addr: &str) -> Option<OnlineMinerSnapshot> {
+    let api_addr = derive_pool_api_addr(pool_addr);
+
+    // Fetch pool aggregate stats for hashrate + active miner count.
+    let mut snapshot = OnlineMinerSnapshot::default();
+    if let Some(stats) = http_get_json(&api_addr, "/stats") {
+        snapshot.pool_hashrate = stats
+            .get("hashrate")
+            .and_then(|h| h.get("pool"))
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+        snapshot.active_miners = stats
+            .get("miners")
+            .and_then(|m| m.get("active"))
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+    }
+
+    // Fetch top miners by live hashrate.
+    if let Some(data) = http_get_json(&api_addr, "/miners?limit=50") {
+        snapshot.total_miners = data.get("count").and_then(|v| v.as_u64()).unwrap_or(0);
+        if let Some(miners) = data.get("miners").and_then(|v| v.as_array()) {
+            let mut top: Vec<OnlineMiner> = miners
+                .iter()
+                .filter_map(parse_online_miner)
+                .collect();
+            top.sort_by(|a, b| b.hashrate.partial_cmp(&a.hashrate).unwrap_or(std::cmp::Ordering::Equal));
+            top.truncate(5);
+            snapshot.top_miners = top;
+        }
+    }
+
+    if snapshot.pool_hashrate == 0.0 && snapshot.top_miners.is_empty() {
+        None
+    } else {
+        Some(snapshot)
+    }
+}
+
+/* ========================================================================= */
+/* Dashboard renderer                                                        */
+/* ========================================================================= */
 
 /// Short display names for algorithms
 fn algo_display(algo: &str) -> &str {
@@ -632,21 +826,26 @@ fn algo_display(algo: &str) -> &str {
     }
 }
 
-pub fn draw_dashboard(
+pub(crate) fn draw_dashboard(
     control: &MinerControl,
     rates: &ComputedHashrates,
     uptime_secs: u64,
     pool_height: u64,
     gpu_info: &[GpuInfoLine],
+    metrics: &Arc<Mutex<crate::MinerMetricsSnapshot>>,
+    hashrate: &Arc<HashrateTracker>,
 ) -> io::Result<()> {
     let mut out = stdout();
 
-    // Move to top-left; clear from cursor down so stale lines are wiped
+    // ── Stable redraw: full clear + move home ──
     queue!(
         out,
         cursor::MoveTo(0, 0),
-        terminal::Clear(ClearType::FromCursorDown),
+        terminal::Clear(ClearType::All),
     )?;
+
+    let (cols, rows) = terminal::size().unwrap_or((80, 24));
+    let _ = cols; // kept for future truncation logic; currently target 80 cols
 
     // ── Title bar ──
     let title = format!(
@@ -678,6 +877,22 @@ pub fn draw_dashboard(
         MiningMode::GpuOnly => "GPU ",
         MiningMode::Dual => "DUAL",
     };
+    let gpu_actual = hashrate.gpu_ext_coin.lock().map(|c| c.clone()).unwrap_or_default();
+    let cpu_actual = hashrate.cpu_ext_coin.lock().map(|c| c.clone()).unwrap_or_default();
+    let gpu_coin = if !gpu_actual.is_empty() {
+        gpu_actual
+    } else if control.gpu_coin.is_empty() {
+        "auto".to_string()
+    } else {
+        control.gpu_coin.clone()
+    };
+    let cpu_coin = if !cpu_actual.is_empty() {
+        cpu_actual
+    } else if control.cpu_coin.is_empty() {
+        "auto".to_string()
+    } else {
+        control.cpu_coin.clone()
+    };
     queue!(
         out,
         Print("  "),
@@ -685,9 +900,8 @@ pub fn draw_dashboard(
         Print(status_text.to_string()),
         ResetColor,
         Print(format!(
-            "  algo={:<32}  mode={mode_str}  threads={}\n",
-            algo_display(&control.algorithm),
-            control.threads
+            "  algo={:<24} mode={:<4} threads={:<2}  CPU={:<5} GPU={:<5}\n",
+            algo_display(&control.algorithm), mode_str, control.threads, cpu_coin, gpu_coin
         )),
     )?;
 
@@ -695,7 +909,7 @@ pub fn draw_dashboard(
     queue!(
         out,
         SetForegroundColor(Color::DarkGrey),
-        Print("  ----------------------------------------------------------------\n"),
+        Print("  ------------------------------------------------------------------------------\n"),
         ResetColor,
     )?;
 
@@ -732,61 +946,46 @@ pub fn draw_dashboard(
 
     // ── Triple Stream Shares (Claymore-style per-stream breakdown) ──
     let zion_total = rates.zion_accepted + rates.zion_rejected;
-    let zion_pct = if zion_total > 0 {
-        rates.zion_accepted as f64 * 100.0 / zion_total as f64
-    } else {
-        100.0
-    };
+    let zion_pct = if zion_total > 0 { rates.zion_accepted as f64 * 100.0 / zion_total as f64 } else { 100.0 };
     let gpu_ext_total = rates.gpu_ext_accepted + rates.gpu_ext_rejected;
-    let gpu_ext_pct = if gpu_ext_total > 0 {
-        rates.gpu_ext_accepted as f64 * 100.0 / gpu_ext_total as f64
-    } else {
-        100.0
-    };
+    let gpu_ext_pct = if gpu_ext_total > 0 { rates.gpu_ext_accepted as f64 * 100.0 / gpu_ext_total as f64 } else { 100.0 };
     let cpu_ext_total = rates.cpu_ext_accepted + rates.cpu_ext_rejected;
-    let cpu_ext_pct = if cpu_ext_total > 0 {
-        rates.cpu_ext_accepted as f64 * 100.0 / cpu_ext_total as f64
-    } else {
-        100.0
-    };
+    let cpu_ext_pct = if cpu_ext_total > 0 { rates.cpu_ext_accepted as f64 * 100.0 / cpu_ext_total as f64 } else { 100.0 };
 
-    // Stream 1: ZION Deeksha
     let (zion_hr, zion_unit) = ui::fmt_hashrate(rates.zion_10s_hps);
     queue!(
         out,
         Print("  Stream 1 "),
         SetForegroundColor(Color::Cyan),
-        Print(format!("ZION")),
+        Print("ZION"),
         ResetColor,
         Print(format!(
-            "  {:>7.2}{:<3} {:>5} acc / {:>3} rej ({:>5.1}%)",
+            "     {:>7}{:<3} {:>5}/{:<3} ({:>5.1}%)\n",
             zion_hr, zion_unit, rates.zion_accepted, rates.zion_rejected, zion_pct
         )),
     )?;
-    // Stream 2: GPU external profit coin
     let (gpu_ext_hr, gpu_ext_unit) = ui::fmt_hashrate(rates.gpu_ext_10s_hps);
     queue!(
         out,
-        Print("  |  "),
+        Print("  Stream 2 "),
         SetForegroundColor(Color::Magenta),
-        Print(format!("GPU PROFIT")),
+        Print("GPU PROFIT"),
         ResetColor,
         Print(format!(
-            "  {:>7.2}{:<3} {:>5} acc / {:>3} rej ({:>5.1}%)",
-            gpu_ext_hr, gpu_ext_unit, rates.gpu_ext_accepted, rates.gpu_ext_rejected, gpu_ext_pct
+            " {:>7}{:<3} {:>5}/{:<3} ({:>5.1}%)  coin={:<5}\n",
+            gpu_ext_hr, gpu_ext_unit, rates.gpu_ext_accepted, rates.gpu_ext_rejected, gpu_ext_pct, gpu_coin
         )),
     )?;
-    // Stream 3: CPU external Verus/RandomX/etc
     let (cpu_ext_hr, cpu_ext_unit) = ui::fmt_hashrate(rates.cpu_ext_10s_hps);
     queue!(
         out,
-        Print("  |  "),
+        Print("  Stream 3 "),
         SetForegroundColor(Color::Yellow),
-        Print(format!("CPU PROFIT")),
+        Print("CPU PROFIT"),
         ResetColor,
         Print(format!(
-            "  {:>7.2}{:<3} {:>5} acc / {:>3} rej ({:>5.1}%)\n",
-            cpu_ext_hr, cpu_ext_unit, rates.cpu_ext_accepted, rates.cpu_ext_rejected, cpu_ext_pct
+            " {:>7}{:<3} {:>5}/{:<3} ({:>5.1}%)  coin={:<5}\n",
+            cpu_ext_hr, cpu_ext_unit, rates.cpu_ext_accepted, rates.cpu_ext_rejected, cpu_ext_pct, cpu_coin
         )),
     )?;
 
@@ -794,11 +993,7 @@ pub fn draw_dashboard(
     let acc = rates.accepted;
     let rej = rates.rejected;
     let total = acc + rej;
-    let pct = if total > 0 {
-        acc as f64 * 100.0 / total as f64
-    } else {
-        100.0
-    };
+    let pct = if total > 0 { acc as f64 * 100.0 / total as f64 } else { 100.0 };
     let rej_col = if rej > 0 { Color::Red } else { Color::DarkGrey };
     queue!(
         out,
@@ -814,23 +1009,123 @@ pub fn draw_dashboard(
     )?;
 
     // ── Pool info ──
+    let online = hashrate
+        .online_snapshot
+        .lock()
+        .map(|g| g.clone())
+        .unwrap_or_default();
+    let (pool_hr, pool_hr_unit) = ui::fmt_hashrate(online.pool_hashrate);
     queue!(
         out,
         Print(format!(
-            "  Pool      height={pool_height}  uptime={}\n",
-            ui::fmt_uptime(uptime_secs)
+            "  Pool      height={:<6}  uptime={:<8}  poolHR={:>7}{:<3}  active_miners={}/{}\n",
+            pool_height,
+            ui::fmt_uptime(uptime_secs),
+            pool_hr,
+            pool_hr_unit,
+            online.active_miners,
+            online.total_miners
         )),
     )?;
 
-    // ── Separator ──
+    // ── Extended metrics panel ──
+    if control.show_metrics && rows > 18 {
+        let tui = metrics.lock().map(|m| m.as_tui()).unwrap_or_default();
+        queue!(
+            out,
+            SetForegroundColor(Color::DarkGrey),
+            Print("  ------------------------------------------------------------------------------\n"),
+            ResetColor,
+        )?;
+        queue!(
+            out,
+            Print(format!(
+                "  Metrics   latency avg/max: {:>6.1}/{:<4}ms  best_batch={:<4}ms  remote_ttl={:<4}ms  peak={:>7.2} H/s\n",
+                tui.submit_avg_ms, tui.submit_max_ms, tui.best_batch_ms, tui.remote_ttl_ms, tui.hashrate_max
+            )),
+        )?;
+        queue!(
+            out,
+            Print(format!(
+                "            iter={:<4}  threads={:<2}  nonce={:<6}  status={:<10}  backend={:<8}\n",
+                tui.current_iteration, tui.threads, tui.nonce_window, tui.status, tui.backend
+            )),
+        )?;
+
+        let (zz10, zz60, zz15) = (rates.zion_10s_hps, rates.zion_60s_hps, rates.zion_15m_hps);
+        let (gz10, gz60, gz15) = (rates.gpu_ext_10s_hps, rates.gpu_ext_60s_hps, rates.gpu_ext_15m_hps);
+        let (cz10, cz60, cz15) = (rates.cpu_ext_10s_hps, rates.cpu_ext_60s_hps, rates.cpu_ext_15m_hps);
+        let (zv10, zu10) = ui::fmt_hashrate(zz10); let (zv60, zu60) = ui::fmt_hashrate(zz60); let (zv15, zu15) = ui::fmt_hashrate(zz15);
+        let (gv10, gu10) = ui::fmt_hashrate(gz10); let (gv60, gu60) = ui::fmt_hashrate(gz60); let (gv15, gu15) = ui::fmt_hashrate(gz15);
+        let (cv10, cu10) = ui::fmt_hashrate(cz10); let (cv60, cu60) = ui::fmt_hashrate(cz60); let (cv15, cu15) = ui::fmt_hashrate(cz15);
+        queue!(
+            out,
+            Print(format!(
+                "  Windows   ZION 10s{:>7}{:<3} 60s{:>7}{:<3} 15m{:>7}{:<3}\n",
+                zv10, zu10, zv60, zu60, zv15, zu15
+            )),
+        )?;
+        queue!(
+            out,
+            Print(format!(
+                "            GPU  10s{:>7}{:<3} 60s{:>7}{:<3} 15m{:>7}{:<3}\n",
+                gv10, gu10, gv60, gu60, gv15, gu15
+            )),
+        )?;
+        queue!(
+            out,
+            Print(format!(
+                "            CPU  10s{:>7}{:<3} 60s{:>7}{:<3} 15m{:>7}{:<3}\n",
+                cv10, cu10, cv60, cu60, cv15, cu15
+            )),
+        )?;
+    }
+
+    // ── Online best miners panel ──
+    if control.show_online && rows > 22 {
+        queue!(
+            out,
+            SetForegroundColor(Color::DarkGrey),
+            Print("  ------------------------------------------------------------------------------\n"),
+            ResetColor,
+        )?;
+        queue!(
+            out,
+            SetForegroundColor(Color::Cyan),
+            Print("  ONLINE BEST MINERS\n"),
+            ResetColor,
+        )?;
+        if online.top_miners.is_empty() {
+            queue!(
+                out,
+                SetForegroundColor(Color::DarkGrey),
+                Print("  (waiting for pool API ... forward port 8455 or set ZION_POOL_API_ADDR)\n"),
+                ResetColor,
+            )?;
+        } else {
+            for (i, m) in online.top_miners.iter().enumerate() {
+                let (hr, unit) = ui::fmt_hashrate(m.hashrate);
+                let worker = if m.worker.len() > 14 { &m.worker[..14] } else { &m.worker };
+                let coin = if m.coin.len() > 8 { &m.coin[..8] } else { &m.coin };
+                let algo = if m.algorithm.len() > 12 { &m.algorithm[..12] } else { &m.algorithm };
+                queue!(
+                    out,
+                    Print(format!(
+                        "  #{:<2} {:<14} {:>8.2}{:<3}  {:<8}  {:<12}\n",
+                        i + 1, worker, hr, unit, coin, algo
+                    )),
+                )?;
+            }
+        }
+    }
+
+    // ── GPU devices (max 2) ──
     queue!(
         out,
         SetForegroundColor(Color::DarkGrey),
-        Print("  ----------------------------------------------------------------\n"),
+        Print("  ------------------------------------------------------------------------------\n"),
         ResetColor,
     )?;
-
-    // ── GPU devices (max 2) ──
     if gpu_info.is_empty() {
         queue!(out, Print("  GPU       (no devices)\n"))?;
         queue!(out, Print("\n"))?;
@@ -839,7 +1134,7 @@ pub fn draw_dashboard(
             queue!(out, Print(format!("  GPU #{:<2}   {}\n", g.index, g.info)),)?;
         }
         if gpu_info.len() == 1 {
-            queue!(out, Print("\n"))?; // keep fixed height
+            queue!(out, Print("\n"))?;
         }
     }
 
@@ -847,7 +1142,7 @@ pub fn draw_dashboard(
     queue!(
         out,
         SetForegroundColor(Color::DarkGrey),
-        Print("  ----------------------------------------------------------------\n"),
+        Print("  ------------------------------------------------------------------------------\n"),
         ResetColor,
     )?;
 
@@ -855,7 +1150,7 @@ pub fn draw_dashboard(
     queue!(
         out,
         SetForegroundColor(Color::DarkGrey),
-        Print("  [a] algo  [c] CPU  [g] GPU  [p] pause  [r] reconnect  [v] verbose  [q] quit\n"),
+        Print("  [a]algo [c]CPU [C]cpu-coin [g]GPU [G]gpu-coin [d]dual [p]pause [r]recon [m]metrics [o]online [v]verb [q]quit\n"),
         ResetColor,
     )?;
 
@@ -902,17 +1197,29 @@ pub fn spawn_input_thread(control: Arc<Mutex<MinerControl>>) -> thread::JoinHand
                             // Reconnect so pool gets new algo in Hello
                             c.requested_reconnect = true;
                         }
-                        KeyCode::Char('c') if modifiers != KeyModifiers::CONTROL => {
+                        KeyCode::Char('c') if modifiers != KeyModifiers::CONTROL && modifiers != KeyModifiers::SHIFT => {
                             c.toggle_cpu();
                         }
-                        KeyCode::Char('g') => {
+                        KeyCode::Char('C') => {
+                            c.cycle_cpu_coin();
+                        }
+                        KeyCode::Char('g') if modifiers != KeyModifiers::SHIFT => {
                             c.toggle_gpu();
+                        }
+                        KeyCode::Char('G') => {
+                            c.cycle_gpu_coin();
                         }
                         KeyCode::Char('d') => {
                             c.toggle_dual();
                         }
                         KeyCode::Char('r') => {
                             c.requested_reconnect = true;
+                        }
+                        KeyCode::Char('m') => {
+                            c.toggle_metrics();
+                        }
+                        KeyCode::Char('o') => {
+                            c.toggle_online();
                         }
                         KeyCode::Char('v') => {
                             c.verbose = !c.verbose;
@@ -941,9 +1248,11 @@ pub fn spawn_input_thread(control: Arc<Mutex<MinerControl>>) -> thread::JoinHand
 
 /// Run the interactive TUI (blocks until user presses q/Esc).
 /// Mining loop should be running in a separate thread.
-pub fn run_interactive(
+pub(crate) fn run_interactive(
     control: Arc<Mutex<MinerControl>>,
     hashrate: Arc<HashrateTracker>,
+    metrics: Arc<Mutex<crate::MinerMetricsSnapshot>>,
+    pool_addr: String,
 ) -> io::Result<()> {
     TUI_ACTIVE.store(true, Ordering::Relaxed);
 
@@ -953,8 +1262,35 @@ pub fn run_interactive(
 
     let input_handle = spawn_input_thread(Arc::clone(&control));
 
+    // Pool API background poller — refreshes online best-miner snapshot
+    let online_hashrate = Arc::clone(&hashrate);
+    let online_control = Arc::clone(&control);
+    let _online_poller = thread::spawn(move || {
+        let mut consecutive_errors = 0u32;
+        loop {
+            thread::sleep(Duration::from_secs(10));
+            if let Some(snapshot) = fetch_online_snapshot(&pool_addr) {
+                if let Ok(mut guard) = online_hashrate.online_snapshot.lock() {
+                    *guard = snapshot;
+                }
+                consecutive_errors = 0;
+            } else {
+                consecutive_errors = consecutive_errors.saturating_add(1);
+                // Back off after repeated failures to avoid spamming the local API port
+                if consecutive_errors > 6 {
+                    thread::sleep(Duration::from_secs(60));
+                }
+            }
+            // Stop when the TUI signals quit (best-effort detection)
+            if online_control.lock().unwrap().requested_quit {
+                break;
+            }
+        }
+    });
+
     let dashboard_control = Arc::clone(&control);
     let dashboard_hashrate = Arc::clone(&hashrate);
+    let dashboard_metrics = Arc::clone(&metrics);
     let started_at = Instant::now();
 
     let dashboard_handle = thread::spawn(move || {
@@ -994,6 +1330,8 @@ pub fn run_interactive(
                 uptime,
                 pool_height,
                 &cached_gpu_info,
+                &dashboard_metrics,
+                &dashboard_hashrate,
             );
         }
     });
