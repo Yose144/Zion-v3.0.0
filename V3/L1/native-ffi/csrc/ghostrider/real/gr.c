@@ -2,16 +2,24 @@
  * ============================================================================
  *  GhostRider hash — Raptoreum (RTM)
  *
- *  This implementation matches the official yiimp-ghostrider stratum server
- *  (Raptor3um/yiimp-ghostrider) and cpuminer-opt's gr_hash exactly.
+ *  This implementation matches the yiimp-ghostrider stratum server
+ *  (Raptor3um/yiimp-ghostrider) EXACTLY — this is what zpool and other
+ *  yiimp-based pools run for share validation.
  *
  *  Key points (verified against yiimp source 2026-07-20):
- *    - getAlgoString reverses byte order: b = (63 - j) >> 1, alternating
- *      low/high nibble extraction based on j parity.
+ *    - getAlgoString uses REVERSED byte order: b = (63 - j) >> 1, with
+ *      HIGH nibble first (j even: >> 4), LOW nibble second (j odd: & 0xF).
+ *      This matches the official Raptoreum daemon's GetNibble (index = 63 - index).
+ *    - NOTE: cpuminer-gr-avx2 (WyvernTKC) and npq7721/gr_hash use FORWARD
+ *      byte order — they are NOT the validator. yiimp is the validator.
+ *      We must match yiimp, not the miner.
+ *    - yiimp has a subtle BUG: the last-selected algo is NOT written to the
+ *      output string (break happens before sprintf). We replicate this bug.
  *    - 6 CN variants only: CNDark, CNDarklite, CNFast, CNLite, CNTurtle,
- *      CNTurtlelite (NOT 14).
+ *      CNTurtlelite (NOT 14 as in npq7721).
+ *    - 15 core algos: BLAKE..WHIRLPOOL.
+ *    - 3 CN positions: indices 5, 11, 17 in the 18-iteration loop.
  *    - NO post-CN memset zeroing of hash[8..40].
- *    - 15 core algos: BLAKE..WHIRLPOOL (same as before).
  *
  *  GhostRider algorithm: 15 core hash functions + 6 CryptoNight variants,
  *  selected dynamically based on previous block hash.
@@ -87,69 +95,61 @@ enum CNAlgo {
 /*
  * getAlgoString — select algorithm ordering from prev-hash bytes.
  *
- * This matches the official cpuminer-gr-avx2 (WyvernTKC) and npq7721/gr_hash
- * implementations exactly:
- *   - Iterates forward over the 32 bytes starting at prevblock[0].
- *   - For each byte, extracts the LOW nibble first, then the HIGH nibble.
- *   - selectAlgo: (nibble & 0x0F) % algoCount, then (nibble >> 4) % algoCount.
- *   - Skips already-selected algos.
- *   - Fills remaining unselected algos in ascending order at the end.
+ * This matches yiimp-ghostrider (Raptor3um/yiimp-ghostrider) EXACTLY,
+ * including its subtle bug where the last-selected algo is NOT written
+ * to the output string (break happens before sprintf). zpool runs yiimp,
+ * so we must replicate yiimp's behavior precisely — NOT cpuminer-gr-avx2
+ * or npq7721/gr_hash, which use a different (forward) byte order.
  *
- * The previous version of this function used REVERSED byte order
- * (b = (63 - j) >> 1) and HIGH nibble first, which produced a DIFFERENT
- * algorithm sequence and thus wrong hashes, causing "Invalid share" (error 25)
- * rejections from yiimp/zpool.
+ * Key details (verified against yiimp source 2026-07-20):
+ *   - Reversed byte order: b = (63 - j) >> 1
+ *   - High nibble first when j is even (prevblock[b] >> 4),
+ *     low nibble when j is odd (prevblock[b] & 0xF).
+ *   - BUG: when selectedCount == algoCount, breaks BEFORE writing the
+ *     last algo to output. The last algo is lost (not in the string).
+ *     The fill-remaining loop only adds unselected algos, so the last
+ *     selected algo is gone. Accessing output[algoCount-1] reads '\0' = 0.
+ *   - This matches the official Raptoreum daemon's GetNibble:
+ *       index = 63 - index; (reversed)
+ *       if (index % 2 == 1) return (m_data[index/2] >> 4);  (high nibble)
+ *       else return (m_data[index/2] & 0x0F);               (low nibble)
  */
-static void selectAlgo(unsigned char nibble, bool* selectedAlgos, uint8_t* selectedIndex, int algoCount, int* currentCount) {
-	uint8_t algoDigit = (nibble & 0x0F) % algoCount;
-	if(!selectedAlgos[algoDigit]) {
-		selectedAlgos[algoDigit] = true;
-		selectedIndex[*currentCount] = algoDigit;
-		(*currentCount)++;
-	}
-	algoDigit = (nibble >> 4) % algoCount;
-	if(!selectedAlgos[algoDigit]) {
-		selectedAlgos[algoDigit] = true;
-		selectedIndex[*currentCount] = algoDigit;
-		(*currentCount)++;
-	}
-}
-
 static void getAlgoString(const uint8_t* prevblock, char *output, int algoCount) {
+	char *sptr = output;
+	int j;
 	bool selectedAlgo[algoCount];
-	for(int z = 0; z < algoCount; z++) {
-		selectedAlgo[z] = false;
+	for(int z=0; z < algoCount; z++) {
+	   selectedAlgo[z] = false;
 	}
-	uint8_t selectedIndex[algoCount];
 	int selectedCount = 0;
-
-	/* Iterate forward over 32 bytes (64 nibbles), low nibble first. */
-	for (int i = 0; i < 32; i++) {
-		selectAlgo(prevblock[i], selectedAlgo, selectedIndex, algoCount, &selectedCount);
-		if (selectedCount == algoCount) {
+	for (j = 0; j < 64; j++) {
+		char b = (63 - j) >> 1; // 64 ascii hex chars, reversed
+		uint8_t algoDigit = ((j & 1) ? prevblock[(uint8_t)b] & 0xF : prevblock[(uint8_t)b] >> 4) % algoCount;
+		if(!selectedAlgo[algoDigit]) {
+			selectedAlgo[algoDigit] = true;
+			selectedCount++;
+		} else {
+			continue;
+		}
+		if(selectedCount == algoCount) {
 			break;
 		}
-	}
-
-	/* Fill remaining unselected algos in ascending order. */
-	if (selectedCount < algoCount) {
-		for (uint8_t i = 0; i < algoCount; i++) {
-			if (!selectedAlgo[i]) {
-				selectedIndex[selectedCount] = i;
-				selectedCount++;
-			}
-		}
-	}
-
-	/* Convert indices to char string: 0-9 as '0'-'9', 10+ as 'A'+. */
-	char *sptr = output;
-	for (int i = 0; i < algoCount; i++) {
-		uint8_t algoDigit = selectedIndex[i];
 		if (algoDigit >= 10)
 			sprintf(sptr, "%c", 'A' + (algoDigit - 10));
 		else
-			sprintf(sptr, "%u", (uint32_t)algoDigit);
+			sprintf(sptr, "%u", (uint32_t) algoDigit);
 		sptr++;
+	}
+	if(selectedCount < algoCount) {
+		for(uint8_t i = 0; i < algoCount; i++) {
+			if(!selectedAlgo[i]) {
+				if (i >= 10)
+					sprintf(sptr, "%c", 'A' + (i - 10));
+				else
+					sprintf(sptr, "%u", (uint32_t) i);
+				sptr++;
+			}
+		}
 	}
 	*sptr = '\0';
 }
