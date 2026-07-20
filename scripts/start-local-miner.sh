@@ -18,6 +18,7 @@ ZION_MINER_LOOPS="${ZION_MINER_LOOPS:-999999}"
 
 # ── Interactive TUI (pro-style dashboard) ───────────────────────────────────
 export ZION_INTERACTIVE="${ZION_INTERACTIVE:-1}"
+export ZION_TUI_WIDTH="${ZION_TUI_WIDTH:-60}"
 
 # ── Triple-Stream tuning ────────────────────────────────────────────────────
 # Hardware autotuning is now built into the miner binary!
