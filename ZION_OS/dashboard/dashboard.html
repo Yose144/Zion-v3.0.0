@@ -6330,6 +6330,73 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <button onclick="loadAgentList(); checkAiStatus();" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
     </div>
 
+    <!-- 🎼 Maestro v2.4 Orchestrator Panel -->
+    <div class="zion-panel p-6 border-amber-500/30" style="border-color: rgba(245,158,11,0.3);">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div class="text-3xl">🎼</div>
+          <div>
+            <h2 class="text-lg font-bold text-amber-300">Maestro v2.4 — Ecosystem Orchestrator</h2>
+            <div class="text-xs text-gray-400">Hierarchical agent dispatch · 55 tools · 32 sub-agents · 14 intents · 26 services</div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="maestroInfo()" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-xs rounded-lg transition">ℹ️ Info</button>
+          <button onclick="maestroHealth()" class="px-3 py-1.5 bg-emerald-700/40 hover:bg-emerald-700/60 border border-emerald-500/30 text-emerald-200 text-xs font-medium rounded-lg transition">💊 Health</button>
+          <button onclick="maestroRefresh()" class="text-xs text-gray-400 hover:text-white">🔄</button>
+        </div>
+      </div>
+
+      <!-- Maestro status grid -->
+      <div id="maestro-status-grid" class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center mb-4">
+        <div class="bg-black/20 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Tools</div><div id="maestro-tools" class="text-xl font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/20 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Sub-Agents</div><div id="maestro-subagents" class="text-xl font-bold text-blue-400">—</div></div>
+        <div class="bg-black/20 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Intents</div><div id="maestro-intents" class="text-xl font-bold text-amber-400">—</div></div>
+        <div class="bg-black/20 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Services</div><div id="maestro-services" class="text-xl font-bold text-purple-400">—</div></div>
+        <div class="bg-black/20 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Overall Health</div><div id="maestro-overall" class="text-xl font-bold text-gray-300">—</div></div>
+      </div>
+
+      <!-- Health matrix (compact) -->
+      <div id="maestro-health-matrix" class="hidden bg-black/20 rounded-lg p-3 mb-4">
+        <div class="text-xs text-gray-400 mb-2 uppercase tracking-wider">Service Health Matrix (26 services)</div>
+        <div id="maestro-health-list" class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs"></div>
+      </div>
+
+      <!-- Orchestrate input -->
+      <div class="bg-black/20 rounded-lg p-4">
+        <div class="text-xs text-gray-400 mb-2 uppercase tracking-wider">🎯 Orchestrate Query</div>
+        <div class="flex gap-2 mb-3">
+          <input id="maestro-query-input" type="text" placeholder="Příklad: 'Je vše zdravé?' nebo 'Jaká je výška bloku?' nebo 'Show DeFi staking APR'"
+                 class="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-amber-500"
+                 onkeydown="if(event.key==='Enter')maestroOrchestrate()"/>
+          <button onclick="maestroOrchestrate()" id="maestro-run-btn"
+                  class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium rounded-lg transition">
+            🎼 Orchestrate
+          </button>
+        </div>
+        <div class="flex flex-wrap gap-2 mb-3">
+          <button onclick="maestroQuick('Je vše zdravé?')" class="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-xs text-gray-300 transition">Je vše zdravé?</button>
+          <button onclick="maestroQuick('Jaká je výška bloku?')" class="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-xs text-gray-300 transition">Výška bloku</button>
+          <button onclick="maestroQuick('Show DeFi staking APR')" class="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-xs text-gray-300 transition">DeFi APR</button>
+          <button onclick="maestroQuick('Watchdog status')" class="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-xs text-gray-300 transition">Watchdog</button>
+          <button onclick="maestroQuick('Backup status')" class="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-xs text-gray-300 transition">Backup</button>
+          <button onclick="maestroQuick('Inspect database')" class="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-xs text-gray-300 transition">Database</button>
+        </div>
+        <div id="maestro-latency" class="text-xs text-gray-500 mb-2 h-4"></div>
+        <div id="maestro-result" class="hidden bg-black/40 rounded-lg p-3 text-xs">
+          <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+            <div class="flex gap-3 flex-wrap">
+              <span class="text-gray-400">Intent: <span id="maestro-result-intent" class="text-amber-400 font-bold">—</span></span>
+              <span class="text-gray-400">Status: <span id="maestro-result-status" class="font-bold">—</span></span>
+              <span class="text-gray-400">Steps: <span id="maestro-result-steps" class="text-blue-400 font-bold">—</span></span>
+              <span class="text-gray-400">Duration: <span id="maestro-result-duration" class="text-emerald-400 font-bold">—</span></span>
+            </div>
+          </div>
+          <div id="maestro-result-steps-list" class="space-y-1 max-h-48 overflow-y-auto"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="zion-panel p-6">
       <!-- Status row -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
@@ -7443,7 +7510,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
   </div>
 </div>
 
-<script src="/dashboard.js?v=115" defer></script>
+<script src="/dashboard.js?v=116" defer></script>
 <script>
 // ═══ Supported AuxPoW coin tickers (keep in sync with app.py AUXPOW_SUPPORTED_COINS) ═══
 const STREAM_COIN_TICKERS = [

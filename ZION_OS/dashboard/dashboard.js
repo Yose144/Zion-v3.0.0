@@ -203,7 +203,7 @@ function switchTab(name){
   else if(name === 'miner-live'){ clearTabTimers('minerLive'); refreshMinerLive(); if(!_minerLiveTimer) _minerLiveTimer = setInterval(refreshMinerLive, 5000); }
   else if(name === 'bridge'){ clearTabTimers('bridge'); loadBridgeStats(); refreshBridgeHistory(); loadBridgeUtxoLocks(); if(!_bridgeTimer) _bridgeTimer = setInterval(loadBridgeStats, 8000); }
   else if(name === 'bridge-validators'){ clearTabTimers('bridge-validators'); loadBridgeValidators(); }
-  else if(name === 'hiran'){ clearTabTimers('hiran'); loadAgentList(); checkAiStatus(); if(!_hiranTimer) _hiranTimer = setInterval(()=>{loadAgentList(); checkAiStatus();}, 10000); }
+  else if(name === 'hiran'){ clearTabTimers('hiran'); loadAgentList(); checkAiStatus(); maestroInfo(); if(!_hiranTimer) _hiranTimer = setInterval(()=>{loadAgentList(); checkAiStatus();}, 10000); }
   else if(name === 'topology'){ clearTabTimers('topology'); loadTopology(); if(!_topologyTimer) _topologyTimer = setInterval(loadTopology, 10000); }
   else if(name === 'dao'){ clearTabTimers('dao'); loadDaoAll(); if(!_daoTimer) _daoTimer = setInterval(loadDaoAll, 10000); }
   else if(name === 'cex'){ clearTabTimers(null); loadCexPanel(); if(!_cexTimer) _cexTimer = setInterval(loadCexPanel, 60000); }
@@ -11545,4 +11545,130 @@ async function hotSwitchCoin(stream, coin){
 function hotSwitchGpuFromDropdown(){
   const sel = document.getElementById('ps-s2-hotswitch-coin');
   if(sel) hotSwitchCoin('gpu', sel.value);
+}
+
+// ── Maestro v2.4 Orchestrator ──────────────────────────────────────────────
+
+async function maestroInfo(){
+  try{
+    const r=await fetch('/api/maestro/info').then(r=>r.json());
+    if(r.ok){
+      const d=r.data;
+      const el=t=>document.getElementById(t);
+      if(el('maestro-tools')) el('maestro-tools').textContent=d.totals.tools;
+      if(el('maestro-subagents')) el('maestro-subagents').textContent=d.totals.sub_agents;
+      if(el('maestro-intents')) el('maestro-intents').textContent=d.totals.intents;
+      if(el('maestro-services')) el('maestro-services').textContent=d.totals.health_services;
+    }else{
+      const el=document.getElementById('maestro-tools');
+      if(el){el.textContent='ERR';el.title=r.error||'maestro unavailable';}
+    }
+  }catch(e){
+    const el=document.getElementById('maestro-tools');
+    if(el) el.textContent='ERR';
+  }
+}
+
+async function maestroHealth(){
+  const mtx=document.getElementById('maestro-health-matrix');
+  const lst=document.getElementById('maestro-health-list');
+  if(!mtx||!lst) return;
+  mtx.classList.remove('hidden');
+  lst.innerHTML='<div class="text-gray-500">Probing 26 services…</div>';
+  const ovEl=document.getElementById('maestro-overall');
+  if(ovEl) ovEl.textContent='…';
+  try{
+    const r=await fetch('/api/maestro/health').then(r=>r.json());
+    if(r.ok){
+      const d=r.data;
+      const svcs=d.services||[];
+      const colorMap={'Healthy':'text-emerald-400','Degraded':'text-amber-400','Down':'text-red-400','Unknown':'text-gray-500'};
+      lst.innerHTML=svcs.map(s=>{
+        const c=colorMap[s.status]||'text-gray-400';
+        const icon=s.status==='Healthy'?'✓':s.status==='Down'?'✗':s.status==='Degraded'?'⚠':'?';
+        return `<div class="flex items-center gap-1"><span class="${c}">${icon}</span><span class="text-gray-300">${s.name}</span></div>`;
+      }).join('');
+      const counts={Healthy:0,Degraded:0,Down:0,Unknown:0};
+      svcs.forEach(s=>{counts[s.status]=(counts[s.status]||0)+1;});
+      const ov=counts.Down>0?'Down':counts.Degraded>0?'Degraded':'Healthy';
+      if(ovEl){
+        ovEl.textContent=ov;
+        ovEl.className='text-xl font-bold '+(ov==='Healthy'?'text-emerald-400':ov==='Degraded'?'text-amber-400':'text-red-400');
+      }
+    }else{
+      lst.innerHTML='<div class="text-red-400">Error: '+(r.error||'unknown')+'</div>';
+      if(ovEl) ovEl.textContent='ERR';
+    }
+  }catch(e){
+    lst.innerHTML='<div class="text-red-400">Fetch error: '+e.message+'</div>';
+    if(ovEl) ovEl.textContent='ERR';
+  }
+}
+
+function maestroRefresh(){
+  maestroInfo();
+  maestroHealth();
+}
+
+function maestroQuick(q){
+  const inp=document.getElementById('maestro-query-input');
+  if(inp){inp.value=q;maestroOrchestrate();}
+}
+
+async function maestroOrchestrate(){
+  const inp=document.getElementById('maestro-query-input');
+  if(!inp) return;
+  const q=inp.value.trim();
+  if(!q) return;
+  const btn=document.getElementById('maestro-run-btn');
+  const lat=document.getElementById('maestro-latency');
+  const res=document.getElementById('maestro-result');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Running…';}
+  if(lat) lat.textContent='Orchestruji…';
+  if(res) res.classList.remove('hidden');
+  const t0=performance.now();
+  try{
+    const r=await fetch('/api/maestro/orchestrate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})}).then(r=>r.json());
+    const dt=((performance.now()-t0)/1000).toFixed(2);
+    if(lat) lat.textContent=`Completed in ${dt}s`;
+    if(r.ok){
+      const d=r.data;
+      const ei=document.getElementById('maestro-result-intent');
+      if(ei) ei.textContent=d.plan.intent;
+      const stEl=document.getElementById('maestro-result-status');
+      if(stEl){
+        stEl.textContent=d.status;
+        stEl.className='font-bold '+(d.status==='Success'?'text-emerald-400':d.status==='Failed'?'text-red-400':'text-amber-400');
+      }
+      const es=document.getElementById('maestro-result-steps');
+      if(es) es.textContent=Object.keys(d.step_results).length;
+      const ed=document.getElementById('maestro-result-duration');
+      if(ed) ed.textContent=d.total_duration_ms+'ms';
+      const stepsList=document.getElementById('maestro-result-steps-list');
+      if(stepsList){
+        const steps=d.plan.steps||[];
+        const stepMap=d.step_results||{};
+        stepsList.innerHTML=steps.map(s=>{
+          const sr=stepMap[s.id]||{status:'?'};
+          const icon=sr.status==='Success'?'✓':sr.status==='Failed'?'✗':sr.status==='Skipped'?'⊘':sr.status==='PartialSuccess'?'◐':'?';
+          const cls=sr.status==='Success'?'text-emerald-400':sr.status==='Failed'?'text-red-400':sr.status==='Skipped'?'text-gray-500':'text-amber-400';
+          const tools=(s.tool_names||[]).join(', ');
+          return `<div class="flex items-start gap-2"><span class="${cls} font-bold">${icon}</span><div><span class="text-gray-300">#${s.id} ${s.description}</span>${tools?` <span class="text-gray-500">[${tools}]</span>`:''}<span class="text-gray-500"> → ${sr.status}</span></div></div>`;
+        }).join('');
+      }
+    }else{
+      const ei=document.getElementById('maestro-result-intent');
+      if(ei) ei.textContent='ERROR';
+      const sl=document.getElementById('maestro-result-steps-list');
+      if(sl) sl.innerHTML='<div class="text-red-400">'+(r.error||'unknown error')+'</div>';
+    }
+  }catch(e){
+    if(lat) lat.textContent='Fetch error';
+    const ei=document.getElementById('maestro-result-intent');
+    if(ei) ei.textContent='ERR';
+    const sl=document.getElementById('maestro-result-steps-list');
+    if(sl) sl.innerHTML='<div class="text-red-400">'+e.message+'</div>';
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='🎼 Orchestrate';}
+  }
 }
