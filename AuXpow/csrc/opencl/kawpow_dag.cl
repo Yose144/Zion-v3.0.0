@@ -5,7 +5,7 @@
 //
 
 
-#define ETHASH_DATASET_PARENTS 512
+#define ETHASH_DATASET_PARENTS 256
 #define NODE_WORDS (64 / 4)
 
 __constant uint2 const Keccak_f1600_RC[24] = {

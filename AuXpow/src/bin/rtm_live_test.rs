@@ -70,18 +70,29 @@ async fn main() {
 
         let mut current_job = initial_job;
         let mut nonce_base = 0u64;
-        let batch_per_round = 50_000u64;
+        let batch_per_round = 500u64;
 
         while found.is_none() && total_nonces < 100_000_000 {
             // Check for updated job from client
             if let Some(new_job) = client.current_job().await {
                 if new_job.job_id != current_job.job_id {
-                    println!(
-                        "  switching job: {} -> {} (nonce_base reset)",
-                        current_job.job_id, new_job.job_id
-                    );
+                    // If prevhash is the same, keep nonce_base (only ntime
+                    // changed).  Otherwise reset.
+                    let same_prev = new_job.header_bytes[4..36]
+                        == current_job.header_bytes[4..36];
+                    if same_prev {
+                        println!(
+                            "  switching job: {} -> {} (same prevhash, keeping nonce_base={})",
+                            current_job.job_id, new_job.job_id, nonce_base
+                        );
+                    } else {
+                        println!(
+                            "  switching job: {} -> {} (new prevhash, nonce_base reset)",
+                            current_job.job_id, new_job.job_id
+                        );
+                        nonce_base = 0;
+                    }
                     current_job = new_job;
-                    nonce_base = 0;
                 }
             }
 
