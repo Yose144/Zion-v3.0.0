@@ -24,6 +24,7 @@ zion-warp = { path = "../warp" }
 zion-bridge = { path = "../../L2/bridge" }
 walkdir = "2"
 sha2 = "0.10"
+clap = { version = "4", features = ["derive"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
