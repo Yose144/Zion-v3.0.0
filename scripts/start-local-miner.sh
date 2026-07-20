@@ -8,7 +8,7 @@
 set -euo pipefail
 
 REPO_ROOT="/home/zionserver/2.9.6-main"
-MINER_BIN="${REPO_ROOT}/V3/target/release/zion-miner"
+MINER_BIN="${REPO_ROOT}/target/release/zion-miner"
 DESKTOP_BIN="${HOME}/Desktop/zion-miner"
 
 # ── Pool & defaults ────────────────────────────────────────────────────────
@@ -39,6 +39,7 @@ export ZION_STREAM1_ENABLED="${ZION_STREAM1_ENABLED:-1}"
 export ZION_STREAM2_ENABLED="${ZION_STREAM2_ENABLED:-0}"
 export ZION_STREAM3_ENABLED="${ZION_STREAM3_ENABLED:-1}"
 export ZION_METRICS_REPORT_SECS="${ZION_METRICS_REPORT_SECS:-15}"
+export ZION_STATS_FILE="${ZION_STATS_FILE:-/tmp/zion-miner-stats.json}"
 
 # ── Autonomous profit routing ────────────────────────────────────────────────
 # When ZION_AUTONOMOUS=1, the miner auto-selects the most profitable compatible
@@ -124,8 +125,8 @@ if [[ -x "$MINER_BIN" ]]; then
     echo "[OK] Miner binary copied to Desktop: $DESKTOP_BIN"
 else
     echo "[BUILD] Miner binary missing, building..."
-    cd "$REPO_ROOT/V3"
-    cargo build --release --bin zion-miner --features gpu-opencl,native-hashers,native-verushash,native-randomx
+    cd "$REPO_ROOT"
+    cargo build --release -p zion-miner --features gpu-opencl,native-hashers,native-verushash,native-randomx
     cp "$MINER_BIN" "$DESKTOP_BIN"
     chmod +x "$DESKTOP_BIN"
 fi
@@ -169,7 +170,7 @@ screen -S "$SCREEN_NAME" -X quit 2>/dev/null || true
 rm -f /tmp/zion-miner-crash.log
 
 screen -dmS "$SCREEN_NAME" bash -c "
-cd '$REPO_ROOT/V3'
+cd '$REPO_ROOT'
 
 # ── Crash watchdog loop ────────────────────────────────────────────────────
 RESTART_COUNT=0
