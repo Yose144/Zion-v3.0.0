@@ -16,6 +16,9 @@ ZION_POOL_ADDR="${ZION_POOL_ADDR:-62.171.141.136:8444}"
 ZION_MINER_WORKER="${ZION_MINER_WORKER:-local-gpu}"
 ZION_MINER_LOOPS="${ZION_MINER_LOOPS:-999999}"
 
+# ── Interactive TUI (pro-style dashboard) ───────────────────────────────────
+export ZION_INTERACTIVE="${ZION_INTERACTIVE:-1}"
+
 # ── Triple-Stream tuning ────────────────────────────────────────────────────
 # Hardware autotuning is now built into the miner binary!
 # The miner auto-detects GPU CUs, VRAM, CPU vendor/model, physical/logical cores,
@@ -185,7 +188,6 @@ while true; do
         --worker '$ZION_MINER_WORKER' \\
         --gpu '$BACKEND' \\
         --algorithm '$ZION_MINER_ALGORITHM' \\
-        --no-tui \\
         --profile pool \\
         --loops '$ZION_MINER_LOOPS'
     EXIT_CODE=\$?

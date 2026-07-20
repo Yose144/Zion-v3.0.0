@@ -1299,6 +1299,17 @@ fn main() -> Result<()> {
     )));
     let hashrate = HashrateTracker::new();
 
+    // ── When TUI is active, redirect mining thread stdout to a log file ──
+    // The TUI writes directly to /dev/tty, so mining println! won't corrupt it.
+    if interactive {
+        let log_path = std::env::var("ZION_MINER_LOG")
+            .unwrap_or_else(|_| "/tmp/zion-miner.log".to_string());
+        if !interactive::redirect_stdout_to_log(&log_path) {
+            // If redirect fails, continue without TUI (logs go to stdout)
+            eprintln!("[WARN] Failed to redirect stdout to {log_path}, TUI may be corrupted");
+        }
+    }
+
     let outcome = match config.pool_addr.as_deref() {
         Some(pool_addr) => {
             println!("mode=remote");
@@ -1764,9 +1775,11 @@ fn run_local_session(
         if matches!(decision.status, ShareStatus::Accepted) {
             accepted_iterations += 1;
             hashrate.record_share(true);
+            hashrate.log_share("ZION", true, job.job_id, 0, "");
         } else {
             rejected_iterations += 1;
             hashrate.record_share(false);
+            hashrate.log_share("ZION", false, job.job_id, 0, "local rejected");
         }
 
         let submit_started_at = Instant::now();
@@ -2789,11 +2802,13 @@ fn run_remote_session(
                     let is_cpu = coin.eq_ignore_ascii_case("VRSC")
                         || coin.eq_ignore_ascii_case("XMR")
                         || coin.eq_ignore_ascii_case("RTM");
+                    let stream_label = if is_cpu { "CPU" } else { "GPU" };
                     if is_cpu {
                         hashrate.record_cpu_ext_share(accepted);
                     } else {
                         hashrate.record_gpu_ext_share(accepted);
                     }
+                    hashrate.log_share(stream_label, accepted, 0, 0, &status);
                     if accepted {
                         println!("[{}] external_share_accepted coin={} status={}", log_timestamp(), coin, status);
                     } else {
@@ -2939,6 +2954,7 @@ fn run_remote_session(
                 if accepted {
                     accepted_iterations += 1;
                     hashrate.record_zion_share(true);
+                    hashrate.log_share("ZION", true, job.job_id, latency_ms as u64, "");
                     ui::log_accepted(
                         job.job_id,
                         job.height,
@@ -2957,6 +2973,7 @@ fn run_remote_session(
                 } else {
                     rejected_iterations += 1;
                     hashrate.record_zion_share(false);
+                    hashrate.log_share("ZION", false, job.job_id, latency_ms as u64, &status);
                     ui::log_rejected(
                         job.job_id,
                         job.height,
@@ -2979,11 +2996,13 @@ fn run_remote_session(
                 let is_cpu = coin.eq_ignore_ascii_case("VRSC")
                     || coin.eq_ignore_ascii_case("XMR")
                     || coin.eq_ignore_ascii_case("RTM");
+                let stream_label = if is_cpu { "CPU" } else { "GPU" };
                 if is_cpu {
                     hashrate.record_cpu_ext_share(accepted);
                 } else {
                     hashrate.record_gpu_ext_share(accepted);
                 }
+                hashrate.log_share(stream_label, accepted, 0, 0, &ext_status);
                 if accepted {
                     println!("[{}] external_share_accepted coin={} status={}", log_timestamp(), coin, ext_status);
                 } else {
@@ -3006,6 +3025,7 @@ fn run_remote_session(
                     if accepted {
                         accepted_iterations += 1;
                         hashrate.record_zion_share(true);
+                        hashrate.log_share("ZION", true, job.job_id, latency_ms as u64, "");
                         ui::log_accepted(job.job_id, job.height, solution.candidate.nonce, latency_ms as u64);
                         println!(
                             "[{}] SHARE_ACCEPTED  job={}  height={}  nonce={}  algo={}  latency_ms={}",
@@ -3014,6 +3034,7 @@ fn run_remote_session(
                     } else {
                         rejected_iterations += 1;
                         hashrate.record_zion_share(false);
+                        hashrate.log_share("ZION", false, job.job_id, latency_ms as u64, &status);
                         ui::log_rejected(job.job_id, job.height, solution.candidate.nonce, latency_ms as u64, &status);
                         println!(
                             "[{}] SHARE_REJECTED  job={}  height={}  nonce={}  algo={}  reason=\"{}\"  hash={}",
@@ -3684,7 +3705,7 @@ fn external_gpu_thread(
     fn epoch_for_algorithm(algorithm: &str, height: u64) -> Option<u32> {
         match algorithm {
             "ethash" | "etchash" | "ethash_etc" => Some((height / 30000) as u32),
-            "progpow" | "progpow_epic" => Some((height / 30000) as u32),
+            "progpow" | "progpow_epic" | "progpow_zano" => Some((height / 30000) as u32),
             "kawpow"
             | "kawpow_rvn"
             | "kawpow_clore"
@@ -5375,6 +5396,7 @@ fn parse_revenue_source(value: &str) -> Result<RevenueSource> {
         "autolykos" | "erg" => Ok(RevenueSource::AutolykosExternal),
         "randomx" | "xmr" => Ok(RevenueSource::RandomXExternal),
         "zelhash" | "flux" => Ok(RevenueSource::ZelHashExternal),
+        "progpow" | "epic" | "zano" => Ok(RevenueSource::ProgPowExternal),
         "ncl" | "ncl_ai" => Ok(RevenueSource::NclAi),
         other => Err(anyhow!("unsupported revenue source: {other}")),
     }

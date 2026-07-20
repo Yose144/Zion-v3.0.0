@@ -33,6 +33,7 @@ pub enum ExternalAlgorithm {
     Octopus,
     Equihash,
     NeoScrypt,
+    KeryxHash,
 }
 
 impl ExternalAlgorithm {
@@ -53,6 +54,7 @@ impl ExternalAlgorithm {
             Self::Octopus => "octopus",
             Self::Equihash => "equihash",
             Self::NeoScrypt => "neoscrypt",
+            Self::KeryxHash => "keryxhash",
         }
     }
 
@@ -73,6 +75,7 @@ impl ExternalAlgorithm {
             "octopus" => Some(Self::Octopus),
             "equihash" => Some(Self::Equihash),
             "neoscrypt" => Some(Self::NeoScrypt),
+            "keryxhash" | "keryx" => Some(Self::KeryxHash),
             _ => None,
         }
     }
@@ -345,7 +348,289 @@ fn kheavy_matrix() -> &'static KheavyMatrix {
     MATRIX.get_or_init(KheavyMatrix::generate)
 }
 
-/// Compute kHeavyHash with an explicit 8-byte nonce prefix.
+// ── KeryxHash (Keryx / KRX) ──────────────────────────────────────────
+//
+// KeryxHash is a modified kHeavyHash with two additions (see
+// keryx-miner src/pow/heavy_hash.rs and keryx-stratum-bridge keryx_hash.go):
+//
+//   1. KERYX_MATRIX_SALT — a 32-byte domain separator XORed into the
+//      pre_pow_hash before seeding the XoShiRo256++ PRNG that generates
+//      the 64×64 matrix. The matrix is therefore PER-BLOCK (derived from
+//      the block's pre_pow_hash), unlike Kaspa where it is fixed (derived
+//      from SHA3-256("KHeavyHash")).
+//
+//      Three salt versions exist (v1, v2, v4 — v3 is intentionally skipped,
+//      it belongs to the abandoned diff-spiral chain). The active salt is
+//      selected by DAA score:
+//        v1: DAA < 17_275_000          (genesis — 2026-05-30)
+//        v2: 17_275_000 ≤ DAA < 21_932_751  (emergency activation 2026-05-30)
+//        v4: DAA ≥ 21_932_751          (chain relaunch 2026-06-07, current)
+//
+//   2. wave_mix — 4-round ARX (Add-Rotate-XOR) post-processing applied to
+//      the 32-byte matrix product BEFORE the final cSHAKE256("HeavyHash")
+//      call. Purely arithmetic (no memory accesses), ~32 ops per hash.
+//
+// The cSHAKE customization strings ("ProofOfWorkHash", "HeavyHash") are
+// identical to Kaspa — Keryx forked from Kaspa and kept them.
+//
+// ⚠️ MAINNET STATUS (2026-07): Keryx mainnet activated Proof-of-Model (PoM)
+// at DAA 37,780,000 (2026-06-26) and made pomFinalState mandatory at H3
+// (DAA 43,450,000, 2026-07-05). Pure KeryxHash blocks are rejected by the
+// network. This implementation is kept for testnet/future/research use and
+// mirrors the pre-PoM keryx-miner behavior.
+
+/// Keryx matrix salt versions — must match `KERYX_MATRIX_SALT_V1/V2/V4` in
+/// `keryx-node/consensus/pow/src/matrix.rs` exactly, or the derived matrix
+/// will differ from the node's and every submitted block is rejected.
+pub const KERYX_MATRIX_SALT_V1: [u8; 32] = *b"KERYX:KeryxHash-v1:2026-04-12:xx";
+pub const KERYX_MATRIX_SALT_V2: [u8; 32] = *b"KERYX:KeryxHash-v2:2026-05-29:xx";
+pub const KERYX_MATRIX_SALT_V4: [u8; 32] = *b"KERYX:KeryxHash-v4:2026-06-07:xx";
+
+/// DAA score at which Keryx switches to salt v2 (mainnet, 2026-05-30).
+/// Matches `keryx-node` MAINNET_PARAMS.pow_salt_v2_activation.
+pub const KERYX_SALT_V2_ACTIVATION_DAA: u64 = 17_275_000;
+
+/// DAA score at which Keryx switches to salt v4 (chain relaunch, 2026-06-07).
+/// Matches `keryx-node` MAINNET_PARAMS.pow_salt_v4_activation.
+pub const KERYX_SALT_V4_ACTIVATION_DAA: u64 = 21_932_751;
+
+/// Return the active Keryx matrix-salt version (1, 2, or 4) for a block at
+/// `daa_score`. Mirrors `active_salt_version` in `keryx-node/consensus/pow/src/lib.rs`.
+#[inline(always)]
+pub fn keryx_active_salt_version(daa_score: u64) -> u8 {
+    if daa_score >= KERYX_SALT_V4_ACTIVATION_DAA {
+        4
+    } else if daa_score >= KERYX_SALT_V2_ACTIVATION_DAA {
+        2
+    } else {
+        1
+    }
+}
+
+/// Return the active Keryx matrix salt bytes for a block at `daa_score`.
+#[inline(always)]
+pub fn keryx_active_salt(daa_score: u64) -> &'static [u8; 32] {
+    match keryx_active_salt_version(daa_score) {
+        1 => &KERYX_MATRIX_SALT_V1,
+        2 => &KERYX_MATRIX_SALT_V2,
+        _ => &KERYX_MATRIX_SALT_V4,
+    }
+}
+
+/// wave_mix round constants — must match `WAVE_MIX_KEYS` in
+/// `keryx-node/consensus/pow/src/matrix.rs`. Consensus-critical.
+const KERYX_WAVE_MIX_KEYS: [u64; 4] = [
+    0x9e3779b97f4a7c15, // fractional bits of φ
+    0x6c62272e07bb0142, // Keryx network discriminator
+    0xb5ad4eceda1ce2a9, // fractional bits of √3
+    0x243f6a8885a308d3, // fractional bits of π
+];
+
+/// wave_mix rotation amounts — coprime to 64 to avoid fixed-point cycles.
+const KERYX_WAVE_MIX_ROTATIONS: [u32; 4] = [17, 31, 47, 13];
+
+/// 4-round ARX post-processing — bit-for-bit identical to `fn wave_mix()`
+/// in `keryx-node/consensus/pow/src/matrix.rs` and `keryx-miner`'s
+/// `heavy_hash.rs::wave_mix`. Applied to the 32-byte matrix product before
+/// the final cSHAKE256("HeavyHash") call.
+#[inline(always)]
+fn keryx_wave_mix(bytes: [u8; 32]) -> [u8; 32] {
+    let mut w = [
+        u64::from_le_bytes(bytes[0..8].try_into().unwrap()),
+        u64::from_le_bytes(bytes[8..16].try_into().unwrap()),
+        u64::from_le_bytes(bytes[16..24].try_into().unwrap()),
+        u64::from_le_bytes(bytes[24..32].try_into().unwrap()),
+    ];
+    for r in 0..4usize {
+        // Step A — vertical pairs (w0,w1) and (w2,w3) are independent.
+        w[0] = w[0].wrapping_add(w[1]).rotate_left(KERYX_WAVE_MIX_ROTATIONS[0]) ^ KERYX_WAVE_MIX_KEYS[r & 3];
+        w[2] = w[2].wrapping_add(w[3]).rotate_left(KERYX_WAVE_MIX_ROTATIONS[2]) ^ KERYX_WAVE_MIX_KEYS[(r + 2) & 3];
+        // Step B — diagonal pairs: cross-pollinate all 256 bits.
+        w[1] = w[1].wrapping_add(w[2]).rotate_left(KERYX_WAVE_MIX_ROTATIONS[1]) ^ KERYX_WAVE_MIX_KEYS[(r + 1) & 3];
+        w[3] = w[3].wrapping_add(w[0]).rotate_left(KERYX_WAVE_MIX_ROTATIONS[3]) ^ KERYX_WAVE_MIX_KEYS[(r + 3) & 3];
+    }
+    let mut out = [0u8; 32];
+    out[0..8].copy_from_slice(&w[0].to_le_bytes());
+    out[8..16].copy_from_slice(&w[1].to_le_bytes());
+    out[16..24].copy_from_slice(&w[2].to_le_bytes());
+    out[24..32].copy_from_slice(&w[3].to_le_bytes());
+    out
+}
+
+/// Generate the per-block Keryx 64×64 matrix from a pre_pow_hash and DAA score.
+///
+/// The matrix is derived by:
+///   1. XORing pre_pow_hash with the active KERYX_MATRIX_SALT (selected by daa_score)
+///   2. Seeding XoShiRo256++ with the salted hash
+///   3. Generating a 64×64 matrix of 4-bit values
+///   4. Retrying until the matrix has full rank (64) — matches `keryx-node`'s
+///      `Matrix::generate`.
+///
+/// Returns 4096 u16 values (8192 bytes) in row-major order, ready to be
+/// uploaded to the GPU kernel as the `matrix` buffer.
+pub fn generate_keryx_matrix(pre_pow_hash: &[u8], daa_score: u64) -> [[u16; 64]; 64] {
+    let salt = keryx_active_salt(daa_score);
+    let mut salted = [0u8; 32];
+    salted.iter_mut().zip(pre_pow_hash.iter().zip(salt.iter())).for_each(
+        |(out, (h, s))| *out = *h ^ *s,
+    );
+    // Seed XoShiRo256++ with the salted hash (LE u64 words).
+    let mut rng = XoShiRo256PlusPlus::new(salted);
+    // Reuse the same matrix-generation logic as KAS (rand_matrix + rank check).
+    // The KheavyMatrix struct is private, so we replicate the loop here.
+    loop {
+        let mut mat = [[0u16; 64]; 64];
+        for row in &mut mat {
+            let mut val = 0u64;
+            for (j, elem) in row.iter_mut().enumerate() {
+                let shift = j % 16;
+                if shift == 0 {
+                    val = rng.next();
+                }
+                *elem = ((val >> (4 * shift)) & 0x0F) as u16;
+            }
+        }
+        if keryx_matrix_rank(&mat) == 64 {
+            return mat;
+        }
+    }
+}
+
+/// Compute the rank of a 64×64 matrix over the reals (Gaussian elimination).
+/// Matches `keryx-node`'s `Matrix::compute_rank` and our `KheavyMatrix::compute_rank`.
+fn keryx_matrix_rank(mat: &[[u16; 64]; 64]) -> usize {
+    const EPS: f64 = 1e-9;
+    let mut m = [[0.0f64; 64]; 64];
+    for i in 0..64 {
+        for j in 0..64 {
+            m[i][j] = mat[i][j] as f64;
+        }
+    }
+    let mut rank = 0;
+    let mut row_selected = [false; 64];
+    for i in 0..64 {
+        let mut j = 0;
+        while j < 64 {
+            if !row_selected[j] && m[j][i].abs() > EPS {
+                break;
+            }
+            j += 1;
+        }
+        if j != 64 {
+            rank += 1;
+            row_selected[j] = true;
+            for p in (i + 1)..64 {
+                m[j][p] /= m[j][i];
+            }
+            for k in 0..64 {
+                if k != j && m[k][i].abs() > EPS {
+                    for p in (i + 1)..64 {
+                        m[k][p] -= m[j][p] * m[k][i];
+                    }
+                }
+            }
+        }
+    }
+    rank
+}
+
+/// Compute KeryxHash — Keryx's PoW algorithm (pre-PoM, kHeavyHash + wave_mix).
+///
+/// # Arguments
+/// * `pre_pow_hash` — 32-byte pre-pow hash from the pool's `mining.notify`
+/// * `timestamp` — Block timestamp (Unix seconds from `ntime`)
+/// * `nonce` — 64-bit nonce
+/// * `daa_score` — Block DAA score (selects the active matrix salt v1/v2/v4)
+///
+/// # Returns
+/// 32-byte KeryxHash digest.
+///
+/// # Algorithm
+/// 1. **PowHash** = cSHAKE256("ProofOfWorkHash")(pre_pow_hash ‖ timestamp ‖ 32 zero bytes ‖ nonce)
+///    (identical to Kaspa — Keryx inherited the customization string)
+/// 2. **Matrix step**: generate the per-block 64×64 matrix from
+///    `pre_pow_hash XOR KERYX_MATRIX_SALT_<v>` via XoShiRo256++ (retry until
+///    full rank 64). Expand PowHash to 64 nibbles, multiply, reduce to 4 bits,
+///    recombine to 32 bytes, XOR with PowHash.
+/// 3. **wave_mix**: 4-round ARX on the 32-byte product (Keryx-only step).
+/// 4. **HeavyHash** = cSHAKE256("HeavyHash")(wave_mix output)
+///    (identical to Kaspa — Keryx inherited the customization string)
+pub fn hash_keryxhash(pre_pow_hash: &[u8], timestamp: u64, nonce: u64, daa_score: u64) -> [u8; 32] {
+    use sha3::digest::{ExtendableOutput, Update, XofReader};
+    use sha3::{CShake256, CShake256Core};
+
+    // Step 1: PowHash (identical to Kaspa)
+    let mut pow_hasher = CShake256::from_core(CShake256Core::new(b"ProofOfWorkHash"));
+    pow_hasher.update(pre_pow_hash);
+    pow_hasher.update(&timestamp.to_le_bytes());
+    pow_hasher.update(&[0u8; 32]);
+    pow_hasher.update(&nonce.to_le_bytes());
+    let mut pow_hash = [0u8; 32];
+    pow_hasher.finalize_xof().read(&mut pow_hash);
+
+    // Step 2: Per-block matrix multiply (matrix derived from salted pre_pow_hash)
+    let matrix = generate_keryx_matrix(pre_pow_hash, daa_score);
+    let product = keryx_matrix_heavy_hash(&matrix, &pow_hash);
+
+    // Step 3: wave_mix ARX (Keryx-only)
+    let product = keryx_wave_mix(product);
+
+    // Step 4: HeavyHash = cSHAKE256("HeavyHash")(wave_mix output)
+    let mut heavy_hasher = CShake256::from_core(CShake256Core::new(b"HeavyHash"));
+    heavy_hasher.update(&product);
+    let mut heavy_hash = [0u8; 32];
+    heavy_hasher.finalize_xof().read(&mut heavy_hash);
+
+    heavy_hash
+}
+
+/// Matrix-vector multiply for Keryx — identical arithmetic to KAS
+/// (`KheavyMatrix::heavy_hash`), parameterized by a per-block matrix.
+fn keryx_matrix_heavy_hash(matrix: &[[u16; 64]; 64], hash: &[u8; 32]) -> [u8; 32] {
+    let mut vec = [0u8; 64];
+    for (i, &byte) in hash.iter().enumerate() {
+        vec[2 * i] = byte >> 4;
+        vec[2 * i + 1] = byte & 0x0F;
+    }
+    let mut product = [0u8; 32];
+    for i in 0..32 {
+        let mut sum1: u32 = 0;
+        let mut sum2: u32 = 0;
+        for (j, &elem) in vec.iter().enumerate() {
+            sum1 += (matrix[2 * i][j] * (elem as u16)) as u32;
+            sum2 += (matrix[2 * i + 1][j] * (elem as u16)) as u32;
+        }
+        product[i] = (((sum1 >> 10) << 4) as u8) | ((sum2 >> 10) as u8);
+    }
+    for (p, h) in product.iter_mut().zip(hash.iter()) {
+        *p ^= h;
+    }
+    product
+}
+
+/// Compute KeryxHash with an explicit 8-byte nonce prefix (stratum extranonce).
+///
+/// Stratum pools split the 64-bit nonce into a pool-fixed `extranonce1`
+/// prefix and a miner-scanned suffix. `suffix` is a `u64` whose low bytes
+/// are appended after `extranonce1` to form the full 8-byte nonce.
+pub fn hash_keryxhash_extranonce(
+    pre_pow_hash: &[u8],
+    timestamp: u64,
+    extranonce1: &[u8],
+    suffix: u64,
+    daa_score: u64,
+) -> [u8; 32] {
+    let mut full_nonce = [0u8; 8];
+    let en1_len = extranonce1.len().min(8);
+    full_nonce[..en1_len].copy_from_slice(&extranonce1[..en1_len]);
+    let suffix_len = 8 - en1_len;
+    if suffix_len > 0 {
+        full_nonce[en1_len..8].copy_from_slice(&suffix.to_le_bytes()[..suffix_len]);
+    }
+    hash_keryxhash(pre_pow_hash, timestamp, u64::from_le_bytes(full_nonce), daa_score)
+}
+
+/// Compute KeryxHash with an explicit 8-byte nonce prefix (stratum extranonce).
 ///
 /// Stratum pools (e.g. 2miners KAS) split the 64-bit nonce into a pool-fixed
 /// `extranonce1` prefix and a miner-scanned suffix.  `suffix` is a `u64` whose
@@ -2245,6 +2530,120 @@ mod tests {
             "430ee3e8261c539b1ff403cc0adc3587e74753a24f628be52b9dea8a6cfe3e66",
             "kHeavyHash must match the verified GPU reference vector"
         );
+    }
+
+    // ── KeryxHash (KRX) ──────────────────────────────────────────────
+
+    #[test]
+    fn keryxhash_deterministic() {
+        // Same (pre_pow_hash, timestamp, nonce, daa_score) → same hash
+        let h1 = hash_keryxhash(&[42u8; 32], 0, 42, 22_000_000);
+        let h2 = hash_keryxhash(&[42u8; 32], 0, 42, 22_000_000);
+        assert_eq!(h1, h2);
+    }
+
+    #[test]
+    fn keryxhash_nonzero() {
+        let h = hash_keryxhash(&[42u8; 32], 0, 0, 22_000_000);
+        assert_ne!(h, [0u8; 32]);
+    }
+
+    #[test]
+    fn keryxhash_nonce_sensitive() {
+        let h0 = hash_keryxhash(&[0u8; 32], 0, 0u64, 22_000_000);
+        let h1 = hash_keryxhash(&[0u8; 32], 0, 1u64, 22_000_000);
+        assert_ne!(h0, h1);
+    }
+
+    #[test]
+    fn keryxhash_header_sensitive() {
+        let h0 = hash_keryxhash(&[0u8; 32], 0, 0u64, 22_000_000);
+        let h1 = hash_keryxhash(&[1u8; 32], 0, 0u64, 22_000_000);
+        assert_ne!(h0, h1);
+    }
+
+    #[test]
+    fn keryxhash_differs_from_kheavyhash() {
+        // KeryxHash adds wave_mix + per-block salted matrix, so the output
+        // must differ from Kaspa's kHeavyHash for the same inputs.
+        let pre_pow_hash = &[42u8; 32];
+        let kas = hash_kheavyhash(pre_pow_hash, 5_435_345_234, 432_432_432);
+        let krx = hash_keryxhash(pre_pow_hash, 5_435_345_234, 432_432_432, 22_000_000);
+        assert_ne!(kas, krx, "KeryxHash must differ from kHeavyHash (wave_mix + salt)");
+    }
+
+    #[test]
+    fn keryxhash_salt_version_sensitive() {
+        // Different DAA scores select different salts → different matrices → different hashes.
+        // v1 (DAA 0) vs v4 (DAA 22_000_000) must produce different outputs.
+        let pre_pow_hash = &[42u8; 32];
+        let h_v1 = hash_keryxhash(pre_pow_hash, 1_000_000, 42, 0);
+        let h_v4 = hash_keryxhash(pre_pow_hash, 1_000_000, 42, 22_000_000);
+        assert_ne!(h_v1, h_v4, "KeryxHash must differ across salt versions");
+    }
+
+    #[test]
+    fn keryxhash_salt_v2_v4_boundary() {
+        // v2 (DAA 17_275_000) vs v4 (DAA 21_932_751) — boundary check
+        let pre_pow_hash = &[42u8; 32];
+        let h_v2 = hash_keryxhash(pre_pow_hash, 1_000_000, 42, 18_000_000);
+        let h_v4 = hash_keryxhash(pre_pow_hash, 1_000_000, 42, 22_000_000);
+        assert_ne!(h_v2, h_v4);
+        // Same salt version (v4) at two DAA scores above the v4 threshold → same hash
+        let h_v4_a = hash_keryxhash(pre_pow_hash, 1_000_000, 42, 22_000_000);
+        let h_v4_b = hash_keryxhash(pre_pow_hash, 1_000_000, 42, 50_000_000);
+        assert_eq!(h_v4_a, h_v4_b, "DAA score within the same salt version must not change the hash");
+    }
+
+    #[test]
+    fn keryxhash_active_salt_version() {
+        assert_eq!(keryx_active_salt_version(0), 1);
+        assert_eq!(keryx_active_salt_version(17_274_999), 1);
+        assert_eq!(keryx_active_salt_version(17_275_000), 2);
+        assert_eq!(keryx_active_salt_version(21_932_750), 2);
+        assert_eq!(keryx_active_salt_version(21_932_751), 4);
+        assert_eq!(keryx_active_salt_version(50_000_000), 4);
+    }
+
+    #[test]
+    fn keryxhash_matrix_full_rank() {
+        // The generated matrix must have full rank (64) — this is the
+        // consensus invariant from keryx-node's Matrix::generate.
+        let mat = generate_keryx_matrix(&[42u8; 32], 22_000_000);
+        // Reuse the rank checker via the public hash function (indirect):
+        // if rank < 64, generate_keryx_matrix would loop forever, so just
+        // reaching this assertion means rank == 64. Verify determinism too.
+        let mat2 = generate_keryx_matrix(&[42u8; 32], 22_000_000);
+        assert_eq!(mat, mat2, "Keryx matrix generation must be deterministic");
+    }
+
+    #[test]
+    fn keryxhash_extranonce_matches_full_nonce() {
+        // hash_keryxhash_extranonce with empty extranonce1 must equal hash_keryxhash
+        let pre_pow_hash = &[42u8; 32];
+        let direct = hash_keryxhash(pre_pow_hash, 1234, 0xAABBCCDD_EEFF0011u64, 22_000_000);
+        let via_en = hash_keryxhash_extranonce(pre_pow_hash, 1234, &[], 0xAABBCCDD_EEFF0011u64, 22_000_000);
+        assert_eq!(direct, via_en);
+
+        // With extranonce1 prefix [0x11, 0x00, 0xFF, 0xEE] + suffix 0xAABBCCDD (u32)
+        // → full nonce = 0xAABBCCDD_EEFF0011 (LE)
+        let mut expected_nonce_bytes = [0u8; 8];
+        expected_nonce_bytes[0..4].copy_from_slice(&[0x11, 0x00, 0xFF, 0xEE]);
+        expected_nonce_bytes[4..8].copy_from_slice(&0xAABBCCDDu32.to_le_bytes());
+        let expected_nonce = u64::from_le_bytes(expected_nonce_bytes);
+        let via_en2 = hash_keryxhash_extranonce(pre_pow_hash, 1234, &[0x11, 0x00, 0xFF, 0xEE], 0xAABBCCDDu64, 22_000_000);
+        let direct2 = hash_keryxhash(pre_pow_hash, 1234, expected_nonce, 22_000_000);
+        assert_eq!(direct2, via_en2);
+    }
+
+    #[test]
+    fn keryxhash_algorithm_enum() {
+        assert_eq!(ExternalAlgorithm::KeryxHash.as_str(), "keryxhash");
+        assert_eq!(ExternalAlgorithm::from_str_loose("keryxhash"), Some(ExternalAlgorithm::KeryxHash));
+        assert_eq!(ExternalAlgorithm::from_str_loose("keryx"), Some(ExternalAlgorithm::KeryxHash));
+        assert_eq!(ExternalAlgorithm::from_str_loose("KERYX"), Some(ExternalAlgorithm::KeryxHash));
+        assert_eq!(ExternalAlgorithm::from_str_loose("keryxhash "), Some(ExternalAlgorithm::KeryxHash));
+        assert_eq!(ExternalAlgorithm::from_str_loose("unknown"), None);
     }
 
     #[test]
