@@ -27,6 +27,11 @@ pub mod error;
 pub mod hiran_inference;
 pub mod hiranyagarbha;
 pub mod in_context;
+pub mod health_poller;
+pub mod intent;
+pub mod layer_agents;
+pub mod maestro;
+pub mod planner;
 pub mod knowledge_base;
 pub mod llm_backend;
 pub mod memory;
@@ -37,6 +42,7 @@ pub mod pool_optimizer;
 pub mod rag;
 pub mod task;
 pub mod telemetry;
+pub mod tool_registry;
 pub mod types;
 pub mod warp_agent;
 
@@ -45,6 +51,9 @@ pub use consciousness_engine::{ConsciousnessEngine, ConsciousnessStatus};
 pub use error::{AiError, AiResult};
 pub use hiran_inference::{HiranInferenceClient, HiranStatus, HybridInferenceBackend};
 pub use hiranyagarbha::{HiranyagarbhaAgent, MmlModality};
+pub use intent::{
+    classify_rule_based, ClassifierSource, IntentClassification, IntentRouter, IntentRouterConfig,
+};
 pub use knowledge_base::{
     chunk_document_text, collect_markdown_chunks_from_relative_roots, RagTextChunk,
     AI_NATIVE_CANONICAL_CORPUS_ROOTS, BUDDHISM_CLASSICAL_CORPUS_ROOTS, BUDDHISM_RAG_CORPUS_ROOTS,
@@ -63,5 +72,8 @@ pub use pool_optimizer::{PoolOptimizer, PoolRecommendation, PoolStats};
 pub use rag::{EmbeddingBackend, MockEmbeddingBackend, RagDocument, VectorStore};
 pub use task::{AiTask, AiTaskType, TaskQueue, TaskStatus};
 pub use telemetry::{NodeConfig, PoolRawStats, TelemetryFeed, TelemetryStats};
+pub use tool_registry::{
+    all_tools, HttpMethod, Intent, Layer, SubAgent, Tool, ToolExecutor, ToolRegistry, ToolResult,
+};
 pub use types::{Agent, AgentCapability, AgentMessage, AgentStatus};
 pub use warp_agent::{FieldTopology, WarpField, WarpMode, WarpOptimizer, WarpStats};

@@ -19,6 +19,15 @@ pub enum AiError {
 
     #[error("Consciousness level too low: need {required}, have {current}")]
     ConsciousnessInsufficient { required: u8, current: u8 },
+
+    #[error("Tool not found: {0}")]
+    ToolNotFound(String),
+
+    #[error("Tool execution failed: {0}")]
+    ToolExecutionFailed(String),
+
+    #[error("Human approval required for tool: {0}")]
+    ApprovalRequired(String),
 }
 
 pub type AiResult<T> = Result<T, AiError>;
