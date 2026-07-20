@@ -4246,7 +4246,15 @@ impl AuxPowClient {
         let accepted = resp
             .get("result")
             .and_then(|v| v.as_bool())
-            .unwrap_or(false);
+            .unwrap_or_else(|| {
+                // Some pools (e.g. ZANO HeroMiners) return result as an
+                // object {"status":"OK"} instead of a boolean true.
+                resp.get("result")
+                    .and_then(|v| v.get("status"))
+                    .and_then(|s| s.as_str())
+                    .map(|s| s.eq_ignore_ascii_case("OK"))
+                    .unwrap_or(false)
+            });
 
         if accepted {
             debug!("AuxPow: share accepted for {}", self.profile.coin);
