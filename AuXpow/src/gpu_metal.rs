@@ -28,6 +28,9 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         "kheavyhash" | "kheavyhash_kas" => {
             Some(("kheavyhash_kernel.metal", "kheavyhash_mine"))
         }
+        "keryxhash" | "keryxhash_krx" => {
+            Some(("keryxhash_kernel.metal", "keryxhash_mine"))
+        }
         "autolykos" | "autolykos_erg" => Some(("autolykos_kernel.metal", "autolykos_mine")),
         "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
             Some(("kawpow_kernel.metal", "kawpow_mine"))
@@ -268,8 +271,48 @@ impl GpuBackend for MetalBackend {
                 encoder.set_buffer(6, Some(&timestamp_buf), 0);
                 encoder.set_buffer(7, Some(&base_nonce_buf), 0);
             }
-            // autolykos: 0=header, 1=target, 2=table, 3=nonce, 4=hash, 5=found, 6=hlen, 7=base_nonce, 8=table_size
+            // keryxhash: same buffer layout as kheavyhash, but the matrix is
+            // generated per-block from pre_pow_hash XOR KERYX_MATRIX_SALT (v4
+            // by default, selected by DAA score in extra[8..16]).
+            "keryxhash" | "keryxhash_krx" => {
+                let timestamp: u64 = if extra.len() >= 8 {
+                    u64::from_le_bytes(extra[..8].try_into().unwrap())
+                } else {
+                    0
+                };
+                let daa_score: u64 = if extra.len() >= 16 {
+                    u64::from_le_bytes(extra[8..16].try_into().unwrap())
+                } else {
+                    crate::external_hashers::KERYX_SALT_V4_ACTIVATION_DAA
+                };
+                let matrix_2d = crate::external_hashers::generate_keryx_matrix(header, daa_score);
+                let mut matrix = [0u16; 4096];
+                for i in 0..64 {
+                    for j in 0..64 {
+                        matrix[i * 64 + j] = matrix_2d[i][j];
+                    }
+                }
+                let matrix_buf = self.device.new_buffer_with_data(
+                    matrix.as_ptr() as *const _,
+                    (4096 * std::mem::size_of::<u16>()) as u64,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                let timestamp_buf = self.device.new_buffer_with_data(
+                    &timestamp as *const u64 as *const _,
+                    std::mem::size_of::<u64>() as u64,
+                    MTLResourceOptions::CPUCacheModeDefaultCache,
+                );
+                encoder.set_buffer(0, Some(&header_buf), 0);
+                encoder.set_buffer(1, Some(&target_buf), 0);
+                encoder.set_buffer(2, Some(&matrix_buf), 0);
+                encoder.set_buffer(3, Some(&output_nonce_buf), 0);
+                encoder.set_buffer(4, Some(&output_hash_buf), 0);
+                encoder.set_buffer(5, Some(&found_flag_buf), 0);
+                encoder.set_buffer(6, Some(&timestamp_buf), 0);
+                encoder.set_buffer(7, Some(&base_nonce_buf), 0);
+            }
             "autolykos" | "autolykos_erg" => {
+                // autolykos: 0=header, 1=target, 2=table, 3=nonce, 4=hash, 5=found, 6=hlen, 7=base_nonce, 8=table_size
                 let height: u32 = if extra.len() >= 4 {
                     u32::from_le_bytes(extra[..4].try_into().unwrap())
                 } else { 0 };

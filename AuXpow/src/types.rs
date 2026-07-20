@@ -224,9 +224,10 @@ impl ExternalCoin {
             //   connection closed by remote; NiceHash uses standard stratum, not IronFish v2)
             // ZCL (equihash192.auto.nicehash.com does not resolve — NiceHash has no equihash192 endpoint;
             //   ZCL falls back to zpool.ca which supports BTC payout)
+            // KRX (KeryxHash — NiceHash has no keryxhash endpoint; mainnet is PoM-only anyway)
             Self::XMR | Self::DCR | Self::EPIC | Self::EVR | Self::MEWC | Self::PRL
             | Self::KLS | Self::QTC | Self::VTC | Self::RTM | Self::DNX | Self::FLUX
-            | Self::BEAM | Self::IRON | Self::ZCL
+            | Self::BEAM | Self::IRON | Self::ZCL | Self::KRX
             => return None,
         })
     }
@@ -429,6 +430,11 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
         ProfitEntry { coin: ExternalCoin::CFX, revenue_per_day_usd: 0.15, power_cost_usd: 0.31 },
         ProfitEntry { coin: ExternalCoin::ZEC, revenue_per_day_usd: 0.10, power_cost_usd: 0.25 },
         ProfitEntry { coin: ExternalCoin::PHX, revenue_per_day_usd: 0.03, power_cost_usd: 0.27 },
+        // Keryx (KRX) — ⚠️ Mainnet is PoM-only since 2026-06-26 (DAA 37,780,000).
+        // Pure KeryxHash mining is not viable on mainnet; this entry is kept at
+        // zero revenue to keep the profit router from selecting it. Testnet or a
+        // future KeryxHash revival would raise this estimate.
+        ProfitEntry { coin: ExternalCoin::KRX, revenue_per_day_usd: 0.00, power_cost_usd: 0.20 },
     ]
 }
 
@@ -699,6 +705,21 @@ mod tests {
     }
 
     #[test]
+    fn krx_is_keryxhash() {
+        assert_eq!(ExternalCoin::KRX.algorithm(), "keryxhash");
+        assert_eq!(ExternalCoin::KRX.ticker(), "KRX");
+        assert_eq!(ExternalCoin::from_str_loose("krx"), Some(ExternalCoin::KRX));
+        assert_eq!(ExternalCoin::from_str_loose("keryx"), Some(ExternalCoin::KRX));
+        assert_eq!(ExternalCoin::from_str_loose("KRX"), Some(ExternalCoin::KRX));
+        // KRX is not on NiceHash and does not support BTC payout (mainnet is PoM-only)
+        assert_eq!(ExternalCoin::KRX.nicehash_pool(), None);
+        assert!(!ExternalCoin::KRX.supports_btc_payout());
+        assert!(!ExternalCoin::KRX.is_zpool());
+        assert!(!ExternalCoin::KRX.is_cpu());
+        assert!(!ExternalCoin::KRX.is_blake3());
+    }
+
+    #[test]
     fn from_str_loose_parses() {
         assert_eq!(ExternalCoin::from_str_loose("dcr"), Some(ExternalCoin::DCR));
         assert_eq!(ExternalCoin::from_str_loose("KAS"), Some(ExternalCoin::KAS));
@@ -958,5 +979,6 @@ mod tests {
         assert!(all.contains(&ExternalCoin::CFX));
         assert!(all.contains(&ExternalCoin::ZEC));
         assert!(all.contains(&ExternalCoin::PHX));
+        assert!(all.contains(&ExternalCoin::KRX));
     }
 }

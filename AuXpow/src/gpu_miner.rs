@@ -197,6 +197,9 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
         "kheavyhash" | "kheavyhash_kas" => {
             Some(("kheavyhash_kernel.cl", "kheavyhash_mine"))
         }
+        "keryxhash" | "keryxhash_krx" => {
+            Some(("keryxhash_kernel.cl", "keryxhash_mine"))
+        }
         "autolykos" | "autolykos_erg" => Some(("autolykos_kernel.cl", "autolykos_mine")),
         "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
         | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
@@ -1001,6 +1004,18 @@ impl GpuMiner {
                 &output_hash_buf,
                 &found_flag_buf,
             )?,
+            "keryxhash" | "keryxhash_krx" => Self::build_keryxhash_kernel(
+                pro_que,
+                kernel_name,
+                header,
+                extra,
+                target,
+                base_nonce,
+                batch_size,
+                &output_nonce_buf,
+                &output_hash_buf,
+                &found_flag_buf,
+            )?,
             "zelhash" | "zelhash_flux" => {
                 // Use the production multi-kernel Wagner's algorithm
                 // (zelhash_prod_kernel.cl) instead of the simplified single-kernel.
@@ -1138,7 +1153,7 @@ impl GpuMiner {
             "ghostrider" | "ghostrider_rtm" => 1, // GhostRider: 2MB scratchpad per nonce
             "dynexsolve" | "dynexsolve_dnx" => 1, // DynexSolve: SAT solver per nonce
             "zelhash" | "zelhash_flux" => 1, // ZelHash: multi-kernel, 1 nonce per dispatch
-            _ => 8, // blake3, kheavyhash
+            _ => 8, // blake3, kheavyhash, keryxhash
         };
         // Work-group size: MUST match GROUP_SIZE defined in the kernel build
         // options. EPIC ProgPow uses GROUP_SIZE=256 (matches reference epic-miner).
@@ -2142,6 +2157,7 @@ typedef unsigned long ulong;
                 // Embedded kernels
                 Ok(vec![
                     "kheavyhash_kernel.cl".to_string(),
+                    "keryxhash_kernel.cl".to_string(),
                     "blake3_kernel.cl".to_string(),
                     "autolykos_kernel.cl".to_string(),
                     "kawpow_kernel.cl".to_string(),
@@ -2235,6 +2251,7 @@ typedef unsigned long ulong;
                 // Embedded kernel sources (compiled into the binary)
                 let embedded: String = match kernel_file {
                     "kheavyhash_kernel.cl" => include_str!("../csrc/opencl/kheavyhash_kernel.cl").to_string(),
+                    "keryxhash_kernel.cl" => include_str!("../csrc/opencl/keryxhash_kernel.cl").to_string(),
                     "blake3_kernel.cl" => include_str!("../csrc/opencl/blake3_kernel.cl").to_string(),
                     "autolykos_kernel.cl" => include_str!("../csrc/opencl/autolykos_kernel.cl").to_string(),
                     "kawpow_kernel.cl" => include_str!("../csrc/opencl/kawpow_kernel.cl").to_string(),
@@ -4447,6 +4464,98 @@ typedef unsigned long ulong;
         Ok(kernel)
     }
 
+    /// Build the KeryxHash mining kernel.
+    ///
+    /// Identical to `build_kheavyhash_kernel` except the 64×64 matrix is
+    /// generated PER-BLOCK from `pre_pow_hash XOR KERYX_MATRIX_SALT_v4`
+    /// (selected by DAA score) via XoShiRo256++, instead of the fixed
+    /// Kaspa matrix from `SHA3-256("KHeavyHash")`. The kernel itself
+    /// (`keryxhash_kernel.cl`) adds the wave_mix ARX step after the matrix
+    /// multiply — that is a kernel-side change, not a host-side change.
+    ///
+    /// `extra` carries the 8-byte little-endian timestamp followed by the
+    /// 8-byte little-endian DAA score (used for salt selection). If `extra`
+    /// is shorter than 16 bytes, DAA defaults to `KERYX_SALT_V4_ACTIVATION_DAA`
+    /// (current mainnet salt version v4).
+    #[allow(clippy::too_many_arguments)]
+    fn build_keryxhash_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        extra: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        batch_size: u64,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        let mut pre_pow_hash = [0u8; 32];
+        let copy_len = header.len().min(32);
+        pre_pow_hash[..copy_len].copy_from_slice(&header[..copy_len]);
+
+        let timestamp: u64 = if extra.len() >= 8 {
+            u64::from_le_bytes(extra[..8].try_into().unwrap())
+        } else {
+            0
+        };
+        // DAA score selects the active Keryx matrix salt (v1/v2/v4).
+        // Default to v4 (current mainnet) if not provided.
+        let daa_score: u64 = if extra.len() >= 16 {
+            u64::from_le_bytes(extra[8..16].try_into().unwrap())
+        } else {
+            crate::external_hashers::KERYX_SALT_V4_ACTIVATION_DAA
+        };
+
+        let pre_pow_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(&pre_pow_hash)
+            .build()?;
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target.as_slice())
+            .build()?;
+
+        // Generate the per-block Keryx 64×64 matrix (4096 u16 values) on the host.
+        // This matches keryx-miner's Matrix::generate: seed = pre_pow_hash XOR
+        // KERYX_MATRIX_SALT_<v>, XoShiRo256++ PRNG, retry until full rank (64).
+        let matrix_2d = crate::external_hashers::generate_keryx_matrix(&pre_pow_hash, daa_score);
+        let mut matrix = [0u16; 4096];
+        for i in 0..64 {
+            for j in 0..64 {
+                matrix[i * 64 + j] = matrix_2d[i][j];
+            }
+        }
+        let matrix_buf: Buffer<u16> = Buffer::builder()
+            .queue(q.clone())
+            .len(4096)
+            .copy_host_slice(&matrix)
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(&pre_pow_buf)
+            .arg(timestamp)
+            .arg(&target_buf)
+            .arg(base_nonce)
+            .arg(&matrix_buf)
+            .arg(output_nonce_buf)
+            .arg(output_hash_buf)
+            .arg(found_flag_buf)
+            .build()
+            .map_err(|e| anyhow!("kernel build failed: {e}"))?;
+
+        let _ = batch_size;
+
+        Ok(kernel)
+    }
+
     /// Build the Autolykos v2 mining kernel.
     ///
     /// The precomputed table (generated on the host from `SHA-256(header)` and
@@ -6097,7 +6206,7 @@ mod tests {
     fn cuda_kernel_files_exist() {
         let cuda_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("csrc/cuda");
-        let kernels = ["blake3_kernel.cu", "kheavyhash_kernel.cu", "autolykos_kernel.cu",
+        let kernels = ["blake3_kernel.cu", "kheavyhash_kernel.cu", "keryxhash_kernel.cu", "autolykos_kernel.cu",
                        "ethash_kernel.cu", "kawpow_kernel.cu", "zelhash_kernel.cu"];
         for k in &kernels {
             let path = cuda_dir.join(k);
@@ -6114,7 +6223,7 @@ mod tests {
     fn metal_kernel_files_exist() {
         let metal_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("csrc/metal");
-        let kernels = ["blake3_kernel.metal", "kheavyhash_kernel.metal", "autolykos_kernel.metal",
+        let kernels = ["blake3_kernel.metal", "kheavyhash_kernel.metal", "keryxhash_kernel.metal", "autolykos_kernel.metal",
                        "ethash_kernel.metal", "kawpow_kernel.metal", "zelhash_kernel.metal"];
         for k in &kernels {
             let path = metal_dir.join(k);

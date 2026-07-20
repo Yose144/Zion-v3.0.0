@@ -445,7 +445,8 @@ impl AuxPowScheduler {
                 ExternalAlgorithm::Eaglesong
                 | ExternalAlgorithm::Octopus
                 | ExternalAlgorithm::Equihash
-                | ExternalAlgorithm::NeoScrypt => {
+                | ExternalAlgorithm::NeoScrypt
+                | ExternalAlgorithm::KeryxHash => {
                     hash_blake3(header, 0, nonce)
                 }
             };
