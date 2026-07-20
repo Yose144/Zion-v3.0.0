@@ -18,7 +18,7 @@
 use std::collections::VecDeque;
 use std::io::{self, Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -47,6 +47,10 @@ static TTY: OnceLock<std::fs::File> = OnceLock::new();
 struct TtyWriter {
     inner: std::fs::File,
 }
+
+/// Track how many lines the previous frame wrote, so we can move the cursor
+/// up that many lines before redrawing (avoids terminal scroll).
+static PREV_FRAME_LINES: AtomicUsize = AtomicUsize::new(0);
 
 impl Write for TtyWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
@@ -100,6 +104,24 @@ fn open_tty_or_fallback() -> std::fs::File {
 extern "C" {
     fn dup(oldfd: i32) -> i32;
     fn dup2(oldfd: i32, newfd: i32) -> i32;
+    fn ioctl(fd: i32, request: u64, ...) -> i32;
+}
+
+/// Window size structure for TIOCGWINSZ ioctl
+#[repr(C)]
+struct libc_winsize {
+    ws_row: u16,
+    ws_col: u16,
+    ws_xpixel: u16,
+    ws_ypixel: u16,
+}
+
+/// TIOCGWINSZ ioctl request number (Linux: 0x5413)
+const TIOCGWINSZ: u64 = 0x5413;
+
+/// Safe wrapper for ioctl(fd, TIOCGWINSZ, &winsize)
+unsafe fn ioctl_tiocgwinsz(fd: i32, ws: &mut libc_winsize) -> i32 {
+    ioctl(fd, TIOCGWINSZ, ws as *mut libc_winsize)
 }
 
 /// Redirect stdout (fd 1) to a log file. Called from main.rs when the
@@ -197,8 +219,8 @@ impl MinerControl {
             thread_override: None,
             cpu_coin: cpu_coin.to_uppercase(),
             gpu_coin: gpu_coin.to_uppercase(),
-            show_metrics: true,
-            show_online: true,
+            show_metrics: false,
+            show_online: false,
         }
     }
 
@@ -1000,127 +1022,119 @@ pub(crate) fn draw_dashboard(
     metrics: &Arc<Mutex<crate::MinerMetricsSnapshot>>,
     hashrate: &Arc<HashrateTracker>,
 ) -> io::Result<()> {
-    draw_dashboard_pro(
-        control, rates, uptime_secs, pool_height, gpu_info, metrics, hashrate,
-    )
-}
-
-/* ========================================================================= */
-/* Pro-style dashboard with boxed panels, sparkline, and share log           */
-/* ========================================================================= */
-
-const SPARK_CHARS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
-
-fn render_sparkline(history: &[f64], width: usize) -> String {
-    if history.is_empty() || width == 0 {
-        return String::new();
-    }
-    let max = history.iter().cloned().fold(0.0f64, f64::max).max(0.001);
-    let min = history.iter().cloned().fold(f64::INFINITY, f64::min);
-    let range = (max - min).max(0.001);
-    // Take the last `width` samples, or pad with min-value chars
-    let start = if history.len() > width { history.len() - width } else { 0 };
-    let samples = &history[start..];
-    let mut s = String::with_capacity(width);
-    for &v in samples {
-        let normalized = ((v - min) / range * 7.0).round() as usize;
-        let idx = normalized.min(7);
-        s.push(SPARK_CHARS[idx]);
-    }
-    // Pad left if we have fewer samples than width
-    let pad = width.saturating_sub(samples.len());
-    for _ in 0..pad {
-        s.insert(0, SPARK_CHARS[0]);
-    }
-    s
-}
-
-/// Format a hashrate value with appropriate unit (H/s, KH/s, MH/s, GH/s).
-fn fmt_hr(hps: f64) -> String {
-    let (v, u) = ui::fmt_hashrate(hps);
-    format!("{:>8.2} {:<4}", v, u)
-}
-
-/// Format elapsed seconds as HH:MM:SS.
-fn fmt_hms(secs: u64) -> String {
-    let h = secs / 3600;
-    let m = (secs % 3600) / 60;
-    let s = secs % 60;
-    format!("{:02}:{:02}:{:02}", h, m, s)
-}
-
-/// Format a timestamp as HH:MM:SS (from Instant — uses elapsed from now).
-fn fmt_time(ts: Instant) -> String {
-    let now = Instant::now();
-    let age = now.duration_since(ts);
-    let total = age.as_secs();
-    let h = total / 3600;
-    let m = (total % 3600) / 60;
-    let s = total % 60;
-    format!("{:02}:{:02}:{:02}", h, m, s)
-}
-
-fn draw_dashboard_pro(
-    control: &MinerControl,
-    rates: &ComputedHashrates,
-    uptime_secs: u64,
-    pool_height: u64,
-    gpu_info: &[GpuInfoLine],
-    metrics: &Arc<Mutex<crate::MinerMetricsSnapshot>>,
-    hashrate: &Arc<HashrateTracker>,
-) -> io::Result<()> {
     let mut out = tty();
 
-    // ── Stable redraw: full clear + move home ──
-    queue!(
-        out,
-        cursor::MoveTo(0, 0),
-        terminal::Clear(ClearType::All),
-    )?;
+    // ── Reposition cursor: move up by previous frame's line count, then clear down ──
+    // This approach is more robust inside screen sessions than Clear(All) + MoveTo(0,0)
+    use std::io::Write;
+    if PREV_FRAME_LINES.load(Ordering::Relaxed) > 0 {
+        let n = PREV_FRAME_LINES.load(Ordering::Relaxed);
+        // Move cursor up N lines, carriage return to col 0, then clear from cursor to end of screen
+        write!(out, "\x1b[{}A\r\x1b[J", n)?;
+        out.flush()?;
+    } else {
+        // First frame: clear screen and move home
+        write!(out, "\x1b[2J\x1b[H")?;
+        out.flush()?;
+    }
 
-    let (cols, rows) = terminal::size().unwrap_or((80, 24));
-    let inner_w = (cols.min(120) as usize).saturating_sub(4);
-
-    // ── Borders ──
-    let mid_border = format!("  ├{:─<width$}┤", "", width = inner_w);
-    let bot_border = format!("  └{:─<width$}┘", "", width = inner_w);
-
-    // ── Helper: content line inside box ──
-    let content_line = |text: &str| -> String {
-        let char_count = text.chars().count();
-        if char_count > inner_w {
-            let truncated: String = text.chars().take(inner_w).collect();
-            format!("  │{}│", truncated)
+    // ── Adaptive width: query /dev/tty directly for real terminal size ──
+    // Inside detached screen sessions, the pty often reports 80x24 regardless
+    // of the actual terminal width. We allow override via ZION_TUI_WIDTH.
+    let (term_cols, term_rows) = {
+        // Check for explicit override first
+        let override_w = std::env::var("ZION_TUI_WIDTH")
+            .ok()
+            .and_then(|s| s.parse::<u16>().ok())
+            .filter(|&w| w >= 40);
+        if let Some(w) = override_w {
+            let h = terminal::size().map(|(_, h)| h).unwrap_or(24);
+            (w, h)
         } else {
-            format!("  │{:<width$}│", text, width = inner_w)
+            // Try ioctl on /dev/tty
+            let mut ws: libc_winsize = libc_winsize { ws_row: 0, ws_col: 0, ws_xpixel: 0, ws_ypixel: 0 };
+            let tty_fd = std::fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .open("/dev/tty")
+                .ok();
+            let mut got_size = false;
+            if let Some(ref f) = tty_fd {
+                use std::os::unix::io::AsRawFd;
+                unsafe {
+                    if ioctl_tiocgwinsz(f.as_raw_fd(), &mut ws) == 0 {
+                        got_size = true;
+                    }
+                }
+            }
+            if got_size && ws.ws_col > 0 && ws.ws_row > 0 {
+                (ws.ws_col, ws.ws_row)
+            } else {
+                terminal::size().unwrap_or((80, 24))
+            }
         }
     };
+    // Clamp width to 40..80
+    let iw = (term_cols as usize).clamp(40, 80).saturating_sub(2); // inner width
+    let avail_rows = term_rows as usize; // total usable rows
 
-    // ── Helper: section header line ──
-    let header_line = |text: &str| -> String {
-        let padded = format!(" {} ", text);
-        format!("  │{:<width$}│", padded, width = inner_w)
-    };
+    // ── Helper: pad/truncate a string to exactly iw display columns ──
+    fn pad_to(text: &str, width: usize) -> String {
+        let chars: Vec<char> = text.chars().collect();
+        if chars.len() > width {
+            chars[..width].iter().collect()
+        } else {
+            let mut s: String = chars.iter().collect();
+            for _ in chars.len()..width {
+                s.push(' ');
+            }
+            s
+        }
+    }
+
+    // ── Borders (ASCII for maximum compatibility in screen sessions) ──
+    let top: String = format!("+{}+", "-".repeat(iw));
+    let mid: String = format!("+{}+", "-".repeat(iw));
+    let bot: String = format!("+{}+", "-".repeat(iw));
+
+    // ── Helper: write a border line ──
+    macro_rules! wborder {
+        ($b:expr) => { queue!(out, Print(format!("\r{}\n", $b)))? };
+    }
+    // ── Helper: write a content line with padding ──
+    macro_rules! wline {
+        ($text:expr) => {
+            queue!(out, Print(format!("\r|{}|\n", pad_to($text, iw))))?
+        };
+    }
+    // ── Helper: write a section header ──
+    macro_rules! wheader {
+        ($text:expr) => {{
+            queue!(out,
+                SetForegroundColor(Color::Cyan),
+                Print(format!("\r|{}|\n", pad_to(&format!(" {} ", $text), iw))),
+                ResetColor,
+            )?
+        }};
+    }
 
     // ── Title bar ──
     let title = format!(
-        " ZION v3.0.6  Triple Parallel Miner  |  {} ",
+        " ZION v3.0.6  Triple Parallel  |  {} ",
         algo_display(&control.algorithm)
     );
-    let title_padded = format!("{:<width$}", title, width = inner_w);
-
     queue!(
         out,
         SetBackgroundColor(Color::Rgb { r: 20, g: 20, b: 50 }),
         SetForegroundColor(Color::Cyan),
-        Print(format!("  ┌{:─<width$}┐\n", "", width = inner_w)),
-        Print(format!("  │{}│\n", title_padded)),
+        Print(format!("\r{}\n", top)),
+        Print(format!("\r|{}|\n", pad_to(&title, iw))),
         ResetColor,
     )?;
 
     // ── Status line ──
     let status_color = if control.pause { Color::Yellow } else { Color::Green };
-    let status_dot = if control.pause { "○ PAUSED" } else { "● RUNNING" };
+    let status_dot = if control.pause { "o PAUSED" } else { "* RUNNING" };
     let mode_str = match control.mode {
         MiningMode::CpuOnly => "CPU",
         MiningMode::GpuOnly => "GPU",
@@ -1135,231 +1149,225 @@ fn draw_dashboard_pro(
         else if control.cpu_coin.is_empty() { "auto".to_string() }
         else { control.cpu_coin.clone() };
 
-    queue!(out, Print(format!("{}\n", mid_border)))?;
+    wborder!(mid);
+    // Status line with colored dot
+    let rest_after_dot = format!(
+        "  algo={:<12} mode={:<4} thr={:<2} CPU={:<4} GPU={:<4}",
+        algo_display(&control.algorithm), mode_str, control.threads, cpu_coin, gpu_coin,
+    );
+    let dot_len = status_dot.chars().count();
+    let pad_needed = iw.saturating_sub(dot_len + 1 + rest_after_dot.chars().count());
+    let mut padded_rest = rest_after_dot;
+    for _ in 0..pad_needed { padded_rest.push(' '); }
+    // Truncate if too long
+    while (dot_len + 1 + padded_rest.chars().count()) > iw {
+        padded_rest.pop();
+    }
     queue!(
         out,
-        Print("  │ "),
+        Print("\r| "),
         SetForegroundColor(status_color),
         Print(status_dot),
         ResetColor,
-        Print(format!(
-            "  algo={:<18} mode={:<4} threads={:<2}  CPU={:<5} GPU={:<5}",
-            algo_display(&control.algorithm), mode_str, control.threads, cpu_coin, gpu_coin
-        )),
-        Print(" │\n"),
+        Print(&padded_rest),
+        Print("|\n"),
     )?;
 
     // ── Hashrate section ──
-    queue!(out, Print(format!("{}\n", mid_border)))?;
-    queue!(
-        out,
-        SetForegroundColor(Color::Cyan),
-        Print(format!("{}\n", header_line("HASHRATE"))),
-        ResetColor,
-    )?;
+    wborder!(mid);
+    wheader!("HASHRATE");
 
-    let hr_line = format!(
-        "   10s {}   60s {}   15m {}   peak {:>8.2}",
-        fmt_hr(rates.total_10s_hps),
-        fmt_hr(rates.total_60s_hps),
-        fmt_hr(rates.total_15m_hps),
-        if rates.total_10s_hps > 0.0 { rates.total_10s_hps } else { 0.0 },
-    );
-    queue!(out, Print(format!("{}\n", content_line(&hr_line))))?;
+    let (v10, u10) = ui::fmt_hashrate(rates.total_10s_hps);
+    let (v60, u60) = ui::fmt_hashrate(rates.total_60s_hps);
+    let (v15m, u15m) = ui::fmt_hashrate(rates.total_15m_hps);
+    wline!(&format!(
+        "   10s {:>6.2}{} 60s {:>6.2}{} 15m {:>6.2}{}",
+        v10, u10, v60, u60, v15m, u15m,
+    ));
 
-    // Sparkline graph
-    let history = hashrate.get_hr_history();
-    let spark = render_sparkline(&history, inner_w.saturating_sub(6));
-    let spark_line = format!("   {}", spark);
-    queue!(
-        out,
-        SetForegroundColor(Color::Green),
-        Print(format!("{}\n", content_line(&spark_line))),
-        ResetColor,
-    )?;
+    // Sparkline — only if we have enough vertical room (need >24 to avoid scroll)
+    if avail_rows > 26 {
+        let history = hashrate.get_hr_history();
+        let spark = render_sparkline(&history, iw.saturating_sub(6));
+        queue!(
+            out,
+            SetForegroundColor(Color::Green),
+            Print(format!("\r|{}|\n", pad_to(&format!("   {}", spark), iw))),
+            ResetColor,
+        )?;
+    }
 
     // ── Streams section ──
-    queue!(out, Print(format!("{}\n", mid_border)))?;
-    queue!(
-        out,
-        SetForegroundColor(Color::Cyan),
-        Print(format!("{}\n", header_line("STREAMS"))),
-        ResetColor,
-    )?;
+    wborder!(mid);
+    wheader!("STREAMS");
 
     // Stream 1: ZION
-    let zion_total_shares = rates.zion_accepted + rates.zion_rejected;
-    let zion_pct = if zion_total_shares > 0 { rates.zion_accepted as f64 * 100.0 / zion_total_shares as f64 } else { 100.0 };
+    let zion_total = rates.zion_accepted + rates.zion_rejected;
+    let zion_pct = if zion_total > 0 { rates.zion_accepted as f64 * 100.0 / zion_total as f64 } else { 100.0 };
+    let (zh, zu) = ui::fmt_hashrate(rates.zion_10s_hps);
+    let s1_content = format!(
+        " #1 ZION {:<12} {:>7.2}{} {:>3}/{:<2} ({:>4.1}%)",
+        algo_display(&control.algorithm), zh, zu,
+        rates.zion_accepted, rates.zion_rejected, zion_pct,
+    );
+    let s1_padded = pad_to(&s1_content, iw);
+    let s1_label = "#1 ZION";
+    let s1_after: String = s1_padded.chars().skip(s1_label.len() + 1).collect();
     queue!(
         out,
-        Print("  │ "),
+        Print("\r| "),
         SetForegroundColor(Color::Cyan),
-        Print("#1  ZION"),
+        Print(s1_label),
         ResetColor,
-        Print(format!(
-            "          {:<14} {}  {:>5}/{:<3} ({:>5.1}%) │\n",
-            algo_display(&control.algorithm),
-            fmt_hr(rates.zion_10s_hps),
-            rates.zion_accepted, rates.zion_rejected, zion_pct,
-        )),
+        Print(&s1_after),
+        Print("|\n"),
     )?;
 
     // Stream 2: GPU PROFIT
-    let gpu_total_shares = rates.gpu_ext_accepted + rates.gpu_ext_rejected;
-    let gpu_pct = if gpu_total_shares > 0 { rates.gpu_ext_accepted as f64 * 100.0 / gpu_total_shares as f64 } else { 100.0 };
+    let gpu_total = rates.gpu_ext_accepted + rates.gpu_ext_rejected;
+    let gpu_pct = if gpu_total > 0 { rates.gpu_ext_accepted as f64 * 100.0 / gpu_total as f64 } else { 100.0 };
     let gpu_active = hashrate.gpu_ext_active.load(Ordering::Relaxed) == 1;
-    let gpu_hr_str = if gpu_active { fmt_hr(rates.gpu_ext_10s_hps) } else { format!("{:>13}", "idle") };
+    let (gh, gu) = ui::fmt_hashrate(rates.gpu_ext_10s_hps);
+    let gpu_hr = if gpu_active { format!("{:>8.2} {:<3}", gh, gu) } else { "    idle       ".to_string() };
+    let s2_content = format!(
+        " #2 GPU {:<8} {} {:>3}/{:<2} ({:>4.1}%) coin={:<4}",
+        if gpu_active { "—" } else { "idle" }, gpu_hr,
+        rates.gpu_ext_accepted, rates.gpu_ext_rejected, gpu_pct, gpu_coin,
+    );
+    let s2_padded = pad_to(&s2_content, iw);
+    let s2_label = "#2 GPU";
+    let s2_after: String = s2_padded.chars().skip(s2_label.len() + 1).collect();
     queue!(
         out,
-        Print("  │ "),
+        Print("\r| "),
         SetForegroundColor(Color::Magenta),
-        Print("#2  GPU PROFIT"),
+        Print(s2_label),
         ResetColor,
-        Print(format!(
-            "  {:<14} {}  {:>5}/{:<3} ({:>5.1}%)  coin={:<5} │\n",
-            if gpu_active { "—" } else { "idle" },
-            gpu_hr_str,
-            rates.gpu_ext_accepted, rates.gpu_ext_rejected, gpu_pct, gpu_coin,
-        )),
+        Print(&s2_after),
+        Print("|\n"),
     )?;
 
     // Stream 3: CPU PROFIT
-    let cpu_total_shares = rates.cpu_ext_accepted + rates.cpu_ext_rejected;
-    let cpu_pct = if cpu_total_shares > 0 { rates.cpu_ext_accepted as f64 * 100.0 / cpu_total_shares as f64 } else { 100.0 };
+    let cpu_total = rates.cpu_ext_accepted + rates.cpu_ext_rejected;
+    let cpu_pct = if cpu_total > 0 { rates.cpu_ext_accepted as f64 * 100.0 / cpu_total as f64 } else { 100.0 };
     let cpu_active = hashrate.cpu_ext_active.load(Ordering::Relaxed) == 1;
-    let cpu_hr_str = if cpu_active { fmt_hr(rates.cpu_ext_10s_hps) } else { format!("{:>13}", "idle") };
+    let (ch, cu) = ui::fmt_hashrate(rates.cpu_ext_10s_hps);
+    let cpu_hr = if cpu_active { format!("{:>8.2} {:<3}", ch, cu) } else { "    idle       ".to_string() };
     let cpu_algo = hashrate.cpu_ext_algorithm.lock().map(|a| a.clone()).unwrap_or_default();
-    let cpu_algo_display = if cpu_algo.is_empty() { "—" } else { algo_display(&cpu_algo) };
+    let cpu_algo_d = if cpu_algo.is_empty() { "—" } else { algo_display(&cpu_algo) };
+    let s3_content = format!(
+        " #3 CPU {:<12} {} {:>3}/{:<2} ({:>4.1}%) coin={:<4}",
+        cpu_algo_d, cpu_hr,
+        rates.cpu_ext_accepted, rates.cpu_ext_rejected, cpu_pct, cpu_coin,
+    );
+    let s3_padded = pad_to(&s3_content, iw);
+    let s3_label = "#3 CPU";
+    let s3_after: String = s3_padded.chars().skip(s3_label.len() + 1).collect();
     queue!(
         out,
-        Print("  │ "),
+        Print("\r| "),
         SetForegroundColor(Color::Yellow),
-        Print("#3  CPU PROFIT"),
+        Print(s3_label),
         ResetColor,
-        Print(format!(
-            "  {:<14} {}  {:>5}/{:<3} ({:>5.1}%)  coin={:<5} │\n",
-            cpu_algo_display,
-            cpu_hr_str,
-            rates.cpu_ext_accepted, rates.cpu_ext_rejected, cpu_pct, cpu_coin,
-        )),
+        Print(&s3_after),
+        Print("|\n"),
     )?;
 
     // ── Shares section ──
-    queue!(out, Print(format!("{}\n", mid_border)))?;
-    queue!(
-        out,
-        SetForegroundColor(Color::Cyan),
-        Print(format!("{}\n", header_line("SHARES"))),
-        ResetColor,
-    )?;
+    wborder!(mid);
+    wheader!("SHARES");
 
     let acc = rates.accepted;
     let rej = rates.rejected;
-    let total = acc + rej;
-    let pct = if total > 0 { acc as f64 * 100.0 / total as f64 } else { 100.0 };
-    let shares_summary = format!(
-        "   Accepted: {}  Rejected: {}  Efficiency: {:.1}%  Uptime: {}",
-        acc, rej, pct, fmt_hms(uptime_secs),
-    );
-    queue!(out, Print(format!("{}\n", content_line(&shares_summary))))?;
+    let total_shares = acc + rej;
+    let share_pct = if total_shares > 0 { acc as f64 * 100.0 / total_shares as f64 } else { 100.0 };
+    wline!(&format!(
+        "   Acc:{} Rej:{} Eff:{:.1}% Up:{}",
+        acc, rej, share_pct, fmt_hms(uptime_secs),
+    ));
 
-    // Share log (last 5 entries)
+    // Share log — adaptive count based on available rows
     let share_log = hashrate.get_share_log();
-    let display_count = share_log.len().min(5);
-    for entry in share_log.iter().rev().take(display_count) {
-        let symbol = if entry.accepted { "✓" } else { "✗" };
-        let sym_color = if entry.accepted { Color::Green } else { Color::Red };
-        let status_word = if entry.accepted { "ACCEPTED" } else { "REJECTED" };
-        let reason_str = if entry.reason.is_empty() {
+    let max_log_entries = if avail_rows >= 40 { 5 }
+        else if avail_rows >= 32 { 3 }
+        else if avail_rows >= 27 { 2 }
+        else { 1 };
+    for entry in share_log.iter().rev().take(max_log_entries) {
+        let sym = if entry.accepted { "+" } else { "x" };
+        let sym_col = if entry.accepted { Color::Green } else { Color::Red };
+        let word = if entry.accepted { "OK " } else { "REJ" };
+        let reason = if entry.reason.is_empty() {
             String::new()
         } else {
-            format!("  \"{}\"", entry.reason)
+            let r: String = entry.reason.chars().take(18).collect();
+            format!(" {}", r)
         };
         let time_str = fmt_time(entry.timestamp);
-        let rest = format!(
-            "{}  stream={:<4}  job={}{}",
-            status_word, entry.stream, entry.job_id, reason_str,
+        // Build content: "  [HH:MM:SS] + OK  stream=ZION  job=123  reason"
+        let content = format!(
+            "  [{}] {} {} stream={:<4} job={}{}",
+            time_str, sym, word, entry.stream, entry.job_id, reason,
         );
-        let prefix = format!("   [{}] ", time_str);
-        let prefix_len = prefix.chars().count();
-        let rest_padded = format!("{:<width$}", rest, width = inner_w.saturating_sub(prefix_len + 2));
+        let padded = pad_to(&content, iw);
+        // Find position of sym char in padded string for coloring
+        let sym_pos = format!("  [{}] ", time_str).chars().count();
+        let before: String = padded.chars().take(sym_pos).collect();
+        let after: String = padded.chars().skip(sym_pos + 1).collect();
         queue!(
             out,
-            Print("  │"),
-            Print(&prefix),
-            SetForegroundColor(sym_color),
-            Print(format!(" {} ", symbol)),
+            Print("\r|"),
+            Print(&before),
+            SetForegroundColor(sym_col),
+            Print(sym),
             ResetColor,
-            Print(&rest_padded),
-            Print("│\n"),
+            Print(&after),
+            Print("|\n"),
         )?;
     }
     if share_log.is_empty() {
         queue!(
             out,
             SetForegroundColor(Color::DarkGrey),
-            Print(format!("{}\n", content_line("   (no shares yet)"))),
+            Print(format!("\r|{}|\n", pad_to("   (no shares yet)", iw))),
             ResetColor,
         )?;
     }
 
     // ── Pool section ──
-    queue!(out, Print(format!("{}\n", mid_border)))?;
-    queue!(
-        out,
-        SetForegroundColor(Color::Cyan),
-        Print(format!("{}\n", header_line("POOL"))),
-        ResetColor,
-    )?;
+    wborder!(mid);
+    wheader!("POOL");
 
-    let online = hashrate
-        .online_snapshot
-        .lock()
-        .map(|g| g.clone())
-        .unwrap_or_default();
-    let (pool_hr, pool_hr_unit) = ui::fmt_hashrate(online.pool_hashrate);
-    let pool_line = format!(
-        "   height={:<6}  uptime={}  poolHR={:>7.2}{:<3}  miners={}/{}",
-        pool_height, fmt_hms(uptime_secs), pool_hr, pool_hr_unit, online.active_miners, online.total_miners,
-    );
-    queue!(out, Print(format!("{}\n", content_line(&pool_line))))?;
+    let online = hashrate.online_snapshot.lock().map(|g| g.clone()).unwrap_or_default();
+    let (phr, phu) = ui::fmt_hashrate(online.pool_hashrate);
+    wline!(&format!(
+        "   h={} up={} pHR={:>6.2}{} min={}/{}",
+        pool_height, fmt_hms(uptime_secs), phr, phu, online.active_miners, online.total_miners,
+    ));
 
-    // ── Extended metrics (if enabled) ──
-    if control.show_metrics && rows > 20 {
-        queue!(out, Print(format!("{}\n", mid_border)))?;
-        queue!(
-            out,
-            SetForegroundColor(Color::Cyan),
-            Print(format!("{}\n", header_line("METRICS"))),
-            ResetColor,
-        )?;
+    // ── Metrics (if enabled) ──
+    if control.show_metrics {
+        wborder!(mid);
+        wheader!("METRICS");
         let tui = metrics.lock().map(|m| m.as_tui()).unwrap_or_default();
-        let m1 = format!(
-            "   latency avg/max: {:.1}/{:?}ms  best_batch={}ms  remote_ttl={}ms  peak={:.2} H/s",
+        wline!(&format!(
+            "   lat avg/max: {:.0}/{:?}ms  batch={}ms  ttl={}ms  peak={:.1}",
             tui.submit_avg_ms, tui.submit_max_ms, tui.best_batch_ms, tui.remote_ttl_ms, tui.hashrate_max,
-        );
-        let m2 = format!(
+        ));
+        wline!(&format!(
             "   iter={}  threads={}  nonce={}  status={}  backend={}",
             tui.current_iteration, tui.threads, tui.nonce_window, tui.status, tui.backend,
-        );
-        queue!(out, Print(format!("{}\n", content_line(&m1))))?;
-        queue!(out, Print(format!("{}\n", content_line(&m2))))?;
+        ));
     }
 
     // ── Online best miners (if enabled) ──
-    if control.show_online && rows > 24 {
-        queue!(out, Print(format!("{}\n", mid_border)))?;
-        queue!(
-            out,
-            SetForegroundColor(Color::Cyan),
-            Print(format!("{}\n", header_line("ONLINE BEST MINERS"))),
-            ResetColor,
-        )?;
+    if control.show_online {
+        wborder!(mid);
+        wheader!("ONLINE BEST MINERS");
         if online.top_miners.is_empty() {
             queue!(
                 out,
                 SetForegroundColor(Color::DarkGrey),
-                Print(format!("{}\n", content_line("   (waiting for pool API ...)"))),
+                Print(format!("\r|{}|\n", pad_to("   (waiting for pool API...)", iw))),
                 ResetColor,
             )?;
         } else {
@@ -1368,41 +1376,127 @@ fn draw_dashboard_pro(
                 let worker = if m.worker.len() > 14 { &m.worker[..14] } else { &m.worker };
                 let coin = if m.coin.len() > 8 { &m.coin[..8] } else { &m.coin };
                 let algo = if m.algorithm.len() > 14 { &m.algorithm[..14] } else { &m.algorithm };
-                let line = format!(
-                    "   #{:<2} {:<14} {:>8.2}{:<3}  {:<8}  {}",
+                wline!(&format!(
+                    "   #{} {:<14} {:>8.2}{:<3} {:<8} {}",
                     i + 1, worker, hr, unit, coin, algo,
-                );
-                queue!(out, Print(format!("{}\n", content_line(&line))))?;
+                ));
             }
         }
     }
 
-    // ── GPU devices ──
-    queue!(out, Print(format!("{}\n", mid_border)))?;
-    if gpu_info.is_empty() {
-        queue!(out, Print(format!("{}\n", content_line("   GPU: (no devices)"))))?;
-    } else {
-        for g in gpu_info.iter().take(2) {
-            let line = format!("   GPU #{:<2} {}", g.index, g.info);
-            queue!(out, Print(format!("{}\n", content_line(&line))))?;
+    // ── GPU devices ── (skip if no devices and terminal is short)
+    if !gpu_info.is_empty() || avail_rows >= 30 {
+        wborder!(mid);
+        if gpu_info.is_empty() {
+            wline!("   GPU: (no devices)");
+        } else {
+            for g in gpu_info.iter().take(2) {
+                wline!(&format!("   GPU #{:<2} {}", g.index, g.info));
+            }
         }
     }
 
-    // ── Footer hotkeys ──
-    queue!(out, Print(format!("{}\n", mid_border)))?;
+    // ── Hotkeys ──
+    wborder!(mid);
     queue!(
         out,
         SetForegroundColor(Color::DarkGrey),
-        Print(format!("{}\n", content_line(" [a]lgo [c]CPU [C]cpu-coin [g]GPU [G]gpu-coin [d]ual [p]ause [r]econ"))),
-        Print(format!("{}\n", content_line(" [m]etrics [o]nline [v]erbose [1-9]threads [q]uit"))),
+        Print(format!("\r|{}|\n", pad_to(" [a]lgo [c]CPU [C]coinCPU [g]GPU [G]coinGPU [d]ual [p]ause", iw))),
+        Print(format!("\r|{}|\n", pad_to(" [r]econ [m]etrics [o]nline [v]erbose [1-9]thr [q]uit", iw))),
         ResetColor,
     )?;
 
-    // ── Bottom border ──
-    queue!(out, Print(format!("{}\n", bot_border)))?;
+    // ── Bottom border (no trailing \n to avoid terminal scroll) ──
+    queue!(out, Print(format!("\r{}", bot)))?;
 
     out.flush()?;
+
+    // Count lines written this frame for next frame's cursor-up repositioning
+    // Each \n in the output = one line. Bottom border has no \n = still 1 line.
+    let lines_this_frame: usize = {
+        // Count based on sections rendered
+        let mut n = 0usize;
+        n += 1; // top border
+        n += 1; // title
+        n += 1; // mid (before status)
+        n += 1; // status
+        n += 1; // mid (before hashrate)
+        n += 1; // HASHRATE header
+        n += 1; // hashrate values
+        if avail_rows > 26 { n += 1; } // sparkline
+        n += 1; // mid (before streams)
+        n += 1; // STREAMS header
+        n += 1; // stream 1
+        n += 1; // stream 2
+        n += 1; // stream 3
+        n += 1; // mid (before shares)
+        n += 1; // SHARES header
+        n += 1; // shares summary
+        // share log entries
+        if share_log.is_empty() {
+            n += 1; // "(no shares yet)" placeholder
+        } else {
+            n += share_log.len().min(max_log_entries);
+        }
+        n += 1; // mid (before pool)
+        n += 1; // POOL header
+        n += 1; // pool content
+        if control.show_metrics { n += 4; } // metrics section
+        if control.show_online { n += 3; } // online section (minimum)
+        if !gpu_info.is_empty() || avail_rows >= 30 { n += 2; } // GPU section
+        n += 1; // mid (before hotkeys)
+        n += 2; // hotkeys (2 lines)
+        n += 1; // bottom border (no \n but still a line)
+        n
+    };
+    PREV_FRAME_LINES.store(lines_this_frame, Ordering::Relaxed);
+
     Ok(())
+}
+
+/* ========================================================================= */
+/* Pro-style dashboard helpers                                               */
+/* ========================================================================= */
+
+const SPARK_CHARS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+
+fn render_sparkline(history: &[f64], width: usize) -> String {
+    if history.is_empty() || width == 0 {
+        return String::new();
+    }
+    let max = history.iter().cloned().fold(0.0f64, f64::max).max(0.001);
+    let min = history.iter().cloned().fold(f64::INFINITY, f64::min);
+    let range = (max - min).max(0.001);
+    let start = if history.len() > width { history.len() - width } else { 0 };
+    let samples = &history[start..];
+    let mut s = String::with_capacity(width);
+    for &v in samples {
+        let normalized = ((v - min) / range * 7.0).round() as usize;
+        s.push(SPARK_CHARS[normalized.min(7)]);
+    }
+    let pad = width.saturating_sub(samples.len());
+    for _ in 0..pad {
+        s.insert(0, SPARK_CHARS[0]);
+    }
+    s
+}
+
+/// Format elapsed seconds as HH:MM:SS.
+fn fmt_hms(secs: u64) -> String {
+    let h = secs / 3600;
+    let m = (secs % 3600) / 60;
+    let s = secs % 60;
+    format!("{:02}:{:02}:{:02}", h, m, s)
+}
+
+/// Format a timestamp age as HH:MM:SS.
+fn fmt_time(ts: Instant) -> String {
+    let age = Instant::now().duration_since(ts);
+    let total = age.as_secs();
+    let h = total / 3600;
+    let m = (total % 3600) / 60;
+    let s = total % 60;
+    format!("{:02}:{:02}:{:02}", h, m, s)
 }
 
 #[derive(Clone)]
@@ -1502,6 +1596,7 @@ pub(crate) fn run_interactive(
     pool_addr: String,
 ) -> io::Result<()> {
     TUI_ACTIVE.store(true, Ordering::Relaxed);
+    PREV_FRAME_LINES.store(0, Ordering::Relaxed);
 
     terminal::enable_raw_mode()?;
     let mut tty_out = tty();
@@ -1601,5 +1696,6 @@ pub(crate) fn run_interactive(
     terminal::disable_raw_mode()?;
 
     TUI_ACTIVE.store(false, Ordering::Relaxed);
+    PREV_FRAME_LINES.store(0, Ordering::Relaxed);
     Ok(())
 }
