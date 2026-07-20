@@ -143,6 +143,10 @@ impl ExternalCoin {
             Self::EPIC => {
                 StratumProtocol::EpicStratum
             }
+            // ZANO uses ProgPoWZ (ProgPow 0.9.2 with permuted math ops) on
+            // HeroMiners / open-ethereum-pool style EthStratum pools:
+            //   eth_submitLogin -> eth_getWork / eth_submitWork
+            Self::ZANO => StratumProtocol::EthStratum,
             // Pearl (PRL) uses a custom JSON-RPC dialect over TCP.
             // Object params (not arrays), no mining.subscribe, plain_proof submit.
             // See StratumProtocol::PearlStratum docs for full protocol details.
@@ -200,7 +204,7 @@ impl ExternalCoin {
                 crate::external_hashers::KAWPOW_EPOCH_LENGTH
             }
             Self::ETC => crate::external_hashers::ETHASH_EPOCH_LENGTH,
-            Self::EPIC => crate::external_hashers::PROGPOW_EPOCH_LENGTH,
+            Self::EPIC | Self::ZANO => crate::external_hashers::PROGPOW_EPOCH_LENGTH,
             Self::PRL => crate::external_hashers::PEARL_EPOCH_LENGTH,
             _ => crate::external_hashers::ETHASH_EPOCH_LENGTH,
         }
@@ -524,7 +528,9 @@ impl AuxPowClient {
                 // object params.  The pool responds with an ack and pushes
                 // mining.notify immediately.
                 // See https://prl.suprnova.cc/stratum-spec.html §4.1
-            } else {
+            } else if self.protocol != StratumProtocol::EthStratum {
+                // EthStratum / ETH-proxy pools (HeroMiners Zano) do not use
+                // mining.subscribe — login is also the subscription.
                 self.subscribe().await?;
             }
             self.authorize(payout_wallet).await?;
@@ -613,8 +619,12 @@ impl AuxPowClient {
             self.ironfish_subscribe(payout_wallet).await?;
         } else {
             // PearlStratum: straight to mining.authorize (no subscribe/configure).
+            // EthStratum / ETH-proxy pools (HeroMiners Zano) do not use
+            // mining.subscribe — login is also the subscription.
             // See https://prl.suprnova.cc/stratum-spec.html §4.1
-            if self.protocol != StratumProtocol::PearlStratum {
+            if self.protocol != StratumProtocol::PearlStratum
+                && self.protocol != StratumProtocol::EthStratum
+            {
                 self.subscribe_inline().await?;
             }
             self.authorize_inline(payout_wallet).await?;
@@ -1986,8 +1996,8 @@ impl AuxPowClient {
                         }
                     }
                 }
-                // EthStratum notify: params = [seed_hash, header_hash, boundary]
-                // where seed_hash and header_hash are 0x-prefixed hex strings.
+                // EthStratum notify: params = [seed_hash, header_hash, boundary, height?]
+                // where all values are 0x-prefixed hex strings.
                 "eth_getWork" => {
                     if let Some(params) = msg.get("params") {
                         if let Some(arr) = params.as_array() {
@@ -1997,6 +2007,7 @@ impl AuxPowClient {
                                         arr[0].as_str().unwrap_or(""),
                                         arr[1].as_str().unwrap_or(""),
                                         arr[2].as_str().unwrap_or(""),
+                                        arr.get(3).and_then(|v| v.as_str()),
                                     )
                                     .await;
                                 *self.current_job.lock().await = Some(job);
@@ -2106,6 +2117,26 @@ impl AuxPowClient {
                 }
                 _ => {
                     debug!("AuxPow: unknown method '{}' from {}", method, self.profile.coin);
+                }
+            }
+        } else if self.protocol == StratumProtocol::EthStratum {
+            // open-ethereum-pool style push notifications have no "method"
+            // field — they are just a top-level "result" array:
+            //   [seed_hash, header_hash, target, height?]
+            if let Some(result) = msg.get("result") {
+                if let Some(arr) = result.as_array() {
+                    if arr.len() >= 3 {
+                        let job = self
+                            .parse_eth_getwork_params(
+                                arr[0].as_str().unwrap_or(""),
+                                arr[1].as_str().unwrap_or(""),
+                                arr[2].as_str().unwrap_or(""),
+                                arr.get(3).and_then(|v| v.as_str()),
+                            )
+                            .await;
+                        *self.current_job.lock().await = Some(job);
+                        self.job_notify.notify_waiters();
+                    }
                 }
             }
         }
@@ -2590,6 +2621,80 @@ impl AuxPowClient {
                     extranonce2: String::new(),
                     epoch,
                 });
+            }
+        }
+
+        // ProgPoWZ / Zano (HeroMiners) Stratum v1:
+        // mining.notify params = [job_id, header_hash, seed_hash, target, clean_jobs, height?, ...]
+        //   - job_id: short string
+        //   - header_hash: 32-byte hex (the pre-hashed block header, no 0x prefix)
+        //   - seed_hash: 32-byte hex (DAG seed, used for epoch derivation)
+        //   - target: 32-byte hex (share boundary, big-endian)
+        //   - height: optional block number (integer or 0x-prefixed hex) for epoch/period.
+        if self.profile.coin == ExternalCoin::ZANO {
+            if let Some(arr) = params.as_array() {
+                if arr.len() >= 4
+                    && arr[1].as_str().map(|s| s.trim_start_matches("0x").len() == 64).unwrap_or(false)
+                    && arr[2].as_str().map(|s| s.trim_start_matches("0x").len() == 64).unwrap_or(false)
+                    && arr[3].as_str().map(|s| s.trim_start_matches("0x").len() == 64).unwrap_or(false)
+                {
+                    let job_id = arr[0].as_str().unwrap_or("unknown").to_string();
+                    let header_hex = arr[1].as_str().unwrap_or("").to_string();
+                    let seed_hash = arr[2].as_str().unwrap_or("").to_string();
+                    let target_hex = arr[3].as_str().unwrap_or("ffffffff").to_string();
+
+                    let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
+                        .unwrap_or_default();
+                    let target_bytes = crate::external_hashers::parse_target_hex(
+                        target_hex.trim_start_matches("0x"),
+                    )
+                    .unwrap_or([0xFFu8; 32]);
+
+                    // Try to extract block height from the first integer/hex field after target.
+                    let height = arr.get(4)
+                        .and_then(|v| v.as_u64())
+                        .or_else(|| {
+                            arr.get(4).and_then(|v| v.as_str()).and_then(|s| {
+                                if s.starts_with("0x") {
+                                    u64::from_str_radix(s.trim_start_matches("0x"), 16).ok()
+                                } else {
+                                    s.parse().ok()
+                                }
+                            })
+                        })
+                        .or(notify_height);
+
+                    let epoch = height.map(|h| (h / self.profile.coin.epoch_length() as u64) as u32);
+
+                    println!(
+                        "auxpow: ZANO notify — job={} header={}.. seed={}.. target={}.. height={:?} epoch={:?}",
+                        job_id,
+                        &header_hex[..16.min(header_hex.len())],
+                        &seed_hash[..16.min(seed_hash.len())],
+                        &target_hex[..16.min(target_hex.len())],
+                        height,
+                        epoch,
+                    );
+
+                    return Ok(ExternalJob {
+                        job_id,
+                        header_hex,
+                        target_hex,
+                        seed_hash: Some(seed_hash),
+                        block_number: height,
+                        algorithm: self.profile.algorithm.clone(),
+                        header_bytes,
+                        target_bytes,
+                        timestamp: None,
+                        nbits: None,
+                        external_coin: self.profile.coin,
+                        from_group: 0,
+                        to_group: 0,
+                        extranonce1: self.extranonce1.lock().await.clone(),
+                        extranonce2: String::new(),
+                        epoch,
+                    });
+                }
             }
         }
 
@@ -3485,13 +3590,14 @@ impl AuxPowClient {
         } else if matches!(
             self.profile.coin,
             ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::EVR
-                | ExternalCoin::MEWC | ExternalCoin::QUAI
+                | ExternalCoin::MEWC | ExternalCoin::QUAI | ExternalCoin::ZANO
         ) {
-            // KawPow coins on 2miners/NiceHash use Stratum v1 mining.submit with 5 params:
+            // KawPow / ProgPoW coins on 2miners/NiceHash/HeroMiners use Stratum v1
+            // mining.submit with 5 params:
             //   [worker, job_id, nonce_hex, header_hash_hex, mix_hash_hex]
             // job_id = short job_id from notify, nonce = 0x-prefixed 8-byte hex,
             // header_hash = 0x-prefixed 32-byte block header hash from notify,
-            // mix_hash = 0x-prefixed 32-byte PoW mix hash from KawPow GPU kernel.
+            // mix_hash = 0x-prefixed 32-byte PoW mix hash from GPU kernel.
             //
             // NiceHash nonce format: extranonce1 || miner_nonce (big-endian).
             // The miner already embeds extranonce1 in the high bits of the
@@ -4108,11 +4214,11 @@ impl AuxPowClient {
             Ok(ShareResult::Accepted)
         } else if let Some(err) = resp.get("error") {
             if err.is_null() {
-                println!("auxpow: VRSC submit response (result=false, error=null): {}", resp);
+                println!("auxpow: {} submit response (result=false, error=null): {}", self.profile.coin, resp);
                 return Ok(ShareResult::Unknown);
             }
             // Log the raw error for debugging
-            println!("auxpow: VRSC submit error raw: {}", err);
+            println!("auxpow: {} submit error raw: {}", self.profile.coin, err);
             let reason = if let Some(m) = err.get("message").and_then(|m| m.as_str()) {
                 m.to_string()
             } else if let Some(s) = err.as_str() {
@@ -4555,7 +4661,7 @@ impl AuxPowClient {
             "params": []
         });
         let resp = self.send_request(&req).await?;
-        // The response has "result" = [seed_hash, header_hash, target]
+        // The response has "result" = [seed_hash, header_hash, target, height?]
         // (same format as the notification params).
         if let Some(result) = resp.get("result") {
             if let Some(arr) = result.as_array() {
@@ -4565,6 +4671,7 @@ impl AuxPowClient {
                             arr[0].as_str().unwrap_or(""),
                             arr[1].as_str().unwrap_or(""),
                             arr[2].as_str().unwrap_or(""),
+                            arr.get(3).and_then(|v| v.as_str()),
                         )
                         .await;
                     *self.current_job.lock().await = Some(job);
@@ -4712,13 +4819,15 @@ impl AuxPowClient {
         })
     }
 
-    /// Parse eth_getWork params (seed_hash, header_hex, target_hex) into
-    /// an `ExternalJob`.  Shared between notification and polling paths.
+    /// Parse eth_getWork params (seed_hash, header_hex, target_hex,
+    /// optional height_hex) into an `ExternalJob`.  Shared between
+    /// notification and polling paths.
     async fn parse_eth_getwork_params(
         &self,
         seed_hash: &str,
         header_hex: &str,
         target_hex: &str,
+        height_hex: Option<&str>,
     ) -> ExternalJob {
         let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
             .unwrap_or_default();
@@ -4726,6 +4835,12 @@ impl AuxPowClient {
             target_hex.trim_start_matches("0x"),
         )
         .unwrap_or([0xFFu8; 32]);
+
+        // open-ethereum-pool style eth_getWork returns an optional 4th
+        // element: the block height as a 0x-prefixed big-endian hex u64.
+        let block_number = height_hex.and_then(|h| {
+            u64::from_str_radix(h.trim_start_matches("0x"), 16).ok()
+        });
 
         // Derive epoch from seed hash for DAG management.
         let epoch = if seed_hash.len() >= 2 {
@@ -4749,11 +4864,11 @@ impl AuxPowClient {
             header_hex: header_hex.to_string(),
             target_hex: target_hex.to_string(),
             seed_hash: Some(seed_hash.to_string()),
-            block_number: None,
+            block_number,
             algorithm: self.profile.algorithm.clone(),
             header_bytes,
             target_bytes,
-            timestamp: None,
+            timestamp: block_number,
             nbits: None,
             external_coin: self.profile.coin,
             from_group: 0,

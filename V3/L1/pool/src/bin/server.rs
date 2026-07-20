@@ -413,6 +413,9 @@ fn revenue_source_to_external_coin(source: RevenueSource) -> Option<ExternalCoin
         RevenueSource::ZelHashExternal => Some(ExternalCoin::FLUX),
         RevenueSource::VerusHashExternal => Some(ExternalCoin::VRSC),
         RevenueSource::ProgPowExternal => Some(ExternalCoin::EPIC),
+        // ZANO shares the ProgPowExternal revenue source; EPIC is the canonical
+        // ProgPow coin for revenue-source fallback. ZANO is selected via profit
+        // switching or CoinPreference when its bridge is enabled.
         RevenueSource::PearlExternal => Some(ExternalCoin::PRL),
         RevenueSource::BeamHashExternal => Some(ExternalCoin::BEAM),
         RevenueSource::KarlsenHashExternal => Some(ExternalCoin::KLS),
@@ -443,6 +446,7 @@ fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
         ExternalCoin::FLUX => RevenueSource::ZelHashExternal,
         ExternalCoin::VRSC => RevenueSource::VerusHashExternal,
         ExternalCoin::EPIC => RevenueSource::ProgPowExternal,
+        ExternalCoin::ZANO => RevenueSource::ProgPowExternal,
         ExternalCoin::PRL => RevenueSource::PearlExternal,
         ExternalCoin::BEAM => RevenueSource::BeamHashExternal,
         ExternalCoin::KLS => RevenueSource::KarlsenHashExternal,
@@ -495,6 +499,7 @@ fn auxpow_to_ch_external_coin(coin: ExternalCoin) -> ChExternalCoin {
         ExternalCoin::XMR => ChExternalCoin::XMR,
         ExternalCoin::VRSC => ChExternalCoin::VRSC,
         ExternalCoin::EPIC => ChExternalCoin::EPIC,
+        ExternalCoin::ZANO => ChExternalCoin::ZANO,
         ExternalCoin::PRL => ChExternalCoin::PRL,
         ExternalCoin::QUAI => ChExternalCoin::QUAI,
         ExternalCoin::BEAM => ChExternalCoin::BEAM,
@@ -531,6 +536,7 @@ fn ch_to_auxpow_external_coin(coin: ChExternalCoin) -> ExternalCoin {
         ChExternalCoin::VRSC => ExternalCoin::VRSC,
         ChExternalCoin::PRL => ExternalCoin::PRL,
         ChExternalCoin::EPIC => ExternalCoin::EPIC,
+        ChExternalCoin::ZANO => ExternalCoin::ZANO,
         ChExternalCoin::QUAI => ExternalCoin::QUAI,
         ChExternalCoin::BEAM => ExternalCoin::BEAM,
         ChExternalCoin::KLS => ExternalCoin::KLS,
@@ -562,6 +568,7 @@ fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
         ExternalCoin::EVR | ExternalCoin::MEWC => "kawpow",
         ExternalCoin::VRSC => "verushash",
         ExternalCoin::EPIC => "progpow",
+        ExternalCoin::ZANO => "progpow_zano",
         ExternalCoin::PRL => "pearlhash",
         ExternalCoin::BEAM => "beamhash",
         ExternalCoin::KLS => "karlsenhash",
@@ -2752,38 +2759,42 @@ fn handle_client(
                             sub_miner_id, coin, external_job_id, nonce
                         );
                         // ── Stale job check ──────────────────────────────
-                        // If the share's job_id doesn't match any job in the
-                        // multi_bridge queue (which holds the current + prev
-                        // job), reject locally as "stale_job" instead of
-                        // forwarding to the upstream pool (which would reject
-                        // with "Invalid job id"). The queue holds at most 2
-                        // jobs, so we tolerate the miner being one job behind
-                        // (common with RTM/XMR which update every ~30s).
+                        // Only forward shares for the LATEST job (front of queue).
+                        // Upstream pools reject shares for older jobs with
+                        // "Invalid job id", which wastes bandwidth and may
+                        // trigger reject-rate bans. Rejecting locally as
+                        // "stale_job" is strictly better.
+                        // The queue holds at most 5 jobs (front = latest), but
+                        // upstream only accepts the most recent job_id.
                         let valid_job_ids = ExternalCoin::from_str_loose(&coin)
                             .map(|c| multi_bridge.job_ids_for_coin(&c))
                             .unwrap_or_default();
-                        if !valid_job_ids.is_empty() && !valid_job_ids.contains(&external_job_id) {
-                            println!(
-                                "external_share_stale miner={} coin={} share_job_id={} valid_ids={} — rejecting locally",
-                                sub_miner_id, coin, external_job_id, valid_job_ids.join(",")
-                            );
-                            let ext_result = PoolMessage::ExternalResult {
-                                accepted: false,
-                                status: "stale_job".to_string(),
-                                coin: coin.clone(),
-                            };
-                            let _ = write_wire_message(&mut writer, &ext_result);
-                            let ext_source = match coin.to_ascii_uppercase().as_str() {
-                                "XMR" => RevenueSource::RandomXExternal,
-                                "VRSC" => RevenueSource::VerusHashExternal,
-                                "RTM" => RevenueSource::GhostRiderExternal,
-                                _ => RevenueSource::Blake3External,
-                            };
-                            {
-                                let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
-                                stats.record(session_group, ext_source, false);
+                        if let Some(latest_job_id) = valid_job_ids.first() {
+                            if latest_job_id != &external_job_id {
+                                println!(
+                                    "external_share_stale miner={} coin={} share_job_id={} latest_job_id={} — rejecting locally",
+                                    sub_miner_id, coin, external_job_id, latest_job_id
+                                );
+                                let ext_result = PoolMessage::ExternalResult {
+                                    accepted: false,
+                                    status: "stale_job".to_string(),
+                                    coin: coin.clone(),
+                                };
+                                let _ = write_wire_message(&mut writer, &ext_result);
+                                let ext_source = match coin.to_ascii_uppercase().as_str() {
+                                    "XMR" => RevenueSource::RandomXExternal,
+                                    "VRSC" => RevenueSource::VerusHashExternal,
+                                    "RTM" => RevenueSource::GhostRiderExternal,
+                                    "EPIC" | "EPICCASH" => RevenueSource::ProgPowExternal,
+                                    "ZANO" => RevenueSource::ProgPowExternal,
+                                    _ => RevenueSource::Blake3External,
+                                };
+                                {
+                                    let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
+                                    stats.record(session_group, ext_source, false);
+                                }
+                                continue;
                             }
-                            continue;
                         }
                         // Parse hash bytes
                         let hash_bytes = match zion_pool::parse_fixed_hex::<32>(&hash_hex, "external share hash") {
@@ -2802,16 +2813,9 @@ fn handle_client(
                         // For CPU coins (XMR/VRSC), use external_stream_cpu_job target.
                         let is_cpu_share = multi_bridge.is_cpu_ticker(&coin);
 
-                        // Stale job check: if the share's job_id doesn't match
-                        // the current external job, skip forwarding to avoid
-                        // "Invalid job id" rejections from the upstream pool.
-                        // The miner's CPU thread may submit shares for an old
-                        // job while transitioning to a new one.
-                        // NOTE: We allow the current job AND tolerate stale jobs
-                        // because MoneroOcean updates jobs every ~30s and the
-                        // miner's CPU scan takes ~5s, so the miner is often
-                        // one job behind. MoneroOcean will reject truly stale
-                        // shares with "Invalid job id" — this is fine.
+                        // NOTE: Stale job check is done above (only latest job_id
+                        // is forwarded). The target bytes below are from the
+                        // current external stream job sent to the miner.
                         let target_bytes = if is_cpu_share {
                             match &external_stream_cpu_job {
                                 Some(ext) => match zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external cpu target") {
@@ -2901,6 +2905,7 @@ fn handle_client(
                             "NEXA" => RevenueSource::NexaPowExternal,
                             "RTM" => RevenueSource::GhostRiderExternal,
                             "DNX" => RevenueSource::DynexSolveExternal,
+                            "ZANO" => RevenueSource::ProgPowExternal,
                             _ => RevenueSource::Blake3External,
                         };
                         {
