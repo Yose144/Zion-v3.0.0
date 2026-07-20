@@ -1092,10 +1092,22 @@ pub(crate) fn draw_dashboard(
         }
     }
 
-    // ── Borders (ASCII for maximum compatibility in screen sessions) ──
-    let top: String = format!("+{}+", "-".repeat(iw));
-    let mid: String = format!("+{}+", "-".repeat(iw));
-    let bot: String = format!("+{}+", "-".repeat(iw));
+    // ── Helper: center text within a given width ──
+    fn center_text(text: &str, width: usize) -> String {
+        let chars: Vec<char> = text.chars().collect();
+        if chars.len() >= width {
+            return chars[..width].iter().collect();
+        }
+        let pad = width - chars.len();
+        let left = pad / 2;
+        let right = pad - left;
+        format!("{}{}{}", " ".repeat(left), text, " ".repeat(right))
+    }
+
+    // ── Borders (Unicode box-drawing characters) ──
+    let top: String = format!("┌{}┐", "─".repeat(iw));
+    let mid: String = format!("├{}┤", "─".repeat(iw));
+    let bot: String = format!("└{}┘", "─".repeat(iw));
 
     // ── Helper: write a border line ──
     macro_rules! wborder {
@@ -1104,7 +1116,7 @@ pub(crate) fn draw_dashboard(
     // ── Helper: write a content line with padding ──
     macro_rules! wline {
         ($text:expr) => {
-            queue!(out, Print(format!("\r|{}|\n", pad_to($text, iw))))?
+            queue!(out, Print(format!("\r│{}│\n", pad_to($text, iw))))?
         };
     }
     // ── Helper: write a section header ──
@@ -1112,29 +1124,28 @@ pub(crate) fn draw_dashboard(
         ($text:expr) => {{
             queue!(out,
                 SetForegroundColor(Color::Cyan),
-                Print(format!("\r|{}|\n", pad_to(&format!(" {} ", $text), iw))),
+                Print(format!("\r│{}│\n", pad_to(&format!(" {} ", $text), iw))),
                 ResetColor,
             )?
         }};
     }
 
     // ── Title bar ──
-    let title = format!(
-        " ZION v3.0.6  Triple Parallel  |  {} ",
-        algo_display(&control.algorithm)
-    );
+    let algo_short = algo_display(&control.algorithm);
+    let title_text = format!("ZION MINER v3.0.6 - Triple Parallel - {}", algo_short);
+    let title = center_text(&title_text, iw);
     queue!(
         out,
-        SetBackgroundColor(Color::Rgb { r: 20, g: 20, b: 50 }),
-        SetForegroundColor(Color::Cyan),
+        SetBackgroundColor(Color::Rgb { r: 0, g: 42, b: 78 }),
+        SetForegroundColor(Color::White),
         Print(format!("\r{}\n", top)),
-        Print(format!("\r|{}|\n", pad_to(&title, iw))),
+        Print(format!("\r│{}│\n", pad_to(&title, iw))),
         ResetColor,
     )?;
 
     // ── Status line ──
     let status_color = if control.pause { Color::Yellow } else { Color::Green };
-    let status_dot = if control.pause { "o PAUSED" } else { "* RUNNING" };
+    let status_dot = if control.pause { "o PAUSED " } else { "* RUNNING" };
     let mode_str = match control.mode {
         MiningMode::CpuOnly => "CPU",
         MiningMode::GpuOnly => "GPU",
@@ -1152,7 +1163,7 @@ pub(crate) fn draw_dashboard(
     wborder!(mid);
     // Status line with colored dot
     let rest_after_dot = format!(
-        "  algo={:<12} mode={:<4} thr={:<2} CPU={:<4} GPU={:<4}",
+        " algo={:<12} mode={:<4} thr={:<2} CPU={:<4} GPU={:<4}",
         algo_display(&control.algorithm), mode_str, control.threads, cpu_coin, gpu_coin,
     );
     let dot_len = status_dot.chars().count();
@@ -1165,12 +1176,12 @@ pub(crate) fn draw_dashboard(
     }
     queue!(
         out,
-        Print("\r| "),
+        Print("\r│ "),
         SetForegroundColor(status_color),
         Print(status_dot),
         ResetColor,
         Print(&padded_rest),
-        Print("|\n"),
+        Print("│\n"),
     )?;
 
     // ── Hashrate section ──
@@ -1180,10 +1191,15 @@ pub(crate) fn draw_dashboard(
     let (v10, u10) = ui::fmt_hashrate(rates.total_10s_hps);
     let (v60, u60) = ui::fmt_hashrate(rates.total_60s_hps);
     let (v15m, u15m) = ui::fmt_hashrate(rates.total_15m_hps);
-    wline!(&format!(
-        "   10s {:>6.2}{} 60s {:>6.2}{} 15m {:>6.2}{}",
-        v10, u10, v60, u60, v15m, u15m,
-    ));
+    queue!(
+        out,
+        SetForegroundColor(Color::White),
+        Print(format!("\r│{}│\n", pad_to(&format!(
+            "   10s {:>6.2}{}  60s {:>6.2}{}  15m {:>6.2}{}",
+            v10, u10, v60, u60, v15m, u15m,
+        ), iw))),
+        ResetColor,
+    )?;
 
     // Sparkline — only if we have enough vertical room (need >24 to avoid scroll)
     if avail_rows > 26 {
@@ -1192,7 +1208,7 @@ pub(crate) fn draw_dashboard(
         queue!(
             out,
             SetForegroundColor(Color::Green),
-            Print(format!("\r|{}|\n", pad_to(&format!("   {}", spark), iw))),
+            Print(format!("\r│{}│\n", pad_to(&format!("   {}", spark), iw))),
             ResetColor,
         )?;
     }
@@ -1215,12 +1231,14 @@ pub(crate) fn draw_dashboard(
     let s1_after: String = s1_padded.chars().skip(s1_label.len() + 1).collect();
     queue!(
         out,
-        Print("\r| "),
-        SetForegroundColor(Color::Cyan),
+        Print("\r│ "),
+        SetForegroundColor(Color::White),
         Print(s1_label),
         ResetColor,
+        SetForegroundColor(Color::Grey),
         Print(&s1_after),
-        Print("|\n"),
+        ResetColor,
+        Print("│\n"),
     )?;
 
     // Stream 2: GPU PROFIT
@@ -1239,12 +1257,14 @@ pub(crate) fn draw_dashboard(
     let s2_after: String = s2_padded.chars().skip(s2_label.len() + 1).collect();
     queue!(
         out,
-        Print("\r| "),
+        Print("\r│ "),
         SetForegroundColor(Color::Magenta),
         Print(s2_label),
         ResetColor,
+        SetForegroundColor(Color::Grey),
         Print(&s2_after),
-        Print("|\n"),
+        ResetColor,
+        Print("│\n"),
     )?;
 
     // Stream 3: CPU PROFIT
@@ -1265,12 +1285,14 @@ pub(crate) fn draw_dashboard(
     let s3_after: String = s3_padded.chars().skip(s3_label.len() + 1).collect();
     queue!(
         out,
-        Print("\r| "),
+        Print("\r│ "),
         SetForegroundColor(Color::Yellow),
         Print(s3_label),
         ResetColor,
+        SetForegroundColor(Color::Grey),
         Print(&s3_after),
-        Print("|\n"),
+        ResetColor,
+        Print("│\n"),
     )?;
 
     // ── Shares section ──
@@ -1281,10 +1303,23 @@ pub(crate) fn draw_dashboard(
     let rej = rates.rejected;
     let total_shares = acc + rej;
     let share_pct = if total_shares > 0 { acc as f64 * 100.0 / total_shares as f64 } else { 100.0 };
-    wline!(&format!(
-        "   Acc:{} Rej:{} Eff:{:.1}% Up:{}",
-        acc, rej, share_pct, fmt_hms(uptime_secs),
-    ));
+    let acc_s = format!("   Acc:{:>3}", acc);
+    let rej_s = format!(" Rej:{:>3}", rej);
+    let rest_s = format!(" Eff:{:>5.1}% Up:{}", share_pct, fmt_hms(uptime_secs));
+    let total_len = acc_s.chars().count() + rej_s.chars().count() + rest_s.chars().count();
+    let pad_right = " ".repeat(iw.saturating_sub(total_len));
+    queue!(
+        out,
+        Print("\r│"),
+        SetForegroundColor(Color::Green),
+        Print(&acc_s),
+        SetForegroundColor(Color::Red),
+        Print(&rej_s),
+        ResetColor,
+        Print(&rest_s),
+        Print(&pad_right),
+        Print("│\n"),
+    )?;
 
     // Share log — adaptive count based on available rows
     let share_log = hashrate.get_share_log();
@@ -1315,20 +1350,20 @@ pub(crate) fn draw_dashboard(
         let after: String = padded.chars().skip(sym_pos + 1).collect();
         queue!(
             out,
-            Print("\r|"),
+            Print("\r│"),
             Print(&before),
             SetForegroundColor(sym_col),
             Print(sym),
             ResetColor,
             Print(&after),
-            Print("|\n"),
+            Print("│\n"),
         )?;
     }
     if share_log.is_empty() {
         queue!(
             out,
             SetForegroundColor(Color::DarkGrey),
-            Print(format!("\r|{}|\n", pad_to("   (no shares yet)", iw))),
+            Print(format!("\r│{}│\n", pad_to("   (no shares yet)", iw))),
             ResetColor,
         )?;
     }
@@ -1339,10 +1374,15 @@ pub(crate) fn draw_dashboard(
 
     let online = hashrate.online_snapshot.lock().map(|g| g.clone()).unwrap_or_default();
     let (phr, phu) = ui::fmt_hashrate(online.pool_hashrate);
-    wline!(&format!(
-        "   h={} up={} pHR={:>6.2}{} min={}/{}",
-        pool_height, fmt_hms(uptime_secs), phr, phu, online.active_miners, online.total_miners,
-    ));
+    queue!(
+        out,
+        SetForegroundColor(Color::White),
+        Print(format!("\r│{}│\n", pad_to(&format!(
+            "   h={} up={} pHR={:>6.2}{} min={}/{}",
+            pool_height, fmt_hms(uptime_secs), phr, phu, online.active_miners, online.total_miners,
+        ), iw))),
+        ResetColor,
+    )?;
 
     // ── Metrics (if enabled) ──
     if control.show_metrics {
@@ -1367,7 +1407,7 @@ pub(crate) fn draw_dashboard(
             queue!(
                 out,
                 SetForegroundColor(Color::DarkGrey),
-                Print(format!("\r|{}|\n", pad_to("   (waiting for pool API...)", iw))),
+                Print(format!("\r│{}│\n", pad_to("   (waiting for pool API...)", iw))),
                 ResetColor,
             )?;
         } else {
@@ -1401,8 +1441,8 @@ pub(crate) fn draw_dashboard(
     queue!(
         out,
         SetForegroundColor(Color::DarkGrey),
-        Print(format!("\r|{}|\n", pad_to(" [a]lgo [c]CPU [C]coinCPU [g]GPU [G]coinGPU [d]ual [p]ause", iw))),
-        Print(format!("\r|{}|\n", pad_to(" [r]econ [m]etrics [o]nline [v]erbose [1-9]thr [q]uit", iw))),
+        Print(format!("\r│{}│\n", pad_to(" [a]lgo [c]CPU [C]coinCPU [g]GPU [G]coinGPU [d]ual [p]ause", iw))),
+        Print(format!("\r│{}│\n", pad_to(" [r]econ [m]etrics [o]nline [v]erbose [1-9]thr [q]uit", iw))),
         ResetColor,
     )?;
 
