@@ -580,6 +580,7 @@ pub fn is_external_algorithm(algorithm: &str) -> bool {
             | "zelhash_flux"
             | "progpow"
             | "progpow_epic"
+            | "progpow_zano"
             | "beamhash"
             | "beamhash_beam"
             | "verushash"
@@ -624,6 +625,7 @@ pub fn is_dag_based_algorithm(algorithm: &str) -> bool {
             | "evrprogpow_evr"
             | "meowpow"
             | "meowpow_mewc"
+            | "progpow_zano"
     )
 }
 
@@ -651,7 +653,7 @@ pub fn algorithm_extra_gpu_memory_bytes(algorithm: &str, height: u64) -> u64 {
             | "kawpow_mewc" | "kawpow_quai"
             | "evrprogpow" | "evrprogpow_evr"
             | "meowpow" | "meowpow_mewc" => 7500u64,
-            "progpow" | "progpow_epic"
+            "progpow" | "progpow_epic" | "progpow_zano"
             | "ethash" | "etchash" | "ethash_etc" => 30000u64,
             _ => 30000u64,
         };
@@ -1949,10 +1951,10 @@ pub fn gpu_scan_job(
             "ethash" | "etchash" | "ethash_etc"
                 | "kawpow" | "kawpow_rvn" | "kawpow_clore"
                 | "kawpow_evr" | "kawpow_mewc"
-                | "progpow" | "progpow_epic"
+                | "progpow" | "progpow_epic" | "progpow_zano"
         )
     {
-        let epoch = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc" | "progpow" | "progpow_epic") {
+        let epoch = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc" | "progpow" | "progpow_epic" | "progpow_zano") {
             (job.height / 30000) as u32
         } else {
             (job.height / 7500) as u32
@@ -7200,7 +7202,7 @@ pub mod opencl_external {
                         "ethash" | "etchash" | "ethash_etc"
                             | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
                             | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-                            | "progpow" | "progpow_epic"
+                            | "progpow" | "progpow_epic" | "progpow_zano"
                     ) {
                         anyhow::bail!(
                             "DAG-based algorithm '{}' requires the 'native-hashers' feature \
@@ -7240,7 +7242,7 @@ pub mod opencl_external {
                 self.algorithm.as_str(),
                 "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
                     | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-                    | "progpow" | "progpow_epic"
+                    | "progpow" | "progpow_epic" | "progpow_zano"
             ) {
                 self.miner.set_block_height(height);
             }
@@ -7253,7 +7255,7 @@ pub mod opencl_external {
                     | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
             ) {
                 Some((height / 7500) as u32)
-            } else if matches!(self.algorithm.as_str(), "progpow" | "progpow_epic") {
+            } else if matches!(self.algorithm.as_str(), "progpow" | "progpow_epic" | "progpow_zano") {
                 Some((height / 30000) as u32)
             } else {
                 None
@@ -7293,6 +7295,7 @@ pub mod opencl_external {
                 | "zelhash_flux"
                 | "progpow"
                 | "progpow_epic"
+                | "progpow_zano"
                 | "beamhash"
                 | "beamhash_beam"
                 | "fishhash"

@@ -2810,49 +2810,56 @@ fn handle_client(
                             }
                         };
                         // Get target from the external stream job we sent.
-                        // For CPU coins (XMR/VRSC), use external_stream_cpu_job target.
+                        // Look up the correct per-coin target from the bridge
+                        // queue, NOT from the single `external_stream_cpu_job`
+                        // variable which gets overwritten when the scheduler
+                        // switches between RTM/XMR/VRSC.
                         let is_cpu_share = multi_bridge.is_cpu_ticker(&coin);
+                        let ext_coin_enum = ExternalCoin::from_str_loose(&coin);
 
-                        // NOTE: Stale job check is done above (only latest job_id
-                        // is forwarded). The target bytes below are from the
-                        // current external stream job sent to the miner.
-                        let target_bytes = if is_cpu_share {
-                            match &external_stream_cpu_job {
-                                Some(ext) => match zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external cpu target") {
-                                    Ok(t) => t,
-                                    Err(_) => [0xFFu8; 32],
-                                },
-                                None => [0xFFu8; 32],
+                        // Use the bridge's per-coin latest job to get the
+                        // correct target and header bytes for this share's coin.
+                        let (target_bytes, header_bytes_for_forward) = match &ext_coin_enum {
+                            Some(c) => {
+                                match multi_bridge.latest_job_for_coin(c) {
+                                    Some(job) => (job.share_target_bytes, job.header_bytes.clone()),
+                                    None => {
+                                        // Fallback: use the external_stream_job
+                                        // variables (may have wrong coin's target).
+                                        if is_cpu_share {
+                                            match &external_stream_cpu_job {
+                                                Some(ext) => (
+                                                    zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external cpu target")
+                                                        .unwrap_or([0xFFu8; 32]),
+                                                    hex::decode(&ext.header_hex).unwrap_or_default(),
+                                                ),
+                                                None => ([0xFFu8; 32], Vec::new()),
+                                            }
+                                        } else {
+                                            match &external_stream_job {
+                                                Some(ext) => (
+                                                    zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external target")
+                                                        .unwrap_or([0xFFu8; 32]),
+                                                    hex::decode(&ext.header_hex).unwrap_or_default(),
+                                                ),
+                                                None => ([0xFFu8; 32], Vec::new()),
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                        } else {
-                            match &external_stream_job {
-                                Some(ext) => match zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external target") {
-                                    Ok(t) => t,
-                                    Err(_) => [0xFFu8; 32],
-                                },
-                                None => [0xFFu8; 32],
-                            }
+                            None => ([0xFFu8; 32], Vec::new()),
                         };
                         // Parse mix hash if present
                         let mix_hash = mix_hash_hex
                             .as_deref()
                             .and_then(|h| zion_pool::parse_fixed_hex::<32>(h, "mix hash").ok());
-                        // Recover the original header_bytes (pre_pow) from the
-                        // external stream job we sent to the miner.  This is
-                        // needed for DAG algorithms (ProgPow/Ethash/KawPow)
-                        // where the GPU kernel only returns a u64 pre-check
-                        // value and the hash field is all zeros — the forwarder
-                        // recomputes the real final hash from header + nonce +
-                        // mix_hash before submitting upstream.
-                        let header_bytes_for_forward = if is_cpu_share {
-                            external_stream_cpu_job.as_ref()
-                                .and_then(|ext| hex::decode(&ext.header_hex).ok())
-                                .unwrap_or_default()
-                        } else {
-                            external_stream_job.as_ref()
-                                .and_then(|ext| hex::decode(&ext.header_hex).ok())
-                                .unwrap_or_default()
-                        };
+                        // header_bytes_for_forward was already set above from
+                        // the per-coin bridge lookup.  This is needed for DAG
+                        // algorithms (ProgPow/Ethash/KawPow) where the GPU
+                        // kernel only returns a u64 pre-check value and the
+                        // hash field is all zeros — the forwarder recomputes
+                        // the real final hash from header + nonce + mix_hash.
                         let forward_req = ShareForwardRequest {
                             external_job_id: external_job_id.clone(),
                             nonce,
@@ -4240,6 +4247,16 @@ impl MultiAuxPowBridge {
             let q = b.job_queue.lock().expect("auxpow job queue lock poisoned");
             q.iter().map(|j| j.external_job_id.clone()).collect()
         }).unwrap_or_default()
+    }
+
+    /// Get the latest target bytes and header bytes for a specific coin.
+    /// Returns (share_target_bytes, header_bytes) from the front of the queue.
+    /// This is used to look up the correct per-coin target when processing
+    /// shares, avoiding the bug where a single `external_stream_cpu_job`
+    /// variable gets overwritten when the scheduler switches coins.
+    fn latest_job_for_coin(&self, coin: &ExternalCoin) -> Option<JobPackage> {
+        let bridges = self.bridges.lock().expect("multi_bridge lock poisoned");
+        bridges.get(coin).and_then(|b| b.pop_job())
     }
 
     /// Forward a share to the bridge for the given coin.

@@ -217,7 +217,9 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
             // dispatches multiple kernels via mine_zelhash_prod().
             Some(("zelhash_prod_kernel.cl", "kernel_init_ht"))
         }
-        "progpow" | "progpow_epic" => Some(("progpow_kernel.cl", "ethash_search")),
+        "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => {
+            Some(("progpow_kernel.cl", "ethash_search"))
+        }
         "pearlhash" | "pearlhash_prl" => {
             // NOTE: pearl_kernel.cl is a BLAKE3-based PLACEHOLDER for pipeline
             // testing only. The real Pearl PoUW GPU kernel is
@@ -790,7 +792,7 @@ impl GpuMiner {
         } else {
             None
         };
-        let progpow_dag = if matches!(algorithm, "progpow" | "progpow_epic") {
+        let progpow_dag = if matches!(algorithm, "progpow" | "progpow_epic" | "progpow_zano" | "progpowz") {
             self.progpow_dag.clone()
         } else {
             None
@@ -806,7 +808,7 @@ impl GpuMiner {
         let is_progpow = matches!(
             algorithm,
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-                | "progpow" | "progpow_epic"
+                | "progpow" | "progpow_epic" | "progpow_zano" | "progpowz"
         );
 
         let pro_que = if is_progpow {
@@ -969,12 +971,12 @@ impl GpuMiner {
                     &found_flag_buf,
                 )?
             }
-            "progpow" | "progpow_epic" => {
-                // ProgPow requires the per-epoch DAG to be uploaded first.
+            "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => {
+                // ProgPow / ProgPoWZ requires the per-epoch DAG to be uploaded first.
                 let dag = progpow_dag.ok_or_else(|| {
                     anyhow!(
                         "ProgPow DAG not set; call GpuMiner::set_progpow_dag() \
-                         before mining EPIC"
+                         before mining EPIC/ZANO"
                     )
                 })?;
                 Self::build_progpow_kernel(
@@ -1143,7 +1145,7 @@ impl GpuMiner {
         let batch_factor = match algorithm {
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 4,
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-            | "progpow" | "progpow_epic" | "beamhash" | "beamhash_beam"
+            | "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" | "beamhash" | "beamhash_beam"
             | "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => 1,
             "verthash" | "verthash_vtc" => 1, // Verthash: 4-way kernel, 1 nonce per 4 work-items
             "equihashzero" | "equihashzero_zcl" => 1, // Equihash: memory-bound, 1 nonce per work-item
@@ -1160,7 +1162,7 @@ impl GpuMiner {
         // KawPow and variants use GROUP_SIZE=128.
         // Mismatch causes out-of-bounds local memory access → GPU hang.
         let wg_size = match algorithm {
-            "progpow" | "progpow_epic" => 128, // GROUP_SIZE=128 for EPIC ProgPow (share+barrier)
+            "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => 128, // GROUP_SIZE=128 for EPIC/Zano ProgPow (share+barrier)
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => 128, // GROUP_SIZE=128 for KawPow
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 128,
             "beamhash" | "beamhash_beam" => 256, // BeamHash: standard work-group
@@ -1283,7 +1285,7 @@ impl GpuMiner {
         let is_dag_algo = matches!(algorithm,
             "ethash" | "etchash" | "ethash_etc"
             | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-            | "progpow" | "progpow_epic"
+            | "progpow" | "progpow_epic" | "progpow_zano" | "progpowz"
         );
 
         let hash_arr: [u8; 32] = if is_dag_algo {
@@ -1491,6 +1493,18 @@ impl GpuMiner {
         self.progpow_dag.as_ref().map(|d| d.epoch)
     }
 
+    /// Read the ProgPow DAG buffer back from the GPU to host memory.
+    /// Used for saving the DAG to disk cache after GPU generation.
+    pub fn read_progpow_dag_to_host(&self) -> Result<(Vec<u64>, u64)> {
+        let dag = self.progpow_dag.as_ref()
+            .ok_or_else(|| anyhow!("ProgPow DAG not loaded on GPU"))?;
+        let len = dag.buf.len();
+        let mut host_buf = vec![0u64; len];
+        dag.buf.read(&mut host_buf).enq()
+            .map_err(|e| anyhow!("failed to read ProgPow DAG from GPU: {e}"))?;
+        Ok((host_buf, dag.size_entries))
+    }
+
     /// Upload the FishHash DAG to the GPU device.
     ///
     /// The DAG must be generated on the host (Blake3-based, 512 parents per item)
@@ -1668,7 +1682,18 @@ typedef unsigned long ulong;
             base.replace("#include \"defs.h\"", defs)
         };
 
-        let batch_size = self.work_size;
+        let batch_size = std::env::var("ZION_AUXPOW_GPU_DAG_BATCH")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+            .unwrap_or(16_384)
+            .min(self.work_size);
+        // Local work size for DAG kernel — small LWS keeps each wavefront
+        // short enough to avoid amdgpu TTD (timeout detection) hangs on
+        // heavy SHA3-512 workloads.
+        let dag_lws: usize = std::env::var("ZION_AUXPOW_GPU_DAG_LWS")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+            .unwrap_or(64);
         // Get a queue from any existing ProQue, or build one fresh.
         let q = if let Some(pq) = self.proques.values().next() {
             pq.queue().clone()
@@ -1797,7 +1822,7 @@ typedef unsigned long ulong;
                 .arg(start_node)
                 .arg(&cache_buf)
                 .arg(&dag_buf)
-                .arg(0u32) // isolate (debug flag, 0 = normal)
+                .arg(1u32) // isolate (MUST be 1 — 0 causes infinite loop in keccak_f1600_no_absorb)
                 .arg(dag_nodes as u32) // dag_words
                 .arg(light_items) // light_items
                 .arg(0u32) // fast_mod_mul (0 = use direct modulo)
@@ -1807,9 +1832,11 @@ typedef unsigned long ulong;
                 .map_err(|e| anyhow!("DAG kernel build failed (batch {}): {e}", batch))?;
 
             unsafe {
+                let gws = ((nodes_this_batch + dag_lws - 1) / dag_lws) * dag_lws;
                 dag_kernel
                     .cmd()
-                    .global_work_size(nodes_this_batch)
+                    .global_work_size(gws)
+                    .local_work_size(dag_lws)
                     .enq()
                     .map_err(|e| anyhow!("DAG kernel enqueue failed (batch {}): {e}", batch))?;
             }
@@ -1901,7 +1928,18 @@ typedef unsigned long ulong;
             base.replace("#include \"defs.h\"", defs)
         };
 
-        let batch_size = self.work_size;
+        let batch_size = std::env::var("ZION_AUXPOW_GPU_DAG_BATCH")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+            .unwrap_or(16_384)
+            .min(self.work_size);
+        // Local work size for DAG kernel — small LWS keeps each wavefront
+        // short enough to avoid amdgpu TTD (timeout detection) hangs on
+        // heavy SHA3-512 workloads.
+        let dag_lws: usize = std::env::var("ZION_AUXPOW_GPU_DAG_LWS")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+            .unwrap_or(64);
         // Get a queue from any existing ProQue, or build one fresh.
         let q = if let Some(pq) = self.proques.values().next() {
             pq.queue().clone()
@@ -1926,8 +1964,6 @@ typedef unsigned long ulong;
         prog_builder.cmplr_opt("-cl-std=CL1.2 -cl-mad-enable");
 
         let dag_pro_que = ProQue::builder()
-            .platform(self.platform)
-            .device(self.device)
             .context(q_context)
             .prog_bldr(prog_builder)
             .dims(batch_size)
@@ -1991,7 +2027,7 @@ typedef unsigned long ulong;
                 .arg(start_node)
                 .arg(&cache_buf)
                 .arg(&dag_buf)
-                .arg(0u32) // isolate (debug flag, 0 = normal)
+                .arg(1u32) // isolate (MUST be 1 — 0 causes infinite loop in keccak_f1600_no_absorb)
                 .arg(dag_nodes as u32) // dag_words
                 .arg(light_items as u32) // light_items
                 .arg(0u32) // fast_mod_mul (0 = use direct modulo)
@@ -2001,9 +2037,11 @@ typedef unsigned long ulong;
                 .map_err(|e| anyhow!("DAG kernel build failed (batch {}): {e}", batch))?;
 
             unsafe {
+                let gws = ((nodes_this_batch + dag_lws - 1) / dag_lws) * dag_lws;
                 dag_kernel
                     .cmd()
-                    .global_work_size(nodes_this_batch)
+                    .global_work_size(gws)
+                    .local_work_size(dag_lws)
                     .enq()
                     .map_err(|e| anyhow!("DAG kernel enqueue failed (batch {}): {e}", batch))?;
             }
@@ -2428,7 +2466,7 @@ typedef unsigned long ulong;
                 progpow_codegen::prepare_kawpow_kernel_source_for_algo(&base_src, algorithm, block_height)
             }
             "progpow_kernel.cl" => {
-                progpow_codegen::prepare_epic_progpow_kernel_source(&base_src, block_height)
+                progpow_codegen::prepare_progpow_kernel_source_for_algo(&base_src, algorithm, block_height)
             }
             _ => base_src,
         };
@@ -2455,8 +2493,8 @@ typedef unsigned long ulong;
         // so the kernel can use the correct register file size and math loop count.
         // MeowPow uses REGS=16 and CNT_MATH=9 (halved vs KawPow's 32/18).
         // EvrProgPow uses the same REGS/CNT_MATH as KawPow (32/18) but PERIOD=3.
-        let group_size = if algorithm == "progpow" || algorithm == "progpow_epic" {
-            128 // EPIC ProgPow: GROUP_SIZE=128 (share+barrier fallback — 256 deadlocks on SMOS)
+        let group_size = if algorithm == "progpow" || algorithm == "progpow_epic" || algorithm == "progpow_zano" || algorithm == "progpowz" {
+            128 // EPIC/Zano ProgPow: GROUP_SIZE=128 (share+barrier fallback — 256 deadlocks on SMOS)
         } else {
             128 // KawPow and variants: GROUP_SIZE=128
         };
@@ -4923,8 +4961,8 @@ impl DagManager {
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
                 self.ensure_kawpow_dag(miner, epoch)
             }
-            "progpow" | "progpow_epic" => {
-                // ProgPow uses the same DAG format as Ethash (epoch 30000),
+            "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => {
+                // ProgPow / ProgPoWZ uses the same DAG format as Ethash (epoch 30000),
                 // but uploads to a separate GPU buffer (progpow_dag, not
                 // ethash_dag) so both algorithms can mine simultaneously.
                 self.ensure_progpow_dag(miner, epoch)

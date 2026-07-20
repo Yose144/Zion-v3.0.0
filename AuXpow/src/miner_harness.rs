@@ -12,6 +12,7 @@
 //!   - `kawpow`      — RVN/CLORE (pure-Rust fallback; use `native-hashers` for real)
 //!   - `ethash`      — ETC (pure-Rust fallback; use `native-hashers` for real)
 //!   - `progpow`     — EPIC (simplified CPU fallback; use GPU kernel for real mining)
+//!   - `progpow_zano` — ZANO (simplified CPU fallback; use GPU kernel for real mining)
 //!
 //! `randomx` (XMR) is supported via the `native-randomx` feature (tevador/RandomX C++).
 
@@ -66,7 +67,7 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
         "kawpow" => Ok(scan_kawpow(job, start, end)),
         "ethash" | "etchash" => Ok(scan_ethash(job, start, end)),
         "verushash" => Ok(scan_verushash(job, start, end)),
-        "progpow" | "progpow_epic" => Ok(scan_progpow(job, start, end)),
+        "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => Ok(scan_progpow(job, start, end)),
         "pearlhash" => Ok(scan_pearl(job, start, end)),
         "randomx" => Ok(scan_randomx(job, start, end)),
         "ghostrider" => Ok(scan_ghostrider(job, start, end)),
@@ -114,7 +115,7 @@ pub fn mine_best(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option
         "kawpow" => Ok(scan_kawpow_best(job, start, end)),
         "ethash" | "etchash" => Ok(scan_ethash_best(job, start, end)),
         "verushash" => Ok(scan_verushash_best(job, start, end)),
-        "progpow" | "progpow_epic" => Ok(scan_progpow_best(job, start, end)),
+        "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => Ok(scan_progpow_best(job, start, end)),
         "pearlhash" => Ok(scan_pearl_best(job, start, end)),
         "randomx" => Ok(scan_randomx_best(job, start, end)),
         "ghostrider" => Ok(scan_ghostrider_best(job, start, end)),
@@ -652,8 +653,10 @@ fn scan_ghostrider_single(job: &JobPackage, start: u64, end: u64) -> Option<Foun
         #[cfg(not(feature = "native-ghostrider"))]
         let hash = crate::external_hashers::hash_blake3(&work_blob, 0, nonce);
 
-        // GhostRider: LE hash, BE target → reverse hash to BE and compare
-        if crate::external_hashers::meets_target_little_endian(&hash, target) {
+        // GhostRider: LE hash, BE target → reverse hash to BE and compare.
+        // Also enforce yiimp's error 25 sanity: hash[30] | hash[31] must be 0.
+        let pfx = hash[30] | hash[31];
+        if pfx == 0 && crate::external_hashers::meets_target_little_endian(&hash, target) {
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
                 nonce,

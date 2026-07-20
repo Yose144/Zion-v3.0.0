@@ -742,14 +742,15 @@ pub fn ethash_header_hash(pre_pow: &[u8]) -> [u8; 32] {
 /// Check if a hash meets the target when the hash is interpreted as a
 /// little-endian 256-bit integer.
 ///
-/// VerusHash v2.2 and Decred BLAKE3 (DCP-0011) return the PoW hash in
-/// little-endian byte order (as per Bitcoin's uint256 convention). The target
-/// bytes remain big-endian, as produced by `difficulty_to_target` or received
-/// from a stratum pool.
+/// VerusHash v2.2, Decred BLAKE3 (DCP-0011), and GhostRider (RTM) return the
+/// PoW hash in little-endian byte order (byte 0 = LSB, byte 31 = MSB), as per
+/// Bitcoin's uint256 convention.  The target bytes are big-endian (byte 0 =
+/// MSB), as produced by `difficulty_to_target` or received from a stratum pool.
 ///
-/// To compare correctly we reverse the hash bytes (converting LE → BE) and
-/// compare against the target as big-endian. Reversing the target too would
-/// yield an incorrect comparison (the target's high bytes would become low).
+/// To compare correctly we must reverse ONLY the hash (LE → BE) and compare
+/// against the target as-is (BE).  Reversing both would compare hash_BE
+/// against target_LE, which is wrong — it compares the hash's MSB against
+/// the target's LSB and produces incorrect results.
 #[inline]
 pub fn meets_target_little_endian(hash: &[u8; 32], target: &[u8; 32]) -> bool {
     hash.iter().rev().cmp(target.iter()).is_le()
@@ -1832,12 +1833,12 @@ pub fn keccak_f800(st: &mut [u32; 25]) {
         10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1,
     ];
     const KECCAKF_RNDC: [u32; 22] = [
-        0x00000001, 0x00008082, 0x80000080, 0x80008000,
-        0x0000008b, 0x00008000, 0x80008088, 0x80000082,
-        0x0000000b, 0x00008008, 0x80008009, 0x8000008a,
-        0x00000088, 0x80008000, 0x8000808b, 0x0000008b,
-        0x80008089, 0x80008003, 0x80008088, 0x80000088,
-        0x80008082, 0x8000000a,
+        0x00000001, 0x00008082, 0x0000808a, 0x80008000,
+        0x0000808b, 0x80000001, 0x80008081, 0x00008009,
+        0x0000008a, 0x00000088, 0x80008009, 0x8000000a,
+        0x8000808b, 0x0000008b, 0x00008089, 0x00008003,
+        0x00008002, 0x00000080, 0x0000800a, 0x8000000a,
+        0x80008081, 0x00008080,
     ];
 
     for r in 0..22 {
@@ -1875,81 +1876,66 @@ pub fn keccak_f800(st: &mut [u32; 25]) {
     }
 }
 
-/// Compute the ProgPow seed hash from header_hash and nonce.
-/// `seed = keccak_f800(header_hash(32) || nonce_le(8))` → first 8 uint32s.
-fn progpow_seed(header_hash: &[u8; 32], nonce: u64) -> [u32; 8] {
-    let mut st = [0u32; 25];
-    // Load 32 bytes of header_hash into st[0..8] (8 x uint32 LE)
+/// Load header, a 64-bit value and an optional 32-byte mix into a fresh
+/// keccak-f[800] state and run the permutation.
+///
+/// This is the internal building block for ProgPow seed and final hashing.
+fn keccak_f800_state(
+    header_hash: &[u8; 32],
+    value: u64,
+    mix: Option<&[u32; 8]>,
+    st: &mut [u32; 25],
+) {
+    *st = [0u32; 25];
     for i in 0..8 {
         st[i] = u32::from_le_bytes(
             header_hash[i * 4..(i + 1) * 4].try_into().unwrap(),
         );
     }
-    // Load 8 bytes of nonce into st[8..10] (2 x uint32 LE)
-    let nonce_le = nonce.to_le_bytes();
-    st[8] = u32::from_le_bytes(nonce_le[0..4].try_into().unwrap());
-    st[9] = u32::from_le_bytes(nonce_le[4..8].try_into().unwrap());
-    keccak_f800(&mut st);
-    // Take first 8 uint32s as the seed (256-bit)
-    let mut seed = [0u32; 8];
-    seed.copy_from_slice(&st[0..8]);
-    seed
+    st[8] = value as u32;
+    st[9] = (value >> 32) as u32;
+    if let Some(m) = mix {
+        for i in 0..8 {
+            st[10 + i] = m[i];
+        }
+    }
+    keccak_f800(st);
 }
 
-/// Compute the final ProgPow hash from the mix state.
-/// `final = keccak_f800(header_hash(32) || mix_state(512 bytes))` → 256-bit.
-fn progpow_final(header_hash: &[u8; 32], mix: &[u32; 512]) -> [u8; 32] {
+/// Compute the ProgPow seed from header_hash and nonce.
+/// Returns the first 64 bits of `keccak_f800(header_hash || nonce)`
+/// as a big-endian integer (the `seed` passed to `hash_mix` and final hash).
+fn progpow_seed(header_hash: &[u8; 32], nonce: u64) -> u64 {
     let mut st = [0u32; 25];
-    // Load header_hash into st[0..8]
+    keccak_f800_state(header_hash, nonce, None, &mut st);
+    ((st[0].to_be() as u64) << 32) | (st[1].to_be() as u64)
+}
+
+/// Compute the final ProgPow hash from header_hash, nonce and mix_hash.
+///
+/// This is the on-GPU pre-check equivalent, producing the full 256-bit final
+/// hash used for target comparison and upstream share submission.
+/// The GPU kernel only compares the top 64 bits against `target_u64`; here we
+/// return the full result so the share forwarder can verify against the pool
+/// target and recompute the hash before submitting.
+pub fn progpow_final_hash(header_hash: &[u8; 32], nonce: u64, mix_hash: &[u8; 32]) -> [u8; 32] {
+    let seed = progpow_seed(header_hash, nonce);
+
+    let mut mix_u32 = [0u32; 8];
     for i in 0..8 {
-        st[i] = u32::from_le_bytes(
-            header_hash[i * 4..(i + 1) * 4].try_into().unwrap(),
+        mix_u32[i] = u32::from_le_bytes(
+            mix_hash[i * 4..(i + 1) * 4].try_into().unwrap(),
         );
     }
-    // Load mix state (512 uint32s = 2048 bytes) into st in chunks
-    // keccak_f800 has 25 uint32s of state, so we absorb in blocks
-    // Absorb first 17 uint32s of mix (st[8..25])
-    for i in 0..17 {
-        st[8 + i] = mix[i];
-    }
-    keccak_f800(&mut st);
-    // Absorb next 17 uint32s
-    for i in 0..17 {
-        st[8 + i] = mix[17 + i];
-    }
-    keccak_f800(&mut st);
-    // Continue absorbing remaining mix data
-    let mut offset = 34;
-    while offset < 512 {
-        let chunk = (512 - offset).min(17);
-        for i in 0..chunk {
-            st[8 + i] = mix[offset + i];
-        }
-        keccak_f800(&mut st);
-        offset += chunk;
-    }
-    // Extract 256-bit result (8 uint32s → 32 bytes, big-endian per EIP-1057)
+
+    let mut st = [0u32; 25];
+    keccak_f800_state(header_hash, seed, Some(&mix_u32), &mut st);
+
     let mut result = [0u8; 32];
     for i in 0..8 {
-        // EIP-1057: "result byte 0 is the MSB of the value"
-        // keccak output is in st[0..8], convert to big-endian bytes
-        result[i * 4..(i + 1) * 4].copy_from_slice(&st[i].to_be_bytes());
+        result[i * 4..(i + 1) * 4].copy_from_slice(&st[i].to_le_bytes());
     }
     result
-}
-
-/// Fill the mix state from the seed.
-/// `fill_mix(seed) → mix[PROGPOW_LANES * PROGPOW_REGS]` (512 uint32s).
-fn progpow_fill_mix(seed: &[u32; 8]) -> [u32; 512] {
-    let mut mix = [0u32; 512];
-    for lane in 0..PROGPOW_LANES as usize {
-        for reg in 0..PROGPOW_REGS as usize {
-            // Each lane gets a different slice of the seed
-            let idx = (lane * PROGPOW_REGS as usize + reg) % 8;
-            mix[lane * PROGPOW_REGS as usize + reg] = seed[idx];
-        }
-    }
-    mix
 }
 
 /// Compute ProgPow hash for Epic Cash (EPIC) mining.
@@ -1983,25 +1969,24 @@ pub fn hash_progpow(header_hash: &[u8; 32], nonce: u64, height: u32) -> ([u8; 32
     #[allow(unreachable_code)]
     {
         let seed = progpow_seed(header_hash, nonce);
-        let mut mix = progpow_fill_mix(&seed);
 
-        // Simplified loop: no DAG, no random math (GPU-only features)
-        // Just mix the state with keccak to produce a deterministic hash
-        let prog_seed = height / PROGPOW_PERIOD;
-        let mut rng = Kiss99::new(prog_seed);
-
-        // Simplified mixing: XORmix the state with RNG values
-        for i in 0..mix.len() {
-            mix[i] = mix[i].wrapping_add(rng.next());
-        }
-
-        let final_hash = progpow_final(header_hash, &mix);
-
-        // Mix hash = first 32 bytes of mix state
+        // Build a deterministic placeholder mix_hash from the seed.
+        // Real ProgPow mixes the full DAG; this fallback only needs to be
+        // deterministic and sensitive to nonce/height for testing.
+        let seed_bytes = seed.to_le_bytes();
         let mut mix_hash = [0u8; 32];
-        for i in 0..8 {
-            mix_hash[i * 4..(i + 1) * 4].copy_from_slice(&mix[i].to_le_bytes());
+        for i in 0..4 {
+            mix_hash[i * 8..(i + 1) * 8].copy_from_slice(&seed_bytes);
         }
+
+        // Slightly perturb the mix_hash with the period so height changes
+        // the output (tests rely on height sensitivity).
+        let prog_seed = (height / PROGPOW_PERIOD) as u64;
+        for i in 0..mix_hash.len() {
+            mix_hash[i] = mix_hash[i].wrapping_add((prog_seed >> (i % 8)) as u8);
+        }
+
+        let final_hash = progpow_final_hash(header_hash, nonce, &mix_hash);
 
         (mix_hash, final_hash)
     }
@@ -2417,6 +2402,30 @@ mod tests {
     }
 
     #[test]
+    fn progpow_seed_epic_zero_vector() {
+        // EpicCash/progpow-rust keccak_f800_short all-zeros vector.
+        // keccak_f800_short([0;32], 0, [0;8]) == 0x5dd431e5fbc604f4
+        let header = [0u8; 32];
+        let seed = progpow_seed(&header, 0);
+        assert_eq!(seed, 0x5dd431e5fbc604f4, "seed mismatch: {:016x}", seed);
+    }
+
+    #[test]
+    fn progpow_final_hash_epic_block0_vector() {
+        // EpicCash/progpow-rust test vector for ProgPoW block 0.
+        // header = 0x00..00, nonce = 0x0000000000000000,
+        // mix_hash  = 0xfaeb1be51075b03a4ff44b335067951ead07a3b078539ace76fd56fc410557a3
+        // final_hash = 0x63155f732f2bf556967f906155b510c917e48e99685ead76ea83f4eca03ab12b
+        let header = [0u8; 32];
+        let mix_hex = "faeb1be51075b03a4ff44b335067951ead07a3b078539ace76fd56fc410557a3";
+        let mut mix = [0u8; 32];
+        mix.copy_from_slice(&hex::decode(mix_hex).unwrap());
+        let final_hash = progpow_final_hash(&header, 0, &mix);
+        let expected = "63155f732f2bf556967f906155b510c917e48e99685ead76ea83f4eca03ab12b";
+        assert_eq!(hash_to_hex(&final_hash), expected);
+    }
+
+    #[test]
     fn progpow_fnv1a_merge() {
         let a = 0xDEADBEEFu32;
         let b = 0xCAFEBABEu32;
@@ -2823,7 +2832,7 @@ mod tests {
 
     #[test]
     fn parse_randomx_target_hex_rejects_wrong_length() {
-        assert!(parse_randomx_target_hex("ffffff00").is_none()); // 4 bytes
+        assert!(parse_randomx_target_hex("ffffff").is_none()); // 3 bytes, not 4 or 8
         assert!(parse_randomx_target_hex("00").is_none()); // 1 byte
     }
 

@@ -75,6 +75,8 @@ pub enum ExternalCoin {
     PRL,
     /// Epic Cash — ProgPow. GPU coin. EpicStratum (TLS) over de.epicmine.io.
     EPIC,
+    /// Zano — ProgPoWZ (ProgPow 0.9.2 with permuted math ops). GPU coin. HeroMiners.
+    ZANO,
     /// Quai Network — KawPoW. GPU coin. 2miners pool, BTC payout.
     QUAI,
     /// Beam — BeamHash III (Equihash 150,5). GPU coin. BeamStratum (TLS) over 2miners.
@@ -125,6 +127,7 @@ impl ExternalCoin {
             Self::VRSC => "VRSC",
             Self::PRL => "PRL",
             Self::EPIC => "EPIC",
+            Self::ZANO => "ZANO",
             Self::QUAI => "QUAI",
             Self::BEAM => "BEAM",
             Self::KLS => "KLS",
@@ -160,6 +163,7 @@ impl ExternalCoin {
             Self::VRSC => "verushash",
             Self::PRL => "pearlhash",
             Self::EPIC => "progpow",
+            Self::ZANO => "progpow_zano",
             Self::QUAI => "kawpow",
             Self::BEAM => "beamhash",
             Self::KLS => "karlsenhash",
@@ -213,6 +217,7 @@ impl ExternalCoin {
             Self::VRSC => None,          // VerusHash — CPU only, no DAG
             Self::PRL => None,           // PearlHash — no DAG
             Self::EPIC => Some(2_684_354_560),   // ProgPow ~2.5 GB
+            Self::ZANO => Some(2_684_354_560),   // ProgPoWZ ~2.5 GB
             Self::QUAI => Some(4_294_967_296),   // KawPow ~4 GB
             Self::BEAM => Some(2_147_483_648),   // BeamHash III ~2 GB
             Self::KLS => None,           // KarlsenHash — no DAG
@@ -278,6 +283,7 @@ impl ExternalCoin {
                 Self::ETC |                        // ethash
                 Self::FLUX |                       // zelhash
                 Self::EPIC |                       // progpow
+                Self::ZANO |                       // progpow_zano
                 Self::PRL |                        // pearlhash
                 Self::BEAM |                       // beamhash
                 Self::KLS |                        // karlsenhash (fishhash path)
@@ -318,6 +324,7 @@ impl ExternalCoin {
             Self::FLUX => 200.0,                     // ZelHash
             Self::PRL => 190.0,                      // PearlHash
             Self::EPIC => 210.0,                     // ProgPow
+            Self::ZANO => 210.0,                     // ProgPoWZ
             Self::BEAM => 180.0,                     // BeamHash
             Self::KLS => 190.0,                      // KarlsenHash
             Self::ZCL | Self::QTC | Self::VTC => 170.0,  // Equihash variants
@@ -362,6 +369,7 @@ impl ExternalCoin {
             "vrsc" | "verus" | "verushash" => Some(Self::VRSC),
             "prl" | "pearl" | "pearlhash" => Some(Self::PRL),
             "epic" | "epiccash" => Some(Self::EPIC),
+            "zano" => Some(Self::ZANO),
             "quai" | "quainetwork" => Some(Self::QUAI),
             "beam" => Some(Self::BEAM),
             "kls" | "karlsen" | "karlsenhash" => Some(Self::KLS),
@@ -399,6 +407,7 @@ impl ExternalCoin {
             Self::VRSC => "eu.luckpool.net:3956",
             Self::PRL => "us2.alphapool.tech:5566",
             Self::EPIC => "de.epicmine.io:3334",
+            Self::ZANO => "de.zano.herominers.com:1110",
             Self::QUAI => "quai.2miners.com:4848",
             Self::BEAM => "beam.2miners.com:5252",
             Self::KLS => "karlsencoin.cedric-crispin.com:4154",
@@ -470,6 +479,7 @@ impl ExternalCoin {
             Self::CKB => ("nervos", 1160),
             Self::CFX => ("conflux", 1170),
             Self::ZEC => ("zcash", 1156),
+            Self::ZANO => ("zano", 1110),
             _ => return None,
         };
 
@@ -557,6 +567,7 @@ impl ExternalCoin {
             Self::VRSC => StratumProtocol::ZcashStratum,
             Self::PRL => StratumProtocol::PearlStratum,
             Self::EPIC => StratumProtocol::EpicStratum,
+            Self::ZANO => StratumProtocol::Stratum,
             Self::QUAI => StratumProtocol::EthStratum,
             Self::BEAM => StratumProtocol::BeamStratum,
             Self::KLS => StratumProtocol::Stratum,
@@ -592,6 +603,7 @@ impl ExternalCoin {
             Self::VRSC,
             Self::PRL,
             Self::EPIC,
+            Self::ZANO,
             Self::QUAI,
             Self::BEAM,
             Self::KLS,
@@ -630,6 +642,7 @@ impl ExternalCoin {
             Self::VRSC => RevenueSource::VerusHashExternal,
             Self::PRL => RevenueSource::PearlExternal,
             Self::EPIC => RevenueSource::ProgPowExternal,
+            Self::ZANO => RevenueSource::ProgPowExternal,
             Self::QUAI => RevenueSource::KawPowExternal,
             Self::BEAM => RevenueSource::BeamHashExternal,
             Self::KLS => RevenueSource::KarlsenHashExternal,
@@ -820,6 +833,11 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
             coin: ExternalCoin::VRSC,
             revenue_per_day_usd: 0.08,
             power_cost_usd: 0.01,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::ZANO,
+            revenue_per_day_usd: 0.28,
+            power_cost_usd: 0.12,
         },
         // ── 8 new no-DAG GPU-mineable coins (2026-07-16) ──
         ProfitEntry {

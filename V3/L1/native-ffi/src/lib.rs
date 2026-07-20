@@ -1700,7 +1700,7 @@ pub mod randomx {
 ///
 /// GhostRider is a stateless algorithm (no VM/dataset like RandomX), so
 /// `init()` is a no-op. The hash function injects a 4-byte LE nonce at
-/// offset 39 in the 80-byte block header before calling `gr_hash`.
+/// offset 76 in the 80-byte block header before calling `gr_hash`.
 ///
 /// Requires `native-ghostrider` feature.
 #[cfg(feature = "native-ghostrider")]

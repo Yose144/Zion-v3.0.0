@@ -1905,6 +1905,35 @@ impl AuxPowClient {
             );
         }
 
+        // Debug: log all EthStratum messages to troubleshoot job expiration
+        if self.protocol == StratumProtocol::EthStratum {
+            let method = msg.get("method").and_then(|m| m.as_str()).unwrap_or("");
+            let id = msg.get("id");
+            let has_result = msg.get("result").is_some();
+            let result_preview = if has_result {
+                let r = msg.get("result").unwrap();
+                if let Some(arr) = r.as_array() {
+                    // Log first 2 elements (seed_hash, header_hash) to see if
+                    // the header_hash changes between push notifications.
+                    let elem0 = arr.get(0).and_then(|v| v.as_str()).unwrap_or("?");
+                    let elem1 = arr.get(1).and_then(|v| v.as_str()).unwrap_or("?");
+                    let elem2 = arr.get(2).and_then(|v| v.as_str()).unwrap_or("?");
+                    let elem3 = arr.get(3).and_then(|v| v.as_str()).unwrap_or("?");
+                    format!(
+                        "array[{}] seed={:.20} header={} target={:.20} height={}",
+                        arr.len(),
+                        elem0, elem1, elem2, elem3
+                    )
+                } else {
+                    format!("{}", r)
+                }
+            } else { "none".to_string() };
+            eprintln!(
+                "auxpow: ZANO poll msg method={} id={:?} result={} (len={})",
+                method, id, result_preview, line.len()
+            );
+        }
+
         // If the message has an id matching a pending request, route it there.
         // EPIC pool sends ids as strings ("0", "1", "20", etc.), so we check
         // both integer and string representations (same logic as
@@ -2123,13 +2152,19 @@ impl AuxPowClient {
             // open-ethereum-pool style push notifications have no "method"
             // field — they are just a top-level "result" array:
             //   [seed_hash, header_hash, target, height?]
+            // NOTE: ZANO HeroMiners returns [header_hash, seed_hash, ...] — swapped.
             if let Some(result) = msg.get("result") {
                 if let Some(arr) = result.as_array() {
                     if arr.len() >= 3 {
+                        let (seed_idx, header_idx) = if self.profile.coin == ExternalCoin::ZANO {
+                            (1, 0) // ZANO: [header_hash, seed_hash, ...] — swapped
+                        } else {
+                            (0, 1) // Standard: [seed_hash, header_hash, ...]
+                        };
                         let job = self
                             .parse_eth_getwork_params(
-                                arr[0].as_str().unwrap_or(""),
-                                arr[1].as_str().unwrap_or(""),
+                                arr[seed_idx].as_str().unwrap_or(""),
+                                arr[header_idx].as_str().unwrap_or(""),
                                 arr[2].as_str().unwrap_or(""),
                                 arr.get(3).and_then(|v| v.as_str()),
                             )
@@ -2214,15 +2249,18 @@ fn build_stratum_v1_header(
         merkle_root = h2.to_vec();
     }
 
-    // NOTE: cpuminer stores sha256d output bytes directly into header without
-    // reversing. sha2 crate also returns bytes in the same order. So we do NOT
-    // reverse — the merkle_root bytes go directly into the header as-is.
-    // (Both cpuminer and Rust sha2 produce the same byte sequence.)
-
-    // prevhash: Stratum v1 pools send prevhash in display (BE) byte order.
-    // yiimp uses ser_string_be which reverses each 4-byte word (BE→LE per word),
-    // NOT a full 32-byte reversal.  We must match yiimp's convention exactly,
-    // otherwise the ghostrider hash will differ and shares will be rejected.
+    // yiimp's build_submit_values applies ser_string_be to the merkle root
+    // TWICE: once standalone (ser_string_be(merkleroot, merkleroot_be, 8))
+    // and once on the whole header (ser_string_be(header, header_be, 20)).
+    // Double byte-reversal within each 4-byte word cancels out, so the final
+    // merkle root in header_bin is in ORIGINAL sha256d output order (BE display).
+    // We must NOT reverse it — placing it as-is matches yiimp exactly.
+    //
+    // prevhash: yiimp sends prevhash_be (ser_string_be2 = words reversed) in
+    // mining.notify, then ser_string_be on the whole header reverses bytes
+    // within each word.  Final = words reversed + LE per word = standard
+    // bitcoin internal prevhash format.  We reverse bytes within each word
+    // of the received prevhash_be to match.
     let mut prevhash_internal = prevhash_bytes.clone();
     for chunk in prevhash_internal.chunks_exact_mut(4) {
         chunk.reverse();
@@ -2246,7 +2284,8 @@ fn build_stratum_v1_header(
     prev[..plen].copy_from_slice(&prevhash_internal[..plen]);
     header.extend_from_slice(&prev);
 
-    // merkle_root (32 bytes) — sha256d output, stored as-is (matches cpuminer)
+    // merkle_root (32 bytes) — original sha256d output (BE display order).
+    // yiimp's double ser_string_be cancels out, so no reversal needed.
     let mut mr = [0u8; 32];
     let mlen = merkle_root.len().min(32);
     mr[..mlen].copy_from_slice(&merkle_root[..mlen]);
@@ -4602,6 +4641,7 @@ impl AuxPowClient {
         *self.connected.lock().await = false;
         *self.subscribed.lock().await = false;
         *self.authorized.lock().await = false;
+        *self.current_job.lock().await = None; // clear stale job
         self.shutdown.notify_waiters();
         info!("AuxPow: disconnected from {}", self.profile.coin);
         Ok(())
@@ -4663,13 +4703,21 @@ impl AuxPowClient {
         let resp = self.send_request(&req).await?;
         // The response has "result" = [seed_hash, header_hash, target, height?]
         // (same format as the notification params).
+        // NOTE: ZANO HeroMiners returns [header_hash, seed_hash, target, height]
+        // — the first two elements are swapped vs standard Ethereum eth_getWork.
+        // The header_hash changes every block; the seed_hash is constant per epoch.
         if let Some(result) = resp.get("result") {
             if let Some(arr) = result.as_array() {
                 if arr.len() >= 3 {
+                    let (seed_idx, header_idx) = if self.profile.coin == ExternalCoin::ZANO {
+                        (1, 0) // ZANO: [header_hash, seed_hash, ...] — swapped
+                    } else {
+                        (0, 1) // Standard: [seed_hash, header_hash, ...]
+                    };
                     let job = self
                         .parse_eth_getwork_params(
-                            arr[0].as_str().unwrap_or(""),
-                            arr[1].as_str().unwrap_or(""),
+                            arr[seed_idx].as_str().unwrap_or(""),
+                            arr[header_idx].as_str().unwrap_or(""),
                             arr[2].as_str().unwrap_or(""),
                             arr.get(3).and_then(|v| v.as_str()),
                         )
@@ -4835,6 +4883,18 @@ impl AuxPowClient {
             target_hex.trim_start_matches("0x"),
         )
         .unwrap_or([0xFFu8; 32]);
+
+        // Update the client's current target and difficulty from the
+        // getWork target.  EthStratum pools (ZANO, ETC, etc.) provide the
+        // share target directly in the getWork response — there is no
+        // separate mining.set_difficulty message.  Without this, the
+        // share_target() method would use the default difficulty=1.0
+        // (target=0xffff...), causing us to submit shares that don't meet
+        // the pool's actual target.
+        let max_target = algorithm_max_target(&self.profile.algorithm);
+        let diff = target_to_difficulty_with_max(&target_bytes, &max_target);
+        *self.current_target_bytes.lock().await = Some(target_bytes);
+        *self.current_difficulty.lock().await = diff;
 
         // open-ethereum-pool style eth_getWork returns an optional 4th
         // element: the block height as a 0x-prefixed big-endian hex u64.
@@ -6633,7 +6693,9 @@ mod tests {
 
                 let hash = zion_native_ffi::ghostrider::hash(&work_blob, nonce);
 
-                if crate::external_hashers::meets_target_little_endian(&hash, target) {
+                if (hash[30] | hash[31]) == 0
+                    && crate::external_hashers::meets_target_little_endian(&hash, target)
+                {
                     found_nonce = Some(nonce);
                     println!("rtm_e2e: Found valid nonce={} in {:?} hash={}",
                         nonce, start.elapsed(), hex::encode(&hash));

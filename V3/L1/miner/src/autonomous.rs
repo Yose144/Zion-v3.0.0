@@ -455,6 +455,7 @@ fn fallback_revenue_usd_per_day(coin: ExternalCoin) -> f64 {
         ExternalCoin::VRSC => 0.40, // CPU: ~12 MH/s on Ryzen 5 3600
         ExternalCoin::PRL => 2.50, // Pearl PoUW — 22x more profitable
         ExternalCoin::EPIC => 0.30,
+        ExternalCoin::ZANO => 0.28,
         ExternalCoin::QUAI => 0.25,
         ExternalCoin::BEAM => 0.35,
         ExternalCoin::KLS => 0.50,

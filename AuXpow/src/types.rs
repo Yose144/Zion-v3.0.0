@@ -25,6 +25,7 @@ pub enum ExternalCoin {
     XMR,
     VRSC,
     EPIC,
+    ZANO,
     PRL,
     QUAI,
     BEAM,
@@ -59,6 +60,7 @@ impl ExternalCoin {
             Self::XMR => "XMR",
             Self::VRSC => "VRSC",
             Self::EPIC => "EPIC",
+            Self::ZANO => "ZANO",
             Self::PRL => "PRL",
             Self::QUAI => "QUAI",
             Self::BEAM => "BEAM",
@@ -93,6 +95,7 @@ impl ExternalCoin {
             Self::XMR => "randomx",
             Self::VRSC => "verushash",
             Self::EPIC => "progpow",
+            Self::ZANO => "progpow_zano",
             Self::PRL => "pearlhash",
             Self::QUAI => "kawpow",
             Self::BEAM => "beamhash",
@@ -135,6 +138,7 @@ impl ExternalCoin {
             "xmr" | "monero" => Some(Self::XMR),
             "vrsc" | "verus" | "veruscoin" => Some(Self::VRSC),
             "epic" | "epiccash" => Some(Self::EPIC),
+            "zano" => Some(Self::ZANO),
             "prl" | "pearl" => Some(Self::PRL),
             "quai" | "quainetwork" => Some(Self::QUAI),
             "beam" => Some(Self::BEAM),
@@ -170,6 +174,7 @@ impl ExternalCoin {
             Self::XMR => "gulf.moneroocean.stream:10001",
             Self::VRSC => "eu.luckpool.net:3956",
             Self::EPIC => "de.epicmine.io:3334",
+            Self::ZANO => "de.zano.herominers.com:1110",
             Self::PRL => "prl.2miners.com:1818",
             Self::QUAI => "quaikawpow.2miners.com:4545",
             Self::BEAM => "beam.2miners.com:5252",
@@ -211,7 +216,6 @@ impl ExternalCoin {
             Self::CFX => "octopus.auto.nicehash.com:9200",
             Self::ZEC => "equihash.auto.nicehash.com:9200",
             Self::PHX => "neoscrypt.auto.nicehash.com:9200",
-            Self::KRX => "keryxhash.auto.nicehash.com:9200",
             // FLUX (ZelHash = Equihash 125,4) is NOT on NiceHash.
             // NiceHash ZHash = Equihash 144,5 (BTG/ANON/BTCZ) — different algo.
             // Not on NiceHash: XMR (requires KYC), DCR (Blake3), EPIC (ProgPow),
@@ -225,7 +229,7 @@ impl ExternalCoin {
             // ZCL (equihash192.auto.nicehash.com does not resolve — NiceHash has no equihash192 endpoint;
             //   ZCL falls back to zpool.ca which supports BTC payout)
             // KRX (KeryxHash — NiceHash has no keryxhash endpoint; mainnet is PoM-only anyway)
-            Self::XMR | Self::DCR | Self::EPIC | Self::EVR | Self::MEWC | Self::PRL
+            Self::XMR | Self::DCR | Self::EPIC | Self::ZANO | Self::EVR | Self::MEWC | Self::PRL
             | Self::KLS | Self::QTC | Self::VTC | Self::RTM | Self::DNX | Self::FLUX
             | Self::BEAM | Self::IRON | Self::ZCL | Self::KRX
             => return None,
@@ -279,6 +283,7 @@ impl ExternalCoin {
             Self::XMR,
             Self::VRSC,
             Self::EPIC,
+            Self::ZANO,
             Self::PRL,
             Self::QUAI,
             Self::BEAM,
@@ -965,8 +970,8 @@ mod tests {
     #[test]
     fn new_coin_all_array_complete() {
         let all = ExternalCoin::all();
-        // 16 original + 8 new + 4 NiceHash + 1 Keryx = 29
-        assert_eq!(all.len(), 29);
+        // 16 original + 8 new + 4 NiceHash + 1 Keryx + 1 Zano = 30
+        assert_eq!(all.len(), 30);
         assert!(all.contains(&ExternalCoin::KLS));
         assert!(all.contains(&ExternalCoin::ZCL));
         assert!(all.contains(&ExternalCoin::QTC));
@@ -980,5 +985,6 @@ mod tests {
         assert!(all.contains(&ExternalCoin::ZEC));
         assert!(all.contains(&ExternalCoin::PHX));
         assert!(all.contains(&ExternalCoin::KRX));
+        assert!(all.contains(&ExternalCoin::ZANO));
     }
 }

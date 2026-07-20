@@ -78,6 +78,19 @@ pub const EPIC_PROGPOW_PARAMS: ProgPowParams = ProgPowParams {
     period: 50,
 };
 
+/// ProgPoWZ (Zano) parameters.
+/// Same as EPIC ProgPow 0.9.2: only the random-math operation indexes are
+/// permuted (the DAG, keccak-f800, and final-hash structure are unchanged).
+pub const PROGPOWZ_PARAMS: ProgPowParams = ProgPowParams {
+    lanes: 16,
+    regs: 32,
+    dag_loads: 4,
+    cnt_dag: 64,
+    cnt_cache: 12,
+    cnt_math: 20,
+    period: 50,
+};
+
 /// EvrProgPow (Evrmore/EVR) parameters
 /// Based on ProgPoW 0.9.4 with PERIOD=3 (vs KawPow=10) for 1-minute block time.
 /// Epoch length: 12000 blocks (vs KawPow 7500). Starting DAG: 3 GB.
@@ -143,6 +156,28 @@ fn math_code(d: &str, a: &str, b: &str, r: u32) -> String {
         8 => format!("{} = {} ^ {};\n", d, a, b),
         9 => format!("{} = clz({}) + clz({});\n", d, a, b),
         10 => format!("{} = popcount({}) + popcount({});\n", d, a, b),
+        _ => unreachable!(),
+    }
+}
+
+/// ProgPoWZ (Zano) math op selection.
+///
+/// The hyle-team/progminer reference (Zano official miner fork) uses the
+/// standard ProgPoW 0.9.2 random_math mapping with selector % 11 - no shift.
+/// Zano modifications are elsewhere (binary layout/consensus), not math ops.
+fn math_code_zano(d: &str, a: &str, b: &str, r: u32) -> String {
+    match r % 11 {
+        0 => format!("{} = clz({}) + clz({});\n", d, a, b),
+        1 => format!("{} = popcount({}) + popcount({});\n", d, a, b),
+        2 => format!("{} = {} + {};\n", d, a, b),
+        3 => format!("{} = {} * {};\n", d, a, b),
+        4 => format!("{} = mul_hi({}, {});\n", d, a, b),
+        5 => format!("{} = min({}, {});\n", d, a, b),
+        6 => format!("{} = ROTL32({}, {});\n", d, a, b),
+        7 => format!("{} = ROTR32({}, {});\n", d, a, b),
+        8 => format!("{} = {} & {};\n", d, a, b),
+        9 => format!("{} = {} | {};\n", d, a, b),
+        10 => format!("{} = {} ^ {};\n", d, a, b),
         _ => unreachable!(),
     }
 }
@@ -288,9 +323,12 @@ pub fn gen_kawpow_data_loads(params: &ProgPowParams, prog_seed: u64) -> String {
 // of a separate progPowLoop function — the SMOS OpenCL compiler may not
 // inline functions containing barriers, causing GPU deadlock.
 
-/// Generate the random math + cache load code for EPIC ProgPow (inline).
-/// Replaces PROGPOW_INCLUDE_RANDOM_MATH.
-pub fn gen_epic_progpow_random_math(params: &ProgPowParams, block_height: u64) -> String {
+/// Generate the random math + cache load code for a ProgPow variant (inline).
+fn gen_progpow_random_math_impl(
+    params: &ProgPowParams,
+    block_height: u64,
+    math_code_fn: fn(&str, &str, &str, u32) -> String,
+) -> String {
     let prog_seed = block_height / params.period as u64;
     let seed0 = prog_seed as u32;
     let seed1 = (prog_seed >> 32) as u32;
@@ -346,12 +384,24 @@ pub fn gen_epic_progpow_random_math(params: &ProgPowParams, block_height: u64) -
             mix_seq_dst_cnt += 1;
             let r2 = rng.next();
             ret.push_str(&format!("// random math {}\n", i));
-            ret.push_str(&math_code("data", &src1_str, &src2_str, r1));
+            ret.push_str(&math_code_fn("data", &src1_str, &src2_str, r1));
             ret.push_str(&merge_code(&dest, "data", r2));
         }
     }
 
     ret
+}
+
+/// Generate the random math + cache load code for EPIC ProgPow (inline).
+/// Replaces PROGPOW_INCLUDE_RANDOM_MATH.
+pub fn gen_epic_progpow_random_math(params: &ProgPowParams, block_height: u64) -> String {
+    gen_progpow_random_math_impl(params, block_height, math_code)
+}
+
+/// Generate the random math + cache load code for ProgPoWZ / Zano (inline).
+/// Replaces PROGPOW_INCLUDE_RANDOM_MATH.
+pub fn gen_zano_progpow_random_math(params: &ProgPowParams, block_height: u64) -> String {
+    gen_progpow_random_math_impl(params, block_height, math_code_zano)
 }
 
 /// Generate the data load (consume global load) code for EPIC ProgPow (inline).
@@ -415,9 +465,12 @@ pub fn gen_epic_progpow_data_loads(params: &ProgPowParams, block_height: u64) ->
     ret
 }
 
-/// Generate the complete progPowLoop function for EPIC ProgPow.
-/// Kept for backward compatibility / testing.
-pub fn gen_epic_progpow_loop(params: &ProgPowParams, block_height: u64) -> String {
+/// Generate the complete progPowLoop function for a ProgPow variant.
+fn gen_progpow_loop_impl(
+    params: &ProgPowParams,
+    block_height: u64,
+    math_code_fn: fn(&str, &str, &str, u32) -> String,
+) -> String {
     let prog_seed = block_height / params.period as u64;
     let seed0 = prog_seed as u32;
     let seed1 = (prog_seed >> 32) as u32;
@@ -509,7 +562,7 @@ pub fn gen_epic_progpow_loop(params: &ProgPowParams, block_height: u64) -> Strin
             mix_seq_dst_cnt += 1;
             let r2 = rng.next();
             ret.push_str(&format!("// random math {}\n", i));
-            ret.push_str(&math_code("data", &src1_str, &src2_str, r1));
+            ret.push_str(&math_code_fn("data", &src1_str, &src2_str, r1));
             ret.push_str(&merge_code(&dest, "data", r2));
         }
     }
@@ -528,6 +581,17 @@ pub fn gen_epic_progpow_loop(params: &ProgPowParams, block_height: u64) -> Strin
     ret.push_str("}\n\n");
 
     ret
+}
+
+/// Generate the complete progPowLoop function for EPIC ProgPow.
+/// Kept for backward compatibility / testing.
+pub fn gen_epic_progpow_loop(params: &ProgPowParams, block_height: u64) -> String {
+    gen_progpow_loop_impl(params, block_height, math_code)
+}
+
+/// Generate the complete progPowLoop function for ProgPoWZ / Zano.
+pub fn gen_zano_progpow_loop(params: &ProgPowParams, block_height: u64) -> String {
+    gen_progpow_loop_impl(params, block_height, math_code_zano)
 }
 
 // ── Kernel source preparation ───────────────────────────────────────
@@ -565,6 +629,36 @@ pub fn prepare_epic_progpow_kernel_source(
         .replace("PROGPOW_INCLUDE_DATA_LOADS", &data_loads)
 }
 
+/// Prepare the ProgPoWZ (Zano) kernel source.
+/// Same ProgPow 0.9.2 structure as EPIC, but uses the Zano math op permutation.
+pub fn prepare_zano_progpow_kernel_source(
+    base_source: &str,
+    block_height: u64,
+) -> String {
+    let random_math = gen_zano_progpow_random_math(&PROGPOWZ_PARAMS, block_height);
+    let data_loads = gen_epic_progpow_data_loads(&PROGPOWZ_PARAMS, block_height);
+    let progpow_loop = gen_zano_progpow_loop(&PROGPOWZ_PARAMS, block_height);
+
+    base_source
+        .replace("PROGPOW_INCLUDE_PROGPOW_LOOP", &progpow_loop)
+        .replace("PROGPOW_INCLUDE_RANDOM_MATH", &random_math)
+        .replace("PROGPOW_INCLUDE_DATA_LOADS", &data_loads)
+}
+
+/// Prepare the ProgPow kernel source for a specific ProgPow variant.
+/// Used for `progpow_kernel.cl` (EPIC and Zano).
+pub fn prepare_progpow_kernel_source_for_algo(
+    base_source: &str,
+    algorithm: &str,
+    block_height: u64,
+) -> String {
+    match algorithm {
+        "progpow" | "progpow_epic" => prepare_epic_progpow_kernel_source(base_source, block_height),
+        "progpowz" | "progpow_zano" => prepare_zano_progpow_kernel_source(base_source, block_height),
+        _ => prepare_epic_progpow_kernel_source(base_source, block_height),
+    }
+}
+
 /// Prepare the KawPow kernel source for a specific ProgPow variant.
 /// Uses the xmrig kawpow_kernel.cl with XMRIG_INCLUDE_PROGPOW_RANDOM_MATH
 /// and XMRIG_INCLUDE_PROGPOW_DATA_LOADS placeholders.
@@ -590,6 +684,7 @@ pub fn select_progpow_params(algorithm: &str) -> &'static ProgPowParams {
         "evrprogpow" | "evrprogpow_evr" => &EVR_PROGPOW_PARAMS,
         "meowpow" | "meowpow_mewc" => &MEOWPOW_PARAMS,
         "progpow" | "progpow_epic" => &EPIC_PROGPOW_PARAMS,
+        "progpowz" | "progpow_zano" => &PROGPOWZ_PARAMS,
         // All KawPow variants (kawpow, kawpow_rvn, kawpow_clore, kawpow_evr, kawpow_mewc)
         // and fallback use standard KawPow params.
         _ => &KAWPOW_PARAMS,

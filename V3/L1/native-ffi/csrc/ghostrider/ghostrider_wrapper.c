@@ -17,9 +17,9 @@
  *                                    uint64_t nonce, const uint8_t* target)
  *    const char* ghostrider_zion_version(void)
  *
- *  The nonce is a 4-byte LE value at offset 39 in the 80-byte Raptoreum
- *  block header (same as X16r/Ravencoin). The wrapper injects the nonce
- *  into a copy of the header before calling gr_hash.
+ *  The nonce is a 4-byte LE value at offset 76 in the 80-byte Raptoreum
+ *  block header (last 4 bytes). The wrapper injects the nonce into a copy
+ *  of the header before calling gr_hash.
  * ============================================================================
  */
 
@@ -55,7 +55,8 @@ EXPORT void ghostrider_zion_init(void) {
  * Compute GhostRider hash of (header || nonce) into 32 bytes.
  *
  * The Raptoreum block header is 80 bytes. The nonce is a 4-byte LE value
- * at offset 39. We copy the header, inject the nonce, and call gr_hash.
+ * at offset 76 (last 4 bytes). We copy the header, inject the nonce, and
+ * call gr_hash.
  *
  * If header_len < 80, we pad with zeros to 80 bytes.
  * If header_len > 80, we use only the first 80 bytes.
@@ -70,17 +71,15 @@ EXPORT void ghostrider_zion_hash(const uint8_t* header, size_t header_len,
     size_t copy_len = header_len < RTM_HEADER_SIZE ? header_len : RTM_HEADER_SIZE;
     memcpy(buf, header, copy_len);
 
-    /* Inject 4-byte LE nonce at offset 39 */
+    /* Inject 4-byte LE nonce at offset 76 */
     uint32_t nonce32 = (uint32_t)(nonce & 0xFFFFFFFF);
     memcpy(buf + RTM_NONCE_OFFSET, &nonce32, RTM_NONCE_SIZE);
 
-    /* Compute GhostRider hash (sphlib outputs in BE/display order) */
-    uint8_t hash_be[32];
-    gr_hash((const char*)buf, (char*)hash_be);
-
-    /* Reverse to LE (Bitcoin internal) order — yiimp/zpool expect hash_bin[31]=MSB */
-    for (int i = 0; i < 32; ++i)
-        output[i] = hash_be[31 - i];
+    /* Compute GhostRider hash — output in raw gr_hash order (same as yiimp's
+     * hash_bin).  yiimp does NOT reverse the output; it uses hash_bin directly
+     * with get_hash_difficulty (reads bytes 22-29 as LE uint64) and checks
+     * hash_bin[30] | hash_bin[31] == 0.  We must NOT reverse the output. */
+    gr_hash((const char*)buf, (char*)output);
 }
 
 /*
@@ -104,29 +103,6 @@ EXPORT int32_t ghostrider_zion_verify(const uint8_t* header, size_t header_len,
 EXPORT const char* ghostrider_zion_version(void)
 {
     return "ghostrider-zion-1.0.0 (sphlib + cryptonote, npq7721/gr_hash)";
-}
-
-/*
- * Debug function: print selected algorithms for a given header.
- * Writes 15 core algo indices + 14 CN algo indices into output (29 bytes).
- */
-EXPORT void ghostrider_zion_debug_algos(const uint8_t* header, size_t header_len,
-                                         uint64_t nonce, uint8_t* output)
-{
-    uint8_t buf[80];
-    memset(buf, 0, sizeof(buf));
-    size_t copy_len = header_len < RTM_HEADER_SIZE ? header_len : RTM_HEADER_SIZE;
-    memcpy(buf, header, copy_len);
-    uint32_t nonce32 = (uint32_t)(nonce & 0xFFFFFFFF);
-    memcpy(buf + RTM_NONCE_OFFSET, &nonce32, RTM_NONCE_SIZE);
-
-    uint8_t selectedAlgoOutput[15] = {0};
-    uint8_t selectedCNAlgoOutput[14] = {0};
-    getAlgoString(&buf[4], 64, selectedAlgoOutput, 15);
-    getAlgoString(&buf[4], 64, selectedCNAlgoOutput, 14);
-
-    memcpy(output, selectedAlgoOutput, 15);
-    memcpy(output + 15, selectedCNAlgoOutput, 14);
 }
 
 /* Debug: call cryptonightdarklite_hash directly with given input */

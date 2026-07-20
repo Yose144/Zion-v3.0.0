@@ -456,8 +456,9 @@ impl AuxPowScheduler {
             } else if job.external_coin == ExternalCoin::RTM {
                 // GhostRider: final stage is CryptoNight (LE hash output).
                 // Target is BE (from difficulty_to_target). Reverse hash to BE
-                // and compare with BE target.
-                meets_target_little_endian(&hash, target)
+                // and compare with BE target.  Also enforce yiimp's error 25
+                // sanity: hash[30] | hash[31] must be 0.
+                (hash[30] | hash[31]) == 0 && meets_target_little_endian(&hash, target)
             } else {
                 meets_target(&hash, target)
             };

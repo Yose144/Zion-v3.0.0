@@ -566,42 +566,117 @@ function updateServiceCards(s){
   const n2u = document.getElementById('val-node2-uptime');
   if(n2u) n2u.textContent = formatUptime(n2data ? n2data.uptime_seconds : null);
 
-  setBadge('badge-pool', p.running); setCardLive('pool', p.running);
-  const ps = document.getElementById('val-pool-sessions');
-  if(ps) ps.textContent = p.active_sessions ?? '0';
-  const pb = document.getElementById('val-pool-blocks');
-  if(pb) pb.textContent = p.blocks_found ?? '0';
-  const psh = document.getElementById('val-pool-shares');
-  if(psh) psh.textContent = (p.shares_accepted ?? 0) + ' / ' + (p.shares_rejected ?? 0);
-  const pf = document.getElementById('val-pool-fee');
-  if(pf) pf.textContent = p.fee_split ? 'Split: ' + p.fee_split : '—';
-
+  // ── Pool Command Center (unified) ──
   const pe = s.pool_edge ?? {};
-  const poolEdgeBadge = document.getElementById('badge-pool-edge');
-  const poolEdgeStatus = document.getElementById('val-pool-edge-status');
-  if(poolEdgeBadge) setBadge('badge-pool-edge', pe.running);
-  if(poolEdgeStatus){
-    setCardLive('pool-edge', pe.running);
-    poolEdgeStatus.textContent = pe.running ? '✓ Online' : '✗ Offline';
-    poolEdgeStatus.className = 'text-3xl font-bold mb-1 ' + (pe.running ? 'text-emerald-400' : 'text-red-400');
-    const hostEl = document.getElementById('val-pool-edge-host');
-    const portEl = document.getElementById('val-pool-edge-port');
-    if(hostEl) hostEl.textContent = pe.host ?? '—';
-    if(portEl) portEl.textContent = safePortFromAddr(pe.ports_open?.[0]) ?? '8444';
+  const poolRunning = p.running || pe.running;
+  const poolBadge = document.getElementById('badge-pool-cc');
+  if(poolBadge){ setBadge('badge-pool-cc', poolRunning); }
+  const poolCard = document.getElementById('card-pool-command');
+  if(poolCard) setCardLive('pool-command', poolRunning);
+
+  // KPI row
+  const pccHash = document.getElementById('pcc-hashrate');
+  if(pccHash){
+    const hr = pe.hashrate ?? p.hashrate_khs ?? 0;
+    pccHash.textContent = hr > 0 ? (hr.toFixed(2) + ' KH/s') : '0 H/s';
   }
-  // Extended Edge Pool details
-  const peMiners = document.getElementById('val-pool-edge-miners');
-  if(peMiners) peMiners.textContent = pe.active_miners ?? '—';
-  const peHash = document.getElementById('val-pool-edge-hashrate');
-  if(peHash) peHash.textContent = pe.hashrate ? pe.hashrate.toFixed(2) + ' KH/s' : '—';
-  const peBlocks = document.getElementById('val-pool-edge-blocks');
-  if(peBlocks) peBlocks.textContent = pe.blocks_found ?? '—';
-  const pePorts = document.getElementById('val-pool-edge-ports');
-  if(pePorts){
+  const pccMiners = document.getElementById('pcc-miners');
+  if(pccMiners) pccMiners.textContent = pe.active_miners ?? p.active_sessions ?? '0';
+  const pccBlocks = document.getElementById('pcc-blocks');
+  if(pccBlocks) pccBlocks.textContent = pe.blocks_found ?? p.blocks_found ?? '0';
+  const pccShares = document.getElementById('pcc-shares');
+  if(pccShares){
+    const acc = pe.shares_accepted ?? p.shares_accepted ?? 0;
+    const rej = pe.shares_rejected ?? p.shares_rejected ?? 0;
+    pccShares.textContent = acc + ' / ' + rej;
+  }
+  const pccAccept = document.getElementById('pcc-accept-rate');
+  if(pccAccept){
+    const ar = pe.accept_rate_pct ?? 0;
+    pccAccept.textContent = ar.toFixed(1) + '%';
+  }
+  const pccPplnsWin = document.getElementById('pcc-pplns-window');
+  if(pccPplnsWin){
+    const used = p.pplns_window_used ?? 0;
+    const size = p.pplns_window_size ?? 0;
+    pccPplnsWin.textContent = used + '/' + size;
+  }
+
+  // Pool config
+  const pccStratum = document.getElementById('pcc-stratum');
+  if(pccStratum) pccStratum.textContent = '62.171.141.136:8444';
+  const pccWallet = document.getElementById('pcc-wallet');
+  if(pccWallet){
+    const w = p.pool_wallet ?? '—';
+    pccWallet.textContent = w.length > 24 ? w.slice(0,16) + '…' + w.slice(-8) : w;
+    pccWallet.title = w;
+  }
+  const pccPayout = document.getElementById('pcc-payout');
+  if(pccPayout) pccPayout.textContent = p.payout_enabled ? '✓ Enabled' : '✗ Disabled';
+  const pccRegistered = document.getElementById('pcc-registered');
+  if(pccRegistered) pccRegistered.textContent = p.pplns_registered_miners ?? '—';
+  const pccPorts = document.getElementById('pcc-ports');
+  if(pccPorts){
     const ports = pe.ports_open || [];
-    pePorts.innerHTML = ports.length
-      ? ports.map(p => `<span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded">${escapeHtml(p)}</span>`).join('')
-      : '<span class="text-[10px] text-gray-500">No open ports detected</span>';
+    pccPorts.innerHTML = ports.length
+      ? ports.map(pt => `<span class="text-emerald-400">${escapeHtml(pt)}</span>`).join(', ')
+      : '<span class="text-gray-500">scanning…</span>';
+  }
+  const pccUptime = document.getElementById('pool-cc-uptime');
+  if(pccUptime) pccUptime.textContent = p.uptime_seconds ? '⏱ ' + formatUptime(p.uptime_seconds) : '';
+
+  // Fee distribution
+  const feeSplit = p.fee_split || '89/5/5/1';
+  const pccFeeSplit = document.getElementById('pcc-fee-split');
+  if(pccFeeSplit) pccFeeSplit.textContent = '(' + feeSplit + ')';
+  // Parse fee split — could be "89/5/5/1" or "90/5/5" etc.
+  const feeParts = feeSplit.split('/').map(Number);
+  const minerPct = feeParts[0] || 89;
+  const humanPct = feeParts[1] || 5;
+  const issobellaPct = feeParts[2] || 5;
+  const poolPct = feeParts[3] ?? (100 - minerPct - humanPct - issobellaPct) ?? 1;
+  const elMinerPct = document.getElementById('pcc-fee-miner-pct');
+  if(elMinerPct) elMinerPct.textContent = minerPct + '%';
+  const elHumanPct = document.getElementById('pcc-fee-human-pct');
+  if(elHumanPct) elHumanPct.textContent = humanPct + '%';
+  const elIssobellaPct = document.getElementById('pcc-fee-issobella-pct');
+  if(elIssobellaPct) elIssobellaPct.textContent = issobellaPct + '%';
+  const elPoolPct = document.getElementById('pcc-fee-pool-pct');
+  if(elPoolPct) elPoolPct.textContent = poolPct + '%';
+  const barMiner = document.getElementById('pcc-bar-miner');
+  if(barMiner) barMiner.style.width = minerPct + '%';
+  const barHuman = document.getElementById('pcc-bar-human');
+  if(barHuman) barHuman.style.width = humanPct + '%';
+  const barIssobella = document.getElementById('pcc-bar-issobella');
+  if(barIssobella) barIssobella.style.width = issobellaPct + '%';
+  const barPool = document.getElementById('pcc-bar-pool');
+  if(barPool) barPool.style.width = poolPct + '%';
+  // Burned totals
+  const burnHuman = document.getElementById('pcc-burned-human');
+  if(burnHuman) burnHuman.textContent = _zionFmt((p.fee_humanitarian ?? 0) / 1_000_000) + ' ZION';
+  const burnIssobella = document.getElementById('pcc-burned-issobella');
+  if(burnIssobella) burnIssobella.textContent = _zionFmt((p.fee_issobella ?? 0) / 1_000_000) + ' ZION';
+  const burnPool = document.getElementById('pcc-burned-pool');
+  if(burnPool) burnPool.textContent = _zionFmt((p.fee_pool ?? 0) / 1_000_000) + ' ZION';
+
+  // PPLNS round stats
+  const pccPplnsSize = document.getElementById('pcc-pplns-size');
+  if(pccPplnsSize) pccPplnsSize.textContent = (p.pplns_window_size ?? 0).toLocaleString();
+  const pccPplnsUsed = document.getElementById('pcc-pplns-used');
+  if(pccPplnsUsed) pccPplnsUsed.textContent = (p.pplns_window_used ?? 0).toLocaleString();
+  const pccPplnsPaid = document.getElementById('pcc-pplns-paid');
+  if(pccPplnsPaid) pccPplnsPaid.textContent = _zionFmt(p.pplns_total_paid_zion ?? 0) + ' ZION';
+  const pccPplnsRounds = document.getElementById('pcc-pplns-rounds-count');
+  if(pccPplnsRounds) pccPplnsRounds.textContent = p.pplns_rounds ?? '0';
+  const pccPplnsRoundsLabel = document.getElementById('pcc-pplns-rounds');
+  if(pccPplnsRoundsLabel) pccPplnsRoundsLabel.textContent = (p.pplns_rounds ?? 0) + ' rounds';
+  // PPLNS progress bar
+  const pccPplnsBar = document.getElementById('pcc-pplns-bar');
+  const pccPplnsBarLabel = document.getElementById('pcc-pplns-bar-label');
+  if(pccPplnsBar && p.pplns_window_size > 0){
+    const pct = Math.min(100, ((p.pplns_window_used ?? 0) / p.pplns_window_size) * 100);
+    pccPplnsBar.style.width = pct.toFixed(1) + '%';
+    if(pccPplnsBarLabel) pccPplnsBarLabel.textContent = pct.toFixed(2) + '% of window filled';
   }
 
   setBadge('badge-miner', m.running); setCardLive('miner', m.running);
