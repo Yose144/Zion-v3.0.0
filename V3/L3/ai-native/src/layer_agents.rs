@@ -513,17 +513,19 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_execute_step_live_tool_fails() {
-        // No live services → tool execution should fail gracefully
+    async fn test_execute_step_live_tool_env_independent() {
+        // Tool execution against live-or-down services — status depends on env.
+        // On dev machine (no services): Failed. On edge (services up): Success.
+        // Either way, the step should produce a tool_outputs entry.
         let agent = LayerAgent::for_layer(Layer::L1);
         let step = PlanStep::new(1, "test", SubAgent::NodeSync)
             .with_tools(&["zion_rpc_getblockcount"]);
         let result = agent.execute_step(&step).await;
-        // No node running → should be Failed (or possibly PartialSuccess if retry succeeds)
         assert!(matches!(
             result.status,
-            StepStatus::Failed | StepStatus::PartialSuccess
+            StepStatus::Success | StepStatus::Failed | StepStatus::PartialSuccess
         ));
+        assert!(result.tool_outputs.contains_key("zion_rpc_getblockcount"));
     }
 
     // ── LayerAgentRegistry ─────────────────────────────────────────────────────
