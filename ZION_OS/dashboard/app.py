@@ -704,9 +704,12 @@ def get_edge_server_health() -> dict:
         }
 
         # Services
-        svc_names = ["zion-node", "zion-pool", "zion-bridge",
-                     "zion-dao", "zion-warp",
-                     "zion-edge-watchdog"]
+        svc_names = ["zion-edge-node1", "zion-edge-node2", "zion-edge-pool",
+                     "zion-edge-bridge", "zion-edge-dao", "zion-edge-atomic-swap",
+                     "zion-edge-warp", "zion-edge-oasis", "zion-edge-miner",
+                     "zion-edge-agent", "zion-edge-dashboard", "zion-edge-dex",
+                     "zion-edge-python-dashboard", "zion-edge-watchdog",
+                     "zion-edge-backup", "zion-edge-maintenance"]
         svc_states = parts.get("SVCS", "").split(",")
         for i, name in enumerate(svc_names):
             if i < len(svc_states):
@@ -1094,6 +1097,22 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8450.",
      "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
      "depends_on": ["edge-node1"]},
+    {"id": "atomic-swap", "name": "Atomic Swap", "icon": "🔄", "level": "L2", "kind": "swap",
+     "ports": {"api": 8452},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "purpose": "Trustless cross-chain atomic swaps via HTLC. API on 8452.",
+     "child_says": "🔄 Swap ZION for other coins without a middleman!",
+     "depends_on": ["edge-node1"]},
+    {"id": "dex", "name": "ZionDex Router", "icon": "💱", "level": "L2", "kind": "dex",
+     "ports": {"api": 8454},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "purpose": "Cross-chain DEX router — 7 chains, AMM aggregation, multi-path quotes. API on 8454.",
+     "child_says": "💱 Find the best swap route across all chains!",
+     "depends_on": ["edge-node1"]},
 
     # ── L3: WARP Relay (running on new server) ───────────────────────────
     {"id": "warp", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
@@ -1149,11 +1168,11 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "child_says": "🔒 The gatekeeper that protects our websites!",
      "depends_on": []},
     {"id": "web-next", "name": "Next.js Website", "icon": "🌐", "level": "Infra", "kind": "web",
-     "ports": {"http": 3001},
+     "ports": {"http": 3000},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "Next.js 16.2.9 website — 73+ routes, Docker container zion-web:nextjs. Port 3001.",
+     "purpose": "Next.js 16.2.9 website — 73+ routes, Docker container zion-web:nextjs. Port 3000 (host network).",
      "child_says": "🌐 The public face of ZION — our website!",
      "depends_on": ["nginx"]},
 ]
@@ -2857,7 +2876,8 @@ def _build_status_edge_primary() -> dict:
         "bridge":     9101,
         "dao":        8450,
         "warp":       8453,
-        "atomic_swap": 8888,
+        "atomic_swap": 8452,
+        "dex":        8454,
         "oasis":      8094,
         "free_world": 8095,
         "issobella":  8096,
@@ -3146,8 +3166,18 @@ def build_checklist(status: dict) -> dict:
             capture_output=True, text=True, timeout=3
         )
         timer_active = proc.stdout.strip() == "active"
-        backup_dir = Path("/root/zion-backups")
-        has_backups = backup_dir.exists() and any(backup_dir.glob("zion-edge-*.tar.gz"))
+        # Backup script writes to /opt/zion/backups/{daily,weekly}/ (see
+        # ZION_OS/infra/scripts/backup-edge.sh). Accept any recent archive
+        # in either location. Fallback to /root/zion-backups for legacy.
+        backup_dirs = [
+            Path("/opt/zion/backups/daily"),
+            Path("/opt/zion/backups/weekly"),
+            Path("/root/zion-backups"),
+        ]
+        has_backups = any(
+            bd.exists() and any(bd.glob("zion-edge-*.tar.gz"))
+            for bd in backup_dirs
+        )
         edge_backup_ok = timer_active and has_backups
     except Exception:
         pass
@@ -3208,7 +3238,7 @@ SERVICE_WEIGHTS = {
     # Local-dev topology weights (node1 becomes primary)
     "pool": 10,
     # Common L2-L6 weights
-    "bridge": 8, "dao": 8, "atomic-swap": 5, "warp": 4,
+    "bridge": 8, "dao": 8, "atomic-swap": 5, "dex": 4, "warp": 4,
     "ai-native": 5, "hiranyagarbha": 3, "ncl": 2, "oasis": 3, "free-world": 2, "issobella": 2,
     # Optional/infra
     "node2": 0, "prometheus": 0, "grafana": 0, "dashboard": 0,
@@ -10306,8 +10336,8 @@ def _build_health_map() -> dict:
             alive = False
         health[sid] = "up" if alive else "down"
     # Nginx + web-next: check via SSH on Edge server (not tunneled locally)
-    for sid, cmd in [("nginx", "sudo systemctl is-active nginx 2>/dev/null"),
-                     ("web-next", "sudo systemctl is-active zion-web-next 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web-next 2>/dev/null")]:
+    for sid, cmd in [("nginx", "systemctl is-active nginx 2>/dev/null"),
+                     ("web-next", "systemctl is-active zion-web-next 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web 2>/dev/null")]:
         try:
             result = _run_edge_cmd(cmd, timeout=3)
             alive = result.returncode == 0 and "active" in (result.stdout or "").strip() or "true" in (result.stdout or "").strip()
@@ -11254,17 +11284,23 @@ class DashboardHandler(BaseHTTPRequestHandler):
             try:
                 s = build_status()
                 if layer == "l1":
-                    result["ok"] = s.get("node1", {}).get("running", False)
+                    result["ok"] = s.get("node1", {}).get("running", False) or s.get("edge_node", {}).get("running", False)
                     result["block_height"] = s.get("edge_node", {}).get("chain_height", s.get("node1", {}).get("chain_height", 0))
                     result["peers"] = s.get("edge_node", {}).get("known_peers", s.get("node1", {}).get("known_peers", 0))
                     result["hashrate"] = s.get("miner", {}).get("hashrate", 0)
                     result["shares_accepted"] = s.get("pool", {}).get("shares_accepted", 0)
                     result["pool_alive"] = s.get("pool", {}).get("running", False)
                     result["miner_alive"] = s.get("miner", {}).get("running", False)
-                    result["node2_alive"] = s.get("node2", {}).get("running", False)
+                    # In edge-primary topology, node2 refers to edge_node2; in local-dev, it's the local node2.
+                    topo = s.get("topology", "edge-primary")
+                    if topo == "edge-primary":
+                        result["node2_alive"] = s.get("edge_node2", {}).get("running", False)
+                    else:
+                        result["node2_alive"] = s.get("node2", {}).get("running", False)
                     result["edge_alive"] = s.get("edge_node", {}).get("running", False)
                     result["services"] = {
                         "edge-node": s.get("edge_node", {}).get("running", False),
+                        "edge-node2": s.get("edge_node2", {}).get("running", False) if topo == "edge-primary" else False,
                         "node1": s.get("node1", {}).get("running", False),
                         "node2": s.get("node2", {}).get("running", False),
                         "pool": s.get("pool", {}).get("running", False),

@@ -176,9 +176,7 @@ fn main() -> Result<()> {
                 pool_fee_address.clone(),
             );
         }
-        if config.block_retention > 0 {
-            rt.set_block_retention(config.block_retention);
-        }
+        rt.set_block_retention(config.block_retention);
         rt
     }));
 
