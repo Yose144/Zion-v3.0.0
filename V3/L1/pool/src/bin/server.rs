@@ -2172,8 +2172,21 @@ fn handle_client(
         .ok()
         .and_then(|s| s.trim().parse().ok())
         .unwrap_or(120);
+    // Job refresh interval: how often the pool sends a new Job message
+    // (with updated external stream) even if the miner hasn't submitted
+    // a ZION share.  This is critical for low-hashrate miners that can't
+    // find ZION shares quickly (e.g. CPU-only debug miners) — without it,
+    // the miner would be stuck with a stale external job for the entire
+    // session.  Default = 15s, override with ZION_POOL_JOB_REFRESH_SECS.
+    let job_refresh_secs: u64 = std::env::var("ZION_POOL_JOB_REFRESH_SECS")
+        .ok()
+        .and_then(|s| s.trim().parse().ok())
+        .unwrap_or(15);
+    // Use the shorter of session_timeout and job_refresh for the read
+    // timeout, so the inner loop can break and refresh the job.
+    let effective_read_timeout = session_read_timeout_secs.min(job_refresh_secs);
     let _ = reader_stream.set_read_timeout(Some(
-        std::time::Duration::from_secs(session_read_timeout_secs),
+        std::time::Duration::from_secs(effective_read_timeout),
     ));
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
@@ -2747,7 +2760,35 @@ fn handle_client(
             let mut zion_line = String::new();
             let mut zion_msg: Option<PoolMessage> = None;
             while !got_zion_response {
-                let (line, msg) = read_wire_message(&mut reader)?;
+                // On read timeout, break the inner loop and issue a new job
+                // with the latest external stream.  This ensures low-hashrate
+                // miners (e.g. CPU-only debug miners) get refreshed external
+                // jobs periodically instead of being stuck with a stale job.
+                let read_result = read_wire_message(&mut reader);
+                let (line, msg) = match read_result {
+                    Ok(r) => r,
+                    Err(e) => {
+                        // Check if this is a timeout error (would block / timed out)
+                        let is_timeout = e
+                            .chain()
+                            .any(|cause| {
+                                if let Some(io_err) = cause.downcast_ref::<std::io::Error>() {
+                                    io_err.kind() == std::io::ErrorKind::WouldBlock
+                                        || io_err.kind() == std::io::ErrorKind::TimedOut
+                                } else {
+                                    false
+                                }
+                            });
+                        if is_timeout {
+                            // Break the inner loop — the outer loop will issue
+                            // a new job with the latest external stream.
+                            println!("job_refresh_timeout miner={} — sending new job with latest external stream", worker_name);
+                            break;
+                        }
+                        // Non-timeout error — propagate (session ends)
+                        return Err(e);
+                    }
+                };
                 match msg {
                     PoolMessage::ExternalSubmit {
                         miner_id: sub_miner_id,
@@ -3036,7 +3077,16 @@ fn handle_client(
                     other => return Err(anyhow!("expected submit from miner, got {other:?}")),
                 }
             }
-            (zion_line, zion_msg.unwrap())
+            // If the inner loop broke due to timeout (no ZION submit),
+            // return a NoSolution so the outer loop issues a new job.
+            let final_msg = zion_msg.unwrap_or(PoolMessage::NoSolution {
+                job_id: assignment.job_id(),
+                miner_id: miner_id.clone(),
+                worker_name: worker_name.clone(),
+                attempted_hashes: Some(0),
+                elapsed_ms: Some(job_issued_at.elapsed().as_millis() as u64),
+            });
+            (zion_line, final_msg)
         };
         let iter_elapsed_ms = job_issued_at.elapsed().as_millis();
         log_ch.log_verbose(format!("wire_submit={submit_line}"));
