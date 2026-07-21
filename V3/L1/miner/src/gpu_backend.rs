@@ -1413,11 +1413,36 @@ fn parse_vm_stat_line(line: &str) -> u64 {
 /// | M4 Max | 36 GB  | 32      | 7000 MB        | 32 CUs, huge RAM          |
 /// | M5     | TBD    | TBD     | TBD            | Expected late 2025/2026   |
 ///
-/// **Linux/OpenCL (dedicated GPU):** Uses system RAM for scratchpad budget,
-/// GPU VRAM for algorithm check (separate path via `detect_gpu_vram_bytes`).
+/// **Linux/OpenCL (dedicated GPU):** Uses GPU VRAM for the global scratchpad
+/// budget; per-stream algorithm fit checks still use `detect_gpu_vram_bytes`.
 ///
 /// `cpu_threads` is the number of CPU mining threads (VerusHash/RandomX).
 pub fn auto_tune_gpu_budget(cpu_threads: usize) -> u64 {
+    // ── Linux / dedicated GPU: use VRAM for the global budget ──
+    // System RAM is irrelevant for OpenCL/CUDA scratchpads that live in
+    // dedicated VRAM. Use 90% of VRAM as the shared budget across all GPU
+    // streams; per-stream limits are still enforced by algorithm_fits_in_gpu().
+    #[cfg(not(target_os = "macos"))]
+    {
+        let gpu_vram = detect_gpu_vram_bytes();
+        if gpu_vram > 0 {
+            let vram_mib = gpu_vram / (1024 * 1024);
+            let max_budget_mib = (vram_mib * 90) / 100;
+            let cpu_adj_mib = (cpu_threads as u64) * 75;
+            let mut budget_mib = max_budget_mib.saturating_sub(cpu_adj_mib).max(32);
+            if let Ok(override_str) = std::env::var("ZION_GPU_MEM_BUDGET_MIB") {
+                if let Ok(override_mib) = override_str.parse::<u64>() {
+                    budget_mib = override_mib.min(max_budget_mib).max(32);
+                }
+            }
+            println!(
+                "gpu_auto_tune dGPU vram_mib={} max_budget_mib={} cpu_adj_mib={} cpu_threads={} => budget_mib={}",
+                vram_mib, max_budget_mib, cpu_adj_mib, cpu_threads, budget_mib
+            );
+            return budget_mib * 1024 * 1024;
+        }
+    }
+
     let total_ram = detect_system_memory_bytes();
     let available = detect_available_memory_bytes();
     let total_mib = total_ram / (1024 * 1024);
@@ -1646,6 +1671,10 @@ pub fn backend_supports_algorithm(backend: GpuBackendKind, algorithm: &str) -> b
     };
     match resolved {
         GpuBackendKind::Metal => {
+            // ProgPoWZ is now supported on Metal via a generated per-period kernel.
+            if algorithm == "progpow_zano" {
+                return true;
+            }
             // Metal on Apple Silicon: skip DAG-based AND memory-hard algorithms
             // to prevent system freezes from unified memory OOM.
             if is_dag_based_algorithm(algorithm) || is_memory_hard_algorithm(algorithm) {
@@ -1879,6 +1908,20 @@ fn create_gpu_backend_inner(
         GpuBackendKind::Metal => {
             #[cfg(feature = "gpu-metal")]
             {
+                // ProgPoWZ now has a native Metal kernel with per-period source
+                // generation. Route it to the dedicated Metal external miner.
+                if algorithm == "progpow_zano" {
+                    #[cfg(feature = "native-hashers")]
+                    {
+                        let miner = crate::gpu_backend::metal_external::MetalExternalMiner::new(algorithm, coin, work_size)?;
+                        return Ok(Box::new(miner));
+                    }
+                    #[cfg(not(feature = "native-hashers"))]
+                    {
+                        anyhow::bail!("ProgPoWZ on Metal requires the 'native-hashers' feature to build the per-epoch DAG");
+                    }
+                }
+
                 // External AuxPoW algorithms (kheavyhash, blake3, etc.) have
                 // no Metal kernel. Fall back to CPU via native-ffi.
                 if is_external_algorithm(algorithm) {
@@ -7412,6 +7455,220 @@ pub mod opencl_external {
                 previous_hash: [0xAA; 32],
                 merkle_root: [0xBB; 32],
                 timestamp: 1_762_000_200,
+                difficulty_bits: 0x1f00ffff,
+            };
+            let target = DifficultyTarget::MAX;
+
+            let start = Instant::now();
+            let mut total = 0u64;
+            let mut nonce = 0u64;
+            while start.elapsed().as_secs_f64() < secs {
+                let result = self.mine_batch(header, target, nonce, self.work_size as u64)?;
+                total += result.nonces_tested;
+                nonce = nonce.wrapping_add(self.work_size as u64);
+            }
+            let elapsed = start.elapsed().as_secs_f64();
+            let khps = if elapsed > 0.0 {
+                total as f64 / elapsed / 1_000.0
+            } else {
+                0.0
+            };
+            Ok((total, elapsed, khps))
+        }
+    }
+}
+
+/// Metal backend for external AuxPoW algorithms (currently ProgPoWZ / ZANO).
+///
+/// Wraps `zion_auxpow::gpu_metal::MetalBackend`, which already has per-period
+/// dynamic source generation for `progpow_zano`.
+#[cfg(all(feature = "gpu-metal", feature = "native-hashers"))]
+pub mod metal_external {
+    use super::*;
+    use std::time::Instant;
+    use zion_auxpow::gpu_backend::GpuBackend;
+    use zion_auxpow::gpu_metal::MetalBackend;
+    use zion_auxpow::generate_ethash_dag;
+
+    pub struct MetalExternalMiner {
+        algorithm: String,
+        backend: MetalBackend,
+        work_size: usize,
+        current_epoch: Option<u32>,
+        current_height: u64,
+    }
+
+    impl MetalExternalMiner {
+        pub fn new(algorithm: &str, _coin: &str, work_size: usize) -> Result<Self> {
+            if algorithm != "progpow_zano" {
+                anyhow::bail!(
+                    "MetalExternalMiner currently only supports progpow_zano, got {algorithm}"
+                );
+            }
+
+            let backend = MetalBackend::new(work_size)
+                .map_err(|e| anyhow::anyhow!("metal_external_init_failed algorithm={algorithm} err={e}"))?;
+
+            Ok(Self {
+                algorithm: algorithm.to_string(),
+                backend,
+                work_size,
+                current_epoch: None,
+                current_height: 0,
+            })
+        }
+
+        /// Round the batch size up to the ProgPow group size (128) so every
+        /// dispatched threadgroup is full. Partial groups would deadlock on the
+        /// threadgroup_barrier inside the kernel.
+        fn round_batch_for_progpow(&self, batch: u64) -> u64 {
+            const GROUP_SIZE: u64 = 128;
+            ((batch + GROUP_SIZE - 1) / GROUP_SIZE) * GROUP_SIZE
+        }
+
+        pub fn update_epoch_from_job(&mut self, epoch: Option<u32>) -> Result<()> {
+            if let Some(ep) = epoch {
+                if self.current_epoch == Some(ep) {
+                    return Ok(());
+                }
+
+                // ProgPow / ProgPoWZ uses the same DAG as Ethash (epoch length 30000).
+                let dag = generate_ethash_dag(ep)
+                    .ok_or_else(|| anyhow::anyhow!("metal_external_dag_generation_failed epoch={ep}"))?;
+
+                let dag_u64 = dag.as_u64_slice();
+                debug_assert_eq!(
+                    dag_u64.len() as u64,
+                    dag.dag_size_entries * 16,
+                    "DAG u64 length mismatch"
+                );
+
+                self.backend
+                    .set_progpow_dag(dag_u64, dag.dag_size_entries, ep)
+                    .map_err(|e| {
+                        anyhow::anyhow!("metal_external_set_progpow_dag_failed epoch={ep} err={e}")
+                    })?;
+
+                self.current_epoch = Some(ep);
+            }
+            Ok(())
+        }
+    }
+
+    impl GpuMiner for MetalExternalMiner {
+        fn device_name(&self) -> String {
+            format!("metal_auxpow_{}", self.algorithm)
+        }
+
+        fn backend_kind(&self) -> GpuBackendKind {
+            GpuBackendKind::Metal
+        }
+
+        fn algorithm(&self) -> String {
+            self.algorithm.clone()
+        }
+
+        fn update_epoch(&mut self, height: u64) -> Result<()> {
+            self.current_height = height;
+            self.backend.set_block_height(height);
+
+            let epoch = if self.algorithm == "progpow_zano" {
+                Some((height / 30000) as u32)
+            } else {
+                None
+            };
+
+            self.update_epoch_from_job(epoch)
+        }
+
+        fn suppress_mismatch_warnings(&self) -> bool {
+            // CPU ProgPoWZ verification is not available, so GPU vs CPU mismatch
+            // warnings are expected and not useful.
+            matches!(self.algorithm.as_str(), "progpow_zano")
+        }
+
+        fn mine_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            let header_bytes = header.to_bytes();
+            let actual_batch = self.round_batch_for_progpow(batch_size.min(self.work_size as u64));
+
+            let found = self
+                .backend
+                .mine(
+                    &self.algorithm,
+                    &header_bytes,
+                    &[],
+                    &target.bytes,
+                    nonce_start,
+                    actual_batch,
+                )
+                .map_err(|e| {
+                    anyhow::anyhow!("metal_external_mine_failed algorithm={} err={}", self.algorithm, e)
+                })?;
+
+            if let Some(zion_auxpow::gpu_backend::GpuFoundShare { nonce, hash, mix_hash, .. }) = found {
+                Ok(GpuBatchResult {
+                    solutions: vec![(nonce, hash, mix_hash)],
+                    nonces_tested: actual_batch,
+                })
+            } else {
+                Ok(GpuBatchResult {
+                    solutions: Vec::new(),
+                    nonces_tested: actual_batch,
+                })
+            }
+        }
+
+        fn mine_batch_raw(
+            &mut self,
+            raw_header: &[u8],
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            let actual_batch = self.round_batch_for_progpow(batch_size.min(self.work_size as u64));
+            let found = self
+                .backend
+                .mine(
+                    &self.algorithm,
+                    raw_header,
+                    &[],
+                    &target.bytes,
+                    nonce_start,
+                    actual_batch,
+                )
+                .map_err(|e| {
+                    anyhow::anyhow!(
+                        "metal_external_mine_failed_raw algorithm={} err={}",
+                        self.algorithm,
+                        e
+                    )
+                })?;
+
+            if let Some(zion_auxpow::gpu_backend::GpuFoundShare { nonce, hash, mix_hash, .. }) = found {
+                Ok(GpuBatchResult {
+                    solutions: vec![(nonce, hash, mix_hash)],
+                    nonces_tested: actual_batch,
+                })
+            } else {
+                Ok(GpuBatchResult {
+                    solutions: Vec::new(),
+                    nonces_tested: actual_batch,
+                })
+            }
+        }
+
+        fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
+            let header = MiningHeader {
+                version: 1,
+                previous_hash: [0xAA; 32],
+                merkle_root: [0xBB; 32],
+                timestamp: 1_700_000_000,
                 difficulty_bits: 0x1f00ffff,
             };
             let target = DifficultyTarget::MAX;
