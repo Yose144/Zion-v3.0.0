@@ -3444,11 +3444,13 @@ impl SessionTelemetry {
 
         // ── SMOS-compatible hashrate output ──
         // SMOS parses stdout for hashrate patterns like "GPU0: X.X MH/s" or
-        // "Total: X.X MH/s". When not in a TTY (SMOS / pipe mode), emit a
-        // compact summary line that SMOS can display in its dashboard.
+        // "Total: X.X MH/s". When ZION_NO_STICKY=1 (SMOS/Docker/pipe mode),
+        // emit a compact summary line that SMOS can display in its dashboard.
         // Uses raw_stdout() (write(2) syscall) to bypass Rust's 8KB block
         // buffer which would prevent output from appearing on pipes/SMOS.
-        if !isatty_stdout() {
+        if std::env::var("ZION_NO_STICKY").map(|v| v == "1" || v == "true").unwrap_or(false)
+            || !isatty_stdout()
+        {
             let gpu_hr = self.gpu_hashrate_hps();
             let line = format!(
                 "GPU0: {} | Total: {} | Accepted: {} | Rejected: {} | Uptime: {:.0}s\n",
@@ -3469,11 +3471,17 @@ impl SessionTelemetry {
             }
         }
 
-        if !TUI_ACTIVE.load(Ordering::Relaxed) && isatty_stdout() {
+        if !TUI_ACTIVE.load(Ordering::Relaxed)
+            && isatty_stdout()
+            && std::env::var("ZION_NO_STICKY").map(|v| v != "1" && v != "true").unwrap_or(true)
+        {
             // ── Claymore-style sticky triple-stream stats (alt screen + full redraw) ──
-            // Only activate when stdout is a real terminal — on SMOS / Docker / pipes
-            // the sticky header would redirect stdout to /dev/null and TTY writes
-            // would fail, making ALL miner output invisible.
+            // Only activate when ALL of:
+            //   1. TUI is not active (ZION_INTERACTIVE=0)
+            //   2. stdout is a real terminal (isatty)
+            //   3. ZION_NO_STICKY is not set (SMOS/Docker use pseudo-TTY but
+            //      /dev/tty is not connected to the console, so sticky header
+            //      would redirect stdout to /dev/null and hide all output)
             // Activate quiet mode to suppress verbose log lines (clean metrics display)
             QUIET.store(true, Ordering::Relaxed);
             std::env::set_var("ZION_QUIET", "1");
