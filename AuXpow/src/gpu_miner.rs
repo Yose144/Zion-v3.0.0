@@ -1158,11 +1158,16 @@ impl GpuMiner {
             _ => 8, // blake3, kheavyhash, keryxhash
         };
         // Work-group size: MUST match GROUP_SIZE defined in the kernel build
-        // options. EPIC ProgPow uses GROUP_SIZE=256 (matches reference epic-miner).
+        // options. ProgPoW uses GROUP_SIZE=256 with bpermute (or 128 without).
         // KawPow and variants use GROUP_SIZE=128.
         // Mismatch causes out-of-bounds local memory access → GPU hang.
+        // ZION_AUXPOW_GPU_GROUP_SIZE env var overrides (must match build define).
+        let progpow_wg = std::env::var("ZION_AUXPOW_GPU_GROUP_SIZE")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+            .unwrap_or(256); // matches GROUP_SIZE=256 default with bpermute
         let wg_size = match algorithm {
-            "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => 128, // GROUP_SIZE=128 for EPIC/Zano ProgPow (share+barrier)
+            "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => progpow_wg,
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => 128, // GROUP_SIZE=128 for KawPow
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 128,
             "beamhash" | "beamhash_beam" => 256, // BeamHash: standard work-group
@@ -2247,8 +2252,16 @@ typedef unsigned long ulong;
             .clamp(10, 90);
         let usable = (global_mem * vram_pct) / 100;
 
-        // Each work item needs ~1 KiB working state for our kernels.
-        let ws = (usable / 1024).clamp(64, 4_194_304);
+        // Each work item needs ~64 bytes of register state for ProgPoW/Ethash
+        // kernels (not 1 KiB as previously assumed).  The 1 KiB estimate was
+        // overly conservative and limited RX 5600 XT to ~3M work-items → only
+        // 4.5 MH/s on ProgPoWZ (reference miners achieve 11-19 MH/s).
+        // Use 64 bytes/item for DAG-based algos, 1 KiB for others.
+        let bytes_per_item: usize = std::env::var("ZION_AUXPOW_GPU_BYTES_PER_ITEM")
+            .ok()
+            .and_then(|v| v.trim().parse().ok())
+            .unwrap_or(64);
+        let ws = (usable / bytes_per_item).clamp(64, 67_108_864);
         let env_cap = std::env::var("ZION_AUXPOW_GPU_WORK_SIZE")
             .ok()
             .and_then(|v| v.trim().parse::<usize>().ok())
@@ -2478,35 +2491,76 @@ typedef unsigned long ulong;
         //   (each dag_t = 16 bytes, and the kernel accesses g_dag[offset] where
         //    offset can be up to dag_elements * PROGPOW_LANES - 1)
         //
-        // GROUP_SIZE=128 for EPIC ProgPow (share+barrier fallback on SMOS):
-        //   - HASHES_PER_GROUP = 128 / 16 = 8 hashes per work-group
-        //   - 2 wavefronts per work-group on Vega (wave64)
-        //   - share+barrier fallback requires barriers in progPowLoop,
-        //     which MUST be always_inline to avoid barrier deadlock on
-        //     SMOS OpenCL compiler (see progpow_codegen.rs).
-        //   - GROUP_SIZE=256 deadlocks on SMOS with share+barrier (4
-        //     wavefronts per work-group exceeds barrier capacity).
+        // GROUP_SIZE=256 for ProgPoW on AMD with USE_AMD_BPERMUTE (ds_bpermute
+        // eliminates barriers, so larger work-groups are safe):
+        //   - HASHES_PER_GROUP = 256 / 16 = 16 hashes per work-group
+        //   - Better DAG cache (c_dag) utilization — 16 hashes share 16KB local mem
+        //   - Matches reference progminer (hyle-team/progminer) default localWorkSize=256
         //
-        // KawPow also uses GROUP_SIZE=128.
+        // On SMOS or non-AMD platforms, fall back to GROUP_SIZE=128 with share+barrier.
+        // ZION_AUXPOW_GPU_GROUP_SIZE env var overrides (for debugging/tuning).
+        //
+        // WAVE_SIZE: 32 for RDNA1+ (gfx10xx, gfx11xx), 64 for GCN/Vega (gfx8xx, gfx9xx).
+        // Detected from device name; the kernel also auto-detects via __gfxXXXX__ macros.
         let dag_bytes = dag_elements_safe * 16 * 16; // * PROGPOW_LANES(16) * sizeof(dag_t)
         // Pass algorithm-specific PROGPOW_REGS and PROGPOW_CNT_MATH as build defines
         // so the kernel can use the correct register file size and math loop count.
         // MeowPow uses REGS=16 and CNT_MATH=9 (halved vs KawPow's 32/18).
         // EvrProgPow uses the same REGS/CNT_MATH as KawPow (32/18) but PERIOD=3.
-        let group_size = if algorithm == "progpow" || algorithm == "progpow_epic" || algorithm == "progpow_zano" || algorithm == "progpowz" {
-            128 // EPIC/Zano ProgPow: GROUP_SIZE=128 (share+barrier fallback — 256 deadlocks on SMOS)
+
+        // Detect wavefront size from device name (RDNA1+ = wave32, GCN/Vega = wave64)
+        let dev_name_lower = self.device_name.to_lowercase();
+        let is_rdna = dev_name_lower.contains("gfx10")
+            || dev_name_lower.contains("gfx11")
+            || dev_name_lower.contains("rdna")
+            || dev_name_lower.contains("5600")
+            || dev_name_lower.contains("5700")
+            || dev_name_lower.contains("6600")
+            || dev_name_lower.contains("6700")
+            || dev_name_lower.contains("6800")
+            || dev_name_lower.contains("6900")
+            || dev_name_lower.contains("7600")
+            || dev_name_lower.contains("7700")
+            || dev_name_lower.contains("7800")
+            || dev_name_lower.contains("7900");
+        let wave_size = if is_rdna { 32 } else { 64 };
+
+        // Determine if we can use AMD bpermute (ds_bpermute) for barrier-free shuffle.
+        // Enabled on AMD platforms with AMDPRO driver (Linux). Can be disabled via
+        // ZION_AUXPOW_GPU_USE_BPERMUTE=0 for debugging.
+        let use_bpermute = std::env::var("ZION_AUXPOW_GPU_USE_BPERMUTE")
+            .ok()
+            .and_then(|v| v.trim().parse::<i32>().ok())
+            .map(|v| v != 0)
+            .unwrap_or(true); // default: enabled
+
+        let is_progpow = algorithm == "progpow"
+            || algorithm == "progpow_epic"
+            || algorithm == "progpow_zano"
+            || algorithm == "progpowz";
+
+        // GROUP_SIZE: 256 with bpermute (no barriers → safe), 128 without (barrier limit)
+        let group_size = std::env::var("ZION_AUXPOW_GPU_GROUP_SIZE")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+            .unwrap_or(if is_progpow && use_bpermute { 256 } else { 128 });
+
+        // Build platform/bpermute/wave defines
+        let amd_def = if use_bpermute {
+            format!("-DPLATFORM=2 -DUSE_AMD_BPERMUTE=1 -DWAVE_SIZE={}", wave_size)
         } else {
-            128 // KawPow and variants: GROUP_SIZE=128
+            format!("-DPLATFORM=2 -DWAVE_SIZE={}", wave_size)
         };
+
         let build_opts = if params.regs != 32 || params.cnt_math != 18 {
             format!(
-                "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={} -DPROGPOW_REGS={} -DPROGPOW_CNT_MATH={}",
-                dag_elements_safe, dag_bytes, group_size, params.regs, params.cnt_math
+                "-cl-std=CL1.2 -cl-mad-enable {} -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={} -DPROGPOW_REGS={} -DPROGPOW_CNT_MATH={}",
+                amd_def, dag_elements_safe, dag_bytes, group_size, params.regs, params.cnt_math
             )
         } else {
             format!(
-                "-cl-std=CL1.2 -cl-mad-enable -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={}",
-                dag_elements_safe, dag_bytes, group_size
+                "-cl-std=CL1.2 -cl-mad-enable {} -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={}",
+                amd_def, dag_elements_safe, dag_bytes, group_size
             )
         };
 
@@ -4749,7 +4803,7 @@ typedef unsigned long ulong;
 #[cfg(feature = "native-hashers")]
 use std::path::Path;
 #[cfg(feature = "native-hashers")]
-use std::io::{Read, Write};
+use std::io::{BufWriter, Read, Write};
 #[cfg(feature = "native-hashers")]
 // CPU FFI DAG generation (generate_ethash_dag, generate_kawpow_dag) is NO LONGER
 // used by DagManager — all DAG generation now happens on the GPU via
@@ -4938,12 +4992,17 @@ impl DagManager {
                     let _ = std::fs::remove_file(&cache_path);
                     // Generate DAG on GPU (NEVER on CPU)
                     miner.generate_progpow_dag_on_gpu(epoch)?;
+                    let (dag_u64, dag_entries) = miner.read_progpow_dag_to_host()?;
+                    self.save_dag_to_disk(&cache_path, &dag_u64, dag_entries)?;
                 }
             }
         } else {
-            // No disk cache — generate DAG directly on the GPU.
+            // No disk cache — generate DAG directly on the GPU and persist it.
             eprintln!("dag_manager: generating ProgPow DAG epoch={} on GPU...", epoch);
             miner.generate_progpow_dag_on_gpu(epoch)?;
+            let (dag_u64, dag_entries) = miner.read_progpow_dag_to_host()?;
+            eprintln!("dag_manager: saving ProgPow DAG to disk cache: {}", cache_path.display());
+            self.save_dag_to_disk(&cache_path, &dag_u64, dag_entries)?;
         }
 
         self.progpow_epoch = Some(epoch);
@@ -5020,8 +5079,10 @@ impl DagManager {
             std::fs::create_dir_all(parent)
                 .map_err(|e| anyhow!("failed to create DAG cache dir {}: {e}", parent.display()))?;
         }
-        let mut file = std::fs::File::create(path)
+        let file = std::fs::File::create(path)
             .map_err(|e| anyhow!("failed to create DAG cache file {}: {e}", path.display()))?;
+        // Buffer the write to avoid one syscall per u64 word.
+        let mut file = BufWriter::with_capacity(1024 * 1024, file);
         // Write dag_size_entries as 8-byte LE header
         file.write_all(&dag_entries.to_le_bytes())
             .map_err(|e| anyhow!("failed to write DAG entries: {e}"))?;
@@ -5030,6 +5091,7 @@ impl DagManager {
             file.write_all(&word.to_le_bytes())
                 .map_err(|e| anyhow!("failed to write DAG data: {e}"))?;
         }
+        file.flush().map_err(|e| anyhow!("failed to flush DAG cache file: {e}"))?;
         eprintln!(
             "dag_manager: saved DAG to disk cache ({} entries, {:.1} MB)",
             dag_entries,

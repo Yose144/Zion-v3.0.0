@@ -76,12 +76,32 @@ typedef unsigned long      uint64_t;
 #ifndef OPENCL_PLATFORM_UNKNOWN
 #define OPENCL_PLATFORM_UNKNOWN 0
 #endif
-// NOTE: USE_AMD_BPERMUTE disabled on SMOS — __builtin_amdgcn_ds_bpermute
-// causes GPU hangs on the SMOS OpenCL compiler (code object manager).
-// The share+barrier fallback is slower but reliable.
-// To re-enable: #if defined(PLATFORM) && PLATFORM == OPENCL_PLATFORM_AMD
-#if 0
+// USE_AMD_BPERMUTE: enabled by default on AMD platforms with AMDPRO driver
+// (Linux). Disabled on SMOS (via build define -DUSE_AMD_BPERMUTE=0) due to
+// GPU hangs on the SMOS OpenCL compiler. On Linux/AMDPRO, ds_bpermute works
+// reliably on GCN (wave64) and RDNA1/2/3 (wave32).
+//
+// WAVE_SIZE: must match the GPU's wavefront size. GCN/Vega = 64, RDNA1+ = 32.
+// The host code passes -DWAVE_SIZE=32 for RDNA1+ or -DWAVE_SIZE=64 for GCN.
+// If not defined, try to auto-detect via __builtin_amdgcn_wavefrontsize().
+#if !defined(USE_AMD_BPERMUTE) && defined(PLATFORM) && PLATFORM == OPENCL_PLATFORM_AMD
 #define USE_AMD_BPERMUTE 1
+#endif
+
+#ifndef WAVE_SIZE
+// Try to auto-detect wavefront size at compile time
+#if defined(__gfx1010__) || defined(__gfx1011__) || defined(__gfx1012__) || \
+    defined(__gfx1030__) || defined(__gfx1031__) || defined(__gfx1032__) || \
+    defined(__gfx1034__) || defined(__gfx1035__) || defined(__gfx1036__) || \
+    defined(__gfx1100__) || defined(__gfx1101__) || defined(__gfx1102__) || \
+    defined(__gfx1103__) || defined(__gfx1150__) || defined(__gfx1151__)
+#define WAVE_SIZE 32
+#else
+#define WAVE_SIZE 64
+#endif
+#endif
+
+#if defined(USE_AMD_BPERMUTE)
 // ds_bpermute intrinsic: reads from lane (offset/4) within wavefront.
 // offset is in bytes, so multiply lane index by 4 for 32-bit values.
 static inline uint amd_wave_shuffle(uint val, uint src_lane)
@@ -272,17 +292,15 @@ __kernel void ethash_search(
     barrier(CLK_LOCAL_MEM_FENCE);
 
     // Wavefront-relative group base: identifies which 16-lane hash group
-    // we belong to within the current wavefront. Hardcoded to 64 (wave64)
-    // for GCN/Vega compatibility — the SMOS OpenCL compiler does not support
-    // __builtin_amdgcn_wavefrontsize(). RDNA1+ (wave32) GPUs have newer
-    // drivers that support the builtin natively. The mask clears the lower
-    // log2(LANES) bits to align to the start of the current hash group.
+    // we belong to within the current wavefront. Uses WAVE_SIZE (32 for
+    // RDNA1+, 64 for GCN/Vega) to correctly compute the wavefront-relative
+    // lane index. The mask clears the lower log2(LANES) bits to align to
+    // the start of the current hash group.
 #if defined(USE_AMD_BPERMUTE)
-    const uint32_t wave_size = 64;
-    const uint32_t wave_lane = lid % wave_size;
+    const uint32_t wave_lane = lid % WAVE_SIZE;
     const uint32_t wave_group_base = wave_lane & ~(uint32_t)(PROGPOW_LANES - 1);
 #else
-    const uint32_t wave_group_base = lid & (PROGPOW_LANES * (64 / PROGPOW_LANES - 1));
+    const uint32_t wave_group_base = lid & (PROGPOW_LANES * (WAVE_SIZE / PROGPOW_LANES - 1));
 #endif
 
     #pragma unroll 1
