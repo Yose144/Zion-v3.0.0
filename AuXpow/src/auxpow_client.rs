@@ -3181,6 +3181,17 @@ impl AuxPowClient {
                         ntime, nbits, version, header_bytes.len(), &target_hex,
                         *self.current_difficulty.lock().await
                     );
+                    // RTM debug: log full header + coinbase components for yiimp comparison
+                    if self.profile.coin == ExternalCoin::RTM {
+                        println!(
+                            "auxpow: RTM_DEBUG job={} extranonce1={} coinbase1={}.. coinbase2={}.. branches={} header_hex={}",
+                            job_id, extranonce1_hex,
+                            &coinbase1[..32.min(coinbase1.len())],
+                            &coinbase2[..32.min(coinbase2.len())],
+                            merkle_branches.len(),
+                            header_hex
+                        );
+                    }
 
                     return Ok(ExternalJob {
                         job_id,
