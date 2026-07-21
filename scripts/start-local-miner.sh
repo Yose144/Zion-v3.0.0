@@ -93,11 +93,13 @@ export ZION_MINER_ALGORITHM="${ZION_MINER_ALGORITHM:-deeksha_lite_v1}"
 export ZION_AUTOTUNE_SECS="${ZION_AUTOTUNE_SECS:-3}"
 
 # ── GPU duty-cycle: 50/50 split between Stream 1 (deeksha) and Stream 2 (ZANO) ──
-#  Static mode: ZION_EXT_GPU_BURST=N batches for Stream 2, then
-#  ZION_EXT_GPU_GAP_MS=M ms for Stream 1, repeat.
-#  burst=3, gap_ms=150 → ~50/50 split (3 batches ≈ 150ms ZANO, 150ms deeksha).
-#  Disable adaptive scheduler (which gives ZANO 97% based on raw hashrate).
+#  Time-based duty cycle sleeps after each external batch so Stream 2 gets
+#  ZION_EXT_GPU_TIME_DUTY_PCT % of wall-clock GPU time. This is accurate for
+#  ProgPoMHZ (ZANO) where batch times differ from deeksha.
 export ZION_ADAPTIVE_DUTY_CYCLE="${ZION_ADAPTIVE_DUTY_CYCLE:-0}"
+export ZION_EXT_GPU_TIME_DUTY_PCT="${ZION_EXT_GPU_TIME_DUTY_PCT:-50}"
+export ZION_EXT_GPU_MAX_GAP_MS="${ZION_EXT_GPU_MAX_GAP_MS:-5000}"
+# Legacy fallback (only used when ZION_EXT_GPU_TIME_DUTY_PCT is unset):
 export ZION_EXT_GPU_BURST="${ZION_EXT_GPU_BURST:-3}"
 export ZION_EXT_GPU_GAP_MS="${ZION_EXT_GPU_GAP_MS:-150}"
 
@@ -113,20 +115,20 @@ export ZION_EXT_GPU_GAP_MS="${ZION_EXT_GPU_GAP_MS:-150}"
 # hashrate ~28 KH/s (with 50/50 ZANO split):
 #   32768 / 28000 = ~1.2s per batch  ← OK (under 2s)
 #   262144 / 28000 = ~9.4s per batch ← STALE (pool 4-5 iterations ahead)
-# ZION_NONCE_AUTOTUNE is DISABLED to prevent grow from 32768 → 5M (which
-# causes massive stale rejects).  ZION_NONCE_COUNT_MAX caps the ceiling.
+# ZION_NONCE_AUTOTUNE grows the batch when no share is found and shrinks it
+# when a share lands in the first quarter. A higher ZION_NONCE_COUNT_MAX lets
+# the GPU pipeline stay fuller on large windows; the pool TTL + max_batch cap
+# still protect against stale shares.
 export ZION_NONCE_COUNT="${ZION_NONCE_COUNT:-32768}"
 export ZION_NONCE_COUNT_MIN="${ZION_NONCE_COUNT_MIN:-16384}"
-export ZION_NONCE_COUNT_MAX="${ZION_NONCE_COUNT_MAX:-65536}"
-export ZION_NONCE_AUTOTUNE="${ZION_NONCE_AUTOTUNE:-0}"
+export ZION_NONCE_COUNT_MAX="${ZION_NONCE_COUNT_MAX:-131072}"
+export ZION_NONCE_AUTOTUNE="${ZION_NONCE_AUTOTUNE:-1}"
 
 # ── GPU max batch cap ───────────────────────────────────────────────────────
-# Caps the GPU batch size to avoid stale jobs.  The pool may send a large
-# nonce_count (e.g. 262144), but processing that many nonces in one batch
-# takes 10+ seconds, by which time the pool may have moved to a new block
-# height (stale share).  Capping to 32768 (4× work_size) keeps each batch
-# under ~1.2 seconds, well within the 2s pool iteration window.
-export ZION_GPU_MAX_BATCH="${ZION_GPU_MAX_BATCH:-32768}"
+# Caps the GPU batch size to avoid stale jobs and to free GPU time for ZANO.
+# With deeksha ~28 KH/s, 16384 nonces take ~0.6 s, giving ZANO a larger
+# share of the GPU while keeping ZION responsive.
+export ZION_GPU_MAX_BATCH="${ZION_GPU_MAX_BATCH:-16384}"
 
 # ── GPU pipelining ──────────────────────────────────────────────────────────
 # ZION_GPU_PIPELINE=0 (default) — synchronous mine_batch: blocks until batch
@@ -218,7 +220,7 @@ RESTART_DELAY=\${ZION_RESTART_DELAY:-5}
 
 while true; do
     # Run the miner
-    './target/release/zion-miner' \\
+    '$MINER_BIN' \\
         --pool '$ZION_POOL_ADDR' \\
         --wallet '$WALLET_ADDRESS' \\
         --worker '$ZION_MINER_WORKER' \\

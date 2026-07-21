@@ -654,9 +654,12 @@ fn scan_ghostrider_single(job: &JobPackage, start: u64, end: u64) -> Option<Foun
         let hash = crate::external_hashers::hash_blake3(&work_blob, 0, nonce);
 
         // GhostRider: LE hash, BE target → reverse hash to BE and compare.
-        // Also enforce yiimp's error 25 sanity: hash[30] | hash[31] must be 0.
-        let pfx = hash[30] | hash[31];
-        if pfx == 0 && crate::external_hashers::meets_target_little_endian(&hash, target) {
+        // The meets_target check already ensures the hash is below the share
+        // target. The yiimp "error 25" check (hash[30]|hash[31]==0) is only
+        // appropriate for BLOCK mining where the target is very hard; for
+        // SHARE mining with an easy target it would be more restrictive than
+        // the target itself (1/65536 probability) and prevent share finding.
+        if crate::external_hashers::meets_target_little_endian(&hash, target) {
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
                 nonce,

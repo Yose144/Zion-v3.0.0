@@ -7271,7 +7271,12 @@ pub mod opencl_external {
             batch_size: u64,
         ) -> Result<GpuBatchResult> {
             let header_bytes = header.to_bytes();
-            let actual_batch = batch_size.min(self.work_size as u64);
+            // Use the AuxPowGpuMiner's internal work_size (detected from VRAM)
+            // which may be much larger than the secondary_gpu_work_size passed
+            // at construction.  This allows ProgPoWZ to run 16M+ work-items per
+            // batch for 11-20 MH/s on RX 5600 XT (matching reference miners).
+            let internal_ws = self.miner.internal_work_size() as u64;
+            let actual_batch = batch_size.min(internal_ws.max(self.work_size as u64));
 
             let found = match self.algorithm.as_str() {
                 "blake3"
@@ -7361,7 +7366,9 @@ pub mod opencl_external {
             batch_size: u64,
         ) -> Result<GpuBatchResult> {
             // Use raw header bytes directly (supports >80B headers for DCR etc.)
-            let actual_batch = batch_size.min(self.work_size as u64);
+            // Use the AuxPowGpuMiner's internal work_size for larger batches.
+            let internal_ws = self.miner.internal_work_size() as u64;
+            let actual_batch = batch_size.min(internal_ws.max(self.work_size as u64));
             let found = self
                 .miner
                 .mine(

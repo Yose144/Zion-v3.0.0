@@ -329,14 +329,16 @@ __kernel void ethash_search(
         // initialize mix for all lanes
         fill_mix(hash_seed, lane_id, mix);
 
-        // Apparently, no unrolling ("#pragma unroll 1") often results in
-        // miscompiles with AMD OpenCL, so use at least 2
+        // DAG loop — share+barrier for mix[0] broadcast.
+        // NOTE: ds_bpermute in the DAG loop causes GPU hangs on RDNA1 (wave32)
+        // with AMDPRO driver, likely due to compiler scheduling issues with
+        // bpermute inside a tight loop with global memory loads. bpermute is
+        // safe in the seed broadcast (outside the loop) but not in the DAG loop.
         #pragma unroll 1
         for (uint32_t l = 0; l < PROGPOW_CNT_DAG; l++)
 		{
             // Global load — broadcast mix[0] from lane (l % PROGPOW_LANES)
             // to all lanes in the hash group via share+barrier.
-            // (USE_AMD_BPERMUTE is disabled on SMOS — ds_bpermute hangs.)
             if(lane_id == (l % PROGPOW_LANES))
                 share[group_id].uint64s[0] = mix[0];
             barrier(CLK_LOCAL_MEM_FENCE);
