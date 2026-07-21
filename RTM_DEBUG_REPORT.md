@@ -176,8 +176,14 @@ yiimp validates shares as follows (`client_submit.cpp`):
 - **Root cause:** Forward byte order produced different algo sequence than yiimp's reversed order
 
 ### Test 4 (after reverting getAlgoString back to yiimp reversed order)
-- **Status:** Pending — binary rebuilt, needs live test
-- **Expected:** Error 25 eliminated, possibly error 21 (stale) due to slow hashrate
+- **Status:** ✅ **SHARE ACCEPTED!**
+- **Nonce:** 2660 (0x00000a64)
+- **Hash:** `2640c0ba9250d5261be203b81a3ad05896f936e11e896ddf1e32b5cbedb20000`
+- **pfx:** 0x00 ✓ (hash ends with `0000`)
+- **Time to find share:** 1188s (~20 min) at 118.2 H/s
+- **Job:** ca4c
+- **Result:** `*** SHARE ACCEPTED! ***` — zpool accepted the share, no error 25 or error 21
+- **Conclusion:** The reverted yiimp reversed byte order is CORRECT. All 7 bug fixes are verified working.
 
 ---
 
@@ -197,11 +203,27 @@ yiimp validates shares as follows (`client_submit.cpp`):
 
 ## Pending Actions
 
-1. **Deploy fixed binary to Edge server** — SSH `zion-new`, rebuild pool, restart `zion-edge-pool` service
-2. **Verify RTM shares accepted by zpool** — run `rtm_live_test` or wait for scheduler to submit
-3. **ZION-edge-agent inactive** — redeploy per `agentdeskupdate.md`
-4. **VRSC scheduler** — wait for first accepted share
-5. **XMR RandomX** — datacenter IP blocking workaround
+1. ✅ **Deploy fixed binary to Edge server** — Separate RTM debug pool deployed on port 8460 (`zion-rtm-debug-pool` service)
+2. ✅ **Verify RTM shares accepted by zpool** — Share ACCEPTED in local test (test 4). Edge debug pool running, waiting for first share (slower CPU + difficulty 0.02).
+3. **Deploy fixed binary to Edge MAIN pool** — Replace `/opt/zion/V3/target/release/server` with the fixed binary and restart `zion-edge-pool`
+4. **ZION-edge-agent inactive** — redeploy per `agentdeskupdate.md`
+5. **VRSC scheduler** — wait for first accepted share
+6. **XMR RandomX** — datacenter IP blocking workaround
+
+---
+
+## Edge RTM Debug Pool
+
+A separate RTM debug pool has been deployed on the Edge server to avoid interfering with the main pool:
+
+- **Service:** `zion-rtm-debug-pool` (systemd)
+- **Port:** 8460 (main pool stays on 8444)
+- **Binary:** `/opt/zion/V3-rtm-debug/target/release/server`
+- **Config:** RTM-only, `ZION_POOL_AUXPOW_COIN=RTM`, `ZION_AUXPOW_COIN=RTM`, allocation=100%
+- **Wallet:** `bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh`
+- **Worker:** `rtm-debug`
+- **PPLNS state:** `/data/zion/rtm-debug-pplns.state` (separate from main pool)
+- **Status:** Running, connected to zpool RTM, receiving jobs, mining with scheduler
 
 ---
 
