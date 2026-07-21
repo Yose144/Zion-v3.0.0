@@ -8,6 +8,7 @@ use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use tracing::{debug, error, info, warn};
 use zion_core::wallet::{BatchRecipient, SpendableUtxo};
 use zion_core::{
     decode_rpc_response, encode_rpc_request, BlockTemplate, ConsensusConfig, CoreRuntime,
@@ -151,6 +152,154 @@ struct DeferredPayout {
 type DeferredPayoutQueue = Arc<Mutex<Vec<DeferredPayout>>>;
 
 // ---------------------------------------------------------------------------
+// BlockTracker — F1.5/F1.6: orphan monitoring + pool luck tracking
+// ---------------------------------------------------------------------------
+
+/// Record of a single block found by the pool.
+#[derive(Debug, Clone)]
+struct BlockRecord {
+    height: u64,
+    miner_id: String,
+    worker_name: String,
+    /// Wall-clock timestamp (unix seconds) when the block was found.
+    found_at_unix: u64,
+    /// Share difficulty at the time the block was found (for luck calc).
+    share_difficulty: u64,
+    /// Network difficulty at the time (for luck calc).
+    network_difficulty: u64,
+    /// Number of shares submitted since the previous block (for luck calc).
+    shares_since_prev_block: u64,
+    /// Whether the node accepted the block submission.
+    node_accepted: bool,
+    /// Confirmation status: Pending, Confirmed, Orphaned.
+    status: BlockStatus,
+    /// Height of the chain when this block was confirmed/orphaned (0 = pending).
+    confirmed_at_chain_height: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum BlockStatus {
+    Pending,
+    Confirmed,
+    Orphaned,
+}
+
+/// In-memory block tracker with stats for pool luck and orphan monitoring.
+/// F1.5: background thread polls node RPC to confirm/orphan blocks.
+/// F1.6: pool luck = expected_shares / actual_shares (100% = average).
+struct BlockTracker {
+    /// Recent block records (newest at back, capped at 1000).
+    blocks: VecDeque<BlockRecord>,
+    /// Running count of shares since the last block was found.
+    shares_since_last_block: u64,
+    /// Total blocks found (all time).
+    total_blocks: u64,
+    /// Total orphaned blocks (all time).
+    total_orphans: u64,
+    /// Total confirmed blocks (all time).
+    total_confirmed: u64,
+}
+
+impl Default for BlockTracker {
+    fn default() -> Self {
+        Self {
+            blocks: VecDeque::with_capacity(100),
+            shares_since_last_block: 0,
+            total_blocks: 0,
+            total_orphans: 0,
+            total_confirmed: 0,
+        }
+    }
+}
+
+impl BlockTracker {
+    /// Record a share submission (called on every accepted ZION share).
+    fn record_share(&mut self) {
+        self.shares_since_last_block += 1;
+    }
+
+    /// Record a block found. Returns a reference to the new record.
+    fn record_block_found(
+        &mut self,
+        height: u64,
+        miner_id: &str,
+        worker_name: &str,
+        share_difficulty: u64,
+        network_difficulty: u64,
+        node_accepted: bool,
+    ) {
+        let shares = self.shares_since_last_block;
+        let now = now_unix_seconds();
+        self.blocks.push_back(BlockRecord {
+            height,
+            miner_id: miner_id.to_string(),
+            worker_name: worker_name.to_string(),
+            found_at_unix: now,
+            share_difficulty,
+            network_difficulty,
+            shares_since_prev_block: shares,
+            node_accepted,
+            status: if node_accepted { BlockStatus::Pending } else { BlockStatus::Orphaned },
+            confirmed_at_chain_height: 0,
+        });
+        if !node_accepted {
+            self.total_orphans += 1;
+        }
+        self.total_blocks += 1;
+        self.shares_since_last_block = 0;
+        // Cap memory at 1000 blocks.
+        while self.blocks.len() > 1000 {
+            self.blocks.pop_front();
+        }
+    }
+
+    /// Mark a block as confirmed or orphaned by height.
+    fn resolve_block(&mut self, height: u64, orphaned: bool, chain_height: u64) {
+        if let Some(rec) = self.blocks.iter_mut().find(|b| b.height == height && b.status == BlockStatus::Pending) {
+            rec.status = if orphaned { BlockStatus::Orphaned } else { BlockStatus::Confirmed };
+            rec.confirmed_at_chain_height = chain_height;
+            if orphaned {
+                self.total_orphans += 1;
+            } else {
+                self.total_confirmed += 1;
+            }
+        }
+    }
+
+    /// Pool luck percentage for the last N blocks.
+    /// luck = (expected_shares / actual_shares) * 100
+    /// expected_shares = network_difficulty / share_difficulty
+    /// 100% = average luck, >100% = lucky, <100% = unlucky.
+    fn pool_luck_pct(&self, last_n: usize) -> Option<f64> {
+        let recent: Vec<&BlockRecord> = self.blocks.iter().rev().take(last_n).collect();
+        if recent.is_empty() {
+            return None;
+        }
+        let mut total_expected = 0.0_f64;
+        let mut total_actual = 0.0_f64;
+        for rec in &recent {
+            if rec.share_difficulty == 0 || rec.shares_since_prev_block == 0 {
+                continue;
+            }
+            let expected = rec.network_difficulty as f64 / rec.share_difficulty as f64;
+            total_expected += expected;
+            total_actual += rec.shares_since_prev_block as f64;
+        }
+        if total_actual == 0.0 {
+            return None;
+        }
+        Some((total_expected / total_actual) * 100.0)
+    }
+
+    /// Pending blocks (found but not yet confirmed/orphaned).
+    fn pending_blocks(&self) -> Vec<&BlockRecord> {
+        self.blocks.iter().filter(|b| b.status == BlockStatus::Pending).collect()
+    }
+}
+
+type BlockTrackerArc = Arc<Mutex<BlockTracker>>;
+
+// ---------------------------------------------------------------------------
 // PoolProfitSwitchState — shared state for pool-side profit switcher
 // ---------------------------------------------------------------------------
 
@@ -250,7 +399,7 @@ impl TemplateCache {
             }
             Err(e) => {
                 if let Some(ref t) = self.template {
-                    println!("template_cache: fetch failed ({e:#}), serving stale template height={}", t.height);
+                    error!("template_cache: fetch failed ({e:#}), serving stale template height={}", t.height);
                     Ok(t.clone())
                 } else {
                     Err(e)
@@ -288,7 +437,7 @@ fn notify_oasis_block_mined(miner_address: &str, block_height: u64) {
     let (authority, base_path) = match parse_oasis_http_target(&oasis_base_url, allow_remote) {
         Ok(target) => target,
         Err(e) => {
-            println!("oasis_xp_hook_invalid_url url={} err={}", oasis_base_url, e);
+            info!("oasis_xp_hook_invalid_url url={} err={}", oasis_base_url, e);
             return;
         }
     };
@@ -302,19 +451,19 @@ fn notify_oasis_block_mined(miner_address: &str, block_height: u64) {
 
     match post_json_http(&authority, &full_path, &body, Duration::from_secs(3)) {
         Ok(code) if code == 200 || code == 201 => {
-            println!(
+            info!(
                 "oasis_xp_awarded miner={} height={}",
                 miner_address, block_height
             );
         }
         Ok(code) => {
-            println!(
+            info!(
                 "oasis_xp_hook_failed miner={} height={} http_code={}",
                 miner_address, block_height, code
             );
         }
         Err(e) => {
-            println!(
+            info!(
                 "oasis_xp_hook_unavailable miner={} height={} err={}",
                 miner_address, block_height, e
             );
@@ -624,7 +773,7 @@ async fn run_auxpow_bridge(
     });
     mux.set_wallet(select_wallet(initial_coin));
     if let Err(e) = mux.connect(initial_coin).await {
-        eprintln!("auxpow_bridge: initial connect to {} failed: {}", initial_coin, e);
+        error!("auxpow_bridge: initial connect to {} failed: {}", initial_coin, e);
     }
 
     // Track when we last checked profitability for auto-switching.
@@ -648,15 +797,15 @@ async fn run_auxpow_bridge(
                 )
             });
             mux.set_wallet(select_wallet(coin));
-            eprintln!("auxpow_bridge: no active connection, reconnecting to {}…", coin);
+            warn!("auxpow_bridge: no active connection, reconnecting to {}…", coin);
             if let Err(e) = mux.connect(coin).await {
-                eprintln!("auxpow_bridge: reconnect to {} failed: {}", coin, e);
+                error!("auxpow_bridge: reconnect to {} failed: {}", coin, e);
                 tokio::time::sleep(Duration::from_secs(reconnect_backoff_secs)).await;
                 reconnect_backoff_secs = (reconnect_backoff_secs * 2).min(600);
                 continue;
             }
             reconnect_backoff_secs = 5;
-            println!("auxpow_bridge: reconnected to {}", coin);
+            info!("auxpow_bridge: reconnected to {}", coin);
         }
 
         // Auto coin switching: when force_coin is None, periodically check
@@ -669,7 +818,7 @@ async fn run_auxpow_bridge(
                 select_best_coin(&estimates, current, cfg.hysteresis_pct)
             {
                 if current != Some(best) {
-                    println!(
+                    info!(
                         "auxpow_bridge: profit_switch old={:?} new={} old_profit={:.4} new_profit={:.4}",
                         current,
                         best,
@@ -688,9 +837,9 @@ async fn run_auxpow_bridge(
                     mux.disconnect().await;
                     mux.set_wallet(select_wallet(new_coin));
                     if let Err(e) = mux.connect(new_coin).await {
-                        eprintln!("auxpow_bridge: profit_switch connect to {} failed: {}", new_coin, e);
+                        error!("auxpow_bridge: profit_switch connect to {} failed: {}", new_coin, e);
                     } else {
-                        println!("auxpow_bridge: profit_switch connected to {}", new_coin);
+                        info!("auxpow_bridge: profit_switch connected to {}", new_coin);
                     }
                 }
             }
@@ -701,7 +850,7 @@ async fn run_auxpow_bridge(
         // because this task has no other work besides forwarding shares.
         match mux.wait_for_job(5_000).await {
             Ok(Some(job)) => {
-                println!(
+                info!(
                     "auxpow_bridge: queued job_id={} coin={} algo={}",
                     job.external_job_id, job.external_coin, job.algorithm
                 );
@@ -718,7 +867,7 @@ async fn run_auxpow_bridge(
                 // the external pool has not yet issued a notify.
             }
             Err(e) => {
-                eprintln!("auxpow_bridge: wait_for_job error: {}", e);
+                error!("auxpow_bridge: wait_for_job error: {}", e);
                 // The connection is likely dead — disconnect so the next
                 // iteration triggers a reconnect.
                 mux.disconnect().await;
@@ -733,14 +882,14 @@ async fn run_auxpow_bridge(
                 let forwarder = ShareForwarder::new(client);
                 match forwarder.try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target, req.mix_hash.as_ref(), &req.algorithm, &req.header_bytes).await {
                     Ok(r) => {
-                        println!(
+                        info!(
                             "auxpow_bridge: share_forwarded job_id={} nonce={} result={:?} elapsed_ms={}",
                             req.external_job_id, req.nonce, r, started.elapsed().as_millis()
                         );
                         r
                     }
                     Err(e) => {
-                        eprintln!("auxpow_bridge: forward error: {}", e);
+                        error!("auxpow_bridge: forward error: {}", e);
                         ShareForwardResult::Unknown
                     }
                 }
@@ -764,21 +913,21 @@ async fn run_auxpow_bridge(
                     &req.target_bytes,
                 ).await {
                     Ok(ShareResult::Accepted) => {
-                        println!(
+                        info!(
                             "auxpow_bridge: pearl_proof_forwarded job_id={} result=accepted elapsed_ms={}",
                             req.external_job_id, started.elapsed().as_millis()
                         );
                         ShareForwardResult::Accepted
                     }
                     Ok(ShareResult::Rejected(reason)) => {
-                        println!(
+                        info!(
                             "auxpow_bridge: pearl_proof_rejected job_id={} reason={} elapsed_ms={}",
                             req.external_job_id, reason, started.elapsed().as_millis()
                         );
                         ShareForwardResult::Rejected(reason)
                     }
                     Ok(ShareResult::Unknown) => {
-                        println!(
+                        info!(
                             "auxpow_bridge: pearl_proof_unknown job_id={} elapsed_ms={}",
                             req.external_job_id, started.elapsed().as_millis()
                         );
@@ -788,7 +937,7 @@ async fn run_auxpow_bridge(
                         ShareForwardResult::BelowTarget
                     }
                     Err(e) => {
-                        eprintln!("auxpow_bridge: pearl forward error: {}", e);
+                        error!("auxpow_bridge: pearl forward error: {}", e);
                         ShareForwardResult::Unknown
                     }
                 }
@@ -804,6 +953,16 @@ async fn run_auxpow_bridge(
 }
 
 fn main() -> Result<()> {
+    // Initialize structured logging (tracing).
+    // Level controlled by RUST_LOG env var (e.g. RUST_LOG=info,zion_pool=debug).
+    // Default: info.  F1.1 upgrade — replaces println!/eprintln! throughout.
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "info".into()),
+        )
+        .init();
+
     // Install the aws-lc-rs CryptoProvider as the process-level default
     // BEFORE any rustls usage (reqwest, tokio-rustls, etc.).  Both aws-lc-rs
     // and ring may be present (ring via reqwest), so rustls can't auto-select.
@@ -822,7 +981,7 @@ fn main() -> Result<()> {
     let routing_stats = Arc::new(Mutex::new(RoutingStats::new(config.routing_log_every)));
     let miner_telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::default()));
     let fee_config = config.fee_config.clone();
-    println!(
+    info!(
         "fee_split: miners={}% humanitarian={}% issobella={}% pool_fee={}%",
         fee_config.miner_pct(),
         fee_config.humanitarian_pct,
@@ -830,10 +989,10 @@ fn main() -> Result<()> {
         fee_config.pool_fee_pct
     );
     if !fee_config.humanitarian_wallet.is_empty() {
-        println!("humanitarian_wallet={}", fee_config.humanitarian_wallet);
+        info!("humanitarian_wallet={}", fee_config.humanitarian_wallet);
     }
     if !fee_config.issobella_wallet.is_empty() {
-        println!("issobella_wallet={}", fee_config.issobella_wallet);
+        info!("issobella_wallet={}", fee_config.issobella_wallet);
     }
     let pplns_state_path = std::env::var("ZION_PPLNS_STATE_PATH").unwrap_or_default();
     let mut pplns_engine_inner = PplnsEngine::new(PplnsConfig {
@@ -849,7 +1008,7 @@ fn main() -> Result<()> {
     // Restore PPLNS state from disk if a state path is configured and the file exists.
     if !pplns_state_path.is_empty() {
         if let Some(snap) = PplnsEngine::load_from_path(&pplns_state_path) {
-            println!(
+            info!(
                 "pplns_persistence: restored state from {} — shares={} miners={} unpaid_miners={} total_paid={}",
                 pplns_state_path,
                 snap.window.len(),
@@ -859,18 +1018,22 @@ fn main() -> Result<()> {
             );
             pplns_engine_inner.restore(snap);
         } else {
-            println!(
+            info!(
                 "pplns_persistence: no snapshot found at {} — starting fresh",
                 pplns_state_path
             );
         }
     } else {
-        println!(
+        info!(
             "pplns_persistence: ZION_PPLNS_STATE_PATH not set — state will be lost on restart"
         );
     }
 
     let pplns_engine = Arc::new(Mutex::new(pplns_engine_inner));
+    // F1.3: force-save flag for PPLNS persistence — set by block-found path.
+    let force_save: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
+    // F1.5/F1.6: block tracker for orphan monitoring + pool luck.
+    let block_tracker: BlockTrackerArc = Arc::new(Mutex::new(BlockTracker::default()));
     let active_sessions = Arc::new(AtomicU64::new(0));
     let session_id_counter = Arc::new(AtomicU64::new(0));
     let template_cache = Arc::new(Mutex::new(TemplateCache::new(
@@ -879,11 +1042,11 @@ fn main() -> Result<()> {
     let listener = TcpListener::bind(&config.bind_addr)
         .with_context(|| format!("failed to bind pool listener on {}", config.bind_addr))?;
 
-    println!("ZION v3 pool server");
-    println!("bind_addr={}", config.bind_addr);
-    println!("loop_count={}", config.loop_count);
-    println!("job_ttl_ms={}", config.job_ttl_ms);
-    println!(
+    info!("ZION v3 pool server");
+    info!("bind_addr={}", config.bind_addr);
+    info!("loop_count={}", config.loop_count);
+    info!("job_ttl_ms={}", config.job_ttl_ms);
+    info!(
         "accept_limit={}",
         config
             .accept_limit
@@ -891,14 +1054,14 @@ fn main() -> Result<()> {
             .unwrap_or_else(|| "unbounded".to_string())
     );
     if let Some(node_rpc_addr) = config.node_rpc_addr.as_deref() {
-        println!("node_rpc_addr={node_rpc_addr}");
+        info!("node_rpc_addr={node_rpc_addr}");
     }
     if let Some(upstream) = config.upstream_pool_addr.as_deref() {
-        println!("upstream_pool_addr={upstream} (share relay enabled — Edge mode)");
+        info!("upstream_pool_addr={upstream} (share relay enabled — Edge mode)");
     } else {
-        println!("upstream_pool_addr=(not set) — this pool owns the PPLNS window (Core mode)");
+        info!("upstream_pool_addr=(not set) — this pool owns the PPLNS window (Core mode)");
     }
-    println!(
+    info!(
         "payout_execution={} pool_wallet={}",
         if config.pool_signing_key.is_some() && config.pool_wallet_address.is_some() {
             "enabled"
@@ -925,16 +1088,16 @@ fn main() -> Result<()> {
         }
     }
     if let Some(btc_wallet) = config.btc_wallet.as_deref() {
-        println!("btc_wallet={btc_wallet}");
+        info!("btc_wallet={btc_wallet}");
     }
-    println!(
+    info!(
         "session_default_group={} backend_miner_ids={} backend_worker_hints={}",
         session_group_name(config.user_default_group),
         config.backend_miner_ids.len(),
         config.backend_worker_hints.join("|")
     );
-    println!("routing_log_every={}", config.routing_log_every);
-    println!("max_sessions_per_ip={}", config.max_sessions_per_ip);
+    info!("routing_log_every={}", config.routing_log_every);
+    info!("max_sessions_per_ip={}", config.max_sessions_per_ip);
     let started_at = std::time::Instant::now();
     // ── AuxPow scheduler (external merge mining) ───────────────────
     // When ZION_AUXPOW_ENABLED=1, the scheduler connects to an external
@@ -947,7 +1110,7 @@ fn main() -> Result<()> {
     let auxpow_scheduler: Arc<AuxPowScheduler> = {
         let sched = Arc::new(AuxPowScheduler::from_env());
         if sched.is_enabled_sync() {
-            println!("auxpow: scheduler enabled, spawning background task");
+            info!("auxpow: scheduler enabled, spawning background task");
             let auxpow_runtime = tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .thread_name("auxpow")
@@ -960,7 +1123,7 @@ fn main() -> Result<()> {
             // should never be dropped (which would cancel all auxpow tasks).
             std::mem::forget(auxpow_runtime);
         } else {
-            println!("auxpow: disabled (set ZION_AUXPOW_ENABLED=1 to enable)");
+            info!("auxpow: disabled (set ZION_AUXPOW_ENABLED=1 to enable)");
         }
         sched
     };
@@ -1002,7 +1165,7 @@ fn main() -> Result<()> {
             }
         }
 
-        println!(
+        info!(
             "multi_bridge: enabled coins={:?} ({} bridges will be started)",
             coins_to_start.iter().map(|c| c.ticker()).collect::<Vec<_>>(),
             coins_to_start.len(),
@@ -1039,7 +1202,7 @@ fn main() -> Result<()> {
             };
 
             let (bridge, share_rx, pearl_rx) = AuxPowBridge::new(true);
-            println!(
+            info!(
                 "multi_bridge: starting coin={} algo={} wallet={}..",
                 coin.ticker(),
                 coin.algorithm(),
@@ -1057,7 +1220,7 @@ fn main() -> Result<()> {
                 {
                     Ok(rt) => rt,
                     Err(e) => {
-                        eprintln!("multi_bridge_rt_error coin={}: {e}", coin_ticker);
+                        error!("multi_bridge_rt_error coin={}: {e}", coin_ticker);
                         return;
                     }
                 };
@@ -1067,13 +1230,13 @@ fn main() -> Result<()> {
             multi_bridge.insert(coin, bridge);
         }
 
-        println!(
+        info!(
             "multi_bridge: {} bridges started, cpu_coins={:?}",
             multi_bridge.enabled_coins().len(),
             multi_bridge.cpu_coins.iter().map(|c| c.ticker()).collect::<Vec<_>>(),
         );
     } else {
-        println!("multi_bridge: disabled (set ZION_POOL_AUXPOW_ENABLED=1 to enable)");
+        info!("multi_bridge: disabled (set ZION_POOL_AUXPOW_ENABLED=1 to enable)");
     }
 
     // ── Pool-side profit switcher (startup log) ───────────────────────
@@ -1085,7 +1248,7 @@ fn main() -> Result<()> {
             .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(300);
         let hysteresis: f64 = std::env::var("ZION_POOL_PROFIT_HYSTERESIS")
             .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(15.0);
-        println!(
+        info!(
             "pool_profit_switch: enabled interval={}s hysteresis={}%",
             interval, hysteresis,
         );
@@ -1119,7 +1282,7 @@ fn main() -> Result<()> {
     let gpu_coin_override: CoinOverrideArc = Arc::new(Mutex::new(None));
 
     if let Some(metrics_bind) = config.routing_metrics_bind.as_deref() {
-        println!("routing_metrics_bind={metrics_bind}");
+        info!("routing_metrics_bind={metrics_bind}");
         let routing_stats = Arc::clone(&routing_stats);
         let miner_telemetry_ref = Arc::clone(&miner_telemetry);
         let active_sessions_ref = Arc::clone(&active_sessions);
@@ -1129,6 +1292,7 @@ fn main() -> Result<()> {
         let profit_switch_ref = Arc::clone(&profit_switch_state);
         let cpu_coin_override_ref = Arc::clone(&cpu_coin_override);
         let gpu_coin_override_ref = Arc::clone(&gpu_coin_override);
+        let block_tracker_metrics_ref = Arc::clone(&block_tracker);
         let metrics_bind = metrics_bind.to_string();
         thread::spawn(move || {
             if let Err(error) = serve_routing_metrics(
@@ -1143,8 +1307,9 @@ fn main() -> Result<()> {
                 profit_switch_ref,
                 cpu_coin_override_ref,
                 gpu_coin_override_ref,
+                block_tracker_metrics_ref,
             ) {
-                eprintln!("routing_metrics_error={error:#}");
+                error!("routing_metrics_error={error:#}");
             }
         });
     }
@@ -1161,24 +1326,97 @@ fn main() -> Result<()> {
     if !pplns_state_path.is_empty() {
         let pplns_ref = Arc::clone(&pplns_engine);
         let state_path = pplns_state_path.clone();
-        let save_interval_s = parse_env_u64("ZION_PPLNS_SAVE_INTERVAL_S", 10).unwrap_or(10);
-        println!(
+        let save_interval_s = parse_env_u64("ZION_PPLNS_SAVE_INTERVAL_S", 5).unwrap_or(5);
+        info!(
             "pplns_persistence: periodic save every {}s to {}",
             save_interval_s, state_path
         );
+        // F1.3: force-save flag — set by block-found path so PPLNS state is
+        // persisted immediately after a block is found (not up to 5s later).
+        let force_save_persistence = Arc::clone(&force_save);
         thread::spawn(move || loop {
             thread::sleep(Duration::from_secs(save_interval_s));
             // Hold the lock only long enough to check dirty + snapshot.
             let snapshot = {
                 let mut pplns = pplns_ref.lock().expect("pplns lock poisoned");
-                if !pplns.take_dirty() {
+                let forced = force_save_persistence.swap(false, Ordering::SeqCst);
+                if !pplns.take_dirty() && !forced {
                     continue; // no changes since last save — skip I/O
                 }
                 pplns.snapshot()
             };
             // Serialize + write outside the lock.
             if let Err(e) = PplnsEngine::write_snapshot_to_path(&snapshot, &state_path) {
-                eprintln!("pplns_persistence: save failed to {}: {}", state_path, e);
+                error!("pplns_persistence: save failed to {}: {}", state_path, e);
+            }
+        });
+    }
+
+    // ── F1.5: Orphan block monitoring thread ─────────────────────────
+    // Polls the node RPC to check if recently-found blocks are still in
+    // the active chain.  A block is considered confirmed after
+    // ZION_POOL_ORPHAN_CONFIRMATIONS (default 10) blocks are built on top
+    // of it.  If the chain tip advances past height+confirmations but the
+    // block is not found at its height, it is marked as orphaned.
+    {
+        let bt_ref = Arc::clone(&block_tracker);
+        let rpc_addr = config.node_rpc_addr.clone();
+        let confirmations: u64 = parse_env_u64("ZION_POOL_ORPHAN_CONFIRMATIONS", 10).unwrap_or(10);
+        let poll_interval_s = parse_env_u64("ZION_POOL_ORPHAN_POLL_SECS", 30).unwrap_or(30);
+        info!(
+            "orphan_monitor: enabled confirmations={} poll={}s rpc={:?}",
+            confirmations, poll_interval_s, rpc_addr
+        );
+        thread::spawn(move || loop {
+            thread::sleep(Duration::from_secs(poll_interval_s));
+            let rpc_str = match rpc_addr.as_deref() {
+                Some(s) if !s.is_empty() => s,
+                _ => continue, // no RPC configured — skip
+            };
+            // Collect pending block heights to check.
+            let pending: Vec<u64> = {
+                let bt = bt_ref.lock().expect("block tracker lock poisoned");
+                bt.pending_blocks().iter().map(|b| b.height).collect()
+            };
+            if pending.is_empty() {
+                continue;
+            }
+            // Get current chain height.
+            let chain_height = match get_chain_height(rpc_str) {
+                Ok(h) => h,
+                Err(e) => {
+                    debug!("orphan_monitor: get_chain_height failed: {e:#}");
+                    continue;
+                }
+            };
+            for height in pending {
+                // Wait for confirmations before checking.
+                if chain_height < height.saturating_add(confirmations) {
+                    continue;
+                }
+                // Check if the block at this height still exists in the chain.
+                let exists = match rpc_single_call(
+                    rpc_str,
+                    "getBlockByHeight",
+                    serde_json::json!({ "height": height }),
+                ) {
+                    Ok(resp) => resp.get("hash_hex").is_some(),
+                    Err(_) => false, // pruned or orphaned
+                };
+                if exists {
+                    if let Ok(mut bt) = bt_ref.lock() {
+                        bt.resolve_block(height, false, chain_height);
+                    }
+                    info!("block_confirmed height={} chain_height={}", height, chain_height);
+                } else {
+                    if let Ok(mut bt) = bt_ref.lock() {
+                        bt.resolve_block(height, true, chain_height);
+                    }
+                    warn!(
+                        "block_orphaned height={} chain_height={} — payout may be invalid",
+                        height, chain_height
+                    );
+                }
             }
         });
     }
@@ -1199,7 +1437,7 @@ fn main() -> Result<()> {
         if profit_cfg.enabled {
             let interval = profit_cfg.interval_secs;
             let cfg_clone = profit_cfg.clone();
-            println!(
+            info!(
                 "stream_profit_enabled provider={} interval={}s hysteresis={}%",
                 profit_cfg.api_provider, interval, profit_cfg.hysteresis_pct
             );
@@ -1216,7 +1454,7 @@ fn main() -> Result<()> {
                 }
             });
         } else {
-            println!("stream_profit_disabled (set ZION_STREAM_PROFIT_SWITCH=true to enable)");
+            info!("stream_profit_disabled (set ZION_STREAM_PROFIT_SWITCH=true to enable)");
         }
     }
 
@@ -1240,7 +1478,7 @@ fn main() -> Result<()> {
                     let heartbeat = NclHeartbeatConfig::from_env();
                     let queue_capacity =
                         parse_env_u64("ZION_NCL_QUEUE_SIZE", 256).unwrap_or(256) as usize;
-                    println!(
+                    info!(
                         "ncl_gateway_enabled url={} heartbeat={} interval_secs={} \
                          price_in_per_1k={} price_out_per_1k={}",
                         client.authority(),
@@ -1256,7 +1494,7 @@ fn main() -> Result<()> {
                         {
                             Ok(rt) => rt,
                             Err(e) => {
-                                eprintln!("ncl_gateway_rt_error: {e}");
+                                error!("ncl_gateway_rt_error: {e}");
                                 return;
                             }
                         };
@@ -1270,19 +1508,19 @@ fn main() -> Result<()> {
                     });
                 }
                 Err(e) => {
-                    eprintln!("ncl_gateway_config_error url={} error={}", gateway_url, e);
+                    error!("ncl_gateway_config_error url={} error={}", gateway_url, e);
                 }
             }
         }
     } else {
-        println!("ncl_gateway_enabled=false (set ZION_NCL_GATEWAY_URL to enable)");
+        info!("ncl_gateway_enabled=false (set ZION_NCL_GATEWAY_URL to enable)");
     }
 
     {
         let scheduler = revenue_scheduler
             .lock()
             .expect("revenue scheduler lock poisoned");
-        println!(
+        info!(
             "revenue_mode={} lanes={} plan={} backend_auto_include_zion={}",
             if scheduler.multistream_enabled {
                 "multistream"
@@ -1299,7 +1537,7 @@ fn main() -> Result<()> {
     {
         let shutdown = Arc::clone(&shutdown);
         ctrlc::set_handler(move || {
-            println!("shutdown_signal_received");
+            info!("shutdown_signal_received");
             shutdown.store(true, Ordering::SeqCst);
         })
         .context("failed to set ctrl-c handler")?;
@@ -1322,7 +1560,7 @@ fn main() -> Result<()> {
         let max_retries = parse_env_u64("ZION_PAYOUT_MAX_RETRIES", 300).unwrap_or(300) as u32;
         let retry_interval_ms =
             parse_env_u64("ZION_PAYOUT_RETRY_INTERVAL_MS", 2000).unwrap_or(2000);
-        println!(
+        info!(
             "deferred_payout_processor: enabled max_retries={} interval_ms={}",
             max_retries, retry_interval_ms
         );
@@ -1347,7 +1585,7 @@ fn main() -> Result<()> {
                 // Permanent failure — rollback PPLNS balances.
                 let mut pplns = pplns_ref.lock().expect("pplns lock poisoned");
                 pplns.rollback_payouts(&payouts);
-                println!(
+                info!(
                     "payout_deferred_giveup height={} miners={} reason=max_retries_exceeded",
                     height,
                     payouts.len()
@@ -1361,7 +1599,7 @@ fn main() -> Result<()> {
             let (rpc, wallet, key) = match (&node_rpc, &pool_wallet, &signing_key) {
                 (Some(r), Some(w), Some(k)) => (r, w, k),
                 _ => {
-                    println!(
+                    info!(
                         "payout_deferred_skip height={} reason=missing_credentials",
                         height
                     );
@@ -1377,7 +1615,7 @@ fn main() -> Result<()> {
             for p in &payouts {
                 match check_payout_in_recent_blocks(rpc, wallet, &p.address, p.amount, 200) {
                     Ok(Some(tx_id)) => {
-                        println!(
+                        info!(
                             "payout_deferred_already_paid height={} miner={} tx_id={} (skipping retry)",
                             height, p.miner_id, &tx_id[..tx_id.len().min(20)],
                         );
@@ -1419,7 +1657,7 @@ fn main() -> Result<()> {
 
             match execute_pool_payout(rpc, wallet, key, &payouts, height) {
                 Ok(outcome) => {
-                    println!(
+                    info!(
                         "payout_deferred_success height={} executed={} deferred={} tx_id={} retry={}",
                         height,
                         outcome.executed.len(),
@@ -1453,7 +1691,7 @@ fn main() -> Result<()> {
                     let err_str = format!("{e}");
                     // Only log every 10th retry to avoid spam.
                     if retry % 10 == 0 || retry <= 3 {
-                        println!(
+                        info!(
                             "payout_deferred_retry height={} miners={} retry={} error={}",
                             height,
                             payouts.len(),
@@ -1479,7 +1717,7 @@ fn main() -> Result<()> {
         let pool_wallet = config.pool_wallet_address.clone();
         let sweep_interval_secs =
             parse_env_u64("ZION_PAYOUT_SWEEP_INTERVAL_SECS", 30).unwrap_or(30);
-        println!(
+        info!(
             "payout_confirmation_sweep: enabled interval_secs={}",
             sweep_interval_secs
         );
@@ -1510,7 +1748,7 @@ fn main() -> Result<()> {
                     }
                 }
                 if confirmed_count > 0 {
-                    println!(
+                    info!(
                         "payout_confirmed_sweep confirmed={} remaining_submitted={}",
                         confirmed_count,
                         submitted.len() - confirmed_count as usize,
@@ -1550,7 +1788,7 @@ fn main() -> Result<()> {
                                 telemetry_ref.lock().expect("telemetry lock poisoned");
                             telemetry.confirm_failed_payout(miner_id, *height, *amount, &tx_id);
                             recovered_count += 1;
-                            println!(
+                            info!(
                                 "payout_recovered height={} miner={} tx_id={} (was submit_failed, found on chain)",
                                 height, miner_id, &tx_id[..tx_id.len().min(20)],
                             );
@@ -1559,7 +1797,7 @@ fn main() -> Result<()> {
                     }
                 }
                 if recovered_count > 0 {
-                    println!(
+                    info!(
                         "payout_failed_sweep recovered={} remaining_failed={}",
                         recovered_count,
                         failed_payouts.len() - recovered_count as usize,
@@ -1590,13 +1828,13 @@ fn main() -> Result<()> {
             handles.retain(|h: &thread::JoinHandle<Result<(), anyhow::Error>>| !h.is_finished());
         }
         if shutdown.load(Ordering::SeqCst) {
-            println!("shutdown_draining clients={}", handles.len());
+            info!("shutdown_draining active_sessions={}", handles.len());
             // Final PPLNS state save before exit.
             if !pplns_state_path.is_empty() {
                 let pplns = pplns_engine.lock().expect("pplns lock poisoned");
                 match pplns.save_to_path(&pplns_state_path) {
-                    Ok(()) => println!("pplns_persistence: final save OK to {}", pplns_state_path),
-                    Err(e) => eprintln!(
+                    Ok(()) => info!("pplns_persistence: final save OK to {}", pplns_state_path),
+                    Err(e) => warn!(
                         "pplns_persistence: final save FAILED to {}: {}",
                         pplns_state_path, e
                     ),
@@ -1634,7 +1872,7 @@ fn main() -> Result<()> {
             if let Some(banned_at) = bans.get(&peer_ip) {
                 let elapsed = banned_at.elapsed().as_secs();
                 if elapsed < config.no_solution_reconnect_cooldown_secs {
-                    println!(
+                    info!(
                         "no_solution_banned_reject ip={peer_ip} elapsed={elapsed}s cooldown={}s",
                         config.no_solution_reconnect_cooldown_secs
                     );
@@ -1649,7 +1887,7 @@ fn main() -> Result<()> {
             let mut sessions = ip_sessions.lock().expect("ip_sessions lock");
             let ip_count = sessions.entry(peer_ip).or_insert(0);
             if config.max_sessions_per_ip > 0 && *ip_count >= config.max_sessions_per_ip {
-                println!("rate_limit_reject ip={peer_ip} sessions={ip_count}");
+                info!("rate_limit_reject ip={peer_ip} sessions={ip_count}");
                 drop(stream);
                 continue;
             }
@@ -1657,7 +1895,7 @@ fn main() -> Result<()> {
         }
         let ip_guard = IpSessionGuard(Arc::clone(&ip_sessions), peer_ip);
 
-        println!("peer_addr={peer_addr}");
+        info!("peer_addr={peer_addr}");
         let pool = Arc::clone(&pool);
         let revenue_scheduler = Arc::clone(&revenue_scheduler);
         let routing_stats = Arc::clone(&routing_stats);
@@ -1674,6 +1912,8 @@ fn main() -> Result<()> {
         let profit_switch_ref = Arc::clone(&profit_switch_state);
         let cpu_coin_override_ref = Arc::clone(&cpu_coin_override);
         let gpu_coin_override_ref = Arc::clone(&gpu_coin_override);
+        let force_save_ref = Arc::clone(&force_save);
+        let block_tracker_ref = Arc::clone(&block_tracker);
         handles.push(thread::spawn(move || {
             let _ip_guard = ip_guard;
             handle_client(
@@ -1695,24 +1935,63 @@ fn main() -> Result<()> {
                 profit_switch_ref,
                 cpu_coin_override_ref,
                 gpu_coin_override_ref,
+                force_save_ref,
+                block_tracker_ref,
             )
         }));
         accepted = accepted.saturating_add(1);
     }
 
+    // F1.7: Graceful session drain with 30s timeout.
+    // Wait for active sessions to finish naturally, but don't block forever
+    // if a session is stuck (e.g. miner hung, network issue).  After the
+    // timeout, log remaining sessions and exit — the OS will clean up
+    // the threads when the process exits.
+    let drain_timeout = Duration::from_secs(
+        parse_env_u64("ZION_POOL_DRAIN_TIMEOUT_S", 30).unwrap_or(30),
+    );
+    let drain_started = Instant::now();
+    let mut drained = 0u32;
+    let mut remaining = handles.len();
     for handle in handles {
-        match handle.join() {
-            Ok(Ok(())) => {}
-            Ok(Err(e)) => println!("session_ended_with_error err={e:#}"),
-            Err(_) => println!("session_ended_with_panic"),
+        remaining -= 1;
+        let time_left = drain_timeout.saturating_sub(drain_started.elapsed());
+        if time_left == Duration::ZERO {
+            info!(
+                "shutdown_drain_timeout reached, {} sessions still active — exiting",
+                remaining + 1
+            );
+            break;
         }
+        // Join with a timeout by polling is_finished in a busy loop.
+        // (JoinHandle::join doesn't support timeout directly.)
+        let joined = loop {
+            if handle.is_finished() {
+                match handle.join() {
+                    Ok(Ok(())) => {}
+                    Ok(Err(e)) => info!("session_ended_with_error err={e:#}"),
+                    Err(_) => info!("session_ended_with_panic"),
+                }
+                break true;
+            }
+            if drain_started.elapsed() >= drain_timeout {
+                break false;
+            }
+            thread::sleep(Duration::from_millis(100));
+        };
+        if joined {
+            drained += 1;
+        }
+    }
+    if drained > 0 {
+        info!("shutdown_drain_complete drained={} timeout_ms={}", drained, drain_timeout.as_millis());
     }
     {
         let snapshot = routing_stats
             .lock()
             .expect("routing stats lock poisoned")
             .snapshot_line();
-        println!("routing_final {snapshot}");
+        info!("routing_final {snapshot}");
     }
     Ok(())
 }
@@ -1959,7 +2238,7 @@ fn issue_zion_job(
                 .get_or_fetch(node_rpc_addr)?;
             if template.height != *last_template_height {
                 if *last_template_height > 0 {
-                    println!(
+                    info!(
                         "template_advanced prev_height={} new_height={} miner={}",
                         *last_template_height, template.height, worker_name
                     );
@@ -2077,7 +2356,7 @@ fn handle_external_share(
     match multi_bridge.forward_for_coin(&external_job.external_coin, forward_req) {
         Some(outcome) => match outcome.result {
             ShareForwardResult::Accepted => {
-                println!(
+                info!(
                     "auxpow_share_accepted miner={} job={} coin={} elapsed_ms={}",
                     worker_name, job_id, external_job.external_coin, outcome.elapsed_ms
                 );
@@ -2087,7 +2366,7 @@ fn handle_external_share(
                 }
             }
             ShareForwardResult::Rejected(ref reason) => {
-                println!(
+                info!(
                     "auxpow_share_rejected miner={} job={} coin={} reason={}",
                     worker_name, job_id, external_job.external_coin, reason
                 );
@@ -2101,7 +2380,7 @@ fn handle_external_share(
                 sealed_block: None,
             },
             ShareForwardResult::Unknown | ShareForwardResult::NotConnected => {
-                println!(
+                info!(
                     "auxpow_share_unknown miner={} job={} coin={} result={:?}",
                     worker_name, job_id, external_job.external_coin, outcome.result
                 );
@@ -2112,7 +2391,7 @@ fn handle_external_share(
             }
         },
         None => {
-            println!(
+            info!(
                 "auxpow_share_forward_failed miner={} job={} coin={}",
                 worker_name, job_id, external_job.external_coin
             );
@@ -2144,6 +2423,8 @@ fn handle_client(
     profit_switch_state: PoolProfitSwitchStateArc,
     cpu_coin_override: CoinOverrideArc,
     gpu_coin_override: CoinOverrideArc,
+    force_save: Arc<AtomicBool>,
+    block_tracker: BlockTrackerArc,
 ) -> Result<()> {
     let session_started = Instant::now();
     let session_id = session_id_counter.fetch_add(1, Ordering::Relaxed);
@@ -2208,8 +2489,8 @@ fn handle_client(
     active_sessions.fetch_add(1, Ordering::Relaxed);
     let session_count = active_sessions.load(Ordering::Relaxed);
     let _guard = SessionGuard(Arc::clone(&active_sessions));
-    println!("session_start active_sessions={session_count} session_id={session_id}");
-    println!("wire_hello={}", hello_line);
+    info!("session_start active_sessions={session_count} session_id={session_id}");
+    info!("wire_hello={}", hello_line);
 
     // ── Inter-pool ShareRelay (Edge → Core) ─────────────────────────────
     // If the first message is a ShareRelay, record it in PPLNS and close.
@@ -2224,7 +2505,7 @@ fn handle_client(
         let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
         let relay_key = format!("{miner_id}/{worker_name}");
         pplns.record_share_with_diff(&relay_key, worker_name, *height, *difficulty);
-        println!(
+        info!(
             "share_relay_accepted miner={} worker={} height={} diff={} origin={}",
             miner_id, worker_name, height, difficulty, relay_origin
         );
@@ -2270,7 +2551,7 @@ fn handle_client(
     } else {
         requested_group
     };
-    println!(
+    info!(
         "session_group_requested={} session_group={} miner_id={} worker_name={}",
         session_group_name(requested_group),
         session_group_name(session_group),
@@ -2313,7 +2594,7 @@ fn handle_client(
         job_ttl_ms: config.job_ttl_ms,
     };
     let welcome_line = write_wire_message(&mut writer, &welcome_message)?;
-    println!("wire_welcome={welcome_line}");
+    info!("wire_welcome={welcome_line}");
 
     // ── Revenue proxy redirect ──────────────────────────────────────────
     // If the miner was assigned to Revenue (or Auto→Revenue) and a proxy
@@ -2335,7 +2616,7 @@ fn handle_client(
                     algorithm,
                 };
                 let redirect_line = write_wire_message(&mut writer, &redirect)?;
-                println!("wire_proxy_redirect={redirect_line}");
+                info!("wire_proxy_redirect={redirect_line}");
             }
         }
     }
@@ -2349,7 +2630,7 @@ fn handle_client(
             target_hex: to_hex(&vardiff.share_target().bytes),
         };
         let sd_line = write_wire_message(&mut writer, &sd_msg)?;
-        println!("wire_set_difficulty={sd_line}");
+        info!("wire_set_difficulty={sd_line}");
     }
 
     let mut last_template_height: u64 = 0;
@@ -2371,8 +2652,8 @@ fn handle_client(
                 .cancel_message(stale_job_id, "stale-ttl-expired");
             let stale_line = write_wire_message(&mut writer, &stale_message)?;
             let cancel_line = write_wire_message(&mut writer, &cancel_message)?;
-            println!("wire_stale={stale_line}");
-            println!("wire_cancel={cancel_line}");
+            info!("wire_stale={stale_line}");
+            info!("wire_cancel={cancel_line}");
         }
 
         // ── Decide whether to issue a ZION or an external AuxPow job ──────
@@ -2429,7 +2710,7 @@ fn handle_client(
                         let profit = gpu_estimates.iter()
                             .find(|e| e.coin == best)
                             .map(|e| e.profit_per_day_usd()).unwrap_or(0.0);
-                        println!(
+                        info!(
                             "pool_profit_switch: GPU {:?} → {} profit=${:.4}/day",
                             pool_profit_best_gpu, new_aux, profit,
                         );
@@ -2446,7 +2727,7 @@ fn handle_client(
                         let profit = cpu_estimates.iter()
                             .find(|e| e.coin == best)
                             .map(|e| e.profit_per_day_usd()).unwrap_or(0.0);
-                        println!(
+                        info!(
                             "pool_profit_switch: CPU {:?} → {} profit=${:.4}/day",
                             pool_profit_best_cpu, new_aux, profit,
                         );
@@ -2551,7 +2832,7 @@ fn handle_client(
                     let ext_header_hex = to_hex(&ext_job.header_bytes);
                     let ext_extranonce1_hex = to_hex(&ext_job.extranonce1);
                     let ext_protocol = ext_job.external_coin.protocol_name().to_string();
-                    println!(
+                    info!(
                         "parallel_stream_embedded miner={} coin={} algo={} ext_job_id={} height={}",
                         worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height
                     );
@@ -2643,7 +2924,7 @@ fn handle_client(
                     let ext_header_hex = to_hex(&ext_job.header_bytes);
                     let ext_extranonce1_hex = to_hex(&ext_job.extranonce1);
                     let ext_protocol = ext_job.external_coin.protocol_name().to_string();
-                    println!(
+                    info!(
                         "parallel_stream_cpu_embedded miner={} coin={} algo={} ext_job_id={} height={} ext_target_hex={:.64}",
                         worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height, ext_target_hex
                     );
@@ -2732,7 +3013,7 @@ fn handle_client(
                 WorkAssignment::External(j) => j.external_coin.ticker().to_string(),
                 _ => "unknown".to_string(),
             };
-            println!(
+            info!(
                 "issued_external_job miner={} job_id={} coin={} algorithm={} height={}",
                 worker_name,
                 assignment.job_id(),
@@ -2782,7 +3063,7 @@ fn handle_client(
                         if is_timeout {
                             // Break the inner loop — the outer loop will issue
                             // a new job with the latest external stream.
-                            println!("job_refresh_timeout miner={} — sending new job with latest external stream", worker_name);
+                            info!("job_refresh_timeout miner={} — sending new job with latest external stream", worker_name);
                             break;
                         }
                         // Non-timeout error — propagate (session ends)
@@ -2802,7 +3083,7 @@ fn handle_client(
                         extranonce1_hex: _,
                     } => {
                         // Forward external share to upstream pool via the bridge
-                        println!(
+                        info!(
                             "external_share_received miner={} coin={} job_id={} nonce={}",
                             sub_miner_id, coin, external_job_id, nonce
                         );
@@ -2819,7 +3100,7 @@ fn handle_client(
                             .unwrap_or_default();
                         if let Some(latest_job_id) = valid_job_ids.first() {
                             if latest_job_id != &external_job_id {
-                                println!(
+                                info!(
                                     "external_share_stale miner={} coin={} share_job_id={} latest_job_id={} — rejecting locally",
                                     sub_miner_id, coin, external_job_id, latest_job_id
                                 );
@@ -2935,7 +3216,7 @@ fn handle_client(
                             coin: coin.clone(),
                         };
                         let _ = write_wire_message(&mut writer, &ext_result);
-                        println!(
+                        info!(
                             "external_share_result miner={} coin={} accepted={} status={}",
                             sub_miner_id, coin, accepted, status
                         );
@@ -2967,7 +3248,7 @@ fn handle_client(
                             let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
                             let should_log = stats.record(session_group, ext_source, accepted);
                             if should_log {
-                                println!("routing_snapshot {}", stats.snapshot_line());
+                                info!("routing_snapshot {}", stats.snapshot_line());
                             }
                         }
                         // Per-stream telemetry for external shares
@@ -2996,7 +3277,7 @@ fn handle_client(
                         mining_job_b64: _,
                     } => {
                         // Forward Pearl PoUW proof to AlphaPool via the bridge
-                        println!(
+                        info!(
                             "pearl_proof_received miner={} coin={} job_id={} proof_b64_len={}",
                             sub_miner_id, coin, external_job_id, plain_proof_b64.len()
                         );
@@ -3032,7 +3313,7 @@ fn handle_client(
                             coin: coin.clone(),
                         };
                         let _ = write_wire_message(&mut writer, &ext_result);
-                        println!(
+                        info!(
                             "pearl_proof_result miner={} coin={} accepted={} status={}",
                             sub_miner_id, coin, accepted, status
                         );
@@ -3045,7 +3326,7 @@ fn handle_client(
                                 accepted,
                             );
                             if should_log {
-                                println!("routing_snapshot {}", stats.snapshot_line());
+                                info!("routing_snapshot {}", stats.snapshot_line());
                             }
                         }
                     }
@@ -3063,7 +3344,7 @@ fn handle_client(
                     } => {
                         // Autonomous miner coin preference — log and store for
                         // use when constructing the next Job's external_stream.
-                        println!(
+                        info!(
                             "coin_preference_received miner={} gpu_coin={} cpu_coin={} gpu_profit={:.2}/day cpu_profit={:.2}/day",
                             pref_miner_id, gpu_coin, cpu_coin, gpu_profit_usd_day, cpu_profit_usd_day
                         );
@@ -3104,7 +3385,7 @@ fn handle_client(
                 mix_hash_hex,
             } => {
                 if submit_miner_id != miner_id || submit_worker_name != worker_name {
-                    println!(
+                    info!(
                         "submit_identity_mismatch session={}/{} submit={}/{}; using session identity",
                         miner_id, worker_name, submit_miner_id, submit_worker_name
                     );
@@ -3220,12 +3501,12 @@ fn handle_client(
                             relay_origin: config.bind_addr.clone(),
                         };
                         if let Err(e) = relay_share_fire_and_forget(upstream, &relay) {
-                            println!(
+                            info!(
                                 "share_relay_failed miner={} upstream={} err={}",
                                 worker_name, upstream, e
                             );
                         } else {
-                            println!(
+                            info!(
                                 "share_relayed miner={} upstream={} diff={}",
                                 worker_name, upstream, share_difficulty
                             );
@@ -3250,7 +3531,7 @@ fn handle_client(
                                 target_hex: to_hex(&vardiff.share_target().bytes),
                             };
                             let diff_line = write_wire_message(&mut writer, &set_diff_msg)?;
-                            println!("wire_set_difficulty={diff_line}");
+                            info!("wire_set_difficulty={diff_line}");
                         }
                     }
 
@@ -3273,7 +3554,7 @@ fn handle_client(
                         )
                     } else if network_target.allows(target_hash) {
                         // Block found! Submit to the node.
-                        println!(
+                        info!(
                             "BLOCK_FOUND miner={} height={} nonce={} hash={}",
                             worker_name, job_height, nonce, hash_hex
                         );
@@ -3289,7 +3570,7 @@ fn handle_client(
                                 match submit_candidate_to_node(addr, mining_job, nonce, job_algorithm)
                                 {
                                     Ok(RpcResponse::SubmitResult { accepted: true, .. }) => {
-                                        println!(
+                                        info!(
                                             "node_accepted_block height={} nonce={}",
                                             job_height, nonce
                                         );
@@ -3300,7 +3581,7 @@ fn handle_client(
                                         reason,
                                         ..
                                     }) => {
-                                        println!(
+                                        info!(
                                             "node_rejected_block height={} nonce={} reason={}",
                                             job_height,
                                             nonce,
@@ -3309,11 +3590,11 @@ fn handle_client(
                                         map_node_rejection(reason.as_deref())
                                     }
                                     Ok(other) => {
-                                        println!("node_rpc_unexpected={other:?}");
+                                        info!("node_rpc_unexpected={other:?}");
                                         ShareStatus::UpstreamRejected
                                     }
                                     Err(error) => {
-                                        println!("node_rpc_error={error:#}");
+                                        error!("node_rpc_error={error:#}");
                                         ShareStatus::UpstreamRejected
                                     }
                                 }
@@ -3411,6 +3692,15 @@ fn handle_client(
                         }
                     }
 
+                    // F1.6: count accepted ZION shares for pool luck calc.
+                    // External shares (ZANO/VRSC) are NOT counted — only ZION
+                    // shares contribute to ZION block-finding luck.
+                    if matches!(decision.status, ShareStatus::Accepted) && !assignment.is_external() {
+                        if let Ok(mut bt) = block_tracker.lock() {
+                            bt.record_share();
+                        }
+                    }
+
                     // Record external revenue when an external share is accepted
                     // by the upstream pool.  This feeds the revenue collector and
                     // dashboard with per-coin external mining income.
@@ -3430,7 +3720,7 @@ fn handle_client(
                                     est_usd,
                                     Some(ext_job.external_coin.ticker()),
                                 );
-                            println!(
+                            info!(
                                 "auxpow_revenue_recorded coin={} source={:?} est_usd={:.4}",
                                 ext_job.external_coin, ext_source, est_usd
                             );
@@ -3482,7 +3772,7 @@ fn handle_client(
                     ));
                 }
                 if submit_miner_id != miner_id || submit_worker_name != worker_name {
-                    println!(
+                    info!(
                         "no_solution_identity_mismatch session={}/{} submit={}/{}; using session identity",
                         miner_id, worker_name, submit_miner_id, submit_worker_name
                     );
@@ -3526,6 +3816,34 @@ fn handle_client(
                         let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
                         let block_key = format!("{miner_id}/{worker_name}");
                         pplns.record_block_found(&block_key);
+                    }
+                    // F1.3: force immediate PPLNS save so block-found state
+                    // (payout distribution, block counter) survives a crash
+                    // that happens within the 5s save window.
+                    force_save.store(true, Ordering::SeqCst);
+                    // F1.5/F1.6: record block in tracker for orphan monitoring
+                    // and pool luck calculation.  Fetch network difficulty from
+                    // the node (best-effort — 0 if unavailable, luck calc skipped).
+                    {
+                        let net_diff = config.node_rpc_addr
+                            .as_deref()
+                            .filter(|s| !s.is_empty())
+                            .map(get_chain_difficulty)
+                            .unwrap_or(0);
+                        if let Ok(mut bt) = block_tracker.lock() {
+                            bt.record_block_found(
+                                job_height,
+                                &miner_id,
+                                &worker_name,
+                                share_difficulty,
+                                net_diff,
+                                true, // node_accepted — block was accepted by node
+                            );
+                        }
+                        info!(
+                            "block_recorded height={} miner={}/{} share_diff={} net_diff={}",
+                            job_height, miner_id, worker_name, share_difficulty, net_diff
+                        );
                     }
                     let payouts = {
                         if job_height > 0 {
@@ -3584,7 +3902,7 @@ fn handle_client(
                     }
                     let should_log = stats.record(session_group, routed_source, accepted);
                     if should_log {
-                        println!("routing_snapshot {}", stats.snapshot_line());
+                        info!("routing_snapshot {}", stats.snapshot_line());
                     }
                 }
                 {
@@ -3613,8 +3931,8 @@ fn handle_client(
                         .cancel_message(current_job_id, "submit-arrived-after-ttl");
                     let stale_line = write_wire_message(&mut writer, &stale_message)?;
                     let cancel_line = write_wire_message(&mut writer, &cancel_message)?;
-                    println!("wire_stale={stale_line}");
-                    println!("wire_cancel={cancel_line}");
+                    info!("wire_stale={stale_line}");
+                    info!("wire_cancel={cancel_line}");
                 }
 
                 let result_message = pool
@@ -3651,7 +3969,7 @@ fn handle_client(
                 if config.max_consecutive_no_solution > 0
                     && consecutive_no_solution >= config.max_consecutive_no_solution
                 {
-                    println!(
+                    info!(
                         "no_solution_limit_exceeded miner={miner_id} worker={worker_name} count={consecutive_no_solution}; disconnecting"
                     );
                     if config.no_solution_reconnect_cooldown_secs > 0 {
@@ -3659,7 +3977,7 @@ fn handle_client(
                             .lock()
                             .expect("banned_ips lock poisoned");
                         bans.insert(peer_ip, Instant::now());
-                        println!(
+                        info!(
                             "no_solution_ban ip={peer_ip} cooldown={}s",
                             config.no_solution_reconnect_cooldown_secs
                         );
@@ -3678,10 +3996,10 @@ fn handle_client(
     let bye_message = pool.lock().expect("pool lock poisoned").bye_message();
     let bye_line = write_wire_message(&mut writer, &bye_message)?;
     let session_elapsed_secs = session_started.elapsed().as_secs();
-    println!("session_miner_id={miner_id}");
-    println!("session_worker_name={worker_name}");
-    println!("session_duration_secs={session_elapsed_secs}");
-    println!("wire_bye={bye_line}");
+    info!("session_miner_id={miner_id}");
+    info!("session_worker_name={worker_name}");
+    info!("session_duration_secs={session_elapsed_secs}");
+    info!("wire_bye={bye_line}");
     Ok(())
 }
 
@@ -5186,7 +5504,7 @@ impl RevenueScheduler {
         let old_desc = self.stream_weights.describe();
         let new_desc = new_weights.describe();
         if old_desc != new_desc {
-            println!("stream_weights_update old=[{}] new=[{}]", old_desc, new_desc);
+            info!("stream_weights_update old=[{}] new=[{}]", old_desc, new_desc);
         }
 
         self.stream_weights = new_weights;
@@ -5504,6 +5822,7 @@ fn serve_routing_metrics(
     profit_switch_state: PoolProfitSwitchStateArc,
     cpu_coin_override: CoinOverrideArc,
     gpu_coin_override: CoinOverrideArc,
+    block_tracker: BlockTrackerArc,
 ) -> Result<()> {
     let listener = TcpListener::bind(bind_addr)
         .with_context(|| format!("failed to bind routing metrics listener on {bind_addr}"))?;
@@ -5512,7 +5831,7 @@ fn serve_routing_metrics(
         let mut stream = match stream {
             Ok(stream) => stream,
             Err(error) => {
-                eprintln!("routing_metrics_accept_error={error}");
+                error!("routing_metrics_accept_error={error}");
                 continue;
             }
         };
@@ -5578,7 +5897,8 @@ fn serve_routing_metrics(
                 let pplns = pplns_engine.lock().expect("pplns lock poisoned");
                 let auxpow_stats = auxpow_scheduler.stats_sync();
                 let rev_sched = revenue_scheduler.lock().expect("revenue scheduler lock poisoned");
-                let body = build_stats_payload(&stats, &telemetry, &pplns, sessions, uptime_s, &auxpow_stats, &rev_sched);
+                let bt = block_tracker.lock().expect("block tracker lock poisoned");
+                let body = build_stats_payload(&stats, &telemetry, &pplns, sessions, uptime_s, &auxpow_stats, &rev_sched, &bt);
                 ("200 OK", "application/json", body)
             }
             p if p.starts_with("/miners") => {
@@ -5636,10 +5956,10 @@ fn serve_routing_metrics(
                     let mut guard = cpu_coin_override.lock().expect("cpu coin override lock poisoned");
                     if coin.is_empty() {
                         *guard = None;
-                        println!("cpu_coin_override: cleared (revert to env/profit)");
+                        info!("cpu_coin_override: cleared (revert to env/profit)");
                     } else {
                         *guard = Some(coin.to_uppercase());
-                        println!("cpu_coin_override: set to {coin}");
+                        info!("cpu_coin_override: set to {coin}");
                     }
                     let body = format!("{{\"ok\":true,\"coin\":{:?}}}", guard.as_deref().unwrap_or(""));
                     ("200 OK", "application/json", body)
@@ -5656,10 +5976,10 @@ fn serve_routing_metrics(
                     let mut guard = gpu_coin_override.lock().expect("gpu coin override lock poisoned");
                     if coin.is_empty() {
                         *guard = None;
-                        println!("gpu_coin_override: cleared (revert to env/profit)");
+                        info!("gpu_coin_override: cleared (revert to env/profit)");
                     } else {
                         *guard = Some(coin.to_uppercase());
-                        println!("gpu_coin_override: set to {coin}");
+                        info!("gpu_coin_override: set to {coin}");
                     }
                     let body = format!("{{\"ok\":true,\"coin\":{:?}}}", guard.as_deref().unwrap_or(""));
                     ("200 OK", "application/json", body)
@@ -5682,7 +6002,7 @@ fn serve_routing_metrics(
         );
 
         if let Err(error) = stream.write_all(response.as_bytes()) {
-            eprintln!("routing_metrics_write_error={error}");
+            error!("routing_metrics_write_error={error}");
         }
     }
 
@@ -5803,10 +6123,63 @@ fn build_stats_payload(
     uptime_s: u64,
     auxpow: &AuxPowStats,
     revenue_scheduler: &RevenueScheduler,
+    block_tracker: &BlockTracker,
 ) -> String {
     let now_s = now_unix_seconds();
     let pplns = pplns_engine.stats();
     let fees = pplns_engine.fee_stats();
+    // F1.4: compute multi_auxpow stats from routing_stats (real share counts).
+    let zion_idx = source_index(RevenueSource::Zion);
+    let multi_auxpow_total_submitted: u64 = stats.source_submits.iter().enumerate()
+        .filter(|(i, _)| *i != zion_idx)
+        .map(|(_, v)| *v).sum();
+    let multi_auxpow_total_accepted: u64 = stats.source_accepted.iter().enumerate()
+        .filter(|(i, _)| *i != zion_idx)
+        .map(|(_, v)| *v).sum();
+    let mut multi_auxpow_by_coin = serde_json::Map::new();
+    for (i, submits) in stats.source_submits.iter().enumerate() {
+        if *submits == 0 && stats.source_accepted[i] == 0 { continue; }
+        if i == zion_idx { continue; }
+        let name = revenue_source_name(ALL_REVENUE_SOURCES[i]);
+        let accepted = stats.source_accepted[i];
+        let rejected = submits.saturating_sub(accepted);
+        let accept_rate = if *submits > 0 {
+            (accepted as f64 * 100.0 / *submits as f64).round()
+        } else { 0.0 };
+        multi_auxpow_by_coin.insert(name.to_string(), serde_json::json!({
+            "submitted": submits,
+            "accepted": accepted,
+            "rejected": rejected,
+            "accept_rate_pct": accept_rate
+        }));
+    }
+    // F1.5/F1.6: block tracker stats — orphan monitoring + pool luck.
+    let bt_total_blocks = block_tracker.total_blocks;
+    let bt_total_confirmed = block_tracker.total_confirmed;
+    let bt_total_orphans = block_tracker.total_orphans;
+    let bt_pending = block_tracker.pending_blocks().len();
+    let bt_orphan_rate = if bt_total_blocks > 0 {
+        (bt_total_orphans as f64 * 100.0 / bt_total_blocks as f64 * 10.0).round() / 10.0
+    } else { 0.0 };
+    let bt_luck_50 = block_tracker.pool_luck_pct(50);
+    let bt_luck_100 = block_tracker.pool_luck_pct(100);
+    let bt_recent: Vec<serde_json::Value> = block_tracker.blocks.iter().rev().take(10).map(|b| {
+        let status_str = match b.status {
+            BlockStatus::Pending => "pending",
+            BlockStatus::Confirmed => "confirmed",
+            BlockStatus::Orphaned => "orphaned",
+        };
+        serde_json::json!({
+            "height": b.height,
+            "miner": b.miner_id,
+            "worker": b.worker_name,
+            "found_at": b.found_at_unix,
+            "share_difficulty": b.share_difficulty,
+            "network_difficulty": b.network_difficulty,
+            "shares": b.shares_since_prev_block,
+            "status": status_str
+        })
+    }).collect();
     let json = serde_json::json!({
         "ok": true,
         "hashrate": {
@@ -5918,6 +6291,28 @@ fn build_stats_payload(
             "uptime_secs": auxpow.uptime_secs,
             "coin_switches": auxpow.coin_switches,
             "last_switch_ts": auxpow.last_switch_ts
+        },
+        // F1.4: multi_auxpow — real share counts from MultiAuxPowBridge path
+        // (routed through routing_stats).  The `auxpow` section above shows
+        // the standalone AuxPowScheduler stats which is a SEPARATE system
+        // (ZION_AUXPOW_* env vars) and often shows 0/0 even when the
+        // multi-bridge is actively accepting shares.  This section shows
+        // the actual external share counts that miners see.
+        "multi_auxpow": {
+            "total_submitted": multi_auxpow_total_submitted,
+            "total_accepted": multi_auxpow_total_accepted,
+            "by_coin": serde_json::Value::Object(multi_auxpow_by_coin)
+        },
+        // F1.5/F1.6: block tracker — orphan monitoring + pool luck
+        "blocks": {
+            "total_found": bt_total_blocks,
+            "total_confirmed": bt_total_confirmed,
+            "total_orphans": bt_total_orphans,
+            "pending": bt_pending,
+            "orphan_rate_pct": bt_orphan_rate,
+            "luck_50_pct": bt_luck_50,
+            "luck_100_pct": bt_luck_100,
+            "recent": bt_recent
         },
         "stream_profit": {
             "enabled": revenue_scheduler.stream_profit_config.enabled,
@@ -6857,6 +7252,8 @@ mod tests {
                 })),
                 Arc::new(Mutex::new(None)), // cpu_coin_override
                 Arc::new(Mutex::new(None)), // gpu_coin_override
+                Arc::new(AtomicBool::new(false)), // force_save
+                Arc::new(Mutex::new(BlockTracker::default())), // block_tracker
             )
         });
 
@@ -7135,6 +7532,7 @@ mod tests {
                 algorithm: "kheavyhash".to_string(),
                 header_bytes: vec![0xAA; 80],
                 target_bytes: target,
+                share_target_bytes: [0xFFu8; 32],
                 timestamp: 1_762_100_200,
                 block_number: None,
                 extranonce1: vec![],
@@ -7323,6 +7721,7 @@ mod tests {
             algorithm: external_job.algorithm.clone(),
             header_bytes: external_job.header_bytes.clone(),
             target_bytes: external_job.target_bytes,
+            share_target_bytes: [0xFFu8; 32],
             timestamp: external_job.timestamp.unwrap_or(0),
             block_number: external_job.block_number,
             extranonce1: external_job.extranonce1.clone(),
@@ -8439,6 +8838,25 @@ fn get_chain_height(node_rpc_addr: &str) -> Result<u64> {
         .get("chain_height")
         .and_then(|v| v.as_u64())
         .ok_or_else(|| anyhow!("missing chain_height in getChainInfo response"))
+}
+
+/// F1.6: Get the network (chain) difficulty at the current tip.
+/// Used for pool luck calculation (expected_shares = net_diff / share_diff).
+/// Returns 0 if unavailable (luck calc will be skipped).
+fn get_chain_difficulty(node_rpc_addr: &str) -> u64 {
+    let height = match get_chain_height(node_rpc_addr) {
+        Ok(h) => h,
+        Err(_) => return 0,
+    };
+    let block = match rpc_single_call(
+        node_rpc_addr,
+        "getBlockByHeight",
+        serde_json::json!({ "height": height }),
+    ) {
+        Ok(b) => b,
+        Err(_) => return 0,
+    };
+    block.get("difficulty").and_then(|v| v.as_u64()).unwrap_or(0)
 }
 
 /// Check if a payout (pool_wallet → miner_address for `amount`) already exists
