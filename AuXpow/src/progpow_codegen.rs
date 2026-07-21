@@ -522,7 +522,7 @@ fn gen_progpow_loop_impl(
 
     ret.push_str("// global load\n");
     ret.push_str("#if defined(USE_AMD_BPERMUTE)\n");
-    ret.push_str("offset = amd_wave_shuffle(mix[0], ((get_local_id(0) % 64) & ~(uint32_t)(PROGPOW_LANES - 1)) + (loop % PROGPOW_LANES));\n");
+    ret.push_str("offset = amd_wave_shuffle(mix[0], ((get_local_id(0) % WAVE_SIZE) & ~(uint32_t)(PROGPOW_LANES - 1)) + (loop % PROGPOW_LANES));\n");
     ret.push_str("#else\n");
     ret.push_str("if(lane_id == (loop % PROGPOW_LANES))\n");
     ret.push_str("    share[group_id] = mix[0];\n");
