@@ -649,6 +649,13 @@ impl AuxPowClient {
             self.job_extranonce1.lock().await.clear();
             self.job_received_at.lock().await.clear();
             *self.latest_job_id.lock().await = None;
+            // Cancel any pending share submission requests — the old
+            // connection is gone and their responses will never arrive.
+            // Without this, send_request waits the full 60s timeout.
+            let cancelled = self.pending_requests.lock().await.drain().count();
+            if cancelled > 0 {
+                warn!("AuxPow: cancelled {} pending request(s) after reconnect for {}", cancelled, self.profile.coin);
+            }
             warn!("AuxPow: cleared per-job state after reconnect for {}", self.profile.coin);
         }
         info!("AuxPow: reconnected and authorized for {}", self.profile.coin);
@@ -1936,6 +1943,21 @@ impl AuxPowClient {
             eprintln!(
                 "auxpow: ZANO poll msg method={} id={:?} result={} (len={})",
                 method, id, result_preview, line.len()
+            );
+        }
+
+        // Debug: log RTM (standard stratum v1) messages that have an "id"
+        // (potential responses) to diagnose share submission timeouts.
+        if self.profile.coin == ExternalCoin::RTM && msg.get("id").is_some() {
+            let pending_count = self.pending_requests.lock().await.len();
+            println!(
+                "auxpow: RTM poll msg id={:?} method={:?} result={:?} error={:?} pending={} (len={})",
+                msg.get("id"),
+                msg.get("method"),
+                msg.get("result"),
+                msg.get("error"),
+                pending_count,
+                line.len()
             );
         }
 
