@@ -21,6 +21,12 @@ required-features = ["gpu-opencl"]
 [features]
 default = []
 
+# Public build: hides Triple Stream / AuxPow details in the TUI.
+# The miner still runs Triple Stream internally, but the UI shows only
+# "ZION / Deeksha Lite v1" — no ZANO, VRSC, or external coin names.
+# Used for public release binaries (v3.0.6-beta+).
+public_build = []
+
 # GPU backends (feature-gated)
 gpu         = ["gpu-opencl"]                           # alias → OpenCL
 gpu-opencl  = ["dep:ocl", "zion-auxpow/gpu-opencl"]    # Ekam Deeksha + external Blake3/kHeavyHash

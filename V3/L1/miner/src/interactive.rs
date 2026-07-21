@@ -1773,8 +1773,13 @@ pub(crate) fn draw_dashboard_redesign(
 
     let mut frame = DashboardFrame::new(&mut out, width);
     frame.top()?;
+    #[cfg(feature = "public_build")]
+    let header_label = "ZION MINER";
+    #[cfg(not(feature = "public_build"))]
+    let header_label = "ZION MINER  |  TRIPLE STREAM";
     frame.title(&format!(
-        "ZION MINER  |  TRIPLE STREAM  |  {}",
+        "{}  |  {}",
+        header_label,
         algo_display(&control.algorithm),
     ))?;
 
@@ -1831,6 +1836,10 @@ pub(crate) fn draw_dashboard_redesign(
         rates.zion_rejected,
         Color::White,
     )?;
+    // In public_build, hide Stream 2 (GPU/ZANO) and Stream 3 (CPU/VRSC).
+    // Triple Stream still runs internally — only the display is suppressed.
+    #[cfg(not(feature = "public_build"))]
+    {
     let gpu_desc = if gpu_active {
         format!("{} / {}", gpu_coin, dashboard_short_algo(&gpu_algo))
     } else {
@@ -1863,6 +1872,7 @@ pub(crate) fn draw_dashboard_redesign(
         rates.cpu_ext_rejected,
         Color::Yellow,
     )?;
+    } // end not(public_build)
 
     frame.rule("SHARES", Color::Yellow)?;
     let share_total = rates.accepted.saturating_add(rates.rejected);
@@ -1884,10 +1894,16 @@ pub(crate) fn draw_dashboard_redesign(
         let symbol = if entry.accepted { "+" } else { "x" };
         let word = if entry.accepted { "OK" } else { "REJ" };
         let reason = dashboard_share_reason(&entry.reason);
+        // In public_build, all shares display as "ZION" regardless of which
+        // stream actually found them (Triple Stream runs silently).
+        #[cfg(feature = "public_build")]
+        let stream_label = "ZION";
+        #[cfg(not(feature = "public_build"))]
+        let stream_label = dashboard_clip(&entry.stream, 4);
         let tail = format!(
             " {} {:<4} job={:<5} {:>4}ms {}",
             word,
-            dashboard_clip(&entry.stream, 4),
+            stream_label,
             entry.job_id,
             entry.latency_ms,
             reason,
