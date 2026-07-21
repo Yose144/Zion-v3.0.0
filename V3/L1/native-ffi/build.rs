@@ -744,6 +744,13 @@ fn build_ghostrider(target_os: &str, is_msvc: bool) {
         b.flag_if_supported("-funroll-loops");
         b.flag_if_supported("-fomit-frame-pointer");
 
+        // Apply CPU baseline (-march=native or -march=x86-64-v3 etc.)
+        // CRITICAL: CryptoNight uses AES — without -maes (implied by -march=native
+        // on CPUs with AES-NI), it falls back to soft AES (table lookup) which is
+        // ~50x slower. This was the root cause of ghostrider being ~0.8 H/s on
+        // Ryzen 3600 (which has AES-NI) vs ~118 H/s on Apple M1 (NEON AES).
+        apply_cpu_baseline(&mut b, is_msvc);
+
         // ARM64: no SSE2 intrinsics — the variant2_int_sqrt.h SSE2 macro
         // is not used by the CN variants in this codebase (they use FP64 path)
         if target_arch == "aarch64" {

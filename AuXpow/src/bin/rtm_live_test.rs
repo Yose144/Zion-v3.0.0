@@ -198,7 +198,7 @@ async fn main() {
             }
 
             println!("Submitting share job={} nonce={}...", job_id, nonce);
-            let hash_hex = hex::encode(&[0u8; 32]);
+            let hash_hex = hex::encode(&hash);
             match client.submit_share(&job_id, nonce, &hash_hex, None).await {
                 Ok(ShareResult::Accepted) => {
                     println!("*** SHARE ACCEPTED! ***");
