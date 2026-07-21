@@ -546,6 +546,279 @@ fn parse_webhook_url(url: &str) -> Result<(String, String, String)> {
     }
 }
 
+// ---------------------------------------------------------------------------
+// F8.1: Telegram bot alerts
+// ---------------------------------------------------------------------------
+
+/// Global Telegram notifier singleton (initialized in main()).
+static TELEGRAM_NOTIFIER: std::sync::OnceLock<Option<TelegramNotifier>> = std::sync::OnceLock::new();
+
+/// Get the global Telegram notifier (None if not configured).
+fn telegram() -> Option<&'static TelegramNotifier> {
+    TELEGRAM_NOTIFIER.get().and_then(|opt| opt.as_ref())
+}
+
+/// Telegram bot notifier for pool ops alerts.
+/// Configured via `ZION_POOL_TELEGRAM_BOT_TOKEN` and `ZION_POOL_TELEGRAM_CHAT_ID`.
+/// All sends are fire-and-forget (best-effort) — failure is silently logged.
+#[derive(Clone)]
+struct TelegramNotifier {
+    bot_token: String,
+    chat_id: String,
+    /// Minimum seconds between repeated alerts of the same kind (rate limit).
+    min_alert_interval_s: u64,
+    /// Last alert timestamp per alert kind (key = "block_found", "orphan", etc.)
+    last_alert: Arc<Mutex<HashMap<String, u64>>>,
+}
+
+impl TelegramNotifier {
+    fn from_env() -> Option<Self> {
+        let bot_token = std::env::var("ZION_POOL_TELEGRAM_BOT_TOKEN").ok()?;
+        let chat_id = std::env::var("ZION_POOL_TELEGRAM_CHAT_ID").ok()?;
+        if bot_token.is_empty() || chat_id.is_empty() {
+            return None;
+        }
+        let min_interval = parse_env_u64("ZION_POOL_TELEGRAM_MIN_INTERVAL_S", 3600).unwrap_or(3600);
+        Some(Self {
+            bot_token,
+            chat_id,
+            min_alert_interval_s: min_interval,
+            last_alert: Arc::new(Mutex::new(HashMap::new())),
+        })
+    }
+
+    /// Check if enough time has passed since the last alert of this kind.
+    fn should_send(&self, kind: &str) -> bool {
+        let now = now_unix_seconds();
+        let mut guard = self.last_alert.lock().expect("telegram alert lock poisoned");
+        if let Some(&last) = guard.get(kind) {
+            if now.saturating_sub(last) < self.min_alert_interval_s {
+                return false;
+            }
+        }
+        guard.insert(kind.to_string(), now);
+        true
+    }
+
+    /// Send a text message to the configured Telegram chat.
+    /// Fire-and-forget — runs in a spawned thread with its own tokio runtime.
+    fn send(&self, text: &str) {
+        let token = self.bot_token.clone();
+        let chat_id = self.chat_id.clone();
+        let body = format!(
+            r#"{{"chat_id":"{}","text":"{}","disable_web_page_preview":true}}"#,
+            chat_id, text.replace('"', "\\\"").replace('\n', "\\n")
+        );
+        let url = format!("https://api.telegram.org/bot{}/sendMessage", token);
+        std::thread::spawn(move || {
+            let rt = match tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+            {
+                Ok(rt) => rt,
+                Err(e) => {
+                    eprintln!("telegram_runtime_error={e}");
+                    return;
+                }
+            };
+            rt.block_on(async move {
+                let client = match reqwest::Client::builder()
+                    .timeout(Duration::from_secs(10))
+                    .build()
+                {
+                    Ok(c) => c,
+                    Err(e) => {
+                        eprintln!("telegram_client_build_error={e}");
+                        return;
+                    }
+                };
+                match client.post(&url)
+                    .header("Content-Type", "application/json")
+                    .body(body)
+                    .send()
+                    .await
+                {
+                    Ok(resp) => {
+                        let status = resp.status();
+                        if !status.is_success() {
+                            eprintln!("telegram_send_failed status={status}");
+                        }
+                    }
+                    Err(e) => eprintln!("telegram_send_error={e}"),
+                }
+            });
+        });
+    }
+
+    /// Alert: block found (info-level, not rate-limited).
+    fn alert_block_found(&self, height: u64, miner_id: &str, worker: &str) {
+        let msg = format!(
+            "🧱 Block Found\nHeight: {}\nMiner: {}\nWorker: {}\nTime: {}",
+            height, miner_id, worker, now_unix_seconds()
+        );
+        self.send(&msg);
+    }
+
+    /// Alert: orphan block (warning-level, rate-limited).
+    fn alert_orphan(&self, height: u64) {
+        if !self.should_send("orphan") {
+            return;
+        }
+        let msg = format!(
+            "⚠️ Orphan Block\nHeight: {}\nThe node rejected or orphaned this block.\nTime: {}",
+            height, now_unix_seconds()
+        );
+        self.send(&msg);
+    }
+
+    /// Alert: payout failure (error-level, rate-limited).
+    fn alert_payout_failed(&self, miner_id: &str, amount_flowers: u64, error: &str) {
+        if !self.should_send("payout_failed") {
+            return;
+        }
+        let msg = format!(
+            "❌ Payout Failed\nMiner: {}\nAmount: {} flowers\nError: {}\nTime: {}",
+            miner_id, amount_flowers, error, now_unix_seconds()
+        );
+        self.send(&msg);
+    }
+
+    /// Alert: accept rate below threshold (warning-level, rate-limited).
+    fn alert_low_accept_rate(&self, accept_rate_pct: f64, threshold: f64) {
+        if !self.should_send("low_accept_rate") {
+            return;
+        }
+        let msg = format!(
+            "📉 Low Accept Rate\nCurrent: {:.1}%\nThreshold: {:.1}%\nShares may be invalid or stale.\nTime: {}",
+            accept_rate_pct, threshold, now_unix_seconds()
+        );
+        self.send(&msg);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// F8.2: SMTP e-mail notifications (admin payout alerts)
+// ---------------------------------------------------------------------------
+
+/// Global SMTP notifier singleton (initialized in main()).
+static SMTP_NOTIFIER: std::sync::OnceLock<Option<SmtpNotifier>> = std::sync::OnceLock::new();
+
+/// Get the global SMTP notifier (None if not configured).
+fn smtp() -> Option<&'static SmtpNotifier> {
+    SMTP_NOTIFIER.get().and_then(|opt| opt.as_ref())
+}
+
+/// Simple SMTP notifier for admin e-mail alerts (plain SMTP, port 25).
+/// Configured via `ZION_POOL_SMTP_HOST` (default 127.0.0.1:25),
+/// `ZION_POOL_SMTP_FROM` (sender address), and `ZION_POOL_ADMIN_EMAIL`
+/// (recipient for payout notifications).
+#[derive(Clone)]
+struct SmtpNotifier {
+    host: String,
+    from_addr: String,
+    admin_email: String,
+}
+
+impl SmtpNotifier {
+    fn from_env() -> Option<Self> {
+        let admin_email = std::env::var("ZION_POOL_ADMIN_EMAIL").ok()?;
+        if admin_email.is_empty() {
+            return None;
+        }
+        let host = std::env::var("ZION_POOL_SMTP_HOST")
+            .unwrap_or_else(|_| "127.0.0.1:25".to_string());
+        let from_addr = std::env::var("ZION_POOL_SMTP_FROM")
+            .unwrap_or_else(|_| "pool@zionterranova.com".to_string());
+        Some(Self { host, from_addr, admin_email })
+    }
+
+    /// Send an e-mail via plain SMTP (fire-and-forget in spawned thread).
+    fn send_email(&self, to: &str, subject: &str, body: &str) {
+        let host = self.host.clone();
+        let from = self.from_addr.clone();
+        let to = to.to_string();
+        let subject = subject.to_string();
+        let body = body.to_string();
+        std::thread::spawn(move || {
+            if let Err(e) = smtp_send_plain(&host, &from, &to, &subject, &body) {
+                eprintln!("smtp_send_error={e}");
+            }
+        });
+    }
+
+    /// Notify admin about a successful payout.
+    fn notify_payout(&self, height: u64, miner_count: usize, total_flowers: u64, tx_id: &str) {
+        let body = format!(
+            "Payout Executed\n\nHeight: {}\nMiners: {}\nTotal: {} flowers\nTX ID: {}\nTime: {}",
+            height, miner_count, total_flowers, tx_id, now_unix_seconds()
+        );
+        self.send_email(&self.admin_email.clone(), "ZION Pool: Payout Executed", &body);
+    }
+}
+
+/// Send an e-mail via plain SMTP (HELO/MAIL FROM/RCPT TO/DATA/QUIT).
+/// Supports only plain SMTP on port 25 (no TLS, no AUTH).
+/// Suitable for local MTA (postfix/exim) or relay.
+fn smtp_send_plain(host: &str, from: &str, to: &str, subject: &str, body: &str) -> Result<()> {
+    let mut stream = TcpStream::connect(host)
+        .with_context(|| format!("SMTP connect failed to {host}"))?;
+    stream.set_read_timeout(Some(Duration::from_secs(10)))?;
+    stream.set_write_timeout(Some(Duration::from_secs(10)))?;
+
+    // Read greeting (220 ...)
+    let _greeting = smtp_read_response(&mut stream)?;
+
+    // HELO
+    smtp_send_cmd(&mut stream, "HELO zionterranova.com")?;
+    smtp_read_response(&mut stream)?;
+
+    // MAIL FROM
+    smtp_send_cmd(&mut stream, &format!("MAIL FROM:<{from}>"))?;
+    smtp_read_response(&mut stream)?;
+
+    // RCPT TO
+    smtp_send_cmd(&mut stream, &format!("RCPT TO:<{to}>"))?;
+    smtp_read_response(&mut stream)?;
+
+    // DATA
+    smtp_send_cmd(&mut stream, "DATA")?;
+    smtp_read_response(&mut stream)?;
+
+    // Message body (headers + body)
+    let date = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let msg = format!(
+        "From: {from}\r\nTo: {to}\r\nSubject: {subject}\r\nDate: {date}\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n{body}\r\n.\r\n"
+    );
+    stream.write_all(msg.as_bytes())?;
+    smtp_read_response(&mut stream)?;
+
+    // QUIT
+    smtp_send_cmd(&mut stream, "QUIT")?;
+    let _ = smtp_read_response(&mut stream);
+
+    Ok(())
+}
+
+fn smtp_send_cmd(stream: &mut TcpStream, cmd: &str) -> Result<()> {
+    stream.write_all(format!("{cmd}\r\n").as_bytes())?;
+    stream.flush()?;
+    Ok(())
+}
+
+fn smtp_read_response(stream: &mut TcpStream) -> Result<String> {
+    let mut reader = BufReader::new(stream);
+    let mut line = String::new();
+    reader.read_line(&mut line)?;
+    let trimmed = line.trim().to_string();
+    if trimmed.starts_with('5') || trimmed.starts_with('4') {
+        return Err(anyhow!("SMTP error: {trimmed}"));
+    }
+    Ok(trimmed)
+}
+
 fn parse_oasis_http_target(url: &str, allow_remote: bool) -> Result<(String, String)> {
     let trimmed = url.trim();
     let without_scheme = trimmed
@@ -1211,6 +1484,23 @@ fn main() -> Result<()> {
     zion_auxpow::install_rustls_crypto_provider();
 
     let config = ServerConfig::from_env()?;
+
+    // F8.1: Initialize Telegram notifier (global singleton).
+    let _ = TELEGRAM_NOTIFIER.set(TelegramNotifier::from_env());
+    if telegram().is_some() {
+        info!("telegram_notifier: enabled (alerts will be sent to configured chat)");
+    } else {
+        info!("telegram_notifier: disabled (set ZION_POOL_TELEGRAM_BOT_TOKEN + ZION_POOL_TELEGRAM_CHAT_ID to enable)");
+    }
+
+    // F8.2: Initialize SMTP notifier (global singleton).
+    let _ = SMTP_NOTIFIER.set(SmtpNotifier::from_env());
+    if smtp().is_some() {
+        info!("smtp_notifier: enabled (admin payout alerts will be sent)");
+    } else {
+        info!("smtp_notifier: disabled (set ZION_POOL_ADMIN_EMAIL to enable)");
+    }
+
     let log_channel = Arc::new(LogChannel::spawn());
     let pool = Arc::new(Mutex::new(MiningPool::with_job_ttl(
         CoreRuntime::new_with_journal_replay(ConsensusConfig::default()),
@@ -1764,6 +2054,10 @@ fn main() -> Result<()> {
                         "block_orphaned height={} chain_height={} — payout may be invalid",
                         height, chain_height
                     );
+                    // F8.1: Telegram alert for orphan block.
+                    if let Some(tg) = telegram() {
+                        tg.alert_orphan(height);
+                    }
                 }
             }
         });
@@ -1804,6 +2098,35 @@ fn main() -> Result<()> {
         } else {
             info!("stream_profit_disabled (set ZION_STREAM_PROFIT_SWITCH=true to enable)");
         }
+    }
+
+    // ── F8.1: Accept-rate monitor (Telegram alert if < threshold) ──
+    // Spawns a background thread that checks accept_rate every 5 minutes.
+    // If accept_rate < ZION_POOL_ALERT_ACCEPT_RATE_THRESHOLD (default 95%),
+    // sends a Telegram alert (rate-limited to 1/hour).
+    if telegram().is_some() {
+        let stats_ref = Arc::clone(&routing_stats);
+        let threshold = parse_env_f64("ZION_POOL_ALERT_ACCEPT_RATE_THRESHOLD", 95.0)
+            .unwrap_or(95.0);
+        let check_interval = parse_env_u64("ZION_POOL_ALERT_CHECK_INTERVAL_S", 300)
+            .unwrap_or(300);
+        info!(
+            "accept_rate_monitor: enabled threshold={}% interval={}s",
+            threshold, check_interval
+        );
+        thread::spawn(move || loop {
+            thread::sleep(Duration::from_secs(check_interval));
+            let stats = stats_ref.lock().expect("routing stats lock poisoned");
+            if stats.total_submits < 100 {
+                continue; // not enough data
+            }
+            let accept_rate = stats.total_accepted as f64 * 100.0 / stats.total_submits as f64;
+            if accept_rate < threshold {
+                if let Some(tg) = telegram() {
+                    tg.alert_low_accept_rate(accept_rate, threshold);
+                }
+            }
+        });
     }
 
     // ── NCL Gateway dispatcher ───────────────────────────────────────
@@ -1939,6 +2262,15 @@ fn main() -> Result<()> {
                     height,
                     payouts.len()
                 );
+                // F8.1: Telegram alert for permanent payout failure.
+                if let Some(tg) = telegram() {
+                    let total: u64 = payouts.iter().map(|p| p.amount).sum();
+                    tg.alert_payout_failed(
+                        &format!("{} miners", payouts.len()),
+                        total,
+                        &format!("max_retries_exceeded at height {}", height),
+                    );
+                }
                 let mut queue = deferred_ref.lock().expect("deferred lock poisoned");
                 queue.remove(0);
                 continue;
@@ -4803,6 +5135,10 @@ fn handle_client(
                                     0, // network_difficulty fetched separately by dashboard
                                 );
                             });
+                            // F8.1: Telegram alert for block found.
+                            if let Some(tg) = telegram() {
+                                tg.alert_block_found(job_height, &miner_id, &worker_name);
+                            }
                         }
 
                         ShareDecision {
@@ -7400,6 +7736,156 @@ fn serve_routing_metrics(
                 );
                 ("200 OK", "application/json", body)
             }
+            // ── F7.3: Pool op API (admin key required) ──
+            // These endpoints expose operational/admin data: full miner
+            // telemetry dump, block tracker state, and revenue summary.
+            // Always require ZION_POOL_API_ADMIN_KEY (separate from
+            // ZION_POOL_API_KEY).  If admin key is not set, endpoints
+            // return 503 (admin API disabled) — they are NEVER open.
+            p if p == "/api/v1/op/miners"
+                || p == "/api/v1/op/blocks"
+                || p == "/api/v1/op/revenue" => {
+                let admin_key = std::env::var("ZION_POOL_API_ADMIN_KEY")
+                    .ok().filter(|s| !s.is_empty());
+                if admin_key.is_none() {
+                    let body = "{\"ok\":false,\"error\":\"admin API disabled (set ZION_POOL_API_ADMIN_KEY)\"}".to_string();
+                    ("503 Service Unavailable", "application/json", body)
+                } else {
+                    let expected = format!("Bearer {}", admin_key.as_deref().unwrap_or(""));
+                    if auth_header.as_deref() != Some(expected.as_str()) {
+                        let body = "{\"ok\":false,\"error\":\"unauthorized: admin key required\"}".to_string();
+                        ("401 Unauthorized", "application/json", body)
+                    } else {
+                        match p {
+                            "/api/v1/op/miners" => {
+                                let now_s = now_unix_seconds();
+                                let telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                                let miners: Vec<serde_json::Value> = telemetry.miners.iter().map(|(key, m)| {
+                                    serde_json::json!({
+                                        "key": key,
+                                        "worker_name": m.worker_name,
+                                        "algorithm": m.algorithm,
+                                        "backend": m.backend,
+                                        "first_seen_s": m.first_seen_s,
+                                        "last_seen_s": m.last_seen_s,
+                                        "last_share_time_s": m.last_share_time_s,
+                                        "valid_shares": m.valid_shares,
+                                        "invalid_shares": m.invalid_shares,
+                                        "no_solution_jobs": m.no_solution_jobs,
+                                        "blocks_found": m.blocks_found,
+                                        "completed_jobs": m.completed_jobs,
+                                        "hashrate_live": m.hashrate_for_window(HASHRATE_WINDOW_LIVE_S, now_s),
+                                        "hashrate_1h": m.hashrate_for_window(HASHRATE_WINDOW_1H_S, now_s),
+                                        "hashrate_24h": m.hashrate_for_window(HASHRATE_WINDOW_24H_S, now_s),
+                                        "paid_total_atomic": m.paid_total_atomic,
+                                    })
+                                }).collect();
+                                let body = serde_json::json!({
+                                    "ok": true,
+                                    "count": miners.len(),
+                                    "miners": miners,
+                                    "ts": now_s,
+                                }).to_string();
+                                ("200 OK", "application/json", body)
+                            }
+                            "/api/v1/op/blocks" => {
+                                let bt = block_tracker.lock().expect("block tracker lock poisoned");
+                                let blocks: Vec<serde_json::Value> = bt.blocks.iter().rev().take(200).map(|b| {
+                                    let status_str = match b.status {
+                                        BlockStatus::Pending => "pending",
+                                        BlockStatus::Confirmed => "confirmed",
+                                        BlockStatus::Orphaned => "orphaned",
+                                    };
+                                    serde_json::json!({
+                                        "height": b.height,
+                                        "miner_id": b.miner_id,
+                                        "worker_name": b.worker_name,
+                                        "found_at_unix": b.found_at_unix,
+                                        "share_difficulty": b.share_difficulty,
+                                        "network_difficulty": b.network_difficulty,
+                                        "shares_since_prev_block": b.shares_since_prev_block,
+                                        "node_accepted": b.node_accepted,
+                                        "status": status_str,
+                                        "confirmed_at_chain_height": b.confirmed_at_chain_height,
+                                    })
+                                }).collect();
+                                let body = serde_json::json!({
+                                    "ok": true,
+                                    "summary": {
+                                        "total_blocks": bt.total_blocks,
+                                        "total_confirmed": bt.total_confirmed,
+                                        "total_orphans": bt.total_orphans,
+                                        "pending": bt.pending_blocks().len(),
+                                        "luck_50": bt.pool_luck_pct(50),
+                                        "luck_100": bt.pool_luck_pct(100),
+                                    },
+                                    "blocks": blocks,
+                                }).to_string();
+                                ("200 OK", "application/json", body)
+                            }
+                            "/api/v1/op/revenue" => {
+                                let uptime_s = started_at.elapsed().as_secs();
+                                let stats = routing_stats.lock().expect("routing stats lock poisoned");
+                                let pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                                let auxpow_stats = auxpow_scheduler.stats_sync();
+                                let rev_sched = revenue_scheduler.lock().expect("revenue scheduler lock poisoned");
+                                let bt = block_tracker.lock().expect("block tracker lock poisoned");
+                                let body = serde_json::json!({
+                                    "ok": true,
+                                    "uptime_s": uptime_s,
+                                    "routing": {
+                                        "total_submits": stats.total_submits,
+                                        "total_accepted": stats.total_accepted,
+                                        "total_stale": stats.total_stale,
+                                        "accept_rate_pct": if stats.total_submits > 0 {
+                                            (stats.total_accepted as f64 * 100.0 / stats.total_submits as f64).round()
+                                        } else { 0.0 },
+                                    },
+                                    "pplns": {
+                                        "window_size": pplns.stats().window_size,
+                                        "window_used": pplns.stats().window_used,
+                                        "registered_miners": pplns.stats().registered_miners,
+                                        "miners_with_unpaid": pplns.stats().miners_with_unpaid,
+                                        "total_unpaid_flowers": pplns.stats().total_unpaid_flowers.to_string(),
+                                        "total_paid_flowers": pplns.stats().total_paid_flowers.to_string(),
+                                        "payout_rounds": pplns.stats().payout_rounds,
+                                    },
+                                    "fees": {
+                                        "humanitarian_pct": pplns.fee_stats().humanitarian_pct,
+                                        "issobella_pct": pplns.fee_stats().issobella_pct,
+                                        "pool_fee_pct": pplns.fee_stats().pool_fee_pct,
+                                        "miner_pct": pplns.fee_stats().miner_pct,
+                                        "humanitarian_accumulated_flowers": pplns.fee_stats().humanitarian_accumulated_flowers,
+                                        "issobella_accumulated_flowers": pplns.fee_stats().issobella_accumulated_flowers,
+                                        "pool_fee_accumulated_flowers": pplns.fee_stats().pool_fee_accumulated_flowers,
+                                    },
+                                    "auxpow": {
+                                        "shares_accepted": auxpow_stats.shares_accepted,
+                                        "shares_rejected": auxpow_stats.shares_rejected,
+                                    },
+                                    "revenue_scheduler": {
+                                        "lanes": rev_sched.lanes.len(),
+                                        "multistream_enabled": rev_sched.multistream_enabled,
+                                        "total_weight": rev_sched.total_weight,
+                                    },
+                                    "blocks": {
+                                        "total": bt.total_blocks,
+                                        "confirmed": bt.total_confirmed,
+                                        "orphans": bt.total_orphans,
+                                        "orphan_rate_pct": if bt.total_blocks > 0 {
+                                            (bt.total_orphans as f64 * 100.0 / bt.total_blocks as f64 * 10.0).round() / 10.0
+                                        } else { 0.0 },
+                                        "luck_50": bt.pool_luck_pct(50),
+                                        "luck_100": bt.pool_luck_pct(100),
+                                    },
+                                }).to_string();
+                                ("200 OK", "application/json", body)
+                            }
+                            _ => unreachable!(),
+                        }
+                    }
+                }
+            }
             _ => (
                 "404 Not Found",
                 "application/json",
@@ -7729,7 +8215,10 @@ fn build_stats_payload(
             "payouts": "/api/v1/payouts?limit=50",
             "all_miners": "/api/v1/miners?limit=100",
             "hashrate_history": "/api/v1/hashrate-history",
-            "health": "/health"
+            "health": "/health",
+            "op_miners": "/api/v1/op/miners (admin key)",
+            "op_blocks": "/api/v1/op/blocks (admin key)",
+            "op_revenue": "/api/v1/op/revenue (admin key)"
         },
         "auxpow": {
             "enabled": auxpow.enabled,
@@ -10746,6 +11235,11 @@ fn execute_payout_async(
                         println!("share_store: record_payout failed: {e}");
                     }
                 }
+            }
+            // F8.2: Send admin e-mail notification about successful payout.
+            if let Some(smtp) = smtp() {
+                let total: u64 = outcome.executed.iter().map(|p| p.amount).sum();
+                smtp.notify_payout(height, outcome.executed.len(), total, &outcome.tx_id);
             }
             if !outcome.deferred.is_empty() {
                 let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
