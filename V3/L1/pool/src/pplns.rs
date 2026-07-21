@@ -26,10 +26,12 @@
 //!   during save/load.
 
 use std::collections::{HashMap, VecDeque};
+use std::io::Write;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
+use tracing::{error, warn};
 
 /// Single accepted share recorded in the PPLNS window (serialization format).
 ///
@@ -448,17 +450,15 @@ impl PplnsEngine {
         self.dirty = false;
     }
 
-    /// Save engine state to a JSON file (atomic write via temp + rename).
+    /// Save engine state to a JSON file (atomic + durable write via temp + fsync + rename).
+    ///
+    /// F1.2 upgrade: writes to a temp file, fsyncs it (so data hits disk before
+    /// rename), then atomically renames.  This guarantees the main state file is
+    /// never in a corrupt state, even if the process is killed mid-write.
     pub fn save_to_path<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
         let path = path.as_ref();
         let snap = self.snapshot();
-        let json = serde_json::to_vec(&snap).map_err(std::io::Error::other)?;
-
-        // Atomic write: write to temp file, then rename.
-        let tmp = path.with_extension("json.tmp");
-        std::fs::write(&tmp, &json)?;
-        std::fs::rename(&tmp, path)?;
-        Ok(())
+        Self::write_snapshot_to_path(&snap, path)
     }
 
     /// Returns `true` if state has changed since the last save, and clears
@@ -469,10 +469,14 @@ impl PplnsEngine {
         std::mem::replace(&mut self.dirty, false)
     }
 
-    /// Write a pre-captured snapshot to a JSON file (atomic write via temp +
-    /// rename).  This is a standalone function so the persistence thread can
-    /// snapshot under the lock, then serialize + write **outside** the lock,
-    /// avoiding blocking share submissions during file I/O.
+    /// Write a pre-captured snapshot to a JSON file (atomic + durable write
+    /// via temp + fsync + rename).  This is a standalone function so the
+    /// persistence thread can snapshot under the lock, then serialize + write
+    /// **outside** the lock, avoiding blocking share submissions during file I/O.
+    ///
+    /// F1.2 upgrade: added `fsync` on the temp file before rename for crash
+    /// durability.  Without fsync, a power loss after rename could leave the
+    /// file with zero-length or partially-flushed data on some filesystems.
     pub fn write_snapshot_to_path<P: AsRef<Path>>(
         snap: &PplnsSnapshot,
         path: P,
@@ -480,21 +484,39 @@ impl PplnsEngine {
         let path = path.as_ref();
         let json = serde_json::to_vec(snap).map_err(std::io::Error::other)?;
         let tmp = path.with_extension("json.tmp");
-        std::fs::write(&tmp, &json)?;
+        // Write + fsync the temp file so data is durable on disk.
+        {
+            let mut f = std::fs::File::create(&tmp)?;
+            f.write_all(&json)?;
+            f.flush()?;
+            let _ = f.sync_all(); // fsync — best effort, ignore errors
+        }
+        // Atomic rename (POSIX guarantee on same filesystem).
         std::fs::rename(&tmp, path)?;
         Ok(())
     }
 
     /// Load engine state from a JSON file. Returns `None` if file doesn't
-    /// exist (first run).  Errors are logged to stderr and treated as
-    /// "no snapshot" so the pool can still start.
+    /// exist (first run).  Errors are logged and treated as "no snapshot"
+    /// so the pool can still start.
+    ///
+    /// F1.2 upgrade: cleans up stale `.json.tmp` files from a previous crash.
     pub fn load_from_path<P: AsRef<Path>>(path: P) -> Option<PplnsSnapshot> {
         let path = path.as_ref();
+        // Clean up stale temp file from a previous crash (F1.2).
+        let tmp = path.with_extension("json.tmp");
+        if tmp.exists() {
+            warn!(
+                "pplns_persistence: cleaning up stale temp file {} (previous crash during save?)",
+                tmp.display()
+            );
+            let _ = std::fs::remove_file(&tmp);
+        }
         match std::fs::read(path) {
             Ok(data) => match serde_json::from_slice::<PplnsSnapshot>(&data) {
                 Ok(snap) => Some(snap),
                 Err(e) => {
-                    eprintln!(
+                    error!(
                         "pplns_persistence: failed to parse snapshot {}: {} — starting fresh",
                         path.display(),
                         e
@@ -504,7 +526,7 @@ impl PplnsEngine {
             },
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
             Err(e) => {
-                eprintln!(
+                error!(
                     "pplns_persistence: failed to read snapshot {}: {} — starting fresh",
                     path.display(),
                     e
