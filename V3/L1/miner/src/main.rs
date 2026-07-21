@@ -101,6 +101,26 @@ fn isatty_stdout() -> bool {
     true
 }
 
+/// Write directly to fd 1 (stdout) bypassing Rust's block buffer.
+/// On non-TTY (pipes/SMOS), Rust's stdout is 8KB block-buffered and output
+/// may never appear. This uses the raw `write(2)` syscall for immediate output.
+#[cfg(unix)]
+fn raw_stdout(s: &str) {
+    extern "C" {
+        fn write(fd: i32, buf: *const u8, count: usize) -> isize;
+    }
+    unsafe {
+        let _ = write(1, s.as_ptr(), s.len());
+    }
+}
+
+#[cfg(not(unix))]
+fn raw_stdout(s: &str) {
+    use std::io::Write;
+    let _ = std::io::stdout().write_all(s.as_bytes());
+    let _ = std::io::stdout().flush();
+}
+
 /// Gate verbose wire_* / iteration= debug output (--verbose or ZION_MINER_VERBOSE=1).
 static VERBOSE: AtomicBool = AtomicBool::new(false);
 /// Suppress verbose log lines when sticky header is active (Claymore-style clean display).
@@ -893,22 +913,6 @@ fn format_hashrate(hps: f64) -> String {
 fn main() -> Result<()> {
     // Install crash handler (SIGABRT/SIGSEGV from AMD OpenCL driver)
     crash_handler::install();
-
-    // ── Line-buffer stdout when it's NOT a terminal (SMOS / Docker / pipes) ──
-    // Rust's default stdout is block-buffered (8KB) when not a TTY, which means
-    // mining output may never appear in the SMOS web console. We force line-
-    // buffered mode by flushing after each newline via a thin wrapper.
-    // The actual flush happens in flush_stdout() called after key print sites.
-    if !isatty_stdout() {
-        // Spawn a background thread that flushes stdout every 500ms — simple
-        // and reliable, avoids wrapping every println! in a flush call.
-        std::thread::spawn(|| {
-            loop {
-                std::thread::sleep(std::time::Duration::from_millis(500));
-                flush_stdout();
-            }
-        });
-    }
 
     // Enable verbose logging via env var or --verbose flag
     if std::env::var("ZION_MINER_VERBOSE").map(|v| v == "1" || v == "true").unwrap_or(false)
@@ -3431,6 +3435,9 @@ impl SessionTelemetry {
         );
         if QUIET.load(Ordering::Relaxed) {
             eprintln!("{status_line}");
+        } else if !isatty_stdout() {
+            // Non-TTY (SMOS/pipe): use raw write(2) to bypass Rust's block buffer
+            raw_stdout(&format!("{status_line}\n"));
         } else {
             println!("{status_line}");
         }
@@ -3439,24 +3446,27 @@ impl SessionTelemetry {
         // SMOS parses stdout for hashrate patterns like "GPU0: X.X MH/s" or
         // "Total: X.X MH/s". When not in a TTY (SMOS / pipe mode), emit a
         // compact summary line that SMOS can display in its dashboard.
+        // Uses raw_stdout() (write(2) syscall) to bypass Rust's 8KB block
+        // buffer which would prevent output from appearing on pipes/SMOS.
         if !isatty_stdout() {
             let gpu_hr = self.gpu_hashrate_hps();
-            println!(
-                "GPU0: {} | Total: {} | Accepted: {} | Rejected: {} | Uptime: {:.0}s",
+            let line = format!(
+                "GPU0: {} | Total: {} | Accepted: {} | Rejected: {} | Uptime: {:.0}s\n",
                 fmt_hashrate(gpu_hr),
                 fmt_hashrate(overall_hps),
                 accepted, rejected, uptime
             );
+            raw_stdout(&line);
             // Also print per-stream info for the triple-stream setup
             for s in stream_stats {
-                println!(
-                    "  Stream {} [{} {}]: {} | A:{} R:{}{}",
+                let stream_line = format!(
+                    "  Stream {} [{} {}]: {} | A:{} R:{}{}\n",
                     s.label, s.coin, s.algorithm, fmt_hashrate(s.hashrate_60s),
                     s.accepted, s.rejected,
                     if s.active { "" } else { " (inactive)" }
                 );
+                raw_stdout(&stream_line);
             }
-            flush_stdout();
         }
 
         if !TUI_ACTIVE.load(Ordering::Relaxed) && isatty_stdout() {
