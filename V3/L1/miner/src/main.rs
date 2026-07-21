@@ -2754,9 +2754,12 @@ fn run_remote_session(
                         effective_header.timestamp = job.height;
                     }
 
+                    // ProgPoWZ (ZANO) pools send the 32-byte pre-hashed header_hash,
+                    // so pass it directly via mine_batch_raw. DCR (>80B) also uses raw.
                     let use_raw = gpu_backend::is_external_algorithm(&current_algorithm)
                         && !current_algorithm.starts_with("kheavyhash")
-                        && raw_header_bytes.len() > 80;
+                        && (raw_header_bytes.len() > 80
+                            || matches!(current_algorithm.as_str(), "progpow" | "progpow_epic" | "progpow_zano"));
 
                     let batch_result = if use_raw {
                         g.mine_batch_raw(&raw_header_bytes, job.target, job.start_nonce, effective_batch)
