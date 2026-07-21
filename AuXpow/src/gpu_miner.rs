@@ -4990,19 +4990,18 @@ impl DagManager {
                 Err(e) => {
                     eprintln!("dag_manager: corrupt ProgPow DAG cache, regenerating on GPU: {e}");
                     let _ = std::fs::remove_file(&cache_path);
-                    // Generate DAG on GPU (NEVER on CPU)
+                    // Generate DAG on GPU (NEVER on CPU) — keep it on GPU, do NOT
+                    // read back to host memory to avoid CPU RAM pressure and stalls.
                     miner.generate_progpow_dag_on_gpu(epoch)?;
-                    let (dag_u64, dag_entries) = miner.read_progpow_dag_to_host()?;
-                    self.save_dag_to_disk(&cache_path, &dag_u64, dag_entries)?;
                 }
             }
         } else {
-            // No disk cache — generate DAG directly on the GPU and persist it.
+            // No disk cache — generate DAG directly on the GPU and keep it there.
+            // We intentionally do NOT persist it to disk: reading 2+ GB back to
+            // host RAM violates the "DAG stays on GPU" rule and can stall the
+            // miner long enough for the pool to close the connection.
             eprintln!("dag_manager: generating ProgPow DAG epoch={} on GPU...", epoch);
             miner.generate_progpow_dag_on_gpu(epoch)?;
-            let (dag_u64, dag_entries) = miner.read_progpow_dag_to_host()?;
-            eprintln!("dag_manager: saving ProgPow DAG to disk cache: {}", cache_path.display());
-            self.save_dag_to_disk(&cache_path, &dag_u64, dag_entries)?;
         }
 
         self.progpow_epoch = Some(epoch);
