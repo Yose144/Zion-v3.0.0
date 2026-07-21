@@ -1047,6 +1047,35 @@ fn main() -> Result<()> {
     let force_save: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
     // F1.5/F1.6: block tracker for orphan monitoring + pool luck.
     let block_tracker: BlockTrackerArc = Arc::new(Mutex::new(BlockTracker::default()));
+    // F4: SQLite-backed share/payout/block store.  Path configurable via
+    // ZION_POOL_DB_PATH (default /data/zion/pool-store.db).  Set empty to
+    // disable (in-memory only, for testing).
+    let db_path = std::env::var("ZION_POOL_DB_PATH").unwrap_or_else(|_| {
+        if !pplns_state_path.is_empty() {
+            // Place DB next to the PPLNS state file.
+            let p = std::path::Path::new(&pplns_state_path);
+            p.parent()
+                .map(|d| d.join("pool-store.db").to_string_lossy().into_owned())
+                .unwrap_or_else(|| "/data/zion/pool-store.db".to_string())
+        } else {
+            "/data/zion/pool-store.db".to_string()
+        }
+    });
+    let share_store: Option<Arc<zion_pool::store::ShareStore>> = if db_path.is_empty() {
+        info!("share_store: disabled (ZION_POOL_DB_PATH empty)");
+        None
+    } else {
+        match zion_pool::store::ShareStore::open(&db_path) {
+            Ok(s) => {
+                info!("share_store: opened {}", db_path);
+                Some(Arc::new(s))
+            }
+            Err(e) => {
+                warn!("share_store: failed to open {}: {} — continuing without DB", db_path, e);
+                None
+            }
+        }
+    };
     let active_sessions = Arc::new(AtomicU64::new(0));
     let session_id_counter = Arc::new(AtomicU64::new(0));
     let template_cache = Arc::new(Mutex::new(TemplateCache::new(
@@ -1973,6 +2002,7 @@ fn main() -> Result<()> {
             let gpu_coin_override_ref = Arc::clone(&gpu_coin_override);
             let force_save_ref = Arc::clone(&force_save);
             let block_tracker_ref = Arc::clone(&block_tracker);
+            let share_store_ref = share_store.clone();
 
             // F3.1: spawn_blocking runs sync handle_client on the tokio
             // blocking thread pool.  This scales to thousands of concurrent
@@ -2014,6 +2044,7 @@ fn main() -> Result<()> {
                         force_save_ref,
                         block_tracker_ref,
                         &first_line,
+                        share_store_ref.clone(),
                     )
                 } else {
                     handle_client(
@@ -2038,6 +2069,7 @@ fn main() -> Result<()> {
                         force_save_ref,
                         block_tracker_ref,
                         if first_line.is_empty() { None } else { Some(&first_line) },
+                        share_store_ref.clone(),
                     )
                 };
                 if let Err(e) = result {
@@ -2607,6 +2639,7 @@ fn handle_stratum_v1_client(
     force_save: Arc<AtomicBool>,
     block_tracker: BlockTrackerArc,
     first_line: &str,
+    share_store: Option<Arc<zion_pool::store::ShareStore>>,
 ) -> Result<()> {
     use zion_pool::stratum_v1::{
         build_mining_notify, build_set_difficulty, parse_mining_submit, read_stratum_request,
@@ -2999,6 +3032,7 @@ fn handle_stratum_v1_client(
                     let telemetry_ref = Arc::clone(&miner_telemetry);
                     let deferred_ref = Arc::clone(&deferred_payouts);
                     let payouts_clone = payouts.clone();
+                    let share_store_for_payout = share_store.clone();
                     thread::spawn(move || {
                         execute_payout_async(
                             node_rpc_addr,
@@ -3009,6 +3043,7 @@ fn handle_stratum_v1_client(
                             &pplns_ref,
                             &telemetry_ref,
                             &deferred_ref,
+                            share_store_for_payout,
                         );
                     });
                 }
@@ -3062,6 +3097,7 @@ fn handle_client(
     force_save: Arc<AtomicBool>,
     block_tracker: BlockTrackerArc,
     first_line: Option<&str>,
+    share_store: Option<Arc<zion_pool::store::ShareStore>>,
 ) -> Result<()> {
     let session_started = Instant::now();
     let session_id = session_id_counter.fetch_add(1, Ordering::Relaxed);
@@ -4358,6 +4394,30 @@ fn handle_client(
                         }
                     }
 
+                    // F4: Record share in SQLite store (write-through).
+                    if let Some(ref ss) = share_store {
+                        let source_label = match &assignment {
+                            WorkAssignment::External(j) => j.external_coin.ticker().to_string(),
+                            WorkAssignment::Zion(_) => "zion".to_string(),
+                        };
+                        let rec = zion_pool::store::ShareRecord {
+                            miner_id: miner_id.clone(),
+                            worker_name: worker_name.clone(),
+                            job_id,
+                            nonce,
+                            hash_hex: hash_hex.clone(),
+                            height: job_height,
+                            accepted: matches!(decision.status, ShareStatus::Accepted),
+                            share_difficulty,
+                            network_difficulty: 0, // filled below for blocks
+                            is_block: decision.sealed_block.is_some(),
+                            source: source_label,
+                        };
+                        if let Err(e) = ss.record_share(&rec) {
+                            warn!("share_store: record_share failed: {e}");
+                        }
+                    }
+
                     // F1.6: count accepted ZION shares for pool luck calc.
                     // External shares (ZANO/VRSC) are NOT counted — only ZION
                     // shares contribute to ZION block-finding luck.
@@ -4510,6 +4570,25 @@ fn handle_client(
                             "block_recorded height={} miner={}/{} share_diff={} net_diff={}",
                             job_height, miner_id, worker_name, share_difficulty, net_diff
                         );
+                        // F4: Record block in SQLite store.
+                        if let Some(ref ss) = share_store {
+                            let block_hash = decision.sealed_block
+                                .as_ref()
+                                .map(|b| hex::encode(&b.hash))
+                                .unwrap_or_default();
+                            let rec = zion_pool::store::BlockRecord {
+                                height: job_height,
+                                hash: block_hash,
+                                miner_id: miner_id.clone(),
+                                worker_name: worker_name.clone(),
+                                share_difficulty,
+                                network_difficulty: net_diff,
+                                status: "pending".to_string(),
+                            };
+                            if let Err(e) = ss.record_block(&rec) {
+                                warn!("share_store: record_block failed: {e}");
+                            }
+                        }
                     }
                     let payouts = {
                         if job_height > 0 {
@@ -4547,6 +4626,7 @@ fn handle_client(
                         let telemetry_ref = Arc::clone(&miner_telemetry);
                         let deferred_ref = Arc::clone(&deferred_payouts);
                         let payouts_clone = payouts.clone();
+                        let share_store_for_payout = share_store.clone();
                         thread::spawn(move || {
                             execute_payout_async(
                                 node_rpc_addr,
@@ -4557,6 +4637,7 @@ fn handle_client(
                                 &pplns_ref,
                                 &telemetry_ref,
                                 &deferred_ref,
+                                share_store_for_payout,
                             );
                         });
                     }
@@ -9768,6 +9849,7 @@ fn execute_payout_async(
     pplns_engine: &Arc<Mutex<PplnsEngine>>,
     miner_telemetry: &Arc<Mutex<MinerTelemetryRegistry>>,
     deferred_payouts: &DeferredPayoutQueue,
+    share_store: Option<Arc<zion_pool::store::ShareStore>>,
 ) {
     let node_rpc_addr = match node_rpc_addr.as_deref() {
         Some(a) => a,
@@ -9852,6 +9934,22 @@ fn execute_payout_async(
                         &outcome.deferred,
                         "deferred: insufficient pool payout wallet balance for full batch",
                     );
+                }
+            }
+            // F4: Record executed payouts in SQLite store.
+            if let Some(ref ss) = share_store {
+                for p in &outcome.executed {
+                    let rec = zion_pool::store::PayoutRecord {
+                        miner_id: p.miner_id.clone(),
+                        address: p.address.clone(),
+                        amount_flowers: p.amount,
+                        tx_id: outcome.tx_id.clone(),
+                        height,
+                        block_hash: String::new(),
+                    };
+                    if let Err(e) = ss.record_payout(&rec) {
+                        println!("share_store: record_payout failed: {e}");
+                    }
                 }
             }
             if !outcome.deferred.is_empty() {
