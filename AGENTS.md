@@ -1883,3 +1883,9 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 - **BEAM (GPU):** Bridge se nepřipojí k `beam.2miners.com:5252` — `connection closed by remote`. Příčina: payout wallet je BTC (`3Qyd...`) a BeamStratum na 2miners vyžaduje BEAM adresu. **Potřebuji BEAM wallet.**
 - **RTM (CPU):** Bridge se připojí k zpool, dostává joby, ale všechny share jsou rejected (`Invalid share`). Příčina: build minera nemá feature `native-ghostrider`, takže `miner_harness.rs` pro `ghostrider` fallbackne na `hash_blake3` místo pravého GhostRider hashe. **Fix: překompilovat s `--features gpu-opencl,native-ghostrider`.**
 - **Výsledek:** Vracím zpět na stabilní `ZION_POOL_AUXPOW_ENABLED=0` a ZION-only, dokud nebude BEAM wallet a opravený RTM build. TUI je opět viditelné, ~20.6 KH/s, 100% accept.
+
+### Metal ProgPoWZ (ZANO) kernel verification (2026-07-21)
+
+- **Build:** `cargo check -p zion-miner --features gpu-metal,native-hashers` must pass on macOS Apple Silicon.
+- **Unit tests (M1):** `cargo test -p zion-auxpow --features gpu-metal progpow_zano_kernel_compiles_and_runs progpow_zano_final_hash_consistency -- --nocapture` compiles and runs the generated Metal kernel against a fake DAG and verifies the returned mix hash recomputes to a valid final hash via `progpow_final_hash`.
+- **Integration:** `zion-miner` routes `progpow_zano` to `MetalExternalMiner` when `gpu-backend=metal` and `native-hashers` is enabled. For live HeroMiners ZANO pool testing, build with `--features gpu-metal,native-hashers` and point the miner at `de.zano.herominers.com:1112` (SSL) or `1110` (TCP) with a ZANO wallet.

@@ -659,6 +659,19 @@ pub fn prepare_progpow_kernel_source_for_algo(
     }
 }
 
+/// Metal template for ProgPow / ProgPoWZ kernels.
+/// Includes placeholders for the inline random math and data loads.
+static PROGPOW_METAL_TEMPLATE: &str = include_str!("../csrc/metal/progpow_zano_kernel_template.metal");
+
+/// Prepare a Metal ProgPow kernel source for a specific algorithm and block height.
+/// The returned source can be passed directly to `MTLDevice::new_library_with_source`.
+pub fn prepare_progpow_metal_kernel_source_for_algo(
+    algorithm: &str,
+    block_height: u64,
+) -> String {
+    prepare_progpow_kernel_source_for_algo(PROGPOW_METAL_TEMPLATE, algorithm, block_height)
+}
+
 /// Prepare the KawPow kernel source for a specific ProgPow variant.
 /// Uses the xmrig kawpow_kernel.cl with XMRIG_INCLUDE_PROGPOW_RANDOM_MATH
 /// and XMRIG_INCLUDE_PROGPOW_DATA_LOADS placeholders.
