@@ -27,6 +27,7 @@ tokio = { workspace = true, features = ["rt-multi-thread", "net", "io-util", "ti
 tracing.workspace = true
 tracing-subscriber.workspace = true
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+rusqlite = { version = "0.31", features = ["bundled"] }
 zion-core = { path = "../core" }
 zion-cosmic-harmony = { path = "../cosmic-harmony" }
 zion-auxpow = { path = "../../../AuXpow" }

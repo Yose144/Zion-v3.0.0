@@ -833,9 +833,14 @@ fn build_triple_stream_box(
     s.push_str("│");
     s.push_str(BOLD);
     s.push_str(WHITE);
-    s.push_str(&format!("  ZION v3.0.6 Triple Stream"));
+    #[cfg(feature = "public_build")]
+    let title_str = "  ZION v3.0.6 Miner";
+    #[cfg(not(feature = "public_build"))]
+    let title_str = "  ZION v3.0.6 Triple Stream";
+    s.push_str(title_str);
     s.push_str(RESET);
-    let title_pad = w - 26 - 7 - uptime.len();
+    let title_len = title_str.chars().count();
+    let title_pad = w - title_len - 7 - uptime.len();
     s.push_str(&" ".repeat(title_pad));
     s.push_str(DIM);
     s.push_str("uptime ");
@@ -845,7 +850,12 @@ fn build_triple_stream_box(
     s.push_str(&format!("├{}┤\n", "─".repeat(w)));
 
     // ── Per-stream lines ──
-    for stream in streams {
+    // In public_build, filter out non-ZION streams (hide Triple Stream).
+    #[cfg(feature = "public_build")]
+    let visible_streams: Vec<&StreamStats> = streams.iter().filter(|s| s.label == "ZION").collect();
+    #[cfg(not(feature = "public_build"))]
+    let visible_streams: Vec<&StreamStats> = streams.iter().collect();
+    for stream in visible_streams {
         s.push_str("│");
         if !stream.active {
             // Inactive stream
