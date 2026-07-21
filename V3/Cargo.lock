@@ -5326,6 +5326,7 @@ dependencies = [
  "ed25519-dalek",
  "hex",
  "reqwest",
+ "rusqlite",
  "serde",
  "serde_json",
  "tokio",
