@@ -32,6 +32,19 @@ use zion_cosmic_harmony::stream_profit::{
 };
 use zion_core::MiningJob;
 
+// F2: Global shutdown flag for Stratum v1 sessions (set by ctrl-c handler).
+static SHUTDOWN_FLAG: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Check if the pool is shutting down (F2: used by Stratum v1 session loop).
+fn shutdown_check() -> bool {
+    SHUTDOWN_FLAG.load(Ordering::SeqCst)
+}
+
+/// Decode a 32-byte hash hex string (F2: used by Stratum v1 submit handler).
+fn decode_hash_hex(raw: &str) -> Result<[u8; 32]> {
+    parse_hash_hex(raw)
+}
+
 // ---------------------------------------------------------------------------
 // LogChannel — batched async logging to reduce I/O on the hot path
 // ---------------------------------------------------------------------------
@@ -1539,6 +1552,7 @@ fn main() -> Result<()> {
         ctrlc::set_handler(move || {
             info!("shutdown_signal_received");
             shutdown.store(true, Ordering::SeqCst);
+            SHUTDOWN_FLAG.store(true, Ordering::SeqCst);
         })
         .context("failed to set ctrl-c handler")?;
     }
@@ -1916,28 +1930,73 @@ fn main() -> Result<()> {
         let block_tracker_ref = Arc::clone(&block_tracker);
         handles.push(thread::spawn(move || {
             let _ip_guard = ip_guard;
-            handle_client(
-                stream,
-                pool,
-                revenue_scheduler,
-                routing_stats,
-                miner_telemetry,
-                pplns_ref,
-                active_sessions_ref,
-                session_id_ref,
-                template_cache_ref,
-                deferred_ref,
-                multi_bridge,
-                &config,
-                &log_ch,
-                peer_ip,
-                banned_ips_ref,
-                profit_switch_ref,
-                cpu_coin_override_ref,
-                gpu_coin_override_ref,
-                force_save_ref,
-                block_tracker_ref,
-            )
+            // F2: Protocol detection — read the first line to determine
+            // if this is Stratum v1 (has "method" field) or native ZION wire.
+            // We read via a BufReader, then extract the stream back with
+            // into_inner() so the handler gets the raw TcpStream (with the
+            // first line already consumed).  The first line is passed to the
+            // handler so it doesn't need to be re-read.
+            let mut peek_reader = BufReader::new(stream);
+            let mut first_line = String::new();
+            let read_result = peek_reader.read_line(&mut first_line);
+            let stream = peek_reader.into_inner();
+            let is_stratum = if read_result.is_ok() && !first_line.is_empty() {
+                zion_pool::stratum_v1::is_stratum_v1(&first_line)
+            } else {
+                false
+            };
+            if is_stratum {
+                info!("stratum_v1: protocol detected from peer={peer_addr}");
+                handle_stratum_v1_client(
+                    stream,
+                    pool,
+                    revenue_scheduler,
+                    routing_stats,
+                    miner_telemetry,
+                    pplns_ref,
+                    active_sessions_ref,
+                    session_id_ref,
+                    template_cache_ref,
+                    deferred_ref,
+                    multi_bridge,
+                    &config,
+                    &log_ch,
+                    peer_ip,
+                    banned_ips_ref,
+                    profit_switch_ref,
+                    cpu_coin_override_ref,
+                    gpu_coin_override_ref,
+                    force_save_ref,
+                    block_tracker_ref,
+                    &first_line,
+                )
+            } else {
+                // Native ZION wire protocol — pass first_line so handle_client
+                // can use it instead of re-reading from the stream.
+                handle_client(
+                    stream,
+                    pool,
+                    revenue_scheduler,
+                    routing_stats,
+                    miner_telemetry,
+                    pplns_ref,
+                    active_sessions_ref,
+                    session_id_ref,
+                    template_cache_ref,
+                    deferred_ref,
+                    multi_bridge,
+                    &config,
+                    &log_ch,
+                    peer_ip,
+                    banned_ips_ref,
+                    profit_switch_ref,
+                    cpu_coin_override_ref,
+                    gpu_coin_override_ref,
+                    force_save_ref,
+                    block_tracker_ref,
+                    if first_line.is_empty() { None } else { Some(&first_line) },
+                )
+            }
         }));
         accepted = accepted.saturating_add(1);
     }
@@ -2403,6 +2462,456 @@ fn handle_external_share(
     }
 }
 
+// ---------------------------------------------------------------------------
+// F2: Stratum v1 session handler
+// ---------------------------------------------------------------------------
+// Handles a Stratum v1 connection (mining.subscribe / authorize / submit).
+// Shares are validated through the same MiningPool.submit_solution path as
+// native ZION wire sessions, so PPLNS, payouts, and block submission work
+// identically.  The Stratum job_id is a string derived from the block height
+// and mapped back to the ZION u64 job_id via StratumV1Session::job_id_map.
+//
+// Only ZION (deeksha_lite_v1) shares are supported — external AuxPoW streams
+// stay on the native wire protocol where the ExternalStreamJob metadata can
+// be carried in full.  External miners that want to merge-mine VRSC/KAS/etc.
+// still use the native protocol via zion-miner.
+#[allow(clippy::too_many_arguments)]
+fn handle_stratum_v1_client(
+    stream: TcpStream,
+    pool: Arc<Mutex<MiningPool>>,
+    revenue_scheduler: Arc<Mutex<RevenueScheduler>>,
+    routing_stats: Arc<Mutex<RoutingStats>>,
+    miner_telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
+    pplns_engine: Arc<Mutex<PplnsEngine>>,
+    active_sessions: Arc<AtomicU64>,
+    session_id_counter: Arc<AtomicU64>,
+    template_cache: Arc<Mutex<TemplateCache>>,
+    deferred_payouts: DeferredPayoutQueue,
+    multi_bridge: MultiAuxPowBridge,
+    config: &ServerConfig,
+    log_ch: &LogChannel,
+    peer_ip: IpAddr,
+    no_solution_banned_ips: Arc<Mutex<HashMap<IpAddr, Instant>>>,
+    profit_switch_state: PoolProfitSwitchStateArc,
+    cpu_coin_override: CoinOverrideArc,
+    gpu_coin_override: CoinOverrideArc,
+    force_save: Arc<AtomicBool>,
+    block_tracker: BlockTrackerArc,
+    first_line: &str,
+) -> Result<()> {
+    use zion_pool::stratum_v1::{
+        build_mining_notify, build_set_difficulty, parse_mining_submit, read_stratum_request,
+        write_stratum_notification, write_stratum_response, StratumRequest, StratumResponse,
+        StratumV1Session,
+    };
+
+    let session_id = session_id_counter.fetch_add(1, Ordering::Relaxed);
+    let mut sv1_session = StratumV1Session::new(session_id);
+
+    let reader_stream = stream.try_clone().context("failed to clone tcp stream")?;
+    let session_read_timeout_secs: u64 = std::env::var("ZION_POOL_SESSION_TIMEOUT")
+        .ok()
+        .and_then(|s| s.trim().parse().ok())
+        .unwrap_or(120);
+    let job_refresh_secs: u64 = std::env::var("ZION_POOL_JOB_REFRESH_SECS")
+        .ok()
+        .and_then(|s| s.trim().parse().ok())
+        .unwrap_or(15);
+    let effective_read_timeout = session_read_timeout_secs.min(job_refresh_secs);
+    let _ = reader_stream.set_read_timeout(Some(Duration::from_secs(effective_read_timeout)));
+    let mut reader = BufReader::new(reader_stream);
+    let mut writer = stream;
+
+    // ── Phase 1: mining.subscribe ─────────────────────────────────────
+    // The first line was already read by the accept loop for protocol
+    // detection.  Parse it as a Stratum request.
+    let subscribe_req: StratumRequest = serde_json::from_str(first_line.trim())
+        .context("failed to parse stratum subscribe")?;
+    if subscribe_req.method != "mining.subscribe" {
+        // Some miners send authorize first — tolerate it.
+        info!(
+            "stratum_v1: first method is {} (expected subscribe), tolerating",
+            subscribe_req.method
+        );
+    }
+    // Extract user-agent from subscribe params (optional).
+    if let Some(agent) = subscribe_req.params.as_array().and_then(|a| a.first()).and_then(|v| v.as_str()) {
+        info!("stratum_v1: client agent = {}", agent);
+    }
+    // Send subscribe response: [[methods], extranonce1, extranonce2_size]
+    let subscribe_resp = StratumResponse {
+        id: subscribe_req.id,
+        result: serde_json::json!([
+            [["mining.set_difficulty", "sv1"], ["mining.notify", "sv1"]],
+            sv1_session.extranonce1_hex,
+            sv1_session.extranonce2_size
+        ]),
+        error: None,
+    };
+    write_stratum_response(&mut writer, &subscribe_resp)?;
+    debug!("stratum_v1: sent subscribe response");
+
+    // ── Phase 2: mining.authorize ─────────────────────────────────────
+    let auth_req = read_stratum_request(&mut reader)?;
+    if auth_req.method != "mining.authorize" {
+        return Err(anyhow!(
+            "stratum_v1: expected mining.authorize, got {}",
+            auth_req.method
+        ));
+    }
+    let (username, _password) = {
+        let arr = auth_req
+            .params
+            .as_array()
+            .ok_or_else(|| anyhow!("mining.authorize params must be an array"))?;
+        let user = arr
+            .first()
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("mining.authorize: missing username"))?
+            .to_string();
+        let pass = arr
+            .get(1)
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        (user, pass)
+    };
+    let (miner_id, worker_name) = StratumV1Session::parse_username(&username);
+    sv1_session.miner_id = miner_id.clone();
+    sv1_session.worker_name = worker_name.clone();
+    sv1_session.authorized = true;
+    // Algorithm: Stratum v1 doesn't carry it — default to deeksha_lite_v1.
+    sv1_session.algorithm = "deeksha_lite_v1".to_string();
+    sv1_session.backend = "stratum_v1".to_string();
+
+    // Validate payout address (miner_id is the wallet address).
+    if !zion_core::crypto::is_valid_address(&miner_id) {
+        // Send authorize=false so the miner knows it was rejected.
+        let resp = StratumResponse {
+            id: auth_req.id,
+            result: serde_json::json!(false),
+            error: Some(serde_json::json!([20, "invalid payout address", null])),
+        };
+        write_stratum_response(&mut writer, &resp)?;
+        return Err(anyhow!(
+            "stratum_v1: invalid payout address {miner_id}: must be a valid zion1 address"
+        ));
+    }
+    // Send authorize response: true
+    let auth_resp = StratumResponse {
+        id: auth_req.id,
+        result: serde_json::json!(true),
+        error: None,
+    };
+    write_stratum_response(&mut writer, &auth_resp)?;
+    info!(
+        "stratum_v1: session_start session_id={} miner={} worker={}",
+        session_id, miner_id, worker_name
+    );
+
+    // Count as active session.
+    active_sessions.fetch_add(1, Ordering::Relaxed);
+    let _guard = SessionGuard(Arc::clone(&active_sessions));
+
+    // Register in telemetry + PPLNS.
+    {
+        let mut telemetry = miner_telemetry
+            .lock()
+            .expect("miner telemetry lock poisoned");
+        telemetry.touch_session(&miner_id, &worker_name, &sv1_session.algorithm, &sv1_session.backend);
+    }
+    let pplns_key = format!("{miner_id}/{worker_name}");
+    pplns_engine
+        .lock()
+        .expect("pplns lock poisoned")
+        .register_address(&pplns_key, &miner_id);
+
+    // ── Phase 3: Send initial set_difficulty + notify ─────────────────
+    let mut vardiff = VarDiff::new(config);
+    let set_diff = build_set_difficulty(vardiff.current_difficulty);
+    write_stratum_notification(&mut writer, &set_diff)?;
+    debug!(
+        "stratum_v1: sent set_difficulty = {}",
+        vardiff.current_difficulty
+    );
+
+    // ── Phase 4: Main loop (notify → submit → response) ───────────────
+    let session_group = SessionGroup::Zion;
+    let mut iteration: u32 = 0;
+    let _ = &revenue_scheduler; // unused but kept for signature parity
+    let _ = &multi_bridge; // Stratum v1 = ZION only
+    let _ = &profit_switch_state;
+    let _ = &cpu_coin_override;
+    let _ = &gpu_coin_override;
+    let _ = &no_solution_banned_ips;
+    let _ = &deferred_payouts;
+    let _ = &routing_stats;
+    let _ = &log_ch;
+
+    loop {
+        iteration = iteration.saturating_add(1);
+        if shutdown_check() {
+            info!("stratum_v1: shutdown signal received, draining session");
+            break;
+        }
+
+        // Fetch fresh block template from node (via cache).
+        let template = {
+            let mut cache = template_cache.lock().expect("template cache lock poisoned");
+            let rpc = config.node_rpc_addr.as_deref().unwrap_or("127.0.0.1:9443");
+            cache.get_or_fetch(rpc)?
+        };
+        // Issue ZION job from template.
+        let job = {
+            let mut p = pool.lock().expect("pool lock poisoned");
+            p.issue_job_from_template(&template, 0, config.nonce_count)
+                .map_err(|e| anyhow!(e))?
+        };
+        let stratum_job_id = sv1_session.register_job(job.job_id, job.height);
+        let clean_jobs = iteration == 1;
+        let notify = build_mining_notify(&job, &stratum_job_id, clean_jobs);
+        write_stratum_notification(&mut writer, &notify)?;
+        debug!(
+            "stratum_v1: sent notify job_id={} height={}",
+            stratum_job_id, job.height
+        );
+
+        // Read submit (with timeout → refresh job).
+        let read_result = read_stratum_request(&mut reader);
+        let req = match read_result {
+            Ok(r) => r,
+            Err(e) => {
+                let is_timeout = e
+                    .chain()
+                    .any(|cause| {
+                        if let Some(io_err) = cause.downcast_ref::<std::io::Error>() {
+                            io_err.kind() == std::io::ErrorKind::WouldBlock
+                                || io_err.kind() == std::io::ErrorKind::TimedOut
+                        } else {
+                            false
+                        }
+                    });
+                if is_timeout {
+                    debug!("stratum_v1: read timeout, refreshing job");
+                    continue;
+                }
+                return Err(e).context("stratum_v1: read error");
+            }
+        };
+
+        if req.method != "mining.submit" {
+            debug!("stratum_v1: ignoring non-submit method: {}", req.method);
+            // Respond with error so miner knows.
+            let resp = StratumResponse {
+                id: req.id,
+                result: serde_json::json!(false),
+                error: Some(serde_json::json!([20, "method not supported", null])),
+            };
+            write_stratum_response(&mut writer, &resp)?;
+            continue;
+        }
+
+        // Parse submit → (zion_job_id, nonce, hash_hex)
+        let (zion_job_id, nonce, hash_hex) = match parse_mining_submit(&req.params, &sv1_session) {
+            Ok(v) => v,
+            Err(e) => {
+                let resp = StratumResponse {
+                    id: req.id,
+                    result: serde_json::json!(false),
+                    error: Some(serde_json::json!([21, &format!("{}", e), null])),
+                };
+                write_stratum_response(&mut writer, &resp)?;
+                debug!("stratum_v1: submit parse error: {e:#}");
+                continue;
+            }
+        };
+
+        // Decode hash hex → 32 bytes.
+        let hash_bytes = match decode_hash_hex(&hash_hex) {
+            Ok(b) => b,
+            Err(e) => {
+                let resp = StratumResponse {
+                    id: req.id,
+                    result: serde_json::json!(false),
+                    error: Some(serde_json::json!([22, &format!("{}", e), null])),
+                };
+                write_stratum_response(&mut writer, &resp)?;
+                continue;
+            }
+        };
+
+        // Build MiningSolution and submit to pool.
+        let solution = MiningSolution {
+            job_id: zion_job_id,
+            candidate: zion_core::BlockCandidate {
+                header: job.header,
+                nonce,
+                height: job.height,
+            },
+            hash: hash_bytes,
+        };
+        let decision = {
+            let mut p = pool.lock().expect("pool lock poisoned");
+            p.submit_solution(
+                miner_id.clone(),
+                worker_name.clone(),
+                solution,
+                RevenueSource::Zion,
+                config.revenue_value_usd,
+                &sv1_session.algorithm,
+            )
+        };
+        let accepted = matches!(decision.status, ShareStatus::Accepted);
+        let block_found = decision.sealed_block.is_some();
+
+        // Send Stratum v1 response.
+        let resp = StratumResponse {
+            id: req.id,
+            result: serde_json::json!(accepted),
+            error: if accepted {
+                None
+            } else {
+                Some(serde_json::json!([23, &format!("{:?}", decision.status), null]))
+            },
+        };
+        write_stratum_response(&mut writer, &resp)?;
+
+        // Update telemetry + PPLNS + routing stats.
+        {
+            let mut telemetry = miner_telemetry
+                .lock()
+                .expect("miner telemetry lock poisoned");
+            telemetry.record_job_result_stream(
+                &miner_id,
+                &worker_name,
+                accepted,
+                0,
+                0,
+                "zion",
+            );
+        }
+        if accepted {
+            {
+                let mut p = pool.lock().expect("pool lock poisoned");
+                p.record_accepted_share();
+            }
+            // PPLNS share recording.
+            let share_diff = vardiff.current_difficulty;
+            {
+                let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                pplns.record_share_with_diff(&pplns_key, &worker_name, job.height, share_diff);
+            }
+            // F1.6: block tracker share count.
+            if let Ok(mut bt) = block_tracker.lock() {
+                bt.record_share();
+            }
+            // VarDiff: record submit for retarget.
+            vardiff.record_submit();
+            // If vardiff changed, send new set_difficulty.
+            if vardiff.current_difficulty != share_diff {
+                let sd = build_set_difficulty(vardiff.current_difficulty);
+                write_stratum_notification(&mut writer, &sd)?;
+                info!(
+                    "stratum_v1: vardiff adjusted {} → {} for miner={}",
+                    share_diff, vardiff.current_difficulty, worker_name
+                );
+            }
+            // Block found handling.
+            if block_found {
+                {
+                    let mut telemetry = miner_telemetry
+                        .lock()
+                        .expect("miner telemetry lock poisoned");
+                    telemetry.record_block_found(&miner_id, &worker_name);
+                }
+                {
+                    let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                    pplns.record_block_found(&pplns_key);
+                }
+                force_save.store(true, Ordering::SeqCst);
+                // F1.5/F1.6: record block in tracker.
+                let net_diff = config
+                    .node_rpc_addr
+                    .as_deref()
+                    .filter(|s| !s.is_empty())
+                    .map(get_chain_difficulty)
+                    .unwrap_or(0);
+                if let Ok(mut bt) = block_tracker.lock() {
+                    bt.record_block_found(
+                        job.height,
+                        &miner_id,
+                        &worker_name,
+                        vardiff.current_difficulty,
+                        net_diff,
+                        true,
+                    );
+                }
+                info!(
+                    "stratum_v1: block_found height={} miner={}/{}",
+                    job.height, miner_id, worker_name
+                );
+                // Trigger async payout (same as handle_client).
+                let payouts = {
+                    let (miner_share, _, _, _) = zion_core::emission::fee_split(
+                        zion_core::emission::block_subsidy(job.height),
+                    );
+                    let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                    pplns.compute_miner_payouts(miner_share)
+                };
+                if !payouts.is_empty() {
+                    {
+                        let mut telemetry = miner_telemetry
+                            .lock()
+                            .expect("miner telemetry lock poisoned");
+                        telemetry.record_pending_payouts(job.height, &payouts);
+                    }
+                    let node_rpc_addr = config.node_rpc_addr.clone();
+                    let pool_wallet_addr = config.pool_wallet_address.clone();
+                    let signing_key = config.pool_signing_key.clone();
+                    let pplns_ref = Arc::clone(&pplns_engine);
+                    let telemetry_ref = Arc::clone(&miner_telemetry);
+                    let deferred_ref = Arc::clone(&deferred_payouts);
+                    let payouts_clone = payouts.clone();
+                    thread::spawn(move || {
+                        execute_payout_async(
+                            node_rpc_addr,
+                            pool_wallet_addr,
+                            signing_key,
+                            &payouts_clone,
+                            job.height,
+                            &pplns_ref,
+                            &telemetry_ref,
+                            &deferred_ref,
+                        );
+                    });
+                }
+            }
+        } else {
+            {
+                let mut p = pool.lock().expect("pool lock poisoned");
+                p.record_rejected_share();
+            }
+        }
+        {
+            let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
+            let should_log = stats.record(session_group, RevenueSource::Zion, accepted);
+            if should_log {
+                info!("routing_snapshot {}", stats.snapshot_line());
+            }
+        }
+        info!(
+            "stratum_v1: share_result miner={}/{} accepted={} block_found={} job_id={} nonce={:#x}",
+            miner_id, worker_name, accepted, block_found, zion_job_id, nonce
+        );
+    }
+
+    info!(
+        "stratum_v1: session_end miner={}/{} iterations={}",
+        miner_id, worker_name, iteration
+    );
+    Ok(())
+}
+
 #[allow(clippy::too_many_arguments)]
 fn handle_client(
     stream: TcpStream,
@@ -2425,6 +2934,7 @@ fn handle_client(
     gpu_coin_override: CoinOverrideArc,
     force_save: Arc<AtomicBool>,
     block_tracker: BlockTrackerArc,
+    first_line: Option<&str>,
 ) -> Result<()> {
     let session_started = Instant::now();
     let session_id = session_id_counter.fetch_add(1, Ordering::Relaxed);
@@ -2475,13 +2985,24 @@ fn handle_client(
     // Read hello BEFORE logging session_start — TCP probes (health checks,
     // dashboard polls) connect and immediately close without sending a hello.
     // Logging session_start for those creates noise and inflates session counts.
-    let (hello_line, hello_message) = match read_wire_message(&mut reader) {
-        Ok(pair) => pair,
-        Err(_) => {
-            // Connection closed before hello — likely a health check / TCP probe.
-            // Decrement ip_sessions counter (already incremented in accept loop)
-            // and return quietly without logging session_start.
-            return Ok(());
+    // F2: If first_line was already read by the accept loop for protocol
+    // detection, use it instead of reading from the stream again.
+    let (hello_line, hello_message) = if let Some(line) = first_line {
+        match decode_message(line) {
+            Ok(msg) => (line.trim().to_string(), msg),
+            Err(_) => {
+                return Ok(());
+            }
+        }
+    } else {
+        match read_wire_message(&mut reader) {
+            Ok(pair) => pair,
+            Err(_) => {
+                // Connection closed before hello — likely a health check / TCP probe.
+                // Decrement ip_sessions counter (already incremented in accept loop)
+                // and return quietly without logging session_start.
+                return Ok(());
+            }
         }
     };
 
@@ -7254,6 +7775,7 @@ mod tests {
                 Arc::new(Mutex::new(None)), // gpu_coin_override
                 Arc::new(AtomicBool::new(false)), // force_save
                 Arc::new(Mutex::new(BlockTracker::default())), // block_tracker
+                None, // first_line (test: read from stream normally)
             )
         });
 

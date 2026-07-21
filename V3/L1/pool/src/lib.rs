@@ -1,6 +1,7 @@
 pub mod ncl_gateway;
 pub mod pplns;
 pub mod revenue_proxy;
+pub mod stratum_v1;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
