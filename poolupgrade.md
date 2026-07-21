@@ -279,10 +279,10 @@ println!("BLOCK_FOUND miner={} height={} nonce={} hash={}", ...);
 |----|------|--------|----------|
 | F7.1 | API key auth (`Authorization: Bearer <key>`) pro `/api/v1/miner/:address/*` | `server.rs:6238` | P1 |
 | F7.2 | Nové endpoints: `/api/v1/miner/:address/hashrate-history`, `/blocks`, `/payouts` | `server.rs` (new) | P1 |
-| F7.3 | Pool op API: `/api/v1/op/miners`, `/op/blocks`, `/op/revenue` (admin key) | `server.rs` (new) | P2 |
-| F7.4 | Grafana dashboard JSON — pool hashrate, miners, blocks, luck, payouts | `grafana/` (new) | P2 |
+| F7.3 | ✅ Pool op API: `/api/v1/op/miners`, `/op/blocks`, `/op/revenue` (admin key) | `server.rs` (new) | P2 ✅ |
+| F7.4 | ✅ Grafana dashboard JSON — pool hashrate, miners, blocks, luck, payouts | `grafana/` (new) | P2 ✅ |
 | F7.5 | Prometheus metrics rozšířit: pool_luck, orphan_rate, share_rate, conn_rate | `server.rs:5692` | P1 |
-| F7.6 | OpenAPI spec (`utoipa` crate) pro API dokumentaci | `Cargo.toml` + `src/api.rs` | P2 |
+| F7.6 | ✅ OpenAPI spec (statický JSON, bez utoipa dep) | `V3/L1/pool/openapi.json` | P2 ✅ |
 
 ### Fáze 8: Notifications + monitoring (1–2 dny) — P2
 
@@ -290,8 +290,8 @@ println!("BLOCK_FOUND miner={} height={} nonce={} hash={}", ...);
 
 | ID | Task | Soubor | Priorita |
 |----|------|--------|----------|
-| F8.1 | Telegram bot alert: pool down, accept_rate < 95%, orphan block, payout fail | `src/notify.rs` (new) | P2 |
-| F8.2 | Email notifikace minerovi o payoutu (SMTP, opt-in) | `src/notify.rs` | P2 |
+| F8.1 | ✅ Telegram bot alert: pool down, accept_rate < 95%, orphan block, payout fail | `server.rs` (TelegramNotifier) | P2 ✅ |
+| F8.2 | ✅ Email notifikace minerovi o payoutu (SMTP, opt-in) | `server.rs` (SmtpNotifier) | P2 ✅ |
 | F8.3 | Webhook na block found (pro dashboard real-time update) | `server.rs` | P2 |
 | F8.4 | Health check endpoint `/health` pro watchdog | `server.rs:5495` | P1 |
 
