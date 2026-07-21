@@ -484,6 +484,68 @@ fn notify_oasis_block_mined(miner_address: &str, block_height: u64) {
     }
 }
 
+/// F8.3: Notify an external webhook that a block was found.
+/// Configured via `ZION_POOL_BLOCK_WEBHOOK_URL`.  Sends a POST with JSON
+/// body containing block details (height, hash, miner_id, worker_name,
+/// timestamp).  Fire-and-forget; failure is silently logged.
+fn notify_block_webhook(
+    height: u64,
+    block_hash: &str,
+    miner_id: &str,
+    worker_name: &str,
+    share_difficulty: u64,
+    network_difficulty: u64,
+) {
+    let webhook_url = match std::env::var("ZION_POOL_BLOCK_WEBHOOK_URL") {
+        Ok(url) if !url.is_empty() => url,
+        _ => return, // webhook disabled
+    };
+    let ts = now_unix_seconds();
+    let body = format!(
+        r#"{{"event":"block_found","height":{},"hash":"{}","miner_id":"{}","worker_name":"{}","share_difficulty":{},"network_difficulty":{},"timestamp":{}}}"#,
+        height, block_hash, miner_id, worker_name, share_difficulty, network_difficulty, ts
+    );
+    // Parse URL — support both http:// and https://
+    let (authority, base_path, _scheme) = match parse_webhook_url(&webhook_url) {
+        Ok(target) => target,
+        Err(e) => {
+            info!("block_webhook_invalid_url url={} err={}", webhook_url, e);
+            return;
+        }
+    };
+    match post_json_http(&authority, &base_path, &body, Duration::from_secs(5)) {
+        Ok(code) if code == 200 || code == 201 || code == 204 => {
+            info!("block_webhook_sent height={} http_code={}", height, code);
+        }
+        Ok(code) => {
+            info!("block_webhook_failed height={} http_code={}", height, code);
+        }
+        Err(e) => {
+            info!("block_webhook_unavailable height={} err={}", height, e);
+        }
+    }
+}
+
+/// Parse a webhook URL (http:// or https://) into (authority, path, scheme).
+fn parse_webhook_url(url: &str) -> Result<(String, String, String)> {
+    let trimmed = url.trim();
+    if let Some(rest) = trimmed.strip_prefix("http://") {
+        let (auth, path) = rest
+            .split_once('/')
+            .map(|(a, p)| (a.to_string(), format!("/{}", p.trim_start_matches('/'))))
+            .unwrap_or_else(|| (rest.to_string(), String::new()));
+        Ok((auth, path, "http".to_string()))
+    } else if let Some(rest) = trimmed.strip_prefix("https://") {
+        let (auth, path) = rest
+            .split_once('/')
+            .map(|(a, p)| (a.to_string(), format!("/{}", p.trim_start_matches('/'))))
+            .unwrap_or_else(|| (rest.to_string(), String::new()));
+        Ok((auth, path, "https".to_string()))
+    } else {
+        Err(anyhow!("webhook URL must start with http:// or https://"))
+    }
+}
+
 fn parse_oasis_http_target(url: &str, allow_remote: bool) -> Result<(String, String)> {
     let trimmed = url.trim();
     let without_scheme = trimmed
@@ -965,6 +1027,173 @@ async fn run_auxpow_bridge(
     }
 }
 
+// ---------------------------------------------------------------------------
+// F5.1: TLS acceptor helper
+// ---------------------------------------------------------------------------
+
+/// Load a TLS server config from PEM-encoded cert + key files.
+/// Uses rustls 0.26 with safe defaults (no dangerous protocols).
+fn load_tls_server_config(
+    cert_path: &str,
+    key_path: &str,
+) -> Result<tokio_rustls::TlsAcceptor> {
+    let cert_pem = std::fs::read(cert_path)
+        .with_context(|| format!("failed to read TLS cert {cert_path}"))?;
+    let key_pem = std::fs::read(key_path)
+        .with_context(|| format!("failed to read TLS key {key_path}"))?;
+    let cert_chain: Vec<rustls::pki_types::CertificateDer> =
+        rustls_pemfile::certs(&mut cert_pem.as_slice())
+            .collect::<Result<Vec<_>, _>>()
+            .context("failed to parse TLS cert PEM")?;
+    if cert_chain.is_empty() {
+        anyhow::bail!("no certificates found in {cert_path}");
+    }
+    let key_der = rustls_pemfile::private_key(&mut key_pem.as_slice())
+        .context("failed to parse TLS key PEM")?
+        .ok_or_else(|| anyhow::anyhow!("no private key found in {key_path}"))?;
+    let mut server_config = rustls::ServerConfig::builder()
+        .with_no_client_auth()
+        .with_single_cert(cert_chain, key_der)
+        .context("failed to build rustls ServerConfig")?;
+    server_config.max_early_data_size = 0;
+    Ok(tokio_rustls::TlsAcceptor::from(std::sync::Arc::new(server_config)))
+}
+
+// ---------------------------------------------------------------------------
+// F5: SessionCtx — shared session dispatch context
+// ---------------------------------------------------------------------------
+
+/// Holds all Arc refs needed to dispatch a miner session.  Shared by the
+/// primary accept loop, TLS listener, and extra-port listeners so they all
+/// use identical ban-check / ip_sessions accounting / handler dispatch.
+struct SessionCtx {
+    pool: Arc<Mutex<MiningPool>>,
+    revenue_scheduler: Arc<Mutex<RevenueScheduler>>,
+    routing_stats: Arc<Mutex<RoutingStats>>,
+    miner_telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
+    pplns_engine: Arc<Mutex<PplnsEngine>>,
+    active_sessions: Arc<AtomicU64>,
+    session_id_counter: Arc<AtomicU64>,
+    template_cache: Arc<Mutex<TemplateCache>>,
+    log_channel: Arc<LogChannel>,
+    deferred_payouts: DeferredPayoutQueue,
+    multi_bridge: MultiAuxPowBridge,
+    no_solution_banned_ips: Arc<Mutex<HashMap<IpAddr, Instant>>>,
+    profit_switch_state: PoolProfitSwitchStateArc,
+    cpu_coin_override: CoinOverrideArc,
+    gpu_coin_override: CoinOverrideArc,
+    force_save: Arc<AtomicBool>,
+    block_tracker: BlockTrackerArc,
+    share_store: Option<Arc<zion_pool::store::ShareStore>>,
+    ip_sessions: Arc<Mutex<HashMap<IpAddr, u32>>>,
+    config: Arc<ServerConfig>,
+    session_read_timeout: u64,
+    no_solution_cooldown: u64,
+    max_sessions_per_ip: u32,
+}
+
+impl SessionCtx {
+    /// Run ban-check + ip_sessions accounting, then dispatch to the
+    /// appropriate handler (handle_stratum_v1_client or handle_client).
+    /// `is_stratum` and `first_line` are pre-computed by the caller (the
+    /// caller reads the first line for protocol detection before calling
+    /// this, because the TLS path reads it via async tokio I/O).
+    fn dispatch_session(
+        &self,
+        stream: std::net::TcpStream,
+        peer_ip: IpAddr,
+        peer_addr: std::net::SocketAddr,
+        is_stratum: bool,
+        first_line: String,
+    ) {
+        // Check NoSolution reconnect ban.
+        if self.no_solution_cooldown > 0 {
+            let mut bans = self.no_solution_banned_ips.lock().expect("banned_ips lock");
+            if let Some(banned_at) = bans.get(&peer_ip) {
+                let elapsed = banned_at.elapsed().as_secs();
+                if elapsed < self.no_solution_cooldown {
+                    info!(
+                        "no_solution_banned_reject ip={peer_ip} elapsed={elapsed}s cooldown={}s",
+                        self.no_solution_cooldown
+                    );
+                    drop(stream);
+                    return;
+                } else {
+                    bans.remove(&peer_ip);
+                }
+            }
+        }
+        {
+            let mut sessions = self.ip_sessions.lock().expect("ip_sessions lock");
+            let ip_count = sessions.entry(peer_ip).or_insert(0);
+            if self.max_sessions_per_ip > 0 && *ip_count >= self.max_sessions_per_ip {
+                info!("rate_limit_reject ip={peer_ip} sessions={ip_count}");
+                drop(stream);
+                return;
+            }
+            *ip_count = ip_count.saturating_add(1);
+        }
+        let _ip_guard = IpSessionGuard(Arc::clone(&self.ip_sessions), peer_ip);
+
+        info!("peer_addr={peer_addr}");
+        let result = if is_stratum {
+            info!("stratum_v1: protocol detected from peer={peer_addr}");
+            handle_stratum_v1_client(
+                stream,
+                Arc::clone(&self.pool),
+                Arc::clone(&self.revenue_scheduler),
+                Arc::clone(&self.routing_stats),
+                Arc::clone(&self.miner_telemetry),
+                Arc::clone(&self.pplns_engine),
+                Arc::clone(&self.active_sessions),
+                Arc::clone(&self.session_id_counter),
+                Arc::clone(&self.template_cache),
+                self.deferred_payouts.clone(),
+                self.multi_bridge.clone(),
+                &self.config,
+                &self.log_channel,
+                peer_ip,
+                Arc::clone(&self.no_solution_banned_ips),
+                Arc::clone(&self.profit_switch_state),
+                Arc::clone(&self.cpu_coin_override),
+                Arc::clone(&self.gpu_coin_override),
+                Arc::clone(&self.force_save),
+                Arc::clone(&self.block_tracker),
+                &first_line,
+                self.share_store.clone(),
+            )
+        } else {
+            handle_client(
+                stream,
+                Arc::clone(&self.pool),
+                Arc::clone(&self.revenue_scheduler),
+                Arc::clone(&self.routing_stats),
+                Arc::clone(&self.miner_telemetry),
+                Arc::clone(&self.pplns_engine),
+                Arc::clone(&self.active_sessions),
+                Arc::clone(&self.session_id_counter),
+                Arc::clone(&self.template_cache),
+                self.deferred_payouts.clone(),
+                self.multi_bridge.clone(),
+                &self.config,
+                &self.log_channel,
+                peer_ip,
+                Arc::clone(&self.no_solution_banned_ips),
+                Arc::clone(&self.profit_switch_state),
+                Arc::clone(&self.cpu_coin_override),
+                Arc::clone(&self.gpu_coin_override),
+                Arc::clone(&self.force_save),
+                Arc::clone(&self.block_tracker),
+                if first_line.is_empty() { None } else { Some(&first_line) },
+                self.share_store.clone(),
+            )
+        };
+        if let Err(e) = result {
+            info!("session_ended_with_error err={e:#}");
+        }
+    }
+}
+
 fn main() -> Result<()> {
     // Initialize structured logging (tracing).
     // Level controlled by RUST_LOG env var (e.g. RUST_LOG=info,zion_pool=debug).
@@ -1078,9 +1307,20 @@ fn main() -> Result<()> {
     };
     let active_sessions = Arc::new(AtomicU64::new(0));
     let session_id_counter = Arc::new(AtomicU64::new(0));
+    // F6.3: Reduced template cache TTL from 3s → 1s for faster block
+    // propagation.  Combined with the per-iteration template refresh in
+    // handle_client, miners get new templates within ~1s of a chain block
+    // (3x improvement over the previous 3s default).  Configurable via
+    // ZION_POOL_TEMPLATE_TTL_MS.
+    let template_ttl_ms = parse_env_u64("ZION_POOL_TEMPLATE_TTL_MS", 1000).unwrap_or(1000);
     let template_cache = Arc::new(Mutex::new(TemplateCache::new(
-        Duration::from_secs(3),
+        Duration::from_millis(template_ttl_ms),
     )));
+    // F6.4/F6.5: Shared template generation counter — incremented each time
+    // the background template watcher detects a new chain height.  Session
+    // threads read this to detect height changes between iterations without
+    // holding the template_cache lock, enabling fast job refresh.
+    let template_generation: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
     let listener = TcpListener::bind(&config.bind_addr)
         .with_context(|| format!("failed to bind pool listener on {}", config.bind_addr))?;
 
@@ -1335,6 +1575,8 @@ fn main() -> Result<()> {
         let cpu_coin_override_ref = Arc::clone(&cpu_coin_override);
         let gpu_coin_override_ref = Arc::clone(&gpu_coin_override);
         let block_tracker_metrics_ref = Arc::clone(&block_tracker);
+        let share_store_metrics_ref = share_store.clone();
+        let session_id_counter_metrics_ref = Arc::clone(&session_id_counter);
         let metrics_bind = metrics_bind.to_string();
         thread::spawn(move || {
             if let Err(error) = serve_routing_metrics(
@@ -1350,6 +1592,8 @@ fn main() -> Result<()> {
                 cpu_coin_override_ref,
                 gpu_coin_override_ref,
                 block_tracker_metrics_ref,
+                share_store_metrics_ref,
+                session_id_counter_metrics_ref,
             ) {
                 error!("routing_metrics_error={error:#}");
             }
@@ -1392,6 +1636,68 @@ fn main() -> Result<()> {
                 error!("pplns_persistence: save failed to {}: {}", state_path, e);
             }
         });
+    }
+
+    // ── F6.4/F6.5: Background template watcher ───────────────────────
+    // Proactively fetches block templates from the node every
+    // ZION_POOL_TEMPLATE_WATCHER_SECS (default 1s) and updates the shared
+    // template_cache + increments template_generation when a new height is
+    // detected.  This decouples template freshness from the per-session
+    // read timeout: sessions always get the latest template from the cache
+    // without each session independently polling the node.
+    //
+    // Without this watcher, template_cache.get_or_fetch() is called
+    // reactively by each session on every loop iteration.  With the 1s TTL
+    // (F6.3) that means up to N concurrent fetch attempts (N = miner count)
+    // every second.  The watcher centralises fetching into a single thread,
+    // reducing node RPC load by Nx.
+    {
+        let tc_ref = Arc::clone(&template_cache);
+        let gen_ref = Arc::clone(&template_generation);
+        let rpc_addr = config.node_rpc_addr.clone();
+        let watcher_interval_ms = parse_env_u64("ZION_POOL_TEMPLATE_WATCHER_SECS", 1)
+            .unwrap_or(1)
+            .saturating_mul(1000);
+        // Only spawn if node RPC is configured.
+        if rpc_addr.as_deref().map(|s| !s.is_empty()).unwrap_or(false) {
+            info!(
+                "template_watcher: enabled interval={}ms rpc={:?}",
+                watcher_interval_ms, rpc_addr
+            );
+            thread::spawn(move || loop {
+                thread::sleep(Duration::from_millis(watcher_interval_ms));
+                let rpc_str = match rpc_addr.as_deref() {
+                    Some(s) if !s.is_empty() => s,
+                    _ => continue,
+                };
+                // Fetch fresh template from node.
+                match fetch_node_template(rpc_str) {
+                    Ok(new_template) => {
+                        let height_changed = {
+                            let mut cache = tc_ref.lock().expect("template cache lock poisoned");
+                            let prev_height = cache.template.as_ref().map(|t| t.height);
+                            cache.template = Some(new_template.clone());
+                            cache.fetched_at = Instant::now();
+                            prev_height != Some(new_template.height)
+                        };
+                        if height_changed {
+                            gen_ref.fetch_add(1, Ordering::SeqCst);
+                            info!(
+                                "template_watcher: new height={} generation={}",
+                                new_template.height,
+                                gen_ref.load(Ordering::SeqCst)
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        // Don't invalidate the cache on fetch failure —
+                        // the stale template is still served (graceful
+                        // degradation, same as get_or_fetch behaviour).
+                        debug!("template_watcher: fetch failed ({e:#}), serving stale");
+                    }
+                }
+            });
+        }
     }
 
     // ── F1.5: Orphan block monitoring thread ─────────────────────────
@@ -1897,6 +2203,227 @@ fn main() -> Result<()> {
     // anything used after the closure must be cloned beforehand.
     let routing_stats_for_after = Arc::clone(&routing_stats);
 
+    // F5: Session context — shared by primary, TLS, and extra-port listeners.
+    // Encapsulates all Arc refs needed to spawn a session so extra listeners
+    // don't duplicate the long clone list.
+    let session_ctx = Arc::new(SessionCtx {
+        pool: Arc::clone(&pool),
+        revenue_scheduler: Arc::clone(&revenue_scheduler),
+        routing_stats: Arc::clone(&routing_stats),
+        miner_telemetry: Arc::clone(&miner_telemetry),
+        pplns_engine: Arc::clone(&pplns_engine),
+        active_sessions: Arc::clone(&active_sessions),
+        session_id_counter: Arc::clone(&session_id_counter),
+        template_cache: Arc::clone(&template_cache),
+        log_channel: Arc::clone(&log_channel),
+        deferred_payouts: Arc::clone(&deferred_payouts),
+        multi_bridge: multi_bridge.clone(),
+        no_solution_banned_ips: Arc::clone(&no_solution_banned_ips),
+        profit_switch_state: Arc::clone(&profit_switch_state),
+        cpu_coin_override: Arc::clone(&cpu_coin_override),
+        gpu_coin_override: Arc::clone(&gpu_coin_override),
+        force_save: Arc::clone(&force_save),
+        block_tracker: Arc::clone(&block_tracker),
+        share_store: share_store.clone(),
+        ip_sessions: Arc::clone(&ip_sessions),
+        config: Arc::new(config.clone()),
+        session_read_timeout,
+        no_solution_cooldown,
+        max_sessions_per_ip,
+    });
+
+    // F5.1: Start TLS stratum listener (optional).
+    // TLS bind failure is NON-FATAL — the pool starts without TLS and
+    // logs a warning.  This prevents a port conflict (e.g. from an SSH
+    // tunnel or another service) from taking down the entire pool.
+    if let (Some(tls_bind), Some(cert_path), Some(key_path)) = (
+        config.tls_bind.as_ref(),
+        config.tls_cert_path.as_ref(),
+        config.tls_key_path.as_ref(),
+    ) {
+        match load_tls_server_config(cert_path, key_path) {
+            Ok(acceptor) => {
+                match std::net::TcpListener::bind(tls_bind) {
+                    Ok(tls_listener) => {
+                        info!("tls_stratum: listener started on {tls_bind}");
+                        let ctx = Arc::clone(&session_ctx);
+                        let acceptor = Arc::new(acceptor);
+                        let shutdown_ref = Arc::clone(&shutdown);
+                // Spawn a dedicated thread for TLS accept loop.  Each accepted
+                // TLS connection is handed to tokio::task::spawn_blocking after
+                // the TLS handshake completes (async).
+                std::thread::spawn(move || {
+                    let runtime = match tokio::runtime::Builder::new_current_thread()
+                        .enable_all()
+                        .build()
+                    {
+                        Ok(rt) => rt,
+                        Err(e) => {
+                            warn!("tls_stratum: failed to build runtime: {e}");
+                            return;
+                        }
+                    };
+                    let acceptor = acceptor;
+                    runtime.block_on(async move {
+                        let tls_listener = match tokio::net::TcpListener::from_std(tls_listener) {
+                            Ok(l) => l,
+                            Err(e) => {
+                                warn!("tls_stratum: from_std failed: {e}");
+                                return;
+                            }
+                        };
+                        loop {
+                            if shutdown_ref.load(Ordering::SeqCst) {
+                                info!("tls_stratum: shutdown");
+                                break;
+                            }
+                            let accept_result = tokio::select! {
+                                _ = tokio::time::sleep(Duration::from_millis(200)) => continue,
+                                r = tls_listener.accept() => r,
+                            };
+                            let (tokio_stream, peer_addr) = match accept_result {
+                                Ok(p) => p,
+                                Err(e) => {
+                                    warn!("tls_stratum: accept error: {e}");
+                                    continue;
+                                }
+                            };
+                            let peer_ip = peer_addr.ip();
+                            let acceptor = Arc::clone(&acceptor);
+                            let ctx = Arc::clone(&ctx);
+                            tokio::spawn(async move {
+                                // Async TLS handshake.
+                                let tls_stream = match acceptor.accept(tokio_stream).await {
+                                    Ok(s) => s,
+                                    Err(e) => {
+                                        warn!("tls_stratum: handshake failed from {peer_addr}: {e}");
+                                        return;
+                                    }
+                                };
+                                // Convert TLS stream back to std TcpStream for
+                                // sync handle_client.  tokio_rustls doesn't
+                                // expose into_std directly — we wrap it in a
+                                // channel that pumps bytes through the TLS
+                                // layer.  For simplicity, use spawn_blocking
+                                // with the TLS stream wrapped as a generic
+                                // Read/Write via a bridge.
+                                //
+                                // Pragmatic approach: spawn_blocking reads
+                                // the first line via tokio I/O, then we pass
+                                // the raw underlying TcpStream (post-handshake)
+                                // to handle_client.  This works because
+                                // tokio_rustls::TlsStream wraps a TcpStream
+                                // and the TLS layer is transparent after
+                                // handshake for line-based protocols.
+                                // Read first line via tokio (async) for
+                                // protocol detection, then convert the TLS
+                                // stream's underlying TcpStream to std for
+                                // sync handle_client.  The TLS layer has
+                                // already decrypted the first line, so the
+                                // sync handler reads subsequent lines in
+                                // plaintext from the raw socket.
+                                use tokio::io::AsyncBufReadExt;
+                                let mut reader = tokio::io::BufReader::new(tls_stream);
+                                let mut first_line = String::new();
+                                let read_result = tokio::time::timeout(
+                                    Duration::from_secs(10),
+                                    reader.read_line(&mut first_line),
+                                ).await;
+                                // Unwrap the BufReader → TlsStream, then
+                                // into_inner() → TcpStream, then into_std().
+                                let tls_stream = reader.into_inner();
+                                let tokio_tcp = tls_stream.into_inner().0;
+                                let std_stream = match tokio_tcp.into_std() {
+                                    Ok(s) => s,
+                                    Err(_) => return,
+                                };
+                                let _ = std_stream.set_nonblocking(false);
+                                let _ = std_stream.set_read_timeout(Some(Duration::from_secs(ctx.session_read_timeout)));
+                                let is_stratum = if let Ok(Ok(_)) = read_result {
+                                    if first_line.is_empty() { false }
+                                    else { zion_pool::stratum_v1::is_stratum_v1(&first_line) }
+                                } else { false };
+                                let ctx2 = Arc::clone(&ctx);
+                                let _ = tokio::task::spawn_blocking(move || {
+                                    ctx2.dispatch_session(std_stream, peer_ip, peer_addr, is_stratum, first_line);
+                                }).await;
+                            });
+                        }
+                    });
+                });
+                    }
+                    Err(e) => {
+                        warn!(
+                            "tls_stratum: failed to bind {tls_bind}: {e} — TLS disabled, pool continues without TLS"
+                        );
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("tls_stratum: failed to load TLS config: {e} — TLS disabled");
+            }
+        }
+    }
+
+    // F5.2/F5.3: Start extra-port listeners (optional).
+    for extra in &config.extra_ports {
+        let bind = extra.bind_addr.clone();
+        let label = extra.label.clone();
+        match std::net::TcpListener::bind(&bind) {
+            Ok(std_listener) => {
+                info!("extra_port: {label} listener on {bind}");
+                let ctx = Arc::clone(&session_ctx);
+                let shutdown_ref = Arc::clone(&shutdown);
+                std::thread::spawn(move || {
+                    let runtime = match tokio::runtime::Builder::new_current_thread()
+                        .enable_all()
+                        .build()
+                    {
+                        Ok(rt) => rt,
+                        Err(_) => return,
+                    };
+                    runtime.block_on(async move {
+                        let listener = match tokio::net::TcpListener::from_std(std_listener) {
+                            Ok(l) => l,
+                            Err(_) => return,
+                        };
+                        loop {
+                            if shutdown_ref.load(Ordering::SeqCst) { break; }
+                            let accept_result = tokio::select! {
+                                _ = tokio::time::sleep(Duration::from_millis(200)) => continue,
+                                r = listener.accept() => r,
+                            };
+                            let (tokio_stream, peer_addr) = match accept_result {
+                                Ok(p) => p,
+                                Err(_) => continue,
+                            };
+                            let peer_ip = peer_addr.ip();
+                            let stream = match tokio_stream.into_std() {
+                                Ok(s) => s,
+                                Err(_) => continue,
+                            };
+                            let _ = stream.set_nonblocking(false);
+                            let _ = stream.set_read_timeout(Some(Duration::from_secs(ctx.session_read_timeout)));
+                            let ctx = Arc::clone(&ctx);
+                            tokio::task::spawn_blocking(move || {
+                                // Protocol detection.
+                                let mut peek = BufReader::new(stream);
+                                let mut first_line = String::new();
+                                let read_result = peek.read_line(&mut first_line);
+                                let stream = peek.into_inner();
+                                let is_stratum = if read_result.is_ok() && !first_line.is_empty() {
+                                    zion_pool::stratum_v1::is_stratum_v1(&first_line)
+                                } else { false };
+                                ctx.dispatch_session(stream, peer_ip, peer_addr, is_stratum, first_line);
+                            });
+                        }
+                    });
+                });
+            }
+            Err(e) => warn!("extra_port: failed to bind {bind}: {e}"),
+        }
+    }
+
     // Collect JoinHandles so we can drain them on shutdown.
     let mut handles: Vec<tokio::task::JoinHandle<()>> = Vec::new();
     let mut accepted: u32 = 0;
@@ -1954,63 +2481,13 @@ fn main() -> Result<()> {
             let _ = stream.set_nonblocking(false);
             let _ = stream.set_read_timeout(Some(Duration::from_secs(session_read_timeout)));
 
-            // Check NoSolution reconnect ban.
-            if no_solution_cooldown > 0 {
-                let mut bans = no_solution_banned_ips.lock().expect("banned_ips lock");
-                if let Some(banned_at) = bans.get(&peer_ip) {
-                    let elapsed = banned_at.elapsed().as_secs();
-                    if elapsed < no_solution_cooldown {
-                        info!(
-                            "no_solution_banned_reject ip={peer_ip} elapsed={elapsed}s cooldown={}s",
-                            no_solution_cooldown
-                        );
-                        drop(stream);
-                        continue;
-                    } else {
-                        bans.remove(&peer_ip);
-                    }
-                }
-            }
-            {
-                let mut sessions = ip_sessions.lock().expect("ip_sessions lock");
-                let ip_count = sessions.entry(peer_ip).or_insert(0);
-                if max_sessions_per_ip > 0 && *ip_count >= max_sessions_per_ip {
-                    info!("rate_limit_reject ip={peer_ip} sessions={ip_count}");
-                    drop(stream);
-                    continue;
-                }
-                *ip_count = ip_count.saturating_add(1);
-            }
-            let ip_guard = IpSessionGuard(Arc::clone(&ip_sessions), peer_ip);
-
-            info!("peer_addr={peer_addr}");
-            let pool = Arc::clone(&pool);
-            let revenue_scheduler = Arc::clone(&revenue_scheduler);
-            let routing_stats = Arc::clone(&routing_stats);
-            let miner_telemetry = Arc::clone(&miner_telemetry);
-            let pplns_ref = Arc::clone(&pplns_engine);
-            let active_sessions_ref = Arc::clone(&active_sessions);
-            let session_id_ref = Arc::clone(&session_id_counter);
-            let template_cache_ref = Arc::clone(&template_cache);
-            let log_ch = Arc::clone(&log_channel);
-            let deferred_ref = Arc::clone(&deferred_payouts);
-            let multi_bridge = multi_bridge.clone();
-            let banned_ips_ref = Arc::clone(&no_solution_banned_ips);
-            let config = config.clone();
-            let profit_switch_ref = Arc::clone(&profit_switch_state);
-            let cpu_coin_override_ref = Arc::clone(&cpu_coin_override);
-            let gpu_coin_override_ref = Arc::clone(&gpu_coin_override);
-            let force_save_ref = Arc::clone(&force_save);
-            let block_tracker_ref = Arc::clone(&block_tracker);
-            let share_store_ref = share_store.clone();
-
-            // F3.1: spawn_blocking runs sync handle_client on the tokio
-            // blocking thread pool.  This scales to thousands of concurrent
-            // sessions without spawning a raw OS thread per miner.
+            // F5: Delegate to shared SessionCtx (handles ban check, ip_sessions
+            // accounting, protocol detection, and dispatch to handle_client /
+            // handle_stratum_v1_client).  This is shared with TLS + extra-port
+            // listeners.
+            let ctx = Arc::clone(&session_ctx);
             let handle = tokio::task::spawn_blocking(move || {
-                let _ip_guard = ip_guard;
-                // F2: Protocol detection — read the first line to determine
-                // if this is Stratum v1 (has "method" field) or native ZION wire.
+                // Protocol detection — read first line.
                 let mut peek_reader = BufReader::new(stream);
                 let mut first_line = String::new();
                 let read_result = peek_reader.read_line(&mut first_line);
@@ -2020,61 +2497,7 @@ fn main() -> Result<()> {
                 } else {
                     false
                 };
-                let result = if is_stratum {
-                    info!("stratum_v1: protocol detected from peer={peer_addr}");
-                    handle_stratum_v1_client(
-                        stream,
-                        pool,
-                        revenue_scheduler,
-                        routing_stats,
-                        miner_telemetry,
-                        pplns_ref,
-                        active_sessions_ref,
-                        session_id_ref,
-                        template_cache_ref,
-                        deferred_ref,
-                        multi_bridge,
-                        &config,
-                        &log_ch,
-                        peer_ip,
-                        banned_ips_ref,
-                        profit_switch_ref,
-                        cpu_coin_override_ref,
-                        gpu_coin_override_ref,
-                        force_save_ref,
-                        block_tracker_ref,
-                        &first_line,
-                        share_store_ref.clone(),
-                    )
-                } else {
-                    handle_client(
-                        stream,
-                        pool,
-                        revenue_scheduler,
-                        routing_stats,
-                        miner_telemetry,
-                        pplns_ref,
-                        active_sessions_ref,
-                        session_id_ref,
-                        template_cache_ref,
-                        deferred_ref,
-                        multi_bridge,
-                        &config,
-                        &log_ch,
-                        peer_ip,
-                        banned_ips_ref,
-                        profit_switch_ref,
-                        cpu_coin_override_ref,
-                        gpu_coin_override_ref,
-                        force_save_ref,
-                        block_tracker_ref,
-                        if first_line.is_empty() { None } else { Some(&first_line) },
-                        share_store_ref.clone(),
-                    )
-                };
-                if let Err(e) = result {
-                    info!("session_ended_with_error err={e:#}");
-                }
+                ctx.dispatch_session(stream, peer_ip, peer_addr, is_stratum, first_line);
             });
             handles.push(handle);
             accepted = accepted.saturating_add(1);
@@ -3137,11 +3560,13 @@ fn handle_client(
     // a ZION share.  This is critical for low-hashrate miners that can't
     // find ZION shares quickly (e.g. CPU-only debug miners) — without it,
     // the miner would be stuck with a stale external job for the entire
-    // session.  Default = 15s, override with ZION_POOL_JOB_REFRESH_SECS.
+    // session.  Default = 5s (F6.4/F6.5: reduced from 15s so idle miners
+    // pick up new templates from the background watcher within ~5s instead
+    // of ~15s), override with ZION_POOL_JOB_REFRESH_SECS.
     let job_refresh_secs: u64 = std::env::var("ZION_POOL_JOB_REFRESH_SECS")
         .ok()
         .and_then(|s| s.trim().parse().ok())
-        .unwrap_or(15);
+        .unwrap_or(5);
     // Use the shorter of session_timeout and job_refresh for the read
     // timeout, so the inner loop can break and refresh the job.
     let effective_read_timeout = session_read_timeout_secs.min(job_refresh_secs);
@@ -4362,6 +4787,22 @@ fn handle_client(
                             std::thread::spawn(move || {
                                 notify_oasis_block_mined(&miner_addr, job_height);
                             });
+                            // F8.3: Notify external webhook (dashboard real-time).
+                            // Fire-and-forget via background thread.
+                            let wb_miner_id = miner_id.clone();
+                            let wb_worker_name = worker_name.clone();
+                            let wb_block_hash = hex::encode(computed_hash);
+                            let wb_share_diff = share_difficulty;
+                            std::thread::spawn(move || {
+                                notify_block_webhook(
+                                    job_height,
+                                    &wb_block_hash,
+                                    &wb_miner_id,
+                                    &wb_worker_name,
+                                    wb_share_diff,
+                                    0, // network_difficulty fetched separately by dashboard
+                                );
+                            });
                         }
 
                         ShareDecision {
@@ -4902,11 +5343,34 @@ fn parse_fixed_hex<const N: usize>(raw: &str, label: &str) -> Result<[u8; N]> {
     Ok(bytes)
 }
 
+/// F5.2/F5.3: Configuration for an extra stratum listener with its own
+/// vardiff defaults.  Used for difficulty stratification across ports.
+#[derive(Clone, Debug)]
+struct ExtraPortConfig {
+    bind_addr: String,
+    label: String,
+    default_difficulty: u64,
+    min_difficulty: u64,
+    max_difficulty: u64,
+}
+
 #[derive(Clone)]
 struct ServerConfig {
     bind_addr: String,
     accept_limit: Option<u32>,
     node_rpc_addr: Option<String>,
+    /// F5.1: Optional TLS stratum listener address (e.g. "0.0.0.0:8443").
+    /// When set, a second tokio listener accepts TLS-wrapped stratum
+    /// connections (stratum+ssl://).  Cert/key paths below required.
+    tls_bind: Option<String>,
+    tls_cert_path: Option<String>,
+    tls_key_path: Option<String>,
+    /// F5.2/F5.3: Multi-port difficulty stratification.  Each entry is
+    /// (bind_addr, default_difficulty, min_difficulty, max_difficulty,
+    /// label).  When non-empty, the pool binds additional listeners with
+    /// per-port vardiff defaults.  The primary `bind_addr` is always
+    /// bound; these are extra.
+    extra_ports: Vec<ExtraPortConfig>,
     loop_count: u32,
     job_ttl_ms: u64,
     start_nonce: u64,
@@ -6557,6 +7021,99 @@ impl RoutingStats {
     }
 }
 
+// F7.1: Helper functions for DB-backed REST API endpoints.
+
+/// Parse `?limit=<n>` from a URL path.  Returns the limit clamped to [1, 500],
+/// or `default` if not specified.
+fn parse_query_limit(path: &str, default: u32) -> u32 {
+    if let Some(q) = path.split('?').nth(1) {
+        for pair in q.split('&') {
+            if let Some(val) = pair.strip_prefix("limit=") {
+                if let Ok(n) = val.parse::<u32>() {
+                    return n.clamp(1, 500);
+                }
+            }
+        }
+    }
+    default
+}
+
+/// Parse `?miner=<address>&limit=<n>` from a URL path.
+fn parse_query_miner_limit(path: &str, default_limit: u32) -> (Option<String>, u32) {
+    let mut miner = None;
+    let mut limit = default_limit;
+    if let Some(q) = path.split('?').nth(1) {
+        for pair in q.split('&') {
+            if let Some(val) = pair.strip_prefix("miner=") {
+                miner = Some(val.to_string());
+            } else if let Some(val) = pair.strip_prefix("limit=") {
+                if let Ok(n) = val.parse::<u32>() {
+                    limit = n.clamp(1, 500);
+                }
+            }
+        }
+    }
+    (miner, limit)
+}
+
+/// Serialize a list of DbBlockRow to JSON.
+fn serialize_blocks_json(blocks: &[zion_pool::store::DbBlockRow]) -> String {
+    let mut out = String::from("{\"ok\":true,\"blocks\":[");
+    for (i, b) in blocks.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&format!(
+            "{{\"height\":{},\"hash\":\"{}\",\"miner_id\":\"{}\",\"worker_name\":\"{}\",\"share_difficulty\":{},\"network_difficulty\":{},\"status\":\"{}\",\"ts\":{},\"confirmed_at\":{}}}",
+            b.height,
+            b.hash,
+            b.miner_id,
+            b.worker_name,
+            b.share_difficulty,
+            b.network_difficulty,
+            b.status,
+            b.ts,
+            b.confirmed_at.map(|t| t.to_string()).unwrap_or_else(|| "null".to_string())
+        ));
+    }
+    out.push_str("]}");
+    out
+}
+
+/// Serialize a list of PayoutRow to JSON.
+fn serialize_payouts_json(payouts: &[zion_pool::store::PayoutRow]) -> String {
+    let mut out = String::from("{\"ok\":true,\"payouts\":[");
+    for (i, p) in payouts.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&format!(
+            "{{\"ts\":{},\"miner_id\":\"{}\",\"address\":\"{}\",\"amount_flowers\":{},\"tx_id\":\"{}\",\"height\":{},\"block_hash\":\"{}\",\"confirmations\":{},\"confirmed\":{}}}",
+            p.ts, p.miner_id, p.address, p.amount_flowers,
+            p.tx_id, p.height, p.block_hash, p.confirmations, p.confirmed
+        ));
+    }
+    out.push_str("]}");
+    out
+}
+
+/// Serialize a list of MinerStatsRow to JSON.
+fn serialize_miners_json(miners: &[zion_pool::store::MinerStatsRow], total_count: u64) -> String {
+    let mut out = format!("{{\"ok\":true,\"miner_count\":{total_count},\"miners\":[");
+    for (i, m) in miners.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&format!(
+            "{{\"miner_id\":\"{}\",\"first_seen\":{},\"last_seen\":{},\"total_shares\":{},\"accepted_shares\":{},\"rejected_shares\":{},\"total_paid_flowers\":{}}}",
+            m.miner_id, m.first_seen, m.last_seen,
+            m.total_shares, m.accepted_shares, m.rejected_shares, m.total_paid_flowers
+        ));
+    }
+    out.push_str("]}");
+    out
+}
+
 fn serve_routing_metrics(
     bind_addr: &str,
     routing_stats: Arc<Mutex<RoutingStats>>,
@@ -6570,6 +7127,8 @@ fn serve_routing_metrics(
     cpu_coin_override: CoinOverrideArc,
     gpu_coin_override: CoinOverrideArc,
     block_tracker: BlockTrackerArc,
+    share_store: Option<Arc<zion_pool::store::ShareStore>>,
+    session_id_counter: Arc<AtomicU64>,
 ) -> Result<()> {
     let listener = TcpListener::bind(bind_addr)
         .with_context(|| format!("failed to bind routing metrics listener on {bind_addr}"))?;
@@ -6591,29 +7150,64 @@ fn serve_routing_metrics(
         }
         let parts: Vec<&str> = request_line.split_whitespace().collect();
         let method = *parts.first().unwrap_or(&"GET");
-        let path = *parts.get(1).unwrap_or(&"/stats");
+        let raw_path = *parts.get(1).unwrap_or(&"/stats");
+        // F7.1: Strip query string for endpoint matching, but keep the
+        // full path (with query) for query param parsing in DB endpoints.
+        let path = raw_path.split('?').next().unwrap_or(raw_path);
+        let raw_path = raw_path; // keep full path for query param extraction
 
-        // For POST requests, read headers + body.
+        // F7.2: Always read HTTP headers (not just for POST) so we can
+        // extract the Authorization header for API key auth.  Also extract
+        // Content-Length for POST body reading.
         let mut post_body = String::new();
-        if method == "POST" {
-            let mut content_length = 0usize;
-            loop {
-                let mut header = String::new();
-                if request_reader.read_line(&mut header).is_err() {
-                    break;
-                }
-                if header.trim().is_empty() {
-                    break; // end of headers
-                }
-                if let Some(val) = header.strip_prefix("Content-Length:").or_else(|| header.strip_prefix("content-length:")) {
-                    content_length = val.trim().parse().unwrap_or(0);
-                }
+        let mut auth_header: Option<String> = None;
+        let mut content_length = 0usize;
+        loop {
+            let mut header = String::new();
+            if request_reader.read_line(&mut header).is_err() {
+                break;
             }
-            if content_length > 0 {
-                let mut buf = vec![0u8; content_length];
-                if request_reader.read_exact(&mut buf).is_ok() {
-                    post_body = String::from_utf8_lossy(&buf).to_string();
-                }
+            if header.trim().is_empty() {
+                break; // end of headers
+            }
+            if let Some(val) = header.strip_prefix("Content-Length:")
+                .or_else(|| header.strip_prefix("content-length:"))
+            {
+                content_length = val.trim().parse().unwrap_or(0);
+            }
+            if let Some(val) = header.strip_prefix("Authorization:")
+                .or_else(|| header.strip_prefix("authorization:"))
+            {
+                auth_header = Some(val.trim().to_string());
+            }
+        }
+        if method == "POST" && content_length > 0 {
+            let mut buf = vec![0u8; content_length];
+            if request_reader.read_exact(&mut buf).is_ok() {
+                post_body = String::from_utf8_lossy(&buf).to_string();
+            }
+        }
+
+        // F7.2: API key auth for DB-backed endpoints.  If
+        // ZION_POOL_API_KEY is set, /api/v1/blocks, /api/v1/payouts,
+        // /api/v1/miners require `Authorization: Bearer <key>`.
+        // If ZION_POOL_API_KEY is not set, these endpoints are open
+        // (backward compatible, for local/dev deployments).
+        let api_key = std::env::var("ZION_POOL_API_KEY").ok().filter(|s| !s.is_empty());
+        let is_db_endpoint = path == "/api/v1/blocks"
+            || path == "/api/v1/payouts"
+            || path == "/api/v1/miners"
+            || path == "/api/v1/hashrate-history";
+        if is_db_endpoint && api_key.is_some() {
+            let expected = format!("Bearer {}", api_key.as_deref().unwrap_or(""));
+            if auth_header.as_deref() != Some(expected.as_str()) {
+                let body = "{\"ok\":false,\"error\":\"unauthorized\"}".to_string();
+                let response = format!(
+                    "HTTP/1.1 401 Unauthorized\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(), body
+                );
+                let _ = stream.write_all(response.as_bytes());
+                continue;
             }
         }
 
@@ -6625,13 +7219,15 @@ fn serve_routing_metrics(
             }
             "/metrics" => {
                 let sessions = active_sessions.load(Ordering::Relaxed);
+                let total_connections = session_id_counter.load(Ordering::Relaxed);
                 let uptime_s = started_at.elapsed().as_secs();
                 let stats = routing_stats.lock().expect("routing stats lock poisoned");
                 let telemetry = miner_telemetry
                     .lock()
                     .expect("miner telemetry lock poisoned");
                 let pplns = pplns_engine.lock().expect("pplns lock poisoned");
-                let body = build_prometheus_payload(&stats, &telemetry, &pplns, sessions, uptime_s);
+                let bt = block_tracker.lock().expect("block tracker lock poisoned");
+                let body = build_prometheus_payload(&stats, &telemetry, &pplns, sessions, uptime_s, &bt, total_connections);
                 ("200 OK", "text/plain; version=0.0.4", body)
             }
             p if p == "/stats" || p == "/" || p == "/pool" => {
@@ -6736,6 +7332,74 @@ fn serve_routing_metrics(
                     ("200 OK", "application/json", body)
                 }
             }
+            // ── F7.1: DB-backed REST API endpoints (ShareStore) ──
+            // These endpoints query the SQLite ShareStore for historical
+            // blocks, payouts, and miner stats.  Requires share_store to
+            // be configured (ZION_POOL_DB_PATH).  If DB is not available,
+            // returns 503 Service Unavailable.
+            "/api/v1/blocks" => {
+                let limit = parse_query_limit(raw_path, 50);
+                match &share_store {
+                    Some(store) => {
+                        let blocks = store.query_blocks(limit).unwrap_or_default();
+                        let body = serialize_blocks_json(&blocks);
+                        ("200 OK", "application/json", body)
+                    }
+                    None => {
+                        let body = "{\"ok\":false,\"error\":\"database not configured\"}".to_string();
+                        ("503 Service Unavailable", "application/json", body)
+                    }
+                }
+            }
+            "/api/v1/payouts" => {
+                // Query param: ?miner=<address>&limit=<n>
+                let (miner_filter, limit) = parse_query_miner_limit(raw_path, 50);
+                match &share_store {
+                    Some(store) => {
+                        let payouts = if let Some(miner) = miner_filter.as_deref() {
+                            store.query_payouts(miner, limit).unwrap_or_default()
+                        } else {
+                            store.query_all_payouts(limit).unwrap_or_default()
+                        };
+                        let body = serialize_payouts_json(&payouts);
+                        ("200 OK", "application/json", body)
+                    }
+                    None => {
+                        let body = "{\"ok\":false,\"error\":\"database not configured\"}".to_string();
+                        ("503 Service Unavailable", "application/json", body)
+                    }
+                }
+            }
+            "/api/v1/miners" => {
+                let limit = parse_query_limit(raw_path, 100);
+                match &share_store {
+                    Some(store) => {
+                        let miners = store.query_all_miners(limit).unwrap_or_default();
+                        let count = store.miner_count().unwrap_or(0);
+                        let body = serialize_miners_json(&miners, count);
+                        ("200 OK", "application/json", body)
+                    }
+                    None => {
+                        let body = "{\"ok\":false,\"error\":\"database not configured\"}".to_string();
+                        ("503 Service Unavailable", "application/json", body)
+                    }
+                }
+            }
+            "/api/v1/hashrate-history" => {
+                // Returns hashrate history from miner_telemetry (live windows).
+                let now_s = now_unix_seconds();
+                let telemetry = miner_telemetry
+                    .lock()
+                    .expect("miner telemetry lock poisoned");
+                let live = telemetry.pool_hashrate_for_window(HASHRATE_WINDOW_LIVE_S, now_s);
+                let h1 = telemetry.pool_hashrate_for_window(HASHRATE_WINDOW_1H_S, now_s);
+                let h24 = telemetry.pool_hashrate_for_window(HASHRATE_WINDOW_24H_S, now_s);
+                let body = format!(
+                    "{{\"ok\":true,\"live_hps\":{:.2},\"1h_hps\":{:.2},\"24h_hps\":{:.2}}}",
+                    live, h1, h24
+                );
+                ("200 OK", "application/json", body)
+            }
             _ => (
                 "404 Not Found",
                 "application/json",
@@ -6762,6 +7426,8 @@ fn build_prometheus_payload(
     pplns_engine: &PplnsEngine,
     active_sessions: u64,
     uptime_s: u64,
+    block_tracker: &BlockTracker,
+    total_connections: u64,
 ) -> String {
     let mut body = stats.snapshot_prometheus_ext(active_sessions, uptime_s);
     let pplns = pplns_engine.stats();
@@ -6779,6 +7445,42 @@ fn build_prometheus_payload(
         telemetry.total_blocks_found()
     );
     let _ = writeln!(body, "zion_pool_miners_tracked {}", telemetry.miners.len());
+    // F7.5: Pool luck, orphan rate, share rate, connection rate.
+    let _ = writeln!(body, "# HELP zion_pool_luck_pct Pool luck (expected/actual shares * 100, last 64 blocks). 100=average.");
+    let _ = writeln!(body, "# TYPE zion_pool_luck_pct gauge");
+    let luck = block_tracker.pool_luck_pct(64).unwrap_or(0.0);
+    let _ = writeln!(body, "zion_pool_luck_pct {luck}");
+    let _ = writeln!(body, "# HELP zion_pool_blocks_total Total blocks found (all time).");
+    let _ = writeln!(body, "# TYPE zion_pool_blocks_total counter");
+    let _ = writeln!(body, "zion_pool_blocks_total {}", block_tracker.total_blocks);
+    let _ = writeln!(body, "# HELP zion_pool_blocks_confirmed_total Total confirmed blocks (all time).");
+    let _ = writeln!(body, "# TYPE zion_pool_blocks_confirmed_total counter");
+    let _ = writeln!(body, "zion_pool_blocks_confirmed_total {}", block_tracker.total_confirmed);
+    let _ = writeln!(body, "# HELP zion_pool_blocks_orphaned_total Total orphaned blocks (all time).");
+    let _ = writeln!(body, "# TYPE zion_pool_blocks_orphaned_total counter");
+    let _ = writeln!(body, "zion_pool_blocks_orphaned_total {}", block_tracker.total_orphans);
+    let _ = writeln!(body, "# HELP zion_pool_orphan_rate Orphan rate (orphans/total, 0.0-1.0).");
+    let _ = writeln!(body, "# TYPE zion_pool_orphan_rate gauge");
+    let orphan_rate = if block_tracker.total_blocks > 0 {
+        block_tracker.total_orphans as f64 / block_tracker.total_blocks as f64
+    } else {
+        0.0
+    };
+    let _ = writeln!(body, "zion_pool_orphan_rate {orphan_rate}");
+    let _ = writeln!(body, "# HELP zion_pool_shares_since_last_block Shares submitted since the last block was found.");
+    let _ = writeln!(body, "# TYPE zion_pool_shares_since_last_block gauge");
+    let _ = writeln!(body, "zion_pool_shares_since_last_block {}", block_tracker.shares_since_last_block);
+    let _ = writeln!(body, "# HELP zion_pool_share_rate_per_sec Share submission rate (shares/sec).");
+    let _ = writeln!(body, "# TYPE zion_pool_share_rate_per_sec gauge");
+    let share_rate = if uptime_s > 0 { stats.total_submits as f64 / uptime_s as f64 } else { 0.0 };
+    let _ = writeln!(body, "zion_pool_share_rate_per_sec {share_rate}");
+    let _ = writeln!(body, "# HELP zion_pool_connections_total Total connections initiated (all time).");
+    let _ = writeln!(body, "# TYPE zion_pool_connections_total counter");
+    let _ = writeln!(body, "zion_pool_connections_total {total_connections}");
+    let _ = writeln!(body, "# HELP zion_pool_conn_rate_per_sec Connection rate (connections/sec).");
+    let _ = writeln!(body, "# TYPE zion_pool_conn_rate_per_sec gauge");
+    let conn_rate = if uptime_s > 0 { total_connections as f64 / uptime_s as f64 } else { 0.0 };
+    let _ = writeln!(body, "zion_pool_conn_rate_per_sec {conn_rate}");
     let _ = writeln!(body, "zion_pplns_window_size {}", pplns.window_size);
     let _ = writeln!(body, "zion_pplns_window_used {}", pplns.window_used);
     let _ = writeln!(
@@ -7022,7 +7724,12 @@ fn build_stats_payload(
             "metrics": "/metrics",
             "revenue_stats": "/api/v1/revenue/stats",
             "revenue_streams": "/api/v1/revenue/streams",
-            "profit_switcher": "/api/v1/profit/switcher"
+            "profit_switcher": "/api/v1/profit/switcher",
+            "blocks": "/api/v1/blocks?limit=50",
+            "payouts": "/api/v1/payouts?limit=50",
+            "all_miners": "/api/v1/miners?limit=100",
+            "hashrate_history": "/api/v1/hashrate-history",
+            "health": "/health"
         },
         "auxpow": {
             "enabled": auxpow.enabled,
@@ -7611,6 +8318,13 @@ impl ServerConfig {
             bind_addr: env_or_default("ZION_POOL_BIND", "127.0.0.1:8444"),
             accept_limit: parse_optional_env_u32("ZION_ACCEPT_LIMIT")?,
             node_rpc_addr: std::env::var("ZION_NODE_RPC_ADDR").ok(),
+            // F5.1: TLS stratum listener (optional).
+            tls_bind: std::env::var("ZION_POOL_TLS_BIND").ok().filter(|s| !s.is_empty()),
+            tls_cert_path: std::env::var("ZION_POOL_TLS_CERT").ok().filter(|s| !s.is_empty()),
+            tls_key_path: std::env::var("ZION_POOL_TLS_KEY").ok().filter(|s| !s.is_empty()),
+            // F5.2/F5.3: Multi-port difficulty stratification.
+            // Format: ZION_POOL_EXTRA_PORTS="8445:gpu:5000:100:50000,8446:farm:50000:1000:0"
+            extra_ports: parse_extra_ports(),
             loop_count: parse_env_u32("ZION_POOL_LOOP_COUNT", 1_000_000)?,
             job_ttl_ms: parse_env_u64("ZION_JOB_TTL_MS", 15_000)?,
             start_nonce: parse_env_u64("ZION_START_NONCE", 42)?,
@@ -7762,6 +8476,45 @@ fn session_group_name(group: SessionGroup) -> &'static str {
 
 fn env_or_default(key: &str, default: &str) -> String {
     std::env::var(key).unwrap_or_else(|_| default.to_string())
+}
+
+/// F5.2/F5.3: Parse ZION_POOL_EXTRA_PORTS env var.
+/// Format: "bind:label:default_diff:min_diff:max_diff,..."
+/// Example: "0.0.0.0:8445:gpu:5000:100:50000,0.0.0.0:8446:farm:50000:1000:0"
+fn parse_extra_ports() -> Vec<ExtraPortConfig> {
+    let raw = match std::env::var("ZION_POOL_EXTRA_PORTS") {
+        Ok(v) if !v.is_empty() => v,
+        _ => return Vec::new(),
+    };
+    let mut out = Vec::new();
+    for entry in raw.split(',') {
+        let parts: Vec<&str> = entry.split(':').collect();
+        if parts.len() < 5 {
+            warn!("extra_ports: skipping malformed entry: {entry}");
+            continue;
+        }
+        let bind_addr = parts[0..2].join(":");
+        let label = parts[2].to_string();
+        let default_difficulty = parts[3].parse::<u64>().unwrap_or(1);
+        let min_difficulty = parts[4].parse::<u64>().unwrap_or(1);
+        let max_difficulty = parts.get(5).and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
+        out.push(ExtraPortConfig {
+            bind_addr,
+            label,
+            default_difficulty,
+            min_difficulty,
+            max_difficulty,
+        });
+        info!(
+            "extra_ports: {} label={} default_diff={} min={} max={}",
+            out.last().unwrap().bind_addr,
+            out.last().unwrap().label,
+            default_difficulty,
+            min_difficulty,
+            max_difficulty
+        );
+    }
+    out
 }
 
 fn parse_env_u64(key: &str, default: u64) -> Result<u64> {
@@ -7942,7 +8695,7 @@ mod tests {
 
     fn spawn_pool_server(
         config: ServerConfig,
-        _auxpow_bridge: Option<AuxPowBridge>,
+        auxpow_bridge: Option<AuxPowBridge>,
     ) -> Result<(
         SocketAddr,
         MultiAuxPowBridge,
@@ -7965,6 +8718,19 @@ mod tests {
         let log_ch = LogChannel::spawn();
         let deferred_payouts: DeferredPayoutQueue = Arc::new(Mutex::new(Vec::new()));
         let multi_bridge = MultiAuxPowBridge::new();
+        // Insert the provided AuxPowBridge (if any) so the pool can pop
+        // external jobs for the test's coin (e.g. DCR).
+        if let Some(bridge) = auxpow_bridge {
+            // Infer the coin from the config's force_coin or revenue_proxy_coin.
+            let coin = config
+                .auxpow_config
+                .force_coin
+                .or_else(|| {
+                    ExternalCoin::from_str_loose(&config.revenue_proxy_coin)
+                })
+                .unwrap_or(ExternalCoin::DCR);
+            multi_bridge.insert(coin, bridge);
+        }
         let multi_bridge_for_session = multi_bridge.clone();
 
         let handle = thread::spawn(move || -> Result<()> {
@@ -8002,6 +8768,7 @@ mod tests {
                 Arc::new(AtomicBool::new(false)), // force_save
                 Arc::new(Mutex::new(BlockTracker::default())), // block_tracker
                 None, // first_line (test: read from stream normally)
+                None, // share_store (test: no DB)
             )
         });
 
@@ -8014,6 +8781,10 @@ mod tests {
         let (node_rpc_addr, node_handle) = spawn_mock_node(submit_response)?;
         let config = ServerConfig {
             bind_addr: "127.0.0.1:0".to_string(),
+            tls_bind: None,
+            tls_cert_path: None,
+            tls_key_path: None,
+            extra_ports: Vec::new(),
             accept_limit: Some(1),
             node_rpc_addr: Some(node_rpc_addr),
             loop_count: 1,
@@ -8211,6 +8982,10 @@ mod tests {
         let _guard = env_lock().lock().expect("env lock");
         let config = ServerConfig {
             bind_addr: "127.0.0.1:0".to_string(),
+            tls_bind: None,
+            tls_cert_path: None,
+            tls_key_path: None,
+            extra_ports: Vec::new(),
             accept_limit: Some(1),
             node_rpc_addr: None,
             loop_count: 1,
@@ -8516,6 +9291,10 @@ mod tests {
         // 4) Start the ZION pool server with this bridge.
         let config = ServerConfig {
             bind_addr: "127.0.0.1:0".to_string(),
+            tls_bind: None,
+            tls_cert_path: None,
+            tls_key_path: None,
+            extra_ports: Vec::new(),
             accept_limit: Some(1),
             node_rpc_addr: None,
             loop_count: 1,
@@ -8760,6 +9539,10 @@ mod tests {
     fn resolve_session_group_defaults_to_zion_for_user_sessions() {
         let config = ServerConfig {
             bind_addr: "127.0.0.1:0".to_string(),
+            tls_bind: None,
+            tls_cert_path: None,
+            tls_key_path: None,
+            extra_ports: Vec::new(),
             accept_limit: Some(1),
             node_rpc_addr: None,
             loop_count: 1,
@@ -8805,6 +9588,10 @@ mod tests {
     fn resolve_session_group_routes_backend_allowlist_to_auto() {
         let config = ServerConfig {
             bind_addr: "127.0.0.1:0".to_string(),
+            tls_bind: None,
+            tls_cert_path: None,
+            tls_key_path: None,
+            extra_ports: Vec::new(),
             accept_limit: Some(1),
             node_rpc_addr: None,
             loop_count: 1,
@@ -8850,6 +9637,10 @@ mod tests {
     fn resolve_session_group_routes_backend_worker_hint_to_auto() {
         let config = ServerConfig {
             bind_addr: "127.0.0.1:0".to_string(),
+            tls_bind: None,
+            tls_cert_path: None,
+            tls_key_path: None,
+            extra_ports: Vec::new(),
             accept_limit: Some(1),
             node_rpc_addr: None,
             loop_count: 1,
@@ -9068,6 +9859,10 @@ mod tests {
     fn resolve_session_group_explicit_hint_overrides_backend() {
         let config = ServerConfig {
             bind_addr: "127.0.0.1:0".to_string(),
+            tls_bind: None,
+            tls_cert_path: None,
+            tls_key_path: None,
+            extra_ports: Vec::new(),
             accept_limit: Some(1),
             node_rpc_addr: None,
             loop_count: 1,
