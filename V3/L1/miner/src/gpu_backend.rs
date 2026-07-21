@@ -438,7 +438,7 @@ impl TriGpuManager {
             });
         }
         let primary_algo = std::env::var("ZION_MINER_ALGORITHM")
-            .unwrap_or_else(|_| "deeksha_lite_fire".to_string());
+            .unwrap_or_else(|_| "deeksha_lite_v1".to_string());
         let primary = create_gpu_backend(kind, primary_work_size, &primary_algo, "")?;
 
         Ok(Self {

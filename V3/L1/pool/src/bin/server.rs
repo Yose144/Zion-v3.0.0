@@ -631,6 +631,11 @@ async fn run_auxpow_bridge(
     let mut last_profit_check = Instant::now();
     let profit_check_interval = Duration::from_secs(cfg.profit_check_interval_secs);
 
+    // Exponential backoff for reconnects so that temporary pool-side IP
+    // suspensions (e.g. MoneroOcean's 10-minute lockout) are not kept alive
+    // by aggressive 5-second retries from this loop.
+    let mut reconnect_backoff_secs: u64 = 5;
+
     loop {
         // If the multiplexer has no active client (e.g. after a disconnect or
         // failed initial connect), try to reconnect before waiting for jobs.
@@ -646,9 +651,11 @@ async fn run_auxpow_bridge(
             eprintln!("auxpow_bridge: no active connection, reconnecting to {}…", coin);
             if let Err(e) = mux.connect(coin).await {
                 eprintln!("auxpow_bridge: reconnect to {} failed: {}", coin, e);
-                tokio::time::sleep(Duration::from_secs(5)).await;
+                tokio::time::sleep(Duration::from_secs(reconnect_backoff_secs)).await;
+                reconnect_backoff_secs = (reconnect_backoff_secs * 2).min(600);
                 continue;
             }
+            reconnect_backoff_secs = 5;
             println!("auxpow_bridge: reconnected to {}", coin);
         }
 

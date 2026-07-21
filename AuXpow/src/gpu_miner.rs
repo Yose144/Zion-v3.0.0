@@ -2663,27 +2663,30 @@ typedef unsigned long ulong;
 
         let q = pro_que.queue().clone();
 
-        // Derive SipHash key from SHA-256(header || nonce)
+        // Compute 4-word prePow state from SHA-256(header || nonce)
+        // BeamHash III uses a 256-bit prePow state (4 × 64-bit words)
+        // derived from the block header + nonce.
         let nonce_bytes = base_nonce.to_le_bytes();
         let mut hasher = Sha256::new();
         hasher.update(header);
         hasher.update(&nonce_bytes);
         let key_result = hasher.finalize();
-        let sipkey0 = u64::from_le_bytes(key_result[..8].try_into().unwrap());
-        let sipkey1 = u64::from_le_bytes(key_result[8..16].try_into().unwrap());
+        let prepow0 = u64::from_le_bytes(key_result[0..8].try_into().unwrap());
+        let prepow1 = u64::from_le_bytes(key_result[8..16].try_into().unwrap());
+        let prepow2 = u64::from_le_bytes(key_result[16..24].try_into().unwrap());
+        let prepow3 = u64::from_le_bytes(key_result[24..32].try_into().unwrap());
 
-        // Target buffer
-        let target_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone())
-            .copy_host_slice(target)
-            .build()?;
-
+        // The kernel generates 448-bit work bits (7 ulongs per index).
+        // output_hash_buf must be large enough: M * 7 * 8 bytes = 2^25 * 56 = ~1.8 GB
+        // For batched processing, the buffer size is set by the caller.
         let kernel = Kernel::builder()
             .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
-            .arg(sipkey0)
-            .arg(sipkey1)
+            .arg(prepow0)
+            .arg(prepow1)
+            .arg(prepow2)
+            .arg(prepow3)
             .arg(output_hash_buf)
             .arg(0u32) // start_index
             .build()
