@@ -85,6 +85,22 @@ fn flush_stdout() {
     let _ = std::io::stdout().flush();
 }
 
+/// Check if stdout is a real terminal (TTY). Returns false on SMOS / Docker / pipes.
+/// Used to decide whether to activate the sticky header (alt screen) mode.
+#[cfg(unix)]
+fn isatty_stdout() -> bool {
+    extern "C" {
+        fn isatty(fd: i32) -> i32;
+    }
+    unsafe { isatty(1) != 0 }
+}
+
+#[cfg(not(unix))]
+fn isatty_stdout() -> bool {
+    // On Windows, assume terminal (console host supports ANSI since Win10)
+    true
+}
+
 /// Gate verbose wire_* / iteration= debug output (--verbose or ZION_MINER_VERBOSE=1).
 static VERBOSE: AtomicBool = AtomicBool::new(false);
 /// Suppress verbose log lines when sticky header is active (Claymore-style clean display).
@@ -877,6 +893,22 @@ fn format_hashrate(hps: f64) -> String {
 fn main() -> Result<()> {
     // Install crash handler (SIGABRT/SIGSEGV from AMD OpenCL driver)
     crash_handler::install();
+
+    // ── Line-buffer stdout when it's NOT a terminal (SMOS / Docker / pipes) ──
+    // Rust's default stdout is block-buffered (8KB) when not a TTY, which means
+    // mining output may never appear in the SMOS web console. We force line-
+    // buffered mode by flushing after each newline via a thin wrapper.
+    // The actual flush happens in flush_stdout() called after key print sites.
+    if !isatty_stdout() {
+        // Spawn a background thread that flushes stdout every 500ms — simple
+        // and reliable, avoids wrapping every println! in a flush call.
+        std::thread::spawn(|| {
+            loop {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                flush_stdout();
+            }
+        });
+    }
 
     // Enable verbose logging via env var or --verbose flag
     if std::env::var("ZION_MINER_VERBOSE").map(|v| v == "1" || v == "true").unwrap_or(false)
@@ -3403,8 +3435,35 @@ impl SessionTelemetry {
             println!("{status_line}");
         }
 
-        if !TUI_ACTIVE.load(Ordering::Relaxed) {
+        // ── SMOS-compatible hashrate output ──
+        // SMOS parses stdout for hashrate patterns like "GPU0: X.X MH/s" or
+        // "Total: X.X MH/s". When not in a TTY (SMOS / pipe mode), emit a
+        // compact summary line that SMOS can display in its dashboard.
+        if !isatty_stdout() {
+            let gpu_hr = self.gpu_hashrate_hps();
+            println!(
+                "GPU0: {} | Total: {} | Accepted: {} | Rejected: {} | Uptime: {:.0}s",
+                fmt_hashrate(gpu_hr),
+                fmt_hashrate(overall_hps),
+                accepted, rejected, uptime
+            );
+            // Also print per-stream info for the triple-stream setup
+            for s in stream_stats {
+                println!(
+                    "  Stream {} [{} {}]: {} | A:{} R:{}{}",
+                    s.label, s.coin, s.algorithm, fmt_hashrate(s.hashrate_60s),
+                    s.accepted, s.rejected,
+                    if s.active { "" } else { " (inactive)" }
+                );
+            }
+            flush_stdout();
+        }
+
+        if !TUI_ACTIVE.load(Ordering::Relaxed) && isatty_stdout() {
             // ── Claymore-style sticky triple-stream stats (alt screen + full redraw) ──
+            // Only activate when stdout is a real terminal — on SMOS / Docker / pipes
+            // the sticky header would redirect stdout to /dev/null and TTY writes
+            // would fail, making ALL miner output invisible.
             // Activate quiet mode to suppress verbose log lines (clean metrics display)
             QUIET.store(true, Ordering::Relaxed);
             std::env::set_var("ZION_QUIET", "1");
