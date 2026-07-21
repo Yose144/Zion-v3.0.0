@@ -4659,6 +4659,211 @@ def _get_pool_active_miner_map() -> dict:
         return {}
 
 
+def get_pool_debug_dump() -> dict:
+    """Comprehensive pool debug dump — all data needed for diagnostics.
+
+    Returns:
+      - raw_metrics: raw Prometheus text from :8455/metrics
+      - parsed_metrics: {name: value} dict
+      - stats: JSON from :8455/stats (API routes, auxpow, etc.)
+      - pplns_state: full pplns-state.json dump
+      - pool_log_tail: last 100 lines from /opt/zion/pool.log
+      - auxpow: auxpow config
+      - registered_miners: registered miners summary
+      - pool_env: pool-related env vars from edge-environment.sh
+      - revenue_stats: from :8455/api/v1/revenue/stats
+      - revenue_streams: from :8455/api/v1/revenue/streams
+      - endpoints: list of available pool API endpoints with status
+    """
+    import urllib.request as _ur
+    host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    port = 8455
+    result = {"ok": True, "ts": int(time.time()), "host": host, "port": port, "sections": {}}
+
+    # 1. Raw Prometheus metrics
+    try:
+        with _ur.urlopen(f"http://{host}:{port}/metrics", timeout=3) as r:
+            raw = r.read().decode("utf-8", errors="ignore")
+        result["raw_metrics"] = raw
+        # Parse into structured form: [{name, value, type, help, labels}]
+        parsed = []
+        current_help = {}
+        for line in raw.splitlines():
+            if line.startswith("# HELP "):
+                parts = line.split(" ", 3)
+                if len(parts) >= 4:
+                    current_help[parts[2]] = parts[3]
+            elif line.startswith("# TYPE "):
+                parts = line.split(" ", 3)
+                if len(parts) >= 4:
+                    pass  # type info captured but not critical
+            elif line and not line.startswith("#"):
+                parts = line.rsplit(" ", 1)
+                if len(parts) == 2:
+                    name_full = parts[0]
+                    try:
+                        val = float(parts[1])
+                    except ValueError:
+                        continue
+                    # Split labels: name{labels} -> name, labels
+                    labels = ""
+                    name = name_full
+                    if "{" in name_full and name_full.endswith("}"):
+                        name = name_full.split("{", 1)[0]
+                        labels = name_full.split("{", 1)[1].rstrip("}")
+                    parsed.append({
+                        "name": name,
+                        "labels": labels,
+                        "value": val,
+                        "help": current_help.get(name, ""),
+                    })
+        result["parsed_metrics"] = parsed
+        result["sections"]["raw_metrics"] = "ok"
+    except Exception as e:
+        result["raw_metrics"] = None
+        result["parsed_metrics"] = []
+        result["sections"]["raw_metrics"] = f"error: {str(e)[:80]}"
+
+    # 2. /stats endpoint
+    try:
+        with _ur.urlopen(f"http://{host}:{port}/stats", timeout=3) as r:
+            result["stats"] = json.loads(r.read().decode("utf-8", errors="ignore"))
+        result["sections"]["stats"] = "ok"
+    except Exception as e:
+        result["stats"] = None
+        result["sections"]["stats"] = f"error: {str(e)[:80]}"
+
+    # 3. PPLNS state
+    try:
+        result["pplns_state"] = _fetch_pplns_state()
+        result["sections"]["pplns_state"] = "ok" if result["pplns_state"] else "empty"
+    except Exception as e:
+        result["pplns_state"] = None
+        result["sections"]["pplns_state"] = f"error: {str(e)[:80]}"
+
+    # 4. Pool log tail (last 100 lines)
+    try:
+        log_result = _run_edge_cmd("tail -100 /opt/zion/pool.log 2>/dev/null || tail -100 /opt/zion/logs/pool.log 2>/dev/null", timeout=5)
+        if log_result.returncode == 0 and log_result.stdout.strip():
+            result["pool_log_tail"] = log_result.stdout.strip().splitlines()
+        else:
+            result["pool_log_tail"] = []
+        result["sections"]["pool_log_tail"] = f"ok ({len(result['pool_log_tail'])} lines)"
+    except Exception as e:
+        result["pool_log_tail"] = []
+        result["sections"]["pool_log_tail"] = f"error: {str(e)[:80]}"
+
+    # 5. AuxPow config
+    try:
+        result["auxpow"] = get_auxpow_config()
+        result["sections"]["auxpow"] = "ok"
+    except Exception as e:
+        result["auxpow"] = None
+        result["sections"]["auxpow"] = f"error: {str(e)[:80]}"
+
+    # 6. Pool env vars from edge-environment.sh
+    try:
+        env_vars = {}
+        if EDGE_ENV_FILE.exists():
+            with open(EDGE_ENV_FILE, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("#") or not line or "=" not in line:
+                        continue
+                    # Strip optional "export " prefix
+                    if line.startswith("export "):
+                        line = line[len("export "):].strip()
+                    if "=" not in line:
+                        continue
+                    kv = line.split("=", 1)
+                    if len(kv) == 2:
+                        key = kv[0].strip()
+                        val = kv[1].strip().strip('"').strip("'")
+                        # Only pool/mining-related vars
+                        if any(k in key.upper() for k in ["POOL", "MINER", "PAYOUT", "PPLNS", "FEE", "AUXPOW", "STRATUM"]):
+                            env_vars[key] = val
+        result["pool_env"] = env_vars
+        result["sections"]["pool_env"] = f"ok ({len(env_vars)} vars)"
+    except Exception as e:
+        result["pool_env"] = {}
+        result["sections"]["pool_env"] = f"error: {str(e)[:80]}"
+
+    # 7. Revenue stats
+    try:
+        with _ur.urlopen(f"http://{host}:{port}/api/v1/revenue/stats", timeout=3) as r:
+            result["revenue_stats"] = json.loads(r.read().decode("utf-8", errors="ignore"))
+        result["sections"]["revenue_stats"] = "ok"
+    except Exception as e:
+        result["revenue_stats"] = None
+        result["sections"]["revenue_stats"] = f"error: {str(e)[:80]}"
+
+    # 8. Revenue streams
+    try:
+        with _ur.urlopen(f"http://{host}:{port}/api/v1/revenue/streams", timeout=3) as r:
+            result["revenue_streams"] = json.loads(r.read().decode("utf-8", errors="ignore"))
+        result["sections"]["revenue_streams"] = "ok"
+    except Exception as e:
+        result["revenue_streams"] = None
+        result["sections"]["revenue_streams"] = f"error: {str(e)[:80]}"
+
+    # 9. Endpoint probes (which pool API endpoints respond)
+    endpoints = {}
+    for ep in ["/stats", "/metrics", "/miners?limit=10", "/api/v1/revenue/stats", "/api/v1/revenue/streams", "/api/v1/profit/switcher"]:
+        try:
+            with _ur.urlopen(f"http://{host}:{port}{ep}", timeout=2) as r:
+                endpoints[ep] = {"status": r.status, "ok": True}
+        except Exception as e:
+            endpoints[ep] = {"status": None, "ok": False, "error": str(e)[:60]}
+    result["endpoints"] = endpoints
+
+    return result
+
+
+def get_pool_blocks(limit: int = 100) -> dict:
+    """Proxy to pool /api/v1/blocks endpoint (DB-backed historical blocks).
+
+    Returns blocks list + summary KPIs (total, confirmed, pending, orphaned,
+    orphan_rate, pool_luck_64). Falls back to 503 if DB not configured.
+    """
+    import urllib.request as _ur
+    host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    port = 8455
+    if limit < 1 or limit > 500:
+        limit = 100
+    try:
+        with _ur.urlopen(f"http://{host}:{port}/api/v1/blocks?limit={limit}", timeout=5) as r:
+            payload = json.loads(r.read().decode("utf-8", errors="ignore"))
+        # Normalize: pool returns either {blocks:[...]} or a bare list
+        blocks = payload.get("blocks", payload) if isinstance(payload, dict) else payload
+        if not isinstance(blocks, list):
+            blocks = []
+        # Compute summary KPIs
+        total = len(blocks)
+        confirmed = sum(1 for b in blocks if (b.get("status") or b.get("state") or "").lower() in ("confirmed", "mature", "valid"))
+        pending = sum(1 for b in blocks if (b.get("status") or b.get("state") or "").lower() in ("pending", "unconfirmed", "immature"))
+        orphaned = sum(1 for b in blocks if (b.get("status") or b.get("state") or "").lower() in ("orphaned", "orphan", "invalid", "stale"))
+        orphan_rate = (orphaned / total * 100.0) if total > 0 else 0.0
+        return {
+            "ok": True,
+            "blocks": blocks,
+            "summary": {
+                "total": total,
+                "confirmed": confirmed,
+                "pending": pending,
+                "orphaned": orphaned,
+                "orphan_rate_pct": round(orphan_rate, 2),
+                "pool_luck_64": payload.get("pool_luck_64") if isinstance(payload, dict) else None,
+            },
+            "host": host,
+            "port": port,
+            "ts": int(time.time()),
+        }
+    except _ur.HTTPError as e:
+        return {"ok": False, "error": f"pool returned HTTP {e.code}", "blocks": [], "summary": {}, "ts": int(time.time())}
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:200], "blocks": [], "summary": {}, "ts": int(time.time())}
+
+
 def get_pool_registered_miners() -> dict:
     """Return ALL miners registered in PPLNS state with real on-chain balances.
 
@@ -11214,6 +11419,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_pool_leaderboard(limit=limit))
         elif route == "/api/pool/miners-dashboard":
             self._json(get_pool_miners_dashboard())
+        elif route == "/api/pool/blocks":
+            limit = int(params.get("limit", ["100"])[0])
+            self._json(get_pool_blocks(limit=limit))
         elif route == "/api/revenue":
             self._json(get_revenue_dashboard())
         elif route == "/api/revenue/report":
@@ -11235,6 +11443,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_pool_miner_detail(address))
         elif route == "/api/pool/registered-miners":
             self._json(get_pool_registered_miners())
+        elif route == "/api/pool/debug":
+            self._json(get_pool_debug_dump())
         elif route == "/api/miner/live":
             self._json(get_miner_live_stats())
         elif route == "/api/miner/log-tail":

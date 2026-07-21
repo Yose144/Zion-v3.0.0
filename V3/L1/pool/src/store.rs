@@ -417,6 +417,58 @@ impl ShareStore {
         Ok(out)
     }
 
+    /// Query recent payouts for all miners (F7.1 — for REST API endpoint).
+    pub fn query_all_payouts(&self, limit: u32) -> Result<Vec<PayoutRow>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed
+             FROM payouts ORDER BY ts DESC LIMIT ?1",
+        )?;
+        let rows = stmt.query_map(params![limit as i64], |row| {
+            Ok(PayoutRow {
+                ts: row.get(0)?,
+                miner_id: row.get(1)?,
+                address: row.get(2)?,
+                amount_flowers: row.get::<_, i64>(3)? as u64,
+                tx_id: row.get(4)?,
+                height: row.get::<_, i64>(5)? as u64,
+                block_hash: row.get(6)?,
+                confirmations: row.get::<_, i64>(7)? as u32,
+                confirmed: row.get::<_, i32>(8)? != 0,
+            })
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    }
+
+    /// Query all miner stats (F7.1 — for REST API endpoint).
+    pub fn query_all_miners(&self, limit: u32) -> Result<Vec<MinerStatsRow>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT miner_id, first_seen, last_seen, total_shares, accepted_shares, rejected_shares, total_paid_flowers
+             FROM miners ORDER BY last_seen DESC LIMIT ?1",
+        )?;
+        let rows = stmt.query_map(params![limit as i64], |row| {
+            Ok(MinerStatsRow {
+                miner_id: row.get(0)?,
+                first_seen: row.get(1)?,
+                last_seen: row.get(2)?,
+                total_shares: row.get::<_, i64>(3)? as u64,
+                accepted_shares: row.get::<_, i64>(4)? as u64,
+                rejected_shares: row.get::<_, i64>(5)? as u64,
+                total_paid_flowers: row.get::<_, i64>(6)? as u64,
+            })
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    }
+
     /// Get miner stats.
     pub fn get_miner_stats(&self, miner_id: &str) -> Result<Option<MinerStatsRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
