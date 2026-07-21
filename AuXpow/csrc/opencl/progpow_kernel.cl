@@ -199,6 +199,7 @@ uint64_t keccak_f800(__constant hash32_t const* g_header, uint64_t seed, hash32_
     for (int i = 0; i < 8; i++)
         st[10+i] = digest.uint32s[i];
 
+    #pragma unroll
     for (int r = 0; r < 22; r++) {
         keccak_f800_round(st, r);
     }
@@ -329,20 +330,26 @@ __kernel void ethash_search(
         // initialize mix for all lanes
         fill_mix(hash_seed, lane_id, mix);
 
-        // DAG loop — share+barrier for mix[0] broadcast.
-        // NOTE: ds_bpermute in the DAG loop causes GPU hangs on RDNA1 (wave32)
-        // with AMDPRO driver, likely due to compiler scheduling issues with
-        // bpermute inside a tight loop with global memory loads. bpermute is
-        // safe in the seed broadcast (outside the loop) but not in the DAG loop.
+        // DAG loop — broadcast mix[0] via ds_bpermute (no barrier) on AMD,
+        // or share+barrier fallback on non-AMD.
+        // NOTE: Previously bpermute was disabled in the DAG loop due to GPU
+        // hangs on RDNA1, but that was caused by a wave_size=64 bug (RDNA1 is
+        // wave32).  With the WAVE_SIZE auto-detection fix, bpermute is now safe
+        // in the DAG loop and eliminates 64 barriers per hash → major speedup.
         #pragma unroll 1
         for (uint32_t l = 0; l < PROGPOW_CNT_DAG; l++)
 		{
-            // Global load — broadcast mix[0] from lane (l % PROGPOW_LANES)
-            // to all lanes in the hash group via share+barrier.
+            // Broadcast mix[0] from lane (l % PROGPOW_LANES) to all lanes
+            // in the hash group.
+            uint32_t offset;
+#if defined(USE_AMD_BPERMUTE)
+            offset = amd_wave_shuffle(mix[0], wave_group_base + (l % PROGPOW_LANES));
+#else
             if(lane_id == (l % PROGPOW_LANES))
                 share[group_id].uint64s[0] = mix[0];
             barrier(CLK_LOCAL_MEM_FENCE);
-            uint32_t offset = share[group_id].uint64s[0];
+            offset = share[group_id].uint64s[0];
+#endif
             offset %= PROGPOW_DAG_ELEMENTS;
             offset = offset * PROGPOW_LANES + (lane_id ^ l) % PROGPOW_LANES;
             dag_t data_dag = g_dag[offset];
