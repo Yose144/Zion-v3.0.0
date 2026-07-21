@@ -495,7 +495,8 @@ Current live topology is **3-node P2P mesh** (Edge primary + Edge follower + Loc
 Edge Server (VPS) — 62.171.141.136
     ├── Node 1 (primary, mining) — RPC 9443, P2P 8333
     ├── Node 2 (follower) — RPC 8448, P2P sync from Node 1
-    ├── Pool (Stratum) — 8444
+    ├── Pool (Stratum, main) — 8444
+    ├── RTM Debug Pool (Stratum, RTM-only) — 8460  ← separate service for RTM debugging
     ├── Bridge (L2) — 9101
     ├── DAO (L2) — 8450
     ├── WARP (L3) — 8453
@@ -516,7 +517,7 @@ Dashboard: https://dashboard.zionterranova.com (nginx → Python)
 
 | Role | Host | Public IP | Ports |
 |------|------|-----------|-------|
-| Edge Node 1 (primary) | VPS (Ubuntu 24.04.4) | 62.171.141.136 | P2P: 8333, RPC: 9443 (localhost), Pool: 8444, WS: 8445, DAO: 8450, WARP: 8453, ZionDex: 8454 (live), OASIS: 8094 (API) / 9102 (metrics), LND REST: 8080 (pending), LND gRPC: 10009 (pending), LND P2P: 9735 (pending), Web: 80/443, Dashboard: 8766 |
+| Edge Node 1 (primary) | VPS (Ubuntu 24.04.4) | 62.171.141.136 | P2P: 8333, RPC: 9443 (localhost), Pool: 8444, RTM Debug Pool: 8460, WS: 8445, DAO: 8450, WARP: 8453, ZionDex: 8454 (live), OASIS: 8094 (API) / 9102 (metrics), LND REST: 8080 (pending), LND gRPC: 10009 (pending), LND P2P: 9735 (pending), Web: 80/443, Dashboard: 8766 |
 | Edge Node 2 (follower) | VPS (same) | 62.171.141.136 | P2P: 8334, RPC: 8448 (localhost) |
 | Local Backup Node | zionserver-144 | 109.81.27.87 | RPC: 8448 (localhost), P2P: 8333 |
 
@@ -533,6 +534,7 @@ Dashboard: https://dashboard.zionterranova.com (nginx → Python)
 | Node WebSocket | 8445 | 127.0.0.1 | TCP | Node event stream |
 | Node metrics | 9100 | 127.0.0.1 | HTTP | Prometheus metrics |
 | Pool Stratum | 8444 | 0.0.0.0 | TCP | Miner connections (public) |
+| RTM Debug Pool | 8460 | 0.0.0.0 | TCP | Separate RTM-only debug pool (zion-rtm-debug-pool service, doesn't interfere with main pool) |
 | Pool stats HTTP | 8455 | 127.0.0.1 | HTTP | Pool routing metrics + /stats + /miners API |
 | Bridge metrics | 9101 | 127.0.0.1 | HTTP | Prometheus metrics (bridge) |
 | OASIS API | 8094 | 127.0.0.1 | HTTP | Avatar hub API |
