@@ -1,33 +1,25 @@
-// BeamHash III OpenCL kernel — Equihash (144,5) with SipHash-2-4
+// BeamHash III OpenCL kernel — SipHash-2-4 hash generation for BEAM mining.
 //
-// Implements the SipHash-2-4 hash function and the initial hash generation
-// for Equihash 144,5 (BeamHash III). The full Wagner's algorithm collision
-// finding is done on the host side; the GPU handles the compute-intensive
-// hash generation phase.
+// This kernel generates the 448-bit work bits for each index using SipHash-2-4
+// with a 256-bit prePow state. The Wagner's algorithm collision finding is
+// done on the host (CPU) side using beamhash.rs.
 //
 // Parameters:
-//   N = 144 (hash width in bits)
-//   K = 5   (number of rounds)
-//   n = 24  (bits per digit)
-//   M = 2^25 (number of initial hashes)
-//   Index bits = 25
-//   Hash bytes = 18 (144 bits)
+//   workBitSize      = 448 (7 × 64-bit SipHash outputs)
+//   collisionBitSize = 24
+//   numRounds        = 5 (K)
+//   M                = 2^25 = 33,554,432 initial entries
+//
+// Hash computation per index:
+//   For j = 0..7: h[j] = siphash24(prePow[0..3], (index << 3) + j)
+//   workBits = h[0] || h[1] || h[2] || h[3] || h[4] || h[5] || h[6]  (448 bits)
+//   (h[7] is computed but discarded — only 7 × 64 = 448 bits fit)
 //
 // References:
+//   - https://github.com/btccom/btcpool-ABANDONED (beamHashIII_impl.cpp)
 //   - https://docs.beam.mw/beamHash_III_spec.pdf
-//   - https://github.com/BeamMW/opencl-miner (BeamHash I/II reference)
-//   - SipHash: https://www.aumasson.fr/siphash/siphash.pdf
 
-// ── Constants ───────────────────────────────────────────────────────
-
-#define BEAMHASH_N          144
-#define BEAMHASH_K          5
-#define BEAMHASH_DIGIT_BITS 24
-#define BEAMHASH_INDEX_BITS 25
-#define BEAMHASH_HASH_BYTES 18
-#define BEAMHASH_M          33554432  // 2^25
-
-// ── SipHash-2-4 ─────────────────────────────────────────────────────
+// === SipHash-2-4 ===
 
 inline ulong rotl64(ulong x, uint b) {
     return (x << b) | (x >> (64 - b));
@@ -50,19 +42,20 @@ inline void sipround(ulong *v0, ulong *v1, ulong *v2, ulong *v3) {
     *v2 = rotl64(*v2, 32);
 }
 
-/// SipHash-2-4 for a single 64-bit message word.
-/// Returns 64-bit hash.
-inline ulong siphash24_u64(ulong k0, ulong k1, ulong m) {
-    ulong v0 = 0x736f6d6570736575UL ^ k0;
-    ulong v1 = 0x646f72616e646f6dUL ^ k1;
-    ulong v2 = 0x6c7967656e657261UL ^ k0;
-    ulong v3 = 0x7465646279746573UL ^ k1;
+/// SipHash-2-4 with 256-bit pre-state (4 × 64-bit words).
+/// This is the BeamHash III variant — uses prePow directly as initial state,
+/// WITHOUT the standard SipHash magic constants.
+inline ulong siphash24_prepow(ulong s0, ulong s1, ulong s2, ulong s3, ulong nonce) {
+    ulong v0 = s0;
+    ulong v1 = s1;
+    ulong v2 = s2;
+    ulong v3 = s3;
 
     // Compression: 2 Sip rounds
-    v3 ^= m;
+    v3 ^= nonce;
     sipround(&v0, &v1, &v2, &v3);
     sipround(&v0, &v1, &v2, &v3);
-    v0 ^= m;
+    v0 ^= nonce;
 
     // Finalization: 4 Sip rounds
     v2 ^= 0xFF;
@@ -74,77 +67,50 @@ inline ulong siphash24_u64(ulong k0, ulong k1, ulong m) {
     return v0 ^ v1 ^ v2 ^ v3;
 }
 
-// ── Hash generation kernel ──────────────────────────────────────────
+// === Hash generation kernel ===
 
-/// Generate initial Equihash hashes for BeamHash III.
+/// Generate 448-bit work bits for each index.
 ///
-/// Each work-item computes the 144-bit (18-byte) hash for one index.
-/// The hash is computed as:
-///   h = SipHash(key, idx) || SipHash(key, idx+1) || SipHash(key, idx+2)[:2]
-/// truncated to 18 bytes.
+/// Each work-item computes the 448-bit hash for one index.
+/// The output is 7 × 64-bit words = 56 bytes per index.
 ///
 /// Args:
-///   sipkey0, sipkey1 — SipHash key (derived from SHA-256 of header+nonce)
-///   output           — output buffer of size M * HASH_BYTES bytes
-///   start_index      — first index to hash (for batched processing)
+///   prePow0, prePow1, prePow2, prePow3 — 4 × 64-bit prePow state words
+///   output — output buffer of size M * 56 bytes (7 ulongs per index)
+///   start_index — first index to hash (for batched processing)
 __kernel void beamhash_generate_hashes(
-        const ulong sipkey0,
-        const ulong sipkey1,
-        __global uchar *output,
+        const ulong prePow0,
+        const ulong prePow1,
+        const ulong prePow2,
+        const ulong prePow3,
+        __global ulong *output,
         const uint start_index) {
 
     uint gid = get_global_id(0);
     uint index = start_index + gid;
 
-    if (index >= BEAMHASH_M) return;
+    // M = 2^25 = 33,554,432
+    if (index >= 33554432u)
+        return;
 
-    ulong idx = (ulong)index;
+    ulong base = (ulong)index << 3;
 
-    // Compute 3 SipHash outputs for 192 bits, truncate to 144 bits (18 bytes)
-    ulong h0 = siphash24_u64(sipkey0, sipkey1, idx);
-    ulong h1 = siphash24_u64(sipkey0, sipkey1, idx + 1);
-    ulong h2 = siphash24_u64(sipkey0, sipkey1, idx + 2);
+    // Compute 7 SipHash outputs (h[7] is discarded)
+    ulong h0 = siphash24_prepow(prePow0, prePow1, prePow2, prePow3, base);
+    ulong h1 = siphash24_prepow(prePow0, prePow1, prePow2, prePow3, base + 1);
+    ulong h2 = siphash24_prepow(prePow0, prePow1, prePow2, prePow3, base + 2);
+    ulong h3 = siphash24_prepow(prePow0, prePow1, prePow2, prePow3, base + 3);
+    ulong h4 = siphash24_prepow(prePow0, prePow1, prePow2, prePow3, base + 4);
+    ulong h5 = siphash24_prepow(prePow0, prePow1, prePow2, prePow3, base + 5);
+    ulong h6 = siphash24_prepow(prePow0, prePow1, prePow2, prePow3, base + 6);
 
-    // Write 18 bytes to output (little-endian)
-    uint offset = gid * BEAMHASH_HASH_BYTES;
-
-    // h0: bytes 0-7
-    vstore8((uchar8)(
-        (uchar)(h0),       (uchar)(h0 >> 8),  (uchar)(h0 >> 16), (uchar)(h0 >> 24),
-        (uchar)(h0 >> 32), (uchar)(h0 >> 40), (uchar)(h0 >> 48), (uchar)(h0 >> 56)
-    ), 0, output + offset);
-
-    // h1: bytes 8-15
-    vstore8((uchar8)(
-        (uchar)(h1),       (uchar)(h1 >> 8),  (uchar)(h1 >> 16), (uchar)(h1 >> 24),
-        (uchar)(h1 >> 32), (uchar)(h1 >> 40), (uchar)(h1 >> 48), (uchar)(h1 >> 56)
-    ), 0, output + offset + 8);
-
-    // h2: bytes 16-17 (first 2 bytes only)
-    output[offset + 16] = (uchar)(h2);
-    output[offset + 17] = (uchar)(h2 >> 8);
-}
-
-// ── Target check kernel ─────────────────────────────────────────────
-
-/// Check if a solution's PoW hash meets the target.
-///
-/// Computes SHA-256(header || nonce || solution) and compares with target.
-/// Since SHA-256 is complex to implement in OpenCL, this kernel does a
-/// simplified check: it compares the first 8 bytes of the solution-derived
-/// hash with the target. The full SHA-256 verification is done on the host.
-///
-/// For now, this kernel is a placeholder — the actual target check is
-/// performed by the host after the Wagner's algorithm finds a solution.
-__kernel void beamhash_check_target(
-        __global const uchar *solution,
-        __global const uchar *target,
-        __global uint *found) {
-
-    uint gid = get_global_id(0);
-    if (gid != 0) return;
-
-    // Placeholder: actual target check is done on host
-    // This kernel exists for API compatibility
-    found[0] = 0;
+    // Write 7 ulongs (56 bytes = 448 bits) to output
+    uint offset = gid * 7;
+    output[offset + 0] = h0;
+    output[offset + 1] = h1;
+    output[offset + 2] = h2;
+    output[offset + 3] = h3;
+    output[offset + 4] = h4;
+    output[offset + 5] = h5;
+    output[offset + 6] = h6;
 }

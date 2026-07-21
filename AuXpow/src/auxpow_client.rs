@@ -453,10 +453,15 @@ impl AuxPowClient {
             self.beam_login(payout_wallet).await?;
         }
 
-        // For CryptonoteStratum (DNX), perform login BEFORE spawning the poll loop.
+        // For CryptonoteStratum (DNX/XMR), perform login BEFORE spawning the poll loop.
         if self.protocol == StratumProtocol::CryptonoteStratum {
             self.cryptonote_login(payout_wallet).await?;
-            self.start_cryptonote_keepalived().await;
+            // MoneroOcean / xmrig-compatible pools explicitly disable keepalive
+            // (`"keepalive": false`) and close the connection when keepalived is
+            // sent. Send keepalived only for coins/pools that expect it (DNX).
+            if self.profile.coin != ExternalCoin::XMR {
+                self.start_cryptonote_keepalived().await;
+            }
         }
 
         // For IronFishStratum (IRON), perform subscribe BEFORE spawning the poll loop.
@@ -3351,6 +3356,14 @@ impl AuxPowClient {
         }
     }
 
+    /// Generate a unique JSON-RPC request id.
+    async fn next_jsonrpc_id(&self) -> i64 {
+        let mut next = self.next_rpc_id.lock().await;
+        let id = *next;
+        *next += 1;
+        id
+    }
+
     /// Submit a share to the pool.
     ///
     /// Returns whether the pool accepted or rejected the share.
@@ -3454,9 +3467,10 @@ impl AuxPowClient {
                 "auxpow: XMR submit_hash_check sid={} job_id={} nonce={} _hash_hex={} mix_hash_hex={:?} result_hex={}",
                 sid, job_id, nonce, _hash_hex, mix_hash_hex, result_hex
             );
+            let submit_req_id = self.next_jsonrpc_id().await;
             let req = json!({
                 "jsonrpc": "2.0",
-                "id": 20,
+                "id": submit_req_id,
                 "method": "submit",
                 "params": {
                     "id": sid,
@@ -3524,8 +3538,9 @@ impl AuxPowClient {
             // graffiti: 32 bytes of zeros (printable chars preferred, but zeros work)
             let graffiti_hex = "0".repeat(64);
 
+            let submit_req_id = self.next_jsonrpc_id().await;
             let req = json!({
-                "id": 20,
+                "id": submit_req_id,
                 "method": "mining.submit",
                 "body": {
                     "miningRequestId": mining_request_id,
@@ -4233,9 +4248,10 @@ impl AuxPowClient {
             ("mining.submit", json!([worker, job_id, hex]))
         };
 
+        let submit_req_id = self.next_jsonrpc_id().await;
         let req = json!({
             "jsonrpc": "2.0",
-            "id": 100,
+            "id": submit_req_id,
             "method": method,
             "params": params
         });
@@ -4697,14 +4713,8 @@ impl AuxPowClient {
     ///   `[seed_hash, header_hash, target]`
     /// where all three are 0x-prefixed hex strings.
     pub async fn request_eth_getwork(&self) -> Result<()> {
-        let id = {
-            let mut next = self.next_rpc_id.lock().await;
-            let id = *next;
-            *next += 1;
-            id
-        };
         let req = json!({
-            "id": id,
+            "id": self.next_jsonrpc_id().await,
             "method": "eth_getWork",
             "params": []
         });
@@ -4956,12 +4966,6 @@ impl AuxPowClient {
         if self.protocol != StratumProtocol::EthStratum {
             return Ok(false);
         }
-        let id = {
-            let mut next = self.next_rpc_id.lock().await;
-            let id = *next;
-            *next += 1;
-            id
-        };
         // eth_submitHashrate params: [hashrate_hex, miner_id]
         // hashrate_hex is 0x-prefixed 32-byte hex of the hashrate value.
         let hashrate_hex = format!("0x{:064x}", hashrate_hps);
@@ -4971,7 +4975,7 @@ impl AuxPowClient {
             self.profile.worker_name
         );
         let req = json!({
-            "id": id,
+            "id": self.next_jsonrpc_id().await,
             "method": "eth_submitHashrate",
             "params": [hashrate_hex, miner_id]
         });

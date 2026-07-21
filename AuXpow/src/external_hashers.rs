@@ -919,6 +919,25 @@ pub fn hash_autolykos(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
     }
 }
 
+/// Verify an Autolykos v2 share.
+///
+/// Returns `true` if `hash_autolykos(header, nonce, height)` is less than or
+/// equal to `target` using big-endian byte comparison.  This is the standard
+/// share check used by Ergo stratum pools.
+///
+/// For real ERG validation the `native-hashers` feature must be enabled; the
+/// fallback without it is NOT Ergo-valid and only checks the hash function
+/// plumbing.
+pub fn is_valid_autolykos_solution(
+    header: &[u8],
+    nonce: u64,
+    height: u32,
+    target: &[u8; 32],
+) -> bool {
+    let hash = hash_autolykos(header, nonce, height);
+    hash <= *target
+}
+
 // ── KawPow (RVN, CLORE) ──────────────────────────────────────────────
 
 /// Compute KawPow hash for Ravencoin (RVN) / Clore.ai (CLORE) mining.
@@ -2834,6 +2853,8 @@ mod tests {
     fn parse_randomx_target_hex_rejects_wrong_length() {
         assert!(parse_randomx_target_hex("ffffff").is_none()); // 3 bytes, not 4 or 8
         assert!(parse_randomx_target_hex("00").is_none()); // 1 byte
+        assert!(parse_randomx_target_hex("aabbcc").is_none()); // 3 bytes
+        assert!(parse_randomx_target_hex("ffffffffffffffff").is_some()); // 8 bytes
     }
 
     #[test]
@@ -2938,6 +2959,58 @@ mod tests {
             ExternalCoin::FLUX.protocol(),
             StratumProtocol::ZcashStratum
         );
+    }
+
+    // ── Autolykos v2 (ERG) share verification ─────────────────────
+
+    #[test]
+    #[cfg(feature = "native-hashers")]
+    fn autolykos_hash_deterministic() {
+        let header = [0x42u8; 32];
+        let h1 = hash_autolykos(&header, 12345, 1000000);
+        let h2 = hash_autolykos(&header, 12345, 1000000);
+        assert_eq!(h1, h2, "Autolykos hash must be deterministic");
+    }
+
+    #[test]
+    #[cfg(feature = "native-hashers")]
+    fn autolykos_hash_nonce_sensitive() {
+        let header = [0x42u8; 32];
+        let h1 = hash_autolykos(&header, 1, 1000000);
+        let h2 = hash_autolykos(&header, 2, 1000000);
+        assert_ne!(h1, h2, "Different nonces must produce different hashes");
+    }
+
+    #[test]
+    #[cfg(feature = "native-hashers")]
+    fn autolykos_is_valid_solution_true() {
+        let header = [0x42u8; 32];
+        let height = 1000000u32;
+        // Very easy target: first byte must be 0x00.
+        let target = [0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+        // Try to find a nonce that satisfies the target.
+        let mut found = false;
+        for nonce in 0..100_000u64 {
+            if is_valid_autolykos_solution(&header, nonce, height, &target) {
+                found = true;
+                break;
+            }
+        }
+        assert!(found, "should find a valid Autolykos share within 100k nonces");
+    }
+
+    #[test]
+    #[cfg(feature = "native-hashers")]
+    fn autolykos_is_valid_solution_false() {
+        let header = [0x42u8; 32];
+        let height = 1000000u32;
+        // Impossible target: all bytes must be 0x00.
+        let target = [0x00u8; 32];
+        let nonce = 12345u64;
+        assert!(!is_valid_autolykos_solution(&header, nonce, height, &target));
     }
 
     // ── PearlHash (PRL) ─────────────────────────────────────────────

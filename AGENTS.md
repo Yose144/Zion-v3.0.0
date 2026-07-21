@@ -1848,3 +1848,36 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 - **Wallet:** `RLFQYsdd8wGGUgMgk17WrqdGNtkAVSCfDQ`, worker `pool-vrsc`, password `d=0.01`
 - **Threads:** `ZION_THREADS=2` (2 CPU threads pro VRSC, zbytek pro GPU)
 - **Stale jobs:** LuckPool posílá nové joby každých ~30s, multi-hop latency (miner→pool→LuckPool) může způsobit `Job not found` rejects — řeší se stale pre-rejection v pool server.rs
+
+### SMOS rig Vega 64 — provozní poznámky (2026-07-20)
+
+- **Rig ID:** 518837, group `ZionLiteFire` (1773590), worker `vega-smos`
+- **GPU:** AMD Vega 64 `gfx900:xnack-` 64CU 8GiB, OpenCL platform `AMD Accelerated Parallel Processing`
+- **GLIBC issue:** SMOS má GLIBC 2.31; build v Ubuntu 22.04 (GLIBC 2.35) padá. Řešení: build v Docker `zion-build-focal` (Ubuntu 20.04 → GLIBC 2.30) s `ZION_CPU_TARGET=x86-64` a `RUSTFLAGS="-C target-cpu=x86-64"` aby se předešlo `SIGILL` na starších CPU.
+- **Aktuální SMOS minerOptions (stable ZION only):**
+  ```
+  https://zionterranova.com/zion-miner/zion-miner-3.0.6-glibc231-cpu-baseline-debug4.zip --pool 62.171.141.136:8444 --wallet zion1w2z3l0q2x5e3q752d3v8k5k3u366j5j3t79n5w3 --worker vega-smos --threads 8 --cpu-coin RTM --gpu-coin VRSC --loops 1000000
+  ```
+- **Aktuální pool config (external streams vypnuty pro stabilitu):**
+  ```bash
+  ZION_POOL_AUXPOW_ENABLED=0
+  ```
+  S tímto běží jen ZION `deeksha_lite_v1` na GPU, ~20 KH/s, 100% accept rate.
+- **Smrtící chyba:** miner měl `ZION_LOOP_COUNT=1` ve výchozím SMOS configu (nebo `--loops` chyběl), takže po 1 iteraci `session_status iter=1/1` proces čistě skončil a SMOS watchdog ho neustále restartoval. Fix: explicitně přidat `--loops 1000000`.
+- **ALPH blake3 na Vega 64:** GPU OpenCL init proběhne, ale ext_gpu thread / pool_io_thread padá — pravděpodobně kompilace OpenCL kernelu nebo CPU baseline. Pro Vega 64 zatím vypnuto; ZION `deeksha_lite_v1` je stabilní.
+- **TUI není vidět v SMOS konzoli:** Příčinou jsou verbose `scan_randomx` / `XMR_SHARE_FOUND` logy z CPU external mining, které přepisují TUI. Fix: vypnout CPU external stream (`ZION_POOL_AUXPOW_CPU_COIN=""` NEfunguje — prázdná hodnota defaultuje na první dostupný CPU coin, obvykle XMR; skutečně vypnout se musí `ZION_POOL_AUXPOW_ENABLED=0` a reload rigu, aby miner dostal `external_stream_cpu: null` a přestal těžit starou XMR job).
+- **Miner si drží starý external job:** Když pool přestane posílat `external_stream`/`external_stream_cpu`, miner si drží poslední job a těží dál (ext_gpu/ext_cpu thread neobdrží explicitní stop). K návratu k čistému ZION těžení je potřeba restart mineru (SMOS reload).
+- **API reload:** `PATCH https://api.simplemining.net/rigs/execute-reload` s body `{"rigIds": [518837]}` funguje pro restart. API key: `X-AUTH-TOKEN: api-17a2bf58...`.
+
+### BeamHash III + Autolykos v2 — share verification (2026-07-20)
+
+- **Autolykos v2 (ERG):** Přidána `is_valid_autolykos_solution(header, nonce, height, target)` v `AuXpow/src/external_hashers.rs`. Používá nativní C implementaci (`native-hashers` feature) a porovnává hash s cílem big-endian. Unit testy pro determinismus, sensitivitu na nonce a valid/invalid target procházejí.
+- **BeamHash III (BEAM):** Opraven `compute_prepow` aby používal skutečný BLAKE2b-256 s BeamHash III personalizací (`Beam-PoW` + workBitSize + numRounds). Implementovány `apply_mix`, `mask` a korektní `remLen` pro jednotlivá kola Wagnerova algoritmu podle `beamHashIII_impl.cpp`. Přidány helpery `apply_mix_rem_len` a `constructor_rem_len`. `is_valid_beamhash_solution` a `hash_beamhash` jsou exportovány z `lib.rs`. Solver s redukovaným `2^16` řádky nenachází řešení (plný solver potřebuje `2^25`), ale verifikátor odmítá neplatná řešení a testy procházejí.
+- **Testy:** `cargo test -p zion-auxpow --features gpu-opencl,native-hashers --lib --tests` = 198 passed (včetně nových Autolykos a BeamHash testů).
+
+### Triple stream pokus — ZION + GPU BEAM + CPU RTM (2026-07-20)
+
+- **Konfigurace:** `ZION_POOL_AUXPOW_ENABLED=1`, `ZION_POOL_AUXPOW_COIN=BEAM`, `ZION_POOL_AUXPOW_CPU_COIN=RTM`, všechny ostatní `ZION_POOL_AUXPOW_WALLET_*` vyprázdněny, aby multi_bridge spustil jen BEAM a RTM. MinerOptions `--gpu-coin BEAM --cpu-coin RTM`.
+- **BEAM (GPU):** Bridge se nepřipojí k `beam.2miners.com:5252` — `connection closed by remote`. Příčina: payout wallet je BTC (`3Qyd...`) a BeamStratum na 2miners vyžaduje BEAM adresu. **Potřebuji BEAM wallet.**
+- **RTM (CPU):** Bridge se připojí k zpool, dostává joby, ale všechny share jsou rejected (`Invalid share`). Příčina: build minera nemá feature `native-ghostrider`, takže `miner_harness.rs` pro `ghostrider` fallbackne na `hash_blake3` místo pravého GhostRider hashe. **Fix: překompilovat s `--features gpu-opencl,native-ghostrider`.**
+- **Výsledek:** Vracím zpět na stabilní `ZION_POOL_AUXPOW_ENABLED=0` a ZION-only, dokud nebude BEAM wallet a opravený RTM build. TUI je opět viditelné, ~20.6 KH/s, 100% accept.

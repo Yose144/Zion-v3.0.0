@@ -81,14 +81,23 @@ async fn effective_share_target(client: &AuxPowClient, job: &ExternalJob) -> [u8
 - `share_forwarder.rs`: `meets_target_little_endian` pro RTM (hash LE od wrapperu, target BE) — po pokusu s `meets_target` vráceno zpět, jinak všechny shares `below_target`
 - **Status: RTM share acceptance VERIFIED**
 
-### XMR (Monero / RandomX) — ČEKÁ NA TEST
+### XMR (Monero / RandomX) — VERIFIED
 - Pool: `moneroocean.stream` (cryptonote stratum)
 - Target: `b88d0600` (LE 64-bit, ~difficulty 10000)
-- Výsledek: **Pool IP ban** (10 min) kvůli příliš mnoha reconnectům během debugging.
+- Debug logging potvrdil:
+  - `mix_hash_hex=None` pro XMR shares → `result_hex = _hash_hex` (žádný mix_hash bug)
+  - `hash_hex` v `try_forward` = `hash_hex` v `submit_share` (stejný hash pro target check i odeslání)
+  - `meets_randomx_target` vrací `true` pro nalezené shary (např. `hash_msb=0x0001a194d885d9fb < target_le=0x00068db8bac710cb`)
+- Verifikace 2026-07-20 (06:29 UTC):
+  - Miner: `m1-test` na Apple Silicon M1 (macOS), `zion-miner` build s `--features native-randomx`
+  - Po návratu k nativní RandomX implementaci začaly MoneroOcean vracet `{"result":{"status":"OK"}}`.
+  - Příklady accepted share odpovědí:
+    - `job_id=13006571` nonce `249721584` → `{"error":null,"id":512,"jsonrpc":"2.0","result":{"status":"OK"}}`
+    - `job_id=13009015` nonce `249702720` → `{"error":null,"id":513,"jsonrpc":"2.0","result":{"status":"OK"}}`
+  - `session_status` v miner logu: `accepted=8 rejected=0 accept_pct=100.00`.
+  - Omezení: při dlouhých RandomX batchech může share dorazit pro již neplatný job (`Invalid job id` / `Block outdated`). Řešeno zmenšením `ZION_EXT_CPU_RANDOMX_NONCE_COUNT=2000` a `ZION_EXT_CPU_RANDOMX_THREADS=4` pro rychlejší reakci na nové joby.
 - RandomX hash je správný (verifikováno benchmarkem — 1696 H/s na M1).
-- Podezření na bug: `submit_share()` pro cryptonote používá `mix_hash_hex.unwrap_or(_hash_hex)` — pokud miner pošle `mix_hash_hex`, použije se místo skutečného hashe. Pro XMR by `mix_hash` mělo být vždy `None`.
-- Přidán debug logging v `share_forwarder.rs` (full hash_hex) a `auxpow_client.rs` (submit_hash_check) pro diagnostiku.
-- **Status: ČEKÁ — po vypršení IP banu otestovat s debug loggingem**
+- **Status: XMR share acceptance VERIFIED**
 
 ## Změněné soubory
 
@@ -112,13 +121,25 @@ cargo build --release -p zion-miner --features "native-ghostrider,native-randomx
 cargo build --release -p zion-pool
 ```
 
+## Runtime konfigurace pro M1 XMR test
+
+Pro rychlou reakci na změny jobu od MoneroOcean byly nastaveny:
+
+```bash
+ZION_EXT_CPU_RANDOMX_THREADS=4
+ZION_EXT_CPU_RANDOMX_NONCE_COUNT=2000
+```
+
+Tím se RandomX batch dokončí do několika sekund a miner rychle přejme na nový `wire_job`, čímž se minimalizuje `Invalid job id` / `Block outdated`.
+
 ## Další kroky
 
-1. **XMR test** — po vypršení IP banu (~10 min) znovu nastavit `cpu-coin=XMR` a verifikovat accepted shares s debug loggingem.
+1. ~~**XMR test**~~ — VERIFIED. Miner `m1-test` posílá XMR shary na MoneroOcean a dostává `status=OK`.
 2. **RTM stale job tolerance** — miner se stuckne na starém jobu 3+ minuty. Možná řešení:
    - Pool by měl posílat `wire_job` update i během `while !got_zion_response` (nejen na začátku iterace).
    - Nebo miner by měl periodicky žádat o nový job.
-3. ~~Commit + push~~ — hotovo.
+3. **Vyřešit `local-miner` spam** — `external_share_result miner=local-miner` generuje tisíce rejected shares (`Invalid job id` / `Block outdated`), což zatěžuje MoneroOcean spojení. Identifikovat a zastavit zdroj (pravděpodobně lokální testovací miner nebo reconnect smyčka na `127.0.0.1`).
+4. ~~Commit + push~~ — hotovo.
 
 ## Historie commitů
 
