@@ -4989,20 +4989,23 @@ impl AuxPowClient {
         };
 
         // Track job age for stale share detection (EthStratum / ZANO).
-        // Only insert on first sighting of a new header_hash — don't update
-        // on re-sends (pool keeps sending the same header_hash every 2-5s
-        // but internally expires the job after ~30-60s).
+        // UPDATE the timestamp on every re-send of the same header_hash.
+        // EthStratum pools (HeroMiners ZANO) re-broadcast the same header_hash
+        // every 2-5s for as long as the upstream job is valid, and stop only
+        // when the job actually expires.  Therefore the most recent receive
+        // time — not the first — is the correct anchor for staleness.  Using
+        // the first sighting would pre-reject shares for any job that takes
+        // longer than ZION_ZANO_STALE_SECS to find a share (which at ~7 MH/s
+        // and ZANO's hard target is minutes, not seconds).
         {
             let mut jra = self.job_received_at.lock().await;
-            if !jra.contains_key(header_hex) {
-                jra.insert(header_hex.to_string(), std::time::Instant::now());
-                // Evict entries older than 5 minutes to bound memory.
-                if jra.len() > 64 {
-                    let cutoff = std::time::Instant::now()
-                        .checked_sub(std::time::Duration::from_secs(300))
-                        .unwrap_or_else(std::time::Instant::now);
-                    jra.retain(|_, ts| *ts > cutoff);
-                }
+            jra.insert(header_hex.to_string(), std::time::Instant::now());
+            // Evict entries older than 5 minutes to bound memory.
+            if jra.len() > 64 {
+                let cutoff = std::time::Instant::now()
+                    .checked_sub(std::time::Duration::from_secs(300))
+                    .unwrap_or_else(std::time::Instant::now);
+                jra.retain(|_, ts| *ts > cutoff);
             }
         }
 
