@@ -3690,8 +3690,12 @@ fn external_gpu_thread(
     let mut backend_init_failures: u32 = 0;
     let mut skipped_algos: std::collections::HashSet<String> = std::collections::HashSet::new();
     // Use a large batch_size — mine_batch_raw caps it at the GPU's actual
-    // work_size internally, so this is safe.
-    let batch_size = 4_186_112u64;
+    // work_size internally, so this is safe.  Default 16M for ProgPoWZ to
+    // match reference miner hashrates (11-20 MH/s on RX 5600 XT).
+    let batch_size = std::env::var("ZION_EXT_GPU_BATCH_SIZE")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(16_777_216u64);
     // Optional time-based duty cycle: target % of wall-clock GPU time for Stream 2.
     // 50 = golden 50/50 split. Falls back to adaptive/static logic if not set.
     let time_duty_pct: Option<u64> = std::env::var("ZION_EXT_GPU_TIME_DUTY_PCT")
@@ -4220,11 +4224,14 @@ fn ext_cpu_thread(
     // VerusHash nonce_count (5M) would block the thread for ~500,000 seconds
     // (5.8 days!) at ~10 H/s, preventing it from ever checking for new jobs.
     // Use a small batch so the thread stays responsive to job updates.
-    //   Ghostrider: ~1 H/s per thread → 100 nonces ≈ 100s per batch (12 threads → ~8s)
-    // With ghostrider_nonce_count=100 and 12 threads, each thread gets ~8
-    // nonces, taking ~8s per batch — responsive to ~30s upstream job changes.
-    let ghostrider_nonce_count = parse_env_u64("ZION_EXT_CPU_GHOSTRIDER_NONCE_COUNT", 100)
-        .unwrap_or(100);
+    // scan_ghostrider() in miner_harness.rs does its own multi-threading
+    // (spawns N threads internally), so we pass the full batch and let it
+    // split.  With 1200 nonces and 12 threads, each thread gets ~100 nonces.
+    // At ~1 H/s per thread, 100 nonces ≈ 100s per batch — but with 12 threads
+    // in parallel, wall time ≈ 100s.  Upstream RTM jobs change every ~30-60s,
+    // so we use a smaller batch (600) for ~50s wall time.
+    let ghostrider_nonce_count = parse_env_u64("ZION_EXT_CPU_GHOSTRIDER_NONCE_COUNT", 600)
+        .unwrap_or(600);
 
     // RandomX is memory-bandwidth bound.  Using all logical cores (HT) for
     // RandomX starves the main mining loop (GPU share submission, TUI, etc.)
@@ -4430,14 +4437,16 @@ fn mine_external_stream_cpu(
         },
     };
 
-    // ── Multi-threaded scan for CPU-bound algorithms (VerusHash, RandomX, Ghostrider) ──
+    // ── Multi-threaded scan for CPU-bound algorithms (VerusHash, RandomX) ──
     // Both VerusHash and RandomX are CPU-only and benefit from parallel scanning.
     // RandomX uses per-thread VMs (thread_local in C wrapper) so each thread
     // gets its own VM sharing the global read-only dataset — no mutex contention.
-    // Ghostrider also uses per-thread RandomX VMs internally, so parallel scanning
-    // is safe and provides ~N× speedup on N cores.
+    // NOTE: Ghostrider is NOT included here because scan_ghostrider() in
+    // miner_harness.rs already does its own multi-threading internally.
+    // Double-threading (12×12=144 threads on 12 cores) causes massive
+    // oversubscription and slowdown.
     // Split the nonce range across `threads` worker threads.
-    if (ext.algorithm == "verushash" || ext.algorithm == "randomx" || ext.algorithm == "ghostrider") && threads > 1 {
+    if (ext.algorithm == "verushash" || ext.algorithm == "randomx") && threads > 1 {
         use std::sync::Arc;
         let job_arc = Arc::new(job_pkg);
         let chunk = (nonce_count / threads as u64).max(1);

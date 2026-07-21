@@ -3602,6 +3602,35 @@ impl AuxPowClient {
         }
 
         let (method, params) = if is_ethstratum {
+            // Stale share pre-rejection for EthStratum (ZANO / HeroMiners).
+            //
+            // HeroMiners keeps sending the same header_hash (job_id) every 2-5s
+            // via eth_getWork, but internally expires the job after ~30-60s.
+            // Shares submitted after expiry are rejected with "Job expired".
+            // Pre-rejecting stale shares locally avoids wasting a round-trip
+            // and inflating the reject rate.
+            //
+            // Default threshold: 30s.  Set ZION_ZANO_STALE_SECS=0 to disable,
+            // or increase to tolerate older jobs.
+            {
+                let stale_secs = std::env::var("ZION_ZANO_STALE_SECS")
+                    .ok()
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(30u64);
+                if stale_secs > 0 && self.is_job_stale(job_id, stale_secs).await {
+                    warn!(
+                        "auxpow: {} stale job={}.. nonce={} — pre-rejected (age > {}s)",
+                        self.profile.coin,
+                        &job_id[..16.min(job_id.len())],
+                        nonce,
+                        stale_secs
+                    );
+                    return Ok(ShareResult::Rejected(
+                        "stale job — pre-rejected (ZANO job expired)".to_string()
+                    ));
+                }
+            }
+
             // EthStratum submit: eth_submitWork(nonce_hex, header_hash, mix_hash)
             // The nonce is 0x-prefixed hex.  mix_hash is the PoW mix hash
             // (for ethash/kawpow) or the final hash (for autolykos).
@@ -4958,6 +4987,24 @@ impl AuxPowClient {
         } else {
             None
         };
+
+        // Track job age for stale share detection (EthStratum / ZANO).
+        // Only insert on first sighting of a new header_hash — don't update
+        // on re-sends (pool keeps sending the same header_hash every 2-5s
+        // but internally expires the job after ~30-60s).
+        {
+            let mut jra = self.job_received_at.lock().await;
+            if !jra.contains_key(header_hex) {
+                jra.insert(header_hex.to_string(), std::time::Instant::now());
+                // Evict entries older than 5 minutes to bound memory.
+                if jra.len() > 64 {
+                    let cutoff = std::time::Instant::now()
+                        .checked_sub(std::time::Duration::from_secs(300))
+                        .unwrap_or_else(std::time::Instant::now);
+                    jra.retain(|_, ts| *ts > cutoff);
+                }
+            }
+        }
 
         ExternalJob {
             job_id: header_hex.to_string(),
