@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/yeshuae/Projects/2.9.6/V3/L1/native-ffi/csrc/randomx/randomx_src/build_mac/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
