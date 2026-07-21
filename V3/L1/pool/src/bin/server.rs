@@ -1821,232 +1821,269 @@ fn main() -> Result<()> {
         });
     }
 
-    listener
-        .set_nonblocking(true)
-        .context("failed to set listener non-blocking")?;
+    // F3.1/F3.2: Async accept loop via tokio::net::TcpListener.
+    // The std::net::TcpListener is converted to a tokio listener so accept()
+    // is async (no busy-wait polling).  Each accepted connection is dispatched
+    // to a sync handle_client via tokio::task::spawn_blocking, which runs on
+    // the tokio blocking thread pool (scales to 10 000+ sessions without
+    // spawning a raw OS thread per miner).
 
-    let mut handles = Vec::new();
-    let mut accepted = 0u32;
+    // Build a dedicated tokio runtime for the accept loop.  The runtime has
+    // a configurable blocking thread pool (default 512) so spawn_blocking
+    // tasks (sync handle_client) don't exhaust the async worker threads.
+    let blocking_threads = parse_env_u64("ZION_POOL_BLOCKING_THREADS", 512).unwrap_or(512) as usize;
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(4)
+        .max_blocking_threads(blocking_threads)
+        .enable_all()
+        .build()
+        .context("failed to build tokio runtime for accept loop")?;
+
+    // from_std requires an active tokio reactor context — enter the runtime
+    // before converting the std listener.
+    let tokio_listener = {
+        let _guard = rt.enter();
+        tokio::net::TcpListener::from_std(listener)
+            .context("failed to convert std listener to tokio listener")?
+    };
+    info!(
+        "accept_loop: async tokio listener, blocking_thread_pool_size={}",
+        blocking_threads
+    );
+
     let ip_sessions: Arc<Mutex<HashMap<IpAddr, u32>>> = Arc::new(Mutex::new(HashMap::new()));
     // IPs temporarily banned after NoSolution limit exceeded, mapped to the
     // Instant they were banned.  The accept loop checks this before allowing a
     // new connection from the same IP.
     let no_solution_banned_ips: Arc<Mutex<HashMap<IpAddr, Instant>>> =
         Arc::new(Mutex::new(HashMap::new()));
-    loop {
-        // Reap finished session threads to prevent unbounded `handles` Vec
-        // growth when miners connect/disconnect over time.  Without this, a
-        // pool running for days with thousands of sessions would accumulate
-        // millions of dead JoinHandle entries in memory.
-        if handles.len() > 128 {
-            handles.retain(|h: &thread::JoinHandle<Result<(), anyhow::Error>>| !h.is_finished());
-        }
-        if shutdown.load(Ordering::SeqCst) {
-            info!("shutdown_draining active_sessions={}", handles.len());
-            // Final PPLNS state save before exit.
-            if !pplns_state_path.is_empty() {
-                let pplns = pplns_engine.lock().expect("pplns lock poisoned");
-                match pplns.save_to_path(&pplns_state_path) {
-                    Ok(()) => info!("pplns_persistence: final save OK to {}", pplns_state_path),
-                    Err(e) => warn!(
-                        "pplns_persistence: final save FAILED to {}: {}",
-                        pplns_state_path, e
-                    ),
+
+    let shutdown_for_rt = Arc::clone(&shutdown);
+    let accept_limit = config.accept_limit;
+    let session_read_timeout = config.session_read_timeout_secs;
+    let no_solution_cooldown = config.no_solution_reconnect_cooldown_secs;
+    let max_sessions_per_ip = config.max_sessions_per_ip;
+    // F3: Clone Arcs that are still needed after block_on returns.  The
+    // async move closure takes ownership of every captured variable, so
+    // anything used after the closure must be cloned beforehand.
+    let routing_stats_for_after = Arc::clone(&routing_stats);
+
+    // Collect JoinHandles so we can drain them on shutdown.
+    let mut handles: Vec<tokio::task::JoinHandle<()>> = Vec::new();
+    let mut accepted: u32 = 0;
+
+    rt.block_on(async move {
+        loop {
+            // Reap finished tasks periodically to prevent unbounded Vec growth.
+            if handles.len() > 256 {
+                handles.retain(|h| !h.is_finished());
+            }
+            if shutdown_for_rt.load(Ordering::SeqCst) {
+                info!("shutdown_draining active_sessions={}", handles.len());
+                if !pplns_state_path.is_empty() {
+                    let pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                    match pplns.save_to_path(&pplns_state_path) {
+                        Ok(()) => info!("pplns_persistence: final save OK to {}", pplns_state_path),
+                        Err(e) => warn!(
+                            "pplns_persistence: final save FAILED to {}: {}",
+                            pplns_state_path, e
+                        ),
+                    }
+                }
+                break;
+            }
+            if matches!(accept_limit, Some(limit) if accepted >= limit) {
+                break;
+            }
+
+            // Async accept with shutdown-aware select.
+            let accept_result = tokio::select! {
+                _ = tokio::time::sleep(Duration::from_millis(200)) => {
+                    // Timeout — loop back to check shutdown flag.
+                    continue;
+                }
+                r = tokio_listener.accept() => r,
+            };
+
+            let (tokio_stream, peer_addr) = match accept_result {
+                Ok(pair) => pair,
+                Err(e) => {
+                    error!("accept_error={e}");
+                    continue;
+                }
+            };
+            let peer_ip = peer_addr.ip();
+
+            // Convert tokio stream back to std stream for sync handle_client.
+            let stream = match tokio_stream.into_std() {
+                Ok(s) => s,
+                Err(e) => {
+                    error!("stream_convert_error={e}");
+                    continue;
+                }
+            };
+            let _ = stream.set_nonblocking(false);
+            let _ = stream.set_read_timeout(Some(Duration::from_secs(session_read_timeout)));
+
+            // Check NoSolution reconnect ban.
+            if no_solution_cooldown > 0 {
+                let mut bans = no_solution_banned_ips.lock().expect("banned_ips lock");
+                if let Some(banned_at) = bans.get(&peer_ip) {
+                    let elapsed = banned_at.elapsed().as_secs();
+                    if elapsed < no_solution_cooldown {
+                        info!(
+                            "no_solution_banned_reject ip={peer_ip} elapsed={elapsed}s cooldown={}s",
+                            no_solution_cooldown
+                        );
+                        drop(stream);
+                        continue;
+                    } else {
+                        bans.remove(&peer_ip);
+                    }
                 }
             }
-            break;
-        }
-        if matches!(config.accept_limit, Some(limit) if accepted >= limit) {
-            break;
-        }
-
-        let (stream, peer_addr) = match listener.accept() {
-            Ok(pair) => pair,
-            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                thread::sleep(Duration::from_millis(50));
-                continue;
-            }
-            Err(e) => {
-                return Err(anyhow::Error::new(e).context("failed to accept miner connection"))
-            }
-        };
-        stream
-            .set_nonblocking(false)
-            .context("failed to set client stream blocking")?;
-        // P1-fix: read timeout prevents zombie threads when miner disconnects
-        // ungracefully (no FIN), which leaks ip_sessions counter slots.
-        stream
-            .set_read_timeout(Some(Duration::from_secs(config.session_read_timeout_secs)))
-            .context("failed to set client stream read timeout")?;
-
-        let peer_ip = peer_addr.ip();
-        // Check NoSolution reconnect ban
-        if config.no_solution_reconnect_cooldown_secs > 0 {
-            let mut bans = no_solution_banned_ips.lock().expect("banned_ips lock");
-            if let Some(banned_at) = bans.get(&peer_ip) {
-                let elapsed = banned_at.elapsed().as_secs();
-                if elapsed < config.no_solution_reconnect_cooldown_secs {
-                    info!(
-                        "no_solution_banned_reject ip={peer_ip} elapsed={elapsed}s cooldown={}s",
-                        config.no_solution_reconnect_cooldown_secs
-                    );
+            {
+                let mut sessions = ip_sessions.lock().expect("ip_sessions lock");
+                let ip_count = sessions.entry(peer_ip).or_insert(0);
+                if max_sessions_per_ip > 0 && *ip_count >= max_sessions_per_ip {
+                    info!("rate_limit_reject ip={peer_ip} sessions={ip_count}");
                     drop(stream);
                     continue;
+                }
+                *ip_count = ip_count.saturating_add(1);
+            }
+            let ip_guard = IpSessionGuard(Arc::clone(&ip_sessions), peer_ip);
+
+            info!("peer_addr={peer_addr}");
+            let pool = Arc::clone(&pool);
+            let revenue_scheduler = Arc::clone(&revenue_scheduler);
+            let routing_stats = Arc::clone(&routing_stats);
+            let miner_telemetry = Arc::clone(&miner_telemetry);
+            let pplns_ref = Arc::clone(&pplns_engine);
+            let active_sessions_ref = Arc::clone(&active_sessions);
+            let session_id_ref = Arc::clone(&session_id_counter);
+            let template_cache_ref = Arc::clone(&template_cache);
+            let log_ch = Arc::clone(&log_channel);
+            let deferred_ref = Arc::clone(&deferred_payouts);
+            let multi_bridge = multi_bridge.clone();
+            let banned_ips_ref = Arc::clone(&no_solution_banned_ips);
+            let config = config.clone();
+            let profit_switch_ref = Arc::clone(&profit_switch_state);
+            let cpu_coin_override_ref = Arc::clone(&cpu_coin_override);
+            let gpu_coin_override_ref = Arc::clone(&gpu_coin_override);
+            let force_save_ref = Arc::clone(&force_save);
+            let block_tracker_ref = Arc::clone(&block_tracker);
+
+            // F3.1: spawn_blocking runs sync handle_client on the tokio
+            // blocking thread pool.  This scales to thousands of concurrent
+            // sessions without spawning a raw OS thread per miner.
+            let handle = tokio::task::spawn_blocking(move || {
+                let _ip_guard = ip_guard;
+                // F2: Protocol detection — read the first line to determine
+                // if this is Stratum v1 (has "method" field) or native ZION wire.
+                let mut peek_reader = BufReader::new(stream);
+                let mut first_line = String::new();
+                let read_result = peek_reader.read_line(&mut first_line);
+                let stream = peek_reader.into_inner();
+                let is_stratum = if read_result.is_ok() && !first_line.is_empty() {
+                    zion_pool::stratum_v1::is_stratum_v1(&first_line)
                 } else {
-                    bans.remove(&peer_ip);
+                    false
+                };
+                let result = if is_stratum {
+                    info!("stratum_v1: protocol detected from peer={peer_addr}");
+                    handle_stratum_v1_client(
+                        stream,
+                        pool,
+                        revenue_scheduler,
+                        routing_stats,
+                        miner_telemetry,
+                        pplns_ref,
+                        active_sessions_ref,
+                        session_id_ref,
+                        template_cache_ref,
+                        deferred_ref,
+                        multi_bridge,
+                        &config,
+                        &log_ch,
+                        peer_ip,
+                        banned_ips_ref,
+                        profit_switch_ref,
+                        cpu_coin_override_ref,
+                        gpu_coin_override_ref,
+                        force_save_ref,
+                        block_tracker_ref,
+                        &first_line,
+                    )
+                } else {
+                    handle_client(
+                        stream,
+                        pool,
+                        revenue_scheduler,
+                        routing_stats,
+                        miner_telemetry,
+                        pplns_ref,
+                        active_sessions_ref,
+                        session_id_ref,
+                        template_cache_ref,
+                        deferred_ref,
+                        multi_bridge,
+                        &config,
+                        &log_ch,
+                        peer_ip,
+                        banned_ips_ref,
+                        profit_switch_ref,
+                        cpu_coin_override_ref,
+                        gpu_coin_override_ref,
+                        force_save_ref,
+                        block_tracker_ref,
+                        if first_line.is_empty() { None } else { Some(&first_line) },
+                    )
+                };
+                if let Err(e) = result {
+                    info!("session_ended_with_error err={e:#}");
                 }
+            });
+            handles.push(handle);
+            accepted = accepted.saturating_add(1);
+        }
+
+        // F1.7: Graceful session drain with 30s timeout (async version).
+        let drain_timeout = Duration::from_secs(
+            parse_env_u64("ZION_POOL_DRAIN_TIMEOUT_S", 30).unwrap_or(30),
+        );
+        let drain_started = Instant::now();
+        let mut drained = 0u32;
+        let mut remaining = handles.len();
+        for handle in handles {
+            remaining -= 1;
+            let time_left = drain_timeout.saturating_sub(drain_started.elapsed());
+            if time_left == Duration::ZERO {
+                info!(
+                    "shutdown_drain_timeout reached, {} sessions still active — exiting",
+                    remaining + 1
+                );
+                break;
+            }
+            // tokio::task::JoinHandle supports async await with timeout.
+            let joined = tokio::time::timeout(time_left, handle).await;
+            match joined {
+                Ok(Ok(())) => drained += 1,
+                Ok(Err(e)) => info!("session_ended_with_panic err={e}"),
+                Err(_) => break, // timeout — break out
             }
         }
-        {
-            let mut sessions = ip_sessions.lock().expect("ip_sessions lock");
-            let ip_count = sessions.entry(peer_ip).or_insert(0);
-            if config.max_sessions_per_ip > 0 && *ip_count >= config.max_sessions_per_ip {
-                info!("rate_limit_reject ip={peer_ip} sessions={ip_count}");
-                drop(stream);
-                continue;
-            }
-            *ip_count = ip_count.saturating_add(1);
-        }
-        let ip_guard = IpSessionGuard(Arc::clone(&ip_sessions), peer_ip);
-
-        info!("peer_addr={peer_addr}");
-        let pool = Arc::clone(&pool);
-        let revenue_scheduler = Arc::clone(&revenue_scheduler);
-        let routing_stats = Arc::clone(&routing_stats);
-        let miner_telemetry = Arc::clone(&miner_telemetry);
-        let pplns_ref = Arc::clone(&pplns_engine);
-        let active_sessions_ref = Arc::clone(&active_sessions);
-        let session_id_ref = Arc::clone(&session_id_counter);
-        let template_cache_ref = Arc::clone(&template_cache);
-        let log_ch = Arc::clone(&log_channel);
-        let deferred_ref = Arc::clone(&deferred_payouts);
-        let multi_bridge = multi_bridge.clone();
-        let banned_ips_ref = Arc::clone(&no_solution_banned_ips);
-        let config = config.clone();
-        let profit_switch_ref = Arc::clone(&profit_switch_state);
-        let cpu_coin_override_ref = Arc::clone(&cpu_coin_override);
-        let gpu_coin_override_ref = Arc::clone(&gpu_coin_override);
-        let force_save_ref = Arc::clone(&force_save);
-        let block_tracker_ref = Arc::clone(&block_tracker);
-        handles.push(thread::spawn(move || {
-            let _ip_guard = ip_guard;
-            // F2: Protocol detection — read the first line to determine
-            // if this is Stratum v1 (has "method" field) or native ZION wire.
-            // We read via a BufReader, then extract the stream back with
-            // into_inner() so the handler gets the raw TcpStream (with the
-            // first line already consumed).  The first line is passed to the
-            // handler so it doesn't need to be re-read.
-            let mut peek_reader = BufReader::new(stream);
-            let mut first_line = String::new();
-            let read_result = peek_reader.read_line(&mut first_line);
-            let stream = peek_reader.into_inner();
-            let is_stratum = if read_result.is_ok() && !first_line.is_empty() {
-                zion_pool::stratum_v1::is_stratum_v1(&first_line)
-            } else {
-                false
-            };
-            if is_stratum {
-                info!("stratum_v1: protocol detected from peer={peer_addr}");
-                handle_stratum_v1_client(
-                    stream,
-                    pool,
-                    revenue_scheduler,
-                    routing_stats,
-                    miner_telemetry,
-                    pplns_ref,
-                    active_sessions_ref,
-                    session_id_ref,
-                    template_cache_ref,
-                    deferred_ref,
-                    multi_bridge,
-                    &config,
-                    &log_ch,
-                    peer_ip,
-                    banned_ips_ref,
-                    profit_switch_ref,
-                    cpu_coin_override_ref,
-                    gpu_coin_override_ref,
-                    force_save_ref,
-                    block_tracker_ref,
-                    &first_line,
-                )
-            } else {
-                // Native ZION wire protocol — pass first_line so handle_client
-                // can use it instead of re-reading from the stream.
-                handle_client(
-                    stream,
-                    pool,
-                    revenue_scheduler,
-                    routing_stats,
-                    miner_telemetry,
-                    pplns_ref,
-                    active_sessions_ref,
-                    session_id_ref,
-                    template_cache_ref,
-                    deferred_ref,
-                    multi_bridge,
-                    &config,
-                    &log_ch,
-                    peer_ip,
-                    banned_ips_ref,
-                    profit_switch_ref,
-                    cpu_coin_override_ref,
-                    gpu_coin_override_ref,
-                    force_save_ref,
-                    block_tracker_ref,
-                    if first_line.is_empty() { None } else { Some(&first_line) },
-                )
-            }
-        }));
-        accepted = accepted.saturating_add(1);
-    }
-
-    // F1.7: Graceful session drain with 30s timeout.
-    // Wait for active sessions to finish naturally, but don't block forever
-    // if a session is stuck (e.g. miner hung, network issue).  After the
-    // timeout, log remaining sessions and exit — the OS will clean up
-    // the threads when the process exits.
-    let drain_timeout = Duration::from_secs(
-        parse_env_u64("ZION_POOL_DRAIN_TIMEOUT_S", 30).unwrap_or(30),
-    );
-    let drain_started = Instant::now();
-    let mut drained = 0u32;
-    let mut remaining = handles.len();
-    for handle in handles {
-        remaining -= 1;
-        let time_left = drain_timeout.saturating_sub(drain_started.elapsed());
-        if time_left == Duration::ZERO {
+        if drained > 0 {
             info!(
-                "shutdown_drain_timeout reached, {} sessions still active — exiting",
-                remaining + 1
+                "shutdown_drain_complete drained={} timeout_ms={}",
+                drained,
+                drain_timeout.as_millis()
             );
-            break;
         }
-        // Join with a timeout by polling is_finished in a busy loop.
-        // (JoinHandle::join doesn't support timeout directly.)
-        let joined = loop {
-            if handle.is_finished() {
-                match handle.join() {
-                    Ok(Ok(())) => {}
-                    Ok(Err(e)) => info!("session_ended_with_error err={e:#}"),
-                    Err(_) => info!("session_ended_with_panic"),
-                }
-                break true;
-            }
-            if drain_started.elapsed() >= drain_timeout {
-                break false;
-            }
-            thread::sleep(Duration::from_millis(100));
-        };
-        if joined {
-            drained += 1;
-        }
-    }
-    if drained > 0 {
-        info!("shutdown_drain_complete drained={} timeout_ms={}", drained, drain_timeout.as_millis());
-    }
+    });
+
     {
-        let snapshot = routing_stats
+        let snapshot = routing_stats_for_after
             .lock()
             .expect("routing stats lock poisoned")
             .snapshot_line();
@@ -2075,6 +2112,78 @@ impl Drop for IpSessionGuard {
                 }
             }
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// F3.6: ShareRateLimiter — per-session token bucket
+// ---------------------------------------------------------------------------
+
+/// Token-bucket rate limiter for share submissions.  Refills at `capacity`
+/// tokens per `refill_interval`.  A share is allowed only if a token is
+/// available; otherwise the share is dropped (throttled).
+///
+/// Default: 10 shares/s (capacity=10, refill every 1s).  Configurable via
+/// `ZION_POOL_SHARE_RATE_PER_SEC` env var.
+struct ShareRateLimiter {
+    tokens: f64,
+    capacity: f64,
+    refill_per_sec: f64,
+    last_refill: Instant,
+}
+
+impl ShareRateLimiter {
+    fn new(per_sec: f64) -> Self {
+        let capacity = per_sec.max(1.0);
+        Self {
+            tokens: capacity,
+            capacity,
+            refill_per_sec: per_sec,
+            last_refill: Instant::now(),
+        }
+    }
+
+    /// Returns true if the share is allowed (token consumed), false if
+    /// throttled.
+    fn allow(&mut self) -> bool {
+        let now = Instant::now();
+        let elapsed = now.duration_since(self.last_refill).as_secs_f64();
+        self.tokens = (self.tokens + elapsed * self.refill_per_sec).min(self.capacity);
+        self.last_refill = now;
+        if self.tokens >= 1.0 {
+            self.tokens -= 1.0;
+            true
+        } else {
+            false
+        }
+    }
+}
+
+#[cfg(test)]
+mod share_rate_limiter_tests {
+    use super::*;
+
+    #[test]
+    fn allows_up_to_capacity_burst() {
+        let mut limiter = ShareRateLimiter::new(5.0);
+        // capacity=5, so first 5 should be allowed.
+        for i in 0..5 {
+            assert!(limiter.allow(), "share {} should be allowed", i);
+        }
+        // 6th should be throttled.
+        assert!(!limiter.allow(), "share 6 should be throttled");
+    }
+
+    #[test]
+    fn refills_after_time() {
+        let mut limiter = ShareRateLimiter::new(2.0);
+        assert!(limiter.allow());
+        assert!(limiter.allow());
+        assert!(!limiter.allow(), "bucket empty");
+        // Simulate time passing by manually adjusting last_refill.
+        limiter.last_refill = Instant::now() - Duration::from_millis(600);
+        // 0.6s * 2/s = 1.2 tokens → should allow 1.
+        assert!(limiter.allow(), "should refill after time");
     }
 }
 
@@ -2522,6 +2631,12 @@ fn handle_stratum_v1_client(
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
 
+    // F3.6: Per-session share rate limiter (token bucket).
+    let share_rate_per_sec = parse_env_f64("ZION_POOL_SHARE_RATE_PER_SEC", 10.0)
+        .unwrap_or(10.0)
+        .max(1.0);
+    let mut share_limiter = ShareRateLimiter::new(share_rate_per_sec);
+
     // ── Phase 1: mining.subscribe ─────────────────────────────────────
     // The first line was already read by the accept loop for protocol
     // detection.  Parse it as a Stratum request.
@@ -2725,6 +2840,18 @@ fn handle_stratum_v1_client(
                 continue;
             }
         };
+
+        // F3.6: Per-session share rate limit check.
+        if !share_limiter.allow() {
+            let resp = StratumResponse {
+                id: req.id,
+                result: serde_json::json!(false),
+                error: Some(serde_json::json!([23, "share rate limited", null])),
+            };
+            write_stratum_response(&mut writer, &resp)?;
+            warn!("stratum_v1: share throttled miner={}", miner_id);
+            continue;
+        }
 
         // Decode hash hex → 32 bytes.
         let hash_bytes = match decode_hash_hex(&hash_hex) {
@@ -2938,6 +3065,12 @@ fn handle_client(
 ) -> Result<()> {
     let session_started = Instant::now();
     let session_id = session_id_counter.fetch_add(1, Ordering::Relaxed);
+
+    // F3.6: Per-session share rate limiter (token bucket).
+    let share_rate_per_sec = parse_env_f64("ZION_POOL_SHARE_RATE_PER_SEC", 10.0)
+        .unwrap_or(10.0)
+        .max(1.0);
+    let mut share_limiter = ShareRateLimiter::new(share_rate_per_sec);
 
     // ── Pool-side profit switcher state ──────────────────────────────
     let pool_profit_switch_enabled = std::env::var("ZION_POOL_PROFIT_SWITCH")
@@ -3609,42 +3742,44 @@ fn handle_client(
                             sub_miner_id, coin, external_job_id, nonce
                         );
                         // ── Stale job check ──────────────────────────────
-                        // Only forward shares for the LATEST job (front of queue).
-                        // Upstream pools reject shares for older jobs with
-                        // "Invalid job id", which wastes bandwidth and may
-                        // trigger reject-rate bans. Rejecting locally as
-                        // "stale_job" is strictly better.
-                        // The queue holds at most 5 jobs (front = latest), but
-                        // upstream only accepts the most recent job_id.
+                        // Forward shares for any job currently in the bridge
+                        // queue (front = latest). The queue holds at most 5
+                        // jobs, covering the current job plus a few recent
+                        // ones. This is needed for coins like ZANO where
+                        // HeroMiners re-sends the same header every 2-5 s but
+                        // the upstream job stays valid for 30-60 s; miners
+                        // may legitimately submit shares for a job that is no
+                        // longer the absolute latest in the queue. Shares for
+                        // job_ids not in the queue or older than the upstream
+                        // validity window are still rejected by the bridge
+                        // forwarder / AuxPowClient stale checks.
                         let valid_job_ids = ExternalCoin::from_str_loose(&coin)
                             .map(|c| multi_bridge.job_ids_for_coin(&c))
                             .unwrap_or_default();
-                        if let Some(latest_job_id) = valid_job_ids.first() {
-                            if latest_job_id != &external_job_id {
-                                info!(
-                                    "external_share_stale miner={} coin={} share_job_id={} latest_job_id={} — rejecting locally",
-                                    sub_miner_id, coin, external_job_id, latest_job_id
-                                );
-                                let ext_result = PoolMessage::ExternalResult {
-                                    accepted: false,
-                                    status: "stale_job".to_string(),
-                                    coin: coin.clone(),
-                                };
-                                let _ = write_wire_message(&mut writer, &ext_result);
-                                let ext_source = match coin.to_ascii_uppercase().as_str() {
-                                    "XMR" => RevenueSource::RandomXExternal,
-                                    "VRSC" => RevenueSource::VerusHashExternal,
-                                    "RTM" => RevenueSource::GhostRiderExternal,
-                                    "EPIC" | "EPICCASH" => RevenueSource::ProgPowExternal,
-                                    "ZANO" => RevenueSource::ProgPowExternal,
-                                    _ => RevenueSource::Blake3External,
-                                };
-                                {
-                                    let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
-                                    stats.record(session_group, ext_source, false);
-                                }
-                                continue;
+                        if !valid_job_ids.is_empty() && !valid_job_ids.contains(&external_job_id) {
+                            info!(
+                                "external_share_stale miner={} coin={} share_job_id={} valid_ids={} — rejecting locally",
+                                sub_miner_id, coin, external_job_id, valid_job_ids.join(",")
+                            );
+                            let ext_result = PoolMessage::ExternalResult {
+                                accepted: false,
+                                status: "stale_job".to_string(),
+                                coin: coin.clone(),
+                            };
+                            let _ = write_wire_message(&mut writer, &ext_result);
+                            let ext_source = match coin.to_ascii_uppercase().as_str() {
+                                "XMR" => RevenueSource::RandomXExternal,
+                                "VRSC" => RevenueSource::VerusHashExternal,
+                                "RTM" => RevenueSource::GhostRiderExternal,
+                                "EPIC" | "EPICCASH" => RevenueSource::ProgPowExternal,
+                                "ZANO" => RevenueSource::ProgPowExternal,
+                                _ => RevenueSource::Blake3External,
+                            };
+                            {
+                                let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
+                                stats.record(session_group, ext_source, false);
                             }
+                            continue;
                         }
                         // Parse hash bytes
                         let hash_bytes = match zion_pool::parse_fixed_hex::<32>(&hash_hex, "external share hash") {
@@ -3905,6 +4040,16 @@ fn handle_client(
                 elapsed_ms,
                 mix_hash_hex,
             } => {
+                // F3.6: Per-session share rate limit check.
+                if !share_limiter.allow() {
+                    warn!("share_throttled miner={miner_id} worker={worker_name}");
+                    let reject = PoolMessage::Result {
+                        accepted: false,
+                        status: "rate_limited".to_string(),
+                    };
+                    let _ = write_wire_message(&mut writer, &reject);
+                    continue;
+                }
                 if submit_miner_id != miner_id || submit_worker_name != worker_name {
                     info!(
                         "submit_identity_mismatch session={}/{} submit={}/{}; using session identity",
