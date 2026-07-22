@@ -165,7 +165,7 @@ export default function ExplorerPage() {
                   <Globe className="h-3 w-3" /> {cs ? '2-uzlový mesh' : '2-node mesh'}
                 </span>
                 <span className="zion-badge zion-badge-green">
-                  {cs ? 'All Green · 11/11 služeb' : 'All Green · 11/11 services'}
+                  {cs ? 'Zion Trinity · 11/11 služeb' : 'Zion Trinity · 11/11 services'}
                 </span>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -472,8 +472,8 @@ export default function ExplorerPage() {
 
         <p className="text-center text-xs text-gray-600">
           {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Živá data z 2-uzlového Rust runtime · v3.0.6 E2E All Green`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Live data from 2-node Rust runtime · v3.0.6 E2E All Green`}
+            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Živá data z 2-uzlového Rust runtime · v3.0.6 E2E Zion Trinity`
+            : `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Live data from 2-node Rust runtime · v3.0.6 E2E Zion Trinity`}
         </p>
       </div>
     </div>

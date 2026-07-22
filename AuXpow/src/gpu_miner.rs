@@ -1190,7 +1190,8 @@ impl GpuMiner {
         let global_work_size = ((raw_gws + wg_size - 1) / wg_size) * wg_size;
         let start = Instant::now();
         // Log before enqueue so we can see if the kernel hangs
-        if is_progpow {
+        // Suppress when ZION_NO_STICKY=1 (SMOS mode) to keep dashboard clean
+        if is_progpow && std::env::var("ZION_NO_STICKY").map(|v| v != "1" && v != "true").unwrap_or(true) {
             eprintln!(
                 "auxpow_gpu_kernel_enqueue algo={} gws={} lws={} batch_factor={} dag_elements={}",
                 algorithm, global_work_size, wg_size, batch_factor,

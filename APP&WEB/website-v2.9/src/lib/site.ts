@@ -1,11 +1,12 @@
 export const SITE_VERSION = 'v3.0.6';
-export const SITE_RELEASE_NAME = 'All Green, Mainnet Beta';
-export const SITE_RELEASE_LABEL = `${SITE_VERSION} "${SITE_RELEASE_NAME}"`;
+export const SITE_RELEASE_NAME = 'Zion Trinity · Triple Stream';
+export const SITE_RELEASE_TAGLINE = 'Triple Stream';
+export const SITE_RELEASE_LABEL = `${SITE_VERSION} "${SITE_RELEASE_NAME}, Mainnet Beta"`;
 export const SITE_RUNTIME_VERSION = 'v3.0.6';
 export const SITE_RUNTIME_NAME = 'Deeksha/Ekam canonical · 6-decimal flowers';
 export const SITE_RUNTIME_LABEL = `${SITE_RUNTIME_VERSION} ${SITE_RUNTIME_NAME}`;
 export const SITE_ENVIRONMENT_LABEL = 'V3 Mainnet Beta';
-export const SITE_PUBLIC_LAUNCH_STATUS = 'All Green, Mainnet Beta';
+export const SITE_PUBLIC_LAUNCH_STATUS = 'Zion Trinity · Triple Stream, Mainnet Beta';
 export const SITE_LAUNCH_DATE = '2026-12-31T00:00:00Z';
 export const SITE_LAUNCH_DATE_DISPLAY = '31 December 2026 (New Year\'s Eve)';
 export const SITE_NETWORK_LABEL = `${SITE_ENVIRONMENT_LABEL} · ${SITE_RELEASE_LABEL}`;

@@ -1,15 +1,15 @@
 # ZION TerraNova — Public Docs Hub
 
 > *"In code we trust. 144B ZION. Not one satoshi more."*
-> **Current public line: v3.0.5 All Green / Mainnet Beta.**
+> **Current public line: v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta.**
 > Genesis #0: 11 June 2026. Hard reset / new genesis hash: 6–7 July 2026.
 > Official public launch: 31 December 2026.
 
 ---
 
-## Live status — v3.0.5 All Green
+## Live status — v3.0.6 Zion Trinity · Triple Stream
 
-ZION Mainnet is live as **Mainnet Beta**. The current runtime is **v3.0.5 Ekam Deeksha** with 6-decimal flowers and a new genesis hash after the July 2026 hard reset.
+ZION Mainnet is live as **Mainnet Beta**. The current runtime is **v3.0.6 Ekam Deeksha** with 6-decimal flowers and a new genesis hash after the July 2026 hard reset.
 
 - ✅ Mainnet Core node — 3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)
 - ✅ Pool server active — `stratum+tcp://pool.zionterranova.com:8444`
@@ -31,7 +31,7 @@ ZION Mainnet is live as **Mainnet Beta**. The current runtime is **v3.0.5 Ekam D
 |-----------|---------|
 | **Chain ID** | `zion-mainnet-1` |
 | **Genesis hash** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
-| **Protocol version** | `zion-v3-node/3.0.5` |
+| **Protocol version** | `zion-v3-node/3.0.6` |
 | **Algorithm** | Ekam Deeksha v2 (multi-algo PoW) |
 | **Block time** | 60 s |
 | **Block reward** | 5,400.067 ZION → Decade Decay (-20%/10 years) |
@@ -98,4 +98,4 @@ ZION Mainnet is live as **Mainnet Beta**. The current runtime is **v3.0.5 Ekam D
 
 ---
 
-*ZION TerraNova public docs hub • v3.0.5 All Green / Mainnet Beta • updated 10 Jul 2026*
+*ZION TerraNova public docs hub • v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta • updated 22 Jul 2026*

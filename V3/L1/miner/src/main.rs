@@ -3606,7 +3606,7 @@ impl SessionTelemetry {
             // Compact dashboard — designed to fit SMOS 19-line buffer
             raw_stdout("\n");
             raw_stdout(&format!("╔══════════════════════════════════════════════╗\n"));
-            raw_stdout(&format!("║  ZION Triple-Stream Miner  v3.1.9-vega-c62   ║\n"));
+            raw_stdout(&format!("║  ZION Zion Trinity Miner   v3.0.6           ║\n"));
             raw_stdout(&format!("╠══════════════════════════════════════════════╣\n"));
             raw_stdout(&format!("║  Uptime: {:<6}  Pool: {:<20}   ║\n",
                 uptime_str, &pool_addr[..pool_addr.len().min(20)]));
@@ -4087,7 +4087,9 @@ fn external_gpu_thread(
             }
             None => {
                 // No job in channel — debug: log first few empty receives
-                if batch_count == 0 && last_heartbeat.elapsed().as_secs() < 3 {
+                if batch_count == 0 && last_heartbeat.elapsed().as_secs() < 3
+                    && !QUIET.load(Ordering::Relaxed)
+                {
                     println!("[{}] ext_gpu_rx_empty (no job yet, thread alive)", log_timestamp());
                 }
             }
@@ -4095,16 +4097,18 @@ fn external_gpu_thread(
 
         // Heartbeat every 15s so we can see the thread is alive
         if last_heartbeat.elapsed().as_secs() >= 15 {
-            println!(
-                "[{}] ext_gpu_heartbeat batches={} nonce_offset={} has_job={} epoch={:?} progpow_period={:?} algo={:?}",
-                log_timestamp(),
-                batch_count,
-                nonce_offset,
-                current_job.is_some(),
-                last_epoch,
-                last_progpow_period,
-                current_algo.as_deref().unwrap_or("none"),
-            );
+            if !QUIET.load(Ordering::Relaxed) {
+                println!(
+                    "[{}] ext_gpu_heartbeat batches={} nonce_offset={} has_job={} epoch={:?} progpow_period={:?} algo={:?}",
+                    log_timestamp(),
+                    batch_count,
+                    nonce_offset,
+                    current_job.is_some(),
+                    last_epoch,
+                    last_progpow_period,
+                    current_algo.as_deref().unwrap_or("none"),
+                );
+            }
             last_heartbeat = std::time::Instant::now();
         }
 
@@ -4319,7 +4323,9 @@ fn external_gpu_thread(
         match result {
             Ok(br) => {
                 actual_batch = br.nonces_tested;
-                if batch_count < 5 || batch_count % 100 == 0 {
+                if (batch_count < 5 || batch_count % 100 == 0)
+                    && !QUIET.load(Ordering::Relaxed)
+                {
                     println!(
                         "[{}] ext_gpu_batch_done batch={} nonces_tested={} solutions={} header_len={}",
                         log_timestamp(),
@@ -4526,14 +4532,16 @@ fn ext_cpu_thread(
                 nonce_base = (h.finish() as u32) as u64;
                 nonce_offset = 0;
                 current_job_id = job.job_id.clone();
-                println!(
-                    "[{}] ext_cpu_thread: new job coin={} algo={} job_id={} nonce_base={}",
-                    log_timestamp(),
-                    job.coin,
-                    job.algorithm,
-                    job.job_id,
-                    nonce_base,
-                );
+                if !QUIET.load(Ordering::Relaxed) {
+                    println!(
+                        "[{}] ext_cpu_thread: new job coin={} algo={} job_id={} nonce_base={}",
+                        log_timestamp(),
+                        job.coin,
+                        job.algorithm,
+                        job.job_id,
+                        nonce_base,
+                    );
+                }
                 // Update hashrate tracker for triple-stream display
                 hashrate.set_cpu_ext_job(&job.coin, &job.algorithm);
             }
