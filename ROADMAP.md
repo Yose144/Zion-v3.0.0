@@ -38,7 +38,7 @@ Overall coordination: [`MAINNET_ALPHA_PLAN.md`](./MAINNET_ALPHA_PLAN.md).
 
 ---
 
-## 1. Current State — 3.0.5 "All Green" (2026-07-09)
+## 1. Current State — 3.0.6 "Zion Trinity · Triple Stream" (2026-07-22)
 
 ✅ **3.0.5 Done (2026-07-09)**
 - Protocol version bumped to `zion-v3-node/3.0.5` (from stale 3.0.3)

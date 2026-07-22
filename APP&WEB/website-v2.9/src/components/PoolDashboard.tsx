@@ -430,7 +430,7 @@ export default function PoolDashboard() {
                   <Globe className="h-3 w-3 text-zion-cyan" /> {cs ? 'Edge Node 1' : 'Edge Node 1'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
-                  {cs ? 'All Green · 11/11 služeb' : 'All Green · 11/11 services'}
+                  {cs ? 'Zion Trinity · 11/11 služeb' : 'Zion Trinity · 11/11 services'}
                 </span>
               </div>
             </div>
@@ -1605,8 +1605,8 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
             {cs
-              ? '89 % miner · 5 % humanitarian · 5 % Issobella fund · 1 % pool fee · PPLNS · v3.0.6 All Green · Public launch 31. prosince 2026'
-              : '89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · v3.0.6 All Green · Public launch 31 December 2026'}
+              ? '89 % miner · 5 % humanitarian · 5 % Issobella fund · 1 % pool fee · PPLNS · v3.0.6 Zion Trinity · Public launch 31. prosince 2026'
+              : '89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · v3.0.6 Zion Trinity · Public launch 31 December 2026'}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <a href="#start-mining" className="zion-button-primary group text-sm" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
@@ -1635,7 +1635,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
         {activeTab === 'benchmarks' && <PoolBenchmarksClient embedded />}
 
         <p className="text-center text-xs text-gray-600">
-          {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Data v reálném čase z primárního stratum endpointu · Edge Node 1 · v3.0.6 E2E All Green` : `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Real-time data from the primary stratum endpoint · Edge Node 1 · v3.0.6 E2E All Green`}
+          {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Data v reálném čase z primárního stratum endpointu · Edge Node 1 · v3.0.6 E2E Zion Trinity` : `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Real-time data from the primary stratum endpoint · Edge Node 1 · v3.0.6 E2E Zion Trinity`}
           {lastUpdate && <> · {cs ? 'Poslední aktualizace' : 'Last update'}: {lastUpdate.toLocaleTimeString(cs ? 'cs-CZ' : 'en-US')}</>}
         </p>
       </div>

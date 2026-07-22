@@ -42,8 +42,8 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'Aktuální veřejná linka je v3.0.6 All Green / Mainnet Beta nad kanonickou runtime v3.0.6 Deeksha/Ekam. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Síť běží na novém genesis hash po hard resetu z července 2026 — viz hlavní dokument [Mainnet Status](#mainnet). Pool aktivní, mining live, 11/11 služeb green. Veřejný launch zůstává 31. prosince 2026.',
-    en: 'The current public line is v3.0.6 All Green / Mainnet Beta on the canonical v3.0.6 Deeksha/Ekam runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. The network is running on a new genesis hash after the July 2026 hard reset — see the main document [Mainnet Status](#mainnet). Pool active, mining live, 11/11 services green. Public launch remains 31 December 2026.',
+    cs: 'Aktuální veřejná linka je v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta nad kanonickou runtime v3.0.6 Deeksha/Ekam. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Síť běží na novém genesis hash po hard resetu z července 2026 — viz hlavní dokument [Mainnet Status](#mainnet). Pool aktivní, mining live, 11/11 služeb green. Veřejný launch zůstává 31. prosince 2026.',
+    en: 'The current public line is v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta on the canonical v3.0.6 Deeksha/Ekam runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. The network is running on a new genesis hash after the July 2026 hard reset — see the main document [Mainnet Status](#mainnet). Pool active, mining live, 11/11 services green. Public launch remains 31 December 2026.',
   },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
   apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },
@@ -52,7 +52,7 @@ const docsPageCopy = {
 const versionText: Record<string, { tag?: LocalizedText; description?: LocalizedText }> = {
   'v3.0.6': {
     tag: { cs: 'AKTUÁLNÍ', en: 'CURRENT' },
-    description: { cs: 'Current public line — v3.0.6 All Green / Mainnet Beta, nový genesis hash po červencovém hard resetu, 11/11 služeb active, E2E memo testy v bloku 752', en: 'Current public line — v3.0.6 All Green / Mainnet Beta, new genesis hash after the July hard reset, 11/11 services active, E2E memo tests in block 752' },
+    description: { cs: 'Current public line — v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta, nový genesis hash po červencovém hard resetu, 11/11 služeb active, E2E memo testy v bloku 752', en: 'Current public line — v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta, new genesis hash after the July hard reset, 11/11 services active, E2E memo tests in block 752' },
   },
   'v3.0.2': {
     tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },

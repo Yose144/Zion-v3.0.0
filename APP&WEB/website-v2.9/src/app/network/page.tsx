@@ -125,7 +125,7 @@ const getHeroStats = (cs: boolean) => [
   },
   {
     label: cs ? 'Síť' : 'Network',
-    value: cs ? 'All Green' : 'All Green',
+    value: cs ? 'Zion Trinity' : 'Zion Trinity',
     descriptor: cs
       ? 'Mainnet Beta · 11/11 služeb · protocol 3.0.6'
       : 'Mainnet Beta · 11/11 services · protocol 3.0.6',
@@ -209,7 +209,7 @@ const getRuntimePanels = (cs: boolean) => [
   {
     icon: Zap,
     label: cs ? 'v3.0.6 E2E Status' : 'v3.0.6 E2E Status',
-    value: cs ? 'All Green ✓' : 'All Green ✓',
+    value: cs ? 'Zion Trinity ✓' : 'Zion Trinity ✓',
     detail: cs
       ? '11/11 služeb aktivních · F4.7 + F5 aktivní · memory leak fix'
       : '11/11 services active · F4.7 + F5 active · memory leak fix',
@@ -261,7 +261,7 @@ const getGuideBlocks = (cs: boolean) => [
 const getNetworkFacts = (cs: boolean) => [
   { text: cs ? 'Nativní Rust P2P — 2-uzlový mesh' : 'Native Rust P2P — 2-node mesh', done: true },
   {
-    text: cs ? 'v3.0.6 "All Green, Mainnet Beta" — 11/11 služeb aktivních' : 'v3.0.6 "All Green, Mainnet Beta" — 11/11 services active',
+    text: cs ? 'v3.0.6 "Zion Trinity · Triple Stream, Mainnet Beta" — 11/11 služeb aktivních' : 'v3.0.6 "Zion Trinity · Triple Stream, Mainnet Beta" — 11/11 services active',
     done: true,
   },
   {
@@ -1044,8 +1044,8 @@ export default function NetworkPage() {
 
         <p className="text-center text-xs text-gray-600">
           {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Síť Pro · 2-uzlový mesh · v3.0.6 E2E All Green`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Network Pro · 2-node mesh · v3.0.6 E2E All Green`}
+            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Síť Pro · 2-uzlový mesh · v3.0.6 E2E Zion Trinity`
+            : `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Network Pro · 2-node mesh · v3.0.6 E2E Zion Trinity`}
         </p>
       </div>
 
@@ -1119,7 +1119,7 @@ function NetFAQSection({ cs }: { cs: boolean }) {
     { q: cs ? 'Jak se připojit jako miner?' : 'How to connect as a miner?', a: cs ? `Stáhněte si XMRig nebo Desktop Agent a použijte stratum+tcp://${SITE_POOL_PRIMARY} jako pool adresu. Detaily najdete v Connection Guides výše.` : `Download XMRig or the Desktop Agent and use stratum+tcp://${SITE_POOL_PRIMARY} as the pool address. See the Connection Guides section above for details.` },
     { q: cs ? 'Jak spustit vlastní full node?' : 'How to run your own full node?', a: cs ? `Klonujte repo, spusťte cargo build --release v V3/core a pak ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333 --add-exclusive-node ${SITE_PRIMARY_HOST}:8334. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.` : `Clone the repo, cargo build --release from V3/core and then ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333 --add-exclusive-node ${SITE_PRIMARY_HOST}:8334. Docker compose is available in docker/docker-compose.mainnet.yml.` },
     { q: cs ? 'Jaký pool fee si ZION účtuje?' : 'What pool fee does ZION charge?', a: cs ? '89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.' : '89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.' },
-    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). v3.0.6 "All Green" běží na 2-uzlovém P2P meshi s aktivním poolem, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzené v bloku 752.' : 'MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). v3.0.6 "All Green" runs on a 2-node P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752.' },
+    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). v3.0.6 "Zion Trinity · Triple Stream" běží na 2-uzlovém P2P meshi s aktivním poolem, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzené v bloku 752.' : 'MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). v3.0.6 "Zion Trinity · Triple Stream" runs on a 2-node P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752.' },
   ];
   return (
     <div className="divide-y divide-white/[0.06]">

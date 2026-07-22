@@ -1,15 +1,15 @@
 # ZION TerraNova — Veřejná dokumentace
 
 > *"In code we trust. 144B ZION. Not one satoshi more."*
-> **Aktuální veřejná linka: v3.0.5 All Green / Mainnet Beta.**
+> **Aktuální veřejná linka: v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta.**
 > Genesis #0: 11. června 2026. Hard reset / nový genesis hash: 6.–7. července 2026.
 > Oficiální veřejný launch: 31. prosince 2026.
 
 ---
 
-## Živý stav — v3.0.5 All Green
+## Živý stav — v3.0.6 Zion Trinity · Triple Stream
 
-ZION Mainnet běží jako **Mainnet Beta**. Aktuální runtime je **v3.0.5 Ekam Deeksha** s přesností na 6 desetinných míst a novým genesis hashem po hard resetu v červenci 2026.
+ZION Mainnet běží jako **Mainnet Beta**. Aktuální runtime je **v3.0.6 Ekam Deeksha** s přesností na 6 desetinných míst a novým genesis hashem po hard resetu v červenci 2026.
 
 - ✅ Mainnet Core nód — 3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)
 - ✅ Pool server aktivní — `stratum+tcp://pool.zionterranova.com:8444`
@@ -31,7 +31,7 @@ ZION Mainnet běží jako **Mainnet Beta**. Aktuální runtime je **v3.0.5 Ekam 
 |----------|---------|
 | **Chain ID** | `zion-mainnet-1` |
 | **Genesis hash** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
-| **Verze protokolu** | `zion-v3-node/3.0.5` |
+| **Verze protokolu** | `zion-v3-node/3.0.6` |
 | **Algoritmus** | Ekam Deeksha v2 (multi-algo PoW) |
 | **Block time** | 60 s |
 | **Block reward** | 5 400,067 ZION → Decade Decay (-20 %/10 let) |
@@ -98,4 +98,4 @@ ZION Mainnet běží jako **Mainnet Beta**. Aktuální runtime je **v3.0.5 Ekam 
 
 ---
 
-*ZION TerraNova veřejná dokumentace • v3.0.5 All Green / Mainnet Beta • aktualizováno 10. 7. 2026*
+*ZION TerraNova veřejná dokumentace • v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta • aktualizováno 22. 7. 2026*

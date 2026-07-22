@@ -5,7 +5,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Status:** Mainnet Beta · 3.0.7 "Triple Stream All Green" planning · 15/15 Services Active · Chain Height 10911+ · Mainnet Alpha target: 3.1.0 — [`MAINNET_ALPHA_PLAN.md`](MAINNET_ALPHA_PLAN.md) + V3.1 migration [`V3.1_MIGRATION_PLAN.md`](V3.1_MIGRATION_PLAN.md) + native integration [`V3.1_INTEGRATION_PLAN.md`](V3.1_INTEGRATION_PLAN.md) · Public Launch: 31 December 2026
+**Status:** Mainnet Beta · 3.0.6 "Zion Trinity · Triple Stream" · 15/15 Services Active · Chain Height 10911+ · Mainnet Alpha target: 3.1.0 — [`MAINNET_ALPHA_PLAN.md`](MAINNET_ALPHA_PLAN.md) + V3.1 migration [`V3.1_MIGRATION_PLAN.md`](V3.1_MIGRATION_PLAN.md) + native integration [`V3.1_INTEGRATION_PLAN.md`](V3.1_INTEGRATION_PLAN.md) · Public Launch: 31 December 2026
 
 **Current plan:** [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](TRIPLE_STREAM_ALL_GREEN_PLAN.md) · **Version overview:** [`3.0.7.md`](3.0.7.md) · **Previous 3.0.6 archive:** [`docs/3.0.6/`](docs/3.0.6/)
 
@@ -59,7 +59,7 @@
 
 ZION is a decentralized **Layer 1 blockchain** built from scratch in **Rust**, running a canonical Proof-of-Work consensus with CPU and GPU acceleration.
 
-v3.0.5 is the current mainnet line under [`V3/`](V3/). It features a 6-layer architecture, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale humanitarian and space projects. The 3.0.5 "All Green" upgrade completed on 2026-07-09 — all 11 services active, protocol bumped to 3.0.5, E2E memo tests verified on live chain, web deploy optimized (Docker image 2.57 GB → 377 MB).
+v3.0.6 is the current mainnet line under [`V3/`](V3/). It features a 6-layer architecture, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale humanitarian and space projects. The 3.0.6 "Zion Trinity · Triple Stream" release — all 11 services active, protocol bumped to 3.0.6, E2E memo tests verified on live chain, web deploy optimized (Docker image 2.57 GB → 377 MB).
 
 ---
 
@@ -208,7 +208,7 @@ RPC: 127.0.0.1:8443 (localhost only)
 
 - **Edge**: Primary 24/7 node + pool. Source of chain truth. Accepts public miner connections. 14 services + watchdog timer + web Docker container.
 - **Core**: Local backup node (P2P peer, same genesis) + Dashboard + AI services.
-- **Chain live since:** 2026-07-07 (hard genesis reset) · **Current protocol:** `zion-v3-node/3.0.6` · **Chain height:** 10911+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` · **Next milestone:** 3.0.7 "Triple Stream All Green" — [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](TRIPLE_STREAM_ALL_GREEN_PLAN.md)
+- **Chain live since:** 2026-07-07 (hard genesis reset) · **Current protocol:** `zion-v3-node/3.0.6` · **Chain height:** 10911+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` · **Current release:** 3.0.6 "Zion Trinity · Triple Stream"
 
 ---
 
