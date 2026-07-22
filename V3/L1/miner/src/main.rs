@@ -3020,17 +3020,19 @@ fn run_remote_session(
             attempted_hashes = attempted_hashes.saturating_add(tested);
             telemetry.record_attempted_hashes(attempted_hashes);
             telemetry.record_no_solution();
-            // Always log scan result for operational visibility
-            println!(
-                "[{}] no_solution  iteration={}  height={}  nonces={}..{}  tested={}  elapsed_ms={}",
-                log_timestamp(),
-                iteration + 1,
-                job.height,
-                job.start_nonce,
+            // Always log scan result for operational visibility (unless QUIET)
+            if !QUIET.load(Ordering::Relaxed) {
+                println!(
+                    "[{}] no_solution  iteration={}  height={}  nonces={}..{}  tested={}  elapsed_ms={}",
+                    log_timestamp(),
+                    iteration + 1,
+                    job.height,
+                    job.start_nonce,
                 job.start_nonce + job.nonce_count,
                 tested,
                 batch_ms,
             );
+            }
             if VERBOSE.load(Ordering::Relaxed) {
                 println!("wire_job={job_line}");
             }
@@ -3881,15 +3883,17 @@ fn maybe_send_adaptive_update(
     let ext_hps = hashrate.gpu_ext_hps_60s();
     let (burst, gap_ms) = compute_adaptive_duty_cycle(zion_hps, ext_hps);
     let _ = atx.send((burst, gap_ms));
-    println!(
-        "[{}] adaptive_duty_cycle_computed zion_hps={:.1} ext_hps={:.1} burst={} gap_ms={} duty={:.0}%",
-        log_timestamp(),
-        zion_hps,
-        ext_hps,
-        burst,
-        gap_ms,
-        if burst > 0 { 100.0 * burst as f64 / (burst as f64 + gap_ms as f64 / 50.0) } else { 0.0 }
-    );
+    if !QUIET.load(Ordering::Relaxed) {
+        println!(
+            "[{}] adaptive_duty_cycle_computed zion_hps={:.1} ext_hps={:.1} burst={} gap_ms={} duty={:.0}%",
+            log_timestamp(),
+            zion_hps,
+            ext_hps,
+            burst,
+            gap_ms,
+            if burst > 0 { 100.0 * burst as f64 / (burst as f64 + gap_ms as f64 / 50.0) } else { 0.0 }
+        );
+    }
 }
 
 /// Persistent external GPU miner thread for the single GPU profit coin.
@@ -4073,14 +4077,16 @@ fn external_gpu_thread(
                 // same job every ~1s, and resetting would cause DAG reload
                 // every second. last_epoch is reset only when the algorithm
                 // changes (see algo switch below).
-                println!(
-                    "[{}] ext_gpu_job_received coin={} algo={} job_id={} height={}",
-                    log_timestamp(),
-                    job.coin,
-                    job.algorithm,
-                    job.job_id,
-                    job.height,
-                );
+                if !QUIET.load(Ordering::Relaxed) {
+                    println!(
+                        "[{}] ext_gpu_job_received coin={} algo={} job_id={} height={}",
+                        log_timestamp(),
+                        job.coin,
+                        job.algorithm,
+                        job.job_id,
+                        job.height,
+                    );
+                }
                 // Update hashrate tracker for triple-stream display
                 hashrate.set_gpu_ext_job(&job.coin, &job.algorithm);
                 current_job = Some(job);
