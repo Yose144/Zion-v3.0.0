@@ -49,6 +49,7 @@
 #include <time.h>
 
 #ifdef _WIN32
+    #include <windows.h>
     #define EXPORT __declspec(dllexport)
 #else
     #define EXPORT
@@ -567,11 +568,19 @@ EXPORT double autolykos_benchmark_cpu(int iterations) {
     uint8_t header[32]; uint8_t out[32];
     volatile uint64_t r = 0; int i;
     memset(header, 0xAB, sizeof(header));
+    #if defined(_WIN32)
+    LARGE_INTEGER _perf_t0; QueryPerformanceCounter(&_perf_t0);
+#else
     timespec_get(&t0, TIME_UTC);
+#endif
     for (i = 0; i < iterations; i++)
         r ^= autolykos_hash(header, 32, (uint64_t)i, 700000u, out);
     (void)r;
+    #if defined(_WIN32)
+    LARGE_INTEGER _perf_t1; QueryPerformanceCounter(&_perf_t1);
+#else
     timespec_get(&t1, TIME_UTC);
+#endif
     double elapsed = (double)(t1.tv_sec - t0.tv_sec)
                    + (double)(t1.tv_nsec - t0.tv_nsec) * 1e-9;
     return (elapsed > 0.0) ? (double)iterations / elapsed : 0.0;

@@ -71,17 +71,20 @@ pub fn reset_sticky_header() {
 /// Write directly to /dev/tty (bypasses redirected stdout).
 /// Falls back to stdout if /dev/tty is not available.
 fn tty_write(s: &str) {
-    let fd = TTY_FD.load(Ordering::SeqCst);
-    if fd >= 0 {
-        // SAFETY: write() is a simple syscall, fd is valid (opened once)
-        unsafe {
-            write(fd, s.as_ptr(), s.len());
+    #[cfg(target_family = "unix")]
+    {
+        let fd = TTY_FD.load(Ordering::SeqCst);
+        if fd >= 0 {
+            // SAFETY: write() is a simple syscall, fd is valid (opened once)
+            unsafe {
+                write(fd, s.as_ptr(), s.len());
+            }
+            return;
         }
-    } else {
-        // Fallback: use stdout
-        let _ = io::stdout().write_all(s.as_bytes());
-        let _ = io::stdout().flush();
     }
+    // Fallback: use stdout (also used on non-Unix platforms)
+    let _ = io::stdout().write_all(s.as_bytes());
+    let _ = io::stdout().flush();
 }
 
 /// Redirect stdout (fd 1) to /dev/null so that ALL println! calls from

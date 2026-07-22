@@ -41,8 +41,13 @@ fn main() {
         // NOTE: OpenMP disabled for cross-compilation to older CPUs (Pentium G4560)
         // because libgomp may contain AVX instructions that cause SIGILL.
         // The DAG generation falls back to single-threaded (still works, just slower).
+        // OpenMP can be disabled via ZION_DISABLE_OPENMP=1 for cross-compiles
+        // where a matching libomp is not available (e.g. x86_64-apple-darwin
+        // cross-compile from Apple Silicon without an x86_64 libomp).
+        // The DAG generation falls back to single-threaded (still works).
+        let openmp_disabled = std::env::var("ZION_DISABLE_OPENMP").as_deref() == Ok("1");
         #[cfg(target_os = "macos")]
-        {
+        if !openmp_disabled {
             // Apple clang supports -Xpreprocessor -fopenmp + -lomp
             build.flag("-Xpreprocessor");
             build.flag("-fopenmp");
@@ -76,7 +81,7 @@ fn main() {
         // Link OpenMP runtime library (libgomp on Linux).
         // NOTE: Disabled on Linux to avoid SIGILL on CPUs without AVX.
         #[cfg(target_os = "macos")]
-        {
+        if !openmp_disabled {
             println!("cargo:rustc-link-lib=omp");
         }
 

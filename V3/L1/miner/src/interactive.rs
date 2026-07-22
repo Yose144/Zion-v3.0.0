@@ -80,27 +80,44 @@ fn tty() -> TtyWriter {
 }
 
 fn open_tty_or_fallback() -> std::fs::File {
-    std::fs::OpenOptions::new()
-        .write(true)
-        .read(true)
-        .open("/dev/tty")
-        .unwrap_or_else(|_| {
-            // Fallback: clone fd 1 (stdout) before it gets redirected
-            use std::os::unix::io::FromRawFd;
-            unsafe {
-                let fd = dup(1);
-                if fd >= 0 {
-                    return std::fs::File::from_raw_fd(fd);
+    #[cfg(unix)]
+    {
+        std::fs::OpenOptions::new()
+            .write(true)
+            .read(true)
+            .open("/dev/tty")
+            .unwrap_or_else(|_| {
+                // Fallback: clone fd 1 (stdout) before it gets redirected
+                use std::os::unix::io::FromRawFd;
+                unsafe {
+                    let fd = dup(1);
+                    if fd >= 0 {
+                        return std::fs::File::from_raw_fd(fd);
+                    }
                 }
-            }
-            // Last resort: /dev/null
-            std::fs::OpenOptions::new()
-                .write(true)
-                .open("/dev/null")
-                .unwrap_or_else(|_| panic!("no TTY and no /dev/null available"))
-        })
+                // Last resort: /dev/null
+                std::fs::OpenOptions::new()
+                    .write(true)
+                    .open("/dev/null")
+                    .unwrap_or_else(|_| panic!("no TTY and no /dev/null available"))
+            })
+    }
+    #[cfg(not(unix))]
+    {
+        // Windows: no /dev/tty, use CONOUT$ or NUL
+        std::fs::OpenOptions::new()
+            .write(true)
+            .open("CONOUT$")
+            .unwrap_or_else(|_| {
+                std::fs::OpenOptions::new()
+                    .write(true)
+                    .open("NUL")
+                    .unwrap_or_else(|_| panic!("no CONOUT$ and no NUL available"))
+            })
+    }
 }
 
+#[cfg(unix)]
 extern "C" {
     fn dup(oldfd: i32) -> i32;
     fn dup2(oldfd: i32, newfd: i32) -> i32;
@@ -120,6 +137,7 @@ struct libc_winsize {
 const TIOCGWINSZ: u64 = 0x5413;
 
 /// Safe wrapper for ioctl(fd, TIOCGWINSZ, &winsize)
+#[cfg(unix)]
 unsafe fn ioctl_tiocgwinsz(fd: i32, ws: &mut libc_winsize) -> i32 {
     ioctl(fd, TIOCGWINSZ, ws as *mut libc_winsize)
 }
@@ -128,33 +146,45 @@ unsafe fn ioctl_tiocgwinsz(fd: i32, ws: &mut libc_winsize) -> i32 {
 /// interactive TUI is enabled, BEFORE the mining thread is spawned.
 /// Returns true on success.
 pub fn redirect_stdout_to_log(path: &str) -> bool {
-    use std::os::unix::io::AsRawFd;
-    let log = match std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path)
+    #[cfg(unix)]
     {
-        Ok(f) => f,
-        Err(_) => return false,
-    };
-    // Initialize TTY handle from /dev/tty before redirecting stdout
-    if let Ok(t) = std::fs::OpenOptions::new()
-        .write(true)
-        .read(true)
-        .open("/dev/tty")
-    {
-        let _ = TTY.set(t);
-    }
-    // Redirect fd 1 → log file
-    unsafe {
-        let log_fd = log.as_raw_fd();
-        if dup2(log_fd, 1) < 0 {
-            return false;
+        use std::os::unix::io::AsRawFd;
+        let log = match std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+        {
+            Ok(f) => f,
+            Err(_) => return false,
+        };
+        // Initialize TTY handle from /dev/tty before redirecting stdout
+        if let Ok(t) = std::fs::OpenOptions::new()
+            .write(true)
+            .read(true)
+            .open("/dev/tty")
+        {
+            let _ = TTY.set(t);
         }
-        // Don't drop `log` — its fd is now fd 1, owned by the OS
-        std::mem::forget(log);
+        // Redirect fd 1 → log file
+        unsafe {
+            let log_fd = log.as_raw_fd();
+            if dup2(log_fd, 1) < 0 {
+                return false;
+            }
+            // Don't drop `log` — its fd is now fd 1, owned by the OS
+            std::mem::forget(log);
+        }
+        true
     }
-    true
+    #[cfg(not(unix))]
+    {
+        // Windows: no fd redirection, just open the log file
+        std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+            .is_ok()
+    }
 }
 
 /* ========================================================================= */
@@ -1051,25 +1081,32 @@ pub(crate) fn draw_dashboard(
             let h = terminal::size().map(|(_, h)| h).unwrap_or(24);
             (w, h)
         } else {
-            // Try ioctl on /dev/tty
-            let mut ws: libc_winsize = libc_winsize { ws_row: 0, ws_col: 0, ws_xpixel: 0, ws_ypixel: 0 };
-            let tty_fd = std::fs::OpenOptions::new()
-                .read(true)
-                .write(true)
-                .open("/dev/tty")
-                .ok();
-            let mut got_size = false;
-            if let Some(ref f) = tty_fd {
-                use std::os::unix::io::AsRawFd;
-                unsafe {
-                    if ioctl_tiocgwinsz(f.as_raw_fd(), &mut ws) == 0 {
-                        got_size = true;
+            // Try ioctl on /dev/tty (Unix only)
+            #[cfg(unix)]
+            {
+                let mut ws: libc_winsize = libc_winsize { ws_row: 0, ws_col: 0, ws_xpixel: 0, ws_ypixel: 0 };
+                let tty_fd = std::fs::OpenOptions::new()
+                    .read(true)
+                    .write(true)
+                    .open("/dev/tty")
+                    .ok();
+                let mut got_size = false;
+                if let Some(ref f) = tty_fd {
+                    use std::os::unix::io::AsRawFd;
+                    unsafe {
+                        if ioctl_tiocgwinsz(f.as_raw_fd(), &mut ws) == 0 {
+                            got_size = true;
+                        }
                     }
                 }
+                if got_size && ws.ws_col > 0 && ws.ws_row > 0 {
+                    (ws.ws_col, ws.ws_row)
+                } else {
+                    terminal::size().unwrap_or((80, 24))
+                }
             }
-            if got_size && ws.ws_col > 0 && ws.ws_row > 0 {
-                (ws.ws_col, ws.ws_row)
-            } else {
+            #[cfg(not(unix))]
+            {
                 terminal::size().unwrap_or((80, 24))
             }
         }
@@ -1704,24 +1741,31 @@ pub(crate) fn draw_dashboard_redesign(
             let height = terminal::size().map(|(_, h)| h).unwrap_or(24);
             (width, height)
         } else {
-            let mut ws = libc_winsize {
-                ws_row: 0,
-                ws_col: 0,
-                ws_xpixel: 0,
-                ws_ypixel: 0,
-            };
-            let tty_fd = std::fs::OpenOptions::new()
-                .read(true)
-                .write(true)
-                .open("/dev/tty")
-                .ok();
-            let got_size = tty_fd.as_ref().map(|file| {
-                use std::os::unix::io::AsRawFd;
-                unsafe { ioctl_tiocgwinsz(file.as_raw_fd(), &mut ws) == 0 }
-            }).unwrap_or(false);
-            if got_size && ws.ws_col > 0 && ws.ws_row > 0 {
-                (ws.ws_col, ws.ws_row)
-            } else {
+            #[cfg(unix)]
+            {
+                let mut ws = libc_winsize {
+                    ws_row: 0,
+                    ws_col: 0,
+                    ws_xpixel: 0,
+                    ws_ypixel: 0,
+                };
+                let tty_fd = std::fs::OpenOptions::new()
+                    .read(true)
+                    .write(true)
+                    .open("/dev/tty")
+                    .ok();
+                let got_size = tty_fd.as_ref().map(|file| {
+                    use std::os::unix::io::AsRawFd;
+                    unsafe { ioctl_tiocgwinsz(file.as_raw_fd(), &mut ws) == 0 }
+                }).unwrap_or(false);
+                if got_size && ws.ws_col > 0 && ws.ws_row > 0 {
+                    (ws.ws_col, ws.ws_row)
+                } else {
+                    terminal::size().unwrap_or((80, 24))
+                }
+            }
+            #[cfg(not(unix))]
+            {
                 terminal::size().unwrap_or((80, 24))
             }
         }
