@@ -1600,6 +1600,121 @@ fn run_local_session(
         }
     }
 
+    // ── Triple Stream setup for local/benchmark mode ──
+    // In local mode there is no pool to dispatch external stream jobs, so we
+    // generate synthetic benchmark jobs for Stream 2 (GPU external: ZANO
+    // ProgPoWZ) and Stream 3 (CPU external: VRSC VerusHash).  The external
+    // threads run persistently and report hashrates just like in pool mode.
+    //
+    // This gives users a full Triple Stream benchmark: ZION + ZANO + VRSC
+    // hashrates out of the box, without needing a pool connection.
+    let stream2_local = config.stream2_enabled && gpu_available && config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
+    let stream3_local = config.stream3_enabled;
+
+    // Channels for external threads (same pattern as run_remote_session).
+    let (ext_gpu_tx, ext_gpu_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
+    let (_ext_gpu_share_tx, ext_gpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
+    let (ext_cpu_tx, ext_cpu_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
+    let (_ext_cpu_share_tx, ext_cpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
+
+    // Easy target (Bitcoin difficulty 1) — synthetic benchmark jobs.
+    const EASY_TARGET_HEX: &str = "00000000ffff0000000000000000000000000000000000000000000000000000";
+
+    // Synthetic VRSC (VerusHash) benchmark job.
+    // 1487-byte VRSC header: version=0x02000000, solution version=0x07 at byte 143.
+    let vrsc_header = {
+        let mut h = vec![0u8; 1487];
+        h[0..4].copy_from_slice(&0x02000000u32.to_le_bytes());
+        h[143] = 0x07; // solution version > 6 → PBaaS path
+        hex::encode(&h)
+    };
+    let vrsc_job = zion_pool::ExternalStreamJob {
+        coin: "VRSC".to_string(),
+        algorithm: "verushash".to_string(),
+        job_id: "benchmark-vrsc-0".to_string(),
+        header_hex: vrsc_header,
+        target_hex: EASY_TARGET_HEX.to_string(),
+        height: 1,
+        extranonce1_hex: String::new(),
+        protocol: "zcashstratum".to_string(),
+        seed_hash_hex: String::new(),
+        timestamp: 0,
+    };
+
+    // Synthetic ZANO (ProgPoWZ) benchmark job.
+    // 32-byte pre-hashed header_hash (zeroed) — ProgPoWZ pools send the hash directly.
+    let zano_header = hex::encode(&[0u8; 32]);
+    let zano_job = zion_pool::ExternalStreamJob {
+        coin: "ZANO".to_string(),
+        algorithm: "progpow_zano".to_string(),
+        job_id: "benchmark-zano-0".to_string(),
+        header_hex: zano_header,
+        target_hex: EASY_TARGET_HEX.to_string(),
+        height: 1,
+        extranonce1_hex: String::new(),
+        protocol: "stratum".to_string(),
+        seed_hash_hex: String::new(),
+        timestamp: 0,
+    };
+
+    // Spawn Stream 2 (GPU external: ZANO ProgPoWZ)
+    if stream2_local {
+        let ws = config.secondary_gpu_work_size;
+        let hr = Arc::clone(hashrate);
+        let bk = effective_gpu_backend;
+        #[cfg(feature = "gpu-cuda")]
+        let shared_cuda: Option<()> = None;
+        #[cfg(not(feature = "gpu-cuda"))]
+        let shared_cuda: Option<()> = None;
+        let share_tx = _ext_gpu_share_tx;
+        thread::spawn(move || {
+            println!("[{}] external_gpu_thread_spawned (local benchmark)", log_timestamp());
+            external_gpu_thread(ext_gpu_rx, share_tx, ws, hr, bk, None, shared_cuda);
+        });
+        println!(
+            "[{}] stream2_gpu_external_started (local benchmark) coin=ZANO algo=progpow_zano work_size={}",
+            log_timestamp(),
+            config.secondary_gpu_work_size
+        );
+        // Send initial job
+        let _ = ext_gpu_tx.send(zano_job.clone());
+        // Update hashrate tracker for triple-stream display
+        hashrate.set_gpu_ext_job("ZANO", "progpow_zano");
+    } else {
+        println!(
+            "[{}] stream2_gpu_external_disabled (local: stream2_enabled={} gpu_available={})",
+            log_timestamp(),
+            config.stream2_enabled,
+            gpu_available
+        );
+    }
+
+    // Spawn Stream 3 (CPU external: VRSC VerusHash)
+    if stream3_local {
+        let ext_cpu_threads = config.threads.max(1);
+        let ext_cpu_nonce_count = config.verushash_nonce_count;
+        let hr = Arc::clone(hashrate);
+        let share_tx = _ext_cpu_share_tx;
+        thread::spawn(move || {
+            ext_cpu_thread(ext_cpu_rx, share_tx, ext_cpu_threads, ext_cpu_nonce_count, hr);
+        });
+        println!(
+            "[{}] stream3c_ext_cpu_started (local benchmark) coin=VRSC algo=verushash threads={}",
+            log_timestamp(),
+            config.threads
+        );
+        // Send initial job
+        let _ = ext_cpu_tx.send(vrsc_job.clone());
+        // Update hashrate tracker for triple-stream display
+        hashrate.set_cpu_ext_job("VRSC", "verushash");
+    } else {
+        println!(
+            "[{}] stream3c_ext_cpu_disabled (local: stream3_enabled={})",
+            log_timestamp(),
+            config.stream3_enabled
+        );
+    }
+
     sync_miner_metrics(
         metrics,
         &telemetry,
@@ -1634,6 +1749,26 @@ fn run_local_session(
             }
             c.algorithm.clone()
         };
+
+        // ── Triple Stream: drain external share channels + re-send jobs ──
+        // The external threads (Stream 2 GPU/ZANO, Stream 3 CPU/VRSC) run
+        // persistently.  Drain any shares they found (we don't submit in
+        // local mode — just count them for hashrate display) and re-send
+        // the synthetic benchmark jobs so they keep mining.
+        while let Ok(_share) = ext_gpu_share_rx.try_recv() {
+            // Shares found in local benchmark mode are not submitted —
+            // they're just hashrate indicators.
+        }
+        while let Ok(_share) = ext_cpu_share_rx.try_recv() {
+            // Same for CPU external shares.
+        }
+        // Re-send jobs every iteration so external threads always have work.
+        if stream2_local {
+            let _ = ext_gpu_tx.send(zano_job.clone());
+        }
+        if stream3_local {
+            let _ = ext_cpu_tx.send(vrsc_job.clone());
+        }
 
         for stale_job_id in pool.expire_stale_jobs() {
             let stale_line = encode_message(&pool.stale_message(stale_job_id))?;
@@ -3442,33 +3577,43 @@ impl SessionTelemetry {
             println!("{status_line}");
         }
 
-        // ── SMOS-compatible hashrate output ──
-        // SMOS parses stdout for hashrate patterns like "GPU0: X.X MH/s" or
-        // "Total: X.X MH/s". When ZION_NO_STICKY=1 (SMOS/Docker/pipe mode),
-        // emit a compact summary line that SMOS can display in its dashboard.
-        // Uses raw_stdout() (write(2) syscall) to bypass Rust's 8KB block
-        // buffer which would prevent output from appearing on pipes/SMOS.
+        // ── SMOS / non-TTY compact dashboard ──
+        // SMOS captures stdout in a 19-line ring buffer. Emit a compact,
+        // human-readable dashboard that fits within that buffer and shows
+        // all three streams at a glance. Uses raw_stdout() (write(2) syscall)
+        // to bypass Rust's 8KB block buffer.
         if std::env::var("ZION_NO_STICKY").map(|v| v == "1" || v == "true").unwrap_or(false)
             || !isatty_stdout()
         {
             let gpu_hr = self.gpu_hashrate_hps();
-            let line = format!(
-                "GPU0: {} | Total: {} | Accepted: {} | Rejected: {} | Uptime: {:.0}s\n",
-                fmt_hashrate(gpu_hr),
-                fmt_hashrate(overall_hps),
-                accepted, rejected, uptime
-            );
-            raw_stdout(&line);
-            // Also print per-stream info for the triple-stream setup
+            let uptime_str = if uptime >= 3600.0 {
+                format!("{:.0}h{:.0}m", uptime / 3600.0, (uptime % 3600.0) / 60.0)
+            } else if uptime >= 60.0 {
+                format!("{:.0}m{:.0}s", uptime / 60.0, uptime % 60.0)
+            } else {
+                format!("{:.0}s", uptime)
+            };
+            // Compact dashboard — designed to fit SMOS 19-line buffer
+            raw_stdout("\n");
+            raw_stdout(&format!("╔══════════════════════════════════════════════╗\n"));
+            raw_stdout(&format!("║  ZION Triple-Stream Miner  v3.1.9-vega-c62   ║\n"));
+            raw_stdout(&format!("╠══════════════════════════════════════════════╣\n"));
+            raw_stdout(&format!("║  Uptime: {:<6}  Pool: {:<20}   ║\n",
+                uptime_str, &pool_addr[..pool_addr.len().min(20)]));
+            raw_stdout(&format!("║  GPU: {:>10}  |  Total: {:>10}      ║\n",
+                fmt_hashrate(gpu_hr), fmt_hashrate(overall_hps)));
+            raw_stdout(&format!("║  Accepted: {:<6}  Rejected: {:<6}         ║\n",
+                accepted, rejected));
+            raw_stdout(&format!("╠══════════════════════════════════════════════╣\n"));
+            // Per-stream lines
             for s in stream_stats {
-                let stream_line = format!(
-                    "  Stream {} [{} {}]: {} | A:{} R:{}{}\n",
-                    s.label, s.coin, s.algorithm, fmt_hashrate(s.hashrate_60s),
-                    s.accepted, s.rejected,
-                    if s.active { "" } else { " (inactive)" }
-                );
-                raw_stdout(&stream_line);
+                let status = if s.active { "ACTIVE  " } else { "INACTIVE" };
+                raw_stdout(&format!("║ {} {:<6} {:<14} {:>10} A:{:<4} R:{:<3}║\n",
+                    status, s.coin, s.algorithm,
+                    fmt_hashrate(s.hashrate_60s),
+                    s.accepted, s.rejected));
             }
+            raw_stdout(&format!("╚══════════════════════════════════════════════╝\n"));
         }
 
         if !TUI_ACTIVE.load(Ordering::Relaxed)
@@ -5509,6 +5654,11 @@ fn apply_profile_defaults() {
             ("ZION_NONCE_COUNT_MAX", "10000000"),
             ("ZION_RECONNECT", "true"),
             ("ZION_METRICS_REPORT_SECS", "30"),
+            // Triple Stream: autonomous profit router selects the best
+            // GPU coin (Stream 2) and CPU coin (Stream 3) automatically.
+            // Default ON for pool profile — users get ZION+ZANO+VRSC (or
+            // whatever is most profitable) out of the box.
+            ("ZION_AUTONOMOUS", "1"),
         ],
         "solo" => &[
             // Solo node mining — no pool, long run, large window.
@@ -5517,6 +5667,8 @@ fn apply_profile_defaults() {
             ("ZION_NONCE_COUNT", "1000000"),
             ("ZION_NONCE_COUNT_MAX", "10000000"),
             ("ZION_METRICS_REPORT_SECS", "60"),
+            // Triple Stream autonomous mode (same as pool profile).
+            ("ZION_AUTONOMOUS", "1"),
         ],
         "benchmark" | "bench" => &[
             // Short burst to measure hash performance.
