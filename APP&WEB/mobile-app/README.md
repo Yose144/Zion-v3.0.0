@@ -1,4 +1,4 @@
-# 📱 ZION TerraNova Mobile App v3.0.6 "Zion Trinity · Triple Stream"
+# 📱 ZION TerraNova Mobile App v3.0.6 "Trinity"
 
 **Where Technology Meets Spirit - Now in Your Pocket** 🌟
 

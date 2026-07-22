@@ -1,13 +1,13 @@
 # ZION TerraNova — Public Docs Hub
 
 > *"In code we trust. 144B ZION. Not one satoshi more."*
-> **Current public line: v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta.**
+> **Current public line: v3.0.6 Trinity / Mainnet Beta.**
 > Genesis #0: 11 June 2026. Hard reset / new genesis hash: 6–7 July 2026.
 > Official public launch: 31 December 2026.
 
 ---
 
-## Live status — v3.0.6 Zion Trinity · Triple Stream
+## Live status — v3.0.6 Trinity
 
 ZION Mainnet is live as **Mainnet Beta**. The current runtime is **v3.0.6 Ekam Deeksha** with 6-decimal flowers and a new genesis hash after the July 2026 hard reset.
 
@@ -98,4 +98,4 @@ ZION Mainnet is live as **Mainnet Beta**. The current runtime is **v3.0.6 Ekam D
 
 ---
 
-*ZION TerraNova public docs hub • v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta • updated 22 Jul 2026*
+*ZION TerraNova public docs hub • v3.0.6 Trinity / Mainnet Beta • updated 22 Jul 2026*

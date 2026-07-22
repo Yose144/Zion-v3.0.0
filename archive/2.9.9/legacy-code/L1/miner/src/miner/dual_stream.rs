@@ -231,7 +231,7 @@ impl std::fmt::Display for DualMode {
 // DualStreamConfig
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Configuration for dual/triple-stream mining
+/// Configuration for dual/trinity mining
 #[derive(Debug, Clone)]
 pub struct DualStreamConfig {
     /// Dual mining mode (secondary coin)

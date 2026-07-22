@@ -142,7 +142,7 @@ fn log_always(msg: &str) {
     println!("{}", msg);
 }
 
-/// Serializable per-stream telemetry for the triple-stream architecture.
+/// Serializable per-stream telemetry for the trinity architecture.
 ///
 /// Mirrors `ui::StreamStats` but derives `Serialize` so it can be embedded
 /// in the stats JSON file and HTTP `/stats` payload consumed by the desktop
@@ -203,9 +203,9 @@ pub(crate) struct MinerMetricsSnapshot {
     pool_addr: String,
     backend: String,
     status: String,
-    /// Per-stream telemetry for the triple-stream architecture.
+    /// Per-stream telemetry for the trinity architecture.
     /// Index 0 = ZION (stream 1), 1 = GPU external (stream 2), 2 = CPU external (stream 3).
-    /// Empty when triple-stream is not active (legacy single-stream mode).
+    /// Empty when trinity is not active (legacy single-stream mode).
     streams: Vec<StreamStatsInfo>,
     #[allow(dead_code)]
     loop_target: u32,
@@ -730,7 +730,7 @@ fn write_stats_file(path: &str, snapshot: &MinerMetricsSnapshot) {
         "miner_id": snapshot.miner_id,
         "pool_addr": snapshot.pool_addr,
         // ── Triple-stream per-stream telemetry (DeekshaChv3 parallel streaming)
-        // Empty array when triple-stream is not active (legacy single-stream mode).
+        // Empty array when trinity is not active (legacy single-stream mode).
         // Each entry: {index, label, coin, algorithm, hashrate_10s, hashrate_60s,
         //              hashrate_15m, accepted, rejected, active}
         "streams": snapshot.streams,
@@ -1610,13 +1610,13 @@ fn run_local_session(
         }
     }
 
-    // ── Triple Stream setup for local/benchmark mode ──
+    // ── Trinity setup for local/benchmark mode ──
     // In local mode there is no pool to dispatch external stream jobs, so we
     // generate synthetic benchmark jobs for Stream 2 (GPU external: ZANO
     // ProgPoWZ) and Stream 3 (CPU external: VRSC VerusHash).  The external
     // threads run persistently and report hashrates just like in pool mode.
     //
-    // This gives users a full Triple Stream benchmark: ZION + ZANO + VRSC
+    // This gives users a full Trinity benchmark: ZION + ZANO + VRSC
     // hashrates out of the box, without needing a pool connection.
     let stream2_local = config.stream2_enabled && gpu_available && config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
     let stream3_local = config.stream3_enabled;
@@ -1688,7 +1688,7 @@ fn run_local_session(
         );
         // Send initial job
         let _ = ext_gpu_tx.send(zano_job.clone());
-        // Update hashrate tracker for triple-stream display
+        // Update hashrate tracker for trinity display
         hashrate.set_gpu_ext_job("ZANO", "progpow_zano");
     } else {
         println!(
@@ -1715,7 +1715,7 @@ fn run_local_session(
         );
         // Send initial job
         let _ = ext_cpu_tx.send(vrsc_job.clone());
-        // Update hashrate tracker for triple-stream display
+        // Update hashrate tracker for trinity display
         hashrate.set_cpu_ext_job("VRSC", "verushash");
     } else {
         println!(
@@ -1760,7 +1760,7 @@ fn run_local_session(
             c.algorithm.clone()
         };
 
-        // ── Triple Stream: drain external share channels + re-send jobs ──
+        // ── Trinity: drain external share channels + re-send jobs ──
         // The external threads (Stream 2 GPU/ZANO, Stream 3 CPU/VRSC) run
         // persistently.  Drain any shares they found (we don't submit in
         // local mode — just count them for hashrate display) and re-send
@@ -3608,7 +3608,7 @@ impl SessionTelemetry {
             // Compact dashboard — designed to fit SMOS 19-line buffer
             raw_stdout("\n");
             raw_stdout(&format!("╔══════════════════════════════════════════════╗\n"));
-            raw_stdout(&format!("║  ZION Zion Trinity Miner   v3.0.6           ║\n"));
+            raw_stdout(&format!("║  ZION Trinity Miner   v3.0.6           ║\n"));
             raw_stdout(&format!("╠══════════════════════════════════════════════╣\n"));
             raw_stdout(&format!("║  Uptime: {:<6}  Pool: {:<20}   ║\n",
                 uptime_str, &pool_addr[..pool_addr.len().min(20)]));
@@ -3632,7 +3632,7 @@ impl SessionTelemetry {
             && isatty_stdout()
             && std::env::var("ZION_NO_STICKY").map(|v| v != "1" && v != "true").unwrap_or(true)
         {
-            // ── Claymore-style sticky triple-stream stats (alt screen + full redraw) ──
+            // ── Claymore-style sticky trinity stats (alt screen + full redraw) ──
             // Only activate when ALL of:
             //   1. TUI is not active (ZION_INTERACTIVE=0)
             //   2. stdout is a real terminal (isatty)
@@ -3657,7 +3657,7 @@ impl SessionTelemetry {
                     )
                 })
                 .collect();
-            ui::print_triple_stream_stats_sticky(
+            ui::print_trinity_stats_sticky(
                 uptime_secs,
                 stream_stats,
                 accepted,
@@ -3676,7 +3676,7 @@ impl SessionTelemetry {
             if now.duration_since(self.last_stats_write).as_secs() >= 3 {
                 if let Ok(mut snapshot) = metrics.lock() {
                     // Refresh per-stream telemetry so the stats file / HTTP
-                    // /stats endpoint expose fresh triple-stream data to the
+                    // /stats endpoint expose fresh trinity data to the
                     // desktop agent. `stream_stats` is built by
                     // `HashrateTracker::build_stream_stats()` upstream.
                     snapshot.set_streams(stream_stats);
@@ -4087,7 +4087,7 @@ fn external_gpu_thread(
                         job.height,
                     );
                 }
-                // Update hashrate tracker for triple-stream display
+                // Update hashrate tracker for trinity display
                 hashrate.set_gpu_ext_job(&job.coin, &job.algorithm);
                 current_job = Some(job);
             }
@@ -4548,7 +4548,7 @@ fn ext_cpu_thread(
                         nonce_base,
                     );
                 }
-                // Update hashrate tracker for triple-stream display
+                // Update hashrate tracker for trinity display
                 hashrate.set_cpu_ext_job(&job.coin, &job.algorithm);
             }
             current_job = Some(job);
@@ -5678,7 +5678,7 @@ fn apply_profile_defaults() {
             ("ZION_NONCE_COUNT_MAX", "10000000"),
             ("ZION_RECONNECT", "true"),
             ("ZION_METRICS_REPORT_SECS", "30"),
-            // Triple Stream: autonomous profit router selects the best
+            // Trinity: autonomous profit router selects the best
             // GPU coin (Stream 2) and CPU coin (Stream 3) automatically.
             // Default ON for pool profile — users get ZION+ZANO+VRSC (or
             // whatever is most profitable) out of the box.
@@ -5691,7 +5691,7 @@ fn apply_profile_defaults() {
             ("ZION_NONCE_COUNT", "1000000"),
             ("ZION_NONCE_COUNT_MAX", "10000000"),
             ("ZION_METRICS_REPORT_SECS", "60"),
-            // Triple Stream autonomous mode (same as pool profile).
+            // Trinity autonomous mode (same as pool profile).
             ("ZION_AUTONOMOUS", "1"),
         ],
         "benchmark" | "bench" => &[

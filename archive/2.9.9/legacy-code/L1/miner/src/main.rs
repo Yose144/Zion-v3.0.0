@@ -509,7 +509,7 @@ async fn main() -> anyhow::Result<()> {
         None
     };
 
-    let triple_stream_cfg = if let Some(ref mode_str) = cli.triplemode {
+    let trinity_cfg = if let Some(ref mode_str) = cli.triplemode {
         let mode = DualMode::from_str(mode_str).ok_or_else(|| {
             anyhow::anyhow!(
                 "Unknown triplemode '{}'. Use same names as --dualmode (ALEPHDUAL, KASPADUAL, ETCHDUAL, ...)" ,
@@ -540,7 +540,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     // Auto-set g=dual if --dualmode or --triplemode is specified and no explicit --group override
-    let effective_group_hint = if (dual_stream_cfg.is_some() || triple_stream_cfg.is_some()) && cli.group.is_none() {
+    let effective_group_hint = if (dual_stream_cfg.is_some() || trinity_cfg.is_some()) && cli.group.is_none() {
         Some("dual".to_string())
     } else {
         cli.group.clone()
@@ -559,7 +559,7 @@ async fn main() -> anyhow::Result<()> {
         stats_file: cli.stats_file.as_deref().map(PathBuf::from),
         stats_interval_secs: cli.stats_interval.max(1),
         dual_stream: dual_stream_cfg,
-        triple_stream: triple_stream_cfg,
+        trinity: trinity_cfg,
     };
 
     println!();
@@ -789,7 +789,7 @@ async fn main() -> anyhow::Result<()> {
             stats_file: None,
             stats_interval_secs: cli.stats_interval.max(1),
             dual_stream: None,
-            triple_stream: None,
+            trinity: None,
         };
 
         let xmr_miner = Arc::new(miner::UniversalMiner::new(xmr_config)?);
@@ -835,11 +835,11 @@ async fn main() -> anyhow::Result<()> {
         );
     }
 
-    // ═══ Triple-Stream Mining ═══
+    // ═══ Trinity Mining ═══
     // If --triplemode is set, spawn a third DualStreamMiner for the tertiary coin.
     // Architecture: primary ZION + dual coin (GPU X%) + triple coin (GPU Y%).
     // GPU budget: primary = (100 - dual_alloc - triple_alloc)%.
-    if let Some(ref triple_cfg) = config.triple_stream {
+    if let Some(ref triple_cfg) = config.trinity {
         let triple_mode_name = triple_cfg.mode.coin_ticker().to_string();
         let triple_pool_url = triple_cfg.pool_url.clone();
         let triple_miner = Arc::new(DualStreamMiner::new(triple_cfg.clone()));

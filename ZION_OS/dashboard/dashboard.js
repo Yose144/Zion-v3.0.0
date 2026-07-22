@@ -1748,7 +1748,7 @@ async function updateMinerLeaderboard(){
       const blocks = m.blocks_found || 0;
       const statusDot = m.active ? '<span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1"></span>' : '<span class="inline-block w-2 h-2 rounded-full bg-gray-600 mr-1"></span>';
       const rankColor = i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-orange-400' : 'text-gray-400';
-      // Triple Stream badges
+      // Trinity badges
       const streams = m.streams || {};
       const streamBadges = Object.entries(streams).filter(([k,v]) => (v.valid_shares||0)+(v.invalid_shares||0) > 0).map(([k,v]) => {
         const sValid = v.valid_shares || 0;
@@ -2486,7 +2486,7 @@ async function updateConnectedMiners(){
   }
 }
 
-// ── Triple Stream Mining panel (Claymore-style 3-stream) ──
+// ── Trinity Mining panel (Claymore-style 3-stream) ──
 // v3.0.6 canonical 3 streams:
 //   Stream 1 — ZION (Deeksha + internal bonuses: keccak/sha3/profit/ncl/deeksha_lite/thermal_bonus)
 //   Stream 2 — GPU PROFIT (one GPU-capable AuxPoW coin: blake3/kheavyhash/ethash/kawpow/autolykos/zelhash/progpow/beamhash)
@@ -2494,7 +2494,7 @@ async function updateConnectedMiners(){
 // Pearl (pearlhash) is intentionally ignored — Pearl thread was removed in v3.0.6.
 function updateTripleStream(data){
   if(!data||!data.routing||!data.routing.sources){
-    const summary = document.getElementById('triple-stream-summary');
+    const summary = document.getElementById('trinity-summary');
     if(summary) summary.textContent='No routing data';
     return;
   }
@@ -2537,7 +2537,7 @@ function updateTripleStream(data){
   // Summary
   const totalAcc=zionAcc+gpuAcc+cpuAcc;
   const totalRej=(zionSub-zionAcc)+(gpuSub-gpuAcc)+(cpuSub-cpuAcc);
-  setText('triple-stream-summary',totalAcc+' acc / '+totalRej+' rej total');
+  setText('trinity-summary',totalAcc+' acc / '+totalRej+' rej total');
 }
 
 async function updatePoolConnectionHistory(){
@@ -2619,7 +2619,7 @@ async function updatePoolLeaderboard(){
       const onChainStr = onChain > 0 ? _zionFmt(onChain) : '—';
       const rankColor = i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-orange-400' : 'text-gray-400';
       const statusDot = m.active ? '<span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1"></span>' : '<span class="inline-block w-2 h-2 rounded-full bg-gray-600 mr-1"></span>';
-      // Triple Stream badges
+      // Trinity badges
       const streams = m.streams || {};
       const streamBadges = Object.entries(streams).filter(([k,v]) => (v.valid_shares||0)+(v.invalid_shares||0) > 0).map(([k,v]) => {
         const sValid = v.valid_shares || 0;
@@ -9664,7 +9664,7 @@ refreshAll = async function() {
   _refreshInFlight = true;
   try {
     await _origRefreshAll.apply(this, arguments);
-    // Triple Stream panel data comes from miners-dashboard endpoint (has routing.sources)
+    // Trinity panel data comes from miners-dashboard endpoint (has routing.sources)
     apiFetch('/api/pool/miners-dashboard', {}, 8000).then(d => {
       if (d && d.routing && typeof updateTripleStream === 'function') updateTripleStream(d);
     }).catch(() => {});

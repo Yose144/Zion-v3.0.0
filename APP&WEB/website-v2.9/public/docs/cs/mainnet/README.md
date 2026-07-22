@@ -1,7 +1,7 @@
-# ZION Mainnet — v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta
+# ZION Mainnet — v3.0.6 Trinity / Mainnet Beta
 
 > **Genesis #0 spuštěn:** 11. června 2026
-> **Aktuální veřejná linka:** v3.0.6 (Zion Trinity · Triple Stream)
+> **Aktuální veřejná linka:** v3.0.6 (Trinity)
 > **Runtime:** v3.0.6 Ekam Deeksha — kanonický, 6-desetinné flowers
 > **Stav:** Mainnet Beta — live, pool aktivní, mining v provozu
 > **Oficiální veřejný launch:** 31. prosince 2026
@@ -174,4 +174,4 @@ Po resetu byl `zion-node` dvakrát ukončen z důvodu nedostatku paměti (OOM), 
 
 ---
 
-*ZION TerraNova Mainnet • v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta • aktualizováno 22. 7. 2026*
+*ZION TerraNova Mainnet • v3.0.6 Trinity / Mainnet Beta • aktualizováno 22. 7. 2026*

@@ -1,12 +1,12 @@
-# ZION Miner v3.0.6 — Triple Stream + Auto-Tune Report
+# ZION Miner v3.0.6 — Trinity + Auto-Tune Report
 
 **Datum:** 2026-07-16
-**Verze:** 3.0.6 Triple Stream
+**Verze:** 3.0.6 Trinity
 **Status:** M1 8GB stabilní (auto-tune), Ryzen/Linux OpenCL pending ladění
 
 ---
 
-## 1. Triple Stream Architecture
+## 1. Trinity Architecture
 
 Miner těží **3 paralelní streamy** současně (Claymore-style dual+):
 
@@ -423,13 +423,13 @@ Recommended Settings:
 
 ---
 
-## 5. Claymore-Style Triple Stream Display
+## 5. Claymore-Style Trinity Display
 
 ### no-TUI mode (stdout)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  ZION v3.0.6 Triple Stream                              uptime 03:53 │
+│  ZION v3.0.6 Trinity                              uptime 03:53 │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  ZION       ZION / deeksha_lite_v1     3.82 MH/s  ███████  1/0        │
 │  GPU PROFIT EPIC / progpow              0.00 H/s   ░░░░░░░  0/0        │
@@ -465,8 +465,8 @@ session_status iter=362/1000000 uptime_s=233.6 accepted=1 rejected=0
 |--------|-------|
 | `V3/L1/miner/src/gpu_backend.rs` | `auto_tune_gpu_budget()`, `detect_available_memory_bytes()`, `detect_gpu_vram_bytes()`, `is_memory_hard_algorithm()`, `algorithm_extra_gpu_memory_bytes()`, `algorithm_fits_gpu_budget()`, `reset_gpu_memory_budget()`, VRAM-aware OpenCL/CUDA guard |
 | `V3/L1/miner/src/main.rs` | `reset_gpu_memory_budget()` na session start, per-stream stats do `maybe_print_status`, `set_gpu_ext_job`/`set_cpu_ext_job` v external threads, Claymore-style share logging |
-| `V3/L1/miner/src/ui.rs` | `print_triple_stream_stats()`, `StreamStats` struct, `log_ext_accepted()`, `log_ext_rejected()`, banner "Triple Stream" |
-| `V3/L1/miner/src/banner.rs` | Verze 3.0.6 Triple Stream |
+| `V3/L1/miner/src/ui.rs` | `print_trinity_stats()`, `StreamStats` struct, `log_ext_accepted()`, `log_ext_rejected()`, banner "Trinity" |
+| `V3/L1/miner/src/banner.rs` | Verze 3.0.6 Trinity |
 | `V3/L1/miner/src/interactive.rs` | `set_gpu_ext_job()`, `set_cpu_ext_job()`, `build_stream_stats()`, per-stream coin/algorithm tracking |
 
 ---
@@ -591,4 +591,4 @@ cargo build --release -p zion-miner --features native-verushash,native-randomx
 
 ---
 
-*Generated 2026-07-16 — ZION Miner v3.0.6 Triple Stream*
+*Generated 2026-07-16 — ZION Miner v3.0.6 Trinity*

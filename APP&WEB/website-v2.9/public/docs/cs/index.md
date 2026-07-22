@@ -1,13 +1,13 @@
 # ZION TerraNova — Veřejná dokumentace
 
 > *"In code we trust. 144B ZION. Not one satoshi more."*
-> **Aktuální veřejná linka: v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta.**
+> **Aktuální veřejná linka: v3.0.6 Trinity / Mainnet Beta.**
 > Genesis #0: 11. června 2026. Hard reset / nový genesis hash: 6.–7. července 2026.
 > Oficiální veřejný launch: 31. prosince 2026.
 
 ---
 
-## Živý stav — v3.0.6 Zion Trinity · Triple Stream
+## Živý stav — v3.0.6 Trinity
 
 ZION Mainnet běží jako **Mainnet Beta**. Aktuální runtime je **v3.0.6 Ekam Deeksha** s přesností na 6 desetinných míst a novým genesis hashem po hard resetu v červenci 2026.
 
@@ -98,4 +98,4 @@ ZION Mainnet běží jako **Mainnet Beta**. Aktuální runtime je **v3.0.6 Ekam 
 
 ---
 
-*ZION TerraNova veřejná dokumentace • v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta • aktualizováno 22. 7. 2026*
+*ZION TerraNova veřejná dokumentace • v3.0.6 Trinity / Mainnet Beta • aktualizováno 22. 7. 2026*

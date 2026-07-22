@@ -1,8 +1,8 @@
-# Triple-Stream E2E Fix Report — 2026-07-18
+# Trinity E2E Fix Report — 2026-07-18
 
 ## Souhrn
 
-Tento report shrnuje veškerou práci na triple-stream E2E testování (ZION + external GPU + external CPU) s reálnými pool targety. Obsahuje opravené bugy, aktuální stav každého streamu, a seznam zbývající práce.
+Tento report shrnuje veškerou práci na trinity E2E testování (ZION + external GPU + external CPU) s reálnými pool targety. Obsahuje opravené bugy, aktuální stav každého streamu, a seznam zbývající práce.
 
 ---
 

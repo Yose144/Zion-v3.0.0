@@ -1,7 +1,7 @@
-# ZION Mainnet — v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta
+# ZION Mainnet — v3.0.6 Trinity / Mainnet Beta
 
 > **Genesis #0 launched:** June 11, 2026
-> **Current public line:** v3.0.6 (Zion Trinity · Triple Stream)
+> **Current public line:** v3.0.6 (Trinity)
 > **Runtime:** v3.0.6 Ekam Deeksha — canonical, 6-decimal flowers
 > **Status:** Mainnet Beta — live, pool active, mining operational
 > **Official public launch:** 31 December 2026
@@ -174,4 +174,4 @@ After the reset, `zion-node` was OOM-killed twice because `accepted_blocks` and 
 
 ---
 
-*ZION TerraNova Mainnet • v3.0.6 Zion Trinity · Triple Stream / Mainnet Beta • updated 22 Jul 2026*
+*ZION TerraNova Mainnet • v3.0.6 Trinity / Mainnet Beta • updated 22 Jul 2026*

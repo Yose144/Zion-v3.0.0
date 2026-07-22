@@ -22,7 +22,7 @@ The multi-stream architecture is **functionally complete and canonical**. The co
 | 3 | TriGpuManager | ✅ DONE | Simplified to a **primary-only** manager; the main Deeksha loop uses `tri_gpu.primary()`, external/Pearl threads create their own OpenCL contexts | — |
 | 4 | Clean Thread Arch | ✅ DONE | `blake3/progpow/kawpow/autolykos` GPU threads collapsed into one generic `external_gpu_thread()`; `ext_cpu_thread` persistent; `ensure_algorithm` spam removed; `evrprogpow`/`meowpow`/`zelhash`/`beamhash` wired | Proper EVR/MEWC ProgPow parameters (currently KawPow fallback); BeamHash III GPU kernel |
 | 5 | Per-Stream Metrics | ✅ DONE | `draw_dashboard()` shows per-stream **hashrate + shares** for ZION / GPU-EXT / CPU-EXT; `HashrateTracker` records per-stream hashes (`zion_hashes`, `gpu_ext_hashes`, `cpu_ext_hashes`) | — |
-| 6 | Dashboard Integration | ✅ DONE | Triple Stream Mining panel in `dashboard.html`/`dashboard.js` wired to `/api/pool/miners-dashboard` routing sources; `app.py` `SUPPORTED_COINS` aligned with `ExternalCoin` enum | — |
+| 6 | Dashboard Integration | ✅ DONE | Trinity Mining panel in `dashboard.html`/`dashboard.js` wired to `/api/pool/miners-dashboard` routing sources; `app.py` `SUPPORTED_COINS` aligned with `ExternalCoin` enum | — |
 | 7 | Pool Routing Stats | ✅ DONE | `RoutingStats.snapshot_json()` / `snapshot_json_ext()` and `/stats` payload now include **all 18 revenue sources** defined in `ALL_REVENUE_SOURCES` | — |
 | 8 | Build/Deploy/Verify | ✅ DONE | `cargo check/test` clean for `zion-miner`, `zion-pool`, `zion-auxpow`; live Edge deployment on `62.171.141.136` verified | — |
 
@@ -214,7 +214,7 @@ pub cpu_ext_hps: f64,
 
 ## 4. Phase 6 — Dashboard 3-Stream Display
 
-> **Implementation Note:** This phase is complete. `dashboard.html`/`dashboard.js` already have a "Triple Stream Mining" panel. It was wired to read `data.routing.sources` from `/api/pool/miners-dashboard`. The per-source list was expanded to cover all 18 canonical revenue sources, and `app.py` `SUPPORTED_COINS` was aligned with the 16-coin `ExternalCoin` enum.
+> **Implementation Note:** This phase is complete. `dashboard.html`/`dashboard.js` already have a "Trinity Mining" panel. It was wired to read `data.routing.sources` from `/api/pool/miners-dashboard`. The per-source list was expanded to cover all 18 canonical revenue sources, and `app.py` `SUPPORTED_COINS` was aligned with the 16-coin `ExternalCoin` enum.
 
 ### Problem
 
@@ -348,7 +348,7 @@ The implementation is complete when:
 4. ✅ Persistent `ext_cpu_thread` runs alongside the main loop; `pearl_gpu_thread` is **disabled** in v3.0.6 (PRL jobs ignored, not yet debugged)
 5. ✅ `draw_dashboard()` shows per-stream hashrate + shares (ZION / GPU-EXT / CPU-EXT)
 6. ✅ Pool `/stats` exposes a `routing.sources` object covering all 18 revenue sources
-7. ✅ Dashboard reads `routing.sources` and renders the Triple Stream panel plus full per-source breakdown
+7. ✅ Dashboard reads `routing.sources` and renders the Trinity panel plus full per-source breakdown
 8. ✅ `ExternalCoin` enum and `SUPPORTED_COINS` list agree on the same 16 coins / default pools
 9. ✅ Live on Edge: ZION + GPU external (EPIC) + CPU external (VRSC) streams all producing shares; Pearl (PRL) stream disabled
 10. ✅ No log spam (`ensure_algorithm`, per-iteration thread creation)

@@ -156,7 +156,7 @@ hashrate 3.90 KH/s (Metal, work_size=1024)
 - VerusHash (VRSC) CPU mining active (target high, needs longer runtime)
 - System stable throughout test
 
-#### Test 2: Full triple-stream (optimal config, 8 min)
+#### Test 2: Full trinity (optimal config, 8 min)
 
 Config: `work_size=65536`, `algorithm=deeksha_lite_fire`, `threads=4`, 3 streams ON
 
@@ -250,7 +250,7 @@ now uses `meets_target` (plain BE comparison) matching C reference
 
 **Full report:** [`VerusHashReport.md`](./VerusHashReport.md)
 
-### Triple-Stream Workflow Diagram (Metal)
+### Trinity Workflow Diagram (Metal)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
