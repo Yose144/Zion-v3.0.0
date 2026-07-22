@@ -131,7 +131,7 @@ The deeksha kernel was already optimized in prior commits (see `docs/3.0.6/30khs
 - **34.12 KH/s peak** — exceeds the 28-30 KH/s target (RX 5700 XT reference)
 - 28-30 KH/s sustained
 
-In triple-stream mode (ZION + ZANO + VRSC), deeksha drops to ~17 KH/s because
+In trinity mode (ZION + ZANO + VRSC), deeksha drops to ~17 KH/s because
 the GPU is shared with ZANO (ProgPoWZ, duty=100% parallel). This is expected —
 the GPU hardware scheduler interleaves deeksha (compute-bound) with ProgPoWZ
 (memory-bound), and they complement each other.
@@ -178,7 +178,7 @@ cd V3 && cargo build --release -p zion-miner \
   --features gpu-opencl,native-hashers,native-verushash,native-randomx
 ```
 
-### Run (triple-stream: ZION GPU + ZANO GPU + VRSC CPU)
+### Run (trinity: ZION GPU + ZANO GPU + VRSC CPU)
 ```bash
 bash ~/Desktop/Start.sh
 ```

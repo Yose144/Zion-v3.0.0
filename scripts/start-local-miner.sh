@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-#  ZION V3 Miner — Triple Stream + Autotune Launcher
+#  ZION V3 Miner — Trinity + Autotune Launcher
 #  Spustí miner s autotune (vybere nejlepší algoritmus) + triple stream.
 #  Wallet se načte z nejnovejsi zalohy na plose.
 # ============================================================================
@@ -20,7 +20,7 @@ ZION_MINER_LOOPS="${ZION_MINER_LOOPS:-999999}"
 export ZION_INTERACTIVE="${ZION_INTERACTIVE:-1}"
 export ZION_TUI_WIDTH="${ZION_TUI_WIDTH:-60}"
 
-# ── Triple-Stream tuning ────────────────────────────────────────────────────
+# ── Trinity tuning ────────────────────────────────────────────────────
 # Hardware autotuning is now built into the miner binary!
 # The miner auto-detects GPU CUs, VRAM, CPU vendor/model, physical/logical cores,
 # and RAM, then computes optimal work sizes, thread count, AND nonce batch size.
@@ -190,9 +190,9 @@ echo "  GPU:    $BACKEND"
 echo "  Autotune: Hardware auto-detect ON | Algorithm: $ZION_MINER_ALGORITHM"
 if [[ "${ZION_AUTONOMOUS:-0}" == "1" ]]; then
     echo "  Autonomous: ON (auto-selects profit coins | electricity=\$${ZION_ELECTRICITY_PRICE}/kWh)"
-    echo "  Triple Stream: ZION GPU + AUTO GPU coin + AUTO CPU coin"
+    echo "  Trinity: ZION GPU + AUTO GPU coin + AUTO CPU coin"
 else
-    echo "  Triple Stream: ZION GPU (Deeksha) + ${ZION_STREAM2_FORCE_COIN:-ZANO} GPU + ${ZION_MINER_CPU_COIN:-VRSC} CPU"
+    echo "  Trinity: ZION GPU (Deeksha) + ${ZION_STREAM2_FORCE_COIN:-ZANO} GPU + ${ZION_MINER_CPU_COIN:-VRSC} CPU"
 fi
 echo "  Tuning: AUTO (detects GPU CUs/VRAM, CPU cores, RAM)"
 echo "  Sticky Header: ON (Claymore-style fixed metrics)"

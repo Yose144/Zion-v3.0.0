@@ -1,4 +1,4 @@
-//! Hardware auto-detection and triple-stream auto-configuration.
+//! Hardware auto-detection and trinity auto-configuration.
 //!
 //! When the user runs `zion mine auto`, this module:
 //! 1. Detects available GPU hardware (OpenCL / CUDA / Metal)

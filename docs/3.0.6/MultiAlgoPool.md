@@ -1,4 +1,4 @@
-# Multi-Algo Pool Report — Triple-Stream Mining & 24-Coin AuxPow Bridge
+# Multi-Algo Pool Report — Trinity Mining & 24-Coin AuxPow Bridge
 
 **Date:** 2026-07-17
 **Status:** Live (ZION GPU + XMR CPU working; EPIC GPU shares found but submission blocked by poll-loop race)

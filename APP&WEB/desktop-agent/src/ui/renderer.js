@@ -717,12 +717,12 @@ function setupControls() {
   const algoStatusEl = document.getElementById('algo-status');
   const gpuCheckbox = document.getElementById('gpu-checkbox');
   const backendStatusEl = document.getElementById('backend-status');
-  // ── Triple Stream coin selectors ──
+  // ── Trinity coin selectors ──
   const gpuCoinSelect = document.getElementById('gpu-coin-select');
   const gpuCoinSelectDashboard = document.getElementById('gpu-coin-select-dashboard');
   const cpuCoinSelect = document.getElementById('cpu-coin-select');
   const cpuCoinSelectDashboard = document.getElementById('cpu-coin-select-dashboard');
-  const tripleStreamCheckbox = document.getElementById('triple-stream-checkbox');
+  const tripleStreamCheckbox = document.getElementById('trinity-checkbox');
 
   const updateBackendStatus = (value) => {
     const labels = {
@@ -830,7 +830,7 @@ function setupControls() {
     }
   }
 
-  // ═══ Triple Stream coin selectors — bind to config ═══
+  // ═══ Trinity coin selectors — bind to config ═══
   // GPU coin (Stream 2) and CPU coin (Stream 3) are persisted in config and
   // forwarded to the V3 miner as --gpu-coin / --cpu-coin CLI flags. "auto"
   // means the pool's profit router decides.
@@ -1805,7 +1805,7 @@ function updateStats(stats) {
   // ---- CH3 Stream / GPU / Revenue ----
   updateCH3Dashboard(stats);
 
-  // ---- Triple Stream per-stream telemetry ----
+  // ---- Trinity per-stream telemetry ----
   updateTripleStreamPanel(stats);
 
   // ---- Mining Console status dot ----
@@ -2822,14 +2822,14 @@ function updateCH3Dashboard(stats) {
   }
 }
 
-// ═══ Triple Stream panel renderer (DeekshaChv3 parallel streaming) ═══
+// ═══ Trinity panel renderer (DeekshaChv3 parallel streaming) ═══
 // Renders per-stream hashrate, shares, coin, and algorithm for the 3-stream
 // dashboard cards. Reads `stats.streams` — an array of:
 //   {index, label, coin, algorithm, hashrate_10s, hashrate_60s,
 //    hashrate_15m, accepted, rejected, active}
 // When `streams` is empty/absent, the panel shows an idle state.
 function updateTripleStreamPanel(stats) {
-  const panel = document.getElementById('triple-stream-panel');
+  const panel = document.getElementById('trinity-panel');
   if (!panel) return;
 
   // Local hashrate formatter (mirrors the one in updateStats)
@@ -2843,7 +2843,7 @@ function updateTripleStreamPanel(stats) {
   };
 
   const streams = Array.isArray(stats.streams) ? stats.streams : [];
-  const statusEl = document.getElementById('triple-stream-status');
+  const statusEl = document.getElementById('trinity-status');
 
   // Panel visibility: always show, but reflect idle/active state
   if (statusEl) {

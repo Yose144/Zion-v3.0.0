@@ -212,7 +212,7 @@ export const CONFIG = {
   // ── App version ───────────────────────────────────────────────────────────
   VERSION: '3.0.6',
   BUILD_NUMBER: '8',
-  CODENAME: 'Zion Trinity · Triple Stream',
+  CODENAME: 'Trinity',
 };
 
 export default CONFIG;

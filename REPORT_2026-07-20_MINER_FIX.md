@@ -5,13 +5,13 @@
 > **Změn:** 1694 souborů, +636 058 / −17 020 řádků
 > **Hardware:** AMD RX 5700 XT (gfx1010, 6 GB), AMD RX Vega 64 (gfx900, 8 GB), Apple M1 (8-core GPU, Metal), NVIDIA RTX 3090 (CUDA), NVIDIA GTX 1080/1660 Ti (CUDA)
 > **Server:** `62.171.141.136` (Contabo VPS, `ssh zion-new`)
-> **Status:** ✅ Mainnet Beta — 15/15 služeb aktivních, triple-stream parallel mining LIVE
+> **Status:** ✅ Mainnet Beta — 15/15 služeb aktivních, trinity parallel mining LIVE
 
 ---
 
 ## TL;DR — Co se podařilo
 
-Tento týden transformoval ZION V3 z jednoduchého single-stream mineru na **plnohodnotný multi-algo merge-mining pool s 24+ externími coiny, triple-stream GPU miningem, autonomous profit routingem, a 100% share acceptance rate**.
+Tento týden transformoval ZION V3 z jednoduchého single-stream mineru na **plnohodnotný multi-algo merge-mining pool s 24+ externími coiny, trinity GPU miningem, autonomous profit routingem, a 100% share acceptance rate**.
 
 | Milestone | Před | Po |
 |---|---|---|
@@ -93,14 +93,14 @@ Tento týden transformoval ZION V3 z jednoduchého single-stream mineru na **pln
 
 ### 1.4 Apple M1 (Metal, 8 GB unified) — 376 → 3,676 H/s (9.8x)
 
-**Reference:** [`docs/3.0.6/M1_TRIPLE_STREAM_REPORT_2026-07-18.md`](./docs/3.0.6/M1_TRIPLE_STREAM_REPORT_2026-07-18.md)
+**Reference:** [`docs/3.0.6/M1_TRINITY_REPORT_2026-07-18.md`](./docs/3.0.6/M1_TRINITY_REPORT_2026-07-18.md)
 
 - **Root cause:** auto-tune počítal `budget_mib = 0` (CPU adjustment sežral celý budget) → `batch_size=128` → 376 H/s
 - **Fix:** `ZION_GPU_MEM_BUDGET_MIB=512` override → `batch_size=1024` → **3,676 H/s, 100% accept**
 
 ---
 
-## 2. Triple-Stream Mining Architecture
+## 2. Trinity Mining Architecture
 
 **Reference:** [`docs/3.0.6/FullRevenueAuxPow.md`](./docs/3.0.6/FullRevenueAuxPow.md), [`docs/3.0.6/AuxPowTriplePlan.md`](./docs/3.0.6/AuxPowTriplePlan.md), [`docs/3.0.6/3.0.6.md`](./docs/3.0.6/3.0.6.md)
 
@@ -295,7 +295,7 @@ Bugs fixed:
 
 ## 7. Autonomous Profit Routing
 
-**Reference:** [`docs/3.0.6/AutoupdateMiner.md`](./docs/3.0.6/AutoupdateMiner.md), [`docs/3.0.6/M1_TRIPLE_STREAM_REPORT_2026-07-18.md`](./docs/3.0.6/M1_TRIPLE_STREAM_REPORT_2026-07-18.md)
+**Reference:** [`docs/3.0.6/AutoupdateMiner.md`](./docs/3.0.6/AutoupdateMiner.md), [`docs/3.0.6/M1_TRINITY_REPORT_2026-07-18.md`](./docs/3.0.6/M1_TRINITY_REPORT_2026-07-18.md)
 
 - `AutonomousProfitRouter` — auto-selects profit coins by hardware compat
 - Live **WhatToMine API** + **NiceHash API** integration
@@ -430,9 +430,9 @@ Bugs fixed:
 | `VEGA_RIG_DEBUG_REPORT_2026-07-16.md` | Vega rig debug |
 | `VEGA_64_I066D_REFLASH_REPORT_2026-07-17.md` | Vega 64 reflash + 19.55 KH/s |
 | `VEGA_RIG_SIGILL_FIX_REPORT.md` | SIGILL fix na non-AVX CPU |
-| `M1_TRIPLE_STREAM_REPORT_2026-07-18.md` | M1 triple-stream + 9.8x boost |
-| `TRIPLE_STREAM_FIX_REPORT_2026-07-18.md` | Triple-stream E2E fixes |
-| `TRIPLE_STREAM_E2E_REPORT_2026-07-16.md` | SMOS Vega E2E |
+| `M1_TRINITY_REPORT_2026-07-18.md` | M1 trinity + 9.8x boost |
+| `TRINITY_FIX_REPORT_2026-07-18.md` | Triple-stream E2E fixes |
+| `TRINITY_E2E_REPORT_2026-07-16.md` | SMOS Vega E2E |
 | `EPIC_PROGPOW_SHARE_FIX_REPORT_2026-07-19.md` | EPIC ProgPow share fix |
 | `HOT_SWITCH_RTM_XMR_REPORT_2026-07-19.md` | RTM/XMR share acceptance |
 | `SESSION_REPORT_2026-07-19_GHOSTRIDER_GPU.md` | GhostRider GPU 15/15 |

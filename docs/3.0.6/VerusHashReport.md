@@ -8,7 +8,7 @@
 
 ## 1. Shrnutí
 
-Tento report dokumentuje kompletní práci na integraci VerusHash v2.2 CPU miningu pro VRSC (Verus Coin) v rámci ZION triple-stream mineru. Práce probíhala na Apple M1 (macOS aarch64) a Edge pool serveru (`62.171.141.136`).
+Tento report dokumentuje kompletní práci na integraci VerusHash v2.2 CPU miningu pro VRSC (Verus Coin) v rámci ZION trinity mineru. Práce probíhala na Apple M1 (macOS aarch64) a Edge pool serveru (`62.171.141.136`).
 
 ### Klíčové výsledky
 

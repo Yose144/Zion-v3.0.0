@@ -46,8 +46,9 @@ fn main() {
         // cross-compile from Apple Silicon without an x86_64 libomp).
         // The DAG generation falls back to single-threaded (still works).
         let openmp_disabled = std::env::var("ZION_DISABLE_OPENMP").as_deref() == Ok("1");
-        #[cfg(target_os = "macos")]
-        if !openmp_disabled {
+        // Use CARGO_CFG_TARGET_OS for cross-compilation awareness.
+        let target_os_for_omp = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+        if target_os_for_omp == "macos" && !openmp_disabled {
             // Apple clang supports -Xpreprocessor -fopenmp + -lomp
             build.flag("-Xpreprocessor");
             build.flag("-fopenmp");
@@ -80,8 +81,12 @@ fn main() {
 
         // Link OpenMP runtime library (libgomp on Linux).
         // NOTE: Disabled on Linux to avoid SIGILL on CPUs without AVX.
-        #[cfg(target_os = "macos")]
-        if !openmp_disabled {
+        // IMPORTANT: Use CARGO_CFG_TARGET_OS (cross-compilation aware)
+        // instead of #[cfg(target_os = "macos")] which evaluates the HOST
+        // OS, not the TARGET OS — causing -lomp to be linked on Windows
+        // when cross-compiling from macOS.
+        let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+        if target_os == "macos" && !openmp_disabled {
             println!("cargo:rustc-link-lib=omp");
         }
 

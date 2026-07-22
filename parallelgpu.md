@@ -6,7 +6,7 @@
 
 ## Summary
 
-Optimized the OpenCL ProgPoWZ kernel for the ZION triple-stream miner. Achieved
+Optimized the OpenCL ProgPoWZ kernel for the ZION trinity miner. Achieved
 **+54% ZANO hashrate** (4.48 → 6.89 MH/s) and **+81% VRSC hashrate** (4.09 → 7.40
 MH/s) by re-enabling AMD hardware lane shuffle (`ds_bpermute`), increasing
 work-group size to 256, and fixing wave32 detection for RDNA1+ GPUs.

@@ -11,7 +11,7 @@ This directory contains the root-level reports, plans and session notes that wer
 | Agent rules | [`AGENTS.md`](../../AGENTS.md) |
 | Main README | [`README.md`](../../README.md) |
 | Current version overview | [`3.0.7.md`](../../3.0.7.md) |
-| Triple Stream All Green plan | [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](../../TRIPLE_STREAM_ALL_GREEN_PLAN.md) |
+| Trinity All Green plan | [`TRINITY_ALL_GREEN_PLAN.md`](../../TRINITY_ALL_GREEN_PLAN.md) |
 
 ## 3.0.6 archive contents
 
@@ -30,7 +30,7 @@ This directory contains the root-level reports, plans and session notes that wer
 - [`AUTOTUNE_STICKY_REPORT_2026-07-16.md`](./AUTOTUNE_STICKY_REPORT_2026-07-16.md) — hardware autotune + sticky header
 
 ### Mining reports by hardware
-- [`M1_TRIPLE_STREAM_REPORT_2026-07-18.md`](./M1_TRIPLE_STREAM_REPORT_2026-07-18.md) — Apple M1 tuned results
+- [`M1_TRINITY_REPORT_2026-07-18.md`](./M1_TRINITY_REPORT_2026-07-18.md) — Apple M1 tuned results
 - [`VegaRig.md`](./VegaRig.md) — Vega 64 SMOS configuration guide
 - [`VEGA_64_I066D_REFLASH_REPORT_2026-07-17.md`](./VEGA_64_I066D_REFLASH_REPORT_2026-07-17.md) — Vega reflash to i066d image
 - [`VEGA_RIG_DEBUG_REPORT_2026-07-16.md`](./VEGA_RIG_DEBUG_REPORT_2026-07-16.md) — Vega EPIC/BMI2 debug
@@ -49,8 +49,8 @@ This directory contains the root-level reports, plans and session notes that wer
 
 ### Session & operational reports
 - [`SESSION_REPORT_2026-07-16.md`](./SESSION_REPORT_2026-07-16.md)
-- [`TRIPLE_STREAM_E2E_REPORT_2026-07-16.md`](./TRIPLE_STREAM_E2E_REPORT_2026-07-16.md)
-- [`TRIPLE_STREAM_FIX_REPORT_2026-07-18.md`](./TRIPLE_STREAM_FIX_REPORT_2026-07-18.md)
+- [`TRINITY_E2E_REPORT_2026-07-16.md`](./TRINITY_E2E_REPORT_2026-07-16.md)
+- [`TRINITY_FIX_REPORT_2026-07-18.md`](./TRINITY_FIX_REPORT_2026-07-18.md)
 - [`PPLNS_Composite_Key_Fix_Report.md`](./PPLNS_Composite_Key_Fix_Report.md)
 - [`bridgebug.md`](./bridgebug.md)
 - [`AUDIT_CODE_VS_DOCS_2026-07-15.md`](./AUDIT_CODE_VS_DOCS_2026-07-15.md)

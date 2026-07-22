@@ -1,4 +1,4 @@
-# Desktop Agent — Triple Stream Integration Update
+# Desktop Agent — Trinity Integration Update
 
 **Datum:** 2026-07-19
 **Autor:** Devin (GLM-5.2 High)
@@ -9,7 +9,7 @@
 
 ## Co bylo uděláno
 
-Kompletní integrace **DeekshaChv3 Triple Stream** architektury do desktop agenta.
+Kompletní integrace **DeekshaChv3 Trinity** architektury do desktop agenta.
 Agent dnes umí paralelně těžit ZION (GPU) + externí GPU coin (Stream 2) + externí CPU coin (Stream 3) současně, vizualizovat per-stream telemetrii a nechat uživatele vybrat coiny.
 
 ### Problém (před změnami)
@@ -85,15 +85,15 @@ tripleStream: true,   // master toggle
 - `gpu-coin-select-dashboard` — 12 GPU coinů: Auto, KAS, ALPH, DCR, ERG, ETC, RVN, CLORE, MEWC, EVR, FLUX, EPIC
 - `cpu-coin-select-dashboard` — 4 CPU coiny: Auto, VRSC, XMR, RTM
 
-**Triple Stream Panel** (index.html:4123-4176) — nová sekce pod stats gridem:
+**Trinity Panel** (index.html:4123-4176) — nová sekce pod stats gridem:
 - 3 stream karty (Stream 1 ZION / Stream 2 GPU Profit / Stream 3 CPU Profit)
 - Každá karta: coin badge, hashrate, algoritmus, shares (accepted/rejected), status (active/inactive/skipped)
 - Status pill v headeru: "Idle" / "Single Stream" / "N/3 active"
 
-**Settings → Performance** (index.html:5260-5307) — nová "Triple Stream" settings card:
+**Settings → Performance** (index.html:5260-5307) — nová "Trinity" settings card:
 - GPU coin select s algoritmus popisky (KAS — kheavyhash, ALPH — blake3, ...)
 - CPU coin select
-- Triple Stream toggle checkbox
+- Trinity toggle checkbox
 
 **CSS** (index.html:1085-1198) — kompletní stylování:
 - Barvy per stream: zelená/ZION, indigo/GPU, amber/CPU
@@ -234,7 +234,7 @@ git subtree push --prefix=public public main
 |--------|-------|
 | `V3/L1/miner/src/main.rs` | +`StreamStatsInfo` struct, +`streams` pole v `MinerMetricsSnapshot`, +`set_streams()`, exponováno v stats file + HTTP /stats, bug fix `share_target_bytes` |
 | `APP&WEB/desktop-agent/src/main.js` | +`cpuCoin`/`gpuCoin`/`tripleStream` v DEFAULT_CONFIG, +CLI flagy `--algorithm`/`--cpu-coin`/`--gpu-coin`, `ZION_ENABLE_STREAM_SWITCH=1`, čtení `streams` z /stats + stats file |
-| `APP&WEB/desktop-agent/src/ui/index.html` | +2 coin selecty v dashboardu, +Triple Stream Panel (3 karty), +Triple Stream settings card, +CSS |
+| `APP&WEB/desktop-agent/src/ui/index.html` | +2 coin selecty v dashboardu, +Trinity Panel (3 karty), +Trinity settings card, +CSS |
 | `APP&WEB/desktop-agent/src/ui/renderer.js` | +`updateTripleStreamPanel()`, +coin select binding, +streams v `buildStatsSignature()` |
 | `agentdeskupdate.md` | tento dokument |
 
