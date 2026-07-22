@@ -46,13 +46,20 @@ Optimized GPU kernels for AMD RDNA (RX 5000/6000 series):
 
 ### Which file should I download?
 
-| Your system | File | Size |
-|-------------|------|------|
-| **Linux** (Ubuntu, Debian, etc.) | `zion-miner-linux-x86_64.tar.gz` | ~5 MB |
+| Your system | File | Size | SHA256 |
+|-------------|------|------|--------|
+| **Linux x86_64** (Ubuntu, Debian, etc.) | `zion-miner-linux-x86_64.tar.gz` | 3.4 MB | `e4bcc7f4…` |
+| **Linux ARM64** (Raspberry Pi 4/5, Ampere, Graviton) | `zion-miner-linux-aarch64.tar.gz` | 2.6 MB | `d44b1aa2…` |
+| **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-miner-macos-aarch64.tar.gz` | 3.3 MB | `2f9e330c…` |
+| **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` | 3.4 MB | `76e47559…` |
+| **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.tar.gz` | 3.6 MB | `2af84f14…` |
 
-> **This release is Linux x86_64 only.** macOS and Windows builds will be
-> available in v3.0.7. If you need macOS or Windows now, use v3.0.5-beta
-> (community CLI with basic mining).
+> **All 5 platforms are now available!** Full SHA256 checksums are in
+> `SHA256SUMS.txt` (download alongside the binary).
+>
+> **GPU support:** Linux x86_64 and macOS builds include OpenCL/Metal GPU
+> acceleration. Windows and Linux ARM64 builds are CPU-only (GPU support
+> coming in a future release).
 
 ---
 
@@ -61,7 +68,7 @@ Optimized GPU kernels for AMD RDNA (RX 5000/6000 series):
 ### Step 1: Download and extract
 
 ```bash
-# Download
+# Download (Linux x86_64 example — choose the right file for your platform)
 wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-beta/zion-miner-linux-x86_64.tar.gz
 
 # Verify SHA256
@@ -72,6 +79,12 @@ sha256sum zion-miner-linux-x86_64.tar.gz
 tar xzf zion-miner-linux-x86_64.tar.gz
 chmod +x zion-miner
 ```
+
+> **Windows:** Extract the `.tar.gz` with 7-Zip or `tar -xzf` (Windows 10+
+> has built-in `tar`). The binary is `zion-miner.exe`.
+>
+> **macOS:** `tar xzf zion-miner-macos-aarch64.tar.gz && chmod +x zion-miner`
+> (Apple Silicon) or `zion-miner-macos-x86_64.tar.gz` (Intel).
 
 ### Step 2: Create your wallet
 
@@ -146,12 +159,19 @@ chmod +x zion
 |-----|---------|-------------|
 | **AMD** | RX 560 (4GB) | RX 5600 XT / 5700 XT (6GB+) |
 | **NVIDIA** | GTX 1060 (6GB) | RTX 3060 (12GB) |
+| **Apple Silicon** | M1 (8-core GPU) | M2/M3/M4 Pro+ |
 | **RAM** | 8GB | 16GB+ |
-| **OS** | Ubuntu 20.04+ | Ubuntu 22.04+ |
+| **OS** | Ubuntu 20.04+ / macOS 12+ / Win 10+ | Latest |
 | **Driver** | AMDPRO 22.x+ / NVIDIA 525+ | Latest |
 
 > **AMD users:** Install AMDPRO (ROCm) driver for best performance.
 > OpenCL 2.0+ required.
+>
+> **macOS users:** Apple Metal is used for GPU acceleration on Apple Silicon.
+> No driver installation needed.
+>
+> **Windows users:** This build is CPU-only. GPU support (OpenCL) will be
+> added in a future release.
 
 ---
 
