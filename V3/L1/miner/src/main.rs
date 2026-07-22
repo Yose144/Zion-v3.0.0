@@ -921,6 +921,16 @@ fn main() -> Result<()> {
         VERBOSE.store(true, Ordering::Relaxed);
     }
 
+    // ── SMOS / non-TTY quiet mode ──
+    // When ZION_NO_STICKY=1 is set (SMOS/Docker/pipe mode), activate QUIET
+    // immediately to suppress verbose per-iteration log lines (stream_weights,
+    // external_stream, ext_gpu_rx_empty, etc.) that would push the compact
+    // dashboard out of SMOS's 19-line ring buffer.
+    if std::env::var("ZION_NO_STICKY").map(|v| v == "1" || v == "true").unwrap_or(false) {
+        QUIET.store(true, Ordering::Relaxed);
+        std::env::set_var("ZION_QUIET", "1");
+    }
+
     // ── Auto mode banner ──
     let auto_mode = std::env::var("ZION_AUTO_MODE")
         .map(|v| v == "1" || v == "true")
