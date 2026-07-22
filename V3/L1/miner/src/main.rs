@@ -3625,10 +3625,7 @@ fn maybe_send_adaptive_update(
 ) {
     let atx = match adaptive_tx {
         Some(tx) => tx,
-        None => {
-            eprintln!("[DEBUG] maybe_send_adaptive_update: adaptive_tx=None");
-            return;
-        }
+        None => return,
     };
     let now = std::time::Instant::now();
     let update_interval = std::env::var("ZION_ADAPTIVE_UPDATE_INTERVAL_S")
@@ -3689,13 +3686,16 @@ fn external_gpu_thread(
     let mut nonce_offset: u64 = 0;
     let mut backend_init_failures: u32 = 0;
     let mut skipped_algos: std::collections::HashSet<String> = std::collections::HashSet::new();
-    // Use a large batch_size — mine_batch_raw caps it at the GPU's actual
-    // work_size internally, so this is safe.  Default 16M for ProgPoWZ to
-    // match reference miner hashrates (11-20 MH/s on RX 5600 XT).
+    // Batch size for external GPU mining.  On a SINGLE GPU shared between
+    // Stream 1 (ZION deeksha) and Stream 2 (ZANO ProgPoWZ), a large batch
+    // (16M) blocks the GPU for 13-30s, starving Stream 1 and dropping ZION
+    // hashrate from ~13 KH/s to ~7 KH/s.  Default 2M = ~1.5s on RX 5700 XT,
+    // giving Stream 1 enough GPU time.  On a DEDICATED GPU (no Stream 1),
+    // set ZION_EXT_GPU_BATCH_SIZE=16777216 for maximum hashrate.
     let batch_size = std::env::var("ZION_EXT_GPU_BATCH_SIZE")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(16_777_216u64);
+        .unwrap_or(2_097_152u64); // 2M default for shared GPU
     // Optional time-based duty cycle: target % of wall-clock GPU time for Stream 2.
     // 50 = golden 50/50 split. Falls back to adaptive/static logic if not set.
     let time_duty_pct: Option<u64> = std::env::var("ZION_EXT_GPU_TIME_DUTY_PCT")
