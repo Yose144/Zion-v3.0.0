@@ -1,7 +1,7 @@
 # BeamHash III GPU Solver — Readiness Report
 
-> Status: **ready for first live test on AMD RX 5600 (6 GB VRAM)**  
-> Commit: `b7873f321`  
+> Status: **verifier fix applied; ready for first live test on AMD RX 5600 (6 GB VRAM)**  
+> Commit: `b7873f321` (OpenCL kernel integration); verifier alignment + unit tests in this commit  
 > Author: Devin integration  
 
 ## What is implemented
@@ -21,7 +21,11 @@
 
 3. **`beamhash.rs`** — `compute_prepow()` is now `pub(crate)` so the GPU solver can derive the 4-word prePow state from `header || nonce`.
 
-4. **Debug environment** `edge-deploy/config/debug-beam-environment.sh`  
+4. **`beamhash.rs` verifier / solver alignment** — `WorkBits::apply_mix` now uses an 8-word (`[u64; 8]`) temporary matching the upstream `beamHashIII_impl.cpp` `std::bitset<512>`; it copies all 448 work bits to the low words and mixes all 8 chunks without silently discarding index-tree padding. `apply_mix_rem_len` and `constructor_rem_len` helpers corrected for rounds 4/5. New unit tests `test_rem_len_helpers_match_reference` and `test_apply_mix_matches_upstream_reference` pass.
+
+5. **BeamStratum client handling** in `AuXpow/src/auxpow_client.rs` — matches response `id` by exact string (e.g. `"login"`) and dispatches `job` / `cancel` notifications for BeamStratum.
+
+6. **Debug environment** `edge-deploy/config/debug-beam-environment.sh`  
    Isolated from the Edge main pool. Sets:
    - `ZION_POOL_AUXPOW_ENABLED=1`
    - `ZION_POOL_AUXPOW_COIN=BEAM`
@@ -30,14 +34,14 @@
 ## Build / check commands
 
 ```bash
-cd /Users/yeshuae/Projects/2.9.6
+cd /home/zionserver/2.9.6-main
 
-cargo check -p zion-auxpow --features gpu-opencl
-cargo check -p zion-miner --features gpu-opencl,native-hashers
-cargo check -p zion-pool-server
+cargo test -p zion-auxpow --release --lib beamhash
+cargo build --release -p zion-miner --features gpu-opencl
 ```
 
-All three passed before commit `b7873f321`.
+- `cargo test` passes 11/11 `beamhash` unit tests (including the new upstream-reference tests).
+- `cargo build --release -p zion-miner --features gpu-opencl` produces `./target/release/zion-miner`.
 
 ## How to test on RX 5600
 
@@ -101,8 +105,8 @@ On integrated / APU graphics or GPUs with < 4.5 GB the buffer allocation will fa
 
    **Workaround for isolated GPU testing:** the solver can still run and validate locally; the `auxpow_gpu_share_found` log proves the kernel is working.
 
-2. **Header padding**  
-   `opencl_external::mine_batch()` pads short headers to 80 bytes before calling `GpuMiner::mine()`. For Beam the pre-PoW header is the raw `input` from stratum (often 32 bytes). Padding with zeros will produce a wrong `prePow` and no valid solutions. For real e2e the miner path must call `GpuMiner::mine()` with the raw header.
+2. **Header padding (already handled in V3 miner)**  
+   `V3/L1/miner/src/main.rs` already marks `beamhash` / `beamhash_beam` for `use_raw_header`, so the solver receives the raw pre-PoW header bytes via `mine_batch_raw()`. For ad-hoc testing of `GpuMiner` directly, pass the raw header and do not pad to 80 bytes.
 
 3. **Result parsing**  
    The kernel writes at most 10 solutions into the 324 `uint` results buffer. The host parses them as `u32[4 + pos*32 .. 4 + (pos+1)*32]`, takes the first 100 bytes, and runs `hash_beamhash(full_header, indices_100)`.
@@ -112,9 +116,11 @@ On integrated / APU graphics or GPUs with < 4.5 GB the buffer allocation will fa
 - `AuXpow/csrc/opencl/beamhash_solver.cl` (new)
 - `AuXpow/src/gpu_miner.rs`
 - `AuXpow/src/beamhash.rs`
+- `AuXpow/src/auxpow_client.rs`
 - `edge-deploy/config/debug-beam-environment.sh` (new)
 - `AGENTS.md`
-- `docs/3.0.6/FullRevenueAuxPow.md`
+- `BeamReady.md`
+- `StatusV3.md`
 
 ## Next steps
 

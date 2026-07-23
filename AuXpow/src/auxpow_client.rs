@@ -689,7 +689,8 @@ impl AuxPowClient {
         }
 
         // Read lines until we get a response with matching id (skip notifications)
-        let req_id = req.get("id").and_then(|v| v.as_i64());
+        let req_id_i64 = req.get("id").and_then(|v| v.as_i64());
+        let req_id_str = req.get("id").and_then(|v| v.as_str());
         let deadline = Instant::now() + Duration::from_secs(60);
         loop {
             let remaining = deadline.saturating_duration_since(Instant::now());
@@ -720,14 +721,26 @@ impl AuxPowClient {
             if self.protocol == StratumProtocol::EpicStratum {
                 println!("auxpow: EPIC raw response: {}", line_str);
             }
+            // Debug: log raw response for BEAM while validating BeamStratum
+            if self.protocol == StratumProtocol::BeamStratum {
+                println!("auxpow: BEAM raw response: {}", line_str);
+            }
             // Check if this is a response (has "id" matching) or a notification.
-            // EPIC pool sends ids as strings ("0", "1", etc.), so we check both
-            // integer and string representations.
-            let resp_id = parsed.get("id").and_then(|v| {
+            // EPIC pool sends ids as strings ("0", "1", etc.), Beam uses the
+            // non-numeric string "login", so we match by normalized integer id
+            // *or* exact string id. Messages with a "method" field are
+            // notifications or EPIC method-tagged responses (handled below).
+            let resp_id_i64 = parsed.get("id").and_then(|v| {
                 v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
             });
-            if let Some(id) = resp_id {
-                if req_id.is_some() && id == req_id.unwrap() {
+            let resp_id_str = parsed.get("id").and_then(|v| v.as_str());
+            if let Some(id) = resp_id_i64 {
+                if req_id_i64 == Some(id) {
+                    return Ok(parsed);
+                }
+            }
+            if let (Some(r), Some(s)) = (req_id_str, resp_id_str) {
+                if r == s {
                     return Ok(parsed);
                 }
             }
@@ -2146,6 +2159,30 @@ impl AuxPowClient {
                         Err(e) => {
                             warn!("AuxPow: cryptonote job parse error for {}: {}", self.profile.coin, e);
                         }
+                    }
+                }
+                "job" if self.protocol == StratumProtocol::BeamStratum => {
+                    // BeamStratum: server pushes `job` notifications with input,
+                    // id, height, difficulty, nonceprefix.
+                    match self.parse_beam_job(&msg).await {
+                        Ok(job) => {
+                            debug!(
+                                "AuxPow: received BEAM job {} height={} for {}",
+                                job.job_id, job.block_number.unwrap_or(0), self.profile.coin
+                            );
+                            *self.current_job.lock().await = Some(job);
+                            self.job_notify.notify_waiters();
+                        }
+                        Err(e) => {
+                            warn!("AuxPow: BEAM job parse error for {}: {}", self.profile.coin, e);
+                        }
+                    }
+                }
+                "cancel" if self.protocol == StratumProtocol::BeamStratum => {
+                    // Beam Stratum: server cancels a job by id.
+                    if let Some(id) = msg.get("id").and_then(|v| v.as_str()) {
+                        println!("auxpow: BEAM job cancelled: id={}", id);
+                        *self.current_job.lock().await = None;
                     }
                 }
                 // IronFish stratum v2: mining.notify with body {miningRequestId, header}
