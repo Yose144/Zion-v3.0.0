@@ -1919,3 +1919,4 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 
 - **Important:** `public/` must be copied into the runtime directory; otherwise static files (e.g. `/docs/WP/*.md`, images, icons) are not served by the container.
 - **Public assets `public/docs/WP/`** must stay in sync with the public `docs/WP` subtree. Use `docs/WP-Mainet/regenerate_pdfs.py` (requires `fpdf2`) to regenerate PDFs and copy them to `public/docs/WP/` and `APP&WEB/website-v2.9/public/docs/WP/`. After editing `public/`, run `git subtree push --prefix=public public main`.
+- **Service worker:** `public/sw.js` is intentionally a kill-switch that clears all caches and unregisters itself. `ServiceWorkerRegistration.tsx` unregisters any existing SWs. Do not re-enable aggressive `cache-first` SW strategies — they caused blank pages after deploy when stale HTML referenced removed `/_next/static/` assets.
