@@ -33,8 +33,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'Roadmap to ZION 3.1.0 Mainnet Alpha — from Trinity to a clean mainnet',
     },
     summary: {
-      cs: 'ZION 3.0.6 Trinity je venku a síť běží. Nyní míříme k 3.1.0 Mainnet Alpha: 3.0.7 „All Green“ → 3.0.8 „Full Stack Stable“ → 3.0.9 „Pre-Alpha Hardening“ → 3.1.0. Pokud síť zůstane bez kritických chyb, další hard reset nebude nutný — současný genesis hash je trvalý. Pracujeme na všech známých bugech, ladíme externí coiny a připravujeme repozitář pro masivní miner onboarding.',
-      en: 'ZION 3.0.6 Trinity is live and the network is running. We are now heading toward 3.1.0 Mainnet Alpha: 3.0.7 “All Green” → 3.0.8 “Full Stack Stable” → 3.0.9 “Pre-Alpha Hardening” → 3.1.0. If the network stays free of critical bugs, no further hard reset will be needed — the current genesis hash is permanent. We are working through every known issue, tuning external coins, and preparing the repository for large-scale miner onboarding.',
+      cs: 'ZION 3.0.6 Trinity je venku a síť běží. Nyní míříme k 3.1.0 Mainnet Alpha: 3.0.7 „All Green“ → 3.0.8 „Full Stack Stable“ → 3.0.9 „Pre-Alpha Hardening“ → 3.1.0. Pokud síť zůstane bez kritických chyb, další hard reset nebude nutný — současný genesis hash je trvalý. Pracujeme na všech známých bugech a připravujeme repozitář pro masivní miner onboarding.',
+      en: 'ZION 3.0.6 Trinity is live and the network is running. We are now heading toward 3.1.0 Mainnet Alpha: 3.0.7 “All Green” → 3.0.8 “Full Stack Stable” → 3.0.9 “Pre-Alpha Hardening” → 3.1.0. If the network stays free of critical bugs, no further hard reset will be needed — the current genesis hash is permanent. We are working through every known issue and preparing the repository for large-scale miner onboarding.',
     },
     href: '/whitepapers',
   },
