@@ -6,8 +6,13 @@ export default function ServiceWorkerRegistration() {
   useEffect(() => {
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register('/sw.js')
-        .catch((err) => console.error('SW registration failed:', err));
+        .getRegistrations()
+        .then((registrations) => {
+          for (const registration of registrations) {
+            registration.unregister();
+          }
+        })
+        .catch((err) => console.error('SW unregister failed:', err));
     }
   }, []);
 
