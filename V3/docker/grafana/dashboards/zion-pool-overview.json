@@ -9,7 +9,7 @@
     {
       "title": "Active Miner Sessions",
       "type": "stat",
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
       "targets": [
         { "expr": "zion_pool_active_sessions", "legendFormat": "sessions", "refId": "A" }
       ],
@@ -23,25 +23,74 @@
     {
       "title": "Uptime",
       "type": "stat",
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
       "targets": [
         { "expr": "zion_pool_uptime_seconds", "legendFormat": "uptime", "refId": "A" }
       ],
       "fieldConfig": { "defaults": { "unit": "s" } }
     },
     {
-      "title": "Total Shares (Accepted / Rejected)",
+      "title": "Pool Hashrate (live)",
       "type": "stat",
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
       "targets": [
-        { "expr": "zion_pool_total_accepted", "legendFormat": "accepted", "refId": "A" },
-        { "expr": "zion_pool_total_submits - zion_pool_total_accepted", "legendFormat": "rejected", "refId": "B" }
+        { "expr": "zion_pool_hashrate_hps", "legendFormat": "live", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "Hs" } }
+    },
+    {
+      "title": "Accept Rate",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "zion_pool_accept_rate_pct", "legendFormat": "accept%", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [
+        { "color": "red", "value": null },
+        { "color": "yellow", "value": 90 },
+        { "color": "green", "value": 95 }
+      ]}}}
+    },
+    {
+      "title": "Pool Luck (64 blocks)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "targets": [
+        { "expr": "zion_pool_luck_pct", "legendFormat": "luck%", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [
+        { "color": "red", "value": null },
+        { "color": "yellow", "value": 80 },
+        { "color": "green", "value": 100 }
+      ]}}}
+    },
+    {
+      "title": "Orphan Rate",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "targets": [
+        { "expr": "zion_pool_orphan_rate * 100", "legendFormat": "orphan%", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [
+        { "color": "green", "value": null },
+        { "color": "yellow", "value": 5 },
+        { "color": "red", "value": 10 }
+      ]}}}
+    },
+    {
+      "title": "Blocks Total / Confirmed / Orphaned",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 4 },
+      "targets": [
+        { "expr": "zion_pool_blocks_total", "legendFormat": "total", "refId": "A" },
+        { "expr": "zion_pool_blocks_confirmed_total", "legendFormat": "confirmed", "refId": "B" },
+        { "expr": "zion_pool_blocks_orphaned_total", "legendFormat": "orphaned", "refId": "C" }
       ]
     },
     {
       "title": "PPLNS Window Usage",
       "type": "gauge",
-      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 4 },
       "targets": [
         { "expr": "zion_pplns_window_used / zion_pplns_window_size", "legendFormat": "fill %", "refId": "A" }
       ],
@@ -52,18 +101,83 @@
       ]}}}
     },
     {
-      "title": "Shares Over Time",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "title": "Registered Miners",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 4 },
       "targets": [
-        { "expr": "rate(zion_pool_total_accepted[5m])", "legendFormat": "accepted/s", "refId": "A" },
-        { "expr": "rate(zion_pool_total_submits[5m]) - rate(zion_pool_total_accepted[5m])", "legendFormat": "rejected/s", "refId": "B" }
+        { "expr": "zion_pplns_registered_miners", "legendFormat": "miners", "refId": "A" }
+      ]
+    },
+    {
+      "title": "Share Rate (shares/sec)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 4 },
+      "targets": [
+        { "expr": "zion_pool_share_rate_per_sec", "legendFormat": "shares/s", "refId": "A" }
+      ]
+    },
+    {
+      "title": "Connection Rate (conn/sec)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 4 },
+      "targets": [
+        { "expr": "zion_pool_conn_rate_per_sec", "legendFormat": "conn/s", "refId": "A" }
+      ]
+    },
+    {
+      "title": "Pool Hashrate Over Time (live / 1h / 24h)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "zion_pool_hashrate_hps", "legendFormat": "live", "refId": "A" },
+        { "expr": "zion_pool_hashrate_1h_hps", "legendFormat": "1h", "refId": "B" },
+        { "expr": "zion_pool_hashrate_24h_hps", "legendFormat": "24h", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "Hs" } }
+    },
+    {
+      "title": "Shares Over Time (accepted/s / rejected/s / stale/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "rate(zion_pool_accepted_total[5m])", "legendFormat": "accepted/s", "refId": "A" },
+        { "expr": "rate(zion_pool_rejected_total[5m])", "legendFormat": "rejected/s", "refId": "B" },
+        { "expr": "rate(zion_pool_stale_total[5m])", "legendFormat": "stale/s", "refId": "C" }
+      ]
+    },
+    {
+      "title": "Blocks Found Over Time",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "increase(zion_pool_blocks_total[1h])", "legendFormat": "blocks/hour", "refId": "A" },
+        { "expr": "increase(zion_pool_blocks_confirmed_total[1h])", "legendFormat": "confirmed/hour", "refId": "B" },
+        { "expr": "increase(zion_pool_blocks_orphaned_total[1h])", "legendFormat": "orphaned/hour", "refId": "C" }
+      ]
+    },
+    {
+      "title": "Pool Luck & Orphan Rate Trend",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 16 },
+      "targets": [
+        { "expr": "zion_pool_luck_pct", "legendFormat": "luck %", "refId": "A" },
+        { "expr": "zion_pool_orphan_rate * 100", "legendFormat": "orphan %", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "title": "Connection & Share Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 16 },
+      "targets": [
+        { "expr": "zion_pool_share_rate_per_sec", "legendFormat": "shares/s", "refId": "A" },
+        { "expr": "zion_pool_conn_rate_per_sec", "legendFormat": "conn/s", "refId": "B" }
       ]
     },
     {
       "title": "PPLNS Payouts",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
       "targets": [
         { "expr": "zion_pplns_payout_rounds", "legendFormat": "rounds", "refId": "A" },
         { "expr": "zion_pplns_total_paid_flowers / 1e15", "legendFormat": "paid ZION", "refId": "B" }
@@ -71,25 +185,26 @@
       "fieldConfig": { "defaults": {} }
     },
     {
-      "title": "Registered Miners",
-      "type": "stat",
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 12 },
-      "targets": [
-        { "expr": "zion_pplns_registered_miners", "legendFormat": "miners", "refId": "A" }
-      ]
-    },
-    {
       "title": "Revenue Source Distribution",
       "type": "piechart",
-      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 12 },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 24 },
       "targets": [
         { "expr": "zion_pool_source_submits", "legendFormat": "{{source}}", "refId": "A" }
       ]
     },
     {
+      "title": "Per-Miner Hashrate (top 20)",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 24 },
+      "targets": [
+        { "expr": "topk(20, zion_pool_miner_hashrate_hps)", "legendFormat": "{{miner_id}}/{{worker_name}}", "refId": "A", "format": "table", "instant": true }
+      ],
+      "fieldConfig": { "defaults": { "unit": "Hs" } }
+    },
+    {
       "title": "Host CPU Usage",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
       "targets": [
         { "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "CPU %", "refId": "A" }
       ],
@@ -98,7 +213,7 @@
     {
       "title": "Host Memory Usage",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
       "targets": [
         { "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100", "legendFormat": "Memory %", "refId": "A" }
       ],
@@ -107,7 +222,7 @@
     {
       "title": "Disk Usage",
       "type": "gauge",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
       "targets": [
         { "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}) * 100", "legendFormat": "root %", "refId": "A" }
       ],
@@ -116,6 +231,22 @@
         { "color": "yellow", "value": 70 },
         { "color": "red", "value": 85 }
       ]}}}
+    },
+    {
+      "title": "Shares Since Last Block",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 40 },
+      "targets": [
+        { "expr": "zion_pool_shares_since_last_block", "legendFormat": "shares", "refId": "A" }
+      ]
+    },
+    {
+      "title": "Total Connections (all time)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 40 },
+      "targets": [
+        { "expr": "zion_pool_connections_total", "legendFormat": "connections", "refId": "A" }
+      ]
     }
   ],
   "schemaVersion": 39,

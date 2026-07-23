@@ -3862,10 +3862,7 @@ fn maybe_send_adaptive_update(
 ) {
     let atx = match adaptive_tx {
         Some(tx) => tx,
-        None => {
-            eprintln!("[DEBUG] maybe_send_adaptive_update: adaptive_tx=None");
-            return;
-        }
+        None => return,
     };
     let now = std::time::Instant::now();
     let update_interval = std::env::var("ZION_ADAPTIVE_UPDATE_INTERVAL_S")
@@ -3928,13 +3925,16 @@ fn external_gpu_thread(
     let mut nonce_offset: u64 = 0;
     let mut backend_init_failures: u32 = 0;
     let mut skipped_algos: std::collections::HashSet<String> = std::collections::HashSet::new();
-    // Use a large batch_size — mine_batch_raw caps it at the GPU's actual
-    // work_size internally, so this is safe.  Default 16M for ProgPoWZ to
-    // match reference miner hashrates (11-20 MH/s on RX 5600 XT).
+    // Batch size for external GPU mining.  On a SINGLE GPU shared between
+    // Stream 1 (ZION deeksha) and Stream 2 (ZANO ProgPoWZ), a large batch
+    // (16M) blocks the GPU for 13-30s, starving Stream 1 and dropping ZION
+    // hashrate from ~13 KH/s to ~7 KH/s.  Default 2M = ~1.5s on RX 5700 XT,
+    // giving Stream 1 enough GPU time.  On a DEDICATED GPU (no Stream 1),
+    // set ZION_EXT_GPU_BATCH_SIZE=16777216 for maximum hashrate.
     let batch_size = std::env::var("ZION_EXT_GPU_BATCH_SIZE")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(16_777_216u64);
+        .unwrap_or(2_097_152u64); // 2M default for shared GPU
     // Optional time-based duty cycle: target % of wall-clock GPU time for Stream 2.
     // 50 = golden 50/50 split. Falls back to adaptive/static logic if not set.
     let time_duty_pct: Option<u64> = std::env::var("ZION_EXT_GPU_TIME_DUTY_PCT")
@@ -4036,10 +4036,20 @@ fn external_gpu_thread(
                     j.job_id != job.job_id || j.height != job.height
                 });
                 if is_new_job {
-                    // Random nonce base to avoid duplicates
+                    // Random nonce base to avoid duplicates.
+                    // Include a timestamp component so that thread restarts
+                    // (which reset nonce_offset to 0) don't re-scan the same
+                    // nonce range for the same job_id.  Without this, the
+                    // deterministic hash(job_id + PID) produces the same
+                    // nonce_base after restart → duplicate share rejects.
                     let mut h = DefaultHasher::new();
                     job.job_id.hash(&mut h);
                     std::process::id().hash(&mut h);
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_nanos()
+                        .hash(&mut h);
                     let random_base = (h.finish() as u32) as u64;
 
                     // NiceHash nonce format: extranonce1 occupies high bits
@@ -4813,6 +4823,39 @@ fn ext_share_submitter_thread(
     config: &MinerConfig,
 ) {
     println!("[{}] ext_share_submitter_thread: started", log_timestamp());
+
+    // Track recently submitted (job_id, nonce) pairs to prevent duplicate
+    // share submissions.  This is a safety net for thread restarts that reset
+    // nonce_offset, causing the GPU to re-scan the same nonce range.
+    // Cap at 4096 entries to bound memory; evict oldest when full.
+    const DEDUP_CAP: usize = 4096;
+    let mut submitted: std::collections::HashSet<(String, u64)> =
+        std::collections::HashSet::with_capacity(DEDUP_CAP);
+    let mut submitted_order: std::collections::VecDeque<(String, u64)> =
+        std::collections::VecDeque::with_capacity(DEDUP_CAP);
+
+    /// Check and record a (job_id, nonce) pair.  Returns true if this is a
+    /// new pair (should submit), false if it's a duplicate (should skip).
+    fn check_and_record(
+        submitted: &mut std::collections::HashSet<(String, u64)>,
+        order: &mut std::collections::VecDeque<(String, u64)>,
+        job_id: &str,
+        nonce: u64,
+    ) -> bool {
+        let key = (job_id.to_string(), nonce);
+        if submitted.contains(&key) {
+            return false;
+        }
+        if submitted.len() >= DEDUP_CAP {
+            if let Some(old) = order.pop_front() {
+                submitted.remove(&old);
+            }
+        }
+        submitted.insert(key.clone());
+        order.push_back(key);
+        true
+    }
+
     loop {
         // Check CPU channel first (VerusHash shares are time-critical)
         let share = match ext_cpu_share_rx.recv_timeout(Duration::from_millis(500)) {
@@ -4831,6 +4874,17 @@ fn ext_share_submitter_thread(
         };
 
         if let Some(share) = share {
+            // Dedup check: skip if this (job_id, nonce) was already submitted
+            if !check_and_record(&mut submitted, &mut submitted_order, &share.external_job_id, share.nonce) {
+                println!(
+                    "[{}] ext_share_dedup_skip coin={} algo={} job_id={} nonce={} — already submitted",
+                    log_timestamp(),
+                    share.coin,
+                    share.algorithm,
+                    share.external_job_id,
+                    share.nonce,
+                );
+            } else {
             let ext_submit = PoolMessage::ExternalSubmit {
                 miner_id: config.miner_id.clone(),
                 worker_name: config.worker_name.clone(),
@@ -4873,8 +4927,19 @@ fn ext_share_submitter_thread(
                     share.nonce,
                 );
             }
+            } // end dedup else
             // Also drain any GPU share that might be pending (non-blocking)
             if let Ok(gpu_share) = ext_gpu_share_rx.try_recv() {
+                if !check_and_record(&mut submitted, &mut submitted_order, &gpu_share.external_job_id, gpu_share.nonce) {
+                    println!(
+                        "[{}] ext_share_dedup_skip coin={} algo={} job_id={} nonce={} — already submitted (gpu drain)",
+                        log_timestamp(),
+                        gpu_share.coin,
+                        gpu_share.algorithm,
+                        gpu_share.external_job_id,
+                        gpu_share.nonce,
+                    );
+                } else {
                 let ext_submit = PoolMessage::ExternalSubmit {
                     miner_id: config.miner_id.clone(),
                     worker_name: config.worker_name.clone(),
@@ -4890,6 +4955,7 @@ fn ext_share_submitter_thread(
                 if let Ok(line) = zion_pool::encode_message(&ext_submit) {
                     let _ = w.write_all(line.as_bytes());
                     let _ = w.flush();
+                }
                 }
             }
         }

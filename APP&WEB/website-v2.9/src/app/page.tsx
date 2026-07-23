@@ -6,6 +6,7 @@ import BridgeStatusBanner from '@/components/BridgeStatusBanner';
 import HomeQuickLinks from '@/components/HomeQuickLinks';
 import WebTerminal from '@/components/WebTerminal';
 import StoryTriptych from '@/components/StoryTriptych';
+import ReleaseHighlightBanner from '@/components/ReleaseHighlightBanner';
 
 const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'));
 const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'));
@@ -27,6 +28,7 @@ export default function Home() {
       <WebTerminal />
       <BridgeStatusBanner />
       <HomeQuickLinks />
+      <ReleaseHighlightBanner />
       <NewsFeed />
       <LiveDashboard />
       <StoryTriptych />

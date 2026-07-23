@@ -140,6 +140,42 @@ extern "C"
 
 d_4(uint32_t, t_dec(f,n), sb_data, u0, u1, u2, u3);
 
+// ── AES-NI accelerated versions (x86-64 with AES-NI) ──────────────────
+// fwd_rnd(y,x,k,c) = s(y,c) = (k)[c] ^ SubBytes(ShiftRows(x))
+// This is exactly _mm_aesenc_si128(state, key) — one AES round.
+// aesb_pseudo_round does 10 rounds, aesb_single_round does 1 round.
+// Soft AES (table lookup below) is ~50x slower than AES-NI on x86-64.
+#if defined(__AES__) && (defined(__x86_64__) || defined(__i386__))
+#include <wmmintrin.h>
+
+void aesb_single_round(const uint8_t *in, uint8_t *out, uint8_t *expandedKey)
+{
+    __m128i state = _mm_loadu_si128((const __m128i*)in);
+    __m128i key   = _mm_loadu_si128((const __m128i*)expandedKey);
+    state = _mm_aesenc_si128(state, key);
+    _mm_storeu_si128((__m128i*)out, state);
+}
+
+void aesb_pseudo_round(const uint8_t *in, uint8_t *out, uint8_t *expandedKey)
+{
+    __m128i state = _mm_loadu_si128((const __m128i*)in);
+    const __m128i *kp = (const __m128i*)expandedKey;
+    state = _mm_aesenc_si128(state, _mm_loadu_si128(kp + 0));
+    state = _mm_aesenc_si128(state, _mm_loadu_si128(kp + 1));
+    state = _mm_aesenc_si128(state, _mm_loadu_si128(kp + 2));
+    state = _mm_aesenc_si128(state, _mm_loadu_si128(kp + 3));
+    state = _mm_aesenc_si128(state, _mm_loadu_si128(kp + 4));
+    state = _mm_aesenc_si128(state, _mm_loadu_si128(kp + 5));
+    state = _mm_aesenc_si128(state, _mm_loadu_si128(kp + 6));
+    state = _mm_aesenc_si128(state, _mm_loadu_si128(kp + 7));
+    state = _mm_aesenc_si128(state, _mm_loadu_si128(kp + 8));
+    state = _mm_aesenc_si128(state, _mm_loadu_si128(kp + 9));
+    _mm_storeu_si128((__m128i*)out, state);
+}
+
+#else
+// ── Soft AES fallback (table lookup) — original implementation ─────────
+
 void aesb_single_round(const uint8_t *in, uint8_t *out, uint8_t *expandedKey)
 {
     uint32_t b0[4], b1[4];
@@ -170,6 +206,8 @@ void aesb_pseudo_round(const uint8_t *in, uint8_t *out, uint8_t *expandedKey)
 
     state_out(out, b0);
 }
+
+#endif /* __AES__ */
 
 
 #if defined(__cplusplus)

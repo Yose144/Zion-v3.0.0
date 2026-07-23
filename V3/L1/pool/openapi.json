@@ -1,0 +1,376 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ZION Pool API",
+    "description": "REST API for the ZION V3 mining pool. Provides miner stats, block history, payout tracking, and operational endpoints.\n\n## Authentication\n\n- **Miner endpoints** (`/api/v1/blocks`, `/api/v1/payouts`, `/api/v1/miners`, `/api/v1/hashrate-history`): Require `Authorization: Bearer <key>` header when `ZION_POOL_API_KEY` env var is set. If not set, endpoints are open (backward compatible).\n- **Admin endpoints** (`/api/v1/op/*`): Always require `Authorization: Bearer <admin_key>` header. Admin key is set via `ZION_POOL_API_ADMIN_KEY` env var. If not set, endpoints return 503.\n- **Public endpoints** (`/health`, `/metrics`, `/stats`, `/api/v1/revenue/*`, `/api/v1/profit/*`, `/api/v1/miner/:address/*`): No auth required.\n\n## Base URL\n\nPool metrics/API server runs on port 8455 (configurable via `ZION_POOL_METRICS_BIND`).",
+    "version": "3.1.0",
+    "contact": {
+    "name": "ZION TerraNova",
+    "url": "https://zionterranova.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8455",
+      "description": "Local pool metrics/API server"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Returns pool health status and uptime. Used by watchdog/monitoring.",
+        "tags": ["Public"],
+        "responses": {
+          "200": {
+            "description": "Pool is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "uptime_s": { "type": "integer", "example": 3600 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Prometheus metrics",
+        "description": "Returns Prometheus-format metrics for scraping. Includes pool hashrate, shares, blocks, PPLNS, per-miner telemetry, luck, orphan rate, connection rate.",
+        "tags": ["Public"],
+        "responses": {
+          "200": {
+            "description": "Prometheus exposition format",
+            "content": {
+              "text/plain": {
+                "schema": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stats": {
+      "get": {
+        "summary": "Pool statistics (JSON)",
+        "description": "Comprehensive pool stats: hashrate, miners, shares, PPLNS, fees, routing, auxpow, block tracker, revenue, API endpoint listing.",
+        "tags": ["Public"],
+        "responses": {
+          "200": {
+            "description": "Pool statistics",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/blocks": {
+      "get": {
+        "summary": "List recent blocks (DB-backed)",
+        "description": "Returns recent blocks from the SQLite ShareStore. Requires `ZION_POOL_DB_PATH` to be configured. Query param `limit` (default 50, max 500).",
+        "tags": ["Miner", "DB-backed"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 50, "maximum": 500 },
+            "description": "Maximum number of blocks to return"
+          }
+        ],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of blocks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "blocks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "height": { "type": "integer" },
+                          "hash": { "type": "string" },
+                          "miner_id": { "type": "string" },
+                          "worker_name": { "type": "string" },
+                          "share_difficulty": { "type": "integer" },
+                          "network_difficulty": { "type": "integer" },
+                          "status": { "type": "string", "enum": ["pending", "confirmed", "orphaned"] },
+                          "ts": { "type": "integer", "description": "Unix timestamp" },
+                          "confirmed_at": { "type": "integer", "nullable": true }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized — API key required" },
+          "503": { "description": "Database not configured" }
+        }
+      }
+    },
+    "/api/v1/payouts": {
+      "get": {
+        "summary": "List recent payouts (DB-backed)",
+        "description": "Returns recent payouts from SQLite ShareStore. Optional query param `miner=<address>` to filter by miner. Query param `limit` (default 50, max 500).",
+        "tags": ["Miner", "DB-backed"],
+        "parameters": [
+          {
+            "name": "miner",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter payouts by miner address"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 50, "maximum": 500 }
+          }
+        ],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of payouts" },
+          "401": { "description": "Unauthorized" },
+          "503": { "description": "Database not configured" }
+        }
+      }
+    },
+    "/api/v1/miners": {
+      "get": {
+        "summary": "List all miners (DB-backed)",
+        "description": "Returns miner statistics from SQLite ShareStore. Query param `limit` (default 100, max 500).",
+        "tags": ["Miner", "DB-backed"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 100, "maximum": 500 }
+          }
+        ],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of miners with stats" },
+          "401": { "description": "Unauthorized" },
+          "503": { "description": "Database not configured" }
+        }
+      }
+    },
+    "/api/v1/hashrate-history": {
+      "get": {
+        "summary": "Pool hashrate history",
+        "description": "Returns live, 1h, and 24h pool hashrate from miner telemetry windows.",
+        "tags": ["Miner"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Hashrate windows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "live_hps": { "type": "number" },
+                    "1h_hps": { "type": "number" },
+                    "24h_hps": { "type": "number" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/miner/{address}/stats": {
+      "get": {
+        "summary": "Per-miner statistics",
+        "description": "Returns detailed stats for a specific miner by payout address.",
+        "tags": ["Public"],
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Miner payout address"
+          }
+        ],
+        "responses": {
+          "200": { "description": "Miner statistics" },
+          "404": { "description": "Miner not found" }
+        }
+      }
+    },
+    "/api/v1/miner/{address}/payouts": {
+      "get": {
+        "summary": "Per-miner payout history",
+        "description": "Returns payout history for a specific miner by payout address.",
+        "tags": ["Public"],
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Miner payout history" }
+        }
+      }
+    },
+    "/api/v1/revenue/stats": {
+      "get": {
+        "summary": "Revenue statistics",
+        "description": "Returns revenue stats: routing, PPLNS, auxpow, revenue scheduler, fees.",
+        "tags": ["Public", "Revenue"],
+        "responses": {
+          "200": { "description": "Revenue statistics" }
+        }
+      }
+    },
+    "/api/v1/revenue/streams": {
+      "get": {
+        "summary": "Revenue stream telemetry",
+        "description": "Returns per-stream telemetry for the triple-stream pipeline (ZION + AuxPow + NCL).",
+        "tags": ["Public", "Revenue"],
+        "responses": {
+          "200": { "description": "Revenue stream telemetry" }
+        }
+      }
+    },
+    "/api/v1/profit/switcher": {
+      "get": {
+        "summary": "Profit switcher state",
+        "description": "Returns the current state of the pool-side profit switcher.",
+        "tags": ["Public", "Revenue"],
+        "responses": {
+          "200": { "description": "Profit switcher state" }
+        }
+      }
+    },
+    "/api/v1/cpu-coin": {
+      "get": {
+        "summary": "Get CPU coin override",
+        "description": "Returns the current CPU coin override (or null if not set).",
+        "tags": ["Public", "Runtime"],
+        "responses": {
+          "200": { "description": "CPU coin override", "content": { "application/json": { "schema": { "type": "object", "properties": { "coin": { "type": "string", "nullable": true } } } } } }
+        }
+      },
+      "post": {
+        "summary": "Set CPU coin override",
+        "description": "Set or clear the CPU coin override. POST `{\"coin\":\"RTM\"}` to set, `{\"coin\":\"\"}` to clear.",
+        "tags": ["Public", "Runtime"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "coin": { "type": "string" } } }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Override updated" }
+        }
+      }
+    },
+    "/api/v1/gpu-coin": {
+      "get": {
+        "summary": "Get GPU coin override",
+        "tags": ["Public", "Runtime"],
+        "responses": {
+          "200": { "description": "GPU coin override" }
+        }
+      },
+      "post": {
+        "summary": "Set GPU coin override",
+        "tags": ["Public", "Runtime"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "coin": { "type": "string" } } }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Override updated" }
+        }
+      }
+    },
+    "/api/v1/op/miners": {
+      "get": {
+        "summary": "Admin: Full miner telemetry dump",
+        "description": "Returns full miner telemetry for all tracked miners (hashrate, shares, blocks, paid total). Admin key required.",
+        "tags": ["Admin"],
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": { "description": "Full miner telemetry" },
+          "401": { "description": "Unauthorized — admin key required" },
+          "503": { "description": "Admin API disabled (ZION_POOL_API_ADMIN_KEY not set)" }
+        }
+      }
+    },
+    "/api/v1/op/blocks": {
+      "get": {
+        "summary": "Admin: Block tracker state",
+        "description": "Returns block tracker state: total/confirmed/orphaned counts, pool luck, and recent 200 block records with full details. Admin key required.",
+        "tags": ["Admin"],
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": { "description": "Block tracker state" },
+          "401": { "description": "Unauthorized" },
+          "503": { "description": "Admin API disabled" }
+        }
+      }
+    },
+    "/api/v1/op/revenue": {
+      "get": {
+        "summary": "Admin: Revenue summary",
+        "description": "Returns comprehensive revenue summary: routing stats, PPLNS, fees, auxpow, revenue scheduler, block tracker. Admin key required.",
+        "tags": ["Admin"],
+        "security": [{ "adminAuth": [] }],
+        "responses": {
+          "200": { "description": "Revenue summary" },
+          "401": { "description": "Unauthorized" },
+          "503": { "description": "Admin API disabled" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API key via `Authorization: Bearer <ZION_POOL_API_KEY>`"
+      },
+      "adminAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Admin API key via `Authorization: Bearer <ZION_POOL_API_ADMIN_KEY>`"
+      }
+    }
+  },
+  "tags": [
+    { "name": "Public", "description": "Public endpoints (no auth)" },
+    { "name": "Miner", "description": "Miner-facing endpoints (API key when configured)" },
+    { "name": "DB-backed", "description": "Requires SQLite ShareStore (ZION_POOL_DB_PATH)" },
+    { "name": "Admin", "description": "Admin endpoints (always require admin key)" },
+    { "name": "Revenue", "description": "Revenue and profit switcher endpoints" },
+    { "name": "Runtime", "description": "Runtime coin hot-switch endpoints" }
+  ]
+}

@@ -41,12 +41,14 @@
   };
 })();
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','pool-miners','pool-setup','revenue','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','pool-miners','pool-blocks','pool-setup','pool-debug','revenue','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
 let _payoutTimer = null;      // Fallback poll timer for payout tab
 let _poolMinersTimer = null;  // Pool Miners tab auto-refresh timer
+let _poolBlocksTimer = null;  // Pool Blocks tab auto-refresh timer
+let _poolDebugTimer = null;   // Pool Debug tab auto-refresh timer
 let _revenueTimer = null;     // Revenue System tab auto-refresh timer
 let _cexTimer = null;         // CEX panel auto-refresh timer
 let friendlyMode = false;
@@ -177,8 +179,10 @@ function clearTabTimers(except){
   if(except !== 'dao') _daoTimer = null;
   if(except !== 'payout'){ clearInterval(_payoutTimer); _payoutTimer = null; }
   if(except !== 'pool-miners'){ clearInterval(_poolMinersTimer); _poolMinersTimer = null; }
+  if(except !== 'pool-blocks'){ clearInterval(_poolBlocksTimer); _poolBlocksTimer = null; }
   if(except !== 'revenue'){ clearInterval(_revenueTimer); _revenueTimer = null; }
   if(except !== 'cex'){ clearInterval(_cexTimer); _cexTimer = null; }
+  if(except !== 'pool-debug'){ clearInterval(_poolDebugTimer); _poolDebugTimer = null; }
 }
 
 function switchTab(name){
@@ -210,7 +214,9 @@ function switchTab(name){
   else if(name === 'warp-swap'){ clearTabTimers(null); loadWarpSwapPanel(); }
   else if(name === 'payout'){ clearTabTimers(null); loadPayoutTab(); connectPayoutSse(); if(!_payoutTimer) _payoutTimer = setInterval(loadPayoutTab, 10000); }
   else if(name === 'pool-miners'){ clearTabTimers(null); loadPoolMinersTab(); if(!_poolMinersTimer) _poolMinersTimer = setInterval(loadPoolMinersTab, 10000); }
+  else if(name === 'pool-blocks'){ clearTabTimers(null); loadPoolBlocksTab(); if(!_poolBlocksTimer) _poolBlocksTimer = setInterval(loadPoolBlocksTab, 15000); }
   else if(name === 'pool-setup'){ clearTabTimers(null); loadPoolSetupTab(); }
+  else if(name === 'pool-debug'){ clearTabTimers(null); loadPoolDebugTab(); if(!_poolDebugTimer) _poolDebugTimer = setInterval(()=>{ if(document.getElementById('pd-autorefresh')?.checked) loadPoolDebugTab(); }, 15000); }
   else if(name === 'revenue'){ clearTabTimers(null); loadRevenueTab(); if(!_revenueTimer) _revenueTimer = setInterval(loadRevenueTab, 15000); }
   else if(name === 'servers-setup'){ clearTabTimers(null); loadServersSetup(); }
   else { clearTabTimers(null); disconnectPayoutSse(); }
@@ -3057,6 +3063,82 @@ async function loadPoolMinersTab(){
     console.error('loadPoolMinersTab error:', e);
     if(tbody) tbody.innerHTML = '<tr><td colspan="13" class="text-red-400 text-center py-4 text-xs">Failed to load miners: ' + escapeHtml(e.message) + '</td></tr>';
     if(eventsTbody) eventsTbody.innerHTML = '<tr><td colspan="7" class="text-red-400 text-center py-4 text-xs">Failed to load events</td></tr>';
+  }
+}
+
+// ── Pool Blocks tab ─────────────────────────────────────────────────────────
+async function loadPoolBlocksTab(){
+  const tbody = document.getElementById('pool-blocks-tbody');
+  const setEl = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = (v == null ? '—' : v); };
+  try {
+    const data = await apiFetch('/api/pool/blocks?limit=100', {}, 10000);
+    if(!data || !data.ok) throw new Error(data?.error || 'Failed to load blocks');
+    const blocks = data.blocks || [];
+    const summary = data.summary || {};
+
+    // KPI row
+    setEl('pool-blocks-total', summary.total ?? blocks.length);
+    setEl('pool-blocks-confirmed', summary.confirmed ?? 0);
+    setEl('pool-blocks-pending', summary.pending ?? 0);
+    setEl('pool-blocks-orphaned', summary.orphaned ?? 0);
+    setEl('pool-blocks-orphan-rate', (summary.orphan_rate_pct ?? 0).toFixed(2) + '%');
+    setEl('pool-blocks-luck', summary.pool_luck_64 != null ? (summary.pool_luck_64).toFixed(1) + '%' : '—');
+    setEl('pool-blocks-count', blocks.length + ' shown');
+
+    // Table
+    if(!blocks.length){
+      if(tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-500 py-4 text-xs">No blocks found in DB yet</td></tr>';
+    } else {
+      const statusColor = (s) => {
+        const v = String(s || '').toLowerCase();
+        if(['confirmed','mature','valid'].includes(v)) return 'text-emerald-400';
+        if(['pending','unconfirmed','immature'].includes(v)) return 'text-yellow-400';
+        if(['orphaned','orphan','invalid','stale'].includes(v)) return 'text-red-400';
+        return 'text-gray-400';
+      };
+      const fmtTime = (ts) => {
+        if(!ts) return '—';
+        try { return new Date(ts * 1000).toLocaleString(); } catch(e) { return String(ts); }
+      };
+      const fmtDiff = (d) => {
+        if(d == null) return '—';
+        const n = Number(d);
+        if(!isFinite(n)) return '—';
+        if(n >= 1e9) return (n/1e9).toFixed(2) + 'G';
+        if(n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+        if(n >= 1e3) return (n/1e3).toFixed(2) + 'K';
+        return n.toString();
+      };
+      const rows = blocks.map(b => {
+        const height = b.height ?? '—';
+        const hash = b.hash ?? '';
+        const hashShort = hash ? hash.slice(0,10) + '…' + hash.slice(-6) : '—';
+        const miner = b.miner_id ?? b.miner_address ?? b.finder ?? '—';
+        const minerShort = miner && miner.length > 18 ? miner.slice(0,16) + '…' : (miner || '—');
+        const shareDiff = b.share_difficulty ?? b.share_diff ?? null;
+        const netDiff = b.network_difficulty ?? b.net_diff ?? null;
+        const status = b.status ?? 'unknown';
+        const time = b.ts ?? b.timestamp ?? b.found_at ?? null;
+        return `<tr class="border-t border-white/5 hover:bg-white/5">
+          <td class="px-3 py-2 font-mono text-cyan-300">${escapeHtml(height)}</td>
+          <td class="px-3 py-2 font-mono text-gray-300" title="${escapeHtml(hash)}">${escapeHtml(hashShort)}</td>
+          <td class="px-3 py-2 font-mono text-gray-300" title="${escapeHtml(miner)}">${escapeHtml(minerShort)}</td>
+          <td class="px-3 py-2 text-right font-mono text-gray-300">${fmtDiff(shareDiff)}</td>
+          <td class="px-3 py-2 text-right font-mono text-gray-400">${fmtDiff(netDiff)}</td>
+          <td class="px-3 py-2 text-center ${statusColor(status)} font-semibold">${escapeHtml(status)}</td>
+          <td class="px-3 py-2 text-right text-gray-400">${escapeHtml(fmtTime(time))}</td>
+        </tr>`;
+      }).join('');
+      if(tbody) tbody.innerHTML = rows;
+    }
+
+    const updated = document.getElementById('pool-blocks-last-updated');
+    if(updated) updated.textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    console.error('loadPoolBlocksTab error:', e);
+    if(tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-red-400 text-center py-4 text-xs">Failed to load blocks: ' + escapeHtml(e.message) + '</td></tr>';
+    setEl('pool-blocks-total', '—');
+    setEl('pool-blocks-count', '—');
   }
 }
 
@@ -11196,6 +11278,225 @@ function _setBadge(id, active){
     el.textContent = '❌ Inactive';
     el.className = 'font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30';
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// POOL DEBUG TAB — Comprehensive diagnostic view
+// ═══════════════════════════════════════════════════════════════════════
+
+let _poolDebugData = null;
+
+async function loadPoolDebugTab(){
+  const el = id => document.getElementById(id);
+  try {
+    const r = await fetch('/api/pool/debug');
+    const d = await r.json();
+    _poolDebugData = d;
+
+    // Section status bar
+    const statusBar = el('pd-section-status');
+    if(statusBar){
+      statusBar.innerHTML = Object.entries(d.sections || {}).map(([k, v]) => {
+        const ok = v === 'ok' || v.startsWith('ok');
+        const cls = ok ? 'bg-emerald-600/20 text-emerald-300 border-emerald-500/30'
+                       : 'bg-red-600/20 text-red-300 border-red-500/30';
+        return `<span class="px-2 py-0.5 rounded border ${cls}">${escapeHtml(k)}: ${escapeHtml(String(v).slice(0,60))}</span>`;
+      }).join('');
+    }
+
+    // Endpoint probes
+    const epTbody = el('pd-endpoints-tbody');
+    const epCount = el('pd-endpoints-count');
+    if(epTbody){
+      const eps = d.endpoints || {};
+      const entries = Object.entries(eps);
+      if(epCount) epCount.textContent = `(${entries.filter(([,v])=>v.ok).length}/${entries.length} ok)`;
+      epTbody.innerHTML = entries.map(([path, info]) => `
+        <tr class="border-b border-white/5">
+          <td class="py-1.5 px-2 font-mono text-cyan-300">${escapeHtml(path)}</td>
+          <td class="py-1.5 px-2 text-center">${info.ok ? '<span class="text-emerald-400">✓</span>' : '<span class="text-red-400">✗</span>'}</td>
+          <td class="py-1.5 px-2 text-center font-mono ${info.ok?'text-emerald-400':'text-red-400'}">${info.status ?? '—'}</td>
+          <td class="py-1.5 px-2 text-[10px] text-gray-500">${escapeHtml(info.error || '')}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Raw Prometheus metrics
+    const metricsTbody = el('pd-metrics-tbody');
+    const metricsCount = el('pd-metrics-count');
+    const metricsRaw = el('pd-metrics-raw');
+    const parsed = d.parsed_metrics || [];
+    if(metricsCount) metricsCount.textContent = `(${parsed.length} metrics)`;
+    if(metricsRaw) metricsRaw.textContent = d.raw_metrics || '(unavailable)';
+    if(metricsTbody){
+      metricsTbody.innerHTML = parsed.slice(0, 200).map(m => `
+        <tr class="border-b border-white/5 hover:bg-white/5">
+          <td class="py-1.5 px-2 font-mono text-cyan-300">${escapeHtml(m.name)}</td>
+          <td class="py-1.5 px-2 font-mono text-[10px] text-gray-500">${escapeHtml(m.labels || '')}</td>
+          <td class="py-1.5 px-2 text-right font-mono text-amber-400">${m.value.toLocaleString(undefined, {maximumFractionDigits:4})}</td>
+          <td class="py-1.5 px-2 text-[10px] text-gray-500">${escapeHtml(m.help || '')}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="4" class="text-gray-500 text-center py-4">No metrics</td></tr>';
+    }
+
+    // PPLNS state
+    const pplns = d.pplns_state || {};
+    const pplnsSummary = el('pd-pplns-summary');
+    const pplnsKpis = el('pd-pplns-kpis');
+    const pplnsJson = el('pd-pplns-json');
+    const winSize = pplns.window_total_difficulty ?? 0;
+    const winUsed = (pplns.window || []).length;
+    const addrs = Object.keys(pplns.addresses || {}).length;
+    const unpaidCount = Object.keys(pplns.unpaid || {}).length;
+    const totalPaid = pplns.total_paid_flowers ?? 0;
+    const rounds = pplns.payout_rounds ?? 0;
+    if(pplnsSummary) pplnsSummary.textContent = `(${winUsed} shares, ${addrs} miners, ${rounds} rounds)`;
+    if(pplnsKpis){
+      pplnsKpis.innerHTML = [
+        ['Window Size', winSize.toLocaleString()],
+        ['Shares in Window', winUsed],
+        ['Registered Miners', addrs],
+        ['Unpaid Miners', unpaidCount],
+        ['Total Paid (flowers)', totalPaid.toLocaleString()],
+        ['Payout Rounds', rounds],
+        ['Fee Humanitarian', (pplns.fee_humanitarian_flowers ?? 0).toLocaleString()],
+        ['Fee Pool', (pplns.fee_pool_flowers ?? 0).toLocaleString()],
+      ].map(([k, v]) => `
+        <div class="bg-black/20 rounded p-2 border border-white/5">
+          <div class="text-[10px] text-gray-400">${escapeHtml(k)}</div>
+          <div class="text-sm font-bold text-white font-mono">${escapeHtml(String(v))}</div>
+        </div>
+      `).join('');
+    }
+    if(pplnsJson) pplnsJson.textContent = JSON.stringify(pplns, null, 2);
+
+    // /stats dump
+    const statsJson = el('pd-stats-json');
+    const statsSummary = el('pd-stats-summary');
+    if(statsJson) statsJson.textContent = d.stats ? JSON.stringify(d.stats, null, 2) : '(unavailable)';
+    if(statsSummary) statsSummary.textContent = d.stats ? '(ok)' : '(error)';
+
+    // AuxPow — merge config (from env) + live state (from /stats)
+    const auxTable = el('pd-auxpow-table');
+    const auxSummary = el('pd-auxpow-summary');
+    const auxConfig = (d.auxpow && d.auxpow.config) || d.auxpow || {};
+    const auxLive = (d.stats && d.stats.auxpow) || {};
+    const auxEnabled = auxConfig.enabled ?? (auxLive.enabled ?? false);
+    const auxCoin = auxLive.current_coin || auxConfig.coin || '—';
+    if(auxSummary) auxSummary.textContent = auxEnabled ? `(enabled, coin=${auxCoin})` : '(disabled)';
+    if(auxTable){
+      // Combine: config keys + live keys (live takes precedence for display)
+      const allKeys = new Set([...Object.keys(auxConfig), ...Object.keys(auxLive)]);
+      const skipKeys = new Set(['ok', 'supported_coins', 'supported_preferences', 'supported_stream_sources', 'supported_stream_providers', 'env_file', 'env_file_exists', 'api']);
+      const rows = [...allKeys].filter(k => !skipKeys.has(k)).map(k => {
+        const liveVal = auxLive[k];
+        const cfgVal = auxConfig[k];
+        const v = liveVal !== undefined ? liveVal : cfgVal;
+        const isLive = liveVal !== undefined;
+        return `<tr class="border-b border-white/5">
+          <td class="py-1.5 px-2 font-mono text-cyan-300">${escapeHtml(k)}${isLive ? ' <span class="text-[8px] text-emerald-500">live</span>' : ''}</td>
+          <td class="py-1.5 px-2 font-mono text-white">${escapeHtml(typeof v === 'object' ? JSON.stringify(v).slice(0,120) : String(v))}</td>
+        </tr>`;
+      }).join('');
+      auxTable.innerHTML = `<thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Key</th><th class="py-2 px-2">Value</th></tr></thead><tbody>${rows || '<tr><td colspan="2" class="text-gray-500 text-center py-4">No auxpow data</td></tr>'}</tbody>`;
+    }
+
+    // Pool env vars
+    const envTbody = el('pd-env-tbody');
+    const envCount = el('pd-env-count');
+    const envVars = d.pool_env || {};
+    if(envCount) envCount.textContent = `(${Object.keys(envVars).length} vars)`;
+    if(envTbody){
+      envTbody.innerHTML = Object.entries(envVars).map(([k, v]) => `
+        <tr class="border-b border-white/5">
+          <td class="py-1.5 px-2 font-mono text-cyan-300">${escapeHtml(k)}</td>
+          <td class="py-1.5 px-2 font-mono text-amber-400 text-[10px]">${escapeHtml(String(v).slice(0,80))}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="2" class="text-gray-500 text-center py-4">No env vars</td></tr>';
+    }
+
+    // Revenue
+    const revStats = el('pd-revenue-stats');
+    const revStreams = el('pd-revenue-streams');
+    const revSummary = el('pd-revenue-summary');
+    if(revStats) revStats.textContent = d.revenue_stats ? JSON.stringify(d.revenue_stats, null, 2) : '(unavailable)';
+    if(revStreams) revStreams.textContent = d.revenue_streams ? JSON.stringify(d.revenue_streams, null, 2) : '(unavailable)';
+    if(revSummary) revSummary.textContent = d.revenue_stats ? '(ok)' : '(error)';
+
+    // Log tail
+    _renderPoolDebugLog(d.pool_log_tail || []);
+
+  } catch(e) {
+    console.error('loadPoolDebugTab error:', e);
+    const statusBar = el('pd-section-status');
+    if(statusBar) statusBar.innerHTML = `<span class="px-2 py-0.5 rounded border bg-red-600/20 text-red-300 border-red-500/30">fetch error: ${escapeHtml(e.message)}</span>`;
+  }
+}
+
+function _renderPoolDebugLog(lines){
+  const logEl = document.getElementById('pd-log');
+  const countEl = document.getElementById('pd-log-count');
+  if(!logEl) return;
+  if(countEl) countEl.textContent = `(${lines.length} lines)`;
+  if(!lines.length){
+    logEl.innerHTML = '<div class="text-gray-500 italic">No log lines available</div>';
+    return;
+  }
+  // Color-code lines
+  logEl.innerHTML = lines.map(l => {
+    let cls = 'text-gray-400';
+    if(/error|fail|panic/i.test(l)) cls = 'text-red-400';
+    else if(/warn/i.test(l)) cls = 'text-amber-400';
+    else if(/accept|block|share|payout/i.test(l)) cls = 'text-emerald-400';
+    else if(/connect|disconnect|session/i.test(l)) cls = 'text-cyan-400';
+    return `<div class="${cls}">${escapeHtml(l)}</div>`;
+  }).join('');
+  // Auto-scroll to bottom
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+async function loadPoolDebugLog(){
+  try {
+    // Lightweight: just re-fetch the full dump but only update log
+    const r = await fetch('/api/pool/debug');
+    const d = await r.json();
+    _renderPoolDebugLog(d.pool_log_tail || []);
+  } catch(e) {
+    console.error('loadPoolDebugLog error:', e);
+  }
+}
+
+function pdToggleSection(mode){
+  const ids = ['pd-section-endpoints','pd-section-metrics','pd-section-pplns','pd-section-stats','pd-section-auxpow','pd-section-env','pd-section-revenue','pd-section-log','pd-section-rpc'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.open = (mode === 'all');
+  });
+}
+
+async function pdRpcTest(path){
+  const resultEl = document.getElementById('pd-rpc-result');
+  if(resultEl){ resultEl.textContent = 'Fetching ' + path + ' …'; resultEl.className = 'mt-2 bg-black/40 rounded p-3 max-h-80 overflow-auto text-[10px] font-mono text-gray-400'; }
+  try {
+    // Use the dashboard proxy: /api/pool/debug already has endpoints, but for ad-hoc we call directly via a query
+    const r = await fetch('/api/pool/debug');
+    const d = await r.json();
+    // Check if this endpoint was probed
+    const ep = (d.endpoints || {})[path];
+    if(ep){
+      resultEl.textContent = `Endpoint ${path}:\nStatus: ${ep.status ?? '—'}\nOK: ${ep.ok}\nError: ${ep.error || 'none'}\n\n(Use direct fetch for full response body — see /stats or /metrics sections above)`;
+    } else {
+      resultEl.textContent = `Endpoint ${path} not in probe list. Try fetching directly from http://62.171.141.136:8455${path}`;
+    }
+  } catch(e) {
+    if(resultEl) resultEl.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function pdRpcTestCustom(){
+  const input = document.getElementById('pd-rpc-path');
+  if(!input || !input.value.trim()) return;
+  await pdRpcTest(input.value.trim());
 }
 
 // ═══════════════════════════════════════════════════════════════════════
