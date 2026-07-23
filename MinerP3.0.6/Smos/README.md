@@ -1,7 +1,7 @@
 # ZION Trinity Miner — SMOS Edition (Private)
 
-**Version:** `v3.1.9-vega-complete-62`
-**Target rig:** `ZionRig` / `vega-smos` (AMD Vega 64 8GB, Intel Pentium G4560)
+**Version:** `v3.1.9-vega-complete-70`
+**Target rig:** `ZionRig` / `vega-smos` (AMD Vega 64 8GB `gfx900`, Intel Pentium G4560)
 **Pool:** `62.171.141.136:8444`
 **Status:** LIVE — triple stream (ZION GPU + ZANO GPU + VRSC CPU) aktivní a stabilní
 
@@ -27,11 +27,11 @@ Smos/
 
 | Stream | Coin  | Algo            | Device | Hashrate (Vega 64) |
 |--------|-------|-----------------|--------|--------------------|
-| 1      | ZION  | deeksha_lite_v1 | GPU    | ~17 KH/s           |
-| 2      | ZANO  | progpow_zano    | GPU    | ~2 MH/s            |
-| 3      | VRSC  | verushash       | CPU    | ~200 H/s           |
+| 1      | ZION  | deeksha_lite_v1 | GPU    | ~12–15 kH/s        |
+| 2      | ZANO  | progpow_zano    | GPU    | ~9.0–9.5 MH/s      |
+| 3      | VRSC  | verushash       | CPU    | ~1.3–1.4 MH/s      |
 
-**Shares/min (pozorováno):** ~70 accepted (ZION ~60, VRSC ~8, ZANO ~2)
+**Shares/min (pozorováno):** ~60–70 accepted (ZION ~45, VRSC ~8, ZANO ~2)
 
 ---
 
@@ -99,10 +99,14 @@ SMOS očekává ZIP s adresářovou strukturou `<name>/miner` (spustitelný wrap
 
 ```bash
 ssh -i ~/.ssh/zion-new-server -p 2222 root@62.171.141.136 << 'EOF'
-V="v3.1.9-vega-complete-62"
+V="v3.1.9-vega-complete-70"
 Z="zion-miner-${V}.zip"
 F="zion-miner-${V}"
 rm -rf /tmp/$F && mkdir -p /tmp/$F
+# v70 binary is the stable build (v71 crashed, v72/v73 4M/2M lower hashrate)
+cp /var/www/zion-miner/zion-miner-v3.1.9-vega-complete-70.zip /tmp/v70.zip
+unzip -o /tmp/v70.zip -d /tmp/v70x >/dev/null
+cp /tmp/v70x/zion-miner-v3.1.9-vega-complete-70/miner /tmp/$F/miner
 cp /tmp/wrapper_complete.sh /tmp/$F/miner
 chmod +x /tmp/$F/miner
 cd /tmp && rm -f /var/www/zion-miner/$Z
@@ -118,7 +122,7 @@ curl -s -X PUT \
   -H "X-AUTH-TOKEN: <SMOS_API_TOKEN>" \
   -H "Content-Type: application/json" \
   https://api.simplemining.net/rig-groups/1773590 \
-  -d '{"minerOptions":"http://62.171.141.136/zion-miner/zion-miner-v3.1.9-vega-complete-62.zip"}'
+  -d '{"minerOptions":"http://62.171.141.136/zion-miner/zion-miner-v3.1.9-vega-complete-70.zip"}'
 
 # 2. Smazat staré cache na rigu
 curl -s -X PATCH \
@@ -194,10 +198,11 @@ API commandOptions, ne v samotném wrapper skriptu).
 | Var | Value | Popis |
 |-----|-------|-------|
 | `ZION_EXT_GPU_TIME_DUTY_PCT` | `100` | GPU duty cycle % |
-| `ZION_AUXPOW_GPU_WORK_SIZE` | `2000000` | gws (orig 6M → hang, 2M OK) |
-| `ZION_AUXPOW_GPU_GROUP_SIZE` | `256` | lws |
-| `ZION_AUXPOW_GPU_USE_BPERMUTE` | `1` | use bpermute |
-| `ZION_AUXPOW_GPU_VRAM_PCT` | `50` | VRAM % pro DAG |
+| `ZION_SECONDARY_GPU_WORK_SIZE` | `1000000` | ZANO work size (1M highest stable) |
+| `ZION_AUXPOW_GPU_WORK_SIZE` | `1000000` | AuXpow internal cap |
+| `ZION_AUXPOW_GPU_GROUP_SIZE` | `128` | lws (256 hangs on Vega) |
+| `ZION_AUXPOW_GPU_USE_BPERMUTE` | `1` | use ds_bpermute (group 128 safe) |
+| `ZION_AUXPOW_GPU_VRAM_PCT` | `40` | VRAM % pro DAG |
 | `ZION_AUXPOW_GPU_BYTES_PER_ITEM` | `64` | bytes per item |
 | `ZION_ZANO_STALE_SECS` | `30` | stale threshold (s) |
 
@@ -212,10 +217,12 @@ API commandOptions, ne v samotném wrapper skriptu).
 - SMOS má 19-line ring buffer — staré bash commandy ("Running User Bash commands...")
 odtlačují miner output. Neposílat zbytečně bash commandy přes SMOS API.
 
-### ZANO kernel hang (30s timeout)
+### ZANO kernel hang / context lost
 
-- `ZION_AUXPOW_GPU_WORK_SIZE=6000000` (6M) → hang na Vega 64
-- Fix: `ZION_AUXPOW_GPU_WORK_SIZE=2000000` (2M)
+- `ZION_AUXPOW_GPU_GROUP_SIZE=256` + `USE_BPERMUTE=1` → `amdgpu` context lost / hang na Vega 64 GCN
+- Fix: `ZION_AUXPOW_GPU_GROUP_SIZE=128` + `USE_BPERMUTE=1` → ~9.5 MH/s stable
+- `ZION_AUXPOW_GPU_WORK_SIZE=4000000` (4M) → lower hashrate (~7.5 MH/s) a méně accepted shares
+- Optimal: `ZION_AUXPOW_GPU_WORK_SIZE=1000000` (1M)
 - Pool log: `auxpow_gpu_kernel_hang elapsed_ms=30003 timeout=30s aborting batch`
 
 ### ZANO stale shares
@@ -237,7 +244,7 @@ odtlačují miner output. Neposílat zbytečně bash commandy přes SMOS API.
 - **SSH:** `ssh -i ~/.ssh/zion-new-server -p 2222 root@62.171.141.136`
 - **Pool:** `62.171.141.136:8444` (stratum)
 - **Miner binary URL:** `http://62.171.141.136/zion-miner/zion-miner`
-- **ZIP URL:** `http://62.171.141.136/zion-miner/zion-miner-v3.1.9-vega-complete-62.zip`
+- **ZIP URL:** `http://62.171.141.136/zion-miner/zion-miner-v3.1.9-vega-complete-70.zip`
 - **Build dir:** `/home/zionserver/zion-build-local/`
 - **Nginx root:** `/var/www/zion-miner/`
 
@@ -282,3 +289,4 @@ curl -s -X PATCH -H "X-AUTH-TOKEN: <TOKEN>" \
 | v3.1.9-vega-complete-60 | 2026-07-21 | isatty check pro sticky header |
 | v3.1.9-vega-complete-61 | 2026-07-21 | raw_stdout() bypass Rust buffer |
 | v3.1.9-vega-complete-62 | 2026-07-21 | ZION_NO_STICKY env var, gws 6M→2M, ZION_VERBOSE=1 |
+| v3.1.9-vega-complete-70 | 2026-07-23 | ZANO stable ~9.5 MH/s on Vega 64 (bpermute+group 128, work size 1M) |
