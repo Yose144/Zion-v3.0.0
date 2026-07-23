@@ -45,6 +45,7 @@ const t = {
     l5_free_world: { cs: 'L5 Free World', en: 'L5 Free World' },
     l6_issobella: { cs: 'L6 Issobella', en: 'L6 Issobella' },
     terranova:  { cs: 'Terra Nova',   en: 'Terra Nova' },
+    whitepapers: { cs: 'Whitepapers', en: 'Whitepapers' },
     tree_of_life: { cs: 'Strom života', en: 'Tree of Life' },
     quantum_revolution: { cs: 'Kvantová Revoluce', en: 'Quantum Revolution' },
     terranova_public: { cs: 'Veřejná edice', en: 'Public edition' },
