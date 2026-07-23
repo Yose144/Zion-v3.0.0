@@ -19,6 +19,7 @@ import {
   Library,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 
 interface Paper {
   id: string;
@@ -221,9 +222,7 @@ export default function WhitepapersPage() {
       } catch (err) {
         console.error('Failed to load whitepaper:', err);
         if (!isCancelled) {
-          setContent(lang === 'cs'
-            ? `# Dokument není dostupný\n\n${currentPaper.title[lang]} (${currentPaper.file}) momentálně není k dispozici.`
-            : `# Document Not Available\n\n${currentPaper.title[lang]} (${currentPaper.file}) is currently not available.`);
+          setContent(`${tr('whitepapers', 'not_available_title', lang)}\n\n${currentPaper.title[lang]} (${currentPaper.file}) ${tr('whitepapers', 'not_available_body', lang)}`);
         }
       } finally {
         if (!isCancelled) setLoading(false);
@@ -255,20 +254,16 @@ export default function WhitepapersPage() {
           <div className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="zion-kicker mx-auto mb-6 w-fit border-violet-400/30 bg-violet-400/10 text-violet-200">
               <BookOpen className="w-4 h-4 text-violet-300" />
-              <span className="text-sm text-violet-200 font-semibold">{lang === 'cs' ? 'Dokumentace' : 'Documentation'}</span>
+              <span className="text-sm text-violet-200 font-semibold">{tr('whitepapers', 'hero_kicker', lang)}</span>
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gradient">
-              {lang === 'cs' ? 'ZION Whitepapers' : 'ZION Whitepapers'}
+              {tr('whitepapers', 'hero_title', lang)}
             </h1>
             <p className="text-xl text-gray-400 mb-4">
-              {lang === 'cs'
-                ? 'Kanonická whitepaper dokumentace pro ZION TerraNova v3 — Mainnet Alpha 3.1.'
-                : 'Canonical whitepaper documentation for ZION TerraNova v3 — Mainnet Alpha 3.1.'}
+              {tr('whitepapers', 'hero_subtitle', lang)}
             </p>
             <div className="zion-rainbow-sub mx-auto mb-8 max-w-3xl px-5 py-4 text-left text-sm text-gray-300" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
-              {lang === 'cs'
-                ? 'Všechny dokumenty jsou veřejné, MIT licencované a verifikovatelné. README níže vysvětluje, jak jednotlivé whitepapery číst — od Zlaté knihy přes technickou referenci až po Knihu Zrození a WpStory6.'
-                : 'All documents are public, MIT licensed, and verifiable. The README below explains how to read each whitepaper — from the Golden Book through the technical reference to the Book of Genesis and WpStory6.'}
+              {tr('whitepapers', 'hero_description', lang)}
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
@@ -287,7 +282,7 @@ export default function WhitepapersPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-5 py-2.5 text-sm font-semibold text-violet-100 hover:bg-violet-500/20 transition-colors"
             >
               <ExternalLink className="h-4 w-4" />
-              {lang === 'cs' ? 'Zdrojové soubory na GitHub' : 'Source files on GitHub'}
+              {tr('whitepapers', 'source_button', lang)}
             </a>
           </div>
         </div>
@@ -426,7 +421,7 @@ export default function WhitepapersPage() {
                     className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-4 py-2 text-sm font-semibold text-emerald-100 transition-colors"
                   >
                     <Download className="h-4 w-4" />
-                    {lang === 'cs' ? 'Stáhnout PDF' : 'Download PDF'}
+                    {tr('whitepapers', 'download_pdf', lang)}
                     <ExternalLink className="h-3 w-3 opacity-60" />
                   </a>
                 )}
@@ -446,9 +441,7 @@ export default function WhitepapersPage() {
               ) : currentPaper?.format === 'pdf' ? (
                 <div className="space-y-6">
                   <p className="text-gray-400 text-lg">
-                    {lang === 'cs'
-                      ? 'Tento dokument je dostupný jako PDF. Klikni na tlačítko výše pro stažení nebo otevření.'
-                      : 'This document is available as a PDF. Click the button above to download or open it.'}
+                    {tr('whitepapers', 'pdf_notice', lang)}
                   </p>
                   <div className="aspect-[4/3] w-full rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
                     <iframe
