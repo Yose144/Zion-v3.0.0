@@ -1,9 +1,10 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-07-19
+> **Datum poslední aktualizace:** 2026-07-23
 > **Protokol:** `zion-v3-node/3.0.6`
 > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
+> **Hard genesis reset:** 2026-07-20 — viz [`docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md`](./docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md). Bloky 0–~10913 předchozího řetězce jsou trvale ztraceny; aktuální chain startuje od genesis s unlimited retention.
 > **Plánovaná V3.1 migrace (po 3.0.9):** [`V3.1_MIGRATION_PLAN.md`](./V3.1_MIGRATION_PLAN.md) — migrace čistého kódu do nového adresáře `V31/` (nová větev). WARP a ZionDex přesunuty do L2, AuxPoW přímo v mineru, L3 vyhrazeno pro AI/orchestraci/automatizaci/NCL/PoC. L4 Oasis, L5 Free World a L6 Issobella zůstávají jako samostatné nadstavbové vrstvy. Detailní nativní propojení integrací: [`V3.1_INTEGRATION_PLAN.md`](./V3.1_INTEGRATION_PLAN.md).
 > **Předchozí archiv:** [`docs/3.0.5/StatusV3_archive_2026-07-13.md`](./docs/3.0.5/StatusV3_archive_2026-07-13.md) (5239 řádků, historické incident reporty)
 
@@ -13,12 +14,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Height** | 10911+ (2026-07-19, 2-node P2P mesh on Edge; local backup offline) |
+| **Height** | 2585+ (2026-07-23, 2-node P2P mesh on Edge + local backup synced) |
 | **Protocol** | `zion-v3-node/3.0.6` (v2) |
 | **Genesis** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
 | **Decimals** | 6 (1 ZION = 1,000,000 flowers, post-3.0.3 fork) |
 | **Total Supply** | 144B ZION (144e15 flowers) |
-| **Circulating** | 16.81B ZION (16.78B premine + ~31.33M mined) |
+| **Circulating** | ~16.692B ZION (16.68B premine + ~12.4M mined since 2026-07-20 reset) |
 | **Block Reward** | 5400.067 ZION |
 | **Fee Split** | 89% miner / 5% treasury / 5% community / 1% burn |
 | **Difficulty** | LWMA-60 (integer, ±25% clamp, 30–120s solve) |
@@ -52,8 +53,9 @@
 | zion-warp | 8453 (WARP API) | 0.0.0.0 | L3 | ✅ active |
 | zion-dex | 8454 (DEX Router API) | 0.0.0.0 | L3 | ✅ active |
 | zion-edge-oasis | 8094 (API), 9102 (metrics) | 127.0.0.1 | L4 | ✅ active |
-| zion-free-world | — | — | L5 | ✅ active |
-| zion-issobella | — | — | L6 | ✅ active |
+| zion-free-world | — | — | L5 | ⚠️ inactive (disabled) |
+| zion-issobella | — | — | L6 | ⚠️ inactive (disabled) |
+| zion-rtm-debug-pool | 8460 | 0.0.0.0 | L1 (RTM) | ✅ active (restarted 2026-07-23) |
 | zion-edge-python-dashboard | 8766 | 127.0.0.1 | — | ✅ active |
 | zion-watchdog.timer | — | — | — | ✅ active (2 min) |
 | zion-web (Docker) | 3000 | 127.0.0.1 | — | ✅ Up (377 MB) |
@@ -61,16 +63,16 @@
 
 ### Local Backup Node: `zionserver-144` (109.81.27.87)
 
-> **⚠️ OFFLINE (2026-07-15):** Dashboard reports `local_backup: running=false`. All services below are listed for reference but are currently down. Restart pending.
+> **✅ ONLINE (2026-07-23):** `zion-backup-node` is running and synced with Edge. Active state DB is `V3/data/zion-node-state.db` (JSON), not the stale `~/.zion/node-state.db` (height 0, unused).
 
 | Service | Port(s) | Status |
 |---------|---------|--------|
-| zion-backup-node | 8446 (RPC), 8333 (P2P) | ❌ offline |
-| zion-dashboard | 8766 | ❌ offline |
-| zion-stack | L2/L3 services | ❌ offline |
-| zion-ssh-tunnel | 9 local + 2 reverse SSH forwards to Edge | ❌ offline |
+| zion-backup-node | 8446 (RPC), 8333 (P2P) | ✅ synced |
+| zion-dashboard | 8766 | ✅ active (local `ZION_OS/dashboard/app.py`) |
+| zion-stack | L2/L3 services | — (runs on Edge) |
+| zion-ssh-tunnel | 9 local + 2 reverse SSH forwards to Edge | ✅ active |
 
-> **Backup node seed peers:** `ZION_SEED_PEERS='62.171.141.136:8333,62.171.141.136:8334'` (`scripts/start-backup-node.sh:25`). Current outage explains `known_peers=1` on Edge primary.
+> **Backup node seed peers:** `ZION_SEED_PEERS='62.171.141.136:8333,62.171.141.136:8334'` (`scripts/start-backup-node.sh:25`). `known_peers` on Edge primary is healthy again.
 
 ### Public Endpoints
 

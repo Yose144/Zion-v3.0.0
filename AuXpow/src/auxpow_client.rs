@@ -337,6 +337,14 @@ pub struct AuxPowClient {
     /// CryptonoteStratum (DNX): session ID from login response.
     /// Used for submit and keepalived requests.
     cryptonote_session_id: Arc<Mutex<Option<String>>>,
+    /// Server-side submitted nonce dedup: tracks (job_id, nonce) pairs
+    /// already forwarded to the upstream pool.  ProgPoW/ethash coins
+    /// (ZANO, ETC, RVN) use a 32-bit nonce — at 4 MH/s the entire 2^32
+    /// nonce space is scanned in ~18 min, after which the GPU wraps
+    /// around and re-finds nonces already submitted.  Without this dedup,
+    /// the upstream pool (HeroMiners) rejects the re-submission as
+    /// "Duplicate share".  Capped at 8192 entries with FIFO eviction.
+    submitted_nonces: Arc<Mutex<std::collections::VecDeque<(String, u64)>>>,
 }
 
 /// Pearl mining parameters received from the pool via `pearl.set_mining_params`.
@@ -386,6 +394,7 @@ impl AuxPowClient {
             gpu_opencl_backend: Arc::new(Mutex::new(None)),
             pearl_mining_params: Arc::new(Mutex::new(None)),
             cryptonote_session_id: Arc::new(Mutex::new(None)),
+            submitted_nonces: Arc::new(Mutex::new(std::collections::VecDeque::new())),
         }
     }
 
@@ -3181,6 +3190,17 @@ impl AuxPowClient {
                         ntime, nbits, version, header_bytes.len(), &target_hex,
                         *self.current_difficulty.lock().await
                     );
+                    // RTM debug: log full header + coinbase components for yiimp comparison
+                    if self.profile.coin == ExternalCoin::RTM {
+                        println!(
+                            "auxpow: RTM_DEBUG job={} extranonce1={} coinbase1={}.. coinbase2={}.. branches={} header_hex={}",
+                            job_id, extranonce1_hex,
+                            &coinbase1[..32.min(coinbase1.len())],
+                            &coinbase2[..32.min(coinbase2.len())],
+                            merkle_branches.len(),
+                            header_hex
+                        );
+                    }
 
                     return Ok(ExternalJob {
                         job_id,
@@ -3413,6 +3433,51 @@ impl AuxPowClient {
         let is_epic = self.protocol == StratumProtocol::EpicStratum;
         let is_beam = self.protocol == StratumProtocol::BeamStratum;
         let is_cryptonote = self.protocol == StratumProtocol::CryptonoteStratum;
+
+        // ── Server-side nonce dedup ──────────────────────────────────────
+        // ProgPoW/ethash coins (ZANO, ETC, RVN) use a 32-bit nonce.  At
+        // 4 MH/s the entire 2^32 nonce space is exhausted in ~18 min, after
+        // which the GPU wraps around and re-finds nonces already submitted
+        // to the upstream pool.  HeroMiners tracks (header_hash, nonce)
+        // pairs for the entire job lifetime and rejects re-submissions as
+        // "Duplicate share".  Pre-check here to avoid the round-trip.
+        //
+        // The dedup is keyed on (job_id, nonce) and capped at 8192 entries
+        // with FIFO eviction.  When a new ZANO block arrives the job_id
+        // changes, so old entries are naturally irrelevant.
+        //
+        // Applied to: EthStratum (ZANO), KawPow/ProgPoW Stratum v1 coins
+        // (RVN, ETC, CLORE, EVR, MEWC, QUAI, ZANO).  Not needed for
+        // ZcashStratum (VRSC — nonce is in solution nonceSpace, not the
+        // stratum nonce field), Beam, EPIC, or CryptonoteStratum.
+        {
+            let needs_dedup = is_ethstratum
+                || matches!(
+                    self.profile.coin,
+                    ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::EVR
+                        | ExternalCoin::MEWC | ExternalCoin::QUAI | ExternalCoin::ZANO
+                        | ExternalCoin::ETC
+                );
+            if needs_dedup {
+                let mut submitted = self.submitted_nonces.lock().await;
+                let key = (job_id.to_string(), nonce);
+                if submitted.iter().any(|(j, n)| j == &key.0 && *n == key.1) {
+                    warn!(
+                        "auxpow: {} server-side dedup skip job={}.. nonce={} — already forwarded to upstream",
+                        self.profile.coin,
+                        &job_id[..16.min(job_id.len())],
+                        nonce
+                    );
+                    return Ok(ShareResult::Rejected(
+                        "duplicate share — server-side dedup (nonce already forwarded)".to_string(),
+                    ));
+                }
+                submitted.push_back(key);
+                if submitted.len() > 8192 {
+                    submitted.pop_front();
+                }
+            }
+        }
 
         // EPIC submit format:
         //   {"id": N, "method": "submit", "params": {
@@ -3839,6 +3904,55 @@ impl AuxPowClient {
                     return Ok(ShareResult::Rejected(
                         "stale job — post-reconnect, solution unavailable".to_string()
                     ));
+                }
+            }
+
+            // ── Latest-job grace period check ────────────────────────────────
+            // LuckPool expires a VRSC job when a new VerusCoin block is found
+            // (~12s average, sometimes 1-3s).  The multi-hop forwarding
+            // architecture (LuckPool → Edge → miner → Edge → LuckPool) adds
+            // 3-5s delay, so shares for recently-superseded jobs may still
+            // be accepted if submitted quickly enough.
+            //
+            // Strategy: if the share's job_id is NOT the latest job_id, check
+            // how long ago the latest job arrived.  If it arrived > GRACE_SECS
+            // ago, the old job is definitely expired at LuckPool — pre-reject.
+            // If it arrived < GRACE_SECS ago, forward the share (it might
+            // still be valid — the miner found it before receiving the new
+            // job, and LuckPool may still accept it).
+            //
+            // DISABLED by default (grace=0): the pool server receives new
+            // jobs from LuckPool BEFORE the miner gets the old job, so
+            // latest_job_id is always ahead of the miner's job.  This causes
+            // false pre-rejections of shares LuckPool would have accepted.
+            // The ~15-17% reject rate is inherent to the multi-hop architecture.
+            // Set ZION_VRSC_JOB_GRACE_SECS > 0 to enable.
+            {
+                let grace_secs = std::env::var("ZION_VRSC_JOB_GRACE_SECS")
+                    .ok()
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0u64);
+                if grace_secs > 0 {
+                    let latest = self.latest_job_id.lock().await.clone();
+                    let latest_received_at = if let Some(ref lid) = latest {
+                        self.job_received_at.lock().await.get(lid).copied()
+                    } else {
+                        None
+                    };
+                    if let (Some(latest_id), Some(received_at)) = (&latest, latest_received_at) {
+                        if latest_id != job_id {
+                            let age = received_at.elapsed().as_secs();
+                            if age >= grace_secs {
+                                warn!(
+                                    "auxpow: {} stale job={} nonce={} — pre-rejected (latest job {} arrived {}s ago, grace={}s)",
+                                    self.profile.coin, job_id, nonce, latest_id, age, grace_secs
+                                );
+                                return Ok(ShareResult::Rejected(
+                                    "stale job — superseded by newer job (grace period expired)".to_string()
+                                ));
+                            }
+                        }
+                    }
                 }
             }
 

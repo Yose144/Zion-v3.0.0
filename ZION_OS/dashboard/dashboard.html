@@ -804,9 +804,11 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <button><i class="fas fa-users"></i> Pool ▾</button>
         <div class="zion-nav-dropdown">
           <button onclick="switchTab('pool-miners')" id="tab-pool-miners"><i class="fas fa-users"></i> Miners</button>
+          <button onclick="switchTab('pool-blocks')" id="tab-pool-blocks"><i class="fas fa-cube"></i> Blocks</button>
           <button onclick="switchTab('payout')" id="tab-payout"><i class="fas fa-money-bill"></i> Payouts</button>
           <button onclick="switchTab('revenue')" id="tab-revenue"><i class="fas fa-chart-line"></i> Revenue</button>
           <button onclick="switchTab('pool-setup')" id="tab-pool-setup"><i class="fas fa-sliders-h"></i> Setup</button>
+          <button onclick="switchTab('pool-debug')" id="tab-pool-debug"><i class="fas fa-bug"></i> Debug</button>
           <button onclick="switchTab('miner-live')" id="tab-miner-live"><i class="fas fa-tower-broadcast"></i> Live Miner</button>
         </div>
       </div>
@@ -2415,6 +2417,74 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
   </div>
 
   <!-- ═════════ TAB: Pool Miners ═════════ -->
+  <div id="pane-pool-blocks" class="hidden space-y-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🧱 Pool Blocks</h1>
+        <p class="text-xs text-gray-400 mt-1">Historical blocks from SQLite · Status · Luck · Orphan monitoring</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="pool-blocks-last-updated" class="text-[10px] text-gray-500"></span>
+        <button onclick="loadPoolBlocksTab()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+      </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div id="pool-blocks-kpi" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+      <div class="bg-black/30 border border-white/10 rounded-xl p-3">
+        <div class="text-[10px] text-gray-400 uppercase">Total Blocks</div>
+        <div id="pool-blocks-total" class="text-xl font-bold text-amber-400">—</div>
+      </div>
+      <div class="bg-black/30 border border-white/10 rounded-xl p-3">
+        <div class="text-[10px] text-gray-400 uppercase">Confirmed</div>
+        <div id="pool-blocks-confirmed" class="text-xl font-bold text-green-400">—</div>
+      </div>
+      <div class="bg-black/30 border border-white/10 rounded-xl p-3">
+        <div class="text-[10px] text-gray-400 uppercase">Pending</div>
+        <div id="pool-blocks-pending" class="text-xl font-bold text-yellow-400">—</div>
+      </div>
+      <div class="bg-black/30 border border-white/10 rounded-xl p-3">
+        <div class="text-[10px] text-gray-400 uppercase">Orphaned</div>
+        <div id="pool-blocks-orphaned" class="text-xl font-bold text-red-400">—</div>
+      </div>
+      <div class="bg-black/30 border border-white/10 rounded-xl p-3">
+        <div class="text-[10px] text-gray-400 uppercase">Orphan Rate</div>
+        <div id="pool-blocks-orphan-rate" class="text-xl font-bold text-orange-400">—</div>
+      </div>
+      <div class="bg-black/30 border border-white/10 rounded-xl p-3">
+        <div class="text-[10px] text-gray-400 uppercase">Pool Luck (64)</div>
+        <div id="pool-blocks-luck" class="text-xl font-bold text-cyan-400">—</div>
+      </div>
+    </div>
+
+    <!-- Blocks Table -->
+    <div class="bg-black/30 border border-white/10 rounded-xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-white">Recent Blocks</h2>
+        <span id="pool-blocks-count" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead class="bg-white/5 text-gray-400 uppercase">
+            <tr>
+              <th class="px-3 py-2 text-left">Height</th>
+              <th class="px-3 py-2 text-left">Hash</th>
+              <th class="px-3 py-2 text-left">Miner</th>
+              <th class="px-3 py-2 text-right">Share Diff</th>
+              <th class="px-3 py-2 text-right">Net Diff</th>
+              <th class="px-3 py-2 text-center">Status</th>
+              <th class="px-3 py-2 text-right">Time</th>
+            </tr>
+          </thead>
+          <tbody id="pool-blocks-tbody">
+            <tr><td colspan="7" class="px-3 py-4 text-center text-gray-500">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <div id="pane-pool-miners" class="hidden space-y-4">
     <!-- Header -->
     <div class="flex items-center justify-between">
@@ -3061,6 +3131,161 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
 
     <!-- Env file info -->
     <div id="ps-env-info" class="text-xs text-gray-500"></div>
+  </div>
+
+  <!-- ═════════ TAB: Pool Debugger ═════════ -->
+  <div id="pane-pool-debug" class="hidden space-y-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🐛 Pool Debugger</h1>
+        <p class="text-xs text-gray-400 mt-1">Raw metrics · PPLNS state · log tail · endpoint probes · env config · AuxPow · revenue — all in one diagnostic view</p>
+      </div>
+      <div class="flex gap-2 items-center">
+        <label class="text-xs text-gray-400 flex items-center gap-1.5">
+          <input type="checkbox" id="pd-autorefresh" checked class="rounded"> Auto-refresh 15s
+        </label>
+        <button onclick="loadPoolDebugTab()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+        <button onclick="pdToggleSection('all')" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">Expand All</button>
+        <button onclick="pdToggleSection('none')" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">Collapse All</button>
+      </div>
+    </div>
+
+    <!-- Section Status Bar -->
+    <div id="pd-status-bar" class="zion-panel p-3">
+      <div class="flex flex-wrap gap-2 text-[10px]" id="pd-section-status"></div>
+    </div>
+
+    <!-- Endpoint Probes -->
+    <details class="zion-panel p-4" id="pd-section-endpoints" open>
+      <summary class="cursor-pointer text-sm font-bold flex items-center gap-2">🔌 Endpoint Probes <span id="pd-endpoints-count" class="text-[10px] text-gray-500">—</span></summary>
+      <div class="mt-3 overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Endpoint</th>
+              <th class="py-2 px-2 text-center">Status</th>
+              <th class="py-2 px-2">HTTP</th>
+              <th class="py-2 px-2">Error</th>
+            </tr>
+          </thead>
+          <tbody id="pd-endpoints-tbody"></tbody>
+        </table>
+      </div>
+    </details>
+
+    <!-- Raw Prometheus Metrics -->
+    <details class="zion-panel p-4" id="pd-section-metrics">
+      <summary class="cursor-pointer text-sm font-bold flex items-center gap-2">📊 Raw Prometheus Metrics <span id="pd-metrics-count" class="text-[10px] text-gray-500">—</span></summary>
+      <div class="mt-3 overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Metric</th>
+              <th class="py-2 px-2">Labels</th>
+              <th class="py-2 px-2 text-right">Value</th>
+              <th class="py-2 px-2">Help</th>
+            </tr>
+          </thead>
+          <tbody id="pd-metrics-tbody"></tbody>
+        </table>
+      </div>
+      <details class="mt-3">
+        <summary class="text-[10px] text-gray-500 cursor-pointer">Show raw text</summary>
+        <pre id="pd-metrics-raw" class="mt-2 bg-black/40 rounded p-3 max-h-80 overflow-auto text-[10px] font-mono text-gray-400"></pre>
+      </details>
+    </details>
+
+    <!-- PPLNS State Dump -->
+    <details class="zion-panel p-4" id="pd-section-pplns">
+      <summary class="cursor-pointer text-sm font-bold flex items-center gap-2">⛏️ PPLNS State Dump <span id="pd-pplns-summary" class="text-[10px] text-gray-500">—</span></summary>
+      <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs mb-3" id="pd-pplns-kpis"></div>
+      <details>
+        <summary class="text-[10px] text-gray-500 cursor-pointer">Show full JSON</summary>
+        <pre id="pd-pplns-json" class="mt-2 bg-black/40 rounded p-3 max-h-96 overflow-auto text-[10px] font-mono text-gray-400"></pre>
+      </details>
+    </details>
+
+    <!-- Pool /stats Dump -->
+    <details class="zion-panel p-4" id="pd-section-stats">
+      <summary class="cursor-pointer text-sm font-bold flex items-center gap-2">📋 Pool /stats Dump <span id="pd-stats-summary" class="text-[10px] text-gray-500">—</span></summary>
+      <pre id="pd-stats-json" class="mt-3 bg-black/40 rounded p-3 max-h-96 overflow-auto text-[10px] font-mono text-gray-400"></pre>
+    </details>
+
+    <!-- AuxPow Config -->
+    <details class="zion-panel p-4" id="pd-section-auxpow">
+      <summary class="cursor-pointer text-sm font-bold flex items-center gap-2">⚡ AuxPow Config <span id="pd-auxpow-summary" class="text-[10px] text-gray-500">—</span></summary>
+      <div class="mt-3 overflow-x-auto">
+        <table class="w-full text-xs text-left" id="pd-auxpow-table"></table>
+      </div>
+    </details>
+
+    <!-- Pool Environment Variables -->
+    <details class="zion-panel p-4" id="pd-section-env">
+      <summary class="cursor-pointer text-sm font-bold flex items-center gap-2">🔑 Pool Environment Variables <span id="pd-env-count" class="text-[10px] text-gray-500">—</span></summary>
+      <div class="mt-3 overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Variable</th>
+              <th class="py-2 px-2">Value</th>
+            </tr>
+          </thead>
+          <tbody id="pd-env-tbody"></tbody>
+        </table>
+      </div>
+    </details>
+
+    <!-- Revenue Stats -->
+    <details class="zion-panel p-4" id="pd-section-revenue">
+      <summary class="cursor-pointer text-sm font-bold flex items-center gap-2">💰 Revenue Stats & Streams <span id="pd-revenue-summary" class="text-[10px] text-gray-500">—</span></summary>
+      <div class="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+          <h4 class="text-[10px] text-gray-400 uppercase mb-1">Revenue Stats</h4>
+          <pre id="pd-revenue-stats" class="bg-black/40 rounded p-3 max-h-72 overflow-auto text-[10px] font-mono text-gray-400"></pre>
+        </div>
+        <div>
+          <h4 class="text-[10px] text-gray-400 uppercase mb-1">Revenue Streams</h4>
+          <pre id="pd-revenue-streams" class="bg-black/40 rounded p-3 max-h-72 overflow-auto text-[10px] font-mono text-gray-400"></pre>
+        </div>
+      </div>
+    </details>
+
+    <!-- Pool Log Tail (live) -->
+    <details class="zion-panel p-4" id="pd-section-log" open>
+      <summary class="cursor-pointer text-sm font-bold flex items-center gap-2">📜 Pool Log Tail <span id="pd-log-count" class="text-[10px] text-gray-500">—</span></summary>
+      <div class="mt-3 flex justify-end">
+        <button onclick="loadPoolDebugLog()" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded mb-2">⟳ Refresh log only</button>
+      </div>
+      <div id="pd-log" class="bg-black/40 rounded p-3 max-h-96 overflow-auto text-[10px] font-mono text-gray-400"></div>
+    </details>
+
+    <!-- RPC Test Console -->
+    <details class="zion-panel p-4" id="pd-section-rpc">
+      <summary class="cursor-pointer text-sm font-bold flex items-center gap-2">🧪 RPC Test Console</summary>
+      <div class="mt-3 space-y-3">
+        <p class="text-[10px] text-gray-500">Quick probes against pool HTTP API endpoints on :8455. Click a button to fetch and display the raw response.</p>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="pdRpcTest('/stats')" class="text-[10px] px-2.5 py-1 bg-cyan-700/50 hover:bg-cyan-600 rounded transition">GET /stats</button>
+          <button onclick="pdRpcTest('/metrics')" class="text-[10px] px-2.5 py-1 bg-cyan-700/50 hover:bg-cyan-600 rounded transition">GET /metrics</button>
+          <button onclick="pdRpcTest('/miners?limit=10')" class="text-[10px] px-2.5 py-1 bg-cyan-700/50 hover:bg-cyan-600 rounded transition">GET /miners</button>
+          <button onclick="pdRpcTest('/api/v1/revenue/stats')" class="text-[10px] px-2.5 py-1 bg-cyan-700/50 hover:bg-cyan-600 rounded transition">GET /revenue/stats</button>
+          <button onclick="pdRpcTest('/api/v1/revenue/streams')" class="text-[10px] px-2.5 py-1 bg-cyan-700/50 hover:bg-cyan-600 rounded transition">GET /revenue/streams</button>
+          <button onclick="pdRpcTest('/api/v1/profit/switcher')" class="text-[10px] px-2.5 py-1 bg-cyan-700/50 hover:bg-cyan-600 rounded transition">GET /profit/switcher</button>
+        </div>
+        <div>
+          <div class="text-[10px] text-gray-400 mb-1">Custom path:</div>
+          <div class="flex gap-2">
+            <input id="pd-rpc-path" type="text" placeholder="/api/v1/miner/zion1.../stats" class="flex-1 bg-gray-700 text-gray-200 text-xs rounded px-2 py-1.5 font-mono">
+            <button onclick="pdRpcTestCustom()" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded transition">Fetch</button>
+          </div>
+        </div>
+        <div>
+          <div class="text-[10px] text-gray-400 mb-1">Response:</div>
+          <pre id="pd-rpc-result" class="bg-black/40 rounded p-3 max-h-80 overflow-auto text-[10px] font-mono text-gray-400">Click a button above to fetch…</pre>
+        </div>
+      </div>
+    </details>
   </div>
 
   <!-- ═════════ TAB: Revenue System ═════════ -->
@@ -7510,7 +7735,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
   </div>
 </div>
 
-<script src="/dashboard.js?v=116" defer></script>
+<script src="/dashboard.js?v=117" defer></script>
 <script>
 // ═══ Supported AuxPoW coin tickers (keep in sync with app.py AUXPOW_SUPPORTED_COINS) ═══
 const STREAM_COIN_TICKERS = [
@@ -7546,6 +7771,8 @@ const STREAM_COIN_TICKERS = [
     'pane-launch-day':        {rc:'255 215 0',   icon:'🚀', label:'Launch Day',       sub:'Genesis rotation & launch'},
     'pane-wizard':            {rc:'147 51 234',  icon:'🧙', label:'Setup Wizard',     sub:'Guided mainnet setup'},
     'pane-miner-live':        {rc:'251 191 36',  icon:'⛏️', label:'Miner Live',       sub:'Real-time miner monitor'},
+    'pane-pool-debug':        {rc:'34 197 94',   icon:'🐛', label:'Pool Debug',       sub:'Raw metrics · PPLNS · logs · RPC tests'},
+    'pane-pool-blocks':       {rc:'251 191 36',  icon:'🧱', label:'Pool Blocks',      sub:'Historical blocks · status · luck · orphans'},
     'pane-settings':          {rc:'100 116 139', icon:'⚙️', label:'Settings',         sub:'Dashboard configuration'},
     'pane-fleet':             {rc:'6 182 212',   icon:'🚢', label:'Fleet',            sub:'Rig fleet management'},
     'pane-logs':              {rc:'156 163 175', icon:'📜', label:'Logs',             sub:'Service log viewer'},

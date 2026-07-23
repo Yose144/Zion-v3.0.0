@@ -654,12 +654,12 @@ fn scan_ghostrider_single(job: &JobPackage, start: u64, end: u64) -> Option<Foun
         let hash = crate::external_hashers::hash_blake3(&work_blob, 0, nonce);
 
         // GhostRider: LE hash, BE target → reverse hash to BE and compare.
-        // The meets_target check already ensures the hash is below the share
-        // target. The yiimp "error 25" check (hash[30]|hash[31]==0) is only
-        // appropriate for BLOCK mining where the target is very hard; for
-        // SHARE mining with an easy target it would be more restrictive than
-        // the target itself (1/65536 probability) and prevent share finding.
-        if crate::external_hashers::meets_target_little_endian(&hash, target) {
+        // yiimp's client_submit.cpp enforces error 25 for ALL shares:
+        //   pfx = hash_bin[30] | hash_bin[31]; if(pfx) → error 25 "Invalid share"
+        // This requires the hash to be < 2^240 (top 2 LE bytes zero).
+        // We must check pfx here to avoid finding shares yiimp will reject.
+        let pfx = hash[30] | hash[31];
+        if pfx == 0 && crate::external_hashers::meets_target_little_endian(&hash, target) {
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
                 nonce,
@@ -739,6 +739,12 @@ fn scan_ghostrider_best_single(job: &JobPackage, start: u64, end: u64) -> Option
         #[cfg(not(feature = "native-ghostrider"))]
         let hash = crate::external_hashers::hash_blake3(&work_blob, 0, nonce);
 
+        // GhostRider: yiimp enforces pfx check (error 25) for ALL shares:
+        // hash_bin[30] | hash_bin[31] must be 0. Skip shares that fail this.
+        let pfx = hash[30] | hash[31];
+        if pfx != 0 {
+            continue;
+        }
         if best
             .as_ref()
             .map(|b| is_hash_better(&hash, &b.hash, true)) // GhostRider = LE

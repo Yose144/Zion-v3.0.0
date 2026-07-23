@@ -42,14 +42,14 @@ Overall coordination: [`MAINNET_ALPHA_PLAN.md`](./MAINNET_ALPHA_PLAN.md).
 
 ✅ **3.0.5 Done (2026-07-09)**
 - Protocol version bumped to `zion-v3-node/3.0.5` (from stale 3.0.3)
-- All 14 services active on live server (62.171.141.136): node, node2, pool, bridge, dao, atomic-swap, warp, ziondex, oasis, free-world, issobella, dashboard, nginx, web
+- All core services active on live server (62.171.141.136): node, node2, pool, bridge, dao, atomic-swap, warp, ziondex, oasis, rtm-debug-pool, dashboard, nginx, web
 - Watchdog timer active (2 min interval)
 - Web (Docker zion-web) Up — zionterranova.com: 200
 - E2E memo tests: 3 account-model TXs with memos confirmed in block 752 (BRIDGE/DAO/SWAP)
 - L2/L3 config fixes: bridge start height 0, backup RPC IP, DB paths unified to /data/zion/
 - Docs reconciled: fake commit hash fixed, activation height 0, old IPs replaced
 - **Web deploy optimalizace:** Docker image 2.57 GB → 377 MB (85% redukce) via standalone output + cache fix + build cache prune (23 GB freed)
-- **Health check 2026-07-14:** Chain height 5800+, 16.81B ZION circulating, 14/14 services active, RAM 2.7G/7.8G, disk 62G/145G
+- **Health check 2026-07-23:** Chain height 2584+, ~16.69B ZION circulating, 14/15 monitored services active (free-world, issobella disabled), RAM ~2.7G/7.8G, disk 66G/145G
 - Report: [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](./docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md)
 
 ✅ **3.0.6 "Triple Parallel" Done (2026-07-15)**
@@ -245,9 +245,9 @@ Final checklist. Full procedure in [`V3/docs/MAINNET_LAUNCH_SEQUENCE.md`](./V3/d
 |--------|-------|
 | V3 workspace tests | ~2,066+ |
 | WARP tests | 499 |
-| Edge services | 14 active (12 systemd + 1 timer + 1 Docker) |
-| Chain height | 5800+ (2026-07-14) |
-| Circulating supply | 16.81B ZION |
+| Edge services | 14 active + 1 timer + 1 Docker (free-world, issobella disabled) |
+| Chain height | 2584+ (2026-07-23) |
+| Circulating supply | ~16.69B ZION |
 | Web image size | 377 MB (was 2.57 GB) |
 | Mainnet launch | 31 December 2026 |
 

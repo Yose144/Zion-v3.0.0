@@ -1189,9 +1189,14 @@ impl GpuMiner {
             .max(1);
         let global_work_size = ((raw_gws + wg_size - 1) / wg_size) * wg_size;
         let start = Instant::now();
-        // Log before enqueue so we can see if the kernel hangs
-        // Suppress when ZION_NO_STICKY=1 (SMOS mode) to keep dashboard clean
-        if is_progpow && std::env::var("ZION_NO_STICKY").map(|v| v != "1" && v != "true").unwrap_or(true) {
+        // Only log kernel enqueue occasionally to avoid log spam (was 5859
+        // lines in a single session). Log first 3 batches and then every 500.
+        // Suppress when ZION_NO_STICKY=1 (SMOS mode) to keep dashboard clean.
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static PROGPOW_BATCH_COUNT: AtomicU64 = AtomicU64::new(0);
+        let batch_count_local = PROGPOW_BATCH_COUNT.fetch_add(1, Ordering::Relaxed);
+        let no_sticky = std::env::var("ZION_NO_STICKY").map(|v| v != "1" && v != "true").unwrap_or(true);
+        if is_progpow && no_sticky && (batch_count_local < 3 || batch_count_local % 500 == 0) {
             eprintln!(
                 "auxpow_gpu_kernel_enqueue algo={} gws={} lws={} batch_factor={} dag_elements={}",
                 algorithm, global_work_size, wg_size, batch_factor,
