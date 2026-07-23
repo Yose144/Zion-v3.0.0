@@ -152,6 +152,18 @@ impl JobMultiplexer {
         Some(pack_job(client.profile().coin, &job, share_target))
     }
 
+    /// Refresh the freshness timestamp for the current external job.
+    /// Called by the pool server whenever it distributes an external job
+    /// to a miner, so that stale-pre-rejection is anchored to the pool's
+    /// distribution time rather than the upstream pool's notification cadence.
+    pub async fn touch_job_timestamp(&self) {
+        if let Some(client) = self.active_client.as_ref() {
+            if let Some(job) = client.current_job().await {
+                client.touch_job_timestamp(&job.job_id).await;
+            }
+        }
+    }
+
     /// Wait for a new external job (or the first job) up to `timeout_ms`.
     pub async fn wait_for_job(&self, timeout_ms: u64) -> Result<Option<JobPackage>> {
         let client = self.active_client.as_ref().ok_or_else(|| anyhow!("not connected"))?;
