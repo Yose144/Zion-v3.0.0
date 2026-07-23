@@ -24,17 +24,18 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
-    slug: 'v3.0.6-beta-triple-stream-miner',
+    slug: 'v3.0.6-beta-trinity-released',
     date: '2026-07-21',
     tag: { cs: 'Release', en: 'Release' },
     tagColor: 'text-emerald-400',
     title: {
-      cs: 'ZION v3.0.6-beta — Triple Stream Miner: GPU + CPU současně, Zion Liquidity, žádné burzy',
-      en: 'ZION v3.0.6-beta — Triple Stream Miner: GPU + CPU together, Zion Liquidity, no exchanges',
+      cs: 'ZION v3.0.6-beta Trinity — veřejný miner release',
+      en: 'ZION v3.0.6-beta Trinity — public miner release',
     },
     summary: {
-      cs: 'Nový release v3.0.6-beta přináší Triple Stream mining engine — GPU a CPU pracují současně pro maximalizaci ZION earnings. Zion Liquidity inverzuje tradiční mining: těž → drž ZION → likvidita roste, pool hlídá konverze, žádné burzy, žádný sell pressure. Zion Grow: čím déle těžíš, tím více ZION držíš. Optimalizované OpenCL/CUDA kernely pro AMD RDNA (RX 5000/6000) a NVIDIA. Linux x86_64 binárka (~3.2 MB) dostupná z GitHub Releases s SHA256 verifikací. Pro macOS a Windows použij v3.0.5-beta Community CLI. Stáhni z /download.',
-      en: 'New release v3.0.6-beta brings the Triple Stream mining engine — GPU and CPU work together to maximize ZION earnings. Zion Liquidity inverts traditional mining: mine → hold ZION → liquidity grows, the pool handles conversions, no exchanges, no sell pressure. Zion Grow: the longer you mine, the more ZION you hold. Optimized OpenCL/CUDA kernels for AMD RDNA (RX 5000/6000) and NVIDIA. Linux x86_64 binary (~3.2 MB) available from GitHub Releases with SHA256 verification. For macOS and Windows use the v3.0.5-beta Community CLI. Download from /download.',
+      cs: 'ZION v3.0.6-beta "Trinity, Mainnet Beta" je venku. Miner pro Linux x86_64/ARM64, macOS Apple Silicon/Intel a Windows. Stáhni z GitHub Releases, vytvoř peněženku a začni těžit na oficiální pool. Veřejný launch zůstává naplánován na 31. prosince 2026.',
+      en: 'ZION v3.0.6-beta "Trinity, Mainnet Beta" is out. Miner for Linux x86_64/ARM64, macOS Apple Silicon/Intel, and Windows. Download from GitHub Releases, create your wallet, and start mining to the official pool. Public launch remains scheduled for 31 December 2026.',
+    },
     },
     href: 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.6-beta',
     external: true,

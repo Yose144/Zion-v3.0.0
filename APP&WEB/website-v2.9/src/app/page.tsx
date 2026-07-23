@@ -1,6 +1,7 @@
 import dynamicImport from 'next/dynamic';
 import Hero from '@/components/Hero';
 import BetaWarningBanner from '@/components/BetaWarningBanner';
+import ReleaseBanner from '@/components/ReleaseBanner';
 import BridgeStatusBanner from '@/components/BridgeStatusBanner';
 import HomeQuickLinks from '@/components/HomeQuickLinks';
 import WebTerminal from '@/components/WebTerminal';
@@ -22,6 +23,7 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <ReleaseBanner />
       <BetaWarningBanner />
       <WebTerminal />
       <BridgeStatusBanner />
