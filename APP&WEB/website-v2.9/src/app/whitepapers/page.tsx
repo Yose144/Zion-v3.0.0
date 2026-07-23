@@ -1,33 +1,30 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
   BookOpen,
-  Scroll,
   FileText,
   Sparkles,
   ExternalLink,
   Download,
-  Globe,
   ChevronRight,
   ChevronDown,
   Cpu,
-  Layers,
   Menu,
   X,
-  Shield,
+  Scroll,
+  ScrollText,
+  Library,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
-import { tr } from '@/lib/translations';
 
 interface Paper {
   id: string;
   title: { cs: string; en: string };
   description: { cs: string; en: string };
-  file: string; // relative to /docs/WP/
+  file: string;
   format: 'md' | 'pdf';
 }
 
@@ -36,33 +33,30 @@ interface Category {
   title: { cs: string; en: string };
   icon: React.ComponentType<{ className?: string }>;
   accentText: string;
-  accentBorder: string;
   papers: Paper[];
 }
 
-const pageCopy = {
-  badge: { cs: 'Dokumentace', en: 'Documentation' },
-  title: { cs: 'ZION Whitepapers', en: 'ZION Whitepapers' },
-  subtitle: {
-    cs: 'Oficiální dokumentace, technické specifikace a příběh projektu ZION TerraNova. Čti online, stahuj PDF a ověřuj fakta on-chain.',
-    en: 'Official documentation, technical specifications, and the story of the ZION TerraNova project. Read online, download PDFs, and verify facts on-chain.',
-  },
-  overview: {
-    cs: 'Všechny whitepapery jsou veřejné, MIT licencované a verifikovatelné: genesis hash `4f75a0df...`, total supply 144B ZION, 89/5/5/1 block reward split. Zlatá kniha (Master Whitepaper) je kanonická syntéza všech čtyř knih pro Mainnet Alpha 3.1.',
-    en: 'All whitepapers are public, MIT licensed, and verifiable: genesis hash `4f75a0df...`, 144B ZION total supply, 89/5/5/1 block reward split. The Golden Book (Master Whitepaper) is the canonical synthesis of all four books for Mainnet Alpha 3.1.',
-  },
-  download: { cs: 'Stáhnout PDF', en: 'Download PDF' },
-  read: { cs: 'Číst online', en: 'Read online' },
-  openPdf: { cs: 'Otevřít PDF', en: 'Open PDF' },
-} as const;
-
 const categories: Category[] = [
   {
+    id: 'overview',
+    title: { cs: 'Přehled', en: 'Overview' },
+    icon: BookOpen,
+    accentText: 'text-violet-300',
+    papers: [
+      {
+        id: 'readme',
+        title: { cs: 'README — ZION Whitepapers & Documentation', en: 'README — ZION Whitepapers & Documentation' },
+        description: { cs: 'Úvodní index do veřejné dokumentace ZION TerraNova v3.', en: 'Introductory index to the public ZION TerraNova v3 documentation.' },
+        file: 'README.md',
+        format: 'md',
+      },
+    ],
+  },
+  {
     id: 'master',
-    title: { cs: 'Master / Zlatá kniha', en: 'Master / Golden Book' },
+    title: { cs: 'Master / Kanonická syntéza', en: 'Master / Canonical Synthesis' },
     icon: Sparkles,
     accentText: 'text-zion-gold',
-    accentBorder: 'border-zion-gold/30',
     papers: [
       {
         id: 'master-cz',
@@ -81,57 +75,10 @@ const categories: Category[] = [
     ],
   },
   {
-    id: 'technical',
-    title: { cs: 'Technické Whitepapery', en: 'Technical Whitepapers' },
-    icon: Cpu,
-    accentText: 'text-zion-cyan',
-    accentBorder: 'border-zion-cyan/30',
-    papers: [
-      {
-        id: 'technical-cz',
-        title: { cs: 'Technický Whitepaper v3.1 (CZ)', en: 'Technical Whitepaper v3.1 (CZ)' },
-        description: { cs: 'Konsensus, ekonomika, architektura a bezpečnost.', en: 'Consensus, economics, architecture, and security.' },
-        file: 'ZION_Technical_Whitepaper_v3.1_CZ.md',
-        format: 'md',
-      },
-      {
-        id: 'technical-en',
-        title: { cs: 'Technical Whitepaper v3.1 (EN)', en: 'Technical Whitepaper v3.1 (EN)' },
-        description: { cs: 'Anglický překlad technické reference.', en: 'English translation of the technical reference.' },
-        file: 'ZION_Technical_Whitepaper_v3.1_EN.md',
-        format: 'md',
-      },
-    ],
-  },
-  {
     id: 'story',
-    title: { cs: 'Příběh / Kronika', en: 'Story / Chronicle' },
-    icon: Globe,
-    accentText: 'text-violet-400',
-    accentBorder: 'border-violet-400/30',
-    papers: [
-      {
-        id: 'story6-cz',
-        title: { cs: 'WpStory6 — Kronika v3.0.1 → v3.0.6 (CZ)', en: 'WpStory6 — Chronicle v3.0.1 → v3.0.6 (CZ)' },
-        description: { cs: 'Růstová kronika od prvního genesis k Trinity.', en: 'Growth chronicle from first genesis to Trinity.' },
-        file: 'WpStory6_CZ.md',
-        format: 'md',
-      },
-      {
-        id: 'story6-en',
-        title: { cs: 'WpStory6 — Chronicle v3.0.1 → v3.0.6 (EN)', en: 'WpStory6 — Chronicle v3.0.1 → v3.0.6 (EN)' },
-        description: { cs: 'Anglická verze kroniky.', en: 'English version of the chronicle.' },
-        file: 'WpStory6_EN.md',
-        format: 'md',
-      },
-    ],
-  },
-  {
-    id: 'pdf',
-    title: { cs: 'PDF ke stažení', en: 'PDF Downloads' },
-    icon: Download,
+    title: { cs: 'Příběh / Narrativ', en: 'Story / Narrative' },
+    icon: Scroll,
     accentText: 'text-emerald-400',
-    accentBorder: 'border-emerald-400/30',
     papers: [
       {
         id: 'genesis-cz',
@@ -161,6 +108,42 @@ const categories: Category[] = [
         file: 'Zion-WpLite_EN.pdf',
         format: 'pdf',
       },
+      {
+        id: 'story6-cz',
+        title: { cs: 'WpStory6 — Kronika v3.0.1 → v3.0.6 (CZ)', en: 'WpStory6 — Chronicle v3.0.1 → v3.0.6 (CZ)' },
+        description: { cs: 'Růstová kronika od prvního genesis k Trinity.', en: 'Growth chronicle from first genesis to Trinity.' },
+        file: 'WpStory6_CZ.md',
+        format: 'md',
+      },
+      {
+        id: 'story6-en',
+        title: { cs: 'WpStory6 — Chronicle v3.0.1 → v3.0.6 (EN)', en: 'WpStory6 — Chronicle v3.0.1 → v3.0.6 (EN)' },
+        description: { cs: 'Anglická verze kroniky.', en: 'English version of the chronicle.' },
+        file: 'WpStory6_EN.md',
+        format: 'md',
+      },
+    ],
+  },
+  {
+    id: 'technical',
+    title: { cs: 'Technické Whitepapery', en: 'Technical Whitepapers' },
+    icon: Cpu,
+    accentText: 'text-zion-cyan',
+    papers: [
+      {
+        id: 'technical-cz',
+        title: { cs: 'Technický Whitepaper v3.1 (CZ)', en: 'Technical Whitepaper v3.1 (CZ)' },
+        description: { cs: 'Konsensus, ekonomika, architektura a bezpečnost.', en: 'Consensus, economics, architecture, and security.' },
+        file: 'ZION_Technical_Whitepaper_v3.1_CZ.md',
+        format: 'md',
+      },
+      {
+        id: 'technical-en',
+        title: { cs: 'Technical Whitepaper v3.1 (EN)', en: 'Technical Whitepaper v3.1 (EN)' },
+        description: { cs: 'Anglický překlad technické reference.', en: 'English translation of the technical reference.' },
+        file: 'ZION_Technical_Whitepaper_v3.1_EN.md',
+        format: 'md',
+      },
     ],
   },
 ];
@@ -168,6 +151,7 @@ const categories: Category[] = [
 const quickFacts = [
   { label: { cs: 'Genesishash', en: 'Genesis hash' }, value: '4f75a0df…79bd6e', full: '4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e' },
   { label: { cs: 'Total supply', en: 'Total supply' }, value: '144B ZION' },
+  { label: { cs: 'Premine', en: 'Premine' }, value: '16.78B ZION' },
   { label: { cs: 'Block split', en: 'Block split' }, value: '89/5/5/1' },
   { label: { cs: 'Licence', en: 'License' }, value: 'MIT' },
 ];
@@ -180,34 +164,28 @@ function findCategoryIdByPaper(paperId: string): string | null {
 
 export default function WhitepapersPage() {
   const { lang } = useLang();
-  const cs = lang === 'cs';
-  const [selectedPaper, setSelectedPaper] = useState('master-cz');
-  const [activeCategory, setActiveCategory] = useState('master');
+  const [selectedPaper, setSelectedPaper] = useState('readme');
+  const [activeCategory, setActiveCategory] = useState('overview');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ master: true, technical: false, story: false, pdf: false });
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ overview: true, master: false, story: false, technical: false });
 
   const currentPaper = allPapers.find(p => p.id === selectedPaper);
   const currentCategory = categories.find(c => c.id === activeCategory);
 
-  // URL hash sync
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const hash = window.location.hash.replace('#', '');
-    if (hash) {
-      const paper = allPapers.find(p => p.id === hash);
-      if (paper) {
-        setSelectedPaper(hash);
-        setActiveCategory(findCategoryIdByPaper(hash) ?? 'master');
-      }
+    if (hash && allPapers.find(p => p.id === hash)) {
+      setSelectedPaper(hash);
+      setActiveCategory(findCategoryIdByPaper(hash) ?? 'overview');
     }
     const onHashChange = () => {
       const id = window.location.hash.replace('#', '');
-      const paper = allPapers.find(p => p.id === id);
-      if (paper) {
+      if (allPapers.find(p => p.id === id)) {
         setSelectedPaper(id);
-        setActiveCategory(findCategoryIdByPaper(id) ?? 'master');
+        setActiveCategory(findCategoryIdByPaper(id) ?? 'overview');
       }
     };
     window.addEventListener('hashchange', onHashChange);
@@ -222,7 +200,6 @@ export default function WhitepapersPage() {
     }
   }, [selectedPaper]);
 
-  // Load markdown content for .md papers
   useEffect(() => {
     let isCancelled = false;
 
@@ -278,20 +255,23 @@ export default function WhitepapersPage() {
           <div className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="zion-kicker mx-auto mb-6 w-fit border-violet-400/30 bg-violet-400/10 text-violet-200">
               <BookOpen className="w-4 h-4 text-violet-300" />
-              <span className="text-sm text-violet-200 font-semibold">{pageCopy.badge[lang]}</span>
+              <span className="text-sm text-violet-200 font-semibold">{lang === 'cs' ? 'Dokumentace' : 'Documentation'}</span>
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gradient">
-              {pageCopy.title[lang]}
+              {lang === 'cs' ? 'ZION Whitepapers' : 'ZION Whitepapers'}
             </h1>
             <p className="text-xl text-gray-400 mb-4">
-              {pageCopy.subtitle[lang]}
+              {lang === 'cs'
+                ? 'Kanonická whitepaper dokumentace pro ZION TerraNova v3 — Mainnet Alpha 3.1.'
+                : 'Canonical whitepaper documentation for ZION TerraNova v3 — Mainnet Alpha 3.1.'}
             </p>
             <div className="zion-rainbow-sub mx-auto mb-8 max-w-3xl px-5 py-4 text-left text-sm text-gray-300" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
-              {pageCopy.overview[lang]}
+              {lang === 'cs'
+                ? 'Všechny dokumenty jsou veřejné, MIT licencované a verifikovatelné. README níže vysvětluje, jak jednotlivé whitepapery číst — od Zlaté knihy přes technickou referenci až po Knihu Zrození a WpStory6.'
+                : 'All documents are public, MIT licensed, and verifiable. The README below explains how to read each whitepaper — from the Golden Book through the technical reference to the Book of Genesis and WpStory6.'}
             </div>
 
-            {/* quick facts */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
               {quickFacts.map((fact, i) => (
                 <div key={i} className="rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm px-3 py-3">
                   <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{fact.label[lang]}</p>
@@ -299,6 +279,16 @@ export default function WhitepapersPage() {
                 </div>
               ))}
             </div>
+
+            <a
+              href="https://github.com/Zion-TerraNova/v3-Mainnet/tree/main/docs/WP"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-5 py-2.5 text-sm font-semibold text-violet-100 hover:bg-violet-500/20 transition-colors"
+            >
+              <ExternalLink className="h-4 w-4" />
+              {lang === 'cs' ? 'Zdrojové soubory na GitHub' : 'Source files on GitHub'}
+            </a>
           </div>
         </div>
       </div>
@@ -436,7 +426,7 @@ export default function WhitepapersPage() {
                     className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-4 py-2 text-sm font-semibold text-emerald-100 transition-colors"
                   >
                     <Download className="h-4 w-4" />
-                    {pageCopy.download[lang]}
+                    {lang === 'cs' ? 'Stáhnout PDF' : 'Download PDF'}
                     <ExternalLink className="h-3 w-3 opacity-60" />
                   </a>
                 )}

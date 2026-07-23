@@ -355,6 +355,10 @@ foundry.lock
 PUBLIC/
 
 # OpenZeppelin submodule (vendored, not tracked)
+
+# Explorer dashboard stubs (temporary build workaround)
+!APP&WEB/website-v2.9/src/components/explorer/v4/dashboard/
+!APP&WEB/website-v2.9/src/components/explorer/v4/dashboard/**
 V3/L2/bridge/contracts/lib/openzeppelin-contracts/
 ZionDex/router/target/
 ZionDex/sdk/node_modules/
