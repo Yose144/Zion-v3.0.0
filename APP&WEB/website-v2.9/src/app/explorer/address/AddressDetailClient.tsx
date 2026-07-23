@@ -188,8 +188,8 @@ interface AddressData {
   transactions: Array<{
     tx_hash: string;
     type: string;
-    sender: string;
-    receiver: string;
+    from: string;
+    to: string;
     amount: number;
     fee: number;
     timestamp: number;
@@ -409,9 +409,9 @@ export default function AddressDetailClient() {
 
         {/* ── transaction summary (received / sent / fees) ──── */}
         {(() => {
-          const txs = data.transactions;
-          const received = txs.filter((t) => t.receiver === addr).reduce((s, t) => s + t.amount, 0);
-          const sent = txs.filter((t) => t.receiver !== addr).reduce((s, t) => s + t.amount, 0);
+          const txs = data.transactions.filter((t) => t.tx_hash);
+          const received = txs.filter((t) => (t.to || '') === addr).reduce((s, t) => s + t.amount, 0);
+          const sent = txs.filter((t) => (t.from || '') === addr).reduce((s, t) => s + t.amount, 0);
           const fees = txs.reduce((s, t) => s + (t.fee || 0), 0);
           const total = received + sent;
           return (
@@ -541,71 +541,78 @@ export default function AddressDetailClient() {
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.amount[cs ? 'cs' : 'en']}</span>
           </div>
 
-          {data.transactions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-2">
-              <p className="text-white/20 text-sm">{ExplorerAddressAddressDetailClientCopy.noTransactionsFound[cs ? 'cs' : 'en']}</p>
-            </div>
-          ) : (
-            <>
-              {data.transactions.slice(0, visibleCount).map((t) => {
-                const incoming = t.receiver === addr;
-                return (
-                  <Link
-                    key={t.tx_hash}
-                    href={`/explorer/tx?hash=${encodeURIComponent(t.tx_hash)}`}
-                    className="grid grid-cols-[70px_1fr_100px_90px_120px] gap-3 px-5 py-3 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group"
-                  >
-                    {/* type */}
-                    <div className="flex items-center">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
-                        t.type === "payout" ? "bg-emerald-500/15 text-emerald-400" : "bg-blue-500/15 text-blue-400"
-                      }`}>{t.type === 'payout' ? (ExplorerAddressAddressDetailClientCopy.payout[cs ? 'cs' : 'en']) : (cs ? 'převod' : t.type)}</span>
-                    </div>
+          {(() => {
+            const cleanTxs = data.transactions.filter((t) => t.tx_hash && (t.from || t.to || t.amount));
+            if (cleanTxs.length === 0) {
+              return (
+                <div className="flex flex-col items-center justify-center py-16 gap-2">
+                  <p className="text-white/20 text-sm">{ExplorerAddressAddressDetailClientCopy.noTransactionsFound[cs ? 'cs' : 'en']}</p>
+                </div>
+              );
+            }
+            const visibleTxs = cleanTxs.slice(0, visibleCount);
+            return (
+              <>
+                {visibleTxs.map((t) => {
+                  const incoming = (t.to || '') === addr;
+                  return (
+                    <Link
+                      key={t.tx_hash}
+                      href={`/explorer/tx?hash=${encodeURIComponent(t.tx_hash)}`}
+                      className="grid grid-cols-[70px_1fr_100px_90px_120px] gap-3 px-5 py-3 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group"
+                    >
+                      {/* type */}
+                      <div className="flex items-center">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
+                          t.type === "payout" ? "bg-emerald-500/15 text-emerald-400" : "bg-blue-500/15 text-blue-400"
+                        }`}>{t.type === 'payout' ? (ExplorerAddressAddressDetailClientCopy.payout[cs ? 'cs' : 'en']) : (cs ? 'převod' : t.type)}</span>
+                      </div>
 
-                    {/* hash */}
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-[13px] font-mono text-cyan-300 group-hover:text-cyan-200 truncate transition-colors">
-                        {t.tx_hash.slice(0, 16)}…{t.tx_hash.slice(-8)}
-                      </span>
-                      <CopyBtn text={t.tx_hash} />
-                    </div>
+                      {/* hash */}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-[13px] font-mono text-cyan-300 group-hover:text-cyan-200 truncate transition-colors">
+                          {t.tx_hash.slice(0, 16)}…{t.tx_hash.slice(-8)}
+                        </span>
+                        <CopyBtn text={t.tx_hash} />
+                      </div>
 
-                    {/* age */}
-                    <div className="flex items-center text-[12px] text-white/40 tabular-nums">{timeAgo(t.timestamp, cs)}</div>
+                      {/* age */}
+                      <div className="flex items-center text-[12px] text-white/40 tabular-nums">{timeAgo(t.timestamp, cs)}</div>
 
-                    {/* fee */}
-                    <div className="flex items-center justify-end text-[12px] text-white/30 tabular-nums font-mono">
-                      {t.fee > 0 ? t.fee.toFixed(6) : "—"}
-                    </div>
+                      {/* fee */}
+                      <div className="flex items-center justify-end text-[12px] text-white/30 tabular-nums font-mono">
+                        {t.fee > 0 ? t.fee.toFixed(6) : "—"}
+                      </div>
 
-                    {/* amount */}
-                    <div className={`flex items-center justify-end text-[13px] font-semibold tabular-nums ${incoming ? "text-emerald-400" : "text-red-400"}`}>
-                      {incoming ? "+" : "-"}{t.amount.toFixed(4)} ₿Z
-                    </div>
-                  </Link>
-                );
-              })}
+                      {/* amount */}
+                      <div className={`flex items-center justify-end text-[13px] font-semibold tabular-nums ${incoming ? "text-emerald-400" : "text-red-400"}`}>
+                        {incoming ? "+" : "-"}{t.amount.toFixed(4)} ₿Z
+                      </div>
+                    </Link>
+                  );
+                })}
 
-              {/* pagination footer */}
-              <div className="px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
-                <span className="text-[11px] text-white/40 tabular-nums">
-                  {cs ? `Zobrazuji ${Math.min(visibleCount, data.transactions.length)} z ${data.transactions.length}` : `Showing ${Math.min(visibleCount, data.transactions.length)} of ${data.transactions.length}`}
-                </span>
-                {visibleCount < data.transactions.length && (
-                  <button
-                    onClick={() => {
-                      setVisibleCount((c) => c + 10);
-                      setTimeout(() => txListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-[12px] font-semibold text-white/70 hover:text-white transition-colors"
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                    {ExplorerAddressAddressDetailClientCopy.loadMore[cs ? 'cs' : 'en']}
-                  </button>
-                )}
-              </div>
-            </>
-          )}
+                {/* pagination footer */}
+                <div className="px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
+                  <span className="text-[11px] text-white/40 tabular-nums">
+                    {cs ? `Zobrazuji ${Math.min(visibleCount, cleanTxs.length)} z ${cleanTxs.length}` : `Showing ${Math.min(visibleCount, cleanTxs.length)} of ${cleanTxs.length}`}
+                  </span>
+                  {visibleCount < cleanTxs.length && (
+                    <button
+                      onClick={() => {
+                        setVisibleCount((c) => c + 10);
+                        setTimeout(() => txListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-[12px] font-semibold text-white/70 hover:text-white transition-colors"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                      {ExplorerAddressAddressDetailClientCopy.loadMore[cs ? 'cs' : 'en']}
+                    </button>
+                  )}
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* ── UTXO list (only for UTXO-model addresses) ────── */}

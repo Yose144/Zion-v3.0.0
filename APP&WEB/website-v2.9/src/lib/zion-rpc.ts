@@ -1194,6 +1194,23 @@ export interface ClientMessage {
   pong?: boolean;
 }
 
+/**
+ * Resolve the default WebSocket URL for Zion realtime subscriptions.
+ * Prefers NEXT_PUBLIC_WS_URL, then derives a same-origin /ws endpoint
+ * from the current window location, falling back to the legacy localhost
+ * port only when no window is available (e.g. during SSR/build).
+ */
+export function getZionWebSocketUrl(): string {
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_WS_URL) {
+    return process.env.NEXT_PUBLIC_WS_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/ws`;
+  }
+  return 'ws://localhost:8445';
+}
+
 export class ZionWebSocketClient {
   private ws: WebSocket | null = null;
   private url: string;
@@ -1203,7 +1220,7 @@ export class ZionWebSocketClient {
   private messageHandlers: Map<SubscriptionType, (data: any) => void> = new Map();
   private connectionState: 'connecting' | 'connected' | 'disconnected' = 'disconnected';
 
-  constructor(url: string = 'ws://localhost:8445') {
+  constructor(url: string = getZionWebSocketUrl()) {
     this.url = url;
   }
 

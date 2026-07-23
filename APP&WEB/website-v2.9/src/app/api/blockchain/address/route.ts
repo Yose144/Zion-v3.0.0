@@ -74,8 +74,8 @@ export async function GET(request: NextRequest) {
       transactions = payouts.map((p: any, idx: number) => ({
         tx_hash: p.tx_id || `payout_${p.timestamp || idx}`,
         type: 'payout',
-        sender: 'Pool',
-        receiver: address,
+        from: 'Pool',
+        to: address,
         amount: p.amount_zion ?? p.amount ?? 0,
         fee: 0,
         timestamp: p.timestamp || 0,
