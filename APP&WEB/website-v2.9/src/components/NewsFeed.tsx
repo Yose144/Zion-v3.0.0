@@ -24,19 +24,20 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
-    slug: 'preparing-v3.0.6-release-update',
-    date: '2026-07-15',
-    tag: { cs: 'Update', en: 'Update' },
-    tagColor: 'text-zion-cyan',
+    slug: 'v3.0.6-beta-trinity-released',
+    date: '2026-07-21',
+    tag: { cs: 'Release', en: 'Release' },
+    tagColor: 'text-emerald-400',
     title: {
-      cs: 'Připravujeme v3.0.6 release update',
-      en: 'Preparing v3.0.6 release update',
+      cs: 'ZION v3.0.6-beta Trinity — veřejný miner release',
+      en: 'ZION v3.0.6-beta Trinity — public miner release',
     },
     summary: {
-      cs: 'Webová prezentace i dashboard se postupně přesouvají na v3.0.6. Aktuálně ladíme peer counting, Database Explorer a všechny verzované texty, aby odpovídaly živému runtime. Veřejný launch zůstává naplánován na 31. prosince 2026.',
-      en: 'The website and dashboard are gradually moving to v3.0.6. We are currently tuning peer counting, the Database Explorer, and all versioned copy to match the live runtime. Public launch remains scheduled for 31 December 2026.',
+      cs: 'ZION v3.0.6-beta "Trinity, Mainnet Beta" je venku. Miner pro Linux x86_64/ARM64, macOS Apple Silicon/Intel a Windows. Stáhni z GitHub Releases, vytvoř peněženku a začni těžit na oficiální pool. Veřejný launch zůstává naplánován na 31. prosince 2026.',
+      en: 'ZION v3.0.6-beta "Trinity, Mainnet Beta" is out. Miner for Linux x86_64/ARM64, macOS Apple Silicon/Intel, and Windows. Download from GitHub Releases, create your wallet, and start mining to the official pool. Public launch remains scheduled for 31 December 2026.',
     },
-    href: '/network',
+    href: 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.6-beta',
+    external: true,
   },
   {
     slug: 'v3.0.5-beta-simplified-community-cli',
