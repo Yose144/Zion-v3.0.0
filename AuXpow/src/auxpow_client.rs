@@ -3921,13 +3921,17 @@ impl AuxPowClient {
             // still be valid — the miner found it before receiving the new
             // job, and LuckPool may still accept it).
             //
-            // Default grace: 5s (covers the 3-5s multi-hop round-trip).
-            // Set ZION_VRSC_JOB_GRACE_SECS to override.
+            // DISABLED by default (grace=0): the pool server receives new
+            // jobs from LuckPool BEFORE the miner gets the old job, so
+            // latest_job_id is always ahead of the miner's job.  This causes
+            // false pre-rejections of shares LuckPool would have accepted.
+            // The ~15-17% reject rate is inherent to the multi-hop architecture.
+            // Set ZION_VRSC_JOB_GRACE_SECS > 0 to enable.
             {
                 let grace_secs = std::env::var("ZION_VRSC_JOB_GRACE_SECS")
                     .ok()
                     .and_then(|v| v.parse().ok())
-                    .unwrap_or(5u64);
+                    .unwrap_or(0u64);
                 if grace_secs > 0 {
                     let latest = self.latest_job_id.lock().await.clone();
                     let latest_received_at = if let Some(ref lid) = latest {
