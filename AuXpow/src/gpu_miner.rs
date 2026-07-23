@@ -2509,8 +2509,13 @@ typedef unsigned long ulong;
         // MeowPow uses REGS=16 and CNT_MATH=9 (halved vs KawPow's 32/18).
         // EvrProgPow uses the same REGS/CNT_MATH as KawPow (32/18) but PERIOD=3.
 
-        // Detect wavefront size from device name (RDNA1+ = wave32, GCN/Vega = wave64)
+        // Detect platform/wavefront size from device name.
+        // RDNA1+ = wave32, GCN/Vega = wave64, NVIDIA = warp32.
         let dev_name_lower = self.device_name.to_lowercase();
+        let is_nvidia = dev_name_lower.contains("nvidia")
+            || dev_name_lower.contains("geforce")
+            || dev_name_lower.contains("quadro")
+            || dev_name_lower.contains("tesla");
         let is_rdna = dev_name_lower.contains("gfx10")
             || dev_name_lower.contains("gfx11")
             || dev_name_lower.contains("rdna")
@@ -2524,16 +2529,23 @@ typedef unsigned long ulong;
             || dev_name_lower.contains("7700")
             || dev_name_lower.contains("7800")
             || dev_name_lower.contains("7900");
-        let wave_size = if is_rdna { 32 } else { 64 };
+        // Legacy GCN/Vega (gfx8xx, gfx9xx) often hangs with ds_bpermute in the
+        // ProgPoW DAG loop when combined with the keccak unroll and GROUP_SIZE=256.
+        // Auto-disable bpermute there; RDNA1+ (gfx10/11) runs it reliably.
+        // NVIDIA never supports AMD bpermute intrinsics.
+        let is_gcn_or_vega = dev_name_lower.contains("gfx8")
+            || dev_name_lower.contains("gfx9")
+            || dev_name_lower.contains("vega");
+        let wave_size = if is_rdna || is_nvidia { 32 } else { 64 };
 
         // Determine if we can use AMD bpermute (ds_bpermute) for barrier-free shuffle.
-        // Enabled on AMD platforms with AMDPRO driver (Linux). Can be disabled via
-        // ZION_AUXPOW_GPU_USE_BPERMUTE=0 for debugging.
-        let use_bpermute = std::env::var("ZION_AUXPOW_GPU_USE_BPERMUTE")
+        // Enabled on RDNA1+ by default; disabled on GCN/Vega and NVIDIA by default.
+        // Can be overridden via ZION_AUXPOW_GPU_USE_BPERMUTE=1/0.
+        let use_bpermute_env = std::env::var("ZION_AUXPOW_GPU_USE_BPERMUTE")
             .ok()
             .and_then(|v| v.trim().parse::<i32>().ok())
-            .map(|v| v != 0)
-            .unwrap_or(true); // default: enabled
+            .map(|v| v != 0);
+        let use_bpermute = use_bpermute_env.unwrap_or((!is_gcn_or_vega) && !is_nvidia);
 
         let is_progpow = algorithm == "progpow"
             || algorithm == "progpow_epic"
@@ -2541,27 +2553,30 @@ typedef unsigned long ulong;
             || algorithm == "progpowz";
 
         // GROUP_SIZE: 256 with bpermute (no barriers → safe), 128 without (barrier limit)
+        // On GCN/Vega we also cap at 128 to reduce register pressure and TTD risk.
+        let group_size_default = if is_progpow && use_bpermute { 256 } else { 128 };
         let group_size = std::env::var("ZION_AUXPOW_GPU_GROUP_SIZE")
             .ok()
             .and_then(|v| v.trim().parse::<usize>().ok())
-            .unwrap_or(if is_progpow && use_bpermute { 256 } else { 128 });
+            .unwrap_or(group_size_default);
 
         // Build platform/bpermute/wave defines
-        let amd_def = if use_bpermute {
-            format!("-DPLATFORM=2 -DUSE_AMD_BPERMUTE=1 -DWAVE_SIZE={}", wave_size)
+        let platform_id = if is_nvidia { 1 } else { 2 };
+        let platform_def = if use_bpermute {
+            format!("-DPLATFORM={platform_id} -DUSE_AMD_BPERMUTE=1 -DWAVE_SIZE={}", wave_size)
         } else {
-            format!("-DPLATFORM=2 -DWAVE_SIZE={}", wave_size)
+            format!("-DPLATFORM={platform_id} -DWAVE_SIZE={}", wave_size)
         };
 
         let build_opts = if params.regs != 32 || params.cnt_math != 18 {
             format!(
                 "-cl-std=CL1.2 -cl-mad-enable {} -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={} -DPROGPOW_REGS={} -DPROGPOW_CNT_MATH={}",
-                amd_def, dag_elements_safe, dag_bytes, group_size, params.regs, params.cnt_math
+                platform_def, dag_elements_safe, dag_bytes, group_size, params.regs, params.cnt_math
             )
         } else {
             format!(
                 "-cl-std=CL1.2 -cl-mad-enable {} -DPROGPOW_DAG_ELEMENTS={} -DPROGPOW_DAG_BYTES={} -DGROUP_SIZE={}",
-                amd_def, dag_elements_safe, dag_bytes, group_size
+                platform_def, dag_elements_safe, dag_bytes, group_size
             )
         };
 
