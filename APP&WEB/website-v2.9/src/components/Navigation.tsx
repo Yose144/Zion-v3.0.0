@@ -211,10 +211,10 @@ export default function Navigation() {
             FLOOR 1 — MAIN BAR
             Logo | 4 HERO icons (rasta) | lang + GitHub + auth + dashboard
             ═══════════════════════════════════════════════════ */}
-        <div className={`relative rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl p-[1px] shadow-[0_16px_60px_rgba(0,0,0,0.35)] transition-all duration-300 ${scrolled ? 'rounded-b-none' : ''}`}>
+        <div className="relative rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl p-[1px] shadow-[0_16px_60px_rgba(0,0,0,0.35)] transition-all duration-300">
           {/* Rasta gradient top accent line — thicker and narrower */}
-          <div className={`pointer-events-none absolute -top-px left-12 right-12 rounded-t-2xl bg-linear-to-r from-emerald-400/60 via-zion-gold/70 to-red-400/60 transition-all duration-300 ${scrolled ? 'h-0.5 left-8 right-8' : 'h-1'}`} />
-          <div className={`relative flex items-center justify-between gap-1.5 rounded-[15px] bg-black/70 px-2 sm:px-3 transition-all duration-300 ${scrolled ? 'py-0.5' : 'py-1'}`}
+          <div className={`pointer-events-none absolute -top-px left-12 right-12 rounded-t-2xl bg-linear-to-r from-emerald-400/60 via-zion-gold/70 to-red-400/60 transition-all duration-300 ${scrolled ? 'h-0.5 left-10 right-10' : 'h-1'}`} />
+          <div className={`relative flex items-center justify-between gap-1.5 rounded-[15px] bg-black/70 px-2 sm:px-3 transition-all duration-300 ${scrolled ? 'py-1' : 'py-1'}`}
             style={{
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
             }}
@@ -222,15 +222,16 @@ export default function Navigation() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group shrink-0">
-            <div className={`rounded-lg flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-all duration-300 bg-transparent shadow-[0_6px_18px_rgba(0,0,0,0.3)] ${scrolled ? 'w-6 h-6 sm:w-7 sm:h-7' : 'w-8 h-8 sm:w-9 sm:h-9'}`}>
+            <div className={`rounded-lg flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-all duration-300 bg-transparent shadow-[0_6px_18px_rgba(0,0,0,0.3)] ${scrolled ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-8 h-8 sm:w-9 sm:h-9'}`}>
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(111,255,240,0.08),transparent_65%)]" />
               <Image
-                src="/stargate-icon.png"
-                alt="ZION TerraNova Stargate"
+                src="/stargate/Z.gif"
+                alt="ZION TerraNova"
+                unoptimized
                 priority
-                width={36}
-                height={36}
-                className="relative z-10 w-full h-full object-contain"
+                width={40}
+                height={40}
+                className="relative z-10 w-full h-full object-contain rounded-lg"
               />
             </div>
             <div className={`hidden sm:flex flex-col leading-none transition-all duration-300 ${scrolled ? 'opacity-0 w-0 overflow-hidden' : ''}`}>
@@ -258,7 +259,7 @@ export default function Navigation() {
                   }}
                 >
                   <ml.icon
-                    className={`transition-all duration-300 ${scrolled ? 'w-3 h-3' : 'w-3.5 h-3.5'}`}
+                    className={`transition-all duration-300 ${scrolled ? 'w-4 h-4' : 'w-3.5 h-3.5'}`}
                     style={{ color: isActive ? `rgb(${ml.color})` : `rgba(${ml.color}, 0.8)` }}
                   />
                   <span
@@ -288,7 +289,7 @@ export default function Navigation() {
               title="GitHub"
               className={`hidden md:inline-flex rounded-lg border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 to-amber-600/8 items-center justify-center shadow-[0_0_10px_rgba(251,191,36,0.12)] hover:shadow-[0_0_18px_rgba(251,191,36,0.28)] hover:border-zion-gold/50 transition-all group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
             >
-              <Github className={`text-zion-gold transition-all duration-300 ${scrolled ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
+              <Github className={`text-zion-gold transition-all duration-300 ${scrolled ? 'w-4 h-4' : 'w-3.5 h-3.5'}`} />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-zion-gold/20 rounded px-2 py-0.5 text-zion-gold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">GitHub</span>
             </Link>
             <NavAuthButton />
@@ -297,7 +298,7 @@ export default function Navigation() {
               title={tr('nav', 'dashboard', lang)}
               className={`rounded-lg border border-white/15 bg-black/85 inline-flex items-center justify-center shadow-[0_10px_28px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50 group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
             >
-              <LayoutDashboard className={`text-white transition-all duration-300 ${scrolled ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
+              <LayoutDashboard className={`text-white transition-all duration-300 ${scrolled ? 'w-4 h-4' : 'w-3.5 h-3.5'}`} />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'dashboard', lang)}</span>
             </Link>
           </div>
