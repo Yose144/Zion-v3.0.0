@@ -85,7 +85,7 @@ Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyči
 ### 3.0.8 Go/No-Go
 
 - ✅ Všechny aktivní external coiny mají ověřené accepted shares nebo jsou disabled.
-- ✅ 15/15 služeb na Edge běží 7 dní bez restartu z důvodu chyby.
+- ✅ 14/15 služeb na Edge běží 7 dní bez restartu z důvodu chyby (free-world a issobella jsou disabled).
 - ✅ Explorer V4 je live.
 - ✅ Autonomous profit router funguje na alespoň jednom referenčním rigu.
 - ❌ Pokud nějaký coin zůstane v „limbu“ (kernel ready, ale host-side TODO), explicitně ho označíme jako deferred.
