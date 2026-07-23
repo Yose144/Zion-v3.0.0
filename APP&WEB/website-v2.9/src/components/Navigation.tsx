@@ -83,6 +83,7 @@ export default function Navigation() {
       color: '16, 185, 129',
       items: [
         { href: '/docs', label: tr('nav', 'docs', lang) },
+        { href: '/whitepapers', label: tr('nav', 'whitepapers', lang) },
         { href: '/news', label: tr('nav', 'news', lang) },
         { href: '/roadmap', label: tr('nav', 'roadmap', lang) },
         { href: '/genesis', label: tr('nav', 'genesis', lang) },
@@ -130,6 +131,7 @@ export default function Navigation() {
     { href: '/tree-of-life', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'tree_of_life', lang) },
     { href: '/news', icon: Newspaper, color: '249, 115, 22', label: tr('nav', 'news', lang) },
     { href: '/roadmap', icon: Map, color: '99, 102, 241', label: tr('nav', 'roadmap', lang) },
+    { href: '/whitepapers', icon: BookOpen, color: '147, 51, 234', label: tr('nav', 'whitepapers', lang) },
     { href: '/genesis', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'genesis', lang) },
     { href: '/quantum-revolution', icon: Atom, color: '251, 191, 36', label: tr('nav', 'quantum_revolution', lang) },
   ];
