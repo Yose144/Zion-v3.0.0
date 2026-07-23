@@ -24,6 +24,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'roadmap-to-mainnet-alpha-31',
+    date: '2026-07-23',
+    tag: { cs: 'Roadmap', en: 'Roadmap' },
+    tagColor: 'text-zion-gold',
+    title: {
+      cs: 'Cesta k ZION 3.1.0 Mainnet Alpha — od Trinity k čistému mainnetu',
+      en: 'Roadmap to ZION 3.1.0 Mainnet Alpha — from Trinity to a clean mainnet',
+    },
+    summary: {
+      cs: 'ZION 3.0.6 Trinity je venku a síť běží. Nyní míříme k 3.1.0 Mainnet Alpha: 3.0.7 „All Green“ → 3.0.8 „Full Stack Stable“ → 3.0.9 „Pre-Alpha Hardening“ → 3.1.0. Pokud síť zůstane bez kritických chyb, další hard reset nebude nutný — současný genesis hash je trvalý. Pracujeme na všech známých bugech, ladíme externí coiny a připravujeme repozitář pro masivní miner onboarding.',
+      en: 'ZION 3.0.6 Trinity is live and the network is running. We are now heading toward 3.1.0 Mainnet Alpha: 3.0.7 “All Green” → 3.0.8 “Full Stack Stable” → 3.0.9 “Pre-Alpha Hardening” → 3.1.0. If the network stays free of critical bugs, no further hard reset will be needed — the current genesis hash is permanent. We are working through every known issue, tuning external coins, and preparing the repository for large-scale miner onboarding.',
+    },
+    href: '/whitepapers',
+  },
+  {
     slug: 'v3.0.6-beta-trinity-released',
     date: '2026-07-21',
     tag: { cs: 'Release', en: 'Release' },
@@ -35,7 +50,6 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     summary: {
       cs: 'ZION v3.0.6-beta "Trinity, Mainnet Beta" je venku. Miner pro Linux x86_64/ARM64, macOS Apple Silicon/Intel a Windows. Stáhni z GitHub Releases, vytvoř peněženku a začni těžit na oficiální pool. Veřejný launch zůstává naplánován na 31. prosince 2026.',
       en: 'ZION v3.0.6-beta "Trinity, Mainnet Beta" is out. Miner for Linux x86_64/ARM64, macOS Apple Silicon/Intel, and Windows. Download from GitHub Releases, create your wallet, and start mining to the official pool. Public launch remains scheduled for 31 December 2026.',
-    },
     },
     href: 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.6-beta',
     external: true,
