@@ -3922,7 +3922,9 @@ fn external_gpu_thread(
     let mut current_miner: Option<Box<dyn gpu_backend::GpuMiner>> = None;
     let mut current_algo: Option<String> = None;
     let mut nonce_base: u64 = 0;
+    let mut nonce_base_origin: u64 = 0;
     let mut nonce_offset: u64 = 0;
+    let mut nonce_rotation: u64 = 0;
     let mut backend_init_failures: u32 = 0;
     let mut skipped_algos: std::collections::HashSet<String> = std::collections::HashSet::new();
     // Batch size for external GPU mining.  On a SINGLE GPU shared between
@@ -4042,15 +4044,27 @@ fn external_gpu_thread(
                     // nonce range for the same job_id.  Without this, the
                     // deterministic hash(job_id + PID) produces the same
                     // nonce_base after restart → duplicate share rejects.
-                    let mut h = DefaultHasher::new();
-                    job.job_id.hash(&mut h);
-                    std::process::id().hash(&mut h);
-                    std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap_or_default()
-                        .as_nanos()
-                        .hash(&mut h);
-                    let random_base = (h.finish() as u32) as u64;
+                    // Build a fresh 64-bit nonce base for this job.
+                    // Use the FULL 64-bit hash (not truncated to u32) so the
+                    // GPU can scan the entire 2^64 EthStratum nonce space.
+                    // This eliminates 32-bit nonce-space wrap-around, which
+                    // was causing HeroMiners "Duplicate share" rejects after
+                    // ~18 minutes of mining on the same ZANO job.
+                    // Include a timestamp so thread restarts don't reuse the
+                    // same nonce range for the same job_id.
+                    let random_base = {
+                        let mut h = DefaultHasher::new();
+                        job.job_id.hash(&mut h);
+                        std::process::id().hash(&mut h);
+                        std::thread::current().id().hash(&mut h);
+                        nonce_rotation.hash(&mut h);
+                        std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_nanos()
+                            .hash(&mut h);
+                        h.finish()
+                    };
 
                     // NiceHash nonce format: extranonce1 occupies high bits
                     // of the nonce. The miner must only iterate over the low
@@ -4081,7 +4095,11 @@ fn external_gpu_thread(
                     } else {
                         nonce_base = random_base;
                     }
+                    // Save the original base so periodic rotations can jump
+                    // to disjoint 64-bit windows without re-hashing.
+                    nonce_base_origin = nonce_base;
                     nonce_offset = 0;
+                    nonce_rotation = 0;
                 }
                 // Note: do NOT reset last_epoch here — the pool re-sends the
                 // same job every ~1s, and resetting would cause DAG reload
@@ -4383,6 +4401,34 @@ fn external_gpu_thread(
         // as reported by the GPU backend. This accounts for the internal
         // work_size cap in the AuXpow GpuMiner, preventing skipped nonces.
         nonce_offset = nonce_offset.wrapping_add(actual_batch);
+
+        // Periodic nonce-base rotation: ZANO/ProgPoW jobs can live for many
+        // minutes.  With the old 32-bit nonce_base, the GPU would wrap the
+        // entire 2^32 nonce space in ~18 min at 4 MH/s and re-submit the
+        // same nonces to HeroMiners → "Duplicate share" rejects.
+        //
+        // Fix: the initial nonce_base is a full 64-bit random value.  To keep
+        // the lower-32 window moving (and the full 64-bit nonce unique), we
+        // rotate nonce_base by rotation * (2^32 + 1) every threshold nonces.
+        // Because the stride is larger than the threshold, each rotation uses
+        // a disjoint 64-bit window and duplicates are effectively impossible.
+        let rotation_threshold = std::env::var("ZION_EXT_GPU_NONCE_ROTATE")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(2_147_483_648u64);
+        if rotation_threshold > 0 && nonce_offset >= rotation_threshold {
+            nonce_rotation = nonce_rotation.wrapping_add(1);
+            let stride = (1u64 << 32).wrapping_add(1);
+            nonce_base = nonce_base_origin.wrapping_add(nonce_rotation.wrapping_mul(stride));
+            nonce_offset = 0;
+            if !QUIET.load(Ordering::Relaxed) {
+                println!(
+                    "[{}] ext_gpu_nonce_rotate rotation={} nonce_base=0x{:016x} threshold={}",
+                    log_timestamp(), nonce_rotation, nonce_base, rotation_threshold
+                );
+            }
+        }
+
         batch_count += 1;
         hashrate.record_gpu_ext_hashes(actual_batch);
 
