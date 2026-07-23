@@ -16,6 +16,44 @@
 
 #if defined(_WIN32)
 #include <winsock2.h>
+// Windows winsock2.h does NOT define le16toh/le32toh/le64toh or htole* macros.
+// Add them explicitly (Windows is little-endian on x86_64).
+#ifndef le16toh
+#define le16toh(x) (x)
+#endif
+#ifndef le32toh
+#define le32toh(x) (x)
+#endif
+#ifndef le64toh
+#define le64toh(x) (x)
+#endif
+#ifndef htole16
+#define htole16(x) (x)
+#endif
+#ifndef htole32
+#define htole32(x) (x)
+#endif
+#ifndef htole64
+#define htole64(x) (x)
+#endif
+#ifndef htobe16
+#define htobe16(x) __builtin_bswap16(x)
+#endif
+#ifndef htobe32
+#define htobe32(x) __builtin_bswap32(x)
+#endif
+#ifndef htobe64
+#define htobe64(x) __builtin_bswap64(x)
+#endif
+#ifndef be16toh
+#define be16toh(x) __builtin_bswap16(x)
+#endif
+#ifndef be32toh
+#define be32toh(x) __builtin_bswap32(x)
+#endif
+#ifndef be64toh
+#define be64toh(x) __builtin_bswap64(x)
+#endif
 #elif defined(__APPLE__)
 #include <machine/endian.h>
 #include <libkern/OSByteOrder.h>

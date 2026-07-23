@@ -147,7 +147,7 @@ The local node state JSON is valid, loads without errors, and contains 2585 acce
 | `README.md` | "Chain Height 10911+" | 2584 |
 | `README.md` | "3.0.7 Triple Stream All Green planning" as current status | Deployed protocol is `3.0.6` |
 | `ROADMAP.md` | "Health check 2026-07-14: Chain height 5800+" | Chain reset; current height 2584 |
-| `3.0.7.md` / `TRIPLE_STREAM_ALL_GREEN_PLAN.md` | Claims verified at height 11608 on 2026-07-19 | Pre-reset chain; no longer valid |
+| `3.0.7.md` / `TRINITY_ALL_GREEN_PLAN.md` | Claims verified at height 11608 on 2026-07-19 | Pre-reset chain; no longer valid |
 | `AGENTS.md` | "local backup node currently offline" | Online |
 
 The **single source of truth** for the reset is `docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md`. Root docs were not updated to reflect it.
@@ -180,7 +180,7 @@ The `+Y` should be `%Y`. Logs show literal `[Y-07-23 ...]`. The bug is cosmetic 
 ### 4.7 Protocol version mismatch between code/docs
 
 - `V3/Cargo.toml` and `V3/L1/core/src/lib.rs` declare version/protocol `3.0.6`.
-- `README.md`, `3.0.7.md`, and `TRIPLE_STREAM_ALL_GREEN_PLAN.md` frame the live work as `3.0.7`.
+- `README.md`, `3.0.7.md`, and `TRINITY_ALL_GREEN_PLAN.md` frame the live work as `3.0.7`.
 - The deployed binary (`/opt/zion/V3/target/release/node`) and RPC respond with `3.0.6`.
 - Recommendation: distinguish **deployed code (3.0.6)** from **planning milestone (3.0.7)** in docs.
 

@@ -10,7 +10,7 @@
 
 ## 1. Release Summary
 
-ZION v3.0.6-beta introduces the **Triple Stream** mining engine and
+ZION v3.0.6-beta introduces the **Trinity** mining engine and
 publishes the canonical whitepaper collection to the public repository.
 
 ### What was released
@@ -25,12 +25,12 @@ publishes the canonical whitepaper collection to the public repository.
 
 ### Key features
 
-- **Triple Stream engine** — GPU + CPU mine simultaneously; the pool handles
+- **Trinity engine** — GPU + CPU mine simultaneously; the pool handles
   all conversions internally so the miner only sees ZION earnings.
 - **Zion Grow** — continuous mining compounds the miner's ZION position.
 - **Zion Liquidity** — every hash deepens the ZION liquidity pool; zero sell
   pressure on the open market.
-- **`public_build` feature** — the public binary contains full Triple Stream
+- **`public_build` feature** — the public binary contains full Trinity
   support but the TUI displays only "ZION / Deeksha Lite v1". No external
   coin names, algorithms, or internal mechanics are visible to the user.
 
@@ -44,7 +44,7 @@ publishes the canonical whitepaper collection to the public repository.
 | Size | 3,377,554 bytes (3.4 MB) |
 | SHA256 | `ad1b6be71be7046f0a77be445089f637587c43e36e6ace00532696a3b3217f44` |
 | Platform | Linux x86_64 only |
-| License | MIT (binary); Triple Stream engine source is proprietary |
+| License | MIT (binary); Trinity engine source is proprietary |
 
 ### Verify the download
 
@@ -64,7 +64,7 @@ chmod +x zion-miner
 ## 3. Build Instructions (reproducible)
 
 The public binary is built with the `public_build` feature flag, which
-hides Triple Stream internals in the TUI while keeping the full engine
+hides Trinity internals in the TUI while keeping the full engine
 active internally.
 
 ### Prerequisites
@@ -79,7 +79,7 @@ active internally.
 # From the repository root
 cd V3
 
-# Public build (Triple Stream hidden in TUI)
+# Public build (Trinity hidden in TUI)
 cargo build --release -p zion-miner \
     --features public_build,gpu-opencl,native-hashers,native-verushash,native-randomx
 
@@ -118,7 +118,7 @@ A reproducible build script is included at
 ```bash
 gh release create v3.0.6-beta \
     --repo Zion-TerraNova/v3-Mainnet \
-    --title "ZION v3.0.6-beta — Triple Stream Miner" \
+    --title "ZION v3.0.6-beta — Trinity Miner" \
     --notes-file MinerP3.0.6/RELEASE_NOTES.md \
     --prerelease \
     MinerP3.0.6/dist/zion-miner-linux-x86_64.tar.gz \
@@ -276,15 +276,15 @@ information leaks.
 
 ### `public_build` feature flag
 
-The public binary contains the full Triple Stream engine but the TUI
+The public binary contains the full Trinity engine but the TUI
 displays only "ZION / Deeksha Lite v1":
 
-- Header shows "ZION MINER" (not "ZION MINER | TRIPLE STREAM")
+- Header shows "ZION MINER" (not "ZION MINER | TRINITY")
 - Only Stream 1 (ZION/Deeksha) is displayed; Streams 2 and 3 are hidden
 - All shares display as "ZION" regardless of which stream found them
 - Sticky stats box shows "ZION v3.0.6 Miner" and filters to ZION stream only
 
-Triple Stream still runs internally — only the display is suppressed.
+Trinity still runs internally — only the display is suppressed.
 
 ---
 
@@ -358,7 +358,7 @@ shares, pool height, and uptime.
 
 | GPU | Algorithm | Hashrate |
 |-----|-----------|----------|
-| RX 5600 XT | Deeksha Lite v1 | 34 KH/s (solo) / 17 KH/s (Triple Stream) |
+| RX 5600 XT | Deeksha Lite v1 | 34 KH/s (solo) / 17 KH/s (Trinity) |
 | RX 5700 XT | Deeksha Lite v1 | 28-30 KH/s |
 
 > **AMD users:** Install AMDPRO (ROCm) driver for best performance.
@@ -432,7 +432,7 @@ nc -zv 62.171.141.136 8444
 
 | Commit | Description |
 |--------|-------------|
-| `6ac734af9` | release: v3.0.6-beta Triple Stream Miner + public_build feature |
+| `6ac734af9` | release: v3.0.6-beta Trinity Miner + public_build feature |
 | `49005b86d` | docs(whitepaper): add WpStory6 canonical addendum (CZ+EN) |
 | `a407361df` | docs(whitepaper): ZION Master Whitepaper for Mainnet Alpha 3.1 (CZ+EN) |
 | `ffbd72271` | docs(WP): publish canonical whitepapers to public/docs/WP/ (CZ+EN) |
@@ -455,7 +455,7 @@ nc -zv 62.171.141.136 8444
 
 - **ZION blockchain core, pool, community CLI:** MIT License
 - **Miner binary:** MIT License
-- **Triple Stream engine source:** Proprietary (not included in public repo)
+- **Trinity engine source:** Proprietary (not included in public repo)
 - **Whitepapers:** MIT License
 
 ---

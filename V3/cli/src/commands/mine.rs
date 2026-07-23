@@ -28,7 +28,7 @@ pub enum MineCmd {
         #[arg(long)]
         algorithm: Option<String>,
     },
-    /// Auto-detect hardware and start mining with optimal triple-stream config
+    /// Auto-detect hardware and start mining with optimal trinity config
     Auto {
         /// Pool address host:port (default: from config)
         #[arg(long)]

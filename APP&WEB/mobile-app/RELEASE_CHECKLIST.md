@@ -1,12 +1,12 @@
-# ZION Mobile v3.0.5 "All Green" — Release Checklist
+# ZION Mobile v3.0.6 "Trinity" — Release Checklist
 
 ## Pre-build
 
-- [x] `package.json` version = `3.0.5`
-- [x] `app.json` version = `3.0.5`, buildNumber = `8`, versionCode = `8`
-- [x] `config.js` VERSION = `3.0.5`, BUILD_NUMBER = `8`, CODENAME = `All Green`
-- [ ] `android/app/build.gradle` versionName = `3.0.5`, versionCode = `8`
-- [ ] `ios/ZIONMobile/Info.plist` CFBundleShortVersionString = `3.0.5`
+- [x] `package.json` version = `3.0.6`
+- [x] `app.json` version = `3.0.6`, buildNumber = `8`, versionCode = `8`
+- [x] `config.js` VERSION = `3.0.6`, BUILD_NUMBER = `8`, CODENAME = `Trinity`
+- [ ] `android/app/build.gradle` versionName = `3.0.6`, versionCode = `8`
+- [ ] `ios/ZIONMobile/Info.plist` CFBundleShortVersionString = `3.0.6`
 - [ ] All `AGENTS.md` mainnet constants verified (genesis hash, ports, addresses)
 - [x] `CONFIG.NETWORK_MODE` defaults to `mainnet`
 - [x] RPC nodes point to `62.171.141.136:8443`
@@ -86,11 +86,11 @@ xcodebuild -workspace ZIONMobile.xcworkspace -scheme ZIONMobile -configuration R
 
 ## Post-release
 
-- [ ] Tag release: `git tag -a v3.0.5-mobile -m "ZION Mobile v3.0.5 All Green"`
-- [ ] Push tag: `git push origin v3.0.5-mobile`
+- [ ] Tag release: `git tag -a v3.0.6-mobile -m "ZION Mobile v3.0.6 Trinity"`
+- [ ] Push tag: `git push origin v3.0.6-mobile`
 - [ ] Update website download links (App Store + Play Store URLs)
 - [ ] Announce on Discord / Twitter
-- [ ] EAS OTA update: `eas update --branch production --message "v3.0.5 All Green"`
+- [ ] EAS OTA update: `eas update --branch production --message "v3.0.6 Trinity"`
 
 ## Notes
 

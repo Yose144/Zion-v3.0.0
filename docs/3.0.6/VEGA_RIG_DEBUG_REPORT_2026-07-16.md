@@ -10,7 +10,7 @@
 
 Get EPIC Cash ProgPow GPU mining working on the SMOS Vega rig via
 `zion-miner` v3.0.6, alongside ZION (Deeksha) GPU and VRSC (VerusHash)
-CPU streams — triple-stream mining.
+CPU streams — trinity mining.
 
 ---
 
@@ -296,7 +296,7 @@ sshpass -p 'omnity.company@gmail.com' ssh miner@192.168.1.113 \
    gdb -batch -ex run -ex "info registers rip" -ex "x/i \$rip" --args /tmp/zion-miner-real --pool 62.171.141.136:8444 --wallet zion1s6m204400290l660k622r3r0c6u040g5j6cu2x5 --worker vega-smos --no-tui --threads 8 2>&1 | tail -20'
 ```
 
-### Step 5: Verify triple-stream mining
+### Step 5: Verify trinity mining
 
 Once SIGILL is fixed, verify all 3 streams:
 - **ZION GPU** (Deeksha) — check `zion_gpu_share_accepted` in logs

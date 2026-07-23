@@ -72,7 +72,7 @@ const t = {
 
   /* ─── Hero ─── */
   hero: {
-    badge_version:  { cs: 'V3 Mainnet Beta · 3.0.6 All Green', en: 'V3 Mainnet Beta · 3.0.6 All Green' },
+    badge_version:  { cs: 'V3 Mainnet Beta · 3.0.6 Trinity', en: 'V3 Mainnet Beta · 3.0.6 Trinity' },
     badge_chv4:     { cs: 'Edge server topologie', en: 'Edge server topology' },
     tagline:        { cs: 'Nativní Rust blockchain s Proof-of-Work konsensem', en: 'Native Rust blockchain with Proof-of-Work consensus' },
     title_sub:      { cs: 'Genesis Live · Edge server · canonical runtime v3.0.6 Ekam Deeksha · 6-decimal flowers', en: 'Genesis Live · Edge server · canonical runtime v3.0.6 Ekam Deeksha · 6-decimal flowers' },

@@ -12,6 +12,9 @@
  */
 
 #include "compat.h"
+#if defined(_WIN32)
+#include <windows.h>
+#endif
 #include "verus_hash.h"
 
 #include <cstring>
@@ -111,12 +114,20 @@ double verushash_benchmark(int32_t iterations) {
     memset(header, 0x56, 76);
     uint8_t out[32];
     struct timespec t0, t1;
+#if defined(_WIN32)
+    LARGE_INTEGER _perf0, _perf1; QueryPerformanceCounter(&_perf0);
+#else
     timespec_get(&t0, TIME_UTC);
+#endif
     for (int32_t i = 0; i < iterations; i++) {
         header[0] = (uint8_t)(i & 0xFF);
         verushash_hash(header, 76, (uint64_t)i, out);
     }
-    timespec_get(&t1, TIME_UTC);
+#if defined(_WIN32)
+    QueryPerformanceCounter(&_perf1); double _elapsed = (double)(_perf1.QuadPart - _perf0.QuadPart);
+#else
+    timespec_get(&t1, TIME_UTC); double _elapsed = (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec) / 1e9;
+#endif
     double secs = (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec) * 1e-9;
     return secs > 0.0 ? iterations / secs : 0.0;
 }

@@ -271,7 +271,7 @@ Rozdíl může být způsoben:
 
 | Commit | Popis |
 |--------|-------|
-| `11a13c212` | feat(miner): RandomX support + seed_hash plumbing for triple-stream mining |
+| `11a13c212` | feat(miner): RandomX support + seed_hash plumbing for trinity mining |
 | `dbf6031e0` | perf(randomx): per-thread VMs for lock-free multi-threaded hashing |
 | `1dd22014e` | perf(randomx): enable JIT + hardware AES on Apple Silicon — 8.8x speedup |
 
@@ -298,7 +298,7 @@ Rozdíl může být způsoben:
 
 1. **Edge server build** — `cargo build --release --features native-randomx` na x86_64
 2. **Memory requirements** — ~2 GB pro dataset + ~256 MB pro cache = ~2.3 GB RAM per miner instance
-3. **Multi-algo coexistence** — RandomX (CPU) + VerusHash (CPU) + ZION (GPU) triple-stream
+3. **Multi-algo coexistence** — RandomX (CPU) + VerusHash (CPU) + ZION (GPU) trinity
 
 ---
 

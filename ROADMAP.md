@@ -1,8 +1,8 @@
 # ZION Roadmap — From 3.0.5 to Public Mainnet Launch
 
-> **Version:** 3.0.7 "Triple Stream All Green" planning  
+> **Version:** 3.0.7 "Trinity All Green" planning  
 > **Last updated:** 2026-07-19
-> **One source of truth:** [`3.0.7.md`](./3.0.7.md) + [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](./TRIPLE_STREAM_ALL_GREEN_PLAN.md) · Previous: [`docs/3.0.6/3.0.6.md`](./docs/3.0.6/3.0.6.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./docs/3.0.4/SecurityFirst.md)  
+> **One source of truth:** [`3.0.7.md`](./3.0.7.md) + [`TRINITY_ALL_GREEN_PLAN.md`](./TRINITY_ALL_GREEN_PLAN.md) · Previous: [`docs/3.0.6/3.0.6.md`](./docs/3.0.6/3.0.6.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./docs/3.0.4/SecurityFirst.md)  
 > **Engineering detail:** [`V3/ROADMAP.md`](./V3/ROADMAP.md)
 
 ---
@@ -28,7 +28,7 @@ The project is now driving toward **Mainnet Alpha (3.1.0)** in three planned ste
 
 | Version | Name | Goal | Plan |
 |---------|------|------|------|
-| **3.0.7** | Triple Stream All Green | Every active mining stream has verified accepted shares | [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](./TRIPLE_STREAM_ALL_GREEN_PLAN.md) / [`3.0.7.md`](./3.0.7.md) |
+| **3.0.7** | Trinity All Green | Every active mining stream has verified accepted shares | [`TRINITY_ALL_GREEN_PLAN.md`](./TRINITY_ALL_GREEN_PLAN.md) / [`3.0.7.md`](./3.0.7.md) |
 | **3.0.8** | Full Stack Stable | All active components work; no placeholders in hot paths | [`3.0.8.md`](./3.0.8.md) |
 | **3.0.9** | Pre-Alpha Hardening | Security audit, chaos tests, repo purification, public sync | [`3.0.9.md`](./3.0.9.md) |
 | **3.1.0** | Mainnet Alpha | Clean repo, feature freeze, release ready | [`3.1.0.md`](./3.1.0.md) |
@@ -38,7 +38,7 @@ Overall coordination: [`MAINNET_ALPHA_PLAN.md`](./MAINNET_ALPHA_PLAN.md).
 
 ---
 
-## 1. Current State — 3.0.5 "All Green" (2026-07-09)
+## 1. Current State — 3.0.6 "Trinity" (2026-07-22)
 
 ✅ **3.0.5 Done (2026-07-09)**
 - Protocol version bumped to `zion-v3-node/3.0.5` (from stale 3.0.3)
@@ -76,7 +76,7 @@ Overall coordination: [`MAINNET_ALPHA_PLAN.md`](./MAINNET_ALPHA_PLAN.md).
 - **E2E Edge audit:** Pool embeds EPIC+VRSC streams ✓, but miners not submitting external shares (old binary) — deploy fix needed
 - **Tests:** 159 AuXpow + 38 miner + 38 pool + 562 core = 797 direct crate tests
 - Plan: [`docs/3.0.6/AuxPowTriplePlan.md`](./docs/3.0.6/AuxPowTriplePlan.md) §11 Live Verification
-- Next milestone: [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](./TRIPLE_STREAM_ALL_GREEN_PLAN.md)
+- Next milestone: [`TRINITY_ALL_GREEN_PLAN.md`](./TRINITY_ALL_GREEN_PLAN.md)
 
 ✅ **Done (3.0.4 and earlier)**
 - DeFi contracts deployed on Base Mainnet: ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm
