@@ -148,6 +148,7 @@ struct WorkBits {
 }
 
 impl WorkBits {
+    #[cfg(test)]
     fn zero() -> Self {
         Self { words: [0u64; 7] }
     }
@@ -229,51 +230,47 @@ impl WorkBits {
         Self { words }
     }
 
-    /// Set bits starting at `offset` to the low 32 bits of `value`.
-    fn set_bits_at(&mut self, offset: usize, value: u64) {
-        let word_idx = offset / 64;
-        let bit_offset = offset % 64;
-        if word_idx >= 7 {
-            return;
-        }
-        let low_bits = 32.min(64 - bit_offset);
-        let mask = (1u64 << low_bits) - 1;
-        self.words[word_idx] |= (value & mask) << bit_offset;
-        if bit_offset + 32 > 64 && word_idx + 1 < 7 {
-            let remaining = 32 - low_bits;
-            let mask2 = (1u64 << remaining) - 1;
-            self.words[word_idx + 1] |= ((value >> low_bits) & mask2);
-        }
-    }
-
     /// Apply the BeamHash III mix function (from reference applyMix).
     ///
     /// Mixes the index tree bits into the work bits, then computes a 64-bit
     /// SipHash-style rotation over eight 64-bit chunks and replaces the
     /// lowest 64 bits with the result.
     fn apply_mix(&mut self, indices: &[u32], rem_len: usize) {
-        let mut temp = *self;
+        // The reference applyMix uses a 512-bit temporary bitset so that
+        // padding index tree bits can live above the 448 work bits.
+        // The 448-bit work bits occupy the lowest 448 bits, the upper 64
+        // bits start as zero and may receive index bits.
+        let mut temp = [0u64; 8];
+        temp[..7].copy_from_slice(&self.words);
 
-        // Add index tree bits into temp at the high end of the remaining bits.
-        // padNum = ((workBitSize - remLen) + collisionBitSize) / (collisionBitSize + 1)
-        let pad_num = ((BEAMHASH_WORK_BITS - rem_len) + BEAMHASH_COLLISION_BITS)
+        // padNum = ((512 - remLen) + collisionBitSize) / (collisionBitSize + 1)
+        let pad_num = ((512 - rem_len) + BEAMHASH_COLLISION_BITS)
             / (BEAMHASH_COLLISION_BITS + 1);
         let pad_num = pad_num.min(indices.len());
 
         for i in 0..pad_num {
-            let shift = rem_len + i * (BEAMHASH_COLLISION_BITS + 1);
-            if shift >= BEAMHASH_WORK_BITS {
+            let offset = rem_len + i * (BEAMHASH_COLLISION_BITS + 1);
+            if offset >= 512 {
                 break;
             }
-            temp.set_bits_at(shift, indices[i] as u64);
+            let value = indices[i] as u64;
+            let word_idx = offset / 64;
+            let bit_offset = offset % 64;
+            let low_bits = 32.min(64 - bit_offset);
+            let mask = (1u64 << low_bits) - 1;
+            temp[word_idx] |= (value & mask) << bit_offset;
+            if bit_offset + 32 > 64 && word_idx + 1 < 8 {
+                let remaining = 32 - low_bits;
+                let mask2 = (1u64 << remaining) - 1;
+                temp[word_idx + 1] |= (value >> low_bits) & mask2;
+            }
         }
 
         // Apply mix: sum rotl(chunk, 29*(i+1) mod 64) for each 64-bit chunk.
         let mut result = 0u64;
         for i in 0..8 {
-            let chunk = if i < 7 { temp.words[i] } else { 0u64 };
             let rot = ((29 * (i + 1)) & 0x3F) as u32;
-            result = result.wrapping_add(chunk.rotate_left(rot));
+            result = result.wrapping_add(temp[i].rotate_left(rot));
         }
         result = result.rotate_left(24);
 
@@ -413,7 +410,7 @@ pub fn decompress_indices(data: &[u8]) -> Result<Vec<u32>, String> {
 fn apply_mix_rem_len(round: u32) -> usize {
     if round + 1 == BEAMHASH_K {
         // Round 5: drop an extra 64 bits before mixing.
-        BEAMHASH_WORK_BITS - (BEAMHASH_K as usize) * BEAMHASH_COLLISION_BITS - 64
+        BEAMHASH_WORK_BITS - ((BEAMHASH_K - 1) as usize) * BEAMHASH_COLLISION_BITS - 64
     } else {
         BEAMHASH_WORK_BITS - (round as usize) * BEAMHASH_COLLISION_BITS
     }
@@ -426,9 +423,9 @@ fn constructor_rem_len(round: u32) -> usize {
     if round + 1 == BEAMHASH_K {
         // Final round: keep only the collision bits.
         BEAMHASH_COLLISION_BITS
-    } else if round + 2 == BEAMHASH_K {
+    } else if round + 1 == BEAMHASH_K - 1 {
         // Round 4: drop an extra 64 bits.
-        BEAMHASH_WORK_BITS - (BEAMHASH_K as usize) * BEAMHASH_COLLISION_BITS - 64
+        BEAMHASH_WORK_BITS - ((BEAMHASH_K - 1) as usize) * BEAMHASH_COLLISION_BITS - 64
     } else {
         BEAMHASH_WORK_BITS - ((round + 1) as usize) * BEAMHASH_COLLISION_BITS
     }
@@ -750,5 +747,97 @@ mod tests {
 
         let hash = hash_beamhash(&header, &fake_solution);
         assert_eq!(hash, [0xffu8; 32], "invalid solution hash must be all 0xff");
+    }
+
+    #[test]
+    fn test_rem_len_helpers_match_reference() {
+        // Values taken from upstream beamHashIII_impl.cpp verifier/solver.
+        assert_eq!(apply_mix_rem_len(0), 448);
+        assert_eq!(apply_mix_rem_len(1), 424);
+        assert_eq!(apply_mix_rem_len(2), 400);
+        assert_eq!(apply_mix_rem_len(3), 376);
+        assert_eq!(apply_mix_rem_len(4), 288);
+
+        assert_eq!(constructor_rem_len(0), 424);
+        assert_eq!(constructor_rem_len(1), 400);
+        assert_eq!(constructor_rem_len(2), 376);
+        assert_eq!(constructor_rem_len(3), 288);
+        assert_eq!(constructor_rem_len(4), 24);
+    }
+
+    #[test]
+    fn test_apply_mix_matches_upstream_reference() {
+        // Independent bit-array reference for the upstream applyMix behavior.
+        fn reference_apply_mix(words: [u64; 7], indices: &[u32], rem_len: usize) -> u64 {
+            let mut bits = vec![false; 512];
+
+            // 448-bit work bits occupy the lowest 448 bits (word 0 = LSBs).
+            for w in 0..7 {
+                for b in 0..64 {
+                    bits[w * 64 + b] = (words[w] >> b) & 1 == 1;
+                }
+            }
+
+            // Index tree padding: padNum = ((512 - remLen) + 24) / 25.
+            let pad_num = ((512 - rem_len) + BEAMHASH_COLLISION_BITS)
+                / (BEAMHASH_COLLISION_BITS + 1);
+            let pad_num = pad_num.min(indices.len());
+            for i in 0..pad_num {
+                let offset = rem_len + i * (BEAMHASH_COLLISION_BITS + 1);
+                if offset >= 512 {
+                    break;
+                }
+                let value = indices[i];
+                for b in 0..32 {
+                    let pos = offset + b;
+                    if pos < 512 && (value >> b) & 1 == 1 {
+                        bits[pos] = true;
+                    }
+                }
+            }
+
+            let mut result = 0u64;
+            for i in 0..8 {
+                let mut chunk = 0u64;
+                for b in 0..64 {
+                    if bits[i * 64 + b] {
+                        chunk |= 1u64 << b;
+                    }
+                }
+                let rot = ((29 * (i + 1)) & 0x3F) as u32;
+                result = result.wrapping_add(chunk.rotate_left(rot));
+            }
+            result.rotate_left(24)
+        }
+
+        let words = [
+            0x123456789ABCDEF0u64,
+            0xFEDCBA9876543210u64,
+            0xA5A5A5A5A5A5A5A5u64,
+            0x5C5C5C5C5C5C5C5Cu64,
+            0x0F0F0F0F0F0F0F0Fu64,
+            0xF0F0F0F0F0F0F0F0u64,
+            0xAA55AA55AA55AA55u64,
+        ];
+        let indices = [
+            0x01234567u32,
+            0x89ABCDEFu32,
+            0x13579BDFu32,
+            0x2468ACE0u32,
+            0xFEDCBA98u32,
+            0x76543210u32,
+            0xAABBCCDDu32,
+            0x11223344u32,
+        ];
+
+        for rem_len in [0usize, 24, 100, 200, 300, 400, 424, 448] {
+            let mut wb = WorkBits { words };
+            wb.apply_mix(&indices, rem_len);
+            let expected = reference_apply_mix(words, &indices, rem_len);
+            assert_eq!(
+                wb.words[0], expected,
+                "apply_mix mismatch for rem_len={}", rem_len
+            );
+        }
     }
 }

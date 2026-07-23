@@ -74,12 +74,12 @@ ulong8 shift56(ulong8 input) {
 __attribute__((reqd_work_group_size(wgSize, 1, 1)))
 __kernel void cleanUp(	__global ulong8 * buffer0,
 			__global ulong8 * buffer1,
-			__global uint4 * counters,
+			__global uint * counters,
 			__global uint * results,
 			ulong4 prePow) {
 
 	uint gId = get_global_id(0);
-	counters[gId] = (uint4) 0;
+	counters[gId] = 0;
 
 	if (get_global_id(0) == 0) {
 		results[0] = 0;

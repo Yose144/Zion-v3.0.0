@@ -152,8 +152,8 @@ pub struct GpuMiner {
 /// Cached OpenCL buffers for the BeamHash III multi-round solver.
 #[cfg(feature = "gpu-opencl")]
 struct BeamhashSolverBuffers {
-    buf0: Buffer<u8>,
-    buf1: Buffer<u8>,
+    buf0: Buffer<ocl::prm::Ulong8>,
+    buf1: Buffer<ocl::prm::Ulong8>,
     counters: Buffer<u32>,
     results: Buffer<u32>,
 }
@@ -1426,13 +1426,13 @@ impl GpuMiner {
         // of `self` by the ProQue and the buffer cache.
         let mut cached = self.beamhash_buffers.take();
         if cached.is_none() {
-            let buf0 = Buffer::<u8>::builder()
+            let buf0 = Buffer::<ocl::prm::Ulong8>::builder()
                 .queue(q.clone())
-                .len(HASH_TABLE_BYTES)
+                .len(HASH_TABLE_BYTES / core::mem::size_of::<ocl::prm::Ulong8>())
                 .build()?;
-            let buf1 = Buffer::<u8>::builder()
+            let buf1 = Buffer::<ocl::prm::Ulong8>::builder()
                 .queue(q.clone())
-                .len(HASH_TABLE_BYTES)
+                .len(HASH_TABLE_BYTES / core::mem::size_of::<ocl::prm::Ulong8>())
                 .build()?;
             let counters = Buffer::<u32>::builder()
                 .queue(q.clone())
@@ -1508,7 +1508,7 @@ impl GpuMiner {
         };
 
         // Run the multi-round solver.
-        enqueue_kernel("cleanUp", 5120, WG_SIZE)?;
+        enqueue_kernel("cleanUp", COUNTERS_LEN, WG_SIZE)?;
         enqueue_kernel("beamHashIII_seed", 33_554_432, WG_SIZE)?;
         enqueue_kernel("beamHashIII_R1", 4_194_304, WG_SIZE)?;
         enqueue_kernel("beamHashIII_R2", 4_194_304, WG_SIZE)?;

@@ -1888,10 +1888,12 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 
 - **Kernel:** `AuXpow/csrc/opencl/beamhash_solver.cl` (upravený `BeamMW/opencl-miner_1.0.82 beam_hash_III.cl`) — plný Wagnerův algoritmus v OpenCL: `cleanUp`, `beamHashIII_seed`, `beamHashIII_R1` až `R5`.
 - **Integrace:** `AuXpow/src/gpu_miner.rs` — `GpuMiner::mine()` rozpozná `beamhash`/`beamhash_beam` a volá `mine_beamhash_solver()`. Komunikuje s GPU přes `ocl`, alokuje 2× 35 171 200 × `ulong8` hash tabulky (~2.3 GB každá) + counter/results, spouští 6 kernelů, parsuje až 10 kandidátních řešení a ověřuje je lokálně `hash_beamhash() + target`.
+- **Verifier fix:** `AuXpow/src/beamhash.rs` — `WorkBits::apply_mix` nyní používá 8-slovný `[u64; 8]` temporary podle upstream `beamHashIII_impl.cpp` (`std::bitset<512>`), takže nezahazuje padding indexového stromu nad bitem 448. Helpery `apply_mix_rem_len`/`constructor_rem_len` opraveny pro kola 4/5. Přidány unit testy `test_rem_len_helpers_match_reference` a `test_apply_mix_matches_upstream_reference` (11/11 testů prochází).
+- **BeamStratum klient:** `AuXpow/src/auxpow_client.rs` — odpovědi se párují podle `id` i jako string (`"login"`), notifikace `job`/`cancel` se dispatchují pro BeamStratum.
 - **VRAM:** ~4.5 GB GPU paměti pro BeamHash III solver (2× hash tabulka ~2.3 GB + drobné buffery). Na integrovaných GPU/APU může selhat; potřebuje dedikovanou VRAM.
-- **Build:** `cargo check -p zion-auxpow --features gpu-opencl` a `cargo check -p zion-miner --features gpu-opencl` procházejí. Živé testování vyžaduje BEAM wallet pro debug pool a GPU s dostatek VRAM.
+- **Build:** `cargo test -p zion-auxpow --release --lib beamhash` = 11/11 passed; `cargo build --release -p zion-miner --features gpu-opencl` úspěšně vyprodukuje `./target/release/zion-miner`.
 - **Debug pool:** `edge-deploy/config/debug-beam-environment.sh` nastavuje `ZION_POOL_AUXPOW_COIN=BEAM` a `ZION_POOL_AUXPOW_WALLET_BEAM` (neposílá se na Edge main pool). Pro lokální test: `source edge-deploy/config/debug-beam-environment.sh && cargo run --release -p zion-pool-server --features gpu-opencl,native-hashers`.
-- **TODO end-to-end:** V3 miner musí předat do `GpuMiner::mine()` raw pre-PoW header (ne 80B padding) a řešení 104 bytů musí projít z `GpuFoundShare.solution` až do `AuxPowClient::submit_share()` jako `output` pro BeamStratum.
+- **TODO end-to-end:** V3 miner už předává raw pre-PoW header (`use_raw_header` pro `beamhash`/`beamhash_beam` v `V3/L1/miner/src/main.rs`); zbývá ověřit, že 104bytové `GpuFoundShare.solution` projde až do `AuxPowClient::submit_share()` jako `output` pro BeamStratum při skutečném share.
 
 ### Metal ProgPoWZ (ZANO) kernel verification (2026-07-21)
 
