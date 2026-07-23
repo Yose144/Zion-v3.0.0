@@ -4351,14 +4351,16 @@ fn external_gpu_thread(
                         mix_hash: *mix_hash,
                         extranonce1_hex: job.extranonce1_hex.clone(),
                     };
-                    println!(
-                        "[{}] ext_gpu_share_found coin={} algo={} nonce={} hash={}",
-                        log_timestamp(),
-                        share.coin,
-                        share.algorithm,
-                        share.nonce,
-                        hex::encode(share.hash)
-                    );
+                    if !QUIET.load(Ordering::Relaxed) {
+                        println!(
+                            "[{}] ext_gpu_share_found coin={} algo={} nonce={} hash={}",
+                            log_timestamp(),
+                            share.coin,
+                            share.algorithm,
+                            share.nonce,
+                            hex::encode(share.hash)
+                        );
+                    }
                     let _ = tx.send(share);
                 }
             }
@@ -4861,7 +4863,7 @@ fn ext_share_submitter_thread(
             };
             if let Err(e) = send_result {
                 eprintln!("[{}] ext_share_submitter: send error: {}", log_timestamp(), e);
-            } else {
+            } else if !QUIET.load(Ordering::Relaxed) {
                 println!(
                     "[{}] ext_share_submitted  coin={}  algo={}  job_id={}  nonce={}",
                     log_timestamp(),

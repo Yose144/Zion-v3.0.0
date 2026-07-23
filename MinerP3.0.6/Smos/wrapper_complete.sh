@@ -31,20 +31,25 @@ export ZION_GPU_MAX_BATCH=16384
 export ZION_GPU_EARLY_BREAK=1
 export ZION_GPU_NO_STREAM_BYPRODUCT=1
 
-# ── Triple-stream (ZION + ZANO + VRSC) ────────────────────────────────────
+# ── Triple-stream (ZION GPU + ZANO GPU + VRSC CPU) ───────────────────────────
+# ZANO ProgPoWZ on Vega 64 (gfx900/GCN, wave64) needs ds_bpermute disabled and
+# a smaller group size to avoid kernel hangs. RDNA1+ can re-enable bpermute.
 export ZION_STREAM1_ENABLED=1
 export ZION_STREAM2_ENABLED=1
-export ZION_STREAM2_FORCE_COIN=ZANO
 export ZION_STREAM3_ENABLED=1
+export ZION_STREAM2_FORCE_COIN=ZANO
 export ZION_MINER_CPU_COIN=VRSC
 export ZION_EXT_CPU_NONCE_COUNT=2000000
 
-# ZANO / ProgPoWZ tuning (from MinerComplet.md, scaled for Vega 64 8GB)
+# ZANO / ProgPoWZ tuning for Vega 64 8GB (GCN/wave64)
+# Group 128 keeps VGPR pressure low; bpermute enabled for speed.
+# Fallback: if it hangs, set USE_BPERMUTE=0 and GROUP_SIZE=128.
 export ZION_EXT_GPU_TIME_DUTY_PCT=100
-export ZION_AUXPOW_GPU_WORK_SIZE=2000000
-export ZION_AUXPOW_GPU_GROUP_SIZE=256
+export ZION_SECONDARY_GPU_WORK_SIZE=1000000
+export ZION_AUXPOW_GPU_WORK_SIZE=1000000
+export ZION_AUXPOW_GPU_GROUP_SIZE=128
 export ZION_AUXPOW_GPU_USE_BPERMUTE=1
-export ZION_AUXPOW_GPU_VRAM_PCT=50
+export ZION_AUXPOW_GPU_VRAM_PCT=40
 export ZION_AUXPOW_GPU_BYTES_PER_ITEM=64
 export ZION_ZANO_STALE_SECS=30
 
