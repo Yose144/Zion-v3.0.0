@@ -384,12 +384,12 @@ fn main() {
             c_build.compile("verushash_c");
 
             // 2. Compile C++ sources (verus_hash, verus_clhash, ffi_wrapper)
-            //    Also compile haraka C sources here so all symbols are in one archive.
+            //    Haraka C sources are NOT recompiled here — they're already in
+            //    the verushash_c archive above.  Including them twice causes
+            //    duplicate-symbol linker errors (aesenc, etc.).
             let mut cpp_build = cc::Build::new();
             cpp_build
                 .cpp(true)
-                .file("csrc/verushash/real/haraka.c")
-                .file("csrc/verushash/real/haraka_portable.c")
                 .file("csrc/verushash/real/verus_hash.cpp")
                 .file("csrc/verushash/real/verus_clhash.cpp")
                 .file("csrc/verushash/real/verus_clhash_portable.cpp")
