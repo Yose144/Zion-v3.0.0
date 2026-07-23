@@ -11,13 +11,6 @@ type ThemeContextType = {
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
-const getStoredTheme = (): Theme => {
-  if (typeof window === 'undefined') {
-    return 'dark';
-  }
-  return (localStorage.getItem('zion-theme') as Theme) || 'dark';
-};
-
 export function useTheme() {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
@@ -25,11 +18,21 @@ export function useTheme() {
 }
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => getStoredTheme());
+  // Default to 'dark' for SSR and first client render to avoid hydration mismatches.
+  const [theme, setTheme] = useState<Theme>('dark');
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('zion-theme') as Theme | null;
+      if (stored === 'dark' || stored === 'cyber' || stored === 'matrix-light') {
+        setTheme(stored);
+      }
+    } catch { /* privacy mode */ }
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('zion-theme', theme);
+    try { localStorage.setItem('zion-theme', theme); } catch { /* privacy mode */ }
   }, [theme]);
 
   const value = useMemo(() => ({ theme, setTheme }), [theme]);

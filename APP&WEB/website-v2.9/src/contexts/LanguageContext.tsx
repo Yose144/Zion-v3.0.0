@@ -15,15 +15,17 @@ const LanguageContext = createContext<LanguageContextType>({
 });
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() => {
-    if (typeof window === 'undefined') return 'cs';
+  // Default to 'cs' for SSR and the first client render to avoid hydration mismatches.
+  const [lang, setLangState] = useState<Lang>('cs');
+
+  useEffect(() => {
     try {
       const stored = window.localStorage.getItem('zion-lang') as Lang | null;
-      return stored === 'cs' || stored === 'en' ? stored : 'cs';
-    } catch {
-      return 'cs';
-    }
-  });
+      if (stored === 'cs' || stored === 'en') {
+        setLangState(stored);
+      }
+    } catch { /* SSR or privacy mode */ }
+  }, []);
 
   const setLang = (l: Lang) => {
     setLangState(l);
