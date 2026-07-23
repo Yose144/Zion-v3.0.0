@@ -14,91 +14,12 @@ Generates two PDFs in docs/WP-Mainet/:
 Run:
   python3 docs/WP-Mainet/generate_genesis_pdfs.py
 """
-from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 import os
 
 FONT_DIR = "/usr/share/fonts/truetype/dejavu/"
 
-
-class GenesisPDF(FPDF):
-    def header(self):
-        if self.page_no() == 1:
-            return
-        self.set_font("DejaVu", "", 8)
-        self.set_text_color(120, 120, 120)
-        self.cell(0, 10, self.header_text, align="C")
-        self.ln(5)
-        self.set_draw_color(180, 140, 60)
-        self.set_line_width(0.3)
-        self.line(20, self.get_y(), 190, self.get_y())
-        self.ln(3)
-
-    def footer(self):
-        self.set_y(-15)
-        self.set_font("DejaVu", "", 8)
-        self.set_text_color(120, 120, 120)
-        self.cell(0, 10, f"{self.page_word} {self.page_no()}", align="C")
-
-    def chapter_title(self, title, subtitle=None):
-        self.set_font("DejaVu", "B", 18)
-        self.set_text_color(180, 140, 60)
-        self.cell(0, 12, title, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-        if subtitle:
-            self.set_font("DejaVu", "I", 11)
-            self.set_text_color(100, 100, 100)
-            self.cell(0, 8, subtitle, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-        self.ln(4)
-        self.set_draw_color(180, 140, 60)
-        self.set_line_width(0.5)
-        self.line(20, self.get_y(), 80, self.get_y())
-        self.ln(6)
-
-    def body_text(self, text, bold=False):
-        self.set_font("DejaVu", "B" if bold else "", 10)
-        self.set_text_color(40, 40, 40)
-        self.multi_cell(0, 6, text)
-        self.ln(2)
-
-    def verse_text(self, text):
-        self.set_font("DejaVu", "I", 10)
-        self.set_text_color(80, 80, 80)
-        self.set_left_margin(30)
-        self.multi_cell(0, 6, text)
-        self.set_left_margin(20)
-        self.ln(3)
-
-    def section_break(self):
-        self.ln(8)
-        self.set_draw_color(180, 140, 60)
-        self.set_line_width(0.3)
-        center = 105
-        self.line(center - 15, self.get_y(), center + 15, self.get_y())
-        self.ln(8)
-
-    def golden_box(self, title, lines):
-        self.set_fill_color(255, 250, 240)
-        self.set_draw_color(180, 140, 60)
-        self.set_line_width(0.5)
-        start_y = self.get_y()
-        self.set_font("DejaVu", "B", 11)
-        self.set_text_color(140, 100, 40)
-        self.cell(0, 8, f"  {title}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-        self.set_font("DejaVu", "", 10)
-        self.set_text_color(60, 60, 60)
-        for line in lines:
-            self.cell(0, 6, f"  {line}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-        end_y = self.get_y() + 2
-        self.rect(20, start_y, 170, end_y - start_y, style="DF")
-        self.set_xy(20, start_y + 2)
-        self.set_font("DejaVu", "B", 11)
-        self.set_text_color(140, 100, 40)
-        self.cell(0, 8, f"  {title}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-        self.set_font("DejaVu", "", 10)
-        self.set_text_color(60, 60, 60)
-        for line in lines:
-            self.cell(0, 6, f"  {line}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-        self.ln(4)
+from zion_pdf import ZionPDF as GenesisPDF
 
 
 def build_pdf(lang):
