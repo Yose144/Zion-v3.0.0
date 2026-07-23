@@ -201,7 +201,7 @@ export default function Navigation() {
   return (
     <nav
       className={`fixed left-0 right-0 z-50 transition-all duration-300 ease-out ${
-        scrolled ? 'top-0 sm:top-0 md:top-0' : 'top-20 sm:top-24 md:top-28'
+        scrolled ? 'top-0' : 'top-14 sm:top-20 md:top-24 lg:top-28'
       }`}
     >
       {/* Subtle ambient glow */}
@@ -224,15 +224,17 @@ export default function Navigation() {
           <Link href="/" className="flex items-center space-x-2 group shrink-0">
             <div className={`rounded-lg flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-all duration-300 bg-transparent shadow-[0_6px_18px_rgba(0,0,0,0.3)] ${scrolled ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-8 h-8 sm:w-9 sm:h-9'}`}>
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(111,255,240,0.08),transparent_65%)]" />
-              <Image
-                src="/stargate/Z.gif"
-                alt="ZION TerraNova"
-                unoptimized
-                priority
-                width={40}
-                height={40}
-                className="relative z-10 w-full h-full object-contain rounded-lg"
-              />
+              <picture>
+                <source srcSet="/stargate/Z.webp" type="image/webp" />
+                <img
+                  src="/stargate/Z.gif"
+                  alt="ZION TerraNova"
+                  width={40}
+                  height={40}
+                  fetchPriority="high"
+                  className="relative z-10 w-full h-full object-contain rounded-lg"
+                />
+              </picture>
             </div>
             <div className={`hidden sm:flex flex-col leading-none transition-all duration-300 ${scrolled ? 'opacity-0 w-0 overflow-hidden' : ''}`}>
               <span className="text-sm sm:text-base font-bold text-gradient-soft tracking-tight">ZION</span>
@@ -456,7 +458,7 @@ export default function Navigation() {
               aria-hidden="true"
             />
             {/* Slide-in panel */}
-            <div className="md:hidden fixed top-0 right-0 bottom-0 w-[min(320px,85vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(16,185,129,0.4), rgba(251,191,36,0.5), rgba(239,68,68,0.4)) 1' }}>
+            <div className="md:hidden fixed top-0 right-0 bottom-0 w-[min(420px,94vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(16,185,129,0.4), rgba(251,191,36,0.5), rgba(239,68,68,0.4)) 1' }}>
               <div className="flex items-center justify-between p-4 border-b border-white/10">
                 <span className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button
@@ -473,7 +475,7 @@ export default function Navigation() {
                 {/* Home shortcut — always visible */}
                 <Link
                   href="/"
-                  className={`rounded-xl px-3 py-3 text-sm font-semibold transition min-h-[44px] flex items-center ${
+                  className={`rounded-xl px-3 py-3 text-base font-semibold transition min-h-[48px] flex items-center ${
                     pathname === '/' ? 'bg-white/10 text-white' : 'text-gray-200 hover:bg-white/5 active:bg-white/10'
                   }`}
                   onClick={() => setIsOpen(false)}
@@ -487,7 +489,7 @@ export default function Navigation() {
                       <button
                         type="button"
                         onClick={() => setOpenGroup(isExpanded ? null : group.title)}
-                        className="w-full flex items-center justify-between rounded-xl px-3 py-3 text-[11px] uppercase tracking-[0.32em] text-gray-400 hover:text-white hover:bg-white/5 min-h-[44px]"
+                        className="w-full flex items-center justify-between rounded-xl px-3 py-3 text-sm uppercase tracking-[0.2em] text-gray-300 hover:text-white hover:bg-white/5 min-h-[48px]"
                         aria-expanded={isExpanded}
                       >
                         <span className="flex items-center gap-2">
@@ -502,7 +504,7 @@ export default function Navigation() {
                             <div key={item.href}>
                               <Link
                                 href={item.href}
-                                className={`rounded-xl px-3 py-2.5 text-sm font-medium transition min-h-[40px] flex items-center ${
+                                className={`rounded-xl px-3 py-3 text-base font-medium transition min-h-[44px] flex items-center ${
                                   navItemMatches(item.href)
                                     ? 'bg-white/10 text-white'
                                     : 'text-gray-300 hover:bg-white/5 active:bg-white/10'
@@ -515,7 +517,7 @@ export default function Navigation() {
                                 <Link
                                   key={child.href}
                                   href={child.href}
-                                  className={`rounded-xl pl-7 pr-3 py-2 text-[13px] transition min-h-[36px] flex items-center ${
+                                  className={`rounded-xl pl-7 pr-3 py-2.5 text-sm transition min-h-[40px] flex items-center ${
                                     pathname === child.href ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 active:bg-white/10'
                                   }`}
                                   onClick={() => setIsOpen(false)}
