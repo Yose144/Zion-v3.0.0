@@ -79,24 +79,22 @@ export default function DownloadPage() {
               {SITE_RELEASE_LABEL}
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? '4 platformy · jeden binární soubor · interaktivní menu' : '4 platforms · one binary · interactive menu'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Triple Stream Miner · GPU + CPU · Zion Liquidity' : 'Triple Stream Miner · GPU + CPU · Zion Liquidity'}</p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
                 {cs ? 'Stáhni. Těž. Vydělávej.' : 'Download. Mine. Earn.'}
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              {cs ? `ZION v3.0.5-beta — zjednodušený Community CLI. Jeden binary s interaktivním menu: ` : `ZION v3.0.5-beta — simplified Community CLI. One binary with an interactive menu: `}{' '}
-              <span className="text-white font-semibold">wallet</span>,{' '}
-              <span className="text-zion-gold font-semibold">node</span>,{' '}
-              <span className="text-zion-cyan font-semibold">miner</span>,{' '}
-              <span className="text-zion-purple font-semibold">pool</span>
-              {cs ? ' — vše v jednom. Dostupné pro ' : ' — all in one. Available for '}{' '}
-              <span className="text-emerald-400 font-semibold">Linux x86_64</span>,{' '}
-              <span className="text-purple-400 font-semibold">macOS Apple Silicon</span>,{' '}
-              <span className="text-indigo-400 font-semibold">macOS Intel</span>{' '}
+              {cs ? `ZION v3.0.6-beta — Triple Stream Miner. GPU + CPU současně, ` : `ZION v3.0.6-beta — Triple Stream Miner. GPU + CPU simultaneously, `}{' '}
+              <span className="text-white font-semibold">Zion Liquidity</span>{' '}
+              {cs ? 'inverzuje tradiční mining: těž → drž ZION → likvidita roste. Žádné burzy, žádný sell pressure. ' : 'inverts traditional mining: mine → hold ZION → liquidity grows. No exchanges, no sell pressure. '}
+              {cs ? 'Dostupné pro ' : 'Available for '}{' '}
+              <span className="text-emerald-400 font-semibold">Linux x86_64</span>
+              {cs ? '. Pro ' : '. For '}
+              <span className="text-purple-400 font-semibold">macOS</span>{' '}
               {cs ? 'a ' : ' and '}{' '}
-              <span className="text-blue-400 font-semibold">Windows x86_64</span>
-              {cs ? '. ARM64 (Raspberry Pi) ze zdrojů.' : '. ARM64 (Raspberry Pi) from source.'}
+              <span className="text-blue-400 font-semibold">Windows</span>
+              {cs ? ' použij v3.0.5-beta Community CLI níže.' : ' use the v3.0.5-beta Community CLI below.'}
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
@@ -122,11 +120,11 @@ export default function DownloadPage() {
         <section className="space-y-6">
           <div className="flex flex-col gap-2">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Veřejný mainnet release' : 'Public mainnet release'}</p>
-            <h2 className="text-3xl font-semibold text-white">ZION v3.0.5-beta · 4 platformy</h2>
+            <h2 className="text-3xl font-semibold text-white">ZION v3.0.6-beta · Triple Stream Miner</h2>
             <p className="text-gray-400 max-w-3xl">
               {cs
-                ? 'Zjednodušený Community CLI — jeden binary s interaktivním menu pro wallet, node, miner a pool. Dostupný pro Linux x86_64, macOS (Apple Silicon + Intel) a Windows x86_64 přímo z GitHub Releases s SHA256 verifikací. ARM64 (Raspberry Pi) build ze zdrojů.'
-                : 'Simplified Community CLI — one binary with an interactive menu for wallet, node, miner, and pool. Available for Linux x86_64, macOS (Apple Silicon + Intel), and Windows x86_64 directly from GitHub Releases with SHA256 verification. ARM64 (Raspberry Pi) build from source.'}
+                ? 'Nejnovější release přináší Triple Stream mining engine — GPU a CPU pracují současně pro maximalizaci ZION earnings. Optimalizované OpenCL/CUDA kernely pro AMD RDNA a NVIDIA. Linux x86_64 binárka dostupná z GitHub Releases s SHA256 verifikací. Pro macOS a Windows použij v3.0.5-beta Community CLI níže.'
+                : 'The latest release brings the Triple Stream mining engine — GPU and CPU work together to maximize ZION earnings. Optimized OpenCL/CUDA kernels for AMD RDNA and NVIDIA. Linux x86_64 binary available from GitHub Releases with SHA256 verification. For macOS and Windows use the v3.0.5-beta Community CLI below.'}
             </p>
           </div>
 

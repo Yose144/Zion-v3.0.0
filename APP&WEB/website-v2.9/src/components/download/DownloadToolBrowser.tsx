@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import {
   ArrowDownToLine,
-  CheckCircle2,
   ShieldCheck,
   ExternalLink,
   GitBranch,
@@ -14,10 +13,15 @@ import {
   Apple,
   MonitorSmartphone,
   Menu as MenuIcon,
+  Package,
+  Zap,
+  Droplets,
+  TrendingUp,
 } from 'lucide-react';
 import { SITE_POOL_PRIMARY } from '@/lib/site';
 import {
   LATEST_RELEASE,
+  COMMUNITY_CLI_RELEASE,
   GITHUB_REPO_URL,
   NETWORK_PARAMS,
 } from '@/lib/github-releases';
@@ -45,7 +49,7 @@ const PLATFORM_COLORS: Record<string, string> = {
   'windows-x86_64': '59, 130, 246',   // blue
 };
 
-/* ── interactive menu features ── */
+/* ── Triple Stream features ── */
 
 type Feature = {
   id: string;
@@ -54,7 +58,36 @@ type Feature = {
   desc: string;
 };
 
-function getFeatures(cs: boolean): Feature[] {
+function getTripleStreamFeatures(cs: boolean): Feature[] {
+  return [
+    {
+      id: 'triple-stream',
+      icon: <Zap className="h-5 w-5" />,
+      label: cs ? 'Triple Stream' : 'Triple Stream',
+      desc: cs ? 'GPU + CPU současně — maximální ZION earnings' : 'GPU + CPU simultaneously — maximum ZION earnings',
+    },
+    {
+      id: 'zion-liquidity',
+      icon: <Droplets className="h-5 w-5" />,
+      label: cs ? 'Zion Liquidity' : 'Zion Liquidity',
+      desc: cs ? 'Pool hlídá konverze — žádné burzy, žádný sell pressure' : 'Pool handles conversions — no exchanges, no sell pressure',
+    },
+    {
+      id: 'zion-grow',
+      icon: <TrendingUp className="h-5 w-5" />,
+      label: cs ? 'Zion Grow' : 'Zion Grow',
+      desc: cs ? 'Čím déle těžíš, tím více ZION držíš — compounding' : 'The longer you mine, the more ZION you hold — compounding',
+    },
+    {
+      id: 'gpu-kernels',
+      icon: <Cpu className="h-5 w-5" />,
+      label: cs ? 'GPU kernels' : 'GPU kernels',
+      desc: cs ? 'OpenCL (AMD) + CUDA (NVIDIA) — Deeksha Lite v1' : 'OpenCL (AMD) + CUDA (NVIDIA) — Deeksha Lite v1',
+    },
+  ];
+}
+
+function getCliFeatures(cs: boolean): Feature[] {
   return [
     {
       id: 'wallet',
@@ -83,22 +116,28 @@ function getFeatures(cs: boolean): Feature[] {
   ];
 }
 
-/* ── component ── */
+/* ── release card subcomponent ── */
 
-export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
-  const release = LATEST_RELEASE;
-  const features = getFeatures(cs);
-
-  // Split assets: platform binaries + checksum
+function ReleaseCard({
+  release,
+  primary,
+  cs,
+}: {
+  release: typeof LATEST_RELEASE;
+  primary?: boolean;
+  cs: boolean;
+}) {
   const binaries = release.assets.filter((a) => a.platform !== 'checksum');
   const checksum = release.assets.find((a) => a.platform === 'checksum');
+  const features = primary ? getTripleStreamFeatures(cs) : getCliFeatures(cs);
+  const accent = primary ? '16, 185, 129' : '6, 182, 212';
 
   return (
-    <section className="space-y-8">
+    <div className="space-y-6">
       {/* ─── Release header ─── */}
       <div
-        className="zion-rainbow-card p-5 sm:p-6"
-        style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+        className={`zion-rainbow-card p-5 sm:p-6 ${primary ? 'ring-1 ring-emerald-500/30' : ''}`}
+        style={{ '--rc': accent } as React.CSSProperties}
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
@@ -111,10 +150,13 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
                 <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-amber-400 uppercase tracking-wider">
                   {cs ? 'Pre-release' : 'Pre-release'}
                 </span>
+                {primary && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
+                    {cs ? 'Nejnovější' : 'Latest'}
+                  </span>
+                )}
               </div>
-              <p className="text-sm text-gray-400 mt-0.5">
-                {release.name}
-              </p>
+              <p className="text-sm text-gray-400 mt-0.5">{release.name}</p>
               <p className="text-xs text-gray-500 mt-1">
                 {cs ? 'Publikováno' : 'Published'} {release.publishedAt}
               </p>
@@ -135,14 +177,16 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
       {/* ─── What's in the box ─── */}
       <div className="space-y-3">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-          {cs ? 'Jeden binary — vše, co potřebuješ' : 'One binary — everything you need'}
+          {primary
+            ? (cs ? 'Triple Stream — vše, co potřebuješ' : 'Triple Stream — everything you need')
+            : (cs ? 'Jeden binary — vše, co potřebuješ' : 'One binary — everything you need')}
         </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feat) => (
             <div
               key={feat.id}
               className="zion-rainbow-sub p-4 transition-colors"
-              style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+              style={{ '--rc': accent } as React.CSSProperties}
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-zion-gold">{feat.icon}</span>
@@ -152,30 +196,40 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
             </div>
           ))}
         </div>
-        <p className="text-xs text-gray-500">
-          {cs
-            ? 'Spusť `zion` bez argumentů pro interaktivní menu se šipkami. Windows verze má node + pool + miner embedded (10 MB).'
-            : 'Run `zion` with no arguments for an interactive arrow-key menu. Windows version has node + pool + miner embedded (10 MB).'}
-        </p>
+        {primary ? (
+          <p className="text-xs text-gray-500">
+            {cs
+              ? 'Triple Stream Miner těží ZION a buduje likviditu. Pro vytvoření peněženky použij v3.0.5-beta Community CLI níže. Linux x86_64 only — macOS a Windows buildy přijdou v v3.0.7.'
+              : 'The Triple Stream Miner mines ZION and builds liquidity. To create a wallet, use the v3.0.5-beta Community CLI below. Linux x86_64 only — macOS and Windows builds are coming in v3.0.7.'}
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500">
+            {cs
+              ? 'Spusť `zion` bez argumentů pro interaktivní menu se šipkami. Windows verze má node + pool + miner embedded (10 MB).'
+              : 'Run `zion` with no arguments for an interactive arrow-key menu. Windows version has node + pool + miner embedded (10 MB).'}
+          </p>
+        )}
       </div>
 
       {/* ─── Platform download cards ─── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-            {cs ? 'Stažení — 4 platformy' : 'Downloads — 4 platforms'}
+            {cs ? 'Stažení' : 'Downloads'}
           </p>
-          <span className="text-xs text-gray-500">{binaries.length} {cs ? 'balíčků' : 'packages'}</span>
+          <span className="text-xs text-gray-500">
+            {binaries.length} {cs ? 'balíčků' : 'packages'}
+          </span>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           {binaries.map((asset) => {
-            const color = PLATFORM_COLORS[asset.platform] || '6, 182, 212';
+            const color = PLATFORM_COLORS[asset.platform] || accent;
             return (
               <div
                 key={asset.name}
                 className="zion-rainbow-sub p-5 transition-colors"
-                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+                style={{ '--rc': accent } as React.CSSProperties}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
@@ -183,12 +237,10 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
                       className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10"
                       style={{ backgroundColor: `rgba(${color}, 0.1)`, color: `rgb(${color})` }}
                     >
-                      {PLATFORM_ICONS[asset.platform]}
+                      {PLATFORM_ICONS[asset.platform] || <Package className="h-6 w-6" />}
                     </span>
                     <div className="min-w-0">
-                      <h3 className="text-base font-semibold text-white">
-                        {asset.label}
-                      </h3>
+                      <h3 className="text-base font-semibold text-white">{asset.label}</h3>
                       <p className="text-xs text-gray-400 mt-0.5">{asset.description}</p>
                       <p className="text-xs text-gray-500 font-mono mt-1 truncate">{asset.name}</p>
                     </div>
@@ -218,7 +270,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
       {/* ─── Checksum + verification ─── */}
       <div
         className="zion-rainbow-sub p-5"
-        style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+        style={{ '--rc': accent } as React.CSSProperties}
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
@@ -252,33 +304,81 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
       </div>
 
       {/* ─── Quick start ─── */}
-      <div
-        className="zion-rainbow-sub p-5"
-        style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
-      >
-        <div className="flex items-center gap-3 mb-3">
-          <Terminal className="h-5 w-5 text-emerald-400" />
-          <h3 className="text-sm font-semibold text-white">
-            {cs ? 'Rychlý start' : 'Quick start'}
-          </h3>
+      {primary ? (
+        <div
+          className="zion-rainbow-sub p-5"
+          style={{ '--rc': accent } as React.CSSProperties}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <Terminal className="h-5 w-5 text-emerald-400" />
+            <h3 className="text-sm font-semibold text-white">
+              {cs ? 'Rychlý start — Triple Stream Miner' : 'Quick start — Triple Stream Miner'}
+            </h3>
+          </div>
+          <div className="rounded-lg bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto space-y-1">
+            <div><span className="text-gray-500">$</span> tar xzf zion-miner-linux-x86_64.tar.gz</div>
+            <div><span className="text-gray-500">$</span> chmod +x zion-miner</div>
+            <div><span className="text-gray-500">$</span> ./zion-miner --pool {SITE_POOL_PRIMARY} --wallet zion1YOUR_ADDR --gpu opencl --algorithm deeksha_lite_v1 --profile pool</div>
+          </div>
+          <p className="text-xs text-gray-400 mt-3">
+            {cs
+              ? 'Miner se připojí k oficiálnímu poolu a zobrazí live dashboard: hashrate, accepted/rejected shares, pool height. Pro vytvoření peněženky použij v3.0.5-beta Community CLI níže.'
+              : 'The miner connects to the official pool and shows a live dashboard: hashrate, accepted/rejected shares, pool height. To create a wallet, use the v3.0.5-beta Community CLI below.'}
+          </p>
         </div>
-        <div className="rounded-lg bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto space-y-1">
-          <div><span className="text-gray-500">$</span> tar xzf zion-cli-linux-x86_64.tar.gz</div>
-          <div><span className="text-gray-500">$</span> chmod +x zion</div>
-          <div><span className="text-gray-500">$</span> ./zion</div>
+      ) : (
+        <div
+          className="zion-rainbow-sub p-5"
+          style={{ '--rc': accent } as React.CSSProperties}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <Terminal className="h-5 w-5 text-zion-cyan" />
+            <h3 className="text-sm font-semibold text-white">
+              {cs ? 'Rychlý start — Community CLI' : 'Quick start — Community CLI'}
+            </h3>
+          </div>
+          <div className="rounded-lg bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto space-y-1">
+            <div><span className="text-gray-500">$</span> tar xzf zion-cli-linux-x86_64.tar.gz</div>
+            <div><span className="text-gray-500">$</span> chmod +x zion</div>
+            <div><span className="text-gray-500">$</span> ./zion</div>
+          </div>
+          <p className="text-xs text-gray-400 mt-3">
+            {cs
+              ? 'Interaktivní menu tě provede: wallet → node → pool → miner. Nebo použij subcommandy: `zion wallet`, `zion node`, `zion mine`, `zion pool`.'
+              : 'The interactive menu guides you: wallet → node → pool → miner. Or use subcommands: `zion wallet`, `zion node`, `zion mine`, `zion pool`.'}
+          </p>
+          <div className="mt-3 rounded-lg bg-black/40 p-2 font-mono text-[10px] text-gray-400 overflow-x-auto">
+            <span className="text-gray-500">$</span> ./zion wallet new --mnemonic --out my-wallet.json
+          </div>
         </div>
-        <p className="text-xs text-gray-400 mt-3">
-          {cs
-            ? 'Interaktivní menu tě provede: wallet → node → pool → miner. Nebo použij subcommandy: `zion wallet`, `zion node`, `zion mine`, `zion pool`.'
-            : 'The interactive menu guides you: wallet → node → pool → miner. Or use subcommands: `zion wallet`, `zion node`, `zion mine`, `zion pool`.'}
+      )}
+    </div>
+  );
+}
+
+/* ── component ── */
+
+export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
+  return (
+    <section className="space-y-12">
+      {/* ─── v3.0.6-beta — Triple Stream Miner (primary) ─── */}
+      <div className="space-y-3">
+        <p className="text-sm uppercase tracking-[0.4em] text-emerald-400">
+          {cs ? 'Nejnovější release — Triple Stream Miner' : 'Latest release — Triple Stream Miner'}
         </p>
-        <div className="mt-3 rounded-lg bg-black/40 p-2 font-mono text-[10px] text-gray-400 overflow-x-auto">
-          <span className="text-gray-500">$</span> ./zion mine start --pool stratum+tcp://{SITE_POOL_PRIMARY} --wallet YOUR_ADDRESS
-        </div>
+        <ReleaseCard release={LATEST_RELEASE} primary cs={cs} />
+      </div>
+
+      {/* ─── v3.0.5-beta — Community CLI (secondary) ─── */}
+      <div className="space-y-3 pt-6 border-t border-white/5">
+        <p className="text-sm uppercase tracking-[0.4em] text-zion-cyan">
+          {cs ? 'Community CLI — peněženka, node, pool, basic mining' : 'Community CLI — wallet, node, pool, basic mining'}
+        </p>
+        <ReleaseCard release={COMMUNITY_CLI_RELEASE} cs={cs} />
       </div>
 
       {/* ─── Network parameters ─── */}
-      <div className="space-y-3">
+      <div className="space-y-3 pt-6 border-t border-white/5">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
           {cs ? 'Parametry sítě' : 'Network parameters'}
         </p>

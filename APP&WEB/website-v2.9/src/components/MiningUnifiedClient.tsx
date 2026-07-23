@@ -179,7 +179,7 @@ const faqItems = [
   { q: "What is Ekam Deeksha?", a: "Ekam Deeksha is ZION's dual-algo PoW consensus: BLAKE3 (primary, fast, ASIC-resistant) + RandomNPU (secondary, GPU-optimized NPU kernel). Both run on CPU and GPU. The algorithm uses a 256 KiB scratchpad with random reads for memory-hardness." },
   { q: "Node won't start / No peers connecting?", a: `Check Rust ≥ 1.75 (rustc --version). Ensure port 8333 is free (lsof -i :8333). Verify firewall allows TCP 8333. Try manual peers: --peers ${SITE_PRIMARY_HOST}:8333.` },
   { q: "Can I mine on Raspberry Pi?", a: "Yes! Build from source for linux-arm64. RPi 4/5 works well for CPU mining with the BLAKE3 hash." },
-  { q: "Where are the binaries?", a: "Pre-built binaries for Linux x86_64, macOS (Apple Silicon + Intel), and Windows x86_64 are on GitHub Releases (v3.0.5-beta). For ARM64 (Raspberry Pi), build from source: git clone https://github.com/Zion-TerraNova/v3-Mainnet.git && cargo build --release -p zion-public" },
+  { q: "Where are the binaries?", a: "Latest release: v3.0.6-beta Triple Stream Miner (Linux x86_64, GPU+CPU). For macOS (Apple Silicon + Intel) and Windows x86_64 use v3.0.5-beta Community CLI. For ARM64 (Raspberry Pi), build from source: git clone https://github.com/Zion-TerraNova/v3-Mainnet.git && cargo build --release -p zion-public" },
 ];
 
 /* ═══════════════════════════════════════════════════════════
@@ -322,7 +322,7 @@ export default function MiningUnifiedClient() {
         { q: 'Co je Ekam Deeksha?', a: 'Ekam Deeksha je dual-algo PoW konsensus ZIONu: BLAKE3 (primarni, rychly, ASIC-resistant) + RandomNPU (sekundarni, GPU NPU kernel). Obe bezi na CPU i GPU. Algoritmus pouziva 256 KiB scratchpad s nahodnymi cteni pro memory-hardness.' },
         { q: 'Node se nespusti / nepripojuji se peery?', a: `Zkontrolujte Rust ≥ 1.75 (rustc --version). Ujistete se, ze port 8333 je volny (lsof -i :8333). Overte firewall pro TCP 8333. Zkuste manualni peery: --peers ${SITE_PRIMARY_HOST}:8333.` },
         { q: 'Muzu tezit na Raspberry Pi?', a: 'Ano. Build ze zdroje pro linux-arm64. RPi 4/5 funguje dobre pro CPU tezbu s BLAKE3 hashem.' },
-        { q: 'Kde jsou binarky?', a: 'Predkompilovane binarky pro Linux x86_64, macOS (Apple Silicon + Intel) a Windows x86_64 jsou na GitHub Releases (v3.0.5-beta). Pro ARM64 (Raspberry Pi) build ze zdroje: git clone https://github.com/Zion-TerraNova/v3-Mainnet.git && cargo build --release' },
+        { q: 'Kde jsou binarky?', a: 'Nejnovější release: v3.0.6-beta Triple Stream Miner (Linux x86_64, GPU+CPU). Pro macOS (Apple Silicon + Intel) a Windows x86_64 použij v3.0.5-beta Community CLI. Pro ARM64 (Raspberry Pi) build ze zdroje: git clone https://github.com/Zion-TerraNova/v3-Mainnet.git && cargo build --release' },
       ]
     : faqItems;
 
@@ -451,11 +451,11 @@ export default function MiningUnifiedClient() {
             </p>
             <div className="zion-rainbow-sub p-3 bg-black/40 font-mono text-xs text-gray-300 overflow-x-auto" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <span className="text-gray-500">$</span>{" "}
-              wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.5-beta/zion-cli-linux-x86_64.tar.gz
+              wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-beta/zion-miner-linux-x86_64.tar.gz
             </div>
             <div className="zion-rainbow-sub p-3 bg-black/40 font-mono text-xs text-gray-300 overflow-x-auto mt-2" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <span className="text-gray-500">$</span>{" "}
-              tar xzf zion-cli-linux-x86_64.tar.gz && chmod +x zion && ./zion --version
+              tar xzf zion-miner-linux-x86_64.tar.gz && chmod +x zion-miner && ./zion-miner --version
             </div>
             <p className="text-xs text-gray-500 mt-2">
               {cs ? 'ZION CLI je unifikovaná binárka — miner, node, wallet, pool, bridge, dao jsou subpříkazy. Nebo stahnte zion-all pro všechny binárky.' : 'ZION CLI is a unified binary — miner, node, wallet, pool, bridge, dao are subcommands. Or download zion-all for all binaries.'}
@@ -565,10 +565,10 @@ export default function MiningUnifiedClient() {
                     code={`# Download ZION CLI from GitHub Releases (Linux, macOS, Windows)
 # → https://github.com/Zion-TerraNova/v3-Mainnet/releases
 
-wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.5-beta/zion-cli-linux-x86_64.tar.gz
-tar xzf zion-cli-linux-x86_64.tar.gz
-chmod +x zion
-./zion --version`}
+wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-beta/zion-miner-linux-x86_64.tar.gz
+tar xzf zion-miner-linux-x86_64.tar.gz
+chmod +x zion-miner
+./zion-miner --version`}
                   />
                   <CodeBlock
                     title={cs ? 'Moznost B - build ze zdroje' : 'Option B — Build from source'}
@@ -889,10 +889,10 @@ cargo build --release -p zion-public --features gpu-opencl
                 code={`# Download ZION CLI from GitHub Releases (Linux, macOS, Windows)
 # → https://github.com/Zion-TerraNova/v3-Mainnet/releases
 
-wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.5-beta/zion-cli-linux-x86_64.tar.gz
-tar xzf zion-cli-linux-x86_64.tar.gz
-chmod +x zion
-./zion --version`}
+wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-beta/zion-miner-linux-x86_64.tar.gz
+tar xzf zion-miner-linux-x86_64.tar.gz
+chmod +x zion-miner
+./zion-miner --version`}
               />
             </div>
 
@@ -915,11 +915,11 @@ cargo build --release -p zion-public
                 <h4 className="text-white font-medium">{cs ? 'ZION CLI (unifikovaná binárka)' : 'ZION CLI (unified binary)'}</h4>
               </div>
               <CodeBlock
-                code={`# ZION CLI contains node, miner, wallet, pool, bridge, dao as subcommands
-wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.5-beta/zion-cli-linux-x86_64.tar.gz
-tar xzf zion-cli-linux-x86_64.tar.gz
-chmod +x zion
-./zion node start --network mainnet`}
+                code={`# ZION v3.0.6-beta Triple Stream Miner (Linux x86_64)
+wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-beta/zion-miner-linux-x86_64.tar.gz
+tar xzf zion-miner-linux-x86_64.tar.gz
+chmod +x zion-miner
+./zion-miner --pool ${SITE_POOL_PRIMARY} --wallet zion1YOUR_ADDR --gpu opencl --profile pool`}
               />
             </div>
           </div>
