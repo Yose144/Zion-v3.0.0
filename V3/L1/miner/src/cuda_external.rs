@@ -22,8 +22,10 @@ use std::sync::Arc;
 use std::time::Instant;
 
 /// Detect the GPU's compute capability and return an NVRTC-compatible arch string
-/// (e.g. "sm_61" for Pascal, "sm_86" for Ampere, "sm_89" for Ada).
-/// Falls back to the ZION_CUDA_ARCH env var, then to "sm_86" if detection fails.
+/// (e.g. "compute_61" for Pascal, "compute_86" for Ampere, "compute_89" for Ada).
+/// NVRTC requires virtual arch (compute_XX) — the generated PTX is JIT-compiled
+/// to SASS by the driver.  Falls back to the ZION_CUDA_ARCH env var, then to
+/// "compute_86" if detection fails.
 fn detect_cuda_arch(dev: &CudaDevice) -> String {
     if let Ok(arch) = std::env::var("ZION_CUDA_ARCH") {
         return arch;
@@ -32,13 +34,13 @@ fn detect_cuda_arch(dev: &CudaDevice) -> String {
     let minor = dev.attribute(CUdevice_attribute::CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR);
     match (major, minor) {
         (Ok(maj), Ok(min)) => {
-            let arch = format!("sm_{}{}", maj, min);
+            let arch = format!("compute_{}{}", maj, min);
             eprintln!("cuda_arch_detect: compute_capability={}.{} => arch={}", maj, min, arch);
             arch
         }
         _ => {
-            eprintln!("cuda_arch_detect: failed to query compute capability, falling back to sm_86");
-            "sm_86".to_string()
+            eprintln!("cuda_arch_detect: failed to query compute capability, falling back to compute_86");
+            "compute_86".to_string()
         }
     }
 }

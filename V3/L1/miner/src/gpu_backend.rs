@@ -5105,13 +5105,15 @@ fn detect_cuda_arch(dev: &cudarc::driver::CudaDevice) -> String {
     let minor = dev.attribute(CUdevice_attribute::CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR);
     match (major, minor) {
         (Ok(maj), Ok(min)) => {
-            let arch = format!("sm_{}{}", maj, min);
+            // NVRTC requires virtual arch (compute_XX) not real arch (sm_XX).
+            // The generated PTX is then JIT-compiled to SASS by the driver.
+            let arch = format!("compute_{}{}", maj, min);
             eprintln!("cuda_arch_detect: compute_capability={}.{} => arch={}", maj, min, arch);
             arch
         }
         _ => {
-            eprintln!("cuda_arch_detect: failed to query compute capability, falling back to sm_86");
-            "sm_86".to_string()
+            eprintln!("cuda_arch_detect: failed to query compute capability, falling back to compute_86");
+            "compute_86".to_string()
         }
     }
 }
