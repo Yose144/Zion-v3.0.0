@@ -1,7 +1,7 @@
 /**
  * GitHub Release data for ZION v3-Mainnet public repo.
  * Source: https://github.com/Zion-TerraNova/v3-Mainnet/releases
- * Updated: 2026-07-10 — v3.0.5-beta (single binary, 4 platforms)
+ * Updated: 2026-07-21 — v3.0.6-beta (Triple Stream Miner, Linux x86_64) + v3.0.5-beta (Community CLI, 4 platforms)
  */
 
 export const GITHUB_REPO = 'Zion-TerraNova/v3-Mainnet';
@@ -26,9 +26,46 @@ export type Release = {
   assets: ReleaseAsset[];
 };
 
-const DL_BASE = `https://github.com/${GITHUB_REPO}/releases/download/v3.0.5-beta`;
+const DL_BASE_306 = `https://github.com/${GITHUB_REPO}/releases/download/v3.0.6-beta`;
+const DL_BASE_305 = `https://github.com/${GITHUB_REPO}/releases/download/v3.0.5-beta`;
 
+/**
+ * v3.0.6-beta — Triple Stream Miner (2026-07-21)
+ * Linux x86_64 only. macOS / Windows coming in v3.0.7.
+ * For wallet creation, use v3.0.5-beta Community CLI.
+ */
 export const LATEST_RELEASE: Release = {
+  tag: 'v3.0.6-beta',
+  name: 'ZION v3.0.6-beta — Triple Stream Miner',
+  publishedAt: '2026-07-21',
+  prerelease: true,
+  htmlUrl: `https://github.com/${GITHUB_REPO}/releases/tag/v3.0.6-beta`,
+  assets: [
+    {
+      name: 'zion-miner-linux-x86_64.tar.gz',
+      label: 'Linux x86_64',
+      description: 'Triple Stream Miner — GPU + CPU mining, OpenCL/CUDA, Deeksha Lite v1',
+      sizeMB: 3.2,
+      downloadUrl: `${DL_BASE_306}/zion-miner-linux-x86_64.tar.gz`,
+      platform: 'linux-x86_64',
+    },
+    {
+      name: 'SHA256SUMS.txt',
+      label: 'SHA256 Checksums',
+      description: 'Verification checksums for v3.0.6-beta downloads',
+      sizeMB: 0.0,
+      downloadUrl: `${DL_BASE_306}/SHA256SUMS.txt`,
+      platform: 'checksum',
+    },
+  ],
+};
+
+/**
+ * v3.0.5-beta — Simplified Community CLI (2026-07-10)
+ * 4 platforms. Use this for wallet creation, node, pool, and basic mining.
+ * macOS / Windows users without GPU mining needs should use this release.
+ */
+export const COMMUNITY_CLI_RELEASE: Release = {
   tag: 'v3.0.5-beta',
   name: 'ZION v3.0.5-beta — Simplified Community CLI',
   publishedAt: '2026-07-10',
@@ -40,7 +77,7 @@ export const LATEST_RELEASE: Release = {
       label: 'Linux x86_64',
       description: 'Single zion binary — interactive menu, wallet, node, mining, pool',
       sizeMB: 2.3,
-      downloadUrl: `${DL_BASE}/zion-cli-linux-x86_64.tar.gz`,
+      downloadUrl: `${DL_BASE_305}/zion-cli-linux-x86_64.tar.gz`,
       platform: 'linux-x86_64',
     },
     {
@@ -48,7 +85,7 @@ export const LATEST_RELEASE: Release = {
       label: 'macOS Apple Silicon (M1–M4)',
       description: 'Single zion binary for Apple Silicon Macs',
       sizeMB: 2.1,
-      downloadUrl: `${DL_BASE}/zion-cli-macos-aarch64.tar.gz`,
+      downloadUrl: `${DL_BASE_305}/zion-cli-macos-aarch64.tar.gz`,
       platform: 'macos-arm64',
     },
     {
@@ -56,7 +93,7 @@ export const LATEST_RELEASE: Release = {
       label: 'macOS Intel x86_64',
       description: 'Single zion binary for Intel Macs',
       sizeMB: 2.3,
-      downloadUrl: `${DL_BASE}/zion-cli-macos-x86_64.tar.gz`,
+      downloadUrl: `${DL_BASE_305}/zion-cli-macos-x86_64.tar.gz`,
       platform: 'macos-x86_64',
     },
     {
@@ -64,15 +101,15 @@ export const LATEST_RELEASE: Release = {
       label: 'Windows x86_64',
       description: 'Single zion.exe — node + pool + miner embedded (10 MB)',
       sizeMB: 4.7,
-      downloadUrl: `${DL_BASE}/zion-cli-windows-x86_64.zip`,
+      downloadUrl: `${DL_BASE_305}/zion-cli-windows-x86_64.zip`,
       platform: 'windows-x86_64',
     },
     {
       name: 'SHA256SUMS.txt',
       label: 'SHA256 Checksums',
-      description: 'Verification checksums for all downloads',
+      description: 'Verification checksums for v3.0.5-beta downloads',
       sizeMB: 0.0,
-      downloadUrl: `${DL_BASE}/SHA256SUMS.txt`,
+      downloadUrl: `${DL_BASE_305}/SHA256SUMS.txt`,
       platform: 'checksum',
     },
   ],
