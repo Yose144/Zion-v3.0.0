@@ -612,7 +612,7 @@ export default function DocsPage() {
       {/* Main Content */}
       <div className="zion-container py-12">
         {/* Mobile Navigation Toggle */}
-        <div className="lg:hidden mb-6">
+        <div className="lg:hidden sticky top-20 z-30 mb-6">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="w-full flex items-center justify-between px-4 py-3 zion-rainbow-sub text-white transition-colors"
@@ -627,58 +627,81 @@ export default function DocsPage() {
 
           {/* Mobile Navigation Dropdown */}
           {mobileMenuOpen && (
-            <div className="mt-4 zion-rainbow-card p-4 space-y-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              {versions.map(version => (
-                <div key={version.id}>
-                  <button
-                    onClick={() => toggleVersion(version.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 mb-2 text-sm font-semibold transition-all ${
-                      activeVersion === version.id
-                        ? 'zion-rainbow-sub text-white'
-                        : 'rounded-lg border border-white/10 bg-black/40 text-gray-400 hover:border-white/20 hover:text-gray-300'
-                    }`}
-                    style={activeVersion === version.id ? { '--rc': '251, 191, 36' } as React.CSSProperties : undefined}
-                  >
-                    <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                      <GitBranch className="w-4 h-4 text-zion-cyan" />
-                      {version.label}
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded border ${version.tagColor}`}>
-                        {getVersionTag(version)}
-                      </span>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${expandedVersions[version.id] ? 'rotate-180' : ''}`} />
-                  </button>
-                  {expandedVersions[version.id] && version.categories.map(category => {
-                    const Icon = category.icon;
-                    const isActive = activeCategory === category.id && activeVersion === version.id;
+            <div className="mt-4 zion-rainbow-card p-4 space-y-3 max-h-[70vh] overflow-y-auto" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+              {/* Resources / History tabs */}
+              <div className="flex border-b border-white/10 mb-2">
+                <button
+                  onClick={() => setSidebarTab('resources')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-all ${
+                    sidebarTab === 'resources'
+                      ? 'zion-rainbow-sub text-zion-cyan'
+                      : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                  style={sidebarTab === 'resources' ? { '--rc': '6, 182, 212' } as React.CSSProperties : undefined}
+                >
+                  <LayoutList className="w-3.5 h-3.5" />
+                  {tr('docs', 'resources_tab', lang)}
+                </button>
+                <button
+                  onClick={() => setSidebarTab('history')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-all ${
+                    sidebarTab === 'history'
+                      ? 'zion-rainbow-sub text-zion-gold'
+                      : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                  style={sidebarTab === 'history' ? { '--rc': '251, 191, 36' } as React.CSSProperties : undefined}
+                >
+                  <GitBranch className="w-3.5 h-3.5" />
+                  {tr('docs', 'history_tab', lang)}
+                </button>
+              </div>
+
+              {sidebarTab === 'resources' ? (
+                <div className="space-y-1">
+                  {sections.map(section => {
+                    const Icon = section.icon;
+                    const isExpanded = expandedVersions[section.id] ?? false;
+                    const hasActiveDoc = section.docs.some(d => d.id === selectedDoc);
                     return (
-                      <div key={category.id} className="ml-3">
+                      <div key={section.id}>
                         <button
-                          onClick={() => { setActiveCategory(category.id); setActiveVersion(version.id); }}
-                          className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-all ${
-                            isActive
-                              ? 'zion-rainbow-sub text-zion-cyan'
+                          onClick={() => toggleVersion(section.id)}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 transition-all text-sm ${
+                            hasActiveDoc
+                              ? 'zion-rainbow-sub text-white'
                               : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                           }`}
-                          style={isActive ? { '--rc': '6, 182, 212' } as React.CSSProperties : undefined}
+                          style={hasActiveDoc ? { '--rc': '6, 182, 212' } as React.CSSProperties : undefined}
                         >
-                          <Icon className="w-4 h-4" />
-                          {getCategoryTitle(category)}
+                          <div className="flex items-center gap-2">
+                            <Icon className={`w-4 h-4 ${section.accentText}`} />
+                            <span className={`font-semibold ${hasActiveDoc ? 'text-white' : 'text-gray-400'}`}>
+                              {getSectionTitle(section)}
+                            </span>
+                          </div>
+                          <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                         </button>
-                        {isActive && (
-                          <div className="mt-1 ml-6 space-y-1 border-l border-zion-cyan/20 pl-3 mb-2">
-                            {category.docs.map(doc => (
+                        {isExpanded && (
+                          <div className="ml-3 mt-1 border-l border-white/5 pl-2 space-y-0.5 pb-2">
+                            {section.docs.map(doc => (
                               <button
                                 key={doc.id}
-                                onClick={() => { handleDocSelect(doc.id, category.id, version.id); setMobileMenuOpen(false); }}
-                                className={`w-full text-left px-2 py-1.5 text-xs transition-all ${
+                                onClick={() => {
+                                  if (doc.href) { window.location.href = doc.href; return; }
+                                  setSelectedDoc(doc.id);
+                                  setActiveCategory(section.id);
+                                  setActiveVersion('v3.0.1');
+                                  setMobileMenuOpen(false);
+                                }}
+                                className={`w-full text-left px-3 py-2 transition-all text-sm flex items-center gap-2 ${
                                   selectedDoc === doc.id
                                     ? 'zion-rainbow-sub text-zion-gold font-medium'
-                                    : 'rounded text-gray-500 hover:text-gray-300'
+                                    : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                                 }`}
                                 style={selectedDoc === doc.id ? { '--rc': '251, 191, 36' } as React.CSSProperties : undefined}
                               >
-                                {getDocTitle(doc)}
+                                <FileText className="w-3.5 h-3.5 shrink-0" />
+                                <span className="text-xs">{getDocTitle(doc)}</span>
                               </button>
                             ))}
                           </div>
@@ -687,7 +710,84 @@ export default function DocsPage() {
                     );
                   })}
                 </div>
-              ))}
+              ) : (
+                <div className="space-y-1">
+                  {versions.map(version => {
+                    const isExpanded = expandedVersions[version.id];
+                    const isActiveVersion = activeVersion === version.id;
+                    return (
+                      <div key={version.id}>
+                        <button
+                          onClick={() => toggleVersion(version.id)}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 transition-all text-sm ${
+                            isActiveVersion
+                              ? 'zion-rainbow-sub text-white'
+                              : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
+                          }`}
+                          style={isActiveVersion ? { '--rc': '251, 191, 36' } as React.CSSProperties : undefined}
+                        >
+                          <div className="flex items-center gap-2">
+                            <GitBranch className={`w-4 h-4 ${isActiveVersion ? 'text-zion-gold' : 'text-gray-500'}`} />
+                            <span className={`font-mono font-semibold ${isActiveVersion ? 'text-white' : 'text-gray-400'}`}>
+                              {version.label}
+                            </span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded border ${version.tagColor}`}>
+                              {getVersionTag(version)}
+                            </span>
+                          </div>
+                          <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isExpanded && (
+                          <div className="ml-3 mt-1 border-l border-white/5 pl-2 space-y-0.5 pb-2">
+                            {version.categories.map(category => {
+                              const Icon = category.icon;
+                              const isActiveCat = activeCategory === category.id && activeVersion === version.id;
+                              return (
+                                <div key={category.id}>
+                                  <button
+                                    onClick={() => { setActiveCategory(category.id); setActiveVersion(version.id); }}
+                                    className={`w-full text-left px-3 py-2 transition-all text-sm ${
+                                      isActiveCat
+                                        ? 'zion-rainbow-sub text-zion-cyan'
+                                        : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
+                                    }`}
+                                    style={isActiveCat ? { '--rc': '6, 182, 212' } as React.CSSProperties : undefined}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Icon className="w-4 h-4" />
+                                      {getCategoryTitle(category)}
+                                    </div>
+                                  </button>
+
+                                  {isActiveCat && (
+                                    <div className="mt-1 ml-6 space-y-0.5 border-l border-zion-cyan/20 pl-3">
+                                      {category.docs.map(doc => (
+                                        <button
+                                          key={doc.id}
+                                          onClick={() => { handleDocSelect(doc.id, category.id, version.id); setMobileMenuOpen(false); }}
+                                          className={`w-full text-left px-2 py-1.5 text-xs transition-all ${
+                                            selectedDoc === doc.id
+                                              ? 'zion-rainbow-sub text-zion-gold font-medium'
+                                              : 'rounded text-gray-500 hover:text-gray-300'
+                                          }`}
+                                          style={selectedDoc === doc.id ? { '--rc': '251, 191, 36' } as React.CSSProperties : undefined}
+                                        >
+                                          {getDocTitle(doc)}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
