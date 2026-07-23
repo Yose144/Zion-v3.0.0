@@ -528,6 +528,31 @@ const t = {
     },
   },
 
+  /* ─── Whitepapers ─── */
+  whitepapers: {
+    hero_kicker: { cs: 'Dokumentace', en: 'Documentation' },
+    hero_title: { cs: 'ZION Whitepapers', en: 'ZION Whitepapers' },
+    hero_subtitle: {
+      cs: 'Kanonická whitepaper dokumentace pro ZION TerraNova v3 — Mainnet Alpha 3.1.',
+      en: 'Canonical whitepaper documentation for ZION TerraNova v3 — Mainnet Alpha 3.1.',
+    },
+    hero_description: {
+      cs: 'Všechny dokumenty jsou veřejné, MIT licencované a verifikovatelné. README níže vysvětluje, jak jednotlivé whitepapery číst — od Zlaté knihy přes technickou referenci až po Knihu Zrození a WpStory6.',
+      en: 'All documents are public, MIT licensed, and verifiable. The README below explains how to read each whitepaper — from the Golden Book through the technical reference to the Book of Genesis and WpStory6.',
+    },
+    source_button: { cs: 'Zdrojové soubory na GitHub', en: 'Source files on GitHub' },
+    download_pdf: { cs: 'Stáhnout PDF', en: 'Download PDF' },
+    pdf_notice: {
+      cs: 'Tento dokument je dostupný jako PDF. Klikni na tlačítko výše pro stažení nebo otevření.',
+      en: 'This document is available as a PDF. Click the button above to download or open it.',
+    },
+    not_available_title: { cs: '# Dokument není dostupný', en: '# Document Not Available' },
+    not_available_body: {
+      cs: 'momentálně není k dispozici.',
+      en: 'is currently not available.',
+    },
+  },
+
   notFound: {
     eyebrow: { cs: 'Ztracený signál', en: 'Signal lost' },
     title_hint: { cs: 'Stránka nenalezena', en: 'Page not found' },
