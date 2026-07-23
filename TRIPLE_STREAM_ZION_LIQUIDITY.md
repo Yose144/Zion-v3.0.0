@@ -1,4 +1,4 @@
-# Triple Stream — Zion Liquidity & Zion Grow
+# Trinity — Zion Liquidity & Zion Grow
 
 **Internal document — NOT for public release**
 **Date:** 2026-07-21
@@ -8,7 +8,7 @@
 
 ## 1. Concept
 
-**Triple Stream** is ZION's proprietary multi-coin mining architecture that
+**Trinity** is ZION's proprietary multi-coin mining architecture that
 runs three independent mining streams in parallel on a single rig, while
 paying miners exclusively in **ZION**.
 
@@ -28,7 +28,7 @@ paying miners exclusively in **ZION**.
 
 ---
 
-## 2. Why Triple Stream?
+## 2. Why Trinity?
 
 ### 2.1 Zion Liquidity
 
@@ -36,7 +36,7 @@ Traditional mining: miner finds a block → gets coin → sells on exchange →
 dumps price → exits.
 
 **Zion Liquidity inverts this:**
-- Miner runs Triple Stream → mines ZION + ZANO + VRSC simultaneously
+- Miner runs Trinity → mines ZION + ZANO + VRSC simultaneously
 - Pool receives all shares (ZION, ZANO, VRSC)
 - Pool converts ZANO/VRSC rewards to ZION at internal rate
 - Miner receives **ZION only** — no exchange, no dump, no price pressure
@@ -48,7 +48,7 @@ liquidity depth.
 
 ### 2.2 Zion Grow
 
-**Zion Grow** is the miner incentive program built on Triple Stream:
+**Zion Grow** is the miner incentive program built on Trinity:
 
 - **Mine ZION** → direct ZION rewards (Deeksha, primary stream)
 - **Mine ZANO** → ZION rewards at ZANO/ZION internal rate (GPU stream 2)
@@ -60,7 +60,7 @@ liquidity depth.
 
 ### 2.3 Why this matters
 
-| Traditional mining | Zion Triple Stream |
+| Traditional mining | Trinity |
 |--------------------|--------------------|
 | Mine coin X | Mine ZION + ZANO + VRSC |
 | Sell coin X on exchange | Pool converts to ZION internally |
@@ -126,16 +126,16 @@ The public miner binary (v3.0.6-beta) presents a simplified interface:
 
 ### 4.2 What's hidden
 
-- Triple Stream runs silently in the background
+- Trinity runs silently in the background
 - AuxPow shares are submitted to external pools without user visibility
 - Coin conversion happens pool-side, transparent to the miner
-- Source code for AuxPow/Triple Stream is NOT in the public repo
+- Source code for AuxPow/Trinity is NOT in the public repo
 
 ### 4.3 Marketing message
 
 > **Mine ZION. Earn ZION. Grow ZION.**
 >
-> The ZION v3.0.6 miner runs our proprietary Triple Stream engine: your GPU
+> The ZION v3.0.6 miner runs our proprietary Trinity engine: your GPU
 > and CPU work together to maximize your ZION earnings. No exchanges, no
 > selling, no price dumps. Every hash you compute grows your ZION position
 > and strengthens the network's liquidity.
@@ -149,16 +149,16 @@ The public miner binary (v3.0.6-beta) presents a simplified interface:
 
 ### 5.1 Binary
 
-- **Private miner binary** (with AuxPow + Triple Stream) released as
+- **Private miner binary** (with AuxPow + Trinity) released as
   `zion-miner-linux-x86_64.tar.gz` on public GitHub releases
-- TUI modified to show only ZION/Deeksha (no Triple Stream visible)
+- TUI modified to show only ZION/Deeksha (no Trinity visible)
 - Build from `MinerP3.0.6/` directory (separate from main V3)
 
 ### 5.2 What's NOT released
 
 - AuxPow source code (`AuXpow/`)
 - ProgPoWZ kernel optimizations (`AuXpow/csrc/opencl/progpow_kernel.cl`)
-- Triple Stream scheduling logic
+- Trinity scheduling logic
 - Stale share detection algorithm
 - Multi-coin stratum client
 
@@ -174,7 +174,7 @@ contain only the open-source ZION core:
 - `docs/` — whitepaper, legal, multilingual READMEs
 
 The v3.0.6-beta release adds only the pre-built miner binary with Triple
-Stream — the source code for Triple Stream remains private.
+Stream — the source code for Trinity remains private.
 
 ---
 
@@ -197,16 +197,16 @@ receive ZION — the conversion is transparent and happens pool-side.
 
 ## 7. Roadmap
 
-- **v3.0.6-beta** (this release): Triple Stream live, ZION-only payouts
+- **v3.0.6-beta** (this release): Trinity live, ZION-only payouts
 - **v3.0.7**: Zion Grow dashboard — miners see their ZION position growth over time
 - **v3.0.8**: Zion Liquidity metrics — miners see how their mining deepens liquidity
-- **v3.1.0**: Public launch — Triple Stream marketing campaign, exchange listings
+- **v3.1.0**: Public launch — Trinity marketing campaign, exchange listings
 
 ---
 
 ## 8. Security considerations
 
-- **Binary only**: Triple Stream source stays private (competitive advantage)
+- **Binary only**: Trinity source stays private (competitive advantage)
 - **No secrets in binary**: Pool address, wallet handling are standard
 - **No backdoors**: Miner behaves exactly as documented (mine → earn ZION)
 - **Open core**: The ZION blockchain itself is fully open-source (public repo)

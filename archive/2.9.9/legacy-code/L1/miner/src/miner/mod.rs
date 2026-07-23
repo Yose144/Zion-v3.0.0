@@ -231,7 +231,7 @@ pub struct MinerConfig {
     /// Triple-stream tertiary mining config (LolMiner-style triple mining).
     /// When set, a third stratum connection is opened to a third external pool.
     /// Requires --dualmode to also be set for the secondary coin.
-    pub triple_stream: Option<dual_stream::DualStreamConfig>,
+    pub trinity: Option<dual_stream::DualStreamConfig>,
 }
 
 pub struct UniversalMiner {

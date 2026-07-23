@@ -35,7 +35,7 @@ mkdir -p /etc/OpenCL/vendors
 echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
 ```
 
-6. Run triple-stream mining:
+6. Run trinity mining:
 ```bash
 ZION_AUTOTUNE=0 ZION_GPU_WORK_SIZE=8192 ZION_GPU_MEM_BUDGET_MIB=4096 \
 ./target/release/zion-miner \

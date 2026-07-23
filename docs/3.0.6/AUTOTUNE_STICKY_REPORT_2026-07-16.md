@@ -137,7 +137,7 @@ The previous implementation used ANSI DECSTBM scroll regions, which `screen` doe
 
 ### Implementation (`ui.rs`)
 
-- **`print_triple_stream_stats_sticky()`** — Enters alt screen, draws metrics box at top, redraws on each update
+- **`print_trinity_stats_sticky()`** — Enters alt screen, draws metrics box at top, redraws on each update
 - **`exit_sticky_header()`** — Leaves alt screen on shutdown (restores normal terminal)
 - **`LOG_RING`** — Ring buffer for recent log lines (displayed below header)
 - **`push_log_line()`** — Adds log lines to ring buffer

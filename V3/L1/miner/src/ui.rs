@@ -71,17 +71,20 @@ pub fn reset_sticky_header() {
 /// Write directly to /dev/tty (bypasses redirected stdout).
 /// Falls back to stdout if /dev/tty is not available.
 fn tty_write(s: &str) {
-    let fd = TTY_FD.load(Ordering::SeqCst);
-    if fd >= 0 {
-        // SAFETY: write() is a simple syscall, fd is valid (opened once)
-        unsafe {
-            write(fd, s.as_ptr(), s.len());
+    #[cfg(target_family = "unix")]
+    {
+        let fd = TTY_FD.load(Ordering::SeqCst);
+        if fd >= 0 {
+            // SAFETY: write() is a simple syscall, fd is valid (opened once)
+            unsafe {
+                write(fd, s.as_ptr(), s.len());
+            }
+            return;
         }
-    } else {
-        // Fallback: use stdout
-        let _ = io::stdout().write_all(s.as_bytes());
-        let _ = io::stdout().flush();
     }
+    // Fallback: use stdout (also used on non-Unix platforms)
+    let _ = io::stdout().write_all(s.as_bytes());
+    let _ = io::stdout().flush();
 }
 
 /// Redirect stdout (fd 1) to /dev/null so that ALL println! calls from
@@ -423,7 +426,10 @@ pub fn log_block_found(height: u64, nonce: u64, hash_prefix: &str) {
                                     ║  Height: {}  Nonce: {}  Hash: {}...                      ║
                                     ╚══════════════════════════════════════════════════════════════════╝"#;
 
-    let flag_formatted = flag.replace("{}", &format!("{}  {}  {}", height, nonce, hash_prefix));
+    let flag_formatted = flag
+        .replacen("{}", &height.to_string(), 1)
+        .replacen("{}", &nonce.to_string(), 1)
+        .replacen("{}", hash_prefix, 1);
 
     let mut s = String::new();
     s.push_str(BRIGHT_YELLOW);
@@ -743,10 +749,10 @@ pub fn print_speed_table(
 }
 
 /* ========================================================================= */
-/* Claymore-style Triple Stream stats (no-TUI mode)                          */
+/* Claymore-style Trinity stats (no-TUI mode)                          */
 /* ========================================================================= */
 
-/// Per-stream data for the triple-stream stats display.
+/// Per-stream data for the trinity stats display.
 pub struct StreamStats {
     pub label: &'static str,      // "ZION", "GPU PROFIT", "CPU PROFIT"
     pub coin: String,             // "ZION", "EPIC", "VRSC", etc.
@@ -759,12 +765,12 @@ pub struct StreamStats {
     pub active: bool,             // is this stream currently mining?
 }
 
-/// Print a Claymore-style triple-stream stats block.
+/// Print a Claymore-style trinity stats block.
 ///
 /// Example output:
 /// ```
 /// ┌─────────────────────────────────────────────────────────────────────────┐
-/// │  ZION v3.0.6 Triple Stream                              uptime 01:23:45 │
+/// │  ZION v3.0.6 Trinity                              uptime 01:23:45 │
 /// ├─────────────────────────────────────────────────────────────────────────┤
 /// │  STREAM 1  ZION       deeksha_lite_v1     12.34 MH/s  ████░░░  45/0  ✓  │
 /// │  STREAM 2  GPU PROFIT EPIC / progpow      SKIPPED (DAG-based on Metal)   │
@@ -774,7 +780,7 @@ pub struct StreamStats {
 /// │  pool 62.171.141.136:8444   height 3623114   latency 12/45 ms           │
 /// └─────────────────────────────────────────────────────────────────────────┘
 /// ```
-pub fn print_triple_stream_stats(
+pub fn print_trinity_stats(
     uptime_secs: u64,
     streams: &[StreamStats],
     total_accepted: u64,
@@ -785,7 +791,7 @@ pub fn print_triple_stream_stats(
     submit_max_ms: u64,
     gpu_infos: &[(String, u32, u64, u32, Option<u32>, Option<u32>)],
 ) {
-    let s = build_triple_stream_box(
+    let s = build_trinity_box(
         uptime_secs,
         streams,
         total_accepted,
@@ -799,9 +805,9 @@ pub fn print_triple_stream_stats(
     print_flush(&s);
 }
 
-/// Build the triple-stream stats box as a string (no printing).
+/// Build the trinity stats box as a string (no printing).
 /// Returns (box_string, line_count).
-fn build_triple_stream_box(
+fn build_trinity_box(
     uptime_secs: u64,
     streams: &[StreamStats],
     total_accepted: u64,
@@ -836,7 +842,7 @@ fn build_triple_stream_box(
     #[cfg(feature = "public_build")]
     let title_str = "  ZION v3.0.6 Miner";
     #[cfg(not(feature = "public_build"))]
-    let title_str = "  ZION v3.0.6 Triple Stream";
+    let title_str = "  ZION v3.0.6 Trinity";
     s.push_str(title_str);
     s.push_str(RESET);
     let title_len = title_str.chars().count();
@@ -850,7 +856,7 @@ fn build_triple_stream_box(
     s.push_str(&format!("├{}┤\n", "─".repeat(w)));
 
     // ── Per-stream lines ──
-    // In public_build, filter out non-ZION streams (hide Triple Stream).
+    // In public_build, filter out non-ZION streams (hide Trinity).
     #[cfg(feature = "public_build")]
     let visible_streams: Vec<&StreamStats> = streams.iter().filter(|s| s.label == "ZION").collect();
     #[cfg(not(feature = "public_build"))]
@@ -1060,7 +1066,7 @@ fn build_triple_stream_box(
 /* Claymore-style sticky header (alternate screen + full redraw)             */
 /* ========================================================================= */
 
-/// Print the triple-stream stats box as a **sticky header** at the top of the
+/// Print the trinity stats box as a **sticky header** at the top of the
 /// terminal.  Uses the **alternate screen buffer** (like Claymore/GMiner) so
 /// the header stays fixed while recent log lines are shown below it.
 ///
@@ -1072,7 +1078,7 @@ fn build_triple_stream_box(
 /// Log lines are captured via `push_log_line()` and kept in a ring buffer.
 ///
 /// Disable with `ZION_NO_STICKY=1`.
-pub fn print_triple_stream_stats_sticky(
+pub fn print_trinity_stats_sticky(
     uptime_secs: u64,
     streams: &[StreamStats],
     total_accepted: u64,
@@ -1088,7 +1094,7 @@ pub fn print_triple_stream_stats_sticky(
         .map(|v| v == "1" || v == "true")
         .unwrap_or(false)
     {
-        print_triple_stream_stats(
+        print_trinity_stats(
             uptime_secs,
             streams,
             total_accepted,
@@ -1102,7 +1108,7 @@ pub fn print_triple_stream_stats_sticky(
         return;
     }
 
-    let box_str = build_triple_stream_box(
+    let box_str = build_trinity_box(
         uptime_secs,
         streams,
         total_accepted,
@@ -1212,7 +1218,7 @@ pub fn print_fancy_banner(threads: usize, version: &str, backend: &str) {
     s.push_str(RESET);
     s.push_str("  ");
     s.push_str(DIM);
-    s.push_str("Triple Stream");
+    s.push_str("Trinity");
     s.push_str(RESET);
     s.push_str("         ║\n");
     s.push_str("║  ");

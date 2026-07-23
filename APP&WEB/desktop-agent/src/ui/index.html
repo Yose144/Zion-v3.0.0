@@ -1082,8 +1082,8 @@
       background-clip: text;
     }
 
-    /* ═══ Triple Stream Panel (DeekshaChv3 parallel streaming) ═══ */
-    .triple-stream-panel {
+    /* ═══ Trinity Panel (DeekshaChv3 parallel streaming) ═══ */
+    .trinity-panel {
       background: rgba(0, 0, 0, 0.28);
       border: 1px solid rgba(255,255,255,0.07);
       border-radius: 24px;
@@ -1093,13 +1093,13 @@
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
     }
-    .triple-stream-header {
+    .trinity-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 14px;
     }
-    .triple-stream-header h3 {
+    .trinity-header h3 {
       margin: 0;
       font-size: 14px;
       font-weight: 600;
@@ -1108,7 +1108,7 @@
       align-items: center;
       gap: 8px;
     }
-    .triple-stream-grid {
+    .trinity-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 12px;
@@ -1194,7 +1194,7 @@
     .stream-status.inactive { color: #6b7280; background: rgba(107,114,128,0.12); }
     .stream-status.skipped  { color: #f59e0b; background: rgba(245,158,11,0.12); }
     @media (max-width: 900px) {
-      .triple-stream-grid { grid-template-columns: 1fr; }
+      .trinity-grid { grid-template-columns: 1fr; }
     }
 
     /* Control Panel — pool-style glass */
@@ -4235,13 +4235,13 @@
 
         </div>
 
-        <!-- ═══ Triple Stream Panel (DeekshaChv3 parallel streaming) ═══ -->
-        <div id="triple-stream-panel" class="triple-stream-panel">
-          <div class="triple-stream-header">
-            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Triple Stream</h3>
-            <span id="triple-stream-status" class="pill pill-compact">Idle</span>
+        <!-- ═══ Trinity Panel (DeekshaChv3 parallel streaming) ═══ -->
+        <div id="trinity-panel" class="trinity-panel">
+          <div class="trinity-header">
+            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Trinity</h3>
+            <span id="trinity-status" class="pill pill-compact">Idle</span>
           </div>
-          <div class="triple-stream-grid">
+          <div class="trinity-grid">
             <!-- Stream 1: ZION (GPU/CPU primary) -->
             <div class="stream-card stream-zion" id="stream-card-1">
               <div class="stream-card-header">
@@ -5263,7 +5263,7 @@
                   <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
                 </div>
                 <div>
-                  <p class="card-kicker">Triple Stream</p>
+                  <p class="card-kicker">Trinity</p>
                   <h3>Parallel Coin Mining</h3>
                 </div>
               </div>
@@ -5297,9 +5297,9 @@
 
               <div class="section-divider">Toggle</div>
               <label class="mode-pill" style="cursor:pointer">
-                <input type="checkbox" id="triple-stream-checkbox" style="width:18px;height:18px" checked />
+                <input type="checkbox" id="trinity-checkbox" style="width:18px;height:18px" checked />
                 <div>
-                  <div class="mode-title">Enable Triple Stream</div>
+                  <div class="mode-title">Enable Trinity</div>
                   <p>Run ZION + GPU coin + CPU coin simultaneously</p>
                 </div>
               </label>

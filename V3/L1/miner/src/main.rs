@@ -85,6 +85,42 @@ fn flush_stdout() {
     let _ = std::io::stdout().flush();
 }
 
+/// Check if stdout is a real terminal (TTY). Returns false on SMOS / Docker / pipes.
+/// Used to decide whether to activate the sticky header (alt screen) mode.
+#[cfg(unix)]
+fn isatty_stdout() -> bool {
+    extern "C" {
+        fn isatty(fd: i32) -> i32;
+    }
+    unsafe { isatty(1) != 0 }
+}
+
+#[cfg(not(unix))]
+fn isatty_stdout() -> bool {
+    // On Windows, assume terminal (console host supports ANSI since Win10)
+    true
+}
+
+/// Write directly to fd 1 (stdout) bypassing Rust's block buffer.
+/// On non-TTY (pipes/SMOS), Rust's stdout is 8KB block-buffered and output
+/// may never appear. This uses the raw `write(2)` syscall for immediate output.
+#[cfg(unix)]
+fn raw_stdout(s: &str) {
+    extern "C" {
+        fn write(fd: i32, buf: *const u8, count: usize) -> isize;
+    }
+    unsafe {
+        let _ = write(1, s.as_ptr(), s.len());
+    }
+}
+
+#[cfg(not(unix))]
+fn raw_stdout(s: &str) {
+    use std::io::Write;
+    let _ = std::io::stdout().write_all(s.as_bytes());
+    let _ = std::io::stdout().flush();
+}
+
 /// Gate verbose wire_* / iteration= debug output (--verbose or ZION_MINER_VERBOSE=1).
 static VERBOSE: AtomicBool = AtomicBool::new(false);
 /// Suppress verbose log lines when sticky header is active (Claymore-style clean display).
@@ -106,7 +142,7 @@ fn log_always(msg: &str) {
     println!("{}", msg);
 }
 
-/// Serializable per-stream telemetry for the triple-stream architecture.
+/// Serializable per-stream telemetry for the trinity architecture.
 ///
 /// Mirrors `ui::StreamStats` but derives `Serialize` so it can be embedded
 /// in the stats JSON file and HTTP `/stats` payload consumed by the desktop
@@ -167,9 +203,9 @@ pub(crate) struct MinerMetricsSnapshot {
     pool_addr: String,
     backend: String,
     status: String,
-    /// Per-stream telemetry for the triple-stream architecture.
+    /// Per-stream telemetry for the trinity architecture.
     /// Index 0 = ZION (stream 1), 1 = GPU external (stream 2), 2 = CPU external (stream 3).
-    /// Empty when triple-stream is not active (legacy single-stream mode).
+    /// Empty when trinity is not active (legacy single-stream mode).
     streams: Vec<StreamStatsInfo>,
     #[allow(dead_code)]
     loop_target: u32,
@@ -694,7 +730,7 @@ fn write_stats_file(path: &str, snapshot: &MinerMetricsSnapshot) {
         "miner_id": snapshot.miner_id,
         "pool_addr": snapshot.pool_addr,
         // ── Triple-stream per-stream telemetry (DeekshaChv3 parallel streaming)
-        // Empty array when triple-stream is not active (legacy single-stream mode).
+        // Empty array when trinity is not active (legacy single-stream mode).
         // Each entry: {index, label, coin, algorithm, hashrate_10s, hashrate_60s,
         //              hashrate_15m, accepted, rejected, active}
         "streams": snapshot.streams,
@@ -883,6 +919,16 @@ fn main() -> Result<()> {
         || std::env::args().any(|a| a == "--verbose")
     {
         VERBOSE.store(true, Ordering::Relaxed);
+    }
+
+    // ── SMOS / non-TTY quiet mode ──
+    // When ZION_NO_STICKY=1 is set (SMOS/Docker/pipe mode), activate QUIET
+    // immediately to suppress verbose per-iteration log lines (stream_weights,
+    // external_stream, ext_gpu_rx_empty, etc.) that would push the compact
+    // dashboard out of SMOS's 19-line ring buffer.
+    if std::env::var("ZION_NO_STICKY").map(|v| v == "1" || v == "true").unwrap_or(false) {
+        QUIET.store(true, Ordering::Relaxed);
+        std::env::set_var("ZION_QUIET", "1");
     }
 
     // ── Auto mode banner ──
@@ -1564,6 +1610,121 @@ fn run_local_session(
         }
     }
 
+    // ── Trinity setup for local/benchmark mode ──
+    // In local mode there is no pool to dispatch external stream jobs, so we
+    // generate synthetic benchmark jobs for Stream 2 (GPU external: ZANO
+    // ProgPoWZ) and Stream 3 (CPU external: VRSC VerusHash).  The external
+    // threads run persistently and report hashrates just like in pool mode.
+    //
+    // This gives users a full Trinity benchmark: ZION + ZANO + VRSC
+    // hashrates out of the box, without needing a pool connection.
+    let stream2_local = config.stream2_enabled && gpu_available && config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
+    let stream3_local = config.stream3_enabled;
+
+    // Channels for external threads (same pattern as run_remote_session).
+    let (ext_gpu_tx, ext_gpu_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
+    let (_ext_gpu_share_tx, ext_gpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
+    let (ext_cpu_tx, ext_cpu_rx) = std::sync::mpsc::channel::<zion_pool::ExternalStreamJob>();
+    let (_ext_cpu_share_tx, ext_cpu_share_rx) = std::sync::mpsc::channel::<ExternalShareResult>();
+
+    // Easy target (Bitcoin difficulty 1) — synthetic benchmark jobs.
+    const EASY_TARGET_HEX: &str = "00000000ffff0000000000000000000000000000000000000000000000000000";
+
+    // Synthetic VRSC (VerusHash) benchmark job.
+    // 1487-byte VRSC header: version=0x02000000, solution version=0x07 at byte 143.
+    let vrsc_header = {
+        let mut h = vec![0u8; 1487];
+        h[0..4].copy_from_slice(&0x02000000u32.to_le_bytes());
+        h[143] = 0x07; // solution version > 6 → PBaaS path
+        hex::encode(&h)
+    };
+    let vrsc_job = zion_pool::ExternalStreamJob {
+        coin: "VRSC".to_string(),
+        algorithm: "verushash".to_string(),
+        job_id: "benchmark-vrsc-0".to_string(),
+        header_hex: vrsc_header,
+        target_hex: EASY_TARGET_HEX.to_string(),
+        height: 1,
+        extranonce1_hex: String::new(),
+        protocol: "zcashstratum".to_string(),
+        seed_hash_hex: String::new(),
+        timestamp: 0,
+    };
+
+    // Synthetic ZANO (ProgPoWZ) benchmark job.
+    // 32-byte pre-hashed header_hash (zeroed) — ProgPoWZ pools send the hash directly.
+    let zano_header = hex::encode(&[0u8; 32]);
+    let zano_job = zion_pool::ExternalStreamJob {
+        coin: "ZANO".to_string(),
+        algorithm: "progpow_zano".to_string(),
+        job_id: "benchmark-zano-0".to_string(),
+        header_hex: zano_header,
+        target_hex: EASY_TARGET_HEX.to_string(),
+        height: 1,
+        extranonce1_hex: String::new(),
+        protocol: "stratum".to_string(),
+        seed_hash_hex: String::new(),
+        timestamp: 0,
+    };
+
+    // Spawn Stream 2 (GPU external: ZANO ProgPoWZ)
+    if stream2_local {
+        let ws = config.secondary_gpu_work_size;
+        let hr = Arc::clone(hashrate);
+        let bk = effective_gpu_backend;
+        #[cfg(feature = "gpu-cuda")]
+        let shared_cuda: Option<std::sync::Arc<cudarc::driver::CudaDevice>> = None;
+        #[cfg(not(feature = "gpu-cuda"))]
+        let shared_cuda: Option<()> = None;
+        let share_tx = _ext_gpu_share_tx;
+        thread::spawn(move || {
+            println!("[{}] external_gpu_thread_spawned (local benchmark)", log_timestamp());
+            external_gpu_thread(ext_gpu_rx, share_tx, ws, hr, bk, None, shared_cuda);
+        });
+        println!(
+            "[{}] stream2_gpu_external_started (local benchmark) coin=ZANO algo=progpow_zano work_size={}",
+            log_timestamp(),
+            config.secondary_gpu_work_size
+        );
+        // Send initial job
+        let _ = ext_gpu_tx.send(zano_job.clone());
+        // Update hashrate tracker for trinity display
+        hashrate.set_gpu_ext_job("ZANO", "progpow_zano");
+    } else {
+        println!(
+            "[{}] stream2_gpu_external_disabled (local: stream2_enabled={} gpu_available={})",
+            log_timestamp(),
+            config.stream2_enabled,
+            gpu_available
+        );
+    }
+
+    // Spawn Stream 3 (CPU external: VRSC VerusHash)
+    if stream3_local {
+        let ext_cpu_threads = config.threads.max(1);
+        let ext_cpu_nonce_count = config.verushash_nonce_count;
+        let hr = Arc::clone(hashrate);
+        let share_tx = _ext_cpu_share_tx;
+        thread::spawn(move || {
+            ext_cpu_thread(ext_cpu_rx, share_tx, ext_cpu_threads, ext_cpu_nonce_count, hr);
+        });
+        println!(
+            "[{}] stream3c_ext_cpu_started (local benchmark) coin=VRSC algo=verushash threads={}",
+            log_timestamp(),
+            config.threads
+        );
+        // Send initial job
+        let _ = ext_cpu_tx.send(vrsc_job.clone());
+        // Update hashrate tracker for trinity display
+        hashrate.set_cpu_ext_job("VRSC", "verushash");
+    } else {
+        println!(
+            "[{}] stream3c_ext_cpu_disabled (local: stream3_enabled={})",
+            log_timestamp(),
+            config.stream3_enabled
+        );
+    }
+
     sync_miner_metrics(
         metrics,
         &telemetry,
@@ -1598,6 +1759,26 @@ fn run_local_session(
             }
             c.algorithm.clone()
         };
+
+        // ── Trinity: drain external share channels + re-send jobs ──
+        // The external threads (Stream 2 GPU/ZANO, Stream 3 CPU/VRSC) run
+        // persistently.  Drain any shares they found (we don't submit in
+        // local mode — just count them for hashrate display) and re-send
+        // the synthetic benchmark jobs so they keep mining.
+        while let Ok(_share) = ext_gpu_share_rx.try_recv() {
+            // Shares found in local benchmark mode are not submitted —
+            // they're just hashrate indicators.
+        }
+        while let Ok(_share) = ext_cpu_share_rx.try_recv() {
+            // Same for CPU external shares.
+        }
+        // Re-send jobs every iteration so external threads always have work.
+        if stream2_local {
+            let _ = ext_gpu_tx.send(zano_job.clone());
+        }
+        if stream3_local {
+            let _ = ext_cpu_tx.send(vrsc_job.clone());
+        }
 
         for stale_job_id in pool.expire_stale_jobs() {
             let stale_line = encode_message(&pool.stale_message(stale_job_id))?;
@@ -2754,9 +2935,12 @@ fn run_remote_session(
                         effective_header.timestamp = job.height;
                     }
 
+                    // ProgPoWZ (ZANO) pools send the 32-byte pre-hashed header_hash,
+                    // so pass it directly via mine_batch_raw. DCR (>80B) also uses raw.
                     let use_raw = gpu_backend::is_external_algorithm(&current_algorithm)
                         && !current_algorithm.starts_with("kheavyhash")
-                        && raw_header_bytes.len() > 80;
+                        && (raw_header_bytes.len() > 80
+                            || matches!(current_algorithm.as_str(), "progpow" | "progpow_epic" | "progpow_zano"));
 
                     let batch_result = if use_raw {
                         g.mine_batch_raw(&raw_header_bytes, job.target, job.start_nonce, effective_batch)
@@ -2836,17 +3020,19 @@ fn run_remote_session(
             attempted_hashes = attempted_hashes.saturating_add(tested);
             telemetry.record_attempted_hashes(attempted_hashes);
             telemetry.record_no_solution();
-            // Always log scan result for operational visibility
-            println!(
-                "[{}] no_solution  iteration={}  height={}  nonces={}..{}  tested={}  elapsed_ms={}",
-                log_timestamp(),
-                iteration + 1,
-                job.height,
-                job.start_nonce,
+            // Always log scan result for operational visibility (unless QUIET)
+            if !QUIET.load(Ordering::Relaxed) {
+                println!(
+                    "[{}] no_solution  iteration={}  height={}  nonces={}..{}  tested={}  elapsed_ms={}",
+                    log_timestamp(),
+                    iteration + 1,
+                    job.height,
+                    job.start_nonce,
                 job.start_nonce + job.nonce_count,
                 tested,
                 batch_ms,
             );
+            }
             if VERBOSE.load(Ordering::Relaxed) {
                 println!("wire_job={job_line}");
             }
@@ -3396,12 +3582,63 @@ impl SessionTelemetry {
         );
         if QUIET.load(Ordering::Relaxed) {
             eprintln!("{status_line}");
+        } else if !isatty_stdout() {
+            // Non-TTY (SMOS/pipe): use raw write(2) to bypass Rust's block buffer
+            raw_stdout(&format!("{status_line}\n"));
         } else {
             println!("{status_line}");
         }
 
-        if !TUI_ACTIVE.load(Ordering::Relaxed) {
-            // ── Claymore-style sticky triple-stream stats (alt screen + full redraw) ──
+        // ── SMOS / non-TTY compact dashboard ──
+        // SMOS captures stdout in a 19-line ring buffer. Emit a compact,
+        // human-readable dashboard that fits within that buffer and shows
+        // all three streams at a glance. Uses raw_stdout() (write(2) syscall)
+        // to bypass Rust's 8KB block buffer.
+        if std::env::var("ZION_NO_STICKY").map(|v| v == "1" || v == "true").unwrap_or(false)
+            || !isatty_stdout()
+        {
+            let gpu_hr = self.gpu_hashrate_hps();
+            let uptime_str = if uptime >= 3600.0 {
+                format!("{:.0}h{:.0}m", uptime / 3600.0, (uptime % 3600.0) / 60.0)
+            } else if uptime >= 60.0 {
+                format!("{:.0}m{:.0}s", uptime / 60.0, uptime % 60.0)
+            } else {
+                format!("{:.0}s", uptime)
+            };
+            // Compact dashboard — designed to fit SMOS 19-line buffer
+            raw_stdout("\n");
+            raw_stdout(&format!("╔══════════════════════════════════════════════╗\n"));
+            raw_stdout(&format!("║  ZION Trinity Miner   v3.0.6           ║\n"));
+            raw_stdout(&format!("╠══════════════════════════════════════════════╣\n"));
+            raw_stdout(&format!("║  Uptime: {:<6}  Pool: {:<20}   ║\n",
+                uptime_str, &pool_addr[..pool_addr.len().min(20)]));
+            raw_stdout(&format!("║  GPU: {:>10}  |  Total: {:>10}      ║\n",
+                fmt_hashrate(gpu_hr), fmt_hashrate(overall_hps)));
+            raw_stdout(&format!("║  Accepted: {:<6}  Rejected: {:<6}         ║\n",
+                accepted, rejected));
+            raw_stdout(&format!("╠══════════════════════════════════════════════╣\n"));
+            // Per-stream lines
+            for s in stream_stats {
+                let status = if s.active { "ACTIVE  " } else { "INACTIVE" };
+                raw_stdout(&format!("║ {} {:<6} {:<14} {:>10} A:{:<4} R:{:<3}║\n",
+                    status, s.coin, s.algorithm,
+                    fmt_hashrate(s.hashrate_60s),
+                    s.accepted, s.rejected));
+            }
+            raw_stdout(&format!("╚══════════════════════════════════════════════╝\n"));
+        }
+
+        if !TUI_ACTIVE.load(Ordering::Relaxed)
+            && isatty_stdout()
+            && std::env::var("ZION_NO_STICKY").map(|v| v != "1" && v != "true").unwrap_or(true)
+        {
+            // ── Claymore-style sticky trinity stats (alt screen + full redraw) ──
+            // Only activate when ALL of:
+            //   1. TUI is not active (ZION_INTERACTIVE=0)
+            //   2. stdout is a real terminal (isatty)
+            //   3. ZION_NO_STICKY is not set (SMOS/Docker use pseudo-TTY but
+            //      /dev/tty is not connected to the console, so sticky header
+            //      would redirect stdout to /dev/null and hide all output)
             // Activate quiet mode to suppress verbose log lines (clean metrics display)
             QUIET.store(true, Ordering::Relaxed);
             std::env::set_var("ZION_QUIET", "1");
@@ -3420,7 +3657,7 @@ impl SessionTelemetry {
                     )
                 })
                 .collect();
-            ui::print_triple_stream_stats_sticky(
+            ui::print_trinity_stats_sticky(
                 uptime_secs,
                 stream_stats,
                 accepted,
@@ -3439,7 +3676,7 @@ impl SessionTelemetry {
             if now.duration_since(self.last_stats_write).as_secs() >= 3 {
                 if let Ok(mut snapshot) = metrics.lock() {
                     // Refresh per-stream telemetry so the stats file / HTTP
-                    // /stats endpoint expose fresh triple-stream data to the
+                    // /stats endpoint expose fresh trinity data to the
                     // desktop agent. `stream_stats` is built by
                     // `HashrateTracker::build_stream_stats()` upstream.
                     snapshot.set_streams(stream_stats);
@@ -3643,15 +3880,17 @@ fn maybe_send_adaptive_update(
     let ext_hps = hashrate.gpu_ext_hps_60s();
     let (burst, gap_ms) = compute_adaptive_duty_cycle(zion_hps, ext_hps);
     let _ = atx.send((burst, gap_ms));
-    println!(
-        "[{}] adaptive_duty_cycle_computed zion_hps={:.1} ext_hps={:.1} burst={} gap_ms={} duty={:.0}%",
-        log_timestamp(),
-        zion_hps,
-        ext_hps,
-        burst,
-        gap_ms,
-        if burst > 0 { 100.0 * burst as f64 / (burst as f64 + gap_ms as f64 / 50.0) } else { 0.0 }
-    );
+    if !QUIET.load(Ordering::Relaxed) {
+        println!(
+            "[{}] adaptive_duty_cycle_computed zion_hps={:.1} ext_hps={:.1} burst={} gap_ms={} duty={:.0}%",
+            log_timestamp(),
+            zion_hps,
+            ext_hps,
+            burst,
+            gap_ms,
+            if burst > 0 { 100.0 * burst as f64 / (burst as f64 + gap_ms as f64 / 50.0) } else { 0.0 }
+        );
+    }
 }
 
 /// Persistent external GPU miner thread for the single GPU profit coin.
@@ -3848,21 +4087,25 @@ fn external_gpu_thread(
                 // same job every ~1s, and resetting would cause DAG reload
                 // every second. last_epoch is reset only when the algorithm
                 // changes (see algo switch below).
-                println!(
-                    "[{}] ext_gpu_job_received coin={} algo={} job_id={} height={}",
-                    log_timestamp(),
-                    job.coin,
-                    job.algorithm,
-                    job.job_id,
-                    job.height,
-                );
-                // Update hashrate tracker for triple-stream display
+                if !QUIET.load(Ordering::Relaxed) {
+                    println!(
+                        "[{}] ext_gpu_job_received coin={} algo={} job_id={} height={}",
+                        log_timestamp(),
+                        job.coin,
+                        job.algorithm,
+                        job.job_id,
+                        job.height,
+                    );
+                }
+                // Update hashrate tracker for trinity display
                 hashrate.set_gpu_ext_job(&job.coin, &job.algorithm);
                 current_job = Some(job);
             }
             None => {
                 // No job in channel — debug: log first few empty receives
-                if batch_count == 0 && last_heartbeat.elapsed().as_secs() < 3 {
+                if batch_count == 0 && last_heartbeat.elapsed().as_secs() < 3
+                    && !QUIET.load(Ordering::Relaxed)
+                {
                     println!("[{}] ext_gpu_rx_empty (no job yet, thread alive)", log_timestamp());
                 }
             }
@@ -3870,16 +4113,18 @@ fn external_gpu_thread(
 
         // Heartbeat every 15s so we can see the thread is alive
         if last_heartbeat.elapsed().as_secs() >= 15 {
-            println!(
-                "[{}] ext_gpu_heartbeat batches={} nonce_offset={} has_job={} epoch={:?} progpow_period={:?} algo={:?}",
-                log_timestamp(),
-                batch_count,
-                nonce_offset,
-                current_job.is_some(),
-                last_epoch,
-                last_progpow_period,
-                current_algo.as_deref().unwrap_or("none"),
-            );
+            if !QUIET.load(Ordering::Relaxed) {
+                println!(
+                    "[{}] ext_gpu_heartbeat batches={} nonce_offset={} has_job={} epoch={:?} progpow_period={:?} algo={:?}",
+                    log_timestamp(),
+                    batch_count,
+                    nonce_offset,
+                    current_job.is_some(),
+                    last_epoch,
+                    last_progpow_period,
+                    current_algo.as_deref().unwrap_or("none"),
+                );
+            }
             last_heartbeat = std::time::Instant::now();
         }
 
@@ -4094,7 +4339,9 @@ fn external_gpu_thread(
         match result {
             Ok(br) => {
                 actual_batch = br.nonces_tested;
-                if batch_count < 5 || batch_count % 100 == 0 {
+                if (batch_count < 5 || batch_count % 100 == 0)
+                    && !QUIET.load(Ordering::Relaxed)
+                {
                     println!(
                         "[{}] ext_gpu_batch_done batch={} nonces_tested={} solutions={} header_len={}",
                         log_timestamp(),
@@ -4301,15 +4548,17 @@ fn ext_cpu_thread(
                 nonce_base = (h.finish() as u32) as u64;
                 nonce_offset = 0;
                 current_job_id = job.job_id.clone();
-                println!(
-                    "[{}] ext_cpu_thread: new job coin={} algo={} job_id={} nonce_base={}",
-                    log_timestamp(),
-                    job.coin,
-                    job.algorithm,
-                    job.job_id,
-                    nonce_base,
-                );
-                // Update hashrate tracker for triple-stream display
+                if !QUIET.load(Ordering::Relaxed) {
+                    println!(
+                        "[{}] ext_cpu_thread: new job coin={} algo={} job_id={} nonce_base={}",
+                        log_timestamp(),
+                        job.coin,
+                        job.algorithm,
+                        job.job_id,
+                        nonce_base,
+                    );
+                }
+                // Update hashrate tracker for trinity display
                 hashrate.set_cpu_ext_job(&job.coin, &job.algorithm);
             }
             current_job = Some(job);
@@ -5495,6 +5744,11 @@ fn apply_profile_defaults() {
             ("ZION_NONCE_COUNT_MAX", "10000000"),
             ("ZION_RECONNECT", "true"),
             ("ZION_METRICS_REPORT_SECS", "30"),
+            // Trinity: autonomous profit router selects the best
+            // GPU coin (Stream 2) and CPU coin (Stream 3) automatically.
+            // Default ON for pool profile — users get ZION+ZANO+VRSC (or
+            // whatever is most profitable) out of the box.
+            ("ZION_AUTONOMOUS", "1"),
         ],
         "solo" => &[
             // Solo node mining — no pool, long run, large window.
@@ -5503,6 +5757,8 @@ fn apply_profile_defaults() {
             ("ZION_NONCE_COUNT", "1000000"),
             ("ZION_NONCE_COUNT_MAX", "10000000"),
             ("ZION_METRICS_REPORT_SECS", "60"),
+            // Trinity autonomous mode (same as pool profile).
+            ("ZION_AUTONOMOUS", "1"),
         ],
         "benchmark" | "bench" => &[
             // Short burst to measure hash performance.

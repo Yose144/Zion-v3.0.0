@@ -88,7 +88,7 @@ pub fn print_genesis_banner() {
     println!("{}", GENESIS_TREE.bright_yellow());
     println!();
     println!("{}", ZION_ASCII.bright_yellow());
-    println!("  {}", "Mainnet Launch v3".bright_white().bold());
+    println!("  {}", "Trinity · Mainnet Launch v3".bright_white().bold());
     println!("  {}", "The Golden Age begins.".bright_cyan());
     println!(
         "  {} {} {}",

@@ -190,7 +190,7 @@ inline u128 _mm_cvtsi32_si128_emu(uint32_t lo)
     return result;
 }
 
-u128 _mm_setr_epi8_emu(u_char c0, u_char c1, u_char c2, u_char c3, u_char c4, u_char c5, u_char c6, u_char c7, u_char c8, u_char c9, u_char c10, u_char c11, u_char c12, u_char c13, u_char c14, u_char c15)
+u128 _mm_setr_epi8_emu(unsigned char c0, unsigned char c1, unsigned char c2, unsigned char c3, unsigned char c4, unsigned char c5, unsigned char c6, unsigned char c7, unsigned char c8, unsigned char c9, unsigned char c10, unsigned char c11, unsigned char c12, unsigned char c13, unsigned char c14, unsigned char c15)
 {
     __m128i result;
     ((uint8_t *)&result)[0] = c0;

@@ -1,4 +1,4 @@
-# Mac M1 Triple-Stream Mining Report — Performance Tuned
+# Mac M1 Trinity Mining Report — Performance Tuned
 
 **Date:** 2026-07-18 (updated with tuning results)
 **Hardware:** Apple M1 (8-core GPU, Metal 4, 8 GB unified memory)
@@ -40,7 +40,7 @@ The auto-tune calculates `budget_mib = 32` on 8 GB M1 because:
 
 600 MiB is slower because larger scratchpad causes memory pressure on 8 GB system.
 
-### 2.3 Triple-Stream Tuned (ZION + KAS + VRSC/XMR)
+### 2.3 Trinity Tuned (ZION + KAS + VRSC/XMR)
 
 | Config | ZION H/s | Accept Rate | KAS kernel | DCR kernel |
 |--------|---------|------------|-----------|-----------|
@@ -249,7 +249,7 @@ This single change provides **9.8x hashrate improvement** on M1 by allowing batc
 1. **Use `ZION_GPU_MEM_BUDGET_MIB=512` on 8 GB M1** — 9.8x speedup, 100% accept
 2. **Use `ZION_GPU_MEM_BUDGET_MIB=1024` on 16 GB M2/M3** — expect ~7,000+ H/s
 3. **Use `ZION_GPU_MEM_BUDGET_MIB=2048` on 32 GB M4 Max** — expect ~15,000+ H/s
-4. **ZION-only is optimal on stock M1** — triple-stream halves hashrate for no external share benefit
+4. **ZION-only is optimal on stock M1** — trinity halves hashrate for no external share benefit
 5. **Fix ARM AES detection** for 10x RandomX speedup
 6. **Test on M2 Pro/M3 Max** — 10-40 GPU cores could reach KAS/DCR share territory
 

@@ -641,7 +641,7 @@ let minerStats = {
   gpu_name: '',
   cpu_only_mode: true,
   // Dual mining: ZION + XMR (DAO revenue)
-  // ── Triple Stream per-stream telemetry (DeekshaChv3 parallel streaming) ──
+  // ── Trinity per-stream telemetry (DeekshaChv3 parallel streaming) ──
   // Populated from V3 miner /stats `streams` array. Each entry:
   //   {index, label, coin, algorithm, hashrate_10s, hashrate_60s,
   //    hashrate_15m, accepted, rejected, active}
@@ -671,7 +671,7 @@ function resetMinerTelemetryForNewSpawn() {
   delete minerStats.current_epoch;
   delete minerStats.stream_algorithm;
   delete minerStats.miner_version;
-  // Reset triple-stream per-stream telemetry on new spawn
+  // Reset trinity per-stream telemetry on new spawn
   minerStats.streams = [];
   Object.assign(minerStats, {
     hashrate: 0,
@@ -1220,7 +1220,7 @@ const DEFAULT_CONFIG = {
   autoSelectPool: true,
   minimizeToTray: true,
   startMinimized: false,
-  // ── Triple Stream (DeekshaChv3 parallel streaming) ──
+  // ── Trinity (DeekshaChv3 parallel streaming) ──
   // cpuCoin: Stream 3 CPU external coin preference ("auto" = pool decides).
   //   Supported: "auto", "VRSC", "XMR", "RTM"
   // gpuCoin:  Stream 2 GPU external coin preference ("auto" = pool decides).
@@ -2180,7 +2180,7 @@ function startMiningV3(config, v3Path) {
   }
   args.push('--stats-file', STATS_PATH);
 
-  // ── 6a. Triple Stream CLI flags (DeekshaChv3 parallel streaming) ──────────
+  // ── 6a. Trinity CLI flags (DeekshaChv3 parallel streaming) ──────────
   // Forward the user's algorithm / coin preferences to the V3 miner so the
   // pool can assign the correct Stream 2 (GPU external) and Stream 3 (CPU
   // external) jobs. "auto" = let the pool's profit router decide.
@@ -2218,7 +2218,7 @@ function startMiningV3(config, v3Path) {
     ZION_STATS_FILE: STATS_PATH,
     ZION_MINER_METRICS_BIND: '127.0.0.1:9116',
     ZION_NONCE_BASE: String((Date.now() >>> 0) & 0x1fffffff),
-    // ── Triple Stream: enable parallel ZION (GPU) + external coin (CPU/GPU) ──
+    // ── Trinity: enable parallel ZION (GPU) + external coin (CPU/GPU) ──
     // When enabled, the pool sends Job messages with external_stream /
     // external_stream_cpu fields and the miner runs them in parallel.
     ZION_ENABLE_STREAM_SWITCH: tripleStreamEnabled ? '1' : '0',
@@ -2566,7 +2566,7 @@ function tryUpdateStatsFromFile() {
     else if (typeof payload.shares === 'number') minerStats.shares = payload.shares;
     if (typeof payload.uptime_sec === 'number') minerStats.uptime = Math.floor(payload.uptime_sec);
 
-    // ── Triple Stream per-stream telemetry (from stats file) ──
+    // ── Trinity per-stream telemetry (from stats file) ──
     // The V3 miner writes a `streams` array to the stats file with the same
     // shape as the HTTP /stats endpoint. This is the fallback path when the
     // HTTP metrics endpoint is unreachable.
@@ -5866,7 +5866,7 @@ setInterval(() => {
             if (typeof stats.current_epoch === 'number') minerStats.current_epoch = stats.current_epoch;
             if (typeof stats.pool_height === 'number') minerStats.last_job_height = String(stats.pool_height);
             if (typeof stats.backend === 'string') minerStats.runtime_backend = stats.backend;
-            // ── Triple Stream per-stream telemetry ──
+            // ── Trinity per-stream telemetry ──
             // V3 miner exposes `streams` as an array of per-stream objects.
             // Forward to renderer for the 3-stream dashboard cards.
             if (Array.isArray(stats.streams)) {

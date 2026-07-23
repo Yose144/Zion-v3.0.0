@@ -1,4 +1,4 @@
-# Triple Stream All Green Plan — ZION 3.0.7
+# Trinity All Green Plan — ZION 3.0.7
 
 > **Goal:** Every active mining stream (ZION Deeksha, external GPU, external CPU) produces verified accepted shares on at least one reference rig, with no critical regressions, and the stack is ready for wider public use.
 > **Target version:** 3.0.7  
@@ -173,7 +173,7 @@
 | # | Task | Details |
 |------|------|---------|
 | 8.1 | Update `StatusV3.md` with 3.0.7 gate results | Mark each coin green/red/deferred |
-| 8.2 | Update `ROADMAP.md` | Move Triple Stream items to 3.0.7 done; surface 3.1.0 items |
+| 8.2 | Update `ROADMAP.md` | Move Trinity items to 3.0.7 done; surface 3.1.0 items |
 | 8.3 | Sync `public/` subtree | Push non-secret 3.0.7 code/docs to public repo |
 | 8.4 | Create GitHub release v3.0.7-beta | Binaries + SHA256SUMS + release notes |
 | 8.5 | Update SMOS group config and roll out | ZionLiteFire group + reference rigs |

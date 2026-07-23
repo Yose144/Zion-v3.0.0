@@ -2,9 +2,9 @@
 # ──────────────────────────────────────────────────────────────
 # MinerP3.0.6/build.sh
 # Build the public-facing ZION miner binary (v3.0.6-beta) with
-# Triple Stream hidden behind the `public_build` feature flag.
+# Trinity hidden behind the `public_build` feature flag.
 #
-# The binary contains full Triple Stream (AuxPow) support but
+# The binary contains full Trinity (AuxPow) support but
 # the TUI shows only "ZION / Deeksha Lite v1" — no ZANO, VRSC,
 # or external coin names are visible to the user.
 #
@@ -21,7 +21,7 @@ VERSION="v3.0.6-beta"
 
 echo "=== ZION Miner Public Build ==="
 echo "Version: ${VERSION}"
-echo "Feature: public_build (Triple Stream hidden in TUI)"
+echo "Feature: public_build (Trinity hidden in TUI)"
 echo ""
 
 # ── Build ──
@@ -58,7 +58,7 @@ echo "SHA256:  $(cat SHA256SUMS.txt)"
 echo ""
 echo "Upload to GitHub release:"
 echo "  gh release create ${VERSION} --repo Zion-TerraNova/v3-Mainnet \\"
-echo "    --title 'ZION v3.0.6-beta — Triple Stream Miner' \\"
+echo "    --title 'ZION v3.0.6-beta — Trinity Miner' \\"
 echo "    --notes-file ${SCRIPT_DIR}/RELEASE_NOTES.md \\"
 echo "    --prerelease \\"
 echo "    ${TARBALL} ${DIST_DIR}/SHA256SUMS.txt"

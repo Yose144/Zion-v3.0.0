@@ -183,6 +183,35 @@ fn main() {
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
     let is_msvc = env::var("CARGO_CFG_TARGET_ENV").unwrap_or_default() == "msvc";
 
+    // Detect if we're cross-compiling with zig (cargo-zigbuild).
+    // zig cc rejects -std=c++17 when compiling .c files (gcc/clang ignore it).
+    // When zig is detected, we skip -std=c++17 for builds that mix .c and .cpp
+    // files. Modern zig/clang defaults to c++17+ anyway.
+    // cargo-zigbuild sets CC_<target> / CXX_<target> env vars (with underscores)
+    // to point to wrapper scripts that contain "cargo-zigbuild" in the path.
+    let target_triple_underscore = format!(
+        "{}_{}_{}_{}",
+        env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default(),
+        env::var("CARGO_CFG_TARGET_VENDOR").unwrap_or_default(),
+        env::var("CARGO_CFG_TARGET_OS").unwrap_or_default(),
+        env::var("CARGO_CFG_TARGET_ENV").unwrap_or_default()
+    );
+    let cc_var = format!("CC_{}", target_triple_underscore);
+    let cxx_var = format!("CXX_{}", target_triple_underscore);
+    let using_zig = env::var("CARGO_ZIGBUILD_ZIG_VERSION").is_ok()
+        || env::var(&cc_var)
+            .map(|v| v.contains("zig") || v.contains("cargo-zigbuild"))
+            .unwrap_or(false)
+        || env::var(&cxx_var)
+            .map(|v| v.contains("zig") || v.contains("cargo-zigbuild"))
+            .unwrap_or(false)
+        || env::var("CC")
+            .map(|v| v.contains("zig") || v.contains("cargo-zigbuild"))
+            .unwrap_or(false)
+        || env::var("CXX")
+            .map(|v| v.contains("zig") || v.contains("cargo-zigbuild"))
+            .unwrap_or(false);
+
     // Log the CPU target for debugging
     println!(
         "cargo:warning=ZION native-ffi build: target={}, portable={}, avx2={}, bmi2={}",
@@ -355,12 +384,12 @@ fn main() {
             c_build.compile("verushash_c");
 
             // 2. Compile C++ sources (verus_hash, verus_clhash, ffi_wrapper)
-            //    Also compile haraka C sources here so all symbols are in one archive.
+            //    Haraka C sources are NOT recompiled here — they're already in
+            //    the verushash_c archive above.  Including them twice causes
+            //    duplicate-symbol linker errors (aesenc, etc.).
             let mut cpp_build = cc::Build::new();
             cpp_build
                 .cpp(true)
-                .file("csrc/verushash/real/haraka.c")
-                .file("csrc/verushash/real/haraka_portable.c")
                 .file("csrc/verushash/real/verus_hash.cpp")
                 .file("csrc/verushash/real/verus_clhash.cpp")
                 .file("csrc/verushash/real/verus_clhash_portable.cpp")
@@ -369,10 +398,15 @@ fn main() {
                 .opt_level(3)
                 .warnings(false)
                 .cargo_warnings(false)
-                .flag_if_supported("-std=c++17")
                 .flag_if_supported("-funroll-loops")
                 .flag_if_supported("-fomit-frame-pointer")
                 .flag_if_supported("-fPIC");
+            // Only pass -std=c++17 when NOT using zig (zig rejects it for .c files
+            // that are compiled with .cpp(true) builds). Modern clang/zig default
+            // to c++17+ anyway.
+            if !using_zig {
+                cpp_build.flag_if_supported("-std=c++17");
+            }
             if !is_msvc {
                 apply_cpu_baseline(&mut cpp_build, is_msvc);
                 if target_arch == "x86_64" {
@@ -438,7 +472,7 @@ fn main() {
     //   Source: csrc/randomx/randomx_src/ (cloned from github.com/tevador/RandomX)
     // -----------------------------------------------------------------------
     if feat("native-randomx") {
-        build_randomx(&target_os, is_msvc);
+        build_randomx(&target_os, is_msvc, using_zig);
     }
 
     // -----------------------------------------------------------------------
@@ -469,7 +503,7 @@ fn main() {
 ///
 /// RandomX is C++ (not C), so we use `.cpp(true)` and compile all .cpp
 /// source files from the randomx_src/src/ directory plus our wrapper.
-fn build_randomx(target_os: &str, is_msvc: bool) {
+fn build_randomx(target_os: &str, is_msvc: bool, using_zig: bool) {
     let rx_dir = "csrc/randomx/randomx_src/src";
 
     // Core RandomX C++ source files (common to all platforms)
@@ -523,7 +557,7 @@ fn build_randomx(target_os: &str, is_msvc: bool) {
         .include("csrc/randomx/randomx_src/src")
         .include("csrc/randomx/randomx_src/src/asm");
 
-    // Add all core source files
+    // Add all core C++ source files
     for src in &core_sources {
         let path = format!("{}/{}", rx_dir, src);
         if std::path::Path::new(&path).exists() {
@@ -533,15 +567,7 @@ fn build_randomx(target_os: &str, is_msvc: bool) {
         }
     }
 
-    // Add Argon2 C source files
-    for src in &argon2_sources {
-        let path = format!("{}/{}", rx_dir, src);
-        if std::path::Path::new(&path).exists() {
-            b.file(&path);
-        }
-    }
-
-    // Add our wrapper
+    // Add our wrapper (C++)
     b.file("csrc/randomx/randomx_wrapper.cpp");
 
     // ARM64: add assembly file for dataset item calculation
@@ -561,7 +587,11 @@ fn build_randomx(target_os: &str, is_msvc: bool) {
     // Platform-specific flags
     if !is_msvc {
         b.flag_if_supported("-fPIC");
-        b.flag_if_supported("-std=c++17");
+        // Only pass -std=c++17 when NOT using zig (zig rejects it for .c files
+        // in .cpp(true) builds). Modern clang/zig default to c++17+ anyway.
+        if !using_zig {
+            b.flag_if_supported("-std=c++17");
+        }
         b.flag_if_supported("-funroll-loops");
         b.flag_if_supported("-fomit-frame-pointer");
         apply_cpu_baseline(&mut b, is_msvc);
@@ -604,7 +634,7 @@ fn build_randomx(target_os: &str, is_msvc: bool) {
     // the corresponding flags. They are only included if the target
     // supports AVX2. RandomX does runtime dispatch via function pointers.
     if target_arch == "x86_64" && !is_msvc && enable_avx2() {
-        // argon2_avx2.c — compiled with -mavx2
+        // argon2_avx2.c — compiled with -mavx2 (C source, no -std=c++17)
         let mut avx2_build = cc::Build::new();
         avx2_build
             .file(&format!("{}/argon2_avx2.c", rx_dir))
@@ -613,12 +643,11 @@ fn build_randomx(target_os: &str, is_msvc: bool) {
             .warnings(false)
             .cargo_warnings(false)
             .flag_if_supported("-fPIC")
-            .flag_if_supported("-std=c++17")
             .flag_if_supported("-mavx2")
             .flag_if_supported("-maes");
         avx2_build.compile("randomx_argon2_avx2");
 
-        // argon2_ssse3.c — compiled with -mssse3
+        // argon2_ssse3.c — compiled with -mssse3 (C source, no -std=c++17)
         let mut ssse3_build = cc::Build::new();
         ssse3_build
             .file(&format!("{}/argon2_ssse3.c", rx_dir))
@@ -627,7 +656,6 @@ fn build_randomx(target_os: &str, is_msvc: bool) {
             .warnings(false)
             .cargo_warnings(false)
             .flag_if_supported("-fPIC")
-            .flag_if_supported("-std=c++17")
             .flag_if_supported("-mssse3");
         ssse3_build.compile("randomx_argon2_ssse3");
 
@@ -641,6 +669,45 @@ fn build_randomx(target_os: &str, is_msvc: bool) {
     }
 
     b.compile("randomx_zion");
+
+    // ── Compile Argon2 C sources separately (NOT with .cpp(true)) ──
+    // zig cc rejects `-std=c++17` when compiling .c files, while gcc/clang
+    // silently ignore it. Splitting C and C++ sources avoids this issue.
+    // The C object files are linked into the same final binary via the
+    // `randomx_argon2_c` static library.
+    let mut c_build = cc::Build::new();
+    c_build
+        .opt_level(3)
+        .warnings(false)
+        .cargo_warnings(false)
+        .include("csrc/randomx/randomx_src/src")
+        .include("csrc/randomx/randomx_src/src/asm");
+    for src in &argon2_sources {
+        let path = format!("{}/{}", rx_dir, src);
+        if std::path::Path::new(&path).exists() {
+            c_build.file(&path);
+        }
+    }
+    if !is_msvc {
+        c_build.flag_if_supported("-fPIC");
+        c_build.flag_if_supported("-funroll-loops");
+        c_build.flag_if_supported("-fomit-frame-pointer");
+        apply_cpu_baseline(&mut c_build, is_msvc);
+        if target_arch == "x86_64" {
+            c_build.flag_if_supported("-maes");
+            c_build.flag_if_supported("-msse4.2");
+        } else if target_arch == "aarch64" {
+            c_build.flag_if_supported("-march=armv8-a+crypto");
+        }
+    } else {
+        add_msvc_includes(&mut c_build);
+    }
+    c_build.compile("randomx_argon2_c");
+    let out_dir_c = env::var("OUT_DIR").unwrap_or_default();
+    if !out_dir_c.is_empty() {
+        println!("cargo:rustc-link-search=native={}", out_dir_c);
+        println!("cargo:rustc-link-lib=static=randomx_argon2_c");
+    }
 
     // On macOS ARM64, force-load the entire static library to ensure
     // global constructors (from jit_compiler_a64.cpp) are included.
