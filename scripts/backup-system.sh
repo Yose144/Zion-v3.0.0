@@ -34,7 +34,7 @@ EDGE_ENV_FILE="/root/zion/edge-environment.sh"
 mkdir -p "$BACKUP_DIR" "${REPO_ROOT}/logs"
 TIMESTAMP="$(date +%Y-%m-%d_%H-%M-%S)"
 
-log() { echo "[$(date '+Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"; }
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"; }
 
 # ── 1. Local chain state backup ────────────────────────────────────────────
 log "=== Backup started ==="
