@@ -3,6 +3,7 @@ set -euo pipefail
 
 WALLET_ADDR="zion1s6m204400290l660k622r3r0c6u040g5j6cu2x5"
 WORKER_NAME="vega-smos"
+export ZION_MINER_ID="vega-smos"
 
 # ── Core miner config ─────────────────────────────────────────────────────
 export ZION_GPU_BACKEND="${ZION_GPU_BACKEND:-opencl}"
