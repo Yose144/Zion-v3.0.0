@@ -923,3 +923,15 @@ body.menu-open {
     display: none;
   }
 }
+
+/* ── Mobile legibility: never render text below 12px ── */
+@media (max-width: 640px) {
+  [class*="text-[9px]"],
+  [class*="text-[10px]"],
+  [class*="text-[11px]"] {
+    font-size: 0.75rem !important; /* 12px */
+  }
+  .zion-docs-prose thead th {
+    white-space: normal;
+  }
+}
