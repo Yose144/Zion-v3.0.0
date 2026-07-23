@@ -460,7 +460,18 @@ export default function WhitepapersPage() {
                 </div>
               ) : (
                 <article className="prose prose-invert prose-lg max-w-none">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      table: ({ children }) => (
+                        <div className="overflow-x-auto my-6 rounded-xl border border-white/10">
+                          <table className="min-w-full">{children}</table>
+                        </div>
+                      ),
+                    }}
+                  >
+                    {content}
+                  </ReactMarkdown>
                 </article>
               )}
             </div>
