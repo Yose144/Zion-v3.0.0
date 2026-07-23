@@ -45,6 +45,7 @@ export ZION_EXT_CPU_NONCE_COUNT=2000000
 # Group 128 keeps VGPR pressure low; bpermute enabled for speed.
 # Fallback: if it hangs, set USE_BPERMUTE=0 and GROUP_SIZE=128.
 export ZION_EXT_GPU_TIME_DUTY_PCT=100
+# 1M work size: highest stable ProgPoWZ hashrate on Vega 64 (~9.5 MH/s with bpermute).
 export ZION_SECONDARY_GPU_WORK_SIZE=1000000
 export ZION_AUXPOW_GPU_WORK_SIZE=1000000
 export ZION_AUXPOW_GPU_GROUP_SIZE=128
