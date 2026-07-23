@@ -22,6 +22,64 @@ import {
 import { useLang } from '@/contexts/LanguageContext';
 import { CONTRACTS, SEED_PRICE_USD } from '@/lib/defi-contracts';
 
+const CexCopy = {
+  refresh: { cs: `Obnovit`, en: `Refresh` },
+  trackZionListingsOnCentralized: { cs: `Sledujte listování ZION na centralizovaných burzách. Aktuálně dostupné na DEX (Uniswap V3), CEX listování plánováno po dosažení volume thresholdů.`, en: `Track ZION listings on centralized exchanges. Currently available on DEX (Uniswap V3), CEX listings planned after volume thresholds are met.` },
+  dexPrice: { cs: `Cena DEX`, en: `DEX Price` },
+  dexVolume24h: { cs: `DEX Volume 24h`, en: `DEX Volume 24h` },
+  dexLiquidity: { cs: `DEX Likvidita`, en: `DEX Liquidity` },
+  exchanges: { cs: `Burzy`, en: `Exchanges` },
+  availableNow: { cs: `DOSTUPNÉ NYNÍ`, en: `AVAILABLE NOW` },
+  dexTradingUniswapV3: { cs: `DEX Trading — Uniswap V3`, en: `DEX Trading — Uniswap V3` },
+  tradeWzionWithoutKycDirectlyFr: { cs: `Obchoduj wZION bez KYC, přímo z vaší peněženky`, en: `Trade wZION without KYC, directly from your wallet` },
+  openUniswap: { cs: `Otevřít Uniswap`, en: `Open Uniswap` },
+  price: { cs: `Cena`, en: `Price` },
+  volume24h: { cs: `Volume 24h`, en: `Volume 24h` },
+  total: { cs: `celkem`, en: `total` },
+  liquidity: { cs: `Likvidita`, en: `Liquidity` },
+  inPools: { cs: `v poolech`, en: `in pools` },
+  txns24h: { cs: `Transakce 24h`, en: `Txns 24h` },
+  pair: { cs: `Pár`, en: `Pair` },
+  exchangeListings: { cs: `Seznam Burz`, en: `Exchange Listings` },
+  listed: { cs: `listováno`, en: `listed` },
+  planned: { cs: `plánováno`, en: `planned` },
+  pairs: { cs: `párů`, en: `pairs` },
+  exchange: { cs: `Burza`, en: `Exchange` },
+  status: { cs: `Status`, en: `Status` },
+  pairs_2: { cs: `Páry`, en: `Pairs` },
+  kyc: { cs: `KYC`, en: `KYC` },
+  fee: { cs: `Poplatek`, en: `Fee` },
+  notes: { cs: `Poznámka`, en: `Notes` },
+  link: { cs: `Odkaz`, en: `Link` },
+  visit: { cs: `Navštívit`, en: `Visit` },
+  howToBuyZion: { cs: `Jak koupit ZION`, en: `How to Buy ZION` },
+  viaUniswapRecommended: { cs: `Přes Uniswap (doporučeno)`, en: `Via Uniswap (recommended)` },
+  connectWalletMetamaskRabby: { cs: `Připoj peněženku (MetaMask/Rabby)`, en: `Connect wallet (MetaMask/Rabby)` },
+  switchToBaseMainnet: { cs: `Přepni na Base mainnet`, en: `Switch to Base mainnet` },
+  haveEthForSwapGas: { cs: `Měj ETH pro swap + gas`, en: `Have ETH for swap + gas` },
+  swapEthWzionOnUniswapV3: { cs: `Swap ETH → wZION na Uniswap V3`, en: `Swap ETH → wZION on Uniswap V3` },
+  wzionIsInYourWallet: { cs: `wZION je v tvé peněžence`, en: `wZION is in your wallet` },
+  viaCentralizedExchange: { cs: `Přes Centralizovanou Burzu`, en: `Via Centralized Exchange` },
+  createAccountOnAListedExchange: { cs: `Vytvoř účet na listované burze`, en: `Create account on a listed exchange` },
+  completeKycVerification: { cs: `Dokonč KYC verifikaci`, en: `Complete KYC verification` },
+  depositUsdtUsdc: { cs: `Vlož USDT/USDC`, en: `Deposit USDT/USDC` },
+  tradeZionUsdtPair: { cs: `Obchoduj ZION/USDT pár`, en: `Trade ZION/USDT pair` },
+  withdrawZionToOwnWallet: { cs: `Vyber ZION do vlastní peněženky`, en: `Withdraw ZION to own wallet` },
+  cexListingPlannedNotYetAvailab: { cs: `⚠️ CEX listování plánováno — zatím nedostupné`, en: `⚠️ CEX listing planned — not yet available` },
+  l1L2Bridge: { cs: `L1 → L2 Bridge`, en: `L1 → L2 Bridge` },
+  haveZionInL1Wallet: { cs: `Měj ZION na L1 peněžence`, en: `Have ZION in L1 wallet` },
+  openZionBridge: { cs: `Otevři ZION Bridge`, en: `Open ZION Bridge` },
+  lockZionOnL1: { cs: `Zamkni ZION na L1`, en: `Lock ZION on L1` },
+  relayMintsWzionOnBase: { cs: `Relay mintne wZION na Base`, en: `Relay mints wZION on Base` },
+  wzionAvailableOnBaseL2: { cs: `wZION dostupný na Base L2`, en: `wZION available on Base L2` },
+  openBridge: { cs: `Otevřít Bridge`, en: `Open Bridge` },
+  faq: { cs: `Časté dotazy`, en: `FAQ` },
+  startTrading: { cs: `Začni obchodovat`, en: `Start Trading` },
+  wzionIsAvailableOnUniswapV3Bas: { cs: `wZION je dostupný na Uniswap V3 (Base). Žádné KYC, žádné čekání. CEX listování plánováno na později.`, en: `wZION is available on Uniswap V3 (Base). No KYC, no waiting. CEX listings planned for later.` },
+  defiHub: { cs: `DeFi Hub`, en: `DeFi Hub` },
+  bridge: { cs: `Bridge`, en: `Bridge` },
+};
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface CexListing {
@@ -195,7 +253,7 @@ export default function CexPage() {
               className="ml-auto inline-flex items-center gap-1 text-[10px] text-gray-500 hover:text-white transition-colors"
             >
               <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
-              {cs ? 'Obnovit' : 'Refresh'}
+              {CexCopy.refresh[cs ? 'cs' : 'en']}
             </button>
           </div>
 
@@ -204,16 +262,14 @@ export default function CexPage() {
           </h1>
 
           <p className="mb-6 max-w-2xl text-lg leading-relaxed text-gray-300">
-            {cs
-              ? 'Sledujte listování ZION na centralizovaných burzách. Aktuálně dostupné na DEX (Uniswap V3), CEX listování plánováno po dosažení volume thresholdů.'
-              : 'Track ZION listings on centralized exchanges. Currently available on DEX (Uniswap V3), CEX listings planned after volume thresholds are met.'}
+            {CexCopy.trackZionListingsOnCentralized[cs ? 'cs' : 'en']}
           </p>
 
           {/* Quick stats */}
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <Activity className="h-3.5 w-3.5 text-zion-gold" />
-              <span className="text-gray-300">{cs ? 'Cena DEX' : 'DEX Price'}:</span>
+              <span className="text-gray-300">{CexCopy.dexPrice[cs ? 'cs' : 'en']}:</span>
               <span className="font-mono text-white">${bestPrice.toFixed(6)}</span>
               <span className={`text-[10px] ${dex?.source === 'dexscreener' ? 'text-emerald-400' : 'text-amber-400'}`}>
                 {dex?.source === 'dexscreener' ? 'live' : (dex?.source ?? 'seed')}
@@ -221,17 +277,17 @@ export default function CexPage() {
             </div>
             <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <DollarSign className="h-3.5 w-3.5 text-zion-cyan" />
-              <span className="text-gray-300">{cs ? 'DEX Volume 24h' : 'DEX Volume 24h'}:</span>
+              <span className="text-gray-300">{CexCopy.dexVolume24h[cs ? 'cs' : 'en']}:</span>
               <span className="font-mono text-white">{formatVolume(dex?.total_volume_24h ?? 0)}</span>
             </div>
             <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
-              <span className="text-gray-300">{cs ? 'DEX Likvidita' : 'DEX Liquidity'}:</span>
+              <span className="text-gray-300">{CexCopy.dexLiquidity[cs ? 'cs' : 'en']}:</span>
               <span className="font-mono text-white">{formatVolume(dex?.total_liquidity_usd ?? 0)}</span>
             </div>
             <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <Building2 className="h-3.5 w-3.5 text-zion-purple" />
-              <span className="text-gray-300">{cs ? 'Burzy' : 'Exchanges'}:</span>
+              <span className="text-gray-300">{CexCopy.exchanges[cs ? 'cs' : 'en']}:</span>
               <span className="font-mono text-white">{summary?.listed ?? 0}/{summary?.total_exchanges ?? 0}</span>
             </div>
           </div>
@@ -253,14 +309,14 @@ export default function CexPage() {
               <div className="flex items-center gap-2 mb-1">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-[10px] font-semibold text-emerald-400">
                   <CheckCircle2 className="h-3 w-3" />
-                  {cs ? 'DOSTUPNÉ NYNÍ' : 'AVAILABLE NOW'}
+                  {CexCopy.availableNow[cs ? 'cs' : 'en']}
                 </span>
                 {dex?.source === 'dexscreener' && (
                   <span className="text-[10px] text-gray-500">via DexScreener</span>
                 )}
               </div>
-              <h2 className="text-2xl font-bold text-white">{cs ? 'DEX Trading — Uniswap V3' : 'DEX Trading — Uniswap V3'}</h2>
-              <p className="text-sm text-gray-400 mt-1">{cs ? 'Obchoduj wZION bez KYC, přímo z vaší peněženky' : 'Trade wZION without KYC, directly from your wallet'}</p>
+              <h2 className="text-2xl font-bold text-white">{CexCopy.dexTradingUniswapV3[cs ? 'cs' : 'en']}</h2>
+              <p className="text-sm text-gray-400 mt-1">{CexCopy.tradeWzionWithoutKycDirectlyFr[cs ? 'cs' : 'en']}</p>
             </div>
             <a
               href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${CONTRACTS.wZION}`}
@@ -268,7 +324,7 @@ export default function CexPage() {
               rel="noopener noreferrer"
               className="zion-button-primary"
             >
-              {cs ? 'Otevřít Uniswap' : 'Open Uniswap'}
+              {CexCopy.openUniswap[cs ? 'cs' : 'en']}
               <ExternalLink className="h-4 w-4" />
             </a>
           </div>
@@ -276,22 +332,22 @@ export default function CexPage() {
           {/* DEX aggregate stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Cena' : 'Price'}</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500">{CexCopy.price[cs ? 'cs' : 'en']}</p>
               <p className="text-lg font-bold text-white mt-1">${bestPrice.toFixed(6)}</p>
               <p className="text-[10px] text-gray-500">USD / wZION</p>
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Volume 24h' : 'Volume 24h'}</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500">{CexCopy.volume24h[cs ? 'cs' : 'en']}</p>
               <p className="text-lg font-bold text-white mt-1">{formatVolume(dex?.total_volume_24h ?? 0)}</p>
-              <p className="text-[10px] text-gray-500">{cs ? 'celkem' : 'total'}</p>
+              <p className="text-[10px] text-gray-500">{CexCopy.total[cs ? 'cs' : 'en']}</p>
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Likvidita' : 'Liquidity'}</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500">{CexCopy.liquidity[cs ? 'cs' : 'en']}</p>
               <p className="text-lg font-bold text-white mt-1">{formatVolume(dex?.total_liquidity_usd ?? 0)}</p>
-              <p className="text-[10px] text-gray-500">{cs ? 'v poolech' : 'in pools'}</p>
+              <p className="text-[10px] text-gray-500">{CexCopy.inPools[cs ? 'cs' : 'en']}</p>
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Transakce 24h' : 'Txns 24h'}</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500">{CexCopy.txns24h[cs ? 'cs' : 'en']}</p>
               <p className="text-lg font-bold text-white mt-1">{(dex?.total_txns_24h ?? 0).toLocaleString()}</p>
               <p className="text-[10px] text-gray-500">
                 <span className="text-emerald-400">{dex?.total_buys_24h ?? 0} buys</span>
@@ -307,8 +363,8 @@ export default function CexPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/2">
-                    <th className="p-3 text-left font-medium text-gray-400">{cs ? 'Pár' : 'Pair'}</th>
-                    <th className="p-3 text-right font-medium text-gray-400">{cs ? 'Cena' : 'Price'}</th>
+                    <th className="p-3 text-left font-medium text-gray-400">{CexCopy.pair[cs ? 'cs' : 'en']}</th>
+                    <th className="p-3 text-right font-medium text-gray-400">{CexCopy.price[cs ? 'cs' : 'en']}</th>
                     <th className="p-3 text-right font-medium text-gray-400">24h %</th>
                     <th className="p-3 text-right font-medium text-gray-500">Liquidity</th>
                     <th className="p-3 text-right font-medium text-gray-500">Volume 24h</th>
@@ -386,11 +442,11 @@ export default function CexPage() {
           transition={{ duration: 0.5 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">{cs ? 'Seznam Burz' : 'Exchange Listings'}</h2>
+            <h2 className="text-lg font-semibold text-white">{CexCopy.exchangeListings[cs ? 'cs' : 'en']}</h2>
             <div className="flex gap-3 text-xs text-gray-400">
-              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-400" />{summary?.listed ?? 0} {cs ? 'listováno' : 'listed'}</span>
-              <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-cyan-400" />{summary?.planned ?? 0} {cs ? 'plánováno' : 'planned'}</span>
-              <span className="flex items-center gap-1"><BarChart3 className="h-3 w-3 text-gray-400" />{summary?.total_pairs ?? 0} {cs ? 'párů' : 'pairs'}</span>
+              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-400" />{summary?.listed ?? 0} {CexCopy.listed[cs ? 'cs' : 'en']}</span>
+              <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-cyan-400" />{summary?.planned ?? 0} {CexCopy.planned[cs ? 'cs' : 'en']}</span>
+              <span className="flex items-center gap-1"><BarChart3 className="h-3 w-3 text-gray-400" />{summary?.total_pairs ?? 0} {CexCopy.pairs[cs ? 'cs' : 'en']}</span>
             </div>
           </div>
 
@@ -399,13 +455,13 @@ export default function CexPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/2">
-                    <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Burza' : 'Exchange'}</th>
-                    <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Status' : 'Status'}</th>
-                    <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Páry' : 'Pairs'}</th>
-                    <th className="p-4 text-left font-medium text-gray-400">{cs ? 'KYC' : 'KYC'}</th>
-                    <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Poplatek' : 'Fee'}</th>
-                    <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Poznámka' : 'Notes'}</th>
-                    <th className="p-4 text-right font-medium text-gray-400">{cs ? 'Odkaz' : 'Link'}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{CexCopy.exchange[cs ? 'cs' : 'en']}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{CexCopy.status[cs ? 'cs' : 'en']}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{CexCopy.pairs_2[cs ? 'cs' : 'en']}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{CexCopy.kyc[cs ? 'cs' : 'en']}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{CexCopy.fee[cs ? 'cs' : 'en']}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{CexCopy.notes[cs ? 'cs' : 'en']}</th>
+                    <th className="p-4 text-right font-medium text-gray-400">{CexCopy.link[cs ? 'cs' : 'en']}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -456,7 +512,7 @@ export default function CexPage() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs text-zion-gold/80 hover:text-zion-gold transition-colors"
                           >
-                            {cs ? 'Navštívit' : 'Visit'} <ExternalLink className="h-3 w-3" />
+                            {CexCopy.visit[cs ? 'cs' : 'en']} <ExternalLink className="h-3 w-3" />
                           </a>
                         </td>
                       </tr>
@@ -477,20 +533,20 @@ export default function CexPage() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="mb-4 text-lg font-semibold text-white">{cs ? 'Jak koupit ZION' : 'How to Buy ZION'}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-white">{CexCopy.howToBuyZion[cs ? 'cs' : 'en']}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* DEX path */}
             <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 text-[10px] font-mono text-cyan-400">DEX</span>
-                <h3 className="font-semibold text-white text-sm">{cs ? 'Přes Uniswap (doporučeno)' : 'Via Uniswap (recommended)'}</h3>
+                <h3 className="font-semibold text-white text-sm">{CexCopy.viaUniswapRecommended[cs ? 'cs' : 'en']}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">1.</span> {cs ? 'Připoj peněženku (MetaMask/Rabby)' : 'Connect wallet (MetaMask/Rabby)'}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">2.</span> {cs ? 'Přepni na Base mainnet' : 'Switch to Base mainnet'}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">3.</span> {cs ? 'Měj ETH pro swap + gas' : 'Have ETH for swap + gas'}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {cs ? 'Swap ETH → wZION na Uniswap V3' : 'Swap ETH → wZION on Uniswap V3'}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {cs ? 'wZION je v tvé peněžence' : 'wZION is in your wallet'}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">1.</span> {CexCopy.connectWalletMetamaskRabby[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">2.</span> {CexCopy.switchToBaseMainnet[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">3.</span> {CexCopy.haveEthForSwapGas[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {CexCopy.swapEthWzionOnUniswapV3[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {CexCopy.wzionIsInYourWallet[cs ? 'cs' : 'en']}</li>
               </ol>
               <a
                 href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${CONTRACTS.wZION}`}
@@ -498,7 +554,7 @@ export default function CexPage() {
                 rel="noopener noreferrer"
                 className="zion-button-primary mt-4"
               >
-                {cs ? 'Otevřít Uniswap' : 'Open Uniswap'} <ArrowRight className="h-3 w-3" />
+                {CexCopy.openUniswap[cs ? 'cs' : 'en']} <ArrowRight className="h-3 w-3" />
               </a>
             </div>
 
@@ -506,36 +562,36 @@ export default function CexPage() {
             <div className="zion-rainbow-card p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-2 py-1 text-[10px] font-mono text-amber-400">CEX</span>
-                <h3 className="font-semibold text-white text-sm">{cs ? 'Přes Centralizovanou Burzu' : 'Via Centralized Exchange'}</h3>
+                <h3 className="font-semibold text-white text-sm">{CexCopy.viaCentralizedExchange[cs ? 'cs' : 'en']}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">1.</span> {cs ? 'Vytvoř účet na listované burze' : 'Create account on a listed exchange'}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">2.</span> {cs ? 'Dokonč KYC verifikaci' : 'Complete KYC verification'}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">3.</span> {cs ? 'Vlož USDT/USDC' : 'Deposit USDT/USDC'}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {cs ? 'Obchoduj ZION/USDT pár' : 'Trade ZION/USDT pair'}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {cs ? 'Vyber ZION do vlastní peněženky' : 'Withdraw ZION to own wallet'}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">1.</span> {CexCopy.createAccountOnAListedExchange[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">2.</span> {CexCopy.completeKycVerification[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">3.</span> {CexCopy.depositUsdtUsdc[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {CexCopy.tradeZionUsdtPair[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {CexCopy.withdrawZionToOwnWallet[cs ? 'cs' : 'en']}</li>
               </ol>
-              <p className="mt-4 text-[10px] text-amber-400/70">{cs ? '⚠️ CEX listování plánováno — zatím nedostupné' : '⚠️ CEX listing planned — not yet available'}</p>
+              <p className="mt-4 text-[10px] text-amber-400/70">{CexCopy.cexListingPlannedNotYetAvailab[cs ? 'cs' : 'en']}</p>
             </div>
 
             {/* Bridge path */}
             <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 text-[10px] font-mono text-cyan-400">Bridge</span>
-                <h3 className="font-semibold text-white text-sm">{cs ? 'L1 → L2 Bridge' : 'L1 → L2 Bridge'}</h3>
+                <h3 className="font-semibold text-white text-sm">{CexCopy.l1L2Bridge[cs ? 'cs' : 'en']}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">1.</span> {cs ? 'Měj ZION na L1 peněžence' : 'Have ZION in L1 wallet'}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">2.</span> {cs ? 'Otevři ZION Bridge' : 'Open ZION Bridge'}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">3.</span> {cs ? 'Zamkni ZION na L1' : 'Lock ZION on L1'}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {cs ? 'Relay mintne wZION na Base' : 'Relay mints wZION on Base'}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {cs ? 'wZION dostupný na Base L2' : 'wZION available on Base L2'}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">1.</span> {CexCopy.haveZionInL1Wallet[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">2.</span> {CexCopy.openZionBridge[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">3.</span> {CexCopy.lockZionOnL1[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {CexCopy.relayMintsWzionOnBase[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {CexCopy.wzionAvailableOnBaseL2[cs ? 'cs' : 'en']}</li>
               </ol>
               <a
                 href="/bridge"
                 className="zion-button-secondary mt-4"
               >
-                {cs ? 'Otevřít Bridge' : 'Open Bridge'} <ArrowRight className="h-3 w-3" />
+                {CexCopy.openBridge[cs ? 'cs' : 'en']} <ArrowRight className="h-3 w-3" />
               </a>
             </div>
           </div>
@@ -550,7 +606,7 @@ export default function CexPage() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="mb-4 text-lg font-semibold text-white">{cs ? 'Časté dotazy' : 'FAQ'}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-white">{CexCopy.faq[cs ? 'cs' : 'en']}</h2>
           <div className="space-y-2 max-w-3xl">
             {FAQ_ITEMS.map((item, i) => (
               <div key={i} className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
@@ -592,25 +648,23 @@ export default function CexPage() {
           transition={{ delay: 0.3 }}
           className="zion-cta-banner"
         >
-          <h2 className="text-2xl font-bold mb-3">{cs ? 'Začni obchodovat' : 'Start Trading'}</h2>
+          <h2 className="text-2xl font-bold mb-3">{CexCopy.startTrading[cs ? 'cs' : 'en']}</h2>
           <p className="mx-auto mb-6 max-w-lg text-gray-300">
-            {cs
-              ? 'wZION je dostupný na Uniswap V3 (Base). Žádné KYC, žádné čekání. CEX listování plánováno na později.'
-              : 'wZION is available on Uniswap V3 (Base). No KYC, no waiting. CEX listings planned for later.'}
+            {CexCopy.wzionIsAvailableOnUniswapV3Bas[cs ? 'cs' : 'en']}
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
             <a
               href="/defi"
               className="zion-button-primary"
             >
-              {cs ? 'DeFi Hub' : 'DeFi Hub'}
+              {CexCopy.defiHub[cs ? 'cs' : 'en']}
               <ArrowRight className="h-4 w-4" />
             </a>
             <a
               href="/bridge"
               className="zion-button-secondary"
             >
-              {cs ? 'Bridge' : 'Bridge'}
+              {CexCopy.bridge[cs ? 'cs' : 'en']}
               <ArrowRight className="h-4 w-4" />
             </a>
           </div>

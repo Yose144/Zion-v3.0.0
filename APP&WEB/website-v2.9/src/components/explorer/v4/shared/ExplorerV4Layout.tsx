@@ -22,6 +22,10 @@ import {
 import { motion } from "framer-motion";
 import ExplorerTicker from "./ExplorerTicker";
 
+const ExplorerV4layoutCopy = {
+  explorerSections: { cs: `Explorer sekce`, en: `Explorer sections` },
+};
+
 interface NavItem {
   href: string;
   labelCs: string;
@@ -88,7 +92,7 @@ export default function ExplorerV4Layout({ children, showTicker = true }: Explor
         <div className="zion-rainbow-card p-4 md:p-6" style={{ "--rc": "6, 182, 212" } as React.CSSProperties}>
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
-              {cs ? "Explorer sekce" : "Explorer sections"}
+              {ExplorerV4layoutCopy.explorerSections[cs ? 'cs' : 'en']}
             </span>
             {navItems.map((item, idx) => {
               const isActive =

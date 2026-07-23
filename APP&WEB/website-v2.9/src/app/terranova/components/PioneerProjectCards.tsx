@@ -20,6 +20,12 @@ import {
   LucideIcon,
 } from 'lucide-react';
 
+const TerranovaComponentsPioneerProjectCardsCopy = {
+  l5PioneerProjects: { cs: `Pioneer Projekty L5`, en: `L5 Pioneer Projects` },
+  liveTerraNovaNodesAroundTheWor: { cs: `Živé uzly Terra Nova po celém světě`, en: `Live Terra Nova nodes around the world` },
+  openProjectDetail: { cs: `Otevřít detail projektu`, en: `Open project detail` },
+};
+
 type CardFeature = {
   icon: LucideIcon;
   labelCs: string;
@@ -126,10 +132,10 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
         </div>
         <div>
           <h2 className="text-lg font-semibold text-white">
-            {cs ? 'Pioneer Projekty L5' : 'L5 Pioneer Projects'}
+            {TerranovaComponentsPioneerProjectCardsCopy.l5PioneerProjects[cs ? 'cs' : 'en']}
           </h2>
           <p className="text-xs text-gray-500">
-            {cs ? 'Živé uzly Terra Nova po celém světě' : 'Live Terra Nova nodes around the world'}
+            {TerranovaComponentsPioneerProjectCardsCopy.liveTerraNovaNodesAroundTheWor[cs ? 'cs' : 'en']}
           </p>
         </div>
       </div>
@@ -191,7 +197,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
               </div>
 
               <div className="zion-button-secondary">
-                <span>{cs ? 'Otevřít detail projektu' : 'Open project detail'}</span>
+                <span>{TerranovaComponentsPioneerProjectCardsCopy.openProjectDetail[cs ? 'cs' : 'en']}</span>
                 <ArrowRight className="h-4 w-4" />
               </div>
             </div>

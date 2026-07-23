@@ -24,6 +24,37 @@ import { useExplorerSSE } from "@/components/explorer/v4/hooks/useExplorerSSE";
 import LiveBadge from "@/components/explorer/v4/shared/LiveBadge";
 import CopyButton from "@/components/explorer/v4/shared/CopyButton";
 
+const ExplorerTxsTxsPageClientCopy = {
+  payout: { cs: `výplata`, en: `payout` },
+  transfer: { cs: `převod`, en: `transfer` },
+  all: { cs: `Vše`, en: `All` },
+  transactions: { cs: `Transakce`, en: `Transactions` },
+  liveFeed: { cs: `Živý feed`, en: `Live Feed` },
+  transactionList: { cs: `Seznam transakcí`, en: `Transaction List` },
+  completeTransactionListOnTheZi: { cs: `Kompletní seznam transakcí na ZION chainu s real-time SSE aktualizacemi, filtrováním a exportem.`, en: `Complete transaction list on the ZION chain with real-time SSE updates, filtering, and export.` },
+  autoRefresh15s: { cs: `Auto-refresh 15s`, en: `Auto-Refresh 15s` },
+  connected: { cs: `připojeno`, en: `connected` },
+  connecting: { cs: `připojuje…`, en: `connecting…` },
+  totalTx: { cs: `celkem TX`, en: `total TX` },
+  live: { cs: `ŽIVĚ`, en: `LIVE` },
+  currentHeight: { cs: `Aktuální výška`, en: `Current height` },
+  mempool: { cs: `Mempool`, en: `Mempool` },
+  filter: { cs: `Filtr:`, en: `Filter:` },
+  address: { cs: `Adresa:`, en: `Address:` },
+  exportCsv: { cs: `Export CSV`, en: `Export CSV` },
+  loaded: { cs: `načteno`, en: `loaded` },
+  type: { cs: `Typ`, en: `Type` },
+  age: { cs: `Stáří`, en: `Age` },
+  block: { cs: `Blok`, en: `Block` },
+  amount: { cs: `Částka`, en: `Amount` },
+  noTransactionsFound: { cs: `Nenalezeny žádné transakce`, en: `No transactions found` },
+  clearFilter: { cs: `Zrušit filtr`, en: `Clear filter` },
+  pending: { cs: `čeká`, en: `pending` },
+  loading: { cs: `Načítám…`, en: `Loading…` },
+  loadMore: { cs: `Načíst další`, en: `Load More` },
+  filtered: { cs: `filtrováno`, en: `filtered` },
+};
+
 /* ── helpers ─────────────────────────────────────────────────── */
 
 function StatusDot({ status }: { status: string }) {
@@ -48,9 +79,9 @@ function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
     type === "coinbase"
       ? "coinbase"
       : type === "payout"
-        ? cs ? "výplata" : "payout"
+        ? ExplorerTxsTxsPageClientCopy.payout[cs ? 'cs' : 'en']
         : type === "transfer"
-          ? cs ? "převod" : "transfer"
+          ? ExplorerTxsTxsPageClientCopy.transfer[cs ? 'cs' : 'en']
           : type;
   return (
     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${cls}`}>
@@ -183,10 +214,10 @@ export default function TxsPageClient() {
   };
 
   const typeFilters = [
-    { key: "", label: cs ? "Vše" : "All" },
+    { key: "", label: ExplorerTxsTxsPageClientCopy.all[cs ? 'cs' : 'en'] },
     { key: "coinbase", label: "coinbase" },
-    { key: "transfer", label: cs ? "převod" : "transfer" },
-    { key: "payout", label: cs ? "výplata" : "payout" },
+    { key: "transfer", label: ExplorerTxsTxsPageClientCopy.transfer[cs ? 'cs' : 'en'] },
+    { key: "payout", label: ExplorerTxsTxsPageClientCopy.payout[cs ? 'cs' : 'en'] },
   ];
 
   const filteredCount = useMemo(() => transactions.length, [transactions]);
@@ -214,51 +245,49 @@ export default function TxsPageClient() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <ArrowRightLeft className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? "Transakce" : "Transactions"}
+                {SITE_RELEASE_LABEL} · {ExplorerTxsTxsPageClientCopy.transactions[cs ? 'cs' : 'en']}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                  {cs ? "Živý feed" : "Live Feed"}
+                  {ExplorerTxsTxsPageClientCopy.liveFeed[cs ? 'cs' : 'en']}
                 </p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? "Seznam transakcí" : "Transaction List"}
+                  {ExplorerTxsTxsPageClientCopy.transactionList[cs ? 'cs' : 'en']}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? "Kompletní seznam transakcí na ZION chainu s real-time SSE aktualizacemi, filtrováním a exportem."
-                  : "Complete transaction list on the ZION chain with real-time SSE updates, filtering, and export."}
+                {ExplorerTxsTxsPageClientCopy.completeTransactionListOnTheZi[cs ? 'cs' : 'en']}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="zion-badge zion-badge-green">
-                  <Activity className="h-3 w-3" /> {cs ? "Auto-refresh 15s" : "Auto-Refresh 15s"}
+                  <Activity className="h-3 w-3" /> {ExplorerTxsTxsPageClientCopy.autoRefresh15s[cs ? 'cs' : 'en']}
                 </span>
                 {sse.connected ? (
                   <span className="zion-badge zion-badge-green">
-                    <Zap className="h-3 w-3" /> SSE {cs ? "připojeno" : "connected"}
+                    <Zap className="h-3 w-3" /> SSE {ExplorerTxsTxsPageClientCopy.connected[cs ? 'cs' : 'en']}
                   </span>
                 ) : (
                   <span className="zion-badge text-amber-400 border-amber-500/40 bg-amber-500/10">
-                    SSE {cs ? "připojuje…" : "connecting…"}
+                    SSE {ExplorerTxsTxsPageClientCopy.connecting[cs ? 'cs' : 'en']}
                   </span>
                 )}
                 {total !== null && (
                   <span className="zion-badge text-zion-gold border-zion-gold/40 bg-zion-gold/10">
-                    {total.toLocaleString()} {cs ? "celkem TX" : "total TX"}
+                    {total.toLocaleString()} {ExplorerTxsTxsPageClientCopy.totalTx[cs ? 'cs' : 'en']}
                   </span>
                 )}
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <LiveBadge label={cs ? "ŽIVĚ" : "LIVE"} />
+              <LiveBadge label={ExplorerTxsTxsPageClientCopy.live[cs ? 'cs' : 'en']} />
               {sse.stats && (
                 <div className="zion-rainbow-sub p-4 rounded-2xl" style={{ "--rc": "6, 182, 212" } as React.CSSProperties}>
-                  <div className="text-xs text-gray-400 mb-1">{cs ? "Aktuální výška" : "Current height"}</div>
+                  <div className="text-xs text-gray-400 mb-1">{ExplorerTxsTxsPageClientCopy.currentHeight[cs ? 'cs' : 'en']}</div>
                   <div className="text-2xl font-bold text-zion-cyan tabular-nums">
                     #{sse.stats.height.toLocaleString()}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    {cs ? "Mempool" : "Mempool"}: {sse.stats.mempool_size} TX
+                    {ExplorerTxsTxsPageClientCopy.mempool[cs ? 'cs' : 'en']}: {sse.stats.mempool_size} TX
                   </div>
                 </div>
               )}
@@ -275,7 +304,7 @@ export default function TxsPageClient() {
           <div className="zion-rainbow-card rounded-2xl bg-black/60 p-4 flex flex-wrap items-center gap-3" style={{ "--rc": "6, 182, 212" } as React.CSSProperties}>
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <Filter className="h-4 w-4" />
-              {cs ? "Filtr:" : "Filter:"}
+              {ExplorerTxsTxsPageClientCopy.filter[cs ? 'cs' : 'en']}
             </div>
             {/* Type filter chips */}
             <div className="flex items-center gap-2">
@@ -302,7 +331,7 @@ export default function TxsPageClient() {
             {/* Address filter display */}
             {addressFilter && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
-                <span className="text-[11px] text-white/40">{cs ? "Adresa:" : "Address:"}</span>
+                <span className="text-[11px] text-white/40">{ExplorerTxsTxsPageClientCopy.address[cs ? 'cs' : 'en']}</span>
                 <span className="text-[11px] text-cyan-300 font-mono">{truncateHash(addressFilter, 14, 6)}</span>
                 <Link
                   href={typeFilter ? `/explorer/txs?type=${typeFilter}` : "/explorer/txs"}
@@ -319,7 +348,7 @@ export default function TxsPageClient() {
               className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               <Download className="w-3.5 h-3.5" />
-              {cs ? "Export CSV" : "Export CSV"}
+              {ExplorerTxsTxsPageClientCopy.exportCsv[cs ? 'cs' : 'en']}
             </button>
           </div>
         </motion.section>
@@ -334,11 +363,11 @@ export default function TxsPageClient() {
             <div className="flex items-center gap-2">
               <ArrowRightLeft className="h-6 w-6 text-zion-cyan" />
               <h2 className="text-2xl font-semibold text-white">
-                {cs ? "Transakce" : "Transactions"}
+                {ExplorerTxsTxsPageClientCopy.transactions[cs ? 'cs' : 'en']}
               </h2>
             </div>
             <span className="text-[11px] text-white/30 font-mono tabular-nums">
-              {filteredCount} {cs ? "načteno" : "loaded"}
+              {filteredCount} {ExplorerTxsTxsPageClientCopy.loaded[cs ? 'cs' : 'en']}
             </span>
           </div>
 
@@ -347,11 +376,11 @@ export default function TxsPageClient() {
             <div className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] gap-3 px-5 py-3 border-b border-white/6">
               <span />
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? "Typ" : "Type"}</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? "Stáří" : "Age"}</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? "Blok" : "Block"}</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTxsTxsPageClientCopy.type[cs ? 'cs' : 'en']}</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTxsTxsPageClientCopy.age[cs ? 'cs' : 'en']}</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTxsTxsPageClientCopy.block[cs ? 'cs' : 'en']}</span>
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? "Částka" : "Amount"}</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerTxsTxsPageClientCopy.amount[cs ? 'cs' : 'en']}</span>
             </div>
 
             {/* loading skeleton */}
@@ -378,14 +407,14 @@ export default function TxsPageClient() {
               <div className="flex flex-col items-center justify-center py-20 gap-3">
                 <ArrowRightLeft className="w-10 h-10 text-white/10" />
                 <p className="text-white/30 text-sm">
-                  {cs ? "Nenalezeny žádné transakce" : "No transactions found"}
+                  {ExplorerTxsTxsPageClientCopy.noTransactionsFound[cs ? 'cs' : 'en']}
                 </p>
                 {(addressFilter || typeFilter) && (
                   <Link
                     href="/explorer/txs"
                     className="text-cyan-400 text-xs hover:underline"
                   >
-                    {cs ? "Zrušit filtr" : "Clear filter"}
+                    {ExplorerTxsTxsPageClientCopy.clearFilter[cs ? 'cs' : 'en']}
                   </Link>
                 )}
               </div>
@@ -434,7 +463,7 @@ export default function TxsPageClient() {
                       </Link>
                     ) : (
                       <span className="text-[12px] text-amber-400/60 italic">
-                        {cs ? "čeká" : "pending"}
+                        {ExplorerTxsTxsPageClientCopy.pending[cs ? 'cs' : 'en']}
                       </span>
                     )}
                   </div>
@@ -461,10 +490,10 @@ export default function TxsPageClient() {
                 >
                   {loadingMore ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> {cs ? "Načítám…" : "Loading…"}
+                      <Loader2 className="w-4 h-4 animate-spin" /> {ExplorerTxsTxsPageClientCopy.loading[cs ? 'cs' : 'en']}
                     </>
                   ) : (
-                    cs ? "Načíst další" : "Load More"
+                    ExplorerTxsTxsPageClientCopy.loadMore[cs ? 'cs' : 'en']
                   )}
                 </button>
               </div>
@@ -478,11 +507,11 @@ export default function TxsPageClient() {
             Explorer
           </Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-white/70">{cs ? "Transakce" : "Transactions"}</span>
+          <span className="text-white/70">{ExplorerTxsTxsPageClientCopy.transactions[cs ? 'cs' : 'en']}</span>
           {(addressFilter || typeFilter) && (
             <>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-zion-cyan">{cs ? "filtrováno" : "filtered"}</span>
+              <span className="text-zion-cyan">{ExplorerTxsTxsPageClientCopy.filtered[cs ? 'cs' : 'en']}</span>
             </>
           )}
         </nav>

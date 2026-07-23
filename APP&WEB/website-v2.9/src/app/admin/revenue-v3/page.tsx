@@ -3,6 +3,31 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const AdminRevenueV3Copy = {
+  saving: { cs: `Ukládání...`, en: `Saving...` },
+  settingsSavedSuccessfully: { cs: `✅ Nastavení úspěšně uložena!`, en: `✅ Settings saved successfully!` },
+  loadingSettings: { cs: `Načítání nastavení...`, en: `Loading Settings...` },
+  failedToLoadConfiguration: { cs: `Nepodařilo se načíst konfiguraci.`, en: `Failed to load configuration.` },
+  cosmicHarmonyV3RevenueSettings: { cs: `Cosmic Harmony v3 — Nastavení příjmů`, en: `Cosmic Harmony v3 Revenue Settings` },
+  refresh: { cs: `Obnovit`, en: `Refresh` },
+  saveConfiguration: { cs: `Uložit konfiguraci`, en: `Save Configuration` },
+  error: { cs: `Chyba`, en: `Error` },
+  nclArtificialIntelligence: { cs: `NCL Umělá inteligence`, en: `NCL Artificial Intelligence` },
+  enabled: { cs: `Aktivní`, en: `Enabled` },
+  npuAllocation0010: { cs: `NPU Alokace (0.0 - 1.0)`, en: `NPU Allocation (0.0 - 1.0)` },
+  percentageOfNpuResourcesDedica: { cs: `Procento NPU zdrojů věnovaných AI úkolům.`, en: `Percentage of NPU resources dedicated to AI tasks.` },
+  revenueTargetShare: { cs: `Cílový podíl příjmů`, en: `Revenue Target Share` },
+  zionNativeChain: { cs: `ZION Nativní Chain`, en: `ZION Native Chain` },
+  alwaysEnabled: { cs: `Vždy aktivní`, en: `Always Enabled` },
+  targetShare: { cs: `Cílový podíl`, en: `Target Share` },
+  etcExternal: { cs: `ETC (Externí)`, en: `ETC (External)` },
+  poolStratumUrl: { cs: `Pool Stratum URL`, en: `Pool Stratum URL` },
+  walletAddress: { cs: `Adresa peněženky`, en: `Wallet Address` },
+  nxsExternal: { cs: `NXS (Externí)`, en: `NXS (External)` },
+  pearlPrlPouwGpu: { cs: `Pearl PRL (PoUW GPU)`, en: `Pearl PRL (PoUW GPU)` },
+  pearlhashPouwInt8MatmulBlake3P: { cs: `PearlHash PoUW — INT8 MatMul + BLAKE3 + Plonky2 ZK. GPU-nativní OpenCL těžba (~657 nonces/s na RX 5700 XT, 14x vs CPU).`, en: `PearlHash PoUW — INT8 MatMul + BLAKE3 + Plonky2 ZK. GPU-native OpenCL mining (~657 nonces/s on RX 5700 XT, 14x vs CPU).` },
+};
+
 const REVENUE_CONFIG_API = '/api/v2.9/revenue/config';
 
 interface PoolConfig {
@@ -51,7 +76,7 @@ export default function RevenueSettings() {
   const handleSave = async () => {
     if (!config) return;
     setSaving(true);
-    setStatus(lang === 'cs' ? 'Ukládání...' : 'Saving...');
+    setStatus(AdminRevenueV3Copy.saving[lang === 'cs' ? 'cs' : 'en']);
     try {
       const res = await fetch(REVENUE_CONFIG_API, {
         method: 'POST',
@@ -61,7 +86,7 @@ export default function RevenueSettings() {
         body: JSON.stringify(config),
       });
       if (!res.ok) throw new Error('Failed to save');
-      setStatus(lang === 'cs' ? '✅ Nastavení úspěšně uložena!' : '✅ Settings saved successfully!');
+      setStatus(AdminRevenueV3Copy.settingsSavedSuccessfully[lang === 'cs' ? 'cs' : 'en']);
     } catch (err: any) {
       console.error(err);
       setStatus(lang === 'cs' ? `Chyba při ukládání: ${err.message}` : `Error saving: ${err.message}`);
@@ -104,15 +129,15 @@ export default function RevenueSettings() {
       });
   };
 
-  if (loading) return <div className="flex items-center justify-center"><div className="text-yellow-400 text-2xl animate-pulse">{lang === 'cs' ? 'Načítání nastavení...' : 'Loading Settings...'}</div></div>;
-  if (!config) return <div className="flex items-center justify-center"><div className="text-red-400 text-xl">{lang === 'cs' ? 'Nepodařilo se načíst konfiguraci.' : 'Failed to load configuration.'}</div></div>;
+  if (loading) return <div className="flex items-center justify-center"><div className="text-yellow-400 text-2xl animate-pulse">{AdminRevenueV3Copy.loadingSettings[lang === 'cs' ? 'cs' : 'en']}</div></div>;
+  if (!config) return <div className="flex items-center justify-center"><div className="text-red-400 text-xl">{AdminRevenueV3Copy.failedToLoadConfiguration[lang === 'cs' ? 'cs' : 'en']}</div></div>;
 
   return (
     <div className="pt-28 md:pt-32 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-4xl space-y-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-          {lang === 'cs' ? 'Cosmic Harmony v3 — Nastavení příjmů' : 'Cosmic Harmony v3 Revenue Settings'}
+          {AdminRevenueV3Copy.cosmicHarmonyV3RevenueSettings[lang === 'cs' ? 'cs' : 'en']}
         </h1>
         <div className="flex gap-4">
             <button
@@ -120,14 +145,14 @@ export default function RevenueSettings() {
                 className="zion-button-secondary"
                 disabled={saving}
             >
-                {lang === 'cs' ? 'Obnovit' : 'Refresh'}
+                {AdminRevenueV3Copy.refresh[lang === 'cs' ? 'cs' : 'en']}
             </button>
             <button
                 onClick={handleSave}
                 className="zion-button-primary"
                 disabled={saving}
             >
-                {saving ? (lang === 'cs' ? 'Ukládání...' : 'Saving...') : (lang === 'cs' ? 'Uložit konfiguraci' : 'Save Configuration')}
+                {saving ? (AdminRevenueV3Copy.saving[lang === 'cs' ? 'cs' : 'en']) : (AdminRevenueV3Copy.saveConfiguration[lang === 'cs' ? 'cs' : 'en'])}
             </button>
         </div>
       </div>
@@ -135,7 +160,7 @@ export default function RevenueSettings() {
       {status && (
         <div
           className="zion-rainbow-card p-4"
-          style={{ '--rc': status.includes(lang === 'cs' ? 'Chyba' : 'Error') ? '239, 68, 68' : '16, 185, 129' } as React.CSSProperties}
+          style={{ '--rc': status.includes(AdminRevenueV3Copy.error[lang === 'cs' ? 'cs' : 'en']) ? '239, 68, 68' : '16, 185, 129' } as React.CSSProperties}
         >
           {status}
         </div>
@@ -146,9 +171,9 @@ export default function RevenueSettings() {
         {/* NCL AI Section */}
         <section className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-purple-300">🤖 {lang === 'cs' ? 'NCL Umělá inteligence' : 'NCL Artificial Intelligence'}</h2>
+                <h2 className="text-xl font-bold text-purple-300">🤖 {AdminRevenueV3Copy.nclArtificialIntelligence[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Enabled'}</span>
+                    <span className="text-sm text-gray-400">{AdminRevenueV3Copy.enabled[lang === 'cs' ? 'cs' : 'en']}</span>
                     <input
                         type="checkbox"
                         checked={config.streams.ncl.enabled}
@@ -159,7 +184,7 @@ export default function RevenueSettings() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-                    <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'NPU Alokace (0.0 - 1.0)' : 'NPU Allocation (0.0 - 1.0)'}</label>
+                    <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.npuAllocation0010[lang === 'cs' ? 'cs' : 'en']}</label>
                     <input
                         type="number"
                         step="0.05"
@@ -169,10 +194,10 @@ export default function RevenueSettings() {
                         onChange={(e) => updateStream('ncl', 'npu_allocation', parseFloat(e.target.value))}
                         className="w-full bg-black/40 border border-white/10 rounded p-2 text-white"
                     />
-                    <p className="text-xs text-gray-400 mt-1">{lang === 'cs' ? 'Procento NPU zdrojů věnovaných AI úkolům.' : 'Percentage of NPU resources dedicated to AI tasks.'}</p>
+                    <p className="text-xs text-gray-400 mt-1">{AdminRevenueV3Copy.percentageOfNpuResourcesDedica[lang === 'cs' ? 'cs' : 'en']}</p>
                 </div>
                 <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-                    <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Cílový podíl příjmů' : 'Revenue Target Share'}</label>
+                    <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.revenueTargetShare[lang === 'cs' ? 'cs' : 'en']}</label>
                     <input
                         type="number"
                         step="0.01"
@@ -187,13 +212,13 @@ export default function RevenueSettings() {
         {/* ZION Native Section */}
         <section className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-blue-300">🌌 {lang === 'cs' ? 'ZION Nativní Chain' : 'ZION Native Chain'}</h2>
+                <h2 className="text-xl font-bold text-blue-300">🌌 {AdminRevenueV3Copy.zionNativeChain[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
-                   <span className="zion-badge zion-badge-green">{lang === 'cs' ? 'Vždy aktivní' : 'Always Enabled'}</span>
+                   <span className="zion-badge zion-badge-green">{AdminRevenueV3Copy.alwaysEnabled[lang === 'cs' ? 'cs' : 'en']}</span>
                 </div>
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-                 <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Cílový podíl' : 'Target Share'}</label>
+                 <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.targetShare[lang === 'cs' ? 'cs' : 'en']}</label>
                  <input
                      type="number"
                      step="0.01"
@@ -207,9 +232,9 @@ export default function RevenueSettings() {
         {/* ETC Stream */}
         <section className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-green-300">⛏️ {lang === 'cs' ? 'ETC (Externí)' : 'ETC (External)'}</h2>
+                <h2 className="text-xl font-bold text-green-300">⛏️ {AdminRevenueV3Copy.etcExternal[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Enabled'}</span>
+                    <span className="text-sm text-gray-400">{AdminRevenueV3Copy.enabled[lang === 'cs' ? 'cs' : 'en']}</span>
                     <input
                         type="checkbox"
                         checked={config.streams.etc.enabled}
@@ -221,7 +246,7 @@ export default function RevenueSettings() {
             <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Pool Stratum URL' : 'Pool Stratum URL'}</label>
+                        <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.poolStratumUrl[lang === 'cs' ? 'cs' : 'en']}</label>
                         <input
                             type="text"
                             value={config.streams.etc.pool.stratum}
@@ -230,7 +255,7 @@ export default function RevenueSettings() {
                         />
                      </div>
                      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Adresa peněženky' : 'Wallet Address'}</label>
+                        <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.walletAddress[lang === 'cs' ? 'cs' : 'en']}</label>
                         <input
                             type="text"
                             value={config.streams.etc.pool.wallet}
@@ -245,9 +270,9 @@ export default function RevenueSettings() {
          {/* NXS Stream */}
          <section className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-orange-300">💎 {lang === 'cs' ? 'NXS (Externí)' : 'NXS (External)'}</h2>
+                <h2 className="text-xl font-bold text-orange-300">💎 {AdminRevenueV3Copy.nxsExternal[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Enabled'}</span>
+                    <span className="text-sm text-gray-400">{AdminRevenueV3Copy.enabled[lang === 'cs' ? 'cs' : 'en']}</span>
                     <input
                         type="checkbox"
                         checked={config.streams.nxs.enabled}
@@ -259,7 +284,7 @@ export default function RevenueSettings() {
             <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Pool Stratum URL' : 'Pool Stratum URL'}</label>
+                        <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.poolStratumUrl[lang === 'cs' ? 'cs' : 'en']}</label>
                         <input
                             type="text"
                             value={config.streams.nxs.pool.stratum}
@@ -268,7 +293,7 @@ export default function RevenueSettings() {
                         />
                      </div>
                      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Adresa peněženky' : 'Wallet Address'}</label>
+                        <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.walletAddress[lang === 'cs' ? 'cs' : 'en']}</label>
                         <input
                             type="text"
                             value={config.streams.nxs.pool.wallet}
@@ -283,9 +308,9 @@ export default function RevenueSettings() {
         {/* Pearl (PRL) Stream */}
         <section className="zion-rainbow-card p-6" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-teal-300">🐚 {lang === 'cs' ? 'Pearl PRL (PoUW GPU)' : 'Pearl PRL (PoUW GPU)'}</h2>
+                <h2 className="text-xl font-bold text-teal-300">🐚 {AdminRevenueV3Copy.pearlPrlPouwGpu[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Enabled'}</span>
+                    <span className="text-sm text-gray-400">{AdminRevenueV3Copy.enabled[lang === 'cs' ? 'cs' : 'en']}</span>
                     <input
                         type="checkbox"
                         checked={config.streams.pearl?.enabled ?? false}
@@ -297,7 +322,7 @@ export default function RevenueSettings() {
             <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Pool Stratum URL' : 'Pool Stratum URL'}</label>
+                        <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.poolStratumUrl[lang === 'cs' ? 'cs' : 'en']}</label>
                         <input
                             type="text"
                             value={config.streams.pearl?.pool?.stratum ?? ''}
@@ -307,7 +332,7 @@ export default function RevenueSettings() {
                         />
                      </div>
                      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Adresa peněženky' : 'Wallet Address'}</label>
+                        <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.walletAddress[lang === 'cs' ? 'cs' : 'en']}</label>
                         <input
                             type="text"
                             value={config.streams.pearl?.pool?.wallet ?? ''}
@@ -318,7 +343,7 @@ export default function RevenueSettings() {
                      </div>
                 </div>
                 <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-                    <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Cílový podíl příjmů' : 'Revenue Target Share'}</label>
+                    <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.revenueTargetShare[lang === 'cs' ? 'cs' : 'en']}</label>
                     <input
                         type="number"
                         step="0.01"
@@ -327,9 +352,7 @@ export default function RevenueSettings() {
                         className="w-full bg-black/40 border border-white/10 rounded p-2 text-white"
                     />
                     <p className="text-xs text-gray-400 mt-1">
-                        {lang === 'cs'
-                            ? 'PearlHash PoUW — INT8 MatMul + BLAKE3 + Plonky2 ZK. GPU-nativní OpenCL těžba (~657 nonces/s na RX 5700 XT, 14x vs CPU).'
-                            : 'PearlHash PoUW — INT8 MatMul + BLAKE3 + Plonky2 ZK. GPU-native OpenCL mining (~657 nonces/s on RX 5700 XT, 14x vs CPU).'}
+                        {AdminRevenueV3Copy.pearlhashPouwInt8MatmulBlake3P[lang === 'cs' ? 'cs' : 'en']}
                     </p>
                 </div>
             </div>

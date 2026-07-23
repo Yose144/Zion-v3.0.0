@@ -6,6 +6,19 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 
+const ReleaseHighlightBannerCopy = {
+  dismiss: { cs: `Zavřít`, en: `Dismiss` },
+  newRelease: { cs: `Nový release`, en: `New release` },
+  zionV306BetaTripleStreamMiner: { cs: `ZION v3.0.6-beta — Triple Stream Miner`, en: `ZION v3.0.6-beta — Triple Stream Miner` },
+  gpuCpuTogether: { cs: `GPU + CPU současně`, en: `GPU + CPU together` },
+  zionLiquidityNoExchanges: { cs: `Zion Liquidity — žádné burzy`, en: `Zion Liquidity — no exchanges` },
+  zionGrowCompounding: { cs: `Zion Grow — compounding`, en: `Zion Grow — compounding` },
+  openclCudaDeekshaLiteV1: { cs: `OpenCL + CUDA · Deeksha Lite v1`, en: `OpenCL + CUDA · Deeksha Lite v1` },
+  downloadMiner: { cs: `Stáhnout miner`, en: `Download miner` },
+  githubRelease: { cs: `GitHub Release`, en: `GitHub Release` },
+  allNews: { cs: `Všechny novinky`, en: `All news` },
+};
+
 const DISMISS_KEY = 'zion-release-306beta-dismissed';
 const RELEASE_TAG = 'v3.0.6-beta';
 const RELEASE_DATE = '2026-07-21';
@@ -53,7 +66,7 @@ export default function ReleaseHighlightBanner() {
           <button
             onClick={dismiss}
             className="absolute top-4 right-4 text-gray-400/60 hover:text-gray-300 transition"
-            aria-label={cs ? 'Zavřít' : 'Dismiss'}
+            aria-label={ReleaseHighlightBannerCopy.dismiss[cs ? 'cs' : 'en']}
           >
             <X className="h-4 w-4" />
           </button>
@@ -62,7 +75,7 @@ export default function ReleaseHighlightBanner() {
           <div className="flex items-center gap-3 mb-4 flex-wrap">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
               <Zap className="h-3 w-3" />
-              {cs ? 'Nový release' : 'New release'}
+              {ReleaseHighlightBannerCopy.newRelease[cs ? 'cs' : 'en']}
             </span>
             <span className="text-xs font-mono text-zion-gold/80">{RELEASE_TAG}</span>
             <span className="text-xs text-gray-500">· {RELEASE_DATE}</span>
@@ -71,7 +84,7 @@ export default function ReleaseHighlightBanner() {
           {/* Headline */}
           <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight mb-3">
             <span className="text-gradient">
-              {cs ? 'ZION v3.0.6-beta — Triple Stream Miner' : 'ZION v3.0.6-beta — Triple Stream Miner'}
+              {ReleaseHighlightBannerCopy.zionV306BetaTripleStreamMiner[cs ? 'cs' : 'en']}
             </span>
           </h2>
 
@@ -92,18 +105,18 @@ export default function ReleaseHighlightBanner() {
           <div className="flex flex-wrap gap-2 mb-6">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
               <Zap className="h-3 w-3 text-emerald-400" />
-              {cs ? 'GPU + CPU současně' : 'GPU + CPU together'}
+              {ReleaseHighlightBannerCopy.gpuCpuTogether[cs ? 'cs' : 'en']}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
               <Droplets className="h-3 w-3 text-zion-cyan" />
-              {cs ? 'Zion Liquidity — žádné burzy' : 'Zion Liquidity — no exchanges'}
+              {ReleaseHighlightBannerCopy.zionLiquidityNoExchanges[cs ? 'cs' : 'en']}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
               <TrendingUp className="h-3 w-3 text-zion-gold" />
-              {cs ? 'Zion Grow — compounding' : 'Zion Grow — compounding'}
+              {ReleaseHighlightBannerCopy.zionGrowCompounding[cs ? 'cs' : 'en']}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
-              {cs ? 'OpenCL + CUDA · Deeksha Lite v1' : 'OpenCL + CUDA · Deeksha Lite v1'}
+              {ReleaseHighlightBannerCopy.openclCudaDeekshaLiteV1[cs ? 'cs' : 'en']}
             </span>
           </div>
 
@@ -114,7 +127,7 @@ export default function ReleaseHighlightBanner() {
               className="group inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-400/40 px-5 py-2.5 text-sm font-semibold text-emerald-100 transition-all duration-200 hover:bg-emerald-500/25 hover:border-emerald-300/60 hover:shadow-[0_0_24px_rgba(16,185,129,0.25)]"
             >
               <ArrowDownToLine className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
-              {cs ? 'Stáhnout miner' : 'Download miner'}
+              {ReleaseHighlightBannerCopy.downloadMiner[cs ? 'cs' : 'en']}
             </Link>
             <Link
               href={GITHUB_RELEASE_URL}
@@ -123,13 +136,13 @@ export default function ReleaseHighlightBanner() {
               className="group inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/10 px-5 py-2.5 text-sm font-medium text-gray-200 transition-all duration-200 hover:bg-white/[0.08] hover:border-white/20 hover:text-white"
             >
               <ExternalLink className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-              {cs ? 'GitHub Release' : 'GitHub Release'}
+              {ReleaseHighlightBannerCopy.githubRelease[cs ? 'cs' : 'en']}
             </Link>
             <Link
               href="/news"
               className="group inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/10 px-5 py-2.5 text-sm font-medium text-gray-200 transition-all duration-200 hover:bg-white/[0.08] hover:border-white/20 hover:text-white"
             >
-              {cs ? 'Všechny novinky' : 'All news'}
+              {ReleaseHighlightBannerCopy.allNews[cs ? 'cs' : 'en']}
               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>

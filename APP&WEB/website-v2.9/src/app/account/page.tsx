@@ -22,6 +22,37 @@ import MiningStats from '@/components/dashboard/MiningStats';
 import TransactionHistory from '@/components/dashboard/TransactionHistory';
 import DashboardAIChat from '@/components/dashboard/DashboardAIChat';
 
+const AccountCopy = {
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  myAccount: { cs: `Můj účet`, en: `My Account` },
+  zionL1Dashboard: { cs: `ZION L1 Dashboard`, en: `ZION L1 Dashboard` },
+  authenticated: { cs: `Autentizováno`, en: `Authenticated` },
+  onChain: { cs: `On-Chain`, en: `On-Chain` },
+  accountOverview: { cs: `Rychlý přehled účtu`, en: `Account Overview` },
+  logins: { cs: `Přihlášení`, en: `Logins` },
+  address: { cs: `Adresa`, en: `Address` },
+  created: { cs: `Vytvořeno`, en: `Created` },
+  lastLogin: { cs: `Poslední login`, en: `Last Login` },
+  logout: { cs: `Odhlásit se`, en: `Logout` },
+  telemetry: { cs: `Telemetrie`, en: `Telemetry` },
+  accountStatistics: { cs: `Statistiky účtu`, en: `Account Statistics` },
+  balance: { cs: `Zůstatek`, en: `Balance` },
+  onChain_2: { cs: `on-chain`, en: `on-chain` },
+  miningRewards: { cs: `Odměny za těžení`, en: `Mining Rewards` },
+  totalEarned: { cs: `celkem vytěženo`, en: `total earned` },
+  transactions: { cs: `Transakce`, en: `Transactions` },
+  last50: { cs: `posledních 50`, en: `last 50` },
+  aiSessions: { cs: `AI relace`, en: `AI Sessions` },
+  hiranyagarbha: { cs: `Hiranyagarbha`, en: `Hiranyagarbha` },
+  sections: { cs: `Sekce`, en: `Sections` },
+  walletOverview: { cs: `Přehled peněženky`, en: `Wallet Overview` },
+  miningStats: { cs: `Statistiky těžení`, en: `Mining Stats` },
+  transactionHistory: { cs: `Historie transakcí`, en: `Transaction History` },
+  hiranyagarbhaAi: { cs: `Hiranyagarbha AI`, en: `Hiranyagarbha AI` },
+  continueInTheZionEcosystem: { cs: `Pokračuj ve ZION ekosystému`, en: `Continue in the ZION ecosystem` },
+  wallet: { cs: `Peněženka`, en: `Wallet` },
+};
+
 type Tab = 'wallet' | 'mining' | 'transactions' | 'ai';
 
 const TABS: { id: Tab; labelCs: string; labelEn: string; icon: typeof Wallet; rc: string }[] = [
@@ -203,10 +234,10 @@ export default function AccountPage() {
   };
 
   const formattedCreated = user.createdAt
-    ? new Date(user.createdAt).toLocaleDateString(cs ? 'cs-CZ' : 'en-US')
+    ? new Date(user.createdAt).toLocaleDateString(AccountCopy.enUs[cs ? 'cs' : 'en'])
     : '—';
   const formattedLastLogin = user.lastLogin
-    ? new Date(user.lastLogin).toLocaleDateString(cs ? 'cs-CZ' : 'en-US')
+    ? new Date(user.lastLogin).toLocaleDateString(AccountCopy.enUs[cs ? 'cs' : 'en'])
     : '—';
 
   return (
@@ -233,15 +264,15 @@ export default function AccountPage() {
               <div className="space-y-5">
                 <div className="zion-badge-gold">
                   <User className="h-4 w-4" />
-                  {cs ? 'Můj účet' : 'My Account'}
+                  {AccountCopy.myAccount[cs ? 'cs' : 'en']}
                 </div>
 
                 <div>
                   <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                    {cs ? 'ZION L1 Dashboard' : 'ZION L1 Dashboard'}
+                    {AccountCopy.zionL1Dashboard[cs ? 'cs' : 'en']}
                   </p>
                   <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                    {user.displayName || (cs ? 'Můj účet' : 'My Account')}
+                    {user.displayName || (AccountCopy.myAccount[cs ? 'cs' : 'en'])}
                   </h1>
                 </div>
 
@@ -255,13 +286,13 @@ export default function AccountPage() {
 
                 <div className="flex flex-wrap gap-3 text-xs">
                   <span className="zion-badge-green">
-                    <Shield className="h-3 w-3" /> {cs ? 'Autentizováno' : 'Authenticated'}
+                    <Shield className="h-3 w-3" /> {AccountCopy.authenticated[cs ? 'cs' : 'en']}
                   </span>
                   <span className="zion-badge-cyan">
                     <Zap className="h-3 w-3" /> ZION L1
                   </span>
                   <span className="zion-badge">
-                    <Globe2 className="h-3 w-3" /> {cs ? 'On-Chain' : 'On-Chain'}
+                    <Globe2 className="h-3 w-3" /> {AccountCopy.onChain[cs ? 'cs' : 'en']}
                   </span>
                 </div>
               </div>
@@ -270,20 +301,20 @@ export default function AccountPage() {
               <div className="w-full lg:max-w-md space-y-3">
                 <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                   <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
-                    {cs ? 'Rychlý přehled účtu' : 'Account Overview'}
+                    {AccountCopy.accountOverview[cs ? 'cs' : 'en']}
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Activity className="h-4 w-4 text-zion-gold" />
-                        {cs ? 'Přihlášení' : 'Logins'}
+                        {AccountCopy.logins[cs ? 'cs' : 'en']}
                       </div>
                       <span className="font-mono text-white">{user.loginCount ?? 0}</span>
                     </div>
                     <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Wallet className="h-4 w-4 text-zion-cyan" />
-                        {cs ? 'Adresa' : 'Address'}
+                        {AccountCopy.address[cs ? 'cs' : 'en']}
                       </div>
                       <span className="font-mono text-white text-xs">
                         {user.address.slice(0, 10)}…{user.address.slice(-6)}
@@ -292,14 +323,14 @@ export default function AccountPage() {
                     <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <TrendingUp className="h-4 w-4 text-emerald-400" />
-                        {cs ? 'Vytvořeno' : 'Created'}
+                        {AccountCopy.created[cs ? 'cs' : 'en']}
                       </div>
                       <span className="font-mono text-white">{formattedCreated}</span>
                     </div>
                     <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Sparkles className="h-4 w-4 text-zion-cyan" />
-                        {cs ? 'Poslední login' : 'Last Login'}
+                        {AccountCopy.lastLogin[cs ? 'cs' : 'en']}
                       </div>
                       <span className="font-mono text-white">{formattedLastLogin}</span>
                     </div>
@@ -313,7 +344,7 @@ export default function AccountPage() {
                   }}
                   className="zion-button-secondary w-full items-center justify-center gap-2 text-red-400 hover:text-red-300"
                 >
-                  <LogOut className="h-3.5 w-3.5" /> {cs ? 'Odhlásit se' : 'Logout'}
+                  <LogOut className="h-3.5 w-3.5" /> {AccountCopy.logout[cs ? 'cs' : 'en']}
                 </button>
               </div>
             </div>
@@ -328,10 +359,10 @@ export default function AccountPage() {
             transition={{ delay: 0.04 }}
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{AccountCopy.telemetry[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Activity className="h-7 w-7 text-emerald-400" />
-                {cs ? 'Statistiky účtu' : 'Account Statistics'}
+                {AccountCopy.accountStatistics[cs ? 'cs' : 'en']}
               </h2>
             </div>
 
@@ -341,9 +372,9 @@ export default function AccountPage() {
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
                 rc="6, 182, 212"
-                label={cs ? 'Zůstatek' : 'Balance'}
+                label={AccountCopy.balance[cs ? 'cs' : 'en']}
                 value={stats.balance !== null ? `${stats.balance.toFixed(8)} ZION` : '—'}
-                sub={cs ? 'on-chain' : 'on-chain'}
+                sub={AccountCopy.onChain_2[cs ? 'cs' : 'en']}
                 loading={stats.balanceLoading}
               />
               <StatCard
@@ -351,9 +382,9 @@ export default function AccountPage() {
                 colorClass="text-zion-gold"
                 bgClass="bg-zion-gold/10"
                 rc="251, 191, 36"
-                label={cs ? 'Odměny za těžení' : 'Mining Rewards'}
+                label={AccountCopy.miningRewards[cs ? 'cs' : 'en']}
                 value={stats.miningRewards !== null ? `${stats.miningRewards.toFixed(8)} ZION` : '—'}
-                sub={cs ? 'celkem vytěženo' : 'total earned'}
+                sub={AccountCopy.totalEarned[cs ? 'cs' : 'en']}
                 loading={stats.miningLoading}
               />
               <StatCard
@@ -361,9 +392,9 @@ export default function AccountPage() {
                 colorClass="text-emerald-400"
                 bgClass="bg-emerald-400/10"
                 rc="16, 185, 129"
-                label={cs ? 'Transakce' : 'Transactions'}
+                label={AccountCopy.transactions[cs ? 'cs' : 'en']}
                 value={stats.txCount !== null ? String(stats.txCount) : '—'}
-                sub={cs ? 'posledních 50' : 'last 50'}
+                sub={AccountCopy.last50[cs ? 'cs' : 'en']}
                 loading={stats.txLoading}
               />
               <StatCard
@@ -371,9 +402,9 @@ export default function AccountPage() {
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
                 rc="6, 182, 212"
-                label={cs ? 'AI relace' : 'AI Sessions'}
+                label={AccountCopy.aiSessions[cs ? 'cs' : 'en']}
                 value={stats.aiSessions !== null ? String(stats.aiSessions) : '—'}
-                sub={cs ? 'Hiranyagarbha' : 'Hiranyagarbha'}
+                sub={AccountCopy.hiranyagarbha[cs ? 'cs' : 'en']}
                 loading={stats.aiLoading}
               />
             </div>
@@ -391,7 +422,7 @@ export default function AccountPage() {
           >
             <div className="flex flex-wrap items-center gap-2 md:gap-3">
               <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
-                {cs ? 'Sekce' : 'Sections'}
+                {AccountCopy.sections[cs ? 'cs' : 'en']}
               </span>
               {TABS.map((t) => {
                 const Icon = t.icon;
@@ -430,7 +461,7 @@ export default function AccountPage() {
                 <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
                     <Wallet className="h-5 w-5 text-zion-cyan" />
-                    <h2 className="text-lg font-bold text-white">{cs ? 'Přehled peněženky' : 'Wallet Overview'}</h2>
+                    <h2 className="text-lg font-bold text-white">{AccountCopy.walletOverview[cs ? 'cs' : 'en']}</h2>
                   </div>
                   <WalletOverview address={user.address} />
                 </div>
@@ -439,7 +470,7 @@ export default function AccountPage() {
                 <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
                     <Pickaxe className="h-5 w-5 text-purple-400" />
-                    <h2 className="text-lg font-bold text-white">{cs ? 'Statistiky těžení' : 'Mining Stats'}</h2>
+                    <h2 className="text-lg font-bold text-white">{AccountCopy.miningStats[cs ? 'cs' : 'en']}</h2>
                   </div>
                   <MiningStats address={user.address} />
                 </div>
@@ -448,7 +479,7 @@ export default function AccountPage() {
                 <div className="zion-rainbow-card p-6" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
                     <ArrowLeftRight className="h-5 w-5 text-zion-gold" />
-                    <h2 className="text-lg font-bold text-white">{cs ? 'Historie transakcí' : 'Transaction History'}</h2>
+                    <h2 className="text-lg font-bold text-white">{AccountCopy.transactionHistory[cs ? 'cs' : 'en']}</h2>
                   </div>
                   <TransactionHistory address={user.address} />
                 </div>
@@ -457,7 +488,7 @@ export default function AccountPage() {
                 <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
                     <Sparkles className="h-5 w-5 text-zion-cyan" />
-                    <h2 className="text-lg font-bold text-white">{cs ? 'Hiranyagarbha AI' : 'Hiranyagarbha AI'}</h2>
+                    <h2 className="text-lg font-bold text-white">{AccountCopy.hiranyagarbhaAi[cs ? 'cs' : 'en']}</h2>
                   </div>
                   <DashboardAIChat />
                 </div>
@@ -475,11 +506,11 @@ export default function AccountPage() {
             className="zion-cta-banner"
           >
             <h2 className="text-2xl font-semibold text-white text-center mb-6">
-              {cs ? 'Pokračuj ve ZION ekosystému' : 'Continue in the ZION ecosystem'}
+              {AccountCopy.continueInTheZionEcosystem[cs ? 'cs' : 'en']}
             </h2>
             <div className="flex flex-wrap justify-center gap-4">
               <Link href="/wallet" className="zion-button-primary">
-                <Wallet className="h-4 w-4" /> {cs ? 'Peněženka' : 'Wallet'}
+                <Wallet className="h-4 w-4" /> {AccountCopy.wallet[cs ? 'cs' : 'en']}
               </Link>
               <Link href="/explorer" className="zion-button-secondary">
                 <Globe2 className="h-4 w-4" /> Explorer

@@ -5,6 +5,30 @@ import { BarChart3, TrendingUp, LayoutGrid, Maximize2, Minimize2 } from "lucide-
 import { apiClient } from "@/lib/api";
 import { useLang } from "@/contexts/LanguageContext";
 
+const ExplorerChartsCopy = {
+  difficulty: { cs: `Obtížnost`, en: `Difficulty` },
+  hashrate: { cs: `Hashrate`, en: `Hashrate` },
+  blockTime: { cs: `Čas bloku`, en: `Block Time` },
+  circulatingSupply: { cs: `Oběžná zásoba`, en: `Circulating Supply` },
+  blockSize: { cs: `Velikost bloku`, en: `Block Size` },
+  txBlock: { cs: `TX / blok`, en: `TX / Block` },
+  txVolume: { cs: `TX objem`, en: `TX Volume` },
+  activeAddresses: { cs: `Aktivní adresy`, en: `Active Addresses` },
+  all: { cs: `Vše`, en: `All` },
+  networkCharts: { cs: `Grafy sítě`, en: `Network Charts` },
+  multiChartDashboard: { cs: `Multi-chart dashboard`, en: `Multi-chart dashboard` },
+  dataPoints: { cs: `datových bodů`, en: `data points` },
+  singleChart: { cs: `Jeden graf`, en: `Single chart` },
+  multiChart: { cs: `Multi-graf`, en: `Multi-chart` },
+  single: { cs: `Jeden`, en: `Single` },
+  dashboard: { cs: `Dashboard`, en: `Dashboard` },
+  noData: { cs: `Data nejsou dostupná`, en: `No data` },
+  noDataAvailable: { cs: `Data nejsou dostupná`, en: `No data available` },
+  min: { cs: `Min`, en: `Min` },
+  avg: { cs: `Průměr`, en: `Avg` },
+  max: { cs: `Max`, en: `Max` },
+};
+
 type ChartType = "difficulty" | "blocktime" | "hashrate" | "emission" | "blocksize" | "txcount" | "txvolume" | "activeaddresses";
 type TimeRange = "1h" | "6h" | "24h" | "7d" | "30d" | "all";
 
@@ -21,14 +45,14 @@ interface ChartData {
 const CHART_ORDER: ChartType[] = ["hashrate", "difficulty", "blocktime", "emission"];
 
 const getChartConfig = (cs: boolean): Record<ChartType, { label: string; color: string; unit: string; kind: "line" | "bar"; formatFn?: (v: number) => string }> => ({
-  difficulty:      { label: cs ? "Obtížnost" : "Difficulty", color: "#ef4444", unit: "", kind: "line", formatFn: formatSI },
-  hashrate:        { label: cs ? "Hashrate" : "Hashrate", color: "#06b6d4", unit: "H/s", kind: "line", formatFn: formatHashrate },
-  blocktime:       { label: cs ? "Čas bloku" : "Block Time", color: "#22c55e", unit: "s", kind: "line" },
-  emission:        { label: cs ? "Oběžná zásoba" : "Circulating Supply", color: "#eab308", unit: "ZION", kind: "line", formatFn: formatSI },
-  blocksize:       { label: cs ? "Velikost bloku" : "Block Size", color: "#a855f7", unit: "B", kind: "line", formatFn: formatBytes },
-  txcount:         { label: cs ? "TX / blok" : "TX / Block", color: "#14b8a6", unit: "tx", kind: "line" },
-  txvolume:        { label: cs ? "TX objem" : "TX Volume", color: "#14b8a6", unit: "tx", kind: "bar" },
-  activeaddresses: { label: cs ? "Aktivní adresy" : "Active Addresses", color: "#06b6d4", unit: "", kind: "line" },
+  difficulty:      { label: ExplorerChartsCopy.difficulty[cs ? 'cs' : 'en'], color: "#ef4444", unit: "", kind: "line", formatFn: formatSI },
+  hashrate:        { label: ExplorerChartsCopy.hashrate[cs ? 'cs' : 'en'], color: "#06b6d4", unit: "H/s", kind: "line", formatFn: formatHashrate },
+  blocktime:       { label: ExplorerChartsCopy.blockTime[cs ? 'cs' : 'en'], color: "#22c55e", unit: "s", kind: "line" },
+  emission:        { label: ExplorerChartsCopy.circulatingSupply[cs ? 'cs' : 'en'], color: "#eab308", unit: "ZION", kind: "line", formatFn: formatSI },
+  blocksize:       { label: ExplorerChartsCopy.blockSize[cs ? 'cs' : 'en'], color: "#a855f7", unit: "B", kind: "line", formatFn: formatBytes },
+  txcount:         { label: ExplorerChartsCopy.txBlock[cs ? 'cs' : 'en'], color: "#14b8a6", unit: "tx", kind: "line" },
+  txvolume:        { label: ExplorerChartsCopy.txVolume[cs ? 'cs' : 'en'], color: "#14b8a6", unit: "tx", kind: "bar" },
+  activeaddresses: { label: ExplorerChartsCopy.activeAddresses[cs ? 'cs' : 'en'], color: "#06b6d4", unit: "", kind: "line" },
 });
 
 const getTimeRanges = (cs: boolean): { value: TimeRange; label: string }[] => [
@@ -37,7 +61,7 @@ const getTimeRanges = (cs: boolean): { value: TimeRange; label: string }[] => [
   { value: "24h", label: "24H" },
   { value: "7d", label: "7D" },
   { value: "30d", label: "30D" },
-  { value: "all", label: cs ? "Vše" : "All" },
+  { value: "all", label: ExplorerChartsCopy.all[cs ? 'cs' : 'en'] },
 ];
 
 export default function ExplorerCharts() {
@@ -94,9 +118,9 @@ export default function ExplorerCharts() {
             <BarChart3 className="w-4.5 h-4.5 text-purple-400" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-white">{cs ? "Grafy sítě" : "Network Charts"}</h2>
+            <h2 className="text-base font-semibold text-white">{ExplorerChartsCopy.networkCharts[cs ? 'cs' : 'en']}</h2>
             <p className="text-[11px] text-white/30">
-              {multiView ? (cs ? "Multi-chart dashboard" : "Multi-chart dashboard") : `${chartConfig[activeChart].label} · ${chartData[activeChart]?.data_points || 0} ${cs ? "datových bodů" : "data points"}`}
+              {multiView ? (ExplorerChartsCopy.multiChartDashboard[cs ? 'cs' : 'en']) : `${chartConfig[activeChart].label} · ${chartData[activeChart]?.data_points || 0} ${ExplorerChartsCopy.dataPoints[cs ? 'cs' : 'en']}`}
             </p>
           </div>
         </div>
@@ -105,10 +129,10 @@ export default function ExplorerCharts() {
           <button
             onClick={() => setMultiView((m) => !m)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] rounded-lg border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] transition-colors text-white/50 hover:text-white/80"
-            title={multiView ? (cs ? "Jeden graf" : "Single chart") : (cs ? "Multi-graf" : "Multi-chart")}
+            title={multiView ? (ExplorerChartsCopy.singleChart[cs ? 'cs' : 'en']) : (ExplorerChartsCopy.multiChart[cs ? 'cs' : 'en'])}
           >
             {multiView ? <Minimize2 className="w-3.5 h-3.5" /> : <LayoutGrid className="w-3.5 h-3.5" />}
-            {multiView ? (cs ? "Jeden" : "Single") : (cs ? "Dashboard" : "Dashboard")}
+            {multiView ? (ExplorerChartsCopy.single[cs ? 'cs' : 'en']) : (ExplorerChartsCopy.dashboard[cs ? 'cs' : 'en'])}
           </button>
           {/* Time ranges */}
           <div className="flex gap-0.5">
@@ -179,7 +203,7 @@ export default function ExplorerCharts() {
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-white/15 gap-1">
                     <TrendingUp className="h-5 w-5" />
-                    <p className="text-[11px]">{cs ? "Data nejsou dostupná" : "No data"}</p>
+                    <p className="text-[11px]">{ExplorerChartsCopy.noData[cs ? 'cs' : 'en']}</p>
                   </div>
                 )}
               </div>
@@ -213,7 +237,7 @@ export default function ExplorerCharts() {
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-white/20 gap-2">
               <TrendingUp className="h-8 w-8" />
-              <p className="text-sm">{cs ? "Data nejsou dostupná" : "No data available"}</p>
+              <p className="text-sm">{ExplorerChartsCopy.noDataAvailable[cs ? 'cs' : 'en']}</p>
             </div>
           )}
         </div>
@@ -223,9 +247,9 @@ export default function ExplorerCharts() {
       {!multiView && chartData[activeChart] && (chartData[activeChart]?.data.values.length ?? 0) > 0 && (
         <div className="grid grid-cols-3 border-t border-white/[0.06]">
           {[
-            { label: cs ? "Min" : "Min", value: Math.min(...chartData[activeChart]!.data.values), color: "text-cyan-400" },
-            { label: cs ? "Průměr" : "Avg", value: chartData[activeChart]!.data.values.reduce((a, b) => a + b, 0) / chartData[activeChart]!.data.values.length, color: "text-white" },
-            { label: cs ? "Max" : "Max", value: Math.max(...chartData[activeChart]!.data.values), color: "text-zion-gold" },
+            { label: ExplorerChartsCopy.min[cs ? 'cs' : 'en'], value: Math.min(...chartData[activeChart]!.data.values), color: "text-cyan-400" },
+            { label: ExplorerChartsCopy.avg[cs ? 'cs' : 'en'], value: chartData[activeChart]!.data.values.reduce((a, b) => a + b, 0) / chartData[activeChart]!.data.values.length, color: "text-white" },
+            { label: ExplorerChartsCopy.max[cs ? 'cs' : 'en'], value: Math.max(...chartData[activeChart]!.data.values), color: "text-zion-gold" },
           ].map((s, i) => (
             <div key={s.label} className={`text-center py-4 ${i < 2 ? "border-r border-white/[0.06]" : ""}`}>
               <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1">{s.label}</p>

@@ -15,43 +15,105 @@ import {
 import { useLang } from '@/contexts/LanguageContext';
 import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
 
+const DownloadCopy = {
+  guiDashboardWithRealTimeHashra: { cs: `GUI dashboard s hashratem a zůstatkem v reálném čase`, en: `GUI Dashboard with real-time hashrate & balance` },
+  oneClickMiningNoTerminalNeeded: { cs: `Těžba na jedno kliknutí — bez terminálu`, en: `One-click mining — no terminal needed` },
+  builtInWalletGeneratorManager: { cs: `Vestavěný generátor a správa peněženek`, en: `Built-in wallet generator & manager` },
+  autoUpdatesSystemTrayIntegrati: { cs: `Auto-updaty a integrace do system tray`, en: `Auto-updates & system tray integration` },
+  remoteMonitoringGamingMode: { cs: `Vzdálené monitorování a Gaming mode`, en: `Remote monitoring & Gaming mode` },
+  availableForWindowsMacosLinux: { cs: `Dostupné pro Windows, macOS a Linux`, en: `Available for Windows, macOS & Linux` },
+  k1CreateWallet: { cs: `1. Vytvoř peněženku`, en: `1. Create Wallet` },
+  downloadZionCliForWindowsBelow: { cs: `Stáhni ZION CLI pro Windows níže`, en: `Download ZION CLI for Windows below` },
+  writeDown24WordsOnPaperThisIsY: { cs: `Zapiš si 24 slov na papír — to je tvá záloha!`, en: `Write down 24 words on paper — this is your backup!` },
+  k2StartMining: { cs: `2. Spusť těžbu`, en: `2. Start Mining` },
+  setAddressZionConfigSetMinerWa: { cs: `Nastav adresu: zion config set miner.wallet YOUR_ADDRESS`, en: `Set address: zion config set miner.wallet YOUR_ADDRESS` },
+  watchHashrateAcceptedSharesInC: { cs: `Sleduj hashrate a přijaté shares v konzoli`, en: `Watch hashrate & accepted shares in console` },
+  k3CheckBalance: { cs: `3. Zkontroluj zůstatek`, en: `3. Check Balance` },
+  orVisitTheExplorerAtZionterran: { cs: `Nebo navštiv Explorer na zionterranova.com/explorer`, en: `Or visit the Explorer at zionterranova.com/explorer` },
+  sendZionZionWalletSendToRecipi: { cs: `Poslat ZION: zion wallet send --to RECIPIENT --amount 100`, en: `Send ZION: zion wallet send --to RECIPIENT --amount 100` },
+  tripleStreamMinerGpuCpuZionLiq: { cs: `Triple Stream Miner · GPU + CPU · Zion Liquidity`, en: `Triple Stream Miner · GPU + CPU · Zion Liquidity` },
+  downloadMineEarn: { cs: `Stáhni. Těž. Vydělávej.`, en: `Download. Mine. Earn.` },
+  zionV306BetaTripleStreamMinerG: { cs: `ZION v3.0.6-beta — Triple Stream Miner. GPU + CPU současně, `, en: `ZION v3.0.6-beta — Triple Stream Miner. GPU + CPU simultaneously, ` },
+  invertsTraditionalMiningMineHo: { cs: `inverzuje tradiční mining: těž → drž ZION → likvidita roste. Žádné burzy, žádný sell pressure. `, en: `inverts traditional mining: mine → hold ZION → liquidity grows. No exchanges, no sell pressure. ` },
+  availableFor: { cs: `Dostupné pro `, en: `Available for ` },
+  for: { cs: `. Pro `, en: `. For ` },
+  and: { cs: `a `, en: ` and ` },
+  useTheV305BetaCommunityCliBelo: { cs: ` použij v3.0.5-beta Community CLI níže.`, en: ` use the v3.0.5-beta Community CLI below.` },
+  downloadBinaries: { cs: `Stáhnout binárky`, en: `Download binaries` },
+  githubReleases: { cs: `GitHub Releases`, en: `GitHub Releases` },
+  publicMainnetRelease: { cs: `Veřejný mainnet release`, en: `Public mainnet release` },
+  theLatestReleaseBringsTheTripl: { cs: `Nejnovější release přináší Triple Stream mining engine — GPU a CPU pracují současně pro maximalizaci ZION earnings. Optimalizované OpenCL/CUDA kernely pro AMD RDNA a NVIDIA. Linux x86_64 binárka dostupná z GitHub Releases s SHA256 verifikací. Pro macOS a Windows použij v3.0.5-beta Community CLI níže.`, en: `The latest release brings the Triple Stream mining engine — GPU and CPU work together to maximize ZION earnings. Optimized OpenCL/CUDA kernels for AMD RDNA and NVIDIA. Linux x86_64 binary available from GitHub Releases with SHA256 verification. For macOS and Windows use the v3.0.5-beta Community CLI below.` },
+  sourceOfTruth: { cs: `Zdroj pravdy:`, en: `Source of truth:` },
+  operatorCommandsGuideFaqRefere: { cs: `operátorské příkazy, guide, FAQ, reference a troubleshooting jsou v sekci `, en: `operator commands, guide, FAQ, reference, and troubleshooting live in the ` },
+  sectionOfTheDocsSourceCodeIsOp: { cs: ` v dokumentaci. Zdrojový kód je open-source na `, en: ` section of the docs. Source code is open-source on ` },
+  mitLicense: { cs: ` (MIT licence).`, en: ` (MIT license).` },
+  comingSoon: { cs: `Brzy`, en: `Coming Soon` },
+  oneClickGuiForMiningWalletMana: { cs: `GUI na jedno kliknutí pro těžbu, správu peněženky a monitoring — bez terminálu`, en: `One-click GUI for mining, wallet management and monitoring — no terminal needed` },
+  inDevelopment: { cs: `VE VYVOJI`, en: `IN DEVELOPMENT` },
+  fullGuiApplicationWithBuiltInM: { cs: `Plná GUI aplikace s vestavěným minerem, peněženkou a dashboardem v reálném čase. Brzy dostupná pro Windows, macOS a Linux.`, en: `Full GUI application with built-in miner, wallet, and real-time dashboard. Available soon for Windows, macOS & Linux.` },
+  windowsComingSoon: { cs: `Windows — Brzy`, en: `Windows — Coming Soon` },
+  macosComingSoon: { cs: `macOS — Brzy`, en: `macOS — Coming Soon` },
+  linuxComingSoon: { cs: `Linux — Brzy`, en: `Linux — Coming Soon` },
+  wantEarlyAccess: { cs: `Chcete předběžný přístup?`, en: `Want early access?` },
+  theDesktopAgentWillBeAvailable: { cs: `Desktop Agent bude dostupný v našem `, en: `The Desktop Agent will be available in our ` },
+  shop: { cs: `Shopu`, en: `Shop` },
+  asAPremiumDownloadWithPriority: { cs: `jako premium download s prioritní podporou a auto-updaty. Připojte se na `, en: `as a premium download with priority support and auto-updates. Join ` },
+  toBeNotifiedWhenItLaunches: { cs: `a dostanete upozornění při launchi.`, en: `to be notified when it launches.` },
+  quickStart: { cs: `Rychlý start`, en: `Quick Start` },
+  k3StepsToMining: { cs: `3 kroky k těžbě`, en: `3 steps to mining` },
+  step: { cs: `Krok`, en: `Step` },
+  hardware: { cs: `Hardware`, en: `Hardware` },
+  systemRequirements: { cs: `Systémové požadavky`, en: `System Requirements` },
+  minimum: { cs: `Minimum`, en: `Minimum` },
+  k2CoreCpu2GbRam100MbDisk: { cs: `2jádrový CPU, 2 GB RAM, 100 MB disk`, en: `2-core CPU, 2 GB RAM, 100 MB disk` },
+  recommended: { cs: `Doporučené`, en: `Recommended` },
+  k4CoreCpu4GbRam500MbSsd: { cs: `4+ jádrový CPU, 4 GB RAM, 500 MB SSD`, en: `4+ core CPU, 4 GB RAM, 500 MB SSD` },
+  supportedOs: { cs: `Podporované OS`, en: `Supported OS` },
+  windows1011LinuxX8664Arm64Maco: { cs: `Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)`, en: `Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)` },
+  network: { cs: `Síť`, en: `Network` },
+  stableInternetOutboundTcpPort8: { cs: `Stabilní internet, odchozí TCP port 8444 (pool stratum)`, en: `Stable internet, outbound TCP port 8444 (pool stratum)` },
+  readyToMine: { cs: `Připraven těžit?`, en: `Ready to mine?` },
+  joinOurCommunityForMiningSuppo: { cs: `Připojte se ke komunitě pro podporu s těžbou, pomoc s peněženkou a aktuality projektu.`, en: `Join our community for mining support, wallet help, and project updates.` },
+  joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
+  documentation: { cs: `Dokumentace`, en: `Documentation` },
+  publicDownloads: { cs: `Veřejné downloady`, en: `Public Downloads` },
+};
+
 const DownloadToolBrowser = dynamic(() => import('@/components/download/DownloadToolBrowser'));
 const DownloadFaq = dynamic(() => import('@/components/download/DownloadFaq'));
 
 const getDesktopAgentFeatures = (cs: boolean) => [
-  cs ? 'GUI dashboard s hashratem a zůstatkem v reálném čase' : 'GUI Dashboard with real-time hashrate & balance',
-  cs ? 'Těžba na jedno kliknutí — bez terminálu' : 'One-click mining — no terminal needed',
-  cs ? 'Vestavěný generátor a správa peněženek' : 'Built-in wallet generator & manager',
-  cs ? 'Auto-updaty a integrace do system tray' : 'Auto-updates & system tray integration',
-  cs ? 'Vzdálené monitorování a Gaming mode' : 'Remote monitoring & Gaming mode',
-  cs ? 'Dostupné pro Windows, macOS a Linux' : 'Available for Windows, macOS & Linux',
+  DownloadCopy.guiDashboardWithRealTimeHashra[cs ? 'cs' : 'en'],
+  DownloadCopy.oneClickMiningNoTerminalNeeded[cs ? 'cs' : 'en'],
+  DownloadCopy.builtInWalletGeneratorManager[cs ? 'cs' : 'en'],
+  DownloadCopy.autoUpdatesSystemTrayIntegrati[cs ? 'cs' : 'en'],
+  DownloadCopy.remoteMonitoringGamingMode[cs ? 'cs' : 'en'],
+  DownloadCopy.availableForWindowsMacosLinux[cs ? 'cs' : 'en'],
 ];
 
 const getCliQuickstartSteps = (cs: boolean) => [
   {
-    title: cs ? '1. Vytvoř peněženku' : '1. Create Wallet',
+    title: DownloadCopy.k1CreateWallet[cs ? 'cs' : 'en'],
     items: [
-      cs ? 'Stáhni ZION CLI pro Windows níže' : 'Download ZION CLI for Windows below',
+      DownloadCopy.downloadZionCliForWindowsBelow[cs ? 'cs' : 'en'],
       'Run: zion wallet new --mnemonic --out my-wallet.json --print',
-      cs ? 'Zapiš si 24 slov na papír — to je tvá záloha!' : 'Write down 24 words on paper — this is your backup!',
+      DownloadCopy.writeDown24WordsOnPaperThisIsY[cs ? 'cs' : 'en'],
     ],
   },
   {
-    title: cs ? '2. Spusť těžbu' : '2. Start Mining',
+    title: DownloadCopy.k2StartMining[cs ? 'cs' : 'en'],
     items: [
-      cs ? 'Nastav adresu: zion config set miner.wallet YOUR_ADDRESS' : 'Set address: zion config set miner.wallet YOUR_ADDRESS',
+      DownloadCopy.setAddressZionConfigSetMinerWa[cs ? 'cs' : 'en'],
       `Run: zion mine start --pool stratum+tcp://${SITE_POOL_PRIMARY}`,
-      cs ? 'Sleduj hashrate a přijaté shares v konzoli' : 'Watch hashrate & accepted shares in console',
+      DownloadCopy.watchHashrateAcceptedSharesInC[cs ? 'cs' : 'en'],
     ],
   },
   {
-    title: cs ? '3. Zkontroluj zůstatek' : '3. Check Balance',
+    title: DownloadCopy.k3CheckBalance[cs ? 'cs' : 'en'],
     items: [
       'Run: zion wallet balance --address YOUR_ADDRESS',
-      cs ? 'Nebo navštiv Explorer na zionterranova.com/explorer' : 'Or visit the Explorer at zionterranova.com/explorer',
-      cs
-        ? 'Poslat ZION: zion wallet send --to RECIPIENT --amount 100'
-        : 'Send ZION: zion wallet send --to RECIPIENT --amount 100',
+      DownloadCopy.orVisitTheExplorerAtZionterran[cs ? 'cs' : 'en'],
+      DownloadCopy.sendZionZionWalletSendToRecipi[cs ? 'cs' : 'en'],
     ],
   },
 ];
@@ -79,22 +141,22 @@ export default function DownloadPage() {
               {SITE_RELEASE_LABEL}
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Triple Stream Miner · GPU + CPU · Zion Liquidity' : 'Triple Stream Miner · GPU + CPU · Zion Liquidity'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{DownloadCopy.tripleStreamMinerGpuCpuZionLiq[cs ? 'cs' : 'en']}</p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-                {cs ? 'Stáhni. Těž. Vydělávej.' : 'Download. Mine. Earn.'}
+                {DownloadCopy.downloadMineEarn[cs ? 'cs' : 'en']}
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              {cs ? `ZION v3.0.6-beta — Triple Stream Miner. GPU + CPU současně, ` : `ZION v3.0.6-beta — Triple Stream Miner. GPU + CPU simultaneously, `}{' '}
+              {DownloadCopy.zionV306BetaTripleStreamMinerG[cs ? 'cs' : 'en']}{' '}
               <span className="text-white font-semibold">Zion Liquidity</span>{' '}
-              {cs ? 'inverzuje tradiční mining: těž → drž ZION → likvidita roste. Žádné burzy, žádný sell pressure. ' : 'inverts traditional mining: mine → hold ZION → liquidity grows. No exchanges, no sell pressure. '}
-              {cs ? 'Dostupné pro ' : 'Available for '}{' '}
+              {DownloadCopy.invertsTraditionalMiningMineHo[cs ? 'cs' : 'en']}
+              {DownloadCopy.availableFor[cs ? 'cs' : 'en']}{' '}
               <span className="text-emerald-400 font-semibold">Linux x86_64</span>
-              {cs ? '. Pro ' : '. For '}
+              {DownloadCopy.for[cs ? 'cs' : 'en']}
               <span className="text-purple-400 font-semibold">macOS</span>{' '}
-              {cs ? 'a ' : ' and '}{' '}
+              {DownloadCopy.and[cs ? 'cs' : 'en']}{' '}
               <span className="text-blue-400 font-semibold">Windows</span>
-              {cs ? ' použij v3.0.5-beta Community CLI níže.' : ' use the v3.0.5-beta Community CLI below.'}
+              {DownloadCopy.useTheV305BetaCommunityCliBelo[cs ? 'cs' : 'en']}
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
@@ -102,7 +164,7 @@ export default function DownloadPage() {
                 className="zion-button-primary text-sm"
               >
                 <ArrowDownToLine className="h-4 w-4" />
-                {cs ? 'Stáhnout binárky' : 'Download binaries'}
+                {DownloadCopy.downloadBinaries[cs ? 'cs' : 'en']}
               </Link>
               <Link
                 href="https://github.com/Zion-TerraNova/v3-Mainnet/releases"
@@ -111,7 +173,7 @@ export default function DownloadPage() {
                 className="zion-button-secondary text-sm"
               >
                 <ExternalLink className="h-3 w-3" />
-                {cs ? 'GitHub Releases' : 'GitHub Releases'}
+                {DownloadCopy.githubReleases[cs ? 'cs' : 'en']}
               </Link>
             </div>
           </div>
@@ -119,23 +181,21 @@ export default function DownloadPage() {
 
         <section className="space-y-6">
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Veřejný mainnet release' : 'Public mainnet release'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadCopy.publicMainnetRelease[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white">ZION v3.0.6-beta · Triple Stream Miner</h2>
             <p className="text-gray-400 max-w-3xl">
-              {cs
-                ? 'Nejnovější release přináší Triple Stream mining engine — GPU a CPU pracují současně pro maximalizaci ZION earnings. Optimalizované OpenCL/CUDA kernely pro AMD RDNA a NVIDIA. Linux x86_64 binárka dostupná z GitHub Releases s SHA256 verifikací. Pro macOS a Windows použij v3.0.5-beta Community CLI níže.'
-                : 'The latest release brings the Triple Stream mining engine — GPU and CPU work together to maximize ZION earnings. Optimized OpenCL/CUDA kernels for AMD RDNA and NVIDIA. Linux x86_64 binary available from GitHub Releases with SHA256 verification. For macOS and Windows use the v3.0.5-beta Community CLI below.'}
+              {DownloadCopy.theLatestReleaseBringsTheTripl[cs ? 'cs' : 'en']}
             </p>
           </div>
 
           <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <p className="text-sm text-gray-300">
-              <span className="text-zion-cyan font-semibold">{cs ? 'Zdroj pravdy:' : 'Source of truth:'}</span>{' '}
-              {cs ? 'operátorské příkazy, guide, FAQ, reference a troubleshooting jsou v sekci ' : 'operator commands, guide, FAQ, reference, and troubleshooting live in the '}
+              <span className="text-zion-cyan font-semibold">{DownloadCopy.sourceOfTruth[cs ? 'cs' : 'en']}</span>{' '}
+              {DownloadCopy.operatorCommandsGuideFaqRefere[cs ? 'cs' : 'en']}
               <Link href="/docs" className="text-zion-cyan underline hover:no-underline">ZION CLI</Link>
-              {cs ? ' v dokumentaci. Zdrojový kód je open-source na ' : ' section of the docs. Source code is open-source on '}
+              {DownloadCopy.sectionOfTheDocsSourceCodeIsOp[cs ? 'cs' : 'en']}
               <Link href="https://github.com/Zion-TerraNova/v3-Mainnet" target="_blank" className="text-zion-cyan underline hover:no-underline">GitHub</Link>
-              {cs ? ' (MIT licence).' : ' (MIT license).'}
+              {DownloadCopy.mitLicense[cs ? 'cs' : 'en']}
             </p>
           </div>
         </section>
@@ -147,14 +207,14 @@ export default function DownloadPage() {
         {/* ─── Desktop Agent — placeholder ─── */}
         <section className="space-y-6">
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Brzy' : 'Coming Soon'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadCopy.comingSoon[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white">Desktop Agent · {SITE_VERSION}</h2>
-            <p className="text-gray-400">{cs ? 'GUI na jedno kliknutí pro těžbu, správu peněženky a monitoring — bez terminálu' : 'One-click GUI for mining, wallet management and monitoring — no terminal needed'}</p>
+            <p className="text-gray-400">{DownloadCopy.oneClickGuiForMiningWalletMana[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="relative overflow-hidden zion-rainbow-card p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="absolute top-4 right-4 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-3 py-1 text-xs font-semibold tracking-wider text-zion-gold">
-              🚧 {cs ? 'VE VYVOJI' : 'IN DEVELOPMENT'}
+              🚧 {DownloadCopy.inDevelopment[cs ? 'cs' : 'en']}
             </div>
 
             <div className="flex items-start gap-4 mb-6">
@@ -162,7 +222,7 @@ export default function DownloadPage() {
               <div>
                 <h3 className="text-2xl font-semibold text-white">ZION Desktop Agent</h3>
                 <p className="text-gray-400 mt-1">
-                  {cs ? 'Plná GUI aplikace s vestavěným minerem, peněženkou a dashboardem v reálném čase. Brzy dostupná pro Windows, macOS a Linux.' : 'Full GUI application with built-in miner, wallet, and real-time dashboard. Available soon for Windows, macOS & Linux.'}
+                  {DownloadCopy.fullGuiApplicationWithBuiltInM[cs ? 'cs' : 'en']}
                 </p>
               </div>
             </div>
@@ -182,36 +242,36 @@ export default function DownloadPage() {
                 className="zion-button-secondary opacity-50 cursor-not-allowed text-sm"
               >
                 <Package className="h-4 w-4" />
-                {cs ? 'Windows — Brzy' : 'Windows — Coming Soon'}
+                {DownloadCopy.windowsComingSoon[cs ? 'cs' : 'en']}
               </button>
               <button
                 disabled
                 className="zion-button-secondary opacity-50 cursor-not-allowed text-sm"
               >
                 <Package className="h-4 w-4" />
-                {cs ? 'macOS — Brzy' : 'macOS — Coming Soon'}
+                {DownloadCopy.macosComingSoon[cs ? 'cs' : 'en']}
               </button>
               <button
                 disabled
                 className="zion-button-secondary opacity-50 cursor-not-allowed text-sm"
               >
                 <Package className="h-4 w-4" />
-                {cs ? 'Linux — Brzy' : 'Linux — Coming Soon'}
+                {DownloadCopy.linuxComingSoon[cs ? 'cs' : 'en']}
               </button>
             </div>
 
             <div className="mt-6 zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-sm text-gray-300">
-                <span className="text-zion-gold font-semibold">💡 {cs ? 'Chcete předběžný přístup?' : 'Want early access?'}</span>{' '}
-                {cs ? 'Desktop Agent bude dostupný v našem ' : 'The Desktop Agent will be available in our '}
+                <span className="text-zion-gold font-semibold">💡 {DownloadCopy.wantEarlyAccess[cs ? 'cs' : 'en']}</span>{' '}
+                {DownloadCopy.theDesktopAgentWillBeAvailable[cs ? 'cs' : 'en']}
                 <Link href="/shop" className="text-zion-gold underline hover:no-underline">
-                  {cs ? 'Shopu' : 'Shop'}
+                  {DownloadCopy.shop[cs ? 'cs' : 'en']}
                 </Link>{' '}
-                {cs ? 'jako premium download s prioritní podporou a auto-updaty. Připojte se na ' : 'as a premium download with priority support and auto-updates. Join '}
+                {DownloadCopy.asAPremiumDownloadWithPriority[cs ? 'cs' : 'en']}
                 <Link href="https://discord.gg/zion-terranova" target="_blank" className="text-zion-gold underline hover:no-underline">
                   Discord
                 </Link>{' '}
-                {cs ? 'a dostanete upozornění při launchi.' : 'to be notified when it launches.'}
+                {DownloadCopy.toBeNotifiedWhenItLaunches[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -220,15 +280,15 @@ export default function DownloadPage() {
         {/* ─── 3-step onboarding ─── */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Rychlý start' : 'Quick Start'}</p>
-            <h2 className="text-3xl font-semibold text-white">{cs ? '3 kroky k těžbě' : '3 steps to mining'}</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadCopy.quickStart[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-3xl font-semibold text-white">{DownloadCopy.k3StepsToMining[cs ? 'cs' : 'en']}</h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {cliQuickstartSteps.map((step) => (
               <div key={step.title} className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
                   <Shield className="h-5 w-5 text-zion-cyan" />
-                  <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{cs ? 'Krok' : 'Step'}</p>
+                  <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{DownloadCopy.step[cs ? 'cs' : 'en']}</p>
                 </div>
                 <h3 className="mt-3 text-xl font-semibold text-white">{step.title}</h3>
                 <ul className="mt-4 space-y-2 text-sm text-gray-300">
@@ -247,15 +307,15 @@ export default function DownloadPage() {
         {/* ─── Requirements ─── */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Hardware' : 'Hardware'}</p>
-            <h2 className="text-3xl font-semibold text-white">{cs ? 'Systémové požadavky' : 'System Requirements'}</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadCopy.hardware[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-3xl font-semibold text-white">{DownloadCopy.systemRequirements[cs ? 'cs' : 'en']}</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {[
-              { label: cs ? 'Minimum' : 'Minimum', value: cs ? '2jádrový CPU, 2 GB RAM, 100 MB disk' : '2-core CPU, 2 GB RAM, 100 MB disk' },
-              { label: cs ? 'Doporučené' : 'Recommended', value: cs ? '4+ jádrový CPU, 4 GB RAM, 500 MB SSD' : '4+ core CPU, 4 GB RAM, 500 MB SSD' },
-              { label: cs ? 'Podporované OS' : 'Supported OS', value: cs ? 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)' : 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)' },
-              { label: cs ? 'Síť' : 'Network', value: cs ? 'Stabilní internet, odchozí TCP port 8444 (pool stratum)' : 'Stable internet, outbound TCP port 8444 (pool stratum)' },
+              { label: DownloadCopy.minimum[cs ? 'cs' : 'en'], value: DownloadCopy.k2CoreCpu2GbRam100MbDisk[cs ? 'cs' : 'en'] },
+              { label: DownloadCopy.recommended[cs ? 'cs' : 'en'], value: DownloadCopy.k4CoreCpu4GbRam500MbSsd[cs ? 'cs' : 'en'] },
+              { label: DownloadCopy.supportedOs[cs ? 'cs' : 'en'], value: DownloadCopy.windows1011LinuxX8664Arm64Maco[cs ? 'cs' : 'en'] },
+              { label: DownloadCopy.network[cs ? 'cs' : 'en'], value: DownloadCopy.stableInternetOutboundTcpPort8[cs ? 'cs' : 'en'] },
             ].map((req) => (
               <div key={req.label} className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
@@ -273,9 +333,9 @@ export default function DownloadPage() {
         {/* ─── CTA ─── */}
         <section className="zion-cta-banner">
           <TerminalSquare className="mx-auto h-12 w-12 text-zion-gold" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Připraven těžit?' : 'Ready to mine?'}</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{DownloadCopy.readyToMine[cs ? 'cs' : 'en']}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {cs ? 'Připojte se ke komunitě pro podporu s těžbou, pomoc s peněženkou a aktuality projektu.' : 'Join our community for mining support, wallet help, and project updates.'}
+            {DownloadCopy.joinOurCommunityForMiningSuppo[cs ? 'cs' : 'en']}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -284,7 +344,7 @@ export default function DownloadPage() {
               rel="noreferrer"
               className="zion-button-primary text-sm"
             >
-              {cs ? 'Připojit se na Discord' : 'Join Discord'}
+              {DownloadCopy.joinDiscord[cs ? 'cs' : 'en']}
             </Link>
             <Link
               href="https://t.me/zionterranova"
@@ -298,14 +358,14 @@ export default function DownloadPage() {
               href="/docs"
               className="zion-button-secondary text-sm"
             >
-              {cs ? 'Dokumentace' : 'Documentation'}
+              {DownloadCopy.documentation[cs ? 'cs' : 'en']}
             </Link>
             <Link
               href="#downloads"
               className="zion-button-secondary text-sm"
             >
               <ArrowDownToLine className="h-4 w-4" />
-              {cs ? 'Veřejné downloady' : 'Public Downloads'}
+              {DownloadCopy.publicDownloads[cs ? 'cs' : 'en']}
             </Link>
           </div>
         </section>

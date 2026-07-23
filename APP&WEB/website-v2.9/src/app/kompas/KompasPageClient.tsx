@@ -7,6 +7,16 @@ import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 import ZlatyKompas, { DIRECTIONS } from '@/components/ZlatyKompas';
 
+const KompasKompasPageClientCopy = {
+  clickADirectionForDetail: { cs: `Klikni na směr pro detail`, en: `Click a direction for detail` },
+  close: { cs: `Zavřít`, en: `Close` },
+  question: { cs: `Otázka`, en: `Question` },
+  selectADirectionOnTheCompass: { cs: `Vyber směr na kompasu →`, en: `Select a direction on the compass →` },
+  allSevenDirections: { cs: `Všech sedm směrů`, en: `All seven directions` },
+  inner: { cs: `Vnitřní`, en: `Inner` },
+  outer: { cs: `Vnější`, en: `Outer` },
+};
+
 /* ═══════════════════════════════════════════════════════════
    /kompas — Zlatý Kompas TerraNova
    Seven directions for orientation, not decoration
@@ -110,7 +120,7 @@ export default function KompasPageClient() {
               </div>
               <div className="relative">
                 <p className="text-center text-xs uppercase tracking-[0.4em] text-gray-500 mb-4">
-                  {cs ? 'Klikni na směr pro detail' : 'Click a direction for detail'}
+                  {KompasKompasPageClientCopy.clickADirectionForDetail[cs ? 'cs' : 'en']}
                 </p>
                 <ZlatyKompas selected={selected} onSelect={handleSelect} />
               </div>
@@ -132,7 +142,7 @@ export default function KompasPageClient() {
                     <button
                       onClick={() => setSelected(null)}
                       className="absolute top-4 right-4 p-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white transition-colors"
-                      aria-label={cs ? 'Zavřít' : 'Close'}
+                      aria-label={KompasKompasPageClientCopy.close[cs ? 'cs' : 'en']}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -164,7 +174,7 @@ export default function KompasPageClient() {
 
                     <div className="zion-tile p-4">
                       <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-1">
-                        {cs ? 'Otázka' : 'Question'}
+                        {KompasKompasPageClientCopy.question[cs ? 'cs' : 'en']}
                       </p>
                       <p className="text-sm text-gray-400 italic">
                         {cs
@@ -182,7 +192,7 @@ export default function KompasPageClient() {
                     className="zion-section flex items-center justify-center h-full min-h-[400px] border-dashed"
                   >
                     <p className="text-gray-600 text-sm text-center px-6">
-                      {cs ? 'Vyber směr na kompasu →' : 'Select a direction on the compass →'}
+                      {KompasKompasPageClientCopy.selectADirectionOnTheCompass[cs ? 'cs' : 'en']}
                     </p>
                   </motion.div>
                 )}
@@ -232,7 +242,7 @@ export default function KompasPageClient() {
           transition={{ duration: 0.5 }}
         >
           <p className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-5 text-center">
-            {cs ? 'Všech sedm směrů' : 'All seven directions'}
+            {KompasKompasPageClientCopy.allSevenDirections[cs ? 'cs' : 'en']}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {DIRECTIONS.map((d, i) => {
@@ -348,7 +358,7 @@ export default function KompasPageClient() {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-zion-gold mb-2 font-semibold">
-                {cs ? 'Vnitřní' : 'Inner'}
+                {KompasKompasPageClientCopy.inner[cs ? 'cs' : 'en']}
               </p>
               <p className="text-gray-300 leading-relaxed">
                 {t('movement_inner', lang)}
@@ -356,7 +366,7 @@ export default function KompasPageClient() {
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-zion-cyan mb-2 font-semibold">
-                {cs ? 'Vnější' : 'Outer'}
+                {KompasKompasPageClientCopy.outer[cs ? 'cs' : 'en']}
               </p>
               <p className="text-gray-300 leading-relaxed">
                 {t('movement_outer', lang)}

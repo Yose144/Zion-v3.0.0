@@ -5,6 +5,12 @@ import { ArrowRight, Calendar, Newspaper } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { NEWS_ARTICLES } from './NewsFeed';
 
+const DeekshaLiteNewsCopy = {
+  deekshaLiteNews: { cs: `Deeksha Lite — Novinky`, en: `Deeksha Lite — News` },
+  newsLite: { cs: `Novinky (Lite)`, en: `News (Lite)` },
+  quickOverviewWithoutAnimations: { cs: `Rychlý přehled bez animací — ideální pro starší zařízení.`, en: `Quick overview without animations — ideal for older devices.` },
+};
+
 const LITE_LIMIT = 6;
 
 export default function DeekshaLiteNews() {
@@ -20,16 +26,14 @@ export default function DeekshaLiteNews() {
           <div className="flex items-center gap-3 mb-2">
             <Newspaper className="w-4 h-4 text-zion-gold" />
             <span className="text-xs uppercase tracking-[0.4em] text-gray-400">
-              {cs ? 'Deeksha Lite — Novinky' : 'Deeksha Lite — News'}
+              {DeekshaLiteNewsCopy.deekshaLiteNews[cs ? 'cs' : 'en']}
             </span>
           </div>
           <h2 className="text-2xl font-bold text-white">
-            {cs ? 'Novinky (Lite)' : 'News (Lite)'}
+            {DeekshaLiteNewsCopy.newsLite[cs ? 'cs' : 'en']}
           </h2>
           <p className="text-sm text-gray-400 mt-1">
-            {cs
-              ? 'Rychlý přehled bez animací — ideální pro starší zařízení.'
-              : 'Quick overview without animations — ideal for older devices.'}
+            {DeekshaLiteNewsCopy.quickOverviewWithoutAnimations[cs ? 'cs' : 'en']}
           </p>
         </div>
 

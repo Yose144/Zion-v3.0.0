@@ -4,6 +4,17 @@ import Link from 'next/link';
 import { ArrowDownToLine, ArrowRight } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const TerraNovaHomeMilestonesCopy = {
+  terraNovaGoldenCompassOfTheNew: { cs: `Terra Nova · Zlatý Kompas Nové Země`, en: `Terra Nova · Golden Compass of the New Earth` },
+  theFourthBookOfZionAndThePubli: { cs: `Čtvrtá kniha ZION a veřejný vstup do celé sekce Terra Nova. Odtud pokračuje kniha, Kompas i další vrstvy bez roadmapového šumu na homepage.`, en: `The fourth book of ZION and the public entry into the whole Terra Nova section. From here the book, Compass, and the remaining layers continue without homepage roadmap noise.` },
+  zionIsYours: { cs: `ZION je váš.`, en: `ZION is yours.` },
+  theGoldenAgeBegins: { cs: `Zlatý věk začíná.`, en: `The Golden Age begins.` },
+  downloadZionCli: { cs: `Download ZION CLI`, en: `Download ZION CLI` },
+  publicWindowsLinuxAndMacosBina: { cs: `Veřejné binárky pro Windows, Linux a macOS jsou živé.`, en: `Public Windows, Linux, and macOS binaries are live.` },
+  openTheTerraNovaSection: { cs: `Otevřít sekci Terra Nova`, en: `Open the Terra Nova section` },
+  goToDownload: { cs: `Přejít na Download`, en: `Go to Download` },
+};
+
 const BRAILLE_TREE = `⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⣀⢂⣁⣧⣖⡖⠠⢠⠀⠀⢤⡀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢼⣶⡭⣛⠫⡞⠡⠀⡤⢦⠆⠨⠀⠀⢸⠋⠬⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -50,15 +61,13 @@ export default function TerraNovaHomeMilestones() {
         {/* Header */}
         <div className="mb-10 flex flex-col items-start gap-3 max-w-3xl">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-            {cs ? 'Terra Nova · Zlatý Kompas Nové Země' : 'Terra Nova · Golden Compass of the New Earth'}
+            {TerraNovaHomeMilestonesCopy.terraNovaGoldenCompassOfTheNew[cs ? 'cs' : 'en']}
           </p>
           <h2 className="text-4xl md:text-5xl font-bold">
             <span className="text-gradient">Terra Nova</span>
           </h2>
           <p className="text-lg text-gray-300 max-w-2xl">
-            {cs
-              ? 'Čtvrtá kniha ZION a veřejný vstup do celé sekce Terra Nova. Odtud pokračuje kniha, Kompas i další vrstvy bez roadmapového šumu na homepage.'
-              : 'The fourth book of ZION and the public entry into the whole Terra Nova section. From here the book, Compass, and the remaining layers continue without homepage roadmap noise.'}
+            {TerraNovaHomeMilestonesCopy.theFourthBookOfZionAndThePubli[cs ? 'cs' : 'en']}
           </p>
         </div>
 
@@ -87,8 +96,8 @@ export default function TerraNovaHomeMilestones() {
               <pre className="text-zion-gold leading-tight select-none mt-2 whitespace-pre">{ZION_ASCII}</pre>
               <div className="mt-3 space-y-1">
                 <p><span className="text-gray-500">[genesis]</span> <span className="text-green-400">Mainnet Launch v3</span> <span className="text-gray-600">✓ block #1</span></p>
-                <p><span className="text-white font-bold">&gt;</span> <span className="text-white">{cs ? 'ZION je váš.' : 'ZION is yours.'}</span></p>
-                <p><span className="text-white font-bold">&gt;</span> <span className="text-zion-gold">{cs ? 'Zlatý věk začíná.' : 'The Golden Age begins.'}</span></p>
+                <p><span className="text-white font-bold">&gt;</span> <span className="text-white">{TerraNovaHomeMilestonesCopy.zionIsYours[cs ? 'cs' : 'en']}</span></p>
+                <p><span className="text-white font-bold">&gt;</span> <span className="text-zion-gold">{TerraNovaHomeMilestonesCopy.theGoldenAgeBegins[cs ? 'cs' : 'en']}</span></p>
                 <p className="text-gray-600 italic text-[10px]">Gate, Gate, Paragate, Parasamgate, Bodhi Swaha</p>
                 <p className="text-gray-700 text-[10px]">— Yeshuae Ben Yose / Zion Creator · Om Namo Hiranyagarbha!</p>
               </div>
@@ -107,10 +116,10 @@ export default function TerraNovaHomeMilestones() {
               className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/10 px-5 py-3 text-sm font-semibold text-zion-cyan hover:bg-zion-cyan/20 transition-all duration-300"
             >
               <ArrowDownToLine className="w-4 h-4" />
-              {cs ? 'Download ZION CLI' : 'Download ZION CLI'}
+              {TerraNovaHomeMilestonesCopy.downloadZionCli[cs ? 'cs' : 'en']}
             </Link>
             <p className="text-sm text-gray-400">
-              {cs ? 'Veřejné binárky pro Windows, Linux a macOS jsou živé.' : 'Public Windows, Linux, and macOS binaries are live.'}
+              {TerraNovaHomeMilestonesCopy.publicWindowsLinuxAndMacosBina[cs ? 'cs' : 'en']}
             </p>
           </div>
         </div>
@@ -121,7 +130,7 @@ export default function TerraNovaHomeMilestones() {
             href="/terranova"
             className="inline-flex items-center gap-2.5 rounded-2xl border border-zion-gold/30 bg-zion-gold/10 px-8 py-3.5 text-sm font-semibold text-zion-gold hover:bg-zion-gold/20 transition-all duration-300"
           >
-            {cs ? 'Otevřít sekci Terra Nova' : 'Open the Terra Nova section'}
+            {TerraNovaHomeMilestonesCopy.openTheTerraNovaSection[cs ? 'cs' : 'en']}
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
@@ -129,7 +138,7 @@ export default function TerraNovaHomeMilestones() {
             className="zion-rainbow-sub inline-flex items-center gap-2.5 px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-all duration-300"
             style={{ '--rc': '244, 63, 94' } as React.CSSProperties}
           >
-            {cs ? 'Přejít na Download' : 'Go to Download'}
+            {TerraNovaHomeMilestonesCopy.goToDownload[cs ? 'cs' : 'en']}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

@@ -33,6 +33,74 @@ import {
   type BridgeStatus,
 } from "@/lib/bridge-api";
 
+const ExplorerBridgeBridgeTrackerClientCopy = {
+  finalized: { cs: `Finalizováno`, en: `Finalized` },
+  bridge: { cs: `Most`, en: `Bridge` },
+  liveTracking: { cs: `Live sledování`, en: `Live Tracking` },
+  bridgeTracker: { cs: `Bridge Tracker`, en: `Bridge Tracker` },
+  realTimeL1BaseBridgeStatusTrac: { cs: `Real-time stav L1↔Base bridge. Sledujte lock, mint, burn a unlock transakce. Relay metriky z Prometheus.`, en: `Real-time L1↔Base bridge status. Track lock, mint, burn and unlock transactions. Relay metrics from Prometheus.` },
+  online: { cs: `Online`, en: `Online` },
+  offline: { cs: `Offline`, en: `Offline` },
+  uptime: { cs: `Uptime`, en: `Uptime` },
+  efficiency: { cs: `Efektivita`, en: `Efficiency` },
+  height: { cs: `výška`, en: `height` },
+  block: { cs: `blok`, en: `block` },
+  metrics: { cs: `Metriky`, en: `Metrics` },
+  bridgeMetrics: { cs: `Bridge metriky`, en: `Bridge Metrics` },
+  locksDetected: { cs: `Lock detekovány`, en: `Locks Detected` },
+  locksFinalized: { cs: `Lock finalizovány`, en: `Locks Finalized` },
+  mintsSubmitted: { cs: `Mint odeslány`, en: `Mints Submitted` },
+  mintsConfirmed: { cs: `Mint potvrzeny`, en: `Mints Confirmed` },
+  burnsDetected: { cs: `Burn detekovány`, en: `Burns Detected` },
+  unlocksSubmitted: { cs: `Unlock odeslány`, en: `Unlocks Submitted` },
+  unlocksConfirmed: { cs: `Unlock potvrzeny`, en: `Unlocks Confirmed` },
+  errors: { cs: `Chyby`, en: `Errors` },
+  pipelines: { cs: `Pipeliny`, en: `Pipelines` },
+  bridgeFlow: { cs: `Bridge flow`, en: `Bridge Flow` },
+  lockMint: { cs: `Lock / Mint`, en: `Lock / Mint` },
+  l1Lock: { cs: `L1 Lock`, en: `L1 Lock` },
+  userLocksZionOnL1: { cs: `Uživatel zamkne ZION na L1`, en: `User locks ZION on L1` },
+  relay: { cs: `Relay`, en: `Relay` },
+  k60BlockFinalityValidatorThresh: { cs: `60-bloková finalita, validátor threshold`, en: `60-block finality, validator threshold` },
+  evmMint: { cs: `EVM Mint`, en: `EVM Mint` },
+  mintWzionErc20OnBase: { cs: `Mint wZION ERC-20 na Base`, en: `Mint wZION ERC-20 on Base` },
+  time: { cs: `Doba`, en: `Time` },
+  l1Blocks: { cs: `L1 bloků`, en: `L1 blocks` },
+  hr: { cs: `hod`, en: `hr` },
+  burnUnlock: { cs: `Burn / Unlock`, en: `Burn / Unlock` },
+  evmBurn: { cs: `EVM Burn`, en: `EVM Burn` },
+  userBurnsWzionOnBase: { cs: `Uživatel spálí wZION na Base`, en: `User burns wZION on Base` },
+  k64BlockEvmFinalityL1UnlockTx: { cs: `64-bloková EVM finalita, L1 unlock TX`, en: `64-block EVM finality, L1 unlock TX` },
+  l1Unlock: { cs: `L1 Unlock`, en: `L1 Unlock` },
+  zionUnlockedOnL1Address: { cs: `ZION odemčeny na L1 adrese`, en: `ZION unlocked on L1 address` },
+  evmBlocks: { cs: `EVM bloků`, en: `EVM blocks` },
+  min: { cs: `min`, en: `min` },
+  liveTransactions: { cs: `Live transakce`, en: `Live Transactions` },
+  bridgeLockTransactions: { cs: `Bridge Lock transakce`, en: `Bridge Lock Transactions` },
+  recentL1LockTransactionsWithFi: { cs: `Nedávné L1 lock transakce s finality progressem. Data z L1 RPC getBridgeLocks.`, en: `Recent L1 lock transactions with finality progress. Data from L1 RPC getBridgeLocks.` },
+  all: { cs: `Vše`, en: `All` },
+  pending: { cs: `Čekající`, en: `Pending` },
+  finalized_2: { cs: `Finalizované`, en: `Finalized` },
+  updatesEvery15s: { cs: `Aktualizace každých 15s`, en: `Updates every 15s` },
+  loadingTransactions: { cs: `Načítání transakcí...`, en: `Loading transactions...` },
+  l1RpcMayBeOfflineTryAgainLater: { cs: `L1 RPC může být offline. Zkuste to později.`, en: `L1 RPC may be offline. Try again later.` },
+  noBridgeTransactionsFound: { cs: `Žádné bridge transakce nenalezeny.`, en: `No bridge transactions found.` },
+  lockTransactionsWillAppearHere: { cs: `Lock transakce se objeví zde, když někdo pošle ZION na bridge adresu s BRIDGE memo.`, en: `Lock transactions will appear here when someone sends ZION to the bridge address with a BRIDGE memo.` },
+  txHash: { cs: `TX Hash`, en: `TX Hash` },
+  block_2: { cs: `Blok`, en: `Block` },
+  sender: { cs: `Odesílatel`, en: `Sender` },
+  chain: { cs: `Řetězec`, en: `Chain` },
+  amount: { cs: `Částka`, en: `Amount` },
+  finality: { cs: `Finalita`, en: `Finality` },
+  status: { cs: `Stav`, en: `Status` },
+  conf: { cs: `konf.`, en: `conf.` },
+  clickTxHashForTransactionDetai: { cs: `Klikněte na TX hash pro detail transakce v průzkumníku. EVM mint TX se zobrazí po finalitě (60 bloků).`, en: `Click TX hash for transaction detail in explorer. EVM mint TX appears after finality (60 blocks).` },
+  contracts: { cs: `Kontrakty`, en: `Contracts` },
+  bridgeContracts: { cs: `Bridge kontrakty`, en: `Bridge Contracts` },
+  bridgeBetweenZionL1AndBaseMain: { cs: `Most mezi ZION L1 a Base Mainnet. Lock/Mint a Burn/Unlock s plnou transparencí.`, en: `Bridge between ZION L1 and Base Mainnet. Lock/Mint and Burn/Unlock with full transparency.` },
+  bridgeUi: { cs: `Bridge UI`, en: `Bridge UI` },
+};
+
 // ─── Bridge Transaction Types ────────────────────────────────────────────────
 
 interface BridgeLockTx {
@@ -74,7 +142,7 @@ function truncateAddr(addr: string, prefix = 12, suffix = 6): string {
 function statusBadge(finalized: boolean, confirmations: number, threshold: number, cs: boolean) {
   if (finalized) {
     return {
-      label: cs ? "Finalizováno" : "Finalized",
+      label: ExplorerBridgeBridgeTrackerClientCopy.finalized[cs ? 'cs' : 'en'],
       className: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
       icon: CheckCircle2,
     };
@@ -250,36 +318,34 @@ export default function BridgeTrackerClient() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <ArrowLeftRight className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? "Most" : "Bridge"}
+                {SITE_RELEASE_LABEL} · {ExplorerBridgeBridgeTrackerClientCopy.bridge[cs ? 'cs' : 'en']}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                  {cs ? "Live sledování" : "Live Tracking"}
+                  {ExplorerBridgeBridgeTrackerClientCopy.liveTracking[cs ? 'cs' : 'en']}
                 </p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? "Bridge Tracker" : "Bridge Tracker"}
+                  {ExplorerBridgeBridgeTrackerClientCopy.bridgeTracker[cs ? 'cs' : 'en']}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? "Real-time stav L1↔Base bridge. Sledujte lock, mint, burn a unlock transakce. Relay metriky z Prometheus."
-                  : "Real-time L1↔Base bridge status. Track lock, mint, burn and unlock transactions. Relay metrics from Prometheus."}
+                {ExplorerBridgeBridgeTrackerClientCopy.realTimeL1BaseBridgeStatusTrac[cs ? 'cs' : 'en']}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 {online ? (
                   <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-emerald-300">
-                    <ShieldCheck className="h-3 w-3" /> {cs ? "Online" : "Online"}
+                    <ShieldCheck className="h-3 w-3" /> {ExplorerBridgeBridgeTrackerClientCopy.online[cs ? 'cs' : 'en']}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-2 rounded-full border border-red-400/30 bg-red-400/10 px-4 py-2 text-red-300">
-                    <AlertCircle className="h-3 w-3" /> {cs ? "Offline" : "Offline"}
+                    <AlertCircle className="h-3 w-3" /> {ExplorerBridgeBridgeTrackerClientCopy.offline[cs ? 'cs' : 'en']}
                   </span>
                 )}
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Clock className="h-3 w-3 text-zion-gold" /> {cs ? "Uptime" : "Uptime"}: {uptime}
+                  <Clock className="h-3 w-3 text-zion-gold" /> {ExplorerBridgeBridgeTrackerClientCopy.uptime[cs ? 'cs' : 'en']}: {uptime}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <TrendingUp className="h-3 w-3 text-zion-cyan" /> {cs ? "Efektivita" : "Efficiency"}: {efficiency}%
+                  <TrendingUp className="h-3 w-3 text-zion-cyan" /> {ExplorerBridgeBridgeTrackerClientCopy.efficiency[cs ? 'cs' : 'en']}: {efficiency}%
                 </span>
               </div>
             </div>
@@ -287,13 +353,13 @@ export default function BridgeTrackerClient() {
             {/* Mini status panel */}
             <div className="grid gap-3 sm:grid-cols-2 lg:w-auto w-full">
               <div className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">L1 {cs ? "výška" : "height"}</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">L1 {ExplorerBridgeBridgeTrackerClientCopy.height[cs ? 'cs' : 'en']}</p>
                 <p className="text-2xl font-semibold text-white mt-1 tabular-nums">
                   {fmtNum(data?.last_l1_height ?? 0)}
                 </p>
               </div>
               <div className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">EVM {cs ? "blok" : "block"}</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">EVM {ExplorerBridgeBridgeTrackerClientCopy.block[cs ? 'cs' : 'en']}</p>
                 <p className="text-2xl font-semibold text-white mt-1 tabular-nums">
                   {fmtNum(data?.last_evm_block ?? 0)}
                 </p>
@@ -309,10 +375,10 @@ export default function BridgeTrackerClient() {
           transition={{ delay: 0.06 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Metriky" : "Metrics"}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerBridgeBridgeTrackerClientCopy.metrics[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
-              {cs ? "Bridge metriky" : "Bridge Metrics"}
+              {ExplorerBridgeBridgeTrackerClientCopy.bridgeMetrics[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -327,14 +393,14 @@ export default function BridgeTrackerClient() {
           {!loading && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: cs ? "Lock detekovány" : "Locks Detected", icon: Lock, accent: "text-zion-cyan", value: fmtNum(data?.l1_locks_detected ?? 0) },
-                { label: cs ? "Lock finalizovány" : "Locks Finalized", icon: ShieldCheck, accent: "text-emerald-400", value: fmtNum(data?.l1_locks_finalized ?? 0) },
-                { label: cs ? "Mint odeslány" : "Mints Submitted", icon: Zap, accent: "text-zion-gold", value: fmtNum(data?.evm_mints_submitted ?? 0) },
-                { label: cs ? "Mint potvrzeny" : "Mints Confirmed", icon: CheckCircle2, accent: "text-emerald-400", value: fmtNum(data?.evm_mints_confirmed ?? 0) },
-                { label: cs ? "Burn detekovány" : "Burns Detected", icon: Flame, accent: "text-amber-400", value: fmtNum(data?.evm_burns_detected ?? 0) },
-                { label: cs ? "Unlock odeslány" : "Unlocks Submitted", icon: Unlock, accent: "text-zion-purple", value: fmtNum(data?.l1_unlocks_submitted ?? 0) },
-                { label: cs ? "Unlock potvrzeny" : "Unlocks Confirmed", icon: CheckCircle2, accent: "text-emerald-400", value: fmtNum(data?.l1_unlocks_confirmed ?? 0) },
-                { label: cs ? "Chyby" : "Errors", icon: AlertCircle, accent: "text-red-400", value: fmtNum(data?.errors_total ?? 0) },
+                { label: ExplorerBridgeBridgeTrackerClientCopy.locksDetected[cs ? 'cs' : 'en'], icon: Lock, accent: "text-zion-cyan", value: fmtNum(data?.l1_locks_detected ?? 0) },
+                { label: ExplorerBridgeBridgeTrackerClientCopy.locksFinalized[cs ? 'cs' : 'en'], icon: ShieldCheck, accent: "text-emerald-400", value: fmtNum(data?.l1_locks_finalized ?? 0) },
+                { label: ExplorerBridgeBridgeTrackerClientCopy.mintsSubmitted[cs ? 'cs' : 'en'], icon: Zap, accent: "text-zion-gold", value: fmtNum(data?.evm_mints_submitted ?? 0) },
+                { label: ExplorerBridgeBridgeTrackerClientCopy.mintsConfirmed[cs ? 'cs' : 'en'], icon: CheckCircle2, accent: "text-emerald-400", value: fmtNum(data?.evm_mints_confirmed ?? 0) },
+                { label: ExplorerBridgeBridgeTrackerClientCopy.burnsDetected[cs ? 'cs' : 'en'], icon: Flame, accent: "text-amber-400", value: fmtNum(data?.evm_burns_detected ?? 0) },
+                { label: ExplorerBridgeBridgeTrackerClientCopy.unlocksSubmitted[cs ? 'cs' : 'en'], icon: Unlock, accent: "text-zion-purple", value: fmtNum(data?.l1_unlocks_submitted ?? 0) },
+                { label: ExplorerBridgeBridgeTrackerClientCopy.unlocksConfirmed[cs ? 'cs' : 'en'], icon: CheckCircle2, accent: "text-emerald-400", value: fmtNum(data?.l1_unlocks_confirmed ?? 0) },
+                { label: ExplorerBridgeBridgeTrackerClientCopy.errors[cs ? 'cs' : 'en'], icon: AlertCircle, accent: "text-red-400", value: fmtNum(data?.errors_total ?? 0) },
               ].map((card) => (
                 <div
                   key={card.label}
@@ -359,10 +425,10 @@ export default function BridgeTrackerClient() {
           transition={{ delay: 0.1 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Pipeliny" : "Pipelines"}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerBridgeBridgeTrackerClientCopy.pipelines[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <ArrowLeftRight className="h-7 w-7 text-zion-cyan" />
-              {cs ? "Bridge flow" : "Bridge Flow"}
+              {ExplorerBridgeBridgeTrackerClientCopy.bridgeFlow[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -373,14 +439,14 @@ export default function BridgeTrackerClient() {
                 <Lock className="h-5 w-5 text-zion-cyan" />
                 <h3 className="text-lg font-semibold text-white">L1 → Base</h3>
                 <span className="ml-auto text-[10px] uppercase tracking-wider text-gray-500">
-                  {cs ? "Lock / Mint" : "Lock / Mint"}
+                  {ExplorerBridgeBridgeTrackerClientCopy.lockMint[cs ? 'cs' : 'en']}
                 </span>
               </div>
               <div className="space-y-2">
                 <PipelineStep
                   icon={Lock}
-                  label={cs ? "L1 Lock" : "L1 Lock"}
-                  sub={cs ? "Uživatel zamkne ZION na L1" : "User locks ZION on L1"}
+                  label={ExplorerBridgeBridgeTrackerClientCopy.l1Lock[cs ? 'cs' : 'en']}
+                  sub={ExplorerBridgeBridgeTrackerClientCopy.userLocksZionOnL1[cs ? 'cs' : 'en']}
                   count={data?.l1_locks_detected}
                   color="text-zion-cyan"
                   border="border-zion-cyan/20"
@@ -388,8 +454,8 @@ export default function BridgeTrackerClient() {
                 />
                 <PipelineStep
                   icon={Shield}
-                  label={cs ? "Relay" : "Relay"}
-                  sub={cs ? "60-bloková finalita, validátor threshold" : "60-block finality, validator threshold"}
+                  label={ExplorerBridgeBridgeTrackerClientCopy.relay[cs ? 'cs' : 'en']}
+                  sub={ExplorerBridgeBridgeTrackerClientCopy.k60BlockFinalityValidatorThresh[cs ? 'cs' : 'en']}
                   count={data?.l1_locks_finalized}
                   color="text-zion-gold"
                   border="border-zion-gold/20"
@@ -398,8 +464,8 @@ export default function BridgeTrackerClient() {
                 />
                 <PipelineStep
                   icon={Zap}
-                  label={cs ? "EVM Mint" : "EVM Mint"}
-                  sub={cs ? "Mint wZION ERC-20 na Base" : "Mint wZION ERC-20 on Base"}
+                  label={ExplorerBridgeBridgeTrackerClientCopy.evmMint[cs ? 'cs' : 'en']}
+                  sub={ExplorerBridgeBridgeTrackerClientCopy.mintWzionErc20OnBase[cs ? 'cs' : 'en']}
                   count={data?.evm_mints_confirmed}
                   color="text-emerald-400"
                   border="border-emerald-500/20"
@@ -408,7 +474,7 @@ export default function BridgeTrackerClient() {
               </div>
               <div className="mt-5 flex items-center gap-2 text-xs text-gray-500">
                 <ArrowDown className="h-3 w-3" />
-                {cs ? "Doba" : "Time"}: ~60 {cs ? "L1 bloků" : "L1 blocks"} (~1 {cs ? "hod" : "hr"})
+                {ExplorerBridgeBridgeTrackerClientCopy.time[cs ? 'cs' : 'en']}: ~60 {ExplorerBridgeBridgeTrackerClientCopy.l1Blocks[cs ? 'cs' : 'en']} (~1 {ExplorerBridgeBridgeTrackerClientCopy.hr[cs ? 'cs' : 'en']})
               </div>
             </div>
 
@@ -418,14 +484,14 @@ export default function BridgeTrackerClient() {
                 <Flame className="h-5 w-5 text-amber-400" />
                 <h3 className="text-lg font-semibold text-white">Base → L1</h3>
                 <span className="ml-auto text-[10px] uppercase tracking-wider text-gray-500">
-                  {cs ? "Burn / Unlock" : "Burn / Unlock"}
+                  {ExplorerBridgeBridgeTrackerClientCopy.burnUnlock[cs ? 'cs' : 'en']}
                 </span>
               </div>
               <div className="space-y-2">
                 <PipelineStep
                   icon={Flame}
-                  label={cs ? "EVM Burn" : "EVM Burn"}
-                  sub={cs ? "Uživatel spálí wZION na Base" : "User burns wZION on Base"}
+                  label={ExplorerBridgeBridgeTrackerClientCopy.evmBurn[cs ? 'cs' : 'en']}
+                  sub={ExplorerBridgeBridgeTrackerClientCopy.userBurnsWzionOnBase[cs ? 'cs' : 'en']}
                   count={data?.evm_burns_detected}
                   color="text-amber-400"
                   border="border-amber-500/20"
@@ -433,8 +499,8 @@ export default function BridgeTrackerClient() {
                 />
                 <PipelineStep
                   icon={Shield}
-                  label={cs ? "Relay" : "Relay"}
-                  sub={cs ? "64-bloková EVM finalita, L1 unlock TX" : "64-block EVM finality, L1 unlock TX"}
+                  label={ExplorerBridgeBridgeTrackerClientCopy.relay[cs ? 'cs' : 'en']}
+                  sub={ExplorerBridgeBridgeTrackerClientCopy.k64BlockEvmFinalityL1UnlockTx[cs ? 'cs' : 'en']}
                   count={data?.l1_unlocks_submitted}
                   color="text-zion-gold"
                   border="border-zion-gold/20"
@@ -443,8 +509,8 @@ export default function BridgeTrackerClient() {
                 />
                 <PipelineStep
                   icon={Unlock}
-                  label={cs ? "L1 Unlock" : "L1 Unlock"}
-                  sub={cs ? "ZION odemčeny na L1 adrese" : "ZION unlocked on L1 address"}
+                  label={ExplorerBridgeBridgeTrackerClientCopy.l1Unlock[cs ? 'cs' : 'en']}
+                  sub={ExplorerBridgeBridgeTrackerClientCopy.zionUnlockedOnL1Address[cs ? 'cs' : 'en']}
                   count={data?.l1_unlocks_confirmed}
                   color="text-emerald-400"
                   border="border-emerald-500/20"
@@ -453,7 +519,7 @@ export default function BridgeTrackerClient() {
               </div>
               <div className="mt-5 flex items-center gap-2 text-xs text-gray-500">
                 <ArrowDown className="h-3 w-3" />
-                {cs ? "Doba" : "Time"}: ~64 {cs ? "EVM bloků" : "EVM blocks"} (~2 {cs ? "min" : "min"}) + L1
+                {ExplorerBridgeBridgeTrackerClientCopy.time[cs ? 'cs' : 'en']}: ~64 {ExplorerBridgeBridgeTrackerClientCopy.evmBlocks[cs ? 'cs' : 'en']} (~2 {ExplorerBridgeBridgeTrackerClientCopy.min[cs ? 'cs' : 'en']}) + L1
               </div>
             </div>
           </div>
@@ -467,25 +533,23 @@ export default function BridgeTrackerClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {cs ? "Live transakce" : "Live Transactions"}
+              {ExplorerBridgeBridgeTrackerClientCopy.liveTransactions[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-zion-cyan" />
-              {cs ? "Bridge Lock transakce" : "Bridge Lock Transactions"}
+              {ExplorerBridgeBridgeTrackerClientCopy.bridgeLockTransactions[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
-              {cs
-                ? "Nedávné L1 lock transakce s finality progressem. Data z L1 RPC getBridgeLocks."
-                : "Recent L1 lock transactions with finality progress. Data from L1 RPC getBridgeLocks."}
+              {ExplorerBridgeBridgeTrackerClientCopy.recentL1LockTransactionsWithFi[cs ? 'cs' : 'en']}
             </p>
           </div>
 
           {/* Filter buttons */}
           <div className="flex flex-wrap items-center gap-2 mb-4">
             {([
-              { key: 'all', label: cs ? 'Vše' : 'All', count: txs.length },
-              { key: 'pending', label: cs ? 'Čekající' : 'Pending', count: txs.filter(t => !t.finalized).length },
-              { key: 'finalized', label: cs ? 'Finalizované' : 'Finalized', count: txs.filter(t => t.finalized).length },
+              { key: 'all', label: ExplorerBridgeBridgeTrackerClientCopy.all[cs ? 'cs' : 'en'], count: txs.length },
+              { key: 'pending', label: ExplorerBridgeBridgeTrackerClientCopy.pending[cs ? 'cs' : 'en'], count: txs.filter(t => !t.finalized).length },
+              { key: 'finalized', label: ExplorerBridgeBridgeTrackerClientCopy.finalized_2[cs ? 'cs' : 'en'], count: txs.filter(t => t.finalized).length },
             ] as const).map((f) => (
               <button
                 key={f.key}
@@ -501,7 +565,7 @@ export default function BridgeTrackerClient() {
               </button>
             ))}
             <span className="ml-auto text-[10px] text-gray-500">
-              {cs ? `Skenováno ${chainHeight} bloků` : `Scanned ${chainHeight} blocks`} · {cs ? 'Aktualizace každých 15s' : 'Updates every 15s'}
+              {cs ? `Skenováno ${chainHeight} bloků` : `Scanned ${chainHeight} blocks`} · {ExplorerBridgeBridgeTrackerClientCopy.updatesEvery15s[cs ? 'cs' : 'en']}
             </span>
           </div>
 
@@ -511,7 +575,7 @@ export default function BridgeTrackerClient() {
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-6 w-6 text-zion-cyan animate-spin" />
                 <span className="ml-3 text-sm text-gray-400">
-                  {cs ? 'Načítání transakcí...' : 'Loading transactions...'}
+                  {ExplorerBridgeBridgeTrackerClientCopy.loadingTransactions[cs ? 'cs' : 'en']}
                 </span>
               </div>
             ) : txsError ? (
@@ -519,19 +583,17 @@ export default function BridgeTrackerClient() {
                 <AlertCircle className="h-8 w-8 text-red-400 mb-3" />
                 <p className="text-sm text-red-300">{txsError}</p>
                 <p className="text-xs text-gray-500 mt-2">
-                  {cs ? 'L1 RPC může být offline. Zkuste to později.' : 'L1 RPC may be offline. Try again later.'}
+                  {ExplorerBridgeBridgeTrackerClientCopy.l1RpcMayBeOfflineTryAgainLater[cs ? 'cs' : 'en']}
                 </p>
               </div>
             ) : filteredTxs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <Search className="h-8 w-8 text-gray-600 mb-3" />
                 <p className="text-sm text-gray-400">
-                  {cs ? 'Žádné bridge transakce nenalezeny.' : 'No bridge transactions found.'}
+                  {ExplorerBridgeBridgeTrackerClientCopy.noBridgeTransactionsFound[cs ? 'cs' : 'en']}
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
-                  {cs
-                    ? 'Lock transakce se objeví zde, když někdo pošle ZION na bridge adresu s BRIDGE memo.'
-                    : 'Lock transactions will appear here when someone sends ZION to the bridge address with a BRIDGE memo.'}
+                  {ExplorerBridgeBridgeTrackerClientCopy.lockTransactionsWillAppearHere[cs ? 'cs' : 'en']}
                 </p>
               </div>
             ) : (
@@ -539,13 +601,13 @@ export default function BridgeTrackerClient() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/10 text-[10px] uppercase tracking-wider text-gray-500">
-                      <th className="text-left px-4 py-3 font-medium">{cs ? 'TX Hash' : 'TX Hash'}</th>
-                      <th className="text-left px-4 py-3 font-medium">{cs ? 'Blok' : 'Block'}</th>
-                      <th className="text-left px-4 py-3 font-medium">{cs ? 'Odesílatel' : 'Sender'}</th>
-                      <th className="text-left px-4 py-3 font-medium">{cs ? 'Řetězec' : 'Chain'}</th>
-                      <th className="text-right px-4 py-3 font-medium">{cs ? 'Částka' : 'Amount'}</th>
-                      <th className="text-left px-4 py-3 font-medium min-w-[120px]">{cs ? 'Finalita' : 'Finality'}</th>
-                      <th className="text-center px-4 py-3 font-medium">{cs ? 'Stav' : 'Status'}</th>
+                      <th className="text-left px-4 py-3 font-medium">{ExplorerBridgeBridgeTrackerClientCopy.txHash[cs ? 'cs' : 'en']}</th>
+                      <th className="text-left px-4 py-3 font-medium">{ExplorerBridgeBridgeTrackerClientCopy.block_2[cs ? 'cs' : 'en']}</th>
+                      <th className="text-left px-4 py-3 font-medium">{ExplorerBridgeBridgeTrackerClientCopy.sender[cs ? 'cs' : 'en']}</th>
+                      <th className="text-left px-4 py-3 font-medium">{ExplorerBridgeBridgeTrackerClientCopy.chain[cs ? 'cs' : 'en']}</th>
+                      <th className="text-right px-4 py-3 font-medium">{ExplorerBridgeBridgeTrackerClientCopy.amount[cs ? 'cs' : 'en']}</th>
+                      <th className="text-left px-4 py-3 font-medium min-w-[120px]">{ExplorerBridgeBridgeTrackerClientCopy.finality[cs ? 'cs' : 'en']}</th>
+                      <th className="text-center px-4 py-3 font-medium">{ExplorerBridgeBridgeTrackerClientCopy.status[cs ? 'cs' : 'en']}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -606,7 +668,7 @@ export default function BridgeTrackerClient() {
                                 threshold={finalityThreshold}
                               />
                               <p className="text-[10px] text-gray-500 tabular-nums">
-                                {tx.confirmations}/{finalityThreshold} {cs ? 'konf.' : 'conf.'}
+                                {tx.confirmations}/{finalityThreshold} {ExplorerBridgeBridgeTrackerClientCopy.conf[cs ? 'cs' : 'en']}
                               </p>
                             </div>
                           </td>
@@ -629,9 +691,7 @@ export default function BridgeTrackerClient() {
           {/* Recipient hint */}
           {filteredTxs.length > 0 && (
             <p className="text-[10px] text-gray-600 mt-3 text-center">
-              {cs
-                ? 'Klikněte na TX hash pro detail transakce v průzkumníku. EVM mint TX se zobrazí po finalitě (60 bloků).'
-                : 'Click TX hash for transaction detail in explorer. EVM mint TX appears after finality (60 blocks).'}
+              {ExplorerBridgeBridgeTrackerClientCopy.clickTxHashForTransactionDetai[cs ? 'cs' : 'en']}
             </p>
           )}
         </motion.section>
@@ -644,10 +704,10 @@ export default function BridgeTrackerClient() {
           className="zion-section p-6 md:p-10"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Kontrakty" : "Contracts"}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerBridgeBridgeTrackerClientCopy.contracts[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe className="h-7 w-7 text-zion-purple" />
-              {cs ? "Bridge kontrakty" : "Bridge Contracts"}
+              {ExplorerBridgeBridgeTrackerClientCopy.bridgeContracts[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -701,13 +761,11 @@ export default function BridgeTrackerClient() {
           <ArrowLeftRight className="mx-auto h-12 w-12 text-zion-cyan" />
           <h2 className="mt-6 text-3xl font-semibold text-white">ZION Bridge</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {cs
-              ? "Most mezi ZION L1 a Base Mainnet. Lock/Mint a Burn/Unlock s plnou transparencí."
-              : "Bridge between ZION L1 and Base Mainnet. Lock/Mint and Burn/Unlock with full transparency."}
+            {ExplorerBridgeBridgeTrackerClientCopy.bridgeBetweenZionL1AndBaseMain[cs ? 'cs' : 'en']}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/bridge" className="zion-button-primary group text-sm" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              <Lock className="h-4 w-4" /> {cs ? "Bridge UI" : "Bridge UI"}
+              <Lock className="h-4 w-4" /> {ExplorerBridgeBridgeTrackerClientCopy.bridgeUi[cs ? 'cs' : 'en']}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link href="/explorer/mempool" className="zion-button-secondary text-sm">

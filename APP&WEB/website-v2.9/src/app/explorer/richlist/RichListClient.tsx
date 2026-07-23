@@ -24,6 +24,32 @@ import {
 } from "lucide-react";
 import { exportToCsv } from "@/lib/csv-export";
 
+const ExplorerRichlistRichListClientCopy = {
+  holder: { cs: `Držitel`, en: `Holder` },
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  totalAddresses: { cs: `Celkem adres`, en: `Total Addresses` },
+  top10Ownership: { cs: `Podil top 10`, en: `Top 10 Ownership` },
+  giniCoefficient: { cs: `Giniho koeficient`, en: `Gini Coefficient` },
+  activeMiners: { cs: `Aktivní mineři`, en: `Active Miners` },
+  supplyDistribution: { cs: `Distribuce zásoby`, en: `Supply Distribution` },
+  miners: { cs: `Mineři`, en: `Miners` },
+  unmapped: { cs: `Nezarazeno`, en: `Unmapped` },
+  miningRewards: { cs: `Těžební odměny`, en: `Mining rewards` },
+  show: { cs: `Zobrazit:`, en: `Show:` },
+  exportCsv: { cs: `Export CSV`, en: `Export CSV` },
+  rank: { cs: `Poradi`, en: `Rank` },
+  address: { cs: `Adresa`, en: `Address` },
+  balanceZion: { cs: `Zůstatek (ZION)`, en: `Balance (ZION)` },
+  type: { cs: `Typ`, en: `Type` },
+  loading: { cs: `Načítám…`, en: `Loading…` },
+  retry: { cs: `Zkusit znovu`, en: `Retry` },
+  dataRefreshed: { cs: `Data aktualizovana:`, en: `Data refreshed:` },
+  showing: { cs: `Zobrazeno`, en: `Showing` },
+  addresses: { cs: `adres`, en: `addresses` },
+  premineAllocationAsDefinedIn: { cs: `Premine alokace podle`, en: `Premine allocation as defined in` },
+  minerBalancesFromPoolRewardHis: { cs: `. Zůstatky minerů vycházejí z historie odměn poolu.`, en: `. Miner balances from pool reward history.` },
+};
+
 /* ── types ───────────────────────────────────────────────────── */
 
 interface RichListEntry {
@@ -105,7 +131,7 @@ const getTypeConfig = (cs: boolean) => ({
     bg: "bg-white/5",
     border: "border-white/10",
     text: "text-white/60",
-    label: cs ? "Držitel" : "Holder",
+    label: ExplorerRichlistRichListClientCopy.holder[cs ? 'cs' : 'en'],
     icon: Wallet,
   },
 });
@@ -120,7 +146,7 @@ interface RichListClientProps {
 export default function RichListClient({ embedded = false }: RichListClientProps) {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = cs ? 'cs-CZ' : 'en-US';
+  const locale = ExplorerRichlistRichListClientCopy.enUs[cs ? 'cs' : 'en'];
   const typeConfig = getTypeConfig(cs);
   const [data, setData] = useState<RichListData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -173,25 +199,25 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           >
             {[
               {
-                label: cs ? "Celkem adres" : "Total Addresses",
+                label: ExplorerRichlistRichListClientCopy.totalAddresses[cs ? 'cs' : 'en'],
                 value: data.stats.total_addresses.toLocaleString(locale),
                 icon: Users,
                 accent: "text-zion-cyan",
               },
               {
-                label: cs ? "Podil top 10" : "Top 10 Ownership",
+                label: ExplorerRichlistRichListClientCopy.top10Ownership[cs ? 'cs' : 'en'],
                 value: `${data.stats.top_10_percentage.toFixed(1)}%`,
                 icon: BarChart3,
                 accent: "text-zion-gold",
               },
               {
-                label: cs ? "Giniho koeficient" : "Gini Coefficient",
+                label: ExplorerRichlistRichListClientCopy.giniCoefficient[cs ? 'cs' : 'en'],
                 value: data.stats.gini_coefficient.toFixed(4),
                 icon: Scale,
                 accent: "text-zion-purple",
               },
               {
-                label: cs ? "Aktivní mineři" : "Active Miners",
+                label: ExplorerRichlistRichListClientCopy.activeMiners[cs ? 'cs' : 'en'],
                 value: data.stats.miner_addresses.toLocaleString(locale),
                 icon: Pickaxe,
                 accent: "text-emerald-400",
@@ -226,7 +252,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           >
             <h2 className="text-sm font-medium text-white/60 mb-4 flex items-center gap-2">
               <Gem className="w-4 h-4 text-zion-gold" />
-              {cs ? 'Distribuce zásoby' : 'Supply Distribution'}
+              {ExplorerRichlistRichListClientCopy.supplyDistribution[cs ? 'cs' : 'en']}
             </h2>
             <div className="flex h-6 rounded-full overflow-hidden border border-white/10">
               {(() => {
@@ -247,12 +273,12 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                     <div
                       className="bg-linear-to-r from-zion-cyan to-blue-500 transition-all"
                       style={{ width: `${minerPerc}%` }}
-                      title={`${cs ? 'Mineři' : 'Miners'}: ${minerPerc.toFixed(1)}%`}
+                      title={`${ExplorerRichlistRichListClientCopy.miners[cs ? 'cs' : 'en']}: ${minerPerc.toFixed(1)}%`}
                     />
                     <div
                       className="bg-white/5 transition-all"
                       style={{ width: `${otherPerc}%` }}
-                      title={`${cs ? 'Nezarazeno' : 'Unmapped'}: ${otherPerc.toFixed(1)}%`}
+                      title={`${ExplorerRichlistRichListClientCopy.unmapped[cs ? 'cs' : 'en']}: ${otherPerc.toFixed(1)}%`}
                     />
                   </>
                 );
@@ -265,11 +291,11 @@ export default function RichListClient({ embedded = false }: RichListClientProps
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-zion-cyan" />
-                {cs ? 'Těžební odměny' : 'Mining rewards'}
+                {ExplorerRichlistRichListClientCopy.miningRewards[cs ? 'cs' : 'en']}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-white/10" />
-                {cs ? 'Nezarazeno' : 'Unmapped'}
+                {ExplorerRichlistRichListClientCopy.unmapped[cs ? 'cs' : 'en']}
               </span>
             </div>
           </motion.div>
@@ -277,7 +303,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
 
         {/* ═══════ LIMIT SELECTOR ═══════ */}
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-sm text-white/40">{cs ? 'Zobrazit:' : 'Show:'}</span>
+          <span className="text-sm text-white/40">{ExplorerRichlistRichListClientCopy.show[cs ? 'cs' : 'en']}</span>
           {[25, 50, 100, 200].map((n) => (
             <button
               key={n}
@@ -297,7 +323,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
             className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             <Download className="w-3.5 h-3.5" />
-            {cs ? 'Export CSV' : 'Export CSV'}
+            {ExplorerRichlistRichListClientCopy.exportCsv[cs ? 'cs' : 'en']}
           </button>
         </div>
 
@@ -311,19 +337,19 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           {/* Table header */}
           <div className="grid grid-cols-[60px_1fr_1fr_120px_100px] md:grid-cols-[60px_2fr_1fr_160px_120px] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02]">
             <span className="text-[11px] text-white/30 uppercase tracking-wider">
-              {cs ? 'Poradi' : 'Rank'}
+              {ExplorerRichlistRichListClientCopy.rank[cs ? 'cs' : 'en']}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider">
-              {cs ? 'Adresa' : 'Address'}
+              {ExplorerRichlistRichListClientCopy.address[cs ? 'cs' : 'en']}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider text-right">
-              {cs ? 'Zůstatek (ZION)' : 'Balance (ZION)'}
+              {ExplorerRichlistRichListClientCopy.balanceZion[cs ? 'cs' : 'en']}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider text-right hidden md:block">
               % Supply
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider text-right">
-              {cs ? 'Typ' : 'Type'}
+              {ExplorerRichlistRichListClientCopy.type[cs ? 'cs' : 'en']}
             </span>
           </div>
 
@@ -331,7 +357,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           {loading && (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-6 h-6 text-zion-gold animate-spin" />
-              <span className="ml-3 text-white/40 text-sm">{cs ? 'Načítám…' : 'Loading…'}</span>
+              <span className="ml-3 text-white/40 text-sm">{ExplorerRichlistRichListClientCopy.loading[cs ? 'cs' : 'en']}</span>
             </div>
           )}
 
@@ -343,7 +369,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                 onClick={fetchRichList}
                 className="mt-4 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 text-sm transition-all"
               >
-                {cs ? 'Zkusit znovu' : 'Retry'}
+                {ExplorerRichlistRichListClientCopy.retry[cs ? 'cs' : 'en']}
               </button>
             </div>
           )}
@@ -431,19 +457,19 @@ export default function RichListClient({ embedded = false }: RichListClientProps
         {data && (
           <div className="text-center text-xs text-white/30 space-y-1">
             <p>
-              {cs ? 'Data aktualizovana:' : 'Data refreshed:'}{' '}
-              {new Date(data.timestamp).toLocaleString(locale)} · {cs ? 'Zobrazeno' : 'Showing'}{' '}
-              {data.rich_list.length} {cs ? 'adres' : 'addresses'}
+              {ExplorerRichlistRichListClientCopy.dataRefreshed[cs ? 'cs' : 'en']}{' '}
+              {new Date(data.timestamp).toLocaleString(locale)} · {ExplorerRichlistRichListClientCopy.showing[cs ? 'cs' : 'en']}{' '}
+              {data.rich_list.length} {ExplorerRichlistRichListClientCopy.addresses[cs ? 'cs' : 'en']}
             </p>
             <p>
-              {cs ? 'Premine alokace podle' : 'Premine allocation as defined in'}{' '}
+              {ExplorerRichlistRichListClientCopy.premineAllocationAsDefinedIn[cs ? 'cs' : 'en']}{' '}
               <Link
                 href="/genesis"
                 className="text-zion-gold/60 hover:text-zion-gold transition-colors underline"
               >
                 Genesis Block
               </Link>
-              {cs ? '. Zůstatky minerů vycházejí z historie odměn poolu.' : '. Miner balances from pool reward history.'}
+              {ExplorerRichlistRichListClientCopy.minerBalancesFromPoolRewardHis[cs ? 'cs' : 'en']}
             </p>
           </div>
         )}

@@ -23,6 +23,78 @@ import GeographyMenu from './components/GeographyMenu';
 import LayerMenu from './components/LayerMenu';
 import type { BookChapter } from './bookData';
 
+const TerranovaTerraNovaBookClientCopy = {
+  prologue: { cs: `Prolog`, en: `Prologue` },
+  conclusion: { cs: `Závěr`, en: `Conclusion` },
+  appendix: { cs: `Příloha`, en: `Appendix` },
+  part: { cs: `Část`, en: `Part` },
+  gateGateParagateParasamgateBod: { cs: `Gate, Gate, Paragate, Parasamgate, Bodhi Swaha`, en: `Gate, Gate, Paragate, Parasamgate, Bodhi Swaha` },
+  forSarahIssobelMaitreyaBuddhaR: { cs: `Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.nZlatý věk začíná.`, en: `For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam /EnaMaTara/,nfriends, family, free humanity and all the children of this world:nZION is yours. Build a better world where you reach for the stars.nThe Golden Age begins. Peace & One Love 4ever.` },
+  layer: { cs: `Vrstva`, en: `Layer` },
+  openGenesis: { cs: `Otevřít Genesis`, en: `Open Genesis` },
+  visualZionCliPanel: { cs: `Visual Zion CLI panel`, en: `Visual ZION CLI Panel` },
+  terraNovaContents: { cs: `Obsah Terra Novy`, en: `Terra Nova Contents` },
+  visualZionCli: { cs: `Visual Zion CLI`, en: `Visual ZION CLI` },
+  mainnetLaunchPulse: { cs: `Mainnet launch pulse`, en: `Mainnet launch pulse` },
+  liveTerminalZionCli: { cs: `Živý terminál — ZION CLI`, en: `Live Terminal — ZION CLI` },
+  orbitalReaderOnline: { cs: `orbitální reader online`, en: `orbital reader online` },
+  expandCliOverlay: { cs: `Rozbalit CLI overlay`, en: `Expand CLI Overlay` },
+  issobellaVisionDeck: { cs: `Issobella Vision Deck`, en: `Issobella Vision Deck` },
+  goldenCompassOnTheOrbitalStati: { cs: `Zlatý Kompas v orbitální stanici`, en: `Golden Compass on the Orbital Station` },
+  earthViewFromTheIssobellaObser: { cs: `Výhled na Zemi z observatoře Issobella a hlavní panel navigace šesti vrstvami L1 až L6.`, en: `Earth view from the Issobella observatory and the main navigation panel across the six L1 to L6 layers.` },
+  canonicalTerraNovaBranch: { cs: `Kanonická větev Terra Novy`, en: `Canonical Terra Nova Branch` },
+  pEpnoutDoETiny: { cs: `Switch to English`, en: `Přepnout do češtiny` },
+  issobellaObservationDeck: { cs: `ISSOBELLA // MODUL VÝHLEDU`, en: `ISSOBELLA // OBSERVATION DECK` },
+  thisIsWhereTomorrowScaleApplie: { cs: `Tady se drží měřítko zítřka: pod tebou Země, nad tebou nekonečný oceán hvězd. Mezi tím naše rozhodnutí.`, en: `This is where tomorrow scale applies: Earth below, an endless ocean of stars above. In between, our choices.` },
+  mainPanelIssobellaStation: { cs: `Main Panel · Issobella Station`, en: `Main Panel · Issobella Station` },
+  interactiveGoldenCompass: { cs: `Interaktivní Zlatý Kompas`, en: `Interactive Golden Compass` },
+  navigationOnline: { cs: `Navigace online`, en: `Navigation online` },
+  l1ToL6CompassNodes: { cs: `Body kompasu L1 až L6`, en: `L1 to L6 Compass Nodes` },
+  selectedDirection: { cs: `Zvolený směr`, en: `Selected Direction` },
+  technicalPoint: { cs: `Technický bod`, en: `Technical Point` },
+  phaseChecklist: { cs: `Checklist fáze`, en: `Phase Checklist` },
+  clickACompassDirectionToOpenDe: { cs: `Klikni na směr v kompasu a otevři detail.`, en: `Click a compass direction to open detail.` },
+  dharmachakra: { cs: `Dharmachakra`, en: `Dharmachakra` },
+  theNobleEightfoldPath: { cs: `Ušlechtilá osmidílná stezka`, en: `The Noble Eightfold Path` },
+  buddhaSWheelOfDharmaAsTerraNov: { cs: `Buddhovo kolo Dharmy jako druhá navigační vrstva Terra Novy: osm paprsků, jedno vědomé jádro.`, en: `Buddha’s Wheel of Dharma as Terra Nova’s second navigation layer: eight spokes, one conscious core.` },
+  dharmachakraWithEightSpokes: { cs: `Dharmachakra s osmi paprsky`, en: `Dharmachakra with eight spokes` },
+  dharma: { cs: `Dharma`, en: `Dharma` },
+  activeSpoke: { cs: `Aktivní paprsek`, en: `Active spoke` },
+  zionMap: { cs: `ZION mapa`, en: `ZION map` },
+  eachCompassPointIsAlsoAnActive: { cs: `Každý bod kompasu je zároveň aktivní uzel roadmapy. Klikni na L1 až L6 nahoře nebo přímo do SVG.`, en: `Each compass point is also an active roadmap node. Click L1 to L6 above or directly inside the SVG.` },
+  fourthBookOfZion: { cs: `Čtvrtá kniha ZION`, en: `Fourth Book of ZION` },
+  compositionalMap: { cs: `Kompoziční mapa`, en: `Compositional Map` },
+  contents: { cs: `Obsah`, en: `Contents` },
+  readingMode: { cs: `Čtecí režim`, en: `Reading Mode` },
+  eachChapterHoldsADifferentRhyt: { cs: `Každá kapitola drží jiný rytmus, ale stejnou disciplínu: realita, plán, horizont.`, en: `Each chapter holds a different rhythm, but the same discipline: reality, plan, horizon.` },
+  currentChapter: { cs: `Aktivní kapitola`, en: `Current Chapter` },
+  leftRightArrowsNextChapters: { cs: `Sipky vlevo/vpravo: další kapitoly`, en: `Left/right arrows: next chapters` },
+  escCloseContents: { cs: `Esc: zavřít obsah`, en: `Esc: close contents` },
+  deadMapsTendToBePreciseOnlyOnP: { cs: `Mrtvé mapy bývají přesné jen na papíře. Živé mapy dokážou přežít i cestu.`, en: `Dead maps tend to be precise only on paper. Living maps can survive the journey.` },
+  documentation: { cs: `Dokumentace`, en: `Documentation` },
+  terraNovaOverlay: { cs: `Terra Nova overlay`, en: `Terra Nova Overlay` },
+  genesisPanelInsideTerraNova: { cs: `Genesis panel uvnitř Terra Novy`, en: `Genesis Panel Inside Terra Nova` },
+  genesisPremine16280000000Zion: { cs: `Genesis premine · 16 280 000 000 ZION`, en: `Genesis Premine · 16,280,000,000 ZION` },
+  daoTreasury: { cs: `DAO Pokladna`, en: `DAO Treasury` },
+  infrastructureDev: { cs: `Infrastruktura + Vývoj`, en: `Infrastructure + Dev` },
+  genesisProjectsDharmaTemplePik: { cs: `Genesis Projects (Dharma Temple, Piko de Ora + DAO)`, en: `Genesis Projects (Dharma Temple, Piko de Ora + DAO)` },
+  humanitarianDao: { cs: `Humanitární DAO`, en: `Humanitarian DAO` },
+  totalGenesis: { cs: `Celkem genesis`, en: `Total genesis` },
+  blockSplit89Miner5Humanitarian: { cs: `Split bloků: 89% miner · 5% humanitární · 5% Issobella · 1% pool`, en: `Block split: 89% miner · 5% humanitarian · 5% Issobella · 1% pool` },
+  whyItLivesHere: { cs: `Proč je to tady`, en: `Why It Lives Here` },
+  openFullGenesisPage: { cs: `Přejít na plnou Genesis stránku`, en: `Open Full Genesis Page` },
+  manualCommands: { cs: `Ruční příkazy`, en: `Manual Commands` },
+  genesisPremine1628bZion: { cs: `Genesis Premine · 16.28B ZION`, en: `Genesis Premine · 16.28B ZION` },
+  oasisGoldenEgg5: { cs: `OASIS Golden Egg ×5`, en: `OASIS Golden Egg ×5` },
+  daoTreasury3: { cs: `DAO Pokladna ×3`, en: `DAO Treasury ×3` },
+  infrastructureDev2: { cs: `Infrastruktura + Vývoj ×2`, en: `Infrastructure + Dev ×2` },
+  total: { cs: `Celkem`, en: `Total` },
+  perBlockSplit89Miner5Humanitar: { cs: `split/blok: 89% miner · 5% humanitární · 5% issobella · 1% pool`, en: `per-block split: 89% miner · 5% humanitarian · 5% issobella · 1% pool` },
+  openTerraNovaContents: { cs: `Přejít do obsahu Terra Novy`, en: `Open Terra Nova Contents` },
+  realZionCliDocs: { cs: `Real ZION CLI dokumentace`, en: `Real ZION CLI Docs` },
+  top: { cs: `Nahoru`, en: `Top` },
+};
+
 type EditionKey = 'final';
 
 type EditionMeta = {
@@ -159,11 +231,11 @@ function formatChapterLabel(chapter: BookChapter, cs: boolean) {
   const title = cs ? chapter.titleCs : chapter.titleEn;
 
   if (chapter.number === 'Prolog') {
-    return `${cs ? 'Prolog' : 'Prologue'} — ${title}`;
+    return `${TerranovaTerraNovaBookClientCopy.prologue[cs ? 'cs' : 'en']} — ${title}`;
   }
 
   if (chapter.number === 'Závěr') {
-    return `${cs ? 'Závěr' : 'Conclusion'} — ${title}`;
+    return `${TerranovaTerraNovaBookClientCopy.conclusion[cs ? 'cs' : 'en']} — ${title}`;
   }
 
   if (APPENDIX_NUMBERS.has(chapter.number)) {
@@ -933,16 +1005,12 @@ export default function TerraNovaBookClient() {
   const progress = ((activeChapter + 1) / currentChapters.length) * 100;
   const chapterLabel =
     chapter.number === 'Prolog'
-      ? cs
-        ? 'Prolog'
-        : 'Prologue'
+      ? TerranovaTerraNovaBookClientCopy.prologue[cs ? 'cs' : 'en']
       : APPENDIX_NUMBERS.has(chapter.number)
-      ? `${cs ? 'Příloha' : 'Appendix'} ${chapter.number}`
+      ? `${TerranovaTerraNovaBookClientCopy.appendix[cs ? 'cs' : 'en']} ${chapter.number}`
       : chapter.number === 'Závěr'
-      ? cs
-        ? 'Závěr'
-        : 'Conclusion'
-      : `${cs ? 'Část' : 'Part'} ${chapter.number}`;
+      ? TerranovaTerraNovaBookClientCopy.conclusion[cs ? 'cs' : 'en']
+      : `${TerranovaTerraNovaBookClientCopy.part[cs ? 'cs' : 'en']} ${chapter.number}`;
   const selectedDirection = compassDir !== null ? ACCELERATION_DIRECTIONS[compassDir] : null;
   const selectedDharmaSpoke = DHARMA_WHEEL_SPOKES[dharmaSpoke];
   const flowersPerZionLabel = cs
@@ -952,12 +1020,8 @@ export default function TerraNovaBookClient() {
   const introLead = cs ? intro.leadCs : intro.leadEn;
   const introBody = cs ? intro.bodyCs : intro.bodyEn;
   const introNotes = cs ? intro.notesCs : intro.notesEn;
-  const introQuote = cs
-    ? 'Gate, Gate, Paragate, Parasamgate, Bodhi Swaha'
-    : 'Gate, Gate, Paragate, Parasamgate, Bodhi Swaha';
-  const introDedication = cs
-    ? 'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.'
-    : 'For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam /EnaMaTara/,\nfriends, family, free humanity and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins. Peace & One Love 4ever.';
+  const introQuote = TerranovaTerraNovaBookClientCopy.gateGateParagateParasamgateBod[cs ? 'cs' : 'en'];
+  const introDedication = TerranovaTerraNovaBookClientCopy.forSarahIssobelMaitreyaBuddhaR[cs ? 'cs' : 'en'];
   const genesisOverlayLines = cs
     ? [
         'Genesis není jen předmluva. Je to okamžik, kdy se jazyk, síť a závazek poprvé dotknou stejného horizontu.',
@@ -1034,7 +1098,7 @@ export default function TerraNovaBookClient() {
                       className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
                     >
                       <p className="mb-2 text-[10px] uppercase tracking-[0.28em] text-gray-500">
-                        {`${cs ? 'Vrstva' : 'Layer'} ${index + 1}`}
+                        {`${TerranovaTerraNovaBookClientCopy.layer[cs ? 'cs' : 'en']} ${index + 1}`}
                       </p>
                       <p className="text-sm leading-relaxed text-gray-300">{note}</p>
                     </div>
@@ -1050,7 +1114,7 @@ export default function TerraNovaBookClient() {
                     className="zion-button-primary"
                   >
                     <BookOpen className="h-4 w-4" />
-                    {cs ? 'Otevřít Genesis' : 'Open Genesis'}
+                    {TerranovaTerraNovaBookClientCopy.openGenesis[cs ? 'cs' : 'en']}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                   <button
@@ -1061,14 +1125,14 @@ export default function TerraNovaBookClient() {
                     className="zion-button-secondary"
                   >
                     <Terminal className="h-4 w-4" />
-                    {cs ? 'Visual Zion CLI panel' : 'Visual ZION CLI Panel'}
+                    {TerranovaTerraNovaBookClientCopy.visualZionCliPanel[cs ? 'cs' : 'en']}
                   </button>
                   <button
                     onClick={() => setTocOpen(true)}
                     className="zion-button-secondary"
                   >
                     <List className="h-4 w-4" />
-                    {cs ? 'Obsah Terra Novy' : 'Terra Nova Contents'}
+                    {TerranovaTerraNovaBookClientCopy.terraNovaContents[cs ? 'cs' : 'en']}
                   </button>
                 </div>
               </div>
@@ -1083,14 +1147,14 @@ export default function TerraNovaBookClient() {
                     </div>
                     <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-gray-500">
                       <Terminal className="h-3.5 w-3.5 text-zion-cyan" />
-                      {cs ? 'Visual Zion CLI' : 'Visual ZION CLI'}
+                      {TerranovaTerraNovaBookClientCopy.visualZionCli[cs ? 'cs' : 'en']}
                     </div>
                   </div>
 
                   <div className="space-y-4 px-4 py-4">
                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                       <p className="mb-2 text-[10px] uppercase tracking-[0.28em] text-zion-cyan/70">
-                        {cs ? 'Mainnet launch pulse' : 'Mainnet launch pulse'}
+                        {TerranovaTerraNovaBookClientCopy.mainnetLaunchPulse[cs ? 'cs' : 'en']}
                       </p>
                       <pre className="overflow-x-auto whitespace-pre font-mono text-[11px] leading-relaxed text-zion-cyan/90" style={{ fontFamily: '"Courier New", Courier, monospace' }}>
 {GENESIS_BANNER}
@@ -1099,7 +1163,7 @@ export default function TerraNovaBookClient() {
 
                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                       <p className="mb-3 text-[10px] uppercase tracking-[0.28em] text-gray-500">
-                        {cs ? 'Živý terminál — ZION CLI' : 'Live Terminal — ZION CLI'}
+                        {TerranovaTerraNovaBookClientCopy.liveTerminalZionCli[cs ? 'cs' : 'en']}
                       </p>
                       <div className="min-h-22 space-y-2 font-mono text-[12px] text-gray-300">
                         <div className="rounded-xl bg-white/3 px-3 py-2.5">
@@ -1118,7 +1182,7 @@ export default function TerraNovaBookClient() {
                         </div>
                         <div className="flex items-center gap-2 px-1 text-[11px] uppercase tracking-[0.24em] text-gray-500">
                           <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                          {cs ? 'orbitální reader online' : 'orbital reader online'}
+                          {TerranovaTerraNovaBookClientCopy.orbitalReaderOnline[cs ? 'cs' : 'en']}
                         </div>
                       </div>
                       <div className="mt-4 flex flex-wrap gap-2">
@@ -1127,7 +1191,7 @@ export default function TerraNovaBookClient() {
                           className="zion-button-secondary"
                         >
                           <Terminal className="h-3.5 w-3.5" />
-                          {cs ? 'Rozbalit CLI overlay' : 'Expand CLI Overlay'}
+                          {TerranovaTerraNovaBookClientCopy.expandCliOverlay[cs ? 'cs' : 'en']}
                         </button>
                         <Link
                           href="/docs"
@@ -1171,15 +1235,13 @@ export default function TerraNovaBookClient() {
         >
           <div className="mb-6 text-center">
             <p className="text-[10px] uppercase tracking-[0.36em] text-zion-gold/70">
-              {cs ? 'Issobella Vision Deck' : 'Issobella Vision Deck'}
+              {TerranovaTerraNovaBookClientCopy.issobellaVisionDeck[cs ? 'cs' : 'en']}
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
-              {cs ? 'Zlatý Kompas v orbitální stanici' : 'Golden Compass on the Orbital Station'}
+              {TerranovaTerraNovaBookClientCopy.goldenCompassOnTheOrbitalStati[cs ? 'cs' : 'en']}
             </h2>
             <p className="mt-2 text-sm text-gray-400 sm:text-base">
-              {cs
-                ? 'Výhled na Zemi z observatoře Issobella a hlavní panel navigace šesti vrstvami L1 až L6.'
-                : 'Earth view from the Issobella observatory and the main navigation panel across the six L1 to L6 layers.'}
+              {TerranovaTerraNovaBookClientCopy.earthViewFromTheIssobellaObser[cs ? 'cs' : 'en']}
             </p>
           </div>
 
@@ -1187,12 +1249,12 @@ export default function TerraNovaBookClient() {
           <div className="mb-6 overflow-hidden zion-rainbow-card" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="px-5 py-3 flex items-center justify-between gap-3">
               <p className="text-[10px] uppercase tracking-[0.4em] text-zion-gold/60">
-                {cs ? 'Kanonická větev Terra Novy' : 'Canonical Terra Nova Branch'}
+                {TerranovaTerraNovaBookClientCopy.canonicalTerraNovaBranch[cs ? 'cs' : 'en']}
               </p>
               <button
                 onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
                 className="zion-button-secondary"
-                title={lang === 'cs' ? 'Switch to English' : 'Přepnout do češtiny'}
+                title={TerranovaTerraNovaBookClientCopy.pEpnoutDoETiny[lang === 'cs' ? 'cs' : 'en']}
               >
                 {lang === 'cs' ? 'EN' : 'CS'}
               </button>
@@ -1237,12 +1299,10 @@ export default function TerraNovaBookClient() {
 
               <div className="relative z-10 space-y-3">
                 <p className="text-[10px] uppercase tracking-[0.3em] font-mono text-cyan-300/80">
-                  {cs ? 'ISSOBELLA // MODUL VÝHLEDU' : 'ISSOBELLA // OBSERVATION DECK'}
+                  {TerranovaTerraNovaBookClientCopy.issobellaObservationDeck[cs ? 'cs' : 'en']}
                 </p>
                 <p className="max-w-[85%] text-sm leading-relaxed text-gray-200 drop-shadow-md">
-                  {cs
-                    ? 'Tady se drží měřítko zítřka: pod tebou Země, nad tebou nekonečný oceán hvězd. Mezi tím naše rozhodnutí.'
-                    : 'This is where tomorrow scale applies: Earth below, an endless ocean of stars above. In between, our choices.'}
+                  {TerranovaTerraNovaBookClientCopy.thisIsWhereTomorrowScaleApplie[cs ? 'cs' : 'en']}
                 </p>
                 <div
                   className="inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em]"
@@ -1279,22 +1339,22 @@ export default function TerraNovaBookClient() {
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.3em] text-zion-gold/70">
-                    {cs ? 'Main Panel · Issobella Station' : 'Main Panel · Issobella Station'}
+                    {TerranovaTerraNovaBookClientCopy.mainPanelIssobellaStation[cs ? 'cs' : 'en']}
                   </p>
                   <p className="mt-1 text-sm text-gray-300">
-                    {cs ? 'Interaktivní Zlatý Kompas' : 'Interactive Golden Compass'}
+                    {TerranovaTerraNovaBookClientCopy.interactiveGoldenCompass[cs ? 'cs' : 'en']}
                   </p>
                 </div>
                 <div className="zion-badge-green">
                   <span className="h-2 w-2 rounded-full bg-emerald-300 animate-pulse" />
-                  {cs ? 'Navigace online' : 'Navigation online'}
+                  {TerranovaTerraNovaBookClientCopy.navigationOnline[cs ? 'cs' : 'en']}
                 </div>
               </div>
 
               <div className="mb-4 zion-rainbow-sub p-3 md:p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                    {cs ? 'Body kompasu L1 až L6' : 'L1 to L6 Compass Nodes'}
+                    {TerranovaTerraNovaBookClientCopy.l1ToL6CompassNodes[cs ? 'cs' : 'en']}
                   </p>
                   <p className="text-[10px] uppercase tracking-[0.24em]" style={{ color: selectedDirection?.color ?? '#FFD700' }}>
                     {selectedDirection ? `${selectedDirection.symbol} · ${cs ? selectedDirection.titleCs : selectedDirection.titleEn}` : ''}
@@ -1349,7 +1409,7 @@ export default function TerraNovaBookClient() {
                     {selectedDirection ? (
                       <>
                         <p className="text-[10px] uppercase tracking-[0.28em]" style={{ color: selectedDirection.color }}>
-                          {cs ? 'Zvolený směr' : 'Selected Direction'}
+                          {TerranovaTerraNovaBookClientCopy.selectedDirection[cs ? 'cs' : 'en']}
                         </p>
                         <h3 className="mt-2 text-lg font-semibold" style={{ color: selectedDirection.color }}>
                           {cs ? selectedDirection.titleCs : selectedDirection.titleEn}
@@ -1359,7 +1419,7 @@ export default function TerraNovaBookClient() {
                         </p>
                         <div className="mt-3 zion-rainbow-sub px-3 py-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                           <p className="text-[10px] uppercase tracking-[0.24em] text-gray-500">
-                            {cs ? 'Technický bod' : 'Technical Point'}
+                            {TerranovaTerraNovaBookClientCopy.technicalPoint[cs ? 'cs' : 'en']}
                           </p>
                           <p className="mt-1 text-sm leading-relaxed text-gray-300">
                             {cs ? selectedDirection.techCs : selectedDirection.techEn}
@@ -1367,7 +1427,7 @@ export default function TerraNovaBookClient() {
                         </div>
                         <div className="mt-3 zion-rainbow-sub px-3 py-2.5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                           <p className="text-[10px] uppercase tracking-[0.24em] text-gray-500">
-                            {cs ? 'Checklist fáze' : 'Phase Checklist'}
+                            {TerranovaTerraNovaBookClientCopy.phaseChecklist[cs ? 'cs' : 'en']}
                           </p>
                           <ul className="mt-2 space-y-1.5">
                             {(cs ? selectedDirection.checklistCs : selectedDirection.checklistEn).map((item) => (
@@ -1381,7 +1441,7 @@ export default function TerraNovaBookClient() {
                       </>
                     ) : (
                       <div className="h-full min-h-[136px] flex items-center justify-center text-center text-sm text-gray-500">
-                        {cs ? 'Klikni na směr v kompasu a otevři detail.' : 'Click a compass direction to open detail.'}
+                        {TerranovaTerraNovaBookClientCopy.clickACompassDirectionToOpenDe[cs ? 'cs' : 'en']}
                       </div>
                     )}
                   </div>
@@ -1389,16 +1449,14 @@ export default function TerraNovaBookClient() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-[10px] uppercase tracking-[0.28em] text-emerald-300/80">
-                          {cs ? 'Dharmachakra' : 'Dharmachakra'}
+                          {TerranovaTerraNovaBookClientCopy.dharmachakra[cs ? 'cs' : 'en']}
                         </p>
                         <h3 className="mt-2 text-lg font-semibold text-emerald-200">
-                          {cs ? 'Ušlechtilá osmidílná stezka' : 'The Noble Eightfold Path'}
+                          {TerranovaTerraNovaBookClientCopy.theNobleEightfoldPath[cs ? 'cs' : 'en']}
                         </h3>
                       </div>
                       <p className="max-w-xs text-xs leading-relaxed text-emerald-100/70">
-                        {cs
-                          ? 'Buddhovo kolo Dharmy jako druhá navigační vrstva Terra Novy: osm paprsků, jedno vědomé jádro.'
-                          : 'Buddha’s Wheel of Dharma as Terra Nova’s second navigation layer: eight spokes, one conscious core.'}
+                        {TerranovaTerraNovaBookClientCopy.buddhaSWheelOfDharmaAsTerraNov[cs ? 'cs' : 'en']}
                       </p>
                     </div>
                     <div className="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
@@ -1407,7 +1465,7 @@ export default function TerraNovaBookClient() {
                           viewBox="0 0 220 220"
                           className="h-auto w-full"
                           role="img"
-                          aria-label={cs ? 'Dharmachakra s osmi paprsky' : 'Dharmachakra with eight spokes'}
+                          aria-label={TerranovaTerraNovaBookClientCopy.dharmachakraWithEightSpokes[cs ? 'cs' : 'en']}
                           initial={{ opacity: 0, scale: 0.97 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ duration: 0.35, ease: 'easeOut' }}
@@ -1526,7 +1584,7 @@ export default function TerraNovaBookClient() {
                           />
                           <circle cx="110" cy="110" r="10" fill="rgba(254,240,138,0.92)" stroke="rgba(255,255,255,0.45)" strokeWidth="1" />
                           <text x="110" y="106" textAnchor="middle" className="fill-emerald-100 text-[10px] uppercase tracking-[0.28em]">
-                            {cs ? 'Dharma' : 'Dharma'}
+                            {TerranovaTerraNovaBookClientCopy.dharma[cs ? 'cs' : 'en']}
                           </text>
                           <text x="110" y="121" textAnchor="middle" className="fill-emerald-300 text-[8px] uppercase tracking-[0.22em]">
                             {dharmaSpoke + 1}/8
@@ -1545,7 +1603,7 @@ export default function TerraNovaBookClient() {
                             style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
                           >
                             <p className="text-[10px] uppercase tracking-[0.24em] text-emerald-300/70">
-                              {cs ? 'Aktivní paprsek' : 'Active spoke'}
+                              {TerranovaTerraNovaBookClientCopy.activeSpoke[cs ? 'cs' : 'en']}
                             </p>
                             <h4 className="mt-1 text-base font-semibold text-emerald-100">
                               {cs ? selectedDharmaSpoke.titleCs : selectedDharmaSpoke.titleEn}
@@ -1555,7 +1613,7 @@ export default function TerraNovaBookClient() {
                             </p>
                             <div className="mt-3 zion-rainbow-sub px-3 py-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                               <p className="text-[10px] uppercase tracking-[0.22em] text-gray-500">
-                                {cs ? 'ZION mapa' : 'ZION map'}
+                                {TerranovaTerraNovaBookClientCopy.zionMap[cs ? 'cs' : 'en']}
                               </p>
                               <p className="mt-1 text-sm text-emerald-100">
                                 {cs ? selectedDharmaSpoke.mapCs : selectedDharmaSpoke.mapEn}
@@ -1594,9 +1652,7 @@ export default function TerraNovaBookClient() {
                     </div>
                   </div>
                   <p className="text-[11px] leading-relaxed text-gray-500">
-                    {cs
-                      ? 'Každý bod kompasu je zároveň aktivní uzel roadmapy. Klikni na L1 až L6 nahoře nebo přímo do SVG.'
-                      : 'Each compass point is also an active roadmap node. Click L1 to L6 above or directly inside the SVG.'}
+                    {TerranovaTerraNovaBookClientCopy.eachCompassPointIsAlsoAnActive[cs ? 'cs' : 'en']}
                   </p>
                 </div>
               </div>
@@ -1624,7 +1680,7 @@ export default function TerraNovaBookClient() {
         >
           <div className="zion-badge-gold">
             <BookOpen className="h-4 w-4" />
-            {cs ? 'Čtvrtá kniha ZION' : 'Fourth Book of ZION'}
+            {TerranovaTerraNovaBookClientCopy.fourthBookOfZion[cs ? 'cs' : 'en']}
           </div>
 
           <h1 className="zion-page-heading text-gradient">
@@ -1657,7 +1713,7 @@ export default function TerraNovaBookClient() {
 
             <div className="border-t border-white/5 pt-5">
               <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-3">
-                {cs ? 'Kompoziční mapa' : 'Compositional Map'}
+                {TerranovaTerraNovaBookClientCopy.compositionalMap[cs ? 'cs' : 'en']}
               </p>
               <ol className="space-y-1.5 list-none pl-0">
                 {compositionLines.map((line: string, i: number) => (
@@ -1679,7 +1735,7 @@ export default function TerraNovaBookClient() {
           className="mb-16"
         >
           <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-5 text-center">
-            {cs ? 'Obsah' : 'Contents'}
+            {TerranovaTerraNovaBookClientCopy.contents[cs ? 'cs' : 'en']}
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {currentChapters.map((ch: typeof currentChapters[number], i: number) => {
@@ -1732,7 +1788,7 @@ export default function TerraNovaBookClient() {
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[10px] uppercase tracking-[0.28em] text-gray-500">
-                    {cs ? 'Čtecí režim' : 'Reading Mode'}
+                    {TerranovaTerraNovaBookClientCopy.readingMode[cs ? 'cs' : 'en']}
                   </p>
                   <p className="truncate text-sm font-semibold text-white">
                     {cs ? chapter.titleCs : chapter.titleEn}
@@ -1766,12 +1822,12 @@ export default function TerraNovaBookClient() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-[10px] uppercase tracking-[0.35em] text-gray-500">
-                    {cs ? 'Čtecí režim' : 'Reading Mode'}
+                    {TerranovaTerraNovaBookClientCopy.readingMode[cs ? 'cs' : 'en']}
                   </p>
                   <button
                     onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
                     className="rounded-lg border border-white/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 hover:border-zion-gold/40 hover:text-zion-gold transition-colors"
-                    title={lang === 'cs' ? 'Switch to English' : 'Přepnout do češtiny'}
+                    title={TerranovaTerraNovaBookClientCopy.pEpnoutDoETiny[lang === 'cs' ? 'cs' : 'en']}
                   >
                     {lang === 'cs' ? 'EN' : 'CS'}
                   </button>
@@ -1788,15 +1844,13 @@ export default function TerraNovaBookClient() {
                   />
                 </div>
                 <p className="text-[11px] leading-relaxed text-gray-400">
-                  {cs
-                    ? 'Každá kapitola drží jiný rytmus, ale stejnou disciplínu: realita, plán, horizont.'
-                    : 'Each chapter holds a different rhythm, but the same discipline: reality, plan, horizon.'}
+                  {TerranovaTerraNovaBookClientCopy.eachChapterHoldsADifferentRhyt[cs ? 'cs' : 'en']}
                 </p>
               </div>
 
               <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">
-                  {cs ? 'Aktivní kapitola' : 'Current Chapter'}
+                  {TerranovaTerraNovaBookClientCopy.currentChapter[cs ? 'cs' : 'en']}
                 </p>
                 <p className="text-sm font-semibold" style={{ color: chapter.color }}>
                   {cs ? chapter.titleCs : chapter.titleEn}
@@ -1809,8 +1863,8 @@ export default function TerraNovaBookClient() {
               </div>
 
               <div className="text-[11px] leading-relaxed text-gray-500 space-y-1">
-                <p>{cs ? 'Sipky vlevo/vpravo: další kapitoly' : 'Left/right arrows: next chapters'}</p>
-                <p>{cs ? 'Esc: zavřít obsah' : 'Esc: close contents'}</p>
+                <p>{TerranovaTerraNovaBookClientCopy.leftRightArrowsNextChapters[cs ? 'cs' : 'en']}</p>
+                <p>{TerranovaTerraNovaBookClientCopy.escCloseContents[cs ? 'cs' : 'en']}</p>
               </div>
             </div>
           </aside>
@@ -1924,7 +1978,7 @@ export default function TerraNovaBookClient() {
                   className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-gray-500 hover:text-white transition-colors"
                 >
                   <List className="w-4 h-4" />
-                  {cs ? 'Obsah' : 'Contents'}
+                  {TerranovaTerraNovaBookClientCopy.contents[cs ? 'cs' : 'en']}
                 </button>
 
                 <button
@@ -1953,9 +2007,7 @@ export default function TerraNovaBookClient() {
           className="mt-16 text-center space-y-4"
         >
           <p className="text-gray-500 text-sm italic max-w-xl mx-auto">
-            {cs
-              ? 'Mrtvé mapy bývají přesné jen na papíře. Živé mapy dokážou přežít i cestu.'
-              : 'Dead maps tend to be precise only on paper. Living maps can survive the journey.'}
+            {TerranovaTerraNovaBookClientCopy.deadMapsTendToBePreciseOnlyOnP[cs ? 'cs' : 'en']}
           </p>
           <div className="flex items-center justify-center">
             <Link
@@ -1963,7 +2015,7 @@ export default function TerraNovaBookClient() {
               className="zion-button-secondary"
             >
               <BookOpen className="w-4 h-4" />
-              {cs ? 'Dokumentace' : 'Documentation'}
+              {TerranovaTerraNovaBookClientCopy.documentation[cs ? 'cs' : 'en']}
             </Link>
           </div>
         </motion.footer>
@@ -2034,7 +2086,7 @@ export default function TerraNovaBookClient() {
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-sm font-semibold text-white uppercase tracking-[0.2em]">
-                  {cs ? 'Obsah' : 'Contents'}
+                  {TerranovaTerraNovaBookClientCopy.contents[cs ? 'cs' : 'en']}
                 </h3>
                 <button
                   onClick={() => setTocOpen(false)}
@@ -2102,16 +2154,12 @@ export default function TerraNovaBookClient() {
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/8 px-4 py-4 sm:px-6">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                    {cs ? 'Terra Nova overlay' : 'Terra Nova Overlay'}
+                    {TerranovaTerraNovaBookClientCopy.terraNovaOverlay[cs ? 'cs' : 'en']}
                   </p>
                   <h3 className="mt-1 text-lg font-semibold text-white">
                     {overlayMode === 'genesis'
-                      ? cs
-                        ? 'Genesis panel uvnitř Terra Novy'
-                        : 'Genesis Panel Inside Terra Nova'
-                      : cs
-                        ? 'Visual Zion CLI panel'
-                        : 'Visual ZION CLI Panel'}
+                      ? TerranovaTerraNovaBookClientCopy.genesisPanelInsideTerraNova[cs ? 'cs' : 'en']
+                      : TerranovaTerraNovaBookClientCopy.visualZionCliPanel[cs ? 'cs' : 'en']}
                   </h3>
                 </div>
 
@@ -2175,18 +2223,18 @@ export default function TerraNovaBookClient() {
                       {/* ── Premine Genesis ── */}
                       <div className="mt-5 zion-rainbow-sub px-4 py-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                         <p className="mb-3 text-[10px] uppercase tracking-[0.32em] text-zion-gold/70">
-                          {cs ? 'Genesis premine · 16 280 000 000 ZION' : 'Genesis Premine · 16,280,000,000 ZION'}
+                          {TerranovaTerraNovaBookClientCopy.genesisPremine16280000000Zion[cs ? 'cs' : 'en']}
                         </p>
                         <div className="space-y-1.5 font-mono text-[10px] text-gray-400">
                           <div className="flex justify-between gap-2"><span className="text-gray-500">OASIS Golden Egg ×5</span><span className="text-zion-gold/80">8.25B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'DAO Pokladna' : 'DAO Treasury'} ×3</span><span className="text-zion-gold/80">4.00B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'Infrastruktura + Vývoj' : 'Infrastructure + Dev'} ×2</span><span className="text-zion-gold/80">2.00B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'Genesis Projects (Dharma Temple, Piko de Ora + DAO)' : 'Genesis Projects (Dharma Temple, Piko de Ora + DAO)'}</span><span className="text-zion-gold/80">0.59B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'Humanitární DAO' : 'Humanitarian DAO'}</span><span className="text-zion-gold/80">1.44B ZION</span></div>
-                          <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2"><span className="text-gray-400 font-semibold">{cs ? 'Celkem genesis' : 'Total genesis'}</span><span className="text-zion-gold font-bold">16.28B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">{TerranovaTerraNovaBookClientCopy.daoTreasury[cs ? 'cs' : 'en']} ×3</span><span className="text-zion-gold/80">4.00B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">{TerranovaTerraNovaBookClientCopy.infrastructureDev[cs ? 'cs' : 'en']} ×2</span><span className="text-zion-gold/80">2.00B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">{TerranovaTerraNovaBookClientCopy.genesisProjectsDharmaTemplePik[cs ? 'cs' : 'en']}</span><span className="text-zion-gold/80">0.59B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">{TerranovaTerraNovaBookClientCopy.humanitarianDao[cs ? 'cs' : 'en']}</span><span className="text-zion-gold/80">1.44B ZION</span></div>
+                          <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2"><span className="text-gray-400 font-semibold">{TerranovaTerraNovaBookClientCopy.totalGenesis[cs ? 'cs' : 'en']}</span><span className="text-zion-gold font-bold">16.28B ZION</span></div>
                         </div>
                         <p className="mt-3 text-[9px] uppercase tracking-[0.24em] text-gray-600">
-                          {cs ? 'Split bloků: 89% miner · 5% humanitární · 5% Issobella · 1% pool' : 'Block split: 89% miner · 5% humanitarian · 5% Issobella · 1% pool'}
+                          {TerranovaTerraNovaBookClientCopy.blockSplit89Miner5Humanitarian[cs ? 'cs' : 'en']}
                         </p>
                       </div>
                     </div>
@@ -2194,7 +2242,7 @@ export default function TerraNovaBookClient() {
                     <div className="space-y-4">
                       <div className="zion-rainbow-sub p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                         <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                          {cs ? 'Proč je to tady' : 'Why It Lives Here'}
+                          {TerranovaTerraNovaBookClientCopy.whyItLivesHere[cs ? 'cs' : 'en']}
                         </p>
                         <div className="mt-4 space-y-3 text-sm leading-relaxed text-gray-300">
                           {genesisOverlayLines.map((line) => (
@@ -2209,7 +2257,7 @@ export default function TerraNovaBookClient() {
                         onClick={() => setOverlayMode(null)}
                       >
                         <BookOpen className="h-4 w-4" />
-                        {cs ? 'Přejít na plnou Genesis stránku' : 'Open Full Genesis Page'}
+                        {TerranovaTerraNovaBookClientCopy.openFullGenesisPage[cs ? 'cs' : 'en']}
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </div>
@@ -2225,7 +2273,7 @@ export default function TerraNovaBookClient() {
                         </div>
                         <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-zion-cyan/70">
                           <Terminal className="h-3.5 w-3.5" />
-                          {cs ? 'Visual Zion CLI' : 'Visual ZION CLI'}
+                          {TerranovaTerraNovaBookClientCopy.visualZionCli[cs ? 'cs' : 'en']}
                         </div>
                       </div>
                       <div className="space-y-3 p-4 font-mono text-[12px] text-gray-200">
@@ -2243,7 +2291,7 @@ export default function TerraNovaBookClient() {
 
                         <div className="zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                           <p className="text-[10px] uppercase tracking-[0.3em] text-zion-cyan/75">
-                            {cs ? 'Ruční příkazy' : 'Manual Commands'}
+                            {TerranovaTerraNovaBookClientCopy.manualCommands[cs ? 'cs' : 'en']}
                           </p>
                           <div className="mt-3 space-y-2 text-gray-300">
                             {CLI_PRESET.map((line) => (
@@ -2260,7 +2308,7 @@ export default function TerraNovaBookClient() {
                     <div className="space-y-4">
                       <div className="zion-rainbow-sub p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                         <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                          {cs ? 'Proč je to tady' : 'Why It Lives Here'}
+                          {TerranovaTerraNovaBookClientCopy.whyItLivesHere[cs ? 'cs' : 'en']}
                         </p>
                         <div className="mt-4 space-y-3 text-sm leading-relaxed text-gray-300">
                           {cliOverlayLines.map((line) => (
@@ -2272,15 +2320,15 @@ export default function TerraNovaBookClient() {
                       {/* ── Premine tabulka ── */}
                       <div className="zion-rainbow-sub p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                         <p className="text-[10px] uppercase tracking-[0.3em] text-zion-cyan/70">
-                          {cs ? 'Genesis Premine · 16.28B ZION' : 'Genesis Premine · 16.28B ZION'}
+                          {TerranovaTerraNovaBookClientCopy.genesisPremine1628bZion[cs ? 'cs' : 'en']}
                         </p>
                         <div className="mt-3 space-y-1.5 font-mono text-[10px]">
                           {[
-                            { label: cs ? 'OASIS Golden Egg ×5' : 'OASIS Golden Egg ×5', amount: '8.25B' },
-                            { label: cs ? 'DAO Pokladna ×3' : 'DAO Treasury ×3', amount: '4.00B' },
-                            { label: cs ? 'Infrastruktura + Vývoj ×2' : 'Infrastructure + Dev ×2', amount: '2.00B' },
-                            { label: cs ? 'Humanitární DAO' : 'Humanitarian DAO', amount: '1.44B' },
-                            { label: cs ? 'Genesis Projects (Dharma Temple, Piko de Ora + DAO)' : 'Genesis Projects (Dharma Temple, Piko de Ora + DAO)', amount: '0.59B' },
+                            { label: TerranovaTerraNovaBookClientCopy.oasisGoldenEgg5[cs ? 'cs' : 'en'], amount: '8.25B' },
+                            { label: TerranovaTerraNovaBookClientCopy.daoTreasury3[cs ? 'cs' : 'en'], amount: '4.00B' },
+                            { label: TerranovaTerraNovaBookClientCopy.infrastructureDev2[cs ? 'cs' : 'en'], amount: '2.00B' },
+                            { label: TerranovaTerraNovaBookClientCopy.humanitarianDao[cs ? 'cs' : 'en'], amount: '1.44B' },
+                            { label: TerranovaTerraNovaBookClientCopy.genesisProjectsDharmaTemplePik[cs ? 'cs' : 'en'], amount: '0.59B' },
                           ].map(({ label, amount }) => (
                             <div key={label} className="flex items-center justify-between gap-2">
                               <span className="flex items-center gap-1.5 text-gray-500">
@@ -2291,13 +2339,13 @@ export default function TerraNovaBookClient() {
                             </div>
                           ))}
                           <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2">
-                            <span className="text-gray-400 font-semibold">{cs ? 'Celkem' : 'Total'}</span>
+                            <span className="text-gray-400 font-semibold">{TerranovaTerraNovaBookClientCopy.total[cs ? 'cs' : 'en']}</span>
                             <span className="text-zion-cyan font-bold tabular-nums">16.28B ZION</span>
                           </div>
                         </div>
                         <div className="mt-3 zion-rainbow-sub px-3 py-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                           <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-gray-600">
-                            {cs ? 'split/blok: 89% miner · 5% humanitární · 5% issobella · 1% pool' : 'per-block split: 89% miner · 5% humanitarian · 5% issobella · 1% pool'}
+                            {TerranovaTerraNovaBookClientCopy.perBlockSplit89Miner5Humanitar[cs ? 'cs' : 'en']}
                           </p>
                         </div>
                       </div>
@@ -2310,7 +2358,7 @@ export default function TerraNovaBookClient() {
                         className="zion-button-secondary"
                       >
                         <List className="h-4 w-4" />
-                        {cs ? 'Přejít do obsahu Terra Novy' : 'Open Terra Nova Contents'}
+                        {TerranovaTerraNovaBookClientCopy.openTerraNovaContents[cs ? 'cs' : 'en']}
                       </button>
 
                       <Link
@@ -2319,7 +2367,7 @@ export default function TerraNovaBookClient() {
                         onClick={() => setOverlayMode(null)}
                       >
                         <Terminal className="h-4 w-4" />
-                        {cs ? 'Real ZION CLI dokumentace' : 'Real ZION CLI Docs'}
+                        {TerranovaTerraNovaBookClientCopy.realZionCliDocs[cs ? 'cs' : 'en']}
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </div>
@@ -2342,7 +2390,7 @@ export default function TerraNovaBookClient() {
             className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-200 shadow-[0_10px_35px_rgba(0,0,0,0.35)] backdrop-blur-lg transition-colors hover:bg-black/80"
           >
             <ChevronLeft className="h-3.5 w-3.5 rotate-90" />
-            {cs ? 'Nahoru' : 'Top'}
+            {TerranovaTerraNovaBookClientCopy.top[cs ? 'cs' : 'en']}
           </motion.button>
         )}
       </AnimatePresence>

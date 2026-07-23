@@ -5,6 +5,12 @@ import { useLang } from '@/contexts/LanguageContext';
 import HiranyagarbhaChat from '@/components/HiranyagarbhaChat';
 import MarketplacePlaceholder from '@/components/MarketplacePlaceholder';
 
+const AiNativeCopy = {
+  liveChat: { cs: `Živý Chat`, en: `Live Chat` },
+  askHiranyagarbha: { cs: `Zeptejte se Hiranyagarbhy`, en: `Ask Hiranyagarbha` },
+  liveAiModelTrainedOnTheComplet: { cs: `Živý AI model trénovaný na kompletním ZION kódu a dokumentaci. Běží na GPU v reálném čase.`, en: `Live AI model trained on the complete ZION codebase and documentation. Running on GPU in real-time.` },
+};
+
 export default function AINativePage() {
   const { lang } = useLang();
   const consciousnessLevels = [
@@ -59,16 +65,14 @@ export default function AINativePage() {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zion-cyan/20 border border-zion-cyan/30 mb-4">
               <MessageCircle className="w-4 h-4 text-zion-cyan" />
               <span className="text-sm font-medium text-zion-cyan">
-                {lang === 'cs' ? 'Živý Chat' : 'Live Chat'}
+                {AiNativeCopy.liveChat[lang === 'cs' ? 'cs' : 'en']}
               </span>
             </div>
             <h2 className="text-3xl font-bold bg-gradient-to-r from-zion-purple via-zion-cyan to-zion-gold bg-clip-text text-transparent mb-3">
-              {lang === 'cs' ? 'Zeptejte se Hiranyagarbhy' : 'Ask Hiranyagarbha'}
+              {AiNativeCopy.askHiranyagarbha[lang === 'cs' ? 'cs' : 'en']}
             </h2>
             <p className="text-gray-400 max-w-xl mx-auto">
-              {lang === 'cs'
-                ? 'Živý AI model trénovaný na kompletním ZION kódu a dokumentaci. Běží na GPU v reálném čase.'
-                : 'Live AI model trained on the complete ZION codebase and documentation. Running on GPU in real-time.'}
+              {AiNativeCopy.liveAiModelTrainedOnTheComplet[lang === 'cs' ? 'cs' : 'en']}
             </p>
           </div>
           <HiranyagarbhaChat lang={lang} />

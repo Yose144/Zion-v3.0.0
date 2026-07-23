@@ -8,6 +8,16 @@ import { apiClient } from "@/lib/api";
 import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
 
+const MempoolFeedCopy = {
+  mempoolUnavailable: { cs: `Mempool není dostupný`, en: `Mempool unavailable` },
+  live: { cs: `Živě`, en: `Live` },
+  k15sRefresh: { cs: `obnova po 15 s`, en: `15s refresh` },
+  pending: { cs: `Čekající`, en: `Pending` },
+  poolSize: { cs: `Velikost poolu`, en: `Pool Size` },
+  fees: { cs: `Poplatky`, en: `Fees` },
+  mempoolIsEmptyAllTransactionsC: { cs: `Mempool je prázdný, všechny transakce jsou potvrzené ✓`, en: `Mempool is empty — all transactions confirmed ✓` },
+};
+
 interface MempoolTx {
   tx_hash: string;
   size: number;
@@ -66,7 +76,7 @@ export default function MempoolFeed() {
       setError(null);
     } catch (err) {
       console.error("Failed to fetch mempool:", err);
-      setError(cs ? "Mempool není dostupný" : "Mempool unavailable");
+      setError(MempoolFeedCopy.mempoolUnavailable[cs ? 'cs' : 'en']);
     } finally {
       setLoading(false);
     }
@@ -89,7 +99,7 @@ export default function MempoolFeed() {
         >
           <Flame className="h-5 w-5 text-orange-400 group-hover:text-orange-300 transition-colors" />
           <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{cs ? "Živě" : "Live"}</p>
+            <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{MempoolFeedCopy.live[cs ? 'cs' : 'en']}</p>
             <h3 className="text-lg font-semibold text-white group-hover:text-amber-300 transition-colors">Mempool →</h3>
           </div>
         </Link>
@@ -99,24 +109,24 @@ export default function MempoolFeed() {
             transition={{ duration: 2, repeat: Infinity }}
             className="inline-flex h-2 w-2 rounded-full bg-emerald-400"
           />
-          <span className="text-xs text-gray-500">{cs ? "obnova po 15 s" : "15s refresh"}</span>
+          <span className="text-xs text-gray-500">{MempoolFeedCopy.k15sRefresh[cs ? 'cs' : 'en']}</span>
         </div>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-          <p className="text-xs text-gray-400">{cs ? "Čekající" : "Pending"}</p>
+          <p className="text-xs text-gray-400">{MempoolFeedCopy.pending[cs ? 'cs' : 'en']}</p>
           <p className="text-xl font-bold text-white">{data?.count ?? 0}</p>
         </div>
         <div className="zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-          <p className="text-xs text-gray-400">{cs ? "Velikost poolu" : "Pool Size"}</p>
+          <p className="text-xs text-gray-400">{MempoolFeedCopy.poolSize[cs ? 'cs' : 'en']}</p>
           <p className="text-xl font-bold text-cyan-400">
             {formatBytes(data?.pool_size_bytes ?? 0)}
           </p>
         </div>
         <div className="zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-          <p className="text-xs text-gray-400">{cs ? "Poplatky" : "Fees"}</p>
+          <p className="text-xs text-gray-400">{MempoolFeedCopy.fees[cs ? 'cs' : 'en']}</p>
           <p className="text-xl font-bold text-yellow-400">
             {(data?.total_fees ?? 0).toFixed(4)}
           </p>
@@ -135,7 +145,7 @@ export default function MempoolFeed() {
         )}
         {data && data.transactions.length === 0 && (
           <p className="text-center text-sm text-gray-500 py-4">
-            {cs ? "Mempool je prázdný, všechny transakce jsou potvrzené ✓" : "Mempool is empty — all transactions confirmed ✓"}
+            {MempoolFeedCopy.mempoolIsEmptyAllTransactionsC[cs ? 'cs' : 'en']}
           </p>
         )}
         {data?.transactions.slice(0, 12).map((tx, i) => (

@@ -22,6 +22,43 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const TerranovaTePikoOraCopy = {
+  home: { cs: `Domů`, en: `Home` },
+  planned2027: { cs: `Plánováno 2027+`, en: `Planned 2027+` },
+  livingCentrePolynesiaTerraNova: { cs: `Živý střed · Polynésie · Terra Nova ®`, en: `Living Centre · Polynesia · Terra Nova ®` },
+  ioranaHereIsTheSandHereIsTheSe: { cs: `"Iorana. Zde je písek, zde je moře, zde je skála. Zde končí mapa. A zde začíná pravda."`, en: `"Iorana. Here is the sand, here is the sea, here is the rock. Here the map ends. And here truth begins."` },
+  frenchPolynesiaCrownOfThePacif: { cs: `Francouzská Polynésie — Koruna Pacifiku`, en: `French Polynesia — Crown of the Pacific` },
+  fiveArchipelagos118Islands4Mil: { cs: `Pět souostroví, 118 ostrovů, 4 miliony km² oceánu. Polynézští navigátoři překonali Pacifik v kánoe bez kompasu — čtením hvězd, vln, větru a letícího ptactva. Tento wayfinding je nejstarší distribuovaný konsensus v dějinách lidstva.`, en: `Five archipelagos, 118 islands, 4 million km² of ocean. Polynesian navigators crossed the Pacific in canoes without a compass — reading stars, waves, wind and flying birds. This wayfinding is the oldest distributed consensus in human history.` },
+  raiateaIsTheSacredHeartOfPolyn: { cs: `Raiatea je posvátné srdce Polynésie — místo, odkud se říká, že vypluli první osadníci na Havaj, Nový Zéland a Velikonoční ostrov. Marae Taputapuātea je UNESCO světové dědictví. Laguna je jednou z největších ve Francouzské Polynésii.`, en: `Raiatea is the sacred heart of Polynesia — the place from which the first settlers are said to have sailed to Hawaii, New Zealand and Easter Island. Marae Taputapuātea is a UNESCO World Heritage Site. The lagoon is one of the largest in French Polynesia.` },
+  islands: { cs: `Ostrovů`, en: `Islands` },
+  ocean: { cs: `Oceán`, en: `Ocean` },
+  culture: { cs: `Kultura`, en: `Culture` },
+  polynesia: { cs: `Polynésie`, en: `Polynesia` },
+  inspiration: { cs: `Inspirace`, en: `Inspiration` },
+  polynesianModelZion: { cs: `Polynéský model & ZION`, en: `Polynesian Model & ZION` },
+  principle: { cs: `Princip`, en: `Principle` },
+  projectConcept: { cs: `Koncept projektu`, en: `Project Concept` },
+  activitiesVision: { cs: `Aktivity & Vize`, en: `Activities & Vision` },
+  rapaNuiLessonsWayfindingSchool: { cs: `Rapa Nui lekce — wayfinding škola`, en: `Rapa Nui Lessons — wayfinding school` },
+  tePKoOraExplicitlyTeachesThese: { cs: `Te Pīko Ora explicitně učí tyto lekce jako součást kurikula.`, en: `Te Pīko Ora explicitly teaches these lessons as part of the curriculum.` },
+  twoFacesOfOneWaveTePKoOraCrown: { cs: `Dvě tváře jedné vlny: Te Pīko Ora (koruna, hojnost) + Rapa Nui (kořen, varování). Obojí potřebujeme.`, en: `Two faces of one wave: Te Pīko Ora (crown, abundance) + Rapa Nui (root, warning). We need both.` },
+  developmentPhases: { cs: `Fáze rozvoje`, en: `Development Phases` },
+  fromVisionToReality: { cs: `Od vize k realitě`, en: `From Vision to Reality` },
+  exploringNow: { cs: `Právě hledáme`, en: `Exploring now` },
+  blockchainIntegration: { cs: `Blockchain integrace`, en: `Blockchain Integration` },
+  active: { cs: `Aktivní`, en: `Active` },
+  planned: { cs: `Plánováno`, en: `Planned` },
+  openQuestionsLookingForGuardia: { cs: `Otevřené otázky — hledáme Guardians`, en: `Open Questions — looking for Guardians` },
+  specificLocationRaiateaTahitiA: { cs: `Konkrétní lokace (Raiatea / Tahiti / jiný ostrov?)`, en: `Specific location (Raiatea / Tahiti / another island?)` },
+  polynesianPartnersLocalCommuni: { cs: `Polynézští partneři — místní komunity, marae správci, navigátoři`, en: `Polynesian partners — local communities, marae stewards, navigators` },
+  foundingGuardiansWithKnowledge: { cs: `Zakládající Guardians se znalostí oceánské kultury a zemědělství`, en: `Founding Guardians with knowledge of ocean culture and farming` },
+  legalFormInFrenchPolynesiaAsso: { cs: `Právní forma ve Francouzské Polynésii (asociace / SAS / komunitní nadace?)`, en: `Legal form in French Polynesia (association / SAS / community foundation?)` },
+  phase0FinancingZionFundHumanit: { cs: `Financování fáze 0 (ZION fond? Humanitární grant? Vlastní zdroje?)`, en: `Phase 0 financing (ZION fund? Humanitarian grant? Own resources?)` },
+  doYouHearTheCallOfThePacificAr: { cs: `Slyšíš volání Pacifiku? Jsi Guardian, který chce stavět na okraji světa?`, en: `Do you hear the call of the Pacific? Are you a Guardian who wants to build at the edge of the world?` },
+  joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
+  terraNova: { cs: `Terra Nova`, en: `Terra Nova` },
+};
+
 type FeatureItem = {
   icon: LucideIcon;
   titleCs: string;
@@ -219,7 +256,7 @@ export default function TePikoOraPage() {
             className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>{cs ? 'Domů' : 'Home'}</span>
+            <span>{TerranovaTePikoOraCopy.home[cs ? 'cs' : 'en']}</span>
           </Link>
           <span className="text-gray-700">|</span>
           <Link
@@ -252,7 +289,7 @@ export default function TePikoOraPage() {
                     L5 · Terra Nova Pioneer
                   </span>
                   <span className="zion-badge-gold">
-                    📋 {cs ? 'Plánováno 2027+' : 'Planned 2027+'}
+                    📋 {TerranovaTePikoOraCopy.planned2027[cs ? 'cs' : 'en']}
                   </span>
                 </div>
 
@@ -260,7 +297,7 @@ export default function TePikoOraPage() {
                   Te Pīko Ora
                 </h1>
                 <p className="text-lg text-zion-cyan font-medium">
-                  {cs ? 'Živý střed · Polynésie · Terra Nova ®' : 'Living Centre · Polynesia · Terra Nova ®'}
+                  {TerranovaTePikoOraCopy.livingCentrePolynesiaTerraNova[cs ? 'cs' : 'en']}
                 </p>
 
                 <div className="flex items-center gap-1.5 text-gray-400">
@@ -269,9 +306,7 @@ export default function TePikoOraPage() {
                 </div>
 
                 <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-gray-400 italic leading-relaxed max-w-lg">
-                  {cs
-                    ? '"Iorana. Zde je písek, zde je moře, zde je skála. Zde končí mapa. A zde začíná pravda."'
-                    : '"Iorana. Here is the sand, here is the sea, here is the rock. Here the map ends. And here truth begins."'}
+                  {TerranovaTePikoOraCopy.ioranaHereIsTheSandHereIsTheSe[cs ? 'cs' : 'en']}
                 </blockquote>
 
                 <div className="grid gap-3 pt-3 sm:grid-cols-3">
@@ -306,25 +341,21 @@ export default function TePikoOraPage() {
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-lg font-bold text-zion-gold">
-                  {cs ? 'Francouzská Polynésie — Koruna Pacifiku' : 'French Polynesia — Crown of the Pacific'}
+                  {TerranovaTePikoOraCopy.frenchPolynesiaCrownOfThePacif[cs ? 'cs' : 'en']}
                 </h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  {cs
-                    ? 'Pět souostroví, 118 ostrovů, 4 miliony km² oceánu. Polynézští navigátoři překonali Pacifik v kánoe bez kompasu — čtením hvězd, vln, větru a letícího ptactva. Tento wayfinding je nejstarší distribuovaný konsensus v dějinách lidstva.'
-                    : 'Five archipelagos, 118 islands, 4 million km² of ocean. Polynesian navigators crossed the Pacific in canoes without a compass — reading stars, waves, wind and flying birds. This wayfinding is the oldest distributed consensus in human history.'}
+                  {TerranovaTePikoOraCopy.fiveArchipelagos118Islands4Mil[cs ? 'cs' : 'en']}
                 </p>
                 <p className="text-gray-500 text-sm leading-relaxed">
-                  {cs
-                    ? 'Raiatea je posvátné srdce Polynésie — místo, odkud se říká, že vypluli první osadníci na Havaj, Nový Zéland a Velikonoční ostrov. Marae Taputapuātea je UNESCO světové dědictví. Laguna je jednou z největších ve Francouzské Polynésii.'
-                    : 'Raiatea is the sacred heart of Polynesia — the place from which the first settlers are said to have sailed to Hawaii, New Zealand and Easter Island. Marae Taputapuātea is a UNESCO World Heritage Site. The lagoon is one of the largest in French Polynesia.'}
+                  {TerranovaTePikoOraCopy.raiateaIsTheSacredHeartOfPolyn[cs ? 'cs' : 'en']}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3 content-start">
                 {[
                   { label: 'UNESCO', val: 'Marae Taputapuātea' },
-                  { label: cs ? 'Ostrovů' : 'Islands', val: '118' },
-                  { label: cs ? 'Oceán' : 'Ocean', val: '4M km²' },
-                  { label: cs ? 'Kultura' : 'Culture', val: cs ? 'Polynésie' : 'Polynesia' },
+                  { label: TerranovaTePikoOraCopy.islands[cs ? 'cs' : 'en'], val: '118' },
+                  { label: TerranovaTePikoOraCopy.ocean[cs ? 'cs' : 'en'], val: '4M km²' },
+                  { label: TerranovaTePikoOraCopy.culture[cs ? 'cs' : 'en'], val: TerranovaTePikoOraCopy.polynesia[cs ? 'cs' : 'en'] },
                 ].map((s) => (
                   <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                     <p className="text-gray-300 font-bold text-xs">{s.val}</p>
@@ -345,17 +376,17 @@ export default function TePikoOraPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Inspirace' : 'Inspiration'}
+              {TerranovaTePikoOraCopy.inspiration[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Polynéský model & ZION' : 'Polynesian Model & ZION'}
+              {TerranovaTePikoOraCopy.polynesianModelZion[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
-              <div className="p-3 text-gray-500">{cs ? 'Polynésie' : 'Polynesia'}</div>
-              <div className="p-3 text-gray-300 sm:border-l border-white/10">{cs ? 'Princip' : 'Principle'}</div>
+              <div className="p-3 text-gray-500">{TerranovaTePikoOraCopy.polynesia[cs ? 'cs' : 'en']}</div>
+              <div className="p-3 text-gray-300 sm:border-l border-white/10">{TerranovaTePikoOraCopy.principle[cs ? 'cs' : 'en']}</div>
               <div className="p-3 text-gray-300 sm:border-l border-white/10">ZION</div>
             </div>
             {[
@@ -398,10 +429,10 @@ export default function TePikoOraPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Koncept projektu' : 'Project Concept'}
+              {TerranovaTePikoOraCopy.projectConcept[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Aktivity & Vize' : 'Activities & Vision'}
+              {TerranovaTePikoOraCopy.activitiesVision[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -458,12 +489,10 @@ export default function TePikoOraPage() {
                 <span className="text-2xl">🗿</span>
                 <div>
                   <h3 className="text-lg font-bold text-zion-gold">
-                    {cs ? 'Rapa Nui lekce — wayfinding škola' : 'Rapa Nui Lessons — wayfinding school'}
+                    {TerranovaTePikoOraCopy.rapaNuiLessonsWayfindingSchool[cs ? 'cs' : 'en']}
                   </h3>
                   <p className="text-gray-500 text-xs">
-                    {cs
-                      ? 'Te Pīko Ora explicitně učí tyto lekce jako součást kurikula.'
-                      : 'Te Pīko Ora explicitly teaches these lessons as part of the curriculum.'}
+                    {TerranovaTePikoOraCopy.tePKoOraExplicitlyTeachesThese[cs ? 'cs' : 'en']}
                   </p>
                 </div>
               </div>
@@ -476,9 +505,7 @@ export default function TePikoOraPage() {
                 ))}
               </ul>
               <p className="text-gray-600 text-xs pt-2">
-                {cs
-                  ? 'Dvě tváře jedné vlny: Te Pīko Ora (koruna, hojnost) + Rapa Nui (kořen, varování). Obojí potřebujeme.'
-                  : 'Two faces of one wave: Te Pīko Ora (crown, abundance) + Rapa Nui (root, warning). We need both.'}
+                {TerranovaTePikoOraCopy.twoFacesOfOneWaveTePKoOraCrown[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -493,10 +520,10 @@ export default function TePikoOraPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Fáze rozvoje' : 'Development Phases'}
+              {TerranovaTePikoOraCopy.developmentPhases[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Od vize k realitě' : 'From Vision to Reality'}
+              {TerranovaTePikoOraCopy.fromVisionToReality[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -537,7 +564,7 @@ export default function TePikoOraPage() {
                       </span>
                       {p.active && (
                         <span className="text-cyan-400 text-xs animate-pulse">
-                          ⚡ {cs ? 'Právě hledáme' : 'Exploring now'}
+                          ⚡ {TerranovaTePikoOraCopy.exploringNow[cs ? 'cs' : 'en']}
                         </span>
                       )}
                     </div>
@@ -558,7 +585,7 @@ export default function TePikoOraPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Blockchain integrace' : 'Blockchain Integration'}
+              {TerranovaTePikoOraCopy.blockchainIntegration[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
@@ -577,9 +604,9 @@ export default function TePikoOraPage() {
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
                     <p className="text-[10px] text-gray-600 capitalize">
                       {item.status === 'active'
-                        ? cs ? 'Aktivní' : 'Active'
+                        ? TerranovaTePikoOraCopy.active[cs ? 'cs' : 'en']
                         : item.status === 'planned'
-                        ? cs ? 'Plánováno' : 'Planned'
+                        ? TerranovaTePikoOraCopy.planned[cs ? 'cs' : 'en']
                         : 'TBD'}
                     </p>
                   </div>
@@ -598,15 +625,15 @@ export default function TePikoOraPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
-              {cs ? 'Otevřené otázky — hledáme Guardians' : 'Open Questions — looking for Guardians'}
+              {TerranovaTePikoOraCopy.openQuestionsLookingForGuardia[cs ? 'cs' : 'en']}
             </h3>
             <ul className="space-y-2">
               {[
-                cs ? 'Konkrétní lokace (Raiatea / Tahiti / jiný ostrov?)' : 'Specific location (Raiatea / Tahiti / another island?)',
-                cs ? 'Polynézští partneři — místní komunity, marae správci, navigátoři' : 'Polynesian partners — local communities, marae stewards, navigators',
-                cs ? 'Zakládající Guardians se znalostí oceánské kultury a zemědělství' : 'Founding Guardians with knowledge of ocean culture and farming',
-                cs ? 'Právní forma ve Francouzské Polynésii (asociace / SAS / komunitní nadace?)' : 'Legal form in French Polynesia (association / SAS / community foundation?)',
-                cs ? 'Financování fáze 0 (ZION fond? Humanitární grant? Vlastní zdroje?)' : 'Phase 0 financing (ZION fund? Humanitarian grant? Own resources?)',
+                TerranovaTePikoOraCopy.specificLocationRaiateaTahitiA[cs ? 'cs' : 'en'],
+                TerranovaTePikoOraCopy.polynesianPartnersLocalCommuni[cs ? 'cs' : 'en'],
+                TerranovaTePikoOraCopy.foundingGuardiansWithKnowledge[cs ? 'cs' : 'en'],
+                TerranovaTePikoOraCopy.legalFormInFrenchPolynesiaAsso[cs ? 'cs' : 'en'],
+                TerranovaTePikoOraCopy.phase0FinancingZionFundHumanit[cs ? 'cs' : 'en'],
               ].map((q, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-400">
                   <span className="text-zion-gold shrink-0 mt-0.5">◇</span>
@@ -615,9 +642,7 @@ export default function TePikoOraPage() {
               ))}
             </ul>
             <p className="text-gray-600 text-xs pt-2">
-              {cs
-                ? 'Slyšíš volání Pacifiku? Jsi Guardian, který chce stavět na okraji světa?'
-                : 'Do you hear the call of the Pacific? Are you a Guardian who wants to build at the edge of the world?'}
+              {TerranovaTePikoOraCopy.doYouHearTheCallOfThePacificAr[cs ? 'cs' : 'en']}
             </p>
             <a
               href="https://discord.gg/eatGYDbd"
@@ -626,7 +651,7 @@ export default function TePikoOraPage() {
               className="zion-button-secondary"
             >
               <Users className="w-4 h-4" />
-              {cs ? 'Připojit se na Discord' : 'Join Discord'}
+              {TerranovaTePikoOraCopy.joinDiscord[cs ? 'cs' : 'en']}
             </a>
           </div>
         </motion.section>
@@ -651,14 +676,14 @@ export default function TePikoOraPage() {
               className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>{cs ? 'Domů' : 'Home'}</span>
+              <span>{TerranovaTePikoOraCopy.home[cs ? 'cs' : 'en']}</span>
             </Link>
             <span className="text-gray-700">|</span>
             <Link
               href="/terranova"
               className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
             >
-              <span>{cs ? 'Terra Nova' : 'Terra Nova'}</span>
+              <span>{TerranovaTePikoOraCopy.terraNova[cs ? 'cs' : 'en']}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

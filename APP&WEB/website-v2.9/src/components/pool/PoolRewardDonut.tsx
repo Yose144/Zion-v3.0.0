@@ -2,6 +2,12 @@
 
 import { Pickaxe, Heart, Building2, Droplets } from 'lucide-react';
 
+const PoolRewardDonutCopy = {
+  economics: { cs: `Ekonomika`, en: `Economics` },
+  blockRewardDistribution: { cs: `Rozdělení odměny za blok`, en: `Block Reward Distribution` },
+  split: { cs: `ROZDĚLENÍ`, en: `SPLIT` },
+};
+
 interface RewardSlice {
   label: string;
   labelCs: string;
@@ -75,10 +81,10 @@ export default function PoolRewardDonut({ cs, minerShare, humanitarianTithe, iss
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Ekonomika' : 'Economics'}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolRewardDonutCopy.economics[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Heart className="h-7 w-7 text-zion-gold" />
-          {cs ? 'Rozdělení odměny za blok' : 'Block Reward Distribution'}
+          {PoolRewardDonutCopy.blockRewardDistribution[cs ? 'cs' : 'en']}
         </h2>
         <p className="text-sm text-gray-400">
           {cs
@@ -105,7 +111,7 @@ export default function PoolRewardDonut({ cs, minerShare, humanitarianTithe, iss
               100%
             </text>
             <text x={CX} y={CY + 8} textAnchor="middle" fill="#9ca3af" fontSize="6" fontFamily="monospace">
-              {cs ? 'ROZDĚLENÍ' : 'SPLIT'}
+              {PoolRewardDonutCopy.split[cs ? 'cs' : 'en']}
             </text>
           </svg>
         </div>

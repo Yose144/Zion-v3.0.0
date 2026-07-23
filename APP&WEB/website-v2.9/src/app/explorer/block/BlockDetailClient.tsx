@@ -21,6 +21,47 @@ import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
 
+const ExplorerBlockBlockDetailClientCopy = {
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  missingBlockIdHeight: { cs: `Chybí id nebo výška bloku`, en: `Missing block id/height` },
+  blockNotFound: { cs: `Blok nenalezen`, en: `Block Not Found` },
+  thisBlockDoesNotExistOnTheZion: { cs: `Tento blok v síti ZION neexistuje.`, en: `This block does not exist on the ZION network.` },
+  backToExplorer: { cs: `Zpět do exploreru`, en: `Back to Explorer` },
+  blocks: { cs: `Bloky`, en: `Blocks` },
+  block: { cs: `Blok`, en: `Block` },
+  orphaned: { cs: `Osiřelý`, en: `Orphaned` },
+  confirmations: { cs: `potvrzení`, en: `Confirmations` },
+  previousBlock: { cs: `Předchozí blok`, en: `Previous Block` },
+  nextBlock: { cs: `Další blok`, en: `Next Block` },
+  hideRawJson: { cs: `Skrýt Raw JSON`, en: `Hide Raw JSON` },
+  showRawJson: { cs: `Zobrazit Raw JSON`, en: `Show Raw JSON` },
+  blockDetails: { cs: `Detaily bloku`, en: `Block Details` },
+  height: { cs: `Výška`, en: `Height` },
+  timestamp: { cs: `Čas`, en: `Timestamp` },
+  previousHash: { cs: `Předchozí hash`, en: `Previous Hash` },
+  merkleRoot: { cs: `Merkleho kořen`, en: `Merkle Root` },
+  merkleRootIsNotExposedByTheCur: { cs: `Merkleho kořen není vystaven aktuálním RPC`, en: `Merkle root is not exposed by the current RPC` },
+  blockSize: { cs: `Velikost bloku`, en: `Block Size` },
+  bytes: { cs: `bajtů`, en: `bytes` },
+  version: { cs: `Verze`, en: `Version` },
+  miningDetails: { cs: `Detaily těžby`, en: `Mining Details` },
+  difficulty: { cs: `Obtížnost`, en: `Difficulty` },
+  blockReward: { cs: `Odměna za blok`, en: `Block Reward` },
+  totalFees: { cs: `Celkové fee`, en: `Total Fees` },
+  transactions: { cs: `Transakce`, en: `Transactions` },
+  user: { cs: `uživatel`, en: `user` },
+  coinbaseRecipient: { cs: `Coinbase příjemce`, en: `Coinbase Recipient` },
+  totalOutput: { cs: `Celkový výstup`, en: `Total Output` },
+  feesCollected: { cs: `Vybrané fee`, en: `Fees Collected` },
+  blockReward_2: { cs: `Odměna bloku`, en: `Block Reward` },
+  txCount: { cs: `Počet tx`, en: `Tx Count` },
+  type: { cs: `Typ`, en: `Type` },
+  amount: { cs: `Částka`, en: `Amount` },
+  coinbase: { cs: `Coinbase`, en: `Coinbase` },
+  transfer: { cs: `Převod`, en: `Transfer` },
+  allBlocks: { cs: `Všechny bloky`, en: `All Blocks` },
+};
+
 interface BlockTx {
   tx_hash: string;
   type: string;
@@ -116,7 +157,7 @@ function InfoRow({ label, value, copyable, mono, color, link, badge }: {
 export default function BlockDetailClient() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = cs ? 'cs-CZ' : 'en-US';
+  const locale = ExplorerBlockBlockDetailClientCopy.enUs[cs ? 'cs' : 'en'];
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = useMemo(() => {
@@ -136,7 +177,7 @@ export default function BlockDetailClient() {
     (async () => {
       try {
         setError(null); setLoading(true); setBlock(null); setRawJson(null);
-        if (!id) { setError(cs ? "Chybí id nebo výška bloku" : "Missing block id/height"); return; }
+        if (!id) { setError(ExplorerBlockBlockDetailClientCopy.missingBlockIdHeight[cs ? 'cs' : 'en']); return; }
         const isHash = /^[a-f0-9]{64}$/i.test(id);
         const query = isHash ? `/blockchain/block?hash=${id}` : `/blockchain/block?height=${id}`;
         const data = await apiClient<BlockDetail>(query);
@@ -186,11 +227,11 @@ export default function BlockDetailClient() {
       <div className="relative min-h-screen pb-24 flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <Box className="h-16 w-16 text-red-400/50 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2">{cs ? 'Blok nenalezen' : 'Block Not Found'}</h1>
-          <p className="text-gray-500 text-sm mb-6">{error || (cs ? 'Tento blok v síti ZION neexistuje.' : 'This block does not exist on the ZION network.')}</p>
+          <h1 className="text-2xl font-bold text-white mb-2">{ExplorerBlockBlockDetailClientCopy.blockNotFound[cs ? 'cs' : 'en']}</h1>
+          <p className="text-gray-500 text-sm mb-6">{error || (ExplorerBlockBlockDetailClientCopy.thisBlockDoesNotExistOnTheZion[cs ? 'cs' : 'en'])}</p>
           <Link href="/explorer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 
             text-sm text-white hover:bg-white/10 transition">
-            <ArrowLeft className="h-4 w-4" /> {cs ? 'Zpět do exploreru' : 'Back to Explorer'}
+            <ArrowLeft className="h-4 w-4" /> {ExplorerBlockBlockDetailClientCopy.backToExplorer[cs ? 'cs' : 'en']}
           </Link>
         </div>
       </div>
@@ -206,7 +247,7 @@ export default function BlockDetailClient() {
         <nav className="flex items-center gap-2 text-sm">
           <Link href="/explorer" className="text-gray-500 hover:text-white transition">Explorer</Link>
           <span className="text-gray-700">/</span>
-          <Link href="/explorer/blocks" className="text-gray-500 hover:text-white transition">{cs ? 'Bloky' : 'Blocks'}</Link>
+          <Link href="/explorer/blocks" className="text-gray-500 hover:text-white transition">{ExplorerBlockBlockDetailClientCopy.blocks[cs ? 'cs' : 'en']}</Link>
           <span className="text-gray-700">/</span>
           <span className="text-white font-medium">#{block.height.toLocaleString(locale)}</span>
         </nav>
@@ -218,7 +259,7 @@ export default function BlockDetailClient() {
           </div>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">
-              {cs ? 'Blok' : 'Block'} <span className="text-zion-gold">#{block.height.toLocaleString(locale)}</span>
+              {ExplorerBlockBlockDetailClientCopy.block[cs ? 'cs' : 'en']} <span className="text-zion-gold">#{block.height.toLocaleString(locale)}</span>
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">{fmtDate(block.timestamp, locale)} · {fmtAge(block.timestamp, cs)}</p>
           </div>
@@ -229,7 +270,7 @@ export default function BlockDetailClient() {
                 : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
             }`}>
               <Shield className="h-3 w-3" />
-              {block.orphan_status ? (cs ? 'Osiřelý' : 'Orphaned') : `${block.confirmations.toLocaleString(locale)} ${cs ? 'potvrzení' : 'Confirmations'}`}
+              {block.orphan_status ? (ExplorerBlockBlockDetailClientCopy.orphaned[cs ? 'cs' : 'en']) : `${block.confirmations.toLocaleString(locale)} ${ExplorerBlockBlockDetailClientCopy.confirmations[cs ? 'cs' : 'en']}`}
             </span>
           </div>
         </motion.div>
@@ -245,7 +286,7 @@ export default function BlockDetailClient() {
               style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
             >
               <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">{cs ? 'Předchozí blok' : 'Previous Block'}</span>
+              <span className="hidden sm:inline">{ExplorerBlockBlockDetailClientCopy.previousBlock[cs ? 'cs' : 'en']}</span>
               <span className="sm:hidden">#{(block.height - 1).toLocaleString(locale)}</span>
               <span className="hidden sm:inline tabular-nums text-gray-400">#{(block.height - 1).toLocaleString(locale)}</span>
             </button>
@@ -258,7 +299,7 @@ export default function BlockDetailClient() {
             >
               <span className="hidden sm:inline tabular-nums text-gray-400">#{(block.height + 1).toLocaleString(locale)}</span>
               <span className="sm:hidden">#{(block.height + 1).toLocaleString(locale)}</span>
-              <span className="hidden sm:inline">{cs ? 'Další blok' : 'Next Block'}</span>
+              <span className="hidden sm:inline">{ExplorerBlockBlockDetailClientCopy.nextBlock[cs ? 'cs' : 'en']}</span>
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -271,7 +312,7 @@ export default function BlockDetailClient() {
             }`}
           >
             <Code className="h-4 w-4" />
-            {showRaw ? (cs ? 'Skrýt Raw JSON' : 'Hide Raw JSON') : (cs ? 'Zobrazit Raw JSON' : 'Show Raw JSON')}
+            {showRaw ? (ExplorerBlockBlockDetailClientCopy.hideRawJson[cs ? 'cs' : 'en']) : (ExplorerBlockBlockDetailClientCopy.showRawJson[cs ? 'cs' : 'en'])}
           </button>
         </div>
 
@@ -301,27 +342,27 @@ export default function BlockDetailClient() {
               <div className="h-8 w-8 rounded-xl bg-zion-cyan/10 flex items-center justify-center">
                 <Layers className="h-4 w-4 text-zion-cyan" />
               </div>
-              <h2 className="text-lg font-semibold text-white">{cs ? 'Detaily bloku' : 'Block Details'}</h2>
+              <h2 className="text-lg font-semibold text-white">{ExplorerBlockBlockDetailClientCopy.blockDetails[cs ? 'cs' : 'en']}</h2>
             </div>
-            <InfoRow label={cs ? 'Výška' : 'Height'} value={block.height.toLocaleString(locale)} />
-            <InfoRow label={cs ? 'Čas' : 'Timestamp'} value={`${fmtDate(block.timestamp, locale)} (${fmtAge(block.timestamp, cs)})`} />
+            <InfoRow label={ExplorerBlockBlockDetailClientCopy.height[cs ? 'cs' : 'en']} value={block.height.toLocaleString(locale)} />
+            <InfoRow label={ExplorerBlockBlockDetailClientCopy.timestamp[cs ? 'cs' : 'en']} value={`${fmtDate(block.timestamp, locale)} (${fmtAge(block.timestamp, cs)})`} />
             <InfoRow label="Hash" value={block.hash} mono copyable />
-            <InfoRow label={cs ? 'Předchozí hash' : 'Previous Hash'} value={truncHash(block.prev_hash, 16)} mono copyable
+            <InfoRow label={ExplorerBlockBlockDetailClientCopy.previousHash[cs ? 'cs' : 'en']} value={truncHash(block.prev_hash, 16)} mono copyable
               link={block.prev_hash ? `/explorer/block?id=${block.height - 1}` : undefined} />
             <InfoRow
-              label={cs ? 'Merkleho kořen' : 'Merkle Root'}
+              label={ExplorerBlockBlockDetailClientCopy.merkleRoot[cs ? 'cs' : 'en']}
               value={block.merkle_root || block.tx_hash_list_merkle_root || "—"}
               mono
               copyable={!!(block.merkle_root || block.tx_hash_list_merkle_root)}
               color={!(block.merkle_root || block.tx_hash_list_merkle_root) ? "text-gray-600" : undefined}
               badge={!(block.merkle_root || block.tx_hash_list_merkle_root) ? (
-                <span title={cs ? 'Merkleho kořen není vystaven aktuálním RPC' : 'Merkle root is not exposed by the current RPC'} className="text-gray-600 cursor-help">
+                <span title={ExplorerBlockBlockDetailClientCopy.merkleRootIsNotExposedByTheCur[cs ? 'cs' : 'en']} className="text-gray-600 cursor-help">
                   ⓘ
                 </span>
               ) : undefined}
             />
-            <InfoRow label={cs ? 'Velikost bloku' : 'Block Size'} value={`${fmtSize(block.block_size)} (${block.block_size.toLocaleString(locale)} ${cs ? 'bajtů' : 'bytes'})`} />
-            <InfoRow label={cs ? 'Verze' : 'Version'} value={`${block.major_version}.${block.minor_version}`} />
+            <InfoRow label={ExplorerBlockBlockDetailClientCopy.blockSize[cs ? 'cs' : 'en']} value={`${fmtSize(block.block_size)} (${block.block_size.toLocaleString(locale)} ${ExplorerBlockBlockDetailClientCopy.bytes[cs ? 'cs' : 'en']})`} />
+            <InfoRow label={ExplorerBlockBlockDetailClientCopy.version[cs ? 'cs' : 'en']} value={`${block.major_version}.${block.minor_version}`} />
           </motion.div>
 
           {/* Mining Details */}
@@ -331,16 +372,16 @@ export default function BlockDetailClient() {
               <div className="h-8 w-8 rounded-xl bg-zion-gold/10 flex items-center justify-center">
                 <Cpu className="h-4 w-4 text-zion-gold" />
               </div>
-              <h2 className="text-lg font-semibold text-white">{cs ? 'Detaily těžby' : 'Mining Details'}</h2>
+              <h2 className="text-lg font-semibold text-white">{ExplorerBlockBlockDetailClientCopy.miningDetails[cs ? 'cs' : 'en']}</h2>
             </div>
-            <InfoRow label={cs ? 'Obtížnost' : 'Difficulty'} value={block.difficulty.toLocaleString(locale)} />
+            <InfoRow label={ExplorerBlockBlockDetailClientCopy.difficulty[cs ? 'cs' : 'en']} value={block.difficulty.toLocaleString(locale)} />
             <InfoRow label="Nonce" value={block.nonce.toLocaleString()} />
-            <InfoRow label={cs ? 'Odměna za blok' : 'Block Reward'} value={`${block.reward.toFixed(6)} ZION`} color="text-zion-gold" />
-            <InfoRow label={cs ? 'Celkové fee' : 'Total Fees'} value={`${block.total_fees.toFixed(6)} ZION`} color="text-amber-400" />
-            <InfoRow label={cs ? 'Transakce' : 'Transactions'} value={`${block.tx_count} (${block.num_txes} ${cs ? 'uživatel' : 'user'} + 1 coinbase)`} />
+            <InfoRow label={ExplorerBlockBlockDetailClientCopy.blockReward[cs ? 'cs' : 'en']} value={`${block.reward.toFixed(6)} ZION`} color="text-zion-gold" />
+            <InfoRow label={ExplorerBlockBlockDetailClientCopy.totalFees[cs ? 'cs' : 'en']} value={`${block.total_fees.toFixed(6)} ZION`} color="text-amber-400" />
+            <InfoRow label={ExplorerBlockBlockDetailClientCopy.transactions[cs ? 'cs' : 'en']} value={`${block.tx_count} (${block.num_txes} ${ExplorerBlockBlockDetailClientCopy.user[cs ? 'cs' : 'en']} + 1 coinbase)`} />
             {block.miner && (
               <InfoRow
-                label={cs ? 'Coinbase příjemce' : 'Coinbase Recipient'}
+                label={ExplorerBlockBlockDetailClientCopy.coinbaseRecipient[cs ? 'cs' : 'en']}
                 value={block.miner_label || truncHash(block.miner)}
                 mono={!block.miner_label}
                 copyable
@@ -360,10 +401,10 @@ export default function BlockDetailClient() {
         {/* Summary bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: cs ? "Celkový výstup" : "Total Output", value: `${block.total_output.toFixed(4)} ZION`, color: "text-white" },
-            { label: cs ? "Vybrané fee" : "Fees Collected", value: `${block.total_fees.toFixed(6)} ZION`, color: "text-amber-400" },
-            { label: cs ? "Odměna bloku" : "Block Reward", value: `${block.reward.toFixed(4)} ZION`, color: "text-zion-gold" },
-            { label: cs ? "Počet tx" : "Tx Count", value: `${block.tx_count}`, color: "text-zion-cyan" },
+            { label: ExplorerBlockBlockDetailClientCopy.totalOutput[cs ? 'cs' : 'en'], value: `${block.total_output.toFixed(4)} ZION`, color: "text-white" },
+            { label: ExplorerBlockBlockDetailClientCopy.feesCollected[cs ? 'cs' : 'en'], value: `${block.total_fees.toFixed(6)} ZION`, color: "text-amber-400" },
+            { label: ExplorerBlockBlockDetailClientCopy.blockReward_2[cs ? 'cs' : 'en'], value: `${block.reward.toFixed(4)} ZION`, color: "text-zion-gold" },
+            { label: ExplorerBlockBlockDetailClientCopy.txCount[cs ? 'cs' : 'en'], value: `${block.tx_count}`, color: "text-zion-cyan" },
           ].map((item) => (
             <div key={item.label} className="zion-tile p-4">
               <p className="text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium mb-1">{item.label}</p>
@@ -379,7 +420,7 @@ export default function BlockDetailClient() {
             <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
               <Hash className="h-4 w-4 text-emerald-400" />
             </div>
-            <h2 className="text-lg font-semibold text-white">{cs ? 'Transakce' : 'Transactions'} ({block.txs?.length || 0})</h2>
+            <h2 className="text-lg font-semibold text-white">{ExplorerBlockBlockDetailClientCopy.transactions[cs ? 'cs' : 'en']} ({block.txs?.length || 0})</h2>
           </div>
 
           {/* TX Table */}
@@ -387,11 +428,11 @@ export default function BlockDetailClient() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.04]">
-                  <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{cs ? 'Typ' : 'Type'}</th>
+                  <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{ExplorerBlockBlockDetailClientCopy.type[cs ? 'cs' : 'en']}</th>
                   <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3">Hash</th>
                   <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden lg:table-cell">From → To</th>
                   <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden md:table-cell">Fee</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{cs ? 'Částka' : 'Amount'}</th>
+                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{ExplorerBlockBlockDetailClientCopy.amount[cs ? 'cs' : 'en']}</th>
                 </tr>
               </thead>
               <tbody>
@@ -403,7 +444,7 @@ export default function BlockDetailClient() {
                           ? "bg-zion-gold/10 text-zion-gold border-zion-gold/20"
                           : "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20"
                       }`}>
-                        {tx.type === "coinbase" ? `⛏ ${cs ? 'Coinbase' : 'Coinbase'}` : `↔ ${cs ? 'Převod' : 'Transfer'}`}
+                        {tx.type === "coinbase" ? `⛏ ${ExplorerBlockBlockDetailClientCopy.coinbase[cs ? 'cs' : 'en']}` : `↔ ${ExplorerBlockBlockDetailClientCopy.transfer[cs ? 'cs' : 'en']}`}
                       </span>
                     </td>
                     <td className="px-3 py-3">
@@ -452,7 +493,7 @@ export default function BlockDetailClient() {
         <div className="flex items-center justify-center pt-2">
           <Link href="/explorer/blocks"
             className="text-xs text-gray-500 hover:text-white transition font-medium">
-            {cs ? 'Všechny bloky' : 'All Blocks'}
+            {ExplorerBlockBlockDetailClientCopy.allBlocks[cs ? 'cs' : 'en']}
           </Link>
         </div>
       </div>

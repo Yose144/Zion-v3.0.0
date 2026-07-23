@@ -25,6 +25,53 @@ import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { CONTRACTS, FARM_ABI, WZION_ABI, FARM_DEPLOYED } from '@/lib/defi-contracts';
 
+const FarmingPanelCopy = {
+  deployPending: { cs: `Deploy pending`, en: `Deploy pending` },
+  yieldFarming: { cs: `Yield Farming`, en: `Yield Farming` },
+  depositLpTokensIntoZionfarmAnd: { cs: `Vložte LP tokeny do ZIONFarm a získávejte odměny ve wZION. MasterChef-style distribuce s dynamickým allocPoint a 90denním halvingem.`, en: `Deposit LP tokens into ZIONFarm and earn wZION rewards. MasterChef-style distribution with dynamic allocPoint and 90-day halving.` },
+  farmingContractHasNotYetBeenDe: { cs: `Farming kontrakt ještě nebyl nasazen na Base Mainnet. Deploy proběhne po pool seeding.`, en: `Farming contract has not yet been deployed to Base Mainnet. Deploy will happen after pool seeding.` },
+  farmingIsCurrentlyPaused: { cs: `Farming je momentálně pozastaven (paused).`, en: `Farming is currently paused.` },
+  k90DayHalving: { cs: `Halving každých 90 dní`, en: `90-day halving` },
+  paused: { cs: `Pozastaveno`, en: `Paused` },
+  active: { cs: `Aktivní`, en: `Active` },
+  rewardS: { cs: `Odměna / s`, en: `Reward / s` },
+  pools: { cs: `Počet poolů`, en: `Pools` },
+  totalAlloc: { cs: `Celkem alloc`, en: `Total Alloc` },
+  contract: { cs: `Stav kontraktu`, en: `Contract` },
+  deposited: { cs: `Vloženo`, en: `Deposited` },
+  pendingReward: { cs: `Čekající odměna`, en: `Pending Reward` },
+  wallet: { cs: `Wallet balance`, en: `Wallet` },
+  farmPools: { cs: `Farm pooly`, en: `Farm Pools` },
+  noPoolsFound: { cs: `Žádné pooly nebyly nalezeny.`, en: `No pools found.` },
+  pending: { cs: `Odměna`, en: `Pending` },
+  connectWalletToFarm: { cs: `Připojte peněženku pro farming`, en: `Connect wallet to farm` },
+  connectMetamask: { cs: `Připojit MetaMask`, en: `Connect MetaMask` },
+  switchToBaseMainnet: { cs: `Přepněte na Base Mainnet`, en: `Switch to Base Mainnet` },
+  switchToBase: { cs: `Přepnout síť`, en: `Switch to Base` },
+  contractAwaitingDeploymentOnBa: { cs: `Farming kontrakt čeká na deploy na Base Mainnet.`, en: `Contract awaiting deployment on Base Mainnet.` },
+  noPoolsAvailable: { cs: `Žádné pooly nejsou dostupné.`, en: `No pools available.` },
+  depositLpTokens: { cs: `Vložit LP tokeny`, en: `Deposit LP Tokens` },
+  available: { cs: `Dostupno`, en: `Available` },
+  approvingWzion: { cs: `Schvaluji wZION...`, en: `Approving wZION...` },
+  depositing: { cs: `Vkládám...`, en: `Depositing...` },
+  withdrawLpTokens: { cs: `Vybrat LP tokeny`, en: `Withdraw LP Tokens` },
+  withdraw: { cs: `Vybrat`, en: `Withdraw` },
+  emergencyWithdrawForfeitsRewar: { cs: `Nouzové vybrání (bez odměn)`, en: `Emergency withdraw (forfeits rewards)` },
+  emergency: { cs: `Nouzově`, en: `Emergency` },
+  claimReward: { cs: `Nárokovat odměnu`, en: `Claim Reward` },
+  pending_2: { cs: `Čekající`, en: `Pending` },
+  claimReward_2: { cs: `Vybírat odměnu`, en: `Claim Reward` },
+  howItWorks: { cs: `Jak to funguje`, en: `How it works` },
+  approveDeposit: { cs: `Schval & vlož`, en: `Approve & Deposit` },
+  approveWzionForTheFarmContract: { cs: `Schval wZION pro farm kontrakt a vlož LP tokeny do vybraného poolu.`, en: `Approve wZION for the farm contract and deposit LP tokens into the selected pool.` },
+  earnRewards: { cs: `Sbírej odměny`, en: `Earn Rewards` },
+  wzionRewardsAccrueAutomaticall: { cs: `Odměny ve wZION narůstají automaticky podle allocPoint poolu.`, en: `wZION rewards accrue automatically based on the pool allocPoint.` },
+  claimWithdraw: { cs: `Claim & Withdraw`, en: `Claim & Withdraw` },
+  claimRewardsAnytimeWithdrawLpT: { cs: `Nárokovuj odměny kdykoliv. Vyber LP tokeny nebo použij emergency withdraw.`, en: `Claim rewards anytime. Withdraw LP tokens or use emergency withdraw.` },
+  contract_2: { cs: `Kontrakt`, en: `Contract` },
+  awaitingDeployment: { cs: `Čeká na deploy`, en: `Awaiting deployment` },
+};
+
 const RPC_URL = 'https://mainnet.base.org';
 const EXPLORER = 'https://basescan.org';
 const SECONDS_PER_YEAR = 365 * 24 * 3600;
@@ -339,16 +386,14 @@ export default function FarmingPanel() {
           </div>
         ) : (
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-semibold tracking-wider text-amber-300 uppercase mb-4 ml-2">
-            <Clock className="h-3 w-3" /> {cs ? 'Deploy pending' : 'Deploy pending'}
+            <Clock className="h-3 w-3" /> {FarmingPanelCopy.deployPending[cs ? 'cs' : 'en']}
           </div>
         )}
         <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-          {cs ? 'Yield Farming' : 'Yield Farming'}
+          {FarmingPanelCopy.yieldFarming[cs ? 'cs' : 'en']}
         </h1>
         <p className="mt-4 text-lg text-gray-300 max-w-2xl">
-          {cs
-            ? 'Vložte LP tokeny do ZIONFarm a získávejte odměny ve wZION. MasterChef-style distribuce s dynamickým allocPoint a 90denním halvingem.'
-            : 'Deposit LP tokens into ZIONFarm and earn wZION rewards. MasterChef-style distribution with dynamic allocPoint and 90-day halving.'}
+          {FarmingPanelCopy.depositLpTokensIntoZionfarmAnd[cs ? 'cs' : 'en']}
         </p>
 
         {/* Deploy pending banner */}
@@ -357,9 +402,7 @@ export default function FarmingPanel() {
             <AlertCircle className="h-5 w-5 text-amber-400 shrink-0" />
             <div className="flex-1">
               <p className="text-sm text-gray-300">
-                {cs
-                  ? 'Farming kontrakt ještě nebyl nasazen na Base Mainnet. Deploy proběhne po pool seeding.'
-                  : 'Farming contract has not yet been deployed to Base Mainnet. Deploy will happen after pool seeding.'}
+                {FarmingPanelCopy.farmingContractHasNotYetBeenDe[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -369,7 +412,7 @@ export default function FarmingPanel() {
           <div className="mt-6 rounded-2xl border border-red-500/20 bg-red-500/5 p-4 flex items-center gap-3">
             <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
             <p className="text-sm text-gray-300">
-              {cs ? 'Farming je momentálně pozastaven (paused).' : 'Farming is currently paused.'}
+              {FarmingPanelCopy.farmingIsCurrentlyPaused[cs ? 'cs' : 'en']}
             </p>
           </div>
         )}
@@ -382,11 +425,11 @@ export default function FarmingPanel() {
             <Flame className="h-3 w-3 text-zion-gold" /> MasterChef v2
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-            <TrendingUp className="h-3 w-3 text-zion-cyan" /> {cs ? 'Halving každých 90 dní' : '90-day halving'}
+            <TrendingUp className="h-3 w-3 text-zion-cyan" /> {FarmingPanelCopy.k90DayHalving[cs ? 'cs' : 'en']}
           </span>
           <span className={`inline-flex items-center gap-2 rounded-full px-2 py-0.5 ${paused ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${paused ? 'bg-red-400' : 'bg-emerald-400 animate-pulse'}`} />
-            {paused ? (cs ? 'Pozastaveno' : 'Paused') : cs ? 'Aktivní' : 'Active'}
+            {paused ? (FarmingPanelCopy.paused[cs ? 'cs' : 'en']) : FarmingPanelCopy.active[cs ? 'cs' : 'en']}
           </span>
         </div>
       </motion.section>
@@ -395,10 +438,10 @@ export default function FarmingPanel() {
       <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: cs ? 'Odměna / s' : 'Reward / s', value: `${fmt(rewardPerSecond, 4)} wZION`, icon: Zap, color: 'text-green-400' },
-            { label: cs ? 'Počet poolů' : 'Pools', value: String(poolLength), icon: Layers, color: 'text-zion-cyan' },
-            { label: cs ? 'Celkem alloc' : 'Total Alloc', value: totalAllocPoint.toLocaleString(), icon: TrendingUp, color: 'text-zion-gold' },
-            { label: cs ? 'Stav kontraktu' : 'Contract', value: paused ? (cs ? 'Pozastaveno' : 'Paused') : (cs ? 'Aktivní' : 'Active'), icon: Shield, color: paused ? 'text-red-400' : 'text-emerald-400' },
+            { label: FarmingPanelCopy.rewardS[cs ? 'cs' : 'en'], value: `${fmt(rewardPerSecond, 4)} wZION`, icon: Zap, color: 'text-green-400' },
+            { label: FarmingPanelCopy.pools[cs ? 'cs' : 'en'], value: String(poolLength), icon: Layers, color: 'text-zion-cyan' },
+            { label: FarmingPanelCopy.totalAlloc[cs ? 'cs' : 'en'], value: totalAllocPoint.toLocaleString(), icon: TrendingUp, color: 'text-zion-gold' },
+            { label: FarmingPanelCopy.contract[cs ? 'cs' : 'en'], value: paused ? (FarmingPanelCopy.paused[cs ? 'cs' : 'en']) : (FarmingPanelCopy.active[cs ? 'cs' : 'en']), icon: Shield, color: paused ? 'text-red-400' : 'text-emerald-400' },
           ].map((card) => (
             <div key={card.label} className="zion-tile">
               <div className="flex items-center gap-2 mb-2">
@@ -417,16 +460,16 @@ export default function FarmingPanel() {
           <div className="grid grid-cols-3 gap-4">
             <div className="zion-tile">
               <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">
-                {cs ? 'Vloženo' : 'Deposited'} · {selectedPool.name}
+                {FarmingPanelCopy.deposited[cs ? 'cs' : 'en']} · {selectedPool.name}
               </p>
               <p className="text-xl font-bold text-green-400">{fmt(selectedPool.userDeposited, 4)} LP</p>
             </div>
             <div className="zion-tile">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Čekající odměna' : 'Pending Reward'}</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{FarmingPanelCopy.pendingReward[cs ? 'cs' : 'en']}</p>
               <p className="text-xl font-bold text-zion-gold">{fmt(selectedPool.userPending, 6)} wZION</p>
             </div>
             <div className="zion-tile">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Wallet balance' : 'Wallet'}</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{FarmingPanelCopy.wallet[cs ? 'cs' : 'en']}</p>
               <p className="text-xl font-bold text-white">{fmt(userBalance, 2)} wZION</p>
             </div>
           </div>
@@ -438,11 +481,11 @@ export default function FarmingPanel() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
             <Layers className="h-6 w-6 text-zion-cyan" />
-            {cs ? 'Farm pooly' : 'Farm Pools'}
+            {FarmingPanelCopy.farmPools[cs ? 'cs' : 'en']}
           </h2>
           {pools.length === 0 ? (
             <div className="zion-tile p-6 text-center text-gray-500 text-sm">
-              {cs ? 'Žádné pooly nebyly nalezeny.' : 'No pools found.'}
+              {FarmingPanelCopy.noPoolsFound[cs ? 'cs' : 'en']}
             </div>
           ) : (
             <div className="space-y-3">
@@ -483,7 +526,7 @@ export default function FarmingPanel() {
                         <p className="font-bold text-zion-gold">{p.allocPoints.toLocaleString()}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[10px] text-gray-500 uppercase">{cs ? 'Odměna' : 'Pending'}</p>
+                        <p className="text-[10px] text-gray-500 uppercase">{FarmingPanelCopy.pending[cs ? 'cs' : 'en']}</p>
                         <p className="font-bold text-zion-gold">{fmt(p.userPending, 4)}</p>
                       </div>
                     </div>
@@ -507,40 +550,40 @@ export default function FarmingPanel() {
           <div className="text-center py-8">
             <Wallet className="h-12 w-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400 mb-4">
-              {cs ? 'Připojte peněženku pro farming' : 'Connect wallet to farm'}
+              {FarmingPanelCopy.connectWalletToFarm[cs ? 'cs' : 'en']}
             </p>
             <button
               onClick={connect}
               className="rounded-2xl bg-green-500/20 border border-green-500/30 px-8 py-3 text-sm font-semibold text-green-300 hover:bg-green-500/30 transition-colors"
             >
-              {cs ? 'Připojit MetaMask' : 'Connect MetaMask'}
+              {FarmingPanelCopy.connectMetamask[cs ? 'cs' : 'en']}
             </button>
           </div>
         ) : !isBaseMainnet ? (
           <div className="text-center py-8">
             <AlertCircle className="h-12 w-12 text-amber-400 mx-auto mb-4" />
             <p className="text-gray-400 mb-4">
-              {cs ? 'Přepněte na Base Mainnet' : 'Switch to Base Mainnet'}
+              {FarmingPanelCopy.switchToBaseMainnet[cs ? 'cs' : 'en']}
             </p>
             <button
               onClick={switchToBase}
               className="rounded-2xl bg-zion-gold/20 border border-zion-gold/30 px-8 py-3 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 transition-colors"
             >
-              {cs ? 'Přepnout síť' : 'Switch to Base'}
+              {FarmingPanelCopy.switchToBase[cs ? 'cs' : 'en']}
             </button>
           </div>
         ) : !FARM_DEPLOYED ? (
           <div className="text-center py-8">
             <Clock className="h-12 w-12 text-amber-400 mx-auto mb-4" />
             <p className="text-gray-400">
-              {cs ? 'Farming kontrakt čeká na deploy na Base Mainnet.' : 'Contract awaiting deployment on Base Mainnet.'}
+              {FarmingPanelCopy.contractAwaitingDeploymentOnBa[cs ? 'cs' : 'en']}
             </p>
           </div>
         ) : !selectedPool ? (
           <div className="text-center py-8">
             <Sprout className="h-12 w-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">
-              {cs ? 'Žádné pooly nejsou dostupné.' : 'No pools available.'}
+              {FarmingPanelCopy.noPoolsAvailable[cs ? 'cs' : 'en']}
             </p>
           </div>
         ) : (
@@ -556,7 +599,7 @@ export default function FarmingPanel() {
             <div className="zion-tile">
               <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
                 <Lock className="h-4 w-4 text-green-400" />
-                {cs ? 'Vložit LP tokeny' : 'Deposit LP Tokens'}
+                {FarmingPanelCopy.depositLpTokens[cs ? 'cs' : 'en']}
               </h4>
               <div className="space-y-3 max-w-md">
                 <div>
@@ -572,7 +615,7 @@ export default function FarmingPanel() {
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">LP</span>
                   </div>
                   <p className="text-[10px] text-gray-500 mt-1">
-                    {cs ? 'Dostupno' : 'Available'}: {fmt(userBalance, 2)} wZION
+                    {FarmingPanelCopy.available[cs ? 'cs' : 'en']}: {fmt(userBalance, 2)} wZION
                   </p>
                 </div>
                 <button
@@ -581,9 +624,9 @@ export default function FarmingPanel() {
                   className="w-full rounded-2xl bg-green-500/20 border border-green-500/30 px-6 py-3 text-sm font-semibold text-green-300 hover:bg-green-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {busy && txPhase === 'approving' && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {txPhase === 'approving' ? (cs ? 'Schvaluji wZION...' : 'Approving wZION...') :
-                   txPhase === 'depositing' ? (cs ? 'Vkládám...' : 'Depositing...') :
-                   cs ? 'Vložit LP tokeny' : 'Deposit LP Tokens'}
+                  {txPhase === 'approving' ? (FarmingPanelCopy.approvingWzion[cs ? 'cs' : 'en']) :
+                   txPhase === 'depositing' ? (FarmingPanelCopy.depositing[cs ? 'cs' : 'en']) :
+                   FarmingPanelCopy.depositLpTokens[cs ? 'cs' : 'en']}
                 </button>
               </div>
             </div>
@@ -592,7 +635,7 @@ export default function FarmingPanel() {
             <div className="zion-tile">
               <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
                 <Unlock className="h-4 w-4 text-amber-400" />
-                {cs ? 'Vybrat LP tokeny' : 'Withdraw LP Tokens'}
+                {FarmingPanelCopy.withdrawLpTokens[cs ? 'cs' : 'en']}
               </h4>
               <div className="space-y-3 max-w-md">
                 <div>
@@ -608,7 +651,7 @@ export default function FarmingPanel() {
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">LP</span>
                   </div>
                   <p className="text-[10px] text-gray-500 mt-1">
-                    {cs ? 'Vloženo' : 'Deposited'}: {fmt(selectedPool.userDeposited, 4)} LP
+                    {FarmingPanelCopy.deposited[cs ? 'cs' : 'en']}: {fmt(selectedPool.userDeposited, 4)} LP
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -618,16 +661,16 @@ export default function FarmingPanel() {
                     className="flex-1 rounded-2xl bg-amber-500/20 border border-amber-500/30 px-6 py-3 text-sm font-semibold text-amber-300 hover:bg-amber-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {busy && txPhase === 'withdrawing' && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {cs ? 'Vybrat' : 'Withdraw'}
+                    {FarmingPanelCopy.withdraw[cs ? 'cs' : 'en']}
                   </button>
                   <button
                     onClick={handleEmergencyWithdraw}
                     disabled={busy || parseFloat(selectedPool.userDeposited) <= 0}
                     className="rounded-2xl bg-red-500/20 border border-red-500/30 px-4 py-3 text-sm font-semibold text-red-300 hover:bg-red-500/30 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    title={cs ? 'Nouzové vybrání (bez odměn)' : 'Emergency withdraw (forfeits rewards)'}
+                    title={FarmingPanelCopy.emergencyWithdrawForfeitsRewar[cs ? 'cs' : 'en']}
                   >
                     {busy && txPhase === 'emergency' && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {cs ? 'Nouzově' : 'Emergency'}
+                    {FarmingPanelCopy.emergency[cs ? 'cs' : 'en']}
                   </button>
                 </div>
               </div>
@@ -637,11 +680,11 @@ export default function FarmingPanel() {
             <div className="zion-tile">
               <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
                 <PiggyBank className="h-4 w-4 text-zion-gold" />
-                {cs ? 'Nárokovat odměnu' : 'Claim Reward'}
+                {FarmingPanelCopy.claimReward[cs ? 'cs' : 'en']}
               </h4>
               <div className="flex items-center gap-4 max-w-md">
                 <div className="flex-1">
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{cs ? 'Čekající' : 'Pending'}</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{FarmingPanelCopy.pending_2[cs ? 'cs' : 'en']}</p>
                   <p className="text-2xl font-bold text-zion-gold">{fmt(selectedPool.userPending, 6)} wZION</p>
                 </div>
                 <button
@@ -650,7 +693,7 @@ export default function FarmingPanel() {
                   className="rounded-2xl bg-zion-gold/20 border border-zion-gold/30 px-6 py-3 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {busy && txPhase === 'claiming' && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {cs ? 'Vybírat odměnu' : 'Claim Reward'}
+                  {FarmingPanelCopy.claimReward_2[cs ? 'cs' : 'en']}
                 </button>
               </div>
             </div>
@@ -678,13 +721,13 @@ export default function FarmingPanel() {
       <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
         <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
           <Zap className="h-6 w-6 text-zion-gold" />
-          {cs ? 'Jak to funguje' : 'How it works'}
+          {FarmingPanelCopy.howItWorks[cs ? 'cs' : 'en']}
         </h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {[
-            { step: '1', title: cs ? 'Schval & vlož' : 'Approve & Deposit', desc: cs ? 'Schval wZION pro farm kontrakt a vlož LP tokeny do vybraného poolu.' : 'Approve wZION for the farm contract and deposit LP tokens into the selected pool.', icon: Lock },
-            { step: '2', title: cs ? 'Sbírej odměny' : 'Earn Rewards', desc: cs ? 'Odměny ve wZION narůstají automaticky podle allocPoint poolu.' : 'wZION rewards accrue automatically based on the pool allocPoint.', icon: Coins },
-            { step: '3', title: cs ? 'Claim & Withdraw' : 'Claim & Withdraw', desc: cs ? 'Nárokovuj odměny kdykoliv. Vyber LP tokeny nebo použij emergency withdraw.' : 'Claim rewards anytime. Withdraw LP tokens or use emergency withdraw.', icon: Unlock },
+            { step: '1', title: FarmingPanelCopy.approveDeposit[cs ? 'cs' : 'en'], desc: FarmingPanelCopy.approveWzionForTheFarmContract[cs ? 'cs' : 'en'], icon: Lock },
+            { step: '2', title: FarmingPanelCopy.earnRewards[cs ? 'cs' : 'en'], desc: FarmingPanelCopy.wzionRewardsAccrueAutomaticall[cs ? 'cs' : 'en'], icon: Coins },
+            { step: '3', title: FarmingPanelCopy.claimWithdraw[cs ? 'cs' : 'en'], desc: FarmingPanelCopy.claimRewardsAnytimeWithdrawLpT[cs ? 'cs' : 'en'], icon: Unlock },
           ].map((s) => (
             <div key={s.step} className="zion-tile">
               <div className="flex items-center gap-2 mb-3">
@@ -703,10 +746,10 @@ export default function FarmingPanel() {
         <div className="zion-tile p-5">
           <div className="flex items-center gap-2 mb-2">
             <Layers className="h-4 w-4 text-gray-400" />
-            <span className="text-xs text-gray-400 uppercase tracking-wider">{cs ? 'Kontrakt' : 'Contract'}</span>
+            <span className="text-xs text-gray-400 uppercase tracking-wider">{FarmingPanelCopy.contract_2[cs ? 'cs' : 'en']}</span>
           </div>
           <p className="font-mono text-sm text-gray-300 break-all">
-            {FARM_DEPLOYED ? CONTRACTS.ZIONFarm : cs ? 'Čeká na deploy' : 'Awaiting deployment'}
+            {FARM_DEPLOYED ? CONTRACTS.ZIONFarm : FarmingPanelCopy.awaitingDeployment[cs ? 'cs' : 'en']}
           </p>
           <p className="text-[10px] text-gray-500 mt-1">Base Mainnet · ZIONFarm.sol · MasterChef v2</p>
         </div>

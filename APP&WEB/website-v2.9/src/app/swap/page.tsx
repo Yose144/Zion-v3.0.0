@@ -35,6 +35,94 @@ import {
   type HtlcRecord,
 } from '@/lib/swap-api';
 
+const SwapCopy = {
+  whatIsAnHtlcSwap: { cs: `Co je HTLC swap?`, en: `What is an HTLC swap?` },
+  aHashTimeLockedContractHtlcEna: { cs: `Hash Time-Locked Contract (HTLC) umožňuje trustless cross-chain swap. Provedení vyžaduje znalost preimage nebo vypršení časového zámku.`, en: `A Hash Time-Locked Contract (HTLC) enables a trustless cross-chain swap. Settlement requires either the preimage or the timelock to expire.` },
+  howLongDoesASwapTake: { cs: `Jak dlouho trvá swap?`, en: `How long does a swap take?` },
+  lockingIsImmediateAfterTheL1Tr: { cs: `Vytvoření zámku je okamžité po potvrzení L1 transakce. Claim probíhá během několika minut. Refund je možný až po vypršení timelocku.`, en: `Locking is immediate after the L1 transaction confirms. Claiming takes a few minutes. Refunds are only possible after the timelock expires.` },
+  whatIsTheMinimumAmount: { cs: `Jaký je minimální obnos?`, en: `What is the minimum amount?` },
+  minimum100ZionPerHtlcLock: { cs: `Minimum 100 ZION na jeden HTLC lock.`, en: `Minimum 100 ZION per HTLC lock.` },
+  isItSafe: { cs: `Je to bezpečné?`, en: `Is it safe?` },
+  yesTheSwapIsSecuredByASha256Ha: { cs: `Ano — swap je chráněn SHA-256 hashlockem a časovým zámkem. Escrow drží tokeny pouze do claimu/refundu.`, en: `Yes — the swap is secured by a SHA-256 hashlock and a timelock. The escrow only holds tokens until claim or refund.` },
+  pleaseFillInAllFields: { cs: `Vyplňte prosím všechna pole`, en: `Please fill in all fields` },
+  pleaseEnterHashlock: { cs: `Zadejte prosím hashlock`, en: `Please enter hashlock` },
+  htlcLockNotFound: { cs: `HTLC nebylo nalezeno.`, en: `HTLC lock not found.` },
+  atomicSwapL1Evm: { cs: `Atomic Swap · L1 ↔ EVM`, en: `Atomic Swap · L1 ↔ EVM` },
+  zionL1EvmChains: { cs: `ZION L1 ↔ EVM řetězce`, en: `ZION L1 ↔ EVM chains` },
+  zionAtomicSwap: { cs: `ZION Atomic Swap`, en: `ZION Atomic Swap` },
+  fullyDecentralizedCrossChainSw: { cs: `Plně decentralizované cross-chain swapy bez prostředníků. Trustless HTLC protokol chráněný SHA-256 hashlocky a časovými zámky.`, en: `Fully decentralized cross-chain swaps with no middlemen. Trustless HTLC protocol secured by SHA-256 hashlocks and timelocks.` },
+  escrowReady: { cs: `Escrow Ready`, en: `Escrow Ready` },
+  escrowOffline: { cs: `Escrow Offline`, en: `Escrow Offline` },
+  minTimelock: { cs: `Min. časový zámek`, en: `Min timelock` },
+  quickOverview: { cs: `Rychlý přehled`, en: `Quick Overview` },
+  escrowAddress: { cs: `Escrow adresa`, en: `Escrow Address` },
+  loading: { cs: `Načítám…`, en: `Loading…` },
+  unavailable: { cs: `Nedostupná`, en: `Unavailable` },
+  activeLocks: { cs: `Aktivní zámky`, en: `Active Locks` },
+  totalLocked: { cs: `Celkem zamčeno`, en: `Total Locked` },
+  relayer: { cs: `Relayer`, en: `Relayer` },
+  online: { cs: `Online`, en: `Online` },
+  offline: { cs: `Offline`, en: `Offline` },
+  telemetry: { cs: `Telemetrie`, en: `Telemetry` },
+  swapStatistics: { cs: `Statistiky swapů`, en: `Swap Statistics` },
+  htlcSwapMetricsAggregatedFromT: { cs: `Metriky HTLC swapů agregované z daemon API v reálném čase.`, en: `HTLC swap metrics aggregated from the daemon API in real time.` },
+  totalLocks: { cs: `Celkem locků`, en: `Total Locks` },
+  allHtlcs: { cs: `Všechny HTLC`, en: `All HTLCs` },
+  totalNumberOfHtlcRecordsDetect: { cs: `Celkový počet HTLC záznamů detekovaných daemonem.`, en: `Total number of HTLC records detected by the daemon.` },
+  refunded: { cs: `Refundováno`, en: `Refunded` },
+  afterExpiry: { cs: `Po vypršení`, en: `After expiry` },
+  numberOfHtlcsRefundedAfterTheT: { cs: `Počet HTLC, které byly refundovány po vypršení časového zámku.`, en: `Number of HTLCs refunded after the timelock expired.` },
+  claimed: { cs: `Uplatněno`, en: `Claimed` },
+  successfulSwaps: { cs: `Úspěšné swapy`, en: `Successful swaps` },
+  numberOfHtlcsSuccessfullyClaim: { cs: `Počet HTLC úspěšně uplatněných pomocí preimage.`, en: `Number of HTLCs successfully claimed with a preimage.` },
+  active: { cs: `Aktivní`, en: `Active` },
+  pending: { cs: `Čekající`, en: `Pending` },
+  numberOfHtlcLocksWaitingForCla: { cs: `Počet HTLC zámek čekajících na claim nebo refund.`, en: `Number of HTLC locks waiting for claim or refund.` },
+  totalZion: { cs: `Celkem ZION`, en: `Total ZION` },
+  lockedInEscrow: { cs: `Zamčeno v escrow`, en: `Locked in escrow` },
+  totalVolumeOfZionTokensLockedI: { cs: `Celkový objem ZION tokenů zamčených v aktivních HTLC.`, en: `Total volume of ZION tokens locked in active HTLCs.` },
+  avgTimelock: { cs: `Prům. timelock`, en: `Avg Timelock` },
+  perLock: { cs: `Na lock`, en: `Per lock` },
+  averageTimelockDurationForActi: { cs: `Průměrná délka časového zámku pro aktivní HTLC.`, en: `Average timelock duration for active HTLCs.` },
+  hashAlgorithm: { cs: `Hash algoritmus`, en: `Hash Algorithm` },
+  security: { cs: `Zabezpečení`, en: `Security` },
+  algorithmUsedToDeriveTheHashlo: { cs: `Algoritmus použitý pro výpočet hashlocku z preimage.`, en: `Algorithm used to derive the hashlock from the preimage.` },
+  protocol: { cs: `Protokol`, en: `Protocol` },
+  htlcAtomicSwap: { cs: `HTLC Atomic Swap`, en: `HTLC Atomic Swap` },
+  currentVersionOfTheZionAtomicS: { cs: `Aktuální verze ZION Atomic Swap protokolu.`, en: `Current version of the ZION Atomic Swap protocol.` },
+  initiateSwap: { cs: `Iniciovat Swap`, en: `Initiate Swap` },
+  zionL1Amount: { cs: `ZION L1 Částka`, en: `ZION L1 Amount` },
+  targetChain: { cs: `Cílová síť`, en: `Target Chain` },
+  timelockMins: { cs: `Časový zámek (min)`, en: `Timelock (Mins)` },
+  targetRecipientAddressEvm: { cs: `Cílová adresa příjemce (EVM)`, en: `Target Recipient Address (EVM)` },
+  k1GenerateHashKeys: { cs: `1. Vygenerovat hash klíče`, en: `1. Generate Hash Keys` },
+  generate: { cs: `Generovat`, en: `Generate` },
+  k2SendTransactionOnZionL1: { cs: `2. Odeslat transakci na ZION L1`, en: `2. Send Transaction on ZION L1` },
+  sendNativeZionToTheEscrowAddre: { cs: `Pošli nativní ZION na escrow adresu se zadaným memo. Daemon automaticky detekuje lock.`, en: `Send native ZION to the escrow address with this exact memo. Daemon will auto-detect the lock.` },
+  manageHtlcLock: { cs: `Spravovat HTLC zámek`, en: `Manage HTLC Lock` },
+  claimSwapRevealPreimageOrReque: { cs: `Uplatnit swap (Claim) nebo refundovat`, en: `Claim swap (reveal preimage) or request refund` },
+  recipientL1Address: { cs: `Příjemce (L1 adresa)`, en: `Recipient (L1 address)` },
+  bearerTokenOptional: { cs: `Bearer Token (Volitelný)`, en: `Bearer Token (Optional)` },
+  claimSwap: { cs: `Uplatnit (Claim)`, en: `Claim Swap` },
+  refund: { cs: `Refund`, en: `Refund` },
+  trackHtlcLock: { cs: `Vyhledat HTLC Lock`, en: `Track HTLC Lock` },
+  search: { cs: `Hledat`, en: `Search` },
+  activeHtlcLocks: { cs: `Aktivní HTLC Zámky`, en: `Active HTLC Locks` },
+  pendingClaimOrWaitingForRefund: { cs: `Čekající na uplatnění nebo vypršení časového zámku`, en: `Pending claim or waiting for refund on expiry` },
+  amount: { cs: `Částka`, en: `Amount` },
+  chain: { cs: `Síť`, en: `Chain` },
+  recipient: { cs: `Příjemce`, en: `Recipient` },
+  timelock: { cs: `Zámek`, en: `Timelock` },
+  loadingLocks: { cs: `Načítám locks…`, en: `Loading locks…` },
+  noActiveHtlcLocksInTheDaemon: { cs: `Žádné aktivní HTLC zámky v daemonu`, en: `No active HTLC locks in the daemon` },
+  faq: { cs: `FAQ`, en: `FAQ` },
+  frequentlyAskedQuestions: { cs: `Často kladené dotazy`, en: `Frequently Asked Questions` },
+  learnMoreAboutZionDefi: { cs: `Více o ZION DeFi`, en: `Learn more about ZION DeFi` },
+  bridge: { cs: `Bridge`, en: `Bridge` },
+  defiHub: { cs: `DeFi Hub`, en: `DeFi Hub` },
+  documentation: { cs: `Dokumentace`, en: `Documentation` },
+};
+
 // ─── Stat Card helper (matches /defi & /bridge) ───────────────────────────────
 
 function StatCard({
@@ -92,26 +180,20 @@ const SECTIONS: { key: SectionTab; labelCs: string; labelEn: string; icon: typeo
 
 const getFaqs = (cs: boolean) => [
   {
-    q: cs ? 'Co je HTLC swap?' : 'What is an HTLC swap?',
-    a: cs
-      ? 'Hash Time-Locked Contract (HTLC) umožňuje trustless cross-chain swap. Provedení vyžaduje znalost preimage nebo vypršení časového zámku.'
-      : 'A Hash Time-Locked Contract (HTLC) enables a trustless cross-chain swap. Settlement requires either the preimage or the timelock to expire.',
+    q: SwapCopy.whatIsAnHtlcSwap[cs ? 'cs' : 'en'],
+    a: SwapCopy.aHashTimeLockedContractHtlcEna[cs ? 'cs' : 'en'],
   },
   {
-    q: cs ? 'Jak dlouho trvá swap?' : 'How long does a swap take?',
-    a: cs
-      ? 'Vytvoření zámku je okamžité po potvrzení L1 transakce. Claim probíhá během několika minut. Refund je možný až po vypršení timelocku.'
-      : 'Locking is immediate after the L1 transaction confirms. Claiming takes a few minutes. Refunds are only possible after the timelock expires.',
+    q: SwapCopy.howLongDoesASwapTake[cs ? 'cs' : 'en'],
+    a: SwapCopy.lockingIsImmediateAfterTheL1Tr[cs ? 'cs' : 'en'],
   },
   {
-    q: cs ? 'Jaký je minimální obnos?' : 'What is the minimum amount?',
-    a: cs ? 'Minimum 100 ZION na jeden HTLC lock.' : 'Minimum 100 ZION per HTLC lock.',
+    q: SwapCopy.whatIsTheMinimumAmount[cs ? 'cs' : 'en'],
+    a: SwapCopy.minimum100ZionPerHtlcLock[cs ? 'cs' : 'en'],
   },
   {
-    q: cs ? 'Je to bezpečné?' : 'Is it safe?',
-    a: cs
-      ? 'Ano — swap je chráněn SHA-256 hashlockem a časovým zámkem. Escrow drží tokeny pouze do claimu/refundu.'
-      : 'Yes — the swap is secured by a SHA-256 hashlock and a timelock. The escrow only holds tokens until claim or refund.',
+    q: SwapCopy.isItSafe[cs ? 'cs' : 'en'],
+    a: SwapCopy.yesTheSwapIsSecuredByASha256Ha[cs ? 'cs' : 'en'],
   },
 ];
 
@@ -208,7 +290,7 @@ export default function SwapPage() {
   const handleClaim = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!actionHash || !actionPreimage || !actionRecipient) {
-      setActionMessage({ text: cs ? 'Vyplňte prosím všechna pole' : 'Please fill in all fields', success: false });
+      setActionMessage({ text: SwapCopy.pleaseFillInAllFields[cs ? 'cs' : 'en'], success: false });
       return;
     }
     try {
@@ -242,7 +324,7 @@ export default function SwapPage() {
   const handleRefund = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!actionHash) {
-      setActionMessage({ text: cs ? 'Zadejte prosím hashlock' : 'Please enter hashlock', success: false });
+      setActionMessage({ text: SwapCopy.pleaseEnterHashlock[cs ? 'cs' : 'en'], success: false });
       return;
     }
     try {
@@ -282,7 +364,7 @@ export default function SwapPage() {
       if (htlc) {
         setSearchResult(htlc);
       } else {
-        setSearchError(cs ? 'HTLC nebylo nalezeno.' : 'HTLC lock not found.');
+        setSearchError(SwapCopy.htlcLockNotFound[cs ? 'cs' : 'en']);
       }
     } catch (err: any) {
       setSearchError(err.message || 'Error');
@@ -329,29 +411,27 @@ export default function SwapPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <ArrowLeftRight className="h-4 w-4 text-zion-purple" />
-                {cs ? 'Atomic Swap · L1 ↔ EVM' : 'Atomic Swap · L1 ↔ EVM'}
+                {SwapCopy.atomicSwapL1Evm[cs ? 'cs' : 'en']}
               </div>
 
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                  {cs ? 'ZION L1 ↔ EVM řetězce' : 'ZION L1 ↔ EVM chains'}
+                  {SwapCopy.zionL1EvmChains[cs ? 'cs' : 'en']}
                 </p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? 'ZION Atomic Swap' : 'ZION Atomic Swap'}
+                  {SwapCopy.zionAtomicSwap[cs ? 'cs' : 'en']}
                 </h1>
               </div>
 
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? 'Plně decentralizované cross-chain swapy bez prostředníků. Trustless HTLC protokol chráněný SHA-256 hashlocky a časovými zámky.'
-                  : 'Fully decentralized cross-chain swaps with no middlemen. Trustless HTLC protocol secured by SHA-256 hashlocks and timelocks.'}
+                {SwapCopy.fullyDecentralizedCrossChainSw[cs ? 'cs' : 'en']}
               </p>
 
               {/* Status badges */}
               <div className="flex flex-wrap items-center gap-3 text-xs">
                 <span className={`zion-badge ${escrowOnline ? 'zion-badge-green' : 'border-red-500/30 bg-red-500/10 text-red-300'}`}>
                   <span className={`h-2 w-2 rounded-full ${escrowOnline ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-                  {escrowOnline ? (cs ? 'Escrow Ready' : 'Escrow Ready') : (cs ? 'Escrow Offline' : 'Escrow Offline')}
+                  {escrowOnline ? (SwapCopy.escrowReady[cs ? 'cs' : 'en']) : (SwapCopy.escrowOffline[cs ? 'cs' : 'en'])}
                 </span>
 
                 <span className="zion-badge">
@@ -362,7 +442,7 @@ export default function SwapPage() {
 
                 <span className="zion-badge">
                   <Clock className="h-3.5 w-3.5 text-zion-cyan" />
-                  <span className="text-gray-300">{cs ? 'Min. časový zámek' : 'Min timelock'}:</span>
+                  <span className="text-gray-300">{SwapCopy.minTimelock[cs ? 'cs' : 'en']}:</span>
                   <span className="font-mono text-white">30 min</span>
                 </span>
               </div>
@@ -372,39 +452,39 @@ export default function SwapPage() {
             <div className="w-full lg:max-w-md space-y-3">
               <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
-                  {cs ? 'Rychlý přehled' : 'Quick Overview'}
+                  {SwapCopy.quickOverview[cs ? 'cs' : 'en']}
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Wallet className="h-4 w-4 text-zion-purple" />
-                      {cs ? 'Escrow adresa' : 'Escrow Address'}
+                      {SwapCopy.escrowAddress[cs ? 'cs' : 'en']}
                     </div>
                     <span className="font-mono text-white text-xs truncate max-w-[160px]">
-                      {escrowLoading ? (cs ? 'Načítám…' : 'Loading…') : (escrowAddress || (cs ? 'Nedostupná' : 'Unavailable'))}
+                      {escrowLoading ? (SwapCopy.loading[cs ? 'cs' : 'en']) : (escrowAddress || (SwapCopy.unavailable[cs ? 'cs' : 'en']))}
                     </span>
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Unlock className="h-4 w-4 text-zion-cyan" />
-                      {cs ? 'Aktivní zámky' : 'Active Locks'}
+                      {SwapCopy.activeLocks[cs ? 'cs' : 'en']}
                     </div>
                     <span className="font-mono text-white">{activeCount.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <ShieldCheck className="h-4 w-4 text-zion-purple" />
-                      {cs ? 'Celkem zamčeno' : 'Total Locked'}
+                      {SwapCopy.totalLocked[cs ? 'cs' : 'en']}
                     </div>
                     <span className="font-mono text-white">{totalLocked.toLocaleString()} ZION</span>
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Activity className={`h-4 w-4 ${escrowOnline ? 'text-zion-cyan' : 'text-red-400'}`} />
-                      {cs ? 'Relayer' : 'Relayer'}
+                      {SwapCopy.relayer[cs ? 'cs' : 'en']}
                     </div>
                     <span className={`font-mono ${escrowOnline ? 'text-zion-cyan' : 'text-red-300'}`}>
-                      {escrowOnline ? (cs ? 'Online' : 'Online') : (cs ? 'Offline' : 'Offline')}
+                      {escrowOnline ? (SwapCopy.online[cs ? 'cs' : 'en']) : (SwapCopy.offline[cs ? 'cs' : 'en'])}
                     </span>
                   </div>
                 </div>
@@ -422,15 +502,13 @@ export default function SwapPage() {
           transition={{ delay: 0.04 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{SwapCopy.telemetry[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Statistiky swapů' : 'Swap Statistics'}
+              {SwapCopy.swapStatistics[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
-              {cs
-                ? 'Metriky HTLC swapů agregované z daemon API v reálném čase.'
-                : 'HTLC swap metrics aggregated from the daemon API in real time.'}
+              {SwapCopy.htlcSwapMetricsAggregatedFromT[cs ? 'cs' : 'en']}
             </p>
           </div>
 
@@ -451,80 +529,80 @@ export default function SwapPage() {
                 colorClass="text-cyan-400"
                 bgClass="bg-cyan-400/10"
                 rc="6, 182, 212"
-                label={cs ? 'Celkem locků' : 'Total Locks'}
+                label={SwapCopy.totalLocks[cs ? 'cs' : 'en']}
                 value={pendingHtlcs.length.toLocaleString()}
-                sub={cs ? 'Všechny HTLC' : 'All HTLCs'}
-                tip={cs ? 'Celkový počet HTLC záznamů detekovaných daemonem.' : 'Total number of HTLC records detected by the daemon.'}
+                sub={SwapCopy.allHtlcs[cs ? 'cs' : 'en']}
+                tip={SwapCopy.totalNumberOfHtlcRecordsDetect[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<Flame className="h-5 w-5" />}
                 colorClass="text-purple-400"
                 bgClass="bg-purple-400/10"
                 rc="147, 51, 234"
-                label={cs ? 'Refundováno' : 'Refunded'}
+                label={SwapCopy.refunded[cs ? 'cs' : 'en']}
                 value={refundedCount.toLocaleString()}
-                sub={cs ? 'Po vypršení' : 'After expiry'}
-                tip={cs ? 'Počet HTLC, které byly refundovány po vypršení časového zámku.' : 'Number of HTLCs refunded after the timelock expired.'}
+                sub={SwapCopy.afterExpiry[cs ? 'cs' : 'en']}
+                tip={SwapCopy.numberOfHtlcsRefundedAfterTheT[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<CheckCircle2 className="h-5 w-5" />}
                 colorClass="text-cyan-400"
                 bgClass="bg-cyan-400/10"
                 rc="6, 182, 212"
-                label={cs ? 'Uplatněno' : 'Claimed'}
+                label={SwapCopy.claimed[cs ? 'cs' : 'en']}
                 value={claimedCount.toLocaleString()}
-                sub={cs ? 'Úspěšné swapy' : 'Successful swaps'}
-                tip={cs ? 'Počet HTLC úspěšně uplatněných pomocí preimage.' : 'Number of HTLCs successfully claimed with a preimage.'}
+                sub={SwapCopy.successfulSwaps[cs ? 'cs' : 'en']}
+                tip={SwapCopy.numberOfHtlcsSuccessfullyClaim[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<Activity className="h-5 w-5" />}
                 colorClass="text-cyan-400"
                 bgClass="bg-cyan-400/10"
                 rc="6, 182, 212"
-                label={cs ? 'Aktivní' : 'Active'}
+                label={SwapCopy.active[cs ? 'cs' : 'en']}
                 value={activeCount.toLocaleString()}
-                sub={cs ? 'Čekající' : 'Pending'}
-                tip={cs ? 'Počet HTLC zámek čekajících na claim nebo refund.' : 'Number of HTLC locks waiting for claim or refund.'}
+                sub={SwapCopy.pending[cs ? 'cs' : 'en']}
+                tip={SwapCopy.numberOfHtlcLocksWaitingForCla[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<Wallet className="h-5 w-5" />}
                 colorClass="text-purple-400"
                 bgClass="bg-purple-400/10"
                 rc="147, 51, 234"
-                label={cs ? 'Celkem ZION' : 'Total ZION'}
+                label={SwapCopy.totalZion[cs ? 'cs' : 'en']}
                 value={`${totalLocked.toLocaleString()} ZION`}
-                sub={cs ? 'Zamčeno v escrow' : 'Locked in escrow'}
-                tip={cs ? 'Celkový objem ZION tokenů zamčených v aktivních HTLC.' : 'Total volume of ZION tokens locked in active HTLCs.'}
+                sub={SwapCopy.lockedInEscrow[cs ? 'cs' : 'en']}
+                tip={SwapCopy.totalVolumeOfZionTokensLockedI[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<Clock className="h-5 w-5" />}
                 colorClass="text-purple-400"
                 bgClass="bg-purple-400/10"
                 rc="147, 51, 234"
-                label={cs ? 'Prům. timelock' : 'Avg Timelock'}
+                label={SwapCopy.avgTimelock[cs ? 'cs' : 'en']}
                 value={`${avgTimelock} min`}
-                sub={cs ? 'Na lock' : 'Per lock'}
-                tip={cs ? 'Průměrná délka časového zámku pro aktivní HTLC.' : 'Average timelock duration for active HTLCs.'}
+                sub={SwapCopy.perLock[cs ? 'cs' : 'en']}
+                tip={SwapCopy.averageTimelockDurationForActi[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<Shield className="h-5 w-5" />}
                 colorClass="text-cyan-400"
                 bgClass="bg-cyan-400/10"
                 rc="6, 182, 212"
-                label={cs ? 'Hash algoritmus' : 'Hash Algorithm'}
+                label={SwapCopy.hashAlgorithm[cs ? 'cs' : 'en']}
                 value="SHA-256"
-                sub={cs ? 'Zabezpečení' : 'Security'}
-                tip={cs ? 'Algoritmus použitý pro výpočet hashlocku z preimage.' : 'Algorithm used to derive the hashlock from the preimage.'}
+                sub={SwapCopy.security[cs ? 'cs' : 'en']}
+                tip={SwapCopy.algorithmUsedToDeriveTheHashlo[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<Sparkles className="h-5 w-5" />}
                 colorClass="text-purple-400"
                 bgClass="bg-purple-400/10"
                 rc="147, 51, 234"
-                label={cs ? 'Protokol' : 'Protocol'}
+                label={SwapCopy.protocol[cs ? 'cs' : 'en']}
                 value="v3.0.6"
-                sub={cs ? 'HTLC Atomic Swap' : 'HTLC Atomic Swap'}
-                tip={cs ? 'Aktuální verze ZION Atomic Swap protokolu.' : 'Current version of the ZION Atomic Swap protocol.'}
+                sub={SwapCopy.htlcAtomicSwap[cs ? 'cs' : 'en']}
+                tip={SwapCopy.currentVersionOfTheZionAtomicS[cs ? 'cs' : 'en']}
               />
             </div>
           )}
@@ -582,7 +660,7 @@ export default function SwapPage() {
                   <Zap className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">{cs ? 'Iniciovat Swap' : 'Initiate Swap'}</h2>
+                  <h2 className="text-xl font-bold">{SwapCopy.initiateSwap[cs ? 'cs' : 'en']}</h2>
                   <p className="text-xs text-gray-500">ZION L1 → Target Chain (Base / EVM)</p>
                 </div>
               </div>
@@ -591,7 +669,7 @@ export default function SwapPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">
-                      {cs ? 'ZION L1 Částka' : 'ZION L1 Amount'}
+                      {SwapCopy.zionL1Amount[cs ? 'cs' : 'en']}
                     </label>
                     <input
                       type="number"
@@ -605,7 +683,7 @@ export default function SwapPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">
-                        {cs ? 'Cílová síť' : 'Target Chain'}
+                        {SwapCopy.targetChain[cs ? 'cs' : 'en']}
                       </label>
                       <select
                         value={initChain}
@@ -620,7 +698,7 @@ export default function SwapPage() {
                     </div>
                     <div>
                       <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">
-                        {cs ? 'Časový zámek (min)' : 'Timelock (Mins)'}
+                        {SwapCopy.timelockMins[cs ? 'cs' : 'en']}
                       </label>
                       <input
                         type="number"
@@ -634,7 +712,7 @@ export default function SwapPage() {
 
                   <div>
                     <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">
-                      {cs ? 'Cílová adresa příjemce (EVM)' : 'Target Recipient Address (EVM)'}
+                      {SwapCopy.targetRecipientAddressEvm[cs ? 'cs' : 'en']}
                     </label>
                     <input
                       type="text"
@@ -651,13 +729,13 @@ export default function SwapPage() {
                   <div className="zion-rainbow-sub p-4 space-y-3" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-gray-300">
-                        {cs ? '1. Vygenerovat hash klíče' : '1. Generate Hash Keys'}
+                        {SwapCopy.k1GenerateHashKeys[cs ? 'cs' : 'en']}
                       </span>
                       <button
                         onClick={handleGenerateKeys}
                         className="zion-button-primary text-xs py-1.5 px-3"
                       >
-                        {cs ? 'Generovat' : 'Generate'}
+                        {SwapCopy.generate[cs ? 'cs' : 'en']}
                       </button>
                     </div>
 
@@ -693,12 +771,10 @@ export default function SwapPage() {
                     <div className="zion-rainbow-sub p-4 space-y-2 text-xs" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                       <div className="flex items-center gap-1.5 text-cyan-400 font-semibold mb-1">
                         <Info className="h-4 w-4" />
-                        {cs ? '2. Odeslat transakci na ZION L1' : '2. Send Transaction on ZION L1'}
+                        {SwapCopy.k2SendTransactionOnZionL1[cs ? 'cs' : 'en']}
                       </div>
                       <p className="text-gray-400">
-                        {cs
-                          ? 'Pošli nativní ZION na escrow adresu se zadaným memo. Daemon automaticky detekuje lock.'
-                          : 'Send native ZION to the escrow address with this exact memo. Daemon will auto-detect the lock.'}
+                        {SwapCopy.sendNativeZionToTheEscrowAddre[cs ? 'cs' : 'en']}
                       </p>
                       <div className="space-y-1.5 font-mono zion-rainbow-sub p-3 relative" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                         <div><span className="text-gray-500">Escrow:</span> <span className="text-white break-all">{escrowLoading ? 'Loading…' : (escrowAddress || 'Unavailable')}</span></div>
@@ -733,8 +809,8 @@ export default function SwapPage() {
                   <Key className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">{cs ? 'Spravovat HTLC zámek' : 'Manage HTLC Lock'}</h2>
-                  <p className="text-xs text-gray-500">{cs ? 'Uplatnit swap (Claim) nebo refundovat' : 'Claim swap (reveal preimage) or request refund'}</p>
+                  <h2 className="text-xl font-bold">{SwapCopy.manageHtlcLock[cs ? 'cs' : 'en']}</h2>
+                  <p className="text-xs text-gray-500">{SwapCopy.claimSwapRevealPreimageOrReque[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
 
@@ -768,7 +844,7 @@ export default function SwapPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">
-                      {cs ? 'Příjemce (L1 adresa)' : 'Recipient (L1 address)'}
+                      {SwapCopy.recipientL1Address[cs ? 'cs' : 'en']}
                     </label>
                     <input
                       type="text"
@@ -780,7 +856,7 @@ export default function SwapPage() {
                   </div>
                   <div>
                     <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">
-                      {cs ? 'Bearer Token (Volitelný)' : 'Bearer Token (Optional)'}
+                      {SwapCopy.bearerTokenOptional[cs ? 'cs' : 'en']}
                     </label>
                     <input
                       type="password"
@@ -799,14 +875,14 @@ export default function SwapPage() {
                     className="flex-1 zion-button-primary disabled:opacity-50"
                   >
                     {actionLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
-                    {cs ? 'Uplatnit (Claim)' : 'Claim Swap'}
+                    {SwapCopy.claimSwap[cs ? 'cs' : 'en']}
                   </button>
                   <button
                     onClick={handleRefund}
                     disabled={actionLoading}
                     className="zion-button-secondary px-6 disabled:opacity-50"
                   >
-                    {cs ? 'Refund' : 'Refund'}
+                    {SwapCopy.refund[cs ? 'cs' : 'en']}
                   </button>
                 </div>
               </form>
@@ -843,7 +919,7 @@ export default function SwapPage() {
               <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
                 <h3 className="text-base font-bold flex items-center gap-2">
                   <Search className="h-4 w-4 text-cyan-400" />
-                  {cs ? 'Vyhledat HTLC Lock' : 'Track HTLC Lock'}
+                  {SwapCopy.trackHtlcLock[cs ? 'cs' : 'en']}
                 </h3>
                 <form onSubmit={handleSearch} className="flex gap-2">
                   <input
@@ -858,7 +934,7 @@ export default function SwapPage() {
                     disabled={searchLoading}
                     className="zion-button-secondary px-4 py-2 text-xs font-semibold"
                   >
-                    {searchLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : (cs ? 'Hledat' : 'Search')}
+                    {searchLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : (SwapCopy.search[cs ? 'cs' : 'en'])}
                   </button>
                 </form>
 
@@ -912,10 +988,10 @@ export default function SwapPage() {
                   <div>
                     <h3 className="text-lg font-bold flex items-center gap-2">
                       <Activity className="h-5 w-5 text-cyan-400" />
-                      {cs ? 'Aktivní HTLC Zámky' : 'Active HTLC Locks'}
+                      {SwapCopy.activeHtlcLocks[cs ? 'cs' : 'en']}
                     </h3>
                     <p className="text-xs text-gray-500">
-                      {cs ? 'Čekající na uplatnění nebo vypršení časového zámku' : 'Pending claim or waiting for refund on expiry'}
+                      {SwapCopy.pendingClaimOrWaitingForRefund[cs ? 'cs' : 'en']}
                     </p>
                   </div>
                   <button
@@ -932,10 +1008,10 @@ export default function SwapPage() {
                     <thead>
                       <tr className="text-gray-500 border-b border-white/10">
                         <th className="py-3 px-4">Hash</th>
-                        <th className="py-3 px-4">{cs ? 'Částka' : 'Amount'}</th>
-                        <th className="py-3 px-4">{cs ? 'Síť' : 'Chain'}</th>
-                        <th className="py-3 px-4">{cs ? 'Příjemce' : 'Recipient'}</th>
-                        <th className="py-3 px-4">{cs ? 'Zámek' : 'Timelock'}</th>
+                        <th className="py-3 px-4">{SwapCopy.amount[cs ? 'cs' : 'en']}</th>
+                        <th className="py-3 px-4">{SwapCopy.chain[cs ? 'cs' : 'en']}</th>
+                        <th className="py-3 px-4">{SwapCopy.recipient[cs ? 'cs' : 'en']}</th>
+                        <th className="py-3 px-4">{SwapCopy.timelock[cs ? 'cs' : 'en']}</th>
                         <th className="py-3 px-4">State</th>
                       </tr>
                     </thead>
@@ -943,13 +1019,13 @@ export default function SwapPage() {
                       {pendingLoading ? (
                         <tr>
                           <td colSpan={6} className="py-8 text-center text-gray-500">
-                            {cs ? 'Načítám locks…' : 'Loading locks…'}
+                            {SwapCopy.loadingLocks[cs ? 'cs' : 'en']}
                           </td>
                         </tr>
                       ) : pendingHtlcs.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="py-8 text-center text-gray-500 italic">
-                            {cs ? 'Žádné aktivní HTLC zámky v daemonu' : 'No active HTLC locks in the daemon'}
+                            {SwapCopy.noActiveHtlcLocksInTheDaemon[cs ? 'cs' : 'en']}
                           </td>
                         </tr>
                       ) : (
@@ -993,10 +1069,10 @@ export default function SwapPage() {
           style={{ '--rc': '147, 51, 234' } as CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'FAQ' : 'FAQ'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{SwapCopy.faq[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <HelpCircle className="h-7 w-7 text-purple-400" />
-              {cs ? 'Často kladené dotazy' : 'Frequently Asked Questions'}
+              {SwapCopy.frequentlyAskedQuestions[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -1037,17 +1113,17 @@ export default function SwapPage() {
           className="zion-cta-banner"
         >
           <h2 className="text-2xl font-semibold text-white text-center mb-6">
-            {cs ? 'Více o ZION DeFi' : 'Learn more about ZION DeFi'}
+            {SwapCopy.learnMoreAboutZionDefi[cs ? 'cs' : 'en']}
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
             <a href="/bridge" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
-              <ArrowLeftRight className="h-4 w-4 text-zion-cyan" /> {cs ? 'Bridge' : 'Bridge'}
+              <ArrowLeftRight className="h-4 w-4 text-zion-cyan" /> {SwapCopy.bridge[cs ? 'cs' : 'en']}
             </a>
             <a href="/defi" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
-              <TrendingUp className="h-4 w-4 text-zion-cyan" /> {cs ? 'DeFi Hub' : 'DeFi Hub'}
+              <TrendingUp className="h-4 w-4 text-zion-cyan" /> {SwapCopy.defiHub[cs ? 'cs' : 'en']}
             </a>
             <a href="/docs" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
-              <ExternalLink className="h-4 w-4 text-cyan-400" /> {cs ? 'Dokumentace' : 'Documentation'}
+              <ExternalLink className="h-4 w-4 text-cyan-400" /> {SwapCopy.documentation[cs ? 'cs' : 'en']}
             </a>
           </div>
         </motion.div>

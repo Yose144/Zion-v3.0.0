@@ -2,6 +2,12 @@
 
 import { Store, Cpu, Database, Server, Clock } from 'lucide-react';
 
+const MarketplacePlaceholderCopy = {
+  comingSoon: { cs: `Připravujeme`, en: `Coming Soon` },
+  decentralizedMarketplaceForAiM: { cs: `Decentralizovaný marketplace pro AI modely, data a compute — poháněný ZION blockchainem.`, en: `Decentralized marketplace for AI models, data & compute — powered by ZION blockchain.` },
+  launchQ32026: { cs: `Spuštění: Q3 2026`, en: `Launch: Q3 2026` },
+};
+
 const MARKETPLACE_ITEMS = [
   {
     icon: Cpu,
@@ -36,16 +42,14 @@ export default function MarketplacePlaceholder({ lang = 'cs' }: { lang?: 'cs' | 
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zion-gold/10 border border-zion-gold/30 mb-4">
           <Store className="w-4 h-4 text-zion-gold" />
           <span className="text-sm font-medium text-zion-gold">
-            {lang === 'cs' ? 'Připravujeme' : 'Coming Soon'}
+            {MarketplacePlaceholderCopy.comingSoon[lang === 'cs' ? 'cs' : 'en']}
           </span>
         </div>
         <h2 className="text-3xl font-bold bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan bg-clip-text text-transparent mb-3">
           AI Native Marketplace
         </h2>
         <p className="text-gray-400 max-w-xl mx-auto">
-          {lang === 'cs'
-            ? 'Decentralizovaný marketplace pro AI modely, data a compute — poháněný ZION blockchainem.'
-            : 'Decentralized marketplace for AI models, data & compute — powered by ZION blockchain.'}
+          {MarketplacePlaceholderCopy.decentralizedMarketplaceForAiM[lang === 'cs' ? 'cs' : 'en']}
         </p>
       </div>
 
@@ -74,7 +78,7 @@ export default function MarketplacePlaceholder({ lang = 'cs' }: { lang?: 'cs' | 
       <div className="text-center">
         <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/10 bg-white/5 text-gray-400 text-sm">
           <Clock className="w-4 h-4" />
-          {lang === 'cs' ? 'Spuštění: Q3 2026' : 'Launch: Q3 2026'}
+          {MarketplacePlaceholderCopy.launchQ32026[lang === 'cs' ? 'cs' : 'en']}
         </div>
       </div>
     </div>

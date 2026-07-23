@@ -13,39 +13,81 @@ import {
 import { useLang } from '@/contexts/LanguageContext';
 import HiranyagarbhaChat from '@/components/HiranyagarbhaChat';
 
+const L3HiranCopy = {
+  deployment: { cs: `Deployment`, en: `Deployment` },
+  automatedGpuInstanceProvisioni: { cs: `Automatický provisioning GPU instance na Vast.ai — RTX 4090, A100. Docker kontejnery s inference endpointem.`, en: `Automated GPU instance provisioning on Vast.ai — RTX 4090, A100. Docker containers with inference endpoint.` },
+  monitoring: { cs: `Monitoring`, en: `Monitoring` },
+  prometheusGrafanaTelemetryInfe: { cs: `Prometheus + Grafana telemetrie — inference latence, VRAM využití, token throughput, error rate.`, en: `Prometheus + Grafana telemetry — inference latency, VRAM usage, token throughput, error rate.` },
+  ragPipeline: { cs: `RAG Pipeline`, en: `RAG Pipeline` },
+  chromadbAllMinilmL6V2Embedding: { cs: `ChromaDB + all-MiniLM-L6-v2 embeddings. 33 knowledge documents. Query router pro hybridní retrieval.`, en: `ChromaDB + all-MiniLM-L6-v2 embeddings. 33 knowledge documents. Query router for hybrid retrieval.` },
+  fineTuning: { cs: `Fine-tuning`, en: `Fine-tuning` },
+  qloraCurriculum5StagesRank1664: { cs: `QLoRA curriculum 5 stages. Rank 16-64. 22 181 instruction pairs. Unsloth/Meta-Llama-3.1-8B base.`, en: `QLoRA curriculum 5 stages. Rank 16-64. 22,181 instruction pairs. Unsloth/Meta-Llama-3.1-8B base.` },
+  stage1Foundation: { cs: `Stage 1: Foundation`, en: `Stage 1: Foundation` },
+  stage2ZionCore: { cs: `Stage 2: Zion Core`, en: `Stage 2: Zion Core` },
+  stage3CrossDomain: { cs: `Stage 3: Cross-domain`, en: `Stage 3: Cross-domain` },
+  stage4RagSynthesis: { cs: `Stage 4: RAG Synthesis`, en: `Stage 4: RAG Synthesis` },
+  k33KnowledgeDocs: { cs: `33 Knowledge Docs`, en: `33 Knowledge Docs` },
+  religionHistorySciencePhilosop: { cs: `Religion, history, science, philosophy, art, medicine, literature, mythology, languages.`, en: `Religion, history, science, philosophy, art, medicine, literature, mythology, languages.` },
+  vectorDbWithAllMinilmL6V2Embed: { cs: `Vector DB s all-MiniLM-L6-v2 embeddings. Multi-collection cosine-similarity retrieval.`, en: `Vector DB with all-MiniLM-L6-v2 embeddings. Multi-collection cosine-similarity retrieval.` },
+  queryRouter: { cs: `Query Router`, en: `Query Router` },
+  classifiesQueriesZionOnlyKnowl: { cs: `Klasifikuje dotazy: zion_only, knowledge_rag, hybrid. Dynamický routing.`, en: `Classifies queries: zion_only, knowledge_rag, hybrid. Dynamic routing.` },
+  hybridInference: { cs: `Hybrid Inference`, en: `Hybrid Inference` },
+  combinesFineTunedModelRetrieve: { cs: `Kombinace fine-tuned modelu + retrieved context v jednom inference kroku.`, en: `Combines fine-tuned model + retrieved context in a single inference step.` },
+  domainSpecificFineTunedModelFo: { cs: `Domain-specific fine-tuned model pro ZION ekosystém. 5 fází QLoRA tréninku.`, en: `Domain-specific fine-tuned model for ZION ecosystem. 5-stage QLoRA training.` },
+  fullFineTuningWithHybridRag48k: { cs: `Full fine-tuning s hybridním RAG. 48K pairs, 9 fází. 4x A100 80GB target.`, en: `Full fine-tuning with hybrid RAG. 48K pairs, 9 stages. 4x A100 80GB target.` },
+  knowledgeDocumentsForHybridRet: { cs: `Knowledge documents pro hybrid retrieval — religion, history, science, philosophy, art.`, en: `Knowledge documents for hybrid retrieval — religion, history, science, philosophy, art.` },
+  aiLayerOfTheZionEcosystem: { cs: `AI vrstva ZION ekosystému`, en: `AI layer of the ZION ecosystem` },
+  hiranV22L3: { cs: `Hiran v2.2 — L3`, en: `Hiran v2.2 — L3` },
+  orchestrationHubForZionAiDomai: { cs: `Orchestrační nástroj pro ZION AI. Domain-specific model (QLoRA 8B), hybridní RAG pipeline, fine-tuning marketplace a inference deployment na Vast.ai. Hiran v2.3 s 32B base a full fine-tuningem je ve vývoji.`, en: `Orchestration hub for ZION AI. Domain-specific model (QLoRA 8B), hybrid RAG pipeline, fine-tuning marketplace, and inference deployment on Vast.ai. Hiran v2.3 with 32B base and full fine-tuning is in development.` },
+  models: { cs: `Modely`, en: `Models` },
+  hiranModelCards: { cs: `Hiran Model Cards`, en: `Hiran Model Cards` },
+  method: { cs: `Metoda`, en: `Method` },
+  size: { cs: `Velikost`, en: `Size` },
+  speed: { cs: `Rychlost`, en: `Speed` },
+  hardware: { cs: `Hardware`, en: `Hardware` },
+  dataset: { cs: `Dataset`, en: `Dataset` },
+  training: { cs: `Trénink`, en: `Training` },
+  trainingPhasesV22: { cs: `Tréninkové fáze v2.2`, en: `Training Phases v2.2` },
+  done: { cs: `Hotovo`, en: `Done` },
+  architecture: { cs: `Architektura`, en: `Architecture` },
+  hybridRagV23: { cs: `Hybrid RAG — v2.3`, en: `Hybrid RAG — v2.3` },
+  becauseGeneralKnowledgeIsTooLa: { cs: `Protože obecné znalosti jsou příliš rozsáhlé pro 32B parametrů, v2.3 používá RAG vedle FT.`, en: `Because general knowledge is too large for 32B parameters, v2.3 uses RAG alongside FT.` },
+  liveChat: { cs: `Živý chat`, en: `Live Chat` },
+  askHiranyagarbha: { cs: `Zeptej se Hiranyagarbhy`, en: `Ask Hiranyagarbha` },
+  domainSpecificAiAssistantTrain: { cs: `Domain-specific AI asistent trénovaný na ZION codebase a dokumentaci.`, en: `Domain-specific AI assistant trained on ZION codebase and documentation.` },
+  marketplace: { cs: `Marketplace`, en: `Marketplace` },
+  aiMarketplace: { cs: `AI Marketplace`, en: `AI Marketplace` },
+  planned: { cs: `Plánováno`, en: `Planned` },
+  operations: { cs: `Operace`, en: `Operations` },
+  orchestrationDeployment: { cs: `Orchestrace & Deployment`, en: `Orchestration & Deployment` },
+  learnMoreAboutL3AndTheEcosyste: { cs: `Více o L3 a ekosystému`, en: `Learn more about L3 and the ecosystem` },
+};
+
 const HIRAN_API = process.env.NEXT_PUBLIC_HIRAN_API ?? 'http://127.0.0.1:8002';
 const HIRANYAGARBHA_API = process.env.NEXT_PUBLIC_HIRANYAGARBHA_API ?? 'http://127.0.0.1:8001';
 
 const getOrchestration = (cs: boolean) => [
   {
-    title: cs ? 'Deployment' : 'Deployment',
-    desc: cs
-      ? 'Automatický provisioning GPU instance na Vast.ai — RTX 4090, A100. Docker kontejnery s inference endpointem.'
-      : 'Automated GPU instance provisioning on Vast.ai — RTX 4090, A100. Docker containers with inference endpoint.',
+    title: L3HiranCopy.deployment[cs ? 'cs' : 'en'],
+    desc: L3HiranCopy.automatedGpuInstanceProvisioni[cs ? 'cs' : 'en'],
     icon: Server,
     color: 'text-cyan-400',
   },
   {
-    title: cs ? 'Monitoring' : 'Monitoring',
-    desc: cs
-      ? 'Prometheus + Grafana telemetrie — inference latence, VRAM využití, token throughput, error rate.'
-      : 'Prometheus + Grafana telemetry — inference latency, VRAM usage, token throughput, error rate.',
+    title: L3HiranCopy.monitoring[cs ? 'cs' : 'en'],
+    desc: L3HiranCopy.prometheusGrafanaTelemetryInfe[cs ? 'cs' : 'en'],
     icon: Activity,
     color: 'text-emerald-400',
   },
   {
-    title: cs ? 'RAG Pipeline' : 'RAG Pipeline',
-    desc: cs
-      ? 'ChromaDB + all-MiniLM-L6-v2 embeddings. 33 knowledge documents. Query router pro hybridní retrieval.'
-      : 'ChromaDB + all-MiniLM-L6-v2 embeddings. 33 knowledge documents. Query router for hybrid retrieval.',
+    title: L3HiranCopy.ragPipeline[cs ? 'cs' : 'en'],
+    desc: L3HiranCopy.chromadbAllMinilmL6V2Embedding[cs ? 'cs' : 'en'],
     icon: Database,
     color: 'text-purple-400',
   },
   {
-    title: cs ? 'Fine-tuning' : 'Fine-tuning',
-    desc: cs
-      ? 'QLoRA curriculum 5 stages. Rank 16-64. 22 181 instruction pairs. Unsloth/Meta-Llama-3.1-8B base.'
-      : 'QLoRA curriculum 5 stages. Rank 16-64. 22,181 instruction pairs. Unsloth/Meta-Llama-3.1-8B base.',
+    title: L3HiranCopy.fineTuning[cs ? 'cs' : 'en'],
+    desc: L3HiranCopy.qloraCurriculum5StagesRank1664[cs ? 'cs' : 'en'],
     icon: Zap,
     color: 'text-amber-400',
   },
@@ -82,7 +124,7 @@ const getModelCards = (cs: boolean) => [
 
 const getPhases = (cs: boolean) => [
   {
-    phase: cs ? 'Stage 1: Foundation' : 'Stage 1: Foundation',
+    phase: L3HiranCopy.stage1Foundation[cs ? 'cs' : 'en'],
     period: 'Rank 16 · 2 epochs',
     status: 'done',
     loss: '~1.297',
@@ -91,7 +133,7 @@ const getPhases = (cs: boolean) => [
       : ['3,869 pairs', 'Fee split, L1-L6', 'Issobella basics'],
   },
   {
-    phase: cs ? 'Stage 2: Zion Core' : 'Stage 2: Zion Core',
+    phase: L3HiranCopy.stage2ZionCore[cs ? 'cs' : 'en'],
     period: 'Rank 32 · 3 epochs',
     status: 'done',
     loss: '~1.040',
@@ -100,7 +142,7 @@ const getPhases = (cs: boolean) => [
       : ['2,368 pairs', 'Mining, DAO, bridge', 'Consensus details'],
   },
   {
-    phase: cs ? 'Stage 3: Cross-domain' : 'Stage 3: Cross-domain',
+    phase: L3HiranCopy.stage3CrossDomain[cs ? 'cs' : 'en'],
     period: 'Rank 64 · 2 epochs',
     status: 'done',
     loss: '~1.246',
@@ -109,7 +151,7 @@ const getPhases = (cs: boolean) => [
       : ['11,434 pairs', 'Religion, science, history', 'Comparative analysis'],
   },
   {
-    phase: cs ? 'Stage 4: RAG Synthesis' : 'Stage 4: RAG Synthesis',
+    phase: L3HiranCopy.stage4RagSynthesis[cs ? 'cs' : 'en'],
     period: 'Rank 64 · 1 epoch',
     status: 'done',
     loss: '~2.469',
@@ -121,26 +163,26 @@ const getPhases = (cs: boolean) => [
 
 const getRagArch = (cs: boolean) => [
   {
-    title: cs ? '33 Knowledge Docs' : '33 Knowledge Docs',
-    desc: cs ? 'Religion, history, science, philosophy, art, medicine, literature, mythology, languages.' : 'Religion, history, science, philosophy, art, medicine, literature, mythology, languages.',
+    title: L3HiranCopy.k33KnowledgeDocs[cs ? 'cs' : 'en'],
+    desc: L3HiranCopy.religionHistorySciencePhilosop[cs ? 'cs' : 'en'],
     icon: Database,
     color: 'text-emerald-400',
   },
   {
     title: 'ChromaDB',
-    desc: cs ? 'Vector DB s all-MiniLM-L6-v2 embeddings. Multi-collection cosine-similarity retrieval.' : 'Vector DB with all-MiniLM-L6-v2 embeddings. Multi-collection cosine-similarity retrieval.',
+    desc: L3HiranCopy.vectorDbWithAllMinilmL6V2Embed[cs ? 'cs' : 'en'],
     icon: Microchip,
     color: 'text-cyan-400',
   },
   {
-    title: cs ? 'Query Router' : 'Query Router',
-    desc: cs ? 'Klasifikuje dotazy: zion_only, knowledge_rag, hybrid. Dynamický routing.' : 'Classifies queries: zion_only, knowledge_rag, hybrid. Dynamic routing.',
+    title: L3HiranCopy.queryRouter[cs ? 'cs' : 'en'],
+    desc: L3HiranCopy.classifiesQueriesZionOnlyKnowl[cs ? 'cs' : 'en'],
     icon: Cable,
     color: 'text-purple-400',
   },
   {
-    title: cs ? 'Hybrid Inference' : 'Hybrid Inference',
-    desc: cs ? 'Kombinace fine-tuned modelu + retrieved context v jednom inference kroku.' : 'Combines fine-tuned model + retrieved context in a single inference step.',
+    title: L3HiranCopy.hybridInference[cs ? 'cs' : 'en'],
+    desc: L3HiranCopy.combinesFineTunedModelRetrieve[cs ? 'cs' : 'en'],
     icon: Bot,
     color: 'text-amber-400',
   },
@@ -151,9 +193,7 @@ const getMarketplace = (cs: boolean) => [
     name: 'Hiran v2.2 Model',
     version: 'FP16 · ~15 GB',
     status: 'live',
-    desc: cs
-      ? 'Domain-specific fine-tuned model pro ZION ekosystém. 5 fází QLoRA tréninku.'
-      : 'Domain-specific fine-tuned model for ZION ecosystem. 5-stage QLoRA training.',
+    desc: L3HiranCopy.domainSpecificFineTunedModelFo[cs ? 'cs' : 'en'],
     tags: ['LLM', 'Fine-tuned', '8B'],
     color: 'border-cyan-500/30 bg-cyan-500/5',
   },
@@ -161,9 +201,7 @@ const getMarketplace = (cs: boolean) => [
     name: 'Hiran v2.3 (WIP)',
     version: 'DeepSpeed ZeRO-3 · 32B',
     status: 'planned',
-    desc: cs
-      ? 'Full fine-tuning s hybridním RAG. 48K pairs, 9 fází. 4x A100 80GB target.'
-      : 'Full fine-tuning with hybrid RAG. 48K pairs, 9 stages. 4x A100 80GB target.',
+    desc: L3HiranCopy.fullFineTuningWithHybridRag48k[cs ? 'cs' : 'en'],
     tags: ['LLM', 'Full FT', '32B'],
     color: 'border-purple-500/30 bg-purple-500/5',
   },
@@ -171,9 +209,7 @@ const getMarketplace = (cs: boolean) => [
     name: 'ZION RAG Corpus',
     version: 'v1.0 · 33 docs',
     status: 'live',
-    desc: cs
-      ? 'Knowledge documents pro hybrid retrieval — religion, history, science, philosophy, art.'
-      : 'Knowledge documents for hybrid retrieval — religion, history, science, philosophy, art.',
+    desc: L3HiranCopy.knowledgeDocumentsForHybridRet[cs ? 'cs' : 'en'],
     tags: ['Dataset', 'RAG', 'Multilingual'],
     color: 'border-emerald-500/30 bg-emerald-500/5',
   },
@@ -246,16 +282,14 @@ export default function L3HiranPage() {
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                {cs ? 'AI vrstva ZION ekosystému' : 'AI layer of the ZION ecosystem'}
+                {L3HiranCopy.aiLayerOfTheZionEcosystem[cs ? 'cs' : 'en']}
               </p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-                {cs ? 'Hiran v2.2 — L3' : 'Hiran v2.2 — L3'}
+                {L3HiranCopy.hiranV22L3[cs ? 'cs' : 'en']}
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              {cs
-                ? 'Orchestrační nástroj pro ZION AI. Domain-specific model (QLoRA 8B), hybridní RAG pipeline, fine-tuning marketplace a inference deployment na Vast.ai. Hiran v2.3 s 32B base a full fine-tuningem je ve vývoji.'
-                : 'Orchestration hub for ZION AI. Domain-specific model (QLoRA 8B), hybrid RAG pipeline, fine-tuning marketplace, and inference deployment on Vast.ai. Hiran v2.3 with 32B base and full fine-tuning is in development.'}
+              {L3HiranCopy.orchestrationHubForZionAiDomai[cs ? 'cs' : 'en']}
             </p>
             <div className="flex flex-wrap gap-3 text-xs">
               <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-cyan-200">
@@ -280,10 +314,10 @@ export default function L3HiranPage() {
           style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Modely' : 'Models'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.models[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Microchip className="h-7 w-7 text-cyan-400" />
-              {cs ? 'Hiran Model Cards' : 'Hiran Model Cards'}
+              {L3HiranCopy.hiranModelCards[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid md:grid-cols-2 gap-5">
@@ -303,12 +337,12 @@ export default function L3HiranPage() {
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
-                  <div><p className="text-xs text-gray-500">{cs ? 'Metoda' : 'Method'}</p><p className="text-gray-300 font-mono">{model.method}</p></div>
-                  <div><p className="text-xs text-gray-500">{cs ? 'Velikost' : 'Size'}</p><p className="text-gray-300 font-mono">{model.size}</p></div>
-                  <div><p className="text-xs text-gray-500">{cs ? 'Rychlost' : 'Speed'}</p><p className="text-gray-300 font-mono">{model.speed}</p></div>
+                  <div><p className="text-xs text-gray-500">{L3HiranCopy.method[cs ? 'cs' : 'en']}</p><p className="text-gray-300 font-mono">{model.method}</p></div>
+                  <div><p className="text-xs text-gray-500">{L3HiranCopy.size[cs ? 'cs' : 'en']}</p><p className="text-gray-300 font-mono">{model.size}</p></div>
+                  <div><p className="text-xs text-gray-500">{L3HiranCopy.speed[cs ? 'cs' : 'en']}</p><p className="text-gray-300 font-mono">{model.speed}</p></div>
                   <div><p className="text-xs text-gray-500">VRAM</p><p className="text-gray-300 font-mono">{model.vram}</p></div>
-                  <div><p className="text-xs text-gray-500">{cs ? 'Hardware' : 'Hardware'}</p><p className="text-gray-300 font-mono">{model.hardware}</p></div>
-                  <div><p className="text-xs text-gray-500">{cs ? 'Dataset' : 'Dataset'}</p><p className="text-gray-300 font-mono">{model.dataset}</p></div>
+                  <div><p className="text-xs text-gray-500">{L3HiranCopy.hardware[cs ? 'cs' : 'en']}</p><p className="text-gray-300 font-mono">{model.hardware}</p></div>
+                  <div><p className="text-xs text-gray-500">{L3HiranCopy.dataset[cs ? 'cs' : 'en']}</p><p className="text-gray-300 font-mono">{model.dataset}</p></div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {model.tags.map((tag) => (
@@ -329,10 +363,10 @@ export default function L3HiranPage() {
           style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Trénink' : 'Training'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.training[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <FlaskConical className="h-7 w-7 text-amber-400" />
-              {cs ? 'Tréninkové fáze v2.2' : 'Training Phases v2.2'}
+              {L3HiranCopy.trainingPhasesV22[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -341,7 +375,7 @@ export default function L3HiranPage() {
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-sm font-bold text-white">{phase.phase}</span>
                   <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/20">
-                    {phase.status === 'done' ? (cs ? 'Hotovo' : 'Done') : phase.status}
+                    {phase.status === 'done' ? (L3HiranCopy.done[cs ? 'cs' : 'en']) : phase.status}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mb-1">{phase.period}</p>
@@ -368,13 +402,13 @@ export default function L3HiranPage() {
           style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Architektura' : 'Architecture'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.architecture[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Database className="h-7 w-7 text-purple-400" />
-              {cs ? 'Hybrid RAG — v2.3' : 'Hybrid RAG — v2.3'}
+              {L3HiranCopy.hybridRagV23[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
-              {cs ? 'Protože obecné znalosti jsou příliš rozsáhlé pro 32B parametrů, v2.3 používá RAG vedle FT.' : 'Because general knowledge is too large for 32B parameters, v2.3 uses RAG alongside FT.'}
+              {L3HiranCopy.becauseGeneralKnowledgeIsTooLa[cs ? 'cs' : 'en']}
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -399,15 +433,13 @@ export default function L3HiranPage() {
           <div className="mx-auto max-w-3xl text-center mb-8">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-cyan-300">
               <MessageCircle className="h-3.5 w-3.5" />
-              {cs ? 'Živý chat' : 'Live Chat'}
+              {L3HiranCopy.liveChat[cs ? 'cs' : 'en']}
             </div>
             <h2 className="text-2xl font-bold sm:text-3xl text-gradient">
-              {cs ? 'Zeptej se Hiranyagarbhy' : 'Ask Hiranyagarbha'}
+              {L3HiranCopy.askHiranyagarbha[cs ? 'cs' : 'en']}
             </h2>
             <p className="mt-3 text-gray-400">
-              {cs
-                ? 'Domain-specific AI asistent trénovaný na ZION codebase a dokumentaci.'
-                : 'Domain-specific AI assistant trained on ZION codebase and documentation.'}
+              {L3HiranCopy.domainSpecificAiAssistantTrain[cs ? 'cs' : 'en']}
             </p>
           </div>
           <div className="mx-auto max-w-2xl">
@@ -424,10 +456,10 @@ export default function L3HiranPage() {
           style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Marketplace' : 'Marketplace'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.marketplace[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <ShoppingCart className="h-7 w-7 text-emerald-400" />
-              {cs ? 'AI Marketplace' : 'AI Marketplace'}
+              {L3HiranCopy.aiMarketplace[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid gap-5 md:grid-cols-3">
@@ -440,7 +472,7 @@ export default function L3HiranPage() {
                       ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
                       : 'bg-purple-500/10 text-purple-300 border-purple-500/20'
                   }`}>
-                    {item.status === 'live' ? 'Live' : (cs ? 'Plánováno' : 'Planned')}
+                    {item.status === 'live' ? 'Live' : (L3HiranCopy.planned[cs ? 'cs' : 'en'])}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mb-2">{item.version}</p>
@@ -464,10 +496,10 @@ export default function L3HiranPage() {
           style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Operace' : 'Operations'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.operations[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Server className="h-7 w-7 text-cyan-400" />
-              {cs ? 'Orchestrace & Deployment' : 'Orchestration & Deployment'}
+              {L3HiranCopy.orchestrationDeployment[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -489,7 +521,7 @@ export default function L3HiranPage() {
           className="zion-cta-banner"
         >
           <h2 className="text-2xl font-semibold text-white text-center mb-6">
-            {cs ? 'Více o L3 a ekosystému' : 'Learn more about L3 and the ecosystem'}
+            {L3HiranCopy.learnMoreAboutL3AndTheEcosyste[cs ? 'cs' : 'en']}
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/ai-native" className="inline-flex items-center gap-2 rounded-2xl border border-cyan-500/30 bg-cyan-500/5 px-6 py-3 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/10 transition-colors">

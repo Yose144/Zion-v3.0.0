@@ -51,6 +51,193 @@ import {
   SITE_RUNTIME_LABEL,
 } from '@/lib/site';
 
+const NetworkCopy = {
+  publicNodes: { cs: `Veřejné nody`, en: `Public Nodes` },
+  k2NodeP2pMeshEdge1Edge2LocalBac: { cs: `2-uzlový P2P mesh: Edge 1, Edge 2 (Local Backup offline)`, en: `2-node P2P mesh: Edge 1, Edge 2 (Local Backup offline)` },
+  p2pMesh: { cs: `P2P mesh`, en: `P2P Mesh` },
+  k2Nodes: { cs: `2 uzly`, en: `2 nodes` },
+  edge1Edge2Within2BlockSyncLoca: { cs: `Edge 1 ↔ Edge 2 v syncu ≤2 bloků · Local Backup offline`, en: `Edge 1 ↔ Edge 2 within ≤2 block sync · Local Backup offline` },
+  telemetry: { cs: `Telemetrie`, en: `Telemetry` },
+  autoRefreshInterval: { cs: `Interval auto-obnovení`, en: `Auto-refresh interval` },
+  topology: { cs: `Topologie`, en: `Topology` },
+  v306E2e: { cs: `v3.0.6 E2E`, en: `v3.0.6 E2E` },
+  sshTunnelsApparmorUfwRpcAuditL: { cs: `SSH tunely, AppArmor, UFW, RPC audit log — vše aktivní`, en: `SSH tunnels, AppArmor, UFW, RPC audit log — all active` },
+  network: { cs: `Síť`, en: `Network` },
+  trinity: { cs: `Trinity`, en: `Trinity` },
+  mainnetBeta1111ServicesProtoco: { cs: `Mainnet Beta · 11/11 služeb · protocol 3.0.6`, en: `Mainnet Beta · 11/11 services · protocol 3.0.6` },
+  edgeNode1PrimaryPool: { cs: `Edge Node 1 (Primary / Pool)`, en: `Edge Node 1 (Primary / Pool)` },
+  publicP2p8333Stratum8444Rpc844: { cs: `Veřejný P2P 8333, stratum 8444, RPC 8443, pool API 8455 — pool live`, en: `Public P2P 8333, stratum 8444, RPC 8443, pool API 8455 — pool live` },
+  active: { cs: `Aktivní`, en: `Active` },
+  edgeNode2Follower: { cs: `Edge Node 2 (Follower)`, en: `Edge Node 2 (Follower)` },
+  p2pPeerOnPort8334Rpc8448FullyS: { cs: `P2P peer na portu 8334, RPC 8448 — plně synchronizovaný s primárním uzlem`, en: `P2P peer on port 8334, RPC 8448 — fully synchronized with primary` },
+  localBackupNodePrague: { cs: `Local Backup Node (Prague)`, en: `Local Backup Node (Prague)` },
+  backupNodeViaSshReverseForward: { cs: `Záložní uzel přes SSH reverzní forward 8446 — aktuálně offline`, en: `Backup node via SSH reverse forward 8446 — currently offline` },
+  zionBackupTunnel: { cs: `ZION Backup (tunel)`, en: `ZION Backup (tunnel)` },
+  offline: { cs: `Offline`, en: `Offline` },
+  publicStratum: { cs: `Veřejný stratum`, en: `Public Stratum` },
+  primaryMiningIngressPoolApi845: { cs: `Primární těžební vstup — pool API 8455`, en: `Primary mining ingress — pool API 8455` },
+  nativeRustJsonRpcForExplorersA: { cs: `Nativní Rust JSON-RPC pro explorer a tooling (2-uzlový mesh)`, en: `Native Rust JSON-RPC for explorers and tooling (2-node mesh)` },
+  k2NodeMesh83338334Backup8335Off: { cs: `2-uzlový mesh: 8333, 8334 · backup 8335 offline`, en: `2-node mesh: 8333, 8334 · backup 8335 offline` },
+  releaseContext: { cs: `Kontext releasu`, en: `Release Context` },
+  v306E2eStatus: { cs: `v3.0.6 E2E Status`, en: `v3.0.6 E2E Status` },
+  trinity_2: { cs: `Trinity ✓`, en: `Trinity ✓` },
+  k1111ServicesActiveF47F5ActiveM: { cs: `11/11 služeb aktivních · F4.7 + F5 aktivní · memory leak fix`, en: `11/11 services active · F4.7 + F5 active · memory leak fix` },
+  mining: { cs: `Těžba`, en: `Mining` },
+  connectAnyCosmicHarmonyCpuMine: { cs: `Připojte jakýkoli Cosmic Harmony / CPU miner k aktuálnímu veřejnému poolu na Edge Node 1.`, en: `Connect any Cosmic Harmony / CPU miner to the current public pool on Edge Node 1.` },
+  currentPrimary: { cs: `(aktuální primární)`, en: `(current primary)` },
+  nativeRustJsonRpcEndpointForEx: { cs: `Nativní Rust JSON-RPC endpoint pro explorer a tooling. Dostupný přes 2-uzlový mesh s auto-failover.`, en: `Native Rust JSON-RPC endpoint for explorers and tooling. Available across a 2-node mesh with auto-failover.` },
+  publicRuntimeEndpoint: { cs: `veřejný runtime endpoint`, en: `public runtime endpoint` },
+  nativeRustP2pNetwork2NodeMeshW: { cs: `Nativní Rust P2P síť — 2-uzlový mesh s výškou v syncu ≤2 bloků, všechny peery veřejně routované nebo přes tunel.`, en: `Native Rust P2P network — 2-node mesh with height sync within ≤2 blocks, all peers publicly routed or tunneled.` },
+  publicPeerEdge1: { cs: `Veřejný peer (Edge 1)`, en: `Public peer (Edge 1)` },
+  publicPeerEdge2: { cs: `Veřejný peer (Edge 2)`, en: `Public peer (Edge 2)` },
+  backupPeerTunnel: { cs: `Backup peer (tunel)`, en: `Backup peer (tunnel)` },
+  hardcodedSeedPeers: { cs: `Hardcoded seed peers`, en: `Hardcoded seed peers` },
+  nativeRustP2p2NodeMesh: { cs: `Nativní Rust P2P — 2-uzlový mesh`, en: `Native Rust P2P — 2-node mesh` },
+  v306TrinityMainnetBeta1111Serv: { cs: `v3.0.6 "Trinity, Mainnet Beta" — 11/11 služeb aktivních`, en: `v3.0.6 "Trinity, Mainnet Beta" — 11/11 services active` },
+  jsonRpcEndpointsLive84438448Ba: { cs: `JSON-RPC endpointy live (8443, 8448; backup 8446 offline)`, en: `JSON-RPC endpoints live (8443, 8448; backup 8446 offline)` },
+  e2eMemoTestsConfirmedInBlock75: { cs: `E2E memo testy potvrzené v bloku 752`, en: `E2E memo tests confirmed in block 752` },
+  f47MaxTxAmountCapF5SenderBalan: { cs: `F4.7 max-tx-amount cap + F5 sender balance check aktivní`, en: `F4.7 max-tx-amount cap + F5 sender balance check active` },
+  lwmaDaaTarget60sBlockTime: { cs: `LWMA DAA — cíl 60s block time`, en: `LWMA DAA — target 60s block time` },
+  systemdServicesWithAutoRestart: { cs: `systemd služby s auto-restartem na Edge`, en: `systemd services with auto-restart on Edge` },
+  prometheusGrafanaMonitoring: { cs: `Monitoring Prometheus + Grafana`, en: `Prometheus + Grafana monitoring` },
+  ufwFirewallApparmorRpcAuditLog: { cs: `UFW firewall + AppArmor + RPC audit log na Edge`, en: `UFW firewall + AppArmor + RPC audit log on Edge` },
+  sshTunnelsForBackupNodeReverse: { cs: `SSH tunely pro backup node (reverse forwards 8446-8447)`, en: `SSH tunnels for backup node (reverse forwards 8446-8447)` },
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  liveStatus: { cs: `Živý stav`, en: `Live Status` },
+  p2pNetwork: { cs: `P2P Síť`, en: `P2P Network` },
+  realTimeTelemetryFromTheCurren: { cs: `Telemetrie v reálném čase z aktuálního veřejného runtime v3.0.6. Živá topologie je 2-uzlový P2P mesh — Edge 1 (primary + pool), Edge 2 (follower); Local Backup Node (Prague) je offline.`, en: `Real-time telemetry from the current public v3.0.6 runtime. The live topology is a 2-node P2P mesh — Edge 1 (primary + pool), Edge 2 (follower); Local Backup Node (Prague) is offline.` },
+  nativeRust: { cs: `Nativní Rust`, en: `Native Rust` },
+  k1PublicHost2InternalSeeds: { cs: `1 veřejný host · 2 interní seedy`, en: `1 Public Host · 2 Internal Seeds` },
+  runtimeSnapshot: { cs: `Runtime přehled`, en: `Runtime Snapshot` },
+  publicNetworkSurface: { cs: `Veřejný povrch sítě`, en: `Public Network Surface` },
+  theCurrentLiveFootprintDistill: { cs: `Aktuální živý footprint zredukovaný na endpointy a role, které operátoři potřebují jako první.`, en: `The current live footprint distilled to the endpoints and roles operators actually need first.` },
+  health: { cs: `Zdraví`, en: `Health` },
+  networkHealthScore: { cs: `Skóre zdraví sítě`, en: `Network Health Score` },
+  aggregateHealthIndicatorBasedO: { cs: `Agregátní indikátor stavu sítě na základě klíčových metrik.`, en: `Aggregate health indicator based on key network metrics.` },
+  nodeOnline: { cs: `Node online`, en: `Node Online` },
+  blocksMining: { cs: `Bloky se těží`, en: `Blocks Mining` },
+  activeMiners: { cs: `Aktivní mineři`, en: `Active Miners` },
+  normalBlockTime: { cs: `Normální block time`, en: `Normal Block Time` },
+  databaseOk: { cs: `Databáze OK`, en: `Database OK` },
+  poolOnline: { cs: `Pool online`, en: `Pool Online` },
+  of100: { cs: `ze 100`, en: `of 100` },
+  excellent: { cs: `Výborný`, en: `Excellent` },
+  good: { cs: `Dobrý`, en: `Good` },
+  fair: { cs: `Průměrný`, en: `Fair` },
+  critical: { cs: `Kritický`, en: `Critical` },
+  ok: { cs: `OK`, en: `OK` },
+  fail: { cs: `FAIL`, en: `FAIL` },
+  pts: { cs: `bodů`, en: `pts` },
+  performance: { cs: `Výkon`, en: `Performance` },
+  chainPerformance: { cs: `Výkon chainu`, en: `Chain Performance` },
+  liveSparklinesForHashrateDiffi: { cs: `Živé grafy hashrate, obtížnosti a block time za poslední hodinu.`, en: `Live sparklines for hashrate, difficulty, and block time over the last hour.` },
+  networkHashrate: { cs: `Hashrate sítě`, en: `Network Hashrate` },
+  difficulty: { cs: `Obtížnost`, en: `Difficulty` },
+  avgBlockTime: { cs: `Průměrný block time`, en: `Avg Block Time` },
+  target: { cs: `Cíl`, en: `Target` },
+  statistics: { cs: `Statistika`, en: `Statistics` },
+  chainStatistics: { cs: `Statistiky chainu`, en: `Chain Statistics` },
+  detailedMetricsFromTheLiveBloc: { cs: `Detailní metriky z živého blockchainu.`, en: `Detailed metrics from the live blockchain.` },
+  blockHeight: { cs: `Výška bloku`, en: `Block Height` },
+  totalNumberOfMinedBlocksSinceG: { cs: `Celkový počet vytěžených bloků od genesis.`, en: `Total number of mined blocks since genesis.` },
+  currentMiningDifficultySetByLw: { cs: `Aktuální těžební obtížnost nastavená LWMA DAA.`, en: `Current mining difficulty set by LWMA DAA.` },
+  cumulativeDiff: { cs: `Kumulativní obtížnost`, en: `Cumulative Diff` },
+  sumOfDifficultyAcrossAllBlocks: { cs: `Součet obtížnosti všech bloků — měří celkovou práci v síti.`, en: `Sum of difficulty across all blocks — measures total network work.` },
+  circulatingSupply: { cs: `Oběžná zásoba`, en: `Circulating Supply` },
+  totalZionInCirculationIncludin: { cs: `Celkové množství ZION v oběhu včetně genesis premine.`, en: `Total ZION in circulation including genesis premine.` },
+  emission: { cs: `Emise`, en: `Emission` },
+  percentageOfTotalSupplyMinedAc: { cs: `Procento vytěžené celkové zásoby podle Decade Decay plánu.`, en: `Percentage of total supply mined according to the Decade Decay schedule.` },
+  totalTx: { cs: `Celkem TX`, en: `Total TX` },
+  totalNumberOfTransactionsRecor: { cs: `Celkový počet transakcí zapsaných na blockchainu.`, en: `Total number of transactions recorded on the blockchain.` },
+  transactionsWaitingForConfirma: { cs: `Transakce čekající na potvrzení v mempoolu.`, en: `Transactions waiting for confirmation in the mempool.` },
+  totalPeers: { cs: `Peery celkem`, en: `Total Peers` },
+  activeP2pConnectionsIncomingAn: { cs: `Aktivní P2P spojení — příchozí a odchozí.`, en: `Active P2P connections — incoming and outgoing.` },
+  knownPeers: { cs: `Známé peery`, en: `Known Peers` },
+  knownWhiteAndUnknownGreyPeerLi: { cs: `Známy (white) a neznámý (grey) peer seznam.`, en: `Known (white) and unknown (grey) peer lists.` },
+  blockSizeLimit: { cs: `Limit bloku`, en: `Block Size Limit` },
+  median: { cs: `Medián`, en: `Median` },
+  maximumAndMedianBlockSizeInByt: { cs: `Maximální a mediánová velikost bloku v bytech.`, en: `Maximum and median block size in bytes.` },
+  database: { cs: `Databáze`, en: `Database` },
+  sizeOfTheLocalBlockchainDataba: { cs: `Velikost lokálního blockchain databázového souboru.`, en: `Size of the local blockchain database file.` },
+  version: { cs: `Verze`, en: `Version` },
+  nodeSoftwareVersion: { cs: `Verze softwaru uzlu.`, en: `Node software version.` },
+  altBlocks: { cs: `Alt bloky`, en: `Alt Blocks` },
+  numberOfAlternativeBranchesOrp: { cs: `Počet alternativních větví (orphan chain tipy).`, en: `Number of alternative branches (orphan chain tips).` },
+  numberOfActiveMinersConnectedT: { cs: `Počet aktivních minerů připojených k poolu.`, en: `Number of active miners connected to the pool.` },
+  poolHashrate: { cs: `Pool hashrate`, en: `Pool Hashrate` },
+  totalComputationalPowerOfAllMi: { cs: `Celkový výpočetní výkon všech minerů v poolu.`, en: `Total computational power of all miners in the pool.` },
+  poolBlocks: { cs: `Pool bloky`, en: `Pool Blocks` },
+  numberOfBlocksFoundByThisPool: { cs: `Počet bloků nalezených tímto poolem.`, en: `Number of blocks found by this pool.` },
+  lastBlock: { cs: `Poslední blok`, en: `Last Block` },
+  latestConfirmedBlockAndItsMini: { cs: `Nejnovější potvrzený blok a čas jeho vytěžení.`, en: `Latest confirmed block and its mining time.` },
+  lastReward: { cs: `Odměna`, en: `Last Reward` },
+  rewardForTheLatestBlockPerDeca: { cs: `Odměna za poslední blok dle Decade Decay.`, en: `Reward for the latest block per Decade Decay.` },
+  emissionProgress: { cs: `Průběh emise`, en: `Emission Progress` },
+  decadeDecayModel20Every10Years: { cs: `Decade Decay model: -20 % každých 10 let. Max supply 144 miliard ZION.`, en: `Decade Decay model: -20% every 10 years. Max supply 144 billion ZION.` },
+  mined: { cs: `Vytěženo`, en: `Mined` },
+  decade: { cs: `Dekáda`, en: `Decade` },
+  now: { cs: `Nyní`, en: `Now` },
+  block: { cs: `blok`, en: `block` },
+  infrastructure: { cs: `Infrastruktura`, en: `Infrastructure` },
+  currentRuntime: { cs: `Aktuální runtime`, en: `Current Runtime` },
+  currentPublicRuntimeIsA2NodeV3: { cs: `Aktuální veřejný runtime tvoří 2-uzlový P2P mesh v3.0.6 — Edge 1 (primary + pool) a Edge 2 (follower). Local Backup Node (Prague) je offline.`, en: `Current public runtime is a 2-node v3.0.6 P2P mesh — Edge 1 (primary + pool) and Edge 2 (follower). Local Backup Node (Prague) is offline.` },
+  portEndpointsSeeNodeDescriptio: { cs: `Endpointy portů viz popis uzlu nahoře`, en: `Port endpoints see node description above` },
+  rpcAutoFailoverAcross2NodeMesh: { cs: `RPC auto-failover přes 2-uzlový mesh`, en: `RPC auto-failover across 2-node mesh` },
+  p2pMesh83338334Backup8335Offli: { cs: `P2P mesh: 8333, 8334 · backup 8335 offline`, en: `P2P mesh: 8333, 8334 · backup 8335 offline` },
+  e2eStack: { cs: `E2E Stack`, en: `E2E Stack` },
+  allV306ComponentsHaveBeenVerif: { cs: `Všechny komponenty v3.0.6 byly ověřeny end-to-end na živé mainnet síti.`, en: `All v3.0.6 components have been verified end-to-end on the live mainnet.` },
+  k1111Services: { cs: `11/11 služeb`, en: `11/11 services` },
+  nodePoolWatchersBridgeWebDashb: { cs: `Node, pool, watchers, bridge, web, dashboard, monitoring — vše active.`, en: `Node, pool, watchers, bridge, web, dashboard, monitoring — all active.` },
+  f47F5Active: { cs: `F4.7 + F5 aktivní`, en: `F4.7 + F5 active` },
+  maxTxAmountCapAndSenderBalance: { cs: `Max-tx-amount cap a sender balance check jsou nasazené od genesis height.`, en: `Max-tx-amount cap and sender balance check are deployed from genesis height.` },
+  memoE2eTests: { cs: `Memo E2E testy`, en: `Memo E2E tests` },
+  k3AccountModelTxsWithMemosConfi: { cs: `3 account-model TX s memy potvrzené v bloku 752.`, en: `3 account-model TXs with memos confirmed in block 752.` },
+  memoryLeakFix: { cs: `Memory leak fix`, en: `Memory leak fix` },
+  poolNodeMemoryLeaksFixedWatchd: { cs: `Pool + node memory leak opraveny, watchdog sleduje zdraví.`, en: `Pool + node memory leaks fixed, watchdog monitors health.` },
+  rpcAuditLog: { cs: `RPC audit log`, en: `RPC audit log` },
+  nodeRpcAuditLogForSecurityFore: { cs: `Audit log na node pro bezpečnostní forenzní analýzu.`, en: `Node RPC audit log for security forensics.` },
+  apparmorUfw: { cs: `AppArmor + UFW`, en: `AppArmor + UFW` },
+  edgeServerIsProtectedByApparmo: { cs: `Edge server je chráněn AppArmor profilem a striktním UFW.`, en: `Edge server is protected by AppArmor profile and strict UFW.` },
+  bridgeBaseMainnet: { cs: `Bridge Base Mainnet`, en: `Bridge Base Mainnet` },
+  zionbridgeAndL2WatchersSynchro: { cs: `ZIONBridge a L2 watchery synchronizují mema na Base.`, en: `ZIONBridge and L2 watchers synchronize memos on Base.` },
+  k2NodeMesh: { cs: `2-uzlový mesh`, en: `2-node mesh` },
+  edge1AndEdge2Within2BlockSyncL: { cs: `Edge 1 a Edge 2 v syncu ≤2 bloků · Local Backup offline.`, en: `Edge 1 and Edge 2 within ≤2 block sync · Local Backup offline.` },
+  liveTelemetry: { cs: `Živá telemetrie`, en: `Live Telemetry` },
+  nodeStatus: { cs: `Stav nodu`, en: `Node Status` },
+  realTimeHealthBlockHeightHashr: { cs: `Zdraví, výška chainu, hashrate a sync stav v reálném čase z 2-uzlového P2P meshe.`, en: `Real-time health, block height, hashrate, and sync status from the 2-node P2P mesh.` },
+  geography: { cs: `Geografie`, en: `Geography` },
+  networkMapPoolFinder: { cs: `Mapa sítě a vyhledávač poolu`, en: `Network Map & Pool Finder` },
+  visualizeTheCurrentTopologyAnd: { cs: `Vizualizujte aktuální topologii a porovnejte ji s archivovaným multi-host rolloutem zachovaným v release dokumentaci.`, en: `Visualize the current topology and compare it with the archived multi-host rollout preserved in release documentation.` },
+  connect: { cs: `Připojení`, en: `Connect` },
+  connectionGuides: { cs: `Připojovací návody`, en: `Connection Guides` },
+  everythingYouNeedToConnectAMin: { cs: `Vše, co potřebujete k připojení mineru, dotazování RPC API nebo synchronizaci nodu.`, en: `Everything you need to connect a miner, query the RPC API, or sync a node.` },
+  status: { cs: `Stav`, en: `Status` },
+  networkReadiness: { cs: `Připravenost sítě`, en: `Network Readiness` },
+  completed: { cs: `dokončeno`, en: `completed` },
+  frequentlyAskedQuestions: { cs: `Často kladené dotazy`, en: `Frequently Asked Questions` },
+  everythingAboutTheZionNetworkI: { cs: `Vše o síti ZION na jednom místě.`, en: `Everything about the ZION network in one place.` },
+  joinTheZionNetwork: { cs: `Připojte se k síti ZION`, en: `Join the ZION Network` },
+  nativeRustInfrastructureRunnin: { cs: `Nativní Rust infrastruktura běží 24/7 z aktuálního primárního hostu s podporou interního kvora. Připojte svůj miner, spusťte vlastní node nebo prozkoumejte blockchain, zatímco historický kontext nasazení zůstává zachován v dokumentaci.`, en: `Native Rust infrastructure running 24/7 from the current primary host with internal quorum support. Connect your miner, run your own node, or explore the blockchain while historical rollout context stays preserved in docs.` },
+  primaryHostLive: { cs: `Primární host online`, en: `Primary host live` },
+  internalSeeds: { cs: `Interní seedy`, en: `Internal seeds` },
+  dockerNative: { cs: `Docker nativně`, en: `Docker native` },
+  archivedMultiHostHistory: { cs: `Archivovaná multi-host historie`, en: `Archived multi-host history` },
+  explorer: { cs: `Explorer`, en: `Explorer` },
+  roadmap: { cs: `Roadmapa`, en: `Roadmap` },
+  whatConsensusDoesZionUse: { cs: `Jaký konsenzus ZION používá?`, en: `What consensus does ZION use?` },
+  cosmicHarmonyProofOfWorkACusto: { cs: `Cosmic Harmony Proof-of-Work – vlastní CryptoNight varianta optimalizovaná pro CPU/GPU mining s 60s block time a Decade Decay emisí.`, en: `Cosmic Harmony Proof-of-Work – a custom CryptoNight variant optimized for CPU/GPU mining with 60s block time and Decade Decay emission.` },
+  whatIsTheTargetBlockTime: { cs: `Jaký je cílový block time?`, en: `What is the target block time?` },
+  k60SecondsDifficultyAdjustsDyna: { cs: `60 sekund. Obtížnost se dynamicky přizpůsobuje každý blok, aby udržela stabilní tempo.`, en: `60 seconds. Difficulty adjusts dynamically every block to maintain a stable pace.` },
+  howManyZionAreMinedPerBlock: { cs: `Kolik ZION se vytěží za blok?`, en: `How many ZION are mined per block?` },
+  whatIsTheMaximumSupply: { cs: `Jaká je maximální zásoba?`, en: `What is the maximum supply?` },
+  howToConnectAsAMiner: { cs: `Jak se připojit jako miner?`, en: `How to connect as a miner?` },
+  howToRunYourOwnFullNode: { cs: `Jak spustit vlastní full node?`, en: `How to run your own full node?` },
+  whatPoolFeeDoesZionCharge: { cs: `Jaký pool fee si ZION účtuje?`, en: `What pool fee does ZION charge?` },
+  k89GoesToTheMiner5ToTheHumanita: { cs: `89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.`, en: `89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.` },
+  isTheNetworkPubliclyLaunched: { cs: `Je síť veřejně spuštěna?`, en: `Is the network publicly launched?` },
+  mainnetGenesisTookPlaceOn11Jun: { cs: `MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). v3.0.6 "Trinity" běží na 2-uzlovém P2P meshi s aktivním poolem, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzené v bloku 752.`, en: `MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). v3.0.6 "Trinity" runs on a 2-node P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752.` },
+};
+
 const NetworkStatus = dynamic(() => import('@/components/NetworkStatus'), {
   loading: () => <SurfaceSkeleton lines={4} />,
 });
@@ -98,73 +285,59 @@ const LiveToast = dynamic(() => import('@/components/explorer/LiveToast'));
 
 const getHeroStats = (cs: boolean) => [
   {
-    label: cs ? 'Veřejné nody' : 'Public Nodes',
+    label: NetworkCopy.publicNodes[cs ? 'cs' : 'en'],
     value: '2',
-    descriptor: cs
-      ? '2-uzlový P2P mesh: Edge 1, Edge 2 (Local Backup offline)'
-      : '2-node P2P mesh: Edge 1, Edge 2 (Local Backup offline)',
+    descriptor: NetworkCopy.k2NodeP2pMeshEdge1Edge2LocalBac[cs ? 'cs' : 'en'],
   },
   {
-    label: cs ? 'P2P mesh' : 'P2P Mesh',
-    value: cs ? '2 uzly' : '2 nodes',
-    descriptor: cs
-      ? 'Edge 1 ↔ Edge 2 v syncu ≤2 bloků · Local Backup offline'
-      : 'Edge 1 ↔ Edge 2 within ≤2 block sync · Local Backup offline',
+    label: NetworkCopy.p2pMesh[cs ? 'cs' : 'en'],
+    value: NetworkCopy.k2Nodes[cs ? 'cs' : 'en'],
+    descriptor: NetworkCopy.edge1Edge2Within2BlockSyncLoca[cs ? 'cs' : 'en'],
   },
   {
-    label: cs ? 'Telemetrie' : 'Telemetry',
+    label: NetworkCopy.telemetry[cs ? 'cs' : 'en'],
     value: '30s',
-    descriptor: cs ? 'Interval auto-obnovení' : 'Auto-refresh interval',
+    descriptor: NetworkCopy.autoRefreshInterval[cs ? 'cs' : 'en'],
   },
   {
-    label: cs ? 'Topologie' : 'Topology',
-    value: cs ? 'v3.0.6 E2E' : 'v3.0.6 E2E',
-    descriptor: cs
-      ? 'SSH tunely, AppArmor, UFW, RPC audit log — vše aktivní'
-      : 'SSH tunnels, AppArmor, UFW, RPC audit log — all active',
+    label: NetworkCopy.topology[cs ? 'cs' : 'en'],
+    value: NetworkCopy.v306E2e[cs ? 'cs' : 'en'],
+    descriptor: NetworkCopy.sshTunnelsApparmorUfwRpcAuditL[cs ? 'cs' : 'en'],
   },
   {
-    label: cs ? 'Síť' : 'Network',
-    value: cs ? 'Trinity' : 'Trinity',
-    descriptor: cs
-      ? 'Mainnet Beta · 11/11 služeb · protocol 3.0.6'
-      : 'Mainnet Beta · 11/11 services · protocol 3.0.6',
+    label: NetworkCopy.network[cs ? 'cs' : 'en'],
+    value: NetworkCopy.trinity[cs ? 'cs' : 'en'],
+    descriptor: NetworkCopy.mainnetBeta1111ServicesProtoco[cs ? 'cs' : 'en'],
   },
 ];
 
 const getInfraFeatures = (cs: boolean) => [
   {
     icon: Server,
-    title: cs ? 'Edge Node 1 (Primary / Pool)' : 'Edge Node 1 (Primary / Pool)',
-    detail: cs
-      ? 'Veřejný P2P 8333, stratum 8444, RPC 8443, pool API 8455 — pool live'
-      : 'Public P2P 8333, stratum 8444, RPC 8443, pool API 8455 — pool live',
+    title: NetworkCopy.edgeNode1PrimaryPool[cs ? 'cs' : 'en'],
+    detail: NetworkCopy.publicP2p8333Stratum8444Rpc844[cs ? 'cs' : 'en'],
     ip: SITE_PRIMARY_HOST,
-    status: cs ? 'Aktivní' : 'Active',
+    status: NetworkCopy.active[cs ? 'cs' : 'en'],
     color: 'text-emerald-400',
     border: 'border-emerald-500/30',
     bg: 'bg-emerald-500/5',
   },
   {
     icon: Server,
-    title: cs ? 'Edge Node 2 (Follower)' : 'Edge Node 2 (Follower)',
-    detail: cs
-      ? 'P2P peer na portu 8334, RPC 8448 — plně synchronizovaný s primárním uzlem'
-      : 'P2P peer on port 8334, RPC 8448 — fully synchronized with primary',
+    title: NetworkCopy.edgeNode2Follower[cs ? 'cs' : 'en'],
+    detail: NetworkCopy.p2pPeerOnPort8334Rpc8448FullyS[cs ? 'cs' : 'en'],
     ip: `${SITE_PRIMARY_HOST}:8334`,
-    status: cs ? 'Aktivní' : 'Active',
+    status: NetworkCopy.active[cs ? 'cs' : 'en'],
     color: 'text-zion-cyan',
     border: 'border-cyan-500/30',
     bg: 'bg-cyan-500/5',
   },
   {
     icon: Server,
-    title: cs ? 'Local Backup Node (Prague)' : 'Local Backup Node (Prague)',
-    detail: cs
-      ? 'Záložní uzel přes SSH reverzní forward 8446 — aktuálně offline'
-      : 'Backup node via SSH reverse forward 8446 — currently offline',
-    ip: cs ? 'ZION Backup (tunel)' : 'ZION Backup (tunnel)',
-    status: cs ? 'Offline' : 'Offline',
+    title: NetworkCopy.localBackupNodePrague[cs ? 'cs' : 'en'],
+    detail: NetworkCopy.backupNodeViaSshReverseForward[cs ? 'cs' : 'en'],
+    ip: NetworkCopy.zionBackupTunnel[cs ? 'cs' : 'en'],
+    status: NetworkCopy.offline[cs ? 'cs' : 'en'],
     color: 'text-gray-400',
     border: 'border-gray-500/30',
     bg: 'bg-gray-500/5',
@@ -174,32 +347,28 @@ const getInfraFeatures = (cs: boolean) => [
 const getRuntimePanels = (cs: boolean) => [
   {
     icon: Radio,
-    label: cs ? 'Veřejný stratum' : 'Public Stratum',
+    label: NetworkCopy.publicStratum[cs ? 'cs' : 'en'],
     value: SITE_POOL_PRIMARY,
-    detail: cs ? 'Primární těžební vstup — pool API 8455' : 'Primary mining ingress — pool API 8455',
+    detail: NetworkCopy.primaryMiningIngressPoolApi845[cs ? 'cs' : 'en'],
     accent: 'text-zion-gold',
   },
   {
     icon: Terminal,
     label: 'RPC Endpoint',
     value: SITE_PRIMARY_RPC_URL,
-    detail: cs
-      ? 'Nativní Rust JSON-RPC pro explorer a tooling (2-uzlový mesh)'
-      : 'Native Rust JSON-RPC for explorers and tooling (2-node mesh)',
+    detail: NetworkCopy.nativeRustJsonRpcForExplorersA[cs ? 'cs' : 'en'],
     accent: 'text-zion-cyan',
   },
   {
     icon: Globe,
     label: 'P2P Mesh',
     value: `${SITE_PRIMARY_HOST}:8333`,
-    detail: cs
-      ? '2-uzlový mesh: 8333, 8334 · backup 8335 offline'
-      : '2-node mesh: 8333, 8334 · backup 8335 offline',
+    detail: NetworkCopy.k2NodeMesh83338334Backup8335Off[cs ? 'cs' : 'en'],
     accent: 'text-emerald-400',
   },
   {
     icon: BookOpen,
-    label: cs ? 'Kontext releasu' : 'Release Context',
+    label: NetworkCopy.releaseContext[cs ? 'cs' : 'en'],
     value: SITE_RELEASE_LABEL,
     detail: cs
       ? `Veřejná linka nad ${SITE_RUNTIME_LABEL}; E2E memo testy potvrzené v bloku 752`
@@ -208,11 +377,9 @@ const getRuntimePanels = (cs: boolean) => [
   },
   {
     icon: Zap,
-    label: cs ? 'v3.0.6 E2E Status' : 'v3.0.6 E2E Status',
-    value: cs ? 'Trinity ✓' : 'Trinity ✓',
-    detail: cs
-      ? '11/11 služeb aktivních · F4.7 + F5 aktivní · memory leak fix'
-      : '11/11 services active · F4.7 + F5 active · memory leak fix',
+    label: NetworkCopy.v306E2eStatus[cs ? 'cs' : 'en'],
+    value: NetworkCopy.trinity_2[cs ? 'cs' : 'en'],
+    detail: NetworkCopy.k1111ServicesActiveF47F5ActiveM[cs ? 'cs' : 'en'],
     accent: 'text-amber-400',
   },
 ];
@@ -220,12 +387,10 @@ const getRuntimePanels = (cs: boolean) => [
 const getGuideBlocks = (cs: boolean) => [
   {
     icon: Zap,
-    title: cs ? 'Těžba' : 'Mining',
-    description: cs
-      ? 'Připojte jakýkoli Cosmic Harmony / CPU miner k aktuálnímu veřejnému poolu na Edge Node 1.'
-      : 'Connect any Cosmic Harmony / CPU miner to the current public pool on Edge Node 1.',
+    title: NetworkCopy.mining[cs ? 'cs' : 'en'],
+    description: NetworkCopy.connectAnyCosmicHarmonyCpuMine[cs ? 'cs' : 'en'],
     items: [
-      `Pool: ${SITE_POOL_PRIMARY} ${cs ? '(aktuální primární)' : '(current primary)'}`,
+      `Pool: ${SITE_POOL_PRIMARY} ${NetworkCopy.currentPrimary[cs ? 'cs' : 'en']}`,
       'Wallet: YOUR_ZION_ADDRESS',
       'Password: x',
     ],
@@ -233,12 +398,10 @@ const getGuideBlocks = (cs: boolean) => [
   {
     icon: Terminal,
     title: 'RPC API',
-    description: cs
-      ? 'Nativní Rust JSON-RPC endpoint pro explorer a tooling. Dostupný přes 2-uzlový mesh s auto-failover.'
-      : 'Native Rust JSON-RPC endpoint for explorers and tooling. Available across a 2-node mesh with auto-failover.',
+    description: NetworkCopy.nativeRustJsonRpcEndpointForEx[cs ? 'cs' : 'en'],
     items: [
       `Primary: ${SITE_PRIMARY_RPC_URL}`,
-      `Scope: ${cs ? 'veřejný runtime endpoint' : 'public runtime endpoint'}`,
+      `Scope: ${NetworkCopy.publicRuntimeEndpoint[cs ? 'cs' : 'en']}`,
       `Backup RPC: 127.0.0.1:8446 (reverse SSH tunnel)`,
       'Method: POST',
     ],
@@ -246,40 +409,38 @@ const getGuideBlocks = (cs: boolean) => [
   {
     icon: Globe,
     title: 'P2P Layer',
-    description: cs
-      ? 'Nativní Rust P2P síť — 2-uzlový mesh s výškou v syncu ≤2 bloků, všechny peery veřejně routované nebo přes tunel.'
-      : 'Native Rust P2P network — 2-node mesh with height sync within ≤2 blocks, all peers publicly routed or tunneled.',
+    description: NetworkCopy.nativeRustP2pNetwork2NodeMeshW[cs ? 'cs' : 'en'],
     items: [
-      `${cs ? 'Veřejný peer (Edge 1)' : 'Public peer (Edge 1)'}: ${SITE_PRIMARY_HOST}:8333`,
-      `${cs ? 'Veřejný peer (Edge 2)' : 'Public peer (Edge 2)'}: ${SITE_PRIMARY_HOST}:8334`,
-      `${cs ? 'Backup peer (tunel)' : 'Backup peer (tunnel)'}: P2P 8335 / RPC 8446 — offline`,
-      `${cs ? 'Hardcoded seed peers' : 'Hardcoded seed peers'}: ${SITE_PRIMARY_HOST}:8333, ${SITE_PRIMARY_HOST}:8334`,
+      `${NetworkCopy.publicPeerEdge1[cs ? 'cs' : 'en']}: ${SITE_PRIMARY_HOST}:8333`,
+      `${NetworkCopy.publicPeerEdge2[cs ? 'cs' : 'en']}: ${SITE_PRIMARY_HOST}:8334`,
+      `${NetworkCopy.backupPeerTunnel[cs ? 'cs' : 'en']}: P2P 8335 / RPC 8446 — offline`,
+      `${NetworkCopy.hardcodedSeedPeers[cs ? 'cs' : 'en']}: ${SITE_PRIMARY_HOST}:8333, ${SITE_PRIMARY_HOST}:8334`,
     ],
   },
 ];
 
 const getNetworkFacts = (cs: boolean) => [
-  { text: cs ? 'Nativní Rust P2P — 2-uzlový mesh' : 'Native Rust P2P — 2-node mesh', done: true },
+  { text: NetworkCopy.nativeRustP2p2NodeMesh[cs ? 'cs' : 'en'], done: true },
   {
-    text: cs ? 'v3.0.6 "Trinity, Mainnet Beta" — 11/11 služeb aktivních' : 'v3.0.6 "Trinity, Mainnet Beta" — 11/11 services active',
+    text: NetworkCopy.v306TrinityMainnetBeta1111Serv[cs ? 'cs' : 'en'],
     done: true,
   },
   {
     text: cs ? `Edge stratum endpoint: ${SITE_POOL_PRIMARY}` : `Edge stratum endpoint: ${SITE_POOL_PRIMARY}`,
     done: true,
   },
-  { text: cs ? 'JSON-RPC endpointy live (8443, 8448; backup 8446 offline)' : 'JSON-RPC endpoints live (8443, 8448; backup 8446 offline)', done: true },
-  { text: cs ? 'E2E memo testy potvrzené v bloku 752' : 'E2E memo tests confirmed in block 752', done: true },
-  { text: cs ? 'F4.7 max-tx-amount cap + F5 sender balance check aktivní' : 'F4.7 max-tx-amount cap + F5 sender balance check active', done: true },
-  { text: cs ? 'LWMA DAA — cíl 60s block time' : 'LWMA DAA — target 60s block time', done: true },
-  { text: cs ? 'systemd služby s auto-restartem na Edge' : 'systemd services with auto-restart on Edge', done: true },
-  { text: cs ? 'Monitoring Prometheus + Grafana' : 'Prometheus + Grafana monitoring', done: true },
+  { text: NetworkCopy.jsonRpcEndpointsLive84438448Ba[cs ? 'cs' : 'en'], done: true },
+  { text: NetworkCopy.e2eMemoTestsConfirmedInBlock75[cs ? 'cs' : 'en'], done: true },
+  { text: NetworkCopy.f47MaxTxAmountCapF5SenderBalan[cs ? 'cs' : 'en'], done: true },
+  { text: NetworkCopy.lwmaDaaTarget60sBlockTime[cs ? 'cs' : 'en'], done: true },
+  { text: NetworkCopy.systemdServicesWithAutoRestart[cs ? 'cs' : 'en'], done: true },
+  { text: NetworkCopy.prometheusGrafanaMonitoring[cs ? 'cs' : 'en'], done: true },
   {
-    text: cs ? 'UFW firewall + AppArmor + RPC audit log na Edge' : 'UFW firewall + AppArmor + RPC audit log on Edge',
+    text: NetworkCopy.ufwFirewallApparmorRpcAuditLog[cs ? 'cs' : 'en'],
     done: true,
   },
   {
-    text: cs ? 'SSH tunely pro backup node (reverse forwards 8446-8447)' : 'SSH tunnels for backup node (reverse forwards 8446-8447)',
+    text: NetworkCopy.sshTunnelsForBackupNodeReverse[cs ? 'cs' : 'en'],
     done: true,
   },
 ];
@@ -377,7 +538,7 @@ async function fetchMonitoringSnapshot(): Promise<MonitoringSnapshot> {
 export default function NetworkPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = cs ? 'cs-CZ' : 'en-US';
+  const locale = NetworkCopy.enUs[cs ? 'cs' : 'en'];
   const heroStats = getHeroStats(cs);
   const infraFeatures = getInfraFeatures(cs);
   const runtimePanels = getRuntimePanels(cs);
@@ -467,28 +628,26 @@ export default function NetworkPage() {
             <div className="space-y-5">
               <div className="zion-kicker border-cyan-400/35 bg-cyan-400/10 text-cyan-200">
                 <Radio className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? 'Síť' : 'Network'}
+                {SITE_RELEASE_LABEL} · {NetworkCopy.network[cs ? 'cs' : 'en']}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Živý stav' : 'Live Status'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{NetworkCopy.liveStatus[cs ? 'cs' : 'en']}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? 'P2P Síť' : 'P2P Network'}
+                  {NetworkCopy.p2pNetwork[cs ? 'cs' : 'en']}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? 'Telemetrie v reálném čase z aktuálního veřejného runtime v3.0.6. Živá topologie je 2-uzlový P2P mesh — Edge 1 (primary + pool), Edge 2 (follower); Local Backup Node (Prague) je offline.'
-                  : 'Real-time telemetry from the current public v3.0.6 runtime. The live topology is a 2-node P2P mesh — Edge 1 (primary + pool), Edge 2 (follower); Local Backup Node (Prague) is offline.'}
+                {NetworkCopy.realTimeTelemetryFromTheCurren[cs ? 'cs' : 'en']}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Nativní Rust' : 'Native Rust'}
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> {NetworkCopy.nativeRust[cs ? 'cs' : 'en']}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
                   <Orbit className="h-3 w-3 text-zion-cyan" /> Runtime: {SITE_RUNTIME_LABEL}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
-                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> {cs ? '1 veřejný host · 2 interní seedy' : '1 Public Host · 2 Internal Seeds'}
+                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> {NetworkCopy.k1PublicHost2InternalSeeds[cs ? 'cs' : 'en']}
                 </span>
               </div>
             </div>
@@ -511,12 +670,12 @@ export default function NetworkPage() {
         {/* ═══════ RUNTIME SNAPSHOT ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Runtime přehled' : 'Runtime Snapshot'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.runtimeSnapshot[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Orbit className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Veřejný povrch sítě' : 'Public Network Surface'}
+              {NetworkCopy.publicNetworkSurface[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Aktuální živý footprint zredukovaný na endpointy a role, které operátoři potřebují jako první.' : 'The current live footprint distilled to the endpoints and roles operators actually need first.'}</p>
+            <p className="text-sm text-gray-400">{NetworkCopy.theCurrentLiveFootprintDistill[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-4">
@@ -541,24 +700,24 @@ export default function NetworkPage() {
         {chainStats && (
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Zdraví' : 'Health'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.health[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <ShieldCheck className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Skóre zdraví sítě' : 'Network Health Score'}
+              {NetworkCopy.networkHealthScore[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Agregátní indikátor stavu sítě na základě klíčových metrik.' : 'Aggregate health indicator based on key network metrics.'}</p>
+            <p className="text-sm text-gray-400">{NetworkCopy.aggregateHealthIndicatorBasedO[cs ? 'cs' : 'en']}</p>
           </div>
 
           {(() => {
             const checks = [
-              { label: cs ? 'Node online' : 'Node Online', ok: chainStats.connected, weight: 25 },
-              { label: cs ? 'Bloky se těží' : 'Blocks Mining', ok: chainStats.block_height > 0, weight: 20 },
-              { label: cs ? 'Aktivní mineři' : 'Active Miners', ok: chainStats.active_miners > 0, weight: 15 },
-              { label: cs ? 'Normální block time' : 'Normal Block Time', ok: chainStats.avg_block_time > 0 && chainStats.avg_block_time < 180, weight: 15 },
+              { label: NetworkCopy.nodeOnline[cs ? 'cs' : 'en'], ok: chainStats.connected, weight: 25 },
+              { label: NetworkCopy.blocksMining[cs ? 'cs' : 'en'], ok: chainStats.block_height > 0, weight: 20 },
+              { label: NetworkCopy.activeMiners[cs ? 'cs' : 'en'], ok: chainStats.active_miners > 0, weight: 15 },
+              { label: NetworkCopy.normalBlockTime[cs ? 'cs' : 'en'], ok: chainStats.avg_block_time > 0 && chainStats.avg_block_time < 180, weight: 15 },
               { label: 'P2P Peers', ok: chainStats.total_connections >= 1, weight: 10 },
               { label: 'Mempool', ok: true, weight: 5 },
-              { label: cs ? 'Databáze OK' : 'Database OK', ok: chainStats.database_size > 0, weight: 5 },
-              { label: cs ? 'Pool online' : 'Pool Online', ok: chainStats.pool_hashrate > 0 || chainStats.active_miners > 0, weight: 5 },
+              { label: NetworkCopy.databaseOk[cs ? 'cs' : 'en'], ok: chainStats.database_size > 0, weight: 5 },
+              { label: NetworkCopy.poolOnline[cs ? 'cs' : 'en'], ok: chainStats.pool_hashrate > 0 || chainStats.active_miners > 0, weight: 5 },
             ];
             const score = checks.reduce((acc, c) => acc + (c.ok ? c.weight : 0), 0);
             const scoreColor = score >= 90 ? 'text-emerald-400' : score >= 70 ? 'text-zion-gold' : score >= 50 ? 'text-amber-400' : 'text-red-400';
@@ -572,7 +731,7 @@ export default function NetworkPage() {
                   <div className={`relative w-40 h-40 rounded-full border-4 ${scoreBorder} flex items-center justify-center shadow-lg ${scoreGlow}`}>
                     <div className="text-center">
                       <p className={`text-5xl font-bold tabular-nums ${scoreColor}`}>{score}</p>
-                      <p className="text-xs text-gray-500 mt-1">{cs ? 'ze 100' : 'of 100'}</p>
+                      <p className="text-xs text-gray-500 mt-1">{NetworkCopy.of100[cs ? 'cs' : 'en']}</p>
                     </div>
                     <svg className="absolute inset-0" viewBox="0 0 160 160">
                       <circle cx="80" cy="80" r="74" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
@@ -584,7 +743,7 @@ export default function NetworkPage() {
                     </svg>
                   </div>
                   <p className={`mt-4 text-sm font-semibold ${scoreColor}`}>
-                    {score >= 90 ? (cs ? 'Výborný' : 'Excellent') : score >= 70 ? (cs ? 'Dobrý' : 'Good') : score >= 50 ? (cs ? 'Průměrný' : 'Fair') : (cs ? 'Kritický' : 'Critical')}
+                    {score >= 90 ? (NetworkCopy.excellent[cs ? 'cs' : 'en']) : score >= 70 ? (NetworkCopy.good[cs ? 'cs' : 'en']) : score >= 50 ? (NetworkCopy.fair[cs ? 'cs' : 'en']) : (NetworkCopy.critical[cs ? 'cs' : 'en'])}
                   </p>
                 </div>
 
@@ -596,8 +755,8 @@ export default function NetworkPage() {
                         <div className={`w-2 h-2 rounded-full ${c.ok ? 'bg-emerald-400' : 'bg-red-400'}`} />
                         <span className="text-[11px] text-gray-400 uppercase tracking-wider">{c.label}</span>
                       </div>
-                      <p className={`text-lg font-bold ${c.ok ? 'text-emerald-400' : 'text-red-400'}`}>{c.ok ? (cs ? 'OK' : 'OK') : (cs ? 'FAIL' : 'FAIL')}</p>
-                      <p className="text-[10px] text-gray-500 mt-0.5">{c.weight} {cs ? 'bodů' : 'pts'}</p>
+                      <p className={`text-lg font-bold ${c.ok ? 'text-emerald-400' : 'text-red-400'}`}>{c.ok ? (NetworkCopy.ok[cs ? 'cs' : 'en']) : (NetworkCopy.fail[cs ? 'cs' : 'en'])}</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">{c.weight} {NetworkCopy.pts[cs ? 'cs' : 'en']}</p>
                     </div>
                   ))}
                 </div>
@@ -611,12 +770,12 @@ export default function NetworkPage() {
         {chainStats && (
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výkon' : 'Performance'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.performance[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Výkon chainu' : 'Chain Performance'}
+              {NetworkCopy.chainPerformance[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Živé grafy hashrate, obtížnosti a block time za poslední hodinu.' : 'Live sparklines for hashrate, difficulty, and block time over the last hour.'}</p>
+            <p className="text-sm text-gray-400">{NetworkCopy.liveSparklinesForHashrateDiffi[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-3">
@@ -624,7 +783,7 @@ export default function NetworkPage() {
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Hashrate sítě' : 'Network Hashrate'}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.networkHashrate[cs ? 'cs' : 'en']}</p>
                   <p className="text-2xl font-bold text-emerald-400 font-mono mt-1">{chainStats.network_hashrate_formatted}</p>
                 </div>
               </div>
@@ -635,7 +794,7 @@ export default function NetworkPage() {
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Obtížnost' : 'Difficulty'}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.difficulty[cs ? 'cs' : 'en']}</p>
                   <p className="text-2xl font-bold text-zion-cyan font-mono mt-1">{fmtLargeNum(chainStats.difficulty)}</p>
                 </div>
               </div>
@@ -646,10 +805,10 @@ export default function NetworkPage() {
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Průměrný block time' : 'Avg Block Time'}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.avgBlockTime[cs ? 'cs' : 'en']}</p>
                   <p className="text-2xl font-bold text-blue-400 font-mono mt-1">{chainStats.avg_block_time}s</p>
                 </div>
-                <span className="text-xs text-gray-500">{cs ? 'Cíl' : 'Target'}: {chainStats.target_block_time ?? BLOCK_TIME_SECONDS}s</span>
+                <span className="text-xs text-gray-500">{NetworkCopy.target[cs ? 'cs' : 'en']}: {chainStats.target_block_time ?? BLOCK_TIME_SECONDS}s</span>
               </div>
               <NetSparkline data={blockTimeHistory.map(p => p.value)} color="rgb(96, 165, 250)" height={80} />
             </div>
@@ -672,35 +831,35 @@ export default function NetworkPage() {
         {chainStats && (
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Statistika' : 'Statistics'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.statistics[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <BarChart3 className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Statistiky chainu' : 'Chain Statistics'}
+              {NetworkCopy.chainStatistics[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Detailní metriky z živého blockchainu.' : 'Detailed metrics from the live blockchain.'}</p>
+            <p className="text-sm text-gray-400">{NetworkCopy.detailedMetricsFromTheLiveBloc[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-            <ChainStatCard label={cs ? 'Výška bloku' : 'Block Height'} value={chainStats.block_height.toLocaleString(locale)} color="text-zion-gold" tip={cs ? 'Celkový počet vytěžených bloků od genesis.' : 'Total number of mined blocks since genesis.'} />
-            <ChainStatCard label={cs ? 'Obtížnost' : 'Difficulty'} value={fmtLargeNum(chainStats.difficulty)} color="text-zion-cyan" tip={cs ? 'Aktuální těžební obtížnost nastavená LWMA DAA.' : 'Current mining difficulty set by LWMA DAA.'} />
-            <ChainStatCard label={cs ? 'Kumulativní obtížnost' : 'Cumulative Diff'} value={fmtLargeNum(chainStats.cumulative_difficulty)} color="text-zion-cyan" tip={cs ? 'Součet obtížnosti všech bloků — měří celkovou práci v síti.' : 'Sum of difficulty across all blocks — measures total network work.'} />
-            <ChainStatCard label={cs ? 'Oběžná zásoba' : 'Circulating Supply'} value={`${fmtLargeNum(chainStats.circulating_supply)} ZION`} color="text-zion-gold" tip={cs ? 'Celkové množství ZION v oběhu včetně genesis premine.' : 'Total ZION in circulation including genesis premine.'} />
-            <ChainStatCard label={cs ? 'Emise' : 'Emission'} value={`${chainStats.emission_pct}%`} color="text-pink-400" tip={cs ? 'Procento vytěžené celkové zásoby podle Decade Decay plánu.' : 'Percentage of total supply mined according to the Decade Decay schedule.'} />
-            <ChainStatCard label={cs ? 'Celkem TX' : 'Total TX'} value={chainStats.tx_count.toLocaleString(locale)} color="text-purple-400" tip={cs ? 'Celkový počet transakcí zapsaných na blockchainu.' : 'Total number of transactions recorded on the blockchain.'} />
-            <ChainStatCard label="Mempool" value={`${chainStats.tx_pool_size} tx`} color={chainStats.tx_pool_size > 0 ? 'text-amber-400' : 'text-gray-400'} tip={cs ? 'Transakce čekající na potvrzení v mempoolu.' : 'Transactions waiting for confirmation in the mempool.'} />
-            <ChainStatCard label={cs ? 'Peery celkem' : 'Total Peers'} value={`${chainStats.total_connections}`} sub={`↓${chainStats.incoming_connections} ↑${chainStats.outgoing_connections}`} color="text-purple-400" tip={cs ? 'Aktivní P2P spojení — příchozí a odchozí.' : 'Active P2P connections — incoming and outgoing.'} />
-            <ChainStatCard label={cs ? 'Známé peery' : 'Known Peers'} value={`${chainStats.white_peerlist_size}`} sub={`${chainStats.grey_peerlist_size} grey`} color="text-indigo-400" tip={cs ? 'Známy (white) a neznámý (grey) peer seznam.' : 'Known (white) and unknown (grey) peer lists.'} />
-            <ChainStatCard label={cs ? 'Limit bloku' : 'Block Size Limit'} value={fmtBytes(chainStats.block_size_limit)} sub={`${cs ? 'Medián' : 'Median'}: ${fmtBytes(chainStats.block_size_median)}`} color="text-cyan-400" tip={cs ? 'Maximální a mediánová velikost bloku v bytech.' : 'Maximum and median block size in bytes.'} />
-            <ChainStatCard label={cs ? 'Databáze' : 'Database'} value={fmtBytes(chainStats.database_size)} color="text-pink-400" tip={cs ? 'Velikost lokálního blockchain databázového souboru.' : 'Size of the local blockchain database file.'} />
-            <ChainStatCard label={cs ? 'Verze' : 'Version'} value={chainStats.version ? `v${chainStats.version}` : '—'} color="text-gray-300" tip={cs ? 'Verze softwaru uzlu.' : 'Node software version.'} />
-            <ChainStatCard label={cs ? 'Alt bloky' : 'Alt Blocks'} value={`${chainStats.alt_blocks_count ?? 0}`} color="text-amber-400" tip={cs ? 'Počet alternativních větví (orphan chain tipy).' : 'Number of alternative branches (orphan chain tips).'} />
-            <ChainStatCard label={cs ? 'Aktivní mineři' : 'Active Miners'} value={`${chainStats.active_miners}`} color="text-emerald-400" tip={cs ? 'Počet aktivních minerů připojených k poolu.' : 'Number of active miners connected to the pool.'} />
-            <ChainStatCard label={cs ? 'Pool hashrate' : 'Pool Hashrate'} value={chainStats.pool_hashrate_formatted || '—'} color="text-emerald-400" tip={cs ? 'Celkový výpočetní výkon všech minerů v poolu.' : 'Total computational power of all miners in the pool.'} />
-            <ChainStatCard label={cs ? 'Pool bloky' : 'Pool Blocks'} value={`${chainStats.pool_blocks_found ?? 0}`} color="text-zion-gold" tip={cs ? 'Počet bloků nalezených tímto poolem.' : 'Number of blocks found by this pool.'} />
+            <ChainStatCard label={NetworkCopy.blockHeight[cs ? 'cs' : 'en']} value={chainStats.block_height.toLocaleString(locale)} color="text-zion-gold" tip={NetworkCopy.totalNumberOfMinedBlocksSinceG[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.difficulty[cs ? 'cs' : 'en']} value={fmtLargeNum(chainStats.difficulty)} color="text-zion-cyan" tip={NetworkCopy.currentMiningDifficultySetByLw[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.cumulativeDiff[cs ? 'cs' : 'en']} value={fmtLargeNum(chainStats.cumulative_difficulty)} color="text-zion-cyan" tip={NetworkCopy.sumOfDifficultyAcrossAllBlocks[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.circulatingSupply[cs ? 'cs' : 'en']} value={`${fmtLargeNum(chainStats.circulating_supply)} ZION`} color="text-zion-gold" tip={NetworkCopy.totalZionInCirculationIncludin[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.emission[cs ? 'cs' : 'en']} value={`${chainStats.emission_pct}%`} color="text-pink-400" tip={NetworkCopy.percentageOfTotalSupplyMinedAc[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.totalTx[cs ? 'cs' : 'en']} value={chainStats.tx_count.toLocaleString(locale)} color="text-purple-400" tip={NetworkCopy.totalNumberOfTransactionsRecor[cs ? 'cs' : 'en']} />
+            <ChainStatCard label="Mempool" value={`${chainStats.tx_pool_size} tx`} color={chainStats.tx_pool_size > 0 ? 'text-amber-400' : 'text-gray-400'} tip={NetworkCopy.transactionsWaitingForConfirma[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.totalPeers[cs ? 'cs' : 'en']} value={`${chainStats.total_connections}`} sub={`↓${chainStats.incoming_connections} ↑${chainStats.outgoing_connections}`} color="text-purple-400" tip={NetworkCopy.activeP2pConnectionsIncomingAn[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.knownPeers[cs ? 'cs' : 'en']} value={`${chainStats.white_peerlist_size}`} sub={`${chainStats.grey_peerlist_size} grey`} color="text-indigo-400" tip={NetworkCopy.knownWhiteAndUnknownGreyPeerLi[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.blockSizeLimit[cs ? 'cs' : 'en']} value={fmtBytes(chainStats.block_size_limit)} sub={`${NetworkCopy.median[cs ? 'cs' : 'en']}: ${fmtBytes(chainStats.block_size_median)}`} color="text-cyan-400" tip={NetworkCopy.maximumAndMedianBlockSizeInByt[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.database[cs ? 'cs' : 'en']} value={fmtBytes(chainStats.database_size)} color="text-pink-400" tip={NetworkCopy.sizeOfTheLocalBlockchainDataba[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.version[cs ? 'cs' : 'en']} value={chainStats.version ? `v${chainStats.version}` : '—'} color="text-gray-300" tip={NetworkCopy.nodeSoftwareVersion[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.altBlocks[cs ? 'cs' : 'en']} value={`${chainStats.alt_blocks_count ?? 0}`} color="text-amber-400" tip={NetworkCopy.numberOfAlternativeBranchesOrp[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.activeMiners[cs ? 'cs' : 'en']} value={`${chainStats.active_miners}`} color="text-emerald-400" tip={NetworkCopy.numberOfActiveMinersConnectedT[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.poolHashrate[cs ? 'cs' : 'en']} value={chainStats.pool_hashrate_formatted || '—'} color="text-emerald-400" tip={NetworkCopy.totalComputationalPowerOfAllMi[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.poolBlocks[cs ? 'cs' : 'en']} value={`${chainStats.pool_blocks_found ?? 0}`} color="text-zion-gold" tip={NetworkCopy.numberOfBlocksFoundByThisPool[cs ? 'cs' : 'en']} />
             {chainStats.last_block && (
               <>
-                <ChainStatCard label={cs ? 'Poslední blok' : 'Last Block'} value={`#${chainStats.last_block.height.toLocaleString(locale)}`} sub={new Date(chainStats.last_block.timestamp * 1000).toLocaleTimeString(locale)} color="text-zion-gold" tip={cs ? 'Nejnovější potvrzený blok a čas jeho vytěžení.' : 'Latest confirmed block and its mining time.'} />
-                <ChainStatCard label={cs ? 'Odměna' : 'Last Reward'} value={`${(chainStats.last_block.reward / 1e6).toFixed(2)} ZION`} color="text-emerald-400" tip={cs ? 'Odměna za poslední blok dle Decade Decay.' : 'Reward for the latest block per Decade Decay.'} />
+                <ChainStatCard label={NetworkCopy.lastBlock[cs ? 'cs' : 'en']} value={`#${chainStats.last_block.height.toLocaleString(locale)}`} sub={new Date(chainStats.last_block.timestamp * 1000).toLocaleTimeString(locale)} color="text-zion-gold" tip={NetworkCopy.latestConfirmedBlockAndItsMini[cs ? 'cs' : 'en']} />
+                <ChainStatCard label={NetworkCopy.lastReward[cs ? 'cs' : 'en']} value={`${(chainStats.last_block.reward / 1e6).toFixed(2)} ZION`} color="text-emerald-400" tip={NetworkCopy.rewardForTheLatestBlockPerDeca[cs ? 'cs' : 'en']} />
               </>
             )}
           </div>
@@ -714,18 +873,18 @@ export default function NetworkPage() {
         {chainStats && (
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Emise' : 'Emission'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.emission[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Coins className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Průběh emise' : 'Emission Progress'}
+              {NetworkCopy.emissionProgress[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Decade Decay model: -20 % každých 10 let. Max supply 144 miliard ZION.' : 'Decade Decay model: -20% every 10 years. Max supply 144 billion ZION.'}</p>
+            <p className="text-sm text-gray-400">{NetworkCopy.decadeDecayModel20Every10Years[cs ? 'cs' : 'en']}</p>
           </div>
 
           {/* Overall progress bar */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-400">{cs ? 'Vytěženo' : 'Mined'}: {chainStats.emission_pct}%</span>
+              <span className="text-sm text-gray-400">{NetworkCopy.mined[cs ? 'cs' : 'en']}: {chainStats.emission_pct}%</span>
               <span className="text-sm text-gray-400">{fmtLargeNum(chainStats.circulating_supply)} / {fmtLargeNum(TOTAL_SUPPLY_ZION)} ZION</span>
             </div>
             <div className="h-4 rounded-full bg-white/5 overflow-hidden">
@@ -745,12 +904,12 @@ export default function NetworkPage() {
               return (
                 <div key={i} className="zion-rainbow-sub p-4" style={{ '--rc': isCurrent ? '251, 191, 36' : isPast ? '52, 211, 153' : '255, 255, 255' } as React.CSSProperties}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] uppercase tracking-wider text-gray-500">{cs ? 'Dekáda' : 'Decade'} {i + 1}</span>
-                    {isCurrent && <span className="text-[9px] font-bold uppercase tracking-widest text-zion-gold bg-zion-gold/20 px-2 py-0.5 rounded-full">{cs ? 'Nyní' : 'Now'}</span>}
+                    <span className="text-[11px] uppercase tracking-wider text-gray-500">{NetworkCopy.decade[cs ? 'cs' : 'en']} {i + 1}</span>
+                    {isCurrent && <span className="text-[9px] font-bold uppercase tracking-widest text-zion-gold bg-zion-gold/20 px-2 py-0.5 rounded-full">{NetworkCopy.now[cs ? 'cs' : 'en']}</span>}
                     {isPast && <span className="text-[9px] text-emerald-400">✓</span>}
                   </div>
                   <p className={`text-lg font-bold font-mono ${isCurrent ? 'text-zion-gold' : isPast ? 'text-emerald-400' : 'text-gray-400'}`}>{reward.toFixed(2)}</p>
-                  <p className="text-[10px] text-gray-500">ZION/{cs ? 'blok' : 'block'}</p>
+                  <p className="text-[10px] text-gray-500">ZION/{NetworkCopy.block[cs ? 'cs' : 'en']}</p>
                   <p className="text-[10px] text-gray-500 mt-1 font-mono">{fmtLargeNum(decadeStart)}–{fmtLargeNum(decadeEnd)}</p>
                 </div>
               );
@@ -762,12 +921,12 @@ export default function NetworkPage() {
         {/* ═══════ INFRASTRUCTURE ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Infrastruktura' : 'Infrastructure'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.infrastructure[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Shield className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Aktuální runtime' : 'Current Runtime'}
+              {NetworkCopy.currentRuntime[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Aktuální veřejný runtime tvoří 2-uzlový P2P mesh v3.0.6 — Edge 1 (primary + pool) a Edge 2 (follower). Local Backup Node (Prague) je offline.' : 'Current public runtime is a 2-node v3.0.6 P2P mesh — Edge 1 (primary + pool) and Edge 2 (follower). Local Backup Node (Prague) is offline.'}</p>
+            <p className="text-sm text-gray-400">{NetworkCopy.currentPublicRuntimeIsA2NodeV3[cs ? 'cs' : 'en']}</p>
           </div>
           <div className="grid gap-5 md:grid-cols-1 lg:max-w-2xl">
             {infraFeatures.map((node) => (
@@ -795,15 +954,15 @@ export default function NetworkPage() {
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Zap className="w-3.5 h-3.5 text-gray-500" />
-                    <span>{cs ? 'Endpointy portů viz popis uzlu nahoře' : 'Port endpoints see node description above'}</span>
+                    <span>{NetworkCopy.portEndpointsSeeNodeDescriptio[cs ? 'cs' : 'en']}</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Terminal className="w-3.5 h-3.5 text-gray-500" />
-                    <span>{cs ? 'RPC auto-failover přes 2-uzlový mesh' : 'RPC auto-failover across 2-node mesh'}</span>
+                    <span>{NetworkCopy.rpcAutoFailoverAcross2NodeMesh[cs ? 'cs' : 'en']}</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Globe className="w-3.5 h-3.5 text-gray-500" />
-                    <span>{cs ? 'P2P mesh: 8333, 8334 · backup 8335 offline' : 'P2P mesh: 8333, 8334 · backup 8335 offline'}</span>
+                    <span>{NetworkCopy.p2pMesh83338334Backup8335Offli[cs ? 'cs' : 'en']}</span>
                   </div>
                 </div>
               </div>
@@ -817,55 +976,53 @@ export default function NetworkPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v3.0.6 E2E</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-zion-gold" />
-              {cs ? 'E2E Stack' : 'E2E Stack'}
+              {NetworkCopy.e2eStack[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
-              {cs
-                ? 'Všechny komponenty v3.0.6 byly ověřeny end-to-end na živé mainnet síti.'
-                : 'All v3.0.6 components have been verified end-to-end on the live mainnet.'}
+              {NetworkCopy.allV306ComponentsHaveBeenVerif[cs ? 'cs' : 'en']}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 icon: CheckCircle,
-                title: cs ? '11/11 služeb' : '11/11 services',
-                detail: cs ? 'Node, pool, watchers, bridge, web, dashboard, monitoring — vše active.' : 'Node, pool, watchers, bridge, web, dashboard, monitoring — all active.',
+                title: NetworkCopy.k1111Services[cs ? 'cs' : 'en'],
+                detail: NetworkCopy.nodePoolWatchersBridgeWebDashb[cs ? 'cs' : 'en'],
               },
               {
                 icon: Shield,
-                title: cs ? 'F4.7 + F5 aktivní' : 'F4.7 + F5 active',
-                detail: cs ? 'Max-tx-amount cap a sender balance check jsou nasazené od genesis height.' : 'Max-tx-amount cap and sender balance check are deployed from genesis height.',
+                title: NetworkCopy.f47F5Active[cs ? 'cs' : 'en'],
+                detail: NetworkCopy.maxTxAmountCapAndSenderBalance[cs ? 'cs' : 'en'],
               },
               {
                 icon: FileText,
-                title: cs ? 'Memo E2E testy' : 'Memo E2E tests',
-                detail: cs ? '3 account-model TX s memy potvrzené v bloku 752.' : '3 account-model TXs with memos confirmed in block 752.',
+                title: NetworkCopy.memoE2eTests[cs ? 'cs' : 'en'],
+                detail: NetworkCopy.k3AccountModelTxsWithMemosConfi[cs ? 'cs' : 'en'],
               },
               {
                 icon: Activity,
-                title: cs ? 'Memory leak fix' : 'Memory leak fix',
-                detail: cs ? 'Pool + node memory leak opraveny, watchdog sleduje zdraví.' : 'Pool + node memory leaks fixed, watchdog monitors health.',
+                title: NetworkCopy.memoryLeakFix[cs ? 'cs' : 'en'],
+                detail: NetworkCopy.poolNodeMemoryLeaksFixedWatchd[cs ? 'cs' : 'en'],
               },
               {
                 icon: Terminal,
-                title: cs ? 'RPC audit log' : 'RPC audit log',
-                detail: cs ? 'Audit log na node pro bezpečnostní forenzní analýzu.' : 'Node RPC audit log for security forensics.',
+                title: NetworkCopy.rpcAuditLog[cs ? 'cs' : 'en'],
+                detail: NetworkCopy.nodeRpcAuditLogForSecurityFore[cs ? 'cs' : 'en'],
               },
               {
                 icon: Lock,
-                title: cs ? 'AppArmor + UFW' : 'AppArmor + UFW',
-                detail: cs ? 'Edge server je chráněn AppArmor profilem a striktním UFW.' : 'Edge server is protected by AppArmor profile and strict UFW.',
+                title: NetworkCopy.apparmorUfw[cs ? 'cs' : 'en'],
+                detail: NetworkCopy.edgeServerIsProtectedByApparmo[cs ? 'cs' : 'en'],
               },
               {
                 icon: Globe,
-                title: cs ? 'Bridge Base Mainnet' : 'Bridge Base Mainnet',
-                detail: cs ? 'ZIONBridge a L2 watchery synchronizují mema na Base.' : 'ZIONBridge and L2 watchers synchronize memos on Base.',
+                title: NetworkCopy.bridgeBaseMainnet[cs ? 'cs' : 'en'],
+                detail: NetworkCopy.zionbridgeAndL2WatchersSynchro[cs ? 'cs' : 'en'],
               },
               {
                 icon: Server,
-                title: cs ? '2-uzlový mesh' : '2-node mesh',
-                detail: cs ? 'Edge 1 a Edge 2 v syncu ≤2 bloků · Local Backup offline.' : 'Edge 1 and Edge 2 within ≤2 block sync · Local Backup offline.',
+                title: NetworkCopy.k2NodeMesh[cs ? 'cs' : 'en'],
+                detail: NetworkCopy.edge1AndEdge2Within2BlockSyncL[cs ? 'cs' : 'en'],
               },
             ].map((item) => (
               <div key={item.title} className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
@@ -886,12 +1043,12 @@ export default function NetworkPage() {
         {/* ═══════ LIVE TELEMETRY ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Živá telemetrie' : 'Live Telemetry'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.liveTelemetry[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Stav nodu' : 'Node Status'}
+              {NetworkCopy.nodeStatus[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Zdraví, výška chainu, hashrate a sync stav v reálném čase z 2-uzlového P2P meshe.' : 'Real-time health, block height, hashrate, and sync status from the 2-node P2P mesh.'}</p>
+            <p className="text-sm text-gray-400">{NetworkCopy.realTimeHealthBlockHeightHashr[cs ? 'cs' : 'en']}</p>
           </div>
           <NetworkStatus className="max-w-none" />
         </section>
@@ -905,12 +1062,12 @@ export default function NetworkPage() {
         {/* ═══════ NETWORK MAP + POOL FINDER ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Geografie' : 'Geography'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.geography[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe2 className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Mapa sítě a vyhledávač poolu' : 'Network Map & Pool Finder'}
+              {NetworkCopy.networkMapPoolFinder[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Vizualizujte aktuální topologii a porovnejte ji s archivovaným multi-host rolloutem zachovaným v release dokumentaci.' : 'Visualize the current topology and compare it with the archived multi-host rollout preserved in release documentation.'}</p>
+            <p className="text-sm text-gray-400">{NetworkCopy.visualizeTheCurrentTopologyAnd[cs ? 'cs' : 'en']}</p>
           </div>
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
@@ -926,12 +1083,12 @@ export default function NetworkPage() {
         {/* ═══════ CONNECTION GUIDES ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Připojení' : 'Connect'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.connect[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Layers className="h-7 w-7 text-zion-purple" />
-              {cs ? 'Připojovací návody' : 'Connection Guides'}
+              {NetworkCopy.connectionGuides[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Vše, co potřebujete k připojení mineru, dotazování RPC API nebo synchronizaci nodu.' : 'Everything you need to connect a miner, query the RPC API, or sync a node.'}</p>
+            <p className="text-sm text-gray-400">{NetworkCopy.everythingYouNeedToConnectAMin[cs ? 'cs' : 'en']}</p>
           </div>
           <div className="grid gap-5 lg:grid-cols-3">
             {guideBlocks.map((block) => (
@@ -958,10 +1115,10 @@ export default function NetworkPage() {
         {/* ═══════ NETWORK CHECKLIST ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Stav' : 'Status'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.status[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <ShieldCheck className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Připravenost sítě' : 'Network Readiness'}
+              {NetworkCopy.networkReadiness[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid gap-2 md:grid-cols-3">
@@ -976,7 +1133,7 @@ export default function NetworkPage() {
             <span className="font-mono text-emerald-400">{factsDone}</span>
             <span>/</span>
             <span className="font-mono">{factsTotal}</span>
-            <span>{cs ? 'dokončeno' : 'completed'}</span>
+            <span>{NetworkCopy.completed[cs ? 'cs' : 'en']}</span>
             <div className="h-2 flex-1 max-w-xs rounded-full bg-white/10">
               <div className="h-2 rounded-full bg-emerald-400" style={{ width: `${(factsDone / factsTotal) * 100}%` }} />
             </div>
@@ -992,9 +1149,9 @@ export default function NetworkPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">FAQ</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Hash className="h-7 w-7 text-purple-400" />
-              {cs ? 'Často kladené dotazy' : 'Frequently Asked Questions'}
+              {NetworkCopy.frequentlyAskedQuestions[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Vše o síti ZION na jednom místě.' : 'Everything about the ZION network in one place.'}</p>
+            <p className="text-sm text-gray-400">{NetworkCopy.everythingAboutTheZionNetworkI[cs ? 'cs' : 'en']}</p>
           </div>
           <NetFAQSection cs={cs} />
         </section>
@@ -1002,11 +1159,9 @@ export default function NetworkPage() {
         {/* ═══════ CTA ═══════ */}
         <section className="zion-cta-banner">
           <Radio className="mx-auto h-12 w-12 text-zion-gold" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Připojte se k síti ZION' : 'Join the ZION Network'}</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{NetworkCopy.joinTheZionNetwork[cs ? 'cs' : 'en']}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {cs
-              ? 'Nativní Rust infrastruktura běží 24/7 z aktuálního primárního hostu s podporou interního kvora. Připojte svůj miner, spusťte vlastní node nebo prozkoumejte blockchain, zatímco historický kontext nasazení zůstává zachován v dokumentaci.'
-              : 'Native Rust infrastructure running 24/7 from the current primary host with internal quorum support. Connect your miner, run your own node, or explore the blockchain while historical rollout context stays preserved in docs.'}
+            {NetworkCopy.nativeRustInfrastructureRunnin[cs ? 'cs' : 'en']}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
             89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · Public launch target 31.12.2026
@@ -1014,10 +1169,10 @@ export default function NetworkPage() {
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs">
             {[
               'Cosmic Harmony PoW',
-              cs ? 'Primární host online' : 'Primary host live',
-              cs ? 'Interní seedy' : 'Internal seeds',
-              cs ? 'Docker nativně' : 'Docker native',
-              cs ? 'Archivovaná multi-host historie' : 'Archived multi-host history',
+              NetworkCopy.primaryHostLive[cs ? 'cs' : 'en'],
+              NetworkCopy.internalSeeds[cs ? 'cs' : 'en'],
+              NetworkCopy.dockerNative[cs ? 'cs' : 'en'],
+              NetworkCopy.archivedMultiHostHistory[cs ? 'cs' : 'en'],
             ].map((item) => (
               <span key={item} className="zion-badge-gold">
                 {item}
@@ -1026,10 +1181,10 @@ export default function NetworkPage() {
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/explorer" className="zion-button-secondary">
-              <Activity className="h-4 w-4" /> {cs ? 'Explorer' : 'Explorer'}
+              <Activity className="h-4 w-4" /> {NetworkCopy.explorer[cs ? 'cs' : 'en']}
             </Link>
             <Link href="/roadmap" className="zion-button-primary">
-              <Rocket className="h-4 w-4" /> {cs ? 'Roadmapa' : 'Roadmap'}
+              <Rocket className="h-4 w-4" /> {NetworkCopy.roadmap[cs ? 'cs' : 'en']}
             </Link>
             <a
               href="https://github.com/Zion-TerraNova"
@@ -1112,14 +1267,14 @@ function ChainStatCard({ label, value, sub, color, tip }: { label: string; value
 function NetFAQSection({ cs }: { cs: boolean }) {
   const [open, setOpen] = useState<number | null>(null);
   const faqs = [
-    { q: cs ? 'Jaký konsenzus ZION používá?' : 'What consensus does ZION use?', a: cs ? 'Cosmic Harmony Proof-of-Work – vlastní CryptoNight varianta optimalizovaná pro CPU/GPU mining s 60s block time a Decade Decay emisí.' : 'Cosmic Harmony Proof-of-Work – a custom CryptoNight variant optimized for CPU/GPU mining with 60s block time and Decade Decay emission.' },
-    { q: cs ? 'Jaký je cílový block time?' : 'What is the target block time?', a: cs ? '60 sekund. Obtížnost se dynamicky přizpůsobuje každý blok, aby udržela stabilní tempo.' : '60 seconds. Difficulty adjusts dynamically every block to maintain a stable pace.' },
-    { q: cs ? 'Kolik ZION se vytěží za blok?' : 'How many ZION are mined per block?', a: cs ? `V první dekádě je odměna ${BLOCK_REWARD_ZION.toFixed(3)} ZION/blok. Každých 10 let (${BLOCKS_PER_DECADE.toLocaleString()} bloků) se odměna sníží o 20 % (Decade Decay).` : `In the first decade the reward is ${BLOCK_REWARD_ZION.toFixed(3)} ZION/block. Every 10 years (${BLOCKS_PER_DECADE.toLocaleString()} blocks) the reward decreases by 20% (Decade Decay).` },
-    { q: cs ? 'Jaká je maximální zásoba?' : 'What is the maximum supply?', a: cs ? `Maximální supply je ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} miliard ZION včetně genesis premine ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)} mld ZION.` : `Maximum supply is ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} billion ZION including genesis premine of ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)}B ZION.` },
-    { q: cs ? 'Jak se připojit jako miner?' : 'How to connect as a miner?', a: cs ? `Stáhněte si XMRig nebo Desktop Agent a použijte stratum+tcp://${SITE_POOL_PRIMARY} jako pool adresu. Detaily najdete v Connection Guides výše.` : `Download XMRig or the Desktop Agent and use stratum+tcp://${SITE_POOL_PRIMARY} as the pool address. See the Connection Guides section above for details.` },
-    { q: cs ? 'Jak spustit vlastní full node?' : 'How to run your own full node?', a: cs ? `Klonujte repo, spusťte cargo build --release v V3/core a pak ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333 --add-exclusive-node ${SITE_PRIMARY_HOST}:8334. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.` : `Clone the repo, cargo build --release from V3/core and then ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333 --add-exclusive-node ${SITE_PRIMARY_HOST}:8334. Docker compose is available in docker/docker-compose.mainnet.yml.` },
-    { q: cs ? 'Jaký pool fee si ZION účtuje?' : 'What pool fee does ZION charge?', a: cs ? '89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.' : '89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.' },
-    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). v3.0.6 "Trinity" běží na 2-uzlovém P2P meshi s aktivním poolem, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzené v bloku 752.' : 'MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). v3.0.6 "Trinity" runs on a 2-node P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752.' },
+    { q: NetworkCopy.whatConsensusDoesZionUse[cs ? 'cs' : 'en'], a: NetworkCopy.cosmicHarmonyProofOfWorkACusto[cs ? 'cs' : 'en'] },
+    { q: NetworkCopy.whatIsTheTargetBlockTime[cs ? 'cs' : 'en'], a: NetworkCopy.k60SecondsDifficultyAdjustsDyna[cs ? 'cs' : 'en'] },
+    { q: NetworkCopy.howManyZionAreMinedPerBlock[cs ? 'cs' : 'en'], a: cs ? `V první dekádě je odměna ${BLOCK_REWARD_ZION.toFixed(3)} ZION/blok. Každých 10 let (${BLOCKS_PER_DECADE.toLocaleString()} bloků) se odměna sníží o 20 % (Decade Decay).` : `In the first decade the reward is ${BLOCK_REWARD_ZION.toFixed(3)} ZION/block. Every 10 years (${BLOCKS_PER_DECADE.toLocaleString()} blocks) the reward decreases by 20% (Decade Decay).` },
+    { q: NetworkCopy.whatIsTheMaximumSupply[cs ? 'cs' : 'en'], a: cs ? `Maximální supply je ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} miliard ZION včetně genesis premine ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)} mld ZION.` : `Maximum supply is ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} billion ZION including genesis premine of ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)}B ZION.` },
+    { q: NetworkCopy.howToConnectAsAMiner[cs ? 'cs' : 'en'], a: cs ? `Stáhněte si XMRig nebo Desktop Agent a použijte stratum+tcp://${SITE_POOL_PRIMARY} jako pool adresu. Detaily najdete v Connection Guides výše.` : `Download XMRig or the Desktop Agent and use stratum+tcp://${SITE_POOL_PRIMARY} as the pool address. See the Connection Guides section above for details.` },
+    { q: NetworkCopy.howToRunYourOwnFullNode[cs ? 'cs' : 'en'], a: cs ? `Klonujte repo, spusťte cargo build --release v V3/core a pak ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333 --add-exclusive-node ${SITE_PRIMARY_HOST}:8334. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.` : `Clone the repo, cargo build --release from V3/core and then ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333 --add-exclusive-node ${SITE_PRIMARY_HOST}:8334. Docker compose is available in docker/docker-compose.mainnet.yml.` },
+    { q: NetworkCopy.whatPoolFeeDoesZionCharge[cs ? 'cs' : 'en'], a: NetworkCopy.k89GoesToTheMiner5ToTheHumanita[cs ? 'cs' : 'en'] },
+    { q: NetworkCopy.isTheNetworkPubliclyLaunched[cs ? 'cs' : 'en'], a: NetworkCopy.mainnetGenesisTookPlaceOn11Jun[cs ? 'cs' : 'en'] },
   ];
   return (
     <div className="divide-y divide-white/[0.06]">

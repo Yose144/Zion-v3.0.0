@@ -8,6 +8,25 @@ import { ArrowRightLeft, ChevronRight, Copy, Check, Clock } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
 
+const ProRecentTransactionsCopy = {
+  justNow: { cs: `prave ted`, en: `just now` },
+  coinbase: { cs: `⛏ Coinbase`, en: `⛏ Coinbase` },
+  transfer: { cs: `↔ Prenos`, en: `↔ Transfer` },
+  payout: { cs: `Vyplata`, en: `Payout` },
+  pending: { cs: `Ceka`, en: `Pending` },
+  confirmed: { cs: `Potvrzeno`, en: `Confirmed` },
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  latestTransactions: { cs: `Posledni transakce`, en: `Latest Transactions` },
+  realTimeTransactionFeed: { cs: `Tok transakci v realnem case`, en: `Real-time transaction feed` },
+  viewAll: { cs: `Zobrazit vse`, en: `View All` },
+  type: { cs: `Typ`, en: `Type` },
+  age: { cs: `Stari`, en: `Age` },
+  block: { cs: `Blok`, en: `Block` },
+  amount: { cs: `Castka`, en: `Amount` },
+  copyHash: { cs: `Kopirovat hash`, en: `Copy hash` },
+  fullTransactionFeed: { cs: `Kompletni tok transakci`, en: `Full Transaction Feed` },
+};
+
 interface Transaction {
   tx_hash: string;
   type: string;
@@ -24,7 +43,7 @@ interface Transaction {
 
 const fmtAge = (ts: number, cs: boolean): string => {
   const s = Math.floor(Date.now() / 1000) - ts;
-  if (s < 5) return cs ? 'prave ted' : 'just now';
+  if (s < 5) return ProRecentTransactionsCopy.justNow[cs ? 'cs' : 'en'];
   if (s < 60) return cs ? `pred ${s}s` : `${s}s ago`;
   if (s < 3600) return cs ? `pred ${Math.floor(s / 60)}m ${s % 60}s` : `${Math.floor(s / 60)}m ${s % 60}s ago`;
   if (s < 86400) return cs ? `pred ${Math.floor(s / 3600)}h` : `${Math.floor(s / 3600)}h ago`;
@@ -62,22 +81,22 @@ function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
   const s = styles[type] || "bg-gray-500/15 text-gray-400 border-gray-500/30";
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border ${s}`}>
-      {type === "coinbase" ? (cs ? "⛏ Coinbase" : "⛏ Coinbase") : type === "transfer" ? (cs ? "↔ Prenos" : "↔ Transfer") : type === "payout" ? (cs ? "Vyplata" : "Payout") : type}
+      {type === "coinbase" ? (ProRecentTransactionsCopy.coinbase[cs ? 'cs' : 'en']) : type === "transfer" ? (ProRecentTransactionsCopy.transfer[cs ? 'cs' : 'en']) : type === "payout" ? (ProRecentTransactionsCopy.payout[cs ? 'cs' : 'en']) : type}
     </span>
   );
 }
 
 function StatusDot({ status, cs }: { status: string; cs: boolean }) {
   if (status === "pending") {
-    return <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" title={cs ? "Ceka" : "Pending"} />;
+    return <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" title={ProRecentTransactionsCopy.pending[cs ? 'cs' : 'en']} />;
   }
-  return <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" title={cs ? "Potvrzeno" : "Confirmed"} />;
+  return <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" title={ProRecentTransactionsCopy.confirmed[cs ? 'cs' : 'en']} />;
 }
 
 export default function ProRecentTransactions() {
   const { lang } = useLang();
   const cs = lang === "cs";
-  const locale = cs ? "cs-CZ" : "en-US";
+  const locale = ProRecentTransactionsCopy.enUs[cs ? 'cs' : 'en'];
   const [txs, setTxs] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setTick] = useState(0);
@@ -112,15 +131,15 @@ export default function ProRecentTransactions() {
             <ArrowRightLeft className="h-4.5 w-4.5 text-zion-cyan" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-white">{cs ? "Posledni transakce" : "Latest Transactions"}</h3>
-            <p className="text-[11px] text-gray-500">{cs ? "Tok transakci v realnem case" : "Real-time transaction feed"}</p>
+            <h3 className="text-base font-semibold text-white">{ProRecentTransactionsCopy.latestTransactions[cs ? 'cs' : 'en']}</h3>
+            <p className="text-[11px] text-gray-500">{ProRecentTransactionsCopy.realTimeTransactionFeed[cs ? 'cs' : 'en']}</p>
           </div>
         </div>
         <Link
           href="/explorer/transactions"
           className="flex items-center gap-1 text-xs text-gray-400 hover:text-zion-cyan transition-colors font-medium"
         >
-          {cs ? "Zobrazit vse" : "View All"} <ChevronRight className="h-3.5 w-3.5" />
+          {ProRecentTransactionsCopy.viewAll[cs ? 'cs' : 'en']} <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
@@ -131,11 +150,11 @@ export default function ProRecentTransactions() {
             <tr className="border-b border-white/4">
               <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3 w-5" />
               <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">Hash</th>
-              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{cs ? "Typ" : "Type"}</th>
-              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{cs ? "Stari" : "Age"}</th>
-              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden md:table-cell">{cs ? "Blok" : "Block"}</th>
+              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{ProRecentTransactionsCopy.type[cs ? 'cs' : 'en']}</th>
+              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{ProRecentTransactionsCopy.age[cs ? 'cs' : 'en']}</th>
+              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden md:table-cell">{ProRecentTransactionsCopy.block[cs ? 'cs' : 'en']}</th>
               <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden lg:table-cell">Fee</th>
-              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{cs ? "Castka" : "Amount"}</th>
+              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{ProRecentTransactionsCopy.amount[cs ? 'cs' : 'en']}</th>
             </tr>
           </thead>
           <tbody>
@@ -172,7 +191,7 @@ export default function ProRecentTransactions() {
                           </Link>
                         )}
                         {tx.tx_hash && !tx.tx_hash.startsWith("coinbase_") && (
-                          <CopyBtn text={tx.tx_hash} label={cs ? "Kopirovat hash" : "Copy hash"} />
+                          <CopyBtn text={tx.tx_hash} label={ProRecentTransactionsCopy.copyHash[cs ? 'cs' : 'en']} />
                         )}
                       </div>
                     </td>
@@ -225,7 +244,7 @@ export default function ProRecentTransactions() {
             href="/explorer/transactions"
             className="text-[11px] text-zion-cyan hover:text-white transition font-medium"
           >
-            {cs ? 'Kompletni tok transakci' : 'Full Transaction Feed'} →
+            {ProRecentTransactionsCopy.fullTransactionFeed[cs ? 'cs' : 'en']} →
           </Link>
         </div>
       )}

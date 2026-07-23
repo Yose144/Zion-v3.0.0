@@ -20,6 +20,28 @@ import { exportToCsv } from "@/lib/csv-export";
 import { SITE_RELEASE_LABEL } from "@/lib/site";
 import LiveBadge from "@/components/explorer/v4/shared/LiveBadge";
 
+const ExplorerChartsChartsPageClientCopy = {
+  height: { cs: `Výška`, en: `Height` },
+  hashrate: { cs: `Hashrate`, en: `Hashrate` },
+  difficulty: { cs: `Obtížnost`, en: `Difficulty` },
+  blockTime: { cs: `Čas bloku`, en: `Block Time` },
+  totalTx: { cs: `TX celkem`, en: `Total TX` },
+  mempool: { cs: `Mempool`, en: `Mempool` },
+  analytics: { cs: `Analytika`, en: `Analytics` },
+  historicalData: { cs: `Historická data`, en: `Historical Data` },
+  chartsAnalytics: { cs: `Grafy a analytika`, en: `Charts & Analytics` },
+  historicalTrendsForHashrateDif: { cs: `Historické trendy hashrate, obtížnosti, času bloku a transakcí. Auto-refresh každých 30 sekund.`, en: `Historical trends for hashrate, difficulty, block time, and transactions. Auto-refresh every 30 seconds.` },
+  autoRefresh30s: { cs: `Auto-refresh 30s`, en: `Auto-Refresh 30s` },
+  live: { cs: `ŽIVĚ`, en: `LIVE` },
+  timeRange: { cs: `Časový rozsah`, en: `Time range` },
+  trends: { cs: `Trendy`, en: `Trends` },
+  networkCharts: { cs: `Síťové grafy`, en: `Network Charts` },
+  points: { cs: `bodů`, en: `points` },
+  exportCsv: { cs: `Export CSV`, en: `Export CSV` },
+  aboutTheCharts: { cs: `O grafech`, en: `About the charts` },
+  dataComesFromTheLiveZionNodeRp: { cs: `Data pocházejí z živého ZION node RPC. Hashrate a obtížnost používají LWMA DAA (Difficulty Adjustment Algorithm). Čas bloku je klouzavý průměr. Auto-refresh 30 sekund.`, en: `Data comes from the live ZION node RPC. Hashrate and difficulty use LWMA DAA (Difficulty Adjustment Algorithm). Block time is a rolling average. Auto-refresh every 30 seconds.` },
+};
+
 /* ── helpers ─────────────────────────────────────────────────── */
 
 function fmtSI(v: number): string {
@@ -235,37 +257,37 @@ export default function ChartsPageClient() {
   const statCards = useMemo(
     () => [
       {
-        label: cs ? "Výška" : "Height",
+        label: ExplorerChartsChartsPageClientCopy.height[cs ? 'cs' : 'en'],
         value: stats ? `#${stats.block_height.toLocaleString()}` : "—",
         icon: Blocks,
         color: "text-zion-gold",
       },
       {
-        label: cs ? "Hashrate" : "Hashrate",
+        label: ExplorerChartsChartsPageClientCopy.hashrate[cs ? 'cs' : 'en'],
         value: stats?.network_hashrate_formatted ?? "—",
         icon: Zap,
         color: "text-zion-cyan",
       },
       {
-        label: cs ? "Obtížnost" : "Difficulty",
+        label: ExplorerChartsChartsPageClientCopy.difficulty[cs ? 'cs' : 'en'],
         value: stats ? fmtSI(stats.difficulty) : "—",
         icon: TrendingUp,
         color: "text-emerald-400",
       },
       {
-        label: cs ? "Čas bloku" : "Block Time",
+        label: ExplorerChartsChartsPageClientCopy.blockTime[cs ? 'cs' : 'en'],
         value: stats ? `${stats.avg_block_time.toFixed(1)}s` : "—",
         icon: Clock,
         color: "text-amber-400",
       },
       {
-        label: cs ? "TX celkem" : "Total TX",
+        label: ExplorerChartsChartsPageClientCopy.totalTx[cs ? 'cs' : 'en'],
         value: stats ? stats.total_transactions.toLocaleString() : "—",
         icon: Layers,
         color: "text-zion-purple",
       },
       {
-        label: cs ? "Mempool" : "Mempool",
+        label: ExplorerChartsChartsPageClientCopy.mempool[cs ? 'cs' : 'en'],
         value: stats ? String(stats.tx_pool_size) : "—",
         icon: Activity,
         color: "text-rose-400",
@@ -297,33 +319,31 @@ export default function ChartsPageClient() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase">
                 <BarChart3 className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? "Analytika" : "Analytics"}
+                {SITE_RELEASE_LABEL} · {ExplorerChartsChartsPageClientCopy.analytics[cs ? 'cs' : 'en']}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                  {cs ? "Historická data" : "Historical Data"}
+                  {ExplorerChartsChartsPageClientCopy.historicalData[cs ? 'cs' : 'en']}
                 </p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? "Grafy a analytika" : "Charts & Analytics"}
+                  {ExplorerChartsChartsPageClientCopy.chartsAnalytics[cs ? 'cs' : 'en']}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? "Historické trendy hashrate, obtížnosti, času bloku a transakcí. Auto-refresh každých 30 sekund."
-                  : "Historical trends for hashrate, difficulty, block time, and transactions. Auto-refresh every 30 seconds."}
+                {ExplorerChartsChartsPageClientCopy.historicalTrendsForHashrateDif[cs ? 'cs' : 'en']}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="zion-badge zion-badge-green">
-                  <Activity className="h-3 w-3" /> {cs ? "Auto-refresh 30s" : "Auto-Refresh 30s"}
+                  <Activity className="h-3 w-3" /> {ExplorerChartsChartsPageClientCopy.autoRefresh30s[cs ? 'cs' : 'en']}
                 </span>
-                <LiveBadge label={cs ? "ŽIVĚ" : "LIVE"} />
+                <LiveBadge label={ExplorerChartsChartsPageClientCopy.live[cs ? 'cs' : 'en']} />
               </div>
             </div>
 
             {/* Range selector */}
             <div className="flex flex-col gap-3">
               <span className="text-xs text-gray-400 uppercase tracking-wider">
-                {cs ? "Časový rozsah" : "Time range"}
+                {ExplorerChartsChartsPageClientCopy.timeRange[cs ? 'cs' : 'en']}
               </span>
               <div className="flex items-center gap-2">
                 {ranges.map((r) => (
@@ -385,11 +405,11 @@ export default function ChartsPageClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {cs ? "Trendy" : "Trends"}
+              {ExplorerChartsChartsPageClientCopy.trends[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <BarChart3 className="h-7 w-7 text-zion-purple" />
-              {cs ? "Síťové grafy" : "Network Charts"}
+              {ExplorerChartsChartsPageClientCopy.networkCharts[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -425,7 +445,7 @@ export default function ChartsPageClient() {
                           {cs ? ct.labelCs : ct.label}
                         </h3>
                         <p className="text-[11px] text-gray-500">
-                          {range.toUpperCase()} · {values.length} {cs ? "bodů" : "points"}
+                          {range.toUpperCase()} · {values.length} {ExplorerChartsChartsPageClientCopy.points[cs ? 'cs' : 'en']}
                         </p>
                       </div>
                     </div>
@@ -451,7 +471,7 @@ export default function ChartsPageClient() {
                         onClick={() => handleExportChart(ct.key)}
                         disabled={!cd}
                         className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/10 disabled:opacity-30 transition"
-                        title={cs ? "Export CSV" : "Export CSV"}
+                        title={ExplorerChartsChartsPageClientCopy.exportCsv[cs ? 'cs' : 'en']}
                       >
                         <Download className="w-3.5 h-3.5" />
                       </button>
@@ -493,12 +513,10 @@ export default function ChartsPageClient() {
               </div>
               <div>
                 <h3 className="text-base font-semibold text-white mb-1">
-                  {cs ? "O grafech" : "About the charts"}
+                  {ExplorerChartsChartsPageClientCopy.aboutTheCharts[cs ? 'cs' : 'en']}
                 </h3>
                 <p className="text-sm text-gray-400">
-                  {cs
-                    ? "Data pocházejí z živého ZION node RPC. Hashrate a obtížnost používají LWMA DAA (Difficulty Adjustment Algorithm). Čas bloku je klouzavý průměr. Auto-refresh 30 sekund."
-                    : "Data comes from the live ZION node RPC. Hashrate and difficulty use LWMA DAA (Difficulty Adjustment Algorithm). Block time is a rolling average. Auto-refresh every 30 seconds."}
+                  {ExplorerChartsChartsPageClientCopy.dataComesFromTheLiveZionNodeRp[cs ? 'cs' : 'en']}
                 </p>
               </div>
             </div>

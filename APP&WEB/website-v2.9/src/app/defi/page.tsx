@@ -47,6 +47,152 @@ const GovernancePanel = dynamic(() => import('@/components/GovernancePanel'), { 
 import { CONTRACTS, SEED_PRICE_USD, CCA_AUCTION_PARAMS, PANCAKE_V3 } from '@/lib/defi-contracts';
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
 
+const DefiCopy = {
+  defiHubBaseMainnet: { cs: `DeFi Hub · Base Mainnet`, en: `DeFi Hub · Base Mainnet` },
+  wzionEcosystem: { cs: `wZION ekosystém`, en: `wZION ecosystem` },
+  manageWzion: { cs: `Spravuj wZION`, en: `Manage wZION` },
+  swapBridgeAndManageWzionOnBase: { cs: `Swapuj, přemosťuj a spravuj wZION na Base. Reálné kontrakty, reálná likvidita, živé ceny z on-chain poolů.`, en: `Swap, bridge, and manage wZION on Base. Real contracts, real liquidity, live prices from on-chain pools.` },
+  live: { cs: `Živě`, en: `Live` },
+  polling: { cs: `Polling`, en: `Polling` },
+  autoRefresh60s: { cs: `Auto-refresh 60 s`, en: `Auto-Refresh 60s` },
+  wzionUsdtUniswapV3: { cs: `wZION/USDT · Uniswap V3`, en: `wZION/USDT · Uniswap V3` },
+  ziondexSwap: { cs: `ZionDex Swap`, en: `ZionDex Swap` },
+  aboutZiondex: { cs: `O ZionDex`, en: `About ZionDex` },
+  quickOverview: { cs: `Rychlý přehled`, en: `Quick Overview` },
+  price: { cs: `Cena`, en: `Price` },
+  supply: { cs: `Supply`, en: `Supply` },
+  switch: { cs: `Přepnout`, en: `Switch` },
+  connectWallet: { cs: `Připojit peněženku`, en: `Connect Wallet` },
+  openUniswapUsdt: { cs: `Otevřít Uniswap (USDT)`, en: `Open Uniswap (USDT)` },
+  defiHubEarlyBeta: { cs: `DeFi Hub — raná beta`, en: `DeFi Hub — Early Beta` },
+  wzionContractsAreDeployedOnBas: { cs: `wZION kontrakty jsou nasazeny na Base mainnetu, ale likvidita je zatím nízká. Používejte malé částky a buďte opatrní při velkých swapech.`, en: `wZION contracts are deployed on Base mainnet, but liquidity is still low. Use small amounts and be cautious with large swaps.` },
+  defiSections: { cs: `DeFi sekce`, en: `DeFi sections` },
+  lowDexLiquidity: { cs: `Nízká DEX likvidita`, en: `Low DEX Liquidity` },
+  telemetry: { cs: `Telemetrie`, en: `Telemetry` },
+  defiTelemetry: { cs: `DeFi telemetrie`, en: `DeFi Telemetry` },
+  wzionMetricsAggregatedFromBase: { cs: `Metriky wZION agregované z Base kontraktů, pool API a bridge relayeru v reálném čase.`, en: `wZION metrics aggregated from Base contracts, pool API, and bridge relayer in real time.` },
+  currentPriceFromThePrimaryWzio: { cs: `Aktuální cena z primárního wZION/USDT poolu nebo seed cena.`, en: `Current price from the primary wZION/USDT pool or seed price.` },
+  totalInPools: { cs: `celkem v poolech`, en: `total in pools` },
+  liquidity: { cs: `Likvidita`, en: `Liquidity` },
+  pools: { cs: `Pooly`, en: `Pools` },
+  active: { cs: `aktivní`, en: `active` },
+  wzionSupply: { cs: `wZION Supply`, en: `wZION Supply` },
+  totalCirculating: { cs: `celkový oběh`, en: `total circulating` },
+  bridge: { cs: `Bridge`, en: `Bridge` },
+  online: { cs: `Online`, en: `Online` },
+  offline: { cs: `Offline`, en: `Offline` },
+  k55Validators: { cs: `5/5 validátorů`, en: `5/5 validators` },
+  validators: { cs: `Validátoři`, en: `Validators` },
+  guardianRelay: { cs: `Guardian relay`, en: `Guardian relay` },
+  auction: { cs: `Aukce`, en: `Auction` },
+  ccaSold: { cs: `prodáno CCA`, en: `CCA sold` },
+  primary: { cs: `primární`, en: `primary` },
+  k1h: { cs: `1h`, en: `1h` },
+  loadingPriceData: { cs: `Načítám cenová data…`, en: `Loading price data…` },
+  priceDataNotAvailableYet: { cs: `Cenová data zatím nedostupná`, en: `Price data not available yet` },
+  status: { cs: `Stav`, en: `Status` },
+  inactive: { cs: `neaktivní`, en: `inactive` },
+  loading: { cs: `načítám`, en: `loading` },
+  contracts: { cs: `Kontrakty`, en: `Contracts` },
+  baseMainnetContracts: { cs: `Kontrakty na Base Mainnet`, en: `Base Mainnet Contracts` },
+  contract: { cs: `Kontrakt`, en: `Contract` },
+  address: { cs: `Adresa`, en: `Address` },
+  tradeWzion: { cs: `Obchoduj wZION`, en: `Trade wZION` },
+  wzionIsAvailableOnUniswapV3Bas: { cs: `wZION je k dispozici na Uniswap V3 (Base). Primární pool wZION/USDT s 0.3% fee.`, en: `wZION is available on Uniswap V3 (Base). Primary wZION/USDT pool with 0.3% fee.` },
+  openUniswap: { cs: `Otevřít Uniswap`, en: `Open Uniswap` },
+  trade: { cs: `Obchodování`, en: `Trade` },
+  swapTradeOnDexAndTrackTheWzion: { cs: `Swapuj, obchoduj na DEX a sleduj cenu wZION na Base Mainnet.`, en: `Swap, trade on DEX, and track the wZION price on Base Mainnet.` },
+  swapWzion: { cs: `Swap wZION`, en: `Swap wZION` },
+  lifiUniswapIntegration: { cs: `LiFi + Uniswap integrace`, en: `LiFi + Uniswap integration` },
+  instantSwapBetweenWzionEthUsdt: { cs: `Okamžitý swap mezi wZION, ETH, USDT a dalšími tokeny. LiFi agreguje 30+ DEX a 20+ bridge.`, en: `Instant swap between wZION, ETH, USDT, and other tokens. LiFi aggregates 30+ DEX and 20+ bridges.` },
+  swapBelow: { cs: `Swap níže`, en: `Swap below` },
+  dexPools: { cs: `DEX Pooly`, en: `DEX Pools` },
+  uniswapV3: { cs: `Uniswap V3`, en: `Uniswap V3` },
+  wzionUsdtPrimaryPoolOnUniswapV: { cs: `wZION/USDT primární pool na Uniswap V3. Sekundární pooly WETH/SOL jsou inicializované, ale bez aktivní likvidity.`, en: `wZION/USDT primary pool on Uniswap V3. Secondary WETH/SOL pools are initialized but carry no active liquidity.` },
+  ccaAuction: { cs: `CCA Aukce`, en: `CCA Auction` },
+  k6647mWzionForUsdc: { cs: `66.47M wZION za USDC`, en: `66.47M wZION for USDC` },
+  active_2: { cs: `Aktivní`, en: `Active` },
+  continuousClearingAuctionOnUni: { cs: `Continuous Clearing Auction na Uniswap. Vyklízecí cena se kontinuálně upravuje podle poptávky.`, en: `Continuous Clearing Auction on Uniswap. Clearing price continuously adjusts based on demand.` },
+  placeBids: { cs: `Přihazovat`, en: `Place bids` },
+  k2ndLargestDexOnBase: { cs: `2. největší DEX na Base`, en: `2nd largest DEX on Base` },
+  wzionUsdtPoolOnPancakeswapV3An: { cs: `wZION/USDT pool na PancakeSwap V3. Další možnost likvidity a swapu pro wZION.`, en: `wZION/USDT pool on PancakeSwap V3. Another liquidity and swap option for wZION.` },
+  swapOnPancakeswap: { cs: `Swap na PancakeSwap`, en: `Swap on PancakeSwap` },
+  crossChainSwap: { cs: `Cross-chain swap`, en: `Cross-chain Swap` },
+  directSwapBalances: { cs: `Direct swap + zůstatky`, en: `Direct Swap + Balances` },
+  yield: { cs: `Výnosy`, en: `Yield` },
+  earnWzion: { cs: `Získej wZION`, en: `Earn wZION` },
+  stakeOrFarmWzionToEarnRegularR: { cs: `Stakeuj nebo farm wZION a získej pravidelné odměny.`, en: `Stake or farm wZION to earn regular rewards.` },
+  staking: { cs: `Staking`, en: `Staking` },
+  farming: { cs: `Farming`, en: `Farming` },
+  infrastructure: { cs: `Infrastruktura`, en: `Infrastructure` },
+  wzionBridge: { cs: `wZION Bridge`, en: `wZION Bridge` },
+  moveBetweenL1AndL2AndGovernThe: { cs: `Přenos mezi L1 a L2 a on-chain řízení protokolu.`, en: `Move between L1 and L2 and govern the protocol on-chain.` },
+  l1Base55Validators: { cs: `L1 ↔ Base · 5/5 validátorů`, en: `L1 ↔ Base · 5/5 validators` },
+  lockZionOnL1AndReceiveWzionOnB: { cs: `Zamkni ZION na L1 a získej wZION na Base. Spal wZION pro odemčení zpět na L1. 1:1 peg, multi-validátorový relay.`, en: `Lock ZION on L1 and receive wZION on Base. Burn wZION to unlock back to L1. 1:1 peg, multi-validator relay.` },
+  openBridge: { cs: `Otevřít bridge`, en: `Open bridge` },
+  howBridgeWorks: { cs: `Jak Bridge funguje`, en: `How Bridge Works` },
+  lockZionOnL1RelayMintsWzionOnB: { cs: `Zamkni ZION na L1 → relay mintne wZION na Base (1:1 peg)`, en: `Lock ZION on L1 → relay mints wZION on Base (1:1 peg)` },
+  burnWzionOnBaseRelayUnlocksZio: { cs: `Spal wZION na Base → relay odemkne ZION na L1 (do ~5 min)`, en: `Burn wZION on Base → relay unlocks ZION on L1 (within ~5 min)` },
+  bridgeVault100mZion: { cs: `Bridge Vault · 100M ZION`, en: `Bridge Vault · 100M ZION` },
+  relayOnline: { cs: `Relay Online`, en: `Relay Online` },
+  relayOffline: { cs: `Relay Offline`, en: `Relay Offline` },
+  k6UtxoLockTransactions1667mZion: { cs: `6 UTXO lock transakcí (~16.67M ZION každá) odesláno na bridge vault v blocích 11611–11612. Relay mintne wZION na Base po dosažení finality (60 bloků).`, en: `6 UTXO lock transactions (~16.67M ZION each) sent to the bridge vault in blocks 11611–11612. Relay mints wZION on Base after finality (60 blocks).` },
+  locked: { cs: `Zamčeno`, en: `Locked` },
+  lockTxs: { cs: `Lock TX`, en: `Lock TXs` },
+  wzionMints: { cs: `wZION Mints`, en: `wZION Mints` },
+  confirmed: { cs: `potvrzeno`, en: `confirmed` },
+  l1Unlocks: { cs: `L1 Odemčeno`, en: `L1 Unlocks` },
+  block: { cs: `blok`, en: `block` },
+  lastScan: { cs: `poslední scan`, en: `last scan` },
+  vault: { cs: `Vault`, en: `Vault` },
+  finality60Blocks: { cs: `Finality: 60 bloků`, en: `Finality: 60 blocks` },
+  reverseBridgeE2eVerified202606: { cs: `Reverse bridge ověřen E2E (2026-06-29)`, en: `Reverse bridge E2E verified (2026-06-29)` },
+  governance: { cs: `Governance`, en: `Governance` },
+  wzionGovernance: { cs: `wZION Governance`, en: `wZION Governance` },
+  voteOnProtocolParametersAndMon: { cs: `Hlasuj o parametrech protokolu a sleduj treasury na Base Mainnet.`, en: `Vote on protocol parameters and monitor the treasury on Base Mainnet.` },
+  governancePanel: { cs: `Governance panel`, en: `Governance Panel` },
+  dexPools_2: { cs: `DEX pooly`, en: `DEX Pools` },
+  wzionUsdtOnUniswapV3AndPancake: { cs: `wZION/USDT na Uniswap V3 a PancakeSwap V3. Aktuální aktivní likvidita: ~240 tis. wZION + ~44 USDT.`, en: `wZION/USDT on Uniswap V3 and PancakeSwap V3. Current active liquidity: ~240k wZION + ~44 USDT.` },
+  k2ndLargestDexOnBase115mDailyVo: { cs: `2. největší DEX na Base · $115M denní volume`, en: `2nd largest DEX on Base · $115M daily volume` },
+  live_2: { cs: `Live`, en: `Live` },
+  poolAddress: { cs: `Pool adresa`, en: `Pool address` },
+  seedPrice: { cs: `seed price`, en: `seed price` },
+  feeTiers: { cs: `Fee tiers`, en: `Fee tiers` },
+  multiTier: { cs: `multi-tier`, en: `multi-tier` },
+  addLiquidity: { cs: `Přidat likviditu`, en: `Add Liquidity` },
+  poolOnBasescan: { cs: `Pool na Basescan`, en: `Pool on Basescan` },
+  factoryContract: { cs: `Factory kontrakt`, en: `Factory Contract` },
+  pancakeswapV3PoolWasCreatedAnd: { cs: `PancakeSwap V3 pool byl vytvořen a inicializován, ale NFT pozice #2054747 byla spálena. V poolu aktuálně není žádná aktivní likvidita. Primární likvidita zůstává na Uniswap V3 wZION/USDT.`, en: `PancakeSwap V3 pool was created and initialized, but NFT position #2054747 has been burned. There is currently no active liquidity in the pool. Primary liquidity remains on Uniswap V3 wZION/USDT.` },
+  uniswapV3Pools: { cs: `Uniswap V3 pooly`, en: `Uniswap V3 pools` },
+  initializedNoLiquidity: { cs: `inicializovaný, bez likvidity`, en: `initialized, no liquidity` },
+  uniswapCcaAuction: { cs: `Uniswap CCA Aukce`, en: `Uniswap CCA Auction` },
+  continuousClearingAuction6647m: { cs: `Continuous Clearing Auction · 66.47M wZION za USDC.`, en: `Continuous Clearing Auction · 66.47M wZION for USDC.` },
+  continuousClearingAuction6647m_2: { cs: `Continuous Clearing Auction · 66.47M wZION za USDC`, en: `Continuous Clearing Auction · 66.47M wZION for USDC` },
+  graduated: { cs: `Graduováno`, en: `Graduated` },
+  bidOnUniswap: { cs: `Přiházet na Uniswap`, en: `Bid on Uniswap` },
+  clearingPrice: { cs: `Vyklízecí cena`, en: `Clearing Price` },
+  usdcRaised: { cs: `USDC vybráno`, en: `USDC Raised` },
+  total: { cs: `celkem`, en: `total` },
+  wzionSold: { cs: `wZION prodáno`, en: `wZION Sold` },
+  of: { cs: `z`, en: `of` },
+  remaining: { cs: `Zbývá`, en: `Remaining` },
+  days6Months: { cs: `dní (~6 měsíců)`, en: `days (~6 months)` },
+  block_2: { cs: `Blok`, en: `Block` },
+  end: { cs: `Konec`, en: `End` },
+  howCcaAuctionWorks: { cs: `Jak CCA aukce funguje`, en: `How CCA Auction Works` },
+  participantsBidUsdcForWzionWit: { cs: `Účastníci přihazují USDC za wZION s max cenou`, en: `Participants bid USDC for wZION with a max price` },
+  clearingPriceContinuouslyAdjus: { cs: `Vyklízecí cena se kontinuálně upravuje na základě poptávky`, en: `Clearing price continuously adjusts based on demand` },
+  afterGraduationLbpPoolOnUniswa: { cs: `Po graduaci → LBP pool na Uniswap V3 + USDC pro tým`, en: `After graduation → LBP pool on Uniswap V3 + USDC for team` },
+  noGraduationExitbidRefundsUsdc: { cs: `Negrace? exitBid() vrátí USDC, sweepUnsoldTokens() vrátí wZION`, en: `No graduation? exitBid() refunds USDC, sweepUnsoldTokens() returns wZION` },
+  contractDetails: { cs: `Detaily kontraktu`, en: `Contract Details` },
+  token: { cs: `Token`, en: `Token` },
+  currency: { cs: `Měna`, en: `Currency` },
+  startBlock: { cs: `Start blok`, en: `Start block` },
+  endBlock: { cs: `End blok`, en: `End block` },
+  floorPrice: { cs: `Floor price`, en: `Floor price` },
+  noteEndBlockIsImmutableAndCann: { cs: `Poznámka: END_BLOCK je immutable a nelze změnit — aukce běží ~184 dní (zamýšleno 30). Po END_BLOCK lze exitBid() pro refund nebo sweepUnsoldTokens() pro vrácení neprodaných wZION. Viz AUCTION_CCA_BASE.md.`, en: `Note: END_BLOCK is immutable and cannot be changed — auction runs ~184 days (intended 30). After END_BLOCK, exitBid() for refund or sweepUnsoldTokens() to reclaim unsold wZION. See AUCTION_CCA_BASE.md.` },
+};
+
 // ─── Price Sparkline (SVG, no deps) ──────────────────────────────────────────
 
 function PriceSparkline({
@@ -425,42 +571,40 @@ export default function DefiPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
                 <Sparkles className="h-4 w-4" />
-                {cs ? 'DeFi Hub · Base Mainnet' : 'DeFi Hub · Base Mainnet'}
+                {DefiCopy.defiHubBaseMainnet[cs ? 'cs' : 'en']}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'wZION ekosystém' : 'wZION ecosystem'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{DefiCopy.wzionEcosystem[cs ? 'cs' : 'en']}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? 'Spravuj wZION' : 'Manage wZION'}
+                  {DefiCopy.manageWzion[cs ? 'cs' : 'en']}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? 'Swapuj, přemosťuj a spravuj wZION na Base. Reálné kontrakty, reálná likvidita, živé ceny z on-chain poolů.'
-                  : 'Swap, bridge, and manage wZION on Base. Real contracts, real liquidity, live prices from on-chain pools.'}
+                {DefiCopy.swapBridgeAndManageWzionOnBase[cs ? 'cs' : 'en']}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className={wsConnected ? 'zion-badge-green' : 'zion-badge'}>
                   <Zap className={`h-3 w-3 ${wsConnected ? 'text-emerald-400' : 'text-zion-gold'}`} />
-                  {wsConnected ? (cs ? 'Živě' : 'Live') : (cs ? 'Polling' : 'Polling')}
+                  {wsConnected ? (DefiCopy.live[cs ? 'cs' : 'en']) : (DefiCopy.polling[cs ? 'cs' : 'en'])}
                 </span>
                 <span className="zion-badge">
-                  <RefreshCw className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 60 s' : 'Auto-Refresh 60s'}
+                  <RefreshCw className="h-3 w-3 text-emerald-400" /> {DefiCopy.autoRefresh60s[cs ? 'cs' : 'en']}
                 </span>
                 <span className="zion-badge">
                   <Globe className="h-3 w-3 text-zion-cyan" /> Base
                 </span>
                 <span className="zion-badge-green">
-                  {cs ? 'wZION/USDT · Uniswap V3' : 'wZION/USDT · Uniswap V3'}
+                  {DefiCopy.wzionUsdtUniswapV3[cs ? 'cs' : 'en']}
                 </span>
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
                 <Link href="/dex" className="zion-button-primary text-sm">
                   <Zap className="h-4 w-4" />
-                  {cs ? 'ZionDex Swap' : 'ZionDex Swap'}
+                  {DefiCopy.ziondexSwap[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-3 w-3" />
                 </Link>
                 <Link href="/ziondex" className="zion-button-secondary text-sm">
-                  {cs ? 'O ZionDex' : 'About ZionDex'}
+                  {DefiCopy.aboutZiondex[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
@@ -469,12 +613,12 @@ export default function DefiPage() {
             {/* Quick info / connect side card */}
             <div className="w-full lg:max-w-md space-y-3">
               <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Rychlý přehled' : 'Quick Overview'}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{DefiCopy.quickOverview[cs ? 'cs' : 'en']}</p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <BarChart3 className="h-4 w-4 text-amber-400" />
-                      {cs ? 'Cena' : 'Price'}
+                      {DefiCopy.price[cs ? 'cs' : 'en']}
                     </div>
                     {dataLoaded ? (
                       <span className="font-mono text-white">
@@ -498,7 +642,7 @@ export default function DefiPage() {
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Activity className="h-4 w-4 text-amber-400" />
-                      {cs ? 'Supply' : 'Supply'}
+                      {DefiCopy.supply[cs ? 'cs' : 'en']}
                     </div>
                     {dataLoaded ? (
                       <span className="font-mono text-white">{wZIONSupply ?? '—'}</span>
@@ -522,7 +666,7 @@ export default function DefiPage() {
                             onClick={switchToBase}
                             className="zion-button-secondary !px-2 !py-1 !text-[10px]"
                           >
-                            {cs ? 'Přepnout' : 'Switch'}
+                            {DefiCopy.switch[cs ? 'cs' : 'en']}
                           </button>
                         )}
                       </div>
@@ -533,7 +677,7 @@ export default function DefiPage() {
                       className="w-full zion-button-primary"
                     >
                       <Wallet className="h-3.5 w-3.5" />
-                      {cs ? 'Připojit peněženku' : 'Connect Wallet'}
+                      {DefiCopy.connectWallet[cs ? 'cs' : 'en']}
                     </button>
                   )}
                 </div>
@@ -543,7 +687,7 @@ export default function DefiPage() {
                   rel="noopener noreferrer"
                   className="mt-3 inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors"
                 >
-                  {cs ? 'Otevřít Uniswap (USDT)' : 'Open Uniswap (USDT)'} <ExternalLink className="h-3.5 w-3.5" />
+                  {DefiCopy.openUniswapUsdt[cs ? 'cs' : 'en']} <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               </div>
             </div>
@@ -558,12 +702,10 @@ export default function DefiPage() {
             <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-amber-200">
-                {cs ? 'DeFi Hub — raná beta' : 'DeFi Hub — Early Beta'}
+                {DefiCopy.defiHubEarlyBeta[cs ? 'cs' : 'en']}
               </p>
               <p className="text-xs text-amber-200/70 mt-1">
-                {cs
-                  ? 'wZION kontrakty jsou nasazeny na Base mainnetu, ale likvidita je zatím nízká. Používejte malé částky a buďte opatrní při velkých swapech.'
-                  : 'wZION contracts are deployed on Base mainnet, but liquidity is still low. Use small amounts and be cautious with large swaps.'}
+                {DefiCopy.wzionContractsAreDeployedOnBas[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -581,7 +723,7 @@ export default function DefiPage() {
         >
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
-              {cs ? 'DeFi sekce' : 'DeFi sections'}
+              {DefiCopy.defiSections[cs ? 'cs' : 'en']}
             </span>
             {SECTIONS.map((s) => {
               const Icon = s.icon;
@@ -622,7 +764,7 @@ export default function DefiPage() {
                 <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
                 <div>
                   <h3 className="text-sm font-semibold text-amber-200 mb-1">
-                    {cs ? 'Nízká DEX likvidita' : 'Low DEX Liquidity'}
+                    {DefiCopy.lowDexLiquidity[cs ? 'cs' : 'en']}
                   </h3>
                   <p className="text-xs text-gray-400 leading-relaxed">
                     {cs
@@ -645,15 +787,13 @@ export default function DefiPage() {
             style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.telemetry[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Activity className="h-7 w-7 text-emerald-400" />
-                {cs ? 'DeFi telemetrie' : 'DeFi Telemetry'}
+                {DefiCopy.defiTelemetry[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-sm text-gray-400">
-                {cs
-                  ? 'Metriky wZION agregované z Base kontraktů, pool API a bridge relayeru v reálném čase.'
-                  : 'wZION metrics aggregated from Base contracts, pool API, and bridge relayer in real time.'}
+                {DefiCopy.wzionMetricsAggregatedFromBase[cs ? 'cs' : 'en']}
               </p>
             </div>
 
@@ -663,10 +803,10 @@ export default function DefiPage() {
                 colorClass="text-zion-gold"
                 bgClass="bg-zion-gold/10"
 
-                label={cs ? 'Cena' : 'Price'}
+                label={DefiCopy.price[cs ? 'cs' : 'en']}
                 value={`$${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}`}
                 sub="USDT / wZION"
-                tip={cs ? 'Aktuální cena z primárního wZION/USDT poolu nebo seed cena.' : 'Current price from the primary wZION/USDT pool or seed price.'}
+                tip={DefiCopy.currentPriceFromThePrimaryWzio[cs ? 'cs' : 'en']}
                 loading={!dataLoaded}
               />
               <StatCard
@@ -676,7 +816,7 @@ export default function DefiPage() {
 
                 label="TVL"
                 value={`$${(poolStats?.tvl_usd ?? 0).toFixed(2)}`}
-                sub={cs ? 'celkem v poolech' : 'total in pools'}
+                sub={DefiCopy.totalInPools[cs ? 'cs' : 'en']}
                 loading={!dataLoaded}
               />
               <StatCard
@@ -684,7 +824,7 @@ export default function DefiPage() {
                 colorClass="text-emerald-400"
                 bgClass="bg-emerald-400/10"
 
-                label={cs ? 'Likvidita' : 'Liquidity'}
+                label={DefiCopy.liquidity[cs ? 'cs' : 'en']}
                 value={`${(poolStats?.total_wzion_liquidity ?? 0).toFixed(0)}`}
                 sub="wZION"
                 loading={!dataLoaded}
@@ -694,9 +834,9 @@ export default function DefiPage() {
                 colorClass="text-purple-400"
                 bgClass="bg-purple-400/10"
 
-                label={cs ? 'Pooly' : 'Pools'}
+                label={DefiCopy.pools[cs ? 'cs' : 'en']}
                 value={String(poolStats?.active_pools ?? 0)}
-                sub={cs ? 'aktivní' : 'active'}
+                sub={DefiCopy.active[cs ? 'cs' : 'en']}
                 loading={!dataLoaded}
               />
               <StatCard
@@ -704,9 +844,9 @@ export default function DefiPage() {
                 colorClass="text-pink-400"
                 bgClass="bg-pink-400/10"
 
-                label={cs ? 'wZION Supply' : 'wZION Supply'}
+                label={DefiCopy.wzionSupply[cs ? 'cs' : 'en']}
                 value={wZIONSupply ?? '—'}
-                sub={cs ? 'celkový oběh' : 'total circulating'}
+                sub={DefiCopy.totalCirculating[cs ? 'cs' : 'en']}
                 loading={!dataLoaded}
               />
               <StatCard
@@ -714,9 +854,9 @@ export default function DefiPage() {
                 colorClass="text-orange-400"
                 bgClass="bg-orange-400/10"
 
-                label={cs ? 'Bridge' : 'Bridge'}
-                value={bridgeStatus?.online ? (cs ? 'Online' : 'Online') : (cs ? 'Offline' : 'Offline')}
-                sub={cs ? '5/5 validátorů' : '5/5 validators'}
+                label={DefiCopy.bridge[cs ? 'cs' : 'en']}
+                value={bridgeStatus?.online ? (DefiCopy.online[cs ? 'cs' : 'en']) : (DefiCopy.offline[cs ? 'cs' : 'en'])}
+                sub={DefiCopy.k55Validators[cs ? 'cs' : 'en']}
                 loading={!dataLoaded}
               />
               <StatCard
@@ -724,9 +864,9 @@ export default function DefiPage() {
                 colorClass="text-blue-400"
                 bgClass="bg-blue-400/10"
 
-                label={cs ? 'Validátoři' : 'Validators'}
+                label={DefiCopy.validators[cs ? 'cs' : 'en']}
                 value="5/5"
-                sub={cs ? 'Guardian relay' : 'Guardian relay'}
+                sub={DefiCopy.guardianRelay[cs ? 'cs' : 'en']}
                 loading={!dataLoaded}
               />
               <StatCard
@@ -734,9 +874,9 @@ export default function DefiPage() {
                 colorClass="text-amber-400"
                 bgClass="bg-amber-400/10"
 
-                label={cs ? 'Aukce' : 'Auction'}
+                label={DefiCopy.auction[cs ? 'cs' : 'en']}
                 value={`${(auctionData?.pctSold ?? 0).toFixed(2)}%`}
-                sub={cs ? 'prodáno CCA' : 'CCA sold'}
+                sub={DefiCopy.ccaSold[cs ? 'cs' : 'en']}
                 loading={!dataLoaded}
               />
             </div>
@@ -757,7 +897,7 @@ export default function DefiPage() {
                 <TrendingUp className="h-4 w-4 text-zion-gold" />
                 <span className="text-sm font-semibold text-white">wZION / USDT</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-zion-gold/20 text-zion-gold border border-zion-gold/30">
-                  {cs ? 'primární' : 'primary'}
+                  {DefiCopy.primary[cs ? 'cs' : 'en']}
                 </span>
                 <span className="text-[10px] text-gray-500">0.3% fee · Base Mainnet</span>
               </div>
@@ -770,7 +910,7 @@ export default function DefiPage() {
                     const chg = ((chartPrices[chartPrices.length - 1] - chartPrices[0]) / chartPrices[0]) * 100;
                     return (
                       <p className={`text-[10px] text-right ${chg >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {chg >= 0 ? '+' : ''}{chg.toFixed(2)}% ({cs ? '1h' : '1h'})
+                        {chg >= 0 ? '+' : ''}{chg.toFixed(2)}% ({DefiCopy.k1h[cs ? 'cs' : 'en']})
                       </p>
                     );
                   })()}
@@ -792,13 +932,13 @@ export default function DefiPage() {
               ) : chartLoading ? (
                 <div className="flex h-full items-center justify-center">
                   <p className="text-xs text-gray-600 animate-pulse">
-                    {cs ? 'Načítám cenová data…' : 'Loading price data…'}
+                    {DefiCopy.loadingPriceData[cs ? 'cs' : 'en']}
                   </p>
                 </div>
               ) : (
                 <div className="flex h-full items-center justify-center">
                   <p className="text-xs text-gray-600">
-                    {cs ? 'Cenová data zatím nedostupná' : 'Price data not available yet'}
+                    {DefiCopy.priceDataNotAvailableYet[cs ? 'cs' : 'en']}
                   </p>
                 </div>
               )}
@@ -810,7 +950,7 @@ export default function DefiPage() {
                 <p className="text-white font-mono">${(poolStats?.tvl_usd ?? 0).toFixed(2)}</p>
               </div>
               <div className="zion-rainbow-sub p-2" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                <p className="text-gray-500 mb-0.5">{cs ? 'Likvidita' : 'Liquidity'}</p>
+                <p className="text-gray-500 mb-0.5">{DefiCopy.liquidity[cs ? 'cs' : 'en']}</p>
                 <p className="text-white font-mono">
                   {(poolStats?.total_wzion_liquidity ?? 0) > 0
                     ? `${(poolStats!.total_wzion_liquidity).toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION`
@@ -830,9 +970,9 @@ export default function DefiPage() {
                 <p className="text-white font-mono">{poolStats?.pools?.wzion_usdt?.tick ?? '—'}</p>
               </div>
               <div className="zion-rainbow-sub p-2" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                <p className="text-gray-500 mb-0.5">{cs ? 'Stav' : 'Status'}</p>
+                <p className="text-gray-500 mb-0.5">{DefiCopy.status[cs ? 'cs' : 'en']}</p>
                 <p className={poolStats?.pools?.wzion_usdt?.active ? 'text-emerald-400' : 'text-amber-400'}>
-                  {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (poolStats ? (cs ? 'neaktivní' : 'inactive') : (cs ? 'načítám' : 'loading'))}
+                  {poolStats?.pools?.wzion_usdt?.active ? (DefiCopy.active[cs ? 'cs' : 'en']) : (poolStats ? (DefiCopy.inactive[cs ? 'cs' : 'en']) : (DefiCopy.loading[cs ? 'cs' : 'en']))}
                 </p>
               </div>
             </div>
@@ -847,10 +987,10 @@ export default function DefiPage() {
             transition={{ delay: 0.08 }}
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Kontrakty' : 'Contracts'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.contracts[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Layers className="h-7 w-7 text-zion-cyan" />
-                {cs ? 'Kontrakty na Base Mainnet' : 'Base Mainnet Contracts'}
+                {DefiCopy.baseMainnetContracts[cs ? 'cs' : 'en']}
               </h2>
             </div>
             <div className="zion-rainbow-card overflow-hidden p-0" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
@@ -858,8 +998,8 @@ export default function DefiPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/10 bg-white/5">
-                      <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Kontrakt' : 'Contract'}</th>
-                      <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Adresa' : 'Address'}</th>
+                      <th className="p-4 text-left font-medium text-gray-400">{DefiCopy.contract[cs ? 'cs' : 'en']}</th>
+                      <th className="p-4 text-left font-medium text-gray-400">{DefiCopy.address[cs ? 'cs' : 'en']}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -895,12 +1035,10 @@ export default function DefiPage() {
             className="zion-cta-banner"
           >
             <h2 className="text-2xl font-bold mb-3">
-              {cs ? 'Obchoduj wZION' : 'Trade wZION'}
+              {DefiCopy.tradeWzion[cs ? 'cs' : 'en']}
             </h2>
             <p className="mx-auto mb-6 max-w-lg text-gray-100">
-              {cs
-                ? 'wZION je k dispozici na Uniswap V3 (Base). Primární pool wZION/USDT s 0.3% fee.'
-                : 'wZION is available on Uniswap V3 (Base). Primary wZION/USDT pool with 0.3% fee.'}
+              {DefiCopy.wzionIsAvailableOnUniswapV3Bas[cs ? 'cs' : 'en']}
             </p>
             <div className="flex justify-center gap-4 flex-wrap">
               <a
@@ -909,7 +1047,7 @@ export default function DefiPage() {
                 rel="noopener noreferrer"
                 className="zion-button-primary"
               >
-                {cs ? 'Otevřít Uniswap' : 'Open Uniswap'}
+                {DefiCopy.openUniswap[cs ? 'cs' : 'en']}
                 <ExternalLink className="h-4 w-4" />
               </a>
               <a
@@ -937,12 +1075,12 @@ export default function DefiPage() {
             transition={{ duration: 0.4 }}
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Obchodování' : 'Trade'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.trade[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <RefreshCw className="h-7 w-7 text-zion-cyan" />
-                {cs ? 'Obchoduj wZION' : 'Trade wZION'}
+                {DefiCopy.tradeWzion[cs ? 'cs' : 'en']}
               </h2>
-              <p className="text-sm text-gray-400">{cs ? 'Swapuj, obchoduj na DEX a sleduj cenu wZION na Base Mainnet.' : 'Swap, trade on DEX, and track the wZION price on Base Mainnet.'}</p>
+              <p className="text-sm text-gray-400">{DefiCopy.swapTradeOnDexAndTrackTheWzion[cs ? 'cs' : 'en']}</p>
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
@@ -956,18 +1094,18 @@ export default function DefiPage() {
                       <RefreshCw className="h-5 w-5 text-purple-400" />
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-white">{cs ? 'Swap wZION' : 'Swap wZION'}</h3>
-                      <p className="text-[11px] text-gray-500">{cs ? 'LiFi + Uniswap integrace' : 'LiFi + Uniswap integration'}</p>
+                      <h3 className="text-base font-semibold text-white">{DefiCopy.swapWzion[cs ? 'cs' : 'en']}</h3>
+                      <p className="text-[11px] text-gray-500">{DefiCopy.lifiUniswapIntegration[cs ? 'cs' : 'en']}</p>
                     </div>
                   </div>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-[10px] font-semibold text-emerald-400">
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    {cs ? 'Živě' : 'Live'}
+                    {DefiCopy.live[cs ? 'cs' : 'en']}
                   </span>
                 </div>
-                <p className="text-sm text-gray-300 leading-relaxed mb-3">{cs ? 'Okamžitý swap mezi wZION, ETH, USDT a dalšími tokeny. LiFi agreguje 30+ DEX a 20+ bridge.' : 'Instant swap between wZION, ETH, USDT, and other tokens. LiFi aggregates 30+ DEX and 20+ bridges.'}</p>
+                <p className="text-sm text-gray-300 leading-relaxed mb-3">{DefiCopy.instantSwapBetweenWzionEthUsdt[cs ? 'cs' : 'en']}</p>
                 <div className="flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
-                  <span>{cs ? 'Swap níže' : 'Swap below'}</span>
+                  <span>{DefiCopy.swapBelow[cs ? 'cs' : 'en']}</span>
                   <ArrowRight className="h-3.5 w-3.5" />
                 </div>
               </div>
@@ -985,18 +1123,18 @@ export default function DefiPage() {
                       <Droplets className="h-5 w-5 text-amber-400" />
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-white">{cs ? 'DEX Pooly' : 'DEX Pools'}</h3>
-                      <p className="text-[11px] text-gray-500">{cs ? 'Uniswap V3' : 'Uniswap V3'}</p>
+                      <h3 className="text-base font-semibold text-white">{DefiCopy.dexPools[cs ? 'cs' : 'en']}</h3>
+                      <p className="text-[11px] text-gray-500">{DefiCopy.uniswapV3[cs ? 'cs' : 'en']}</p>
                     </div>
                   </div>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-[10px] font-semibold text-emerald-400">
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    {cs ? 'Živě' : 'Live'}
+                    {DefiCopy.live[cs ? 'cs' : 'en']}
                   </span>
                 </div>
-                <p className="text-sm text-gray-300 leading-relaxed mb-3">{cs ? 'wZION/USDT primární pool na Uniswap V3. Sekundární pooly WETH/SOL jsou inicializované, ale bez aktivní likvidity.' : 'wZION/USDT primary pool on Uniswap V3. Secondary WETH/SOL pools are initialized but carry no active liquidity.'}</p>
+                <p className="text-sm text-gray-300 leading-relaxed mb-3">{DefiCopy.wzionUsdtPrimaryPoolOnUniswapV[cs ? 'cs' : 'en']}</p>
                 <div className="flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
-                  <span>{cs ? 'Otevřít Uniswap' : 'Open Uniswap'}</span>
+                  <span>{DefiCopy.openUniswap[cs ? 'cs' : 'en']}</span>
                   <ExternalLink className="h-3.5 w-3.5" />
                 </div>
               </Link>
@@ -1014,18 +1152,18 @@ export default function DefiPage() {
                       <Gavel className="h-5 w-5 text-amber-400" />
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-white">{cs ? 'CCA Aukce' : 'CCA Auction'}</h3>
-                      <p className="text-[11px] text-gray-500">{cs ? '66.47M wZION za USDC' : '66.47M wZION for USDC'}</p>
+                      <h3 className="text-base font-semibold text-white">{DefiCopy.ccaAuction[cs ? 'cs' : 'en']}</h3>
+                      <p className="text-[11px] text-gray-500">{DefiCopy.k6647mWzionForUsdc[cs ? 'cs' : 'en']}</p>
                     </div>
                   </div>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-[10px] font-semibold text-amber-400">
                     <Clock className="h-3.5 w-3.5" />
-                    {cs ? 'Aktivní' : 'Active'}
+                    {DefiCopy.active_2[cs ? 'cs' : 'en']}
                   </span>
                 </div>
-                <p className="text-sm text-gray-300 leading-relaxed mb-3">{cs ? 'Continuous Clearing Auction na Uniswap. Vyklízecí cena se kontinuálně upravuje podle poptávky.' : 'Continuous Clearing Auction on Uniswap. Clearing price continuously adjusts based on demand.'}</p>
+                <p className="text-sm text-gray-300 leading-relaxed mb-3">{DefiCopy.continuousClearingAuctionOnUni[cs ? 'cs' : 'en']}</p>
                 <div className="flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
-                  <span>{cs ? 'Přihazovat' : 'Place bids'}</span>
+                  <span>{DefiCopy.placeBids[cs ? 'cs' : 'en']}</span>
                   <ExternalLink className="h-3.5 w-3.5" />
                 </div>
               </Link>
@@ -1044,17 +1182,17 @@ export default function DefiPage() {
                     </div>
                     <div>
                       <h3 className="text-base font-semibold text-white">PancakeSwap V3</h3>
-                      <p className="text-[11px] text-gray-500">{cs ? '2. největší DEX na Base' : '2nd largest DEX on Base'}</p>
+                      <p className="text-[11px] text-gray-500">{DefiCopy.k2ndLargestDexOnBase[cs ? 'cs' : 'en']}</p>
                     </div>
                   </div>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-[10px] font-semibold text-emerald-400">
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    {cs ? 'Živě' : 'Live'}
+                    {DefiCopy.live[cs ? 'cs' : 'en']}
                   </span>
                 </div>
-                <p className="text-sm text-gray-300 leading-relaxed mb-3">{cs ? 'wZION/USDT pool na PancakeSwap V3. Další možnost likvidity a swapu pro wZION.' : 'wZION/USDT pool on PancakeSwap V3. Another liquidity and swap option for wZION.'}</p>
+                <p className="text-sm text-gray-300 leading-relaxed mb-3">{DefiCopy.wzionUsdtPoolOnPancakeswapV3An[cs ? 'cs' : 'en']}</p>
                 <div className="flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
-                  <span>{cs ? 'Swap na PancakeSwap' : 'Swap on PancakeSwap'}</span>
+                  <span>{DefiCopy.swapOnPancakeswap[cs ? 'cs' : 'en']}</span>
                   <ExternalLink className="h-3.5 w-3.5" />
                 </div>
               </Link>
@@ -1073,14 +1211,14 @@ export default function DefiPage() {
             <div className="zion-rainbow-card p-5 md:p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-4">
                 <RefreshCw className="h-4 w-4 text-purple-400" />
-                <h3 className="text-sm font-semibold text-white uppercase tracking-wider">{cs ? 'Cross-chain swap' : 'Cross-chain Swap'}</h3>
+                <h3 className="text-sm font-semibold text-white uppercase tracking-wider">{DefiCopy.crossChainSwap[cs ? 'cs' : 'en']}</h3>
               </div>
               <LiFiWidget />
             </div>
             <div className="zion-rainbow-card p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-4">
                 <Droplets className="h-4 w-4 text-zion-purple" />
-                <h3 className="text-sm font-semibold text-white uppercase tracking-wider">{cs ? 'Direct swap + zůstatky' : 'Direct Swap + Balances'}</h3>
+                <h3 className="text-sm font-semibold text-white uppercase tracking-wider">{DefiCopy.directSwapBalances[cs ? 'cs' : 'en']}</h3>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <SwapWidget />
@@ -1104,19 +1242,19 @@ export default function DefiPage() {
             transition={{ duration: 0.4 }}
             className="flex flex-col gap-2 mb-2"
           >
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výnosy' : 'Yield'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.yield[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <PiggyBank className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Získej wZION' : 'Earn wZION'}
+              {DefiCopy.earnWzion[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Stakeuj nebo farm wZION a získej pravidelné odměny.' : 'Stake or farm wZION to earn regular rewards.'}</p>
+            <p className="text-sm text-gray-400">{DefiCopy.stakeOrFarmWzionToEarnRegularR[cs ? 'cs' : 'en']}</p>
           </motion.div>
 
           <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <div className="zion-rainbow-sub p-4 mb-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
                 <Lock className="h-5 w-5 text-amber-400" />
-                <h3 className="text-base font-semibold text-white">{cs ? 'Staking' : 'Staking'}</h3>
+                <h3 className="text-base font-semibold text-white">{DefiCopy.staking[cs ? 'cs' : 'en']}</h3>
               </div>
             </div>
             <StakingPanel />
@@ -1126,7 +1264,7 @@ export default function DefiPage() {
             <div className="zion-rainbow-sub p-4 mb-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
                 <Sprout className="h-5 w-5 text-amber-400" />
-                <h3 className="text-base font-semibold text-white">{cs ? 'Farming' : 'Farming'}</h3>
+                <h3 className="text-base font-semibold text-white">{DefiCopy.farming[cs ? 'cs' : 'en']}</h3>
               </div>
             </div>
             <FarmingPanel />
@@ -1145,12 +1283,12 @@ export default function DefiPage() {
           transition={{ duration: 0.4, delay: 0.1 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Infrastruktura' : 'Infrastructure'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.infrastructure[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <ArrowLeftRight className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'wZION Bridge' : 'wZION Bridge'}
+              {DefiCopy.wzionBridge[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Přenos mezi L1 a L2 a on-chain řízení protokolu.' : 'Move between L1 and L2 and govern the protocol on-chain.'}</p>
+            <p className="text-sm text-gray-400">{DefiCopy.moveBetweenL1AndL2AndGovernThe[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
@@ -1164,13 +1302,13 @@ export default function DefiPage() {
                   <ArrowLeftRight className="h-5 w-5 text-purple-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{cs ? 'wZION Bridge' : 'wZION Bridge'}</h3>
-                  <p className="text-[11px] text-gray-500">{cs ? 'L1 ↔ Base · 5/5 validátorů' : 'L1 ↔ Base · 5/5 validators'}</p>
+                  <h3 className="text-base font-semibold text-white">{DefiCopy.wzionBridge[cs ? 'cs' : 'en']}</h3>
+                  <p className="text-[11px] text-gray-500">{DefiCopy.l1Base55Validators[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-300 leading-relaxed mb-3">{cs ? 'Zamkni ZION na L1 a získej wZION na Base. Spal wZION pro odemčení zpět na L1. 1:1 peg, multi-validátorový relay.' : 'Lock ZION on L1 and receive wZION on Base. Burn wZION to unlock back to L1. 1:1 peg, multi-validator relay.'}</p>
+              <p className="text-sm text-gray-300 leading-relaxed mb-3">{DefiCopy.lockZionOnL1AndReceiveWzionOnB[cs ? 'cs' : 'en']}</p>
               <div className="flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
-                <span>{cs ? 'Otevřít bridge' : 'Open bridge'}</span>
+                <span>{DefiCopy.openBridge[cs ? 'cs' : 'en']}</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </div>
             </Link>
@@ -1182,17 +1320,17 @@ export default function DefiPage() {
               <div className="flex items-center gap-2 mb-4">
                 <Flame className="h-5 w-5 text-amber-400" />
                 <h3 className="font-semibold text-white text-sm">
-                  {cs ? 'Jak Bridge funguje' : 'How Bridge Works'}
+                  {DefiCopy.howBridgeWorks[cs ? 'cs' : 'en']}
                 </h3>
               </div>
               <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
                 <div className="flex gap-3">
                   <span className="shrink-0 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 text-emerald-400 font-mono text-[10px]">L1→L2</span>
-                  <p>{cs ? 'Zamkni ZION na L1 → relay mintne wZION na Base (1:1 peg)' : 'Lock ZION on L1 → relay mints wZION on Base (1:1 peg)'}</p>
+                  <p>{DefiCopy.lockZionOnL1RelayMintsWzionOnB[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="flex gap-3">
                   <span className="shrink-0 rounded-lg bg-orange-500/10 border border-orange-500/20 px-2 py-1 text-orange-400 font-mono text-[10px]">L2→L1</span>
-                  <p>{cs ? 'Spal wZION na Base → relay odemkne ZION na L1 (do ~5 min)' : 'Burn wZION on Base → relay unlocks ZION on L1 (within ~5 min)'}</p>
+                  <p>{DefiCopy.burnWzionOnBaseRelayUnlocksZio[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
               <div className="pt-4 flex flex-wrap gap-2">
@@ -1231,7 +1369,7 @@ export default function DefiPage() {
             <div className="flex items-center gap-2 mb-4">
               <Lock className="h-5 w-5 text-purple-400" />
               <h3 className="font-semibold text-white text-sm">
-                {cs ? 'Bridge Vault · 100M ZION' : 'Bridge Vault · 100M ZION'}
+                {DefiCopy.bridgeVault100mZion[cs ? 'cs' : 'en']}
               </h3>
               <span className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold ${
                 bridgeStatus?.online
@@ -1239,49 +1377,47 @@ export default function DefiPage() {
                   : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
               }`}>
                 <span className={`h-1.5 w-1.5 rounded-full ${bridgeStatus?.online ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`} />
-                {bridgeStatus?.online ? (cs ? 'Relay Online' : 'Relay Online') : (cs ? 'Relay Offline' : 'Relay Offline')}
+                {bridgeStatus?.online ? (DefiCopy.relayOnline[cs ? 'cs' : 'en']) : (DefiCopy.relayOffline[cs ? 'cs' : 'en'])}
               </span>
             </div>
             <p className="text-xs text-gray-400 mb-4">
-              {cs
-                ? '6 UTXO lock transakcí (~16.67M ZION každá) odesláno na bridge vault v blocích 11611–11612. Relay mintne wZION na Base po dosažení finality (60 bloků).'
-                : '6 UTXO lock transactions (~16.67M ZION each) sent to the bridge vault in blocks 11611–11612. Relay mints wZION on Base after finality (60 blocks).'}
+              {DefiCopy.k6UtxoLockTransactions1667mZion[cs ? 'cs' : 'en']}
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Zamčeno' : 'Locked'}</p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500">{DefiCopy.locked[cs ? 'cs' : 'en']}</p>
                 <p className="text-base font-semibold text-white mt-1">~100M</p>
                 <p className="text-[10px] text-gray-500">ZION</p>
               </div>
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Lock TX' : 'Lock TXs'}</p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500">{DefiCopy.lockTxs[cs ? 'cs' : 'en']}</p>
                 <p className="text-base font-semibold text-white mt-1">6</p>
                 <p className="text-[10px] text-gray-500">UTXO</p>
               </div>
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'wZION Mints' : 'wZION Mints'}</p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500">{DefiCopy.wzionMints[cs ? 'cs' : 'en']}</p>
                 <p className="text-base font-semibold text-white mt-1 flex items-center gap-1">
                   {bridgeStatus?.evm_mints_confirmed ?? '—'}
                   {bridgeStatus && bridgeStatus.evm_mints_confirmed > 0 && (
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                   )}
                 </p>
-                <p className="text-[10px] text-gray-500">{cs ? 'potvrzeno' : 'confirmed'}</p>
+                <p className="text-[10px] text-gray-500">{DefiCopy.confirmed[cs ? 'cs' : 'en']}</p>
               </div>
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'L1 Odemčeno' : 'L1 Unlocks'}</p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500">{DefiCopy.l1Unlocks[cs ? 'cs' : 'en']}</p>
                 <p className="text-base font-semibold text-white mt-1 flex items-center gap-1">
                   {bridgeStatus?.l1_unlocks_confirmed ?? '—'}
                   {bridgeStatus && (bridgeStatus.l1_unlocks_confirmed ?? 0) > 0 && (
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                   )}
                 </p>
-                <p className="text-[10px] text-gray-500">{cs ? 'potvrzeno' : 'confirmed'}</p>
+                <p className="text-[10px] text-gray-500">{DefiCopy.confirmed[cs ? 'cs' : 'en']}</p>
               </div>
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500">L1 {cs ? 'blok' : 'block'}</p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500">L1 {DefiCopy.block[cs ? 'cs' : 'en']}</p>
                 <p className="text-base font-semibold text-white mt-1">{bridgeStatus?.last_l1_height ?? '—'}</p>
-                <p className="text-[10px] text-gray-500">{cs ? 'poslední scan' : 'last scan'}</p>
+                <p className="text-[10px] text-gray-500">{DefiCopy.lastScan[cs ? 'cs' : 'en']}</p>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3 text-[10px] text-gray-500">
@@ -1290,13 +1426,13 @@ export default function DefiPage() {
                 wZION: <span className="text-gray-400 font-mono">{CONTRACTS.wZION?.slice(0, 8)}…{CONTRACTS.wZION?.slice(-4)}</span>
               </span>
               <span className="text-gray-600">·</span>
-              <span>{cs ? 'Vault' : 'Vault'}: <span className="text-gray-400 font-mono">zion1w0r0…w0t0</span></span>
+              <span>{DefiCopy.vault[cs ? 'cs' : 'en']}: <span className="text-gray-400 font-mono">zion1w0r0…w0t0</span></span>
               <span className="text-gray-600">·</span>
-              <span>{cs ? 'Finality: 60 bloků' : 'Finality: 60 blocks'}</span>
+              <span>{DefiCopy.finality60Blocks[cs ? 'cs' : 'en']}</span>
               <span className="text-gray-600">·</span>
               <span className="inline-flex items-center gap-1 text-emerald-400">
                 <CheckCircle2 className="h-3 w-3" />
-                {cs ? 'Reverse bridge ověřen E2E (2026-06-29)' : 'Reverse bridge E2E verified (2026-06-29)'}
+                {DefiCopy.reverseBridgeE2eVerified202606[cs ? 'cs' : 'en']}
               </span>
             </div>
           </div>
@@ -1308,17 +1444,17 @@ export default function DefiPage() {
               <div className="flex items-center gap-2 mb-2">
                 <Flame className="h-5 w-5 text-amber-400" />
                 <h3 className="font-semibold text-white text-sm">
-                  {cs ? 'Jak Bridge funguje' : 'How Bridge Works'}
+                  {DefiCopy.howBridgeWorks[cs ? 'cs' : 'en']}
                 </h3>
               </div>
               <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
                 <div className="flex gap-3">
                   <span className="shrink-0 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 text-emerald-400 font-mono text-[10px]">L1→L2</span>
-                  <p>{cs ? 'Zamkni ZION na L1 → relay mintne wZION na Base (1:1 peg)' : 'Lock ZION on L1 → relay mints wZION on Base (1:1 peg)'}</p>
+                  <p>{DefiCopy.lockZionOnL1RelayMintsWzionOnB[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="flex gap-3">
                   <span className="shrink-0 rounded-lg bg-orange-500/10 border border-orange-500/20 px-2 py-1 text-orange-400 font-mono text-[10px]">L2→L1</span>
-                  <p>{cs ? 'Spal wZION na Base → relay odemkne ZION na L1 (do ~5 min)' : 'Burn wZION on Base → relay unlocks ZION on L1 (within ~5 min)'}</p>
+                  <p>{DefiCopy.burnWzionOnBaseRelayUnlocksZio[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
               <div className="pt-2 flex flex-wrap gap-2">
@@ -1356,19 +1492,19 @@ export default function DefiPage() {
             transition={{ duration: 0.4 }}
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Governance' : 'Governance'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.governance[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Scale className="h-7 w-7 text-purple-400" />
-                {cs ? 'wZION Governance' : 'wZION Governance'}
+                {DefiCopy.wzionGovernance[cs ? 'cs' : 'en']}
               </h2>
-              <p className="text-sm text-gray-400">{cs ? 'Hlasuj o parametrech protokolu a sleduj treasury na Base Mainnet.' : 'Vote on protocol parameters and monitor the treasury on Base Mainnet.'}</p>
+              <p className="text-sm text-gray-400">{DefiCopy.voteOnProtocolParametersAndMon[cs ? 'cs' : 'en']}</p>
             </div>
           </motion.div>
           <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <div className="zion-rainbow-sub p-4 mb-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
                 <Scale className="h-5 w-5 text-amber-400" />
-                <h3 className="text-base font-semibold text-white">{cs ? 'Governance panel' : 'Governance Panel'}</h3>
+                <h3 className="text-base font-semibold text-white">{DefiCopy.governancePanel[cs ? 'cs' : 'en']}</h3>
               </div>
             </div>
             <GovernancePanel />
@@ -1387,12 +1523,12 @@ export default function DefiPage() {
             transition={{ duration: 0.4 }}
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Likvidita' : 'Liquidity'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.liquidity[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Droplets className="h-7 w-7 text-zion-cyan" />
-                {cs ? 'DEX pooly' : 'DEX Pools'}
+                {DefiCopy.dexPools_2[cs ? 'cs' : 'en']}
               </h2>
-              <p className="text-sm text-gray-400">{cs ? 'wZION/USDT na Uniswap V3 a PancakeSwap V3. Aktuální aktivní likvidita: ~240 tis. wZION + ~44 USDT.' : 'wZION/USDT on Uniswap V3 and PancakeSwap V3. Current active liquidity: ~240k wZION + ~44 USDT.'}</p>
+              <p className="text-sm text-gray-400">{DefiCopy.wzionUsdtOnUniswapV3AndPancake[cs ? 'cs' : 'en']}</p>
             </div>
           </motion.div>
         </section>
@@ -1415,14 +1551,14 @@ export default function DefiPage() {
                     PancakeSwap V3
                   </h2>
                   <p className="text-[10px] text-gray-500">
-                    {cs ? '2. největší DEX na Base · $115M denní volume' : '2nd largest DEX on Base · $115M daily volume'}
+                    {DefiCopy.k2ndLargestDexOnBase115mDailyVo[cs ? 'cs' : 'en']}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  {cs ? 'Live' : 'Live'}
+                  {DefiCopy.live_2[cs ? 'cs' : 'en']}
                 </span>
                 <a
                   href={PANCAKE_V3.swapUrl}
@@ -1430,7 +1566,7 @@ export default function DefiPage() {
                   rel="noopener noreferrer"
                   className="zion-button-primary !px-4 !py-2 !text-xs"
                 >
-                  {cs ? 'Swap na PancakeSwap' : 'Swap on PancakeSwap'}
+                  {DefiCopy.swapOnPancakeswap[cs ? 'cs' : 'en']}
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
@@ -1439,19 +1575,19 @@ export default function DefiPage() {
             {/* Info grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Pool adresa' : 'Pool address'}</p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{DefiCopy.poolAddress[cs ? 'cs' : 'en']}</p>
                 <p className="text-sm font-semibold text-white font-mono">0x46cc...6f47</p>
                 <p className="text-[10px] text-gray-500">wZION/USDT · 0.25% fee · NFT #2054747</p>
               </div>
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Cena' : 'Price'}</p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{DefiCopy.price[cs ? 'cs' : 'en']}</p>
                 <p className="text-sm font-semibold text-white font-mono">$0.0002</p>
-                <p className="text-[10px] text-gray-500">{cs ? 'seed price' : 'seed price'}</p>
+                <p className="text-[10px] text-gray-500">{DefiCopy.seedPrice[cs ? 'cs' : 'en']}</p>
               </div>
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Fee tiers' : 'Fee tiers'}</p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{DefiCopy.feeTiers[cs ? 'cs' : 'en']}</p>
                 <p className="text-sm font-semibold text-white">0.01% · 0.05% · 0.25% · 1%</p>
-                <p className="text-[10px] text-gray-500">{cs ? 'multi-tier' : 'multi-tier'}</p>
+                <p className="text-[10px] text-gray-500">{DefiCopy.multiTier[cs ? 'cs' : 'en']}</p>
               </div>
             </div>
 
@@ -1463,7 +1599,7 @@ export default function DefiPage() {
                 rel="noopener noreferrer"
                 className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
               >
-                {cs ? 'Swap wZION' : 'Swap wZION'} <ExternalLink className="h-2.5 w-2.5" />
+                {DefiCopy.swapWzion[cs ? 'cs' : 'en']} <ExternalLink className="h-2.5 w-2.5" />
               </a>
               <a
                 href={PANCAKE_V3.addLiquidityUrl}
@@ -1471,7 +1607,7 @@ export default function DefiPage() {
                 rel="noopener noreferrer"
                 className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
               >
-                {cs ? 'Přidat likviditu' : 'Add Liquidity'} <ExternalLink className="h-2.5 w-2.5" />
+                {DefiCopy.addLiquidity[cs ? 'cs' : 'en']} <ExternalLink className="h-2.5 w-2.5" />
               </a>
               <a
                 href={`https://basescan.org/address/${CONTRACTS.PancakeV3PoolUSDT}`}
@@ -1479,7 +1615,7 @@ export default function DefiPage() {
                 rel="noopener noreferrer"
                 className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
               >
-                {cs ? 'Pool na Basescan' : 'Pool on Basescan'} <ExternalLink className="h-2.5 w-2.5" />
+                {DefiCopy.poolOnBasescan[cs ? 'cs' : 'en']} <ExternalLink className="h-2.5 w-2.5" />
               </a>
               <a
                 href={`https://basescan.org/address/${PANCAKE_V3.factory}`}
@@ -1487,7 +1623,7 @@ export default function DefiPage() {
                 rel="noopener noreferrer"
                 className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
               >
-                {cs ? 'Factory kontrakt' : 'Factory Contract'} <ExternalLink className="h-2.5 w-2.5" />
+                {DefiCopy.factoryContract[cs ? 'cs' : 'en']} <ExternalLink className="h-2.5 w-2.5" />
               </a>
             </div>
 
@@ -1495,9 +1631,7 @@ export default function DefiPage() {
             <div className="mt-4 flex items-start gap-3 zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-[10px] text-gray-400 leading-relaxed">
-                {cs
-                  ? 'PancakeSwap V3 pool byl vytvořen a inicializován, ale NFT pozice #2054747 byla spálena. V poolu aktuálně není žádná aktivní likvidita. Primární likvidita zůstává na Uniswap V3 wZION/USDT.'
-                  : 'PancakeSwap V3 pool was created and initialized, but NFT position #2054747 has been burned. There is currently no active liquidity in the pool. Primary liquidity remains on Uniswap V3 wZION/USDT.'}
+                {DefiCopy.pancakeswapV3PoolWasCreatedAnd[cs ? 'cs' : 'en']}
               </p>
             </div>
           </motion.div>
@@ -1511,10 +1645,10 @@ export default function DefiPage() {
             transition={{ delay: 0.06 }}
           >
             <div className="flex flex-col gap-2 mb-4">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Uniswap V3' : 'Uniswap V3'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.uniswapV3[cs ? 'cs' : 'en']}</p>
               <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                 <Droplets className="h-5 w-5 text-zion-cyan" />
-                {cs ? 'Uniswap V3 pooly' : 'Uniswap V3 pools'}
+                {DefiCopy.uniswapV3Pools[cs ? 'cs' : 'en']}
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1527,18 +1661,18 @@ export default function DefiPage() {
                   <span className="font-semibold text-white">{poolStats?.pools?.wzion_usdt?.pair ?? 'wZION/USDT'}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                      {cs ? 'primární' : 'primary'}
+                      {DefiCopy.primary[cs ? 'cs' : 'en']}
                     </span>
                     <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_usdt?.feeLabel ?? '0.3%'}</span>
                   </div>
                 </div>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">{cs ? 'Cena' : 'Price'}:</span>
+                    <span className="text-gray-400">{DefiCopy.price[cs ? 'cs' : 'en']}:</span>
                     <span className="font-mono text-white">${(poolStats?.pools?.wzion_usdt?.price_usd ?? 0).toFixed(6)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
+                    <span className="text-gray-400">{DefiCopy.liquidity[cs ? 'cs' : 'en']}:</span>
                     <span className="font-mono text-white">
                       {(Number(poolStats?.pools?.wzion_usdt?.balances?.wzion ?? 0)) > 0
                         ? `${(Number(poolStats!.pools.wzion_usdt.balances.wzion)).toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION`
@@ -1562,9 +1696,9 @@ export default function DefiPage() {
                     <span className="font-mono text-white">{poolStats?.pools?.wzion_usdt?.tick ?? '—'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
+                    <span className="text-gray-400">{DefiCopy.status[cs ? 'cs' : 'en']}:</span>
                     <span className={poolStats?.pools?.wzion_usdt?.active ? 'text-emerald-400' : 'text-amber-400'}>
-                      {poolStats?.pools?.wzion_usdt?.active ? (cs ? 'aktivní' : 'active') : (cs ? 'neaktivní' : 'inactive')}
+                      {poolStats?.pools?.wzion_usdt?.active ? (DefiCopy.active[cs ? 'cs' : 'en']) : (DefiCopy.inactive[cs ? 'cs' : 'en'])}
                     </span>
                   </div>
                 </div>
@@ -1581,12 +1715,12 @@ export default function DefiPage() {
                 </div>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
+                    <span className="text-gray-400">{DefiCopy.liquidity[cs ? 'cs' : 'en']}:</span>
                     <span className="font-mono text-gray-500">0</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
-                    <span className="text-amber-400/70">{cs ? 'inicializovaný, bez likvidity' : 'initialized, no liquidity'}</span>
+                    <span className="text-gray-400">{DefiCopy.status[cs ? 'cs' : 'en']}:</span>
+                    <span className="text-amber-400/70">{DefiCopy.initializedNoLiquidity[cs ? 'cs' : 'en']}</span>
                   </div>
                 </div>
               </div>
@@ -1602,12 +1736,12 @@ export default function DefiPage() {
                 </div>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}:</span>
+                    <span className="text-gray-400">{DefiCopy.liquidity[cs ? 'cs' : 'en']}:</span>
                     <span className="font-mono text-gray-500">0</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">{cs ? 'Stav' : 'Status'}:</span>
-                    <span className="text-amber-400/70">{cs ? 'inicializovaný, bez likvidity' : 'initialized, no liquidity'}</span>
+                    <span className="text-gray-400">{DefiCopy.status[cs ? 'cs' : 'en']}:</span>
+                    <span className="text-amber-400/70">{DefiCopy.initializedNoLiquidity[cs ? 'cs' : 'en']}</span>
                   </div>
                 </div>
               </div>
@@ -1627,12 +1761,12 @@ export default function DefiPage() {
             transition={{ duration: 0.4 }}
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Aukce' : 'Auction'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.auction[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Gavel className="h-7 w-7 text-amber-400" />
-                {cs ? 'Uniswap CCA Aukce' : 'Uniswap CCA Auction'}
+                {DefiCopy.uniswapCcaAuction[cs ? 'cs' : 'en']}
               </h2>
-              <p className="text-sm text-gray-400">{cs ? 'Continuous Clearing Auction · 66.47M wZION za USDC.' : 'Continuous Clearing Auction · 66.47M wZION for USDC.'}</p>
+              <p className="text-sm text-gray-400">{DefiCopy.continuousClearingAuction6647m[cs ? 'cs' : 'en']}</p>
             </div>
           </motion.div>
         </section>
@@ -1652,10 +1786,10 @@ export default function DefiPage() {
                 <Gavel className="h-6 w-6 text-amber-400" />
                 <div>
                   <h2 className="text-lg font-bold text-white">
-                    {cs ? 'Uniswap CCA Aukce' : 'Uniswap CCA Auction'}
+                    {DefiCopy.uniswapCcaAuction[cs ? 'cs' : 'en']}
                   </h2>
                   <p className="text-[10px] text-gray-500">
-                    {cs ? 'Continuous Clearing Auction · 66.47M wZION za USDC' : 'Continuous Clearing Auction · 66.47M wZION for USDC'}
+                    {DefiCopy.continuousClearingAuction6647m_2[cs ? 'cs' : 'en']}
                   </p>
                 </div>
               </div>
@@ -1667,8 +1801,8 @@ export default function DefiPage() {
                 }`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${auctionData?.isGraduated ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
                   {auctionData?.isGraduated
-                    ? (cs ? 'Graduováno' : 'Graduated')
-                    : (cs ? 'Aktivní' : 'Active')}
+                    ? (DefiCopy.graduated[cs ? 'cs' : 'en'])
+                    : (DefiCopy.active_2[cs ? 'cs' : 'en'])}
                 </span>
                 <a
                   href={CCA_AUCTION_PARAMS.uniswapUrl}
@@ -1676,7 +1810,7 @@ export default function DefiPage() {
                   rel="noopener noreferrer"
                   className="zion-button-primary !px-4 !py-2 !text-xs"
                 >
-                  {cs ? 'Přiházet na Uniswap' : 'Bid on Uniswap'}
+                  {DefiCopy.bidOnUniswap[cs ? 'cs' : 'en']}
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
@@ -1688,7 +1822,7 @@ export default function DefiPage() {
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <div className="flex items-center gap-1.5 mb-1">
                   <TrendingUp className="h-3 w-3 text-amber-400" />
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Vyklízecí cena' : 'Clearing Price'}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{DefiCopy.clearingPrice[cs ? 'cs' : 'en']}</p>
                 </div>
                 <p className="text-lg font-bold text-white font-mono">
                   ${(auctionData?.clearingPriceUsd ?? 0).toFixed(7)}
@@ -1700,25 +1834,25 @@ export default function DefiPage() {
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <div className="flex items-center gap-1.5 mb-1">
                   <Droplets className="h-3 w-3 text-emerald-400" />
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'USDC vybráno' : 'USDC Raised'}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{DefiCopy.usdcRaised[cs ? 'cs' : 'en']}</p>
                 </div>
                 <p className="text-lg font-bold text-white font-mono">
                   ${(auctionData?.currencyRaised ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </p>
-                <p className="text-[10px] text-gray-500">{cs ? 'celkem' : 'total'}</p>
+                <p className="text-[10px] text-gray-500">{DefiCopy.total[cs ? 'cs' : 'en']}</p>
               </div>
 
               {/* wZION sold */}
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <div className="flex items-center gap-1.5 mb-1">
                   <Activity className="h-3 w-3 text-zion-gold" />
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'wZION prodáno' : 'wZION Sold'}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{DefiCopy.wzionSold[cs ? 'cs' : 'en']}</p>
                 </div>
                 <p className="text-lg font-bold text-white font-mono">
                   {(auctionData?.totalCleared ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </p>
                 <p className="text-[10px] text-gray-500">
-                  {cs ? 'z' : 'of'} {CCA_AUCTION_PARAMS.totalSupply.toLocaleString()} ({(auctionData?.pctSold ?? 0).toFixed(4)}%)
+                  {DefiCopy.of[cs ? 'cs' : 'en']} {CCA_AUCTION_PARAMS.totalSupply.toLocaleString()} ({(auctionData?.pctSold ?? 0).toFixed(4)}%)
                 </p>
               </div>
 
@@ -1726,21 +1860,21 @@ export default function DefiPage() {
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                 <div className="flex items-center gap-1.5 mb-1">
                   <Clock className="h-3 w-3 text-orange-400" />
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Zbývá' : 'Remaining'}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{DefiCopy.remaining[cs ? 'cs' : 'en']}</p>
                 </div>
                 <p className="text-lg font-bold text-white font-mono">
                   {(auctionData?.daysRemaining ?? 184).toFixed(0)}
                 </p>
-                <p className="text-[10px] text-gray-500">{cs ? 'dní (~6 měsíců)' : 'days (~6 months)'}</p>
+                <p className="text-[10px] text-gray-500">{DefiCopy.days6Months[cs ? 'cs' : 'en']}</p>
               </div>
             </div>
 
             {/* Progress bar */}
             <div className="mb-4">
               <div className="flex justify-between text-[10px] text-gray-500 mb-1">
-                <span>{cs ? 'Blok' : 'Block'} {auctionData?.currentBlock?.toLocaleString() ?? '…'}</span>
+                <span>{DefiCopy.block_2[cs ? 'cs' : 'en']} {auctionData?.currentBlock?.toLocaleString() ?? '…'}</span>
                 <span>{(auctionData?.progressPct ?? 0).toFixed(3)}%</span>
-                <span>{cs ? 'Konec' : 'End'} {CCA_AUCTION_PARAMS.endBlock.toLocaleString()}</span>
+                <span>{DefiCopy.end[cs ? 'cs' : 'en']} {CCA_AUCTION_PARAMS.endBlock.toLocaleString()}</span>
               </div>
               <div className="h-2 bg-black/40 rounded-full overflow-hidden">
                 <div
@@ -1755,33 +1889,33 @@ export default function DefiPage() {
               {/* Left: How it works */}
               <div className="space-y-2">
                 <h3 className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
-                  {cs ? 'Jak CCA aukce funguje' : 'How CCA Auction Works'}
+                  {DefiCopy.howCcaAuctionWorks[cs ? 'cs' : 'en']}
                 </h3>
                 <div className="flex gap-2 text-gray-300">
                   <span className="shrink-0 rounded-lg bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-amber-400 font-mono text-[9px]">1</span>
-                  <p>{cs ? 'Účastníci přihazují USDC za wZION s max cenou' : 'Participants bid USDC for wZION with a max price'}</p>
+                  <p>{DefiCopy.participantsBidUsdcForWzionWit[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="flex gap-2 text-gray-300">
                   <span className="shrink-0 rounded-lg bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-amber-400 font-mono text-[9px]">2</span>
-                  <p>{cs ? 'Vyklízecí cena se kontinuálně upravuje na základě poptávky' : 'Clearing price continuously adjusts based on demand'}</p>
+                  <p>{DefiCopy.clearingPriceContinuouslyAdjus[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="flex gap-2 text-gray-300">
                   <span className="shrink-0 rounded-lg bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-amber-400 font-mono text-[9px]">3</span>
-                  <p>{cs ? 'Po graduaci → LBP pool na Uniswap V3 + USDC pro tým' : 'After graduation → LBP pool on Uniswap V3 + USDC for team'}</p>
+                  <p>{DefiCopy.afterGraduationLbpPoolOnUniswa[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="flex gap-2 text-gray-300">
                   <span className="shrink-0 rounded-lg bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-amber-400 font-mono text-[9px]">4</span>
-                  <p>{cs ? 'Negrace? exitBid() vrátí USDC, sweepUnsoldTokens() vrátí wZION' : 'No graduation? exitBid() refunds USDC, sweepUnsoldTokens() returns wZION'}</p>
+                  <p>{DefiCopy.noGraduationExitbidRefundsUsdc[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
 
               {/* Right: Contract info */}
               <div className="space-y-2">
                 <h3 className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
-                  {cs ? 'Detaily kontraktu' : 'Contract Details'}
+                  {DefiCopy.contractDetails[cs ? 'cs' : 'en']}
                 </h3>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">{cs ? 'Aukce' : 'Auction'}</span>
+                  <span className="text-gray-400">{DefiCopy.auction[cs ? 'cs' : 'en']}</span>
                   <a
                     href={CCA_AUCTION_PARAMS.basescanUrl}
                     target="_blank"
@@ -1793,23 +1927,23 @@ export default function DefiPage() {
                   </a>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">{cs ? 'Token' : 'Token'}</span>
+                  <span className="text-gray-400">{DefiCopy.token[cs ? 'cs' : 'en']}</span>
                   <span className="font-mono text-gray-300">wZION (18d)</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">{cs ? 'Měna' : 'Currency'}</span>
+                  <span className="text-gray-400">{DefiCopy.currency[cs ? 'cs' : 'en']}</span>
                   <span className="font-mono text-gray-300">USDC (6d, Base)</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">{cs ? 'Start blok' : 'Start block'}</span>
+                  <span className="text-gray-400">{DefiCopy.startBlock[cs ? 'cs' : 'en']}</span>
                   <span className="font-mono text-gray-300">{CCA_AUCTION_PARAMS.startBlock.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">{cs ? 'End blok' : 'End block'}</span>
+                  <span className="text-gray-400">{DefiCopy.endBlock[cs ? 'cs' : 'en']}</span>
                   <span className="font-mono text-gray-300">{CCA_AUCTION_PARAMS.endBlock.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">{cs ? 'Floor price' : 'Floor price'}</span>
+                  <span className="text-gray-400">{DefiCopy.floorPrice[cs ? 'cs' : 'en']}</span>
                   <span className="font-mono text-gray-300">$0.00019/wZION</span>
                 </div>
               </div>
@@ -1819,9 +1953,7 @@ export default function DefiPage() {
             <div className="mt-4 flex items-start gap-3 zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-[10px] text-gray-400 leading-relaxed">
-                {cs
-                  ? 'Poznámka: END_BLOCK je immutable a nelze změnit — aukce běží ~184 dní (zamýšleno 30). Po END_BLOCK lze exitBid() pro refund nebo sweepUnsoldTokens() pro vrácení neprodaných wZION. Viz AUCTION_CCA_BASE.md.'
-                  : 'Note: END_BLOCK is immutable and cannot be changed — auction runs ~184 days (intended 30). After END_BLOCK, exitBid() for refund or sweepUnsoldTokens() to reclaim unsold wZION. See AUCTION_CCA_BASE.md.'}
+                {DefiCopy.noteEndBlockIsImmutableAndCann[cs ? 'cs' : 'en']}
               </p>
             </div>
           </motion.div>

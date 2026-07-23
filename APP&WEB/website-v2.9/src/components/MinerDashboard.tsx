@@ -30,6 +30,90 @@ import {
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
 
+const MinerDashboardCopy = {
+  minerNotFound: { cs: `Miner nebyl nalezen`, en: `Miner not found` },
+  failedToFetchMinerData: { cs: `Nepodarilo se nacist data minera`, en: `Failed to fetch miner data` },
+  loadingMinerData: { cs: `Nacitam data minera...`, en: `Loading miner data...` },
+  minerNotFound_2: { cs: `Miner nebyl nalezen`, en: `Miner Not Found` },
+  makeSureTheAddressIsCorrectAnd: { cs: `Zkontrolujte, ze je adresa spravna a ze odeslala shares do poolu.`, en: `Make sure the address is correct and has submitted shares to the pool.` },
+  backToPool: { cs: `Zpet do poolu`, en: `Back to Pool` },
+  active: { cs: `Aktivní`, en: `Active` },
+  recentlyActive: { cs: `Nedávno aktivní`, en: `Recently Active` },
+  historical: { cs: `Historický`, en: `Historical` },
+  inactive: { cs: `Neaktivní`, en: `Inactive` },
+  pool: { cs: `Pool`, en: `Pool` },
+  miner: { cs: `Miner`, en: `Miner` },
+  lastShare: { cs: `poslední share`, en: `last share` },
+  copyAddress: { cs: `Kopírovat adresu`, en: `Copy address` },
+  active_2: { cs: `aktivních`, en: `active` },
+  blocks: { cs: `Bloky`, en: `Blocks` },
+  paid: { cs: `Vyplaceno`, en: `Paid` },
+  telemetry: { cs: `Telemetrie`, en: `Telemetry` },
+  minerStatistics: { cs: `Statistiky minera`, en: `Miner Statistics` },
+  realTimeMetricsForThisMinerAcr: { cs: `Metriky tohoto minera v realnem case napric vsemi pool servery.`, en: `Real-time metrics for this miner across all pool servers.` },
+  hashrate1h: { cs: `Hashrate 1h`, en: `Hashrate 1h` },
+  hashrate24h: { cs: `Hashrate 24h`, en: `Hashrate 24h` },
+  validShares: { cs: `Validni shares`, en: `Valid Shares` },
+  invalidShares: { cs: `Neplatne shares`, en: `Invalid Shares` },
+  efficiency: { cs: `Efektivita`, en: `Efficiency` },
+  blocksFound: { cs: `Nalezene bloky`, en: `Blocks Found` },
+  pending: { cs: `Čeká na payout`, en: `Pending` },
+  totalPaid: { cs: `Celkem vyplaceno`, en: `Total Paid` },
+  totalShares: { cs: `Shares celkem`, en: `Total Shares` },
+  lastShare_2: { cs: `Poslední share`, en: `Last Share` },
+  servers: { cs: `Servery`, en: `Servers` },
+  algorithm: { cs: `Algoritmus`, en: `Algorithm` },
+  performance: { cs: `Výkon`, en: `Performance` },
+  hashrateTimeline: { cs: `Vývoj hashrate`, en: `Hashrate Timeline` },
+  liveHashrateSamplesCollectedEv: { cs: `Živé vzorky hashrate sbírané každých 15 sekund.`, en: `Live hashrate samples collected every 15 seconds.` },
+  current: { cs: `Aktuálně:`, en: `Current:` },
+  k24hAvg: { cs: `24h průměr:`, en: `24h avg:` },
+  notEnoughDataForChart: { cs: `Pro graf zatím není dost dat`, en: `Not enough data for chart` },
+  mining: { cs: `Těžba`, en: `Mining` },
+  blocksFoundByThisMinerOnThePoo: { cs: `Bloky nalezené tímto minerem v poolu.`, en: `Blocks found by this miner on the pool.` },
+  height: { cs: `Výška`, en: `Height` },
+  reward: { cs: `Odměna`, en: `Reward` },
+  time: { cs: `Čas`, en: `Time` },
+  server: { cs: `Server`, en: `Server` },
+  earnings: { cs: `Výdělky`, en: `Earnings` },
+  payouts: { cs: `Payouty`, en: `Payouts` },
+  historyOfPoolPayoutsToThisMine: { cs: `Historie pool payoutů tomuto minerovi.`, en: `History of pool payouts to this miner.` },
+  noPayoutsYetMinimumPayout01Zio: { cs: `Zatím žádné payouty. Minimální payout: 0.1 ZION`, en: `No payouts yet. Minimum payout: 0.1 ZION` },
+  pendingBalance: { cs: `Čekající zůstatek`, en: `Pending balance` },
+  amount: { cs: `Částka`, en: `Amount` },
+  status: { cs: `Stav`, en: `Status` },
+  confirmed: { cs: `potvrzeno`, en: `confirmed` },
+  pending_2: { cs: `ceka`, en: `pending` },
+  advanced: { cs: `Rozšířené`, en: `Advanced` },
+  advancedMetrics: { cs: `Rozšířené metriky`, en: `Advanced Metrics` },
+  bestAvailableMinerTelemetryFro: { cs: `Nejlepší dostupná telemetrie minera z pool accounting a živých runtime dat.`, en: `Best available miner telemetry from pool accounting and live runtime data.` },
+  loadingAdvancedMinerMetrics: { cs: `Načítám rozšířené metriky minera...`, en: `Loading advanced miner metrics...` },
+  currentHashrateGauge: { cs: `Aktualni hashrate (Gauge)`, en: `Current hashrate (Gauge)` },
+  k24hAverageHashrate: { cs: `24h průměrný hashrate`, en: `24h average hashrate` },
+  validInvalidSharesCounter: { cs: `Validni / neplatne shares (Counter)`, en: `Valid / invalid shares (Counter)` },
+  blocksFoundCounter: { cs: `Nalezene bloky (Counter)`, en: `Blocks found (Counter)` },
+  pendingBalanceGauge: { cs: `Čekající zůstatek (Gauge)`, en: `Pending balance (Gauge)` },
+  totalPaidGauge: { cs: `Celkem vyplaceno (Gauge)`, en: `Total paid (Gauge)` },
+  activeConnectionsGauge: { cs: `Aktivní spojení (Gauge)`, en: `Active connections (Gauge)` },
+  poolContext: { cs: `Kontext poolu`, en: `Pool Context` },
+  poolHashrate: { cs: `Pool hashrate`, en: `Pool Hashrate` },
+  pool24h: { cs: `Pool 24h`, en: `Pool 24h` },
+  activeMiners: { cs: `Aktivních`, en: `Active Miners` },
+  poolBlocks: { cs: `Pool bloky`, en: `Pool Blocks` },
+  poolShare: { cs: `Podíl na poolu`, en: `Pool share` },
+  lastScrape: { cs: `Posledni scrape`, en: `Last scrape` },
+  updatedEvery15s: { cs: `aktualizace kazdych 15 s`, en: `Updated every 15s` },
+  source: { cs: `Zdroj`, en: `Source` },
+  runtimeFallback: { cs: `runtime fallback`, en: `runtime fallback` },
+  endpoints: { cs: `Endpointy`, en: `Endpoints` },
+  ok: { cs: `ok`, en: `ok` },
+  down: { cs: `down`, en: `down` },
+  backToPoolOverview: { cs: `Zpet na prehled poolu`, en: `Back to Pool Overview` },
+  viewAllPoolStatisticsServerSta: { cs: `Zobrazte vsechny statistiky poolu, stav serveru a pripojte se k tezebni komunite.`, en: `View all pool statistics, server status, and join the mining community.` },
+  poolDashboard: { cs: `Prehled poolu`, en: `Pool Dashboard` },
+  explorer: { cs: `Explorer`, en: `Explorer` },
+};
+
 /* ═══════════════════════════════════════════════════════════
    MINER DASHBOARD — Per-miner metrics & charts
    Explorer design language (bg-black/60, rounded-3xl, motion.section)
@@ -266,10 +350,10 @@ export default function MinerDashboard({ address }: { address: string }) {
           }
         }
       } else {
-        setError(json.error || (cs ? 'Miner nebyl nalezen' : 'Miner not found'));
+        setError(json.error || (MinerDashboardCopy.minerNotFound[cs ? 'cs' : 'en']));
       }
     } catch {
-      setError(cs ? 'Nepodarilo se nacist data minera' : 'Failed to fetch miner data');
+      setError(MinerDashboardCopy.failedToFetchMinerData[cs ? 'cs' : 'en']);
     } finally {
       setLoading(false);
     }
@@ -283,7 +367,7 @@ export default function MinerDashboard({ address }: { address: string }) {
       <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 flex items-center justify-center">
         <div className="flex items-center gap-3 text-gray-400">
           <RefreshCw className="h-5 w-5 animate-spin" />
-          <span>{cs ? 'Nacitam data minera...' : 'Loading miner data...'}</span>
+          <span>{MinerDashboardCopy.loadingMinerData[cs ? 'cs' : 'en']}</span>
         </div>
       </div>
     );
@@ -302,14 +386,14 @@ export default function MinerDashboard({ address }: { address: string }) {
             <div className="mx-auto h-16 w-16 rounded-2xl bg-red-500/10 flex items-center justify-center">
               <XCircle className="h-8 w-8 text-red-400" />
             </div>
-            <h1 className="text-2xl font-semibold text-white">{cs ? 'Miner nebyl nalezen' : 'Miner Not Found'}</h1>
+            <h1 className="text-2xl font-semibold text-white">{MinerDashboardCopy.minerNotFound_2[cs ? 'cs' : 'en']}</h1>
             <p className="text-gray-400 max-w-md mx-auto">
               {error || (cs ? `Pro adresu ${shortAddr(address)} nebyla nalezena zadna tezebni data.` : `No mining data found for address ${shortAddr(address)}.`)}
-              <br />{cs ? 'Zkontrolujte, ze je adresa spravna a ze odeslala shares do poolu.' : 'Make sure the address is correct and has submitted shares to the pool.'}
+              <br />{MinerDashboardCopy.makeSureTheAddressIsCorrectAnd[cs ? 'cs' : 'en']}
             </p>
             <code className="block text-sm text-gray-500 font-mono break-all">{address}</code>
             <Link href="/pool" className="inline-flex items-center gap-2 text-zion-cyan hover:text-white transition-colors text-sm">
-              <ArrowLeft className="h-4 w-4" /> {cs ? 'Zpet do poolu' : 'Back to Pool'}
+              <ArrowLeft className="h-4 w-4" /> {MinerDashboardCopy.backToPool[cs ? 'cs' : 'en']}
             </Link>
           </motion.div>
         </div>
@@ -326,12 +410,12 @@ export default function MinerDashboard({ address }: { address: string }) {
   const statusColor = isActive ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : isRecentlyActive ? 'bg-amber-400' : hasHistory ? 'bg-blue-400' : 'bg-red-400';
   const statusText = isActive ? 'text-emerald-400' : isRecentlyActive ? 'text-amber-400' : hasHistory ? 'text-blue-400' : 'text-red-400';
   const statusLabel = isActive
-    ? (cs ? 'Aktivní' : 'Active')
+    ? (MinerDashboardCopy.active[cs ? 'cs' : 'en'])
     : isRecentlyActive
-      ? (cs ? 'Nedávno aktivní' : 'Recently Active')
+      ? (MinerDashboardCopy.recentlyActive[cs ? 'cs' : 'en'])
       : hasHistory
-        ? (cs ? 'Historický' : 'Historical')
-        : (cs ? 'Neaktivní' : 'Inactive');
+        ? (MinerDashboardCopy.historical[cs ? 'cs' : 'en'])
+        : (MinerDashboardCopy.inactive[cs ? 'cs' : 'en']);
 
   return (
     <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
@@ -347,10 +431,10 @@ export default function MinerDashboard({ address }: { address: string }) {
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
             <Link href="/pool" className="hover:text-white transition-colors inline-flex items-center gap-1">
-              <Pickaxe className="h-3.5 w-3.5" /> {cs ? 'Pool' : 'Pool'}
+              <Pickaxe className="h-3.5 w-3.5" /> {MinerDashboardCopy.pool[cs ? 'cs' : 'en']}
             </Link>
             <ArrowRight className="h-3 w-3" />
-            <span className="text-gray-400">{cs ? 'Miner' : 'Miner'}</span>
+            <span className="text-gray-400">{MinerDashboardCopy.miner[cs ? 'cs' : 'en']}</span>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -361,7 +445,7 @@ export default function MinerDashboard({ address }: { address: string }) {
                   {statusLabel}
                 </span>
                 {s.last_share_time > 0 && (
-                  <span className="text-xs text-gray-500">· {cs ? 'poslední share' : 'last share'} {timeAgo(s.last_share_time, cs)}</span>
+                  <span className="text-xs text-gray-500">· {MinerDashboardCopy.lastShare[cs ? 'cs' : 'en']} {timeAgo(s.last_share_time, cs)}</span>
                 )}
                 {data.worker_name && (
                   <span className="text-xs text-gray-500">· worker: <span className="text-zion-cyan font-mono">{data.worker_name}</span></span>
@@ -389,7 +473,7 @@ export default function MinerDashboard({ address }: { address: string }) {
               )}
               <h1 className="text-xl md:text-2xl font-mono text-white break-all leading-relaxed flex items-center gap-2">
                 {shortAddr(address)}
-                <CopyBtn text={address} titleLabel={cs ? 'Kopírovat adresu' : 'Copy address'} />
+                <CopyBtn text={address} titleLabel={MinerDashboardCopy.copyAddress[cs ? 'cs' : 'en']} />
               </h1>
               <div className="flex flex-wrap gap-2">
                 {data.servers.filter((sv) => sv.connected).map((sv) => (
@@ -399,7 +483,7 @@ export default function MinerDashboard({ address }: { address: string }) {
                 ))}
                 {data.pool_stats && (
                   <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
-                    <Pickaxe className="h-3 w-3 text-zion-gold" /> {cs ? 'Pool' : 'Pool'}: {fmtHash(data.pool_stats.pool_hashrate)} · {data.pool_stats.active_miners} {cs ? 'aktivních' : 'active'}
+                    <Pickaxe className="h-3 w-3 text-zion-gold" /> {MinerDashboardCopy.pool[cs ? 'cs' : 'en']}: {fmtHash(data.pool_stats.pool_hashrate)} · {data.pool_stats.active_miners} {MinerDashboardCopy.active_2[cs ? 'cs' : 'en']}
                   </span>
                 )}
               </div>
@@ -415,11 +499,11 @@ export default function MinerDashboard({ address }: { address: string }) {
                 )}
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Bloky' : 'Blocks'}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider">{MinerDashboardCopy.blocks[cs ? 'cs' : 'en']}</p>
                 <p className="text-2xl font-semibold text-zion-gold">{fmtNum(s.blocks_found)}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Vyplaceno' : 'Paid'}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider">{MinerDashboardCopy.paid[cs ? 'cs' : 'en']}</p>
                 <p className="text-2xl font-semibold text-emerald-400">{fmtZion(s.total_paid)}</p>
                 <p className="text-xs text-gray-500">ZION</p>
               </div>
@@ -434,27 +518,27 @@ export default function MinerDashboard({ address }: { address: string }) {
           transition={{ delay: 0.06 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MinerDashboardCopy.telemetry[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Statistiky minera' : 'Miner Statistics'}
+              {MinerDashboardCopy.minerStatistics[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Metriky tohoto minera v realnem case napric vsemi pool servery.' : 'Real-time metrics for this miner across all pool servers.'}</p>
+            <p className="text-sm text-gray-400">{MinerDashboardCopy.realTimeMetricsForThisMinerAcr[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-            <StatCard icon={<Zap />} label={cs ? 'Hashrate 1h' : 'Hashrate 1h'} value={fmtHash(s.hashrate_1h)} accent="text-zion-cyan" />
-            <StatCard icon={<TrendingUp />} label={cs ? 'Hashrate 24h' : 'Hashrate 24h'} value={fmtHash(s.hashrate_24h)} accent="text-zion-purple" />
-            <StatCard icon={<Layers />} label={cs ? 'Validni shares' : 'Valid Shares'} value={fmtNum(s.valid_shares)} accent="text-emerald-400" />
-            <StatCard icon={<XCircle />} label={cs ? 'Neplatne shares' : 'Invalid Shares'} value={fmtNum(s.invalid_shares)} accent="text-red-400" />
-            <StatCard icon={<Shield />} label={cs ? 'Efektivita' : 'Efficiency'} value={`${s.efficiency}%`} accent="text-zion-gold" />
-            <StatCard icon={<Box />} label={cs ? 'Nalezene bloky' : 'Blocks Found'} value={fmtNum(s.blocks_found)} accent="text-amber-400" />
-            <StatCard icon={<Wallet />} label={cs ? 'Čeká na payout' : 'Pending'} value={`${fmtZion(s.pending_balance)} ZION`} accent="text-zion-cyan" />
-            <StatCard icon={<Sparkles />} label={cs ? 'Celkem vyplaceno' : 'Total Paid'} value={`${fmtZion(s.total_paid)} ZION`} accent="text-emerald-400" />
-            <StatCard icon={<Hash />} label={cs ? 'Shares celkem' : 'Total Shares'} value={fmtNum(s.total_shares)} accent="text-gray-300" />
-            <StatCard icon={<Clock />} label={cs ? 'Poslední share' : 'Last Share'} value={s.last_share_time > 0 ? timeAgo(s.last_share_time, cs) : '—'} accent="text-gray-300" />
-            <StatCard icon={<Server />} label={cs ? 'Servery' : 'Servers'} value={`${data.servers.filter(sv => sv.connected).length} / ${data.servers.length}`} accent="text-zion-purple" />
-            <StatCard icon={<Cpu />} label={cs ? 'Algoritmus' : 'Algorithm'} value="Cosmic Harmony" sub="v3 Multi-Algo" accent="text-zion-gold" />
+            <StatCard icon={<Zap />} label={MinerDashboardCopy.hashrate1h[cs ? 'cs' : 'en']} value={fmtHash(s.hashrate_1h)} accent="text-zion-cyan" />
+            <StatCard icon={<TrendingUp />} label={MinerDashboardCopy.hashrate24h[cs ? 'cs' : 'en']} value={fmtHash(s.hashrate_24h)} accent="text-zion-purple" />
+            <StatCard icon={<Layers />} label={MinerDashboardCopy.validShares[cs ? 'cs' : 'en']} value={fmtNum(s.valid_shares)} accent="text-emerald-400" />
+            <StatCard icon={<XCircle />} label={MinerDashboardCopy.invalidShares[cs ? 'cs' : 'en']} value={fmtNum(s.invalid_shares)} accent="text-red-400" />
+            <StatCard icon={<Shield />} label={MinerDashboardCopy.efficiency[cs ? 'cs' : 'en']} value={`${s.efficiency}%`} accent="text-zion-gold" />
+            <StatCard icon={<Box />} label={MinerDashboardCopy.blocksFound[cs ? 'cs' : 'en']} value={fmtNum(s.blocks_found)} accent="text-amber-400" />
+            <StatCard icon={<Wallet />} label={MinerDashboardCopy.pending[cs ? 'cs' : 'en']} value={`${fmtZion(s.pending_balance)} ZION`} accent="text-zion-cyan" />
+            <StatCard icon={<Sparkles />} label={MinerDashboardCopy.totalPaid[cs ? 'cs' : 'en']} value={`${fmtZion(s.total_paid)} ZION`} accent="text-emerald-400" />
+            <StatCard icon={<Hash />} label={MinerDashboardCopy.totalShares[cs ? 'cs' : 'en']} value={fmtNum(s.total_shares)} accent="text-gray-300" />
+            <StatCard icon={<Clock />} label={MinerDashboardCopy.lastShare_2[cs ? 'cs' : 'en']} value={s.last_share_time > 0 ? timeAgo(s.last_share_time, cs) : '—'} accent="text-gray-300" />
+            <StatCard icon={<Server />} label={MinerDashboardCopy.servers[cs ? 'cs' : 'en']} value={`${data.servers.filter(sv => sv.connected).length} / ${data.servers.length}`} accent="text-zion-purple" />
+            <StatCard icon={<Cpu />} label={MinerDashboardCopy.algorithm[cs ? 'cs' : 'en']} value="Cosmic Harmony" sub="v3 Multi-Algo" accent="text-zion-gold" />
           </div>
         </motion.section>
 
@@ -465,25 +549,25 @@ export default function MinerDashboard({ address }: { address: string }) {
           transition={{ delay: 0.10 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výkon' : 'Performance'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MinerDashboardCopy.performance[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-purple" />
-              {cs ? 'Vývoj hashrate' : 'Hashrate Timeline'}
+              {MinerDashboardCopy.hashrateTimeline[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Živé vzorky hashrate sbírané každých 15 sekund.' : 'Live hashrate samples collected every 15 seconds.'}</p>
+            <p className="text-sm text-gray-400">{MinerDashboardCopy.liveHashrateSamplesCollectedEv[cs ? 'cs' : 'en']}</p>
           </div>
           <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-400">{cs ? 'Aktuálně:' : 'Current:'}</span>
+                <span className="text-sm text-gray-400">{MinerDashboardCopy.current[cs ? 'cs' : 'en']}</span>
                 <span className="text-lg font-semibold text-zion-cyan">{fmtHash(s.hashrate_1h)}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-400">{cs ? '24h průměr:' : '24h avg:'}</span>
+                <span className="text-sm text-gray-400">{MinerDashboardCopy.k24hAvg[cs ? 'cs' : 'en']}</span>
                 <span className="text-lg font-semibold text-zion-purple">{fmtHash(s.hashrate_24h)}</span>
               </div>
             </div>
-            <HashrateSpark data={hashHistory} emptyLabel={cs ? 'Pro graf zatím není dost dat' : 'Not enough data for chart'} />
+            <HashrateSpark data={hashHistory} emptyLabel={MinerDashboardCopy.notEnoughDataForChart[cs ? 'cs' : 'en']} />
           </div>
         </motion.section>
 
@@ -495,23 +579,23 @@ export default function MinerDashboard({ address }: { address: string }) {
             transition={{ delay: 0.14 }}
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Těžba' : 'Mining'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MinerDashboardCopy.mining[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Box className="h-7 w-7 text-amber-400" />
-                {cs ? 'Nalezene bloky' : 'Blocks Found'}
+                {MinerDashboardCopy.blocksFound[cs ? 'cs' : 'en']}
               </h2>
-              <p className="text-sm text-gray-400">{cs ? 'Bloky nalezené tímto minerem v poolu.' : 'Blocks found by this miner on the pool.'}</p>
+              <p className="text-sm text-gray-400">{MinerDashboardCopy.blocksFoundByThisMinerOnThePoo[cs ? 'cs' : 'en']}</p>
             </div>
             <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wider text-gray-500">
-                      <th className="px-4 md:px-6 py-4">{cs ? 'Výška' : 'Height'}</th>
+                      <th className="px-4 md:px-6 py-4">{MinerDashboardCopy.height[cs ? 'cs' : 'en']}</th>
                       <th className="px-4 md:px-6 py-4">Hash</th>
-                      <th className="px-4 md:px-6 py-4">{cs ? 'Odměna' : 'Reward'}</th>
-                      <th className="px-4 md:px-6 py-4">{cs ? 'Čas' : 'Time'}</th>
-                      <th className="px-4 md:px-6 py-4">{cs ? 'Server' : 'Server'}</th>
+                      <th className="px-4 md:px-6 py-4">{MinerDashboardCopy.reward[cs ? 'cs' : 'en']}</th>
+                      <th className="px-4 md:px-6 py-4">{MinerDashboardCopy.time[cs ? 'cs' : 'en']}</th>
+                      <th className="px-4 md:px-6 py-4">{MinerDashboardCopy.server[cs ? 'cs' : 'en']}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -542,29 +626,29 @@ export default function MinerDashboard({ address }: { address: string }) {
           transition={{ delay: 0.18 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výdělky' : 'Earnings'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MinerDashboardCopy.earnings[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Wallet className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Payouty' : 'Payouts'}
+              {MinerDashboardCopy.payouts[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Historie pool payoutů tomuto minerovi.' : 'History of pool payouts to this miner.'}</p>
+            <p className="text-sm text-gray-400">{MinerDashboardCopy.historyOfPoolPayoutsToThisMine[cs ? 'cs' : 'en']}</p>
           </div>
           <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             {data.payouts.length === 0 ? (
               <div className="text-center py-10 text-gray-500">
                 <Wallet className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                <p>{cs ? 'Zatím žádné payouty. Minimální payout: 0.1 ZION' : 'No payouts yet. Minimum payout: 0.1 ZION'}</p>
-                <p className="text-xs mt-1">{cs ? 'Čekající zůstatek' : 'Pending balance'}: {fmtZion(s.pending_balance)} ZION</p>
+                <p>{MinerDashboardCopy.noPayoutsYetMinimumPayout01Zio[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs mt-1">{MinerDashboardCopy.pendingBalance[cs ? 'cs' : 'en']}: {fmtZion(s.pending_balance)} ZION</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wider text-gray-500">
-                      <th className="px-4 py-3">{cs ? 'Částka' : 'Amount'}</th>
+                      <th className="px-4 py-3">{MinerDashboardCopy.amount[cs ? 'cs' : 'en']}</th>
                       <th className="px-4 py-3">TX ID</th>
-                      <th className="px-4 py-3">{cs ? 'Čas' : 'Time'}</th>
-                      <th className="px-4 py-3">{cs ? 'Stav' : 'Status'}</th>
+                      <th className="px-4 py-3">{MinerDashboardCopy.time[cs ? 'cs' : 'en']}</th>
+                      <th className="px-4 py-3">{MinerDashboardCopy.status[cs ? 'cs' : 'en']}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -583,7 +667,7 @@ export default function MinerDashboard({ address }: { address: string }) {
                           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${
                             p.status === 'confirmed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
                           }`}>
-                            {p.status ? (p.status === 'confirmed' ? (cs ? 'potvrzeno' : 'confirmed') : p.status) : (cs ? 'ceka' : 'pending')}
+                            {p.status ? (p.status === 'confirmed' ? (MinerDashboardCopy.confirmed[cs ? 'cs' : 'en']) : p.status) : (MinerDashboardCopy.pending_2[cs ? 'cs' : 'en'])}
                           </span>
                         </td>
                       </tr>
@@ -602,55 +686,55 @@ export default function MinerDashboard({ address }: { address: string }) {
           transition={{ delay: 0.22 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Rozšířené' : 'Advanced'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MinerDashboardCopy.advanced[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Signal className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Rozšířené metriky' : 'Advanced Metrics'}
+              {MinerDashboardCopy.advancedMetrics[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Nejlepší dostupná telemetrie minera z pool accounting a živých runtime dat.' : 'Best available miner telemetry from pool accounting and live runtime data.'}</p>
+            <p className="text-sm text-gray-400">{MinerDashboardCopy.bestAvailableMinerTelemetryFro[cs ? 'cs' : 'en']}</p>
           </div>
           <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             {!promMetrics ? (
-              <p className="text-sm text-gray-400">{cs ? 'Načítám rozšířené metriky minera...' : 'Loading advanced miner metrics...'}</p>
+              <p className="text-sm text-gray-400">{MinerDashboardCopy.loadingAdvancedMinerMetrics[cs ? 'cs' : 'en']}</p>
             ) : (
               <>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_hashrate{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtHash(promMetrics.metrics.hashrate)}</p>
-                    <p className="text-xs text-gray-400">{cs ? 'Aktualni hashrate (Gauge)' : 'Current hashrate (Gauge)'}</p>
+                    <p className="text-xs text-gray-400">{MinerDashboardCopy.currentHashrateGauge[cs ? 'cs' : 'en']}</p>
                   </div>
                   {promMetrics.metrics.hashrate_24h !== undefined && (
                     <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                       <p className="text-xs text-zion-cyan font-mono break-all">miner_hashrate_24h{`{address="..."}`}</p>
                       <p className="text-lg font-semibold text-white">{fmtHash(promMetrics.metrics.hashrate_24h ?? 0)}</p>
-                      <p className="text-xs text-gray-400">{cs ? '24h průměrný hashrate' : '24h average hashrate'}</p>
+                      <p className="text-xs text-gray-400">{MinerDashboardCopy.k24hAverageHashrate[cs ? 'cs' : 'en']}</p>
                     </div>
                   )}
                   <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_shares_total{`{status="valid|invalid"}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtNum(promMetrics.metrics.shares_valid)} / {fmtNum(promMetrics.metrics.shares_invalid)}</p>
-                    <p className="text-xs text-gray-400">{cs ? 'Validni / neplatne shares (Counter)' : 'Valid / invalid shares (Counter)'}</p>
+                    <p className="text-xs text-gray-400">{MinerDashboardCopy.validInvalidSharesCounter[cs ? 'cs' : 'en']}</p>
                   </div>
                   <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_blocks_found_total{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtNum(promMetrics.metrics.blocks_found)}</p>
-                    <p className="text-xs text-gray-400">{cs ? 'Nalezene bloky (Counter)' : 'Blocks found (Counter)'}</p>
+                    <p className="text-xs text-gray-400">{MinerDashboardCopy.blocksFoundCounter[cs ? 'cs' : 'en']}</p>
                   </div>
                   <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_pending_balance_atomic{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtZion(promMetrics.metrics.pending_balance_atomic)} ZION</p>
-                    <p className="text-xs text-gray-400">{cs ? 'Čekající zůstatek (Gauge)' : 'Pending balance (Gauge)'}</p>
+                    <p className="text-xs text-gray-400">{MinerDashboardCopy.pendingBalanceGauge[cs ? 'cs' : 'en']}</p>
                   </div>
                   <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_paid_total_atomic{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtZion(promMetrics.metrics.paid_total_atomic)} ZION</p>
-                    <p className="text-xs text-gray-400">{cs ? 'Celkem vyplaceno (Gauge)' : 'Total paid (Gauge)'}</p>
+                    <p className="text-xs text-gray-400">{MinerDashboardCopy.totalPaidGauge[cs ? 'cs' : 'en']}</p>
                   </div>
                   <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_connections_active{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtNum(promMetrics.metrics.connections_active)}</p>
-                    <p className="text-xs text-gray-400">{cs ? 'Aktivní spojení (Gauge)' : 'Active connections (Gauge)'}</p>
+                    <p className="text-xs text-gray-400">{MinerDashboardCopy.activeConnectionsGauge[cs ? 'cs' : 'en']}</p>
                   </div>
                 </div>
 
@@ -658,29 +742,29 @@ export default function MinerDashboard({ address }: { address: string }) {
                 {promMetrics.pool_context && (
                   <div className="mt-6 pt-6 border-t border-white/10">
                     <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
-                      <Pickaxe className="h-4 w-4 text-zion-gold" /> {cs ? 'Kontext poolu' : 'Pool Context'}
+                      <Pickaxe className="h-4 w-4 text-zion-gold" /> {MinerDashboardCopy.poolContext[cs ? 'cs' : 'en']}
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="text-center p-3 rounded-xl bg-white/5">
-                        <p className="text-xs text-gray-500 uppercase">{cs ? 'Pool hashrate' : 'Pool Hashrate'}</p>
+                        <p className="text-xs text-gray-500 uppercase">{MinerDashboardCopy.poolHashrate[cs ? 'cs' : 'en']}</p>
                         <p className="text-lg font-semibold text-zion-cyan">{fmtHash(promMetrics.pool_context.pool_hashrate)}</p>
                       </div>
                       <div className="text-center p-3 rounded-xl bg-white/5">
-                        <p className="text-xs text-gray-500 uppercase">{cs ? 'Pool 24h' : 'Pool 24h'}</p>
+                        <p className="text-xs text-gray-500 uppercase">{MinerDashboardCopy.pool24h[cs ? 'cs' : 'en']}</p>
                         <p className="text-lg font-semibold text-zion-purple">{fmtHash(promMetrics.pool_context.pool_hashrate_24h)}</p>
                       </div>
                       <div className="text-center p-3 rounded-xl bg-white/5">
-                        <p className="text-xs text-gray-500 uppercase">{cs ? 'Aktivních' : 'Active Miners'}</p>
+                        <p className="text-xs text-gray-500 uppercase">{MinerDashboardCopy.activeMiners[cs ? 'cs' : 'en']}</p>
                         <p className="text-lg font-semibold text-emerald-400">{promMetrics.pool_context.active_miners}</p>
                       </div>
                       <div className="text-center p-3 rounded-xl bg-white/5">
-                        <p className="text-xs text-gray-500 uppercase">{cs ? 'Pool bloky' : 'Pool Blocks'}</p>
+                        <p className="text-xs text-gray-500 uppercase">{MinerDashboardCopy.poolBlocks[cs ? 'cs' : 'en']}</p>
                         <p className="text-lg font-semibold text-amber-400">{fmtNum(promMetrics.pool_context.total_blocks_found)}</p>
                       </div>
                     </div>
                     {promMetrics.metrics.hashrate > 0 && promMetrics.pool_context.pool_hashrate > 0 && (
                       <p className="mt-3 text-xs text-gray-500 text-center">
-                        {cs ? 'Podíl na poolu' : 'Pool share'}: {((promMetrics.metrics.hashrate / promMetrics.pool_context.pool_hashrate) * 100).toFixed(2)}%
+                        {MinerDashboardCopy.poolShare[cs ? 'cs' : 'en']}: {((promMetrics.metrics.hashrate / promMetrics.pool_context.pool_hashrate) * 100).toFixed(2)}%
                       </p>
                     )}
                   </div>
@@ -688,14 +772,14 @@ export default function MinerDashboard({ address }: { address: string }) {
 
                 <div className="mt-4 text-xs text-gray-500 space-y-1">
                   <p>
-                    {cs ? 'Posledni scrape' : 'Last scrape'}: {promMetrics.scrape_ts > 0 ? timeAgo(promMetrics.scrape_ts, cs) : '—'} · {cs ? 'aktualizace kazdych 15 s' : 'Updated every 15s'}
+                    {MinerDashboardCopy.lastScrape[cs ? 'cs' : 'en']}: {promMetrics.scrape_ts > 0 ? timeAgo(promMetrics.scrape_ts, cs) : '—'} · {MinerDashboardCopy.updatedEvery15s[cs ? 'cs' : 'en']}
                   </p>
                   <p>
-                    {cs ? 'Zdroj' : 'Source'}: {promMetrics.source ?? (cs ? 'runtime fallback' : 'runtime fallback')}
+                    {MinerDashboardCopy.source[cs ? 'cs' : 'en']}: {promMetrics.source ?? (MinerDashboardCopy.runtimeFallback[cs ? 'cs' : 'en'])}
                     {promMetrics.worker_name && ` · worker: ${promMetrics.worker_name}`}
                   </p>
                   <p>
-                    {cs ? 'Endpointy' : 'Endpoints'}: {promMetrics.servers.map((sv) => `${sv.server}:${sv.connected ? (cs ? 'ok' : 'ok') : (cs ? 'down' : 'down')}`).join(' · ')}
+                    {MinerDashboardCopy.endpoints[cs ? 'cs' : 'en']}: {promMetrics.servers.map((sv) => `${sv.server}:${sv.connected ? (MinerDashboardCopy.ok[cs ? 'cs' : 'en']) : (MinerDashboardCopy.down[cs ? 'cs' : 'en'])}`).join(' · ')}
                   </p>
                 </div>
               </>
@@ -711,9 +795,9 @@ export default function MinerDashboard({ address }: { address: string }) {
         >
           <div className="relative rounded-3xl md:rounded-4xl p-px bg-linear-to-r from-zion-purple/60 via-white/10 to-zion-cyan/60">
             <div className="rounded-3xl md:rounded-4xl bg-black/90 backdrop-blur-xl p-8 md:p-12 text-center space-y-6">
-              <h3 className="text-2xl md:text-3xl font-semibold text-gradient">{cs ? 'Zpet na prehled poolu' : 'Back to Pool Overview'}</h3>
+              <h3 className="text-2xl md:text-3xl font-semibold text-gradient">{MinerDashboardCopy.backToPoolOverview[cs ? 'cs' : 'en']}</h3>
               <p className="text-gray-300 max-w-lg mx-auto">
-                {cs ? 'Zobrazte vsechny statistiky poolu, stav serveru a pripojte se k tezebni komunite.' : 'View all pool statistics, server status, and join the mining community.'}
+                {MinerDashboardCopy.viewAllPoolStatisticsServerSta[cs ? 'cs' : 'en']}
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link
@@ -721,14 +805,14 @@ export default function MinerDashboard({ address }: { address: string }) {
                   className="zion-button-primary group text-sm"
                   style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
                 >
-                  <Pickaxe className="h-4 w-4" /> {cs ? 'Prehled poolu' : 'Pool Dashboard'}
+                  <Pickaxe className="h-4 w-4" /> {MinerDashboardCopy.poolDashboard[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 <Link
                   href="/explorer"
                   className="zion-button-secondary text-sm"
                 >
-                  <ExternalLink className="h-4 w-4" /> {cs ? 'Explorer' : 'Explorer'}
+                  <ExternalLink className="h-4 w-4" /> {MinerDashboardCopy.explorer[cs ? 'cs' : 'en']}
                 </Link>
               </div>
             </div>

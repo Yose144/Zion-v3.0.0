@@ -31,6 +31,82 @@ import { formatHashrate, formatNumber, formatAge, formatDuration } from "@/lib/e
 import { useExplorerSSE } from "@/components/explorer/v4/hooks/useExplorerSSE";
 import LiveBadge from "@/components/explorer/v4/shared/LiveBadge";
 
+const ExplorerStatusStatusPageClientCopy = {
+  nodeRpc: { cs: `Node RPC`, en: `Node RPC` },
+  connected: { cs: `Připojeno`, en: `Connected` },
+  disconnected: { cs: `Odpojeno`, en: `Disconnected` },
+  mainnet: { cs: `Mainnet`, en: `Mainnet` },
+  active: { cs: `Aktivní`, en: `Active` },
+  inactive: { cs: `Neaktivní`, en: `Inactive` },
+  mempool: { cs: `Mempool`, en: `Mempool` },
+  txPending: { cs: `TX čeká`, en: `TX pending` },
+  p2pNetwork: { cs: `P2P síť`, en: `P2P Network` },
+  connections: { cs: `připojení`, en: `connections` },
+  miningPool: { cs: `Mining pool`, en: `Mining Pool` },
+  activeMiners: { cs: `aktivních minerů`, en: `active miners` },
+  newBlocks: { cs: `nových bloků`, en: `new blocks` },
+  connecting: { cs: `Připojuje…`, en: `Connecting…` },
+  protocolVersion: { cs: `Verze protokolu`, en: `Protocol version` },
+  consensusProfile: { cs: `Profil konsenzu`, en: `Consensus profile` },
+  network: { cs: `Síť`, en: `Network` },
+  runtime: { cs: `Runtime`, en: `Runtime` },
+  release: { cs: `Vydání`, en: `Release` },
+  status: { cs: `Status`, en: `Status` },
+  blockHeight: { cs: `Výška bloku`, en: `Block height` },
+  tipHash: { cs: `Tip hash`, en: `Tip hash` },
+  hashrate: { cs: `Hashrate`, en: `Hashrate` },
+  difficulty: { cs: `Obtížnost`, en: `Difficulty` },
+  cumulativeDifficulty: { cs: `Kumulativní obtížnost`, en: `Cumulative difficulty` },
+  targetBlockTime: { cs: `Cílový čas bloku`, en: `Target block time` },
+  avgBlockTime: { cs: `Průměrný čas bloku`, en: `Avg block time` },
+  totalBlocks: { cs: `Celkem bloků`, en: `Total blocks` },
+  totalTransactions: { cs: `Celkem transakcí`, en: `Total transactions` },
+  mempoolTx: { cs: `Mempool TX`, en: `Mempool TX` },
+  incoming: { cs: `Příchozí`, en: `Incoming` },
+  outgoing: { cs: `Odchozí`, en: `Outgoing` },
+  total: { cs: `Celkem`, en: `Total` },
+  whitePeerlist: { cs: `White peerlist`, en: `White peerlist` },
+  greyPeerlist: { cs: `Grey peerlist`, en: `Grey peerlist` },
+  poolHashrate: { cs: `Pool hashrate`, en: `Pool hashrate` },
+  activeMiners_2: { cs: `Aktivní mineři`, en: `Active miners` },
+  blocksFound: { cs: `Nalezené bloky`, en: `Blocks found` },
+  poolUptime: { cs: `Pool uptime`, en: `Pool uptime` },
+  pplnsWindow: { cs: `PPLNS window`, en: `PPLNS window` },
+  nodeStatus: { cs: `Status uzlu`, en: `Node Status` },
+  liveHealth: { cs: `Živý stav`, en: `Live Health` },
+  networkStatus: { cs: `Status sítě`, en: `Network Status` },
+  completeOverviewOfZionNodeHeal: { cs: `Kompletní přehled zdraví ZION node, P2P sítě, mining poolu a služeb. Real-time SSE aktualizace.`, en: `Complete overview of ZION node health, P2P network, mining pool, and services. Real-time SSE updates.` },
+  autoRefresh15s: { cs: `Auto-refresh 15s`, en: `Auto-Refresh 15s` },
+  connected_2: { cs: `připojeno`, en: `connected` },
+  connecting_2: { cs: `připojuje…`, en: `connecting…` },
+  live: { cs: `ŽIVĚ`, en: `LIVE` },
+  currentHeightSse: { cs: `Aktuální výška (SSE)`, en: `Current height (SSE)` },
+  protocol: { cs: `Protokol`, en: `Protocol` },
+  health: { cs: `Zdraví`, en: `Health` },
+  healthChecks: { cs: `Kontroly zdraví`, en: `Health Checks` },
+  node: { cs: `Uzel`, en: `Node` },
+  nodeInformation: { cs: `Informace o uzlu`, en: `Node Information` },
+  metrics: { cs: `Metriky`, en: `Metrics` },
+  networkMetrics: { cs: `Síťové metriky`, en: `Network Metrics` },
+  p2p: { cs: `P2P`, en: `P2P` },
+  networkPeers: { cs: `Síťoví peeri`, en: `Network Peers` },
+  address: { cs: `Adresa`, en: `Address` },
+  direction: { cs: `Směr`, en: `Direction` },
+  height: { cs: `Výška`, en: `Height` },
+  version: { cs: `Verze`, en: `Version` },
+  state: { cs: `Stav`, en: `State` },
+  idle: { cs: `Idle`, en: `Idle` },
+  incoming_2: { cs: `příchozí`, en: `incoming` },
+  outgoing_2: { cs: `odchozí`, en: `outgoing` },
+  pool: { cs: `Pool`, en: `Pool` },
+  lastBlock: { cs: `Poslední blok`, en: `Last Block` },
+  latestBlock: { cs: `Nejnovější blok`, en: `Latest Block` },
+  reward: { cs: `Odměna`, en: `Reward` },
+  transactions: { cs: `Transakce`, en: `Transactions` },
+  age: { cs: `Stáří`, en: `Age` },
+  hash: { cs: `Hash`, en: `Hash` },
+};
+
 /* ── types ───────────────────────────────────────────────────── */
 
 interface StatsData {
@@ -130,75 +206,75 @@ export default function StatusPageClient() {
   // Health checks
   const healthChecks = [
     {
-      label: cs ? "Node RPC" : "Node RPC",
+      label: ExplorerStatusStatusPageClientCopy.nodeRpc[cs ? 'cs' : 'en'],
       status: stats?.connected ? "ok" : "down",
-      detail: stats?.connected ? (cs ? "Připojeno" : "Connected") : (cs ? "Odpojeno" : "Disconnected"),
+      detail: stats?.connected ? (ExplorerStatusStatusPageClientCopy.connected[cs ? 'cs' : 'en']) : (ExplorerStatusStatusPageClientCopy.disconnected[cs ? 'cs' : 'en']),
     },
     {
-      label: cs ? "Mainnet" : "Mainnet",
+      label: ExplorerStatusStatusPageClientCopy.mainnet[cs ? 'cs' : 'en'],
       status: stats?.mainnet ? "ok" : "warn",
-      detail: stats?.mainnet ? (cs ? "Aktivní" : "Active") : (cs ? "Neaktivní" : "Inactive"),
+      detail: stats?.mainnet ? (ExplorerStatusStatusPageClientCopy.active[cs ? 'cs' : 'en']) : (ExplorerStatusStatusPageClientCopy.inactive[cs ? 'cs' : 'en']),
     },
     {
-      label: cs ? "Mempool" : "Mempool",
+      label: ExplorerStatusStatusPageClientCopy.mempool[cs ? 'cs' : 'en'],
       status: (stats?.tx_pool_size ?? 0) > 0 ? "ok" : "idle",
-      detail: `${stats?.tx_pool_size ?? 0} ${cs ? "TX čeká" : "TX pending"}`,
+      detail: `${stats?.tx_pool_size ?? 0} ${ExplorerStatusStatusPageClientCopy.txPending[cs ? 'cs' : 'en']}`,
     },
     {
-      label: cs ? "P2P síť" : "P2P Network",
+      label: ExplorerStatusStatusPageClientCopy.p2pNetwork[cs ? 'cs' : 'en'],
       status: (stats?.total_connections ?? 0) > 0 ? "ok" : "warn",
-      detail: `${stats?.total_connections ?? 0} ${cs ? "připojení" : "connections"}`,
+      detail: `${stats?.total_connections ?? 0} ${ExplorerStatusStatusPageClientCopy.connections[cs ? 'cs' : 'en']}`,
     },
     {
-      label: cs ? "Mining pool" : "Mining Pool",
+      label: ExplorerStatusStatusPageClientCopy.miningPool[cs ? 'cs' : 'en'],
       status: (stats?.active_miners ?? 0) > 0 ? "ok" : "idle",
-      detail: `${stats?.active_miners ?? 0} ${cs ? "aktivních minerů" : "active miners"}`,
+      detail: `${stats?.active_miners ?? 0} ${ExplorerStatusStatusPageClientCopy.activeMiners[cs ? 'cs' : 'en']}`,
     },
     {
       label: "SSE",
       status: sse.connected ? "ok" : "connecting",
       detail: sse.connected
-        ? `${sse.blockCount} ${cs ? "nových bloků" : "new blocks"}`
-        : (cs ? "Připojuje…" : "Connecting…"),
+        ? `${sse.blockCount} ${ExplorerStatusStatusPageClientCopy.newBlocks[cs ? 'cs' : 'en']}`
+        : (ExplorerStatusStatusPageClientCopy.connecting[cs ? 'cs' : 'en']),
     },
   ];
 
   const nodeInfo = [
-    { label: cs ? "Verze protokolu" : "Protocol version", value: stats?.version || "v3.0.6", icon: Hash, color: "text-zion-gold" },
-    { label: cs ? "Profil konsenzu" : "Consensus profile", value: "deeksha_lite_fire", icon: Shield, color: "text-emerald-400" },
-    { label: cs ? "Síť" : "Network", value: stats?.mainnet ? "Mainnet" : "Testnet", icon: Network, color: "text-zion-cyan" },
-    { label: cs ? "Runtime" : "Runtime", value: SITE_RUNTIME_LABEL, icon: Cpu, color: "text-zion-purple" },
-    { label: cs ? "Vydání" : "Release", value: SITE_RELEASE_LABEL, icon: Boxes, color: "text-zion-gold" },
-    { label: cs ? "Status" : "Status", value: stats?.status || "OK", icon: Activity, color: "text-emerald-400" },
+    { label: ExplorerStatusStatusPageClientCopy.protocolVersion[cs ? 'cs' : 'en'], value: stats?.version || "v3.0.6", icon: Hash, color: "text-zion-gold" },
+    { label: ExplorerStatusStatusPageClientCopy.consensusProfile[cs ? 'cs' : 'en'], value: "deeksha_lite_fire", icon: Shield, color: "text-emerald-400" },
+    { label: ExplorerStatusStatusPageClientCopy.network[cs ? 'cs' : 'en'], value: stats?.mainnet ? "Mainnet" : "Testnet", icon: Network, color: "text-zion-cyan" },
+    { label: ExplorerStatusStatusPageClientCopy.runtime[cs ? 'cs' : 'en'], value: SITE_RUNTIME_LABEL, icon: Cpu, color: "text-zion-purple" },
+    { label: ExplorerStatusStatusPageClientCopy.release[cs ? 'cs' : 'en'], value: SITE_RELEASE_LABEL, icon: Boxes, color: "text-zion-gold" },
+    { label: ExplorerStatusStatusPageClientCopy.status[cs ? 'cs' : 'en'], value: stats?.status || "OK", icon: Activity, color: "text-emerald-400" },
   ];
 
   const networkMetrics = [
-    { label: cs ? "Výška bloku" : "Block height", value: stats ? `#${stats.block_height.toLocaleString()}` : "—", icon: Boxes, color: "text-zion-gold" },
-    { label: cs ? "Tip hash" : "Tip hash", value: stats?.top_block_hash ? `${stats.top_block_hash.slice(0, 12)}…` : "—", icon: Hash, color: "text-zion-cyan" },
-    { label: cs ? "Hashrate" : "Hashrate", value: stats?.network_hashrate_formatted ?? "—", icon: Zap, color: "text-zion-cyan" },
-    { label: cs ? "Obtížnost" : "Difficulty", value: stats ? formatNumber(stats.difficulty) : "—", icon: Activity, color: "text-emerald-400" },
-    { label: cs ? "Kumulativní obtížnost" : "Cumulative difficulty", value: stats ? formatNumber(stats.cumulative_difficulty) : "—", icon: TrendingUp, color: "text-emerald-400" },
-    { label: cs ? "Cílový čas bloku" : "Target block time", value: stats ? `${stats.target_block_time}s` : "—", icon: Clock, color: "text-amber-400" },
-    { label: cs ? "Průměrný čas bloku" : "Avg block time", value: stats ? `${stats.avg_block_time.toFixed(1)}s` : "—", icon: Clock, color: "text-amber-400" },
-    { label: cs ? "Celkem bloků" : "Total blocks", value: stats ? stats.total_blocks.toLocaleString() : "—", icon: Boxes, color: "text-zion-gold" },
-    { label: cs ? "Celkem transakcí" : "Total transactions", value: stats ? stats.total_transactions.toLocaleString() : "—", icon: Activity, color: "text-zion-cyan" },
-    { label: cs ? "Mempool TX" : "Mempool TX", value: stats ? String(stats.tx_pool_size) : "—", icon: Signal, color: "text-rose-400" },
+    { label: ExplorerStatusStatusPageClientCopy.blockHeight[cs ? 'cs' : 'en'], value: stats ? `#${stats.block_height.toLocaleString()}` : "—", icon: Boxes, color: "text-zion-gold" },
+    { label: ExplorerStatusStatusPageClientCopy.tipHash[cs ? 'cs' : 'en'], value: stats?.top_block_hash ? `${stats.top_block_hash.slice(0, 12)}…` : "—", icon: Hash, color: "text-zion-cyan" },
+    { label: ExplorerStatusStatusPageClientCopy.hashrate[cs ? 'cs' : 'en'], value: stats?.network_hashrate_formatted ?? "—", icon: Zap, color: "text-zion-cyan" },
+    { label: ExplorerStatusStatusPageClientCopy.difficulty[cs ? 'cs' : 'en'], value: stats ? formatNumber(stats.difficulty) : "—", icon: Activity, color: "text-emerald-400" },
+    { label: ExplorerStatusStatusPageClientCopy.cumulativeDifficulty[cs ? 'cs' : 'en'], value: stats ? formatNumber(stats.cumulative_difficulty) : "—", icon: TrendingUp, color: "text-emerald-400" },
+    { label: ExplorerStatusStatusPageClientCopy.targetBlockTime[cs ? 'cs' : 'en'], value: stats ? `${stats.target_block_time}s` : "—", icon: Clock, color: "text-amber-400" },
+    { label: ExplorerStatusStatusPageClientCopy.avgBlockTime[cs ? 'cs' : 'en'], value: stats ? `${stats.avg_block_time.toFixed(1)}s` : "—", icon: Clock, color: "text-amber-400" },
+    { label: ExplorerStatusStatusPageClientCopy.totalBlocks[cs ? 'cs' : 'en'], value: stats ? stats.total_blocks.toLocaleString() : "—", icon: Boxes, color: "text-zion-gold" },
+    { label: ExplorerStatusStatusPageClientCopy.totalTransactions[cs ? 'cs' : 'en'], value: stats ? stats.total_transactions.toLocaleString() : "—", icon: Activity, color: "text-zion-cyan" },
+    { label: ExplorerStatusStatusPageClientCopy.mempoolTx[cs ? 'cs' : 'en'], value: stats ? String(stats.tx_pool_size) : "—", icon: Signal, color: "text-rose-400" },
   ];
 
   const peerMetrics = [
-    { label: cs ? "Příchozí" : "Incoming", value: stats ? String(stats.incoming_connections) : "—", icon: ArrowDown, color: "text-emerald-400" },
-    { label: cs ? "Odchozí" : "Outgoing", value: stats ? String(stats.outgoing_connections) : "—", icon: ArrowUp, color: "text-zion-cyan" },
-    { label: cs ? "Celkem" : "Total", value: stats ? String(stats.total_connections) : "—", icon: Network, color: "text-zion-gold" },
-    { label: cs ? "White peerlist" : "White peerlist", value: stats ? String(stats.white_peerlist_size) : "—", icon: Globe, color: "text-zion-purple" },
-    { label: cs ? "Grey peerlist" : "Grey peerlist", value: stats ? String(stats.grey_peerlist_size) : "—", icon: Globe, color: "text-gray-400" },
+    { label: ExplorerStatusStatusPageClientCopy.incoming[cs ? 'cs' : 'en'], value: stats ? String(stats.incoming_connections) : "—", icon: ArrowDown, color: "text-emerald-400" },
+    { label: ExplorerStatusStatusPageClientCopy.outgoing[cs ? 'cs' : 'en'], value: stats ? String(stats.outgoing_connections) : "—", icon: ArrowUp, color: "text-zion-cyan" },
+    { label: ExplorerStatusStatusPageClientCopy.total[cs ? 'cs' : 'en'], value: stats ? String(stats.total_connections) : "—", icon: Network, color: "text-zion-gold" },
+    { label: ExplorerStatusStatusPageClientCopy.whitePeerlist[cs ? 'cs' : 'en'], value: stats ? String(stats.white_peerlist_size) : "—", icon: Globe, color: "text-zion-purple" },
+    { label: ExplorerStatusStatusPageClientCopy.greyPeerlist[cs ? 'cs' : 'en'], value: stats ? String(stats.grey_peerlist_size) : "—", icon: Globe, color: "text-gray-400" },
   ];
 
   const poolMetrics = [
-    { label: cs ? "Pool hashrate" : "Pool hashrate", value: stats?.pool_hashrate_formatted ?? "—", icon: Zap, color: "text-zion-cyan" },
-    { label: cs ? "Aktivní mineři" : "Active miners", value: stats ? String(stats.active_miners) : "—", icon: Pickaxe, color: "text-amber-400" },
-    { label: cs ? "Nalezené bloky" : "Blocks found", value: stats ? String(stats.pool_blocks_found) : "—", icon: Boxes, color: "text-zion-gold" },
-    { label: cs ? "Pool uptime" : "Pool uptime", value: stats?.pool_uptime_s ? formatDuration(stats.pool_uptime_s) : "—", icon: Clock, color: "text-emerald-400" },
-    { label: cs ? "PPLNS window" : "PPLNS window", value: stats ? String(stats.pool_pplns_window) : "—", icon: HardDrive, color: "text-zion-purple" },
+    { label: ExplorerStatusStatusPageClientCopy.poolHashrate[cs ? 'cs' : 'en'], value: stats?.pool_hashrate_formatted ?? "—", icon: Zap, color: "text-zion-cyan" },
+    { label: ExplorerStatusStatusPageClientCopy.activeMiners_2[cs ? 'cs' : 'en'], value: stats ? String(stats.active_miners) : "—", icon: Pickaxe, color: "text-amber-400" },
+    { label: ExplorerStatusStatusPageClientCopy.blocksFound[cs ? 'cs' : 'en'], value: stats ? String(stats.pool_blocks_found) : "—", icon: Boxes, color: "text-zion-gold" },
+    { label: ExplorerStatusStatusPageClientCopy.poolUptime[cs ? 'cs' : 'en'], value: stats?.pool_uptime_s ? formatDuration(stats.pool_uptime_s) : "—", icon: Clock, color: "text-emerald-400" },
+    { label: ExplorerStatusStatusPageClientCopy.pplnsWindow[cs ? 'cs' : 'en'], value: stats ? String(stats.pool_pplns_window) : "—", icon: HardDrive, color: "text-zion-purple" },
   ];
 
   /* ── render ──────────────────────────────────────────────── */
@@ -224,35 +300,33 @@ export default function StatusPageClient() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-emerald-300 uppercase">
                 <Server className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? "Status uzlu" : "Node Status"}
+                {SITE_RELEASE_LABEL} · {ExplorerStatusStatusPageClientCopy.nodeStatus[cs ? 'cs' : 'en']}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                  {cs ? "Živý stav" : "Live Health"}
+                  {ExplorerStatusStatusPageClientCopy.liveHealth[cs ? 'cs' : 'en']}
                 </p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? "Status sítě" : "Network Status"}
+                  {ExplorerStatusStatusPageClientCopy.networkStatus[cs ? 'cs' : 'en']}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? "Kompletní přehled zdraví ZION node, P2P sítě, mining poolu a služeb. Real-time SSE aktualizace."
-                  : "Complete overview of ZION node health, P2P network, mining pool, and services. Real-time SSE updates."}
+                {ExplorerStatusStatusPageClientCopy.completeOverviewOfZionNodeHeal[cs ? 'cs' : 'en']}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="zion-badge zion-badge-green">
-                  <Activity className="h-3 w-3" /> {cs ? "Auto-refresh 15s" : "Auto-Refresh 15s"}
+                  <Activity className="h-3 w-3" /> {ExplorerStatusStatusPageClientCopy.autoRefresh15s[cs ? 'cs' : 'en']}
                 </span>
                 {sse.connected ? (
                   <span className="zion-badge zion-badge-green">
-                    <Zap className="h-3 w-3" /> SSE {cs ? "připojeno" : "connected"}
+                    <Zap className="h-3 w-3" /> SSE {ExplorerStatusStatusPageClientCopy.connected_2[cs ? 'cs' : 'en']}
                   </span>
                 ) : (
                   <span className="zion-badge text-amber-400 border-amber-500/40 bg-amber-500/10">
-                    SSE {cs ? "připojuje…" : "connecting…"}
+                    SSE {ExplorerStatusStatusPageClientCopy.connecting_2[cs ? 'cs' : 'en']}
                   </span>
                 )}
-                <LiveBadge label={cs ? "ŽIVĚ" : "LIVE"} />
+                <LiveBadge label={ExplorerStatusStatusPageClientCopy.live[cs ? 'cs' : 'en']} />
               </div>
             </div>
 
@@ -260,18 +334,18 @@ export default function StatusPageClient() {
             {sse.stats && (
               <div className="zion-rainbow-sub p-6 rounded-2xl" style={{ "--rc": "74, 222, 128" } as React.CSSProperties}>
                 <div className="text-xs text-gray-400 mb-2 uppercase tracking-wider">
-                  {cs ? "Aktuální výška (SSE)" : "Current height (SSE)"}
+                  {ExplorerStatusStatusPageClientCopy.currentHeightSse[cs ? 'cs' : 'en']}
                 </div>
                 <div className="text-4xl font-bold text-emerald-400 tabular-nums">
                   #{sse.stats.height.toLocaleString()}
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
                   <div>
-                    <span className="text-gray-500">{cs ? "Mempool" : "Mempool"}</span>
+                    <span className="text-gray-500">{ExplorerStatusStatusPageClientCopy.mempool[cs ? 'cs' : 'en']}</span>
                     <div className="text-amber-400 font-bold">{sse.stats.mempool_size} TX</div>
                   </div>
                   <div>
-                    <span className="text-gray-500">{cs ? "Protokol" : "Protocol"}</span>
+                    <span className="text-gray-500">{ExplorerStatusStatusPageClientCopy.protocol[cs ? 'cs' : 'en']}</span>
                     <div className="text-zion-cyan font-bold">{sse.stats.protocol_version}</div>
                   </div>
                 </div>
@@ -288,11 +362,11 @@ export default function StatusPageClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {cs ? "Zdraví" : "Health"}
+              {ExplorerStatusStatusPageClientCopy.health[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Heart className="h-7 w-7 text-emerald-400" />
-              {cs ? "Kontroly zdraví" : "Health Checks"}
+              {ExplorerStatusStatusPageClientCopy.healthChecks[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -333,11 +407,11 @@ export default function StatusPageClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {cs ? "Uzel" : "Node"}
+              {ExplorerStatusStatusPageClientCopy.node[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Server className="h-7 w-7 text-zion-gold" />
-              {cs ? "Informace o uzlu" : "Node Information"}
+              {ExplorerStatusStatusPageClientCopy.nodeInformation[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -372,11 +446,11 @@ export default function StatusPageClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {cs ? "Metriky" : "Metrics"}
+              {ExplorerStatusStatusPageClientCopy.metrics[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-zion-cyan" />
-              {cs ? "Síťové metriky" : "Network Metrics"}
+              {ExplorerStatusStatusPageClientCopy.networkMetrics[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -411,11 +485,11 @@ export default function StatusPageClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {cs ? "P2P" : "P2P"}
+              {ExplorerStatusStatusPageClientCopy.p2p[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe className="h-7 w-7 text-zion-purple" />
-              {cs ? "Síťoví peeri" : "Network Peers"}
+              {ExplorerStatusStatusPageClientCopy.networkPeers[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
@@ -445,12 +519,12 @@ export default function StatusPageClient() {
           {peers?.peers && peers.peers.length > 0 && (
             <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ "--rc": "168, 85, 247" } as React.CSSProperties}>
               <div className="grid grid-cols-[1fr_80px_80px_100px_100px_80px] gap-3 px-5 py-3 border-b border-white/6">
-                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? "Adresa" : "Address"}</span>
-                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? "Směr" : "Direction"}</span>
-                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? "Výška" : "Height"}</span>
-                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? "Verze" : "Version"}</span>
-                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? "Stav" : "State"}</span>
-                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? "Idle" : "Idle"}</span>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.address[cs ? 'cs' : 'en']}</span>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.direction[cs ? 'cs' : 'en']}</span>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.height[cs ? 'cs' : 'en']}</span>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.version[cs ? 'cs' : 'en']}</span>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.state[cs ? 'cs' : 'en']}</span>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerStatusStatusPageClientCopy.idle[cs ? 'cs' : 'en']}</span>
               </div>
               {peers.peers.slice(0, 10).map((peer, i) => (
                 <div
@@ -461,7 +535,7 @@ export default function StatusPageClient() {
                     {peer.address || peer.host}
                   </span>
                   <span className={`text-[12px] ${peer.incoming ? "text-emerald-400" : "text-zion-cyan"}`}>
-                    {peer.incoming ? (cs ? "příchozí" : "incoming") : (cs ? "odchozí" : "outgoing")}
+                    {peer.incoming ? (ExplorerStatusStatusPageClientCopy.incoming_2[cs ? 'cs' : 'en']) : (ExplorerStatusStatusPageClientCopy.outgoing_2[cs ? 'cs' : 'en'])}
                   </span>
                   <span className="text-[12px] text-zion-gold tabular-nums">
                     {peer.height > 0 ? `#${peer.height.toLocaleString()}` : "—"}
@@ -489,11 +563,11 @@ export default function StatusPageClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {cs ? "Pool" : "Pool"}
+              {ExplorerStatusStatusPageClientCopy.pool[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Pickaxe className="h-7 w-7 text-amber-400" />
-              {cs ? "Mining pool" : "Mining Pool"}
+              {ExplorerStatusStatusPageClientCopy.miningPool[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -529,42 +603,42 @@ export default function StatusPageClient() {
           >
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-                {cs ? "Poslední blok" : "Last Block"}
+                {ExplorerStatusStatusPageClientCopy.lastBlock[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Boxes className="h-7 w-7 text-zion-gold" />
-                {cs ? "Nejnovější blok" : "Latest Block"}
+                {ExplorerStatusStatusPageClientCopy.latestBlock[cs ? 'cs' : 'en']}
               </h2>
             </div>
             <div className="zion-rainbow-card rounded-2xl bg-black/60 p-6" style={{ "--rc": "251, 191, 36" } as React.CSSProperties}>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{cs ? "Výška" : "Height"}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{ExplorerStatusStatusPageClientCopy.height[cs ? 'cs' : 'en']}</div>
                   <Link href={`/explorer/block?height=${stats.last_block.height}`} className="text-xl font-bold text-zion-gold hover:text-amber-300 tabular-nums">
                     #{stats.last_block.height.toLocaleString()}
                   </Link>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{cs ? "Odměna" : "Reward"}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{ExplorerStatusStatusPageClientCopy.reward[cs ? 'cs' : 'en']}</div>
                   <div className="text-xl font-bold text-emerald-400 tabular-nums">
                     {stats.last_block.reward.toFixed(2)} ₿Z
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{cs ? "Transakce" : "Transactions"}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{ExplorerStatusStatusPageClientCopy.transactions[cs ? 'cs' : 'en']}</div>
                   <div className="text-xl font-bold text-zion-cyan tabular-nums">
                     {stats.last_block.num_txes}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{cs ? "Stáří" : "Age"}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{ExplorerStatusStatusPageClientCopy.age[cs ? 'cs' : 'en']}</div>
                   <div className="text-xl font-bold text-amber-400">
                     {formatAge(stats.last_block.timestamp, cs)}
                   </div>
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-white/5">
-                <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{cs ? "Hash" : "Hash"}</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{ExplorerStatusStatusPageClientCopy.hash[cs ? 'cs' : 'en']}</div>
                 <Link href={`/explorer/block?hash=${stats.last_block.hash}`} className="text-sm font-mono text-zion-cyan hover:text-zion-gold transition-colors break-all">
                   {stats.last_block.hash}
                 </Link>

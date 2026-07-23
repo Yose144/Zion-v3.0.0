@@ -19,6 +19,32 @@ import { SITE_RELEASE_LABEL } from "@/lib/site";
 import { broadcastTransaction, broadcastRaw } from "@/lib/explorer/api";
 import type { BroadcastResult } from "@/lib/explorer/types";
 
+const ExplorerBroadcastBroadcastPageClientCopy = {
+  emptyPayload: { cs: `Prázdný payload`, en: `Empty payload` },
+  invalidJson: { cs: `Neplatný JSON`, en: `Invalid JSON` },
+  broadcast: { cs: `Broadcast`, en: `Broadcast` },
+  submit: { cs: `Odeslat`, en: `Submit` },
+  broadcastTransaction: { cs: `Broadcast transakce`, en: `Broadcast Transaction` },
+  submitASignedTransactionToTheZ: { cs: `Odešlete podepsanou transakci do ZION sítě. Podporuje account-model JSON i raw hex formát.`, en: `Submit a signed transaction to the ZION network. Supports account-model JSON and raw hex format.` },
+  transactionsMustBeSignedBefore: { cs: `Transakce musí být podepsána před odesláním. Tento nástroj nepodepisuje — pouze odesílá již podepsaná data do sítě.`, en: `Transactions must be signed before broadcasting. This tool does not sign — it only submits already-signed data to the network.` },
+  format: { cs: `Formát:`, en: `Format:` },
+  model: { cs: `Model:`, en: `Model:` },
+  loadExample: { cs: `Načíst příklad`, en: `Load example` },
+  broadcasting: { cs: `Odesílám…`, en: `Broadcasting…` },
+  broadcastTransaction_2: { cs: `Odeslat transakci`, en: `Broadcast Transaction` },
+  clear: { cs: `Vyčistit`, en: `Clear` },
+  transactionAccepted: { cs: `Transakce přijata`, en: `Transaction Accepted` },
+  transactionRejected: { cs: `Transakce zamítnuta`, en: `Transaction Rejected` },
+  transactionId: { cs: `ID transakce`, en: `Transaction ID` },
+  view: { cs: `Zobrazit`, en: `View` },
+  error: { cs: `Chyba`, en: `Error` },
+  howToBroadcast: { cs: `Jak broadcastovat`, en: `How to broadcast` },
+  accountModelSignTheTransaction: { cs: `Account-model: podepište transakci pomocí wallet SDK, vložte JSON s from/to/amount/fee/nonce/public_key/signature.`, en: `Account-model: sign the transaction using the wallet SDK, paste JSON with from/to/amount/fee/nonce/public_key/signature.` },
+  utxoModelUseTheSubmittransacti: { cs: `UTXO model: použijte submitTransaction RPC formát s inputs/outputs.`, en: `UTXO model: use the submitTransaction RPC format with inputs/outputs.` },
+  rawHexForPreSignedBinaryTransa: { cs: `Raw hex: pro pre-signed binární transakce v hex formátu.`, en: `Raw hex: for pre-signed binary transactions in hex format.` },
+  afterSuccessfulBroadcastYouRec: { cs: `Po úspěšném broadcastu dostanete tx_id pro sledování v průzkumníku.`, en: `After successful broadcast you receive a tx_id to track in the explorer.` },
+};
+
 /* ── component ───────────────────────────────────────────────── */
 
 type InputMode = "json" | "hex";
@@ -40,7 +66,7 @@ export default function BroadcastPageClient() {
     setResult(null);
 
     if (!payload.trim()) {
-      setError(cs ? "Prázdný payload" : "Empty payload");
+      setError(ExplorerBroadcastBroadcastPageClientCopy.emptyPayload[cs ? 'cs' : 'en']);
       return;
     }
 
@@ -55,7 +81,7 @@ export default function BroadcastPageClient() {
         try {
           parsed = JSON.parse(payload);
         } catch {
-          setError(cs ? "Neplatný JSON" : "Invalid JSON");
+          setError(ExplorerBroadcastBroadcastPageClientCopy.invalidJson[cs ? 'cs' : 'en']);
           setLoading(false);
           return;
         }
@@ -116,28 +142,24 @@ export default function BroadcastPageClient() {
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/40 bg-rose-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-rose-300 uppercase">
               <Radio className="h-4 w-4" />
-              {SITE_RELEASE_LABEL} · {cs ? "Broadcast" : "Broadcast"}
+              {SITE_RELEASE_LABEL} · {ExplorerBroadcastBroadcastPageClientCopy.broadcast[cs ? 'cs' : 'en']}
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                {cs ? "Odeslat" : "Submit"}
+                {ExplorerBroadcastBroadcastPageClientCopy.submit[cs ? 'cs' : 'en']}
               </p>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                {cs ? "Broadcast transakce" : "Broadcast Transaction"}
+                {ExplorerBroadcastBroadcastPageClientCopy.broadcastTransaction[cs ? 'cs' : 'en']}
               </h1>
             </div>
             <p className="text-lg text-gray-300 max-w-2xl">
-              {cs
-                ? "Odešlete podepsanou transakci do ZION sítě. Podporuje account-model JSON i raw hex formát."
-                : "Submit a signed transaction to the ZION network. Supports account-model JSON and raw hex format."}
+              {ExplorerBroadcastBroadcastPageClientCopy.submitASignedTransactionToTheZ[cs ? 'cs' : 'en']}
             </p>
             {/* Warning */}
             <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
               <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-amber-200/80">
-                {cs
-                  ? "Transakce musí být podepsána před odesláním. Tento nástroj nepodepisuje — pouze odesílá již podepsaná data do sítě."
-                  : "Transactions must be signed before broadcasting. This tool does not sign — it only submits already-signed data to the network."}
+                {ExplorerBroadcastBroadcastPageClientCopy.transactionsMustBeSignedBefore[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -153,7 +175,7 @@ export default function BroadcastPageClient() {
             {/* Mode selector */}
             <div className="flex flex-wrap items-center gap-4 mb-6">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">{cs ? "Formát:" : "Format:"}</span>
+                <span className="text-sm text-gray-400">{ExplorerBroadcastBroadcastPageClientCopy.format[cs ? 'cs' : 'en']}</span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setMode("json")}
@@ -183,7 +205,7 @@ export default function BroadcastPageClient() {
               {/* TX model selector (only for JSON mode) */}
               {mode === "json" && (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-400">{cs ? "Model:" : "Model:"}</span>
+                  <span className="text-sm text-gray-400">{ExplorerBroadcastBroadcastPageClientCopy.model[cs ? 'cs' : 'en']}</span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setTxModel("account")}
@@ -214,7 +236,7 @@ export default function BroadcastPageClient() {
                 className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/60 hover:bg-white/10 hover:text-white transition"
               >
                 <Code className="w-3.5 h-3.5" />
-                {cs ? "Načíst příklad" : "Load example"}
+                {ExplorerBroadcastBroadcastPageClientCopy.loadExample[cs ? 'cs' : 'en']}
               </button>
             </div>
 
@@ -244,12 +266,12 @@ export default function BroadcastPageClient() {
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {cs ? "Odesílám…" : "Broadcasting…"}
+                    {ExplorerBroadcastBroadcastPageClientCopy.broadcasting[cs ? 'cs' : 'en']}
                   </>
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    {cs ? "Odeslat transakci" : "Broadcast Transaction"}
+                    {ExplorerBroadcastBroadcastPageClientCopy.broadcastTransaction_2[cs ? 'cs' : 'en']}
                   </>
                 )}
               </button>
@@ -261,7 +283,7 @@ export default function BroadcastPageClient() {
                 }}
                 className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm text-white/60 hover:bg-white/10 hover:text-white transition"
               >
-                {cs ? "Vyčistit" : "Clear"}
+                {ExplorerBroadcastBroadcastPageClientCopy.clear[cs ? 'cs' : 'en']}
               </button>
             </div>
           </div>
@@ -290,8 +312,8 @@ export default function BroadcastPageClient() {
                 <div>
                   <h2 className={`text-2xl font-bold ${result.accepted ? "text-emerald-400" : "text-rose-400"}`}>
                     {result.accepted
-                      ? cs ? "Transakce přijata" : "Transaction Accepted"
-                      : cs ? "Transakce zamítnuta" : "Transaction Rejected"}
+                      ? ExplorerBroadcastBroadcastPageClientCopy.transactionAccepted[cs ? 'cs' : 'en']
+                      : ExplorerBroadcastBroadcastPageClientCopy.transactionRejected[cs ? 'cs' : 'en']}
                   </h2>
                   <p className="text-sm text-gray-400">
                     {result.method && (
@@ -304,7 +326,7 @@ export default function BroadcastPageClient() {
               {result.tx_id && (
                 <div className="space-y-2">
                   <div className="text-xs text-gray-400 uppercase tracking-wider">
-                    {cs ? "ID transakce" : "Transaction ID"}
+                    {ExplorerBroadcastBroadcastPageClientCopy.transactionId[cs ? 'cs' : 'en']}
                   </div>
                   <div className="flex items-center gap-3">
                     <code className="text-sm font-mono text-zion-cyan break-all">
@@ -314,7 +336,7 @@ export default function BroadcastPageClient() {
                       href={`/explorer/tx?hash=${result.tx_id}`}
                       className="flex-shrink-0 px-3 py-1.5 rounded-xl bg-zion-cyan/10 border border-zion-cyan/20 text-xs text-zion-cyan hover:bg-zion-cyan/20 transition"
                     >
-                      {cs ? "Zobrazit" : "View"}
+                      {ExplorerBroadcastBroadcastPageClientCopy.view[cs ? 'cs' : 'en']}
                     </Link>
                   </div>
                 </div>
@@ -323,7 +345,7 @@ export default function BroadcastPageClient() {
               {result.error && (
                 <div className="mt-4 p-4 rounded-xl bg-rose-500/5 border border-rose-500/20">
                   <div className="text-xs text-rose-400 uppercase tracking-wider mb-1">
-                    {cs ? "Chyba" : "Error"}
+                    {ExplorerBroadcastBroadcastPageClientCopy.error[cs ? 'cs' : 'en']}
                   </div>
                   <code className="text-sm font-mono text-rose-300 break-all">
                     {result.error}
@@ -345,7 +367,7 @@ export default function BroadcastPageClient() {
                 <AlertCircle className="w-6 h-6 text-rose-400" />
                 <div>
                   <h3 className="text-lg font-bold text-rose-400">
-                    {cs ? "Chyba" : "Error"}
+                    {ExplorerBroadcastBroadcastPageClientCopy.error[cs ? 'cs' : 'en']}
                   </h3>
                   <code className="text-sm font-mono text-rose-300 break-all">
                     {error}
@@ -369,28 +391,20 @@ export default function BroadcastPageClient() {
               </div>
               <div className="space-y-2">
                 <h3 className="text-base font-semibold text-white">
-                  {cs ? "Jak broadcastovat" : "How to broadcast"}
+                  {ExplorerBroadcastBroadcastPageClientCopy.howToBroadcast[cs ? 'cs' : 'en']}
                 </h3>
                 <ul className="text-sm text-gray-400 space-y-1 list-disc list-inside">
                   <li>
-                    {cs
-                      ? "Account-model: podepište transakci pomocí wallet SDK, vložte JSON s from/to/amount/fee/nonce/public_key/signature."
-                      : "Account-model: sign the transaction using the wallet SDK, paste JSON with from/to/amount/fee/nonce/public_key/signature."}
+                    {ExplorerBroadcastBroadcastPageClientCopy.accountModelSignTheTransaction[cs ? 'cs' : 'en']}
                   </li>
                   <li>
-                    {cs
-                      ? "UTXO model: použijte submitTransaction RPC formát s inputs/outputs."
-                      : "UTXO model: use the submitTransaction RPC format with inputs/outputs."}
+                    {ExplorerBroadcastBroadcastPageClientCopy.utxoModelUseTheSubmittransacti[cs ? 'cs' : 'en']}
                   </li>
                   <li>
-                    {cs
-                      ? "Raw hex: pro pre-signed binární transakce v hex formátu."
-                      : "Raw hex: for pre-signed binary transactions in hex format."}
+                    {ExplorerBroadcastBroadcastPageClientCopy.rawHexForPreSignedBinaryTransa[cs ? 'cs' : 'en']}
                   </li>
                   <li>
-                    {cs
-                      ? "Po úspěšném broadcastu dostanete tx_id pro sledování v průzkumníku."
-                      : "After successful broadcast you receive a tx_id to track in the explorer."}
+                    {ExplorerBroadcastBroadcastPageClientCopy.afterSuccessfulBroadcastYouRec[cs ? 'cs' : 'en']}
                   </li>
                 </ul>
               </div>

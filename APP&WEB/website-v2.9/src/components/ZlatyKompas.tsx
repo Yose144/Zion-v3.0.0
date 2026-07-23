@@ -4,6 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLang } from '@/contexts/LanguageContext';
 
+const ZlatyKompasCopy = {
+  goldenCompassSevenDirectionsOf: { cs: `Zlatý Kompas — sedm směrů TerraNova`, en: `Golden Compass — seven directions of TerraNova` },
+};
+
 /* ═══════════════════════════════════════════════════════════
    Zlatý Kompas — 7 Directions of TerraNova
    Rich interactive SVG compass visualization
@@ -157,7 +161,7 @@ export default function ZlatyKompas({ selected, onSelect }: ZlatyKompasProps) {
       viewBox="0 0 700 700"
       className="w-full h-auto select-none"
       role="img"
-      aria-label={cs ? 'Zlatý Kompas — sedm směrů TerraNova' : 'Golden Compass — seven directions of TerraNova'}
+      aria-label={ZlatyKompasCopy.goldenCompassSevenDirectionsOf[cs ? 'cs' : 'en']}
     >
       <defs>
         {/* Central radial glow */}

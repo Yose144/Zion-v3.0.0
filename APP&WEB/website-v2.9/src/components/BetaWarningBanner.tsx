@@ -5,6 +5,10 @@ import { AlertTriangle, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const BetaWarningBannerCopy = {
+  dismissWarning: { cs: `Zavřit varování`, en: `Dismiss warning` },
+};
+
 const DISMISS_KEY = 'zion-beta-warning-dismissed';
 
 export default function BetaWarningBanner() {
@@ -50,7 +54,7 @@ export default function BetaWarningBanner() {
         <button
           onClick={dismiss}
           className="flex-shrink-0 text-amber-400/60 hover:text-amber-300 transition mt-0.5"
-          aria-label={cs ? 'Zavřit varování' : 'Dismiss warning'}
+          aria-label={BetaWarningBannerCopy.dismissWarning[cs ? 'cs' : 'en']}
         >
           <X className="h-4 w-4" />
         </button>

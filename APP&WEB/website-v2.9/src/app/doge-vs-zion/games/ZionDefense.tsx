@@ -16,6 +16,29 @@ import {
   type SaveData, type TowerUpgradePath,
 } from '../gameData';
 
+const DogeVsZionGamesZionDefenseCopy = {
+  menu: { cs: `Menu`, en: `Menu` },
+  killed: { cs: `zabito`, en: `killed` },
+  nextWave: { cs: `Další vlna →`, en: `Next wave →` },
+  autoStartIn5s: { cs: `Auto-start za 5s`, en: `Auto-start in 5s` },
+  victory: { cs: `Vítězství!`, en: `Victory!` },
+  next: { cs: `Další →`, en: `Next →` },
+  nodeCompromised: { cs: `Node kompromitována!`, en: `Node compromised!` },
+  retry: { cs: `Zkusit znovu`, en: `Retry` },
+  paused: { cs: `Pauza`, en: `Paused` },
+  resume: { cs: `Pokračovat`, en: `Resume` },
+  back: { cs: `Zpět`, en: `Back` },
+  defendTheZionNodeAcrossL1L6Bui: { cs: `Bránit ZION node přes L1→L6. Postav věže, přežij vlny, zachraň síť.`, en: `Defend the ZION node across L1→L6. Build towers, survive waves, save the network.` },
+  unlocked: { cs: `odemčeno`, en: `unlocked` },
+  waves: { cs: `vln`, en: `waves` },
+  towers: { cs: `Věže`, en: `Towers` },
+  buildTower: { cs: `Postavit věž`, en: `Build Tower` },
+  otherPath: { cs: `Jiná cesta`, en: `Other path` },
+  max: { cs: `Max`, en: `Max` },
+  maxLevel: { cs: `Maximální úroveň`, en: `Max level` },
+  sell: { cs: `Prodat`, en: `Sell` },
+};
+
 // ─── Sound Manager ────────────────────────────────────────────────────────────
 
 class SoundManager {
@@ -898,7 +921,7 @@ export function ZionDefense() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <button onClick={backToMenu} className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft className="h-4 w-4" /> {cs ? 'Menu' : 'Menu'}
+            <ArrowLeft className="h-4 w-4" /> {DogeVsZionGamesZionDefenseCopy.menu[cs ? 'cs' : 'en']}
           </button>
           <div className="flex items-center gap-2">
             <button onClick={togglePause} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors">
@@ -930,7 +953,7 @@ export function ZionDefense() {
             </div>
             <div className="flex items-center gap-1.5">
               <Trophy className="h-4 w-4 text-zion-gold" />
-              <span className="text-xs tabular-nums text-gray-400">{s.enemiesKilled} {cs ? 'zabito' : 'killed'}</span>
+              <span className="text-xs tabular-nums text-gray-400">{s.enemiesKilled} {DogeVsZionGamesZionDefenseCopy.killed[cs ? 'cs' : 'en']}</span>
             </div>
           </div>
         </div>
@@ -975,9 +998,9 @@ export function ZionDefense() {
               <p className="text-sm font-bold text-zion-gold mb-2">{cs ? `Vlna ${s.waveIndex + 1} vyčištěna!` : `Wave ${s.waveIndex + 1} cleared!`}</p>
               <p className="text-xs text-gray-400 mb-4">{cs ? `Bonus: +${level.waves[s.waveIndex]?.reward ?? 0} ZION` : `Bonus: +${level.waves[s.waveIndex]?.reward ?? 0} ZION`}</p>
               <button onClick={startNextWave} className="w-full rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-4 py-2.5 text-sm font-bold text-zion-gold hover:bg-zion-gold/30 transition-colors">
-                {cs ? 'Další vlna →' : 'Next wave →'}
+                {DogeVsZionGamesZionDefenseCopy.nextWave[cs ? 'cs' : 'en']}
               </button>
-              <p className="mt-2 text-[10px] text-gray-600">{cs ? 'Auto-start za 5s' : 'Auto-start in 5s'}</p>
+              <p className="mt-2 text-[10px] text-gray-600">{DogeVsZionGamesZionDefenseCopy.autoStartIn5s[cs ? 'cs' : 'en']}</p>
             </div>
           </div>
         )}
@@ -986,7 +1009,7 @@ export function ZionDefense() {
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
             <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-black/90 to-emerald-500/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">🎉</p>
-              <p className="text-lg font-bold text-emerald-300 mb-2">{cs ? 'Vítězství!' : 'Victory!'}</p>
+              <p className="text-lg font-bold text-emerald-300 mb-2">{DogeVsZionGamesZionDefenseCopy.victory[cs ? 'cs' : 'en']}</p>
               <div className="flex justify-center gap-1 mb-4">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <Star key={i} className={`h-6 w-6 ${i < (s.nodeHp === s.maxNodeHp ? 3 : s.nodeHp >= s.maxNodeHp * 0.6 ? 2 : 1) ? 'text-zion-gold fill-zion-gold' : 'text-gray-700'}`} />
@@ -995,11 +1018,11 @@ export function ZionDefense() {
               <p className="text-xs text-gray-400 mb-4">{cs ? `${s.enemiesKilled} zabito, ${s.enemiesEscaped} prošlo` : `${s.enemiesKilled} killed, ${s.enemiesEscaped} escaped`}</p>
               <div className="flex gap-2">
                 <button onClick={backToMenu} className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/20 transition-colors">
-                  {cs ? 'Menu' : 'Menu'}
+                  {DogeVsZionGamesZionDefenseCopy.menu[cs ? 'cs' : 'en']}
                 </button>
                 {s.currentLevel < LEVELS.length - 1 && (
                   <button onClick={() => startLevel(s.currentLevel + 1)} className="flex-1 rounded-xl bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 text-sm font-bold text-emerald-300 hover:bg-emerald-500/30 transition-colors">
-                    {cs ? 'Další →' : 'Next →'}
+                    {DogeVsZionGamesZionDefenseCopy.next[cs ? 'cs' : 'en']}
                   </button>
                 )}
               </div>
@@ -1011,14 +1034,14 @@ export function ZionDefense() {
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
             <div className="rounded-2xl border border-red-500/30 bg-gradient-to-br from-black/90 to-red-500/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">💀</p>
-              <p className="text-lg font-bold text-red-300 mb-2">{cs ? 'Node kompromitována!' : 'Node compromised!'}</p>
+              <p className="text-lg font-bold text-red-300 mb-2">{DogeVsZionGamesZionDefenseCopy.nodeCompromised[cs ? 'cs' : 'en']}</p>
               <p className="text-xs text-gray-400 mb-4">{cs ? `Přežil jsi ${s.waveIndex + 1} vln` : `You survived ${s.waveIndex + 1} waves`}</p>
               <div className="flex gap-2">
                 <button onClick={backToMenu} className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/20 transition-colors">
-                  {cs ? 'Menu' : 'Menu'}
+                  {DogeVsZionGamesZionDefenseCopy.menu[cs ? 'cs' : 'en']}
                 </button>
                 <button onClick={() => startLevel(s.currentLevel)} className="flex-1 rounded-xl bg-red-500/20 border border-red-500/30 px-4 py-2.5 text-sm font-bold text-red-300 hover:bg-red-500/30 transition-colors">
-                  {cs ? 'Zkusit znovu' : 'Retry'}
+                  {DogeVsZionGamesZionDefenseCopy.retry[cs ? 'cs' : 'en']}
                 </button>
               </div>
             </div>
@@ -1028,9 +1051,9 @@ export function ZionDefense() {
         {s.status === 'paused' && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <div className="zion-rainbow-card p-6 text-center" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-              <p className="text-lg font-bold text-white mb-4">{cs ? 'Pauza' : 'Paused'}</p>
+              <p className="text-lg font-bold text-white mb-4">{DogeVsZionGamesZionDefenseCopy.paused[cs ? 'cs' : 'en']}</p>
               <button onClick={togglePause} className="rounded-xl bg-white/10 border border-white/20 px-6 py-2.5 text-sm font-bold text-white hover:bg-white/20 transition-colors">
-                {cs ? 'Pokračovat' : 'Resume'}
+                {DogeVsZionGamesZionDefenseCopy.resume[cs ? 'cs' : 'en']}
               </button>
             </div>
           </div>
@@ -1065,7 +1088,7 @@ function LevelSelect({ cs, saveData, onStart, muted, setMuted }: {
         {/* Header */}
         <div className="flex items-center justify-between">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft className="h-4 w-4" /> {cs ? 'Zpět' : 'Back'}
+            <ArrowLeft className="h-4 w-4" /> {DogeVsZionGamesZionDefenseCopy.back[cs ? 'cs' : 'en']}
           </Link>
           <button onClick={() => { sfx.init(); setMuted((m) => !m); }} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors">
             {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -1076,10 +1099,10 @@ function LevelSelect({ cs, saveData, onStart, muted, setMuted }: {
         <div className="text-center">
           <h1 className="text-3xl md:text-5xl font-bold text-gradient">ZION Defense</h1>
           <p className="mt-2 text-sm text-gray-500">
-            {cs ? 'Bránit ZION node přes L1→L6. Postav věže, přežij vlny, zachraň síť.' : 'Defend the ZION node across L1→L6. Build towers, survive waves, save the network.'}
+            {DogeVsZionGamesZionDefenseCopy.defendTheZionNodeAcrossL1L6Bui[cs ? 'cs' : 'en']}
           </p>
           <div className="mt-3 flex justify-center gap-4 text-xs text-gray-600">
-            <span>{saveData.unlockedLevels.length}/{LEVELS.length} {cs ? 'odemčeno' : 'unlocked'}</span>
+            <span>{saveData.unlockedLevels.length}/{LEVELS.length} {DogeVsZionGamesZionDefenseCopy.unlocked[cs ? 'cs' : 'en']}</span>
             <span>⭐ {(Object.values(saveData.levelStars) as number[]).reduce((a, b) => a + b, 0)}/{LEVELS.length * 3}</span>
           </div>
         </div>
@@ -1106,7 +1129,7 @@ function LevelSelect({ cs, saveData, onStart, muted, setMuted }: {
                     <span className="text-3xl">{unlocked ? level.emoji : '🔒'}</span>
                     <div>
                       <p className="text-sm font-bold text-white">{level.layer} — {level.name}</p>
-                      <p className="text-[10px] text-gray-500">{level.waves.length} {cs ? 'vln' : 'waves'}</p>
+                      <p className="text-[10px] text-gray-500">{level.waves.length} {DogeVsZionGamesZionDefenseCopy.waves[cs ? 'cs' : 'en']}</p>
                     </div>
                   </div>
                   {unlocked && (
@@ -1129,7 +1152,7 @@ function LevelSelect({ cs, saveData, onStart, muted, setMuted }: {
 
         {/* Tower reference */}
         <div className="zion-rainbow-card p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-          <h3 className="mb-3 text-sm font-bold text-white">{cs ? 'Věže' : 'Towers'}</h3>
+          <h3 className="mb-3 text-sm font-bold text-white">{DogeVsZionGamesZionDefenseCopy.towers[cs ? 'cs' : 'en']}</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {Object.values(TOWERS).map((tower: TowerDef) => (
               <div key={tower.type} className="zion-tile p-3 text-center">
@@ -1156,7 +1179,7 @@ function TowerShop({ cs, zion, selected, onSelect }: {
 }) {
   return (
     <div className="zion-rainbow-card p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-      <p className="mb-2 text-xs font-bold text-white/80">{cs ? 'Postavit věž' : 'Build Tower'}</p>
+      <p className="mb-2 text-xs font-bold text-white/80">{DogeVsZionGamesZionDefenseCopy.buildTower[cs ? 'cs' : 'en']}</p>
       <div className="space-y-2">
         {Object.values(TOWERS).map((tower: TowerDef) => {
           const canAfford = zion >= tower.cost;
@@ -1279,13 +1302,13 @@ function UpgradePanel({ cs, tower, def, stats, zion, onUpgrade, onSell, onClose 
                         : 'bg-white/5 border border-white/10 text-gray-600 cursor-not-allowed'
                     }`}
                   >
-                    {tower.upgradeTier > 0 && !isCurrentPath ? (cs ? 'Jiná cesta' : 'Other path') :
-                     !canBuy ? (cs ? 'Max' : 'Max') :
+                    {tower.upgradeTier > 0 && !isCurrentPath ? (DogeVsZionGamesZionDefenseCopy.otherPath[cs ? 'cs' : 'en']) :
+                     !canBuy ? (DogeVsZionGamesZionDefenseCopy.max[cs ? 'cs' : 'en']) :
                      `${cost} ZION → T${tier + 1}`}
                   </button>
                 </>
               ) : (
-                <p className="text-[10px] text-emerald-400 flex items-center gap-1"><Check className="h-3 w-3" /> {cs ? 'Maximální úroveň' : 'Max level'}</p>
+                <p className="text-[10px] text-emerald-400 flex items-center gap-1"><Check className="h-3 w-3" /> {DogeVsZionGamesZionDefenseCopy.maxLevel[cs ? 'cs' : 'en']}</p>
               )}
               {/* Tier indicators */}
               <div className="mt-1.5 flex gap-1">
@@ -1303,7 +1326,7 @@ function UpgradePanel({ cs, tower, def, stats, zion, onUpgrade, onSell, onClose 
         onClick={onSell}
         className="w-full rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-[10px] font-bold text-red-400 hover:bg-red-500/20 transition-colors"
       >
-        {cs ? 'Prodat' : 'Sell'} (+{getSellValue(def, tower.upgradePath, tower.upgradeTier)} ZION)
+        {DogeVsZionGamesZionDefenseCopy.sell[cs ? 'cs' : 'en']} (+{getSellValue(def, tower.upgradePath, tower.upgradeTier)} ZION)
       </button>
     </div>
   );

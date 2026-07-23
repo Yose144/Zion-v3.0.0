@@ -4,6 +4,43 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Volume2, VolumeX, RefreshCw, Trophy } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const DogeVsZionGamesBlockBreakerCopy = {
+  clickOrPressSpaceToLaunch: { cs: `Klepni nebo stiskni MEZERNÍK pro start`, en: `Click or press Space to launch` },
+  back: { cs: `Zpět`, en: `Back` },
+  blockBreaker: { cs: `Rozbíječ Bloků`, en: `Block Breaker` },
+  breakThroughTheFirewallsFreeTh: { cs: `Proraz si skrz firewally. Osvoboď síť.`, en: `Break through the firewalls. Free the network.` },
+  highScore: { cs: `Nejlepší skóre`, en: `High Score` },
+  startGame: { cs: `Hrát`, en: `Start Game` },
+  howToPlay: { cs: `Jak hrát`, en: `How to Play` },
+  moveThe: { cs: `Pohybuj pádlem `, en: `Move the ` },
+  firewall: { cs: `Firewall`, en: `Firewall` },
+  paddleWithMouseOrArrowKeys: { cs: ` myší nebo šipkami`, en: ` paddle with mouse or arrow keys` },
+  launchThe: { cs: `Vystřel `, en: `Launch the ` },
+  validatorNode: { cs: `Validator uzel`, en: `Validator node` },
+  withClickOrSpace: { cs: ` klikem nebo MEZERNÍKEM`, en: ` with click or Space` },
+  breakThrough: { cs: `Proraz `, en: `Break through ` },
+  firewallSegments: { cs: `firewallové segmenty`, en: `firewall segments` },
+  toScorePoints: { cs: ` pro body`, en: ` to score points` },
+  donu2019tLetTheNodeFallYouHave: { cs: `Nenech uzel spadnout — máš `, en: `Donu2019t let the node fall — you have ` },
+  k3Lives: { cs: `3 životy`, en: `3 lives` },
+  clearAllBlocksToAdvanceToTheNe: { cs: `Vyčisti všechny bloky pro postup na další vrstvu`, en: `Clear all blocks to advance to the next layer` },
+  firewallLayers: { cs: `Firewallové vrstvy`, en: `Firewall Layers` },
+  pts: { cs: `bodů`, en: `pts` },
+  score: { cs: `Skóre`, en: `Score` },
+  level: { cs: `Úroveň`, en: `Level` },
+  lives: { cs: `Životy`, en: `Lives` },
+  high: { cs: `Nejlepší`, en: `High` },
+  paused: { cs: `Pauza`, en: `PAUSED` },
+  resume: { cs: `Pokračovat`, en: `Resume` },
+  pressPToResume: { cs: `Stiskni P pro pokračování`, en: `Press P to resume` },
+  nextLayerFasterNodeMoreFirewal: { cs: `Další vrstva: rychlejší uzel, více firewallů`, en: `Next layer: faster node, more firewalls` },
+  firewallCompromised: { cs: `Firewall kompromitován`, en: `Firewall Compromised` },
+  finalScore: { cs: `Konečné skóre`, en: `Final Score` },
+  layersBreached: { cs: `Proražené vrstvy`, en: `Layers Breached` },
+  newHighScore: { cs: `Nové nejlepší skóre!`, en: `New High Score!` },
+  retry: { cs: `Zkusit znovu`, en: `Retry` },
+};
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CANVAS_W = 480;
@@ -450,7 +487,7 @@ function renderCanvas(s: GameState, canvasRef: React.RefObject<HTMLCanvasElement
     ctx.font = '12px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(cs ? 'Klepni nebo stiskni MEZERNÍK pro start' : 'Click or press Space to launch', CANVAS_W / 2, CANVAS_H - 50);
+    ctx.fillText(DogeVsZionGamesBlockBreakerCopy.clickOrPressSpaceToLaunch[cs ? 'cs' : 'en'], CANVAS_W / 2, CANVAS_H - 50);
   }
 }
 
@@ -680,7 +717,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
           {/* Header */}
           <div className="flex w-full items-center justify-between">
             <button onClick={onBack} className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-              <ArrowLeft className="h-4 w-4" /> {cs ? 'Zpět' : 'Back'}
+              <ArrowLeft className="h-4 w-4" /> {DogeVsZionGamesBlockBreakerCopy.back[cs ? 'cs' : 'en']}
             </button>
             <button onClick={() => { sfx.init(); setMuted((m) => !m); }} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors">
               {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -689,38 +726,38 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
 
           {/* Title */}
           <div className="text-center">
-            <h1 className="text-3xl md:text-5xl font-bold text-gradient">{cs ? 'Rozbíječ Bloků' : 'Block Breaker'}</h1>
-            <p className="mt-2 text-sm text-gray-500">{cs ? 'Proraz si skrz firewally. Osvoboď síť.' : 'Break through the firewalls. Free the network.'}</p>
+            <h1 className="text-3xl md:text-5xl font-bold text-gradient">{DogeVsZionGamesBlockBreakerCopy.blockBreaker[cs ? 'cs' : 'en']}</h1>
+            <p className="mt-2 text-sm text-gray-500">{DogeVsZionGamesBlockBreakerCopy.breakThroughTheFirewallsFreeTh[cs ? 'cs' : 'en']}</p>
           </div>
 
           {/* High score */}
           {highScore > 0 && (
             <div className="flex items-center gap-2 rounded-xl border border-zion-gold/20 bg-zion-gold/5 px-4 py-2">
               <Trophy className="h-4 w-4 text-zion-gold" />
-              <span className="text-sm font-bold text-zion-gold">{cs ? 'Nejlepší skóre' : 'High Score'}: {highScore}</span>
+              <span className="text-sm font-bold text-zion-gold">{DogeVsZionGamesBlockBreakerCopy.highScore[cs ? 'cs' : 'en']}: {highScore}</span>
             </div>
           )}
 
           {/* Start button */}
           <button onClick={startGame} className="rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-8 py-3 text-lg font-bold text-zion-gold hover:bg-zion-gold/30 transition-colors">
-            {cs ? 'Hrát' : 'Start Game'}
+            {DogeVsZionGamesBlockBreakerCopy.startGame[cs ? 'cs' : 'en']}
           </button>
 
           {/* Instructions */}
           <div className="max-w-md zion-rainbow-card p-5 text-center" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-            <h3 className="mb-3 text-sm font-bold text-white">{cs ? 'Jak hrát' : 'How to Play'}</h3>
+            <h3 className="mb-3 text-sm font-bold text-white">{DogeVsZionGamesBlockBreakerCopy.howToPlay[cs ? 'cs' : 'en']}</h3>
             <div className="space-y-2 text-xs text-gray-400">
-              <p>{cs ? 'Pohybuj pádlem ' : 'Move the '}<span className="text-orange-400 font-bold">{cs ? 'Firewall' : 'Firewall'}</span>{cs ? ' myší nebo šipkami' : ' paddle with mouse or arrow keys'}</p>
-              <p>{cs ? 'Vystřel ' : 'Launch the '}<span className="text-blue-400 font-bold">{cs ? 'Validator uzel' : 'Validator node'}</span>{cs ? ' klikem nebo MEZERNÍKEM' : ' with click or Space'}</p>
-              <p>{cs ? 'Proraz ' : 'Break through '}<span className="text-purple-400 font-bold">{cs ? 'firewallové segmenty' : 'firewall segments'}</span>{cs ? ' pro body' : ' to score points'}</p>
-              <p>{cs ? 'Nenech uzel spadnout — máš ' : 'Don\u2019t let the node fall — you have '}<span className="text-red-400 font-bold">{cs ? '3 životy' : '3 lives'}</span></p>
-              <p>{cs ? 'Vyčisti všechny bloky pro postup na další vrstvu' : 'Clear all blocks to advance to the next layer'}</p>
+              <p>{DogeVsZionGamesBlockBreakerCopy.moveThe[cs ? 'cs' : 'en']}<span className="text-orange-400 font-bold">{DogeVsZionGamesBlockBreakerCopy.firewall[cs ? 'cs' : 'en']}</span>{DogeVsZionGamesBlockBreakerCopy.paddleWithMouseOrArrowKeys[cs ? 'cs' : 'en']}</p>
+              <p>{DogeVsZionGamesBlockBreakerCopy.launchThe[cs ? 'cs' : 'en']}<span className="text-blue-400 font-bold">{DogeVsZionGamesBlockBreakerCopy.validatorNode[cs ? 'cs' : 'en']}</span>{DogeVsZionGamesBlockBreakerCopy.withClickOrSpace[cs ? 'cs' : 'en']}</p>
+              <p>{DogeVsZionGamesBlockBreakerCopy.breakThrough[cs ? 'cs' : 'en']}<span className="text-purple-400 font-bold">{DogeVsZionGamesBlockBreakerCopy.firewallSegments[cs ? 'cs' : 'en']}</span>{DogeVsZionGamesBlockBreakerCopy.toScorePoints[cs ? 'cs' : 'en']}</p>
+              <p>{DogeVsZionGamesBlockBreakerCopy.donu2019tLetTheNodeFallYouHave[cs ? 'cs' : 'en']}<span className="text-red-400 font-bold">{DogeVsZionGamesBlockBreakerCopy.k3Lives[cs ? 'cs' : 'en']}</span></p>
+              <p>{DogeVsZionGamesBlockBreakerCopy.clearAllBlocksToAdvanceToTheNe[cs ? 'cs' : 'en']}</p>
             </div>
           </div>
 
           {/* Layer legend */}
           <div className="max-w-md zion-rainbow-card p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-            <h3 className="mb-3 text-sm font-bold text-white">{cs ? 'Firewallové vrstvy' : 'Firewall Layers'}</h3>
+            <h3 className="mb-3 text-sm font-bold text-white">{DogeVsZionGamesBlockBreakerCopy.firewallLayers[cs ? 'cs' : 'en']}</h3>
             <div className="space-y-2">
               {ROW_DEFS.map((row, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">
@@ -728,7 +765,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
                     <div className="h-4 w-8 rounded" style={{ backgroundColor: row.color, border: `1px solid ${row.borderColor}` }} />
                     <span className="text-gray-300">{row.label}</span>
                   </div>
-                  <span className="text-gray-500">{row.points} {cs ? 'bodů' : 'pts'}</span>
+                  <span className="text-gray-500">{row.points} {DogeVsZionGamesBlockBreakerCopy.pts[cs ? 'cs' : 'en']}</span>
                 </div>
               ))}
             </div>
@@ -749,7 +786,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
         {/* Header */}
         <div className="flex items-center justify-between">
           <button onClick={onBack} className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft className="h-4 w-4" /> {cs ? 'Zpět' : 'Back'}
+            <ArrowLeft className="h-4 w-4" /> {DogeVsZionGamesBlockBreakerCopy.back[cs ? 'cs' : 'en']}
           </button>
           <div className="flex items-center gap-2">
             <button onClick={togglePause} disabled={s.status !== 'playing' && s.status !== 'paused'} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors disabled:opacity-30">
@@ -766,25 +803,25 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
 
         {/* Title */}
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gradient">{cs ? 'Rozbíječ Bloků' : 'Block Breaker'}</h1>
-          <p className="text-[10px] text-gray-500">{cs ? 'Proraz si skrz firewally. Osvoboď síť.' : 'Break through the firewalls. Free the network.'}</p>
+          <h1 className="text-2xl font-bold text-gradient">{DogeVsZionGamesBlockBreakerCopy.blockBreaker[cs ? 'cs' : 'en']}</h1>
+          <p className="text-[10px] text-gray-500">{DogeVsZionGamesBlockBreakerCopy.breakThroughTheFirewallsFreeTh[cs ? 'cs' : 'en']}</p>
         </div>
 
         {/* Info bar */}
         <div style={{ '--rc': '245, 158, 11' } as React.CSSProperties} className="zion-rainbow-card p-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div>
-              <p className="text-[10px] text-gray-500">{cs ? 'Skóre' : 'Score'}</p>
+              <p className="text-[10px] text-gray-500">{DogeVsZionGamesBlockBreakerCopy.score[cs ? 'cs' : 'en']}</p>
               <p className="text-sm font-bold tabular-nums text-white">{s.score}</p>
             </div>
             <div>
-              <p className="text-[10px] text-gray-500">{cs ? 'Úroveň' : 'Level'}</p>
+              <p className="text-[10px] text-gray-500">{DogeVsZionGamesBlockBreakerCopy.level[cs ? 'cs' : 'en']}</p>
               <p className="text-sm font-bold tabular-nums text-zion-gold">{s.level}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div>
-              <p className="text-[10px] text-gray-500">{cs ? 'Životy' : 'Lives'}</p>
+              <p className="text-[10px] text-gray-500">{DogeVsZionGamesBlockBreakerCopy.lives[cs ? 'cs' : 'en']}</p>
               <div className="flex gap-1">
                 {Array.from({ length: LIVES }).map((_, i) => (
                   <span key={i} className={i < s.lives ? 'text-red-400' : 'text-gray-700'}>❤</span>
@@ -792,7 +829,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
               </div>
             </div>
             <div>
-              <p className="text-[10px] text-gray-500">{cs ? 'Nejlepší' : 'High'}</p>
+              <p className="text-[10px] text-gray-500">{DogeVsZionGamesBlockBreakerCopy.high[cs ? 'cs' : 'en']}</p>
               <p className="text-sm font-bold tabular-nums text-zion-gold">{Math.max(highScore, s.score)}</p>
             </div>
           </div>
@@ -818,11 +855,11 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
             <div className="rounded-2xl border border-zion-gold/30 bg-gradient-to-br from-black/90 to-zion-gold/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">⏸</p>
-              <p className="text-lg font-bold text-zion-gold mb-4">{cs ? 'Pauza' : 'PAUSED'}</p>
+              <p className="text-lg font-bold text-zion-gold mb-4">{DogeVsZionGamesBlockBreakerCopy.paused[cs ? 'cs' : 'en']}</p>
               <button onClick={togglePause} className="w-full rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-4 py-2.5 text-sm font-bold text-zion-gold hover:bg-zion-gold/30 transition-colors">
-                {cs ? 'Pokračovat' : 'Resume'}
+                {DogeVsZionGamesBlockBreakerCopy.resume[cs ? 'cs' : 'en']}
               </button>
-              <p className="mt-3 text-[11px] text-gray-500">{cs ? 'Stiskni P pro pokračování' : 'Press P to resume'}</p>
+              <p className="mt-3 text-[11px] text-gray-500">{DogeVsZionGamesBlockBreakerCopy.pressPToResume[cs ? 'cs' : 'en']}</p>
             </div>
           </div>
         )}
@@ -833,8 +870,8 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
             <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-black/90 to-emerald-500/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">🔓</p>
               <p className="text-lg font-bold text-emerald-300 mb-2">{cs ? `Vrstva ${s.level} proražena!` : `Layer ${s.level} Breached!`}</p>
-              <p className="text-xs text-gray-400 mb-1">{cs ? 'Skóre' : 'Score'}: {s.score}</p>
-              <p className="text-xs text-gray-500 mb-4">{cs ? 'Další vrstva: rychlejší uzel, více firewallů' : 'Next layer: faster node, more firewalls'}</p>
+              <p className="text-xs text-gray-400 mb-1">{DogeVsZionGamesBlockBreakerCopy.score[cs ? 'cs' : 'en']}: {s.score}</p>
+              <p className="text-xs text-gray-500 mb-4">{DogeVsZionGamesBlockBreakerCopy.nextLayerFasterNodeMoreFirewal[cs ? 'cs' : 'en']}</p>
               <button onClick={nextLevel} className="w-full rounded-xl bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 text-sm font-bold text-emerald-300 hover:bg-emerald-500/30 transition-colors">
                 {cs ? `Postup na vrstvu ${s.level + 1} →` : `Advance to Layer ${s.level + 1} →`}
               </button>
@@ -847,23 +884,23 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
             <div className="rounded-2xl border border-red-500/30 bg-gradient-to-br from-black/90 to-red-500/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">🔥</p>
-              <p className="text-lg font-bold text-red-300 mb-2">{cs ? 'Firewall kompromitován' : 'Firewall Compromised'}</p>
-              <p className="text-xs text-gray-400 mb-1">{cs ? 'Konečné skóre' : 'Final Score'}: {s.score}</p>
-              <p className="text-xs text-gray-400 mb-1">{cs ? 'Proražené vrstvy' : 'Layers Breached'}: {s.level - 1}</p>
+              <p className="text-lg font-bold text-red-300 mb-2">{DogeVsZionGamesBlockBreakerCopy.firewallCompromised[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs text-gray-400 mb-1">{DogeVsZionGamesBlockBreakerCopy.finalScore[cs ? 'cs' : 'en']}: {s.score}</p>
+              <p className="text-xs text-gray-400 mb-1">{DogeVsZionGamesBlockBreakerCopy.layersBreached[cs ? 'cs' : 'en']}: {s.level - 1}</p>
               {s.score >= highScore && s.score > 0 && (
                 <p className="text-xs font-bold text-zion-gold mb-4 flex items-center justify-center gap-1">
-                  <Trophy className="h-3 w-3" /> {cs ? 'Nové nejlepší skóre!' : 'New High Score!'}
+                  <Trophy className="h-3 w-3" /> {DogeVsZionGamesBlockBreakerCopy.newHighScore[cs ? 'cs' : 'en']}
                 </p>
               )}
               {s.score < highScore && (
-                <p className="text-xs text-gray-500 mb-4">{cs ? 'Nejlepší skóre' : 'High Score'}: {highScore}</p>
+                <p className="text-xs text-gray-500 mb-4">{DogeVsZionGamesBlockBreakerCopy.highScore[cs ? 'cs' : 'en']}: {highScore}</p>
               )}
               <div className="flex gap-2">
                 <button onClick={onBack} className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/20 transition-colors">
-                  {cs ? 'Zpět' : 'Back'}
+                  {DogeVsZionGamesBlockBreakerCopy.back[cs ? 'cs' : 'en']}
                 </button>
                 <button onClick={restartGame} className="flex-1 rounded-xl bg-red-500/20 border border-red-500/30 px-4 py-2.5 text-sm font-bold text-red-300 hover:bg-red-500/30 transition-colors">
-                  {cs ? 'Zkusit znovu' : 'Retry'}
+                  {DogeVsZionGamesBlockBreakerCopy.retry[cs ? 'cs' : 'en']}
                 </button>
               </div>
             </div>

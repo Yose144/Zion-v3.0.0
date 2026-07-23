@@ -5,6 +5,15 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Box, ArrowRightLeft, Users, Clock, Radio, RefreshCw } from 'lucide-react';
 
+const NetworkEventsFeedCopy = {
+  justNow: { cs: `právě teď`, en: `just now` },
+  ago: { cs: `zpět`, en: `ago` },
+  events: { cs: `Události`, en: `Events` },
+  liveNetworkFeed: { cs: `Živý síťový feed`, en: `Live Network Feed` },
+  refresh: { cs: `Aktualizovat`, en: `Refresh` },
+  noEventsToDisplayWaitingForLiv: { cs: `Žádné události k zobrazení. Čekám na živá data…`, en: `No events to display. Waiting for live data…` },
+};
+
 interface NetworkEvent {
   id: string;
   type: 'block' | 'tx' | 'peer' | 'miner';
@@ -136,11 +145,11 @@ const typeIcons: Record<string, React.ReactNode> = {
 
 function timeAgo(ts: number, cs: boolean): string {
   const s = Math.floor((Date.now() - ts) / 1000);
-  if (s < 60) return cs ? 'právě teď' : 'just now';
+  if (s < 60) return NetworkEventsFeedCopy.justNow[cs ? 'cs' : 'en'];
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ${cs ? 'zpět' : 'ago'}`;
+  if (m < 60) return `${m}m ${NetworkEventsFeedCopy.ago[cs ? 'cs' : 'en']}`;
   const h = Math.floor(m / 60);
-  return `${h}h ${cs ? 'zpět' : 'ago'}`;
+  return `${h}h ${NetworkEventsFeedCopy.ago[cs ? 'cs' : 'en']}`;
 }
 
 export default function NetworkEventsFeed({ cs }: { cs: boolean }) {
@@ -150,17 +159,17 @@ export default function NetworkEventsFeed({ cs }: { cs: boolean }) {
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex flex-col gap-2">
-          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Události' : 'Events'}</p>
+          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkEventsFeedCopy.events[cs ? 'cs' : 'en']}</p>
           <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
             <Clock className="h-7 w-7 text-zion-cyan" />
-            {cs ? 'Živý síťový feed' : 'Live Network Feed'}
+            {NetworkEventsFeedCopy.liveNetworkFeed[cs ? 'cs' : 'en']}
           </h2>
         </div>
         <button
           onClick={refresh}
           className="zion-button-secondary text-xs py-2 px-3"
         >
-          <RefreshCw className="h-3.5 w-3.5" /> {cs ? 'Aktualizovat' : 'Refresh'}
+          <RefreshCw className="h-3.5 w-3.5" /> {NetworkEventsFeedCopy.refresh[cs ? 'cs' : 'en']}
         </button>
       </div>
 
@@ -202,7 +211,7 @@ export default function NetworkEventsFeed({ cs }: { cs: boolean }) {
         </AnimatePresence>
         {events.length === 0 && (
           <div className="text-center text-sm text-gray-500 py-8">
-            {cs ? 'Žádné události k zobrazení. Čekám na živá data…' : 'No events to display. Waiting for live data…'}
+            {NetworkEventsFeedCopy.noEventsToDisplayWaitingForLiv[cs ? 'cs' : 'en']}
           </div>
         )}
       </div>

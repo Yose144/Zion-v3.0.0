@@ -7,6 +7,20 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Leaf, LoaderCircle, Sparkles } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const HomeTreePortalCopy = {
+  kabbalah10Sephirot22Paths: { cs: `Kabala · 10 Sephirot · 22 cest`, en: `Kabbalah · 10 Sephirot · 22 paths` },
+  treeOfLife: { cs: `Strom života`, en: `Tree of Life` },
+  tenSpheresThroughWhichLightFlo: { cs: `Deset sfér, jimiž proudí světlo od Keteru k Malkuth. Architektura všeho — od kvantového pole po tvou duši, od blokchainu po strom sám.`, en: `Ten spheres through which light flows from Keter to Malkuth. The architecture of everything — from the quantum field to your soul, from blockchain to the tree itself.` },
+  quickPreview: { cs: `Rychlý náhled`, en: `Quick preview` },
+  theKabbalisticTreeOfLifeMapsTe: { cs: `Kabalistický Strom života mapuje deset archetypálních sfér — od čistého světla (Keter) až po hmotný svět (Malkuth). Každá sféra je frekvence, atribut i brána. Spojení mezi nimi tvoří 22 cest, jimiž proudí vědomí.`, en: `The Kabbalistic Tree of Life maps ten archetypal spheres — from pure light (Keter) to the material world (Malkuth). Each sphere is a frequency, an attribute, a gateway. The connections between them form 22 paths through which consciousness flows.` },
+  theSameStructureRepeatsIn14400: { cs: `Stejná struktura se opakuje v 144 000 Guardians, v 10% tithe, v devíti úrovních vědomí. ZION je Strom života přeložený do kódu.`, en: `The same structure repeats in 144 000 Guardians, in the 10% tithe, in nine levels of consciousness. ZION is the Tree of Life translated into code.` },
+  spheres: { cs: `Sfér`, en: `Spheres` },
+  paths: { cs: `Cest`, en: `Paths` },
+  pillars: { cs: `Pilířů`, en: `Pillars` },
+  loadInteractiveScene: { cs: `Načíst interaktivní scénu`, en: `Load interactive scene` },
+  openTreeOfLifeOfZion: { cs: `Otevřít Strom života ZIONu`, en: `Open Tree of Life of ZION` },
+};
+
 const TreeOfLifeSwitch = dynamic(() => import('@/components/TreeOfLifeSwitch'), {
   ssr: false,
   loading: () => (
@@ -59,15 +73,13 @@ export default function HomeTreePortal() {
         {/* Header — unified with StoryTriptych style */}
         <div className="text-center space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.36em] text-emerald-400">
-            {cs ? 'Kabala · 10 Sephirot · 22 cest' : 'Kabbalah · 10 Sephirot · 22 paths'}
+            {HomeTreePortalCopy.kabbalah10Sephirot22Paths[cs ? 'cs' : 'en']}
           </p>
           <h2 className="text-3xl font-bold leading-tight text-white sm:text-4xl">
-            {cs ? 'Strom života' : 'Tree of Life'}
+            {HomeTreePortalCopy.treeOfLife[cs ? 'cs' : 'en']}
           </h2>
           <p className="mx-auto max-w-2xl text-sm leading-relaxed text-gray-400 sm:text-base">
-            {cs
-              ? 'Deset sfér, jimiž proudí světlo od Keteru k Malkuth. Architektura všeho — od kvantového pole po tvou duši, od blokchainu po strom sám.'
-              : 'Ten spheres through which light flows from Keter to Malkuth. The architecture of everything — from the quantum field to your soul, from blockchain to the tree itself.'}
+            {HomeTreePortalCopy.tenSpheresThroughWhichLightFlo[cs ? 'cs' : 'en']}
           </p>
         </div>
 
@@ -84,29 +96,25 @@ export default function HomeTreePortal() {
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-emerald-300">
                     <Sparkles className="h-4 w-4" />
-                    {cs ? 'Rychlý náhled' : 'Quick preview'}
+                    {HomeTreePortalCopy.quickPreview[cs ? 'cs' : 'en']}
                   </div>
                   <p className="text-base leading-relaxed text-gray-300">
-                    {cs
-                      ? 'Kabalistický Strom života mapuje deset archetypálních sfér — od čistého světla (Keter) až po hmotný svět (Malkuth). Každá sféra je frekvence, atribut i brána. Spojení mezi nimi tvoří 22 cest, jimiž proudí vědomí.'
-                      : 'The Kabbalistic Tree of Life maps ten archetypal spheres — from pure light (Keter) to the material world (Malkuth). Each sphere is a frequency, an attribute, a gateway. The connections between them form 22 paths through which consciousness flows.'}
+                    {HomeTreePortalCopy.theKabbalisticTreeOfLifeMapsTe[cs ? 'cs' : 'en']}
                   </p>
                   <p className="text-sm leading-relaxed text-gray-400">
-                    {cs
-                      ? 'Stejná struktura se opakuje v 144 000 Guardians, v 10% tithe, v devíti úrovních vědomí. ZION je Strom života přeložený do kódu.'
-                      : 'The same structure repeats in 144 000 Guardians, in the 10% tithe, in nine levels of consciousness. ZION is the Tree of Life translated into code.'}
+                    {HomeTreePortalCopy.theSameStructureRepeatsIn14400[cs ? 'cs' : 'en']}
                   </p>
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="zion-rainbow-sub p-3" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Sfér' : 'Spheres'}</p>
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{HomeTreePortalCopy.spheres[cs ? 'cs' : 'en']}</p>
                       <p className="mt-1 text-lg font-bold text-white">10</p>
                     </div>
                     <div className="zion-rainbow-sub p-3" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Cest' : 'Paths'}</p>
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{HomeTreePortalCopy.paths[cs ? 'cs' : 'en']}</p>
                       <p className="mt-1 text-lg font-bold text-white">22</p>
                     </div>
                     <div className="zion-rainbow-sub p-3" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Pilířů' : 'Pillars'}</p>
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{HomeTreePortalCopy.pillars[cs ? 'cs' : 'en']}</p>
                       <p className="mt-1 text-lg font-bold text-white">3</p>
                     </div>
                   </div>
@@ -116,7 +124,7 @@ export default function HomeTreePortal() {
                     className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-emerald-500 via-zion-gold to-zion-cyan px-6 py-3 text-sm font-semibold text-white shadow-[0_0_40px_rgba(34,197,94,0.25)] transition-all hover:shadow-[0_0_60px_rgba(34,197,94,0.4)]"
                   >
                     <Leaf className="h-4 w-4" />
-                    {cs ? 'Načíst interaktivní scénu' : 'Load interactive scene'}
+                    {HomeTreePortalCopy.loadInteractiveScene[cs ? 'cs' : 'en']}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                   <Link
@@ -124,7 +132,7 @@ export default function HomeTreePortal() {
                     className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/40 bg-zion-gold/5 px-5 py-3 text-sm font-semibold text-zion-gold transition-all hover:bg-zion-gold/10 hover:border-zion-gold/60"
                   >
                     <Sparkles className="h-4 w-4" />
-                    {cs ? 'Otevřít Strom života ZIONu' : 'Open Tree of Life of ZION'}
+                    {HomeTreePortalCopy.openTreeOfLifeOfZion[cs ? 'cs' : 'en']}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>

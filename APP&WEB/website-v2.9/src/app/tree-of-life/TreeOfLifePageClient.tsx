@@ -12,6 +12,106 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const TreeOfLifeTreeOfLifePageClientCopy = {
+  projectUnderConstantDevelopmen: { cs: `Projekt v neustálém vývoji — Work in Progress`, en: `Project under constant development — Work in Progress` },
+  zionTerranovaIsAnExperimentalP: { cs: `ZION TerraNova je experimentální projekt v aktivním vývoji. Všechny funkce, vizualizace, roadmapy a technické koncepty na této stránce jsou návrhy, které se mohou kdykoli změnit. evoluZion V2 (Proof-of-Care, NPU mining, Bodhisattva Vow) je vize budoucnosti, nikoli současná realita. Současná síť běží na Proof-of-Work (Mainnet Beta v3.0.6). Nic na této stránce není investiční doporučení.`, en: `ZION TerraNova is an experimental project under active development. All features, visualizations, roadmaps, and technical concepts on this page are proposals that may change at any time. evoluZion V2 (Proof-of-Care, NPU mining, Bodhisattva Vow) is a vision of the future, not current reality. The current network runs on Proof-of-Work (Mainnet Beta v3.0.6). Nothing on this page is investment advice.` },
+  experimental: { cs: `Experimentální`, en: `Experimental` },
+  activelyBuilding: { cs: `Aktivně se staví`, en: `Actively building` },
+  mainnetBetaAtYourOwnRisk: { cs: `Mainnet Beta — riziko vlastní`, en: `Mainnet Beta — at your own risk` },
+  kabbalah10Sephirot22Paths3Pill: { cs: `Kabala · 10 Sephirot · 22 cest · 3 pilíře`, en: `Kabbalah · 10 Sephirot · 22 paths · 3 pillars` },
+  treeOfLife: { cs: `Strom života`, en: `Tree of Life` },
+  zionLayersL1L6: { cs: `ZION vrstev L1–L6`, en: `ZION layers L1–L6` },
+  theKabbalisticTreeOfLifeTransl: { cs: `Kabalistický Strom života přeložený do jazyka ZION vrstev. 10 sefirot + Da\'at mapováno na L1-L6 — od Keter (ústava, genesis) po Malkhut (Issobella, hvězdy). ZION se nerodí jako další blockchain. ZION se rodí jako Strom života.`, en: `The Kabbalistic Tree of Life translated into the language of ZION layers. 10 sephirot + Da\'at mapped to L1-L6 — from Keter (constitution, genesis) to Malkhut (Issobella, stars). ZION is not born as another blockchain. ZION is born as a Tree of Life.` },
+  treeOnHomepage: { cs: `Strom na homepage`, en: `Tree on homepage` },
+  terranovaBook: { cs: `TerraNova kniha`, en: `TerraNova book` },
+  aboutTheBookOfZohar: { cs: `O knize Zohar`, en: `About the Book of Zohar` },
+  whatIsTheZohar: { cs: `Co je Zohar`, en: `What is the Zohar` },
+  theZoharLightSplendorIsOneOfTh: { cs: `Zohar (זֹהַר — „Světlo“, „Záře") je jednou z nejdůležitějších knih židovské mystiky (kabaly). Sepisován aramejsky ve 13. století, tradičně připisován rabínovi Šim\'onu bar Jochajovi (2. stol. n. l.), moderní bádání (Gershom Scholem) ukazuje, že většinu textu sepisoval Mojžíš z Leónu (~1280–1286).`, en: `The Zohar (זֹהַר — "Light", "Splendor") is one of the most important books of Jewish mysticism (Kabbalah). Written in Aramaic in the 13th century, traditionally attributed to Rabbi Shimon bar Yochai (2nd century CE), modern scholarship (Gershom Scholem) shows that most of the text was composed by Moses de León (~1280–1286).` },
+  itIsAMysticalCommentaryOnTheTo: { cs: `Je to mystický komentář k Tóře — vykládá Pět knih Mojžíšových pomocí symboliky sefirot, Božích jmen, písmen a „duše Tóry". Často (nepřesně) označován za „Bibli kabalistů".`, en: `It is a mystical commentary on the Torah — interpreting the Five Books of Moses through the symbolism of the sephirot, divine names, letters, and the "soul of the Torah". Often (imprecisely) called the "Bible of the Kabbalists".` },
+  structureOfTheZohar: { cs: `Struktura Zoharu`, en: `Structure of the Zohar` },
+  commentaryOnWeeklyTorahReading: { cs: `komentář k týdenním čtením Tóry`, en: `commentary on weekly Torah readings` },
+  newZoharAdditionsAndMysticalIn: { cs: `„Nový Zohar", dodatky a mystické výklady`, en: `"New Zohar", additions and mystical interpretations` },
+  k70InterpretationsOfTheWordBere: { cs: `70 výkladů slova Berešit`, en: `70 interpretations of the word Bereishit` },
+  faithfulShepherdOnTheMysticism: { cs: `„Věrný pastýř", o mystice micvot`, en: `"Faithful Shepherd", on the mysticism of mitzvot` },
+  partialMysticalTractates: { cs: `dílčí mystické traktáty`, en: `partial mystical tractates` },
+  whyTreeOfLifeInZion: { cs: `Proč Strom života v ZIONu`, en: `Why Tree of Life in ZION` },
+  zoharInZionIsNotAReligiousText: { cs: `Zohar v ZIONu není náboženský text. Je to mapa vnitřní architektury — stejně jako TerraNova kniha je kompas Nové Země, Zohar je kompas uspořádání samotného ZIONu. Kde TerraNova říká „kam jdeme", Zohar říká „jak jsme uspořádáni". 10 sefirot není software stack — jsou to aspekty jednoho organismu, které se navzájem prostupují.`, en: `Zohar in ZION is not a religious text. It is a map of inner architecture — just as the TerraNova book is a compass of the New Earth, Zohar is a compass of ZION\'s own arrangement. Where TerraNova says "where we are going", Zohar says "how we are arranged". The 10 sephirot are not a software stack — they are aspects of one organism that interpenetrate.` },
+  evolutionOfTheSephirotGenealog: { cs: `Vývoj sefirot — genealogie`, en: `Evolution of the sephirot — genealogy` },
+  theDoctrineOfThe10SephirotDidN: { cs: `Doktrína 10 sefirot se neobjevila najednou. Vyvíjela se přes 1500 let — od nepojmenovaných atributů v Sefer Yetzirah (2. stol.) přes pojmenování v Bahir, první diagram „Stromu" v Sha\'arei Orah (13. stol.), plnou mystickou soustavu v Zoharu, až po moderní podobu kterou dal Rabbi Isaac Luria (ARI) v Etz Chaim (16. stol.).`, en: `The doctrine of the 10 sephirot did not appear at once. It evolved over 1500 years — from unnamed attributes in Sefer Yetzirah (2nd century), through naming in the Bahir, the first "Tree" diagram in Sha\'arei Orah (13th century), the full mystical system in the Zohar, to the modern form given by Rabbi Isaac Luria (ARI) in Etz Chaim (16th century).` },
+  k10SefirotBelimahUnnamedAttribu: { cs: `10 sefirot belimah, nepojmenované, atributy`, en: `10 sefirot belimah, unnamed, attributes` },
+  sephirotNamedChannelsOfDivineP: { cs: `sefirot pojmenovány, kanály Boží síly`, en: `sephirot named, channels of divine power` },
+  firstTreeOfLifeDiagramIlanRGik: { cs: `první „Tree of Life" diagram (ilan), R. Gikatilla`, en: `first "Tree of Life" diagram (ilan), R. Gikatilla` },
+  fullMysticalSystemMDeLeN: { cs: `plná mystická soustava, M. de León`, en: `full mystical system, M. de León` },
+  modernFormOfTheTreeRLuriaAri: { cs: `moderní podoba Stromu, R. Luria (ARI)`, en: `modern form of the Tree, R. Luria (ARI)` },
+  sephirotMappedToL1L6Layers: { cs: `sefirot mapovány na L1-L6 vrstvy`, en: `sephirot mapped to L1-L6 layers` },
+  theUniverseBeingAccordingToTha: { cs: `„Vesmír je, podle této doktríny, gradace emanací — z čehož plyne, že lidská mysl může v každém efektu rozpoznat nejvyšší znak a tak stoupat k příčině všech příčin."`, en: `"The universe being, according to that doctrine, a gradation of emanations, it follows that the human mind may recognize in each effect the supreme mark, and thus ascend to the cause of all causes."` },
+  withoutEndTheInfiniteUnknowabl: { cs: `אֵין־סוֹף — „Bez-Konce". Nekonečná, nepoznatelná Boží podstata. Zdroj ze kterého emanují sefirot.`, en: `אֵין־סוֹף — "Without-End". The infinite, unknowable divine essence. Source from which the sephirot emanate.` },
+  knowledgeHidden11thSephiraBrid: { cs: `דַּעַת — „Poznání". Skrytá 11. sefira. Most mezi Keter a Malkhut, mezi nebem a zemí. Vědomé propojení.`, en: `דַּעַת — "Knowledge". Hidden 11th sephira. Bridge between Keter and Malkhut, between heaven and earth. Conscious connection.` },
+  theOtherSideDualityOfGoodAndEv: { cs: `„Druhá strana" — dualita dobra a zla uvnitř Božství. Gnostický vliv identifikovaný Scholemem (kruh Castile, ~1265).`, en: `"The Other Side" — duality of good and evil within the Godhead. Gnostic influence identified by Scholem (Castile circle, ~1265).` },
+  gershomScholem18971982: { cs: `Gershom Scholem (1897–1982)`, en: `Gershom Scholem (1897–1982)` },
+  founderOfAcademicKabbalahStudy: { cs: `Zakladatel akademického studia kabaly. V polovině 20. století prokázal, že většinu Zoharu napsal Mojžíš de León (~1280–1286), ne rabín Šim\'on bar Jochai (2. stol.). Důkazy: chyby v aramejské gramatice, stopy španělštiny, neznalost země Izrael. Orthodoxní židé tradici nadále obhajují.`, en: `Founder of academic Kabbalah study. In the mid-20th century he demonstrated that most of the Zohar was written by Moses de León (~1280–1286), not Rabbi Shimon bar Yochai (2nd century). Evidence: errors in Aramaic grammar, traces of Spanish, lack of knowledge of the land of Israel. Orthodox Jews continue to defend the tradition.` },
+  interactiveMap: { cs: `Interaktivní mapa`, en: `Interactive map` },
+  k10SephirotZionLayers: { cs: `10 Sefirot → ZION vrstvy`, en: `10 Sephirot → ZION layers` },
+  clickASephiraForDetailsColorPi: { cs: `Klikni na sefiru pro detail. Barva = pilíř (modrý = Milosrdenství, červený = Přísnost, zlatý = Rovnováha).`, en: `Click a sephira for details. Color = pillar (blue = Mercy, red = Severity, gold = Equilibrium).` },
+  zionLayer: { cs: `ZION vrstva`, en: `ZION layer` },
+  whatItEmanates: { cs: `Co emanuje`, en: `What it emanates` },
+  question: { cs: `Otázka`, en: `Question` },
+  pillar: { cs: `Pilíř`, en: `Pillar` },
+  selectASephiraOnTheTreeToExplo: { cs: `Vyber sefiru na stromu vlevo a prozkoumej, jak se kabalistický archetyp mapuje na ZION vrstvu.`, en: `Select a sephira on the tree to explore how the kabbalistic archetype maps to a ZION layer.` },
+  architectureOfTheTree: { cs: `Architektura stromu`, en: `Architecture of the tree` },
+  threePillars: { cs: `Tři pilíře`, en: `Three Pillars` },
+  organismDiagnosticsLiveData: { cs: `Diagnostika organismu — živá data`, en: `Organism diagnostics — live data` },
+  emanationStatus: { cs: `Stav emanace`, en: `Emanation status` },
+  whichAspectsOfZionAreAliveInRu: { cs: `Které aspekty ZIONu jsou živé v runtime, které čekají na manifestaci. Strom života jako diagnostický nástroj. Data z /api/tree-of-life/tree-health — agregováno z blockchain, DeFi, bridge a NCL API.`, en: `Which aspects of ZION are alive in runtime, which await manifestation. The Tree of Life as a diagnostic tool. Data from /api/tree-of-life/tree-health — aggregated from blockchain, DeFi, bridge and NCL APIs.` },
+  treeOverall: { cs: `Strom celkem`, en: `Tree overall` },
+  pillarOfMercy: { cs: `Pilíř Milosrdenství`, en: `Pillar of Mercy` },
+  chokmahChesedNetzach: { cs: `Chokmah, Chesed, Netzach`, en: `Chokmah, Chesed, Netzach` },
+  pillarOfSeverity: { cs: `Pilíř Přísnosti`, en: `Pillar of Severity` },
+  binahGevurahHod: { cs: `Binah, Gevurah, Hod`, en: `Binah, Gevurah, Hod` },
+  pillarOfEquilibrium: { cs: `Pilíř Rovnováhy`, en: `Pillar of Equilibrium` },
+  keterTiferetYesodMalkhut: { cs: `Keter, Tiferet, Yesod, Malkhut`, en: `Keter, Tiferet, Yesod, Malkhut` },
+  bridgeOfConsciousness: { cs: `most vědomí`, en: `bridge of consciousness` },
+  liveSephirot: { cs: `Živých sefirot`, en: `Live sephirot` },
+  mythCodeConnection: { cs: `propojení mýtu a kódu`, en: `myth-code connection` },
+  loadingLiveData: { cs: `Načítám živá data…`, en: `Loading live data…` },
+  sources: { cs: `Zdroje:`, en: `Sources:` },
+  liveInRuntime: { cs: `Živé v runtime`, en: `Live in runtime` },
+  partialSeed: { cs: `Částečné / seed`, en: `Partial / seed` },
+  horizon: { cs: `Horizont`, en: `Horizon` },
+  implementation: { cs: `Implementace`, en: `Implementation` },
+  treeOfLifeZionRoadmap: { cs: `Roadmapa Tree of Life → ZION`, en: `Tree of Life → ZION roadmap` },
+  consensusEvolution10YearHybrid: { cs: `Evoluce konsenzu — 10letý hybridní přechod`, en: `Consensus evolution — 10-year hybrid transition` },
+  evoluzionV2FromPowToProtocolOf: { cs: `evoluZion V2 — Od PoW k Protokolu Péče`, en: `evoluZion V2 — From PoW to Protocol of Care` },
+  zionIsNotBornAsAnotherBlockcha: { cs: `ZION se nerodí jako další blockchain. Rodí se jako Strom života — živý organismus, který se vyvíjí od dětství k dospělosti. 10letý hybridní přechod zajistí, že přechod z PoW na Proof-of-Care bude bezpečný, decentralizovaný a komunitou schválený.`, en: `ZION is not born as another blockchain. It is born as a Tree of Life — a living organism that evolves from childhood to maturity. A 10-year hybrid transition ensures the shift from PoW to Proof-of-Care is safe, decentralized, and community-approved.` },
+  current: { cs: `Aktuální`, en: `Current` },
+  npuValidators: { cs: `NPU validátorů`, en: `NPU validators` },
+  protocolOfCareProofOfCare: { cs: `Protokol Péče — Proof-of-Care`, en: `Protocol of Care — Proof-of-Care` },
+  miningCareNotWaste: { cs: `Těžení = péče, ne plýtvání`, en: `Mining = care, not waste` },
+  powMeasuresStrengthPosMeasures: { cs: `PoW měří sílu. PoS měří kapitál. PoC měří péči — užitečnou práci, kterou validátor vykonává pro zdraví sítě. Každý blok obsahuje care proofs — AI práci která pomohla ekosystému.`, en: `PoW measures strength. PoS measures capital. PoC measures care — useful work that validators perform for the health of the network. Every block contains care proofs — AI work that helped the ecosystem.` },
+  energy: { cs: `Energie`, en: `Energy` },
+  careTasksUsefulWorkInEveryBloc: { cs: `Care Tasks — užitečná práce v každém bloku`, en: `Care Tasks — useful work in every block` },
+  npuMiningDemocratizingMining: { cs: `NPU Mining — demokratizace těžení`, en: `NPU Mining — democratizing mining` },
+  insteadOfExpensiveGpuRigs30005: { cs: `Místo drahých GPU rigů ($3000+, 500W+) — NPU čip v telefonu ($0 extra, 5-15W). Každý telefon se stává potenciálním validátorem. RandomNPU = ASIC resistance (náhodné MLP topologie per epoch).`, en: `Instead of expensive GPU rigs ($3000+, 500W+) — NPU chip in phone ($0 extra, 5-15W). Every phone becomes a potential validator. RandomNPU = ASIC resistance (random MLP topologies per epoch).` },
+  careProofStructureAiInferenceO: { cs: `Struktura care proof — AI inference output který prokazuje péči o síť:`, en: `Care proof structure — AI inference output that proves care for the network:` },
+  ethicalFoundationBodhisattvaVo: { cs: `Etický základ — Bodhisattva Vow`, en: `Ethical foundation — Bodhisattva Vow` },
+  eightGreatBodhisattvasGuardian: { cs: `Osm Velkých Bodhisattvů — Strážci ZIONu`, en: `Eight Great Bodhisattvas — Guardians of ZION` },
+  zionIsNotACryptoEconomicProtoc: { cs: `ZION není krypto-ekonomický protokol. Je Proof-of-Care síť — pokus zakódovat Bodhisattva orientaci do konsensu, governance a komunitní praxe. Osm Bodhisattvů předsedá osmi doménám protokolu.`, en: `ZION is not a crypto-economic protocol. It is a Proof-of-Care network — an attempt to encode the Bodhisattva orientation into consensus, governance, and community practice. Eight Bodhisattvas preside over eight domains of the protocol.` },
+  fourGreatVows: { cs: `Čtyři Velké Sliby (四弘誓願)`, en: `Four Great Vows (四弘誓願)` },
+  theFourVowsAreImpossibleByDesi: { cs: `Čtyři sliby jsou nemožné záměrně. Nejsou cíli, kterých se dosáhne. Jsou směrem, kterým se kráčí.`, en: `The Four Vows are impossible by design. They are not goals to be reached. They are a direction to walk.` },
+  zionRole: { cs: `ZION role`, en: `ZION role` },
+  eightGuardianPledges: { cs: `Osm slibů Guardianů`, en: `Eight Guardian Pledges` },
+  theBodhisattvaVowIsTheHighestC: { cs: `Bodhisattva Vow je nejvyšší závazek pro L5 komunitní Guardiány. Osm slibů pokrývá půdu, život, učení, smrt a radost.`, en: `The Bodhisattva Vow is the highest commitment for L5 community Guardians. Eight pledges cover land, life, teaching, death, and joy.` },
+  dualVow: { cs: `Dual Vow — Dvojí slib`, en: `Dual Vow` },
+  aGuardianWhoHoldsBothTheSefiro: { cs: `Guardian, který drží jak Sefirot Vow (pro integritu protokolu), tak Bodhisattva Vow (pro soucitnou akci), je rozpoznán jako Dual-Vow Guardian. Care score bonus: +5% nad single-vow.`, en: `A Guardian who holds both the Sefirot Vow (for protocol integrity) and the Bodhisattva Vow (for compassionate action) is recognized as a Dual-Vow Guardian. Care score bonus: +5% above single-vow.` },
+  theThousandBreakings: { cs: `Tisíc zlomení`, en: `The Thousand Breakings` },
+  mayIBreakItAThousandTimesAndRe: { cs: `„Kéž ho zlomím tisíckrát a obnovím tisíc a jednou."`, en: `"May I break it a thousand times and renew it a thousand and one."` },
+  theVowIsADirectionNotADestinat: { cs: `Slib je směr, ne destinace. Zlomení se očekává. Obnova je praxe. To odlišuje ZION slib od právní smlouvy (zneplatněna porušením) i slibu věrnosti (nese hanbu).`, en: `The vow is a direction, not a destination. Breaking is expected. Renewal is the practice. This distinguishes the ZION vow from a legal contract (invalidated by breach) and a loyalty oath (carries shame).` },
+  forAsLongAsSpaceEnduresAndForA: { cs: `„Tak dlouho, jak prostor trvá, a tak dlouho, jak cítící bytosti zůstávají, do té doby kéž i já zůstávám, abych rozptýlil bídu světa."`, en: `"For as long as space endures, and for as long as sentient beings remain, until then may I too abide, to dispel the misery of the world."` },
+  notTheOneWhoHasTheGreatestStre: { cs: `„Ne ten kdo má největší sílu, ale ten kdo nejlépe opékuje, ten bude vést."`, en: `"Not the one who has the greatest strength, but the one who cares best, that one shall lead."` },
+  protocolOfCare: { cs: `Protokol Péče`, en: `Protocol of Care` },
+  l6IssobellaMalkhut: { cs: `L6 Issobella (Malkhut)`, en: `L6 Issobella (Malkhut)` },
+};
+
 /* ═══════════════════════════════════════════════════════════════════════════
    Tree of Life — Kabbalistic Tree mapped to ZION layers L1-L6
    docs/Zohar/ — canonical source: README.md, 01-SEFIROT-VRSTVY.md, 02-ROADMAP.md
@@ -479,24 +579,22 @@ export default function TreeOfLifePageClient() {
             </div>
             <div className="space-y-1.5">
               <h3 className="text-sm font-bold text-amber-300">
-                {cs ? 'Projekt v neustálém vývoji — Work in Progress' : 'Project under constant development — Work in Progress'}
+                {TreeOfLifeTreeOfLifePageClientCopy.projectUnderConstantDevelopmen[cs ? 'cs' : 'en']}
               </h3>
               <p className="text-xs leading-relaxed text-amber-200/70">
-                {cs
-                  ? 'ZION TerraNova je experimentální projekt v aktivním vývoji. Všechny funkce, vizualizace, roadmapy a technické koncepty na této stránce jsou návrhy, které se mohou kdykoli změnit. evoluZion V2 (Proof-of-Care, NPU mining, Bodhisattva Vow) je vize budoucnosti, nikoli současná realita. Současná síť běží na Proof-of-Work (Mainnet Beta v3.0.6). Nic na této stránce není investiční doporučení.'
-                  : 'ZION TerraNova is an experimental project under active development. All features, visualizations, roadmaps, and technical concepts on this page are proposals that may change at any time. evoluZion V2 (Proof-of-Care, NPU mining, Bodhisattva Vow) is a vision of the future, not current reality. The current network runs on Proof-of-Work (Mainnet Beta v3.0.6). Nothing on this page is investment advice.'}
+                {TreeOfLifeTreeOfLifePageClientCopy.zionTerranovaIsAnExperimentalP[cs ? 'cs' : 'en']}
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
                 <span className="zion-badge zion-badge-amber">
                   <FlaskConical className="h-3 w-3" />
-                  {cs ? 'Experimentální' : 'Experimental'}
+                  {TreeOfLifeTreeOfLifePageClientCopy.experimental[cs ? 'cs' : 'en']}
                 </span>
                 <span className="zion-badge zion-badge-rasta">
                   <Construction className="h-3 w-3" />
-                  {cs ? 'Aktivně se staví' : 'Actively building'}
+                  {TreeOfLifeTreeOfLifePageClientCopy.activelyBuilding[cs ? 'cs' : 'en']}
                 </span>
                 <span className="zion-badge border-rose-500/30 bg-rose-500/10 text-rose-300">
-                  {cs ? 'Mainnet Beta — riziko vlastní' : 'Mainnet Beta — at your own risk'}
+                  {TreeOfLifeTreeOfLifePageClientCopy.mainnetBetaAtYourOwnRisk[cs ? 'cs' : 'en']}
                 </span>
               </div>
             </div>
@@ -512,18 +610,16 @@ export default function TreeOfLifePageClient() {
         >
           <div className="zion-kicker border-zion-gold/30 bg-zion-gold/10 text-zion-gold">
             <Sparkles className="h-4 w-4" />
-            {cs ? 'Kabala · 10 Sephirot · 22 cest · 3 pilíře' : 'Kabbalah · 10 Sephirot · 22 paths · 3 pillars'}
+            {TreeOfLifeTreeOfLifePageClientCopy.kabbalah10Sephirot22Paths3Pill[cs ? 'cs' : 'en']}
           </div>
           <h1 className="text-4xl md:text-6xl font-bold leading-tight text-white">
-            {cs ? 'Strom života' : 'Tree of Life'}
+            {TreeOfLifeTreeOfLifePageClientCopy.treeOfLife[cs ? 'cs' : 'en']}
             <span className="block bg-linear-to-r from-zion-gold via-amber-400 to-zion-cyan bg-clip-text text-transparent">
-              {cs ? 'ZION vrstev L1–L6' : 'ZION layers L1–L6'}
+              {TreeOfLifeTreeOfLifePageClientCopy.zionLayersL1L6[cs ? 'cs' : 'en']}
             </span>
           </h1>
           <p className="mx-auto max-w-3xl text-base md:text-lg leading-relaxed text-gray-400">
-            {cs
-              ? 'Kabalistický Strom života přeložený do jazyka ZION vrstev. 10 sefirot + Da\'at mapováno na L1-L6 — od Keter (ústava, genesis) po Malkhut (Issobella, hvězdy). ZION se nerodí jako další blockchain. ZION se rodí jako Strom života.'
-              : 'The Kabbalistic Tree of Life translated into the language of ZION layers. 10 sephirot + Da\'at mapped to L1-L6 — from Keter (constitution, genesis) to Malkhut (Issobella, stars). ZION is not born as another blockchain. ZION is born as a Tree of Life.'}
+            {TreeOfLifeTreeOfLifePageClientCopy.theKabbalisticTreeOfLifeTransl[cs ? 'cs' : 'en']}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <Link
@@ -531,14 +627,14 @@ export default function TreeOfLifePageClient() {
               className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white transition-all"
             >
               <TreePine className="h-4 w-4" />
-              {cs ? 'Strom na homepage' : 'Tree on homepage'}
+              {TreeOfLifeTreeOfLifePageClientCopy.treeOnHomepage[cs ? 'cs' : 'en']}
             </Link>
             <Link
               href="/terranova"
               className="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 px-5 py-2.5 text-sm font-medium text-emerald-300 hover:bg-emerald-500/10 transition-all"
             >
               <BookOpen className="h-4 w-4" />
-              {cs ? 'TerraNova kniha' : 'TerraNova book'}
+              {TreeOfLifeTreeOfLifePageClientCopy.terranovaBook[cs ? 'cs' : 'en']}
             </Link>
           </div>
         </motion.section>
@@ -554,42 +650,36 @@ export default function TreeOfLifePageClient() {
           <div className="flex items-center gap-3">
             <BookOpen className="h-5 w-5 text-zion-gold" />
             <h2 className="text-2xl md:text-3xl font-bold text-white">
-              {cs ? 'O knize Zohar' : 'About the Book of Zohar'}
+              {TreeOfLifeTreeOfLifePageClientCopy.aboutTheBookOfZohar[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid gap-6 md:grid-cols-2">
             <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-              <h3 className="text-lg font-semibold text-white">{cs ? 'Co je Zohar' : 'What is the Zohar'}</h3>
+              <h3 className="text-lg font-semibold text-white">{TreeOfLifeTreeOfLifePageClientCopy.whatIsTheZohar[cs ? 'cs' : 'en']}</h3>
               <p className="text-sm leading-relaxed text-gray-400">
-                {cs
-                  ? 'Zohar (זֹהַר — „Světlo“, „Záře\") je jednou z nejdůležitějších knih židovské mystiky (kabaly). Sepisován aramejsky ve 13. století, tradičně připisován rabínovi Šim\'onu bar Jochajovi (2. stol. n. l.), moderní bádání (Gershom Scholem) ukazuje, že většinu textu sepisoval Mojžíš z Leónu (~1280–1286).'
-                  : 'The Zohar (זֹהַר — "Light", "Splendor") is one of the most important books of Jewish mysticism (Kabbalah). Written in Aramaic in the 13th century, traditionally attributed to Rabbi Shimon bar Yochai (2nd century CE), modern scholarship (Gershom Scholem) shows that most of the text was composed by Moses de León (~1280–1286).'}
+                {TreeOfLifeTreeOfLifePageClientCopy.theZoharLightSplendorIsOneOfTh[cs ? 'cs' : 'en']}
               </p>
               <p className="text-sm leading-relaxed text-gray-400">
-                {cs
-                  ? 'Je to mystický komentář k Tóře — vykládá Pět knih Mojžíšových pomocí symboliky sefirot, Božích jmen, písmen a „duše Tóry". Často (nepřesně) označován za „Bibli kabalistů".'
-                  : 'It is a mystical commentary on the Torah — interpreting the Five Books of Moses through the symbolism of the sephirot, divine names, letters, and the "soul of the Torah". Often (imprecisely) called the "Bible of the Kabbalists".'}
+                {TreeOfLifeTreeOfLifePageClientCopy.itIsAMysticalCommentaryOnTheTo[cs ? 'cs' : 'en']}
               </p>
             </div>
             <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-              <h3 className="text-lg font-semibold text-white">{cs ? 'Struktura Zoharu' : 'Structure of the Zohar'}</h3>
+              <h3 className="text-lg font-semibold text-white">{TreeOfLifeTreeOfLifePageClientCopy.structureOfTheZohar[cs ? 'cs' : 'en']}</h3>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><span className="text-zion-gold font-semibold">Hlavní Zohar</span> — {cs ? 'komentář k týdenním čtením Tóry' : 'commentary on weekly Torah readings'}</li>
-                <li><span className="text-zion-gold font-semibold">Zohar chadaš</span> — {cs ? '„Nový Zohar", dodatky a mystické výklady' : '"New Zohar", additions and mystical interpretations'}</li>
-                <li><span className="text-zion-gold font-semibold">Tikunej Zohar</span> — {cs ? '70 výkladů slova Berešit' : '70 interpretations of the word Bereishit'}</li>
-                <li><span className="text-zion-gold font-semibold">Ra&apos;aja mehemna</span> — {cs ? '„Věrný pastýř", o mystice micvot' : '"Faithful Shepherd", on the mysticism of mitzvot'}</li>
-                <li><span className="text-zion-gold font-semibold">Sitrej Tora, Midraš ha-ne&apos;elam</span> — {cs ? 'dílčí mystické traktáty' : 'partial mystical tractates'}</li>
+                <li><span className="text-zion-gold font-semibold">Hlavní Zohar</span> — {TreeOfLifeTreeOfLifePageClientCopy.commentaryOnWeeklyTorahReading[cs ? 'cs' : 'en']}</li>
+                <li><span className="text-zion-gold font-semibold">Zohar chadaš</span> — {TreeOfLifeTreeOfLifePageClientCopy.newZoharAdditionsAndMysticalIn[cs ? 'cs' : 'en']}</li>
+                <li><span className="text-zion-gold font-semibold">Tikunej Zohar</span> — {TreeOfLifeTreeOfLifePageClientCopy.k70InterpretationsOfTheWordBere[cs ? 'cs' : 'en']}</li>
+                <li><span className="text-zion-gold font-semibold">Ra&apos;aja mehemna</span> — {TreeOfLifeTreeOfLifePageClientCopy.faithfulShepherdOnTheMysticism[cs ? 'cs' : 'en']}</li>
+                <li><span className="text-zion-gold font-semibold">Sitrej Tora, Midraš ha-ne&apos;elam</span> — {TreeOfLifeTreeOfLifePageClientCopy.partialMysticalTractates[cs ? 'cs' : 'en']}</li>
               </ul>
             </div>
           </div>
           <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
             <h3 className="text-lg font-semibold text-white">
-              {cs ? 'Proč Strom života v ZIONu' : 'Why Tree of Life in ZION'}
+              {TreeOfLifeTreeOfLifePageClientCopy.whyTreeOfLifeInZion[cs ? 'cs' : 'en']}
             </h3>
             <p className="text-sm leading-relaxed text-gray-400">
-              {cs
-                ? 'Zohar v ZIONu není náboženský text. Je to mapa vnitřní architektury — stejně jako TerraNova kniha je kompas Nové Země, Zohar je kompas uspořádání samotného ZIONu. Kde TerraNova říká „kam jdeme", Zohar říká „jak jsme uspořádáni". 10 sefirot není software stack — jsou to aspekty jednoho organismu, které se navzájem prostupují.'
-                : 'Zohar in ZION is not a religious text. It is a map of inner architecture — just as the TerraNova book is a compass of the New Earth, Zohar is a compass of ZION\'s own arrangement. Where TerraNova says "where we are going", Zohar says "how we are arranged". The 10 sephirot are not a software stack — they are aspects of one organism that interpenetrate.'}
+              {TreeOfLifeTreeOfLifePageClientCopy.zoharInZionIsNotAReligiousText[cs ? 'cs' : 'en']}
             </p>
             <div className="grid gap-3 sm:grid-cols-2 pt-2">
               <Link href="/docs/Zohar/README.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-amber-300 transition-colors">
@@ -613,43 +703,41 @@ export default function TreeOfLifePageClient() {
           {/* Vývoj sefirot — genealogie */}
           <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
             <h3 className="text-lg font-semibold text-white">
-              {cs ? 'Vývoj sefirot — genealogie' : 'Evolution of the sephirot — genealogy'}
+              {TreeOfLifeTreeOfLifePageClientCopy.evolutionOfTheSephirotGenealog[cs ? 'cs' : 'en']}
             </h3>
             <p className="text-sm leading-relaxed text-gray-400">
-              {cs
-                ? 'Doktrína 10 sefirot se neobjevila najednou. Vyvíjela se přes 1500 let — od nepojmenovaných atributů v Sefer Yetzirah (2. stol.) přes pojmenování v Bahir, první diagram „Stromu" v Sha\'arei Orah (13. stol.), plnou mystickou soustavu v Zoharu, až po moderní podobu kterou dal Rabbi Isaac Luria (ARI) v Etz Chaim (16. stol.).'
-                : 'The doctrine of the 10 sephirot did not appear at once. It evolved over 1500 years — from unnamed attributes in Sefer Yetzirah (2nd century), through naming in the Bahir, the first "Tree" diagram in Sha\'arei Orah (13th century), the full mystical system in the Zohar, to the modern form given by Rabbi Isaac Luria (ARI) in Etz Chaim (16th century).'}
+              {TreeOfLifeTreeOfLifePageClientCopy.theDoctrineOfThe10SephirotDidN[cs ? 'cs' : 'en']}
             </p>
             <div className="space-y-2 font-mono text-xs text-gray-400">
               <div className="flex items-center gap-2">
                 <span className="rounded bg-indigo-500/20 px-2 py-0.5 text-indigo-300">~2. stol.</span>
                 <span className="text-gray-500">→</span>
-                <span><span className="text-white">Sefer Yetzirah</span> — {cs ? '10 sefirot belimah, nepojmenované, atributy' : '10 sefirot belimah, unnamed, attributes'}</span>
+                <span><span className="text-white">Sefer Yetzirah</span> — {TreeOfLifeTreeOfLifePageClientCopy.k10SefirotBelimahUnnamedAttribu[cs ? 'cs' : 'en']}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="rounded bg-indigo-500/20 px-2 py-0.5 text-indigo-300">~1150</span>
                 <span className="text-gray-500">→</span>
-                <span><span className="text-white">Sefer ha-Bahir</span> — {cs ? 'sefirot pojmenovány, kanály Boží síly' : 'sephirot named, channels of divine power'}</span>
+                <span><span className="text-white">Sefer ha-Bahir</span> — {TreeOfLifeTreeOfLifePageClientCopy.sephirotNamedChannelsOfDivineP[cs ? 'cs' : 'en']}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="rounded bg-indigo-500/20 px-2 py-0.5 text-indigo-300">~1200</span>
                 <span className="text-gray-500">→</span>
-                <span><span className="text-white">Sha&apos;arei Orah</span> — {cs ? 'první „Tree of Life" diagram (ilan), R. Gikatilla' : 'first "Tree of Life" diagram (ilan), R. Gikatilla'}</span>
+                <span><span className="text-white">Sha&apos;arei Orah</span> — {TreeOfLifeTreeOfLifePageClientCopy.firstTreeOfLifeDiagramIlanRGik[cs ? 'cs' : 'en']}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="rounded bg-amber-500/20 px-2 py-0.5 text-amber-300">~1280</span>
                 <span className="text-gray-500">→</span>
-                <span><span className="text-white">Zohar</span> — {cs ? 'plná mystická soustava, M. de León' : 'full mystical system, M. de León'}</span>
+                <span><span className="text-white">Zohar</span> — {TreeOfLifeTreeOfLifePageClientCopy.fullMysticalSystemMDeLeN[cs ? 'cs' : 'en']}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-emerald-300">~1570</span>
                 <span className="text-gray-500">→</span>
-                <span><span className="text-white">Etz Chaim</span> — {cs ? 'moderní podoba Stromu, R. Luria (ARI)' : 'modern form of the Tree, R. Luria (ARI)'}</span>
+                <span><span className="text-white">Etz Chaim</span> — {TreeOfLifeTreeOfLifePageClientCopy.modernFormOfTheTreeRLuriaAri[cs ? 'cs' : 'en']}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="rounded bg-zion-gold/20 px-2 py-0.5 text-zion-gold">2026</span>
                 <span className="text-gray-500">→</span>
-                <span><span className="text-white">ZION Tree of Life</span> — {cs ? 'sefirot mapovány na L1-L6 vrstvy' : 'sephirot mapped to L1-L6 layers'}</span>
+                <span><span className="text-white">ZION Tree of Life</span> — {TreeOfLifeTreeOfLifePageClientCopy.sephirotMappedToL1L6Layers[cs ? 'cs' : 'en']}</span>
               </div>
             </div>
           </div>
@@ -657,9 +745,7 @@ export default function TreeOfLifePageClient() {
           {/* Citát */}
           <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <p className="text-sm italic leading-relaxed text-gray-300">
-              {cs
-                ? '„Vesmír je, podle této doktríny, gradace emanací — z čehož plyne, že lidská mysl může v každém efektu rozpoznat nejvyšší znak a tak stoupat k příčině všech příčin."'
-                : '"The universe being, according to that doctrine, a gradation of emanations, it follows that the human mind may recognize in each effect the supreme mark, and thus ascend to the cause of all causes."'}
+              {TreeOfLifeTreeOfLifePageClientCopy.theUniverseBeingAccordingToTha[cs ? 'cs' : 'en']}
             </p>
             <p className="text-xs uppercase tracking-[0.3em] text-zion-gold">— Jewish Virtual Library, o Zoharu / Stromu života</p>
           </div>
@@ -669,25 +755,19 @@ export default function TreeOfLifePageClient() {
             <div className="zion-rainbow-card space-y-2 p-5" style={{ '--rc': '255, 255, 255' } as React.CSSProperties}>
               <h4 className="text-sm font-bold text-white">Ein Sof</h4>
               <p className="text-xs text-gray-400">
-                {cs
-                  ? 'אֵין־סוֹף — „Bez-Konce". Nekonečná, nepoznatelná Boží podstata. Zdroj ze kterého emanují sefirot.'
-                  : 'אֵין־סוֹף — "Without-End". The infinite, unknowable divine essence. Source from which the sephirot emanate.'}
+                {TreeOfLifeTreeOfLifePageClientCopy.withoutEndTheInfiniteUnknowabl[cs ? 'cs' : 'en']}
               </p>
             </div>
             <div className="zion-rainbow-card space-y-2 p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <h4 className="text-sm font-bold text-white">Da&apos;at</h4>
               <p className="text-xs text-gray-400">
-                {cs
-                  ? 'דַּעַת — „Poznání". Skrytá 11. sefira. Most mezi Keter a Malkhut, mezi nebem a zemí. Vědomé propojení.'
-                  : 'דַּעַת — "Knowledge". Hidden 11th sephira. Bridge between Keter and Malkhut, between heaven and earth. Conscious connection.'}
+                {TreeOfLifeTreeOfLifePageClientCopy.knowledgeHidden11thSephiraBrid[cs ? 'cs' : 'en']}
               </p>
             </div>
             <div className="zion-rainbow-card space-y-2 p-5" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
               <h4 className="text-sm font-bold text-white">Sitra Ahra</h4>
               <p className="text-xs text-gray-400">
-                {cs
-                  ? '„Druhá strana" — dualita dobra a zla uvnitř Božství. Gnostický vliv identifikovaný Scholemem (kruh Castile, ~1265).'
-                  : '"The Other Side" — duality of good and evil within the Godhead. Gnostic influence identified by Scholem (Castile circle, ~1265).'}
+                {TreeOfLifeTreeOfLifePageClientCopy.theOtherSideDualityOfGoodAndEv[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -697,13 +777,11 @@ export default function TreeOfLifePageClient() {
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-cyan-400" />
               <h4 className="text-sm font-bold text-white">
-                {cs ? 'Gershom Scholem (1897–1982)' : 'Gershom Scholem (1897–1982)'}
+                {TreeOfLifeTreeOfLifePageClientCopy.gershomScholem18971982[cs ? 'cs' : 'en']}
               </h4>
             </div>
             <p className="text-xs leading-relaxed text-gray-400">
-              {cs
-                ? 'Zakladatel akademického studia kabaly. V polovině 20. století prokázal, že většinu Zoharu napsal Mojžíš de León (~1280–1286), ne rabín Šim\'on bar Jochai (2. stol.). Důkazy: chyby v aramejské gramatice, stopy španělštiny, neznalost země Izrael. Orthodoxní židé tradici nadále obhajují.'
-                : 'Founder of academic Kabbalah study. In the mid-20th century he demonstrated that most of the Zohar was written by Moses de León (~1280–1286), not Rabbi Shimon bar Yochai (2nd century). Evidence: errors in Aramaic grammar, traces of Spanish, lack of knowledge of the land of Israel. Orthodox Jews continue to defend the tradition.'}
+              {TreeOfLifeTreeOfLifePageClientCopy.founderOfAcademicKabbalahStudy[cs ? 'cs' : 'en']}
             </p>
           </div>
         </motion.section>
@@ -718,15 +796,13 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-gold">
-              {cs ? 'Interaktivní mapa' : 'Interactive map'}
+              {TreeOfLifeTreeOfLifePageClientCopy.interactiveMap[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {cs ? '10 Sefirot → ZION vrstvy' : '10 Sephirot → ZION layers'}
+              {TreeOfLifeTreeOfLifePageClientCopy.k10SephirotZionLayers[cs ? 'cs' : 'en']}
             </h2>
             <p className="mx-auto max-w-2xl text-sm text-gray-400">
-              {cs
-                ? 'Klikni na sefiru pro detail. Barva = pilíř (modrý = Milosrdenství, červený = Přísnost, zlatý = Rovnováha).'
-                : 'Click a sephira for details. Color = pillar (blue = Mercy, red = Severity, gold = Equilibrium).'}
+              {TreeOfLifeTreeOfLifePageClientCopy.clickASephiraForDetailsColorPi[cs ? 'cs' : 'en']}
             </p>
           </div>
 
@@ -880,7 +956,7 @@ export default function TreeOfLifePageClient() {
 
                     <div className="space-y-3 pt-2">
                       <div>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'ZION vrstva' : 'ZION layer'}</p>
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.zionLayer[cs ? 'cs' : 'en']}</p>
                         <p className="mt-1 text-base font-semibold" style={{ color: `rgb(${selected.color})` }}>
                           {selected.zionLayer}
                         </p>
@@ -888,14 +964,14 @@ export default function TreeOfLifePageClient() {
                       </div>
 
                       <div>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Co emanuje' : 'What it emanates'}</p>
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.whatItEmanates[cs ? 'cs' : 'en']}</p>
                         <p className="mt-1 text-sm leading-relaxed text-gray-300">
                           {cs ? selected.emanates.cs : selected.emanates.en}
                         </p>
                       </div>
 
                       <div className="zion-rainbow-sub p-3" style={{ '--rc': selected.color } as React.CSSProperties}>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Otázka' : 'Question'}</p>
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.question[cs ? 'cs' : 'en']}</p>
                         <p className="mt-1 text-sm italic text-gray-300">
                           {cs ? selected.question.cs : selected.question.en}
                         </p>
@@ -916,7 +992,7 @@ export default function TreeOfLifePageClient() {
                           {STATUS_LABEL[selected.status][cs ? 'cs' : 'en']}
                         </span>
                         <span className="text-[10px] uppercase tracking-wider text-gray-500">
-                          {cs ? 'Pilíř' : 'Pillar'}: {PILLARS.find((p) => p.id === selected.pillar)?.name[cs ? 'cs' : 'en']}
+                          {TreeOfLifeTreeOfLifePageClientCopy.pillar[cs ? 'cs' : 'en']}: {PILLARS.find((p) => p.id === selected.pillar)?.name[cs ? 'cs' : 'en']}
                         </span>
                       </div>
                     </div>
@@ -934,9 +1010,7 @@ export default function TreeOfLifePageClient() {
                       <Sparkles className="h-8 w-8 text-zion-gold" />
                     </div>
                     <p className="text-sm text-gray-400">
-                      {cs
-                        ? 'Vyber sefiru na stromu vlevo a prozkoumej, jak se kabalistický archetyp mapuje na ZION vrstvu.'
-                        : 'Select a sephira on the tree to explore how the kabbalistic archetype maps to a ZION layer.'}
+                      {TreeOfLifeTreeOfLifePageClientCopy.selectASephiraOnTheTreeToExplo[cs ? 'cs' : 'en']}
                     </p>
                     <div className="grid grid-cols-3 gap-2 pt-2 text-center">
                       <div className="zion-rainbow-sub p-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
@@ -995,10 +1069,10 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-gold">
-              {cs ? 'Architektura stromu' : 'Architecture of the tree'}
+              {TreeOfLifeTreeOfLifePageClientCopy.architectureOfTheTree[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {cs ? 'Tři pilíře' : 'Three Pillars'}
+              {TreeOfLifeTreeOfLifePageClientCopy.threePillars[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
@@ -1044,15 +1118,13 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-emerald-400">
-              {cs ? 'Diagnostika organismu — živá data' : 'Organism diagnostics — live data'}
+              {TreeOfLifeTreeOfLifePageClientCopy.organismDiagnosticsLiveData[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {cs ? 'Stav emanace' : 'Emanation status'}
+              {TreeOfLifeTreeOfLifePageClientCopy.emanationStatus[cs ? 'cs' : 'en']}
             </h2>
             <p className="mx-auto max-w-2xl text-sm text-gray-400">
-              {cs
-                ? 'Které aspekty ZIONu jsou živé v runtime, které čekají na manifestaci. Strom života jako diagnostický nástroj. Data z /api/tree-of-life/tree-health — agregováno z blockchain, DeFi, bridge a NCL API.'
-                : 'Which aspects of ZION are alive in runtime, which await manifestation. The Tree of Life as a diagnostic tool. Data from /api/tree-of-life/tree-health — aggregated from blockchain, DeFi, bridge and NCL APIs.'}
+              {TreeOfLifeTreeOfLifePageClientCopy.whichAspectsOfZionAreAliveInRu[cs ? 'cs' : 'en']}
             </p>
           </div>
 
@@ -1060,7 +1132,7 @@ export default function TreeOfLifePageClient() {
           {treeHealth && (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Strom celkem' : 'Tree overall'}</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.treeOverall[cs ? 'cs' : 'en']}</p>
                 <p className="text-4xl font-bold text-zion-gold">{treeHealth.treeHealth}<span className="text-lg text-gray-500">/100</span></p>
                 <div className="mx-auto h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                   <div
@@ -1070,19 +1142,19 @@ export default function TreeOfLifePageClient() {
                 </div>
               </div>
               <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Pilíř Milosrdenství' : 'Pillar of Mercy'}</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.pillarOfMercy[cs ? 'cs' : 'en']}</p>
                 <p className="text-3xl font-bold text-cyan-400">{treeHealth.pillars.mercy}<span className="text-base text-gray-500">/100</span></p>
-                <p className="text-[10px] text-gray-500">{cs ? 'Chokmah, Chesed, Netzach' : 'Chokmah, Chesed, Netzach'}</p>
+                <p className="text-[10px] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.chokmahChesedNetzach[cs ? 'cs' : 'en']}</p>
               </div>
               <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Pilíř Přísnosti' : 'Pillar of Severity'}</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.pillarOfSeverity[cs ? 'cs' : 'en']}</p>
                 <p className="text-3xl font-bold text-red-400">{treeHealth.pillars.severity}<span className="text-base text-gray-500">/100</span></p>
-                <p className="text-[10px] text-gray-500">{cs ? 'Binah, Gevurah, Hod' : 'Binah, Gevurah, Hod'}</p>
+                <p className="text-[10px] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.binahGevurahHod[cs ? 'cs' : 'en']}</p>
               </div>
               <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{cs ? 'Pilíř Rovnováhy' : 'Pillar of Equilibrium'}</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.pillarOfEquilibrium[cs ? 'cs' : 'en']}</p>
                 <p className="text-3xl font-bold text-amber-400">{treeHealth.pillars.equilibrium}<span className="text-base text-gray-500">/100</span></p>
-                <p className="text-[10px] text-gray-500">{cs ? 'Keter, Tiferet, Yesod, Malkhut' : 'Keter, Tiferet, Yesod, Malkhut'}</p>
+                <p className="text-[10px] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.keterTiferetYesodMalkhut[cs ? 'cs' : 'en']}</p>
               </div>
             </div>
           )}
@@ -1152,15 +1224,15 @@ export default function TreeOfLifePageClient() {
                   <span className="text-xs font-bold text-gray-300">11</span>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white">Da&apos;at — {cs ? 'most vědomí' : 'bridge of consciousness'}</p>
+                  <p className="text-sm font-semibold text-white">Da&apos;at — {TreeOfLifeTreeOfLifePageClientCopy.bridgeOfConsciousness[cs ? 'cs' : 'en']}</p>
                   <p className="text-xs text-gray-400">
-                    {cs ? 'Živých sefirot' : 'Live sephirot'}: {treeHealth.daat.metrics.live_sephirot}/{treeHealth.daat.metrics.total_sephirot}
+                    {TreeOfLifeTreeOfLifePageClientCopy.liveSephirot[cs ? 'cs' : 'en']}: {treeHealth.daat.metrics.live_sephirot}/{treeHealth.daat.metrics.total_sephirot}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-white">{treeHealth.daat.health}<span className="text-sm text-gray-500">/100</span></p>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'propojení mýtu a kódu' : 'myth-code connection'}</p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.mythCodeConnection[cs ? 'cs' : 'en']}</p>
               </div>
             </div>
           )}
@@ -1170,20 +1242,20 @@ export default function TreeOfLifePageClient() {
             {healthLoading && (
               <span className="inline-flex items-center gap-2">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-zion-gold" />
-                {cs ? 'Načítám živá data…' : 'Loading live data…'}
+                {TreeOfLifeTreeOfLifePageClientCopy.loadingLiveData[cs ? 'cs' : 'en']}
               </span>
             )}
             {treeHealth?.sources?.length > 0 && (
-              <span>{cs ? 'Zdroje:' : 'Sources:'} {treeHealth.sources.join(', ')}</span>
+              <span>{TreeOfLifeTreeOfLifePageClientCopy.sources[cs ? 'cs' : 'en']} {treeHealth.sources.join(', ')}</span>
             )}
             <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" /> {cs ? 'Živé v runtime' : 'Live in runtime'}
+              <span className="h-2 w-2 rounded-full bg-emerald-400" /> {TreeOfLifeTreeOfLifePageClientCopy.liveInRuntime[cs ? 'cs' : 'en']}
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-amber-400/50" /> {cs ? 'Částečné / seed' : 'Partial / seed'}
+              <span className="h-2 w-2 rounded-full bg-amber-400/50" /> {TreeOfLifeTreeOfLifePageClientCopy.partialSeed[cs ? 'cs' : 'en']}
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-gray-600" /> {cs ? 'Horizont' : 'Horizon'}
+              <span className="h-2 w-2 rounded-full bg-gray-600" /> {TreeOfLifeTreeOfLifePageClientCopy.horizon[cs ? 'cs' : 'en']}
             </span>
           </div>
         </motion.section>
@@ -1198,10 +1270,10 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-purple">
-              {cs ? 'Implementace' : 'Implementation'}
+              {TreeOfLifeTreeOfLifePageClientCopy.implementation[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {cs ? 'Roadmapa Tree of Life → ZION' : 'Tree of Life → ZION roadmap'}
+              {TreeOfLifeTreeOfLifePageClientCopy.treeOfLifeZionRoadmap[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="space-y-3">
@@ -1289,15 +1361,13 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-cyan-400">
-              {cs ? 'Evoluce konsenzu — 10letý hybridní přechod' : 'Consensus evolution — 10-year hybrid transition'}
+              {TreeOfLifeTreeOfLifePageClientCopy.consensusEvolution10YearHybrid[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {cs ? 'evoluZion V2 — Od PoW k Protokolu Péče' : 'evoluZion V2 — From PoW to Protocol of Care'}
+              {TreeOfLifeTreeOfLifePageClientCopy.evoluzionV2FromPowToProtocolOf[cs ? 'cs' : 'en']}
             </h2>
             <p className="mx-auto max-w-3xl text-sm text-gray-400">
-              {cs
-                ? 'ZION se nerodí jako další blockchain. Rodí se jako Strom života — živý organismus, který se vyvíjí od dětství k dospělosti. 10letý hybridní přechod zajistí, že přechod z PoW na Proof-of-Care bude bezpečný, decentralizovaný a komunitou schválený.'
-                : 'ZION is not born as another blockchain. It is born as a Tree of Life — a living organism that evolves from childhood to maturity. A 10-year hybrid transition ensures the shift from PoW to Proof-of-Care is safe, decentralized, and community-approved.'}
+              {TreeOfLifeTreeOfLifePageClientCopy.zionIsNotBornAsAnotherBlockcha[cs ? 'cs' : 'en']}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <a
@@ -1357,12 +1427,12 @@ export default function TreeOfLifePageClient() {
                     }}
                   >
                     {p.status === 'live' && <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ backgroundColor: `rgb(${p.color})` }} />}
-                    {p.status === 'live' ? (cs ? 'Aktuální' : 'Current') : (cs ? 'Horizont' : 'Horizon')}
+                    {p.status === 'live' ? (TreeOfLifeTreeOfLifePageClientCopy.current[cs ? 'cs' : 'en']) : (TreeOfLifeTreeOfLifePageClientCopy.horizon[cs ? 'cs' : 'en'])}
                   </span>
                   {p.npuValidators !== '—' && (
                     <span className="text-[10px] text-gray-500">
                       <Cpu className="mr-1 inline h-3 w-3" />
-                      {cs ? 'NPU validátorů' : 'NPU validators'}: {p.npuValidators}
+                      {TreeOfLifeTreeOfLifePageClientCopy.npuValidators[cs ? 'cs' : 'en']}: {p.npuValidators}
                     </span>
                   )}
                 </div>
@@ -1402,15 +1472,13 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-emerald-400">
-              {cs ? 'Protokol Péče — Proof-of-Care' : 'Protocol of Care — Proof-of-Care'}
+              {TreeOfLifeTreeOfLifePageClientCopy.protocolOfCareProofOfCare[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {cs ? 'Těžení = péče, ne plýtvání' : 'Mining = care, not waste'}
+              {TreeOfLifeTreeOfLifePageClientCopy.miningCareNotWaste[cs ? 'cs' : 'en']}
             </h2>
             <p className="mx-auto max-w-3xl text-sm text-gray-400">
-              {cs
-                ? 'PoW měří sílu. PoS měří kapitál. PoC měří péči — užitečnou práci, kterou validátor vykonává pro zdraví sítě. Každý blok obsahuje care proofs — AI práci která pomohla ekosystému.'
-                : 'PoW measures strength. PoS measures capital. PoC measures care — useful work that validators perform for the health of the network. Every block contains care proofs — AI work that helped the ecosystem.'}
+              {TreeOfLifeTreeOfLifePageClientCopy.powMeasuresStrengthPosMeasures[cs ? 'cs' : 'en']}
             </p>
           </div>
 
@@ -1426,7 +1494,7 @@ export default function TreeOfLifePageClient() {
                 <p className="text-sm text-gray-300">{cs ? m.desc.cs : m.desc.en}</p>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <Zap className="h-3.5 w-3.5" />
-                  {cs ? 'Energie' : 'Energy'}: {cs ? m.energy.cs : m.energy.en}
+                  {TreeOfLifeTreeOfLifePageClientCopy.energy[cs ? 'cs' : 'en']}: {cs ? m.energy.cs : m.energy.en}
                 </div>
               </div>
             ))}
@@ -1434,7 +1502,7 @@ export default function TreeOfLifePageClient() {
 
           {/* Care Tasks */}
           <div className="space-y-3">
-            <h3 className="text-lg font-bold text-white">{cs ? 'Care Tasks — užitečná práce v každém bloku' : 'Care Tasks — useful work in every block'}</h3>
+            <h3 className="text-lg font-bold text-white">{TreeOfLifeTreeOfLifePageClientCopy.careTasksUsefulWorkInEveryBloc[cs ? 'cs' : 'en']}</h3>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {CARE_TASKS.map((t) => (
                 <div
@@ -1457,13 +1525,11 @@ export default function TreeOfLifePageClient() {
             <div className="flex items-center gap-2">
               <Cpu className="h-5 w-5 text-cyan-400" />
               <h3 className="text-lg font-bold text-white">
-                {cs ? 'NPU Mining — demokratizace těžení' : 'NPU Mining — democratizing mining'}
+                {TreeOfLifeTreeOfLifePageClientCopy.npuMiningDemocratizingMining[cs ? 'cs' : 'en']}
               </h3>
             </div>
             <p className="text-sm text-gray-400">
-              {cs
-                ? 'Místo drahých GPU rigů ($3000+, 500W+) — NPU čip v telefonu ($0 extra, 5-15W). Každý telefon se stává potenciálním validátorem. RandomNPU = ASIC resistance (náhodné MLP topologie per epoch).'
-                : 'Instead of expensive GPU rigs ($3000+, 500W+) — NPU chip in phone ($0 extra, 5-15W). Every phone becomes a potential validator. RandomNPU = ASIC resistance (random MLP topologies per epoch).'}
+              {TreeOfLifeTreeOfLifePageClientCopy.insteadOfExpensiveGpuRigs30005[cs ? 'cs' : 'en']}
             </p>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {NPU_CHIPS.map((c) => (
@@ -1547,7 +1613,7 @@ export default function TreeOfLifePageClient() {
               <h3 className="text-lg font-bold text-white">Care Proof</h3>
             </div>
             <p className="text-sm text-gray-400">
-              {cs ? 'Struktura care proof — AI inference output který prokazuje péči o síť:' : 'Care proof structure — AI inference output that proves care for the network:'}
+              {TreeOfLifeTreeOfLifePageClientCopy.careProofStructureAiInferenceO[cs ? 'cs' : 'en']}
             </p>
             <pre className="zion-rainbow-sub overflow-x-auto p-4 text-xs text-gray-300" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}><code>{`struct CareProof {
     validator_id: [u8; 32],     // Identifikátor validátora
@@ -1572,15 +1638,13 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-amber-400">
-              {cs ? 'Etický základ — Bodhisattva Vow' : 'Ethical foundation — Bodhisattva Vow'}
+              {TreeOfLifeTreeOfLifePageClientCopy.ethicalFoundationBodhisattvaVo[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {cs ? 'Osm Velkých Bodhisattvů — Strážci ZIONu' : 'Eight Great Bodhisattvas — Guardians of ZION'}
+              {TreeOfLifeTreeOfLifePageClientCopy.eightGreatBodhisattvasGuardian[cs ? 'cs' : 'en']}
             </h2>
             <p className="mx-auto max-w-3xl text-sm text-gray-400">
-              {cs
-                ? 'ZION není krypto-ekonomický protokol. Je Proof-of-Care síť — pokus zakódovat Bodhisattva orientaci do konsensu, governance a komunitní praxe. Osm Bodhisattvů předsedá osmi doménám protokolu.'
-                : 'ZION is not a crypto-economic protocol. It is a Proof-of-Care network — an attempt to encode the Bodhisattva orientation into consensus, governance, and community practice. Eight Bodhisattvas preside over eight domains of the protocol.'}
+              {TreeOfLifeTreeOfLifePageClientCopy.zionIsNotACryptoEconomicProtoc[cs ? 'cs' : 'en']}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <a
@@ -1599,7 +1663,7 @@ export default function TreeOfLifePageClient() {
           {/* Four Great Vows */}
           <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-white">
-              {cs ? 'Čtyři Velké Sliby (四弘誓願)' : 'Four Great Vows (四弘誓願)'}
+              {TreeOfLifeTreeOfLifePageClientCopy.fourGreatVows[cs ? 'cs' : 'en']}
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">
               {FOUR_GREAT_VOWS.map((v, i) => (
@@ -1609,7 +1673,7 @@ export default function TreeOfLifePageClient() {
               ))}
             </div>
             <p className="text-xs text-gray-500">
-              {cs ? 'Čtyři sliby jsou nemožné záměrně. Nejsou cíli, kterých se dosáhne. Jsou směrem, kterým se kráčí.' : 'The Four Vows are impossible by design. They are not goals to be reached. They are a direction to walk.'}
+              {TreeOfLifeTreeOfLifePageClientCopy.theFourVowsAreImpossibleByDesi[cs ? 'cs' : 'en']}
             </p>
           </div>
 
@@ -1661,7 +1725,7 @@ export default function TreeOfLifePageClient() {
                 </div>
                 {/* ZION Role */}
                 <div className="flex items-start gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'ZION role' : 'ZION role'}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.zionRole[cs ? 'cs' : 'en']}</span>
                   <p className="flex-1 text-xs text-gray-400">{cs ? b.zionRole.cs : b.zionRole.en}</p>
                 </div>
               </div>
@@ -1671,12 +1735,10 @@ export default function TreeOfLifePageClient() {
           {/* Eight Pledges */}
           <div className="space-y-3">
             <h3 className="text-lg font-bold text-white">
-              {cs ? 'Osm slibů Guardianů' : 'Eight Guardian Pledges'}
+              {TreeOfLifeTreeOfLifePageClientCopy.eightGuardianPledges[cs ? 'cs' : 'en']}
             </h3>
             <p className="text-sm text-gray-400">
-              {cs
-                ? 'Bodhisattva Vow je nejvyšší závazek pro L5 komunitní Guardiány. Osm slibů pokrývá půdu, život, učení, smrt a radost.'
-                : 'The Bodhisattva Vow is the highest commitment for L5 community Guardians. Eight pledges cover land, life, teaching, death, and joy.'}
+              {TreeOfLifeTreeOfLifePageClientCopy.theBodhisattvaVowIsTheHighestC[cs ? 'cs' : 'en']}
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
               {EIGHT_PLEDGES.map((p) => (
@@ -1699,27 +1761,23 @@ export default function TreeOfLifePageClient() {
             <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
                 <HeartHandshake className="h-5 w-5 text-purple-400" />
-                <h4 className="text-sm font-bold text-white">{cs ? 'Dual Vow — Dvojí slib' : 'Dual Vow'}</h4>
+                <h4 className="text-sm font-bold text-white">{TreeOfLifeTreeOfLifePageClientCopy.dualVow[cs ? 'cs' : 'en']}</h4>
               </div>
               <p className="text-xs text-gray-400">
-                {cs
-                  ? 'Guardian, který drží jak Sefirot Vow (pro integritu protokolu), tak Bodhisattva Vow (pro soucitnou akci), je rozpoznán jako Dual-Vow Guardian. Care score bonus: +5% nad single-vow.'
-                  : 'A Guardian who holds both the Sefirot Vow (for protocol integrity) and the Bodhisattva Vow (for compassionate action) is recognized as a Dual-Vow Guardian. Care score bonus: +5% above single-vow.'}
+                {TreeOfLifeTreeOfLifePageClientCopy.aGuardianWhoHoldsBothTheSefiro[cs ? 'cs' : 'en']}
               </p>
               <p className="font-mono text-[10px] text-purple-300">DUAL_VOW_CARE_SCORE_BONUS_BPS = 10_500</p>
             </div>
             <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-amber-400" />
-                <h4 className="text-sm font-bold text-white">{cs ? 'Tisíc zlomení' : 'The Thousand Breakings'}</h4>
+                <h4 className="text-sm font-bold text-white">{TreeOfLifeTreeOfLifePageClientCopy.theThousandBreakings[cs ? 'cs' : 'en']}</h4>
               </div>
               <p className="text-sm italic text-gray-300">
-                {cs ? '„Kéž ho zlomím tisíckrát a obnovím tisíc a jednou."' : '"May I break it a thousand times and renew it a thousand and one."'}
+                {TreeOfLifeTreeOfLifePageClientCopy.mayIBreakItAThousandTimesAndRe[cs ? 'cs' : 'en']}
               </p>
               <p className="text-xs text-gray-400">
-                {cs
-                  ? 'Slib je směr, ne destinace. Zlomení se očekává. Obnova je praxe. To odlišuje ZION slib od právní smlouvy (zneplatněna porušením) i slibu věrnosti (nese hanbu).'
-                  : 'The vow is a direction, not a destination. Breaking is expected. Renewal is the practice. This distinguishes the ZION vow from a legal contract (invalidated by breach) and a loyalty oath (carries shame).'}
+                {TreeOfLifeTreeOfLifePageClientCopy.theVowIsADirectionNotADestinat[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -1727,9 +1785,7 @@ export default function TreeOfLifePageClient() {
           {/* Shantideva quote */}
           <div className="zion-rainbow-card space-y-3 p-6 text-center" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
             <p className="text-lg italic text-gray-300">
-              {cs
-                ? '„Tak dlouho, jak prostor trvá, a tak dlouho, jak cítící bytosti zůstávají, do té doby kéž i já zůstávám, abych rozptýlil bídu světa."'
-                : '"For as long as space endures, and for as long as sentient beings remain, until then may I too abide, to dispel the misery of the world."'}
+              {TreeOfLifeTreeOfLifePageClientCopy.forAsLongAsSpaceEnduresAndForA[cs ? 'cs' : 'en']}
             </p>
             <p className="text-xs uppercase tracking-[0.3em] text-emerald-400">— Shantideva, Bodhicharyavatara 10.55</p>
           </div>
@@ -1745,11 +1801,9 @@ export default function TreeOfLifePageClient() {
         >
           <div className="zion-rainbow-card space-y-4 p-8" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <p className="text-lg italic text-gray-300">
-              {cs
-                ? '„Ne ten kdo má největší sílu, ale ten kdo nejlépe opékuje, ten bude vést."'
-                : '"Not the one who has the greatest strength, but the one who cares best, that one shall lead."'}
+              {TreeOfLifeTreeOfLifePageClientCopy.notTheOneWhoHasTheGreatestStre[cs ? 'cs' : 'en']}
             </p>
-            <p className="text-xs uppercase tracking-[0.3em] text-zion-gold">— {cs ? 'Protokol Péče' : 'Protocol of Care'}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-zion-gold">— {TreeOfLifeTreeOfLifePageClientCopy.protocolOfCare[cs ? 'cs' : 'en']}</p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -1757,7 +1811,7 @@ export default function TreeOfLifePageClient() {
               className="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 px-5 py-2.5 text-sm font-medium text-emerald-300 hover:bg-emerald-500/10 transition-all"
             >
               <BookOpen className="h-4 w-4" />
-              {cs ? 'TerraNova kniha' : 'TerraNova book'}
+              {TreeOfLifeTreeOfLifePageClientCopy.terranovaBook[cs ? 'cs' : 'en']}
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
@@ -1765,14 +1819,14 @@ export default function TreeOfLifePageClient() {
               className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white transition-all"
             >
               <TreePine className="h-4 w-4" />
-              {cs ? 'Strom na homepage' : 'Tree on homepage'}
+              {TreeOfLifeTreeOfLifePageClientCopy.treeOnHomepage[cs ? 'cs' : 'en']}
             </Link>
             <Link
               href="/l6-issobella"
               className="inline-flex items-center gap-2 rounded-2xl border border-pink-500/30 bg-pink-500/5 px-5 py-2.5 text-sm font-medium text-pink-300 hover:bg-pink-500/10 transition-all"
             >
               <Star className="h-4 w-4" />
-              {cs ? 'L6 Issobella (Malkhut)' : 'L6 Issobella (Malkhut)'}
+              {TreeOfLifeTreeOfLifePageClientCopy.l6IssobellaMalkhut[cs ? 'cs' : 'en']}
             </Link>
           </div>
         </motion.section>

@@ -5,6 +5,12 @@ import { BookOpen, FileText, Sparkles, ExternalLink, Scroll, Globe } from 'lucid
 import { useLang } from '@/contexts/LanguageContext';
 import Link from 'next/link';
 
+const WhitepapersBannerCopy = {
+  officialZionWhitepapers: { cs: `Oficiální Whitepapers ZION`, en: `Official ZION Whitepapers` },
+  masterWhitepaperTechnicalWhite: { cs: `Master Whitepaper, Technical Whitepaper, Kniha Zrození a další. Čti, stahuj PDF a sdílej fundaci projektu.`, en: `Master Whitepaper, Technical Whitepaper, Book of Genesis and more. Read, download PDFs, and share the foundation of the project.` },
+  exploreWhitepapers: { cs: `Prozkoumat Whitepapers`, en: `Explore Whitepapers` },
+};
+
 export default function WhitepapersBanner() {
   const { lang } = useLang();
   const cs = lang === 'cs';
@@ -25,12 +31,10 @@ export default function WhitepapersBanner() {
             </div>
             <div className="min-w-0">
               <p className="text-sm sm:text-base font-semibold text-violet-100 leading-snug">
-                {cs ? 'Oficiální Whitepapers ZION' : 'Official ZION Whitepapers'}
+                {WhitepapersBannerCopy.officialZionWhitepapers[cs ? 'cs' : 'en']}
               </p>
               <p className="text-xs sm:text-sm text-violet-200/80 leading-relaxed mt-0.5">
-                {cs
-                  ? 'Master Whitepaper, Technical Whitepaper, Kniha Zrození a další. Čti, stahuj PDF a sdílej fundaci projektu.'
-                  : 'Master Whitepaper, Technical Whitepaper, Book of Genesis and more. Read, download PDFs, and share the foundation of the project.'}
+                {WhitepapersBannerCopy.masterWhitepaperTechnicalWhite[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -39,7 +43,7 @@ export default function WhitepapersBanner() {
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/40 px-4 py-2 text-sm font-semibold text-violet-100 transition-colors shrink-0"
           >
             <BookOpen className="h-4 w-4" />
-            {cs ? 'Prozkoumat Whitepapers' : 'Explore Whitepapers'}
+            {WhitepapersBannerCopy.exploreWhitepapers[cs ? 'cs' : 'en']}
             <ExternalLink className="h-3 w-3 opacity-60" />
           </Link>
         </div>

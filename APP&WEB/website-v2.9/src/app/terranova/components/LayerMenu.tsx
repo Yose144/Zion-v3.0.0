@@ -8,6 +8,10 @@ import {
   LucideIcon,
 } from 'lucide-react';
 
+const TerranovaComponentsLayerMenuCopy = {
+  ecosystemLayers: { cs: `Ekosystémové vrstvy`, en: `Ecosystem Layers` },
+};
+
 type Layer = {
   id: string;
   labelCs: string;
@@ -49,7 +53,7 @@ export default function LayerMenu({ cs }: { cs: boolean }) {
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-          {cs ? 'Ekosystémové vrstvy' : 'Ecosystem Layers'}
+          {TerranovaComponentsLayerMenuCopy.ecosystemLayers[cs ? 'cs' : 'en']}
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3">

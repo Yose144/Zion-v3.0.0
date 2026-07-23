@@ -4,6 +4,14 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ExternalLink, Volume2 } from 'lucide-react';
 
+const SpotifyBannerCopy = {
+  playMusicWhileYouPlay: { cs: `Pusť si hudbu při hraní`, en: `Play music while you play` },
+  hide: { cs: `Skrýt`, en: `Hide` },
+  open: { cs: `Otevřít`, en: `Open` },
+  requiresSpotifyAccountForFullP: { cs: `Vyžaduje Spotify účet pro plné přehrávání`, en: `Requires Spotify account for full playback` },
+  openInSpotify: { cs: `Otevřít v Spotify`, en: `Open in Spotify` },
+};
+
 interface SpotifyBannerProps {
   /** Spotify playlist ID */
   playlistId?: string;
@@ -64,13 +72,13 @@ export default function SpotifyBanner({
               </span>
             </p>
             <p className="text-[10px] text-gray-500">
-              {cs ? 'Pusť si hudbu při hraní' : 'Play music while you play'}
+              {SpotifyBannerCopy.playMusicWhileYouPlay[cs ? 'cs' : 'en']}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="hidden sm:inline text-[10px] text-[#1DB954]/70 uppercase tracking-wider">
-            {open ? (cs ? 'Skrýt' : 'Hide') : (cs ? 'Otevřít' : 'Open')}
+            {open ? (SpotifyBannerCopy.hide[cs ? 'cs' : 'en']) : (SpotifyBannerCopy.open[cs ? 'cs' : 'en'])}
           </span>
           <motion.div
             animate={{ rotate: open ? 180 : 0 }}
@@ -104,7 +112,7 @@ export default function SpotifyBanner({
               />
               <div className="mt-3 flex items-center justify-between px-1">
                 <p className="text-[10px] text-gray-600">
-                  {cs ? 'Vyžaduje Spotify účet pro plné přehrávání' : 'Requires Spotify account for full playback'}
+                  {SpotifyBannerCopy.requiresSpotifyAccountForFullP[cs ? 'cs' : 'en']}
                 </p>
                 <a
                   href={`https://open.spotify.com/playlist/${playlistId}`}
@@ -112,7 +120,7 @@ export default function SpotifyBanner({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-lg border border-[#1DB954]/20 px-2.5 py-1 text-[10px] text-[#1DB954] hover:bg-[#1DB954]/10 transition-colors"
                 >
-                  {cs ? 'Otevřít v Spotify' : 'Open in Spotify'}
+                  {SpotifyBannerCopy.openInSpotify[cs ? 'cs' : 'en']}
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </div>

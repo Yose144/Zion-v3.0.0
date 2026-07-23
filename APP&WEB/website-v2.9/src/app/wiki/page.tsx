@@ -8,38 +8,44 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const WikiCopy = {
+  terranova: { cs: `TerraNova`, en: `TerraNova` },
+  theBookOfTheNewEarth7ChaptersF: { cs: `Kniha nové Země — 7 kapitol od Genesis po Zlatý Kompas. Kompletní filosofie a vize projektu ZION.`, en: `The Book of the New Earth — 7 chapters from Genesis to Golden Compass. The complete philosophy and vision of the ZION project.` },
+  genesis: { cs: `Genesis`, en: `Genesis` },
+  genesisBlockSpecificationFeeSp: { cs: `Specifikace genesis bloku, konfigurace fee split, premine adresy a parametry sítě.`, en: `Genesis block specification, fee split configuration, premine addresses and network parameters.` },
+  documentation: { cs: `Dokumentace`, en: `Documentation` },
+  technicalDocumentationWhitepap: { cs: `Technická dokumentace, whitepaper, API reference, návody a FAQ.`, en: `Technical documentation, whitepaper, API reference, guides and FAQ.` },
+  rapaNuiCulturalRevivalHeritage: { cs: `Rapa Nui — kulturní obnova, ochrana dědictví a L5 komunitní fond.`, en: `Rapa Nui — cultural revival, heritage protection and L5 community fund.` },
+  knowledgeBase: { cs: `Znalostní báze`, en: `Knowledge Base` },
+  terranovaGenesisDocumentationA: { cs: `TerraNova, Genesis, dokumentace a další zdroje vědomí o projektu ZION.`, en: `TerraNova, Genesis, documentation and other knowledge sources about the ZION project.` },
+  open: { cs: `Otevřít →`, en: `Open →` },
+  terranovaBook: { cs: `TerraNova kniha`, en: `TerraNova Book` },
+};
+
 const getSections = (cs: boolean) => [
   {
     href: '/terranova',
     icon: BookMarked,
-    title: cs ? 'TerraNova' : 'TerraNova',
-    desc: cs
-      ? 'Kniha nové Země — 7 kapitol od Genesis po Zlatý Kompas. Kompletní filosofie a vize projektu ZION.'
-      : 'The Book of the New Earth — 7 chapters from Genesis to Golden Compass. The complete philosophy and vision of the ZION project.',
+    title: WikiCopy.terranova[cs ? 'cs' : 'en'],
+    desc: WikiCopy.theBookOfTheNewEarth7ChaptersF[cs ? 'cs' : 'en'],
   },
   {
     href: '/genesis',
     icon: Sprout,
-    title: cs ? 'Genesis' : 'Genesis',
-    desc: cs
-      ? 'Specifikace genesis bloku, konfigurace fee split, premine adresy a parametry sítě.'
-      : 'Genesis block specification, fee split configuration, premine addresses and network parameters.',
+    title: WikiCopy.genesis[cs ? 'cs' : 'en'],
+    desc: WikiCopy.genesisBlockSpecificationFeeSp[cs ? 'cs' : 'en'],
   },
   {
     href: '/docs',
     icon: FileText,
-    title: cs ? 'Dokumentace' : 'Documentation',
-    desc: cs
-      ? 'Technická dokumentace, whitepaper, API reference, návody a FAQ.'
-      : 'Technical documentation, whitepaper, API reference, guides and FAQ.',
+    title: WikiCopy.documentation[cs ? 'cs' : 'en'],
+    desc: WikiCopy.technicalDocumentationWhitepap[cs ? 'cs' : 'en'],
   },
   {
     href: '/terranova/te-piko-ora',
     icon: Waves,
     title: 'Te Pīko Ora',
-    desc: cs
-      ? 'Rapa Nui — kulturní obnova, ochrana dědictví a L5 komunitní fond.'
-      : 'Rapa Nui — cultural revival, heritage protection and L5 community fund.',
+    desc: WikiCopy.rapaNuiCulturalRevivalHeritage[cs ? 'cs' : 'en'],
   },
 ];
 
@@ -61,15 +67,13 @@ export default function WikiPage() {
           >
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-zion-cyan">
               <Globe className="h-3.5 w-3.5" />
-              {cs ? 'Znalostní báze' : 'Knowledge Base'}
+              {WikiCopy.knowledgeBase[cs ? 'cs' : 'en']}
             </div>
             <h1 className="text-gradient text-4xl font-bold tracking-tight sm:text-5xl">
               ZION Wiki
             </h1>
             <p className="mt-4 text-lg text-gray-400">
-              {cs
-                ? 'TerraNova, Genesis, dokumentace a další zdroje vědomí o projektu ZION.'
-                : 'TerraNova, Genesis, documentation and other knowledge sources about the ZION project.'}
+              {WikiCopy.terranovaGenesisDocumentationA[cs ? 'cs' : 'en']}
             </p>
           </motion.div>
         </div>
@@ -97,7 +101,7 @@ export default function WikiPage() {
                 <h3 className="mt-4 text-xl font-bold text-white">{s.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-gray-400">{s.desc}</p>
                 <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-zion-cyan opacity-70 group-hover:opacity-100 transition-opacity">
-                  {cs ? 'Otevřít →' : 'Open →'}
+                  {WikiCopy.open[cs ? 'cs' : 'en']}
                 </span>
               </Link>
             </motion.div>
@@ -114,7 +118,7 @@ export default function WikiPage() {
               className="zion-rainbow-sub px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
               style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
             >
-              {cs ? 'TerraNova kniha' : 'TerraNova Book'}
+              {WikiCopy.terranovaBook[cs ? 'cs' : 'en']}
             </Link>
             <Link
               href="/genesis"
@@ -128,7 +132,7 @@ export default function WikiPage() {
               className="zion-rainbow-sub px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
               style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
             >
-              {cs ? 'Dokumentace' : 'Documentation'}
+              {WikiCopy.documentation[cs ? 'cs' : 'en']}
             </Link>
             <Link
               href="/terranova/te-piko-ora"

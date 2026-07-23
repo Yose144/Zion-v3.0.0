@@ -20,6 +20,40 @@ import { SITE_RELEASE_LABEL } from "@/lib/site";
 import { verifyMessage } from "@/lib/explorer/api";
 import type { VerifyMessageResult } from "@/lib/explorer/types";
 
+const ExplorerVerifyMessageVerifyMessagePageClientCopy = {
+  fillInPublicKeyMessageAndSigna: { cs: `Vyplňte public key, zprávu a podpis`, en: `Fill in public key, message, and signature` },
+  verify: { cs: `Verify`, en: `Verify` },
+  cryptography: { cs: `Kryptografie`, en: `Cryptography` },
+  verifyMessage: { cs: `Ověření zprávy`, en: `Verify Message` },
+  verifyAnEd25519MessageSignatur: { cs: `Ověřte Ed25519 podpis zprávy proti public key. Volitelně zkontrolujte, zda public key odpovídá ZION adrese.`, en: `Verify an Ed25519 message signature against a public key. Optionally check that the public key matches a ZION address.` },
+  clientSideVerify: { cs: `Client-side verify`, en: `Client-side verify` },
+  publicKeyHex: { cs: `Public Key (hex)`, en: `Public Key (hex)` },
+  message: { cs: `Zpráva`, en: `Message` },
+  signatureHex: { cs: `Podpis (hex)`, en: `Signature (hex)` },
+  zionAddressOptional: { cs: `ZION adresa (volitelné)`, en: `ZION Address (optional)` },
+  ifProvidedVerifiesThatThePubli: { cs: `Pokud zadáno, ověří se že public key derivuje tuto ZION adresu (SHA-256 → RIPEMD-160 → base32).`, en: `If provided, verifies that the public key derives this ZION address (SHA-256 → RIPEMD-160 → base32).` },
+  verifying: { cs: `Ověřuji…`, en: `Verifying…` },
+  verifySignature: { cs: `Ověřit podpis`, en: `Verify Signature` },
+  clear: { cs: `Vyčistit`, en: `Clear` },
+  signatureValid: { cs: `Podpis platný`, en: `Signature Valid` },
+  signatureInvalid: { cs: `Podpis neplatný`, en: `Signature Invalid` },
+  ed25519Signature: { cs: `Ed25519 podpis`, en: `Ed25519 Signature` },
+  signatureMatchesPublicKey: { cs: `Podpis odpovídá public key`, en: `Signature matches public key` },
+  signatureDoesNotMatchPublicKey: { cs: `Podpis neodpovídá public key`, en: `Signature does not match public key` },
+  addressMatch: { cs: `Shoda adresy`, en: `Address Match` },
+  publicKeyAddressOk: { cs: `Public key → adresa OK`, en: `Public key → address OK` },
+  publicKeyDoesNotMatchAddress: { cs: `Public key neodpovídá adrese`, en: `Public key does not match address` },
+  derivedAddress: { cs: `Derivovaná adresa`, en: `Derived Address` },
+  providedAddress: { cs: `Zadaná adresa`, en: `Provided Address` },
+  errorDetail: { cs: `Detail chyby`, en: `Error detail` },
+  error: { cs: `Chyba`, en: `Error` },
+  howVerificationWorks: { cs: `Jak ověřování funguje`, en: `How verification works` },
+  ed25519SignatureIsVerifiedAgai: { cs: `Ed25519 podpis se ověřuje proti public key pomocí @noble/ed25519 knihovny (client-side, žádný RPC).`, en: `Ed25519 signature is verified against the public key using @noble/ed25519 library (client-side, no RPC).` },
+  zionAddressSha256PubkeyRipemd1: { cs: `ZION adresa: SHA-256(pubkey) → RIPEMD-160 → custom base32 → zion1 prefix + 4-char checksum.`, en: `ZION address: SHA-256(pubkey) → RIPEMD-160 → custom base32 → zion1 prefix + 4-char checksum.` },
+  publicKeyCannotBeExtractedFrom: { cs: `Public key nelze extrahovat z adresy (jednosměrný hash). Lze pouze ověřit, zda pubkey odpovídá adrese.`, en: `Public key cannot be extracted from address (one-way hash). You can only verify whether a pubkey matches an address.` },
+  algorithmEd25519EdwardsCurveDi: { cs: `Algoritmus: Ed25519 (Edwards-curve Digital Signature Algorithm, RFC 8032).`, en: `Algorithm: Ed25519 (Edwards-curve Digital Signature Algorithm, RFC 8032).` },
+};
+
 /* ── component ───────────────────────────────────────────────── */
 
 export default function VerifyMessagePageClient() {
@@ -39,7 +73,7 @@ export default function VerifyMessagePageClient() {
     setResult(null);
 
     if (!publicKey.trim() || !message.trim() || !signature.trim()) {
-      setError(cs ? "Vyplňte public key, zprávu a podpis" : "Fill in public key, message, and signature");
+      setError(ExplorerVerifyMessageVerifyMessagePageClientCopy.fillInPublicKeyMessageAndSigna[cs ? 'cs' : 'en']);
       return;
     }
 
@@ -93,27 +127,25 @@ export default function VerifyMessagePageClient() {
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-emerald-300 uppercase">
               <ShieldCheck className="h-4 w-4" />
-              {SITE_RELEASE_LABEL} · {cs ? "Verify" : "Verify"}
+              {SITE_RELEASE_LABEL} · {ExplorerVerifyMessageVerifyMessagePageClientCopy.verify[cs ? 'cs' : 'en']}
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                {cs ? "Kryptografie" : "Cryptography"}
+                {ExplorerVerifyMessageVerifyMessagePageClientCopy.cryptography[cs ? 'cs' : 'en']}
               </p>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                {cs ? "Ověření zprávy" : "Verify Message"}
+                {ExplorerVerifyMessageVerifyMessagePageClientCopy.verifyMessage[cs ? 'cs' : 'en']}
               </h1>
             </div>
             <p className="text-lg text-gray-300 max-w-2xl">
-              {cs
-                ? "Ověřte Ed25519 podpis zprávy proti public key. Volitelně zkontrolujte, zda public key odpovídá ZION adrese."
-                : "Verify an Ed25519 message signature against a public key. Optionally check that the public key matches a ZION address."}
+              {ExplorerVerifyMessageVerifyMessagePageClientCopy.verifyAnEd25519MessageSignatur[cs ? 'cs' : 'en']}
             </p>
             <div className="flex flex-wrap gap-3 text-xs">
               <span className="zion-badge zion-badge-green">
                 <Shield className="h-3 w-3" /> Ed25519
               </span>
               <span className="zion-badge text-zion-cyan border-zion-cyan/40 bg-zion-cyan/10">
-                <Key className="h-3 w-3" /> {cs ? "Client-side verify" : "Client-side verify"}
+                <Key className="h-3 w-3" /> {ExplorerVerifyMessageVerifyMessagePageClientCopy.clientSideVerify[cs ? 'cs' : 'en']}
               </span>
               <span className="zion-badge zion-badge-gold">
                 <Signature className="h-3 w-3" /> @noble/ed25519
@@ -134,7 +166,7 @@ export default function VerifyMessagePageClient() {
               <div>
                 <label className="flex items-center gap-2 text-sm text-gray-300 mb-2">
                   <Key className="w-4 h-4 text-emerald-400" />
-                  {cs ? "Public Key (hex)" : "Public Key (hex)"}
+                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyHex[cs ? 'cs' : 'en']}
                   <span className="text-rose-400">*</span>
                 </label>
                 <input
@@ -151,7 +183,7 @@ export default function VerifyMessagePageClient() {
               <div>
                 <label className="flex items-center gap-2 text-sm text-gray-300 mb-2">
                   <MessageSquare className="w-4 h-4 text-zion-cyan" />
-                  {cs ? "Zpráva" : "Message"}
+                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.message[cs ? 'cs' : 'en']}
                   <span className="text-rose-400">*</span>
                 </label>
                 <textarea
@@ -168,7 +200,7 @@ export default function VerifyMessagePageClient() {
               <div>
                 <label className="flex items-center gap-2 text-sm text-gray-300 mb-2">
                   <Signature className="w-4 h-4 text-zion-gold" />
-                  {cs ? "Podpis (hex)" : "Signature (hex)"}
+                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureHex[cs ? 'cs' : 'en']}
                   <span className="text-rose-400">*</span>
                 </label>
                 <input
@@ -185,7 +217,7 @@ export default function VerifyMessagePageClient() {
               <div>
                 <label className="flex items-center gap-2 text-sm text-gray-300 mb-2">
                   <Shield className="w-4 h-4 text-zion-purple" />
-                  {cs ? "ZION adresa (volitelné)" : "ZION Address (optional)"}
+                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.zionAddressOptional[cs ? 'cs' : 'en']}
                 </label>
                 <input
                   type="text"
@@ -196,9 +228,7 @@ export default function VerifyMessagePageClient() {
                   spellCheck={false}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {cs
-                    ? "Pokud zadáno, ověří se že public key derivuje tuto ZION adresu (SHA-256 → RIPEMD-160 → base32)."
-                    : "If provided, verifies that the public key derives this ZION address (SHA-256 → RIPEMD-160 → base32)."}
+                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.ifProvidedVerifiesThatThePubli[cs ? 'cs' : 'en']}
                 </p>
               </div>
 
@@ -212,12 +242,12 @@ export default function VerifyMessagePageClient() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {cs ? "Ověřuji…" : "Verifying…"}
+                      {ExplorerVerifyMessageVerifyMessagePageClientCopy.verifying[cs ? 'cs' : 'en']}
                     </>
                   ) : (
                     <>
                       <ShieldCheck className="w-4 h-4" />
-                      {cs ? "Ověřit podpis" : "Verify Signature"}
+                      {ExplorerVerifyMessageVerifyMessagePageClientCopy.verifySignature[cs ? 'cs' : 'en']}
                     </>
                   )}
                 </button>
@@ -225,7 +255,7 @@ export default function VerifyMessagePageClient() {
                   onClick={handleClear}
                   className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm text-white/60 hover:bg-white/10 hover:text-white transition"
                 >
-                  {cs ? "Vyčistit" : "Clear"}
+                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.clear[cs ? 'cs' : 'en']}
                 </button>
               </div>
             </div>
@@ -260,8 +290,8 @@ export default function VerifyMessagePageClient() {
                 <div>
                   <h2 className={`text-3xl font-bold ${result.valid ? "text-emerald-400" : "text-rose-400"}`}>
                     {result.valid
-                      ? cs ? "Podpis platný" : "Signature Valid"
-                      : cs ? "Podpis neplatný" : "Signature Invalid"}
+                      ? ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureValid[cs ? 'cs' : 'en']
+                      : ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureInvalid[cs ? 'cs' : 'en']}
                   </h2>
                   <p className="text-sm text-gray-400">
                     {result.algorithm && (
@@ -282,13 +312,13 @@ export default function VerifyMessagePageClient() {
                       <XCircle className="w-4 h-4 text-rose-400" />
                     )}
                     <span className="text-xs text-gray-400 uppercase tracking-wider">
-                      {cs ? "Ed25519 podpis" : "Ed25519 Signature"}
+                      {ExplorerVerifyMessageVerifyMessagePageClientCopy.ed25519Signature[cs ? 'cs' : 'en']}
                     </span>
                   </div>
                   <div className={`text-sm font-bold ${result.valid ? "text-emerald-400" : "text-rose-400"}`}>
                     {result.valid
-                      ? cs ? "Podpis odpovídá public key" : "Signature matches public key"
-                      : cs ? "Podpis neodpovídá public key" : "Signature does not match public key"}
+                      ? ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureMatchesPublicKey[cs ? 'cs' : 'en']
+                      : ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureDoesNotMatchPublicKey[cs ? 'cs' : 'en']}
                   </div>
                 </div>
 
@@ -302,13 +332,13 @@ export default function VerifyMessagePageClient() {
                         <XCircle className="w-4 h-4 text-rose-400" />
                       )}
                       <span className="text-xs text-gray-400 uppercase tracking-wider">
-                        {cs ? "Shoda adresy" : "Address Match"}
+                        {ExplorerVerifyMessageVerifyMessagePageClientCopy.addressMatch[cs ? 'cs' : 'en']}
                       </span>
                     </div>
                     <div className={`text-sm font-bold ${result.addressMatch ? "text-emerald-400" : "text-rose-400"}`}>
                       {result.addressMatch
-                        ? cs ? "Public key → adresa OK" : "Public key → address OK"
-                        : cs ? "Public key neodpovídá adrese" : "Public key does not match address"}
+                        ? ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyAddressOk[cs ? 'cs' : 'en']
+                        : ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyDoesNotMatchAddress[cs ? 'cs' : 'en']}
                     </div>
                   </div>
                 )}
@@ -317,7 +347,7 @@ export default function VerifyMessagePageClient() {
                 {result.address && (
                   <div className="zion-rainbow-sub p-4 rounded-xl" style={{ "--rc": "6, 182, 212" } as React.CSSProperties}>
                     <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">
-                      {cs ? "Derivovaná adresa" : "Derived Address"}
+                      {ExplorerVerifyMessageVerifyMessagePageClientCopy.derivedAddress[cs ? 'cs' : 'en']}
                     </div>
                     <code className="text-sm font-mono text-zion-cyan break-all">
                       {result.address}
@@ -329,7 +359,7 @@ export default function VerifyMessagePageClient() {
                 {result.providedAddress && (
                   <div className="zion-rainbow-sub p-4 rounded-xl" style={{ "--rc": "168, 85, 247" } as React.CSSProperties}>
                     <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">
-                      {cs ? "Zadaná adresa" : "Provided Address"}
+                      {ExplorerVerifyMessageVerifyMessagePageClientCopy.providedAddress[cs ? 'cs' : 'en']}
                     </div>
                     <code className="text-sm font-mono text-zion-purple break-all">
                       {result.providedAddress}
@@ -342,7 +372,7 @@ export default function VerifyMessagePageClient() {
               {result.error && !result.valid && (
                 <div className="mt-4 p-4 rounded-xl bg-rose-500/5 border border-rose-500/20">
                   <div className="text-xs text-rose-400 uppercase tracking-wider mb-1">
-                    {cs ? "Detail chyby" : "Error detail"}
+                    {ExplorerVerifyMessageVerifyMessagePageClientCopy.errorDetail[cs ? 'cs' : 'en']}
                   </div>
                   <code className="text-sm font-mono text-rose-300 break-all">
                     {result.error}
@@ -364,7 +394,7 @@ export default function VerifyMessagePageClient() {
                 <AlertCircle className="w-6 h-6 text-rose-400" />
                 <div>
                   <h3 className="text-lg font-bold text-rose-400">
-                    {cs ? "Chyba" : "Error"}
+                    {ExplorerVerifyMessageVerifyMessagePageClientCopy.error[cs ? 'cs' : 'en']}
                   </h3>
                   <code className="text-sm font-mono text-rose-300 break-all">
                     {error}
@@ -388,28 +418,20 @@ export default function VerifyMessagePageClient() {
               </div>
               <div className="space-y-2">
                 <h3 className="text-base font-semibold text-white">
-                  {cs ? "Jak ověřování funguje" : "How verification works"}
+                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.howVerificationWorks[cs ? 'cs' : 'en']}
                 </h3>
                 <ul className="text-sm text-gray-400 space-y-1 list-disc list-inside">
                   <li>
-                    {cs
-                      ? "Ed25519 podpis se ověřuje proti public key pomocí @noble/ed25519 knihovny (client-side, žádný RPC)."
-                      : "Ed25519 signature is verified against the public key using @noble/ed25519 library (client-side, no RPC)."}
+                    {ExplorerVerifyMessageVerifyMessagePageClientCopy.ed25519SignatureIsVerifiedAgai[cs ? 'cs' : 'en']}
                   </li>
                   <li>
-                    {cs
-                      ? "ZION adresa: SHA-256(pubkey) → RIPEMD-160 → custom base32 → zion1 prefix + 4-char checksum."
-                      : "ZION address: SHA-256(pubkey) → RIPEMD-160 → custom base32 → zion1 prefix + 4-char checksum."}
+                    {ExplorerVerifyMessageVerifyMessagePageClientCopy.zionAddressSha256PubkeyRipemd1[cs ? 'cs' : 'en']}
                   </li>
                   <li>
-                    {cs
-                      ? "Public key nelze extrahovat z adresy (jednosměrný hash). Lze pouze ověřit, zda pubkey odpovídá adrese."
-                      : "Public key cannot be extracted from address (one-way hash). You can only verify whether a pubkey matches an address."}
+                    {ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyCannotBeExtractedFrom[cs ? 'cs' : 'en']}
                   </li>
                   <li>
-                    {cs
-                      ? "Algoritmus: Ed25519 (Edwards-curve Digital Signature Algorithm, RFC 8032)."
-                      : "Algorithm: Ed25519 (Edwards-curve Digital Signature Algorithm, RFC 8032)."}
+                    {ExplorerVerifyMessageVerifyMessagePageClientCopy.algorithmEd25519EdwardsCurveDi[cs ? 'cs' : 'en']}
                   </li>
                 </ul>
               </div>

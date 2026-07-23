@@ -6,6 +6,15 @@ import { Rocket, Calendar } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 
+const MainnetCountdownCopy = {
+  days: { cs: `Dnů`, en: `Days` },
+  hours: { cs: `Hodin`, en: `Hours` },
+  minutes: { cs: `Minut`, en: `Minutes` },
+  seconds: { cs: `Sekund`, en: `Seconds` },
+  l2BridgeL3AiDefi: { cs: `L2 Bridge · L3 AI · DeFi`, en: `L2 Bridge · L3 AI · DeFi` },
+  launchCountdown: { cs: `Odpočet launchu`, en: `Launch Countdown` },
+};
+
 const LAUNCH_DATE = new Date('2026-12-31T00:00:00Z');
 const GENESIS_DATE = new Date('2026-06-11T00:00:00Z');
 const BRIDGE_DATE = new Date('2026-06-18T00:00:00Z');
@@ -55,10 +64,10 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
   }, []);
 
   const units = [
-    { value: time.days, label: cs ? 'Dnů' : 'Days' },
-    { value: time.hours, label: cs ? 'Hodin' : 'Hours' },
-    { value: time.minutes, label: cs ? 'Minut' : 'Minutes' },
-    { value: time.seconds, label: cs ? 'Sekund' : 'Seconds' },
+    { value: time.days, label: MainnetCountdownCopy.days[cs ? 'cs' : 'en'] },
+    { value: time.hours, label: MainnetCountdownCopy.hours[cs ? 'cs' : 'en'] },
+    { value: time.minutes, label: MainnetCountdownCopy.minutes[cs ? 'cs' : 'en'] },
+    { value: time.seconds, label: MainnetCountdownCopy.seconds[cs ? 'cs' : 'en'] },
   ];
 
   const tMinus = time.total > 0 ? `T-${time.days}` : 'LIVE';
@@ -129,7 +138,7 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
             {/* Phase badge — compact */}
             <div className="flex items-center gap-2 text-[10px] text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-1 self-start">
               <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-              {cs ? 'L2 Bridge · L3 AI · DeFi' : 'L2 Bridge · L3 AI · DeFi'}
+              {MainnetCountdownCopy.l2BridgeL3AiDefi[cs ? 'cs' : 'en']}
             </div>
 
             {/* Title row */}
@@ -139,7 +148,7 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-sm font-bold text-white leading-tight">
-                  {cs ? 'Odpočet launchu' : 'Launch Countdown'}
+                  {MainnetCountdownCopy.launchCountdown[cs ? 'cs' : 'en']}
                 </h2>
                 <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
                   <Calendar className="w-3 h-3 text-zion-cyan shrink-0" />

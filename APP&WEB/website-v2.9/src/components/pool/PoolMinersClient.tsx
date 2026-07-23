@@ -31,6 +31,69 @@ import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
 import { SITE_RELEASE_LABEL } from "@/lib/site";
 
+const PoolMinersCopy = {
+  distribution: { cs: `Distribuce`, en: `Distribution` },
+  groups: { cs: `skupin`, en: `groups` },
+  miner: { cs: `Miner`, en: `Miner` },
+  invalidZionAddressMustStartWit: { cs: `Neplatná ZION adresa — musí začínat na zion1`, en: `Invalid ZION address — must start with zion1` },
+  gold: { cs: `Zlato`, en: `Gold` },
+  silver: { cs: `Stříbro`, en: `Silver` },
+  bronze: { cs: `Bronz`, en: `Bronze` },
+  minerLeaderboard: { cs: `Žebříček minerů`, en: `Miner Leaderboard` },
+  cosmicHarmony: { cs: `Cosmic Harmony`, en: `Cosmic Harmony` },
+  topZionMinersByHashrateShareCo: { cs: `Top ZION mineři podle hashrate, podílu shares a odhadovaných odměn. Živá data s auto-refresh každých 15 sekund.`, en: `Top ZION miners by hashrate, share contribution, and estimated rewards. Live data with auto-refresh every 15 seconds.` },
+  liveData: { cs: `Živá data`, en: `Live Data` },
+  autoRefresh15s: { cs: `Auto-refresh 15 s`, en: `Auto-Refresh 15s` },
+  backToPool: { cs: `Zpět na pool`, en: `Back to Pool` },
+  quickSnapshot: { cs: `Rychlý přehled`, en: `Quick Snapshot` },
+  activeMiners: { cs: `Aktivní mineři`, en: `Active Miners` },
+  total: { cs: `Celkem`, en: `Total` },
+  poolHashrate: { cs: `Pool hashrate`, en: `Pool Hashrate` },
+  topMiner: { cs: `Top miner`, en: `Top Miner` },
+  enterAZionAddressToViewMinerDe: { cs: `Zadejte ZION adresu pro zobrazení detailu minera...`, en: `Enter a ZION address to view miner details...` },
+  searchMiner: { cs: `Najít minera`, en: `Search Miner` },
+  loadingMinerLeaderboard: { cs: `Načítání žebříčku minerů...`, en: `Loading miner leaderboard...` },
+  poolDataUnavailableServersMayB: { cs: `Data poolu nejsou dostupná. Servery mohou být offline.`, en: `Pool data unavailable. Servers may be offline.` },
+  podium: { cs: `Pódium`, en: `Podium` },
+  top3Miners: { cs: `Top 3 mineři`, en: `Top 3 Miners` },
+  theBiggestContributorsToPoolHa: { cs: `Největší přispěvatelé do pool hashrate.`, en: `The biggest contributors to pool hashrate.` },
+  active: { cs: `Aktivní`, en: `Active` },
+  inactive: { cs: `Neaktivní`, en: `Inactive` },
+  worker: { cs: `Worker`, en: `Worker` },
+  payout: { cs: `Payout`, en: `Payout` },
+  hashrate: { cs: `Hashrate`, en: `Hashrate` },
+  poolShare: { cs: `Podíl poolu`, en: `Pool Share` },
+  estDaily: { cs: `Odhad denně`, en: `Est. Daily` },
+  leaderboard: { cs: `Žebříček`, en: `Leaderboard` },
+  fullLeaderboard: { cs: `Úplný žebříček`, en: `Full Leaderboard` },
+  clickColumnHeadersToSortDefaul: { cs: `Klikněte na záhlaví pro řazení. Výchozí řazení podle podílu shares. Hashrate je odhadovaný z distribuce aktivních minerů.`, en: `Click column headers to sort. Default sort by share %. Hashrate is estimated from active miner distribution.` },
+  address: { cs: `Adresa`, en: `Address` },
+  server: { cs: `Server`, en: `Server` },
+  hashrateIsEstimatedFromShareSu: { cs: `Hashrate je odhadován z frekvence odesílání share. Skutečný individuální hashrate se může lišit.`, en: `Hashrate is estimated from share submission frequency. Actual individual hashrate may vary.` },
+  share: { cs: `Podíl`, en: `Share %` },
+  shares: { cs: `Shares`, en: `Shares` },
+  lastShare: { cs: `Poslední share`, en: `Last Share` },
+  estZionDay: { cs: `Est. ZION/den`, en: `Est. ZION/day` },
+  status: { cs: `Stav`, en: `Status` },
+  noMinersAvailable: { cs: `Žádní mineři nejsou dostupní.`, en: `No miners available.` },
+  summary: { cs: `Souhrn`, en: `Summary` },
+  minerStatistics: { cs: `Statistiky minerů`, en: `Miner Statistics` },
+  shareInLast10Min: { cs: `share za posledních 10 min`, en: `share in last 10 min` },
+  registeredMiners: { cs: `Registrovaní mineři`, en: `Registered Miners` },
+  inPplnsWindow: { cs: `v PPLNS okně`, en: `in PPLNS window` },
+  averageHashrate: { cs: `Průměrný hashrate`, en: `Average Hashrate` },
+  perActiveMiner: { cs: `na aktivního minera`, en: `per active miner` },
+  topMinerHashrate: { cs: `Top miner hashrate`, en: `Top Miner Hashrate` },
+  biggestContributor: { cs: `největší přispěvatel`, en: `biggest contributor` },
+  hashrateAndSharesComeFromPoolS: { cs: `Hashrate a shares pocházejí z telemetrie pool serveru (per-worker). Pokud telemetrie nedodává reálná data, hashrate je odhadován proporcionálně z pool hashrate.`, en: `Hashrate and shares come from pool server telemetry (per-worker). When telemetry doesn\'t provide real data, hashrate is estimated proportionally from pool hashrate.` },
+  hashrateDistribution: { cs: `Distribuce hashrate`, en: `Hashrate Distribution` },
+  top10MinersVsTheRestOfThePool: { cs: `Podíl top 10 minerů vs. zbytek poolu.`, en: `Top 10 miners vs. the rest of the pool.` },
+  joinTheLeaderboard: { cs: `Připojte se k žebříčku`, en: `Join the Leaderboard` },
+  startMiningZionAndAppearOnTheL: { cs: `Začněte těžit ZION a objevte se v žebříčku. PPLNS odměny, 89 % pro minera, humanitární mise v každém bloku.`, en: `Start mining ZION and appear on the leaderboard. PPLNS rewards, 89% miner share, humanitarian mission in every block.` },
+  poolDashboard: { cs: `Hlavní stránka poolu`, en: `Pool Dashboard` },
+  searchMiner_2: { cs: `Hledat minera`, en: `Search Miner` },
+};
+
 /* ═══════════════════════════════════════════════════════════
    ZION MINER LEADERBOARD
    Dedicated subpage for /pool/miners
@@ -225,10 +288,10 @@ function DistributionDonut({ slices, cs }: { slices: { label: string; value: num
           return el;
         })}
         <text x="100" y="95" textAnchor="middle" className="fill-white text-[11px] font-semibold uppercase tracking-wider">
-          {cs ? "Distribuce" : "Distribution"}
+          {PoolMinersCopy.distribution[cs ? 'cs' : 'en']}
         </text>
         <text x="100" y="115" textAnchor="middle" className="fill-zion-cyan text-base font-mono font-bold">
-          {slices.length} {cs ? "skupin" : "groups"}
+          {slices.length} {PoolMinersCopy.groups[cs ? 'cs' : 'en']}
         </text>
       </svg>
       <div className="flex-1 w-full space-y-2">
@@ -454,7 +517,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
     const top = [...minerRows].sort((a, b) => b.sharePct - a.sharePct).slice(0, 10);
     const restPct = 100 - top.reduce((s, m) => s + m.sharePct, 0);
     const slices = top.map((m, i) => ({
-      label: `${cs ? "Miner" : "Miner"} #${m.rank} ${shortAddr(m.address)}${m.worker_name ? ` · ${m.worker_name}` : ""}`,
+      label: `${PoolMinersCopy.miner[cs ? 'cs' : 'en']} #${m.rank} ${shortAddr(m.address)}${m.worker_name ? ` · ${m.worker_name}` : ""}`,
       value: m.sharePct,
       color: purplePalette[i % purplePalette.length],
     }));
@@ -473,7 +536,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
     const addr = minerSearch.trim().toLowerCase();
     if (!addr) return;
     if (!addr.startsWith("zion1") || addr.length < 20) {
-      setSearchError(cs ? "Neplatná ZION adresa — musí začínat na zion1" : "Invalid ZION address — must start with zion1");
+      setSearchError(PoolMinersCopy.invalidZionAddressMustStartWit[cs ? 'cs' : 'en']);
       return;
     }
     setSearchError("");
@@ -481,9 +544,9 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
   };
 
   const podiumStyles = [
-    { gradient: "from-amber-300 via-yellow-400 to-amber-600", label: cs ? "Zlato" : "Gold", icon: <Crown className="h-5 w-5" /> },
-    { gradient: "from-slate-200 via-gray-300 to-slate-500", label: cs ? "Stříbro" : "Silver", icon: <Medal className="h-5 w-5" /> },
-    { gradient: "from-orange-300 via-amber-500 to-orange-700", label: cs ? "Bronz" : "Bronze", icon: <Medal className="h-5 w-5" /> },
+    { gradient: "from-amber-300 via-yellow-400 to-amber-600", label: PoolMinersCopy.gold[cs ? 'cs' : 'en'], icon: <Crown className="h-5 w-5" /> },
+    { gradient: "from-slate-200 via-gray-300 to-slate-500", label: PoolMinersCopy.silver[cs ? 'cs' : 'en'], icon: <Medal className="h-5 w-5" /> },
+    { gradient: "from-orange-300 via-amber-500 to-orange-700", label: PoolMinersCopy.bronze[cs ? 'cs' : 'en'], icon: <Medal className="h-5 w-5" /> },
   ];
 
   return (
@@ -512,50 +575,48 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase">
                 <Trophy className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? "Žebříček minerů" : "Miner Leaderboard"}
+                {SITE_RELEASE_LABEL} · {PoolMinersCopy.minerLeaderboard[cs ? 'cs' : 'en']}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? "Cosmic Harmony" : "Cosmic Harmony"}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{PoolMinersCopy.cosmicHarmony[cs ? 'cs' : 'en']}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight flex items-center gap-4">
                   <Users className="hidden md:block h-12 w-12 text-zion-purple" />
-                  {cs ? "Žebříček minerů" : "Miner Leaderboard"}
+                  {PoolMinersCopy.minerLeaderboard[cs ? 'cs' : 'en']}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? "Top ZION mineři podle hashrate, podílu shares a odhadovaných odměn. Živá data s auto-refresh každých 15 sekund."
-                  : "Top ZION miners by hashrate, share contribution, and estimated rewards. Live data with auto-refresh every 15 seconds."}
+                {PoolMinersCopy.topZionMinersByHashrateShareCo[cs ? 'cs' : 'en']}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Activity className="h-3 w-3 text-emerald-400" /> {cs ? "Živá data" : "Live Data"}
+                  <Activity className="h-3 w-3 text-emerald-400" /> {PoolMinersCopy.liveData[cs ? 'cs' : 'en']}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Gauge className="h-3 w-3 text-zion-cyan" /> {cs ? "Auto-refresh 15 s" : "Auto-Refresh 15s"}
+                  <Gauge className="h-3 w-3 text-zion-cyan" /> {PoolMinersCopy.autoRefresh15s[cs ? 'cs' : 'en']}
                 </span>
                 <Link href="/pool" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 hover:text-white hover:border-white/20 transition-colors">
-                  <ArrowRight className="h-3 w-3 rotate-180" /> {cs ? "Zpět na pool" : "Back to Pool"}
+                  <ArrowRight className="h-3 w-3 rotate-180" /> {PoolMinersCopy.backToPool[cs ? 'cs' : 'en']}
                 </Link>
               </div>
             </div>
             <div className="w-full lg:max-w-sm space-y-3">
               <div className="zion-rainbow-sub p-5" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? "Rychlý přehled" : "Quick Snapshot"}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{PoolMinersCopy.quickSnapshot[cs ? 'cs' : 'en']}</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-[11px] text-gray-500">{cs ? "Aktivní mineři" : "Active Miners"}</p>
+                    <p className="text-[11px] text-gray-500">{PoolMinersCopy.activeMiners[cs ? 'cs' : 'en']}</p>
                     <p className="text-2xl font-bold text-emerald-400 font-mono">{activeCount}</p>
                   </div>
                   <div>
-                    <p className="text-[11px] text-gray-500">{cs ? "Celkem" : "Total"}</p>
+                    <p className="text-[11px] text-gray-500">{PoolMinersCopy.total[cs ? 'cs' : 'en']}</p>
                     <p className="text-2xl font-bold text-white font-mono">{totalCount}</p>
                   </div>
                   <div>
-                    <p className="text-[11px] text-gray-500">{cs ? "Pool hashrate" : "Pool Hashrate"}</p>
+                    <p className="text-[11px] text-gray-500">{PoolMinersCopy.poolHashrate[cs ? 'cs' : 'en']}</p>
                     <p className="text-sm font-bold text-zion-cyan font-mono">{fmtHash(poolHashrate)}</p>
                   </div>
                   <div>
-                    <p className="text-[11px] text-gray-500">{cs ? "Top miner" : "Top Miner"}</p>
+                    <p className="text-[11px] text-gray-500">{PoolMinersCopy.topMiner[cs ? 'cs' : 'en']}</p>
                     <p className="text-sm font-bold text-zion-gold font-mono">{fmtHash(topHashrate)}</p>
                   </div>
                 </div>
@@ -579,7 +640,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                   type="text"
                   value={minerSearch}
                   onChange={(e) => { setMinerSearch(e.target.value); setSearchError(""); }}
-                  placeholder={cs ? "Zadejte ZION adresu pro zobrazení detailu minera..." : "Enter a ZION address to view miner details..."}
+                  placeholder={PoolMinersCopy.enterAZionAddressToViewMinerDe[cs ? 'cs' : 'en']}
                   className={`w-full rounded-xl border ${searchError ? "border-red-500/60" : "border-white/10"} bg-white/5 pl-12 pr-4 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-zion-cyan/50 focus:ring-1 focus:ring-zion-cyan/30 transition-colors font-mono`}
                 />
                 {searchError && (
@@ -592,7 +653,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                 style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
               >
                 <Search className="h-4 w-4" />
-                {cs ? "Najít minera" : "Search Miner"}
+                {PoolMinersCopy.searchMiner[cs ? 'cs' : 'en']}
               </button>
             </div>
           </form>
@@ -602,13 +663,13 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
           <div className="zion-rainbow-card p-10 text-center" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
             <div className="inline-flex items-center gap-3 text-gray-400">
               <Activity className="h-5 w-5 animate-pulse text-zion-purple" />
-              {cs ? "Načítání žebříčku minerů..." : "Loading miner leaderboard..."}
+              {PoolMinersCopy.loadingMinerLeaderboard[cs ? 'cs' : 'en']}
             </div>
           </div>
         ) : !data ? (
           <div className="zion-rainbow-card p-10 text-center" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
             <XCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
-            <p className="text-gray-400">{cs ? "Data poolu nejsou dostupná. Servery mohou být offline." : "Pool data unavailable. Servers may be offline."}</p>
+            <p className="text-gray-400">{PoolMinersCopy.poolDataUnavailableServersMayB[cs ? 'cs' : 'en']}</p>
           </div>
         ) : (
           <>
@@ -620,12 +681,12 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                 transition={{ delay: 0.06 }}
               >
                 <div className="flex flex-col gap-2 mb-6">
-                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Pódium" : "Podium"}</p>
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolMinersCopy.podium[cs ? 'cs' : 'en']}</p>
                   <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                     <Trophy className="h-7 w-7 text-zion-gold" />
-                    {cs ? "Top 3 mineři" : "Top 3 Miners"}
+                    {PoolMinersCopy.top3Miners[cs ? 'cs' : 'en']}
                   </h2>
-                  <p className="text-sm text-gray-400">{cs ? "Největší přispěvatelé do pool hashrate." : "The biggest contributors to pool hashrate."}</p>
+                  <p className="text-sm text-gray-400">{PoolMinersCopy.theBiggestContributorsToPoolHa[cs ? 'cs' : 'en']}</p>
                 </div>
 
                 <div className="grid gap-5 md:grid-cols-3">
@@ -652,7 +713,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                               : "border-gray-500/30 bg-white/5 text-gray-400"
                           }`}>
                             <CircleDot className="h-3 w-3" />
-                            {m.isActive ? (cs ? "Aktivní" : "Active") : (cs ? "Neaktivní" : "Inactive")}
+                            {m.isActive ? (PoolMinersCopy.active[cs ? 'cs' : 'en']) : (PoolMinersCopy.inactive[cs ? 'cs' : 'en'])}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mb-1">
@@ -665,22 +726,22 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                           <CopyButton text={m.address} />
                         </div>
                         {m.worker_name && (
-                          <p className="text-[11px] text-gray-500 font-mono mb-1">{cs ? "Worker" : "Worker"}: {m.worker_name}</p>
+                          <p className="text-[11px] text-gray-500 font-mono mb-1">{PoolMinersCopy.worker[cs ? 'cs' : 'en']}: {m.worker_name}</p>
                         )}
                         {m.payout_address && (
-                          <p className="text-[11px] text-gray-600 font-mono mb-3">{cs ? "Payout" : "Payout"}: {shortAddr(m.payout_address)}</p>
+                          <p className="text-[11px] text-gray-600 font-mono mb-3">{PoolMinersCopy.payout[cs ? 'cs' : 'en']}: {shortAddr(m.payout_address)}</p>
                         )}
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div>
-                            <p className="text-[11px] text-gray-500 uppercase tracking-wider">{cs ? "Hashrate" : "Hashrate"}</p>
+                            <p className="text-[11px] text-gray-500 uppercase tracking-wider">{PoolMinersCopy.hashrate[cs ? 'cs' : 'en']}</p>
                             <p className="text-lg font-bold text-zion-cyan font-mono">{fmtHash(m.hashrate)}</p>
                           </div>
                           <div>
-                            <p className="text-[11px] text-gray-500 uppercase tracking-wider">{cs ? "Podíl poolu" : "Pool Share"}</p>
+                            <p className="text-[11px] text-gray-500 uppercase tracking-wider">{PoolMinersCopy.poolShare[cs ? 'cs' : 'en']}</p>
                             <p className="text-lg font-bold text-white font-mono">{m.sharePct.toFixed(2)}%</p>
                           </div>
                           <div className="col-span-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2.5 flex items-center justify-between">
-                            <span className="text-emerald-200 text-[11px] uppercase tracking-wider">{cs ? "Odhad denně" : "Est. Daily"}</span>
+                            <span className="text-emerald-200 text-[11px] uppercase tracking-wider">{PoolMinersCopy.estDaily[cs ? 'cs' : 'en']}</span>
                             <span className="text-emerald-300 font-bold font-mono">{m.estDailyZion.toFixed(4)} ZION</span>
                           </div>
                         </div>
@@ -698,15 +759,13 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
               transition={{ delay: 0.1 }}
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Žebříček" : "Leaderboard"}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolMinersCopy.leaderboard[cs ? 'cs' : 'en']}</p>
                 <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                   <Users className="h-7 w-7 text-zion-cyan" />
-                  {cs ? "Úplný žebříček" : "Full Leaderboard"} ({sortedRows.length})
+                  {PoolMinersCopy.fullLeaderboard[cs ? 'cs' : 'en']} ({sortedRows.length})
                 </h2>
                 <p className="text-sm text-gray-400">
-                  {cs
-                    ? "Klikněte na záhlaví pro řazení. Výchozí řazení podle podílu shares. Hashrate je odhadovaný z distribuce aktivních minerů."
-                    : "Click column headers to sort. Default sort by share %. Hashrate is estimated from active miner distribution."}
+                  {PoolMinersCopy.clickColumnHeadersToSortDefaul[cs ? 'cs' : 'en']}
                 </p>
               </div>
 
@@ -716,14 +775,14 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                     <thead>
                       <tr className="border-b border-white/[0.08]">
                         <SortHeader label="#" sortKey="rank" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} />
-                        <SortHeader label={cs ? "Adresa" : "Address"} sortKey="address" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} />
-                        <SortHeader label={cs ? "Server" : "Server"} sortKey="server" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} />
-                        <SortHeader label={cs ? "Hashrate" : "Hashrate"} sortKey="hashrate" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} align="right" tooltip={cs ? "Hashrate je odhadován z frekvence odesílání share. Skutečný individuální hashrate se může lišit." : "Hashrate is estimated from share submission frequency. Actual individual hashrate may vary."} />
-                        <SortHeader label={cs ? "Podíl" : "Share %"} sortKey="sharePct" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
-                        <SortHeader label={cs ? "Shares" : "Shares"} sortKey="validShares" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
-                        <SortHeader label={cs ? "Poslední share" : "Last Share"} sortKey="last_share" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} />
-                        <SortHeader label={cs ? "Est. ZION/den" : "Est. ZION/day"} sortKey="estDailyZion" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
-                        <SortHeader label={cs ? "Stav" : "Status"} sortKey="isActive" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} />
+                        <SortHeader label={PoolMinersCopy.address[cs ? 'cs' : 'en']} sortKey="address" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} />
+                        <SortHeader label={PoolMinersCopy.server[cs ? 'cs' : 'en']} sortKey="server" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} />
+                        <SortHeader label={PoolMinersCopy.hashrate[cs ? 'cs' : 'en']} sortKey="hashrate" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} align="right" tooltip={PoolMinersCopy.hashrateIsEstimatedFromShareSu[cs ? 'cs' : 'en']} />
+                        <SortHeader label={PoolMinersCopy.share[cs ? 'cs' : 'en']} sortKey="sharePct" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
+                        <SortHeader label={PoolMinersCopy.shares[cs ? 'cs' : 'en']} sortKey="validShares" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
+                        <SortHeader label={PoolMinersCopy.lastShare[cs ? 'cs' : 'en']} sortKey="last_share" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} />
+                        <SortHeader label={PoolMinersCopy.estZionDay[cs ? 'cs' : 'en']} sortKey="estDailyZion" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
+                        <SortHeader label={PoolMinersCopy.status[cs ? 'cs' : 'en']} sortKey="isActive" currentSort={sortKey} sortDir={sortDir} onSort={handleSort} />
                       </tr>
                     </thead>
                     <tbody>
@@ -746,7 +805,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                                 <span className="text-[11px] text-gray-500 font-mono">{m.worker_name}</span>
                               )}
                               {m.payout_address && (
-                                <span className="text-[10px] text-gray-600 font-mono">{cs ? "Payout" : "Payout"}: {shortAddr(m.payout_address)}</span>
+                                <span className="text-[10px] text-gray-600 font-mono">{PoolMinersCopy.payout[cs ? 'cs' : 'en']}: {shortAddr(m.payout_address)}</span>
                               )}
                             </Link>
                           </td>
@@ -774,7 +833,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                                 : "text-gray-500 bg-white/5 border border-white/[0.06]"
                             }`}>
                               <CircleDot className="h-3 w-3" />
-                              {m.isActive ? (cs ? "Aktivní" : "Active") : (cs ? "Neaktivní" : "Inactive")}
+                              {m.isActive ? (PoolMinersCopy.active[cs ? 'cs' : 'en']) : (PoolMinersCopy.inactive[cs ? 'cs' : 'en'])}
                             </span>
                           </td>
                         </tr>
@@ -783,7 +842,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                       {sortedRows.length === 0 && (
                         <tr>
                           <td colSpan={9} className="px-5 py-10 text-center text-gray-500">
-                            {cs ? "Žádní mineři nejsou dostupní." : "No miners available."}
+                            {PoolMinersCopy.noMinersAvailable[cs ? 'cs' : 'en']}
                           </td>
                         </tr>
                       )}
@@ -800,10 +859,10 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
               transition={{ delay: 0.12 }}
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Souhrn" : "Summary"}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolMinersCopy.summary[cs ? 'cs' : 'en']}</p>
                 <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                   <Gauge className="h-7 w-7 text-zion-purple" />
-                  {cs ? "Statistiky minerů" : "Miner Statistics"}
+                  {PoolMinersCopy.minerStatistics[cs ? 'cs' : 'en']}
                 </h2>
               </div>
 
@@ -812,42 +871,40 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                   <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-emerald-400/10 mb-3">
                     <Activity className="h-4 w-4 text-emerald-400" />
                   </div>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider">{cs ? "Aktivní mineři" : "Active Miners"}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider">{PoolMinersCopy.activeMiners[cs ? 'cs' : 'en']}</p>
                   <p className="mt-1 text-2xl font-bold text-white font-mono">{activeCount}</p>
-                  <p className="text-[11px] text-gray-500 mt-1">{cs ? "share za posledních 10 min" : "share in last 10 min"}</p>
+                  <p className="text-[11px] text-gray-500 mt-1">{PoolMinersCopy.shareInLast10Min[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="zion-rainbow-sub p-5" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
                   <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-purple-400/10 mb-3">
                     <Users className="h-4 w-4 text-purple-400" />
                   </div>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider">{cs ? "Registrovaní mineři" : "Registered Miners"}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider">{PoolMinersCopy.registeredMiners[cs ? 'cs' : 'en']}</p>
                   <p className="mt-1 text-2xl font-bold text-white font-mono">{data.pplns?.registered_miners ?? totalCount}</p>
-                  <p className="text-[11px] text-gray-500 mt-1">{cs ? "v PPLNS okně" : "in PPLNS window"}</p>
+                  <p className="text-[11px] text-gray-500 mt-1">{PoolMinersCopy.inPplnsWindow[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="zion-rainbow-sub p-5" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
                   <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-zion-cyan/10 mb-3">
                     <Gauge className="h-4 w-4 text-zion-cyan" />
                   </div>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider">{cs ? "Průměrný hashrate" : "Average Hashrate"}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider">{PoolMinersCopy.averageHashrate[cs ? 'cs' : 'en']}</p>
                   <p className="mt-1 text-2xl font-bold text-white font-mono">{fmtHash(avgHashrate)}</p>
-                  <p className="text-[11px] text-gray-500 mt-1">{cs ? "na aktivního minera" : "per active miner"}</p>
+                  <p className="text-[11px] text-gray-500 mt-1">{PoolMinersCopy.perActiveMiner[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="zion-rainbow-sub p-5" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
                   <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-zion-gold/10 mb-3">
                     <Trophy className="h-4 w-4 text-zion-gold" />
                   </div>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider">{cs ? "Top miner hashrate" : "Top Miner Hashrate"}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider">{PoolMinersCopy.topMinerHashrate[cs ? 'cs' : 'en']}</p>
                   <p className="mt-1 text-2xl font-bold text-white font-mono">{fmtHash(topHashrate)}</p>
-                  <p className="text-[11px] text-gray-500 mt-1">{cs ? "největší přispěvatel" : "biggest contributor"}</p>
+                  <p className="text-[11px] text-gray-500 mt-1">{PoolMinersCopy.biggestContributor[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
 
               <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
                 <Info className="h-3.5 w-3.5 shrink-0" />
                 <span>
-                  {cs
-                    ? "Hashrate a shares pocházejí z telemetrie pool serveru (per-worker). Pokud telemetrie nedodává reálná data, hashrate je odhadován proporcionálně z pool hashrate."
-                    : "Hashrate and shares come from pool server telemetry (per-worker). When telemetry doesn't provide real data, hashrate is estimated proportionally from pool hashrate."}
+                  {PoolMinersCopy.hashrateAndSharesComeFromPoolS[cs ? 'cs' : 'en']}
                 </span>
               </div>
             </motion.section>
@@ -860,12 +917,12 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                 transition={{ delay: 0.14 }}
               >
                 <div className="flex flex-col gap-2 mb-6">
-                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Distribuce" : "Distribution"}</p>
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolMinersCopy.distribution[cs ? 'cs' : 'en']}</p>
                   <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                     <Share2 className="h-7 w-7 text-zion-purple" />
-                    {cs ? "Distribuce hashrate" : "Hashrate Distribution"}
+                    {PoolMinersCopy.hashrateDistribution[cs ? 'cs' : 'en']}
                   </h2>
-                  <p className="text-sm text-gray-400">{cs ? "Podíl top 10 minerů vs. zbytek poolu." : "Top 10 miners vs. the rest of the pool."}</p>
+                  <p className="text-sm text-gray-400">{PoolMinersCopy.top10MinersVsTheRestOfThePool[cs ? 'cs' : 'en']}</p>
                 </div>
 
                 <div className="zion-rainbow-card p-6 md:p-8" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
@@ -886,19 +943,17 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
               className="zion-cta-banner p-10 text-center"
             >
               <Pickaxe className="mx-auto h-12 w-12 text-zion-purple" />
-              <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? "Připojte se k žebříčku" : "Join the Leaderboard"}</h2>
+              <h2 className="mt-6 text-3xl font-semibold text-white">{PoolMinersCopy.joinTheLeaderboard[cs ? 'cs' : 'en']}</h2>
               <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-                {cs
-                  ? "Začněte těžit ZION a objevte se v žebříčku. PPLNS odměny, 89 % pro minera, humanitární mise v každém bloku."
-                  : "Start mining ZION and appear on the leaderboard. PPLNS rewards, 89% miner share, humanitarian mission in every block."}
+                {PoolMinersCopy.startMiningZionAndAppearOnTheL[cs ? 'cs' : 'en']}
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
                 <Link href="/pool" className="zion-button-primary group text-sm" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                  <Pickaxe className="h-4 w-4" /> {cs ? "Hlavní stránka poolu" : "Pool Dashboard"}
+                  <Pickaxe className="h-4 w-4" /> {PoolMinersCopy.poolDashboard[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 <a href="#search" onClick={(e) => { e.preventDefault(); (document.querySelector('input[type="text"]') as HTMLInputElement | null)?.focus(); }} className="zion-button-secondary text-sm">
-                  <Search className="h-4 w-4" /> {cs ? "Hledat minera" : "Search Miner"}
+                  <Search className="h-4 w-4" /> {PoolMinersCopy.searchMiner_2[cs ? 'cs' : 'en']}
                 </a>
                 <Link href="/explorer" className="zion-button-secondary text-sm">
                   <Server className="h-4 w-4" /> Explorer

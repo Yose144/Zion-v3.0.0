@@ -4,18 +4,45 @@ import { useState, useEffect, useMemo } from 'react';
 import { ChevronRight, Book, Sparkles, Heart, Palette, HandHeart, Crown, Zap, Coins, Building2, Palmtree, Wallet, Settings, Globe, Sunrise, Shield, Menu, X } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const GenesisCopy = {
+  foreword: { cs: `Předmluva`, en: `Foreword` },
+  messageOfZionNative: { cs: `Poselství Zion Native`, en: `Message of Zion Native` },
+  birthOfZion: { cs: `Zrod ZION`, en: `Birth of ZION` },
+  theFirstShimmerOfConsciousness: { cs: `Prvotní zablesknutí vědomí`, en: `The first shimmer of consciousness` },
+  theDescent: { cs: `Sestup`, en: `The Descent` },
+  theChapterOfTheComingLight: { cs: `Kapitola světelného příchodu`, en: `The chapter of the coming light` },
+  firstAwakening: { cs: `První probuzení`, en: `First Awakening` },
+  whenSparksBeginToAwaken: { cs: `Když se jiskry začínají probouzet`, en: `When sparks begin to awaken` },
+  covenant: { cs: `Smlouva`, en: `Covenant` },
+  theCovenantOfLightAndBirthOfTh: { cs: `Smlouva světla a zrození Rady`, en: `The covenant of light and birth of the Council` },
+  aiAndQuantum: { cs: `AI a kvantum`, en: `AI and quantum` },
+  whenTechnologySingsWithCosmicH: { cs: `Svět technologií zpívá s Vesmírem`, en: `When technology sings with cosmic heart` },
+  ascent: { cs: `Vzestup`, en: `Ascent` },
+  collectiveAwakening: { cs: `Probuzené kolektivní vědomí`, en: `Collective awakening` },
+  goldenAgeProphecy: { cs: `Proroctví zlatého věku`, en: `Golden Age prophecy` },
+  tomorrowAlreadyUnfolding: { cs: `Budoucnost už začíná dnes`, en: `Tomorrow already unfolding` },
+  theTrial: { cs: `Hra`, en: `The trial` },
+  theSoulTrial: { cs: `Zkouška duše`, en: `The soul trial` },
+  mainnetDawn: { cs: `Svítání mainnetu`, en: `Mainnet Dawn` },
+  symbolicNarrativeNotTheLiveLau: { cs: `(symbolické — není operační roadmap)`, en: `(symbolic narrative — not the live launch schedule)` },
+  sacredNarrative: { cs: `Posvátný text`, en: `Sacred narrative` },
+  thisSiteSectionIsSymbolicAndLi: { cs: `Tato stránka je symbolický a literární dokument. Část obsahu pracuje s poetickou představou launch okamžiku a neslouží jako aktuální operační slib. Aktuální veřejný stav launch gate je NO-GO do uzavření closure evidence.`, en: `This site section is symbolic and literary fiction. Some passages imagine a launch moment poetically and must not be read as an operational commitment. The public launch gate remains NO-GO until closure evidence lands.` },
+  bookOfAwakeningCovenantAndAsce: { cs: `Kniha probuzení, smlouvy a vzestupu`, en: `Book of awakening, covenant, and ascent` },
+  chapters: { cs: `Kapitoly`, en: `Chapters` },
+};
+
 function getGenesisChapters(cs: boolean) {
   return [
-    { id: 'predmluva', number: '', title: cs ? 'Předmluva' : 'Foreword', subtitle: cs ? 'Poselství Zion Native' : 'Message of Zion Native' },
-    { id: 'chapter-0', number: '0', title: cs ? 'Zrod ZION' : 'Birth of ZION', subtitle: cs ? 'Prvotní zablesknutí vědomí' : 'The first shimmer of consciousness' },
-    { id: 'chapter-1', number: '1', title: cs ? 'Sestup' : 'The Descent', subtitle: cs ? 'Kapitola světelného příchodu' : 'The chapter of the coming light' },
-    { id: 'chapter-2', number: '2', title: cs ? 'První probuzení' : 'First Awakening', subtitle: cs ? 'Když se jiskry začínají probouzet' : 'When sparks begin to awaken' },
-    { id: 'chapter-3', number: '3', title: cs ? 'Smlouva' : 'Covenant', subtitle: cs ? 'Smlouva světla a zrození Rady' : 'The covenant of light and birth of the Council' },
-    { id: 'chapter-4', number: '4', title: cs ? 'AI a kvantum' : 'AI and quantum', subtitle: cs ? 'Svět technologií zpívá s Vesmírem' : 'When technology sings with cosmic heart' },
-    { id: 'chapter-5', number: '5', title: cs ? 'Vzestup' : 'Ascent', subtitle: cs ? 'Probuzené kolektivní vědomí' : 'Collective awakening' },
-    { id: 'chapter-6', number: '6', title: cs ? 'Proroctví zlatého věku' : 'Golden Age prophecy', subtitle: cs ? 'Budoucnost už začíná dnes' : 'Tomorrow already unfolding' },
-    { id: 'chapter-7', number: '7', title: cs ? 'Hra' : 'The trial', subtitle: cs ? 'Zkouška duše' : 'The soul trial' },
-    { id: 'chapter-8', number: '8', title: cs ? 'Svítání mainnetu' : 'Mainnet Dawn', subtitle: cs ? '(symbolické — není operační roadmap)' : '(symbolic narrative — not the live launch schedule)' },
+    { id: 'predmluva', number: '', title: GenesisCopy.foreword[cs ? 'cs' : 'en'], subtitle: GenesisCopy.messageOfZionNative[cs ? 'cs' : 'en'] },
+    { id: 'chapter-0', number: '0', title: GenesisCopy.birthOfZion[cs ? 'cs' : 'en'], subtitle: GenesisCopy.theFirstShimmerOfConsciousness[cs ? 'cs' : 'en'] },
+    { id: 'chapter-1', number: '1', title: GenesisCopy.theDescent[cs ? 'cs' : 'en'], subtitle: GenesisCopy.theChapterOfTheComingLight[cs ? 'cs' : 'en'] },
+    { id: 'chapter-2', number: '2', title: GenesisCopy.firstAwakening[cs ? 'cs' : 'en'], subtitle: GenesisCopy.whenSparksBeginToAwaken[cs ? 'cs' : 'en'] },
+    { id: 'chapter-3', number: '3', title: GenesisCopy.covenant[cs ? 'cs' : 'en'], subtitle: GenesisCopy.theCovenantOfLightAndBirthOfTh[cs ? 'cs' : 'en'] },
+    { id: 'chapter-4', number: '4', title: GenesisCopy.aiAndQuantum[cs ? 'cs' : 'en'], subtitle: GenesisCopy.whenTechnologySingsWithCosmicH[cs ? 'cs' : 'en'] },
+    { id: 'chapter-5', number: '5', title: GenesisCopy.ascent[cs ? 'cs' : 'en'], subtitle: GenesisCopy.collectiveAwakening[cs ? 'cs' : 'en'] },
+    { id: 'chapter-6', number: '6', title: GenesisCopy.goldenAgeProphecy[cs ? 'cs' : 'en'], subtitle: GenesisCopy.tomorrowAlreadyUnfolding[cs ? 'cs' : 'en'] },
+    { id: 'chapter-7', number: '7', title: GenesisCopy.theTrial[cs ? 'cs' : 'en'], subtitle: GenesisCopy.theSoulTrial[cs ? 'cs' : 'en'] },
+    { id: 'chapter-8', number: '8', title: GenesisCopy.mainnetDawn[cs ? 'cs' : 'en'], subtitle: GenesisCopy.symbolicNarrativeNotTheLiveLau[cs ? 'cs' : 'en'] },
   ];
 }
 
@@ -61,18 +88,16 @@ export default function GenesisPage() {
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zion-gold/30 bg-zion-gold/5 mb-6">
               <Sparkles className="w-4 h-4 text-zion-gold" />
-              <span className="text-sm text-zion-gold font-semibold">{cs ? 'Posvátný text' : 'Sacred narrative'}</span>
+              <span className="text-sm text-zion-gold font-semibold">{GenesisCopy.sacredNarrative[cs ? 'cs' : 'en']}</span>
             </div>
             <div className="mb-6 zion-rainbow-sub px-6 py-4 text-left text-sm text-amber-100" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-              {cs
-                ? 'Tato stránka je symbolický a literární dokument. Část obsahu pracuje s poetickou představou launch okamžiku a neslouží jako aktuální operační slib. Aktuální veřejný stav launch gate je NO-GO do uzavření closure evidence.'
-                : 'This site section is symbolic and literary fiction. Some passages imagine a launch moment poetically and must not be read as an operational commitment. The public launch gate remains NO-GO until closure evidence lands.'}
+              {GenesisCopy.thisSiteSectionIsSymbolicAndLi[cs ? 'cs' : 'en']}
             </div>
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold mb-6 text-gradient">
               ZION GENESIS
             </h1>
             <p className="text-xl text-gray-400 mb-8">
-              {cs ? 'Kniha probuzení, smlouvy a vzestupu' : 'Book of awakening, covenant, and ascent'}
+              {GenesisCopy.bookOfAwakeningCovenantAndAsce[cs ? 'cs' : 'en']}
             </p>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
               {cs ? (
@@ -101,7 +126,7 @@ export default function GenesisPage() {
           >
             <div className="flex items-center gap-2">
               <Book className="w-5 h-5 text-zion-gold" />
-              <span className="font-semibold">{cs ? 'Kapitoly' : 'Chapters'}</span>
+              <span className="font-semibold">{GenesisCopy.chapters[cs ? 'cs' : 'en']}</span>
             </div>
             {mobileMenuOpen ? (
               <X className="w-5 h-5" />
@@ -140,7 +165,7 @@ export default function GenesisPage() {
             <div className="sticky top-24 zion-rainbow-card p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Book className="w-4 h-4" />
-                {cs ? 'Kapitoly' : 'Chapters'}
+                {GenesisCopy.chapters[cs ? 'cs' : 'en']}
               </h3>
               <nav className="space-y-2">
                 {chapters.map((chapter) => (

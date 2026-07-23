@@ -26,6 +26,36 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const QuantumRevolutionQuantumRevolutionClientCopy = {
+  theBookThatStartedItAll: { cs: `Kniha, která to celé odstartovala`, en: `The book that started it all` },
+  quantum: { cs: `Kvantová`, en: `Quantum` },
+  revolution: { cs: `Revoluce`, en: `Revolution` },
+  aFiresideStoryOfANewEarthWhere: { cs: `Příběh u ohně o Nové Zemi, kde kvantová fyzika potkává duši, blockchain je meditace a každý z nás je Guardian probouzející Golden Age.`, en: `A fireside story of a New Earth where quantum physics meets the soul, blockchain is meditation, and each of us is a Guardian awakening the Golden Age.` },
+  chapters: { cs: `kapitol`, en: `chapters` },
+  languages: { cs: `jazyků`, en: `languages` },
+  pages: { cs: `stran`, en: `pages` },
+  edition: { cs: `vydání`, en: `edition` },
+  fourPillarsOfTheBook: { cs: `Čtyři pilíře knihy`, en: `Four pillars of the book` },
+  quantumPhysicsMeetsTheSoul: { cs: `Kvantová fyzika potkává duši`, en: `Quantum physics meets the soul` },
+  k10ChaptersOfTheFiresideStory: { cs: `10 kapitol povídky u ohně`, en: `10 chapters of the fireside story` },
+  k12PagesNarrativeEdition2026: { cs: `12 stran · vyprávěcí edice 2026`, en: `12 pages · narrative edition 2026` },
+  ch: { cs: `Kap.`, en: `Ch.` },
+  chapterContentWillBeAddedMockP: { cs: `📝 Obsah kapitoly bude doplněn. — Mock placeholder, data dodána později.`, en: `📝 Chapter content will be added. — Mock placeholder, data to be provided later.` },
+  quantumRevolutionBookCover: { cs: `Kvantová Revoluce — obálka knihy`, en: `Quantum Revolution — book cover` },
+  freeDownload: { cs: `Zdarma ke stažení`, en: `Free download` },
+  hallsOfAmentiDigitalLibrary: { cs: `Síně Amenti — Digitální Knihovna`, en: `Halls of Amenti — Digital Library` },
+  k180PagesOnZionPhilosophyConsci: { cs: `180 stran o filozofii ZION, vědomé těžbě, DAO governance a duchovní evoluci. PDF v 11 jazycích + bonus materiály — Kvantová revoluce, Claude edice. Vše dostupné zdarma v Amenti Library.`, en: `180 pages on ZION philosophy, conscious mining, DAO governance, and spiritual evolution. PDF in 11 languages + bonus materials — Quantum Revolution, Claude edition. All available free in the Amenti Library.` },
+  enterAmentiLibrary: { cs: `Vstoupit do Amenti Library`, en: `Enter Amenti Library` },
+  downloadAllZip: { cs: `Stáhnout vše (ZIP)`, en: `Download all (ZIP)` },
+  bookVsReality98Match: { cs: `Kniha vs. realita: 98% shoda`, en: `Book vs. reality: 98% match` },
+  everySpiritualConceptFromTheBo: { cs: `Každý duchovní koncept z knihy je hard-coded v implementaci. 9 úrovní vědomí, 10% humanitární tithe, zásoba 144B, XP multiplikátory (1× → 10×), alokace OASIS 1.44B — vše ověřeno v Rust a Python kódu.`, en: `Every spiritual concept from the book is hard-coded in the implementation. 9 levels of consciousness, 10% humanitarian tithe, 144B supply, XP multipliers (1× → 10×), OASIS allocation 1.44B — all verified in Rust and Python code.` },
+  bdquoWhereTheRoadmapSaysAposPo: { cs: `&bdquo;Kde roadmapa říká &apos;Pool Native Rewrite 49%&apos;, kniha říká &apos;Srdce se učí bít silněji&apos;. Kde kód říká &apos;if xp > threshold&apos;, kniha říká &apos;Když rosteš ty, roste i tvá odměna&apos;.&ldquo;`, en: `&bdquo;Where the roadmap says &apos;Pool Native Rewrite 49%&apos;, the book says &apos;The heart is learning to beat stronger&apos;. Where the code says &apos;if xp > threshold&apos;, the book says &apos;When you grow, your reward grows too&apos;.&ldquo;` },
+  analysisBookVsReality: { cs: `Analýza: kniha vs. realita`, en: `Analysis: book vs. reality` },
+  genesisAiAndQuantum: { cs: `Genesis: AI a kvantum`, en: `Genesis: AI and quantum` },
+  terraNova: { cs: `Terra Nova`, en: `Terra Nova` },
+  availableIn: { cs: `Dostupné v:`, en: `Available in:` },
+};
+
 /* ── Mock chapter data (placeholder — will be replaced with real content) ── */
 const chapters = [
   { num: '1', titleCs: 'U Ohně Začíná Příběh', titleEn: 'The Story Begins at the Fire', subtitleCs: 'Strom Života, 144k Guardians, blockchain jako digitální Ma\u2019at', subtitleEn: 'Tree of Life, 144k Guardians, blockchain as digital Ma\u2019at', icon: Flame },
@@ -105,40 +135,38 @@ export default function QuantumRevolutionClient() {
                 <Atom className="h-6 w-6" style={{ color: `rgb(${GOLD})` }} />
               </div>
               <p className="text-xs font-semibold uppercase tracking-[0.36em]" style={{ color: `rgba(${GOLD}, 0.8)` }}>
-                {cs ? 'Kniha, která to celé odstartovala' : 'The book that started it all'}
+                {QuantumRevolutionQuantumRevolutionClientCopy.theBookThatStartedItAll[cs ? 'cs' : 'en']}
               </p>
             </div>
 
             {/* Title */}
             <h1 className="text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl">
-              {cs ? 'Kvantová' : 'Quantum'}{' '}
-              <span className="text-gradient">{cs ? 'Revoluce' : 'Revolution'}</span>
+              {QuantumRevolutionQuantumRevolutionClientCopy.quantum[cs ? 'cs' : 'en']}{' '}
+              <span className="text-gradient">{QuantumRevolutionQuantumRevolutionClientCopy.revolution[cs ? 'cs' : 'en']}</span>
             </h1>
 
             {/* Lead */}
             <p className="max-w-3xl text-base leading-relaxed text-gray-300 md:text-lg">
-              {cs
-                ? 'Příběh u ohně o Nové Zemi, kde kvantová fyzika potkává duši, blockchain je meditace a každý z nás je Guardian probouzející Golden Age.'
-                : 'A fireside story of a New Earth where quantum physics meets the soul, blockchain is meditation, and each of us is a Guardian awakening the Golden Age.'}
+              {QuantumRevolutionQuantumRevolutionClientCopy.aFiresideStoryOfANewEarthWhere[cs ? 'cs' : 'en']}
             </p>
 
             {/* Stats row */}
             <div className="flex flex-wrap gap-3 pt-2">
               <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': GOLD } as React.CSSProperties}>
                 <strong className="text-white">10</strong>{' '}
-                <span className="text-gray-400">{cs ? 'kapitol' : 'chapters'}</span>
+                <span className="text-gray-400">{QuantumRevolutionQuantumRevolutionClientCopy.chapters[cs ? 'cs' : 'en']}</span>
               </span>
               <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': GOLD } as React.CSSProperties}>
                 <strong className="text-white">11</strong>{' '}
-                <span className="text-gray-400">{cs ? 'jazyků' : 'languages'}</span>
+                <span className="text-gray-400">{QuantumRevolutionQuantumRevolutionClientCopy.languages[cs ? 'cs' : 'en']}</span>
               </span>
               <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': GOLD } as React.CSSProperties}>
                 <strong className="text-white">180</strong>{' '}
-                <span className="text-gray-400">{cs ? 'stran' : 'pages'}</span>
+                <span className="text-gray-400">{QuantumRevolutionQuantumRevolutionClientCopy.pages[cs ? 'cs' : 'en']}</span>
               </span>
               <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': GOLD } as React.CSSProperties}>
                 <strong className="text-white">2026</strong>{' '}
-                <span className="text-gray-400">{cs ? 'vydání' : 'edition'}</span>
+                <span className="text-gray-400">{QuantumRevolutionQuantumRevolutionClientCopy.edition[cs ? 'cs' : 'en']}</span>
               </span>
             </div>
           </motion.div>
@@ -150,10 +178,10 @@ export default function QuantumRevolutionClient() {
         <div className="zion-container space-y-6">
           <div className="text-center space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.36em]" style={{ color: `rgba(${GOLD}, 0.8)` }}>
-              {cs ? 'Čtyři pilíře knihy' : 'Four pillars of the book'}
+              {QuantumRevolutionQuantumRevolutionClientCopy.fourPillarsOfTheBook[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white sm:text-3xl">
-              {cs ? 'Kvantová fyzika potkává duši' : 'Quantum physics meets the soul'}
+              {QuantumRevolutionQuantumRevolutionClientCopy.quantumPhysicsMeetsTheSoul[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -191,11 +219,11 @@ export default function QuantumRevolutionClient() {
             <div className="flex items-center gap-3">
               <BookOpen className="h-5 w-5" style={{ color: `rgb(${GOLD})` }} />
               <h2 className="text-xl font-semibold text-white">
-                {cs ? '10 kapitol povídky u ohně' : '10 chapters of the fireside story'}
+                {QuantumRevolutionQuantumRevolutionClientCopy.k10ChaptersOfTheFiresideStory[cs ? 'cs' : 'en']}
               </h2>
             </div>
             <span className="text-xs text-gray-500 uppercase tracking-wider hidden sm:block">
-              {cs ? '12 stran · vyprávěcí edice 2026' : '12 pages · narrative edition 2026'}
+              {QuantumRevolutionQuantumRevolutionClientCopy.k12PagesNarrativeEdition2026[cs ? 'cs' : 'en']}
             </span>
           </div>
 
@@ -217,7 +245,7 @@ export default function QuantumRevolutionClient() {
                   <div className="flex items-center gap-2 mb-2">
                     <Icon className="h-4 w-4" style={{ color: `rgba(${GOLD}, 0.8)` }} />
                     <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                      {cs ? 'Kap.' : 'Ch.'} {ch.num}
+                      {QuantumRevolutionQuantumRevolutionClientCopy.ch[cs ? 'cs' : 'en']} {ch.num}
                     </span>
                   </div>
                   <p className="text-xs font-semibold text-gray-200 leading-tight mb-1">
@@ -254,9 +282,7 @@ export default function QuantumRevolutionClient() {
                 </div>
                 <div className="space-y-3 text-sm text-gray-400 leading-relaxed">
                   <p className="text-center py-8 italic">
-                    {cs
-                      ? '📝 Obsah kapitoly bude doplněn. — Mock placeholder, data dodána později.'
-                      : '📝 Chapter content will be added. — Mock placeholder, data to be provided later.'}
+                    {QuantumRevolutionQuantumRevolutionClientCopy.chapterContentWillBeAddedMockP[cs ? 'cs' : 'en']}
                   </p>
                 </div>
               </div>
@@ -282,7 +308,7 @@ export default function QuantumRevolutionClient() {
               >
                 <Image
                   src="https://newearth.cz/images/Zion.jpg"
-                  alt={cs ? 'Kvantová Revoluce — obálka knihy' : 'Quantum Revolution — book cover'}
+                  alt={QuantumRevolutionQuantumRevolutionClientCopy.quantumRevolutionBookCover[cs ? 'cs' : 'en']}
                   width={220}
                   height={310}
                   className="rounded-2xl border shadow-[0_8px_40px_rgba(251,191,36,0.15)] transition-transform hover:scale-[1.03]"
@@ -294,15 +320,13 @@ export default function QuantumRevolutionClient() {
               {/* Amenti info */}
               <div className="space-y-4 text-center lg:text-left">
                 <div className="zion-badge zion-badge-amber">
-                  ⚛️ {cs ? 'Zdarma ke stažení' : 'Free download'}
+                  ⚛️ {QuantumRevolutionQuantumRevolutionClientCopy.freeDownload[cs ? 'cs' : 'en']}
                 </div>
                 <h3 className="text-xl font-bold text-white">
-                  {cs ? 'Síně Amenti — Digitální Knihovna' : 'Halls of Amenti — Digital Library'}
+                  {QuantumRevolutionQuantumRevolutionClientCopy.hallsOfAmentiDigitalLibrary[cs ? 'cs' : 'en']}
                 </h3>
                 <p className="text-sm text-gray-400 leading-relaxed">
-                  {cs
-                    ? '180 stran o filozofii ZION, vědomé těžbě, DAO governance a duchovní evoluci. PDF v 11 jazycích + bonus materiály — Kvantová revoluce, Claude edice. Vše dostupné zdarma v Amenti Library.'
-                    : '180 pages on ZION philosophy, conscious mining, DAO governance, and spiritual evolution. PDF in 11 languages + bonus materials — Quantum Revolution, Claude edition. All available free in the Amenti Library.'}
+                  {QuantumRevolutionQuantumRevolutionClientCopy.k180PagesOnZionPhilosophyConsci[cs ? 'cs' : 'en']}
                 </p>
                 <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
                   <a
@@ -312,7 +336,7 @@ export default function QuantumRevolutionClient() {
                     className="zion-button-primary"
                   >
                     <BookOpen className="h-4 w-4" />
-                    {cs ? 'Vstoupit do Amenti Library' : 'Enter Amenti Library'}
+                    {QuantumRevolutionQuantumRevolutionClientCopy.enterAmentiLibrary[cs ? 'cs' : 'en']}
                   </a>
                   <a
                     href="https://newearth.cz/V2/books/QuantumRevolution.zip"
@@ -321,7 +345,7 @@ export default function QuantumRevolutionClient() {
                     className="zion-button-secondary"
                   >
                     <Download className="h-4 w-4" />
-                    {cs ? 'Stáhnout vše (ZIP)' : 'Download all (ZIP)'}
+                    {QuantumRevolutionQuantumRevolutionClientCopy.downloadAllZip[cs ? 'cs' : 'en']}
                   </a>
                 </div>
               </div>
@@ -342,13 +366,11 @@ export default function QuantumRevolutionClient() {
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="h-4 w-4" style={{ color: `rgb(${GOLD})` }} />
                 <span className="text-sm font-semibold text-white">
-                  {cs ? 'Kniha vs. realita: 98% shoda' : 'Book vs. reality: 98% match'}
+                  {QuantumRevolutionQuantumRevolutionClientCopy.bookVsReality98Match[cs ? 'cs' : 'en']}
                 </span>
               </div>
               <p className="text-xs text-gray-400 leading-relaxed">
-                {cs
-                  ? 'Každý duchovní koncept z knihy je hard-coded v implementaci. 9 úrovní vědomí, 10% humanitární tithe, zásoba 144B, XP multiplikátory (1× → 10×), alokace OASIS 1.44B — vše ověřeno v Rust a Python kódu.'
-                  : 'Every spiritual concept from the book is hard-coded in the implementation. 9 levels of consciousness, 10% humanitarian tithe, 144B supply, XP multipliers (1× → 10×), OASIS allocation 1.44B — all verified in Rust and Python code.'}
+                {QuantumRevolutionQuantumRevolutionClientCopy.everySpiritualConceptFromTheBo[cs ? 'cs' : 'en']}
               </p>
               <div className="flex flex-wrap gap-2">
                 {(cs
@@ -370,12 +392,10 @@ export default function QuantumRevolutionClient() {
             <div className="zion-cta-banner flex flex-col justify-between space-y-4">
               <blockquote className="text-center space-y-2">
                 <p className="text-base italic text-gray-300 leading-relaxed">
-                  {cs
-                    ? '&bdquo;Kde roadmapa říká &apos;Pool Native Rewrite 49%&apos;, kniha říká &apos;Srdce se učí bít silněji&apos;. Kde kód říká &apos;if xp > threshold&apos;, kniha říká &apos;Když rosteš ty, roste i tvá odměna&apos;.&ldquo;'
-                    : '&bdquo;Where the roadmap says &apos;Pool Native Rewrite 49%&apos;, the book says &apos;The heart is learning to beat stronger&apos;. Where the code says &apos;if xp > threshold&apos;, the book says &apos;When you grow, your reward grows too&apos;.&ldquo;'}
+                  {QuantumRevolutionQuantumRevolutionClientCopy.bdquoWhereTheRoadmapSaysAposPo[cs ? 'cs' : 'en']}
                 </p>
                 <p className="text-xs text-gray-500">
-                  — {cs ? 'Analýza: kniha vs. realita' : 'Analysis: book vs. reality'}
+                  — {QuantumRevolutionQuantumRevolutionClientCopy.analysisBookVsReality[cs ? 'cs' : 'en']}
                 </p>
               </blockquote>
               <div className="flex flex-wrap gap-3 justify-center">
@@ -384,13 +404,13 @@ export default function QuantumRevolutionClient() {
                   className="zion-button-primary"
                 >
                   <Sparkles className="h-4 w-4" />
-                  {cs ? 'Genesis: AI a kvantum' : 'Genesis: AI and quantum'}
+                  {QuantumRevolutionQuantumRevolutionClientCopy.genesisAiAndQuantum[cs ? 'cs' : 'en']}
                 </Link>
                 <Link
                   href="/terranova"
                   className="zion-button-secondary"
                 >
-                  {cs ? 'Terra Nova' : 'Terra Nova'}
+                  {QuantumRevolutionQuantumRevolutionClientCopy.terraNova[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -404,7 +424,7 @@ export default function QuantumRevolutionClient() {
         <div className="zion-container">
           <div className="flex flex-wrap items-center justify-center gap-2">
             <span className="text-[10px] uppercase tracking-wider text-gray-600 mr-2">
-              {cs ? 'Dostupné v:' : 'Available in:'}
+              {QuantumRevolutionQuantumRevolutionClientCopy.availableIn[cs ? 'cs' : 'en']}
             </span>
             {editions.map((ed) => (
               <span

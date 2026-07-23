@@ -22,6 +22,67 @@ import {
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
 
+const PoolCalculatorCopy = {
+  rewardCalculator: { cs: `Kalkulačka odměn`, en: `Reward Calculator` },
+  miningRewardCalculator: { cs: `Kalkulačka těžebních odměn`, en: `Mining Reward Calculator` },
+  estimateYourDailyMonthlyAndYea: { cs: `Odhadněte své denní, měsíční a roční odměny z těžby ZION. Zadejte svůj výpočetní výkon, cenu elektřiny a získejte kompletní projekce ziskovosti včetně ROI.`, en: `Estimate your daily, monthly, and yearly ZION mining rewards. Enter your hashrate, electricity cost, and get full profitability projections including ROI.` },
+  backToPool: { cs: `Zpět na pool`, en: `Back to Pool` },
+  startMining: { cs: `Začít těžit`, en: `Start Mining` },
+  inputParameters: { cs: `Vstupní parametry`, en: `Input Parameters` },
+  reset: { cs: `Reset`, en: `Reset` },
+  yourHashrate: { cs: `Váš výpočetní výkon`, en: `Your hashrate` },
+  eG18K2M1G: { cs: `např. 18 K, 2 M, 1 G`, en: `e.g. 18 K, 2 M, 1 G` },
+  hardwareType: { cs: `Typ hardwaru`, en: `Hardware type` },
+  powerConsumptionW: { cs: `Spotřeba (W)`, en: `Power consumption (W)` },
+  electricityCostKwh: { cs: `Cena elektřiny ($/kWh)`, en: `Electricity cost ($/kWh)` },
+  zionPrice: { cs: `Cena ZION ($)`, en: `ZION price ($)` },
+  poolFee: { cs: `Pool poplatek (%)`, en: `Pool fee (%)` },
+  networkDifficulty: { cs: `Network difficulty`, en: `Network difficulty` },
+  autoFetched: { cs: `auto-fetch`, en: `auto-fetched` },
+  hardwareCost: { cs: `Cena hardwaru ($)`, en: `Hardware cost ($)` },
+  forRoiCalc: { cs: `pro výpočet ROI`, en: `for ROI calc` },
+  rewardPerBlockZion: { cs: `Odměna za blok (ZION)`, en: `Reward per block (ZION)` },
+  presets: { cs: `Předvolby:`, en: `Presets:` },
+  loadingPoolData: { cs: `Načítání pool dat…`, en: `Loading pool data…` },
+  poolDataUnavailableUsingDefaul: { cs: `Pool data nedostupná — použity výchozí hodnoty`, en: `Pool data unavailable — using defaults` },
+  resultsDashboard: { cs: `Výsledky`, en: `Results Dashboard` },
+  dailyRewards: { cs: `Denní odměny`, en: `Daily Rewards` },
+  monthlyRewards: { cs: `Měsíční odměny`, en: `Monthly Rewards` },
+  yearlyRewards: { cs: `Roční odměny`, en: `Yearly Rewards` },
+  electricityCost: { cs: `Náklady na elektřinu`, en: `Electricity Cost` },
+  netProfit: { cs: `Čistý zisk`, en: `Net Profit` },
+  roiBreakEven: { cs: `ROI · Break-even`, en: `ROI · Break-even` },
+  daysToBreakEven: { cs: `dní do návratnosti`, en: `days to break even` },
+  enterHardwareCost: { cs: `zadejte cenu HW`, en: `enter hardware cost` },
+  investment: { cs: `investice`, en: `investment` },
+  poolShare: { cs: `Podíl v poolu`, en: `Pool Share` },
+  ofPoolHashrate: { cs: `z pool hashrate`, en: `of pool hashrate` },
+  totalPool: { cs: `celkový pool`, en: `total pool` },
+  blocksPerDay: { cs: `Bloky za den`, en: `Blocks per Day` },
+  expectedBlocks: { cs: `očekávané bloky`, en: `expected blocks` },
+  totalBlocksDay: { cs: `celkem bloků/den`, en: `total blocks/day` },
+  hardwareComparison: { cs: `Srovnání hardwaru`, en: `Hardware Comparison` },
+  hardware: { cs: `Hardware`, en: `Hardware` },
+  hashrate: { cs: `Výkon`, en: `Hashrate` },
+  power: { cs: `Spotřeba`, en: `Power` },
+  netProfitMonth: { cs: `Čistý zisk/měsíc`, en: `Net profit/month` },
+  selected: { cs: `vybráno`, en: `selected` },
+  estimatesAreBasedOnCurrentPool: { cs: `Odhady jsou založeny na aktuálním pool hashrate a předpokládaných blocích. Skutečné výsledky se mohou lišit v závislosti na síťovém výkonu a pool štěstí.`, en: `Estimates are based on current pool hashrate and assumed block cadence. Actual results vary with network performance and pool luck.` },
+  currentZionPrice: { cs: `Aktuální cena ZION`, en: `Current ZION Price` },
+  usdPer1ZionSpot: { cs: `USD za 1 ZION (spot)`, en: `USD per 1 ZION (spot)` },
+  live: { cs: `živá data`, en: `live` },
+  seedPoolUninitialized: { cs: `seed (pool není inicializován)`, en: `seed (pool uninitialized)` },
+  seedFallback: { cs: `seed (záloha)`, en: `seed (fallback)` },
+  noHistoricalPriceSeriesAvailab: { cs: `Historická řada cen není k dispozici. Zobrazena je aktuální spot cena z /api/defi/price.`, en: `No historical price series available. Showing the current spot price from /api/defi/price.` },
+  profitabilityTimeline365d: { cs: `Časová osa ziskovosti (365d)`, en: `Profitability Timeline (365d)` },
+  day0: { cs: `Den 0`, en: `Day 0` },
+  day365: { cs: `Den 365`, en: `Day 365` },
+  readyToMine: { cs: `Připraveni těžit?`, en: `Ready to mine?` },
+  startMiningZionToday: { cs: `Začněte těžit ZION ještě dnes`, en: `Start mining ZION today` },
+  joinOurPplnsPoolWith89MinerSha: { cs: `Připojte se k naší PPLNS pool s 89% podílem pro těžaře a podporujte humanitární těžbu.`, en: `Join our PPLNS pool with 89% miner share and support humanitarian mining.` },
+  viewPoolStats: { cs: `Statistiky poolu`, en: `View Pool Stats` },
+};
+
 /* ═══════════════════════════════════════════════════════════
    ZION MINING REWARD CALCULATOR
    Self-contained · purple theme · reactive
@@ -281,15 +342,13 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               <div className="space-y-3">
                 <span className="zion-kicker">
                   <Calculator className="h-3.5 w-3.5" />
-                  {cs ? 'Kalkulačka odměn' : 'Reward Calculator'}
+                  {PoolCalculatorCopy.rewardCalculator[cs ? 'cs' : 'en']}
                 </span>
                 <h1 className="zion-section-title text-3xl md:text-5xl">
-                  {cs ? 'Kalkulačka těžebních odměn' : 'Mining Reward Calculator'}
+                  {PoolCalculatorCopy.miningRewardCalculator[cs ? 'cs' : 'en']}
                 </h1>
                 <p className="zion-section-sub">
-                  {cs
-                    ? 'Odhadněte své denní, měsíční a roční odměny z těžby ZION. Zadejte svůj výpočetní výkon, cenu elektřiny a získejte kompletní projekce ziskovosti včetně ROI.'
-                    : 'Estimate your daily, monthly, and yearly ZION mining rewards. Enter your hashrate, electricity cost, and get full profitability projections including ROI.'}
+                  {PoolCalculatorCopy.estimateYourDailyMonthlyAndYea[cs ? 'cs' : 'en']}
                 </p>
                 <div className="flex flex-wrap gap-3 pt-2">
                   <Link
@@ -297,14 +356,14 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                     className="zion-button-secondary text-sm px-4 py-2.5"
                   >
                     <ArrowLeft className="h-4 w-4" />
-                    {cs ? 'Zpět na pool' : 'Back to Pool'}
+                    {PoolCalculatorCopy.backToPool[cs ? 'cs' : 'en']}
                   </Link>
                   <Link
                     href="/pool#start-mining"
                     className="zion-button-primary text-sm px-4 py-2.5"
                   >
                     <Zap className="h-4 w-4" />
-                    {cs ? 'Začít těžit' : 'Start Mining'}
+                    {PoolCalculatorCopy.startMining[cs ? 'cs' : 'en']}
                   </Link>
                 </div>
               </div>
@@ -332,20 +391,20 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <div className="mb-6 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
                 <Gauge className="h-5 w-5 text-purple-300" />
-                {cs ? 'Vstupní parametry' : 'Input Parameters'}
+                {PoolCalculatorCopy.inputParameters[cs ? 'cs' : 'en']}
               </h2>
               <button
                 onClick={reset}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-300 transition-colors hover:border-white/20 hover:text-white"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                {cs ? 'Reset' : 'Reset'}
+                {PoolCalculatorCopy.reset[cs ? 'cs' : 'en']}
               </button>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {/* Hashrate */}
-              <Field label={cs ? 'Váš výpočetní výkon' : 'Your hashrate'} hint={cs ? 'např. 18 K, 2 M, 1 G' : 'e.g. 18 K, 2 M, 1 G'}>
+              <Field label={PoolCalculatorCopy.yourHashrate[cs ? 'cs' : 'en']} hint={PoolCalculatorCopy.eG18K2M1G[cs ? 'cs' : 'en']}>
                 <input
                   type="text"
                   value={hashrateInput}
@@ -359,7 +418,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Hardware type */}
-              <Field label={cs ? 'Typ hardwaru' : 'Hardware type'}>
+              <Field label={PoolCalculatorCopy.hardwareType[cs ? 'cs' : 'en']}>
                 <select
                   value={hardwareType}
                   onChange={(e) => setHardwareType(e.target.value as HardwareType)}
@@ -372,7 +431,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Power */}
-              <Field label={cs ? 'Spotřeba (W)' : 'Power consumption (W)'}>
+              <Field label={PoolCalculatorCopy.powerConsumptionW[cs ? 'cs' : 'en']}>
                 <input
                   type="number"
                   value={powerW}
@@ -383,7 +442,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Electricity cost */}
-              <Field label={cs ? 'Cena elektřiny ($/kWh)' : 'Electricity cost ($/kWh)'}>
+              <Field label={PoolCalculatorCopy.electricityCostKwh[cs ? 'cs' : 'en']}>
                 <input
                   type="number"
                   step="0.01"
@@ -395,7 +454,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* ZION price */}
-              <Field label={cs ? 'Cena ZION ($)' : 'ZION price ($)'}>
+              <Field label={PoolCalculatorCopy.zionPrice[cs ? 'cs' : 'en']}>
                 <input
                   type="number"
                   step="0.00001"
@@ -407,7 +466,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Pool fee */}
-              <Field label={cs ? 'Pool poplatek (%)' : 'Pool fee (%)'}>
+              <Field label={PoolCalculatorCopy.poolFee[cs ? 'cs' : 'en']}>
                 <input
                   type="number"
                   step="0.1"
@@ -419,7 +478,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Difficulty */}
-              <Field label={cs ? 'Network difficulty' : 'Network difficulty'} hint={cs ? 'auto-fetch' : 'auto-fetched'}>
+              <Field label={PoolCalculatorCopy.networkDifficulty[cs ? 'cs' : 'en']} hint={PoolCalculatorCopy.autoFetched[cs ? 'cs' : 'en']}>
                 <input
                   type="number"
                   step="0.01"
@@ -431,7 +490,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Hardware cost */}
-              <Field label={cs ? 'Cena hardwaru ($)' : 'Hardware cost ($)'} hint={cs ? 'pro výpočet ROI' : 'for ROI calc'}>
+              <Field label={PoolCalculatorCopy.hardwareCost[cs ? 'cs' : 'en']} hint={PoolCalculatorCopy.forRoiCalc[cs ? 'cs' : 'en']}>
                 <input
                   type="number"
                   step="50"
@@ -443,7 +502,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Reward per block */}
-              <Field label={cs ? 'Odměna za blok (ZION)' : 'Reward per block (ZION)'}>
+              <Field label={PoolCalculatorCopy.rewardPerBlockZion[cs ? 'cs' : 'en']}>
                 <input
                   type="number"
                   step="1"
@@ -457,7 +516,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
 
             {/* Quick preset chips */}
             <div className="mt-6 flex flex-wrap items-center gap-2">
-              <span className="text-xs text-gray-500">{cs ? 'Předvolby:' : 'Presets:'}</span>
+              <span className="text-xs text-gray-500">{PoolCalculatorCopy.presets[cs ? 'cs' : 'en']}</span>
               {HARDWARE_PRESETS.map((hw) => (
                 <button
                   key={hw.id}
@@ -474,10 +533,10 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
               <span className={`inline-block h-2 w-2 rounded-full ${loading ? 'bg-amber-400' : poolStats ? 'bg-emerald-400' : 'bg-gray-600'}`} />
               {loading
-                ? cs ? 'Načítání pool dat…' : 'Loading pool data…'
+                ? PoolCalculatorCopy.loadingPoolData[cs ? 'cs' : 'en']
                 : poolStats
                 ? cs ? `Pool: ${fmtHash(poolHashrate)} · ${poolStats.aggregate?.active_miners ?? 0} minerů` : `Pool: ${fmtHash(poolHashrate)} · ${poolStats.aggregate?.active_miners ?? 0} miners`
-                : cs ? 'Pool data nedostupná — použity výchozí hodnoty' : 'Pool data unavailable — using defaults'}
+                : PoolCalculatorCopy.poolDataUnavailableUsingDefaul[cs ? 'cs' : 'en']}
             </div>
           </div>
         </motion.section>
@@ -491,7 +550,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
         >
           <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
             <Activity className="h-5 w-5 text-purple-300" />
-            {cs ? 'Výsledky' : 'Results Dashboard'}
+            {PoolCalculatorCopy.resultsDashboard[cs ? 'cs' : 'en']}
           </h2>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -499,7 +558,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <ResultCard
               style={purpleStyle}
               icon={<Coins className="h-4 w-4 text-purple-300" />}
-              title={cs ? 'Denní odměny' : 'Daily Rewards'}
+              title={PoolCalculatorCopy.dailyRewards[cs ? 'cs' : 'en']}
               big={fmtZion(calc.myZionPerDay)}
               bigLabel="ZION/day"
               sub={fmtUsd(calc.myUsdPerDay)}
@@ -510,7 +569,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <ResultCard
               style={purpleStyle}
               icon={<Coins className="h-4 w-4 text-purple-300" />}
-              title={cs ? 'Měsíční odměny' : 'Monthly Rewards'}
+              title={PoolCalculatorCopy.monthlyRewards[cs ? 'cs' : 'en']}
               big={fmtZion(calc.myZionPerMonth)}
               bigLabel="ZION/month"
               sub={fmtUsd(calc.myUsdPerMonth)}
@@ -521,7 +580,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <ResultCard
               style={purpleStyle}
               icon={<Coins className="h-4 w-4 text-purple-300" />}
-              title={cs ? 'Roční odměny' : 'Yearly Rewards'}
+              title={PoolCalculatorCopy.yearlyRewards[cs ? 'cs' : 'en']}
               big={fmtZion(calc.myZionPerYear)}
               bigLabel="ZION/year"
               sub={fmtUsd(calc.myUsdPerYear)}
@@ -532,7 +591,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <ResultCard
               style={purpleStyle}
               icon={<Zap className="h-4 w-4 text-amber-400" />}
-              title={cs ? 'Náklady na elektřinu' : 'Electricity Cost'}
+              title={PoolCalculatorCopy.electricityCost[cs ? 'cs' : 'en']}
               big={fmtUsd(calc.electricityPerDay)}
               bigLabel="$/day"
               sub={`${fmtUsd(calc.electricityPerMonth)} / ${fmtUsd(calc.electricityPerYear)}`}
@@ -543,7 +602,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <ResultCard
               style={purpleStyle}
               icon={<DollarSign className="h-4 w-4 text-emerald-400" />}
-              title={cs ? 'Čistý zisk' : 'Net Profit'}
+              title={PoolCalculatorCopy.netProfit[cs ? 'cs' : 'en']}
               big={fmtUsd(calc.netProfitPerDay)}
               bigLabel="$/day"
               sub={`${fmtUsd(calc.netProfitPerMonth)} / ${fmtUsd(calc.netProfitPerYear)}`}
@@ -555,33 +614,33 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <ResultCard
               style={purpleStyle}
               icon={<TrendingUp className="h-4 w-4 text-cyan-300" />}
-              title={cs ? 'ROI · Break-even' : 'ROI · Break-even'}
+              title={PoolCalculatorCopy.roiBreakEven[cs ? 'cs' : 'en']}
               big={breakEvenDay !== null ? `${fmtNum(breakEvenDay)} d` : '—'}
-              bigLabel={cs ? 'dní do návratnosti' : 'days to break even'}
-              sub={hardwareCost > 0 ? fmtUsd(hardwareCost) : cs ? 'zadejte cenu HW' : 'enter hardware cost'}
-              subLabel={cs ? 'investice' : 'investment'}
+              bigLabel={PoolCalculatorCopy.daysToBreakEven[cs ? 'cs' : 'en']}
+              sub={hardwareCost > 0 ? fmtUsd(hardwareCost) : PoolCalculatorCopy.enterHardwareCost[cs ? 'cs' : 'en']}
+              subLabel={PoolCalculatorCopy.investment[cs ? 'cs' : 'en']}
             />
 
             {/* Pool share */}
             <ResultCard
               style={purpleStyle}
               icon={<Server className="h-4 w-4 text-purple-300" />}
-              title={cs ? 'Podíl v poolu' : 'Pool Share'}
+              title={PoolCalculatorCopy.poolShare[cs ? 'cs' : 'en']}
               big={`${calc.mySharePct.toFixed(4)}%`}
-              bigLabel={cs ? 'z pool hashrate' : 'of pool hashrate'}
+              bigLabel={PoolCalculatorCopy.ofPoolHashrate[cs ? 'cs' : 'en']}
               sub={fmtHash(poolHashrate)}
-              subLabel={cs ? 'celkový pool' : 'total pool'}
+              subLabel={PoolCalculatorCopy.totalPool[cs ? 'cs' : 'en']}
             />
 
             {/* Blocks per day */}
             <ResultCard
               style={purpleStyle}
               icon={<Activity className="h-4 w-4 text-purple-300" />}
-              title={cs ? 'Bloky za den' : 'Blocks per Day'}
+              title={PoolCalculatorCopy.blocksPerDay[cs ? 'cs' : 'en']}
               big={calc.myBlocksPerDay > 0 ? calc.myBlocksPerDay.toFixed(6) : '0'}
-              bigLabel={cs ? 'očekávané bloky' : 'expected blocks'}
+              bigLabel={PoolCalculatorCopy.expectedBlocks[cs ? 'cs' : 'en']}
               sub={`${calc.blocksPerDay}`}
-              subLabel={cs ? 'celkem bloků/den' : 'total blocks/day'}
+              subLabel={PoolCalculatorCopy.totalBlocksDay[cs ? 'cs' : 'en']}
             />
           </div>
         </motion.section>
@@ -597,19 +656,19 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
           <div className="relative z-[1]">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-semibold text-white">
               <Cpu className="h-5 w-5 text-purple-300" />
-              {cs ? 'Srovnání hardwaru' : 'Hardware Comparison'}
+              {PoolCalculatorCopy.hardwareComparison[cs ? 'cs' : 'en']}
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wider text-gray-400">
-                    <th className="py-3 pr-4">{cs ? 'Hardware' : 'Hardware'}</th>
-                    <th className="py-3 pr-4">{cs ? 'Výkon' : 'Hashrate'}</th>
-                    <th className="py-3 pr-4">{cs ? 'Spotřeba' : 'Power'}</th>
+                    <th className="py-3 pr-4">{PoolCalculatorCopy.hardware[cs ? 'cs' : 'en']}</th>
+                    <th className="py-3 pr-4">{PoolCalculatorCopy.hashrate[cs ? 'cs' : 'en']}</th>
+                    <th className="py-3 pr-4">{PoolCalculatorCopy.power[cs ? 'cs' : 'en']}</th>
                     <th className="py-3 pr-4">ZION/day</th>
                     <th className="py-3 pr-4">$/day</th>
                     <th className="py-3 pr-4">$/month</th>
-                    <th className="py-3 pr-4">{cs ? 'Čistý zisk/měsíc' : 'Net profit/month'}</th>
+                    <th className="py-3 pr-4">{PoolCalculatorCopy.netProfitMonth[cs ? 'cs' : 'en']}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -628,7 +687,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                             <span className={isSelected ? 'font-semibold text-white' : 'text-gray-200'}>{hw.label}</span>
                             {isSelected && (
                               <span className="rounded bg-purple-500/20 px-1.5 py-0.5 text-[10px] font-medium text-purple-300">
-                                {cs ? 'vybráno' : 'selected'}
+                                {PoolCalculatorCopy.selected[cs ? 'cs' : 'en']}
                               </span>
                             )}
                           </div>
@@ -649,9 +708,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             </div>
             <p className="mt-3 flex items-start gap-1.5 text-xs text-gray-500">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              {cs
-                ? 'Odhady jsou založeny na aktuálním pool hashrate a předpokládaných blocích. Skutečné výsledky se mohou lišit v závislosti na síťovém výkonu a pool štěstí.'
-                : 'Estimates are based on current pool hashrate and assumed block cadence. Actual results vary with network performance and pool luck.'}
+              {PoolCalculatorCopy.estimatesAreBasedOnCurrentPool[cs ? 'cs' : 'en']}
             </p>
           </div>
         </motion.section>
@@ -669,7 +726,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-white">
                   <TrendingUp className="h-4 w-4 text-emerald-400" />
-                  {cs ? 'Aktuální cena ZION' : 'Current ZION Price'}
+                  {PoolCalculatorCopy.currentZionPrice[cs ? 'cs' : 'en']}
                 </h3>
                 <span className="font-mono text-sm text-emerald-400">${zionPrice.toFixed(6)}</span>
               </div>
@@ -678,23 +735,21 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                   ${zionPrice.toFixed(6)}
                 </span>
                 <span className="text-xs text-gray-500">
-                  {cs ? 'USD za 1 ZION (spot)' : 'USD per 1 ZION (spot)'}
+                  {PoolCalculatorCopy.usdPer1ZionSpot[cs ? 'cs' : 'en']}
                 </span>
                 {priceSource && (
                   <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] uppercase tracking-wider text-gray-500">
                     {priceSource === 'live'
-                      ? cs ? 'živá data' : 'live'
+                      ? PoolCalculatorCopy.live[cs ? 'cs' : 'en']
                       : priceSource === 'seed-uninitialized'
-                        ? cs ? 'seed (pool není inicializován)' : 'seed (pool uninitialized)'
+                        ? PoolCalculatorCopy.seedPoolUninitialized[cs ? 'cs' : 'en']
                         : priceSource === 'seed-fallback'
-                          ? cs ? 'seed (záloha)' : 'seed (fallback)'
+                          ? PoolCalculatorCopy.seedFallback[cs ? 'cs' : 'en']
                           : priceSource}
                   </span>
                 )}
                 <p className="mt-1 max-w-xs text-center text-[11px] text-gray-600">
-                  {cs
-                    ? 'Historická řada cen není k dispozici. Zobrazena je aktuální spot cena z /api/defi/price.'
-                    : 'No historical price series available. Showing the current spot price from /api/defi/price.'}
+                  {PoolCalculatorCopy.noHistoricalPriceSeriesAvailab[cs ? 'cs' : 'en']}
                 </p>
               </div>
             </div>
@@ -706,7 +761,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-white">
                   <Activity className="h-4 w-4 text-purple-300" />
-                  {cs ? 'Časová osa ziskovosti (365d)' : 'Profitability Timeline (365d)'}
+                  {PoolCalculatorCopy.profitabilityTimeline365d[cs ? 'cs' : 'en']}
                 </h3>
                 {breakEvenDay !== null && (
                   <span className="rounded-full bg-purple-500/20 px-2.5 py-1 text-xs text-purple-300">
@@ -716,8 +771,8 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </div>
               <ProfitTimeline points={timeline} />
               <div className="mt-3 flex justify-between text-xs text-gray-500">
-                <span>{cs ? 'Den 0' : 'Day 0'}</span>
-                <span>{cs ? 'Den 365' : 'Day 365'}</span>
+                <span>{PoolCalculatorCopy.day0[cs ? 'cs' : 'en']}</span>
+                <span>{PoolCalculatorCopy.day365[cs ? 'cs' : 'en']}</span>
               </div>
             </div>
           </div>
@@ -735,24 +790,22 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               <div className="relative z-[1] flex flex-col items-center gap-4 text-center">
                 <span className="zion-kicker">
                   <Sparkles className="h-3.5 w-3.5" />
-                  {cs ? 'Připraveni těžit?' : 'Ready to mine?'}
+                  {PoolCalculatorCopy.readyToMine[cs ? 'cs' : 'en']}
                 </span>
                 <h2 className="zion-section-title text-2xl md:text-4xl">
-                  {cs ? 'Začněte těžit ZION ještě dnes' : 'Start mining ZION today'}
+                  {PoolCalculatorCopy.startMiningZionToday[cs ? 'cs' : 'en']}
                 </h2>
                 <p className="zion-section-sub mx-auto">
-                  {cs
-                    ? 'Připojte se k naší PPLNS pool s 89% podílem pro těžaře a podporujte humanitární těžbu.'
-                    : 'Join our PPLNS pool with 89% miner share and support humanitarian mining.'}
+                  {PoolCalculatorCopy.joinOurPplnsPoolWith89MinerSha[cs ? 'cs' : 'en']}
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 pt-2">
                   <Link href="/pool#start-mining" className="zion-button-primary text-sm px-5 py-3">
                     <Zap className="h-4 w-4" />
-                    {cs ? 'Začít těžit' : 'Start Mining'}
+                    {PoolCalculatorCopy.startMining[cs ? 'cs' : 'en']}
                   </Link>
                   <Link href="/pool" className="zion-button-secondary text-sm px-5 py-3">
                     <Server className="h-4 w-4" />
-                    {cs ? 'Statistiky poolu' : 'View Pool Stats'}
+                    {PoolCalculatorCopy.viewPoolStats[cs ? 'cs' : 'en']}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>

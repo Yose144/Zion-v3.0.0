@@ -8,6 +8,21 @@ import { Box, ChevronRight, Copy, Check } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
 
+const ProRecentBlocksCopy = {
+  justNow: { cs: `prave ted`, en: `just now` },
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  latestBlocks: { cs: `Posledni bloky`, en: `Latest Blocks` },
+  realTimeBlockFeed: { cs: `Tok bloku v realnem case`, en: `Real-time block feed` },
+  viewAll: { cs: `Zobrazit vse`, en: `View All` },
+  height: { cs: `Vyska`, en: `Height` },
+  age: { cs: `Stari`, en: `Age` },
+  size: { cs: `Velikost`, en: `Size` },
+  difficulty: { cs: `Obtiznost`, en: `Difficulty` },
+  reward: { cs: `Odmena`, en: `Reward` },
+  copyHash: { cs: `Kopirovat hash`, en: `Copy hash` },
+  fullBlockArchive: { cs: `Kompletni archiv bloku`, en: `Full Block Archive` },
+};
+
 interface Block {
   height: number;
   hash: string;
@@ -23,7 +38,7 @@ interface Block {
 
 const fmtAge = (ts: number, cs: boolean): string => {
   const s = Math.floor(Date.now() / 1000) - ts;
-  if (s < 5) return cs ? 'prave ted' : 'just now';
+  if (s < 5) return ProRecentBlocksCopy.justNow[cs ? 'cs' : 'en'];
   if (s < 60) return cs ? `pred ${s}s` : `${s}s ago`;
   if (s < 3600) return cs ? `pred ${Math.floor(s / 60)}m ${s % 60}s` : `${Math.floor(s / 60)}m ${s % 60}s ago`;
   if (s < 86400) return cs ? `pred ${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m` : `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ago`;
@@ -61,7 +76,7 @@ function CopyBtn({ text, label }: { text: string; label: string }) {
 export default function ProRecentBlocks() {
   const { lang } = useLang();
   const cs = lang === "cs";
-  const locale = cs ? "cs-CZ" : "en-US";
+  const locale = ProRecentBlocksCopy.enUs[cs ? 'cs' : 'en'];
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setTick] = useState(0);
@@ -96,15 +111,15 @@ export default function ProRecentBlocks() {
             <Box className="h-4.5 w-4.5 text-zion-gold" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-white">{cs ? "Posledni bloky" : "Latest Blocks"}</h3>
-            <p className="text-[11px] text-gray-500">{cs ? "Tok bloku v realnem case" : "Real-time block feed"}</p>
+            <h3 className="text-base font-semibold text-white">{ProRecentBlocksCopy.latestBlocks[cs ? 'cs' : 'en']}</h3>
+            <p className="text-[11px] text-gray-500">{ProRecentBlocksCopy.realTimeBlockFeed[cs ? 'cs' : 'en']}</p>
           </div>
         </div>
         <Link
           href="/explorer/blocks"
           className="flex items-center gap-1 text-xs text-gray-400 hover:text-zion-cyan transition-colors font-medium"
         >
-          {cs ? "Zobrazit vse" : "View All"} <ChevronRight className="h-3.5 w-3.5" />
+          {ProRecentBlocksCopy.viewAll[cs ? 'cs' : 'en']} <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
@@ -113,13 +128,13 @@ export default function ProRecentBlocks() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/4">
-              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{cs ? "Vyska" : "Height"}</th>
-              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{cs ? "Stari" : "Age"}</th>
+              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{ProRecentBlocksCopy.height[cs ? 'cs' : 'en']}</th>
+              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{ProRecentBlocksCopy.age[cs ? 'cs' : 'en']}</th>
               <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden md:table-cell">Hash</th>
               <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">Txs</th>
-              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{cs ? "Velikost" : "Size"}</th>
-              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden lg:table-cell">{cs ? "Obtiznost" : "Difficulty"}</th>
-              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{cs ? "Odmena" : "Reward"}</th>
+              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{ProRecentBlocksCopy.size[cs ? 'cs' : 'en']}</th>
+              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden lg:table-cell">{ProRecentBlocksCopy.difficulty[cs ? 'cs' : 'en']}</th>
+              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{ProRecentBlocksCopy.reward[cs ? 'cs' : 'en']}</th>
             </tr>
           </thead>
           <tbody>
@@ -162,7 +177,7 @@ export default function ProRecentBlocks() {
                         >
                           {truncHash(block.hash, 10)}
                         </Link>
-                        <CopyBtn text={block.hash} label={cs ? "Kopirovat hash" : "Copy hash"} />
+                        <CopyBtn text={block.hash} label={ProRecentBlocksCopy.copyHash[cs ? 'cs' : 'en']} />
                       </div>
                     </td>
                     <td className="px-3 py-3 text-right">
@@ -208,7 +223,7 @@ export default function ProRecentBlocks() {
             href="/explorer/blocks"
             className="text-[11px] text-zion-cyan hover:text-white transition font-medium"
           >
-            {cs ? 'Kompletni archiv bloku' : 'Full Block Archive'} →
+            {ProRecentBlocksCopy.fullBlockArchive[cs ? 'cs' : 'en']} →
           </Link>
         </div>
       )}

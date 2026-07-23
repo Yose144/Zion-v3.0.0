@@ -11,28 +11,115 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const WalletCopy = {
+  ed25519: { cs: `Ed25519`, en: `Ed25519` },
+  stateOfTheArtCurveCryptography: { cs: `Nejmodernější křivková kryptografie — rychlé a bezpečné podpisy.`, en: `State-of-the-art curve cryptography — fast and secure signatures.` },
+  bip39Mnemonic: { cs: `BIP39 Mnemonic`, en: `BIP39 Mnemonic` },
+  k1224WordSeedForEasyBackupAndRe: { cs: `12–24 slovní seed pro snadné zálohování a obnovení.`, en: `12–24 word seed for easy backup and recovery.` },
+  utxoModel: { cs: `UTXO Model`, en: `UTXO Model` },
+  nativeZionL1UtxoModelTranspare: { cs: `Nativní UTXO model ZION L1 — transparentní a auditovatelný.`, en: `Native ZION L1 UTXO model — transparent and auditable.` },
+  onChain: { cs: `On-Chain`, en: `On-Chain` },
+  fullyOnChainWalletNoCustodialS: { cs: `Plně on-chain wallet — žádné custodial služby.`, en: `Fully on-chain wallet — no custodial services.` },
+  initializingZionWallet: { cs: `Inicializace ZION Wallet...`, en: `Initializing ZION Wallet...` },
+  passwordMustBeAtLeast8Characte: { cs: `Heslo musí mít alespoň 8 znaků`, en: `Password must be at least 8 characters` },
+  walletCreatedYouCanNowSignIn: { cs: `Peněženka vytvořena! Nyní se můžete přihlásit.`, en: `Wallet created! You can now sign in.` },
+  mnemonicAndPasswordRequired: { cs: `Vyžadováno mnemonic a heslo`, en: `Mnemonic and password required` },
+  walletImportedSuccessfully: { cs: `Peněženka importována!`, en: `Wallet imported successfully!` },
+  privateKeyAndPasswordRequired: { cs: `Vyžadován private key a heslo`, en: `Private key and password required` },
+  fillAllRequiredFields: { cs: `Vyplňte všechna povinná pole`, en: `Fill all required fields` },
+  trezorWalletConnected: { cs: `Trezor peněženka připojena!`, en: `Trezor wallet connected!` },
+  ledgerWalletConnected: { cs: `Ledger peněženka připojena!`, en: `Ledger wallet connected!` },
+  copiedToClipboard: { cs: `Zkopírováno do schránky!`, en: `Copied to clipboard!` },
+  noWallet: { cs: `Žádná peněženka`, en: `No wallet` },
+  watchOnly: { cs: `Watch-only`, en: `Watch-only` },
+  software: { cs: `Software`, en: `Software` },
+  hardware: { cs: `Hardware`, en: `Hardware` },
+  local: { cs: `Lokalní`, en: `Local` },
+  nativeZionBlockchainWallet: { cs: `Nativní peněženka ZION blockchainu`, en: `Native ZION blockchain wallet` },
+  zionWallet: { cs: `ZION Wallet`, en: `ZION Wallet` },
+  fullyOnChainWalletForZionL1Cre: { cs: `Plně on-chain peněženka pro ZION L1. Vytvořte, importujte, odešlete a zálohujte své ZION tokeny s Ed25519 kryptografií a UTXO modelem. Žádné custodial služby — plná kontrola nad klíči.`, en: `Fully on-chain wallet for ZION L1. Create, import, send, and back up your ZION tokens with Ed25519 cryptography and UTXO model. No custodial services — full key control.` },
+  localOnly: { cs: `Local-only`, en: `Local-only` },
+  quickOverview: { cs: `Rychlý přehled`, en: `Quick Overview` },
+  wallet: { cs: `Peněženka`, en: `Wallet` },
+  address: { cs: `Adresa`, en: `Address` },
+  balance: { cs: `Zůstatek`, en: `Balance` },
+  telemetry: { cs: `Telemetrie`, en: `Telemetry` },
+  walletStatistics: { cs: `Statistiky peněženky`, en: `Wallet Statistics` },
+  currentMetricsFromYourLocalZio: { cs: `Aktuální metriky z lokální ZION Wallet.`, en: `Current metrics from your local ZION Wallet.` },
+  wallets: { cs: `Peněženky`, en: `Wallets` },
+  total: { cs: `celkem`, en: `total` },
+  activeBalance: { cs: `Aktivní zůstatek`, en: `Active Balance` },
+  cryptography: { cs: `Kryptografie`, en: `Cryptography` },
+  security: { cs: `Zabezpečení`, en: `Security` },
+  level: { cs: `úroveň`, en: `level` },
+  features: { cs: `Vlastnosti`, en: `Features` },
+  whyZionWallet: { cs: `Proč ZION Wallet?`, en: `Why ZION Wallet?` },
+  goToLogin: { cs: `Přejít na přihlášení`, en: `Go to Login` },
+  activeWallet: { cs: `Aktivní peněženka`, en: `Active Wallet` },
+  hardwareWalletWatchOnly: { cs: `Hardware peněženka — pouze pro sledování`, en: `Hardware Wallet — Watch Only` },
+  trezorLedgerFirmwareDoesNotYet: { cs: `Trezor/Ledger firmware zatím nepodporuje podepisování transakcí pro ZION. Pro odeslání tokenů použijte software peněženku se stejným seedem (méně bezpečné) nebo počkejte na Ledger aplikaci.`, en: `Trezor/Ledger firmware does not yet support transaction signing for ZION. To send tokens, use a software wallet with the same seed (less secure) or wait for the Ledger app.` },
+  yourWallets: { cs: `Vaše peněženky`, en: `Your Wallets` },
+  walletOperations: { cs: `Peněženkové operace`, en: `Wallet operations` },
+  createNewWallet: { cs: `Vytvořit novou peněženku`, en: `Create New Wallet` },
+  walletName: { cs: `Název peněženky`, en: `Wallet Name` },
+  passwordMin8Chars: { cs: `Heslo (min. 8 znaků)`, en: `Password (min 8 chars)` },
+  creating: { cs: `Vytváření...`, en: `Creating...` },
+  createWallet: { cs: `Vytvořit peněženku`, en: `Create Wallet` },
+  importWallet: { cs: `Importovat peněženku`, en: `Import Wallet` },
+  fromMnemonicBip39: { cs: `Z Mnemonic (BIP39)`, en: `From Mnemonic (BIP39)` },
+  enter12Or24WordMnemonicPhrase: { cs: `Zadejte 12 nebo 24 slovní frázi...`, en: `Enter 12 or 24 word mnemonic phrase...` },
+  encryptionPassword: { cs: `Šifrovací heslo`, en: `Encryption password` },
+  importing: { cs: `Importování...`, en: `Importing...` },
+  importFromMnemonic: { cs: `Importovat z Mnemonic`, en: `Import from Mnemonic` },
+  fromPrivateKeyHex: { cs: `Z Private Key (hex)`, en: `From Private Key (hex)` },
+  k64CharHexPrivateKey: { cs: `64-znakový hex private key`, en: `64-char hex private key` },
+  importFromPrivateKey: { cs: `Importovat z Private Key`, en: `Import from Private Key` },
+  hardwareWalletWatchOnly_2: { cs: `Hardware peněženka (Watch-only)`, en: `Hardware Wallet (Watch-only)` },
+  importPublicKeyFromTrezorOrLed: { cs: `Importujte veřejný klíč z Trezoru nebo Ledgeru.`, en: `Import public key from Trezor or Ledger.` },
+  connecting: { cs: `Připojování...`, en: `Connecting...` },
+  warningTrezorLedgerFirmwareDoe: { cs: `Varování: Trezor/Ledger firmware zatím neumožňuje podepisování transakcí pro ZION. Peněženka bude pouze pro sledování.`, en: `Warning: Trezor/Ledger firmware does not yet support transaction signing for ZION. Wallet will be watch-only.` },
+  sendZion: { cs: `Odeslat ZION`, en: `Send ZION` },
+  selectOrCreateAWalletFirst: { cs: `Nejprve vyberte nebo vytvořte peněženku.`, en: `Select or create a wallet first.` },
+  recipientAddressZion1: { cs: `Adresa příjemce (zion1...)`, en: `Recipient Address (zion1...)` },
+  amountZion: { cs: `Částka (ZION)`, en: `Amount (ZION)` },
+  memoOptional: { cs: `Memo (volitelné)`, en: `Memo (optional)` },
+  optionalMessage: { cs: `Volitelná zpráva...`, en: `Optional message...` },
+  walletPassword: { cs: `Heslo peněženky`, en: `Wallet Password` },
+  enterWalletPassword: { cs: `Zadejte heslo peněženky`, en: `Enter wallet password` },
+  sending: { cs: `Odesílání...`, en: `Sending...` },
+  exportWalletSecrets: { cs: `Exportovat tajemství`, en: `Export Wallet Secrets` },
+  selectAWalletFirst: { cs: `Nejprve vyberte peněženku.`, en: `Select a wallet first.` },
+  enterPasswordToDecrypt: { cs: `Zadejte heslo pro dešifrování`, en: `Enter password to decrypt` },
+  exportMnemonic: { cs: `Exportovat Mnemonic`, en: `Export Mnemonic` },
+  exportPrivateKey: { cs: `Exportovat Private Key`, en: `Export Private Key` },
+  secretNeverShare: { cs: `Tajemství (nikdy nesdílejte!)`, en: `Secret (never share!)` },
+  learnMoreAboutZionWallet: { cs: `Více o ZION Wallet`, en: `Learn more about ZION Wallet` },
+  download: { cs: `Stáhnout`, en: `Download` },
+  documentation: { cs: `Dokumentace`, en: `Documentation` },
+};
+
 const getFeatures = (cs: boolean) => [
   {
-    title: cs ? 'Ed25519' : 'Ed25519',
-    desc: cs ? 'Nejmodernější křivková kryptografie — rychlé a bezpečné podpisy.' : 'State-of-the-art curve cryptography — fast and secure signatures.',
+    title: WalletCopy.ed25519[cs ? 'cs' : 'en'],
+    desc: WalletCopy.stateOfTheArtCurveCryptography[cs ? 'cs' : 'en'],
     icon: Fingerprint,
     color: 'text-cyan-400',
   },
   {
-    title: cs ? 'BIP39 Mnemonic' : 'BIP39 Mnemonic',
-    desc: cs ? '12–24 slovní seed pro snadné zálohování a obnovení.' : '12–24 word seed for easy backup and recovery.',
+    title: WalletCopy.bip39Mnemonic[cs ? 'cs' : 'en'],
+    desc: WalletCopy.k1224WordSeedForEasyBackupAndRe[cs ? 'cs' : 'en'],
     icon: KeyRound,
     color: 'text-zion-gold',
   },
   {
-    title: cs ? 'UTXO Model' : 'UTXO Model',
-    desc: cs ? 'Nativní UTXO model ZION L1 — transparentní a auditovatelný.' : 'Native ZION L1 UTXO model — transparent and auditable.',
+    title: WalletCopy.utxoModel[cs ? 'cs' : 'en'],
+    desc: WalletCopy.nativeZionL1UtxoModelTranspare[cs ? 'cs' : 'en'],
     icon: Zap,
     color: 'text-emerald-400',
   },
   {
-    title: cs ? 'On-Chain' : 'On-Chain',
-    desc: cs ? 'Plně on-chain wallet — žádné custodial služby.' : 'Fully on-chain wallet — no custodial services.',
+    title: WalletCopy.onChain[cs ? 'cs' : 'en'],
+    desc: WalletCopy.fullyOnChainWalletNoCustodialS[cs ? 'cs' : 'en'],
     icon: Globe2,
     color: 'text-purple-400',
   },
@@ -123,7 +210,7 @@ export default function WalletPage() {
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
               <Wallet className="w-12 h-12 mx-auto mb-4 text-zinc-500 animate-pulse" />
-              <p className="text-zinc-400">{cs ? 'Inicializace ZION Wallet...' : 'Initializing ZION Wallet...'}</p>
+              <p className="text-zinc-400">{WalletCopy.initializingZionWallet[cs ? 'cs' : 'en']}</p>
             </div>
           </div>
         </div>
@@ -134,13 +221,13 @@ export default function WalletPage() {
   const handleCreate = async () => {
     if (!password || password.length < 8) {
       setSuccessMsg('');
-      setLocalError(cs ? 'Heslo musí mít alespoň 8 znaků' : 'Password must be at least 8 characters');
+      setLocalError(WalletCopy.passwordMustBeAtLeast8Characte[cs ? 'cs' : 'en']);
       return;
     }
     try {
       await createWallet(walletName, password);
       setPassword('');
-      setSuccessMsg(cs ? 'Peněženka vytvořena! Nyní se můžete přihlásit.' : 'Wallet created! You can now sign in.');
+      setSuccessMsg(WalletCopy.walletCreatedYouCanNowSignIn[cs ? 'cs' : 'en']);
       setLocalError('');
     } catch (e: any) {
       setSuccessMsg('');
@@ -149,26 +236,26 @@ export default function WalletPage() {
   };
 
   const handleImportMnemonic = async () => {
-    if (!mnemonic || !password) { alert(cs ? 'Vyžadováno mnemonic a heslo' : 'Mnemonic and password required'); return; }
+    if (!mnemonic || !password) { alert(WalletCopy.mnemonicAndPasswordRequired[cs ? 'cs' : 'en']); return; }
     try {
       await importFromMnemonic(mnemonic, walletName, password);
       setMnemonic(''); setPassword('');
-      alert(cs ? 'Peněženka importována!' : 'Wallet imported successfully!');
+      alert(WalletCopy.walletImportedSuccessfully[cs ? 'cs' : 'en']);
     } catch (e: any) { alert(e.message); }
   };
 
   const handleImportPrivateKey = async () => {
-    if (!privateKey || !password) { alert(cs ? 'Vyžadován private key a heslo' : 'Private key and password required'); return; }
+    if (!privateKey || !password) { alert(WalletCopy.privateKeyAndPasswordRequired[cs ? 'cs' : 'en']); return; }
     try {
       await importFromPrivateKey(privateKey, walletName, password);
       setPrivateKey(''); setPassword('');
-      alert(cs ? 'Peněženka importována!' : 'Wallet imported successfully!');
+      alert(WalletCopy.walletImportedSuccessfully[cs ? 'cs' : 'en']);
     } catch (e: any) { alert(e.message); }
   };
 
   const handleSend = async () => {
     if (!activeWallet || !sendTo || !sendAmount || !password) {
-      alert(cs ? 'Vyplňte všechna povinná pole' : 'Fill all required fields'); return;
+      alert(WalletCopy.fillAllRequiredFields[cs ? 'cs' : 'en']); return;
     }
     try {
       const txid = await send(sendTo, parseFloat(sendAmount), password, sendMemo || undefined);
@@ -198,35 +285,35 @@ export default function WalletPage() {
   const handleImportTrezor = async () => {
     try {
       await importFromTrezor(walletName);
-      alert(cs ? 'Trezor peněženka připojena!' : 'Trezor wallet connected!');
+      alert(WalletCopy.trezorWalletConnected[cs ? 'cs' : 'en']);
     } catch (e: any) { alert(e.message); }
   };
 
   const handleImportLedger = async () => {
     try {
       await importFromLedger(walletName);
-      alert(cs ? 'Ledger peněženka připojena!' : 'Ledger wallet connected!');
+      alert(WalletCopy.ledgerWalletConnected[cs ? 'cs' : 'en']);
     } catch (e: any) { alert(e.message); }
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert(cs ? 'Zkopírováno do schránky!' : 'Copied to clipboard!');
+    alert(WalletCopy.copiedToClipboard[cs ? 'cs' : 'en']);
   };
 
-  const activeName = activeWallet?.name ?? (cs ? 'Žádná peněženka' : 'No wallet');
+  const activeName = activeWallet?.name ?? (WalletCopy.noWallet[cs ? 'cs' : 'en']);
   const activeAddress = activeWallet?.address ?? '—';
   const activeBalanceDisplay = balance !== null ? `${balance.toFixed(6)} ZION` : '—';
   const hardwareStatus = isHardwareWallet
-    ? (cs ? 'Watch-only' : 'Watch-only')
-    : (cs ? 'Software' : 'Software');
+    ? (WalletCopy.watchOnly[cs ? 'cs' : 'en'])
+    : (WalletCopy.software[cs ? 'cs' : 'en']);
 
   const walletCount = wallets.length;
   const activeBalance = balance !== null ? `${balance.toFixed(6)} ZION` : '---';
   const ed25519Type = 'Ed25519';
   const securityLevel = isHardwareWallet
-    ? (cs ? 'Hardware' : 'Hardware')
-    : (cs ? 'Lokalní' : 'Local');
+    ? (WalletCopy.hardware[cs ? 'cs' : 'en'])
+    : (WalletCopy.local[cs ? 'cs' : 'en']);
 
   return (
     <div className="zion-page text-white">
@@ -256,16 +343,14 @@ export default function WalletPage() {
                 </div>
                 <div>
                   <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                    {cs ? 'Nativní peněženka ZION blockchainu' : 'Native ZION blockchain wallet'}
+                    {WalletCopy.nativeZionBlockchainWallet[cs ? 'cs' : 'en']}
                   </p>
                   <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                    {cs ? 'ZION Wallet' : 'ZION Wallet'}
+                    {WalletCopy.zionWallet[cs ? 'cs' : 'en']}
                   </h1>
                 </div>
                 <p className="text-lg text-gray-300 max-w-2xl">
-                  {cs
-                    ? 'Plně on-chain peněženka pro ZION L1. Vytvořte, importujte, odešlete a zálohujte své ZION tokeny s Ed25519 kryptografií a UTXO modelem. Žádné custodial služby — plná kontrola nad klíči.'
-                    : 'Fully on-chain wallet for ZION L1. Create, import, send, and back up your ZION tokens with Ed25519 cryptography and UTXO model. No custodial services — full key control.'}
+                  {WalletCopy.fullyOnChainWalletForZionL1Cre[cs ? 'cs' : 'en']}
                 </p>
                 <div className="flex flex-wrap gap-3 text-xs">
                   <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-cyan-200">
@@ -275,7 +360,7 @@ export default function WalletPage() {
                     <KeyRound className="h-3 w-3" /> BIP39
                   </span>
                   <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                    <Lock className="h-3 w-3" /> {cs ? 'Local-only' : 'Local-only'}
+                    <Lock className="h-3 w-3" /> {WalletCopy.localOnly[cs ? 'cs' : 'en']}
                   </span>
                 </div>
               </div>
@@ -287,7 +372,7 @@ export default function WalletPage() {
                   style={{ '--rc': '251, 191, 36' } as CSSProperties}
                 >
                   <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
-                    {cs ? 'Rychlý přehled' : 'Quick Overview'}
+                    {WalletCopy.quickOverview[cs ? 'cs' : 'en']}
                   </p>
                   <div className="space-y-3">
                     <div
@@ -296,7 +381,7 @@ export default function WalletPage() {
                     >
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Wallet className="h-4 w-4 text-zion-gold" />
-                        {cs ? 'Peněženka' : 'Wallet'}
+                        {WalletCopy.wallet[cs ? 'cs' : 'en']}
                       </div>
                       <span className="font-mono text-white text-sm">{activeName}</span>
                     </div>
@@ -306,7 +391,7 @@ export default function WalletPage() {
                     >
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Copy className="h-4 w-4 text-zion-gold" />
-                        {cs ? 'Adresa' : 'Address'}
+                        {WalletCopy.address[cs ? 'cs' : 'en']}
                       </div>
                       <span className="font-mono text-white text-xs break-all max-w-[180px]">{activeAddress}</span>
                     </div>
@@ -316,7 +401,7 @@ export default function WalletPage() {
                     >
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Activity className="h-4 w-4 text-zion-gold" />
-                        {cs ? 'Zůstatek' : 'Balance'}
+                        {WalletCopy.balance[cs ? 'cs' : 'en']}
                       </div>
                       <span className="font-mono text-white">{activeBalanceDisplay}</span>
                     </div>
@@ -326,7 +411,7 @@ export default function WalletPage() {
                     >
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Usb className="h-4 w-4 text-zion-gold" />
-                        {cs ? 'Hardware' : 'Hardware'}
+                        {WalletCopy.hardware[cs ? 'cs' : 'en']}
                       </div>
                       <span className="font-mono text-white">{hardwareStatus}</span>
                     </div>
@@ -345,15 +430,13 @@ export default function WalletPage() {
             transition={{ delay: 0.04 }}
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{WalletCopy.telemetry[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Activity className="h-7 w-7 text-emerald-400" />
-                {cs ? 'Statistiky peněženky' : 'Wallet Statistics'}
+                {WalletCopy.walletStatistics[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-sm text-gray-400">
-                {cs
-                  ? 'Aktuální metriky z lokální ZION Wallet.'
-                  : 'Current metrics from your local ZION Wallet.'}
+                {WalletCopy.currentMetricsFromYourLocalZio[cs ? 'cs' : 'en']}
               </p>
             </div>
 
@@ -362,15 +445,15 @@ export default function WalletPage() {
                 icon={<Wallet className="h-5 w-5" />}
                 colorClass="text-zion-gold"
                 bgClass="bg-zion-gold/10"
-                label={cs ? 'Peněženky' : 'Wallets'}
+                label={WalletCopy.wallets[cs ? 'cs' : 'en']}
                 value={String(walletCount)}
-                sub={cs ? 'celkem' : 'total'}
+                sub={WalletCopy.total[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<Activity className="h-5 w-5" />}
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
-                label={cs ? 'Aktivní zůstatek' : 'Active Balance'}
+                label={WalletCopy.activeBalance[cs ? 'cs' : 'en']}
                 value={activeBalance}
                 sub="ZION"
               />
@@ -378,7 +461,7 @@ export default function WalletPage() {
                 icon={<Fingerprint className="h-5 w-5" />}
                 colorClass="text-emerald-400"
                 bgClass="bg-emerald-400/10"
-                label={cs ? 'Kryptografie' : 'Cryptography'}
+                label={WalletCopy.cryptography[cs ? 'cs' : 'en']}
                 value={ed25519Type}
                 sub="Ed25519"
               />
@@ -386,9 +469,9 @@ export default function WalletPage() {
                 icon={<Shield className="h-5 w-5" />}
                 colorClass="text-purple-400"
                 bgClass="bg-purple-400/10"
-                label={cs ? 'Zabezpečení' : 'Security'}
+                label={WalletCopy.security[cs ? 'cs' : 'en']}
                 value={securityLevel}
-                sub={cs ? 'úroveň' : 'level'}
+                sub={WalletCopy.level[cs ? 'cs' : 'en']}
               />
             </div>
           </motion.div>
@@ -404,10 +487,10 @@ export default function WalletPage() {
             style={{ '--rc': '147, 51, 234' } as CSSProperties}
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vlastnosti' : 'Features'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{WalletCopy.features[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Shield className="h-7 w-7 text-cyan-400" />
-                {cs ? 'Proč ZION Wallet?' : 'Why ZION Wallet?'}
+                {WalletCopy.whyZionWallet[cs ? 'cs' : 'en']}
               </h2>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -435,7 +518,7 @@ export default function WalletPage() {
                 <p>{successMsg}</p>
                 <Link href="/login" className="inline-flex items-center gap-2 text-emerald-200 hover:text-emerald-100 font-medium mt-2">
                   <ArrowRight className="w-4 h-4" />
-                  {cs ? 'Přejít na přihlášení' : 'Go to Login'}
+                  {WalletCopy.goToLogin[cs ? 'cs' : 'en']}
                 </Link>
               </div>
             )}
@@ -450,7 +533,7 @@ export default function WalletPage() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-sm text-gray-400">{cs ? 'Aktivní peněženka' : 'Active Wallet'}</p>
+                    <p className="text-sm text-gray-400">{WalletCopy.activeWallet[cs ? 'cs' : 'en']}</p>
                     <p className="text-lg font-semibold text-white">{activeWallet.name}</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -475,11 +558,9 @@ export default function WalletPage() {
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                       <div className="text-sm text-amber-200">
-                        <p className="font-medium">{cs ? 'Hardware peněženka — pouze pro sledování' : 'Hardware Wallet — Watch Only'}</p>
+                        <p className="font-medium">{WalletCopy.hardwareWalletWatchOnly[cs ? 'cs' : 'en']}</p>
                         <p className="text-amber-300/80 mt-1">
-                          {cs
-                            ? 'Trezor/Ledger firmware zatím nepodporuje podepisování transakcí pro ZION. Pro odeslání tokenů použijte software peněženku se stejným seedem (méně bezpečné) nebo počkejte na Ledger aplikaci.'
-                            : 'Trezor/Ledger firmware does not yet support transaction signing for ZION. To send tokens, use a software wallet with the same seed (less secure) or wait for the Ledger app.'}
+                          {WalletCopy.trezorLedgerFirmwareDoesNotYet[cs ? 'cs' : 'en']}
                         </p>
                       </div>
                     </div>
@@ -497,7 +578,7 @@ export default function WalletPage() {
                 className="zion-rainbow-card p-6"
                 style={{ '--rc': '147, 51, 234' } as CSSProperties}
               >
-                <h2 className="text-lg font-semibold text-white mb-4">{cs ? 'Vaše peněženky' : 'Your Wallets'} ({wallets.length})</h2>
+                <h2 className="text-lg font-semibold text-white mb-4">{WalletCopy.yourWallets[cs ? 'cs' : 'en']} ({wallets.length})</h2>
                 <div className="space-y-2">
                   {wallets.map((w) => (
                     <div
@@ -536,7 +617,7 @@ export default function WalletPage() {
             >
               <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-6">
                 <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
-                  {cs ? 'Peněženkové operace' : 'Wallet operations'}
+                  {WalletCopy.walletOperations[cs ? 'cs' : 'en']}
                 </span>
                 {TABS.map((t) => {
                   const Icon = t.icon;
@@ -563,11 +644,11 @@ export default function WalletPage() {
               {tab === 'create' && (
                 <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Plus className="w-5 h-5 text-zion-gold" /> {cs ? 'Vytvořit novou peněženku' : 'Create New Wallet'}
+                    <Plus className="w-5 h-5 text-zion-gold" /> {WalletCopy.createNewWallet[cs ? 'cs' : 'en']}
                   </h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm text-gray-400 mb-1">{cs ? 'Název peněženky' : 'Wallet Name'}</label>
+                      <label className="block text-sm text-gray-400 mb-1">{WalletCopy.walletName[cs ? 'cs' : 'en']}</label>
                       <input
                         type="text"
                         value={walletName}
@@ -576,7 +657,7 @@ export default function WalletPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-400 mb-1">{cs ? 'Heslo (min. 8 znaků)' : 'Password (min 8 chars)'}</label>
+                      <label className="block text-sm text-gray-400 mb-1">{WalletCopy.passwordMin8Chars[cs ? 'cs' : 'en']}</label>
                       <input
                         type="password"
                         value={password}
@@ -594,7 +675,7 @@ export default function WalletPage() {
                         <p className="mb-2">{successMsg}</p>
                         <Link href="/login" className="inline-flex items-center gap-2 text-emerald-300 hover:text-emerald-200 font-medium">
                           <ArrowRight className="w-4 h-4" />
-                          {cs ? 'Přejít na přihlášení' : 'Go to Login'}
+                          {WalletCopy.goToLogin[cs ? 'cs' : 'en']}
                         </Link>
                       </div>
                     )}
@@ -604,7 +685,7 @@ export default function WalletPage() {
                       className="zion-button-primary text-sm"
                       style={{ '--rc': '251, 191, 36' } as CSSProperties}
                     >
-                      {loading ? (cs ? 'Vytváření...' : 'Creating...') : (cs ? 'Vytvořit peněženku' : 'Create Wallet')}
+                      {loading ? (WalletCopy.creating[cs ? 'cs' : 'en']) : (WalletCopy.createWallet[cs ? 'cs' : 'en'])}
                     </button>
                   </div>
                 </div>
@@ -614,15 +695,15 @@ export default function WalletPage() {
               {tab === 'import' && (
                 <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Import className="w-5 h-5 text-zion-gold" /> {cs ? 'Importovat peněženku' : 'Import Wallet'}
+                    <Import className="w-5 h-5 text-zion-gold" /> {WalletCopy.importWallet[cs ? 'cs' : 'en']}
                   </h3>
                   <div className="space-y-6">
                     <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
-                      <p className="text-sm font-medium text-gray-300 mb-3">{cs ? 'Z Mnemonic (BIP39)' : 'From Mnemonic (BIP39)'}</p>
+                      <p className="text-sm font-medium text-gray-300 mb-3">{WalletCopy.fromMnemonicBip39[cs ? 'cs' : 'en']}</p>
                       <textarea
                         value={mnemonic}
                         onChange={(e) => setMnemonic(e.target.value)}
-                        placeholder={cs ? 'Zadejte 12 nebo 24 slovní frázi...' : 'Enter 12 or 24 word mnemonic phrase...'}
+                        placeholder={WalletCopy.enter12Or24WordMnemonicPhrase[cs ? 'cs' : 'en']}
                         className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none h-24"
                       />
                       <div className="mt-3 space-y-3">
@@ -630,7 +711,7 @@ export default function WalletPage() {
                           type="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder={cs ? 'Šifrovací heslo' : 'Encryption password'}
+                          placeholder={WalletCopy.encryptionPassword[cs ? 'cs' : 'en']}
                           className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none"
                         />
                         <button
@@ -639,17 +720,17 @@ export default function WalletPage() {
                           className="zion-button-primary text-sm"
                           style={{ '--rc': '6, 182, 212' } as CSSProperties}
                         >
-                          {loading ? (cs ? 'Importování...' : 'Importing...') : (cs ? 'Importovat z Mnemonic' : 'Import from Mnemonic')}
+                          {loading ? (WalletCopy.importing[cs ? 'cs' : 'en']) : (WalletCopy.importFromMnemonic[cs ? 'cs' : 'en'])}
                         </button>
                       </div>
                     </div>
                     <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
-                      <p className="text-sm font-medium text-gray-300 mb-3">{cs ? 'Z Private Key (hex)' : 'From Private Key (hex)'}</p>
+                      <p className="text-sm font-medium text-gray-300 mb-3">{WalletCopy.fromPrivateKeyHex[cs ? 'cs' : 'en']}</p>
                       <input
                         type="text"
                         value={privateKey}
                         onChange={(e) => setPrivateKey(e.target.value)}
-                        placeholder={cs ? '64-znakový hex private key' : '64-char hex private key'}
+                        placeholder={WalletCopy.k64CharHexPrivateKey[cs ? 'cs' : 'en']}
                         className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none font-mono text-sm"
                       />
                       <div className="mt-3 space-y-3">
@@ -657,7 +738,7 @@ export default function WalletPage() {
                           type="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder={cs ? 'Šifrovací heslo' : 'Encryption password'}
+                          placeholder={WalletCopy.encryptionPassword[cs ? 'cs' : 'en']}
                           className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none"
                         />
                         <button
@@ -666,13 +747,13 @@ export default function WalletPage() {
                           className="zion-button-primary text-sm"
                           style={{ '--rc': '6, 182, 212' } as CSSProperties}
                         >
-                          {loading ? (cs ? 'Importování...' : 'Importing...') : (cs ? 'Importovat z Private Key' : 'Import from Private Key')}
+                          {loading ? (WalletCopy.importing[cs ? 'cs' : 'en']) : (WalletCopy.importFromPrivateKey[cs ? 'cs' : 'en'])}
                         </button>
                       </div>
                     </div>
                     <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
-                      <p className="text-sm font-medium text-gray-300 mb-3">{cs ? 'Hardware peněženka (Watch-only)' : 'Hardware Wallet (Watch-only)'}</p>
-                      <p className="text-xs text-gray-400 mb-3">{cs ? 'Importujte veřejný klíč z Trezoru nebo Ledgeru.' : 'Import public key from Trezor or Ledger.'}</p>
+                      <p className="text-sm font-medium text-gray-300 mb-3">{WalletCopy.hardwareWalletWatchOnly_2[cs ? 'cs' : 'en']}</p>
+                      <p className="text-xs text-gray-400 mb-3">{WalletCopy.importPublicKeyFromTrezorOrLed[cs ? 'cs' : 'en']}</p>
                       <div className="flex flex-wrap gap-3">
                         <button
                           onClick={handleImportTrezor}
@@ -680,7 +761,7 @@ export default function WalletPage() {
                           className="zion-button-secondary text-sm"
                           style={{ '--rc': '34, 197, 94' } as CSSProperties}
                         >
-                          {loading ? (cs ? 'Připojování...' : 'Connecting...') : 'Trezor'}
+                          {loading ? (WalletCopy.connecting[cs ? 'cs' : 'en']) : 'Trezor'}
                         </button>
                         <button
                           onClick={handleImportLedger}
@@ -688,13 +769,11 @@ export default function WalletPage() {
                           className="zion-button-secondary text-sm"
                           style={{ '--rc': '147, 51, 234' } as CSSProperties}
                         >
-                          {loading ? (cs ? 'Připojování...' : 'Connecting...') : 'Ledger'}
+                          {loading ? (WalletCopy.connecting[cs ? 'cs' : 'en']) : 'Ledger'}
                         </button>
                       </div>
                       <p className="text-xs text-amber-300/70 mt-2">
-                        {cs
-                          ? 'Varování: Trezor/Ledger firmware zatím neumožňuje podepisování transakcí pro ZION. Peněženka bude pouze pro sledování.'
-                          : 'Warning: Trezor/Ledger firmware does not yet support transaction signing for ZION. Wallet will be watch-only.'}
+                        {WalletCopy.warningTrezorLedgerFirmwareDoe[cs ? 'cs' : 'en']}
                       </p>
                     </div>
                   </div>
@@ -705,14 +784,14 @@ export default function WalletPage() {
               {tab === 'send' && (
                 <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Send className="w-5 h-5 text-zion-gold" /> {cs ? 'Odeslat ZION' : 'Send ZION'}
+                    <Send className="w-5 h-5 text-zion-gold" /> {WalletCopy.sendZion[cs ? 'cs' : 'en']}
                   </h3>
                   {!activeWallet ? (
-                    <p className="text-gray-500">{cs ? 'Nejprve vyberte nebo vytvořte peněženku.' : 'Select or create a wallet first.'}</p>
+                    <p className="text-gray-500">{WalletCopy.selectOrCreateAWalletFirst[cs ? 'cs' : 'en']}</p>
                   ) : (
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm text-gray-400 mb-1">{cs ? 'Adresa příjemce (zion1...)' : 'Recipient Address (zion1...)'}</label>
+                        <label className="block text-sm text-gray-400 mb-1">{WalletCopy.recipientAddressZion1[cs ? 'cs' : 'en']}</label>
                         <input
                           type="text"
                           value={sendTo}
@@ -722,7 +801,7 @@ export default function WalletPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm text-gray-400 mb-1">{cs ? 'Částka (ZION)' : 'Amount (ZION)'}</label>
+                        <label className="block text-sm text-gray-400 mb-1">{WalletCopy.amountZion[cs ? 'cs' : 'en']}</label>
                         <input
                           type="number"
                           value={sendAmount}
@@ -733,22 +812,22 @@ export default function WalletPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm text-gray-400 mb-1">{cs ? 'Memo (volitelné)' : 'Memo (optional)'}</label>
+                        <label className="block text-sm text-gray-400 mb-1">{WalletCopy.memoOptional[cs ? 'cs' : 'en']}</label>
                         <input
                           type="text"
                           value={sendMemo}
                           onChange={(e) => setSendMemo(e.target.value)}
-                          placeholder={cs ? 'Volitelná zpráva...' : 'Optional message...'}
+                          placeholder={WalletCopy.optionalMessage[cs ? 'cs' : 'en']}
                           className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm text-gray-400 mb-1">{cs ? 'Heslo peněženky' : 'Wallet Password'}</label>
+                        <label className="block text-sm text-gray-400 mb-1">{WalletCopy.walletPassword[cs ? 'cs' : 'en']}</label>
                         <input
                           type="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder={cs ? 'Zadejte heslo peněženky' : 'Enter wallet password'}
+                          placeholder={WalletCopy.enterWalletPassword[cs ? 'cs' : 'en']}
                           className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none"
                         />
                       </div>
@@ -758,7 +837,7 @@ export default function WalletPage() {
                         className="zion-button-primary text-sm"
                         style={{ '--rc': '16, 185, 129' } as CSSProperties}
                       >
-                        {loading ? (cs ? 'Odesílání...' : 'Sending...') : (cs ? 'Odeslat ZION' : 'Send ZION')}
+                        {loading ? (WalletCopy.sending[cs ? 'cs' : 'en']) : (WalletCopy.sendZion[cs ? 'cs' : 'en'])}
                       </button>
                       {txResult && (
                         <p className="text-zion-cyan text-sm mt-2 zion-rainbow-sub p-3 font-mono" style={{ '--rc': '251, 191, 36' } as CSSProperties}>{txResult}</p>
@@ -772,19 +851,19 @@ export default function WalletPage() {
               {tab === 'export' && (
                 <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Download className="w-5 h-5 text-zion-gold" /> {cs ? 'Exportovat tajemství' : 'Export Wallet Secrets'}
+                    <Download className="w-5 h-5 text-zion-gold" /> {WalletCopy.exportWalletSecrets[cs ? 'cs' : 'en']}
                   </h3>
                   {!activeWallet ? (
-                    <p className="text-gray-500">{cs ? 'Nejprve vyberte peněženku.' : 'Select a wallet first.'}</p>
+                    <p className="text-gray-500">{WalletCopy.selectAWalletFirst[cs ? 'cs' : 'en']}</p>
                   ) : (
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm text-gray-400 mb-1">{cs ? 'Heslo peněženky' : 'Wallet Password'}</label>
+                        <label className="block text-sm text-gray-400 mb-1">{WalletCopy.walletPassword[cs ? 'cs' : 'en']}</label>
                         <input
                           type="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder={cs ? 'Zadejte heslo pro dešifrování' : 'Enter password to decrypt'}
+                          placeholder={WalletCopy.enterPasswordToDecrypt[cs ? 'cs' : 'en']}
                           className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none"
                         />
                       </div>
@@ -794,20 +873,20 @@ export default function WalletPage() {
                           className="zion-button-secondary text-sm"
                           style={{ '--rc': '251, 191, 36' } as CSSProperties}
                         >
-                          <KeyRound className="h-4 w-4" /> {cs ? 'Exportovat Mnemonic' : 'Export Mnemonic'}
+                          <KeyRound className="h-4 w-4" /> {WalletCopy.exportMnemonic[cs ? 'cs' : 'en']}
                         </button>
                         <button
                           onClick={handleExportPrivateKey}
                           className="zion-button-secondary text-sm"
                           style={{ '--rc': '6, 182, 212' } as CSSProperties}
                         >
-                          <Fingerprint className="h-4 w-4" /> {cs ? 'Exportovat Private Key' : 'Export Private Key'}
+                          <Fingerprint className="h-4 w-4" /> {WalletCopy.exportPrivateKey[cs ? 'cs' : 'en']}
                         </button>
                       </div>
                       {exportedSecret && (
                         <div className="mt-4 zion-rainbow-sub p-4" style={{ '--rc': '239, 68, 68' } as CSSProperties}>
                           <div className="flex items-center justify-between mb-2">
-                            <p className="text-red-300 text-sm font-medium">{cs ? 'Tajemství (nikdy nesdílejte!)' : 'Secret (never share!)'}</p>
+                            <p className="text-red-300 text-sm font-medium">{WalletCopy.secretNeverShare[cs ? 'cs' : 'en']}</p>
                             <div className="flex gap-2">
                               <button onClick={() => setShowSecret(!showSecret)} className="p-1 hover:bg-red-900/30 rounded transition">
                                 {showSecret ? <EyeOff className="w-4 h-4 text-red-300" /> : <Eye className="w-4 h-4 text-red-300" />}
@@ -839,7 +918,7 @@ export default function WalletPage() {
             className="zion-cta-banner"
           >
             <h2 className="text-2xl font-semibold text-white text-center mb-6">
-              {cs ? 'Více o ZION Wallet' : 'Learn more about ZION Wallet'}
+              {WalletCopy.learnMoreAboutZionWallet[cs ? 'cs' : 'en']}
             </h2>
             <div className="flex flex-wrap justify-center gap-4">
               <Link href="/explorer" className="zion-button-secondary group text-sm" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
@@ -847,11 +926,11 @@ export default function WalletPage() {
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link href="/download" className="zion-button-secondary group text-sm" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
-                <Download className="h-4 w-4" /> {cs ? 'Stáhnout' : 'Download'}
+                <Download className="h-4 w-4" /> {WalletCopy.download[cs ? 'cs' : 'en']}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link href="/docs" className="zion-button-secondary group text-sm" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
-                <BookOpen className="h-4 w-4" /> {cs ? 'Dokumentace' : 'Documentation'}
+                <BookOpen className="h-4 w-4" /> {WalletCopy.documentation[cs ? 'cs' : 'en']}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>
