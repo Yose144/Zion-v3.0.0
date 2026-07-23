@@ -1673,7 +1673,7 @@ fn run_local_session(
         let hr = Arc::clone(hashrate);
         let bk = effective_gpu_backend;
         #[cfg(feature = "gpu-cuda")]
-        let shared_cuda: Option<()> = None;
+        let shared_cuda: Option<std::sync::Arc<cudarc::driver::CudaDevice>> = None;
         #[cfg(not(feature = "gpu-cuda"))]
         let shared_cuda: Option<()> = None;
         let share_tx = _ext_gpu_share_tx;
