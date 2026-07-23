@@ -24,7 +24,7 @@
 
 > **Note:** This matrix reflects the **actual code state**, not documentation claims.
 > Verified via: `cargo build --workspace` ✅, `cargo test --workspace --lib` ✅ (2179 pass, 0 fail),
-> Edge RPC `getChainInfo` (height 11608), pool `/miners` stats, web `/explorer` routes inspection.
+> Edge RPC `getChainInfo` (height 2584+ after 2026-07-20 reset), pool `/miners` stats, web `/explorer` routes inspection.
 
 | Coin | Algo | Stream | Status | Blocker | Verified by |
 |------|------|--------|--------|---------|-------------|

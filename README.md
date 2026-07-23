@@ -5,7 +5,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Status:** Mainnet Beta · 3.0.7 "Triple Stream All Green" planning · 15/15 Services Active · Chain Height 10911+ · Mainnet Alpha target: 3.1.0 — [`MAINNET_ALPHA_PLAN.md`](MAINNET_ALPHA_PLAN.md) + V3.1 migration [`V3.1_MIGRATION_PLAN.md`](V3.1_MIGRATION_PLAN.md) + native integration [`V3.1_INTEGRATION_PLAN.md`](V3.1_INTEGRATION_PLAN.md) · Public Launch: 31 December 2026
+**Status:** Mainnet Beta · 3.0.7 "Triple Stream All Green" planning · 14/15 services active (zion-free-world, zion-issobella disabled) · Chain Height 2584+ · Mainnet Alpha target: 3.1.0 — [`MAINNET_ALPHA_PLAN.md`](MAINNET_ALPHA_PLAN.md) + V3.1 migration [`V3.1_MIGRATION_PLAN.md`](V3.1_MIGRATION_PLAN.md) + native integration [`V3.1_INTEGRATION_PLAN.md`](V3.1_INTEGRATION_PLAN.md) · Public Launch: 31 December 2026
 
 **Current plan:** [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](TRIPLE_STREAM_ALL_GREEN_PLAN.md) · **Version overview:** [`3.0.7.md`](3.0.7.md) · **Previous 3.0.6 archive:** [`docs/3.0.6/`](docs/3.0.6/)
 
@@ -206,9 +206,9 @@ RPC: 127.0.0.1:8443 (localhost only)
 | **Edge** | Hetzner Cloud | `62.171.141.136` | P2P: 8333, Pool: 8444, RPC: 8443 (localhost), Web: 80/443 |
 | **Core** | Local machine | `109.81.27.87` | P2P: 8333, RPC: 8446 |
 
-- **Edge**: Primary 24/7 node + pool. Source of chain truth. Accepts public miner connections. 14 services + watchdog timer + web Docker container.
+- **Edge**: Primary 24/7 node + pool. Source of chain truth. Accepts public miner connections. 13 active services + watchdog timer + web Docker container (free-world and issobella are disabled).
 - **Core**: Local backup node (P2P peer, same genesis) + Dashboard + AI services.
-- **Chain live since:** 2026-07-07 (hard genesis reset) · **Current protocol:** `zion-v3-node/3.0.6` · **Chain height:** 10911+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` · **Next milestone:** 3.0.7 "Triple Stream All Green" — [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](TRIPLE_STREAM_ALL_GREEN_PLAN.md)
+- **Chain live since:** 2026-07-07 (hard genesis reset), re-reset 2026-07-20 for retention fix · **Current protocol:** `zion-v3-node/3.0.6` · **Chain height:** 2584+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` · **Next milestone:** 3.0.7 "Triple Stream All Green" — [`TRIPLE_STREAM_ALL_GREEN_PLAN.md`](TRIPLE_STREAM_ALL_GREEN_PLAN.md)
 
 ---
 
