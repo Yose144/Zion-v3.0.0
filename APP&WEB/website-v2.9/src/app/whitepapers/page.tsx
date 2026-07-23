@@ -291,7 +291,7 @@ export default function WhitepapersPage() {
       {/* Main Content */}
       <div className="zion-container py-12">
         {/* Mobile toggle */}
-        <div className="lg:hidden mb-6">
+        <div className="lg:hidden sticky top-20 z-30 mb-6">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="w-full flex items-center justify-between px-4 py-3 zion-rainbow-sub text-white transition-colors"
@@ -305,7 +305,7 @@ export default function WhitepapersPage() {
           </button>
 
           {mobileMenuOpen && (
-            <div className="mt-4 zion-rainbow-card p-4 space-y-2" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+            <div className="mt-4 zion-rainbow-card p-4 space-y-2 max-h-[70vh] overflow-y-auto" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
               {categories.map(category => {
                 const Icon = category.icon;
                 const isExpanded = expanded[category.id];
