@@ -22,6 +22,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useState, useCallback, type CSSProperties } from 'react';
+import dynamic from 'next/dynamic';
 import {
   getBridgeStatus,
   formatUptime,
@@ -30,8 +31,12 @@ import {
   type BridgeStatus,
 } from '@/lib/bridge-api';
 import { useLang } from '@/contexts/LanguageContext';
-import BridgeBurnWidget from '@/components/BridgeBurnWidget';
 import { usePolling } from '@/hooks/usePolling';
+
+const BridgeBurnWidget = dynamic(() => import('@/components/BridgeBurnWidget'), {
+  ssr: false,
+  loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" />,
+});
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import {
   Zap,
@@ -14,10 +15,14 @@ import {
   TrendingUp,
   AlertTriangle,
 } from 'lucide-react';
-import CrossChainSwapWidget from './CrossChainSwapWidget';
 import RecentSwaps from './RecentSwaps';
 import PriceChart from './PriceChart';
 import Link from 'next/link';
+
+const CrossChainSwapWidget = dynamic(() => import('./CrossChainSwapWidget'), {
+  ssr: false,
+  loading: () => <div className="h-96 animate-pulse rounded-2xl bg-white/5" />,
+});
 
 const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://zionterranova.com/dex-api';
 

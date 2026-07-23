@@ -78,15 +78,18 @@ export default function StargateLogo({ className = '' }: { className?: string })
             href="/l4-oasis"
             aria-label="Zion Terra Nova — Enter to Oasis"
           >
-            <img
-              src="/stargate/Z.gif"
-              alt="Zion"
-              style={{
-                filter: 'grayscale(100%) contrast(180%)',
-                boxShadow: '0 0 1px #000',
-                opacity: 0.6,
-              }}
-            />
+            <picture>
+              <source srcSet="/stargate/Z.webp" type="image/webp" />
+              <img
+                src="/stargate/Z.gif"
+                alt="Zion"
+                style={{
+                  filter: 'grayscale(100%) contrast(180%)',
+                  boxShadow: '0 0 1px #000',
+                  opacity: 0.6,
+                }}
+              />
+            </picture>
           </a>
         </div>
         {/* Glyphs — mimo container, uvnitř gate (dle originálu) */}

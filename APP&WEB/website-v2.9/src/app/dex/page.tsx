@@ -6,13 +6,18 @@
  */
 
 import { useState, type CSSProperties } from 'react';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { Zap, Globe, Shield, TrendingUp, ArrowRight, Info, Layers, AlertTriangle } from 'lucide-react';
-import CrossChainSwapWidget from '@/components/dex/CrossChainSwapWidget';
 import RecentSwaps from '@/components/dex/RecentSwaps';
 import TransactionStatus from '@/components/dex/TransactionStatus';
 import PriceChart from '@/components/dex/PriceChart';
 import Link from 'next/link';
+
+const CrossChainSwapWidget = dynamic(() => import('@/components/dex/CrossChainSwapWidget'), {
+  ssr: false,
+  loading: () => <div className="h-96 animate-pulse rounded-2xl bg-white/5" />,
+});
 
 export default function DexPage() {
   const [activeSwapId, setActiveSwapId] = useState<string | null>(null);
