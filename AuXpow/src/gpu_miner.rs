@@ -30,7 +30,7 @@
 
 use anyhow::{anyhow, Context, Result};
 use ocl::builders::ProgramBuilder;
-use ocl::{Buffer, Device, Kernel, Platform, ProQue};
+use ocl::{Buffer, Context as ClContext, Device, Kernel, Platform, ProQue, Queue};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -113,6 +113,9 @@ struct VerthashData {
 pub struct GpuMiner {
     platform: Platform,
     device: Device,
+    /// Shared OpenCL context for all ProQue instances and buffers.
+    /// Ensures DAG buffers are valid for kernels compiled in later ProQues.
+    context: ClContext,
     #[allow(dead_code)]
     device_name: String,
     #[allow(dead_code)]
@@ -324,6 +327,16 @@ impl GpuMiner {
         let (platform, device, platform_name, device_name) = Self::pick_opencl_device()?;
         let work_size = Self::detect_work_size(&device)?;
 
+        // Create one shared OpenCL context for all ProQues and buffers.
+        // Without this every ProQue::builder().platform().device() creates a
+        // fresh context, so DAG buffers generated in one context are invalid
+        // when passed to kernels compiled in another (CL_INVALID_MEM_OBJECT).
+        let context = ClContext::builder()
+            .platform(platform)
+            .devices(device)
+            .build()
+            .map_err(|e| anyhow!("failed to create OpenCL context: {e}"))?;
+
         println!(
             "auxpow_gpu_opencl platform=\"{}\" device=\"{}\" work_size={}",
             platform_name, device_name, work_size
@@ -332,6 +345,7 @@ impl GpuMiner {
         Ok(Self {
             platform,
             device,
+            context,
             device_name,
             platform_name,
             proques: HashMap::new(),
@@ -1705,29 +1719,16 @@ typedef unsigned long ulong;
             .ok()
             .and_then(|v| v.trim().parse::<usize>().ok())
             .unwrap_or(64);
-        // Get a queue from any existing ProQue, or build one fresh.
-        let q = if let Some(pq) = self.proques.values().next() {
-            pq.queue().clone()
-        } else {
-            // No existing ProQue — create a minimal one just for the queue.
-            let mut dummy_prog = ProgramBuilder::new();
-            dummy_prog.src("__kernel void dummy() {}");
-            let dummy_pq = ProQue::builder()
-                .platform(self.platform)
-                .device(self.device)
-                .prog_bldr(dummy_prog)
-                .dims(1)
-                .build()
-                .map_err(|e| anyhow!("failed to create queue: {e}"))?;
-            dummy_pq.queue().clone()
-        };
+        // Use the shared context for DAG buffers and the DAG generation kernel.
+        let q = Queue::new(&self.context, self.device, None)
+            .map_err(|e| anyhow!("failed to create queue: {e}"))?;
 
         let mut prog_builder = ProgramBuilder::new();
         prog_builder.src(dag_kernel_src);
         prog_builder.cmplr_opt("-cl-std=CL1.2 -cl-mad-enable");
 
         let dag_pro_que = match ProQue::builder()
-            .platform(self.platform)
+            .context(self.context.clone())
             .device(self.device)
             .prog_bldr(prog_builder)
             .dims(batch_size)
@@ -1951,31 +1952,17 @@ typedef unsigned long ulong;
             .ok()
             .and_then(|v| v.trim().parse::<usize>().ok())
             .unwrap_or(64);
-        // Get a queue from any existing ProQue, or build one fresh.
-        let q = if let Some(pq) = self.proques.values().next() {
-            pq.queue().clone()
-        } else {
-            // No existing ProQue — create a minimal one just for the queue.
-            let mut dummy_prog = ProgramBuilder::new();
-            dummy_prog.src("__kernel void dummy() {}");
-            let dummy_pq = ProQue::builder()
-                .platform(self.platform)
-                .device(self.device)
-                .prog_bldr(dummy_prog)
-                .dims(1)
-                .build()
-                .map_err(|e| anyhow!("failed to create queue: {e}"))?;
-            dummy_pq.queue().clone()
-        };
-
-        let q_context = q.context();
+        // Use the shared context for DAG buffers and the DAG generation kernel.
+        let q = Queue::new(&self.context, self.device, None)
+            .map_err(|e| anyhow!("failed to create queue: {e}"))?;
 
         let mut prog_builder = ProgramBuilder::new();
         prog_builder.src(dag_kernel_src);
         prog_builder.cmplr_opt("-cl-std=CL1.2 -cl-mad-enable");
 
         let dag_pro_que = ProQue::builder()
-            .context(q_context)
+            .context(self.context.clone())
+            .device(self.device)
             .prog_bldr(prog_builder)
             .dims(batch_size)
             .build()
@@ -2355,7 +2342,7 @@ typedef unsigned long ulong;
         prog_builder.cmplr_opt(&force_recompile);
 
         let pro_que = ProQue::builder()
-            .platform(self.platform)
+            .context(self.context.clone())
             .device(self.device)
             .prog_bldr(prog_builder)
             .dims(self.work_size)
@@ -2403,7 +2390,7 @@ typedef unsigned long ulong;
         prog_builder.cmplr_opt(&build_opts);
 
         let pro_que = ProQue::builder()
-            .platform(self.platform)
+            .context(self.context.clone())
             .device(self.device)
             .prog_bldr(prog_builder)
             .dims(self.work_size)
@@ -2590,7 +2577,7 @@ typedef unsigned long ulong;
         prog_builder.cmplr_opt(&build_opts);
 
         let pro_que = ProQue::builder()
-            .platform(self.platform)
+            .context(self.context.clone())
             .device(self.device)
             .prog_bldr(prog_builder)
             .dims(self.work_size)
