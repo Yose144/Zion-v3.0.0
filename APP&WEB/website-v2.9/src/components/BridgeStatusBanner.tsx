@@ -6,6 +6,19 @@ import { ArrowRight, Lock, Shield, Activity, Zap, RefreshCw } from 'lucide-react
 import { useEffect, useState, useCallback } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const BridgeStatusBannerCopy = {
+  bridgeStatus: { cs: `Bridge Status`, en: `Bridge Status` },
+  connecting: { cs: `Připojování…`, en: `Connecting…` },
+  onlineRelayActive: { cs: `Online · Relay aktivní`, en: `Online · Relay active` },
+  offlineRelayRestarting: { cs: `Offline · Relay restart?`, en: `Offline · Relay restarting?` },
+  locked: { cs: `Zamčeno`, en: `Locked` },
+  validators: { cs: `Validátory`, en: `Validators` },
+  locksMints: { cs: `Locks/Mints`, en: `Locks/Mints` },
+  uptime: { cs: `Uptime`, en: `Uptime` },
+  network: { cs: `Síť`, en: `Network` },
+  openBridge: { cs: `Otevřít Bridge`, en: `Open Bridge` },
+};
+
 interface BridgeStatus {
   online: boolean;
   uptime_seconds?: number;
@@ -94,14 +107,14 @@ export default function BridgeStatusBanner() {
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                  {cs ? 'Bridge Status' : 'Bridge Status'}
+                  {BridgeStatusBannerCopy.bridgeStatus[cs ? 'cs' : 'en']}
                 </p>
                 <p className={`text-sm font-bold ${online ? 'text-emerald-300' : 'text-gray-400'}`}>
                   {loading
-                    ? (cs ? 'Připojování…' : 'Connecting…')
+                    ? (BridgeStatusBannerCopy.connecting[cs ? 'cs' : 'en'])
                     : online
-                      ? (cs ? 'Online · Relay aktivní' : 'Online · Relay active')
-                      : (cs ? 'Offline · Relay restart?' : 'Offline · Relay restarting?')}
+                      ? (BridgeStatusBannerCopy.onlineRelayActive[cs ? 'cs' : 'en'])
+                      : (BridgeStatusBannerCopy.offlineRelayRestarting[cs ? 'cs' : 'en'])}
                 </p>
               </div>
             </div>
@@ -111,14 +124,14 @@ export default function BridgeStatusBanner() {
               <div className="flex items-center gap-2">
                 <Lock className="h-4 w-4 text-zion-gold shrink-0" />
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Zamčeno' : 'Locked'}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{BridgeStatusBannerCopy.locked[cs ? 'cs' : 'en']}</p>
                   <p className="text-sm font-bold text-white tabular-nums">{locked} ZION</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-zion-cyan shrink-0" />
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Validátory' : 'Validators'}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{BridgeStatusBannerCopy.validators[cs ? 'cs' : 'en']}</p>
                   <p className="text-sm font-bold text-white tabular-nums">{threshold}</p>
                 </div>
               </div>
@@ -127,14 +140,14 @@ export default function BridgeStatusBanner() {
                   <div className="flex items-center gap-2">
                     <Activity className="h-4 w-4 text-emerald-400 shrink-0" />
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Locks/Mints' : 'Locks/Mints'}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500">{BridgeStatusBannerCopy.locksMints[cs ? 'cs' : 'en']}</p>
                       <p className="text-sm font-bold text-white tabular-nums">{locks} / {mints}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Zap className="h-4 w-4 text-emerald-400 shrink-0" />
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Uptime' : 'Uptime'}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500">{BridgeStatusBannerCopy.uptime[cs ? 'cs' : 'en']}</p>
                       <p className="text-sm font-bold text-white tabular-nums">{formatUptime(uptime)}</p>
                     </div>
                   </div>
@@ -143,7 +156,7 @@ export default function BridgeStatusBanner() {
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-emerald-400 shrink-0" />
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Síť' : 'Network'}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{BridgeStatusBannerCopy.network[cs ? 'cs' : 'en']}</p>
                   <p className="text-sm font-bold text-white">6 chains · Base</p>
                 </div>
               </div>
@@ -152,7 +165,7 @@ export default function BridgeStatusBanner() {
             {/* CTA */}
             <div className="flex items-center gap-2 text-emerald-300 group-hover:gap-3 transition-all shrink-0">
               <span className="text-sm font-semibold">
-                {cs ? 'Otevřít Bridge' : 'Open Bridge'}
+                {BridgeStatusBannerCopy.openBridge[cs ? 'cs' : 'en']}
               </span>
               <ArrowRight className="h-4 w-4" />
             </div>

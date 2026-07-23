@@ -22,6 +22,60 @@ import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
 import { FLOWERS_PER_ZION } from '@/lib/constants';
 
+const ExplorerAddressAddressDetailClientCopy = {
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  missingAddressUseAddrZion1OrAd: { cs: `Chybí adresa. Použijte ?addr=zion1... nebo ?addr=ZION...`, en: `Missing address. Use ?addr=zion1... or ?addr=ZION...` },
+  address: { cs: `Adresa`, en: `Address` },
+  addressNotFound: { cs: `Adresa nenalezena`, en: `Address Not Found` },
+  backToExplorer: { cs: `← Zpět do exploreru`, en: `← Back to Explorer` },
+  watched: { cs: `Sledováno`, en: `Watched` },
+  activeMiner: { cs: `Aktivní miner`, en: `Active Miner` },
+  unwatch: { cs: `Přestat sledovat`, en: `Unwatch` },
+  watch: { cs: `Sledovat`, en: `Watch` },
+  optionalLabel: { cs: `Volitelný popisek...`, en: `Optional label...` },
+  add: { cs: `Přidat`, en: `Add` },
+  cancel: { cs: `Zrušit`, en: `Cancel` },
+  onChainBalance: { cs: `On-chain zůstatek`, en: `On-Chain Balance` },
+  utxos: { cs: `UTXOs`, en: `UTXOs` },
+  poolPending: { cs: `Pool (čeká)`, en: `Pool (Pending)` },
+  poolPaid: { cs: `Pool (vyplaceno)`, en: `Pool (Paid)` },
+  transactionSummary: { cs: `Souhrn transakcí`, en: `Transaction Summary` },
+  total: { cs: `Celkem`, en: `Total` },
+  received: { cs: `Přijato`, en: `Received` },
+  sent: { cs: `Odesláno`, en: `Sent` },
+  fees: { cs: `Poplatky`, en: `Fees` },
+  addressDetails: { cs: `Detaily adresy`, en: `Address Details` },
+  poolPending_2: { cs: `Pool (čeká)`, en: `Pool Pending` },
+  poolPaid_2: { cs: `Pool (vyplaceno)`, en: `Pool Paid` },
+  transactions: { cs: `Transakce`, en: `Transactions` },
+  firstSeen: { cs: `První výskyt`, en: `First Seen` },
+  lastActive: { cs: `Naposledy aktivní`, en: `Last Active` },
+  miningStats: { cs: `Statistiky těžby`, en: `Mining Stats` },
+  blocksFound: { cs: `Nalezené bloky`, en: `Blocks Found` },
+  acceptedShares: { cs: `Přijaté shares`, en: `Accepted Shares` },
+  rejectedShares: { cs: `Odmítnuté shares`, en: `Rejected Shares` },
+  worker: { cs: `Worker`, en: `Worker` },
+  consciousnessLevel: { cs: `Úroveň vědomí`, en: `Consciousness Level` },
+  multiplier: { cs: `Násobič`, en: `Multiplier` },
+  notAnActiveMiner: { cs: `Není to aktivní miner`, en: `Not an active miner` },
+  miningStatsWillAppearOnceThisA: { cs: `Statistiky těžby se objeví, jakmile tato adresa začne těžit.`, en: `Mining stats will appear once this address starts mining.` },
+  viewAll: { cs: `Zobrazit vše →`, en: `View all →` },
+  type: { cs: `Typ`, en: `Type` },
+  age: { cs: `Stáří`, en: `Age` },
+  amount: { cs: `Částka`, en: `Amount` },
+  noTransactionsFound: { cs: `Nenalezeny žádné transakce`, en: `No transactions found` },
+  payout: { cs: `výplata`, en: `payout` },
+  loadMore: { cs: `Načíst další`, en: `Load More` },
+  utxoList: { cs: `UTXO seznam`, en: `UTXO List` },
+  index: { cs: `Index`, en: `Index` },
+  height: { cs: `Výška`, en: `Height` },
+  noUtxosFound: { cs: `Žádné UTXO nenalezeny`, en: `No UTXOs found` },
+  watchlist: { cs: `Sledované adresy`, en: `Watchlist` },
+  added: { cs: `Přidáno`, en: `Added` },
+  current: { cs: `Aktuální`, en: `Current` },
+  remove: { cs: `Odstranit`, en: `Remove` },
+};
+
 /* ── helpers ─────────────────────────────────────────────────── */
 
 function CopyBtn({ text }: { text: string }) {
@@ -163,7 +217,7 @@ const consciousnessMap: Record<string, { bg: string; border: string; text: strin
 export default function AddressDetailClient() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = cs ? 'cs-CZ' : 'en-US';
+  const locale = ExplorerAddressAddressDetailClientCopy.enUs[cs ? 'cs' : 'en'];
   const router = useRouter();
   const searchParams = useSearchParams();
   const addr = useMemo(() => String(searchParams.get("addr") || "").trim(), [searchParams]);
@@ -212,7 +266,7 @@ export default function AddressDetailClient() {
     (async () => {
       try {
         setError(null); setLoading(true); setData(null);
-        if (!addr) { setError(cs ? "Chybí adresa. Použijte ?addr=zion1... nebo ?addr=ZION..." : "Missing address. Use ?addr=zion1... or ?addr=ZION..."); return; }
+        if (!addr) { setError(ExplorerAddressAddressDetailClientCopy.missingAddressUseAddrZion1OrAd[cs ? 'cs' : 'en']); return; }
         const result = await apiClient<AddressData>(`/blockchain/address?addr=${encodeURIComponent(addr)}`, { cache: "no-store" });
         setData(result);
       } catch (err) { setError(cs ? `Nepodařilo se načíst adresu: ${err}` : `Failed to load address: ${err}`); }
@@ -238,14 +292,14 @@ export default function AddressDetailClient() {
           <nav className="flex items-center gap-1.5 text-[11px] text-white/40 mb-6">
             <Link href="/explorer" className="hover:text-white/70 transition-colors">Explorer</Link>
             <ChevronRight className="w-3 h-3" />
-            <span className="text-white/70">{cs ? 'Adresa' : 'Address'}</span>
+            <span className="text-white/70">{ExplorerAddressAddressDetailClientCopy.address[cs ? 'cs' : 'en']}</span>
           </nav>
           <div className="zion-rainbow-card rounded-[28px] bg-black/60 border border-red-500/20 p-5 sm:p-8 md:p-10 text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <XCircle className="h-10 w-10 text-red-400/60 mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-white mb-2">{cs ? 'Adresa nenalezena' : 'Address Not Found'}</h1>
+            <h1 className="text-xl font-bold text-white mb-2">{ExplorerAddressAddressDetailClientCopy.addressNotFound[cs ? 'cs' : 'en']}</h1>
             <p className="text-white/40 text-sm mb-6 font-mono break-all">{error || addr}</p>
             <button onClick={() => router.push("/explorer")} className="px-5 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.10] transition-colors text-sm text-white/60 hover:text-white/90">
-              {cs ? '← Zpět do exploreru' : '← Back to Explorer'}
+              {ExplorerAddressAddressDetailClientCopy.backToExplorer[cs ? 'cs' : 'en']}
             </button>
           </div>
         </div>
@@ -267,7 +321,7 @@ export default function AddressDetailClient() {
         <nav className="flex items-center gap-1.5 text-[11px] text-white/40 mb-6">
           <Link href="/explorer" className="hover:text-white/70 transition-colors">Explorer</Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-white/70">{cs ? 'Adresa' : 'Address'}</span>
+          <span className="text-white/70">{ExplorerAddressAddressDetailClientCopy.address[cs ? 'cs' : 'en']}</span>
         </nav>
 
         {/* title & address */}
@@ -277,11 +331,11 @@ export default function AddressDetailClient() {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-white tracking-tight">{cs ? 'Adresa' : 'Address'}</h1>
+              <h1 className="text-2xl font-bold text-white tracking-tight">{ExplorerAddressAddressDetailClientCopy.address[cs ? 'cs' : 'en']}</h1>
               {isWatched && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-zion-gold/10 text-zion-gold border border-zion-gold/20" title={cs ? 'Sledováno' : 'Watched'}>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-zion-gold/10 text-zion-gold border border-zion-gold/20" title={ExplorerAddressAddressDetailClientCopy.watched[cs ? 'cs' : 'en']}>
                   <Star className="w-3 h-3 fill-current" />
-                  {cs ? 'Sledováno' : 'Watched'}
+                  {ExplorerAddressAddressDetailClientCopy.watched[cs ? 'cs' : 'en']}
                 </span>
               )}
               {data.known_label && (
@@ -296,7 +350,7 @@ export default function AddressDetailClient() {
               )}
               {data.is_miner && !data.known_label && (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  ⛏ {cs ? 'Aktivní miner' : 'Active Miner'}
+                  ⛏ {ExplorerAddressAddressDetailClientCopy.activeMiner[cs ? 'cs' : 'en']}
                 </span>
               )}
             </div>
@@ -310,10 +364,10 @@ export default function AddressDetailClient() {
                     ? "bg-zion-gold/10 text-zion-gold border-zion-gold/30 hover:bg-zion-gold/20"
                     : "bg-white/[0.04] text-white/60 border-white/[0.08] hover:bg-white/[0.08] hover:text-white/90"
                 }`}
-                title={isWatched ? (cs ? 'Přestat sledovat' : 'Unwatch') : (cs ? 'Sledovat' : 'Watch')}
+                title={isWatched ? (ExplorerAddressAddressDetailClientCopy.unwatch[cs ? 'cs' : 'en']) : (ExplorerAddressAddressDetailClientCopy.watch[cs ? 'cs' : 'en'])}
               >
                 <Star className={`w-3.5 h-3.5 ${isWatched ? "fill-current" : ""}`} />
-                {isWatched ? (cs ? 'Přestat sledovat' : 'Unwatch') : (cs ? 'Sledovat' : 'Watch')}
+                {isWatched ? (ExplorerAddressAddressDetailClientCopy.unwatch[cs ? 'cs' : 'en']) : (ExplorerAddressAddressDetailClientCopy.watch[cs ? 'cs' : 'en'])}
               </button>
             </div>
             {showLabelInput && !isWatched && (
@@ -322,16 +376,16 @@ export default function AddressDetailClient() {
                   type="text"
                   value={labelValue}
                   onChange={(e) => setLabelValue(e.target.value)}
-                  placeholder={cs ? 'Volitelný popisek...' : 'Optional label...'}
+                  placeholder={ExplorerAddressAddressDetailClientCopy.optionalLabel[cs ? 'cs' : 'en']}
                   className="px-3 py-1.5 rounded-lg bg-black/40 border border-white/[0.08] text-[12px] text-white/80 placeholder:text-white/25 focus:outline-none focus:border-zion-gold/40 w-56"
                   onKeyDown={(e) => { if (e.key === 'Enter') confirmWatch(); if (e.key === 'Escape') { setShowLabelInput(false); setLabelValue(""); } }}
                   autoFocus
                 />
                 <button onClick={confirmWatch} className="px-3 py-1.5 rounded-lg bg-zion-gold/15 text-zion-gold border border-zion-gold/30 text-[11px] font-semibold hover:bg-zion-gold/25 transition-colors">
-                  {cs ? 'Přidat' : 'Add'}
+                  {ExplorerAddressAddressDetailClientCopy.add[cs ? 'cs' : 'en']}
                 </button>
                 <button onClick={() => { setShowLabelInput(false); setLabelValue(""); }} className="px-3 py-1.5 rounded-lg text-white/40 text-[11px] hover:text-white/70 transition-colors">
-                  {cs ? 'Zrušit' : 'Cancel'}
+                  {ExplorerAddressAddressDetailClientCopy.cancel[cs ? 'cs' : 'en']}
                 </button>
               </div>
             )}
@@ -341,10 +395,10 @@ export default function AddressDetailClient() {
         {/* ── balance summary ──────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
-            { label: cs ? "On-chain zůstatek" : "On-Chain Balance", value: `${data.balance.total.toFixed(4)} ZION`, color: "text-white" },
-            { label: cs ? "UTXOs" : "UTXOs", value: String(data.balance.utxo_count), color: "text-zion-cyan" },
-            { label: cs ? "Pool (čeká)" : "Pool (Pending)", value: `${data.balance.pool_pending.toFixed(4)} ZION`, color: "text-amber-400" },
-            { label: cs ? "Pool (vyplaceno)" : "Pool (Paid)", value: `${data.balance.pool_paid.toFixed(2)} ZION`, color: "text-zion-gold" },
+            { label: ExplorerAddressAddressDetailClientCopy.onChainBalance[cs ? 'cs' : 'en'], value: `${data.balance.total.toFixed(4)} ZION`, color: "text-white" },
+            { label: ExplorerAddressAddressDetailClientCopy.utxos[cs ? 'cs' : 'en'], value: String(data.balance.utxo_count), color: "text-zion-cyan" },
+            { label: ExplorerAddressAddressDetailClientCopy.poolPending[cs ? 'cs' : 'en'], value: `${data.balance.pool_pending.toFixed(4)} ZION`, color: "text-amber-400" },
+            { label: ExplorerAddressAddressDetailClientCopy.poolPaid[cs ? 'cs' : 'en'], value: `${data.balance.pool_paid.toFixed(2)} ZION`, color: "text-zion-gold" },
           ].map((s) => (
             <div key={s.label} className="zion-rainbow-sub rounded-[20px] bg-black/60 p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1.5">{s.label}</p>
@@ -364,14 +418,14 @@ export default function AddressDetailClient() {
             <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 mb-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
                 <Activity className="w-4 h-4 text-purple-400" />
-                {cs ? 'Souhrn transakcí' : 'Transaction Summary'}
+                {ExplorerAddressAddressDetailClientCopy.transactionSummary[cs ? 'cs' : 'en']}
               </h2>
               <div className="flex items-center gap-6 flex-wrap">
                 <div className="relative flex-shrink-0">
                   <DonutChart received={received} sent={sent} />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <p className="text-[9px] uppercase tracking-wider text-white/30">{cs ? 'Celkem' : 'Total'}</p>
+                      <p className="text-[9px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.total[cs ? 'cs' : 'en']}</p>
                       <p className="text-[11px] font-bold text-white tabular-nums">{total.toFixed(2)}</p>
                     </div>
                   </div>
@@ -380,7 +434,7 @@ export default function AddressDetailClient() {
                   <div>
                     <div className="flex items-center gap-1.5 mb-1">
                       <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                      <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Přijato' : 'Received'}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.received[cs ? 'cs' : 'en']}</p>
                     </div>
                     <p className="text-lg font-bold text-emerald-400 tabular-nums">{received.toFixed(4)}</p>
                     <p className="text-[10px] text-white/30">ZION</p>
@@ -388,7 +442,7 @@ export default function AddressDetailClient() {
                   <div>
                     <div className="flex items-center gap-1.5 mb-1">
                       <span className="w-2 h-2 rounded-full bg-red-400" />
-                      <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Odesláno' : 'Sent'}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.sent[cs ? 'cs' : 'en']}</p>
                     </div>
                     <p className="text-lg font-bold text-red-400 tabular-nums">{sent.toFixed(4)}</p>
                     <p className="text-[10px] text-white/30">ZION</p>
@@ -396,7 +450,7 @@ export default function AddressDetailClient() {
                   <div>
                     <div className="flex items-center gap-1.5 mb-1">
                       <span className="w-2 h-2 rounded-full bg-amber-400" />
-                      <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Poplatky' : 'Fees'}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.fees[cs ? 'cs' : 'en']}</p>
                     </div>
                     <p className="text-lg font-bold text-amber-400 tabular-nums">{fees.toFixed(6)}</p>
                     <p className="text-[10px] text-white/30">ZION</p>
@@ -413,16 +467,16 @@ export default function AddressDetailClient() {
           <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
               <Wallet className="w-4 h-4 text-purple-400" />
-              {cs ? 'Detaily adresy' : 'Address Details'}
+              {ExplorerAddressAddressDetailClientCopy.addressDetails[cs ? 'cs' : 'en']}
             </h2>
-            <InfoRow label={cs ? 'Adresa' : 'Address'} value={addr} mono copy />
-            <InfoRow label={cs ? 'On-chain zůstatek' : 'On-Chain Balance'} value={`${data.balance.total.toFixed(4)} ZION`} color="text-white" />
+            <InfoRow label={ExplorerAddressAddressDetailClientCopy.address[cs ? 'cs' : 'en']} value={addr} mono copy />
+            <InfoRow label={ExplorerAddressAddressDetailClientCopy.onChainBalance[cs ? 'cs' : 'en']} value={`${data.balance.total.toFixed(4)} ZION`} color="text-white" />
             <InfoRow label="UTXOs" value={String(data.balance.utxo_count)} />
-            <InfoRow label={cs ? 'Pool (čeká)' : 'Pool Pending'} value={`${data.balance.pool_pending.toFixed(4)} ZION`} color="text-amber-400" />
-            <InfoRow label={cs ? 'Pool (vyplaceno)' : 'Pool Paid'} value={`${data.balance.pool_paid.toFixed(4)} ZION`} color="text-zion-gold" />
-            <InfoRow label={cs ? 'Transakce' : 'Transactions'} value={String(data.transaction_count)} />
-            {data.first_seen && data.first_seen > 0 && <InfoRow label={cs ? 'První výskyt' : 'First Seen'} value={formatDate(data.first_seen, locale)} />}
-            {data.last_seen && data.last_seen > 0 && <InfoRow label={cs ? 'Naposledy aktivní' : 'Last Active'} value={formatDate(data.last_seen, locale)} />}
+            <InfoRow label={ExplorerAddressAddressDetailClientCopy.poolPending_2[cs ? 'cs' : 'en']} value={`${data.balance.pool_pending.toFixed(4)} ZION`} color="text-amber-400" />
+            <InfoRow label={ExplorerAddressAddressDetailClientCopy.poolPaid_2[cs ? 'cs' : 'en']} value={`${data.balance.pool_paid.toFixed(4)} ZION`} color="text-zion-gold" />
+            <InfoRow label={ExplorerAddressAddressDetailClientCopy.transactions[cs ? 'cs' : 'en']} value={String(data.transaction_count)} />
+            {data.first_seen && data.first_seen > 0 && <InfoRow label={ExplorerAddressAddressDetailClientCopy.firstSeen[cs ? 'cs' : 'en']} value={formatDate(data.first_seen, locale)} />}
+            {data.last_seen && data.last_seen > 0 && <InfoRow label={ExplorerAddressAddressDetailClientCopy.lastActive[cs ? 'cs' : 'en']} value={formatDate(data.last_seen, locale)} />}
           </div>
 
           {/* ── Mining Stats card (or placeholder) ──────────── */}
@@ -430,25 +484,25 @@ export default function AddressDetailClient() {
             <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
                 <Pickaxe className="w-4 h-4 text-emerald-400" />
-                {cs ? 'Statistiky těžby' : 'Mining Stats'}
+                {ExplorerAddressAddressDetailClientCopy.miningStats[cs ? 'cs' : 'en']}
               </h2>
               <InfoRow label="Hashrate (1h)" value={data.mining_stats.hashrate_formatted} color="text-emerald-400" />
-              <InfoRow label={cs ? 'Nalezené bloky' : 'Blocks Found'} value={String(data.mining_stats.blocks_found)} color="text-zion-gold" />
-              <InfoRow label={cs ? 'Přijaté shares' : 'Accepted Shares'} value={data.mining_stats.accepted_shares.toLocaleString(locale)} />
-              <InfoRow label={cs ? 'Odmítnuté shares' : 'Rejected Shares'} value={data.mining_stats.rejected_shares.toLocaleString(locale)} color="text-red-400" />
-              {data.mining_stats.worker_name && <InfoRow label={cs ? 'Worker' : 'Worker'} value={data.mining_stats.worker_name} mono />}
+              <InfoRow label={ExplorerAddressAddressDetailClientCopy.blocksFound[cs ? 'cs' : 'en']} value={String(data.mining_stats.blocks_found)} color="text-zion-gold" />
+              <InfoRow label={ExplorerAddressAddressDetailClientCopy.acceptedShares[cs ? 'cs' : 'en']} value={data.mining_stats.accepted_shares.toLocaleString(locale)} />
+              <InfoRow label={ExplorerAddressAddressDetailClientCopy.rejectedShares[cs ? 'cs' : 'en']} value={data.mining_stats.rejected_shares.toLocaleString(locale)} color="text-red-400" />
+              {data.mining_stats.worker_name && <InfoRow label={ExplorerAddressAddressDetailClientCopy.worker[cs ? 'cs' : 'en']} value={data.mining_stats.worker_name} mono />}
 
               {/* consciousness level */}
               <div className={`mt-4 rounded-2xl ${cStyle.bg} border ${cStyle.border} p-4 flex items-center justify-between`}>
                 <div className="flex items-center gap-3">
                   <CIcon className={`w-6 h-6 ${cStyle.text}`} />
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Úroveň vědomí' : 'Consciousness Level'}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.consciousnessLevel[cs ? 'cs' : 'en']}</p>
                     <p className={`${cStyle.text} font-bold text-lg`}>{level.replace(/_/g, " ")}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] uppercase tracking-wider text-white/30">{cs ? 'Násobič' : 'Multiplier'}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.multiplier[cs ? 'cs' : 'en']}</p>
                   <p className={`${cStyle.text} font-bold text-2xl tabular-nums`}>{data.mining_stats.consciousness_multiplier}×</p>
                 </div>
               </div>
@@ -456,8 +510,8 @@ export default function AddressDetailClient() {
           ) : (
             <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 flex flex-col items-center justify-center text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <Pickaxe className="w-8 h-8 text-white/10 mb-3" />
-              <p className="text-white/30 text-sm">{cs ? 'Není to aktivní miner' : 'Not an active miner'}</p>
-              <p className="text-white/15 text-xs mt-1">{cs ? 'Statistiky těžby se objeví, jakmile tato adresa začne těžit.' : 'Mining stats will appear once this address starts mining.'}</p>
+              <p className="text-white/30 text-sm">{ExplorerAddressAddressDetailClientCopy.notAnActiveMiner[cs ? 'cs' : 'en']}</p>
+              <p className="text-white/15 text-xs mt-1">{ExplorerAddressAddressDetailClientCopy.miningStatsWillAppearOnceThisA[cs ? 'cs' : 'en']}</p>
             </div>
           )}
         </div>
@@ -466,30 +520,30 @@ export default function AddressDetailClient() {
         <div ref={txListRef} className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden scroll-mt-8" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white/70">
-              {cs ? 'Transakce' : 'Transactions'} ({data.transactions?.length ?? 0})
+              {ExplorerAddressAddressDetailClientCopy.transactions[cs ? 'cs' : 'en']} ({data.transactions?.length ?? 0})
             </h2>
             {(data.transactions?.length ?? 0) > 0 && (
               <Link
                 href={`/explorer/transactions?address=${encodeURIComponent(addr)}`}
                 className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors"
               >
-                {cs ? 'Zobrazit vše →' : 'View all →'}
+                {ExplorerAddressAddressDetailClientCopy.viewAll[cs ? 'cs' : 'en']}
               </Link>
             )}
           </div>
 
           {/* table header */}
           <div className="grid grid-cols-[70px_1fr_100px_90px_120px] gap-3 px-5 py-2.5 border-b border-white/[0.04]">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Typ' : 'Type'}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerAddressAddressDetailClientCopy.type[cs ? 'cs' : 'en']}</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Stáří' : 'Age'}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerAddressAddressDetailClientCopy.age[cs ? 'cs' : 'en']}</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Částka' : 'Amount'}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.amount[cs ? 'cs' : 'en']}</span>
           </div>
 
           {data.transactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-2">
-              <p className="text-white/20 text-sm">{cs ? 'Nenalezeny žádné transakce' : 'No transactions found'}</p>
+              <p className="text-white/20 text-sm">{ExplorerAddressAddressDetailClientCopy.noTransactionsFound[cs ? 'cs' : 'en']}</p>
             </div>
           ) : (
             <>
@@ -505,7 +559,7 @@ export default function AddressDetailClient() {
                     <div className="flex items-center">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
                         t.type === "payout" ? "bg-emerald-500/15 text-emerald-400" : "bg-blue-500/15 text-blue-400"
-                      }`}>{t.type === 'payout' ? (cs ? 'výplata' : 'payout') : (cs ? 'převod' : t.type)}</span>
+                      }`}>{t.type === 'payout' ? (ExplorerAddressAddressDetailClientCopy.payout[cs ? 'cs' : 'en']) : (cs ? 'převod' : t.type)}</span>
                     </div>
 
                     {/* hash */}
@@ -546,7 +600,7 @@ export default function AddressDetailClient() {
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-[12px] font-semibold text-white/70 hover:text-white transition-colors"
                   >
                     <ChevronDown className="w-4 h-4" />
-                    {cs ? 'Načíst další' : 'Load More'}
+                    {ExplorerAddressAddressDetailClientCopy.loadMore[cs ? 'cs' : 'en']}
                   </button>
                 )}
               </div>
@@ -560,10 +614,10 @@ export default function AddressDetailClient() {
             <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
               <h2 className="text-sm font-semibold text-white/70 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-zion-cyan" />
-                {cs ? 'UTXO seznam' : 'UTXO List'} ({data.utxos.length})
+                {ExplorerAddressAddressDetailClientCopy.utxoList[cs ? 'cs' : 'en']} ({data.utxos.length})
               </h2>
               <span className="text-[10px] text-white/30 uppercase tracking-wider">
-                {cs ? 'Celkem' : 'Total'} {(data.utxos.reduce((s, u) => s + u.amount, 0) / FLOWERS_PER_ZION).toFixed(4)} ZION
+                {ExplorerAddressAddressDetailClientCopy.total[cs ? 'cs' : 'en']} {(data.utxos.reduce((s, u) => s + u.amount, 0) / FLOWERS_PER_ZION).toFixed(4)} ZION
               </span>
             </div>
 
@@ -571,14 +625,14 @@ export default function AddressDetailClient() {
             <div className="grid grid-cols-[60px_1fr_80px_100px_100px] gap-3 px-5 py-2.5 border-b border-white/[0.04]">
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">#</span>
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Index' : 'Index'}</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Výška' : 'Height'}</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Částka' : 'Amount'}</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.index[cs ? 'cs' : 'en']}</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.height[cs ? 'cs' : 'en']}</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.amount[cs ? 'cs' : 'en']}</span>
             </div>
 
             {data.utxos.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
-                <p className="text-white/20 text-sm">{cs ? 'Žádné UTXO nenalezeny' : 'No UTXOs found'}</p>
+                <p className="text-white/20 text-sm">{ExplorerAddressAddressDetailClientCopy.noUtxosFound[cs ? 'cs' : 'en']}</p>
               </div>
             ) : (
               data.utxos.map((u, idx) => (
@@ -610,7 +664,7 @@ export default function AddressDetailClient() {
           <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 mt-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
               <Star className="w-4 h-4 text-zion-gold fill-current" />
-              {cs ? 'Sledované adresy' : 'Watchlist'} ({watchlist.length})
+              {ExplorerAddressAddressDetailClientCopy.watchlist[cs ? 'cs' : 'en']} ({watchlist.length})
             </h2>
             <div className="space-y-2">
               {watchlist.map((w) => {
@@ -625,13 +679,13 @@ export default function AddressDetailClient() {
                         </Link>
                         {w.label && <span className="text-[10px] text-white/40 truncate">— {w.label}</span>}
                       </div>
-                      <p className="text-[10px] text-white/25 mt-0.5">{cs ? 'Přidáno' : 'Added'} {timeAgo(w.addedAt, cs)}</p>
+                      <p className="text-[10px] text-white/25 mt-0.5">{ExplorerAddressAddressDetailClientCopy.added[cs ? 'cs' : 'en']} {timeAgo(w.addedAt, cs)}</p>
                     </div>
-                    {current && <span className="text-[10px] uppercase tracking-wider text-zion-gold font-semibold flex-shrink-0">{cs ? 'Aktuální' : 'Current'}</span>}
+                    {current && <span className="text-[10px] uppercase tracking-wider text-zion-gold font-semibold flex-shrink-0">{ExplorerAddressAddressDetailClientCopy.current[cs ? 'cs' : 'en']}</span>}
                     <button
                       onClick={() => { const next = watchlist.filter((x) => x.address !== w.address); setWatchlist(next); saveWatchlist(next); }}
                       className="text-white/20 hover:text-red-400 transition-colors flex-shrink-0 text-[11px]"
-                      title={cs ? 'Odstranit' : 'Remove'}
+                      title={ExplorerAddressAddressDetailClientCopy.remove[cs ? 'cs' : 'en']}
                     >
                       ✕
                     </button>

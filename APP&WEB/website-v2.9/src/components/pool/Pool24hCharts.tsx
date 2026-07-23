@@ -3,6 +3,12 @@
 import { useMemo } from 'react';
 import { TrendingUp, Activity, Users } from 'lucide-react';
 
+const Pool24hChartsCopy = {
+  history: { cs: `Historie`, en: `History` },
+  k24HourPoolTrends: { cs: `24hodinové trendy poolu`, en: `24-Hour Pool Trends` },
+  fullDayHistoryOfHashrateAccept: { cs: `Celodenní historie hashrate, míry přijetí a počtu aktivních minerů s mřížkou a popisky os.`, en: `Full-day history of hashrate, accept rate, and active miner count with grid and axis labels.` },
+};
+
 function fmtSI(v: number): string {
   if (v >= 1e12) return `${(v / 1e12).toFixed(2)}T`;
   if (v >= 1e9) return `${(v / 1e9).toFixed(2)}G`;
@@ -124,15 +130,13 @@ export default function Pool24hCharts({
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Historie' : 'History'}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Pool24hChartsCopy.history[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Activity className="h-7 w-7 text-emerald-400" />
-          {cs ? '24hodinové trendy poolu' : '24-Hour Pool Trends'}
+          {Pool24hChartsCopy.k24HourPoolTrends[cs ? 'cs' : 'en']}
         </h2>
         <p className="text-sm text-gray-400">
-          {cs
-            ? 'Celodenní historie hashrate, míry přijetí a počtu aktivních minerů s mřížkou a popisky os.'
-            : 'Full-day history of hashrate, accept rate, and active miner count with grid and axis labels.'}
+          {Pool24hChartsCopy.fullDayHistoryOfHashrateAccept[cs ? 'cs' : 'en']}
         </p>
       </div>
 

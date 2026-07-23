@@ -8,6 +8,18 @@ import { apiClient } from '@/lib/api';
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
 
+const RecentBlocksCopy = {
+  justNow: { cs: `právě teď`, en: `just now` },
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  loadingRecentBlocks: { cs: `Načítám poslední bloky...`, en: `Loading recent blocks...` },
+  recentBlocks: { cs: `Poslední bloky`, en: `Recent Blocks` },
+  viewAll: { cs: `Zobrazit vše →`, en: `View all →` },
+  height: { cs: `Výška`, en: `Height` },
+  time: { cs: `Čas`, en: `Time` },
+  transactions: { cs: `Transakce`, en: `Transactions` },
+  consciousness: { cs: `Vědomí: `, en: `Consciousness: ` },
+};
+
 interface Block {
   height: number;
   hash: string;
@@ -42,11 +54,11 @@ export default function RecentBlocks() {
     const diff = now - date.getTime();
     const minutes = Math.floor(diff / 60000);
     
-    if (minutes < 1) return cs ? 'právě teď' : 'just now';
+    if (minutes < 1) return RecentBlocksCopy.justNow[cs ? 'cs' : 'en'];
     if (minutes < 60) return cs ? `před ${minutes} min` : `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return cs ? `před ${hours} h` : `${hours}h ago`;
-    return date.toLocaleDateString(cs ? 'cs-CZ' : 'en-US');
+    return date.toLocaleDateString(RecentBlocksCopy.enUs[cs ? 'cs' : 'en']);
   };
 
   const truncateHash = (hash: string) => {
@@ -56,7 +68,7 @@ export default function RecentBlocks() {
   if (loading) {
     return (
       <section className="mt-12">
-        <div className="animate-pulse text-gray-400">{cs ? 'Načítám poslední bloky...' : 'Loading recent blocks...'}</div>
+        <div className="animate-pulse text-gray-400">{RecentBlocksCopy.loadingRecentBlocks[cs ? 'cs' : 'en']}</div>
       </section>
     );
   }
@@ -71,13 +83,13 @@ export default function RecentBlocks() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Blocks className="w-6 h-6 text-zion-gold" />
-            <h2 className="text-3xl font-bold">{cs ? 'Poslední bloky' : 'Recent Blocks'}</h2>
+            <h2 className="text-3xl font-bold">{RecentBlocksCopy.recentBlocks[cs ? 'cs' : 'en']}</h2>
           </div>
           <Link 
             href="/explorer/blocks"
             className="text-sm text-zion-cyan hover:text-zion-gold transition-colors"
           >
-            {cs ? 'Zobrazit vše →' : 'View all →'}
+            {RecentBlocksCopy.viewAll[cs ? 'cs' : 'en']}
           </Link>
         </div>
 
@@ -94,7 +106,7 @@ export default function RecentBlocks() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Blocks className="w-4 h-4 text-zion-purple" />
-                    <span className="text-sm text-gray-400">{cs ? 'Výška' : 'Height'}</span>
+                    <span className="text-sm text-gray-400">{RecentBlocksCopy.height[cs ? 'cs' : 'en']}</span>
                   </div>
                   <div className="text-lg font-semibold text-zion-purple">
                     #{block.height}
@@ -114,7 +126,7 @@ export default function RecentBlocks() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Clock className="w-4 h-4 text-zion-gold" />
-                    <span className="text-sm text-gray-400">{cs ? 'Čas' : 'Time'}</span>
+                    <span className="text-sm text-gray-400">{RecentBlocksCopy.time[cs ? 'cs' : 'en']}</span>
                   </div>
                   <div className="text-sm text-zion-gold">
                     {formatTimestamp(block.timestamp)}
@@ -124,7 +136,7 @@ export default function RecentBlocks() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <User className="w-4 h-4 text-green-400" />
-                    <span className="text-sm text-gray-400">{cs ? 'Transakce' : 'Transactions'}</span>
+                    <span className="text-sm text-gray-400">{RecentBlocksCopy.transactions[cs ? 'cs' : 'en']}</span>
                   </div>
                   <div className="text-sm text-green-400">
                     {block.transactions} tx
@@ -134,7 +146,7 @@ export default function RecentBlocks() {
 
               {block.consciousness_level && (
                 <div className="mt-3 pt-3 border-t border-white/10">
-                  <span className="text-xs text-gray-500">{cs ? 'Vědomí: ' : 'Consciousness: '}</span>
+                  <span className="text-xs text-gray-500">{RecentBlocksCopy.consciousness[cs ? 'cs' : 'en']}</span>
                   <span className="text-xs text-zion-purple font-semibold">
                     {block.consciousness_level}
                   </span>

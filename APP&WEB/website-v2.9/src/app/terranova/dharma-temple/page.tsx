@@ -20,6 +20,41 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const TerranovaDharmaTempleCopy = {
+  backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
+  planning: { cs: `V přípravě`, en: `Planning` },
+  dharmaIsNotAPathAwayFromTheWor: { cs: `"Dharma není cesta od světa. Je to způsob, jak být ve světě jinak."`, en: `"Dharma is not a path away from the world. It is a way of being in the world differently."` },
+  laPalmaLaIslaBonita: { cs: `La Palma — La Isla Bonita`, en: `La Palma — La Isla Bonita` },
+  laPalmaIsCalledTheBeautifulIsl: { cs: `La Palma je nazývána "Krásným ostrovem". Nejzelenější z Kanárských ostrovů, s bioreservací UNESCO, národním parkem Caldera de Taburiente a nocemi tak tmavými, že tu stojí jedno z nejlepších observatoří světa.`, en: `La Palma is called the "Beautiful Island". The greenest of the Canary Islands, with a UNESCO biosphere reserve, Caldera de Taburiente national park, and nights so dark it hosts one of the world\'s finest observatories.` },
+  theVolcanicSoilRetainsHeatHold: { cs: `Vulkanická půda uchovává teplo, drží vlhkost a je extrémně úrodná — stromy tu rostou jako zázrakem. Voda teče z hor. Místo má přirozené podmínky pro život, které by v kontinentální Evropě trvalo dekády vybudovat.`, en: `The volcanic soil retains heat, holds moisture and is extremely fertile — trees grow here like magic. Water flows from the mountains. The place has natural conditions for life that would take decades to build in continental Europe.` },
+  biosphere: { cs: `Bioreservace`, en: `Biosphere` },
+  rainfall: { cs: `Srážky`, en: `Rainfall` },
+  soil: { cs: `Půda`, en: `Soil` },
+  volcanic: { cs: `Vulkanická`, en: `Volcanic` },
+  observatory: { cs: `Observatoř`, en: `Observatory` },
+  projectConcept: { cs: `Koncept projektu`, en: `Project Concept` },
+  activitiesVision: { cs: `Aktivity & Vize`, en: `Activities & Vision` },
+  developmentPhases: { cs: `Fáze rozvoje`, en: `Development Phases` },
+  fromVisionToReality: { cs: `Od vize k realitě`, en: `From Vision to Reality` },
+  now: { cs: `Nyní`, en: `Now` },
+  terraNovaNetwork: { cs: `Sít Terra Nova`, en: `Terra Nova Network` },
+  connectionWithZahradaGenesis: { cs: `Propojení se Zahradou Genesis`, en: `Connection with Zahrada Genesis` },
+  dimension: { cs: `Dimenze`, en: `Dimension` },
+  bothProjectsShareSourceCodeTer: { cs: `Oba projekty sdílejí zdrojový kód: Terra Nova etika, ZION blockchain, off-grid technologie, komunitní governance.`, en: `Both projects share source code: Terra Nova ethics, ZION blockchain, off-grid technology, community governance.` },
+  blockchainIntegration: { cs: `Blockchain integrace`, en: `Blockchain Integration` },
+  active: { cs: `Aktivní`, en: `Active` },
+  planned: { cs: `Plánováno`, en: `Planned` },
+  openQuestionsLookingForGuardia: { cs: `Otevřené otázky — hledáme Guardians`, en: `Open Questions — looking for Guardians` },
+  specificLocationOnLaPalmaNorth: { cs: `Konkrétní lokace na La Palmě (sever / jih / nadmořská výška?)`, en: `Specific location on La Palma (north / south / altitude?)` },
+  foundingGuardiansWhoIsTheCoreT: { cs: `Zakládající Guardians — kdo je core team?`, en: `Founding Guardians — who is the core team?` },
+  legalFormSpanishAsociaciNSlCom: { cs: `Právní forma (španělská asociación / SL / komunitní nadace?)`, en: `Legal form (Spanish asociación / SL / community foundation?)` },
+  phase01FinancingZionFundCrowdf: { cs: `Financování fáze 0–1 (ZION fond? crowdfunding? vlastní zdroje?)`, en: `Phase 0–1 financing (ZION fund? crowdfunding? own resources?)` },
+  seedLibraryCoordinationWithZah: { cs: `Koordinace seed library se Zahradou Genesis`, en: `Seed library coordination with Zahrada Genesis` },
+  areYouAGuardianWhoHearsLaPalma: { cs: `Jsi Guardian, který slyší volání La Palmy? Napiš nám.`, en: `Are you a Guardian who hears La Palma\'s call? Reach out.` },
+  joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
+  zahradaGenesis: { cs: `Zahrada Genesis`, en: `Zahrada Genesis` },
+};
+
 type FeatureItem = {
   icon: LucideIcon;
   titleCs: string;
@@ -156,7 +191,7 @@ export default function DharmaTemplePage() {
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {cs ? 'Zpět na Terra Nova' : 'Back to Terra Nova'}
+            {TerranovaDharmaTempleCopy.backToTerraNova[cs ? 'cs' : 'en']}
           </Link>
         </motion.div>
 
@@ -184,7 +219,7 @@ export default function DharmaTemplePage() {
                     L5 · Terra Nova Pioneer
                   </span>
                   <span className="zion-badge-gold">
-                    🔵 {cs ? 'V přípravě' : 'Planning'}
+                    🔵 {TerranovaDharmaTempleCopy.planning[cs ? 'cs' : 'en']}
                   </span>
                 </div>
 
@@ -199,9 +234,7 @@ export default function DharmaTemplePage() {
                 </div>
 
                 <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-gray-400 italic leading-relaxed max-w-lg">
-                  {cs
-                    ? '"Dharma není cesta od světa. Je to způsob, jak být ve světě jinak."'
-                    : '"Dharma is not a path away from the world. It is a way of being in the world differently."'}
+                  {TerranovaDharmaTempleCopy.dharmaIsNotAPathAwayFromTheWor[cs ? 'cs' : 'en']}
                 </blockquote>
 
                 <div className="grid gap-3 pt-3 sm:grid-cols-3">
@@ -236,25 +269,21 @@ export default function DharmaTemplePage() {
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-lg font-bold text-zion-gold">
-                  {cs ? 'La Palma — La Isla Bonita' : 'La Palma — La Isla Bonita'}
+                  {TerranovaDharmaTempleCopy.laPalmaLaIslaBonita[cs ? 'cs' : 'en']}
                 </h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  {cs
-                    ? 'La Palma je nazývána "Krásným ostrovem". Nejzelenější z Kanárských ostrovů, s bioreservací UNESCO, národním parkem Caldera de Taburiente a nocemi tak tmavými, že tu stojí jedno z nejlepších observatoří světa.'
-                    : 'La Palma is called the "Beautiful Island". The greenest of the Canary Islands, with a UNESCO biosphere reserve, Caldera de Taburiente national park, and nights so dark it hosts one of the world\'s finest observatories.'}
+                  {TerranovaDharmaTempleCopy.laPalmaIsCalledTheBeautifulIsl[cs ? 'cs' : 'en']}
                 </p>
                 <p className="text-gray-500 text-sm leading-relaxed">
-                  {cs
-                    ? 'Vulkanická půda uchovává teplo, drží vlhkost a je extrémně úrodná — stromy tu rostou jako zázrakem. Voda teče z hor. Místo má přirozené podmínky pro život, které by v kontinentální Evropě trvalo dekády vybudovat.'
-                    : 'The volcanic soil retains heat, holds moisture and is extremely fertile — trees grow here like magic. Water flows from the mountains. The place has natural conditions for life that would take decades to build in continental Europe.'}
+                  {TerranovaDharmaTempleCopy.theVolcanicSoilRetainsHeatHold[cs ? 'cs' : 'en']}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3 content-start">
                 {[
-                  { label: 'UNESCO', val: cs ? 'Bioreservace' : 'Biosphere' },
-                  { label: cs ? 'Srážky' : 'Rainfall', val: '700–1500mm' },
-                  { label: cs ? 'Půda' : 'Soil', val: cs ? 'Vulkanická' : 'Volcanic' },
-                  { label: cs ? 'Observatoř' : 'Observatory', val: 'ORM' },
+                  { label: 'UNESCO', val: TerranovaDharmaTempleCopy.biosphere[cs ? 'cs' : 'en'] },
+                  { label: TerranovaDharmaTempleCopy.rainfall[cs ? 'cs' : 'en'], val: '700–1500mm' },
+                  { label: TerranovaDharmaTempleCopy.soil[cs ? 'cs' : 'en'], val: TerranovaDharmaTempleCopy.volcanic[cs ? 'cs' : 'en'] },
+                  { label: TerranovaDharmaTempleCopy.observatory[cs ? 'cs' : 'en'], val: 'ORM' },
                 ].map((s) => (
                   <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                     <p className="text-gray-300 font-bold text-sm">{s.val}</p>
@@ -275,10 +304,10 @@ export default function DharmaTemplePage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Koncept projektu' : 'Project Concept'}
+              {TerranovaDharmaTempleCopy.projectConcept[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Aktivity & Vize' : 'Activities & Vision'}
+              {TerranovaDharmaTempleCopy.activitiesVision[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -329,10 +358,10 @@ export default function DharmaTemplePage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Fáze rozvoje' : 'Development Phases'}
+              {TerranovaDharmaTempleCopy.developmentPhases[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Od vize k realitě' : 'From Vision to Reality'}
+              {TerranovaDharmaTempleCopy.fromVisionToReality[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -371,7 +400,7 @@ export default function DharmaTemplePage() {
                       <span className="text-sm font-semibold text-white/80">
                         {cs ? p.cs : p.en}
                       </span>
-                      {p.active && <span className="text-zion-cyan text-xs animate-pulse">⚡ {cs ? 'Nyní' : 'Now'}</span>}
+                      {p.active && <span className="text-zion-cyan text-xs animate-pulse">⚡ {TerranovaDharmaTempleCopy.now[cs ? 'cs' : 'en']}</span>}
                     </div>
                     <p className="text-gray-500 text-xs">{cs ? p.descCs : p.descEn}</p>
                   </div>
@@ -390,17 +419,17 @@ export default function DharmaTemplePage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Sít Terra Nova' : 'Terra Nova Network'}
+              {TerranovaDharmaTempleCopy.terraNovaNetwork[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Propojení se Zahradou Genesis' : 'Connection with Zahrada Genesis'}
+              {TerranovaDharmaTempleCopy.connectionWithZahradaGenesis[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             {/* Header row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
-              <div className="p-3 text-gray-500">{cs ? 'Dimenze' : 'Dimension'}</div>
+              <div className="p-3 text-gray-500">{TerranovaDharmaTempleCopy.dimension[cs ? 'cs' : 'en']}</div>
               <div className="p-3 text-gray-300 sm:border-l border-white/10">🌿 Zahrada Genesis</div>
               <div className="p-3 text-zion-gold sm:border-l border-white/10">🕌 Dharma Temple</div>
             </div>
@@ -417,9 +446,7 @@ export default function DharmaTemplePage() {
           </div>
 
           <p className="text-gray-600 text-xs text-center mt-4">
-            {cs
-              ? 'Oba projekty sdílejí zdrojový kód: Terra Nova etika, ZION blockchain, off-grid technologie, komunitní governance.'
-              : 'Both projects share source code: Terra Nova ethics, ZION blockchain, off-grid technology, community governance.'}
+            {TerranovaDharmaTempleCopy.bothProjectsShareSourceCodeTer[cs ? 'cs' : 'en']}
           </p>
         </motion.section>
 
@@ -432,7 +459,7 @@ export default function DharmaTemplePage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Blockchain integrace' : 'Blockchain Integration'}
+              {TerranovaDharmaTempleCopy.blockchainIntegration[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
@@ -451,9 +478,9 @@ export default function DharmaTemplePage() {
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
                     <p className="text-[10px] text-gray-600 capitalize">
                       {item.status === 'active'
-                        ? (cs ? 'Aktivní' : 'Active')
+                        ? (TerranovaDharmaTempleCopy.active[cs ? 'cs' : 'en'])
                         : item.status === 'planned'
-                        ? (cs ? 'Plánováno' : 'Planned')
+                        ? (TerranovaDharmaTempleCopy.planned[cs ? 'cs' : 'en'])
                         : 'TBD'}
                     </p>
                   </div>
@@ -472,15 +499,15 @@ export default function DharmaTemplePage() {
         >
           <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
-              {cs ? 'Otevřené otázky — hledáme Guardians' : 'Open Questions — looking for Guardians'}
+              {TerranovaDharmaTempleCopy.openQuestionsLookingForGuardia[cs ? 'cs' : 'en']}
             </h3>
             <ul className="space-y-2">
               {[
-                cs ? 'Konkrétní lokace na La Palmě (sever / jih / nadmořská výška?)' : 'Specific location on La Palma (north / south / altitude?)',
-                cs ? 'Zakládající Guardians — kdo je core team?' : 'Founding Guardians — who is the core team?',
-                cs ? 'Právní forma (španělská asociación / SL / komunitní nadace?)' : 'Legal form (Spanish asociación / SL / community foundation?)',
-                cs ? 'Financování fáze 0–1 (ZION fond? crowdfunding? vlastní zdroje?)' : 'Phase 0–1 financing (ZION fund? crowdfunding? own resources?)',
-                cs ? 'Koordinace seed library se Zahradou Genesis' : 'Seed library coordination with Zahrada Genesis',
+                TerranovaDharmaTempleCopy.specificLocationOnLaPalmaNorth[cs ? 'cs' : 'en'],
+                TerranovaDharmaTempleCopy.foundingGuardiansWhoIsTheCoreT[cs ? 'cs' : 'en'],
+                TerranovaDharmaTempleCopy.legalFormSpanishAsociaciNSlCom[cs ? 'cs' : 'en'],
+                TerranovaDharmaTempleCopy.phase01FinancingZionFundCrowdf[cs ? 'cs' : 'en'],
+                TerranovaDharmaTempleCopy.seedLibraryCoordinationWithZah[cs ? 'cs' : 'en'],
               ].map((q, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-400">
                   <span className="text-zion-gold shrink-0 mt-0.5">◇</span>
@@ -489,9 +516,7 @@ export default function DharmaTemplePage() {
               ))}
             </ul>
             <p className="text-gray-600 text-xs pt-2">
-              {cs
-                ? 'Jsi Guardian, který slyší volání La Palmy? Napiš nám.'
-                : "Are you a Guardian who hears La Palma's call? Reach out."}
+              {TerranovaDharmaTempleCopy.areYouAGuardianWhoHearsLaPalma[cs ? 'cs' : 'en']}
             </p>
             <a
               href="https://discord.gg/eatGYDbd"
@@ -500,7 +525,7 @@ export default function DharmaTemplePage() {
               className="zion-button-secondary"
             >
               <Users className="w-4 h-4" />
-              {cs ? 'Připojit se na Discord' : 'Join Discord'}
+              {TerranovaDharmaTempleCopy.joinDiscord[cs ? 'cs' : 'en']}
             </a>
           </div>
         </motion.section>
@@ -517,7 +542,7 @@ export default function DharmaTemplePage() {
             className="zion-button-secondary"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>{cs ? 'Zahrada Genesis' : 'Zahrada Genesis'}</span>
+            <span>{TerranovaDharmaTempleCopy.zahradaGenesis[cs ? 'cs' : 'en']}</span>
           </Link>
           <Link
             href="/terranova/te-piko-ora"

@@ -5,6 +5,21 @@ import { motion } from 'framer-motion';
 import { MapPin, Zap, Copy, Check, Navigation2 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const PoolFinderCopy = {
+  findBestMiningPool: { cs: `Najít nejlepší těžební pool`, en: `Find Best Mining Pool` },
+  getTheOptimalMiningPoolBasedOn: { cs: `Získejte optimální těžební pool podle své polohy pro co nejnižší latenci.`, en: `Get the optimal mining pool based on your location for lowest latency.` },
+  detecting: { cs: `Zjišťuji polohu...`, en: `Detecting...` },
+  useMyLocation: { cs: `Použít moji polohu`, en: `Use My Location` },
+  enterManually: { cs: `Zadat ručně`, en: `Enter Manually` },
+  latitudeEG5008: { cs: `Zeměpisná šířka (např. 50.08)`, en: `Latitude (e.g. 50.08)` },
+  longitudeEG1442: { cs: `Zeměpisná délka (např. 14.42)`, en: `Longitude (e.g. 14.42)` },
+  search: { cs: `Hledat`, en: `Search` },
+  recommended: { cs: `Doporučeno`, en: `Recommended` },
+  distance: { cs: `Vzdálenost`, en: `Distance` },
+  noRecommendedPoolAvailableTryD: { cs: `Není k dispozici žádný doporučený pool. Zkuste zjistit svoji polohu.`, en: `No recommended pool available. Try detecting your location.` },
+  allPools: { cs: `Všechny pooly`, en: `All Pools` },
+};
+
 interface Pool {
   id: string;
   name: string;
@@ -92,11 +107,11 @@ export default function PoolFinder() {
     <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
         <Zap className="w-5 h-5 text-zion-gold" />
-        {cs ? 'Najít nejlepší těžební pool' : 'Find Best Mining Pool'}
+        {PoolFinderCopy.findBestMiningPool[cs ? 'cs' : 'en']}
       </h3>
 
       <p className="text-gray-400 text-sm mb-6">
-        {cs ? 'Získejte optimální těžební pool podle své polohy pro co nejnižší latenci.' : 'Get the optimal mining pool based on your location for lowest latency.'}
+        {PoolFinderCopy.getTheOptimalMiningPoolBasedOn[cs ? 'cs' : 'en']}
       </p>
 
       {/* Location Detection */}
@@ -107,7 +122,7 @@ export default function PoolFinder() {
           className="zion-button-primary disabled:opacity-60"
         >
           <Navigation2 className="w-4 h-4" />
-          {loading ? (cs ? 'Zjišťuji polohu...' : 'Detecting...') : (cs ? 'Použít moji polohu' : 'Use My Location')}
+          {loading ? (PoolFinderCopy.detecting[cs ? 'cs' : 'en']) : (PoolFinderCopy.useMyLocation[cs ? 'cs' : 'en'])}
         </button>
 
         <button
@@ -115,7 +130,7 @@ export default function PoolFinder() {
           className="zion-button-secondary"
         >
           <MapPin className="w-4 h-4" />
-          {cs ? 'Zadat ručně' : 'Enter Manually'}
+          {PoolFinderCopy.enterManually[cs ? 'cs' : 'en']}
         </button>
       </div>
 
@@ -124,14 +139,14 @@ export default function PoolFinder() {
         <div className="flex flex-wrap gap-3 mb-6">
           <input
             type="text"
-            placeholder={cs ? 'Zeměpisná šířka (např. 50.08)' : 'Latitude (e.g. 50.08)'}
+            placeholder={PoolFinderCopy.latitudeEG5008[cs ? 'cs' : 'en']}
             value={manualLocation.lat}
             onChange={(e) => setManualLocation(prev => ({ ...prev, lat: e.target.value }))}
             className="px-3 py-2 bg-black/40 border border-white/10 rounded-xl text-white text-sm focus:border-zion-gold outline-none"
           />
           <input
             type="text"
-            placeholder={cs ? 'Zeměpisná délka (např. 14.42)' : 'Longitude (e.g. 14.42)'}
+            placeholder={PoolFinderCopy.longitudeEG1442[cs ? 'cs' : 'en']}
             value={manualLocation.lon}
             onChange={(e) => setManualLocation(prev => ({ ...prev, lon: e.target.value }))}
             className="px-3 py-2 bg-black/40 border border-white/10 rounded-xl text-white text-sm focus:border-zion-gold outline-none"
@@ -140,7 +155,7 @@ export default function PoolFinder() {
             onClick={handleManualSearch}
             className="zion-button-primary"
           >
-            {cs ? 'Hledat' : 'Search'}
+            {PoolFinderCopy.search[cs ? 'cs' : 'en']}
           </button>
         </div>
       )}
@@ -160,7 +175,7 @@ export default function PoolFinder() {
                 <span className="text-lg">⭐</span>
                 <span className="font-semibold text-white">{result.recommended.name}</span>
                 <span className="zion-badge-green">
-                  {cs ? 'Doporučeno' : 'Recommended'}
+                  {PoolFinderCopy.recommended[cs ? 'cs' : 'en']}
                 </span>
               </div>
               {result.recommended.estimatedLatency && (
@@ -188,20 +203,20 @@ export default function PoolFinder() {
 
             {result.recommended.distance && (
               <div className="mt-2 text-sm text-gray-400">
-                {cs ? 'Vzdálenost' : 'Distance'}: {Math.round(result.recommended.distance)} km
+                {PoolFinderCopy.distance[cs ? 'cs' : 'en']}: {Math.round(result.recommended.distance)} km
               </div>
             )}
           </div>
           ) : (
           <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '255, 255, 255' } as React.CSSProperties}>
-            <p className="text-gray-400 text-sm">{cs ? 'Není k dispozici žádný doporučený pool. Zkuste zjistit svoji polohu.' : 'No recommended pool available. Try detecting your location.'}</p>
+            <p className="text-gray-400 text-sm">{PoolFinderCopy.noRecommendedPoolAvailableTryD[cs ? 'cs' : 'en']}</p>
           </div>
           )}
 
           {/* All Pools */}
           {result.pools && result.pools.length > 0 && (
           <div>
-            <h4 className="text-sm font-semibold text-gray-400 mb-2">{cs ? 'Všechny pooly' : 'All Pools'}</h4>
+            <h4 className="text-sm font-semibold text-gray-400 mb-2">{PoolFinderCopy.allPools[cs ? 'cs' : 'en']}</h4>
             <div className="space-y-2">
               {result.pools.map((pool, index) => (
                 <div

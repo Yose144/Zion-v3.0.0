@@ -26,6 +26,73 @@ import {
   Zap,
 } from "lucide-react";
 
+const ExplorerCopy = {
+  blockArchive: { cs: `Archiv bloku`, en: `Block Archive` },
+  completeLedgerOfAllValidatedBl: { cs: `Kompletní ledger všech validovaných bloků`, en: `Complete ledger of all validated blocks` },
+  transactionFeed: { cs: `Tok transakcí`, en: `Transaction Feed` },
+  realTimeFlowOfFundsAndFees: { cs: `Tok fondů a fee v reálném čase`, en: `Real-time flow of funds and fees` },
+  mempool: { cs: `Mempool`, en: `Mempool` },
+  pendingTransactionsFeeHistogra: { cs: `Čekající transakce, fee histogram, double-spend`, en: `Pending transactions, fee histogram, double-spend` },
+  bridgeTracker: { cs: `Bridge Tracker`, en: `Bridge Tracker` },
+  liveL1BaseBridgeStatusLockMint: { cs: `Live stav L1↔Base mostu, lock/mint/burn/unlock`, en: `Live L1↔Base bridge status, lock/mint/burn/unlock` },
+  networkPeers: { cs: `Síťoví peeri`, en: `Network Peers` },
+  globalNodeConnectivityMap: { cs: `Globální mapa konektivity nodů`, en: `Global node connectivity map` },
+  supplyDashboard: { cs: `Supply Dashboard`, en: `Supply Dashboard` },
+  circulatingMinedPremineDecadeD: { cs: `Circulating, vytěženo, premine, Decade Decay`, en: `Circulating, mined, premine, Decade Decay` },
+  chartsAnalytics: { cs: `Grafy a analytika`, en: `Charts & Analytics` },
+  historicalDifficultyHashrateEm: { cs: `Historická obtížnost, hashrate a emise`, en: `Historical difficulty, hashrate & emission` },
+  networkStats: { cs: `Network Stats`, en: `Network Stats` },
+  hashrateDifficultyBlockTimeTxT: { cs: `Hashrate, obtížnost, čas bloku, TX trendy`, en: `Hashrate, difficulty, block time, TX trends` },
+  search: { cs: `Hledat`, en: `Search` },
+  unifiedSearchForBlocksTransact: { cs: `Jednotne hledani bloku, tx a adres`, en: `Unified search for blocks, transactions and addresses` },
+  explorerApi: { cs: `API explorera`, en: `Explorer API` },
+  directJsonEndpointsForIntegrat: { cs: `Priame JSON endpointy pro integraci a monitoring`, en: `Direct JSON endpoints for integration and monitoring` },
+  explorerPro: { cs: `Průzkumník Pro`, en: `Explorer Pro` },
+  realTime: { cs: `Živé`, en: `Real-Time` },
+  blockchainExplorer: { cs: `Průzkumník blockchainu`, en: `Blockchain Explorer` },
+  liveMainnetData: { cs: `Živá mainnet data`, en: `Live Mainnet Data` },
+  autoRefresh15s: { cs: `Auto-refresh 15 s`, en: `Auto-Refresh 15s` },
+  k2NodeMesh: { cs: `2-uzlový mesh`, en: `2-node mesh` },
+  trinity1111Services: { cs: `Trinity · 11/11 služeb`, en: `Trinity · 11/11 services` },
+  apiDocs: { cs: `API dokumentace`, en: `API Docs` },
+  telemetry: { cs: `Telemetrie`, en: `Telemetry` },
+  networkStatistics: { cs: `Síťové statistiky`, en: `Network Statistics` },
+  realTimeMetricsFromTheZionBloc: { cs: `Metriky v reálném čase z blockchain daemonu ZION.`, en: `Real-time metrics from the ZION blockchain daemon.` },
+  ledger: { cs: `Ledger`, en: `Ledger` },
+  blocksTransactions: { cs: `Bloky a transakce`, en: `Blocks & Transactions` },
+  latestConfirmedBlocksAndTransa: { cs: `Nejnovější potvrzené bloky a tok transakcí ze chainu ZION.`, en: `Latest confirmed blocks and transaction feed from the ZION chain.` },
+  quickNavigation: { cs: `Rychlá navigace`, en: `Quick Navigation` },
+  jumpToSection: { cs: `Skok do sekce`, en: `Jump to section` },
+  v306Ledger: { cs: `Ledger v3.0.6`, en: `v3.0.6 Ledger` },
+  newFeaturesAndSecurityPatchesV: { cs: `Nové vlastnosti a bezpečnostní patche ověřené end-to-end na živém mainnetu.`, en: `New features and security patches verified end-to-end on the live mainnet.` },
+  accountModelMemo: { cs: `Account-model memo`, en: `Account-model memo` },
+  txMemoFieldForBridgeDaoAndSwap: { cs: `TX pole memo pro BRIDGE, DAO a SWAP — E2E potvrzeno v bloku 752.`, en: `TX memo field for BRIDGE, DAO, and SWAP — E2E confirmed in block 752.` },
+  f47F5Patches: { cs: `F4.7 + F5 patche`, en: `F4.7 + F5 patches` },
+  maxTxAmountCapAndSenderBalance: { cs: `Max-tx-amount cap a sender balance check aktivní od genesis.`, en: `Max-tx-amount cap and sender balance check active from genesis.` },
+  k2NodeRpcMesh: { cs: `2-uzlový RPC mesh`, en: `2-node RPC mesh` },
+  rpcAutoFailoverAcrossEdge18443: { cs: `RPC auto-failover přes Edge 1 (8443) a Edge 2 (8448). Local Backup je offline.`, en: `RPC auto-failover across Edge 1 (8443) and Edge 2 (8448). Local Backup is offline.` },
+  memoryLeakFix: { cs: `Memory leak fix`, en: `Memory leak fix` },
+  poolNodeMemoryLeaksFixedWatchd: { cs: `Pool + node memory leak opraveny, watchdog hlídá zdraví.`, en: `Pool + node memory leaks fixed, watchdog monitors health.` },
+  analytics: { cs: `Analytika`, en: `Analytics` },
+  networkCharts: { cs: `Síťové grafy`, en: `Network Charts` },
+  historicalDifficultyHashrateEm_2: { cs: `Historické trendy obtížnosti, hashrate, emise a velikosti bloku.`, en: `Historical difficulty, hashrate, emission, and block size trends.` },
+  supply: { cs: `Zasoba`, en: `Supply` },
+  emissionMonitor: { cs: `Monitoring emise`, en: `Emission Monitor` },
+  trackMiningProgressDecadeDecay: { cs: `Sledujte postup těžby – Decade Decay: 5,400 -> 724 ZION/blok, 100+ let + tail ∞.`, en: `Track mining progress - Decade Decay: 5,400 -> 724 ZION/block, 100+ years + tail ∞.` },
+  p2pNetwork: { cs: `P2P síť`, en: `P2P Network` },
+  connectivityOfThe2NodeP2pMeshE: { cs: `Konektivita 2-uzlového P2P meshe — Edge 1 a Edge 2 v reálném čase. Local Backup Node je offline.`, en: `Connectivity of the 2-node P2P mesh — Edge 1 and Edge 2 in real time. Local Backup Node is offline.` },
+  realTime_2: { cs: `Real-time`, en: `Real-time` },
+  liveBlockFeed: { cs: `Živý feed bloků`, en: `Live Block Feed` },
+  newBlocksDeliveredViaServerSen: { cs: `Nové bloky doručené přes Server-Sent Events — okamžitě po potvrzení.`, en: `New blocks delivered via Server-Sent Events — instantly upon confirmation.` },
+  distribution: { cs: `Distribuce`, en: `Distribution` },
+  richList: { cs: `Rich list`, en: `Rich List` },
+  topZionHoldersByBalancePremine: { cs: `Top držitelé ZION podle zůstatku – premine alokace, těžební odměny a ekonomika sítě.`, en: `Top ZION holders by balance - premine allocations, mining rewards, and network economics.` },
+  realTimeBlockchainDataFromNati: { cs: `Blockchain data v reálném čase z nativních Rust nodů. Každý blok, transakce a adresa – plně transparentní, plně otevřené.`, en: `Real-time blockchain data from native Rust nodes. Every block, transaction, and address - fully transparent, fully open.` },
+  decadeDecayEmission5400724Zion: { cs: `Decade Decay emise: 5,400 → 724 ZION/block · 100+ let + tail ∞ · Veškeré fee spáleno · 89/5/5/1 distribuce · Memo E2E potvrzeno v bloku 752 · Public launch 31.12.2026`, en: `Decade Decay emission: 5,400 → 724 ZION/block · 100+ years + tail ∞ · All fees burned · 89/5/5/1 distribution · Memo E2E confirmed in block 752 · Public launch 31.12.2026` },
+  networkStatus: { cs: `Stav sítě`, en: `Network Status` },
+  roadmap: { cs: `Roadmapa`, en: `Roadmap` },
+};
+
 const ExplorerDashboard = dynamic(() => import("@/components/explorer/ExplorerDashboard"), { ssr: false });
 const ProExplorerStats = dynamic(() => import("@/components/explorer/ProExplorerStats"), { ssr: false });
 const ExplorerCharts = dynamic(() => import("@/components/explorer/ExplorerCharts"), { ssr: false });
@@ -43,71 +110,71 @@ const SseBlockFeed = dynamic(() => import("@/components/explorer/v4/dashboard/Ss
 
 const getQuickLinks = (cs: boolean) => [
   {
-    title: cs ? 'Archiv bloku' : 'Block Archive',
-    description: cs ? 'Kompletní ledger všech validovaných bloků' : 'Complete ledger of all validated blocks',
+    title: ExplorerCopy.blockArchive[cs ? 'cs' : 'en'],
+    description: ExplorerCopy.completeLedgerOfAllValidatedBl[cs ? 'cs' : 'en'],
     href: '/explorer/blocks',
     accent: 'from-zion-gold/80 to-amber-600/80',
     icon: Layers,
   },
   {
-    title: cs ? 'Tok transakcí' : 'Transaction Feed',
-    description: cs ? 'Tok fondů a fee v reálném čase' : 'Real-time flow of funds and fees',
+    title: ExplorerCopy.transactionFeed[cs ? 'cs' : 'en'],
+    description: ExplorerCopy.realTimeFlowOfFundsAndFees[cs ? 'cs' : 'en'],
     href: '/explorer/transactions',
     accent: 'from-zion-cyan/80 to-blue-600/80',
     icon: Activity,
   },
   {
-    title: cs ? 'Mempool' : 'Mempool',
-    description: cs ? 'Čekající transakce, fee histogram, double-spend' : 'Pending transactions, fee histogram, double-spend',
+    title: ExplorerCopy.mempool[cs ? 'cs' : 'en'],
+    description: ExplorerCopy.pendingTransactionsFeeHistogra[cs ? 'cs' : 'en'],
     href: '/explorer/mempool',
     accent: 'from-amber-500/80 to-orange-600/80',
     icon: Flame,
   },
   {
-    title: cs ? 'Bridge Tracker' : 'Bridge Tracker',
-    description: cs ? 'Live stav L1↔Base mostu, lock/mint/burn/unlock' : 'Live L1↔Base bridge status, lock/mint/burn/unlock',
+    title: ExplorerCopy.bridgeTracker[cs ? 'cs' : 'en'],
+    description: ExplorerCopy.liveL1BaseBridgeStatusLockMint[cs ? 'cs' : 'en'],
     href: '/explorer/bridge',
     accent: 'from-blue-500/80 to-cyan-600/80',
     icon: ArrowLeftRight,
   },
   {
-    title: cs ? 'Síťoví peeri' : 'Network Peers',
-    description: cs ? 'Globální mapa konektivity nodů' : 'Global node connectivity map',
+    title: ExplorerCopy.networkPeers[cs ? 'cs' : 'en'],
+    description: ExplorerCopy.globalNodeConnectivityMap[cs ? 'cs' : 'en'],
     href: '#peers',
     accent: 'from-purple-500/80 to-indigo-600/80',
     icon: Globe,
   },
   {
-    title: cs ? 'Supply Dashboard' : 'Supply Dashboard',
-    description: cs ? 'Circulating, vytěženo, premine, Decade Decay' : 'Circulating, mined, premine, Decade Decay',
+    title: ExplorerCopy.supplyDashboard[cs ? 'cs' : 'en'],
+    description: ExplorerCopy.circulatingMinedPremineDecadeD[cs ? 'cs' : 'en'],
     href: '/explorer/supply',
     accent: 'from-emerald-500/80 to-teal-600/80',
     icon: BarChart3,
   },
   {
-    title: cs ? 'Grafy a analytika' : 'Charts & Analytics',
-    description: cs ? 'Historická obtížnost, hashrate a emise' : 'Historical difficulty, hashrate & emission',
+    title: ExplorerCopy.chartsAnalytics[cs ? 'cs' : 'en'],
+    description: ExplorerCopy.historicalDifficultyHashrateEm[cs ? 'cs' : 'en'],
     href: '#charts',
     accent: 'from-rose-500/80 to-pink-600/80',
     icon: TrendingUp,
   },
   {
-    title: cs ? 'Network Stats' : 'Network Stats',
-    description: cs ? 'Hashrate, obtížnost, čas bloku, TX trendy' : 'Hashrate, difficulty, block time, TX trends',
+    title: ExplorerCopy.networkStats[cs ? 'cs' : 'en'],
+    description: ExplorerCopy.hashrateDifficultyBlockTimeTxT[cs ? 'cs' : 'en'],
     href: '/explorer/network-stats',
     accent: 'from-violet-500/80 to-purple-600/80',
     icon: Network,
   },
   {
-    title: cs ? 'Hledat' : 'Search',
-    description: cs ? 'Jednotne hledani bloku, tx a adres' : 'Unified search for blocks, transactions and addresses',
+    title: ExplorerCopy.search[cs ? 'cs' : 'en'],
+    description: ExplorerCopy.unifiedSearchForBlocksTransact[cs ? 'cs' : 'en'],
     href: '/explorer/search',
     accent: 'from-zion-cyan/80 to-blue-600/80',
     icon: Search,
   },
   {
-    title: cs ? 'API explorera' : 'Explorer API',
-    description: cs ? 'Priame JSON endpointy pro integraci a monitoring' : 'Direct JSON endpoints for integration and monitoring',
+    title: ExplorerCopy.explorerApi[cs ? 'cs' : 'en'],
+    description: ExplorerCopy.directJsonEndpointsForIntegrat[cs ? 'cs' : 'en'],
     href: '/api-reference',
     accent: 'from-fuchsia-500/80 to-violet-600/80',
     icon: ExternalLink,
@@ -141,12 +208,12 @@ export default function ExplorerPage() {
             <div className="space-y-5">
               <div className="zion-badge text-zion-cyan border-zion-cyan/40 bg-zion-cyan/10">
                 <SearchCode className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? 'Průzkumník Pro' : 'Explorer Pro'}
+                {SITE_RELEASE_LABEL} · {ExplorerCopy.explorerPro[cs ? 'cs' : 'en']}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Živé' : 'Real-Time'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{ExplorerCopy.realTime[cs ? 'cs' : 'en']}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? 'Průzkumník blockchainu' : 'Blockchain Explorer'}
+                  {ExplorerCopy.blockchainExplorer[cs ? 'cs' : 'en']}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
@@ -156,21 +223,21 @@ export default function ExplorerPage() {
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="zion-badge zion-badge-gold">
-                  <Sparkles className="h-3 w-3" /> {cs ? 'Živá mainnet data' : 'Live Mainnet Data'}
+                  <Sparkles className="h-3 w-3" /> {ExplorerCopy.liveMainnetData[cs ? 'cs' : 'en']}
                 </span>
                 <span className="zion-badge zion-badge-green">
-                  <Activity className="h-3 w-3" /> {cs ? 'Auto-refresh 15 s' : 'Auto-Refresh 15s'}
+                  <Activity className="h-3 w-3" /> {ExplorerCopy.autoRefresh15s[cs ? 'cs' : 'en']}
                 </span>
                 <span className="zion-badge text-zion-cyan border-zion-cyan/40 bg-zion-cyan/10">
-                  <Globe className="h-3 w-3" /> {cs ? '2-uzlový mesh' : '2-node mesh'}
+                  <Globe className="h-3 w-3" /> {ExplorerCopy.k2NodeMesh[cs ? 'cs' : 'en']}
                 </span>
                 <span className="zion-badge zion-badge-green">
-                  {cs ? 'Trinity · 11/11 služeb' : 'Trinity · 11/11 services'}
+                  {ExplorerCopy.trinity1111Services[cs ? 'cs' : 'en']}
                 </span>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Link href="/explorer/api-docs" className="zion-button-secondary">
-                  <Code className="h-4 w-4" /> {cs ? 'API dokumentace' : 'API Docs'}
+                  <Code className="h-4 w-4" /> {ExplorerCopy.apiDocs[cs ? 'cs' : 'en']}
                 </Link>
               </div>
             </div>
@@ -187,12 +254,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.06 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.telemetry[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Síťové statistiky' : 'Network Statistics'}
+              {ExplorerCopy.networkStatistics[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Metriky v reálném čase z blockchain daemonu ZION.' : 'Real-time metrics from the ZION blockchain daemon.'}</p>
+            <p className="text-sm text-gray-400">{ExplorerCopy.realTimeMetricsFromTheZionBloc[cs ? 'cs' : 'en']}</p>
           </div>
           <Suspense
             fallback={
@@ -218,12 +285,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.1 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Ledger' : 'Ledger'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.ledger[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Layers className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Bloky a transakce' : 'Blocks & Transactions'}
+              {ExplorerCopy.blocksTransactions[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Nejnovější potvrzené bloky a tok transakcí ze chainu ZION.' : 'Latest confirmed blocks and transaction feed from the ZION chain.'}</p>
+            <p className="text-sm text-gray-400">{ExplorerCopy.latestConfirmedBlocksAndTransa[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="grid gap-6 xl:grid-cols-3">
@@ -251,8 +318,8 @@ export default function ExplorerPage() {
                     <Compass className="h-4.5 w-4.5 text-zion-gold" />
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold text-white">{cs ? 'Rychlá navigace' : 'Quick Navigation'}</h3>
-                    <p className="text-[11px] text-gray-500">{cs ? 'Skok do sekce' : 'Jump to section'}</p>
+                    <h3 className="text-base font-semibold text-white">{ExplorerCopy.quickNavigation[cs ? 'cs' : 'en']}</h3>
+                    <p className="text-[11px] text-gray-500">{ExplorerCopy.jumpToSection[cs ? 'cs' : 'en']}</p>
                   </div>
                 </div>
                 <div className="space-y-2.5">
@@ -289,42 +356,32 @@ export default function ExplorerPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v3.0.6 E2E</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Ledger v3.0.6' : 'v3.0.6 Ledger'}
+              {ExplorerCopy.v306Ledger[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
-              {cs
-                ? 'Nové vlastnosti a bezpečnostní patche ověřené end-to-end na živém mainnetu.'
-                : 'New features and security patches verified end-to-end on the live mainnet.'}
+              {ExplorerCopy.newFeaturesAndSecurityPatchesV[cs ? 'cs' : 'en']}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
-                title: cs ? 'Account-model memo' : 'Account-model memo',
-                detail: cs
-                  ? 'TX pole memo pro BRIDGE, DAO a SWAP — E2E potvrzeno v bloku 752.'
-                  : 'TX memo field for BRIDGE, DAO, and SWAP — E2E confirmed in block 752.',
+                title: ExplorerCopy.accountModelMemo[cs ? 'cs' : 'en'],
+                detail: ExplorerCopy.txMemoFieldForBridgeDaoAndSwap[cs ? 'cs' : 'en'],
                 accent: 'text-zion-cyan',
               },
               {
-                title: cs ? 'F4.7 + F5 patche' : 'F4.7 + F5 patches',
-                detail: cs
-                  ? 'Max-tx-amount cap a sender balance check aktivní od genesis.'
-                  : 'Max-tx-amount cap and sender balance check active from genesis.',
+                title: ExplorerCopy.f47F5Patches[cs ? 'cs' : 'en'],
+                detail: ExplorerCopy.maxTxAmountCapAndSenderBalance[cs ? 'cs' : 'en'],
                 accent: 'text-emerald-400',
               },
               {
-                title: cs ? '2-uzlový RPC mesh' : '2-node RPC mesh',
-                detail: cs
-                  ? 'RPC auto-failover přes Edge 1 (8443) a Edge 2 (8448). Local Backup je offline.'
-                  : 'RPC auto-failover across Edge 1 (8443) and Edge 2 (8448). Local Backup is offline.',
+                title: ExplorerCopy.k2NodeRpcMesh[cs ? 'cs' : 'en'],
+                detail: ExplorerCopy.rpcAutoFailoverAcrossEdge18443[cs ? 'cs' : 'en'],
                 accent: 'text-purple-400',
               },
               {
-                title: cs ? 'Memory leak fix' : 'Memory leak fix',
-                detail: cs
-                  ? 'Pool + node memory leak opraveny, watchdog hlídá zdraví.'
-                  : 'Pool + node memory leaks fixed, watchdog monitors health.',
+                title: ExplorerCopy.memoryLeakFix[cs ? 'cs' : 'en'],
+                detail: ExplorerCopy.poolNodeMemoryLeaksFixedWatchd[cs ? 'cs' : 'en'],
                 accent: 'text-amber-400',
               },
             ].map((card) => (
@@ -344,12 +401,12 @@ export default function ExplorerPage() {
           id="charts"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Analytika' : 'Analytics'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.analytics[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <BarChart3 className="h-7 w-7 text-purple-400" />
-              {cs ? 'Síťové grafy' : 'Network Charts'}
+              {ExplorerCopy.networkCharts[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Historické trendy obtížnosti, hashrate, emise a velikosti bloku.' : 'Historical difficulty, hashrate, emission, and block size trends.'}</p>
+            <p className="text-sm text-gray-400">{ExplorerCopy.historicalDifficultyHashrateEm_2[cs ? 'cs' : 'en']}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[400px]" />}>
             <ExplorerCharts />
@@ -363,12 +420,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.18 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Zasoba' : 'Supply'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.supply[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Rocket className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Monitoring emise' : 'Emission Monitor'}
+              {ExplorerCopy.emissionMonitor[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Sledujte postup těžby – Decade Decay: 5,400 -> 724 ZION/blok, 100+ let + tail ∞.' : 'Track mining progress - Decade Decay: 5,400 -> 724 ZION/block, 100+ years + tail ∞.'}</p>
+            <p className="text-sm text-gray-400">{ExplorerCopy.trackMiningProgressDecadeDecay[cs ? 'cs' : 'en']}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[280px]" />}>
             <EmissionMonitor />
@@ -383,12 +440,12 @@ export default function ExplorerPage() {
           id="peers"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'P2P síť' : 'P2P Network'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.p2pNetwork[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Síťoví peeri' : 'Network Peers'}
+              {ExplorerCopy.networkPeers[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Konektivita 2-uzlového P2P meshe — Edge 1 a Edge 2 v reálném čase. Local Backup Node je offline.' : 'Connectivity of the 2-node P2P mesh — Edge 1 and Edge 2 in real time. Local Backup Node is offline.'}</p>
+            <p className="text-sm text-gray-400">{ExplorerCopy.connectivityOfThe2NodeP2pMeshE[cs ? 'cs' : 'en']}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[280px]" />}>
             <NetworkPeers />
@@ -402,12 +459,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.24 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Real-time' : 'Real-time'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.realTime_2[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Zap className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Živý feed bloků' : 'Live Block Feed'}
+              {ExplorerCopy.liveBlockFeed[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Nové bloky doručené přes Server-Sent Events — okamžitě po potvrzení.' : 'New blocks delivered via Server-Sent Events — instantly upon confirmation.'}</p>
+            <p className="text-sm text-gray-400">{ExplorerCopy.newBlocksDeliveredViaServerSen[cs ? 'cs' : 'en']}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[200px]" />}>
             <SseBlockFeed />
@@ -423,12 +480,12 @@ export default function ExplorerPage() {
           className="scroll-mt-28"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Distribuce' : 'Distribution'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.distribution[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Rich list' : 'Rich List'}
+              {ExplorerCopy.richList[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Top držitelé ZION podle zůstatku – premine alokace, těžební odměny a ekonomika sítě.' : 'Top ZION holders by balance - premine allocations, mining rewards, and network economics.'}</p>
+            <p className="text-sm text-gray-400">{ExplorerCopy.topZionHoldersByBalancePremine[cs ? 'cs' : 'en']}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[400px]" />}>
             <RichListClient embedded />
@@ -445,19 +502,17 @@ export default function ExplorerPage() {
           <SearchCode className="mx-auto h-12 w-12 text-zion-cyan" />
           <h2 className="mt-6 text-3xl font-semibold text-white">ZION TerraNova Explorer</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {cs ? 'Blockchain data v reálném čase z nativních Rust nodů. Každý blok, transakce a adresa – plně transparentní, plně otevřené.' : 'Real-time blockchain data from native Rust nodes. Every block, transaction, and address - fully transparent, fully open.'}
+            {ExplorerCopy.realTimeBlockchainDataFromNati[cs ? 'cs' : 'en']}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            {cs
-              ? 'Decade Decay emise: 5,400 → 724 ZION/block · 100+ let + tail ∞ · Veškeré fee spáleno · 89/5/5/1 distribuce · Memo E2E potvrzeno v bloku 752 · Public launch 31.12.2026'
-              : 'Decade Decay emission: 5,400 → 724 ZION/block · 100+ years + tail ∞ · All fees burned · 89/5/5/1 distribution · Memo E2E confirmed in block 752 · Public launch 31.12.2026'}
+            {ExplorerCopy.decadeDecayEmission5400724Zion[cs ? 'cs' : 'en']}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/network" className="zion-button-secondary">
-              <Globe className="h-4 w-4" /> {cs ? 'Stav sítě' : 'Network Status'}
+              <Globe className="h-4 w-4" /> {ExplorerCopy.networkStatus[cs ? 'cs' : 'en']}
             </Link>
             <Link href="/roadmap" className="zion-button-primary">
-              <Activity className="h-4 w-4" /> {cs ? 'Roadmapa' : 'Roadmap'}
+              <Activity className="h-4 w-4" /> {ExplorerCopy.roadmap[cs ? 'cs' : 'en']}
             </Link>
             <a
               href="https://github.com/Zion-TerraNova"

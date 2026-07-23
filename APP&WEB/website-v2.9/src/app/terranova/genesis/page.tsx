@@ -21,6 +21,64 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const TerranovaGenesisCopy = {
+  backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
+  activeDevelopment: { cs: `Aktivní rozvoj`, en: `Active Development` },
+  oneLoveOneHeartTogetherWeCreat: { cs: `"One love, one heart. Společně tvoříme budoucnost, kde je člověk a Země opět v harmonii."`, en: `"One love, one heart. Together we create a future where humanity and Earth are in harmony again."` },
+  whatTheProjectOffers: { cs: `Co projekt nabízí`, en: `What the project offers` },
+  activitiesInfrastructure: { cs: `Aktivity & Infrastruktura`, en: `Activities & Infrastructure` },
+  developmentPhases: { cs: `Fáze rozvoje`, en: `Development Phases` },
+  fromSeedToRadiance: { cs: `Cesta od zárodku k výzařování`, en: `From Seed to Radiance` },
+  physicalFoundation: { cs: `Fyzická základna`, en: `Physical Foundation` },
+  infrastructureOffGrid: { cs: `Infrastruktura & Off-grid`, en: `Infrastructure & Off-grid` },
+  energy: { cs: `Energie`, en: `Energy` },
+  source: { cs: `Zdroj`, en: `Source` },
+  backup: { cs: `Záloha`, en: `Backup` },
+  inDevelopment: { cs: `V rozvoji`, en: `In development` },
+  status: { cs: `Status`, en: `Status` },
+  installing: { cs: `🟡 Instalace`, en: `🟡 Installing` },
+  goalFullEnergySelfSufficiency: { cs: `Cíl: energetická soběstačnost areálu`, en: `Goal: full energy self-sufficiency` },
+  water: { cs: `Voda`, en: `Water` },
+  wellRainwater: { cs: `Studna + déšť`, en: `Well + rainwater` },
+  filter: { cs: `Čištění`, en: `Filter` },
+  basicSystem: { cs: `🟡 Funkční základ`, en: `🟡 Basic system` },
+  plannedRainwaterHarvestingFull: { cs: `Plánovaný sběr dešťové vody — plná retence`, en: `Planned rainwater harvesting — full retention` },
+  gardenFood: { cs: `Zahrada & Jídlo`, en: `Garden & Food` },
+  method: { cs: `Metoda`, en: `Method` },
+  organicFarming: { cs: `Organická farma`, en: `Organic farming` },
+  goal: { cs: `Cíl`, en: `Goal` },
+  growing: { cs: `🟢 Roste`, en: `🟢 Growing` },
+  treePlantingBiodiversityRestor: { cs: `Sázení stromů, obnova biodiverzity, sezónní sklizeň`, en: `Tree planting, biodiversity restoration, seasonal harvest` },
+  communityGovernance: { cs: `Komunitní správa`, en: `Community Governance` },
+  governanceDao: { cs: `Governance & DAO`, en: `Governance & DAO` },
+  decisionModel: { cs: `Model rozhodování`, en: `Decision Model` },
+  model: { cs: `Model`, en: `Model` },
+  communityGovernanceTerraNovaFr: { cs: `Komunitní správa + Terra Nova ® framework`, en: `Community governance + Terra Nova ® framework` },
+  decisions: { cs: `Rozhodování`, en: `Decisions` },
+  consensusForKeyDecisions: { cs: `Konsensuální pro klíčová rozhodnutí`, en: `Consensus for key decisions` },
+  zionDao: { cs: `ZION DAO`, en: `ZION DAO` },
+  plannedProofOfCareGovernance: { cs: `Plánováno — Proof-of-Care governance`, en: `Planned — Proof-of-Care governance` },
+  minCell: { cs: `Min. buňka`, en: `Min. cell` },
+  k35PermanentGuardiansSeasonal: { cs: `3–5 stálých Guardians + sezónní`, en: `3–5 permanent Guardians + seasonal` },
+  humanitarianCommitment: { cs: `Humanitární závazek`, en: `Humanitarian Commitment` },
+  ofZionNetworkNodeRewardsGoToTh: { cs: `z node odměn ZION sítě jde do humanitárního fondu komunity`, en: `of ZION network node rewards go to the community humanitarian fund` },
+  everyGuardianNodeOperatedOnThe: { cs: `Každý Guardian node, který bude provozován v areálu, přispívá 10 % odměn zpět komunitě a jejím projektům.`, en: `Every Guardian node operated on the premises contributes 10% of rewards back to the community and its projects.` },
+  characterOfPlace: { cs: `Charakter místa`, en: `Character of Place` },
+  aFarmOnTheEdgeOfTwoWorlds: { cs: `Farma na hranici dvou světů`, en: `A Farm on the Edge of Two Worlds` },
+  zahradaGenesisStandsOnTheBound: { cs: `Zahrada Genesis stojí na hranici dvou světů: tichého vnitrozemí farmy a divokého atlantického pobřeží. Tato dualita — ticho půdy a energie oceánu — je záměrná. Projekt hledá lidi, kteří umí pracovat v hlíně i surfovat vlny. Farmáře i surfaře. Stavitele i meditující.`, en: `Zahrada Genesis stands on the boundary of two worlds: the quiet inland farm and the wild Atlantic coast. This duality — the silence of soil and the energy of the ocean — is intentional. The project looks for people who can work in clay and surf waves. Farmers and surfers. Builders and meditators.` },
+  treePlantingIsNotAPrActivityIt: { cs: `Sázení stromů není PR aktivita. Je to rituál zakořenění. Každý strom, který tu vyroste, bude tu dál, když tenhle tým dávno odejde. Zahrada Genesis buduje dědictví v biologickém čase — ne v čtvrtletních zprávách.`, en: `Tree planting is not a PR activity. It is a ritual of rooting. Every tree that grows here will be here long after this team is gone. Zahrada Genesis builds legacy in biological time — not in quarterly reports.` },
+  oceanMovement: { cs: `🌊 Oceán & pohyb`, en: `🌊 Ocean & movement` },
+  soilSilence: { cs: `🌱 Půda & ticho`, en: `🌱 Soil & silence` },
+  biologicalTime: { cs: `🌳 Biologický čas`, en: `🌳 Biological time` },
+  authenticIntention: { cs: `🔥 Autentický záměr`, en: `🔥 Authentic intention` },
+  blockchainIntegration: { cs: `Blockchain integrace`, en: `Blockchain Integration` },
+  active: { cs: `Aktivní`, en: `Active` },
+  planned: { cs: `Plánováno`, en: `Planned` },
+  resourcesContact: { cs: `Zdroje a kontakt`, en: `Resources & Contact` },
+  instagramTerranovaProjectThisP: { cs: `Instagram: @terranova_project · Tento projektový list je živý dokument — průběžně aktualizujeme.`, en: `Instagram: @terranova_project · This project sheet is a living document — continuously updated.` },
+  dharmaTemple: { cs: `Dharma Temple`, en: `Dharma Temple` },
+};
+
 type FeatureItem = {
   icon: LucideIcon;
   titleCs: string;
@@ -150,7 +208,7 @@ export default function ZahradaGenesisPage() {
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-400 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {cs ? 'Zpět na Terra Nova' : 'Back to Terra Nova'}
+            {TerranovaGenesisCopy.backToTerraNova[cs ? 'cs' : 'en']}
           </Link>
         </motion.div>
 
@@ -180,7 +238,7 @@ export default function ZahradaGenesisPage() {
                     L5 · Terra Nova Pioneer
                   </span>
                   <span className="zion-badge-gold">
-                    🟡 {cs ? 'Aktivní rozvoj' : 'Active Development'}
+                    🟡 {TerranovaGenesisCopy.activeDevelopment[cs ? 'cs' : 'en']}
                   </span>
                 </div>
 
@@ -195,9 +253,7 @@ export default function ZahradaGenesisPage() {
                 </div>
 
                 <blockquote className="mt-4 pl-4 border-l-2 border-emerald-500/40 text-sm text-gray-400 italic leading-relaxed max-w-lg">
-                  {cs
-                    ? '"One love, one heart. Společně tvoříme budoucnost, kde je člověk a Země opět v harmonii."'
-                    : '"One love, one heart. Together we create a future where humanity and Earth are in harmony again."'}
+                  {TerranovaGenesisCopy.oneLoveOneHeartTogetherWeCreat[cs ? 'cs' : 'en']}
                 </blockquote>
 
                 <div className="grid gap-3 pt-3 sm:grid-cols-3">
@@ -230,10 +286,10 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Co projekt nabízí' : 'What the project offers'}
+              {TerranovaGenesisCopy.whatTheProjectOffers[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Aktivity & Infrastruktura' : 'Activities & Infrastructure'}
+              {TerranovaGenesisCopy.activitiesInfrastructure[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -284,10 +340,10 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Fáze rozvoje' : 'Development Phases'}
+              {TerranovaGenesisCopy.developmentPhases[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Cesta od zárodku k výzařování' : 'From Seed to Radiance'}
+              {TerranovaGenesisCopy.fromSeedToRadiance[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -347,10 +403,10 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Fyzická základna' : 'Physical Foundation'}
+              {TerranovaGenesisCopy.physicalFoundation[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Infrastruktura & Off-grid' : 'Infrastructure & Off-grid'}
+              {TerranovaGenesisCopy.infrastructureOffGrid[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -362,13 +418,13 @@ export default function ZahradaGenesisPage() {
                 <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <Sun className="h-4 w-4 text-zion-gold" />
                 </span>
-                <h3 className="font-bold text-zion-gold text-sm">{cs ? 'Energie' : 'Energy'}</h3>
+                <h3 className="font-bold text-zion-gold text-sm">{TerranovaGenesisCopy.energy[cs ? 'cs' : 'en']}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[
-                  { label: cs ? 'Zdroj' : 'Source', val: 'Solar FV systém' },
-                  { label: cs ? 'Záloha' : 'Backup', val: cs ? 'V rozvoji' : 'In development' },
-                  { label: cs ? 'Status' : 'Status', val: cs ? '🟡 Instalace' : '🟡 Installing' },
+                  { label: TerranovaGenesisCopy.source[cs ? 'cs' : 'en'], val: 'Solar FV systém' },
+                  { label: TerranovaGenesisCopy.backup[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.inDevelopment[cs ? 'cs' : 'en'] },
+                  { label: TerranovaGenesisCopy.status[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.installing[cs ? 'cs' : 'en'] },
                 ].map((r) => (
                   <div key={r.label} className="flex justify-between text-xs gap-2">
                     <span className="text-gray-500">{r.label}</span>
@@ -377,7 +433,7 @@ export default function ZahradaGenesisPage() {
                 ))}
               </div>
               <p className="text-[11px] text-gray-600 relative z-10">
-                {cs ? 'Cíl: energetická soběstačnost areálu' : 'Goal: full energy self-sufficiency'}
+                {TerranovaGenesisCopy.goalFullEnergySelfSufficiency[cs ? 'cs' : 'en']}
               </p>
             </div>
 
@@ -388,13 +444,13 @@ export default function ZahradaGenesisPage() {
                 <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <Droplets className="h-4 w-4 text-zion-cyan" />
                 </span>
-                <h3 className="font-bold text-zion-cyan text-sm">{cs ? 'Voda' : 'Water'}</h3>
+                <h3 className="font-bold text-zion-cyan text-sm">{TerranovaGenesisCopy.water[cs ? 'cs' : 'en']}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[
-                  { label: cs ? 'Zdroj' : 'Source', val: cs ? 'Studna + déšť' : 'Well + rainwater' },
-                  { label: cs ? 'Čištění' : 'Filter', val: 'Gravitace + UV' },
-                  { label: cs ? 'Status' : 'Status', val: cs ? '🟡 Funkční základ' : '🟡 Basic system' },
+                  { label: TerranovaGenesisCopy.source[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.wellRainwater[cs ? 'cs' : 'en'] },
+                  { label: TerranovaGenesisCopy.filter[cs ? 'cs' : 'en'], val: 'Gravitace + UV' },
+                  { label: TerranovaGenesisCopy.status[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.basicSystem[cs ? 'cs' : 'en'] },
                 ].map((r) => (
                   <div key={r.label} className="flex justify-between text-xs gap-2">
                     <span className="text-gray-500">{r.label}</span>
@@ -403,7 +459,7 @@ export default function ZahradaGenesisPage() {
                 ))}
               </div>
               <p className="text-[11px] text-gray-600 relative z-10">
-                {cs ? 'Plánovaný sběr dešťové vody — plná retence' : 'Planned rainwater harvesting — full retention'}
+                {TerranovaGenesisCopy.plannedRainwaterHarvestingFull[cs ? 'cs' : 'en']}
               </p>
             </div>
 
@@ -414,13 +470,13 @@ export default function ZahradaGenesisPage() {
                 <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <Sprout className="h-4 w-4 text-emerald-400" />
                 </span>
-                <h3 className="font-bold text-emerald-400 text-sm">{cs ? 'Zahrada & Jídlo' : 'Garden & Food'}</h3>
+                <h3 className="font-bold text-emerald-400 text-sm">{TerranovaGenesisCopy.gardenFood[cs ? 'cs' : 'en']}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[
-                  { label: cs ? 'Metoda' : 'Method', val: cs ? 'Organická farma' : 'Organic farming' },
-                  { label: cs ? 'Cíl' : 'Goal', val: '40–60 % kalorií' },
-                  { label: cs ? 'Status' : 'Status', val: cs ? '🟢 Roste' : '🟢 Growing' },
+                  { label: TerranovaGenesisCopy.method[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.organicFarming[cs ? 'cs' : 'en'] },
+                  { label: TerranovaGenesisCopy.goal[cs ? 'cs' : 'en'], val: '40–60 % kalorií' },
+                  { label: TerranovaGenesisCopy.status[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.growing[cs ? 'cs' : 'en'] },
                 ].map((r) => (
                   <div key={r.label} className="flex justify-between text-xs gap-2">
                     <span className="text-gray-500">{r.label}</span>
@@ -429,7 +485,7 @@ export default function ZahradaGenesisPage() {
                 ))}
               </div>
               <p className="text-[11px] text-gray-600 relative z-10">
-                {cs ? 'Sázení stromů, obnova biodiverzity, sezónní sklizeň' : 'Tree planting, biodiversity restoration, seasonal harvest'}
+                {TerranovaGenesisCopy.treePlantingBiodiversityRestor[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -444,10 +500,10 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Komunitní správa' : 'Community Governance'}
+              {TerranovaGenesisCopy.communityGovernance[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Governance & DAO' : 'Governance & DAO'}
+              {TerranovaGenesisCopy.governanceDao[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -455,14 +511,14 @@ export default function ZahradaGenesisPage() {
             <div className="relative z-10 grid md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <h3 className="text-zion-cyan font-bold text-sm uppercase tracking-widest">
-                  {cs ? 'Model rozhodování' : 'Decision Model'}
+                  {TerranovaGenesisCopy.decisionModel[cs ? 'cs' : 'en']}
                 </h3>
                 <div className="space-y-3">
                   {[
-                    { label: cs ? 'Model' : 'Model', val: cs ? 'Komunitní správa + Terra Nova ® framework' : 'Community governance + Terra Nova ® framework' },
-                    { label: cs ? 'Rozhodování' : 'Decisions', val: cs ? 'Konsensuální pro klíčová rozhodnutí' : 'Consensus for key decisions' },
-                    { label: cs ? 'ZION DAO' : 'ZION DAO', val: cs ? 'Plánováno — Proof-of-Care governance' : 'Planned — Proof-of-Care governance' },
-                    { label: cs ? 'Min. buňka' : 'Min. cell', val: cs ? '3–5 stálých Guardians + sezónní' : '3–5 permanent Guardians + seasonal' },
+                    { label: TerranovaGenesisCopy.model[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.communityGovernanceTerraNovaFr[cs ? 'cs' : 'en'] },
+                    { label: TerranovaGenesisCopy.decisions[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.consensusForKeyDecisions[cs ? 'cs' : 'en'] },
+                    { label: TerranovaGenesisCopy.zionDao[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.plannedProofOfCareGovernance[cs ? 'cs' : 'en'] },
+                    { label: TerranovaGenesisCopy.minCell[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.k35PermanentGuardiansSeasonal[cs ? 'cs' : 'en'] },
                   ].map((row) => (
                     <div key={row.label} className="flex gap-3">
                       <span className="text-gray-500 text-xs w-28 shrink-0 pt-0.5">{row.label}</span>
@@ -473,20 +529,16 @@ export default function ZahradaGenesisPage() {
               </div>
               <div className="space-y-4">
                 <h3 className="text-zion-gold font-bold text-sm uppercase tracking-widest">
-                  {cs ? 'Humanitární závazek' : 'Humanitarian Commitment'}
+                  {TerranovaGenesisCopy.humanitarianCommitment[cs ? 'cs' : 'en']}
                 </h3>
                 <div className="relative zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
                   <div className="text-3xl font-black text-zion-gold mb-1">10 %</div>
                   <p className="text-gray-400 text-sm">
-                    {cs
-                      ? 'z node odměn ZION sítě jde do humanitárního fondu komunity'
-                      : 'of ZION network node rewards go to the community humanitarian fund'}
+                    {TerranovaGenesisCopy.ofZionNetworkNodeRewardsGoToTh[cs ? 'cs' : 'en']}
                   </p>
                 </div>
                 <p className="text-gray-600 text-xs">
-                  {cs
-                    ? 'Každý Guardian node, který bude provozován v areálu, přispívá 10 % odměn zpět komunitě a jejím projektům.'
-                    : 'Every Guardian node operated on the premises contributes 10% of rewards back to the community and its projects.'}
+                  {TerranovaGenesisCopy.everyGuardianNodeOperatedOnThe[cs ? 'cs' : 'en']}
                 </p>
               </div>
             </div>
@@ -503,27 +555,23 @@ export default function ZahradaGenesisPage() {
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <div className="relative z-10 max-w-2xl space-y-4">
               <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500">
-                {cs ? 'Charakter místa' : 'Character of Place'}
+                {TerranovaGenesisCopy.characterOfPlace[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {cs ? 'Farma na hranici dvou světů' : 'A Farm on the Edge of Two Worlds'}
+                {TerranovaGenesisCopy.aFarmOnTheEdgeOfTwoWorlds[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-gray-400 text-sm leading-relaxed">
-                {cs
-                  ? 'Zahrada Genesis stojí na hranici dvou světů: tichého vnitrozemí farmy a divokého atlantického pobřeží. Tato dualita — ticho půdy a energie oceánu — je záměrná. Projekt hledá lidi, kteří umí pracovat v hlíně i surfovat vlny. Farmáře i surfaře. Stavitele i meditující.'
-                  : 'Zahrada Genesis stands on the boundary of two worlds: the quiet inland farm and the wild Atlantic coast. This duality — the silence of soil and the energy of the ocean — is intentional. The project looks for people who can work in clay and surf waves. Farmers and surfers. Builders and meditators.'}
+                {TerranovaGenesisCopy.zahradaGenesisStandsOnTheBound[cs ? 'cs' : 'en']}
               </p>
               <p className="text-gray-500 text-sm leading-relaxed">
-                {cs
-                  ? 'Sázení stromů není PR aktivita. Je to rituál zakořenění. Každý strom, který tu vyroste, bude tu dál, když tenhle tým dávno odejde. Zahrada Genesis buduje dědictví v biologickém čase — ne v čtvrtletních zprávách.'
-                  : "Tree planting is not a PR activity. It is a ritual of rooting. Every tree that grows here will be here long after this team is gone. Zahrada Genesis builds legacy in biological time — not in quarterly reports."}
+                {TerranovaGenesisCopy.treePlantingIsNotAPrActivityIt[cs ? 'cs' : 'en']}
               </p>
               <div className="pt-2 flex flex-wrap gap-2">
                 {[
-                  cs ? '🌊 Oceán & pohyb' : '🌊 Ocean & movement',
-                  cs ? '🌱 Půda & ticho' : '🌱 Soil & silence',
-                  cs ? '🌳 Biologický čas' : '🌳 Biological time',
-                  cs ? '🔥 Autentický záměr' : '🔥 Authentic intention',
+                  TerranovaGenesisCopy.oceanMovement[cs ? 'cs' : 'en'],
+                  TerranovaGenesisCopy.soilSilence[cs ? 'cs' : 'en'],
+                  TerranovaGenesisCopy.biologicalTime[cs ? 'cs' : 'en'],
+                  TerranovaGenesisCopy.authenticIntention[cs ? 'cs' : 'en'],
                 ].map((tag) => (
                   <span key={tag} className="zion-badge">
                     {tag}
@@ -543,7 +591,7 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Blockchain integrace' : 'Blockchain Integration'}
+              {TerranovaGenesisCopy.blockchainIntegration[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
@@ -562,9 +610,9 @@ export default function ZahradaGenesisPage() {
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
                     <p className="text-[10px] text-gray-600 capitalize">
                       {item.status === 'active'
-                        ? (cs ? 'Aktivní' : 'Active')
+                        ? (TerranovaGenesisCopy.active[cs ? 'cs' : 'en'])
                         : item.status === 'planned'
-                        ? (cs ? 'Plánováno' : 'Planned')
+                        ? (TerranovaGenesisCopy.planned[cs ? 'cs' : 'en'])
                         : 'TBD'}
                     </p>
                   </div>
@@ -583,7 +631,7 @@ export default function ZahradaGenesisPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
-              {cs ? 'Zdroje a kontakt' : 'Resources & Contact'}
+              {TerranovaGenesisCopy.resourcesContact[cs ? 'cs' : 'en']}
             </h3>
             <div className="flex flex-wrap gap-3">
               <a
@@ -612,9 +660,7 @@ export default function ZahradaGenesisPage() {
               </a>
             </div>
             <p className="text-gray-600 text-xs">
-              {cs
-                ? 'Instagram: @terranova_project · Tento projektový list je živý dokument — průběžně aktualizujeme.'
-                : 'Instagram: @terranova_project · This project sheet is a living document — continuously updated.'}
+              {TerranovaGenesisCopy.instagramTerranovaProjectThisP[cs ? 'cs' : 'en']}
             </p>
           </div>
         </motion.section>
@@ -631,13 +677,13 @@ export default function ZahradaGenesisPage() {
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {cs ? 'Zpět na Terra Nova' : 'Back to Terra Nova'}
+            {TerranovaGenesisCopy.backToTerraNova[cs ? 'cs' : 'en']}
           </Link>
           <Link
             href="/terranova/dharma-temple"
             className="zion-button-secondary"
           >
-            <span>{cs ? 'Dharma Temple' : 'Dharma Temple'}</span>
+            <span>{TerranovaGenesisCopy.dharmaTemple[cs ? 'cs' : 'en']}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>

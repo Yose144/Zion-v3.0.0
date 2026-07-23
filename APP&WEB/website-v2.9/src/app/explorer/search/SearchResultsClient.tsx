@@ -18,6 +18,18 @@ import { useLang } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api";
 import { SITE_RELEASE_LABEL } from "@/lib/site";
 
+const ExplorerSearchSearchResultsClientCopy = {
+  searchError: { cs: `Chyba při hledání`, en: `Search error` },
+  search: { cs: `Hledání`, en: `Search` },
+  searchResults: { cs: `Výsledky hledání`, en: `Search Results` },
+  searching: { cs: `Hledám…`, en: `Searching…` },
+  nothingFound: { cs: `Nic nebylo nalezeno`, en: `Nothing found` },
+  trySearchingByBlockHeightTrans: { cs: `Zkuste hledat podle výšky bloku, hashe transakce nebo ZION adresy.`, en: `Try searching by block height, transaction hash, or ZION address.` },
+  blocks: { cs: `Bloky`, en: `Blocks` },
+  transactions: { cs: `Transakce`, en: `Transactions` },
+  addresses: { cs: `Adresy`, en: `Addresses` },
+};
+
 interface SearchResult {
   type: "block" | "transaction" | "address";
   href: string;
@@ -49,7 +61,7 @@ export default function SearchResultsClient() {
       );
       setResults(res?.results ?? []);
     } catch (e) {
-      setError(cs ? "Chyba při hledání" : "Search error");
+      setError(ExplorerSearchSearchResultsClientCopy.searchError[cs ? 'cs' : 'en']);
     } finally {
       setLoading(false);
     }
@@ -89,10 +101,10 @@ export default function SearchResultsClient() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase mb-4">
             <Search className="h-4 w-4" />
-            {SITE_RELEASE_LABEL} · {cs ? "Hledání" : "Search"}
+            {SITE_RELEASE_LABEL} · {ExplorerSearchSearchResultsClientCopy.search[cs ? 'cs' : 'en']}
           </div>
           <h1 className="text-3xl sm:text-4xl font-semibold text-gradient">
-            {cs ? "Výsledky hledání" : "Search Results"}
+            {ExplorerSearchSearchResultsClientCopy.searchResults[cs ? 'cs' : 'en']}
           </h1>
           <div className="mt-4 flex items-center gap-3">
             <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5">
@@ -108,7 +120,7 @@ export default function SearchResultsClient() {
           {loading && results.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <Loader2 className="h-8 w-8 text-zion-cyan animate-spin" />
-              <p className="text-sm text-gray-400">{cs ? "Hledám…" : "Searching…"}</p>
+              <p className="text-sm text-gray-400">{ExplorerSearchSearchResultsClientCopy.searching[cs ? 'cs' : 'en']}</p>
             </div>
           )}
 
@@ -122,11 +134,9 @@ export default function SearchResultsClient() {
           {!loading && !error && results.length === 0 && query && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <Search className="h-10 w-10 text-gray-600" />
-              <p className="text-gray-400">{cs ? "Nic nebylo nalezeno" : "Nothing found"}</p>
+              <p className="text-gray-400">{ExplorerSearchSearchResultsClientCopy.nothingFound[cs ? 'cs' : 'en']}</p>
               <p className="text-xs text-gray-600 max-w-md text-center">
-                {cs
-                  ? "Zkuste hledat podle výšky bloku, hashe transakce nebo ZION adresy."
-                  : "Try searching by block height, transaction hash, or ZION address."}
+                {ExplorerSearchSearchResultsClientCopy.trySearchingByBlockHeightTrans[cs ? 'cs' : 'en']}
               </p>
             </div>
           )}
@@ -141,9 +151,9 @@ export default function SearchResultsClient() {
                   <div className="flex items-center gap-2 mb-3">
                     <Icon className={`h-4 w-4 ${col.text}`} />
                     <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
-                      {type === "block" ? (cs ? "Bloky" : "Blocks")
-                        : type === "transaction" ? (cs ? "Transakce" : "Transactions")
-                        : (cs ? "Adresy" : "Addresses")}
+                      {type === "block" ? (ExplorerSearchSearchResultsClientCopy.blocks[cs ? 'cs' : 'en'])
+                        : type === "transaction" ? (ExplorerSearchSearchResultsClientCopy.transactions[cs ? 'cs' : 'en'])
+                        : (ExplorerSearchSearchResultsClientCopy.addresses[cs ? 'cs' : 'en'])}
                     </h2>
                     <span className="text-[10px] text-gray-500 ml-2">{items.length}</span>
                   </div>

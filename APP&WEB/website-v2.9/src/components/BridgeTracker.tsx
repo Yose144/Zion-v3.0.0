@@ -23,6 +23,19 @@ import { useLang } from '@/contexts/LanguageContext';
 import { getBridgeStatus, formatUptime, type BridgeStatus } from '@/lib/bridge-api';
 import { usePolling } from '@/hooks/usePolling';
 
+const BridgeTrackerCopy = {
+  bridgePipeline: { cs: `Bridge Pipeline`, en: `Bridge Pipeline` },
+  online: { cs: `Online`, en: `Online` },
+  offline: { cs: `Offline`, en: `Offline` },
+  refresh: { cs: `Obnovit`, en: `Refresh` },
+  l1L2LockMint: { cs: `L1 → L2 (Lock → Mint)`, en: `L1 → L2 (Lock → Mint)` },
+  l2L1BurnUnlock: { cs: `L2 → L1 (Burn → Unlock)`, en: `L2 → L1 (Burn → Unlock)` },
+  l1Height: { cs: `L1 height`, en: `L1 height` },
+  evmBlock: { cs: `EVM block`, en: `EVM block` },
+  errors: { cs: `chyb`, en: `errors` },
+  updated: { cs: `Aktualizováno`, en: `Updated` },
+};
+
 interface PipelineStep {
   id: string;
   label: string;
@@ -85,19 +98,19 @@ export default function BridgeTracker() {
           </div>
           <div>
             <h3 className="text-lg font-semibold text-white">
-              {cs ? 'Bridge Pipeline' : 'Bridge Pipeline'}
+              {BridgeTrackerCopy.bridgePipeline[cs ? 'cs' : 'en']}
             </h3>
             <p className="text-xs text-gray-500">
               {online
-                ? `${cs ? 'Online' : 'Online'} · ${formatUptime(s.uptime_seconds ?? 0)}`
-                : cs ? 'Offline' : 'Offline'}
+                ? `${BridgeTrackerCopy.online[cs ? 'cs' : 'en']} · ${formatUptime(s.uptime_seconds ?? 0)}`
+                : BridgeTrackerCopy.offline[cs ? 'cs' : 'en']}
             </p>
           </div>
         </div>
         <button
           onClick={() => void fetchStatus()}
           className="rounded-xl border border-white/10 bg-white/5 p-2 text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-          title={cs ? 'Obnovit' : 'Refresh'}
+          title={BridgeTrackerCopy.refresh[cs ? 'cs' : 'en']}
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
@@ -107,7 +120,7 @@ export default function BridgeTracker() {
       <div>
         <h4 className="text-xs uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
           <Lock className="h-3 w-3 text-cyan-400" />
-          {cs ? 'L1 → L2 (Lock → Mint)' : 'L1 → L2 (Lock → Mint)'}
+          {BridgeTrackerCopy.l1L2LockMint[cs ? 'cs' : 'en']}
         </h4>
         <div className="grid grid-cols-3 gap-3">
           {l1ToL2Steps.map((step, i) => (
@@ -142,7 +155,7 @@ export default function BridgeTracker() {
       <div>
         <h4 className="text-xs uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
           <Flame className="h-3 w-3 text-orange-400" />
-          {cs ? 'L2 → L1 (Burn → Unlock)' : 'L2 → L1 (Burn → Unlock)'}
+          {BridgeTrackerCopy.l2L1BurnUnlock[cs ? 'cs' : 'en']}
         </h4>
         <div className="grid grid-cols-3 gap-3">
           {l2ToL1Steps.map((step, i) => (
@@ -175,22 +188,22 @@ export default function BridgeTracker() {
       {/* Footer stats */}
       <div className="flex flex-wrap gap-4 pt-2 border-t border-white/5 text-xs">
         <div className="flex items-center gap-2">
-          <span className="text-gray-500">{cs ? 'L1 height' : 'L1 height'}:</span>
+          <span className="text-gray-500">{BridgeTrackerCopy.l1Height[cs ? 'cs' : 'en']}:</span>
           <span className="font-mono text-gray-300">{(s.last_l1_height ?? 0).toLocaleString()}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-gray-500">{cs ? 'EVM block' : 'EVM block'}:</span>
+          <span className="text-gray-500">{BridgeTrackerCopy.evmBlock[cs ? 'cs' : 'en']}:</span>
           <span className="font-mono text-gray-300">{(s.last_evm_block ?? 0).toLocaleString()}</span>
         </div>
         {(s.errors_total ?? 0) > 0 && (
           <div className="flex items-center gap-2 text-red-400">
             <AlertCircle className="h-3 w-3" />
-            <span>{s.errors_total} {cs ? 'chyb' : 'errors'}</span>
+            <span>{s.errors_total} {BridgeTrackerCopy.errors[cs ? 'cs' : 'en']}</span>
           </div>
         )}
         {lastUpdated && (
           <div className="ml-auto text-gray-600">
-            {cs ? 'Aktualizováno' : 'Updated'}: {new Date(lastUpdated).toLocaleTimeString()}
+            {BridgeTrackerCopy.updated[cs ? 'cs' : 'en']}: {new Date(lastUpdated).toLocaleTimeString()}
           </div>
         )}
       </div>

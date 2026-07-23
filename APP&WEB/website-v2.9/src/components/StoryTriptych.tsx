@@ -5,6 +5,22 @@ import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, Sparkles, Globe2 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const StoryTriptychCopy = {
+  goldenCompassOfTheNewEarth: { cs: `Zlatý Kompas Nové Země`, en: `Golden Compass of the New Earth` },
+  theFourthBookOfZionPublicEntry: { cs: `Čtvrtá kniha ZION. Veřejný vstup do knihy, Kompasu a dalších vrstev bez roadmapového šumu.`, en: `The fourth book of ZION. Public entry into the book, Compass, and remaining layers.` },
+  bookCompassCli: { cs: `Kniha · Kompas · CLI`, en: `Book · Compass · CLI` },
+  quantumRevolution: { cs: `Kvantová Revoluce`, en: `Quantum Revolution` },
+  theBookThatStartedItAll: { cs: `Kniha, která to odstartovala`, en: `The book that started it all` },
+  aFiresideStoryOfANewEarthWhere: { cs: `Příběh u ohně o Nové Zemi, kde kvantová fyzika potkává duši a blockchain je meditace.`, en: `A fireside story of a New Earth where quantum physics meets the soul and blockchain is meditation.` },
+  k10Chapters11Languages: { cs: `10 kapitol · 11 jazyků`, en: `10 chapters · 11 languages` },
+  sacredStoryOfTheSameWorld: { cs: `Posvátný příběh stejného světa`, en: `Sacred story of the same world` },
+  aMemoryOfTheFutureTheStoryOf14: { cs: `Vzpomínka na budoucnost. Příběh 144 000 duší, které se vracejí domů — hrdinou jsi ty.`, en: `A memory of the future. The story of 144 000 souls returning home — you are the hero.` },
+  k9ChaptersOfAwakening: { cs: `9 kapitol probuzení`, en: `9 chapters of awakening` },
+  threeStoriesOfOneWorld: { cs: `Tři příběhy jednoho světa`, en: `Three stories of one world` },
+  storyPhilosophyAndMyth: { cs: `Příběh, filozofie a mýtus`, en: `Story, philosophy, and myth` },
+  open: { cs: `Otevřít`, en: `Open` },
+};
+
 export default function StoryTriptych() {
   const { lang } = useLang();
   const cs = lang === 'cs';
@@ -14,34 +30,28 @@ export default function StoryTriptych() {
       href: '/terranova',
       icon: Globe2,
       title: 'Terra Nova',
-      subtitle: cs ? 'Zlatý Kompas Nové Země' : 'Golden Compass of the New Earth',
-      desc: cs
-        ? 'Čtvrtá kniha ZION. Veřejný vstup do knihy, Kompasu a dalších vrstev bez roadmapového šumu.'
-        : 'The fourth book of ZION. Public entry into the book, Compass, and remaining layers.',
+      subtitle: StoryTriptychCopy.goldenCompassOfTheNewEarth[cs ? 'cs' : 'en'],
+      desc: StoryTriptychCopy.theFourthBookOfZionPublicEntry[cs ? 'cs' : 'en'],
       rc: '244, 63, 94', // rose
-      chapters: cs ? 'Kniha · Kompas · CLI' : 'Book · Compass · CLI',
+      chapters: StoryTriptychCopy.bookCompassCli[cs ? 'cs' : 'en'],
     },
     {
       href: '/quantum-revolution',
       icon: Sparkles,
-      title: cs ? 'Kvantová Revoluce' : 'Quantum Revolution',
-      subtitle: cs ? 'Kniha, která to odstartovala' : 'The book that started it all',
-      desc: cs
-        ? 'Příběh u ohně o Nové Zemi, kde kvantová fyzika potkává duši a blockchain je meditace.'
-        : 'A fireside story of a New Earth where quantum physics meets the soul and blockchain is meditation.',
+      title: StoryTriptychCopy.quantumRevolution[cs ? 'cs' : 'en'],
+      subtitle: StoryTriptychCopy.theBookThatStartedItAll[cs ? 'cs' : 'en'],
+      desc: StoryTriptychCopy.aFiresideStoryOfANewEarthWhere[cs ? 'cs' : 'en'],
       rc: '251, 191, 36', // gold
-      chapters: cs ? '10 kapitol · 11 jazyků' : '10 chapters · 11 languages',
+      chapters: StoryTriptychCopy.k10Chapters11Languages[cs ? 'cs' : 'en'],
     },
     {
       href: '/genesis',
       icon: BookOpen,
       title: 'ZION Genesis',
-      subtitle: cs ? 'Posvátný příběh stejného světa' : 'Sacred story of the same world',
-      desc: cs
-        ? 'Vzpomínka na budoucnost. Příběh 144 000 duší, které se vracejí domů — hrdinou jsi ty.'
-        : 'A memory of the future. The story of 144 000 souls returning home — you are the hero.',
+      subtitle: StoryTriptychCopy.sacredStoryOfTheSameWorld[cs ? 'cs' : 'en'],
+      desc: StoryTriptychCopy.aMemoryOfTheFutureTheStoryOf14[cs ? 'cs' : 'en'],
       rc: '20, 184, 166', // teal
-      chapters: cs ? '9 kapitol probuzení' : '9 chapters of awakening',
+      chapters: StoryTriptychCopy.k9ChaptersOfAwakening[cs ? 'cs' : 'en'],
     },
   ];
 
@@ -51,10 +61,10 @@ export default function StoryTriptych() {
         {/* Header */}
         <div className="text-center space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-gold">
-            {cs ? 'Tři příběhy jednoho světa' : 'Three stories of one world'}
+            {StoryTriptychCopy.threeStoriesOfOneWorld[cs ? 'cs' : 'en']}
           </p>
           <h2 className="text-3xl font-bold leading-tight text-white sm:text-4xl">
-            {cs ? 'Příběh, filozofie a mýtus' : 'Story, philosophy, and myth'}
+            {StoryTriptychCopy.storyPhilosophyAndMyth[cs ? 'cs' : 'en']}
           </h2>
         </div>
 
@@ -101,7 +111,7 @@ export default function StoryTriptych() {
                   <div className="flex items-center justify-between pt-2 border-t border-white/5">
                     <span className="text-[10px] uppercase tracking-wider text-gray-600">{card.chapters}</span>
                     <span className="inline-flex items-center gap-1 text-sm font-semibold transition-all group-hover:gap-2" style={{ color: `rgb(${card.rc})` }}>
-                      {cs ? 'Otevřít' : 'Open'}
+                      {StoryTriptychCopy.open[cs ? 'cs' : 'en']}
                       <ArrowRight className="h-4 w-4" />
                     </span>
                   </div>

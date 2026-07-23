@@ -15,6 +15,196 @@ import { usePolling } from '@/hooks/usePolling';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 import { SEED_PRICE_USD } from '@/lib/defi-contracts';
 
+const MissionControlDashboardCopy = {
+  dashboard: { cs: `Prehled`, en: `Dashboard` },
+  stackMetrics: { cs: `Metriky stacku`, en: `Stack Metrics` },
+  roadmap: { cs: `Roadmapa`, en: `Roadmap` },
+  layers: { cs: `Vrstvy`, en: `Layers` },
+  constitution: { cs: `Ustava`, en: `Constitution` },
+  economy: { cs: `Ekonomika`, en: `Economy` },
+  security: { cs: `Bezpecnost`, en: `Security` },
+  timeline: { cs: `Casova osa`, en: `Timeline` },
+  priority: { cs: `Priorita`, en: `Priority` },
+  phase1Foundation: { cs: `Fáze 1 — Foundation`, en: `Phase 1 — Foundation` },
+  coreConsensusInfrastructureL2B: { cs: `Core, consensus, infrastructure, L2 bridge`, en: `Core, consensus, infrastructure, L2 bridge` },
+  feeSplit89551: { cs: `Fee split 89/5/5/1`, en: `Fee split 89/5/5/1` },
+  pplnsPayoutVerifiedAndActive: { cs: `PPLNS payout ověřen a aktivní`, en: `PPLNS payout verified and active` },
+  edgeServerTopology: { cs: `Edge server topologie`, en: `Edge server topology` },
+  privateVpnActive: { cs: `Privátní VPN aktivní`, en: `Private VPN active` },
+  dockerComposeMainnet: { cs: `Docker Compose mainnet`, en: `Docker Compose mainnet` },
+  readyForDeployment: { cs: `Připraveno pro deployment`, en: `Ready for deployment` },
+  securityCleanup: { cs: `Bezpečnostní cleanup`, en: `Security cleanup` },
+  credentialRotationComplete: { cs: `Credential rotation dokončen`, en: `Credential rotation complete` },
+  finalPayoutVerification: { cs: `Finální payout verification`, en: `Final payout verification` },
+  pplnsWindowValidationInProgres: { cs: `PPLNS window validace probíhá`, en: `PPLNS window validation in progress` },
+  securityAudit: { cs: `Security audit`, en: `Security audit` },
+  externalFirmBooked: { cs: `Externí firma rezervována`, en: `External firm booked` },
+  bridgeValidatorKeyProvisioning: { cs: `Bridge validator provisioning`, en: `Bridge validator key provisioning` },
+  k35ThresholdProduction: { cs: `3/5 threshold produkce`, en: `3/5 threshold production` },
+  ciBillingResolution: { cs: `CI billing`, en: `CI billing resolution` },
+  githubActionsInfrastructurePen: { cs: `GitHub Actions infrastruktura`, en: `GitHub Actions infrastructure pending` },
+  genesisPremine: { cs: `Genesis premine`, en: `Genesis premine` },
+  k1628bZion12Wallets: { cs: `16.28B ZION, 12 peněženek`, en: `16.28B ZION, 12 wallets` },
+  wzionErc20: { cs: `wZION ERC-20`, en: `wZION ERC-20` },
+  deployedOnBaseMainnet: { cs: `Deployed na Base Mainnet`, en: `Deployed on Base Mainnet` },
+  zionstaking: { cs: `ZIONStaking`, en: `ZIONStaking` },
+  k12Apr7DayCooldown: { cs: `12% APR, 7-denní cooldown`, en: `12% APR, 7-day cooldown` },
+  pplnsFeeSplitFinalVerification: { cs: `PPLNS fee split finální ověření`, en: `PPLNS fee split final verification` },
+  confirm89551Wiring: { cs: `Potvrdit 89/5/5/1 wiring`, en: `Confirm 89/5/5/1 wiring` },
+  launchChecklistDashboardIntegr: { cs: `Launch checklist dashboard integrace`, en: `Launch checklist dashboard integration` },
+  connectToMissionControl: { cs: `Propojit s Mission Control`, en: `Connect to Mission Control` },
+  bfgScrubGitHistory: { cs: `BFG scrub / git historie`, en: `BFG scrub / git history` },
+  finalCleanupBeforeLaunch: { cs: `Finální cleanup před launch`, en: `Final cleanup before launch` },
+  all: { cs: `Vse`, en: `All` },
+  mining: { cs: `Tezba`, en: `Mining` },
+  inspect: { cs: `Zkontrolovat`, en: `Inspect` },
+  offline: { cs: `Offline`, en: `Offline` },
+  online: { cs: `Online`, en: `Online` },
+  syncing: { cs: `Synchronizace`, en: `Syncing` },
+  stale: { cs: `Neaktualni`, en: `Stale` },
+  unhealthy: { cs: `Nezdrave`, en: `Unhealthy` },
+  height: { cs: `Vyska`, en: `Height` },
+  peers: { cs: `Peeri`, en: `Peers` },
+  difficulty: { cs: `Obtiznost`, en: `Difficulty` },
+  lastBlock: { cs: `Posledni blok`, en: `Last Block` },
+  containers: { cs: `Kontejnery`, en: `Containers` },
+  memory: { cs: `Pamet`, en: `Memory` },
+  disk: { cs: `Disk`, en: `Disk` },
+  load: { cs: `Zatez`, en: `Load` },
+  ports: { cs: `Porty`, en: `Ports` },
+  closeDetails: { cs: `Zavrit detail`, en: `Close details` },
+  serviceDetail: { cs: `Detail sluzby`, en: `Service Detail` },
+  status: { cs: `Stav`, en: `Status` },
+  operationalContext: { cs: `Provozni kontext`, en: `Operational Context` },
+  localServiceWithoutADirectProm: { cs: `Lokalni sluzba bez primeho Prometheus scrape targetu.`, en: `Local service without a direct Prometheus scrape target.` },
+  quickActions: { cs: `Rychle akce`, en: `Quick Actions` },
+  operatorNotes: { cs: `Poznamky operatora`, en: `Operator Notes` },
+  statusDownMeansAScrapeFailureO: { cs: `Stav DOWN znamena scrape fail nebo nedostupny target.`, en: `Status DOWN means a scrape failure or an unreachable target.` },
+  statusNAMeansTheServiceIsNotCo: { cs: `Stav N/A znamena, ze sluzba neni napojena primo na Prometheus scrape.`, en: `Status N/A means the service is not connected directly to a Prometheus scrape.` },
+  useTheMonitoringOrGrafanaActio: { cs: `Pro hlubsi drill-down pouzij akce Monitoring nebo Grafana vyse.`, en: `Use the Monitoring or Grafana actions above for deeper drill-down.` },
+  awaitingData: { cs: `cekam na data`, en: `awaiting data` },
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  coreNode: { cs: `Core node`, en: `Core Node` },
+  miningPool: { cs: `Mining pool`, en: `Mining Pool` },
+  minerRuntime: { cs: `Miner runtime`, en: `Miner Runtime` },
+  block: { cs: `Blok`, en: `Block` },
+  blocksAcc: { cs: `Prijate bloky`, en: `Blocks Acc` },
+  tmplTxs: { cs: `Tx v sablone`, en: `Tmpl Txs` },
+  tmplFees: { cs: `Fee sablony`, en: `Tmpl Fees` },
+  chainHeight1h: { cs: `Vyska chainu — 1h`, en: `Chain Height — 1h` },
+  activeMiners1h: { cs: `Aktivni mineri — 1h`, en: `Active Miners — 1h` },
+  acceptedShares1h: { cs: `Prijate shares — 1h`, en: `Accepted Shares — 1h` },
+  minerTarget: { cs: `Cil minera`, en: `Miner Target` },
+  hashrate10s: { cs: `Hashrate 10 s`, en: `Hashrate 10s` },
+  hashrate60s: { cs: `Hashrate 60 s`, en: `Hashrate 60s` },
+  accepted: { cs: `Prijate`, en: `Accepted` },
+  rejected: { cs: `Odmitnute`, en: `Rejected` },
+  acceptRate: { cs: `Accept rate`, en: `Accept Rate` },
+  submitAvg: { cs: `Prumer submitu`, en: `Submit Avg` },
+  poolHeight: { cs: `Vyska poolu`, en: `Pool Height` },
+  minerHashrate1h: { cs: `Hashrate minera — 1 h`, en: `Miner Hashrate — 1h` },
+  poolRoutingGroups: { cs: `Routing skupiny poolu`, en: `Pool Routing Groups` },
+  cpuLoad: { cs: `CPU zatez`, en: `CPU Load` },
+  serverUptime: { cs: `Uptime serveru`, en: `Server Uptime` },
+  since: { cs: `od`, en: `since` },
+  k30LivePrometheusMetrics: { cs: `30+ zivych Prometheus metrik`, en: `30+ live Prometheus metrics` },
+  instantRangeQueries: { cs: `Instantni + range dotazy`, en: `Instant + Range queries` },
+  k15sAutoRefresh: { cs: `Auto-refresh 15 s`, en: `15s auto-refresh` },
+  svgSparklines1h: { cs: `SVG sparkliny (1 h)`, en: `SVG sparklines (1h)` },
+  fullMonitoringPage: { cs: `Cela monitoring stranka →`, en: `Full monitoring page →` },
+  openGrafana: { cs: `Otevrit Grafanu →`, en: `Open Grafana →` },
+  signedTxOnly: { cs: `JEN PODEPSANE TX`, en: `SIGNED TX ONLY` },
+  walletDiagnosticsTransactionSu: { cs: `Diagnostika walletu a odeslani transakce`, en: `Wallet Diagnostics & Transaction Submit` },
+  liveRpcHealthBalanceUtxoSnapsh: { cs: `Zive zdravi RPC, balance, UTXO snapshot, viditelnost payoutu minera a bezpecny broadcast jiz podepsane transakce bez prace s privatnimi klici na serveru.`, en: `Live RPC health, balance, UTXO snapshot, miner payout visibility, and safe broadcast of an already signed transaction without handling private keys on the server.` },
+  chainHeight: { cs: `Vyska chainu`, en: `Chain Height` },
+  network: { cs: `Sit`, en: `Network` },
+  rpcVersion: { cs: `Verze RPC`, en: `RPC Version` },
+  walletAddressOrAccount: { cs: `Adresa walletu nebo ucet`, en: `Wallet Address Or Account` },
+  loading: { cs: `Nacitam…`, en: `Loading…` },
+  loadWallet: { cs: `Nacist wallet`, en: `Load Wallet` },
+  address: { cs: `Adresa`, en: `Address` },
+  notLoaded: { cs: `nenacteno`, en: `not loaded` },
+  utxoCount: { cs: `Pocet UTXO`, en: `UTXO Count` },
+  utxoTotal: { cs: `UTXO celkem`, en: `UTXO Total` },
+  minerPending: { cs: `Miner pending`, en: `Miner Pending` },
+  minerPaid: { cs: `Miner vyplaceno`, en: `Miner Paid` },
+  minerShares: { cs: `Miner shares`, en: `Miner Shares` },
+  recentUtxos: { cs: `Posledni UTXO`, en: `Recent UTXOs` },
+  top20FromRpc: { cs: `top 20 z RPC`, en: `top 20 from RPC` },
+  height_2: { cs: `vyska`, en: `height` },
+  noUtxosReturnedForThisAddress: { cs: `Pro tuto adresu se nevratilo zadne UTXO.`, en: `No UTXOs returned for this address.` },
+  loadAZion1AddressToInspectUtxo: { cs: `Nacti adresu zion1 pro kontrolu UTXO.`, en: `Load a zion1 address to inspect UTXOs.` },
+  rpcSubmitTester: { cs: `RPC tester odeslani`, en: `RPC Submit Tester` },
+  signedPayloadOnly: { cs: `jen podepsany payload`, en: `signed payload only` },
+  submitting: { cs: `Odesilam…`, en: `Submitting…` },
+  broadcastSignedTx: { cs: `Broadcast podepsane TX`, en: `Broadcast Signed TX` },
+  method: { cs: `metoda`, en: `method` },
+  accepted_2: { cs: `prijato`, en: `accepted` },
+  yes: { cs: `ano`, en: `yes` },
+  no: { cs: `ne`, en: `no` },
+  done: { cs: `Hotovo`, en: `Done` },
+  missingBeforePublicLaunch: { cs: `Chybí před public launch`, en: `Missing before public launch` },
+  noLongerMissing: { cs: `Co už nechybí`, en: `No longer missing` },
+  next4872h: { cs: `Další 48-72h`, en: `Next 48-72h` },
+  liveTelemetry: { cs: `Ziva telemetrie`, en: `Live Telemetry` },
+  missionControl: { cs: `Rizeni mise`, en: `Mission Control` },
+  liveData30sRefresh: { cs: `ZIVA DATA · refresh 30 s`, en: `LIVE DATA · 30s refresh` },
+  allSystemsHealthy: { cs: `Vsechny systemy zdrave`, en: `All Systems Healthy` },
+  partialSystemsUp: { cs: `Cast systemu online`, en: `Partial Systems Up` },
+  systemsMonitoring: { cs: `Monitoring systemu`, en: `Systems Monitoring` },
+  live: { cs: `ZIVE`, en: `LIVE` },
+  loadingMissionControlData: { cs: `Nacitam data Mission Control…`, en: `Loading Mission Control data…` },
+  liveTelemetryUnavailable: { cs: `Ziva telemetrie neni dostupna`, en: `Live telemetry unavailable` },
+  nodeApiTemporarilyUnreachableR: { cs: `Node API je docasne nedostupne - zalozky roadmapy a ustavy stale funguji.`, en: `Node API temporarily unreachable - roadmap & constitution tabs still work.` },
+  retry: { cs: `Zkusit znovu`, en: `Retry` },
+  launchReadinessPreLaunchBlocke: { cs: `Připravenost k launchi — Pre-Launch Blockers`, en: `Launch Readiness — Pre-Launch Blockers` },
+  currentLaunchGateStatusBasedOn: { cs: `Aktuální stav launch gate založený na ROADMAP a operational status. Blockers musí být vyřešeny před public mainnet GO.`, en: `Current launch gate status based on ROADMAP and operational status. Blockers must be resolved before public mainnet GO.` },
+  noItems: { cs: `Žádné položky`, en: `No items` },
+  goldenCompassSevenDirectionsOf: { cs: `Zlatý Kompas — sedm směrů TerraNova`, en: `Golden Compass — seven directions of TerraNova` },
+  truthfulnessCareDisciplineComm: { cs: `Pravdivost · Péče · Disciplína · Komunita · Otevřenost · Odvaha · Míra — interaktivní orientace projektu z knihy TerraNova.`, en: `Truthfulness · Care · Discipline · Community · Openness · Courage · Measure — interactive project orientation from the TerraNova book.` },
+  progress: { cs: `Postup`, en: `Progress` },
+  phase0SpecFreezeCoreRewrite: { cs: `Faze 0 — zmrazeni specifikace a prepis core`, en: `Phase 0 — Spec Freeze & Core Rewrite` },
+  completed: { cs: `DOKONCENO`, en: `COMPLETED` },
+  architecture: { cs: `Architektura`, en: `Architecture` },
+  layerStack: { cs: `Vrstvovy stack`, en: `Layer Stack` },
+  totalSupply: { cs: `Celkova zasoba`, en: `Total Supply` },
+  miningSupply: { cs: `Tezebni zasoba`, en: `Mining Supply` },
+  genesisPremine_2: { cs: `Genesis premine`, en: `Genesis Premine` },
+  blockRewardD1: { cs: `Block reward (D1)`, en: `Block Reward (D1)` },
+  emissionModel: { cs: `Emisni model`, en: `Emission Model` },
+  tailEmission: { cs: `Tail emise`, en: `Tail Emission` },
+  blockTime: { cs: `Cas bloku`, en: `Block Time` },
+  k60Seconds: { cs: `60 sekund`, en: `60 seconds` },
+  maxReorg: { cs: `Max reorg`, en: `Max Reorg` },
+  k10Blocks: { cs: `10 bloku`, en: `10 blocks` },
+  softFinality: { cs: `Soft finalita`, en: `Soft Finality` },
+  k60Blocks: { cs: `60 bloku`, en: `60 blocks` },
+  coinbaseMaturity: { cs: `Coinbase maturity`, en: `Coinbase Maturity` },
+  k100Blocks: { cs: `100 bloku`, en: `100 blocks` },
+  distribution: { cs: `Distribuce`, en: `Distribution` },
+  k89Miner5Humanitarian5Issobella: { cs: `89 % miner · 5 % humanit. · 5 % Issobella · 1 % pool`, en: `89% miner · 5% humanitarian · 5% Issobella · 1% pool` },
+  atomicUnits: { cs: `Atomic units`, en: `Atomic Units` },
+  k1mPerZion: { cs: `1M na ZION`, en: `1M per ZION` },
+  miningHorizon: { cs: `Horizont tezby`, en: `Mining Horizon` },
+  k100YearsTail: { cs: `100+ let + tail ∞`, en: `100+ years + tail ∞` },
+  immediatelyAvailable: { cs: `Okamzite dostupne`, en: `Immediately available` },
+  infrastructureDev: { cs: `Infrastruktura a vyvoj`, en: `Infrastructure & Dev` },
+  humanitarianFund: { cs: `Humanitarni fond`, en: `Humanitarian Fund` },
+  zionBlockFrom2126: { cs: `ZION/block ∞ (od 2126)`, en: `ZION/block ∞ (from 2126)` },
+  minerHumanitarianIssobellaPool: { cs: `miner / humanit. / Issobella / pool`, en: `miner / humanitarian / Issobella / pool` },
+  k100Years: { cs: `100+ let`, en: `100+ years` },
+  perpetualTail: { cs: `+ perpetualni tail ∞`, en: `+ perpetual tail ∞` },
+  l5L6Treasury: { cs: `L5 / L6 Pokladna`, en: `L5 / L6 Treasury` },
+  humanitarianFundSpaceStation: { cs: `Humanitární fond & Vesmírná stanice`, en: `Humanitarian Fund & Space Station` },
+  k5OfEveryBlockRewardGoesToTheL5: { cs: `5 % každého blokového odměny putuje na L5 humanitární fond a 5 % na L6 Issobella vesmírný fond.`, en: `5% of every block reward goes to the L5 humanitarian fund and 5% to the L6 Issobella space fund.` },
+  physicalCommunitiesHumanitaria: { cs: `Fyzické komunity, humanitární projekty, Free Energy, terénní governance. Fond odemčen ve výšce bloku ~525,600.`, en: `Physical communities, humanitarian projects, Free Energy, on-ground governance. Fund unlocked at block ~525,600.` },
+  orbitalStationSpaceResearchSet: { cs: `Orbitální stanice, vesmírný výzkum, SETI, Overview Effect protokoly. Fond odemčen ve výšce bloku ~525,600.`, en: `Orbital station, space research, SETI, Overview Effect protocols. Fund unlocked at block ~525,600.` },
+  allL1TransactionFees: { cs: `VSECHNY L1 TRANSAKCNI POPLATKY → `, en: `ALL L1 TRANSACTION FEES → ` },
+  burned: { cs: `SPALENY`, en: `BURNED` },
+  sentToABurnAddressWithoutAPriv: { cs: `Posilany na burn adresu bez privatniho klice → deflacni tlak`, en: `Sent to a burn address without a private key → deflationary pressure` },
+  priorities: { cs: `Priority`, en: `Priorities` },
+};
+
 /* ═══════════════════════ TYPES ═══════════════════════ */
 interface NodeStats {
   height?: number;
@@ -583,16 +773,16 @@ function fmtBytes(bytes: number | null | undefined) {
 
 /* ═══════════════════════ TAB CONFIG ═══════════════════════ */
 const getTabs = (cs: boolean) => [
-  { id: 'dashboard', label: cs ? 'Prehled' : 'Dashboard', icon: Monitor },
-  { id: 'metrics', label: cs ? 'Metriky stacku' : 'Stack Metrics', icon: BarChart3 },
+  { id: 'dashboard', label: MissionControlDashboardCopy.dashboard[cs ? 'cs' : 'en'], icon: Monitor },
+  { id: 'metrics', label: MissionControlDashboardCopy.stackMetrics[cs ? 'cs' : 'en'], icon: BarChart3 },
   { id: 'upgrade', label: 'Ekam Deeksha', icon: Sparkles },
-  { id: 'roadmap', label: cs ? 'Roadmapa' : 'Roadmap', icon: Target },
-  { id: 'layers', label: cs ? 'Vrstvy' : 'Layers', icon: Layers },
-  { id: 'constitution', label: cs ? 'Ustava' : 'Constitution', icon: Lock },
-  { id: 'economy', label: cs ? 'Ekonomika' : 'Economy', icon: Wallet },
-  { id: 'security', label: cs ? 'Bezpecnost' : 'Security', icon: Shield },
-  { id: 'timeline', label: cs ? 'Casova osa' : 'Timeline', icon: CalendarDays },
-  { id: 'priority', label: cs ? 'Priorita' : 'Priority', icon: Zap },
+  { id: 'roadmap', label: MissionControlDashboardCopy.roadmap[cs ? 'cs' : 'en'], icon: Target },
+  { id: 'layers', label: MissionControlDashboardCopy.layers[cs ? 'cs' : 'en'], icon: Layers },
+  { id: 'constitution', label: MissionControlDashboardCopy.constitution[cs ? 'cs' : 'en'], icon: Lock },
+  { id: 'economy', label: MissionControlDashboardCopy.economy[cs ? 'cs' : 'en'], icon: Wallet },
+  { id: 'security', label: MissionControlDashboardCopy.security[cs ? 'cs' : 'en'], icon: Shield },
+  { id: 'timeline', label: MissionControlDashboardCopy.timeline[cs ? 'cs' : 'en'], icon: CalendarDays },
+  { id: 'priority', label: MissionControlDashboardCopy.priority[cs ? 'cs' : 'en'], icon: Zap },
 ] as const;
 
 type TabId = 'dashboard' | 'metrics' | 'upgrade' | 'roadmap' | 'layers' | 'constitution' | 'economy' | 'security' | 'timeline' | 'priority';
@@ -600,27 +790,27 @@ type TabId = 'dashboard' | 'metrics' | 'upgrade' | 'roadmap' | 'layers' | 'const
 function getFallbackReadinessMap(cs: boolean): ReadinessMap {
   return {
     done: [
-      { title: cs ? 'Fáze 1 — Foundation' : 'Phase 1 — Foundation', detail: cs ? 'Core, consensus, infrastructure, L2 bridge' : 'Core, consensus, infrastructure, L2 bridge' },
-      { title: cs ? 'Fee split 89/5/5/1' : 'Fee split 89/5/5/1', detail: cs ? 'PPLNS payout ověřen a aktivní' : 'PPLNS payout verified and active' },
-      { title: cs ? 'Edge server topologie' : 'Edge server topology', detail: cs ? 'Privátní VPN aktivní' : 'Private VPN active' },
-      { title: cs ? 'Docker Compose mainnet' : 'Docker Compose mainnet', detail: cs ? 'Připraveno pro deployment' : 'Ready for deployment' },
-      { title: cs ? 'Bezpečnostní cleanup' : 'Security cleanup', detail: cs ? 'Credential rotation dokončen' : 'Credential rotation complete' },
+      { title: MissionControlDashboardCopy.phase1Foundation[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.coreConsensusInfrastructureL2B[cs ? 'cs' : 'en'] },
+      { title: MissionControlDashboardCopy.feeSplit89551[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.pplnsPayoutVerifiedAndActive[cs ? 'cs' : 'en'] },
+      { title: MissionControlDashboardCopy.edgeServerTopology[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.privateVpnActive[cs ? 'cs' : 'en'] },
+      { title: MissionControlDashboardCopy.dockerComposeMainnet[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.readyForDeployment[cs ? 'cs' : 'en'] },
+      { title: MissionControlDashboardCopy.securityCleanup[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.credentialRotationComplete[cs ? 'cs' : 'en'] },
     ],
     missing: [
-      { title: cs ? 'Finální payout verification' : 'Final payout verification', detail: cs ? 'PPLNS window validace probíhá' : 'PPLNS window validation in progress' },
-      { title: cs ? 'Security audit' : 'Security audit', detail: cs ? 'Externí firma rezervována' : 'External firm booked' },
-      { title: cs ? 'Bridge validator provisioning' : 'Bridge validator key provisioning', detail: cs ? '3/5 threshold produkce' : '3/5 threshold production' },
-      { title: cs ? 'CI billing' : 'CI billing resolution', detail: cs ? 'GitHub Actions infrastruktura' : 'GitHub Actions infrastructure pending' },
+      { title: MissionControlDashboardCopy.finalPayoutVerification[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.pplnsWindowValidationInProgres[cs ? 'cs' : 'en'] },
+      { title: MissionControlDashboardCopy.securityAudit[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.externalFirmBooked[cs ? 'cs' : 'en'] },
+      { title: MissionControlDashboardCopy.bridgeValidatorKeyProvisioning[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.k35ThresholdProduction[cs ? 'cs' : 'en'] },
+      { title: MissionControlDashboardCopy.ciBillingResolution[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.githubActionsInfrastructurePen[cs ? 'cs' : 'en'] },
     ],
     not_missing: [
-      { title: cs ? 'Genesis premine' : 'Genesis premine', detail: cs ? '16.28B ZION, 12 peněženek' : '16.28B ZION, 12 wallets' },
-      { title: cs ? 'wZION ERC-20' : 'wZION ERC-20', detail: cs ? 'Deployed na Base Mainnet' : 'Deployed on Base Mainnet' },
-      { title: cs ? 'ZIONStaking' : 'ZIONStaking', detail: cs ? '12% APR, 7-denní cooldown' : '12% APR, 7-day cooldown' },
+      { title: MissionControlDashboardCopy.genesisPremine[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.k1628bZion12Wallets[cs ? 'cs' : 'en'] },
+      { title: MissionControlDashboardCopy.wzionErc20[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.deployedOnBaseMainnet[cs ? 'cs' : 'en'] },
+      { title: MissionControlDashboardCopy.zionstaking[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.k12Apr7DayCooldown[cs ? 'cs' : 'en'] },
     ],
     next_48h: [
-      { title: cs ? 'PPLNS fee split finální ověření' : 'PPLNS fee split final verification', detail: cs ? 'Potvrdit 89/5/5/1 wiring' : 'Confirm 89/5/5/1 wiring' },
-      { title: cs ? 'Launch checklist dashboard integrace' : 'Launch checklist dashboard integration', detail: cs ? 'Propojit s Mission Control' : 'Connect to Mission Control' },
-      { title: cs ? 'BFG scrub / git historie' : 'BFG scrub / git history', detail: cs ? 'Finální cleanup před launch' : 'Final cleanup before launch' },
+      { title: MissionControlDashboardCopy.pplnsFeeSplitFinalVerification[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.confirm89551Wiring[cs ? 'cs' : 'en'] },
+      { title: MissionControlDashboardCopy.launchChecklistDashboardIntegr[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.connectToMissionControl[cs ? 'cs' : 'en'] },
+      { title: MissionControlDashboardCopy.bfgScrubGitHistory[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.finalCleanupBeforeLaunch[cs ? 'cs' : 'en'] },
     ],
   };
 }
@@ -632,9 +822,9 @@ const CHART_RANGES: { value: ChartRange; label: string }[] = [
 ];
 
 const getServiceGroups = (cs: boolean): { value: ServiceGroup; label: string }[] => [
-  { value: 'all', label: cs ? 'Vse' : 'All' },
+  { value: 'all', label: MissionControlDashboardCopy.all[cs ? 'cs' : 'en'] },
   { value: 'core', label: 'Core' },
-  { value: 'mining', label: cs ? 'Tezba' : 'Mining' },
+  { value: 'mining', label: MissionControlDashboardCopy.mining[cs ? 'cs' : 'en'] },
   { value: 'monitoring', label: 'Monitoring' },
   { value: 'remote', label: 'Remote' },
 ];
@@ -655,7 +845,7 @@ function getServiceActions(service: ServiceStatus, cs: boolean): { href: string;
     actions.push({ href: '/grafana/', label: 'Grafana' });
   }
   if (actions.length === 0) {
-    actions.push({ href: '/monitoring', label: cs ? 'Zkontrolovat' : 'Inspect' });
+    actions.push({ href: '/monitoring', label: MissionControlDashboardCopy.inspect[cs ? 'cs' : 'en'] });
   }
   return actions;
 }
@@ -737,7 +927,7 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
       ? `${node.containers_up}/${node.containers_healthy}`
       : '—/—';
 
-  const statusLabel = !s?.status ? (cs ? 'Offline' : 'Offline') : isHealthy ? (cs ? 'Online' : 'Online') : isSyncing ? (cs ? 'Synchronizace' : 'Syncing') : isStale ? (cs ? 'Neaktualni' : 'Stale') : (cs ? 'Nezdrave' : 'Unhealthy');
+  const statusLabel = !s?.status ? (MissionControlDashboardCopy.offline[cs ? 'cs' : 'en']) : isHealthy ? (MissionControlDashboardCopy.online[cs ? 'cs' : 'en']) : isSyncing ? (MissionControlDashboardCopy.syncing[cs ? 'cs' : 'en']) : isStale ? (MissionControlDashboardCopy.stale[cs ? 'cs' : 'en']) : (MissionControlDashboardCopy.unhealthy[cs ? 'cs' : 'en']);
   const statusStyle = isHealthy
     ? 'text-emerald-200 bg-emerald-400/10 border-emerald-400/30'
     : isSyncing
@@ -761,27 +951,27 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
         </span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
-        <MiniMetric label={cs ? 'Vyska' : 'Height'} value={fmt(s?.height)} color="text-cyan-400" />
-        <MiniMetric label={cs ? 'Peeri' : 'Peers'} value={fmt(s?.peers_connected)} />
-        <MiniMetric label={cs ? 'Obtiznost' : 'Difficulty'} value={fmt(s?.difficulty)} />
+        <MiniMetric label={MissionControlDashboardCopy.height[cs ? 'cs' : 'en']} value={fmt(s?.height)} color="text-cyan-400" />
+        <MiniMetric label={MissionControlDashboardCopy.peers[cs ? 'cs' : 'en']} value={fmt(s?.peers_connected)} />
+        <MiniMetric label={MissionControlDashboardCopy.difficulty[cs ? 'cs' : 'en']} value={fmt(s?.difficulty)} />
         <MiniMetric label="Mempool" value={fmt(s?.mempool_size)} />
-        <MiniMetric label={cs ? 'Posledni blok' : 'Last Block'} value={fmtLastBlock(s?.time_since_last_block)} color={isStale ? 'text-yellow-400' : 'text-white'} />
-        <MiniMetric label={cs ? 'Kontejnery' : 'Containers'} value={containersLabel} />
+        <MiniMetric label={MissionControlDashboardCopy.lastBlock[cs ? 'cs' : 'en']} value={fmtLastBlock(s?.time_since_last_block)} color={isStale ? 'text-yellow-400' : 'text-white'} />
+        <MiniMetric label={MissionControlDashboardCopy.containers[cs ? 'cs' : 'en']} value={containersLabel} />
         <div className="zion-tile p-3">
-          <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">{cs ? 'Pamet' : 'Memory'}</p>
+          <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">{MissionControlDashboardCopy.memory[cs ? 'cs' : 'en']}</p>
           <p className={`text-base font-bold font-mono ${valColor(memPct)}`}>{memPct == null ? '—' : `${memPct}%`}</p>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
             <div className={`h-full rounded-full ${barColor(memPct)}`} style={{ width: `${memPct ?? 0}%` }} />
           </div>
         </div>
         <div className="zion-tile p-3">
-          <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">{cs ? 'Disk' : 'Disk'}</p>
+          <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">{MissionControlDashboardCopy.disk[cs ? 'cs' : 'en']}</p>
           <p className={`text-base font-bold font-mono ${valColor(diskPct)}`}>{diskPct == null ? '—' : `${diskPct}%`}</p>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
             <div className={`h-full rounded-full ${barColor(diskPct)}`} style={{ width: `${diskPct ?? 0}%` }} />
           </div>
         </div>
-        <MiniMetric label={cs ? 'Zatez' : 'Load'} value={String(node?.load ?? '—')} />
+        <MiniMetric label={MissionControlDashboardCopy.load[cs ? 'cs' : 'en']} value={String(node?.load ?? '—')} />
       </div>
     </div>
   );
@@ -838,7 +1028,7 @@ function OpsServiceCard({ service, onOpen }: { service: ServiceStatus; onOpen: (
       </div>
       <div className="grid grid-cols-2 gap-2 text-[10px]">
         <div className="zion-tile p-2">
-          <div className="uppercase tracking-[0.2em] text-gray-500 mb-1">{cs ? 'Porty' : 'Ports'}</div>
+          <div className="uppercase tracking-[0.2em] text-gray-500 mb-1">{MissionControlDashboardCopy.ports[cs ? 'cs' : 'en']}</div>
           <div className="font-mono text-gray-300 break-all">{service.ports}</div>
         </div>
         <div className="zion-tile p-2">
@@ -863,11 +1053,11 @@ function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onC
     : 'text-gray-300 border-white/10 bg-white/5';
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
-      <button aria-label={cs ? 'Zavrit detail' : 'Close details'} onClick={onClose} className="absolute inset-0" />
+      <button aria-label={MissionControlDashboardCopy.closeDetails[cs ? 'cs' : 'en']} onClick={onClose} className="absolute inset-0" />
       <motion.div initial={{ x: 32, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 32, opacity: 0 }} className="relative h-full w-full max-w-lg border-l border-white/10 bg-zinc-950/95 p-5 sm:p-6 overflow-y-auto">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{cs ? 'Detail sluzby' : 'Service Detail'}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{MissionControlDashboardCopy.serviceDetail[cs ? 'cs' : 'en']}</p>
             <h3 className="text-2xl font-semibold text-white mt-2">{service.name}</h3>
             <p className="text-xs text-gray-500 font-mono mt-1">{service.image}</p>
           </div>
@@ -881,15 +1071,15 @@ function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onC
           {service.job && <span className="text-[10px] font-semibold px-3 py-1 rounded-full border border-cyan-500/20 bg-cyan-500/10 text-cyan-300 uppercase tracking-widest">{service.job}</span>}
         </div>
         <div className="grid grid-cols-2 gap-3 mb-5">
-          <MiniMetric label={cs ? 'Porty' : 'Ports'} value={service.ports} color="text-cyan-400" />
-          <MiniMetric label={cs ? 'Stav' : 'Status'} value={statusLabel} color={service.up === true ? 'text-emerald-400' : service.up === false ? 'text-red-400' : 'text-gray-300'} />
+          <MiniMetric label={MissionControlDashboardCopy.ports[cs ? 'cs' : 'en']} value={service.ports} color="text-cyan-400" />
+          <MiniMetric label={MissionControlDashboardCopy.status[cs ? 'cs' : 'en']} value={statusLabel} color={service.up === true ? 'text-emerald-400' : service.up === false ? 'text-red-400' : 'text-gray-300'} />
         </div>
         <div className="zion-section p-4 mb-5">
-          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">{cs ? 'Provozni kontext' : 'Operational Context'}</div>
-          <div className="text-sm text-gray-300 leading-relaxed">{service.note ?? (service.job ? (cs ? `Prometheus target je propojen pres job ${service.job}.` : `Prometheus target linked through job ${service.job}.`) : (cs ? 'Lokalni sluzba bez primeho Prometheus scrape targetu.' : 'Local service without a direct Prometheus scrape target.'))}</div>
+          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">{MissionControlDashboardCopy.operationalContext[cs ? 'cs' : 'en']}</div>
+          <div className="text-sm text-gray-300 leading-relaxed">{service.note ?? (service.job ? (cs ? `Prometheus target je propojen pres job ${service.job}.` : `Prometheus target linked through job ${service.job}.`) : (MissionControlDashboardCopy.localServiceWithoutADirectProm[cs ? 'cs' : 'en']))}</div>
         </div>
         <div className="zion-section p-4 mb-5">
-          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">{cs ? 'Rychle akce' : 'Quick Actions'}</div>
+          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">{MissionControlDashboardCopy.quickActions[cs ? 'cs' : 'en']}</div>
           <div className="flex flex-wrap gap-2">
             {actions.map(action => (
               <a key={`${service.name}_drawer_${action.label}`} href={action.href} target={action.href.startsWith('/grafana') ? '_blank' : undefined} rel={action.href.startsWith('/grafana') ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-300 hover:border-cyan-400/40 hover:text-cyan-200 transition-colors">
@@ -900,11 +1090,11 @@ function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onC
           </div>
         </div>
         <div className="zion-section p-4">
-          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">{cs ? 'Poznamky operatora' : 'Operator Notes'}</div>
+          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">{MissionControlDashboardCopy.operatorNotes[cs ? 'cs' : 'en']}</div>
           <ul className="space-y-2 text-sm text-gray-300">
-            <li>{cs ? 'Stav DOWN znamena scrape fail nebo nedostupny target.' : 'Status DOWN means a scrape failure or an unreachable target.'}</li>
-            <li>{cs ? 'Stav N/A znamena, ze sluzba neni napojena primo na Prometheus scrape.' : 'Status N/A means the service is not connected directly to a Prometheus scrape.'}</li>
-            <li>{cs ? 'Pro hlubsi drill-down pouzij akce Monitoring nebo Grafana vyse.' : 'Use the Monitoring or Grafana actions above for deeper drill-down.'}</li>
+            <li>{MissionControlDashboardCopy.statusDownMeansAScrapeFailureO[cs ? 'cs' : 'en']}</li>
+            <li>{MissionControlDashboardCopy.statusNAMeansTheServiceIsNotCo[cs ? 'cs' : 'en']}</li>
+            <li>{MissionControlDashboardCopy.useTheMonitoringOrGrafanaActio[cs ? 'cs' : 'en']}</li>
           </ul>
         </div>
       </motion.div>
@@ -930,7 +1120,7 @@ function MetricBar({ value, max, color = 'bg-emerald-500' }: { value: number; ma
 function MiniSparkline({ data: d, color = '#10b981', height = 28 }: { data: number[]; color?: string; height?: number }) {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  if (d.length < 2) return <div className="h-7 flex items-center text-[10px] text-gray-600">{cs ? 'cekam na data' : 'awaiting data'}</div>;
+  if (d.length < 2) return <div className="h-7 flex items-center text-[10px] text-gray-600">{MissionControlDashboardCopy.awaitingData[cs ? 'cs' : 'en']}</div>;
   const min = Math.min(...d), max = Math.max(...d), range = max - min || 1, w = 140;
   const pts = d.map((v, i) => `${(i / (d.length - 1)) * w},${height - ((v - min) / range) * (height - 4) - 2}`).join(' ');
   return <svg viewBox={`0 0 ${w} ${height}`} className="w-full" style={{ height }} preserveAspectRatio="none"><polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
@@ -939,8 +1129,8 @@ function MiniSparkline({ data: d, color = '#10b981', height = 28 }: { data: numb
 function AreaChart({ data: d, timestamps, label, color = '#10b981', unit = '', height = 120 }: { data: number[]; timestamps?: number[]; label: string; color?: string; unit?: string; height?: number }) {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = cs ? 'cs-CZ' : 'en-US';
-  if (d.length < 2) return <div className="zion-tile p-4"><div className="text-[10px] text-gray-500 mb-1">{label}</div><div className="h-20 flex items-center justify-center text-[10px] text-gray-600">{cs ? 'cekam na data' : 'awaiting data'}</div></div>;
+  const locale = MissionControlDashboardCopy.enUs[cs ? 'cs' : 'en'];
+  if (d.length < 2) return <div className="zion-tile p-4"><div className="text-[10px] text-gray-500 mb-1">{label}</div><div className="h-20 flex items-center justify-center text-[10px] text-gray-600">{MissionControlDashboardCopy.awaitingData[cs ? 'cs' : 'en']}</div></div>;
   const min = Math.min(...d), max = Math.max(...d), range = max - min || 1;
   const w = 600, h = height, pad = 2;
   const pts = d.map((v, i) => `${(i / (d.length - 1)) * w},${h - ((v - min) / range) * (h - pad * 2) - pad}`);
@@ -1058,11 +1248,11 @@ function V3MetricsSection({
 
       {/* Status indicators */}
       <div className="flex flex-wrap gap-4 items-center">
-        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.coreUp} /><span className="text-gray-300">{cs ? 'Core node' : 'Core Node'}</span></div>
-        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.poolUp} /><span className="text-gray-300">{cs ? 'Mining pool' : 'Mining Pool'}</span></div>
-        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.minerUp} /><span className="text-gray-300">{cs ? 'Miner runtime' : 'Miner Runtime'}</span></div>
+        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.coreUp} /><span className="text-gray-300">{MissionControlDashboardCopy.coreNode[cs ? 'cs' : 'en']}</span></div>
+        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.poolUp} /><span className="text-gray-300">{MissionControlDashboardCopy.miningPool[cs ? 'cs' : 'en']}</span></div>
+        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.minerUp} /><span className="text-gray-300">{MissionControlDashboardCopy.minerRuntime[cs ? 'cs' : 'en']}</span></div>
         <div className="flex items-center gap-2 text-sm"><StatusDot up={m.serverLoad1 != null ? 1 : null} /><span className="text-gray-300">Node Exporter</span></div>
-        <div className="ml-auto text-xs text-gray-500 font-mono">{m.chainHeight != null ? `${cs ? 'Blok' : 'Block'} #${m.chainHeight.toLocaleString(locale)}` : ''}</div>
+        <div className="ml-auto text-xs text-gray-500 font-mono">{m.chainHeight != null ? `${MissionControlDashboardCopy.block[cs ? 'cs' : 'en']} #${m.chainHeight.toLocaleString(locale)}` : ''}</div>
       </div>
 
       {/* ── Core Blockchain ── */}
@@ -1073,13 +1263,13 @@ function V3MetricsSection({
           <MiniMetric label="Template Ht" value={fmt(m.templateHeight)} color="text-amber-400" />
           <MiniMetric label="Peers" value={fmt(m.peerCount)} color="text-cyan-400" />
           <MiniMetric label="Mempool" value={fmt(m.mempoolSize)} color="text-purple-400" />
-          <MiniMetric label={cs ? 'Prijate bloky' : 'Blocks Acc'} value={fmt(m.blocksAccepted)} color="text-emerald-400" />
-          <MiniMetric label={cs ? 'Tx v sablone' : 'Tmpl Txs'} value={fmt(m.templateTxs)} color="text-sky-400" />
-          <MiniMetric label={cs ? 'Fee sablony' : 'Tmpl Fees'} value={m.templateFees != null ? `${m.templateFees}` : '—'} color="text-amber-300" />
+          <MiniMetric label={MissionControlDashboardCopy.blocksAcc[cs ? 'cs' : 'en']} value={fmt(m.blocksAccepted)} color="text-emerald-400" />
+          <MiniMetric label={MissionControlDashboardCopy.tmplTxs[cs ? 'cs' : 'en']} value={fmt(m.templateTxs)} color="text-sky-400" />
+          <MiniMetric label={MissionControlDashboardCopy.tmplFees[cs ? 'cs' : 'en']} value={m.templateFees != null ? `${m.templateFees}` : '—'} color="text-amber-300" />
         </div>
         {sparks.chainHeight.length > 1 && (
           <div className="mt-2 zion-tile p-3">
-            <div className="text-[10px] text-gray-500 mb-1">{cs ? 'Vyska chainu — 1h' : 'Chain Height — 1h'}</div>
+            <div className="text-[10px] text-gray-500 mb-1">{MissionControlDashboardCopy.chainHeight1h[cs ? 'cs' : 'en']}</div>
             <MiniSparkline data={sparks.chainHeight} color="#FFD700" height={32} />
           </div>
         )}
@@ -1099,29 +1289,29 @@ function V3MetricsSection({
         </div>
         {(sparks.poolSessions.length > 1 || sparks.shares.length > 1) && (
           <div className="mt-2 grid md:grid-cols-2 gap-2.5">
-            {sparks.poolSessions.length > 1 && (<div className="zion-tile p-3"><div className="text-[10px] text-gray-500 mb-1">{cs ? 'Aktivni mineri — 1h' : 'Active Miners — 1h'}</div><MiniSparkline data={sparks.poolSessions} color="#FFD700" /></div>)}
-            {sparks.shares.length > 1 && (<div className="zion-tile p-3"><div className="text-[10px] text-gray-500 mb-1">{cs ? 'Prijate shares — 1h' : 'Accepted Shares — 1h'}</div><MiniSparkline data={sparks.shares} color="#10b981" /></div>)}
+            {sparks.poolSessions.length > 1 && (<div className="zion-tile p-3"><div className="text-[10px] text-gray-500 mb-1">{MissionControlDashboardCopy.activeMiners1h[cs ? 'cs' : 'en']}</div><MiniSparkline data={sparks.poolSessions} color="#FFD700" /></div>)}
+            {sparks.shares.length > 1 && (<div className="zion-tile p-3"><div className="text-[10px] text-gray-500 mb-1">{MissionControlDashboardCopy.acceptedShares1h[cs ? 'cs' : 'en']}</div><MiniSparkline data={sparks.shares} color="#10b981" /></div>)}
           </div>
         )}
       </div>
 
       {/* ── Miner Runtime ── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Pickaxe className="h-4 w-4 text-emerald-400" /> {cs ? 'Miner runtime' : 'Miner Runtime'}</h3>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Pickaxe className="h-4 w-4 text-emerald-400" /> {MissionControlDashboardCopy.minerRuntime[cs ? 'cs' : 'en']}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-          <MiniMetric label={cs ? 'Cil minera' : 'Miner Target'} value={m.minerUp === 1 ? 'UP' : m.minerUp === 0 ? 'DOWN' : '—'} color={m.minerUp === 1 ? 'text-emerald-400' : m.minerUp === 0 ? 'text-red-400' : 'text-gray-400'} />
+          <MiniMetric label={MissionControlDashboardCopy.minerTarget[cs ? 'cs' : 'en']} value={m.minerUp === 1 ? 'UP' : m.minerUp === 0 ? 'DOWN' : '—'} color={m.minerUp === 1 ? 'text-emerald-400' : m.minerUp === 0 ? 'text-red-400' : 'text-gray-400'} />
           <MiniMetric label="Hashrate" value={m.minerHashrate != null ? fmtHash(m.minerHashrate) : '—'} color="text-emerald-400" />
-          <MiniMetric label={cs ? 'Hashrate 10 s' : 'Hashrate 10s'} value={m.minerHashrate10s != null ? fmtHash(m.minerHashrate10s) : '—'} color="text-cyan-400" />
-          <MiniMetric label={cs ? 'Hashrate 60 s' : 'Hashrate 60s'} value={m.minerHashrate60s != null ? fmtHash(m.minerHashrate60s) : '—'} color="text-sky-400" />
-          <MiniMetric label={cs ? 'Prijate' : 'Accepted'} value={fmt(m.minerAccepted)} color="text-emerald-400" />
-          <MiniMetric label={cs ? 'Odmitnute' : 'Rejected'} value={fmt(m.minerRejected)} color="text-red-400" />
-          <MiniMetric label={cs ? 'Accept rate' : 'Accept Rate'} value={m.minerAcceptRate != null ? `${m.minerAcceptRate.toFixed(1)}%` : '—'} color={m.minerAcceptRate != null && m.minerAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} />
-          <MiniMetric label={cs ? 'Prumer submitu' : 'Submit Avg'} value={m.minerSubmitAvgMs != null ? `${m.minerSubmitAvgMs.toFixed(1)} ms` : '—'} color="text-purple-400" />
-          <MiniMetric label={cs ? 'Vyska poolu' : 'Pool Height'} value={fmt(m.minerPoolHeight)} color="text-zion-gold" />
+          <MiniMetric label={MissionControlDashboardCopy.hashrate10s[cs ? 'cs' : 'en']} value={m.minerHashrate10s != null ? fmtHash(m.minerHashrate10s) : '—'} color="text-cyan-400" />
+          <MiniMetric label={MissionControlDashboardCopy.hashrate60s[cs ? 'cs' : 'en']} value={m.minerHashrate60s != null ? fmtHash(m.minerHashrate60s) : '—'} color="text-sky-400" />
+          <MiniMetric label={MissionControlDashboardCopy.accepted[cs ? 'cs' : 'en']} value={fmt(m.minerAccepted)} color="text-emerald-400" />
+          <MiniMetric label={MissionControlDashboardCopy.rejected[cs ? 'cs' : 'en']} value={fmt(m.minerRejected)} color="text-red-400" />
+          <MiniMetric label={MissionControlDashboardCopy.acceptRate[cs ? 'cs' : 'en']} value={m.minerAcceptRate != null ? `${m.minerAcceptRate.toFixed(1)}%` : '—'} color={m.minerAcceptRate != null && m.minerAcceptRate >= 95 ? 'text-emerald-400' : 'text-amber-400'} />
+          <MiniMetric label={MissionControlDashboardCopy.submitAvg[cs ? 'cs' : 'en']} value={m.minerSubmitAvgMs != null ? `${m.minerSubmitAvgMs.toFixed(1)} ms` : '—'} color="text-purple-400" />
+          <MiniMetric label={MissionControlDashboardCopy.poolHeight[cs ? 'cs' : 'en']} value={fmt(m.minerPoolHeight)} color="text-zion-gold" />
         </div>
         {sparks.minerHashrate.length > 1 && (
           <div className="mt-2 zion-tile p-3">
-            <div className="text-[10px] text-gray-500 mb-1">{cs ? 'Hashrate minera — 1 h' : 'Miner Hashrate — 1h'}</div>
+            <div className="text-[10px] text-gray-500 mb-1">{MissionControlDashboardCopy.minerHashrate1h[cs ? 'cs' : 'en']}</div>
             <MiniSparkline data={sparks.minerHashrate} color="#10b981" height={32} />
           </div>
         )}
@@ -1129,7 +1319,7 @@ function V3MetricsSection({
 
       {/* ── Pool Groups ── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Network className="h-4 w-4 text-sky-400" /> {cs ? 'Routing skupiny poolu' : 'Pool Routing Groups'}</h3>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Network className="h-4 w-4 text-sky-400" /> {MissionControlDashboardCopy.poolRoutingGroups[cs ? 'cs' : 'en']}</h3>
         <div className="grid md:grid-cols-2 gap-2.5">
           <PoolGroupRow name="zion (Main)" submits={m.groupZionSub} accepted={m.groupZionAcc} dot="bg-emerald-400" />
           <PoolGroupRow name="revenue (CH3)" submits={m.groupRevenueSub} accepted={m.groupRevenueAcc} dot="bg-amber-400" />
@@ -1172,12 +1362,12 @@ function V3MetricsSection({
         <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><HardDrive className="h-4 w-4 text-cyan-400" /> Server Infrastructure <span className="text-[10px] text-gray-500 font-normal">Edge server · cloud VPS</span></h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="zion-tile p-3">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400 flex items-center gap-1"><Flame className="h-3 w-3" /> {cs ? 'CPU zatez' : 'CPU Load'}</p>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400 flex items-center gap-1"><Flame className="h-3 w-3" /> {MissionControlDashboardCopy.cpuLoad[cs ? 'cs' : 'en']}</p>
             <p className="text-lg font-mono font-bold text-cyan-400">{m.serverLoad1?.toFixed(1) ?? '—'}</p>
             <p className="text-[10px] text-gray-500">{m.serverLoad5?.toFixed(1) ?? '—'} / {m.serverLoad15?.toFixed(1) ?? '—'} (5m/15m)</p>
           </div>
           <div className="zion-tile p-3">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">{cs ? 'Pamet' : 'Memory'}</p>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">{MissionControlDashboardCopy.memory[cs ? 'cs' : 'en']}</p>
             <p className={`text-lg font-mono font-bold ${memPct != null && memPct > 85 ? 'text-red-400' : 'text-purple-400'}`}>{memPct != null ? `${memPct.toFixed(1)}%` : '—'}</p>
             {m.memTotal && m.memAvail && <MetricBar value={m.memTotal - m.memAvail} max={m.memTotal} color={memPct != null && memPct > 85 ? 'bg-red-500' : 'bg-purple-500'} />}
             <p className="text-[10px] text-gray-500">{cs ? `${fmtBytes(m.memAvail)} volne / ${fmtBytes(m.memTotal)}` : `${fmtBytes(m.memAvail)} free / ${fmtBytes(m.memTotal)}`}</p>
@@ -1189,21 +1379,21 @@ function V3MetricsSection({
             <p className="text-[10px] text-gray-500">{cs ? `${fmtBytes(m.diskAvail)} volne / ${fmtBytes(m.diskTotal)}` : `${fmtBytes(m.diskAvail)} free / ${fmtBytes(m.diskTotal)}`}</p>
           </div>
           <div className="zion-tile p-3">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">{cs ? 'Uptime serveru' : 'Server Uptime'}</p>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400">{MissionControlDashboardCopy.serverUptime[cs ? 'cs' : 'en']}</p>
             <p className="text-lg font-mono font-bold text-emerald-400">{fmtUptime(uptime)}</p>
-            <p className="text-[10px] text-gray-500">{cs ? 'od' : 'since'} {m.bootTime ? new Date(m.bootTime * 1000).toLocaleDateString(locale) : '—'}</p>
+            <p className="text-[10px] text-gray-500">{MissionControlDashboardCopy.since[cs ? 'cs' : 'en']} {m.bootTime ? new Date(m.bootTime * 1000).toLocaleDateString(locale) : '—'}</p>
           </div>
         </div>
       </div>
 
       {/* Footer legend */}
       <div className="flex flex-wrap gap-x-5 gap-y-1 text-[10px] text-gray-500 pt-2 border-t border-white/10">
-        <span>{cs ? '30+ zivych Prometheus metrik' : '30+ live Prometheus metrics'}</span>
-        <span>{cs ? 'Instantni + range dotazy' : 'Instant + Range queries'}</span>
-        <span>{cs ? 'Auto-refresh 15 s' : '15s auto-refresh'}</span>
-        <span>{cs ? 'SVG sparkliny (1 h)' : 'SVG sparklines (1h)'}</span>
-        <a href="/monitoring" className="text-emerald-400 hover:text-emerald-300 transition-colors">{cs ? 'Cela monitoring stranka →' : 'Full monitoring page →'}</a>
-        <a href="/grafana/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 transition-colors">{cs ? 'Otevrit Grafanu →' : 'Open Grafana →'}</a>
+        <span>{MissionControlDashboardCopy.k30LivePrometheusMetrics[cs ? 'cs' : 'en']}</span>
+        <span>{MissionControlDashboardCopy.instantRangeQueries[cs ? 'cs' : 'en']}</span>
+        <span>{MissionControlDashboardCopy.k15sAutoRefresh[cs ? 'cs' : 'en']}</span>
+        <span>{MissionControlDashboardCopy.svgSparklines1h[cs ? 'cs' : 'en']}</span>
+        <a href="/monitoring" className="text-emerald-400 hover:text-emerald-300 transition-colors">{MissionControlDashboardCopy.fullMonitoringPage[cs ? 'cs' : 'en']}</a>
+        <a href="/grafana/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 transition-colors">{MissionControlDashboardCopy.openGrafana[cs ? 'cs' : 'en']}</a>
       </div>
     </motion.section>
   );
@@ -1263,28 +1453,28 @@ function WalletDiagnosticsSection({
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Wallet & RPC</p>
-          <span className="text-[10px] uppercase tracking-widest border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 px-2 py-0.5 rounded-full font-semibold">{cs ? 'JEN PODEPSANE TX' : 'SIGNED TX ONLY'}</span>
+          <span className="text-[10px] uppercase tracking-widest border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 px-2 py-0.5 rounded-full font-semibold">{MissionControlDashboardCopy.signedTxOnly[cs ? 'cs' : 'en']}</span>
         </div>
         <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
           <Wallet className="h-7 w-7 text-emerald-400" />
-          {cs ? 'Diagnostika walletu a odeslani transakce' : 'Wallet Diagnostics & Transaction Submit'}
+          {MissionControlDashboardCopy.walletDiagnosticsTransactionSu[cs ? 'cs' : 'en']}
         </h2>
-        <p className="text-sm text-gray-400">{cs ? 'Zive zdravi RPC, balance, UTXO snapshot, viditelnost payoutu minera a bezpecny broadcast jiz podepsane transakce bez prace s privatnimi klici na serveru.' : 'Live RPC health, balance, UTXO snapshot, miner payout visibility, and safe broadcast of an already signed transaction without handling private keys on the server.'}</p>
+        <p className="text-sm text-gray-400">{MissionControlDashboardCopy.liveRpcHealthBalanceUtxoSnapsh[cs ? 'cs' : 'en']}</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
         <Stat label="RPC" value={rpc?.connected ? 'ONLINE' : 'OFFLINE'} color={rpc?.connected ? 'text-emerald-400' : 'text-red-400'} />
-        <Stat label={cs ? 'Vyska chainu' : 'Chain Height'} value={fmt(rpc?.chain_height)} color="text-cyan-400" mono />
+        <Stat label={MissionControlDashboardCopy.chainHeight[cs ? 'cs' : 'en']} value={fmt(rpc?.chain_height)} color="text-cyan-400" mono />
         <Stat label="Peers" value={fmt(rpc?.peers)} color="text-emerald-400" mono />
         <Stat label="Mempool" value={fmt(rpc?.mempool_size)} color="text-purple-400" mono />
-        <Stat label={cs ? 'Sit' : 'Network'} value={rpc?.network?.toUpperCase() ?? '—'} color="text-zion-gold" />
-        <Stat label={cs ? 'Verze RPC' : 'RPC Version'} value={rpc?.version ?? '—'} color="text-gray-200" mono />
+        <Stat label={MissionControlDashboardCopy.network[cs ? 'cs' : 'en']} value={rpc?.network?.toUpperCase() ?? '—'} color="text-zion-gold" />
+        <Stat label={MissionControlDashboardCopy.rpcVersion[cs ? 'cs' : 'en']} value={rpc?.version ?? '—'} color="text-gray-200" mono />
       </div>
 
       <div className="zion-rainbow-sub p-4 sm:p-5 space-y-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
           <div className="flex-1 min-w-0">
-            <label className="block text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">{cs ? 'Adresa walletu nebo ucet' : 'Wallet Address Or Account'}</label>
+            <label className="block text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">{MissionControlDashboardCopy.walletAddressOrAccount[cs ? 'cs' : 'en']}</label>
             <input
               value={addressInput}
               onChange={(event) => onAddressChange(event.target.value)}
@@ -1298,7 +1488,7 @@ function WalletDiagnosticsSection({
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-300 transition-colors hover:border-cyan-400/50 hover:text-cyan-200 disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            {loading ? (cs ? 'Nacitam…' : 'Loading…') : (cs ? 'Nacist wallet' : 'Load Wallet')}
+            {loading ? (MissionControlDashboardCopy.loading[cs ? 'cs' : 'en']) : (MissionControlDashboardCopy.loadWallet[cs ? 'cs' : 'en'])}
           </button>
         </div>
 
@@ -1309,21 +1499,21 @@ function WalletDiagnosticsSection({
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <MiniMetric label={cs ? 'Adresa' : 'Address'} value={activeAddress || (cs ? 'nenacteno' : 'not loaded')} color="text-cyan-400" />
+          <MiniMetric label={MissionControlDashboardCopy.address[cs ? 'cs' : 'en']} value={activeAddress || (MissionControlDashboardCopy.notLoaded[cs ? 'cs' : 'en'])} color="text-cyan-400" />
           <MiniMetric label="TX Model" value={wallet?.transaction_model ?? 'rpc-only'} color="text-zion-gold" />
           <MiniMetric label="Balance" value={wallet ? fmtZion(wallet.balance_zion) : '—'} color="text-emerald-400" />
-          <MiniMetric label={cs ? 'Pocet UTXO' : 'UTXO Count'} value={wallet ? fmt(wallet.utxo_count) : '—'} color="text-purple-400" />
-          <MiniMetric label={cs ? 'UTXO celkem' : 'UTXO Total'} value={wallet ? fmtZion(wallet.total_utxo_zion) : '—'} color="text-cyan-400" />
-          <MiniMetric label={cs ? 'Miner pending' : 'Miner Pending'} value={miner ? fmtZion(miner.pending_balance_zion) : '—'} color="text-amber-400" />
-          <MiniMetric label={cs ? 'Miner vyplaceno' : 'Miner Paid'} value={miner ? fmtZion(miner.paid_balance_zion) : '—'} color="text-emerald-400" />
-          <MiniMetric label={cs ? 'Miner shares' : 'Miner Shares'} value={miner ? `${fmt(miner.accepted_shares)} / ${fmt(miner.rejected_shares)}` : '—'} color="text-gray-200" />
+          <MiniMetric label={MissionControlDashboardCopy.utxoCount[cs ? 'cs' : 'en']} value={wallet ? fmt(wallet.utxo_count) : '—'} color="text-purple-400" />
+          <MiniMetric label={MissionControlDashboardCopy.utxoTotal[cs ? 'cs' : 'en']} value={wallet ? fmtZion(wallet.total_utxo_zion) : '—'} color="text-cyan-400" />
+          <MiniMetric label={MissionControlDashboardCopy.minerPending[cs ? 'cs' : 'en']} value={miner ? fmtZion(miner.pending_balance_zion) : '—'} color="text-amber-400" />
+          <MiniMetric label={MissionControlDashboardCopy.minerPaid[cs ? 'cs' : 'en']} value={miner ? fmtZion(miner.paid_balance_zion) : '—'} color="text-emerald-400" />
+          <MiniMetric label={MissionControlDashboardCopy.minerShares[cs ? 'cs' : 'en']} value={miner ? `${fmt(miner.accepted_shares)} / ${fmt(miner.rejected_shares)}` : '—'} color="text-gray-200" />
         </div>
 
         <div className="grid lg:grid-cols-2 gap-4">
           <div className="zion-section p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">{cs ? 'Posledni UTXO' : 'Recent UTXOs'}</div>
-              <div className="text-[10px] text-gray-500">{cs ? 'top 20 z RPC' : 'top 20 from RPC'}</div>
+              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">{MissionControlDashboardCopy.recentUtxos[cs ? 'cs' : 'en']}</div>
+              <div className="text-[10px] text-gray-500">{MissionControlDashboardCopy.top20FromRpc[cs ? 'cs' : 'en']}</div>
             </div>
             {wallet?.utxos?.length ? (
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
@@ -1333,19 +1523,19 @@ function WalletDiagnosticsSection({
                       <span className="font-mono text-cyan-300 truncate">{utxo.tx_hash.slice(0, 12)}…:{utxo.output_index}</span>
                       <span className="font-mono text-emerald-300">{fmtZion(utxo.amount / 1_000_000)}</span>
                     </div>
-                    <div className="mt-1 text-gray-500">{cs ? 'vyska' : 'height'} {fmt(utxo.height)} · {utxo.address}</div>
+                    <div className="mt-1 text-gray-500">{MissionControlDashboardCopy.height_2[cs ? 'cs' : 'en']} {fmt(utxo.height)} · {utxo.address}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-sm text-gray-500">{activeAddress ? (cs ? 'Pro tuto adresu se nevratilo zadne UTXO.' : 'No UTXOs returned for this address.') : (cs ? 'Nacti adresu zion1 pro kontrolu UTXO.' : 'Load a zion1 address to inspect UTXOs.')}</div>
+              <div className="text-sm text-gray-500">{activeAddress ? (MissionControlDashboardCopy.noUtxosReturnedForThisAddress[cs ? 'cs' : 'en']) : (MissionControlDashboardCopy.loadAZion1AddressToInspectUtxo[cs ? 'cs' : 'en'])}</div>
             )}
           </div>
 
           <div className="zion-section p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">{cs ? 'RPC tester odeslani' : 'RPC Submit Tester'}</div>
-              <div className="text-[10px] text-gray-500">{cs ? 'jen podepsany payload' : 'signed payload only'}</div>
+              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">{MissionControlDashboardCopy.rpcSubmitTester[cs ? 'cs' : 'en']}</div>
+              <div className="text-[10px] text-gray-500">{MissionControlDashboardCopy.signedPayloadOnly[cs ? 'cs' : 'en']}</div>
             </div>
             <div className="space-y-3">
               <select
@@ -1369,12 +1559,12 @@ function WalletDiagnosticsSection({
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-300 transition-colors hover:border-emerald-400/50 hover:text-emerald-200 disabled:opacity-50"
               >
                 <ArrowLeftRight className={`h-4 w-4 ${txSubmitting ? 'animate-pulse' : ''}`} />
-                {txSubmitting ? (cs ? 'Odesilam…' : 'Submitting…') : (cs ? 'Broadcast podepsane TX' : 'Broadcast Signed TX')}
+                {txSubmitting ? (MissionControlDashboardCopy.submitting[cs ? 'cs' : 'en']) : (MissionControlDashboardCopy.broadcastSignedTx[cs ? 'cs' : 'en'])}
               </button>
               {txResult && (
                 <div className={`rounded-xl border px-4 py-3 text-sm ${txResult.accepted ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' : 'border-amber-500/30 bg-amber-500/10 text-amber-200'}`}>
-                  <div>{cs ? 'metoda' : 'method'}: {txResult.method}</div>
-                  <div>{cs ? 'prijato' : 'accepted'}: {txResult.accepted ? (cs ? 'ano' : 'yes') : (cs ? 'ne' : 'no')}</div>
+                  <div>{MissionControlDashboardCopy.method[cs ? 'cs' : 'en']}: {txResult.method}</div>
+                  <div>{MissionControlDashboardCopy.accepted_2[cs ? 'cs' : 'en']}: {txResult.accepted ? (MissionControlDashboardCopy.yes[cs ? 'cs' : 'en']) : (MissionControlDashboardCopy.no[cs ? 'cs' : 'en'])}</div>
                   <div>tx_id: {txResult.tx_id ?? '—'}</div>
                 </div>
               )}
@@ -1523,7 +1713,7 @@ function LogConsole({ logTail }: { logTail?: string }) {
 export default function MissionControlDashboard() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = cs ? 'cs-CZ' : 'en-US';
+  const locale = MissionControlDashboardCopy.enUs[cs ? 'cs' : 'en'];
   const tabs = getTabs(cs);
   const serviceGroups = getServiceGroups(cs);
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
@@ -1751,7 +1941,7 @@ export default function MissionControlDashboard() {
   const readinessPanels = [
     {
       key: 'done',
-      title: cs ? 'Hotovo' : 'Done',
+      title: MissionControlDashboardCopy.done[cs ? 'cs' : 'en'],
       badge: 'READY NOW',
       Icon: CheckCheck,
       cardClass: 'border-emerald-500/20 bg-emerald-500/5',
@@ -1761,7 +1951,7 @@ export default function MissionControlDashboard() {
     },
     {
       key: 'missing',
-      title: cs ? 'Chybí před public launch' : 'Missing before public launch',
+      title: MissionControlDashboardCopy.missingBeforePublicLaunch[cs ? 'cs' : 'en'],
       badge: 'BLOCKERS',
       Icon: XCircle,
       cardClass: 'border-red-500/20 bg-red-500/5',
@@ -1771,7 +1961,7 @@ export default function MissionControlDashboard() {
     },
     {
       key: 'not-missing',
-      title: cs ? 'Co už nechybí' : 'No longer missing',
+      title: MissionControlDashboardCopy.noLongerMissing[cs ? 'cs' : 'en'],
       badge: 'CLARIFIED',
       Icon: CircleDot,
       cardClass: 'border-cyan-500/20 bg-cyan-500/5',
@@ -1781,7 +1971,7 @@ export default function MissionControlDashboard() {
     },
     {
       key: 'next-48h',
-      title: cs ? 'Další 48-72h' : 'Next 48-72h',
+      title: MissionControlDashboardCopy.next4872h[cs ? 'cs' : 'en'],
       badge: 'REHEARSAL',
       Icon: Construction,
       cardClass: 'border-amber-500/20 bg-amber-500/5',
@@ -1809,9 +1999,9 @@ export default function MissionControlDashboard() {
                 MAINNET · LIVE · GO
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Ziva telemetrie' : 'Live Telemetry'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{MissionControlDashboardCopy.liveTelemetry[cs ? 'cs' : 'en']}</p>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? 'Rizeni mise' : 'Mission Control'}
+                  {MissionControlDashboardCopy.missionControl[cs ? 'cs' : 'en']}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
@@ -1819,7 +2009,7 @@ export default function MissionControlDashboard() {
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> {cs ? 'ZIVA DATA · refresh 30 s' : 'LIVE DATA · 30s refresh'}
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> {MissionControlDashboardCopy.liveData30sRefresh[cs ? 'cs' : 'en']}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
                   <CheckCircle2 className="h-3 w-3" /> Security Gate · PASS
@@ -1831,7 +2021,7 @@ export default function MissionControlDashboard() {
                   <Rocket className="h-3 w-3" /> Mainnet launch countdown T-{Math.max(0, Math.ceil((new Date('2026-06-20T00:00:00Z').getTime() - Date.now()) / 86400000))} days
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Shield className="h-3 w-3 text-emerald-400" /> {allHealthy ? (cs ? 'Vsechny systemy zdrave' : 'All Systems Healthy') : anyHealthy ? (cs ? 'Cast systemu online' : 'Partial Systems Up') : (cs ? 'Monitoring systemu' : 'Systems Monitoring')}
+                  <Shield className="h-3 w-3 text-emerald-400" /> {allHealthy ? (MissionControlDashboardCopy.allSystemsHealthy[cs ? 'cs' : 'en']) : anyHealthy ? (MissionControlDashboardCopy.partialSystemsUp[cs ? 'cs' : 'en']) : (MissionControlDashboardCopy.systemsMonitoring[cs ? 'cs' : 'en'])}
                 </span>
               </div>
             </div>
@@ -1891,7 +2081,7 @@ export default function MissionControlDashboard() {
             ))}
             <div className="ml-auto flex items-center gap-2 text-xs text-emerald-400 whitespace-nowrap pr-2 sm:pr-3">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="hidden sm:inline">{cs ? 'ZIVE' : 'LIVE'}</span>
+              <span className="hidden sm:inline">{MissionControlDashboardCopy.live[cs ? 'cs' : 'en']}</span>
             </div>
           </div>
         </motion.div>
@@ -1900,7 +2090,7 @@ export default function MissionControlDashboard() {
         {loading && !data && (
           <div className="text-center py-20 text-gray-500">
             <div className="inline-block w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mb-4" />
-            <p>{cs ? 'Nacitam data Mission Control…' : 'Loading Mission Control data…'}</p>
+            <p>{MissionControlDashboardCopy.loadingMissionControlData[cs ? 'cs' : 'en']}</p>
           </div>
         )}
 
@@ -1908,9 +2098,9 @@ export default function MissionControlDashboard() {
         {!loading && !data && (
           <div className="text-center py-16 text-gray-500 zion-section border-orange-500/20 bg-orange-500/5">
             <Radio className="h-8 w-8 text-orange-400 mx-auto mb-3" />
-            <p className="text-orange-300 font-semibold">{cs ? 'Ziva telemetrie neni dostupna' : 'Live telemetry unavailable'}</p>
-            <p className="text-sm mt-1">{cs ? 'Node API je docasne nedostupne - zalozky roadmapy a ustavy stale funguji.' : 'Node API temporarily unreachable - roadmap & constitution tabs still work.'}</p>
-            <button onClick={refresh} className="mt-4 px-4 py-2 text-xs rounded-xl border border-orange-400/30 text-orange-300 hover:bg-orange-500/10 transition-colors">{cs ? 'Zkusit znovu' : 'Retry'}</button>
+            <p className="text-orange-300 font-semibold">{MissionControlDashboardCopy.liveTelemetryUnavailable[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm mt-1">{MissionControlDashboardCopy.nodeApiTemporarilyUnreachableR[cs ? 'cs' : 'en']}</p>
+            <button onClick={refresh} className="mt-4 px-4 py-2 text-xs rounded-xl border border-orange-400/30 text-orange-300 hover:bg-orange-500/10 transition-colors">{MissionControlDashboardCopy.retry[cs ? 'cs' : 'en']}</button>
           </div>
         )}
 
@@ -2042,12 +2232,10 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Launch Gate</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Target className="h-7 w-7 text-amber-400" />
-                  {cs ? 'Připravenost k launchi — Pre-Launch Blockers' : 'Launch Readiness — Pre-Launch Blockers'}
+                  {MissionControlDashboardCopy.launchReadinessPreLaunchBlocke[cs ? 'cs' : 'en']}
                 </h2>
                 <p className="text-sm text-gray-400">
-                  {cs
-                    ? 'Aktuální stav launch gate založený na ROADMAP a operational status. Blockers musí být vyřešeny před public mainnet GO.'
-                    : 'Current launch gate status based on ROADMAP and operational status. Blockers must be resolved before public mainnet GO.'}
+                  {MissionControlDashboardCopy.currentLaunchGateStatusBasedOn[cs ? 'cs' : 'en']}
                 </p>
               </div>
               <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
@@ -2062,7 +2250,7 @@ export default function MissionControlDashboard() {
                     </div>
                     {panel.items.length === 0 ? (
                       <p className="text-sm text-gray-500 italic">
-                        {cs ? 'Žádné položky' : 'No items'}
+                        {MissionControlDashboardCopy.noItems[cs ? 'cs' : 'en']}
                       </p>
                     ) : (
                       <ul className="space-y-2.5">
@@ -2168,12 +2356,10 @@ export default function MissionControlDashboard() {
                 </div>
                 <div className="space-y-1">
                   <h2 className="text-xl font-semibold text-white group-hover:text-zion-gold transition-colors">
-                    {cs ? 'Zlatý Kompas — sedm směrů TerraNova' : 'Golden Compass — seven directions of TerraNova'}
+                    {MissionControlDashboardCopy.goldenCompassSevenDirectionsOf[cs ? 'cs' : 'en']}
                   </h2>
                   <p className="text-sm text-gray-400 leading-relaxed">
-                    {cs
-                      ? 'Pravdivost · Péče · Disciplína · Komunita · Otevřenost · Odvaha · Míra — interaktivní orientace projektu z knihy TerraNova.'
-                      : 'Truthfulness · Care · Discipline · Community · Openness · Courage · Measure — interactive project orientation from the TerraNova book.'}
+                    {MissionControlDashboardCopy.truthfulnessCareDisciplineComm[cs ? 'cs' : 'en']}
                   </p>
                 </div>
               </a>
@@ -2745,7 +2931,7 @@ export default function MissionControlDashboard() {
               style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Postup' : 'Progress'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MissionControlDashboardCopy.progress[cs ? 'cs' : 'en']}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Target className="h-7 w-7 text-zion-gold" />
                   Roadmap — Launch Countdown
@@ -2765,7 +2951,7 @@ export default function MissionControlDashboard() {
               transition={{ delay: 0.12 }}
               className="space-y-5"
             >
-              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title={cs ? 'Faze 0 — zmrazeni specifikace a prepis core' : 'Phase 0 — Spec Freeze & Core Rewrite'} pct={100} status={cs ? 'DOKONCENO' : 'COMPLETED'} statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200" defaultOpen>
+              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title={MissionControlDashboardCopy.phase0SpecFreezeCoreRewrite[cs ? 'cs' : 'en']} pct={100} status={MissionControlDashboardCopy.completed[cs ? 'cs' : 'en']} statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200" defaultOpen>
                 <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Únor 2026 — 155 testů, 8 commitů</p>
                 <table className="w-full text-left"><tbody>
                   <SprintRow name="0.0 Repo Migrace" content="Čisté repo, workspace, Docker, CI/CD" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
@@ -2860,10 +3046,10 @@ export default function MissionControlDashboard() {
               style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-8">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Architektura' : 'Architecture'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MissionControlDashboardCopy.architecture[cs ? 'cs' : 'en']}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Layers className="h-7 w-7 text-zion-gold" />
-                  {cs ? 'Vrstvovy stack' : 'Layer Stack'}
+                  {MissionControlDashboardCopy.layerStack[cs ? 'cs' : 'en']}
                 </h2>
                 <p className="text-sm text-gray-400 italic">&quot;Jednoduchý L1 blockchain, který funguje bezchybně, je základem pro nekonečný ekosystém nad ním.&quot;</p>
               </div>
@@ -2919,22 +3105,22 @@ export default function MissionControlDashboard() {
                 <div className="space-y-0">
                   {[
                     ['Chain ID', 'zion-mainnet-1'],
-                    [cs ? 'Celkova zasoba' : 'Total Supply', '144,000,000,000'],
-                    [cs ? 'Tezebni zasoba' : 'Mining Supply', '127,720,000,000'],
-                    [cs ? 'Genesis premine' : 'Genesis Premine', '16,280,000,000'],
-                    [cs ? 'Block reward (D1)' : 'Block Reward (D1)', '5,400.067 ZION'],
-                    [cs ? 'Emisni model' : 'Emission Model', 'Decade Decay (-20%/10y)'],
-                    [cs ? 'Tail emise' : 'Tail Emission', '724.785 ZION/block ∞'],
-                    [cs ? 'Cas bloku' : 'Block Time', cs ? '60 sekund' : '60 seconds'],
+                    [MissionControlDashboardCopy.totalSupply[cs ? 'cs' : 'en'], '144,000,000,000'],
+                    [MissionControlDashboardCopy.miningSupply[cs ? 'cs' : 'en'], '127,720,000,000'],
+                    [MissionControlDashboardCopy.genesisPremine_2[cs ? 'cs' : 'en'], '16,280,000,000'],
+                    [MissionControlDashboardCopy.blockRewardD1[cs ? 'cs' : 'en'], '5,400.067 ZION'],
+                    [MissionControlDashboardCopy.emissionModel[cs ? 'cs' : 'en'], 'Decade Decay (-20%/10y)'],
+                    [MissionControlDashboardCopy.tailEmission[cs ? 'cs' : 'en'], '724.785 ZION/block ∞'],
+                    [MissionControlDashboardCopy.blockTime[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k60Seconds[cs ? 'cs' : 'en']],
                     ['DAA', 'LWMA (60 bloků, ±25%)'],
-                    [cs ? 'Max reorg' : 'Max Reorg', cs ? '10 bloku' : '10 blocks'],
-                    [cs ? 'Soft finalita' : 'Soft Finality', cs ? '60 bloku' : '60 blocks'],
-                    [cs ? 'Coinbase maturity' : 'Coinbase Maturity', cs ? '100 bloku' : '100 blocks'],
+                    [MissionControlDashboardCopy.maxReorg[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k10Blocks[cs ? 'cs' : 'en']],
+                    [MissionControlDashboardCopy.softFinality[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k60Blocks[cs ? 'cs' : 'en']],
+                    [MissionControlDashboardCopy.coinbaseMaturity[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k100Blocks[cs ? 'cs' : 'en']],
                     ['Consensus', 'PoW CHv3 + VRSC dual'],
-                    [cs ? 'Distribuce' : 'Distribution', cs ? '89 % miner · 5 % humanit. · 5 % Issobella · 1 % pool' : '89% miner · 5% humanitarian · 5% Issobella · 1% pool'],
+                    [MissionControlDashboardCopy.distribution[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k89Miner5Humanitarian5Issobella[cs ? 'cs' : 'en']],
                     ['Presale', 'NEEXISTUJE'],
-                    [cs ? 'Atomic units' : 'Atomic Units', cs ? '1M na ZION' : '1M per ZION'],
-                    [cs ? 'Horizont tezby' : 'Mining Horizon', cs ? '100+ let + tail ∞' : '100+ years + tail ∞'],
+                    [MissionControlDashboardCopy.atomicUnits[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k1mPerZion[cs ? 'cs' : 'en']],
+                    [MissionControlDashboardCopy.miningHorizon[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k100YearsTail[cs ? 'cs' : 'en']],
                   ].map(([param, value]) => (
                     <div key={param} className="flex items-center justify-between py-2 sm:py-2.5 border-b border-white/5 text-xs sm:text-sm gap-2">
                       <span className="text-gray-400 shrink-0">{param}</span>
@@ -2958,10 +3144,10 @@ export default function MissionControlDashboard() {
                 </div>
                 <div className="space-y-4">
                   {[
-                    { cat: 'ZION OASIS + Winners Golden Egg/Xp', Icon: Pickaxe, amount: '8,250,000,000', pct: 50.7, lock: cs ? 'Okamzite dostupne' : 'Immediately available', lockColor: 'text-emerald-400' },
+                    { cat: 'ZION OASIS + Winners Golden Egg/Xp', Icon: Pickaxe, amount: '8,250,000,000', pct: 50.7, lock: MissionControlDashboardCopy.immediatelyAvailable[cs ? 'cs' : 'en'], lockColor: 'text-emerald-400' },
                     { cat: 'DAO Treasury', Icon: Database, amount: '4,000,000,000', pct: 24.6, lock: 'Okamžitě dostupné', lockColor: 'text-emerald-400' },
-                    { cat: cs ? 'Infrastruktura a vyvoj' : 'Infrastructure & Dev', Icon: Wrench, amount: '2,500,000,000', pct: 15.4, lock: cs ? 'Okamzite dostupne' : 'Immediately available', lockColor: 'text-emerald-400' },
-                    { cat: cs ? 'Humanitarni fond' : 'Humanitarian Fund', Icon: Heart, amount: '1,530,000,000', pct: 9.4, lock: cs ? 'Okamzite dostupne' : 'Immediately available', lockColor: 'text-emerald-400' },
+                    { cat: MissionControlDashboardCopy.infrastructureDev[cs ? 'cs' : 'en'], Icon: Wrench, amount: '2,500,000,000', pct: 15.4, lock: MissionControlDashboardCopy.immediatelyAvailable[cs ? 'cs' : 'en'], lockColor: 'text-emerald-400' },
+                    { cat: MissionControlDashboardCopy.humanitarianFund[cs ? 'cs' : 'en'], Icon: Heart, amount: '1,530,000,000', pct: 9.4, lock: MissionControlDashboardCopy.immediatelyAvailable[cs ? 'cs' : 'en'], lockColor: 'text-emerald-400' },
                   ].map(p => (
                     <div key={p.cat} className="zion-rainbow-sub p-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                       <div className="flex items-center justify-between">
@@ -3006,10 +3192,10 @@ export default function MissionControlDashboard() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <Stat label={cs ? 'Block reward (D1)' : 'Block Reward (D1)'} value="5,400.067" sub="ZION/block · Decade Decay" color="text-cyan-400" mono />
-                <Stat label={cs ? 'Tail emise' : 'Tail Emission'} value="724.785" sub={cs ? 'ZION/block ∞ (od 2126)' : 'ZION/block ∞ (from 2126)'} color="text-emerald-400" mono />
-                <Stat label={cs ? 'Distribuce' : 'Distribution'} value="89/5/5/1" sub={cs ? 'miner / humanit. / Issobella / pool' : 'miner / humanitarian / Issobella / pool'} color="text-purple-400" mono />
-                <Stat label={cs ? 'Horizont tezby' : 'Mining Horizon'} value={cs ? '100+ let' : '100+ years'} sub={cs ? '+ perpetualni tail ∞' : '+ perpetual tail ∞'} color="text-zion-gold" mono />
+                <Stat label={MissionControlDashboardCopy.blockRewardD1[cs ? 'cs' : 'en']} value="5,400.067" sub="ZION/block · Decade Decay" color="text-cyan-400" mono />
+                <Stat label={MissionControlDashboardCopy.tailEmission[cs ? 'cs' : 'en']} value="724.785" sub={MissionControlDashboardCopy.zionBlockFrom2126[cs ? 'cs' : 'en']} color="text-emerald-400" mono />
+                <Stat label={MissionControlDashboardCopy.distribution[cs ? 'cs' : 'en']} value="89/5/5/1" sub={MissionControlDashboardCopy.minerHumanitarianIssobellaPool[cs ? 'cs' : 'en']} color="text-purple-400" mono />
+                <Stat label={MissionControlDashboardCopy.miningHorizon[cs ? 'cs' : 'en']} value={MissionControlDashboardCopy.k100Years[cs ? 'cs' : 'en']} sub={MissionControlDashboardCopy.perpetualTail[cs ? 'cs' : 'en']} color="text-zion-gold" mono />
               </div>
             </motion.section>
 
@@ -3022,12 +3208,12 @@ export default function MissionControlDashboard() {
               style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'L5 / L6 Pokladna' : 'L5 / L6 Treasury'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MissionControlDashboardCopy.l5L6Treasury[cs ? 'cs' : 'en']}</p>
                 <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Heart className="h-6 w-6 text-amber-400" />
-                  {cs ? 'Humanitární fond & Vesmírná stanice' : 'Humanitarian Fund & Space Station'}
+                  {MissionControlDashboardCopy.humanitarianFundSpaceStation[cs ? 'cs' : 'en']}
                 </h2>
-                <p className="text-sm text-gray-400">{cs ? '5 % každého blokového odměny putuje na L5 humanitární fond a 5 % na L6 Issobella vesmírný fond.' : '5% of every block reward goes to the L5 humanitarian fund and 5% to the L6 Issobella space fund.'}</p>
+                <p className="text-sm text-gray-400">{MissionControlDashboardCopy.k5OfEveryBlockRewardGoesToTheL5[cs ? 'cs' : 'en']}</p>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="zion-rainbow-sub p-4 sm:p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
@@ -3038,7 +3224,7 @@ export default function MissionControlDashboard() {
                       <p className="text-xs text-amber-400 font-mono">5% block reward → ~15,000 ZION/měsíc</p>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 mb-3">{cs ? 'Fyzické komunity, humanitární projekty, Free Energy, terénní governance. Fond odemčen ve výšce bloku ~525,600.' : 'Physical communities, humanitarian projects, Free Energy, on-ground governance. Fund unlocked at block ~525,600.'}</p>
+                  <p className="text-xs text-gray-400 mb-3">{MissionControlDashboardCopy.physicalCommunitiesHumanitaria[cs ? 'cs' : 'en']}</p>
                   <div className="space-y-1 text-[10px] font-mono text-gray-500">
                     <p>wallet: zion1t4w447d7k4c600h3x893m5r55645w4p057yf4d7</p>
                     <p className="text-amber-400">~15,000 ZION / měsíc · DAO řízeno · L5 Radou</p>
@@ -3052,7 +3238,7 @@ export default function MissionControlDashboard() {
                       <p className="text-xs text-rose-400 font-mono">5% block reward → ~15,000 ZION/měsíc</p>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 mb-3">{cs ? 'Orbitální stanice, vesmírný výzkum, SETI, Overview Effect protokoly. Fond odemčen ve výšce bloku ~525,600.' : 'Orbital station, space research, SETI, Overview Effect protocols. Fund unlocked at block ~525,600.'}</p>
+                  <p className="text-xs text-gray-400 mb-3">{MissionControlDashboardCopy.orbitalStationSpaceResearchSet[cs ? 'cs' : 'en']}</p>
                   <div className="space-y-1 text-[10px] font-mono text-gray-500">
                     <p>wallet: zion1e4t5a390m2r427a8f3s39885v4f2v6n8u3mj3f5</p>
                     <p className="text-rose-400">~15,000 ZION / měsíc · DAO řízeno · L6 Radou</p>
@@ -3069,8 +3255,8 @@ export default function MissionControlDashboard() {
             >
               <Flame className="h-8 w-8 sm:h-10 sm:w-10 text-red-400 shrink-0" />
               <div>
-                <p className="text-sm sm:text-lg font-bold text-white">{cs ? 'VSECHNY L1 TRANSAKCNI POPLATKY → ' : 'ALL L1 TRANSACTION FEES → '}<span className="text-red-400">{cs ? 'SPALENY' : 'BURNED'}</span></p>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">{cs ? 'Posilany na burn adresu bez privatniho klice → deflacni tlak' : 'Sent to a burn address without a private key → deflationary pressure'}</p>
+                <p className="text-sm sm:text-lg font-bold text-white">{MissionControlDashboardCopy.allL1TransactionFees[cs ? 'cs' : 'en']}<span className="text-red-400">{MissionControlDashboardCopy.burned[cs ? 'cs' : 'en']}</span></p>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">{MissionControlDashboardCopy.sentToABurnAddressWithoutAPriv[cs ? 'cs' : 'en']}</p>
               </div>
             </motion.section>
           </div>
@@ -3089,7 +3275,7 @@ export default function MissionControlDashboard() {
               style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Bezpecnost' : 'Security'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MissionControlDashboardCopy.security[cs ? 'cs' : 'en']}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Shield className="h-7 w-7 text-emerald-400" />
                   Mainnet Security Gate
@@ -3151,7 +3337,7 @@ export default function MissionControlDashboard() {
               style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-8">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Casova osa' : 'Timeline'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MissionControlDashboardCopy.timeline[cs ? 'cs' : 'en']}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <CalendarDays className="h-7 w-7 text-zion-gold" />
                   Master Timeline — Test Mainnet To Production
@@ -3257,7 +3443,7 @@ export default function MissionControlDashboard() {
               style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Priority' : 'Priorities'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MissionControlDashboardCopy.priorities[cs ? 'cs' : 'en']}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Zap className="h-7 w-7 text-yellow-400" />
                   Launch Priority Map

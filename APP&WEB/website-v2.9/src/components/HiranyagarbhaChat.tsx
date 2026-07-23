@@ -3,6 +3,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Brain, User, Loader2, Sparkles } from 'lucide-react';
 
+const HiranyagarbhaChatCopy = {
+  failedToConnectToAiPleaseTryAg: { cs: `Nepodařilo se spojit s AI. Zkuste to znovu.`, en: `Failed to connect to AI. Please try again.` },
+  zionAiNativeZionExpertModel: { cs: `ZION AI Native · zion-expert model`, en: `ZION AI Native · zion-expert model` },
+  askHiranyagarbhaAnythingAboutZ: { cs: `Zeptejte se Hiranyagarbhy na cokoliv o ZIONu`, en: `Ask Hiranyagarbha anything about ZION` },
+  typeAMessage: { cs: `Napište zprávu...`, en: `Type a message...` },
+};
+
 type Message = {
   role: 'user' | 'assistant';
   content: string;
@@ -60,9 +67,7 @@ export default function HiranyagarbhaChat({ lang = 'cs' }: { lang?: 'cs' | 'en' 
         {
           role: 'assistant',
           content:
-            lang === 'cs'
-              ? 'Nepodařilo se spojit s AI. Zkuste to znovu.'
-              : 'Failed to connect to AI. Please try again.',
+            HiranyagarbhaChatCopy.failedToConnectToAiPleaseTryAg[lang === 'cs' ? 'cs' : 'en'],
         },
       ]);
     } finally {
@@ -86,7 +91,7 @@ export default function HiranyagarbhaChat({ lang = 'cs' }: { lang?: 'cs' | 'en' 
         <div>
           <h3 className="text-white font-semibold text-sm">Hiranyagarbha</h3>
           <p className="text-gray-400 text-xs">
-            {lang === 'cs' ? 'ZION AI Native · zion-expert model' : 'ZION AI Native · zion-expert model'}
+            {HiranyagarbhaChatCopy.zionAiNativeZionExpertModel[lang === 'cs' ? 'cs' : 'en']}
           </p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
@@ -101,9 +106,7 @@ export default function HiranyagarbhaChat({ lang = 'cs' }: { lang?: 'cs' | 'en' 
           <div className="text-center py-8">
             <Sparkles className="w-10 h-10 text-zion-gold mx-auto mb-4 opacity-60" />
             <p className="text-gray-400 text-sm mb-6">
-              {lang === 'cs'
-                ? 'Zeptejte se Hiranyagarbhy na cokoliv o ZIONu'
-                : 'Ask Hiranyagarbha anything about ZION'}
+              {HiranyagarbhaChatCopy.askHiranyagarbhaAnythingAboutZ[lang === 'cs' ? 'cs' : 'en']}
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {SUGGESTED_QUESTIONS.map((q, i) => (
@@ -163,7 +166,7 @@ export default function HiranyagarbhaChat({ lang = 'cs' }: { lang?: 'cs' | 'en' 
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={lang === 'cs' ? 'Napište zprávu...' : 'Type a message...'}
+            placeholder={HiranyagarbhaChatCopy.typeAMessage[lang === 'cs' ? 'cs' : 'en']}
             disabled={loading}
             maxLength={2000}
             className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-zion-cyan/50 disabled:opacity-50 transition-colors"

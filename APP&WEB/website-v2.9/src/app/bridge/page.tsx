@@ -33,6 +33,78 @@ import {
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
 
+const BridgeCopy = {
+  howLongDoesItTake: { cs: `Jak dlouho to trvá?`, en: `How long does it take?` },
+  zionWzion10Min60L1BlockFinalit: { cs: `ZION → wZION: ~10 min (60 L1 bloků finalita + mint). wZION → ZION: ~5 min (64 EVM bloků + L1 unlock).`, en: `ZION → wZION: ~10 min (60 L1 block finality + mint). wZION → ZION: ~5 min (64 EVM blocks + L1 unlock).` },
+  isThereAFee: { cs: `Jaký je poplatek?`, en: `Is there a fee?` },
+  noProtocolFeeYouOnlyPayL1TxFee: { cs: `Žádný protokolový poplatek. Platíš jen L1 TX fee (ZION) a EVM gas (ETH na Base).`, en: `No protocol fee. You only pay L1 TX fee (ZION) and EVM gas (ETH on Base).` },
+  whatIsTheMinimumAmount: { cs: `Jaký je minimální obnos?`, en: `What is the minimum amount?` },
+  minimum100ZionPerTransaction: { cs: `Minimum 100 ZION na transakci.`, en: `Minimum 100 ZION per transaction.` },
+  isItSafe: { cs: `Je to bezpečné?`, en: `Is it safe?` },
+  yes55GuardianValidators60Block: { cs: `Ano — 5/5 Guardian validátory, 60-block L1 finalita, replay-attack prevence. Bridge kontrakt je na Base Mainnet.`, en: `Yes — 5/5 Guardian validators, 60-block L1 finality, replay-attack prevention. Bridge contract is on Base Mainnet.` },
+  bridgeL1Base: { cs: `Bridge · L1 ↔ Base`, en: `Bridge · L1 ↔ Base` },
+  zionL1BaseL2: { cs: `ZION L1 ↔ Base L2`, en: `ZION L1 ↔ Base L2` },
+  zionBridge: { cs: `Most ZION`, en: `ZION Bridge` },
+  lockZionOnL1ReceiveWzionOnBase: { cs: `Zamkni ZION na L1 → přijmi wZION na Base. Nebo spal wZION → přijmi ZION na L1. 1:1 peg, žádné poplatky.`, en: `Lock ZION on L1 → receive wZION on Base. Or burn wZION → receive ZION on L1. 1:1 peg, no fees.` },
+  relayOnline: { cs: `Relay Online`, en: `Relay Online` },
+  relayOffline: { cs: `Relay Offline`, en: `Relay Offline` },
+  checking: { cs: `Kontroluji…`, en: `Checking…` },
+  quickOverview: { cs: `Rychlý přehled`, en: `Quick Overview` },
+  locked: { cs: `Zamčeno`, en: `Locked` },
+  unlocks: { cs: `Unlocky`, en: `Unlocks` },
+  validators: { cs: `Validátoři`, en: `Validators` },
+  relay: { cs: `Relay`, en: `Relay` },
+  online: { cs: `Online`, en: `Online` },
+  offline: { cs: `Offline`, en: `Offline` },
+  telemetry: { cs: `Telemetrie`, en: `Telemetry` },
+  bridgeStatistics: { cs: `Statistiky bridge`, en: `Bridge Statistics` },
+  bridgeMetricsAggregatedFromThe: { cs: `Metriky mostu agregované z relayer API v reálném čase.`, en: `Bridge metrics aggregated from the relayer API in real time.` },
+  mints: { cs: `Minty`, en: `Mints` },
+  l1Base: { cs: `L1 → Base`, en: `L1 → Base` },
+  totalWzionMintedOnBaseAfterLoc: { cs: `Celkový počet wZION mintnutých na Base po zamčení ZION na L1.`, en: `Total wZION minted on Base after locking ZION on L1.` },
+  burns: { cs: `Burny`, en: `Burns` },
+  baseL1: { cs: `Base → L1`, en: `Base → L1` },
+  totalWzionBurnEventsDetectedOn: { cs: `Celkový počet burn eventů wZION detekovaných na EVM.`, en: `Total wZION burn events detected on EVM.` },
+  confirmed: { cs: `potvrzeno`, en: `confirmed` },
+  totalL1UnlocksConfirmedByTheRe: { cs: `Celkový počet L1 unlocků potvrzených relayem.`, en: `Total L1 unlocks confirmed by the relay.` },
+  errors: { cs: `Chyby`, en: `Errors` },
+  total: { cs: `celkem`, en: `total` },
+  totalErrorsLoggedByTheRelayer: { cs: `Celkový počet chyb zaznamenaných relayerem.`, en: `Total errors logged by the relayer.` },
+  locks: { cs: `Locky`, en: `Locks` },
+  finalized: { cs: `finalizováno`, en: `finalized` },
+  l1LocksThatReached60BlockFinal: { cs: `L1 locky dosažené 60-block finality.`, en: `L1 locks that reached 60-block finality.` },
+  guardianRelay: { cs: `Guardian relay`, en: `Guardian relay` },
+  guardianValidators55Quorum: { cs: `Guardian validátoři — quorum 5/5.`, en: `Guardian validators — 5/5 quorum.` },
+  uptime: { cs: `Uptime`, en: `Uptime` },
+  relayRunning: { cs: `relay běží`, en: `relay running` },
+  efficiency: { cs: `Efektivita`, en: `Efficiency` },
+  finalizedDetected: { cs: `finalizováno / detekováno`, en: `finalized / detected` },
+  ratioOfFinalizedLocksToDetecte: { cs: `Poměr finalizovaných locků k detekovaným lockům.`, en: `Ratio of finalized locks to detected locks.` },
+  bridgeOperations: { cs: `Bridge operace`, en: `Bridge operations` },
+  lockZionOnL1: { cs: `Zamkni ZION na L1`, en: `Lock ZION on L1` },
+  step1SendZionToBridgeAddress: { cs: `Krok 1 — Pošli ZION na bridge adresu`, en: `Step 1 — Send ZION to bridge address` },
+  copied: { cs: `Zkopírováno`, en: `Copied` },
+  step2IncludeMemoWithYourEvmAdd: { cs: `Krok 2 — Přidej memo s tvou EVM adresou`, en: `Step 2 — Include memo with your EVM address` },
+  wait10MinRelayDetectsLockWaits: { cs: `Počkej ~10 min. Relay detekuje lock, počká na finalitu a mintne wZION na tvou Base adresu.`, en: `Wait ~10 min. Relay detects lock, waits for finality, mints wZION to your Base address.` },
+  minimum100ZionMemoFormat: { cs: `Minimum: 100 ZION · Formát memo: `, en: `Minimum: 100 ZION · Memo format: ` },
+  howItWorks: { cs: `Jak to funguje`, en: `How it works` },
+  sendZionToBridgeEscrowAddressW: { cs: `Pošli ZION na bridge escrow adresu s memo`, en: `Send ZION to bridge escrow address with memo` },
+  relayVerifies60BlockFinalityGu: { cs: `Relay ověří 60-block finalitu + Guardian threshold`, en: `Relay verifies 60-block finality + Guardian threshold` },
+  zionbridgeMintsWzionToYourBase: { cs: `ZIONBridge mintne wZION na tvou Base adresu`, en: `ZIONBridge mints wZION to your Base address` },
+  contracts: { cs: `Kontrakty`, en: `Contracts` },
+  pipelineTracker: { cs: `Pipeline tracker`, en: `Pipeline tracker` },
+  burnWzionOnBaseBurnAmountL1rec: { cs: `Spal wZION na Base (burn(amount, l1Recipient))`, en: `Burn wZION on Base (burn(amount, l1Recipient))` },
+  evmWatcherWaits64BlockFinality: { cs: `EVM watcher čeká 64-block finalitu`, en: `EVM watcher waits 64-block finality` },
+  relaySubmitsL1UnlockZionArrive: { cs: `Relay odešle L1 unlock, ZION dorazí na tvou adresu`, en: `Relay submits L1 unlock, ZION arrives to your address` },
+  details: { cs: `Detail`, en: `Details` },
+  time5Min64EvmBlocksL1Unlock: { cs: `Čas: ~5 min (64 EVM bloků + L1 unlock)`, en: `Time: ~5 min (64 EVM blocks + L1 unlock)` },
+  feeOnlyEvmGasEthOnBase: { cs: `Poplatek: jen EVM gas (ETH na Base)`, en: `Fee: only EVM gas (ETH on Base)` },
+  minimum100Wzion: { cs: `Minimum: 100 wZION`, en: `Minimum: 100 wZION` },
+  l1AddressZion1OrZo: { cs: `L1 adresa: zion1... nebo Zo...`, en: `L1 address: zion1... or Zo...` },
+  support: { cs: `Podpora`, en: `Support` },
+  faq: { cs: `Časté dotazy`, en: `FAQ` },
+};
+
 const BridgeBurnWidget = dynamic(() => import('@/components/BridgeBurnWidget'), {
   ssr: false,
   loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" />,
@@ -99,26 +171,20 @@ function StatCard({
 
 const getFaqs = (cs: boolean) => [
   {
-    q: cs ? 'Jak dlouho to trvá?' : 'How long does it take?',
-    a: cs
-      ? 'ZION → wZION: ~10 min (60 L1 bloků finalita + mint). wZION → ZION: ~5 min (64 EVM bloků + L1 unlock).'
-      : 'ZION → wZION: ~10 min (60 L1 block finality + mint). wZION → ZION: ~5 min (64 EVM blocks + L1 unlock).',
+    q: BridgeCopy.howLongDoesItTake[cs ? 'cs' : 'en'],
+    a: BridgeCopy.zionWzion10Min60L1BlockFinalit[cs ? 'cs' : 'en'],
   },
   {
-    q: cs ? 'Jaký je poplatek?' : 'Is there a fee?',
-    a: cs
-      ? 'Žádný protokolový poplatek. Platíš jen L1 TX fee (ZION) a EVM gas (ETH na Base).'
-      : 'No protocol fee. You only pay L1 TX fee (ZION) and EVM gas (ETH on Base).',
+    q: BridgeCopy.isThereAFee[cs ? 'cs' : 'en'],
+    a: BridgeCopy.noProtocolFeeYouOnlyPayL1TxFee[cs ? 'cs' : 'en'],
   },
   {
-    q: cs ? 'Jaký je minimální obnos?' : 'What is the minimum amount?',
-    a: cs ? 'Minimum 100 ZION na transakci.' : 'Minimum 100 ZION per transaction.',
+    q: BridgeCopy.whatIsTheMinimumAmount[cs ? 'cs' : 'en'],
+    a: BridgeCopy.minimum100ZionPerTransaction[cs ? 'cs' : 'en'],
   },
   {
-    q: cs ? 'Je to bezpečné?' : 'Is it safe?',
-    a: cs
-      ? 'Ano — 5/5 Guardian validátory, 60-block L1 finalita, replay-attack prevence. Bridge kontrakt je na Base Mainnet.'
-      : 'Yes — 5/5 Guardian validators, 60-block L1 finality, replay-attack prevention. Bridge contract is on Base Mainnet.',
+    q: BridgeCopy.isItSafe[cs ? 'cs' : 'en'],
+    a: BridgeCopy.yes55GuardianValidators60Block[cs ? 'cs' : 'en'],
   },
 ];
 
@@ -178,22 +244,20 @@ export default function BridgePage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
                 <ArrowLeftRight className="h-4 w-4 text-zion-cyan" />
-                {cs ? 'Bridge · L1 ↔ Base' : 'Bridge · L1 ↔ Base'}
+                {BridgeCopy.bridgeL1Base[cs ? 'cs' : 'en']}
               </div>
 
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                  {cs ? 'ZION L1 ↔ Base L2' : 'ZION L1 ↔ Base L2'}
+                  {BridgeCopy.zionL1BaseL2[cs ? 'cs' : 'en']}
                 </p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? 'Most ZION' : 'ZION Bridge'}
+                  {BridgeCopy.zionBridge[cs ? 'cs' : 'en']}
                 </h1>
               </div>
 
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? 'Zamkni ZION na L1 → přijmi wZION na Base. Nebo spal wZION → přijmi ZION na L1. 1:1 peg, žádné poplatky.'
-                  : 'Lock ZION on L1 → receive wZION on Base. Or burn wZION → receive ZION on L1. 1:1 peg, no fees.'}
+                {BridgeCopy.lockZionOnL1ReceiveWzionOnBase[cs ? 'cs' : 'en']}
               </p>
 
               {/* Status badges */}
@@ -212,13 +276,13 @@ export default function BridgePage() {
                       }`}
                     />
                     {status.online
-                      ? (cs ? 'Relay Online' : 'Relay Online')
-                      : (cs ? 'Relay Offline' : 'Relay Offline')}
+                      ? (BridgeCopy.relayOnline[cs ? 'cs' : 'en'])
+                      : (BridgeCopy.relayOffline[cs ? 'cs' : 'en'])}
                   </span>
                 ) : (
                   <span className="zion-badge">
                     <span className="h-2 w-2 rounded-full bg-gray-500 animate-pulse" />
-                    {cs ? 'Kontroluji…' : 'Checking…'}
+                    {BridgeCopy.checking[cs ? 'cs' : 'en']}
                   </span>
                 )}
 
@@ -259,7 +323,7 @@ export default function BridgePage() {
                 style={{ '--rc': '6, 182, 212' } as CSSProperties}
               >
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
-                  {cs ? 'Rychlý přehled' : 'Quick Overview'}
+                  {BridgeCopy.quickOverview[cs ? 'cs' : 'en']}
                 </p>
                 <div className="space-y-3">
                   <div
@@ -268,7 +332,7 @@ export default function BridgePage() {
                   >
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Wallet className="h-4 w-4 text-zion-gold" />
-                      {cs ? 'Zamčeno' : 'Locked'}
+                      {BridgeCopy.locked[cs ? 'cs' : 'en']}
                     </div>
                     <span className="font-mono text-white">{totalBridged.toLocaleString()} ZION</span>
                   </div>
@@ -278,7 +342,7 @@ export default function BridgePage() {
                   >
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Unlock className="h-4 w-4 text-zion-cyan" />
-                      {cs ? 'Unlocky' : 'Unlocks'}
+                      {BridgeCopy.unlocks[cs ? 'cs' : 'en']}
                     </div>
                     <span className="font-mono text-white">{(status?.l1_unlocks_confirmed ?? 0).toLocaleString()}</span>
                   </div>
@@ -288,7 +352,7 @@ export default function BridgePage() {
                   >
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                      {cs ? 'Validátoři' : 'Validators'}
+                      {BridgeCopy.validators[cs ? 'cs' : 'en']}
                     </div>
                     <span className="font-mono text-white">5/5</span>
                   </div>
@@ -298,10 +362,10 @@ export default function BridgePage() {
                   >
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Activity className={`h-4 w-4 ${status?.online ? 'text-emerald-400' : 'text-red-400'}`} />
-                      {cs ? 'Relay' : 'Relay'}
+                      {BridgeCopy.relay[cs ? 'cs' : 'en']}
                     </div>
                     <span className={`font-mono ${status?.online ? 'text-emerald-300' : 'text-red-300'}`}>
-                      {status?.online ? (cs ? 'Online' : 'Online') : (cs ? 'Offline' : 'Offline')}
+                      {status?.online ? (BridgeCopy.online[cs ? 'cs' : 'en']) : (BridgeCopy.offline[cs ? 'cs' : 'en'])}
                     </span>
                   </div>
                 </div>
@@ -319,15 +383,13 @@ export default function BridgePage() {
           transition={{ delay: 0.04 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{BridgeCopy.telemetry[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Statistiky bridge' : 'Bridge Statistics'}
+              {BridgeCopy.bridgeStatistics[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
-              {cs
-                ? 'Metriky mostu agregované z relayer API v reálném čase.'
-                : 'Bridge metrics aggregated from the relayer API in real time.'}
+              {BridgeCopy.bridgeMetricsAggregatedFromThe[cs ? 'cs' : 'en']}
             </p>
           </div>
 
@@ -352,79 +414,79 @@ export default function BridgePage() {
                 colorClass="text-emerald-400"
                 bgClass="bg-emerald-400/10"
                 rc="16, 185, 129"
-                label={cs ? 'Minty' : 'Mints'}
+                label={BridgeCopy.mints[cs ? 'cs' : 'en']}
                 value={(status?.evm_mints_confirmed ?? 0).toLocaleString()}
-                sub={cs ? 'L1 → Base' : 'L1 → Base'}
-                tip={cs ? 'Celkový počet wZION mintnutých na Base po zamčení ZION na L1.' : 'Total wZION minted on Base after locking ZION on L1.'}
+                sub={BridgeCopy.l1Base[cs ? 'cs' : 'en']}
+                tip={BridgeCopy.totalWzionMintedOnBaseAfterLoc[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<Flame className="h-5 w-5" />}
                 colorClass="text-orange-400"
                 bgClass="bg-orange-400/10"
                 rc="249, 115, 22"
-                label={cs ? 'Burny' : 'Burns'}
+                label={BridgeCopy.burns[cs ? 'cs' : 'en']}
                 value={(status?.evm_burns_detected ?? 0).toLocaleString()}
-                sub={cs ? 'Base → L1' : 'Base → L1'}
-                tip={cs ? 'Celkový počet burn eventů wZION detekovaných na EVM.' : 'Total wZION burn events detected on EVM.'}
+                sub={BridgeCopy.baseL1[cs ? 'cs' : 'en']}
+                tip={BridgeCopy.totalWzionBurnEventsDetectedOn[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<Unlock className="h-5 w-5" />}
                 colorClass="text-zion-gold"
                 bgClass="bg-zion-gold/10"
                 rc="255, 215, 0"
-                label={cs ? 'Unlocky' : 'Unlocks'}
+                label={BridgeCopy.unlocks[cs ? 'cs' : 'en']}
                 value={(status?.l1_unlocks_confirmed ?? 0).toLocaleString()}
-                sub={cs ? 'potvrzeno' : 'confirmed'}
-                tip={cs ? 'Celkový počet L1 unlocků potvrzených relayem.' : 'Total L1 unlocks confirmed by the relay.'}
+                sub={BridgeCopy.confirmed[cs ? 'cs' : 'en']}
+                tip={BridgeCopy.totalL1UnlocksConfirmedByTheRe[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<Activity className="h-5 w-5" />}
                 colorClass="text-blue-400"
                 bgClass="bg-blue-400/10"
                 rc="59, 130, 246"
-                label={cs ? 'Chyby' : 'Errors'}
+                label={BridgeCopy.errors[cs ? 'cs' : 'en']}
                 value={(status?.errors_total ?? 0).toLocaleString()}
-                sub={cs ? 'celkem' : 'total'}
-                tip={cs ? 'Celkový počet chyb zaznamenaných relayerem.' : 'Total errors logged by the relayer.'}
+                sub={BridgeCopy.total[cs ? 'cs' : 'en']}
+                tip={BridgeCopy.totalErrorsLoggedByTheRelayer[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<Lock className="h-5 w-5" />}
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
                 rc="6, 182, 212"
-                label={cs ? 'Locky' : 'Locks'}
+                label={BridgeCopy.locks[cs ? 'cs' : 'en']}
                 value={(status?.l1_locks_finalized ?? 0).toLocaleString()}
-                sub={cs ? 'finalizováno' : 'finalized'}
-                tip={cs ? 'L1 locky dosažené 60-block finality.' : 'L1 locks that reached 60-block finality.'}
+                sub={BridgeCopy.finalized[cs ? 'cs' : 'en']}
+                tip={BridgeCopy.l1LocksThatReached60BlockFinal[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<ShieldCheck className="h-5 w-5" />}
                 colorClass="text-purple-400"
                 bgClass="bg-purple-400/10"
                 rc="147, 51, 234"
-                label={cs ? 'Validátoři' : 'Validators'}
+                label={BridgeCopy.validators[cs ? 'cs' : 'en']}
                 value="5/5"
-                sub={cs ? 'Guardian relay' : 'Guardian relay'}
-                tip={cs ? 'Guardian validátoři — quorum 5/5.' : 'Guardian validators — 5/5 quorum.'}
+                sub={BridgeCopy.guardianRelay[cs ? 'cs' : 'en']}
+                tip={BridgeCopy.guardianValidators55Quorum[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<Clock className="h-5 w-5" />}
                 colorClass="text-teal-400"
                 bgClass="bg-teal-400/10"
                 rc="20, 184, 166"
-                label={cs ? 'Uptime' : 'Uptime'}
+                label={BridgeCopy.uptime[cs ? 'cs' : 'en']}
                 value={status ? formatUptime(status.uptime_seconds) : '—'}
-                sub={cs ? 'relay běží' : 'relay running'}
+                sub={BridgeCopy.relayRunning[cs ? 'cs' : 'en']}
               />
               <StatCard
                 icon={<TrendingUp className="h-5 w-5" />}
                 colorClass="text-amber-400"
                 bgClass="bg-amber-400/10"
                 rc="251, 191, 36"
-                label={cs ? 'Efektivita' : 'Efficiency'}
+                label={BridgeCopy.efficiency[cs ? 'cs' : 'en']}
                 value={`${status ? bridgeEfficiency(status) : 0}%`}
-                sub={cs ? 'finalizováno / detekováno' : 'finalized / detected'}
-                tip={cs ? 'Poměr finalizovaných locků k detekovaným lockům.' : 'Ratio of finalized locks to detected locks.'}
+                sub={BridgeCopy.finalizedDetected[cs ? 'cs' : 'en']}
+                tip={BridgeCopy.ratioOfFinalizedLocksToDetecte[cs ? 'cs' : 'en']}
               />
             </div>
           )}
@@ -442,7 +504,7 @@ export default function BridgePage() {
         >
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
-              {cs ? 'Bridge operace' : 'Bridge operations'}
+              {BridgeCopy.bridgeOperations[cs ? 'cs' : 'en']}
             </span>
             {TABS.map((t) => {
               const Icon = t.icon;
@@ -485,14 +547,14 @@ export default function BridgePage() {
                 <div className="flex items-center gap-2 mb-6">
                   <Lock className="h-5 w-5 text-emerald-400" />
                   <h2 className="text-lg font-bold text-white">
-                    {cs ? 'Zamkni ZION na L1' : 'Lock ZION on L1'}
+                    {BridgeCopy.lockZionOnL1[cs ? 'cs' : 'en']}
                   </h2>
                 </div>
 
                 {/* Step 1: Bridge address */}
                 <div className="mb-5">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 mb-2">
-                    {cs ? 'Krok 1 — Pošli ZION na bridge adresu' : 'Step 1 — Send ZION to bridge address'}
+                    {BridgeCopy.step1SendZionToBridgeAddress[cs ? 'cs' : 'en']}
                   </p>
                   <div
                     className="flex items-center gap-3 zion-rainbow-sub p-3"
@@ -509,14 +571,14 @@ export default function BridgePage() {
                     </button>
                   </div>
                   {copied === 'l1addr' && (
-                    <p className="text-xs text-emerald-400 mt-1">✓ {cs ? 'Zkopírováno' : 'Copied'}</p>
+                    <p className="text-xs text-emerald-400 mt-1">✓ {BridgeCopy.copied[cs ? 'cs' : 'en']}</p>
                   )}
                 </div>
 
                 {/* Step 2: Memo */}
                 <div className="mb-5">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 mb-2">
-                    {cs ? 'Krok 2 — Přidej memo s tvou EVM adresou' : 'Step 2 — Include memo with your EVM address'}
+                    {BridgeCopy.step2IncludeMemoWithYourEvmAdd[cs ? 'cs' : 'en']}
                   </p>
                   <div
                     className="zion-rainbow-sub p-1 mb-3"
@@ -543,7 +605,7 @@ export default function BridgePage() {
                     </button>
                   </div>
                   {copied === 'memo' && (
-                    <p className="text-xs text-emerald-400 mt-1">✓ {cs ? 'Zkopírováno' : 'Copied'}</p>
+                    <p className="text-xs text-emerald-400 mt-1">✓ {BridgeCopy.copied[cs ? 'cs' : 'en']}</p>
                   )}
                 </div>
 
@@ -554,14 +616,12 @@ export default function BridgePage() {
                 >
                   <Clock className="h-4 w-4 text-cyan-400 shrink-0 mt-0.5" />
                   <p className="text-sm text-gray-300">
-                    {cs
-                      ? 'Počkej ~10 min. Relay detekuje lock, počká na finalitu a mintne wZION na tvou Base adresu.'
-                      : 'Wait ~10 min. Relay detects lock, waits for finality, mints wZION to your Base address.'}
+                    {BridgeCopy.wait10MinRelayDetectsLockWaits[cs ? 'cs' : 'en']}
                   </p>
                 </div>
 
                 <p className="text-xs text-gray-500">
-                  {cs ? 'Minimum: 100 ZION · Formát memo: ' : 'Minimum: 100 ZION · Memo format: '}
+                  {BridgeCopy.minimum100ZionMemoFormat[cs ? 'cs' : 'en']}
                   <code className="text-gray-400">BRIDGE:base:0x...</code>
                 </p>
               </div>
@@ -573,31 +633,25 @@ export default function BridgePage() {
                   style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
                   <h3 className="text-sm font-semibold text-white mb-4">
-                    {cs ? 'Jak to funguje' : 'How it works'}
+                    {BridgeCopy.howItWorks[cs ? 'cs' : 'en']}
                   </h3>
                   <div className="space-y-3">
                     {[
                       {
                         icon: Lock,
-                        text: cs
-                          ? 'Pošli ZION na bridge escrow adresu s memo'
-                          : 'Send ZION to bridge escrow address with memo',
+                        text: BridgeCopy.sendZionToBridgeEscrowAddressW[cs ? 'cs' : 'en'],
                         rc: '16, 185, 129',
                         color: 'text-emerald-400',
                       },
                       {
                         icon: Shield,
-                        text: cs
-                          ? 'Relay ověří 60-block finalitu + Guardian threshold'
-                          : 'Relay verifies 60-block finality + Guardian threshold',
+                        text: BridgeCopy.relayVerifies60BlockFinalityGu[cs ? 'cs' : 'en'],
                         rc: '251, 191, 36',
                         color: 'text-zion-gold',
                       },
                       {
                         icon: ArrowRight,
-                        text: cs
-                          ? 'ZIONBridge mintne wZION na tvou Base adresu'
-                          : 'ZIONBridge mints wZION to your Base address',
+                        text: BridgeCopy.zionbridgeMintsWzionToYourBase[cs ? 'cs' : 'en'],
                         rc: '6, 182, 212',
                         color: 'text-zion-cyan',
                       },
@@ -620,7 +674,7 @@ export default function BridgePage() {
                   style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
                   <h3 className="text-sm font-semibold text-white mb-3">
-                    {cs ? 'Kontrakty' : 'Contracts'}
+                    {BridgeCopy.contracts[cs ? 'cs' : 'en']}
                   </h3>
                   <div className="space-y-2 text-xs">
                     <div
@@ -655,7 +709,7 @@ export default function BridgePage() {
                       className="flex items-center justify-between zion-rainbow-sub p-3"
                       style={{ '--rc': '147, 51, 234' } as CSSProperties}
                     >
-                      <span className="text-gray-400">{cs ? 'Pipeline tracker' : 'Pipeline tracker'}</span>
+                      <span className="text-gray-400">{BridgeCopy.pipelineTracker[cs ? 'cs' : 'en']}</span>
                       <Link href="/explorer/bridge" className="inline-flex items-center gap-1 text-gray-400 hover:text-white">
                         <ArrowRight className="h-3 w-3" />
                       </Link>
@@ -685,31 +739,25 @@ export default function BridgePage() {
                   style={{ '--rc': '251, 191, 36' } as CSSProperties}
                 >
                   <h3 className="text-sm font-semibold text-white mb-4">
-                    {cs ? 'Jak to funguje' : 'How it works'}
+                    {BridgeCopy.howItWorks[cs ? 'cs' : 'en']}
                   </h3>
                   <div className="space-y-3">
                     {[
                       {
                         icon: Flame,
-                        text: cs
-                          ? 'Spal wZION na Base (burn(amount, l1Recipient))'
-                          : 'Burn wZION on Base (burn(amount, l1Recipient))',
+                        text: BridgeCopy.burnWzionOnBaseBurnAmountL1rec[cs ? 'cs' : 'en'],
                         rc: '251, 191, 36',
                         color: 'text-zion-gold',
                       },
                       {
                         icon: Shield,
-                        text: cs
-                          ? 'EVM watcher čeká 64-block finalitu'
-                          : 'EVM watcher waits 64-block finality',
+                        text: BridgeCopy.evmWatcherWaits64BlockFinality[cs ? 'cs' : 'en'],
                         rc: '251, 191, 36',
                         color: 'text-zion-gold',
                       },
                       {
                         icon: ArrowRight,
-                        text: cs
-                          ? 'Relay odešle L1 unlock, ZION dorazí na tvou adresu'
-                          : 'Relay submits L1 unlock, ZION arrives to your address',
+                        text: BridgeCopy.relaySubmitsL1UnlockZionArrive[cs ? 'cs' : 'en'],
                         rc: '6, 182, 212',
                         color: 'text-zion-cyan',
                       },
@@ -731,12 +779,12 @@ export default function BridgePage() {
                   className="zion-rainbow-card p-6"
                   style={{ '--rc': '6, 182, 212' } as CSSProperties}
                 >
-                  <h3 className="text-sm font-semibold text-white mb-3">{cs ? 'Detail' : 'Details'}</h3>
+                  <h3 className="text-sm font-semibold text-white mb-3">{BridgeCopy.details[cs ? 'cs' : 'en']}</h3>
                   <div className="space-y-2 text-xs text-gray-300">
-                    <p>{cs ? 'Čas: ~5 min (64 EVM bloků + L1 unlock)' : 'Time: ~5 min (64 EVM blocks + L1 unlock)'}</p>
-                    <p>{cs ? 'Poplatek: jen EVM gas (ETH na Base)' : 'Fee: only EVM gas (ETH on Base)'}</p>
-                    <p>{cs ? 'Minimum: 100 wZION' : 'Minimum: 100 wZION'}</p>
-                    <p>{cs ? 'L1 adresa: zion1... nebo Zo...' : 'L1 address: zion1... or Zo...'}</p>
+                    <p>{BridgeCopy.time5Min64EvmBlocksL1Unlock[cs ? 'cs' : 'en']}</p>
+                    <p>{BridgeCopy.feeOnlyEvmGasEthOnBase[cs ? 'cs' : 'en']}</p>
+                    <p>{BridgeCopy.minimum100Wzion[cs ? 'cs' : 'en']}</p>
+                    <p>{BridgeCopy.l1AddressZion1OrZo[cs ? 'cs' : 'en']}</p>
                   </div>
                 </div>
               </div>
@@ -755,10 +803,10 @@ export default function BridgePage() {
           className="zion-section"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Podpora' : 'Support'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{BridgeCopy.support[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <HelpCircle className="h-7 w-7 text-blue-400" />
-              {cs ? 'Časté dotazy' : 'FAQ'}
+              {BridgeCopy.faq[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="space-y-3 max-w-3xl">

@@ -14,29 +14,67 @@ import {
   Sparkles,
 } from 'lucide-react';
 
+const ApiReferenceCopy = {
+  explorerTelemetry: { cs: `Explorer / telemetry`, en: `Explorer / telemetry` },
+  startWithNetworkAndExplorerLiv: { cs: `Začni na /network a /explorer — z živých endpointů uvidíš výšku chainu, peers a hashrate.`, en: `Start with /network and /explorer — live endpoints expose chain height, peers, and hashrate.` },
+  poolApi: { cs: `Pool API`, en: `Pool API` },
+  poolStatsHashrateSessionsPplns: { cs: `Pool statistiky (hashrate, sessions, PPLNS) jsou dostupné přes /api/pool/stats.`, en: `Pool stats (hashrate, sessions, PPLNS) are available via /api/pool/stats.` },
+  health: { cs: `Health`, en: `Health` },
+  oneEndpointForDependencyChecks: { cs: `Jeden endpoint pro rychlé ověření závislostí webu: /api/health.`, en: `One endpoint for dependency checks: /api/health.` },
+  quickstart: { cs: `Quickstart`, en: `Quickstart` },
+  basicPanelsToGetStartedWithThe: { cs: `Základní panely pro rychlé zapojení do runtime surface.`, en: `Basic panels to get started with the runtime surface.` },
+  open: { cs: `Otevřít`, en: `Open` },
+  coreEnvironment: { cs: `Core prostředí`, en: `Core environment` },
+  controlledRehearsalLine: { cs: `kontrolovaná mainnet rehearsal linka`, en: `controlled rehearsal line` },
+  apiPort: { cs: `API port`, en: `API Port` },
+  jsonRpcRest: { cs: `JSON-RPC + REST`, en: `JSON-RPC + REST` },
+  poolPort: { cs: `Pool port`, en: `Pool Port` },
+  statsEndpoint: { cs: `stats endpoint`, en: `stats endpoint` },
+  blockchainCore: { cs: `Blockchainové jádro`, en: `Blockchain Core` },
+  statsBlocksAndRpcForExplorersW: { cs: `Statistiky, bloky a RPC pro explorery, peněženky a validátory.`, en: `Stats, blocks, and RPC for explorers, wallets, and validators.` },
+  networkHeightSupplyFeeWindowAn: { cs: `Snapshot výšky sítě, zásoby, fee okna a hashratu.`, en: `Network height, supply, fee window, and hash rate snapshot.` },
+  paginatedBlockFeedWithMinerRew: { cs: `Stránkovaný tok bloků s metadaty o těžaři, odměně a obtížnosti.`, en: `Paginated block feed with miner, reward, and difficulty metadata.` },
+  recentTransactionsForExplorers: { cs: `Poslední transakce pro explorery a monitoring pipeline.`, en: `Recent transactions for explorers and monitoring pipelines.` },
+  miningPool: { cs: `Těžba a pool`, en: `Mining & Pool` },
+  stratumTelemetryWorkerBalanceQ: { cs: `Stratum telemetrie, dotazy na worker balance a historie výplat.`, en: `Stratum telemetry, worker balance queries, and payout history.` },
+  poolHealthSnapshotMinersHashra: { cs: `Snapshot zdraví poolu: mineři, hashrate a obtížnost.`, en: `Pool health snapshot: miners, hashrate, and difficulty.` },
+  minerWorkerStatsBalancesAndPay: { cs: `Statistiky workeru, balance a stav výplat pro peněženku.`, en: `Miner worker stats, balances, and payout state for a wallet.` },
+  observabilityAi: { cs: `Observabilita a AI`, en: `Observability & AI` },
+  healthAiSelectorRecommendation: { cs: `Health, doporučení AI selektoru a alert hooky.`, en: `Health, AI selector recommendations, and alert hooks.` },
+  fullServiceHeartbeatWithVersio: { cs: `Kompletní heartbeat služeb s verzi, block lagem a dependency kontrolami.`, en: `Full service heartbeat with version, block lag, and dependency checks.` },
+  networkStatusIncludingConnecti: { cs: `Stav sítě včetně konektivity, uzlů a core služeb.`, en: `Network status including connectivity, nodes, and core services.` },
+  bestPoolSelectionBasedOnCurren: { cs: `Výběr nejlepšího poolu podle aktuálních podmínek (read-only).`, en: `Best pool selection based on current conditions (read-only).` },
+  listingsCoingeckoCmc: { cs: `Listingy (CoinGecko / CMC)`, en: `Listings (CoinGecko / CMC)` },
+  machineReadableProjectSupplyAn: { cs: `Strojově čitelné feedy projektu, zásoby a on-chain metadat pro listing review.`, en: `Machine-readable project, supply, and on-chain metadata feeds for listing review.` },
+  coingeckoReadyPayloadLinksSupp: { cs: `CoinGecko-ready payload: odkazy, zásoba, tokenomika a živá chain telemetrie.`, en: `CoinGecko-ready payload: links, supply, tokenomics, and live chain telemetry.` },
+  coinmarketcapStylePayloadWithP: { cs: `Payload ve stylu CoinMarketCap s URL projektu, supply metrikami a on-chain snapshotem.`, en: `CoinMarketCap-style payload with project URLs, supply metrics, and on-chain snapshot.` },
+  apiCommandDeck: { cs: `API velitelský panel`, en: `API Command Deck` },
+  oneSurfaceForWalletsExplorersA: { cs: `Jedno místo pro peněženky, explorery, AI orchestrátory a monitoring stacky. Stabilní schémata, velkorysé rate limity a hotové šablony pro cURL / TypeScript.`, en: `One surface for wallets, explorers, AI orchestrators, and monitoring stacks. Stable schemas, generous rate limits, and ready-to-use cURL / TypeScript templates.` },
+  liveHealth: { cs: `Živé health`, en: `Live health` },
+  fullDocs: { cs: `Plná dokumentace`, en: `Full docs` },
+  readyToWireTheMesh: { cs: `Připraven zapojit mesh?`, en: `Ready to wire the mesh?` },
+  deployTheSdksFromGithubWatchLi: { cs: `Nasaďte SDK z GitHubu, sledujte živé health a ozvěte se týmu v docs, pokud potřebujete další scopes.`, en: `Deploy the SDKs from GitHub, watch live health, and ping the team in docs if you need additional scopes.` },
+  openGithubRepo: { cs: `Otevřít GitHub repozitář`, en: `Open GitHub repo` },
+  exploreDocumentation: { cs: `Projít dokumentaci`, en: `Explore documentation` },
+};
+
 function ApiQuickstartPanels({ cs }: { cs: boolean }) {
   const panels = [
     {
-      title: cs ? 'Explorer / telemetry' : 'Explorer / telemetry',
-      body: cs
-        ? 'Začni na /network a /explorer — z živých endpointů uvidíš výšku chainu, peers a hashrate.'
-        : 'Start with /network and /explorer — live endpoints expose chain height, peers, and hashrate.',
+      title: ApiReferenceCopy.explorerTelemetry[cs ? 'cs' : 'en'],
+      body: ApiReferenceCopy.startWithNetworkAndExplorerLiv[cs ? 'cs' : 'en'],
       href: '/network',
       icon: Activity,
     },
     {
-      title: cs ? 'Pool API' : 'Pool API',
-      body: cs
-        ? 'Pool statistiky (hashrate, sessions, PPLNS) jsou dostupné přes /api/pool/stats.'
-        : 'Pool stats (hashrate, sessions, PPLNS) are available via /api/pool/stats.',
+      title: ApiReferenceCopy.poolApi[cs ? 'cs' : 'en'],
+      body: ApiReferenceCopy.poolStatsHashrateSessionsPplns[cs ? 'cs' : 'en'],
       href: '/pool',
       icon: Server,
     },
     {
-      title: cs ? 'Health' : 'Health',
-      body: cs
-        ? 'Jeden endpoint pro rychlé ověření závislostí webu: /api/health.'
-        : 'One endpoint for dependency checks: /api/health.',
+      title: ApiReferenceCopy.health[cs ? 'cs' : 'en'],
+      body: ApiReferenceCopy.oneEndpointForDependencyChecks[cs ? 'cs' : 'en'],
       href: '/api/health',
       icon: Shield,
     },
@@ -45,12 +83,10 @@ function ApiQuickstartPanels({ cs }: { cs: boolean }) {
   return (
     <section className="zion-section">
       <h3 className="text-2xl font-semibold text-white">
-        {cs ? 'Quickstart' : 'Quickstart'}
+        {ApiReferenceCopy.quickstart[cs ? 'cs' : 'en']}
       </h3>
       <p className="mt-2 text-sm text-gray-400">
-        {cs
-          ? 'Základní panely pro rychlé zapojení do runtime surface.'
-          : 'Basic panels to get started with the runtime surface.'}
+        {ApiReferenceCopy.basicPanelsToGetStartedWithThe[cs ? 'cs' : 'en']}
       </p>
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {panels.map((p) => (
@@ -68,7 +104,7 @@ function ApiQuickstartPanels({ cs }: { cs: boolean }) {
               {p.body}
             </p>
             <div className="mt-4 inline-flex items-center gap-1.5 text-xs text-zion-gold/70 group-hover:text-zion-gold">
-              <span>{cs ? 'Otevřít' : 'Open'}</span>
+              <span>{ApiReferenceCopy.open[cs ? 'cs' : 'en']}</span>
               <ArrowUpRight className="h-3.5 w-3.5" />
             </div>
           </Link>
@@ -80,114 +116,114 @@ function ApiQuickstartPanels({ cs }: { cs: boolean }) {
 
 const getApiStats = (cs: boolean) => [
   {
-    label: cs ? 'Core prostředí' : 'Core environment',
+    label: ApiReferenceCopy.coreEnvironment[cs ? 'cs' : 'en'],
     value: 'V3 Test Mainnet',
-    detail: cs ? 'kontrolovaná mainnet rehearsal linka' : 'controlled rehearsal line',
+    detail: ApiReferenceCopy.controlledRehearsalLine[cs ? 'cs' : 'en'],
     icon: Shield,
   },
   {
-    label: cs ? 'API port' : 'API Port',
+    label: ApiReferenceCopy.apiPort[cs ? 'cs' : 'en'],
     value: '8443',
-    detail: cs ? 'JSON-RPC + REST' : 'JSON-RPC + REST',
+    detail: ApiReferenceCopy.jsonRpcRest[cs ? 'cs' : 'en'],
     icon: Activity,
   },
   {
-    label: cs ? 'Pool port' : 'Pool Port',
+    label: ApiReferenceCopy.poolPort[cs ? 'cs' : 'en'],
     value: '8080',
-    detail: cs ? 'stats endpoint' : 'stats endpoint',
+    detail: ApiReferenceCopy.statsEndpoint[cs ? 'cs' : 'en'],
     icon: Server,
   },
 ];
 
 const getEndpointGroups = (cs: boolean) => [
   {
-    title: cs ? 'Blockchainové jádro' : 'Blockchain Core',
-    description: cs ? 'Statistiky, bloky a RPC pro explorery, peněženky a validátory.' : 'Stats, blocks, and RPC for explorers, wallets, and validators.',
+    title: ApiReferenceCopy.blockchainCore[cs ? 'cs' : 'en'],
+    description: ApiReferenceCopy.statsBlocksAndRpcForExplorersW[cs ? 'cs' : 'en'],
     icon: Database,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/api/blockchain/stats',
-        description: cs ? 'Snapshot výšky sítě, zásoby, fee okna a hashratu.' : 'Network height, supply, fee window, and hash rate snapshot.',
+        description: ApiReferenceCopy.networkHeightSupplyFeeWindowAn[cs ? 'cs' : 'en'],
         latency: '45 ms avg'
       },
       {
         method: 'GET',
         path: '/api/blockchain/blocks?limit=50',
-        description: cs ? 'Stránkovaný tok bloků s metadaty o těžaři, odměně a obtížnosti.' : 'Paginated block feed with miner, reward, and difficulty metadata.',
+        description: ApiReferenceCopy.paginatedBlockFeedWithMinerRew[cs ? 'cs' : 'en'],
         latency: '65 ms avg'
       },
       {
         method: 'GET',
         path: '/api/blockchain/transactions?limit=50',
-        description: cs ? 'Poslední transakce pro explorery a monitoring pipeline.' : 'Recent transactions for explorers and monitoring pipelines.',
+        description: ApiReferenceCopy.recentTransactionsForExplorers[cs ? 'cs' : 'en'],
         latency: '70 ms avg'
       }
     ]
   },
   {
-    title: cs ? 'Těžba a pool' : 'Mining & Pool',
-    description: cs ? 'Stratum telemetrie, dotazy na worker balance a historie výplat.' : 'Stratum telemetry, worker balance queries, and payout history.',
+    title: ApiReferenceCopy.miningPool[cs ? 'cs' : 'en'],
+    description: ApiReferenceCopy.stratumTelemetryWorkerBalanceQ[cs ? 'cs' : 'en'],
     icon: PlugZap,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/pool/stats',
-        description: cs ? 'Snapshot zdraví poolu: mineři, hashrate a obtížnost.' : 'Pool health snapshot: miners, hashrate, and difficulty.',
+        description: ApiReferenceCopy.poolHealthSnapshotMinersHashra[cs ? 'cs' : 'en'],
         latency: '58 ms avg'
       },
       {
         method: 'GET',
         path: '/pool/miner/{wallet}',
-        description: cs ? 'Statistiky workeru, balance a stav výplat pro peněženku.' : 'Miner worker stats, balances, and payout state for a wallet.',
+        description: ApiReferenceCopy.minerWorkerStatsBalancesAndPay[cs ? 'cs' : 'en'],
         latency: '62 ms avg'
       }
     ]
   },
   {
-    title: cs ? 'Observabilita a AI' : 'Observability & AI',
-    description: cs ? 'Health, doporučení AI selektoru a alert hooky.' : 'Health, AI selector recommendations, and alert hooks.',
+    title: ApiReferenceCopy.observabilityAi[cs ? 'cs' : 'en'],
+    description: ApiReferenceCopy.healthAiSelectorRecommendation[cs ? 'cs' : 'en'],
     icon: SatelliteDish,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/health',
-        description: cs ? 'Kompletní heartbeat služeb s verzi, block lagem a dependency kontrolami.' : 'Full service heartbeat with version, block lag, and dependency checks.',
+        description: ApiReferenceCopy.fullServiceHeartbeatWithVersio[cs ? 'cs' : 'en'],
         latency: '30 ms avg'
       },
       {
         method: 'GET',
         path: '/api/network',
-        description: cs ? 'Stav sítě včetně konektivity, uzlů a core služeb.' : 'Network status including connectivity, nodes, and core services.',
+        description: ApiReferenceCopy.networkStatusIncludingConnecti[cs ? 'cs' : 'en'],
         latency: '48 ms avg'
       },
       {
         method: 'GET',
         path: '/api/network/best-pool',
-        description: cs ? 'Výběr nejlepšího poolu podle aktuálních podmínek (read-only).' : 'Best pool selection based on current conditions (read-only).',
+        description: ApiReferenceCopy.bestPoolSelectionBasedOnCurren[cs ? 'cs' : 'en'],
         latency: '90 ms avg'
       }
     ]
   },
   {
-    title: cs ? 'Listingy (CoinGecko / CMC)' : 'Listings (CoinGecko / CMC)',
-    description: cs ? 'Strojově čitelné feedy projektu, zásoby a on-chain metadat pro listing review.' : 'Machine-readable project, supply, and on-chain metadata feeds for listing review.',
+    title: ApiReferenceCopy.listingsCoingeckoCmc[cs ? 'cs' : 'en'],
+    description: ApiReferenceCopy.machineReadableProjectSupplyAn[cs ? 'cs' : 'en'],
     icon: Sparkles,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/api/listing/coingecko',
-        description: cs ? 'CoinGecko-ready payload: odkazy, zásoba, tokenomika a živá chain telemetrie.' : 'CoinGecko-ready payload: links, supply, tokenomics, and live chain telemetry.',
+        description: ApiReferenceCopy.coingeckoReadyPayloadLinksSupp[cs ? 'cs' : 'en'],
         latency: '55 ms avg'
       },
       {
         method: 'GET',
         path: '/api/listing/coinmarketcap',
-        description: cs ? 'Payload ve stylu CoinMarketCap s URL projektu, supply metrikami a on-chain snapshotem.' : 'CoinMarketCap-style payload with project URLs, supply metrics, and on-chain snapshot.',
+        description: ApiReferenceCopy.coinmarketcapStylePayloadWithP[cs ? 'cs' : 'en'],
         latency: '55 ms avg'
       }
     ]
@@ -207,9 +243,9 @@ export default function ApiReferencePage() {
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">
             <Sparkles className="h-4 w-4" /> API v2.9 · Orion Mesh
           </div>
-          <h1 className="mt-4 text-4xl md:text-5xl font-bold text-gradient">{cs ? 'API velitelský panel' : 'API Command Deck'}</h1>
+          <h1 className="mt-4 text-4xl md:text-5xl font-bold text-gradient">{ApiReferenceCopy.apiCommandDeck[cs ? 'cs' : 'en']}</h1>
           <p className="mt-4 text-gray-300 max-w-3xl">
-            {cs ? 'Jedno místo pro peněženky, explorery, AI orchestrátory a monitoring stacky. Stabilní schémata, velkorysé rate limity a hotové šablony pro cURL / TypeScript.' : 'One surface for wallets, explorers, AI orchestrators, and monitoring stacks. Stable schemas, generous rate limits, and ready-to-use cURL / TypeScript templates.'}
+            {ApiReferenceCopy.oneSurfaceForWalletsExplorersA[cs ? 'cs' : 'en']}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
               <a
@@ -218,13 +254,13 @@ export default function ApiReferencePage() {
               rel="noreferrer"
               className="zion-button-primary"
             >
-              <Server className="h-4 w-4 text-zion-gold" /> {cs ? 'Živé health' : 'Live health'}
+              <Server className="h-4 w-4 text-zion-gold" /> {ApiReferenceCopy.liveHealth[cs ? 'cs' : 'en']}
             </a>
             <Link
               href="/docs"
               className="zion-button-secondary"
             >
-              <ArrowUpRight className="h-4 w-4 text-zion-gold" /> {cs ? 'Plná dokumentace' : 'Full docs'}
+              <ArrowUpRight className="h-4 w-4 text-zion-gold" /> {ApiReferenceCopy.fullDocs[cs ? 'cs' : 'en']}
             </Link>
           </div>
         </section>
@@ -285,9 +321,9 @@ export default function ApiReferencePage() {
         <ApiQuickstartPanels cs={cs} />
 
         <section className="zion-cta-banner">
-          <h3 className="text-3xl font-semibold text-white">{cs ? 'Připraven zapojit mesh?' : 'Ready to wire the mesh?'}</h3>
+          <h3 className="text-3xl font-semibold text-white">{ApiReferenceCopy.readyToWireTheMesh[cs ? 'cs' : 'en']}</h3>
           <p className="mt-3 text-gray-50">
-            {cs ? 'Nasaďte SDK z GitHubu, sledujte živé health a ozvěte se týmu v docs, pokud potřebujete další scopes.' : 'Deploy the SDKs from GitHub, watch live health, and ping the team in docs if you need additional scopes.'}
+            {ApiReferenceCopy.deployTheSdksFromGithubWatchLi[cs ? 'cs' : 'en']}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
             <a
@@ -296,13 +332,13 @@ export default function ApiReferencePage() {
               rel="noreferrer"
               className="zion-button-secondary"
             >
-              {cs ? 'Otevřít GitHub repozitář' : 'Open GitHub repo'}
+              {ApiReferenceCopy.openGithubRepo[cs ? 'cs' : 'en']}
             </a>
             <Link
               href="/docs"
               className="zion-button-primary"
             >
-              {cs ? 'Projít dokumentaci' : 'Explore documentation'}
+              {ApiReferenceCopy.exploreDocumentation[cs ? 'cs' : 'en']}
             </Link>
           </div>
         </section>

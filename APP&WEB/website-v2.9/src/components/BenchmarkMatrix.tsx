@@ -4,6 +4,23 @@ import { Cpu, Zap, DollarSign, BarChart3, ArrowRight, ExternalLink } from 'lucid
 import { useLang } from '@/contexts/LanguageContext';
 import Link from 'next/link';
 
+const BenchmarkMatrixCopy = {
+  k8GpusFromGtx1060ToH100SxmPureB: { cs: `8 GPU od GTX 1060 po H100 SXM — čistý benchmark bez pool overhead. Algoritmus: 256 KiB scratchpad, 4 průchody, 256 náhodných čtení, INT8 NPU Mix, 8-round Cosmic Fusion.`, en: `8 GPUs from GTX 1060 to H100 SXM — pure benchmark without pool overhead. Algorithm: 256 KiB scratchpad, 4 passes, 256 random reads, INT8 NPU Mix, 8-round Cosmic Fusion.` },
+  resultsSortedByPerformance: { cs: `Výsledky — seřazeno dle výkonu`, en: `Results — sorted by performance` },
+  architecture: { cs: `Architektura`, en: `Architecture` },
+  optTpb: { cs: `Opt. TPB`, en: `Opt TPB` },
+  optWc: { cs: `Opt. wc`, en: `Opt wc` },
+  rtx2060sBenchmarkedWithPoolOve: { cs: `¹ RTX 2060S: benchmark s pool overhead — dolní mez. ² RX 5600 XT: OpenCL, ne CUDA. Vast.ai ceny z dubna 2026.`, en: `¹ RTX 2060S: benchmarked with pool overhead — lower bound. ² RX 5600 XT: OpenCL, not CUDA. Vast.ai prices from April 2026.` },
+  keyFindings: { cs: `Klíčové závěry`, en: `Key Findings` },
+  recommendedTuningDefaults: { cs: `Doporučené nastavení`, en: `Recommended Tuning Defaults` },
+  gpuClass: { cs: `Třída GPU`, en: `GPU Class` },
+  notes: { cs: `Poznámka`, en: `Notes` },
+  bandwidthEfficiency: { cs: `Efektivita šířky pásma`, en: `Bandwidth Efficiency` },
+  lowerGpusHaveBetterKhSPerGbSEk: { cs: `Nižší GPU mají lepší KH/s na GB/s — Ekam Deeksha je omezen latencí paměti, ne propustností.`, en: `Lower GPUs have better KH/s per GB/s — Ekam Deeksha is memory-latency-bound, not bandwidth-bound.` },
+  benchmarksRunWithEkamBenchMode: { cs: `Benchmarky provedeny v režimu --ekam-bench (10s měření, bez pool overhead). Miner commit: 9e307c4d`, en: `Benchmarks run with --ekam-bench mode (10-second measurement, no pool overhead). Miner commit: 9e307c4d` },
+  miningGuide: { cs: `Průvodce těžbou`, en: `Mining Guide` },
+};
+
 /* ─── Data ─────────────────────────────────────────────────────────────────── */
 
 interface GpuRow {
@@ -102,9 +119,7 @@ export default function BenchmarkMatrix() {
             <span className="text-gradient">GPU Benchmarks</span>
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            {cs
-              ? '8 GPU od GTX 1060 po H100 SXM — čistý benchmark bez pool overhead. Algoritmus: 256 KiB scratchpad, 4 průchody, 256 náhodných čtení, INT8 NPU Mix, 8-round Cosmic Fusion.'
-              : '8 GPUs from GTX 1060 to H100 SXM — pure benchmark without pool overhead. Algorithm: 256 KiB scratchpad, 4 passes, 256 random reads, INT8 NPU Mix, 8-round Cosmic Fusion.'}
+            {BenchmarkMatrixCopy.k8GpusFromGtx1060ToH100SxmPureB[cs ? 'cs' : 'en']}
           </p>
         </div>
 
@@ -113,7 +128,7 @@ export default function BenchmarkMatrix() {
           <div className="p-4 border-b border-white/10">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Cpu className="w-5 h-5 text-zion-gold" />
-              {cs ? 'Výsledky — seřazeno dle výkonu' : 'Results — sorted by performance'}
+              {BenchmarkMatrixCopy.resultsSortedByPerformance[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="overflow-x-auto">
@@ -121,12 +136,12 @@ export default function BenchmarkMatrix() {
               <thead>
                 <tr className="border-b border-white/10 text-left text-white/50 text-xs uppercase tracking-wider">
                   <th className="px-4 py-3">GPU</th>
-                  <th className="px-4 py-3">{cs ? 'Architektura' : 'Architecture'}</th>
+                  <th className="px-4 py-3">{BenchmarkMatrixCopy.architecture[cs ? 'cs' : 'en']}</th>
                   <th className="px-4 py-3">VRAM</th>
                   <th className="px-4 py-3">BW (GB/s)</th>
                   <th className="px-4 py-3 text-right font-bold text-zion-gold/80">KH/s</th>
-                  <th className="px-4 py-3">{cs ? 'Opt. TPB' : 'Opt TPB'}</th>
-                  <th className="px-4 py-3">{cs ? 'Opt. wc' : 'Opt wc'}</th>
+                  <th className="px-4 py-3">{BenchmarkMatrixCopy.optTpb[cs ? 'cs' : 'en']}</th>
+                  <th className="px-4 py-3">{BenchmarkMatrixCopy.optWc[cs ? 'cs' : 'en']}</th>
                   <th className="px-4 py-3">$/hr</th>
                   <th className="px-4 py-3 text-right">KH/$</th>
                 </tr>
@@ -154,16 +169,14 @@ export default function BenchmarkMatrix() {
             </table>
           </div>
           <div className="px-4 py-3 border-t border-white/5 text-xs text-white/30">
-            {cs
-              ? '¹ RTX 2060S: benchmark s pool overhead — dolní mez. ² RX 5600 XT: OpenCL, ne CUDA. Vast.ai ceny z dubna 2026.'
-              : '¹ RTX 2060S: benchmarked with pool overhead — lower bound. ² RX 5600 XT: OpenCL, not CUDA. Vast.ai prices from April 2026.'}
+            {BenchmarkMatrixCopy.rtx2060sBenchmarkedWithPoolOve[cs ? 'cs' : 'en']}
           </div>
         </div>
 
         {/* ── Key findings cards ─────────────────────────────── */}
         <div className="mb-16">
           <h2 className="text-2xl font-bold text-white mb-8">
-            {cs ? 'Klíčové závěry' : 'Key Findings'}
+            {BenchmarkMatrixCopy.keyFindings[cs ? 'cs' : 'en']}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {FINDINGS.map((f, i) => {
@@ -191,17 +204,17 @@ export default function BenchmarkMatrix() {
           <div className="p-4 border-b border-white/10">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Zap className="w-5 h-5 text-zion-gold" />
-              {cs ? 'Doporučené nastavení' : 'Recommended Tuning Defaults'}
+              {BenchmarkMatrixCopy.recommendedTuningDefaults[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-white/50 text-xs uppercase tracking-wider">
-                  <th className="px-4 py-3">{cs ? 'Třída GPU' : 'GPU Class'}</th>
+                  <th className="px-4 py-3">{BenchmarkMatrixCopy.gpuClass[cs ? 'cs' : 'en']}</th>
                   <th className="px-4 py-3">ZION_CUDA_TPB</th>
                   <th className="px-4 py-3">ZION_GPU_WORK_SIZE</th>
-                  <th className="px-4 py-3">{cs ? 'Poznámka' : 'Notes'}</th>
+                  <th className="px-4 py-3">{BenchmarkMatrixCopy.notes[cs ? 'cs' : 'en']}</th>
                 </tr>
               </thead>
               <tbody>
@@ -222,7 +235,7 @@ export default function BenchmarkMatrix() {
         <div className="zion-rainbow-card p-6 mb-16" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-zion-gold" />
-            {cs ? 'Efektivita šířky pásma' : 'Bandwidth Efficiency'}
+            {BenchmarkMatrixCopy.bandwidthEfficiency[cs ? 'cs' : 'en']}
           </h2>
           <div className="space-y-3">
             {[
@@ -251,24 +264,20 @@ export default function BenchmarkMatrix() {
             })}
           </div>
           <p className="text-xs text-white/30 mt-4">
-            {cs
-              ? 'Nižší GPU mají lepší KH/s na GB/s — Ekam Deeksha je omezen latencí paměti, ne propustností.'
-              : 'Lower GPUs have better KH/s per GB/s — Ekam Deeksha is memory-latency-bound, not bandwidth-bound.'}
+            {BenchmarkMatrixCopy.lowerGpusHaveBetterKhSPerGbSEk[cs ? 'cs' : 'en']}
           </p>
         </div>
 
         {/* ── CTA ────────────────────────────────────────────── */}
         <div className="text-center">
           <p className="text-white/40 text-sm mb-4">
-            {cs
-              ? 'Benchmarky provedeny v režimu --ekam-bench (10s měření, bez pool overhead). Miner commit: 9e307c4d'
-              : 'Benchmarks run with --ekam-bench mode (10-second measurement, no pool overhead). Miner commit: 9e307c4d'}
+            {BenchmarkMatrixCopy.benchmarksRunWithEkamBenchMode[cs ? 'cs' : 'en']}
           </p>
           <Link
             href="/mining"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-zion-gold/30 bg-zion-gold/5 text-zion-gold hover:bg-zion-gold/10 transition-colors"
           >
-            {cs ? 'Průvodce těžbou' : 'Mining Guide'}
+            {BenchmarkMatrixCopy.miningGuide[cs ? 'cs' : 'en']}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

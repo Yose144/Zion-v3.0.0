@@ -4,6 +4,12 @@ import { motion } from 'framer-motion';
 import { Rocket, Download, ExternalLink } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const ReleaseBannerCopy = {
+  zionV306BetaTrinityIsLive: { cs: `ZION v3.0.6-beta Trinity je live`, en: `ZION v3.0.6-beta Trinity is live` },
+  publicMinerReleaseForLinuxX866: { cs: `Veřejný miner release pro Linux x86_64/ARM64, macOS Apple Silicon/Intel a Windows. Mine ZION na vlastním zařízení.`, en: `Public miner release for Linux x86_64/ARM64, macOS Apple Silicon/Intel, and Windows. Mine ZION on your own hardware.` },
+  downloadFromGithub: { cs: `Stáhnout z GitHub`, en: `Download from GitHub` },
+};
+
 export default function ReleaseBanner() {
   const { lang } = useLang();
   const cs = lang === 'cs';
@@ -24,12 +30,10 @@ export default function ReleaseBanner() {
             </div>
             <div className="min-w-0">
               <p className="text-sm sm:text-base font-semibold text-emerald-100 leading-snug">
-                {cs ? 'ZION v3.0.6-beta Trinity je live' : 'ZION v3.0.6-beta Trinity is live'}
+                {ReleaseBannerCopy.zionV306BetaTrinityIsLive[cs ? 'cs' : 'en']}
               </p>
               <p className="text-xs sm:text-sm text-emerald-200/80 leading-relaxed mt-0.5">
-                {cs
-                  ? 'Veřejný miner release pro Linux x86_64/ARM64, macOS Apple Silicon/Intel a Windows. Mine ZION na vlastním zařízení.'
-                  : 'Public miner release for Linux x86_64/ARM64, macOS Apple Silicon/Intel, and Windows. Mine ZION on your own hardware.'}
+                {ReleaseBannerCopy.publicMinerReleaseForLinuxX866[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -40,7 +44,7 @@ export default function ReleaseBanner() {
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-4 py-2 text-sm font-semibold text-emerald-100 transition-colors shrink-0"
           >
             <Download className="h-4 w-4" />
-            {cs ? 'Stáhnout z GitHub' : 'Download from GitHub'}
+            {ReleaseBannerCopy.downloadFromGithub[cs ? 'cs' : 'en']}
             <ExternalLink className="h-3 w-3 opacity-60" />
           </a>
         </div>

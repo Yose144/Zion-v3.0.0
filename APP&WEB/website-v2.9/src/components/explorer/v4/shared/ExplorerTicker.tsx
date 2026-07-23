@@ -7,6 +7,16 @@ import { useBlockchainStats } from "@/hooks/useBlockchainStats";
 import { formatHashrate, formatNumber, formatAge } from "@/lib/explorer/format";
 import LiveBadge from "./LiveBadge";
 
+const ExplorerTickerCopy = {
+  height: { cs: `Výška`, en: `Height` },
+  hashrate: { cs: `Hashrate`, en: `Hashrate` },
+  difficulty: { cs: `Obtížnost`, en: `Difficulty` },
+  mempool: { cs: `Mempool`, en: `Mempool` },
+  peers: { cs: `Peeri`, en: `Peers` },
+  blockTime: { cs: `Čas bloku`, en: `Block time` },
+  miners: { cs: `Mineři`, en: `Miners` },
+};
+
 /**
  * Slim live stats strip for the explorer.
  * Shows: height, hashrate, difficulty, mempool, peers, block time.
@@ -20,43 +30,43 @@ export default function ExplorerTicker() {
   const items = [
     {
       icon: Box,
-      label: cs ? "Výška" : "Height",
+      label: ExplorerTickerCopy.height[cs ? 'cs' : 'en'],
       value: stats ? formatNumber(stats.block_height) : "—",
       accent: "text-zion-gold",
     },
     {
       icon: Zap,
-      label: cs ? "Hashrate" : "Hashrate",
+      label: ExplorerTickerCopy.hashrate[cs ? 'cs' : 'en'],
       value: stats ? formatHashrate(stats.network_hashrate || stats.pool_hashrate || 0) : "—",
       accent: "text-zion-cyan",
     },
     {
       icon: TrendingUp,
-      label: cs ? "Obtížnost" : "Difficulty",
+      label: ExplorerTickerCopy.difficulty[cs ? 'cs' : 'en'],
       value: stats ? formatNumber(stats.difficulty) : "—",
       accent: "text-zion-purple",
     },
     {
       icon: Hash,
-      label: cs ? "Mempool" : "Mempool",
+      label: ExplorerTickerCopy.mempool[cs ? 'cs' : 'en'],
       value: stats ? String(stats.tx_pool_size || 0) : "—",
       accent: "text-amber-400",
     },
     {
       icon: Globe,
-      label: cs ? "Peeri" : "Peers",
+      label: ExplorerTickerCopy.peers[cs ? 'cs' : 'en'],
       value: stats ? String(stats.total_connections || 0) : "—",
       accent: "text-green-400",
     },
     {
       icon: Cpu,
-      label: cs ? "Čas bloku" : "Block time",
+      label: ExplorerTickerCopy.blockTime[cs ? 'cs' : 'en'],
       value: stats ? `${(stats.avg_block_time || 60).toFixed(1)}s` : "—",
       accent: "text-zion-blue",
     },
     {
       icon: Users,
-      label: cs ? "Mineři" : "Miners",
+      label: ExplorerTickerCopy.miners[cs ? 'cs' : 'en'],
       value: stats ? String(stats.active_miners || 0) : "—",
       accent: "text-rose-400",
     },

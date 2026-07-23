@@ -4,6 +4,42 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 
+const AdminAlgoManagerCopy = {
+  miningRouting: { cs: `Mining routing`, en: `Mining routing` },
+  algorithmManager: { cs: `Správce algoritmů`, en: `Algorithm manager` },
+  algorithmSwitchingAndAutoManua: { cs: `Přepínání algoritmů a režim auto/manual. Aktuálně běží na mock datech, dokud se nepřipojí pool API.`, en: `Algorithm switching and auto/manual mode. Currently running on mock data until pool API is connected.` },
+  autoSwitch: { cs: `Auto-přepínání`, en: `Auto-switch` },
+  back: { cs: `Zpět`, en: `Back` },
+  mode: { cs: `Režim`, en: `Mode` },
+  profitabilityBased: { cs: `založeno na ziskovosti`, en: `profitability based` },
+  operatorControlled: { cs: `řízeno operátorem`, en: `operator controlled` },
+  active: { cs: `Aktivní`, en: `Active` },
+  profitDay: { cs: `Zisk/den`, en: `Profit/day` },
+  perGpuBaseline: { cs: `na GPU baseline`, en: `per GPU baseline` },
+  nextCheck: { cs: `Další kontrola`, en: `Next check` },
+  schedulerTick: { cs: `scheduler tick`, en: `scheduler tick` },
+  connectedMiners: { cs: `Připojení těžaři`, en: `Connected miners` },
+  totalHashrate: { cs: `Celkový hashrate`, en: `Total hashrate` },
+  profitability: { cs: `Ziskovost`, en: `Profitability` },
+  liveTable: { cs: `Live tabulka`, en: `Live table` },
+  mockDataRtx4090Baseline: { cs: `Mock data (RTX 4090 baseline)`, en: `Mock data (RTX 4090 baseline)` },
+  poolConfiguration: { cs: `Pool konfigurace →`, en: `Pool configuration →` },
+  algorithm: { cs: `Algoritmus`, en: `Algorithm` },
+  status: { cs: `Status`, en: `Status` },
+  action: { cs: `Akce`, en: `Action` },
+  active_2: { cs: `AKTIVNÍ`, en: `ACTIVE` },
+  standby: { cs: `Pohotovost`, en: `Standby` },
+  switch: { cs: `Přepnout`, en: `Switch` },
+  tuning: { cs: `Ladění`, en: `Tuning` },
+  settings: { cs: `Nastavení`, en: `Settings` },
+  switchThreshold: { cs: `Práh přepnutí`, en: `Switch threshold` },
+  minProfitDiffForSwitch: { cs: `min rozdíl zisku pro přepnutí`, en: `min profit diff for switch` },
+  checkInterval: { cs: `Interval kontroly`, en: `Check interval` },
+  recalcPeriod: { cs: `perioda přepočtu`, en: `recalc period` },
+  minTimeOnAlgo: { cs: `Min čas na algoritmu`, en: `Min time on algo` },
+  antiFlapGuard: { cs: `anti-flap ochrana`, en: `anti-flap guard` },
+};
+
 interface AlgoStatus {
   algo: string;
   coin: string;
@@ -103,18 +139,16 @@ export default function AlgoManagerPage() {
         <div className="zion-rainbow-card p-5 sm:p-8 md:p-10" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{lang === 'cs' ? 'Mining routing' : 'Mining routing'}</p>
-              <h1 className="text-5xl md:text-6xl font-semibold text-gradient">{lang === 'cs' ? 'Správce algoritmů' : 'Algorithm manager'}</h1>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{AdminAlgoManagerCopy.miningRouting[lang === 'cs' ? 'cs' : 'en']}</p>
+              <h1 className="text-5xl md:text-6xl font-semibold text-gradient">{AdminAlgoManagerCopy.algorithmManager[lang === 'cs' ? 'cs' : 'en']}</h1>
               <p className="mt-4 text-lg text-gray-300 max-w-2xl">
-                {lang === 'cs'
-                  ? 'Přepínání algoritmů a režim auto/manual. Aktuálně běží na mock datech, dokud se nepřipojí pool API.'
-                  : 'Algorithm switching and auto/manual mode. Currently running on mock data until pool API is connected.'}
+                {AdminAlgoManagerCopy.algorithmSwitchingAndAutoManua[lang === 'cs' ? 'cs' : 'en']}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               <div className="zion-rainbow-sub px-4 py-3 text-sm text-gray-300" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-                {lang === 'cs' ? 'Auto-přepínání' : 'Auto-switch'}
+                {AdminAlgoManagerCopy.autoSwitch[lang === 'cs' ? 'cs' : 'en']}
               </div>
               <button
                 onClick={handleModeToggle}
@@ -126,40 +160,40 @@ export default function AlgoManagerPage() {
                 href="/admin"
                 className="zion-button-secondary"
               >
-                {lang === 'cs' ? 'Zpět' : 'Back'}
+                {AdminAlgoManagerCopy.back[lang === 'cs' ? 'cs' : 'en']}
               </Link>
             </div>
           </div>
 
           <div className="mt-10 grid gap-4 md:grid-cols-4">
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Režim' : 'Mode'}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.mode[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{status.mode.toUpperCase()}</p>
-              <p className="text-sm text-gray-300">{status.mode === 'auto' ? (lang === 'cs' ? 'založeno na ziskovosti' : 'profitability based') : (lang === 'cs' ? 'řízeno operátorem' : 'operator controlled')}</p>
+              <p className="text-sm text-gray-300">{status.mode === 'auto' ? (AdminAlgoManagerCopy.profitabilityBased[lang === 'cs' ? 'cs' : 'en']) : (AdminAlgoManagerCopy.operatorControlled[lang === 'cs' ? 'cs' : 'en'])}</p>
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Active'}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.active[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{status.activeAlgo.toUpperCase()}</p>
               <p className="text-sm text-gray-300">{status.activeCoin}</p>
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Zisk/den' : 'Profit/day'}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.profitDay[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">${status.profitPerDay.toFixed(2)}</p>
-              <p className="text-sm text-gray-300">{lang === 'cs' ? 'na GPU baseline' : 'per GPU baseline'}</p>
+              <p className="text-sm text-gray-300">{AdminAlgoManagerCopy.perGpuBaseline[lang === 'cs' ? 'cs' : 'en']}</p>
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Další kontrola' : 'Next check'}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.nextCheck[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{formatTime(countdown)}</p>
-              <p className="text-sm text-gray-300">{lang === 'cs' ? 'scheduler tick' : 'scheduler tick'}</p>
+              <p className="text-sm text-gray-300">{AdminAlgoManagerCopy.schedulerTick[lang === 'cs' ? 'cs' : 'en']}</p>
             </div>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-4 text-sm text-gray-300">
             <div className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              {lang === 'cs' ? 'Připojení těžaři' : 'Connected miners'}: <span className="text-white font-semibold">{status.connectedMiners}</span>
+              {AdminAlgoManagerCopy.connectedMiners[lang === 'cs' ? 'cs' : 'en']}: <span className="text-white font-semibold">{status.connectedMiners}</span>
             </div>
             <div className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              {lang === 'cs' ? 'Celkový hashrate' : 'Total hashrate'}: <span className="text-white font-semibold">{status.totalHashrate}</span>
+              {AdminAlgoManagerCopy.totalHashrate[lang === 'cs' ? 'cs' : 'en']}: <span className="text-white font-semibold">{status.totalHashrate}</span>
             </div>
           </div>
         </div>
@@ -167,15 +201,15 @@ export default function AlgoManagerPage() {
         <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Ziskovost' : 'Profitability'}</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">{lang === 'cs' ? 'Live tabulka' : 'Live table'}</h2>
-              <p className="mt-2 text-sm text-gray-300">{lang === 'cs' ? 'Mock data (RTX 4090 baseline)' : 'Mock data (RTX 4090 baseline)'}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.profitability[lang === 'cs' ? 'cs' : 'en']}</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">{AdminAlgoManagerCopy.liveTable[lang === 'cs' ? 'cs' : 'en']}</h2>
+              <p className="mt-2 text-sm text-gray-300">{AdminAlgoManagerCopy.mockDataRtx4090Baseline[lang === 'cs' ? 'cs' : 'en']}</p>
             </div>
             <Link
               href="/admin/pool-config"
               className="zion-button-secondary"
             >
-              {lang === 'cs' ? 'Pool konfigurace →' : 'Pool configuration →'}
+              {AdminAlgoManagerCopy.poolConfiguration[lang === 'cs' ? 'cs' : 'en']}
             </Link>
           </div>
 
@@ -183,12 +217,12 @@ export default function AlgoManagerPage() {
             <table className="w-full text-sm">
               <thead className="bg-white/5">
                 <tr className="text-left text-gray-300">
-                  <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">{lang === 'cs' ? 'Algoritmus' : 'Algorithm'}</th>
+                  <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">{AdminAlgoManagerCopy.algorithm[lang === 'cs' ? 'cs' : 'en']}</th>
                   <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">Coin</th>
                   <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">$/den</th>
                   <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">24h</th>
-                  <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">{lang === 'cs' ? 'Status' : 'Status'}</th>
-                  <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">{lang === 'cs' ? 'Akce' : 'Action'}</th>
+                  <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">{AdminAlgoManagerCopy.status[lang === 'cs' ? 'cs' : 'en']}</th>
+                  <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">{AdminAlgoManagerCopy.action[lang === 'cs' ? 'cs' : 'en']}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
@@ -211,9 +245,9 @@ export default function AlgoManagerPage() {
                       </td>
                       <td className="px-4 py-4">
                         {algo.isActive ? (
-                          <span className="zion-badge zion-badge-green">{lang === 'cs' ? 'AKTIVNÍ' : 'ACTIVE'}</span>
+                          <span className="zion-badge zion-badge-green">{AdminAlgoManagerCopy.active_2[lang === 'cs' ? 'cs' : 'en']}</span>
                         ) : (
-                          <span className="zion-badge">{lang === 'cs' ? 'Pohotovost' : 'Standby'}</span>
+                          <span className="zion-badge">{AdminAlgoManagerCopy.standby[lang === 'cs' ? 'cs' : 'en']}</span>
                         )}
                       </td>
                       <td className="px-4 py-4">
@@ -224,7 +258,7 @@ export default function AlgoManagerPage() {
                             onClick={() => handleSwitch(algo.algo)}
                             className="zion-button-secondary text-xs px-4 py-2"
                           >
-                            {lang === 'cs' ? 'Přepnout' : 'Switch'}
+                            {AdminAlgoManagerCopy.switch[lang === 'cs' ? 'cs' : 'en']}
                           </button>
                         )}
                       </td>
@@ -236,12 +270,12 @@ export default function AlgoManagerPage() {
         </div>
 
         <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Ladění' : 'Tuning'}</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{lang === 'cs' ? 'Nastavení' : 'Settings'}</h2>
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.tuning[lang === 'cs' ? 'cs' : 'en']}</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">{AdminAlgoManagerCopy.settings[lang === 'cs' ? 'cs' : 'en']}</h2>
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Práh přepnutí' : 'Switch threshold'}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.switchThreshold[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{settings.switchThreshold}%</p>
               <input
                 type="range"
@@ -251,11 +285,11 @@ export default function AlgoManagerPage() {
                 onChange={(e) => setSettings({ ...settings, switchThreshold: parseInt(e.target.value) })}
                 className="mt-4 w-full"
               />
-              <p className="mt-2 text-sm text-gray-300">{lang === 'cs' ? 'min rozdíl zisku pro přepnutí' : 'min profit diff for switch'}</p>
+              <p className="mt-2 text-sm text-gray-300">{AdminAlgoManagerCopy.minProfitDiffForSwitch[lang === 'cs' ? 'cs' : 'en']}</p>
             </div>
 
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Interval kontroly' : 'Check interval'}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.checkInterval[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{settings.checkInterval} min</p>
               <input
                 type="range"
@@ -265,11 +299,11 @@ export default function AlgoManagerPage() {
                 onChange={(e) => setSettings({ ...settings, checkInterval: parseInt(e.target.value) })}
                 className="mt-4 w-full"
               />
-              <p className="mt-2 text-sm text-gray-300">{lang === 'cs' ? 'perioda přepočtu' : 'recalc period'}</p>
+              <p className="mt-2 text-sm text-gray-300">{AdminAlgoManagerCopy.recalcPeriod[lang === 'cs' ? 'cs' : 'en']}</p>
             </div>
 
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{lang === 'cs' ? 'Min čas na algoritmu' : 'Min time on algo'}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.minTimeOnAlgo[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{settings.minTimeOnAlgo} min</p>
               <input
                 type="range"
@@ -279,7 +313,7 @@ export default function AlgoManagerPage() {
                 onChange={(e) => setSettings({ ...settings, minTimeOnAlgo: parseInt(e.target.value) })}
                 className="mt-4 w-full"
               />
-              <p className="mt-2 text-sm text-gray-300">{lang === 'cs' ? 'anti-flap ochrana' : 'anti-flap guard'}</p>
+              <p className="mt-2 text-sm text-gray-300">{AdminAlgoManagerCopy.antiFlapGuard[lang === 'cs' ? 'cs' : 'en']}</p>
             </div>
           </div>
         </div>

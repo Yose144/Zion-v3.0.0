@@ -4,6 +4,23 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Volume2, VolumeX, RefreshCw, Trophy } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const DogeVsZionGamesFlappyNodeCopy = {
+  back: { cs: `Zpět`, en: `Back` },
+  flappyNode: { cs: `Flappy Uzel`, en: `Flappy Node` },
+  keepTheNodeAliveDodgeTheFirewa: { cs: `Udrž uzel při životě. Uhýbej firewallům.`, en: `Keep the node alive. Dodge the firewalls.` },
+  clickSpacebarToFlap: { cs: `Klepni nebo stiskni MEZERNÍK pro flap`, en: `Click / Spacebar to flap` },
+  start: { cs: `Start`, en: `Start` },
+  best: { cs: `Nejlepší`, en: `Best` },
+  paused: { cs: `Pauza`, en: `PAUSED` },
+  resume: { cs: `Pokračovat`, en: `Resume` },
+  pressPToResume: { cs: `Stiskni P pro pokračování`, en: `Press P to resume` },
+  nodeDown: { cs: `Uzel padl`, en: `Node Down` },
+  score: { cs: `Skóre`, en: `Score` },
+  newHighScore: { cs: `Nové nejlepší skóre!`, en: `New High Score!` },
+  retry: { cs: `Zkusit znovu`, en: `Retry` },
+  tapClickOrPressSpaceToFlapPToP: { cs: `Klepni, klikni nebo stiskni MEZERNÍK pro flap. P pro pauzu. Projížděj mezerami ve firewallu pro skóre.`, en: `Tap, click, or press Space to flap. P to pause. Pass through the firewall gaps to score.` },
+};
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CANVAS_W = 400;
@@ -430,11 +447,11 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
           onClick={onBack}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-colors text-sm"
         >
-          <ArrowLeft size={16} /> {cs ? 'Zpět' : 'Back'}
+          <ArrowLeft size={16} /> {DogeVsZionGamesFlappyNodeCopy.back[cs ? 'cs' : 'en']}
         </button>
         <div className="text-center">
-          <h2 className="text-lg font-bold text-white leading-tight">{cs ? 'Flappy Uzel' : 'Flappy Node'}</h2>
-          <p className="text-[11px] text-slate-400">{cs ? 'Udrž uzel při životě. Uhýbej firewallům.' : 'Keep the node alive. Dodge the firewalls.'}</p>
+          <h2 className="text-lg font-bold text-white leading-tight">{DogeVsZionGamesFlappyNodeCopy.flappyNode[cs ? 'cs' : 'en']}</h2>
+          <p className="text-[11px] text-slate-400">{DogeVsZionGamesFlappyNodeCopy.keepTheNodeAliveDodgeTheFirewa[cs ? 'cs' : 'en']}</p>
         </div>
         <button
           onClick={toggleMute}
@@ -470,18 +487,18 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
         {uiStatus === 'ready' && (
           <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/55 rounded-xl backdrop-blur-sm">
             <div className="text-5xl mb-3">🛡️</div>
-            <h3 className="text-2xl font-bold text-white mb-1">{cs ? 'Flappy Uzel' : 'Flappy Node'}</h3>
+            <h3 className="text-2xl font-bold text-white mb-1">{DogeVsZionGamesFlappyNodeCopy.flappyNode[cs ? 'cs' : 'en']}</h3>
             <p className="text-sm text-slate-300 mb-5 text-center px-6">
-              {cs ? 'Klepni nebo stiskni MEZERNÍK pro flap' : 'Click / Spacebar to flap'}
+              {DogeVsZionGamesFlappyNodeCopy.clickSpacebarToFlap[cs ? 'cs' : 'en']}
             </p>
             <button
               onClick={doFlap}
               className="px-6 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white font-semibold transition-colors shadow-lg shadow-emerald-500/30"
             >
-              {cs ? 'Start' : 'Start'}
+              {DogeVsZionGamesFlappyNodeCopy.start[cs ? 'cs' : 'en']}
             </button>
             <div className="mt-4 flex items-center gap-1.5 text-xs text-amber-300">
-              <Trophy size={13} /> {cs ? 'Nejlepší' : 'Best'}: {highScore}
+              <Trophy size={13} /> {DogeVsZionGamesFlappyNodeCopy.best[cs ? 'cs' : 'en']}: {highScore}
             </div>
           </div>
         )}
@@ -489,42 +506,42 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
         {/* Pause screen */}
         {uiStatus === 'paused' && (
           <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/60 rounded-xl backdrop-blur-sm">
-            <h3 className="text-2xl font-bold text-white mb-4">{cs ? 'Pauza' : 'PAUSED'}</h3>
+            <h3 className="text-2xl font-bold text-white mb-4">{DogeVsZionGamesFlappyNodeCopy.paused[cs ? 'cs' : 'en']}</h3>
             <button
               onClick={doTogglePause}
               className="px-6 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white font-semibold transition-colors shadow-lg shadow-emerald-500/30"
             >
-              {cs ? 'Pokračovat' : 'Resume'}
+              {DogeVsZionGamesFlappyNodeCopy.resume[cs ? 'cs' : 'en']}
             </button>
-            <p className="mt-3 text-[11px] text-slate-400">{cs ? 'Stiskni P pro pokračování' : 'Press P to resume'}</p>
+            <p className="mt-3 text-[11px] text-slate-400">{DogeVsZionGamesFlappyNodeCopy.pressPToResume[cs ? 'cs' : 'en']}</p>
           </div>
         )}
 
         {/* Game over screen */}
         {uiStatus === 'over' && (
           <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/65 rounded-xl backdrop-blur-sm">
-            <h3 className="text-2xl font-bold text-red-400 mb-2">{cs ? 'Uzel padl' : 'Node Down'}</h3>
+            <h3 className="text-2xl font-bold text-red-400 mb-2">{DogeVsZionGamesFlappyNodeCopy.nodeDown[cs ? 'cs' : 'en']}</h3>
             <div className="flex items-center gap-4 mb-4">
               <div className="text-center">
-                <div className="text-[11px] text-slate-400 uppercase tracking-wide">{cs ? 'Skóre' : 'Score'}</div>
+                <div className="text-[11px] text-slate-400 uppercase tracking-wide">{DogeVsZionGamesFlappyNodeCopy.score[cs ? 'cs' : 'en']}</div>
                 <div className="text-3xl font-black text-white">{score}</div>
               </div>
               <div className="w-px h-10 bg-white/15" />
               <div className="text-center">
-                <div className="text-[11px] text-slate-400 uppercase tracking-wide">{cs ? 'Nejlepší' : 'Best'}</div>
+                <div className="text-[11px] text-slate-400 uppercase tracking-wide">{DogeVsZionGamesFlappyNodeCopy.best[cs ? 'cs' : 'en']}</div>
                 <div className="text-3xl font-black text-amber-300 flex items-center gap-1">
                   <Trophy size={20} /> {highScore}
                 </div>
               </div>
             </div>
             {score > 0 && score >= highScore && (
-              <div className="mb-3 text-xs text-emerald-400 font-semibold">{cs ? 'Nové nejlepší skóre!' : 'New High Score!'}</div>
+              <div className="mb-3 text-xs text-emerald-400 font-semibold">{DogeVsZionGamesFlappyNodeCopy.newHighScore[cs ? 'cs' : 'en']}</div>
             )}
             <button
               onClick={restart}
               className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white font-semibold transition-colors shadow-lg shadow-emerald-500/30"
             >
-              <RefreshCw size={16} /> {cs ? 'Zkusit znovu' : 'Retry'}
+              <RefreshCw size={16} /> {DogeVsZionGamesFlappyNodeCopy.retry[cs ? 'cs' : 'en']}
             </button>
           </div>
         )}
@@ -532,7 +549,7 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
 
       {/* Footer hint */}
       <p className="mt-3 text-[11px] text-slate-500 text-center">
-        {cs ? 'Klepni, klikni nebo stiskni MEZERNÍK pro flap. P pro pauzu. Projížděj mezerami ve firewallu pro skóre.' : 'Tap, click, or press Space to flap. P to pause. Pass through the firewall gaps to score.'}
+        {DogeVsZionGamesFlappyNodeCopy.tapClickOrPressSpaceToFlapPToP[cs ? 'cs' : 'en']}
       </p>
     </div>
   );

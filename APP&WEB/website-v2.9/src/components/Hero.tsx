@@ -22,6 +22,10 @@ import CosmicFlowers from './CosmicFlowers';
 import HolographicEarthLazy from './HolographicEarthLazy';
 import MainnetCountdown from './MainnetCountdown';
 
+const HeroCopy = {
+  mainnetBetaGithub: { cs: `Mainnet Beta · GitHub`, en: `Mainnet Beta · GitHub` },
+};
+
 export default function Hero() {
   const { lang } = useLang();
   const cs = lang === 'cs';
@@ -67,7 +71,7 @@ export default function Hero() {
             className="zion-kicker border-zion-gold/40 bg-zion-gold/10 text-zion-gold group"
           >
             <Github className="h-4 w-4 transition-transform group-hover:rotate-12" />
-            {cs ? 'Mainnet Beta · GitHub' : 'Mainnet Beta · GitHub'}
+            {HeroCopy.mainnetBetaGithub[cs ? 'cs' : 'en']}
             <ExternalLink className="h-3 w-3 opacity-50 transition-opacity group-hover:opacity-100" />
           </a>
         </motion.div>

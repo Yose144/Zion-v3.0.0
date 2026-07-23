@@ -13,6 +13,47 @@ import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION, SITE_VERSION } from '@/lib/si
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
 
+const MonitoringMonitoringClientCopy = {
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  monitoring: { cs: `Monitoring`, en: `Monitoring` },
+  networkMonitoring: { cs: `Sitovy monitoring`, en: `Network Monitoring` },
+  livePrometheusMetricsFromTheV3: { cs: `Zive Prometheus metriky z V3 core nodu, mining poolu, PPLNS enginu a serverove infrastruktury. 30+ metrik · automaticky refresh kazdych 15 sekund.`, en: `Live Prometheus metrics from the V3 core node, mining pool, PPLNS engine, and server infrastructure. 30+ metrics · Auto-refreshes every 15 seconds.` },
+  openGrafanaDashboard: { cs: `Otevrit Grafana dashboard`, en: `Open Grafana Dashboard` },
+  refresh: { cs: `Obnovit`, en: `Refresh` },
+  lastUpdate: { cs: `Posledni aktualizace`, en: `Last update` },
+  nextIn15s: { cs: `dalsi za 15 s`, en: `Next in 15s` },
+  coreNode: { cs: `Core node`, en: `Core Node` },
+  miningPool: { cs: `Mining pool`, en: `Mining Pool` },
+  block: { cs: `Blok`, en: `Block` },
+  chainHeightLast1Hour: { cs: `Vyska chainu — posledni 1 hodina`, en: `Chain Height — last 1 hour` },
+  activeMinersLast1Hour: { cs: `Aktivni mineri — posledni 1 hodina`, en: `Active Miners — last 1 hour` },
+  acceptedSharesLast1Hour: { cs: `Prijate shares — posledni 1 hodina`, en: `Accepted Shares — last 1 hour` },
+  poolGroups: { cs: `Skupiny poolu`, en: `Pool Groups` },
+  pplnsRewardEngine: { cs: `PPLNS vyplatni engine`, en: `PPLNS Reward Engine` },
+  cpuLoad: { cs: `CPU zatez`, en: `CPU Load` },
+  k1m5m15mAverage: { cs: `prumer 1m / 5m / 15m`, en: `1m / 5m / 15m average` },
+  memory: { cs: `Pamet`, en: `Memory` },
+  serverUptime: { cs: `Uptime serveru`, en: `Server Uptime` },
+  since: { cs: `od`, en: `since` },
+  monitoringStack: { cs: `Monitoring stack`, en: `Monitoring Stack` },
+  metricsCollectionAlerting: { cs: `Sber metrik a alerting`, en: `Metrics collection & alerting` },
+  k22PanelV3Dashboard: { cs: `22panelovy dashboard V3`, en: `22-panel V3 dashboard` },
+  hostCpuRamDiskNetwork: { cs: `Host CPU, RAM, disk, sit`, en: `Host CPU, RAM, disk, network` },
+  redisPersistenceMetrics: { cs: `Metriky persistence Redisu`, en: `Redis persistence metrics` },
+  alertRoutingNotifications: { cs: `Routing alertu a notifikace`, en: `Alert routing & notifications` },
+  coreMetrics: { cs: `Core metriky`, en: `Core Metrics` },
+  v3NodePrometheusEndpoint7Gauge: { cs: `Prometheus endpoint V3 nodu (7 gaugu)`, en: `V3 node Prometheus endpoint (7 gauges)` },
+  poolMetrics: { cs: `Pool metriky`, en: `Pool Metrics` },
+  miningPoolMetrics20CountersGau: { cs: `Mining pool /metrics (20+ counteru/gaugu)`, en: `Mining pool /metrics (20+ counters/gauges)` },
+  secureAllowlistedQueryProxy: { cs: `Bezpecny allowlist query proxy`, en: `Secure allowlisted query proxy` },
+  website: { cs: `Web`, en: `Website` },
+  k30LivePrometheusMetrics: { cs: `30+ zivych Prometheus metrik`, en: `30+ live Prometheus metrics` },
+  instantRangeQueries: { cs: `Instantni + range dotazy`, en: `Instant + Range queries` },
+  allowlistedProxyZionNode: { cs: `Allowlist proxy (zion_*, node_*)`, en: `Allowlisted proxy (zion_*, node_*)` },
+  k15sAutoRefresh: { cs: `Auto-refresh 15 s`, en: `15s auto-refresh` },
+  svgSparklines1hHistory: { cs: `SVG sparkliny (historie 1 h)`, en: `SVG sparklines (1h history)` },
+};
+
 /* ═══════════════════════ TYPES ═══════════════════════ */
 interface PrometheusResult {
   metric: Record<string, string>;
@@ -328,7 +369,7 @@ function GroupRow({ name, submits, accepted, color }: {
 export default function MonitoringClient() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = cs ? 'cs-CZ' : 'en-US';
+  const locale = MonitoringMonitoringClientCopy.enUs[cs ? 'cs' : 'en'];
   const [data, setData] = useState<MonitoringData | null>(null);
   const [sparklines, setSparklines] = useState<SparklineData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -381,15 +422,13 @@ export default function MonitoringClient() {
             <div className="space-y-4">
               <div className="zion-badge zion-badge-green">
                 <Monitor className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? 'Monitoring' : 'Monitoring'}
+                {SITE_RELEASE_LABEL} · {MonitoringMonitoringClientCopy.monitoring[cs ? 'cs' : 'en']}
               </div>
               <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-white via-emerald-200 to-emerald-400 bg-clip-text text-transparent">
-                {cs ? 'Sitovy monitoring' : 'Network Monitoring'}
+                {MonitoringMonitoringClientCopy.networkMonitoring[cs ? 'cs' : 'en']}
               </h1>
               <p className="text-gray-400 max-w-2xl text-sm md:text-base">
-                {cs
-                  ? 'Zive Prometheus metriky z V3 core nodu, mining poolu, PPLNS enginu a serverove infrastruktury. 30+ metrik · automaticky refresh kazdych 15 sekund.'
-                  : 'Live Prometheus metrics from the V3 core node, mining pool, PPLNS engine, and server infrastructure. 30+ metrics · Auto-refreshes every 15 seconds.'}
+                {MonitoringMonitoringClientCopy.livePrometheusMetricsFromTheV3[cs ? 'cs' : 'en']}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -400,7 +439,7 @@ export default function MonitoringClient() {
                 className="zion-button-primary"
               >
                 <BarChart3 className="h-4 w-4" />
-                {cs ? 'Otevrit Grafana dashboard' : 'Open Grafana Dashboard'}
+                {MonitoringMonitoringClientCopy.openGrafanaDashboard[cs ? 'cs' : 'en']}
                 <ExternalLink className="h-3.5 w-3.5 opacity-60" />
               </a>
               <button
@@ -409,13 +448,13 @@ export default function MonitoringClient() {
                 className="zion-button-secondary"
               >
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                {cs ? 'Obnovit' : 'Refresh'}
+                {MonitoringMonitoringClientCopy.refresh[cs ? 'cs' : 'en']}
               </button>
             </div>
           </div>
           {lastUpdate && (
             <div className="mt-4 text-xs text-gray-500">
-              {cs ? 'Posledni aktualizace' : 'Last update'}: {lastUpdate.toLocaleTimeString(locale)} · {cs ? 'dalsi za 15 s' : 'Next in 15s'}
+              {MonitoringMonitoringClientCopy.lastUpdate[cs ? 'cs' : 'en']}: {lastUpdate.toLocaleTimeString(locale)} · {MonitoringMonitoringClientCopy.nextIn15s[cs ? 'cs' : 'en']}
             </div>
           )}
         </motion.section>
@@ -429,18 +468,18 @@ export default function MonitoringClient() {
         >
           <div className="flex items-center gap-2 text-sm">
             <StatusDot up={data?.coreUp ?? null} />
-            <span className="text-gray-300">{cs ? 'Core node' : 'Core Node'}</span>
+            <span className="text-gray-300">{MonitoringMonitoringClientCopy.coreNode[cs ? 'cs' : 'en']}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <StatusDot up={data?.poolUp ?? null} />
-            <span className="text-gray-300">{cs ? 'Mining pool' : 'Mining Pool'}</span>
+            <span className="text-gray-300">{MonitoringMonitoringClientCopy.miningPool[cs ? 'cs' : 'en']}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <StatusDot up={data?.serverLoad1 != null ? 1 : null} />
             <span className="text-gray-300">Node Exporter</span>
           </div>
           <div className="ml-auto text-xs text-gray-500 font-mono">
-            {data?.chainHeight != null ? `${cs ? 'Blok' : 'Block'} #${data.chainHeight.toLocaleString(locale)}` : ''}
+            {data?.chainHeight != null ? `${MonitoringMonitoringClientCopy.block[cs ? 'cs' : 'en']} #${data.chainHeight.toLocaleString(locale)}` : ''}
           </div>
         </motion.section>
 
@@ -453,7 +492,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Server className="h-5 w-5 text-zion-cyan" />
-            {cs ? 'Core node' : 'Core Node'}
+            {MonitoringMonitoringClientCopy.coreNode[cs ? 'cs' : 'en']}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             <StatCard icon={Layers}   label="Chain Height"    value={fmt(data?.chainHeight)} accent="text-zion-gold" />
@@ -467,7 +506,7 @@ export default function MonitoringClient() {
           {/* Sparkline */}
           {sparklines && sparklines.chainHeight.length > 1 && (
             <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="mt-3 zion-rainbow-sub p-4">
-              <div className="text-xs text-gray-400 mb-2">{cs ? 'Vyska chainu — posledni 1 hodina' : 'Chain Height — last 1 hour'}</div>
+              <div className="text-xs text-gray-400 mb-2">{MonitoringMonitoringClientCopy.chainHeightLast1Hour[cs ? 'cs' : 'en']}</div>
               <Sparkline data={sparklines.chainHeight} color="#FFD700" height={40} />
             </div>
           )}
@@ -482,7 +521,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Cpu className="h-5 w-5 text-zion-gold" />
-            {cs ? 'Mining pool' : 'Mining Pool'}
+            {MonitoringMonitoringClientCopy.miningPool[cs ? 'cs' : 'en']}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             <StatCard icon={Users}    label="Active Miners"    value={fmt(data?.poolActiveSessions)} accent="text-zion-gold" rc="16, 185, 129" />
@@ -498,13 +537,13 @@ export default function MonitoringClient() {
             <div className="mt-3 grid md:grid-cols-2 gap-3">
               {sparklines.poolSessions.length > 1 && (
                 <div style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-4">
-                  <div className="text-xs text-gray-400 mb-2">{cs ? 'Aktivni mineri — posledni 1 hodina' : 'Active Miners — last 1 hour'}</div>
+                  <div className="text-xs text-gray-400 mb-2">{MonitoringMonitoringClientCopy.activeMinersLast1Hour[cs ? 'cs' : 'en']}</div>
                   <Sparkline data={sparklines.poolSessions} color="#FFD700" height={36} />
                 </div>
               )}
               {sparklines.shares.length > 1 && (
                 <div style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-4">
-                  <div className="text-xs text-gray-400 mb-2">{cs ? 'Prijate shares — posledni 1 hodina' : 'Accepted Shares — last 1 hour'}</div>
+                  <div className="text-xs text-gray-400 mb-2">{MonitoringMonitoringClientCopy.acceptedSharesLast1Hour[cs ? 'cs' : 'en']}</div>
                   <Sparkline data={sparklines.shares} color="#10b981" height={36} />
                 </div>
               )}
@@ -522,7 +561,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Network className="h-5 w-5 text-sky-400" />
-            {cs ? 'Skupiny poolu' : 'Pool Groups'}
+            {MonitoringMonitoringClientCopy.poolGroups[cs ? 'cs' : 'en']}
           </h2>
           <div className="grid md:grid-cols-2 gap-3">
             <GroupRow name="zion (Main)" submits={data?.groupZionSubmits} accepted={data?.groupZionAccepted} color="bg-emerald-400" />
@@ -542,7 +581,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <CircleDollarSign className="h-5 w-5 text-pink-400" />
-            {cs ? 'PPLNS vyplatni engine' : 'PPLNS Reward Engine'}
+            {MonitoringMonitoringClientCopy.pplnsRewardEngine[cs ? 'cs' : 'en']}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             <div style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
@@ -590,19 +629,19 @@ export default function MonitoringClient() {
             {/* CPU Load */}
             <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Flame className="h-3 w-3" /> {cs ? 'CPU zatez' : 'CPU Load'}
+                <Flame className="h-3 w-3" /> {MonitoringMonitoringClientCopy.cpuLoad[cs ? 'cs' : 'en']}
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-mono font-bold text-zion-cyan">{fmtDec(data?.serverLoad1)}</span>
                 <span className="text-xs text-gray-500">{fmtDec(data?.serverLoad5)} / {fmtDec(data?.serverLoad15)}</span>
               </div>
-              <div className="text-xs text-gray-500">{cs ? 'prumer 1m / 5m / 15m' : '1m / 5m / 15m average'}</div>
+              <div className="text-xs text-gray-500">{MonitoringMonitoringClientCopy.k1m5m15mAverage[cs ? 'cs' : 'en']}</div>
             </div>
 
             {/* Memory */}
             <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Cpu className="h-3 w-3" /> {cs ? 'Pamet' : 'Memory'}
+                <Cpu className="h-3 w-3" /> {MonitoringMonitoringClientCopy.memory[cs ? 'cs' : 'en']}
               </div>
               <div className="text-xl font-mono font-bold text-purple-400">
                 {memUsedPct != null ? `${memUsedPct.toFixed(1)}%` : '—'}
@@ -642,13 +681,13 @@ export default function MonitoringClient() {
             {/* Server Uptime */}
             <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Clock className="h-3 w-3" /> {cs ? 'Uptime serveru' : 'Server Uptime'}
+                <Clock className="h-3 w-3" /> {MonitoringMonitoringClientCopy.serverUptime[cs ? 'cs' : 'en']}
               </div>
               <div className="text-xl font-mono font-bold text-emerald-400">
                 {fmtUptime(serverUptime)}
               </div>
               <div className="text-xs text-gray-500">
-                {cs ? 'od' : 'since'} {data?.bootTime ? new Date(data.bootTime * 1000).toLocaleDateString(locale) : '—'}
+                {MonitoringMonitoringClientCopy.since[cs ? 'cs' : 'en']} {data?.bootTime ? new Date(data.bootTime * 1000).toLocaleDateString(locale) : '—'}
               </div>
             </div>
           </div>
@@ -664,19 +703,19 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5 text-emerald-400" />
-            {cs ? 'Monitoring stack' : 'Monitoring Stack'}
+            {MonitoringMonitoringClientCopy.monitoringStack[cs ? 'cs' : 'en']}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             {[
-              { name: 'Prometheus', ver: 'v2.53.0', desc: cs ? 'Sber metrik a alerting' : 'Metrics collection & alerting', color: 'text-orange-400' },
-              { name: 'Grafana', ver: 'v11.1.0', desc: cs ? '22panelovy dashboard V3' : '22-panel V3 dashboard', color: 'text-zion-gold' },
-              { name: 'Node Exporter', ver: 'v1.8.1', desc: cs ? 'Host CPU, RAM, disk, sit' : 'Host CPU, RAM, disk, network', color: 'text-zion-cyan' },
-              { name: 'Redis Exporter', ver: 'v1.61.0', desc: cs ? 'Metriky persistence Redisu' : 'Redis persistence metrics', color: 'text-red-400' },
-              { name: 'Alertmanager', ver: 'v0.27.0', desc: cs ? 'Routing alertu a notifikace' : 'Alert routing & notifications', color: 'text-purple-400' },
-              { name: cs ? 'Core metriky' : 'Core Metrics', ver: ':9115', desc: cs ? 'Prometheus endpoint V3 nodu (7 gaugu)' : 'V3 node Prometheus endpoint (7 gauges)', color: 'text-emerald-400' },
-              { name: cs ? 'Pool metriky' : 'Pool Metrics', ver: ':8080', desc: cs ? 'Mining pool /metrics (20+ counteru/gaugu)' : 'Mining pool /metrics (20+ counters/gauges)', color: 'text-zion-gold' },
-              { name: 'API Proxy', ver: '/api/metrics', desc: cs ? 'Bezpecny allowlist query proxy' : 'Secure allowlisted query proxy', color: 'text-sky-400' },
-              { name: cs ? 'Web' : 'Website', ver: SITE_VERSION, desc: `Next.js 16 + Tailwind CSS 4 · runtime ${SITE_RUNTIME_VERSION}`, color: 'text-pink-400' },
+              { name: 'Prometheus', ver: 'v2.53.0', desc: MonitoringMonitoringClientCopy.metricsCollectionAlerting[cs ? 'cs' : 'en'], color: 'text-orange-400' },
+              { name: 'Grafana', ver: 'v11.1.0', desc: MonitoringMonitoringClientCopy.k22PanelV3Dashboard[cs ? 'cs' : 'en'], color: 'text-zion-gold' },
+              { name: 'Node Exporter', ver: 'v1.8.1', desc: MonitoringMonitoringClientCopy.hostCpuRamDiskNetwork[cs ? 'cs' : 'en'], color: 'text-zion-cyan' },
+              { name: 'Redis Exporter', ver: 'v1.61.0', desc: MonitoringMonitoringClientCopy.redisPersistenceMetrics[cs ? 'cs' : 'en'], color: 'text-red-400' },
+              { name: 'Alertmanager', ver: 'v0.27.0', desc: MonitoringMonitoringClientCopy.alertRoutingNotifications[cs ? 'cs' : 'en'], color: 'text-purple-400' },
+              { name: MonitoringMonitoringClientCopy.coreMetrics[cs ? 'cs' : 'en'], ver: ':9115', desc: MonitoringMonitoringClientCopy.v3NodePrometheusEndpoint7Gauge[cs ? 'cs' : 'en'], color: 'text-emerald-400' },
+              { name: MonitoringMonitoringClientCopy.poolMetrics[cs ? 'cs' : 'en'], ver: ':8080', desc: MonitoringMonitoringClientCopy.miningPoolMetrics20CountersGau[cs ? 'cs' : 'en'], color: 'text-zion-gold' },
+              { name: 'API Proxy', ver: '/api/metrics', desc: MonitoringMonitoringClientCopy.secureAllowlistedQueryProxy[cs ? 'cs' : 'en'], color: 'text-sky-400' },
+              { name: MonitoringMonitoringClientCopy.website[cs ? 'cs' : 'en'], ver: SITE_VERSION, desc: `Next.js 16 + Tailwind CSS 4 · runtime ${SITE_RUNTIME_VERSION}`, color: 'text-pink-400' },
             ].map((s) => (
               <div key={s.name} style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-3 flex items-start gap-3">
                 <div className={`mt-0.5 h-2 w-2 rounded-full ${s.color.replace('text-', 'bg-')}`} />
@@ -692,11 +731,11 @@ export default function MonitoringClient() {
 
           {/* Legend */}
           <div className="mt-6 pt-4 border-t border-white/10 text-xs text-gray-500 flex flex-wrap gap-x-6 gap-y-2">
-            <span>{cs ? '30+ zivych Prometheus metrik' : '30+ live Prometheus metrics'}</span>
-            <span>{cs ? 'Instantni + range dotazy' : 'Instant + Range queries'}</span>
-            <span>{cs ? 'Allowlist proxy (zion_*, node_*)' : 'Allowlisted proxy (zion_*, node_*)'}</span>
-            <span>{cs ? 'Auto-refresh 15 s' : '15s auto-refresh'}</span>
-            <span>{cs ? 'SVG sparkliny (historie 1 h)' : 'SVG sparklines (1h history)'}</span>
+            <span>{MonitoringMonitoringClientCopy.k30LivePrometheusMetrics[cs ? 'cs' : 'en']}</span>
+            <span>{MonitoringMonitoringClientCopy.instantRangeQueries[cs ? 'cs' : 'en']}</span>
+            <span>{MonitoringMonitoringClientCopy.allowlistedProxyZionNode[cs ? 'cs' : 'en']}</span>
+            <span>{MonitoringMonitoringClientCopy.k15sAutoRefresh[cs ? 'cs' : 'en']}</span>
+            <span>{MonitoringMonitoringClientCopy.svgSparklines1hHistory[cs ? 'cs' : 'en']}</span>
           </div>
         </motion.section>
 

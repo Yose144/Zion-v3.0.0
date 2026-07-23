@@ -9,6 +9,26 @@ import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from "@/hooks/usePolling";
 import { exportToCsv } from "@/lib/csv-export";
 
+const ExplorerTransactionsTransactionsPageClientCopy = {
+  payout: { cs: `výplata`, en: `payout` },
+  transfer: { cs: `převod`, en: `transfer` },
+  transactions: { cs: `Transakce`, en: `Transactions` },
+  loaded: { cs: `načteno`, en: `loaded` },
+  exportCsv: { cs: `Export CSV`, en: `Export CSV` },
+  addressFilter: { cs: `Filtr adresy:`, en: `Address filter:` },
+  failedToLoadTransactions: { cs: `Chyba načítání transakcí`, en: `Failed to load transactions` },
+  retry: { cs: `Zkusit znovu`, en: `Retry` },
+  type: { cs: `Typ`, en: `Type` },
+  age: { cs: `Stáří`, en: `Age` },
+  block: { cs: `Blok`, en: `Block` },
+  amount: { cs: `Částka`, en: `Amount` },
+  noTransactionsFound: { cs: `Nenalezeny žádné transakce`, en: `No transactions found` },
+  clearFilter: { cs: `Zrušit filtr`, en: `Clear filter` },
+  pending: { cs: `čeká`, en: `pending` },
+  loading: { cs: `Načítám…`, en: `Loading…` },
+  loadMoreTransactions: { cs: `Načíst další transakce`, en: `Load More Transactions` },
+};
+
 /* ── helpers ─────────────────────────────────────────────────── */
 
 function CopyBtn({ text }: { text: string }) {
@@ -31,7 +51,7 @@ function StatusDot({ status }: { status: string }) {
 function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
   const map: Record<string, string> = { coinbase: "bg-zion-gold/15 text-zion-gold", payout: "bg-emerald-500/15 text-emerald-400", transfer: "bg-cyan-500/15 text-cyan-300" };
   const cls = map[type] || "bg-white/10 text-white/60";
-  const label = type === 'coinbase' ? 'coinbase' : type === 'payout' ? (cs ? 'výplata' : 'payout') : type === 'transfer' ? (cs ? 'převod' : 'transfer') : type;
+  const label = type === 'coinbase' ? 'coinbase' : type === 'payout' ? (ExplorerTransactionsTransactionsPageClientCopy.payout[cs ? 'cs' : 'en']) : type === 'transfer' ? (ExplorerTransactionsTransactionsPageClientCopy.transfer[cs ? 'cs' : 'en']) : type;
   return <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${cls}`}>{label}</span>;
 }
 
@@ -149,7 +169,7 @@ export default function TransactionsPageClient() {
         <nav className="flex items-center gap-1.5 text-[11px] text-white/40 mb-6">
           <Link href="/explorer" className="hover:text-white/70 transition-colors">Explorer</Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-white/70">{cs ? 'Transakce' : 'Transactions'}</span>
+          <span className="text-white/70">{ExplorerTransactionsTransactionsPageClientCopy.transactions[cs ? 'cs' : 'en']}</span>
           {addressFilter && <>
             <ChevronRight className="w-3 h-3" />
             <span className="text-white/70 font-mono">{addressFilter.slice(0, 12)}…</span>
@@ -161,21 +181,21 @@ export default function TransactionsPageClient() {
           <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
             <ArrowRightLeft className="w-4.5 h-4.5 text-cyan-400" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">{cs ? 'Transakce' : 'Transactions'}</h1>
-          <span className="text-[11px] text-white/30 font-mono tabular-nums ml-1">{transactions.length} {cs ? 'načteno' : 'loaded'}</span>
+          <h1 className="text-2xl font-bold text-white tracking-tight">{ExplorerTransactionsTransactionsPageClientCopy.transactions[cs ? 'cs' : 'en']}</h1>
+          <span className="text-[11px] text-white/30 font-mono tabular-nums ml-1">{transactions.length} {ExplorerTransactionsTransactionsPageClientCopy.loaded[cs ? 'cs' : 'en']}</span>
           <button
             onClick={handleExportCsv}
             disabled={transactions.length === 0}
             className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             <Download className="w-3.5 h-3.5" />
-            {cs ? 'Export CSV' : 'Export CSV'}
+            {ExplorerTransactionsTransactionsPageClientCopy.exportCsv[cs ? 'cs' : 'en']}
           </button>
         </div>
 
         {addressFilter && (
           <div className="flex items-center gap-2 mt-2 mb-4 px-3 py-2 rounded-xl bg-cyan-500/5 border border-cyan-500/10 w-fit">
-            <span className="text-[11px] text-white/40">{cs ? 'Filtr adresy:' : 'Address filter:'}</span>
+            <span className="text-[11px] text-white/40">{ExplorerTransactionsTransactionsPageClientCopy.addressFilter[cs ? 'cs' : 'en']}</span>
             <span className="text-[11px] text-cyan-300 font-mono">{addressFilter}</span>
             <Link href="/explorer/transactions" className="text-white/30 hover:text-white/60"><X className="w-3 h-3" /></Link>
           </div>
@@ -186,14 +206,14 @@ export default function TransactionsPageClient() {
           <div className="mt-4 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-3">
             <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-red-300 font-medium">{cs ? 'Chyba načítání transakcí' : 'Failed to load transactions'}</p>
+              <p className="text-sm text-red-300 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.failedToLoadTransactions[cs ? 'cs' : 'en']}</p>
               <p className="text-xs text-white/40 font-mono break-all">{error}</p>
             </div>
             <button
               onClick={() => { setError(null); setLoading(true); setPage(1); loadTransactions(1, false); }}
               className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/70 hover:bg-white/10 hover:text-white transition shrink-0"
             >
-              {cs ? 'Zkusit znovu' : 'Retry'}
+              {ExplorerTransactionsTransactionsPageClientCopy.retry[cs ? 'cs' : 'en']}
             </button>
           </div>
         )}
@@ -204,11 +224,11 @@ export default function TransactionsPageClient() {
           <div className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] md:grid-cols-[32px_1fr_90px_80px_100px_80px_110px] gap-3 px-5 py-3 border-b border-white/6">
             <span />
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Typ' : 'Type'}</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Stáří' : 'Age'}</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? 'Blok' : 'Block'}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.type[cs ? 'cs' : 'en']}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.age[cs ? 'cs' : 'en']}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.block[cs ? 'cs' : 'en']}</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Částka' : 'Amount'}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerTransactionsTransactionsPageClientCopy.amount[cs ? 'cs' : 'en']}</span>
           </div>
 
           {/* loading skeleton */}
@@ -228,8 +248,8 @@ export default function TransactionsPageClient() {
           {!loading && transactions.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <ArrowRightLeft className="w-10 h-10 text-white/10" />
-              <p className="text-white/30 text-sm">{cs ? 'Nenalezeny žádné transakce' : 'No transactions found'}</p>
-              {addressFilter && <Link href="/explorer/transactions" className="text-cyan-400 text-xs hover:underline">{cs ? 'Zrušit filtr' : 'Clear filter'}</Link>}
+              <p className="text-white/30 text-sm">{ExplorerTransactionsTransactionsPageClientCopy.noTransactionsFound[cs ? 'cs' : 'en']}</p>
+              {addressFilter && <Link href="/explorer/transactions" className="text-cyan-400 text-xs hover:underline">{ExplorerTransactionsTransactionsPageClientCopy.clearFilter[cs ? 'cs' : 'en']}</Link>}
             </div>
           )}
 
@@ -268,7 +288,7 @@ export default function TransactionsPageClient() {
                     #{tx.block_height?.toLocaleString()}
                   </Link>
                 ) : (
-                  <span className="text-[12px] text-amber-400/60 italic">{cs ? 'čeká' : 'pending'}</span>
+                  <span className="text-[12px] text-amber-400/60 italic">{ExplorerTransactionsTransactionsPageClientCopy.pending[cs ? 'cs' : 'en']}</span>
                 )}
               </div>
 
@@ -292,7 +312,7 @@ export default function TransactionsPageClient() {
                 disabled={loadingMore}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/4 border border-white/8 hover:bg-white/8 transition-colors text-sm text-white/60 hover:text-white/90 disabled:opacity-50"
               >
-                {loadingMore ? <><Loader2 className="w-4 h-4 animate-spin" /> {cs ? 'Načítám…' : 'Loading…'}</> : cs ? 'Načíst další transakce' : 'Load More Transactions'}
+                {loadingMore ? <><Loader2 className="w-4 h-4 animate-spin" /> {ExplorerTransactionsTransactionsPageClientCopy.loading[cs ? 'cs' : 'en']}</> : ExplorerTransactionsTransactionsPageClientCopy.loadMoreTransactions[cs ? 'cs' : 'en']}
               </button>
             </div>
           )}

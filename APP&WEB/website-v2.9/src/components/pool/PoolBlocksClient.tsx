@@ -25,6 +25,65 @@ import {
 import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
 
+const PoolBlocksCopy = {
+  historicalHashrateDataUnavaila: { cs: `Historická data hashrate nejsou k dispozici`, en: `Historical hashrate data unavailable` },
+  insufficientHistoricalData: { cs: `Nedostatek historických dat`, en: `Insufficient historical data` },
+  chartWillPopulateAsMoreBlocksA: { cs: `Graf se naplní jak bude těžba pokračovat`, en: `Chart will populate as more blocks are mined` },
+  chartsWillPopulateAsMoreBlocks: { cs: `Grafy se naplní jak bude těžba pokračovat`, en: `Charts will populate as more blocks are mined` },
+  miningPoolHistory: { cs: `Těžební pool · Historie`, en: `Mining Pool · History` },
+  poolBlocksHistory: { cs: `Historie bloků poolu`, en: `Pool Blocks History` },
+  historicalBlockDiscoveryChartL: { cs: `Historický graf objevování bloků, trend štěstí, historie odměn a časová osa hashrate poolu vs sítě.`, en: `Historical block discovery chart, luck trend, reward history, and pool vs network hashrate timeline.` },
+  backToDashboard: { cs: `Zpět na dashboard`, en: `Back to Dashboard` },
+  timeRange: { cs: `Časový rozsah`, en: `Time range` },
+  loadError: { cs: `Chyba načítání`, en: `Load error` },
+  refresh: { cs: `Obnovit`, en: `Refresh` },
+  summary: { cs: `Přehled`, en: `Summary` },
+  periodStatistics: { cs: `Statistiky za období`, en: `Period Statistics` },
+  totalBlocks: { cs: `Celkem bloků`, en: `Total Blocks` },
+  avgBlockTime: { cs: `Prům. čas bloku`, en: `Avg Block Time` },
+  betweenBlocks: { cs: `mezi bloky`, en: `between blocks` },
+  avgReward: { cs: `Prům. odměna`, en: `Avg Reward` },
+  perBlock: { cs: `na blok`, en: `per block` },
+  bestStreak: { cs: `Nejlepší série`, en: `Best Streak` },
+  days: { cs: `dní`, en: `days` },
+  consecutive: { cs: `po sobě`, en: `consecutive` },
+  luckIndex: { cs: `Index štěstí`, en: `Luck Index` },
+  foundExpected: { cs: `nalezeno / očekáváno`, en: `found / expected` },
+  totalRewards: { cs: `Celkem odměn`, en: `Total Rewards` },
+  distributed: { cs: `distribuováno`, en: `distributed` },
+  discovery: { cs: `Objevování`, en: `Discovery` },
+  blocksPerDay: { cs: `Bloků za den`, en: `Blocks Per Day` },
+  numberOfBlocksDiscoveredByTheP: { cs: `Počet bloků objevených poolem za každý den vybraného období.`, en: `Number of blocks discovered by the pool each day over the selected period.` },
+  luck: { cs: `Štěstí`, en: `Luck` },
+  luckTrend: { cs: `Trend štěstí`, en: `Luck Trend` },
+  cumulativeRatioOfFoundVsExpect: { cs: `Kumulativní poměr nalezených vs očekávaných bloků. Nad 100 % = šťastné, pod 80 % = nešťastné.`, en: `Cumulative ratio of found vs expected blocks. Above 100% = lucky, below 80% = unlucky.` },
+  lucky100: { cs: `Šťastné (≥100%)`, en: `Lucky (≥100%)` },
+  average80100: { cs: `Průměrné (80–100%)`, en: `Average (80–100%)` },
+  unlucky80: { cs: `Nešťastné (<80%)`, en: `Unlucky (<80%)` },
+  rewards: { cs: `Odměny`, en: `Rewards` },
+  rewardHistory: { cs: `Historie odměn`, en: `Reward History` },
+  totalZionRewardedEachDayOverTh: { cs: `Celkem ZION odměneno za každý den vybraného období.`, en: `Total ZION rewarded each day over the selected period.` },
+  power: { cs: `Výkon`, en: `Power` },
+  poolVsNetworkHashrate: { cs: `Pool vs síť – hashrate`, en: `Pool vs Network Hashrate` },
+  timelineOfPoolHashratePurpleVs: { cs: `Časová osa hashrate poolu (fialová) vůči celé síti (azurová).`, en: `Timeline of pool hashrate (purple) vs total network hashrate (cyan).` },
+  pool: { cs: `Pool`, en: `Pool` },
+  network: { cs: `Síť`, en: `Network` },
+  ledger: { cs: `Ledger`, en: `Ledger` },
+  detailedBlocksTable: { cs: `Detailní seznam bloků`, en: `Detailed Blocks Table` },
+  realBlocksDiscoveredByThePoolI: { cs: `Skutečné bloky objevené poolem ve vybraném období (data z API).`, en: `Real blocks discovered by the pool in the selected period (API data).` },
+  height: { cs: `Výška`, en: `Height` },
+  time: { cs: `Čas`, en: `Time` },
+  difficulty: { cs: `Obtížnost`, en: `Difficulty` },
+  reward: { cs: `Odměna`, en: `Reward` },
+  poolLuck: { cs: `Štěstí poolu`, en: `Pool Luck` },
+  noBlocksInThisPeriod: { cs: `Žádné bloky v tomto období`, en: `No blocks in this period` },
+  loadMore: { cs: `Načíst více`, en: `Load more` },
+  startMiningOrExploreTheChain: { cs: `Začněte těžit nebo prozkoumejte blockchain`, en: `Start Mining or Explore the Chain` },
+  joinThePoolAndMineZionOrExplor: { cs: `Připojte se k poolu a těžte ZION, nebo prozkoumejte bloky a transakce v exploreru.`, en: `Join the pool and mine ZION, or explore blocks and transactions in the explorer.` },
+  poolDashboard: { cs: `Dashboard poolu`, en: `Pool Dashboard` },
+  blockchainExplorer: { cs: `Blockchain Explorer`, en: `Blockchain Explorer` },
+};
+
 /* ═══════════════════════════════════════════════════════════
    ZION POOL BLOCKS HISTORY
    Historical block discovery, luck, rewards, and hashrate timeline
@@ -270,21 +329,13 @@ function InsufficientData({
     >
       <p className="text-sm text-gray-400">
         {hashrate
-          ? cs
-            ? "Historická data hashrate nejsou k dispozici"
-            : "Historical hashrate data unavailable"
-          : cs
-            ? "Nedostatek historických dat"
-            : "Insufficient historical data"}
+          ? PoolBlocksCopy.historicalHashrateDataUnavaila[cs ? 'cs' : 'en']
+          : PoolBlocksCopy.insufficientHistoricalData[cs ? 'cs' : 'en']}
       </p>
       <p className="text-xs text-gray-600">
         {hashrate
-          ? cs
-            ? "Graf se naplní jak bude těžba pokračovat"
-            : "Chart will populate as more blocks are mined"
-          : cs
-            ? "Grafy se naplní jak bude těžba pokračovat"
-            : "Charts will populate as more blocks are mined"}
+          ? PoolBlocksCopy.chartWillPopulateAsMoreBlocksA[cs ? 'cs' : 'en']
+          : PoolBlocksCopy.chartsWillPopulateAsMoreBlocks[cs ? 'cs' : 'en']}
       </p>
     </div>
   );
@@ -714,15 +765,13 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-1">
-                      {cs ? "Těžební pool · Historie" : "Mining Pool · History"}
+                      {PoolBlocksCopy.miningPoolHistory[cs ? 'cs' : 'en']}
                     </p>
                     <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
-                      {cs ? "Historie bloků poolu" : "Pool Blocks History"}
+                      {PoolBlocksCopy.poolBlocksHistory[cs ? 'cs' : 'en']}
                     </h1>
                     <p className="text-sm text-gray-400 mt-2 max-w-xl">
-                      {cs
-                        ? "Historický graf objevování bloků, trend štěstí, historie odměn a časová osa hashrate poolu vs sítě."
-                        : "Historical block discovery chart, luck trend, reward history, and pool vs network hashrate timeline."}
+                      {PoolBlocksCopy.historicalBlockDiscoveryChartL[cs ? 'cs' : 'en']}
                     </p>
                   </div>
                 </div>
@@ -731,7 +780,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-sm text-gray-300 hover:text-white hover:border-white/20 transition-colors flex-shrink-0"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  {cs ? "Zpět na dashboard" : "Back to Dashboard"}
+                  {PoolBlocksCopy.backToDashboard[cs ? 'cs' : 'en']}
                 </Link>
               </div>
             </div>
@@ -744,7 +793,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs uppercase tracking-wider text-gray-500 mr-2">
-                  {cs ? "Časový rozsah" : "Time range"}
+                  {PoolBlocksCopy.timeRange[cs ? 'cs' : 'en']}
                 </span>
                 {rangeOptions.map((opt) => (
                   <button
@@ -764,7 +813,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                 {loading && <Loader2 className="h-4 w-4 text-gray-500 animate-spin" />}
                 {error && (
                   <span className="text-xs text-rose-400">
-                    {cs ? "Chyba načítání" : "Load error"}: {error}
+                    {PoolBlocksCopy.loadError[cs ? 'cs' : 'en']}: {error}
                   </span>
                 )}
                 <button
@@ -775,7 +824,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs text-gray-300 hover:text-white hover:border-white/20 transition-colors"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
-                  {cs ? "Obnovit" : "Refresh"}
+                  {PoolBlocksCopy.refresh[cs ? 'cs' : 'en']}
                 </button>
               </div>
             </div>
@@ -785,53 +834,53 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
         {/* ═══════ C. STATS SUMMARY ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
           <div className="flex flex-col gap-2 mb-5">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Přehled" : "Summary"}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolBlocksCopy.summary[cs ? 'cs' : 'en']}</p>
             <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
               <Layers className="h-6 w-6 text-zion-gold" />
-              {cs ? "Statistiky za období" : "Period Statistics"}
+              {PoolBlocksCopy.periodStatistics[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <StatCard
               icon={<Blocks className="h-5 w-5 text-white" />}
-              label={cs ? "Celkem bloků" : "Total Blocks"}
+              label={PoolBlocksCopy.totalBlocks[cs ? 'cs' : 'en']}
               value={fmtNum(stats.totalBlocks)}
               sub={cs ? `za ${days} dní` : `over ${days} days`}
               accent="purple"
             />
             <StatCard
               icon={<Clock className="h-5 w-5 text-white" />}
-              label={cs ? "Prům. čas bloku" : "Avg Block Time"}
+              label={PoolBlocksCopy.avgBlockTime[cs ? 'cs' : 'en']}
               value={fmtDuration(stats.avgBlockTime, cs)}
-              sub={cs ? "mezi bloky" : "between blocks"}
+              sub={PoolBlocksCopy.betweenBlocks[cs ? 'cs' : 'en']}
               accent="cyan"
             />
             <StatCard
               icon={<Coins className="h-5 w-5 text-white" />}
-              label={cs ? "Prům. odměna" : "Avg Reward"}
+              label={PoolBlocksCopy.avgReward[cs ? 'cs' : 'en']}
               value={`${atomicToZion(stats.avgReward)} ZION`}
-              sub={cs ? "na blok" : "per block"}
+              sub={PoolBlocksCopy.perBlock[cs ? 'cs' : 'en']}
               accent="emerald"
             />
             <StatCard
               icon={<Trophy className="h-5 w-5 text-white" />}
-              label={cs ? "Nejlepší série" : "Best Streak"}
-              value={`${stats.bestStreak} ${cs ? "dní" : "days"}`}
-              sub={cs ? "po sobě" : "consecutive"}
+              label={PoolBlocksCopy.bestStreak[cs ? 'cs' : 'en']}
+              value={`${stats.bestStreak} ${PoolBlocksCopy.days[cs ? 'cs' : 'en']}`}
+              sub={PoolBlocksCopy.consecutive[cs ? 'cs' : 'en']}
               accent="gold"
             />
             <StatCard
               icon={<TrendingUp className="h-5 w-5 text-white" />}
-              label={cs ? "Index štěstí" : "Luck Index"}
+              label={PoolBlocksCopy.luckIndex[cs ? 'cs' : 'en']}
               value={stats.luckIndex === null ? "—" : `${(stats.luckIndex * 100).toFixed(1)}%`}
-              sub={cs ? "nalezeno / očekáváno" : "found / expected"}
+              sub={PoolBlocksCopy.foundExpected[cs ? 'cs' : 'en']}
               accent={stats.luckIndex === null ? "purple" : stats.luckIndex >= 1 ? "emerald" : stats.luckIndex >= 0.8 ? "amber" : "rose"}
             />
             <StatCard
               icon={<Gift className="h-5 w-5 text-white" />}
-              label={cs ? "Celkem odměn" : "Total Rewards"}
+              label={PoolBlocksCopy.totalRewards[cs ? 'cs' : 'en']}
               value={`${atomicToZion(stats.totalRewards)} ZION`}
-              sub={cs ? "distribuováno" : "distributed"}
+              sub={PoolBlocksCopy.distributed[cs ? 'cs' : 'en']}
               accent="purple"
             />
           </div>
@@ -840,15 +889,13 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
         {/* ═══════ D. BLOCK DISCOVERY CHART ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
           <div className="flex flex-col gap-2 mb-5">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Objevování" : "Discovery"}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolBlocksCopy.discovery[cs ? 'cs' : 'en']}</p>
             <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
               <Box className="h-6 w-6 text-zion-gold" />
-              {cs ? "Bloků za den" : "Blocks Per Day"}
+              {PoolBlocksCopy.blocksPerDay[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
-              {cs
-                ? "Počet bloků objevených poolem za každý den vybraného období."
-                : "Number of blocks discovered by the pool each day over the selected period."}
+              {PoolBlocksCopy.numberOfBlocksDiscoveredByTheP[cs ? 'cs' : 'en']}
             </p>
           </div>
           <div className="zion-rainbow-card p-6" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
@@ -859,30 +906,28 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
         {/* ═══════ E. LUCK TREND CHART ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <div className="flex flex-col gap-2 mb-5">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Štěstí" : "Luck"}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolBlocksCopy.luck[cs ? 'cs' : 'en']}</p>
             <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-6 w-6 text-zion-gold" />
-              {cs ? "Trend štěstí" : "Luck Trend"}
+              {PoolBlocksCopy.luckTrend[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
-              {cs
-                ? "Kumulativní poměr nalezených vs očekávaných bloků. Nad 100 % = šťastné, pod 80 % = nešťastné."
-                : "Cumulative ratio of found vs expected blocks. Above 100% = lucky, below 80% = unlucky."}
+              {PoolBlocksCopy.cumulativeRatioOfFoundVsExpect[cs ? 'cs' : 'en']}
             </p>
           </div>
           <div className="zion-rainbow-card p-6" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
             <div className="flex items-center gap-4 mb-3 text-xs">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400" />
-                <span className="text-gray-400">{cs ? "Šťastné (≥100%)" : "Lucky (≥100%)"}</span>
+                <span className="text-gray-400">{PoolBlocksCopy.lucky100[cs ? 'cs' : 'en']}</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-400" />
-                <span className="text-gray-400">{cs ? "Průměrné (80–100%)" : "Average (80–100%)"}</span>
+                <span className="text-gray-400">{PoolBlocksCopy.average80100[cs ? 'cs' : 'en']}</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-rose-400" />
-                <span className="text-gray-400">{cs ? "Nešťastné (<80%)" : "Unlucky (<80%)"}</span>
+                <span className="text-gray-400">{PoolBlocksCopy.unlucky80[cs ? 'cs' : 'en']}</span>
               </span>
             </div>
             {hasEnough ? <LuckChart data={buckets} cs={cs} /> : <InsufficientData height={220} cs={cs} />}
@@ -892,15 +937,13 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
         {/* ═══════ F. REWARD HISTORY CHART ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
           <div className="flex flex-col gap-2 mb-5">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Odměny" : "Rewards"}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolBlocksCopy.rewards[cs ? 'cs' : 'en']}</p>
             <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
               <Coins className="h-6 w-6 text-zion-gold" />
-              {cs ? "Historie odměn" : "Reward History"}
+              {PoolBlocksCopy.rewardHistory[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
-              {cs
-                ? "Celkem ZION odměneno za každý den vybraného období."
-                : "Total ZION rewarded each day over the selected period."}
+              {PoolBlocksCopy.totalZionRewardedEachDayOverTh[cs ? 'cs' : 'en']}
             </p>
           </div>
           <div className="zion-rainbow-card p-6" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
@@ -911,26 +954,24 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
         {/* ═══════ G. POOL VS NETWORK HASHRATE ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
           <div className="flex flex-col gap-2 mb-5">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Výkon" : "Power"}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolBlocksCopy.power[cs ? 'cs' : 'en']}</p>
             <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
               <Gauge className="h-6 w-6 text-zion-gold" />
-              {cs ? "Pool vs síť – hashrate" : "Pool vs Network Hashrate"}
+              {PoolBlocksCopy.poolVsNetworkHashrate[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
-              {cs
-                ? "Časová osa hashrate poolu (fialová) vůči celé síti (azurová)."
-                : "Timeline of pool hashrate (purple) vs total network hashrate (cyan)."}
+              {PoolBlocksCopy.timelineOfPoolHashratePurpleVs[cs ? 'cs' : 'en']}
             </p>
           </div>
           <div className="zion-rainbow-card p-6" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
             <div className="flex items-center gap-4 mb-3 text-xs">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-purple-400" />
-                <span className="text-gray-400">{cs ? "Pool" : "Pool"}</span>
+                <span className="text-gray-400">{PoolBlocksCopy.pool[cs ? 'cs' : 'en']}</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-cyan-400" />
-                <span className="text-gray-400">{cs ? "Síť" : "Network"}</span>
+                <span className="text-gray-400">{PoolBlocksCopy.network[cs ? 'cs' : 'en']}</span>
               </span>
             </div>
             <HashrateTimeline data={buckets} cs={cs} />
@@ -940,15 +981,13 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
         {/* ═══════ H. DETAILED BLOCKS TABLE ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Ledger" : "Ledger"}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolBlocksCopy.ledger[cs ? 'cs' : 'en']}</p>
             <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
               <Blocks className="h-6 w-6 text-zion-gold" />
-              {cs ? "Detailní seznam bloků" : "Detailed Blocks Table"} ({fmtNum(realBlocks.length)})
+              {PoolBlocksCopy.detailedBlocksTable[cs ? 'cs' : 'en']} ({fmtNum(realBlocks.length)})
             </h2>
             <p className="text-sm text-gray-400">
-              {cs
-                ? "Skutečné bloky objevené poolem ve vybraném období (data z API)."
-                : "Real blocks discovered by the pool in the selected period (API data)."}
+              {PoolBlocksCopy.realBlocksDiscoveredByThePoolI[cs ? 'cs' : 'en']}
             </p>
           </div>
 
@@ -958,22 +997,22 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                 <thead>
                   <tr className="border-b border-white/[0.08]">
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">
-                      {cs ? "Výška" : "Height"}
+                      {PoolBlocksCopy.height[cs ? 'cs' : 'en']}
                     </th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">
-                      {cs ? "Čas" : "Time"}
+                      {PoolBlocksCopy.time[cs ? 'cs' : 'en']}
                     </th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">
-                      {cs ? "Obtížnost" : "Difficulty"}
+                      {PoolBlocksCopy.difficulty[cs ? 'cs' : 'en']}
                     </th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">
-                      {cs ? "Odměna" : "Reward"}
+                      {PoolBlocksCopy.reward[cs ? 'cs' : 'en']}
                     </th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">
                       Miner
                     </th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">
-                      {cs ? "Štěstí poolu" : "Pool Luck"}
+                      {PoolBlocksCopy.poolLuck[cs ? 'cs' : 'en']}
                     </th>
                   </tr>
                 </thead>
@@ -1031,7 +1070,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                   {realBlocks.length === 0 && (
                     <tr>
                       <td colSpan={6} className="px-5 py-10 text-center text-gray-500">
-                        {cs ? "Žádné bloky v tomto období" : "No blocks in this period"}
+                        {PoolBlocksCopy.noBlocksInThisPeriod[cs ? 'cs' : 'en']}
                       </td>
                     </tr>
                   )}
@@ -1049,7 +1088,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                   onClick={() => setVisibleCount((c) => c + 25)}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/[0.03] text-xs text-gray-300 hover:text-white hover:border-white/20 transition-colors"
                 >
-                  {cs ? "Načíst více" : "Load more"}
+                  {PoolBlocksCopy.loadMore[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -1067,12 +1106,10 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-white">
-                      {cs ? "Začněte těžit nebo prozkoumejte blockchain" : "Start Mining or Explore the Chain"}
+                      {PoolBlocksCopy.startMiningOrExploreTheChain[cs ? 'cs' : 'en']}
                     </h3>
                     <p className="text-sm text-gray-400 mt-1">
-                      {cs
-                        ? "Připojte se k poolu a těžte ZION, nebo prozkoumejte bloky a transakce v exploreru."
-                        : "Join the pool and mine ZION, or explore blocks and transactions in the explorer."}
+                      {PoolBlocksCopy.joinThePoolAndMineZionOrExplor[cs ? 'cs' : 'en']}
                     </p>
                   </div>
                 </div>
@@ -1082,13 +1119,13 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                     className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-linear-to-br from-purple-500/80 to-indigo-600/80 text-sm font-medium text-white hover:opacity-90 transition-opacity"
                   >
                     <ArrowLeft className="h-4 w-4" />
-                    {cs ? "Dashboard poolu" : "Pool Dashboard"}
+                    {PoolBlocksCopy.poolDashboard[cs ? 'cs' : 'en']}
                   </Link>
                   <Link
                     href="/explorer"
                     className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-sm text-gray-300 hover:text-white hover:border-white/20 transition-colors"
                   >
-                    {cs ? "Blockchain Explorer" : "Blockchain Explorer"}
+                    {PoolBlocksCopy.blockchainExplorer[cs ? 'cs' : 'en']}
                     <ExternalLink className="h-4 w-4" />
                   </Link>
                 </div>

@@ -49,6 +49,221 @@ import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
 import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL } from '@/lib/site';
 
+const PoolDashboardCopy = {
+  miningPool: { cs: `Těžební pool`, en: `Mining Pool` },
+  mineZion: { cs: `Těžte ZION`, en: `Mine ZION` },
+  pplnsRewards89Miner5Humanitari: { cs: `Odměny PPLNS · 89 % pro minera · 5 % humanitární tithe · 5 % fond Issobella. Veřejný pool běží na Edge Node 1 jako součást v3.0.6 E2E sítě s 2-uzlovým P2P meshem, RPC audit logem a memory leak fixem.`, en: `PPLNS rewards · 89% miner · 5% humanitarian · 5% Issobella fund. The public pool runs on Edge Node 1 as part of the v3.0.6 E2E network with a 2-node P2P mesh, RPC audit log, and memory leak fix.` },
+  liveData: { cs: `Živá data`, en: `Live Data` },
+  autoRefresh15s: { cs: `Auto-refresh 15 s`, en: `Auto-Refresh 15s` },
+  edgeNode1: { cs: `Edge Node 1`, en: `Edge Node 1` },
+  trinity1111Services: { cs: `Trinity · 11/11 služeb`, en: `Trinity · 11/11 services` },
+  quickConnect: { cs: `Rychlé připojení`, en: `Quick Connect` },
+  gettingStartedGuide: { cs: `Průvodce začátkem`, en: `Getting started guide` },
+  poolSections: { cs: `Pool sekce`, en: `Pool sections` },
+  overview: { cs: `Přehled`, en: `Overview` },
+  blocks: { cs: `Bloky`, en: `Blocks` },
+  miners: { cs: `Mineři`, en: `Miners` },
+  calculator: { cs: `Kalkulačka`, en: `Calculator` },
+  benchmarks: { cs: `Benchmarky`, en: `Benchmarks` },
+  invalidZionAddressMustStartWit: { cs: `Neplatná ZION adresa — musí začínat na zion1`, en: `Invalid ZION address — must start with zion1` },
+  enterYourZionAddressToViewMine: { cs: `Zadejte svou ZION adresu pro zobrazení statistik minera...`, en: `Enter your ZION address to view miner stats...` },
+  searchMiner: { cs: `Najít minera`, en: `Search Miner` },
+  telemetry: { cs: `Telemetrie`, en: `Telemetry` },
+  poolStatistics: { cs: `Statistiky poolu`, en: `Pool Statistics` },
+  realTimeMetricsAggregatedFromT: { cs: `Metriky v reálném čase agregované z veřejného pool API na Edge Node 1 (8455).`, en: `Real-time metrics aggregated from the public pool API on Edge Node 1 (8455).` },
+  poolHashrate: { cs: `Hashrate poolu`, en: `Pool Hashrate` },
+  k24hAvg: { cs: `24h průměr`, en: `24h avg` },
+  liveBackendIsNotExportingHashr: { cs: `Živý backend zatím hashrate neexportuje`, en: `Live backend is not exporting hashrate yet` },
+  totalComputationalPowerOfAllMi: { cs: `Celkový výpočetní výkon všech minerů v poolu.`, en: `Total computational power of all miners in the pool.` },
+  activeMiners: { cs: `Aktivní mineři`, en: `Active Miners` },
+  numberOfMinersWhoSubmittedASha: { cs: `Počet minerů, kteří odeslali share za posledních 10 minut.`, en: `Number of miners who submitted a share in the last 10 minutes.` },
+  blocksFound: { cs: `Nalezené bloky`, en: `Blocks Found` },
+  totalNumberOfBlocksFoundByThis: { cs: `Celkový počet bloků nalezených tímto poolem.`, en: `Total number of blocks found by this pool.` },
+  shareEfficiency: { cs: `Efektivita share`, en: `Share Efficiency` },
+  ratioOfValidSharesToTotalSubmi: { cs: `Poměr validních shares k celkovým odevzdaným.`, en: `Ratio of valid shares to total submitted shares.` },
+  acceptRate: { cs: `Míra přijetí`, en: `Accept Rate` },
+  percentageOfSharesAcceptedByTh: { cs: `Procento share přijatých poolem (validních řešení).`, en: `Percentage of shares accepted by the pool (valid solutions).` },
+  rejectedShares: { cs: `Odmítnuté shares`, en: `Rejected Shares` },
+  numberOfRejectedSharesOftenCau: { cs: `Počet odmítnutých share — často způsobený duplicitním řešením nebo špatnou obtížností.`, en: `Number of rejected shares — often caused by duplicate solutions or stale difficulty.` },
+  serversOnline: { cs: `Servery online`, en: `Servers Online` },
+  numberOfAvailablePoolServers: { cs: `Počet dostupných pool serverů.`, en: `Number of available pool servers.` },
+  minerShare: { cs: `Podíl minera`, en: `Miner Share` },
+  percentageOfRewardGoingToTheMi: { cs: `Procento odměny, které získá miner (zbytek jde na fondy a fee).`, en: `Percentage of reward going to the miner (rest goes to funds and fee).` },
+  pplnsWindowFillDeterminesHowMa: { cs: `Naplnění PPLNS okna — určuje, kolik posledních share se započítává do odměn.`, en: `PPLNS window fill — determines how many recent shares count towards rewards.` },
+  totalPaid: { cs: `Celkem vyplaceno`, en: `Total Paid` },
+  totalZionPaidOutToMinersInPool: { cs: `Celkové množství ZION vyplacené minerům v historii poolu.`, en: `Total ZION paid out to miners in pool history.` },
+  networkHashrate: { cs: `Síťový hashrate`, en: `Network Hashrate` },
+  offline: { cs: `Offline`, en: `Offline` },
+  totalComputationalPowerOfTheEn: { cs: `Celkový výpočetní výkon celé ZION sítě.`, en: `Total computational power of the entire ZION network.` },
+  templateFees: { cs: `Template fees`, en: `Template Fees` },
+  sumOfFeesFromTransactionsInThe: { cs: `Součet fee z transakcí v aktuálním block template.`, en: `Sum of fees from transactions in the current block template.` },
+  poolDataUnavailableServersMayB: { cs: `Data poolu nejsou dostupná. Servery mohou být offline.`, en: `Pool data unavailable. Servers may be offline.` },
+  performance: { cs: `Výkon`, en: `Performance` },
+  poolPerformance: { cs: `Výkon poolu`, en: `Pool Performance` },
+  liveHashrateChartNetworkShareA: { cs: `Živý graf hashrate, podíl na síti a statistika štěstí poolu.`, en: `Live hashrate chart, network share, and pool luck statistics.` },
+  poolHashrateLastHour: { cs: `Hashrate poolu (poslední hodina)`, en: `Pool Hashrate (last hour)` },
+  k24hAverage: { cs: `24h průměr`, en: `24h average` },
+  networkShare: { cs: `Podíl na síti`, en: `Network Share` },
+  network: { cs: `Síť`, en: `Network` },
+  poolLuck: { cs: `Štěstí poolu`, en: `Pool Luck` },
+  found: { cs: `nalezeno`, en: `found` },
+  expected: { cs: `očekáváno`, en: `expected` },
+  pendingPayouts: { cs: `Čekající výplaty`, en: `Pending Payouts` },
+  minersQueued: { cs: `minerů čeká`, en: `miners queued` },
+  operations: { cs: `Provoz`, en: `Operations` },
+  poolRuntimeOverview: { cs: `Přehled runtime poolu`, en: `Pool Runtime Overview` },
+  submissionFlowPplnsEngineFillA: { cs: `Tok submitů, naplnění PPLNS enginu a payout throughput čerpané z živé telemetrie poolu v3.0.6.`, en: `Submission flow, PPLNS engine fill, and payout throughput sourced from live v3.0.6 pool telemetry.` },
+  acceptedShares: { cs: `přijaté shares`, en: `accepted shares` },
+  submits: { cs: `Submity`, en: `Submits` },
+  acceptRate_2: { cs: `Míra přijetí`, en: `Accept rate` },
+  windowUtilization: { cs: `Využití okna`, en: `Window utilization` },
+  registeredMiners: { cs: `Registrovaní mineři`, en: `Registered miners` },
+  payoutRounds: { cs: `Payout kola`, en: `Payout rounds` },
+  totalPaid_2: { cs: `Celkem vyplaceno`, en: `Total paid` },
+  poolUptime: { cs: `Uptime poolu`, en: `Pool uptime` },
+  telemetryStatus: { cs: `Stav telemetrie`, en: `Telemetry status` },
+  poolHashrateIsStillUnavailable: { cs: `Hashrate poolu zatím není v živém backend exporteru dostupný, proto stránka upřednostňuje routing, PPLNS a zdraví chain runtime v3.0.6.`, en: `Pool hashrate is still unavailable on the live backend exporter, so the page prioritizes routing, PPLNS, and v3.0.6 chain runtime health.` },
+  profitRouter: { cs: `Profit Router`, en: `Profit Router` },
+  profitSwitcher: { cs: `Přepínač profitability`, en: `Profit Switcher` },
+  bestGpuCoin: { cs: `Nejlepší GPU coin`, en: `Best GPU Coin` },
+  bestCpuCoin: { cs: `Nejlepší CPU coin`, en: `Best CPU Coin` },
+  lastCheck: { cs: `Poslední kontrola: `, en: `Last check: ` },
+  in5Min: { cs: `proběhne za ~5 min`, en: `in ~5 min` },
+  coin: { cs: `Coin`, en: `Coin` },
+  algorithm: { cs: `Algoritmus`, en: `Algorithm` },
+  revenueUsdDay: { cs: `Příjem USD/den`, en: `Revenue USD/day` },
+  profitUsdDay: { cs: `Zisk USD/den`, en: `Profit USD/day` },
+  type: { cs: `Typ`, en: `Type` },
+  infrastructure: { cs: `Infrastruktura`, en: `Infrastructure` },
+  poolServers: { cs: `Pool servery`, en: `Pool Servers` },
+  currentPublicPoolHostAndStratu: { cs: `Aktuální veřejný pool host a stratum endpoint vystavený na primárním serveru.`, en: `Current public pool host and stratum endpoint exposed on the primary server.` },
+  mining: { cs: `Těží`, en: `Mining` },
+  idle: { cs: `Nečinný`, en: `Idle` },
+  disconnected: { cs: `Odpojen`, en: `Disconnected` },
+  activeTotal: { cs: `Aktivní / Celkem`, en: `Active / Total` },
+  validShares: { cs: `Validní shares`, en: `Valid Shares` },
+  invalid: { cs: `Neplatné`, en: `Invalid` },
+  height: { cs: `Výška`, en: `Height` },
+  noDataAvailable: { cs: `Data nejsou dostupná`, en: `No data available` },
+  directory: { cs: `Adresář`, en: `Directory` },
+  recentMinerDirectoryFromTheLiv: { cs: `Aktuální adresář minerů z živého pool backendu. Pro detail konkrétní adresy použijte vyhledávání výše.`, en: `Recent miner directory from the live pool backend. Use miner search for full address-level detail.` },
+  activeOnly: { cs: `Jen aktivní`, en: `Active only` },
+  allMiners: { cs: `Všichni mineři`, en: `All miners` },
+  minerWorker: { cs: `Miner / Worker`, en: `Miner / Worker` },
+  payoutAddress: { cs: `Payout adresa`, en: `Payout Address` },
+  hashrate: { cs: `Hashrate`, en: `Hashrate` },
+  shares: { cs: `Shares`, en: `Shares` },
+  server: { cs: `Server`, en: `Server` },
+  lastShare: { cs: `Poslední share`, en: `Last Share` },
+  status: { cs: `Stav`, en: `Status` },
+  active: { cs: `Aktivní`, en: `Active` },
+  inactive: { cs: `Neaktivní`, en: `Inactive` },
+  liveBackendIsNotExposingRecent: { cs: `Živý backend zatím nezveřejňuje poslední řádky minerů. Pro individuální statistiky vyhledejte adresu výše.`, en: `Live backend is not exposing recent miner rows yet. Search by address above for individual stats.` },
+  ledger: { cs: `Ledger`, en: `Ledger` },
+  recentNetworkBlocks: { cs: `Poslední síťové bloky`, en: `Recent Network Blocks` },
+  latestConfirmedChainBlocksFrom: { cs: `Nejnovější potvrzené chain bloky z aktuálního v3.0.6 runtime. Veřejná atribuce vítěze poolu zatím není vystavena samostatně.`, en: `Latest confirmed chain blocks from the current v3.0.6 runtime. Public pool winner attribution is not exposed separately yet.` },
+  difficulty: { cs: `Obtížnost`, en: `Difficulty` },
+  reward: { cs: `Odměna`, en: `Reward` },
+  time: { cs: `Čas`, en: `Time` },
+  noRecentChainBlocksAvailable: { cs: `Nejsou dostupné žádné poslední chain bloky`, en: `No recent chain blocks available` },
+  gettingStarted: { cs: `Začínáme`, en: `Getting Started` },
+  startMiningZion: { cs: `Začněte těžit ZION`, en: `Start Mining ZION` },
+  followTheseStepsToBeginMiningI: { cs: `Postupujte podle těchto kroků a začněte těžit během několika minut. ZION používá zion-miner (Rust binárka z V3).`, en: `Follow these steps to begin mining in minutes. ZION uses zion-miner (the Rust binary from V3).` },
+  k1GetAZionWallet: { cs: `1. Získejte ZION peněženku`, en: `1. Get a ZION Wallet` },
+  valid44CharZion1AddressRequire: { cs: `Vyžadována platná 44-znaková zion1... adresa`, en: `Valid 44-char zion1... address required` },
+  downloadTheZionDesktopWalletOr: { cs: `Stáhněte desktop peněženku ZION nebo použijte webovou peněženku pro vytvoření těžební adresy. Pool odmítne připojení bez platné payout adresy.`, en: `Download the ZION desktop wallet or use the web wallet to generate your mining address. The pool rejects connections without a valid payout address.` },
+  criticalZionPayoutAddressMustB: { cs: `Kritické: ZION_PAYOUT_ADDRESS musí být platná 44-znaková zion1... adresa. Pool odmítne spojení ("pool closed the connection") bez ní.`, en: `Critical: ZION_PAYOUT_ADDRESS must be a valid 44-char zion1... address. The pool rejects the connection ("pool closed the connection") without it.` },
+  downloadWallet: { cs: `Stáhnout peněženku`, en: `Download Wallet` },
+  k2BuildTheMiner: { cs: `2. Sestavte miner`, en: `2. Build the Miner` },
+  rustToolchainV3Source: { cs: `Rust toolchain + V3 zdroj`, en: `Rust toolchain + V3 source` },
+  zionMinerIsTheRustBinaryFromTh: { cs: `zion-miner je Rust binárka z V3 workspace. Sestavte ji přes cargo. Pro GPU přidejte --features gpu-opencl (nebo gpu-cuda, gpu-metal).`, en: `zion-miner is the Rust binary from the V3 workspace. Build it with cargo. For GPU add --features gpu-opencl (or gpu-cuda, gpu-metal).` },
+  cpuBuild: { cs: `CPU sestavení`, en: `CPU build` },
+  gpuBuildOpencl: { cs: `GPU sestavení (OpenCL)`, en: `GPU build (OpenCL)` },
+  nodeSetupGuide: { cs: `Průvodce nastavením`, en: `Node setup guide` },
+  moreGuides: { cs: `Více průvodců`, en: `More guides` },
+  k3ChooseAlgorithm: { cs: `3. Vyberte algoritmus`, en: `3. Choose Algorithm` },
+  k3DeekshaPowVariants: { cs: `3 varianty Deeksha PoW`, en: `3 Deeksha PoW variants` },
+  defaultCpuGpuBalanced: { cs: `Výchozí · CPU + GPU · Vyvážený`, en: `Default · CPU + GPU · Balanced` },
+  standardDeekshaLiteRecommended: { cs: `Standardní Deeksha Lite — doporučeno pro začátek.`, en: `Standard Deeksha Lite — recommended starting point.` },
+  advancedCpuGpu: { cs: `Pokročilý · CPU + GPU`, en: `Advanced · CPU + GPU` },
+  ekamV2AdvancedDeekshaVariant: { cs: `Ekam v2 — pokročilejší varianta Deeksha.`, en: `Ekam v2 — advanced Deeksha variant.` },
+  thermalIntensive512KibScratchp: { cs: `Teplotně náročný · 512 KiB scratchpad · Vyšší příkon`, en: `Thermal-intensive · 512 KiB scratchpad · Higher power draw` },
+  fireHigherHashrateHigherPowerR: { cs: `Fire — vyšší hashrate, vyšší spotřeba. RX 5700 XT: 18.16 KH/s.`, en: `Fire — higher hashrate, higher power. RX 5700 XT: 18.16 KH/s.` },
+  k4ConfigureConnect: { cs: `4. Nakonfigurujte a připojte`, en: `4. Configure & Connect` },
+  runZionMinerWithTheRightEnvVar: { cs: `Spusťte zion-miner se správnými env vars`, en: `Run zion-miner with the right env vars` },
+  cpuMining: { cs: `CPU těžba`, en: `CPU Mining` },
+  gpuMining: { cs: `GPU těžba`, en: `GPU Mining` },
+  linuxMacosBash: { cs: `Linux / macOS (bash)`, en: `Linux / macOS (bash)` },
+  gpuZionGpuBackendOpenclOrCudaM: { cs: `GPU: ZION_GPU_BACKEND=opencl (nebo cuda, metal). ZION_NONCE_COUNT_GPU=262144 je kritické pro GPU hashrate. ZION_LOOP_COUNT=1000000 zabraňuje reconnectům.`, en: `GPU: ZION_GPU_BACKEND=opencl (or cuda, metal). ZION_NONCE_COUNT_GPU=262144 is critical for GPU hashrate. ZION_LOOP_COUNT=1000000 prevents reconnects.` },
+  poolAndMinerBinariesMustBeComp: { cs: `Pool a miner binárky musí být zkompilovány ze stejné zdrojové verze — protokol není zpětně kompatibilní.`, en: `Pool and miner binaries must be compiled from the same source version — protocol is not backward compatible.` },
+  k5MonitorEarn: { cs: `5. Sledujte a vydělávejte`, en: `5. Monitor & Earn` },
+  trackYourRewardsInRealTime: { cs: `Sledujte své odměny v reálném čase`, en: `Track your rewards in real-time` },
+  onceConnectedMonitorYourMining: { cs: `Po připojení sledujte své těžební statistiky přímo zde. Výplaty probíhají automaticky po dosažení minimálního prahu.`, en: `Once connected, monitor your mining stats right here. Payouts are automatic when you reach the minimum threshold.` },
+  minPayout: { cs: `Min. payout`, en: `Min Payout` },
+  rewardMethod: { cs: `Metoda odměn`, en: `Reward Method` },
+  poolFee: { cs: `Pool fee`, en: `Pool Fee` },
+  coinbaseSplit89Miner5Humanitar: { cs: `Rozdělení coinbase: 89 % miner · 5 % humanitární tithe · 5 % fond Issobella · 1 % pool fee. PPLNS — férová distribuce podle odevzdaných shares.`, en: `Coinbase split: 89% miner · 5% humanitarian tithe · 5% Issobella fund · 1% pool fee. PPLNS — fair distribution based on contributed shares.` },
+  openMinerDashboard: { cs: `Otevřít dashboard minera`, en: `Open miner dashboard` },
+  features: { cs: `Funkce`, en: `Features` },
+  whyMineWithUs: { cs: `Proč těžit s námi`, en: `Why Mine With Us` },
+  fairTransparentAndHumanitarian: { cs: `Férový, transparentní a humanitárně zaměřený těžební pool.`, en: `Fair, transparent, and humanitarian-focused mining pool.` },
+  deekshaPowAlgorithm: { cs: `Deeksha PoW algoritmus`, en: `Deeksha PoW Algorithm` },
+  nativeZionPowCpuGpuAsicResista: { cs: `Nativní ZION PoW, CPU + GPU, odolný vůči ASIC. 3 varianty: Lite v1, Ekam v2, Fire.`, en: `Native ZION PoW, CPU + GPU, ASIC-resistant. 3 variants: Lite v1, Ekam v2, Fire.` },
+  humanitarianMission: { cs: `Humanitární mise`, en: `Humanitarian Mission` },
+  k5Humanitarian5IssobellaFundMin: { cs: `5 % humanitární tithe + 5 % fond Issobella. Těžba pro vědomí.`, en: `5% humanitarian + 5% Issobella fund. Mining for consciousness.` },
+  v306PoolInfrastructure: { cs: `v3.0.6 pool infrastruktura`, en: `v3.0.6 Pool Infrastructure` },
+  edgeNode1PoolRealStratumPplns2: { cs: `Edge Node 1 pool, skutečný stratum, PPLNS, 2-uzlový mesh, RPC audit log.`, en: `Edge Node 1 pool, real stratum, PPLNS, 2-node mesh, RPC audit log.` },
+  pplnsRewards: { cs: `PPLNS odměny`, en: `PPLNS Rewards` },
+  fairRewardDistributionBasedOnY: { cs: `Férová distribuce odměn podle vašich odevzdaných shares. Bez luck variance.`, en: `Fair reward distribution based on your contributed shares. No luck variance.` },
+  gpuAcceleration: { cs: `GPU akcelerace`, en: `GPU Acceleration` },
+  openclCudaMetalSupportRx5700Xt: { cs: `Podpora OpenCL/CUDA/Metal. RX 5700 XT: 18 KH/s na Fire.`, en: `OpenCL/CUDA/Metal support. RX 5700 XT: 18 KH/s on Fire.` },
+  realTimeMonitoring: { cs: `Monitoring v reálném čase`, en: `Real-Time Monitoring` },
+  liveHashrateSharesAndEarningsV: { cs: `Živý přehled hashratu, shares a výdělků přes webový dashboard a API.`, en: `Live hashrate, shares, and earnings via web dashboard + API.` },
+  proTools: { cs: `Pro nástroje`, en: `Pro Tools` },
+  operatorToolkit: { cs: `Nástroje operátora`, en: `Operator Toolkit` },
+  failoverTemplatesProfitEstimat: { cs: `Failover šablony, odhad výnosu a automatizační endpointy pro řízený provoz těžby.`, en: `Failover templates, profit estimate, and automation endpoints for managed mining operations.` },
+  profitEstimator: { cs: `Odhad výnosu`, en: `Profit Estimator` },
+  yourHashrateSupportsKMGT: { cs: `Váš hashrate (podporuje K/M/G/T)`, en: `Your hashrate (supports K/M/G/T)` },
+  eG250m: { cs: `např. 250M`, en: `e.g. 250M` },
+  parsedHashrate: { cs: `Parsovaný hashrate`, en: `Parsed hashrate` },
+  poolShare: { cs: `Podíl v poolu`, en: `Pool share` },
+  observedBlocksDay: { cs: `Pozorované bloky/den`, en: `Observed blocks/day` },
+  rewardBlock: { cs: `Odměna / blok`, en: `Reward / block` },
+  estimatedDailyReward: { cs: `Odhad denní odměny`, en: `Estimated daily reward` },
+  failoverConfig: { cs: `Failover konfigurace`, en: `Failover Config` },
+  zionMinerPrimaryBackup: { cs: `zion-miner (primární + záložní)`, en: `zion-miner (primary + backup)` },
+  forFailoverSwitchZionPoolAddrT: { cs: `Pro failover přepněte ZION_POOL_ADDR na záložní endpoint a restartujte zion-miner. Pool a miner musí být ze stejné zdrojové verze.`, en: `For failover, switch ZION_POOL_ADDR to the backup endpoint and restart zion-miner. Pool and miner must be from the same source version.` },
+  automationExport: { cs: `Automatizace a export`, en: `Automation & Export` },
+  setAlertIfLastShareExceeds10Mi: { cs: `Nastavte alert: pokud poslední share přesáhne 10 minut nebo míra přijetí klesne pod 95 %, přepněte na záložní endpoint.`, en: `Set alert: if last share exceeds 10 minutes or accept rate drops below 95%, rotate to the backup endpoint.` },
+  frequentlyAskedQuestions: { cs: `Časté dotazy`, en: `Frequently Asked Questions` },
+  answersToTheMostCommonMinerQue: { cs: `Odpovědi na nejčastější otázky minerů.`, en: `Answers to the most common miner questions.` },
+  whatAlgorithmDoesZionUse: { cs: `Jaký algoritmus ZION používá?`, en: `What algorithm does ZION use?` },
+  zionUsesDeekshaACustomAsicResi: { cs: `ZION používá Deeksha — vlastní proof-of-work algoritmus odolný vůči ASIC. 3 varianty: Deeksha Lite v1 (výchozí), Ekam v2 (pokročilý), Fire (teplotně náročný, 512 KiB scratchpad). Podporuje CPU i GPU těžbu.`, en: `ZION uses Deeksha — a custom ASIC-resistant proof-of-work algorithm. 3 variants: Deeksha Lite v1 (default), Ekam v2 (advanced), Fire (thermal-intensive, 512 KiB scratchpad). It supports both CPU and GPU mining.` },
+  howDoesPplnsWork: { cs: `Jak funguje PPLNS?`, en: `How does PPLNS work?` },
+  pplnsPayPerLastNSharesRewardsM: { cs: `PPLNS (Pay Per Last N Shares) odměňuje minery podle jejich příspěvku v posledních N share. Je férovější než proporcionální odměny a penalizuje pool-hopping.`, en: `PPLNS (Pay Per Last N Shares) rewards miners based on their contribution in the last N shares. It is fairer than proportional rewards and penalizes pool-hopping.` },
+  whatIsTheMinimumPayout: { cs: `Jaký je minimální payout?`, en: `What is the minimum payout?` },
+  whereDoTitheAndFundsGo: { cs: `Kam jdou tithe a fondy?`, en: `Where do tithe and funds go?` },
+  coinbaseDistribution89Miner5Hu: { cs: `Distribuce coinbase: 89 % miner, 5 % humanitární tithe, 5 % fond Issobella, 1 % pool fee. Tithe a fondy jsou kódovány přímo v coinbase transakci na chain úrovni.`, en: `Coinbase distribution: 89% miner, 5% humanitarian tithe, 5% Issobella fund, 1% pool fee. Tithe and funds are encoded directly in the coinbase transaction at the chain level.` },
+  canIUseXmrig: { cs: `Mohu používat XMRig?`, en: `Can I use XMRig?` },
+  noZionUsesDeekshaPowWhichIsNot: { cs: `NE. ZION používá Deeksha PoW, který XMRig nepodporuje. Musíte použít oficiální zion-miner (Rust binárka z V3).`, en: `NO. ZION uses Deeksha PoW, which is not supported by XMRig. You must use the official zion-miner (the Rust binary from V3).` },
+  whatDoesPoolLuckMean: { cs: `Co znamená Pool Luck?`, en: `What does Pool Luck mean?` },
+  poolLuckShowsTheRatioOfBlocksF: { cs: `Pool Luck ukazuje poměr nalezených bloků vs. statisticky očekávaných na základě hashrate poolu a obtížnosti sítě. 100 % = přesně dle očekávání, nad 100 % = lepší než průměr.`, en: `Pool Luck shows the ratio of blocks found vs. statistically expected based on pool hashrate and network difficulty. 100% = exactly as expected, above 100% = better than average.` },
+  howDoISetUpFailover: { cs: `Jak nastavím failover?`, en: `How do I set up failover?` },
+  forFailoverSwitchZionPoolAddrT_2: { cs: `Pro failover přepněte ZION_POOL_ADDR na záložní endpoint a restartujte zion-miner. Pool a miner musí být zkompilovány ze stejné zdrojové verze — protokol není zpětně kompatibilní.`, en: `For failover, switch ZION_POOL_ADDR to the backup endpoint and restart zion-miner. Pool and miner must be compiled from the same source version — protocol is not backward compatible.` },
+  howOftenArePayoutsProcessed: { cs: `Jak často probíhají výplaty?`, en: `How often are payouts processed?` },
+  payoutsAreProcessedAfterEveryB: { cs: `Výplaty se zpracovávají po každém nalezeném bloku. Pool spočítá PPLNS podíly, vytvoří transakci a odešle ji do sítě. Potvrzení trvá obvykle 10 bloků.`, en: `Payouts are processed after every block found. The pool calculates PPLNS shares, creates a transaction, and broadcasts it. Confirmation takes around 10 blocks.` },
+  doINeedAGpu: { cs: `Potřebuji GPU?`, en: `Do I need a GPU?` },
+  noCpuMiningWorksButGpuOpenclCu: { cs: `Ne, CPU těžba funguje. Ale GPU (OpenCL/CUDA/Metal) dává 10-100x vyšší hashrate. RX 5700 XT dosahuje 18.16 KH/s na Fire.`, en: `No, CPU mining works. But GPU (OpenCL/CUDA/Metal) gives 10-100x more hashrate. RX 5700 XT reaches 18.16 KH/s on Fire.` },
+  whatIsZionPayoutAddress: { cs: `Co je ZION_PAYOUT_ADDRESS?`, en: `What is ZION_PAYOUT_ADDRESS?` },
+  criticalMustBeAValid44CharZion: { cs: `Kritické: musí být platná 44-znaková zion1... adresa. Pool odmítne spojení ("pool closed the connection") bez ní — fallback na miner_id není povolen.`, en: `Critical: must be a valid 44-char zion1... address. The pool rejects the connection ("pool closed the connection") without it — fallback to miner_id is not allowed.` },
+  zionMiningPool: { cs: `ZION těžební pool`, en: `ZION Mining Pool` },
+  mineZionWithDeekshaPowAFairTra: { cs: `Těžte ZION s Deeksha PoW — férový a transparentní PoW pool s humanitárním přesahem zabudovaným do každého bloku.`, en: `Mine ZION with Deeksha PoW — a fair, transparent PoW pool with humanitarian impact built into every block.` },
+  k89Miner5Humanitarian5Issobella: { cs: `89 % miner · 5 % humanitarian · 5 % Issobella fund · 1 % pool fee · PPLNS · v3.0.6 Trinity · Public launch 31. prosince 2026`, en: `89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · v3.0.6 Trinity · Public launch 31 December 2026` },
+  startMining: { cs: `Začít těžit`, en: `Start Mining` },
+  lastUpdate: { cs: `Poslední aktualizace`, en: `Last update` },
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+};
+
 /* ═══════════════════════════════════════════════════════════
    ZION MINING POOL DASHBOARD
    Redesigned to match Explorer visual language
@@ -406,38 +621,36 @@ export default function PoolDashboard() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <Pickaxe className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? 'Těžební pool' : 'Mining Pool'}
+                {SITE_RELEASE_LABEL} · {PoolDashboardCopy.miningPool[cs ? 'cs' : 'en']}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Deeksha PoW</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? 'Těžte ZION' : 'Mine ZION'}
+                  {PoolDashboardCopy.mineZion[cs ? 'cs' : 'en']}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? `Odměny PPLNS · 89 % pro minera · 5 % humanitární tithe · 5 % fond Issobella. Veřejný pool běží na Edge Node 1 jako součást v3.0.6 E2E sítě s 2-uzlovým P2P meshem, RPC audit logem a memory leak fixem.`
-                  : `PPLNS rewards · 89% miner · 5% humanitarian · 5% Issobella fund. The public pool runs on Edge Node 1 as part of the v3.0.6 E2E network with a 2-node P2P mesh, RPC audit log, and memory leak fix.`}
+                {PoolDashboardCopy.pplnsRewards89Miner5Humanitari[cs ? 'cs' : 'en']}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Živá data' : 'Live Data'}
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> {PoolDashboardCopy.liveData[cs ? 'cs' : 'en']}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Activity className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 15 s' : 'Auto-Refresh 15s'}
+                  <Activity className="h-3 w-3 text-emerald-400" /> {PoolDashboardCopy.autoRefresh15s[cs ? 'cs' : 'en']}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Globe className="h-3 w-3 text-zion-cyan" /> {cs ? 'Edge Node 1' : 'Edge Node 1'}
+                  <Globe className="h-3 w-3 text-zion-cyan" /> {PoolDashboardCopy.edgeNode1[cs ? 'cs' : 'en']}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
-                  {cs ? 'Trinity · 11/11 služeb' : 'Trinity · 11/11 services'}
+                  {PoolDashboardCopy.trinity1111Services[cs ? 'cs' : 'en']}
                 </span>
               </div>
             </div>
             {/* Stratum quick connect */}
             <div className="w-full lg:max-w-md space-y-3">
               <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Rychlé připojení' : 'Quick Connect'}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{PoolDashboardCopy.quickConnect[cs ? 'cs' : 'en']}</p>
                 <div className="space-y-2">
                   {(data?.servers ?? []).filter(s => s.online).map(s => (
                     <div key={s.id} className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
@@ -450,7 +663,7 @@ export default function PoolDashboard() {
                   ))}
                 </div>
                 <a href="#start-mining" className="mt-3 inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
-                  {cs ? 'Průvodce začátkem' : 'Getting started guide'} <ArrowRight className="h-3.5 w-3.5" />
+                  {PoolDashboardCopy.gettingStartedGuide[cs ? 'cs' : 'en']} <ArrowRight className="h-3.5 w-3.5" />
                 </a>
               </div>
             </div>
@@ -467,14 +680,14 @@ export default function PoolDashboard() {
         >
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
               <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
-                {cs ? 'Pool sekce' : 'Pool sections'}
+                {PoolDashboardCopy.poolSections[cs ? 'cs' : 'en']}
               </span>
               {[
-                { id: 'overview', label: cs ? 'Přehled' : 'Overview', icon: Activity },
-                { id: 'blocks', label: cs ? 'Bloky' : 'Blocks', icon: Box },
-                { id: 'miners', label: cs ? 'Mineři' : 'Miners', icon: Users },
-                { id: 'calculator', label: cs ? 'Kalkulačka' : 'Calculator', icon: TrendingUp },
-                { id: 'benchmarks', label: cs ? 'Benchmarky' : 'Benchmarks', icon: Cpu },
+                { id: 'overview', label: PoolDashboardCopy.overview[cs ? 'cs' : 'en'], icon: Activity },
+                { id: 'blocks', label: PoolDashboardCopy.blocks[cs ? 'cs' : 'en'], icon: Box },
+                { id: 'miners', label: PoolDashboardCopy.miners[cs ? 'cs' : 'en'], icon: Users },
+                { id: 'calculator', label: PoolDashboardCopy.calculator[cs ? 'cs' : 'en'], icon: TrendingUp },
+                { id: 'benchmarks', label: PoolDashboardCopy.benchmarks[cs ? 'cs' : 'en'], icon: Cpu },
               ].map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -512,7 +725,7 @@ export default function PoolDashboard() {
               const addr = minerSearch.trim().toLowerCase();
               if (!addr) return;
               if (!addr.startsWith("zion1") || addr.length < 20) {
-                setSearchError(cs ? 'Neplatná ZION adresa — musí začínat na zion1' : 'Invalid ZION address — must start with zion1');
+                setSearchError(PoolDashboardCopy.invalidZionAddressMustStartWit[cs ? 'cs' : 'en']);
                 return;
               }
               setSearchError("");
@@ -526,7 +739,7 @@ export default function PoolDashboard() {
                   type="text"
                   value={minerSearch}
                   onChange={(e) => { setMinerSearch(e.target.value); setSearchError(""); }}
-                  placeholder={cs ? 'Zadejte svou ZION adresu pro zobrazení statistik minera...' : 'Enter your ZION address to view miner stats...'}
+                  placeholder={PoolDashboardCopy.enterYourZionAddressToViewMine[cs ? 'cs' : 'en']}
                   className={`w-full rounded-xl border ${searchError ? 'border-red-500/60' : 'border-white/10'} bg-white/5 pl-12 pr-4 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-zion-cyan/50 focus:ring-1 focus:ring-zion-cyan/30 transition-colors font-mono`}
                 />
                 {searchError && (
@@ -538,7 +751,7 @@ export default function PoolDashboard() {
                 className="zion-button-primary text-sm whitespace-nowrap"
                 style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
               >
-                {cs ? 'Najít minera' : 'Search Miner'}
+                {PoolDashboardCopy.searchMiner[cs ? 'cs' : 'en']}
               </button>
             </div>
           </form>
@@ -553,12 +766,12 @@ export default function PoolDashboard() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.telemetry[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Statistiky poolu' : 'Pool Statistics'}
+              {PoolDashboardCopy.poolStatistics[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Metriky v reálném čase agregované z veřejného pool API na Edge Node 1 (8455).' : 'Real-time metrics aggregated from the public pool API on Edge Node 1 (8455).'}</p>
+            <p className="text-sm text-gray-400">{PoolDashboardCopy.realTimeMetricsAggregatedFromT[cs ? 'cs' : 'en']}</p>
           </div>
 
           {loading ? (
@@ -573,18 +786,18 @@ export default function PoolDashboard() {
             </div>
           ) : data ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-              <StatCard icon={<Activity className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label={cs ? 'Hashrate poolu' : 'Pool Hashrate'} value={fmtHashOrPending(data.aggregate.hashrate)} sub={data.aggregate.hashrate > 0 ? `${cs ? '24h průměr' : '24h avg'}: ${fmtHash(data.aggregate.hashrate_24h)}` : (cs ? 'Živý backend zatím hashrate neexportuje' : 'Live backend is not exporting hashrate yet')} tip={cs ? 'Celkový výpočetní výkon všech minerů v poolu.' : 'Total computational power of all miners in the pool.'} />
-              <StatCard icon={<Users className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label={cs ? 'Aktivní mineři' : 'Active Miners'} value={String(data.aggregate.active_miners)} sub={cs ? `${data.aggregate.total_miners} celkem registrovaných` : `${data.aggregate.total_miners} total registered`} tip={cs ? 'Počet minerů, kteří odeslali share za posledních 10 minut.' : 'Number of miners who submitted a share in the last 10 minutes.'} />
-              <StatCard icon={<Layers className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={cs ? 'Nalezené bloky' : 'Blocks Found'} value={fmtNum(data.aggregate.blocks_found)} tip={cs ? 'Celkový počet bloků nalezených tímto poolem.' : 'Total number of blocks found by this pool.'} />
-              <StatCard icon={<Shield className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label={cs ? 'Efektivita share' : 'Share Efficiency'} value={`${data.aggregate.share_efficiency}%`} sub={cs ? `${fmtNum(data.aggregate.valid_shares)} validních` : `${fmtNum(data.aggregate.valid_shares)} valid`} tip={cs ? 'Poměr validních shares k celkovým odevzdaným.' : 'Ratio of valid shares to total submitted shares.'} />
-              <StatCard icon={<Check className="h-5 w-5" />} color="text-teal-400" bg="bg-teal-400/10" label={cs ? 'Míra přijetí' : 'Accept Rate'} value={fmtPct(data.aggregate.accept_rate_pct)} sub={cs ? `${fmtNum(data.aggregate.accepted_total)} přijatých` : `${fmtNum(data.aggregate.accepted_total)} accepted`} tip={cs ? 'Procento share přijatých poolem (validních řešení).' : 'Percentage of shares accepted by the pool (valid solutions).'} />
-              <StatCard icon={<XCircle className="h-5 w-5" />} color="text-orange-400" bg="bg-orange-400/10" label={cs ? 'Odmítnuté shares' : 'Rejected Shares'} value={fmtNum(data.aggregate.rejected_total)} sub={cs ? `${fmtNum(data.aggregate.submits_total)} submitů celkem` : `${fmtNum(data.aggregate.submits_total)} total submits`} tip={cs ? 'Počet odmítnutých share — často způsobený duplicitním řešením nebo špatnou obtížností.' : 'Number of rejected shares — often caused by duplicate solutions or stale difficulty.'} />
-              <StatCard icon={<Globe className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label={cs ? 'Servery online' : 'Servers Online'} value={`${data.servers.filter(s => s.online).length} / ${data.servers.length}`} tip={cs ? 'Počet dostupných pool serverů.' : 'Number of available pool servers.'} />
-              <StatCard icon={<Heart className="h-5 w-5" />} color="text-pink-400" bg="bg-pink-400/10" label={cs ? 'Podíl minera' : 'Miner Share'} value={`${data.fee.miner_share}%`} sub={cs ? `${data.fee.pool_fee}% fee` : `${data.fee.pool_fee}% fee`} tip={cs ? 'Procento odměny, které získá miner (zbytek jde na fondy a fee).' : 'Percentage of reward going to the miner (rest goes to funds and fee).'} />
-              <StatCard icon={<HardHat className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label="PPLNS Fill" value={fmtPct(data.pplns.window_pct)} sub={cs ? `${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} share` : `${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} shares`} tip={cs ? 'Naplnění PPLNS okna — určuje, kolik posledních share se započítává do odměn.' : 'PPLNS window fill — determines how many recent shares count towards rewards.'} />
-              <StatCard icon={<Wallet className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={cs ? 'Celkem vyplaceno' : 'Total Paid'} value={`${data.pplns.total_paid_zion.toFixed(2)} ZION`} sub={cs ? `${fmtNum(data.pplns.payout_rounds)} payout kol` : `${fmtNum(data.pplns.payout_rounds)} payout rounds`} tip={cs ? 'Celkové množství ZION vyplacené minerům v historii poolu.' : 'Total ZION paid out to miners in pool history.'} />
-              <StatCard icon={<Cpu className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={cs ? 'Síťový hashrate' : 'Network Hashrate'} value={fmtHashOrPending(data.runtime.network_hashrate, cs ? 'Offline' : 'Offline')} sub={cs ? `Výška ${fmtNum(data.runtime.chain_height)}` : `Height ${fmtNum(data.runtime.chain_height)}`} tip={cs ? 'Celkový výpočetní výkon celé ZION sítě.' : 'Total computational power of the entire ZION network.'} />
-              <StatCard icon={<Bell className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label={cs ? 'Template fees' : 'Template Fees'} value={`${data.runtime.template_fees_zion.toFixed(4)} ZION`} sub={cs ? `Obtížnost ${fmtDifficulty(data.runtime.difficulty)}` : `Difficulty ${fmtDifficulty(data.runtime.difficulty)}`} tip={cs ? 'Součet fee z transakcí v aktuálním block template.' : 'Sum of fees from transactions in the current block template.'} />
+              <StatCard icon={<Activity className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label={PoolDashboardCopy.poolHashrate[cs ? 'cs' : 'en']} value={fmtHashOrPending(data.aggregate.hashrate)} sub={data.aggregate.hashrate > 0 ? `${PoolDashboardCopy.k24hAvg[cs ? 'cs' : 'en']}: ${fmtHash(data.aggregate.hashrate_24h)}` : (PoolDashboardCopy.liveBackendIsNotExportingHashr[cs ? 'cs' : 'en'])} tip={PoolDashboardCopy.totalComputationalPowerOfAllMi[cs ? 'cs' : 'en']} />
+              <StatCard icon={<Users className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label={PoolDashboardCopy.activeMiners[cs ? 'cs' : 'en']} value={String(data.aggregate.active_miners)} sub={cs ? `${data.aggregate.total_miners} celkem registrovaných` : `${data.aggregate.total_miners} total registered`} tip={PoolDashboardCopy.numberOfMinersWhoSubmittedASha[cs ? 'cs' : 'en']} />
+              <StatCard icon={<Layers className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={PoolDashboardCopy.blocksFound[cs ? 'cs' : 'en']} value={fmtNum(data.aggregate.blocks_found)} tip={PoolDashboardCopy.totalNumberOfBlocksFoundByThis[cs ? 'cs' : 'en']} />
+              <StatCard icon={<Shield className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label={PoolDashboardCopy.shareEfficiency[cs ? 'cs' : 'en']} value={`${data.aggregate.share_efficiency}%`} sub={cs ? `${fmtNum(data.aggregate.valid_shares)} validních` : `${fmtNum(data.aggregate.valid_shares)} valid`} tip={PoolDashboardCopy.ratioOfValidSharesToTotalSubmi[cs ? 'cs' : 'en']} />
+              <StatCard icon={<Check className="h-5 w-5" />} color="text-teal-400" bg="bg-teal-400/10" label={PoolDashboardCopy.acceptRate[cs ? 'cs' : 'en']} value={fmtPct(data.aggregate.accept_rate_pct)} sub={cs ? `${fmtNum(data.aggregate.accepted_total)} přijatých` : `${fmtNum(data.aggregate.accepted_total)} accepted`} tip={PoolDashboardCopy.percentageOfSharesAcceptedByTh[cs ? 'cs' : 'en']} />
+              <StatCard icon={<XCircle className="h-5 w-5" />} color="text-orange-400" bg="bg-orange-400/10" label={PoolDashboardCopy.rejectedShares[cs ? 'cs' : 'en']} value={fmtNum(data.aggregate.rejected_total)} sub={cs ? `${fmtNum(data.aggregate.submits_total)} submitů celkem` : `${fmtNum(data.aggregate.submits_total)} total submits`} tip={PoolDashboardCopy.numberOfRejectedSharesOftenCau[cs ? 'cs' : 'en']} />
+              <StatCard icon={<Globe className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label={PoolDashboardCopy.serversOnline[cs ? 'cs' : 'en']} value={`${data.servers.filter(s => s.online).length} / ${data.servers.length}`} tip={PoolDashboardCopy.numberOfAvailablePoolServers[cs ? 'cs' : 'en']} />
+              <StatCard icon={<Heart className="h-5 w-5" />} color="text-pink-400" bg="bg-pink-400/10" label={PoolDashboardCopy.minerShare[cs ? 'cs' : 'en']} value={`${data.fee.miner_share}%`} sub={cs ? `${data.fee.pool_fee}% fee` : `${data.fee.pool_fee}% fee`} tip={PoolDashboardCopy.percentageOfRewardGoingToTheMi[cs ? 'cs' : 'en']} />
+              <StatCard icon={<HardHat className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label="PPLNS Fill" value={fmtPct(data.pplns.window_pct)} sub={cs ? `${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} share` : `${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} shares`} tip={PoolDashboardCopy.pplnsWindowFillDeterminesHowMa[cs ? 'cs' : 'en']} />
+              <StatCard icon={<Wallet className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={PoolDashboardCopy.totalPaid[cs ? 'cs' : 'en']} value={`${data.pplns.total_paid_zion.toFixed(2)} ZION`} sub={cs ? `${fmtNum(data.pplns.payout_rounds)} payout kol` : `${fmtNum(data.pplns.payout_rounds)} payout rounds`} tip={PoolDashboardCopy.totalZionPaidOutToMinersInPool[cs ? 'cs' : 'en']} />
+              <StatCard icon={<Cpu className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={PoolDashboardCopy.networkHashrate[cs ? 'cs' : 'en']} value={fmtHashOrPending(data.runtime.network_hashrate, PoolDashboardCopy.offline[cs ? 'cs' : 'en'])} sub={cs ? `Výška ${fmtNum(data.runtime.chain_height)}` : `Height ${fmtNum(data.runtime.chain_height)}`} tip={PoolDashboardCopy.totalComputationalPowerOfTheEn[cs ? 'cs' : 'en']} />
+              <StatCard icon={<Bell className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label={PoolDashboardCopy.templateFees[cs ? 'cs' : 'en']} value={`${data.runtime.template_fees_zion.toFixed(4)} ZION`} sub={cs ? `Obtížnost ${fmtDifficulty(data.runtime.difficulty)}` : `Difficulty ${fmtDifficulty(data.runtime.difficulty)}`} tip={PoolDashboardCopy.sumOfFeesFromTransactionsInThe[cs ? 'cs' : 'en']} />
               {data.servers.filter(s => s.stats?.blockchain?.connected).map(srv => (
                 <StatCard
                   key={srv.id}
@@ -610,7 +823,7 @@ export default function PoolDashboard() {
           ) : (
             <div className="zion-rainbow-sub p-6 text-center" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <XCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
-              <p className="text-gray-400">{cs ? 'Data poolu nejsou dostupná. Servery mohou být offline.' : 'Pool data unavailable. Servers may be offline.'}</p>
+              <p className="text-gray-400">{PoolDashboardCopy.poolDataUnavailableServersMayB[cs ? 'cs' : 'en']}</p>
             </div>
           )}
         </motion.section>
@@ -625,12 +838,12 @@ export default function PoolDashboard() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výkon' : 'Performance'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.performance[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Výkon poolu' : 'Pool Performance'}
+              {PoolDashboardCopy.poolPerformance[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Živý graf hashrate, podíl na síti a statistika štěstí poolu.' : 'Live hashrate chart, network share, and pool luck statistics.'}</p>
+            <p className="text-sm text-gray-400">{PoolDashboardCopy.liveHashrateChartNetworkShareA[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
@@ -638,11 +851,11 @@ export default function PoolDashboard() {
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Hashrate poolu (poslední hodina)' : 'Pool Hashrate (last hour)'}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{PoolDashboardCopy.poolHashrateLastHour[cs ? 'cs' : 'en']}</p>
                   <p className="text-2xl font-bold text-emerald-400 font-mono mt-1">{fmtHash(data.aggregate.hashrate)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500">{cs ? '24h průměr' : '24h average'}</p>
+                  <p className="text-xs text-gray-500">{PoolDashboardCopy.k24hAverage[cs ? 'cs' : 'en']}</p>
                   <p className="text-sm font-mono text-gray-300">{fmtHash(data.aggregate.hashrate_24h)}</p>
                 </div>
               </div>
@@ -653,7 +866,7 @@ export default function PoolDashboard() {
             <div className="space-y-4">
               {/* Network Share */}
               <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Podíl na síti' : 'Network Share'}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{PoolDashboardCopy.networkShare[cs ? 'cs' : 'en']}</p>
                 {(() => {
                   const netHash = data.runtime.network_hashrate ?? 0;
                   const poolHash = data.aggregate.hashrate ?? 0;
@@ -666,7 +879,7 @@ export default function PoolDashboard() {
                       </div>
                       <div className="mt-2 flex justify-between text-[10px] text-gray-500">
                         <span>Pool: {fmtHash(poolHash)}</span>
-                        <span>{cs ? 'Síť' : 'Network'}: {fmtHash(netHash)}</span>
+                        <span>{PoolDashboardCopy.network[cs ? 'cs' : 'en']}: {fmtHash(netHash)}</span>
                       </div>
                     </>
                   );
@@ -675,7 +888,7 @@ export default function PoolDashboard() {
 
               {/* Pool Luck */}
               <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{cs ? 'Štěstí poolu' : 'Pool Luck'}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{PoolDashboardCopy.poolLuck[cs ? 'cs' : 'en']}</p>
                 {(() => {
                   const netHash = data.runtime.network_hashrate ?? 0;
                   const poolHash = data.aggregate.hashrate ?? 0;
@@ -688,7 +901,7 @@ export default function PoolDashboard() {
                     <>
                       <p className={`text-2xl font-bold font-mono ${luckColor}`}>{luck > 0 ? `${luck.toFixed(0)}%` : '—'}</p>
                       <p className="text-[11px] text-gray-500 mt-1">
-                        {blocksFound} {cs ? 'nalezeno' : 'found'} / {expectedBlocks.toFixed(1)} {cs ? 'očekáváno' : 'expected'}
+                        {blocksFound} {PoolDashboardCopy.found[cs ? 'cs' : 'en']} / {expectedBlocks.toFixed(1)} {PoolDashboardCopy.expected[cs ? 'cs' : 'en']}
                       </p>
                     </>
                   );
@@ -697,7 +910,7 @@ export default function PoolDashboard() {
 
               {/* Pending Payouts */}
               <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{cs ? 'Čekající výplaty' : 'Pending Payouts'}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{PoolDashboardCopy.pendingPayouts[cs ? 'cs' : 'en']}</p>
                 {(() => {
                   const srv = data.servers.find(s => s.stats?.payouts);
                   const pending = srv?.stats?.payouts;
@@ -706,7 +919,7 @@ export default function PoolDashboard() {
                   return (
                     <>
                       <p className="text-2xl font-bold text-amber-400 font-mono">{pendingZion} ZION</p>
-                      <p className="text-[11px] text-gray-500 mt-1">{pendingMiners} {cs ? 'minerů čeká' : 'miners queued'}</p>
+                      <p className="text-[11px] text-gray-500 mt-1">{pendingMiners} {PoolDashboardCopy.minersQueued[cs ? 'cs' : 'en']}</p>
                     </>
                   );
                 })()}
@@ -733,12 +946,12 @@ export default function PoolDashboard() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Provoz' : 'Operations'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.operations[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Přehled runtime poolu' : 'Pool Runtime Overview'}
+              {PoolDashboardCopy.poolRuntimeOverview[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Tok submitů, naplnění PPLNS enginu a payout throughput čerpané z živé telemetrie poolu v3.0.6.' : 'Submission flow, PPLNS engine fill, and payout throughput sourced from live v3.0.6 pool telemetry.'}</p>
+            <p className="text-sm text-gray-400">{PoolDashboardCopy.submissionFlowPplnsEngineFillA[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
@@ -760,10 +973,10 @@ export default function PoolDashboard() {
                     <div key={name} className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                       <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">{name}</p>
                       <p className="mt-2 text-2xl font-semibold text-white font-mono">{fmtNum(group.accepted)}</p>
-                      <p className="text-xs text-gray-500">{cs ? 'přijaté shares' : 'accepted shares'}</p>
+                      <p className="text-xs text-gray-500">{PoolDashboardCopy.acceptedShares[cs ? 'cs' : 'en']}</p>
                       <div className="mt-3 space-y-1 text-xs">
-                        <div className="flex items-center justify-between text-gray-400"><span>{cs ? 'Submity' : 'Submits'}</span><span className="font-mono text-gray-200">{fmtNum(group.submits)}</span></div>
-                        <div className="flex items-center justify-between text-gray-400"><span>{cs ? 'Míra přijetí' : 'Accept rate'}</span><span className="font-mono text-zion-cyan">{fmtPct(groupRate)}</span></div>
+                        <div className="flex items-center justify-between text-gray-400"><span>{PoolDashboardCopy.submits[cs ? 'cs' : 'en']}</span><span className="font-mono text-gray-200">{fmtNum(group.submits)}</span></div>
+                        <div className="flex items-center justify-between text-gray-400"><span>{PoolDashboardCopy.acceptRate_2[cs ? 'cs' : 'en']}</span><span className="font-mono text-zion-cyan">{fmtPct(groupRate)}</span></div>
                       </div>
                     </div>
                   );
@@ -776,7 +989,7 @@ export default function PoolDashboard() {
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-gray-400">{cs ? 'Využití okna' : 'Window utilization'}</span>
+                    <span className="text-gray-400">{PoolDashboardCopy.windowUtilization[cs ? 'cs' : 'en']}</span>
                     <span className="text-white font-mono">{fmtPct(data?.pplns?.window_pct)}</span>
                   </div>
                   <div className="h-3 rounded-full bg-white/5 overflow-hidden">
@@ -789,34 +1002,34 @@ export default function PoolDashboard() {
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                    <p className="text-xs text-gray-500">{cs ? 'Registrovaní mineři' : 'Registered miners'}</p>
+                    <p className="text-xs text-gray-500">{PoolDashboardCopy.registeredMiners[cs ? 'cs' : 'en']}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data?.pplns?.registered_miners)}</p>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                    <p className="text-xs text-gray-500">{cs ? 'Payout kola' : 'Payout rounds'}</p>
+                    <p className="text-xs text-gray-500">{PoolDashboardCopy.payoutRounds[cs ? 'cs' : 'en']}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data?.pplns?.payout_rounds)}</p>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                    <p className="text-xs text-gray-500">{cs ? 'Celkem vyplaceno' : 'Total paid'}</p>
+                    <p className="text-xs text-gray-500">{PoolDashboardCopy.totalPaid_2[cs ? 'cs' : 'en']}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{(data?.pplns?.total_paid_zion ?? 0).toFixed(4)}</p>
                     <p className="text-xs text-gray-500">ZION</p>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                    <p className="text-xs text-gray-500">{cs ? 'Uptime poolu' : 'Pool uptime'}</p>
+                    <p className="text-xs text-gray-500">{PoolDashboardCopy.poolUptime[cs ? 'cs' : 'en']}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtUptime(data?.runtime?.pool_uptime_seconds)}</p>
                   </div>
                 </div>
 
                 <div className="zion-rainbow-sub p-4 text-sm text-zion-cyan" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                   <div className="flex items-center justify-between gap-3">
-                    <span>{cs ? 'Stav telemetrie' : 'Telemetry status'}</span>
+                    <span>{PoolDashboardCopy.telemetryStatus[cs ? 'cs' : 'en']}</span>
                     <span className="font-mono text-xs text-white">
                       pool {data?.runtime?.data_sources?.pool_tcp ? 'on' : 'off'} · rpc {data?.runtime?.data_sources?.core_rpc ? 'on' : 'off'} · prom {data?.runtime?.data_sources?.prometheus ? 'on' : 'off'}
                     </span>
                   </div>
                   {data?.aggregate?.hashrate !== undefined && data.aggregate.hashrate <= 0 && (
                     <p className="mt-2 text-xs text-zion-cyan/80">
-                      {cs ? 'Hashrate poolu zatím není v živém backend exporteru dostupný, proto stránka upřednostňuje routing, PPLNS a zdraví chain runtime v3.0.6.' : 'Pool hashrate is still unavailable on the live backend exporter, so the page prioritizes routing, PPLNS, and v3.0.6 chain runtime health.'}
+                      {PoolDashboardCopy.poolHashrateIsStillUnavailable[cs ? 'cs' : 'en']}
                     </p>
                   )}
                 </div>
@@ -835,10 +1048,10 @@ export default function PoolDashboard() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Profit Router' : 'Profit Router'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.profitRouter[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Přepínač profitability' : 'Profit Switcher'}
+              {PoolDashboardCopy.profitSwitcher[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
               {cs
@@ -853,7 +1066,7 @@ export default function PoolDashboard() {
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="h-5 w-5 text-emerald-400" />
-                <span className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'Nejlepší GPU coin' : 'Best GPU Coin'}</span>
+                <span className="text-xs uppercase tracking-wider text-gray-400">{PoolDashboardCopy.bestGpuCoin[cs ? 'cs' : 'en']}</span>
               </div>
               <div className="text-3xl font-bold text-white">
                 {data.profit_switcher.best_gpu_coin ?? '—'}
@@ -866,7 +1079,7 @@ export default function PoolDashboard() {
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-2">
                 <Cpu className="h-5 w-5 text-purple-400" />
-                <span className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'Nejlepší CPU coin' : 'Best CPU Coin'}</span>
+                <span className="text-xs uppercase tracking-wider text-gray-400">{PoolDashboardCopy.bestCpuCoin[cs ? 'cs' : 'en']}</span>
               </div>
               <div className="text-3xl font-bold text-white">
                 {data.profit_switcher.best_cpu_coin ?? '—'}
@@ -880,10 +1093,10 @@ export default function PoolDashboard() {
           {/* ── Last check ── */}
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
             <RefreshCw className="h-3 w-3" />
-            {cs ? 'Poslední kontrola: ' : 'Last check: '}
+            {PoolDashboardCopy.lastCheck[cs ? 'cs' : 'en']}
             {data.profit_switcher.last_check_unix > 0
               ? new Date(data.profit_switcher.last_check_unix * 1000).toLocaleTimeString()
-              : (cs ? 'proběhne za ~5 min' : 'in ~5 min')}
+              : (PoolDashboardCopy.in5Min[cs ? 'cs' : 'en'])}
           </div>
 
           {/* ── Profit estimates table ── */}
@@ -892,11 +1105,11 @@ export default function PoolDashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-gray-500">
-                    <th className="text-left py-2 px-3">{cs ? 'Coin' : 'Coin'}</th>
-                    <th className="text-left py-2 px-3">{cs ? 'Algoritmus' : 'Algorithm'}</th>
-                    <th className="text-right py-2 px-3">{cs ? 'Příjem USD/den' : 'Revenue USD/day'}</th>
-                    <th className="text-right py-2 px-3">{cs ? 'Zisk USD/den' : 'Profit USD/day'}</th>
-                    <th className="text-center py-2 px-3">{cs ? 'Typ' : 'Type'}</th>
+                    <th className="text-left py-2 px-3">{PoolDashboardCopy.coin[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left py-2 px-3">{PoolDashboardCopy.algorithm[cs ? 'cs' : 'en']}</th>
+                    <th className="text-right py-2 px-3">{PoolDashboardCopy.revenueUsdDay[cs ? 'cs' : 'en']}</th>
+                    <th className="text-right py-2 px-3">{PoolDashboardCopy.profitUsdDay[cs ? 'cs' : 'en']}</th>
+                    <th className="text-center py-2 px-3">{PoolDashboardCopy.type[cs ? 'cs' : 'en']}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -953,12 +1166,12 @@ export default function PoolDashboard() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Infrastruktura' : 'Infrastructure'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.infrastructure[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Server className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Pool servery' : 'Pool Servers'}
+              {PoolDashboardCopy.poolServers[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Aktuální veřejný pool host a stratum endpoint vystavený na primárním serveru.' : 'Current public pool host and stratum endpoint exposed on the primary server.'}</p>
+            <p className="text-sm text-gray-400">{PoolDashboardCopy.currentPublicPoolHostAndStratu[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
@@ -987,29 +1200,29 @@ export default function PoolDashboard() {
                       }`}
                     >
                       {!srv.online ? (
-                        <><XCircle className="h-3 w-3" /> {cs ? 'Offline' : 'Offline'}</>
+                        <><XCircle className="h-3 w-3" /> {PoolDashboardCopy.offline[cs ? 'cs' : 'en']}</>
                       ) : connected && active ? (
-                        <><CircleDot className="h-3 w-3" /> {cs ? 'Těží' : 'Mining'}</>
+                        <><CircleDot className="h-3 w-3" /> {PoolDashboardCopy.mining[cs ? 'cs' : 'en']}</>
                       ) : connected ? (
-                        <><CircleDot className="h-3 w-3" /> {cs ? 'Nečinný' : 'Idle'}</>
+                        <><CircleDot className="h-3 w-3" /> {PoolDashboardCopy.idle[cs ? 'cs' : 'en']}</>
                       ) : (
-                        <><XCircle className="h-3 w-3" /> {cs ? 'Odpojen' : 'Disconnected'}</>
+                        <><XCircle className="h-3 w-3" /> {PoolDashboardCopy.disconnected[cs ? 'cs' : 'en']}</>
                       )}
                     </span>
                   </div>
                   {srv.stats ? (
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                       <MiniStat label="Hashrate" value={fmtHash(srv.stats.hashrate?.pool)} highlight />
-                      <MiniStat label={cs ? 'Aktivní / Celkem' : 'Active / Total'} value={`${srv.stats.miners?.active ?? 0} / ${srv.stats.miners?.total ?? 0}`} />
-                      <MiniStat label={cs ? 'Validní shares' : 'Valid Shares'} value={fmtNum(srv.stats.shares?.valid)} />
-                      <MiniStat label={cs ? 'Neplatné' : 'Invalid'} value={String(srv.stats.shares?.invalid ?? 0)} />
-                      <MiniStat label={cs ? 'Nalezené bloky' : 'Blocks Found'} value={fmtNum(srv.stats.blocks?.found)} />
+                      <MiniStat label={PoolDashboardCopy.activeTotal[cs ? 'cs' : 'en']} value={`${srv.stats.miners?.active ?? 0} / ${srv.stats.miners?.total ?? 0}`} />
+                      <MiniStat label={PoolDashboardCopy.validShares[cs ? 'cs' : 'en']} value={fmtNum(srv.stats.shares?.valid)} />
+                      <MiniStat label={PoolDashboardCopy.invalid[cs ? 'cs' : 'en']} value={String(srv.stats.shares?.invalid ?? 0)} />
+                      <MiniStat label={PoolDashboardCopy.blocksFound[cs ? 'cs' : 'en']} value={fmtNum(srv.stats.blocks?.found)} />
                       <MiniStat label="PPLNS Window" value={fmtNum(srv.stats.pplns_window_size)} />
-                      <MiniStat label={cs ? 'Výška' : 'Height'} value={fmtNum(srv.stats.blockchain?.height)} />
+                      <MiniStat label={PoolDashboardCopy.height[cs ? 'cs' : 'en']} value={fmtNum(srv.stats.blockchain?.height)} />
                       <MiniStat label="Uptime" value={fmtUptime(srv.stats.pool?.uptime_secs)} />
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500">{cs ? 'Data nejsou dostupná' : 'No data available'}</p>
+                    <p className="text-sm text-gray-500">{PoolDashboardCopy.noDataAvailable[cs ? 'cs' : 'en']}</p>
                   )}
                   <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2">
                     <Terminal className="h-3.5 w-3.5 text-gray-500" />
@@ -1041,26 +1254,26 @@ export default function PoolDashboard() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Adresář' : 'Directory'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.directory[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Users className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Aktivní mineři' : 'Active Miners'} ({visibleMiners.length})
+              {PoolDashboardCopy.activeMiners[cs ? 'cs' : 'en']} ({visibleMiners.length})
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Aktuální adresář minerů z živého pool backendu. Pro detail konkrétní adresy použijte vyhledávání výše.' : 'Recent miner directory from the live pool backend. Use miner search for full address-level detail.'}</p>
+            <p className="text-sm text-gray-400">{PoolDashboardCopy.recentMinerDirectoryFromTheLiv[cs ? 'cs' : 'en']}</p>
             <div className="mt-1 inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
               <button
                 onClick={() => setActiveOnly(true)}
                 className={`px-3 py-1.5 text-xs rounded-lg transition ${activeOnly ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
                 style={activeOnly ? ({ '--rc': '147, 51, 234' } as React.CSSProperties) : undefined}
               >
-                {cs ? 'Jen aktivní' : 'Active only'}
+                {PoolDashboardCopy.activeOnly[cs ? 'cs' : 'en']}
               </button>
               <button
                 onClick={() => setActiveOnly(false)}
                 className={`px-3 py-1.5 text-xs rounded-lg transition ${!activeOnly ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
                 style={!activeOnly ? ({ '--rc': '147, 51, 234' } as React.CSSProperties) : undefined}
               >
-                {cs ? 'Všichni mineři' : 'All miners'}
+                {PoolDashboardCopy.allMiners[cs ? 'cs' : 'en']}
               </button>
             </div>
           </div>
@@ -1071,13 +1284,13 @@ export default function PoolDashboard() {
                 <thead>
                   <tr className="border-b border-white/[0.08]">
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">#</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Miner / Worker' : 'Miner / Worker'}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Payout adresa' : 'Payout Address'}</th>
-                    <th className="text-right px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Hashrate' : 'Hashrate'}</th>
-                    <th className="text-right px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Shares' : 'Shares'}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Server' : 'Server'}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Poslední share' : 'Last Share'}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Stav' : 'Status'}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.minerWorker[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.payoutAddress[cs ? 'cs' : 'en']}</th>
+                    <th className="text-right px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.hashrate[cs ? 'cs' : 'en']}</th>
+                    <th className="text-right px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.shares[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.server[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.lastShare[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.status[cs ? 'cs' : 'en']}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1120,14 +1333,14 @@ export default function PoolDashboard() {
                               : "text-gray-500 bg-white/5 border border-white/[0.06]"
                           }`}>
                             <CircleDot className="h-3 w-3" />
-                            {isActive ? (cs ? 'Aktivní' : 'Active') : (cs ? 'Neaktivní' : 'Inactive')}
+                            {isActive ? (PoolDashboardCopy.active[cs ? 'cs' : 'en']) : (PoolDashboardCopy.inactive[cs ? 'cs' : 'en'])}
                           </span>
                         </td>
                       </tr>
                     );
                   })}
                   {visibleMiners.length === 0 && (
-                    <tr><td colSpan={8} className="px-5 py-10 text-center text-gray-500">{cs ? 'Živý backend zatím nezveřejňuje poslední řádky minerů. Pro individuální statistiky vyhledejte adresu výše.' : 'Live backend is not exposing recent miner rows yet. Search by address above for individual stats.'}</td></tr>
+                    <tr><td colSpan={8} className="px-5 py-10 text-center text-gray-500">{PoolDashboardCopy.liveBackendIsNotExposingRecent[cs ? 'cs' : 'en']}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -1145,12 +1358,12 @@ export default function PoolDashboard() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Ledger' : 'Ledger'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.ledger[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Box className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Poslední síťové bloky' : 'Recent Network Blocks'} ({data?.recent_blocks.length ?? 0})
+              {PoolDashboardCopy.recentNetworkBlocks[cs ? 'cs' : 'en']} ({data?.recent_blocks.length ?? 0})
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Nejnovější potvrzené chain bloky z aktuálního v3.0.6 runtime. Veřejná atribuce vítěze poolu zatím není vystavena samostatně.' : 'Latest confirmed chain blocks from the current v3.0.6 runtime. Public pool winner attribution is not exposed separately yet.'}</p>
+            <p className="text-sm text-gray-400">{PoolDashboardCopy.latestConfirmedChainBlocksFrom[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
@@ -1158,12 +1371,12 @@ export default function PoolDashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.08]">
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Výška' : 'Height'}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.height[cs ? 'cs' : 'en']}</th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Hash</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Obtížnost' : 'Difficulty'}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Odměna' : 'Reward'}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.difficulty[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.reward[cs ? 'cs' : 'en']}</th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Miner</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Čas' : 'Time'}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.time[cs ? 'cs' : 'en']}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1186,7 +1399,7 @@ export default function PoolDashboard() {
                     </tr>
                   ))}
                   {(!data?.recent_blocks || data.recent_blocks.length === 0) && (
-                    <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-500">{cs ? 'Nejsou dostupné žádné poslední chain bloky' : 'No recent chain blocks available'}</td></tr>
+                    <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-500">{PoolDashboardCopy.noRecentChainBlocksAvailable[cs ? 'cs' : 'en']}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -1207,12 +1420,12 @@ export default function PoolDashboard() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Začínáme' : 'Getting Started'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.gettingStarted[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Rocket className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Začněte těžit ZION' : 'Start Mining ZION'}
+              {PoolDashboardCopy.startMiningZion[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Postupujte podle těchto kroků a začněte těžit během několika minut. ZION používá zion-miner (Rust binárka z V3).' : 'Follow these steps to begin mining in minutes. ZION uses zion-miner (the Rust binary from V3).'}</p>
+            <p className="text-sm text-gray-400">{PoolDashboardCopy.followTheseStepsToBeginMiningI[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
@@ -1223,17 +1436,17 @@ export default function PoolDashboard() {
                   <Wallet className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{cs ? '1. Získejte ZION peněženku' : '1. Get a ZION Wallet'}</h3>
-                  <p className="text-[11px] text-gray-500">{cs ? 'Vyžadována platná 44-znaková zion1... adresa' : 'Valid 44-char zion1... address required'}</p>
+                  <h3 className="text-base font-semibold text-white">{PoolDashboardCopy.k1GetAZionWallet[cs ? 'cs' : 'en']}</h3>
+                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.valid44CharZion1AddressRequire[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-300 mb-3">{cs ? 'Stáhněte desktop peněženku ZION nebo použijte webovou peněženku pro vytvoření těžební adresy. Pool odmítne připojení bez platné payout adresy.' : 'Download the ZION desktop wallet or use the web wallet to generate your mining address. The pool rejects connections without a valid payout address.'}</p>
+              <p className="text-sm text-gray-300 mb-3">{PoolDashboardCopy.downloadTheZionDesktopWalletOr[cs ? 'cs' : 'en']}</p>
               <div className="zion-rainbow-sub p-3 text-xs text-amber-200 flex items-start gap-2 mb-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <Bell className="h-3.5 w-3.5 mt-0.5" />
-                <span>{cs ? 'Kritické: ZION_PAYOUT_ADDRESS musí být platná 44-znaková zion1... adresa. Pool odmítne spojení ("pool closed the connection") bez ní.' : 'Critical: ZION_PAYOUT_ADDRESS must be a valid 44-char zion1... address. The pool rejects the connection ("pool closed the connection") without it.'}</span>
+                <span>{PoolDashboardCopy.criticalZionPayoutAddressMustB[cs ? 'cs' : 'en']}</span>
               </div>
               <Link href="/download" className="inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
-                {cs ? 'Stáhnout peněženku' : 'Download Wallet'} <ExternalLink className="h-3.5 w-3.5" />
+                {PoolDashboardCopy.downloadWallet[cs ? 'cs' : 'en']} <ExternalLink className="h-3.5 w-3.5" />
               </Link>
             </div>
 
@@ -1244,20 +1457,20 @@ export default function PoolDashboard() {
                   <Cpu className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{cs ? '2. Sestavte miner' : '2. Build the Miner'}</h3>
-                  <p className="text-[11px] text-gray-500">{cs ? 'Rust toolchain + V3 zdroj' : 'Rust toolchain + V3 source'}</p>
+                  <h3 className="text-base font-semibold text-white">{PoolDashboardCopy.k2BuildTheMiner[cs ? 'cs' : 'en']}</h3>
+                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.rustToolchainV3Source[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-300 mb-3">{cs ? 'zion-miner je Rust binárka z V3 workspace. Sestavte ji přes cargo. Pro GPU přidejte --features gpu-opencl (nebo gpu-cuda, gpu-metal).' : 'zion-miner is the Rust binary from the V3 workspace. Build it with cargo. For GPU add --features gpu-opencl (or gpu-cuda, gpu-metal).'}</p>
+              <p className="text-sm text-gray-300 mb-3">{PoolDashboardCopy.zionMinerIsTheRustBinaryFromTh[cs ? 'cs' : 'en']}</p>
               <div className="space-y-3">
                 <div>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{cs ? 'CPU sestavení' : 'CPU build'}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{PoolDashboardCopy.cpuBuild[cs ? 'cs' : 'en']}</p>
                   <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
 {`cargo build --release --manifest-path V3/Cargo.toml -p zion-miner`}
                   </pre>
                 </div>
                 <div>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{cs ? 'GPU sestavení (OpenCL)' : 'GPU build (OpenCL)'}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{PoolDashboardCopy.gpuBuildOpencl[cs ? 'cs' : 'en']}</p>
                   <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
 {`cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu-opencl`}
                   </pre>
@@ -1265,10 +1478,10 @@ export default function PoolDashboard() {
               </div>
               <div className="mt-3 flex flex-wrap gap-3 text-sm">
                 <Link href="/mining/node-setup" className="inline-flex items-center gap-2 text-zion-cyan hover:text-white transition-colors">
-                  {cs ? 'Průvodce nastavením' : 'Node setup guide'} <ExternalLink className="h-3.5 w-3.5" />
+                  {PoolDashboardCopy.nodeSetupGuide[cs ? 'cs' : 'en']} <ExternalLink className="h-3.5 w-3.5" />
                 </Link>
                 <Link href="/mining/guides" className="inline-flex items-center gap-2 text-zion-cyan hover:text-white transition-colors">
-                  {cs ? 'Více průvodců' : 'More guides'} <ExternalLink className="h-3.5 w-3.5" />
+                  {PoolDashboardCopy.moreGuides[cs ? 'cs' : 'en']} <ExternalLink className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </div>
@@ -1280,15 +1493,15 @@ export default function PoolDashboard() {
                   <Layers className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{cs ? '3. Vyberte algoritmus' : '3. Choose Algorithm'}</h3>
-                  <p className="text-[11px] text-gray-500">{cs ? '3 varianty Deeksha PoW' : '3 Deeksha PoW variants'}</p>
+                  <h3 className="text-base font-semibold text-white">{PoolDashboardCopy.k3ChooseAlgorithm[cs ? 'cs' : 'en']}</h3>
+                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.k3DeekshaPowVariants[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
               <div className="grid gap-3 md:grid-cols-3">
                 {[
-                  { algo: 'deeksha_lite_v1', tag: cs ? 'Výchozí · CPU + GPU · Vyvážený' : 'Default · CPU + GPU · Balanced', desc: cs ? 'Standardní Deeksha Lite — doporučeno pro začátek.' : 'Standard Deeksha Lite — recommended starting point.' },
-                  { algo: 'cosmic_harmony_ekam_deeksha_v2', tag: cs ? 'Pokročilý · CPU + GPU' : 'Advanced · CPU + GPU', desc: cs ? 'Ekam v2 — pokročilejší varianta Deeksha.' : 'Ekam v2 — advanced Deeksha variant.' },
-                  { algo: 'deeksha_lite_fire', tag: cs ? 'Teplotně náročný · 512 KiB scratchpad · Vyšší příkon' : 'Thermal-intensive · 512 KiB scratchpad · Higher power draw', desc: cs ? 'Fire — vyšší hashrate, vyšší spotřeba. RX 5700 XT: 18.16 KH/s.' : 'Fire — higher hashrate, higher power. RX 5700 XT: 18.16 KH/s.' },
+                  { algo: 'deeksha_lite_v1', tag: PoolDashboardCopy.defaultCpuGpuBalanced[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.standardDeekshaLiteRecommended[cs ? 'cs' : 'en'] },
+                  { algo: 'cosmic_harmony_ekam_deeksha_v2', tag: PoolDashboardCopy.advancedCpuGpu[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.ekamV2AdvancedDeekshaVariant[cs ? 'cs' : 'en'] },
+                  { algo: 'deeksha_lite_fire', tag: PoolDashboardCopy.thermalIntensive512KibScratchp[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.fireHigherHashrateHigherPowerR[cs ? 'cs' : 'en'] },
                 ].map((a) => (
                   <div key={a.algo} className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                     <div className="flex items-center justify-between mb-2">
@@ -1309,8 +1522,8 @@ export default function PoolDashboard() {
                   <Terminal className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{cs ? '4. Nakonfigurujte a připojte' : '4. Configure & Connect'}</h3>
-                  <p className="text-[11px] text-gray-500">{cs ? 'Spusťte zion-miner se správnými env vars' : 'Run zion-miner with the right env vars'}</p>
+                  <h3 className="text-base font-semibold text-white">{PoolDashboardCopy.k4ConfigureConnect[cs ? 'cs' : 'en']}</h3>
+                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.runZionMinerWithTheRightEnvVar[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
 
@@ -1322,14 +1535,14 @@ export default function PoolDashboard() {
                     className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${miningMode === 'cpu' ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
                     style={miningMode === 'cpu' ? ({ '--rc': '147, 51, 234' } as React.CSSProperties) : undefined}
                   >
-                    <Cpu className="h-3.5 w-3.5 inline mr-1.5" /> {cs ? 'CPU těžba' : 'CPU Mining'}
+                    <Cpu className="h-3.5 w-3.5 inline mr-1.5" /> {PoolDashboardCopy.cpuMining[cs ? 'cs' : 'en']}
                   </button>
                   <button
                     onClick={() => setMiningMode('gpu')}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${miningMode === 'gpu' ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
                     style={miningMode === 'gpu' ? ({ '--rc': '147, 51, 234' } as React.CSSProperties) : undefined}
                   >
-                    <Zap className="h-3.5 w-3.5 inline mr-1.5" /> {cs ? 'GPU těžba' : 'GPU Mining'}
+                    <Zap className="h-3.5 w-3.5 inline mr-1.5" /> {PoolDashboardCopy.gpuMining[cs ? 'cs' : 'en']}
                   </button>
                 </div>
                 <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
@@ -1354,7 +1567,7 @@ export default function PoolDashboard() {
                 {minerOS === 'linux' ? (
                   <div>
                     <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5 flex items-center">
-                      {cs ? 'Linux / macOS (bash)' : 'Linux / macOS (bash)'}
+                      {PoolDashboardCopy.linuxMacosBash[cs ? 'cs' : 'en']}
                       <CopyButton text={`ZION_POOL_ADDR=${SITE_POOL_PRIMARY} \\\nZION_WORKER_NAME=my-rig \\\nZION_MINER_ID=worker-01 \\\nZION_PAYOUT_ADDRESS=zion1...your44charaddress \\\nZION_MINER_ALGORITHM=deeksha_lite_v1 \\\nZION_LOOP_COUNT=1000000${miningMode === 'gpu' ? ' \\\nZION_GPU_BACKEND=opencl \\\nZION_NONCE_COUNT_GPU=262144' : ''} \\\ncargo run --release --manifest-path V3/Cargo.toml -p zion-miner`} />
                     </p>
                     <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
@@ -1391,12 +1604,12 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
                 {miningMode === 'gpu' && (
                   <div className="zion-rainbow-sub p-3 text-xs text-zion-cyan/90 flex items-start gap-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                     <Zap className="h-3.5 w-3.5 mt-0.5" />
-                    <span>{cs ? 'GPU: ZION_GPU_BACKEND=opencl (nebo cuda, metal). ZION_NONCE_COUNT_GPU=262144 je kritické pro GPU hashrate. ZION_LOOP_COUNT=1000000 zabraňuje reconnectům.' : 'GPU: ZION_GPU_BACKEND=opencl (or cuda, metal). ZION_NONCE_COUNT_GPU=262144 is critical for GPU hashrate. ZION_LOOP_COUNT=1000000 prevents reconnects.'}</span>
+                    <span>{PoolDashboardCopy.gpuZionGpuBackendOpenclOrCudaM[cs ? 'cs' : 'en']}</span>
                   </div>
                 )}
                 <div className="zion-rainbow-sub p-3 text-xs text-amber-200 flex items-start gap-2" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <Shield className="h-3.5 w-3.5 mt-0.5" />
-                  <span>{cs ? 'Pool a miner binárky musí být zkompilovány ze stejné zdrojové verze — protokol není zpětně kompatibilní.' : 'Pool and miner binaries must be compiled from the same source version — protocol is not backward compatible.'}</span>
+                  <span>{PoolDashboardCopy.poolAndMinerBinariesMustBeComp[cs ? 'cs' : 'en']}</span>
                 </div>
               </div>
             </div>
@@ -1408,34 +1621,34 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
                   <TrendingUp className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{cs ? '5. Sledujte a vydělávejte' : '5. Monitor & Earn'}</h3>
-                  <p className="text-[11px] text-gray-500">{cs ? 'Sledujte své odměny v reálném čase' : 'Track your rewards in real-time'}</p>
+                  <h3 className="text-base font-semibold text-white">{PoolDashboardCopy.k5MonitorEarn[cs ? 'cs' : 'en']}</h3>
+                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.trackYourRewardsInRealTime[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-300 mb-3">{cs ? 'Po připojení sledujte své těžební statistiky přímo zde. Výplaty probíhají automaticky po dosažení minimálního prahu.' : 'Once connected, monitor your mining stats right here. Payouts are automatic when you reach the minimum threshold.'}</p>
+              <p className="text-sm text-gray-300 mb-3">{PoolDashboardCopy.onceConnectedMonitorYourMining[cs ? 'cs' : 'en']}</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                 <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                  <p className="text-[11px] text-gray-500">{cs ? 'Min. payout' : 'Min Payout'}</p>
+                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.minPayout[cs ? 'cs' : 'en']}</p>
                   <p className="text-lg font-bold text-white font-mono">{(data?.fee?.min_payout ?? 0.1)} ZION</p>
                 </div>
                 <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                  <p className="text-[11px] text-gray-500">{cs ? 'Podíl minera' : 'Miner Share'}</p>
+                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.minerShare[cs ? 'cs' : 'en']}</p>
                   <p className="text-lg font-bold text-white font-mono">{(data?.fee?.miner_share ?? 89)}%</p>
                 </div>
                 <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                  <p className="text-[11px] text-gray-500">{cs ? 'Metoda odměn' : 'Reward Method'}</p>
+                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.rewardMethod[cs ? 'cs' : 'en']}</p>
                   <p className="text-lg font-bold text-white">PPLNS</p>
                 </div>
                 <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                  <p className="text-[11px] text-gray-500">{cs ? 'Pool fee' : 'Pool Fee'}</p>
+                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.poolFee[cs ? 'cs' : 'en']}</p>
                   <p className="text-lg font-bold text-white font-mono">{(data?.fee?.pool_fee ?? 1)}%</p>
                 </div>
               </div>
               <div className="zion-rainbow-sub p-3 text-xs text-gray-300 mb-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                {cs ? 'Rozdělení coinbase: 89 % miner · 5 % humanitární tithe · 5 % fond Issobella · 1 % pool fee. PPLNS — férová distribuce podle odevzdaných shares.' : 'Coinbase split: 89% miner · 5% humanitarian tithe · 5% Issobella fund · 1% pool fee. PPLNS — fair distribution based on contributed shares.'}
+                {PoolDashboardCopy.coinbaseSplit89Miner5Humanitar[cs ? 'cs' : 'en']}
               </div>
               <Link href="/pool/miner/YOUR_ADDRESS" className="inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
-                {cs ? 'Otevřít dashboard minera' : 'Open miner dashboard'} <ArrowRight className="h-3.5 w-3.5" />
+                {PoolDashboardCopy.openMinerDashboard[cs ? 'cs' : 'en']} <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
           </div>
@@ -1450,22 +1663,22 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Funkce' : 'Features'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.features[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-purple-400" />
-              {cs ? 'Proč těžit s námi' : 'Why Mine With Us'}
+              {PoolDashboardCopy.whyMineWithUs[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Férový, transparentní a humanitárně zaměřený těžební pool.' : 'Fair, transparent, and humanitarian-focused mining pool.'}</p>
+            <p className="text-sm text-gray-400">{PoolDashboardCopy.fairTransparentAndHumanitarian[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-purple-500/80 to-indigo-600/80", title: cs ? 'Deeksha PoW algoritmus' : 'Deeksha PoW Algorithm', desc: cs ? 'Nativní ZION PoW, CPU + GPU, odolný vůči ASIC. 3 varianty: Lite v1, Ekam v2, Fire.' : 'Native ZION PoW, CPU + GPU, ASIC-resistant. 3 variants: Lite v1, Ekam v2, Fire.' },
-              { icon: <Heart className="h-5 w-5 text-white" />, color: "from-pink-500/80 to-rose-600/80", title: cs ? 'Humanitární mise' : 'Humanitarian Mission', desc: cs ? '5 % humanitární tithe + 5 % fond Issobella. Těžba pro vědomí.' : '5% humanitarian + 5% Issobella fund. Mining for consciousness.' },
-              { icon: <Server className="h-5 w-5 text-white" />, color: "from-blue-500/80 to-cyan-600/80", title: cs ? 'v3.0.6 pool infrastruktura' : 'v3.0.6 Pool Infrastructure', desc: cs ? 'Edge Node 1 pool, skutečný stratum, PPLNS, 2-uzlový mesh, RPC audit log.' : 'Edge Node 1 pool, real stratum, PPLNS, 2-node mesh, RPC audit log.' },
-              { icon: <Shield className="h-5 w-5 text-white" />, color: "from-emerald-500/80 to-teal-600/80", title: cs ? 'PPLNS odměny' : 'PPLNS Rewards', desc: cs ? 'Férová distribuce odměn podle vašich odevzdaných shares. Bez luck variance.' : 'Fair reward distribution based on your contributed shares. No luck variance.' },
-              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-orange-500/80 to-amber-600/80", title: cs ? 'GPU akcelerace' : 'GPU Acceleration', desc: cs ? 'Podpora OpenCL/CUDA/Metal. RX 5700 XT: 18 KH/s na Fire.' : 'OpenCL/CUDA/Metal support. RX 5700 XT: 18 KH/s on Fire.' },
-              { icon: <Signal className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-blue-600/80", title: cs ? 'Monitoring v reálném čase' : 'Real-Time Monitoring', desc: cs ? 'Živý přehled hashratu, shares a výdělků přes webový dashboard a API.' : 'Live hashrate, shares, and earnings via web dashboard + API.' },
+              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-purple-500/80 to-indigo-600/80", title: PoolDashboardCopy.deekshaPowAlgorithm[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.nativeZionPowCpuGpuAsicResista[cs ? 'cs' : 'en'] },
+              { icon: <Heart className="h-5 w-5 text-white" />, color: "from-pink-500/80 to-rose-600/80", title: PoolDashboardCopy.humanitarianMission[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.k5Humanitarian5IssobellaFundMin[cs ? 'cs' : 'en'] },
+              { icon: <Server className="h-5 w-5 text-white" />, color: "from-blue-500/80 to-cyan-600/80", title: PoolDashboardCopy.v306PoolInfrastructure[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.edgeNode1PoolRealStratumPplns2[cs ? 'cs' : 'en'] },
+              { icon: <Shield className="h-5 w-5 text-white" />, color: "from-emerald-500/80 to-teal-600/80", title: PoolDashboardCopy.pplnsRewards[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.fairRewardDistributionBasedOnY[cs ? 'cs' : 'en'] },
+              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-orange-500/80 to-amber-600/80", title: PoolDashboardCopy.gpuAcceleration[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.openclCudaMetalSupportRx5700Xt[cs ? 'cs' : 'en'] },
+              { icon: <Signal className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-blue-600/80", title: PoolDashboardCopy.realTimeMonitoring[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.liveHashrateSharesAndEarningsV[cs ? 'cs' : 'en'] },
             ].map((f) => (
               <div key={f.title} className="group zion-rainbow-sub p-5 transition-all duration-200" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <div className={`flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br ${f.color} opacity-80 group-hover:opacity-100 transition mb-4`}>
@@ -1487,53 +1700,53 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Pro nástroje' : 'Pro Tools'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.proTools[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Nástroje operátora' : 'Operator Toolkit'}
+              {PoolDashboardCopy.operatorToolkit[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Failover šablony, odhad výnosu a automatizační endpointy pro řízený provoz těžby.' : 'Failover templates, profit estimate, and automation endpoints for managed mining operations.'}</p>
+            <p className="text-sm text-gray-400">{PoolDashboardCopy.failoverTemplatesProfitEstimat[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-3">
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Odhad výnosu' : 'Profit Estimator'}</p>
-              <label className="text-xs text-gray-400">{cs ? 'Váš hashrate (podporuje K/M/G/T)' : 'Your hashrate (supports K/M/G/T)'}</label>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{PoolDashboardCopy.profitEstimator[cs ? 'cs' : 'en']}</p>
+              <label className="text-xs text-gray-400">{PoolDashboardCopy.yourHashrateSupportsKMGT[cs ? 'cs' : 'en']}</label>
               <input
                 value={myHashrateInput}
                 onChange={(e) => setMyHashrateInput(e.target.value)}
-                placeholder={cs ? 'např. 250M' : 'e.g. 250M'}
+                placeholder={PoolDashboardCopy.eG250m[cs ? 'cs' : 'en']}
                 className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 font-mono outline-none focus:border-zion-cyan/50"
               />
               <div className="mt-4 space-y-2 text-sm">
-                <div className="flex items-center justify-between"><span className="text-gray-500">{cs ? 'Parsovaný hashrate' : 'Parsed hashrate'}</span><span className="text-white font-mono">{fmtHash(myHashrate)}</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">{cs ? 'Podíl v poolu' : 'Pool share'}</span><span className="text-zion-cyan font-mono">{mySharePct.toFixed(6)}%</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">{cs ? 'Pozorované bloky/den' : 'Observed blocks/day'}</span><span className="text-gray-200 font-mono">{blocksPerDay.toFixed(2)}</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">{cs ? 'Odměna / blok' : 'Reward / block'}</span><span className="text-gray-200 font-mono">{rewardPerBlock.toFixed(4)} ZION</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">{PoolDashboardCopy.parsedHashrate[cs ? 'cs' : 'en']}</span><span className="text-white font-mono">{fmtHash(myHashrate)}</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">{PoolDashboardCopy.poolShare[cs ? 'cs' : 'en']}</span><span className="text-zion-cyan font-mono">{mySharePct.toFixed(6)}%</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">{PoolDashboardCopy.observedBlocksDay[cs ? 'cs' : 'en']}</span><span className="text-gray-200 font-mono">{blocksPerDay.toFixed(2)}</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">{PoolDashboardCopy.rewardBlock[cs ? 'cs' : 'en']}</span><span className="text-gray-200 font-mono">{rewardPerBlock.toFixed(4)} ZION</span></div>
                 <div className="mt-3 zion-rainbow-sub p-3 flex items-center justify-between" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                  <span className="text-emerald-200 text-xs uppercase tracking-wider">{cs ? 'Odhad denní odměny' : 'Estimated daily reward'}</span>
+                  <span className="text-emerald-200 text-xs uppercase tracking-wider">{PoolDashboardCopy.estimatedDailyReward[cs ? 'cs' : 'en']}</span>
                   <span className="text-emerald-300 font-bold font-mono">{myDailyZion.toFixed(4)} ZION</span>
                 </div>
               </div>
             </div>
 
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Failover konfigurace' : 'Failover Config'}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{PoolDashboardCopy.failoverConfig[cs ? 'cs' : 'en']}</p>
               <div className="space-y-3">
                 <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{cs ? 'zion-miner (primární + záložní)' : 'zion-miner (primary + backup)'}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{PoolDashboardCopy.zionMinerPrimaryBackup[cs ? 'cs' : 'en']}</p>
                   <pre className="block text-xs text-zion-cyan whitespace-pre-wrap break-all font-mono">{zionMinerFailoverCmd}</pre>
                   <div className="mt-2"><CopyButton text={zionMinerFailoverCmd} /></div>
                 </div>
                 <div className="zion-rainbow-sub p-3 text-xs text-amber-200 flex items-start gap-2" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <Shield className="h-3.5 w-3.5 mt-0.5" />
-                  <span>{cs ? 'Pro failover přepněte ZION_POOL_ADDR na záložní endpoint a restartujte zion-miner. Pool a miner musí být ze stejné zdrojové verze.' : 'For failover, switch ZION_POOL_ADDR to the backup endpoint and restart zion-miner. Pool and miner must be from the same source version.'}</span>
+                  <span>{PoolDashboardCopy.forFailoverSwitchZionPoolAddrT[cs ? 'cs' : 'en']}</span>
                 </div>
               </div>
             </div>
 
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Automatizace a export' : 'Automation & Export'}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{PoolDashboardCopy.automationExport[cs ? 'cs' : 'en']}</p>
               <div className="space-y-2.5 text-sm">
                 <a href="/api/pool/stats" target="_blank" rel="noreferrer" className="flex items-center justify-between zion-rainbow-sub px-3 py-2 transition" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <span className="text-gray-200 font-mono text-xs">/api/pool/stats</span>
@@ -1549,7 +1762,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
                 </a>
                 <div className="zion-rainbow-sub p-3 text-xs text-amber-200 flex items-start gap-2" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                   <Bell className="h-3.5 w-3.5 mt-0.5" />
-                  <span>{cs ? 'Nastavte alert: pokud poslední share přesáhne 10 minut nebo míra přijetí klesne pod 95 %, přepněte na záložní endpoint.' : 'Set alert: if last share exceeds 10 minutes or accept rate drops below 95%, rotate to the backup endpoint.'}</span>
+                  <span>{PoolDashboardCopy.setAlertIfLastShareExceeds10Mi[cs ? 'cs' : 'en']}</span>
                 </div>
               </div>
             </div>
@@ -1568,23 +1781,23 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">FAQ</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <span className="flex items-center justify-center h-7 w-7 rounded-full border border-blue-400/30 bg-blue-400/10 text-blue-400 text-sm font-bold">?</span>
-              {cs ? 'Časté dotazy' : 'Frequently Asked Questions'}
+              {PoolDashboardCopy.frequentlyAskedQuestions[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Odpovědi na nejčastější otázky minerů.' : 'Answers to the most common miner questions.'}</p>
+            <p className="text-sm text-gray-400">{PoolDashboardCopy.answersToTheMostCommonMinerQue[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="space-y-3">
             {[
-              { q: cs ? 'Jaký algoritmus ZION používá?' : 'What algorithm does ZION use?', a: cs ? 'ZION používá Deeksha — vlastní proof-of-work algoritmus odolný vůči ASIC. 3 varianty: Deeksha Lite v1 (výchozí), Ekam v2 (pokročilý), Fire (teplotně náročný, 512 KiB scratchpad). Podporuje CPU i GPU těžbu.' : 'ZION uses Deeksha — a custom ASIC-resistant proof-of-work algorithm. 3 variants: Deeksha Lite v1 (default), Ekam v2 (advanced), Fire (thermal-intensive, 512 KiB scratchpad). It supports both CPU and GPU mining.' },
-              { q: cs ? 'Jak funguje PPLNS?' : 'How does PPLNS work?', a: cs ? 'PPLNS (Pay Per Last N Shares) odměňuje minery podle jejich příspěvku v posledních N share. Je férovější než proporcionální odměny a penalizuje pool-hopping.' : 'PPLNS (Pay Per Last N Shares) rewards miners based on their contribution in the last N shares. It is fairer than proportional rewards and penalizes pool-hopping.' },
-              { q: cs ? 'Jaký je minimální payout?' : 'What is the minimum payout?', a: cs ? `Minimální výplata je ${data?.fee?.min_payout ?? 0.1} ZION. Výplaty probíhají automaticky po nalezení bloku, jakmile váš zůstatek dosáhne prahu.` : `The minimum payout is ${data?.fee?.min_payout ?? 0.1} ZION. Payouts happen automatically after a block is found once your balance reaches the threshold.` },
-              { q: cs ? 'Kam jdou tithe a fondy?' : 'Where do tithe and funds go?', a: cs ? 'Distribuce coinbase: 89 % miner, 5 % humanitární tithe, 5 % fond Issobella, 1 % pool fee. Tithe a fondy jsou kódovány přímo v coinbase transakci na chain úrovni.' : 'Coinbase distribution: 89% miner, 5% humanitarian tithe, 5% Issobella fund, 1% pool fee. Tithe and funds are encoded directly in the coinbase transaction at the chain level.' },
-              { q: cs ? 'Mohu používat XMRig?' : 'Can I use XMRig?', a: cs ? 'NE. ZION používá Deeksha PoW, který XMRig nepodporuje. Musíte použít oficiální zion-miner (Rust binárka z V3).' : 'NO. ZION uses Deeksha PoW, which is not supported by XMRig. You must use the official zion-miner (the Rust binary from V3).' },
-              { q: cs ? 'Co znamená Pool Luck?' : 'What does Pool Luck mean?', a: cs ? 'Pool Luck ukazuje poměr nalezených bloků vs. statisticky očekávaných na základě hashrate poolu a obtížnosti sítě. 100 % = přesně dle očekávání, nad 100 % = lepší než průměr.' : 'Pool Luck shows the ratio of blocks found vs. statistically expected based on pool hashrate and network difficulty. 100% = exactly as expected, above 100% = better than average.' },
-              { q: cs ? 'Jak nastavím failover?' : 'How do I set up failover?', a: cs ? 'Pro failover přepněte ZION_POOL_ADDR na záložní endpoint a restartujte zion-miner. Pool a miner musí být zkompilovány ze stejné zdrojové verze — protokol není zpětně kompatibilní.' : 'For failover, switch ZION_POOL_ADDR to the backup endpoint and restart zion-miner. Pool and miner must be compiled from the same source version — protocol is not backward compatible.' },
-              { q: cs ? 'Jak často probíhají výplaty?' : 'How often are payouts processed?', a: cs ? 'Výplaty se zpracovávají po každém nalezeném bloku. Pool spočítá PPLNS podíly, vytvoří transakci a odešle ji do sítě. Potvrzení trvá obvykle 10 bloků.' : 'Payouts are processed after every block found. The pool calculates PPLNS shares, creates a transaction, and broadcasts it. Confirmation takes around 10 blocks.' },
-              { q: cs ? 'Potřebuji GPU?' : 'Do I need a GPU?', a: cs ? 'Ne, CPU těžba funguje. Ale GPU (OpenCL/CUDA/Metal) dává 10-100x vyšší hashrate. RX 5700 XT dosahuje 18.16 KH/s na Fire.' : 'No, CPU mining works. But GPU (OpenCL/CUDA/Metal) gives 10-100x more hashrate. RX 5700 XT reaches 18.16 KH/s on Fire.' },
-              { q: cs ? 'Co je ZION_PAYOUT_ADDRESS?' : 'What is ZION_PAYOUT_ADDRESS?', a: cs ? 'Kritické: musí být platná 44-znaková zion1... adresa. Pool odmítne spojení ("pool closed the connection") bez ní — fallback na miner_id není povolen.' : 'Critical: must be a valid 44-char zion1... address. The pool rejects the connection ("pool closed the connection") without it — fallback to miner_id is not allowed.' },
+              { q: PoolDashboardCopy.whatAlgorithmDoesZionUse[cs ? 'cs' : 'en'], a: PoolDashboardCopy.zionUsesDeekshaACustomAsicResi[cs ? 'cs' : 'en'] },
+              { q: PoolDashboardCopy.howDoesPplnsWork[cs ? 'cs' : 'en'], a: PoolDashboardCopy.pplnsPayPerLastNSharesRewardsM[cs ? 'cs' : 'en'] },
+              { q: PoolDashboardCopy.whatIsTheMinimumPayout[cs ? 'cs' : 'en'], a: cs ? `Minimální výplata je ${data?.fee?.min_payout ?? 0.1} ZION. Výplaty probíhají automaticky po nalezení bloku, jakmile váš zůstatek dosáhne prahu.` : `The minimum payout is ${data?.fee?.min_payout ?? 0.1} ZION. Payouts happen automatically after a block is found once your balance reaches the threshold.` },
+              { q: PoolDashboardCopy.whereDoTitheAndFundsGo[cs ? 'cs' : 'en'], a: PoolDashboardCopy.coinbaseDistribution89Miner5Hu[cs ? 'cs' : 'en'] },
+              { q: PoolDashboardCopy.canIUseXmrig[cs ? 'cs' : 'en'], a: PoolDashboardCopy.noZionUsesDeekshaPowWhichIsNot[cs ? 'cs' : 'en'] },
+              { q: PoolDashboardCopy.whatDoesPoolLuckMean[cs ? 'cs' : 'en'], a: PoolDashboardCopy.poolLuckShowsTheRatioOfBlocksF[cs ? 'cs' : 'en'] },
+              { q: PoolDashboardCopy.howDoISetUpFailover[cs ? 'cs' : 'en'], a: PoolDashboardCopy.forFailoverSwitchZionPoolAddrT_2[cs ? 'cs' : 'en'] },
+              { q: PoolDashboardCopy.howOftenArePayoutsProcessed[cs ? 'cs' : 'en'], a: PoolDashboardCopy.payoutsAreProcessedAfterEveryB[cs ? 'cs' : 'en'] },
+              { q: PoolDashboardCopy.doINeedAGpu[cs ? 'cs' : 'en'], a: PoolDashboardCopy.noCpuMiningWorksButGpuOpenclCu[cs ? 'cs' : 'en'] },
+              { q: PoolDashboardCopy.whatIsZionPayoutAddress[cs ? 'cs' : 'en'], a: PoolDashboardCopy.criticalMustBeAValid44CharZion[cs ? 'cs' : 'en'] },
             ].map((item) => (
               <FAQItem key={item.q} question={item.q} answer={item.a} />
             ))}
@@ -1599,18 +1812,16 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
           className="zion-cta-banner"
         >
           <Pickaxe className="mx-auto h-12 w-12 text-zion-cyan" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'ZION těžební pool' : 'ZION Mining Pool'}</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{PoolDashboardCopy.zionMiningPool[cs ? 'cs' : 'en']}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {cs ? 'Těžte ZION s Deeksha PoW — férový a transparentní PoW pool s humanitárním přesahem zabudovaným do každého bloku.' : 'Mine ZION with Deeksha PoW — a fair, transparent PoW pool with humanitarian impact built into every block.'}
+            {PoolDashboardCopy.mineZionWithDeekshaPowAFairTra[cs ? 'cs' : 'en']}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            {cs
-              ? '89 % miner · 5 % humanitarian · 5 % Issobella fund · 1 % pool fee · PPLNS · v3.0.6 Trinity · Public launch 31. prosince 2026'
-              : '89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · v3.0.6 Trinity · Public launch 31 December 2026'}
+            {PoolDashboardCopy.k89Miner5Humanitarian5Issobella[cs ? 'cs' : 'en']}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <a href="#start-mining" className="zion-button-primary group text-sm" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              <Zap className="h-4 w-4" /> {cs ? 'Začít těžit' : 'Start Mining'}
+              <Zap className="h-4 w-4" /> {PoolDashboardCopy.startMining[cs ? 'cs' : 'en']}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
             <Link href="/explorer" className="zion-button-secondary text-sm">
@@ -1636,7 +1847,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
 
         <p className="text-center text-xs text-gray-600">
           {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Data v reálném čase z primárního stratum endpointu · Edge Node 1 · v3.0.6 E2E Trinity` : `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Real-time data from the primary stratum endpoint · Edge Node 1 · v3.0.6 E2E Trinity`}
-          {lastUpdate && <> · {cs ? 'Poslední aktualizace' : 'Last update'}: {lastUpdate.toLocaleTimeString(cs ? 'cs-CZ' : 'en-US')}</>}
+          {lastUpdate && <> · {PoolDashboardCopy.lastUpdate[cs ? 'cs' : 'en']}: {lastUpdate.toLocaleTimeString(PoolDashboardCopy.enUs[cs ? 'cs' : 'en'])}</>}
         </p>
       </div>
 

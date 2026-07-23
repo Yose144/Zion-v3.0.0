@@ -3,6 +3,14 @@
 import { Activity, Server, Zap } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const NetworkLatencyPanelCopy = {
+  latency: { cs: `Latence`, en: `Latency` },
+  networkLatency: { cs: `Síťová latence`, en: `Network Latency` },
+  rpcAndPoolLatenciesPerNodeToge: { cs: `RPC a pool latence jednotlivých uzlů spolu se zpožděním bloků (block lag).`, en: `RPC and pool latencies per node together with block propagation lag.` },
+  noNodesAreCurrentlyOnline: { cs: `Žádné uzly nejsou online.`, en: `No nodes are currently online.` },
+  lag: { cs: `Lag`, en: `Lag` },
+};
+
 interface NodeLatency {
   id: string;
   name: string;
@@ -35,22 +43,20 @@ export default function NetworkLatencyPanel({ nodes }: Props) {
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Latence' : 'Latency'}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkLatencyPanelCopy.latency[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Zap className="h-7 w-7 text-yellow-400" />
-          {cs ? 'Síťová latence' : 'Network Latency'}
+          {NetworkLatencyPanelCopy.networkLatency[cs ? 'cs' : 'en']}
         </h2>
         <p className="text-sm text-gray-400">
-          {cs
-            ? 'RPC a pool latence jednotlivých uzlů spolu se zpožděním bloků (block lag).'
-            : 'RPC and pool latencies per node together with block propagation lag.'}
+          {NetworkLatencyPanelCopy.rpcAndPoolLatenciesPerNodeToge[cs ? 'cs' : 'en']}
         </p>
       </div>
 
       <div className="grid gap-3">
         {onlineNodes.length === 0 && (
           <div className="zion-tile p-6 text-sm text-gray-500 text-center">
-            {cs ? 'Žádné uzly nejsou online.' : 'No nodes are currently online.'}
+            {NetworkLatencyPanelCopy.noNodesAreCurrentlyOnline[cs ? 'cs' : 'en']}
           </div>
         )}
         {onlineNodes.map((node) => (
@@ -84,7 +90,7 @@ export default function NetworkLatencyPanel({ nodes }: Props) {
                 </div>
               </div>
               <div className="flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-1">
-                <span className="text-[10px] uppercase tracking-wider text-gray-500 w-12 sm:w-auto">{cs ? 'Lag' : 'Lag'}</span>
+                <span className="text-[10px] uppercase tracking-wider text-gray-500 w-12 sm:w-auto">{NetworkLatencyPanelCopy.lag[cs ? 'cs' : 'en']}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-mono text-white w-12">
                     {node.blockLag != null ? `${node.blockLag}` : '—'}

@@ -4,6 +4,10 @@ import { Brain, Cpu, Landmark, Rocket, Shield, Sparkles, Zap } from 'lucide-reac
 import { useLang } from '@/contexts/LanguageContext';
 import t, { tx, tr } from '@/lib/translations';
 
+const FeaturesCopy = {
+  continuum: { cs: `Kontinuum`, en: `Continuum` },
+};
+
 
 export default function Features() {
   const { lang } = useLang();
@@ -71,7 +75,7 @@ export default function Features() {
       <div className="zion-container space-y-12">
         <div className="flex flex-col lg:flex-row lg:items-end gap-6">
           <div className="flex-1">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{lang === 'cs' ? 'Kontinuum' : 'Continuum'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{FeaturesCopy.continuum[lang === 'cs' ? 'cs' : 'en']}</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
               <span className="text-gradient">{tr('features', 'heading', lang)}</span>
             </h2>

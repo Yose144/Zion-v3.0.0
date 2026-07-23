@@ -5,6 +5,14 @@ import { Newspaper, ArrowRight, Calendar, ArrowLeft } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { NEWS_ARTICLES } from './NewsFeed';
 
+const NewsArchiveCopy = {
+  backToHomepage: { cs: `Zpět na hlavní stránku`, en: `Back to homepage` },
+  newsArchive: { cs: `Archív novinek`, en: `News Archive` },
+  news: { cs: `Novinky`, en: `News` },
+  allUpdatesFromTheZionEcosystem: { cs: `Všechny zprávy z vývoje ZION ekosystému — DeFi, těžba, benchmarky, síť a releases.`, en: `All updates from the ZION ecosystem — DeFi, mining, benchmarks, network, and releases.` },
+  readMore: { cs: `Číst více`, en: `Read more` },
+};
+
 export default function NewsArchive() {
   const { lang } = useLang();
   const cs = lang === 'cs';
@@ -19,24 +27,22 @@ export default function NewsArchive() {
             className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-white/70 transition-colors mb-6"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            {cs ? 'Zpět na hlavní stránku' : 'Back to homepage'}
+            {NewsArchiveCopy.backToHomepage[cs ? 'cs' : 'en']}
           </Link>
 
           <div className="flex items-center gap-3 mb-3">
             <Newspaper className="w-5 h-5 text-zion-gold" />
             <span className="text-sm uppercase tracking-[0.4em] text-gray-400">
-              {cs ? 'Archív novinek' : 'News Archive'}
+              {NewsArchiveCopy.newsArchive[cs ? 'cs' : 'en']}
             </span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
             <span className="text-gradient">
-              {cs ? 'Novinky' : 'News'}
+              {NewsArchiveCopy.news[cs ? 'cs' : 'en']}
             </span>
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl">
-            {cs
-              ? 'Všechny zprávy z vývoje ZION ekosystému — DeFi, těžba, benchmarky, síť a releases.'
-              : 'All updates from the ZION ecosystem — DeFi, mining, benchmarks, network, and releases.'}
+            {NewsArchiveCopy.allUpdatesFromTheZionEcosystem[cs ? 'cs' : 'en']}
           </p>
         </div>
 
@@ -78,7 +84,7 @@ export default function NewsArchive() {
 
                   {/* Read more */}
                   <div className="flex items-center gap-1.5 text-xs text-zion-gold/60 group-hover:text-zion-gold transition-colors">
-                    <span>{cs ? 'Číst více' : 'Read more'}</span>
+                    <span>{NewsArchiveCopy.readMore[cs ? 'cs' : 'en']}</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>

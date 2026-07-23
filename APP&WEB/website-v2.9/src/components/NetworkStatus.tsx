@@ -18,6 +18,27 @@ import {
   Zap,
 } from 'lucide-react';
 
+const NetworkStatusCopy = {
+  primaryHost: { cs: `Primarni host`, en: `Primary host` },
+  internalQuorum: { cs: `Interni quorum`, en: `Internal quorum` },
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  hostsOnline: { cs: `Hosty online`, en: `Hosts Online` },
+  blockHeight: { cs: `Vyska bloku`, en: `Block Height` },
+  heightGap: { cs: `Rozdil vysky`, en: `Height Gap` },
+  inSync: { cs: `synchronizovano`, en: `in sync` },
+  syncing: { cs: `synchronizuji`, en: `syncing` },
+  activeMiners: { cs: `Aktivni mineri`, en: `Active Miners` },
+  networkSynchronized: { cs: `Sit je synchronizovana`, en: `Network Synchronized` },
+  synchronizing: { cs: `Synchronizuji...`, en: `Synchronizing...` },
+  networkHosts: { cs: `Sitove hosty`, en: `Network Hosts` },
+  nodeLatency: { cs: `Latence uzlů`, en: `Node Latency` },
+  lag: { cs: `Lag`, en: `Lag` },
+  updated: { cs: `Aktualizovano`, en: `Updated` },
+  height: { cs: `Vyska`, en: `Height` },
+  lag_2: { cs: `Zpozdeni`, en: `Lag` },
+  error: { cs: `Chyba`, en: `Error` },
+};
+
 interface NodeStatus {
   id: string;
   name: string;
@@ -63,17 +84,17 @@ const regionFlags: Record<string, string> = {
 };
 
 const getRegionLabels = (cs: boolean): Record<string, string> => ({
-  'PRIMARY': cs ? 'Primarni host' : 'Primary host',
-  'INTERNAL': cs ? 'Interni quorum' : 'Internal quorum',
-  'EU-NORTH': cs ? 'Primarni host' : 'Primary host',
-  'US-EAST': cs ? 'Interni quorum' : 'Internal quorum',
-  'ASIA-SE': cs ? 'Interni quorum' : 'Internal quorum',
+  'PRIMARY': NetworkStatusCopy.primaryHost[cs ? 'cs' : 'en'],
+  'INTERNAL': NetworkStatusCopy.internalQuorum[cs ? 'cs' : 'en'],
+  'EU-NORTH': NetworkStatusCopy.primaryHost[cs ? 'cs' : 'en'],
+  'US-EAST': NetworkStatusCopy.internalQuorum[cs ? 'cs' : 'en'],
+  'ASIA-SE': NetworkStatusCopy.internalQuorum[cs ? 'cs' : 'en'],
 });
 
 export default function NetworkStatus({ className }: { className?: string }) {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = cs ? 'cs-CZ' : 'en-US';
+  const locale = NetworkStatusCopy.enUs[cs ? 'cs' : 'en'];
   const regionLabels = getRegionLabels(cs);
   const [status, setStatus] = useState<NetworkStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -121,27 +142,27 @@ export default function NetworkStatus({ className }: { className?: string }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <SummaryCard
           icon={Server}
-          label={cs ? 'Hosty online' : 'Hosts Online'}
+          label={NetworkStatusCopy.hostsOnline[cs ? 'cs' : 'en']}
           value={`${status.summary.online}/${status.summary.total}`}
           accent={status.summary.online === status.summary.total ? 'green' : 'yellow'}
           sub={status.summary.onlinePct != null ? `${status.summary.onlinePct}%` : undefined}
         />
         <SummaryCard
           icon={Activity}
-          label={cs ? 'Vyska bloku' : 'Block Height'}
+          label={NetworkStatusCopy.blockHeight[cs ? 'cs' : 'en']}
           value={status.summary.maxHeight ? status.summary.maxHeight.toLocaleString(locale) : '—'}
           accent="blue"
         />
         <SummaryCard
           icon={Gauge}
-          label={cs ? 'Rozdil vysky' : 'Height Gap'}
+          label={NetworkStatusCopy.heightGap[cs ? 'cs' : 'en']}
           value={`${status.summary.heightGap ?? 0}`}
           accent="purple"
-          sub={status.summary.inSync ? (cs ? 'synchronizovano' : 'in sync') : (cs ? 'synchronizuji' : 'syncing')}
+          sub={status.summary.inSync ? (NetworkStatusCopy.inSync[cs ? 'cs' : 'en']) : (NetworkStatusCopy.syncing[cs ? 'cs' : 'en'])}
         />
         <SummaryCard
           icon={Users}
-          label={cs ? 'Aktivni mineri' : 'Active Miners'}
+          label={NetworkStatusCopy.activeMiners[cs ? 'cs' : 'en']}
           value={status.summary.totalMiners.toString()}
           accent="gold"
         />
@@ -159,7 +180,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
             <XCircle className="w-5 h-5 text-amber-400" />
           )}
           <span className={status.summary.inSync ? 'text-emerald-400' : 'text-amber-400'}>
-            {status.summary.inSync ? (cs ? 'Sit je synchronizovana' : 'Network Synchronized') : (cs ? 'Synchronizuji...' : 'Synchronizing...')}
+            {status.summary.inSync ? (NetworkStatusCopy.networkSynchronized[cs ? 'cs' : 'en']) : (NetworkStatusCopy.synchronizing[cs ? 'cs' : 'en'])}
           </span>
         </div>
       </div>
@@ -168,7 +189,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
       <div className="space-y-3">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
           <Globe className="w-5 h-5 text-zion-gold" />
-          {cs ? 'Sitove hosty' : 'Network Hosts'}
+          {NetworkStatusCopy.networkHosts[cs ? 'cs' : 'en']}
         </h3>
         
         <div className="grid gap-3">
@@ -193,7 +214,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
         <div className="zion-rainbow-card p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
           <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
             <Zap className="w-4 h-4 text-yellow-400" />
-            {cs ? 'Latence uzlů' : 'Node Latency'}
+            {NetworkStatusCopy.nodeLatency[cs ? 'cs' : 'en']}
           </h3>
           <div className="grid gap-3">
             {status.nodes.filter((n) => n.online).map((node) => (
@@ -212,7 +233,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
                     <span className="text-white font-mono">{node.poolLatencyMs != null ? `${node.poolLatencyMs}ms` : '—'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 block mb-0.5">{cs ? 'Lag' : 'Lag'}</span>
+                    <span className="text-gray-500 block mb-0.5">{NetworkStatusCopy.lag[cs ? 'cs' : 'en']}</span>
                     <span className="text-white font-mono">{node.blockLag != null ? `${node.blockLag}` : '—'}</span>
                   </div>
                 </div>
@@ -226,7 +247,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
       {lastUpdate && (
         <div className="text-xs uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
           <RefreshCw className="w-4 h-4 text-zion-gold" />
-          {cs ? 'Aktualizovano' : 'Updated'} {lastUpdate.toLocaleTimeString(locale)}
+          {NetworkStatusCopy.updated[cs ? 'cs' : 'en']} {lastUpdate.toLocaleTimeString(locale)}
         </div>
       )}
     </div>
@@ -295,8 +316,8 @@ function NodeCard({ node, cs, locale, regionLabels }: { node: NodeStatus; cs: bo
               </span>
               {node.online && (
                 <>
-                  <span>{cs ? 'Vyska' : 'Height'}: {node.height ? node.height.toLocaleString(locale) : '—'}</span>
-                  {node.blockLag != null && <span>{cs ? 'Zpozdeni' : 'Lag'}: {node.blockLag}</span>}
+                  <span>{NetworkStatusCopy.height[cs ? 'cs' : 'en']}: {node.height ? node.height.toLocaleString(locale) : '—'}</span>
+                  {node.blockLag != null && <span>{NetworkStatusCopy.lag_2[cs ? 'cs' : 'en']}: {node.blockLag}</span>}
                   {node.rpcLatencyMs != null && <span>RPC: {node.rpcLatencyMs} ms</span>}
                   {node.poolLatencyMs != null && <span>Pool: {node.poolLatencyMs} ms</span>}
                   {node.miners > 0 && (
@@ -322,7 +343,7 @@ function NodeCard({ node, cs, locale, regionLabels }: { node: NodeStatus; cs: bo
 
       {node.error && !node.online && (
         <div className="mt-2 text-xs text-red-400">
-          {cs ? 'Chyba' : 'Error'}: {node.error}
+          {NetworkStatusCopy.error[cs ? 'cs' : 'en']}: {node.error}
         </div>
       )}
     </div>

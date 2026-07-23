@@ -19,6 +19,37 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const DogeVsZionGamesStarMinerCopy = {
+  back: { cs: `Zpět`, en: `Back` },
+  mineOnTheStarReachIssobella: { cs: `Těž na hvězdě · Dosáhni Issobelly`, en: `Mine on the star · Reach Issobella` },
+  zionBalance: { cs: `ZION zůstatek`, en: `ZION balance` },
+  zionSec: { cs: `ZION/sek`, en: `ZION/sec` },
+  clickPower: { cs: `Síla kliku`, en: `Click power` },
+  layer: { cs: `Vrstva`, en: `Layer` },
+  totalMined: { cs: `Celkem vytěženo`, en: `Total mined` },
+  miningRigs: { cs: `Těžební Rigy`, en: `Mining Rigs` },
+  zS: { cs: `Z/s`, en: `Z/s` },
+  mineZion: { cs: `Těžit ZION`, en: `Mine ZION` },
+  clickTheStarToMine: { cs: `Klikni na hvězdu pro těžbu`, en: `Click the star to mine` },
+  perClick: { cs: `za klik`, en: `per click` },
+  upgrades: { cs: `Vylepšení`, en: `Upgrades` },
+  reset: { cs: `Reset`, en: `Reset` },
+  newLayer: { cs: `Nová vrstva!`, en: `New Layer!` },
+  keepMiningDeeperIntoZion: { cs: `Pokračuj v těžbě hlouběji do ZION.`, en: `Keep mining deeper into ZION.` },
+  continue: { cs: `Pokračovat`, en: `Continue` },
+  youReachedIssobella: { cs: `Dosáhl jsi Issobelly!`, en: `You reached Issobella!` },
+  youMinedYourWayToL6ZionIsYours: { cs: `Vytesal jsi si cestu na L6. ZION je tvůj.`, en: `You mined your way to L6. ZION is yours.` },
+  keepPlaying: { cs: `Hraju dál`, en: `Keep Playing` },
+  newGame: { cs: `Nová hra`, en: `New Game` },
+  resetGame: { cs: `Resetovat hru?`, en: `Reset game?` },
+  allProgressWillBeLost: { cs: `Veškerý postup bude ztracen.`, en: `All progress will be lost.` },
+  cancel: { cs: `Zrušit`, en: `Cancel` },
+  reset_2: { cs: `Resetovat`, en: `Reset` },
+  welcomeBack: { cs: `Vítej zpět!`, en: `Welcome back!` },
+  yourRigsMinedWhileYouWereAway: { cs: `Tvá rigy těžily while jsi byl pryč.`, en: `Your rigs mined while you were away.` },
+  awesome: { cs: `Skvělé`, en: `Awesome` },
+};
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SAVE_KEY = 'star-miner-save';
@@ -615,13 +646,13 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
           onClick={onBack}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-colors text-sm"
         >
-          <ArrowLeft size={16} /> {cs ? 'Zpět' : 'Back'}
+          <ArrowLeft size={16} /> {DogeVsZionGamesStarMinerCopy.back[cs ? 'cs' : 'en']}
         </button>
         <div className="text-center">
           <h2 className="text-lg font-bold text-white leading-tight flex items-center gap-1.5 justify-center">
             <Star size={18} className="text-purple-400" /> Star Miner
           </h2>
-          <p className="text-[11px] text-slate-400">{cs ? 'Těž na hvězdě · Dosáhni Issobelly' : 'Mine on the star · Reach Issobella'}</p>
+          <p className="text-[11px] text-slate-400">{DogeVsZionGamesStarMinerCopy.mineOnTheStarReachIssobella[cs ? 'cs' : 'en']}</p>
         </div>
         <button
           onClick={toggleMute}
@@ -638,35 +669,35 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
           <div className="flex items-center gap-2">
             <span className="text-2xl">🪙</span>
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-slate-400">{cs ? 'ZION zůstatek' : 'ZION balance'}</div>
+              <div className="text-[10px] uppercase tracking-widest text-slate-400">{DogeVsZionGamesStarMinerCopy.zionBalance[cs ? 'cs' : 'en']}</div>
               <div className="text-2xl font-black text-purple-300 leading-none">{formatNumber(zion)}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Zap size={18} className="text-emerald-400" />
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-slate-400">{cs ? 'ZION/sek' : 'ZION/sec'}</div>
+              <div className="text-[10px] uppercase tracking-widest text-slate-400">{DogeVsZionGamesStarMinerCopy.zionSec[cs ? 'cs' : 'en']}</div>
               <div className="text-xl font-bold text-emerald-300 leading-none">{formatNumber(rate)}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Pickaxe size={18} className="text-amber-400" />
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-slate-400">{cs ? 'Síla kliku' : 'Click power'}</div>
+              <div className="text-[10px] uppercase tracking-widest text-slate-400">{DogeVsZionGamesStarMinerCopy.clickPower[cs ? 'cs' : 'en']}</div>
               <div className="text-xl font-bold text-amber-300 leading-none">{formatNumber(clickPower)}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xl">{currentLayer.emoji}</span>
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-slate-400">{cs ? 'Vrstva' : 'Layer'}</div>
+              <div className="text-[10px] uppercase tracking-widest text-slate-400">{DogeVsZionGamesStarMinerCopy.layer[cs ? 'cs' : 'en']}</div>
               <div className="text-sm font-bold text-white leading-none">{cs ? currentLayer.nameCs : currentLayer.name}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Trophy size={18} className="text-purple-400" />
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-slate-400">{cs ? 'Celkem vytěženo' : 'Total mined'}</div>
+              <div className="text-[10px] uppercase tracking-widest text-slate-400">{DogeVsZionGamesStarMinerCopy.totalMined[cs ? 'cs' : 'en']}</div>
               <div className="text-xl font-bold text-white leading-none">{formatNumber(totalMined)}</div>
             </div>
           </div>
@@ -678,7 +709,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
         {/* Left: Helpers */}
         <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-1.5">
-            <Cpu size={15} className="text-emerald-400" /> {cs ? 'Těžební Rigy' : 'Mining Rigs'}
+            <Cpu size={15} className="text-emerald-400" /> {DogeVsZionGamesStarMinerCopy.miningRigs[cs ? 'cs' : 'en']}
           </h3>
           <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
             {HELPERS.map((def) => {
@@ -709,7 +740,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
                         <span className="text-[10px] text-slate-400 shrink-0">×{owned}</span>
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-0.5">
-                        <span className="text-[10px] text-emerald-300">{formatNumber(perSec)} {cs ? 'Z/s' : 'Z/s'}</span>
+                        <span className="text-[10px] text-emerald-300">{formatNumber(perSec)} {DogeVsZionGamesStarMinerCopy.zS[cs ? 'cs' : 'en']}</span>
                         <span className={`text-[11px] font-bold ${affordable ? 'text-amber-300' : 'text-slate-500'}`}>
                           🪙 {formatNumber(cost)}
                         </span>
@@ -729,7 +760,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
             <button
               onClick={handleStarClick}
               className="relative group focus:outline-none"
-              aria-label={cs ? 'Těžit ZION' : 'Mine ZION'}
+              aria-label={DogeVsZionGamesStarMinerCopy.mineZion[cs ? 'cs' : 'en']}
             >
               {/* Glow rings */}
               <motion.div
@@ -780,10 +811,10 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
             </button>
 
             <p className="mt-4 text-xs text-slate-300 text-center">
-              {cs ? 'Klikni na hvězdu pro těžbu' : 'Click the star to mine'}
+              {DogeVsZionGamesStarMinerCopy.clickTheStarToMine[cs ? 'cs' : 'en']}
             </p>
             <p className="mt-1 text-[10px] text-slate-500 text-center">
-              +{formatNumber(clickPower)} ZION {cs ? 'za klik' : 'per click'}
+              +{formatNumber(clickPower)} ZION {DogeVsZionGamesStarMinerCopy.perClick[cs ? 'cs' : 'en']}
             </p>
           </div>
         </div>
@@ -791,7 +822,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
         {/* Right: Upgrades */}
         <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-1.5">
-            <Sparkles size={15} className="text-purple-400" /> {cs ? 'Vylepšení' : 'Upgrades'}
+            <Sparkles size={15} className="text-purple-400" /> {DogeVsZionGamesStarMinerCopy.upgrades[cs ? 'cs' : 'en']}
           </h3>
           <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
             {UPGRADES.map((def) => {
@@ -853,7 +884,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
             onClick={() => setShowReset(true)}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/30 transition-colors text-[11px]"
           >
-            <RotateCcw size={12} /> {cs ? 'Reset' : 'Reset'}
+            <RotateCcw size={12} /> {DogeVsZionGamesStarMinerCopy.reset[cs ? 'cs' : 'en']}
           </button>
         </div>
         <div className="relative h-3 rounded-full bg-black/50 border border-white/10 overflow-hidden">
@@ -895,16 +926,16 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
               >
                 {layerOverlay.emoji}
               </motion.div>
-              <h3 className="text-2xl font-black text-white mb-1">{cs ? 'Nová vrstva!' : 'New Layer!'}</h3>
+              <h3 className="text-2xl font-black text-white mb-1">{DogeVsZionGamesStarMinerCopy.newLayer[cs ? 'cs' : 'en']}</h3>
               <p className="text-lg font-bold text-purple-300">{cs ? layerOverlay.nameCs : layerOverlay.name}</p>
               <p className="text-xs text-slate-400 mt-3 mb-4">
-                {cs ? 'Pokračuj v těžbě hlouběji do ZION.' : 'Keep mining deeper into ZION.'}
+                {DogeVsZionGamesStarMinerCopy.keepMiningDeeperIntoZion[cs ? 'cs' : 'en']}
               </p>
               <button
                 onClick={() => setLayerOverlay(null)}
                 className="px-6 py-2 rounded-lg bg-purple-500 hover:bg-purple-400 text-white font-semibold transition-colors"
               >
-                {cs ? 'Pokračovat' : 'Continue'}
+                {DogeVsZionGamesStarMinerCopy.continue[cs ? 'cs' : 'en']}
               </button>
             </motion.div>
           </motion.div>
@@ -934,18 +965,18 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
                 👑
               </motion.div>
               <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-emerald-400 mb-2">
-                {cs ? 'Dosáhl jsi Issobelly!' : 'You reached Issobella!'}
+                {DogeVsZionGamesStarMinerCopy.youReachedIssobella[cs ? 'cs' : 'en']}
               </h3>
               <p className="text-sm text-slate-300 mb-4">
-                {cs ? 'Vytesal jsi si cestu na L6. ZION je tvůj.' : 'You mined your way to L6. ZION is yours.'}
+                {DogeVsZionGamesStarMinerCopy.youMinedYourWayToL6ZionIsYours[cs ? 'cs' : 'en']}
               </p>
               <div className="grid grid-cols-2 gap-3 mb-4 text-left">
                 <div className="rounded-lg border border-white/10 bg-black/40 p-3">
-                  <div className="text-[10px] uppercase tracking-widest text-slate-400">{cs ? 'Celkem vytěženo' : 'Total mined'}</div>
+                  <div className="text-[10px] uppercase tracking-widest text-slate-400">{DogeVsZionGamesStarMinerCopy.totalMined[cs ? 'cs' : 'en']}</div>
                   <div className="text-lg font-bold text-purple-300">{formatNumber(totalMined)}</div>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/40 p-3">
-                  <div className="text-[10px] uppercase tracking-widest text-slate-400">{cs ? 'ZION/sek' : 'ZION/sec'}</div>
+                  <div className="text-[10px] uppercase tracking-widest text-slate-400">{DogeVsZionGamesStarMinerCopy.zionSec[cs ? 'cs' : 'en']}</div>
                   <div className="text-lg font-bold text-emerald-300">{formatNumber(rate)}</div>
                 </div>
               </div>
@@ -954,13 +985,13 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
                   onClick={() => setShowVictory(false)}
                   className="px-5 py-2 rounded-lg bg-purple-500 hover:bg-purple-400 text-white font-semibold transition-colors"
                 >
-                  {cs ? 'Hraju dál' : 'Keep Playing'}
+                  {DogeVsZionGamesStarMinerCopy.keepPlaying[cs ? 'cs' : 'en']}
                 </button>
                 <button
                   onClick={doReset}
                   className="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors"
                 >
-                  <RotateCcw size={14} /> {cs ? 'Nová hra' : 'New Game'}
+                  <RotateCcw size={14} /> {DogeVsZionGamesStarMinerCopy.newGame[cs ? 'cs' : 'en']}
                 </button>
               </div>
             </motion.div>
@@ -987,22 +1018,22 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
               style={{ '--rc': '239, 68, 68' } as React.CSSProperties}
             >
               <RotateCcw size={32} className="text-red-400 mx-auto mb-3" />
-              <h3 className="text-lg font-bold text-white mb-1">{cs ? 'Resetovat hru?' : 'Reset game?'}</h3>
+              <h3 className="text-lg font-bold text-white mb-1">{DogeVsZionGamesStarMinerCopy.resetGame[cs ? 'cs' : 'en']}</h3>
               <p className="text-xs text-slate-400 mb-4">
-                {cs ? 'Veškerý postup bude ztracen.' : 'All progress will be lost.'}
+                {DogeVsZionGamesStarMinerCopy.allProgressWillBeLost[cs ? 'cs' : 'en']}
               </p>
               <div className="flex gap-2 justify-center">
                 <button
                   onClick={() => setShowReset(false)}
                   className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-colors"
                 >
-                  {cs ? 'Zrušit' : 'Cancel'}
+                  {DogeVsZionGamesStarMinerCopy.cancel[cs ? 'cs' : 'en']}
                 </button>
                 <button
                   onClick={doReset}
                   className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-400 text-white text-sm font-semibold transition-colors"
                 >
-                  {cs ? 'Resetovat' : 'Reset'}
+                  {DogeVsZionGamesStarMinerCopy.reset_2[cs ? 'cs' : 'en']}
                 </button>
               </div>
             </motion.div>
@@ -1034,9 +1065,9 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
               >
                 🪙
               </motion.div>
-              <h3 className="text-lg font-bold text-white mb-1">{cs ? 'Vítej zpět!' : 'Welcome back!'}</h3>
+              <h3 className="text-lg font-bold text-white mb-1">{DogeVsZionGamesStarMinerCopy.welcomeBack[cs ? 'cs' : 'en']}</h3>
               <p className="text-xs text-slate-400 mb-3">
-                {cs ? 'Tvá rigy těžily while jsi byl pryč.' : 'Your rigs mined while you were away.'}
+                {DogeVsZionGamesStarMinerCopy.yourRigsMinedWhileYouWereAway[cs ? 'cs' : 'en']}
               </p>
               <p className="text-2xl font-black text-emerald-300 mb-4">
                 +{formatNumber(offlineEarnings)} ZION
@@ -1045,7 +1076,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
                 onClick={() => setOfflineEarnings(null)}
                 className="px-5 py-2 rounded-lg bg-purple-500 hover:bg-purple-400 text-white font-semibold transition-colors"
               >
-                {cs ? 'Skvělé' : 'Awesome'}
+                {DogeVsZionGamesStarMinerCopy.awesome[cs ? 'cs' : 'en']}
               </button>
             </motion.div>
           </motion.div>

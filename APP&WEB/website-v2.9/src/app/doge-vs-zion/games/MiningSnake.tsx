@@ -4,6 +4,27 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { ArrowLeft, Volume2, VolumeX, RefreshCw, Trophy } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const DogeVsZionGamesMiningSnakeCopy = {
+  back: { cs: `Zpět`, en: `Back` },
+  miningSnake: { cs: `Těžební Had`, en: `Mining Snake` },
+  collectZionDonu2019tCrashYourR: { cs: `Sbírej ZION. Nenič svůj rig.`, en: `Collect ZION. Donu2019t crash your rig.` },
+  coins: { cs: `mince`, en: `coins` },
+  pts: { cs: `bodů`, en: `pts` },
+  pilotYourMiningRigAcrossTheGri: { cs: `Riď svůj těžební rig po mřížce. Sbírej ZION mince (⛏️) pro růst a skóre. Chyť vzácné diamanty (💎) za +50 bonusových bodů. Nenarazíš do stěn ani do sebe!`, en: `Pilot your mining rig across the grid. Collect ZION coins (⛏️) to grow and score. Grab rare diamonds (💎) for +50 bonus points. Donu2019t hit the walls or yourself!` },
+  arrowKeysWasdToMoveSpaceToPaus: { cs: `Šipky / WASD pro pohyb · Mezerník pro pauzu`, en: `Arrow keys / WASD to move · Space to pause` },
+  startMining: { cs: `Začít těžit`, en: `Start Mining` },
+  paused: { cs: `Pauza`, en: `Paused` },
+  resume: { cs: `Pokračovat`, en: `Resume` },
+  pressSpaceToResume: { cs: `Stiskni MEZERNÍK pro pokračování`, en: `Press Space to resume` },
+  rigCrashed: { cs: `Rig havaroval`, en: `Rig Crashed` },
+  score: { cs: `Skóre`, en: `Score` },
+  coins_2: { cs: `Mince`, en: `Coins` },
+  best: { cs: `Nejlepší`, en: `Best` },
+  newHighScore: { cs: `Nové nejlepší skóre!`, en: `New High Score!` },
+  retry: { cs: `Zkusit znovu`, en: `Retry` },
+  swipeToSteerOnMobileSpaceToPau: { cs: `Posunem prstem riď na mobilu · Mezerník pro pauzu`, en: `Swipe to steer on mobile · Space to pause` },
+};
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const GRID = 20;
@@ -439,11 +460,11 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
           onClick={onBack}
           className="flex items-center gap-1 text-sm text-zinc-400 hover:text-white transition-colors"
         >
-          <ArrowLeft size={18} /> {cs ? 'Zpět' : 'Back'}
+          <ArrowLeft size={18} /> {DogeVsZionGamesMiningSnakeCopy.back[cs ? 'cs' : 'en']}
         </button>
         <div className="text-center">
-          <h1 className="text-xl font-bold text-green-400 tracking-wide">{cs ? 'Těžební Had' : 'Mining Snake'}</h1>
-          <p className="text-[10px] text-zinc-500">{cs ? 'Sbírej ZION. Nenič svůj rig.' : 'Collect ZION. Don\u2019t crash your rig.'}</p>
+          <h1 className="text-xl font-bold text-green-400 tracking-wide">{DogeVsZionGamesMiningSnakeCopy.miningSnake[cs ? 'cs' : 'en']}</h1>
+          <p className="text-[10px] text-zinc-500">{DogeVsZionGamesMiningSnakeCopy.collectZionDonu2019tCrashYourR[cs ? 'cs' : 'en']}</p>
         </div>
         <button
           onClick={() => setMuted((m) => !m)}
@@ -459,11 +480,11 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
         <div className="flex items-center gap-1.5 text-amber-400">
           <span className="text-base">⛏️</span>
           <span className="font-mono font-bold">{coins}</span>
-          <span className="text-zinc-500 text-xs">{cs ? 'mince' : 'coins'}</span>
+          <span className="text-zinc-500 text-xs">{DogeVsZionGamesMiningSnakeCopy.coins[cs ? 'cs' : 'en']}</span>
         </div>
         <div className="flex items-center gap-1.5 text-white">
           <span className="font-mono font-bold">{score}</span>
-          <span className="text-zinc-500 text-xs">{cs ? 'bodů' : 'pts'}</span>
+          <span className="text-zinc-500 text-xs">{DogeVsZionGamesMiningSnakeCopy.pts[cs ? 'cs' : 'en']}</span>
         </div>
         <div className="flex items-center gap-1.5 text-yellow-500">
           <Trophy size={14} />
@@ -485,20 +506,18 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
         {status === 'start' && (
           <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/70 rounded-lg backdrop-blur-sm gap-4 p-6 text-center">
             <div className="text-4xl">⛏️</div>
-            <h2 className="text-lg font-bold text-green-400">{cs ? 'Těžební Had' : 'Mining Snake'}</h2>
+            <h2 className="text-lg font-bold text-green-400">{DogeVsZionGamesMiningSnakeCopy.miningSnake[cs ? 'cs' : 'en']}</h2>
             <p className="text-xs text-zinc-400 max-w-xs leading-relaxed">
-              {cs
-                ? 'Riď svůj těžební rig po mřížce. Sbírej ZION mince (⛏️) pro růst a skóre. Chyť vzácné diamanty (💎) za +50 bonusových bodů. Nenarazíš do stěn ani do sebe!'
-                : 'Pilot your mining rig across the grid. Collect ZION coins (⛏️) to grow and score. Grab rare diamonds (💎) for +50 bonus points. Don\u2019t hit the walls or yourself!'}
+              {DogeVsZionGamesMiningSnakeCopy.pilotYourMiningRigAcrossTheGri[cs ? 'cs' : 'en']}
             </p>
             <div className="text-[10px] text-zinc-500">
-              {cs ? 'Šipky / WASD pro pohyb · Mezerník pro pauzu' : 'Arrow keys / WASD to move · Space to pause'}
+              {DogeVsZionGamesMiningSnakeCopy.arrowKeysWasdToMoveSpaceToPaus[cs ? 'cs' : 'en']}
             </div>
             <button
               onClick={startGame}
               className="px-6 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition-colors"
             >
-              {cs ? 'Začít těžit' : 'Start Mining'}
+              {DogeVsZionGamesMiningSnakeCopy.startMining[cs ? 'cs' : 'en']}
             </button>
           </div>
         )}
@@ -506,14 +525,14 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
         {/* Pause overlay */}
         {status === 'paused' && (
           <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/60 rounded-lg backdrop-blur-sm gap-3">
-            <h2 className="text-lg font-bold text-white">{cs ? 'Pauza' : 'Paused'}</h2>
+            <h2 className="text-lg font-bold text-white">{DogeVsZionGamesMiningSnakeCopy.paused[cs ? 'cs' : 'en']}</h2>
             <button
               onClick={togglePause}
               className="px-5 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition-colors"
             >
-              {cs ? 'Pokračovat' : 'Resume'}
+              {DogeVsZionGamesMiningSnakeCopy.resume[cs ? 'cs' : 'en']}
             </button>
-            <p className="text-[10px] text-zinc-500">{cs ? 'Stiskni MEZERNÍK pro pokračování' : 'Press Space to resume'}</p>
+            <p className="text-[10px] text-zinc-500">{DogeVsZionGamesMiningSnakeCopy.pressSpaceToResume[cs ? 'cs' : 'en']}</p>
           </div>
         )}
 
@@ -521,17 +540,17 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
         {status === 'over' && (
           <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/75 rounded-lg backdrop-blur-sm gap-3 p-6 text-center">
             <div className="text-3xl">💥</div>
-            <h2 className="text-lg font-bold text-red-400">{cs ? 'Rig havaroval' : 'Rig Crashed'}</h2>
+            <h2 className="text-lg font-bold text-red-400">{DogeVsZionGamesMiningSnakeCopy.rigCrashed[cs ? 'cs' : 'en']}</h2>
             <div className="flex flex-col gap-1">
               <div className="text-sm text-white">
-                {cs ? 'Skóre' : 'Score'}: <span className="font-mono font-bold text-amber-400">{score}</span>
+                {DogeVsZionGamesMiningSnakeCopy.score[cs ? 'cs' : 'en']}: <span className="font-mono font-bold text-amber-400">{score}</span>
               </div>
               <div className="text-xs text-zinc-400">
-                {cs ? 'Mince' : 'Coins'}: <span className="font-mono">{coins}</span> · {cs ? 'Nejlepší' : 'Best'}: <span className="font-mono text-yellow-500">{highScore}</span>
+                {DogeVsZionGamesMiningSnakeCopy.coins_2[cs ? 'cs' : 'en']}: <span className="font-mono">{coins}</span> · {DogeVsZionGamesMiningSnakeCopy.best[cs ? 'cs' : 'en']}: <span className="font-mono text-yellow-500">{highScore}</span>
               </div>
               {score >= highScore && score > 0 && (
                 <div className="text-xs text-yellow-400 font-bold flex items-center gap-1 justify-center">
-                  <Trophy size={12} /> {cs ? 'Nové nejlepší skóre!' : 'New High Score!'}
+                  <Trophy size={12} /> {DogeVsZionGamesMiningSnakeCopy.newHighScore[cs ? 'cs' : 'en']}
                 </div>
               )}
             </div>
@@ -539,7 +558,7 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
               onClick={startGame}
               className="flex items-center gap-2 px-5 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition-colors"
             >
-              <RefreshCw size={14} /> {cs ? 'Zkusit znovu' : 'Retry'}
+              <RefreshCw size={14} /> {DogeVsZionGamesMiningSnakeCopy.retry[cs ? 'cs' : 'en']}
             </button>
           </div>
         )}
@@ -547,7 +566,7 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
 
       {/* Mobile controls hint */}
       <p className="text-[10px] text-zinc-600 text-center">
-        {cs ? 'Posunem prstem riď na mobilu · Mezerník pro pauzu' : 'Swipe to steer on mobile · Space to pause'}
+        {DogeVsZionGamesMiningSnakeCopy.swipeToSteerOnMobileSpaceToPau[cs ? 'cs' : 'en']}
       </p>
     </div>
   );

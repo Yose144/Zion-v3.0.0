@@ -3,6 +3,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Brain, User, Loader2, Sparkles, MessageCircle } from 'lucide-react';
 
+const HiranMiniChatCopy = {
+  failedToConnectToAiPleaseTryAg: { cs: `Nepodařilo se spojit s AI. Zkuste to znovu.`, en: `Failed to connect to AI. Please try again.` },
+  askAiAnythingAboutZion: { cs: `Zeptejte se AI na cokoliv o ZIONu`, en: `Ask AI anything about ZION` },
+  zionAiNativeZionExpertModel: { cs: `ZION AI Native · zion-expert model`, en: `ZION AI Native · zion-expert model` },
+  askHiranyagarbhaAnythingAboutZ: { cs: `Zeptejte se Hiranyagarbhy na cokoliv o ZIONu`, en: `Ask Hiranyagarbha anything about ZION` },
+  typeAMessage: { cs: `Napište zprávu...`, en: `Type a message...` },
+};
+
 type Message = {
   role: 'user' | 'assistant';
   content: string;
@@ -66,9 +74,7 @@ export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
         {
           role: 'assistant',
           content:
-            lang === 'cs'
-              ? 'Nepodařilo se spojit s AI. Zkuste to znovu.'
-              : 'Failed to connect to AI. Please try again.',
+            HiranMiniChatCopy.failedToConnectToAiPleaseTryAg[lang === 'cs' ? 'cs' : 'en'],
         },
       ]);
     } finally {
@@ -94,7 +100,7 @@ export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
         <div className="flex-1 text-left">
           <span className="text-sm font-bold text-purple-300 tracking-wide">Hiran v2.2</span>
           <p className="text-[11px] text-gray-400 group-hover:text-gray-300 transition-colors">
-            {lang === 'cs' ? 'Zeptejte se AI na cokoliv o ZIONu' : 'Ask AI anything about ZION'}
+            {HiranMiniChatCopy.askAiAnythingAboutZion[lang === 'cs' ? 'cs' : 'en']}
           </p>
         </div>
         <MessageCircle className="h-4 w-4 text-gray-500 transition-colors group-hover:text-purple-300" />
@@ -112,7 +118,7 @@ export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
         <div className="flex-1 min-w-0">
           <h3 className="text-white font-semibold text-sm">Hiranyagarbha v2.2</h3>
           <p className="text-gray-400 text-[10px]">
-            {lang === 'cs' ? 'ZION AI Native · zion-expert model' : 'ZION AI Native · zion-expert model'}
+            {HiranMiniChatCopy.zionAiNativeZionExpertModel[lang === 'cs' ? 'cs' : 'en']}
           </p>
         </div>
         <div className="flex items-center gap-1.5">
@@ -133,9 +139,7 @@ export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
           <div className="text-center py-4">
             <Sparkles className="w-8 h-8 text-zion-gold mx-auto mb-3 opacity-60" />
             <p className="text-gray-400 text-xs mb-4">
-              {lang === 'cs'
-                ? 'Zeptejte se Hiranyagarbhy na cokoliv o ZIONu'
-                : 'Ask Hiranyagarbha anything about ZION'}
+              {HiranMiniChatCopy.askHiranyagarbhaAnythingAboutZ[lang === 'cs' ? 'cs' : 'en']}
             </p>
             <div className="flex flex-wrap justify-center gap-1.5">
               {SUGGESTED_QUESTIONS.map((q, i) => (
@@ -195,7 +199,7 @@ export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={lang === 'cs' ? 'Napište zprávu...' : 'Type a message...'}
+            placeholder={HiranMiniChatCopy.typeAMessage[lang === 'cs' ? 'cs' : 'en']}
             disabled={loading}
             maxLength={2000}
             className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 disabled:opacity-50 transition-colors"

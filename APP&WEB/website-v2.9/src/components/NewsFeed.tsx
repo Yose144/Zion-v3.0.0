@@ -6,6 +6,13 @@ import { Newspaper, ArrowRight, Calendar, Sparkles } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import DogeVsZionBanner from '@/components/DogeVsZionBanner';
 
+const NewsFeedCopy = {
+  newsUpdates: { cs: `Novinky a aktualizace`, en: `News & Updates` },
+  news: { cs: `Novinky`, en: `News` },
+  latestUpdatesFromTheZionEcosys: { cs: `Poslední zprávy z vývoje ZION ekosystému, DeFi, listingu a sítě.`, en: `Latest updates from the ZION ecosystem development, DeFi, listings, and network.` },
+  readMore: { cs: `Číst více`, en: `Read more` },
+};
+
 // ─── Article type ─────────────────────────────────────────────────────────────
 
 export interface NewsArticle {
@@ -471,7 +478,7 @@ export default function NewsFeed() {
           <div className="flex items-center gap-3 mb-3">
             <Newspaper className="w-5 h-5 text-zion-gold" />
             <span className="text-sm uppercase tracking-[0.4em] text-gray-400">
-              {cs ? 'Novinky a aktualizace' : 'News & Updates'}
+              {NewsFeedCopy.newsUpdates[cs ? 'cs' : 'en']}
             </span>
             <span className="ml-auto text-[10px] uppercase tracking-wider text-zion-gold/60 bg-zion-gold/10 border border-zion-gold/20 px-2 py-0.5 rounded-full">
               {cs ? `${NEWS_ARTICLES.length} článků` : `${NEWS_ARTICLES.length} articles`}
@@ -479,13 +486,11 @@ export default function NewsFeed() {
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-white">
             <span className="text-gradient">
-              {cs ? 'Novinky' : 'News'}
+              {NewsFeedCopy.news[cs ? 'cs' : 'en']}
             </span>
           </h2>
           <p className="text-lg text-gray-300 mt-3 max-w-2xl">
-            {cs
-              ? 'Poslední zprávy z vývoje ZION ekosystému, DeFi, listingu a sítě.'
-              : 'Latest updates from the ZION ecosystem development, DeFi, listings, and network.'}
+            {NewsFeedCopy.latestUpdatesFromTheZionEcosys[cs ? 'cs' : 'en']}
           </p>
         </motion.div>
 
@@ -544,7 +549,7 @@ export default function NewsFeed() {
 
                     {/* Read more */}
                     <div className="flex items-center gap-1.5 text-xs text-zion-gold/60 group-hover:text-zion-gold transition-colors">
-                      <span>{cs ? 'Číst více' : 'Read more'}</span>
+                      <span>{NewsFeedCopy.readMore[cs ? 'cs' : 'en']}</span>
                       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>

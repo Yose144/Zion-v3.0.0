@@ -6,6 +6,21 @@ import { apiClient } from "@/lib/api";
 import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
 
+const EmissionMonitorCopy = {
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  emissionMonitor: { cs: `Monitoring emise`, en: `Emission Monitor` },
+  block: { cs: `Blok`, en: `Block` },
+  mined: { cs: `Vytěženo`, en: `Mined` },
+  emitted: { cs: `emitováno`, en: `emitted` },
+  dailyEmission: { cs: `Denní emise`, en: `Daily Emission` },
+  blocks: { cs: `bloků`, en: `blocks` },
+  miningDuration: { cs: `Doba těžby`, en: `Mining Duration` },
+  full: { cs: `Plně`, en: `Full` },
+  totalFees: { cs: `Celkové poplatky`, en: `Total Fees` },
+  cumulativeNetworkFees: { cs: `Kumulované síťové poplatky`, en: `Cumulative network fees` },
+  humanitarianTithe: { cs: `Humanitární desátek`, en: `Humanitarian Tithe` },
+};
+
 interface EmissionData {
   total_emission: number;
   total_fees: number;
@@ -31,7 +46,7 @@ interface EmissionData {
 export default function EmissionMonitor() {
   const { lang } = useLang();
   const cs = lang === "cs";
-  const locale = cs ? "cs-CZ" : "en-US";
+  const locale = EmissionMonitorCopy.enUs[cs ? 'cs' : 'en'];
   const [data, setData] = useState<EmissionData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -71,8 +86,8 @@ export default function EmissionMonitor() {
           <Coins className="w-4.5 h-4.5 text-zion-gold" />
         </div>
         <div>
-          <h2 className="text-base font-semibold text-white">{cs ? "Monitoring emise" : "Emission Monitor"}</h2>
-          <p className="text-[11px] text-white/30">{cs ? "Blok" : "Block"} #{data.block_height?.toLocaleString(locale)}</p>
+          <h2 className="text-base font-semibold text-white">{EmissionMonitorCopy.emissionMonitor[cs ? 'cs' : 'en']}</h2>
+          <p className="text-[11px] text-white/30">{EmissionMonitorCopy.block[cs ? 'cs' : 'en']} #{data.block_height?.toLocaleString(locale)}</p>
         </div>
       </div>
 
@@ -80,7 +95,7 @@ export default function EmissionMonitor() {
         {/* Progress bar */}
         <div>
           <div className="flex justify-between text-[11px] mb-2">
-            <span className="text-white/40">{cs ? "Vytěženo" : "Mined"}</span>
+            <span className="text-white/40">{EmissionMonitorCopy.mined[cs ? 'cs' : 'en']}</span>
             <span className="text-zion-gold font-mono tabular-nums">
               {fmt(data.circulating_supply)} / {fmt(data.max_supply)} ZION
             </span>
@@ -92,17 +107,17 @@ export default function EmissionMonitor() {
             />
           </div>
           <div className="text-right text-[10px] text-white/20 mt-1 tabular-nums">
-            {data.emission_pct.toFixed(6)}% {cs ? "emitováno" : "emitted"}
+            {data.emission_pct.toFixed(6)}% {EmissionMonitorCopy.emitted[cs ? 'cs' : 'en']}
           </div>
         </div>
 
         {/* 2×2 metric cards */}
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: cs ? "Denní emise" : "Daily Emission", icon: TrendingUp, color: "text-emerald-400", value: `${fmt(data.daily_emission)} ZION`, sub: `${data.base_reward_per_block} ZION × ${data.blocks_per_day.toLocaleString(locale)} ${cs ? "bloků" : "blocks"}` },
-            { label: cs ? "Doba těžby" : "Mining Duration", icon: Timer, color: "text-cyan-400", value: data.mining_horizon_label ?? (cs ? `~${Math.round(data.estimated_years_remaining)} let` : `~${Math.round(data.estimated_years_remaining)} years`), sub: `${cs ? "Plně" : "Full"}: ${data.estimated_full_emission_date}` },
-            { label: cs ? "Celkové poplatky" : "Total Fees", icon: Flame, color: "text-amber-400", value: `${fmt(data.total_fees)} ZION`, sub: cs ? "Kumulované síťové poplatky" : "Cumulative network fees" },
-            { label: cs ? "Humanitární desátek" : "Humanitarian Tithe", icon: Heart, color: "text-pink-400", value: `${fmt(data.humanitarian.estimated_total)} ZION`, sub: cs ? `${(data.humanitarian.rate * 100).toFixed(0)}% všech odměn` : `${(data.humanitarian.rate * 100).toFixed(0)}% of all rewards` },
+            { label: EmissionMonitorCopy.dailyEmission[cs ? 'cs' : 'en'], icon: TrendingUp, color: "text-emerald-400", value: `${fmt(data.daily_emission)} ZION`, sub: `${data.base_reward_per_block} ZION × ${data.blocks_per_day.toLocaleString(locale)} ${EmissionMonitorCopy.blocks[cs ? 'cs' : 'en']}` },
+            { label: EmissionMonitorCopy.miningDuration[cs ? 'cs' : 'en'], icon: Timer, color: "text-cyan-400", value: data.mining_horizon_label ?? (cs ? `~${Math.round(data.estimated_years_remaining)} let` : `~${Math.round(data.estimated_years_remaining)} years`), sub: `${EmissionMonitorCopy.full[cs ? 'cs' : 'en']}: ${data.estimated_full_emission_date}` },
+            { label: EmissionMonitorCopy.totalFees[cs ? 'cs' : 'en'], icon: Flame, color: "text-amber-400", value: `${fmt(data.total_fees)} ZION`, sub: EmissionMonitorCopy.cumulativeNetworkFees[cs ? 'cs' : 'en'] },
+            { label: EmissionMonitorCopy.humanitarianTithe[cs ? 'cs' : 'en'], icon: Heart, color: "text-pink-400", value: `${fmt(data.humanitarian.estimated_total)} ZION`, sub: cs ? `${(data.humanitarian.rate * 100).toFixed(0)}% všech odměn` : `${(data.humanitarian.rate * 100).toFixed(0)}% of all rewards` },
           ].map((m) => (
             <div key={m.label} className="rounded-2xl bg-white/3 border border-white/6 p-4">
               <div className="flex items-center gap-2 mb-2">

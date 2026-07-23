@@ -7,6 +7,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import { type LucideIcon, Search, Box, ArrowRightLeft, Wallet, Hash, X, Loader2 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
 
+const ProSearchBarCopy = {
+  block: { cs: `Blok`, en: `Block` },
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  searchByBlockHeight: { cs: `Hledat podle výšky bloku`, en: `Search by block height` },
+  searchAsTransactionHash: { cs: `Hledat jako hash transakce`, en: `Search as transaction hash` },
+  searchAsBlockHash: { cs: `Hledat jako hash bloku`, en: `Search as block hash` },
+  address: { cs: `Adresa`, en: `Address` },
+  searchZionAddress: { cs: `Hledat ZION adresu`, en: `Search ZION address` },
+  hash: { cs: `Hash`, en: `Hash` },
+  searchByHash: { cs: `Hledat podle hashe`, en: `Search by hash` },
+  search: { cs: `Hledat`, en: `Search` },
+  trySearchingAsBlockTx: { cs: `Zkusit hledat jako blok nebo tx`, en: `Try searching as block/tx` },
+  searchByBlockHeightTxHashOrAdd: { cs: `Hledat podle výšky bloku, hashe tx nebo adresy…`, en: `Search by block height, tx hash, or address…` },
+  enter: { cs: `Enter ↵`, en: `Enter ↵` },
+  txHash: { cs: `tx:<hash>`, en: `tx:<hash>` },
+  addrAddress: { cs: `addr:<adresa>`, en: `addr:<address>` },
+};
+
 type SearchType = "block_height" | "block_hash" | "tx_hash" | "address" | "unknown";
 
 interface ParsedQuery {
@@ -66,10 +84,10 @@ function buildPreviews(query: string, cs: boolean): SearchPreview[] {
     case "block_height":
       previews.push({
         type: "block_height",
-        label: `${cs ? "Blok" : "Block"} #${parseInt(s).toLocaleString(cs ? "cs-CZ" : "en-US")}`,
+        label: `${ProSearchBarCopy.block[cs ? 'cs' : 'en']} #${parseInt(s).toLocaleString(ProSearchBarCopy.enUs[cs ? 'cs' : 'en'])}`,
         icon: Box,
         href: `/explorer/block?id=${s}`,
-        meta: cs ? "Hledat podle výšky bloku" : "Search by block height",
+        meta: ProSearchBarCopy.searchByBlockHeight[cs ? 'cs' : 'en'],
       });
       break;
     case "tx_hash":
@@ -78,44 +96,44 @@ function buildPreviews(query: string, cs: boolean): SearchPreview[] {
         label: `TX ${s.slice(0, 12)}…${s.slice(-8)}`,
         icon: ArrowRightLeft,
         href: `/explorer/tx?hash=${s}`,
-        meta: cs ? "Hledat jako hash transakce" : "Search as transaction hash",
+        meta: ProSearchBarCopy.searchAsTransactionHash[cs ? 'cs' : 'en'],
       });
       if (!parsed.forcedType || parsed.forcedType === "block_hash") {
         previews.push({
           type: "block_hash",
-          label: `${cs ? "Blok" : "Block"} ${s.slice(0, 12)}…${s.slice(-8)}`,
+          label: `${ProSearchBarCopy.block[cs ? 'cs' : 'en']} ${s.slice(0, 12)}…${s.slice(-8)}`,
           icon: Box,
           href: `/explorer/block?id=${s}`,
-          meta: cs ? "Hledat jako hash bloku" : "Search as block hash",
+          meta: ProSearchBarCopy.searchAsBlockHash[cs ? 'cs' : 'en'],
         });
       }
       break;
     case "address":
       previews.push({
         type: "address",
-        label: `${cs ? "Adresa" : "Address"} ${s.slice(0, 12)}…${s.slice(-8)}`,
+        label: `${ProSearchBarCopy.address[cs ? 'cs' : 'en']} ${s.slice(0, 12)}…${s.slice(-8)}`,
         icon: Wallet,
         href: `/explorer/address?addr=${s}`,
-        meta: cs ? "Hledat ZION adresu" : "Search ZION address",
+        meta: ProSearchBarCopy.searchZionAddress[cs ? 'cs' : 'en'],
       });
       break;
     case "block_hash":
       previews.push({
         type: "block_hash",
-        label: `${cs ? "Hash" : "Hash"} ${s.slice(0, 12)}…`,
+        label: `${ProSearchBarCopy.hash[cs ? 'cs' : 'en']} ${s.slice(0, 12)}…`,
         icon: Hash,
         href: `/explorer/block?id=${s}`,
-        meta: cs ? "Hledat podle hashe" : "Search by hash",
+        meta: ProSearchBarCopy.searchByHash[cs ? 'cs' : 'en'],
       });
       break;
     default:
       if (s.length > 2) {
         previews.push({
           type: "unknown",
-          label: `${cs ? "Hledat" : "Search"} "${s.length > 20 ? s.slice(0, 20) + "…" : s}"`,
+          label: `${ProSearchBarCopy.search[cs ? 'cs' : 'en']} "${s.length > 20 ? s.slice(0, 20) + "…" : s}"`,
           icon: Search,
           href: `/explorer/block?id=${s}`,
-          meta: cs ? "Zkusit hledat jako blok nebo tx" : "Try searching as block/tx",
+          meta: ProSearchBarCopy.trySearchingAsBlockTx[cs ? 'cs' : 'en'],
         });
       }
   }
@@ -248,7 +266,7 @@ export default function ProSearchBar() {
           }}
           onFocus={() => setFocused(true)}
           onKeyDown={handleKeyDown}
-          placeholder={cs ? "Hledat podle výšky bloku, hashe tx nebo adresy…" : "Search by block height, tx hash, or address…"}
+          placeholder={ProSearchBarCopy.searchByBlockHeightTxHashOrAdd[cs ? 'cs' : 'en']}
           className="w-full bg-transparent px-3 py-3.5 text-sm text-white placeholder:text-gray-500 
             focus:outline-none font-mono"
           autoComplete="off"
@@ -304,7 +322,7 @@ export default function ProSearchBar() {
                   <p className="text-[11px] text-gray-500">{p.meta}</p>
                 </div>
                 <span className="text-[10px] text-gray-600 uppercase tracking-wider shrink-0">
-                  {i === selected ? (cs ? "Enter ↵" : "Enter ↵") : ""}
+                  {i === selected ? (ProSearchBarCopy.enter[cs ? 'cs' : 'en']) : ""}
                 </span>
               </button>
             ))}
@@ -315,8 +333,8 @@ export default function ProSearchBar() {
       <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-gray-500">
         {[
           { label: "block:123456", value: "block:123456" },
-          { label: cs ? "tx:<hash>" : "tx:<hash>", value: "tx:" },
-          { label: cs ? "addr:<adresa>" : "addr:<address>", value: "addr:" },
+          { label: ProSearchBarCopy.txHash[cs ? 'cs' : 'en'], value: "tx:" },
+          { label: ProSearchBarCopy.addrAddress[cs ? 'cs' : 'en'], value: "addr:" },
         ].map((hint) => (
           <button
             key={hint.label}

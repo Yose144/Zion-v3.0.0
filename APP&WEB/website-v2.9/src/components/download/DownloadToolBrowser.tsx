@@ -26,6 +26,47 @@ import {
   NETWORK_PARAMS,
 } from '@/lib/github-releases';
 
+const DownloadToolBrowserCopy = {
+  tripleStream: { cs: `Triple Stream`, en: `Triple Stream` },
+  gpuCpuSimultaneouslyMaximumZio: { cs: `GPU + CPU současně — maximální ZION earnings`, en: `GPU + CPU simultaneously — maximum ZION earnings` },
+  zionLiquidity: { cs: `Zion Liquidity`, en: `Zion Liquidity` },
+  poolHandlesConversionsNoExchan: { cs: `Pool hlídá konverze — žádné burzy, žádný sell pressure`, en: `Pool handles conversions — no exchanges, no sell pressure` },
+  zionGrow: { cs: `Zion Grow`, en: `Zion Grow` },
+  theLongerYouMineTheMoreZionYou: { cs: `Čím déle těžíš, tím více ZION držíš — compounding`, en: `The longer you mine, the more ZION you hold — compounding` },
+  gpuKernels: { cs: `GPU kernels`, en: `GPU kernels` },
+  openclAmdCudaNvidiaDeekshaLite: { cs: `OpenCL (AMD) + CUDA (NVIDIA) — Deeksha Lite v1`, en: `OpenCL (AMD) + CUDA (NVIDIA) — Deeksha Lite v1` },
+  wallet: { cs: `Wallet`, en: `Wallet` },
+  ed25519Bip39MnemonicBalanceSen: { cs: `Ed25519 + BIP39 mnemotechnika, zustatek, odesilani`, en: `Ed25519 + BIP39 mnemonic, balance, send` },
+  node: { cs: `Node`, en: `Node` },
+  fullL1NodeBlocksTransactionsMe: { cs: `Full L1 node — bloky, transakce, mempool, P2P`, en: `Full L1 node — blocks, transactions, mempool, P2P` },
+  miner: { cs: `Miner`, en: `Miner` },
+  cpuGpuMiningWithEkamDeekshaDua: { cs: `CPU/GPU tezba s Ekam Deeksha dual-algo`, en: `CPU/GPU mining with Ekam Deeksha dual-algo` },
+  pool: { cs: `Pool`, en: `Pool` },
+  stratumPoolMonitoringStats: { cs: `Stratum pool monitoring a statistiky`, en: `Stratum pool monitoring & stats` },
+  preRelease: { cs: `Pre-release`, en: `Pre-release` },
+  latest: { cs: `Nejnovější`, en: `Latest` },
+  published: { cs: `Publikováno`, en: `Published` },
+  githubRelease: { cs: `GitHub Release`, en: `GitHub Release` },
+  tripleStreamEverythingYouNeed: { cs: `Triple Stream — vše, co potřebuješ`, en: `Triple Stream — everything you need` },
+  oneBinaryEverythingYouNeed: { cs: `Jeden binary — vše, co potřebuješ`, en: `One binary — everything you need` },
+  theTripleStreamMinerMinesZionA: { cs: `Triple Stream Miner těží ZION a buduje likviditu. Pro vytvoření peněženky použij v3.0.5-beta Community CLI níže. Linux x86_64 only — macOS a Windows buildy přijdou v v3.0.7.`, en: `The Triple Stream Miner mines ZION and builds liquidity. To create a wallet, use the v3.0.5-beta Community CLI below. Linux x86_64 only — macOS and Windows builds are coming in v3.0.7.` },
+  runZionWithNoArgumentsForAnInt: { cs: "Spusť `zion` bez argumentů pro interaktivní menu se šipkami. Windows verze má node + pool + miner embedded (10 MB).", en: "Run `zion` with no arguments for an interactive arrow-key menu. Windows version has node + pool + miner embedded (10 MB)." },
+  downloads: { cs: `Stažení`, en: `Downloads` },
+  packages: { cs: `balíčků`, en: `packages` },
+  download: { cs: `Stáhnout`, en: `Download` },
+  sha256Verification: { cs: `SHA256 verifikace`, en: `SHA256 verification` },
+  downloadSha256sumsTxtAndVerify: { cs: `Stáhni SHA256SUMS.txt a ověř binárky před použitím:`, en: `Download SHA256SUMS.txt and verify binaries before use:` },
+  quickStartTripleStreamMiner: { cs: `Rychlý start — Triple Stream Miner`, en: `Quick start — Triple Stream Miner` },
+  theMinerConnectsToTheOfficialP: { cs: `Miner se připojí k oficiálnímu poolu a zobrazí live dashboard: hashrate, accepted/rejected shares, pool height. Pro vytvoření peněženky použij v3.0.5-beta Community CLI níže.`, en: `The miner connects to the official pool and shows a live dashboard: hashrate, accepted/rejected shares, pool height. To create a wallet, use the v3.0.5-beta Community CLI below.` },
+  quickStartCommunityCli: { cs: `Rychlý start — Community CLI`, en: `Quick start — Community CLI` },
+  theInteractiveMenuGuidesYouWal: { cs: "Interaktivní menu tě provede: wallet → node → pool → miner. Nebo použij subcommandy: `zion wallet`, `zion node`, `zion mine`, `zion pool`.", en: "The interactive menu guides you: wallet → node → pool → miner. Or use subcommands: `zion wallet`, `zion node`, `zion mine`, `zion pool`." },
+  latestReleaseTripleStreamMiner: { cs: `Nejnovější release — Triple Stream Miner`, en: `Latest release — Triple Stream Miner` },
+  communityCliWalletNodePoolBasi: { cs: `Community CLI — peněženka, node, pool, basic mining`, en: `Community CLI — wallet, node, pool, basic mining` },
+  networkParameters: { cs: `Parametry sítě`, en: `Network parameters` },
+  buildFromSource: { cs: `Build ze zdrojů`, en: `Build from source` },
+  forArm64RaspberryPiAwsGraviton: { cs: `Pro ARM64 (Raspberry Pi, AWS Graviton) nebo vlastní build:`, en: `For ARM64 (Raspberry Pi, AWS Graviton) or custom builds:` },
+};
+
 /* ── helpers ── */
 
 function formatSize(mb: number): string {
@@ -63,26 +104,26 @@ function getTripleStreamFeatures(cs: boolean): Feature[] {
     {
       id: 'triple-stream',
       icon: <Zap className="h-5 w-5" />,
-      label: cs ? 'Triple Stream' : 'Triple Stream',
-      desc: cs ? 'GPU + CPU současně — maximální ZION earnings' : 'GPU + CPU simultaneously — maximum ZION earnings',
+      label: DownloadToolBrowserCopy.tripleStream[cs ? 'cs' : 'en'],
+      desc: DownloadToolBrowserCopy.gpuCpuSimultaneouslyMaximumZio[cs ? 'cs' : 'en'],
     },
     {
       id: 'zion-liquidity',
       icon: <Droplets className="h-5 w-5" />,
-      label: cs ? 'Zion Liquidity' : 'Zion Liquidity',
-      desc: cs ? 'Pool hlídá konverze — žádné burzy, žádný sell pressure' : 'Pool handles conversions — no exchanges, no sell pressure',
+      label: DownloadToolBrowserCopy.zionLiquidity[cs ? 'cs' : 'en'],
+      desc: DownloadToolBrowserCopy.poolHandlesConversionsNoExchan[cs ? 'cs' : 'en'],
     },
     {
       id: 'zion-grow',
       icon: <TrendingUp className="h-5 w-5" />,
-      label: cs ? 'Zion Grow' : 'Zion Grow',
-      desc: cs ? 'Čím déle těžíš, tím více ZION držíš — compounding' : 'The longer you mine, the more ZION you hold — compounding',
+      label: DownloadToolBrowserCopy.zionGrow[cs ? 'cs' : 'en'],
+      desc: DownloadToolBrowserCopy.theLongerYouMineTheMoreZionYou[cs ? 'cs' : 'en'],
     },
     {
       id: 'gpu-kernels',
       icon: <Cpu className="h-5 w-5" />,
-      label: cs ? 'GPU kernels' : 'GPU kernels',
-      desc: cs ? 'OpenCL (AMD) + CUDA (NVIDIA) — Deeksha Lite v1' : 'OpenCL (AMD) + CUDA (NVIDIA) — Deeksha Lite v1',
+      label: DownloadToolBrowserCopy.gpuKernels[cs ? 'cs' : 'en'],
+      desc: DownloadToolBrowserCopy.openclAmdCudaNvidiaDeekshaLite[cs ? 'cs' : 'en'],
     },
   ];
 }
@@ -92,26 +133,26 @@ function getCliFeatures(cs: boolean): Feature[] {
     {
       id: 'wallet',
       icon: <ShieldCheck className="h-5 w-5" />,
-      label: cs ? 'Wallet' : 'Wallet',
-      desc: cs ? 'Ed25519 + BIP39 mnemotechnika, zustatek, odesilani' : 'Ed25519 + BIP39 mnemonic, balance, send',
+      label: DownloadToolBrowserCopy.wallet[cs ? 'cs' : 'en'],
+      desc: DownloadToolBrowserCopy.ed25519Bip39MnemonicBalanceSen[cs ? 'cs' : 'en'],
     },
     {
       id: 'node',
       icon: <Terminal className="h-5 w-5" />,
-      label: cs ? 'Node' : 'Node',
-      desc: cs ? 'Full L1 node — bloky, transakce, mempool, P2P' : 'Full L1 node — blocks, transactions, mempool, P2P',
+      label: DownloadToolBrowserCopy.node[cs ? 'cs' : 'en'],
+      desc: DownloadToolBrowserCopy.fullL1NodeBlocksTransactionsMe[cs ? 'cs' : 'en'],
     },
     {
       id: 'mine',
       icon: <ArrowDownToLine className="h-5 w-5" />,
-      label: cs ? 'Miner' : 'Miner',
-      desc: cs ? 'CPU/GPU tezba s Ekam Deeksha dual-algo' : 'CPU/GPU mining with Ekam Deeksha dual-algo',
+      label: DownloadToolBrowserCopy.miner[cs ? 'cs' : 'en'],
+      desc: DownloadToolBrowserCopy.cpuGpuMiningWithEkamDeekshaDua[cs ? 'cs' : 'en'],
     },
     {
       id: 'pool',
       icon: <MenuIcon className="h-5 w-5" />,
-      label: cs ? 'Pool' : 'Pool',
-      desc: cs ? 'Stratum pool monitoring a statistiky' : 'Stratum pool monitoring & stats',
+      label: DownloadToolBrowserCopy.pool[cs ? 'cs' : 'en'],
+      desc: DownloadToolBrowserCopy.stratumPoolMonitoringStats[cs ? 'cs' : 'en'],
     },
   ];
 }
@@ -148,17 +189,17 @@ function ReleaseCard({
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-xl sm:text-2xl font-semibold text-white">{release.tag}</h2>
                 <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-amber-400 uppercase tracking-wider">
-                  {cs ? 'Pre-release' : 'Pre-release'}
+                  {DownloadToolBrowserCopy.preRelease[cs ? 'cs' : 'en']}
                 </span>
                 {primary && (
                   <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
-                    {cs ? 'Nejnovější' : 'Latest'}
+                    {DownloadToolBrowserCopy.latest[cs ? 'cs' : 'en']}
                   </span>
                 )}
               </div>
               <p className="text-sm text-gray-400 mt-0.5">{release.name}</p>
               <p className="text-xs text-gray-500 mt-1">
-                {cs ? 'Publikováno' : 'Published'} {release.publishedAt}
+                {DownloadToolBrowserCopy.published[cs ? 'cs' : 'en']} {release.publishedAt}
               </p>
             </div>
           </div>
@@ -169,7 +210,7 @@ function ReleaseCard({
             className="zion-button-secondary text-sm"
           >
             <ExternalLink className="h-4 w-4" />
-            {cs ? 'GitHub Release' : 'GitHub Release'}
+            {DownloadToolBrowserCopy.githubRelease[cs ? 'cs' : 'en']}
           </Link>
         </div>
       </div>
@@ -178,8 +219,8 @@ function ReleaseCard({
       <div className="space-y-3">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
           {primary
-            ? (cs ? 'Triple Stream — vše, co potřebuješ' : 'Triple Stream — everything you need')
-            : (cs ? 'Jeden binary — vše, co potřebuješ' : 'One binary — everything you need')}
+            ? (DownloadToolBrowserCopy.tripleStreamEverythingYouNeed[cs ? 'cs' : 'en'])
+            : (DownloadToolBrowserCopy.oneBinaryEverythingYouNeed[cs ? 'cs' : 'en'])}
         </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feat) => (
@@ -198,15 +239,11 @@ function ReleaseCard({
         </div>
         {primary ? (
           <p className="text-xs text-gray-500">
-            {cs
-              ? 'Triple Stream Miner těží ZION a buduje likviditu. Pro vytvoření peněženky použij v3.0.5-beta Community CLI níže. Linux x86_64 only — macOS a Windows buildy přijdou v v3.0.7.'
-              : 'The Triple Stream Miner mines ZION and builds liquidity. To create a wallet, use the v3.0.5-beta Community CLI below. Linux x86_64 only — macOS and Windows builds are coming in v3.0.7.'}
+            {DownloadToolBrowserCopy.theTripleStreamMinerMinesZionA[cs ? 'cs' : 'en']}
           </p>
         ) : (
           <p className="text-xs text-gray-500">
-            {cs
-              ? 'Spusť `zion` bez argumentů pro interaktivní menu se šipkami. Windows verze má node + pool + miner embedded (10 MB).'
-              : 'Run `zion` with no arguments for an interactive arrow-key menu. Windows version has node + pool + miner embedded (10 MB).'}
+            {DownloadToolBrowserCopy.runZionWithNoArgumentsForAnInt[cs ? 'cs' : 'en']}
           </p>
         )}
       </div>
@@ -215,10 +252,10 @@ function ReleaseCard({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-            {cs ? 'Stažení' : 'Downloads'}
+            {DownloadToolBrowserCopy.downloads[cs ? 'cs' : 'en']}
           </p>
           <span className="text-xs text-gray-500">
-            {binaries.length} {cs ? 'balíčků' : 'packages'}
+            {binaries.length} {DownloadToolBrowserCopy.packages[cs ? 'cs' : 'en']}
           </span>
         </div>
 
@@ -258,7 +295,7 @@ function ReleaseCard({
                     className="zion-button-secondary text-sm"
                   >
                     <ArrowDownToLine className="h-4 w-4" />
-                    {cs ? 'Stáhnout' : 'Download'}
+                    {DownloadToolBrowserCopy.download[cs ? 'cs' : 'en']}
                   </Link>
                 </div>
               </div>
@@ -277,12 +314,10 @@ function ReleaseCard({
             <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-emerald-400" />
             <div>
               <h3 className="text-sm font-semibold text-white">
-                {cs ? 'SHA256 verifikace' : 'SHA256 verification'}
+                {DownloadToolBrowserCopy.sha256Verification[cs ? 'cs' : 'en']}
               </h3>
               <p className="text-xs text-gray-400 mt-1">
-                {cs
-                  ? 'Stáhni SHA256SUMS.txt a ověř binárky před použitím:'
-                  : 'Download SHA256SUMS.txt and verify binaries before use:'}
+                {DownloadToolBrowserCopy.downloadSha256sumsTxtAndVerify[cs ? 'cs' : 'en']}
               </p>
               <div className="mt-2 rounded-lg bg-black/60 p-2 font-mono text-[10px] text-gray-300 overflow-x-auto">
                 <span className="text-gray-500">$</span> sha256sum -c SHA256SUMS.txt
@@ -312,7 +347,7 @@ function ReleaseCard({
           <div className="flex items-center gap-3 mb-3">
             <Terminal className="h-5 w-5 text-emerald-400" />
             <h3 className="text-sm font-semibold text-white">
-              {cs ? 'Rychlý start — Triple Stream Miner' : 'Quick start — Triple Stream Miner'}
+              {DownloadToolBrowserCopy.quickStartTripleStreamMiner[cs ? 'cs' : 'en']}
             </h3>
           </div>
           <div className="rounded-lg bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto space-y-1">
@@ -321,9 +356,7 @@ function ReleaseCard({
             <div><span className="text-gray-500">$</span> ./zion-miner --pool {SITE_POOL_PRIMARY} --wallet zion1YOUR_ADDR --gpu opencl --algorithm deeksha_lite_v1 --profile pool</div>
           </div>
           <p className="text-xs text-gray-400 mt-3">
-            {cs
-              ? 'Miner se připojí k oficiálnímu poolu a zobrazí live dashboard: hashrate, accepted/rejected shares, pool height. Pro vytvoření peněženky použij v3.0.5-beta Community CLI níže.'
-              : 'The miner connects to the official pool and shows a live dashboard: hashrate, accepted/rejected shares, pool height. To create a wallet, use the v3.0.5-beta Community CLI below.'}
+            {DownloadToolBrowserCopy.theMinerConnectsToTheOfficialP[cs ? 'cs' : 'en']}
           </p>
         </div>
       ) : (
@@ -334,7 +367,7 @@ function ReleaseCard({
           <div className="flex items-center gap-3 mb-3">
             <Terminal className="h-5 w-5 text-zion-cyan" />
             <h3 className="text-sm font-semibold text-white">
-              {cs ? 'Rychlý start — Community CLI' : 'Quick start — Community CLI'}
+              {DownloadToolBrowserCopy.quickStartCommunityCli[cs ? 'cs' : 'en']}
             </h3>
           </div>
           <div className="rounded-lg bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto space-y-1">
@@ -343,9 +376,7 @@ function ReleaseCard({
             <div><span className="text-gray-500">$</span> ./zion</div>
           </div>
           <p className="text-xs text-gray-400 mt-3">
-            {cs
-              ? 'Interaktivní menu tě provede: wallet → node → pool → miner. Nebo použij subcommandy: `zion wallet`, `zion node`, `zion mine`, `zion pool`.'
-              : 'The interactive menu guides you: wallet → node → pool → miner. Or use subcommands: `zion wallet`, `zion node`, `zion mine`, `zion pool`.'}
+            {DownloadToolBrowserCopy.theInteractiveMenuGuidesYouWal[cs ? 'cs' : 'en']}
           </p>
           <div className="mt-3 rounded-lg bg-black/40 p-2 font-mono text-[10px] text-gray-400 overflow-x-auto">
             <span className="text-gray-500">$</span> ./zion wallet new --mnemonic --out my-wallet.json
@@ -364,7 +395,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
       {/* ─── v3.0.6-beta — Triple Stream Miner (primary) ─── */}
       <div className="space-y-3">
         <p className="text-sm uppercase tracking-[0.4em] text-emerald-400">
-          {cs ? 'Nejnovější release — Triple Stream Miner' : 'Latest release — Triple Stream Miner'}
+          {DownloadToolBrowserCopy.latestReleaseTripleStreamMiner[cs ? 'cs' : 'en']}
         </p>
         <ReleaseCard release={LATEST_RELEASE} primary cs={cs} />
       </div>
@@ -372,7 +403,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
       {/* ─── v3.0.5-beta — Community CLI (secondary) ─── */}
       <div className="space-y-3 pt-6 border-t border-white/5">
         <p className="text-sm uppercase tracking-[0.4em] text-zion-cyan">
-          {cs ? 'Community CLI — peněženka, node, pool, basic mining' : 'Community CLI — wallet, node, pool, basic mining'}
+          {DownloadToolBrowserCopy.communityCliWalletNodePoolBasi[cs ? 'cs' : 'en']}
         </p>
         <ReleaseCard release={COMMUNITY_CLI_RELEASE} cs={cs} />
       </div>
@@ -380,7 +411,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
       {/* ─── Network parameters ─── */}
       <div className="space-y-3 pt-6 border-t border-white/5">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-          {cs ? 'Parametry sítě' : 'Network parameters'}
+          {DownloadToolBrowserCopy.networkParameters[cs ? 'cs' : 'en']}
         </p>
         <div
           className="zion-rainbow-sub p-5 overflow-x-auto"
@@ -411,13 +442,11 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
         <div className="flex items-center gap-3 mb-3">
           <Cpu className="h-5 w-5 text-zion-cyan" />
           <h3 className="text-sm font-semibold text-white">
-            {cs ? 'Build ze zdrojů' : 'Build from source'}
+            {DownloadToolBrowserCopy.buildFromSource[cs ? 'cs' : 'en']}
           </h3>
         </div>
         <p className="text-xs text-gray-400 mb-3">
-          {cs
-            ? 'Pro ARM64 (Raspberry Pi, AWS Graviton) nebo vlastní build:'
-            : 'For ARM64 (Raspberry Pi, AWS Graviton) or custom builds:'}
+          {DownloadToolBrowserCopy.forArm64RaspberryPiAwsGraviton[cs ? 'cs' : 'en']}
         </p>
         <div className="rounded-lg bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto space-y-1">
           <div><span className="text-gray-500">$</span> git clone {GITHUB_REPO_URL}.git</div>

@@ -10,6 +10,24 @@ import { exportToCsv } from "@/lib/csv-export";
 import { useExplorerSSE } from "@/components/explorer/v4/hooks/useExplorerSSE";
 import LiveBadge from "@/components/explorer/v4/shared/LiveBadge";
 
+const ExplorerBlocksCopy = {
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  blocks: { cs: `Bloky`, en: `Blocks` },
+  blockArchive: { cs: `Archiv bloku`, en: `Block Archive` },
+  completeHistoryOfZionBlockchai: { cs: `Kompletní historie blockchainových bloků ZION`, en: `Complete history of ZION blockchain blocks` },
+  live: { cs: `Živě`, en: `Live` },
+  offline: { cs: `Offline`, en: `Offline` },
+  failedToLoad: { cs: `Chyba načítání`, en: `Failed to load` },
+  retry: { cs: `Zkusit znovu`, en: `Retry` },
+  height: { cs: `Výška`, en: `Height` },
+  age: { cs: `Stáří`, en: `Age` },
+  size: { cs: `Velikost`, en: `Size` },
+  difficulty: { cs: `Obtížnost`, en: `Difficulty` },
+  reward: { cs: `Odměna`, en: `Reward` },
+  exportCsv: { cs: `Export CSV`, en: `Export CSV` },
+  loadMore: { cs: `Načíst další`, en: `Load More` },
+};
+
 interface Block {
   height: number;
   hash: string;
@@ -55,7 +73,7 @@ function CopyBtn({ text }: { text: string }) {
 export default function BlocksPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = cs ? 'cs-CZ' : 'en-US';
+  const locale = ExplorerBlocksCopy.enUs[cs ? 'cs' : 'en'];
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -159,7 +177,7 @@ export default function BlocksPage() {
         <nav className="flex items-center gap-2 text-sm">
           <Link href="/explorer" className="text-gray-500 hover:text-white transition">Explorer</Link>
           <span className="text-gray-700">/</span>
-          <span className="text-white font-medium">{cs ? 'Bloky' : 'Blocks'}</span>
+          <span className="text-white font-medium">{ExplorerBlocksCopy.blocks[cs ? 'cs' : 'en']}</span>
         </nav>
 
         {/* Header */}
@@ -168,18 +186,18 @@ export default function BlocksPage() {
             <Box className="h-6 w-6 text-zion-gold" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl md:text-3xl font-bold text-white">{cs ? 'Archiv bloku' : 'Block Archive'}</h1>
-            <p className="text-sm text-gray-500">{cs ? 'Kompletní historie blockchainových bloků ZION' : 'Complete history of ZION blockchain blocks'}</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">{ExplorerBlocksCopy.blockArchive[cs ? 'cs' : 'en']}</h1>
+            <p className="text-sm text-gray-500">{ExplorerBlocksCopy.completeHistoryOfZionBlockchai[cs ? 'cs' : 'en']}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {sse.connected ? (
-              <LiveBadge label={cs ? 'Živě' : 'Live'} />
+              <LiveBadge label={ExplorerBlocksCopy.live[cs ? 'cs' : 'en']} />
             ) : (
               <span className="inline-flex items-center gap-1.5">
                 <span className="relative flex h-2 w-2">
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-gray-500" />
                 </span>
-                <span className="text-xs font-bold text-gray-500 tracking-wider">{cs ? 'Offline' : 'Offline'}</span>
+                <span className="text-xs font-bold text-gray-500 tracking-wider">{ExplorerBlocksCopy.offline[cs ? 'cs' : 'en']}</span>
               </span>
             )}
             {sse.blockCount > 0 && (
@@ -195,14 +213,14 @@ export default function BlocksPage() {
           <div className="zion-rainbow-sub px-4 py-3 flex items-center gap-3" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
             <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-red-300 font-medium">{cs ? 'Chyba načítání' : 'Failed to load'}</p>
+              <p className="text-sm text-red-300 font-medium">{ExplorerBlocksCopy.failedToLoad[cs ? 'cs' : 'en']}</p>
               <p className="text-xs text-gray-500 font-mono break-all">{error}</p>
             </div>
             <button
               onClick={() => { setError(null); setLoading(true); loadBlocks(1, false); }}
               className="zion-button-secondary text-xs py-1.5 px-3 shrink-0"
             >
-              {cs ? 'Zkusit znovu' : 'Retry'}
+              {ExplorerBlocksCopy.retry[cs ? 'cs' : 'en']}
             </button>
           </div>
         )}
@@ -213,13 +231,13 @@ export default function BlocksPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/6">
-                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{cs ? 'Výška' : 'Height'}</th>
-                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{cs ? 'Stáří' : 'Age'}</th>
+                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{ExplorerBlocksCopy.height[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{ExplorerBlocksCopy.age[cs ? 'cs' : 'en']}</th>
                   <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden md:table-cell">Hash</th>
                   <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">Txs</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden sm:table-cell">{cs ? 'Velikost' : 'Size'}</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{cs ? 'Obtížnost' : 'Difficulty'}</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{cs ? 'Odměna' : 'Reward'}</th>
+                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden sm:table-cell">{ExplorerBlocksCopy.size[cs ? 'cs' : 'en']}</th>
+                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerBlocksCopy.difficulty[cs ? 'cs' : 'en']}</th>
+                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{ExplorerBlocksCopy.reward[cs ? 'cs' : 'en']}</th>
                 </tr>
               </thead>
               <tbody>
@@ -286,7 +304,7 @@ export default function BlocksPage() {
                 className="zion-button-secondary text-xs py-2 px-4"
               >
                 <Download className="h-3.5 w-3.5" />
-                {cs ? 'Export CSV' : 'Export CSV'}
+                {ExplorerBlocksCopy.exportCsv[cs ? 'cs' : 'en']}
               </button>
               {hasMore && (
                 <button
@@ -299,7 +317,7 @@ export default function BlocksPage() {
                   ) : (
                     <ChevronDown className="h-3.5 w-3.5" />
                   )}
-                  {cs ? 'Načíst další' : 'Load More'}
+                  {ExplorerBlocksCopy.loadMore[cs ? 'cs' : 'en']}
                 </button>
               )}
             </div>

@@ -4,69 +4,80 @@ import { ArrowRight, CalendarDays, CheckCircle2, Rocket } from 'lucide-react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 
+const RoadmapPulseCopy = {
+  l1TerranovaGenesis301: { cs: `L1 TerraNova — Genesis 3.0.1`, en: `L1 TerraNova — Genesis 3.0.1` },
+  marJun2026: { cs: `Čer — Čvn 2026`, en: `Mar — Jun 2026` },
+  genesis301Successful11Jun2026M: { cs: `Genesis 3.0.1 úspěšný 11. 6. 2026 — MainNet Edge server topologie běží`, en: `Genesis 3.0.1 successful 11 Jun 2026 — MainNet Edge server topology live` },
+  poolActive89551SplitVerifiedEx: { cs: `Pool aktivní, 89/5/5/1 split ověřen, explorer synchronizován`, en: `Pool active, 89/5/5/1 split verified, explorer synced` },
+  lwmaDaaDualAlgoMiningGpuCpuStr: { cs: `LWMA DAA, dual-algo mining, GPU/CPU stratum live`, en: `LWMA DAA, dual-algo mining, GPU/CPU stratum live` },
+  l2BridgeDefiRunV306: { cs: `L2 Bridge, DeFi Run — v3.0.6`, en: `L2 Bridge, DeFi Run — v3.0.6` },
+  jun2026: { cs: `Čvn 2026`, en: `Jun 2026` },
+  bridgeDeployedOnBaseMainnetWzi: { cs: `Bridge nasazen na Base Mainnet — wZION token live`, en: `Bridge deployed on Base Mainnet — wZION token live` },
+  defiContractsActiveSwapBridgeP: { cs: `DeFi kontrakty aktivní — swap, bridge, portfolio`, en: `DeFi contracts active — swap, bridge, portfolio` },
+  atomicSwapApiFunctionalCrossCh: { cs: `Atomic swap API funkční — cross-chain operace`, en: `Atomic swap API functional — cross-chain operations` },
+  launchOpsSecurityClosure: { cs: `Launch Ops & Bezpečnostní uzávěr`, en: `Launch Ops & Security Closure` },
+  junDec2026: { cs: `Čvn — Pro 2026`, en: `Jun — Dec 2026` },
+  bfgScrubGenesisArtifactsChecks: { cs: `BFG scrub + genesis artefakty / checksumy v průběhu`, en: `BFG scrub + genesis artifacts / checksums in progress` },
+  externalSecurityAuditScheduled: { cs: `Externí bezpečnostní audit naplánován (Q4 2026)`, en: `External security audit scheduled (Q4 2026)` },
+  documentationMonitoringBridgeP: { cs: `Dokumentace, monitoring, bridge provisioning — odpočet k 31. 12. 2026`, en: `Documentation, monitoring, bridge provisioning — countdown to 31 Dec 2026` },
+  publicLaunchGate: { cs: `Veřejný launch`, en: `Public Launch Gate` },
+  k31Dec2026: { cs: `31. Pro 2026`, en: `31 Dec 2026` },
+  genesisFreezeAllParametersBein: { cs: `Genesis freeze — všechny parametry finalizovány`, en: `Genesis freeze — all parameters being finalized` },
+  publicLaunchScheduledCountdown: { cs: `Veřejný launch naplánován — odpočet aktivní`, en: `Public launch scheduled — countdown active` },
+  coingeckoListingWzionBridgeInP: { cs: `CoinGecko listing + wZION bridge v přípravě`, en: `CoinGecko listing + wZION bridge in preparation` },
+  mainnetGenesisCosmicHarmonyV3V: { cs: `Mainnet genesis, Cosmic Harmony v3/v4, UTXO, zásoba 144B ZION`, en: `MainNet Genesis, Cosmic Harmony v3/v4, UTXO, 144B ZION supply` },
+  wzionDexOnBaseMainnetLiveBridg: { cs: `wZION DEX na Base Mainnet live, bridge relay, treasury rails a DAO governance vrstva`, en: `wZION DEX on Base Mainnet live, bridge relay, treasury rails, and the DAO governance layer` },
+  hiranyagarbhaRuntimeTheNclComp: { cs: `Hiranyagarbha runtime, NCL compute lane, WARP relaye a agentická orchestrace nad L1/L2`, en: `Hiranyagarbha runtime, the NCL compute lane, WARP relays, and agentic orchestration above L1/L2` },
+  goldenEggXpEconomyWinnersProgr: { cs: `Golden Egg, XP ekonomika, Winners program, herní vrstva`, en: `Golden Egg, XP economy, Winners program, game layer` },
+  humanitarianMissionsFreeEnergy: { cs: `Humanitární mise, free-energy R&D, off-grid komunity`, en: `Humanitarian missions, free energy R&D, off-grid communities` },
+  orbitalObservatoryLeoResearchS: { cs: `Orbitální observatoř, LEO výzkumná stanice, dlouhodobý misijní layer`, en: `Orbital observatory, LEO research station, long-range mission layer` },
+  roadmap: { cs: `Roadmapa`, en: `Roadmap` },
+  mainnetGenesis11Jun2026Success: { cs: `MainNet Genesis 11. 6. 2026 úspěšný — public line 3.0.6 Bridge, DeFi Run nad kanonickou runtime v3.0.6 Deeksha/Ekam. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Edge server topologie běží, pool aktivní, mining live. Bridge a DeFi protokoly nasazeny na Base Mainnet, wZION token live. Veřejný launch zůstává naplánován na 31. prosinec 2026 (Silvestr). Prioritou je finální validace telemetrie, doladění dokumentace, bezpečnostní audit a provozní připravenost.`, en: `MainNet Genesis 11 Jun 2026 successful — public line 3.0.6 Bridge, DeFi Run over the canonical v3.0.6 Deeksha/Ekam runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. Edge server topology running, pool active, mining live. Bridge and DeFi protocols deployed on Base Mainnet, wZION token live. Public launch remains scheduled for 31 December 2026 (New Year\'s Eve). Priority is final telemetry validation, documentation polish, security audit, and operational readiness.` },
+  fullRoadmap: { cs: `Celá roadmapa`, en: `Full Roadmap` },
+  blockExplorer: { cs: `Průzkumník blockchainu`, en: `Block Explorer` },
+  k6LayerVision: { cs: `6vrstva vize`, en: `6-Layer Vision` },
+  k6LayerVisionAfterThePureCodeBa: { cs: `6vrstva vize po Pure Code baseline`, en: `6-layer vision — after the Pure Code baseline` },
+};
+
 const getPhaseCards = (cs: boolean) => [
   {
-    name: cs ? 'L1 TerraNova — Genesis 3.0.1' : 'L1 TerraNova — Genesis 3.0.1',
-    window: cs ? 'Čer — Čvn 2026' : 'Mar — Jun 2026',
+    name: RoadmapPulseCopy.l1TerranovaGenesis301[cs ? 'cs' : 'en'],
+    window: RoadmapPulseCopy.marJun2026[cs ? 'cs' : 'en'],
     progress: 100,
     highlights: [
-      cs
-        ? 'Genesis 3.0.1 úspěšný 11. 6. 2026 — MainNet Edge server topologie běží'
-        : 'Genesis 3.0.1 successful 11 Jun 2026 — MainNet Edge server topology live',
-      cs
-        ? 'Pool aktivní, 89/5/5/1 split ověřen, explorer synchronizován'
-        : 'Pool active, 89/5/5/1 split verified, explorer synced',
-      cs
-        ? 'LWMA DAA, dual-algo mining, GPU/CPU stratum live'
-        : 'LWMA DAA, dual-algo mining, GPU/CPU stratum live',
+      RoadmapPulseCopy.genesis301Successful11Jun2026M[cs ? 'cs' : 'en'],
+      RoadmapPulseCopy.poolActive89551SplitVerifiedEx[cs ? 'cs' : 'en'],
+      RoadmapPulseCopy.lwmaDaaDualAlgoMiningGpuCpuStr[cs ? 'cs' : 'en'],
     ],
   },
   {
-    name: cs ? 'L2 Bridge, DeFi Run — v3.0.6' : 'L2 Bridge, DeFi Run — v3.0.6',
-    window: cs ? 'Čvn 2026' : 'Jun 2026',
+    name: RoadmapPulseCopy.l2BridgeDefiRunV306[cs ? 'cs' : 'en'],
+    window: RoadmapPulseCopy.jun2026[cs ? 'cs' : 'en'],
     progress: 100,
     highlights: [
-      cs
-        ? 'Bridge nasazen na Base Mainnet — wZION token live'
-        : 'Bridge deployed on Base Mainnet — wZION token live',
-      cs
-        ? 'DeFi kontrakty aktivní — swap, bridge, portfolio'
-        : 'DeFi contracts active — swap, bridge, portfolio',
-      cs
-        ? 'Atomic swap API funkční — cross-chain operace'
-        : 'Atomic swap API functional — cross-chain operations',
+      RoadmapPulseCopy.bridgeDeployedOnBaseMainnetWzi[cs ? 'cs' : 'en'],
+      RoadmapPulseCopy.defiContractsActiveSwapBridgeP[cs ? 'cs' : 'en'],
+      RoadmapPulseCopy.atomicSwapApiFunctionalCrossCh[cs ? 'cs' : 'en'],
     ],
   },
   {
-    name: cs ? 'Launch Ops & Bezpečnostní uzávěr' : 'Launch Ops & Security Closure',
-    window: cs ? 'Čvn — Pro 2026' : 'Jun — Dec 2026',
+    name: RoadmapPulseCopy.launchOpsSecurityClosure[cs ? 'cs' : 'en'],
+    window: RoadmapPulseCopy.junDec2026[cs ? 'cs' : 'en'],
     progress: 40,
     highlights: [
-      cs
-        ? 'BFG scrub + genesis artefakty / checksumy v průběhu'
-        : 'BFG scrub + genesis artifacts / checksums in progress',
-      cs
-        ? 'Externí bezpečnostní audit naplánován (Q4 2026)'
-        : 'External security audit scheduled (Q4 2026)',
-      cs
-        ? 'Dokumentace, monitoring, bridge provisioning — odpočet k 31. 12. 2026'
-        : 'Documentation, monitoring, bridge provisioning — countdown to 31 Dec 2026',
+      RoadmapPulseCopy.bfgScrubGenesisArtifactsChecks[cs ? 'cs' : 'en'],
+      RoadmapPulseCopy.externalSecurityAuditScheduled[cs ? 'cs' : 'en'],
+      RoadmapPulseCopy.documentationMonitoringBridgeP[cs ? 'cs' : 'en'],
     ],
   },
   {
-    name: cs ? 'Veřejný launch' : 'Public Launch Gate',
-    window: cs ? '31. Pro 2026' : '31 Dec 2026',
+    name: RoadmapPulseCopy.publicLaunchGate[cs ? 'cs' : 'en'],
+    window: RoadmapPulseCopy.k31Dec2026[cs ? 'cs' : 'en'],
     progress: 15,
     highlights: [
-      cs
-        ? 'Genesis freeze — všechny parametry finalizovány'
-        : 'Genesis freeze — all parameters being finalized',
-      cs
-        ? 'Veřejný launch naplánován — odpočet aktivní'
-        : 'Public launch scheduled — countdown active',
-      cs
-        ? 'CoinGecko listing + wZION bridge v přípravě'
-        : 'CoinGecko listing + wZION bridge in preparation',
+      RoadmapPulseCopy.genesisFreezeAllParametersBein[cs ? 'cs' : 'en'],
+      RoadmapPulseCopy.publicLaunchScheduledCountdown[cs ? 'cs' : 'en'],
+      RoadmapPulseCopy.coingeckoListingWzionBridgeInP[cs ? 'cs' : 'en'],
     ],
   },
 ];
@@ -74,27 +85,27 @@ const getPhaseCards = (cs: boolean) => [
 const getTimeline = (cs: boolean) => [
   {
     title: '⛏️ L1 TerraNova · 2026',
-    focus: cs ? 'Mainnet genesis, Cosmic Harmony v3/v4, UTXO, zásoba 144B ZION' : 'MainNet Genesis, Cosmic Harmony v3/v4, UTXO, 144B ZION supply',
+    focus: RoadmapPulseCopy.mainnetGenesisCosmicHarmonyV3V[cs ? 'cs' : 'en'],
   },
   {
     title: '🌉 L2 Bridge, DAO & DeFi · 2026',
-    focus: cs ? 'wZION DEX na Base Mainnet live, bridge relay, treasury rails a DAO governance vrstva' : 'wZION DEX on Base Mainnet live, bridge relay, treasury rails, and the DAO governance layer',
+    focus: RoadmapPulseCopy.wzionDexOnBaseMainnetLiveBridg[cs ? 'cs' : 'en'],
   },
   {
     title: '🧠 L3 AI Native, WARP & NCL · 2027–2028',
-    focus: cs ? 'Hiranyagarbha runtime, NCL compute lane, WARP relaye a agentická orchestrace nad L1/L2' : 'Hiranyagarbha runtime, the NCL compute lane, WARP relays, and agentic orchestration above L1/L2',
+    focus: RoadmapPulseCopy.hiranyagarbhaRuntimeTheNclComp[cs ? 'cs' : 'en'],
   },
   {
     title: '🎮 L4 Oasis · 2029',
-    focus: cs ? 'Golden Egg, XP ekonomika, Winners program, herní vrstva' : 'Golden Egg, XP economy, Winners program, game layer',
+    focus: RoadmapPulseCopy.goldenEggXpEconomyWinnersProgr[cs ? 'cs' : 'en'],
   },
   {
     title: '🌍 L5 Free World · 2030',
-    focus: cs ? 'Humanitární mise, free-energy R&D, off-grid komunity' : 'Humanitarian missions, free energy R&D, off-grid communities',
+    focus: RoadmapPulseCopy.humanitarianMissionsFreeEnergy[cs ? 'cs' : 'en'],
   },
   {
     title: '🔭 L6 Issobella · 2040+',
-    focus: cs ? 'Orbitální observatoř, LEO výzkumná stanice, dlouhodobý misijní layer' : 'Orbital observatory, LEO research station, long-range mission layer',
+    focus: RoadmapPulseCopy.orbitalObservatoryLeoResearchS[cs ? 'cs' : 'en'],
   },
 ];
 
@@ -109,14 +120,12 @@ export default function RoadmapPulse() {
       <div className="zion-container space-y-12">
         <div className="flex flex-col lg:flex-row lg:items-center gap-6">
           <div className="flex-1 space-y-3">
-            <p className="text-sm uppercase tracking-[0.4em] text-zion-gold">{cs ? 'Roadmapa' : 'Roadmap'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-zion-gold">{RoadmapPulseCopy.roadmap[cs ? 'cs' : 'en']}</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
               3.0.6 <span className="text-gradient">Bridge, DeFi Run</span>
             </h2>
             <p className="text-base sm:text-lg text-gray-300 max-w-2xl">
-              {cs
-                ? 'MainNet Genesis 11. 6. 2026 úspěšný — public line 3.0.6 Bridge, DeFi Run nad kanonickou runtime v3.0.6 Deeksha/Ekam. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Edge server topologie běží, pool aktivní, mining live. Bridge a DeFi protokoly nasazeny na Base Mainnet, wZION token live. Veřejný launch zůstává naplánován na 31. prosinec 2026 (Silvestr). Prioritou je finální validace telemetrie, doladění dokumentace, bezpečnostní audit a provozní připravenost.'
-                : 'MainNet Genesis 11 Jun 2026 successful — public line 3.0.6 Bridge, DeFi Run over the canonical v3.0.6 Deeksha/Ekam runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. Edge server topology running, pool active, mining live. Bridge and DeFi protocols deployed on Base Mainnet, wZION token live. Public launch remains scheduled for 31 December 2026 (New Year\'s Eve). Priority is final telemetry validation, documentation polish, security audit, and operational readiness.'}
+              {RoadmapPulseCopy.mainnetGenesis11Jun2026Success[cs ? 'cs' : 'en']}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
@@ -124,7 +133,7 @@ export default function RoadmapPulse() {
               href="/roadmap"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan text-sm font-semibold"
             >
-              {cs ? 'Celá roadmapa' : 'Full Roadmap'}
+              {RoadmapPulseCopy.fullRoadmap[cs ? 'cs' : 'en']}
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
@@ -133,7 +142,7 @@ export default function RoadmapPulse() {
               style={{ '--rc': '249, 115, 22' } as React.CSSProperties}
             >
               <CalendarDays className="w-4 h-4 text-zion-cyan" />
-              {cs ? 'Průzkumník blockchainu' : 'Block Explorer'}
+              {RoadmapPulseCopy.blockExplorer[cs ? 'cs' : 'en']}
             </Link>
           </div>
         </div>
@@ -176,8 +185,8 @@ export default function RoadmapPulse() {
           <div className="flex items-center gap-3 mb-6">
             <Rocket className="w-6 h-6 text-zion-cyan" />
             <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{cs ? '6vrstva vize' : '6-Layer Vision'}</p>
-              <h3 className="text-2xl font-semibold text-white">{cs ? '6vrstva vize po Pure Code baseline' : '6-layer vision — after the Pure Code baseline'}</h3>
+              <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{RoadmapPulseCopy.k6LayerVision[cs ? 'cs' : 'en']}</p>
+              <h3 className="text-2xl font-semibold text-white">{RoadmapPulseCopy.k6LayerVisionAfterThePureCodeBa[cs ? 'cs' : 'en']}</h3>
             </div>
           </div>
 

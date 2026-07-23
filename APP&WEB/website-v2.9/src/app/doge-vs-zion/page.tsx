@@ -35,6 +35,39 @@ import SpotifyBanner from '@/components/SpotifyBanner';
 import StargatePortal from '@/components/StargatePortal';
 import StargateLogo from '@/components/StargateLogo';
 
+const DogeVsZionCopy = {
+  back: { cs: `Zpět`, en: `Back` },
+  zionStargatePortalToOasis: { cs: `ZION Stargate — Portál do Oasis`, en: `ZION Stargate — Portal to Oasis` },
+  enterToOasis: { cs: `Vstoupit do Oasis`, en: `Enter to Oasis` },
+  showdownArcade: { cs: `Showdown a Arkáda`, en: `Showdown & Arcade` },
+  zionIsAt00002ExactlyWhereDogeW: { cs: `ZION je na $0.0002 — přesně kde byl Doge v prosinci 2013. Ale ZION má Oasis, kvantovou odolnost a humanitární fond. Hraj a rozhodni kdo vyhraje.`, en: `ZION is at $0.0002 — exactly where Doge was in December 2013. But ZION has Oasis, quantum resistance, and a humanitarian fund. Play and decide who wins.` },
+  games: { cs: `her`, en: `games` },
+  pts: { cs: `bodů`, en: `pts` },
+  zionLive: { cs: `ZION online`, en: `ZION live` },
+  zionOffline: { cs: `ZION offline`, en: `ZION offline` },
+  dogeVsZionComparison: { cs: `Doge vs ZION — Srovnání`, en: `Doge vs ZION — Comparison` },
+  liveZionDataFromApiDogeApproxi: { cs: `Skutečná data ZION z API · Doge aprox. hodnoty`, en: `Live ZION data from API · Doge approximate values` },
+  in13Years: { cs: `za 13 let`, en: `in 13 years` },
+  zionTodayIsExactlyWhereDogeWas: { cs: `ZION je dnes přesně kde byl Doge v prosinci 2013. Stejná cena, stejný start. Ale ZION má navíc: kvantovou odolnost, humanitární fond, AI-nativní design a Oasis metaverse. Historie se neopakuje — ale rýmuje.`, en: `ZION today is exactly where Doge was in December 2013. Same price, same starting line. But ZION has more: quantum resistance, humanitarian fund, AI-native design, and the Oasis metaverse. History doesn\'t repeat — but it rhymes.` },
+  zionAdvantages: { cs: `Výhody ZION`, en: `ZION Advantages` },
+  battleStats: { cs: `Bitvní Statistiky`, en: `Battle Stats` },
+  aPlayfulShowdownWhoWins: { cs: `Hravé srovnání — kdo vyhrává?`, en: `A playful showdown — who wins?` },
+  theOriginal: { cs: `Originál`, en: `The Original` },
+  whereItAllBeganAndTheZionAnswe: { cs: `Kde to všechno začalo — a ZION odpověď`, en: `Where it all began — and the ZION answer` },
+  legendaryClicker: { cs: `Legendární klikárna`, en: `Legendary clicker` },
+  theLegendaryClickerThatStarted: { cs: `Legendární klikárna, která to všechno začala. Těž Dogecoiny, najmi psy, let na měsíc. 100% time-waster, 0% kvantová odolnost.`, en: `The legendary clicker that started it all. Mine Dogecoins, hire dogs, go to the moon. 100% time-waster, 0% quantum resistance.` },
+  playExternal: { cs: `Hrát externě`, en: `Play External` },
+  zionAnswer: { cs: `ZION odpověď`, en: `ZION answer` },
+  zionSAnswerToDogeMiner2MineOnT: { cs: `ZION odpověď na Doge Miner 2. Těž na hvězdě, stavej rigy od CPU po Cosmic Harmony, dosáhni Issobelly. 100% time-waster, 100% kvantová odolnost.`, en: `ZION\'s answer to Doge Miner 2. Mine on the star, build rigs from CPU to Cosmic Harmony, reach Issobella. 100% time-waster, 100% quantum resistance.` },
+  play: { cs: `Hrát`, en: `Play` },
+  zionArcade: { cs: `ZION Arkáda`, en: `ZION Arcade` },
+  playGamesEarnGloryDefendTheNet: { cs: `Hraj hry, získej slávu, braň síť`, en: `Play games, earn glory, defend the network` },
+  notPlayedYet: { cs: `Ještě nehráno`, en: `Not played yet` },
+  comingSoon: { cs: `Již brzy`, en: `Coming Soon` },
+  moreGamesOnTheHorizon: { cs: `Další hry na horizontu`, en: `More games on the horizon` },
+  lockedSoon: { cs: `Zamčeno · brzy`, en: `Locked · soon` },
+};
+
 // ─── Game Catalog ─────────────────────────────────────────────────────────────
 
 interface GameEntry {
@@ -473,7 +506,7 @@ export default function DogeVsZionPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft className="h-4 w-4" /> {cs ? 'Zpět' : 'Back'}
+            <ArrowLeft className="h-4 w-4" /> {DogeVsZionCopy.back[cs ? 'cs' : 'en']}
           </Link>
           <button
             onClick={() => setMuted((m) => !m)}
@@ -503,7 +536,7 @@ export default function DogeVsZionPage() {
               transition={{ duration: 0.6 }}
               className="mb-8 text-sm font-bold uppercase tracking-[0.3em] text-zion-cyan/80"
             >
-              {cs ? 'ZION Stargate — Portál do Oasis' : 'ZION Stargate — Portal to Oasis'}
+              {DogeVsZionCopy.zionStargatePortalToOasis[cs ? 'cs' : 'en']}
             </motion.p>
 
             {/* Stargate — plný originál, úplně nahoře */}
@@ -527,7 +560,7 @@ export default function DogeVsZionPage() {
                 href="/l4-oasis"
                 className="zion-button-secondary group"
               >
-                {cs ? 'Vstoupit do Oasis' : 'Enter to Oasis'}
+                {DogeVsZionCopy.enterToOasis[cs ? 'cs' : 'en']}
                 <span className="transition-transform group-hover:translate-x-1">→</span>
               </Link>
             </motion.div>
@@ -540,7 +573,7 @@ export default function DogeVsZionPage() {
               className="relative z-20 text-2xl md:text-3xl font-bold tracking-tight"
             >
               <span className="bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan bg-clip-text text-transparent">
-                {cs ? 'Showdown a Arkáda' : 'Showdown & Arcade'}
+                {DogeVsZionCopy.showdownArcade[cs ? 'cs' : 'en']}
               </span>
             </motion.h2>
 
@@ -562,9 +595,7 @@ export default function DogeVsZionPage() {
               transition={{ delay: 0.6 }}
               className="mt-3 text-sm md:text-base text-gray-400 max-w-2xl leading-relaxed"
             >
-              {cs
-                ? 'ZION je na $0.0002 — přesně kde byl Doge v prosinci 2013. Ale ZION má Oasis, kvantovou odolnost a humanitární fond. Hraj a rozhodni kdo vyhraje.'
-                : 'ZION is at $0.0002 — exactly where Doge was in December 2013. But ZION has Oasis, quantum resistance, and a humanitarian fund. Play and decide who wins.'}
+              {DogeVsZionCopy.zionIsAt00002ExactlyWhereDogeW[cs ? 'cs' : 'en']}
             </motion.p>
 
             {/* Statistiky */}
@@ -576,17 +607,17 @@ export default function DogeVsZionPage() {
             >
               <div className="zion-badge">
                 <Gamepad2 className="h-3.5 w-3.5 text-zion-cyan" />
-                <span>{GAMES.length} {cs ? 'her' : 'games'}</span>
+                <span>{GAMES.length} {DogeVsZionCopy.games[cs ? 'cs' : 'en']}</span>
               </div>
               <div className="zion-badge-gold">
                 <Trophy className="h-3.5 w-3.5 text-zion-gold" />
                 <span>
-                  {Object.values(highScores).reduce((a, b) => a + b, 0)} {cs ? 'bodů' : 'pts'}
+                  {Object.values(highScores).reduce((a, b) => a + b, 0)} {DogeVsZionCopy.pts[cs ? 'cs' : 'en']}
                 </span>
               </div>
               <div className={`zion-badge ${zion.connected ? 'zion-badge-green' : ''}`}>
                 <span className={`h-2 w-2 rounded-full ${zion.connected ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`} />
-                <span>{zion.connected ? (cs ? 'ZION online' : 'ZION live') : (cs ? 'ZION offline' : 'ZION offline')}</span>
+                <span>{zion.connected ? (DogeVsZionCopy.zionLive[cs ? 'cs' : 'en']) : (DogeVsZionCopy.zionOffline[cs ? 'cs' : 'en'])}</span>
               </div>
             </motion.div>
           </div>
@@ -607,10 +638,10 @@ export default function DogeVsZionPage() {
             <Swords className="h-6 w-6 text-zion-purple" />
             <div>
               <h2 className="text-2xl font-bold text-white tracking-tight">
-                {cs ? 'Doge vs ZION — Srovnání' : 'Doge vs ZION — Comparison'}
+                {DogeVsZionCopy.dogeVsZionComparison[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                {cs ? 'Skutečná data ZION z API · Doge aprox. hodnoty' : 'Live ZION data from API · Doge approximate values'}
+                {DogeVsZionCopy.liveZionDataFromApiDogeApproxi[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -718,7 +749,7 @@ export default function DogeVsZionPage() {
                   →
                 </motion.div>
                 <p className="text-xs font-bold text-emerald-400 mt-1">600x</p>
-                <p className="text-[10px] text-gray-500">{cs ? 'za 13 let' : 'in 13 years'}</p>
+                <p className="text-[10px] text-gray-500">{DogeVsZionCopy.in13Years[cs ? 'cs' : 'en']}</p>
               </div>
 
               {/* Right: Doge now */}
@@ -748,9 +779,7 @@ export default function DogeVsZionPage() {
             </div>
 
             <p className="mt-4 text-center text-xs text-gray-400 leading-relaxed">
-              {cs
-                ? 'ZION je dnes přesně kde byl Doge v prosinci 2013. Stejná cena, stejný start. Ale ZION má navíc: kvantovou odolnost, humanitární fond, AI-nativní design a Oasis metaverse. Historie se neopakuje — ale rýmuje.'
-                : 'ZION today is exactly where Doge was in December 2013. Same price, same starting line. But ZION has more: quantum resistance, humanitarian fund, AI-native design, and the Oasis metaverse. History doesn\'t repeat — but it rhymes.'}
+              {DogeVsZionCopy.zionTodayIsExactlyWhereDogeWas[cs ? 'cs' : 'en']}
             </p>
           </motion.div>
 
@@ -765,7 +794,7 @@ export default function DogeVsZionPage() {
           >
             <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
               <Trophy className="h-4 w-4 text-zion-gold" />
-              {cs ? 'Výhody ZION' : 'ZION Advantages'}
+              {DogeVsZionCopy.zionAdvantages[cs ? 'cs' : 'en']}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ZION_ADVANTAGES.map((adv) => {
@@ -796,10 +825,10 @@ export default function DogeVsZionPage() {
             <Trophy className="h-6 w-6 text-zion-gold" />
             <div>
               <h2 className="text-2xl font-bold text-white tracking-tight">
-                {cs ? 'Bitvní Statistiky' : 'Battle Stats'}
+                {DogeVsZionCopy.battleStats[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                {cs ? 'Hravé srovnání — kdo vyhrává?' : 'A playful showdown — who wins?'}
+                {DogeVsZionCopy.aPlayfulShowdownWhoWins[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -852,10 +881,10 @@ export default function DogeVsZionPage() {
             <Sparkles className="h-6 w-6 text-amber-400" />
             <div>
               <h2 className="text-2xl font-bold text-white tracking-tight">
-                {cs ? 'Originál' : 'The Original'}
+                {DogeVsZionCopy.theOriginal[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                {cs ? 'Kde to všechno začalo — a ZION odpověď' : 'Where it all began — and the ZION answer'}
+                {DogeVsZionCopy.whereItAllBeganAndTheZionAnswe[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -892,17 +921,15 @@ export default function DogeVsZionPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-amber-400">Doge Miner 2</h3>
-                  <p className="text-[10px] uppercase tracking-widest text-gray-500">{cs ? 'Legendární klikárna' : 'Legendary clicker'}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500">{DogeVsZionCopy.legendaryClicker[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
               <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                {cs
-                  ? 'Legendární klikárna, která to všechno začala. Těž Dogecoiny, najmi psy, let na měsíc. 100% time-waster, 0% kvantová odolnost.'
-                  : 'The legendary clicker that started it all. Mine Dogecoins, hire dogs, go to the moon. 100% time-waster, 0% quantum resistance.'}
+                {DogeVsZionCopy.theLegendaryClickerThatStarted[cs ? 'cs' : 'en']}
               </p>
               <div className="zion-button-secondary group-hover:gap-3 text-xs !px-4 !py-2">
                 <ExternalLink className="h-3.5 w-3.5" />
-                {cs ? 'Hrát externě' : 'Play External'}
+                {DogeVsZionCopy.playExternal[cs ? 'cs' : 'en']}
               </div>
             </motion.a>
 
@@ -922,17 +949,15 @@ export default function DogeVsZionPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-zion-gold">Star Miner</h3>
-                  <p className="text-[10px] uppercase tracking-widest text-gray-500">{cs ? 'ZION odpověď' : 'ZION answer'}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500">{DogeVsZionCopy.zionAnswer[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
               <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                {cs
-                  ? 'ZION odpověď na Doge Miner 2. Těž na hvězdě, stavej rigy od CPU po Cosmic Harmony, dosáhni Issobelly. 100% time-waster, 100% kvantová odolnost.'
-                  : "ZION's answer to Doge Miner 2. Mine on the star, build rigs from CPU to Cosmic Harmony, reach Issobella. 100% time-waster, 100% quantum resistance."}
+                {DogeVsZionCopy.zionSAnswerToDogeMiner2MineOnT[cs ? 'cs' : 'en']}
               </p>
               <div className="zion-button-primary group-hover:gap-3 text-xs !px-4 !py-2">
                 <Play className="h-3.5 w-3.5" />
-                {cs ? 'Hrát' : 'Play'}
+                {DogeVsZionCopy.play[cs ? 'cs' : 'en']}
               </div>
             </motion.button>
           </div>
@@ -946,11 +971,11 @@ export default function DogeVsZionPage() {
               <div className="flex items-center gap-2">
                 <Gamepad2 className="h-5 w-5 text-zion-purple" />
                 <h2 className="text-lg font-bold text-white tracking-wide">
-                  {cs ? 'ZION Arkáda' : 'ZION Arcade'}
+                  {DogeVsZionCopy.zionArcade[cs ? 'cs' : 'en']}
                 </h2>
               </div>
               <p className="text-[11px] text-gray-500 mt-0.5">
-                {cs ? 'Hraj hry, získej slávu, braň síť' : 'Play games, earn glory, defend the network'}
+                {DogeVsZionCopy.playGamesEarnGloryDefendTheNet[cs ? 'cs' : 'en']}
               </p>
             </div>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zion-purple/40 to-transparent" />
@@ -1034,13 +1059,13 @@ export default function DogeVsZionPage() {
                         <Trophy className="h-3.5 w-3.5 text-gray-600" />
                         <span className="text-xs text-gray-500">
                           {score > 0
-                            ? <span style={{ color: game.color }}>{score} {cs ? 'bodů' : 'pts'}</span>
-                            : (cs ? 'Ještě nehráno' : 'Not played yet')}
+                            ? <span style={{ color: game.color }}>{score} {DogeVsZionCopy.pts[cs ? 'cs' : 'en']}</span>
+                            : (DogeVsZionCopy.notPlayedYet[cs ? 'cs' : 'en'])}
                         </span>
                       </div>
                       <div className="zion-button-primary group-hover:gap-3 text-xs !px-4 !py-2">
                         <Play className="h-3.5 w-3.5" />
-                        {cs ? 'Hrát' : 'Play'}
+                        {DogeVsZionCopy.play[cs ? 'cs' : 'en']}
                       </div>
                     </div>
                   </div>
@@ -1086,10 +1111,10 @@ export default function DogeVsZionPage() {
             <Lock className="h-5 w-5 text-gray-500" />
             <div>
               <h2 className="text-lg font-bold text-white tracking-wide">
-                {cs ? 'Již brzy' : 'Coming Soon'}
+                {DogeVsZionCopy.comingSoon[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-[11px] text-gray-500 mt-0.5">
-                {cs ? 'Další hry na horizontu' : 'More games on the horizon'}
+                {DogeVsZionCopy.moreGamesOnTheHorizon[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -1124,7 +1149,7 @@ export default function DogeVsZionPage() {
                 </div>
                 <p className="relative text-xs text-gray-500 leading-relaxed">{cs ? game.descriptionCs : game.description}</p>
                 <p className="relative mt-3 text-[10px] uppercase tracking-widest text-gray-600 font-semibold">
-                  {cs ? 'Zamčeno · brzy' : 'Locked · soon'}
+                  {DogeVsZionCopy.lockedSoon[cs ? 'cs' : 'en']}
                 </p>
               </motion.div>
             ))}

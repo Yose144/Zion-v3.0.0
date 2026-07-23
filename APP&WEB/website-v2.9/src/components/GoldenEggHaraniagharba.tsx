@@ -7,6 +7,16 @@ import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import GoldenOrb from './GoldenOrb';
 
+const GoldenEggHaraniagharbaCopy = {
+  hiranHiranyagarbha: { cs: `Hiran / Hiranyagarbha`, en: `Hiran / Hiranyagarbha` },
+  hiranAsTheAiGatewayIntoTerraNo: { cs: `Hiran jako AI brána do Terra Nova`, en: `Hiran as the AI gateway into Terra Nova` },
+  justLikeTerraNovaAboveHiranSho: { cs: `Stejně jako Terra Nova nahoře musí i Hiran na homepage působit jako jasná kapitola: AI-native vrstva, knihovna, inference a most mezi vizí a nástroji.`, en: `Just like Terra Nova above, Hiran should read as a clear chapter on the homepage: the AI-native layer, the library, inference, and the bridge between vision and tools.` },
+  homepageRole: { cs: `Úloha na homepage`, en: `Homepage role` },
+  notExtraDecorationButTheSecond: { cs: `Ne dekorace navíc, ale druhý hlavní pilíř vstupní stránky vedle Terra Nova: Hiran, Kvantová revoluce a Genesis musí mít stejnou váhu i typografii.`, en: `Not extra decoration, but the second major pillar of the entry page next to Terra Nova: Hiran, Quantum Revolution, and Genesis should carry the same weight and typography.` },
+  interactiveGoldenOrbMoveMouseT: { cs: `Interaktivní Golden Orb — pohyb myší ovlivňuje světlo`, en: `Interactive Golden Orb — move mouse to steer the light` },
+  insideTheLayer: { cs: `Uvnitř vrstvy`, en: `Inside the layer` },
+};
+
 export default function GoldenEggHaraniagharba() {
   const { lang } = useLang();
   const cs = lang === 'cs';
@@ -17,25 +27,21 @@ export default function GoldenEggHaraniagharba() {
         <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-amber-200/75">
-              {cs ? 'Hiran / Hiranyagarbha' : 'Hiran / Hiranyagarbha'}
+              {GoldenEggHaraniagharbaCopy.hiranHiranyagarbha[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl">
-              {cs ? 'Hiran jako AI brána do Terra Nova' : 'Hiran as the AI gateway into Terra Nova'}
+              {GoldenEggHaraniagharbaCopy.hiranAsTheAiGatewayIntoTerraNo[cs ? 'cs' : 'en']}
             </h2>
             <p className="max-w-3xl text-base leading-relaxed text-gray-300 md:text-lg">
-              {cs
-                ? 'Stejně jako Terra Nova nahoře musí i Hiran na homepage působit jako jasná kapitola: AI-native vrstva, knihovna, inference a most mezi vizí a nástroji.'
-                : 'Just like Terra Nova above, Hiran should read as a clear chapter on the homepage: the AI-native layer, the library, inference, and the bridge between vision and tools.'}
+              {GoldenEggHaraniagharbaCopy.justLikeTerraNovaAboveHiranSho[cs ? 'cs' : 'en']}
             </p>
           </div>
           <div className="rounded-2xl border border-amber-300/15 bg-amber-200/6 p-4">
             <p className="text-[10px] uppercase tracking-[0.28em] text-amber-100/60">
-              {cs ? 'Úloha na homepage' : 'Homepage role'}
+              {GoldenEggHaraniagharbaCopy.homepageRole[cs ? 'cs' : 'en']}
             </p>
             <p className="mt-2 text-sm leading-relaxed text-gray-300">
-              {cs
-                ? 'Ne dekorace navíc, ale druhý hlavní pilíř vstupní stránky vedle Terra Nova: Hiran, Kvantová revoluce a Genesis musí mít stejnou váhu i typografii.'
-                : 'Not extra decoration, but the second major pillar of the entry page next to Terra Nova: Hiran, Quantum Revolution, and Genesis should carry the same weight and typography.'}
+              {GoldenEggHaraniagharbaCopy.notExtraDecorationButTheSecond[cs ? 'cs' : 'en']}
             </p>
           </div>
         </div>
@@ -57,7 +63,7 @@ export default function GoldenEggHaraniagharba() {
                 </div>
               </div>
               <p className="text-[10px] uppercase tracking-[0.24em] text-amber-100/50 text-center">
-                {cs ? 'Interaktivní Golden Orb — pohyb myší ovlivňuje světlo' : 'Interactive Golden Orb — move mouse to steer the light'}
+                {GoldenEggHaraniagharbaCopy.interactiveGoldenOrbMoveMouseT[cs ? 'cs' : 'en']}
               </p>
             </div>
 
@@ -94,7 +100,7 @@ export default function GoldenEggHaraniagharba() {
 
               <div>
                 <p className="text-xs uppercase tracking-[0.4em] text-amber-100/60">
-                  {cs ? 'Uvnitř vrstvy' : 'Inside the layer'}
+                  {GoldenEggHaraniagharbaCopy.insideTheLayer[cs ? 'cs' : 'en']}
                 </p>
                 <h3 className="mt-2 text-2xl font-semibold text-white md:text-4xl">
                   {tr('goldenEgg', 'title', lang)}{' '}

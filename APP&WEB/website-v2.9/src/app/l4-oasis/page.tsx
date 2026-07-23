@@ -9,6 +9,61 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const L4OasisCopy = {
+  ue5Metaverse: { cs: `UE5 Metaverse`, en: `UE5 Metaverse` },
+  unrealEngine5WorldBuiltOnZionP: { cs: `Unreal Engine 5 svět postavený na ZION — photorealistické prostředí, persistentní stav, on-chain inventory.`, en: `Unreal Engine 5 world built on ZION — photorealistic environments, persistent state, on-chain inventory.` },
+  xpEconomy: { cs: `XP Ekonomie`, en: `XP Economy` },
+  gameXpConvertsToZionTokensSkil: { cs: `Herní XP se převádí na ZION tokeny — skill-based mining, quest rewards, guild treasury.`, en: `Game XP converts to ZION tokens — skill-based mining, quest rewards, guild treasury.` },
+  onChainInventory: { cs: `On-Chain Inventory`, en: `On-Chain Inventory` },
+  allGameItemsAreNftsOnZionL1Tru: { cs: `Všechny herní předměty jsou NFT na ZION L1 — skutečné vlastnictví, obchodování na marketplace.`, en: `All game items are NFTs on ZION L1 — true ownership, trading on marketplace.` },
+  guildDao: { cs: `Guild DAO`, en: `Guild DAO` },
+  playerGuildsAsDaosSharedTreasu: { cs: `Hráčské guildy jako DAO — společné treasury, hlasování o expanzi, territory claims.`, en: `Player guilds as DAOs — shared treasury, expansion voting, territory claims.` },
+  coreAvatars: { cs: `Základní avataři`, en: `Core Avatars` },
+  k51UniqueCoreAvatarsWithFullAni: { cs: `51 unikátních základních avatarů s plnou animací a skillem.`, en: `51 unique core avatars with full animation and skill tree.` },
+  extendedAvatars: { cs: `Rozšíření avataři`, en: `Extended Avatars` },
+  k151ExtendedAvatarsWithUniqueTr: { cs: `151 rozšířených avatarů s unikátními vlastnostmi a příběhem.`, en: `151 extended avatars with unique traits and backstory.` },
+  questEngine: { cs: `Quest systém`, en: `Quest Engine` },
+  k5QuestsPerAvatarPveExploration: { cs: `5 questů na každého avatara — PvE, exploration, crafting, social.`, en: `5 quests per avatar — PvE, exploration, crafting, social.` },
+  totalPrizePool: { cs: `Celková výhra`, en: `Total Prize Pool` },
+  clues: { cs: `Stopy / indicie`, en: `Clues` },
+  estimatedStart: { cs: `Odhadovaný start`, en: `Estimated Start` },
+  type: { cs: `Typ`, en: `Type` },
+  globalTreasureHunt: { cs: `Celosvětová honba`, en: `Global Treasure Hunt` },
+  alpha: { cs: `Alpha`, en: `Alpha` },
+  beta: { cs: `Beta`, en: `Beta` },
+  live: { cs: `Live`, en: `Live` },
+  avatarMinting: { cs: `Avatar Minting`, en: `Avatar Minting` },
+  everyAvatarIsAnNftOnZionL1Erc7: { cs: `Každý avatar je NFT na ZION L1 — ERC-721 kompatibilní, metadata on-chain.`, en: `Every avatar is an NFT on ZION L1 — ERC-721 compatible, metadata on-chain.` },
+  questEngine_2: { cs: `Quest Engine`, en: `Quest Engine` },
+  k5QuestsPerAvatarGenerativeCont: { cs: `5 questů na avatara — generativní obsah, skóre, odměny v ZION.`, en: `5 quests per avatar — generative content, scoring, ZION rewards.` },
+  nftInventory: { cs: `NFT Inventory`, en: `NFT Inventory` },
+  itemsWeaponsArmorAllAsNftsWith: { cs: `Itemy, zbraně, brnění — vše jako NFT s UTXO-backed ownership.`, en: `Items, weapons, armor — all as NFTs with UTXO-backed ownership.` },
+  guildTreasury: { cs: `Guild Treasury`, en: `Guild Treasury` },
+  guildsAsSubDaosOnChainTreasury: { cs: `Guildy jako sub-DAO — on-chain treasury, vote-weighted governance.`, en: `Guilds as sub-DAOs — on-chain treasury, vote-weighted governance.` },
+  territoryClaims: { cs: `Territory Claims`, en: `Territory Claims` },
+  digitalTerritoriesOnZionMapL1R: { cs: `Digitální teritoria na ZION mapě — L1 záznam, guild ownership.`, en: `Digital territories on ZION map — L1 record, guild ownership.` },
+  xpZionBridge: { cs: `XP → ZION Bridge`, en: `XP → ZION Bridge` },
+  xpFromQuestsConvertibleToZionT: { cs: `XP z questů konvertovatelný na ZION tokeny — non-consensus ekonomika.`, en: `XP from quests convertible to ZION tokens — non-consensus economy.` },
+  gameLayerOfTheZionEcosystem: { cs: `Herní vrstva ZION ekosystému`, en: `Game layer of the ZION ecosystem` },
+  zionOasisL4: { cs: `ZION Oasis — L4`, en: `ZION Oasis — L4` },
+  metaverseBuiltOnTheZionBlockch: { cs: `Metaverse postavený na ZION blockchainu. UE5 svět s on-chain inventory, XP ekonomií, guild DAO a Golden Egg pokladem. Avatar systém aktivní — 51 core + 151 extended avatarů s quest engine.`, en: `Metaverse built on the ZION blockchain. UE5 world with on-chain inventory, XP economy, guild DAO, and Golden Egg treasure hunt. Avatar system active — 51 core + 151 extended avatars with quest engine.` },
+  ue5Integration20282029: { cs: `UE5 integrace 2028–2029`, en: `UE5 integration 2028–2029` },
+  liveSystem: { cs: `Živý systém`, en: `Live System` },
+  avatarSystemActive: { cs: `Avatar systém — Active`, en: `Avatar System — Active` },
+  k51Core151ExtendedAvatarsEachHa: { cs: `51 core + 151 extended avatarů. Každý má 5 questů. REST API endpointy /avatars a /quests jsou aktivní.`, en: `51 core + 151 extended avatars. Each has 5 quests. REST API endpoints /avatars and /quests are active.` },
+  treasure: { cs: `Poklad`, en: `Treasure` },
+  goldenEgg108Clues825bZion: { cs: `Golden Egg — 108 stop, 8.25B ZION`, en: `Golden Egg — 108 Clues, 8.25B ZION` },
+  goldenEggIsAMassiveTreasureHun: { cs: `Golden Egg je masivní honba za pokladem napříč celým ZION ekosystémem. 108 kryptických stop je ukryto v blockchainu, smart kontraktech, knihách TerraNova a fyzických lokacích. Vítěz získá 8,25 miliardy ZION — 50,7 % genesis rezervy. Start plánován na 2027.`, en: `Golden Egg is a massive treasure hunt across the entire ZION ecosystem. 108 cryptic clues are hidden in the blockchain, smart contracts, TerraNova books, and physical locations. The winner receives 8.25 billion ZION — 50.7% of the genesis reserve. Launch planned for 2027.` },
+  baselineProtocols: { cs: `Baseline protokoly`, en: `Baseline Protocols` },
+  oasisGameProtocols: { cs: `Oasis Game Protocols`, en: `Oasis Game Protocols` },
+  coreGameProtocolsForInteropera: { cs: `Základní herní protokoly pro interoperabilitu napříč ZION Oasis ekosystémem.`, en: `Core game protocols for interoperability across the ZION Oasis ecosystem.` },
+  vision: { cs: `Vize`, en: `Vision` },
+  oasisKeyPillars: { cs: `Klíčové pilíře Oasis`, en: `Oasis Key Pillars` },
+  developmentPath: { cs: `Vývojová cesta`, en: `Development Path` },
+  l4OasisRoadmap: { cs: `Roadmap L4 Oasis`, en: `L4 Oasis Roadmap` },
+  learnMoreAboutL4AndTheEcosyste: { cs: `Více o L4 a ekosystému`, en: `Learn more about L4 and the ecosystem` },
+};
+
 const AVATAR_COUNT_CORE = 51;
 const AVATAR_COUNT_EXTENDED = 151;
 const GOLDEN_EGG_CLUES = 108;
@@ -16,37 +71,29 @@ const GOLDEN_EGG_PRIZE = '8,250,000,000';
 
 const getFeatures = (cs: boolean) => [
   {
-    title: cs ? 'UE5 Metaverse' : 'UE5 Metaverse',
-    desc: cs
-      ? 'Unreal Engine 5 svět postavený na ZION — photorealistické prostředí, persistentní stav, on-chain inventory.'
-      : 'Unreal Engine 5 world built on ZION — photorealistic environments, persistent state, on-chain inventory.',
+    title: L4OasisCopy.ue5Metaverse[cs ? 'cs' : 'en'],
+    desc: L4OasisCopy.unrealEngine5WorldBuiltOnZionP[cs ? 'cs' : 'en'],
     icon: Palette,
     color: 'text-orange-400',
     active: false,
   },
   {
-    title: cs ? 'XP Ekonomie' : 'XP Economy',
-    desc: cs
-      ? 'Herní XP se převádí na ZION tokeny — skill-based mining, quest rewards, guild treasury.'
-      : 'Game XP converts to ZION tokens — skill-based mining, quest rewards, guild treasury.',
+    title: L4OasisCopy.xpEconomy[cs ? 'cs' : 'en'],
+    desc: L4OasisCopy.gameXpConvertsToZionTokensSkil[cs ? 'cs' : 'en'],
     icon: Gem,
     color: 'text-yellow-400',
     active: false,
   },
   {
-    title: cs ? 'On-Chain Inventory' : 'On-Chain Inventory',
-    desc: cs
-      ? 'Všechny herní předměty jsou NFT na ZION L1 — skutečné vlastnictví, obchodování na marketplace.'
-      : 'All game items are NFTs on ZION L1 — true ownership, trading on marketplace.',
+    title: L4OasisCopy.onChainInventory[cs ? 'cs' : 'en'],
+    desc: L4OasisCopy.allGameItemsAreNftsOnZionL1Tru[cs ? 'cs' : 'en'],
     icon: Cpu,
     color: 'text-cyan-400',
     active: false,
   },
   {
-    title: cs ? 'Guild DAO' : 'Guild DAO',
-    desc: cs
-      ? 'Hráčské guildy jako DAO — společné treasury, hlasování o expanzi, territory claims.'
-      : 'Player guilds as DAOs — shared treasury, expansion voting, territory claims.',
+    title: L4OasisCopy.guildDao[cs ? 'cs' : 'en'],
+    desc: L4OasisCopy.playerGuildsAsDaosSharedTreasu[cs ? 'cs' : 'en'],
     icon: Users,
     color: 'text-purple-400',
     active: false,
@@ -55,25 +102,25 @@ const getFeatures = (cs: boolean) => [
 
 const getAvatarTypes = (cs: boolean) => [
   {
-    name: cs ? 'Základní avataři' : 'Core Avatars',
+    name: L4OasisCopy.coreAvatars[cs ? 'cs' : 'en'],
     count: `${AVATAR_COUNT_CORE}`,
-    desc: cs ? '51 unikátních základních avatarů s plnou animací a skillem.' : '51 unique core avatars with full animation and skill tree.',
+    desc: L4OasisCopy.k51UniqueCoreAvatarsWithFullAni[cs ? 'cs' : 'en'],
     icon: Star,
     color: 'border-orange-500/30 bg-orange-500/5',
     badge: 'border-orange-500/30 bg-orange-500/10 text-orange-300',
   },
   {
-    name: cs ? 'Rozšíření avataři' : 'Extended Avatars',
+    name: L4OasisCopy.extendedAvatars[cs ? 'cs' : 'en'],
     count: `${AVATAR_COUNT_EXTENDED}`,
-    desc: cs ? '151 rozšířených avatarů s unikátními vlastnostmi a příběhem.' : '151 extended avatars with unique traits and backstory.',
+    desc: L4OasisCopy.k151ExtendedAvatarsWithUniqueTr[cs ? 'cs' : 'en'],
     icon: Sparkles,
     color: 'border-purple-500/30 bg-purple-500/5',
     badge: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
   },
   {
-    name: cs ? 'Quest systém' : 'Quest Engine',
+    name: L4OasisCopy.questEngine[cs ? 'cs' : 'en'],
     count: '5',
-    desc: cs ? '5 questů na každého avatara — PvE, exploration, crafting, social.' : '5 quests per avatar — PvE, exploration, crafting, social.',
+    desc: L4OasisCopy.k5QuestsPerAvatarPveExploration[cs ? 'cs' : 'en'],
     icon: Swords,
     color: 'border-cyan-500/30 bg-cyan-500/5',
     badge: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300',
@@ -81,15 +128,15 @@ const getAvatarTypes = (cs: boolean) => [
 ];
 
 const getGoldenEgg = (cs: boolean) => [
-  { label: cs ? 'Celková výhra' : 'Total Prize Pool', value: `${GOLDEN_EGG_PRIZE} ZION`, color: 'text-zion-gold' },
-  { label: cs ? 'Stopy / indicie' : 'Clues', value: `${GOLDEN_EGG_CLUES}`, color: 'text-orange-400' },
-  { label: cs ? 'Odhadovaný start' : 'Estimated Start', value: '2027', color: 'text-cyan-400' },
-  { label: cs ? 'Typ' : 'Type', value: cs ? 'Celosvětová honba' : 'Global Treasure Hunt', color: 'text-purple-400' },
+  { label: L4OasisCopy.totalPrizePool[cs ? 'cs' : 'en'], value: `${GOLDEN_EGG_PRIZE} ZION`, color: 'text-zion-gold' },
+  { label: L4OasisCopy.clues[cs ? 'cs' : 'en'], value: `${GOLDEN_EGG_CLUES}`, color: 'text-orange-400' },
+  { label: L4OasisCopy.estimatedStart[cs ? 'cs' : 'en'], value: '2027', color: 'text-cyan-400' },
+  { label: L4OasisCopy.type[cs ? 'cs' : 'en'], value: L4OasisCopy.globalTreasureHunt[cs ? 'cs' : 'en'], color: 'text-purple-400' },
 ];
 
 const getRoadmap = (cs: boolean) => [
   {
-    phase: cs ? 'Alpha' : 'Alpha',
+    phase: L4OasisCopy.alpha[cs ? 'cs' : 'en'],
     period: '2027 Q3',
     status: 'planned',
     items: cs
@@ -97,7 +144,7 @@ const getRoadmap = (cs: boolean) => [
       : ['Basic UE5 world', 'On-chain avatars', 'XP system', 'Test network'],
   },
   {
-    phase: cs ? 'Beta' : 'Beta',
+    phase: L4OasisCopy.beta[cs ? 'cs' : 'en'],
     period: '2028 Q2',
     status: 'planned',
     items: cs
@@ -105,7 +152,7 @@ const getRoadmap = (cs: boolean) => [
       : ['NFT inventory', 'Guild system', 'PvE quests', 'ZION marketplace integration'],
   },
   {
-    phase: cs ? 'Live' : 'Live',
+    phase: L4OasisCopy.live[cs ? 'cs' : 'en'],
     period: '2028 Q4',
     status: 'vision',
     items: cs
@@ -116,38 +163,38 @@ const getRoadmap = (cs: boolean) => [
 
 const getProtocols = (cs: boolean) => [
   {
-    title: cs ? 'Avatar Minting' : 'Avatar Minting',
-    desc: cs ? 'Každý avatar je NFT na ZION L1 — ERC-721 kompatibilní, metadata on-chain.' : 'Every avatar is an NFT on ZION L1 — ERC-721 compatible, metadata on-chain.',
+    title: L4OasisCopy.avatarMinting[cs ? 'cs' : 'en'],
+    desc: L4OasisCopy.everyAvatarIsAnNftOnZionL1Erc7[cs ? 'cs' : 'en'],
     icon: Star,
     color: 'text-orange-400',
   },
   {
-    title: cs ? 'Quest Engine' : 'Quest Engine',
-    desc: cs ? '5 questů na avatara — generativní obsah, skóre, odměny v ZION.' : '5 quests per avatar — generative content, scoring, ZION rewards.',
+    title: L4OasisCopy.questEngine_2[cs ? 'cs' : 'en'],
+    desc: L4OasisCopy.k5QuestsPerAvatarGenerativeCont[cs ? 'cs' : 'en'],
     icon: Swords,
     color: 'text-cyan-400',
   },
   {
-    title: cs ? 'NFT Inventory' : 'NFT Inventory',
-    desc: cs ? 'Itemy, zbraně, brnění — vše jako NFT s UTXO-backed ownership.' : 'Items, weapons, armor — all as NFTs with UTXO-backed ownership.',
+    title: L4OasisCopy.nftInventory[cs ? 'cs' : 'en'],
+    desc: L4OasisCopy.itemsWeaponsArmorAllAsNftsWith[cs ? 'cs' : 'en'],
     icon: Shield,
     color: 'text-emerald-400',
   },
   {
-    title: cs ? 'Guild Treasury' : 'Guild Treasury',
-    desc: cs ? 'Guildy jako sub-DAO — on-chain treasury, vote-weighted governance.' : 'Guilds as sub-DAOs — on-chain treasury, vote-weighted governance.',
+    title: L4OasisCopy.guildTreasury[cs ? 'cs' : 'en'],
+    desc: L4OasisCopy.guildsAsSubDaosOnChainTreasury[cs ? 'cs' : 'en'],
     icon: Coins,
     color: 'text-purple-400',
   },
   {
-    title: cs ? 'Territory Claims' : 'Territory Claims',
-    desc: cs ? 'Digitální teritoria na ZION mapě — L1 záznam, guild ownership.' : 'Digital territories on ZION map — L1 record, guild ownership.',
+    title: L4OasisCopy.territoryClaims[cs ? 'cs' : 'en'],
+    desc: L4OasisCopy.digitalTerritoriesOnZionMapL1R[cs ? 'cs' : 'en'],
     icon: MapPin,
     color: 'text-amber-400',
   },
   {
-    title: cs ? 'XP → ZION Bridge' : 'XP → ZION Bridge',
-    desc: cs ? 'XP z questů konvertovatelný na ZION tokeny — non-consensus ekonomika.' : 'XP from quests convertible to ZION tokens — non-consensus economy.',
+    title: L4OasisCopy.xpZionBridge[cs ? 'cs' : 'en'],
+    desc: L4OasisCopy.xpFromQuestsConvertibleToZionT[cs ? 'cs' : 'en'],
     icon: Zap,
     color: 'text-yellow-400',
   },
@@ -180,16 +227,14 @@ export default function L4OasisPage() {
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                {cs ? 'Herní vrstva ZION ekosystému' : 'Game layer of the ZION ecosystem'}
+                {L4OasisCopy.gameLayerOfTheZionEcosystem[cs ? 'cs' : 'en']}
               </p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-                {cs ? 'ZION Oasis — L4' : 'ZION Oasis — L4'}
+                {L4OasisCopy.zionOasisL4[cs ? 'cs' : 'en']}
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              {cs
-                ? 'Metaverse postavený na ZION blockchainu. UE5 svět s on-chain inventory, XP ekonomií, guild DAO a Golden Egg pokladem. Avatar systém aktivní — 51 core + 151 extended avatarů s quest engine.'
-                : 'Metaverse built on the ZION blockchain. UE5 world with on-chain inventory, XP economy, guild DAO, and Golden Egg treasure hunt. Avatar system active — 51 core + 151 extended avatars with quest engine.'}
+              {L4OasisCopy.metaverseBuiltOnTheZionBlockch[cs ? 'cs' : 'en']}
             </p>
             <div className="flex flex-wrap gap-3 text-xs">
               <span className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-orange-200">
@@ -199,7 +244,7 @@ export default function L4OasisPage() {
                 <Gem className="h-3 w-3" /> {cs ? `${GOLDEN_EGG_PRIZE} ZION prize` : `${GOLDEN_EGG_PRIZE} ZION prize`}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                <Clock className="h-3 w-3" /> {cs ? 'UE5 integrace 2028–2029' : 'UE5 integration 2028–2029'}
+                <Clock className="h-3 w-3" /> {L4OasisCopy.ue5Integration20282029[cs ? 'cs' : 'en']}
               </span>
             </div>
           </div>
@@ -214,13 +259,13 @@ export default function L4OasisPage() {
           style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Živý systém' : 'Live System'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.liveSystem[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Star className="h-7 w-7 text-orange-400" />
-              {cs ? 'Avatar systém — Active' : 'Avatar System — Active'}
+              {L4OasisCopy.avatarSystemActive[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
-              {cs ? '51 core + 151 extended avatarů. Každý má 5 questů. REST API endpointy /avatars a /quests jsou aktivní.' : '51 core + 151 extended avatars. Each has 5 quests. REST API endpoints /avatars and /quests are active.'}
+              {L4OasisCopy.k51Core151ExtendedAvatarsEachHa[cs ? 'cs' : 'en']}
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-4 mb-6">
@@ -254,10 +299,10 @@ export default function L4OasisPage() {
           style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Poklad' : 'Treasure'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.treasure[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Trophy className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Golden Egg — 108 stop, 8.25B ZION' : 'Golden Egg — 108 Clues, 8.25B ZION'}
+              {L4OasisCopy.goldenEgg108Clues825bZion[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -269,9 +314,7 @@ export default function L4OasisPage() {
             ))}
           </div>
           <p className="text-sm text-gray-300 leading-relaxed">
-            {cs
-              ? 'Golden Egg je masivní honba za pokladem napříč celým ZION ekosystémem. 108 kryptických stop je ukryto v blockchainu, smart kontraktech, knihách TerraNova a fyzických lokacích. Vítěz získá 8,25 miliardy ZION — 50,7 % genesis rezervy. Start plánován na 2027.'
-              : 'Golden Egg is a massive treasure hunt across the entire ZION ecosystem. 108 cryptic clues are hidden in the blockchain, smart contracts, TerraNova books, and physical locations. The winner receives 8.25 billion ZION — 50.7% of the genesis reserve. Launch planned for 2027.'}
+            {L4OasisCopy.goldenEggIsAMassiveTreasureHun[cs ? 'cs' : 'en']}
           </p>
         </motion.section>
 
@@ -284,13 +327,13 @@ export default function L4OasisPage() {
           style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Baseline protokoly' : 'Baseline Protocols'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.baselineProtocols[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Shield className="h-7 w-7 text-cyan-400" />
-              {cs ? 'Oasis Game Protocols' : 'Oasis Game Protocols'}
+              {L4OasisCopy.oasisGameProtocols[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
-              {cs ? 'Základní herní protokoly pro interoperabilitu napříč ZION Oasis ekosystémem.' : 'Core game protocols for interoperability across the ZION Oasis ecosystem.'}
+              {L4OasisCopy.coreGameProtocolsForInteropera[cs ? 'cs' : 'en']}
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -315,10 +358,10 @@ export default function L4OasisPage() {
           style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vize' : 'Vision'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.vision[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Palette className="h-7 w-7 text-yellow-400" />
-              {cs ? 'Klíčové pilíře Oasis' : 'Oasis Key Pillars'}
+              {L4OasisCopy.oasisKeyPillars[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -341,10 +384,10 @@ export default function L4OasisPage() {
           style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vývojová cesta' : 'Development Path'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.developmentPath[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Clock className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Roadmap L4 Oasis' : 'L4 Oasis Roadmap'}
+              {L4OasisCopy.l4OasisRoadmap[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
@@ -385,7 +428,7 @@ export default function L4OasisPage() {
           className="zion-cta-banner"
         >
           <h2 className="text-2xl font-semibold text-white text-center mb-6">
-            {cs ? 'Více o L4 a ekosystému' : 'Learn more about L4 and the ecosystem'}
+            {L4OasisCopy.learnMoreAboutL4AndTheEcosyste[cs ? 'cs' : 'en']}
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/l3-hiran" className="inline-flex items-center gap-2 rounded-2xl border border-purple-500/30 bg-purple-500/5 px-6 py-3 text-sm font-semibold text-purple-200 hover:bg-purple-500/10 transition-colors">

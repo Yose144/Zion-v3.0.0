@@ -14,6 +14,26 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const HomeQuickLinksCopy = {
+  explorer: { cs: `Explorer`, en: `Explorer` },
+  blocksTxAddresses: { cs: `Bloky, tx, adresy`, en: `Blocks, tx, addresses` },
+  network: { cs: `Síť`, en: `Network` },
+  nodesLatency: { cs: `Uzly, latence`, en: `Nodes, latency` },
+  pool: { cs: `Pool`, en: `Pool` },
+  hashrateMiners: { cs: `Hashrate, mineri`, en: `Hashrate, miners` },
+  docs: { cs: `Dokumentace`, en: `Docs` },
+  guidesApi: { cs: `Guides, API`, en: `Guides, API` },
+  roadmap: { cs: `Roadmapa`, en: `Roadmap` },
+  l1L6Vision: { cs: `L1-L6 vize`, en: `L1-L6 vision` },
+  terraNova: { cs: `Terra Nova`, en: `Terra Nova` },
+  bookStory: { cs: `Kniha, příběh`, en: `Book, story` },
+  sixGateways: { cs: `Šest vstupů`, en: `Six Gateways` },
+  homepageAsACleanControlPanel: { cs: `Homepage jako přehledný řídicí panel`, en: `Homepage as a clean control panel` },
+  lessNoiseClearerDirectionNetwo: { cs: `Méně šumu, jasné směry: síť, těžba, dokumentace, plán a příběh Terra Nova.`, en: `Less noise, clearer direction: network, mining, documentation, roadmap, and the Terra Nova story.` },
+  arcade: { cs: `ARKÁDA`, en: `ARCADE` },
+  whenDogecoinWas000025GamesShow: { cs: `Když Dogecoin stál $0.0002 — 5 her, showdown, stargate`, en: `When Dogecoin was $0.0002 — 5 games, showdown, stargate` },
+};
+
 export default function HomeQuickLinks() {
   const { lang } = useLang();
   const cs = lang === 'cs';
@@ -21,43 +41,43 @@ export default function HomeQuickLinks() {
   const links = [
     {
       href: '/explorer',
-      label: cs ? 'Explorer' : 'Explorer',
-      desc: cs ? 'Bloky, tx, adresy' : 'Blocks, tx, addresses',
+      label: HomeQuickLinksCopy.explorer[cs ? 'cs' : 'en'],
+      desc: HomeQuickLinksCopy.blocksTxAddresses[cs ? 'cs' : 'en'],
       icon: Blocks,
       rc: '251, 191, 36', // gold
     },
     {
       href: '/network',
-      label: cs ? 'Síť' : 'Network',
-      desc: cs ? 'Uzly, latence' : 'Nodes, latency',
+      label: HomeQuickLinksCopy.network[cs ? 'cs' : 'en'],
+      desc: HomeQuickLinksCopy.nodesLatency[cs ? 'cs' : 'en'],
       icon: Globe,
       rc: '6, 182, 212', // cyan
     },
     {
       href: '/pool',
-      label: cs ? 'Pool' : 'Pool',
-      desc: cs ? 'Hashrate, mineri' : 'Hashrate, miners',
+      label: HomeQuickLinksCopy.pool[cs ? 'cs' : 'en'],
+      desc: HomeQuickLinksCopy.hashrateMiners[cs ? 'cs' : 'en'],
       icon: HardHat,
       rc: '147, 51, 234', // purple
     },
     {
       href: '/docs',
-      label: cs ? 'Dokumentace' : 'Docs',
-      desc: cs ? 'Guides, API' : 'Guides, API',
+      label: HomeQuickLinksCopy.docs[cs ? 'cs' : 'en'],
+      desc: HomeQuickLinksCopy.guidesApi[cs ? 'cs' : 'en'],
       icon: ScrollText,
       rc: '16, 185, 129', // emerald
     },
     {
       href: '/roadmap',
-      label: cs ? 'Roadmapa' : 'Roadmap',
-      desc: cs ? 'L1-L6 vize' : 'L1-L6 vision',
+      label: HomeQuickLinksCopy.roadmap[cs ? 'cs' : 'en'],
+      desc: HomeQuickLinksCopy.l1L6Vision[cs ? 'cs' : 'en'],
       icon: LayoutDashboard,
       rc: '236, 72, 153', // pink
     },
     {
       href: '/terranova',
-      label: cs ? 'Terra Nova' : 'Terra Nova',
-      desc: cs ? 'Kniha, příběh' : 'Book, story',
+      label: HomeQuickLinksCopy.terraNova[cs ? 'cs' : 'en'],
+      desc: HomeQuickLinksCopy.bookStory[cs ? 'cs' : 'en'],
       icon: Sparkles,
       rc: '245, 158, 11', // amber
     },
@@ -69,16 +89,14 @@ export default function HomeQuickLinks() {
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-gold">
-              {cs ? 'Šest vstupů' : 'Six Gateways'}
+              {HomeQuickLinksCopy.sixGateways[cs ? 'cs' : 'en']}
             </p>
             <h2 className="max-w-2xl text-3xl font-bold leading-tight text-white sm:text-4xl">
-              {cs ? 'Homepage jako přehledný řídicí panel' : 'Homepage as a clean control panel'}
+              {HomeQuickLinksCopy.homepageAsACleanControlPanel[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <p className="max-w-xl text-sm leading-relaxed text-gray-300 sm:text-base">
-            {cs
-              ? 'Méně šumu, jasné směry: síť, těžba, dokumentace, plán a příběh Terra Nova.'
-              : 'Less noise, clearer direction: network, mining, documentation, roadmap, and the Terra Nova story.'}
+            {HomeQuickLinksCopy.lessNoiseClearerDirectionNetwo[cs ? 'cs' : 'en']}
           </p>
         </div>
 
@@ -140,11 +158,11 @@ export default function HomeQuickLinks() {
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-white">Doge vs ZION</h3>
                 <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[9px] font-bold text-amber-300">
-                  {cs ? 'ARKÁDA' : 'ARCADE'}
+                  {HomeQuickLinksCopy.arcade[cs ? 'cs' : 'en']}
                 </span>
               </div>
               <p className="text-[11px] leading-tight text-gray-400">
-                {cs ? 'Když Dogecoin stál $0.0002 — 5 her, showdown, stargate' : 'When Dogecoin was $0.0002 — 5 games, showdown, stargate'}
+                {HomeQuickLinksCopy.whenDogecoinWas000025GamesShow[cs ? 'cs' : 'en']}
               </p>
             </div>
             <ArrowRight className="h-4 w-4 shrink-0 text-white/30 transition-all group-hover:translate-x-1 group-hover:text-white/70" />

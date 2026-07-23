@@ -3,6 +3,57 @@
 import { useState, useEffect, type CSSProperties } from "react";
 import { useLang } from "@/contexts/LanguageContext";
 
+const DashboardCh3Copy = {
+  loadingChV3Settings: { cs: `Načítání CH v3 nastavení...`, en: `Loading CH v3 Settings...` },
+  chV3RevenueStreams: { cs: `CH v3 Revenue Streams`, en: `CH v3 Revenue Streams` },
+  configureAll5RevenueStreamsFor: { cs: `Konfigurace všech 5 revenue streamů pro Cosmic Harmony v3`, en: `Configure all 5 revenue streams for Cosmic Harmony v3` },
+  overview: { cs: `📊 Přehled`, en: `📊 Overview` },
+  mergedMining: { cs: `💎 Merged Mining`, en: `💎 Merged Mining` },
+  dynamicGpu: { cs: `🎮 Dynamic GPU`, en: `🎮 Dynamic GPU` },
+  nclAi: { cs: `🧠 NCL AI`, en: `🧠 NCL AI` },
+  pearlPrl: { cs: `🐚 Pearl (PRL)`, en: `🐚 Pearl (PRL)` },
+  revenueDistribution: { cs: `Rozdělení příjmů`, en: `Revenue Distribution` },
+  aiTasks: { cs: `AI úkoly`, en: `AI Tasks` },
+  active: { cs: `✓ Aktivní`, en: `✓ Active` },
+  disabled: { cs: `✗ Vypnuto`, en: `✗ Disabled` },
+  mergedMiningConfiguration: { cs: `Merged Mining konfigurace`, en: `Merged Mining Configuration` },
+  intermediateHashesFromCosmicHa: { cs: `Intermediate hashes z Cosmic Harmony se exportují do kompatibilních blockchainů. Žádný extra výpočet není potřeba — je to free revenue!`, en: `Intermediate hashes from Cosmic Harmony are exported to compatible blockchains. No extra computation required — it\'s free revenue!` },
+  enabled: { cs: `Zapnuto`, en: `Enabled` },
+  disabled_2: { cs: `Vypnuto`, en: `Disabled` },
+  poolStratum: { cs: `Pool Stratum`, en: `Pool Stratum` },
+  poolWallet: { cs: `Pool Wallet`, en: `Pool Wallet` },
+  autoConvertToZion: { cs: `Auto-convert do ZION`, en: `Auto-convert to ZION` },
+  dynamicGpuMining: { cs: `Dynamic GPU Mining`, en: `Dynamic GPU Mining` },
+  automaticallySwitchBetweenGpuA: { cs: `Automatické přepínání mezi GPU algoritmy na základě real-time ziskovosti. Pool vybere nejziskovější coin pro všechny minery.`, en: `Automatically switch between GPU algorithms based on real-time profitability. Pool selects the most profitable coin for all miners.` },
+  switchingMode: { cs: `Režim přepínání`, en: `Switching Mode` },
+  auto: { cs: `auto`, en: `auto` },
+  manual: { cs: `manuál`, en: `manual` },
+  hybrid: { cs: `hybrid`, en: `hybrid` },
+  selectCoin: { cs: `Vybrat Coin`, en: `Select Coin` },
+  preferredCoins: { cs: `Preferované Coiny`, en: `Preferred Coins` },
+  miningNow: { cs: `Těží nyní`, en: `Mining Now` },
+  minProfitUsdDay: { cs: `Min zisk (USD/den)`, en: `Min Profit (USD/day)` },
+  switchIntervalMin: { cs: `Interval přepnutí (min)`, en: `Switch Interval (min)` },
+  hysteresis: { cs: `Hystereze (%)`, en: `Hysteresis (%)` },
+  nclAiBonusConfiguration: { cs: `NCL AI Bonus konfigurace`, en: `NCL AI Bonus Configuration` },
+  allocateComputeTimeForAiInfere: { cs: `Alokujte výpočetní čas pro AI inference úkoly. Vyšší vědomí = vyšší odměny!`, en: `Allocate compute time for AI inference tasks. Higher consciousness = higher rewards!` },
+  computeAllocation: { cs: `Výpočetní alokace`, en: `Compute Allocation` },
+  mining: { cs: `Mining`, en: `Mining` },
+  miningOnly: { cs: `Pouze mining`, en: `Mining only` },
+  maxAi: { cs: `Max AI`, en: `Max AI` },
+  supportedAiTasks: { cs: `Podporované AI úkoly`, en: `Supported AI Tasks` },
+  base: { cs: `Základ`, en: `Base` },
+  pearlPrlPouwMining: { cs: `Pearl (PRL) PoUW Mining`, en: `Pearl (PRL) PoUW Mining` },
+  pearlCoinPrlUsesProofOfUsefulW: { cs: `Pearl coin (PRL) využívá Proof-of-Useful-Work: INT8 MatMul + BLAKE3 + Plonky2 ZK. GPU-nativní OpenCL těžba na AMD RX 5700 XT (~657 nonces/s, 14x rychlejší než CPU). Pool: AlphaPool/suprnova, custom Stratum dialect.`, en: `Pearl coin (PRL) uses Proof-of-Useful-Work: INT8 MatMul + BLAKE3 + Plonky2 ZK. GPU-native OpenCL mining on AMD RX 5700 XT (~657 nonces/s, 14x faster than CPU). Pool: AlphaPool/suprnova, custom Stratum dialect.` },
+  targetShare: { cs: `Cílový podíl`, en: `Target Share` },
+  gpuSpeed: { cs: `GPU rychlost`, en: `GPU Speed` },
+  vsCpu: { cs: `vs CPU`, en: `vs CPU` },
+  speedup: { cs: `zrychlení`, en: `speedup` },
+  algorithm: { cs: `Algoritmus`, en: `Algorithm` },
+  saving: { cs: `Ukládání...`, en: `Saving...` },
+  saveSettings: { cs: `💾 Uložit nastavení`, en: `💾 Save Settings` },
+};
+
 const zionStyle = (rc: string): CSSProperties => ({ "--rc": rc } as CSSProperties);
 
 interface StreamConfig {
@@ -250,7 +301,7 @@ export default function CH3SettingsPage() {
   if (loading || !settings) {
     return (
       <div className="flex items-center justify-center">
-        <div className="text-zion-gold text-2xl animate-pulse">{lang === 'cs' ? 'Načítání CH v3 nastavení...' : 'Loading CH v3 Settings...'}</div>
+        <div className="text-zion-gold text-2xl animate-pulse">{DashboardCh3Copy.loadingChV3Settings[lang === 'cs' ? 'cs' : 'en']}</div>
       </div>
     );
   }
@@ -264,9 +315,9 @@ export default function CH3SettingsPage() {
             <span className="text-xl">⚡</span>
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-zion-gold">{lang === 'cs' ? 'CH v3 Revenue Streams' : 'CH v3 Revenue Streams'}</h1>
+            <h1 className="text-3xl font-bold text-zion-gold">{DashboardCh3Copy.chV3RevenueStreams[lang === 'cs' ? 'cs' : 'en']}</h1>
             <p className="text-sm text-gray-400">
-              {lang === 'cs' ? 'Konfigurace všech 5 revenue streamů pro Cosmic Harmony v3' : 'Configure all 5 revenue streams for Cosmic Harmony v3'}
+              {DashboardCh3Copy.configureAll5RevenueStreamsFor[lang === 'cs' ? 'cs' : 'en']}
             </p>
           </div>
         </div>
@@ -328,11 +379,11 @@ export default function CH3SettingsPage() {
             }`}
             style={activeTab === tab ? zionStyle("251, 191, 36") : undefined}
           >
-            {tab === "overview" && (lang === 'cs' ? '📊 Přehled' : '📊 Overview')}
-            {tab === "merged" && (lang === 'cs' ? '💎 Merged Mining' : '💎 Merged Mining')}
-            {tab === "dynamic" && (lang === 'cs' ? '🎮 Dynamic GPU' : '🎮 Dynamic GPU')}
-            {tab === "ncl" && (lang === 'cs' ? '🧠 NCL AI' : '🧠 NCL AI')}
-            {tab === "pearl" && (lang === 'cs' ? '🐚 Pearl (PRL)' : '🐚 Pearl (PRL)')}
+            {tab === "overview" && (DashboardCh3Copy.overview[lang === 'cs' ? 'cs' : 'en'])}
+            {tab === "merged" && (DashboardCh3Copy.mergedMining[lang === 'cs' ? 'cs' : 'en'])}
+            {tab === "dynamic" && (DashboardCh3Copy.dynamicGpu[lang === 'cs' ? 'cs' : 'en'])}
+            {tab === "ncl" && (DashboardCh3Copy.nclAi[lang === 'cs' ? 'cs' : 'en'])}
+            {tab === "pearl" && (DashboardCh3Copy.pearlPrl[lang === 'cs' ? 'cs' : 'en'])}
           </button>
         ))}
       </div>
@@ -342,7 +393,7 @@ export default function CH3SettingsPage() {
         {/* Overview Tab */}
         {activeTab === "overview" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">{lang === 'cs' ? 'Rozdělení příjmů' : 'Revenue Distribution'}</h2>
+            <h2 className="text-2xl font-bold mb-6">{DashboardCh3Copy.revenueDistribution[lang === 'cs' ? 'cs' : 'en']}</h2>
             
             {/* Visual bar */}
             <div className="h-12 rounded-lg overflow-hidden flex mb-6">
@@ -367,12 +418,12 @@ export default function CH3SettingsPage() {
                     <span className="text-2xl">{STREAM_ICONS[key]}</span>
                     <div>
                       <div className="font-bold">{stream.name}</div>
-                      <div className="text-gray-400 text-sm">{stream.algorithm || stream.mode || (lang === 'cs' ? 'AI úkoly' : 'AI Tasks')}</div>
+                      <div className="text-gray-400 text-sm">{stream.algorithm || stream.mode || (DashboardCh3Copy.aiTasks[lang === 'cs' ? 'cs' : 'en'])}</div>
                     </div>
                   </div>
                   <div className="text-sm text-gray-500">{stream.description}</div>
                   <div className={`mt-2 text-sm ${stream.enabled ? "text-emerald-400" : "text-red-400"}`}>
-                    {stream.enabled ? (lang === 'cs' ? '✓ Aktivní' : '✓ Active') : (lang === 'cs' ? '✗ Vypnuto' : '✗ Disabled')}
+                    {stream.enabled ? (DashboardCh3Copy.active[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.disabled[lang === 'cs' ? 'cs' : 'en'])}
                   </div>
                 </div>
               ))}
@@ -383,9 +434,9 @@ export default function CH3SettingsPage() {
         {/* Merged Mining Tab */}
         {activeTab === "merged" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">{lang === 'cs' ? 'Merged Mining konfigurace' : 'Merged Mining Configuration'}</h2>
+            <h2 className="text-2xl font-bold mb-6">{DashboardCh3Copy.mergedMiningConfiguration[lang === 'cs' ? 'cs' : 'en']}</h2>
             <p className="text-gray-400 mb-6">
-              {lang === 'cs' ? 'Intermediate hashes z Cosmic Harmony se exportují do kompatibilních blockchainů. Žádný extra výpočet není potřeba — je to free revenue!' : 'Intermediate hashes from Cosmic Harmony are exported to compatible blockchains. No extra computation required — it\'s free revenue!'}
+              {DashboardCh3Copy.intermediateHashesFromCosmicHa[lang === 'cs' ? 'cs' : 'en']}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -408,13 +459,13 @@ export default function CH3SettingsPage() {
                     }`}
                     style={settings.streams.etc.enabled ? zionStyle("251, 191, 36") : undefined}
                   >
-                    {settings.streams.etc.enabled ? (lang === 'cs' ? 'Zapnuto' : 'Enabled') : (lang === 'cs' ? 'Vypnuto' : 'Disabled')}
+                    {settings.streams.etc.enabled ? (DashboardCh3Copy.enabled[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.disabled_2[lang === 'cs' ? 'cs' : 'en'])}
                   </button>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Pool Stratum' : 'Pool Stratum'}</label>
+                    <label className="text-gray-400 text-sm">{DashboardCh3Copy.poolStratum[lang === 'cs' ? 'cs' : 'en']}</label>
                     <input
                       type="text"
                       defaultValue={settings.streams.etc.pool?.stratum}
@@ -423,7 +474,7 @@ export default function CH3SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Pool Wallet' : 'Pool Wallet'}</label>
+                    <label className="text-gray-400 text-sm">{DashboardCh3Copy.poolWallet[lang === 'cs' ? 'cs' : 'en']}</label>
                     <input
                       type="text"
                       defaultValue={settings.streams.etc.pool?.wallet}
@@ -433,7 +484,7 @@ export default function CH3SettingsPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <input type="checkbox" defaultChecked className="w-4 h-4" />
-                    {lang === 'cs' ? 'Auto-convert do ZION' : 'Auto-convert to ZION'}
+                    {DashboardCh3Copy.autoConvertToZion[lang === 'cs' ? 'cs' : 'en']}
                   </div>
                 </div>
               </div>
@@ -457,13 +508,13 @@ export default function CH3SettingsPage() {
                     }`}
                     style={settings.streams.nxs.enabled ? zionStyle("251, 191, 36") : undefined}
                   >
-                    {settings.streams.nxs.enabled ? (lang === 'cs' ? 'Zapnuto' : 'Enabled') : (lang === 'cs' ? 'Vypnuto' : 'Disabled')}
+                    {settings.streams.nxs.enabled ? (DashboardCh3Copy.enabled[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.disabled_2[lang === 'cs' ? 'cs' : 'en'])}
                   </button>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Pool Stratum' : 'Pool Stratum'}</label>
+                    <label className="text-gray-400 text-sm">{DashboardCh3Copy.poolStratum[lang === 'cs' ? 'cs' : 'en']}</label>
                     <input
                       type="text"
                       defaultValue={settings.streams.nxs.pool?.stratum}
@@ -472,7 +523,7 @@ export default function CH3SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Pool Wallet' : 'Pool Wallet'}</label>
+                    <label className="text-gray-400 text-sm">{DashboardCh3Copy.poolWallet[lang === 'cs' ? 'cs' : 'en']}</label>
                     <input
                       type="text"
                       defaultValue={settings.streams.nxs.pool?.wallet}
@@ -482,7 +533,7 @@ export default function CH3SettingsPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <input type="checkbox" defaultChecked className="w-4 h-4" />
-                    {lang === 'cs' ? 'Auto-convert do ZION' : 'Auto-convert to ZION'}
+                    {DashboardCh3Copy.autoConvertToZion[lang === 'cs' ? 'cs' : 'en']}
                   </div>
                 </div>
               </div>
@@ -493,14 +544,14 @@ export default function CH3SettingsPage() {
         {/* Dynamic GPU Tab */}
         {activeTab === "dynamic" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">{lang === 'cs' ? 'Dynamic GPU Mining' : 'Dynamic GPU Mining'}</h2>
+            <h2 className="text-2xl font-bold mb-6">{DashboardCh3Copy.dynamicGpuMining[lang === 'cs' ? 'cs' : 'en']}</h2>
             <p className="text-gray-400 mb-6">
-              {lang === 'cs' ? 'Automatické přepínání mezi GPU algoritmy na základě real-time ziskovosti. Pool vybere nejziskovější coin pro všechny minery.' : 'Automatically switch between GPU algorithms based on real-time profitability. Pool selects the most profitable coin for all miners.'}
+              {DashboardCh3Copy.automaticallySwitchBetweenGpuA[lang === 'cs' ? 'cs' : 'en']}
             </p>
 
             {/* Mode Selection */}
             <div className="mb-6">
-              <label className="text-gray-400 text-sm block mb-2">{lang === 'cs' ? 'Režim přepínání' : 'Switching Mode'}</label>
+              <label className="text-gray-400 text-sm block mb-2">{DashboardCh3Copy.switchingMode[lang === 'cs' ? 'cs' : 'en']}</label>
               <div className="flex gap-4">
                 {["auto", "manual", "hybrid"].map((mode) => (
                   <button
@@ -516,7 +567,7 @@ export default function CH3SettingsPage() {
                     {mode === "auto" && "🤖 "}
                     {mode === "manual" && "👆 "}
                     {mode === "hybrid" && "🔀 "}
-                    {mode === "auto" ? (lang === 'cs' ? 'auto' : 'auto') : mode === "manual" ? (lang === 'cs' ? 'manuál' : 'manual') : (lang === 'cs' ? 'hybrid' : 'hybrid')}
+                    {mode === "auto" ? (DashboardCh3Copy.auto[lang === 'cs' ? 'cs' : 'en']) : mode === "manual" ? (DashboardCh3Copy.manual[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.hybrid[lang === 'cs' ? 'cs' : 'en'])}
                   </button>
                 ))}
               </div>
@@ -525,7 +576,7 @@ export default function CH3SettingsPage() {
             {/* Coin Selection */}
             <div className="mb-6">
               <label className="text-gray-400 text-sm block mb-2">
-                {settings.streams.dynamic_gpu.mode === "manual" ? (lang === 'cs' ? 'Vybrat Coin' : 'Select Coin') : (lang === 'cs' ? 'Preferované Coiny' : 'Preferred Coins')}
+                {settings.streams.dynamic_gpu.mode === "manual" ? (DashboardCh3Copy.selectCoin[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.preferredCoins[lang === 'cs' ? 'cs' : 'en'])}
               </label>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {GPU_COINS.map((coin) => {
@@ -559,7 +610,7 @@ export default function CH3SettingsPage() {
                       <div className="text-gray-400 text-sm">{coin.name}</div>
                       <div className="text-gray-500 text-xs mt-1">{coin.algo}</div>
                       {isCurrent && (
-                        <div className="text-zion-gold text-xs mt-2">⚡ {lang === 'cs' ? 'Těží nyní' : 'Mining Now'}</div>
+                        <div className="text-zion-gold text-xs mt-2">⚡ {DashboardCh3Copy.miningNow[lang === 'cs' ? 'cs' : 'en']}</div>
                       )}
                     </button>
                   );
@@ -571,7 +622,7 @@ export default function CH3SettingsPage() {
             {settings.streams.dynamic_gpu.mode === "auto" && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Min zisk (USD/den)' : 'Min Profit (USD/day)'}</label>
+                  <label className="text-gray-400 text-sm">{DashboardCh3Copy.minProfitUsdDay[lang === 'cs' ? 'cs' : 'en']}</label>
                   <input
                     type="number"
                     defaultValue="0.10"
@@ -580,7 +631,7 @@ export default function CH3SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Interval přepnutí (min)' : 'Switch Interval (min)'}</label>
+                  <label className="text-gray-400 text-sm">{DashboardCh3Copy.switchIntervalMin[lang === 'cs' ? 'cs' : 'en']}</label>
                   <input
                     type="number"
                     defaultValue="15"
@@ -588,7 +639,7 @@ export default function CH3SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Hystereze (%)' : 'Hysteresis (%)'}</label>
+                  <label className="text-gray-400 text-sm">{DashboardCh3Copy.hysteresis[lang === 'cs' ? 'cs' : 'en']}</label>
                   <input
                     type="number"
                     defaultValue="5"
@@ -603,18 +654,18 @@ export default function CH3SettingsPage() {
         {/* NCL Tab */}
         {activeTab === "ncl" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">{lang === 'cs' ? 'NCL AI Bonus konfigurace' : 'NCL AI Bonus Configuration'}</h2>
+            <h2 className="text-2xl font-bold mb-6">{DashboardCh3Copy.nclAiBonusConfiguration[lang === 'cs' ? 'cs' : 'en']}</h2>
             <p className="text-gray-400 mb-6">
-              {lang === 'cs' ? 'Alokujte výpočetní čas pro AI inference úkoly. Vyšší vědomí = vyšší odměny!' : 'Allocate compute time for AI inference tasks. Higher consciousness = higher rewards!'}
+              {DashboardCh3Copy.allocateComputeTimeForAiInfere[lang === 'cs' ? 'cs' : 'en']}
             </p>
 
             {/* Allocation Slider */}
             <div className="mb-8">
               <div className="flex justify-between text-sm text-gray-400 mb-2">
-                <span>{lang === 'cs' ? 'Výpočetní alokace' : 'Compute Allocation'}</span>
+                <span>{DashboardCh3Copy.computeAllocation[lang === 'cs' ? 'cs' : 'en']}</span>
                 <span>
                   {((settings.streams.ncl.npu_allocation || 0) * 100).toFixed(0)}% AI / 
-                  {((settings.streams.ncl.mining_allocation || 0) * 100).toFixed(0)}% {lang === 'cs' ? 'Mining' : 'Mining'}
+                  {((settings.streams.ncl.mining_allocation || 0) * 100).toFixed(0)}% {DashboardCh3Copy.mining[lang === 'cs' ? 'cs' : 'en']}
                 </span>
               </div>
               
@@ -635,8 +686,8 @@ export default function CH3SettingsPage() {
                   }}
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>0% ({lang === 'cs' ? 'Pouze mining' : 'Mining only'})</span>
-                  <span>50% ({lang === 'cs' ? 'Max AI' : 'Max AI'})</span>
+                  <span>0% ({DashboardCh3Copy.miningOnly[lang === 'cs' ? 'cs' : 'en']})</span>
+                  <span>50% ({DashboardCh3Copy.maxAi[lang === 'cs' ? 'cs' : 'en']})</span>
                 </div>
               </div>
 
@@ -646,7 +697,7 @@ export default function CH3SettingsPage() {
                   className="bg-gradient-to-r from-amber-500 to-zion-gold flex items-center justify-center"
                   style={{ width: `${(settings.streams.ncl.mining_allocation || 0) * 100}%` }}
                 >
-                  <span className="font-bold">⛏️ {lang === 'cs' ? 'Mining' : 'Mining'}</span>
+                  <span className="font-bold">⛏️ {DashboardCh3Copy.mining[lang === 'cs' ? 'cs' : 'en']}</span>
                 </div>
                 <div 
                   className="bg-gradient-to-r from-pink-600 to-pink-500 flex items-center justify-center"
@@ -659,7 +710,7 @@ export default function CH3SettingsPage() {
 
             {/* Task Types */}
             <div>
-              <label className="text-gray-400 text-sm block mb-2">{lang === 'cs' ? 'Podporované AI úkoly' : 'Supported AI Tasks'}</label>
+              <label className="text-gray-400 text-sm block mb-2">{DashboardCh3Copy.supportedAiTasks[lang === 'cs' ? 'cs' : 'en']}</label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                   { id: "embeddings", name: "Embeddings", reward: "0.001" },
@@ -673,7 +724,7 @@ export default function CH3SettingsPage() {
                       <span className="font-medium">{task.name}</span>
                     </div>
                     <div className="text-gray-500 text-sm">
-                      {lang === 'cs' ? 'Základ' : 'Base'}: {task.reward} ZION
+                      {DashboardCh3Copy.base[lang === 'cs' ? 'cs' : 'en']}: {task.reward} ZION
                     </div>
                   </div>
                 ))}
@@ -685,11 +736,9 @@ export default function CH3SettingsPage() {
         {/* Pearl Tab */}
         {activeTab === "pearl" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">{lang === 'cs' ? 'Pearl (PRL) PoUW Mining' : 'Pearl (PRL) PoUW Mining'}</h2>
+            <h2 className="text-2xl font-bold mb-6">{DashboardCh3Copy.pearlPrlPouwMining[lang === 'cs' ? 'cs' : 'en']}</h2>
             <p className="text-gray-400 mb-6">
-              {lang === 'cs'
-                ? 'Pearl coin (PRL) využívá Proof-of-Useful-Work: INT8 MatMul + BLAKE3 + Plonky2 ZK. GPU-nativní OpenCL těžba na AMD RX 5700 XT (~657 nonces/s, 14x rychlejší než CPU). Pool: AlphaPool/suprnova, custom Stratum dialect.'
-                : 'Pearl coin (PRL) uses Proof-of-Useful-Work: INT8 MatMul + BLAKE3 + Plonky2 ZK. GPU-native OpenCL mining on AMD RX 5700 XT (~657 nonces/s, 14x faster than CPU). Pool: AlphaPool/suprnova, custom Stratum dialect.'}
+              {DashboardCh3Copy.pearlCoinPrlUsesProofOfUsefulW[lang === 'cs' ? 'cs' : 'en']}
             </p>
 
             <div className="zion-rainbow-card p-6 mb-6" style={zionStyle("245, 158, 11")}>
@@ -710,13 +759,13 @@ export default function CH3SettingsPage() {
                   }`}
                   style={settings.streams.pearl.enabled ? zionStyle("251, 191, 36") : undefined}
                 >
-                  {settings.streams.pearl.enabled ? (lang === 'cs' ? 'Zapnuto' : 'Enabled') : (lang === 'cs' ? 'Vypnuto' : 'Disabled')}
+                  {settings.streams.pearl.enabled ? (DashboardCh3Copy.enabled[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.disabled_2[lang === 'cs' ? 'cs' : 'en'])}
                 </button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Pool Stratum' : 'Pool Stratum'}</label>
+                  <label className="text-gray-400 text-sm">{DashboardCh3Copy.poolStratum[lang === 'cs' ? 'cs' : 'en']}</label>
                   <input
                     type="text"
                     defaultValue={settings.streams.pearl.pool?.stratum}
@@ -725,7 +774,7 @@ export default function CH3SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Pool Wallet' : 'Pool Wallet'}</label>
+                  <label className="text-gray-400 text-sm">{DashboardCh3Copy.poolWallet[lang === 'cs' ? 'cs' : 'en']}</label>
                   <input
                     type="text"
                     defaultValue={settings.streams.pearl.pool?.wallet}
@@ -734,7 +783,7 @@ export default function CH3SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Cílový podíl' : 'Target Share'}</label>
+                  <label className="text-gray-400 text-sm">{DashboardCh3Copy.targetShare[lang === 'cs' ? 'cs' : 'en']}</label>
                   <input
                     type="number"
                     step="0.01"
@@ -746,7 +795,7 @@ export default function CH3SettingsPage() {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-400">
                   <input type="checkbox" defaultChecked className="w-4 h-4" />
-                  {lang === 'cs' ? 'Auto-convert do ZION' : 'Auto-convert to ZION'}
+                  {DashboardCh3Copy.autoConvertToZion[lang === 'cs' ? 'cs' : 'en']}
                 </div>
               </div>
             </div>
@@ -754,17 +803,17 @@ export default function CH3SettingsPage() {
             {/* GPU Performance Info */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="zion-rainbow-sub p-4" style={zionStyle("245, 158, 11")}>
-                <div className="text-gray-400 text-sm">{lang === 'cs' ? 'GPU rychlost' : 'GPU Speed'}</div>
+                <div className="text-gray-400 text-sm">{DashboardCh3Copy.gpuSpeed[lang === 'cs' ? 'cs' : 'en']}</div>
                 <div className="font-bold text-2xl text-teal-400">657.6</div>
                 <div className="text-gray-500 text-xs">nonces/s (batch=16)</div>
               </div>
               <div className="zion-rainbow-sub p-4" style={zionStyle("245, 158, 11")}>
-                <div className="text-gray-400 text-sm">{lang === 'cs' ? 'vs CPU' : 'vs CPU'}</div>
+                <div className="text-gray-400 text-sm">{DashboardCh3Copy.vsCpu[lang === 'cs' ? 'cs' : 'en']}</div>
                 <div className="font-bold text-2xl text-teal-400">14.2x</div>
-                <div className="text-gray-500 text-xs">{lang === 'cs' ? 'zrychlení' : 'speedup'}</div>
+                <div className="text-gray-500 text-xs">{DashboardCh3Copy.speedup[lang === 'cs' ? 'cs' : 'en']}</div>
               </div>
               <div className="zion-rainbow-sub p-4" style={zionStyle("245, 158, 11")}>
-                <div className="text-gray-400 text-sm">{lang === 'cs' ? 'Algoritmus' : 'Algorithm'}</div>
+                <div className="text-gray-400 text-sm">{DashboardCh3Copy.algorithm[lang === 'cs' ? 'cs' : 'en']}</div>
                 <div className="font-bold text-lg text-teal-400">PearlHash</div>
                 <div className="text-gray-500 text-xs">PoUW — INT8 MatMul + ZK</div>
               </div>
@@ -791,7 +840,7 @@ export default function CH3SettingsPage() {
               : "bg-zion-gold text-black hover:bg-yellow-400"
           }`}
         >
-          {saving ? (lang === 'cs' ? 'Ukládání...' : 'Saving...') : (lang === 'cs' ? '💾 Uložit nastavení' : '💾 Save Settings')}
+          {saving ? (DashboardCh3Copy.saving[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.saveSettings[lang === 'cs' ? 'cs' : 'en'])}
         </button>
       </div>
     </div>

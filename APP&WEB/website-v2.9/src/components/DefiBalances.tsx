@@ -12,6 +12,13 @@ import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { CONTRACTS, WZION_ABI, SEED_PRICE_USD, SEED_TICK } from '@/lib/defi-contracts';
 
+const DefiBalancesCopy = {
+  portfolio: { cs: `Portfolio`, en: `Portfolio` },
+  currentWzionPrice: { cs: `Aktuální cena wZION`, en: `Current wZION price` },
+  connectWalletToViewBalances: { cs: `Připoj peněženku pro zobrazení zůstatků`, en: `Connect wallet to view balances` },
+  connectMetamask: { cs: `Připojit MetaMask`, en: `Connect MetaMask` },
+};
+
 interface Balances {
   eth: string;
   wzion: string;
@@ -114,7 +121,7 @@ export default function DefiBalances() {
     <div className="zion-rainbow-card backdrop-blur-xl p-6 space-y-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white">
-          {cs ? 'Portfolio' : 'Portfolio'}
+          {DefiBalancesCopy.portfolio[cs ? 'cs' : 'en']}
         </h3>
         {connected && (
           <button
@@ -130,7 +137,7 @@ export default function DefiBalances() {
       {/* Pool price (always visible) */}
       {poolInfo && (
         <div className="rounded-xl border border-zion-gold/20 bg-zion-gold/5 p-4">
-          <div className="text-xs text-gray-400 mb-1">{cs ? 'Aktuální cena wZION' : 'Current wZION price'}</div>
+          <div className="text-xs text-gray-400 mb-1">{DefiBalancesCopy.currentWzionPrice[cs ? 'cs' : 'en']}</div>
           <div className="flex items-baseline gap-3">
             <span className="text-2xl font-bold font-mono text-zion-gold">${poolInfo.priceWzionInUsd}</span>
             <span className="text-sm text-gray-400">USDT / wZION</span>
@@ -155,14 +162,14 @@ export default function DefiBalances() {
         <div className="text-center py-4">
           <Wallet className="h-8 w-8 text-gray-600 mx-auto mb-3" />
           <p className="text-sm text-gray-400 mb-4">
-            {cs ? 'Připoj peněženku pro zobrazení zůstatků' : 'Connect wallet to view balances'}
+            {DefiBalancesCopy.connectWalletToViewBalances[cs ? 'cs' : 'en']}
           </p>
           <button
             onClick={connect}
             className="inline-flex items-center gap-2 rounded-xl bg-white/10 border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/15 transition-colors"
           >
             <Wallet className="h-4 w-4" />
-            {cs ? 'Připojit MetaMask' : 'Connect MetaMask'}
+            {DefiBalancesCopy.connectMetamask[cs ? 'cs' : 'en']}
           </button>
         </div>
       )}

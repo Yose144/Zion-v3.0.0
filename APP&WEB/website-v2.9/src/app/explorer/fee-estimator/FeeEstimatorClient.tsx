@@ -15,6 +15,35 @@ import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
 import { apiClient } from "@/lib/api";
 
+const ExplorerFeeEstimatorFeeEstimatorClientCopy = {
+  low: { cs: `Nízký`, en: `Low` },
+  k10Min: { cs: `~10 min`, en: `~10 min` },
+  medium: { cs: `Střední`, en: `Medium` },
+  k5Min: { cs: `~5 min`, en: `~5 min` },
+  high: { cs: `Vysoký`, en: `High` },
+  k2Min: { cs: `~2 min`, en: `~2 min` },
+  urgent: { cs: `Urgentní`, en: `Urgent` },
+  k1Min: { cs: `~1 min`, en: `~1 min` },
+  live: { cs: `Live`, en: `Live` },
+  mempoolAnalysis: { cs: `Mempool analýza`, en: `Mempool Analysis` },
+  feeEstimator: { cs: `Fee odhad`, en: `Fee Estimator` },
+  recommendedFeesBasedOnTheCurre: { cs: `Doporučené poplatky na základě aktuálního mempoolu. Čím vyšší fee, tím rychlejší potvrzení.`, en: `Recommended fees based on the current mempool. Higher fee = faster confirmation.` },
+  recommendations: { cs: `Doporučení`, en: `Recommendations` },
+  feeTiers: { cs: `Odhad poplatků`, en: `Fee Tiers` },
+  mempoolIsEmptyNoFeeNeeded: { cs: `Mempool je prázdný — není třeba fee`, en: `Mempool is empty — no fee needed` },
+  statistics: { cs: `Statistiky`, en: `Statistics` },
+  mempoolStats: { cs: `Mempool statistiky`, en: `Mempool Stats` },
+  pendingTx: { cs: `TX čekajících`, en: `Pending TX` },
+  minFee: { cs: `Min fee`, en: `Min Fee` },
+  average: { cs: `Průměr`, en: `Average` },
+  median: { cs: `Medián`, en: `Median` },
+  maxFee: { cs: `Max fee`, en: `Max Fee` },
+  k25thIle: { cs: `25. percentil`, en: `25th %ile` },
+  k50thIle: { cs: `50. percentil`, en: `50th %ile` },
+  k90thIle: { cs: `90. percentil`, en: `90th %ile` },
+  zionTerranovaFeeEstimatorMempo: { cs: `ZION TerraNova — Fee Estimator · Data z mempoolu · Aktualizace každých 10 s`, en: `ZION TerraNova — Fee Estimator · Mempool data · Updates every 10s` },
+};
+
 interface MempoolTx {
   tx_hash: string;
   size: number;
@@ -81,8 +110,8 @@ export default function FeeEstimatorClient() {
   const tiers = fees ? [
     {
       key: "low",
-      label: cs ? "Nízký" : "Low",
-      sub: cs ? "~10 min" : "~10 min",
+      label: ExplorerFeeEstimatorFeeEstimatorClientCopy.low[cs ? 'cs' : 'en'],
+      sub: ExplorerFeeEstimatorFeeEstimatorClientCopy.k10Min[cs ? 'cs' : 'en'],
       fee: fees.low,
       icon: Turtle,
       color: "text-emerald-400",
@@ -91,8 +120,8 @@ export default function FeeEstimatorClient() {
     },
     {
       key: "medium",
-      label: cs ? "Střední" : "Medium",
-      sub: cs ? "~5 min" : "~5 min",
+      label: ExplorerFeeEstimatorFeeEstimatorClientCopy.medium[cs ? 'cs' : 'en'],
+      sub: ExplorerFeeEstimatorFeeEstimatorClientCopy.k5Min[cs ? 'cs' : 'en'],
       fee: fees.medium,
       icon: Timer,
       color: "text-zion-cyan",
@@ -101,8 +130,8 @@ export default function FeeEstimatorClient() {
     },
     {
       key: "high",
-      label: cs ? "Vysoký" : "High",
-      sub: cs ? "~2 min" : "~2 min",
+      label: ExplorerFeeEstimatorFeeEstimatorClientCopy.high[cs ? 'cs' : 'en'],
+      sub: ExplorerFeeEstimatorFeeEstimatorClientCopy.k2Min[cs ? 'cs' : 'en'],
       fee: fees.high,
       icon: Rabbit,
       color: "text-amber-400",
@@ -111,8 +140,8 @@ export default function FeeEstimatorClient() {
     },
     {
       key: "urgent",
-      label: cs ? "Urgentní" : "Urgent",
-      sub: cs ? "~1 min" : "~1 min",
+      label: ExplorerFeeEstimatorFeeEstimatorClientCopy.urgent[cs ? 'cs' : 'en'],
+      sub: ExplorerFeeEstimatorFeeEstimatorClientCopy.k1Min[cs ? 'cs' : 'en'],
       fee: fees.urgent,
       icon: Zap,
       color: "text-rose-400",
@@ -136,18 +165,16 @@ export default function FeeEstimatorClient() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-emerald-300 uppercase">
                 <Gauge className="h-4 w-4" />
-                {cs ? "Live" : "Live"}
+                {ExplorerFeeEstimatorFeeEstimatorClientCopy.live[cs ? 'cs' : 'en']}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? "Mempool analýza" : "Mempool Analysis"}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{ExplorerFeeEstimatorFeeEstimatorClientCopy.mempoolAnalysis[cs ? 'cs' : 'en']}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? "Fee odhad" : "Fee Estimator"}
+                  {ExplorerFeeEstimatorFeeEstimatorClientCopy.feeEstimator[cs ? 'cs' : 'en']}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? "Doporučené poplatky na základě aktuálního mempoolu. Čím vyšší fee, tím rychlejší potvrzení."
-                  : "Recommended fees based on the current mempool. Higher fee = faster confirmation."}
+                {ExplorerFeeEstimatorFeeEstimatorClientCopy.recommendedFeesBasedOnTheCurre[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
@@ -156,10 +183,10 @@ export default function FeeEstimatorClient() {
         {/* TIER CARDS */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Doporučení" : "Recommendations"}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerFeeEstimatorFeeEstimatorClientCopy.recommendations[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <DollarSign className="h-7 w-7 text-emerald-400" />
-              {cs ? "Odhad poplatků" : "Fee Tiers"}
+              {ExplorerFeeEstimatorFeeEstimatorClientCopy.feeTiers[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -189,7 +216,7 @@ export default function FeeEstimatorClient() {
           {!loading && !fees && (
             <div className="zion-section p-10 text-center">
               <Flame className="h-10 w-10 text-white/10 mx-auto mb-3" />
-              <p className="text-white/30 text-sm">{cs ? "Mempool je prázdný — není třeba fee" : "Mempool is empty — no fee needed"}</p>
+              <p className="text-white/30 text-sm">{ExplorerFeeEstimatorFeeEstimatorClientCopy.mempoolIsEmptyNoFeeNeeded[cs ? 'cs' : 'en']}</p>
             </div>
           )}
         </motion.section>
@@ -198,22 +225,22 @@ export default function FeeEstimatorClient() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="zion-section p-6 md:p-10">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Statistiky" : "Statistics"}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerFeeEstimatorFeeEstimatorClientCopy.statistics[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Gauge className="h-7 w-7 text-zion-cyan" />
-              {cs ? "Mempool statistiky" : "Mempool Stats"}
+              {ExplorerFeeEstimatorFeeEstimatorClientCopy.mempoolStats[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: cs ? "TX čekajících" : "Pending TX", value: fees?.count ?? 0, color: "text-white" },
-              { label: cs ? "Min fee" : "Min Fee", value: formatFee(fees?.min ?? 0) + " ZION", color: "text-emerald-400" },
-              { label: cs ? "Průměr" : "Average", value: formatFee(fees?.avg ?? 0) + " ZION", color: "text-zion-cyan" },
-              { label: cs ? "Medián" : "Median", value: formatFee(fees?.median ?? 0) + " ZION", color: "text-zion-gold" },
-              { label: cs ? "Max fee" : "Max Fee", value: formatFee(fees?.max ?? 0) + " ZION", color: "text-amber-400" },
-              { label: cs ? "25. percentil" : "25th %ile", value: formatFee(fees?.low ?? 0) + " ZION", color: "text-purple-400" },
-              { label: cs ? "50. percentil" : "50th %ile", value: formatFee(fees?.medium ?? 0) + " ZION", color: "text-purple-400" },
-              { label: cs ? "90. percentil" : "90th %ile", value: formatFee(fees?.urgent ?? 0) + " ZION", color: "text-rose-400" },
+              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.pendingTx[cs ? 'cs' : 'en'], value: fees?.count ?? 0, color: "text-white" },
+              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.minFee[cs ? 'cs' : 'en'], value: formatFee(fees?.min ?? 0) + " ZION", color: "text-emerald-400" },
+              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.average[cs ? 'cs' : 'en'], value: formatFee(fees?.avg ?? 0) + " ZION", color: "text-zion-cyan" },
+              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.median[cs ? 'cs' : 'en'], value: formatFee(fees?.median ?? 0) + " ZION", color: "text-zion-gold" },
+              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.maxFee[cs ? 'cs' : 'en'], value: formatFee(fees?.max ?? 0) + " ZION", color: "text-amber-400" },
+              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.k25thIle[cs ? 'cs' : 'en'], value: formatFee(fees?.low ?? 0) + " ZION", color: "text-purple-400" },
+              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.k50thIle[cs ? 'cs' : 'en'], value: formatFee(fees?.medium ?? 0) + " ZION", color: "text-purple-400" },
+              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.k90thIle[cs ? 'cs' : 'en'], value: formatFee(fees?.urgent ?? 0) + " ZION", color: "text-rose-400" },
             ].map((s) => (
               <div key={s.label} className="zion-tile p-4">
                 <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-1">{s.label}</p>
@@ -224,9 +251,7 @@ export default function FeeEstimatorClient() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          {cs
-            ? `ZION TerraNova — Fee Estimator · Data z mempoolu · Aktualizace každých 10 s`
-            : `ZION TerraNova — Fee Estimator · Mempool data · Updates every 10s`}
+          {ExplorerFeeEstimatorFeeEstimatorClientCopy.zionTerranovaFeeEstimatorMempo[cs ? 'cs' : 'en']}
         </p>
       </div>
     </div>

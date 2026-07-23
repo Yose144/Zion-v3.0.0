@@ -3,6 +3,12 @@
 import { useMemo } from 'react';
 import { TrendingUp, Activity, Gauge, Timer } from 'lucide-react';
 
+const Network24hChartsCopy = {
+  history: { cs: `Historie`, en: `History` },
+  k24HourTrends: { cs: `24hodinové trendy`, en: `24-Hour Trends` },
+  fullDayHistoryOfHashrateDiffic: { cs: `Celodenní historie hashrate, obtížnosti a času mezi bloky s mřížkou a popisky os.`, en: `Full-day history of hashrate, difficulty, and inter-block time with grid and axis labels.` },
+};
+
 function fmtSI(v: number): string {
   if (v >= 1e12) return `${(v / 1e12).toFixed(2)}T`;
   if (v >= 1e9) return `${(v / 1e9).toFixed(2)}G`;
@@ -127,15 +133,13 @@ export default function Network24hCharts({
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Historie' : 'History'}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Network24hChartsCopy.history[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Activity className="h-7 w-7 text-emerald-400" />
-          {cs ? '24hodinové trendy' : '24-Hour Trends'}
+          {Network24hChartsCopy.k24HourTrends[cs ? 'cs' : 'en']}
         </h2>
         <p className="text-sm text-gray-400">
-          {cs
-            ? 'Celodenní historie hashrate, obtížnosti a času mezi bloky s mřížkou a popisky os.'
-            : 'Full-day history of hashrate, difficulty, and inter-block time with grid and axis labels.'}
+          {Network24hChartsCopy.fullDayHistoryOfHashrateDiffic[cs ? 'cs' : 'en']}
         </p>
       </div>
 

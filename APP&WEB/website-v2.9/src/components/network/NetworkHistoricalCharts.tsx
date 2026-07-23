@@ -14,6 +14,19 @@ import {
 import { usePolling } from '@/hooks/usePolling';
 import { useLang } from '@/contexts/LanguageContext';
 
+const NetworkHistoricalChartsCopy = {
+  trends: { cs: `Trendy`, en: `Trends` },
+  historicalTrends: { cs: `Historické trendy`, en: `Historical Trends` },
+  hashrateDifficultyBlockTimePee: { cs: `Hashrate, obtížnost, čas bloku, počet peerů a mempool — živá data za posledních 24 hodin s exportem do CSV.`, en: `Hashrate, difficulty, block time, peer count, and mempool — live data for the last 24 hours with CSV export.` },
+  range: { cs: `Rozsah:`, en: `Range:` },
+  liveData: { cs: `Živá data`, en: `Live data` },
+  exportCsv: { cs: `Exportovat CSV`, en: `Export CSV` },
+  insufficientDataToRenderChart: { cs: `Nedostatek dat pro zobrazení grafu`, en: `Insufficient data to render chart` },
+  chartWillPopulateAsLiveDataAcc: { cs: `Graf se naplní jak budou přibývat živá data (každých 15 s).`, en: `Chart will populate as live data accumulates (every 15s).` },
+  current: { cs: `Aktuální`, en: `Current` },
+  avg: { cs: `Průměr`, en: `Avg` },
+};
+
 /* ═══════════════════════════════════════════════════════════
    Types
    ═══════════════════════════════════════════════════════════ */
@@ -320,23 +333,21 @@ export default function NetworkHistoricalCharts() {
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Trendy' : 'Trends'}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkHistoricalChartsCopy.trends[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Activity className="h-7 w-7 text-zion-cyan" />
-          {cs ? 'Historické trendy' : 'Historical Trends'}
+          {NetworkHistoricalChartsCopy.historicalTrends[cs ? 'cs' : 'en']}
         </h2>
         <p className="text-sm text-gray-400">
-          {cs
-            ? 'Hashrate, obtížnost, čas bloku, počet peerů a mempool — živá data za posledních 24 hodin s exportem do CSV.'
-            : 'Hashrate, difficulty, block time, peer count, and mempool — live data for the last 24 hours with CSV export.'}
+          {NetworkHistoricalChartsCopy.hashrateDifficultyBlockTimePee[cs ? 'cs' : 'en']}
         </p>
       </div>
 
       {/* Live data badge — only 24h real data is available */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
-        <span className="text-xs text-gray-500 mr-2">{cs ? 'Rozsah:' : 'Range:'}</span>
+        <span className="text-xs text-gray-500 mr-2">{NetworkHistoricalChartsCopy.range[cs ? 'cs' : 'en']}</span>
         <span className="zion-badge-gold">24h</span>
-        <span className="text-[10px] text-emerald-400 ml-2">● {cs ? 'Živá data' : 'Live data'}</span>
+        <span className="text-[10px] text-emerald-400 ml-2">● {NetworkHistoricalChartsCopy.liveData[cs ? 'cs' : 'en']}</span>
       </div>
 
       {/* Charts grid */}
@@ -360,7 +371,7 @@ export default function NetworkHistoricalCharts() {
               <button
                 onClick={() => exportCSV(chart.key, chart.series, chart.label)}
                 className="text-gray-500 hover:text-purple-300 transition-colors"
-                title={cs ? 'Exportovat CSV' : 'Export CSV'}
+                title={NetworkHistoricalChartsCopy.exportCsv[cs ? 'cs' : 'en']}
               >
                 <Download className="h-3.5 w-3.5" />
               </button>
@@ -370,11 +381,10 @@ export default function NetworkHistoricalCharts() {
               {chart.series.length < 2 ? (
                 <div className="flex flex-col items-center justify-center gap-2 h-full text-center">
                   <p className="text-sm text-gray-400">
-                    {cs ? 'Nedostatek dat pro zobrazení grafu' : 'Insufficient data to render chart'}
+                    {NetworkHistoricalChartsCopy.insufficientDataToRenderChart[cs ? 'cs' : 'en']}
                   </p>
                   <p className="text-xs text-gray-600">
-                    {cs ? 'Graf se naplní jak budou přibývat živá data (každých 15 s).'
-                      : 'Chart will populate as live data accumulates (every 15s).'}
+                    {NetworkHistoricalChartsCopy.chartWillPopulateAsLiveDataAcc[cs ? 'cs' : 'en']}
                   </p>
                 </div>
               ) : (
@@ -388,12 +398,12 @@ export default function NetworkHistoricalCharts() {
             {chart.series.length > 0 && (
               <div className="mt-2 flex items-center justify-between text-[10px] text-gray-500">
                 <span>
-                  {cs ? 'Aktuální' : 'Current'}: <span className="font-mono text-gray-300">
+                  {NetworkHistoricalChartsCopy.current[cs ? 'cs' : 'en']}: <span className="font-mono text-gray-300">
                     {fmtSI(chart.series[chart.series.length - 1].value)}{chart.unit ? ` ${chart.unit}` : ''}
                   </span>
                 </span>
                 <span>
-                  {cs ? 'Průměr' : 'Avg'}: <span className="font-mono text-gray-400">
+                  {NetworkHistoricalChartsCopy.avg[cs ? 'cs' : 'en']}: <span className="font-mono text-gray-400">
                     {fmtSI(chart.series.reduce((a, p) => a + p.value, 0) / chart.series.length)}
                   </span>
                 </span>

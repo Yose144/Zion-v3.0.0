@@ -5,6 +5,29 @@ import { Activity, Globe, TrendingUp, Users, Zap } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
 import { useBlockchainStats } from "@/hooks/useBlockchainStats";
 
+const ExplorerDashboardCopy = {
+  healthy: { cs: `zdravá`, en: `healthy` },
+  warning: { cs: `varování`, en: `warning` },
+  offline: { cs: `offline`, en: `offline` },
+  networkDashboard: { cs: `Přehled sítě`, en: `Network Dashboard` },
+  unableToConnectToDaemonService: { cs: `Nepodařilo se připojit k daemonu. Služby se možná právě spouštějí...`, en: `Unable to connect to daemon. Services may be starting...` },
+  network: { cs: `Síť`, en: `Network` },
+  miners: { cs: `Mineři`, en: `Miners` },
+  poolHash: { cs: `Hash poolu`, en: `Pool Hash` },
+  blockTime: { cs: `Čas bloku`, en: `Block Time` },
+  mempool: { cs: `Mempool`, en: `Mempool` },
+  peers: { cs: `Peery`, en: `Peers` },
+  live: { cs: `Živě`, en: `Live` },
+  rewardDistribution: { cs: `Distribuce odmeny`, en: `Reward Distribution` },
+  reward: { cs: `Odmena`, en: `Reward` },
+  emission: { cs: `Emise`, en: `Emission` },
+  decadeDecay: { cs: `Decade Decay`, en: `Decade Decay` },
+  miner89: { cs: `Miner (89%)`, en: `Miner (89%)` },
+  humanitarian: { cs: `Humanitar.`, en: `Humanitarian` },
+  issobella: { cs: `Issobella`, en: `Issobella` },
+  poolFee: { cs: `Pool fee`, en: `Pool Fee` },
+};
+
 interface DashboardData {
   active_miners: number;
   network_status: string;
@@ -40,11 +63,11 @@ export default function ExplorerDashboard() {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "healthy":
-        return cs ? "zdravá" : "healthy";
+        return ExplorerDashboardCopy.healthy[cs ? 'cs' : 'en'];
       case "warning":
-        return cs ? "varování" : "warning";
+        return ExplorerDashboardCopy.warning[cs ? 'cs' : 'en'];
       default:
-        return cs ? "offline" : "offline";
+        return ExplorerDashboardCopy.offline[cs ? 'cs' : 'en'];
     }
   };
 
@@ -71,9 +94,9 @@ export default function ExplorerDashboard() {
       <div className="zion-rainbow-card rounded-[28px] border-red-500/20 bg-black/60 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
         <div className="flex items-center gap-2 text-red-400 mb-2">
           <Activity className="w-5 h-5" />
-          <span className="font-semibold">{cs ? "Přehled sítě" : "Network Dashboard"}</span>
+          <span className="font-semibold">{ExplorerDashboardCopy.networkDashboard[cs ? 'cs' : 'en']}</span>
         </div>
-        <p className="text-gray-500 text-sm">{cs ? "Nepodařilo se připojit k daemonu. Služby se možná právě spouštějí..." : "Unable to connect to daemon. Services may be starting..."}</p>
+        <p className="text-gray-500 text-sm">{ExplorerDashboardCopy.unableToConnectToDaemonService[cs ? 'cs' : 'en']}</p>
       </div>
     );
   }
@@ -100,38 +123,38 @@ export default function ExplorerDashboard() {
 
   const metrics = [
     {
-      label: cs ? "Síť" : "Network",
+      label: ExplorerDashboardCopy.network[cs ? 'cs' : 'en'],
       value: getStatusLabel(data.network_status),
       color: getStatusColor(data.network_status),
       icon: Globe,
       dot: getStatusDot(data.network_status),
     },
     {
-      label: cs ? "Mineři" : "Miners",
+      label: ExplorerDashboardCopy.miners[cs ? 'cs' : 'en'],
       value: data.active_miners.toString(),
       color: "text-blue-400",
       icon: Users,
     },
     {
-      label: cs ? "Hash poolu" : "Pool Hash",
+      label: ExplorerDashboardCopy.poolHash[cs ? 'cs' : 'en'],
       value: data.pool_hashrate,
       color: "text-green-400",
       icon: TrendingUp,
     },
     {
-      label: cs ? "Čas bloku" : "Block Time",
+      label: ExplorerDashboardCopy.blockTime[cs ? 'cs' : 'en'],
       value: `${data.block_time_avg}s`,
       color: "text-cyan-400",
       icon: Activity,
     },
     {
-      label: cs ? "Mempool" : "Mempool",
+      label: ExplorerDashboardCopy.mempool[cs ? 'cs' : 'en'],
       value: data.tx_pool_size.toString(),
       color: "text-orange-400",
       icon: Zap,
     },
     {
-      label: cs ? "Peery" : "Peers",
+      label: ExplorerDashboardCopy.peers[cs ? 'cs' : 'en'],
       value: data.connections.toString(),
       color: "text-purple-400",
       icon: Globe,
@@ -147,8 +170,8 @@ export default function ExplorerDashboard() {
       <div className="flex items-center gap-3 mb-5">
         <Activity className="h-5 w-5 text-purple-400" />
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{cs ? "Živě" : "Live"}</p>
-          <h3 className="text-lg font-semibold text-white">{cs ? "Přehled sítě" : "Network Dashboard"}</h3>
+          <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{ExplorerDashboardCopy.live[cs ? 'cs' : 'en']}</p>
+          <h3 className="text-lg font-semibold text-white">{ExplorerDashboardCopy.networkDashboard[cs ? 'cs' : 'en']}</h3>
         </div>
       </div>
 
@@ -177,16 +200,16 @@ export default function ExplorerDashboard() {
       {/* Block reward info */}
       <div className="mt-4 zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">
-          {cs ? "Distribuce odmeny" : "Reward Distribution"}
+          {ExplorerDashboardCopy.rewardDistribution[cs ? 'cs' : 'en']}
         </p>
         <div className="grid grid-cols-2 gap-2 text-xs">
           {[
-            { label: cs ? "Odmena" : "Reward", value: "5,400 ZION", color: "text-zion-gold" },
-            { label: cs ? "Emise" : "Emission", value: cs ? "Decade Decay" : "Decade Decay", color: "text-gray-300" },
-            { label: cs ? "Miner (89%)" : "Miner (89%)", value: "4,806 ZION", color: "text-emerald-400" },
-            { label: cs ? "Humanitar." : "Humanitarian", value: "5% (270)", color: "text-blue-400" },
-            { label: cs ? "Issobella" : "Issobella", value: "5% (270)", color: "text-purple-400" },
-            { label: cs ? "Pool fee" : "Pool Fee", value: "1% (54)", color: "text-amber-400" },
+            { label: ExplorerDashboardCopy.reward[cs ? 'cs' : 'en'], value: "5,400 ZION", color: "text-zion-gold" },
+            { label: ExplorerDashboardCopy.emission[cs ? 'cs' : 'en'], value: ExplorerDashboardCopy.decadeDecay[cs ? 'cs' : 'en'], color: "text-gray-300" },
+            { label: ExplorerDashboardCopy.miner89[cs ? 'cs' : 'en'], value: "4,806 ZION", color: "text-emerald-400" },
+            { label: ExplorerDashboardCopy.humanitarian[cs ? 'cs' : 'en'], value: "5% (270)", color: "text-blue-400" },
+            { label: ExplorerDashboardCopy.issobella[cs ? 'cs' : 'en'], value: "5% (270)", color: "text-purple-400" },
+            { label: ExplorerDashboardCopy.poolFee[cs ? 'cs' : 'en'], value: "1% (54)", color: "text-amber-400" },
           ].map((c) => (
             <div key={c.label} className="flex items-center justify-between">
               <span className="text-gray-500">{c.label}</span>

@@ -12,6 +12,22 @@ import {
   ExternalLink,
 } from "lucide-react";
 
+const ApiDocsCopy = {
+  parameters: { cs: `Parametry`, en: `Parameters` },
+  description: { cs: `Popis`, en: `Description` },
+  exampleRequest: { cs: `Priklad pozadavku`, en: `Example Request` },
+  exampleResponse: { cs: `Priklad odpovedi`, en: `Example Response` },
+  tryIt: { cs: `Vyzkouset`, en: `Try it` },
+  apiDocs: { cs: `API dokumentace`, en: `API Docs` },
+  zionBlockchainApi: { cs: `ZION Blockchain API`, en: `ZION Blockchain API` },
+  jsonEndpointsForIntegrationAnd: { cs: `JSON endpointy pro integraci a monitoring`, en: `JSON endpoints for integration and monitoring` },
+  baseUrl: { cs: `Base URL`, en: `Base URL` },
+  copy: { cs: `Kopirovat`, en: `Copy` },
+  rateLimiting: { cs: `Rate Limiting:`, en: `Rate Limiting:` },
+  noRateLimitFairUse: { cs: `Zadny rate limit (fair use)`, en: `No rate limit (fair use)` },
+  zionTerranovaV306ApiDocumentat: { cs: `ZION TerraNova v3.0.6 · API dokumentace · Vsechny endpointy vraci JSON`, en: `ZION TerraNova v3.0.6 · API Documentation · All endpoints return JSON` },
+};
+
 /* ── types ───────────────────────────────────────────────────── */
 
 interface Param {
@@ -396,7 +412,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
           {/* parameters */}
           {ep.params.length > 0 && (
             <div>
-              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium mb-2">{cs ? "Parametry" : "Parameters"}</p>
+              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium mb-2">{ApiDocsCopy.parameters[cs ? 'cs' : 'en']}</p>
               <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
                 <table className="w-full text-[12px]">
                   <thead>
@@ -404,7 +420,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
                       <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/40 font-medium">Name</th>
                       <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/40 font-medium">Type</th>
                       <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/40 font-medium">Required</th>
-                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/40 font-medium">{cs ? "Popis" : "Description"}</th>
+                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/40 font-medium">{ApiDocsCopy.description[cs ? 'cs' : 'en']}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -429,7 +445,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
           {/* example request */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? "Priklad pozadavku" : "Example Request"}</p>
+              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ApiDocsCopy.exampleRequest[cs ? 'cs' : 'en']}</p>
               <CopyButton text={curl} />
             </div>
             <pre className="rounded-xl bg-black/60 border border-white/[0.06] p-3.5 overflow-x-auto text-[12px] font-mono text-emerald-300/90 leading-relaxed">
@@ -440,7 +456,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
           {/* example response */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? "Priklad odpovedi" : "Example Response"}</p>
+              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ApiDocsCopy.exampleResponse[cs ? 'cs' : 'en']}</p>
               <CopyButton text={ep.exampleResponse} />
             </div>
             <pre className="rounded-xl bg-black/60 border border-white/[0.06] p-3.5 overflow-x-auto text-[12px] font-mono text-cyan-200/80 leading-relaxed">
@@ -456,7 +472,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-500/15 border border-purple-500/30 text-[12px] font-semibold text-purple-300 hover:bg-purple-500/25 transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" />
-            {cs ? "Vyzkouset" : "Try it"}
+            {ApiDocsCopy.tryIt[cs ? 'cs' : 'en']}
           </a>
         </div>
       )}
@@ -483,7 +499,7 @@ export default function ApiDocsClient() {
         <nav className="flex items-center gap-1.5 text-[11px] text-white/40">
           <Link href="/explorer" className="hover:text-white/70 transition-colors">Explorer</Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-white/70">{cs ? "API dokumentace" : "API Docs"}</span>
+          <span className="text-white/70">{ApiDocsCopy.apiDocs[cs ? 'cs' : 'en']}</span>
         </nav>
 
         {/* header */}
@@ -494,28 +510,28 @@ export default function ApiDocsClient() {
             </div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{cs ? "ZION Blockchain API" : "ZION Blockchain API"}</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{ApiDocsCopy.zionBlockchainApi[cs ? 'cs' : 'en']}</h1>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-300 border border-purple-500/30">
                   v3.0.6
                 </span>
               </div>
-              <p className="text-sm text-white/40 mt-1">{cs ? "JSON endpointy pro integraci a monitoring" : "JSON endpoints for integration and monitoring"}</p>
+              <p className="text-sm text-white/40 mt-1">{ApiDocsCopy.jsonEndpointsForIntegrationAnd[cs ? 'cs' : 'en']}</p>
             </div>
           </div>
 
           {/* base url */}
           <div className="flex items-center gap-3 flex-wrap mt-6">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{cs ? "Base URL" : "Base URL"}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ApiDocsCopy.baseUrl[cs ? 'cs' : 'en']}</span>
             <code className="px-3 py-1.5 rounded-lg bg-black/50 border border-white/[0.08] text-[13px] font-mono text-purple-300">{BASE_URL}</code>
-            <CopyButton text={BASE_URL} label={cs ? "Kopirovat" : "Copy"} />
+            <CopyButton text={BASE_URL} label={ApiDocsCopy.copy[cs ? 'cs' : 'en']} />
           </div>
 
           {/* rate limit banner */}
           <div className="mt-5 flex items-center gap-3 rounded-xl bg-emerald-500/[0.07] border border-emerald-500/20 px-4 py-3">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
             <p className="text-[13px] text-emerald-300/90">
-              <span className="font-semibold">{cs ? "Rate Limiting:" : "Rate Limiting:"}</span>{" "}
-              {cs ? "Zadny rate limit (fair use)" : "No rate limit (fair use)"}
+              <span className="font-semibold">{ApiDocsCopy.rateLimiting[cs ? 'cs' : 'en']}</span>{" "}
+              {ApiDocsCopy.noRateLimitFairUse[cs ? 'cs' : 'en']}
             </p>
           </div>
         </div>
@@ -541,9 +557,7 @@ export default function ApiDocsClient() {
 
         {/* footer */}
         <p className="text-center text-xs text-white/30 pt-4">
-          {cs
-            ? "ZION TerraNova v3.0.6 · API dokumentace · Vsechny endpointy vraci JSON"
-            : "ZION TerraNova v3.0.6 · API Documentation · All endpoints return JSON"}
+          {ApiDocsCopy.zionTerranovaV306ApiDocumentat[cs ? 'cs' : 'en']}
         </p>
       </div>
     </div>

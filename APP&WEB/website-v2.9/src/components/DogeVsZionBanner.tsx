@@ -7,6 +7,11 @@ import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import StargateLogo from '@/components/StargateLogo';
 
+const DogeVsZionBannerCopy = {
+  dogeVsZionWhoLocks100mZionFirs: { cs: `Doge vs ZION — kdo zamkne 100M ZION první?`, en: `Doge vs ZION — who locks 100M ZION first?` },
+  clickAndPlayTheClickBattle: { cs: `Klikni a hraj v Click Battle →`, en: `Click and play the Click Battle →` },
+};
+
 interface DogeVsZionBannerProps {
   cs?: boolean;
 }
@@ -75,10 +80,10 @@ export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
             </span>
           </div>
           <h3 className="text-sm font-bold text-white md:text-base">
-            {cs ? 'Doge vs ZION — kdo zamkne 100M ZION první?' : 'Doge vs ZION — who locks 100M ZION first?'}
+            {DogeVsZionBannerCopy.dogeVsZionWhoLocks100mZionFirs[cs ? 'cs' : 'en']}
           </h3>
           <p className="mt-1 text-[10px] text-white/50">
-            {cs ? 'Klikni a hraj v Click Battle →' : 'Click and play the Click Battle →'}
+            {DogeVsZionBannerCopy.clickAndPlayTheClickBattle[cs ? 'cs' : 'en']}
           </p>
         </div>
 

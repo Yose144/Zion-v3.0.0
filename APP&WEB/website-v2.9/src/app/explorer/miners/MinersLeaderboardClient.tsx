@@ -16,6 +16,27 @@ import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
 import { apiClient } from "@/lib/api";
 
+const ExplorerMinersMinersLeaderboardClientCopy = {
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  live: { cs: `Live`, en: `Live` },
+  mining: { cs: `Těžba`, en: `Mining` },
+  topMiners: { cs: `Top mineři`, en: `Top Miners` },
+  mostActiveMinersAndPoolsOnTheZ: { cs: `Nejaktivnější těžaři a pooly na ZION síti. Seřazeno podle zůstatku a aktivní těžby.`, en: `Most active miners and pools on the ZION network. Sorted by balance and mining activity.` },
+  totalMiners: { cs: `Celkem minerů`, en: `Total Miners` },
+  minerSupply: { cs: `Těžební zásoba`, en: `Miner Supply` },
+  pools: { cs: `Pooly`, en: `Pools` },
+  soloMiners: { cs: `Solo mineři`, en: `Solo Miners` },
+  leaderboard: { cs: `Žebříček`, en: `Leaderboard` },
+  miningLeaderboard: { cs: `Těžební žebříček`, en: `Mining Leaderboard` },
+  address: { cs: `Adresa`, en: `Address` },
+  type: { cs: `Typ`, en: `Type` },
+  balance: { cs: `Zůstatek`, en: `Balance` },
+  pool: { cs: `Pool`, en: `Pool` },
+  solo: { cs: `Solo`, en: `Solo` },
+  noMinersFound: { cs: `Žádní mineři nenalezeni`, en: `No miners found` },
+  zionTerranovaTopMinersRichlist: { cs: `ZION TerraNova — Top Mineři · Data z richlistu · Aktualizace každých 30 s`, en: `ZION TerraNova — Top Miners · Richlist data · Updates every 30s` },
+};
+
 interface RichListEntry {
   address: string;
   known_label?: string | null;
@@ -41,7 +62,7 @@ interface MinersData {
 export default function MinersLeaderboardClient() {
   const { lang } = useLang();
   const cs = lang === "cs";
-  const locale = cs ? "cs-CZ" : "en-US";
+  const locale = ExplorerMinersMinersLeaderboardClientCopy.enUs[cs ? 'cs' : 'en'];
   const [data, setData] = useState<MinersData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -78,18 +99,16 @@ export default function MinersLeaderboardClient() {
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-amber-300 uppercase">
               <Pickaxe className="h-4 w-4" />
-              {cs ? "Live" : "Live"}
+              {ExplorerMinersMinersLeaderboardClientCopy.live[cs ? 'cs' : 'en']}
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? "Těžba" : "Mining"}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{ExplorerMinersMinersLeaderboardClientCopy.mining[cs ? 'cs' : 'en']}</p>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                {cs ? "Top mineři" : "Top Miners"}
+                {ExplorerMinersMinersLeaderboardClientCopy.topMiners[cs ? 'cs' : 'en']}
               </h1>
             </div>
             <p className="text-lg text-gray-300 max-w-2xl">
-              {cs
-                ? "Nejaktivnější těžaři a pooly na ZION síti. Seřazeno podle zůstatku a aktivní těžby."
-                : "Most active miners and pools on the ZION network. Sorted by balance and mining activity."}
+              {ExplorerMinersMinersLeaderboardClientCopy.mostActiveMinersAndPoolsOnTheZ[cs ? 'cs' : 'en']}
             </p>
           </div>
         </motion.section>
@@ -98,10 +117,10 @@ export default function MinersLeaderboardClient() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: cs ? "Celkem minerů" : "Total Miners", value: stats?.total_miners ?? 0, icon: Users, color: "text-emerald-400" },
-              { label: cs ? "Těžební zásoba" : "Miner Supply", value: `${((stats?.miner_supply ?? 0) / 1e6).toFixed(2)} ZION`, icon: TrendingUp, color: "text-zion-gold" },
-              { label: cs ? "Pooly" : "Pools", value: miners.filter((m) => m.known_type === "pool").length, icon: Crown, color: "text-amber-400" },
-              { label: cs ? "Solo mineři" : "Solo Miners", value: miners.filter((m) => m.known_type !== "pool").length, icon: Activity, color: "text-zion-cyan" },
+              { label: ExplorerMinersMinersLeaderboardClientCopy.totalMiners[cs ? 'cs' : 'en'], value: stats?.total_miners ?? 0, icon: Users, color: "text-emerald-400" },
+              { label: ExplorerMinersMinersLeaderboardClientCopy.minerSupply[cs ? 'cs' : 'en'], value: `${((stats?.miner_supply ?? 0) / 1e6).toFixed(2)} ZION`, icon: TrendingUp, color: "text-zion-gold" },
+              { label: ExplorerMinersMinersLeaderboardClientCopy.pools[cs ? 'cs' : 'en'], value: miners.filter((m) => m.known_type === "pool").length, icon: Crown, color: "text-amber-400" },
+              { label: ExplorerMinersMinersLeaderboardClientCopy.soloMiners[cs ? 'cs' : 'en'], value: miners.filter((m) => m.known_type !== "pool").length, icon: Activity, color: "text-zion-cyan" },
             ].map((s) => (
               <div key={s.label} className="zion-rainbow-sub p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-3">
@@ -117,10 +136,10 @@ export default function MinersLeaderboardClient() {
         {/* TABLE */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? "Žebříček" : "Leaderboard"}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerMinersMinersLeaderboardClientCopy.leaderboard[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Trophy className="h-7 w-7 text-zion-gold" />
-              {cs ? "Těžební žebříček" : "Mining Leaderboard"}
+              {ExplorerMinersMinersLeaderboardClientCopy.miningLeaderboard[cs ? 'cs' : 'en']}
             </h2>
           </div>
 
@@ -130,9 +149,9 @@ export default function MinersLeaderboardClient() {
                 <thead>
                   <tr className="border-b border-white/6">
                     <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">#</th>
-                    <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{cs ? "Adresa" : "Address"}</th>
-                    <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden md:table-cell">{cs ? "Typ" : "Type"}</th>
-                    <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{cs ? "Zůstatek" : "Balance"}</th>
+                    <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{ExplorerMinersMinersLeaderboardClientCopy.address[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden md:table-cell">{ExplorerMinersMinersLeaderboardClientCopy.type[cs ? 'cs' : 'en']}</th>
+                    <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{ExplorerMinersMinersLeaderboardClientCopy.balance[cs ? 'cs' : 'en']}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -165,7 +184,7 @@ export default function MinersLeaderboardClient() {
                                 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                                 : "bg-blue-500/10 text-blue-400 border-blue-500/20"
                             }`}>
-                              {m.known_type === "pool" ? (cs ? "Pool" : "Pool") : (cs ? "Solo" : "Solo")}
+                              {m.known_type === "pool" ? (ExplorerMinersMinersLeaderboardClientCopy.pool[cs ? 'cs' : 'en']) : (ExplorerMinersMinersLeaderboardClientCopy.solo[cs ? 'cs' : 'en'])}
                             </span>
                           </td>
                           <td className="px-6 py-3 text-right">
@@ -182,16 +201,14 @@ export default function MinersLeaderboardClient() {
             {miners.length === 0 && !loading && (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
                 <Pickaxe className="h-10 w-10 text-white/10" />
-                <p className="text-white/30 text-sm">{cs ? "Žádní mineři nenalezeni" : "No miners found"}</p>
+                <p className="text-white/30 text-sm">{ExplorerMinersMinersLeaderboardClientCopy.noMinersFound[cs ? 'cs' : 'en']}</p>
               </div>
             )}
           </div>
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          {cs
-            ? `ZION TerraNova — Top Mineři · Data z richlistu · Aktualizace každých 30 s`
-            : `ZION TerraNova — Top Miners · Richlist data · Updates every 30s`}
+          {ExplorerMinersMinersLeaderboardClientCopy.zionTerranovaTopMinersRichlist[cs ? 'cs' : 'en']}
         </p>
       </div>
     </div>

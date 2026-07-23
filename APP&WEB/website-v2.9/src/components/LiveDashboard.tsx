@@ -8,6 +8,37 @@ import { apiClient } from '@/lib/api';
 import { usePolling } from '@/hooks/usePolling';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 
+const LiveDashboardCopy = {
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  totalBlocks: { cs: `Bloky celkem`, en: `Total Blocks` },
+  totalNumberOfMinedBlocksSinceM: { cs: `Celkový počet vytěžených bloků od MainNet Genesis.`, en: `Total number of mined blocks since MainNet Genesis.` },
+  totalSupply: { cs: `Zásoba celkem`, en: `Total Supply` },
+  maximumZionSupplyIs144BillionI: { cs: `Maximální zásoba ZION je 144 miliard včetně genesis premine.`, en: `Maximum ZION supply is 144 billion including genesis premine.` },
+  transactions: { cs: `Transakce`, en: `Transactions` },
+  totalNumberOfTransactionsRecor: { cs: `Celkový počet transakcí zapsaných na blockchainu.`, en: `Total number of transactions recorded on the blockchain.` },
+  difficulty: { cs: `Obtížnost`, en: `Difficulty` },
+  currentMiningDifficultySetByLw: { cs: `Aktuální těžební obtížnost nastavená LWMA DAA.`, en: `Current mining difficulty set by LWMA DAA.` },
+  mempoolSize: { cs: `Velikost mempoolu`, en: `Mempool Size` },
+  transactionsWaitingForConfirma: { cs: `Transakce čekající na potvrzení v mempoolu.`, en: `Transactions waiting for confirmation in the mempool.` },
+  missionConsole: { cs: `Mise console`, en: `Mission Console` },
+  lastValidSnapshotWaitingForTel: { cs: `Poslední validní snapshot · čekám na obnovu telemetrie`, en: `Last valid snapshot · waiting for telemetry recovery` },
+  continuumStatus: { cs: `Stav kontinuua`, en: `Continuum status` },
+  galacticNetworkSync: { cs: `Synchronizace galakticke site`, en: `Galactic network sync` },
+  snapshotActive: { cs: `Snapshot aktivni`, en: `Snapshot active` },
+  updated: { cs: `Aktualizace`, en: `Updated` },
+  live: { cs: `zive`, en: `live` },
+  initializing: { cs: `spousteni`, en: `initializing` },
+  latestBlock: { cs: `Posledni blok`, en: `Latest block` },
+  waitingForSignal: { cs: `Cekani na signal`, en: `Waiting for signal` },
+  difficulty_2: { cs: `Obtiznost`, en: `Difficulty` },
+  defiPool: { cs: `DeFi Pool`, en: `DeFi Pool` },
+  zionPrice: { cs: `Cena ZION`, en: `ZION Price` },
+  tvlUsd: { cs: `TVL (USD)`, en: `TVL (USD)` },
+  liquidity: { cs: `Likvidita`, en: `Liquidity` },
+  ethUsd: { cs: `ETH/USD`, en: `ETH/USD` },
+  primaryPriceFromWzionUsdt03Poo: { cs: `Primární cena z wZION/USDT 0.3% poolu na Base mainnet. Aktualizováno každých 30s.`, en: `Primary price from wZION/USDT 0.3% pool on Base mainnet. Updated every 30s.` },
+};
+
 interface BlockchainStats {
   // NOTE: Backend schema can vary across deployments.
   // Keep fields optional and use safe fallbacks in rendering.
@@ -65,7 +96,7 @@ const placeholderStats: BlockchainStats = {
 export default function LiveDashboard() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = cs ? 'cs-CZ' : 'en-US';
+  const locale = LiveDashboardCopy.enUs[cs ? 'cs' : 'en'];
   const [stats, setStats] = useState<BlockchainStats>(placeholderStats);
   const [defiPrice, setDefiPrice] = useState<DefiPrice | null>(null);
   const [loadedAtLeastOnce, setLoadedAtLeastOnce] = useState(false);
@@ -126,31 +157,31 @@ export default function LiveDashboard() {
 
   const highlightCards = [
     {
-      label: cs ? 'Bloky celkem' : 'Total Blocks',
+      label: LiveDashboardCopy.totalBlocks[cs ? 'cs' : 'en'],
       value: (stats.total_blocks ?? 0).toLocaleString(locale),
       icon: Database,
       accent: 'from-zion-gold/25 to-zion-purple/10',
-      tip: cs ? 'Celkový počet vytěžených bloků od MainNet Genesis.' : 'Total number of mined blocks since MainNet Genesis.',
+      tip: LiveDashboardCopy.totalNumberOfMinedBlocksSinceM[cs ? 'cs' : 'en'],
     },
     {
-      label: cs ? 'Zásoba celkem' : 'Total Supply',
+      label: LiveDashboardCopy.totalSupply[cs ? 'cs' : 'en'],
       value: formattedSupply,
       icon: Gauge,
       accent: 'from-zion-purple/25 to-zion-cyan/10',
-      tip: cs ? 'Maximální zásoba ZION je 144 miliard včetně genesis premine.' : 'Maximum ZION supply is 144 billion including genesis premine.',
+      tip: LiveDashboardCopy.maximumZionSupplyIs144BillionI[cs ? 'cs' : 'en'],
     },
     {
-      label: cs ? 'Transakce' : 'Transactions',
+      label: LiveDashboardCopy.transactions[cs ? 'cs' : 'en'],
       value: (stats.total_transactions ?? 0).toLocaleString(locale),
       icon: Atom,
       accent: 'from-zion-cyan/25 to-zion-gold/10',
-      tip: cs ? 'Celkový počet transakcí zapsaných na blockchainu.' : 'Total number of transactions recorded on the blockchain.',
+      tip: LiveDashboardCopy.totalNumberOfTransactionsRecor[cs ? 'cs' : 'en'],
     },
   ];
 
   const auxCards = [
-    { label: cs ? 'Obtížnost' : 'Difficulty', value: (stats.difficulty ?? 0).toLocaleString(locale), icon: Shield, tip: cs ? 'Aktuální těžební obtížnost nastavená LWMA DAA.' : 'Current mining difficulty set by LWMA DAA.' },
-    { label: cs ? 'Velikost mempoolu' : 'Mempool Size', value: mempoolSize.toLocaleString(locale), icon: Braces, tip: cs ? 'Transakce čekající na potvrzení v mempoolu.' : 'Transactions waiting for confirmation in the mempool.' },
+    { label: LiveDashboardCopy.difficulty[cs ? 'cs' : 'en'], value: (stats.difficulty ?? 0).toLocaleString(locale), icon: Shield, tip: LiveDashboardCopy.currentMiningDifficultySetByLw[cs ? 'cs' : 'en'] },
+    { label: LiveDashboardCopy.mempoolSize[cs ? 'cs' : 'en'], value: mempoolSize.toLocaleString(locale), icon: Braces, tip: LiveDashboardCopy.transactionsWaitingForConfirma[cs ? 'cs' : 'en'] },
   ];
 
   return (
@@ -159,12 +190,12 @@ export default function LiveDashboard() {
         <div className="flex flex-wrap items-center gap-4">
           <div className="inline-flex items-center gap-3 rounded-full border border-white/10 px-4 py-2">
             <Activity className="w-5 h-5 text-zion-gold animate-pulse" />
-            <span className="text-sm tracking-wide uppercase text-gray-300">{cs ? 'Mise console' : 'Mission Console'}</span>
+            <span className="text-sm tracking-wide uppercase text-gray-300">{LiveDashboardCopy.missionConsole[cs ? 'cs' : 'en']}</span>
           </div>
           <div className="text-xl sm:text-2xl md:text-3xl font-semibold text-gradient">{SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Mainnet Launch Countdown Telemetry</div>
           {staleTelemetry && (
             <span className="text-xs text-cyan-200 bg-cyan-500/10 rounded-full px-3 py-1 border border-cyan-500/30">
-              {cs ? 'Poslední validní snapshot · čekám na obnovu telemetrie' : 'Last valid snapshot · waiting for telemetry recovery'}
+              {LiveDashboardCopy.lastValidSnapshotWaitingForTel[cs ? 'cs' : 'en']}
             </span>
           )}
           {error && (
@@ -185,14 +216,14 @@ export default function LiveDashboard() {
           >
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-sm uppercase text-gray-400 tracking-[0.4em]">{cs ? 'Stav kontinuua' : 'Continuum status'}</p>
-                <h3 className="text-2xl font-semibold text-white">{cs ? 'Synchronizace galakticke site' : 'Galactic network sync'}</h3>
+                <p className="text-sm uppercase text-gray-400 tracking-[0.4em]">{LiveDashboardCopy.continuumStatus[cs ? 'cs' : 'en']}</p>
+                <h3 className="text-2xl font-semibold text-white">{LiveDashboardCopy.galacticNetworkSync[cs ? 'cs' : 'en']}</h3>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-400">
                 <span className={`inline-flex h-2 w-2 rounded-full ${staleTelemetry ? 'bg-amber-300' : 'bg-emerald-400'} animate-pulse`} />
                 {staleTelemetry
-                  ? (cs ? 'Snapshot aktivni' : 'Snapshot active')
-                  : `${cs ? 'Aktualizace' : 'Updated'} ${loadedAtLeastOnce ? (cs ? 'zive' : 'live') : (cs ? 'spousteni' : 'initializing')}`}
+                  ? (LiveDashboardCopy.snapshotActive[cs ? 'cs' : 'en'])
+                  : `${LiveDashboardCopy.updated[cs ? 'cs' : 'en']} ${loadedAtLeastOnce ? (LiveDashboardCopy.live[cs ? 'cs' : 'en']) : (LiveDashboardCopy.initializing[cs ? 'cs' : 'en'])}`}
                 {lastSuccessAt && (
                   <span>
                     · {new Date(lastSuccessAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -255,7 +286,7 @@ export default function LiveDashboard() {
             style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
           >
             <div>
-              <p className="text-xs uppercase text-gray-500 tracking-[0.3em]">{cs ? 'Posledni blok' : 'Latest block'}</p>
+              <p className="text-xs uppercase text-gray-500 tracking-[0.3em]">{LiveDashboardCopy.latestBlock[cs ? 'cs' : 'en']}</p>
               <h3 className="text-3xl font-semibold text-white">
                 #{latestBlock?.height ?? stats.block_height ?? '—'}
               </h3>
@@ -265,7 +296,7 @@ export default function LiveDashboard() {
             <div className="zion-tile p-4">
               <p className="text-xs text-gray-400 mb-2">Hash</p>
               <p className="font-mono text-xs text-zion-cyan break-all">
-                {latestBlock?.hash ?? (cs ? 'Cekani na signal' : 'Waiting for signal')}
+                {latestBlock?.hash ?? (LiveDashboardCopy.waitingForSignal[cs ? 'cs' : 'en'])}
               </p>
             </div>
 
@@ -275,7 +306,7 @@ export default function LiveDashboard() {
                 <p className="text-xl font-semibold text-white">{(stats.mempool_size ?? 0).toLocaleString(locale)}</p>
               </div>
               <div>
-                <p className="text-gray-400">{cs ? 'Obtiznost' : 'Difficulty'}</p>
+                <p className="text-gray-400">{LiveDashboardCopy.difficulty_2[cs ? 'cs' : 'en']}</p>
                 <p className="text-xl font-semibold text-white">{(stats.difficulty ?? 0).toLocaleString(locale)}</p>
               </div>
             </div>
@@ -290,7 +321,7 @@ export default function LiveDashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Droplets className="w-4 h-4 text-zion-cyan" />
-                  <span className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'DeFi Pool' : 'DeFi Pool'}</span>
+                  <span className="text-xs uppercase tracking-[0.3em] text-gray-400">{LiveDashboardCopy.defiPool[cs ? 'cs' : 'en']}</span>
                 </div>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
                   defiPrice?.source === 'live'
@@ -302,20 +333,20 @@ export default function LiveDashboard() {
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-gray-400">{cs ? 'Cena ZION' : 'ZION Price'}</p>
+                  <p className="text-xs text-gray-400">{LiveDashboardCopy.zionPrice[cs ? 'cs' : 'en']}</p>
                   <p className="text-lg font-semibold text-white flex items-center gap-1">
                     <TrendingUp className="w-3.5 h-3.5 text-zion-gold" />
                     ${defiPrice?.price?.usd_per_wzion?.toFixed(6) ?? '0.000200'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">{cs ? 'TVL (USD)' : 'TVL (USD)'}</p>
+                  <p className="text-xs text-gray-400">{LiveDashboardCopy.tvlUsd[cs ? 'cs' : 'en']}</p>
                   <p className="text-lg font-semibold text-white">
                     ${(defiPrice?.tvl?.usd ?? 0).toFixed(2)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">{cs ? 'Likvidita' : 'Liquidity'}</p>
+                  <p className="text-xs text-gray-400">{LiveDashboardCopy.liquidity[cs ? 'cs' : 'en']}</p>
                   <p className="text-sm font-mono text-zion-cyan">
                     {defiPrice?.liquidity && Number(defiPrice.liquidity) > 0
                       ? Number(defiPrice.liquidity).toLocaleString(locale)
@@ -323,16 +354,14 @@ export default function LiveDashboard() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">{cs ? 'ETH/USD' : 'ETH/USD'}</p>
+                  <p className="text-xs text-gray-400">{LiveDashboardCopy.ethUsd[cs ? 'cs' : 'en']}</p>
                   <p className="text-sm font-mono text-gray-200">
                     ${defiPrice?.price?.weth_usd?.toFixed(2) ?? '—'}
                   </p>
                 </div>
               </div>
               <p className="text-[10px] text-gray-500">
-                {cs
-                  ? 'Primární cena z wZION/USDT 0.3% poolu na Base mainnet. Aktualizováno každých 30s.'
-                  : 'Primary price from wZION/USDT 0.3% pool on Base mainnet. Updated every 30s.'}
+                {LiveDashboardCopy.primaryPriceFromWzionUsdt03Poo[cs ? 'cs' : 'en']}
               </p>
             </div>
           </motion.div>

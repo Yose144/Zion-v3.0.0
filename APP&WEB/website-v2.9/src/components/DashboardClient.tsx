@@ -23,6 +23,73 @@ import {
 } from 'lucide-react';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION, SITE_VERSION, SITE_POOL_PRIMARY } from '@/lib/site';
 
+const DashboardCopy = {
+  poolHealth: { cs: `Zdravi poolu`, en: `Pool Health` },
+  version: { cs: `Verze`, en: `Version` },
+  launchGate: { cs: `Launch gate`, en: `Launch Gate` },
+  publicLaunchDecisionOnlyAfterC: { cs: `Rozhodnuti o verejnem launchi az po closure evidence`, en: `Public launch decision only after closure evidence` },
+  q1Q22026Hardening: { cs: `Q1-Q2 2026 · Zpevneni`, en: `Q1-Q2 2026 · Hardening` },
+  launchWindowEnd2026Gated: { cs: `Launch window · konec 2026 (gated)`, en: `Launch window · end 2026 (gated)` },
+  daoTreeOfLife: { cs: `DAO Strom zivota`, en: `DAO Tree of Life` },
+  treeOfLifeLedgerForDaoGuardian: { cs: `Ledger stromu zivota pro DAO guardiany, governance kruhy a dohled nad treasury`, en: `Tree-of-life ledger for DAO guardians, governance circles, and treasury oversight` },
+  daoPrototype: { cs: `DAO prototyp`, en: `DAO prototype` },
+  poolMetricsDashboard: { cs: `Dashboard pool metrik`, en: `Pool Metrics Dashboard` },
+  hashrateWorkersSharesBlockDisc: { cs: `Hashrate · Workeri · Shares · Rychlost nalezu bloku`, en: `Hashrate · Workers · Shares · Block discovery rate` },
+  autoRefresh10s: { cs: `Auto-refresh 10 s`, en: `Auto-refresh 10s` },
+  fullSystemDashboard: { cs: `Plny systemovy dashboard`, en: `Full System Dashboard` },
+  cpuRamRpcLatencyApiHealthUptim: { cs: `CPU/RAM · RPC latence · API zdravi · uptime`, en: `CPU/RAM · RPC latency · API health · uptime` },
+  stackWideTelemetry: { cs: `Telemetrie celeho stacku`, en: `Stack-wide telemetry` },
+  advancedPoolDashboardPrometheu: { cs: `Pokrocily pool dashboard (Prometheus)`, en: `Advanced Pool Dashboard (Prometheus)` },
+  rawPromqlExplorerAdHocQueriesC: { cs: `Raw PromQL explorer, ad-hoc dotazy a vlastni alerty`, en: `Raw PromQL explorer, ad-hoc queries & custom alerts` },
+  latestBlock: { cs: `Posledni blok`, en: `Latest block` },
+  height: { cs: `Vyska`, en: `Height` },
+  timestamp: { cs: `Cas`, en: `Timestamp` },
+  enUs: { cs: `cs-CZ`, en: `en-US` },
+  awaitingBlockchainMetrics: { cs: `Cekam na blockchain metriky…`, en: `Awaiting blockchain metrics…` },
+  poolStats: { cs: `Statistiky poolu`, en: `Pool Stats` },
+  activeMiners: { cs: `Aktivni mineri`, en: `Active miners` },
+  poolHashrate: { cs: `Hashrate poolu`, en: `Pool hashrate` },
+  blocksFound: { cs: `Nalezene bloky`, en: `Blocks found` },
+  totalPaid: { cs: `Celkove vyplaceno`, en: `Total paid` },
+  poolConfiguration: { cs: `Konfigurace poolu`, en: `Pool configuration` },
+  poolFee: { cs: `Poplatek poolu:`, en: `Pool fee:` },
+  minPayout: { cs: `Min vyplata:`, en: `Min payout:` },
+  payoutInterval: { cs: `Interval vyplaty:`, en: `Payout interval:` },
+  totalMiners: { cs: `Celkem mineru:`, en: `Total miners:` },
+  networkStats: { cs: `Sitove statistiky`, en: `Network stats` },
+  networkHashrate: { cs: `Sitovy hashrate:`, en: `Network hashrate:` },
+  difficulty: { cs: `Obtiznost:`, en: `Difficulty:` },
+  pendingPayouts: { cs: `Cekajici vyplaty:`, en: `Pending payouts:` },
+  lastBlock: { cs: `Posledni blok:`, en: `Last block:` },
+  poolMetricsUnavailable: { cs: `Metriky poolu nejsou dostupne`, en: `Pool metrics unavailable` },
+  liveGrafanaMetrics: { cs: `Zive Grafana metriky`, en: `Live Grafana Metrics` },
+  realTimeDashboardsEmbeddedDire: { cs: `Dashboardy v realnem case vlozene primo do ZION Mission Control`, en: `Real-time dashboards embedded directly on ZION Mission Control` },
+  openGrafana: { cs: `Otevrit Grafanu`, en: `Open Grafana` },
+  viewLiveData: { cs: `Zobrazit ziva data`, en: `View live data` },
+  availableMetrics: { cs: `Dostupne metriky`, en: `Available Metrics` },
+  poolMetrics: { cs: `Pool metriky`, en: `Pool Metrics` },
+  blockHeight: { cs: `Vyska bloku`, en: `Block height` },
+  transactionRate: { cs: `Rychlost transakci`, en: `Transaction rate` },
+  connectedPeers: { cs: `Pripojeni peeri`, en: `Connected peers` },
+  mempoolSize: { cs: `Velikost mempoolu`, en: `Mempool size` },
+  apiPerformance: { cs: `Vykon API`, en: `API Performance` },
+  latencyP95P99: { cs: `Latence (p95/p99)`, en: `Latency (p95/p99)` },
+  errorRate: { cs: `Chybovost`, en: `Error rate` },
+  activeConnections: { cs: `Aktivni spojeni`, en: `Active connections` },
+  systemResources: { cs: `Systemove zdroje`, en: `System Resources` },
+  cpuUsage: { cs: `Vytizeni CPU`, en: `CPU usage` },
+  memoryUsage: { cs: `Vytizeni pameti`, en: `Memory usage` },
+  diskIO: { cs: `Diskove I/O`, en: `Disk I/O` },
+  networkTraffic: { cs: `Sitovy provoz`, en: `Network traffic` },
+  recentBlocks: { cs: `Posledni bloky`, en: `Recent blocks` },
+  txs: { cs: `Tx`, en: `Txs` },
+  noBlockFeedDetectedFromApi: { cs: `Z API nebyl detekovan zadny block feed.`, en: `No block feed detected from API.` },
+  whatSNext: { cs: `Co dal`, en: `What\'s next` },
+  operationalRoadmap: { cs: `Operacni roadmapa`, en: `Operational roadmap` },
+  pulledFromTheCurrentPublicLaun: { cs: `Prevzato z aktualni verejne launch cesty a rehearsal readiness materialu.`, en: `Pulled from the current public launch path and rehearsal-readiness material.` },
+  openRoadmap: { cs: `Otevrit roadmapu`, en: `Open roadmap` },
+};
+
 interface DashboardClientProps {
   stats: any;
   health: any;
@@ -38,21 +105,21 @@ const getMissionMetrics = (cs: boolean) => [
     icon: Zap
   },
   {
-    label: cs ? 'Zdravi poolu' : 'Pool Health',
+    label: DashboardCopy.poolHealth[cs ? 'cs' : 'en'],
     value: '100%',
     description: 'Edge server pool + Edge server consensus node',
     icon: ShieldCheck
   },
   {
-    label: cs ? 'Verze' : 'Version',
+    label: DashboardCopy.version[cs ? 'cs' : 'en'],
     value: SITE_VERSION,
     description: cs ? `Verejna linie ${SITE_RELEASE_LABEL} · runtime v${SITE_RUNTIME_VERSION.replace('v', '')}` : `Public line ${SITE_RELEASE_LABEL} · runtime v${SITE_RUNTIME_VERSION.replace('v', '')}`,
     icon: Gauge
   },
   {
-    label: cs ? 'Launch gate' : 'Launch Gate',
+    label: DashboardCopy.launchGate[cs ? 'cs' : 'en'],
     value: 'NO-GO',
-    description: cs ? 'Rozhodnuti o verejnem launchi az po closure evidence' : 'Public launch decision only after closure evidence',
+    description: DashboardCopy.publicLaunchDecisionOnlyAfterC[cs ? 'cs' : 'en'],
     icon: SignalHigh
   }
 ];
@@ -63,11 +130,11 @@ const getRoadmapSlices = (cs: boolean) => [
     bullets: ['Native Rust blockchain + pool infrastructure', 'Edge server topology: Edge server consensus + Edge server pool/relay', 'Real mining rewards · 5% humanitarian · 5% Issobella fund']
   },
   {
-    title: cs ? 'Q1-Q2 2026 · Zpevneni' : 'Q1-Q2 2026 · Hardening',
+    title: DashboardCopy.q1Q22026Hardening[cs ? 'cs' : 'en'],
     bullets: cs ? ['Bezpecnostni audit (Trail of Bits)', 'Nativni penezenka + podpora Ledger/Trezor', 'Zapojeni komunitnich tezebnich poolu'] : ['Security audit (Trail of Bits)', 'Native wallet + Ledger/Trezor support', 'Community mining pools onboarding']
   },
   {
-    title: cs ? 'Launch window · konec 2026 (gated)' : 'Launch window · end 2026 (gated)',
+    title: DashboardCopy.launchWindowEnd2026Gated[cs ? 'cs' : 'en'],
     bullets: cs ? ['Verejny launch jen po closure reportu', 'Mosty a listing readiness az po GO rozhodnuti', 'Governance aktivace az po schvalenem launch baliku'] : ['Public launch only after closure reporting', 'Bridge and listing readiness only after a GO decision', 'Governance activation only after the approved launch package']
   }
 ];
@@ -77,32 +144,32 @@ const PROMETHEUS_BASE_URL = (process.env.NEXT_PUBLIC_PROMETHEUS_BASE_URL || 'htt
 
 const getGrafanaDashboards = (cs: boolean) => [
   {
-    title: cs ? 'DAO Strom zivota' : 'DAO Tree of Life',
-    description: cs ? 'Ledger stromu zivota pro DAO guardiany, governance kruhy a dohled nad treasury' : 'Tree-of-life ledger for DAO guardians, governance circles, and treasury oversight',
+    title: DashboardCopy.daoTreeOfLife[cs ? 'cs' : 'en'],
+    description: DashboardCopy.treeOfLifeLedgerForDaoGuardian[cs ? 'cs' : 'en'],
     href: '/dashboard/dao-tree',
     icon: TreeDeciduous,
     accent: 'text-emerald-300',
-    pill: cs ? 'DAO prototyp' : 'DAO prototype'
+    pill: DashboardCopy.daoPrototype[cs ? 'cs' : 'en']
   },
   {
-    title: cs ? 'Dashboard pool metrik' : 'Pool Metrics Dashboard',
-    description: cs ? 'Hashrate · Workeri · Shares · Rychlost nalezu bloku' : 'Hashrate · Workers · Shares · Block discovery rate',
+    title: DashboardCopy.poolMetricsDashboard[cs ? 'cs' : 'en'],
+    description: DashboardCopy.hashrateWorkersSharesBlockDisc[cs ? 'cs' : 'en'],
     href: '/dashboard/pool-metrics',
     icon: BarChart3,
     accent: 'text-zion-cyan',
-    pill: cs ? 'Auto-refresh 10 s' : 'Auto-refresh 10s'
+    pill: DashboardCopy.autoRefresh10s[cs ? 'cs' : 'en']
   },
   {
-    title: cs ? 'Plny systemovy dashboard' : 'Full System Dashboard',
-    description: cs ? 'CPU/RAM · RPC latence · API zdravi · uptime' : 'CPU/RAM · RPC latency · API health · uptime',
+    title: DashboardCopy.fullSystemDashboard[cs ? 'cs' : 'en'],
+    description: DashboardCopy.cpuRamRpcLatencyApiHealthUptim[cs ? 'cs' : 'en'],
     href: '/dashboard/system-metrics',
     icon: LineChart,
     accent: 'text-zion-purple',
-    pill: cs ? 'Telemetrie celeho stacku' : 'Stack-wide telemetry'
+    pill: DashboardCopy.stackWideTelemetry[cs ? 'cs' : 'en']
   },
   {
-    title: cs ? 'Pokrocily pool dashboard (Prometheus)' : 'Advanced Pool Dashboard (Prometheus)',
-    description: cs ? 'Raw PromQL explorer, ad-hoc dotazy a vlastni alerty' : 'Raw PromQL explorer, ad-hoc queries & custom alerts',
+    title: DashboardCopy.advancedPoolDashboardPrometheu[cs ? 'cs' : 'en'],
+    description: DashboardCopy.rawPromqlExplorerAdHocQueriesC[cs ? 'cs' : 'en'],
     href: '/dashboard/advanced-pool',
     icon: Activity,
     accent: 'text-zion-gold',
@@ -290,10 +357,10 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                 </div>
                 {stats.latest_block && (
                   <div style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-sub p-4">
-                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Posledni blok' : 'Latest block'}</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{DashboardCopy.latestBlock[cs ? 'cs' : 'en']}</p>
                     <div className="mt-3 grid gap-3 text-sm">
                       <div className="flex justify-between text-gray-300">
-                        <span>{cs ? 'Vyska' : 'Height'}</span>
+                        <span>{DashboardCopy.height[cs ? 'cs' : 'en']}</span>
                         <span className="font-mono">{stats.latest_block.height}</span>
                       </div>
                       <div className="flex justify-between text-gray-300">
@@ -305,15 +372,15 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                         </span>
                       </div>
                       <div className="flex justify-between text-gray-300">
-                        <span>{cs ? 'Cas' : 'Timestamp'}</span>
-                        <span>{stats.latest_block?.timestamp ? new Date(stats.latest_block.timestamp * 1000).toLocaleString(cs ? 'cs-CZ' : 'en-US') : '—'}</span>
+                        <span>{DashboardCopy.timestamp[cs ? 'cs' : 'en']}</span>
+                        <span>{stats.latest_block?.timestamp ? new Date(stats.latest_block.timestamp * 1000).toLocaleString(DashboardCopy.enUs[cs ? 'cs' : 'en']) : '—'}</span>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-gray-400 text-center py-12">{cs ? 'Cekam na blockchain metriky…' : 'Awaiting blockchain metrics…'}</div>
+              <div className="text-gray-400 text-center py-12">{DashboardCopy.awaitingBlockchainMetrics[cs ? 'cs' : 'en']}</div>
             )}
           </motion.div>
           )}
@@ -330,7 +397,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               </div>
             </div>
             <Link href="/pool/stats" target="_blank" rel="noreferrer" className="text-xs uppercase tracking-[0.3em] text-zion-cyan inline-flex items-center gap-1">
-              {cs ? 'Statistiky poolu' : 'Pool Stats'}
+              {DashboardCopy.poolStats[cs ? 'cs' : 'en']}
               <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -338,63 +405,63 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             <div className="mt-6 space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <MetricCard 
-                  label={cs ? 'Aktivni mineri' : 'Active miners'} 
+                  label={DashboardCopy.activeMiners[cs ? 'cs' : 'en']} 
                   value={poolStats.active_miners?.toString() || '0'} 
                 />
                 <MetricCard 
-                  label={cs ? 'Hashrate poolu' : 'Pool hashrate'} 
+                  label={DashboardCopy.poolHashrate[cs ? 'cs' : 'en']} 
                   value={formatHashrate(poolStats.pool_hashrate || 0)} 
                 />
                 <MetricCard 
-                  label={cs ? 'Nalezene bloky' : 'Blocks found'} 
+                  label={DashboardCopy.blocksFound[cs ? 'cs' : 'en']} 
                   value={poolStats.blocks_found ? poolStats.blocks_found.toLocaleString() : '0'} 
                 />
                 <MetricCard 
-                  label={cs ? 'Celkove vyplaceno' : 'Total paid'} 
+                  label={DashboardCopy.totalPaid[cs ? 'cs' : 'en']} 
                   value={poolStats.total_paid ? `${(poolStats.total_paid / 1e9).toFixed(2)}B` : '0'} 
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-sub p-4">
-                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Konfigurace poolu' : 'Pool configuration'}</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{DashboardCopy.poolConfiguration[cs ? 'cs' : 'en']}</p>
                   <div className="mt-3 space-y-2 text-sm text-gray-300">
                     <div className="flex justify-between">
-                      <span>{cs ? 'Poplatek poolu:' : 'Pool fee:'}</span>
+                      <span>{DashboardCopy.poolFee[cs ? 'cs' : 'en']}</span>
                       <span className="font-mono">{poolStats?.pool_fee ?? '—'}%</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>{cs ? 'Min vyplata:' : 'Min payout:'}</span>
+                      <span>{DashboardCopy.minPayout[cs ? 'cs' : 'en']}</span>
                       <span className="font-mono">{poolStats?.min_payout ?? '—'} ZION</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>{cs ? 'Interval vyplaty:' : 'Payout interval:'}</span>
+                      <span>{DashboardCopy.payoutInterval[cs ? 'cs' : 'en']}</span>
                       <span className="font-mono">{poolStats?.payment_interval ?? '—'}s</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>{cs ? 'Celkem mineru:' : 'Total miners:'}</span>
+                      <span>{DashboardCopy.totalMiners[cs ? 'cs' : 'en']}</span>
                       <span className="font-mono">{poolStats?.total_miners ?? 0}</span>
                     </div>
                   </div>
                 </div>
                 <div style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-sub p-4">
-                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Sitove statistiky' : 'Network stats'}</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{DashboardCopy.networkStats[cs ? 'cs' : 'en']}</p>
                   <div className="mt-3 space-y-2 text-sm text-gray-300">
                     <div className="flex justify-between">
-                      <span>{cs ? 'Sitovy hashrate:' : 'Network hashrate:'}</span>
+                      <span>{DashboardCopy.networkHashrate[cs ? 'cs' : 'en']}</span>
                       <span className="font-mono">{formatHashrate(poolStats?.network_hashrate ?? 0)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>{cs ? 'Obtiznost:' : 'Difficulty:'}</span>
+                      <span>{DashboardCopy.difficulty[cs ? 'cs' : 'en']}</span>
                       <span className="font-mono">{poolStats?.network_difficulty ? poolStats.network_difficulty.toLocaleString() : '—'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>{cs ? 'Cekajici vyplaty:' : 'Pending payouts:'}</span>
+                      <span>{DashboardCopy.pendingPayouts[cs ? 'cs' : 'en']}</span>
                       <span className="font-mono">{(poolStats?.pending_payouts ?? 0).toFixed(2)} ZION</span>
                     </div>
                     {poolStats?.last_block_time && (
                       <div className="flex justify-between">
-                        <span>{cs ? 'Posledni blok:' : 'Last block:'}</span>
-                        <span className="text-xs">{new Date(poolStats.last_block_time * 1000).toLocaleTimeString(cs ? 'cs-CZ' : 'en-US')}</span>
+                        <span>{DashboardCopy.lastBlock[cs ? 'cs' : 'en']}</span>
+                        <span className="text-xs">{new Date(poolStats.last_block_time * 1000).toLocaleTimeString(DashboardCopy.enUs[cs ? 'cs' : 'en'])}</span>
                       </div>
                     )}
                   </div>
@@ -402,7 +469,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               </div>
             </div>
           ) : (
-            <div className="text-gray-400 text-center py-12">{cs ? 'Metriky poolu nejsou dostupne' : 'Pool metrics unavailable'}</div>
+            <div className="text-gray-400 text-center py-12">{DashboardCopy.poolMetricsUnavailable[cs ? 'cs' : 'en']}</div>
           )}
         </motion.div>
         )}
@@ -419,8 +486,8 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             <div className="flex items-center gap-3">
               <TrendingUp className="w-6 h-6 text-zion-cyan" />
               <div>
-                <h2 className="text-2xl font-semibold text-white">{cs ? 'Zive Grafana metriky' : 'Live Grafana Metrics'}</h2>
-                <p className="text-sm text-gray-400">{cs ? 'Dashboardy v realnem case vlozene primo do ZION Mission Control' : 'Real-time dashboards embedded directly on ZION Mission Control'}</p>
+                <h2 className="text-2xl font-semibold text-white">{DashboardCopy.liveGrafanaMetrics[cs ? 'cs' : 'en']}</h2>
+                <p className="text-sm text-gray-400">{DashboardCopy.realTimeDashboardsEmbeddedDire[cs ? 'cs' : 'en']}</p>
               </div>
             </div>
             <Link
@@ -429,7 +496,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               rel="noreferrer"
               className="text-xs uppercase tracking-[0.3em] text-zion-cyan inline-flex items-center gap-1"
             >
-              {cs ? 'Otevrit Grafanu' : 'Open Grafana'}
+              {DashboardCopy.openGrafana[cs ? 'cs' : 'en']}
               <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -449,7 +516,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                 <h3 className="mt-4 text-lg font-semibold text-white group-hover:text-zion-cyan transition-colors">{card.title}</h3>
                 <p className="mt-2 text-sm text-gray-400">{card.description}</p>
                 <div className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-zion-cyan">
-                  {cs ? 'Zobrazit ziva data' : 'View live data'}
+                  {DashboardCopy.viewLiveData[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-3 w-3" />
                 </div>
               </Link>
@@ -457,42 +524,42 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
           </div>
 
           <div className="mt-6 zion-section p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">{cs ? 'Dostupne metriky' : 'Available Metrics'}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">{DashboardCopy.availableMetrics[cs ? 'cs' : 'en']}</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <p className="text-zion-purple font-semibold">{cs ? 'Pool metriky' : 'Pool Metrics'}</p>
+                <p className="text-zion-purple font-semibold">{DashboardCopy.poolMetrics[cs ? 'cs' : 'en']}</p>
                 <ul className="mt-2 space-y-1 text-gray-400">
-                  <li>• {cs ? 'Aktivni mineri' : 'Active miners'}</li>
-                  <li>• {cs ? 'Hashrate poolu' : 'Pool hashrate'}</li>
+                  <li>• {DashboardCopy.activeMiners[cs ? 'cs' : 'en']}</li>
+                  <li>• {DashboardCopy.poolHashrate[cs ? 'cs' : 'en']}</li>
                   <li>• Shares accepted/rejected</li>
-                  <li>• {cs ? 'Nalezene bloky' : 'Blocks found'}</li>
+                  <li>• {DashboardCopy.blocksFound[cs ? 'cs' : 'en']}</li>
                 </ul>
               </div>
               <div>
                 <p className="text-zion-gold font-semibold">Blockchain</p>
                 <ul className="mt-2 space-y-1 text-gray-400">
-                  <li>• {cs ? 'Vyska bloku' : 'Block height'}</li>
-                  <li>• {cs ? 'Rychlost transakci' : 'Transaction rate'}</li>
-                  <li>• {cs ? 'Pripojeni peeri' : 'Connected peers'}</li>
-                  <li>• {cs ? 'Velikost mempoolu' : 'Mempool size'}</li>
+                  <li>• {DashboardCopy.blockHeight[cs ? 'cs' : 'en']}</li>
+                  <li>• {DashboardCopy.transactionRate[cs ? 'cs' : 'en']}</li>
+                  <li>• {DashboardCopy.connectedPeers[cs ? 'cs' : 'en']}</li>
+                  <li>• {DashboardCopy.mempoolSize[cs ? 'cs' : 'en']}</li>
                 </ul>
               </div>
               <div>
-                <p className="text-zion-cyan font-semibold">{cs ? 'Vykon API' : 'API Performance'}</p>
+                <p className="text-zion-cyan font-semibold">{DashboardCopy.apiPerformance[cs ? 'cs' : 'en']}</p>
                 <ul className="mt-2 space-y-1 text-gray-400">
                   <li>• Request rate</li>
-                  <li>• {cs ? 'Latence (p95/p99)' : 'Latency (p95/p99)'}</li>
-                  <li>• {cs ? 'Chybovost' : 'Error rate'}</li>
-                  <li>• {cs ? 'Aktivni spojeni' : 'Active connections'}</li>
+                  <li>• {DashboardCopy.latencyP95P99[cs ? 'cs' : 'en']}</li>
+                  <li>• {DashboardCopy.errorRate[cs ? 'cs' : 'en']}</li>
+                  <li>• {DashboardCopy.activeConnections[cs ? 'cs' : 'en']}</li>
                 </ul>
               </div>
               <div>
-                <p className="text-emerald-400 font-semibold">{cs ? 'Systemove zdroje' : 'System Resources'}</p>
+                <p className="text-emerald-400 font-semibold">{DashboardCopy.systemResources[cs ? 'cs' : 'en']}</p>
                 <ul className="mt-2 space-y-1 text-gray-400">
-                  <li>• {cs ? 'Vytizeni CPU' : 'CPU usage'}</li>
-                  <li>• {cs ? 'Vytizeni pameti' : 'Memory usage'}</li>
-                  <li>• {cs ? 'Diskove I/O' : 'Disk I/O'}</li>
-                  <li>• {cs ? 'Sitovy provoz' : 'Network traffic'}</li>
+                  <li>• {DashboardCopy.cpuUsage[cs ? 'cs' : 'en']}</li>
+                  <li>• {DashboardCopy.memoryUsage[cs ? 'cs' : 'en']}</li>
+                  <li>• {DashboardCopy.diskIO[cs ? 'cs' : 'en']}</li>
+                  <li>• {DashboardCopy.networkTraffic[cs ? 'cs' : 'en']}</li>
                 </ul>
               </div>
             </div>
@@ -504,7 +571,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-card rounded-[28px] p-6">
           <div className="flex items-center gap-3 mb-4">
             <Cpu className="w-6 h-6 text-zion-gold" />
-            <h2 className="text-2xl font-semibold text-white">{cs ? 'Posledni bloky' : 'Recent blocks'}</h2>
+            <h2 className="text-2xl font-semibold text-white">{DashboardCopy.recentBlocks[cs ? 'cs' : 'en']}</h2>
           </div>
           {blocks && blocks.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
@@ -515,17 +582,17 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                       <p className="text-xs uppercase tracking-[0.3em] text-gray-400">#{block.height}</p>
                       <p className="font-mono text-xs text-zion-cyan">{block.hash?.substring(0, 16)}...</p>
                     </div>
-                    <span className="text-xs text-gray-400">{new Date(block.timestamp * 1000).toLocaleTimeString(cs ? 'cs-CZ' : 'en-US')}</span>
+                    <span className="text-xs text-gray-400">{new Date(block.timestamp * 1000).toLocaleTimeString(DashboardCopy.enUs[cs ? 'cs' : 'en'])}</span>
                   </div>
                   <div className="mt-3 flex justify-between text-xs text-gray-400">
-                    <span>{cs ? 'Tx' : 'Txs'} {block.transactions || 0}</span>
+                    <span>{DashboardCopy.txs[cs ? 'cs' : 'en']} {block.transactions || 0}</span>
                     {block.consciousness_level && <span>{block.consciousness_level}</span>}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center text-gray-400 py-12">{cs ? 'Z API nebyl detekovan zadny block feed.' : 'No block feed detected from API.'}</div>
+            <div className="text-center text-gray-400 py-12">{DashboardCopy.noBlockFeedDetectedFromApi[cs ? 'cs' : 'en']}</div>
           )}
         </motion.div>
         )}
@@ -534,12 +601,12 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ '--rc': '99, 102, 241' } as React.CSSProperties} className="zion-rainbow-card rounded-4xl border-zion-gold/30 bg-linear-to-r from-zion-purple/20 via-zion-gold/10 to-zion-cyan/20 p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-gray-200">{cs ? 'Co dal' : 'What\'s next'}</p>
-              <h2 className="text-3xl font-semibold text-white">{cs ? 'Operacni roadmapa' : 'Operational roadmap'}</h2>
-              <p className="text-sm text-gray-100 max-w-xl mt-2">{cs ? 'Prevzato z aktualni verejne launch cesty a rehearsal readiness materialu.' : 'Pulled from the current public launch path and rehearsal-readiness material.'}</p>
+              <p className="text-xs uppercase tracking-[0.4em] text-gray-200">{DashboardCopy.whatSNext[cs ? 'cs' : 'en']}</p>
+              <h2 className="text-3xl font-semibold text-white">{DashboardCopy.operationalRoadmap[cs ? 'cs' : 'en']}</h2>
+              <p className="text-sm text-gray-100 max-w-xl mt-2">{DashboardCopy.pulledFromTheCurrentPublicLaun[cs ? 'cs' : 'en']}</p>
             </div>
             <Link href="/roadmap" className="inline-flex items-center gap-2 rounded-2xl bg-black/60 px-5 py-2 text-sm font-semibold text-white">
-              {cs ? 'Otevrit roadmapu' : 'Open roadmap'}
+              {DashboardCopy.openRoadmap[cs ? 'cs' : 'en']}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

@@ -24,6 +24,78 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const PoolBenchmarksCopy = {
+  cosmicHarmonyPow: { cs: `Cosmic Harmony PoW`, en: `Cosmic Harmony PoW` },
+  hardwareBenchmarks: { cs: `Hardwarové Benchmarky`, en: `Hardware Benchmarks` },
+  cosmicHarmonyPowGpuCpuPerforma: { cs: `Cosmic Harmony PoW — výsledky GPU a CPU výkonu. Hashrate, energetická efektivita a porovnání ziskovosti.`, en: `Cosmic Harmony PoW — GPU & CPU performance results. Hashrate, power efficiency, and profitability comparison.` },
+  backToPool: { cs: `Zpět na Pool`, en: `Back to Pool` },
+  theseBenchmarksAreFromRealMeas: { cs: `Tyto benchmarky jsou z reálných měření našeho těžebního hardwaru. Přispěvky komunity jsou vítány.`, en: `These benchmarks are from real measurements on our mining hardware. Community benchmark submissions are welcome.` },
+  filtersSorting: { cs: `Filtry a řazení`, en: `Filters & Sorting` },
+  algorithm: { cs: `Algoritmus`, en: `Algorithm` },
+  all: { cs: `Všechny`, en: `All` },
+  hardwareType: { cs: `Typ hardwaru`, en: `Hardware Type` },
+  all_2: { cs: `Vše`, en: `All` },
+  sortBy: { cs: `Řadit podle`, en: `Sort By` },
+  hashrate: { cs: `Hashrate`, en: `Hashrate` },
+  efficiencyHW: { cs: `Efektivita (H/W)`, en: `Efficiency (H/W)` },
+  profitabilityDay: { cs: `Ziskovost ($/den)`, en: `Profitability ($/day)` },
+  bestGpuHashrate: { cs: `Nejlepší GPU hashrate`, en: `Best GPU hashrate` },
+  bestCpuHashrate: { cs: `Nejlepší CPU hashrate`, en: `Best CPU hashrate` },
+  noData: { cs: `Žádné měření`, en: `No data` },
+  cpuBenchmarksPending: { cs: `CPU benchmarky očekávány`, en: `CPU benchmarks pending` },
+  mostEfficientHW: { cs: `Nejefektivnější (H/W)`, en: `Most efficient (H/W)` },
+  totalBenchmarks: { cs: `Celkem benchmarků`, en: `Total benchmarks` },
+  verifiedMeasurements: { cs: `ověřených měření`, en: `verified measurements` },
+  mainBenchmarkTable: { cs: `Hlavní tabulka benchmarků`, en: `Main Benchmark Table` },
+  entries: { cs: `záznamů`, en: `entries` },
+  hardware: { cs: `Hardware`, en: `Hardware` },
+  type: { cs: `Typ`, en: `Type` },
+  powerW: { cs: `Příkon (W)`, en: `Power (W)` },
+  memory: { cs: `Paměť`, en: `Memory` },
+  estZionDay: { cs: `Est. ZION/den`, en: `Est. ZION/day` },
+  estDay: { cs: `Est. $/den`, en: `Est. $/day` },
+  measured: { cs: `Měřeno`, en: `Measured` },
+  estimated: { cs: `Odhad`, en: `Estimated` },
+  architecture: { cs: `Architektura`, en: `Architecture` },
+  backend: { cs: `Backend`, en: `Backend` },
+  status: { cs: `Status`, en: `Status` },
+  notes: { cs: `Poznámka`, en: `Notes` },
+  power: { cs: `Příkon`, en: `Power` },
+  efficiency: { cs: `Efektivita`, en: `Efficiency` },
+  energyDay: { cs: `Energie/den`, en: `Energy/day` },
+  noEntriesMatchTheSelectedFilte: { cs: `Žádné záznamy pro vybrané filtry.`, en: `No entries match the selected filters.` },
+  clickARowForDetails: { cs: `Klikněte na řádek pro detail.`, en: `Click a row for details.` },
+  onlyVerifiedMeasurementsAreSho: { cs: `Zobrazena pouze ověřená měření. Odhady/specifikace výrobce nejsou zahrnuty.`, en: `Only verified measurements are shown. Estimated/manufacturer specifications are not included.` },
+  efficiencyChartHW: { cs: `Graf efektivity (H/W)`, en: `Efficiency Chart (H/W)` },
+  best: { cs: `Nejlepší`, en: `Best` },
+  mid: { cs: `Průměrný`, en: `Mid` },
+  worst: { cs: `Nejhorší`, en: `Worst` },
+  hashrateComparison: { cs: `Porovnání hashrate`, en: `Hashrate Comparison` },
+  profitabilityCalculator: { cs: `Kalkulačka ziskovosti`, en: `Profitability Calculator` },
+  electricityCostKwh: { cs: `Cena elektřiny ($/kWh)`, en: `Electricity Cost ($/kWh)` },
+  zionPrice: { cs: `Cena ZION ($)`, en: `ZION Price ($)` },
+  livePoolHashrate: { cs: `Pool hashrate (live):`, en: `Live pool hashrate:` },
+  blocksDay: { cs: `Bloky/den:`, en: `Blocks/day:` },
+  reward: { cs: `Odměna:`, en: `Reward:` },
+  zionDay: { cs: `ZION/den`, en: `ZION/day` },
+  elecDay: { cs: `Elektřina/den`, en: `Elec/day` },
+  grossDay: { cs: `Hrubý $/den`, en: `Gross $/day` },
+  netDay: { cs: `Čistý $/den`, en: `Net $/day` },
+  benchmarkMethodology: { cs: `Metodika benchmarků`, en: `Benchmark Methodology` },
+  benchmarkTool: { cs: `Benchmark nástroj`, en: `Benchmark Tool` },
+  benchmarksRunWithEkamBenchMode: { cs: `Měření probíhá v režimu --ekam-bench (10sekundové měření, bez pool overhead). Miner commit: 9e307c4d. Výsledky představují horní mez — live stratum hashrate je nižší kvůli režii komunikace s pool.`, en: `Benchmarks run with --ekam-bench mode (10-second measurement, no pool overhead). Miner commit: 9e307c4d. Results represent an upper bound — live stratum hashrate is lower due to pool communication overhead.` },
+  stratumVsBenchmarkDifference: { cs: `Stratum vs benchmark rozdíl`, en: `Stratum vs Benchmark Difference` },
+  theEkamBenchBenchmarkUsesWorkS: { cs: `Benchmark --ekam-bench používá work_size přímo, zatímco live stratum mining omezuje nonce batch size (ZION_NONCE_COUNT=4096 pro CPU, ZION_NONCE_COUNT_GPU=262144 pro GPU). To snižuje efektivní hashrate cca o 10–30 %.`, en: `The --ekam-bench benchmark uses work_size directly, while live stratum mining limits nonce batch size (ZION_NONCE_COUNT=4096 for CPU, ZION_NONCE_COUNT_GPU=262144 for GPU). This reduces effective hashrate by roughly 10–30%.` },
+  gpuBackends: { cs: `GPU backendy`, en: `GPU Backends` },
+  amdGpusRdna1Rdna2Gcn: { cs: `AMD GPU (RDNA1/RDNA2, GCN)`, en: `AMD GPUs (RDNA1/RDNA2, GCN)` },
+  nvidiaGpusPascalBlackwell: { cs: `NVIDIA GPU (Pascal → Blackwell)`, en: `NVIDIA GPUs (Pascal → Blackwell)` },
+  appleSiliconM1M2M3: { cs: `Apple Silicon (M1/M2/M3)`, en: `Apple Silicon (M1/M2/M3)` },
+  howToReproduce: { cs: `Jak reprodukovat`, en: `How to Reproduce` },
+  runYourOwnBenchmark: { cs: `Spusťte vlastní benchmark`, en: `Run Your Own Benchmark` },
+  downloadTheZionMinerCompileWit: { cs: `Stáhněte si ZION miner, zkompilujte s GPU podporou a změřte svůj hardware v režimu --ekam-bench.`, en: `Download the ZION miner, compile with GPU support, and measure your hardware in --ekam-bench mode.` },
+  downloadMiner: { cs: `Stáhnout Miner`, en: `Download Miner` },
+};
+
 /* ═══════════════════════════════════════════════════════════
    ZION POOL · HARDWARE BENCHMARKS
    GPU & CPU performance results for Cosmic Harmony PoW
@@ -287,15 +359,13 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
               <div className="flex-1">
                 <div className="zion-kicker mb-3" style={{ borderColor: 'rgba(147,51,234,0.3)' }}>
                   <Cpu className="w-3.5 h-3.5 text-purple-400" />
-                  {cs ? 'Cosmic Harmony PoW' : 'Cosmic Harmony PoW'}
+                  {PoolBenchmarksCopy.cosmicHarmonyPow[cs ? 'cs' : 'en']}
                 </div>
                 <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">
-                  {cs ? 'Hardwarové Benchmarky' : 'Hardware Benchmarks'}
+                  {PoolBenchmarksCopy.hardwareBenchmarks[cs ? 'cs' : 'en']}
                 </h1>
                 <p className="text-gray-400 text-base md:text-lg max-w-2xl">
-                  {cs
-                    ? 'Cosmic Harmony PoW — výsledky GPU a CPU výkonu. Hashrate, energetická efektivita a porovnání ziskovosti.'
-                    : 'Cosmic Harmony PoW — GPU & CPU performance results. Hashrate, power efficiency, and profitability comparison.'}
+                  {PoolBenchmarksCopy.cosmicHarmonyPowGpuCpuPerforma[cs ? 'cs' : 'en']}
                 </p>
               </div>
               <Link
@@ -303,7 +373,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-purple-400/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 transition-colors text-sm font-medium shrink-0"
               >
                 <ArrowLeft className="w-4 h-4" />
-                {cs ? 'Zpět na Pool' : 'Back to Pool'}
+                {PoolBenchmarksCopy.backToPool[cs ? 'cs' : 'en']}
               </Link>
             </div>
           </motion.section>
@@ -319,9 +389,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
         >
           <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
           <p className="text-sm text-gray-300 leading-relaxed">
-            {cs
-              ? 'Tyto benchmarky jsou z reálných měření našeho těžebního hardwaru. Přispěvky komunity jsou vítány.'
-              : 'These benchmarks are from real measurements on our mining hardware. Community benchmark submissions are welcome.'}
+            {PoolBenchmarksCopy.theseBenchmarksAreFromRealMeas[cs ? 'cs' : 'en']}
           </p>
         </motion.section>
 
@@ -336,21 +404,21 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           <div className="flex items-center gap-2 mb-4 text-purple-300">
             <Filter className="w-4 h-4" />
             <span className="text-sm font-semibold uppercase tracking-wider">
-              {cs ? 'Filtry a řazení' : 'Filters & Sorting'}
+              {PoolBenchmarksCopy.filtersSorting[cs ? 'cs' : 'en']}
             </span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Algorithm filter */}
             <div>
               <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wider">
-                {cs ? 'Algoritmus' : 'Algorithm'}
+                {PoolBenchmarksCopy.algorithm[cs ? 'cs' : 'en']}
               </label>
               <select
                 value={algoFilter}
                 onChange={(e) => setAlgoFilter(e.target.value as AlgoFilter)}
                 className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:border-purple-400/50 focus:outline-none transition-colors"
               >
-                <option value="all">{cs ? 'Všechny' : 'All'}</option>
+                <option value="all">{PoolBenchmarksCopy.all[cs ? 'cs' : 'en']}</option>
                 <option value="deeksha_lite_v1">Deeksha Lite v1</option>
                 <option value="deeksha_lite_fire">Deeksha Lite Fire</option>
                 <option value="ekam_deeksha_v2">Ekam Deeksha v2</option>
@@ -359,14 +427,14 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
             {/* Hardware type filter */}
             <div>
               <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wider">
-                {cs ? 'Typ hardwaru' : 'Hardware Type'}
+                {PoolBenchmarksCopy.hardwareType[cs ? 'cs' : 'en']}
               </label>
               <select
                 value={hwFilter}
                 onChange={(e) => setHwFilter(e.target.value as HwFilter)}
                 className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:border-purple-400/50 focus:outline-none transition-colors"
               >
-                <option value="all">{cs ? 'Vše' : 'All'}</option>
+                <option value="all">{PoolBenchmarksCopy.all_2[cs ? 'cs' : 'en']}</option>
                 <option value="GPU">GPU</option>
                 <option value="CPU">CPU</option>
               </select>
@@ -374,16 +442,16 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
             {/* Sort by */}
             <div>
               <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wider">
-                {cs ? 'Řadit podle' : 'Sort By'}
+                {PoolBenchmarksCopy.sortBy[cs ? 'cs' : 'en']}
               </label>
               <select
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value as SortKey)}
                 className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:border-purple-400/50 focus:outline-none transition-colors"
               >
-                <option value="hashrate">{cs ? 'Hashrate' : 'Hashrate'}</option>
-                <option value="efficiency">{cs ? 'Efektivita (H/W)' : 'Efficiency (H/W)'}</option>
-                <option value="profitability">{cs ? 'Ziskovost ($/den)' : 'Profitability ($/day)'}</option>
+                <option value="hashrate">{PoolBenchmarksCopy.hashrate[cs ? 'cs' : 'en']}</option>
+                <option value="efficiency">{PoolBenchmarksCopy.efficiencyHW[cs ? 'cs' : 'en']}</option>
+                <option value="profitability">{PoolBenchmarksCopy.profitabilityDay[cs ? 'cs' : 'en']}</option>
               </select>
             </div>
           </div>
@@ -398,30 +466,30 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
         >
           <SummaryCard
             icon={<TrendingUp className="w-5 h-5 text-emerald-400" />}
-            label={cs ? 'Nejlepší GPU hashrate' : 'Best GPU hashrate'}
+            label={PoolBenchmarksCopy.bestGpuHashrate[cs ? 'cs' : 'en']}
             value={summary.bestGpu ? `${summary.bestGpu.hashrate} KH/s` : '—'}
             sub={summary.bestGpu?.hardware}
             rc={rcStyle}
           />
           <SummaryCard
             icon={<Cpu className="w-5 h-5 text-cyan-400" />}
-            label={cs ? 'Nejlepší CPU hashrate' : 'Best CPU hashrate'}
-            value={summary.bestCpu ? `${summary.bestCpu.hashrate} KH/s` : (cs ? 'Žádné měření' : 'No data')}
-            sub={summary.bestCpu?.hardware ?? (cs ? 'CPU benchmarky očekávány' : 'CPU benchmarks pending')}
+            label={PoolBenchmarksCopy.bestCpuHashrate[cs ? 'cs' : 'en']}
+            value={summary.bestCpu ? `${summary.bestCpu.hashrate} KH/s` : (PoolBenchmarksCopy.noData[cs ? 'cs' : 'en'])}
+            sub={summary.bestCpu?.hardware ?? (PoolBenchmarksCopy.cpuBenchmarksPending[cs ? 'cs' : 'en'])}
             rc={rcStyle}
           />
           <SummaryCard
             icon={<Zap className="w-5 h-5 text-amber-400" />}
-            label={cs ? 'Nejefektivnější (H/W)' : 'Most efficient (H/W)'}
+            label={PoolBenchmarksCopy.mostEfficientHW[cs ? 'cs' : 'en']}
             value={summary.mostEff ? `${efficiency(summary.mostEff).toFixed(2)} KH/W` : '—'}
             sub={summary.mostEff?.hardware}
             rc={rcStyle}
           />
           <SummaryCard
             icon={<Server className="w-5 h-5 text-purple-400" />}
-            label={cs ? 'Celkem benchmarků' : 'Total benchmarks'}
+            label={PoolBenchmarksCopy.totalBenchmarks[cs ? 'cs' : 'en']}
             value={`${summary.total}`}
-            sub={cs ? 'ověřených měření' : 'verified measurements'}
+            sub={PoolBenchmarksCopy.verifiedMeasurements[cs ? 'cs' : 'en']}
             rc={rcStyle}
           />
         </motion.section>
@@ -437,25 +505,25 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           <div className="p-5 border-b border-white/10 flex items-center gap-2">
             <Activity className="w-5 h-5 text-purple-400" />
             <h2 className="text-lg font-semibold text-white">
-              {cs ? 'Hlavní tabulka benchmarků' : 'Main Benchmark Table'}
+              {PoolBenchmarksCopy.mainBenchmarkTable[cs ? 'cs' : 'en']}
             </h2>
             <span className="ml-auto text-xs text-gray-500">
-              {filteredRows.length} {cs ? 'záznamů' : 'entries'}
+              {filteredRows.length} {PoolBenchmarksCopy.entries[cs ? 'cs' : 'en']}
             </span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-white/50 text-xs uppercase tracking-wider">
-                  <th className="px-4 py-3">{cs ? 'Hardware' : 'Hardware'}</th>
-                  <th className="px-4 py-3">{cs ? 'Typ' : 'Type'}</th>
-                  <th className="px-4 py-3">{cs ? 'Algoritmus' : 'Algorithm'}</th>
-                  <SortHeader label={cs ? 'Hashrate' : 'Hashrate'} active={sortKey === 'hashrate'} dir={sortDir} onClick={() => handleSort('hashrate')} align="right" />
-                  <th className="px-4 py-3 text-right">{cs ? 'Příkon (W)' : 'Power (W)'}</th>
-                  <SortHeader label={cs ? 'Efektivita (H/W)' : 'Efficiency (H/W)'} active={sortKey === 'efficiency'} dir={sortDir} onClick={() => handleSort('efficiency')} align="right" />
-                  <th className="px-4 py-3">{cs ? 'Paměť' : 'Memory'}</th>
-                  <th className="px-4 py-3 text-right">{cs ? 'Est. ZION/den' : 'Est. ZION/day'}</th>
-                  <SortHeader label={cs ? 'Est. $/den' : 'Est. $/day'} active={sortKey === 'profitability'} dir={sortDir} onClick={() => handleSort('profitability')} align="right" />
+                  <th className="px-4 py-3">{PoolBenchmarksCopy.hardware[cs ? 'cs' : 'en']}</th>
+                  <th className="px-4 py-3">{PoolBenchmarksCopy.type[cs ? 'cs' : 'en']}</th>
+                  <th className="px-4 py-3">{PoolBenchmarksCopy.algorithm[cs ? 'cs' : 'en']}</th>
+                  <SortHeader label={PoolBenchmarksCopy.hashrate[cs ? 'cs' : 'en']} active={sortKey === 'hashrate'} dir={sortDir} onClick={() => handleSort('hashrate')} align="right" />
+                  <th className="px-4 py-3 text-right">{PoolBenchmarksCopy.powerW[cs ? 'cs' : 'en']}</th>
+                  <SortHeader label={PoolBenchmarksCopy.efficiencyHW[cs ? 'cs' : 'en']} active={sortKey === 'efficiency'} dir={sortDir} onClick={() => handleSort('efficiency')} align="right" />
+                  <th className="px-4 py-3">{PoolBenchmarksCopy.memory[cs ? 'cs' : 'en']}</th>
+                  <th className="px-4 py-3 text-right">{PoolBenchmarksCopy.estZionDay[cs ? 'cs' : 'en']}</th>
+                  <SortHeader label={PoolBenchmarksCopy.estDay[cs ? 'cs' : 'en']} active={sortKey === 'profitability'} dir={sortDir} onClick={() => handleSort('profitability')} align="right" />
                 </tr>
               </thead>
               <tbody>
@@ -474,9 +542,9 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
                         <td className="px-4 py-3 font-medium text-white whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             {row.measured ? (
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title={cs ? 'Měřeno' : 'Measured'} />
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title={PoolBenchmarksCopy.measured[cs ? 'cs' : 'en']} />
                             ) : (
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60 shrink-0" title={cs ? 'Odhad' : 'Estimated'} />
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60 shrink-0" title={PoolBenchmarksCopy.estimated[cs ? 'cs' : 'en']} />
                             )}
                             {row.hardware}
                           </div>
@@ -511,28 +579,28 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
                           <td colSpan={9} className="px-4 py-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                               <div>
-                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{cs ? 'Architektura' : 'Architecture'}</div>
+                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{PoolBenchmarksCopy.architecture[cs ? 'cs' : 'en']}</div>
                                 <div className="text-white/80">{row.arch}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{cs ? 'Backend' : 'Backend'}</div>
+                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{PoolBenchmarksCopy.backend[cs ? 'cs' : 'en']}</div>
                                 <div className="text-white/80">{row.backend}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{cs ? 'Status' : 'Status'}</div>
+                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{PoolBenchmarksCopy.status[cs ? 'cs' : 'en']}</div>
                                 <div className={row.measured ? 'text-emerald-400' : 'text-amber-400'}>
-                                  {row.measured ? (cs ? 'Měřeno' : 'Measured') : (cs ? 'Odhad' : 'Estimated')}
+                                  {row.measured ? (PoolBenchmarksCopy.measured[cs ? 'cs' : 'en']) : (PoolBenchmarksCopy.estimated[cs ? 'cs' : 'en'])}
                                 </div>
                               </div>
                               <div className="md:col-span-3">
-                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{cs ? 'Poznámka' : 'Notes'}</div>
+                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{PoolBenchmarksCopy.notes[cs ? 'cs' : 'en']}</div>
                                 <div className="text-white/60 leading-relaxed">{row.notes[cs ? 'cs' : 'en']}</div>
                               </div>
                               <div className="md:col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-white/5">
-                                <MiniStat label={cs ? 'Hashrate' : 'Hashrate'} value={`${row.hashrate} KH/s`} />
-                                <MiniStat label={cs ? 'Příkon' : 'Power'} value={`${row.power} W`} />
-                                <MiniStat label={cs ? 'Efektivita' : 'Efficiency'} value={`${efficiency(row).toFixed(2)} KH/W`} />
-                                <MiniStat label={cs ? 'Energie/den' : 'Energy/day'} value={`${((row.power / 1000) * 24).toFixed(2)} kWh`} />
+                                <MiniStat label={PoolBenchmarksCopy.hashrate[cs ? 'cs' : 'en']} value={`${row.hashrate} KH/s`} />
+                                <MiniStat label={PoolBenchmarksCopy.power[cs ? 'cs' : 'en']} value={`${row.power} W`} />
+                                <MiniStat label={PoolBenchmarksCopy.efficiency[cs ? 'cs' : 'en']} value={`${efficiency(row).toFixed(2)} KH/W`} />
+                                <MiniStat label={PoolBenchmarksCopy.energyDay[cs ? 'cs' : 'en']} value={`${((row.power / 1000) * 24).toFixed(2)} kWh`} />
                               </div>
                             </div>
                           </td>
@@ -544,7 +612,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
                 {filteredRows.length === 0 && (
                   <tr>
                     <td colSpan={9} className="px-4 py-12 text-center text-gray-500">
-                      {cs ? 'Žádné záznamy pro vybrané filtry.' : 'No entries match the selected filters.'}
+                      {PoolBenchmarksCopy.noEntriesMatchTheSelectedFilte[cs ? 'cs' : 'en']}
                     </td>
                   </tr>
                 )}
@@ -553,18 +621,16 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           </div>
           <div className="px-4 py-3 border-t border-white/5 text-xs text-gray-500 flex items-center gap-4 flex-wrap">
             <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> {cs ? 'Měřeno' : 'Measured'}
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> {PoolBenchmarksCopy.measured[cs ? 'cs' : 'en']}
             </span>
             <span className="ml-auto">
-              {cs ? 'Klikněte na řádek pro detail.' : 'Click a row for details.'}
+              {PoolBenchmarksCopy.clickARowForDetails[cs ? 'cs' : 'en']}
             </span>
           </div>
           <div className="px-4 py-3 border-t border-white/5 flex items-center gap-2 text-xs text-gray-500">
             <AlertCircle className="w-3.5 h-3.5 text-amber-400/70 shrink-0" />
             <span>
-              {cs
-                ? 'Zobrazena pouze ověřená měření. Odhady/specifikace výrobce nejsou zahrnuty.'
-                : 'Only verified measurements are shown. Estimated/manufacturer specifications are not included.'}
+              {PoolBenchmarksCopy.onlyVerifiedMeasurementsAreSho[cs ? 'cs' : 'en']}
             </span>
           </div>
         </motion.section>
@@ -580,7 +646,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           <div className="flex items-center gap-2 mb-6">
             <Zap className="w-5 h-5 text-amber-400" />
             <h2 className="text-lg font-semibold text-white">
-              {cs ? 'Graf efektivity (H/W)' : 'Efficiency Chart (H/W)'}
+              {PoolBenchmarksCopy.efficiencyChartHW[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="space-y-2.5">
@@ -608,9 +674,9 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
             })}
           </div>
           <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-500" /> {cs ? 'Nejlepší' : 'Best'}</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-500" /> {cs ? 'Průměrný' : 'Mid'}</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-500" /> {cs ? 'Nejhorší' : 'Worst'}</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-500" /> {PoolBenchmarksCopy.best[cs ? 'cs' : 'en']}</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-500" /> {PoolBenchmarksCopy.mid[cs ? 'cs' : 'en']}</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-500" /> {PoolBenchmarksCopy.worst[cs ? 'cs' : 'en']}</span>
           </div>
         </motion.section>
 
@@ -625,7 +691,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="w-5 h-5 text-purple-400" />
             <h2 className="text-lg font-semibold text-white">
-              {cs ? 'Porovnání hashrate' : 'Hashrate Comparison'}
+              {PoolBenchmarksCopy.hashrateComparison[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="space-y-2.5">
@@ -666,13 +732,13 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           <div className="flex items-center gap-2 mb-5">
             <Calculator className="w-5 h-5 text-purple-400" />
             <h2 className="text-lg font-semibold text-white">
-              {cs ? 'Kalkulačka ziskovosti' : 'Profitability Calculator'}
+              {PoolBenchmarksCopy.profitabilityCalculator[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div>
               <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wider">
-                {cs ? 'Cena elektřiny ($/kWh)' : 'Electricity Cost ($/kWh)'}
+                {PoolBenchmarksCopy.electricityCostKwh[cs ? 'cs' : 'en']}
               </label>
               <input
                 type="number"
@@ -685,7 +751,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wider">
-                {cs ? 'Cena ZION ($)' : 'ZION Price ($)'}
+                {PoolBenchmarksCopy.zionPrice[cs ? 'cs' : 'en']}
               </label>
               <input
                 type="number"
@@ -699,26 +765,26 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           </div>
           <div className="text-xs text-gray-500 mb-4 flex items-center gap-2">
             <Activity className="w-3.5 h-3.5 text-purple-400" />
-            {cs ? 'Pool hashrate (live):' : 'Live pool hashrate:'}{' '}
+            {PoolBenchmarksCopy.livePoolHashrate[cs ? 'cs' : 'en']}{' '}
             <span className="font-mono text-purple-300">
               {(poolStats.poolHashrate / 1000).toFixed(2)} KH/s
             </span>
             {' · '}
-            {cs ? 'Bloky/den:' : 'Blocks/day:'}{' '}
+            {PoolBenchmarksCopy.blocksDay[cs ? 'cs' : 'en']}{' '}
             <span className="font-mono text-purple-300">{poolStats.blocksPerDay.toFixed(0)}</span>
             {' · '}
-            {cs ? 'Odměna:' : 'Reward:'}{' '}
+            {PoolBenchmarksCopy.reward[cs ? 'cs' : 'en']}{' '}
             <span className="font-mono text-purple-300">{poolStats.rewardPerBlock} ZION</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-white/50 text-xs uppercase tracking-wider">
-                  <th className="px-3 py-2">{cs ? 'Hardware' : 'Hardware'}</th>
-                  <th className="px-3 py-2 text-right">{cs ? 'ZION/den' : 'ZION/day'}</th>
-                  <th className="px-3 py-2 text-right">{cs ? 'Elektřina/den' : 'Elec/day'}</th>
-                  <th className="px-3 py-2 text-right">{cs ? 'Hrubý $/den' : 'Gross $/day'}</th>
-                  <th className="px-3 py-2 text-right">{cs ? 'Čistý $/den' : 'Net $/day'}</th>
+                  <th className="px-3 py-2">{PoolBenchmarksCopy.hardware[cs ? 'cs' : 'en']}</th>
+                  <th className="px-3 py-2 text-right">{PoolBenchmarksCopy.zionDay[cs ? 'cs' : 'en']}</th>
+                  <th className="px-3 py-2 text-right">{PoolBenchmarksCopy.elecDay[cs ? 'cs' : 'en']}</th>
+                  <th className="px-3 py-2 text-right">{PoolBenchmarksCopy.grossDay[cs ? 'cs' : 'en']}</th>
+                  <th className="px-3 py-2 text-right">{PoolBenchmarksCopy.netDay[cs ? 'cs' : 'en']}</th>
                 </tr>
               </thead>
               <tbody>
@@ -756,44 +822,40 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           <div className="flex items-center gap-2 mb-5">
             <Info className="w-5 h-5 text-purple-400" />
             <h2 className="text-lg font-semibold text-white">
-              {cs ? 'Metodika benchmarků' : 'Benchmark Methodology'}
+              {PoolBenchmarksCopy.benchmarkMethodology[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="zion-tile">
               <h3 className="text-sm font-semibold text-purple-300 mb-2 flex items-center gap-2">
                 <span className="font-mono text-xs bg-purple-500/15 px-2 py-0.5 rounded">--ekam-bench</span>
-                {cs ? 'Benchmark nástroj' : 'Benchmark Tool'}
+                {PoolBenchmarksCopy.benchmarkTool[cs ? 'cs' : 'en']}
               </h3>
               <p className="text-sm text-white/60 leading-relaxed">
-                {cs
-                  ? 'Měření probíhá v režimu --ekam-bench (10sekundové měření, bez pool overhead). Miner commit: 9e307c4d. Výsledky představují horní mez — live stratum hashrate je nižší kvůli režii komunikace s pool.'
-                  : 'Benchmarks run with --ekam-bench mode (10-second measurement, no pool overhead). Miner commit: 9e307c4d. Results represent an upper bound — live stratum hashrate is lower due to pool communication overhead.'}
+                {PoolBenchmarksCopy.benchmarksRunWithEkamBenchMode[cs ? 'cs' : 'en']}
               </p>
             </div>
             <div className="zion-tile">
               <h3 className="text-sm font-semibold text-purple-300 mb-2">
-                {cs ? 'Stratum vs benchmark rozdíl' : 'Stratum vs Benchmark Difference'}
+                {PoolBenchmarksCopy.stratumVsBenchmarkDifference[cs ? 'cs' : 'en']}
               </h3>
               <p className="text-sm text-white/60 leading-relaxed">
-                {cs
-                  ? 'Benchmark --ekam-bench používá work_size přímo, zatímco live stratum mining omezuje nonce batch size (ZION_NONCE_COUNT=4096 pro CPU, ZION_NONCE_COUNT_GPU=262144 pro GPU). To snižuje efektivní hashrate cca o 10–30 %.'
-                  : 'The --ekam-bench benchmark uses work_size directly, while live stratum mining limits nonce batch size (ZION_NONCE_COUNT=4096 for CPU, ZION_NONCE_COUNT_GPU=262144 for GPU). This reduces effective hashrate by roughly 10–30%.'}
+                {PoolBenchmarksCopy.theEkamBenchBenchmarkUsesWorkS[cs ? 'cs' : 'en']}
               </p>
             </div>
             <div className="zion-tile">
               <h3 className="text-sm font-semibold text-purple-300 mb-2">
-                {cs ? 'GPU backendy' : 'GPU Backends'}
+                {PoolBenchmarksCopy.gpuBackends[cs ? 'cs' : 'en']}
               </h3>
               <ul className="text-sm text-white/60 leading-relaxed space-y-1">
-                <li>• <span className="font-mono text-purple-300/80">OpenCL</span> — {cs ? 'AMD GPU (RDNA1/RDNA2, GCN)' : 'AMD GPUs (RDNA1/RDNA2, GCN)'}</li>
-                <li>• <span className="font-mono text-purple-300/80">CUDA</span> — {cs ? 'NVIDIA GPU (Pascal → Blackwell)' : 'NVIDIA GPUs (Pascal → Blackwell)'}</li>
-                <li>• <span className="font-mono text-purple-300/80">Metal</span> — {cs ? 'Apple Silicon (M1/M2/M3)' : 'Apple Silicon (M1/M2/M3)'}</li>
+                <li>• <span className="font-mono text-purple-300/80">OpenCL</span> — {PoolBenchmarksCopy.amdGpusRdna1Rdna2Gcn[cs ? 'cs' : 'en']}</li>
+                <li>• <span className="font-mono text-purple-300/80">CUDA</span> — {PoolBenchmarksCopy.nvidiaGpusPascalBlackwell[cs ? 'cs' : 'en']}</li>
+                <li>• <span className="font-mono text-purple-300/80">Metal</span> — {PoolBenchmarksCopy.appleSiliconM1M2M3[cs ? 'cs' : 'en']}</li>
               </ul>
             </div>
             <div className="zion-tile">
               <h3 className="text-sm font-semibold text-purple-300 mb-2">
-                {cs ? 'Jak reprodukovat' : 'How to Reproduce'}
+                {PoolBenchmarksCopy.howToReproduce[cs ? 'cs' : 'en']}
               </h3>
               <pre className="text-xs font-mono text-white/70 bg-black/40 rounded-lg p-3 overflow-x-auto leading-relaxed">
 {`# Build with GPU support
@@ -818,12 +880,10 @@ ZION_GPU_BACKEND=opencl \\
               className="zion-cta-banner"
             >
               <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-                {cs ? 'Spusťte vlastní benchmark' : 'Run Your Own Benchmark'}
+                {PoolBenchmarksCopy.runYourOwnBenchmark[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-white/70 mb-6 max-w-xl mx-auto">
-                {cs
-                  ? 'Stáhněte si ZION miner, zkompilujte s GPU podporou a změřte svůj hardware v režimu --ekam-bench.'
-                  : 'Download the ZION miner, compile with GPU support, and measure your hardware in --ekam-bench mode.'}
+                {PoolBenchmarksCopy.downloadTheZionMinerCompileWit[cs ? 'cs' : 'en']}
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
@@ -831,7 +891,7 @@ ZION_GPU_BACKEND=opencl \\
                   className="zion-button-primary"
                 >
                   <Download className="w-4 h-4" />
-                  {cs ? 'Stáhnout Miner' : 'Download Miner'}
+                  {PoolBenchmarksCopy.downloadMiner[cs ? 'cs' : 'en']}
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
@@ -839,7 +899,7 @@ ZION_GPU_BACKEND=opencl \\
                   className="zion-button-secondary"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  {cs ? 'Zpět na Pool' : 'Back to Pool'}
+                  {PoolBenchmarksCopy.backToPool[cs ? 'cs' : 'en']}
                 </Link>
               </div>
             </motion.section>

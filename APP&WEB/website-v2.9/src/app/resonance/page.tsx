@@ -21,6 +21,21 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
+const ResonanceCopy = {
+  resonanceProtocol: { cs: `Protokol Rezonance`, en: `Resonance Protocol` },
+  soundTimeAndTheIntergeneration: { cs: `Zvuk, čas a mezigenerační most. Před hlasováním — přízvuk. Před slovem — tón. Před smlouvou — smlouva frekvencí.`, en: `Sound, time and the intergenerational bridge. Before the vote — attunement. Before the word — tone. Before the contract — the covenant of frequency.` },
+  documentation: { cs: `Dokumentace`, en: `Documentation` },
+  sevenFrequencies: { cs: `Sedm frekvencí`, en: `Seven Frequencies` },
+  eachLayerOfTheZionStackResonat: { cs: `Každá vrstva ZION zásobníku rezonuje na své frekvenci. 108 Hz je univerzální nosná vlna všech vrstev.`, en: `Each layer of the ZION stack resonates at its own frequency. 108 Hz is the universal carrier wave across all layers.` },
+  universalCarrier: { cs: `Univerzální nosná vlna`, en: `Universal carrier` },
+  temporalAnchorMantraMultiplier: { cs: `Časový kotvící bod, mantra multiplikátor, podpis block headeru`, en: `Temporal anchor, mantra multiplier, block header signature` },
+  threeGatesOfAttunement: { cs: `Tři brány naladění`, en: `Three Gates of Attunement` },
+  beforeAProposalReachesDaoVotin: { cs: `Než návrh dosáhne DAO hlasování, musí projít třemi bránami Rady Rezonance.`, en: `Before a proposal reaches DAO voting, it must pass through three gates of the Resonance Council.` },
+  everyContractIsAPrayer: { cs: `Každý kontrakt je modlitba`, en: `Every contract is a prayer` },
+  theResonanceProtocolDoesNotVot: { cs: `Protokol Rezonance nehlasuje — připravuje pole, ve kterém DAO jedná. Jako Oneness Hall v EKAM před osmi komorami, Rezonance je centrální kupole, kterou protéká veškerá governance.`, en: `The Resonance Protocol does not vote — it prepares the field in which the DAO acts. Like EKAM\'s Oneness Hall before the eight chambers, Resonance is the central dome through which all governance flows.` },
+  openDocumentation: { cs: `Otevřít dokumentaci`, en: `Open documentation` },
+};
+
 type SectionData = {
   icon: LucideIcon;
   titleCs: string;
@@ -199,15 +214,13 @@ export default function ResonancePage() {
 
           <FadeIn delay={0.1}>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-gradient-soft">
-              {lang === 'cs' ? 'Protokol Rezonance' : 'Resonance Protocol'}
+              {ResonanceCopy.resonanceProtocol[lang === 'cs' ? 'cs' : 'en']}
             </h1>
           </FadeIn>
 
           <FadeIn delay={0.15}>
             <p className="mt-6 max-w-3xl text-lg md:text-xl text-gray-300 leading-relaxed">
-              {lang === 'cs'
-                ? 'Zvuk, čas a mezigenerační most. Před hlasováním — přízvuk. Před slovem — tón. Před smlouvou — smlouva frekvencí.'
-                : 'Sound, time and the intergenerational bridge. Before the vote — attunement. Before the word — tone. Before the contract — the covenant of frequency.'}
+              {ResonanceCopy.soundTimeAndTheIntergeneration[lang === 'cs' ? 'cs' : 'en']}
             </p>
           </FadeIn>
 
@@ -215,7 +228,7 @@ export default function ResonancePage() {
             <div className="mt-10 flex flex-wrap gap-4">
               <Link href="/docs" className="zion-button-primary group">
                 <BookOpen className="h-4 w-4" />
-                {lang === 'cs' ? 'Dokumentace' : 'Documentation'}
+                {ResonanceCopy.documentation[lang === 'cs' ? 'cs' : 'en']}
                 <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
               </Link>
               <Link href="/terranova" className="zion-button-secondary group">
@@ -235,12 +248,10 @@ export default function ResonancePage() {
           <FadeIn>
             <div className="mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gradient-soft">
-                {lang === 'cs' ? 'Sedm frekvencí' : 'Seven Frequencies'}
+                {ResonanceCopy.sevenFrequencies[lang === 'cs' ? 'cs' : 'en']}
               </h2>
               <p className="mt-3 text-gray-400 max-w-2xl">
-                {lang === 'cs'
-                  ? 'Každá vrstva ZION zásobníku rezonuje na své frekvenci. 108 Hz je univerzální nosná vlna všech vrstev.'
-                  : 'Each layer of the ZION stack resonates at its own frequency. 108 Hz is the universal carrier wave across all layers.'}
+                {ResonanceCopy.eachLayerOfTheZionStackResonat[lang === 'cs' ? 'cs' : 'en']}
               </p>
             </div>
           </FadeIn>
@@ -275,12 +286,10 @@ export default function ResonancePage() {
                 </span>
                 <h3 className="text-lg font-bold text-white mb-1">108 Hz</h3>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-                  {lang === 'cs' ? 'Univerzální nosná vlna' : 'Universal carrier'}
+                  {ResonanceCopy.universalCarrier[lang === 'cs' ? 'cs' : 'en']}
                 </p>
                 <p className="text-sm text-gray-300">
-                  {lang === 'cs'
-                    ? 'Časový kotvící bod, mantra multiplikátor, podpis block headeru'
-                    : 'Temporal anchor, mantra multiplier, block header signature'}
+                  {ResonanceCopy.temporalAnchorMantraMultiplier[lang === 'cs' ? 'cs' : 'en']}
                 </p>
               </div>
             </FadeIn>
@@ -318,12 +327,10 @@ export default function ResonancePage() {
         <div className="zion-container relative">
           <FadeIn>
             <h2 className="text-3xl md:text-4xl font-bold text-gradient-soft mb-3">
-              {lang === 'cs' ? 'Tři brány naladění' : 'Three Gates of Attunement'}
+              {ResonanceCopy.threeGatesOfAttunement[lang === 'cs' ? 'cs' : 'en']}
             </h2>
             <p className="text-gray-400 max-w-2xl mb-12">
-              {lang === 'cs'
-                ? 'Než návrh dosáhne DAO hlasování, musí projít třemi bránami Rady Rezonance.'
-                : 'Before a proposal reaches DAO voting, it must pass through three gates of the Resonance Council.'}
+              {ResonanceCopy.beforeAProposalReachesDaoVotin[lang === 'cs' ? 'cs' : 'en']}
             </p>
           </FadeIn>
 
@@ -393,17 +400,15 @@ export default function ResonancePage() {
             <div className="zion-cta-banner">
               <Flower2 className="h-10 w-10 text-zion-gold mx-auto mb-6" />
               <h2 className="text-3xl md:text-4xl font-bold text-gradient-soft mb-4">
-                {lang === 'cs' ? 'Každý kontrakt je modlitba' : 'Every contract is a prayer'}
+                {ResonanceCopy.everyContractIsAPrayer[lang === 'cs' ? 'cs' : 'en']}
               </h2>
               <p className="text-gray-400 max-w-2xl mx-auto mb-8">
-                {lang === 'cs'
-                  ? 'Protokol Rezonance nehlasuje — připravuje pole, ve kterém DAO jedná. Jako Oneness Hall v EKAM před osmi komorami, Rezonance je centrální kupole, kterou protéká veškerá governance.'
-                  : 'The Resonance Protocol does not vote — it prepares the field in which the DAO acts. Like EKAM\'s Oneness Hall before the eight chambers, Resonance is the central dome through which all governance flows.'}
+                {ResonanceCopy.theResonanceProtocolDoesNotVot[lang === 'cs' ? 'cs' : 'en']}
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link href="/docs" className="zion-button-primary group">
                   <BookOpen className="h-4 w-4" />
-                  {lang === 'cs' ? 'Otevřít dokumentaci' : 'Open documentation'}
+                  {ResonanceCopy.openDocumentation[lang === 'cs' ? 'cs' : 'en']}
                   <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
                 </Link>
               </div>
