@@ -34,7 +34,7 @@ rsync -avz --exclude='.git' --exclude='target' --exclude='node_modules' \
 
 # Edge: Docker build (Linux x86_64, GLIBC 2.31)
 ssh -i ~/.ssh/zion-new-server -p 2222 root@62.171.141.136 \
-  'sed -i "s/VERSION=\"v3.1.9-vega-complete-[0-9]*\"/VERSION=\"v3.1.9-vega-complete-62\"/" /tmp/build_complete.sh && /tmp/build_complete.sh'
+  'sed -i "s/VERSION=\"v3.1.9-vega-complete-[0-9]*\"/VERSION=\"v3.1.9-vega-complete-70\"/" /tmp/build_complete.sh && /tmp/build_complete.sh'
 ```
 
 Build trvá ~8 min. Binárka se instaluje do `/var/www/zion-miner/zion-miner`.
@@ -43,10 +43,14 @@ Build trvá ~8 min. Binárka se instaluje do `/var/www/zion-miner/zion-miner`.
 
 ```bash
 ssh -i ~/.ssh/zion-new-server -p 2222 root@62.171.141.136 << 'EOF'
-V="v3.1.9-vega-complete-62"
+V="v3.1.9-vega-complete-70"
 Z="zion-miner-${V}.zip"
 F="zion-miner-${V}"
 rm -rf /tmp/$F && mkdir -p /tmp/$F
+# Reuse the v70 binary; v71 crashed, v72/v73 4M/2M gave lower hashrate
+cp /var/www/zion-miner/zion-miner-v3.1.9-vega-complete-70.zip /tmp/v70.zip
+unzip -o /tmp/v70.zip -d /tmp/v70x >/dev/null
+cp /tmp/v70x/zion-miner-v3.1.9-vega-complete-70/miner /tmp/$F/miner
 cp /tmp/wrapper_complete.sh /tmp/$F/miner
 chmod +x /tmp/$F/miner
 cd /tmp && rm -f /var/www/zion-miner/$Z
@@ -63,7 +67,7 @@ curl -s -X PUT \
   -H "X-AUTH-TOKEN: <SMOS_API_TOKEN>" \
   -H "Content-Type: application/json" \
   https://api.simplemining.net/rig-groups/1773590 \
-  -d '{"minerOptions":"http://62.171.141.136/zion-miner/zion-miner-v3.1.9-vega-complete-62.zip"}'
+  -d '{"minerOptions":"http://62.171.141.136/zion-miner/zion-miner-v3.1.9-vega-complete-70.zip"}'
 
 # Smazat staré cache na rigu
 curl -s -X PATCH \

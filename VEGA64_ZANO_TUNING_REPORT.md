@@ -93,4 +93,8 @@ Typical SMOS console read-out:
 - `V3/L1/native-ffi/build.rs`
 - `V3/L1/miner/src/main.rs` (attempted QUIET log gating, reverted in deployment)
 - `MinerP3.0.6/Smos/wrapper_complete.sh`
+- `MinerP3.0.6/Smos/README.md` and `DEPLOY.md` updated to v70
+- `MinerP3.0.6/Smos/vega-smos.env` — saved rig env vars
+- `MinerP3.0.6/Smos/vega-smos.deploy.sh` — one-click deploy script
+- `MinerP3.0.6/Smos/VEGA_SMAXOS_TUNING_REPORT.md` — complete Czech report
 - `VEGA64_ZANO_TUNING_REPORT.md` (this file)
