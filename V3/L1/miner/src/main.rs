@@ -4328,14 +4328,15 @@ fn external_gpu_thread(
         // header from the pool. The 80-byte MiningHeader wrapper is for ZION
         // native headers; padding the 32-byte header hash into it causes
         // GpuMiner to re-hash it, producing a wrong header and rejected shares.
-        let is_dag_algo = matches!(
+        let use_raw_header = matches!(
             algo,
             "ethash" | "etchash" | "ethash_etc"
                 | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
                 | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
                 | "progpow" | "progpow_epic" | "progpow_zano" | "progpowz"
+                | "beamhash" | "beamhash_beam"
         );
-        let result = if header_bytes.len() > 80 || is_dag_algo {
+        let result = if header_bytes.len() > 80 || use_raw_header {
             gpu_miner.mine_batch_raw(&header_bytes, target, nonce, batch_size)
         } else {
             let mut bytes = [0u8; 80];
@@ -4591,7 +4592,16 @@ fn ext_cpu_thread(
                 job.job_id.hash(&mut h);
                 std::process::id().hash(&mut h);
                 std::thread::current().id().hash(&mut h);
-                nonce_base = (h.finish() as u32) as u64;
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_nanos()
+                    .hash(&mut h);
+                // Use the FULL 64-bit hash as nonce_base.  This prevents
+                // nonce-space wrap-around (which caused "duplicate share"
+                // rejects when the 32-bit space was exhausted and the miner
+                // re-found the same nonce).
+                nonce_base = h.finish();
                 nonce_offset = 0;
                 current_job_id = job.job_id.clone();
                 if !QUIET.load(Ordering::Relaxed) {
@@ -4644,7 +4654,12 @@ fn ext_cpu_thread(
                         newer.job_id.hash(&mut h);
                         std::process::id().hash(&mut h);
                         std::thread::current().id().hash(&mut h);
-                        nonce_base = (h.finish() as u32) as u64;
+                        std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_nanos()
+                            .hash(&mut h);
+                        nonce_base = h.finish();
                         nonce_offset = 0;
                         continue;
                     }

@@ -71,10 +71,11 @@ if [[ "${1:-}" == "--autonomous" || "${ZION_AUTONOMOUS:-0}" == "1" ]]; then
 fi
 # VRSC/VerusHash nonce batch size — now auto-tuned by CPU profile.
 # Override only if you want to experiment. Auto-tune picks 5M for 12-thread Ryzen.
-# Smaller batches (2M) make the ext_cpu_thread check for new VRSC jobs more
+# Smaller batches (1M) make the ext_cpu_thread check for new VRSC jobs more
 # frequently, reducing stale-share rejections from LuckPool ("job not found").
-# With 6 threads at ~5 MH/s, 2M nonces takes ~0.4s per scan vs ~2s for 10M.
-export ZION_EXT_CPU_NONCE_COUNT="${ZION_EXT_CPU_NONCE_COUNT:-2000000}"
+# With 6 threads at ~5 MH/s, 1M nonces takes ~0.2s per scan vs ~0.4s for 2M.
+# This halves the window where the miner can find shares for a stale job.
+export ZION_EXT_CPU_NONCE_COUNT="${ZION_EXT_CPU_NONCE_COUNT:-1000000}"
 
 # ── CPU external coin (Stream 3) ───────────────────────────────────────────
 # VRSC (VerusHash v2.2) — LuckPool, ASIC/GPU-resistant, PBaaS merge mining.

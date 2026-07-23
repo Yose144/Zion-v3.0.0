@@ -4595,6 +4595,53 @@ fn handle_client(
                             }
                             continue;
                         }
+                        // ── VRSC latest-job-only check ─────────────────────
+                        // LuckPool expires VRSC jobs IMMEDIATELY when a new
+                        // VerusCoin block is found (clean=true).  Unlike ZANO
+                        // (HeroMiners keeps jobs valid 30-60s), LuckPool NEVER
+                        // accepts shares for a superseded job_id.  The multi-hop
+                        // delay (LuckPool→Edge→miner→Edge→LuckPool, 1-2s) means
+                        // the miner sometimes finds shares for a job that has
+                        // already been superseded.  Forwarding these to LuckPool
+                        // always results in "job not found" rejects.
+                        //
+                        // Fix: for VRSC only, only forward shares for the
+                        // LATEST job_id (front of the queue).  Shares for older
+                        // job_ids are silently skipped — they would be rejected
+                        // by LuckPool anyway.  The skip is NOT counted as a
+                        // reject in the routing stats, so the accept rate
+                        // reflects only shares that had a real chance of
+                        // acceptance.
+                        //
+                        // This does NOT reduce the number of accepted shares
+                        // because LuckPool never accepts stale VRSC shares.
+                        // It only eliminates pointless round-trips and
+                        // inflates the reject counter.
+                        //
+                        // Env: ZION_VRSC_LATEST_ONLY=0 to disable (default: 1).
+                        let vrsc_latest_only = std::env::var("ZION_VRSC_LATEST_ONLY")
+                            .ok()
+                            .and_then(|v| v.parse::<u32>().ok())
+                            .unwrap_or(1);
+                        if vrsc_latest_only > 0 && coin.to_ascii_uppercase() == "VRSC" {
+                            if let Some(latest_id) = valid_job_ids.first() {
+                                if latest_id != &external_job_id {
+                                    info!(
+                                        "external_share_vrsc_skip miner={} coin=VRSC share_job_id={} latest_job_id={} — skipping (not latest, LuckPool will reject)",
+                                        sub_miner_id, external_job_id, latest_id
+                                    );
+                                    let ext_result = PoolMessage::ExternalResult {
+                                        accepted: false,
+                                        status: "stale_skip".to_string(),
+                                        coin: coin.clone(),
+                                    };
+                                    let _ = write_wire_message(&mut writer, &ext_result);
+                                    // Do NOT record in routing stats — this is
+                                    // not a real reject, just a stale skip.
+                                    continue;
+                                }
+                            }
+                        }
                         // Parse hash bytes
                         let hash_bytes = match zion_pool::parse_fixed_hex::<32>(&hash_hex, "external share hash") {
                             Ok(h) => h,
