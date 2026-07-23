@@ -3338,6 +3338,15 @@ impl AuxPowClient {
         self.current_job.lock().await.clone()
     }
 
+    /// Refresh the freshness timestamp for a job.  This is used by the pool
+    /// server to keep `job_received_at` current whenever it distributes a job
+    /// to a miner, regardless of whether the upstream pool is still actively
+    /// broadcasting it.  Prevents false "stale job" pre-rejections when the
+    /// upstream pool goes silent (e.g. HeroMiners ZANO).
+    pub async fn touch_job_timestamp(&self, job_id: &str) {
+        self.job_received_at.lock().await.insert(job_id.to_string(), std::time::Instant::now());
+    }
+
     /// Check if a VRSC job is stale and should not be forwarded upstream.
     ///
     /// A job is considered stale if it is older than `max_age_secs`.
@@ -3349,9 +3358,6 @@ impl AuxPowClient {
     /// shares that LuckPool would have accepted — the miner is legitimately
     /// still working on the previous job which is still valid upstream.
     /// Age-based detection is the only safe heuristic.
-    ///
-    /// Returns `true` if the share should be skipped to avoid "job not found"
-    /// rejections (error 21) from LuckPool.
     pub async fn is_job_stale(&self, job_id: &str, max_age_secs: u64) -> bool {
         if max_age_secs == 0 {
             return false;
@@ -3675,13 +3681,16 @@ impl AuxPowClient {
             // Pre-rejecting stale shares locally avoids wasting a round-trip
             // and inflating the reject rate.
             //
-            // Default threshold: 30s.  Set ZION_ZANO_STALE_SECS=0 to disable,
-            // or increase to tolerate older jobs.
+            // The freshness timestamp is refreshed every time the pool server
+            // distributes the job to a miner (see touch_job_timestamp), so the
+            // default 120s threshold covers both normal wire_job cadence and
+            // any upstream silent periods without false pre-rejections.
+            // Set ZION_ZANO_STALE_SECS=0 to disable, or override to adjust.
             {
                 let stale_secs = std::env::var("ZION_ZANO_STALE_SECS")
                     .ok()
                     .and_then(|v| v.parse().ok())
-                    .unwrap_or(30u64);
+                    .unwrap_or(120u64);
                 if stale_secs > 0 && self.is_job_stale(job_id, stale_secs).await {
                     warn!(
                         "auxpow: {} stale job={}.. nonce={} — pre-rejected (age > {}s)",

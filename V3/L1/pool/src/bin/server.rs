@@ -1091,6 +1091,7 @@ async fn run_auxpow_bridge(
     bridge: AuxPowBridge,
     share_rx: std::sync::mpsc::Receiver<(ShareForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
     pearl_rx: std::sync::mpsc::Receiver<(PearlForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
+    touch_rx: std::sync::mpsc::Receiver<String>,
 ) {
     let mut mux = JobMultiplexer::new(&cfg.payout_wallet, &cfg.worker_name)
         .with_preference(cfg.pool_preference, &cfg.region);
@@ -1296,6 +1297,19 @@ async fn run_auxpow_bridge(
                 result,
                 elapsed_ms: started.elapsed().as_millis() as u64,
             });
+        }
+
+        // Drain pending job-distribution touch requests.  Refreshing the
+        // AuxPowClient's `job_received_at` timestamp here anchors staleness
+        // to the pool's own distribution of the job, not to the upstream
+        // pool's notification cadence.  This prevents false "stale job"
+        // pre-rejections when the upstream pool (HeroMiners ZANO) goes
+        // silent for minutes while the pool keeps sending the same job.
+        while let Ok(job_id) = touch_rx.try_recv() {
+            if let Some(client) = mux.client() {
+                client.touch_job_timestamp(&job_id).await;
+                debug!("auxpow_bridge: touched job_id={}", job_id);
+            }
         }
     }
 }
@@ -1773,7 +1787,7 @@ fn main() -> Result<()> {
                 hysteresis_pct: config.auxpow_config.hysteresis_pct,
             };
 
-            let (bridge, share_rx, pearl_rx) = AuxPowBridge::new(true);
+            let (bridge, share_rx, pearl_rx, touch_rx) = AuxPowBridge::new(true);
             info!(
                 "multi_bridge: starting coin={} algo={} wallet={}..",
                 coin.ticker(),
@@ -1796,7 +1810,7 @@ fn main() -> Result<()> {
                         return;
                     }
                 };
-                rt.block_on(run_auxpow_bridge(cfg_clone, bridge_clone, share_rx, pearl_rx));
+                rt.block_on(run_auxpow_bridge(cfg_clone, bridge_clone, share_rx, pearl_rx, touch_rx));
             });
 
             multi_bridge.insert(coin, bridge);
@@ -4283,6 +4297,12 @@ fn handle_client(
                         "parallel_stream_embedded miner={} coin={} algo={} ext_job_id={} height={}",
                         worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height
                     );
+                    // Refresh the job's freshness timestamp whenever we
+                    // distribute it to a miner.  This prevents false "stale
+                    // job" pre-rejections when the upstream pool (HeroMiners
+                    // ZANO) stops sending eth_getWork notifications while the
+                    // pool keeps distributing the same job.
+                    multi_bridge.touch_job_timestamp(&ext_job.external_coin, &ext_job_id);
                     // For testing: use an easier target so the miner can find
                     // shares quickly.  The pool still checks against the real
                     // external target before forwarding to LuckPool.
@@ -4375,6 +4395,7 @@ fn handle_client(
                         "parallel_stream_cpu_embedded miner={} coin={} algo={} ext_job_id={} height={} ext_target_hex={:.64}",
                         worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height, ext_target_hex
                     );
+                    multi_bridge.touch_job_timestamp(&ext_job.external_coin, &ext_job_id);
                     let easy_target_hex = if std::env::var("ZION_AUXPOW_EASY_TARGET")
                         .as_deref()
                         .unwrap_or("")
@@ -6003,6 +6024,10 @@ struct ShareForwardOutcome {
 /// * Session threads pop jobs from `job_queue` synchronously.
 /// * Session threads send `ShareForwardRequest`s via `share_tx`; the tokio
 ///   side forwards them and returns the result via a synchronous mpsc channel.
+/// * Session threads send `job_id` strings via `touch_tx` whenever they
+///   distribute an external job to a miner; the tokio side refreshes the
+///   job's freshness timestamp so stale-pre-rejection is anchored to the
+///   pool's distribution time, not the upstream notification cadence.
 #[derive(Clone)]
 struct AuxPowBridge {
     enabled: bool,
@@ -6010,6 +6035,9 @@ struct AuxPowBridge {
     share_tx: std::sync::mpsc::Sender<(ShareForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
     /// Separate channel for Pearl PoUW proof forwarding (large blobs).
     pearl_tx: std::sync::mpsc::Sender<(PearlForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
+    /// Job-id touch channel to refresh `AuxPowClient::job_received_at` when
+    /// the pool distributes an external job to a miner.
+    touch_tx: std::sync::mpsc::Sender<String>,
 }
 
 impl AuxPowBridge {
@@ -6017,16 +6045,28 @@ impl AuxPowBridge {
         Self,
         std::sync::mpsc::Receiver<(ShareForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
         std::sync::mpsc::Receiver<(PearlForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
+        std::sync::mpsc::Receiver<String>,
     ) {
         let (share_tx, share_rx) = std::sync::mpsc::channel();
         let (pearl_tx, pearl_rx) = std::sync::mpsc::channel();
+        let (touch_tx, touch_rx) = std::sync::mpsc::channel();
         let bridge = Self {
             enabled,
             job_queue: Arc::new(Mutex::new(VecDeque::new())),
             share_tx,
             pearl_tx,
+            touch_tx,
         };
-        (bridge, share_rx, pearl_rx)
+        (bridge, share_rx, pearl_rx, touch_rx)
+    }
+
+    /// Inform the tokio side that an external job with `job_id` has been
+    /// distributed to a miner and its freshness timestamp should be refreshed.
+    fn touch_job_timestamp(&self, job_id: &str) {
+        if !self.enabled {
+            return;
+        }
+        let _ = self.touch_tx.send(job_id.to_string());
     }
 
     /// Return a clone of the freshest external job from the queue.
@@ -6125,6 +6165,16 @@ impl MultiAuxPowBridge {
 
     fn enabled_coins(&self) -> Vec<ExternalCoin> {
         self.bridges.lock().expect("multi_bridge lock poisoned").keys().copied().collect()
+    }
+
+    /// Inform the tokio side that an external job has been distributed to a
+    /// miner, so the job's freshness timestamp should be refreshed.  This is
+    /// used for ZANO/HeroMiners to avoid false "stale job" pre-rejections
+    /// when the upstream pool goes silent.
+    fn touch_job_timestamp(&self, coin: &ExternalCoin, job_id: &str) {
+        if let Some(bridge) = self.bridges.lock().expect("multi_bridge lock poisoned").get(coin) {
+            bridge.touch_job_timestamp(job_id);
+        }
     }
 
     /// Pop a job for a specific coin. Returns None if the coin has no bridge
@@ -9533,7 +9583,7 @@ mod tests {
         target[1] = 0x00;
         target[2] = 0xff;
         target[3] = 0xff;
-        let (kas_bridge, _, _) = AuxPowBridge::new(true);
+        let (kas_bridge, _, _, _) = AuxPowBridge::new(true);
         kas_bridge
             .job_queue
             .lock()
@@ -9743,7 +9793,7 @@ mod tests {
         };
 
         // 3) Build the bridge and a background tokio task that forwards shares.
-        let (bridge, share_rx, _pearl_rx) = AuxPowBridge::new(true);
+        let (bridge, share_rx, _pearl_rx, _touch_rx) = AuxPowBridge::new(true);
         bridge
             .job_queue
             .lock()
