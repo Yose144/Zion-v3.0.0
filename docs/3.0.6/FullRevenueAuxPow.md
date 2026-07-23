@@ -760,10 +760,10 @@ coin at a time per miner).
 - ✅ `BeamHashExternal` in pool server: `source_index` (17), `revenue_source_name` ("beamhash"), `revenue_source_to_external_coin`, `external_coin_to_revenue_source`, `auxpow_to_ch_external_coin` (→ FLUX placeholder), `external_coin_to_algorithm` ("beamhash"), routing stats ("BEAM"), lane config (`ZION_STREAM_BEAMHASH_PCT`/`ZION_STREAM_BEAMHASH_USD`), auto-assign match, `ALL_REVENUE_SOURCES` array (18), array sizes [18]
 - ✅ Env var: `ZION_POOL_AUXPOW_WALLET_BEAM`
 
-**Miner-side (TODO):**
-- ❌ BeamHash III GPU kernel (Equihash 150,5 with SipHash mixing) — not yet implemented
-- ❌ `beam_gpu_thread()` in miner/main.rs — not yet implemented
-- ❌ BEAM share routing in miner — not yet implemented
+**Miner-side:**
+- ✅ BeamHash III GPU solver kernel (`beamhash_solver.cl`) implemented in `AuXpow/csrc/opencl/`
+- ✅ `GpuMiner::mine()` dispatches `beamhash` / `beamhash_beam` to `mine_beamhash_solver()` in `AuXpow/src/gpu_miner.rs`
+- ❌ V3 miner share routing still needs to propagate the 104-byte `GpuFoundShare.solution` from `V3/L1/miner/src/gpu_backend.rs` through `ExternalShareResult` to `AuxPowClient::submit_share()`
 
 ### Build & Deploy Status
 

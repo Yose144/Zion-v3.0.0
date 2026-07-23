@@ -1884,6 +1884,15 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 - **RTM (CPU):** Bridge se připojí k zpool, dostává joby, ale všechny share jsou rejected (`Invalid share`). Příčina: build minera nemá feature `native-ghostrider`, takže `miner_harness.rs` pro `ghostrider` fallbackne na `hash_blake3` místo pravého GhostRider hashe. **Fix: překompilovat s `--features gpu-opencl,native-ghostrider`.**
 - **Výsledek:** Vracím zpět na stabilní `ZION_POOL_AUXPOW_ENABLED=0` a ZION-only, dokud nebude BEAM wallet a opravený RTM build. TUI je opět viditelné, ~20.6 KH/s, 100% accept.
 
+### BeamHash III GPU solver (2026-07-23)
+
+- **Kernel:** `AuXpow/csrc/opencl/beamhash_solver.cl` (upravený `BeamMW/opencl-miner_1.0.82 beam_hash_III.cl`) — plný Wagnerův algoritmus v OpenCL: `cleanUp`, `beamHashIII_seed`, `beamHashIII_R1` až `R5`.
+- **Integrace:** `AuXpow/src/gpu_miner.rs` — `GpuMiner::mine()` rozpozná `beamhash`/`beamhash_beam` a volá `mine_beamhash_solver()`. Komunikuje s GPU přes `ocl`, alokuje 2× 35 171 200 × `ulong8` hash tabulky (~2.3 GB každá) + counter/results, spouští 6 kernelů, parsuje až 10 kandidátních řešení a ověřuje je lokálně `hash_beamhash() + target`.
+- **VRAM:** ~4.5 GB GPU paměti pro BeamHash III solver (2× hash tabulka ~2.3 GB + drobné buffery). Na integrovaných GPU/APU může selhat; potřebuje dedikovanou VRAM.
+- **Build:** `cargo check -p zion-auxpow --features gpu-opencl` a `cargo check -p zion-miner --features gpu-opencl` procházejí. Živé testování vyžaduje BEAM wallet pro debug pool a GPU s dostatek VRAM.
+- **Debug pool:** `edge-deploy/config/debug-beam-environment.sh` nastavuje `ZION_POOL_AUXPOW_COIN=BEAM` a `ZION_POOL_AUXPOW_WALLET_BEAM` (neposílá se na Edge main pool). Pro lokální test: `source edge-deploy/config/debug-beam-environment.sh && cargo run --release -p zion-pool-server --features gpu-opencl,native-hashers`.
+- **TODO end-to-end:** V3 miner musí předat do `GpuMiner::mine()` raw pre-PoW header (ne 80B padding) a řešení 104 bytů musí projít z `GpuFoundShare.solution` až do `AuxPowClient::submit_share()` jako `output` pro BeamStratum.
+
 ### Metal ProgPoWZ (ZANO) kernel verification (2026-07-21)
 
 - **Build:** `cargo check -p zion-miner --features gpu-metal,native-hashers` must pass on macOS Apple Silicon.

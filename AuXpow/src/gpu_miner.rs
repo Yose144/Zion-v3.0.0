@@ -141,9 +141,21 @@ pub struct GpuMiner {
     /// Cached Pearl PoUW buffers (reused across nonces to avoid allocation overhead).
     #[cfg(feature = "gpu-opencl")]
     pearl_buffers: Option<PearlPouwBufferCache>,
+    /// Cached BeamHash III solver buffers (large hash tables reused per job).
+    #[cfg(feature = "gpu-opencl")]
+    beamhash_buffers: Option<BeamhashSolverBuffers>,
     /// Current block height for KawPow/ProgPow period calculation.
     /// Must be set via `set_block_height()` before mining KawPow/ProgPow.
     block_height: u64,
+}
+
+/// Cached OpenCL buffers for the BeamHash III multi-round solver.
+#[cfg(feature = "gpu-opencl")]
+struct BeamhashSolverBuffers {
+    buf0: Buffer<u8>,
+    buf1: Buffer<u8>,
+    counters: Buffer<u32>,
+    results: Buffer<u32>,
 }
 
 /// Cached OpenCL buffers for Pearl PoUW pipeline, reused across nonces.
@@ -233,7 +245,7 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
             // Stream 2 (Pearl PoUW) is disabled in 3.0.6 (ZION_STREAM2_ENABLED=0).
             Some(("pearl_kernel.cl", "pearl_mine"))
         }
-        "beamhash" | "beamhash_beam" => Some(("beamhash_kernel.cl", "beamhash_generate_hashes")),
+        "beamhash" | "beamhash_beam" => Some(("beamhash_solver.cl", "beamHashIII_seed")),
         "karlsenhash" | "karlsenhash_kls" => {
             Some(("karlsenhash_kernel.cl", "karlsenhash_mine"))
         }
@@ -358,6 +370,7 @@ impl GpuMiner {
             verthash_data: None,
             #[cfg(feature = "gpu-opencl")]
             pearl_buffers: None,
+            beamhash_buffers: None,
             block_height: 0,
         })
     }
@@ -791,6 +804,12 @@ impl GpuMiner {
         let (kernel_file, kernel_name) = kernel_info(algorithm)
             .with_context(|| format!("GPU kernel not available for algorithm {algorithm}"))?;
 
+        // BeamHash III uses a multi-round Wagner solver with its own buffers;
+        // it cannot share the simple single-kernel path below.
+        if matches!(algorithm, "beamhash" | "beamhash_beam") {
+            return self.mine_beamhash_solver(header, extra, target, base_nonce, batch_size);
+        }
+
         // Ethash/KawPow need the per-epoch DAG; clone the Arc-backed buffer
         // handle before borrowing `self` for the ProQue below.
         let ethash_dag = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc") {
@@ -1038,17 +1057,7 @@ impl GpuMiner {
                 // Falls back to simplified kernel if VRAM is insufficient.
                 return self.mine_zelhash_prod(header, target, base_nonce);
             }
-            "beamhash" | "beamhash_beam" => Self::build_beamhash_kernel(
-                pro_que,
-                kernel_name,
-                header,
-                target,
-                base_nonce,
-                &output_nonce_buf,
-                &output_hash_buf,
-                &output_solution_buf,
-                &found_flag_buf,
-            )?,
+            "beamhash" | "beamhash_beam" => unreachable!(),
             "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => {
                 let dag = fishhash_dag.ok_or_else(|| {
                     anyhow!(
@@ -1360,6 +1369,202 @@ impl GpuMiner {
             mix_hash,
             solution,
         }))
+    }
+
+    /// Run the full BeamHash III Wagner solver on the GPU for one nonce.
+    ///
+    /// `header` is the pre-PoW block header (without nonce/solution). `extra`
+    /// is the pool-provided nonce prefix (e.g. 4-byte `nonceprefix`); if empty,
+    /// `base_nonce` is treated as the full 8-byte nonce.  The kernel generates
+    /// 2^25 initial SipHash-2-4 rows and runs five collision rounds (R1-R5).
+    ///
+    /// Returns the first solution whose 32-byte hash meets `target`. The share
+    /// solution is 104 bytes: 100 bytes of compressed 25-bit indices followed
+    /// by the 4-byte extra nonce (needed for BeamStratum `output`).
+    #[allow(clippy::too_many_arguments)]
+    fn mine_beamhash_solver(
+        &mut self,
+        header: &[u8],
+        extra: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        _batch_size: u64,
+    ) -> Result<Option<GpuFoundShare>> {
+        use ocl::enums::{CommandExecutionStatus, EventInfo, EventInfoResult};
+
+        let start = Instant::now();
+
+        // Build the full 8-byte nonce and the 4-byte extra nonce that is
+        // appended to the 100-byte solution for submission.
+        let prefix_len = extra.len().min(8);
+        let mut full_nonce = [0u8; 8];
+        full_nonce[..prefix_len].copy_from_slice(&extra[..prefix_len]);
+        let suffix_len = 8 - prefix_len;
+        full_nonce[prefix_len..].copy_from_slice(&base_nonce.to_le_bytes()[..suffix_len]);
+        let extra_nonce_len = suffix_len.min(4);
+        let extra_nonce = full_nonce[prefix_len..prefix_len + extra_nonce_len].to_vec();
+
+        let mut full_header = header.to_vec();
+        full_header.extend_from_slice(&full_nonce);
+        let pre_pow_u64 = crate::beamhash::compute_prepow(&full_header);
+        let prepow = ocl::prm::Ulong4::new(pre_pow_u64[0], pre_pow_u64[1], pre_pow_u64[2], pre_pow_u64[3]);
+
+        const WG_SIZE: usize = 256;
+        const NUM_BUCKETS: usize = 4096;
+        const BUCKET_SIZE: usize = 8720;
+        const HASH_TABLE_BYTES: usize = NUM_BUCKETS * BUCKET_SIZE * 64;
+        const COUNTERS_LEN: usize = 20480;
+        const RESULTS_LEN: usize = 324;
+
+        // Use a dedicated queue for the solver buffers and kernels so we can
+        // allocate the cached buffers without holding the ProQue borrow.
+        let q = Queue::new(&self.context, self.device, None)
+            .map_err(|e| anyhow!("BeamHash solver queue creation failed: {e}"))?;
+
+        // Take ownership of the cached buffers (or allocate them now), then
+        // run the solver in a scoped block. This avoids simultaneous borrows
+        // of `self` by the ProQue and the buffer cache.
+        let mut cached = self.beamhash_buffers.take();
+        if cached.is_none() {
+            let buf0 = Buffer::<u8>::builder()
+                .queue(q.clone())
+                .len(HASH_TABLE_BYTES)
+                .build()?;
+            let buf1 = Buffer::<u8>::builder()
+                .queue(q.clone())
+                .len(HASH_TABLE_BYTES)
+                .build()?;
+            let counters = Buffer::<u32>::builder()
+                .queue(q.clone())
+                .len(COUNTERS_LEN)
+                .build()?;
+            let results = Buffer::<u32>::builder()
+                .queue(q.clone())
+                .len(RESULTS_LEN)
+                .build()?;
+            cached = Some(BeamhashSolverBuffers { buf0, buf1, counters, results });
+        }
+
+        let result: Result<Option<GpuFoundShare>> = (|| {
+            let buffers = cached.as_ref().unwrap();
+            let pro_que = self.ensure_proque("beamhash_solver.cl")?;
+
+            let enqueue_kernel = |name: &str, gws: usize, lws: usize| -> Result<()> {
+            let kernel = Kernel::builder()
+                .queue(q.clone())
+                .program(pro_que.program())
+                .name(name)
+                .arg(&buffers.buf0)
+                .arg(&buffers.buf1)
+                .arg(&buffers.counters)
+                .arg(&buffers.results)
+                .arg(prepow)
+                .build()
+                .map_err(|e| anyhow!("BeamHash solver kernel '{name}' build failed: {e}"))?;
+
+            let mut event = ocl::Event::empty();
+            unsafe {
+                kernel
+                    .cmd()
+                    .global_work_size(gws)
+                    .local_work_size(lws)
+                    .enew(&mut event)
+                    .enq()
+                    .map_err(|e| anyhow!("BeamHash solver kernel '{name}' enqueue failed: {e}"))?;
+            }
+
+            let timeout_secs: u64 = std::env::var("ZION_GPU_KERNEL_TIMEOUT_SECS")
+                .ok()
+                .and_then(|v| v.parse::<u64>().ok())
+                .unwrap_or(120);
+            let deadline = start + std::time::Duration::from_secs(timeout_secs);
+            loop {
+                match event.info(EventInfo::CommandExecutionStatus) {
+                    Ok(EventInfoResult::CommandExecutionStatus(CommandExecutionStatus::Complete)) => break,
+                    Ok(EventInfoResult::CommandExecutionStatus(_)) => {
+                        if Instant::now() > deadline {
+                            let _ = q.flush();
+                            return Err(anyhow!(
+                                "BeamHash solver kernel '{name}' hang: elapsed_ms={} timeout={}s",
+                                start.elapsed().as_millis(),
+                                timeout_secs
+                            ));
+                        }
+                        std::thread::sleep(std::time::Duration::from_millis(10));
+                    }
+                    Ok(other) => {
+                        eprintln!("auxpow_gpu_kernel_event_unexpected_status algo=beamhash kernel={name} result={:?} — falling back to q.finish()", other);
+                        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+                        break;
+                    }
+                    Err(e) => {
+                        eprintln!("auxpow_gpu_kernel_event_query_failed algo=beamhash kernel={name} err={e} — falling back to q.finish()");
+                        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+                        break;
+                    }
+                }
+            }
+            Ok(())
+        };
+
+        // Run the multi-round solver.
+        enqueue_kernel("cleanUp", 5120, WG_SIZE)?;
+        enqueue_kernel("beamHashIII_seed", 33_554_432, WG_SIZE)?;
+        enqueue_kernel("beamHashIII_R1", 4_194_304, WG_SIZE)?;
+        enqueue_kernel("beamHashIII_R2", 4_194_304, WG_SIZE)?;
+        enqueue_kernel("beamHashIII_R3", 4_194_304, WG_SIZE)?;
+        enqueue_kernel("beamHashIII_R4", 4_194_304, WG_SIZE)?;
+        enqueue_kernel("beamHashIII_R5", 4_194_304, WG_SIZE)?;
+
+        // Read the solution count and up to 10 candidate solutions.
+        let mut results = vec![0u32; RESULTS_LEN];
+        buffers.results.read(&mut results).enq()?;
+        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+
+        let solution_count = results[0] as usize;
+        if solution_count == 0 {
+            return Ok(None);
+        }
+
+        for pos in 0..solution_count.min(10) {
+            let start_u32 = 4 + pos * 32;
+            let end_u32 = start_u32 + 32;
+            if end_u32 > results.len() {
+                break;
+            }
+
+            let mut sol_bytes = Vec::with_capacity(128);
+            for w in &results[start_u32..end_u32] {
+                sol_bytes.extend_from_slice(&w.to_le_bytes());
+            }
+            let indices_100 = &sol_bytes[..100.min(sol_bytes.len())];
+
+            let hash = crate::beamhash::hash_beamhash(&full_header, indices_100);
+            if hash.as_slice() <= target.as_slice() {
+                let mut solution = indices_100.to_vec();
+                solution.extend_from_slice(&extra_nonce);
+
+                println!(
+                    "auxpow_gpu_share_found algorithm=beamhash nonce={} hash_first8={:016x} elapsed_ms={}",
+                    u64::from_le_bytes(full_nonce),
+                    u64::from_le_bytes(hash[0..8].try_into().unwrap()),
+                    start.elapsed().as_millis()
+                );
+
+                return Ok(Some(GpuFoundShare {
+                    nonce: u64::from_le_bytes(full_nonce),
+                    hash,
+                    mix_hash: None,
+                    solution: Some(solution),
+                }));
+            }
+        }
+
+        Ok(None)
+        })();
+
+        self.beamhash_buffers = cached;
+        result
     }
 
     /// Convenience: mine with a 32-byte header and no extra data.
@@ -2316,6 +2521,7 @@ typedef unsigned long ulong;
                     "octopus_kernel.cl" => include_str!("../csrc/opencl/octopus_kernel.cl").to_string(),
                     "neoscrypt_kernel.cl" => include_str!("../csrc/opencl/neoscrypt_kernel.cl").to_string(),
                     "nexapow_kernel.cl" => include_str!("../csrc/opencl/nexapow_kernel.cl").to_string(),
+                    "beamhash_solver.cl" => include_str!("../csrc/opencl/beamhash_solver.cl").to_string(),
                     "ghostrider_kernel.cl" => {
                         // Concatenate embedded SPH + CN + main kernel
                         let sph = include_str!("../csrc/opencl/ghostrider_sph.cl");
@@ -2696,63 +2902,6 @@ typedef unsigned long ulong;
             .arg(found_flag_buf)
             .build()
             .map_err(|e| anyhow!("ZelHash kernel build failed: {e}"))?;
-
-        Ok(kernel)
-    }
-
-    /// Build the BeamHash III kernel (Equihash 144,5 with SipHash-2-4).
-    ///
-    /// BeamHash III uses SipHash-2-4 as the hash function instead of BLAKE2b.
-    /// The GPU kernel generates initial Equihash hashes; the Wagner's algorithm
-    /// collision finding is done on the host side using the generated hashes.
-    ///
-    /// The `header` is the block header (without nonce/solution).
-    /// The kernel derives the SipHash key from SHA-256(header || nonce) and
-    /// generates M = 2^25 initial hashes.
-    #[allow(clippy::too_many_arguments)]
-    fn build_beamhash_kernel(
-        pro_que: &ProQue,
-        kernel_name: &str,
-        header: &[u8],
-        target: &[u8; 32],
-        base_nonce: u64,
-        output_nonce_buf: &Buffer<u64>,
-        output_hash_buf: &Buffer<u8>,
-        output_solution_buf: &Buffer<u8>,
-        found_flag_buf: &Buffer<u32>,
-    ) -> Result<Kernel> {
-        use sha2::{Digest, Sha256};
-
-        let q = pro_que.queue().clone();
-
-        // Compute 4-word prePow state from SHA-256(header || nonce)
-        // BeamHash III uses a 256-bit prePow state (4 × 64-bit words)
-        // derived from the block header + nonce.
-        let nonce_bytes = base_nonce.to_le_bytes();
-        let mut hasher = Sha256::new();
-        hasher.update(header);
-        hasher.update(&nonce_bytes);
-        let key_result = hasher.finalize();
-        let prepow0 = u64::from_le_bytes(key_result[0..8].try_into().unwrap());
-        let prepow1 = u64::from_le_bytes(key_result[8..16].try_into().unwrap());
-        let prepow2 = u64::from_le_bytes(key_result[16..24].try_into().unwrap());
-        let prepow3 = u64::from_le_bytes(key_result[24..32].try_into().unwrap());
-
-        // The kernel generates 448-bit work bits (7 ulongs per index).
-        // output_hash_buf must be large enough: M * 7 * 8 bytes = 2^25 * 56 = ~1.8 GB
-        // For batched processing, the buffer size is set by the caller.
-        let kernel = Kernel::builder()
-            .queue(q.clone())
-            .program(pro_que.program())
-            .name(kernel_name)
-            .arg(prepow0)
-            .arg(prepow1)
-            .arg(prepow2)
-            .arg(prepow3)
-            .arg(output_hash_buf)
-            .arg(0u32) // start_index
-            .build()
-            .map_err(|e| anyhow!("BeamHash kernel build failed: {e}"))?;
 
         Ok(kernel)
     }

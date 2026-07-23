@@ -1,0 +1,39 @@
+# Debug environment for BeamHash III / BEAM testing on a local ZION pool.
+# This file intentionally does NOT affect the Edge main pool.
+#
+# Usage (run from repo root):
+#   source edge-deploy/config/debug-beam-environment.sh
+#   cargo run --release -p zion-pool-server --features gpu-opencl,native-hashers
+#
+# Or merge just the ZION_POOL_AUXPOW_WALLET_BEAM line into the server's
+# EnvironmentFile=/etc/zion/edge-environment.sh on a dedicated debug host.
+
+# Core AuxPoW switches
+ZION_POOL_AUXPOW_ENABLED=1
+ZION_POOL_AUXPOW_COIN=BEAM
+ZION_POOL_AUXPOW_WORKER_NAME=zion-debug-beam
+ZION_POOL_AUXPOW_POOL_PREFERENCE=default
+ZION_POOL_AUXPOW_REGION=eu
+ZION_POOL_AUXPOW_SPLIT_ZION=4
+ZION_POOL_AUXPOW_SPLIT_EXTERNAL=1
+ZION_POOL_AUXPOW_PROFIT_CHECK_INTERVAL=60
+ZION_POOL_AUXPOW_HYSTERESIS_PCT=15.0
+
+# Beam payout wallet for beam.2miners.com:5252 (BeamStratum requires a BEAM address).
+ZION_POOL_AUXPOW_WALLET_BEAM="8WWUkQiqiJgTwDE5gcNR3cUoNxDu3ZYjdJZMQAj7BhqHfJ72EbC8L7PfJEYaW4wynHUUvV4epCz3Lu93y4rwHtyJoaFsh67fxxRxZKf7MYrc3mfMb1hT4pSqBXx55UpTykcsvTg1zFB3tr6LLBM6rxeFgBR2cyEdHDk4hJ2Uy1Lxfzr1xubWGcZyzXxw9JAkbJTCt4VKqPXkTvCrdrqUhh8ReqLyjJZtJJTBc4DEi788epxeZh88QJ7vsRWB4DKD6HnoPYPD7qQUj2BKtP5EBZemdJGTNd9c7fWeu86HEy4U9iRG7Ugigm3hQjeF1sLPTWaBsoiUL6CZNjPFKNVB5KU4cnfa1JruibruZUnwSJXiMTDEQ7ZXoptPjLHJGhRsTCdYj2PEUX7wMNeM6DvWSQ2PKCChF1qRFMeJrtAP1zYPkLYHod2ym4nkD1WJRBi7293"
+
+# Fallback wallet — keep identical to BEAM wallet so a missing per-coin override
+# does not accidentally send a BTC address to beam.2miners.com.
+ZION_POOL_AUXPOW_WALLET="8WWUkQiqiJgTwDE5gcNR3cUoNxDu3ZYjdJZMQAj7BhqHfJ72EbC8L7PfJEYaW4wynHUUvV4epCz3Lu93y4rwHtyJoaFsh67fxxRxZKf7MYrc3mfMb1hT4pSqBXx55UpTykcsvTg1zFB3tr6LLBM6rxeFgBR2cyEdHDk4hJ2Uy1Lxfzr1xubWGcZyzXxw9JAkbJTCt4VKqPXkTvCrdrqUhh8ReqLyjJZtJJTBc4DEi788epxeZh88QJ7vsRWB4DKD6HnoPYPD7qQUj2BKtP5EBZemdJGTNd9c7fWeu86HEy4U9iRG7Ugigm3hQjeF1sLPTWaBsoiUL6CZNjPFKNVB5KU4cnfa1JruibruZUnwSJXiMTDEQ7ZXoptPjLHJGhRsTCdYj2PEUX7wMNeM6DvWSQ2PKCChF1qRFMeJrtAP1zYPkLYHod2ym4nkD1WJRBi7293"
+
+export ZION_POOL_AUXPOW_ENABLED
+export ZION_POOL_AUXPOW_COIN
+export ZION_POOL_AUXPOW_WORKER_NAME
+export ZION_POOL_AUXPOW_POOL_PREFERENCE
+export ZION_POOL_AUXPOW_REGION
+export ZION_POOL_AUXPOW_SPLIT_ZION
+export ZION_POOL_AUXPOW_SPLIT_EXTERNAL
+export ZION_POOL_AUXPOW_PROFIT_CHECK_INTERVAL
+export ZION_POOL_AUXPOW_HYSTERESIS_PCT
+export ZION_POOL_AUXPOW_WALLET_BEAM
+export ZION_POOL_AUXPOW_WALLET
