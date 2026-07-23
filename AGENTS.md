@@ -1889,3 +1889,33 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 - **Build:** `cargo check -p zion-miner --features gpu-metal,native-hashers` must pass on macOS Apple Silicon.
 - **Unit tests (M1):** `cargo test -p zion-auxpow --features gpu-metal progpow_zano_kernel_compiles_and_runs progpow_zano_final_hash_consistency -- --nocapture` compiles and runs the generated Metal kernel against a fake DAG and verifies the returned mix hash recomputes to a valid final hash via `progpow_final_hash`.
 - **Integration:** `zion-miner` routes `progpow_zano` to `MetalExternalMiner` when `gpu-backend=metal` and `native-hashers` is enabled. For live HeroMiners ZANO pool testing, build with `--features gpu-metal,native-hashers` and point the miner at `de.zano.herominers.com:1112` (SSL) or `1110` (TCP) with a ZANO wallet.
+
+### Website v2.9 deploy (2026-07-23)
+
+- **Build server:** `/root/zion-web-build` (Next.js source + `public/`)
+- **Runtime dir:** `/root/zion-web-runtime` (Docker build context)
+- **Dockerfile:** `APP&WEB/website-v2.9/Dockerfile.runtime` copies `standalone`, `.next/static`, and `public/`
+- **Full deploy from local repo:**
+
+  ```bash
+  cd APP\&WEB/website-v2.9
+  # Sync source and public assets (exclude node_modules/.next/.git/downloads)
+  tar czf - --exclude=node_modules --exclude=.next --exclude=.git --exclude=public/downloads src/ public/ \
+    | ssh zion-new 'cd /root/zion-web-build && rm -rf src public && tar xzf -'
+  # Build
+  ssh zion-new 'cd /root/zion-web-build && rm -rf .next && npx next build --webpack'
+  # Copy artifacts to runtime and rebuild Docker image
+  ssh zion-new 'cd /root/zion-web-build && \
+    rm -rf /root/zion-web-runtime/standalone /root/zion-web-runtime/static /root/zion-web-runtime/public && \
+    cp -r .next/standalone /root/zion-web-runtime/standalone && \
+    cp -r .next/static /root/zion-web-runtime/static && \
+    cp -r public /root/zion-web-runtime/public && \
+    rm -rf /root/zion-web-runtime/public/public && \
+    cd /root/zion-web-runtime && \
+    docker stop zion-web && docker rm zion-web && \
+    DOCKER_BUILDKIT=1 docker build -f Dockerfile.runtime -t zion-web:runtime . && \
+    docker run -d --network host --name zion-web zion-web:runtime'
+  ```
+
+- **Important:** `public/` must be copied into the runtime directory; otherwise static files (e.g. `/docs/WP/*.md`, images, icons) are not served by the container.
+- **Public assets `public/docs/WP/`** must stay in sync with the public `docs/WP` subtree. Use `docs/WP-Mainet/regenerate_pdfs.py` (requires `fpdf2`) to regenerate PDFs and copy them to `public/docs/WP/` and `APP&WEB/website-v2.9/public/docs/WP/`. After editing `public/`, run `git subtree push --prefix=public public main`.
