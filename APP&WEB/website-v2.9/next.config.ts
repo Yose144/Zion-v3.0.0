@@ -128,16 +128,7 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // sw.js must never be cached so browsers pick up the kill-switch update immediately
-      {
-        source: "/sw.js",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "no-cache, no-store, must-revalidate",
-          },
-        ],
-      },
+      // sw.js is served by src/app/sw.js/route.ts with no-store headers.
       // Read-only API responses can be cached briefly at the edge/CDN
       {
         source: "/api/blockchain/(.*)",
