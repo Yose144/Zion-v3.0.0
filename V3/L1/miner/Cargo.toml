@@ -83,7 +83,7 @@ serde_json.workspace = true
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["rt-multi-thread", "time", "sync"] }
 zion-core = { path = "../core" }
-zion-pool = { path = "../pool" }
+zion-pool = { path = "../pool", default-features = false }
 zion-cosmic-harmony = { path = "../cosmic-harmony" }
 zion-native-ffi = { path = "../native-ffi", optional = true }
 zion-auxpow = { path = "../../../AuXpow", default-features = false }
