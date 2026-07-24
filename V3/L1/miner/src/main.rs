@@ -4,8 +4,10 @@
 #![allow(clippy::type_complexity)]
 
 use anyhow::{anyhow, Context, Result};
+use std::collections::hash_map::DefaultHasher;
 use std::collections::VecDeque;
 use std::fmt::Write as _;
+use std::hash::{Hash, Hasher};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -3921,6 +3923,58 @@ fn maybe_send_adaptive_update(
     }
 }
 
+/// Reset nonce_base/offset/rotation for a new external GPU job.  Used both
+/// when a new job arrives and when a share is discarded because a newer job
+/// appeared during GPU mining.
+fn reset_ext_gpu_nonce(
+    job: &ExternalStreamJob,
+    nonce_base: &mut u64,
+    nonce_base_origin: &mut u64,
+    nonce_offset: &mut u64,
+    nonce_rotation: &mut u64,
+) {
+    let random_base = {
+        let mut h = DefaultHasher::new();
+        job.job_id.hash(&mut h);
+        std::process::id().hash(&mut h);
+        std::thread::current().id().hash(&mut h);
+        nonce_rotation.hash(&mut h);
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+            .hash(&mut h);
+        h.finish()
+    };
+
+    let en1_bytes = if job.extranonce1_hex.is_empty() {
+        Vec::new()
+    } else {
+        hex::decode(job.extranonce1_hex.trim_start_matches("0x")).unwrap_or_default()
+    };
+    let en1_len = en1_bytes.len();
+    if en1_len > 0 && en1_len <= 4 {
+        let mut en1_val: u64 = 0;
+        for &b in &en1_bytes {
+            en1_val = (en1_val << 8) | (b as u64);
+        }
+        let shift = (8 - en1_len) * 8;
+        *nonce_base = (en1_val << shift) | (random_base & ((1u64 << shift) - 1));
+        println!(
+            "[{}] ext_gpu_nicehash_nonce en1_hex={} en1_len={} nonce_base=0x{:016x}",
+            log_timestamp(),
+            job.extranonce1_hex,
+            en1_len,
+            *nonce_base,
+        );
+    } else {
+        *nonce_base = random_base;
+    }
+    *nonce_base_origin = *nonce_base;
+    *nonce_offset = 0;
+    *nonce_rotation = 0;
+}
+
 /// Persistent external GPU miner thread for the single GPU profit coin.
 ///
 /// Runs in a separate thread with its own GPU context/command queue.
@@ -3943,8 +3997,6 @@ fn external_gpu_thread(
     shared_cuda_dev: Option<()>,
 ) {
     println!("[{}] external_gpu_thread_entered backend={} shared_cuda={} adaptive={}", log_timestamp(), backend_kind.as_str(), shared_cuda_dev.is_some(), adaptive_rx.is_some());
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
 
     let mut current_job: Option<zion_pool::ExternalStreamJob> = None;
     let mut current_miner: Option<Box<dyn gpu_backend::GpuMiner>> = None;
@@ -4066,68 +4118,13 @@ fn external_gpu_thread(
                     j.job_id != job.job_id || j.height != job.height
                 });
                 if is_new_job {
-                    // Random nonce base to avoid duplicates.
-                    // Include a timestamp component so that thread restarts
-                    // (which reset nonce_offset to 0) don't re-scan the same
-                    // nonce range for the same job_id.  Without this, the
-                    // deterministic hash(job_id + PID) produces the same
-                    // nonce_base after restart → duplicate share rejects.
-                    // Build a fresh 64-bit nonce base for this job.
-                    // Use the FULL 64-bit hash (not truncated to u32) so the
-                    // GPU can scan the entire 2^64 EthStratum nonce space.
-                    // This eliminates 32-bit nonce-space wrap-around, which
-                    // was causing HeroMiners "Duplicate share" rejects after
-                    // ~18 minutes of mining on the same ZANO job.
-                    // Include a timestamp so thread restarts don't reuse the
-                    // same nonce range for the same job_id.
-                    let random_base = {
-                        let mut h = DefaultHasher::new();
-                        job.job_id.hash(&mut h);
-                        std::process::id().hash(&mut h);
-                        std::thread::current().id().hash(&mut h);
-                        nonce_rotation.hash(&mut h);
-                        std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .unwrap_or_default()
-                            .as_nanos()
-                            .hash(&mut h);
-                        h.finish()
-                    };
-
-                    // NiceHash nonce format: extranonce1 occupies high bits
-                    // of the nonce. The miner must only iterate over the low
-                    // bits. Parse extranonce1_hex and embed it in nonce_base.
-                    let en1_bytes = if job.extranonce1_hex.is_empty() {
-                        Vec::new()
-                    } else {
-                        hex::decode(job.extranonce1_hex.trim_start_matches("0x")).unwrap_or_default()
-                    };
-                    let en1_len = en1_bytes.len();
-                    if en1_len > 0 && en1_len <= 4 {
-                        // Embed extranonce1 in the high bits of the nonce.
-                        // extranonce1 is big-endian; shift it left to occupy
-                        // the top en1_len bytes of the 8-byte nonce.
-                        let mut en1_val: u64 = 0;
-                        for &b in &en1_bytes {
-                            en1_val = (en1_val << 8) | (b as u64);
-                        }
-                        let shift = (8 - en1_len) * 8;
-                        nonce_base = (en1_val << shift) | (random_base & ((1u64 << shift) - 1));
-                        println!(
-                            "[{}] ext_gpu_nicehash_nonce en1_hex={} en1_len={} nonce_base=0x{:016x}",
-                            log_timestamp(),
-                            job.extranonce1_hex,
-                            en1_len,
-                            nonce_base,
-                        );
-                    } else {
-                        nonce_base = random_base;
-                    }
-                    // Save the original base so periodic rotations can jump
-                    // to disjoint 64-bit windows without re-hashing.
-                    nonce_base_origin = nonce_base;
-                    nonce_offset = 0;
-                    nonce_rotation = 0;
+                    reset_ext_gpu_nonce(
+                        &job,
+                        &mut nonce_base,
+                        &mut nonce_base_origin,
+                        &mut nonce_offset,
+                        &mut nonce_rotation,
+                    );
                 }
                 // Note: do NOT reset last_epoch here — the pool re-sends the
                 // same job every ~1s, and resetting would cause DAG reload
@@ -4399,6 +4396,44 @@ fn external_gpu_thread(
                     );
                 }
                 if let Some((found_nonce, hash, mix_hash)) = br.solutions.first() {
+                    // Stale-job guard: if a newer ZANO/ProgPoW job arrived while the
+                    // GPU batch was running, discard the share.  ProgPoW CUDA batches
+                    // take ~0.3-0.8s; the pool can rotate job_id in that window,
+                    // especially around period changes (every 50 blocks).  Without
+                    // this guard the share is submitted with the old job_id →
+                    // upstream "Job not found" / stale reject.
+                    let mut newer_job: Option<zion_pool::ExternalStreamJob> = None;
+                    while let Ok(j) = rx.try_recv() { newer_job = Some(j); }
+                    if let Some(newer) = newer_job {
+                        if newer.job_id != job.job_id || newer.height != job.height {
+                            println!(
+                                "[{}] ext_gpu_share_discarded_stale coin={} algo={} old_job_id={} new_job_id={} height={}->{}",
+                                log_timestamp(),
+                                job.coin,
+                                job.algorithm,
+                                job.job_id,
+                                newer.job_id,
+                                job.height,
+                                newer.height,
+                            );
+                            // Switch to the newer job immediately.  Reset nonce
+                            // for it and continue; the next loop iteration will
+                            // drain any further jobs and mine the new header.
+                            // Keep current_algo/last_epoch/last_progpow_period so
+                            // the same GPU miner is reused and update_epoch is only
+                            // called if the new job actually changes epoch/period.
+                            reset_ext_gpu_nonce(
+                                &newer,
+                                &mut nonce_base,
+                                &mut nonce_base_origin,
+                                &mut nonce_offset,
+                                &mut nonce_rotation,
+                            );
+                            current_job = Some(newer);
+                            continue;
+                        }
+                    }
+
                     let share = ExternalShareResult {
                         coin: job.coin.clone(),
                         algorithm: job.algorithm.clone(),
