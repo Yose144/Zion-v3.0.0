@@ -7,10 +7,9 @@
 //
 // The random math + data load code is generated at compile time by the
 // host-side codegen (AuXpow/src/progpow_codegen.rs) and injected via
-// the PROGPOW_INCLUDE_RANDOM_MATH and PROGPOW_INCLUDE_DATA_LOADS
-// placeholders.  The codegen produces backend-agnostic C code using
-// mul_hi(), clz(), popcount(), ROTL32(), ROTR32() — all mapped to
-// CUDA intrinsics below.
+// placeholder tokens in the kernel body.  The codegen produces
+// backend-agnostic C code using mul_hi(), clz(), popcount(), ROTL32(),
+// ROTR32() — all mapped to CUDA intrinsics below.
 //
 // References:
 //   - OpenCL source: AuXpow/csrc/opencl/progpow_kernel.cl
@@ -379,7 +378,7 @@ __global__ __launch_bounds__(256) void progpow_mine(
     }
 
     // Final hash: keccak(header .. seed .. digest) and compare to target
-    if (keccak_f800(g_header, seed, digest) <= target)
+    if (keccak_f800(header_u32, seed, digest) <= target)
     {
         unsigned int old = atomicExch(found, 1u);
         if (old == 0u) {

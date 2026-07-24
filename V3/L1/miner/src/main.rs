@@ -1671,7 +1671,19 @@ fn run_local_session(
     if stream2_local {
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
-        let bk = effective_gpu_backend;
+        // Allow Stream 2 (external GPU) to use a different backend than Stream 1
+        // in local benchmark mode too (same as pool mode).  Set
+        // ZION_EXT_GPU_BACKEND=opencl to force OpenCL for ZANO ProgPoWZ while
+        // ZION deeksha runs on CUDA.
+        let bk = std::env::var("ZION_EXT_GPU_BACKEND")
+            .ok()
+            .and_then(|v| match v.to_lowercase().as_str() {
+                "opencl" | "ocl" => Some(gpu_backend::GpuBackendKind::OpenCL),
+                "cuda" => Some(gpu_backend::GpuBackendKind::Cuda),
+                "metal" => Some(gpu_backend::GpuBackendKind::Metal),
+                _ => None,
+            })
+            .unwrap_or(effective_gpu_backend);
         #[cfg(feature = "gpu-cuda")]
         let shared_cuda: Option<std::sync::Arc<cudarc::driver::CudaDevice>> = None;
         #[cfg(not(feature = "gpu-cuda"))]

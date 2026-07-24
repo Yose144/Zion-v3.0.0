@@ -274,11 +274,64 @@ ProgPoW CUDA kernel **neexistuje** — pouze OpenCL. Port by umožnil ZANO na CU
 | `V3/L1/miner/src/deeksha_lite_fire.cu` | CUDA deeksha kernel (INTERLEAVED + shared + early-exit) |
 | `V3/L1/cosmic-harmony/src/gpu/kernels/deeksha_lite_fire.cl` | OpenCL deeksha kernel (STRIDED + constant) |
 | `V3/L1/miner/src/gpu_backend.rs` | Backend dispatch — CudaDeekshaLiteFireMiner (launch_batch/collect_batch) |
-| `V3/L1/miner/src/cuda_external.rs` | CudaExtAlgo enum — 8 algos, **progpow chybí** |
+| `V3/L1/miner/src/cuda_external.rs` | CudaExtAlgo enum — 9 algos včetně Progpow (CUDA port) |
 | `AuXpow/csrc/opencl/progpow_kernel.cl` | OpenCL ProgPoW kernel (~1200 řádků, AMD-optimized) |
+| `AuXpow/csrc/cuda/progpow_kernel.cu` | CUDA ProgPoW kernel (~411 řádků, NVIDIA port) |
 | `AuXpow/src/progpow_codegen.rs` | Random math codegen (backend-agnostický) |
 | `docs/3.0.6/CUDA_TUNING_RTX.md` | RTX 3090 CUDA tuning (potvrzuje early-exit inflation) |
 | `docs/3.0.6/Vast1080.md` | GTX 1080 CUDA session (367 KH/s, raw 32M nonces/s) |
 | `docs/3.0.6/30khsDeeksha.md` | RX 5700 XT OpenCL tuning (28-30 KH/s, double-buffer) |
 | `docs/3.0.6/PROGPOW_KERNEL_OPTIMIZATION_REPORT.md` | ProgPoW OpenCL optimalizace (AMD bpermute) |
 | `docs/GPU_BENCHMARK_MATRIX.md` | Srovnání GPU (GTX 1080 OpenCL 9.5 KH/s) |
+
+---
+
+## 8. ProgPoWZ CUDA Port — Benchmark Results (2026-07-24)
+
+### Implementation
+
+ProgPoWZ (Zano) kernel ported from OpenCL to CUDA:
+- **`AuXpow/csrc/cuda/progpow_kernel.cu`** (~411 lines) — full CUDA port
+- Keccak-f800 (seed) + Keccak-f1600 (final hash)
+- Shared memory c_dag (PROGPOW_CACHE_WORDS = 4096)
+- `__shfl_sync` → `__shared__` + `__syncthreads()` for lane shuffle (NVIDIA fallback)
+- `__launch_bounds__(256)`, HASHES_PER_GROUP = 16
+- NVRTC compilation with period-based recompilation (every 50 blocks)
+- Random math code injected via `prepare_progpow_kernel_source_for_algo()` codegen
+
+### Benchmark: GTX 1070 Ti (sm_61, Pascal)
+
+| Backend | ProgPoWZ Hashrate | DAG Generation | Notes |
+|---|---|---|---|
+| **CUDA** (NVRTC) | **~11.0 MH/s** | 1.0s | Standalone `--test-cuda-kernel progpow_zano` |
+| **OpenCL** | **~5.6 MH/s** | 9.3s | Local benchmark, 100% duty for ZANO |
+| **Speedup** | **~2.0x** | **9.3x** | CUDA DAG gen uses proprietary ethash_dag_gen.cu |
+
+### Key Differences
+
+1. **DAG generation:** CUDA uses `ethash_dag_gen.cu` (proprietary kernel, 1.0s) vs OpenCL pure-Rust light cache + GPU gen (9.3s)
+2. **Kernel compilation:** CUDA uses NVRTC (runtime, 0.8s per period) vs OpenCL (runtime, ~0.5s)
+3. **Lane shuffle:** CUDA uses `__shared__` memory + `__syncthreads()` vs OpenCL `ds_bpermute` (AMD) / `__shared__` (NVIDIA OpenCL fallback)
+4. **Memory access:** CUDA `__ldg()` (texture cache) for DAG loads vs OpenCL `__constant` / global loads
+
+### Files Modified
+
+| File | Change |
+|---|---|
+| `AuXpow/csrc/cuda/progpow_kernel.cu` | NEW — CUDA ProgPoW kernel |
+| `V3/L1/miner/src/cuda_external.rs` | Progpow variant, NVRTC period recompile, dispatch arm |
+| `V3/L1/miner/src/main.rs` | `ZION_EXT_GPU_BACKEND` in local benchmark mode |
+| `AuXpow/src/progpow_codegen.rs` | `test_dump_cuda_progpow_source` test |
+
+### Usage
+
+```bash
+# Test CUDA ProgPoW kernel:
+zion-miner --test-cuda-kernel progpow_zano
+
+# Run with CUDA for ZANO (Stream 2):
+ZION_EXT_GPU_BACKEND=cuda ./start-local-miner.sh
+
+# Run with OpenCL for ZANO (default, safer for dual-mining):
+ZION_EXT_GPU_BACKEND=opencl ./start-local-miner.sh
+```

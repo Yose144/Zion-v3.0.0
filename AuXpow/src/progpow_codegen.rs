@@ -898,4 +898,29 @@ mod tests {
         let cache_loads = result.matches("c_dag[offset]").count();
         assert_eq!(cache_loads, 6, "MeowPow should have 6 cache loads");
     }
+
+    #[test]
+    fn test_dump_cuda_progpow_source() {
+        let base_src = include_str!("../csrc/cuda/progpow_kernel.cu");
+        let prepared = prepare_progpow_kernel_source_for_algo(
+            base_src,
+            "progpow_zano",
+            3785945,
+        );
+        std::fs::write("/tmp/progpow_cuda_source.cu", &prepared).unwrap();
+
+        // Check where injected code ends up
+        for (i, line) in prepared.lines().enumerate() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("offset = mix")
+                || trimmed.starts_with("data = c_dag")
+                || trimmed.contains("PROGPOW_INCLUDE")
+                || trimmed.contains("progpow_mine")
+                || trimmed.contains("extern \"C\"")
+            {
+                println!("Line {}: {}", i + 1, line);
+            }
+        }
+        assert!(!prepared.contains("PROGPOW_INCLUDE"), "Placeholders should be replaced");
+    }
 }
