@@ -147,6 +147,10 @@ pub struct GpuMiner {
     /// Current block height for KawPow/ProgPow period calculation.
     /// Must be set via `set_block_height()` before mining KawPow/ProgPow.
     block_height: u64,
+    /// Group size used the last time a ProgPow kernel was compiled.
+    /// Kept in sync with the kernel's GROUP_SIZE build define so the
+    /// enqueue local_work_size matches and avoids out-of-bounds local mem.
+    progpow_group_size: usize,
 }
 
 /// Cached OpenCL buffers for the BeamHash III multi-round solver.
@@ -372,6 +376,7 @@ impl GpuMiner {
             pearl_buffers: None,
             beamhash_buffers: None,
             block_height: 0,
+            progpow_group_size: 256,
         })
     }
 
@@ -1184,11 +1189,9 @@ impl GpuMiner {
         // options. ProgPoW uses GROUP_SIZE=256 with bpermute (or 128 without).
         // KawPow and variants use GROUP_SIZE=128.
         // Mismatch causes out-of-bounds local memory access → GPU hang.
-        // ZION_AUXPOW_GPU_GROUP_SIZE env var overrides (must match build define).
-        let progpow_wg = std::env::var("ZION_AUXPOW_GPU_GROUP_SIZE")
-            .ok()
-            .and_then(|v| v.trim().parse::<usize>().ok())
-            .unwrap_or(256); // matches GROUP_SIZE=256 default with bpermute
+        // progpow_group_size is set during kernel compilation in ensure_proque_progpow,
+        // which already respects ZION_AUXPOW_GPU_GROUP_SIZE.
+        let progpow_wg = self.progpow_group_size.max(1);
         let wg_size = match algorithm {
             "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => progpow_wg,
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => 128, // GROUP_SIZE=128 for KawPow
@@ -2627,6 +2630,41 @@ typedef unsigned long ulong;
         let params = progpow_codegen::select_progpow_params(algorithm);
         let period = block_height / params.period as u64;
 
+        // Detect platform/wavefront size from device name.
+        // RDNA1+ = wave32, GCN/Vega = wave64, NVIDIA = warp32.
+        let dev_name_lower = self.device_name.to_lowercase();
+        let is_nvidia = dev_name_lower.contains("nvidia")
+            || dev_name_lower.contains("geforce")
+            || dev_name_lower.contains("quadro")
+            || dev_name_lower.contains("tesla");
+
+        // Determine if we can use AMD bpermute (ds_bpermute) for barrier-free shuffle.
+        // Enabled on RDNA1+ by default; disabled on GCN/Vega and NVIDIA by default.
+        // Can be overridden via ZION_AUXPOW_GPU_USE_BPERMUTE=1/0.
+        let is_gcn_or_vega = dev_name_lower.contains("gfx8")
+            || dev_name_lower.contains("gfx9")
+            || dev_name_lower.contains("vega");
+        let use_bpermute_env = std::env::var("ZION_AUXPOW_GPU_USE_BPERMUTE")
+            .ok()
+            .and_then(|v| v.trim().parse::<i32>().ok())
+            .map(|v| v != 0);
+        let use_bpermute = use_bpermute_env.unwrap_or((!is_gcn_or_vega) && !is_nvidia);
+
+        let is_progpow = algorithm == "progpow"
+            || algorithm == "progpow_epic"
+            || algorithm == "progpow_zano"
+            || algorithm == "progpowz";
+
+        // GROUP_SIZE: 256 with bpermute (no barriers → safe), 128 without (barrier limit)
+        // On GCN/Vega we cap at 128 to reduce register pressure and TTD risk.
+        // NVIDIA supports barriers cleanly and benefits from 256 (16 hashes/group).
+        let group_size_default = if is_progpow && (use_bpermute || is_nvidia) { 256 } else { 128 };
+        let group_size = std::env::var("ZION_AUXPOW_GPU_GROUP_SIZE")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+            .unwrap_or(group_size_default);
+        self.progpow_group_size = group_size;
+
         // Cache key includes dag_elements so that the kernel is recompiled
         // with the correct PROGPOW_DAG_ELEMENTS when the DAG becomes available.
         let dag_elements_safe = dag_elements.max(1);
@@ -2707,13 +2745,7 @@ typedef unsigned long ulong;
         // MeowPow uses REGS=16 and CNT_MATH=9 (halved vs KawPow's 32/18).
         // EvrProgPow uses the same REGS/CNT_MATH as KawPow (32/18) but PERIOD=3.
 
-        // Detect platform/wavefront size from device name.
-        // RDNA1+ = wave32, GCN/Vega = wave64, NVIDIA = warp32.
-        let dev_name_lower = self.device_name.to_lowercase();
-        let is_nvidia = dev_name_lower.contains("nvidia")
-            || dev_name_lower.contains("geforce")
-            || dev_name_lower.contains("quadro")
-            || dev_name_lower.contains("tesla");
+        // RDNA1+ detection (re-used for WAVE_SIZE).
         let is_rdna = dev_name_lower.contains("gfx10")
             || dev_name_lower.contains("gfx11")
             || dev_name_lower.contains("rdna")
@@ -2727,36 +2759,7 @@ typedef unsigned long ulong;
             || dev_name_lower.contains("7700")
             || dev_name_lower.contains("7800")
             || dev_name_lower.contains("7900");
-        // Legacy GCN/Vega (gfx8xx, gfx9xx) often hangs with ds_bpermute in the
-        // ProgPoW DAG loop when combined with the keccak unroll and GROUP_SIZE=256.
-        // Auto-disable bpermute there; RDNA1+ (gfx10/11) runs it reliably.
-        // NVIDIA never supports AMD bpermute intrinsics.
-        let is_gcn_or_vega = dev_name_lower.contains("gfx8")
-            || dev_name_lower.contains("gfx9")
-            || dev_name_lower.contains("vega");
         let wave_size = if is_rdna || is_nvidia { 32 } else { 64 };
-
-        // Determine if we can use AMD bpermute (ds_bpermute) for barrier-free shuffle.
-        // Enabled on RDNA1+ by default; disabled on GCN/Vega and NVIDIA by default.
-        // Can be overridden via ZION_AUXPOW_GPU_USE_BPERMUTE=1/0.
-        let use_bpermute_env = std::env::var("ZION_AUXPOW_GPU_USE_BPERMUTE")
-            .ok()
-            .and_then(|v| v.trim().parse::<i32>().ok())
-            .map(|v| v != 0);
-        let use_bpermute = use_bpermute_env.unwrap_or((!is_gcn_or_vega) && !is_nvidia);
-
-        let is_progpow = algorithm == "progpow"
-            || algorithm == "progpow_epic"
-            || algorithm == "progpow_zano"
-            || algorithm == "progpowz";
-
-        // GROUP_SIZE: 256 with bpermute (no barriers → safe), 128 without (barrier limit)
-        // On GCN/Vega we also cap at 128 to reduce register pressure and TTD risk.
-        let group_size_default = if is_progpow && use_bpermute { 256 } else { 128 };
-        let group_size = std::env::var("ZION_AUXPOW_GPU_GROUP_SIZE")
-            .ok()
-            .and_then(|v| v.trim().parse::<usize>().ok())
-            .unwrap_or(group_size_default);
 
         // Build platform/bpermute/wave defines
         let platform_id = if is_nvidia { 1 } else { 2 };

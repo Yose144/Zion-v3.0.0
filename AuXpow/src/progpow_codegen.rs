@@ -162,9 +162,12 @@ fn math_code(d: &str, a: &str, b: &str, r: u32) -> String {
 
 /// ProgPoWZ (Zano) math op selection.
 ///
-/// The hyle-team/progminer reference (Zano official miner fork) uses the
-/// standard ProgPoW 0.9.2 random_math mapping with selector % 11 - no shift.
-/// Zano modifications are elsewhere (binary layout/consensus), not math ops.
+/// The hyle-team/progminer reference (Zano official miner fork) permutes the
+/// standard ProgPoW 0.9.2 math ops (clz/popcount moved to slots 0/1) and
+/// explicitly masks the rotation count with `% 32` to match the CPU
+/// `rotl32`/`rotr32` implementation. Without the mask NVIDIA's OpenCL
+/// `rotate()` is implementation-defined for counts >= 32, producing wrong
+/// mix hashes and rejected shares.
 fn math_code_zano(d: &str, a: &str, b: &str, r: u32) -> String {
     match r % 11 {
         0 => format!("{} = clz({}) + clz({});\n", d, a, b),
@@ -173,8 +176,8 @@ fn math_code_zano(d: &str, a: &str, b: &str, r: u32) -> String {
         3 => format!("{} = {} * {};\n", d, a, b),
         4 => format!("{} = mul_hi({}, {});\n", d, a, b),
         5 => format!("{} = min({}, {});\n", d, a, b),
-        6 => format!("{} = ROTL32({}, {});\n", d, a, b),
-        7 => format!("{} = ROTR32({}, {});\n", d, a, b),
+        6 => format!("{} = ROTL32({}, ({} % 32));\n", d, a, b),
+        7 => format!("{} = ROTR32({}, ({} % 32));\n", d, a, b),
         8 => format!("{} = {} & {};\n", d, a, b),
         9 => format!("{} = {} | {};\n", d, a, b),
         10 => format!("{} = {} ^ {};\n", d, a, b),
