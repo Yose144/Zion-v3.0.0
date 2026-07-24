@@ -649,6 +649,9 @@ impl CudaExternalMiner {
         // Step 3: Preprocess (strip #pragma once, #include, fix NVRTC issues)
         let processed = preprocess_kernel(&prepared_src);
 
+        // Debug: dump the preprocessed source for inspection
+        let _ = std::fs::write("/tmp/progpow_cuda_source.cu", &processed);
+
         // Step 4: Compile via NVRTC with PROGPOW_DAG_ELEMENTS define
         let arch = detect_cuda_arch(&self.dev);
         let ptx = compile_ptx_with_opts(
