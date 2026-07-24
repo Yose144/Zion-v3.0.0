@@ -8,7 +8,7 @@
 set -euo pipefail
 
 REPO_ROOT="/home/zionserver/2.9.6-main"
-MINER_BIN="${REPO_ROOT}/V3/target/release/zion-miner"
+MINER_BIN="${REPO_ROOT}/target/release/zion-miner"
 DESKTOP_BIN="${HOME}/Desktop/zion-miner"
 
 # ── Pool & defaults ────────────────────────────────────────────────────────
