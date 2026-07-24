@@ -41,7 +41,9 @@ export ZION_STREAM1_ENABLED="${ZION_STREAM1_ENABLED:-1}"
 # Fits in 6 GB VRAM alongside deeksha (~2 GB scratchpad): ~4.5 GB total.
 # KawPow (RVN) was 5.6 GB and OOM'd — ZANO is much smaller.
 # ZION_STREAM2_FORCE_COIN pins Stream 2 to ZANO regardless of autonomous router.
-export ZION_STREAM2_ENABLED="${ZION_STREAM2_ENABLED:-1}"
+export ZION_STREAM2_ENABLED="${ZION_STREAM2_ENABLED:-0}"
+# ZANO (ProgPoWZ) is currently producing zero hashes on NVIDIA OpenCL,
+# causing 100% rejects. Disable Stream 2 until the ProgPoWZ kernel is fixed.
 export ZION_STREAM2_FORCE_COIN="${ZION_STREAM2_FORCE_COIN:-ZANO}"
 export ZION_STREAM3_ENABLED="${ZION_STREAM3_ENABLED:-1}"
 export ZION_METRICS_REPORT_SECS="${ZION_METRICS_REPORT_SECS:-15}"
