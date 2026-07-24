@@ -166,7 +166,7 @@ static thread_local __m128i tl_shuf2;
 /* fixupkey: restore only the ~64 modified 16-byte key blocks from the refresh area.
  * This replaces the old 8832-byte memcpy per nonce with ~1024 bytes of restores.
  * Matches the VerusCoin reference miner (verus_clhash.cpp mine_verus_v2). */
-static inline __attribute__((always_inline)) void fixupkey_opt(
+VERUSHASH_ALWAYS_INLINE void fixupkey_opt(
     __m128i **pMoveScratch, verusclhash_descr *pdesc)
 {
     uint32_t ofs = pdesc->keySizeInBytes >> 4;
@@ -359,7 +359,7 @@ void verushash_mining_reset(void) {
 /* Target comparison: VerusHash v2.2 returns hash in LE byte order.
  * Target is BE. We compare hash_reversed (→BE) vs target (BE).
  * Returns 1 if hash <= target, 0 otherwise. */
-static inline __attribute__((always_inline)) int meets_target_le(
+VERUSHASH_ALWAYS_INLINE int meets_target_le(
     const uint8_t hash[32], const uint8_t target[32])
 {
     /* Compare reversed hash (LE→BE) against target (BE) */
