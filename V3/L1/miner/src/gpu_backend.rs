@@ -553,6 +553,262 @@ impl TriGpuManager {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// MultiGpuMiner — professional multi-GPU support (like teamredminer/lolMiner)
+// ═══════════════════════════════════════════════════════════════════════════
+// Wraps multiple GpuMiner instances (one per GPU device) and distributes
+// nonce ranges across them in parallel using std::thread::scope.
+// Each sub-miner has its own OpenCL context/queue, so they are fully
+// independent and thread-safe.
+
+/// Multi-GPU wrapper that implements the GpuMiner trait by dispatching
+/// mine_batch() calls across all detected GPU devices in parallel.
+pub struct MultiGpuMiner {
+    /// One miner per GPU device.
+    miners: Vec<Box<dyn GpuMiner>>,
+    /// Cached combined device name (e.g. "RX 5600 XT + RX Vega 64").
+    device_name_cache: String,
+    /// Backend kind (all sub-miners share the same kind).
+    kind: GpuBackendKind,
+    /// Algorithm (all sub-miners share the same algorithm).
+    algorithm: String,
+}
+
+impl MultiGpuMiner {
+    /// Create a MultiGpuMiner from a list of already-initialized sub-miners.
+    pub fn new(miners: Vec<Box<dyn GpuMiner>>, kind: GpuBackendKind, algorithm: &str) -> Self {
+        let device_name_cache = miners
+            .iter()
+            .map(|m| m.device_name())
+            .collect::<Vec<_>>()
+            .join(" + ");
+        Self {
+            miners,
+            device_name_cache,
+            kind,
+            algorithm: algorithm.to_string(),
+        }
+    }
+
+    /// Number of GPU devices.
+    pub fn device_count(&self) -> usize {
+        self.miners.len()
+    }
+}
+
+impl GpuMiner for MultiGpuMiner {
+    fn device_name(&self) -> String {
+        self.device_name_cache.clone()
+    }
+
+    fn backend_kind(&self) -> GpuBackendKind {
+        self.kind
+    }
+
+    fn algorithm(&self) -> String {
+        self.algorithm.clone()
+    }
+
+    fn update_epoch(&mut self, height: u64) -> Result<()> {
+        for m in &mut self.miners {
+            m.update_epoch(height)?;
+        }
+        Ok(())
+    }
+
+    fn set_stream_weights(
+        &mut self,
+        weights: &zion_cosmic_harmony::stream_profit::StreamWeights,
+    ) -> Result<()> {
+        for m in &mut self.miners {
+            m.set_stream_weights(weights)?;
+        }
+        Ok(())
+    }
+
+    fn suppress_mismatch_warnings(&self) -> bool {
+        // Suppress per-GPU mismatch warnings in multi-GPU mode; the main loop
+        // verifies the combined result against CPU hash.
+        true
+    }
+
+    fn mine_batch(
+        &mut self,
+        header: MiningHeader,
+        target: DifficultyTarget,
+        nonce_start: u64,
+        batch_size: u64,
+    ) -> Result<GpuBatchResult> {
+        let n = self.miners.len();
+        if n == 0 {
+            anyhow::bail!("MultiGpuMiner has no sub-miners");
+        }
+        if n == 1 {
+            return self.miners[0].mine_batch(header, target, nonce_start, batch_size);
+        }
+
+        // Split the nonce range evenly across GPUs. Remainder goes to GPU 0..r.
+        let per_gpu = batch_size / n as u64;
+        let remainder = (batch_size % n as u64) as usize;
+        let ranges: Vec<(u64, u64)> = {
+            let mut nonce = nonce_start;
+            (0..n)
+                .map(|i| {
+                    let size = per_gpu + if i < remainder { 1 } else { 0 };
+                    let ns = nonce;
+                    nonce += size;
+                    (ns, size)
+                })
+                .collect()
+        };
+
+        // Dispatch each sub-miner in a scoped thread. Each sub-miner has its
+        // own OpenCL context, so parallel execution is safe.
+        let results: Vec<Result<GpuBatchResult>> = std::thread::scope(|s| {
+            let handles: Vec<_> = self
+                .miners
+                .iter_mut()
+                .zip(ranges.iter())
+                .map(|(miner, (ns, sz))| {
+                    let h = header;
+                    let t = target;
+                    let ns = *ns;
+                    let sz = *sz;
+                    s.spawn(move || miner.mine_batch(h, t, ns, sz))
+                })
+                .collect();
+            handles.into_iter().map(|h| h.join().unwrap()).collect()
+        });
+
+        // Merge results from all GPUs.
+        let mut merged = GpuBatchResult {
+            solutions: Vec::new(),
+            nonces_tested: 0,
+        };
+        for result in results {
+            match result {
+                Ok(r) => {
+                    merged.nonces_tested += r.nonces_tested;
+                    merged.solutions.extend(r.solutions);
+                }
+                Err(e) => {
+                    eprintln!("multi_gpu: sub-miner batch error: {e}");
+                }
+            }
+        }
+        Ok(merged)
+    }
+
+    fn mine_batch_raw(
+        &mut self,
+        raw_header: &[u8],
+        target: DifficultyTarget,
+        nonce_start: u64,
+        batch_size: u64,
+    ) -> Result<GpuBatchResult> {
+        let n = self.miners.len();
+        if n == 0 {
+            anyhow::bail!("MultiGpuMiner has no sub-miners");
+        }
+        if n == 1 {
+            return self.miners[0].mine_batch_raw(raw_header, target, nonce_start, batch_size);
+        }
+
+        let per_gpu = batch_size / n as u64;
+        let remainder = (batch_size % n as u64) as usize;
+        let ranges: Vec<(u64, u64)> = {
+            let mut nonce = nonce_start;
+            (0..n)
+                .map(|i| {
+                    let size = per_gpu + if i < remainder { 1 } else { 0 };
+                    let ns = nonce;
+                    nonce += size;
+                    (ns, size)
+                })
+                .collect()
+        };
+
+        // For raw header, clone the bytes for each thread.
+        let header_bytes: Vec<u8> = raw_header.to_vec();
+        let results: Vec<Result<GpuBatchResult>> = std::thread::scope(|s| {
+            let handles: Vec<_> = self
+                .miners
+                .iter_mut()
+                .zip(ranges.iter())
+                .map(|(miner, (ns, sz))| {
+                    let hb = header_bytes.clone();
+                    let t = target;
+                    let ns = *ns;
+                    let sz = *sz;
+                    s.spawn(move || miner.mine_batch_raw(&hb, t, ns, sz))
+                })
+                .collect();
+            handles.into_iter().map(|h| h.join().unwrap()).collect()
+        });
+
+        let mut merged = GpuBatchResult {
+            solutions: Vec::new(),
+            nonces_tested: 0,
+        };
+        for result in results {
+            match result {
+                Ok(r) => {
+                    merged.nonces_tested += r.nonces_tested;
+                    merged.solutions.extend(r.solutions);
+                }
+                Err(e) => {
+                    eprintln!("multi_gpu: sub-miner raw batch error: {e}");
+                }
+            }
+        }
+        Ok(merged)
+    }
+
+    #[cfg(feature = "gpu-cuda")]
+    fn shared_cuda_device(&self) -> Option<std::sync::Arc<cudarc::driver::CudaDevice>> {
+        // In multi-GPU mode, there's no single shared CUDA device.
+        // The external GPU stream creates its own backend.
+        None
+    }
+
+    fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
+        // Benchmark all sub-miners in parallel and sum the hashrates.
+        let n = self.miners.len();
+        if n == 0 {
+            anyhow::bail!("MultiGpuMiner has no sub-miners");
+        }
+        if n == 1 {
+            return self.miners[0].benchmark(secs);
+        }
+
+        let results: Vec<Result<(u64, f64, f64)>> = std::thread::scope(|s| {
+            let handles: Vec<_> = self
+                .miners
+                .iter_mut()
+                .map(|miner| {
+                    s.spawn(move || miner.benchmark(secs))
+                })
+                .collect();
+            handles.into_iter().map(|h| h.join().unwrap()).collect()
+        });
+
+        let mut total_hashes: u64 = 0;
+        let mut total_hps: f64 = 0.0;
+        let mut max_batch_ms: f64 = 0.0;
+        for result in results {
+            match result {
+                Ok((h, hps, bms)) => {
+                    total_hashes += h;
+                    total_hps += hps;
+                    max_batch_ms = max_batch_ms.max(bms);
+                }
+                Err(e) => eprintln!("multi_gpu benchmark error: {e}"),
+            }
+        }
+        Ok((total_hashes, total_hps, max_batch_ms))
+    }
+}
+
 /// Set of external AuxPoW algorithms that are handled by `zion_auxpow` GPU miner.
 pub fn is_external_algorithm(algorithm: &str) -> bool {
     matches!(
@@ -1718,13 +1974,96 @@ pub fn backend_supports_algorithm(backend: GpuBackendKind, algorithm: &str) -> b
 
 /// Try to create the best available GPU backend.
 /// Selects the appropriate OpenCL miner based on the algorithm.
+///
+/// When multiple GPU devices are detected and `ZION_MULTI_GPU` is not
+/// explicitly disabled ("false"/"0"), this creates a `MultiGpuMiner` that
+/// wraps one sub-miner per GPU device, distributing nonce ranges in parallel.
+/// This gives professional multi-GPU support like teamredminer/lolMiner.
 pub fn create_gpu_backend(
     kind: GpuBackendKind,
     work_size: usize,
     algorithm: &str,
     coin: &str,
 ) -> Result<Box<dyn GpuMiner>> {
+    // Multi-GPU is only for OpenCL (CUDA/Metal have their own multi-GPU logic).
+    // External AuxPoW algorithms have their own device selection in stream threads.
+    let multi_gpu_enabled = match std::env::var("ZION_MULTI_GPU") {
+        Ok(v) => !v.eq_ignore_ascii_case("false") && v != "0",
+        Err(_) => true, // default: auto-enable
+    };
+
+    if multi_gpu_enabled
+        && (kind == GpuBackendKind::OpenCL || kind == GpuBackendKind::Auto)
+        && !is_external_algorithm(algorithm)
+    {
+        // Count available GPU devices.
+        let gpu_count = count_opencl_gpu_devices();
+        if gpu_count > 1 {
+            println!(
+                "multi_gpu_init devices={} algorithm={} — creating {} parallel sub-miners",
+                gpu_count, algorithm, gpu_count
+            );
+            let mut sub_miners: Vec<Box<dyn GpuMiner>> = Vec::new();
+            let prev_idx = std::env::var("ZION_OCL_DEVICE_IDX").ok();
+            for i in 0..gpu_count {
+                std::env::set_var("ZION_OCL_DEVICE_IDX", i.to_string());
+                match create_gpu_backend_inner(kind, work_size, algorithm, coin, None) {
+                    Ok(m) => {
+                        println!(
+                            "multi_gpu_sub_init device_idx={} device=\"{}\" ok",
+                            i,
+                            m.device_name()
+                        );
+                        sub_miners.push(m);
+                    }
+                    Err(e) => {
+                        eprintln!(
+                            "multi_gpu_sub_init device_idx={} failed: {e}",
+                            i
+                        );
+                    }
+                }
+            }
+            // Restore previous env var state.
+            match prev_idx {
+                Some(v) => std::env::set_var("ZION_OCL_DEVICE_IDX", v),
+                None => std::env::remove_var("ZION_OCL_DEVICE_IDX"),
+            }
+            if sub_miners.is_empty() {
+                anyhow::bail!("multi_gpu: all sub-miner initializations failed");
+            }
+            if sub_miners.len() == 1 {
+                println!("multi_gpu: only 1 sub-miner succeeded — using single-GPU mode");
+                return Ok(sub_miners.pop().unwrap());
+            }
+            println!(
+                "multi_gpu_ready active_devices={} names=\"{}\"",
+                sub_miners.len(),
+                sub_miners.iter().map(|m| m.device_name()).collect::<Vec<_>>().join(" + ")
+            );
+            return Ok(Box::new(MultiGpuMiner::new(sub_miners, kind, algorithm)));
+        }
+    }
+
     create_gpu_backend_inner(kind, work_size, algorithm, coin, None)
+}
+
+/// Count the number of OpenCL GPU devices across all platforms.
+#[cfg(feature = "gpu-opencl")]
+fn count_opencl_gpu_devices() -> usize {
+    let platforms = ocl::Platform::list();
+    let mut count = 0;
+    for platform in &platforms {
+        if let Ok(devs) = ocl::Device::list(*platform, Some(ocl::flags::DeviceType::GPU)) {
+            count += devs.len();
+        }
+    }
+    count
+}
+
+#[cfg(not(feature = "gpu-opencl"))]
+fn count_opencl_gpu_devices() -> usize {
+    0
 }
 
 /// Create a GPU backend with an optional shared CUDA device.

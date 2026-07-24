@@ -2436,11 +2436,27 @@ fn run_remote_session(
     if dual_gpu_enabled {
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
-        let bk = effective_gpu_backend;
+        // Allow Stream 2 (external GPU) to use a different backend than Stream 1.
+        // This is essential when the primary backend is CUDA (for ZION deeksha)
+        // but the external algorithm (e.g. ProgPoWZ/ZANO) is only implemented in
+        // OpenCL.  Set ZION_EXT_GPU_BACKEND=opencl to force OpenCL for Stream 2.
+        let bk = std::env::var("ZION_EXT_GPU_BACKEND")
+            .ok()
+            .and_then(|v| match v.to_lowercase().as_str() {
+                "opencl" | "ocl" => Some(gpu_backend::GpuBackendKind::OpenCL),
+                "cuda" => Some(gpu_backend::GpuBackendKind::Cuda),
+                "metal" => Some(gpu_backend::GpuBackendKind::Metal),
+                _ => None,
+            })
+            .unwrap_or(effective_gpu_backend);
         // Share the CUDA device with the external GPU thread to avoid
         // creating a second CUDA context (deadlock on consumer GPUs).
         #[cfg(feature = "gpu-cuda")]
-        let shared_cuda = tri_gpu.shared_cuda_device();
+        let shared_cuda = if bk == gpu_backend::GpuBackendKind::Cuda {
+            tri_gpu.shared_cuda_device()
+        } else {
+            None
+        };
         #[cfg(not(feature = "gpu-cuda"))]
         let shared_cuda: Option<()> = None;
         thread::spawn(move || {
