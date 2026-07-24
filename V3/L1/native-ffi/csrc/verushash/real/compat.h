@@ -34,6 +34,12 @@
     #define VERUSHASH_PORTABLE_ONLY 1
 #endif
 
+#if defined(_MSC_VER)
+    #define VERUSHASH_ALWAYS_INLINE static __forceinline
+#else
+    #define VERUSHASH_ALWAYS_INLINE static inline __attribute__((always_inline))
+#endif
+
 /* ---------------------------------------------------------------
  * Boost stubs
  * --------------------------------------------------------------- */

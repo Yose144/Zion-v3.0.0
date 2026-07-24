@@ -31,7 +31,6 @@
 
 #ifdef _WIN32
 #pragma warning (disable : 4146)
-#include <intrin.h>
 #endif
 extern "C" int __cpuverusoptimized = 0x80;
 
@@ -41,6 +40,8 @@ extern "C" int __cpuverusoptimized = 0x80;
 #else
 #include "sse2neon.h"
 #endif
+#elif defined(_WIN32)
+#include <intrin.h>
 #else
 #include <x86intrin.h>
 #endif
@@ -69,7 +70,7 @@ thread_specific_ptr::~thread_specific_ptr() {
 #endif // defined(__APPLE__) || defined(_WIN32)
 
 // multiply the length and the some key, no modulo
-    static inline __attribute__((always_inline)) __m128i lazyLengthHash(uint64_t keylength, uint64_t length) {
+    VERUSHASH_ALWAYS_INLINE __m128i lazyLengthHash(uint64_t keylength, uint64_t length) {
 
     const __m128i lengthvector = _mm_set_epi64x(keylength,length);
     const __m128i clprod1 = _mm_clmulepi64_si128( lengthvector, lengthvector, 0x10);
@@ -77,7 +78,7 @@ thread_specific_ptr::~thread_specific_ptr() {
 }
 
 // modulo reduction to 64-bit value. The high 64 bits contain garbage, see precompReduction64
-  static inline __attribute__((always_inline)) __m128i precompReduction64_si128( __m128i A) {
+  VERUSHASH_ALWAYS_INLINE __m128i precompReduction64_si128( __m128i A) {
     //const __m128i C = _mm_set_epi64x(1U,(1U<<4)+(1U<<3)+(1U<<1)+(1U<<0)); // C is the irreducible poly. (64,4,3,1,0)
     const __m128i C = _mm_cvtsi64_si128((1U<<4)+(1U<<3)+(1U<<1)+(1U<<0));
     __m128i Q2 = _mm_clmulepi64_si128( A, C, 0x01);
@@ -88,11 +89,11 @@ thread_specific_ptr::~thread_specific_ptr() {
     return final;/// WARNING: HIGH 64 BITS CONTAIN GARBAGE
 }
 
-    static inline __attribute__((always_inline)) uint64_t precompReduction64( __m128i A) {
+    VERUSHASH_ALWAYS_INLINE uint64_t precompReduction64( __m128i A) {
     return _mm_cvtsi128_si64(precompReduction64_si128(A));
 }
 
-    static inline __attribute__((always_inline)) void fixupkey(__m128i **pMoveScratch, verusclhash_descr *pdesc) {
+    VERUSHASH_ALWAYS_INLINE void fixupkey(__m128i **pMoveScratch, verusclhash_descr *pdesc) {
     uint32_t ofs = pdesc->keySizeInBytes >> 4;
     for (__m128i *pfixup = *pMoveScratch; pfixup; pfixup = *++pMoveScratch)
     {
@@ -101,7 +102,7 @@ thread_specific_ptr::~thread_specific_ptr() {
     }
 }
 
-    static inline __attribute__((always_inline)) void haraka512_keyed_local(unsigned char *out, const unsigned char *in, const u128 *rc) {
+    VERUSHASH_ALWAYS_INLINE void haraka512_keyed_local(unsigned char *out, const unsigned char *in, const u128 *rc) {
   u128 s[4], tmp;
 
   s[0] = LOAD(in);
