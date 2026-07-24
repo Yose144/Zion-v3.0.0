@@ -1931,3 +1931,22 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 - **Important:** `public/` must be copied into the runtime directory; otherwise static files (e.g. `/docs/WP/*.md`, images, icons) are not served by the container.
 - **Public assets `public/docs/WP/`** must stay in sync with the public `docs/WP` subtree. Use `docs/WP-Mainet/regenerate_pdfs.py` (requires `fpdf2`) to regenerate PDFs and copy them to `public/docs/WP/` and `APP&WEB/website-v2.9/public/docs/WP/`. After editing `public/`, run `git subtree push --prefix=public public main`.
 - **Service worker:** `public/sw.js` is intentionally a kill-switch that clears all caches and unregisters itself. `ServiceWorkerRegistration.tsx` unregisters any existing SWs. Do not re-enable aggressive `cache-first` SW strategies — they caused blank pages after deploy when stale HTML referenced removed `/_next/static/` assets.
+
+## Memory pressure incident 2026-07-24
+
+**Symptom:** Edge server `62.171.141.136` showed `used` memory climbing to ~6.7 GiB and swap use, with `PageTables` ~870 MiB and each `zion-node` process mapping ~210 GiB of virtual address space (~211 k VMAs per process).
+
+**Root cause:** `MALLOC_ARENA_MAX=1` was set in `/etc/zion/edge-environment.sh` and `/etc/zion/edge-node2-environment.sh`. With a single glibc arena, every short-lived P2P/RPC thread caused glibc to `mmap` new 2 MiB heap regions for the 256 KiB scratchpad `Vec` allocations used by `deeksha_lite` / `deeksha_chv3` / `deeksha_lite_fire`. The regions were not released, accumulating 100 k+ 2 MiB mappings per node and blowing up the kernel page-table memory.
+
+**Fix applied:**
+1. Removed `MALLOC_ARENA_MAX=1` from both Edge node environment files.
+2. Restarted `zion-edge-node2.service` then `zion-edge-node1.service` (rolling restart).
+3. Reduced `vm.nr_hugepages` from `1250` to `256` in `/etc/sysctl.conf`, `/etc/sysctl.d/99-hugepages.conf`, and `/etc/sysctl.d/99-sysctl.conf` (freed ~2 GiB of reserved but unused huge-page memory; kept 512 MiB in case a RandomX/XMR stream is activated later).
+
+**Result:**
+- `/proc/meminfo` `PageTables` dropped from ~870 MiB to ~15 MiB.
+- `free` showed `used` drop from ~6.7 GiB to ~2.5 GiB, `available` up to ~5.3 GiB, swap use down to ~710 MiB.
+- Each restarted node process now has ~200–400 VMAs instead of ~211 k.
+- Node health, pool stratum listener, web, dashboard, and RPC all recovered.
+
+**Prevention:** Do not set `MALLOC_ARENA_MAX=1` for the node/pool binaries. The default glibc arena count scales with core count and avoids single-arena `mmap` bloat. If huge pages are reserved, keep only what the active workload (e.g. RandomX dataset) actually needs.
