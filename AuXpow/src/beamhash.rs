@@ -112,7 +112,7 @@ impl SipHash24State {
 /// Reference: beamHashIII_impl.cpp → InitialiseState(blake2b_state& base_state)
 /// The base_state is initialized with personalization and then fed the
 /// pre-PoW data (block header without solution).
-pub(crate) fn compute_prepow(header: &[u8]) -> [u64; 4] {
+pub fn compute_prepow(header: &[u8]) -> [u64; 4] {
     // BeamHash III uses BLAKE2b-256 with a 16-byte personalization:
     //   bytes 0-7:  "Beam-PoW"
     //   bytes 8-11: workBitSize (little-endian u32)

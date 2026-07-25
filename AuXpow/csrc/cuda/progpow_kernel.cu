@@ -68,18 +68,19 @@
 
 // ── CUDA intrinsics mapping for codegen compatibility ───────────────
 // The codegen produces: mul_hi(), clz(), popcount(), ROTL32(), ROTR32()
-// Use pure C implementations — CUDA intrinsics (__funnelshift_lc, __byte_perm)
-// have compiler optimization bugs on sm_61 with NVRTC that produce wrong results.
+// Manual (x<<n)|(x>>32-n) rotation matches the OpenCL/CPU reference and
+// avoids any NVRTC/PTX shf semantic ambiguity.  The codegen already masks
+// variable counts with % 32 for Zano, so counts are always in [0,31].
 #define mul_hi(a, b)    ((uint32_t)(((uint64_t)(a) * (uint64_t)(b)) >> 32))
 #define clz(x)          __clz((x))
 #define popcount(x)     __popc((x))
 __device__ __forceinline__ uint32_t rotl32_impl(uint32_t x, uint32_t n) {
     n &= 31;
-    return n ? (x << n) | (x >> (32 - n)) : x;
+    return (n == 0) ? x : ((x << n) | (x >> (32 - n)));
 }
 __device__ __forceinline__ uint32_t rotr32_impl(uint32_t x, uint32_t n) {
     n &= 31;
-    return n ? (x >> n) | (x << (32 - n)) : x;
+    return (n == 0) ? x : ((x >> n) | (x << (32 - n)));
 }
 #define ROTL32(x, n)    rotl32_impl((x), (n))
 #define ROTR32(x, n)    rotr32_impl((x), (n))
@@ -217,8 +218,12 @@ __device__ __forceinline__ void fill_mix(
 {
     uint32_t fnv_hash = 0x811c9dc5;
     kiss99_t st;
-    fnv1a(fnv_hash, (uint32_t)seed);       st.z = fnv_hash;
-    fnv1a(fnv_hash, (uint32_t)(seed >> 32)); st.w = fnv_hash;
+    // Match the OpenCL/reference behaviour: use the full 64-bit seed in the
+    // FNV-1a steps; the macro result is assigned back to a uint32_t, so it
+    // naturally truncates to the low 32 bits.  Casting to uint32_t first would
+    // perform the multiplication in 32-bit and lose the high-seed influence.
+    fnv1a(fnv_hash, seed);                 st.z = fnv_hash;
+    fnv1a(fnv_hash, seed >> 32);           st.w = fnv_hash;
     fnv1a(fnv_hash, lane_id);              st.jsr = fnv_hash;
     fnv1a(fnv_hash, lane_id);              st.jcong = fnv_hash;
     #pragma unroll

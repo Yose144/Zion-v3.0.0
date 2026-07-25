@@ -1561,7 +1561,8 @@ def _compute_derived_status(svc: dict, health_map: dict) -> dict:
 def all_services_health() -> list:
     # First pass: raw health (parallel to avoid serial TCP timeouts)
     raw = {}
-    with ThreadPoolExecutor(max_workers=min(8, len(SERVICE_REGISTRY) or 1)) as ex:
+    ex = ThreadPoolExecutor(max_workers=min(8, len(SERVICE_REGISTRY) or 1))
+    try:
         futures = {ex.submit(check_service_health, svc): svc["id"] for svc in SERVICE_REGISTRY}
         for fut in as_completed(futures, timeout=3.0):
             sid = futures[fut]
@@ -1569,6 +1570,8 @@ def all_services_health() -> list:
                 raw[sid] = fut.result()
             except Exception:
                 raw[sid] = {"alive": False, "status": "error", "details": "health check failed"}
+    finally:
+        ex.shutdown(wait=False, cancel_futures=True)
     # Fill in any timed-out entries
     for svc in SERVICE_REGISTRY:
         if svc["id"] not in raw:
@@ -2621,32 +2624,36 @@ def _build_status_edge_primary() -> dict:
     edge_node2_nodeinfo = None
     edge_peers = None
     edge_nodeinfo = None
-    with ThreadPoolExecutor(max_workers=5) as ex:
-        futures = {
-            ex.submit(_edge_rpc_call),
-            ex.submit(_edge_node2_rpc_call),
-            ex.submit(_edge_node2_nodeinfo_call),
-            ex.submit(_edge_peerinfo_call),
-            ex.submit(_edge_nodeinfo_call),
-        }
-        try:
-            for fut in as_completed(futures, timeout=5.0):
-                try:
-                    key, val = fut.result()
-                    if key == "edge":
-                        edge_rpc_info = val
-                    elif key == "edge2":
-                        edge_node2_info = val
-                    elif key == "edge2_info":
-                        edge_node2_nodeinfo = val
-                    elif key == "edge_peers":
-                        edge_peers = val
-                    elif key == "edge_info":
-                        edge_nodeinfo = val
-                except Exception:
-                    pass
-        except TimeoutError:
-            pass
+    ex = ThreadPoolExecutor(max_workers=5)
+    futures = {
+        ex.submit(_edge_rpc_call),
+        ex.submit(_edge_node2_rpc_call),
+        ex.submit(_edge_node2_nodeinfo_call),
+        ex.submit(_edge_peerinfo_call),
+        ex.submit(_edge_nodeinfo_call),
+    }
+    try:
+        for fut in as_completed(futures, timeout=5.0):
+            try:
+                key, val = fut.result()
+                if key == "edge":
+                    edge_rpc_info = val
+                elif key == "edge2":
+                    edge_node2_info = val
+                elif key == "edge2_info":
+                    edge_node2_nodeinfo = val
+                elif key == "edge_peers":
+                    edge_peers = val
+                elif key == "edge_info":
+                    edge_nodeinfo = val
+            except Exception:
+                pass
+    except TimeoutError:
+        pass
+    finally:
+        # Do not block the dashboard if an RPC thread is still stuck waiting
+        # for a node response. Running threads will time out on their own.
+        ex.shutdown(wait=False, cancel_futures=True)
 
     # ── Edge Node status ─────────────────────────────────────────────────────
     edge_node1_status = {

@@ -2919,6 +2919,7 @@ fn run_remote_session(
         let mut gpu_nonces_tested = 0u64;
         let mut cpu_nonces_tested = 0u64;
         let mut gpu_mix_hash: Option<[u8; 32]> = None;
+        let mut gpu_found_device: String = String::new();
 
         let scan_result = if can_gpu {
             let g = gpu_ref.unwrap();
@@ -2983,6 +2984,9 @@ fn run_remote_session(
                     match batch_result {
                         Ok(result) => {
                             gpu_nonces_tested = result.nonces_tested;
+                            if !result.device_name.is_empty() {
+                                gpu_found_device = result.device_name.clone();
+                            }
                             if let Some((nonce, gpu_hash, mix_hash)) = result.solutions.first() {
                                 gpu_mix_hash = *mix_hash;
                                 let candidate = zion_core::BlockCandidate {
@@ -3162,8 +3166,13 @@ fn run_remote_session(
             .iter()
             .map(|x| format!("{:02x}", x))
             .collect();
+        let display_device = if gpu_found_device.is_empty() {
+            telemetry.gpu_device_name.clone()
+        } else {
+            gpu_found_device
+        };
         println!(
-            "[{}] found_nonce={}  height={}  depth={}/{}  tested={}  elapsed_ms={}  algo={}  hash_prefix={}",
+            "[{}] found_nonce={}  height={}  depth={}/{}  tested={}  elapsed_ms={}  algo={}  device=\"{}\"  hash_prefix={}",
             log_timestamp(),
             solution.candidate.nonce,
             job.height,
@@ -3172,6 +3181,7 @@ fn run_remote_session(
             tested,
             batch_ms,
             current_algorithm,
+            display_device,
             hash_prefix,
         );
 
