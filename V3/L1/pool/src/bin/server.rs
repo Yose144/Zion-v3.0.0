@@ -1666,6 +1666,50 @@ fn main() -> Result<()> {
             Err(e) => warn!("block_tracker: failed to load pending blocks from DB: {}", e),
         }
     }
+    // F4.2: Restore miner telemetry paid totals and payout history from the
+    // share_store so the confirmation sweep, metrics, and miner detail API
+    // are correct after a restart.
+    if let Some(ref ss) = share_store {
+        match ss.payout_totals_by_miner() {
+            Ok(totals) => {
+                let mut telemetry = miner_telemetry
+                    .lock()
+                    .expect("miner telemetry lock poisoned");
+                for (miner_id, total) in totals {
+                    telemetry.set_paid_total_atomic(&miner_id, total);
+                }
+            }
+            Err(e) => warn!("share_store: failed to load payout totals: {}", e),
+        }
+        match ss.query_all_payouts_asc() {
+            Ok(rows) => {
+                let mut telemetry = miner_telemetry
+                    .lock()
+                    .expect("miner telemetry lock poisoned");
+                for row in &rows {
+                    let status = if row.confirmed {
+                        "confirmed".to_string()
+                    } else {
+                        "submitted_to_node".to_string()
+                    };
+                    telemetry.restore_payout(
+                        &row.miner_id,
+                        MinerPayoutRecord {
+                            amount_atomic: row.amount_flowers,
+                            share_count: 0,
+                            created_ts: row.ts as u64,
+                            height: row.height,
+                            status,
+                            tx_id: Some(row.tx_id.clone()),
+                            error: None,
+                        },
+                    );
+                }
+                info!("share_store: restored {} payout records into telemetry", rows.len());
+            }
+            Err(e) => warn!("share_store: failed to restore payout history: {}", e),
+        }
+    }
     let active_sessions = Arc::new(AtomicU64::new(0));
     let session_id_counter = Arc::new(AtomicU64::new(0));
     // F6.3: Reduced template cache TTL from 3s → 1s for faster block
@@ -2304,6 +2348,7 @@ fn main() -> Result<()> {
         let deferred_ref = Arc::clone(&deferred_payouts);
         let pplns_ref = Arc::clone(&pplns_engine);
         let telemetry_ref = Arc::clone(&miner_telemetry);
+        let share_store_ref = share_store.clone();
         let node_rpc = config.node_rpc_addr.clone();
         let pool_wallet = config.pool_wallet_address.clone();
         let signing_key = config.pool_signing_key.clone();
@@ -2385,13 +2430,23 @@ fn main() -> Result<()> {
                     }
                 }
             }
-            // Mark already-paid payouts as confirmed in telemetry
+            // Mark already-paid payouts as confirmed in telemetry and the DB.
             if !already_paid.is_empty() {
                 let mut telemetry = telemetry_ref
                     .lock()
                     .expect("miner telemetry lock poisoned");
                 for (p, tx_id) in &already_paid {
                     telemetry.confirm_failed_payout(&p.miner_id, height, p.amount, tx_id);
+                    if let Some(ref ss) = share_store_ref {
+                        let confirmations = match check_tx_on_chain(rpc, tx_id) {
+                            Ok(Some(tx_height)) => {
+                                let chain_height = get_chain_height(rpc).unwrap_or(tx_height);
+                                chain_height.saturating_sub(tx_height).saturating_add(1) as u32
+                            }
+                            _ => 1,
+                        };
+                        let _ = ss.confirm_payout(tx_id, confirmations);
+                    }
                 }
             }
             // If all payouts were already paid, remove from queue
@@ -2433,6 +2488,22 @@ fn main() -> Result<()> {
                             &outcome.executed,
                             &outcome.tx_id,
                         );
+                    }
+                    // F4: persist deferred payouts to the SQLite store as well.
+                    if let Some(ref ss) = share_store_ref {
+                        for p in &outcome.executed {
+                            let rec = zion_pool::store::PayoutRecord {
+                                miner_id: p.miner_id.clone(),
+                                address: p.address.clone(),
+                                amount_flowers: p.amount,
+                                tx_id: outcome.tx_id.clone(),
+                                height,
+                                block_hash: String::new(),
+                            };
+                            if let Err(e) = ss.record_payout(&rec) {
+                                println!("share_store: deferred record_payout failed: {e}");
+                            }
+                        }
                     }
                     let mut queue = deferred_ref.lock().expect("deferred lock poisoned");
                     if outcome.deferred.is_empty() {
@@ -6789,6 +6860,30 @@ impl MinerTelemetryRegistry {
         }
     }
 
+    /// Set the lifetime paid total for a miner (used when restoring from the
+    /// SQLite share_store on startup).
+    fn set_paid_total_atomic(&mut self, miner_id: &str, total: u64) {
+        let miner = self
+            .miners
+            .entry(miner_id.to_string())
+            .or_insert_with(|| MinerTelemetry::new("", "", "", now_unix_seconds()));
+        miner.paid_total_atomic = total;
+    }
+
+    /// Insert a payout record without touching `paid_total_atomic` (the total
+    /// is set separately from the share_store aggregate).  Used for startup
+    /// restore so the confirmation sweep and miner detail API have history.
+    fn restore_payout(&mut self, miner_id: &str, record: MinerPayoutRecord) {
+        let miner = self
+            .miners
+            .entry(miner_id.to_string())
+            .or_insert_with(|| MinerTelemetry::new("", "", "", now_unix_seconds()));
+        miner.payouts.push_front(record);
+        while miner.payouts.len() > PAYOUT_HISTORY_LIMIT {
+            miner.payouts.pop_back();
+        }
+    }
+
     fn pool_hashrate_for_window(&self, window_s: u64, now_s: u64) -> f64 {
         self.miners
             .values()
@@ -7779,7 +7874,7 @@ fn serve_routing_metrics(
                     .lock()
                     .expect("miner telemetry lock poisoned");
                 let pplns = pplns_engine.lock().expect("pplns lock poisoned");
-                match build_miner_api_payload(path, &stats, &telemetry, &pplns) {
+                match build_miner_api_payload(path, &stats, &telemetry, &pplns, share_store.as_deref()) {
                     Some(body) => ("200 OK", "application/json", body),
                     None => (
                         "404 Not Found",
@@ -8745,6 +8840,7 @@ fn build_miners_payload(
                 "valid_shares": miner.valid_shares,
                 "invalid_shares": miner.invalid_shares,
                 "pending_balance": pplns_engine.unpaid_balance(key),
+                "paid_total_atomic": miner.paid_total_atomic,
                 "streams": miner.streams
             })
         })
@@ -8762,6 +8858,7 @@ fn build_miner_api_payload(
     _stats: &RoutingStats,
     telemetry: &MinerTelemetryRegistry,
     pplns_engine: &PplnsEngine,
+    share_store: Option<&zion_pool::store::ShareStore>,
 ) -> Option<String> {
     let remainder = path.strip_prefix("/api/v1/miner/")?;
     let (address, suffix) = remainder.split_once('/')?;
@@ -8789,11 +8886,10 @@ fn build_miner_api_payload(
     let mut completed_jobs: u64 = 0;
     let mut no_solution_jobs: u64 = 0;
     let mut workers = Vec::new();
-    let mut all_payouts = Vec::new();
 
-    for miner_id in miner_ids {
+    for miner_id in &miner_ids {
         pending_balance += pplns_engine.unpaid_balance(miner_id);
-        if let Some(miner) = telemetry.miners.get(miner_id) {
+        if let Some(miner) = telemetry.miners.get(*miner_id) {
             hashrate_1h += miner.hashrate_for_window(HASHRATE_WINDOW_1H_S, now_s);
             hashrate_24h += miner.hashrate_for_window(HASHRATE_WINDOW_24H_S, now_s);
             valid_shares += miner.valid_shares;
@@ -8808,7 +8904,15 @@ fn build_miner_api_payload(
             if !miner.worker_name.is_empty() && !workers.contains(&miner.worker_name) {
                 workers.push(miner.worker_name.clone());
             }
-            all_payouts.extend(miner.payouts.iter().cloned());
+        }
+    }
+
+    // Prefer the SQLite store for the lifetime paid total so /stats and
+    // /payouts are consistent and avoid the race between telemetry updates
+    // and share_store writes.
+    if let Some(ss) = share_store {
+        if let Ok(db_total) = ss.payout_total_by_address(address) {
+            total_paid = db_total;
         }
     }
 
@@ -8837,6 +8941,37 @@ fn build_miner_api_payload(
             .to_string(),
         ),
         "payouts" => {
+            // Prefer the SQLite store for full payout history so the list sum
+            // matches stats.total_paid.  Fall back to the in-memory ring buffer
+            // only if the store is not configured.
+            let limit = extract_limit(path).unwrap_or(10000) as u32;
+            let mut all_payouts: Vec<MinerPayoutRecord> = if let Some(ss) = share_store {
+                match ss.query_payouts_by_address(address, limit) {
+                    Ok(rows) => rows
+                        .into_iter()
+                        .map(|row| MinerPayoutRecord {
+                            amount_atomic: row.amount_flowers,
+                            share_count: 0,
+                            created_ts: row.ts as u64,
+                            height: row.height,
+                            status: if row.confirmed {
+                                "confirmed".to_string()
+                            } else {
+                                "submitted_to_node".to_string()
+                            },
+                            tx_id: Some(row.tx_id),
+                            error: None,
+                        })
+                        .collect(),
+                    Err(_) => Vec::new(),
+                }
+            } else {
+                miner_ids
+                    .iter()
+                    .filter_map(|id| telemetry.miners.get(*id))
+                    .flat_map(|m| m.payouts.iter().cloned())
+                    .collect()
+            };
             // Sort payouts newest first and dedupe by tx_id/height.
             all_payouts.sort_by(|a, b| b.created_ts.cmp(&a.created_ts));
             Some(

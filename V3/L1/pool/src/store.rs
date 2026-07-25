@@ -11,6 +11,7 @@
 
 use anyhow::{Context, Result};
 use rusqlite::{params, Connection, OptionalExtension};
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
 use tracing::{debug, info};
@@ -289,10 +290,19 @@ impl ShareStore {
                 rec.block_hash,
             ],
         )?;
-        // Update miner's total_paid.
+        // Update miner's total_paid.  Payouts are keyed by the composite
+        // "miner_id/worker_name", but the miners table is keyed by the base
+        // miner id (the payout address / worker prefix).
+        let base_miner_id = rec
+            .miner_id
+            .split_once('/')
+            .map(|(base, _)| base)
+            .unwrap_or(&rec.miner_id);
         conn.execute(
-            "UPDATE miners SET total_paid_flowers = total_paid_flowers + ?1 WHERE miner_id = ?2",
-            params![rec.amount_flowers as i64, rec.miner_id],
+            "INSERT INTO miners (miner_id, first_seen, last_seen, total_shares, accepted_shares, rejected_shares, total_paid_flowers)
+             VALUES (?2, unixepoch(), unixepoch(), 0, 0, 0, ?1)
+             ON CONFLICT(miner_id) DO UPDATE SET total_paid_flowers = total_paid_flowers + excluded.total_paid_flowers",
+            params![rec.amount_flowers as i64, base_miner_id],
         )?;
         Ok(())
     }
@@ -417,6 +427,34 @@ impl ShareStore {
         Ok(out)
     }
 
+    /// Query recent payouts for a payout address (used by the miner detail API
+    /// so the returned list matches the full historical paid total).
+    pub fn query_payouts_by_address(&self, address: &str, limit: u32) -> Result<Vec<PayoutRow>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed
+             FROM payouts WHERE address = ?1 ORDER BY ts DESC LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![address, limit as i64], |row| {
+            Ok(PayoutRow {
+                ts: row.get(0)?,
+                miner_id: row.get(1)?,
+                address: row.get(2)?,
+                amount_flowers: row.get::<_, i64>(3)? as u64,
+                tx_id: row.get(4)?,
+                height: row.get::<_, i64>(5)? as u64,
+                block_hash: row.get(6)?,
+                confirmations: row.get::<_, i64>(7)? as u32,
+                confirmed: row.get::<_, i32>(8)? != 0,
+            })
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    }
+
     /// Query recent payouts for all miners (F7.1 — for REST API endpoint).
     pub fn query_all_payouts(&self, limit: u32) -> Result<Vec<PayoutRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
@@ -440,6 +478,88 @@ impl ShareStore {
         let mut out = Vec::new();
         for r in rows {
             out.push(r?);
+        }
+        Ok(out)
+    }
+
+    /// Query all payouts in ascending time order for telemetry restore.
+    pub fn query_all_payouts_asc(&self) -> Result<Vec<PayoutRow>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed
+             FROM payouts ORDER BY ts ASC",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(PayoutRow {
+                ts: row.get(0)?,
+                miner_id: row.get(1)?,
+                address: row.get(2)?,
+                amount_flowers: row.get::<_, i64>(3)? as u64,
+                tx_id: row.get(4)?,
+                height: row.get::<_, i64>(5)? as u64,
+                block_hash: row.get(6)?,
+                confirmations: row.get::<_, i64>(7)? as u32,
+                confirmed: row.get::<_, i32>(8)? != 0,
+            })
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    }
+
+    /// Query payouts that have not yet been marked confirmed.
+    pub fn query_unconfirmed_payouts(&self) -> Result<Vec<PayoutRow>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed
+             FROM payouts WHERE confirmed = 0",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(PayoutRow {
+                ts: row.get(0)?,
+                miner_id: row.get(1)?,
+                address: row.get(2)?,
+                amount_flowers: row.get::<_, i64>(3)? as u64,
+                tx_id: row.get(4)?,
+                height: row.get::<_, i64>(5)? as u64,
+                block_hash: row.get(6)?,
+                confirmations: row.get::<_, i64>(7)? as u32,
+                confirmed: row.get::<_, i32>(8)? != 0,
+            })
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    }
+
+    /// Return the lifetime paid total (flowers) for a payout address.
+    pub fn payout_total_by_address(&self, address: &str) -> Result<u64> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let total: i64 = conn.query_row(
+            "SELECT COALESCE(SUM(amount_flowers),0) FROM payouts WHERE address = ?1",
+            params![address],
+            |row| row.get(0),
+        )?;
+        Ok(total as u64)
+    }
+
+    /// Return total paid flowers per composite miner_id.
+    pub fn payout_totals_by_miner(&self) -> Result<HashMap<String, u64>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT miner_id, COALESCE(SUM(amount_flowers),0) FROM payouts GROUP BY miner_id",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)? as u64))
+        })?;
+        let mut out = HashMap::new();
+        for r in rows {
+            let (miner_id, total) = r?;
+            out.insert(miner_id, total);
         }
         Ok(out)
     }
