@@ -38,7 +38,7 @@ position. No trading, no timing the market — just mine and grow.
 This release adds support for mining OS distributions. The miner runs
 headless on SMOS and HiveOS with machine-parseable dashboard output.
 
-See the [SMOS/HiveOS Guide](docs/SMOS_HIVEOS_GUIDE.md) for setup
+See the [SMOS/HiveOS Guide](https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/docs/SMOS_HIVEOS_GUIDE.md) for setup
 instructions.
 
 ---
