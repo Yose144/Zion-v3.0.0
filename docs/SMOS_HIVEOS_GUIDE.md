@@ -1,0 +1,342 @@
+# ZION Miner — SMOS / HiveOS / SimpleMining Guide
+
+**Version:** v3.0.6-beta (Trinity)
+**Pool:** `62.171.141.136:8444`
+**Website:** [zionterranova.com](https://zionterranova.com)
+
+---
+
+## What is Trinity?
+
+Trinity is ZION's proprietary multi-stream mining engine. Instead of
+mining a single coin, your GPU and CPU work **in parallel** on three
+streams simultaneously:
+
+| Stream | Hardware | Coin | Algorithm | Auto? |
+|--------|----------|------|-----------|-------|
+| **Stream 1** | GPU | ZION | Deeksha Lite v1 | Always on |
+| **Stream 2** | GPU | ZANO (or best GPU coin) | ProgPoWZ | Auto-selected |
+| **Stream 3** | CPU | VRSC (or best CPU coin) | VerusHash | Auto-selected |
+
+**You mine ZION. The Trinity engine automatically adds ZANO + VRSC
+as bonus income — no extra configuration needed.**
+
+The TUI shows only ZION hashrate (clean interface). Trinity streams
+run silently in the backend and report shares to the pool.
+
+---
+
+## Quick Start — SMOS (SimpleMining OS)
+
+### 1. Download the miner
+
+```bash
+# On your SMOS rig or a machine with internet access:
+wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-beta/zion-miner-linux-x86_64.tar.gz
+tar xzf zion-miner-linux-x86_64.tar.gz
+```
+
+### 2. Create a SMOS wrapper script
+
+Create a file named `miner` (this is what SMOS executes):
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# ── Your ZION wallet address ──
+WALLET="zion1YOUR_WALLET_ADDRESS"
+WORKER="my-rig"
+
+# ── Trinity Engine (auto-enabled with pool profile) ──
+export ZION_PROFILE=pool
+export ZION_GPU_BACKEND=opencl
+export ZION_MINER_ALGORITHM=deeksha_lite_v1
+export ZION_INTERACTIVE=0
+export ZION_NO_STICKY=1
+
+# ── GPU tuning (auto-tune handles most cases) ──
+export ZION_AUTOTUNE=1
+export ZION_IGNORE_GPU_SELF_TEST_FAIL=1
+
+# ── Stream configuration (Trinity auto-selects best coins) ──
+# Defaults: ZION (GPU) + ZANO (GPU) + VRSC (CPU)
+# To force specific coins:
+# export ZION_MINER_GPU_COIN=ZANO
+# export ZION_MINER_CPU_COIN=VRSC
+
+# ── Download miner binary if not present ──
+LOCAL_MINER="/tmp/zion-miner-real"
+if [ ! -f "${LOCAL_MINER}" ]; then
+    echo "[zion] downloading miner binary ..."
+    curl -fsSL -o "${LOCAL_MINER}.tmp" \
+        "http://62.171.141.136/zion-miner/zion-miner"
+    chmod +x "${LOCAL_MINER}.tmp"
+    mv "${LOCAL_MINER}.tmp" "${LOCAL_MINER}"
+fi
+
+exec "${LOCAL_MINER}" \
+    --pool 62.171.141.136:8444 \
+    --wallet "${WALLET}" \
+    --worker "${WORKER}" \
+    --profile pool
+```
+
+### 3. Package as SMOS custom miner
+
+```bash
+mkdir -p zion-smos/zion-miner-smos
+cp miner zion-smos/zion-miner-smos/
+chmod +x zion-smos/zion-miner-smos/miner
+cd zion-smos
+zip -r zion-miner-smos.zip zion-miner-smos/
+```
+
+### 4. Upload to SMOS
+
+1. Go to **SMOS Dashboard** → **Rig Groups** → **Create Group**
+2. Set **Miner Program** → **Custom**
+3. Upload `zion-miner-smos.zip`
+4. Set **Miner Path**: `zion-miner-smos/miner`
+5. Assign your rig(s) to this group
+6. **Save & Reboot** the rig
+
+---
+
+## Quick Start — HiveOS
+
+### 1. Create a custom miner
+
+In HiveOS dashboard:
+
+1. Go to **Miners** → **Custom Miners** → **Add New**
+2. Name: `zion-miner`
+3. Installation URL: `https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-beta/zion-miner-linux-x86_64.tar.gz`
+4. Binary: `zion-miner`
+5. Save
+
+### 2. Create a flight sheet
+
+| Field | Value |
+|-------|-------|
+| Miner | zion-miner (custom) |
+| Pool | `62.171.141.136:8444` |
+| Wallet | `zion1YOUR_WALLET_ADDRESS` |
+| Worker | `my-rig` |
+| Extra config | See below |
+
+**Extra config arguments:**
+
+```
+--profile pool --gpu opencl --algorithm deeksha_lite_v1
+```
+
+### 3. Apply and reboot
+
+Apply the flight sheet to your rig and reboot. The miner will start
+automatically with Trinity engine enabled.
+
+---
+
+## Quick Start — Linux (any distro)
+
+```bash
+# Download
+wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-beta/zion-miner-linux-x86_64.tar.gz
+tar xzf zion-miner-linux-x86_64.tar.gz
+chmod +x zion-miner
+
+# Start mining (Trinity auto-enabled)
+./zion-miner \
+    --pool 62.171.141.136:8444 \
+    --wallet zion1YOUR_WALLET_ADDRESS \
+    --worker my-rig \
+    --gpu opencl \
+    --algorithm deeksha_lite_v1 \
+    --profile pool
+```
+
+---
+
+## Environment Variables Reference
+
+### Core Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ZION_POOL_ADDR` | `62.171.141.136:8444` | Pool address |
+| `ZION_MINER_ID` | (wallet) | Miner identifier (your wallet address) |
+| `ZION_PROFILE` | `pool` | Mining profile: `pool`, `solo`, `benchmark`, `dual` |
+| `ZION_INTERACTIVE` | `1` | `0` = no TUI (for SMOS/HiveOS headless) |
+| `ZION_NO_STICKY` | `0` | `1` = disable sticky header (SMOS mode) |
+
+### Trinity Engine
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ZION_STREAM1_ENABLED` | `1` | Stream 1: ZION GPU mining |
+| `ZION_STREAM2_ENABLED` | `1` | Stream 2: GPU external coin (ZANO) |
+| `ZION_STREAM3_ENABLED` | `1` | Stream 3: CPU external coin (VRSC) |
+| `ZION_MINER_GPU_COIN` | auto | Force Stream 2 coin: `ZANO`, `EPIC`, etc. |
+| `ZION_MINER_CPU_COIN` | auto | Force Stream 3 coin: `VRSC`, `XMR`, etc. |
+| `ZION_AUTONOMOUS` | `1` (pool) | Auto-select best coins based on profitability |
+
+### GPU Tuning
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ZION_GPU_BACKEND` | `auto` | `opencl`, `cuda`, `metal`, `cpu` |
+| `ZION_GPU_WORK_SIZE` | auto | Global work size (auto-tuned per GPU) |
+| `ZION_NONCE_COUNT` | auto | Nonces per batch (4× work_size) |
+| `ZION_GPU_MAX_BATCH` | auto | Max batch size cap |
+| `ZION_GPU_EARLY_BREAK` | `0` | `0` = full batch + double-buffering (recommended) |
+| `ZION_AUTOTUNE` | `1` | Auto-tune GPU parameters |
+| `ZION_OCL_VRAM_PCT` | `65` | VRAM usage percentage |
+| `ZION_IGNORE_GPU_SELF_TEST_FAIL` | `0` | `1` = skip GPU self-test failure (Vega compat) |
+
+### Multi-GPU (Claymore Dual)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ZION_MULTI_GPU` | `1` | Auto-enable multi-GPU when 2+ GPUs detected |
+| `ZION_ZANO_RESERVE` | `1` | `0` = all GPUs mine ZION, ZANO time-shared |
+| `ZION_ZANO_DEVICE_NAME` | auto | Force ZANO to specific GPU (e.g. `vega`) |
+| `ZION_EXT_GPU_TIME_DUTY_PCT` | adaptive | GPU time split (100 = full ZANO priority) |
+
+### CPU Tuning
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ZION_THREADS` | auto | CPU thread count (auto-detect) |
+| `ZION_EXT_CPU_NONCE_COUNT` | `2000000` | CPU nonce batch size |
+
+---
+
+## GPU Compatibility
+
+### AMD (OpenCL)
+
+| GPU | Architecture | ZION Hashrate | ZANO | Notes |
+|-----|-------------|---------------|------|-------|
+| Vega 64 8GB | GCN (gfx900) | 24-40 kH/s | 9-14 MH/s | `local_ws=64`, `work_size=16384` |
+| RX 5700 XT 8GB | RDNA1 (gfx1010) | 28-30 kH/s | 7 MH/s | `local_ws=128`, `work_size=8192` |
+| RX 5600 XT 6GB | RDNA1 (gfx1010) | 15-20 kH/s | 5.5 MH/s | `local_ws=128`, bpermute enabled |
+| RX 580 8GB | GCN (gfx803) | 8-12 kH/s | 4 MH/s | Conservative tuning |
+
+### NVIDIA (CUDA)
+
+| GPU | ZION Hashrate | Notes |
+|-----|---------------|-------|
+| RTX 3090 24GB | 300+ kH/s | Async htod + batched launch |
+| RTX 4090 24GB | 400+ kH/s | Latest Ampere optimizations |
+
+> **Note:** CUDA support requires building from source with CUDA toolkit.
+> The prebuilt binary includes OpenCL only. NVIDIA users can build with:
+> ```bash
+> cargo build --release -p zion-miner --features "gpu-cuda,native-all,public_build"
+> ```
+
+---
+
+## Monitoring
+
+### Machine-parseable output
+
+The miner prints `session_status` lines to stdout/stderr for external
+parsers (SMOS dashboard, monitoring scripts):
+
+```
+session_status iter=42/1000000 uptime_s=125.3 accepted=15 rejected=0 accept_pct=100.00 ...
+```
+
+### JSON stats file
+
+```bash
+cat /tmp/zion-miner-stats.json | python3 -m json.tool
+```
+
+Includes per-stream hashrates, accepted/rejected shares, GPU info.
+
+### HTTP stats endpoint
+
+```bash
+curl http://127.0.0.1:8080/stats | python3 -m json.tool
+```
+
+---
+
+## Troubleshooting
+
+### GPU not detected
+
+```bash
+# Check OpenCL devices
+clinfo | grep "Device Name"
+
+# If clinfo is missing:
+apt install clinfo ocl-icd-opencl-dev
+```
+
+### Vega 64 kernel hang
+
+```bash
+export ZION_IGNORE_GPU_SELF_TEST_FAIL=1
+export ZION_OCL_VRAM_PCT=50
+```
+
+### Low hashrate on SMOS
+
+```bash
+# Ensure double-buffering is enabled (default):
+export ZION_GPU_EARLY_BREAK=0
+
+# Increase batch size:
+export ZION_GPU_MAX_BATCH=65536
+export ZION_NONCE_COUNT=65536
+```
+
+### No external stream jobs (ZANO/VRSC)
+
+The pool automatically sends external stream jobs when available. If
+you see no ZANO/VRSC shares:
+
+1. Check pool connection: `ZION_POOL_ADDR=62.171.141.136:8444`
+2. Ensure streams are enabled: `ZION_STREAM2_ENABLED=1`, `ZION_STREAM3_ENABLED=1`
+3. Use pool profile: `ZION_PROFILE=pool` (enables autonomous mode)
+
+---
+
+## Build from Source
+
+```bash
+# Prerequisites: Rust 1.75+, OpenCL headers
+apt install ocl-icd-opencl-dev opencl-headers
+
+# Clone
+git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
+cd v3-Mainnet/V3
+
+# Build with OpenCL + all native algorithms + public_build
+cargo build --release -p zion-miner --features "gpu-opencl,native-all,public_build"
+
+# Binary: target/release/zion-miner
+```
+
+---
+
+## Support
+
+- **Website:** [zionterranova.com](https://zionterranova.com)
+- **Pool:** `62.171.141.136:8444`
+- **RPC:** `rpc.zionterranova.com:8443`
+- **GitHub:** [Zion-TerraNova/v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet)
+
+---
+
+## License
+
+MIT — see [LICENSE](https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/LICENSE)
+
+> The miner binary includes the proprietary Trinity engine. Source code
+> for Trinity and AuxPow is not included in the public repository. The
+> ZION blockchain core, pool, and community CLI remain fully open-source.
