@@ -33,17 +33,25 @@ exchange, and there is zero sell pressure on ZION.
 The longer you mine, the more ZION you hold. Every hash compounds your
 position. No trading, no timing the market — just mine and grow.
 
+### SMOS / HiveOS / SimpleMining Support
+
+This release adds support for mining OS distributions. The miner runs
+headless on SMOS and HiveOS with machine-parseable dashboard output.
+
+See the [SMOS/HiveOS Guide](docs/SMOS_HIVEOS_GUIDE.md) for setup
+instructions.
+
 ---
 
 ## Download
 
 | Your system | File | Size | SHA256 |
 |-------------|------|------|--------|
-| **Linux x86_64** (Ubuntu, Debian, etc.) | `zion-miner-linux-x86_64.tar.gz` | 3.4 MB | `e4bcc7f4…` |
-| **Linux ARM64** (Raspberry Pi 4/5, Ampere, Graviton) | `zion-miner-linux-aarch64.tar.gz` | 2.6 MB | `d44b1aa2…` |
-| **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-miner-macos-aarch64.tar.gz` | 3.3 MB | `2f9e330c…` |
-| **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` | 3.4 MB | `76e47559…` |
-| **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.tar.gz` | 3.6 MB | `2af84f14…` |
+| **Linux x86_64** (Ubuntu, Debian, SMOS, HiveOS) | `zion-miner-linux-x86_64.tar.gz` | 3.3 MB | `a98b0e89…` |
+| **Linux ARM64** (Raspberry Pi 4/5, Ampere, Graviton) | `zion-miner-linux-aarch64.tar.gz` | 2.6 MB | `ad271c5d…` |
+| **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-miner-macos-aarch64.tar.gz` | 3.3 MB | `b7be80e5…` |
+| **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` | 3.4 MB | `269b72d9…` |
+| **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.tar.gz` | 2.9 MB | `fcfe0123…` |
 
 > **All 5 platforms are now available!** Full SHA256 checksums are in
 > `SHA256SUMS.txt` (download alongside the binary).
