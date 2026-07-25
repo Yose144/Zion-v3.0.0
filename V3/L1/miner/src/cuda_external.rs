@@ -338,7 +338,15 @@ impl CudaExternalMiner {
             None
         };
 
-        let actual_work_size = work_size.max(256).min(1 << 20);
+        // Allow larger work sizes for ProgPoW to reduce kernel launch
+        // overhead and improve occupancy on Pascal+.  The previous 1M cap
+        // was conservative; 4M gives the GPU bigger batches to chew on
+        // without exceeding reasonable launch grid limits.
+        let max_work_size = std::env::var("ZION_CUDA_MAX_WORK_SIZE")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+            .unwrap_or(1 << 22); // 4M default
+        let actual_work_size = work_size.max(256).min(max_work_size);
 
         println!(
             "gpu_cuda_ext_init device=\"{}\" algorithm={} work_size={}",
@@ -571,6 +579,7 @@ impl CudaExternalMiner {
                             light_cache_ref,
                             self.light_cache_items,
                             &dag_buf,
+                            dag_nodes,
                         ),
                     )
                     .map_err(|e| anyhow::anyhow!("dag_gen launch: {e}"))?;
@@ -1358,18 +1367,57 @@ fn mod_inv_15(a: u32) -> u32 {
 
 const DAG_CACHE_ROUNDS: usize = 3;
 
+const CACHE_BYTES_INIT: u64 = 1 << 24;       // 16 MB
+const CACHE_BYTES_GROWTH: u64 = 1 << 17;     // 128 KB
+const HASH_BYTES: u64 = 64;
+const DATASET_BYTES_INIT: u64 = 1 << 30;     // 1 GB
+const DATASET_BYTES_GROWTH: u64 = 1 << 23;   // 8 MB
+const MIX_BYTES: u64 = 128;
+
+/// Primality test for u64 using trial division (sufficient for cache/dataset
+/// item counts, which are < 2^64 and whose square roots are small).
+fn is_prime_u64(n: u64) -> bool {
+    if n < 2 {
+        return false;
+    }
+    if n % 2 == 0 {
+        return n == 2;
+    }
+    if n % 3 == 0 {
+        return n == 3;
+    }
+    let mut i = 5u64;
+    while i * i <= n {
+        if n % i == 0 || n % (i + 2) == 0 {
+            return false;
+        }
+        i += 6;
+    }
+    true
+}
+
 /// Compute the cache size for a given epoch.
-/// Formula: 16 MB + epoch * 128 KB, rounded to 64-byte boundary.
+///
+/// Follows the Ethash/ProgPoW spec: linear growth rounded down to the largest
+/// size whose number of 64-byte items is prime.
 fn cache_size_for_epoch(epoch: u32) -> u64 {
-    let size = 16u64 * 1024 * 1024 + epoch as u64 * 128 * 1024;
-    (size / 64) * 64
+    let mut items = (CACHE_BYTES_INIT + (epoch as u64) * CACHE_BYTES_GROWTH - HASH_BYTES) / HASH_BYTES;
+    while !is_prime_u64(items) {
+        items = items.saturating_sub(2).max(1);
+    }
+    items * HASH_BYTES
 }
 
 /// Compute the dataset (DAG) size for a given epoch.
-/// Formula: 1 GB + epoch * 8 MB, rounded to 128-byte boundary.
+///
+/// Follows the Ethash/ProgPoW spec: linear growth rounded down to the largest
+/// size whose number of 128-byte items is prime.
 fn dataset_size_for_epoch(epoch: u32) -> u64 {
-    let size = 1024u64 * 1024 * 1024 + epoch as u64 * 8 * 1024 * 1024;
-    (size / 128) * 128
+    let mut items = (DATASET_BYTES_INIT + (epoch as u64) * DATASET_BYTES_GROWTH - MIX_BYTES) / MIX_BYTES;
+    while !is_prime_u64(items) {
+        items = items.saturating_sub(2).max(1);
+    }
+    items * MIX_BYTES
 }
 
 /// Compute the seed hash for an epoch by keccak-256 chaining.

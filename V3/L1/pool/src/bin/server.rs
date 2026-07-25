@@ -279,6 +279,36 @@ impl BlockTracker {
         }
     }
 
+    /// Load a pending block from the DB on startup so the orphan monitor
+    /// continues to track blocks that were found before a restart.
+    fn load_pending_block(
+        &mut self,
+        height: u64,
+        miner_id: &str,
+        worker_name: &str,
+        share_difficulty: u64,
+        network_difficulty: u64,
+    ) {
+        if self.blocks.iter().any(|b| b.height == height) {
+            return;
+        }
+        self.blocks.push_back(BlockRecord {
+            height,
+            miner_id: miner_id.to_string(),
+            worker_name: worker_name.to_string(),
+            found_at_unix: 0,
+            share_difficulty,
+            network_difficulty,
+            shares_since_prev_block: 0,
+            node_accepted: true,
+            status: BlockStatus::Pending,
+            confirmed_at_chain_height: 0,
+        });
+        while self.blocks.len() > 1000 {
+            self.blocks.pop_front();
+        }
+    }
+
     /// Pool luck percentage for the last N blocks.
     /// luck = (expected_shares / actual_shares) * 100
     /// expected_shares = network_difficulty / share_difficulty
@@ -1609,6 +1639,33 @@ fn main() -> Result<()> {
             }
         }
     };
+    // F4.1: Restore pending blocks from the DB so the orphan monitor can
+    // continue confirming blocks found before a restart.
+    if let Some(ref ss) = share_store {
+        match ss.query_blocks(u32::MAX) {
+            Ok(rows) => {
+                let mut loaded = 0u32;
+                if let Ok(mut bt) = block_tracker.lock() {
+                    for row in rows {
+                        if row.status == "pending" {
+                            bt.load_pending_block(
+                                row.height,
+                                &row.miner_id,
+                                &row.worker_name,
+                                row.share_difficulty,
+                                row.network_difficulty,
+                            );
+                            loaded += 1;
+                        }
+                    }
+                }
+                if loaded > 0 {
+                    info!("block_tracker: loaded {} pending blocks from DB", loaded);
+                }
+            }
+            Err(e) => warn!("block_tracker: failed to load pending blocks from DB: {}", e),
+        }
+    }
     let active_sessions = Arc::new(AtomicU64::new(0));
     let session_id_counter = Arc::new(AtomicU64::new(0));
     // F6.3: Reduced template cache TTL from 3s → 1s for faster block
@@ -2012,6 +2069,7 @@ fn main() -> Result<()> {
     // block is not found at its height, it is marked as orphaned.
     {
         let bt_ref = Arc::clone(&block_tracker);
+        let share_store_ref = share_store.clone();
         let rpc_addr = config.node_rpc_addr.clone();
         let confirmations: u64 = parse_env_u64("ZION_POOL_ORPHAN_CONFIRMATIONS", 10).unwrap_or(10);
         let poll_interval_s = parse_env_u64("ZION_POOL_ORPHAN_POLL_SECS", 30).unwrap_or(30);
@@ -2059,10 +2117,16 @@ fn main() -> Result<()> {
                     if let Ok(mut bt) = bt_ref.lock() {
                         bt.resolve_block(height, false, chain_height);
                     }
+                    if let Some(ref ss) = share_store_ref {
+                        let _ = ss.update_block_status(height, "confirmed");
+                    }
                     info!("block_confirmed height={} chain_height={}", height, chain_height);
                 } else {
                     if let Ok(mut bt) = bt_ref.lock() {
                         bt.resolve_block(height, true, chain_height);
+                    }
+                    if let Some(ref ss) = share_store_ref {
+                        let _ = ss.update_block_status(height, "orphaned");
                     }
                     warn!(
                         "block_orphaned height={} chain_height={} — payout may be invalid",
@@ -2408,6 +2472,7 @@ fn main() -> Result<()> {
     {
         let telemetry_ref = Arc::clone(&miner_telemetry);
         let pplns_ref = Arc::clone(&pplns_engine);
+        let share_store_ref = share_store.clone();
         let node_rpc = config.node_rpc_addr.clone();
         let pool_wallet = config.pool_wallet_address.clone();
         let sweep_interval_secs =
@@ -2424,6 +2489,14 @@ fn main() -> Result<()> {
                 _ => continue,
             };
 
+            let chain_height = match get_chain_height(rpc) {
+                Ok(h) => h,
+                Err(e) => {
+                    debug!("payout_confirmation_sweep: get_chain_height failed: {e:#}");
+                    continue;
+                }
+            };
+
             // 1. Confirm submitted_to_node payouts via getTransaction
             let submitted: Vec<(String, u64, String)> = {
                 let telemetry = telemetry_ref.lock().expect("telemetry lock poisoned");
@@ -2433,9 +2506,14 @@ fn main() -> Result<()> {
                 let mut confirmed_count = 0u32;
                 for (miner_id, height, tx_id) in &submitted {
                     match check_tx_on_chain(rpc, tx_id) {
-                        Ok(Some(_)) => {
+                        Ok(Some(tx_height)) => {
+                            let confirmations =
+                                chain_height.saturating_sub(tx_height).saturating_add(1);
                             let mut telemetry = telemetry_ref.lock().expect("telemetry lock poisoned");
                             telemetry.confirm_payout(miner_id, *height, tx_id);
+                            if let Some(ref ss) = share_store_ref {
+                                let _ = ss.confirm_payout(tx_id, confirmations as u32);
+                            }
                             confirmed_count += 1;
                         }
                         Ok(None) => {} // not on chain yet
@@ -2482,6 +2560,15 @@ fn main() -> Result<()> {
                             let mut telemetry =
                                 telemetry_ref.lock().expect("telemetry lock poisoned");
                             telemetry.confirm_failed_payout(miner_id, *height, *amount, &tx_id);
+                            if let Some(ref ss) = share_store_ref {
+                                let confirmations = match check_tx_on_chain(rpc, &tx_id) {
+                                    Ok(Some(tx_height)) => chain_height
+                                        .saturating_sub(tx_height)
+                                        .saturating_add(1) as u32,
+                                    _ => 1,
+                                };
+                                let _ = ss.confirm_payout(&tx_id, confirmations);
+                            }
                             recovered_count += 1;
                             info!(
                                 "payout_recovered height={} miner={} tx_id={} (was submit_failed, found on chain)",
