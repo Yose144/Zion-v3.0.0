@@ -11830,7 +11830,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "known_peers": known_peers,
                 }
 
-            with ThreadPoolExecutor(max_workers=3) as ex:
+            ex = ThreadPoolExecutor(max_workers=3)
+            try:
                 futs = {
                     ex.submit(_probe_node, "Edge Node 1", "127.0.0.1", 9443),
                     ex.submit(_probe_node, "Edge Node 2", "127.0.0.1", 8448),
@@ -11843,6 +11844,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         results[r["label"]] = r
                     except Exception:
                         pass
+            finally:
+                ex.shutdown(wait=False, cancel_futures=True)
 
             edge1 = results.get("Edge Node 1", {})
             edge2 = results.get("Edge Node 2", {})
