@@ -68,12 +68,21 @@
 
 // ── CUDA intrinsics mapping for codegen compatibility ───────────────
 // The codegen produces: mul_hi(), clz(), popcount(), ROTL32(), ROTR32()
-// Map these to CUDA built-in intrinsics.
-#define mul_hi(a, b)    __umulhi((a), (b))
+// Use pure C implementations — CUDA intrinsics (__funnelshift_lc, __byte_perm)
+// have compiler optimization bugs on sm_61 with NVRTC that produce wrong results.
+#define mul_hi(a, b)    ((uint32_t)(((uint64_t)(a) * (uint64_t)(b)) >> 32))
 #define clz(x)          __clz((x))
 #define popcount(x)     __popc((x))
-#define ROTL32(x, n)    __funnelshift_lc((x), (x), (n))
-#define ROTR32(x, n)    __funnelshift_rc((x), (x), (n))
+__device__ __forceinline__ uint32_t rotl32_impl(uint32_t x, uint32_t n) {
+    n &= 31;
+    return n ? (x << n) | (x >> (32 - n)) : x;
+}
+__device__ __forceinline__ uint32_t rotr32_impl(uint32_t x, uint32_t n) {
+    n &= 31;
+    return n ? (x >> n) | (x << (32 - n)) : x;
+}
+#define ROTL32(x, n)    rotl32_impl((x), (n))
+#define ROTR32(x, n)    rotr32_impl((x), (n))
 
 // ── Type definitions ────────────────────────────────────────────────
 typedef struct { uint32_t s[PROGPOW_DAG_LOADS]; } dag_t;
@@ -93,7 +102,7 @@ typedef struct {
 
 __constant__ const uint32_t keccakf_rndc[24] = {
     0x00000001, 0x00008082, 0x0000808a, 0x80008000, 0x0000808b, 0x80000001,
-    0x80008081, 0x00000009, 0x0000008a, 0x00000088, 0x80008009, 0x8000000a,
+    0x80008081, 0x00008009, 0x0000008a, 0x00000088, 0x80008009, 0x8000000a,
     0x8000808b, 0x0000008b, 0x00008089, 0x00008003, 0x00008002, 0x00000080,
     0x0000800a, 0x8000000a, 0x80008081, 0x00008080, 0x80000001, 0x80008008
 };
@@ -174,8 +183,12 @@ __device__ __forceinline__ uint64_t keccak_f800(
     }
 
     // Byte-reverse 64-bit result (matches OpenCL as_ulong(as_uchar8(res).s76543210))
-    uint32_t lo = __byte_perm(st[1], 0, 0x3210);  // reversed high word → new low
-    uint32_t hi = __byte_perm(st[0], 0, 0x3210);  // reversed low word → new high
+    // Manual byte swap — __byte_perm(x, 0, 0x0123) has a compiler optimization
+    // bug on sm_61 with NVRTC that returns 0 when the second argument is 0.
+    uint32_t lo = ((st[1] & 0xFFu) << 24) | ((st[1] & 0xFF00u) << 8) |
+                  ((st[1] & 0xFF0000u) >> 8) | ((st[1] & 0xFF000000u) >> 24);
+    uint32_t hi = ((st[0] & 0xFFu) << 24) | ((st[0] & 0xFF00u) << 8) |
+                  ((st[0] & 0xFF0000u) >> 8) | ((st[0] & 0xFF000000u) >> 24);
     return ((uint64_t)hi << 32) | lo;
 }
 
@@ -295,6 +308,7 @@ __global__ __launch_bounds__(256) void progpow_mine(
     for (int i = 0; i < 8; i++)
         digest[i] = 0;
     uint64_t seed = keccak_f800(header_u32, nonce, digest);
+    uint64_t initial_seed = seed;  // Debug: save seed before ProgPoW loop
 
     __syncthreads();
 
@@ -378,7 +392,8 @@ __global__ __launch_bounds__(256) void progpow_mine(
     }
 
     // Final hash: keccak(header .. seed .. digest) and compare to target
-    if (keccak_f800(header_u32, seed, digest) <= target)
+    uint64_t final_hash = keccak_f800(header_u32, seed, digest);
+    if (final_hash <= target)
     {
         unsigned int old = atomicExch(found, 1u);
         if (old == 0u) {
@@ -391,6 +406,15 @@ __global__ __launch_bounds__(256) void progpow_mine(
                 output_mix[i * 4 + 2] = (unsigned char)(digest[i] >> 16);
                 output_mix[i * 4 + 3] = (unsigned char)(digest[i] >> 24);
             }
+            // Debug: write seed and final hash from the found thread only
+            g_output[10] = (unsigned int)seed;
+            g_output[11] = (unsigned int)(seed >> 32);
+            g_output[12] = (unsigned int)final_hash;
+            g_output[13] = (unsigned int)(final_hash >> 32);
+            g_output[14] = (unsigned int)initial_seed;
+            g_output[15] = (unsigned int)(initial_seed >> 32);
+            g_output[16] = header_u32[0];
+            g_output[17] = header_u32[1];
         }
         // Also write to g_output for compatibility
         unsigned int slot = atomicAdd(&g_output[0], 1u) + 1;

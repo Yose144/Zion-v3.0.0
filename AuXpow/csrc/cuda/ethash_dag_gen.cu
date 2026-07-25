@@ -149,7 +149,11 @@ __global__ __launch_bounds__(256) void ethash_calculate_dag(
 )
 {
     const uint64_t node_index = start + (uint64_t)(blockIdx.x * blockDim.x + threadIdx.x);
-    if (node_index >= light_items * 4) return; // safety limit, host controls actual range
+    // No safety limit needed — the host controls the actual range via grid
+    // dimensions.  The previous `light_items * 4` limit was wrong: it
+    // terminated ~98% of threads for large epochs (e.g. epoch 126 has
+    // ~50M DAG nodes but only ~278K cache items, so light_items*4 ≈ 1.1M),
+    // leaving most of the DAG as zeros and producing invalid mix hashes.
 
     // Step 1: mix = cache[node_index % light_items]
     unsigned char mix_bytes[64];

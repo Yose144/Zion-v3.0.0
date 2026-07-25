@@ -1585,6 +1585,7 @@ fn run_local_session(
                     initial_algorithm
                 );
                 telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
+                telemetry.gpu_device_name = g.device_name();
                 telemetry.gpu_infos = gpu_backend::query_gpu_details();
                 telemetry.algorithm = initial_algorithm.clone();
                 // Push GPU info to HashrateTracker for TUI dashboard
@@ -2377,6 +2378,7 @@ fn run_remote_session(
                     initial_algorithm
                 );
                 telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
+                telemetry.gpu_device_name = g.device_name();
                 telemetry.gpu_infos = gpu_backend::query_gpu_details();
                 telemetry.algorithm = initial_algorithm.clone();
                 // Push GPU info to HashrateTracker for TUI dashboard
@@ -3431,6 +3433,7 @@ struct SessionTelemetry {
     submit_max_latency_ms: u64,
     gpu_hashes: u64,
     gpu_backend_name: String,
+    gpu_device_name: String,
     current_epoch: u64,
     pool_height: u64,
     best_batch_ms: u64,
@@ -3460,6 +3463,7 @@ impl SessionTelemetry {
             submit_max_latency_ms: 0,
             gpu_hashes: 0,
             gpu_backend_name: String::new(),
+            gpu_device_name: String::new(),
             current_epoch: 0,
             pool_height: 0,
             best_batch_ms: 0,
@@ -3587,7 +3591,7 @@ impl SessionTelemetry {
         // In QUIET/sticky mode: write to stderr so external parsers still work
         //   (alt screen buffer would hide stdout from pipe readers)
         let status_line = format!(
-            "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} hps_15m={:.2} attempted_hashes={} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={} gpu_backend={} gpu_hps={:.2} epoch={} pool_height={} best_batch_ms={}",
+            "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} hps_15m={:.2} attempted_hashes={} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={} gpu_backend={} gpu_hps={:.2} gpu_device=\"{}\" epoch={} pool_height={} best_batch_ms={}",
             iteration_done,
             loop_count,
             uptime,
@@ -3606,6 +3610,7 @@ impl SessionTelemetry {
             ttl_text,
             if self.gpu_backend_name.is_empty() { "cpu" } else { &self.gpu_backend_name },
             self.gpu_hashrate_hps(),
+            self.gpu_device_name,
             self.current_epoch,
             self.pool_height,
             self.best_batch_ms,
@@ -3642,8 +3647,11 @@ impl SessionTelemetry {
             raw_stdout(&format!("╠══════════════════════════════════════════════╣\n"));
             raw_stdout(&format!("║  Uptime: {:<6}  Pool: {:<20}   ║\n",
                 uptime_str, &pool_addr[..pool_addr.len().min(20)]));
+            let dev_name = if self.gpu_device_name.is_empty() { "cpu" } else { &self.gpu_device_name };
             raw_stdout(&format!("║  GPU: {:>10}  |  Total: {:>10}      ║\n",
                 fmt_hashrate(gpu_hr), fmt_hashrate(overall_hps)));
+            raw_stdout(&format!("║  Device: {:<34}   ║\n",
+                &dev_name[..dev_name.len().min(34)]));
             raw_stdout(&format!("║  Accepted: {:<6}  Rejected: {:<6}         ║\n",
                 accepted, rejected));
             raw_stdout(&format!("╠══════════════════════════════════════════════╣\n"));
@@ -4344,6 +4352,18 @@ fn external_gpu_thread(
             }
         };
 
+        // Debug: log target for DAG algorithms (first batch only)
+        if batch_count == 0 && (algo.contains("progpow") || algo.contains("ethash") || algo.contains("kawpow")) {
+            let target_u64 = u64::from_be_bytes([
+                target_bytes[0], target_bytes[1], target_bytes[2], target_bytes[3],
+                target_bytes[4], target_bytes[5], target_bytes[6], target_bytes[7],
+            ]);
+            println!(
+                "[{}] ext_gpu_target_debug algo={} target_hex={} target_u64=0x{:016x} header_hex={}",
+                log_timestamp(), algo, job.target_hex, target_u64, &job.header_hex[..64.min(job.header_hex.len())],
+            );
+        }
+
         let target = DifficultyTarget { bytes: target_bytes };
         let nonce = nonce_base.wrapping_add(nonce_offset);
         let batch_start = std::time::Instant::now();
@@ -4451,6 +4471,33 @@ fn external_gpu_thread(
                         share.nonce,
                         hex::encode(share.hash)
                     );
+                    // Debug: compute Rust progpow_final_hash locally and compare
+                    if let Some(mix) = mix_hash {
+                        if let Ok(header_arr) = <[u8; 32]>::try_from(&header_bytes[..32.min(header_bytes.len())]) {
+                            let rust_seed = zion_auxpow::external_hashers::progpow_seed_pub(&header_arr, *found_nonce);
+                            let real_hash = zion_auxpow::external_hashers::progpow_final_hash(&header_arr, *found_nonce, mix);
+                            let target_u64 = u64::from_be_bytes([
+                                target_bytes[0], target_bytes[1], target_bytes[2], target_bytes[3],
+                                target_bytes[4], target_bytes[5], target_bytes[6], target_bytes[7],
+                            ]);
+                            let real_u64 = u64::from_be_bytes([
+                                real_hash[0], real_hash[1], real_hash[2], real_hash[3],
+                                real_hash[4], real_hash[5], real_hash[6], real_hash[7],
+                            ]);
+                            println!(
+                                "[{}] ext_gpu_share_debug algo={} nonce={} rust_seed=0x{:016x} mix_hash={} real_hash={} real_u64=0x{:016x} target_u64=0x{:016x} meets={}",
+                                log_timestamp(),
+                                algo,
+                                *found_nonce,
+                                rust_seed,
+                                hex::encode(mix),
+                                hex::encode(real_hash),
+                                real_u64,
+                                target_u64,
+                                real_u64 <= target_u64,
+                            );
+                        }
+                    }
                     let _ = tx.send(share);
                 }
             }
