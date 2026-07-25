@@ -328,10 +328,10 @@ impl CudaExternalMiner {
 
         let autolykos_table = None; // Generated on first mine_batch
 
-        // ProgPoW: allocate g_output buffer (10 × u32 for compatibility output slots)
+        // ProgPoW: allocate g_output buffer (18 × u32: 10 compatibility + 8 debug)
         let progpow_g_output = if algo == CudaExtAlgo::Progpow {
             Some(
-                dev.htod_copy(vec![0u32; 10])
+                dev.htod_copy(vec![0u32; 18])
                     .map_err(|e| anyhow::anyhow!("progpow_g_output alloc: {e}"))?,
             )
         } else {
@@ -911,7 +911,7 @@ impl CudaExternalMiner {
                             .ok_or_else(|| anyhow::anyhow!("progpow g_output not allocated"))?;
                         // Reset g_output[0] (solution counter)
                         self.dev
-                            .htod_copy_into(vec![0u32; 10], g_output)
+                            .htod_copy_into(vec![0u32; 18], g_output)
                             .map_err(|e| anyhow::anyhow!("progpow g_output reset: {e}"))?;
                         // Convert 32-byte big-endian target to u64 (first 8 bytes)
                         let target_u64 = u64::from_be_bytes([
@@ -1009,6 +1009,30 @@ impl CudaExternalMiner {
             } else {
                 None
             };
+
+            // ProgPoW debug: read g_output[10..17] for seed, final hash, initial seed, header
+            if self.algo == CudaExtAlgo::Progpow {
+                if let Some(g_out) = &self.progpow_g_output {
+                    if let Ok(g_host) = self.dev.dtoh_sync_copy(g_out) {
+                        if g_host.len() >= 18 {
+                            let cuda_seed = (g_host[10] as u64) | ((g_host[11] as u64) << 32);
+                            let cuda_final = (g_host[12] as u64) | ((g_host[13] as u64) << 32);
+                            let cuda_initial_seed = (g_host[14] as u64) | ((g_host[15] as u64) << 32);
+                            let cuda_hdr0 = g_host[16];
+                            let cuda_hdr1 = g_host[17];
+                            println!(
+                                "cuda_progpow_debug nonce={} cuda_seed=0x{:016x} cuda_final_u64=0x{:016x} initial_seed=0x{:016x} hdr0=0x{:08x} hdr1=0x{:08x}",
+                                nonce_host[0],
+                                cuda_seed,
+                                cuda_final,
+                                cuda_initial_seed,
+                                cuda_hdr0,
+                                cuda_hdr1,
+                            );
+                        }
+                    }
+                }
+            }
 
             Ok(GpuBatchResult {
                 solutions: vec![(nonce_host[0], hash, mix_hash)],
@@ -1121,11 +1145,15 @@ impl GpuMiner for CudaExternalMiner {
             self.ensure_verus_key(raw_header)?;
         }
 
-        // Ethash/Kawpow/Progpow: ensure DAG for epoch 0 (benchmark mode)
+        // Ethash/Kawpow/Progpow: use the DAG already loaded by update_epoch().
+        // Only load epoch-0 DAG if none is loaded yet (e.g. benchmark mode).
+        // Calling ensure_dag(0) unconditionally would overwrite the real DAG
+        // (e.g. epoch 126) with a dummy epoch-0 DAG → wrong mix_hash → rejected.
         if self.algo.needs_dag() {
-            self.ensure_dag(0)?;
-            // ProgPoW: also compile the kernel for period 0
-            if self.algo.needs_period_recompile() {
+            if self.dag_epoch == 0xFFFFFFFF {
+                self.ensure_dag(0)?;
+            }
+            if self.algo.needs_period_recompile() && self.progpow_period == 0xFFFFFFFF {
                 self.ensure_progpow_kernel(0)?;
             }
             let header_hash = &raw_header[..32.min(raw_header.len())];
