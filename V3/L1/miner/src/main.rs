@@ -4163,8 +4163,10 @@ fn external_gpu_thread(
                 current_job = Some(job);
             }
             None => {
-                // No job in channel — debug: log first few empty receives
-                if batch_count == 0 && last_heartbeat.elapsed().as_secs() < 3
+                // No new job in channel and no current job either — debug: log first few empty receives
+                if current_job.is_none()
+                    && batch_count == 0
+                    && last_heartbeat.elapsed().as_secs() < 3
                     && !QUIET.load(Ordering::Relaxed)
                 {
                     println!("[{}] ext_gpu_rx_empty (no job yet, thread alive)", log_timestamp());
