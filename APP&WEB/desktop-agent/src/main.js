@@ -2233,6 +2233,7 @@ function startMiningV3(config, v3Path) {
     ZION_STATS_FILE: STATS_PATH,
     ZION_MINER_METRICS_BIND: '127.0.0.1:9116',
     ZION_NO_DASHBOARD: '1', // desktop agent renders its own Trinity UI; suppress SMOS compact dashboard
+    ZION_NO_FANCY: '1',     // suppress ASCII banner and block-found art; keep machine-parseable logs
     ZION_NONCE_BASE: String((Date.now() >>> 0) & 0x1fffffff),
     // ── Trinity: enable parallel ZION (GPU) + external coin (CPU/GPU) ──
     // When enabled, the pool sends Job messages with external_stream /
@@ -2956,6 +2957,16 @@ function stopMining() {
   }
   startMiningInProgress = false;
   void stopMiningAsync();
+}
+
+function maybeEmitBlockFound(output) {
+  const clean = output.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '').replace(/\x1B\[\?[0-9;]*[A-Za-z]/g, '');
+  const m = clean.match(/\[?BLOCK FOUND\]?.*height[=:]\s*(\d+)/i) || clean.match(/block found.*height[=:]\s*(\d+)/i);
+  if (m) {
+    try {
+      sendToRenderer('block-found', { height: parseInt(m[1], 10) });
+    } catch {}
+  }
 }
 
 function parseMinerOutput(output) {
