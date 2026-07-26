@@ -1964,8 +1964,11 @@ function addLogEntry(message, type = 'info') {
   }
 
   // ── Dashboard home feed: mirror important events on the main view ──
+  // Don't flood the feed with long repetitive xmrig-style [STATUS]/[METRICS]
+  // lines; those belong in the Mining Console (Logs tab).
+  const isStatusOrMetrics = /\[(STATUS|METRICS)\]/.test(message);
   const dashFeed = document.getElementById('dashboard-feed-body');
-  if (dashFeed) {
+  if (dashFeed && !isStatusOrMetrics) {
     const dashEntry = document.createElement('div');
     dashEntry.className = `feed-entry ${type}`;
     dashEntry.textContent = `[${timestamp}] ${message}`;
