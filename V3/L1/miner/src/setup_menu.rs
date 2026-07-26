@@ -63,7 +63,10 @@ fn run_menu() {
 
     // Defaults
     let default_pool = "62.171.141.136:8444";
-    let default_worker = format!("{}-rig", std::env::var("USER").unwrap_or_else(|_| "desktop".into()));
+    let default_worker = format!(
+        "{}-rig",
+        std::env::var("USER").unwrap_or_else(|_| "desktop".into())
+    );
     let default_worker: &str = &default_worker;
 
     // Platform-specific GPU backend hint
@@ -111,13 +114,34 @@ fn run_menu() {
 
     println!();
     println!("Starting ZION miner...");
-    println!("  pool:    {}", std::env::var("ZION_POOL_ADDR").unwrap_or_default());
-    println!("  wallet:  {}", std::env::var("ZION_PAYOUT_ADDRESS").unwrap_or_default());
-    println!("  worker:  {}", std::env::var("ZION_WORKER_NAME").unwrap_or_default());
-    println!("  gpu:     {}", std::env::var("ZION_GPU_BACKEND").unwrap_or_default());
-    println!("  threads: {}", std::env::var("ZION_THREADS").unwrap_or_else(|_| "auto".into()));
-    println!("  algo:    {}", std::env::var("ZION_MINER_ALGORITHM").unwrap_or_default());
-    println!("  profile: {}", std::env::var("ZION_PROFILE").unwrap_or_default());
+    println!(
+        "  pool:    {}",
+        std::env::var("ZION_POOL_ADDR").unwrap_or_default()
+    );
+    println!(
+        "  wallet:  {}",
+        std::env::var("ZION_PAYOUT_ADDRESS").unwrap_or_default()
+    );
+    println!(
+        "  worker:  {}",
+        std::env::var("ZION_WORKER_NAME").unwrap_or_default()
+    );
+    println!(
+        "  gpu:     {}",
+        std::env::var("ZION_GPU_BACKEND").unwrap_or_default()
+    );
+    println!(
+        "  threads: {}",
+        std::env::var("ZION_THREADS").unwrap_or_else(|_| "auto".into())
+    );
+    println!(
+        "  algo:    {}",
+        std::env::var("ZION_MINER_ALGORITHM").unwrap_or_default()
+    );
+    println!(
+        "  profile: {}",
+        std::env::var("ZION_PROFILE").unwrap_or_default()
+    );
     println!();
 }
 
@@ -138,7 +162,9 @@ pub fn maybe_run() {
 
     // Explicit opt-out
     if args.iter().any(|a| a == "--no-menu")
-        || std::env::var("ZION_NO_MENU").map(|v| v == "1" || v == "true").unwrap_or(false)
+        || std::env::var("ZION_NO_MENU")
+            .map(|v| v == "1" || v == "true")
+            .unwrap_or(false)
     {
         return;
     }
@@ -182,11 +208,21 @@ pub fn maybe_run() {
         if !io::stdin().is_terminal() {
             return;
         }
-        let has_pool = std::env::var("ZION_POOL_ADDR").map(|v| !v.is_empty()).unwrap_or(false)
-            || std::env::var("ZION_POOL").map(|v| !v.is_empty()).unwrap_or(false);
-        let has_wallet = std::env::var("ZION_PAYOUT_ADDRESS").map(|v| !v.is_empty()).unwrap_or(false)
-            || std::env::var("ZION_WALLET").map(|v| !v.is_empty()).unwrap_or(false)
-            || std::env::var("ZION_MINER_ID").map(|v| !v.is_empty()).unwrap_or(false);
+        let has_pool = std::env::var("ZION_POOL_ADDR")
+            .map(|v| !v.is_empty())
+            .unwrap_or(false)
+            || std::env::var("ZION_POOL")
+                .map(|v| !v.is_empty())
+                .unwrap_or(false);
+        let has_wallet = std::env::var("ZION_PAYOUT_ADDRESS")
+            .map(|v| !v.is_empty())
+            .unwrap_or(false)
+            || std::env::var("ZION_WALLET")
+                .map(|v| !v.is_empty())
+                .unwrap_or(false)
+            || std::env::var("ZION_MINER_ID")
+                .map(|v| !v.is_empty())
+                .unwrap_or(false);
         if has_pool && has_wallet {
             return;
         }

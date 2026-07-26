@@ -216,7 +216,8 @@ impl AutonomousProfitRouter {
 
         let candidates = self.gpu_compatible_coins();
         if candidates.is_empty() {
-            self.log.push("stream2: no GPU-compatible coins".to_string());
+            self.log
+                .push("stream2: no GPU-compatible coins".to_string());
             return None;
         }
 
@@ -268,7 +269,8 @@ impl AutonomousProfitRouter {
     pub fn select_stream3(&mut self) -> Option<ExternalCoin> {
         let candidates = self.cpu_compatible_coins();
         if candidates.is_empty() {
-            self.log.push("stream3: no CPU-compatible coins".to_string());
+            self.log
+                .push("stream3: no CPU-compatible coins".to_string());
             return None;
         }
 
@@ -318,7 +320,8 @@ impl AutonomousProfitRouter {
         if !self.enabled {
             return;
         }
-        self.log.push("=== Autonomous Profit Router — Initial Selection ===".to_string());
+        self.log
+            .push("=== Autonomous Profit Router — Initial Selection ===".to_string());
         self.log.push(format!(
             "hardware: GPU={} ({} MiB VRAM, {} backend), CPU AES={} AVX2={}, threads={}",
             self.hw.has_gpu,
@@ -369,7 +372,8 @@ impl AutonomousProfitRouter {
         if !self.enabled {
             return;
         }
-        self.log.push("=== Autonomous Profit Router — Re-evaluation ===".to_string());
+        self.log
+            .push("=== Autonomous Profit Router — Re-evaluation ===".to_string());
         self.fetch_profits();
         self.select_stream2();
         self.select_stream3();
@@ -399,9 +403,7 @@ impl AutonomousProfitRouter {
             .unwrap_or_else(|| "disabled".to_string());
         format!(
             "autonomous: stream2={} stream3={} (enabled={})",
-            s2,
-            s3,
-            self.enabled
+            s2, s3, self.enabled
         )
     }
 
@@ -412,8 +414,14 @@ impl AutonomousProfitRouter {
             return None;
         }
 
-        let gpu_coin = self.stream2_coin.map(|c| c.ticker().to_string()).unwrap_or_default();
-        let cpu_coin = self.stream3_coin.map(|c| c.ticker().to_string()).unwrap_or_default();
+        let gpu_coin = self
+            .stream2_coin
+            .map(|c| c.ticker().to_string())
+            .unwrap_or_default();
+        let cpu_coin = self
+            .stream3_coin
+            .map(|c| c.ticker().to_string())
+            .unwrap_or_default();
 
         let gpu_profit = self
             .stream2_coin
@@ -436,7 +444,11 @@ impl AutonomousProfitRouter {
     }
 
     /// Check if the coin selection has changed since the last pool notification.
-    pub fn coins_changed(&self, prev_s2: Option<ExternalCoin>, prev_s3: Option<ExternalCoin>) -> bool {
+    pub fn coins_changed(
+        &self,
+        prev_s2: Option<ExternalCoin>,
+        prev_s3: Option<ExternalCoin>,
+    ) -> bool {
         self.stream2_coin != prev_s2 || self.stream3_coin != prev_s3
     }
 }
@@ -456,9 +468,9 @@ fn fallback_revenue_usd_per_day(coin: ExternalCoin) -> f64 {
         ExternalCoin::MEWC => 0.25,
         ExternalCoin::FLUX => 0.40,
         ExternalCoin::CLORE => 0.35,
-        ExternalCoin::XMR => 0.55, // CPU: ~550 H/s on Ryzen 5 3600
+        ExternalCoin::XMR => 0.55,  // CPU: ~550 H/s on Ryzen 5 3600
         ExternalCoin::VRSC => 0.40, // CPU: ~12 MH/s on Ryzen 5 3600
-        ExternalCoin::PRL => 2.50, // Pearl PoUW — 22x more profitable
+        ExternalCoin::PRL => 2.50,  // Pearl PoUW — 22x more profitable
         ExternalCoin::EPIC => 0.30,
         ExternalCoin::ZANO => 0.28,
         ExternalCoin::QUAI => 0.25,
@@ -485,5 +497,8 @@ fn fallback_revenue_usd_per_day(coin: ExternalCoin) -> f64 {
 fn forced_stream2_coin() -> Option<ExternalCoin> {
     let raw = std::env::var("ZION_STREAM2_FORCE_COIN").ok()?;
     let upper = raw.trim().to_uppercase();
-    ExternalCoin::all().iter().copied().find(|c| c.ticker() == upper)
+    ExternalCoin::all()
+        .iter()
+        .copied()
+        .find(|c| c.ticker() == upper)
 }
