@@ -1,0 +1,5 @@
+c3de1f632acd7ae3753b9c2c8be9e9e69f1415095b3aedd44e2b7d0ee37e88d2  linux-x86_64/zion-miner-linux-x86_64.tar.gz
+d46e0eadff071c6409a8f27001c5007ab01c5106edc40d5673bee3538cadd375  linux-aarch64/zion-miner-linux-aarch64.tar.gz
+2a775d59e4696fc96d5b241b3ff18e9a346f3954a04fcb442ceed299a2c0f22c  macos-aarch64/zion-miner-macos-aarch64.tar.gz
+e944acf7b270af4813b62ff4ca9c7124bface277f89ce30c50f219d02e940bf9  macos-x86_64/zion-miner-macos-x86_64.tar.gz
+022c60b2f35aeebadcacfab3cdb7d367b864706db4acc1d9a36abc5df451cbcc  windows-x86_64/zion-miner-windows-x86_64.zip
