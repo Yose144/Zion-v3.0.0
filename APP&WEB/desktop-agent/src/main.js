@@ -2232,6 +2232,7 @@ function startMiningV3(config, v3Path) {
     ZION_METRICS_REPORT_SECS: '10',
     ZION_STATS_FILE: STATS_PATH,
     ZION_MINER_METRICS_BIND: '127.0.0.1:9116',
+    ZION_NO_DASHBOARD: '1', // desktop agent renders its own Trinity UI; suppress SMOS compact dashboard
     ZION_NONCE_BASE: String((Date.now() >>> 0) & 0x1fffffff),
     // ── Trinity: enable parallel ZION (GPU) + external coin (CPU/GPU) ──
     // When enabled, the pool sends Job messages with external_stream /
