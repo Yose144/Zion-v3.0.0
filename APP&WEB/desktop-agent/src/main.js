@@ -2258,9 +2258,11 @@ function startMiningV3(config, v3Path) {
       env.ZION_MINER_GPU_COIN = gpuCoinEnv;
     }
   }
+  // Always tell the miner which backend to use.  When the user disables GPU,
+  // force CPU so the miner does not auto-detect Metal/OpenCL and run a broken
+  // or unsupported GPU kernel.
+  env.ZION_BACKEND = selectedGpuBackend;
   if (wantsGpu) {
-    // ── GPU detection & backend auto-select ──
-    env.ZION_BACKEND = selectedGpuBackend;
     env.ZION_HAS_GPU = '1';
 
     // ── VRAM-aware batch/work-cap sizing ──
@@ -2414,7 +2416,7 @@ function startMiningV3(config, v3Path) {
   minerStats.pool = pool;
   minerStats.worker = worker || 'desktop';
   minerStats.threads = String(effectiveThreads);
-  minerStats.algorithm = 'cosmic_harmony_deeksha';
+  minerStats.algorithm = algoForMiner;
   updateTrayMenu(minerStats);
 
   // ── 18. Clear guard ────────────────────────────────────────────────────────

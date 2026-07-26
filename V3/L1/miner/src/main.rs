@@ -2239,6 +2239,35 @@ fn spawn_pool_config_poller(pool_addr: String, stop_flag: std::sync::Arc<std::sy
     });
 }
 
+/// Clamp a ZION job's share target to the harder of (a) the target supplied by
+/// the pool in the Job message and (b) the current vardiff target from the most
+/// recent SetDifficulty message.  This prevents two races:
+///   1. A SetDifficulty increase arrives between job issue and submission, and
+///      the miner submits a share that met the old (easier) job target but not
+///      the new pool vardiff (RejectedLowDifficulty).
+///   2. A retargeted job with a harder target arrives before the pool has sent
+///      the matching SetDifficulty, and the miner uses an old (easier) current
+///      difficulty (also RejectedLowDifficulty).
+/// External AuxPoW jobs carry their own share target from the external pool and
+/// are not clamped.
+fn clamp_job_target_to_pool_difficulty(job: &mut MiningJob, algorithm: &str) {
+    if gpu_backend::is_external_algorithm(algorithm) {
+        return;
+    }
+    let current_diff = CURRENT_POOL_DIFFICULTY.load(Ordering::Relaxed);
+    if current_diff <= 1 {
+        return;
+    }
+    let current_target = zion_core::difficulty::difficulty_to_target(current_diff);
+    // `current_target.allows(&job.target)` is true when `job.target` is
+    // lexicographically smaller-or-equal, i.e. harder-or-equal.  If the job
+    // target is easier (larger) than the current vardiff target, switch to the
+    // harder current target.
+    if !current_target.allows(&job.target.bytes) {
+        job.target = current_target;
+    }
+}
+
 #[allow(unused_assignments)] // gpu_available / current_algorithm carry fallback state
 fn run_remote_session(
     config: &MinerConfig,
@@ -2782,10 +2811,10 @@ fn run_remote_session(
         if !QUIET.load(Ordering::Relaxed) {
             println!(">> new job #{} height={} algo={}", job.job_id, job.height, algorithm);
         }
-        // Use the target supplied by the pool in the Job message (this is the
-        // vardiff share target at the moment the job was issued).  The pool may
-        // retarget between job issue and submission; using the job's own target
-        // avoids submitting shares that no longer meet the pool's current vardiff.
+        // Use the target supplied by the pool in the Job message, but clamp it
+        // to the current pool vardiff so a SetDifficulty increase is respected
+        // and a retargeted job with a harder target is not ignored.
+        clamp_job_target_to_pool_difficulty(&mut job, &algorithm);
         current_algorithm = algorithm.clone();
         remote_nonce_window = job.nonce_count;
         let job_started_at = Instant::now();
@@ -2934,6 +2963,10 @@ fn run_remote_session(
         let mut cpu_nonces_tested = 0u64;
         let mut gpu_mix_hash: Option<[u8; 32]> = None;
         let mut gpu_found_device: String = String::new();
+
+        // Re-clamp right before hashing in case SetDifficulty changed while we
+        // were routing external streams / updating GPU epoch.
+        clamp_job_target_to_pool_difficulty(&mut job, &current_algorithm);
 
         let scan_result = if can_gpu {
             let g = gpu_ref.unwrap();
