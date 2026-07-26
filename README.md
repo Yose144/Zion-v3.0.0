@@ -130,26 +130,33 @@ chmod +x zion-miner start.sh
 **Windows:**
 Right-click the downloaded `.zip` → **Extract All**, then open the extracted folder.
 
-### 3. Start the easy menu
+### 3. Run the interactive setup
 
 **Linux / macOS:**
 ```bash
-./start.sh
+./zion-miner
 ```
 
 **Windows:**
-Double-click `start.bat`.
+Double-click `zion-miner.exe` or run `zion-miner.exe` in Command Prompt.
 
-The script asks for:
+The miner asks for:
 - your ZION **wallet address** (`zion1...`)
 - a **worker name** (e.g. `desktop-rig`)
 - **GPU backend** (`auto`, `opencl`, `cuda`, `metal`, or `cpu`)
 - number of **CPU threads**
+- mining **algorithm**
 - mining **profile** (`pool` is recommended)
 
-Then it launches the miner with the right settings.
+Then it launches with the right settings.
 
-### 4. Manual start (optional)
+### 4. Advanced wrapper script (optional)
+
+Use `start.sh` (Linux/macOS) or `start.bat` (Windows) for the same questions
+plus extra pass-through arguments. Set `ZION_EASY_MENU=0` to skip prompts
+and supply command-line arguments directly.
+
+### 5. Manual start (optional)
 
 If you prefer the command line:
 
@@ -174,6 +181,7 @@ On Windows use `zion-miner.exe` in Command Prompt or PowerShell.
 | Apple Silicon (M1-M4) | `auto` / `metal` | |
 | Older Mac (Intel/AMD) | `opencl` / `cpu` | OpenCL may be limited on macOS |
 | NVIDIA on Windows | `auto` / `cuda` | Windows build currently ships CUDA |
+| AMD / Intel on Windows | `opencl` / `cpu` | OpenCL support is coming in a future release |
 | No / unknown GPU | `cpu` | Slow but works everywhere |
 
 ### Need more help?
