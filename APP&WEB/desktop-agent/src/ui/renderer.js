@@ -1205,8 +1205,18 @@ function parseMinerEventForFeed(line) {
   if (/^\[METRICS\]/i.test(line)) return null;
   if (/^wire_stale\b|^wire_cancel\b/i.test(line)) return null;
   if (/^gpu_init\b|^gpu_backend\b|^gpu_epoch_fallback\b/i.test(line)) return null;
-  if (/^external_stream|^ext_gpu|^ext_cpu|^ext_share/i.test(line)) return null;
-  if (/^stream_weights/i.test(line)) return null;
+  if (/^external_stream\b|^ext_gpu_tx_send\b|^ext_cpu_thread\b|^ext_share_submitted\b/i.test(line)) return null;
+  if (/^stream_weights\b/i.test(line)) return null;
+  if (/^nonce_range\b|^found_nonce\b|^hash=|^iteration=|^job_id=|^share_status=/i.test(line)) return null;
+  if (/^adaptive_duty_cycle\b|^ext_gpu_adaptive_update\b/i.test(line)) return null;
+  if (/^-\s+job=/i.test(line)) return null; // dash-prefixed reject summary
+
+  // MEMORY_CRITICAL — show as error
+  m = line.match(/MEMORY_CRITICAL\s+available_mib=(\d+)\s+total_mib=(\d+)/i);
+  if (m) return { msg: `Memory critical — ${m[1]} MiB free / ${m[2]} MiB total`, type: 'error' };
+
+  // ext_gpu_adaptive_update — skip (verbose)
+  if (/^ext_gpu_adaptive_update\b/i.test(line)) return null;
 
   // Connection events
   if (/connecting|connected|reconnect/i.test(line)) {
@@ -1228,6 +1238,7 @@ function parseMinerEventForFeed(line) {
     return { msg: line.substring(0, 100), type: 'info' };
   }
 
+  // Unknown lines — skip from feed (Mining Console shows them)
   return null;
 }
 
@@ -1240,16 +1251,16 @@ function logStreamLine(stream, line) {
   }
 
   // Parse V3 Rust miner events for the Live Activity feed.
-  // Long raw lines get truncated by the feed's nowrap+ellipsis CSS,
-  // so we emit short summaries instead.
+  // Only parsed events appear in the feed; unparsed/verbose lines are
+  // skipped entirely (they still show in the Mining Console / Logs tab).
   const feedMsg = parseMinerEventForFeed(line);
-  if (feedMsg) {
-    addLogEntry(feedMsg.msg, feedMsg.type);
-  } else if (_streamLogCount < _streamLogMaxPerWindow) {
-    _streamLogCount += 1;
-    addLogEntry(`[${stream}] ${line}`, 'info');
-  } else {
-    _streamLogSuppressed += 1;
+  if (feedMsg && feedMsg.msg) {
+    if (_streamLogCount < _streamLogMaxPerWindow) {
+      _streamLogCount += 1;
+      addLogEntry(feedMsg.msg, feedMsg.type);
+    } else {
+      _streamLogSuppressed += 1;
+    }
   }
 
   // Mining Console — only append if Logs tab is visible (perf optimization)

@@ -2264,6 +2264,13 @@ function startMiningV3(config, v3Path) {
   // force CPU so the miner does not auto-detect Metal/OpenCL and run a broken
   // or unsupported GPU kernel.
   env.ZION_BACKEND = selectedGpuBackend;
+  // When GPU is off (or Apple Silicon where Metal ProgPoW is not implemented),
+  // disable the external GPU stream (ZANO/ProgPoW) to prevent memory exhaustion
+  // and wasted CPU cycles.  The pool still sends external_stream jobs, but the
+  // miner will skip them instead of spinning a useless GPU thread.
+  if (!wantsGpu || (process.platform === 'darwin' && os.arch() === 'arm64')) {
+    env.ZION_DISABLE_EXT_GPU = '1';
+  }
   if (wantsGpu) {
     env.ZION_HAS_GPU = '1';
 

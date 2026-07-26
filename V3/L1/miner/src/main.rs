@@ -88,6 +88,19 @@ fn flush_stdout() {
     let _ = std::io::stdout().flush();
 }
 
+/// Returns true for any Deeksha-family algorithm the public build is allowed
+/// to run. All other algorithms (external/AuxPoW coins) are disabled in
+/// public builds.
+fn is_deeksha_algorithm(algorithm: &str) -> bool {
+    matches!(
+        algorithm.to_ascii_lowercase().as_str(),
+        "deeksha_lite_v1"
+            | "deeksha_lite_fire"
+            | "cosmic_harmony_ekam_deeksha_v2"
+            | "ekam_deeksha"
+    )
+}
+
 /// Check if stdout is a real terminal (TTY). Returns false on SMOS / Docker / pipes.
 /// Used to decide whether to activate the sticky header (alt screen) mode.
 #[cfg(unix)]
@@ -944,18 +957,23 @@ fn main() -> Result<()> {
     }
 
     // ── Auto mode banner ──
-    let auto_mode = std::env::var("ZION_AUTO_MODE")
-        .map(|v| v == "1" || v == "true")
-        .unwrap_or(false);
-    if auto_mode {
-        let s1 = std::env::var("ZION_STREAM1_ENABLED").map(|v| v != "0").unwrap_or(true);
-        let s2 = std::env::var("ZION_STREAM2_ENABLED").map(|v| v != "0").unwrap_or(true);
-        let s3 = std::env::var("ZION_STREAM3_ENABLED").map(|v| v != "0").unwrap_or(true);
-        println!("=== ZION Auto Mode ===");
-        println!("  Stream 1 (ZION primary):  {}", if s1 { "ON" } else { "OFF" });
-        println!("  Stream 2 (GPU external):  {}", if s2 { "ON" } else { "OFF" });
-        println!("  Stream 3 (CPU external):  {}", if s3 { "ON" } else { "OFF" });
-        println!("======================");
+    // Public builds run a single ZION/Deeksha stream only; the Trinity stream
+    // banner is suppressed even if ZION_AUTO_MODE is set.
+    #[cfg(not(feature = "public_build"))]
+    {
+        let auto_mode = std::env::var("ZION_AUTO_MODE")
+            .map(|v| v == "1" || v == "true")
+            .unwrap_or(false);
+        if auto_mode {
+            let s1 = std::env::var("ZION_STREAM1_ENABLED").map(|v| v != "0").unwrap_or(true);
+            let s2 = std::env::var("ZION_STREAM2_ENABLED").map(|v| v != "0").unwrap_or(true);
+            let s3 = std::env::var("ZION_STREAM3_ENABLED").map(|v| v != "0").unwrap_or(true);
+            println!("=== ZION Auto Mode ===");
+            println!("  Stream 1 (ZION primary):  {}", if s1 { "ON" } else { "OFF" });
+            println!("  Stream 2 (GPU external):  {}", if s2 { "ON" } else { "OFF" });
+            println!("  Stream 3 (CPU external):  {}", if s3 { "ON" } else { "OFF" });
+            println!("======================");
+        }
     }
 
     // ── VerusHash CPU benchmark: `zion-miner --verus-bench` ──
@@ -2895,10 +2913,20 @@ fn run_remote_session(
         // CPU-only algorithms (VerusHash, RandomX) go to the persistent CPU thread.
         // Pearl (PRL) jobs are ignored in v3.0.6 canonical mode because the Pearl
         // GPU thread is not yet debugged.
+        // ZION_DISABLE_EXT_GPU=1 skips all external GPU stream jobs (ZANO/ProgPoW)
+        // to free memory and CPU for the primary deeksha stream.  This is essential
+        // on Apple Silicon where Metal ProgPoW is not implemented.
+        let disable_ext_gpu = std::env::var("ZION_DISABLE_EXT_GPU")
+            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+            .unwrap_or(false);
         if let Some(ref ext) = external_stream {
             if ext.coin.eq_ignore_ascii_case("PRL") || ext.algorithm.eq_ignore_ascii_case("pearlhash") {
                 if VERBOSE.load(Ordering::Relaxed) {
                     println!("external_stream_ignore coin={} algo={} reason=pearl_disabled", ext.coin, ext.algorithm);
+                }
+            } else if disable_ext_gpu && gpu_backend::is_external_algorithm(&ext.algorithm) {
+                if VERBOSE.load(Ordering::Relaxed) {
+                    println!("external_stream_ignore coin={} algo={} reason=ext_gpu_disabled", ext.coin, ext.algorithm);
                 }
             } else if gpu_backend::is_cpu_only_algorithm(&ext.algorithm) {
                 let _ = ext_cpu_tx.send(ext.clone());
@@ -5258,8 +5286,13 @@ fn pool_io_thread(
                     if !ext.coin.eq_ignore_ascii_case("PRL")
                         && !ext.algorithm.eq_ignore_ascii_case("pearlhash")
                     {
+                        let disable_ext_gpu = std::env::var("ZION_DISABLE_EXT_GPU")
+                            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+                            .unwrap_or(false);
                         if gpu_backend::is_cpu_only_algorithm(&ext.algorithm) {
                             let _ = ext_cpu_tx.send(ext.clone());
+                        } else if disable_ext_gpu && gpu_backend::is_external_algorithm(&ext.algorithm) {
+                            // Skip — ext GPU disabled via env
                         } else if gpu_backend::is_external_algorithm(&ext.algorithm) {
                             let _ = ext_gpu_tx.send(ext.clone());
                         }
@@ -5887,7 +5920,7 @@ impl MinerConfig {
             1024
         };
 
-        Ok(Self {
+        let mut config = Self {
             miner_id,
             worker_name: env_or_default("ZION_WORKER_NAME", "cpu-rig-0"),
             payout_address,
@@ -5958,7 +5991,26 @@ impl MinerConfig {
             gpu_coin: std::env::var("ZION_MINER_GPU_COIN")
                 .ok()
                 .filter(|v| !v.trim().is_empty()),
-        })
+        };
+
+        // ── Public build lock-down: single Deeksha stream, no Trinity/AuxPoW ──
+        #[cfg(feature = "public_build")]
+        {
+            if !is_deeksha_algorithm(&config.algorithm) {
+                eprintln!(
+                    "[public_build] algorithm '{}' is not a Deeksha variant; forcing deeksha_lite_v1",
+                    config.algorithm
+                );
+                config.algorithm = "deeksha_lite_v1".to_string();
+            }
+            config.stream2_enabled = false;
+            config.stream3_enabled = false;
+            config.cpu_coin = None;
+            config.gpu_coin = None;
+            config.auto_mode = false;
+        }
+
+        Ok(config)
     }
 }
 
