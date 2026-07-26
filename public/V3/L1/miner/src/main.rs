@@ -3653,8 +3653,14 @@ impl SessionTelemetry {
         // human-readable dashboard that fits within that buffer and shows
         // all three streams at a glance. Uses raw_stdout() (write(2) syscall)
         // to bypass Rust's 8KB block buffer.
-        if std::env::var("ZION_NO_STICKY").map(|v| v == "1" || v == "true").unwrap_or(false)
-            || !isatty_stdout()
+        // Desktop agents can suppress this with ZION_NO_DASHBOARD=1 because
+        // they render their own Trinity UI.
+        let no_dashboard = std::env::var("ZION_NO_DASHBOARD")
+            .map(|v| v == "1" || v == "true")
+            .unwrap_or(false);
+        if (std::env::var("ZION_NO_STICKY").map(|v| v == "1" || v == "true").unwrap_or(false)
+            || !isatty_stdout())
+            && !no_dashboard
         {
             let gpu_hr = self.gpu_hashrate_hps();
             let uptime_str = if uptime >= 3600.0 {
