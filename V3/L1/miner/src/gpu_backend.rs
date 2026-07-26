@@ -2071,6 +2071,16 @@ pub fn create_gpu_backend(
     algorithm: &str,
     coin: &str,
 ) -> Result<Box<dyn GpuMiner>> {
+    // Resolve Auto to a concrete backend before doing multi-GPU or per-kind
+    // dispatch.  Otherwise an Apple-Silicon build without gpu-opencl could
+    // reach the OpenCL multi-GPU branch and call a function that does not
+    // exist when that feature is disabled.
+    let kind = if kind == GpuBackendKind::Auto {
+        resolve_auto_backend()
+    } else {
+        kind
+    };
+
     // Multi-GPU is only for OpenCL (CUDA/Metal have their own multi-GPU logic).
     // External AuxPoW algorithms have their own device selection in stream threads.
     let multi_gpu_enabled = match std::env::var("ZION_MULTI_GPU") {
@@ -2078,6 +2088,10 @@ pub fn create_gpu_backend(
         Err(_) => true, // default: auto-enable
     };
 
+    // The multi-GPU branch enumerates OpenCL devices, so it is only compiled
+    // when the gpu-opencl feature is enabled.  On Apple Silicon / Metal-only
+    // builds this branch would reference a non-existent function.
+    #[cfg(feature = "gpu-opencl")]
     if multi_gpu_enabled
         && (kind == GpuBackendKind::OpenCL || kind == GpuBackendKind::Auto)
     {
