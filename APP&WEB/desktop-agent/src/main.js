@@ -3132,6 +3132,14 @@ function parseMinerOutput(output) {
     minerStats.stream_algorithm = newJobMatch[3];
   }
 
+  // ─── V3 Rust miner new job: ">> new job #6216 height=6216 algo=deeksha_lite_v1" ───
+  const v3NewJobMatch = output.match(/>>\s*new job\s*#(\d+)\s+height=(\d+)\s+algo=(\S+)/i);
+  if (v3NewJobMatch) {
+    minerStats.last_job_id = v3NewJobMatch[1];
+    minerStats.last_job_height = v3NewJobMatch[2];
+    minerStats.stream_algorithm = v3NewJobMatch[3];
+  }
+
   // ─── Deeksha job line: "[Job] id=h154-... height=154 target=00418937..." ───
   const deekshaJobMatch = output.match(/\[Job\]\s+id=(\S+)\s+height=(\d+)\s+target=([0-9a-fA-F]+)/i);
   if (deekshaJobMatch) {
@@ -3460,6 +3468,23 @@ function parseMinerOutput(output) {
     minerStats.shares = (Number(minerStats.accepted) || 0) + (Number(minerStats.rejected) || 0);
   }
 
+  // ─── V3 SHARE_ACCEPTED/SHARE_REJECTED events (real-time, between session_status updates) ──
+  const v3ShareAccMatch = output.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=(\S+)\s+latency_ms=(\d+)/i);
+  if (v3ShareAccMatch) {
+    minerStats.last_job_id = v3ShareAccMatch[1];
+    minerStats.last_job_height = v3ShareAccMatch[2];
+    minerStats.stream_algorithm = v3ShareAccMatch[3];
+    minerStats.last_share_latency = parseInt(v3ShareAccMatch[4], 10);
+    minerStats.last_share_time = Date.now();
+  }
+  const v3ShareRejMatch = output.match(/SHARE_REJECTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=\S+\s+reason="([^"]+)"/i);
+  if (v3ShareRejMatch) {
+    minerStats.last_job_id = v3ShareRejMatch[1];
+    minerStats.last_job_height = v3ShareRejMatch[2];
+    minerStats.last_reject_reason = v3ShareRejMatch[3];
+    minerStats.last_share_time = Date.now();
+  }
+
   // ─── V3 wire_result JSON: extract accepted flag for real-time share counting ───
   const v3WireResultMatch = output.match(/wire_result=\{[^}]*"accepted"\s*:\s*(true|false)/);
   if (v3WireResultMatch) {
@@ -3495,6 +3520,13 @@ function parseMinerOutput(output) {
   const v3ConsensusMatch = output.match(/^consensus=(\S+)/m);
   if (v3ConsensusMatch) {
     minerStats.stream_algorithm = v3ConsensusMatch[1];
+  }
+
+  // ─── V3 pool_set_difficulty: "pool_set_difficulty=1024" ───
+  const v3PoolDiffMatch = output.match(/pool_set_difficulty=(\d+)/);
+  if (v3PoolDiffMatch) {
+    minerStats.last_pool_diff = v3PoolDiffMatch[1];
+    minerStats.difficulty = parseInt(v3PoolDiffMatch[1], 10);
   }
 
   // ─── V3 DCR stealth stats: "dcr_total_hashes=N dcr_accepted=N dcr_rejected=N" ───
@@ -3674,7 +3706,7 @@ function sendToRenderer(channel, data) {
 }
 
 let statsEmitTimer = null;
-const STATS_EMIT_INTERVAL_MS = 250;
+const STATS_EMIT_INTERVAL_MS = 500;
 
 function scheduleStatsEmit() {
   if (statsEmitTimer) return;

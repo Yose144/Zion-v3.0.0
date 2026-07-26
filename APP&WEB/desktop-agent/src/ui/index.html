@@ -1238,12 +1238,13 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      transition: background 0.15s;
     }
-    .feed-entry.info  { color: #9ca3af; }
-    .feed-entry.ok    { color: #34d399; }
+    .feed-entry:hover { background: rgba(255,255,255,0.04); }
+    .feed-entry.ok, .feed-entry.success { color: #34d399; }
     .feed-entry.error { color: #f87171; }
     .feed-entry.warn  { color: #fbbf24; }
-    .feed-entry.success { color: #34d399; font-weight: 600; }
+    .feed-entry.info  { color: #9ca3af; }
 
     /* Control Panel — pool-style glass */
     .control-panel {
@@ -2738,26 +2739,26 @@
 
     /* ── Miner static panel ─────────────────── */
     .miner-static-panel {
-      background: rgba(0,0,0,0.45);
-      border: 1px solid rgba(0,255,136,0.18);
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(0,255,136,0.22);
       border-radius: 12px;
-      padding: 12px 18px;
+      padding: 14px 20px;
       margin-bottom: 10px;
       font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-      font-size: 14px;
-      line-height: 1.7;
+      font-size: 13px;
+      line-height: 1.85;
       color: #e8e8e8;
       white-space: pre;
       position: sticky;
       top: 0;
       z-index: 10;
-      box-shadow: 0 4px 20px rgba(0,255,136,0.04);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 24px rgba(0,255,136,0.06);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
     }
-    .miner-static-panel .sp-label { color: #ffffff; font-weight: 800; font-size: 14px; text-shadow: 0 0 8px rgba(255,255,255,0.15); }
-    .miner-static-panel .sp-value { color: #00ffc8; font-weight: 800; font-size: 15px; text-shadow: 0 0 10px rgba(0,255,200,0.3); }
-    .miner-static-panel .sp-unit  { color: #a0a0a0; font-weight: 600; }
+    .miner-static-panel .sp-label { color: #ffffff; font-weight: 800; font-size: 12px; text-shadow: 0 0 8px rgba(255,255,255,0.15); }
+    .miner-static-panel .sp-value { color: #00ffc8; font-weight: 800; font-size: 14px; text-shadow: 0 0 10px rgba(0,255,200,0.3); }
+    .miner-static-panel .sp-unit  { color: #888; font-weight: 600; font-size: 12px; }
     .miner-static-panel .sp-good  { color: #34d399; font-weight: 800; text-shadow: 0 0 8px rgba(52,211,153,0.3); }
     .miner-static-panel .sp-bad   { color: #f87171; font-weight: 700; text-shadow: 0 0 8px rgba(248,113,113,0.3); }
     .miner-static-panel .sp-dim   { color: #555; }
