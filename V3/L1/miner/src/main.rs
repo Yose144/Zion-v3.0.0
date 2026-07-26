@@ -88,19 +88,6 @@ fn flush_stdout() {
     let _ = std::io::stdout().flush();
 }
 
-/// Returns true for any Deeksha-family algorithm the public build is allowed
-/// to run. All other algorithms (external/AuxPoW coins) are disabled in
-/// public builds.
-fn is_deeksha_algorithm(algorithm: &str) -> bool {
-    matches!(
-        algorithm.to_ascii_lowercase().as_str(),
-        "deeksha_lite_v1"
-            | "deeksha_lite_fire"
-            | "cosmic_harmony_ekam_deeksha_v2"
-            | "ekam_deeksha"
-    )
-}
-
 /// Check if stdout is a real terminal (TTY). Returns false on SMOS / Docker / pipes.
 /// Used to decide whether to activate the sticky header (alt screen) mode.
 #[cfg(unix)]
@@ -1740,6 +1727,7 @@ fn run_local_session(
             config.stream2_enabled,
             gpu_available
         );
+        drop(ext_gpu_rx);
     }
 
     // Spawn Stream 3 (CPU external: VRSC VerusHash)
@@ -1766,6 +1754,7 @@ fn run_local_session(
             log_timestamp(),
             config.stream3_enabled
         );
+        drop(ext_cpu_rx);
     }
 
     sync_miner_metrics(
@@ -2547,6 +2536,9 @@ fn run_remote_session(
         );
     } else {
         println!("[{}] stream2_gpu_external_disabled (gpu_available={})", log_timestamp(), gpu_available);
+        // No reader for this stream; drop the receiver so sends fail fast
+        // instead of buffering unbounded jobs in the channel.
+        drop(ext_gpu_rx);
     }
 
     // ── Persistent CPU external thread (Stream 3: VerusHash/RandomX) ──
@@ -2571,6 +2563,8 @@ fn run_remote_session(
             "[{}] stream3c_ext_cpu_disabled (stream3_enabled=false)",
             log_timestamp()
         );
+        // No reader for this stream; drop the receiver so sends fail fast.
+        drop(ext_cpu_rx);
     }
 
     sync_miner_metrics(
@@ -2651,14 +2645,18 @@ fn run_remote_session(
     //
     // The pool's ExternalResult response comes back through pool_io_thread
     // → result_rx, and is handled by the main loop as "late_external_result".
-    let config_for_ext = config.clone();
-    std::thread::Builder::new()
-        .name("ext-submit".to_string())
-        .spawn(move || {
-            ext_share_submitter_thread(writer_ext, ext_gpu_share_rx, ext_cpu_share_rx, &config_for_ext);
-        })
-        .context("failed to spawn ext-share submitter thread")?;
-    println!("[{}] ext_share_submitter_thread_started — immediate ext share submission", log_timestamp());
+    if stream2_enabled || stream3_enabled {
+        let config_for_ext = config.clone();
+        std::thread::Builder::new()
+            .name("ext-submit".to_string())
+            .spawn(move || {
+                ext_share_submitter_thread(writer_ext, ext_gpu_share_rx, ext_cpu_share_rx, &config_for_ext);
+            })
+            .context("failed to spawn ext-share submitter thread")?;
+        println!("[{}] ext_share_submitter_thread_started — immediate ext share submission", log_timestamp());
+    } else {
+        println!("[{}] ext_share_submitter_thread_skipped (no external streams enabled)", log_timestamp());
+    }
     sync_miner_metrics(
         metrics,
         &telemetry,
@@ -5996,9 +5994,12 @@ impl MinerConfig {
         // ── Public build lock-down: single Deeksha stream, no Trinity/AuxPoW ──
         #[cfg(feature = "public_build")]
         {
-            if !is_deeksha_algorithm(&config.algorithm) {
+            // Public binaries are always locked to the canonical Deeksha
+            // algorithm; external/AuxPoW coins and Trinity streams are handled
+            // by the pool/backend, not the local miner.
+            if config.algorithm != "deeksha_lite_v1" {
                 eprintln!(
-                    "[public_build] algorithm '{}' is not a Deeksha variant; forcing deeksha_lite_v1",
+                    "[public_build] ignoring algorithm '{}'; using deeksha_lite_v1",
                     config.algorithm
                 );
                 config.algorithm = "deeksha_lite_v1".to_string();

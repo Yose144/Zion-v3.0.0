@@ -89,7 +89,13 @@ fn run_menu() {
     let worker = prompt(default_worker, "Worker name");
     let gpu = prompt_choice("auto", &format!("GPU backend ({gpu_hint})"), &gpu_choices);
     let threads = prompt("auto", "CPU threads (auto or number)");
+
+    // Public builds are locked to Deeksha only; do not ask for algorithm.
+    #[cfg(feature = "public_build")]
+    let algorithm = "deeksha_lite_v1".to_string();
+    #[cfg(not(feature = "public_build"))]
     let algorithm = prompt("deeksha_lite_v1", "Algorithm");
+
     let profile = prompt_choice("pool", "Profile", &profile_choices);
 
     // Set env vars for the normal config parser

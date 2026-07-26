@@ -88,6 +88,11 @@ pub struct AutonomousProfitRouter {
 impl AutonomousProfitRouter {
     /// Create a new autonomous profit router from hardware profile.
     pub fn new(hw: HardwareProfile) -> Self {
+        // Public builds run only the single ZION/Deeksha stream; the pool
+        // handles any external-coin routing, so local profit switching is off.
+        #[cfg(feature = "public_build")]
+        let enabled = false;
+        #[cfg(not(feature = "public_build"))]
         let enabled = std::env::var("ZION_AUTONOMOUS")
             .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
             .unwrap_or(false);

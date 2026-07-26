@@ -1175,67 +1175,104 @@ function flushSuppressedStreamLogs() {
 // Live Activity feed.  Returns null for lines that should not appear
 // in the feed (verbose / repetitive lines).
 function parseMinerEventForFeed(line) {
+  // Strip optional timestamp prefix: "[2026-07-26 18:26:03] ..."
+  const stripped = line.replace(/^\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\]\s*/, '');
+
   // SHARE_ACCEPTED
-  let m = line.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=(\S+)\s+latency_ms=(\d+)/i);
+  let m = stripped.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=(\S+)\s+latency_ms=(\d+)/i);
   if (m) return { msg: `Share accepted — job #${m[1]} h=${m[2]} ${m[4]}ms`, type: 'ok' };
 
   // SHARE_REJECTED
-  m = line.match(/SHARE_REJECTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=\S+\s+reason="([^"]+)"/i);
+  m = stripped.match(/SHARE_REJECTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=\S+\s+reason="([^"]+)"/i);
   if (m) return { msg: `Share rejected — job #${m[1]} ${m[3]}`, type: 'error' };
 
-  // new job
-  m = line.match(/>>\s*new job\s*#(\d+)\s+height=(\d+)\s+algo=(\S+)/i);
+  // new job (V3 Rust: ">> new job #6216 height=6216 algo=deeksha_lite_v1")
+  m = stripped.match(/>>\s*new job\s*#(\d+)\s+height=(\d+)\s+algo=(\S+)/i);
   if (m) return { msg: `New job #${m[1]} — height ${m[2]} algo ${m[3]}`, type: 'info' };
 
+  // new job (XMRig style: "new job height 1523 diff 256 algo cosmic_harmony_v3")
+  m = stripped.match(/new job\s+height\s+(\d+)\s+diff\s+([\d.]+[TGMK]?)\s+algo\s+(\S+)/i);
+  if (m) return { msg: `New job — height ${m[1]} diff ${m[2]} algo ${m[3]}`, type: 'info' };
+
   // VRSC_SHARE_FOUND (triple stream)
-  m = line.match(/(\w+)_SHARE_FOUND\s+nonce=\d+\s+hash=[0-9a-fA-F]+\s+\((\S+)\)/i);
+  m = stripped.match(/(\w+)_SHARE_FOUND\s+nonce=\d+\s+hash=[0-9a-fA-F]+\s+\((\S+)\)/i);
   if (m) return { msg: `${m[1]} share found (${m[2]})`, type: 'ok' };
 
   // pool_set_difficulty
-  m = line.match(/pool_set_difficulty=(\d+)/i);
+  m = stripped.match(/pool_set_difficulty=(\d+)/i);
   if (m) return { msg: `Pool difficulty → ${m[1]}`, type: 'info' };
 
   // BLOCK FOUND
-  m = line.match(/BLOCK\s+FOUND.*?height[=:]\s*(\d+)/i);
+  m = stripped.match(/BLOCK\s+FOUND.*?height[=:]\s*(\d+)/i);
   if (m) return { msg: `BLOCK FOUND — height ${m[1]}!`, type: 'success' };
 
+  // accepted (XMRig style: "accepted 42/0 (+1) diff 256 [38 ms] (100.0%)")
+  m = stripped.match(/accepted\s+(\d+)\/(\d+)\s+\(\+1\)\s+diff\s+([\d.]+[TGMK]?)(?:\s+\[([^\]]+)\])?\s+\(([\d.]+)%\)/i);
+  if (m) return { msg: `Share accepted (${m[1]}/${m[2]}) ${m[5]}%`, type: 'ok' };
+
+  // rejected (XMRig/Rust: "rejected 42/1 (+1) \"reason\"" or "rejected 42/1 — reason")
+  m = stripped.match(/rejected\s+(\d+)\/(\d+)(?:\s+\(\+1\))?\s+(?:"([^"]+)"|[—–-]\s*(\S[^\n]*))/i);
+  if (m) return { msg: `Share rejected — ${m[3] || m[4] || 'unknown'}`, type: 'error' };
+
+  // First share accepted/rejected
+  if (/First\s+share\s+accepted/i.test(stripped)) return { msg: 'First share accepted!', type: 'ok' };
+  if (/First\s+share\s+rejected/i.test(stripped)) return { msg: 'First share rejected', type: 'error' };
+
+  // GPU share accepted/rejected
+  m = stripped.match(/GPU share ACCEPTED[^(]*\(total:\s*(\d+)\)/i);
+  if (m) return { msg: `GPU share accepted (total ${m[1]})`, type: 'ok' };
+  if (/GPU share REJECTED/i.test(stripped)) return { msg: 'GPU share rejected', type: 'error' };
+
+  // wire_hello / wire_welcome (connection established)
+  if (/wire_hello|wire_welcome/i.test(stripped)) return { msg: 'Pool connected', type: 'ok' };
+
+  // mode=remote (mining started)
+  if (/mode=remote/i.test(stripped)) return { msg: 'Remote mining started', type: 'info' };
+
+  // pool_addr= (pool connection)
+  m = stripped.match(/pool_addr=(\S+)/i);
+  if (m) return { msg: `Connecting to pool ${m[1]}`, type: 'info' };
+
+  // gpu_init / gpu_backend
+  m = stripped.match(/gpu_init\s+(.+)/i);
+  if (m) return { msg: `GPU init: ${m[1].substring(0, 60)}`, type: 'info' };
+
   // Skip verbose / repetitive lines
-  if (/^session_status\b/i.test(line)) return null;
-  if (/^\[STATUS\]/i.test(line)) return null;
-  if (/^\[METRICS\]/i.test(line)) return null;
-  if (/^wire_stale\b|^wire_cancel\b/i.test(line)) return null;
-  if (/^gpu_init\b|^gpu_backend\b|^gpu_epoch_fallback\b/i.test(line)) return null;
-  if (/^external_stream\b|^ext_gpu_tx_send\b|^ext_cpu_thread\b|^ext_share_submitted\b/i.test(line)) return null;
-  if (/^stream_weights\b/i.test(line)) return null;
-  if (/^nonce_range\b|^found_nonce\b|^hash=|^iteration=|^job_id=|^share_status=/i.test(line)) return null;
-  if (/^adaptive_duty_cycle\b|^ext_gpu_adaptive_update\b/i.test(line)) return null;
-  if (/^-\s+job=/i.test(line)) return null; // dash-prefixed reject summary
+  if (/^session_status\b/i.test(stripped)) return null;
+  if (/^\[STATUS\]/i.test(stripped)) return null;
+  if (/^\[METRICS\]/i.test(stripped)) return null;
+  if (/^wire_stale\b|^wire_cancel\b/i.test(stripped)) return null;
+  if (/^gpu_backend\b|^gpu_epoch_fallback\b/i.test(stripped)) return null;
+  if (/^external_stream\b|^ext_gpu_tx_send\b|^ext_cpu_thread\b|^ext_share_submitted\b/i.test(stripped)) return null;
+  if (/^external_stream_cpu\b/i.test(stripped)) return null;
+  if (/^stream_weights\b/i.test(stripped)) return null;
+  if (/^nonce_range\b|^found_nonce\b|^hash=|^iteration=|^job_id=|^share_status=/i.test(stripped)) return null;
+  if (/^adaptive_duty_cycle\b|^ext_gpu_adaptive_update\b/i.test(stripped)) return null;
+  if (/^-\s+job=/i.test(stripped)) return null; // dash-prefixed reject summary
+  if (/^external_stream_ignore\b/i.test(stripped)) return null;
 
   // MEMORY_CRITICAL — show as error
-  m = line.match(/MEMORY_CRITICAL\s+available_mib=(\d+)\s+total_mib=(\d+)/i);
+  m = stripped.match(/MEMORY_CRITICAL\s+available_mib=(\d+)\s+total_mib=(\d+)/i);
   if (m) return { msg: `Memory critical — ${m[1]} MiB free / ${m[2]} MiB total`, type: 'error' };
 
-  // ext_gpu_adaptive_update — skip (verbose)
-  if (/^ext_gpu_adaptive_update\b/i.test(line)) return null;
-
   // Connection events
-  if (/connecting|connected|reconnect/i.test(line)) {
-    return { msg: line.substring(0, 80), type: /connected/i.test(line) ? 'ok' : 'info' };
+  if (/connecting|connected|reconnect/i.test(stripped)) {
+    return { msg: stripped.substring(0, 80), type: /connected/i.test(stripped) ? 'ok' : 'info' };
   }
 
   // Errors
-  if (/error|failed|panic/i.test(line)) {
-    return { msg: line.substring(0, 100), type: 'error' };
+  if (/error|failed|panic/i.test(stripped)) {
+    return { msg: stripped.substring(0, 100), type: 'error' };
   }
 
   // Warnings
-  if (/warn|⚠|timeout/i.test(line)) {
-    return { msg: line.substring(0, 100), type: 'warn' };
+  if (/warn|⚠|timeout/i.test(stripped)) {
+    return { msg: stripped.substring(0, 100), type: 'warn' };
   }
 
   // Startup lines
-  if (/V3-FAST|Starting|started|Initializ/i.test(line)) {
-    return { msg: line.substring(0, 100), type: 'info' };
+  if (/V3-FAST|Starting|started|Initializ/i.test(stripped)) {
+    return { msg: stripped.substring(0, 100), type: 'info' };
   }
 
   // Unknown lines — skip from feed (Mining Console shows them)
@@ -1702,7 +1739,7 @@ function setupEventListeners() {
     }
 
     // Split into priority (always shown) vs bulk (limited) lines
-    const priorityRe = /accepted|rejected|speed\s+10s|new job|BLOCK FOUND|\[METRICS\]|gpu_init|wire_hello|wire_welcome|mode=remote|pool_addr=/i;
+    const priorityRe = /SHARE_ACCEPTED|SHARE_REJECTED|accepted|rejected|speed\s+10s|new job|BLOCK FOUND|\[METRICS\]|gpu_init|wire_hello|wire_welcome|mode=remote|pool_addr=|pool_set_difficulty|VRSC_SHARE_FOUND|MEMORY_CRITICAL|First share/i;
     const priorityLines = [];
     const bulkLines = [];
     for (const line of logLines) {
@@ -2054,14 +2091,7 @@ let _logFlushScheduled = false;
 const _maxLogQueue = 100;
 
 function addLogEntry(message, type = 'info') {
-  const logViewer = document.getElementById('log-viewer');
-  if (!logViewer) return;
-
   const timestamp = new Date().toLocaleTimeString();
-  _logQueue.push({ timestamp, message, type });
-  if (_logQueue.length > _maxLogQueue) {
-    _logQueue.splice(0, _logQueue.length - _maxLogQueue);
-  }
 
   // ── Dashboard home feed: mirror important events on the main view ──
   // Don't flood the feed with long repetitive xmrig-style [STATUS]/[METRICS]
@@ -2069,6 +2099,11 @@ function addLogEntry(message, type = 'info') {
   const isStatusOrMetrics = /\[(STATUS|METRICS)\]/.test(message);
   const dashFeed = document.getElementById('dashboard-feed-body');
   if (dashFeed && !isStatusOrMetrics) {
+    // Remove placeholder text on first real entry
+    const placeholder = dashFeed.querySelector('.feed-entry.info');
+    if (placeholder && /Mining activity will appear here/i.test(placeholder.textContent)) {
+      placeholder.remove();
+    }
     const dashEntry = document.createElement('div');
     dashEntry.className = `feed-entry ${type}`;
     dashEntry.textContent = `[${timestamp}] ${message}`;
@@ -2077,6 +2112,14 @@ function addLogEntry(message, type = 'info') {
       dashFeed.removeChild(dashFeed.firstChild);
     }
     dashFeed.scrollTop = dashFeed.scrollHeight;
+  }
+
+  const logViewer = document.getElementById('log-viewer');
+  if (!logViewer) return;
+
+  _logQueue.push({ timestamp, message, type });
+  if (_logQueue.length > _maxLogQueue) {
+    _logQueue.splice(0, _logQueue.length - _maxLogQueue);
   }
 
   if (_logFlushScheduled) return;
