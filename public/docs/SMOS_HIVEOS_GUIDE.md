@@ -3,22 +3,21 @@
 **Version:** v3.0.6-beta
 **Pool:** `62.171.141.136:8444`
 **Website:** [zionterranova.com](https://zionterranova.com)
+**FAQ:** [docs/FAQ.md](./FAQ.md) — common questions for beginners and rig operators
 
 ---
 
 ## Quick Start — SMOS (SimpleMining OS)
 
-### 1. Download the miner
+### 1. What you need
 
-```bash
-# On your SMOS rig or a machine with internet access:
-wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-beta/zion-miner-linux-x86_64.tar.gz
-tar xzf zion-miner-linux-x86_64.tar.gz
-```
+- A SMOS rig with **x86_64** CPU (most AMD/Intel rigs).
+- A ZION wallet address (`zion1...`).
+- Internet access from the rig.
 
-### 2. Create a SMOS wrapper script
+### 2. Create the SMOS wrapper script
 
-Create a file named `miner` (this is what SMOS executes):
+Create a file named `miner` (SMOS will run this file). Replace `zion1YOUR_WALLET_ADDRESS` and `my-rig` with your real wallet and worker name.
 
 ```bash
 #!/bin/bash
@@ -28,33 +27,31 @@ set -euo pipefail
 WALLET="zion1YOUR_WALLET_ADDRESS"
 WORKER="my-rig"
 
-# ── Mining configuration ──
-export ZION_PROFILE=pool
-export ZION_GPU_BACKEND=opencl
-export ZION_MINER_ALGORITHM=deeksha_lite_v1
-export ZION_INTERACTIVE=0
-export ZION_NO_STICKY=1
+# ── Paths ──
+RELEASE="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-beta/zion-miner-linux-x86_64.tar.gz"
+MINER_DIR="/tmp/zion-miner-smos"
+MINER_BIN="${MINER_DIR}/zion-miner"
 
-# ── GPU tuning (auto-tune handles most cases) ──
-export ZION_AUTOTUNE=1
-export ZION_IGNORE_GPU_SELF_TEST_FAIL=1
-
-# ── Download miner binary if not present ──
-LOCAL_MINER="/tmp/zion-miner-real"
-if [ ! -f "${LOCAL_MINER}" ]; then
-    echo "[zion] downloading miner binary ..."
-    curl -fsSL -o "${LOCAL_MINER}.tmp" \
-        "http://62.171.141.136/zion-miner/zion-miner"
-    chmod +x "${LOCAL_MINER}.tmp"
-    mv "${LOCAL_MINER}.tmp" "${LOCAL_MINER}"
+# ── Download and extract miner if missing ──
+if [ ! -f "${MINER_BIN}" ]; then
+    echo "[zion] downloading release ${RELEASE} ..."
+    mkdir -p "${MINER_DIR}"
+    curl -fsSL -o "${MINER_DIR}/zion-miner.tar.gz" "${RELEASE}"
+    tar xzf "${MINER_DIR}/zion-miner.tar.gz" -C "${MINER_DIR}"
+    chmod +x "${MINER_BIN}"
 fi
 
-exec "${LOCAL_MINER}" \
+# ── Run miner (non-interactive SMOS mode) ──
+exec "${MINER_BIN}" \
     --pool 62.171.141.136:8444 \
     --wallet "${WALLET}" \
     --worker "${WORKER}" \
+    --gpu auto \
+    --algorithm deeksha_lite_v1 \
     --profile pool
 ```
+
+> **GPU backend:** `--gpu auto` will pick CUDA for NVIDIA, OpenCL for AMD/Intel, and CPU if no GPU is detected. You can also set it explicitly to `cuda` or `opencl`.
 
 ### 3. Package as SMOS custom miner
 
@@ -102,8 +99,10 @@ In HiveOS dashboard:
 **Extra config arguments:**
 
 ```
---profile pool --gpu opencl --algorithm deeksha_lite_v1
+--profile pool --gpu auto --algorithm deeksha_lite_v1
 ```
+
+> `--gpu auto` selects CUDA for NVIDIA, OpenCL for AMD/Intel, and CPU if no GPU is found. Set `--gpu cuda` or `--gpu opencl` explicitly if you have a mixed rig and want to force one backend.
 
 ### 3. Apply and reboot
 
@@ -115,17 +114,20 @@ automatically.
 ## Quick Start — Linux (any distro)
 
 ```bash
-# Download
+# Download and extract
 wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-beta/zion-miner-linux-x86_64.tar.gz
 tar xzf zion-miner-linux-x86_64.tar.gz
-chmod +x zion-miner
+chmod +x zion-miner start.sh
 
-# Start mining
+# Easy interactive menu (recommended for beginners)
+./start.sh
+
+# Or start directly from the command line
 ./zion-miner \
     --pool 62.171.141.136:8444 \
     --wallet zion1YOUR_WALLET_ADDRESS \
     --worker my-rig \
-    --gpu opencl \
+    --gpu auto \
     --algorithm deeksha_lite_v1 \
     --profile pool
 ```
@@ -184,8 +186,7 @@ chmod +x zion-miner
 | RTX 3090 24GB | 300+ kH/s | Async htod + batched launch |
 | RTX 4090 24GB | 400+ kH/s | Latest Ampere optimizations |
 
-> **Note:** CUDA support requires building from source with CUDA toolkit.
-> The prebuilt binary includes OpenCL only. NVIDIA users can build with:
+> **Note:** The v3.0.6-beta prebuilt Linux x86_64 binary includes both **CUDA** and **OpenCL**. NVIDIA users on Linux x86_64 can use `--gpu cuda` or `--gpu auto` directly. For other platforms or custom builds, compile from source:
 > ```bash
 > cargo build --release -p zion-miner --features "gpu-cuda,native-all,public_build"
 > ```
