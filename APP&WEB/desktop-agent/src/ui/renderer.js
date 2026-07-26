@@ -1960,6 +1960,19 @@ function addLogEntry(message, type = 'info') {
     _logQueue.splice(0, _logQueue.length - _maxLogQueue);
   }
 
+  // ── Dashboard home feed: mirror important events on the main view ──
+  const dashFeed = document.getElementById('dashboard-feed-body');
+  if (dashFeed) {
+    const dashEntry = document.createElement('div');
+    dashEntry.className = `feed-entry ${type}`;
+    dashEntry.textContent = `[${timestamp}] ${message}`;
+    dashFeed.appendChild(dashEntry);
+    while (dashFeed.children.length > 40) {
+      dashFeed.removeChild(dashFeed.firstChild);
+    }
+    dashFeed.scrollTop = dashFeed.scrollHeight;
+  }
+
   if (_logFlushScheduled) return;
   _logFlushScheduled = true;
 
@@ -2867,9 +2880,10 @@ function updateTripleStreamPanel(stats) {
     }
   }
 
-  // Render each stream card (1-indexed: stream-1, stream-2, stream-3)
+  // Render each stream card (1-indexed: stream-1, stream-2, stream-3).
+  // Prefer the explicit `index` field; fall back to array order if missing.
   for (let i = 1; i <= 3; i++) {
-    const stream = streams.find(s => Number(s.index) === i);
+    const stream = streams.find(s => Number(s.index) === i) || streams[i - 1];
     const card = document.getElementById(`stream-card-${i}`);
     if (!card) continue;
 
