@@ -2782,12 +2782,10 @@ fn run_remote_session(
         if !QUIET.load(Ordering::Relaxed) {
             println!(">> new job #{} height={} algo={}", job.job_id, job.height, algorithm);
         }
-        let current_diff = CURRENT_POOL_DIFFICULTY.load(Ordering::Relaxed);
-        // Only override target for ZION jobs. External AuxPoW jobs carry
-        // their own share target from the external pool (e.g. KAS).
-        if !gpu_backend::is_external_algorithm(&algorithm) {
-            job.target = zion_core::difficulty::difficulty_to_target(current_diff);
-        }
+        // Use the target supplied by the pool in the Job message (this is the
+        // vardiff share target at the moment the job was issued).  The pool may
+        // retarget between job issue and submission; using the job's own target
+        // avoids submitting shares that no longer meet the pool's current vardiff.
         current_algorithm = algorithm.clone();
         remote_nonce_window = job.nonce_count;
         let job_started_at = Instant::now();

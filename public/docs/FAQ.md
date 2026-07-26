@@ -63,17 +63,18 @@ wget https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-beta/
 tar xzf zion-miner-linux-x86_64.tar.gz
 chmod +x zion-miner start.sh
 
-# 2. Spusť easy-menu
-./start.sh
+# 2. Spusť interaktivní menu
+./zion-miner
 ```
 
 ### Jak rychle začít těžit? (Windows)
 1. Stáhni `zion-miner-windows-x86_64.zip`.
 2. Rozbal zip (pravý klik → "Extract All").
-3. Dvakrát klikni na `start.bat` a odpověz na otázky.
+3. Dvakrát klikni na `zion-miner.exe` a odpověz na otázky.
 
 ### Co dělá `start.sh` / `start.bat`?
-Zeptá se tě na:
+Je to pokročilý wrapper, který se zeptá na stejné věci jako `./zion-miner`
+navíc s možností předat vlastní argumenty. Zeptá se tě na:
 - **pool** (výchozí `62.171.141.136:8444`)
 - **wallet adresu** (povinná)
 - **worker name**
@@ -82,7 +83,8 @@ Zeptá se tě na:
 - **algoritmus** (výchozí `deeksha_lite_v1`)
 - **profil** (`pool`, `solo`, `benchmark`)
 
-Pak spustí miner se správnými parametry.
+Pak spustí miner se správnými parametry. Nastav `ZION_EASY_MENU=0`
+a argumenty se předají přímo binárce.
 
 ### Jak těžit bez menu (příkazová řádka)?
 ```bash
@@ -103,6 +105,7 @@ Pak spustí miner se správnými parametry.
 | Apple Silicon (M1/M2/M3/M4) | `auto` nebo `metal` | Metal |
 | starší Mac s AMD/Intel | `opencl` nebo `cpu` | OpenCL může být na macOS omezené |
 | Windows NVIDIA | `auto` nebo `cuda` | Windows build má zatím CUDA |
+| Windows AMD/Intel | `opencl` nebo `cpu` | OpenCL podpora přijde v dalším release |
 | žádná/neznámá GPU | `cpu` | pomalejší, ale funguje všude |
 
 ### Proč `--gpu auto` nevybere správnou GPU?

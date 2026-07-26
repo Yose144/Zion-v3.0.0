@@ -26,12 +26,16 @@ echo ""
 
 # ── Build ──
 cd "${V3_DIR}"
-echo "[1/3] Building zion-miner with public_build + GPU + native hashers..."
-cargo build --release -p zion-miner \
-    --features public_build,gpu-opencl,native-hashers,native-verushash,native-randomx \
-    2>&1 | tail -5
+echo "[1/3] Building zion-miner with public_build + OpenCL + CUDA + native hashers..."
+cd "${V3_DIR}"
+source ~/.cargo/env 2>/dev/null || true
+ZION_CPU_TARGET=x86-64 ZION_DISABLE_OPENMP=1 \
+    cargo build --release --target x86_64-unknown-linux-gnu -p zion-miner \
+        --bin zion-miner \
+        --features public_build,gpu-opencl,gpu-cuda,native-all,native-hashers \
+        2>&1 | tail -5
 
-BINARY="${V3_DIR}/target/release/zion-miner"
+BINARY="${V3_DIR}/target/x86_64-unknown-linux-gnu/release/zion-miner"
 if [[ ! -x "${BINARY}" ]]; then
     echo "ERROR: Binary not found at ${BINARY}"
     exit 1

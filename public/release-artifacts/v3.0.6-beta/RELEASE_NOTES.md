@@ -47,11 +47,11 @@ instructions.
 
 | Your system | File | Size | SHA256 |
 |-------------|------|------|--------|
-| **Linux x86_64** (Ubuntu, Debian, SMOS, HiveOS) | `zion-miner-linux-x86_64.tar.gz` | 3.5 MB | `c3de1f632acd7ae3753b9c2c8be9e9e69f1415095b3aedd44e2b7d0ee37e88d2` |
-| **Linux ARM64** (Raspberry Pi 4/5, Ampere, Jetson) | `zion-miner-linux-aarch64.tar.gz` | 2.7 MB | `d46e0eadff071c6409a8f27001c5007ab01c5106edc40d5673bee3538cadd375` |
-| **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-miner-macos-aarch64.tar.gz` | 2.2 MB | `2a775d59e4696fc96d5b241b3ff18e9a346f3954a04fcb442ceed299a2c0f22c` |
-| **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` | 3.3 MB | `e944acf7b270af4813b62ff4ca9c7124bface277f89ce30c50f219d02e940bf9` |
-| **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.zip` | 2.9 MB | `022c60b2f35aeebadcacfab3cdb7d367b864706db4acc1d9a36abc5df451cbcc` |
+| **Linux x86_64** (Ubuntu, Debian, SMOS, HiveOS) | `zion-miner-linux-x86_64.tar.gz` | 3.5 MB | `9466755d2b9835cef43aef0e55a9088d7576ccacddf85951b888f373b45beb65` |
+| **Linux ARM64** (Raspberry Pi 4/5, Ampere, Jetson) | `zion-miner-linux-aarch64.tar.gz` | 2.7 MB | `a416e9cb3183193a4040de668099e6391089c0ef4c9b1d3a2271dd7a616c7f85` |
+| **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-miner-macos-aarch64.tar.gz` | 3.2 MB | `ea9993c4a3978e6e5ea10b37d14b44dc343bba5efbb7b0788a9275e7ad992d74` |
+| **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` | 3.3 MB | `a4677f005baf539aaf6c02a538c9dbcaf117ac288a4c51c39901d477889af86a` |
+| **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.zip` | 2.9 MB | `9a7454ebabbf2346bdd8e034e1af4d6473dc1939fcd159fe8170563922105e36` |
 
 > **All 5 platforms are now available!** Full SHA256 checksums are in
 > `SHA256SUMS.txt` (download alongside the binary).
@@ -79,15 +79,25 @@ tar xzf zion-miner-linux-x86_64.tar.gz
 chmod +x zion-miner start.sh
 ```
 
-### Easy menu (recommended)
+### Interactive setup (recommended for desktop)
+
+```bash
+./zion-miner
+```
+
+When run without arguments, the binary opens a simple interactive menu that
+asks for your pool, wallet, worker name, GPU backend, thread count, algorithm
+and profile.
+
+### Advanced wrapper script
 
 ```bash
 ./start.sh
 ```
 
-`start.sh` (Linux/macOS) or `start.bat` (Windows) asks for your wallet,
-worker name, GPU backend, and thread count, then launches the miner. Set
-`ZION_EASY_MENU=0` to skip the prompts and pass arguments directly.
+`start.sh` (Linux/macOS) or `start.bat` (Windows) is the same easy wrapper
+with extra options and full argument pass-through. Set `ZION_EASY_MENU=0`
+to skip the prompts and pass arguments directly.
 
 ### Manual start
 
