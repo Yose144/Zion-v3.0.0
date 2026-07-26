@@ -398,6 +398,7 @@ pub(crate) struct TuiMetrics {
 fn sync_miner_metrics(
     metrics: &Arc<Mutex<MinerMetricsSnapshot>>,
     telemetry: &SessionTelemetry,
+    hashrate: &Arc<interactive::HashrateTracker>,
     iteration_done: u32,
     accepted: u64,
     rejected: u64,
@@ -421,6 +422,10 @@ fn sync_miner_metrics(
             session_active,
             status,
         );
+        // Always update per-stream telemetry so the desktop agent's Trinity
+        // panel is populated even when maybe_print_status() is skipped.
+        let stream_stats = hashrate.build_stream_stats(&telemetry.algorithm);
+        snapshot.set_streams(&stream_stats);
     }
 }
 
@@ -1743,6 +1748,7 @@ fn run_local_session(
     sync_miner_metrics(
         metrics,
         &telemetry,
+        hashrate,
         0,
         hashrate.accepted_shares.load(Ordering::Relaxed),
         hashrate.rejected_shares.load(Ordering::Relaxed),
@@ -1911,6 +1917,7 @@ fn run_local_session(
             sync_miner_metrics(
                 metrics,
                 &telemetry,
+                hashrate,
                 iteration + 1,
                 total_accepted,
                 total_rejected,
@@ -2039,6 +2046,7 @@ fn run_local_session(
         sync_miner_metrics(
             metrics,
             &telemetry,
+            hashrate,
             iteration + 1,
             total_accepted,
             total_rejected,
@@ -2078,6 +2086,7 @@ fn run_local_session(
     sync_miner_metrics(
         metrics,
         &telemetry,
+        hashrate,
         config.loop_count,
         hashrate.accepted_shares.load(Ordering::Relaxed),
         hashrate.rejected_shares.load(Ordering::Relaxed),
@@ -2515,6 +2524,7 @@ fn run_remote_session(
     sync_miner_metrics(
         metrics,
         &telemetry,
+        hashrate,
         0,
         hashrate.accepted_shares.load(Ordering::Relaxed),
         hashrate.rejected_shares.load(Ordering::Relaxed),
@@ -2600,6 +2610,7 @@ fn run_remote_session(
     sync_miner_metrics(
         metrics,
         &telemetry,
+        hashrate,
         0,
         hashrate.accepted_shares.load(Ordering::Relaxed),
         hashrate.rejected_shares.load(Ordering::Relaxed),
@@ -3130,6 +3141,7 @@ fn run_remote_session(
             sync_miner_metrics(
                 metrics,
                 &telemetry,
+                hashrate,
                 iteration + 1,
                 total_accepted,
                 total_rejected,
@@ -3294,6 +3306,7 @@ fn run_remote_session(
         sync_miner_metrics(
             metrics,
             &telemetry,
+            hashrate,
             iteration + 1,
             total_accepted,
             total_rejected,
@@ -3339,6 +3352,7 @@ fn run_remote_session(
     sync_miner_metrics(
         metrics,
         &telemetry,
+        hashrate,
         config.loop_count,
         hashrate.accepted_shares.load(Ordering::Relaxed),
         hashrate.rejected_shares.load(Ordering::Relaxed),

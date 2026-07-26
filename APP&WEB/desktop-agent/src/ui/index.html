@@ -1197,6 +1197,54 @@
       .trinity-grid { grid-template-columns: 1fr; }
     }
 
+    /* ═══ Dashboard Live Activity Feed ═══ */
+    .dashboard-activity-feed {
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 24px;
+      padding: 16px 20px;
+      margin-top: 18px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      display: flex;
+      flex-direction: column;
+      max-height: 260px;
+    }
+    .dashboard-activity-feed .feed-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+    .dashboard-activity-feed .feed-body {
+      overflow-y: auto;
+      font-family: 'SF Mono', 'Menlo', monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #d1d5db;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .feed-entry {
+      padding: 3px 6px;
+      border-radius: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .feed-entry.info  { color: #9ca3af; }
+    .feed-entry.ok    { color: #34d399; }
+    .feed-entry.error { color: #f87171; }
+    .feed-entry.warn  { color: #fbbf24; }
+    .feed-entry.success { color: #34d399; font-weight: 600; }
+
     /* Control Panel — pool-style glass */
     .control-panel {
       background: rgba(0, 0, 0, 0.28);
@@ -4287,6 +4335,17 @@
                 <span class="stream-status" id="stream-3-status">inactive</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- ═══ Live Activity Feed (home dashboard) ═══ -->
+        <div id="dashboard-activity-feed" class="dashboard-activity-feed">
+          <div class="feed-header">
+            <svg class="icon icon-inline" aria-hidden="true"><use href="#i-logs"></use></svg>
+            <span>Live Activity</span>
+          </div>
+          <div class="feed-body" id="dashboard-feed-body">
+            <div class="feed-entry info">Mining activity will appear here once mining starts.</div>
           </div>
         </div>
       </div>
