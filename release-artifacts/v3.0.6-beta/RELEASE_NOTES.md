@@ -47,11 +47,11 @@ instructions.
 
 | Your system | File | Size | SHA256 |
 |-------------|------|------|--------|
-| **Linux x86_64** (Ubuntu, Debian, SMOS, HiveOS) | `zion-miner-linux-x86_64.tar.gz` | 3.5 MB | `9466755d2b9835cef43aef0e55a9088d7576ccacddf85951b888f373b45beb65` |
-| **Linux ARM64** (Raspberry Pi 4/5, Ampere, Jetson) | `zion-miner-linux-aarch64.tar.gz` | 2.7 MB | `a416e9cb3183193a4040de668099e6391089c0ef4c9b1d3a2271dd7a616c7f85` |
-| **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-miner-macos-aarch64.tar.gz` | 3.2 MB | `ea9993c4a3978e6e5ea10b37d14b44dc343bba5efbb7b0788a9275e7ad992d74` |
-| **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` | 3.3 MB | `a4677f005baf539aaf6c02a538c9dbcaf117ac288a4c51c39901d477889af86a` |
-| **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.zip` | 2.9 MB | `9a7454ebabbf2346bdd8e034e1af4d6473dc1939fcd159fe8170563922105e36` |
+| **Linux x86_64** (Ubuntu, Debian, SMOS, HiveOS) | `zion-miner-linux-x86_64.tar.gz` | 3.5 MB | `5cac4fd18ec4bcdc1e3b23dab09e76248e79bbcae051e0f0510bfd25e2be5df4` |
+| **Linux ARM64** (Raspberry Pi 4/5, Ampere, Jetson) | `zion-miner-linux-aarch64.tar.gz` | 2.7 MB | `946c4c82df381c344a5df522a1a415e23e0df9038d9669723e3f9979a4caa22d` |
+| **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-miner-macos-aarch64.tar.gz` | 3.2 MB | `ed39b49cd5edaef3025b0f847903fe62dcd0ea33be5c550ec403091ef6660360` |
+| **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` | 3.3 MB | `dbf45cf246c21ac96120987e290f23101eb25cf4dfc8731e3704dc7e45dbeb42` |
+| **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.zip` | 2.9 MB | `c85dd3831c6b77f6f4542dd31281449e0878dbcb7b29734a1daf44585c15f21b` |
 
 > **All 5 platforms are now available!** Full SHA256 checksums are in
 > `SHA256SUMS.txt` (download alongside the binary).
