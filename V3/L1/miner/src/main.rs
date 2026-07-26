@@ -28,6 +28,7 @@ mod gpu_backend;
 mod gpu_guard;
 mod interactive;
 mod parallel;
+mod setup_menu;
 mod thread_affinity;
 mod ui;
 
@@ -920,6 +921,10 @@ fn format_hashrate(hps: f64) -> String {
 fn main() -> Result<()> {
     // Install crash handler (SIGABRT/SIGSEGV from AMD OpenCL driver)
     crash_handler::install();
+
+    // Optional interactive setup menu (like zion CLI but simpler).
+    // Skipped automatically when arguments or required env vars are present.
+    setup_menu::maybe_run();
 
     // Enable verbose logging via env var or --verbose flag
     if std::env::var("ZION_MINER_VERBOSE").map(|v| v == "1" || v == "true").unwrap_or(false)

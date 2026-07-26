@@ -16,11 +16,32 @@ lto = "thin"
 # Codegen units = paralelni kompilace release modulu
 codegen-units = 8
 
-# Nastaveni pro rychlejsi linkovani na Windows
+# Portable x86-64 baseline so the miner runs on every CPU (no SIGILL on older chips).
 [target.x86_64-pc-windows-msvc]
 # Pokud je nainstalovan lld-link, pouzij ho (mnohem rychlejsi nez link.exe)
 # linker = "lld-link.exe"
 # rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+rustflags = ["-C", "target-cpu=x86-64"]
 
-# Alternativa: Pouzit native CPU instrukce pro runtime vykon
-rustflags = ["-C", "target-cpu=native"]
+# Same portable baseline for all x86-64 targets.
+[target.x86_64-apple-darwin]
+rustflags = ["-C", "target-cpu=x86-64"]
+
+[target.x86_64-pc-windows-gnu]
+rustflags = ["-C", "target-cpu=x86-64"]
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "target-cpu=x86-64"]
+
+[target.x86_64-unknown-linux-musl]
+rustflags = ["-C", "target-cpu=x86-64"]
+
+# ARM64 stays generic so it works across Apple Silicon / Ampere / Jetson.
+[target.aarch64-apple-darwin]
+rustflags = ["-C", "target-cpu=generic"]
+
+[target.aarch64-unknown-linux-gnu]
+rustflags = ["-C", "target-cpu=generic"]
+
+[target.aarch64-unknown-linux-musl]
+rustflags = ["-C", "target-cpu=generic"]

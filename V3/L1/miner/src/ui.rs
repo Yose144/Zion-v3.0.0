@@ -412,6 +412,15 @@ pub fn log_ext_rejected(stream_label: &str, coin: &str, algorithm: &str, reason:
 
 /// Print a block found celebration with ASCII art flag
 pub fn log_block_found(height: u64, nonce: u64, hash_prefix: &str) {
+    // Desktop agents get a compact machine-parseable line instead of ASCII art.
+    if std::env::var("ZION_NO_FANCY")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false)
+    {
+        println!("[BLOCK FOUND] height={} nonce={} hash={}...", height, nonce, hash_prefix);
+        return;
+    }
+
     let flag = r#"
                                     ╔══════════════════════════════════════════════════════════════════╗
                                     ║                    🐋 KEPORKAK BLOCK FOUND! 🐋                   ║
@@ -1197,6 +1206,13 @@ pub fn exit_sticky_header() {
 /* ========================================================================= */
 
 pub fn print_fancy_banner(threads: usize, version: &str, backend: &str) {
+    // Desktop agents have their own splash/branding; suppress ASCII banner.
+    if std::env::var("ZION_NO_FANCY")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false)
+    {
+        return;
+    }
     let mut s = String::new();
     s.push_str(CYAN);
     s.push_str("╔══════════════════════════════════════════════════════════════════╗\n");
