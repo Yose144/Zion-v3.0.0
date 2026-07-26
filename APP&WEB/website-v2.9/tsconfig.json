@@ -26,9 +26,6 @@
     "paths": {
       "@/*": [
         "./src/*"
-      ],
-      "zion-wallet-sdk": [
-        "../zion-wallet-sdk/dist/index.js"
       ]
     }
   },
