@@ -1217,7 +1217,9 @@ const DEFAULT_CONFIG = {
   wallet: '',
   worker: 'desktop-agent',
   threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
-  gpu: true,
+  // Apple Silicon Metal deeksha kernel is not yet reliable; default to CPU
+  // mining for a working out-of-the-box experience. Users can still toggle GPU.
+  gpu: !(process.platform === 'darwin' && os.arch() === 'arm64'),
   gpuCpuThreads: 5,
   gpuBatchSize: 16000000,
   minerBackend: 'rust',
