@@ -1203,12 +1203,12 @@ const DESKTOP_PURE_ZION_DEFAULT = true;
 
 const DEFAULT_CONFIG = {
   pool: {
-    host: PRIMARY_TESTNET_HOST,
+    host: PRIMARY_MAINNET_HOST,
     port: PRIMARY_POOL_PORT
   },
   desktopPureZionDefault: DESKTOP_PURE_ZION_DEFAULT,
   rpcUrl: DEFAULT_RPC_URL,
-  algorithm: 'cosmic_harmony',
+  algorithm: 'deeksha_lite_v1',
   wallet: '',
   worker: 'desktop-agent',
   threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
@@ -1236,12 +1236,18 @@ const DEFAULT_CONFIG = {
 
 function normalizeAlgorithmName(algo) {
   const raw = String(algo || '').trim().toLowerCase().replace(/-/g, '_');
-  if (['cosmic_harmony_v3','cosmic_harmony_v4','cosmic_harmony_v4_2','chv3','ch3',
+  const v2Names = ['cosmic_harmony_v3','cosmic_harmony_v4','cosmic_harmony_v4_2','chv3','ch3',
        'chv4','ch4','deeksha','cosmic_harmony_deeksha','ekam','ekam_deeksha',
-       'cosmic_harmony_ekam'].includes(raw)) {
-    return 'cosmic_harmony';
+       'cosmic_harmony_ekam','cosmic_harmony'];
+  if (v2Names.includes(raw)) {
+    return 'cosmic_harmony_ekam_deeksha_v2';
   }
-  return raw || 'cosmic_harmony';
+  if (['deeksha_lite_fire','fire','thermal'].includes(raw)) {
+    return 'deeksha_lite_fire';
+  }
+  const valid = ['deeksha_lite_v1','cosmic_harmony_ekam_deeksha_v2','deeksha_lite_fire'];
+  if (valid.includes(raw)) return raw;
+  return 'deeksha_lite_v1';
 }
 
 function sanitizeWorkerName(raw) {
@@ -1272,8 +1278,17 @@ function loadConfig() {
         }
       }
       if (merged.pool && /^(localhost|127\.0\.0\.1)$/i.test(merged.pool.host)) {
-        merged.pool.host = PRIMARY_TESTNET_HOST;
+        merged.pool.host = PRIMARY_MAINNET_HOST;
         merged.pool.port = PRIMARY_POOL_PORT;
+      }
+      // Migrate decommissioned Edge server IPs to the current canonical pool.
+      const DECOMMISSIONED_POOL_HOSTS = new Set(['77.42.71.94', '100.76.16.108']);
+      if (merged.pool && DECOMMISSIONED_POOL_HOSTS.has(merged.pool.host)) {
+        log(`[config] migrated decommissioned pool ${merged.pool.host} → ${PRIMARY_MAINNET_HOST}:${PRIMARY_POOL_PORT}`);
+        merged.pool.host = PRIMARY_MAINNET_HOST;
+        merged.pool.port = PRIMARY_POOL_PORT;
+        // Persist the migration immediately so renderer sees the new address.
+        saveConfig(merged);
       }
       merged.algorithm = normalizeAlgorithmName(merged.algorithm || DEFAULT_CONFIG.algorithm);
       merged.desktopPureZionDefault = DESKTOP_PURE_ZION_DEFAULT;
