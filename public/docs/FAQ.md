@@ -46,7 +46,7 @@ Těžba není okamžitá bankomatová transakce. Pool sbírá share, až když n
 ## Desktop — Windows, macOS, Linux
 
 ### Kde stáhnu miner?
-Nejnovější v3.0.6-beta balíčky najdeš v [releasech](https://github.com/Zion-TerraNova/v3-Mainnet/releases):
+Nejnovější v3.0.6-beta balíčky najdeš v release **[v3.0.6-beta](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.6-beta)**:
 
 | Platform | Soubor |
 |----------|--------|
