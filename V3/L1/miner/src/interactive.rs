@@ -621,10 +621,26 @@ impl HashrateTracker {
             (0.0, 0.0, 0.0)
         };
 
-        let gpu_coin = self.gpu_ext_coin.lock().map(|c| c.clone()).unwrap_or_default();
-        let gpu_algo = self.gpu_ext_algorithm.lock().map(|a| a.clone()).unwrap_or_default();
-        let cpu_coin = self.cpu_ext_coin.lock().map(|c| c.clone()).unwrap_or_default();
-        let cpu_algo = self.cpu_ext_algorithm.lock().map(|a| a.clone()).unwrap_or_default();
+        let gpu_coin = self
+            .gpu_ext_coin
+            .lock()
+            .map(|c| c.clone())
+            .unwrap_or_default();
+        let gpu_algo = self
+            .gpu_ext_algorithm
+            .lock()
+            .map(|a| a.clone())
+            .unwrap_or_default();
+        let cpu_coin = self
+            .cpu_ext_coin
+            .lock()
+            .map(|c| c.clone())
+            .unwrap_or_default();
+        let cpu_algo = self
+            .cpu_ext_algorithm
+            .lock()
+            .map(|a| a.clone())
+            .unwrap_or_default();
         let gpu_active = self.gpu_ext_active.load(Ordering::Relaxed) == 1;
         let cpu_active = self.cpu_ext_active.load(Ordering::Relaxed) == 1;
 
@@ -780,7 +796,14 @@ impl HashrateTracker {
     // ── Share log + hashrate history (TUI pro dashboard) ──
 
     /// Push a share log entry (called from main.rs share handlers).
-    pub fn log_share(&self, stream: &str, accepted: bool, job_id: u64, latency_ms: u64, reason: &str) {
+    pub fn log_share(
+        &self,
+        stream: &str,
+        accepted: bool,
+        job_id: u64,
+        latency_ms: u64,
+        reason: &str,
+    ) {
         if let Ok(mut log) = self.share_log.lock() {
             if log.len() >= 8 {
                 log.pop_front();
@@ -814,12 +837,18 @@ impl HashrateTracker {
 
     /// Get the hashrate history samples for sparkline rendering.
     pub fn get_hr_history(&self) -> Vec<f64> {
-        self.hr_history.lock().map(|h| h.iter().copied().collect()).unwrap_or_default()
+        self.hr_history
+            .lock()
+            .map(|h| h.iter().copied().collect())
+            .unwrap_or_default()
     }
 
     /// Get a copy of the share log.
     pub fn get_share_log(&self) -> Vec<ShareLogEntry> {
-        self.share_log.lock().map(|l| l.iter().cloned().collect()).unwrap_or_default()
+        self.share_log
+            .lock()
+            .map(|l| l.iter().cloned().collect())
+            .unwrap_or_default()
     }
 
     pub fn set_pool_height(&self, h: u64) {
@@ -1001,10 +1030,18 @@ fn parse_online_miner(v: &serde_json::Value) -> Option<OnlineMiner> {
         .unwrap_or("")
         .to_string();
     if coin.is_empty() {
-        coin = obj.get("algorithm").and_then(|x| x.as_str()).unwrap_or("?").to_string();
+        coin = obj
+            .get("algorithm")
+            .and_then(|x| x.as_str())
+            .unwrap_or("?")
+            .to_string();
     }
     if algorithm.is_empty() {
-        algorithm = obj.get("backend").and_then(|x| x.as_str()).unwrap_or("?").to_string();
+        algorithm = obj
+            .get("backend")
+            .and_then(|x| x.as_str())
+            .unwrap_or("?")
+            .to_string();
     }
     Some(OnlineMiner {
         worker,
@@ -1036,11 +1073,12 @@ pub fn fetch_online_snapshot(pool_addr: &str) -> Option<OnlineMinerSnapshot> {
     if let Some(data) = http_get_json(&api_addr, "/miners?limit=50") {
         snapshot.total_miners = data.get("count").and_then(|v| v.as_u64()).unwrap_or(0);
         if let Some(miners) = data.get("miners").and_then(|v| v.as_array()) {
-            let mut top: Vec<OnlineMiner> = miners
-                .iter()
-                .filter_map(parse_online_miner)
-                .collect();
-            top.sort_by(|a, b| b.hashrate.partial_cmp(&a.hashrate).unwrap_or(std::cmp::Ordering::Equal));
+            let mut top: Vec<OnlineMiner> = miners.iter().filter_map(parse_online_miner).collect();
+            top.sort_by(|a, b| {
+                b.hashrate
+                    .partial_cmp(&a.hashrate)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
             top.truncate(5);
             snapshot.top_miners = top;
         }
@@ -1108,7 +1146,12 @@ pub(crate) fn draw_dashboard(
             // Try ioctl on /dev/tty (Unix only)
             #[cfg(unix)]
             {
-                let mut ws: libc_winsize = libc_winsize { ws_row: 0, ws_col: 0, ws_xpixel: 0, ws_ypixel: 0 };
+                let mut ws: libc_winsize = libc_winsize {
+                    ws_row: 0,
+                    ws_col: 0,
+                    ws_xpixel: 0,
+                    ws_ypixel: 0,
+                };
                 let tty_fd = std::fs::OpenOptions::new()
                     .read(true)
                     .write(true)
@@ -1172,7 +1215,9 @@ pub(crate) fn draw_dashboard(
 
     // ── Helper: write a border line ──
     macro_rules! wborder {
-        ($b:expr) => { queue!(out, Print(format!("\r{}\n", $b)))? };
+        ($b:expr) => {
+            queue!(out, Print(format!("\r{}\n", $b)))?
+        };
     }
     // ── Helper: write a content line with padding ──
     macro_rules! wline {
@@ -1183,7 +1228,8 @@ pub(crate) fn draw_dashboard(
     // ── Helper: write a section header ──
     macro_rules! wheader {
         ($text:expr) => {{
-            queue!(out,
+            queue!(
+                out,
                 SetForegroundColor(Color::Cyan),
                 Print(format!("\r│{}│\n", pad_to(&format!(" {} ", $text), iw))),
                 ResetColor,
@@ -1205,32 +1251,62 @@ pub(crate) fn draw_dashboard(
     )?;
 
     // ── Status line ──
-    let status_color = if control.pause { Color::Yellow } else { Color::Green };
-    let status_dot = if control.pause { "o PAUSED " } else { "* RUNNING" };
+    let status_color = if control.pause {
+        Color::Yellow
+    } else {
+        Color::Green
+    };
+    let status_dot = if control.pause {
+        "o PAUSED "
+    } else {
+        "* RUNNING"
+    };
     let mode_str = match control.mode {
         MiningMode::CpuOnly => "CPU",
         MiningMode::GpuOnly => "GPU",
         MiningMode::Dual => "DUAL",
     };
-    let gpu_actual = hashrate.gpu_ext_coin.lock().map(|c| c.clone()).unwrap_or_default();
-    let cpu_actual = hashrate.cpu_ext_coin.lock().map(|c| c.clone()).unwrap_or_default();
-    let gpu_coin = if !gpu_actual.is_empty() { gpu_actual }
-        else if control.gpu_coin.is_empty() { "auto".to_string() }
-        else { control.gpu_coin.clone() };
-    let cpu_coin = if !cpu_actual.is_empty() { cpu_actual }
-        else if control.cpu_coin.is_empty() { "auto".to_string() }
-        else { control.cpu_coin.clone() };
+    let gpu_actual = hashrate
+        .gpu_ext_coin
+        .lock()
+        .map(|c| c.clone())
+        .unwrap_or_default();
+    let cpu_actual = hashrate
+        .cpu_ext_coin
+        .lock()
+        .map(|c| c.clone())
+        .unwrap_or_default();
+    let gpu_coin = if !gpu_actual.is_empty() {
+        gpu_actual
+    } else if control.gpu_coin.is_empty() {
+        "auto".to_string()
+    } else {
+        control.gpu_coin.clone()
+    };
+    let cpu_coin = if !cpu_actual.is_empty() {
+        cpu_actual
+    } else if control.cpu_coin.is_empty() {
+        "auto".to_string()
+    } else {
+        control.cpu_coin.clone()
+    };
 
     wborder!(mid);
     // Status line with colored dot
     let rest_after_dot = format!(
         " algo={:<12} mode={:<4} thr={:<2} CPU={:<4} GPU={:<4}",
-        algo_display(&control.algorithm), mode_str, control.threads, cpu_coin, gpu_coin,
+        algo_display(&control.algorithm),
+        mode_str,
+        control.threads,
+        cpu_coin,
+        gpu_coin,
     );
     let dot_len = status_dot.chars().count();
     let pad_needed = iw.saturating_sub(dot_len + 1 + rest_after_dot.chars().count());
     let mut padded_rest = rest_after_dot;
-    for _ in 0..pad_needed { padded_rest.push(' '); }
+    for _ in 0..pad_needed {
+        padded_rest.push(' ');
+    }
     // Truncate if too long
     while (dot_len + 1 + padded_rest.chars().count()) > iw {
         padded_rest.pop();
@@ -1255,10 +1331,16 @@ pub(crate) fn draw_dashboard(
     queue!(
         out,
         SetForegroundColor(Color::White),
-        Print(format!("\r│{}│\n", pad_to(&format!(
-            "   10s {:>6.2}{}  60s {:>6.2}{}  15m {:>6.2}{}",
-            v10, u10, v60, u60, v15m, u15m,
-        ), iw))),
+        Print(format!(
+            "\r│{}│\n",
+            pad_to(
+                &format!(
+                    "   10s {:>6.2}{}  60s {:>6.2}{}  15m {:>6.2}{}",
+                    v10, u10, v60, u60, v15m, u15m,
+                ),
+                iw
+            )
+        )),
         ResetColor,
     )?;
 
@@ -1280,12 +1362,20 @@ pub(crate) fn draw_dashboard(
 
     // Stream 1: ZION
     let zion_total = rates.zion_accepted + rates.zion_rejected;
-    let zion_pct = if zion_total > 0 { rates.zion_accepted as f64 * 100.0 / zion_total as f64 } else { 100.0 };
+    let zion_pct = if zion_total > 0 {
+        rates.zion_accepted as f64 * 100.0 / zion_total as f64
+    } else {
+        100.0
+    };
     let (zh, zu) = ui::fmt_hashrate(rates.zion_10s_hps);
     let s1_content = format!(
         " #1 ZION {:<12} {:>7.2}{} {:>3}/{:<2} ({:>4.1}%)",
-        algo_display(&control.algorithm), zh, zu,
-        rates.zion_accepted, rates.zion_rejected, zion_pct,
+        algo_display(&control.algorithm),
+        zh,
+        zu,
+        rates.zion_accepted,
+        rates.zion_rejected,
+        zion_pct,
     );
     let s1_padded = pad_to(&s1_content, iw);
     let s1_label = "#1 ZION";
@@ -1304,14 +1394,26 @@ pub(crate) fn draw_dashboard(
 
     // Stream 2: GPU PROFIT
     let gpu_total = rates.gpu_ext_accepted + rates.gpu_ext_rejected;
-    let gpu_pct = if gpu_total > 0 { rates.gpu_ext_accepted as f64 * 100.0 / gpu_total as f64 } else { 100.0 };
+    let gpu_pct = if gpu_total > 0 {
+        rates.gpu_ext_accepted as f64 * 100.0 / gpu_total as f64
+    } else {
+        100.0
+    };
     let gpu_active = hashrate.gpu_ext_active.load(Ordering::Relaxed) == 1;
     let (gh, gu) = ui::fmt_hashrate(rates.gpu_ext_10s_hps);
-    let gpu_hr = if gpu_active { format!("{:>8.2} {:<3}", gh, gu) } else { "    idle       ".to_string() };
+    let gpu_hr = if gpu_active {
+        format!("{:>8.2} {:<3}", gh, gu)
+    } else {
+        "    idle       ".to_string()
+    };
     let s2_content = format!(
         " #2 GPU {:<8} {} {:>3}/{:<2} ({:>4.1}%) coin={:<4}",
-        if gpu_active { "—" } else { "idle" }, gpu_hr,
-        rates.gpu_ext_accepted, rates.gpu_ext_rejected, gpu_pct, gpu_coin,
+        if gpu_active { "—" } else { "idle" },
+        gpu_hr,
+        rates.gpu_ext_accepted,
+        rates.gpu_ext_rejected,
+        gpu_pct,
+        gpu_coin,
     );
     let s2_padded = pad_to(&s2_content, iw);
     let s2_label = "#2 GPU";
@@ -1330,16 +1432,31 @@ pub(crate) fn draw_dashboard(
 
     // Stream 3: CPU PROFIT
     let cpu_total = rates.cpu_ext_accepted + rates.cpu_ext_rejected;
-    let cpu_pct = if cpu_total > 0 { rates.cpu_ext_accepted as f64 * 100.0 / cpu_total as f64 } else { 100.0 };
+    let cpu_pct = if cpu_total > 0 {
+        rates.cpu_ext_accepted as f64 * 100.0 / cpu_total as f64
+    } else {
+        100.0
+    };
     let cpu_active = hashrate.cpu_ext_active.load(Ordering::Relaxed) == 1;
     let (ch, cu) = ui::fmt_hashrate(rates.cpu_ext_10s_hps);
-    let cpu_hr = if cpu_active { format!("{:>8.2} {:<3}", ch, cu) } else { "    idle       ".to_string() };
-    let cpu_algo = hashrate.cpu_ext_algorithm.lock().map(|a| a.clone()).unwrap_or_default();
-    let cpu_algo_d = if cpu_algo.is_empty() { "—" } else { algo_display(&cpu_algo) };
+    let cpu_hr = if cpu_active {
+        format!("{:>8.2} {:<3}", ch, cu)
+    } else {
+        "    idle       ".to_string()
+    };
+    let cpu_algo = hashrate
+        .cpu_ext_algorithm
+        .lock()
+        .map(|a| a.clone())
+        .unwrap_or_default();
+    let cpu_algo_d = if cpu_algo.is_empty() {
+        "—"
+    } else {
+        algo_display(&cpu_algo)
+    };
     let s3_content = format!(
         " #3 CPU {:<12} {} {:>3}/{:<2} ({:>4.1}%) coin={:<4}",
-        cpu_algo_d, cpu_hr,
-        rates.cpu_ext_accepted, rates.cpu_ext_rejected, cpu_pct, cpu_coin,
+        cpu_algo_d, cpu_hr, rates.cpu_ext_accepted, rates.cpu_ext_rejected, cpu_pct, cpu_coin,
     );
     let s3_padded = pad_to(&s3_content, iw);
     let s3_label = "#3 CPU";
@@ -1363,7 +1480,11 @@ pub(crate) fn draw_dashboard(
     let acc = rates.accepted;
     let rej = rates.rejected;
     let total_shares = acc + rej;
-    let share_pct = if total_shares > 0 { acc as f64 * 100.0 / total_shares as f64 } else { 100.0 };
+    let share_pct = if total_shares > 0 {
+        acc as f64 * 100.0 / total_shares as f64
+    } else {
+        100.0
+    };
     let acc_s = format!("   Acc:{:>3}", acc);
     let rej_s = format!(" Rej:{:>3}", rej);
     let rest_s = format!(" Eff:{:>5.1}% Up:{}", share_pct, fmt_hms(uptime_secs));
@@ -1384,13 +1505,22 @@ pub(crate) fn draw_dashboard(
 
     // Share log — adaptive count based on available rows
     let share_log = hashrate.get_share_log();
-    let max_log_entries = if avail_rows >= 40 { 5 }
-        else if avail_rows >= 32 { 3 }
-        else if avail_rows >= 27 { 2 }
-        else { 1 };
+    let max_log_entries = if avail_rows >= 40 {
+        5
+    } else if avail_rows >= 32 {
+        3
+    } else if avail_rows >= 27 {
+        2
+    } else {
+        1
+    };
     for entry in share_log.iter().rev().take(max_log_entries) {
         let sym = if entry.accepted { "+" } else { "x" };
-        let sym_col = if entry.accepted { Color::Green } else { Color::Red };
+        let sym_col = if entry.accepted {
+            Color::Green
+        } else {
+            Color::Red
+        };
         let word = if entry.accepted { "OK " } else { "REJ" };
         let reason = if entry.reason.is_empty() {
             String::new()
@@ -1433,15 +1563,30 @@ pub(crate) fn draw_dashboard(
     wborder!(mid);
     wheader!("POOL");
 
-    let online = hashrate.online_snapshot.lock().map(|g| g.clone()).unwrap_or_default();
+    let online = hashrate
+        .online_snapshot
+        .lock()
+        .map(|g| g.clone())
+        .unwrap_or_default();
     let (phr, phu) = ui::fmt_hashrate(online.pool_hashrate);
     queue!(
         out,
         SetForegroundColor(Color::White),
-        Print(format!("\r│{}│\n", pad_to(&format!(
-            "   h={} up={} pHR={:>6.2}{} min={}/{}",
-            pool_height, fmt_hms(uptime_secs), phr, phu, online.active_miners, online.total_miners,
-        ), iw))),
+        Print(format!(
+            "\r│{}│\n",
+            pad_to(
+                &format!(
+                    "   h={} up={} pHR={:>6.2}{} min={}/{}",
+                    pool_height,
+                    fmt_hms(uptime_secs),
+                    phr,
+                    phu,
+                    online.active_miners,
+                    online.total_miners,
+                ),
+                iw
+            )
+        )),
         ResetColor,
     )?;
 
@@ -1452,7 +1597,11 @@ pub(crate) fn draw_dashboard(
         let tui = metrics.lock().map(|m| m.as_tui()).unwrap_or_default();
         wline!(&format!(
             "   lat avg/max: {:.0}/{:?}ms  batch={}ms  ttl={}ms  peak={:.1}",
-            tui.submit_avg_ms, tui.submit_max_ms, tui.best_batch_ms, tui.remote_ttl_ms, tui.hashrate_max,
+            tui.submit_avg_ms,
+            tui.submit_max_ms,
+            tui.best_batch_ms,
+            tui.remote_ttl_ms,
+            tui.hashrate_max,
         ));
         wline!(&format!(
             "   iter={}  threads={}  nonce={}  status={}  backend={}",
@@ -1468,18 +1617,38 @@ pub(crate) fn draw_dashboard(
             queue!(
                 out,
                 SetForegroundColor(Color::DarkGrey),
-                Print(format!("\r│{}│\n", pad_to("   (waiting for pool API...)", iw))),
+                Print(format!(
+                    "\r│{}│\n",
+                    pad_to("   (waiting for pool API...)", iw)
+                )),
                 ResetColor,
             )?;
         } else {
             for (i, m) in online.top_miners.iter().enumerate() {
                 let (hr, unit) = ui::fmt_hashrate(m.hashrate);
-                let worker = if m.worker.len() > 14 { &m.worker[..14] } else { &m.worker };
-                let coin = if m.coin.len() > 8 { &m.coin[..8] } else { &m.coin };
-                let algo = if m.algorithm.len() > 14 { &m.algorithm[..14] } else { &m.algorithm };
+                let worker = if m.worker.len() > 14 {
+                    &m.worker[..14]
+                } else {
+                    &m.worker
+                };
+                let coin = if m.coin.len() > 8 {
+                    &m.coin[..8]
+                } else {
+                    &m.coin
+                };
+                let algo = if m.algorithm.len() > 14 {
+                    &m.algorithm[..14]
+                } else {
+                    &m.algorithm
+                };
                 wline!(&format!(
                     "   #{} {:<14} {:>8.2}{:<3} {:<8} {}",
-                    i + 1, worker, hr, unit, coin, algo,
+                    i + 1,
+                    worker,
+                    hr,
+                    unit,
+                    coin,
+                    algo,
                 ));
             }
         }
@@ -1502,8 +1671,17 @@ pub(crate) fn draw_dashboard(
     queue!(
         out,
         SetForegroundColor(Color::DarkGrey),
-        Print(format!("\r│{}│\n", pad_to(" [a]lgo [c]CPU [C]coinCPU [g]GPU [G]coinGPU [d]ual [p]ause", iw))),
-        Print(format!("\r│{}│\n", pad_to(" [r]econ [m]etrics [o]nline [v]erbose [1-9]thr [q]uit", iw))),
+        Print(format!(
+            "\r│{}│\n",
+            pad_to(
+                " [a]lgo [c]CPU [C]coinCPU [g]GPU [G]coinGPU [d]ual [p]ause",
+                iw
+            )
+        )),
+        Print(format!(
+            "\r│{}│\n",
+            pad_to(" [r]econ [m]etrics [o]nline [v]erbose [1-9]thr [q]uit", iw)
+        )),
         ResetColor,
     )?;
 
@@ -1524,7 +1702,9 @@ pub(crate) fn draw_dashboard(
         n += 1; // mid (before hashrate)
         n += 1; // HASHRATE header
         n += 1; // hashrate values
-        if avail_rows > 26 { n += 1; } // sparkline
+        if avail_rows > 26 {
+            n += 1;
+        } // sparkline
         n += 1; // mid (before streams)
         n += 1; // STREAMS header
         n += 1; // stream 1
@@ -1533,7 +1713,7 @@ pub(crate) fn draw_dashboard(
         n += 1; // mid (before shares)
         n += 1; // SHARES header
         n += 1; // shares summary
-        // share log entries
+                // share log entries
         if share_log.is_empty() {
             n += 1; // "(no shares yet)" placeholder
         } else {
@@ -1542,9 +1722,15 @@ pub(crate) fn draw_dashboard(
         n += 1; // mid (before pool)
         n += 1; // POOL header
         n += 1; // pool content
-        if control.show_metrics { n += 4; } // metrics section
-        if control.show_online { n += 3; } // online section (minimum)
-        if !gpu_info.is_empty() || avail_rows >= 30 { n += 2; } // GPU section
+        if control.show_metrics {
+            n += 4;
+        } // metrics section
+        if control.show_online {
+            n += 3;
+        } // online section (minimum)
+        if !gpu_info.is_empty() || avail_rows >= 30 {
+            n += 2;
+        } // GPU section
         n += 1; // mid (before hotkeys)
         n += 2; // hotkeys (2 lines)
         n += 1; // bottom border (no \n but still a line)
@@ -1563,7 +1749,11 @@ struct DashboardFrame<'a> {
 
 impl<'a> DashboardFrame<'a> {
     fn new(out: &'a mut TtyWriter, width: usize) -> Self {
-        Self { out, width, lines: 0 }
+        Self {
+            out,
+            width,
+            lines: 0,
+        }
     }
 
     fn top(&mut self) -> io::Result<()> {
@@ -1623,18 +1813,10 @@ impl<'a> DashboardFrame<'a> {
                 continue;
             }
             used += clipped.chars().count();
-            queue!(
-                self.out,
-                SetForegroundColor(color.clone()),
-                Print(clipped),
-            )?;
+            queue!(self.out, SetForegroundColor(color.clone()), Print(clipped),)?;
         }
         if used < self.width {
-            queue!(
-                self.out,
-                ResetColor,
-                Print(" ".repeat(self.width - used)),
-            )?;
+            queue!(self.out, ResetColor, Print(" ".repeat(self.width - used)),)?;
         }
         queue!(self.out, ResetColor, Print("│\n"))?;
         self.lines += 1;
@@ -1659,14 +1841,23 @@ fn dashboard_clip(text: &str, width: usize) -> String {
 
 fn dashboard_pad(text: &str, width: usize) -> String {
     let clipped = dashboard_clip(text, width);
-    format!("{}{}", clipped, " ".repeat(width.saturating_sub(clipped.chars().count())))
+    format!(
+        "{}{}",
+        clipped,
+        " ".repeat(width.saturating_sub(clipped.chars().count()))
+    )
 }
 
 fn dashboard_center(text: &str, width: usize) -> String {
     let clipped = dashboard_clip(text, width);
     let padding = width.saturating_sub(clipped.chars().count());
     let left = padding / 2;
-    format!("{}{}{}", " ".repeat(left), clipped, " ".repeat(padding - left))
+    format!(
+        "{}{}{}",
+        " ".repeat(left),
+        clipped,
+        " ".repeat(padding - left)
+    )
 }
 
 fn dashboard_rate(hps: f64) -> String {
@@ -1722,16 +1913,36 @@ fn dashboard_stream_row(
     let prefix = format!(" {}  {:<9} ", number, label);
     let description = dashboard_pad(description, 18);
     let rate = dashboard_pad(
-        &format!("{:>11}", if active { dashboard_rate(rate_hps) } else { "-".to_string() }),
+        &format!(
+            "{:>11}",
+            if active {
+                dashboard_rate(rate_hps)
+            } else {
+                "-".to_string()
+            }
+        ),
         11,
     );
     let shares = format!("{:>5}", format!("{}/{}", accepted, rejected));
     let efficiency = format!("{:>5}", dashboard_efficiency(accepted, rejected));
-    let share_color = if rejected > 0 { Color::Red } else if accepted > 0 { Color::Green } else { Color::DarkGrey };
+    let share_color = if rejected > 0 {
+        Color::Red
+    } else if accepted > 0 {
+        Color::Green
+    } else {
+        Color::DarkGrey
+    };
     frame.parts(&[
         (label_color, prefix),
         (Color::DarkGrey, format!("{} ", description)),
-        (if active { Color::White } else { Color::DarkGrey }, rate),
+        (
+            if active {
+                Color::White
+            } else {
+                Color::DarkGrey
+            },
+            rate,
+        ),
         (Color::DarkGrey, " ".to_string()),
         (share_color.clone(), shares),
         (Color::DarkGrey, " ".to_string()),
@@ -1778,10 +1989,13 @@ pub(crate) fn draw_dashboard_redesign(
                     .write(true)
                     .open("/dev/tty")
                     .ok();
-                let got_size = tty_fd.as_ref().map(|file| {
-                    use std::os::unix::io::AsRawFd;
-                    unsafe { ioctl_tiocgwinsz(file.as_raw_fd(), &mut ws) == 0 }
-                }).unwrap_or(false);
+                let got_size = tty_fd
+                    .as_ref()
+                    .map(|file| {
+                        use std::os::unix::io::AsRawFd;
+                        unsafe { ioctl_tiocgwinsz(file.as_raw_fd(), &mut ws) == 0 }
+                    })
+                    .unwrap_or(false);
                 if got_size && ws.ws_col > 0 && ws.ws_row > 0 {
                     (ws.ws_col, ws.ws_row)
                 } else {
@@ -1797,9 +2011,8 @@ pub(crate) fn draw_dashboard_redesign(
     let width = (term_cols as usize).clamp(40, 80).saturating_sub(2);
     let available_rows = term_rows as usize;
     let show_metrics = control.show_metrics && available_rows >= 24;
-    let show_online = control.show_online
-        && available_rows >= 24
-        && (!show_metrics || available_rows >= 32);
+    let show_online =
+        control.show_online && available_rows >= 24 && (!show_metrics || available_rows >= 32);
     let compact_panel = show_metrics || show_online;
     let show_sparkline = !compact_panel && available_rows >= 24;
     let show_gpu = !compact_panel && (!gpu_info.is_empty() || available_rows >= 27);
@@ -1814,7 +2027,10 @@ pub(crate) fn draw_dashboard_redesign(
     } else {
         2
     };
-    let tui_metrics = metrics.lock().map(|snapshot| snapshot.as_tui()).unwrap_or_default();
+    let tui_metrics = metrics
+        .lock()
+        .map(|snapshot| snapshot.as_tui())
+        .unwrap_or_default();
     let peak_hashrate = if tui_metrics.hashrate_max > 0.0 {
         tui_metrics.hashrate_max
     } else {
@@ -1824,38 +2040,56 @@ pub(crate) fn draw_dashboard_redesign(
     // External stream status is only needed in non-public builds where
     // Trinity (Stream 2/3) is exposed in the TUI.
     #[cfg(not(feature = "public_build"))]
-    let (
-        gpu_actual,
-        cpu_actual,
-        gpu_algo,
-        cpu_algo,
-        gpu_coin,
-        cpu_coin,
-        gpu_active,
-        cpu_active,
-    ) = {
-        let gpu_actual = hashrate.gpu_ext_coin.lock().map(|coin| coin.clone()).unwrap_or_default();
-        let cpu_actual = hashrate.cpu_ext_coin.lock().map(|coin| coin.clone()).unwrap_or_default();
-        let gpu_algo = hashrate.gpu_ext_algorithm.lock().map(|algo| algo.clone()).unwrap_or_default();
-        let cpu_algo = hashrate.cpu_ext_algorithm.lock().map(|algo| algo.clone()).unwrap_or_default();
+    let (gpu_algo, cpu_algo, gpu_coin, cpu_coin, gpu_active, cpu_active) = {
+        let gpu_actual = hashrate
+            .gpu_ext_coin
+            .lock()
+            .map(|coin| coin.clone())
+            .unwrap_or_default();
+        let cpu_actual = hashrate
+            .cpu_ext_coin
+            .lock()
+            .map(|coin| coin.clone())
+            .unwrap_or_default();
+        let gpu_algo = hashrate
+            .gpu_ext_algorithm
+            .lock()
+            .map(|algo| algo.clone())
+            .unwrap_or_default();
+        let cpu_algo = hashrate
+            .cpu_ext_algorithm
+            .lock()
+            .map(|algo| algo.clone())
+            .unwrap_or_default();
         let gpu_coin = if gpu_actual.is_empty() {
-            if control.gpu_coin.is_empty() { "AUTO".to_string() } else { control.gpu_coin.clone() }
+            if control.gpu_coin.is_empty() {
+                "AUTO".to_string()
+            } else {
+                control.gpu_coin.clone()
+            }
         } else {
-            gpu_actual
+            gpu_actual.clone()
         };
         let cpu_coin = if cpu_actual.is_empty() {
-            if control.cpu_coin.is_empty() { "AUTO".to_string() } else { control.cpu_coin.clone() }
+            if control.cpu_coin.is_empty() {
+                "AUTO".to_string()
+            } else {
+                control.cpu_coin.clone()
+            }
         } else {
-            cpu_actual
+            cpu_actual.clone()
         };
         let gpu_active = hashrate.gpu_ext_active.load(Ordering::Relaxed) == 1;
         let cpu_active = hashrate.cpu_ext_active.load(Ordering::Relaxed) == 1;
         (
-            gpu_actual, cpu_actual, gpu_algo, cpu_algo,
-            gpu_coin, cpu_coin, gpu_active, cpu_active,
+            gpu_algo, cpu_algo, gpu_coin, cpu_coin, gpu_active, cpu_active,
         )
     };
-    let online = hashrate.online_snapshot.lock().map(|snapshot| snapshot.clone()).unwrap_or_default();
+    let online = hashrate
+        .online_snapshot
+        .lock()
+        .map(|snapshot| snapshot.clone())
+        .unwrap_or_default();
 
     let mut frame = DashboardFrame::new(&mut out, width);
     frame.top()?;
@@ -1888,26 +2122,44 @@ pub(crate) fn draw_dashboard_redesign(
     };
     frame.parts(&[
         (status_color, format!(" {}", status)),
-        (Color::DarkGrey, format!("  {}  {}  UP {}", mode, backend, fmt_hms(uptime_secs))),
+        (
+            Color::DarkGrey,
+            format!("  {}  {}  UP {}", mode, backend, fmt_hms(uptime_secs)),
+        ),
     ])?;
 
     frame.rule("HASHRATE", Color::Cyan)?;
     frame.parts(&[
         (Color::DarkGrey, "  10s ".to_string()),
-        (Color::White, format!("{:>10}", dashboard_rate(rates.total_10s_hps))),
+        (
+            Color::White,
+            format!("{:>10}", dashboard_rate(rates.total_10s_hps)),
+        ),
         (Color::DarkGrey, "   60s ".to_string()),
-        (Color::White, format!("{:>10}", dashboard_rate(rates.total_60s_hps))),
+        (
+            Color::White,
+            format!("{:>10}", dashboard_rate(rates.total_60s_hps)),
+        ),
         (Color::DarkGrey, "   peak ".to_string()),
-        (Color::Green, format!("{:>10}", dashboard_rate(peak_hashrate))),
+        (
+            Color::Green,
+            format!("{:>10}", dashboard_rate(peak_hashrate)),
+        ),
     ])?;
     if show_sparkline {
         let spark = render_sparkline(&hashrate.get_hr_history(), width.saturating_sub(8));
-        frame.parts(&[(Color::DarkGrey, "  trend ".to_string()), (Color::Green, spark)])?;
+        frame.parts(&[
+            (Color::DarkGrey, "  trend ".to_string()),
+            (Color::Green, spark),
+        ])?;
     }
 
     frame.rule("STREAMS", Color::Magenta)?;
     frame.plain(
-        &format!(" #  {:<9} {:<18} {:>11} {:>5} {:>5}", "STREAM", "ALGORITHM", "RATE", "A/R", "EFF"),
+        &format!(
+            " #  {:<9} {:<18} {:>11} {:>5} {:>5}",
+            "STREAM", "ALGORITHM", "RATE", "A/R", "EFF"
+        ),
         Color::DarkGrey,
     )?;
     let zion_desc = algo_display(&control.algorithm).to_string();
@@ -1926,38 +2178,38 @@ pub(crate) fn draw_dashboard_redesign(
     // Trinity still runs internally — only the display is suppressed.
     #[cfg(not(feature = "public_build"))]
     {
-    let gpu_desc = if gpu_active {
-        format!("{} / {}", gpu_coin, dashboard_short_algo(&gpu_algo))
-    } else {
-        "idle".to_string()
-    };
-    dashboard_stream_row(
-        &mut frame,
-        2,
-        "GPU",
-        &gpu_desc,
-        rates.gpu_ext_10s_hps,
-        gpu_active,
-        rates.gpu_ext_accepted,
-        rates.gpu_ext_rejected,
-        Color::Magenta,
-    )?;
-    let cpu_desc = if cpu_active {
-        format!("{} / {}", cpu_coin, dashboard_short_algo(&cpu_algo))
-    } else {
-        "idle".to_string()
-    };
-    dashboard_stream_row(
-        &mut frame,
-        3,
-        "CPU",
-        &cpu_desc,
-        rates.cpu_ext_10s_hps,
-        cpu_active,
-        rates.cpu_ext_accepted,
-        rates.cpu_ext_rejected,
-        Color::Yellow,
-    )?;
+        let gpu_desc = if gpu_active {
+            format!("{} / {}", gpu_coin, dashboard_short_algo(&gpu_algo))
+        } else {
+            "idle".to_string()
+        };
+        dashboard_stream_row(
+            &mut frame,
+            2,
+            "GPU",
+            &gpu_desc,
+            rates.gpu_ext_10s_hps,
+            gpu_active,
+            rates.gpu_ext_accepted,
+            rates.gpu_ext_rejected,
+            Color::Magenta,
+        )?;
+        let cpu_desc = if cpu_active {
+            format!("{} / {}", cpu_coin, dashboard_short_algo(&cpu_algo))
+        } else {
+            "idle".to_string()
+        };
+        dashboard_stream_row(
+            &mut frame,
+            3,
+            "CPU",
+            &cpu_desc,
+            rates.cpu_ext_10s_hps,
+            cpu_active,
+            rates.cpu_ext_accepted,
+            rates.cpu_ext_rejected,
+            Color::Yellow,
+        )?;
     } // end not(public_build)
 
     frame.rule("SHARES", Color::Yellow)?;
@@ -1972,7 +2224,14 @@ pub(crate) fn draw_dashboard_redesign(
         (Color::Green, format!("ACCEPT {:>3}", rates.accepted)),
         (Color::DarkGrey, "   ".to_string()),
         (Color::Red, format!("REJECT {:>3}", rates.rejected)),
-        (Color::DarkGrey, format!("   EFF {:>5}   UP {}", share_efficiency, fmt_hms(uptime_secs))),
+        (
+            Color::DarkGrey,
+            format!(
+                "   EFF {:>5}   UP {}",
+                share_efficiency,
+                fmt_hms(uptime_secs)
+            ),
+        ),
     ])?;
 
     let share_log = hashrate.get_share_log();
@@ -1988,15 +2247,21 @@ pub(crate) fn draw_dashboard_redesign(
         let stream_label = dashboard_clip(&entry.stream, 4);
         let tail = format!(
             " {} {:<4} job={:<5} {:>4}ms {}",
-            word,
-            stream_label,
-            entry.job_id,
-            entry.latency_ms,
-            reason,
+            word, stream_label, entry.job_id, entry.latency_ms, reason,
         );
         frame.parts(&[
-            (Color::DarkGrey, format!("  [{}] ", fmt_time(entry.timestamp))),
-            (if entry.accepted { Color::Green } else { Color::Red }, symbol.to_string()),
+            (
+                Color::DarkGrey,
+                format!("  [{}] ", fmt_time(entry.timestamp)),
+            ),
+            (
+                if entry.accepted {
+                    Color::Green
+                } else {
+                    Color::Red
+                },
+                symbol.to_string(),
+            ),
             (Color::DarkGrey, tail),
         ])?;
     }
@@ -2010,7 +2275,10 @@ pub(crate) fn draw_dashboard_redesign(
         (Color::DarkGrey, "  HEIGHT ".to_string()),
         (Color::White, pool_height.to_string()),
         (Color::DarkGrey, "   MINERS ".to_string()),
-        (Color::White, format!("{}/{}", online.active_miners, online.total_miners)),
+        (
+            Color::White,
+            format!("{}/{}", online.active_miners, online.total_miners),
+        ),
         (Color::DarkGrey, "   POOL ".to_string()),
         (Color::White, format!("{} {}", pool_rate, pool_unit)),
         (Color::DarkGrey, format!("   UP {}", fmt_hms(uptime_secs))),
@@ -2024,7 +2292,10 @@ pub(crate) fn draw_dashboard_redesign(
             for gpu in gpu_info.iter().take(2) {
                 frame.parts(&[
                     (Color::Magenta, format!("  GPU #{}  ", gpu.index)),
-                    (Color::DarkGrey, dashboard_clip(&gpu.info, width.saturating_sub(10))),
+                    (
+                        Color::DarkGrey,
+                        dashboard_clip(&gpu.info, width.saturating_sub(10)),
+                    ),
                 ])?;
             }
         }
@@ -2059,7 +2330,10 @@ pub(crate) fn draw_dashboard_redesign(
         if online.top_miners.is_empty() {
             frame.plain("  waiting for pool telemetry...", Color::DarkGrey)?;
         } else {
-            frame.plain("  #  WORKER          RATE       COIN  ALGO", Color::DarkGrey)?;
+            frame.plain(
+                "  #  WORKER          RATE       COIN  ALGO",
+                Color::DarkGrey,
+            )?;
             for (index, miner) in online.top_miners.iter().take(3).enumerate() {
                 let (value, unit) = ui::fmt_hashrate(miner.hashrate);
                 frame.plain(
@@ -2080,7 +2354,10 @@ pub(crate) fn draw_dashboard_redesign(
 
     frame.rule("CONTROLS", Color::DarkGrey)?;
     frame.plain("  [a]algo [p]pause [r]reconnect [q]quit", Color::DarkGrey)?;
-    frame.plain("  [c/g]cpu/gpu [d]dual [C/G]coins [m/o]panels [1-9]threads", Color::DarkGrey)?;
+    frame.plain(
+        "  [c/g]cpu/gpu [d]dual [C/G]coins [m/o]panels [1-9]threads",
+        Color::DarkGrey,
+    )?;
     frame.bottom()?;
 
     let lines_this_frame = frame.lines;
@@ -2103,7 +2380,11 @@ fn render_sparkline(history: &[f64], width: usize) -> String {
     let max = history.iter().cloned().fold(0.0f64, f64::max).max(0.001);
     let min = history.iter().cloned().fold(f64::INFINITY, f64::min);
     let range = (max - min).max(0.001);
-    let start = if history.len() > width { history.len() - width } else { 0 };
+    let start = if history.len() > width {
+        history.len() - width
+    } else {
+        0
+    };
     let samples = &history[start..];
     let mut s = String::with_capacity(width);
     for &v in samples {
@@ -2174,7 +2455,10 @@ pub fn spawn_input_thread(control: Arc<Mutex<MinerControl>>) -> thread::JoinHand
                             // Reconnect so pool gets new algo in Hello
                             c.requested_reconnect = true;
                         }
-                        KeyCode::Char('c') if modifiers != KeyModifiers::CONTROL && modifiers != KeyModifiers::SHIFT => {
+                        KeyCode::Char('c')
+                            if modifiers != KeyModifiers::CONTROL
+                                && modifiers != KeyModifiers::SHIFT =>
+                        {
                             c.toggle_cpu();
                         }
                         KeyCode::Char('C') => {
@@ -2273,11 +2557,7 @@ pub(crate) fn run_interactive(
 
     let dashboard_handle = thread::spawn(move || {
         // Initial full clear
-        let _ = execute!(
-            tty(),
-            cursor::MoveTo(0, 0),
-            terminal::Clear(ClearType::All),
-        );
+        let _ = execute!(tty(), cursor::MoveTo(0, 0), terminal::Clear(ClearType::All),);
 
         loop {
             thread::sleep(Duration::from_millis(800));

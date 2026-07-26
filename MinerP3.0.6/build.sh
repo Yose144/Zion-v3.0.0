@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────────
 # MinerP3.0.6/build.sh
-# Build the public-facing ZION miner binary (v3.0.6-beta) with
-# Trinity hidden behind the `public_build` feature flag.
+# Build the public-facing ZION miner binary (v3.0.6-beta) with the
+# `public_build` feature flag enabled.
 #
-# The binary contains full Trinity (AuxPow) support but
-# the TUI shows only "ZION / Deeksha Lite v1" — no ZANO, VRSC,
-# or external coin names are visible to the user.
+# The public miner is locked to the ZION / Deeksha Lite v1 algorithm.
+# Trinity (AuxPoW) backend support is still compiled in, but the TUI and
+# logs show only the ZION stream — no ZANO, VRSC, or other external
+# coin names are visible to the user.
 #
 # Usage:  ./MinerP3.0.6/build.sh
 # Output: MinerP3.0.6/dist/zion-miner-linux-x86_64.tar.gz
@@ -62,7 +63,7 @@ echo "SHA256:  $(cat SHA256SUMS.txt)"
 echo ""
 echo "Upload to GitHub release:"
 echo "  gh release create ${VERSION} --repo Zion-TerraNova/v3-Mainnet \\"
-echo "    --title 'ZION v3.0.6-beta — Trinity Miner' \\"
+echo "    --title 'ZION v3.0.6-beta — Public Miner' \\"
 echo "    --notes-file ${SCRIPT_DIR}/RELEASE_NOTES.md \\"
 echo "    --prerelease \\"
 echo "    ${TARBALL} ${DIST_DIR}/SHA256SUMS.txt"

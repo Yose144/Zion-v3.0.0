@@ -49,8 +49,8 @@ instructions.
 |-------------|------|------|--------|
 | **Linux x86_64** (Ubuntu, Debian, SMOS, HiveOS) | `zion-miner-linux-x86_64.tar.gz` | 3.5 MB | `5cac4fd18ec4bcdc1e3b23dab09e76248e79bbcae051e0f0510bfd25e2be5df4` |
 | **Linux ARM64** (Raspberry Pi 4/5, Ampere, Jetson) | `zion-miner-linux-aarch64.tar.gz` | 2.7 MB | `946c4c82df381c344a5df522a1a415e23e0df9038d9669723e3f9979a4caa22d` |
-| **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-miner-macos-aarch64.tar.gz` | 3.2 MB | `ed39b49cd5edaef3025b0f847903fe62dcd0ea33be5c550ec403091ef6660360` |
-| **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` | 3.3 MB | `dbf45cf246c21ac96120987e290f23101eb25cf4dfc8731e3704dc7e45dbeb42` |
+| **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-miner-macos-aarch64.tar.gz` | 2.5 MB | `2632ff9a5cdbd239bf038300c877287a6c668e6e13109c0631205a6d7cdc6a07` |
+| **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` | 2.5 MB | `b94d906a0a76b181cb300d9f2d35f9b712c8284678ee55529454c50d4c2ed867` |
 | **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.zip` | 2.9 MB | `c85dd3831c6b77f6f4542dd31281449e0878dbcb7b29734a1daf44585c15f21b` |
 
 > **All 5 platforms are now available!** Full SHA256 checksums are in
@@ -58,7 +58,7 @@ instructions.
 >
 > **GPU support:**
 > - **Linux x86_64:** OpenCL (AMD/Intel) + CUDA (NVIDIA).
-> - **macOS:** Metal (Apple Silicon) + OpenCL (Intel/AMD where available).
+> - **macOS:** Metal (Apple Silicon + Intel Macs with supported AMD/Intel GPUs).
 > - **Windows x86_64:** CUDA (NVIDIA); OpenCL/AMD support is coming in a future release.
 > - **Linux ARM64:** CUDA (NVIDIA Jetson); OpenCL support is coming in a future release.
 
