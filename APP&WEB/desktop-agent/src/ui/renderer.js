@@ -32,6 +32,7 @@ const PRIMARY_RPC_PORT = 8443;
 const PRIMARY_TESTNET_HOST = PRIMARY_MAINNET_HOST;
 const DEFAULT_RPC_URL = `http://${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
 const DESKTOP_PURE_ZION_DEFAULT = true;
+const DECOMMISSIONED_POOL_HOSTS = new Set(['77.42.71.94', '100.76.16.108']);
 
 function currentPureZionDefault(cfg = config) {
   if (cfg && typeof cfg.desktopPureZionDefault === 'boolean') {
@@ -929,6 +930,12 @@ function setupControls() {
         poolPort = parseInt(p) || PRIMARY_POOL_PORT;
       }
     }
+    // Migrate decommissioned Edge IPs if the user somehow has them in custom input.
+    if (DECOMMISSIONED_POOL_HOSTS.has(poolHost)) {
+      console.warn(`[renderer] ignoring decommissioned pool ${poolHost}, using ${PRIMARY_MAINNET_HOST}:${PRIMARY_POOL_PORT}`);
+      poolHost = PRIMARY_MAINNET_HOST;
+      poolPort = PRIMARY_POOL_PORT;
+    }
     
     const pureZionMode = isPureZionDesktopMode(config);
     const selectedMode = normalizeMiningMode(
@@ -975,7 +982,7 @@ function setupControls() {
         port: poolPort
       },
       rpcUrl: document.getElementById('rpc-url')?.value || config.rpcUrl || DEFAULT_RPC_URL,
-      algorithm: config.algorithm || 'cosmic_harmony',
+      algorithm: config.algorithm || 'deeksha_lite_v1',
       wallet: document.getElementById('wallet-input').value,
       worker: document.getElementById('worker-input').value,
       threads: Math.min(

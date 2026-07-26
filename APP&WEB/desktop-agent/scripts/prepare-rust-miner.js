@@ -63,29 +63,32 @@ function copyIfExists(src, dst) {
 function detectPlatformFeatures() {
   const platform = process.platform;
   const arch = os.arch();
+  // Native CPU algorithm acceleration is required for triple-stream CPU coins
+  // (VerusHash/VRSC, RandomX/XMR, GhostRider/RTM) to hash at full speed.
+  const nativeAll = 'native-all';
 
   if (platform === 'darwin') {
     if (arch === 'arm64') {
-      console.log('[prepare-v3] Apple Silicon detected -> enabling Metal GPU');
-      return 'gpu-metal';
+      console.log('[prepare-v3] Apple Silicon detected -> enabling Metal GPU + native-all');
+      return `gpu-metal,${nativeAll}`;
     }
-    console.log('[prepare-v3] Intel Mac detected -> enabling OpenCL GPU');
-    return 'gpu-opencl';
+    console.log('[prepare-v3] Intel Mac detected -> enabling OpenCL GPU + native-all');
+    return `gpu-opencl,${nativeAll}`;
   }
 
   if (platform === 'linux' || platform === 'win32') {
     const cudaCheck = checkCudaCapability();
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
     if (forceCuda || cudaCheck.hasCuda) {
-      console.log(`[prepare-v3] ${platform === 'win32' ? 'Windows' : 'Linux'} + NVIDIA CUDA detected -> enabling OpenCL + CUDA`);
-      return 'gpu-opencl,gpu-cuda';
+      console.log(`[prepare-v3] ${platform === 'win32' ? 'Windows' : 'Linux'} + NVIDIA CUDA detected -> enabling OpenCL + CUDA + native-all`);
+      return `gpu-opencl,gpu-cuda,${nativeAll}`;
     }
-    console.log(`[prepare-v3] ${platform === 'win32' ? 'Windows' : 'Linux'} detected -> enabling OpenCL GPU (safe default)`);
-    return 'gpu-opencl';
+    console.log(`[prepare-v3] ${platform === 'win32' ? 'Windows' : 'Linux'} detected -> enabling OpenCL GPU + native-all`);
+    return `gpu-opencl,${nativeAll}`;
   }
 
-  console.log('[prepare-v3] Unknown platform -> enabling OpenCL GPU');
-  return 'gpu-opencl';
+  console.log('[prepare-v3] Unknown platform -> enabling OpenCL GPU + native-all');
+  return `gpu-opencl,${nativeAll}`;
 }
 
 function checkCudaCapability() {
