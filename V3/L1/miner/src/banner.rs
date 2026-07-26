@@ -9,7 +9,10 @@ pub fn print_banner(threads: usize) {
 
     // ── System info table ──
     let mut rows: Vec<(String, String)> = Vec::new();
+    #[cfg(not(feature = "public_build"))]
     rows.push(("version".to_string(), "3.0.6 Trinity".to_string()));
+    #[cfg(feature = "public_build")]
+    rows.push(("version".to_string(), "3.0.6".to_string()));
     rows.push((
         "consensus".to_string(),
         zion_core::consensus_profile().to_string(),
