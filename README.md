@@ -117,7 +117,7 @@ All disclosed security issues have been remediated. See [Security](./SECURITY.md
 | **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` |
 | **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.zip` |
 
-Latest release: [github.com/Zion-TerraNova/v3-Mainnet/releases](https://github.com/Zion-TerraNova/v3-Mainnet/releases)
+Latest release: **[v3.0.6-beta](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.6-beta)**
 
 ### 2. Extract
 

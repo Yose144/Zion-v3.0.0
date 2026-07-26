@@ -108,8 +108,10 @@ worker name, GPU backend, and thread count, then launches the miner. Set
 
 ---
 
-## Support
+## Documentation & Support
 
+- **Desktop quick start & FAQ:** [README.md](https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/README.md) and [docs/FAQ.md](https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/docs/FAQ.md)
+- **SMOS / HiveOS guide:** [docs/SMOS_HIVEOS_GUIDE.md](https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/docs/SMOS_HIVEOS_GUIDE.md)
 - **Website:** [zionterranova.com](https://zionterranova.com)
 - **Pool:** `62.171.141.136:8444`
 - **RPC:** `rpc.zionterranova.com:8443`
