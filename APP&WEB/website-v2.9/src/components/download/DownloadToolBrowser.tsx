@@ -17,6 +17,7 @@ import {
   Zap,
   Droplets,
   TrendingUp,
+  Server,
 } from 'lucide-react';
 import { SITE_POOL_PRIMARY } from '@/lib/site';
 import {
@@ -49,22 +50,22 @@ const DownloadToolBrowserCopy = {
   githubRelease: { cs: `GitHub Release`, en: `GitHub Release` },
   tripleStreamEverythingYouNeed: { cs: `Triple Stream — vše, co potřebuješ`, en: `Triple Stream — everything you need` },
   oneBinaryEverythingYouNeed: { cs: `Jeden binary — vše, co potřebuješ`, en: `One binary — everything you need` },
-  theTripleStreamMinerMinesZionA: { cs: `Triple Stream Miner těží ZION a buduje likviditu. Pro vytvoření peněženky použij v3.0.5-beta Community CLI níže. Linux x86_64 only — macOS a Windows buildy přijdou v v3.0.7.`, en: `The Triple Stream Miner mines ZION and builds liquidity. To create a wallet, use the v3.0.5-beta Community CLI below. Linux x86_64 only — macOS and Windows builds are coming in v3.0.7.` },
-  runZionWithNoArgumentsForAnInt: { cs: "Spusť `zion` bez argumentů pro interaktivní menu se šipkami. Windows verze má node + pool + miner embedded (10 MB).", en: "Run `zion` with no arguments for an interactive arrow-key menu. Windows version has node + pool + miner embedded (10 MB)." },
+  theTripleStreamMinerMinesZionA: { cs: `Triple Stream Miner těží ZION a buduje likviditu. Spusť binárku bez argumentů a projdi interaktivním menu, nebo použij příkazovou řádku pro pokročilé nastavení.`, en: `The Triple Stream Miner mines ZION and builds liquidity. Run the binary with no arguments and walk through the interactive menu, or use the command line for advanced settings.` },
+  runZionWithNoArgumentsForAnInt: { cs: "Spusť `zion-miner` bez argumentů pro interaktivní menu. Pro vytvoření peněženky použij v3.0.5-beta Community CLI níže.", en: "Run `zion-miner` with no arguments for the interactive setup menu. To create a wallet, use the v3.0.5-beta Community CLI below." },
   downloads: { cs: `Stažení`, en: `Downloads` },
   packages: { cs: `balíčků`, en: `packages` },
   download: { cs: `Stáhnout`, en: `Download` },
   sha256Verification: { cs: `SHA256 verifikace`, en: `SHA256 verification` },
   downloadSha256sumsTxtAndVerify: { cs: `Stáhni SHA256SUMS.txt a ověř binárky před použitím:`, en: `Download SHA256SUMS.txt and verify binaries before use:` },
   quickStartTripleStreamMiner: { cs: `Rychlý start — Triple Stream Miner`, en: `Quick start — Triple Stream Miner` },
-  theMinerConnectsToTheOfficialP: { cs: `Miner se připojí k oficiálnímu poolu a zobrazí live dashboard: hashrate, accepted/rejected shares, pool height. Pro vytvoření peněženky použij v3.0.5-beta Community CLI níže.`, en: `The miner connects to the official pool and shows a live dashboard: hashrate, accepted/rejected shares, pool height. To create a wallet, use the v3.0.5-beta Community CLI below.` },
+  theMinerConnectsToTheOfficialP: { cs: `Miner se připojí k oficiálnímu poolu a zobrazí live dashboard: hashrate, accepted/rejected shares, pool height. Na Linux/macOS spusť ./zion-miner, na Windows dvakrát klikni na zion-miner.exe.`, en: `The miner connects to the official pool and shows a live dashboard: hashrate, accepted/rejected shares, pool height. On Linux/macOS run ./zion-miner; on Windows double-click zion-miner.exe.` },
   quickStartCommunityCli: { cs: `Rychlý start — Community CLI`, en: `Quick start — Community CLI` },
   theInteractiveMenuGuidesYouWal: { cs: "Interaktivní menu tě provede: wallet → node → pool → miner. Nebo použij subcommandy: `zion wallet`, `zion node`, `zion mine`, `zion pool`.", en: "The interactive menu guides you: wallet → node → pool → miner. Or use subcommands: `zion wallet`, `zion node`, `zion mine`, `zion pool`." },
   latestReleaseTripleStreamMiner: { cs: `Nejnovější release — Triple Stream Miner`, en: `Latest release — Triple Stream Miner` },
   communityCliWalletNodePoolBasi: { cs: `Community CLI — peněženka, node, pool, basic mining`, en: `Community CLI — wallet, node, pool, basic mining` },
   networkParameters: { cs: `Parametry sítě`, en: `Network parameters` },
   buildFromSource: { cs: `Build ze zdrojů`, en: `Build from source` },
-  forArm64RaspberryPiAwsGraviton: { cs: `Pro ARM64 (Raspberry Pi, AWS Graviton) nebo vlastní build:`, en: `For ARM64 (Raspberry Pi, AWS Graviton) or custom builds:` },
+  forArm64RaspberryPiAwsGraviton: { cs: `Pro vlastní build (včetně ARM64 jako Raspberry Pi nebo AWS Graviton) stáhni zdrojový kód a přelož:`, en: `For custom builds (including ARM64 like Raspberry Pi or AWS Graviton) clone the source and build:` },
 };
 
 /* ── helpers ── */
@@ -78,6 +79,7 @@ function formatSize(mb: number): string {
 
 const PLATFORM_ICONS: Record<string, React.ReactNode> = {
   'linux-x86_64': <Terminal className="h-6 w-6" />,
+  'linux-aarch64': <Server className="h-6 w-6" />,
   'macos-arm64': <Apple className="h-6 w-6" />,
   'macos-x86_64': <Monitor className="h-6 w-6" />,
   'windows-x86_64': <MonitorSmartphone className="h-6 w-6" />,
@@ -85,6 +87,7 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
 
 const PLATFORM_COLORS: Record<string, string> = {
   'linux-x86_64': '34, 197, 94',      // green
+  'linux-aarch64': '20, 184, 166',    // teal
   'macos-arm64': '168, 85, 247',      // purple
   'macos-x86_64': '99, 102, 241',     // indigo
   'windows-x86_64': '59, 130, 246',   // blue
@@ -352,8 +355,8 @@ function ReleaseCard({
           </div>
           <div className="rounded-lg bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto space-y-1">
             <div><span className="text-gray-500">$</span> tar xzf zion-miner-linux-x86_64.tar.gz</div>
-            <div><span className="text-gray-500">$</span> chmod +x zion-miner</div>
-            <div><span className="text-gray-500">$</span> ./zion-miner --pool {SITE_POOL_PRIMARY} --wallet zion1YOUR_ADDR --gpu opencl --algorithm deeksha_lite_v1 --profile pool</div>
+            <div><span className="text-gray-500">$</span> chmod +x zion-miner start.sh</div>
+            <div><span className="text-gray-500">$</span> ./zion-miner</div>
           </div>
           <p className="text-xs text-gray-400 mt-3">
             {DownloadToolBrowserCopy.theMinerConnectsToTheOfficialP[cs ? 'cs' : 'en']}
@@ -451,7 +454,8 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
         <div className="rounded-lg bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto space-y-1">
           <div><span className="text-gray-500">$</span> git clone {GITHUB_REPO_URL}.git</div>
           <div><span className="text-gray-500">$</span> cd v3-Mainnet/V3</div>
-          <div><span className="text-gray-500">$</span> cargo build --release -p zion-public</div>
+          <div><span className="text-gray-500">$</span> cargo build --release -p zion-miner</div>
+          <div className="text-gray-500"># optional GPU features: --features gpu-opencl,gpu-cuda,gpu-metal</div>
         </div>
         <div className="mt-3">
           <Link
