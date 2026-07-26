@@ -1218,7 +1218,10 @@ pub fn print_fancy_banner(threads: usize, version: &str, backend: &str) {
     s.push_str(RESET);
     s.push_str("  ");
     s.push_str(DIM);
+    #[cfg(not(feature = "public_build"))]
     s.push_str("Trinity");
+    #[cfg(feature = "public_build")]
+    s.push_str("Desktop");
     s.push_str(RESET);
     s.push_str("         ║\n");
     s.push_str("║  ");

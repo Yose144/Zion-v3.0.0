@@ -4223,6 +4223,7 @@ fn external_gpu_thread(
                 skipped_algos.insert(algo.to_string());
                 current_algo = None;
                 current_miner = None;
+                hashrate.clear_gpu_ext_job();
                 thread::sleep(Duration::from_millis(500));
                 continue;
             }

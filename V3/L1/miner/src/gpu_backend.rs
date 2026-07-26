@@ -2013,10 +2013,11 @@ pub fn backend_supports_algorithm(backend: GpuBackendKind, algorithm: &str) -> b
     };
     match resolved {
         GpuBackendKind::Metal => {
-            // ProgPoWZ is now supported on Metal via a generated per-period kernel.
-            if algorithm == "progpow_zano" {
-                return true;
-            }
+            // ProgPoWZ/ZANO is intentionally disabled on Metal: the per-epoch
+            // DAG is too large for Apple Silicon unified memory and the current
+            // CPU-side DAG generation is too slow without a disk cache. Mining
+            // it would hang or freeze the machine. Fall back to a non-DAG GPU
+            // coin (KAS/ALPH/DCR) or CPU fallback instead.
             // Metal on Apple Silicon: skip DAG-based AND memory-hard algorithms
             // to prevent system freezes from unified memory OOM.
             if is_dag_based_algorithm(algorithm) || is_memory_hard_algorithm(algorithm) {
@@ -8775,6 +8776,10 @@ pub fn query_gpu_details() -> Vec<GpuInfo> {
     {
         out.extend(query_cuda_details());
     }
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
+    {
+        out.extend(query_metal_details());
+    }
     out
 }
 
@@ -8784,6 +8789,54 @@ pub fn query_gpu_details() -> Vec<GpuInfo> {
     #[cfg(feature = "gpu-cuda")]
     {
         out.extend(query_cuda_details());
+    }
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
+    {
+        out.extend(query_metal_details());
+    }
+    out
+}
+
+/// Enumerate Metal devices on Apple Silicon / macOS.
+#[cfg(all(feature = "gpu-metal", target_os = "macos"))]
+fn query_metal_details() -> Vec<GpuInfo> {
+    let mut out = Vec::new();
+    for device in metal::Device::all() {
+        let name = device.name().to_string();
+        let is_apple_silicon = name.to_ascii_lowercase().contains("apple");
+        let compute_units = if is_apple_silicon {
+            // Best-effort CU estimate from marketing name for autotune.
+            let n = name.to_ascii_lowercase();
+            if n.contains("ultra") {
+                64
+            } else if n.contains("max") {
+                32
+            } else if n.contains("pro") {
+                16
+            } else if n.contains("m3") {
+                10
+            } else if n.contains("m2") {
+                10
+            } else if n.contains("m4") {
+                10
+            } else {
+                8 // base M1/M2/M3/M4
+            }
+        } else {
+            0 // discrete AMD — let defaults handle it
+        };
+        let global_mem_bytes = device.recommended_max_working_set_size();
+        out.push(GpuInfo {
+            name,
+            platform: "Metal".to_string(),
+            compute_units,
+            max_clock_mhz: 0,
+            global_mem_bytes,
+            local_mem_bytes: 0,
+            max_work_group_size: 0,
+            temp_c: None,
+            power_w: None,
+        });
     }
     out
 }
