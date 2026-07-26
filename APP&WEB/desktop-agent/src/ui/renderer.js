@@ -1581,11 +1581,14 @@ function setupEventListeners() {
 
     const lines = clean.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-    // Collect static panel lines (┌│└) → overwrite fixed panel element
+    // Collect TUI panel lines (SRBMiner ┌│└─ and compact dashboard ╔║╠╚═)
+    // so they don't flood the Live Activity / console log.
     const panelLines = [];
     const logLines = [];
+    const panelRe = /^[┌┐└┘│─├┤┴┬┼╔╗╚╝║═╠╣╦╩╬]/;
+    const hbarRe = /^[─═━]+$/;
     for (const line of lines) {
-      if (/^[┌│└]/.test(line) || /^[─]+$/.test(line)) {
+      if (panelRe.test(line) || hbarRe.test(line)) {
         panelLines.push(line);
       } else {
         // Include [STATUS] lines for real-time mining stats
