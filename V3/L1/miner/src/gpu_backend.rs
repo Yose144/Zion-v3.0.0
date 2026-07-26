@@ -8522,13 +8522,13 @@ pub mod metal_external {
                 Ok(GpuBatchResult {
                     solutions: vec![(nonce, hash, mix_hash)],
                     nonces_tested: actual_batch,
-                    device_name: self.device_name_cached.clone(),
+                    device_name: self.device_name(),
                 })
             } else {
                 Ok(GpuBatchResult {
                     solutions: Vec::new(),
                     nonces_tested: actual_batch,
-                    device_name: self.device_name_cached.clone(),
+                    device_name: self.device_name(),
                 })
             }
         }
@@ -8563,13 +8563,13 @@ pub mod metal_external {
                 Ok(GpuBatchResult {
                     solutions: vec![(nonce, hash, mix_hash)],
                     nonces_tested: actual_batch,
-                    device_name: self.device_name_cached.clone(),
+                    device_name: self.device_name(),
                 })
             } else {
                 Ok(GpuBatchResult {
                     solutions: Vec::new(),
                     nonces_tested: actual_batch,
-                    device_name: self.device_name_cached.clone(),
+                    device_name: self.device_name(),
                 })
             }
         }

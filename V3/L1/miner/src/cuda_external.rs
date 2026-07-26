@@ -1046,11 +1046,13 @@ impl CudaExternalMiner {
             Ok(GpuBatchResult {
                 solutions: vec![(nonce_host[0], hash, mix_hash)],
                 nonces_tested: total_tested,
+                device_name: self.device_name_cached.clone(),
             })
         } else {
             Ok(GpuBatchResult {
                 solutions: Vec::new(),
                 nonces_tested: total_tested,
+                device_name: self.device_name_cached.clone(),
             })
         }
     }
