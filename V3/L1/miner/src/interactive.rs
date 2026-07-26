@@ -255,13 +255,19 @@ impl MinerControl {
     }
 
     pub fn cycle_algorithm(&mut self) {
-        const ALGOS: &[&str] = &[
-            "deeksha_lite_v1",
-            "deeksha_lite_fire",
-            "cosmic_harmony_ekam_deeksha_v2",
-        ];
-        let idx = ALGOS.iter().position(|&a| a == self.algorithm).unwrap_or(0);
-        self.algorithm = ALGOS[(idx + 1) % ALGOS.len()].to_string();
+        // Public builds are locked to a single Deeksha algorithm.
+        #[cfg(feature = "public_build")]
+        return;
+        #[cfg(not(feature = "public_build"))]
+        {
+            const ALGOS: &[&str] = &[
+                "deeksha_lite_v1",
+                "deeksha_lite_fire",
+                "cosmic_harmony_ekam_deeksha_v2",
+            ];
+            let idx = ALGOS.iter().position(|&a| a == self.algorithm).unwrap_or(0);
+            self.algorithm = ALGOS[(idx + 1) % ALGOS.len()].to_string();
+        }
     }
 
     pub fn toggle_cpu(&mut self) {
@@ -275,30 +281,48 @@ impl MinerControl {
     }
 
     pub fn toggle_dual(&mut self) {
-        self.dual_mode = !self.dual_mode;
-        if self.dual_mode {
-            self.cpu_enabled = true;
-            self.gpu_enabled = true;
+        // Public builds run a single ZION/Deeksha stream; dual mode is disabled.
+        #[cfg(feature = "public_build")]
+        return;
+        #[cfg(not(feature = "public_build"))]
+        {
+            self.dual_mode = !self.dual_mode;
+            if self.dual_mode {
+                self.cpu_enabled = true;
+                self.gpu_enabled = true;
+            }
+            self.recompute_mode();
         }
-        self.recompute_mode();
     }
 
     pub fn cycle_cpu_coin(&mut self) {
-        let current = self.cpu_coin.as_str();
-        let idx = CPU_COIN_OPTIONS
-            .iter()
-            .position(|&c| c.eq_ignore_ascii_case(current))
-            .unwrap_or(0);
-        self.cpu_coin = CPU_COIN_OPTIONS[(idx + 1) % CPU_COIN_OPTIONS.len()].to_uppercase();
+        // Public builds do not support external CPU coins.
+        #[cfg(feature = "public_build")]
+        return;
+        #[cfg(not(feature = "public_build"))]
+        {
+            let current = self.cpu_coin.as_str();
+            let idx = CPU_COIN_OPTIONS
+                .iter()
+                .position(|&c| c.eq_ignore_ascii_case(current))
+                .unwrap_or(0);
+            self.cpu_coin = CPU_COIN_OPTIONS[(idx + 1) % CPU_COIN_OPTIONS.len()].to_uppercase();
+        }
     }
 
     pub fn cycle_gpu_coin(&mut self) {
-        let current = self.gpu_coin.as_str();
-        let idx = GPU_COIN_OPTIONS
-            .iter()
-            .position(|&c| c.eq_ignore_ascii_case(current))
-            .unwrap_or(0);
-        self.gpu_coin = GPU_COIN_OPTIONS[(idx + 1) % GPU_COIN_OPTIONS.len()].to_uppercase();
+        // Public builds do not support external GPU coins.
+        #[cfg(feature = "public_build")]
+        return;
+        #[cfg(not(feature = "public_build"))]
+        {
+            let current = self.gpu_coin.as_str();
+            let idx = GPU_COIN_OPTIONS
+                .iter()
+                .position(|&c| c.eq_ignore_ascii_case(current))
+                .unwrap_or(0);
+            self.gpu_coin = GPU_COIN_OPTIONS[(idx + 1) % GPU_COIN_OPTIONS.len()].to_uppercase();
+        }
     }
 
     pub fn toggle_metrics(&mut self) {
@@ -1797,22 +1821,40 @@ pub(crate) fn draw_dashboard_redesign(
         rates.total_10s_hps
     };
 
-    let gpu_actual = hashrate.gpu_ext_coin.lock().map(|coin| coin.clone()).unwrap_or_default();
-    let cpu_actual = hashrate.cpu_ext_coin.lock().map(|coin| coin.clone()).unwrap_or_default();
-    let gpu_algo = hashrate.gpu_ext_algorithm.lock().map(|algo| algo.clone()).unwrap_or_default();
-    let cpu_algo = hashrate.cpu_ext_algorithm.lock().map(|algo| algo.clone()).unwrap_or_default();
-    let gpu_coin = if gpu_actual.is_empty() {
-        if control.gpu_coin.is_empty() { "AUTO".to_string() } else { control.gpu_coin.clone() }
-    } else {
-        gpu_actual
+    // External stream status is only needed in non-public builds where
+    // Trinity (Stream 2/3) is exposed in the TUI.
+    #[cfg(not(feature = "public_build"))]
+    let (
+        gpu_actual,
+        cpu_actual,
+        gpu_algo,
+        cpu_algo,
+        gpu_coin,
+        cpu_coin,
+        gpu_active,
+        cpu_active,
+    ) = {
+        let gpu_actual = hashrate.gpu_ext_coin.lock().map(|coin| coin.clone()).unwrap_or_default();
+        let cpu_actual = hashrate.cpu_ext_coin.lock().map(|coin| coin.clone()).unwrap_or_default();
+        let gpu_algo = hashrate.gpu_ext_algorithm.lock().map(|algo| algo.clone()).unwrap_or_default();
+        let cpu_algo = hashrate.cpu_ext_algorithm.lock().map(|algo| algo.clone()).unwrap_or_default();
+        let gpu_coin = if gpu_actual.is_empty() {
+            if control.gpu_coin.is_empty() { "AUTO".to_string() } else { control.gpu_coin.clone() }
+        } else {
+            gpu_actual
+        };
+        let cpu_coin = if cpu_actual.is_empty() {
+            if control.cpu_coin.is_empty() { "AUTO".to_string() } else { control.cpu_coin.clone() }
+        } else {
+            cpu_actual
+        };
+        let gpu_active = hashrate.gpu_ext_active.load(Ordering::Relaxed) == 1;
+        let cpu_active = hashrate.cpu_ext_active.load(Ordering::Relaxed) == 1;
+        (
+            gpu_actual, cpu_actual, gpu_algo, cpu_algo,
+            gpu_coin, cpu_coin, gpu_active, cpu_active,
+        )
     };
-    let cpu_coin = if cpu_actual.is_empty() {
-        if control.cpu_coin.is_empty() { "AUTO".to_string() } else { control.cpu_coin.clone() }
-    } else {
-        cpu_actual
-    };
-    let gpu_active = hashrate.gpu_ext_active.load(Ordering::Relaxed) == 1;
-    let cpu_active = hashrate.cpu_ext_active.load(Ordering::Relaxed) == 1;
     let online = hashrate.online_snapshot.lock().map(|snapshot| snapshot.clone()).unwrap_or_default();
 
     let mut frame = DashboardFrame::new(&mut out, width);
