@@ -651,6 +651,11 @@ let minerStats = {
 
 /** Clear stdout-derived mining telemetry so UI/[METRICS] never mixes two miner processes. */
 function resetMinerTelemetryForNewSpawn() {
+  // Remove any stats file from a previous session so the UI doesn't show
+  // stale accepted/rejected counts before the new miner writes fresh metrics.
+  try {
+    if (fs.existsSync(STATS_PATH)) fs.unlinkSync(STATS_PATH);
+  } catch {}
   minerRateSamples = [];
   minerShareDeltaSamples = [];
   minerShareLastSample = { t: 0, accepted: 0, rejected: 0 };
