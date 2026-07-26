@@ -1,7 +1,7 @@
 /**
  * GitHub Release data for ZION v3-Mainnet public repo.
  * Source: https://github.com/Zion-TerraNova/v3-Mainnet/releases
- * Updated: 2026-07-21 — v3.0.6-beta (Triple Stream Miner, Linux x86_64) + v3.0.5-beta (Community CLI, 4 platforms)
+ * Updated: 2026-07-26 — v3.0.6-beta (Triple Stream Miner, 5 platforms)
  */
 
 export const GITHUB_REPO = 'Zion-TerraNova/v3-Mainnet';
@@ -14,7 +14,7 @@ export type ReleaseAsset = {
   description: string;
   sizeMB: number;
   downloadUrl: string;
-  platform: 'linux-x86_64' | 'macos-arm64' | 'macos-x86_64' | 'windows-x86_64' | 'checksum';
+  platform: 'linux-x86_64' | 'linux-aarch64' | 'macos-arm64' | 'macos-x86_64' | 'windows-x86_64' | 'checksum';
 };
 
 export type Release = {
@@ -30,24 +30,56 @@ const DL_BASE_306 = `https://github.com/${GITHUB_REPO}/releases/download/v3.0.6-
 const DL_BASE_305 = `https://github.com/${GITHUB_REPO}/releases/download/v3.0.5-beta`;
 
 /**
- * v3.0.6-beta — Triple Stream Miner (2026-07-21)
- * Linux x86_64 only. macOS / Windows coming in v3.0.7.
- * For wallet creation, use v3.0.5-beta Community CLI.
+ * v3.0.6-beta — Triple Stream Miner (2026-07-26)
+ * Standalone zion-miner binary with interactive setup menu.
+ * All 5 platforms: Linux x86_64/ARM64, macOS Apple Silicon/Intel, Windows x86_64.
  */
 export const LATEST_RELEASE: Release = {
   tag: 'v3.0.6-beta',
   name: 'ZION v3.0.6-beta — Triple Stream Miner',
-  publishedAt: '2026-07-21',
+  publishedAt: '2026-07-26',
   prerelease: true,
   htmlUrl: `https://github.com/${GITHUB_REPO}/releases/tag/v3.0.6-beta`,
   assets: [
     {
       name: 'zion-miner-linux-x86_64.tar.gz',
       label: 'Linux x86_64',
-      description: 'Triple Stream Miner — GPU + CPU mining, OpenCL/CUDA, Deeksha Lite v1',
-      sizeMB: 3.2,
+      description: 'Triple Stream Miner — OpenCL (AMD/Intel) + CUDA (NVIDIA)',
+      sizeMB: 3.5,
       downloadUrl: `${DL_BASE_306}/zion-miner-linux-x86_64.tar.gz`,
       platform: 'linux-x86_64',
+    },
+    {
+      name: 'zion-miner-linux-aarch64.tar.gz',
+      label: 'Linux ARM64',
+      description: 'Triple Stream Miner — CUDA (Jetson/ARM64 servers)',
+      sizeMB: 2.7,
+      downloadUrl: `${DL_BASE_306}/zion-miner-linux-aarch64.tar.gz`,
+      platform: 'linux-aarch64',
+    },
+    {
+      name: 'zion-miner-macos-aarch64.tar.gz',
+      label: 'macOS Apple Silicon (M1–M4)',
+      description: 'Triple Stream Miner — Metal + OpenCL',
+      sizeMB: 3.2,
+      downloadUrl: `${DL_BASE_306}/zion-miner-macos-aarch64.tar.gz`,
+      platform: 'macos-arm64',
+    },
+    {
+      name: 'zion-miner-macos-x86_64.tar.gz',
+      label: 'macOS Intel x86_64',
+      description: 'Triple Stream Miner — Metal + OpenCL',
+      sizeMB: 3.3,
+      downloadUrl: `${DL_BASE_306}/zion-miner-macos-x86_64.tar.gz`,
+      platform: 'macos-x86_64',
+    },
+    {
+      name: 'zion-miner-windows-x86_64.zip',
+      label: 'Windows x86_64',
+      description: 'Triple Stream Miner — CUDA (NVIDIA); OpenCL/AMD coming later',
+      sizeMB: 2.9,
+      downloadUrl: `${DL_BASE_306}/zion-miner-windows-x86_64.zip`,
+      platform: 'windows-x86_64',
     },
     {
       name: 'SHA256SUMS.txt',
@@ -63,7 +95,6 @@ export const LATEST_RELEASE: Release = {
 /**
  * v3.0.5-beta — Simplified Community CLI (2026-07-10)
  * 4 platforms. Use this for wallet creation, node, pool, and basic mining.
- * macOS / Windows users without GPU mining needs should use this release.
  */
 export const COMMUNITY_CLI_RELEASE: Release = {
   tag: 'v3.0.5-beta',
