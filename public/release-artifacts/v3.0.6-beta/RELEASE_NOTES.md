@@ -1,6 +1,6 @@
 # ZION v3.0.6-beta — Trinity
 
-**Date:** 2026-07-21
+**Date:** 2026-07-26
 
 **Mine ZION. Earn ZION. Grow ZION.**
 
@@ -33,24 +33,34 @@ exchange, and there is zero sell pressure on ZION.
 The longer you mine, the more ZION you hold. Every hash compounds your
 position. No trading, no timing the market — just mine and grow.
 
+### SMOS / HiveOS / SimpleMining Support
+
+This release adds support for mining OS distributions. The miner runs
+headless on SMOS and HiveOS with machine-parseable dashboard output.
+
+See the [SMOS/HiveOS Guide](https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/docs/SMOS_HIVEOS_GUIDE.md) for setup
+instructions.
+
 ---
 
 ## Download
 
 | Your system | File | Size | SHA256 |
 |-------------|------|------|--------|
-| **Linux x86_64** (Ubuntu, Debian, etc.) | `zion-miner-linux-x86_64.tar.gz` | 3.4 MB | `e4bcc7f4…` |
-| **Linux ARM64** (Raspberry Pi 4/5, Ampere, Graviton) | `zion-miner-linux-aarch64.tar.gz` | 2.6 MB | `d44b1aa2…` |
-| **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-miner-macos-aarch64.tar.gz` | 3.3 MB | `2f9e330c…` |
-| **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` | 3.4 MB | `76e47559…` |
-| **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.tar.gz` | 3.6 MB | `2af84f14…` |
+| **Linux x86_64** (Ubuntu, Debian, SMOS, HiveOS) | `zion-miner-linux-x86_64.tar.gz` | 3.5 MB | `5cac4fd18ec4bcdc1e3b23dab09e76248e79bbcae051e0f0510bfd25e2be5df4` |
+| **Linux ARM64** (Raspberry Pi 4/5, Ampere, Jetson) | `zion-miner-linux-aarch64.tar.gz` | 2.7 MB | `946c4c82df381c344a5df522a1a415e23e0df9038d9669723e3f9979a4caa22d` |
+| **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-miner-macos-aarch64.tar.gz` | 2.5 MB | `2632ff9a5cdbd239bf038300c877287a6c668e6e13109c0631205a6d7cdc6a07` |
+| **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` | 2.5 MB | `b94d906a0a76b181cb300d9f2d35f9b712c8284678ee55529454c50d4c2ed867` |
+| **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.zip` | 2.9 MB | `c85dd3831c6b77f6f4542dd31281449e0878dbcb7b29734a1daf44585c15f21b` |
 
 > **All 5 platforms are now available!** Full SHA256 checksums are in
 > `SHA256SUMS.txt` (download alongside the binary).
 >
-> **GPU support:** Linux x86_64 and macOS builds include OpenCL/Metal GPU
-> acceleration. Windows and Linux ARM64 builds are CPU-only (GPU support
-> coming in a future release).
+> **GPU support:**
+> - **Linux x86_64:** OpenCL (AMD/Intel) + CUDA (NVIDIA).
+> - **macOS:** Metal (Apple Silicon + Intel Macs with supported AMD/Intel GPUs).
+> - **Windows x86_64:** CUDA (NVIDIA); OpenCL/AMD support is coming in a future release.
+> - **Linux ARM64:** CUDA (NVIDIA Jetson); OpenCL support is coming in a future release.
 
 ---
 
@@ -66,17 +76,37 @@ sha256sum zion-miner-linux-x86_64.tar.gz
 
 # Extract
 tar xzf zion-miner-linux-x86_64.tar.gz
-chmod +x zion-miner
+chmod +x zion-miner start.sh
 ```
 
-### Start mining
+### Interactive setup (recommended for desktop)
+
+```bash
+./zion-miner
+```
+
+When run without arguments, the binary opens a simple interactive menu that
+asks for your pool, wallet, worker name, GPU backend, thread count, algorithm
+and profile.
+
+### Advanced wrapper script
+
+```bash
+./start.sh
+```
+
+`start.sh` (Linux/macOS) or `start.bat` (Windows) is the same easy wrapper
+with extra options and full argument pass-through. Set `ZION_EASY_MENU=0`
+to skip the prompts and pass arguments directly.
+
+### Manual start
 
 ```bash
 ./zion-miner \
     --pool 62.171.141.136:8444 \
     --wallet zion1YOUR_WALLET_ADDRESS \
     --worker my-rig \
-    --gpu opencl \
+    --gpu auto \
     --algorithm deeksha_lite_v1 \
     --profile pool
 ```
@@ -88,8 +118,10 @@ chmod +x zion-miner
 
 ---
 
-## Support
+## Documentation & Support
 
+- **Desktop quick start & FAQ:** [README.md](https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/README.md) and [docs/FAQ.md](https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/docs/FAQ.md)
+- **SMOS / HiveOS guide:** [docs/SMOS_HIVEOS_GUIDE.md](https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/docs/SMOS_HIVEOS_GUIDE.md)
 - **Website:** [zionterranova.com](https://zionterranova.com)
 - **Pool:** `62.171.141.136:8444`
 - **RPC:** `rpc.zionterranova.com:8443`

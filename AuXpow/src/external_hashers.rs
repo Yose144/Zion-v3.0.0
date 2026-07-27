@@ -1924,6 +1924,10 @@ fn keccak_f800_state(
 /// Compute the ProgPow seed from header_hash and nonce.
 /// Returns the first 64 bits of `keccak_f800(header_hash || nonce)`
 /// as a big-endian integer (the `seed` passed to `hash_mix` and final hash).
+pub fn progpow_seed_pub(header_hash: &[u8; 32], nonce: u64) -> u64 {
+    progpow_seed(header_hash, nonce)
+}
+
 fn progpow_seed(header_hash: &[u8; 32], nonce: u64) -> u64 {
     let mut st = [0u32; 25];
     keccak_f800_state(header_hash, nonce, None, &mut st);

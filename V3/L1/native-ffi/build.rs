@@ -497,6 +497,13 @@ fn main() {
             );
         }
     }
+
+    // Re-run build.rs when environment-controlled CPU/OpenMP settings change.
+    println!("cargo:rerun-if-env-changed=ZION_DISABLE_OPENMP");
+    println!("cargo:rerun-if-env-changed=ZION_CPU_TARGET");
+    println!("cargo:rerun-if-env-changed=ZION_CPU_NO_AVX");
+    println!("cargo:rerun-if-env-changed=ZION_CPU_NO_BMI2");
+    println!("cargo:rerun-if-changed=build.rs");
 }
 
 /// Build the real tevador/RandomX C++ library + ZION wrapper.

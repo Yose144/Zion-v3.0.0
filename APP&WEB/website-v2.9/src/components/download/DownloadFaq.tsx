@@ -4,18 +4,30 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 const DownloadFaqCopy = {
-  doINeedANodeToMine: { cs: `Potrebuji pro tezbu Node?`, en: `Do I need a Node to mine?` },
-  noConnectToThePublicPoolZionte: { cs: `Ne. Pripojte se k verejnemu poolu (zionterranova.com/pool). Pool resi komunikaci s blockchainem. Node potrebujete jen pokud chcete sami overovat transakce nebo provozovat vlastni pool.`, en: `No. Connect to the public pool (zionterranova.com/pool). The pool handles blockchain communication. A node is only needed if you want to verify transactions yourself or run your own pool.` },
-  howDoICreateAWallet: { cs: `Jak vytvorim penezenku?`, en: `How do I create a wallet?` },
-  downloadZionCliAndRunZionWalle: { cs: `Stahnete ZION CLI a spustte: zion wallet new --mnemonic --out my-wallet.json --print. Zapisete si 24 slov na papir — to je vase zaloha. Nikdy je nesdilejte online.`, en: `Download ZION CLI and run: zion wallet new --mnemonic --out my-wallet.json --print. Write down the 24 words on paper — they are your backup. Never share them online.` },
-  windowsDefenderBlocksTheBinary: { cs: `Windows Defender blokuje binarku?`, en: `Windows Defender blocks the binary?` },
-  clickMoreInfoRunAnywayTheBinar: { cs: `Kliknete na More info -> Run anyway. Binarky jsou open-source (MIT licence), ale nepodepsane. Muzete take pridat C:\\ZION\\ do vyjimek ve Windows Security.`, en: `Click More info -> Run anyway. The binaries are open-source (MIT license) but unsigned. You can also add C:\\ZION\\ to exclusions in Windows Security.` },
-  macosSaysCannotBeOpened: { cs: `macOS pise cannot be opened?`, en: `macOS says cannot be opened?` },
-  runXattrDComAppleQuarantineZio: { cs: `Spustte: xattr -d com.apple.quarantine zion-cli-macos-arm64 nebo jdete do System Settings -> Privacy & Security -> Allow Anyway.`, en: `Run: xattr -d com.apple.quarantine zion-cli-macos-arm64 or go to System Settings -> Privacy & Security -> Allow Anyway.` },
+  doINeedANodeToMine: { cs: `Potřebuji pro těžbu Node?`, en: `Do I need a Node to mine?` },
+  noConnectToThePublicPoolZionte: { cs: `Ne. Připojte se k veřejnému poolu (zionterranova.com/pool). Pool řeší komunikaci s blockchainem. Node potřebujete jen pokud chcete sami ověřovat transakce nebo provozovat vlastní pool.`, en: `No. Connect to the public pool (zionterranova.com/pool). The pool handles blockchain communication. A node is only needed if you want to verify transactions yourself or run your own pool.` },
+  howDoICreateAWallet: { cs: `Jak vytvořím peněženku?`, en: `How do I create a wallet?` },
+  downloadZionCliAndRunZionWalle: { cs: `Stáhněte ZION CLI (v3.0.5-beta Community CLI níže) a spusťte: zion wallet new --mnemonic --out my-wallet.json --print. Zapište si 24 slov na papír — to je vaše záloha. Nikdy je nesdílejte online.`, en: `Download ZION CLI (v3.0.5-beta Community CLI below) and run: zion wallet new --mnemonic --out my-wallet.json --print. Write down the 24 words on paper — they are your backup. Never share them online.` },
+  howDoIStartMining: { cs: `Jak spustím těžbu?`, en: `How do I start mining?` },
+  extractArchiveAndRunZionMinerNoArgs: { cs: `Na Linuxu/macOS rozbalte .tar.gz, nastavte práva chmod +x zion-miner a spusťte ./zion-miner. Na Windows rozbalte .zip a dvakrát klikněte na zion-miner.exe. Interaktivní menu se zeptá na wallet, worker, GPU backend, threads, algoritmus a profil.`, en: `On Linux/macOS extract the .tar.gz, chmod +x zion-miner, and run ./zion-miner. On Windows extract the .zip and double-click zion-miner.exe. The interactive menu will ask for wallet, worker, GPU backend, threads, algorithm, and profile.` },
+  whatIsTheInteractiveMenu: { cs: `Co dělá interaktivní menu?`, en: `What does the interactive menu do?` },
+  theMenuCollectsPoolWalletWorkerGpuThreadsAlgoProfile: { cs: `Když spustíte zion-miner bez argumentů, zeptá se vás na pool (výchozí stratum.zionterranova.com:8444), adresu peněženky, jméno workeru, GPU backend, počet CPU vláken, algoritmus a profil. Pak miner nastartuje. Pro pokročilé nastavení použijte ./start.sh nebo ./start.bat.`, en: `When you run zion-miner with no arguments, it asks for pool (default stratum.zionterranova.com:8444), wallet address, worker name, GPU backend, CPU thread count, algorithm, and profile. Then it starts mining. For advanced settings use ./start.sh or ./start.bat.` },
+  whichGpuBackendShouldIUse: { cs: `Jaký GPU backend mám zvolit?`, en: `Which GPU backend should I choose?` },
+  chooseBackendBasedOnGpuAndOs: { cs: `Linux x86_64: auto / cuda (NVIDIA) / opencl (AMD/Intel). macOS: auto / metal (Apple Silicon) / opencl / cpu. Windows: auto / cuda (NVIDIA) / cpu. Linux ARM64: auto / cuda (Jetson). Při nejistotě zvolte auto — miner vybere nejlepší dostupný backend.`, en: `Linux x86_64: auto / cuda (NVIDIA) / opencl (AMD/Intel). macOS: auto / metal (Apple Silicon) / opencl / cpu. Windows: auto / cuda (NVIDIA) / cpu. Linux ARM64: auto / cuda (Jetson). When unsure, pick auto — the miner selects the best available backend.` },
+  canIMineOnRaspberryPi: { cs: `Mohu těžit na Raspberry Pi?`, en: `Can I mine on Raspberry Pi?` },
+  theLinuxArm64BuildSupportsRpi4And5: { cs: `Ano. Stáhněte zion-miner-linux-aarch64.tar.gz pro ARM64 (Raspberry Pi 4/5, Jetson, AWS Graviton a další). Na RPi očekávejte nižší hashrate — ideální pro testing nebo low-power těžbu.`, en: `Yes. Download zion-miner-linux-aarch64.tar.gz for ARM64 (Raspberry Pi 4/5, Jetson, AWS Graviton and others). On RPi expect lower hashrate — ideal for testing or low-power mining.` },
+  windowsDefenderBlocksTheBinary: { cs: `Windows Defender blokuje binárku?`, en: `Windows Defender blocks the binary?` },
+  clickMoreInfoRunAnywayTheBinar: { cs: `Klikněte na More info → Run anyway. Binárky jsou open-source (MIT licence), ale nepodepsané. Můžete také přidat adresář s minerem do výjimek ve Windows Security.`, en: `Click More info → Run anyway. The binaries are open-source (MIT license) but unsigned. You can also add the miner directory to exclusions in Windows Security.` },
+  macosSaysCannotBeOpened: { cs: `macOS píše cannot be opened?`, en: `macOS says cannot be opened?` },
+  runXattrDComAppleQuarantineZio: { cs: `Spusťte: xattr -d com.apple.quarantine zion-miner nebo přejděte do System Settings → Privacy & Security → Allow Anyway.`, en: `Run: xattr -d com.apple.quarantine zion-miner or go to System Settings → Privacy & Security → Allow Anyway.` },
+  whyAreMySharesNotPaidImmediately: { cs: `Proč se mi okamžitě nepřičítají ZIONy?`, en: `Why aren't my ZION rewards showing immediately?` },
+  poolCollectsSharesAndDistributesWhenBlockFound: { cs: `Těžba není okamžitý bankomat. Pool sbírá share a až najde blok, rozdělí odměnu mezi workery. Trvá to minuty až hodiny podle štěstí a výkonu poolu. Sledujte accepted shares v TUI.`, en: `Mining is not an instant ATM. The pool collects shares and, once it finds a block, distributes the reward among workers. This takes minutes to hours depending on pool luck and hashrate. Watch accepted shares in the TUI.` },
+  canIMineSolo: { cs: `Mohu těžit solo?`, en: `Can I mine solo?` },
+  yesButPoolRecommendedForRegularPayouts: { cs: `Ano — v interaktivním menu zvolte profil solo. Doporučujeme ale pool, protože solo vyplácí jen když sami najdete blok, což může trvat dlouho.`, en: `Yes — choose profile solo in the interactive menu. However, pool is recommended because solo only pays when you find a block yourself, which can take a long time.` },
   whatIsConsciousnessMining: { cs: `Co je Consciousness Mining?`, en: `What is Consciousness Mining?` },
-  yourConsciousnessLevelPhysical: { cs: `Vase uroven vedomi (PHYSICAL -> COSMIC) nasobi blokove odmeny az 15x. Levelujete konzistentni tezbou, nachazenim bloku a prispevkem ke zdravi site.`, en: `Your consciousness level (PHYSICAL -> COSMIC) multiplies block rewards up to 15x. Level up by consistent mining, discovering blocks, and contributing to network health.` },
-  canIMineOnRaspberryPi: { cs: `Mohu tezit na Raspberry Pi?`, en: `Can I mine on Raspberry Pi?` },
-  theLinuxArm64BuildIsInProgress: { cs: `Linux ARM64 build je ve vyvoji. RPi 4/5 bude podporovano — sledujte releases na zionterranova.com/download.`, en: `The Linux ARM64 build is in progress. RPi 4/5 will be supported — watch releases at zionterranova.com/download.` },
+  yourConsciousnessLevelPhysical: { cs: `Vaše úroveň vědomí (PHYSICAL → COSMIC) násobí blokové odměny až 15x. Levelujete konzistentní těžbou, nacházením bloků a příspěvkem ke zdraví sítě.`, en: `Your consciousness level (PHYSICAL → COSMIC) multiplies block rewards up to 15x. Level up by consistent mining, discovering blocks, and contributing to network health.` },
+  smosHiveosSupport: { cs: `Funguje to na SMOS / HiveOS?`, en: `Does it work on SMOS / HiveOS?` },
+  useLinuxX8664TarballWithZionInteractive0: { cs: `Ano. Použijte zion-miner-linux-x86_64.tar.gz a spusťte miner s proměnnou ZION_INTERACTIVE=0 a požadovanými argumenty --pool/--wallet/--worker/--gpu/--profile. Podrobný návod najdete v docs/SMOS_HIVEOS_GUIDE.md.`, en: `Yes. Use zion-miner-linux-x86_64.tar.gz and run the miner with ZION_INTERACTIVE=0 and the required --pool/--wallet/--worker/--gpu/--profile arguments. See docs/SMOS_HIVEOS_GUIDE.md for a detailed guide.` },
   support: { cs: `Podpora`, en: `Support` },
 };
 
@@ -35,6 +47,22 @@ function getFaqItems(cs: boolean): FaqItem[] {
       a: DownloadFaqCopy.downloadZionCliAndRunZionWalle[cs ? 'cs' : 'en'],
     },
     {
+      q: DownloadFaqCopy.howDoIStartMining[cs ? 'cs' : 'en'],
+      a: DownloadFaqCopy.extractArchiveAndRunZionMinerNoArgs[cs ? 'cs' : 'en'],
+    },
+    {
+      q: DownloadFaqCopy.whatIsTheInteractiveMenu[cs ? 'cs' : 'en'],
+      a: DownloadFaqCopy.theMenuCollectsPoolWalletWorkerGpuThreadsAlgoProfile[cs ? 'cs' : 'en'],
+    },
+    {
+      q: DownloadFaqCopy.whichGpuBackendShouldIUse[cs ? 'cs' : 'en'],
+      a: DownloadFaqCopy.chooseBackendBasedOnGpuAndOs[cs ? 'cs' : 'en'],
+    },
+    {
+      q: DownloadFaqCopy.canIMineOnRaspberryPi[cs ? 'cs' : 'en'],
+      a: DownloadFaqCopy.theLinuxArm64BuildSupportsRpi4And5[cs ? 'cs' : 'en'],
+    },
+    {
       q: DownloadFaqCopy.windowsDefenderBlocksTheBinary[cs ? 'cs' : 'en'],
       a: DownloadFaqCopy.clickMoreInfoRunAnywayTheBinar[cs ? 'cs' : 'en'],
     },
@@ -43,12 +71,20 @@ function getFaqItems(cs: boolean): FaqItem[] {
       a: DownloadFaqCopy.runXattrDComAppleQuarantineZio[cs ? 'cs' : 'en'],
     },
     {
-      q: DownloadFaqCopy.whatIsConsciousnessMining[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.yourConsciousnessLevelPhysical[cs ? 'cs' : 'en'],
+      q: DownloadFaqCopy.whyAreMySharesNotPaidImmediately[cs ? 'cs' : 'en'],
+      a: DownloadFaqCopy.poolCollectsSharesAndDistributesWhenBlockFound[cs ? 'cs' : 'en'],
     },
     {
-      q: DownloadFaqCopy.canIMineOnRaspberryPi[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.theLinuxArm64BuildIsInProgress[cs ? 'cs' : 'en'],
+      q: DownloadFaqCopy.canIMineSolo[cs ? 'cs' : 'en'],
+      a: DownloadFaqCopy.yesButPoolRecommendedForRegularPayouts[cs ? 'cs' : 'en'],
+    },
+    {
+      q: DownloadFaqCopy.smosHiveosSupport[cs ? 'cs' : 'en'],
+      a: DownloadFaqCopy.useLinuxX8664TarballWithZionInteractive0[cs ? 'cs' : 'en'],
+    },
+    {
+      q: DownloadFaqCopy.whatIsConsciousnessMining[cs ? 'cs' : 'en'],
+      a: DownloadFaqCopy.yourConsciousnessLevelPhysical[cs ? 'cs' : 'en'],
     },
   ];
 }

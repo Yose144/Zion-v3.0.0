@@ -162,9 +162,12 @@ fn math_code(d: &str, a: &str, b: &str, r: u32) -> String {
 
 /// ProgPoWZ (Zano) math op selection.
 ///
-/// The hyle-team/progminer reference (Zano official miner fork) uses the
-/// standard ProgPoW 0.9.2 random_math mapping with selector % 11 - no shift.
-/// Zano modifications are elsewhere (binary layout/consensus), not math ops.
+/// The hyle-team/progminer reference (Zano official miner fork) permutes the
+/// standard ProgPoW 0.9.2 math ops (clz/popcount moved to slots 0/1) and
+/// explicitly masks the rotation count with `% 32` to match the CPU
+/// `rotl32`/`rotr32` implementation. Without the mask NVIDIA's OpenCL
+/// `rotate()` is implementation-defined for counts >= 32, producing wrong
+/// mix hashes and rejected shares.
 fn math_code_zano(d: &str, a: &str, b: &str, r: u32) -> String {
     match r % 11 {
         0 => format!("{} = clz({}) + clz({});\n", d, a, b),
@@ -173,8 +176,8 @@ fn math_code_zano(d: &str, a: &str, b: &str, r: u32) -> String {
         3 => format!("{} = {} * {};\n", d, a, b),
         4 => format!("{} = mul_hi({}, {});\n", d, a, b),
         5 => format!("{} = min({}, {});\n", d, a, b),
-        6 => format!("{} = ROTL32({}, {});\n", d, a, b),
-        7 => format!("{} = ROTR32({}, {});\n", d, a, b),
+        6 => format!("{} = ROTL32({}, ({} % 32));\n", d, a, b),
+        7 => format!("{} = ROTR32({}, ({} % 32));\n", d, a, b),
         8 => format!("{} = {} & {};\n", d, a, b),
         9 => format!("{} = {} | {};\n", d, a, b),
         10 => format!("{} = {} ^ {};\n", d, a, b),
@@ -894,5 +897,30 @@ mod tests {
         // Should have 6 cache loads (CNT_CACHE=6)
         let cache_loads = result.matches("c_dag[offset]").count();
         assert_eq!(cache_loads, 6, "MeowPow should have 6 cache loads");
+    }
+
+    #[test]
+    fn test_dump_cuda_progpow_source() {
+        let base_src = include_str!("../csrc/cuda/progpow_kernel.cu");
+        let prepared = prepare_progpow_kernel_source_for_algo(
+            base_src,
+            "progpow_zano",
+            3785945,
+        );
+        std::fs::write("/tmp/progpow_cuda_source.cu", &prepared).unwrap();
+
+        // Check where injected code ends up
+        for (i, line) in prepared.lines().enumerate() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("offset = mix")
+                || trimmed.starts_with("data = c_dag")
+                || trimmed.contains("PROGPOW_INCLUDE")
+                || trimmed.contains("progpow_mine")
+                || trimmed.contains("extern \"C\"")
+            {
+                println!("Line {}: {}", i + 1, line);
+            }
+        }
+        assert!(!prepared.contains("PROGPOW_INCLUDE"), "Placeholders should be replaced");
     }
 }

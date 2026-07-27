@@ -32,6 +32,7 @@ const PRIMARY_RPC_PORT = 8443;
 const PRIMARY_TESTNET_HOST = PRIMARY_MAINNET_HOST;
 const DEFAULT_RPC_URL = `http://${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
 const DESKTOP_PURE_ZION_DEFAULT = true;
+const DECOMMISSIONED_POOL_HOSTS = new Set(['77.42.71.94', '100.76.16.108']);
 
 function currentPureZionDefault(cfg = config) {
   if (cfg && typeof cfg.desktopPureZionDefault === 'boolean') {
@@ -654,9 +655,9 @@ function switchView(view) {
 
   // When switching to Logs, flush deferred mining console lines
   if (view === 'logs' && typeof _mcDeferredQueue !== 'undefined') {
-    // Render cached static panel immediately
-    if (typeof _lastPanelLines !== 'undefined' && _lastPanelLines) {
-      updateStaticPanel(_lastPanelLines);
+    // Render live static panel from last stats snapshot
+    if (typeof _lastStatsSnapshot !== 'undefined' && _lastStatsSnapshot) {
+      updateStaticPanelFromStats(_lastStatsSnapshot);
     }
     const lines = _mcDeferredQueue.splice(0);
     for (const line of lines) {
@@ -929,6 +930,12 @@ function setupControls() {
         poolPort = parseInt(p) || PRIMARY_POOL_PORT;
       }
     }
+    // Migrate decommissioned Edge IPs if the user somehow has them in custom input.
+    if (DECOMMISSIONED_POOL_HOSTS.has(poolHost)) {
+      console.warn(`[renderer] ignoring decommissioned pool ${poolHost}, using ${PRIMARY_MAINNET_HOST}:${PRIMARY_POOL_PORT}`);
+      poolHost = PRIMARY_MAINNET_HOST;
+      poolPort = PRIMARY_POOL_PORT;
+    }
     
     const pureZionMode = isPureZionDesktopMode(config);
     const selectedMode = normalizeMiningMode(
@@ -975,7 +982,7 @@ function setupControls() {
         port: poolPort
       },
       rpcUrl: document.getElementById('rpc-url')?.value || config.rpcUrl || DEFAULT_RPC_URL,
-      algorithm: config.algorithm || 'cosmic_harmony',
+      algorithm: config.algorithm || 'deeksha_lite_v1',
       wallet: document.getElementById('wallet-input').value,
       worker: document.getElementById('worker-input').value,
       threads: Math.min(
@@ -1168,6 +1175,114 @@ function flushSuppressedStreamLogs() {
   }
 }
 
+// Parse V3 Rust miner stdout lines and return a short summary for the
+// Live Activity feed.  Returns null for lines that should not appear
+// in the feed (verbose / repetitive lines).
+function parseMinerEventForFeed(line) {
+  // Strip optional timestamp prefix: "[2026-07-26 18:26:03] ..."
+  const stripped = line.replace(/^\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\]\s*/, '');
+
+  // SHARE_ACCEPTED
+  let m = stripped.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=(\S+)\s+latency_ms=(\d+)/i);
+  if (m) return { msg: `Share accepted — job #${m[1]} h=${m[2]} ${m[4]}ms`, type: 'ok' };
+
+  // SHARE_REJECTED
+  m = stripped.match(/SHARE_REJECTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=\S+\s+reason="([^"]+)"/i);
+  if (m) return { msg: `Share rejected — job #${m[1]} ${m[3]}`, type: 'error' };
+
+  // new job (V3 Rust: ">> new job #6216 height=6216 algo=deeksha_lite_v1")
+  m = stripped.match(/>>\s*new job\s*#(\d+)\s+height=(\d+)\s+algo=(\S+)/i);
+  if (m) return { msg: `New job #${m[1]} — height ${m[2]} algo ${m[3]}`, type: 'info' };
+
+  // new job (XMRig style: "new job height 1523 diff 256 algo cosmic_harmony_v3")
+  m = stripped.match(/new job\s+height\s+(\d+)\s+diff\s+([\d.]+[TGMK]?)\s+algo\s+(\S+)/i);
+  if (m) return { msg: `New job — height ${m[1]} diff ${m[2]} algo ${m[3]}`, type: 'info' };
+
+  // VRSC_SHARE_FOUND (triple stream)
+  m = stripped.match(/(\w+)_SHARE_FOUND\s+nonce=\d+\s+hash=[0-9a-fA-F]+\s+\((\S+)\)/i);
+  if (m) return { msg: `${m[1]} share found (${m[2]})`, type: 'ok' };
+
+  // pool_set_difficulty
+  m = stripped.match(/pool_set_difficulty=(\d+)/i);
+  if (m) return { msg: `Pool difficulty → ${m[1]}`, type: 'info' };
+
+  // BLOCK FOUND
+  m = stripped.match(/BLOCK\s+FOUND.*?height[=:]\s*(\d+)/i);
+  if (m) return { msg: `BLOCK FOUND — height ${m[1]}!`, type: 'success' };
+
+  // accepted (XMRig style: "accepted 42/0 (+1) diff 256 [38 ms] (100.0%)")
+  m = stripped.match(/accepted\s+(\d+)\/(\d+)\s+\(\+1\)\s+diff\s+([\d.]+[TGMK]?)(?:\s+\[([^\]]+)\])?\s+\(([\d.]+)%\)/i);
+  if (m) return { msg: `Share accepted (${m[1]}/${m[2]}) ${m[5]}%`, type: 'ok' };
+
+  // rejected (XMRig/Rust: "rejected 42/1 (+1) \"reason\"" or "rejected 42/1 — reason")
+  m = stripped.match(/rejected\s+(\d+)\/(\d+)(?:\s+\(\+1\))?\s+(?:"([^"]+)"|[—–-]\s*(\S[^\n]*))/i);
+  if (m) return { msg: `Share rejected — ${m[3] || m[4] || 'unknown'}`, type: 'error' };
+
+  // First share accepted/rejected
+  if (/First\s+share\s+accepted/i.test(stripped)) return { msg: 'First share accepted!', type: 'ok' };
+  if (/First\s+share\s+rejected/i.test(stripped)) return { msg: 'First share rejected', type: 'error' };
+
+  // GPU share accepted/rejected
+  m = stripped.match(/GPU share ACCEPTED[^(]*\(total:\s*(\d+)\)/i);
+  if (m) return { msg: `GPU share accepted (total ${m[1]})`, type: 'ok' };
+  if (/GPU share REJECTED/i.test(stripped)) return { msg: 'GPU share rejected', type: 'error' };
+
+  // wire_hello / wire_welcome (connection established)
+  if (/wire_hello|wire_welcome/i.test(stripped)) return { msg: 'Pool connected', type: 'ok' };
+
+  // mode=remote (mining started)
+  if (/mode=remote/i.test(stripped)) return { msg: 'Remote mining started', type: 'info' };
+
+  // pool_addr= (pool connection)
+  m = stripped.match(/pool_addr=(\S+)/i);
+  if (m) return { msg: `Connecting to pool ${m[1]}`, type: 'info' };
+
+  // gpu_init / gpu_backend
+  m = stripped.match(/gpu_init\s+(.+)/i);
+  if (m) return { msg: `GPU init: ${m[1].substring(0, 60)}`, type: 'info' };
+
+  // Skip verbose / repetitive lines
+  if (/^session_status\b/i.test(stripped)) return null;
+  if (/^\[STATUS\]/i.test(stripped)) return null;
+  if (/^\[METRICS\]/i.test(stripped)) return null;
+  if (/^wire_stale\b|^wire_cancel\b/i.test(stripped)) return null;
+  if (/^gpu_backend\b|^gpu_epoch_fallback\b/i.test(stripped)) return null;
+  if (/^external_stream\b|^ext_gpu_tx_send\b|^ext_cpu_thread\b|^ext_share_submitted\b/i.test(stripped)) return null;
+  if (/^external_stream_cpu\b/i.test(stripped)) return null;
+  if (/^stream_weights\b/i.test(stripped)) return null;
+  if (/^nonce_range\b|^found_nonce\b|^hash=|^iteration=|^job_id=|^share_status=/i.test(stripped)) return null;
+  if (/^adaptive_duty_cycle\b|^ext_gpu_adaptive_update\b/i.test(stripped)) return null;
+  if (/^-\s+job=/i.test(stripped)) return null; // dash-prefixed reject summary
+  if (/^external_stream_ignore\b/i.test(stripped)) return null;
+
+  // MEMORY_CRITICAL — show as error
+  m = stripped.match(/MEMORY_CRITICAL\s+available_mib=(\d+)\s+total_mib=(\d+)/i);
+  if (m) return { msg: `Memory critical — ${m[1]} MiB free / ${m[2]} MiB total`, type: 'error' };
+
+  // Connection events
+  if (/connecting|connected|reconnect/i.test(stripped)) {
+    return { msg: stripped.substring(0, 80), type: /connected/i.test(stripped) ? 'ok' : 'info' };
+  }
+
+  // Errors
+  if (/error|failed|panic/i.test(stripped)) {
+    return { msg: stripped.substring(0, 100), type: 'error' };
+  }
+
+  // Warnings
+  if (/warn|⚠|timeout/i.test(stripped)) {
+    return { msg: stripped.substring(0, 100), type: 'warn' };
+  }
+
+  // Startup lines
+  if (/V3-FAST|Starting|started|Initializ/i.test(stripped)) {
+    return { msg: stripped.substring(0, 100), type: 'info' };
+  }
+
+  // Unknown lines — skip from feed (Mining Console shows them)
+  return null;
+}
+
 function logStreamLine(stream, line) {
   const now = Date.now();
   if (now - _streamLogWindowStart > _streamLogWindowMs) {
@@ -1176,11 +1291,17 @@ function logStreamLine(stream, line) {
     flushSuppressedStreamLogs();
   }
 
-  if (_streamLogCount < _streamLogMaxPerWindow) {
-    _streamLogCount += 1;
-    addLogEntry(`[${stream}] ${line}`, 'info');
-  } else {
-    _streamLogSuppressed += 1;
+  // Parse V3 Rust miner events for the Live Activity feed.
+  // Only parsed events appear in the feed; unparsed/verbose lines are
+  // skipped entirely (they still show in the Mining Console / Logs tab).
+  const feedMsg = parseMinerEventForFeed(line);
+  if (feedMsg && feedMsg.msg) {
+    if (_streamLogCount < _streamLogMaxPerWindow) {
+      _streamLogCount += 1;
+      addLogEntry(feedMsg.msg, feedMsg.type);
+    } else {
+      _streamLogSuppressed += 1;
+    }
   }
 
   // Mining Console — only append if Logs tab is visible (perf optimization)
@@ -1196,7 +1317,7 @@ function logStreamLine(stream, line) {
 // ────────────────────────────────────────────────────────────
 // MINING CONSOLE — Professional XMRig/SRBMiner-style terminal
 // ────────────────────────────────────────────────────────────
-const MC_MAX_LINES = 120;
+const MC_MAX_LINES = 80;
 let _mcQueue = [];
 let _mcFlushScheduled = false;
 let _mcDeferredQueue = []; // lines buffered while Logs tab is hidden
@@ -1206,11 +1327,12 @@ function appendMiningConsole(raw) {
   const body = document.getElementById('console-body');
   if (!body) return;
 
-  // Skip panel lines (handled by updateStaticPanel)
-  // Note: T-Rex style lines use "KEYWORD   : value" format — keep those (negative lookahead (?!\s*:))
+  // Skip box-drawing panel lines (handled by updateStaticPanel)
   if (/^[\u250c\u2502\u2514]/.test(raw) || /^\s*(SPEED|SHARES|DIFF|UPTIME|HW|NET|EVENT)\b(?!\s*:)/i.test(raw)) return;
-  // [STATUS] lines are verbose — skip, but keep [METRICS] lines
+  // [STATUS] lines are verbose xmrig-style summaries — skip (we have [METRICS] + session_status)
   if (/^\[STATUS\]/i.test(raw)) return;
+  // Skip raw session_status lines — the [METRICS] line already covers this data
+  if (/^session_status\b/.test(raw)) return;
 
   const html = colorizeConsoleLine(raw);
   if (!html) return;
@@ -1251,103 +1373,102 @@ function colorizeConsoleLine(raw) {
   const tsHtml = `<span class="mc-ts">[${ts}]</span> `;
   const esc = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  // ── XMRig speed line: "speed 10s/60s/15m  X.XX  Y.YY  Z.ZZ kH/s  max W.WW kH/s" ──
-  let m = raw.match(/speed\s+10s\/60s\/15m\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*([kKmMgGtT]?H\/s)\s+max\s+([\d.]+)/i);
+  // ── V3 Rust miner: SHARE_ACCEPTED ──
+  // "SHARE_ACCEPTED  job=6242  height=6242  nonce=...  algo=deeksha_lite_v1  latency_ms=564"
+  let m = raw.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=(\d+)\s+algo=(\S+)\s+latency_ms=(\d+)/i);
+  if (m) {
+    return { html: `${tsHtml}<span class="mc-accepted">[+] SHARE ACCEPTED</span> job=<span class="mc-hr">${m[1]}</span> height=<span class="mc-hr">${m[2]}</span> algo=<span class="mc-algo">${esc(m[4])}</span> <span class="mc-ts">${m[5]}ms</span>`, _cls: ' mc-highlight' };
+  }
+
+  // ── V3 Rust miner: SHARE_REJECTED ──
+  // "SHARE_REJECTED  job=6243  height=6243  nonce=...  algo=...  reason="NoSolution"  hash=..."
+  m = raw.match(/SHARE_REJECTED\s+job=(\d+)\s+height=(\d+)\s+nonce=(\d+)\s+algo=(\S+)\s+reason="([^"]+)"(?:\s+hash=([0-9a-fA-F]+))?/i);
+  if (m) {
+    return { html: `${tsHtml}<span class="mc-rejected">[✗] SHARE REJECTED</span> job=<span class="mc-hr">${m[1]}</span> height=<span class="mc-hr">${m[2]}</span> algo=<span class="mc-algo">${esc(m[4])}</span> <span class="mc-err">${esc(m[5])}</span>`, _cls: ' mc-highlight' };
+  }
+
+  // ── V3 Rust miner: new job ──
+  // ">> new job #6216 height=6216 algo=deeksha_lite_v1"
+  m = raw.match(/>>\s*new job\s*#(\d+)\s+height=(\d+)\s+algo=(\S+)/i);
+  if (m) {
+    return { html: `${tsHtml}<span class="mc-job">[▶] NEW JOB</span> #<span class="mc-hr">${m[1]}</span> height=<span class="mc-hr">${m[2]}</span> algo=<span class="mc-algo">${esc(m[3])}</span>` };
+  }
+
+  // ── V3 Rust miner: VRSC_SHARE_FOUND (triple-stream CPU coin) ──
+  // "VRSC_SHARE_FOUND nonce=... hash=... (batch-scan)"
+  m = raw.match(/(\w+)_SHARE_FOUND\s+nonce=(\d+)\s+hash=([0-9a-fA-F]+)\s+\((\S+)\)/i);
+  if (m) {
+    return { html: `${tsHtml}<span class="mc-ok">[◆] ${esc(m[1])} SHARE FOUND</span> <span class="mc-info">(${esc(m[4])})</span> <span class="mc-ts">nonce=${m[2]}</span>` };
+  }
+
+  // ── V3 Rust miner: pool_set_difficulty ──
+  // "pool_set_difficulty=1024"
+  m = raw.match(/pool_set_difficulty=(\d+)/i);
+  if (m) {
+    return { html: `${tsHtml}<span class="mc-warn">[~] POOL DIFFICULTY</span> → <span class="mc-diff">${m[1]}</span>` };
+  }
+
+  // ── V3 Rust miner: wire_stale / wire_cancel ──
+  if (/^wire_stale\b/.test(raw)) {
+    return { html: `${tsHtml}<span class="mc-warn">[~] STALE</span> <span class="mc-info">${esc(raw)}</span>` };
+  }
+  if (/^wire_cancel\b/.test(raw)) {
+    return { html: `${tsHtml}<span class="mc-warn">[~] CANCEL</span> <span class="mc-info">${esc(raw)}</span>` };
+  }
+
+  // ── V3 Rust miner: gpu_init / gpu_backend ──
+  if (/^gpu_init\b|^gpu_backend\b|^gpu_epoch_fallback\b/.test(raw)) {
+    return { html: `${tsHtml}<span class="mc-algo">${esc(raw)}</span>` };
+  }
+
+  // ── V3 Rust miner: external_stream / ext_gpu ──
+  if (/^external_stream|^ext_gpu|^ext_cpu|^ext_share/.test(raw)) {
+    return { html: `${tsHtml}<span class="mc-info">${esc(raw)}</span>` };
+  }
+
+  // ── V3 Rust miner: BLOCK FOUND ──
+  m = raw.match(/BLOCK\s+FOUND.*?height[=:]\s*(\d+)/i);
+  if (m) {
+    return { html: `${tsHtml}<span class="mc-block">█ BLOCK FOUND █ ★</span> height=<span class="mc-hr">${m[1]}</span>`, _cls: ' mc-block-line' };
+  }
+
+  // ── [METRICS] compact GPU mining status ──
+  m = raw.match(/^\[METRICS\]\s+(.+)/i);
+  if (m) {
+    let html = esc(m[1]);
+    html = html.replace(/(\d+\.\d+\s*[kKmMgGtT]?H\/s)/g, '<span class="mc-hr">$1</span>');
+    html = html.replace(/A:(\d+)/g, 'A:<span class="mc-accepted">$1</span>');
+    html = html.replace(/R:(\d+)/g, 'R:<span class="mc-rejected">$1</span>');
+    html = html.replace(/(\d+\.\d+%)/g, '<span class="mc-info">$1</span>');
+    html = html.replace(/gpu=([^\s|]+)/g, 'gpu=<span class="mc-ok">$1</span>');
+    html = html.replace(/backend=([^\s|]+)/g, 'backend=<span class="mc-algo">$1</span>');
+    html = html.replace(/epoch=(\d+)/g, 'epoch=<span class="mc-diff">$1</span>');
+    html = html.replace(/h=(\d+)/g, 'h=<span class="mc-diff">$1</span>');
+    return { html: `${tsHtml}<span class="mc-speed">[METRICS]</span> ${html}` };
+  }
+
+  // ── XMRig speed line (legacy compat) ──
+  m = raw.match(/speed\s+10s\/60s\/15m\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*([kKmMgGtT]?H\/s)\s+max\s+([\d.]+)/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-speed">speed</span> 10s/60s/15m <span class="mc-hr">${m[1]}</span> <span class="mc-hr">${m[2]}</span> <span class="mc-hr">${m[3]}</span> <span class="mc-unit">${m[4]}</span> max <span class="mc-max">${m[5]} ${m[4]}</span>` };
   }
 
-  // ── XMRig accepted: "accepted 42/0 (+1) diff 256 [38 ms] (100.0%)" ──
-  // Rust miner event: "accepted 42/0 (+1) diff 256 (100.0%)" — no latency
+  // ── XMRig accepted/rejected (legacy compat) ──
   m = raw.match(/accepted\s+(\d+)\/(\d+)\s+\(\+1\)\s+diff\s+([\d.]+[TGMK]?)(?:\s+\[([^\]]+)\])?\s+\(([\d.]+)%\)/i);
   if (m) {
     const latencyPart = m[4] ? ` <span class="mc-ts">[${m[4]}]</span>` : '';
     return { html: `${tsHtml}<span class="mc-accepted">accepted</span> <span class="mc-hr">${m[1]}</span>/<span class="mc-rejected">${m[2]}</span> <span class="mc-ok">(+1)</span> diff <span class="mc-diff">${m[3]}</span>${latencyPart} <span class="mc-info">(${m[5]}%)</span>`, _cls: ' mc-highlight' };
   }
-
-  // ── XMRig rejected: "rejected 42/1 (+1) \"reason\"" ──
-  // Rust miner event: "rejected 42/1 — reason"
   m = raw.match(/rejected\s+(\d+)\/(\d+)(?:\s+\(\+1\))?\s+(?:"([^"]+)"|[—–-]\s*(\S[^\n]*))/i);
   if (m) {
     const reason = esc((m[3] || m[4] || '').trim());
     return { html: `${tsHtml}<span class="mc-rejected">rejected</span> ${m[1]}/<span class="mc-rejected">${m[2]}</span> <span class="mc-err">${reason}</span>` };
   }
 
-  // ── new job: "new job  height 1523  diff 256  algo cosmic_harmony" ──
-  m = raw.match(/new job\s+height\s+(\d+)\s+diff\s+([\d.]+[TGMK]?)\s+algo\s+(\S+)/i);
-  if (m) {
-    return { html: `${tsHtml}<span class="mc-job">new job</span> height <span class="mc-hr">${m[1]}</span> diff <span class="mc-diff">${m[2]}</span> algo <span class="mc-algo">${esc(m[3])}</span>` };
-  }
-
-  // ── V3 shares summary: "shares A:5 R:0 (100.0%) | hashes 42000 | pool latency 38ms | uptime 0h 5m 12s" ──
-  m = raw.match(/shares A:(\d+)\s+R:(\d+)\s+\(([\d.]+)%\)\s+\|\s+hashes\s+(\d+)\s+\|\s+pool latency\s+([\d.]+)ms\s+\|\s+uptime\s+(.*)/i);
-  if (m) {
-    return { html: `${tsHtml}<span class="mc-speed">shares</span> A:<span class="mc-accepted">${m[1]}</span> R:<span class="mc-rejected">${m[2]}</span> <span class="mc-info">(${m[3]}%)</span> | hashes <span class="mc-hr">${m[4]}</span> | latency <span class="mc-ts">${m[5]}ms</span> | uptime <span class="mc-info">${esc(m[6].trim())}</span>` };
-  }
-
-  // ── BLOCK FOUND ──
-  m = raw.match(/BLOCK FOUND.*?height\s+(\d+).*?\(total:\s*(\d+)\)/i);
-  if (m) {
-    return { html: `${tsHtml}<span class="mc-block">█ BLOCK FOUND █ ★</span> height <span class="mc-hr">${m[1]}</span> <span class="mc-info">(total: ${m[2]})</span>`, _cls: ' mc-block-line' };
-  }
-
-  // ── GPU share: "GPU SHARE FOUND" / "GPU share ACCEPTED" / "GPU share REJECTED" ──
-  if (/GPU SHARE FOUND/i.test(raw)) {
-    return { html: `${tsHtml}<span class="mc-ok">[GPU] SHARE FOUND!</span> <span class="mc-info">${esc(raw.replace(/.*GPU SHARE FOUND!?/i, '').trim())}</span>` };
-  }
-  if (/GPU share ACCEPTED/i.test(raw)) {
-    m = raw.match(/\(total:\s*(\d+)\)/i);
-    return { html: `${tsHtml}<span class="mc-accepted">[+] GPU share ACCEPTED</span> <span class="mc-info">(total: ${m ? m[1] : '?'})</span>`, _cls: ' mc-highlight' };
-  }
-  if (/GPU share REJECTED/i.test(raw)) {
-    return { html: `${tsHtml}<span class="mc-rejected">[✗] GPU share REJECTED</span>` };
-  }
-
-  // ── GPU hashrate: "Apple M1 [GPU]: 2.59 MH/s" ──
-  m = raw.match(/([^\[]+)\[(GPU|CPU-fallback)\]:\s*([\d.]+)\s*([kKmMgGtT]?H\/s)/i);
-  if (m) {
-    const mode = m[2].toUpperCase();
-    const cls = mode === 'GPU' ? 'mc-ok' : 'mc-algo';
-    return { html: `${tsHtml}<span class="${cls}">${esc(m[1].trim())} [${mode}]</span> <span class="mc-hr">${m[3]}</span> <span class="mc-unit">${m[4]}</span>` };
-  }
-
-  // ── Batch done: "✅ Batch done: 250000 hashes in 452ms, 552.04 kH/s" ──
-  m = raw.match(/Batch done:.*?([\d.]+)\s*([kKmMgGtT]?H\/s)/i);
-  if (m) {
-    return { html: `${tsHtml}<span class="mc-ok">[OK] Batch</span> <span class="mc-hr">${m[1]}</span> <span class="mc-unit">${m[2]}</span>` };
-  }
-
-  // ── Connection: "Connecting", "connected", "Reconnection" ──
+  // ── Connection events ──
   if (/connecting|connected|reconnect/i.test(raw)) {
     const cls = /connected|success/i.test(raw) ? 'mc-ok' : 'mc-warn';
     return { html: `${tsHtml}<span class="${cls}">${esc(raw)}</span>` };
-  }
-
-  // ── Stream switch ──
-  m = raw.match(/Stream switch:\s*(\S+)\s*→\s*(\S+)/i);
-  if (m) {
-    return { html: `${tsHtml}<span class="mc-warn">~&gt; Stream switch</span> <span class="mc-algo">${esc(m[1])}</span> → <span class="mc-algo">${esc(m[2])}</span>` };
-  }
-
-  // ── [METRICS] compact GPU mining status ──
-  m = raw.match(/^\[METRICS\]\s+(.+)/i);
-  if (m) {
-    const body = m[1];
-    let html = esc(body);
-    // Highlight hashrate values
-    html = html.replace(/(\d+\.\d+\s*[kKmMgGtT]?H\/s)/g, '<span class="mc-hr">$1</span>');
-    // Highlight A:N green, R:N red
-    html = html.replace(/A:(\d+)/g, 'A:<span class="mc-accepted">$1</span>');
-    html = html.replace(/R:(\d+)/g, 'R:<span class="mc-rejected">$1</span>');
-    // Highlight accept percentage
-    html = html.replace(/(\d+\.\d+%)/g, '<span class="mc-info">$1</span>');
-    // Highlight gpu= and backend= values
-    html = html.replace(/gpu=([^\s|]+)/g, 'gpu=<span class="mc-ok">$1</span>');
-    html = html.replace(/backend=([^\s|]+)/g, 'backend=<span class="mc-algo">$1</span>');
-    // Highlight epoch and height
-    html = html.replace(/epoch=(\d+)/g, 'epoch=<span class="mc-diff">$1</span>');
-    html = html.replace(/h=(\d+)/g, 'h=<span class="mc-diff">$1</span>');
-    return { html: `${tsHtml}<span class="mc-speed">[METRICS]</span> ${html}` };
   }
 
   // ── Errors ──
@@ -1360,33 +1481,8 @@ function colorizeConsoleLine(raw) {
     return { html: `${tsHtml}<span class="mc-warn">${esc(raw)}</span>` };
   }
 
-  // ── T-Rex dashboard: " HASHRATE : TOTAL X | CPU Y | GPU Z" ──
-  m = raw.match(/HASHRATE\s*:\s*TOTAL\s+([\d.]+\s*\S+\/s)\s*\|\s*CPU\s+([\d.]+\s*\S+\/s)\s*\|\s*GPU\s+([\d.]+\s*\S+\/s)/i);
-  if (m) {
-    return { html: `${tsHtml}<span class="mc-speed">HASHRATE</span> TOTAL <span class="mc-hr">${esc(m[1])}</span> | CPU <span class="mc-hr">${esc(m[2])}</span> | GPU <span class="mc-hr">${esc(m[3])}</span>` };
-  }
-
-  // ── T-Rex dashboard: " SHARES : ACCEPTED 5 | REJECTED 0 | SENT 5 | ACC 100.0%" ──
-  m = raw.match(/SHARES\s*:\s*ACCEPTED\s+(\d+)\s*\|\s*REJECTED\s+(\d+)\s*\|\s*SENT\s+(\d+)\s*\|\s*ACC\s+([\d.]+%)/i);
-  if (m) {
-    return { html: `${tsHtml}<span class="mc-speed">SHARES</span> <span class="mc-accepted">ACCEPTED ${m[1]}</span> | <span class="mc-rejected">REJECTED ${m[2]}</span> | SENT ${m[3]} | ACC <span class="mc-info">${m[4]}</span>` };
-  }
-
-  // ── T-Rex dashboard: " UPTIME : 00:05:42 | GPU: ON | JOB: abcdef" ──
-  m = raw.match(/UPTIME\s*:\s*([\d:hms]+)\s*\|\s*GPU:\s*(\w+)\s*\|\s*JOB:\s*(\S*)/i);
-  if (m) {
-    const gpuCls = m[2].toUpperCase() === 'ON' ? 'mc-ok' : 'mc-warn';
-    return { html: `${tsHtml}<span class="mc-info">UPTIME</span> <span class="mc-hr">${esc(m[1])}</span> | GPU: <span class="${gpuCls}">${esc(m[2])}</span> | JOB: <span class="mc-ts">${esc(m[3])}</span>` };
-  }
-
-  // ── Status panel lines (┌│└ or XMRig-style SPEED/SHARES/DIFF/UPTIME/HW/NET/EVENT without colon) ──
-  // T-Rex "KEY   : value" lines are already handled above; skip only XMRig panel lines
-  if (/^[│┌└]|^\s*(HASHRATE|SHARES|DIFF|UPTIME|THREADS|SPEED|HW|NET|EVENT)(?!\s*:)/i.test(raw)) {
-    return null; // Signal to skip this line
-  }
-
   // ── Startup info lines ──
-  if (/^\s*\*|Starting|started|Initializ|threads|algorithm|pool|wallet|miner/i.test(raw)) {
+  if (/^\s*\*|Starting|started|Initializ|threads|algorithm|pool|wallet|miner|V3-FAST/i.test(raw)) {
     return { html: `${tsHtml}<span class="mc-info">${esc(raw)}</span>` };
   }
 
@@ -1395,46 +1491,91 @@ function colorizeConsoleLine(raw) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// STATIC MINER PANEL — SRBMiner-style, overwrites in place
+// STATIC MINER PANEL — Live dashboard from stats data
 // ═══════════════════════════════════════════════════════════
+let _lastStatsSnapshot = null;
+
 function updateStaticPanel(panelLines) {
+  // Legacy path: if the miner emits box-drawing panel lines, render them.
+  // (The V3 Rust miner does NOT emit these — see updateStaticPanelFromStats.)
+  if (!panelLines || panelLines.length === 0) return;
   const el = document.getElementById('miner-static-panel');
   if (!el) return;
   el.style.display = 'block';
+  el.classList.remove('view-hidden');
 
   const esc = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
   const htmlLines = panelLines.map(raw => {
-    // Border lines
-    if (/^[┌└]/.test(raw)) {
-      return `<span class="sp-border">${esc(raw)}</span>`;
-    }
-    // Content lines — parse key: value
+    if (/^[┌└]/.test(raw)) return `<span class="sp-border">${esc(raw)}</span>`;
     let line = esc(raw);
-    // Highlight labels: SPEED, SHARES, DIFF, UPTIME, HW, NET, EVENT
     line = line.replace(/\b(SPEED|SHARES|DIFF|UPTIME|HW|NET|EVENT)\b/g, '<span class="sp-label">$1</span>');
-    // Highlight numeric values with units
     line = line.replace(/(\d+\.\d+)\s*(MH\/s|kH\/s|GH\/s|TH\/s|H\/s)/gi, '<span class="sp-value">$1</span> <span class="sp-unit">$2</span>');
-    // Highlight A: N (accepted — green)
     line = line.replace(/A:\s*(\d+)/g, 'A: <span class="sp-good">$1</span>');
-    // Highlight R: N (rejected — red)
     line = line.replace(/R:\s*(\d+)/g, 'R: <span class="sp-bad">$1</span>');
-    // Highlight rate percentage
-    line = line.replace(/rate:\s*([\d.]+%)/g, 'rate: <span class="sp-value">$1</span>');
-    // Highlight blocks count
-    line = line.replace(/blocks:\s*(\d+)/g, 'blocks: <span class="sp-value">$1</span>');
-    // Highlight height
-    line = line.replace(/height:\s*(\d+)/g, 'height: <span class="sp-value">$1</span>');
-    // Highlight algo
-    line = line.replace(/algo:\s*(\S+)/g, 'algo: <span class="sp-value">$1</span>');
-    // Dim the │ border
     line = line.replace(/│/g, '<span class="sp-dim">│</span>');
-    // Event text — green
-    line = line.replace(/(accepted \d+\/\d+.*)/g, '<span class="sp-event">$1</span>');
     return line;
   });
-
   el.innerHTML = htmlLines.join('\n');
+}
+
+function updateStaticPanelFromStats(stats) {
+  if (!stats) return;
+  _lastStatsSnapshot = stats;
+  const el = document.getElementById('miner-static-panel');
+  if (!el) return;
+
+  // Only show when mining
+  if (!stats.isRunning) {
+    el.style.display = 'none';
+    el.classList.add('view-hidden');
+    return;
+  }
+  el.style.display = 'block';
+  el.classList.remove('view-hidden');
+
+  const fmtHr = (v) => {
+    if (!v || !Number.isFinite(v) || v <= 0) return '0.00 H/s';
+    if (v >= 1e9) return (v / 1e9).toFixed(2) + ' GH/s';
+    if (v >= 1e6) return (v / 1e6).toFixed(2) + ' MH/s';
+    if (v >= 1e3) return (v / 1e3).toFixed(2) + ' kH/s';
+    return v.toFixed(2) + ' H/s';
+  };
+  const fmtUptime = (sec) => {
+    const s = Math.max(0, Math.floor(sec || 0));
+    const h = String(Math.floor(s / 3600)).padStart(2, '0');
+    const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+    const ss = String(s % 60).padStart(2, '0');
+    return `${h}:${m}:${ss}`;
+  };
+  const fmtDiff = (d) => {
+    if (!d) return '—';
+    if (typeof d === 'string') return d;
+    if (d >= 1e9) return (d / 1e9).toFixed(2) + 'G';
+    if (d >= 1e6) return (d / 1e6).toFixed(2) + 'M';
+    if (d >= 1e3) return (d / 1e3).toFixed(2) + 'K';
+    return String(Math.round(d));
+  };
+
+  const acc = Number(stats.accepted) || 0;
+  const rej = Number(stats.rejected) || 0;
+  const total = acc + rej;
+  const pct = total > 0 ? ((acc / total) * 100).toFixed(1) + '%' : '—';
+  const algo = stats.stream_algorithm || stats.algorithm || '—';
+  const height = stats.last_job_height || '—';
+  const diff = fmtDiff(stats.difficulty);
+  const poolDiff = fmtDiff(stats.last_pool_diff);
+  const gpu = stats.gpu_info || stats.gpu_name || 'none';
+  const gpuHr = fmtHr(stats.hashrate_gpu);
+  const cpuThr = stats.cpu_threads || stats.threads || '—';
+  const epoch = stats.current_epoch != null ? stats.current_epoch : '—';
+
+  el.innerHTML = [
+    `<span class="sp-label">HASHRATE</span>  <span class="sp-value">${fmtHr(stats.hashrate)}</span>  <span class="sp-unit">| 10s ${fmtHr(stats.hashrate_10s)} | 60s ${fmtHr(stats.hashrate_60s)} | 15m ${fmtHr(stats.hashrate_15m)}</span>`,
+    `<span class="sp-label">SHARES</span>    <span class="sp-good">A: ${acc}</span>  <span class="sp-bad">R: ${rej}</span>  <span class="sp-value">${pct}</span>  <span class="sp-unit">| blocks: ${Number(stats.blocks_found) || 0}</span>`,
+    `<span class="sp-label">DIFF</span>      <span class="sp-value">${diff}</span>  <span class="sp-unit">| pool: ${poolDiff} | epoch: ${epoch}</span>`,
+    `<span class="sp-label">UPTIME</span>    <span class="sp-value">${fmtUptime(stats.uptime)}</span>  <span class="sp-unit">| height: ${height} | algo: ${algo}</span>`,
+    `<span class="sp-label">HW</span>        <span class="sp-unit">CPU ${cpuThr}T</span>  <span class="sp-value">${fmtHr(stats.hashrate_cpu)}</span>  <span class="sp-unit">| GPU ${gpu} ${gpuHr}</span>`,
+  ].join('\n');
 }
 
 // Console controls
@@ -1578,11 +1719,14 @@ function setupEventListeners() {
 
     const lines = clean.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-    // Collect static panel lines (┌│└) → overwrite fixed panel element
+    // Collect TUI panel lines (SRBMiner ┌│└─ and compact dashboard ╔║╠╚═)
+    // so they don't flood the Live Activity / console log.
     const panelLines = [];
     const logLines = [];
+    const panelRe = /^[┌┐└┘│─├┤┴┬┼╔╗╚╝║═╠╣╦╩╬]/;
+    const hbarRe = /^[─═━]+$/;
     for (const line of lines) {
-      if (/^[┌│└]/.test(line) || /^[─]+$/.test(line)) {
+      if (panelRe.test(line) || hbarRe.test(line)) {
         panelLines.push(line);
       } else {
         // Include [STATUS] lines for real-time mining stats
@@ -1599,7 +1743,7 @@ function setupEventListeners() {
     }
 
     // Split into priority (always shown) vs bulk (limited) lines
-    const priorityRe = /accepted|rejected|speed\s+10s|new job|BLOCK FOUND|\[METRICS\]|gpu_init|wire_hello|wire_welcome|mode=remote|pool_addr=/i;
+    const priorityRe = /SHARE_ACCEPTED|SHARE_REJECTED|accepted|rejected|speed\s+10s|new job|BLOCK FOUND|\[METRICS\]|gpu_init|wire_hello|wire_welcome|mode=remote|pool_addr=|pool_set_difficulty|VRSC_SHARE_FOUND|MEMORY_CRITICAL|First share/i;
     const priorityLines = [];
     const bulkLines = [];
     for (const line of logLines) {
@@ -1812,6 +1956,9 @@ function updateStats(stats) {
   // ---- Trinity per-stream telemetry ----
   updateTripleStreamPanel(stats);
 
+  // ---- Live static panel (SRBMiner-style dashboard from stats) ----
+  updateStaticPanelFromStats(stats);
+
   // ---- Mining Console status dot ----
   updateConsoleDot(!!stats?.isRunning);
   
@@ -1898,7 +2045,8 @@ function scheduleStatsUpdate(stats) {
   if (!stats) return;
   _pendingStats = stats;
   if (_statsRafId) return;
-  _statsRafId = requestAnimationFrame(() => {
+
+  const flush = () => {
     _statsRafId = null;
     const s = _pendingStats;
     _pendingStats = null;
@@ -1917,7 +2065,18 @@ function scheduleStatsUpdate(stats) {
       updateControlButtons();
       updateStatusBadge(s.isRunning ? 'mining' : 'stopped');
     }
-  });
+  };
+
+  _statsRafId = requestAnimationFrame(flush);
+  // Fallback: RAF can be throttled/paused by Electron when the window is
+  // unfocused or the renderer is backgrounded.  setTimeout ensures stats
+  // still update even when RAF doesn't fire.
+  setTimeout(() => {
+    if (_statsRafId !== null) {
+      cancelAnimationFrame(_statsRafId);
+      flush();
+    }
+  }, 500);
 }
 
 async function pollStats() {
@@ -1948,10 +2107,32 @@ let _logFlushScheduled = false;
 const _maxLogQueue = 100;
 
 function addLogEntry(message, type = 'info') {
+  const timestamp = new Date().toLocaleTimeString();
+
+  // ── Dashboard home feed: mirror important events on the main view ──
+  // Don't flood the feed with long repetitive xmrig-style [STATUS]/[METRICS]
+  // lines; those belong in the Mining Console (Logs tab).
+  const isStatusOrMetrics = /\[(STATUS|METRICS)\]/.test(message);
+  const dashFeed = document.getElementById('dashboard-feed-body');
+  if (dashFeed && !isStatusOrMetrics) {
+    // Remove placeholder text on first real entry
+    const placeholder = dashFeed.querySelector('.feed-entry.info');
+    if (placeholder && /Mining activity will appear here/i.test(placeholder.textContent)) {
+      placeholder.remove();
+    }
+    const dashEntry = document.createElement('div');
+    dashEntry.className = `feed-entry ${type}`;
+    dashEntry.textContent = `[${timestamp}] ${message}`;
+    dashFeed.appendChild(dashEntry);
+    while (dashFeed.children.length > 40) {
+      dashFeed.removeChild(dashFeed.firstChild);
+    }
+    dashFeed.scrollTop = dashFeed.scrollHeight;
+  }
+
   const logViewer = document.getElementById('log-viewer');
   if (!logViewer) return;
 
-  const timestamp = new Date().toLocaleTimeString();
   _logQueue.push({ timestamp, message, type });
   if (_logQueue.length > _maxLogQueue) {
     _logQueue.splice(0, _logQueue.length - _maxLogQueue);
@@ -2864,9 +3045,10 @@ function updateTripleStreamPanel(stats) {
     }
   }
 
-  // Render each stream card (1-indexed: stream-1, stream-2, stream-3)
+  // Render each stream card (1-indexed: stream-1, stream-2, stream-3).
+  // Prefer the explicit `index` field; fall back to array order if missing.
   for (let i = 1; i <= 3; i++) {
-    const stream = streams.find(s => Number(s.index) === i);
+    const stream = streams.find(s => Number(s.index) === i) || streams[i - 1];
     const card = document.getElementById(`stream-card-${i}`);
     if (!card) continue;
 

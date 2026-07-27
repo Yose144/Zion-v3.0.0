@@ -29,11 +29,13 @@ fn main() {
             }
         }
 
-        // L1/native-libs/ — legacy native libs
-        if let Some(native_libs) = manifest_path.parent().map(|p| p.join("native-libs")) {
-            if native_libs.exists() {
-                println!("cargo:rustc-link-search=native={}", native_libs.display());
-            }
+        // Ensure OpenCL is linked after all zion-auxpow objects on Linux.
+        // cl-sys emits -lOpenCL early in the link line; zion-auxpow's object
+        // files are placed later, causing undefined references on GNU/Linux.
+        // Re-emitting the link lib from the final binary crate places it last.
+        #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
+        {
+            println!("cargo:rustc-link-lib=OpenCL");
         }
     }
 

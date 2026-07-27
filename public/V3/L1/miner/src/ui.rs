@@ -426,7 +426,10 @@ pub fn log_block_found(height: u64, nonce: u64, hash_prefix: &str) {
                                     ║  Height: {}  Nonce: {}  Hash: {}...                      ║
                                     ╚══════════════════════════════════════════════════════════════════╝"#;
 
-    let flag_formatted = flag.replace("{}", &format!("{}  {}  {}", height, nonce, hash_prefix));
+    let flag_formatted = flag
+        .replacen("{}", &height.to_string(), 1)
+        .replacen("{}", &nonce.to_string(), 1)
+        .replacen("{}", hash_prefix, 1);
 
     let mut s = String::new();
     s.push_str(BRIGHT_YELLOW);
@@ -1215,7 +1218,10 @@ pub fn print_fancy_banner(threads: usize, version: &str, backend: &str) {
     s.push_str(RESET);
     s.push_str("  ");
     s.push_str(DIM);
+    #[cfg(not(feature = "public_build"))]
     s.push_str("Trinity");
+    #[cfg(feature = "public_build")]
+    s.push_str("Desktop");
     s.push_str(RESET);
     s.push_str("         ║\n");
     s.push_str("║  ");

@@ -651,6 +651,11 @@ let minerStats = {
 
 /** Clear stdout-derived mining telemetry so UI/[METRICS] never mixes two miner processes. */
 function resetMinerTelemetryForNewSpawn() {
+  // Remove any stats file from a previous session so the UI doesn't show
+  // stale accepted/rejected counts before the new miner writes fresh metrics.
+  try {
+    if (fs.existsSync(STATS_PATH)) fs.unlinkSync(STATS_PATH);
+  } catch {}
   minerRateSamples = [];
   minerShareDeltaSamples = [];
   minerShareLastSample = { t: 0, accepted: 0, rejected: 0 };
@@ -1203,16 +1208,18 @@ const DESKTOP_PURE_ZION_DEFAULT = true;
 
 const DEFAULT_CONFIG = {
   pool: {
-    host: PRIMARY_TESTNET_HOST,
+    host: PRIMARY_MAINNET_HOST,
     port: PRIMARY_POOL_PORT
   },
   desktopPureZionDefault: DESKTOP_PURE_ZION_DEFAULT,
   rpcUrl: DEFAULT_RPC_URL,
-  algorithm: 'cosmic_harmony',
+  algorithm: 'deeksha_lite_v1',
   wallet: '',
   worker: 'desktop-agent',
   threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
-  gpu: true,
+  // Apple Silicon Metal deeksha kernel is not yet reliable; default to CPU
+  // mining for a working out-of-the-box experience. Users can still toggle GPU.
+  gpu: !(process.platform === 'darwin' && os.arch() === 'arm64'),
   gpuCpuThreads: 5,
   gpuBatchSize: 16000000,
   minerBackend: 'rust',
@@ -1236,12 +1243,18 @@ const DEFAULT_CONFIG = {
 
 function normalizeAlgorithmName(algo) {
   const raw = String(algo || '').trim().toLowerCase().replace(/-/g, '_');
-  if (['cosmic_harmony_v3','cosmic_harmony_v4','cosmic_harmony_v4_2','chv3','ch3',
+  const v2Names = ['cosmic_harmony_v3','cosmic_harmony_v4','cosmic_harmony_v4_2','chv3','ch3',
        'chv4','ch4','deeksha','cosmic_harmony_deeksha','ekam','ekam_deeksha',
-       'cosmic_harmony_ekam'].includes(raw)) {
-    return 'cosmic_harmony';
+       'cosmic_harmony_ekam','cosmic_harmony'];
+  if (v2Names.includes(raw)) {
+    return 'cosmic_harmony_ekam_deeksha_v2';
   }
-  return raw || 'cosmic_harmony';
+  if (['deeksha_lite_fire','fire','thermal'].includes(raw)) {
+    return 'deeksha_lite_fire';
+  }
+  const valid = ['deeksha_lite_v1','cosmic_harmony_ekam_deeksha_v2','deeksha_lite_fire'];
+  if (valid.includes(raw)) return raw;
+  return 'deeksha_lite_v1';
 }
 
 function sanitizeWorkerName(raw) {
@@ -1272,8 +1285,17 @@ function loadConfig() {
         }
       }
       if (merged.pool && /^(localhost|127\.0\.0\.1)$/i.test(merged.pool.host)) {
-        merged.pool.host = PRIMARY_TESTNET_HOST;
+        merged.pool.host = PRIMARY_MAINNET_HOST;
         merged.pool.port = PRIMARY_POOL_PORT;
+      }
+      // Migrate decommissioned Edge server IPs to the current canonical pool.
+      const DECOMMISSIONED_POOL_HOSTS = new Set(['77.42.71.94', '100.76.16.108']);
+      if (merged.pool && DECOMMISSIONED_POOL_HOSTS.has(merged.pool.host)) {
+        log(`[config] migrated decommissioned pool ${merged.pool.host} → ${PRIMARY_MAINNET_HOST}:${PRIMARY_POOL_PORT}`);
+        merged.pool.host = PRIMARY_MAINNET_HOST;
+        merged.pool.port = PRIMARY_POOL_PORT;
+        // Persist the migration immediately so renderer sees the new address.
+        saveConfig(merged);
       }
       merged.algorithm = normalizeAlgorithmName(merged.algorithm || DEFAULT_CONFIG.algorithm);
       merged.desktopPureZionDefault = DESKTOP_PURE_ZION_DEFAULT;
@@ -2230,6 +2252,8 @@ function startMiningV3(config, v3Path) {
     ZION_METRICS_REPORT_SECS: '10',
     ZION_STATS_FILE: STATS_PATH,
     ZION_MINER_METRICS_BIND: '127.0.0.1:9116',
+    ZION_NO_DASHBOARD: '1', // desktop agent renders its own Trinity UI; suppress SMOS compact dashboard
+    ZION_NO_FANCY: '1',     // suppress ASCII banner and block-found art; keep machine-parseable logs
     ZION_NONCE_BASE: String((Date.now() >>> 0) & 0x1fffffff),
     ZION_PAYOUT_ADDRESS: wallet,
     // ── Trinity: enable parallel ZION (GPU) + external coin (CPU/GPU) ──
@@ -2252,9 +2276,18 @@ function startMiningV3(config, v3Path) {
       env.ZION_MINER_GPU_COIN = gpuCoinEnv;
     }
   }
+  // Always tell the miner which backend to use.  When the user disables GPU,
+  // force CPU so the miner does not auto-detect Metal/OpenCL and run a broken
+  // or unsupported GPU kernel.
+  env.ZION_BACKEND = selectedGpuBackend;
+  // When GPU is off (or Apple Silicon where Metal ProgPoW is not implemented),
+  // disable the external GPU stream (ZANO/ProgPoW) to prevent memory exhaustion
+  // and wasted CPU cycles.  The pool still sends external_stream jobs, but the
+  // miner will skip them instead of spinning a useless GPU thread.
+  if (!wantsGpu || (process.platform === 'darwin' && os.arch() === 'arm64')) {
+    env.ZION_DISABLE_EXT_GPU = '1';
+  }
   if (wantsGpu) {
-    // ── GPU detection & backend auto-select ──
-    env.ZION_BACKEND = selectedGpuBackend;
     env.ZION_HAS_GPU = '1';
 
     // ── VRAM-aware batch/work-cap sizing ──
@@ -2408,7 +2441,7 @@ function startMiningV3(config, v3Path) {
   minerStats.pool = pool;
   minerStats.worker = worker || 'desktop';
   minerStats.threads = String(effectiveThreads);
-  minerStats.algorithm = 'cosmic_harmony_deeksha';
+  minerStats.algorithm = algoForMiner;
   updateTrayMenu(minerStats);
 
   // ── 18. Clear guard ────────────────────────────────────────────────────────
@@ -2958,6 +2991,16 @@ function stopMining() {
   void stopMiningAsync();
 }
 
+function maybeEmitBlockFound(output) {
+  const clean = output.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '').replace(/\x1B\[\?[0-9;]*[A-Za-z]/g, '');
+  const m = clean.match(/\[?BLOCK FOUND\]?.*height[=:]\s*(\d+)/i) || clean.match(/block found.*height[=:]\s*(\d+)/i);
+  if (m) {
+    try {
+      sendToRenderer('block-found', { height: parseInt(m[1], 10) });
+    } catch {}
+  }
+}
+
 function parseMinerOutput(output) {
   // Strip ANSI escape sequences (colors, cursor control) before regex parsing
   output = output.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '').replace(/\x1B\[\?[0-9;]*[A-Za-z]/g, '');
@@ -3110,6 +3153,14 @@ function parseMinerOutput(output) {
     minerStats.last_job_height = newJobMatch[1];
     minerStats.last_job_diff = newJobMatch[2];
     minerStats.stream_algorithm = newJobMatch[3];
+  }
+
+  // ─── V3 Rust miner new job: ">> new job #6216 height=6216 algo=deeksha_lite_v1" ───
+  const v3NewJobMatch = output.match(/>>\s*new job\s*#(\d+)\s+height=(\d+)\s+algo=(\S+)/i);
+  if (v3NewJobMatch) {
+    minerStats.last_job_id = v3NewJobMatch[1];
+    minerStats.last_job_height = v3NewJobMatch[2];
+    minerStats.stream_algorithm = v3NewJobMatch[3];
   }
 
   // ─── Deeksha job line: "[Job] id=h154-... height=154 target=00418937..." ───
@@ -3440,6 +3491,23 @@ function parseMinerOutput(output) {
     minerStats.shares = (Number(minerStats.accepted) || 0) + (Number(minerStats.rejected) || 0);
   }
 
+  // ─── V3 SHARE_ACCEPTED/SHARE_REJECTED events (real-time, between session_status updates) ──
+  const v3ShareAccMatch = output.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=(\S+)\s+latency_ms=(\d+)/i);
+  if (v3ShareAccMatch) {
+    minerStats.last_job_id = v3ShareAccMatch[1];
+    minerStats.last_job_height = v3ShareAccMatch[2];
+    minerStats.stream_algorithm = v3ShareAccMatch[3];
+    minerStats.last_share_latency = parseInt(v3ShareAccMatch[4], 10);
+    minerStats.last_share_time = Date.now();
+  }
+  const v3ShareRejMatch = output.match(/SHARE_REJECTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=\S+\s+reason="([^"]+)"/i);
+  if (v3ShareRejMatch) {
+    minerStats.last_job_id = v3ShareRejMatch[1];
+    minerStats.last_job_height = v3ShareRejMatch[2];
+    minerStats.last_reject_reason = v3ShareRejMatch[3];
+    minerStats.last_share_time = Date.now();
+  }
+
   // ─── V3 wire_result JSON: extract accepted flag for real-time share counting ───
   const v3WireResultMatch = output.match(/wire_result=\{[^}]*"accepted"\s*:\s*(true|false)/);
   if (v3WireResultMatch) {
@@ -3475,6 +3543,13 @@ function parseMinerOutput(output) {
   const v3ConsensusMatch = output.match(/^consensus=(\S+)/m);
   if (v3ConsensusMatch) {
     minerStats.stream_algorithm = v3ConsensusMatch[1];
+  }
+
+  // ─── V3 pool_set_difficulty: "pool_set_difficulty=1024" ───
+  const v3PoolDiffMatch = output.match(/pool_set_difficulty=(\d+)/);
+  if (v3PoolDiffMatch) {
+    minerStats.last_pool_diff = v3PoolDiffMatch[1];
+    minerStats.difficulty = parseInt(v3PoolDiffMatch[1], 10);
   }
 
   // ─── V3 DCR stealth stats: "dcr_total_hashes=N dcr_accepted=N dcr_rejected=N" ───
@@ -3654,7 +3729,7 @@ function sendToRenderer(channel, data) {
 }
 
 let statsEmitTimer = null;
-const STATS_EMIT_INTERVAL_MS = 250;
+const STATS_EMIT_INTERVAL_MS = 500;
 
 function scheduleStatsEmit() {
   if (statsEmitTimer) return;
