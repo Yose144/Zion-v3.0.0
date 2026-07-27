@@ -5,8 +5,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use tokio::sync::{Mutex, RwLock};
-use zion_l1_types::{Address, Amount, Asset, ChainId};
+use zion_l1_types::{Address, Amount, Asset, ChainId, Hash};
 
+use crate::bridge::Bridge;
 use crate::chain::adapters::{BitcoinAdapter, EvmAdapter, ZionL1Adapter};
 use crate::chain::{ChainAdapter, ChainAdapterRegistry};
 use crate::config::{AdapterConfig, MultichainConfig};
@@ -14,6 +15,8 @@ use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
 use crate::swap::dex::{DexRouter, Pool, Quote};
+use crate::types::Transfer;
+use crate::wallet::Keyring;
 
 /// Top-level runtime for `zion-multichain`.
 pub struct MultichainService {
@@ -21,7 +24,9 @@ pub struct MultichainService {
     config: MultichainConfig,
     #[allow(dead_code)]
     _db: Arc<Mutex<Db>>,
-    adapters: ChainAdapterRegistry,
+    adapters: Arc<ChainAdapterRegistry>,
+    bridge: Bridge,
+    keyring: Keyring,
     credits: CreditsLedger,
     dex: RwLock<DexRouter>,
 }
@@ -40,7 +45,7 @@ impl MultichainService {
             adapters.register(chain_id, adapter);
         }
 
-        Ok(Self::from_parts(config, db, adapters))
+        Ok(Self::from_parts(config, db, Arc::new(adapters)))
     }
 
     /// Build a service from an already-constructed registry. Useful in tests
@@ -50,18 +55,21 @@ impl MultichainService {
         adapters: ChainAdapterRegistry,
     ) -> MultichainResult<Self> {
         let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
-        Ok(Self::from_parts(config, db, adapters))
+        Ok(Self::from_parts(config, db, Arc::new(adapters)))
     }
 
     fn from_parts(
         config: MultichainConfig,
         db: Arc<Mutex<Db>>,
-        adapters: ChainAdapterRegistry,
+        adapters: Arc<ChainAdapterRegistry>,
     ) -> Self {
+        let bridge = Bridge::new(Arc::clone(&adapters));
         Self {
             config,
             _db: db,
             adapters,
+            bridge,
+            keyring: Keyring::generate().expect("keyring generation"),
             credits: CreditsLedger::new(),
             dex: RwLock::new(DexRouter::new()),
         }
@@ -143,9 +151,45 @@ impl MultichainService {
         self.dex.write().await.execute(from, to, amount)
     }
 
+    /// Access the bridge module.
+    pub fn bridge(&self) -> &Bridge {
+        &self.bridge
+    }
+
+    /// Submit a cross-chain bridge transfer.
+    pub async fn bridge_submit(&self, transfer: &mut Transfer) -> MultichainResult<Hash> {
+        self.bridge.submit(transfer).await
+    }
+
+    /// Access the wallet keyring.
+    pub fn keyring(&self) -> &Keyring {
+        &self.keyring
+    }
+
+    /// Derive a wallet address for a chain.
+    pub fn wallet_address(
+        &self,
+        chain: ChainId,
+        account: u32,
+        index: u32,
+    ) -> MultichainResult<Address> {
+        self.keyring.address(chain, account, index)
+    }
+
+    /// Sign a message with the wallet key for a chain.
+    pub fn wallet_sign(
+        &self,
+        chain: ChainId,
+        message: &[u8],
+        account: u32,
+        index: u32,
+    ) -> MultichainResult<Vec<u8>> {
+        self.keyring.sign(chain, message, account, index)
+    }
+
     /// Borrow the raw adapter registry (useful for tests and advanced callers).
     pub fn adapters(&self) -> &ChainAdapterRegistry {
-        &self.adapters
+        self.adapters.as_ref()
     }
 }
 

@@ -22,8 +22,10 @@ pub mod swap;
 pub mod types;
 pub mod wallet;
 
+pub use bridge::Bridge;
 pub use chain::{ChainAdapter, ChainAdapterRegistry};
 pub use config::MultichainConfig;
 pub use error::{MultichainError, MultichainResult};
 pub use service::MultichainService;
 pub use types::{Transfer, TransferDirection, TransferStatus};
+pub use wallet::Keyring;

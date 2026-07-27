@@ -1,0 +1,26 @@
+[package]
+name = "zion-pool"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "ZION L1 stratum pool with PPLNS share accounting."
+
+[dependencies]
+zion-l1-types = { workspace = true }
+zion-core = { workspace = true }
+zion-cosmic-harmony = { workspace = true }
+zion-miner = { workspace = true }
+
+anyhow = { workspace = true }
+chrono = { workspace = true }
+hex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha3 = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
