@@ -1080,7 +1080,7 @@ pub fn kawpow_hash_real(
 
     // ProgPoW mix: 64 rounds
     let mut mix = kawpow_init_mix(&hash_seed);
-    let prog_seed = block_height / KAWPOW_PERIOD;
+    let prog_seed = (block_height / KAWPOW_PERIOD) as u64;
     let mut mix_state = KawpowMixRngState::new(&[prog_seed as u32, (prog_seed >> 32) as u32]);
     for i in 0..KAWPOW_CNT_DAG {
         kawpow_round(dag, dag_size_entries, i as u32, &mut mix, &mut mix_state);
