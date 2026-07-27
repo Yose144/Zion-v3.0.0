@@ -349,6 +349,7 @@ V3/target_e2e/
 V3/test_results.txt
 zion-sm3042c-fire-*.zip
 zion-sm3042c-fire-*/
+2miners/xmrig-*/
 nul
 foundry.lock
 
