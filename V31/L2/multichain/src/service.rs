@@ -2,10 +2,11 @@
 //! the domain modules (bridge, swap, DEX, credits) into one runtime.
 
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex as StdMutex};
 
 use tokio::sync::{Mutex, RwLock};
 use zion_l1_types::{Address, Amount, Asset, ChainId, Hash};
+use zion_pool::Pool as MiningPool;
 
 use crate::bridge::Bridge;
 use crate::chain::adapters::{BitcoinAdapter, EvmAdapter, ZionL1Adapter};
@@ -30,6 +31,7 @@ pub struct MultichainService {
     keyring: Keyring,
     credits: CreditsLedger,
     dex: RwLock<DexRouter>,
+    pool: Option<Arc<StdMutex<MiningPool>>>,
 }
 
 impl MultichainService {
@@ -68,6 +70,13 @@ impl MultichainService {
         keyring: Keyring,
     ) -> Self {
         let bridge = Bridge::new(Arc::clone(&adapters));
+        let pool = config.pool.as_ref().and_then(|p| {
+            if p.enabled {
+                Some(Arc::new(StdMutex::new(MiningPool::new(p.to_pool_config()))))
+            } else {
+                None
+            }
+        });
         Self {
             config,
             _db: db,
@@ -76,6 +85,7 @@ impl MultichainService {
             keyring,
             credits: CreditsLedger::new(),
             dex: RwLock::new(DexRouter::new()),
+            pool,
         }
     }
 
@@ -194,6 +204,22 @@ impl MultichainService {
     /// Borrow the raw adapter registry (useful for tests and advanced callers).
     pub fn adapters(&self) -> &ChainAdapterRegistry {
         self.adapters.as_ref()
+    }
+
+    /// Return pool stats, or `None` if the pool is not configured.
+    pub fn pool_stats(&self) -> Option<serde_json::Value> {
+        let pool = self.pool.as_ref()?;
+        let pool = pool.lock().ok()?;
+        let (accepted, rejected) = pool.stats();
+        Some(serde_json::json!({
+            "enabled": true,
+            "accepted": accepted,
+            "rejected": rejected,
+            "pool_fee_bps": pool.config.pool_fee_bps,
+            "pplns_window_shares": pool.config.pplns_window_shares,
+            "pplns_window_blocks": pool.config.pplns_window_blocks,
+            "pool_address": pool.config.pool_address.encoded,
+        }))
     }
 }
 
