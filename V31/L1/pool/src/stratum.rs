@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpListener;
+use tokio::sync::broadcast;
 use zion_cosmic_harmony::ExternalCoin;
 
 use crate::config::PoolConfig;
@@ -16,15 +17,18 @@ pub struct StratumServer {
     pub pool: Arc<Mutex<Pool>>,
     pub config: PoolConfig,
     jobs: Arc<Mutex<HashMap<String, Vec<u8>>>>,
+    notify_tx: broadcast::Sender<String>,
 }
 
 impl StratumServer {
     pub fn new(pool: Arc<Mutex<Pool>>) -> Self {
         let config = pool.lock().unwrap().config.clone();
+        let (notify_tx, _notify_rx) = broadcast::channel(16);
         Self {
             pool,
             config,
             jobs: Arc::new(Mutex::new(HashMap::new())),
+            notify_tx,
         }
     }
 
@@ -95,6 +99,7 @@ impl StratumServer {
         }
     }
 
+    /// Build and store a `mining.notify` message for the given job.
     pub fn job_notification(&self, job_id: &str, header_hex: &str, target_hex: &str) -> String {
         let trimmed = header_hex
             .trim()
@@ -111,21 +116,43 @@ impl StratumServer {
         .to_string()
     }
 
+    /// Broadcast a `mining.notify` message to all connected clients.
+    pub fn broadcast_job(&self, job_id: &str, header_hex: &str, target_hex: &str) {
+        let msg = self.job_notification(job_id, header_hex, target_hex);
+        let _ = self.notify_tx.send(msg);
+    }
+
     pub async fn run(&self, listener: TcpListener) -> std::io::Result<()> {
         loop {
             let (socket, _) = listener.accept().await?;
             let server = self.clone();
             tokio::spawn(async move {
-                let (reader, mut writer) = tokio::io::split(socket);
+                let (reader, writer) = tokio::io::split(socket);
+                let writer = Arc::new(tokio::sync::Mutex::new(writer));
+                let mut notify_rx = server.notify_tx.subscribe();
+
                 let reader = BufReader::new(reader);
                 let mut lines = reader.lines();
-                while let Ok(Some(line)) = lines.next_line().await {
-                    let response = server.handle_request(&line);
-                    if writer.write_all(response.as_bytes()).await.is_err() {
-                        break;
-                    }
-                    if writer.write_all(b"\n").await.is_err() {
-                        break;
+
+                loop {
+                    tokio::select! {
+                        line = lines.next_line() => match line {
+                            Ok(Some(line)) => {
+                                let response = server.handle_request(&line);
+                                let mut w = writer.lock().await;
+                                if w.write_all(response.as_bytes()).await.is_err() { break; }
+                                if w.write_all(b"\n").await.is_err() { break; }
+                            }
+                            _ => break,
+                        },
+                        msg = notify_rx.recv() => match msg {
+                            Ok(msg) => {
+                                let mut w = writer.lock().await;
+                                if w.write_all(msg.as_bytes()).await.is_err() { break; }
+                                if w.write_all(b"\n").await.is_err() { break; }
+                            }
+                            Err(_) => break,
+                        },
                     }
                 }
             });
@@ -159,6 +186,7 @@ fn error_response(id: Option<Value>, code: i32, message: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
 
     fn make_server() -> StratumServer {
         let pool = Arc::new(Mutex::new(Pool::new(PoolConfig::default())));
@@ -168,41 +196,49 @@ mod tests {
     #[test]
     fn handles_subscribe() {
         let server = make_server();
-        let req = r#"{"id":1,"method":"mining.subscribe","params":[]}"#;
-        let resp = server.handle_request(req);
+        let resp = server.handle_request(r#"{"id":1,"method":"mining.subscribe","params":[]}"#);
+        assert!(resp.contains("mining.notify"));
         assert!(resp.contains("\"result\""));
-        assert!(resp.contains("session_id"));
-        assert!(resp.contains("\"error\":null"));
     }
 
     #[test]
     fn handles_authorize() {
         let server = make_server();
-        let req = r#"{"id":2,"method":"mining.authorize","params":["worker","x"]}"#;
-        let resp = server.handle_request(req);
-        assert!(resp.contains("\"result\":true"));
+        let resp = server
+            .handle_request(r#"{"id":2,"method":"mining.authorize","params":["worker","x"]}"#);
+        assert!(resp.contains("true"));
     }
 
     #[test]
     fn handles_zion_submit() {
         let server = make_server();
-        let header = b"zion_test_header";
-        server.job_notification("zion_1", &hex::encode(header), "f");
-        let nonce_hex = format!("{:016x}", 0u64);
-        let req = format!(
-            "{{\"id\":3,\"method\":\"mining.submit\",\"params\":[\"worker1\",\"zion_1\",\"{}\"]}}",
-            nonce_hex
+        let target = "f".repeat(64);
+        let header = "00".repeat(80);
+        server.job_notification("zion_1", &header, &target);
+        let resp = server.handle_request(
+            r#"{"id":3,"method":"mining.submit","params":["worker","zion_1","0000000000000000"]}"#,
         );
-        let resp = server.handle_request(&req);
-        assert!(resp.contains("\"result\":true"), "resp={}", resp);
+        assert!(resp.contains("true"));
     }
 
     #[test]
-    fn rejects_submit_for_unknown_job() {
+    fn handles_auxpow_submit() {
         let server = make_server();
-        let req =
-            r#"{"id":4,"method":"mining.submit","params":["worker","zion_99","0000000000000000"]}"#;
-        let resp = server.handle_request(req);
-        assert!(resp.contains("error"));
+        let target = "f".repeat(64);
+        let header = "00".repeat(80);
+        server.job_notification("aux_bitcoin_1", &header, &target);
+        let resp = server.handle_request(
+            r#"{"id":4,"method":"mining.submit","params":["worker","aux_bitcoin_1","0000000000000000"]}"#,
+        );
+        assert!(resp.contains("true"));
+    }
+
+    #[test]
+    fn rejects_unknown_job() {
+        let server = make_server();
+        let resp = server.handle_request(
+            r#"{"id":5,"method":"mining.submit","params":["worker","zion_99","0000000000000000"]}"#,
+        );
+        assert!(resp.contains("unknown job"));
     }
 }

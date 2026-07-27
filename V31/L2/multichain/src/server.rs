@@ -1,6 +1,7 @@
 //! HTTP API gateway for the Multi-Chain layer.
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use axum::{
     extract::{Path, State},
@@ -19,6 +20,7 @@ use crate::contracts::ZionContracts;
 use crate::error::{MultichainError, MultichainResult};
 use crate::service::MultichainService;
 use crate::types::{Transfer, TransferDirection, TransferEndpoint};
+use zion_pool::StratumServer;
 
 /// Axum state shared by all handlers.
 #[derive(Clone)]
@@ -37,7 +39,41 @@ impl ApiServer {
         Self { config, service }
     }
 
+    async fn start_stratum_if_configured(&self) -> MultichainResult<()> {
+        let Some(pool) = self.service.pool() else {
+            return Ok(());
+        };
+        let port = pool.lock().unwrap().config.port;
+        let stratum = StratumServer::new(Arc::clone(&pool));
+        let bind = format!("0.0.0.0:{}", port);
+        let listener = tokio::net::TcpListener::bind(&bind)
+            .await
+            .map_err(|e| MultichainError::Internal(format!("stratum bind {bind}: {e}")))?;
+
+        let stratum_run = stratum.clone();
+        tokio::spawn(async move {
+            if let Err(e) = stratum_run.run(listener).await {
+                tracing::error!("stratum server error: {}", e);
+            }
+        });
+
+        let stratum_broadcast = stratum;
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(10));
+            loop {
+                interval.tick().await;
+                let header = "00".repeat(80);
+                let target = "f".repeat(64);
+                stratum_broadcast.broadcast_job("zion_1", &header, &target);
+            }
+        });
+
+        Ok(())
+    }
+
     pub async fn run(&self) -> MultichainResult<()> {
+        self.start_stratum_if_configured().await?;
+
         let state = AppState {
             service: Arc::clone(&self.service),
         };
