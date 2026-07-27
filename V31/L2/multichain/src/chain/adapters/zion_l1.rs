@@ -22,6 +22,7 @@ pub struct ZionL1Adapter {
     rpc_url: String,
     client: reqwest::Client,
     request_id: std::sync::atomic::AtomicU64,
+    nonce: std::sync::atomic::AtomicU64,
     keyring: Keyring,
 }
 
@@ -34,6 +35,7 @@ impl ZionL1Adapter {
                 .build()
                 .expect("valid reqwest client"),
             request_id: std::sync::atomic::AtomicU64::new(1),
+            nonce: std::sync::atomic::AtomicU64::new(1),
             keyring,
         }
     }
@@ -244,10 +246,68 @@ impl ChainAdapter for ZionL1Adapter {
         Ok(tip.saturating_sub(tx_block) + 1)
     }
 
-    async fn send_payment(&self, _to: &Address, _amount: Amount) -> MultichainResult<Hash> {
-        Err(MultichainError::Unsupported(
-            "zion-l1 send_payment requires a signer; not wired yet".to_string(),
-        ))
+    async fn send_payment(&self, to: &Address, amount: Amount) -> MultichainResult<Hash> {
+        self.validate_address(to)?;
+        if !to.encoded.starts_with("zion1") || to.encoded.len() != 44 {
+            return Err(MultichainError::Validation(
+                "recipient must be a valid zion1 address".to_string(),
+            ));
+        }
+        if amount.0 == 0 {
+            return Err(MultichainError::Validation(
+                "cannot send zero zion amount".to_string(),
+            ));
+        }
+
+        const FEE_ZION: u64 = 1;
+        if amount.0 < FEE_ZION as u128 {
+            return Err(MultichainError::Validation(
+                "amount is smaller than the transaction fee".to_string(),
+            ));
+        }
+
+        let from = self.keyring.address(ChainId::ZionL1, 0, 0)?;
+        let public_key = self.keyring.zion_public_key(0, 0)?;
+        let nonce = self
+            .nonce
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let tx_id = generate_account_tx_id(&from.encoded, &to.encoded, amount.0, nonce);
+        let signature = self.keyring.sign(ChainId::ZionL1, tx_id.as_bytes(), 0, 0)?;
+
+        let transaction = json!({
+            "tx_id": tx_id,
+            "from": from.encoded,
+            "to": to.encoded,
+            "amount_zion": amount.0.to_string(),
+            "fee_zion": FEE_ZION,
+            "nonce": nonce,
+            "signature": hex::encode(&signature),
+            "public_key": public_key,
+        });
+
+        let resp: serde_json::Value = self
+            .call("submitTransaction", json!({ "transaction": transaction }))
+            .await?;
+
+        let accepted = resp
+            .get("accepted")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        if !accepted {
+            let reason = resp
+                .get("reason")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            return Err(MultichainError::Internal(format!(
+                "submitTransaction rejected: {reason}"
+            )));
+        }
+
+        let tx_id_resp = resp.get("tx_id").and_then(|v| v.as_str()).ok_or_else(|| {
+            MultichainError::Internal("submitTransaction missing tx_id".to_string())
+        })?;
+        Hash::from_hex(tx_id_resp)
+            .ok_or_else(|| MultichainError::Internal("invalid tx_id hex returned".to_string()))
     }
 
     async fn balance(&self, address: &Address) -> MultichainResult<Amount> {
@@ -298,6 +358,20 @@ impl ChainAdapter for ZionL1Adapter {
             block_reward,
         }))
     }
+}
+
+fn generate_account_tx_id(from: &str, to: &str, amount: u128, nonce: u64) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(from.as_bytes());
+    hasher.update(to.as_bytes());
+    hasher.update(amount.to_le_bytes());
+    hasher.update(nonce.to_le_bytes());
+    let ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    hasher.update(ts.to_le_bytes());
+    hex::encode(hasher.finalize())
 }
 
 #[derive(Debug, Deserialize)]

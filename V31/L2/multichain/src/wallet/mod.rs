@@ -12,7 +12,9 @@ use bitcoin::secp256k1::Secp256k1;
 use ed25519_dalek::{Signer as EdSigner, SigningKey as EdSigningKey};
 use ethers::core::{types::PathOrString, utils::hash_message};
 use ethers::signers::{coins_bip39::English, LocalWallet, MnemonicBuilder, Signer as EthSigner};
-use sha3::{Digest, Keccak256};
+use ripemd::Ripemd160;
+use sha2::{Digest, Sha256};
+use sha3::Keccak256;
 use zion_l1_types::{Address, ChainFamily, ChainId};
 
 use crate::error::{MultichainError, MultichainResult};
@@ -136,12 +138,14 @@ impl Keyring {
     fn zion_address(&self, chain: ChainId, account: u32, index: u32) -> MultichainResult<Address> {
         let signing_key = self.zion_signing_key(account, index)?;
         let public = signing_key.verifying_key().to_bytes();
-        let mut hasher = Keccak256::new();
-        hasher.update(public);
-        let hash = hasher.finalize();
-        let bytes = hash[..20].to_vec();
-        let encoded = format!("0x{}", hex::encode(&bytes));
-        Ok(Address::new(chain, bytes, encoded)?)
+        let encoded = derive_zion_address(&public);
+        Ok(Address::new(chain, Vec::new(), encoded)?)
+    }
+
+    /// Return the hex-encoded Ed25519 public key for the Zion L1 account.
+    pub fn zion_public_key(&self, account: u32, index: u32) -> MultichainResult<String> {
+        let signing_key = self.zion_signing_key(account, index)?;
+        Ok(hex::encode(signing_key.verifying_key().to_bytes()))
     }
 
     fn sign_zion(&self, message: &[u8], account: u32, index: u32) -> MultichainResult<Vec<u8>> {
@@ -227,6 +231,37 @@ impl Keyring {
     }
 }
 
+const ZION_BASE32_ALPHABET: &[u8; 32] = b"023456789acdefghjklmnpqrstuvwxyz";
+
+fn compute_address_checksum(body_35: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(b"zion1");
+    hasher.update(body_35.as_bytes());
+    let hash = hasher.finalize();
+    let mut ck = String::with_capacity(4);
+    for &byte in &hash[..2] {
+        ck.push(ZION_BASE32_ALPHABET[(byte % 32) as usize] as char);
+        ck.push(ZION_BASE32_ALPHABET[((byte / 32) % 32) as usize] as char);
+    }
+    ck
+}
+
+fn derive_zion_address(public_key_bytes: &[u8]) -> String {
+    let sha = Sha256::digest(public_key_bytes);
+    let key_hash = Ripemd160::digest(sha);
+    let key_hash: &[u8] = key_hash.as_ref();
+
+    let mut data = String::with_capacity(40);
+    for &byte in key_hash {
+        data.push(ZION_BASE32_ALPHABET[(byte % 32) as usize] as char);
+        data.push(ZION_BASE32_ALPHABET[((byte / 32) % 32) as usize] as char);
+    }
+    data.truncate(35);
+
+    let checksum = compute_address_checksum(&data);
+    format!("zion1{data}{checksum}")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -274,8 +309,9 @@ mod tests {
         let keyring = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
         let addr = keyring.address(ChainId::ZionL1, 0, 0).unwrap();
         assert_eq!(addr.family(), ChainFamily::Zion);
-        assert_eq!(addr.bytes.len(), 20);
-        assert!(addr.encoded.starts_with("0x"));
+        assert!(addr.encoded.starts_with("zion1"));
+        assert_eq!(addr.encoded.len(), 44);
+        assert!(addr.bytes.is_empty());
     }
 
     #[test]
