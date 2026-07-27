@@ -8,6 +8,20 @@ use std::str::FromStr;
 
 use zion_l1_types::Amount;
 
+/// Mining device category for a coin / algorithm.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+pub enum Device {
+    Cpu,
+    Gpu,
+    Both,
+}
+
+impl Device {
+    pub fn is_compatible_with(&self, required: Device) -> bool {
+        required == Device::Both || *self == required || *self == Device::Both
+    }
+}
+
 /// External coin mined through AuxPoW / merged mining.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum ExternalCoin {
@@ -25,6 +39,7 @@ pub enum ExternalCoin {
     Neoxa,
     EthereumClassic,
     Bitcoin,
+    Verus,
 }
 
 impl ExternalCoin {
@@ -43,6 +58,7 @@ impl ExternalCoin {
         ExternalCoin::Neoxa,
         ExternalCoin::EthereumClassic,
         ExternalCoin::Bitcoin,
+        ExternalCoin::Verus,
     ];
 
     pub fn as_str(&self) -> &'static str {
@@ -61,6 +77,7 @@ impl ExternalCoin {
             ExternalCoin::Neoxa => "NEOX",
             ExternalCoin::EthereumClassic => "ETC",
             ExternalCoin::Bitcoin => "BTC",
+            ExternalCoin::Verus => "VRSC",
         }
     }
 
@@ -80,6 +97,7 @@ impl ExternalCoin {
             ExternalCoin::Neoxa => "kawpow",
             ExternalCoin::EthereumClassic => "etchash",
             ExternalCoin::Bitcoin => "sha256d",
+            ExternalCoin::Verus => "verushash",
         }
     }
 }
@@ -120,6 +138,8 @@ pub struct CoinProfile {
     pub block_reward: Amount,
     /// Approximate network difficulty at 1 TH/s normalized to the unit.
     pub network_difficulty: f64,
+    /// Device category this coin is mined with.
+    pub device: Device,
 }
 
 impl CoinProfile {
@@ -135,15 +155,25 @@ impl CoinProfile {
     /// Placeholder defaults for Mainnet Alpha. These are not live quotes.
     pub fn defaults() -> Vec<Self> {
         vec![
-            Self::new(ExternalCoin::Kaspa, 1000.0, 0.05),
-            Self::new(ExternalCoin::Alephium, 1000.0, 0.03),
-            Self::new(ExternalCoin::Decred, 1000.0, 0.02),
-            Self::new(ExternalCoin::Vertcoin, 1000.0, 0.01),
-            Self::new(ExternalCoin::Ravencoin, 1000.0, 0.015),
+            Self::new(ExternalCoin::Kaspa, 1000.0, 0.05, Device::Gpu),
+            Self::new(ExternalCoin::Alephium, 1000.0, 0.03, Device::Gpu),
+            Self::new(ExternalCoin::Ravencoin, 1000.0, 0.015, Device::Gpu),
+            Self::new(ExternalCoin::Zano, 1000.0, 0.012, Device::Gpu),
+            Self::new(ExternalCoin::Flux, 1000.0, 0.011, Device::Gpu),
+            Self::new(ExternalCoin::Monero, 1000.0, 0.025, Device::Cpu),
+            Self::new(ExternalCoin::EpicCash, 1000.0, 0.020, Device::Both),
+            Self::new(ExternalCoin::Verus, 1000.0, 0.018, Device::Cpu),
+            Self::new(ExternalCoin::Decred, 1000.0, 0.02, Device::Gpu),
+            Self::new(ExternalCoin::Vertcoin, 1000.0, 0.01, Device::Gpu),
         ]
     }
 
-    fn new(coin: ExternalCoin, hashrate_unit_mhs: f64, profit_per_unit_usd: f64) -> Self {
+    fn new(
+        coin: ExternalCoin,
+        hashrate_unit_mhs: f64,
+        profit_per_unit_usd: f64,
+        device: Device,
+    ) -> Self {
         Self {
             coin,
             hashrate_unit_mhs,
@@ -156,6 +186,7 @@ impl CoinProfile {
             )],
             block_reward: Amount::new(0),
             network_difficulty: 1.0,
+            device,
         }
     }
 }
@@ -164,6 +195,7 @@ impl CoinProfile {
 #[derive(Clone, Debug)]
 pub struct ProfitEntry {
     pub coin: ExternalCoin,
+    pub device: Device,
     pub hashrate: f64,
     pub profit_usd_per_day: f64,
 }
@@ -172,6 +204,7 @@ impl ProfitEntry {
     pub fn from_profile(profile: &CoinProfile, hashrate: f64) -> Self {
         Self {
             coin: profile.coin,
+            device: profile.device,
             hashrate,
             profit_usd_per_day: profile.estimate_profit(hashrate),
         }
@@ -200,6 +233,14 @@ impl ProfitRouter {
             .max_by(|a, b| a.profit_usd_per_day.total_cmp(&b.profit_usd_per_day))
     }
 
+    /// Return the most profitable coin compatible with `device`.
+    pub fn best_for(&self, device: Device) -> Option<&ProfitEntry> {
+        self.entries
+            .iter()
+            .filter(|e| e.device.is_compatible_with(device))
+            .max_by(|a, b| a.profit_usd_per_day.total_cmp(&b.profit_usd_per_day))
+    }
+
     pub fn entries(&self) -> &[ProfitEntry] {
         &self.entries
     }
@@ -225,5 +266,19 @@ mod tests {
         let router = ProfitRouter::new(entries);
         let best = router.best().expect("has best");
         assert_eq!(best.coin, ExternalCoin::Kaspa); // highest profit_per_unit in defaults
+    }
+
+    #[test]
+    fn router_filters_by_device() {
+        let profiles = CoinProfile::defaults();
+        let entries: Vec<_> = profiles
+            .iter()
+            .map(|p| ProfitEntry::from_profile(p, 100.0))
+            .collect();
+        let router = ProfitRouter::new(entries);
+        let gpu = router.best_for(Device::Gpu).expect("has gpu");
+        let cpu = router.best_for(Device::Cpu).expect("has cpu");
+        assert_eq!(gpu.coin, ExternalCoin::Kaspa);
+        assert_eq!(cpu.coin, ExternalCoin::Monero);
     }
 }

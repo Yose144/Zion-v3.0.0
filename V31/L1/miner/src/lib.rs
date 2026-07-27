@@ -7,7 +7,9 @@
 pub mod auxpow;
 pub mod config;
 pub mod runtime;
+pub mod stream;
 
 pub use auxpow::{ExternalCoin, Job, Share, StratumClient};
 pub use config::MinerConfig;
 pub use runtime::{MinerError, MinerRuntime};
+pub use stream::{StreamId, StreamStats};
