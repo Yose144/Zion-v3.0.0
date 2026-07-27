@@ -1397,8 +1397,18 @@ function detectGPU() {
         result.driver = parts[2] || '';
         result.temperature = parts[3] ? `${parts[3]}°C` : '';
         result.utilization = parts[4] ? `${parts[4]}%` : '';
+        // The NVIDIA driver/runtime is present, but the CUDA toolkit (nvcc) is
+        // required to build a miner binary with the gpu-cuda feature. If nvcc
+        // is missing, the distributed/prebuilt binary almost certainly only has
+        // the OpenCL backend, so fall back to OpenCL for runtime.
         result.backendPreferred = 'cuda';
         result.cudaCapable = true;
+        try {
+          execFileSync('nvcc', ['--version'], { timeout: 5000, stdio: 'pipe' });
+        } catch {
+          result.backendPreferred = 'opencl';
+          result.cudaCapable = false;
+        }
       }
     } catch {}
   }
@@ -1460,7 +1470,7 @@ function detectGPU() {
   if (result.available && process.platform === 'darwin') {
     result.backendPreferred = 'metal';
   } else if (result.available && result.type === 'nvidia') {
-    result.backendPreferred = 'cuda';
+    result.backendPreferred = result.cudaCapable ? 'cuda' : 'opencl';
   } else if (result.available) {
     result.backendPreferred = 'opencl';
   }
