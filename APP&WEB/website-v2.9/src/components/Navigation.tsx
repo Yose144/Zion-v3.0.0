@@ -238,7 +238,7 @@ export default function Navigation() {
                 />
               </picture>
             </div>
-            <div className={`hidden sm:flex flex-col leading-none transition-all duration-300 ${scrolled ? 'opacity-0 w-0 overflow-hidden' : ''}`}>
+            <div className="hidden sm:flex flex-col leading-none transition-all duration-300">
               <span className="text-sm sm:text-base font-bold text-gradient-soft tracking-tight">ZION</span>
               <span className="text-[6px] sm:text-[7px] px-1 sm:px-1 py-0.5 mt-0.5 rounded-full bg-white/6 border border-white/10 uppercase tracking-[0.18em] text-white/60">
                 {SITE_RELEASE_LABEL}
@@ -267,7 +267,7 @@ export default function Navigation() {
                     style={{ color: isActive ? `rgb(${ml.color})` : `rgba(${ml.color}, 0.8)` }}
                   />
                   <span
-                    className={`text-[10px] font-bold uppercase tracking-wider hidden lg:inline transition-all duration-300 ${scrolled ? 'opacity-0 w-0 overflow-hidden' : ''}`}
+                    className="text-[10px] font-bold uppercase tracking-wider hidden lg:inline transition-all duration-300"
                     style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.7)' }}
                   >
                     {ml.label}
@@ -320,7 +320,7 @@ export default function Navigation() {
         </div>
 
         {/* ═══ FLOOR 2 — MINI ICONS + GROUP DROPDOWNS + BACKGROUND TOGGLE ═══ */}
-        <div className={`hidden md:flex items-center justify-between gap-2 relative rounded-2xl border border-white/[0.07] bg-black/20 backdrop-blur-md px-2 py-1 shadow-none transition-all duration-300 ${scrolled ? 'mt-0 h-0 opacity-0 py-0 px-0 border-0 overflow-hidden' : 'mt-1 h-auto opacity-100 overflow-visible'}`}>
+        <div className="hidden md:flex items-center justify-between gap-2 relative rounded-2xl border border-white/[0.07] bg-black/20 backdrop-blur-md px-2 py-1 shadow-none transition-all duration-300 mt-1 h-auto opacity-100 overflow-visible">
           {/* Icons + group dropdowns */}
           <div className="flex items-center gap-0.5 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
             {/* Secondary icons — medium */}
