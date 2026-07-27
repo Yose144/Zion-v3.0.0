@@ -260,7 +260,7 @@ fn build_adapter(
             } else {
                 Some(cfg.rpc_url.as_str())
             };
-            Ok(Box::new(BitcoinAdapter::new("bitcoin", url)?))
+            Ok(Box::new(BitcoinAdapter::new("bitcoin", url, keyring)?))
         }
         "base" => {
             let wallet = keyring.evm_wallet(0, 0).ok();

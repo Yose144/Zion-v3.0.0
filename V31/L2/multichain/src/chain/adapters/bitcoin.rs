@@ -17,6 +17,7 @@ use zion_l1_types::{Address, Amount, ChainFamily, ChainId, Hash};
 
 use crate::chain::adapter::{ChainAdapter, DepositEvent};
 use crate::error::{MultichainError, MultichainResult};
+use crate::wallet::Keyring;
 
 const MAINNET_API: &str = "https://mempool.space/api";
 const TESTNET_API: &str = "https://mempool.space/testnet/api";
@@ -28,10 +29,12 @@ pub struct BitcoinAdapter {
     network: bitcoin::Network,
     api_url: String,
     client: reqwest::Client,
+    deposit_address: Address,
+    deposit_address_str: String,
 }
 
 impl BitcoinAdapter {
-    pub fn new(network_str: &str, rpc_url: Option<&str>) -> MultichainResult<Self> {
+    pub fn new(network_str: &str, rpc_url: Option<&str>, keyring: &Keyring) -> MultichainResult<Self> {
         let network = bitcoin::Network::from_core_arg(network_str).map_err(|_| {
             MultichainError::Config(format!("unknown bitcoin network: {network_str}"))
         })?;
@@ -48,6 +51,9 @@ impl BitcoinAdapter {
             .to_string()
         };
 
+        let deposit_address = keyring.bitcoin_address_for_network(network, 0, 0)?;
+        let deposit_address_str = deposit_address.encoded.clone();
+
         Ok(Self {
             network,
             api_url,
@@ -55,6 +61,8 @@ impl BitcoinAdapter {
                 .timeout(std::time::Duration::from_secs(20))
                 .build()
                 .map_err(|e| MultichainError::Internal(e.to_string()))?,
+            deposit_address,
+            deposit_address_str,
         })
     }
 
@@ -113,9 +121,45 @@ impl ChainAdapter for BitcoinAdapter {
     }
 
     async fn watch_events(&self) -> MultichainResult<Vec<DepositEvent>> {
-        // Deposit watching requires a configured deposit address + long-poll.
-        // Returning empty is intentional for the scaffold stage.
-        Ok(vec![])
+        let url = format!("{}/api/address/{}/txs", self.api_url, self.deposit_address_str);
+        let txs: Vec<MempoolAddressTx> = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| MultichainError::Internal(e.to_string()))?
+            .json()
+            .await
+            .map_err(|e| MultichainError::Internal(e.to_string()))?;
+
+        let mut events = Vec::new();
+        for tx in txs {
+            let mut amount = 0u64;
+            let mut memo = None;
+            for vout in &tx.vout {
+                if vout.scriptpubkey_address.as_deref() == Some(&self.deposit_address_str) {
+                    amount += vout.value;
+                }
+                if vout.scriptpubkey_type == "op_return" {
+                    memo = extract_op_return_memo(&vout.scriptpubkey);
+                }
+            }
+            if amount == 0 {
+                continue;
+            }
+            let tx_hash = Hash::from_hex(&tx.txid).ok_or_else(|| {
+                MultichainError::Internal(format!("invalid bitcoin txid: {}", tx.txid))
+            })?;
+            events.push(DepositEvent {
+                chain: ChainId::Bitcoin,
+                tx_hash,
+                recipient: self.deposit_address.clone(),
+                amount: Amount::new(amount as u128),
+                memo,
+                confirmations: if tx.status.confirmed { 1 } else { 0 },
+            });
+        }
+        Ok(events)
     }
 
     async fn execute_outbound(&self, _transfer: &crate::types::Transfer) -> MultichainResult<Hash> {
@@ -202,4 +246,49 @@ struct MempoolTx {
 struct MempoolTxStatus {
     confirmed: bool,
     block_height: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MempoolAddressTx {
+    txid: String,
+    vout: Vec<MempoolVout>,
+    status: MempoolTxStatus,
+}
+
+#[derive(Debug, Deserialize)]
+struct MempoolVout {
+    scriptpubkey: String,
+    #[serde(rename = "scriptpubkey_type")]
+    scriptpubkey_type: String,
+    #[serde(rename = "scriptpubkey_address")]
+    scriptpubkey_address: Option<String>,
+    value: u64,
+}
+
+fn extract_op_return_memo(script_hex: &str) -> Option<String> {
+    let bytes = hex::decode(script_hex.trim_start_matches("0x")).ok()?;
+    if bytes.is_empty() || bytes[0] != 0x6a {
+        return None;
+    }
+    let mut idx = 1;
+    if idx >= bytes.len() {
+        return None;
+    }
+    let len = match bytes[idx] {
+        n if n <= 0x4b => {
+            idx += 1;
+            n as usize
+        }
+        0x4c if idx + 1 < bytes.len() => {
+            let l = bytes[idx + 1] as usize;
+            idx += 2;
+            l
+        }
+        _ => return None,
+    };
+    if idx + len > bytes.len() {
+        return None;
+    }
+    let data = &bytes[idx..idx + len];
+    Some(String::from_utf8_lossy(data).into_owned())
 }
