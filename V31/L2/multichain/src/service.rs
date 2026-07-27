@@ -4,8 +4,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use tokio::sync::Mutex;
-use zion_l1_types::{Address, Amount, ChainId};
+use tokio::sync::{Mutex, RwLock};
+use zion_l1_types::{Address, Amount, Asset, ChainId};
 
 use crate::chain::adapters::{BitcoinAdapter, EvmAdapter, ZionL1Adapter};
 use crate::chain::{ChainAdapter, ChainAdapterRegistry};
@@ -13,6 +13,7 @@ use crate::config::{AdapterConfig, MultichainConfig};
 use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
+use crate::swap::dex::{DexRouter, Pool, Quote};
 
 /// Top-level runtime for `zion-multichain`.
 pub struct MultichainService {
@@ -22,6 +23,7 @@ pub struct MultichainService {
     _db: Arc<Mutex<Db>>,
     adapters: ChainAdapterRegistry,
     credits: CreditsLedger,
+    dex: RwLock<DexRouter>,
 }
 
 impl MultichainService {
@@ -61,6 +63,7 @@ impl MultichainService {
             _db: db,
             adapters,
             credits: CreditsLedger::new(),
+            dex: RwLock::new(DexRouter::new()),
         }
     }
 
@@ -113,6 +116,31 @@ impl MultichainService {
     /// Mutable access to the Dharma Credits ledger.
     pub fn credits_mut(&mut self) -> &mut CreditsLedger {
         &mut self.credits
+    }
+
+    /// Add an AMM liquidity pool to the DEX router.
+    pub async fn add_dex_pool(&self, pool: Pool) {
+        self.dex.write().await.add_pool(pool);
+    }
+
+    /// Return a DEX quote for swapping `amount` of `from` into `to`.
+    pub async fn dex_quote(
+        &self,
+        from: &Asset,
+        to: &Asset,
+        amount: Amount,
+    ) -> MultichainResult<Quote> {
+        self.dex.read().await.quote(from, to, amount)
+    }
+
+    /// Execute a DEX swap and return the output amount.
+    pub async fn dex_swap(
+        &self,
+        from: &Asset,
+        to: &Asset,
+        amount: Amount,
+    ) -> MultichainResult<Amount> {
+        self.dex.write().await.execute(from, to, amount)
     }
 
     /// Borrow the raw adapter registry (useful for tests and advanced callers).
