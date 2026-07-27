@@ -968,6 +968,210 @@ fn format_hashrate(hps: f64) -> String {
     }
 }
 
+#[cfg(feature = "gpu-cuda")]
+fn cuda_verify_label(algo: &str) -> Option<&'static str> {
+    match algo {
+        "blake3" | "blake3_alph" => Some("BLAKE3_ALPH"),
+        "blake3_dcr" => Some("BLAKE3_DCR"),
+        "kheavyhash" | "kheavyhash_kas" => Some("KHEAVYHASH"),
+        "ethash" | "etchash" | "ethash_etc" | "ethash_ethw" => Some("ETHASH"),
+        "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
+            Some("KAWPOW")
+        }
+        "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" | "evrprogpow"
+        | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => Some("PROGPOW"),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "gpu-cuda")]
+fn cuda_verify_share(
+    algo: &str,
+    miner: &mut cuda_external::CudaExternalMiner,
+    target: &zion_core::DifficultyTarget,
+    batch: u64,
+) -> anyhow::Result<Option<(u64, [u8; 32], Option<[u8; 32]>, [u8; 32], bool)>> {
+    use gpu_backend::GpuMiner;
+    use zion_auxpow::external_hashers as eh;
+
+    let (header, cpu_hash_fn): (
+        Vec<u8>,
+        Box<dyn Fn(u64, [u8; 32], Option<[u8; 32]>) -> [u8; 32]>,
+    ) = match algo {
+        "blake3" | "blake3_alph" => {
+            let header = vec![0u8; 80];
+            (
+                header.clone(),
+                Box::new(move |nonce, _gpu_hash, _mix| {
+                    eh::hash_blake3_alph(&header, &[], nonce)
+                }),
+            )
+        }
+        "blake3_dcr" => {
+            let header = vec![0u8; 180];
+            (
+                header.clone(),
+                Box::new(move |nonce, _gpu_hash, _mix| eh::hash_blake3(&header, 0, nonce)),
+            )
+        }
+        "kheavyhash" | "kheavyhash_kas" => {
+            let header = [0xAAu8; 32].to_vec();
+            (
+                header.clone(),
+                Box::new(move |nonce, _gpu_hash, _mix| eh::hash_kheavyhash(&header, 0, nonce)),
+            )
+        }
+        "ethash" | "etchash" | "ethash_etc" | "ethash_ethw" => {
+            let header = [0xAAu8; 32].to_vec();
+            (
+                header.clone(),
+                Box::new(move |nonce, _gpu_hash, _mix| eh::hash_ethash(&header, nonce, 0)),
+            )
+        }
+        "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
+            let header_arr = [0xAAu8; 32];
+            let header = header_arr.to_vec();
+            (
+                header,
+                Box::new(move |nonce, _gpu_hash, mix| {
+                    let mix = mix.expect("kawpow requires mix_hash");
+                    eh::ethash_final_hash(&header_arr, nonce, &mix)
+                }),
+            )
+        }
+        "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" | "evrprogpow"
+        | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
+            let header_arr = [0xAAu8; 32];
+            let header = header_arr.to_vec();
+            (
+                header,
+                Box::new(move |nonce, _gpu_hash, mix| {
+                    let mix = mix.expect("progpow requires mix_hash");
+                    eh::progpow_final_hash(&header_arr, nonce, &mix)
+                }),
+            )
+        }
+        _ => return Ok(None),
+    };
+
+    let result = miner.mine_batch_raw(&header, *target, 0, batch)?;
+    if let Some((nonce, gpu_hash, mix_hash_opt)) = result.solutions.first().copied() {
+        let mix = mix_hash_opt;
+        let cpu_hash = cpu_hash_fn(nonce, gpu_hash, mix);
+        let matched = cpu_hash == gpu_hash;
+        Ok(Some((nonce, gpu_hash, mix, cpu_hash, matched)))
+    } else {
+        Ok(None)
+    }
+}
+
+#[cfg(feature = "gpu-opencl")]
+fn opencl_verify_setup(
+    algo: &str,
+) -> (
+    Vec<u8>,
+    Box<dyn Fn(&zion_auxpow::gpu_miner::GpuFoundShare) -> (&'static str, bool, [u8; 32])>,
+) {
+    use zion_auxpow::external_hashers as eh;
+
+    match algo {
+        "blake3" | "blake3_alph" => {
+            let header = vec![0u8; 80];
+            let h = header.clone();
+            (
+                header,
+                Box::new(move |share| {
+                    let cpu = eh::hash_blake3_alph(&h, &[], share.nonce);
+                    ("BLAKE3_ALPH", cpu == share.hash, cpu)
+                }),
+            )
+        }
+        "blake3_dcr" => {
+            let header = vec![0u8; 180];
+            let h = header.clone();
+            (
+                header,
+                Box::new(move |share| {
+                    let cpu = eh::hash_blake3(&h, 0, share.nonce);
+                    ("BLAKE3_DCR", cpu == share.hash, cpu)
+                }),
+            )
+        }
+        "kheavyhash" | "kheavyhash_kas" => {
+            let header = [0xAAu8; 32].to_vec();
+            let h = header.clone();
+            (
+                header,
+                Box::new(move |share| {
+                    let cpu = eh::hash_kheavyhash(&h, 0, share.nonce);
+                    ("KHEAVYHASH", cpu == share.hash, cpu)
+                }),
+            )
+        }
+        "zelhash" | "zelhash_flux" => {
+            let header = [0xAAu8; 80].to_vec();
+            let h = header.clone();
+            (
+                header,
+                Box::new(move |share| {
+                    let mut nonce = vec![0u8; 32];
+                    nonce[..8].copy_from_slice(&share.nonce.to_le_bytes());
+                    let sol = share
+                        .solution
+                        .as_ref()
+                        .expect("zelhash requires solution");
+                    let cpu = eh::hash_zelhash(&h, &nonce, sol);
+                    ("ZELHASH", cpu == share.hash, cpu)
+                }),
+            )
+        }
+        "ethash" | "etchash" | "ethash_etc" | "ethash_ethw" => {
+            let header_arr = [0xAAu8; 32];
+            let header = header_arr.to_vec();
+            (
+                header,
+                Box::new(move |share| {
+                    let mix = share
+                        .mix_hash
+                        .expect("ethash requires mix_hash");
+                    let cpu = eh::ethash_final_hash(&header_arr, share.nonce, &mix);
+                    ("ETHASH", cpu == share.hash, cpu)
+                }),
+            )
+        }
+        "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
+            let header_arr = [0xAAu8; 32];
+            let header = header_arr.to_vec();
+            (
+                header,
+                Box::new(move |share| {
+                    let mix = share
+                        .mix_hash
+                        .expect("kawpow requires mix_hash");
+                    let cpu = eh::ethash_final_hash(&header_arr, share.nonce, &mix);
+                    ("KAWPOW", cpu == share.hash, cpu)
+                }),
+            )
+        }
+        "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" | "evrprogpow"
+        | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
+            let header_arr = [0xAAu8; 32];
+            let header = header_arr.to_vec();
+            (
+                header,
+                Box::new(move |share| {
+                    let mix = share
+                        .mix_hash
+                        .expect("progpow requires mix_hash");
+                    let cpu = eh::progpow_final_hash(&header_arr, share.nonce, &mix);
+                    ("PROGPOW", cpu == share.hash, cpu)
+                }),
+            )
+        }
+        _ => panic!("unsupported algorithm for --test-opencl-kernel: {}", algo),
+    }
+}
+
 fn main() -> Result<()> {
     // Install crash handler (SIGABRT/SIGSEGV from AMD OpenCL driver)
     crash_handler::install();
@@ -1313,7 +1517,7 @@ fn main() -> Result<()> {
         if let Some(pos) = args.iter().position(|a| a == "--test-cuda-kernel") {
             let algo = args.get(pos + 1).cloned().unwrap_or_else(|| {
                 eprintln!("Usage: zion-miner --test-cuda-kernel <algorithm>");
-                eprintln!("Algorithms: kheavyhash, blake3_alph, blake3_dcr, autolykos, zelhash");
+                eprintln!("Algorithms: kheavyhash, blake3_alph, blake3_dcr, autolykos, zelhash, ethash, kawpow, progpow, evrprogpow, meowpow, verushash");
                 std::process::exit(1);
             });
             let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
@@ -1347,31 +1551,111 @@ fn main() -> Result<()> {
                         }
                     }
 
-                    // ── Ethash CPU/GPU reference comparison ──
-                    if algo == "ethash" || algo == "etchash" {
+                    // ── CPU/GPU reference comparison for selected algorithms ──
+                    if let Some(label) = cuda_verify_label(&algo) {
                         use zion_core::DifficultyTarget;
-                        let header = [0xAAu8; 32];
                         let target = DifficultyTarget { bytes: [0xFFu8; 32] };
                         let batch = work_size as u64;
-                        match miner.mine_batch_raw(&header, target, 0, batch) {
-                            Ok(result) => {
-                                if let Some((nonce, gpu_hash, _mix)) = result.solutions.first() {
-                                    let cpu_hash = zion_auxpow::external_hashers::hash_ethash(&header, *nonce, 0);
-                                    if cpu_hash == *gpu_hash {
-                                        println!("ETHASH_CPU_GPU_MATCH nonce={} hash_prefix={}", nonce, hex::encode(&cpu_hash[..8]));
-                                    } else {
-                                        println!("ETHASH_CPU_GPU_MISMATCH nonce={} gpu_prefix={} cpu_prefix={}", nonce, hex::encode(gpu_hash), hex::encode(&cpu_hash));
-                                    }
+                        match cuda_verify_share(&algo, &mut miner, &target, batch) {
+                            Ok(Some((nonce, gpu_hash, mix_hash, cpu_hash, matched))) => {
+                                let prefix = |h: &[u8; 32]| hex::encode(&h[..8]);
+                                let mix = mix_hash.as_ref().map(|m| prefix(m)).unwrap_or_else(|| "n/a".to_string());
+                                if matched {
+                                    println!("{}_CPU_GPU_MATCH nonce={} hash_prefix={} mix_prefix={}", label, nonce, prefix(&gpu_hash), mix);
                                 } else {
-                                    println!("ETHASH_CPU_GPU no solution in batch");
+                                    println!("{}_CPU_GPU_MISMATCH nonce={} gpu_prefix={} cpu_prefix={} mix_prefix={}", label, nonce, prefix(&gpu_hash), prefix(&cpu_hash), mix);
                                 }
                             }
-                            Err(e) => eprintln!("ethash_mine_batch_raw error=\"{}\"", e),
+                            Ok(None) => println!("{}_CPU_GPU no solution in batch", label),
+                            Err(e) => eprintln!("{}_verify_error error=\"{}\"", label, e),
                         }
                     }
                 }
                 Err(e) => {
                     eprintln!("init_failed algorithm={} error=\"{}\"", algo, e);
+                    println!("status=FAIL");
+                }
+            }
+            return Ok(());
+        }
+    }
+
+    // ── OpenCL external kernel test: `zion-miner --test-opencl-kernel <algo>` ──
+    #[cfg(feature = "gpu-opencl")]
+    {
+        let args: Vec<String> = std::env::args().collect();
+        if let Some(pos) = args.iter().position(|a| a == "--test-opencl-kernel") {
+            let algo = args.get(pos + 1).cloned().unwrap_or_else(|| {
+                eprintln!("Usage: zion-miner --test-opencl-kernel <algorithm>");
+                eprintln!("Algorithms: blake3, blake3_alph, blake3_dcr, kheavyhash, zelhash, ethash, kawpow, progpow, evrprogpow, meowpow");
+                std::process::exit(1);
+            });
+            let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(8192);
+            let batch = work_size as u64;
+            let target = [0xFFu8; 32];
+
+            println!("=== OpenCL External Kernel Test ===");
+            println!("algorithm={} work_size={}", algo, work_size);
+
+            let mut miner = match zion_auxpow::gpu_miner::GpuMiner::new() {
+                Ok(m) => m,
+                Err(e) => {
+                    eprintln!("opencl_init_failed error=\"{}\"", e);
+                    println!("status=FAIL");
+                    return Ok(());
+                }
+            };
+            println!("opencl_init_ok device=\"{}\"", miner.device_name());
+
+            // ProgPow / KawPow need block height set before mining.
+            if matches!(algo.as_str(), "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc") {
+                miner.set_block_height(0);
+            }
+
+            #[cfg(feature = "native-hashers")]
+            {
+                let needs_dag = matches!(algo.as_str(), "ethash" | "etchash" | "ethash_etc" | "ethash_ethw" | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc");
+                if needs_dag {
+                    let mut dm = zion_auxpow::gpu_miner::DagManager::new();
+                    if let Err(e) = dm.ensure_dag(&mut miner, &algo, 0) {
+                        eprintln!("opencl_dag_failed error=\"{}\"", e);
+                        println!("status=FAIL");
+                        return Ok(());
+                    }
+                }
+            }
+            #[cfg(not(feature = "native-hashers"))]
+            {
+                let needs_dag = matches!(algo.as_str(), "ethash" | "etchash" | "ethash_etc" | "ethash_ethw" | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc");
+                if needs_dag {
+                    eprintln!("DAG algorithms require the native-hashers feature");
+                    println!("status=FAIL");
+                    return Ok(());
+                }
+            }
+
+            let (header, verify) = opencl_verify_setup(&algo);
+            match miner.mine_simple(&algo, &header, &target, 0, batch) {
+                Ok(Some(share)) => {
+                    let (label, matched, cpu_hash) = verify(&share);
+                    let prefix = |h: &[u8]| hex::encode(&h[..8.min(h.len())]);
+                    if matched {
+                        println!("{}_OPENCL_CPU_GPU_MATCH nonce={} hash_prefix={}", label, share.nonce, prefix(&share.hash));
+                        println!("status=PASS");
+                    } else {
+                        println!("{}_OPENCL_CPU_GPU_MISMATCH nonce={} gpu_prefix={} cpu_prefix={}", label, share.nonce, prefix(&share.hash), prefix(&cpu_hash));
+                        println!("status=FAIL");
+                    }
+                }
+                Ok(None) => {
+                    eprintln!("opencl no solution found in {} nonces", batch);
+                    println!("status=WARN");
+                }
+                Err(e) => {
+                    eprintln!("opencl_mine_failed error=\"{}\"", e);
                     println!("status=FAIL");
                 }
             }
