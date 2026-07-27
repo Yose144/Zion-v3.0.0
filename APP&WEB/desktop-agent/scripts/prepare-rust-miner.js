@@ -60,6 +60,25 @@ function copyIfExists(src, dst) {
   return true;
 }
 
+function windowsMinerFeatures() {
+  // Windows MSVC lib.exe can hit command-line length limits with the full
+  // `native-all` stack because RandomX and GhostRider compile 20+ .c/.cpp
+  // files. Use a focused feature set that still supports Trinity
+  // triple-stream mining (ZION + GPU external + CPU external) without XMR
+  // and RTM native acceleration on this platform.
+  return [
+    'gpu-opencl',
+    'native-etchash',
+    'native-kawpow',
+    'native-autolykos',
+    'native-kheavyhash',
+    'native-blake3-algo',
+    'native-cosmic-harmony',
+    'native-verushash',
+    'native-hashers'
+  ].join(',');
+}
+
 function detectPlatformFeatures() {
   const platform = process.platform;
   const arch = os.arch();
@@ -69,28 +88,45 @@ function detectPlatformFeatures() {
   // (ProgPoWZ/ZANO on Metal, Ethash/KawPow on OpenCL/CUDA).
   const nativeFeatures = 'native-all,native-hashers';
 
+  // Build the unified miner with all GPU/native backends enabled.
+  // `full` = gpu-opencl + native-all + native-hashers, which is required for
+  // Trinity triple-stream mining (ZION + external GPU + external CPU).
+  const base = 'full';
+
   if (platform === 'darwin') {
     if (arch === 'arm64') {
-      console.log('[prepare-v3] Apple Silicon detected -> enabling Metal GPU + native-all,native-hashers');
-      return `gpu-metal,${nativeFeatures}`;
+      console.log('[prepare-v3] Apple Silicon detected -> enabling Metal + full native stack');
+      return `${base},gpu-metal`;
     }
-    console.log('[prepare-v3] Intel Mac detected -> enabling OpenCL GPU + native-all,native-hashers');
-    return `gpu-opencl,${nativeFeatures}`;
+    console.log('[prepare-v3] Intel Mac detected -> enabling full native stack (OpenCL)');
+    return base;
   }
 
-  if (platform === 'linux' || platform === 'win32') {
+  if (platform === 'win32') {
+    const cudaCheck = checkCudaCapability();
+    const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
+    const winFeatures = windowsMinerFeatures();
+    if (forceCuda || cudaCheck.hasCuda) {
+      console.log('[prepare-v3] Windows + NVIDIA CUDA toolkit detected -> adding CUDA backend');
+      return `${winFeatures},gpu-cuda`;
+    }
+    console.log('[prepare-v3] Windows detected -> enabling focused native stack for W11 triple-stream (OpenCL)');
+    return winFeatures;
+  }
+
+  if (platform === 'linux') {
     const cudaCheck = checkCudaCapability();
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
     if (forceCuda || cudaCheck.hasCuda) {
-      console.log(`[prepare-v3] ${platform === 'win32' ? 'Windows' : 'Linux'} + NVIDIA CUDA detected -> enabling OpenCL + CUDA + native-all,native-hashers`);
-      return `gpu-opencl,gpu-cuda,${nativeFeatures}`;
+      console.log('[prepare-v3] Linux + NVIDIA CUDA detected -> enabling CUDA + full native stack');
+      return `${base},gpu-cuda`;
     }
-    console.log(`[prepare-v3] ${platform === 'win32' ? 'Windows' : 'Linux'} detected -> enabling OpenCL GPU + native-all,native-hashers`);
-    return `gpu-opencl,${nativeFeatures}`;
+    console.log('[prepare-v3] Linux detected -> enabling full native stack (OpenCL, safe default)');
+    return base;
   }
 
-  console.log('[prepare-v3] Unknown platform -> enabling OpenCL GPU + native-all,native-hashers');
-  return `gpu-opencl,${nativeFeatures}`;
+  console.log('[prepare-v3] Unknown platform -> enabling full native stack (OpenCL)');
+  return base;
 }
 
 function checkCudaCapability() {
@@ -106,8 +142,11 @@ function checkCudaCapability() {
         if (driverCheck.status === 0) {
           result.driverVersion = driverCheck.stdout.toString().trim().split('\n')[0];
         }
+        // Having an NVIDIA GPU + driver is enough to try the CUDA backend at
+        // build time; the CUDA toolkit (nvcc) is only required for compilation.
         const cudaVersion = spawnSync('nvcc', ['--version'], { stdio: 'pipe' });
         if (cudaVersion.status === 0) {
+          result.hasCuda = true;
           result.driverVersion += ` (nvcc: ${cudaVersion.stdout.toString().trim().split('\n')[0]})`;
         }
       }
@@ -153,13 +192,25 @@ function buildV3Workspace(workspaceRoot, features) {
   const minerRes = spawnSync('cargo', minerArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
   if (minerRes.error) throw minerRes.error;
   if (minerRes.status !== 0) {
-    // Fallback: retry without GPU features
+    // Fallback chain for W11 / mixed environments:
+    //   1. If CUDA was requested, retry with OpenCL + native stack.
+    //   2. If that fails too, retry with native algorithms but no GPU backend.
+    //      (CPU-only still requires native-verushash / native-randomx.)
     if (features && features !== 'default') {
-      console.warn('[prepare-v3] GPU build failed, retrying with CPU-only...');
-      const fallbackArgs = [...cargoArgs, '-p', 'zion-miner'];
-      const fallbackRes = spawnSync('cargo', fallbackArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
+      const fallbackFeatures = features.includes('gpu-cuda')
+        ? 'full'
+        : 'native-all';
+      console.warn(`[prepare-v3] Build with [${features}] failed, retrying with [${fallbackFeatures}]...`);
+      const fallbackArgs = [...cargoArgs, '-p', 'zion-miner', '--features', fallbackFeatures];
+      const fallbackRes = spawnSync('cargo', fallbackArgs, { cwd: workspaceRoot, stdio: 'inherit', env: process.env });
       if (fallbackRes.error) throw fallbackRes.error;
-      if (fallbackRes.status !== 0) throw new Error(`cargo build for zion-miner failed (exit ${fallbackRes.status})`);
+      if (fallbackRes.status !== 0) {
+        console.warn('[prepare-v3] Retrying CPU-only with native algorithms...');
+        const cpuFallbackArgs = [...cargoArgs, '-p', 'zion-miner', '--features', 'native-all'];
+        const cpuFallbackRes = spawnSync('cargo', cpuFallbackArgs, { cwd: workspaceRoot, stdio: 'inherit', env: process.env });
+        if (cpuFallbackRes.error) throw cpuFallbackRes.error;
+        if (cpuFallbackRes.status !== 0) throw new Error(`cargo build for zion-miner failed (exit ${cpuFallbackRes.status})`);
+      }
     } else {
       throw new Error(`cargo build for zion-miner failed (exit ${minerRes.status})`);
     }

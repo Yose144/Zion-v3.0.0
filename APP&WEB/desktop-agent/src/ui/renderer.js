@@ -991,6 +991,10 @@ function setupControls() {
       ),
       // New mining mode system
       miningMode: selectedMode,
+      // Trinity / triple-stream configuration
+      tripleStream: tripleStreamCheckbox ? tripleStreamCheckbox.checked : config.tripleStream,
+      cpuCoin: cpuCoinSelect ? cpuCoinSelect.value : config.cpuCoin,
+      gpuCoin: gpuCoinSelect ? gpuCoinSelect.value : config.gpuCoin,
       // GPU Revenue Mining configuration
       poolPreference: nextRevenue.gpu.poolPreference || 'herominers',
       poolRegion: nextRevenue.gpu.poolRegion || 'eu',
