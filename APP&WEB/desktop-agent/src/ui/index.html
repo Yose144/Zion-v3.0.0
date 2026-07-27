@@ -1295,9 +1295,8 @@
       background: rgba(0,0,0,0.2);
     }
 
-    /* ═══ Session Metrics (static, professional-miner style) ═══
-       Replaces the old scrolling "Live Activity" feed. Scrolling log output
-       lives in the Logs tab; the dashboard shows stable numbers only. */
+    /* ═══ Session Metrics (interactive stream panel) ═══
+       Live Trinity stream rows with a console-metrics-like compact layout. */
     .session-metrics {
       background: rgba(0, 0, 0, 0.28);
       border: 1px solid rgba(255,255,255,0.07);
@@ -1323,6 +1322,70 @@
       align-items: center;
       gap: 8px;
     }
+    .session-metrics-streams {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 14px 0;
+      min-height: 80px;
+    }
+    .session-metrics-empty {
+      color: rgba(255,255,255,0.3);
+      font-size: 13px;
+      text-align: center;
+      padding: 28px 0;
+    }
+    .session-metrics-row {
+      display: grid;
+      grid-template-columns: 32px 120px 1fr 120px 80px 70px;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: all .2s;
+      cursor: default;
+    }
+    .session-metrics-row:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(0,255,136,0.15);
+      transform: translateY(-1px);
+    }
+    .session-metrics-row.active {
+      background: rgba(0,255,136,0.06);
+      border-color: rgba(0,255,136,0.18);
+    }
+    .session-metrics-row.inactive {
+      opacity: 0.55;
+    }
+    .session-metrics-row-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      background: rgba(255,255,255,0.06);
+    }
+    .session-metrics-row.active .session-metrics-row-icon { background: rgba(0,255,136,0.12); }
+    .session-metrics-row-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.05em; }
+    .session-metrics-row-coin { font-weight: 700; color: #fff; font-size: 14px; }
+    .session-metrics-row-algo { color: rgba(255,255,255,0.5); font-size: 12px; }
+    .session-metrics-row-hr { font-weight: 800; color: #00ffc8; text-align: right; font-family: 'SF Mono', 'Menlo', monospace; }
+    .session-metrics-row-shares { text-align: right; font-size: 12px; }
+    .session-metrics-row-shares .good { color: #34d399; font-weight: 700; }
+    .session-metrics-row-shares .bad { color: #f87171; font-weight: 700; }
+    .session-metrics-row-status { text-align: right; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .session-metrics-row-status.active { color: #00ff88; }
+    .session-metrics-row-status.inactive { color: rgba(255,255,255,0.3); }
+    .session-metrics-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .session-metrics-footer-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
     .metrics-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -4578,82 +4641,21 @@
           </div>
         </div>
 
-        <!-- ═══ Session Metrics (static — replaces the old Live Activity feed) ═══
-             Professional-miner style: stable numbers, no scrolling log.
-             Full miner output lives in the Logs tab. -->
+        <!-- ═══ Session Metrics (interactive stream panel) ═══
+             Live stream overview like the sticky console metrics, but on Home. -->
         <div id="session-metrics" class="session-metrics">
           <div class="metrics-header">
             <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-logs"></use></svg>Session Metrics</h3>
             <span id="metrics-backend" class="pill pill-compact">—</span>
           </div>
-          <div class="metrics-grid">
-            <div class="metric-item">
-              <span class="metric-label">Pool</span>
-              <span class="metric-value" id="metric-pool">—</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Worker</span>
-              <span class="metric-value" id="metric-worker">—</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Algorithm</span>
-              <span class="metric-value" id="metric-algo">—</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Pool Latency</span>
-              <span class="metric-value" id="metric-latency">—</span>
-            </div>
-
-            <div class="metric-item">
-              <span class="metric-label">Accepted</span>
-              <span class="metric-value good" id="metric-accepted">0</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Rejected</span>
-              <span class="metric-value" id="metric-rejected">0</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Efficiency</span>
-              <span class="metric-value" id="metric-efficiency">—</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Last Share</span>
-              <span class="metric-value" id="metric-last-share">—</span>
-            </div>
-
-            <div class="metric-item">
-              <span class="metric-label">Avg 60s</span>
-              <span class="metric-value" id="metric-avg60">—</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Avg 15m</span>
-              <span class="metric-value" id="metric-avg15m">—</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Peak</span>
-              <span class="metric-value" id="metric-peak">—</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Total Hashes</span>
-              <span class="metric-value" id="metric-total-hashes">—</span>
-            </div>
-
-            <div class="metric-item">
-              <span class="metric-label">Difficulty</span>
-              <span class="metric-value" id="metric-difficulty">—</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Pool Height</span>
-              <span class="metric-value" id="metric-height">—</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Epoch</span>
-              <span class="metric-value" id="metric-epoch">—</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Uptime</span>
-              <span class="metric-value" id="metric-uptime">—</span>
-            </div>
+          <div class="session-metrics-streams" id="session-metrics-streams">
+            <div class="session-metrics-empty">Waiting for mining to start...</div>
+          </div>
+          <div class="session-metrics-footer">
+            <span class="session-metrics-footer-item"><span class="metric-label">Accepted</span> <span id="session-metrics-accepted" class="metric-value good">0</span></span>
+            <span class="session-metrics-footer-item"><span class="metric-label">Rejected</span> <span id="session-metrics-rejected" class="metric-value">0</span></span>
+            <span class="session-metrics-footer-item"><span class="metric-label">Efficiency</span> <span id="session-metrics-efficiency" class="metric-value">—</span></span>
+            <span class="session-metrics-footer-item"><span class="metric-label">Uptime</span> <span id="session-metrics-uptime" class="metric-value muted">—</span></span>
           </div>
         </div>
       </div>
