@@ -191,9 +191,18 @@ Likely blockers:
 2. At 7 MH/s the expected time to find a 2miners KAS share can be many minutes; a 120 s run is not conclusive.
 3. Share correctness is not yet proven against a known test vector.
 
+#### ERG (`autolykos`) — table cache fixed, share format fixed, but upstream rejects hashes
+
+* Pool: `erg.2miners.com:8888` via Edge debug pool, BTC wallet.
+* `cuda_external.rs` now caches the Autolykos table per `(header, height)` and uses the 32-byte pre-pow hash and the block height for table generation (previously it used the full 80-byte `MiningHeader` and `header.timestamp` as a height).
+* `auxpow_client.rs` now sends the correct 2miners `mining.submit` `[worker, job_id, nonce2]` where `nonce2` is the lower 6 bytes of the full 64-bit nonce in big-endian hex (previously it sent the upper 6 bytes, duplicating `en1`).
+* The Edge `zion-pool` (`server`) binary and `pool/Cargo.toml` were rebuilt to add the `tracing-subscriber/env-filter` feature, and the debug pool service was restarted.
+* After the fixes, the debug pool forwards ERG `mining.submit` calls to `erg.2miners.com` successfully; the pool now returns `[23,"Low difficulty share"]` or `[21,"Job not found"]` rather than rejecting the message format.
+* Root cause of the remaining rejection: the `autolykos_mine` CUDA kernel in `AuXpow/csrc/cuda/autolykos_kernel.cu` is a simplified placeholder. It does a 9-iteration table walk and a single BLAKE2b-256 of `header || r || nonce`, which is **not** the real Autolykos v2 algorithm used by Ergo (permutation indices derived from `f31`, 32 table lookups summed, final BLAKE2b over the 32-byte sum). All computed hashes therefore fail upstream validation.
+
 ### 6.4 Additional blockers discovered
 
-1. **Autolykos table regeneration:** `cuda_external.rs` `ensure_autolykos_table()` rebuilds the 64 MB table on the CPU for every batch (it does not cache the table per header), so ERG live mining would spend most of its time regenerating the table.
+1. **Autolykos table cache fixed, but kernel invalid:** `cuda_external.rs` `ensure_autolykos_table()` now caches the table per `(header, height)` and uses the 32-byte pre-pow hash and the real block height. The remaining ERG blocker is that the `autolykos_mine` CUDA kernel is a simplified placeholder and does not implement the real Autolykos v2 algorithm.
 2. **ProgPow variants not routed in CUDA external miner:** `CudaExtAlgo::from_name()` does not match `evrprogpow` / `meowpow`, so EVR and MEWC fall through even though the `kawpow` kernel is essentially the same DAG family.
 3. **Wallet generation:** For coins not on 2miners/zpool BTC payout (e.g. `DCR`, `ALPH`, `FLUX`, `VTC`, `IRON`, `NEXA`, `DNX`, `KRX`, `CKB`, `CFX`, `ZEC`, `PHX`) a coin-specific payout address is required. The repo already contains `DEFAULT_BTC_WALLET` for the BTC-payout coins.
 
@@ -203,7 +212,7 @@ Likely blockers:
 |------|-----------|---------------------|---------|
 | ETC | `ethash` | **no** | DAG generation ~3 h for epoch 834 |
 | KAS | `kheavyhash` | **no** | Kernel slow; run too short; correctness unverified |
-| ERG | `autolykos` | **not tested** | Table regenerated every batch |
+| ERG | `autolykos` | **no** | Table cache and nonce2 format fixed; `autolykos_mine` CUDA kernel is a placeholder and produces invalid hashes |
 | RVN/CLORE/QUAI | `kawpow` | **not tested** | DAG generation; likely same as ETC |
 | EVR/MEWC | `evrprogpow`/`meowpow` | **not tested** | `CudaExtAlgo` does not recognise the algorithm name |
 | FLUX | `zelhash` | **not tested** | Equihash solver; no known test vector |
@@ -214,7 +223,8 @@ Likely blockers:
 
 **Option A — Fix/optimize the CUDA kernels and re-test**
 * Speed up `ethash_calculate_dag` (larger batches, streams, kernel tuning) and possibly generate the DAG once per epoch on the host.
-* Cache the Autolykos table per header.
+* Cache the Autolykos table per header. **Done.**
+* Replace the `autolykos_mine` CUDA kernel with a real Autolykos v2 implementation.
 * Add `evrprogpow` / `meowpow` to `CudaExtAlgo::from_name()`.
 * Add known-answer tests for `kheavyhash`, `kawpow`, `ethash`, `autolykos` against reference implementations.
 

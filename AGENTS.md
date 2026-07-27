@@ -2027,6 +2027,8 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
   - `zion-miner --gpu-benchmark-all` compiled and ran all CUDA kernels against an easy target.
   - `ETC`/`ethash` live test was blocked because `cuda_external.rs` `ensure_dag()` would take ~3 hours to build the 7.52 GB DAG for epoch 834.
   - `KAS`/`kheavyhash` ran at ~7 MH/s (much slower than reference miners) and did not find a share in 120 s.
-  - `autolykos` table is regenerated on the CPU for every batch; this needs caching before ERG can be live-tested.
+  - `autolykos` table is now cached per `(header, height)` and `cuda_external.rs` uses the 32-byte pre-pow hash and the real block height.
+  - `auxpow_client.rs` now submits the correct 2miners `nonce2` (lower 6 bytes of the full 64-bit nonce). The Edge `zion-pool` `server` binary was rebuilt (`pool/Cargo.toml` needs `tracing-subscriber/env-filter` feature).
+  - `ERG`/`autolykos` live test reaches `erg.2miners.com` and receives `[23,"Low difficulty share"]`. The remaining blocker is that the `autolykos_mine` CUDA kernel in `AuXpow/csrc/cuda/autolykos_kernel.cu` is a simplified placeholder (9-iteration table walk + single BLAKE2b) and does **not** implement the real Autolykos v2 algorithm (permutation indices, 32 table lookups summed, final BLAKE2b over the 32-byte sum). Shares therefore fail upstream validation.
   - `evrprogpow` / `meowpow` are not recognised by `CudaExtAlgo::from_name()`, so EVR/MEWC are not dispatched to the CUDA `kawpow` kernel.
   - For coins not on 2miners/zpool BTC payout, coin-specific payout addresses are required; test wallets were saved to the desktop.
