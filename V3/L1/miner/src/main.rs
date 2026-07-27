@@ -2,6 +2,9 @@
 // and a few GPU-fallback flags are informational. These are non-consensus.
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::type_complexity)]
+// The stats JSON payload in build_miner_stats_payload() is large enough to
+// exceed the default macro recursion limit.
+#![recursion_limit = "512"]
 
 use anyhow::{anyhow, Context, Result};
 use std::collections::hash_map::DefaultHasher;
@@ -249,6 +252,13 @@ pub(crate) struct MinerMetricsSnapshot {
     remote_ttl_ms: u64,
     hashrate_max: f64,
     algorithm: String,
+    /// GPU device details for the desktop agent hardware panel.
+    gpu_name: String,
+    gpu_compute_units: u32,
+    gpu_vram_bytes: u64,
+    gpu_clock_mhz: u32,
+    gpu_temp_c: Option<u32>,
+    gpu_power_w: Option<u32>,
 }
 
 impl MinerMetricsSnapshot {
@@ -296,6 +306,12 @@ impl MinerMetricsSnapshot {
             hashrate_max: 0.0,
             algorithm: config.algorithm.clone(),
             streams: Vec::new(),
+            gpu_name: String::new(),
+            gpu_compute_units: 0,
+            gpu_vram_bytes: 0,
+            gpu_clock_mhz: 0,
+            gpu_temp_c: None,
+            gpu_power_w: None,
         }
     }
 
@@ -367,6 +383,16 @@ impl MinerMetricsSnapshot {
         };
         if current_peak > self.hashrate_max {
             self.hashrate_max = current_peak;
+        }
+        // Sync GPU device details from telemetry so the desktop agent
+        // hardware panel can show temp/power/VRAM/clock alongside the name.
+        if let Some(gpu) = telemetry.gpu_infos.first() {
+            self.gpu_name = gpu.name.clone();
+            self.gpu_compute_units = gpu.compute_units;
+            self.gpu_vram_bytes = gpu.global_mem_bytes;
+            self.gpu_clock_mhz = gpu.max_clock_mhz;
+            self.gpu_temp_c = gpu.temp_c;
+            self.gpu_power_w = gpu.power_w;
         }
     }
 
@@ -631,6 +657,12 @@ fn build_miner_stats_payload(snapshot: &MinerMetricsSnapshot) -> String {
         "submit_avg_latency_ms": snapshot.submit_avg_latency_ms,
         "submit_max_latency_ms": snapshot.submit_max_latency_ms,
         "gpu_hashrate_hps": snapshot.gpu_hashrate_hps,
+        "gpu_name": if snapshot.backend == "cpu" { "none".to_string() } else { snapshot.gpu_name.clone() },
+        "gpu_compute_units": snapshot.gpu_compute_units,
+        "gpu_vram_mib": snapshot.gpu_vram_bytes / (1024 * 1024),
+        "gpu_clock_mhz": snapshot.gpu_clock_mhz,
+        "gpu_temp_c": snapshot.gpu_temp_c,
+        "gpu_power_w": snapshot.gpu_power_w,
         "current_epoch": snapshot.current_epoch,
         "pool_height": snapshot.pool_height,
         "best_batch_ms": snapshot.best_batch_ms,
@@ -740,7 +772,12 @@ fn write_stats_file(path: &str, snapshot: &MinerMetricsSnapshot) {
         // Pool / connection
         "pool_latency_ms": snapshot.submit_avg_latency_ms as u64,
         "backend": snapshot.backend,
-        "gpu_name": if snapshot.backend == "cpu" { "none" } else { &snapshot.backend },
+        "gpu_name": if snapshot.backend == "cpu" { "none" } else { &snapshot.gpu_name },
+        "gpu_compute_units": snapshot.gpu_compute_units,
+        "gpu_vram_mib": snapshot.gpu_vram_bytes / (1024 * 1024),
+        "gpu_clock_mhz": snapshot.gpu_clock_mhz,
+        "gpu_temp_c": snapshot.gpu_temp_c,
+        "gpu_power_w": snapshot.gpu_power_w,
         "worker": snapshot.worker_name,
         "algorithm": snapshot.algorithm,
         "cpu_threads": snapshot.threads,
@@ -3806,12 +3843,26 @@ impl SessionTelemetry {
         if let Some(path) = stats_file {
             // Throttle writes to at most every 3 seconds
             if now.duration_since(self.last_stats_write).as_secs() >= 3 {
+                // Refresh GPU temp/power (cheap query, changes over time).
+                let fresh_gpus = gpu_backend::query_gpu_details();
+                if !fresh_gpus.is_empty() {
+                    if let Some(active) = self.gpu_infos.first_mut() {
+                        if let Some(fresh) = fresh_gpus.first() {
+                            active.temp_c = fresh.temp_c;
+                            active.power_w = fresh.power_w;
+                        }
+                    }
+                }
                 if let Ok(mut snapshot) = metrics.lock() {
-                    // Refresh per-stream telemetry so the stats file / HTTP
-                    // /stats endpoint expose fresh trinity data to the
-                    // desktop agent. `stream_stats` is built by
-                    // `HashrateTracker::build_stream_stats()` upstream.
                     snapshot.set_streams(stream_stats);
+                    if let Some(gpu) = self.gpu_infos.first() {
+                        snapshot.gpu_name = gpu.name.clone();
+                        snapshot.gpu_compute_units = gpu.compute_units;
+                        snapshot.gpu_vram_bytes = gpu.global_mem_bytes;
+                        snapshot.gpu_clock_mhz = gpu.max_clock_mhz;
+                        snapshot.gpu_temp_c = gpu.temp_c;
+                        snapshot.gpu_power_w = gpu.power_w;
+                    }
                     write_stats_file(path, &snapshot);
                     self.last_stats_write = now;
                 }

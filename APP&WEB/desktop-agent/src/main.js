@@ -639,6 +639,12 @@ let minerStats = {
   gpu_detected: false,
   gpu_type: 'none',
   gpu_name: '',
+  // GPU hardware details (populated from stats file / HTTP /stats)
+  gpu_compute_units: 0,
+  gpu_vram_mib: 0,
+  gpu_clock_mhz: 0,
+  gpu_temp_c: null,
+  gpu_power_w: null,
   cpu_only_mode: true,
   // Dual mining: ZION + XMR (DAO revenue)
   // ── Trinity per-stream telemetry (DeekshaChv3 parallel streaming) ──
@@ -663,6 +669,12 @@ function resetMinerTelemetryForNewSpawn() {
   delete minerStats.gpu_info;
   delete minerStats.gpu_backend;
   delete minerStats.runtime_backend;
+  // Reset GPU hardware details so stale temp/power doesn't bleed across sessions
+  minerStats.gpu_compute_units = 0;
+  minerStats.gpu_vram_mib = 0;
+  minerStats.gpu_clock_mhz = 0;
+  minerStats.gpu_temp_c = null;
+  minerStats.gpu_power_w = null;
   delete minerStats.hashrate_10s;
   delete minerStats.hashrate_60s;
   delete minerStats.hashrate_15m;
@@ -2390,6 +2402,7 @@ function startMiningV3(config, v3Path) {
     if (!skip) safeMinerLogWriteV3(`[STDOUT] ${output}`);
     if (!skip) enqueueMinerOutputToRenderer('stdout', output);
     maybeEmitBlockFound(output);
+    maybeEmitShareEvent(output);
     parseMinerOutput(output);
   });
 
@@ -2591,6 +2604,12 @@ function tryUpdateStatsFromFile() {
     if (typeof payload.algorithm === 'string') minerStats.stream_algorithm = payload.algorithm;
     if (typeof payload.worker === 'string') minerStats.worker = payload.worker;
     if (typeof payload.gpu_name === 'string' && payload.gpu_name !== 'none') minerStats.gpu_info = payload.gpu_name;
+    // ── GPU hardware details (temp/power/VRAM/clock) for the Hardware panel ──
+    if (typeof payload.gpu_compute_units === 'number') minerStats.gpu_compute_units = payload.gpu_compute_units;
+    if (typeof payload.gpu_vram_mib === 'number') minerStats.gpu_vram_mib = payload.gpu_vram_mib;
+    if (typeof payload.gpu_clock_mhz === 'number') minerStats.gpu_clock_mhz = payload.gpu_clock_mhz;
+    if (payload.gpu_temp_c != null) minerStats.gpu_temp_c = payload.gpu_temp_c;
+    if (payload.gpu_power_w != null) minerStats.gpu_power_w = payload.gpu_power_w;
     if (typeof payload.backend === 'string') {
       const runtimeBackend = String(payload.backend || '').toLowerCase();
       minerStats.runtime_backend = runtimeBackend;
@@ -2997,6 +3016,54 @@ function maybeEmitBlockFound(output) {
   if (m) {
     try {
       sendToRenderer('block-found', { height: parseInt(m[1], 10) });
+    } catch {}
+  }
+}
+
+/** Parse share accept/reject events from miner stdout and forward to renderer. */
+function maybeEmitShareEvent(output) {
+  const clean = output.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '').replace(/\x1B\[\?[0-9;]*[A-Za-z]/g, '');
+  const accM = clean.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=(\d+)\s+algo=(\S+)\s+latency_ms=(\d+)/i);
+  if (accM) {
+    try {
+      sendToRenderer('share-event', {
+        stream: 1, coin: 'ZION', accepted: true,
+        job: parseInt(accM[1], 10), height: parseInt(accM[2], 10),
+        nonce: parseInt(accM[3], 10), algorithm: accM[4],
+        latencyMs: parseInt(accM[5], 10), ts: Date.now(),
+      });
+    } catch {}
+    return;
+  }
+  const rejM = clean.match(/SHARE_REJECTED\s+job=(\d+)\s+height=(\d+)\s+nonce=(\d+)\s+algo=(\S+)\s+reason="([^"]+)"(?:\s+hash=([0-9a-fA-F]+))?/i);
+  if (rejM) {
+    try {
+      sendToRenderer('share-event', {
+        stream: 1, coin: 'ZION', accepted: false,
+        job: parseInt(rejM[1], 10), height: parseInt(rejM[2], 10),
+        nonce: parseInt(rejM[3], 10), algorithm: rejM[4],
+        reason: rejM[5], hash: rejM[6] || null, ts: Date.now(),
+      });
+    } catch {}
+    return;
+  }
+  const extAccM = clean.match(/external_share_accepted\s+coin=(\S+)\s+status=(\S+)/i);
+  if (extAccM) {
+    try {
+      sendToRenderer('share-event', {
+        stream: extAccM[1] === 'VRSC' ? 3 : 2, coin: extAccM[1],
+        accepted: true, status: extAccM[2], ts: Date.now(),
+      });
+    } catch {}
+    return;
+  }
+  const extRejM = clean.match(/external_share_rejected\s+coin=(\S+)\s+status=(\S+)/i);
+  if (extRejM) {
+    try {
+      sendToRenderer('share-event', {
+        stream: extRejM[1] === 'VRSC' ? 3 : 2, coin: extRejM[1],
+        accepted: false, status: extRejM[2], ts: Date.now(),
+      });
     } catch {}
   }
 }
@@ -5957,6 +6024,13 @@ setInterval(() => {
             if (typeof stats.current_epoch === 'number') minerStats.current_epoch = stats.current_epoch;
             if (typeof stats.pool_height === 'number') minerStats.last_job_height = String(stats.pool_height);
             if (typeof stats.backend === 'string') minerStats.runtime_backend = stats.backend;
+            // ── GPU hardware details (temp/power/VRAM/clock) ──
+            if (typeof stats.gpu_name === 'string' && stats.gpu_name !== 'none') minerStats.gpu_info = stats.gpu_name;
+            if (typeof stats.gpu_compute_units === 'number') minerStats.gpu_compute_units = stats.gpu_compute_units;
+            if (typeof stats.gpu_vram_mib === 'number') minerStats.gpu_vram_mib = stats.gpu_vram_mib;
+            if (typeof stats.gpu_clock_mhz === 'number') minerStats.gpu_clock_mhz = stats.gpu_clock_mhz;
+            if (stats.gpu_temp_c != null) minerStats.gpu_temp_c = stats.gpu_temp_c;
+            if (stats.gpu_power_w != null) minerStats.gpu_power_w = stats.gpu_power_w;
             // ── Trinity per-stream telemetry ──
             // V3 miner exposes `streams` as an array of per-stream objects.
             // Forward to renderer for the 3-stream dashboard cards.

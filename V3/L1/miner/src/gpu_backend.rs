@@ -8705,7 +8705,68 @@ fn query_cuda_details() -> Vec<GpuInfo> {
     out
 }
 
-/// Query rich GPU details from OpenCL (best-effort; temp/power often unavailable).
+/// Query GPU temperature (°C) and power draw (W) via `nvidia-smi`.
+/// Returns `None` if nvidia-smi is unavailable or the query fails.
+/// Works on Windows and Linux whenever the NVIDIA driver is installed.
+fn query_nvidia_smi_temp_power() -> Option<(u32, u32)> {
+    let out = std::process::Command::new("nvidia-smi")
+        .args([
+            "--query-gpu=temperature.gpu,power.draw",
+            "--format=csv,noheader,nounits",
+        ])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    let line = String::from_utf8_lossy(&out.stdout);
+    let line = line.lines().next()?;
+    let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
+    if parts.len() < 2 {
+        return None;
+    }
+    let temp = parts[0].parse::<u32>().ok()?;
+    // power.draw may be "N/A" on some drivers when idle, or a float like "10.21"
+    let power = parts[1].parse::<f64>().map(|w| w as u32).unwrap_or(0);
+    Some((temp, power))
+}
+
+/// Query GPU temperature (°C) and power draw (W) via `rocm-smi`.
+/// Returns `None` if rocm-smi is unavailable or the query fails.
+/// Linux + AMD ROCm only.
+fn query_rocm_smi_temp_power() -> Option<(u32, u32)> {
+    let out = std::process::Command::new("rocm-smi")
+        .args(["--showtemp", "--showpower", "--json"])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    let text = String::from_utf8_lossy(&out.stdout);
+    let temp = text
+        .lines()
+        .find(|l| l.contains("Temperature (Sensor edge) (C)"))
+        .and_then(|l| l.split(':').nth(1))
+        .and_then(|v| v.trim().trim_matches('"').trim_end_matches('.').parse::<u32>().ok())
+        .or_else(|| {
+            text.lines()
+                .find(|l| l.contains("Temperature (Sensor junction) (C)"))
+                .and_then(|l| l.split(':').nth(1))
+                .and_then(|v| v.trim().trim_matches('"').trim_end_matches('.').parse::<u32>().ok())
+        });
+    let power = text
+        .lines()
+        .find(|l| l.contains("Average Graphics Package Power (W)"))
+        .and_then(|l| l.split(':').nth(1))
+        .and_then(|v| v.trim().trim_matches('"').trim_end_matches('.').parse::<u32>().ok());
+    match (temp, power) {
+        (Some(t), Some(p)) => Some((t, p)),
+        (Some(t), None) => Some((t, 0)),
+        _ => None,
+    }
+}
+
+/// Query rich GPU details from OpenCL (best-effort; temp/power via nvidia-smi/rocm-smi).
 /// Falls back to / merges with CUDA device details when compiled with `gpu-cuda`.
 #[cfg(feature = "gpu-opencl")]
 pub fn query_gpu_details() -> Vec<GpuInfo> {
@@ -8758,8 +8819,8 @@ pub fn query_gpu_details() -> Vec<GpuInfo> {
                     .unwrap_or(0);
                 // Temperature is vendor-specific; try AMD/NVIDIA extensions
                 let temp_c: Option<u32> = None; // OpenCL does not expose temp via standard query
-                out.push(GpuInfo {
-                    name,
+                let mut info = GpuInfo {
+                    name: name.clone(),
                     platform: platform_name.clone(),
                     compute_units,
                     max_clock_mhz,
@@ -8768,7 +8829,23 @@ pub fn query_gpu_details() -> Vec<GpuInfo> {
                     max_work_group_size,
                     temp_c: None,
                     power_w: None,
-                });
+                };
+                // NVIDIA + AMD fallback: query temp/power via nvidia-smi / rocm-smi.
+                if name.to_lowercase().contains("nvidia") {
+                    if let Some((t, p)) = query_nvidia_smi_temp_power() {
+                        info.temp_c = Some(t);
+                        info.power_w = Some(p);
+                    }
+                } else if name.to_lowercase().contains("amd")
+                    || name.to_lowercase().contains("radeon")
+                    || platform_name.to_lowercase().contains("amd")
+                {
+                    if let Some((t, p)) = query_rocm_smi_temp_power() {
+                        info.temp_c = Some(t);
+                        info.power_w = Some(p);
+                    }
+                }
+                out.push(info);
             }
         }
     }

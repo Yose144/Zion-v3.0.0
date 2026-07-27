@@ -17,6 +17,19 @@ fn main() {
             );
         }
 
+        // V3/L1/native-libs/ — repo-bundled Windows import library (OpenCL.lib)
+        if let Some(native_libs) = manifest_path
+            .parent()
+            .map(|p| p.join("native-libs"))
+        {
+            if native_libs.exists() {
+                println!(
+                    "cargo:rustc-link-search=native={}",
+                    native_libs.display()
+                );
+            }
+        }
+
         // opencl_sdk/ — repo-bundled SDK
         if let Some(opencl_sdk) = manifest_path
             .parent()
