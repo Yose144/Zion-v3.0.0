@@ -27,14 +27,14 @@ export default function NavAuthButton() {
       <>
         <button
           onClick={() => setShowLogin(true)}
-          className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/15 bg-black/85 text-sm font-semibold text-white hover:border-zion-cyan/40 hover:text-zion-cyan transition-colors"
+          className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/15 bg-black/85 text-sm font-semibold text-white hover:border-zion-cyan/40 hover:text-zion-cyan transition-colors"
         >
           <LogIn className="w-4 h-4" />
           Login
         </button>
         <button
           onClick={() => setShowLogin(true)}
-          className="md:hidden p-2 rounded-xl border border-white/15 bg-black/85 text-white"
+          className="sm:hidden p-2 rounded-xl border border-white/15 bg-black/85 text-white"
         >
           <LogIn className="w-4 h-4" />
         </button>
