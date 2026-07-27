@@ -1997,3 +1997,36 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
   - KawPow/Ethash CPU scans need per-epoch DAG management (`generate_kawpow_dag` / `generate_ethash_dag`).
   - ProgPow variants (EVR, MEWC, EPIC, ZANO) and Pearl (PRL) need real algorithms or GPU-only dispatch.
   - Several coins have no `miner_harness.rs` route or no implementation at all (FLUX/zelhash, BEAM/beamhash, VTC, IRON, NEXA, DNX, KRX, CKB, CFX, ZEC, PHX).
+
+### GPU CUDA debug-pool verification (2026-07-27)
+
+- **Hardware:** local Windows rig, NVIDIA GeForce GTX 1070 Ti 8 GB (compute 6.1), driver 581.57.
+- **NVRTC install:** `py -m pip install --target C:\Zion\nvrtc_tmp nvidia-cuda-nvrtc-cu12`, then add `C:\Zion\nvrtc_tmp\nvidia\cuda_nvrtc\bin` to `PATH` before running the miner.
+- **Build:** `cd V3; cargo build --release -p zion-miner --features gpu-cuda`.
+- **Debug pool switch:**
+  ```bash
+  ssh zion-new
+  systemctl stop zion-edge-debug-pool@<OLD>
+  mkdir -p /etc/systemd/system/zion-edge-debug-pool@<COIN>.service.d
+  # write coin.conf with ZION_POOL_AUXPOW_COIN / ZION_POOL_AUXPOW_WALLET / ZION_POOL_AUXPOW_WORKER_NAME
+  systemctl daemon-reload && systemctl start zion-edge-debug-pool@<COIN>
+  ```
+- **Miner run for a fixed coin:**
+  ```powershell
+  $env:PATH = "C:\Zion\nvrtc_tmp\nvidia\cuda_nvrtc\bin;" + $env:PATH
+  $env:ZION_AUTOTUNE = "0"
+  $env:ZION_GPU_WORK_SIZE = "8192"
+  $env:ZION_SECONDARY_GPU_WORK_SIZE = "5242880"
+  $env:ZION_EXT_GPU_BACKEND = "cuda"
+  $env:ZION_LOOP_COUNT = "1000000"
+  $env:ZION_RECONNECT = "true"
+  $env:ZION_STREAM3_ENABLED = "0"
+  .\zion-miner.exe --pool 62.171.141.136:8461 --wallet <zion1-address> --worker <name> --gpu cuda --algorithm <algo> --no-tui
+  ```
+- **Key findings from this session:**
+  - `zion-miner --gpu-benchmark-all` compiled and ran all CUDA kernels against an easy target.
+  - `ETC`/`ethash` live test was blocked because `cuda_external.rs` `ensure_dag()` would take ~3 hours to build the 7.52 GB DAG for epoch 834.
+  - `KAS`/`kheavyhash` ran at ~7 MH/s (much slower than reference miners) and did not find a share in 120 s.
+  - `autolykos` table is regenerated on the CPU for every batch; this needs caching before ERG can be live-tested.
+  - `evrprogpow` / `meowpow` are not recognised by `CudaExtAlgo::from_name()`, so EVR/MEWC are not dispatched to the CUDA `kawpow` kernel.
+  - For coins not on 2miners/zpool BTC payout, coin-specific payout addresses are required; test wallets were saved to the desktop.

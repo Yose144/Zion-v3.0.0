@@ -127,3 +127,102 @@ Even where the implementation is real, none of the following have been live pool
 * **Real implementation, not yet live:** 6+ (DCR, ALPH, KAS, ERG, XMR, VRSC, QTC)
 * **Broken / needs DAG or native work:** 9+ (RVN, CLORE, QUAI, ETC, EVR, MEWC, EPIC, ZANO, PRL, KLS, ZCL)
 * **No CPU support / not routed:** 11+ (FLUX, BEAM, VTC, IRON, NEXA, DNX, KRX, CKB, CFX, ZEC, PHX)
+
+## 6. GPU CUDA debug-pool verification session (2026-07-27)
+
+Hardware: local Windows rig, NVIDIA GeForce GTX 1070 Ti 8 GB (compute 6.1), driver 581.57.
+
+### 6.1 Setup performed
+
+1. Installed NVRTC redistributable (`nvidia-cuda-nvrtc-cu12`) to `C:\Zion\nvrtc_tmp` and added it to `PATH`.
+2. Built `zion-miner` with CUDA external kernels:
+   ```powershell
+   cd V3
+   cargo build --release -p zion-miner --features gpu-cuda
+   ```
+3. Generated test wallets and saved to the desktop:
+   * `C:\Users\anaha\Desktop\zion_test_wallet.json` (ZION payout address for the miner `hello`)
+   * `C:\Users\anaha\Desktop\etc_test_wallet.json` (ETC/EVM test wallet, not used because 2miners/zpool accept BTC payout)
+4. Switched the Edge debug pool from `RTM` to `ETC`, then to `KAS`:
+   ```bash
+   ssh zion-new
+   # /etc/systemd/system/zion-edge-debug-pool@<COIN>.service.d/coin.conf
+   systemctl start zion-edge-debug-pool@<COIN>
+   ```
+
+### 6.2 `zion-miner --gpu-benchmark-all` results (CUDA, 5 s/algo)
+
+| Algorithm | Nonces tested | Time | H/s (labelled KH/s) | Notes |
+|-----------|--------------|------|---------------------|-------|
+| `deeksha_chv3` | 282,624 | 5.03 s | 56,168 | ZION primary |
+| `deeksha_lite_v1` | 167,936 | 5.19 s | 32,358 | ZION primary |
+| `cosmic_harmony_ekam_deeksha_v2` | 8,192 | 141.04 s | 58 | very slow; likely initialization heavy |
+| `deeksha_lite_fire` | 20,480 | 5.30 s | 3,864 | ZION primary |
+| `blake3` | 11,075,584 | 5.00 s | 2,215,117 | ALPH/DCR |
+| `kheavyhash` | 35,078,144 | 5.00 s | 7,014,610 | KAS |
+| `autolykos` | 16,384 | 5.29 s | 3,097 | ERG |
+| `zelhash` | 48,054,272 | 5.00 s | 9,610,559 | FLUX |
+| `kawpow` | 39,911,424 | 5.00 s | 7,981,643 | RVN/CLORE/QUAI |
+| `ethash` | 41,902,080 | 5.00 s | 8,333,090 | ETC |
+| `progpow` | 11,812,864 | 5.00 s | 2,362,551 | EPIC/ZANO |
+
+All CUDA kernels compiled and ran against the synthetic easy target (`00000000ffff...`). The numbers are raw nonces/sec, not actual accepted shares.
+
+### 6.3 Live debug-pool runs
+
+#### ETC (`ethash`) — blocked by DAG generation
+
+* Pool: `etc.2miners.com:1010` via Edge debug pool, authorized with the repo `DEFAULT_BTC_WALLET` (`bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh`) + `c=BTC`.
+* Primary ZION stream (`deeksha_lite_v1`) mined and submitted accepted shares immediately.
+* External `ethash` stream started DAG generation for epoch 834.
+* Generation speed was ~8,192 DAG nodes every ~0.7 s. For the 126,091,226-node (7.52 GB) DAG this extrapolates to **~3 hours**.
+* The miner never reached `ext_gpu_dag_ready` in a 180 s run, so no ETC share was attempted.
+
+Root cause: `cuda_external.rs` `ensure_dag()` launches the `ethash_calculate_dag` kernel in tiny 8,192-node batches with a full `synchronize()` after each batch, and the per-node work is far too heavy. Real epochs are therefore not usable in the current CUDA path.
+
+#### KAS (`kheavyhash`) — runs but no accepted share in 120 s
+
+* Pool: `kas.2miners.com:2020` via Edge debug pool, BTC wallet.
+* External stream initialized, `ext_gpu_batch_done` reported batches of 2,097,152 nonces with `solutions=0`.
+* Primary ZION shares were accepted; KAS shares were not found.
+
+Likely blockers:
+1. `kheavyhash` CUDA throughput is ~7 MH/s on a GTX 1070 Ti; reference miners reach ~100-200 MH/s, so the kernel is 10-30x slower.
+2. At 7 MH/s the expected time to find a 2miners KAS share can be many minutes; a 120 s run is not conclusive.
+3. Share correctness is not yet proven against a known test vector.
+
+### 6.4 Additional blockers discovered
+
+1. **Autolykos table regeneration:** `cuda_external.rs` `ensure_autolykos_table()` rebuilds the 64 MB table on the CPU for every batch (it does not cache the table per header), so ERG live mining would spend most of its time regenerating the table.
+2. **ProgPow variants not routed in CUDA external miner:** `CudaExtAlgo::from_name()` does not match `evrprogpow` / `meowpow`, so EVR and MEWC fall through even though the `kawpow` kernel is essentially the same DAG family.
+3. **Wallet generation:** For coins not on 2miners/zpool BTC payout (e.g. `DCR`, `ALPH`, `FLUX`, `VTC`, `IRON`, `NEXA`, `DNX`, `KRX`, `CKB`, `CFX`, `ZEC`, `PHX`) a coin-specific payout address is required. The repo already contains `DEFAULT_BTC_WALLET` for the BTC-payout coins.
+
+### 6.5 CUDA verification status
+
+| Coin | CUDA path | Live share accepted | Blocker |
+|------|-----------|---------------------|---------|
+| ETC | `ethash` | **no** | DAG generation ~3 h for epoch 834 |
+| KAS | `kheavyhash` | **no** | Kernel slow; run too short; correctness unverified |
+| ERG | `autolykos` | **not tested** | Table regenerated every batch |
+| RVN/CLORE/QUAI | `kawpow` | **not tested** | DAG generation; likely same as ETC |
+| EVR/MEWC | `evrprogpow`/`meowpow` | **not tested** | `CudaExtAlgo` does not recognise the algorithm name |
+| FLUX | `zelhash` | **not tested** | Equihash solver; no known test vector |
+| EPIC/ZANO | `progpow` | **not tested** | DAG + per-period kernel recompilation; no live test |
+| BEAM/VTC/IRON/NEXA/DNX/KRX/CKB/CFX/ZEC/PHX | various | **not tested** | Missing CUDA kernel or coin-specific wallet |
+
+### 6.6 Next-step options
+
+**Option A — Fix/optimize the CUDA kernels and re-test**
+* Speed up `ethash_calculate_dag` (larger batches, streams, kernel tuning) and possibly generate the DAG once per epoch on the host.
+* Cache the Autolykos table per header.
+* Add `evrprogpow` / `meowpow` to `CudaExtAlgo::from_name()`.
+* Add known-answer tests for `kheavyhash`, `kawpow`, `ethash`, `autolykos` against reference implementations.
+
+**Option B — Use reference miners through the debug pool for quick verification**
+* Download/install a multi-algo reference miner (e.g. `gminer`, `nbminer`, `lolMiner`, `t-rex`) that the `2miners` batch files expect.
+* Point the reference miner at `62.171.141.136:8461` for each debug-pool coin.
+* This validates the debug pool / share-forwarder side independently of the `zion-miner` kernels.
+
+**Option C — Parallel path**
+* Do Option B now to get first live accepted GPU shares and confirm the end-to-end pipeline.
+* Do Option A in a follow-up to replace reference miners with the native `zion-miner` CUDA path.
