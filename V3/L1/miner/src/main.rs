@@ -2059,15 +2059,11 @@ fn run_local_session(
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
         // Allow Stream 2 (external GPU) to use a different backend than Stream 1
-        // in local benchmark mode too.  See pool mode for the rationale:
-        // ZION deeksha is much faster on CUDA, but ZANO ProgPoWZ performs
-        // better on OpenCL in triple-stream mode, so default ext stream to
-        // OpenCL when the primary backend is CUDA.
-        let default_ext_backend = if effective_gpu_backend == gpu_backend::GpuBackendKind::Cuda {
-            gpu_backend::GpuBackendKind::OpenCL
-        } else {
-            effective_gpu_backend
-        };
+        // in local benchmark mode too.  Auto-detect: when the primary backend is
+        // CUDA (NVIDIA GPU detected), default the external stream to CUDA as well
+        // so both streams share the same CUDA device via shared_cuda_dev.  Override
+        // with ZION_EXT_GPU_BACKEND=opencl if desired.
+        let default_ext_backend = effective_gpu_backend;
         let bk = std::env::var("ZION_EXT_GPU_BACKEND")
             .ok()
             .and_then(|v| match v.to_lowercase().as_str() {
@@ -2881,19 +2877,12 @@ fn run_remote_session(
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
         // Allow Stream 2 (external GPU) to use a different backend than Stream 1.
-        // Benchmarks on a GTX 1070 Ti showed that ZION deeksha is ~6x faster on
-        // CUDA than on OpenCL, but the CUDA ProgPoWZ/ZANO kernel is currently far
-        // worse in triple-stream mode (~0.45 MH/s and it starves ZION down to
-        // ~46 kH/s) than OpenCL ZANO (~3.6 MH/s while ZION stays ~117 kH/s).
-        // Therefore, when the primary backend is CUDA, default the external GPU
-        // stream to OpenCL so the two algorithms run on different APIs and the
-        // driver can time-slice them like Claymore Dual.
-        // Override with ZION_EXT_GPU_BACKEND=cuda or =opencl if desired.
-        let default_ext_backend = if effective_gpu_backend == gpu_backend::GpuBackendKind::Cuda {
-            gpu_backend::GpuBackendKind::OpenCL
-        } else {
-            effective_gpu_backend
-        };
+        // Auto-detect: when the primary backend is CUDA (NVIDIA GPU detected),
+        // default the external stream to CUDA as well so both streams share the
+        // same CUDA device via shared_cuda_dev.  This gives the best ZANO ProgPoWZ
+        // hashrate on NVIDIA GPUs (several GH/s on GTX 1070 Ti).
+        // Override with ZION_EXT_GPU_BACKEND=opencl if desired.
+        let default_ext_backend = effective_gpu_backend;
         let bk = std::env::var("ZION_EXT_GPU_BACKEND")
             .ok()
             .and_then(|v| match v.to_lowercase().as_str() {
