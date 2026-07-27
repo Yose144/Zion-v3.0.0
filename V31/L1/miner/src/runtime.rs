@@ -1,8 +1,11 @@
+use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 
 use chrono::Utc;
 use sha3::{Digest, Sha3_256};
-use tokio::sync::watch;
+use tokio::sync::{watch, Mutex};
+use tokio::time::sleep;
 use tracing::{info, warn};
 use zion_core::{
     Block, BlockHeader, ConsensusEngine, Transaction, TransactionInput, TransactionOutput,
@@ -12,33 +15,46 @@ use zion_l1_types::{Amount, Hash};
 
 use crate::auxpow::{find_share, AuxPoWScheduler, Job, StratumClient};
 use crate::config::MinerConfig;
+use crate::stream::{StreamId, StreamStats};
 
 #[derive(Debug, thiserror::Error)]
 pub enum MinerError {
     #[error("consensus error: {0}")]
     Consensus(String),
-    #[error("no AuxPoW coin selected")]
+    #[error("no AuxPoW solution")]
     NoAuxPoWSolution,
     #[error("shutdown requested")]
     Shutdown,
+    #[error("task join error: {0}")]
+    Join(#[from] tokio::task::JoinError),
 }
 
 /// Unified mining runtime: ZION canonical blocks + AuxPoW external shares.
+#[derive(Clone)]
 pub struct MinerRuntime {
-    config: MinerConfig,
-    consensus: ConsensusEngine,
-    scheduler: AuxPoWScheduler,
+    config: Arc<MinerConfig>,
+    consensus: Arc<ConsensusEngine>,
+    scheduler: Arc<Mutex<AuxPoWScheduler>>,
+    stats: Arc<Mutex<HashMap<StreamId, StreamStats>>>,
 }
 
 impl MinerRuntime {
     pub fn new(config: MinerConfig) -> Self {
         let algorithm = Arc::new(EkamDeeksha::new()) as Arc<dyn zion_cosmic_harmony::PowAlgorithm>;
-        let consensus = ConsensusEngine::new(algorithm);
-        let scheduler = AuxPoWScheduler::new(config.hashrate_per_unit);
+        let consensus = Arc::new(ConsensusEngine::new(algorithm));
+        let scheduler = Arc::new(Mutex::new(AuxPoWScheduler::new(config.hashrate_per_unit)));
+
+        let mut map = HashMap::new();
+        map.insert(StreamId::Zion, StreamStats::new(StreamId::Zion));
+        map.insert(StreamId::GpuExternal, StreamStats::new(StreamId::GpuExternal));
+        map.insert(StreamId::CpuExternal, StreamStats::new(StreamId::CpuExternal));
+        let stats = Arc::new(Mutex::new(map));
+
         Self {
-            config,
+            config: Arc::new(config),
             consensus,
             scheduler,
+            stats,
         }
     }
 
@@ -76,8 +92,6 @@ impl MinerRuntime {
             difficulty: parent.difficulty,
         };
 
-        // Use an easy target for the scaffold; real pool mining uses a
-        // network-derived target.
         let target = [0xFFu8; 32];
         let _hash = self
             .consensus
@@ -87,74 +101,231 @@ impl MinerRuntime {
         Ok(Block::new(header, transactions))
     }
 
-    /// Mine a single AuxPoW share for `job` using the CPU scaffold.
+    /// Mine a single AuxPoW share for `job` using the configured batch.
     pub async fn mine_auxpow_share(&self, job: &Job) -> Result<crate::auxpow::Share, MinerError> {
-        let coin = job.coin;
-        find_share(coin, job, 0, self.config.auxpow_nonce_batch).ok_or(MinerError::NoAuxPoWSolution)
+        self.mine_auxpow_share_batch(job, self.config.auxpow_nonce_batch)
+            .await
     }
 
-    /// Refresh the AuxPoW scheduler from the provided profiles and return the
-    /// selected pool client, if enabled.
+    /// Mine a single AuxPoW share for `job` using a custom batch.
+    pub async fn mine_auxpow_share_batch(
+        &self,
+        job: &Job,
+        batch: u64,
+    ) -> Result<crate::auxpow::Share, MinerError> {
+        find_share(job.coin, job, 0, batch).ok_or(MinerError::NoAuxPoWSolution)
+    }
+
+    /// Refresh the AuxPoW scheduler and return GPU and CPU stratum clients.
     pub async fn refresh_auxpow(
-        &mut self,
+        &self,
         profiles: &[zion_cosmic_harmony::CoinProfile],
-    ) -> Option<StratumClient> {
-        if !self.config.auxpow_enabled {
-            return None;
-        }
-        self.scheduler.refresh(profiles);
-        match self.scheduler.current() {
-            Some(coin) => {
-                info!(coin = %coin, "auxpow coin selected");
-                self.scheduler
-                    .client(&self.config.worker, &self.config.password)
-            }
-            None => {
-                warn!("no profitable auxpow coin");
-                None
-            }
+    ) -> (Option<StratumClient>, Option<StratumClient>) {
+        let mut scheduler = self.scheduler.lock().await;
+        scheduler.refresh(profiles);
+        (
+            scheduler.gpu_client(&self.config.worker, &self.config.password),
+            scheduler.cpu_client(&self.config.worker, &self.config.password),
+        )
+    }
+
+    /// Return the currently selected GPU and CPU external coins.
+    pub async fn current_auxpow(
+        &self,
+    ) -> (
+        Option<zion_cosmic_harmony::ExternalCoin>,
+        Option<zion_cosmic_harmony::ExternalCoin>,
+    ) {
+        let scheduler = self.scheduler.lock().await;
+        (scheduler.current_gpu(), scheduler.current_cpu())
+    }
+
+    /// Return a snapshot of all stream statistics.
+    pub async fn stats(&self) -> HashMap<StreamId, StreamStats> {
+        self.stats.lock().await.clone()
+    }
+
+    /// Total accepted shares across all streams.
+    pub async fn total_shares(&self) -> u64 {
+        self.stats().await.values().map(|s| s.accepted).sum()
+    }
+
+    /// Run all enabled mining streams until the shutdown signal is received.
+    pub async fn run(&self, mut shutdown: watch::Receiver<bool>) -> Result<(), MinerError> {
+        let profiles = zion_cosmic_harmony::CoinProfile::defaults();
+        let _ = self.refresh_auxpow(&profiles).await;
+
+        let h1: tokio::task::JoinHandle<Result<(), MinerError>> = if self.config.stream1_enabled {
+            let this = self.clone();
+            let shutdown = shutdown.clone();
+            tokio::spawn(async move {
+                let mut parent = genesis_header();
+                loop {
+                    if *shutdown.borrow() {
+                        break;
+                    }
+                    this.mark_active(StreamId::Zion).await;
+                    match this.mine_zion_block(&parent).await {
+                        Ok(block) => {
+                            parent = block.header.clone();
+                            this.record_accepted(StreamId::Zion).await;
+                            info!(
+                                height = block.header.height,
+                                nonce = block.header.nonce,
+                                "mined zion block"
+                            );
+                        }
+                        Err(e) => warn!(error = %e, "zion mining batch failed"),
+                    }
+                    sleep(Duration::from_millis(10)).await;
+                }
+                Ok(())
+            })
+        } else {
+            tokio::spawn(async { Ok::<(), MinerError>(()) })
+        };
+
+        let h2: tokio::task::JoinHandle<Result<(), MinerError>> = if self.config.stream2_enabled {
+            let this = self.clone();
+            let shutdown = shutdown.clone();
+            tokio::spawn(async move {
+                loop {
+                    if *shutdown.borrow() {
+                        break;
+                    }
+                    this.mark_active(StreamId::GpuExternal).await;
+
+                    let (coin, client) = {
+                        let scheduler = this.scheduler.lock().await;
+                        (
+                            scheduler.current_gpu(),
+                            scheduler.gpu_client(&this.config.worker, &this.config.password),
+                        )
+                    };
+
+                    if let Some(coin) = coin {
+                        if let Some(ref client) = client {
+                            let _ = client.connect().await;
+                        }
+                        let job = Job {
+                            job_id: "gpu".to_string(),
+                            coin,
+                            header: vec![0xAA; 32],
+                            target: [0xFF; 32],
+                            extranonce: vec![1],
+                        };
+                        match this
+                            .mine_auxpow_share_batch(&job, this.config.stream2_batch)
+                            .await
+                        {
+                            Ok(share) => {
+                                this.record_share(StreamId::GpuExternal, coin).await;
+                                if let Some(ref client) = client {
+                                    let _ = client.submit_share(&share).await;
+                                }
+                                info!(coin = %coin, nonce = share.nonce, "mined gpu auxpow share");
+                            }
+                            Err(e) => warn!(error = %e, "gpu auxpow share failed"),
+                        }
+                    } else {
+                        warn!("no gpu auxpow coin selected");
+                    }
+                    sleep(Duration::from_millis(10)).await;
+                }
+                Ok(())
+            })
+        } else {
+            tokio::spawn(async { Ok::<(), MinerError>(()) })
+        };
+
+        let h3: tokio::task::JoinHandle<Result<(), MinerError>> = if self.config.stream3_enabled {
+            let this = self.clone();
+            let shutdown = shutdown.clone();
+            tokio::spawn(async move {
+                loop {
+                    if *shutdown.borrow() {
+                        break;
+                    }
+                    this.mark_active(StreamId::CpuExternal).await;
+
+                    let (coin, client) = {
+                        let scheduler = this.scheduler.lock().await;
+                        (
+                            scheduler.current_cpu(),
+                            scheduler.cpu_client(&this.config.worker, &this.config.password),
+                        )
+                    };
+
+                    if let Some(coin) = coin {
+                        if let Some(ref client) = client {
+                            let _ = client.connect().await;
+                        }
+                        let job = Job {
+                            job_id: "cpu".to_string(),
+                            coin,
+                            header: vec![0xAA; 32],
+                            target: [0xFF; 32],
+                            extranonce: vec![2],
+                        };
+                        match this
+                            .mine_auxpow_share_batch(&job, this.config.stream3_batch)
+                            .await
+                        {
+                            Ok(share) => {
+                                this.record_share(StreamId::CpuExternal, coin).await;
+                                if let Some(ref client) = client {
+                                    let _ = client.submit_share(&share).await;
+                                }
+                                info!(coin = %coin, nonce = share.nonce, "mined cpu auxpow share");
+                            }
+                            Err(e) => warn!(error = %e, "cpu auxpow share failed"),
+                        }
+                    } else {
+                        warn!("no cpu auxpow coin selected");
+                    }
+                    sleep(Duration::from_millis(10)).await;
+                }
+                Ok(())
+            })
+        } else {
+            tokio::spawn(async { Ok::<(), MinerError>(()) })
+        };
+
+        let _ = shutdown.changed().await;
+        let (r1, r2, r3) = tokio::join!(h1, h2, h3);
+        r1??;
+        r2??;
+        r3??;
+        Ok(())
+    }
+
+    async fn mark_active(&self, stream: StreamId) {
+        let mut stats = self.stats.lock().await;
+        if let Some(s) = stats.get_mut(&stream) {
+            s.active = true;
         }
     }
 
-    /// Run both ZION and AuxPoW loops until the shutdown signal is received.
-    ///
-    /// This is a long-running scaffold; production will add stratum networking,
-    /// share submission, and pool reconnect logic.
-    pub async fn run(&self, shutdown: watch::Receiver<bool>) -> Result<(), MinerError> {
-        let mut parent = genesis_header();
+    async fn record_accepted(&self, stream: StreamId) {
+        let mut stats = self.stats.lock().await;
+        if let Some(s) = stats.get_mut(&stream) {
+            s.accepted += 1;
+        }
+    }
 
-        loop {
-            if *shutdown.borrow() {
-                return Err(MinerError::Shutdown);
-            }
-
-            match self.mine_zion_block(&parent).await {
-                Ok(block) => {
-                    info!(
-                        height = block.header.height,
-                        nonce = block.header.nonce,
-                        "mined zion block"
-                    );
-                    parent = block.header;
-                }
-                Err(e) => {
-                    warn!(error = %e, "zion mining batch failed");
-                }
-            }
-
-            // AuxPoW is handled by the scheduler/pool client in a real loop;
-            // here we just log the currently selected coin.
-            if self.config.auxpow_enabled {
-                if let Some(coin) = self.scheduler.current() {
-                    info!(coin = %coin, "auxpow active");
-                }
-            }
+    async fn record_share(&self, stream: StreamId, coin: zion_cosmic_harmony::ExternalCoin) {
+        let mut stats = self.stats.lock().await;
+        if let Some(s) = stats.get_mut(&stream) {
+            s.active = true;
+            s.coin = Some(coin);
+            s.algorithm = Some(coin.algorithm().to_string());
+            s.accepted += 1;
+            s.shares_found += 1;
         }
     }
 }
 
-/// Dummy genesis header for the runtime scaffold. Real operation starts from
-/// the tip reported by a synced node.
+/// Dummy genesis header for the runtime scaffold.
 fn genesis_header() -> BlockHeader {
     BlockHeader {
         previous_hash: Hash::default(),
@@ -169,14 +340,13 @@ fn genesis_header() -> BlockHeader {
 /// Simple block reward schedule: 50 ZION per block until height 1M.
 fn block_reward(height: u64) -> Amount {
     if height < 1_000_000 {
-        Amount::new(50_000_000) // 50 ZION, 6 decimals
+        Amount::new(50_000_000)
     } else {
         Amount::ZERO
     }
 }
 
 /// Simple merkle root: SHA3-256 of the concatenation of transaction hashes.
-/// This is sufficient for the mining scaffold; production uses a binary tree.
 fn merkle_root(transactions: &[Transaction]) -> Hash {
     if transactions.is_empty() {
         return Hash::default();
@@ -192,6 +362,8 @@ fn merkle_root(transactions: &[Transaction]) -> Hash {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Duration;
+    use tokio::sync::watch;
     use zion_l1_types::Address;
 
     fn test_address() -> Address {
@@ -210,11 +382,12 @@ mod tests {
 
     #[tokio::test]
     async fn auxpow_scheduler_refresh() {
-        let mut runtime = MinerRuntime::new(MinerConfig::new(test_address()));
+        let runtime = MinerRuntime::new(MinerConfig::new(test_address()));
         let profiles = zion_cosmic_harmony::CoinProfile::defaults();
-        let client = runtime.refresh_auxpow(&profiles).await;
-        assert!(client.is_some());
-        assert!(runtime.scheduler.current().is_some());
+        let (gpu, cpu) = runtime.refresh_auxpow(&profiles).await;
+        assert!(gpu.is_some() || cpu.is_some());
+        let (gpu_coin, cpu_coin) = runtime.current_auxpow().await;
+        assert!(gpu_coin.is_some() || cpu_coin.is_some());
     }
 
     #[tokio::test]
@@ -231,5 +404,27 @@ mod tests {
         };
         let share = runtime.mine_auxpow_share(&job).await.unwrap();
         assert_eq!(share.coin, job.coin);
+    }
+
+    #[tokio::test]
+    async fn triple_stream_runs() {
+        let runtime = Arc::new(MinerRuntime::new(MinerConfig::new(test_address())));
+        let (shutdown_tx, shutdown_rx) = watch::channel(false);
+
+        let handle = {
+            let runtime = Arc::clone(&runtime);
+            tokio::spawn(async move { runtime.run(shutdown_rx).await })
+        };
+
+        for _ in 0..50 {
+            if runtime.total_shares().await >= 2 {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
+        shutdown_tx.send(true).unwrap();
+        handle.await.unwrap().unwrap();
+        assert!(runtime.total_shares().await >= 2);
     }
 }
