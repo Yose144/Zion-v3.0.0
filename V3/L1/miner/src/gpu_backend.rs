@@ -6034,6 +6034,16 @@ pub mod cuda_deeksha {
         npu_scales: CudaSlice<i16>,
         npu_meta: CudaSlice<u32>,
         current_epoch: u64,
+        // v6: pending batch info for launch_batch/collect_batch pipelining
+        pending: Option<PendingBatch>,
+    }
+
+    /// Info stored by launch_batch, used by collect_batch (v6 pipelining).
+    struct PendingBatch {
+        nonce_start: u64,
+        batch_size: u64,
+        target_u32: u32,
+        total_tested: u64,
     }
 
     // Max buffer sizes across all topologies:
@@ -6149,6 +6159,7 @@ pub mod cuda_deeksha {
                 npu_scales,
                 npu_meta,
                 current_epoch: init_epoch,
+                pending: None,
             })
         }
     }
@@ -6176,25 +6187,25 @@ pub mod cuda_deeksha {
             let mut w_padded = packed.weights;
             w_padded.resize(MAX_NPU_WEIGHTS, 0);
             self.dev
-                .htod_sync_copy_into(&w_padded, &mut self.npu_weights)
+                .htod_copy_into(w_padded, &mut self.npu_weights)
                 .map_err(|e| anyhow::anyhow!("npu_weights update: {e}"))?;
 
             let mut b_padded = packed.biases;
             b_padded.resize(MAX_NPU_BIASES, 0);
             self.dev
-                .htod_sync_copy_into(&b_padded, &mut self.npu_biases)
+                .htod_copy_into(b_padded, &mut self.npu_biases)
                 .map_err(|e| anyhow::anyhow!("npu_biases update: {e}"))?;
 
             let mut s_padded = packed.scales;
             s_padded.resize(MAX_NPU_SCALES, 0);
             self.dev
-                .htod_sync_copy_into(&s_padded, &mut self.npu_scales)
+                .htod_copy_into(s_padded, &mut self.npu_scales)
                 .map_err(|e| anyhow::anyhow!("npu_scales update: {e}"))?;
 
             let mut m_padded = packed.meta;
             m_padded.resize(MAX_NPU_META, 0);
             self.dev
-                .htod_sync_copy_into(&m_padded, &mut self.npu_meta)
+                .htod_copy_into(m_padded, &mut self.npu_meta)
                 .map_err(|e| anyhow::anyhow!("npu_meta update: {e}"))?;
 
             let topo = zion_cosmic_harmony::algorithms_npu::MlpTopology::for_epoch(epoch);
@@ -6214,8 +6225,10 @@ pub mod cuda_deeksha {
             batch_size: u64,
         ) -> Result<GpuBatchResult> {
             let header_bytes = header.to_bytes();
+            // v5: async htod copy — queues on the default stream, doesn't block the host.
+            // The kernel launch below is also async, so the copy + launch overlap.
             self.dev
-                .htod_sync_copy_into(&header_bytes[..], &mut self.header_buf)
+                .htod_copy_into(header_bytes.to_vec(), &mut self.header_buf)
                 .map_err(|e| anyhow::anyhow!("header upload: {e}"))?;
 
             // Target: LE u32 from first 4 bytes of target
@@ -6247,8 +6260,9 @@ pub mod cuda_deeksha {
             // already found by a previous chunk, so wasted GPU work is minimal.
             // This eliminates N-1 synchronous host↔device copies per batch
             // (8-12% hashrate gain vs per-chunk sync).
+            // v5: async sentinel reset — queued on the stream before kernel launches.
             self.dev
-                .htod_sync_copy_into(&[SENTINEL], &mut self.result_nonce)
+                .htod_copy_into(vec![SENTINEL], &mut self.result_nonce)
                 .map_err(|e| anyhow::anyhow!("reset sentinel: {e}"))?;
 
             while left > 0 {
@@ -6310,6 +6324,139 @@ pub mod cuda_deeksha {
             Ok(GpuBatchResult {
                 solutions: all_solutions,
                 nonces_tested: total_tested,
+                device_name: self.device_name_cached.clone(),
+            })
+        }
+
+        /// v6: Async batch launch — queues htod copies + kernel launches on the
+        /// default stream without syncing. Host returns immediately so pool I/O
+        /// can overlap with GPU compute. Results are collected via `collect_batch`.
+        fn launch_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<u64> {
+            // If there's already a pending batch, collect it first (blocking).
+            if self.pending.is_some() {
+                let _ = self.collect_batch(0)?;
+            }
+
+            self.update_npu_epoch(header.height)?;
+
+            let header_bytes = header.to_bytes();
+            // v5: async htod copy — queued on the stream before kernel launches
+            self.dev
+                .htod_copy_into(header_bytes.to_vec(), &mut self.header_buf)
+                .map_err(|e| anyhow::anyhow!("header upload: {e}"))?;
+
+            let target_u32 = u32::from_le_bytes([
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
+            ]);
+
+            let func = self
+                .dev
+                .get_func("deeksha", "ekam_deeksha_mine")
+                .ok_or_else(|| anyhow::anyhow!("ekam_deeksha_mine kernel not found"))?;
+
+            let threads_per_block: u32 = std::env::var("ZION_CUDA_TPB")
+                .ok()
+                .and_then(|v| v.trim().parse().ok())
+                .unwrap_or(48);
+
+            // Reset sentinel (ASYNC, v5)
+            self.dev
+                .htod_copy_into(vec![SENTINEL], &mut self.result_nonce)
+                .map_err(|e| anyhow::anyhow!("reset sentinel: {e}"))?;
+
+            // Launch all chunks back-to-back (async, no sync)
+            let mut total_tested = 0u64;
+            let mut current_nonce = nonce_start;
+            let mut left = batch_size;
+
+            while left > 0 {
+                let chunk = (left as usize).min(self.work_size) as u32;
+                let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+                let cfg = LaunchConfig {
+                    grid_dim: (blocks, 1, 1),
+                    block_dim: (threads_per_block, 1, 1),
+                    shared_mem_bytes: 0,
+                };
+
+                unsafe {
+                    func.clone()
+                        .launch(
+                            cfg,
+                            (
+                                &self.header_buf,
+                                header_bytes.len() as u32,
+                                current_nonce,
+                                chunk,
+                                &self.scratchpad_buf,
+                                target_u32,
+                                &mut self.result_nonce,
+                                &mut self.result_hash,
+                                &self.npu_weights,
+                                &self.npu_biases,
+                                &self.npu_scales,
+                                &self.npu_meta,
+                            ),
+                        )
+                        .map_err(|e| anyhow::anyhow!("kernel launch: {e}"))?;
+                }
+
+                total_tested += chunk as u64;
+                current_nonce = current_nonce.wrapping_add(chunk as u64);
+                left = left.saturating_sub(chunk as u64);
+            }
+
+            // Store pending info — NO sync yet, host returns immediately
+            self.pending = Some(PendingBatch {
+                nonce_start,
+                batch_size,
+                target_u32,
+                total_tested,
+            });
+
+            Ok(0) // token is unused, pending is stored in self
+        }
+
+        /// v6: Collect results from a previously launched batch.
+        /// Syncs the GPU and reads results.
+        fn collect_batch(&mut self, _token: u64) -> Result<GpuBatchResult> {
+            let pending = self
+                .pending
+                .take()
+                .ok_or_else(|| anyhow::anyhow!("no pending batch to collect"))?;
+
+            // Single sync point: wait for ALL chunks to complete
+            self.dev
+                .synchronize()
+                .map_err(|e| anyhow::anyhow!("device sync: {e}"))?;
+
+            let nonce_result = self
+                .dev
+                .dtoh_sync_copy(&self.result_nonce)
+                .map_err(|e| anyhow::anyhow!("read result_nonce: {e}"))?;
+
+            let mut all_solutions = Vec::new();
+            if nonce_result[0] != SENTINEL {
+                let hash_result = self
+                    .dev
+                    .dtoh_sync_copy(&self.result_hash)
+                    .map_err(|e| anyhow::anyhow!("read result_hash: {e}"))?;
+                let mut hash = [0u8; 32];
+                hash.copy_from_slice(&hash_result[..32]);
+                all_solutions.push((nonce_result[0], hash, None));
+            }
+
+            Ok(GpuBatchResult {
+                solutions: all_solutions,
+                nonces_tested: pending.total_tested,
                 device_name: self.device_name_cached.clone(),
             })
         }
