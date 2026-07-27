@@ -206,6 +206,11 @@ impl MultichainService {
         self.adapters.as_ref()
     }
 
+    /// Borrow the configured mining pool, if any.
+    pub fn pool(&self) -> Option<Arc<StdMutex<MiningPool>>> {
+        self.pool.as_ref().map(Arc::clone)
+    }
+
     /// Return pool stats, or `None` if the pool is not configured.
     pub fn pool_stats(&self) -> Option<serde_json::Value> {
         let pool = self.pool.as_ref()?;

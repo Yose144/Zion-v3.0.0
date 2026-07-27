@@ -92,6 +92,11 @@
 - Nový HTTP endpoint `GET /v1/pool/stats` vrací `accepted`, `rejected`, fee a PPLNS okno.
 - `Dash31` dashboard pool panel načítá statistiky z `/v1/pool/stats`.
 
+### 14. TCP stratum server
+- `zion-pool::StratumServer` rozšířen o `tokio::sync::broadcast` pro `mining.notify` broadcast.
+- `ApiServer::run` při `[pool]` enabled bindne TCP port a spustí `StratumServer`.
+- Každých 10s se broadcastuje dummy job `zion_1` s 80-byte headerem a max targetem, aby se mohli minerové připojit a submitovat share.
+
 ## Verifikace
 
 ```bash
@@ -107,8 +112,8 @@ Rozpis testů:
 - `zion_l1_types`: 4
 - `zion_miner`: 4 (vč. Triple Stream)
 - `zion_multichain`: 14 (DEX, bridge, wallet) + 1 `service.rs` test
-- `zion_pool`: 17
-- **celkem: 55**
+- `zion_pool`: 18
+- **celkem: 70**
 
 ## Commity dnes
 
@@ -123,6 +128,7 @@ Rozpis testů:
 - `0f2eef54` — `feat(v31): ZionL1 bridge locks + submitBridgeUnlock with validator proof`
 - `441e327f` — `fix(v31): decimal scaling in EvmAdapter submitLockProof + fmt`
 - `18405d25` — `feat(v31): integrate zion-pool stats into HTTP API + Dash31`
+- `<novy>` — `feat(v31): TCP stratum server with mining.notify broadcast`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -130,7 +136,8 @@ Rozpis testů:
    - Bind `StratumServer` na TCP port (Edge: `62.171.141.136:8444` nebo podobně podle `AGENTS.md`).
    - Generovat reálné `mining.notify` joby z `zion-core` / `zion-node`.
    - Propojit PPLNS payouts se skutečnými block rewards.
-   - `Dash31` `/v1/pool/stats` ✅ — zbývá TCP stratum a share broadcast.
+   - `Dash31` `/v1/pool/stats` ✅.
+   - TCP stratum ✅ — `ApiServer` spouští `StratumServer` na portu z `[pool]` configu a každých 10s broadcastuje dummy `mining.notify` job (`zion_1`) s max target.
 
 2. **Real chain adapters (další kroky)**
    - `EvmAdapter` ✅ — provider + wallet + contract addresses; zbývá nasadit validator wallet a testovat `submitLockProof` na Base.
