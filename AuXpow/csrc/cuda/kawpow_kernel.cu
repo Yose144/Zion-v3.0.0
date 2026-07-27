@@ -89,10 +89,10 @@ __device__ __forceinline__ unsigned int fnv1a(unsigned int a, unsigned int b) {
     return (a ^ b) * FNV_PRIME;
 }
 
-// -- Keccak-512 (SHA3-512) --
+// -- Keccak-512 --
 //
 // Rate = 576 bits = 72 bytes = 9 lanes.  Output = 512 bits = 64 bytes = 8 lanes.
-// Domain separator: 0x06 (SHA3), padding 0x80 at end of rate.
+// Domain separator: 0x01 (original Keccak, same as Ethereum), padding 0x80 at end of rate.
 
 __device__ void keccak512(const unsigned char *input, const unsigned int len, unsigned char *output) {
     uint64_t state[25];
@@ -116,7 +116,7 @@ __device__ void keccak512(const unsigned char *input, const unsigned int len, un
     for (int i = 0; i < 72; i++) padded[i] = 0;
     unsigned int remaining = len - offset;
     for (unsigned int i = 0; i < remaining; i++) padded[i] = input[offset + i];
-    padded[remaining] = 0x06;       // SHA3 domain separator
+    padded[remaining] = 0x01;       // Keccak domain separator
     padded[71] |= 0x80;             // end-of-rate padding
 
     for (int i = 0; i < 9; i++) {
@@ -133,10 +133,10 @@ __device__ void keccak512(const unsigned char *input, const unsigned int len, un
             output[i*8 + j] = (unsigned char)(state[i] >> (j*8));
 }
 
-// -- Keccak-256 (SHA3-256) --
+// -- Keccak-256 --
 //
 // Rate = 1088 bits = 136 bytes = 17 lanes.  Output = 256 bits = 32 bytes = 4 lanes.
-// Domain separator: 0x06 (SHA3), padding 0x80 at end of rate.
+// Domain separator: 0x01 (original Keccak, same as Ethereum), padding 0x80 at end of rate.
 
 __device__ void keccak256(const unsigned char *input, const unsigned int len, unsigned char *output) {
     uint64_t state[25];
@@ -160,7 +160,7 @@ __device__ void keccak256(const unsigned char *input, const unsigned int len, un
     for (int i = 0; i < 136; i++) padded[i] = 0;
     unsigned int remaining = len - offset;
     for (unsigned int i = 0; i < remaining; i++) padded[i] = input[offset + i];
-    padded[remaining] = 0x06;       // SHA3 domain separator
+    padded[remaining] = 0x01;       // Keccak domain separator
     padded[135] |= 0x80;            // end-of-rate padding
 
     for (int i = 0; i < 17; i++) {
