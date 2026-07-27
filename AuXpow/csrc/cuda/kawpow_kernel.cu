@@ -209,6 +209,21 @@ __global__ __launch_bounds__(256) void kawpow_mine(
 
     uint64_t nonce = base_nonce + (uint64_t)(blockIdx.x * blockDim.x + threadIdx.x);
 
+    // Standalone keccak512 test for thread 0: compute keccak512 of
+    // [0xAA;32] || [0;8] (nonce=0). CPU ref: seed0=0xc659f544.
+    if (blockIdx.x == 0 && threadIdx.x == 0) {
+        unsigned char tin[40];
+        for (int i = 0; i < 32; i++) tin[i] = 0xAA;
+        for (int i = 0; i < 8; i++) tin[32 + i] = 0;
+        unsigned char tout[64];
+        keccak512(tin, 40, tout);
+        unsigned int ts0 = (unsigned int)tout[0]
+                         | ((unsigned int)tout[1] << 8)
+                         | ((unsigned int)tout[2] << 16)
+                         | ((unsigned int)tout[3] << 24);
+        printf("kaw_standalone_keccak512 seed0=%08x (CPU: c659f544)\n", ts0);
+    }
+
     // -- Step 1: seed = keccak512(header_hash || nonce) -> 64 bytes --
     unsigned char seed_input[40];
     for (int i = 0; i < 32; i++) seed_input[i] = header_hash[i];
