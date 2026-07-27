@@ -83,6 +83,7 @@
 - `execute_outbound` pro `BurnRelease` sestaví validator proof (secp256k1 ECDSA přes `evm_wallet`) a volá `submitBridgeUnlock`.
 - `Bridge` matching nyní podporuje mema `BRIDGE:<chain>:<recipient>` z V3 a po detekci eventu přepíše `transfer.id` na source tx hash.
 - `Keyring` je `Clone`, aby ho mohl service sdílet s adaptéry.
+- `EvmAdapter` převádí ZION flowers (6 dec) na wZION wei (18 dec) při `submitLockProof` pro `LockMint`.
 
 ## Verifikace
 
