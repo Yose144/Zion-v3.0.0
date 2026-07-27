@@ -339,6 +339,7 @@ V3/deploy/
 
 # Temporary scripts
 scan-ssh.ps1
+V3/target/
 V3/target4/
 V3/target5/
 V3/target6/
