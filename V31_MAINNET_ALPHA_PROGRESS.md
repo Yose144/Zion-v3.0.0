@@ -96,7 +96,7 @@ Rozpis testů:
 - `9e720dc4` — `feat(v31): add pool, bridge and wallet modules for Mainnet Alpha`
 - `23e8ecec` — `docs: add V31 Mainnet Alpha progress report and next plan`
 - `91bdd696` — `feat(v31): add CLI commands for wallet, bridge and swap`
-- `<novy>` — `feat(v31): add V3 contracts, HTTP API, CORS and Dash31 dashboard`
+- `eb7bcda7` — `feat(v31): add V3 contracts, HTTP API, CORS and Dash31 dashboard`
 
 ## Další plán (Mainnet Alpha milestones)
 
