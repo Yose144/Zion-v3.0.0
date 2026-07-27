@@ -1,0 +1,27 @@
+//! `zion-multichain` — unified L2 value layer for ZION Mainnet Alpha.
+//!
+//! This crate consolidates:
+//! - cross-chain bridges (lock/mint),
+//! - trustless atomic swaps (HTLC),
+//! - DEX routing and settlement,
+//! - multi-chain wallet keyring,
+//! - Dharma Credits accounting.
+//!
+//! All modules share a single `Transfer` pipeline and a `ChainAdapter` trait.
+//! No V3 code is copied here; implementations are written clean for `V31/`.
+
+pub mod bridge;
+pub mod chain;
+pub mod config;
+pub mod credits;
+pub mod db;
+pub mod error;
+pub mod server;
+pub mod swap;
+pub mod types;
+pub mod wallet;
+
+pub use chain::{ChainAdapter, ChainAdapterRegistry};
+pub use config::MultichainConfig;
+pub use error::{MultichainError, MultichainResult};
+pub use types::{Transfer, TransferDirection, TransferStatus};

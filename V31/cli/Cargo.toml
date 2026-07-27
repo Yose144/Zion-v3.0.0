@@ -1,0 +1,20 @@
+[package]
+name = "zion-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Unified ZION operator CLI for V31 Mainnet Alpha."
+
+[[bin]]
+name = "zion"
+path = "src/main.rs"
+
+[dependencies]
+clap = { workspace = true }
+anyhow = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+zion-multichain = { path = "../L2/multichain" }
