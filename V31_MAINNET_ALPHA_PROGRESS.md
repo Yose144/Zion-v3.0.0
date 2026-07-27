@@ -169,7 +169,7 @@ Rozpis testů:
 - `1c96ffcd` — `feat(v31): real block reward and worker payout addresses`
 - `9b0ce9c5` — `feat(v31): Dash31 pool payouts panel`
 - `9cbcaba7` — `feat(v31): submit solved blocks to zion-l1 RPC`
-- `<novy>` — `feat(v31): Bitcoin deposit watching via mempool.space`
+- `d91ec96d` — `feat(v31): Bitcoin deposit watching via mempool.space`
 
 ## Další plán (Mainnet Alpha milestones)
 
