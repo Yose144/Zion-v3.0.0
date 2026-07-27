@@ -114,6 +114,7 @@ Rozpis testů:
 - `eb7bcda7` — `feat(v31): add V3 contracts, HTTP API, CORS and Dash31 dashboard`
 - `49b8e76c` — `feat(v31): wire EvmAdapter with ethers provider, signer and V3 contracts`
 - `0f2eef54` — `feat(v31): ZionL1 bridge locks + submitBridgeUnlock with validator proof`
+- `441e327f` — `fix(v31): decimal scaling in EvmAdapter submitLockProof + fmt`
 
 ## Další plán (Mainnet Alpha milestones)
 
