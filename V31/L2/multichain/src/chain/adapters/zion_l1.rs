@@ -216,13 +216,13 @@ impl ChainAdapter for ZionL1Adapter {
         });
 
         let resp: serde_json::Value = self.call("submitBridgeUnlock", params).await?;
-        let tx_id = resp
-            .get("tx_id")
-            .and_then(|v| v.as_str())
-            .ok_or_else(|| MultichainError::Internal("submitBridgeUnlock missing tx_id".to_string()))?;
+        let tx_id = resp.get("tx_id").and_then(|v| v.as_str()).ok_or_else(|| {
+            MultichainError::Internal("submitBridgeUnlock missing tx_id".to_string())
+        })?;
 
-        Hash::from_hex(tx_id)
-            .ok_or_else(|| MultichainError::Internal("invalid tx_id hex from submitBridgeUnlock".to_string()))
+        Hash::from_hex(tx_id).ok_or_else(|| {
+            MultichainError::Internal("invalid tx_id hex from submitBridgeUnlock".to_string())
+        })
     }
 
     async fn current_height(&self) -> MultichainResult<u64> {

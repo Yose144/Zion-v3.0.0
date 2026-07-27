@@ -7,12 +7,12 @@
 //! - call `ZIONBridge.submitLockProof` when the configured wallet is a validator.
 
 use async_trait::async_trait;
-use ethers::core::abi::{encode, decode, ParamType, Token};
-use ethers::core::types::{TransactionRequest, Filter};
+use ethers::core::abi::{decode, encode, ParamType, Token};
+use ethers::core::types::{Filter, TransactionRequest};
 use ethers::core::utils::keccak256;
+use ethers::middleware::SignerMiddleware;
 use ethers::providers::{Http, Middleware, Provider};
 use ethers::signers::{LocalWallet, Signer as _Signer};
-use ethers::middleware::SignerMiddleware;
 use ethers::types::{Address as EthAddress, H256, U256, U64};
 use std::str::FromStr;
 
@@ -94,7 +94,11 @@ impl EvmAdapter {
             .topic0(topic0)
     }
 
-    async fn is_validator(&self, bridge: EthAddress, account: EthAddress) -> MultichainResult<bool> {
+    async fn is_validator(
+        &self,
+        bridge: EthAddress,
+        account: EthAddress,
+    ) -> MultichainResult<bool> {
         let role = H256::from(keccak256("VALIDATOR_ROLE".as_bytes()));
         let mut call = Self::function_selector(HAS_ROLE_SIG).to_vec();
         let args = encode(&[
@@ -140,7 +144,9 @@ impl EvmAdapter {
             .map_err(|e| MultichainError::Internal(format!("send_transaction failed: {e}")))?;
         let receipt = pending
             .await
-            .map_err(|e| MultichainError::Internal(format!("transaction confirmation failed: {e}")))?
+            .map_err(|e| {
+                MultichainError::Internal(format!("transaction confirmation failed: {e}"))
+            })?
             .ok_or_else(|| MultichainError::Internal("transaction receipt missing".to_string()))?;
 
         let hash = receipt.transaction_hash;
@@ -156,18 +162,30 @@ impl EvmAdapter {
         let from = Self::address_from_topic(log.topics.get(1).copied()?);
         let _burn_id = log.topics.get(2).copied()?;
         let tokens = decode(
-            &[ParamType::Uint(256), ParamType::String, ParamType::Uint(256)],
+            &[
+                ParamType::Uint(256),
+                ParamType::String,
+                ParamType::Uint(256),
+            ],
             log.data.as_ref(),
         )
         .ok()?;
         let amount = tokens[0].clone().into_uint()?;
         let l1_recipient = tokens[1].clone().into_string()?;
 
-        let from_addr = Address::new(self.chain, from.as_bytes().to_vec(), format!("0x{}", hex::encode(from.as_bytes()))).ok()?;
+        let from_addr = Address::new(
+            self.chain,
+            from.as_bytes().to_vec(),
+            format!("0x{}", hex::encode(from.as_bytes())),
+        )
+        .ok()?;
 
         Some(DepositEvent {
             chain: self.chain,
-            tx_hash: log.transaction_hash.map(|h| Hash::new(*h.as_fixed_bytes())).unwrap_or_default(),
+            tx_hash: log
+                .transaction_hash
+                .map(|h| Hash::new(*h.as_fixed_bytes()))
+                .unwrap_or_default(),
             recipient: from_addr,
             amount: Amount::new(amount.as_u128()),
             memo: Some(format!("BRIDGE:zion-l1:{}", l1_recipient)),
@@ -185,11 +203,19 @@ impl EvmAdapter {
         .ok()?;
         let amount = tokens[0].clone().into_uint()?;
 
-        let recipient_addr = Address::new(self.chain, recipient.as_bytes().to_vec(), format!("0x{}", hex::encode(recipient.as_bytes()))).ok()?;
+        let recipient_addr = Address::new(
+            self.chain,
+            recipient.as_bytes().to_vec(),
+            format!("0x{}", hex::encode(recipient.as_bytes())),
+        )
+        .ok()?;
 
         Some(DepositEvent {
             chain: self.chain,
-            tx_hash: log.transaction_hash.map(|h| Hash::new(*h.as_fixed_bytes())).unwrap_or_default(),
+            tx_hash: log
+                .transaction_hash
+                .map(|h| Hash::new(*h.as_fixed_bytes()))
+                .unwrap_or_default(),
             recipient: recipient_addr,
             amount: Amount::new(amount.as_u128()),
             memo: None,
@@ -227,14 +253,24 @@ impl ChainAdapter for EvmAdapter {
         let mut events = Vec::new();
 
         let burn_filter = Self::make_filter(wzion, from, tip, Self::topic0(BRIDGE_BURN_SIG));
-        for log in self.provider.get_logs(&burn_filter).await.unwrap_or_default() {
+        for log in self
+            .provider
+            .get_logs(&burn_filter)
+            .await
+            .unwrap_or_default()
+        {
             if let Some(e) = self.decode_burn_log(&log) {
                 events.push(e);
             }
         }
 
         let mint_filter = Self::make_filter(wzion, from, tip, Self::topic0(BRIDGE_MINT_SIG));
-        for log in self.provider.get_logs(&mint_filter).await.unwrap_or_default() {
+        for log in self
+            .provider
+            .get_logs(&mint_filter)
+            .await
+            .unwrap_or_default()
+        {
             if let Some(e) = self.decode_mint_log(&log) {
                 events.push(e);
             }
@@ -264,7 +300,14 @@ impl ChainAdapter for EvmAdapter {
             _ => H256::from(keccak256(transfer.id.as_bytes())),
         };
         let recipient = self.to_eth_address(&transfer.target.address)?;
-        let amount = U256::from(transfer.target.amount.0);
+        // Zion L1 flowers (6 decimals) -> wZION wei (18 decimals).
+        let amount_flowers = transfer.target.amount.0;
+        let amount_wei = if transfer.source.address.chain == ChainId::ZionL1 {
+            amount_flowers.saturating_mul(1_000_000_000_000u128)
+        } else {
+            amount_flowers
+        };
+        let amount = U256::from(amount_wei);
         let l1_block_height = U256::from(0u64);
         let l1_sender = transfer.source.address.encoded.clone();
 
@@ -313,7 +356,8 @@ impl ChainAdapter for EvmAdapter {
 
     async fn send_payment(&self, to: &Address, amount: Amount) -> MultichainResult<Hash> {
         let eth_addr = self.to_eth_address(to)?;
-        self.send_transaction(eth_addr, vec![], U256::from(amount.0)).await
+        self.send_transaction(eth_addr, vec![], U256::from(amount.0))
+            .await
     }
 
     async fn balance(&self, address: &Address) -> MultichainResult<Amount> {
