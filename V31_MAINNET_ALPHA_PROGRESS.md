@@ -122,7 +122,7 @@ Rozpis testů:
 - `49b8e76c` — `feat(v31): wire EvmAdapter with ethers provider, signer and V3 contracts`
 - `0f2eef54` — `feat(v31): ZionL1 bridge locks + submitBridgeUnlock with validator proof`
 - `441e327f` — `fix(v31): decimal scaling in EvmAdapter submitLockProof + fmt`
-- `<novy>` — `feat(v31): integrate zion-pool stats into HTTP API + Dash31`
+- `18405d25` — `feat(v31): integrate zion-pool stats into HTTP API + Dash31`
 
 ## Další plán (Mainnet Alpha milestones)
 
