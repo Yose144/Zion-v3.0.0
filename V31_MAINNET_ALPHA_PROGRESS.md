@@ -97,11 +97,17 @@
 - `ApiServer::run` při `[pool]` enabled bindne TCP port a spustí `StratumServer`.
 - Každých 10s se broadcastuje dummy job `zion_1` s 80-byte headerem a max targetem, aby se mohli minerové připojit a submitovat share.
 
+### 15. Živé `mining.notify` joby z `zion-l1` block template
+- `ChainAdapter` trait rozšířen o `block_template()` s default `Ok(None)`.
+- `ZionL1Adapter::block_template` volá RPC `getBlockTemplate` a parsuje `header_hex`/`target_hex`/`template_id`/`height`.
+- `MultichainService` vystavuje `block_template(chain)`.
+- Stratum broadcast task každých 10s fetchne template z `zion-l1`; pokud je dostupný, pushne `mining.notify` pro `zion_{template_id}`, jinak dummy.
+
 ## Verifikace
 
 ```bash
 cd V31
-cargo test      # 55 testů OK
+cargo test      # 70 testů OK
 cargo clippy -- -D warnings   # OK
 cargo fmt       # OK
 ```
@@ -129,6 +135,7 @@ Rozpis testů:
 - `441e327f` — `fix(v31): decimal scaling in EvmAdapter submitLockProof + fmt`
 - `18405d25` — `feat(v31): integrate zion-pool stats into HTTP API + Dash31`
 - `ff2b8840` — `feat(v31): TCP stratum server with mining.notify broadcast`
+- `<novy>` — `feat(v31): live mining jobs from zion-l1 getBlockTemplate`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -137,7 +144,8 @@ Rozpis testů:
    - Generovat reálné `mining.notify` joby z `zion-core` / `zion-node`.
    - Propojit PPLNS payouts se skutečnými block rewards.
    - `Dash31` `/v1/pool/stats` ✅.
-   - TCP stratum ✅ — `ApiServer` spouští `StratumServer` na portu z `[pool]` configu a každých 10s broadcastuje dummy `mining.notify` job (`zion_1`) s max target.
+   - TCP stratum ✅ — `ApiServer` spouští `StratumServer` na portu z `[pool]` configu.
+   - Živé `mining.notify` joby ✅ — `ChainAdapter::block_template` a `ZionL1Adapter::getBlockTemplate` RPC; stratum broadcast každých 10s fetchne reálný template z `zion-l1` a pushne ho minerům, jinak fallback dummy.
 
 2. **Real chain adapters (další kroky)**
    - `EvmAdapter` ✅ — provider + wallet + contract addresses; zbývá nasadit validator wallet a testovat `submitLockProof` na Base.

@@ -10,7 +10,7 @@ use zion_pool::Pool as MiningPool;
 
 use crate::bridge::Bridge;
 use crate::chain::adapters::{BitcoinAdapter, EvmAdapter, ZionL1Adapter};
-use crate::chain::{ChainAdapter, ChainAdapterRegistry};
+use crate::chain::{BlockTemplate, ChainAdapter, ChainAdapterRegistry};
 use crate::config::{AdapterConfig, MultichainConfig};
 use crate::contracts::ZionContracts;
 use crate::credits::CreditsLedger;
@@ -204,6 +204,15 @@ impl MultichainService {
     /// Borrow the raw adapter registry (useful for tests and advanced callers).
     pub fn adapters(&self) -> &ChainAdapterRegistry {
         self.adapters.as_ref()
+    }
+
+    /// Fetch a mining block template from a registered chain adapter.
+    pub async fn block_template(&self, chain: ChainId) -> MultichainResult<Option<BlockTemplate>> {
+        let adapter = self
+            .adapters
+            .get(chain)
+            .ok_or_else(|| MultichainError::AdapterNotFound(chain.as_str().to_string()))?;
+        adapter.block_template().await
     }
 
     /// Borrow the configured mining pool, if any.
