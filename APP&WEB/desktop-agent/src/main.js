@@ -1365,6 +1365,57 @@ const STATS_TICK_MS = STATS_INTERVAL_SEC * 1000;
 
 let cachedGpuInfo = null;
 let gpuInfoLastProbeMs = 0;
+let cachedNvrtcPresent = null;
+
+/**
+ * Detect whether the NVRTC runtime library is available.
+ *
+ * The miner JIT-compiles its CUDA kernels via NVRTC at startup, so NVRTC is
+ * the ONLY runtime dependency for the CUDA backend (the driver ships
+ * nvcuda.dll / libcuda.so separately). The full CUDA toolkit is NOT required.
+ *
+ * Search order:
+ *   1. Alongside the shipped miner binary (resources/ in packaged builds,
+ *      the dev target dirs otherwise) — this is where the bundled
+ *      cuda_nvrtc redistributable lands.
+ *   2. CUDA_PATH / CUDA_HOME from a full toolkit install.
+ *   3. System library directories.
+ */
+function hasNvrtcRuntime() {
+  if (cachedNvrtcPresent !== null) return cachedNvrtcPresent;
+
+  const isWin = process.platform === 'win32';
+  // NVRTC is versioned in its filename, so match by prefix rather than
+  // hardcoding a CUDA version (nvrtc64_120_0.dll, libnvrtc.so.12, ...).
+  const matches = (name) => isWin
+    ? /^nvrtc64_.*\.dll$/i.test(name)
+    : /^libnvrtc\.(so|dylib)(\.\d+)*$/i.test(name);
+
+  const dirs = [];
+  try {
+    dirs.push(IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources'));
+    dirs.push(path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release'));
+  } catch { /* ignore */ }
+  for (const envVar of ['CUDA_PATH', 'CUDA_HOME']) {
+    const base = process.env[envVar];
+    if (base) dirs.push(path.join(base, isWin ? 'bin' : 'lib64'));
+  }
+  if (isWin) {
+    dirs.push(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32'));
+  } else {
+    dirs.push('/usr/lib/x86_64-linux-gnu', '/usr/local/cuda/lib64', '/usr/lib64');
+  }
+
+  cachedNvrtcPresent = dirs.some((dir) => {
+    try {
+      return fs.readdirSync(dir).some(matches);
+    } catch {
+      return false;
+    }
+  });
+  logApp('nvrtc-probe', JSON.stringify({ present: cachedNvrtcPresent }));
+  return cachedNvrtcPresent;
+}
 
 function detectGPU() {
   const now = Date.now();
@@ -1431,18 +1482,17 @@ function detectGPU() {
         result.driver = parts[2] || '';
         result.temperature = parts[3] ? `${parts[3]}°C` : '';
         result.utilization = parts[4] ? `${parts[4]}%` : '';
-        // The NVIDIA driver/runtime is present, but the CUDA toolkit (nvcc) is
-        // required to build a miner binary with the gpu-cuda feature. If nvcc
-        // is missing, the distributed/prebuilt binary almost certainly only has
-        // the OpenCL backend, so fall back to OpenCL for runtime.
-        result.backendPreferred = 'cuda';
-        result.cudaCapable = true;
-        try {
-          execFileSync('nvcc', ['--version'], { timeout: 5000, stdio: 'pipe' });
-        } catch {
-          result.backendPreferred = 'opencl';
-          result.cudaCapable = false;
-        }
+        // CUDA runtime capability is decided by NVRTC, not nvcc.
+        //
+        // The miner JIT-compiles its kernels through NVRTC at startup, so the
+        // only runtime requirement is `nvrtc64_*.dll` (shipped next to the
+        // miner binary via the cuda_nvrtc redistributable). `nvcc` is a
+        // BUILD-time tool and is irrelevant here — probing for it made every
+        // machine without the full 3 GB CUDA toolkit silently fall back to
+        // OpenCL, which is ~6x slower on NVIDIA (35 kH/s vs 211 kH/s on a
+        // GTX 1070 Ti).
+        result.cudaCapable = hasNvrtcRuntime();
+        result.backendPreferred = result.cudaCapable ? 'cuda' : 'opencl';
       }
     } catch {}
   }

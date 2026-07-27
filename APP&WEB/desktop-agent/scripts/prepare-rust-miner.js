@@ -93,11 +93,6 @@ function detectPlatformFeatures() {
   // Trinity triple-stream mining (ZION + external GPU + external CPU).
   const base = 'full';
 
-  // Build the unified miner with all GPU/native backends enabled.
-  // `full` = gpu-opencl + native-all + native-hashers, which is required for
-  // Trinity triple-stream mining (ZION + external GPU + external CPU).
-  const base = 'full';
-
   if (platform === 'darwin') {
     if (arch === 'arm64') {
       console.log('[prepare-v3] Apple Silicon detected -> enabling Metal + full native stack');
@@ -270,10 +265,11 @@ function copyBinaries(workspaceRoot, resourcesDir) {
   }
 
   // Best-effort: copy DLLs that are next to the built exe
+  let dllNames = [];
   try {
     const files = fs.readdirSync(targetDir);
-    const dlls = files.filter((f) => f.toLowerCase().endsWith('.dll'));
-    for (const dll of dlls) {
+    dllNames = files.filter((f) => f.toLowerCase().endsWith('.dll'));
+    for (const dll of dllNames) {
       const src = path.join(targetDir, dll);
       const dst = path.join(resourcesDir, dll);
       console.log(`[prepare-v3] Copying DLL ${dll}`);
@@ -281,7 +277,33 @@ function copyBinaries(workspaceRoot, resourcesDir) {
     }
   } catch { /* ignore */ }
 
+  warnIfCudaRuntimeMissing(dllNames);
+
   return copied;
+}
+
+/**
+ * The CUDA backend JIT-compiles its kernels through NVRTC, so a build with
+ * `gpu-cuda` is useless at runtime unless `nvrtc64_*.dll` ships alongside the
+ * miner. The NVIDIA driver does NOT provide it — it comes from the CUDA
+ * toolkit or the standalone `cuda_nvrtc` redistributable.
+ *
+ * Without NVRTC the miner initialises a CUDA device, fails at kernel compile
+ * time and falls back all the way to CPU, so surface this loudly at build time.
+ */
+function warnIfCudaRuntimeMissing(dllNames) {
+  if (process.platform !== 'win32') return;
+  if (dllNames.some((f) => /^nvrtc64_.*\.dll$/i.test(f))) {
+    console.log('[prepare-v3] NVRTC runtime found -> CUDA backend is runtime-ready');
+    return;
+  }
+  console.warn(
+    '[prepare-v3] WARNING: no nvrtc64_*.dll next to the miner binary.\n' +
+    '[prepare-v3]   The CUDA backend needs NVRTC at runtime; without it the\n' +
+    '[prepare-v3]   miner falls back to OpenCL (~6x slower on NVIDIA).\n' +
+    '[prepare-v3]   Fix: install the CUDA toolkit, or drop the standalone\n' +
+    '[prepare-v3]   cuda_nvrtc redistributable DLLs into V3/target/release/.'
+  );
 }
 
 // ── Main ───────────────────────────────────────────────────────────
