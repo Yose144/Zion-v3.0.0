@@ -483,10 +483,13 @@ extern "C" __global__ void deeksha_lite_fire_mine(
     /* Shared memory: AES S-box (256 bytes) */
     __shared__ uint8_t sbox[256];
     {
-        /* Cooperative load of S-box into shared memory */
+        /* Cooperative strided load of S-box into shared memory.
+         * Block may have fewer than 256 threads (e.g. 64), so each
+         * thread loads multiple entries in a strided loop. */
         uint32_t tid_local = threadIdx.x;
-        if (tid_local < 256) {
-            sbox[tid_local] = AES_SBOX_DATA[tid_local];
+        uint32_t blockDim_x = blockDim.x;
+        for (uint32_t i = tid_local; i < 256; i += blockDim_x) {
+            sbox[i] = AES_SBOX_DATA[i];
         }
         __syncthreads();
     }
@@ -616,7 +619,13 @@ extern "C" __global__ void deeksha_lite_fire_debug(
 
     /* AES mix (load S-box to shared first) */
     __shared__ uint8_t sbox[256];
-    if (threadIdx.x < 256) sbox[threadIdx.x] = AES_SBOX_DATA[threadIdx.x];
+    {
+        uint32_t tid_local = threadIdx.x;
+        uint32_t blockDim_x = blockDim.x;
+        for (uint32_t i = tid_local; i < 256; i += blockDim_x) {
+            sbox[i] = AES_SBOX_DATA[i];
+        }
+    }
     __syncthreads();
 
     uint64_t s3[4];
