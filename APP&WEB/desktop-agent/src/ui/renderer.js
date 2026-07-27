@@ -3085,20 +3085,17 @@ function computeEfficiency(accepted, rejected) {
   return { text: `${pct.toFixed(1)}%`, cls };
 }
 
-// ── Static session metrics panel (professional-miner style) ───────────────
-// Replaces the old scrolling "Live Activity" feed with stable numbers that
-// mirror what pool dashboards (2miners) and XMRig/SRBMiner report.
+// ── Session metrics panel (interactive Trinity stream overview) ─────────────
+// Renders a compact, live stream panel on the Home tab using the active TUI
+// stream data. Mirrors the console metrics panel but styled as a dashboard card.
 function updateSessionMetrics(stats) {
   const panel = document.getElementById('session-metrics');
   if (!panel) return;
 
-  const set = (id, text, cls) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = (text === undefined || text === null || text === '') ? '—' : text;
-    el.className = `metric-value${cls ? ' ' + cls : ''}`;
-  };
+  const fmtHr = fmtHashrate;
+  const fmtA = (n) => Number.isFinite(n) ? String(n) : '0';
 
+  // Backend pill (GPU / backend name)
   const backendEl = document.getElementById('metrics-backend');
   if (backendEl) {
     const backend = String(stats.backend || stats.minerBackendResolved || '').trim();
@@ -3108,39 +3105,55 @@ function updateSessionMetrics(stats) {
       : '—';
   }
 
-  set('metric-pool', stats.pool_addr || stats.pool || '—');
-  set('metric-worker', stats.worker || '—');
-  set('metric-algo', stats.algorithm || '—');
-
-  const lat = Number(stats.pool_latency_ms);
-  if (Number.isFinite(lat) && lat > 0) {
-    set('metric-latency', `${Math.round(lat)} ms`,
-      lat < 150 ? 'good' : lat < 400 ? 'warn' : 'bad');
-  } else {
-    set('metric-latency', '—');
+  // Render Trinity stream rows
+  const streamsEl = document.getElementById('session-metrics-streams');
+  if (streamsEl) {
+    const streams = Array.isArray(stats.streams) ? stats.streams : [];
+    if (!stats.isRunning || streams.length === 0) {
+      streamsEl.innerHTML = `<div class="session-metrics-empty">${stats.isRunning ? 'Waiting for stream telemetry...' : 'Waiting for mining to start...'}</div>`;
+    } else {
+      const icons = { 1: '⛏', 2: '⚡', 3: '🖥' };
+      const labels = { 1: 'ZION', 2: 'GPU PROFIT', 3: 'CPU PROFIT' };
+      streamsEl.innerHTML = streams.map((s) => {
+        const idx = Number(s.index) || 1;
+        const active = s.active !== false;
+        const label = s.label || labels[idx] || `STREAM ${idx}`;
+        const coin = s.coin || '—';
+        const algo = s.algorithm || '';
+        const hr = fmtHr(Number(s.hashrate_60s) || Number(s.hashrate) || 0);
+        const acc = Number(s.accepted) || 0;
+        const rej = Number(s.rejected) || 0;
+        const sharesClass = rej > 0 ? 'bad' : acc > 0 ? 'good' : '';
+        return `<div class="session-metrics-row ${active ? 'active' : 'inactive'}">
+          <div class="session-metrics-row-icon">${escapeHtml(String(icons[idx] || '◆'))}</div>
+          <div class="session-metrics-row-label">${escapeHtml(label)}</div>
+          <div>
+            <div class="session-metrics-row-coin">${escapeHtml(coin)}</div>
+            <div class="session-metrics-row-algo">${escapeHtml(algo)}</div>
+          </div>
+          <div class="session-metrics-row-hr">${hr}</div>
+          <div class="session-metrics-row-shares"><span class="${sharesClass}">${acc}</span>${rej > 0 ? ' / <span class="bad">' + rej + '</span>' : ''}</div>
+          <div class="session-metrics-row-status ${active ? 'active' : 'inactive'}">${active ? 'ONLINE' : 'OFFLINE'}</div>
+        </div>`;
+      }).join('');
+    }
   }
 
+  // Footer stats
   const acc = Number(stats.shares_accepted ?? stats.accepted) || 0;
   const rej = Number(stats.shares_rejected ?? stats.rejected) || 0;
-  set('metric-accepted', String(acc), acc > 0 ? 'good' : '');
-  set('metric-rejected', String(rej), rej > 0 ? 'bad' : 'muted');
-
   const eff = computeEfficiency(acc, rej);
-  set('metric-efficiency', eff.text, eff.cls);
-  set('metric-last-share', fmtAgo(stats.last_share_time), 'muted');
 
-  set('metric-avg60', fmtHashrate(Number(stats.hashrate_60s)));
-  set('metric-avg15m', fmtHashrate(Number(stats.hashrate_15m)));
-  set('metric-peak', fmtHashrate(Number(stats.hashrate_max)));
-  set('metric-total-hashes', fmtCount(stats.total_hashes), 'muted');
-
-  const diff = Number(stats.difficulty);
-  set('metric-difficulty', Number.isFinite(diff) && diff > 0 ? fmtCount(diff) : '—', 'muted');
-  const height = Number(stats.pool_height);
-  set('metric-height', Number.isFinite(height) && height > 0 ? String(height) : '—', 'muted');
-  const epoch = stats.current_epoch;
-  set('metric-epoch', (epoch !== null && epoch !== undefined) ? String(epoch) : '—', 'muted');
-  set('metric-uptime', fmtDuration(stats.uptime_sec), 'muted');
+  const setFooter = (id, text, cls) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = `metric-value${cls ? ' ' + cls : ''}`;
+  };
+  setFooter('session-metrics-accepted', fmtA(acc), acc > 0 ? ' good' : '');
+  setFooter('session-metrics-rejected', fmtA(rej), rej > 0 ? ' bad' : ' muted');
+  setFooter('session-metrics-efficiency', eff.text, eff.cls ? ' ' + eff.cls : '');
+  setFooter('session-metrics-uptime', fmtDuration(stats.uptime_sec), ' muted');
 }
 
 // ── Sticky Mining Console metrics panel (modern TUI-style header) ───────────
