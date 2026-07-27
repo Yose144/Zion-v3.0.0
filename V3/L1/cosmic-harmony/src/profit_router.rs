@@ -14,6 +14,18 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+// In public_build, suppress all profit_router log output (hides external
+// coin names like KAS, VRSC, RVN, etc.).  V3 never enables this feature.
+#[cfg(feature = "public_build")]
+macro_rules! plog {
+    () => {};
+    ($($arg:tt)*) => {};
+}
+#[cfg(not(feature = "public_build"))]
+macro_rules! plog {
+    ($($arg:tt)*) => { eprintln!($($arg)*) };
+}
+
 /// Pool routing preference, compatible with legacy revenue system semantics.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -962,7 +974,7 @@ fn fetch_nicehash_paying_rates() -> Vec<(ExternalCoin, f64)> {
     let body = match fetch_url_blocking_internal(url, 10) {
         Ok(b) => b,
         Err(e) => {
-            eprintln!("profit_router: nicehash fetch error: {e}");
+            plog!("profit_router: nicehash fetch error: {e}");
             return Vec::new();
         }
     };
@@ -970,7 +982,7 @@ fn fetch_nicehash_paying_rates() -> Vec<(ExternalCoin, f64)> {
     let json: serde_json::Value = match serde_json::from_str(&body) {
         Ok(j) => j,
         Err(e) => {
-            eprintln!("profit_router: nicehash parse error: {e}");
+            plog!("profit_router: nicehash parse error: {e}");
             return Vec::new();
         }
     };
@@ -994,7 +1006,7 @@ fn fetch_nicehash_paying_rates() -> Vec<(ExternalCoin, f64)> {
         }
     }
 
-    eprintln!(
+    plog!(
         "profit_router: nicehash paying rates fetched for {} algorithms",
         rates.len()
     );
@@ -1025,7 +1037,7 @@ pub fn fetch_live_profit_estimates_with_nicehash() -> (Vec<ProfitEntry>, Vec<(Ex
     // Fetch NiceHash paying rates for monitoring.
     let nh_rates = fetch_nicehash_paying_rates();
     for (coin, paying) in &nh_rates {
-        eprintln!(
+        plog!(
             "profit_router: nicehash {} paying={:.15}",
             coin, paying
         );
@@ -1035,13 +1047,13 @@ pub fn fetch_live_profit_estimates_with_nicehash() -> (Vec<ProfitEntry>, Vec<(Ex
     let url = "https://whattomine.com/coins.json";
     let entries = match fetch_url_blocking_internal(url, 10) {
         Ok(body) => {
-            eprintln!("profit_router: whattomine fetched {} bytes", body.len());
+            plog!("profit_router: whattomine fetched {} bytes", body.len());
             let entries = parse_whattomine_for_external_coins(&body);
-            eprintln!("profit_router: whattomine parsed {} entries", entries.len());
+            plog!("profit_router: whattomine parsed {} entries", entries.len());
             entries
         }
         Err(e) => {
-            eprintln!("profit_router: whattomine fetch error: {e}");
+            plog!("profit_router: whattomine fetch error: {e}");
             fallback_estimates()
         }
     };
@@ -1056,7 +1068,7 @@ pub fn fetch_live_profit_estimates_with_nicehash() -> (Vec<ProfitEntry>, Vec<(Ex
 fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
     let parsed: Option<serde_json::Value> = serde_json::from_str(body).ok();
     let Some(json) = parsed else {
-        eprintln!("profit_router: whattomine parse error");
+        plog!("profit_router: whattomine parse error");
         return fallback_estimates();
     };
 
@@ -1065,7 +1077,7 @@ fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
 
     // Fetch BTC price for converting btc_revenue → USD.
     let btc_price = fetch_btc_price_usd().unwrap_or(0.0);
-    eprintln!("profit_router: btc_price=${}", btc_price);
+    plog!("profit_router: btc_price=${}", btc_price);
 
     if let Some(coins) = json.get("coins").and_then(|c| c.as_object()) {
         for (_id, coin_data) in coins {
@@ -1104,7 +1116,7 @@ fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
                     .find(|e| e.coin == coin)
                     .map(|e| e.power_cost_usd)
                     .unwrap_or(0.10);
-                eprintln!("profit_router: whattomine {} revenue=${:.4}/day", tag, revenue_usd);
+                plog!("profit_router: whattomine {} revenue=${:.4}/day", tag, revenue_usd);
                 entries.push(ProfitEntry {
                     coin,
                     revenue_per_day_usd: revenue_usd.max(0.01),
@@ -1113,7 +1125,7 @@ fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
             }
         }
     } else {
-        eprintln!("profit_router: whattomine 'coins' key not found or not object");
+        plog!("profit_router: whattomine 'coins' key not found or not object");
     }
 
     // If we got fewer entries than fallback, merge in any missing coins.
