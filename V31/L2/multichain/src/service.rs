@@ -11,6 +11,7 @@ use crate::bridge::Bridge;
 use crate::chain::adapters::{BitcoinAdapter, EvmAdapter, ZionL1Adapter};
 use crate::chain::{ChainAdapter, ChainAdapterRegistry};
 use crate::config::{AdapterConfig, MultichainConfig};
+use crate::contracts::ZionContracts;
 use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
@@ -34,18 +35,19 @@ pub struct MultichainService {
 impl MultichainService {
     pub fn new(config: MultichainConfig) -> MultichainResult<Self> {
         let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
+        let keyring = Keyring::generate()?;
         let mut adapters = ChainAdapterRegistry::new();
 
         for cfg in &config.adapters {
             if !cfg.enabled {
                 continue;
             }
-            let adapter = build_adapter(cfg)?;
+            let adapter = build_adapter(cfg, &keyring)?;
             let chain_id = chain_id_by_name(&cfg.chain)?;
             adapters.register(chain_id, adapter);
         }
 
-        Ok(Self::from_parts(config, db, Arc::new(adapters)))
+        Ok(Self::from_parts(config, db, Arc::new(adapters), keyring))
     }
 
     /// Build a service from an already-constructed registry. Useful in tests
@@ -55,13 +57,15 @@ impl MultichainService {
         adapters: ChainAdapterRegistry,
     ) -> MultichainResult<Self> {
         let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
-        Ok(Self::from_parts(config, db, Arc::new(adapters)))
+        let keyring = Keyring::generate()?;
+        Ok(Self::from_parts(config, db, Arc::new(adapters), keyring))
     }
 
     fn from_parts(
         config: MultichainConfig,
         db: Arc<Mutex<Db>>,
         adapters: Arc<ChainAdapterRegistry>,
+        keyring: Keyring,
     ) -> Self {
         let bridge = Bridge::new(Arc::clone(&adapters));
         Self {
@@ -69,7 +73,7 @@ impl MultichainService {
             _db: db,
             adapters,
             bridge,
-            keyring: Keyring::generate().expect("keyring generation"),
+            keyring,
             credits: CreditsLedger::new(),
             dex: RwLock::new(DexRouter::new()),
         }
@@ -193,7 +197,7 @@ impl MultichainService {
     }
 }
 
-fn build_adapter(cfg: &AdapterConfig) -> MultichainResult<Box<dyn ChainAdapter>> {
+fn build_adapter(cfg: &AdapterConfig, keyring: &Keyring) -> MultichainResult<Box<dyn ChainAdapter>> {
     let name_lower = cfg.chain.to_lowercase();
     match name_lower.as_str() {
         "bitcoin" | "btc" => {
@@ -204,16 +208,28 @@ fn build_adapter(cfg: &AdapterConfig) -> MultichainResult<Box<dyn ChainAdapter>>
             };
             Ok(Box::new(BitcoinAdapter::new("bitcoin", url)?))
         }
-        "base" => Ok(Box::new(EvmAdapter::new(
-            "base",
-            ChainId::Base,
-            &cfg.rpc_url,
-        )?)),
-        "ethereum" | "eth" => Ok(Box::new(EvmAdapter::new(
-            "ethereum",
-            ChainId::Ethereum,
-            &cfg.rpc_url,
-        )?)),
+        "base" => {
+            let wallet = keyring.evm_wallet(0, 0).ok();
+            let contracts = ZionContracts::for_chain("base");
+            Ok(Box::new(EvmAdapter::new(
+                "base",
+                ChainId::Base,
+                &cfg.rpc_url,
+                wallet,
+                contracts,
+            )?))
+        }
+        "ethereum" | "eth" => {
+            let wallet = keyring.evm_wallet(0, 0).ok();
+            let contracts = ZionContracts::for_chain("ethereum");
+            Ok(Box::new(EvmAdapter::new(
+                "ethereum",
+                ChainId::Ethereum,
+                &cfg.rpc_url,
+                wallet,
+                contracts,
+            )?))
+        }
         "zion-l1" | "zion" | "zionl1" => Ok(Box::new(ZionL1Adapter::new(&cfg.rpc_url))),
         _ => Err(MultichainError::AdapterNotFound(format!(
             "no adapter builder for chain '{}': add it to build_adapter()",
