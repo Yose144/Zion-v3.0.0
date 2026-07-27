@@ -565,7 +565,11 @@ impl CudaExternalMiner {
             .ok_or_else(|| anyhow::anyhow!("dag_gen kernel not found"))?;
 
         let threads_per_block: u32 = 256;
-        let batch_nodes: u32 = 8192; // nodes per kernel launch
+        // Larger batches amortize kernel launch overhead.  A batch of 512k
+        // nodes (~32 MB of DAG) completes in well under the Windows TDR
+        // limit on a GTX 1070 Ti, while cutting ~15000 tiny launches down
+        // to a few hundred.
+        let batch_nodes: u32 = 524_288; // nodes per kernel launch
         let light_cache_ref = self.light_cache_buf.as_ref().unwrap();
 
         eprintln!(
@@ -574,6 +578,7 @@ impl CudaExternalMiner {
         );
 
         let mut node_start: u64 = 0;
+        let mut batches_since_sync: u32 = 0;
         while node_start < dag_nodes {
             let chunk = (dag_nodes - node_start).min(batch_nodes as u64);
             let blocks = ((chunk as u32) + threads_per_block - 1) / threads_per_block;
@@ -599,21 +604,32 @@ impl CudaExternalMiner {
                     .map_err(|e| anyhow::anyhow!("dag_gen launch: {e}"))?;
             }
 
-            self.dev
-                .synchronize()
-                .map_err(|e| anyhow::anyhow!("dag_gen sync: {e}"))?;
+            batches_since_sync += 1;
+            // Synchronize every 4 batches to keep progress feedback while
+            // still overlapping most of the work.
+            if batches_since_sync >= 4 || node_start + chunk >= dag_nodes {
+                self.dev
+                    .synchronize()
+                    .map_err(|e| anyhow::anyhow!("dag_gen sync: {e}"))?;
+                batches_since_sync = 0;
+
+                let pct = ((node_start + chunk) * 100 / dag_nodes).min(100);
+                if pct % 10 == 0 || node_start + chunk >= dag_nodes {
+                    eprintln!(
+                        "dag_manager: DAG generation {}% ({}/{}, {:.1}s)",
+                        pct, node_start + chunk, dag_nodes,
+                        start.elapsed().as_secs_f64(),
+                    );
+                }
+            }
 
             node_start += chunk;
-
-            let pct = (node_start * 100 / dag_nodes).min(100);
-            if pct % 10 == 0 || node_start == dag_nodes {
-                eprintln!(
-                    "dag_manager: DAG generation {}% ({}/{}, {:.1}s)",
-                    pct, node_start, dag_nodes,
-                    start.elapsed().as_secs_f64(),
-                );
-            }
         }
+
+        // Final safety sync in case the last chunk was exactly a multiple.
+        self.dev
+            .synchronize()
+            .map_err(|e| anyhow::anyhow!("dag_gen final sync: {e}"))?;
 
         self.dag_buf = Some(dag_buf);
         self.dag_size_entries = dag_size_entries;

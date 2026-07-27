@@ -2025,8 +2025,8 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
   ```
 - **Key findings from this session:**
   - `zion-miner --gpu-benchmark-all` compiled and ran all CUDA kernels against an easy target.
-  - `ETC`/`ethash` live test was blocked because `cuda_external.rs` `ensure_dag()` would take ~3 hours to build the 7.52 GB DAG for epoch 834.
-  - `KAS`/`kheavyhash` long test is running at ~3.3 MH/s on GTX 1070 Ti through the debug pool; no share yet in the first few minutes (expected share time ~20 min at diff 1). The previous 120 s run was too short.
+  - `ETC`/`ethash` DAG generation is now fixed: `cuda_external.rs` launches `ethash_calculate_dag` in 524,288-node batches with a sync every 4 batches; epoch-0 DAG (~1 GB) builds in ~7 s on GTX 1070 Ti. The `ethash_mine` kernel was corrected to FNV-1 and `fnv(i ^ seed0, mix[i % 32])`; `gpu_backend.rs` now passes the 32-byte `header_hash` directly to `mine_batch_raw`. Benchmark finds a nonce; live share still pending.
+  - `KAS`/`kheavyhash` long test ran at ~3.3 MH/s on GTX 1070 Ti through the debug pool for 120 s but the `GPU PROFIT` row remained `0/0`; only primary ZION shares were accepted. A longer run or lower test target is needed.
   - `autolykos` table is now cached per `(header, height)` and `cuda_external.rs` uses the 32-byte pre-pow hash and the real block height.
   - `auxpow_client.rs` now submits the correct 2miners `nonce2` (lower 6 bytes of the full 64-bit nonce). The Edge `zion-pool` `server` binary was rebuilt (`pool/Cargo.toml` needs `tracing-subscriber/env-filter` feature).
   - `ERG`/`autolykos` live test reaches `erg.2miners.com` and receives `[23,"Low difficulty share"]`. The remaining blocker is that the `autolykos_mine` CUDA kernel in `AuXpow/csrc/cuda/autolykos_kernel.cu` is a simplified placeholder (9-iteration table walk + single BLAKE2b) and does **not** implement the real Autolykos v2 algorithm (permutation indices, 32 table lookups summed, final BLAKE2b over the 32-byte sum). Shares therefore fail upstream validation.
