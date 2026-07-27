@@ -1075,7 +1075,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "ports": {},
      "log": "miner.log", "start": "start-miner", "stop": None,
      "health_method": "log", "severity": "warning", "autoheal": True,
-     "health_endpoint": "http://127.0.0.1:8444",
+     "health_endpoint": "http://127.0.0.1:8455/metrics",
      "purpose": "Performs Deeksha PoW hashing to find new blocks. Connects to pool 8444.",
      "child_says": "⛏️ The miner digs for new gold (ZION coins)!",
      "depends_on": ["pool-edge"]},
@@ -1436,22 +1436,28 @@ def check_service_health(svc: dict) -> dict:
             proc_info = {"has_pid": True, "alive": True, "pid": miner_pid}
             register_process("miner", miner_pid, image="zion-miner")
 
-    # Miner edge-primary: check Edge pool /miners endpoint for active miners
+    # Miner edge-primary: check Edge pool metrics for active miners
     if sid == "miner" and TOPOLOGY == "edge-primary" and svc.get("health_endpoint"):
         try:
-            import urllib.request as _ur, json as _json
+            import urllib.request as _ur
             with _ur.urlopen(svc["health_endpoint"], timeout=2.0) as _r:
-                _md = _json.loads(_r.read().decode("utf-8"))
-                _active = _md.get("count", 0) if isinstance(_md, dict) else 0
-                if _active > 0:
-                    log_alive = True
-                    log_age = 0
-                    proc_info = {"has_pid": True, "alive": True, "pid": -1}
-                    details_parts_preview = f"Edge pool: {_active} active miner(s)"
-                else:
-                    details_parts_preview = "Edge pool: 0 active miners"
+                _txt = _r.read().decode("utf-8")
+            _active = 0
+            _miners = 0
+            for _line in _txt.splitlines():
+                if _line.startswith("zion_pool_active_sessions "):
+                    _active = int(float(_line.split()[-1]))
+                elif _line.startswith("zion_pool_miners_tracked "):
+                    _miners = int(float(_line.split()[-1]))
+            if _active > 0:
+                log_alive = True
+                log_age = 0
+                proc_info = {"has_pid": True, "alive": True, "pid": -1}
+                details_parts_preview = f"Edge pool: {_active} active session(s), {_miners} miner(s) tracked"
+            else:
+                details_parts_preview = f"Edge pool: 0 active sessions ({_miners} tracked)"
         except Exception as _e:
-            details_parts_preview = f"Edge pool check failed: {str(_e)[:40]}"
+            details_parts_preview = f"Edge pool metrics check failed: {str(_e)[:40]}"
     else:
         details_parts_preview = None
 
