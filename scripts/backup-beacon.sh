@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# backup-beacon.sh — Report local backup node status to Edge dashboard
+# backup-beacon.sh — Report local backup node status to Edge and local dashboards
 # Runs via cron every 15s. Reads RPC from local node (127.0.0.1:8446) and
-# POSTs the status to the Edge dashboard /api/backup-beacon endpoint.
+# POSTs the status to the Edge dashboard and the local dashboard.
 set -euo pipefail
 
 RPC_HOST="127.0.0.1"
@@ -9,6 +9,7 @@ RPC_PORT="8446"
 EDGE_URL="https://dashboard.zionterranova.com/api/backup-beacon"
 EDGE_USER="Yose"
 EDGE_PASS="3nityOne13"
+LOCAL_URL="http://127.0.0.1:8766/api/backup-beacon"
 HOSTNAME_LABEL="$(hostname -s)"
 
 # Read chain info from local node RPC
@@ -52,8 +53,13 @@ print(json.dumps({
 " 2>/dev/null || echo '{"running":false,"host":"'"${HOSTNAME_LABEL}"'"}')
 fi
 
-# POST beacon to Edge dashboard
+# POST beacon to Edge dashboard (best-effort) and local dashboard
 curl -sf -m 10 -X POST "$EDGE_URL" \
+  -u "${EDGE_USER}:${EDGE_PASS}" \
+  -H 'Content-Type: application/json' \
+  -d "$PAYLOAD" > /dev/null 2>&1 || true
+
+curl -sf -m 5 -X POST "$LOCAL_URL" \
   -u "${EDGE_USER}:${EDGE_PASS}" \
   -H 'Content-Type: application/json' \
   -d "$PAYLOAD" > /dev/null 2>&1 || true
