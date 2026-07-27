@@ -69,6 +69,7 @@ ZION is a multi-layer blockchain infrastructure built on proof-of-work consensus
 - **ZIONGovernance** — Token-weighted voting, 15% quorum, 14d period
 - **ZIONTreasury** — 3-of-3 multisig
 - **ZIONStaking** — 12% APR, 7d cooldown
+- **ZIONAtomicSwap** — atomic HTLC escrow swap
 - **ZIONFarm** — 1 wZION/s, 90d halving
 - **All 7 contracts verified on Basescan**
 
