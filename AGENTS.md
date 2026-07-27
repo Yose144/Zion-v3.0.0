@@ -1951,6 +1951,23 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 
 **Prevention:** Do not set `MALLOC_ARENA_MAX=1` for the node/pool binaries. The default glibc arena count scales with core count and avoids single-arena `mmap` bloat. If huge pages are reserved, keep only what the active workload (e.g. RandomX dataset) actually needs.
 
+### RTM GhostRider share validation fix (2026-07-27)
+
+- **Symptom:** `rtm_live_test` against `ghostrider.eu.mine.zpool.ca:5354` submitted shares and received `[25,"Invalid share",null]`; CPU mined for tens of minutes with no accepted shares.
+- **Root cause:** `V3/L1/native-ffi/csrc/ghostrider/real/gr.c` replicated `Raptor3um/yiimp-ghostrider`'s buggy `getAlgoString`: reverse byte order, high nibble first, and a loop that dropped the last selected algorithm. It also omitted the post-CryptoNight `memset` of the upper 32 bytes of the 64-byte hash buffer, so the next 64-byte core input was polluted by the previous 64-byte core output.
+- **Fix:** Ported `gr.c` to the reference logic used by `cpuminer-gr-avx2`, `xmrig`, and the Raptoreum daemon:
+  - `getAlgoString` reads previous-block hash bytes **forward**, **low nibble first**.
+  - The final selected algorithm is written to the output array.
+  - After each CN stage, `memset(&hash[8], 0, 32)` zeroes the upper half.
+- **Verification:**
+  ```bash
+  cd /opt/zion/AuXpow && . /root/.cargo/env
+  cargo build --release --features native-ghostrider --bin rtm_live_test
+  cd /opt/zion && ./target/release/rtm_live_test
+  ```
+  Live run on Edge produced `*** SHARE ACCEPTED! ***` for job `22500` after ~10 min.
+- **Notes:** The `mining.submit` 5-param format `[worker, job_id, extranonce2, ntime, nonce]` with `nonce` as the 8-char big-endian hex of the 32-bit value and `extranonce2 = "00000000"` is what zpool accepted; no `auxpow_client.rs` format change was required.
+
 ### Windows 11 AMD RX 5700 XT triple-stream tuning (2026-07-24)
 
 - **Autotune (`zion-miner.exe --auto-tune`) reports:**
