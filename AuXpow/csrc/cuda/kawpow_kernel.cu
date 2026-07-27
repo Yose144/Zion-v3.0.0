@@ -201,10 +201,7 @@ __global__ void kawpow_mine(
 {
     if (*found) return;
 
-    uint64_t nonce = base_nonce + (uint64_t)(blockIdx.x * blockDim.x + threadIdx.x);
-
-    // Standalone keccak512 test for thread 0: compute keccak512 of
-    // [0xAA;32] || [0;8] (nonce=0). CPU ref: seed0=0xc659f544.
+    // Standalone keccak512 test for thread 0: CPU ref: seed0=0xc659f544
     if (blockIdx.x == 0 && threadIdx.x == 0) {
         unsigned char tin[40];
         for (int i = 0; i < 32; i++) tin[i] = 0xAA;
@@ -216,102 +213,7 @@ __global__ void kawpow_mine(
                          | ((unsigned int)tout[2] << 16)
                          | ((unsigned int)tout[3] << 24);
         printf("kaw_standalone_keccak512 seed0=%08x (CPU: c659f544)\n", ts0);
-    }
-
-    // -- Step 1: seed = keccak512(header_hash || nonce) -> 64 bytes --
-    unsigned char seed_input[40];
-    for (int i = 0; i < 32; i++) seed_input[i] = header_hash[i];
-    for (int i = 0; i < 8; i++) seed_input[32 + i] = (unsigned char)(nonce >> (i*8));
-
-    unsigned char seed[64];
-    keccak512(seed_input, 40, seed);
-
-    // -- Step 2: Initialize mix from seed (two 32-byte halves = 16 uint32) --
-    // mix is 16 uint32 values (64 bytes total)
-    unsigned int mix[16];
-    for (int i = 0; i < 16; i++) {
-        mix[i] = (unsigned int)seed[i*4]
-               | ((unsigned int)seed[i*4 + 1] << 8)
-               | ((unsigned int)seed[i*4 + 2] << 16)
-               | ((unsigned int)seed[i*4 + 3] << 24);
-    }
-
-    // -- Step 3: 32 DAG accesses with FNV-1a mixing --
-    // KawPow uses 32 accesses (vs Ethash's 64).
-    for (int i = 0; i < 32; i++) {
-        // index = fnv(i ^ mix[0], mix[0]) % dag_entries
-        unsigned int idx_seed = fnv1a((unsigned int)i ^ mix[0], mix[0]);
-        uint64_t index = (uint64_t)idx_seed % dag_entries;
-
-        // Load first 64 bytes of 128-byte DAG node = 16 uint32 (8 u64 lanes).
-        // KawPow uses a 16-uint32 mix; only the first half of each 128-byte
-        // DAG entry participates in FNV-1a mixing (matches C reference).
-        unsigned int dag_node[16];
-        for (int lane = 0; lane < 8; lane++) {
-            uint64_t val = dag[index * 16 + lane];
-            dag_node[lane * 2]     = (unsigned int)(val & 0xFFFFFFFFu);
-            dag_node[lane * 2 + 1] = (unsigned int)(val >> 32);
-        }
-
-        // mix = fnv(mix, dag_node) -- per-uint32 FNV-1a
-        for (int w = 0; w < 16; w++) {
-            mix[w] = fnv1a(mix[w], dag_node[w]);
-        }
-    }
-
-    // -- Step 4: Compress mix to 32 bytes --
-    // FNV-1a compress: fold 16 uint32 -> 8 uint32 (32 bytes)
-    unsigned int compressed[8];
-    for (int i = 0; i < 8; i++) {
-        compressed[i] = fnv1a(mix[i*2], mix[i*2 + 1]);
-    }
-
-    unsigned char mix_bytes[32];
-    for (int i = 0; i < 8; i++) {
-        mix_bytes[i*4]     = (unsigned char)(compressed[i] & 0xFF);
-        mix_bytes[i*4 + 1] = (unsigned char)((compressed[i] >> 8) & 0xFF);
-        mix_bytes[i*4 + 2] = (unsigned char)((compressed[i] >> 16) & 0xFF);
-        mix_bytes[i*4 + 3] = (unsigned char)((compressed[i] >> 24) & 0xFF);
-    }
-
-    // -- Step 5: hash = keccak256(seed || mix) -> 32 bytes --
-    unsigned char final_input[96];   // 64 (seed) + 32 (mix)
-    for (int i = 0; i < 64; i++) final_input[i] = seed[i];
-    for (int i = 0; i < 32; i++) final_input[64 + i] = mix_bytes[i];
-
-    unsigned char hash[32];
-    keccak256(final_input, 96, hash);
-
-    // -- Step 6: Check target (big-endian byte comparison: hash <= target) --
-    int meets = 1;
-    for (int i = 0; i < 32; i++) {
-        if (hash[i] < target[i]) { meets = 1; break; }
-        if (hash[i] > target[i]) { meets = 0; break; }
-    }
-
-    if (meets) {
-        unsigned int old = atomicExch(found, 1u);
-        if (old == 0u) {
-            *output_nonce = nonce;
-            for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
-            // Write the compressed mix hash for eth_submitWork.
-            for (int i = 0; i < 32; i++) output_mix[i] = mix_bytes[i];
-
-            // Debug: print inputs and first u32 of seed, mix, and hash for CPU comparison
-            unsigned int seed0 = (unsigned int)seed[0]
-                               | ((unsigned int)seed[1] << 8)
-                               | ((unsigned int)seed[2] << 16)
-                               | ((unsigned int)seed[3] << 24);
-            unsigned int hash0 = (unsigned int)hash[0]
-                               | ((unsigned int)hash[1] << 8)
-                               | ((unsigned int)hash[2] << 16)
-                               | ((unsigned int)hash[3] << 24);
-            printf("kawpow_debug nonce=%llu seed0=%08x mix0=%08x hash0=%08x idx0=%llu hdr0=%02x hdr1=%02x s32=%02x s39=%02x\n",
-                   (unsigned long long)nonce, seed0, mix[0], hash0,
-                   (unsigned long long)(fnv1a(((unsigned int)0 ^ mix[0]), mix[0]) % dag_entries),
-                   (unsigned int)header_hash[0], (unsigned int)header_hash[1],
-                   (unsigned int)seed_input[32], (unsigned int)seed_input[39]);
-        }
+        *found = 1u;  // stop after first thread
     }
 }
 
