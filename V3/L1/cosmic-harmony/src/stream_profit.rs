@@ -25,6 +25,17 @@
 
 use serde::{Deserialize, Serialize};
 
+// In public_build, suppress stream_profit log output.
+#[cfg(feature = "public_build")]
+macro_rules! plog {
+    () => {};
+    ($($arg:tt)*) => {};
+}
+#[cfg(not(feature = "public_build"))]
+macro_rules! plog {
+    ($($arg:tt)*) => { eprintln!($($arg)*) };
+}
+
 use crate::revenue::RevenueSource;
 use crate::stream_layers::DeekshaStep;
 
@@ -544,7 +555,7 @@ fn fetch_whattomine(config: &StreamProfitConfig) -> StreamProfitSnapshot {
     match fetch_url_blocking(url, 10) {
         Ok(body) => parse_whattomine_response(&body),
         Err(e) => {
-            eprintln!("stream_profit: whattomine fetch error: {e}");
+            plog!("stream_profit: whattomine fetch error: {e}");
             let mut snap = StreamProfitSnapshot::fallback();
             snap.live = false;
             snap
@@ -563,7 +574,7 @@ fn fetch_coingecko(config: &StreamProfitConfig) -> StreamProfitSnapshot {
     match fetch_url_blocking(url, 10) {
         Ok(body) => parse_coingecko_response(&body),
         Err(e) => {
-            eprintln!("stream_profit: coingecko fetch error: {e}");
+            plog!("stream_profit: coingecko fetch error: {e}");
             let mut snap = StreamProfitSnapshot::fallback();
             snap.live = false;
             snap
@@ -613,7 +624,7 @@ fn parse_whattomine_response(body: &str) -> StreamProfitSnapshot {
     // Use serde_json to parse the response.
     let parsed: Option<serde_json::Value> = serde_json::from_str(body).ok();
     let Some(json) = parsed else {
-        eprintln!("stream_profit: whattomine parse error");
+        plog!("stream_profit: whattomine parse error");
         return StreamProfitSnapshot::fallback();
     };
 
@@ -703,7 +714,7 @@ fn parse_whattomine_response(body: &str) -> StreamProfitSnapshot {
 fn parse_coingecko_response(body: &str) -> StreamProfitSnapshot {
     let parsed: Option<serde_json::Value> = serde_json::from_str(body).ok();
     let Some(json) = parsed else {
-        eprintln!("stream_profit: coingecko parse error");
+        plog!("stream_profit: coingecko parse error");
         return StreamProfitSnapshot::fallback();
     };
 
