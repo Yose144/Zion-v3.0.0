@@ -11,8 +11,12 @@ zion-l1-types = { workspace = true }
 
 async-trait = { workspace = true }
 axum = { workspace = true }
+bip39 = { workspace = true }
+bitcoin = { workspace = true }
 chrono = { workspace = true }
+ethers = { workspace = true }
 hex = { workspace = true }
+rand = { workspace = true }
 reqwest = { workspace = true }
 rusqlite = { workspace = true }
 serde = { workspace = true }
@@ -25,6 +29,7 @@ toml = { workspace = true }
 tower = { workspace = true }
 tower-http = { workspace = true }
 tracing = { workspace = true }
+zeroize = { workspace = true }
 
 [dev-dependencies]
 tokio-test = { version = "0.4" }
