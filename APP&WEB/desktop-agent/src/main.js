@@ -2201,6 +2201,9 @@ function startMiningV3(config, v3Path) {
     args.push('--gpu', selectedGpuBackend);
   }
   args.push('--stats-file', STATS_PATH);
+  // The miner is launched non-interactively from Electron; keep the TUI off so
+  // stdout is a clean stream of logs/telemetry for the agent to parse.
+  args.push('--no-tui');
 
   // ── 6a. Trinity CLI flags (DeekshaChv3 parallel streaming) ──────────
   // Forward the user's algorithm / coin preferences to the V3 miner so the
@@ -2242,10 +2245,13 @@ function startMiningV3(config, v3Path) {
     ZION_NO_DASHBOARD: '1', // desktop agent renders its own Trinity UI; suppress SMOS compact dashboard
     ZION_NO_FANCY: '1',     // suppress ASCII banner and block-found art; keep machine-parseable logs
     ZION_NONCE_BASE: String((Date.now() >>> 0) & 0x1fffffff),
+    ZION_PAYOUT_ADDRESS: wallet,
     // ── Trinity: enable parallel ZION (GPU) + external coin (CPU/GPU) ──
     // When enabled, the pool sends Job messages with external_stream /
     // external_stream_cpu fields and the miner runs them in parallel.
     ZION_ENABLE_STREAM_SWITCH: tripleStreamEnabled ? '1' : '0',
+    ZION_STREAM2_ENABLED: tripleStreamEnabled ? '1' : '0',
+    ZION_STREAM3_ENABLED: tripleStreamEnabled ? '1' : '0',
   };
   // Forward coin preferences via env (in addition to CLI flags) so the miner's
   // autonomous profit router and CoinPreference message see them even if a
