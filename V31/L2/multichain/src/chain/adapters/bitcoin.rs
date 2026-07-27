@@ -229,7 +229,10 @@ impl ChainAdapter for BitcoinAdapter {
 
         let utxos = self
             .client
-            .get(format!("{}/api/address/{}/utxo", self.api_url, self.deposit_address_str))
+            .get(format!(
+                "{}/api/address/{}/utxo",
+                self.api_url, self.deposit_address_str
+            ))
             .send()
             .await
             .map_err(|e| MultichainError::Internal(e.to_string()))?
@@ -361,8 +364,9 @@ impl ChainAdapter for BitcoinAdapter {
             .await
             .map_err(|e| MultichainError::Internal(e.to_string()))?;
 
-        Hash::from_hex(&txid)
-            .ok_or_else(|| MultichainError::Internal(format!("broadcast returned invalid txid: {txid}")))
+        Hash::from_hex(&txid).ok_or_else(|| {
+            MultichainError::Internal(format!("broadcast returned invalid txid: {txid}"))
+        })
     }
 
     async fn balance(&self, address: &Address) -> MultichainResult<Amount> {
@@ -387,7 +391,8 @@ impl ChainAdapter for BitcoinAdapter {
     }
 
     async fn execute_outbound(&self, transfer: &crate::types::Transfer) -> MultichainResult<Hash> {
-        self.send_payment(&transfer.target.address, transfer.target.amount).await
+        self.send_payment(&transfer.target.address, transfer.target.amount)
+            .await
     }
 }
 

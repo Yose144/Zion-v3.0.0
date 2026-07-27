@@ -130,7 +130,12 @@
 - `BitcoinAdapter` přijímá `Keyring` a ukládá si deposit adresu.
 - `BitcoinAdapter::watch_events` volá mempool.space `/api/address/{addr}/txs`, najde UTXO výstupy na deposit adresu a parsuje OP_RETURN memo.
 - `balance` používá `/api/address/{addr}/utxo` a `confirmations` používá `/api/tx/{txid}`.
-- `send_payment` / `execute_outbound` zatím neimplementovány (potřebují P2WPKH tx build + sign).
+
+### 21. Bitcoin adapter — P2WPKH send_payment a bridge execute_outbound
+- `Keyring` exportuje `bitcoin_key_pair` (private + public) pro BIP84 odvozené adresy.
+- `BitcoinAdapter::send_payment` vybírá potvrzené UTXOs z mempool.space, počítá fee z `/v1/fees/recommended`, staví P2WPKH transakci a podepisuje ji pomocí `SighashCache` + `secp256k1`.
+- Transakce se broadcastuje přes mempool.space `/api/tx` a vrací se `txid` jako `Hash`.
+- `execute_outbound` předává `BurnRelease` transfer do `send_payment`, takže bridge může odesílat BTC na cílovou adresu.
 
 ## Verifikace
 
@@ -170,6 +175,7 @@ Rozpis testů:
 - `9b0ce9c5` — `feat(v31): Dash31 pool payouts panel`
 - `9cbcaba7` — `feat(v31): submit solved blocks to zion-l1 RPC`
 - `d91ec96d` — `feat(v31): Bitcoin deposit watching via mempool.space`
+- `<novy>` — `feat(v31): Bitcoin P2WPKH send_payment and execute_outbound`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -190,7 +196,7 @@ Rozpis testů:
 2. **Real chain adapters (další kroky)**
    - `EvmAdapter` ✅ — provider + wallet + contract addresses; zbývá nasadit validator wallet a testovat `submitLockProof` na Base.
    - `ZionL1Adapter` ✅ — `getBridgeLocks` a `submitBridgeUnlock` s proofem; zbývá testovat na živém L1 RPC.
-   - `BitcoinAdapter` ✅ — BIP84 P2WPKH adresy z `Keyring`, `watch_events` pro BTC deposity přes mempool.space (OP_RETURN memo), `balance` přes UTXO API a `confirmations`; `send_payment` / `execute_outbound` (burn release) zbývá.
+   - `BitcoinAdapter` ✅ — BIP84 P2WPKH adresy z `Keyring`, `watch_events` pro BTC deposity přes mempool.space (OP_RETURN memo), `balance` přes UTXO API, `confirmations`, P2WPKH `send_payment` build/sign/broadcast a `execute_outbound` pro `BurnRelease` bridge.
    - Testovací bridge end-to-end mezi `zion-l1` a `base` (nejprve na testnet fork).
 
 3. **Bridge watcher finalizace**
