@@ -283,6 +283,11 @@ impl CudaExternalMiner {
             if use_fast_math {
                 opts.push("--use_fast_math".to_string());
             }
+            // KawPow: add -G (device debug, no optimizations) to work
+            // around NVRTC compiler bug on compute_61 (Pascal).
+            if matches!(algo, CudaExtAlgo::Kawpow) {
+                opts.push("-G".to_string());
+            }
             let ptx = compile_ptx_with_opts(
                 &processed,
                 CompileOptions {
