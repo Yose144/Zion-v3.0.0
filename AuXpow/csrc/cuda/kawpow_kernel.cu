@@ -280,7 +280,7 @@ __global__ XMRIG_INCLUDE_LAUNCH_BOUNDS void progpow_search(
     __shared__ uint32_t c_dag[PROGPOW_CACHE_WORDS];
 
     const uint32_t lid = threadIdx.x;
-    const uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+    uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
 
     const uint32_t lane_id = lid & (PROGPOW_LANES - 1);
     const uint32_t group_id = lid / PROGPOW_LANES;
