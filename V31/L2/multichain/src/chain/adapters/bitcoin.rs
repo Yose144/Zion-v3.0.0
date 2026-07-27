@@ -34,7 +34,11 @@ pub struct BitcoinAdapter {
 }
 
 impl BitcoinAdapter {
-    pub fn new(network_str: &str, rpc_url: Option<&str>, keyring: &Keyring) -> MultichainResult<Self> {
+    pub fn new(
+        network_str: &str,
+        rpc_url: Option<&str>,
+        keyring: &Keyring,
+    ) -> MultichainResult<Self> {
         let network = bitcoin::Network::from_core_arg(network_str).map_err(|_| {
             MultichainError::Config(format!("unknown bitcoin network: {network_str}"))
         })?;
@@ -121,7 +125,10 @@ impl ChainAdapter for BitcoinAdapter {
     }
 
     async fn watch_events(&self) -> MultichainResult<Vec<DepositEvent>> {
-        let url = format!("{}/api/address/{}/txs", self.api_url, self.deposit_address_str);
+        let url = format!(
+            "{}/api/address/{}/txs",
+            self.api_url, self.deposit_address_str
+        );
         let txs: Vec<MempoolAddressTx> = self
             .client
             .get(&url)
