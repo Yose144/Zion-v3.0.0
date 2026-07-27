@@ -883,6 +883,8 @@ impl CudaExternalMiner {
 
         let threads_per_block: u32 = if self.algo == CudaExtAlgo::Verushash {
             128 // Verushash kernel uses __launch_bounds__(128)
+        } else if self.algo == CudaExtAlgo::Kawpow {
+            128 // KawPow kernel uses GROUP_SIZE=128 (HASHES_PER_GROUP=8)
         } else {
             // Configurable via ZION_CUDA_BLOCK_SIZE env var.
             // Default 256 (optimal for Ampere/Ada). For Pascal/Turing (GTX 1080, etc.),
