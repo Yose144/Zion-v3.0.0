@@ -143,6 +143,12 @@
 - `zion miner start` — spustí `MinerRuntime` s volitelnými `--reward-address`, `--auxpow-pool`, `--worker`, `--no-zion`, `--no-gpu`, `--no-cpu`; zastavení Ctrl-C pomocí `tokio::signal::ctrl_c` + `watch::Receiver`.
 - `zion doctor` — načte `MultichainService`, vypíše health každého adapteru a vrátí chybu, pokud je nějaký unreachable.
 
+### 23. Payout execution pro pool
+- `Keyring` odvozuje Zion adresy ve formátu `zion1...` kompatibilním s `zion-l1` (SHA-256 + RIPEMD-160 + custom base32 + checksum); přidán `zion_public_key`.
+- `ZionL1Adapter::send_payment` staví a podepisuje account-model transakci, posílá ji přes `submitTransaction` JSON-RPC a vrací `txid`.
+- `MultichainService::execute_payouts` projde `last_payouts` z poolu, zkontroluje `processed_payouts` set a pro každý neodeslaný payout zavolá `ZionL1Adapter::send_payment`.
+- `ApiServer::run` spouští payout executor každých 30s jako background task.
+
 ## Verifikace
 
 ```bash
@@ -183,6 +189,7 @@ Rozpis testů:
 - `d91ec96d` — `feat(v31): Bitcoin deposit watching via mempool.space`
 - `98a46b5e` — `feat(v31): Bitcoin P2WPKH send_payment and execute_outbound`
 - `1ac40f9b` — `feat(v31): pool/miner/doctor CLI extensions`
+- `<novy>` — `feat(v31): automatic pool payout execution via ZionL1Adapter`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -190,6 +197,7 @@ Rozpis testů:
    - Bind `StratumServer` na TCP port (Edge: `62.171.141.136:8444` nebo podobně podle `AGENTS.md`).
    - Generovat reálné `mining.notify` joby z `zion-core` / `zion-node`.
    - Propojit PPLNS payouts se skutečnými block rewards.
+   - Automaticky odesílat PPLNS payouts na worker adresy přes `ZionL1Adapter`.
    - `Dash31` `/v1/pool/stats` ✅.
    - TCP stratum ✅ — `ApiServer` spouští `StratumServer` na portu z `[pool]` configu.
    - Živé `mining.notify` joby ✅ — `ChainAdapter::block_template` a `ZionL1Adapter::getBlockTemplate` RPC; stratum broadcast každých 10s fetchne reálný template z `zion-l1` a pushne ho minerům, jinak fallback dummy.
@@ -199,6 +207,7 @@ Rozpis testů:
    - Worker jako payout adresa ✅ — pokud stratum worker začíná `zion1...`, je použita jako payout adresa pro PPLNS.
    - `Dash31` payouts panel ✅ — zobrazuje nejnovější payouts z `/v1/pool/payouts` v pool sekci.
    - Submit nalezeného bloku ✅ — `StratumServer` volá `submitBlock` JSON-RPC na `l1_rpc_url` (config `[pool].l1_rpc_url`) při nalezení bloku.
+   - Payout execution ✅ — `MultichainService::execute_payouts` posílá každý payout přes `ZionL1Adapter::send_payment`; `ApiServer` spouští executor task každých 30s. Každý payout se odesílá jen jednou pomocí `processed_payouts` setu.
 
 2. **Real chain adapters (další kroky)**
    - `EvmAdapter` ✅ — provider + wallet + contract addresses; zbývá nasadit validator wallet a testovat `submitLockProof` na Base.

@@ -1,7 +1,7 @@
 //! `MultichainService` — the orchestrator that wires adapters, the DB, and
 //! the domain modules (bridge, swap, DEX, credits) into one runtime.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex as StdMutex};
 
 use tokio::sync::{Mutex, RwLock};
@@ -32,6 +32,7 @@ pub struct MultichainService {
     credits: CreditsLedger,
     dex: RwLock<DexRouter>,
     pool: Option<Arc<StdMutex<MiningPool>>>,
+    processed_payouts: Arc<StdMutex<HashSet<(u64, String)>>>,
 }
 
 impl MultichainService {
@@ -86,6 +87,7 @@ impl MultichainService {
             credits: CreditsLedger::new(),
             dex: RwLock::new(DexRouter::new()),
             pool,
+            processed_payouts: Arc::new(StdMutex::new(HashSet::new())),
         }
     }
 
@@ -218,6 +220,63 @@ impl MultichainService {
     /// Borrow the configured mining pool, if any.
     pub fn pool(&self) -> Option<Arc<StdMutex<MiningPool>>> {
         self.pool.as_ref().map(Arc::clone)
+    }
+
+    /// Execute any pending PPLNS payouts for the configured pool using the
+    /// Zion L1 adapter. Each payout is sent only once per `(block, address)`.
+    pub async fn execute_payouts(&self) -> MultichainResult<()> {
+        let pool = match self.pool.as_ref() {
+            Some(p) => p,
+            None => return Ok(()),
+        };
+        let adapter = match self.adapters.get(ChainId::ZionL1) {
+            Some(a) => a,
+            None => return Ok(()),
+        };
+
+        let (block_height, payouts) = {
+            let pool = pool
+                .lock()
+                .map_err(|_| MultichainError::Internal("pool lock poisoned".to_string()))?;
+            match pool.last_payouts.clone() {
+                Some(p) => p,
+                None => return Ok(()),
+            }
+        };
+
+        for payout in &payouts {
+            let key = (block_height, payout.address.encoded.clone());
+            {
+                let processed = self.processed_payouts.lock().unwrap();
+                if processed.contains(&key) {
+                    continue;
+                }
+            }
+
+            match adapter.send_payment(&payout.address, payout.amount).await {
+                Ok(hash) => {
+                    tracing::info!(
+                        "payout executed: block={} to={} amount={} tx={}",
+                        block_height,
+                        payout.address.encoded,
+                        payout.amount.0,
+                        hash.to_hex()
+                    );
+                    self.processed_payouts.lock().unwrap().insert(key);
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        "payout failed: block={} to={} amount={} error={}",
+                        block_height,
+                        payout.address.encoded,
+                        payout.amount.0,
+                        e
+                    );
+                }
+            }
+        }
+
+        Ok(())
     }
 
     /// Return pool stats, or `None` if the pool is not configured.

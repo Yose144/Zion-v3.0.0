@@ -34,6 +34,7 @@ tower = { workspace = true }
 tower-http = { workspace = true }
 tracing = { workspace = true }
 zeroize = { workspace = true }
+ripemd = "0.1.3"
 
 [dev-dependencies]
 tokio-test = { version = "0.4" }

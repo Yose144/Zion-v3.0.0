@@ -90,6 +90,17 @@ impl ApiServer {
     pub async fn run(&self) -> MultichainResult<()> {
         self.start_stratum_if_configured().await?;
 
+        let payout_service = Arc::clone(&self.service);
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(30));
+            loop {
+                interval.tick().await;
+                if let Err(e) = payout_service.execute_payouts().await {
+                    tracing::warn!("payout executor error: {}", e);
+                }
+            }
+        });
+
         let state = AppState {
             service: Arc::clone(&self.service),
         };
