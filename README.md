@@ -1,11 +1,13 @@
-# ZION TerraNova v3.0.6
+# ZION TerraNova v3.0.7
 
 > **Proof of Work Layer 1 for the next 100 years.**
 > From blockchain to the stars.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Status:** Mainnet Beta · 3.0.6 "Triple Parallel" live · 3.0.7 "Trinity" planning · 14/15 services active (zion-free-world, zion-issobella disabled) · Chain Height 6735+ · Mainnet Alpha target: 3.1.0 — [`MAINNET_ALPHA_PLAN.md`](docs/3.0.6/MAINNET_ALPHA_PLAN.md) + V3.1 migration [`V3.1_MIGRATION_PLAN.md`](docs/3.0.6/V3.1_MIGRATION_PLAN.md) + native integration [`V3.1_INTEGRATION_PLAN.md`](docs/3.0.6/V3.1_INTEGRATION_PLAN.md) · Public Launch: 31 December 2026
+**Status:** Mainnet Beta · 3.0.7 "Trinity" in final verification · 14/15 services active (zion-free-world, zion-issobella disabled) · Chain Height 6735+ · Mainnet Alpha target: 3.1.0 — [`MAINNET_ALPHA_PLAN.md`](docs/3.0.6/MAINNET_ALPHA_PLAN.md) + V3.1 migration [`V3.1_MIGRATION_PLAN.md`](docs/3.0.6/V3.1_MIGRATION_PLAN.md) + native integration [`V3.1_INTEGRATION_PLAN.md`](docs/3.0.6/V3.1_INTEGRATION_PLAN.md) · Public Launch: 31 December 2026
+
+**Latest win:** ETC/Ethash CPU reference aligned with `ethash` 0.4 crate and CUDA kernel byte-for-byte (`ETHASH_CPU_GPU_MATCH`, ~121 MH/s on GTX 1070 Ti, epoch 1). Root documentation cleaned — non-3.0.7 plans and reports moved to [`docs/3.0.6/`](docs/3.0.6/).
 
 **Current plan:** [`TRINITY_ALL_GREEN_PLAN.md`](TRINITY_ALL_GREEN_PLAN.md) · **Version overview:** [`3.0.7.md`](3.0.7.md) · **Previous 3.0.6 archive:** [`docs/3.0.6/`](docs/3.0.6/)
 

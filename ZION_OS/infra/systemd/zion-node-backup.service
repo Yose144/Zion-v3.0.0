@@ -1,0 +1,10 @@
+[Unit]
+Description=ZION Local Node Backup (V3/data)
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/2.9.6-main
+ExecStart=%h/2.9.6-main/scripts/backup-node.sh
+StandardOutput=journal
+StandardError=journal
