@@ -194,25 +194,92 @@ backend           : opencl
 
 ---
 
-## 5. Files Changed
+## 5. Stale Job Reject Fix (2026-07-27)
+
+### Problem
+
+GPU shares had **41% reject rate** (`NoSolution` reason) on GTX 1070 Ti.
+Root cause: default `ZION_GPU_MAX_BATCH=262144` → each GPU batch took
+~10s at 25 KH/s, but the pool rotates ZION jobs every ~5s → stale nonces.
+
+### Fix
+
+Reduced default batch size from 262144 → **65536** in all three code paths:
+- `gpu_backend.rs::gpu_scan_job()` (local/benchmark mode)
+- `main.rs` pool mode synchronous scan
+- `gpu_backend.rs::GpuPipelineState::step()` (pipelined mode)
+
+Desktop agent now sets `ZION_GPU_MAX_BATCH=65536` explicitly.
+Override with `ZION_GPU_MAX_BATCH` env var or `config.gpuMaxBatch`.
+
+### Results
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Batch size | 262144 | 65536 |
+| Batch time | ~7.4s | ~1.9s |
+| Accept rate | 59% (41% reject) | **100% (0 reject)** |
+| GPU hashrate | 25 KH/s | 20-35 KH/s |
+| GPU temp (ZION only) | 64°C | 60°C |
+
+---
+
+## 6. Thermal Management
+
+### Observed Temperatures
+
+| Mode | GPU Temp | GPU Power | Notes |
+|------|----------|-----------|-------|
+| Idle | 50°C | 11W | Fan 45% |
+| ZION only (deeksha_lite) | 60°C | 44W | Single stream |
+| Triple-stream (ZION+ZANO+VRSC) | **81°C** | 43W | **Red zone** |
+
+### Recommendations for GTX 1070 Ti
+
+The 81°C under triple-stream is caused by the ZANO ProgPoW stream which
+is GPU-intensive. While the GTX 1070 Ti can handle up to 94°C, sustained
+81°C reduces GPU lifespan.
+
+**Option 1: Power limit (recommended)**
+```powershell
+# Reduce power limit from 144W to 120W (requires admin)
+nvidia-smi -pl 120
+# Restore default
+nvidia-smi -pl 144
+```
+This reduces temp by ~8-10°C with minimal hashrate loss (~5%).
+
+**Option 2: Disable ZANO stream**
+Set `ZION_STREAM2_ENABLED=0` in miner config or disable triple-stream
+in desktop agent settings. GPU only mines ZION → temp drops to ~60°C.
+
+**Option 3: Custom fan curve**
+Use MSI Afterburner or EVGA Precision XOC to set a more aggressive
+fan curve (e.g., 80% fan at 70°C).
+
+---
+
+## 7. Files Changed
 
 | File | Change |
 |------|--------|
-| `V3/L1/miner/src/main.rs` | MinerMetricsSnapshot GPU fields, stats.json, HTTP /stats, GPU refresh |
-| `V3/L1/miner/src/gpu_backend.rs` | nvidia-smi/rocm-smi helpers, v5 async copies, v6 launch_batch/collect_batch, PTXAS opts |
+| `V3/L1/miner/src/main.rs` | MinerMetricsSnapshot GPU fields, stats.json, HTTP /stats, GPU refresh, batch size fix (pool mode), local mode telemetry fix, init_verushash cfg guard |
+| `V3/L1/miner/src/gpu_backend.rs` | nvidia-smi/rocm-smi helpers, v5 async copies, v6 launch_batch/collect_batch, PTXAS opts, batch size fix (local + pipeline mode) |
 | `V3/L1/miner/src/cosmic_harmony_deeksha.cu` | __launch_bounds__(256) on all kernels |
 | `V3/L1/miner/build.rs` | V3/L1/native-libs link search path |
-| `APP&WEB/desktop-agent/src/main.js` | GPU field parsing, share event parsing, IPC |
+| `APP&WEB/desktop-agent/src/main.js` | GPU field parsing, share event parsing, IPC, ZION_GPU_MAX_BATCH env setup |
 | `APP&WEB/desktop-agent/src/preload.js` | onShareEvent IPC channel |
 | `APP&WEB/desktop-agent/src/ui/renderer.js` | GPU panel, share log, sparkline rendering |
 | `APP&WEB/desktop-agent/src/ui/index.html` | GPU rows, share log panel, sparkline canvas, CSS |
 
 ---
 
-## 6. Commits
+## 8. Commits
 
 | Commit | Description |
 |--------|-------------|
 | `cc022c3ff` | feat(miner+desktop): GPU hardware panel, share log, hashrate sparkline |
 | `d93cd232d` | feat(cuda): v5 async htod copies + v6 pool I/O pipelining for ekam kernel |
 | `d8e8b4f3e` | fix(cuda): resolve PTXAS O3 hang for ekam kernel |
+| `ec45b37b1` | feat(desktop-agent): professional TUI mode for terminal mining dashboard |
+| `366820af5` | fix(gpu): reduce default batch size to 65536 to eliminate stale job rejects |
