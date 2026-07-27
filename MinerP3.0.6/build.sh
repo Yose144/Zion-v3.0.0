@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────────
 # MinerP3.0.6/build.sh
-# Build the public-facing ZION miner binary (v3.0.6-beta) with
-# Trinity hidden behind the `public_build` feature flag.
+# Build the public-facing ZION miner binary (v3.0.6-beta) with the
+# `public_build` feature flag enabled.
 #
-# The binary contains full Trinity (AuxPow) support but
-# the TUI shows only "ZION / Deeksha Lite v1" — no ZANO, VRSC,
-# or external coin names are visible to the user.
+# The public miner is locked to the ZION / Deeksha Lite v1 algorithm.
+# Trinity (AuxPoW) backend support is still compiled in, but the TUI and
+# logs show only the ZION stream — no ZANO, VRSC, or other external
+# coin names are visible to the user.
 #
 # Usage:  ./MinerP3.0.6/build.sh
 # Output: MinerP3.0.6/dist/zion-miner-linux-x86_64.tar.gz
@@ -26,12 +27,16 @@ echo ""
 
 # ── Build ──
 cd "${V3_DIR}"
-echo "[1/3] Building zion-miner with public_build + GPU + native hashers..."
-cargo build --release -p zion-miner \
-    --features public_build,gpu-opencl,native-hashers,native-verushash,native-randomx \
-    2>&1 | tail -5
+echo "[1/3] Building zion-miner with public_build + OpenCL + CUDA + native hashers..."
+cd "${V3_DIR}"
+source ~/.cargo/env 2>/dev/null || true
+ZION_CPU_TARGET=x86-64 ZION_DISABLE_OPENMP=1 \
+    cargo build --release --target x86_64-unknown-linux-gnu -p zion-miner \
+        --bin zion-miner \
+        --features public_build,gpu-opencl,gpu-cuda,native-all,native-hashers \
+        2>&1 | tail -5
 
-BINARY="${V3_DIR}/target/release/zion-miner"
+BINARY="${V3_DIR}/target/x86_64-unknown-linux-gnu/release/zion-miner"
 if [[ ! -x "${BINARY}" ]]; then
     echo "ERROR: Binary not found at ${BINARY}"
     exit 1
@@ -58,7 +63,7 @@ echo "SHA256:  $(cat SHA256SUMS.txt)"
 echo ""
 echo "Upload to GitHub release:"
 echo "  gh release create ${VERSION} --repo Zion-TerraNova/v3-Mainnet \\"
-echo "    --title 'ZION v3.0.6-beta — Trinity Miner' \\"
+echo "    --title 'ZION v3.0.6-beta — Public Miner' \\"
 echo "    --notes-file ${SCRIPT_DIR}/RELEASE_NOTES.md \\"
 echo "    --prerelease \\"
 echo "    ${TARBALL} ${DIST_DIR}/SHA256SUMS.txt"

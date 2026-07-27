@@ -1567,7 +1567,8 @@ def _compute_derived_status(svc: dict, health_map: dict) -> dict:
 def all_services_health() -> list:
     # First pass: raw health (parallel to avoid serial TCP timeouts)
     raw = {}
-    with ThreadPoolExecutor(max_workers=min(8, len(SERVICE_REGISTRY) or 1)) as ex:
+    ex = ThreadPoolExecutor(max_workers=min(8, len(SERVICE_REGISTRY) or 1))
+    try:
         futures = {ex.submit(check_service_health, svc): svc["id"] for svc in SERVICE_REGISTRY}
         for fut in as_completed(futures, timeout=3.0):
             sid = futures[fut]
@@ -1575,6 +1576,8 @@ def all_services_health() -> list:
                 raw[sid] = fut.result()
             except Exception:
                 raw[sid] = {"alive": False, "status": "error", "details": "health check failed"}
+    finally:
+        ex.shutdown(wait=False, cancel_futures=True)
     # Fill in any timed-out entries
     for svc in SERVICE_REGISTRY:
         if svc["id"] not in raw:
@@ -2627,32 +2630,36 @@ def _build_status_edge_primary() -> dict:
     edge_node2_nodeinfo = None
     edge_peers = None
     edge_nodeinfo = None
-    with ThreadPoolExecutor(max_workers=5) as ex:
-        futures = {
-            ex.submit(_edge_rpc_call),
-            ex.submit(_edge_node2_rpc_call),
-            ex.submit(_edge_node2_nodeinfo_call),
-            ex.submit(_edge_peerinfo_call),
-            ex.submit(_edge_nodeinfo_call),
-        }
-        try:
-            for fut in as_completed(futures, timeout=5.0):
-                try:
-                    key, val = fut.result()
-                    if key == "edge":
-                        edge_rpc_info = val
-                    elif key == "edge2":
-                        edge_node2_info = val
-                    elif key == "edge2_info":
-                        edge_node2_nodeinfo = val
-                    elif key == "edge_peers":
-                        edge_peers = val
-                    elif key == "edge_info":
-                        edge_nodeinfo = val
-                except Exception:
-                    pass
-        except TimeoutError:
-            pass
+    ex = ThreadPoolExecutor(max_workers=5)
+    futures = {
+        ex.submit(_edge_rpc_call),
+        ex.submit(_edge_node2_rpc_call),
+        ex.submit(_edge_node2_nodeinfo_call),
+        ex.submit(_edge_peerinfo_call),
+        ex.submit(_edge_nodeinfo_call),
+    }
+    try:
+        for fut in as_completed(futures, timeout=5.0):
+            try:
+                key, val = fut.result()
+                if key == "edge":
+                    edge_rpc_info = val
+                elif key == "edge2":
+                    edge_node2_info = val
+                elif key == "edge2_info":
+                    edge_node2_nodeinfo = val
+                elif key == "edge_peers":
+                    edge_peers = val
+                elif key == "edge_info":
+                    edge_nodeinfo = val
+            except Exception:
+                pass
+    except TimeoutError:
+        pass
+    finally:
+        # Do not block the dashboard if an RPC thread is still stuck waiting
+        # for a node response. Running threads will time out on their own.
+        ex.shutdown(wait=False, cancel_futures=True)
 
     # ── Edge Node status ─────────────────────────────────────────────────────
     edge_node1_status = {
@@ -4376,118 +4383,33 @@ def get_edge_backup_path(filename: str) -> "Path | None":
 
 
 def get_pool_miners() -> dict:
-    """Fetch active miners from Edge pool Prometheus metrics."""
+    """Fetch active miners from Edge pool /miners endpoint.
+
+    Uses the JSON /miners endpoint as the primary source for per-miner data;
+    only extracts aggregate counters (active_sessions, miners_tracked) from
+    Prometheus metrics so the response is consistent and avoids parsing the
+    full metrics text for every field.
+    """
+    active_sessions = 0
+    miners_tracked = 0
     try:
         import urllib.request as _ur
         with _ur.urlopen(f"http://{EDGE_RPC_HOST}:8455/metrics", timeout=3.0) as r:
-            body = r.read().decode("utf-8", errors="ignore")
-    except Exception as e:
-        return {"ok": False, "miners": [], "active_sessions": 0, "total_hashrate_khs": 0, "error": str(e)}
-
-    miners = {}
-    active_sessions = 0
-    miners_tracked = 0
-    total_hashrate_hps = 0.0
-    u64_max = (1 << 64) - 1
-
-    for line in body.splitlines():
-        line = line.strip()
-        if line.startswith("zion_pool_active_sessions "):
-            active_sessions = int(float(line.split()[-1]))
-        elif line.startswith("zion_pool_miners_tracked "):
-            miners_tracked = int(float(line.split()[-1]))
-        elif line.startswith("zion_pool_miner_hashrate_hps{"):
-            # Parse labels: miner_id="...",worker_name="..."
-            # Use composite key "miner_id/worker_name" since multiple workers
-            # can share the same miner_id (e.g. local-miner).
-            m_id = re.search(r'miner_id="([^"]+)"', line)
-            w_name = re.search(r'worker_name="([^"]+)"', line)
-            val = float(line.split()[-1])
-            if m_id and w_name:
-                key = f"{m_id.group(1)}/{w_name.group(1)}"
-                miners[key] = {
-                    "miner_id": m_id.group(1),
-                    "worker_name": w_name.group(1),
-                    "hashrate_hps": val,
-                    "valid_shares": 0,
-                    "invalid_shares": 0,
-                    "paid_total": 0,
-                    "paid_total_atomic": 0,
-                    "blocks_found": 0,
-                    "last_seen": 0,
-                }
-                total_hashrate_hps += val
-        elif line.startswith("zion_pool_miner_valid_shares_total{"):
-            m_id = re.search(r'miner_id="([^"]+)"', line)
-            w_name = re.search(r'worker_name="([^"]+)"', line)
-            val = int(float(line.split()[-1]))
-            if m_id:
-                key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
-                if key in miners:
-                    miners[key]["valid_shares"] = val
-        elif line.startswith("zion_pool_miner_invalid_shares_total{"):
-            m_id = re.search(r'miner_id="([^"]+)"', line)
-            w_name = re.search(r'worker_name="([^"]+)"', line)
-            val = int(float(line.split()[-1]))
-            if m_id:
-                key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
-                if key in miners:
-                    miners[key]["invalid_shares"] = val
-        elif line.startswith("zion_pool_miner_paid_total_atomic{"):
-            m_id = re.search(r'miner_id="([^"]+)"', line)
-            w_name = re.search(r'worker_name="([^"]+)"', line)
-            val = int(line.split()[-1])
-            if m_id:
-                key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
-                if key in miners:
-                    miners[key]["paid_total_atomic"] = val
-                    miners[key]["paid_total"] = flowers_to_zion(val)  # convert atomic flowers to ZION
-        elif line.startswith("zion_pool_miner_last_seen_seconds{"):
-            m_id = re.search(r'miner_id="([^"]+)"', line)
-            w_name = re.search(r'worker_name="([^"]+)"', line)
-            val = int(float(line.split()[-1]))
-            if m_id:
-                key = f"{m_id.group(1)}/{w_name.group(1)}" if w_name else m_id.group(1)
-                if key in miners:
-                    miners[key]["last_seen"] = val
-
-    miner_list = list(miners.values())
-
-    # Merge with the sanitized payout view so UI consumers don't inherit stale
-    # per-miner counters from older pool binaries.
-    # Use composite key "address/worker_name" for matching.
-    try:
-        payout_miners = fetch_pool_miners()
-        payout_by_key = {}
-        for payout_miner in payout_miners:
-            addr = payout_miner.get("address") or payout_miner.get("miner_id") or ""
-            worker = payout_miner.get("worker_name") or ""
-            composite = f"{addr}/{worker}" if worker else addr
-            if composite:
-                payout_by_key[composite] = payout_miner
-        for miner in miner_list:
-            m_addr = miner.get("miner_id") or ""
-            m_worker = miner.get("worker_name") or ""
-            m_composite = f"{m_addr}/{m_worker}" if m_worker else m_addr
-            payout_miner = payout_by_key.get(m_composite)
-            if not payout_miner:
-                continue
-            payout_atomic = int(payout_miner.get("paid_total_atomic") or 0)
-            if payout_atomic and (
-                int(miner.get("paid_total_atomic") or 0) == u64_max
-                or int(miner.get("paid_total_atomic") or 0) == 0
-            ):
-                miner["paid_total_atomic"] = payout_atomic
-                miner["paid_total"] = flowers_to_zion(payout_atomic)
-            miner["blocks_found"] = payout_miner.get("blocks_found", miner.get("blocks_found", 0))
-            if payout_miner.get("pending_balance") is not None:
-                miner["pending_balance"] = payout_miner.get("pending_balance")
-            if payout_miner.get("on_chain_balance_zion") is not None:
-                miner["on_chain_balance_zion"] = payout_miner.get("on_chain_balance_zion")
-            if payout_miner.get("payout_address"):
-                miner["payout_address"] = payout_miner.get("payout_address")
+            for line in r.read().decode("utf-8", errors="ignore").splitlines():
+                line = line.strip()
+                if line.startswith("zion_pool_active_sessions "):
+                    active_sessions = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_miners_tracked "):
+                    miners_tracked = int(float(line.split()[-1]))
     except Exception:
         pass
+
+    try:
+        miner_list = fetch_pool_miners()
+    except Exception as e:
+        return {"ok": False, "miners": [], "active_sessions": active_sessions, "total_hashrate_khs": 0, "error": str(e)}
+
+    total_hashrate_hps = sum(float(m.get("hashrate_hps") or 0) for m in miner_list)
 
     return {
         "ok": True,
@@ -6617,6 +6539,19 @@ def get_pool_miner_detail(address: str) -> dict:
     except Exception:
         result["payouts"] = []
 
+    # Ensure stats.total_paid matches the sum of the returned payout list so the
+    # dashboard UI stays consistent even if a payout lands between the /stats
+    # and /payouts calls.
+    try:
+        payouts = result.get("payouts", [])
+        if payouts:
+            payout_total = sum(int(p.get("amount_atomic", 0) or 0) for p in payouts)
+            stats = result.setdefault("stats", {})
+            stats["total_paid"] = payout_total
+            stats["total_paid_zion"] = flowers_to_zion(payout_total)
+    except Exception:
+        pass
+
     return result
 
 
@@ -6875,7 +6810,12 @@ def fetch_pool_stats() -> dict:
         return {}
 
 def fetch_pool_miners() -> list:
-    """Fetch active miners from Edge pool, enriched with paid_total from Prometheus metrics."""
+    """Fetch active miners from Edge pool, enriched with paid_total.
+
+    The pool's /miners endpoint now includes paid_total_atomic, so we only fall
+    back to parsing Prometheus metrics when the field is missing (older pool
+    binaries or stale responses).
+    """
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
     miners = []
     try:
@@ -6885,9 +6825,14 @@ def fetch_pool_miners() -> list:
             miners = data.get("miners", [])
     except Exception:
         pass
-    # Enrich with paid_total from Prometheus metrics.
-    # Use composite key "miner_id/worker_name" since multiple workers can share
-    # the same miner_id (e.g. local-miner) but have separate payout addresses.
+
+    # If every miner already has paid_total_atomic, normalize it and return.
+    if miners and all(m.get("paid_total_atomic") is not None for m in miners):
+        for m in miners:
+            m["paid_total"] = flowers_to_zion(int(m.get("paid_total_atomic") or 0))
+        return miners
+
+    # Fallback: enrich with paid_total from Prometheus metrics.
     paid_map = {}
     try:
         import urllib.request
@@ -11829,7 +11774,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "known_peers": known_peers,
                 }
 
-            with ThreadPoolExecutor(max_workers=3) as ex:
+            ex = ThreadPoolExecutor(max_workers=3)
+            try:
                 futs = {
                     ex.submit(_probe_node, "Edge Node 1", "127.0.0.1", 9443),
                     ex.submit(_probe_node, "Edge Node 2", "127.0.0.1", 8448),
@@ -11842,6 +11788,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         results[r["label"]] = r
                     except Exception:
                         pass
+            finally:
+                ex.shutdown(wait=False, cancel_futures=True)
 
             edge1 = results.get("Edge Node 1", {})
             edge2 = results.get("Edge Node 2", {})

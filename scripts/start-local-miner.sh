@@ -8,7 +8,7 @@
 set -euo pipefail
 
 REPO_ROOT="/home/zionserver/2.9.6-main"
-MINER_BIN="${REPO_ROOT}/V3/target/release/zion-miner"
+MINER_BIN="${REPO_ROOT}/target/release/zion-miner"
 DESKTOP_BIN="${HOME}/Desktop/zion-miner"
 
 # ── Pool & defaults ────────────────────────────────────────────────────────
@@ -42,6 +42,8 @@ export ZION_STREAM1_ENABLED="${ZION_STREAM1_ENABLED:-1}"
 # KawPow (RVN) was 5.6 GB and OOM'd — ZANO is much smaller.
 # ZION_STREAM2_FORCE_COIN pins Stream 2 to ZANO regardless of autonomous router.
 export ZION_STREAM2_ENABLED="${ZION_STREAM2_ENABLED:-1}"
+# Stream 2 (ZANO ProgPoWZ) is re-enabled after fixing the OpenCL kernel
+# rotation-count mask and NVIDIA GROUP_SIZE/work-group sync.
 export ZION_STREAM2_FORCE_COIN="${ZION_STREAM2_FORCE_COIN:-ZANO}"
 export ZION_STREAM3_ENABLED="${ZION_STREAM3_ENABLED:-1}"
 export ZION_METRICS_REPORT_SECS="${ZION_METRICS_REPORT_SECS:-15}"
@@ -93,13 +95,22 @@ export ZION_MINER_CPU_COIN="${ZION_MINER_CPU_COIN:-VRSC}"
 export ZION_MINER_ALGORITHM="${ZION_MINER_ALGORITHM:-deeksha_lite_v1}"
 export ZION_AUTOTUNE_SECS="${ZION_AUTOTUNE_SECS:-3}"
 
-# ── GPU duty-cycle: 50/50 split between Stream 1 (deeksha) and Stream 2 (ZANO) ──
-#  Time-based duty cycle sleeps after each external batch so Stream 2 gets
-#  ZION_EXT_GPU_TIME_DUTY_PCT % of wall-clock GPU time. This is accurate for
-#  ProgPoMHZ (ZANO) where batch times differ from deeksha.
+# ── GPU duty-cycle: balanced 50/50 split for single GTX 1070 Ti ──
+#  Time-based duty cycle sleeps after each external batch so Stream 2 (ZANO)
+#  gets ZION_EXT_GPU_TIME_DUTY_PCT % of wall-clock GPU time.
+#  50 = golden 50/50 split (ZION and ZANO each get half the GPU time).
+#  Batch 2M (not 16M!) — commit 729531f1b proved 16M starves ZION:
+#    "16M work-items took 13-30s per batch, starving the ZION stream and
+#     dropping hashrate from ~13 KH/s to ~7 KH/s. 2M = ~1.5s per batch,
+#     restoring ZION to ~15 KH/s."
 export ZION_ADAPTIVE_DUTY_CYCLE="${ZION_ADAPTIVE_DUTY_CYCLE:-0}"
-export ZION_EXT_GPU_TIME_DUTY_PCT="${ZION_EXT_GPU_TIME_DUTY_PCT:-50}"
+export ZION_EXT_GPU_TIME_DUTY_PCT="${ZION_EXT_GPU_TIME_DUTY_PCT:-70}"
 export ZION_EXT_GPU_MAX_GAP_MS="${ZION_EXT_GPU_MAX_GAP_MS:-5000}"
+export ZION_EXT_GPU_BATCH_SIZE="${ZION_EXT_GPU_BATCH_SIZE:-4194304}"
+export ZION_AUXPOW_GPU_WORK_SIZE="${ZION_AUXPOW_GPU_WORK_SIZE:-4194304}"
+# Work-group size 256 matches the ProgPoWZ kernel GROUP_SIZE define and
+# is optimal for NVIDIA Pascal/Turing; the kernel recompiles per period.
+export ZION_AUXPOW_GPU_GROUP_SIZE="${ZION_AUXPOW_GPU_GROUP_SIZE:-256}"
 # Legacy fallback (only used when ZION_EXT_GPU_TIME_DUTY_PCT is unset):
 export ZION_EXT_GPU_BURST="${ZION_EXT_GPU_BURST:-3}"
 export ZION_EXT_GPU_GAP_MS="${ZION_EXT_GPU_GAP_MS:-150}"
@@ -126,10 +137,11 @@ export ZION_NONCE_COUNT_MAX="${ZION_NONCE_COUNT_MAX:-131072}"
 export ZION_NONCE_AUTOTUNE="${ZION_NONCE_AUTOTUNE:-1}"
 
 # ── GPU max batch cap ───────────────────────────────────────────────────────
-# Caps the GPU batch size to avoid stale jobs and to free GPU time for ZANO.
-# With deeksha ~28 KH/s, 16384 nonces take ~0.6 s, giving ZANO a larger
-# share of the GPU while keeping ZION responsive.
-export ZION_GPU_MAX_BATCH="${ZION_GPU_MAX_BATCH:-16384}"
+# CRITICAL: must be ≥ 4× GPU work_size (8192) to activate double-buffered
+# async readback (the +50% optimization from 30khsDeeksha.md).
+# 32768 = 4×8192. With 50% ZANO duty, 32768 nonces takes ~1.2s at ~28 KH/s
+# — well within the ~2s pool rotation window, so no stale shares.
+export ZION_GPU_MAX_BATCH="${ZION_GPU_MAX_BATCH:-32768}"
 
 # ── GPU pipelining ──────────────────────────────────────────────────────────
 # ZION_GPU_PIPELINE=0 (default) — synchronous mine_batch: blocks until batch
@@ -168,7 +180,7 @@ if [[ -x "$MINER_BIN" ]]; then
 else
     echo "[BUILD] Miner binary missing, building..."
     cd "$REPO_ROOT"
-    cargo build --release -p zion-miner --features gpu-opencl,native-hashers,native-verushash,native-randomx
+    cargo build --release -p zion-miner --features gpu-cuda,gpu-opencl,native-hashers,native-verushash,native-randomx
     cp "$MINER_BIN" "$DESKTOP_BIN"
     chmod +x "$DESKTOP_BIN"
 fi
@@ -181,7 +193,14 @@ if [[ "$HUGE_PAGES" -lt 768 ]]; then
 fi
 
 # ── GPU backend ────────────────────────────────────────────────────────────
-BACKEND="${ZION_MINER_GPU:-opencl}"
+# CUDA backend for ZION deeksha (Stream 1) — 10-45x faster than OpenCL on NVIDIA.
+# ZANO/ProgPoWZ (Stream 2) uses OpenCL via AuXpow (CUDA doesn't support ProgPoWZ).
+# Binary must be compiled with --features gpu-cuda,gpu-opencl for both to work.
+BACKEND="${ZION_MINER_GPU:-cuda}"
+# Force Stream 2 (external GPU) to OpenCL — ProgPoWZ/ethash/kawpow are only
+# implemented in OpenCL (AuXpow), not CUDA.  Without this, the external GPU
+# thread inherits the primary CUDA backend and fails to init ProgPoWZ.
+export ZION_EXT_GPU_BACKEND="${ZION_EXT_GPU_BACKEND:-opencl}"
 
 echo "==========================================================="
 echo "  ZION Miner  |  Pool: $ZION_POOL_ADDR"

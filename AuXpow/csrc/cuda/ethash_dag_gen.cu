@@ -142,14 +142,21 @@ __device__ __forceinline__ unsigned int fnv1a_dag(unsigned int a, unsigned int b
 extern "C" {
 
 __global__ __launch_bounds__(256) void ethash_calculate_dag(
-    const uint64_t start,           // first node index
+    const uint64_t start,           // first node index in this batch
     const uint64_t *light_cache,    // light cache buffer (8 u64 per item)
     const uint64_t light_items,     // number of cache items
-    uint64_t *dag                   // output DAG buffer (8 u64 per node)
+    uint64_t *dag,                  // output DAG buffer (8 u64 per node)
+    const uint64_t dag_nodes        // total number of nodes to compute
 )
 {
     const uint64_t node_index = start + (uint64_t)(blockIdx.x * blockDim.x + threadIdx.x);
-    if (node_index >= light_items * 4) return; // safety limit, host controls actual range
+    // The host rounds the grid size up to a multiple of the block size, so
+    // extra threads beyond the DAG end must return early.  The previous
+    // `light_items * 4` limit was wrong: it terminated ~98% of threads for
+    // large epochs (e.g. epoch 126 has ~50M DAG nodes but only ~278K cache
+    // items, so light_items*4 ≈ 1.1M), leaving most of the DAG as zeros.
+    if (node_index >= dag_nodes)
+        return;
 
     // Step 1: mix = cache[node_index % light_items]
     unsigned char mix_bytes[64];
@@ -161,9 +168,11 @@ __global__ __launch_bounds__(256) void ethash_calculate_dag(
             mix_bytes[i * 8 + j] = (unsigned char)(w >> (j * 8));
     }
 
-    // Step 2: mix[0..7] ^= node_index (XOR first 8 bytes with little-endian node_index)
-    for (int j = 0; j < 8; j++)
-        mix_bytes[j] ^= (unsigned char)(node_index >> (j * 8));
+    // Step 2: XOR the first 32-bit word of mix with (node_index as uint32).
+    // Ethash/ProgPoW uses the low 32 bits of the node index only.
+    unsigned int node_index_lo = (unsigned int)node_index;
+    for (int j = 0; j < 4; j++)
+        mix_bytes[j] ^= (unsigned char)(node_index_lo >> (j * 8));
 
     // Step 3: mix = keccak512(mix)
     unsigned char hash[64];

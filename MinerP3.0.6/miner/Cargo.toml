@@ -1,0 +1,101 @@
+# Standalone crate — NOT part of the root workspace.
+# This copy lives in MinerP3.0.6/miner/ and is the public-release miner
+# with the `public_build` feature enabled by default.  Trinity / AuxPoW
+# streams still run in the background; the TUI and logs only show ZION /
+# Deeksha Lite v1 info.
+[workspace]
+
+[package]
+name = "zion-miner"
+version = "3.0.6"
+edition = "2021"
+license = "MIT"
+authors = ["Yose144"]
+
+[[bin]]
+name = "zion-miner"
+path = "src/main.rs"
+
+[[bin]]
+name = "b3_verify"
+path = "src/b3_verify.rs"
+
+[[bin]]
+name = "gpu_kat_bench"
+path = "src/bin/gpu_kat_bench.rs"
+required-features = ["gpu-opencl"]
+
+[features]
+default = ["public_build"]
+
+# Public build: Trinity / AuxPoW streams run in the background, but the TUI
+# and logs show only ZION / Deeksha Lite v1 info.  No ZANO, VRSC, or other
+# external coin names are visible to the user.
+public_build = ["zion-cosmic-harmony/public_build"]
+
+# GPU backends (feature-gated)
+gpu         = ["gpu-opencl"]
+gpu-opencl  = ["dep:ocl", "zion-auxpow/gpu-opencl"]
+gpu-cuda    = ["dep:cudarc"]
+gpu-metal   = ["dep:metal", "dep:block", "dep:objc", "zion-auxpow/gpu-metal"]
+gpu-all     = ["gpu-opencl", "gpu-cuda", "gpu-metal"]
+
+# Native algorithm acceleration (optional, requires C toolchain)
+native-etchash        = ["dep:zion-native-ffi", "zion-native-ffi/native-etchash"]
+native-kawpow         = ["dep:zion-native-ffi", "zion-native-ffi/native-kawpow"]
+native-autolykos      = ["dep:zion-native-ffi", "zion-native-ffi/native-autolykos"]
+native-kheavyhash     = ["dep:zion-native-ffi", "zion-native-ffi/native-kheavyhash"]
+native-blake3-algo    = ["dep:zion-native-ffi", "zion-native-ffi/native-blake3-algo"]
+native-cosmic-harmony = ["dep:zion-native-ffi", "zion-native-ffi/native-cosmic-harmony"]
+native-verushash      = ["dep:zion-native-ffi", "zion-native-ffi/native-verushash", "zion-auxpow/native-verushash"]
+native-randomx        = ["dep:zion-native-ffi", "zion-native-ffi/native-randomx", "zion-auxpow/native-randomx"]
+native-ghostrider     = ["dep:zion-native-ffi", "zion-native-ffi/native-ghostrider", "zion-auxpow/native-ghostrider"]
+native-all = [
+    "native-etchash", "native-kawpow", "native-autolykos", "native-kheavyhash",
+    "native-blake3-algo", "native-cosmic-harmony", "native-verushash", "native-randomx",
+    "native-ghostrider",
+]
+
+# AuXpow native hashers (DAG generation for Ethash/KawPow via C FFI)
+native-hashers = ["zion-auxpow/native-hashers"]
+
+# Full build: every GPU backend + every native algorithm.
+full = [
+    "gpu-opencl",
+    "native-all",
+    "native-hashers",
+]
+
+[dependencies]
+anyhow = "1"
+blake3 = "1"
+sha3 = "0.10"
+sha2 = "0.10"
+blake2 = "0.10"
+num_cpus = "1"
+rayon = "1"
+hex = "0.4"
+base64 = "0.22"
+ocl = { version = "0.19", optional = true }
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["rt-multi-thread", "time", "sync"] }
+zion-core = { path = "../../V3/L1/core" }
+zion-pool = { path = "../../V3/L1/pool" }
+zion-cosmic-harmony = { path = "../../V3/L1/cosmic-harmony" }
+zion-native-ffi = { path = "../../V3/L1/native-ffi", optional = true }
+zion-auxpow = { path = "../../AuXpow", default-features = false }
+cudarc = { version = "0.12", optional = true, features = ["cuda-12040"] }
+crossterm = "0.28"
+
+# Apple Silicon Metal GPU backend (macOS only)
+[target.'cfg(target_os = "macos")'.dependencies]
+metal = { version = "0.33", optional = true }
+block = { version = "0.1", optional = true }
+objc = { version = "0.2", optional = true }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = "symbols"

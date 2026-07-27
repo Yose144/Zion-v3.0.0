@@ -13,7 +13,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
-import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
+import { SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
 
 const DownloadCopy = {
   guiDashboardWithRealTimeHashra: { cs: `GUI dashboard s hashratem a zůstatkem v reálném čase`, en: `GUI Dashboard with real-time hashrate & balance` },
@@ -22,27 +22,22 @@ const DownloadCopy = {
   autoUpdatesSystemTrayIntegrati: { cs: `Auto-updaty a integrace do system tray`, en: `Auto-updates & system tray integration` },
   remoteMonitoringGamingMode: { cs: `Vzdálené monitorování a Gaming mode`, en: `Remote monitoring & Gaming mode` },
   availableForWindowsMacosLinux: { cs: `Dostupné pro Windows, macOS a Linux`, en: `Available for Windows, macOS & Linux` },
-  k1CreateWallet: { cs: `1. Vytvoř peněženku`, en: `1. Create Wallet` },
-  downloadZionCliForWindowsBelow: { cs: `Stáhni ZION CLI pro Windows níže`, en: `Download ZION CLI for Windows below` },
-  writeDown24WordsOnPaperThisIsY: { cs: `Zapiš si 24 slov na papír — to je tvá záloha!`, en: `Write down 24 words on paper — this is your backup!` },
+  k1DownloadMiner: { cs: `1. Stáhni miner`, en: `1. Download Miner` },
+  pickYourPlatformBelowAndExtra: { cs: `Vyber svou platformu níže a rozbal archiv`, en: `Pick your platform below and extract the archive` },
   k2StartMining: { cs: `2. Spusť těžbu`, en: `2. Start Mining` },
-  setAddressZionConfigSetMinerWa: { cs: `Nastav adresu: zion config set miner.wallet YOUR_ADDRESS`, en: `Set address: zion config set miner.wallet YOUR_ADDRESS` },
-  watchHashrateAcceptedSharesInC: { cs: `Sleduj hashrate a přijaté shares v konzoli`, en: `Watch hashrate & accepted shares in console` },
+  runZionMinerNoArgsForMenu: { cs: `Spusť ./zion-miner bez argumentů a projdi interaktivním menu`, en: `Run ./zion-miner with no arguments and walk through the interactive menu` },
+  windowsDoubleClickZionMinerExe: { cs: `Na Windows dvakrát klikni na zion-miner.exe`, en: `On Windows double-click zion-miner.exe` },
   k3CheckBalance: { cs: `3. Zkontroluj zůstatek`, en: `3. Check Balance` },
   orVisitTheExplorerAtZionterran: { cs: `Nebo navštiv Explorer na zionterranova.com/explorer`, en: `Or visit the Explorer at zionterranova.com/explorer` },
-  sendZionZionWalletSendToRecipi: { cs: `Poslat ZION: zion wallet send --to RECIPIENT --amount 100`, en: `Send ZION: zion wallet send --to RECIPIENT --amount 100` },
+  needAWalletUseV305CliBelow: { cs: `Potřebuješ peněženku? Použij v3.0.5-beta Community CLI níže`, en: `Need a wallet? Use the v3.0.5-beta Community CLI below` },
   tripleStreamMinerGpuCpuZionLiq: { cs: `Triple Stream Miner · GPU + CPU · Zion Liquidity`, en: `Triple Stream Miner · GPU + CPU · Zion Liquidity` },
   downloadMineEarn: { cs: `Stáhni. Těž. Vydělávej.`, en: `Download. Mine. Earn.` },
   zionV306BetaTripleStreamMinerG: { cs: `ZION v3.0.6-beta — Triple Stream Miner. GPU + CPU současně, `, en: `ZION v3.0.6-beta — Triple Stream Miner. GPU + CPU simultaneously, ` },
-  invertsTraditionalMiningMineHo: { cs: `inverzuje tradiční mining: těž → drž ZION → likvidita roste. Žádné burzy, žádný sell pressure. `, en: `inverts traditional mining: mine → hold ZION → liquidity grows. No exchanges, no sell pressure. ` },
-  availableFor: { cs: `Dostupné pro `, en: `Available for ` },
-  for: { cs: `. Pro `, en: `. For ` },
-  and: { cs: `a `, en: ` and ` },
-  useTheV305BetaCommunityCliBelo: { cs: ` použij v3.0.5-beta Community CLI níže.`, en: ` use the v3.0.5-beta Community CLI below.` },
+  invertsTraditionalMiningMineHo: { cs: `inverzuje tradiční mining: těž → drž ZION → likvidita roste. Žádné burzy, žádný sell pressure. Dostupné pro Linux x86_64/ARM64, macOS Apple Silicon/Intel a Windows x86_64.`, en: `inverts traditional mining: mine → hold ZION → liquidity grows. No exchanges, no sell pressure. Available for Linux x86_64/ARM64, macOS Apple Silicon/Intel and Windows x86_64.` },
   downloadBinaries: { cs: `Stáhnout binárky`, en: `Download binaries` },
   githubReleases: { cs: `GitHub Releases`, en: `GitHub Releases` },
   publicMainnetRelease: { cs: `Veřejný mainnet release`, en: `Public mainnet release` },
-  theLatestReleaseBringsTheTripl: { cs: `Nejnovější release přináší Triple Stream mining engine — GPU a CPU pracují současně pro maximalizaci ZION earnings. Optimalizované OpenCL/CUDA kernely pro AMD RDNA a NVIDIA. Linux x86_64 binárka dostupná z GitHub Releases s SHA256 verifikací. Pro macOS a Windows použij v3.0.5-beta Community CLI níže.`, en: `The latest release brings the Triple Stream mining engine — GPU and CPU work together to maximize ZION earnings. Optimized OpenCL/CUDA kernels for AMD RDNA and NVIDIA. Linux x86_64 binary available from GitHub Releases with SHA256 verification. For macOS and Windows use the v3.0.5-beta Community CLI below.` },
+  theLatestReleaseBringsTheTripl: { cs: `Nejnovější release přináší Triple Stream mining engine — GPU a CPU pracují současně pro maximalizaci ZION earnings. OpenCL (AMD/Intel) a CUDA (NVIDIA) na Linuxu, Metal + OpenCL na macOS, CUDA na Windows. Všechny 5 binárek je na GitHub Releases s SHA256 verifikací.`, en: `The latest release brings the Triple Stream mining engine — GPU and CPU work together to maximize ZION earnings. OpenCL (AMD/Intel) and CUDA (NVIDIA) on Linux, Metal + OpenCL on macOS, CUDA on Windows. All 5 binaries are on GitHub Releases with SHA256 verification.` },
   sourceOfTruth: { cs: `Zdroj pravdy:`, en: `Source of truth:` },
   operatorCommandsGuideFaqRefere: { cs: `operátorské příkazy, guide, FAQ, reference a troubleshooting jsou v sekci `, en: `operator commands, guide, FAQ, reference, and troubleshooting live in the ` },
   sectionOfTheDocsSourceCodeIsOp: { cs: ` v dokumentaci. Zdrojový kód je open-source na `, en: ` section of the docs. Source code is open-source on ` },
@@ -69,7 +64,7 @@ const DownloadCopy = {
   recommended: { cs: `Doporučené`, en: `Recommended` },
   k4CoreCpu4GbRam500MbSsd: { cs: `4+ jádrový CPU, 4 GB RAM, 500 MB SSD`, en: `4+ core CPU, 4 GB RAM, 500 MB SSD` },
   supportedOs: { cs: `Podporované OS`, en: `Supported OS` },
-  windows1011LinuxX8664Arm64Maco: { cs: `Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)`, en: `Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)` },
+  windows1011LinuxX8664Arm64Maco: { cs: `Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon/Intel)`, en: `Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon/Intel)` },
   network: { cs: `Síť`, en: `Network` },
   stableInternetOutboundTcpPort8: { cs: `Stabilní internet, odchozí TCP port 8444 (pool stratum)`, en: `Stable internet, outbound TCP port 8444 (pool stratum)` },
   readyToMine: { cs: `Připraven těžit?`, en: `Ready to mine?` },
@@ -93,27 +88,27 @@ const getDesktopAgentFeatures = (cs: boolean) => [
 
 const getCliQuickstartSteps = (cs: boolean) => [
   {
-    title: DownloadCopy.k1CreateWallet[cs ? 'cs' : 'en'],
+    title: DownloadCopy.k1DownloadMiner[cs ? 'cs' : 'en'],
     items: [
-      DownloadCopy.downloadZionCliForWindowsBelow[cs ? 'cs' : 'en'],
-      'Run: zion wallet new --mnemonic --out my-wallet.json --print',
-      DownloadCopy.writeDown24WordsOnPaperThisIsY[cs ? 'cs' : 'en'],
+      DownloadCopy.pickYourPlatformBelowAndExtra[cs ? 'cs' : 'en'],
+      'Linux/macOS: tar xzf zion-miner-*.tar.gz',
+      'Windows: right-click the .zip → Extract All',
     ],
   },
   {
     title: DownloadCopy.k2StartMining[cs ? 'cs' : 'en'],
     items: [
-      DownloadCopy.setAddressZionConfigSetMinerWa[cs ? 'cs' : 'en'],
-      `Run: zion mine start --pool stratum+tcp://${SITE_POOL_PRIMARY}`,
-      DownloadCopy.watchHashrateAcceptedSharesInC[cs ? 'cs' : 'en'],
+      DownloadCopy.runZionMinerNoArgsForMenu[cs ? 'cs' : 'en'],
+      DownloadCopy.windowsDoubleClickZionMinerExe[cs ? 'cs' : 'en'],
+      'Advanced: ./start.sh or ./start.bat',
     ],
   },
   {
     title: DownloadCopy.k3CheckBalance[cs ? 'cs' : 'en'],
     items: [
-      'Run: zion wallet balance --address YOUR_ADDRESS',
       DownloadCopy.orVisitTheExplorerAtZionterran[cs ? 'cs' : 'en'],
-      DownloadCopy.sendZionZionWalletSendToRecipi[cs ? 'cs' : 'en'],
+      DownloadCopy.needAWalletUseV305CliBelow[cs ? 'cs' : 'en'],
+      'Community CLI can also create wallets, run node & pool',
     ],
   },
 ];
@@ -150,13 +145,6 @@ export default function DownloadPage() {
               {DownloadCopy.zionV306BetaTripleStreamMinerG[cs ? 'cs' : 'en']}{' '}
               <span className="text-white font-semibold">Zion Liquidity</span>{' '}
               {DownloadCopy.invertsTraditionalMiningMineHo[cs ? 'cs' : 'en']}
-              {DownloadCopy.availableFor[cs ? 'cs' : 'en']}{' '}
-              <span className="text-emerald-400 font-semibold">Linux x86_64</span>
-              {DownloadCopy.for[cs ? 'cs' : 'en']}
-              <span className="text-purple-400 font-semibold">macOS</span>{' '}
-              {DownloadCopy.and[cs ? 'cs' : 'en']}{' '}
-              <span className="text-blue-400 font-semibold">Windows</span>
-              {DownloadCopy.useTheV305BetaCommunityCliBelo[cs ? 'cs' : 'en']}
             </p>
             <div className="flex flex-wrap gap-3">
               <Link

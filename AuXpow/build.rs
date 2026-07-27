@@ -90,10 +90,12 @@ fn main() {
             println!("cargo:rustc-link-lib=omp");
         }
 
-        // Tell cargo to rerun if any C source changes
+        // Tell cargo to rerun if any C source or environment-controlled settings change
         for src in &sources {
             println!("cargo:rerun-if-changed={}", src);
         }
+        println!("cargo:rerun-if-env-changed=ZION_DISABLE_OPENMP");
+        println!("cargo:rerun-if-env-changed=ZION_CPU_TARGET");
     }
 
     println!("cargo:rerun-if-changed=build.rs");

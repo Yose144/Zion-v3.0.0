@@ -82,6 +82,16 @@ function windowsMinerFeatures() {
 function detectPlatformFeatures() {
   const platform = process.platform;
   const arch = os.arch();
+  // Native CPU algorithm acceleration is required for triple-stream CPU coins
+  // (VerusHash/VRSC, RandomX/XMR, GhostRider/RTM) to hash at full speed.
+  // native-hashers is required for DAG-based external algorithms on GPU
+  // (ProgPoWZ/ZANO on Metal, Ethash/KawPow on OpenCL/CUDA).
+  const nativeFeatures = 'native-all,native-hashers';
+
+  // Build the unified miner with all GPU/native backends enabled.
+  // `full` = gpu-opencl + native-all + native-hashers, which is required for
+  // Trinity triple-stream mining (ZION + external GPU + external CPU).
+  const base = 'full';
 
   // Build the unified miner with all GPU/native backends enabled.
   // `full` = gpu-opencl + native-all + native-hashers, which is required for
@@ -132,6 +142,7 @@ function checkCudaCapability() {
       const gpuCount = parseInt(nvSmi.stdout.toString().trim());
       if (gpuCount > 0) {
         result.gpuCount = gpuCount;
+        result.hasCuda = true; // Runtime CUDA only needs the driver + libcuda; nvcc is optional.
         const driverCheck = spawnSync('nvidia-smi', ['--query-gpu=driver_version', '--format=csv,noheader,nounits'], { stdio: 'pipe' });
         if (driverCheck.status === 0) {
           result.driverVersion = driverCheck.stdout.toString().trim().split('\n')[0];
@@ -141,6 +152,7 @@ function checkCudaCapability() {
         const cudaVersion = spawnSync('nvcc', ['--version'], { stdio: 'pipe' });
         if (cudaVersion.status === 0) {
           result.hasCuda = true;
+          result.driverVersion += ` (nvcc: ${cudaVersion.stdout.toString().trim().split('\n')[0]})`;
         } else {
           // No nvcc, but a modern GeForce driver may still run OpenCL/CUDA
           // binaries if they are built elsewhere. For local W11 builds we stay
@@ -173,12 +185,21 @@ function parseArgs(argv) {
 function buildV3Workspace(workspaceRoot, features) {
   const cargoArgs = ['build', '--release', '--manifest-path', V3_WORKSPACE_MANIFEST];
 
+  // On macOS, AuXpow's native-hashers C code links libomp by default.
+  // Homebrew libomp is not available on a clean user machine, so disable
+  // OpenMP for DAG generation. This makes DAG generation single-threaded
+  // but removes the libomp runtime dependency for the shipped DMG.
+  const buildEnv = { ...process.env };
+  if (process.platform === 'darwin') {
+    buildEnv.ZION_DISABLE_OPENMP = '1';
+  }
+
   // Build miner with GPU features
   const minerArgs = [...cargoArgs, '-p', 'zion-miner'];
   if (features) minerArgs.push('--features', features);
 
   console.log(`[prepare-v3] Building zion-miner (features=${features || 'default'})...`);
-  const minerRes = spawnSync('cargo', minerArgs, { cwd: workspaceRoot, stdio: 'inherit', env: process.env });
+  const minerRes = spawnSync('cargo', minerArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
   if (minerRes.error) throw minerRes.error;
   if (minerRes.status !== 0) {
     // Fallback chain for W11 / mixed environments:
@@ -208,14 +229,14 @@ function buildV3Workspace(workspaceRoot, features) {
   // Build node
   console.log('[prepare-v3] Building zion-core (node)...');
   const nodeArgs = [...cargoArgs, '-p', 'zion-core', '--bin', 'node'];
-  const nodeRes = spawnSync('cargo', nodeArgs, { cwd: workspaceRoot, stdio: 'inherit', env: process.env });
+  const nodeRes = spawnSync('cargo', nodeArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
   if (nodeRes.error) throw nodeRes.error;
   if (nodeRes.status !== 0) throw new Error(`cargo build for node failed (exit ${nodeRes.status})`);
 
   // Build CLI
   console.log('[prepare-v3] Building zion-cli...');
   const cliArgs = [...cargoArgs, '-p', 'zion-cli'];
-  const cliRes = spawnSync('cargo', cliArgs, { cwd: workspaceRoot, stdio: 'inherit', env: process.env });
+  const cliRes = spawnSync('cargo', cliArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
   if (cliRes.error) throw cliRes.error;
   if (cliRes.status !== 0) throw new Error(`cargo build for zion-cli failed (exit ${cliRes.status})`);
 }

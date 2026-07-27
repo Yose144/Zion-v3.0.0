@@ -147,6 +147,10 @@ pub struct GpuMiner {
     /// Current block height for KawPow/ProgPow period calculation.
     /// Must be set via `set_block_height()` before mining KawPow/ProgPow.
     block_height: u64,
+    /// Group size used the last time a ProgPow kernel was compiled.
+    /// Kept in sync with the kernel's GROUP_SIZE build define so the
+    /// enqueue local_work_size matches and avoids out-of-bounds local mem.
+    progpow_group_size: usize,
 }
 
 /// Cached OpenCL buffers for the BeamHash III multi-round solver.
@@ -245,7 +249,7 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
             // Stream 2 (Pearl PoUW) is disabled in 3.0.6 (ZION_STREAM2_ENABLED=0).
             Some(("pearl_kernel.cl", "pearl_mine"))
         }
-        "beamhash" | "beamhash_beam" => Some(("beamhash_solver.cl", "beamHashIII_seed")),
+        "beamhash" | "beamhash_beam" => Some(("beamhash_kernel.cl", "beamhash_generate_hashes")),
         "karlsenhash" | "karlsenhash_kls" => {
             Some(("karlsenhash_kernel.cl", "karlsenhash_mine"))
         }
@@ -372,6 +376,7 @@ impl GpuMiner {
             pearl_buffers: None,
             beamhash_buffers: None,
             block_height: 0,
+            progpow_group_size: 256,
         })
     }
 
@@ -380,6 +385,11 @@ impl GpuMiner {
     /// smaller than the V3 work_size passed to `mine_batch_raw`.
     pub fn internal_work_size(&self) -> usize {
         self.work_size
+    }
+
+    /// Returns the OpenCL device name (e.g. "gfx900:xnack- (Vega 64, 64 CUs, 8GB)").
+    pub fn device_name(&self) -> &str {
+        &self.device_name
     }
 
     /// Compute GhostRider hash for a single nonce using the benchmark kernel.
@@ -1184,11 +1194,9 @@ impl GpuMiner {
         // options. ProgPoW uses GROUP_SIZE=256 with bpermute (or 128 without).
         // KawPow and variants use GROUP_SIZE=128.
         // Mismatch causes out-of-bounds local memory access → GPU hang.
-        // ZION_AUXPOW_GPU_GROUP_SIZE env var overrides (must match build define).
-        let progpow_wg = std::env::var("ZION_AUXPOW_GPU_GROUP_SIZE")
-            .ok()
-            .and_then(|v| v.trim().parse::<usize>().ok())
-            .unwrap_or(256); // matches GROUP_SIZE=256 default with bpermute
+        // progpow_group_size is set during kernel compilation in ensure_proque_progpow,
+        // which already respects ZION_AUXPOW_GPU_GROUP_SIZE.
+        let progpow_wg = self.progpow_group_size.max(1);
         let wg_size = match algorithm {
             "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => progpow_wg,
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => 128, // GROUP_SIZE=128 for KawPow
@@ -1447,7 +1455,7 @@ impl GpuMiner {
 
         let result: Result<Option<GpuFoundShare>> = (|| {
             let buffers = cached.as_ref().unwrap();
-            let pro_que = self.ensure_proque("beamhash_solver.cl")?;
+            let pro_que = self.ensure_proque("beamhash_kernel.cl")?;
 
             let enqueue_kernel = |name: &str, gws: usize, lws: usize| -> Result<()> {
             let kernel = Kernel::builder()
@@ -2408,28 +2416,128 @@ typedef unsigned long ulong;
         }
     }
 
+    /// Check if a device name matches a filter string, supporting gfx codenames.
+    /// e.g. filter="vega" matches "gfx900:xnack-" because gfx900 = Vega.
+    fn auxpow_device_name_matches_filter(device_name: &str, filter: &str) -> bool {
+        let dn = device_name.to_ascii_lowercase();
+        // Direct substring match already tried by caller, but check again
+        if dn.contains(filter) {
+            return true;
+        }
+        // gfx codename → classification mapping
+        let is_vega = dn.contains("gfx900") || dn.contains("gfx906") || dn.contains("gfx908")
+            || dn.contains("vega") || dn.contains("radeon vii");
+        let is_rdna1 = dn.contains("gfx1010") || dn.contains("gfx1011") || dn.contains("gfx1012");
+        let is_rdna2 = dn.contains("gfx1030") || dn.contains("gfx1031") || dn.contains("gfx1032");
+        let is_rdna3 = dn.contains("gfx1100") || dn.contains("gfx1101") || dn.contains("gfx1102");
+        match filter {
+            "vega" | "vega64" | "vega 64" => is_vega,
+            "rdna1" | "5600" | "5600xt" | "5700" | "5700xt" | "navi10" | "navi 10" => is_rdna1,
+            "rdna2" | "6700" | "6800" | "6900" | "navi21" | "navi 21" => is_rdna2,
+            "rdna3" | "7900" | "7800" | "7700" => is_rdna3,
+            _ => false,
+        }
+    }
+
     fn pick_opencl_device() -> Result<(Platform, Device, String, String)> {
         let platforms = Platform::list();
         if platforms.is_empty() {
             anyhow::bail!("no OpenCL platforms found");
         }
 
-        for platform in platforms {
+        let platform_idx_override = std::env::var("ZION_OCL_PLATFORM_IDX")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok());
+        let device_idx_override = std::env::var("ZION_OCL_DEVICE_IDX")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok());
+        let device_name_filter = std::env::var("ZION_OCL_DEVICE_NAME").ok();
+
+        let mut candidates: Vec<(usize, usize, Platform, Device, String, String)> = Vec::new();
+        for (pidx, platform) in platforms.into_iter().enumerate() {
+            if let Some(only_idx) = platform_idx_override {
+                if pidx != only_idx {
+                    continue;
+                }
+            }
             let platform_name = platform
                 .name()
                 .unwrap_or_else(|_| "unknown-platform".to_string());
             let gpus = Device::list(platform, Some(ocl::flags::DeviceType::GPU));
             if let Ok(gpus) = gpus {
-                if let Some(device) = gpus.into_iter().next() {
+                for (didx, device) in gpus.into_iter().enumerate() {
                     let device_name = device
                         .name()
                         .unwrap_or_else(|_| "unknown-device".to_string());
-                    return Ok((platform, device, platform_name, device_name));
+                    candidates.push((
+                        pidx,
+                        didx,
+                        platform,
+                        device,
+                        platform_name.clone(),
+                        device_name,
+                    ));
                 }
             }
         }
 
-        anyhow::bail!("no OpenCL GPU devices found")
+        if candidates.is_empty() {
+            anyhow::bail!("no OpenCL GPU devices found");
+        }
+
+        // Optional name-based filter (case-insensitive substring).
+        // Also supports gfx codename → classification mapping (e.g. "vega" matches "gfx900").
+        if let Some(filter) = device_name_filter {
+            let filter_l = filter.to_ascii_lowercase();
+            // First try direct substring match
+            if let Some((pidx, didx, platform, device, platform_name, device_name)) =
+                candidates.iter().find(|(_, _, _, _, _, name)| {
+                    name.to_ascii_lowercase().contains(&filter_l)
+                })
+            {
+                println!(
+                    "auxpow_opencl_pick mode=name filter=\"{}\" platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
+                    filter, pidx, didx, platform_name, device_name
+                );
+                return Ok((*platform, *device, platform_name.clone(), device_name.clone()));
+            }
+            // Try classification-based match (vega → gfx900, rdna1 → gfx1010, etc.)
+            if let Some((pidx, didx, platform, device, platform_name, device_name)) =
+                candidates.iter().find(|(_, _, _, _, _, name)| {
+                    Self::auxpow_device_name_matches_filter(name, &filter_l)
+                })
+            {
+                println!(
+                    "auxpow_opencl_pick mode=name_classified filter=\"{}\" platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
+                    filter, pidx, didx, platform_name, device_name
+                );
+                return Ok((*platform, *device, platform_name.clone(), device_name.clone()));
+            }
+            eprintln!(
+                "auxpow_opencl_pick name filter=\"{}\" matched no device, falling back to index",
+                filter
+            );
+        }
+
+        // Optional explicit global index across all platforms/devices.
+        if let Some(global_idx) = device_idx_override {
+            let idx = global_idx.min(candidates.len().saturating_sub(1));
+            let (pidx, didx, platform, device, platform_name, device_name) =
+                candidates.swap_remove(idx);
+            println!(
+                "auxpow_opencl_pick mode=override index={} platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
+                idx, pidx, didx, platform_name, device_name
+            );
+            return Ok((platform, device, platform_name, device_name));
+        }
+
+        // Default: first available device.
+        let (pidx, didx, platform, device, platform_name, device_name) = candidates.swap_remove(0);
+        println!(
+            "auxpow_opencl_pick mode=auto platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
+            pidx, didx, platform_name, device_name
+        );
+        Ok((platform, device, platform_name, device_name))
     }
 
     fn detect_work_size(device: &Device) -> Result<usize> {
@@ -2521,7 +2629,7 @@ typedef unsigned long ulong;
                     "octopus_kernel.cl" => include_str!("../csrc/opencl/octopus_kernel.cl").to_string(),
                     "neoscrypt_kernel.cl" => include_str!("../csrc/opencl/neoscrypt_kernel.cl").to_string(),
                     "nexapow_kernel.cl" => include_str!("../csrc/opencl/nexapow_kernel.cl").to_string(),
-                    "beamhash_solver.cl" => include_str!("../csrc/opencl/beamhash_solver.cl").to_string(),
+                    "beamhash_kernel.cl" => include_str!("../csrc/opencl/beamhash_kernel.cl").to_string(),
                     "ghostrider_kernel.cl" => {
                         // Concatenate embedded SPH + CN + main kernel
                         let sph = include_str!("../csrc/opencl/ghostrider_sph.cl");
@@ -2627,6 +2735,41 @@ typedef unsigned long ulong;
         let params = progpow_codegen::select_progpow_params(algorithm);
         let period = block_height / params.period as u64;
 
+        // Detect platform/wavefront size from device name.
+        // RDNA1+ = wave32, GCN/Vega = wave64, NVIDIA = warp32.
+        let dev_name_lower = self.device_name.to_lowercase();
+        let is_nvidia = dev_name_lower.contains("nvidia")
+            || dev_name_lower.contains("geforce")
+            || dev_name_lower.contains("quadro")
+            || dev_name_lower.contains("tesla");
+
+        // Determine if we can use AMD bpermute (ds_bpermute) for barrier-free shuffle.
+        // Enabled on RDNA1+ by default; disabled on GCN/Vega and NVIDIA by default.
+        // Can be overridden via ZION_AUXPOW_GPU_USE_BPERMUTE=1/0.
+        let is_gcn_or_vega = dev_name_lower.contains("gfx8")
+            || dev_name_lower.contains("gfx9")
+            || dev_name_lower.contains("vega");
+        let use_bpermute_env = std::env::var("ZION_AUXPOW_GPU_USE_BPERMUTE")
+            .ok()
+            .and_then(|v| v.trim().parse::<i32>().ok())
+            .map(|v| v != 0);
+        let use_bpermute = use_bpermute_env.unwrap_or((!is_gcn_or_vega) && !is_nvidia);
+
+        let is_progpow = algorithm == "progpow"
+            || algorithm == "progpow_epic"
+            || algorithm == "progpow_zano"
+            || algorithm == "progpowz";
+
+        // GROUP_SIZE: 256 with bpermute (no barriers → safe), 128 without (barrier limit)
+        // On GCN/Vega we cap at 128 to reduce register pressure and TTD risk.
+        // NVIDIA supports barriers cleanly and benefits from 256 (16 hashes/group).
+        let group_size_default = if is_progpow && (use_bpermute || is_nvidia) { 256 } else { 128 };
+        let group_size = std::env::var("ZION_AUXPOW_GPU_GROUP_SIZE")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+            .unwrap_or(group_size_default);
+        self.progpow_group_size = group_size;
+
         // Cache key includes dag_elements so that the kernel is recompiled
         // with the correct PROGPOW_DAG_ELEMENTS when the DAG becomes available.
         let dag_elements_safe = dag_elements.max(1);
@@ -2707,13 +2850,7 @@ typedef unsigned long ulong;
         // MeowPow uses REGS=16 and CNT_MATH=9 (halved vs KawPow's 32/18).
         // EvrProgPow uses the same REGS/CNT_MATH as KawPow (32/18) but PERIOD=3.
 
-        // Detect platform/wavefront size from device name.
-        // RDNA1+ = wave32, GCN/Vega = wave64, NVIDIA = warp32.
-        let dev_name_lower = self.device_name.to_lowercase();
-        let is_nvidia = dev_name_lower.contains("nvidia")
-            || dev_name_lower.contains("geforce")
-            || dev_name_lower.contains("quadro")
-            || dev_name_lower.contains("tesla");
+        // RDNA1+ detection (re-used for WAVE_SIZE).
         let is_rdna = dev_name_lower.contains("gfx10")
             || dev_name_lower.contains("gfx11")
             || dev_name_lower.contains("rdna")
@@ -2727,36 +2864,7 @@ typedef unsigned long ulong;
             || dev_name_lower.contains("7700")
             || dev_name_lower.contains("7800")
             || dev_name_lower.contains("7900");
-        // Legacy GCN/Vega (gfx8xx, gfx9xx) often hangs with ds_bpermute in the
-        // ProgPoW DAG loop when combined with the keccak unroll and GROUP_SIZE=256.
-        // Auto-disable bpermute there; RDNA1+ (gfx10/11) runs it reliably.
-        // NVIDIA never supports AMD bpermute intrinsics.
-        let is_gcn_or_vega = dev_name_lower.contains("gfx8")
-            || dev_name_lower.contains("gfx9")
-            || dev_name_lower.contains("vega");
         let wave_size = if is_rdna || is_nvidia { 32 } else { 64 };
-
-        // Determine if we can use AMD bpermute (ds_bpermute) for barrier-free shuffle.
-        // Enabled on RDNA1+ by default; disabled on GCN/Vega and NVIDIA by default.
-        // Can be overridden via ZION_AUXPOW_GPU_USE_BPERMUTE=1/0.
-        let use_bpermute_env = std::env::var("ZION_AUXPOW_GPU_USE_BPERMUTE")
-            .ok()
-            .and_then(|v| v.trim().parse::<i32>().ok())
-            .map(|v| v != 0);
-        let use_bpermute = use_bpermute_env.unwrap_or((!is_gcn_or_vega) && !is_nvidia);
-
-        let is_progpow = algorithm == "progpow"
-            || algorithm == "progpow_epic"
-            || algorithm == "progpow_zano"
-            || algorithm == "progpowz";
-
-        // GROUP_SIZE: 256 with bpermute (no barriers → safe), 128 without (barrier limit)
-        // On GCN/Vega we also cap at 128 to reduce register pressure and TTD risk.
-        let group_size_default = if is_progpow && use_bpermute { 256 } else { 128 };
-        let group_size = std::env::var("ZION_AUXPOW_GPU_GROUP_SIZE")
-            .ok()
-            .and_then(|v| v.trim().parse::<usize>().ok())
-            .unwrap_or(group_size_default);
 
         // Build platform/bpermute/wave defines
         let platform_id = if is_nvidia { 1 } else { 2 };
