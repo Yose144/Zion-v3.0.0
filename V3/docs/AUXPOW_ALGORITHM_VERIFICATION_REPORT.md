@@ -301,11 +301,11 @@ For `ethash` a longer run with the default `work_size=262144` and `bench_secs=5`
 | `progpow` | EPIC/ZANO | PASS | 6,004,499 | ⚠️ not checked | Kernel compiles, period-0 DAG + recompilation OK. No CPU comparison. |
 | `evrprogpow` | EVR | PASS | 6,157,093 | ⚠️ not checked | 12000-block epoch routed correctly. No CPU comparison. |
 | `meowpow` | MEWC | PASS | 5,960,545 | ⚠️ not checked | 12000-block epoch routed correctly. No CPU comparison. |
-| `verushash` | VRSC | N/A (CPU-only) | — | — | VRSC is intentionally CPU-mined via `native-verushash` / `hash_verushash`. The CUDA `verushash` kernel requires `native-verushash` key precomputation and is not a 3.0.7 blocker. |
+| `verushash` | VRSC | PASS (with `native-verushash`) | 484,539 | ⚠️ not checked | Builds and runs with `--features "gpu-cuda,native-verushash"` on GTX 1070 Ti. The `verus_mine` CUDA kernel requires `verushash_get_gpu_keydata()` key precomputation; CPU/GPU hash match is non-trivial (15-byte nonceSpace vs 8-byte appended nonce) and not yet verified. VRSC remains CPU-only for normal mining. |
 
 ### 8.2 Canonical overview: what is verified / what is not
 
-* ✅ **CUDA compile/run** — 10 of 10 GPU-relevant algorithms compile with NVRTC (arch `compute_61`) and complete a 3 s benchmark against the synthetic easy target. `verushash` is intentionally CPU-only for VRSC.
+* ✅ **CUDA compile/run** — 10 of 10 GPU-relevant algorithms compile with NVRTC (arch `compute_61`) and complete a 3 s benchmark against the synthetic easy target. `verushash` is intentionally CPU-only for VRSC in normal mode, but also compiles/runs with `--features native-verushash`.
 * ✅ **ETC/Ethash CPU/GPU match** — fixed by removing the `native-hashers` shortcut in `AuXpow/src/external_hashers.rs::hash_ethash` and `hash_ethash_with_dag`; both now use the canonical `ethash` 0.4 crate (`hashimoto_light` / `hashimoto_full`). `zion-miner --test-cuda-kernel ethash` reports `ETHASH_CPU_GPU_MATCH` and ~117 MH/s on the test rig.
 * ⚠️ **Live accepted upstream shares** — still pending for all CUDA algorithms except the ETC CPU/GPU correctness check. The benchmark only proves the kernel compiles and hashes against an easy target.
 * ⚠️ **CPU reference for DAG-based non-Ethash algorithms** — KawPow, ProgPow variants and Autolykos still need CPU/GPU hash comparison or a known-answer test.
@@ -322,6 +322,6 @@ For `ethash` a longer run with the default `work_size=262144` and `bench_secs=5`
 ### 8.4 Remaining next steps
 
 1. Add CPU/GPU comparison to `--test-cuda-kernel` for `kawpow` (use `ethash_final_hash` with GPU `mix_hash`) and `progpow`/`evrprogpow`/`meowpow` (use `progpow_final_hash` with GPU `mix_hash`).
-2. Optionally build and test `verushash` CUDA with `--features "gpu-cuda native-verushash"` if a GPU path for VRSC is desired later; the CPU path is already live.
+2. ✅ Build and test `verushash` CUDA with `--features "gpu-cuda native-verushash"` — kernel compiles/runs at ~484 kH/s on GTX 1070 Ti. CPU/GPU hash match remains non-trivial and is not required for 3.0.7.
 3. Replace the placeholder `autolykos_mine` CUDA kernel with real Autolykos v2 and run a CPU/GPU comparison.
 4. Run live upstream debug-pool tests for at least one coin per algorithm to confirm `mining.submit` acceptance.
