@@ -3601,7 +3601,41 @@
     .ms-sub   { font-size:13px; color:rgba(255,255,255,.55); margin-top:8px; line-height:1.5; }
 
     /* ═══ DAO — Governance Layer ═══ */
-
+    .dao-proposal-list { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+    .dao-proposal {
+      background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.07); border-radius:18px;
+      padding:18px; cursor:default; transition:all .2s;
+    }
+    .dao-proposal:hover { border-color:rgba(147,51,234,0.25); transform:translateY(-1px); box-shadow:0 10px 35px rgba(0,0,0,0.3); }
+    .dao-proposal-header { display:flex; justify-content:space-between; margin-bottom:8px; gap:10px; }
+    .dao-proposal-title { font-size:15px; font-weight:600; }
+    .dao-status-badge { font-size:10px; padding:4px 10px; border-radius:20px; flex-shrink:0; }
+    .dao-status-active   { background:rgba(0,255,136,0.1); color:#00ff88; }
+    .dao-status-passed   { background:rgba(6,182,212,0.1); color:var(--zion-cyan); }
+    .dao-status-executed { background:rgba(255,215,0,0.1); color:var(--zion-gold); }
+    .dao-status-failed   { background:rgba(239,68,68,0.1); color:#f87171; }
+    .dao-status-timelocked { background:rgba(147,51,234,0.1); color:var(--zion-purple); }
+    .dao-proposal-desc { font-size:12px; color:rgba(255,255,255,0.4); margin-bottom:12px; }
+    .dao-vote-bar { height:6px; border-radius:3px; display:flex; overflow:hidden; }
+    .dao-vote-yes   { background:#00ff88; height:100%; }
+    .dao-vote-no    { background:#f87171; height:100%; }
+    .dao-vote-abstain { background:rgba(255,255,255,0.15); height:100%; }
+    .dao-vote-labels { display:flex; justify-content:space-between; margin-top:6px; font-size:11px; color:rgba(255,255,255,0.45); }
+    .dao-treasury-card {
+      background:linear-gradient(135deg, rgba(0,0,0,0.35), rgba(147,51,234,0.08));
+      border:1px solid rgba(147,51,234,0.18); border-radius:22px; padding:28px; text-align:center;
+    }
+    .dao-treasury-value { font-size:36px; font-weight:800; margin:12px 0 6px; color:#fff; text-shadow:0 0 20px rgba(147,51,234,0.25); }
+    .dao-treasury-label { font-size:11px; color:rgba(255,255,255,0.4); letter-spacing:2px; text-transform:uppercase; }
+    .dao-guardian-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; margin-top:14px; }
+    .dao-guardian {
+      background:rgba(0,0,0,0.22); border:1px solid rgba(255,255,255,0.07); border-radius:14px;
+      padding:16px; text-align:center; transition:all .25s;
+    }
+    .dao-guardian:hover { border-color:rgba(147,51,234,0.2); }
+    .dao-guardian-icon { font-size:28px; margin-bottom:8px; }
+    .dao-guardian-name { font-size:13px; font-weight:600; margin-bottom:4px; }
+    .dao-guardian-status { font-size:10px; color:rgba(255,255,255,0.45); }
 
     /* ═══ WARP — Cross-Chain Corridors ═══ */
 
@@ -6825,6 +6859,166 @@
       <!-- ═══════════════════════════════════════════════ -->
       <!-- DAO — On-Chain Governance                      -->
       <!-- ═══════════════════════════════════════════════ -->
+      <div id="dao-view" class="view-shell d-none">
+
+        <!-- ── Page Header ───────────────────────────────────── -->
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 2 · Governance</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">DAO</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>4B ZION Treasury · 5-of-7 Multisig · Token Governance</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Section Tabs ─────────────────────────────────── -->
+        <div class="section-tabs" data-group="dao">
+          <div class="section-tab active" data-section="dao-proposals"><span class="tab-dot"></span><span>Proposals</span></div>
+          <div class="section-tab" data-section="dao-treasury"><svg class="tab-icon icon" aria-hidden="true"><use href="#i-wallet"></use></svg><span>Treasury</span></div>
+          <div class="section-tab" data-section="dao-guardians"><svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg><span>Guardians</span></div>
+          <div class="section-tab" data-section="dao-humanitarian"><svg class="tab-icon icon" aria-hidden="true"><use href="#i-info"></use></svg><span>Humanitarian</span></div>
+          <div class="section-tab" data-section="dao-config"><svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg><span>Config</span></div>
+        </div>
+
+        <!-- ── TAB: Proposals ── -->
+        <div id="dao-proposals" class="section-panel active">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg></div>
+              <div><p class="card-kicker">Governance</p><h3>Active Proposals</h3></div>
+            </div>
+            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
+              Token-weighted voting: 1 ZION = 1 vote. Proposals require 1M ZION minimum stake. Voting via L1 TX memo: <code style="color:var(--zion-cyan); font-size:12px">DAO:vote:&lt;id&gt;:&lt;choice&gt;</code>
+            </p>
+          </div>
+          <div class="dao-proposal-list" id="dao-proposal-list">
+            <div style="color:rgba(255,255,255,0.35);text-align:center;margin-top:40px">No active proposals yet.</div>
+          </div>
+        </div>
+
+        <!-- ── TAB: Treasury ── -->
+        <div id="dao-treasury" class="section-panel">
+          <div class="dao-treasury-card">
+            <div class="dao-treasury-label">Total Treasury Balance</div>
+            <div class="dao-treasury-value" id="dao-treasury-balance">4,000,000,000 ZION</div>
+            <div class="dao-treasury-label">3 multisig wallets · 100M ZION/day spend limit</div>
+          </div>
+          <div class="oasis-stats-row" style="margin-top:20px">
+            <div class="oasis-stat"><div class="oasis-stat-value" id="dao-daily-spent">0</div><div class="oasis-stat-label">Spent Today</div></div>
+            <div class="oasis-stat"><div class="oasis-stat-value" id="dao-ops-pending">0</div><div class="oasis-stat-label">Pending Ops</div></div>
+            <div class="oasis-stat"><div class="oasis-stat-value" id="dao-total-disbursed">0</div><div class="oasis-stat-label">Total Disbursed</div></div>
+            <div class="oasis-stat"><div class="oasis-stat-value" id="dao-signers">0 / 7</div><div class="oasis-stat-label">Active Guardians</div></div>
+          </div>
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold"><svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg></div>
+              <div><p class="card-kicker">Operations</p><h3>Treasury Operations</h3></div>
+            </div>
+            <table class="dex-chain-table">
+              <thead><tr><th>Type</th><th>Detail</th><th>Threshold</th></tr></thead>
+              <tbody>
+                <tr><td>Spend</td><td>Fund proposals, grants, humanitarian</td><td>5-of-7 multisig</td></tr>
+                <tr><td>Humanitarian Grant</td><td>Direct funding to humanitarian causes</td><td>5-of-7 multisig</td></tr>
+                <tr><td>Rebalance</td><td>Move funds between treasury wallets</td><td>5-of-7 multisig</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── TAB: Guardians ── -->
+        <div id="dao-guardians" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-cyan"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg></div>
+              <div><p class="card-kicker">5-of-7 Multisig</p><h3>Guardian Council</h3></div>
+            </div>
+            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
+              Guardian council secures the DAO treasury. 5 out of 7 guardians must sign every treasury operation. Emergency actions (pause bridge, freeze treasury, halt validator) require guardian consensus.
+            </p>
+          </div>
+          <div class="dao-guardian-grid" id="dao-guardian-grid">
+            <div style="color:rgba(255,255,255,0.35);text-align:center;margin-top:40px">Guardian data not available offline.</div>
+          </div>
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple"><svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg></div>
+              <div><p class="card-kicker">Whitelist</p><h3>Emergency Actions</h3></div>
+            </div>
+            <table class="dex-chain-table">
+              <thead><tr><th>Action</th><th>Description</th><th>Cooldown</th></tr></thead>
+              <tbody>
+                <tr><td>pause_bridge</td><td>Halt all bridge operations immediately</td><td>None</td></tr>
+                <tr><td>unpause_bridge</td><td>Resume bridge operations</td><td>1h</td></tr>
+                <tr><td>freeze_treasury</td><td>Freeze all treasury spending</td><td>None</td></tr>
+                <tr><td>unfreeze_treasury</td><td>Unfreeze treasury operations</td><td>1h</td></tr>
+                <tr><td>halt_validator</td><td>Remove a misbehaving validator</td><td>None</td></tr>
+                <tr><td>rotate_guardian</td><td>Replace a guardian key</td><td>48h</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── TAB: Humanitarian ── -->
+        <div id="dao-humanitarian" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold"><svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg></div>
+              <div><p class="card-kicker">1.44B ZION Genesis</p><h3>Humanitarian Fund</h3></div>
+            </div>
+            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
+              The DAO manages a 1.44 billion ZION humanitarian fund distributed across 7 categories. Proposals of type <code style="color:var(--zion-cyan); font-size:12px">Humanitarian</code> can allocate funds to specific regions and causes. Quorum: 10%, voting period: 7 days.
+            </p>
+          </div>
+          <div class="tithe-grid" id="dao-humanitarian-grid">
+            <div style="color:rgba(255,255,255,0.35);text-align:center;margin-top:40px">No disbursements yet.</div>
+          </div>
+          <div class="tithe-total-bar" style="margin-top:20px">
+            <div><div class="tithe-total-label">Humanitarian Genesis Pool</div></div>
+            <div class="tithe-total-value">1,440,000,000 ZION</div>
+          </div>
+        </div>
+
+        <!-- ── TAB: Config ── -->
+        <div id="dao-config" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg></div>
+              <div><p class="card-kicker">Governance Parameters</p><h3>DAO Configuration</h3></div>
+            </div>
+            <table class="dex-chain-table" style="margin-top:14px">
+              <thead><tr><th>Parameter</th><th>Value</th><th>Changeable</th></tr></thead>
+              <tbody>
+                <tr><td>Quorum Required</td><td>10%</td><td>via Parameter proposal (1-50%)</td></tr>
+                <tr><td>Voting Period</td><td>7 days</td><td>via Parameter proposal (1-30d)</td></tr>
+                <tr><td>Timelock</td><td>48 hours</td><td>via Parameter proposal (12-168h)</td></tr>
+                <tr><td>Daily Spend Limit</td><td>100M ZION</td><td>via Parameter proposal (max 500M)</td></tr>
+                <tr><td>Multisig Threshold</td><td>5-of-7</td><td>via Parameter proposal (min 3)</td></tr>
+                <tr><td>Proposal Threshold</td><td>1M ZION</td><td>via Parameter proposal</td></tr>
+                <tr><td>L1 Scanner Interval</td><td>10s</td><td>Config file</td></tr>
+                <tr><td>Finality Blocks</td><td>6</td><td>Config file</td></tr>
+                <tr><td>API Port</td><td>8080</td><td>Config file</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-cyan"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg></div>
+              <div><p class="card-kicker">5 Types</p><h3>Proposal Types</h3></div>
+            </div>
+            <table class="dex-chain-table" style="margin-top:14px">
+              <thead><tr><th>Type</th><th>Quorum</th><th>Period</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td>Parameter</td><td>10%</td><td>7d</td><td>Change governance parameters</td></tr>
+                <tr><td>Treasury</td><td>15%</td><td>7d</td><td>Spend from treasury (recipient + amount)</td></tr>
+                <tr><td>Emergency</td><td>20%</td><td>3d</td><td>Emergency actions (pause/freeze/halt)</td></tr>
+                <tr><td>Grant</td><td>10%</td><td>7d</td><td>Milestone-based grants</td></tr>
+                <tr><td>Humanitarian</td><td>10%</td><td>7d</td><td>Fund humanitarian causes</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
       <!-- ═══════════════════════════════════════════════ -->
       <!-- WARP — Cross-Chain Corridors                   -->
@@ -7210,6 +7404,13 @@ Click a button above to run a command.
       <div class="nav-item" data-view="defi">
         <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
         <span>DeFi</span>
+      </div>
+      <div class="nav-item" data-view="dao">
+        <svg class="icon" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M3 10h18M8 5v14M16 5v14" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+        </svg>
+        <span>DAO</span>
       </div>
       <div class="nav-item" data-view="network">
         <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
