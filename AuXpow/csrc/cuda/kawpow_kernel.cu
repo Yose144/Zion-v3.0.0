@@ -48,7 +48,7 @@ __constant__ const int KECCAK_PI[24] = {
     10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1
 };
 
-__device__ void keccak_f1600(uint64_t state[25]) {
+__device__ __noinline__ void keccak_f1600(uint64_t state[25]) {
     for (int round = 0; round < 24; round++) {
         // Theta
         uint64_t c[5], d[5];
@@ -94,7 +94,7 @@ __device__ __forceinline__ unsigned int fnv1a(unsigned int a, unsigned int b) {
 // Rate = 576 bits = 72 bytes = 9 lanes.  Output = 512 bits = 64 bytes = 8 lanes.
 // Domain separator: 0x01 (original Keccak, same as Ethereum), padding 0x80 at end of rate.
 
-__device__ void keccak512(const unsigned char *input, const unsigned int len, unsigned char *output) {
+__device__ __noinline__ void keccak512(const unsigned char *input, const unsigned int len, unsigned char *output) {
     uint64_t state[25];
     for (int i = 0; i < 25; i++) state[i] = 0;
 
@@ -138,7 +138,7 @@ __device__ void keccak512(const unsigned char *input, const unsigned int len, un
 // Rate = 1088 bits = 136 bytes = 17 lanes.  Output = 256 bits = 32 bytes = 4 lanes.
 // Domain separator: 0x01 (original Keccak, same as Ethereum), padding 0x80 at end of rate.
 
-__device__ void keccak256(const unsigned char *input, const unsigned int len, unsigned char *output) {
+__device__ __noinline__ void keccak256(const unsigned char *input, const unsigned int len, unsigned char *output) {
     uint64_t state[25];
     for (int i = 0; i < 25; i++) state[i] = 0;
 

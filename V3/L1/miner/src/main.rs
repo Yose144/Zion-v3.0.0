@@ -1057,37 +1057,22 @@ fn cuda_verify_share(
     let result = miner.mine_batch_raw(&header, *target, 0, batch)?;
     if let Some((nonce, gpu_hash, mix_hash_opt)) = result.solutions.first().copied() {
         let mix = mix_hash_opt;
-        let mut cpu_hash = cpu_hash_fn(nonce, gpu_hash, mix);
-        let mut matched = cpu_hash == gpu_hash;
+        let cpu_hash = cpu_hash_fn(nonce, gpu_hash, mix);
+        let matched = cpu_hash == gpu_hash;
 
-        // KawPow deep-debug: download the GPU DAG and recompute the hash/mix
-        // from scratch with the pure-Rust reference. This tells us whether the
-        // mismatch is in output_hash, output_mix, or the kernel mixing itself.
+        // KawPow: compute CPU seed0 for comparison with GPU printf
         if algo.starts_with("kawpow") {
-            let (dag_entries, dag_bytes) = miner.debug_download_dag()?;
+            use sha3::{Digest, Keccak512};
             let header_arr: [u8; 32] = header[..32.min(header.len())].try_into().unwrap();
-            let (cpu_seed, cpu_mix_u32, cpu_mix, cpu_hash2) =
-                eh::kawpow_hash_from_dag(&header_arr, nonce, &dag_bytes, dag_entries);
-            let mix_match = Some(cpu_mix) == mix;
-            let hash_match = cpu_hash2 == gpu_hash;
-            let cpu_seed0 = u32::from_le_bytes([cpu_seed[0], cpu_seed[1], cpu_seed[2], cpu_seed[3]]);
-            let cpu_idx0 = ((cpu_mix_u32[0] ^ 0u32).wrapping_mul(0x0100_0193u32) as u64) % dag_entries;
+            let mut seed_input = [0u8; 40];
+            seed_input[..32].copy_from_slice(&header_arr);
+            seed_input[32..40].copy_from_slice(&nonce.to_le_bytes());
+            let seed = Keccak512::digest(&seed_input);
+            let cpu_seed0 = u32::from_le_bytes([seed[0], seed[1], seed[2], seed[3]]);
             eprintln!(
-                "KAWPOW_DEBUG nonce={} mix_match={} hash_match={} \
-                 gpu_hash_prefix={} cpu_hash_prefix={} gpu_mix_prefix={} cpu_mix_prefix={} cpu_seed0={:08x} cpu_mix0={:08x} cpu_idx0={}",
-                nonce,
-                mix_match,
-                hash_match,
-                hex::encode(&gpu_hash[..8]),
-                hex::encode(&cpu_hash2[..8]),
-                mix.map(|m| hex::encode(&m[..8])).unwrap_or_default(),
-                hex::encode(&cpu_mix[..8]),
-                cpu_seed0,
-                cpu_mix_u32[0],
-                cpu_idx0
+                "KAWPOW_SEED_CMP nonce={} cpu_seed0={:08x} (compare with GPU kawpow_debug seed0)",
+                nonce, cpu_seed0
             );
-            cpu_hash = cpu_hash2;
-            matched = hash_match;
         }
 
         Ok(Some((nonce, gpu_hash, mix, cpu_hash, matched)))
