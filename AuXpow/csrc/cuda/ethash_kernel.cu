@@ -212,6 +212,20 @@ __global__ __launch_bounds__(256) void ethash_mine(
 {
     if (*found) return;
 
+    // Standalone keccak512 test for thread 0: CPU ref: seed0=0xc659f544
+    if (blockIdx.x == 0 && threadIdx.x == 0) {
+        unsigned char tin[40];
+        for (int i = 0; i < 32; i++) tin[i] = 0xAA;
+        for (int i = 0; i < 8; i++) tin[32 + i] = 0;
+        unsigned char tout[64];
+        keccak512(tin, 40, tout);
+        unsigned int ts0 = (unsigned int)tout[0]
+                         | ((unsigned int)tout[1] << 8)
+                         | ((unsigned int)tout[2] << 16)
+                         | ((unsigned int)tout[3] << 24);
+        printf("eth_standalone_keccak512 seed0=%08x (CPU: c659f544)\n", ts0);
+    }
+
     uint64_t nonce = nonce_base + (uint64_t)(blockIdx.x * blockDim.x + threadIdx.x) * stride;
 
     // -- Step 1: seed = Keccak-512(header_hash || nonce_le) -> 64 bytes --
