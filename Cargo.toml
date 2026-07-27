@@ -53,6 +53,9 @@ tokio = "1"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 zeroize = { version = "1", features = ["derive"] }
+bip39 = "2"
+hmac = "0.12"
+pbkdf2 = "0.12"
 
 [profile.release]
 opt-level = 3
