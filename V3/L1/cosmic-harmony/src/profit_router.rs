@@ -200,12 +200,16 @@ impl ExternalCoin {
         matches!(self, Self::DCR | Self::ALPH)
     }
 
-    /// Whether this coin is CPU-minable (no GPU required).
+    /// Whether this coin is CPU-minable.
+    /// This includes coins that the `zion-miner` GPU backend routes to CPU
+    /// (verushash, randomx, ghostrider) plus any CPU-capable algorithm.
     pub fn is_cpu(self) -> bool {
         matches!(self, Self::XMR | Self::VRSC | Self::RTM)
     }
 
-    /// Whether this coin is GPU-minable (requires GPU).
+    /// Whether this coin is GPU-minable (not a CPU-only algorithm).
+    /// Note: RTM has an OpenCL kernel but is still treated as CPU-minable
+    /// by `gpu_backend::is_cpu_only_algorithm`, so it is excluded here.
     pub fn is_gpu(self) -> bool {
         !self.is_cpu()
     }
@@ -262,9 +266,9 @@ impl ExternalCoin {
     /// `has_avx2` = AVX2 support (beneficial for VerusHash but not required).
     pub fn cpu_compatible(self, has_aes: bool, _has_avx2: bool) -> bool {
         match self {
-            Self::VRSC => true,          // VerusHash always works
-            Self::XMR => has_aes,        // RandomX needs AES-NI
-            _ => false,                  // GPU-only algorithms
+            Self::VRSC | Self::RTM => true, // VerusHash/GhostRider always work on CPU
+            Self::XMR => has_aes,           // RandomX needs AES-NI
+            _ => false,                     // GPU-only algorithms
         }
     }
 
@@ -313,8 +317,14 @@ impl ExternalCoin {
             ),
             "cuda" => matches!(
                 self,
-                Self::DCR | Self::ALPH | Self::KAS | Self::ERG |
-                Self::RVN | Self::ETC
+                Self::DCR | Self::ALPH |       // blake3
+                Self::KAS |                    // kheavyhash
+                Self::ERG |                    // autolykos
+                Self::RVN | Self::CLORE | Self::QUAI |  // kawpow
+                Self::ETC |                    // ethash
+                Self::EVR | Self::MEWC |       // evrprogpow / meowpow → ProgPow kernel
+                Self::FLUX |                   // zelhash
+                Self::EPIC | Self::ZANO        // progpow / progpow_zano
             ),
             "metal" => matches!(
                 self,
@@ -348,8 +358,8 @@ impl ExternalCoin {
             Self::ZEC => 170.0,                      // Equihash 200,9 — memory-hard
             Self::PHX => 180.0,                      // NeoScrypt — memory-hard
             Self::KRX => 180.0,                      // KeryxHash — memory-hard
-            Self::RTM => 0.0,                        // CPU-only (was 200W GPU placeholder)
-            Self::XMR | Self::VRSC => 0.0,           // CPU coins — no GPU power
+            Self::RTM => 0.0,                    // Treated as CPU-only; OpenCL kernel exists but routed to CPU
+            Self::XMR | Self::VRSC => 0.0,         // CPU-only coins — no GPU power
         }
     }
 

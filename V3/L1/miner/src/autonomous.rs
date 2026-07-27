@@ -332,11 +332,18 @@ impl AutonomousProfitRouter {
         self.select_stream2();
         self.select_stream3();
 
-        // Override with forced coin if env var is set
+        // Override with forced coins if env vars are set
         if let Some(forced) = forced_stream2_coin() {
             self.stream2_coin = Some(forced);
             self.log.push(format!(
                 "stream2_forced: {} (ZION_STREAM2_FORCE_COIN)",
+                forced.ticker()
+            ));
+        }
+        if let Some(forced) = forced_stream3_coin() {
+            self.stream3_coin = Some(forced);
+            self.log.push(format!(
+                "stream3_forced: {} (ZION_STREAM3_FORCE_COIN)",
                 forced.ticker()
             ));
         }
@@ -369,9 +376,12 @@ impl AutonomousProfitRouter {
         self.select_stream2();
         self.select_stream3();
 
-        // Override with forced coin if env var is set
+        // Override with forced coins if env vars are set
         if let Some(forced) = forced_stream2_coin() {
             self.stream2_coin = Some(forced);
+        }
+        if let Some(forced) = forced_stream3_coin() {
+            self.stream3_coin = Some(forced);
         }
     }
 
@@ -481,4 +491,65 @@ fn forced_stream2_coin() -> Option<ExternalCoin> {
     let raw = std::env::var("ZION_STREAM2_FORCE_COIN").ok()?;
     let upper = raw.trim().to_uppercase();
     ExternalCoin::all().iter().copied().find(|c| c.ticker() == upper)
+}
+
+/// Read ZION_STREAM3_FORCE_COIN env var to force a specific Stream 3 (CPU) coin.
+fn forced_stream3_coin() -> Option<ExternalCoin> {
+    let raw = std::env::var("ZION_STREAM3_FORCE_COIN").ok()?;
+    let upper = raw.trim().to_uppercase();
+    ExternalCoin::all().iter().copied().find(|c| c.ticker() == upper)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_hw_opencl() -> HardwareProfile {
+        HardwareProfile {
+            gpu_vram_bytes: 8_000_000_000,
+            gpu_backend: "opencl".to_string(),
+            has_gpu: true,
+            cpu_has_aes: true,
+            cpu_has_avx2: true,
+            cpu_threads: 8,
+        }
+    }
+
+    #[test]
+    fn rtm_is_cpu_compatible_and_not_gpu_selected() {
+        let router = AutonomousProfitRouter::new(sample_hw_opencl());
+        let cpu = router.cpu_compatible_coins();
+        assert!(
+            cpu.contains(&ExternalCoin::RTM),
+            "RTM must be CPU-compatible"
+        );
+
+        let gpu = router.gpu_compatible_coins();
+        assert!(
+            !gpu.contains(&ExternalCoin::RTM),
+            "RTM is routed to CPU, not GPU"
+        );
+    }
+
+    #[test]
+    fn verushash_and_randomx_are_cpu_only() {
+        let router = AutonomousProfitRouter::new(sample_hw_opencl());
+        let gpu = router.gpu_compatible_coins();
+        assert!(!gpu.contains(&ExternalCoin::VRSC));
+        assert!(!gpu.contains(&ExternalCoin::XMR));
+    }
+
+    #[test]
+    fn forced_stream3_env_var_works() {
+        std::env::set_var("ZION_STREAM3_FORCE_COIN", "VRSC");
+        assert_eq!(forced_stream3_coin(), Some(ExternalCoin::VRSC));
+        std::env::remove_var("ZION_STREAM3_FORCE_COIN");
+    }
+
+    #[test]
+    fn forced_stream2_env_var_works() {
+        std::env::set_var("ZION_STREAM2_FORCE_COIN", "KAS");
+        assert_eq!(forced_stream2_coin(), Some(ExternalCoin::KAS));
+        std::env::remove_var("ZION_STREAM2_FORCE_COIN");
+    }
 }
