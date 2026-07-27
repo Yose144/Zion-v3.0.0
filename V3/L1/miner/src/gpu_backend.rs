@@ -6327,7 +6327,9 @@ pub mod cuda_deeksha {
                 .map_err(|e| anyhow::anyhow!("header upload: {e}"))?;
 
             // Target: LE u32 from first 4 bytes of target
-            let target_u32 = u32::from_le_bytes([
+            // Big-endian u32 of the first 4 target bytes — matches the
+            // lexicographic (big-endian) comparison used by DifficultyTarget::allows().
+            let target_u32 = u32::from_be_bytes([
                 target.bytes[0],
                 target.bytes[1],
                 target.bytes[2],
@@ -6448,7 +6450,9 @@ pub mod cuda_deeksha {
                 .htod_copy_into(header_bytes.to_vec(), &mut self.header_buf)
                 .map_err(|e| anyhow::anyhow!("header upload: {e}"))?;
 
-            let target_u32 = u32::from_le_bytes([
+            // Big-endian u32 of the first 4 target bytes — matches the
+            // lexicographic (big-endian) comparison used by DifficultyTarget::allows().
+            let target_u32 = u32::from_be_bytes([
                 target.bytes[0],
                 target.bytes[1],
                 target.bytes[2],
@@ -6759,7 +6763,9 @@ pub mod cuda_deeksha_lite_fire {
                 .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
 
             // Target: LE u32 from first 4 bytes of target
-            let target_u32 = u32::from_le_bytes([
+            // Big-endian u32 of the first 4 target bytes — matches the
+            // lexicographic (big-endian) comparison used by DifficultyTarget::allows().
+            let target_u32 = u32::from_be_bytes([
                 target.bytes[0],
                 target.bytes[1],
                 target.bytes[2],
@@ -6889,7 +6895,9 @@ pub mod cuda_deeksha_lite_fire {
                 .htod_copy_into(keccak_state.to_vec(), &mut self.header_state_buf)
                 .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
 
-            let target_u32 = u32::from_le_bytes([
+            // Big-endian u32 of the first 4 target bytes — matches the
+            // lexicographic (big-endian) comparison used by DifficultyTarget::allows().
+            let target_u32 = u32::from_be_bytes([
                 target.bytes[0],
                 target.bytes[1],
                 target.bytes[2],
@@ -7171,7 +7179,9 @@ pub mod cuda_deeksha_lite {
                 .htod_copy_into(keccak_state.to_vec(), &mut self.header_state_buf)
                 .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
 
-            let target_u32 = u32::from_le_bytes([
+            // Big-endian u32 of the first 4 target bytes — matches the
+            // lexicographic (big-endian) comparison used by DifficultyTarget::allows().
+            let target_u32 = u32::from_be_bytes([
                 target.bytes[0],
                 target.bytes[1],
                 target.bytes[2],
@@ -7286,7 +7296,9 @@ pub mod cuda_deeksha_lite {
                 .htod_copy_into(keccak_state.to_vec(), &mut self.header_state_buf)
                 .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
 
-            let target_u32 = u32::from_le_bytes([
+            // Big-endian u32 of the first 4 target bytes — matches the
+            // lexicographic (big-endian) comparison used by DifficultyTarget::allows().
+            let target_u32 = u32::from_be_bytes([
                 target.bytes[0],
                 target.bytes[1],
                 target.bytes[2],

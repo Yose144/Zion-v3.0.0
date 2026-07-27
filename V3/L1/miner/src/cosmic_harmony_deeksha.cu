@@ -1113,8 +1113,10 @@ extern "C" __global__ __launch_bounds__(256) void ekam_deeksha_mine(
     uint8_t hash[32];
     cosmic_fusion_ekam(s5, hash);
 
-    /* Target check */
-    uint32_t state0 = *(uint32_t *)hash;
+    /* Target check — big-endian u32 of first 4 hash bytes (matches
+     * DifficultyTarget::allows() lexicographic comparison). */
+    uint32_t state0_le = *(uint32_t *)hash;
+    uint32_t state0 = __byte_perm(state0_le, 0u, 0x3210u);
 
     if (state0 <= target_u32) {
         unsigned long long int old = atomicCAS(
