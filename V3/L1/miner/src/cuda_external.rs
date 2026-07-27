@@ -219,6 +219,8 @@ pub struct CudaExternalMiner {
     kheavy_matrix: Option<CudaSlice<u16>>,
     autolykos_table: Option<CudaSlice<u64>>,
     autolykos_table_size: u32,
+    autolykos_header: Vec<u8>,
+    autolykos_height: u64,
     // DAG buffer for ethash/kawpow
     dag_buf: Option<CudaSlice<u64>>,
     dag_size_entries: u64,
@@ -369,6 +371,8 @@ impl CudaExternalMiner {
             kheavy_matrix,
             autolykos_table,
             autolykos_table_size: 0,
+            autolykos_header: Vec::new(),
+            autolykos_height: 0,
             dag_buf: None,
             dag_size_entries: 0,
             dag_epoch: 0xFFFFFFFF,
@@ -386,10 +390,19 @@ impl CudaExternalMiner {
     }
 
     /// Generate the Autolykos v2 table on the host and upload to GPU.
+    /// Caches the table per header so it is not rebuilt for every batch.
     fn ensure_autolykos_table(&mut self, header: &[u8], height: u32) -> Result<()> {
+        if self.autolykos_table.is_some()
+            && self.autolykos_header == header
+            && self.autolykos_height == height as u64
+        {
+            return Ok(());
+        }
         let table_size = autolykos_table_size_cuda();
         let table = generate_autolykos_table_cuda(header, height, table_size);
         self.autolykos_table_size = table_size as u32;
+        self.autolykos_header = header.to_vec();
+        self.autolykos_height = height as u64;
         let table_buf = self
             .dev
             .htod_copy(table)
@@ -1072,6 +1085,9 @@ impl GpuMiner for CudaExternalMiner {
     }
 
     fn update_epoch(&mut self, height: u64) -> Result<()> {
+        if self.algo == CudaExtAlgo::Autolykos {
+            self.autolykos_height = height;
+        }
         if self.algo.needs_dag() {
             let epoch = (height / self.algo.epoch_length() as u64) as u32;
             self.ensure_dag(epoch)?;
@@ -1099,8 +1115,13 @@ impl GpuMiner for CudaExternalMiner {
         }
 
         if self.algo == CudaExtAlgo::Autolykos {
-            let height = header.timestamp as u32;
-            self.ensure_autolykos_table(&header_bytes, height)?;
+            // Autolykos v2 uses the 32-byte pre-pow hash as the message and the
+            // block height for table generation. The padded 80-byte MiningHeader
+            // has the raw pre-pow hash in the first 32 bytes.
+            let height = self.autolykos_height as u32;
+            let pre_pow = &header_bytes[..32];
+            self.ensure_autolykos_table(pre_pow, height)?;
+            return self.run_kernel(pre_pow, &target.bytes, nonce_start, batch_size);
         }
 
         // Verushash: precompute key from block header
@@ -1148,7 +1169,9 @@ impl GpuMiner for CudaExternalMiner {
 
         if self.algo == CudaExtAlgo::Autolykos {
             let height = 0u32;
-            self.ensure_autolykos_table(raw_header, height)?;
+            let pre_pow = &raw_header[..32.min(raw_header.len())];
+            self.ensure_autolykos_table(pre_pow, height)?;
+            return self.run_kernel(pre_pow, &target.bytes, nonce_start, batch_size);
         }
 
         // Verushash: precompute key from raw header

@@ -4189,24 +4189,18 @@ impl AuxPowClient {
         } else if self.profile.coin == ExternalCoin::ERG {
             // ERG / Autolykos v2 (2miners): 3 params
             //   [worker, job_id, nonce2]
-            // nonce2 = extranonce2 + miner_nonce (8 bytes LE hex)
+            // The full 8-byte Autolykos nonce is en1 (from subscribe) followed
+            // by extranonce2 (the miner's searched space). 2miners ERG uses
+            // en1 = 2 bytes and nonce2 = 6 bytes, so nonce2 is the lower 6 bytes
+            // of the full 64-bit nonce in big-endian hex.
             let wallet = self.payout_wallet.lock().await.clone();
             let worker = format!("{}.{}", wallet, self.profile.worker_name);
             let en1 = self.extranonce1.lock().await;
             let en1_hex = hex::encode(&*en1);
-            let nonce2_4b = format!("{:08x}", nonce);
-            // ERG nonce2 = miner_nonce (4 bytes) padded to extranonce2 size
-            // 2miners ERG: extranonce2_size = 6 (from subscribe), en1 = 4 bytes
-            // nonce2 = 6 bytes total = miner_nonce(4B) + padding(2B)
-            let nonce2_size = 6usize;
-            let mut nonce2 = nonce2_4b.clone();
-            let needed = nonce2_size * 2;
-            if nonce2.len() < needed {
-                nonce2.push_str(&"0".repeat(needed - nonce2.len()));
-            }
-            if nonce2.len() > needed {
-                nonce2.truncate(needed);
-            }
+            let en1_len = en1.len();
+            let nonce2_size = 8usize.saturating_sub(en1_len).max(1);
+            let nonce_be = nonce.to_be_bytes();
+            let nonce2 = hex::encode(&nonce_be[en1_len..en1_len + nonce2_size]);
             println!(
                 "auxpow: ERG submit — job={} nonce2={} en1={}",
                 job_id, nonce2, en1_hex
