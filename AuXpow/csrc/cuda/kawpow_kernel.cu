@@ -1,219 +1,433 @@
-// KawPow (RVN/CLORE/EVR/MEWC) CUDA kernel -- real implementation.
+// KawPow (RVN/CLORE/EVR/MEWC) CUDA kernel — REAL implementation from xmrig.
 //
-// Implements the Ethash-like core of the KawPow algorithm:
-//   1. seed = keccak512(header_hash || nonce)  -> 64 bytes (mix)
-//   2. For i in 0..32:
-//        index = fnv(i ^ mix[0], mix[0]) % dag_entries
-//        dag_node = dag[index * 128 .. index * 128 + 128]
-//        mix = fnv(mix, dag_node)  (per-uint32 FNV-1a)
-//   3. hash = keccak256(seed || mix)  -> 32 bytes
-//   4. Check hash <= target
+// Implements the full ProgPow/KawPow algorithm with:
+//   - keccak_f800 (32-bit words, 800-bit state, 22 rounds)
+//   - KISS99 RNG for random math sequence (changes every PERIOD blocks)
+//   - "RAVENCOINKAWPOW" constant in keccak state
+//   - Raw 40-byte job_blob input (NOT pre-hashed)
+//   - Full ProgPow mix loop with cache accesses + random math + DAG loads
 //
-// The DAG is precomputed on the host and passed as a device buffer of
-// 128-byte entries (each = 16 u64 lanes).  The host is responsible for
-// DAG generation (Ethash-style keccak512 / FNV).
+// The random math code is generated at compile time by the host-side
+// random math generator (AuXpow/src/progpow_codegen.rs) and injected
+// via the XMRIG_INCLUDE tags below.
 //
 // References:
-//   - https://github.com/RavenCommunity/kawpowminer
-//   - https://github.com/ethereum-mining/ethminer (ethash.cl)
-//   - Rust CPU reference: AuXpow/src/external_hashers.rs (hash_kawpow)
+//   - https://github.com/xmrig/xmrig-cuda (src/KawPow/raven/KawPow.h)
+//   - OpenCL source: AuXpow/csrc/opencl/kawpow_kernel.cl
+//   - Codegen: AuXpow/src/progpow_codegen.rs
 
 #pragma once
 
 #include <cuda_runtime.h>
 #include <stdint.h>
 
-// -- Keccak-f[1600] --
+// ── KawPow constants ───────────────────────────────────────────────
+#ifndef PROGPOW_LANES
+#define PROGPOW_LANES           16
+#endif
+#ifndef PROGPOW_REGS
+#define PROGPOW_REGS            32
+#endif
+#ifndef PROGPOW_DAG_LOADS
+#define PROGPOW_DAG_LOADS       4
+#endif
+#define PROGPOW_CACHE_WORDS     4096
+#ifndef PROGPOW_CNT_DAG
+#define PROGPOW_CNT_DAG         64
+#endif
+#ifndef PROGPOW_CNT_CACHE
+#define PROGPOW_CNT_CACHE       11
+#endif
+#ifndef PROGPOW_CNT_MATH
+#define PROGPOW_CNT_MATH        18
+#endif
 
-#define ROTL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
+#ifndef GROUP_SIZE
+#define GROUP_SIZE              128
+#endif
+#define HASHES_PER_GROUP        (GROUP_SIZE / PROGPOW_LANES)
 
-__constant__ const uint64_t KECCAK_RC[24] = {
-    0x0000000000000001ULL, 0x0000000000008082ULL, 0x800000000000808aULL,
-    0x8000000080008000ULL, 0x000000000000808bULL, 0x0000000080000001ULL,
-    0x8000000080008081ULL, 0x8000000000008009ULL, 0x000000000000008aULL,
-    0x0000000000000088ULL, 0x0000000080008009ULL, 0x000000008000000aULL,
-    0x800000008000808bULL, 0x800000000000008bULL, 0x8000000000008089ULL,
-    0x8000000000008003ULL, 0x8000000000008002ULL, 0x8000000000000080ULL,
-    0x000000000000800aULL, 0x800000008000000aULL, 0x8000000080008081ULL,
-    0x8000000000008080ULL, 0x0000000080000001ULL, 0x8000000080008008ULL
+#define FNV_PRIME               0x1000193
+#define FNV_OFFSET_BASIS        0x811c9dc5
+
+// ── Helper macros ──────────────────────────────────────────────────
+#if __CUDA_ARCH__ < 350
+    #define ROTL32(x,n) (((x) << (n % 32)) | ((x) >> (32 - (n % 32))))
+    #define ROTR32(x,n) (((x) >> (n % 32)) | ((x) << (32 - (n % 32))))
+#else
+    #define ROTL32(x,n) __funnelshift_l((x), (x), (n))
+    #define ROTR32(x,n) __funnelshift_r((x), (x), (n))
+#endif
+
+#define min(a,b)     ((a<b) ? a : b)
+#define mul_hi(a, b) __umulhi(a, b)
+#define clz(a)       __clz(a)
+#define popcount(a)  __popc(a)
+
+#define DEV_INLINE __device__ __forceinline__
+
+#if (__CUDACC_VER_MAJOR__ > 8)
+    #define SHFL(x, y, z) __shfl_sync(0xFFFFFFFF, (x), (y), (z))
+#else
+    #define SHFL(x, y, z) __shfl((x), (y), (z))
+#endif
+
+// ── DAG type ───────────────────────────────────────────────────────
+typedef struct __align__(16) {uint32_t s[PROGPOW_DAG_LOADS];} dag_t;
+
+typedef struct {
+    uint32_t uint32s[32 / sizeof(uint32_t)];
+} hash32_t;
+
+// ── Keccak-f[800] round constants (32-bit) ─────────────────────────
+__device__ __constant__ const uint32_t keccakf_rndc[24] = {
+    0x00000001, 0x00008082, 0x0000808a, 0x80008000, 0x0000808b, 0x80000001,
+    0x80008081, 0x00008009, 0x0000008a, 0x00000088, 0x80008009, 0x8000000a,
+    0x8000808b, 0x0000008b, 0x00008089, 0x00008003, 0x00008002, 0x00000080,
+    0x0000800a, 0x8000000a, 0x80008081, 0x00008080, 0x80000001, 0x80008008
 };
 
-// Keccak Rho rotation offsets
-__constant__ const unsigned int KECCAK_RHO[24] = {
-    1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44
+// ── Ravencoin "RAVENCOINKAWPOW" constant ───────────────────────────
+__device__ __constant__ const uint32_t ravencoin_rndc[15] = {
+    0x00000072, //R
+    0x00000041, //A
+    0x00000056, //V
+    0x00000045, //E
+    0x0000004E, //N
+    0x00000043, //C
+    0x0000004F, //O
+    0x00000049, //I
+    0x0000004E, //N
+    0x0000004B, //K
+    0x00000041, //A
+    0x00000057, //W
+    0x00000050, //P
+    0x0000004F, //O
+    0x00000057, //W
 };
 
-// Keccak Pi permutation indices
-__constant__ const int KECCAK_PI[24] = {
-    10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1
-};
+// ── Keccak-f[800] round (width 800, 25 × uint32 state) ────────────
+__device__ __forceinline__ void keccak_f800_round(uint32_t st[25], const int r)
+{
+    const uint32_t keccakf_rotc[24] = {
+        1,  3,  6,  10, 15, 21, 28, 36, 45, 55, 2,  14,
+        27, 41, 56, 8,  25, 43, 62, 18, 39, 61, 20, 44
+    };
+    const uint32_t keccakf_piln[24] = {
+        10, 7,  11, 17, 18, 3, 5,  16, 8,  21, 24, 4,
+        15, 23, 19, 13, 12, 2, 20, 14, 22, 9,  6,  1
+    };
 
-__device__ void keccak_f1600(uint64_t state[25]) {
-    for (int round = 0; round < 24; round++) {
-        // Theta
-        uint64_t c[5], d[5];
-        for (int x = 0; x < 5; x++)
-            c[x] = state[x] ^ state[x+5] ^ state[x+10] ^ state[x+15] ^ state[x+20];
-        for (int x = 0; x < 5; x++)
-            d[x] = c[(x+4)%5] ^ ROTL64(c[(x+1)%5], 1);
-        for (int i = 0; i < 25; i++)
-            state[i] ^= d[i%5];
+    uint32_t t, bc[5];
+    // Theta
+    #pragma unroll
+    for (int i = 0; i < 5; i++)
+        bc[i] = st[i] ^ st[i + 5] ^ st[i + 10] ^ st[i + 15] ^ st[i + 20];
 
-        // Rho and Pi
-        uint64_t temp = state[1];
-        for (int t = 0; t < 24; t++) {
-            int idx = KECCAK_PI[t];
-            uint64_t tmp2 = state[idx];
-            state[idx] = ROTL64(temp, KECCAK_RHO[t]);
-            temp = tmp2;
-        }
+    #pragma unroll
+    for (int i = 0; i < 5; i++) {
+        t = bc[(i + 4) % 5] ^ ROTL32(bc[(i + 1) % 5], 1u);
+        for (uint32_t j = 0; j < 25; j += 5)
+            st[j + i] ^= t;
+    }
 
-        // Chi
-        for (int y = 0; y < 5; y++) {
-            uint64_t row[5];
-            for (int x = 0; x < 5; x++) row[x] = state[y*5+x];
-            for (int x = 0; x < 5; x++)
-                state[y*5+x] = row[x] ^ ((~row[(x+1)%5]) & row[(x+2)%5]);
-        }
+    // Rho Pi
+    t = st[1];
+    #pragma unroll
+    for (int i = 0; i < 24; i++) {
+        uint32_t j = keccakf_piln[i];
+        bc[0] = st[j];
+        st[j] = ROTL32(t, keccakf_rotc[i]);
+        t = bc[0];
+    }
 
-        // Iota
-        state[0] ^= KECCAK_RC[round];
+    //  Chi
+    #pragma unroll
+    for (uint32_t j = 0; j < 25; j += 5) {
+        #pragma unroll
+        for (int i = 0; i < 5; i++)
+            bc[i] = st[j + i];
+        #pragma unroll
+        for (int i = 0; i < 5; i++)
+            st[j + i] ^= (~bc[(i + 1) % 5]) & bc[(i + 2) % 5];
+    }
+
+    //  Iota
+    st[0] ^= keccakf_rndc[r];
+}
+
+// Keccak-f800: 800-bit state, bitrate 576, capacity 224, no padding.
+// 22 rounds (last 2 rounds omitted — only need 64 bits of output).
+__device__ __forceinline__ void keccak_f800(uint32_t st[25])
+{
+    #pragma unroll
+    for (int r = 0; r < 22; r++) {
+        keccak_f800_round(st, r);
     }
 }
 
-// -- FNV-1a --
+// ── FNV-1a ──────────────────────────────────────────────────────────
+#define fnv1a(h, d) (h = (h ^ d) * FNV_PRIME)
 
-#define FNV_PRIME 0x01000193u
+// ── KISS99 RNG ──────────────────────────────────────────────────────
+typedef struct {
+    uint32_t z, w, jsr, jcong;
+} kiss99_t;
 
-__device__ __forceinline__ unsigned int fnv1a(unsigned int a, unsigned int b) {
-    return (a ^ b) * FNV_PRIME;
+__device__ __forceinline__ uint32_t kiss99(kiss99_t *st)
+{
+    st->z = 36969 * (st->z & 65535) + (st->z >> 16);
+    st->w = 18000 * (st->w & 65535) + (st->w >> 16);
+    uint32_t MWC = ((st->z << 16) + st->w);
+    st->jsr ^= (st->jsr << 17);
+    st->jsr ^= (st->jsr >> 13);
+    st->jsr ^= (st->jsr << 5);
+    st->jcong = 69069 * st->jcong + 1234567;
+    return ((MWC ^ st->jcong) + st->jsr);
 }
 
-// -- Keccak absorb helpers (match ethash_kernel.cu structure exactly) --
-
-__device__ __forceinline__ void absorb_block_9(uint64_t state[25], const unsigned char *block) {
-    for (int i = 0; i < 9; i++) {
-        uint64_t lane = 0;
-        for (int j = 0; j < 8; j++)
-            lane |= ((uint64_t)block[i*8 + j]) << (j*8);
-        state[i] ^= lane;
-    }
+// ── fill_mix: expand per-warp seed to per-lane mix ─────────────────
+__device__ __forceinline__ void fill_mix(
+    uint32_t* hash_seed, uint32_t lane_id, uint32_t* mix)
+{
+    uint32_t fnv_hash = FNV_OFFSET_BASIS;
+    kiss99_t st;
+    st.z = fnv1a(fnv_hash, hash_seed[0]);
+    st.w = fnv1a(fnv_hash, hash_seed[1]);
+    st.jsr = fnv1a(fnv_hash, lane_id);
+    st.jcong = fnv1a(fnv_hash, lane_id);
+    #pragma unroll
+    for (int i = 0; i < PROGPOW_REGS; i++)
+        mix[i] = kiss99(&st);
 }
 
-__device__ __forceinline__ void absorb_block_17(uint64_t state[25], const unsigned char *block) {
-    for (int i = 0; i < 17; i++) {
-        uint64_t lane = 0;
-        for (int j = 0; j < 8; j++)
-            lane |= ((uint64_t)block[i*8 + j]) << (j*8);
-        state[i] ^= lane;
-    }
+// ── Shuffle helper for inter-lane communication ────────────────────
+typedef struct {
+    uint32_t uint32s[PROGPOW_LANES];
+} shuffle_t;
+
+// ── Byte swap (avoid __byte_perm bug on sm_61) ─────────────────────
+__device__ __forceinline__ uint32_t cuda_swab32(uint32_t x)
+{
+    return ((x & 0x000000FFu) << 24) |
+           ((x & 0x0000FF00u) << 8)  |
+           ((x & 0x00FF0000u) >> 8)  |
+           ((x & 0xFF000000u) >> 24);
 }
 
-// -- Keccak-512 --
-//
-// Rate = 576 bits = 72 bytes = 9 lanes.  Output = 512 bits = 64 bytes = 8 lanes.
-// Domain separator: 0x01 (original Keccak, same as Ethereum), padding 0x80 at end of rate.
+// ── ProgPow loop (one iteration) ───────────────────────────────────
+// The random math + data loads are injected via XMRIG_INCLUDE tags.
+DEV_INLINE void progPowLoop(
+    const uint32_t loop,
+    uint32_t mix[PROGPOW_REGS],
+    const dag_t *g_dag,
+    const uint32_t c_dag[PROGPOW_CACHE_WORDS],
+    const bool hack_false)
+{
+    dag_t data_dag;
+    uint32_t offset, data;
+    const uint32_t lane_id = threadIdx.x & (PROGPOW_LANES - 1);
 
-__device__ void keccak512(const unsigned char *input, const unsigned int len, unsigned char *output) {
-    uint64_t state[25];
-    for (int i = 0; i < 25; i++) state[i] = 0;
+    // global load
+    offset = SHFL(mix[0], loop % PROGPOW_LANES, PROGPOW_LANES);
+    XMRIG_INCLUDE_OFFSET_MOD_DAG_ELEMENTS
+    offset = offset * PROGPOW_LANES + (lane_id ^ loop) % PROGPOW_LANES;
+    data_dag = g_dag[offset];
 
-    unsigned int offset = 0;
-    while (offset + 72 <= len) {
-        absorb_block_9(state, input + offset);
-        keccak_f1600(state);
-        offset += 72;
-    }
+    // hack to prevent compiler from reordering LD and usage
+    if (hack_false) __threadfence_block();
 
-    unsigned char padded[72];
-    for (int i = 0; i < 72; i++) padded[i] = 0;
-    unsigned int remaining = len - offset;
-    for (unsigned int i = 0; i < remaining; i++) padded[i] = input[offset + i];
-    padded[remaining] = 0x01;       // Keccak domain separator
-    padded[71] |= 0x80;             // end-of-rate padding
+    XMRIG_INCLUDE_PROGPOW_RANDOM_MATH
 
-    absorb_block_9(state, padded);
-    keccak_f1600(state);
+    // consume global load data
+    // hack to prevent compiler from reordering LD and usage
+    if (hack_false) __threadfence_block();
 
-    for (int i = 0; i < 8; i++)
-        for (int j = 0; j < 8; j++)
-            output[i*8 + j] = (unsigned char)(state[i] >> (j*8));
+    XMRIG_INCLUDE_PROGPOW_DATA_LOADS
 }
 
-// -- Keccak-256 --
-//
-// Rate = 1088 bits = 136 bytes = 17 lanes.  Output = 256 bits = 32 bytes = 4 lanes.
-// Domain separator: 0x01 (original Keccak, same as Ethereum), padding 0x80 at end of rate.
-
-__device__ void keccak256(const unsigned char *input, const unsigned int len, unsigned char *output) {
-    uint64_t state[25];
-    for (int i = 0; i < 25; i++) state[i] = 0;
-
-    unsigned int offset = 0;
-    while (offset + 136 <= len) {
-        absorb_block_17(state, input + offset);
-        keccak_f1600(state);
-        offset += 136;
-    }
-
-    unsigned char padded[136];
-    for (int i = 0; i < 136; i++) padded[i] = 0;
-    unsigned int remaining = len - offset;
-    for (unsigned int i = 0; i < remaining; i++) padded[i] = input[offset + i];
-    padded[remaining] = 0x01;       // Keccak domain separator
-    padded[135] |= 0x80;            // end-of-rate padding
-
-    absorb_block_17(state, padded);
-    keccak_f1600(state);
-
-    for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 8; j++)
-            output[i*8 + j] = (unsigned char)(state[i] >> (j*8));
-}
-
-// -- Mining kernel --
-//
-// Kernel arguments:
-//   header_hash   -- 32-byte block header hash (the "seed hash" base)
-//   target        -- 32-byte target (big-endian byte comparison)
-//   base_nonce    -- first nonce in this batch
-//   dag           -- u64 buffer containing the DAG.
-//                   Each DAG entry is 128 bytes = 16 u64 lanes.
-//                   dag[index * 16 + lane] accesses lane within entry.
-//   dag_entries   -- number of 128-byte DAG entries (dag_size / 128)
-//   output_nonce  -- single u64, written when a solution is found
-//   output_hash   -- 32-byte final hash of the winning nonce
-//   output_mix    -- 32-byte compressed mix hash (for eth_submitWork)
-//   found         -- atomic flag: 0 = not found, 1 = found
+// ── Main kernel: progpow_search ────────────────────────────────────
+// KawPow takes a raw 40-byte job_blob (10 uint32) and uses keccak_f800
+// with "RAVENCOINKAWPOW" constant. The kernel overwrites job_blob[8]
+// (uint32 at offset 32) with gid (the nonce).
 extern "C" {
 
-__global__ void kawpow_mine(
-    const unsigned char *header_hash,  // 32 bytes
-    const unsigned char *target,       // 32 bytes
-    const uint64_t base_nonce,
-    const uint64_t *dag,               // DAG buffer (128-byte entries)
-    const uint64_t dag_entries,        // number of 128-byte entries
-    uint64_t *output_nonce,
-    unsigned char *output_hash,
-    unsigned char *output_mix,         // 32-byte compressed mix hash
-    unsigned int *found
+__global__ XMRIG_INCLUDE_LAUNCH_BOUNDS void progpow_search(
+    const dag_t *g_dag,              // 0: DAG buffer (dag_t = 4 × uint32)
+    const uint32_t* job_blob,        // 1: 40-byte job blob (10 uint32)
+    const uint64_t target,           // 2: u64 target (big-endian)
+    bool hack_false,                 // 3: always false
+    uint32_t* results,               // 4: results buffer (16 uint32)
+    uint32_t* stop,                  // 5: stop flag (2 uint32)
+    // ZION extensions:
+    uint64_t* output_nonce,          // 6: found nonce
+    unsigned char* output_mix,       // 7: 32-byte mix hash
+    unsigned int* found              // 8: found flag
 )
 {
-    if (*found) return;
+    if (*stop) {
+        if ((threadIdx.x == 0) && ((blockIdx.x & 15) == 0)) {
+            atomicAdd(stop + 1, blockDim.x * 16);
+        }
+        return;
+    }
 
-    // Standalone keccak512 test for thread 0: CPU ref: seed0=0xc659f544
-    if (blockIdx.x == 0 && threadIdx.x == 0) {
-        unsigned char tin[40];
-        for (int i = 0; i < 32; i++) tin[i] = 0xAA;
-        for (int i = 0; i < 8; i++) tin[32 + i] = 0;
-        unsigned char tout[64];
-        keccak512(tin, 40, tout);
-        unsigned int ts0 = (unsigned int)tout[0]
-                         | ((unsigned int)tout[1] << 8)
-                         | ((unsigned int)tout[2] << 16)
-                         | ((unsigned int)tout[3] << 24);
-        printf("kaw_standalone_keccak512 seed0=%08x (CPU: c659f544)\n", ts0);
-        *found = 1u;  // stop after first thread
+    __shared__ shuffle_t share[HASHES_PER_GROUP];
+    __shared__ uint32_t c_dag[PROGPOW_CACHE_WORDS];
+
+    const uint32_t lid = threadIdx.x;
+    const uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    const uint32_t lane_id = lid & (PROGPOW_LANES - 1);
+    const uint32_t group_id = lid / PROGPOW_LANES;
+
+    // Load the first portion of the DAG into the shared cache
+    for (uint32_t word = lid * PROGPOW_DAG_LOADS; word < PROGPOW_CACHE_WORDS;
+         word += GROUP_SIZE * PROGPOW_DAG_LOADS)
+    {
+        dag_t load = g_dag[word / PROGPOW_DAG_LOADS];
+        #pragma unroll
+        for (int i = 0; i < PROGPOW_DAG_LOADS; i++)
+            c_dag[word + i] = load.s[i];
+    }
+
+    uint32_t hash_seed[2];  // KISS99 initiator
+    hash32_t digest;        // Carry-over from mix output
+
+    uint32_t state2[8];
+
+    {
+        // Absorb phase for initial round of keccak
+        uint32_t state[25] = {0x0};     // Keccak's state
+
+        // 1st fill with job data (10 uint32 = 40 bytes)
+        #pragma unroll
+        for (int i = 0; i < 10; i++)
+            state[i] = job_blob[i];
+
+        // Apply nonce: overwrite state[8] with gid
+        gid += state[8];
+        state[8] = gid;
+
+        // 3rd apply ravencoin input constraints
+        #pragma unroll
+        for (int i = 10; i < 25; i++)
+            state[i] = ravencoin_rndc[i - 10];
+
+        // Run initial keccak round
+        keccak_f800(state);
+
+        #pragma unroll
+        for (int i = 0; i < 8; i++)
+            state2[i] = state[i];
+    }
+
+    // Force threads to sync and ensure shared mem is in sync
+    __syncthreads();
+
+    #pragma unroll 1
+    for (uint32_t h = 0; h < PROGPOW_LANES; h++)
+    {
+        uint32_t mix[PROGPOW_REGS];
+
+        // Share the hash's seed across all lanes
+        if (lane_id == h) {
+            share[group_id].uint32s[0] = state2[0];
+            share[group_id].uint32s[1] = state2[1];
+        }
+        __syncthreads();
+
+        // Initialize mix for all lanes
+        fill_mix(share[group_id].uint32s, lane_id, mix);
+
+        // DAG loop — 64 iterations
+        #pragma unroll 1
+        for (uint32_t loop = 0; loop < PROGPOW_CNT_DAG; loop++)
+        {
+            progPowLoop(loop, mix, g_dag, c_dag, hack_false);
+        }
+
+        // Reduce mix data to a per-lane 32-bit digest
+        uint32_t mix_hash = FNV_OFFSET_BASIS;
+        #pragma unroll
+        for (int i = 0; i < PROGPOW_REGS; i++)
+            fnv1a(mix_hash, mix[i]);
+
+        // Reduce all lanes to a single 256-bit digest
+        hash32_t digest_temp;
+        #pragma unroll
+        for (int i = 0; i < 8; i++)
+            digest_temp.uint32s[i] = FNV_OFFSET_BASIS;
+
+        share[group_id].uint32s[lane_id] = mix_hash;
+        __syncthreads();
+
+        #pragma unroll
+        for (int i = 0; i < PROGPOW_LANES; i++)
+            fnv1a(digest_temp.uint32s[i % 8], share[group_id].uint32s[i]);
+
+        if (h == lane_id)
+            digest = digest_temp;
+    }
+
+    // Absorb phase for last round of keccak (256 bits)
+    uint64_t result;
+
+    {
+        uint32_t state[25] = {0x0};     // Keccak's state
+
+        // 1st initial 8 words of state are kept as carry-over from initial keccak
+        #pragma unroll
+        for (int i = 0; i < 8; i++)
+            state[i] = state2[i];
+
+        // 2nd subsequent 8 words are carried from digest/mix
+        #pragma unroll
+        for (int i = 8; i < 16; i++)
+            state[i] = digest.uint32s[i - 8];
+
+        // 3rd apply ravencoin input constraints
+        #pragma unroll
+        for (int i = 16; i < 25; i++)
+            state[i] = ravencoin_rndc[i - 16];
+
+        // Run keccak loop
+        keccak_f800(state);
+
+        // Extract result: byte-swap state[0] and state[1] for big-endian comparison
+        // result = (uint64_t)cuda_swab32(state[0]) << 32 | cuda_swab32(state[1]);
+        // Actually xmrig uses: result = (uint64_t)cuda_swab32(state[0]) << 32 | cuda_swab32(state[1])
+        // But OpenCL uses: res = (uint64_t)state[1] << 32 | state[0]; result = as_ulong(as_uchar8(res).s76543210)
+        // which is byte-swap of the full 64-bit value.
+        // (uint64_t)cuda_swab32(state[0]) << 32 | cuda_swab32(state[1])
+        //   = byte_swap(state[0]) << 32 | byte_swap(state[1])
+        //   = byte_swap64(state[1] << 32 | state[0])
+        // So both are equivalent.
+        result = (uint64_t)cuda_swab32(state[0]) << 32 | cuda_swab32(state[1]);
+    }
+
+    // Check result vs target
+    if (result <= target)
+    {
+        *stop = 1;
+
+        const uint32_t index = atomicAdd(results, 1U) + 1U;
+        if (index <= 15) {
+            results[index] = gid;
+        }
+
+        // ZION: write to our output buffers for share submission
+        unsigned int old = atomicExch(found, 1u);
+        if (old == 0u) {
+            *output_nonce = (uint64_t)gid;
+            // Write mix hash (digest) as 32 bytes little-endian
+            for (int i = 0; i < 8; i++) {
+                output_mix[i * 4]     = (unsigned char)(digest.uint32s[i]);
+                output_mix[i * 4 + 1] = (unsigned char)(digest.uint32s[i] >> 8);
+                output_mix[i * 4 + 2] = (unsigned char)(digest.uint32s[i] >> 16);
+                output_mix[i * 4 + 3] = (unsigned char)(digest.uint32s[i] >> 24);
+            }
+        }
     }
 }
 
