@@ -20,7 +20,8 @@
     "build:win:portable": "npm run prepare:rust-miner && electron-builder --win portable --x64",
     "build:mac": "npm run prepare:rust-miner && electron-builder --mac",
     "build:linux": "npm run prepare:rust-miner && electron-builder --linux --x64",
-    "build:all": "npm run prepare:rust-miner && electron-builder --mac --win --linux --x64"
+    "build:all": "npm run prepare:rust-miner && electron-builder --mac --win --linux --x64",
+    "tui": "node src/tui/index.js"
   },
   "keywords": [
     "zion",
@@ -39,6 +40,7 @@
     "@noble/ed25519": "^3.0.0",
     "@noble/hashes": "^1.7.0",
     "bip39": "^3.1.0",
+    "blessed": "^0.1.81",
     "electron-updater": "^6.8.3",
     "ethers": "^5.8.0",
     "qrcode": "^1.5.4"
