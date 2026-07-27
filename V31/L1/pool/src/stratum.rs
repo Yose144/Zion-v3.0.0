@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -140,6 +141,18 @@ impl StratumServer {
         };
         if is_block {
             pool.on_block_found(0, block_reward);
+            if let Some(rpc_url) = pool.config.l1_rpc_url.clone() {
+                let template_id = parse_template_id(job_id);
+                let header_hex = hex::encode(header);
+                let target_hex = hex::encode(target);
+                tokio::spawn(async move {
+                    if let Err(e) =
+                        submit_block_rpc(&rpc_url, template_id, header_hex, nonce, target_hex).await
+                    {
+                        tracing::warn!("submitBlock failed for template {}: {}", template_id, e);
+                    }
+                });
+            }
         }
     }
 
@@ -241,6 +254,50 @@ fn parse_target_hex(target_hex: &str) -> Option<[u8; 32]> {
     let mut out = [0u8; 32];
     hex::decode_to_slice(hex, &mut out).ok()?;
     Some(out)
+}
+
+fn parse_template_id(job_id: &str) -> u64 {
+    job_id
+        .strip_prefix("zion_")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0)
+}
+
+async fn submit_block_rpc(
+    rpc_url: &str,
+    template_id: u64,
+    header_hex: String,
+    nonce: u64,
+    target_hex: String,
+) -> Result<(), reqwest::Error> {
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(15))
+        .build()?;
+    let payload = json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "submitBlock",
+        "params": {
+            "template_id": template_id,
+            "header_hex": header_hex,
+            "nonce": nonce,
+            "target_hex": target_hex,
+            "algorithm": "deeksha_lite_v1"
+        }
+    });
+    let response: serde_json::Value = client
+        .post(rpc_url)
+        .json(&payload)
+        .send()
+        .await?
+        .json()
+        .await?;
+    tracing::info!(
+        "submitBlock response for template {}: {}",
+        template_id,
+        response
+    );
+    Ok(())
 }
 
 fn success_response(id: Value, result: Value) -> String {

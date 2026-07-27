@@ -11,6 +11,8 @@ pub struct PoolConfig {
     pub pool_address: Address,
     pub worker: String,
     pub password: String,
+    /// Optional Zion L1 RPC URL where solved blocks are submitted.
+    pub l1_rpc_url: Option<String>,
 }
 
 impl Default for PoolConfig {
@@ -25,6 +27,7 @@ impl Default for PoolConfig {
             pool_address: Address::new(ChainId::ZionL1, vec![0u8; 20], "zion1pool").unwrap(),
             worker: String::new(),
             password: String::new(),
+            l1_rpc_url: None,
         }
     }
 }
