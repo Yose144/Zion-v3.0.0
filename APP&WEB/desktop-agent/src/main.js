@@ -1276,8 +1276,19 @@ function normalizeAlgorithmName(algo) {
 }
 
 function sanitizeWorkerName(raw) {
-  const s = String(raw || 'desktop-agent').trim().replace(/[^a-zA-Z0-9_.\-]/g, '').slice(0, 32);
+  const s = String(raw || 'desktop-agent').trim().replace(/[^a-zA-Z0-9_.\-=@]/g, '').slice(0, 32);
   return s || 'desktop-agent';
+}
+
+function ensureZionGroupHint(raw) {
+  const s = String(raw || 'desktop-agent').trim() || 'desktop-agent';
+  if (/[\-_]g=(zion|revenue|ncl|auto)\b/i.test(s) || /\bg=(zion|revenue|ncl|auto)\b/i.test(s)) {
+    return s;
+  }
+  // Append a pool group hint so the pool routes the session to the Zion group.
+  // Without this, the pool may assign the session to Auto/Revenue and serve an
+  // external coin (e.g. ZANO ProgPoWZ) as the primary job, breaking Trinity.
+  return `${s}@g=zion`.slice(0, 32);
 }
 
 function loadConfig() {
@@ -2255,7 +2266,7 @@ function startMiningV3(config, v3Path) {
   const poolHost = config?.pool?.host || PRIMARY_TESTNET_HOST;
   const poolPort = config?.pool?.port || PRIMARY_POOL_PORT;
   const pool = `${poolHost}:${poolPort}`;
-  const worker = config.worker ? sanitizeWorkerName(config.worker) : '';
+  const worker = config.worker ? ensureZionGroupHint(sanitizeWorkerName(config.worker)) : ensureZionGroupHint('desktop');
   const miningMode = String(config.miningMode || (config.gpu ? 'dual' : 'cpu')).toLowerCase();
   const wantsGpu = miningMode === 'gpu' || miningMode === 'dual';
   const explicitGpuBackend = String(config?.gpuBackend || process.env.ZION_BACKEND || '').trim().toLowerCase();
@@ -2308,7 +2319,7 @@ function startMiningV3(config, v3Path) {
     ...process.env,
     ZION_POOL_ADDR: pool,
     ZION_MINER_ID: wallet,
-    ZION_WORKER_NAME: worker || 'desktop',
+    ZION_WORKER_NAME: ensureZionGroupHint(worker || 'desktop'),
     ZION_PROFILE: 'pool',
     // Loop count must be large — default of 1 causes pool to send Bye after every iteration
     ZION_LOOP_COUNT: '1000000',
@@ -3985,7 +3996,7 @@ ipcMain.handle('quick-setup', async (event, { password, workerName }) => {
     // Update config with the new wallet
     const config = loadConfig();
     config.wallet = wallet.address;
-    config.worker = workerName || 'desktop-agent';
+    config.worker = ensureZionGroupHint(sanitizeWorkerName(workerName));
     saveConfig(config);
 
     return {
@@ -5758,7 +5769,7 @@ ipcMain.handle('cli-wallet-send', async (_event, { wallet, to, amount, memo }) =
 ipcMain.handle('cli-mine-start', async (_event, { pool, worker, wallet, threads, gpuBackend }) => {
   const args = ['mine', 'start'];
   if (pool) { process.env.ZION_POOL_ADDR = pool; }
-  if (worker) { process.env.ZION_WORKER_NAME = worker; }
+  if (worker) { process.env.ZION_WORKER_NAME = ensureZionGroupHint(worker); }
   if (wallet) { process.env.ZION_MINER_ID = wallet; }
   if (threads) { process.env.ZION_THREADS = String(threads); }
   if (gpuBackend) { process.env.ZION_GPU_BACKEND = gpuBackend; }
