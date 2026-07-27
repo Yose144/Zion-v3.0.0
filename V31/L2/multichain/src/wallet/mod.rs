@@ -211,6 +211,20 @@ impl Keyring {
         let bytes = btc_address.script_pubkey().as_bytes().to_vec();
         Ok(Address::new(ChainId::Bitcoin, bytes, &encoded)?)
     }
+
+    /// Return the Bitcoin ECDSA private/public key pair for the default (0,0) address.
+    pub fn bitcoin_key_pair(
+        &self,
+        network: bitcoin::Network,
+        account: u32,
+        index: u32,
+    ) -> MultichainResult<(bitcoin::PrivateKey, bitcoin::PublicKey)> {
+        let xpriv = self.bitcoin_xpriv(network, account, index)?;
+        let secp = Secp256k1::new();
+        let private_key = bitcoin::PrivateKey::new(xpriv.private_key, xpriv.network);
+        let public_key = bitcoin::PublicKey::from_private_key(&secp, &private_key);
+        Ok((private_key, public_key))
+    }
 }
 
 #[cfg(test)]

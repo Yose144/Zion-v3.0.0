@@ -29,6 +29,7 @@ pub struct BitcoinAdapter {
     network: bitcoin::Network,
     api_url: String,
     client: reqwest::Client,
+    keyring: Keyring,
     deposit_address: Address,
     deposit_address_str: String,
 }
@@ -65,6 +66,7 @@ impl BitcoinAdapter {
                 .timeout(std::time::Duration::from_secs(20))
                 .build()
                 .map_err(|e| MultichainError::Internal(e.to_string()))?,
+            keyring: keyring.clone(),
             deposit_address,
             deposit_address_str,
         })
@@ -169,12 +171,6 @@ impl ChainAdapter for BitcoinAdapter {
         Ok(events)
     }
 
-    async fn execute_outbound(&self, _transfer: &crate::types::Transfer) -> MultichainResult<Hash> {
-        Err(MultichainError::Unsupported(
-            "bitcoin outbound signing not yet implemented in Mainnet Alpha scaffold".to_string(),
-        ))
-    }
-
     async fn current_height(&self) -> MultichainResult<u64> {
         let url = format!("{}/blocks/tip/height", self.api_url);
         let text = self
@@ -215,10 +211,158 @@ impl ChainAdapter for BitcoinAdapter {
         Ok(tip.saturating_sub(block_height) + 1)
     }
 
-    async fn send_payment(&self, _to: &Address, _amount: Amount) -> MultichainResult<Hash> {
-        Err(MultichainError::Unsupported(
-            "bitcoin send_payment requires a signer; not wired yet".to_string(),
-        ))
+    async fn send_payment(&self, to: &Address, amount: Amount) -> MultichainResult<Hash> {
+        let satoshis: u64 = amount
+            .0
+            .try_into()
+            .map_err(|_| MultichainError::Validation("amount exceeds u64 satoshis".to_string()))?;
+        if satoshis == 0 {
+            return Err(MultichainError::Validation(
+                "cannot send zero bitcoin amount".to_string(),
+            ));
+        }
+
+        let recipient = bitcoin::Address::from_str(&to.encoded)
+            .map_err(|e| MultichainError::Validation(format!("invalid bitcoin recipient: {e}")))?
+            .require_network(self.network)
+            .map_err(|e| MultichainError::Validation(format!("recipient network mismatch: {e}")))?;
+
+        let utxos = self
+            .client
+            .get(format!("{}/api/address/{}/utxo", self.api_url, self.deposit_address_str))
+            .send()
+            .await
+            .map_err(|e| MultichainError::Internal(e.to_string()))?
+            .json::<Vec<MempoolUtxo>>()
+            .await
+            .map_err(|e| MultichainError::Internal(e.to_string()))?;
+
+        let fee_rate = self
+            .client
+            .get(format!("{}/v1/fees/recommended", self.api_url))
+            .send()
+            .await
+            .map_err(|e| MultichainError::Internal(e.to_string()))?
+            .json::<MempoolFeeEstimate>()
+            .await
+            .map_err(|e| MultichainError::Internal(e.to_string()))?;
+        let fee_per_vbyte = fee_rate.hour_fee.max(1);
+
+        let mut selected = Vec::new();
+        let mut selected_value = 0u64;
+        for utxo in utxos {
+            if !utxo.status.confirmed {
+                continue;
+            }
+            selected_value += utxo.value;
+            selected.push(utxo);
+            let vsize = estimate_vsize(selected.len(), 2);
+            let fee = fee_per_vbyte * vsize as u64;
+            if selected_value >= satoshis + fee {
+                break;
+            }
+        }
+
+        if selected.is_empty() {
+            return Err(MultichainError::Validation(
+                "no confirmed UTXOs available".to_string(),
+            ));
+        }
+
+        let vsize = estimate_vsize(selected.len(), 2);
+        let fee = fee_per_vbyte * vsize as u64;
+        let total_input: u64 = selected.iter().map(|u| u.value).sum();
+        if total_input < satoshis + fee {
+            return Err(MultichainError::Validation(
+                "insufficient confirmed UTXO balance".to_string(),
+            ));
+        }
+
+        let change = total_input - satoshis - fee;
+        const DUST_LIMIT: u64 = 546;
+        let mut outputs = vec![bitcoin::TxOut {
+            value: bitcoin::Amount::from_sat(satoshis),
+            script_pubkey: recipient.script_pubkey(),
+        }];
+        if change > DUST_LIMIT {
+            let change_address = bitcoin::Address::from_str(&self.deposit_address_str)
+                .map_err(|e| MultichainError::Internal(format!("invalid change address: {e}")))?
+                .require_network(self.network)
+                .map_err(|e| MultichainError::Internal(format!("change network mismatch: {e}")))?;
+            outputs.push(bitcoin::TxOut {
+                value: bitcoin::Amount::from_sat(change),
+                script_pubkey: change_address.script_pubkey(),
+            });
+        }
+
+        let mut inputs = Vec::with_capacity(selected.len());
+        for utxo in &selected {
+            let txid = bitcoin::Txid::from_str(&utxo.txid)
+                .map_err(|e| MultichainError::Internal(format!("invalid utxo txid: {e}")))?;
+            inputs.push(bitcoin::TxIn {
+                previous_output: bitcoin::OutPoint::new(txid, utxo.vout),
+                script_sig: bitcoin::ScriptBuf::new(),
+                sequence: bitcoin::Sequence::MAX,
+                witness: bitcoin::Witness::new(),
+            });
+        }
+
+        let mut tx = bitcoin::Transaction {
+            version: bitcoin::transaction::Version::TWO,
+            lock_time: bitcoin::locktime::absolute::LockTime::ZERO,
+            input: inputs,
+            output: outputs,
+        };
+
+        let secp = bitcoin::secp256k1::Secp256k1::new();
+        let (private_key, _public_key) = self
+            .keyring
+            .bitcoin_key_pair(self.network, 0, 0)
+            .map_err(|e| MultichainError::Internal(format!("bitcoin key pair: {e}")))?;
+        let secp_public_key = private_key.inner.public_key(&secp);
+
+        let deposit_script = bitcoin::Address::from_str(&self.deposit_address_str)
+            .map_err(|e| MultichainError::Internal(format!("invalid deposit address: {e}")))?
+            .require_network(self.network)
+            .map_err(|e| MultichainError::Internal(format!("deposit network mismatch: {e}")))?
+            .script_pubkey();
+
+        let mut sighasher = bitcoin::sighash::SighashCache::new(&mut tx);
+        for (idx, utxo) in selected.iter().enumerate() {
+            let value = bitcoin::Amount::from_sat(utxo.value);
+            let sighash = sighasher
+                .p2wpkh_signature_hash(
+                    idx,
+                    &deposit_script,
+                    value,
+                    bitcoin::sighash::EcdsaSighashType::All,
+                )
+                .map_err(|e| MultichainError::Internal(format!("sighash: {e}")))?;
+            let message = bitcoin::secp256k1::Message::from_digest(sighash.to_byte_array());
+            let sig = secp.sign_ecdsa(&message, &private_key.inner);
+            let bitcoin_sig = bitcoin::ecdsa::Signature::sighash_all(sig);
+            let witness = bitcoin::Witness::p2wpkh(&bitcoin_sig, &secp_public_key);
+            *sighasher.witness_mut(idx).ok_or_else(|| {
+                MultichainError::Internal("missing witness for input".to_string())
+            })? = witness;
+        }
+
+        let raw_hex = bitcoin::consensus::encode::serialize_hex(&tx);
+        let broadcast_url = format!("{}/api/tx", self.api_url);
+        let txid = self
+            .client
+            .post(&broadcast_url)
+            .header("Content-Type", "text/plain")
+            .body(raw_hex)
+            .send()
+            .await
+            .map_err(|e| MultichainError::Internal(e.to_string()))?
+            .text()
+            .await
+            .map_err(|e| MultichainError::Internal(e.to_string()))?;
+
+        Hash::from_hex(&txid)
+            .ok_or_else(|| MultichainError::Internal(format!("broadcast returned invalid txid: {txid}")))
     }
 
     async fn balance(&self, address: &Address) -> MultichainResult<Amount> {
@@ -234,14 +378,40 @@ impl ChainAdapter for BitcoinAdapter {
             .await
             .map_err(|e| MultichainError::Internal(e.to_string()))?;
 
-        let total: u64 = utxos.into_iter().map(|u| u.value).sum();
+        let total: u64 = utxos
+            .into_iter()
+            .filter(|u| u.status.confirmed)
+            .map(|u| u.value)
+            .sum();
         Ok(Amount::new(total as u128))
     }
+
+    async fn execute_outbound(&self, transfer: &crate::types::Transfer) -> MultichainResult<Hash> {
+        self.send_payment(&transfer.target.address, transfer.target.amount).await
+    }
+}
+
+fn estimate_vsize(inputs: usize, outputs: usize) -> usize {
+    10 + 68 * inputs + 31 * outputs
+}
+
+#[derive(Debug, Deserialize)]
+struct MempoolFeeEstimate {
+    #[serde(rename = "hourFee")]
+    hour_fee: u64,
 }
 
 #[derive(Debug, Deserialize)]
 struct MempoolUtxo {
+    txid: String,
+    vout: u32,
     value: u64,
+    status: MempoolUtxoStatus,
+}
+
+#[derive(Debug, Deserialize)]
+struct MempoolUtxoStatus {
+    confirmed: bool,
 }
 
 #[derive(Debug, Deserialize)]
