@@ -48,24 +48,7 @@ __constant__ const int KECCAK_PI[24] = {
     10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1
 };
 
-__device__ __forceinline__ void keccak_f1600(uint64_t state[25]) {
-    // Local copies of constants (test: __constant__ init bug on Pascal?)
-    const uint64_t RC[24] = {
-        0x0000000000000001ULL, 0x0000000000008082ULL, 0x800000000000808aULL,
-        0x8000000080008000ULL, 0x000000000000808bULL, 0x0000000080000001ULL,
-        0x8000000080008081ULL, 0x8000000000008009ULL, 0x000000000000008aULL,
-        0x0000000000000088ULL, 0x0000000080008009ULL, 0x000000008000000aULL,
-        0x800000008000808bULL, 0x800000000000008bULL, 0x8000000000008089ULL,
-        0x8000000000008003ULL, 0x8000000000008002ULL, 0x8000000000000080ULL,
-        0x000000000000800aULL, 0x800000008000000aULL, 0x8000000080008081ULL,
-        0x8000000000008080ULL, 0x0000000080000001ULL, 0x8000000080008008ULL
-    };
-    const unsigned int RHO[24] = {
-        1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44
-    };
-    const int PI[24] = {
-        10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1
-    };
+__device__ void keccak_f1600(uint64_t state[25]) {
     for (int round = 0; round < 24; round++) {
         // Theta
         uint64_t c[5], d[5];
@@ -79,9 +62,9 @@ __device__ __forceinline__ void keccak_f1600(uint64_t state[25]) {
         // Rho and Pi
         uint64_t temp = state[1];
         for (int t = 0; t < 24; t++) {
-            int idx = PI[t];
+            int idx = KECCAK_PI[t];
             uint64_t tmp2 = state[idx];
-            state[idx] = ROTL64(temp, RHO[t]);
+            state[idx] = ROTL64(temp, KECCAK_RHO[t]);
             temp = tmp2;
         }
 
@@ -94,7 +77,7 @@ __device__ __forceinline__ void keccak_f1600(uint64_t state[25]) {
         }
 
         // Iota
-        state[0] ^= RC[round];
+        state[0] ^= KECCAK_RC[round];
     }
 }
 
@@ -104,6 +87,26 @@ __device__ __forceinline__ void keccak_f1600(uint64_t state[25]) {
 
 __device__ __forceinline__ unsigned int fnv1a(unsigned int a, unsigned int b) {
     return (a ^ b) * FNV_PRIME;
+}
+
+// -- Keccak absorb helpers (match ethash_kernel.cu structure exactly) --
+
+__device__ __forceinline__ void absorb_block_9(uint64_t state[25], const unsigned char *block) {
+    for (int i = 0; i < 9; i++) {
+        uint64_t lane = 0;
+        for (int j = 0; j < 8; j++)
+            lane |= ((uint64_t)block[i*8 + j]) << (j*8);
+        state[i] ^= lane;
+    }
+}
+
+__device__ __forceinline__ void absorb_block_17(uint64_t state[25], const unsigned char *block) {
+    for (int i = 0; i < 17; i++) {
+        uint64_t lane = 0;
+        for (int j = 0; j < 8; j++)
+            lane |= ((uint64_t)block[i*8 + j]) << (j*8);
+        state[i] ^= lane;
+    }
 }
 
 // -- Keccak-512 --
@@ -116,19 +119,12 @@ __device__ void keccak512(const unsigned char *input, const unsigned int len, un
     for (int i = 0; i < 25; i++) state[i] = 0;
 
     unsigned int offset = 0;
-    // Absorb full 72-byte blocks
     while (offset + 72 <= len) {
-        for (int i = 0; i < 9; i++) {
-            uint64_t lane = 0;
-            for (int j = 0; j < 8; j++)
-                lane |= ((uint64_t)input[offset + i*8 + j]) << (j*8);
-            state[i] ^= lane;
-        }
+        absorb_block_9(state, input + offset);
         keccak_f1600(state);
         offset += 72;
     }
 
-    // Final block with padding
     unsigned char padded[72];
     for (int i = 0; i < 72; i++) padded[i] = 0;
     unsigned int remaining = len - offset;
@@ -136,15 +132,9 @@ __device__ void keccak512(const unsigned char *input, const unsigned int len, un
     padded[remaining] = 0x01;       // Keccak domain separator
     padded[71] |= 0x80;             // end-of-rate padding
 
-    for (int i = 0; i < 9; i++) {
-        uint64_t lane = 0;
-        for (int j = 0; j < 8; j++)
-            lane |= ((uint64_t)padded[i*8 + j]) << (j*8);
-        state[i] ^= lane;
-    }
+    absorb_block_9(state, padded);
     keccak_f1600(state);
 
-    // Squeeze 64 bytes (8 lanes)
     for (int i = 0; i < 8; i++)
         for (int j = 0; j < 8; j++)
             output[i*8 + j] = (unsigned char)(state[i] >> (j*8));
@@ -160,19 +150,12 @@ __device__ void keccak256(const unsigned char *input, const unsigned int len, un
     for (int i = 0; i < 25; i++) state[i] = 0;
 
     unsigned int offset = 0;
-    // Absorb full 136-byte blocks
     while (offset + 136 <= len) {
-        for (int i = 0; i < 17; i++) {
-            uint64_t lane = 0;
-            for (int j = 0; j < 8; j++)
-                lane |= ((uint64_t)input[offset + i*8 + j]) << (j*8);
-            state[i] ^= lane;
-        }
+        absorb_block_17(state, input + offset);
         keccak_f1600(state);
         offset += 136;
     }
 
-    // Final block with padding
     unsigned char padded[136];
     for (int i = 0; i < 136; i++) padded[i] = 0;
     unsigned int remaining = len - offset;
@@ -180,15 +163,9 @@ __device__ void keccak256(const unsigned char *input, const unsigned int len, un
     padded[remaining] = 0x01;       // Keccak domain separator
     padded[135] |= 0x80;            // end-of-rate padding
 
-    for (int i = 0; i < 17; i++) {
-        uint64_t lane = 0;
-        for (int j = 0; j < 8; j++)
-            lane |= ((uint64_t)padded[i*8 + j]) << (j*8);
-        state[i] ^= lane;
-    }
+    absorb_block_17(state, padded);
     keccak_f1600(state);
 
-    // Squeeze 32 bytes (4 lanes)
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 8; j++)
             output[i*8 + j] = (unsigned char)(state[i] >> (j*8));
