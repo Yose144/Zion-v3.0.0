@@ -716,6 +716,68 @@ pub fn meets_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
 ///
 /// # Returns
 /// 32-byte final hash (big-endian, comparable to target).
+pub fn kawpow_hash_from_dag(
+    header_hash: &[u8; 32],
+    nonce: u64,
+    dag: &[u8],
+    dag_size_entries: u64,
+) -> ([u8; 64], [u32; 16], [u8; 32], [u8; 32]) {
+    use sha3::{Digest, Keccak512};
+
+    const FNV_PRIME: u32 = 0x0100_0193u32;
+    let dag_size_entries = dag_size_entries as usize;
+
+    // 1. seed = Keccak-512(header_hash || nonce_le) -> 64 bytes
+    let mut seed_input = [0u8; 40];
+    seed_input[..32].copy_from_slice(header_hash);
+    seed_input[32..40].copy_from_slice(&nonce.to_le_bytes());
+    let seed = Keccak512::digest(&seed_input);
+
+    // 2. mix = 16 x uint32 initialized from seed (little-endian)
+    let mut mix = [0u32; 16];
+    for i in 0..16 {
+        mix[i] = u32::from_le_bytes([
+            seed[i * 4],
+            seed[i * 4 + 1],
+            seed[i * 4 + 2],
+            seed[i * 4 + 3],
+        ]);
+    }
+
+    // 3. 32 DAG accesses with FNV-1a mixing (matches kawpow_kernel.cu)
+    for i in 0..32usize {
+        let idx_seed = (mix[0] ^ ((i as u32) ^ mix[0])).wrapping_mul(FNV_PRIME);
+        let index = (idx_seed as u64) as usize % dag_size_entries;
+        let entry_start = index * 128;
+        for w in 0..16usize {
+            let off = entry_start + w * 4;
+            let node_word = u32::from_le_bytes([
+                dag[off],
+                dag[off + 1],
+                dag[off + 2],
+                dag[off + 3],
+            ]);
+            mix[w] = (mix[w] ^ node_word).wrapping_mul(FNV_PRIME);
+        }
+    }
+
+    // 4. Compress: FNV-fold pairs -> 8 uint32 (32 bytes)
+    let mut compressed = [0u32; 8];
+    for i in 0..8usize {
+        compressed[i] = (mix[i * 2] ^ mix[i * 2 + 1]).wrapping_mul(FNV_PRIME);
+    }
+    let mut mix_bytes = [0u8; 32];
+    for i in 0..8usize {
+        mix_bytes[i * 4..i * 4 + 4].copy_from_slice(&compressed[i].to_le_bytes());
+    }
+
+    // 5. final = Keccak-256(seed || mix_bytes)
+    let final_hash = ethash_final_hash(header_hash, nonce, &mix_bytes);
+    let mut seed_arr = [0u8; 64];
+    seed_arr.copy_from_slice(&seed);
+    (seed_arr, mix, mix_bytes, final_hash)
+}
+
 pub fn ethash_final_hash(header_hash: &[u8; 32], nonce: u64, mix_hash: &[u8; 32]) -> [u8; 32] {
     use sha3::{Digest, Keccak256, Keccak512};
     // seed = Keccak-512(header_hash || nonce_le)

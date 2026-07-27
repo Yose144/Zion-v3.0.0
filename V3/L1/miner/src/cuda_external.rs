@@ -1122,6 +1122,27 @@ impl CudaExternalMiner {
     }
 }
 
+impl CudaExternalMiner {
+    /// Download the currently-loaded DAG from GPU to host memory and return
+    /// `(dag_size_entries, raw bytes)`.  Each DAG entry is 128 bytes; only the
+    /// first 64 bytes are used by the KawPow kernel.
+    pub fn debug_download_dag(&self) -> anyhow::Result<(u64, Vec<u8>)> {
+        let buf = self
+            .dag_buf
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("DAG not loaded on GPU"))?;
+        let u64s = self
+            .dev
+            .dtoh_sync_copy(buf)
+            .map_err(|e| anyhow::anyhow!("DAG download: {e}"))?;
+        let mut bytes = Vec::with_capacity(u64s.len() * 8);
+        for w in u64s {
+            bytes.extend_from_slice(&w.to_le_bytes());
+        }
+        Ok((self.dag_size_entries, bytes))
+    }
+}
+
 impl GpuMiner for CudaExternalMiner {
     fn device_name(&self) -> String {
         self.device_name_cached.clone()

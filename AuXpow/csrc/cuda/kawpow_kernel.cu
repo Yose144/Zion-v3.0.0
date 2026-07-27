@@ -287,6 +287,21 @@ __global__ __launch_bounds__(256) void kawpow_mine(
             for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
             // Write the compressed mix hash for eth_submitWork.
             for (int i = 0; i < 32; i++) output_mix[i] = mix_bytes[i];
+
+            // Debug: print inputs and first u32 of seed, mix, and hash for CPU comparison
+            unsigned int seed0 = (unsigned int)seed[0]
+                               | ((unsigned int)seed[1] << 8)
+                               | ((unsigned int)seed[2] << 16)
+                               | ((unsigned int)seed[3] << 24);
+            unsigned int hash0 = (unsigned int)hash[0]
+                               | ((unsigned int)hash[1] << 8)
+                               | ((unsigned int)hash[2] << 16)
+                               | ((unsigned int)hash[3] << 24);
+            printf("kawpow_debug nonce=%llu seed0=%08x mix0=%08x hash0=%08x idx0=%llu hdr0=%02x hdr1=%02x s32=%02x s39=%02x\n",
+                   (unsigned long long)nonce, seed0, mix[0], hash0,
+                   (unsigned long long)(fnv1a(((unsigned int)0 ^ mix[0]), mix[0]) % dag_entries),
+                   (unsigned int)header_hash[0], (unsigned int)header_hash[1],
+                   (unsigned int)seed_input[32], (unsigned int)seed_input[39]);
         }
     }
 }
