@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use sha3::{Digest, Keccak256};
-use zion_l1_types::Hash;
+use zion_l1_types::{ChainId, Hash};
 
 use crate::chain::{ChainAdapter, ChainAdapterRegistry, DepositEvent};
 use crate::error::{MultichainError, MultichainResult};
@@ -43,7 +43,7 @@ impl Bridge {
         transfer.status = TransferStatus::Detected;
 
         if let Some(event) = self.poll_for_event(source, transfer).await {
-            let _ = event;
+            transfer.id = event.tx_hash.to_hex();
             transfer.status = TransferStatus::Executing;
             match target.execute_outbound(transfer).await {
                 Ok(hash) => {
@@ -68,7 +68,8 @@ impl Bridge {
 
         transfer.status = TransferStatus::Detected;
 
-        if self.poll_for_event(source, transfer).await.is_some() {
+        if let Some(event) = self.poll_for_event(source, transfer).await {
+            transfer.id = event.tx_hash.to_hex();
             transfer.status = TransferStatus::Executing;
             match target.execute_outbound(transfer).await {
                 Ok(hash) => {
@@ -98,13 +99,14 @@ impl Bridge {
         adapter: &dyn ChainAdapter,
         transfer: &Transfer,
     ) -> Option<DepositEvent> {
-        let memo = bridge_memo(transfer);
         let expected = &transfer.source;
 
         for attempt in 0..MAX_ATTEMPTS {
             if let Ok(events) = adapter.watch_events().await {
                 if let Some(event) = events.iter().find(|e| {
-                    e.recipient == expected.address && e.amount == expected.amount && e.memo == memo
+                    e.recipient == expected.address
+                        && e.amount == expected.amount
+                        && bridge_memo_matches(transfer, &e.memo)
                 }) {
                     return Some(event.clone());
                 }
@@ -121,6 +123,44 @@ impl Bridge {
 
 fn bridge_memo(transfer: &Transfer) -> Option<String> {
     Some(format!("bridge:{}", transfer.id))
+}
+
+fn bridge_memo_matches(transfer: &Transfer, memo: &Option<String>) -> bool {
+    if memo.as_ref() == bridge_memo(transfer).as_ref() {
+        return true;
+    }
+    if let Some(m) = memo {
+        if let Some((chain, recipient)) = parse_bridge_memo(m) {
+            let target_chain = transfer.target.address.chain;
+            if chain_name_to_id(chain).ok() == Some(target_chain)
+                && recipient == transfer.target.address.encoded
+            {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn parse_bridge_memo(memo: &str) -> Option<(&str, &str)> {
+    let rest = memo
+        .strip_prefix("BRIDGE:")
+        .or_else(|| memo.strip_prefix("bridge:"))?;
+    let (chain, recipient) = rest.split_once(':')?;
+    if chain.is_empty() || recipient.is_empty() {
+        return None;
+    }
+    Some((chain, recipient))
+}
+
+fn chain_name_to_id(name: &str) -> MultichainResult<ChainId> {
+    match name.to_lowercase().as_str() {
+        "bitcoin" | "btc" => Ok(ChainId::Bitcoin),
+        "base" => Ok(ChainId::Base),
+        "ethereum" | "eth" => Ok(ChainId::Ethereum),
+        "zion-l1" | "zion" | "zionl1" => Ok(ChainId::ZionL1),
+        _ => Err(MultichainError::AdapterNotFound(name.to_string())),
+    }
 }
 
 fn placeholder_hash(transfer: &Transfer) -> Hash {

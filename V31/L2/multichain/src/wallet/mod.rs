@@ -14,6 +14,7 @@ use zion_l1_types::{Address, ChainFamily, ChainId};
 use crate::error::{MultichainError, MultichainResult};
 
 /// In-memory keyring derived from a single BIP39 mnemonic.
+#[derive(Clone)]
 pub struct Keyring {
     mnemonic: Mnemonic,
     seed: Option<[u8; 64]>,
