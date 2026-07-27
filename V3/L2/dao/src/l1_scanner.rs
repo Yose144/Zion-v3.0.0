@@ -37,7 +37,8 @@ use zion_l1_types::{bytes_to_hex, normalize_rpc_addr, zion_address_from_public_k
 
 use crate::db::DaoDb;
 use crate::error::{DaoError, DaoResult};
-use crate::types::{parse_dao_memo, DaoMemo};
+use crate::proposal::ProposalType;
+use crate::types::{parse_dao_memo, DaoMemo, VoteChoice};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // L1 RPC types (minimal — only what we need)
@@ -356,7 +357,7 @@ impl L1Scanner {
                         let db = self.db.lock().await;
 
                         let row = db.get_proposal(pid)?;
-                        match row {
+                        let (_is_active, proposal_type) = match row {
                             None => {
                                 debug!("[DAO-SCANNER] Proposal {} not found, ignoring vote", pid);
                                 continue;
@@ -368,7 +369,42 @@ impl L1Scanner {
                                 );
                                 continue;
                             }
-                            _ => {}
+                            Some(ref r) => {
+                                let pt: Option<ProposalType> =
+                                    serde_json::from_str(&r.proposal_type_json).ok();
+                                (true, pt)
+                            }
+                        };
+
+                        // Validate choice against proposal type
+                        let valid = match (&choice, &proposal_type) {
+                            (VoteChoice::Yes | VoteChoice::No | VoteChoice::Abstain, Some(ProposalType::ParliamentaryElection { .. })) => {
+                                debug!(
+                                    "[DAO-SCANNER] Invalid choice for election proposal {}: {:?}",
+                                    pid, choice
+                                );
+                                continue;
+                            }
+                            (VoteChoice::Candidate(ref party), Some(ProposalType::ParliamentaryElection { ref parties, .. })) => {
+                                parties.contains(party)
+                            }
+                            (VoteChoice::Candidate(_), _) => {
+                                debug!(
+                                    "[DAO-SCANNER] Candidate vote not allowed for non-election proposal {}",
+                                    pid
+                                );
+                                continue;
+                            }
+                            _ => true,
+                        };
+
+                        if !valid {
+                            debug!(
+                                "[DAO-SCANNER] Party '{}' not on ballot for proposal {}",
+                                match &choice { VoteChoice::Candidate(p) => p.as_str(), _ => "?" },
+                                pid
+                            );
+                            continue;
                         }
 
                         db.record_vote(pid, sender, choice, weight, Some(txid))?

@@ -32,6 +32,8 @@ use axum::{
     Router,
 };
 use chrono::Utc;
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use tracing::info;
@@ -39,7 +41,7 @@ use tracing::info;
 use crate::config::DaoConfig;
 use crate::db::DaoDb;
 use crate::metrics::DaoMetrics;
-use crate::proposal::{Proposal, ProposalType};
+use crate::proposal::{allocate_seats_dhondt, Proposal, ProposalType};
 use crate::treasury::{Treasury, TreasuryOperation};
 use crate::types::{VoteChoice, DAO_TREASURY_TOTAL, FLOWERS_PER_ZION, PROPOSAL_THRESHOLD};
 
@@ -317,6 +319,28 @@ async fn create_proposal(
             )
         })?;
 
+    // Validate election-specific fields
+    if let ProposalType::ParliamentaryElection { ref parties, seats, .. } = proposal_type {
+        if parties.is_empty() {
+            return Err(err(
+                "ParliamentaryElection requires at least one party",
+                StatusCode::BAD_REQUEST,
+            ));
+        }
+        if seats == 0 {
+            return Err(err(
+                "ParliamentaryElection requires seats > 0",
+                StatusCode::BAD_REQUEST,
+            ));
+        }
+        if parties.iter().any(|p| p.trim().is_empty()) {
+            return Err(err(
+                "Party names must not be empty",
+                StatusCode::BAD_REQUEST,
+            ));
+        }
+    }
+
     // Assign sequential ID (simple: max(id)+1)
     let next_id = {
         let db = state.db.lock().await;
@@ -361,8 +385,9 @@ async fn get_votes(
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     let db = state.db.lock().await;
 
-    // Verify proposal exists
-    match db.get_proposal(id) {
+    // Load proposal metadata for seat allocation
+    let row = match db.get_proposal(id) {
+        Ok(Some(row)) => row,
         Ok(None) => {
             return Err(err(
                 format!("Proposal {} not found", id),
@@ -370,8 +395,24 @@ async fn get_votes(
             ))
         }
         Err(e) => return Err(err(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
-        _ => {}
-    }
+    };
+
+    let proposal_type: ProposalType =
+        serde_json::from_str(&row.proposal_type_json).unwrap_or_else(|_| ProposalType::Parameter {
+            parameter_name: "n/a".into(),
+            current_value: "".into(),
+            proposed_value: "".into(),
+        });
+    let election_tallies_json: BTreeMap<String, u64> =
+        serde_json::from_str(&row.election_tallies).unwrap_or_default();
+
+    let (seats, allocated_seats) = match proposal_type {
+        ProposalType::ParliamentaryElection { ref parties, seats, .. } => {
+            let allocated = allocate_seats_dhondt(parties, seats, &election_tallies_json);
+            (seats, allocated)
+        }
+        _ => (0, BTreeMap::new()),
+    };
 
     let (yes, no, abstain) = db
         .vote_totals(id)
@@ -399,6 +440,8 @@ async fn get_votes(
         "no":   { "weight": no,            "pct": pct(no) },
         "abstain": { "weight": abstain,    "pct": pct(abstain) },
         "election_tallies": election_tallies,
+        "allocated_seats": allocated_seats,
+        "total_seats": seats,
         "total_weight": total,
     })))
 }

@@ -7903,6 +7903,35 @@ async function loadDaoProposals() {
   }
 }
 
+/// Allocate parliamentary seats using the D'Hondt method.
+function dhondt(parties, seats, tallies) {
+  seats = Math.max(0, Math.floor(seats || 0));
+  if (!seats || !parties || !parties.length || !tallies) return {};
+  const won = {};
+  const votes = {};
+  for (const party of parties) {
+    const w = tallies[party] || 0;
+    if (w > 0) {
+      votes[party] = w;
+      won[party] = 0;
+    }
+  }
+  for (let i = 0; i < seats; i++) {
+    let bestParty = null;
+    let bestQuotient = 0;
+    for (const party in votes) {
+      const quotient = votes[party] / (won[party] + 1);
+      if (quotient > bestQuotient) {
+        bestQuotient = quotient;
+        bestParty = party;
+      }
+    }
+    if (!bestParty) break;
+    won[bestParty]++;
+  }
+  return won;
+}
+
 function getDaoTypeName(p) {
   const pt = p.proposal_type;
   if (pt && typeof pt === 'object' && !Array.isArray(pt)) {
@@ -7948,24 +7977,28 @@ function renderDaoProposalCard(p) {
   if (isElection) {
     const tallies = p.election_tallies || {};
     const abs = p.votes_abstain || 0;
-    const parties = Object.keys(tallies);
+    const typeData = getDaoTypeData(p);
+    const totalSeats = typeData.seats || 0;
+    const parties = typeData.parties && typeData.parties.length ? typeData.parties : Object.keys(tallies);
     const total = parties.reduce((s, k) => s + (tallies[k] || 0), 0) + abs;
+    const allocated = totalSeats ? dhondt(parties, totalSeats, tallies) : {};
     if (total > 0) {
       const partyBars = parties.map(k => {
         const v = tallies[k] || 0;
-        const pct = Math.round(v / total * 100);
+        const pct = Math.round(v / total * 100) || 0;
         return `<div class="bg-cyan-600" style="width:${pct}%" title="${escapeHtml(k)}: ${v.toLocaleString()}"></div>`;
       }).join('');
-      const absPct = Math.round(abs / total * 100);
+      const absPct = Math.round(abs / total * 100) || 0;
+      const seatInfo = totalSeats ? `<span class="text-purple-400 ml-2">🪑 ${totalSeats} seats</span>` : '';
       voteBar = `<div class="mt-2">
         <div class="flex gap-0.5 h-1.5 rounded-full overflow-hidden bg-white/5 mb-1">${partyBars}<div class="bg-gray-600 rounded-r-full" style="width:${absPct}%"></div></div>
         <div class="flex flex-wrap gap-2 text-[10px]">
-          ${parties.map(k => `<span class="text-cyan-400">● ${escapeHtml(k)}: ${(tallies[k]||0).toLocaleString()}</span>`).join('')}
-          <span class="text-gray-500 ml-auto">Total weight: ${total.toLocaleString()}</span>
+          ${parties.map(k => `<span class="text-cyan-400">● ${escapeHtml(k)}: ${(tallies[k]||0).toLocaleString()}${allocated[k] ? ` <span class="text-purple-300">(${allocated[k]} 🪑)</span>` : ''}</span>`).join('')}
+          <span class="text-gray-500 ml-auto">Total weight: ${total.toLocaleString()}</span>${seatInfo}
         </div>
       </div>`;
     } else {
-      voteBar = '<div class="text-[10px] text-gray-600 mt-1">No votes yet</div>';
+      voteBar = `<div class="text-[10px] text-gray-600 mt-1">No votes yet ${totalSeats ? `· ${totalSeats} seats to allocate` : ''}</div>`;
     }
   } else {
     const yes = p.votes_yes || 0, no = p.votes_no || 0, abs = p.votes_abstain || 0;
@@ -8084,10 +8117,10 @@ function closeCreateProposalModal() {
   if(st) st.classList.add('hidden');
 }
 
-function _daoField(id, label, type='text', placeholder='', rows=0) {
+function _daoField(id, label, type='text', placeholder='', rows=0, attrs='') {
   const input = rows
     ? `<textarea id="${id}" rows="${rows}" placeholder="${placeholder}" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition resize-none"></textarea>`
-    : `<input type="${type}" id="${id}" placeholder="${placeholder}" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">`;
+    : `<input type="${type}" id="${id}" placeholder="${placeholder}" ${attrs} class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">`;
   return `<div><label class="text-[10px] text-gray-400 uppercase tracking-wider">${label}</label>${input}</div>`;
 }
 
@@ -8129,7 +8162,7 @@ function renderDaoCreateFields() {
     'ParliamentaryElection': [
       _daoField('dao-f-election-title', 'Election Title'),
       _daoField('dao-f-election-parties', 'Parties / Candidate Lists (one per line)', 'text', '', 4),
-      _daoField('dao-f-election-seats', 'Number of Seats', 'number'),
+      _daoField('dao-f-election-seats', 'Number of Seats', 'number', '', 0, 'min="1"'),
     ],
   }[ptype] || [];
   container.innerHTML = fields.join('');
@@ -8201,6 +8234,13 @@ async function submitCreateProposal() {
   const typePayload = buildDaoCreateBody(ptype);
   if(!typePayload || Object.keys(typePayload).length === 0) return setStatus('Invalid proposal type payload.', false);
 
+  if (ptype === 'ParliamentaryElection') {
+    if (!typePayload.parties || typePayload.parties.length === 0) return setStatus('At least one party/list is required.', false);
+    if (typePayload.seats <= 0) return setStatus('Number of seats must be greater than 0.', false);
+    if (typePayload.parties.some(p => !p.trim())) return setStatus('Party names must not be empty.', false);
+    if (typePayload.title && !typePayload.title.trim()) return setStatus('Election title is required.', false);
+  }
+
   const body = {
     title, description: desc, proposer,
     proposal_type: { [ptype]: typePayload }
@@ -8229,15 +8269,19 @@ async function submitCreateProposal() {
 
 function openDaoVoteModal(proposal) {
   document.getElementById('dao-vote-proposal-id').value = proposal.id;
-  document.getElementById('dao-vote-proposal-title').textContent = `Proposal #${proposal.id}: ${proposal.title || ''}`;
+  const typeName = getDaoTypeName(proposal);
+  const typeData = getDaoTypeData(proposal);
+  const isElection = typeName === 'ParliamentaryElection';
+  const titleEl = document.getElementById('dao-vote-proposal-title');
+  if(titleEl) {
+    const seats = isElection ? (typeData.seats || 0) : 0;
+    titleEl.textContent = `Proposal #${proposal.id}: ${proposal.title || ''}${seats ? ` · ${seats} seats` : ''}`;
+  }
   document.getElementById('dao-vote-proposal-type').value = JSON.stringify(proposal.proposal_type || {});
   const stEl = document.getElementById('dao-vote-status');
   if(stEl) stEl.classList.add('hidden');
 
-  const typeName = getDaoTypeName(proposal);
-  const typeData = getDaoTypeData(proposal);
   const optionsContainer = document.getElementById('dao-vote-options');
-  const isElection = typeName === 'ParliamentaryElection';
   const parties = isElection ? (typeData.parties || []) : [];
 
   if(optionsContainer) {
