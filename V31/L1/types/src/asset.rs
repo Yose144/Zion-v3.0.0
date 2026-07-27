@@ -43,7 +43,12 @@ pub struct Asset {
 }
 
 impl Asset {
-    pub fn native(chain: ChainId, ticker: impl Into<String>, decimals: u8, name: impl Into<String>) -> Self {
+    pub fn native(
+        chain: ChainId,
+        ticker: impl Into<String>,
+        decimals: u8,
+        name: impl Into<String>,
+    ) -> Self {
         Self {
             id: AssetId::native(chain, ticker),
             decimals,
@@ -78,7 +83,12 @@ impl Asset {
         let factor = 10u128.pow(self.decimals as u32);
         let integer = smallest / factor;
         let frac = smallest % factor;
-        format!("{}.{:0>width$}", integer, frac, width = self.decimals as usize)
+        format!(
+            "{}.{:0>width$}",
+            integer,
+            frac,
+            width = self.decimals as usize
+        )
     }
 }
 

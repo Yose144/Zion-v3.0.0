@@ -130,9 +130,9 @@ impl ChainAdapter for ZionL1Adapter {
         if !tx.confirmed {
             return Ok(0);
         }
-        let tx_block = tx.block_height.ok_or_else(|| {
-            MultichainError::Internal("zion tx missing block_height".to_string())
-        })?;
+        let tx_block = tx
+            .block_height
+            .ok_or_else(|| MultichainError::Internal("zion tx missing block_height".to_string()))?;
         let tip = self.current_height().await?;
         Ok(tip.saturating_sub(tx_block) + 1)
     }

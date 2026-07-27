@@ -77,7 +77,9 @@ async fn get_height(
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     let chain = chain_name_to_id(&chain_name).map_err(|_| StatusCode::BAD_REQUEST)?;
     match state.service.height(chain).await {
-        Ok(h) => Ok(Json(serde_json::json!({ "chain": chain_name, "height": h }))),
+        Ok(h) => Ok(Json(
+            serde_json::json!({ "chain": chain_name, "height": h }),
+        )),
         Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
     }
 }

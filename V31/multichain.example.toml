@@ -1,0 +1,28 @@
+# Example configuration for `zion-multichain` (V31 Mainnet Alpha).
+# Copy to `multichain.toml` and edit RPC endpoints before running `zion` or
+# the `zion-multichain` server.
+
+[server]
+bind = "127.0.0.1"
+port = 8453
+
+[database]
+path = "multichain.db"
+
+[[adapters]]
+chain = "base"
+# Base mainnet public RPC; use a private endpoint for production.
+rpc_url = "https://mainnet.base.org"
+enabled = true
+
+[[adapters]]
+chain = "bitcoin"
+# mempool.space API for mainnet. Use a custom electrum/esplora URL if desired.
+rpc_url = "https://mempool.space/api"
+enabled = true
+
+[[adapters]]
+chain = "zion-l1"
+# Local ZION node RPC. The public endpoint is rpc.zionterranova.com:8443.
+rpc_url = "http://127.0.0.1:9443"
+enabled = true

@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 
 /// Integer amount in the smallest indivisible unit of an asset.
 /// The associated `Asset` carries the decimal scale.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize,
+)]
 #[serde(transparent)]
 pub struct Amount(pub u128);
 

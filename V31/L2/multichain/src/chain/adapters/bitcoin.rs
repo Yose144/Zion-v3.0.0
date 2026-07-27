@@ -31,17 +31,22 @@ pub struct BitcoinAdapter {
 }
 
 impl BitcoinAdapter {
-    pub fn new(network_str: &str) -> MultichainResult<Self> {
-        let network = bitcoin::Network::from_core_arg(network_str)
-            .map_err(|_| MultichainError::Config(format!("unknown bitcoin network: {network_str}")))?;
+    pub fn new(network_str: &str, rpc_url: Option<&str>) -> MultichainResult<Self> {
+        let network = bitcoin::Network::from_core_arg(network_str).map_err(|_| {
+            MultichainError::Config(format!("unknown bitcoin network: {network_str}"))
+        })?;
 
-        let api_url = match network {
-            bitcoin::Network::Bitcoin => MAINNET_API,
-            bitcoin::Network::Testnet => TESTNET_API,
-            bitcoin::Network::Signet => SIGNET_API,
-            _ => MAINNET_API,
-        }
-        .to_string();
+        let api_url = if let Some(url) = rpc_url.filter(|u| !u.is_empty()) {
+            url.to_string()
+        } else {
+            match network {
+                bitcoin::Network::Bitcoin => MAINNET_API,
+                bitcoin::Network::Testnet => TESTNET_API,
+                bitcoin::Network::Signet => SIGNET_API,
+                _ => MAINNET_API,
+            }
+            .to_string()
+        };
 
         Ok(Self {
             network,
@@ -53,7 +58,10 @@ impl BitcoinAdapter {
         })
     }
 
-    fn validate_address(&self, addr: &Address) -> MultichainResult<bitcoin::Address<bitcoin::address::NetworkChecked>> {
+    fn validate_address(
+        &self,
+        addr: &Address,
+    ) -> MultichainResult<bitcoin::Address<bitcoin::address::NetworkChecked>> {
         if addr.chain != ChainId::Bitcoin {
             return Err(MultichainError::Validation(format!(
                 "expected bitcoin address, got {}",
@@ -149,10 +157,9 @@ impl ChainAdapter for BitcoinAdapter {
             return Ok(0);
         }
 
-        let block_height = tx
-            .status
-            .block_height
-            .ok_or_else(|| MultichainError::Internal("confirmed tx missing block_height".to_string()))?;
+        let block_height = tx.status.block_height.ok_or_else(|| {
+            MultichainError::Internal("confirmed tx missing block_height".to_string())
+        })?;
         let tip = self.current_height().await?;
         Ok(tip.saturating_sub(block_height) + 1)
     }
