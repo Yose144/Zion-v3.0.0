@@ -5,7 +5,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Status:** Mainnet Beta · 3.0.6 "Triple Parallel" live · 3.0.7 "Trinity" planning · 14/15 services active (zion-free-world, zion-issobella disabled) · Chain Height 6735+ · Mainnet Alpha target: 3.1.0 — [`MAINNET_ALPHA_PLAN.md`](MAINNET_ALPHA_PLAN.md) + V3.1 migration [`V3.1_MIGRATION_PLAN.md`](V3.1_MIGRATION_PLAN.md) + native integration [`V3.1_INTEGRATION_PLAN.md`](V3.1_INTEGRATION_PLAN.md) · Public Launch: 31 December 2026
+**Status:** Mainnet Beta · 3.0.6 "Triple Parallel" live · 3.0.7 "Trinity" planning · 14/15 services active (zion-free-world, zion-issobella disabled) · Chain Height 6735+ · Mainnet Alpha target: 3.1.0 — [`MAINNET_ALPHA_PLAN.md`](docs/3.0.6/MAINNET_ALPHA_PLAN.md) + V3.1 migration [`V3.1_MIGRATION_PLAN.md`](docs/3.0.6/V3.1_MIGRATION_PLAN.md) + native integration [`V3.1_INTEGRATION_PLAN.md`](docs/3.0.6/V3.1_INTEGRATION_PLAN.md) · Public Launch: 31 December 2026
 
 **Current plan:** [`TRINITY_ALL_GREEN_PLAN.md`](TRINITY_ALL_GREEN_PLAN.md) · **Version overview:** [`3.0.7.md`](3.0.7.md) · **Previous 3.0.6 archive:** [`docs/3.0.6/`](docs/3.0.6/)
 
@@ -33,12 +33,12 @@
 | **3.0.4 release overview** | [`docs/3.0.4/3.0.4.md`](docs/3.0.4/3.0.4.md) |
 | **3.0.7 plan** | [`TRINITY_ALL_GREEN_PLAN.md`](TRINITY_ALL_GREEN_PLAN.md) |
 | **3.0.7 overview** | [`3.0.7.md`](3.0.7.md) |
-| **3.0.8 overview** | [`3.0.8.md`](3.0.8.md) |
-| **3.0.9 overview** | [`3.0.9.md`](3.0.9.md) |
-| **3.1.0 overview** | [`3.1.0.md`](3.1.0.md) |
-| **Mainnet Alpha roadmap** | [`MAINNET_ALPHA_PLAN.md`](MAINNET_ALPHA_PLAN.md) |
-| **V3.1 migration plan** | [`V3.1_MIGRATION_PLAN.md`](V3.1_MIGRATION_PLAN.md) |
-| **V3.1 integration plan** | [`V3.1_INTEGRATION_PLAN.md`](V3.1_INTEGRATION_PLAN.md) |
+| **3.0.8 overview** | [`3.0.8.md`](docs/3.0.6/3.0.8.md) |
+| **3.0.9 overview** | [`3.0.9.md`](docs/3.0.6/3.0.9.md) |
+| **3.1.0 overview** | [`3.1.0.md`](docs/3.0.6/3.1.0.md) |
+| **Mainnet Alpha roadmap** | [`MAINNET_ALPHA_PLAN.md`](docs/3.0.6/MAINNET_ALPHA_PLAN.md) |
+| **V3.1 migration plan** | [`V3.1_MIGRATION_PLAN.md`](docs/3.0.6/V3.1_MIGRATION_PLAN.md) |
+| **V3.1 integration plan** | [`V3.1_INTEGRATION_PLAN.md`](docs/3.0.6/V3.1_INTEGRATION_PLAN.md) |
 | **3.0.6 archive** | [`docs/3.0.6/`](docs/3.0.6/) |
 | **Live status + blockers** | [`StatusV3.md`](StatusV3.md) |
 | **V3 workspace code** | [`V3/`](V3/) |
