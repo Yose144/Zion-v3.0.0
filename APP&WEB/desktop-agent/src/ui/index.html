@@ -2853,33 +2853,6 @@
     }
     .mining-console-header .ctrl-btn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
 
-    /* ── Miner static panel ─────────────────── */
-    .miner-static-panel {
-      background: rgba(0,0,0,0.55);
-      border: 1px solid rgba(0,255,136,0.22);
-      border-radius: 12px;
-      padding: 14px 20px;
-      margin-bottom: 10px;
-      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-      font-size: 13px;
-      line-height: 1.85;
-      color: #e8e8e8;
-      white-space: pre;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      box-shadow: 0 4px 24px rgba(0,255,136,0.06);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-    }
-    .miner-static-panel .sp-label { color: #ffffff; font-weight: 800; font-size: 12px; text-shadow: 0 0 8px rgba(255,255,255,0.15); }
-    .miner-static-panel .sp-value { color: #00ffc8; font-weight: 800; font-size: 14px; text-shadow: 0 0 10px rgba(0,255,200,0.3); }
-    .miner-static-panel .sp-unit  { color: #888; font-weight: 600; font-size: 12px; }
-    .miner-static-panel .sp-good  { color: #34d399; font-weight: 800; text-shadow: 0 0 8px rgba(52,211,153,0.3); }
-    .miner-static-panel .sp-bad   { color: #f87171; font-weight: 700; text-shadow: 0 0 8px rgba(248,113,113,0.3); }
-    .miner-static-panel .sp-dim   { color: #555; }
-    .miner-static-panel .sp-event { color: #34d399; font-weight: 700; }
-    .miner-static-panel .sp-border { color: #3a3a3a; }
     .mining-console-body {
       height: calc(100vh - 260px);
       min-height: 350px;
@@ -5685,8 +5658,6 @@
             </div>
           </div>
           <div class="mining-console-body" id="console-body">
-            <!-- Static miner panel — SRBMiner style, overwrites in place -->
-            <div id="miner-static-panel" class="miner-static-panel view-hidden"></div>
             <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION ZION V3 Mainnet v3.0.6</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
             <div class="mc-line"><span class="mc-info"> * </span><span class="mc-info">Waiting for mining to start...</span></div>
           </div>
