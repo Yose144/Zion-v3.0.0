@@ -221,6 +221,7 @@ if (process.platform === 'win32' && !app.isPackaged) {
 // Avoid multiple Electron instances fighting over the same cache directory.
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
+  console.warn('[DESKTOP-AGENT] Another instance is already running. Quitting.');
   app.quit();
 }
 
@@ -1031,7 +1032,7 @@ function findRustMiner() {
         return left.pathIndex - right.pathIndex;
       });
       const chosen = candidates[0].fullPath;
-      log(`[V3-FAST] findRustMiner selected ${chosen} (mtime=${candidates[0].mtimeMs}, pathIndex=${candidates[0].pathIndex})\n`);
+      console.log(`[V3-FAST] findRustMiner selected ${chosen} (mtime=${candidates[0].mtimeMs}, pathIndex=${candidates[0].pathIndex})`);
       return chosen;
     }
   }
