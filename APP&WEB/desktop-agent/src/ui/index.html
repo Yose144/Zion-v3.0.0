@@ -2853,6 +2853,68 @@
     }
     .mining-console-header .ctrl-btn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
 
+    /* ── Console metrics panel (sticky TUI-style header) ─────────────────── */
+    .console-metrics-panel {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(0,0,0,0.72);
+      border: 1px solid rgba(0,255,136,0.18);
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin: -4px -4px 12px -4px;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.9);
+    }
+    .console-metrics-panel.view-hidden { display: none; }
+    .console-metrics-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .console-metrics-title {
+      font-weight: 800;
+      color: #00ffc8;
+      text-shadow: 0 0 10px rgba(0,255,200,0.25);
+    }
+    .console-metrics-uptime { color: rgba(255,255,255,0.55); }
+    .console-metrics-streams { display: flex; flex-direction: column; gap: 4px; }
+    .console-metrics-row {
+      display: grid;
+      grid-template-columns: 90px 130px 1fr 90px 80px;
+      gap: 8px;
+      align-items: center;
+      padding: 3px 6px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.03);
+    }
+    .console-metrics-row.active { background: rgba(0,255,136,0.06); }
+    .console-metrics-label { color: rgba(255,255,255,0.5); font-size: 10px; }
+    .console-metrics-coin { font-weight: 700; color: #fff; }
+    .console-metrics-algo { color: rgba(255,255,255,0.55); font-size: 11px; }
+    .console-metrics-hr { color: #00ffc8; font-weight: 800; text-align: right; }
+    .console-metrics-shares { text-align: right; font-size: 11px; }
+    .console-metrics-shares .good { color: #34d399; font-weight: 700; }
+    .console-metrics-shares .bad { color: #f87171; font-weight: 700; }
+    .console-metrics-footer {
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.45);
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .mining-console-body {
       height: calc(100vh - 260px);
       min-height: 350px;
@@ -5658,6 +5720,15 @@
             </div>
           </div>
           <div class="mining-console-body" id="console-body">
+            <!-- Live metrics strip — sticky at top of Mining Console -->
+            <div id="console-metrics-panel" class="console-metrics-panel view-hidden">
+              <div class="console-metrics-header">
+                <span class="console-metrics-title">ZION v3.0.6 Trinity</span>
+                <span class="console-metrics-uptime" id="console-metrics-uptime">uptime 00:00</span>
+              </div>
+              <div class="console-metrics-streams" id="console-metrics-streams"></div>
+              <div class="console-metrics-footer" id="console-metrics-footer">pool — | height —</div>
+            </div>
             <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION ZION V3 Mainnet v3.0.6</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
             <div class="mc-line"><span class="mc-info"> * </span><span class="mc-info">Waiting for mining to start...</span></div>
           </div>
