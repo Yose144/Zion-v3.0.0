@@ -2026,9 +2026,9 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 - **Key findings from this session:**
   - `zion-miner --gpu-benchmark-all` compiled and ran all CUDA kernels against an easy target.
   - `ETC`/`ethash` live test was blocked because `cuda_external.rs` `ensure_dag()` would take ~3 hours to build the 7.52 GB DAG for epoch 834.
-  - `KAS`/`kheavyhash` ran at ~7 MH/s (much slower than reference miners) and did not find a share in 120 s.
+  - `KAS`/`kheavyhash` long test is running at ~3.3 MH/s on GTX 1070 Ti through the debug pool; no share yet in the first few minutes (expected share time ~20 min at diff 1). The previous 120 s run was too short.
   - `autolykos` table is now cached per `(header, height)` and `cuda_external.rs` uses the 32-byte pre-pow hash and the real block height.
   - `auxpow_client.rs` now submits the correct 2miners `nonce2` (lower 6 bytes of the full 64-bit nonce). The Edge `zion-pool` `server` binary was rebuilt (`pool/Cargo.toml` needs `tracing-subscriber/env-filter` feature).
   - `ERG`/`autolykos` live test reaches `erg.2miners.com` and receives `[23,"Low difficulty share"]`. The remaining blocker is that the `autolykos_mine` CUDA kernel in `AuXpow/csrc/cuda/autolykos_kernel.cu` is a simplified placeholder (9-iteration table walk + single BLAKE2b) and does **not** implement the real Autolykos v2 algorithm (permutation indices, 32 table lookups summed, final BLAKE2b over the 32-byte sum). Shares therefore fail upstream validation.
-  - `evrprogpow` / `meowpow` are not recognised by `CudaExtAlgo::from_name()`, so EVR/MEWC are not dispatched to the CUDA `kawpow` kernel.
+  - `evrprogpow` / `meowpow` are now recognised by `CudaExtAlgo::from_name()` and routed to the ProgPow CUDA kernel with a 12000-block epoch. `CoinProfile::epoch_length()` for EVR/MEWC was corrected from 7500 to 12000. Live test not yet attempted because the ProgPow DAG for a real EVR/MEWC epoch is likely too slow on this GPU and may require a coin-specific DAG-size formula.
   - For coins not on 2miners/zpool BTC payout, coin-specific payout addresses are required; test wallets were saved to the desktop.

@@ -197,12 +197,12 @@ impl ExternalCoin {
     /// Ethash/ETC: 30000 blocks per epoch.
     /// KawPow/RVN: 7500 blocks per epoch.
     /// ProgPow/EPIC: 30000 blocks per epoch (same as Ethash).
+    /// EVR/MEWC: 12000 blocks per epoch (EvrProgPow/MeowPow).
     /// Pearl/PRL: no DAG (PEARL_EPOCH_LENGTH = 0).
     pub fn epoch_length(self) -> u32 {
         match self {
-            Self::RVN | Self::CLORE | Self::EVR | Self::MEWC => {
-                crate::external_hashers::KAWPOW_EPOCH_LENGTH
-            }
+            Self::RVN | Self::CLORE => crate::external_hashers::KAWPOW_EPOCH_LENGTH,
+            Self::EVR | Self::MEWC => 12000,
             Self::ETC => crate::external_hashers::ETHASH_EPOCH_LENGTH,
             Self::EPIC | Self::ZANO => crate::external_hashers::PROGPOW_EPOCH_LENGTH,
             Self::PRL => crate::external_hashers::PEARL_EPOCH_LENGTH,

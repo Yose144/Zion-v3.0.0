@@ -211,10 +211,10 @@ Likely blockers:
 | Coin | CUDA path | Live share accepted | Blocker |
 |------|-----------|---------------------|---------|
 | ETC | `ethash` | **no** | DAG generation ~3 h for epoch 834 |
-| KAS | `kheavyhash` | **no** | Kernel slow; run too short; correctness unverified |
+| KAS | `kheavyhash` | **in progress** | Long live test running at ~3.3 MH/s on GTX 1070 Ti through debug pool; no KAS share yet after ~4 min, ~20 min run in progress |
 | ERG | `autolykos` | **no** | Table cache and nonce2 format fixed; `autolykos_mine` CUDA kernel is a placeholder and produces invalid hashes |
 | RVN/CLORE/QUAI | `kawpow` | **not tested** | DAG generation; likely same as ETC |
-| EVR/MEWC | `evrprogpow`/`meowpow` | **not tested** | `CudaExtAlgo` does not recognise the algorithm name |
+| EVR/MEWC | `evrprogpow`/`meowpow` | **not tested** | `CudaExtAlgo` now recognises `evrprogpow`/`meowpow` and uses 12000-block epochs; no live GPU test yet (DAG generation still likely too slow) |
 | FLUX | `zelhash` | **not tested** | Equihash solver; no known test vector |
 | EPIC/ZANO | `progpow` | **not tested** | DAG + per-period kernel recompilation; no live test |
 | BEAM/VTC/IRON/NEXA/DNX/KRX/CKB/CFX/ZEC/PHX | various | **not tested** | Missing CUDA kernel or coin-specific wallet |
@@ -236,3 +236,42 @@ Likely blockers:
 **Option C — Parallel path**
 * Do Option B now to get first live accepted GPU shares and confirm the end-to-end pipeline.
 * Do Option A in a follow-up to replace reference miners with the native `zion-miner` CUDA path.
+
+## 7. Current session updates (2026-07-27)
+
+### 7.1 EVR/MEWC CUDA routing fixed
+
+* `CudaExtAlgo::from_name()` in `V3/L1/miner/src/cuda_external.rs` now maps `evrprogpow` / `evrprogpow_evr` / `meowpow` / `meowpow_mewc` to `CudaExtAlgo::Progpow`.
+* Added `progpow_params()`, `dag_epoch_length()`, and `progpow_period()` helpers to `CudaExternalMiner` so ProgPow variants use coin-specific epoch/period parameters instead of the `Progpow` defaults.
+* `CoinProfile::epoch_length()` in `AuXpow/src/auxpow_client.rs` now returns `12000` for `EVR`/`MEWC` instead of the KawPow `7500` default.
+
+### 7.2 KAS `kheavyhash` long test
+
+* Restarted `zion-miner` with the new binary, pointed at the KAS debug pool (`62.171.141.136:8461`), using the corrected `kheavyhash` CUDA kernel and the timestamp-in-`MiningHeader` fix from the previous session.
+* Current rate: ~3.3 MH/s on `NVIDIA GeForce GTX 1070 Ti`. At KAS diff 1, expected share time ~20 min; a 20-minute test is running.
+* The `ext_gpu_batch_done` stdout logs are suppressed because the process is not on a TTY; `session_status` is written to stderr.
+
+### 7.3 Reference miner (GMiner) attempt
+
+* GMiner v3.44 (`miner.exe --algo kheavyhash`) connects to the KAS debug pool but the session must use a valid `zion1...` wallet (the local ZION pool validates the Stratum `mining.authorize` username as a ZION address).
+* GMiner terminates after 6 seconds, most likely because it expects a different `mining.notify` format than the one the debug pool forwards from 2miners (`[job_id, [4xu64], timestamp]`). Therefore GMiner is not a usable reference for KAS through this debug pool.
+
+### 7.5 KAS `kheavyhash` GPU/CPU mismatch fixed (2026-07-27)
+
+* Root cause was **not** the CUDA kernel itself. The `kheavyhash` CUDA kernel produced the same hashes as `zion_auxpow::hash_kheavyhash` once it was given the same inputs.
+* Two input-divergence bugs were fixed:
+  1. `BlockCandidate::hash_with_algorithm()` in `V3/L1/core/src/lib.rs` was using `self.height` as the KAS timestamp instead of the `MiningHeader.timestamp` slot. It now uses `header.timestamp`, with a fallback to `self.height` when `header.timestamp` is 0 (pool-mode KAS jobs encode the timestamp in `job.height` because the header_hex is only the 32-byte pre_pow_hash).
+  2. `gpu_scan_job()` / `gpu_scan_async()` in `V3/L1/miner/src/gpu_backend.rs` was unconditionally overwriting `effective_header.timestamp` with `job.height` for all external algorithms. This broke benchmark mode, where `job.height` is 0 and the correct timestamp lives in `job.header.timestamp`. The overwrite is now conditional: for `kheavyhash` the timestamp is taken from `job.header.timestamp` if it is non-zero, otherwise from `job.height`.
+* `assignment_to_candidate()` in `V3/L1/pool/src/bin/server.rs` now copies the external KAS timestamp into `MiningHeader.timestamp` so pool-side CPU validation hashes the same inputs as the GPU.
+* `generate_kheavy_matrix_cuda()` in `V3/L1/miner/src/cuda_external.rs` now delegates to `zion_auxpow::kheavyhash_matrix_flat()` so the GPU matrix is identical to the CPU matrix.
+* Added a known-answer test `kheavyhash_benchmark_vector` in `AuXpow/src/external_hashers.rs` for nonce `4682` with the benchmark header:
+  * `version=3`, `previous_hash=[0x11;32]`, `timestamp=1_762_000_200` → `1cff8de2f856c9a5c7970f35cb2642496bff0b5be2a42c61e3ca4a657914a93e`
+* Local CUDA benchmark (`--profile benchmark --algorithm kheavyhash`) now runs without `GPU_CPU_MISMATCH` and the found nonce/hash matches the CPU reference.
+
+### 7.4 Remaining blockers
+
+* **KAS:** CUDA benchmark is fixed, but a live pool share still needs to be accepted to confirm end-to-end correctness.
+* **EVR/MEWC:** code routing and epoch length are fixed, but the ProgPow DAG for a real EVR/MEWC epoch will likely take too long on this GTX 1070 Ti (8 GB) and may also use a coin-specific DAG-size formula not yet implemented.
+* **ETC/RVN/CLORE/QUAI:** blocked by slow single-threaded `ethash_calculate_dag`.
+* **ERG:** blocked by the placeholder `autolykos_mine` CUDA kernel.
+* **zion-pool default build:** `zion-native-ffi` `ghostrider/real/gr.c` currently fails to compile on MSVC due to a variable-length array (`bool selectedAlgo[algoCount]`), unrelated to this session's changes.
