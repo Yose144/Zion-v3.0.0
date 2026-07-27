@@ -137,6 +137,12 @@
 - Transakce se broadcastuje přes mempool.space `/api/tx` a vrací se `txid` jako `Hash`.
 - `execute_outbound` předává `BurnRelease` transfer do `send_payment`, takže bridge může odesílat BTC na cílovou adresu.
 
+### 22. CLI rozšíření
+- `zion pool status` / `zion pool shares` — vypíše JSON s accepted/rejected shares a pool configem (`pool_fee_bps`, PPLNS okna, pool adresu).
+- `zion pool payouts` — vypíše poslední PPLNS payouts z `MultichainService::pool_payouts()`.
+- `zion miner start` — spustí `MinerRuntime` s volitelnými `--reward-address`, `--auxpow-pool`, `--worker`, `--no-zion`, `--no-gpu`, `--no-cpu`; zastavení Ctrl-C pomocí `tokio::signal::ctrl_c` + `watch::Receiver`.
+- `zion doctor` — načte `MultichainService`, vypíše health každého adapteru a vrátí chybu, pokud je nějaký unreachable.
+
 ## Verifikace
 
 ```bash
@@ -176,6 +182,7 @@ Rozpis testů:
 - `9cbcaba7` — `feat(v31): submit solved blocks to zion-l1 RPC`
 - `d91ec96d` — `feat(v31): Bitcoin deposit watching via mempool.space`
 - `98a46b5e` — `feat(v31): Bitcoin P2WPKH send_payment and execute_outbound`
+- `<novy>` — `feat(v31): pool/miner/doctor CLI extensions`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -210,9 +217,9 @@ Rozpis testů:
    - Intent-based routing mezi chainy.
 
 5. **CLI rozšíření**
-   - Přidat `zion pool` příkazy (status, shares, payouts).
-   - `zion miner` start/stop Triple Stream.
-   - `zion doctor` pro ověření konfigurace a připojení.
+   - `zion pool` příkazy ✅ — `status`/`shares` zobrazí accepted/rejected shares a config, `payouts` zobrazí poslední PPLNS payouts.
+   - `zion miner start` ✅ — spustí `MinerRuntime` s ZION + AuxPoW GPU/CPU streamy, volitelně `--reward-address`, `--auxpow-pool`, `--no-zion`, `--no-gpu`, `--no-cpu`; zastavení Ctrl-C.
+   - `zion doctor` ✅ — vypíše health všech nakonfigurovaných adapterů a vrátí chybu, pokud některý není dostupný.
 
 6. **V31 workspace v `public/` subtree**
    - Až bude V31 stabilní, připravit subset pro public repo (`public/V31/`).
