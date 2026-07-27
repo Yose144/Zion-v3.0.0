@@ -4090,6 +4090,7 @@ def build_wallets() -> dict:
     op_total = sum(w.get("balance_zion", 0) or 0 for w in wallets if w.get("category") == "operational")
 
     return {
+        "ok": True,
         "wallets": wallets,
         "summary": {
             "total_wallets": len(wallets),
@@ -4733,7 +4734,16 @@ def get_pool_miners() -> dict:
     except Exception as e:
         return {"ok": False, "miners": [], "active_sessions": active_sessions, "total_hashrate_khs": 0, "error": str(e)}
 
-    total_hashrate_hps = sum(float(m.get("hashrate_hps") or 0) for m in miner_list)
+    # Normalize raw /miners fields used by the dashboard
+    for m in miner_list:
+        if not m.get("hashrate_hps") and m.get("hashrate"):
+            m["hashrate_hps"] = float(m["hashrate"])
+        if not m.get("miner_id") and m.get("address"):
+            m["miner_id"] = m["address"]
+        if not m.get("hashrate") and m.get("hashrate_hps"):
+            m["hashrate"] = float(m["hashrate_hps"])
+
+    total_hashrate_hps = sum(float(m.get("hashrate_hps") or m.get("hashrate") or 0) for m in miner_list)
 
     return {
         "ok": True,
@@ -7076,6 +7086,8 @@ def get_pool_wallet_status() -> dict:
         blocks = stats.get("blocks", {})
         if blocks.get("found"):
             status["blocks_found"] = blocks["found"]
+        elif blocks.get("total_found"):
+            status["blocks_found"] = blocks["total_found"]
         routing = stats.get("routing", {})
         if routing.get("accepted"):
             status["shares_accepted"] = routing["accepted"]
@@ -7130,6 +7142,7 @@ def get_pool_wallet_status() -> dict:
             # UTXO count from RPC if available
             if bal.get("utxo_count"):
                 status["utxo_count"] = bal["utxo_count"]
+    status["ok"] = True
     return status
 
 # ── Payout System Status Builder ─────────────────────────────────────────
@@ -7301,6 +7314,8 @@ def build_payout_status() -> dict:
         "recent_payouts": [],
         "session_stats": {},
         "payout_validation": {},
+        "shares_accepted": 0,
+        "shares_rejected": 0,
     }
 
     # ── Topology-aware config discovery ───────────────────────────────
@@ -7571,9 +7586,16 @@ def build_payout_status() -> dict:
 
     # Edge-primary: if local logs have no blocks, use Edge pool stats
     if is_edge and pool_stats:
-        edge_blocks = pool_stats.get("blocks", {}).get("found") if isinstance(pool_stats.get("blocks"), dict) else None
-        if edge_blocks is not None and status["blocks_found"] == 0:
+        blocks_info = pool_stats.get("blocks") if isinstance(pool_stats.get("blocks"), dict) else {}
+        edge_blocks = blocks_info.get("found") or blocks_info.get("total_found")
+        if edge_blocks and status["blocks_found"] == 0:
             status["blocks_found"] = edge_blocks
+        recent_blocks = blocks_info.get("recent") or []
+        if recent_blocks and not status["last_block_height"]:
+            try:
+                status["last_block_height"] = int(recent_blocks[0].get("height", 0))
+            except Exception:
+                pass
 
     # ── Burned total (after edge block fallback so total_blocks is accurate) ─
     total_blocks = status["blocks_found"]
@@ -7653,11 +7675,37 @@ def build_payout_status() -> dict:
     status["miner_stats"] = miner_stats
     status["miner_payouts_detail"] = status["miner_payouts"]
 
+    # Expose top-level share counters used by the wallet status panel
+    routing = pool_stats.get("routing") if isinstance(pool_stats.get("routing"), dict) else {}
+    status["shares_accepted"] = routing.get("accepted") or status["session_stats"].get("total_shares_1h") or sum(m.get("valid_shares", 0) for m in miners)
+    status["shares_rejected"] = routing.get("rejected") or routing.get("stale") or 0
+
     # If Edge stats are dead, surface a warning
     if is_edge and not edge_stats_alive:
         status["pool_health"]["error_msg"] = "Edge pool metrics endpoint (8455) unreachable. Stats/miners may be stale."
 
+    status["ok"] = True
     return status
+
+def trigger_payout() -> dict:
+    """Manual payout trigger endpoint.
+
+    The pool uses PPLNS with per-block automatic settlement, so there is no
+    separate manual-payout command.  This endpoint refreshes the dashboard view
+    and returns the current payout state so the UI can confirm that the cycle
+    is active without throwing a 404.
+    """
+    try:
+        status = build_payout_status()
+        return {
+            "ok": True,
+            "message": "Payout cycle is active — PPLNS settles automatically on each block.",
+            "payout_enabled": status.get("payout_enabled", False),
+            "pending_payouts": status.get("pending_payouts", 0),
+            "blocks_found": status.get("blocks_found", 0),
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 # ── AI services status (Hiran + Hiranyagarbha) ───────────────────────────
 
@@ -13947,6 +13995,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json({"ok": True, "stdout": out_text, "stderr": stderr.decode("utf-8", errors="ignore"), "exit_code": proc.returncode, "cmd": full_cmd})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
+        elif route == "/api/payout/trigger":
+            self._json(trigger_payout())
         elif route == "/api/backup/trigger":
             script = SCRIPTS_DIR / ("backup-chain" + _SCRIPT_EXT)
             try:
