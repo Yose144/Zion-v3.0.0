@@ -2061,8 +2061,10 @@ fn run_local_session(
         // Allow Stream 2 (external GPU) to use a different backend than Stream 1
         // in local benchmark mode too.  Auto-detect: when the primary backend is
         // CUDA (NVIDIA GPU detected), default the external stream to CUDA as well
-        // so both streams share the same CUDA device via shared_cuda_dev.  Override
-        // with ZION_EXT_GPU_BACKEND=opencl if desired.
+        // so both streams share the same CUDA device via shared_cuda_dev.
+        // The CUDA ProgPoWZ kernel (AuXpow/csrc/cuda/progpow_kernel.cu) gives
+        // ~11 MH/s standalone on GTX 1070 Ti (2x faster than OpenCL's 5.6 MH/s).
+        // Override with ZION_EXT_GPU_BACKEND=opencl if desired.
         let default_ext_backend = effective_gpu_backend;
         let bk = std::env::var("ZION_EXT_GPU_BACKEND")
             .ok()
@@ -2879,8 +2881,9 @@ fn run_remote_session(
         // Allow Stream 2 (external GPU) to use a different backend than Stream 1.
         // Auto-detect: when the primary backend is CUDA (NVIDIA GPU detected),
         // default the external stream to CUDA as well so both streams share the
-        // same CUDA device via shared_cuda_dev.  This gives the best ZANO ProgPoWZ
-        // hashrate on NVIDIA GPUs (several GH/s on GTX 1070 Ti).
+        // same CUDA device via shared_cuda_dev.  The CUDA ProgPoWZ kernel
+        // (AuXpow/csrc/cuda/progpow_kernel.cu, commit e6d311d0) gives ~11 MH/s
+        // standalone on GTX 1070 Ti — 2x faster than OpenCL.
         // Override with ZION_EXT_GPU_BACKEND=opencl if desired.
         let default_ext_backend = effective_gpu_backend;
         let bk = std::env::var("ZION_EXT_GPU_BACKEND")
