@@ -135,7 +135,7 @@ Rozpis testů:
 - `441e327f` — `fix(v31): decimal scaling in EvmAdapter submitLockProof + fmt`
 - `18405d25` — `feat(v31): integrate zion-pool stats into HTTP API + Dash31`
 - `ff2b8840` — `feat(v31): TCP stratum server with mining.notify broadcast`
-- `<novy>` — `feat(v31): live mining jobs from zion-l1 getBlockTemplate`
+- `6e76d23f` — `feat(v31): live mining jobs from zion-l1 getBlockTemplate`
 
 ## Další plán (Mainnet Alpha milestones)
 
