@@ -182,7 +182,7 @@ Rozpis testů:
 - `9cbcaba7` — `feat(v31): submit solved blocks to zion-l1 RPC`
 - `d91ec96d` — `feat(v31): Bitcoin deposit watching via mempool.space`
 - `98a46b5e` — `feat(v31): Bitcoin P2WPKH send_payment and execute_outbound`
-- `<novy>` — `feat(v31): pool/miner/doctor CLI extensions`
+- `1ac40f9b` — `feat(v31): pool/miner/doctor CLI extensions`
 
 ## Další plán (Mainnet Alpha milestones)
 
