@@ -1035,7 +1035,7 @@ fn cuda_verify_share(
                 header,
                 Box::new(move |nonce, _gpu_hash, mix| {
                     let mix = mix.expect("kawpow requires mix_hash");
-                    eh::ethash_final_hash(&header_arr, nonce, &mix)
+                    eh::kawpow_final_hash_real(&header_arr, nonce, &mix)
                 }),
             )
         }
@@ -1060,18 +1060,14 @@ fn cuda_verify_share(
         let cpu_hash = cpu_hash_fn(nonce, gpu_hash, mix);
         let matched = cpu_hash == gpu_hash;
 
-        // KawPow: compute CPU seed0 for comparison with GPU printf
+        // KawPow: print CPU/GPU hash comparison for debugging
         if algo.starts_with("kawpow") {
-            use sha3::{Digest, Keccak512};
-            let header_arr: [u8; 32] = header[..32.min(header.len())].try_into().unwrap();
-            let mut seed_input = [0u8; 40];
-            seed_input[..32].copy_from_slice(&header_arr);
-            seed_input[32..40].copy_from_slice(&nonce.to_le_bytes());
-            let seed = Keccak512::digest(&seed_input);
-            let cpu_seed0 = u32::from_le_bytes([seed[0], seed[1], seed[2], seed[3]]);
             eprintln!(
-                "KAWPOW_SEED_CMP nonce={} cpu_seed0={:08x} (compare with GPU kawpow_debug seed0)",
-                nonce, cpu_seed0
+                "KAWPOW_VERIFY nonce={} cpu_hash={:02x}{:02x}{:02x}{:02x}... gpu_hash={:02x}{:02x}{:02x}{:02x}... matched={}",
+                nonce,
+                cpu_hash[0], cpu_hash[1], cpu_hash[2], cpu_hash[3],
+                gpu_hash[0], gpu_hash[1], gpu_hash[2], gpu_hash[3],
+                matched,
             );
         }
 

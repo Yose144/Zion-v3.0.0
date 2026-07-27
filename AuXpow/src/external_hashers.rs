@@ -716,6 +716,492 @@ pub fn meets_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
 ///
 /// # Returns
 /// 32-byte final hash (big-endian, comparable to target).
+
+// ── KawPow CPU reference (real ProgPoW with keccak_f800) ───────────
+// Ported from cpp-kawpow lib/ethash/progpow.cpp.
+// Uses keccak-f[800] (32-bit state, 22 rounds) with RAVENCOINKAWPOW domain.
+
+const KAWPOW_LANES: usize = 16;
+const KAWPOW_REGS: usize = 32;
+const KAWPOW_DAG_LOADS: usize = 4;
+const KAWPOW_CNT_DAG: usize = 64;
+const KAWPOW_CNT_CACHE: usize = 11;
+const KAWPOW_CNT_MATH: usize = 18;
+const KAWPOW_PERIOD: u32 = 10;
+const KAWPOW_L1_CACHE_NUM_ITEMS: usize = 4096; // PROGPOW_CACHE_WORDS
+
+const KAWPOW_RAVENCOIN: [u32; 15] = [
+    0x00000072, 0x00000041, 0x00000056, 0x00000045, 0x0000004E,
+    0x00000043, 0x0000004F, 0x00000049, 0x0000004E, 0x0000004B,
+    0x00000041, 0x00000057, 0x00000050, 0x0000004F, 0x00000057,
+];
+
+const KAWPOW_KECCAK_RNDC: [u32; 24] = [
+    0x00000001, 0x00008082, 0x0000808a, 0x80008000, 0x0000808b, 0x80000001,
+    0x80008081, 0x00008009, 0x0000008a, 0x00000088, 0x80008009, 0x8000000a,
+    0x8000808b, 0x0000008b, 0x00008089, 0x00008003, 0x00008002, 0x00000080,
+    0x0000800a, 0x8000000a, 0x80008081, 0x00008080, 0x80000001, 0x80008008,
+];
+
+const KAWPOW_KECCAK_ROTC: [u32; 24] = [
+    1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14,
+    27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44,
+];
+
+const KAWPOW_KECCAK_PILN: [usize; 24] = [
+    10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4,
+    15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1,
+];
+
+#[inline]
+fn kawpow_rotl32(x: u32, n: u32) -> u32 {
+    x.rotate_left(n % 32)
+}
+
+#[inline]
+fn kawpow_rotr32(x: u32, n: u32) -> u32 {
+    x.rotate_right(n % 32)
+}
+
+#[inline]
+fn kawpow_mul_hi32(a: u32, b: u32) -> u32 {
+    (((a as u64).wrapping_mul(b as u64)) >> 32) as u32
+}
+
+#[inline]
+fn kawpow_clz32(a: u32) -> u32 {
+    a.leading_zeros()
+}
+
+#[inline]
+fn kawpow_popcount32(a: u32) -> u32 {
+    a.count_ones()
+}
+
+/// Keccak-f[800] round (32-bit state, 25 words).
+fn kawpow_keccak_f800_round(st: &mut [u32; 25], r: usize) {
+    let mut bc = [0u32; 5];
+    let mut t: u32;
+
+    // Theta
+    for i in 0..5 {
+        bc[i] = st[i] ^ st[i + 5] ^ st[i + 10] ^ st[i + 15] ^ st[i + 20];
+    }
+    for i in 0..5 {
+        t = bc[(i + 4) % 5] ^ kawpow_rotl32(bc[(i + 1) % 5], 1);
+        for j in (0..25).step_by(5) {
+            st[j + i] ^= t;
+        }
+    }
+
+    // Rho Pi
+    t = st[1];
+    for i in 0..24 {
+        let j = KAWPOW_KECCAK_PILN[i];
+        bc[0] = st[j];
+        st[j] = kawpow_rotl32(t, KAWPOW_KECCAK_ROTC[i]);
+        t = bc[0];
+    }
+
+    // Chi
+    for j in (0..25).step_by(5) {
+        for i in 0..5 {
+            bc[i] = st[j + i];
+        }
+        for i in 0..5 {
+            st[j + i] ^= (!bc[(i + 1) % 5]) & bc[(i + 2) % 5];
+        }
+    }
+
+    // Iota
+    st[0] ^= KAWPOW_KECCAK_RNDC[r];
+}
+
+/// Keccak-f[800]: 22 rounds (800-bit state, no padding).
+fn kawpow_keccak_f800(st: &mut [u32; 25]) {
+    for r in 0..22 {
+        kawpow_keccak_f800_round(st, r);
+    }
+}
+
+// KISS99 RNG
+struct KawpowKiss99 {
+    z: u32, w: u32, jsr: u32, jcong: u32,
+}
+
+impl KawpowKiss99 {
+    fn next(&mut self) -> u32 {
+        self.z = 36969u32.wrapping_mul(self.z & 0xFFFF).wrapping_add(self.z >> 16);
+        self.w = 18000u32.wrapping_mul(self.w & 0xFFFF).wrapping_add(self.w >> 16);
+        let mwc = (self.z << 16).wrapping_add(self.w);
+        self.jsr ^= self.jsr << 17;
+        self.jsr ^= self.jsr >> 13;
+        self.jsr ^= self.jsr << 5;
+        self.jcong = 69069u32.wrapping_mul(self.jcong).wrapping_add(1234567);
+        (mwc ^ self.jcong).wrapping_add(self.jsr)
+    }
+}
+
+#[inline]
+fn kawpow_fnv1a(h: u32, d: u32) -> u32 {
+    (h ^ d).wrapping_mul(0x01000193)
+}
+
+/// Random math operation (11 cases, matches ProgPoW spec).
+#[inline]
+fn kawpow_random_math(a: u32, b: u32, selector: u32) -> u32 {
+    match selector % 11 {
+        0 => a.wrapping_add(b),
+        1 => a.wrapping_mul(b),
+        2 => kawpow_mul_hi32(a, b),
+        3 => a.min(b),
+        4 => kawpow_rotl32(a, b),
+        5 => kawpow_rotr32(a, b),
+        6 => a & b,
+        7 => a | b,
+        8 => a ^ b,
+        9 => kawpow_clz32(a).wrapping_add(kawpow_clz32(b)),
+        10 => kawpow_popcount32(a).wrapping_add(kawpow_popcount32(b)),
+        _ => unreachable!(),
+    }
+}
+
+/// Random merge (4 cases, retains entropy).
+#[inline]
+fn kawpow_random_merge(a: &mut u32, b: u32, selector: u32) {
+    let x = (selector >> 16) % 31 + 1;
+    match selector % 4 {
+        0 => *a = a.wrapping_mul(33).wrapping_add(b),
+        1 => *a = (*a ^ b).wrapping_mul(33),
+        2 => *a = kawpow_rotl32(*a, x) ^ b,
+        3 => *a = kawpow_rotr32(*a, x) ^ b,
+        _ => unreachable!(),
+    }
+}
+
+/// Mix RNG state for ProgPoW random math sequence.
+struct KawpowMixRngState {
+    rng: KawpowKiss99,
+    dst_seq: [u32; KAWPOW_REGS],
+    src_seq: [u32; KAWPOW_REGS],
+    dst_counter: usize,
+    src_counter: usize,
+}
+
+impl KawpowMixRngState {
+    fn new(hash_seed: &[u32; 2]) -> Self {
+        let z = kawpow_fnv1a(0x811c9dc5, hash_seed[0]);
+        let w = kawpow_fnv1a(z, hash_seed[1]);
+        let jsr = kawpow_fnv1a(w, hash_seed[0]);
+        let jcong = kawpow_fnv1a(jsr, hash_seed[1]);
+
+        let mut dst_seq = [0u32; KAWPOW_REGS];
+        let mut src_seq = [0u32; KAWPOW_REGS];
+        for i in 0..KAWPOW_REGS {
+            dst_seq[i] = i as u32;
+            src_seq[i] = i as u32;
+        }
+
+        let mut rng = KawpowKiss99 { z, w, jsr, jcong };
+        // Fisher-Yates shuffle
+        for i in (1..KAWPOW_REGS).rev() {
+            let j = (rng.next() as usize) % (i + 1);
+            dst_seq.swap(i, j);
+            let j = (rng.next() as usize) % (i + 1);
+            src_seq.swap(i, j);
+        }
+
+        Self {
+            rng,
+            dst_seq,
+            src_seq,
+            dst_counter: 0,
+            src_counter: 0,
+        }
+    }
+
+    fn next_dst(&mut self) -> usize {
+        let d = self.dst_seq[self.dst_counter % KAWPOW_REGS] as usize;
+        self.dst_counter += 1;
+        d
+    }
+
+    fn next_src(&mut self) -> usize {
+        let s = self.src_seq[self.src_counter % KAWPOW_REGS] as usize;
+        self.src_counter += 1;
+        s
+    }
+}
+
+/// Initialize mix array from hash_seed (16 lanes × 32 regs).
+fn kawpow_init_mix(hash_seed: &[u32; 2]) -> [[u32; KAWPOW_REGS]; KAWPOW_LANES] {
+    let z = kawpow_fnv1a(0x811c9dc5, hash_seed[0]);
+    let w = kawpow_fnv1a(z, hash_seed[1]);
+
+    let mut mix = [[0u32; KAWPOW_REGS]; KAWPOW_LANES];
+    for l in 0..KAWPOW_LANES {
+        let jsr = kawpow_fnv1a(w, l as u32);
+        let jcong = kawpow_fnv1a(jsr, l as u32);
+        let mut rng = KawpowKiss99 { z, w, jsr, jcong };
+        for i in 0..KAWPOW_REGS {
+            mix[l][i] = rng.next();
+        }
+    }
+    mix
+}
+
+/// One ProgPoW round (64 iterations total).
+fn kawpow_round(
+    dag: &[u8],
+    dag_size_entries: u64,
+    r: u32,
+    mix: &mut [[u32; KAWPOW_REGS]; KAWPOW_LANES],
+    state: &mut KawpowMixRngState,
+) {
+    let num_items = (dag_size_entries / 2) as u32; // each dag_t = 4 uint32 = 2 uint64
+    let item_index = mix[(r as usize) % KAWPOW_LANES][0] % num_items;
+
+    // Load DAG item: hash2048 = 64 uint32 = 256 bytes
+    // Each DAG entry is 128 bytes (16 uint64 = 32 uint32), but ProgPoW uses
+    // hash2048 = 4 × hash512 = 4 × 16 uint32 = 64 uint32 = 256 bytes.
+    // So we need 2 consecutive 128-byte DAG entries.
+    let item_start = (item_index as usize) * 128 * 2; // 2 entries × 128 bytes
+    let mut item = [0u32; 64]; // hash2048
+    if item_start + 256 <= dag.len() {
+        for i in 0..64 {
+            item[i] = u32::from_le_bytes([
+                dag[item_start + i * 4],
+                dag[item_start + i * 4 + 1],
+                dag[item_start + i * 4 + 2],
+                dag[item_start + i * 4 + 3],
+            ]);
+        }
+    }
+
+    let num_words_per_lane = 64 / KAWPOW_LANES; // 4
+    let max_ops = KAWPOW_CNT_CACHE.max(KAWPOW_CNT_MATH);
+
+    for i in 0..max_ops {
+        if i < KAWPOW_CNT_CACHE {
+            let src = state.next_src();
+            let dst = state.next_dst();
+            let sel = state.rng.next();
+            for l in 0..KAWPOW_LANES {
+                let offset = (mix[l][src] as usize) % KAWPOW_L1_CACHE_NUM_ITEMS;
+                // c_dag is the first 4096 words of the DAG
+                let c_dag_word = if offset * 4 + 4 <= dag.len() {
+                    u32::from_le_bytes([
+                        dag[offset * 4],
+                        dag[offset * 4 + 1],
+                        dag[offset * 4 + 2],
+                        dag[offset * 4 + 3],
+                    ])
+                } else {
+                    0
+                };
+                kawpow_random_merge(&mut mix[l][dst], c_dag_word, sel);
+            }
+        }
+        if i < KAWPOW_CNT_MATH {
+            let src_rnd = (state.rng.next() as usize) % (KAWPOW_REGS * (KAWPOW_REGS - 1));
+            let src1 = src_rnd % KAWPOW_REGS;
+            let mut src2 = src_rnd / KAWPOW_REGS;
+            if src2 >= src1 {
+                src2 += 1;
+            }
+            let sel1 = state.rng.next();
+            let dst = state.next_dst();
+            let sel2 = state.rng.next();
+            for l in 0..KAWPOW_LANES {
+                let data = kawpow_random_math(mix[l][src1], mix[l][src2], sel1);
+                kawpow_random_merge(&mut mix[l][dst], data, sel2);
+            }
+        }
+    }
+
+    // DAG access pattern
+    let mut dsts = [0usize; 4];
+    let mut sels = [0u32; 4];
+    for i in 0..num_words_per_lane {
+        dsts[i] = if i == 0 { 0 } else { state.next_dst() };
+        sels[i] = state.rng.next();
+    }
+
+    // DAG access
+    for l in 0..KAWPOW_LANES {
+        let offset = ((l as u32 ^ r) % KAWPOW_LANES as u32) as usize * num_words_per_lane;
+        for i in 0..num_words_per_lane {
+            let word = item[offset + i];
+            kawpow_random_merge(&mut mix[l][dsts[i]], word, sels[i]);
+        }
+    }
+}
+
+/// Real KawPow hash (ProgPoW with keccak_f800 + RAVENCOINKAWPOW domain).
+/// Returns (mix_hash, final_hash) — both 32 bytes.
+pub fn kawpow_hash_real(
+    header_hash: &[u8; 32],
+    nonce: u64,
+    dag: &[u8],
+    dag_size_entries: u64,
+    block_height: u32,
+) -> ([u8; 32], [u8; 32]) {
+    // Convert header to 8 uint32 (little-endian)
+    let header_u32: [u32; 8] = [
+        u32::from_le_bytes([header_hash[0], header_hash[1], header_hash[2], header_hash[3]]),
+        u32::from_le_bytes([header_hash[4], header_hash[5], header_hash[6], header_hash[7]]),
+        u32::from_le_bytes([header_hash[8], header_hash[9], header_hash[10], header_hash[11]]),
+        u32::from_le_bytes([header_hash[12], header_hash[13], header_hash[14], header_hash[15]]),
+        u32::from_le_bytes([header_hash[16], header_hash[17], header_hash[18], header_hash[19]]),
+        u32::from_le_bytes([header_hash[20], header_hash[21], header_hash[22], header_hash[23]]),
+        u32::from_le_bytes([header_hash[24], header_hash[25], header_hash[26], header_hash[27]]),
+        u32::from_le_bytes([header_hash[28], header_hash[29], header_hash[30], header_hash[31]]),
+    ];
+
+    // Initial keccak: state[0..7] = header, state[8..9] = nonce, state[10..24] = ravencoin
+    let mut state = [0u32; 25];
+    for i in 0..8 {
+        state[i] = header_u32[i];
+    }
+    state[8] = nonce as u32;
+    state[9] = (nonce >> 32) as u32;
+    for i in 10..25 {
+        state[i] = KAWPOW_RAVENCOIN[i - 10];
+    }
+    kawpow_keccak_f800(&mut state);
+
+    let mut state2 = [0u32; 8];
+    for i in 0..8 {
+        state2[i] = state[i];
+    }
+
+    // hash_seed for ProgPoW mix
+    let hash_seed = [state2[0], state2[1]];
+
+    // ProgPoW mix: 64 rounds
+    let mut mix = kawpow_init_mix(&hash_seed);
+    let prog_seed = block_height / KAWPOW_PERIOD;
+    let mut mix_state = KawpowMixRngState::new(&[prog_seed as u32, (prog_seed >> 32) as u32]);
+    for i in 0..KAWPOW_CNT_DAG {
+        kawpow_round(dag, dag_size_entries, i as u32, &mut mix, &mut mix_state);
+    }
+
+    // Reduce mix to per-lane digest
+    let mut lane_hash = [0u32; KAWPOW_LANES];
+    for l in 0..KAWPOW_LANES {
+        lane_hash[l] = 0x811c9dc5;
+        for i in 0..KAWPOW_REGS {
+            lane_hash[l] = kawpow_fnv1a(lane_hash[l], mix[l][i]);
+        }
+    }
+
+    // Reduce all lanes to 256-bit digest
+    let mut mix_hash = [0u8; 32];
+    let mut mix_u32 = [0x811c9dc5u32; 8];
+    for l in 0..KAWPOW_LANES {
+        mix_u32[l % 8] = kawpow_fnv1a(mix_u32[l % 8], lane_hash[l]);
+    }
+    for i in 0..8 {
+        mix_hash[i * 4..i * 4 + 4].copy_from_slice(&mix_u32[i].to_le_bytes());
+    }
+
+    // Final keccak: state[0..7] = state2, state[8..15] = mix_hash, state[16..24] = ravencoin
+    let mut final_state = [0u32; 25];
+    for i in 0..8 {
+        final_state[i] = state2[i];
+    }
+    for i in 0..8 {
+        final_state[8 + i] = mix_u32[i];
+    }
+    for i in 16..25 {
+        final_state[i] = KAWPOW_RAVENCOIN[i - 16];
+    }
+    kawpow_keccak_f800(&mut final_state);
+
+    // Result: byte-swap state[0] and state[1] for big-endian
+    let mut final_hash = [0u8; 32];
+    // The 64-bit result = (u64)swab32(state[0]) << 32 | swab32(state[1])
+    // For full 256-bit hash, we take state[0..8] byte-swapped
+    for i in 0..8 {
+        let swab = final_state[i].swap_bytes();
+        final_hash[i * 4..i * 4 + 4].copy_from_slice(&swab.to_le_bytes());
+    }
+
+    (mix_hash, final_hash)
+}
+
+/// KawPow final hash from mix_hash (keccak_f800 with RAVENCOINKAWPOW domain).
+/// This is used to verify GPU solutions: given the header_hash, nonce, and
+/// mix_hash from the GPU, compute the final 32-byte hash.
+pub fn kawpow_final_hash_real(
+    header_hash: &[u8; 32],
+    nonce: u64,
+    mix_hash: &[u8; 32],
+) -> [u8; 32] {
+    // Convert header to 8 uint32 (little-endian)
+    let header_u32: [u32; 8] = [
+        u32::from_le_bytes([header_hash[0], header_hash[1], header_hash[2], header_hash[3]]),
+        u32::from_le_bytes([header_hash[4], header_hash[5], header_hash[6], header_hash[7]]),
+        u32::from_le_bytes([header_hash[8], header_hash[9], header_hash[10], header_hash[11]]),
+        u32::from_le_bytes([header_hash[12], header_hash[13], header_hash[14], header_hash[15]]),
+        u32::from_le_bytes([header_hash[16], header_hash[17], header_hash[18], header_hash[19]]),
+        u32::from_le_bytes([header_hash[20], header_hash[21], header_hash[22], header_hash[23]]),
+        u32::from_le_bytes([header_hash[24], header_hash[25], header_hash[26], header_hash[27]]),
+        u32::from_le_bytes([header_hash[28], header_hash[29], header_hash[30], header_hash[31]]),
+    ];
+
+    // Convert mix_hash to 8 uint32 (little-endian)
+    let mix_u32: [u32; 8] = [
+        u32::from_le_bytes([mix_hash[0], mix_hash[1], mix_hash[2], mix_hash[3]]),
+        u32::from_le_bytes([mix_hash[4], mix_hash[5], mix_hash[6], mix_hash[7]]),
+        u32::from_le_bytes([mix_hash[8], mix_hash[9], mix_hash[10], mix_hash[11]]),
+        u32::from_le_bytes([mix_hash[12], mix_hash[13], mix_hash[14], mix_hash[15]]),
+        u32::from_le_bytes([mix_hash[16], mix_hash[17], mix_hash[18], mix_hash[19]]),
+        u32::from_le_bytes([mix_hash[20], mix_hash[21], mix_hash[22], mix_hash[23]]),
+        u32::from_le_bytes([mix_hash[24], mix_hash[25], mix_hash[26], mix_hash[27]]),
+        u32::from_le_bytes([mix_hash[28], mix_hash[29], mix_hash[30], mix_hash[31]]),
+    ];
+
+    // Initial keccak: state[0..7] = header, state[8..9] = nonce, state[10..24] = ravencoin
+    let mut state = [0u32; 25];
+    for i in 0..8 {
+        state[i] = header_u32[i];
+    }
+    state[8] = nonce as u32;
+    state[9] = (nonce >> 32) as u32;
+    for i in 10..25 {
+        state[i] = KAWPOW_RAVENCOIN[i - 10];
+    }
+    kawpow_keccak_f800(&mut state);
+
+    let mut state2 = [0u32; 8];
+    for i in 0..8 {
+        state2[i] = state[i];
+    }
+
+    // Final keccak: state[0..7] = state2, state[8..15] = mix_hash, state[16..24] = ravencoin
+    let mut final_state = [0u32; 25];
+    for i in 0..8 {
+        final_state[i] = state2[i];
+    }
+    for i in 0..8 {
+        final_state[8 + i] = mix_u32[i];
+    }
+    for i in 16..25 {
+        final_state[i] = KAWPOW_RAVENCOIN[i - 16];
+    }
+    kawpow_keccak_f800(&mut final_state);
+
+    // Result: byte-swap state[0..7] for big-endian 256-bit hash
+    let mut final_hash = [0u8; 32];
+    for i in 0..8 {
+        let swab = final_state[i].swap_bytes();
+        final_hash[i * 4..i * 4 + 4].copy_from_slice(&swab.to_le_bytes());
+    }
+
+    final_hash
+}
+
 pub fn kawpow_hash_from_dag(
     header_hash: &[u8; 32],
     nonce: u64,
