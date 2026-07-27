@@ -21,4 +21,19 @@ foreach ($bin in $binaries) {
     }
 }
 
+$BackupRoot = if ($env:ZION_BACKUP_DIR) { $env:ZION_BACKUP_DIR } else { "D:\Zion" }
+
+# Stop backup beacon loop (started by launch-local-backup.ps1)
+$PidDir = Join-Path $BackupRoot ".pids"
+$beaconPidFile = Join-Path $PidDir "backup-beacon-loop.pid"
+if (Test-Path $beaconPidFile) {
+    $beaconPid = Get-Content $beaconPidFile -ErrorAction SilentlyContinue
+    $proc = Get-Process -Id $beaconPid -ErrorAction SilentlyContinue
+    if ($proc) {
+        Write-Host "Stopping backup-beacon-loop PID=$beaconPid"
+        Stop-Process -Id $beaconPid -Force
+    }
+    Remove-Item $beaconPidFile -ErrorAction SilentlyContinue
+}
+
 Write-Host "[stop-stack] All ZION release binaries stopped."

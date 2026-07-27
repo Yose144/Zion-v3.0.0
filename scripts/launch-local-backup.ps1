@@ -70,6 +70,13 @@ $P1 = $p.Id
 Write-Host "Started Backup Node  PID=$P1 (seeding from 62.171.141.136:8333,62.171.141.136:8334)"
 Start-Sleep -Seconds 3
 
+# ── Backup beacon loop (reports to dashboard every 15s) ──
+Stop-ByPidFile "backup-beacon-loop"
+$beacon = Join-Path $PSScriptRoot "backup-beacon-loop.ps1"
+$bp = Start-Process -FilePath powershell.exe -ArgumentList "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$beacon`"" -WindowStyle Hidden -PassThru
+$bp.Id | Out-File "$PidDir\backup-beacon-loop.pid" -Encoding utf8
+Write-Host "Started Backup Beacon  PID=$($bp.Id)"
+
 Write-Host ""
 Write-Host "[launch] Backup node started. PID=$P1"
 Write-Host "[launch] Logs : $LogDir\node1.log"
