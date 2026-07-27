@@ -1062,11 +1062,6 @@ pub fn mine_kawpow(
 
 const ETHASH_MIX_BYTES: usize = 128;
 const ETHASH_HASH_BYTES: usize = 64;
-const ETHASH_WORD_BYTES: usize = 4;
-const ETHASH_DATASET_PARENTS: usize = 256;
-const ETHASH_CACHE_ROUNDS: usize = 3;
-const ETHASH_ACCESSES: usize = 64;
-const ETHASH_FNV_PRIME: u32 = 0x01000193;
 
 fn ethash_keccak256(data: &[u8]) -> [u8; 32] {
     let mut hasher = Keccak256::new();
@@ -1074,16 +1069,11 @@ fn ethash_keccak256(data: &[u8]) -> [u8; 32] {
     hasher.finalize().into()
 }
 
+#[allow(dead_code)]
 fn ethash_keccak512(data: &[u8]) -> [u8; 64] {
     let mut hasher = Keccak512::new();
     hasher.update(data);
     hasher.finalize().into()
-}
-
-fn ethash_fnv(a: u32, b: u32) -> u32 {
-    let a = a as u64;
-    let b = b as u64;
-    (a.wrapping_mul(ETHASH_FNV_PRIME as u64) ^ b) as u32
 }
 
 fn ethash_get_cache_size(epoch: usize) -> usize {
@@ -1129,112 +1119,22 @@ fn ethash_get_seedhash(epoch: usize) -> [u8; 32] {
     seed
 }
 
+fn ethash_h256_from_bytes(bytes: &[u8; 32]) -> ethereum_types::H256 {
+    ethereum_types::H256::from(*bytes)
+}
+
+fn ethash_bytes_from_h256(h: &ethereum_types::H256) -> [u8; 32] {
+    let mut out = [0u8; 32];
+    out.copy_from_slice(h.as_bytes());
+    out
+}
+
+fn ethash_h64_from_nonce(nonce: u64) -> ethereum_types::H64 {
+    ethereum_types::H64::from(nonce.to_be_bytes())
+}
+
 fn ethash_make_cache(cache: &mut [u8], seed: &[u8; 32]) {
-    let n = cache.len() / ETHASH_HASH_BYTES;
-    let mut temp = [0u8; 64];
-    let h = ethash_keccak512(seed);
-    temp.copy_from_slice(&h);
-    cache[0..64].copy_from_slice(&temp);
-    for i in 1..n {
-        let prev = cache[(i - 1) * 64..i * 64].to_vec();
-        temp.copy_from_slice(&ethash_keccak512(&prev));
-        cache[i * 64..(i + 1) * 64].copy_from_slice(&temp);
-    }
-    for _ in 0..ETHASH_CACHE_ROUNDS {
-        let mut next = vec![0u8; cache.len()];
-        for i in 0..n {
-            let v = u32::from_le_bytes(cache[i * 64..i * 64 + 4].try_into().unwrap()) as usize % n;
-            let prev = cache[((n + i - 1) % n) * 64..((n + i - 1) % n + 1) * 64].to_vec();
-            let mut r = [0u8; 64];
-            for j in 0..64 {
-                r[j] = prev[j] ^ cache[v * 64 + j];
-            }
-            next[i * 64..(i + 1) * 64].copy_from_slice(&ethash_keccak512(&r));
-        }
-        cache.copy_from_slice(&next);
-    }
-}
-
-fn ethash_calc_dataset_item(cache: &[u8], i: usize) -> [u8; 64] {
-    let n = cache.len() / ETHASH_HASH_BYTES;
-    let r = ETHASH_HASH_BYTES / ETHASH_WORD_BYTES;
-    let start = (i % n) * 64;
-    let mut mix = [0u8; 64];
-    mix.copy_from_slice(&cache[start..start + 64]);
-    let mut first = u32::from_le_bytes(mix[0..4].try_into().unwrap());
-    first ^= i as u32;
-    mix[0..4].copy_from_slice(&first.to_le_bytes());
-    let h = ethash_keccak512(&mix);
-    mix.copy_from_slice(&h);
-    for j in 0..ETHASH_DATASET_PARENTS {
-        let cache_index = ethash_fnv((i ^ j) as u32, u32::from_le_bytes(mix[(j % r * 4)..(j % r * 4) + 4].try_into().unwrap())) as usize % n;
-        let item_start = cache_index * 64;
-        for k in 0..(ETHASH_HASH_BYTES / ETHASH_WORD_BYTES) {
-            let off = k * 4;
-            let a = u32::from_le_bytes(mix[off..off + 4].try_into().unwrap());
-            let b = u32::from_le_bytes(cache[item_start + off..item_start + off + 4].try_into().unwrap());
-            mix[off..off + 4].copy_from_slice(&ethash_fnv(a, b).to_le_bytes());
-        }
-    }
-    let h = ethash_keccak512(&mix);
-    mix.copy_from_slice(&h);
-    mix
-}
-
-fn ethash_hashimoto<F: Fn(usize) -> [u8; 64]>(
-    header_hash: &[u8; 32],
-    nonce: u64,
-    full_size: usize,
-    lookup: F,
-) -> ([u8; 32], [u8; 32]) {
-    let n = full_size / ETHASH_HASH_BYTES;
-    let w = ETHASH_MIX_BYTES / ETHASH_WORD_BYTES;
-    let mix_hashes = ETHASH_MIX_BYTES / ETHASH_HASH_BYTES;
-    let mut seed_input = Vec::with_capacity(32 + 8);
-    seed_input.extend_from_slice(header_hash);
-    seed_input.extend_from_slice(&nonce.to_le_bytes());
-    let s = ethash_keccak512(&seed_input);
-    let mut mix = [0u8; ETHASH_MIX_BYTES];
-    for i in 0..mix_hashes {
-        mix[i * 64..(i + 1) * 64].copy_from_slice(&s);
-    }
-    let seed0 = u32::from_le_bytes(s[0..4].try_into().unwrap());
-    for i in 0..ETHASH_ACCESSES {
-        let p = (ethash_fnv((i as u32) ^ seed0, u32::from_le_bytes(mix[(i % w * 4)..(i % w * 4) + 4].try_into().unwrap())) as usize) % (n / mix_hashes) * mix_hashes;
-        let mut newdata = [0u8; ETHASH_MIX_BYTES];
-        for j in 0..mix_hashes {
-            let item = lookup(p + j);
-            newdata[j * 64..(j + 1) * 64].copy_from_slice(&item);
-        }
-        for k in 0..(ETHASH_MIX_BYTES / ETHASH_WORD_BYTES) {
-            let off = k * 4;
-            let a = u32::from_le_bytes(mix[off..off + 4].try_into().unwrap());
-            let b = u32::from_le_bytes(newdata[off..off + 4].try_into().unwrap());
-            mix[off..off + 4].copy_from_slice(&ethash_fnv(a, b).to_le_bytes());
-        }
-    }
-    let mut cmix = [0u8; ETHASH_MIX_BYTES / 4];
-    for i in 0..(ETHASH_MIX_BYTES / 4 / 4) {
-        let j = i * 4;
-        let a = ethash_fnv(
-            u32::from_le_bytes(mix[j * 4..j * 4 + 4].try_into().unwrap()),
-            u32::from_le_bytes(mix[(j + 1) * 4..(j + 1) * 4 + 4].try_into().unwrap()),
-        );
-        let b = ethash_fnv(
-            a,
-            u32::from_le_bytes(mix[(j + 2) * 4..(j + 2) * 4 + 4].try_into().unwrap()),
-        );
-        let c = ethash_fnv(
-            b,
-            u32::from_le_bytes(mix[(j + 3) * 4..(j + 3) * 4 + 4].try_into().unwrap()),
-        );
-        cmix[i * 4..i * 4 + 4].copy_from_slice(&c.to_le_bytes());
-    }
-    let mut result_input = Vec::with_capacity(64 + 32);
-    result_input.extend_from_slice(&s);
-    result_input.extend_from_slice(&cmix);
-    let result = ethash_keccak256(&result_input);
-    (cmix, result)
+    ethash::make_cache(cache, ethash_h256_from_bytes(seed));
 }
 
 fn ethash_hashimoto_light(
@@ -1243,7 +1143,13 @@ fn ethash_hashimoto_light(
     full_size: usize,
     cache: &[u8],
 ) -> ([u8; 32], [u8; 32]) {
-    ethash_hashimoto(header_hash, nonce, full_size, |i| ethash_calc_dataset_item(cache, i))
+    let (mix, result) = ethash::hashimoto_light(
+        ethash_h256_from_bytes(header_hash),
+        ethash_h64_from_nonce(nonce),
+        full_size,
+        cache,
+    );
+    (ethash_bytes_from_h256(&mix), ethash_bytes_from_h256(&result))
 }
 
 #[derive(Clone)]
@@ -1332,16 +1238,14 @@ pub fn hash_ethash_with_dag(
     #[allow(unreachable_code)]
     {
         let full_size = (dag_size_entries as usize) * 128;
-        let dag = dag; // borrow
-        ethash_hashimoto(header_hash, nonce, full_size, |i| {
-            let entry = i / 2;
-            let offset = (i % 2) * 64;
-            let mut item = [0u8; 64];
-            if entry * 128 + offset + 64 <= dag.len() {
-                item.copy_from_slice(&dag[entry * 128 + offset..entry * 128 + offset + 64]);
-            }
-            item
-        }).1
+        let (mix, result) = ethash::hashimoto_full(
+            ethash_h256_from_bytes(header_hash),
+            ethash_h64_from_nonce(nonce),
+            full_size,
+            dag,
+        );
+        let _ = mix;
+        ethash_bytes_from_h256(&result)
     }
 }
 
@@ -2806,6 +2710,93 @@ mod tests {
     // ── Ethash/Etchash ───────────────────────────────────────────────
 
     #[test]
+    fn ethash_size_matches_chfast() {
+        // Reference sizes from chfast/ethash test/unittests/test_ethash.cpp
+        assert_eq!(ethash_get_cache_size(0), 16_776_896);
+        assert_eq!(ethash_get_full_size(0), 1_073_739_904);
+        assert_eq!(ethash_get_cache_size(14), 18_611_392);
+        assert_eq!(ethash_get_full_size(14), 1_191_180_416);
+    }
+
+    #[test]
+    fn ethash_keccak_known() {
+        // Keccak-256 of empty input (Ethereum)
+        assert_eq!(
+            hash_to_hex(&ethash_keccak256(b"")),
+            "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+        );
+        // Keccak-512 of empty input
+        assert_eq!(
+            hex::encode(ethash_keccak512(b"")),
+            "0eab42de4c3ceb9235fc91acffe746b29c29a8c366b7c60e4e67c466f36a4304c00fa9caf9d87976ba469bcbe06713b435f091ef2769fb160cdab33d3670680e"
+        );
+        // Keccak-512 of known pangram (from asecuritysite)
+        assert_eq!(
+            hex::encode(ethash_keccak512(b"The quick brown fox jumps over the lazy dog")),
+            "d135bb84d0439dbac432247ee573a23ea7d3c9deb2a968eb31d47c4fb45f1ef4422d6c531b5b9bd6f449ebcc449ea94d0a8f05f62130fda612da53c79659f609"
+        );
+    }
+
+    #[test]
+    fn ethash_cache_vs_crate() {
+        let seed = ethash::get_seedhash(0);
+        let mut crate_cache = vec![0u8; ethash::get_cache_size(0)];
+        ethash::make_cache(&mut crate_cache, seed);
+        let (our_cache, _) = ethash_cache_for_epoch(0);
+        assert_eq!(&our_cache[..64], &crate_cache[..64], "first cache item mismatch");
+        assert_eq!(&our_cache[64..128], &crate_cache[64..128], "second cache item mismatch");
+    }
+
+    #[test]
+    fn ethash_vs_crate() {
+        use ethereum_types::{H256, H64};
+        let header_hash_hex = "2a8de2adf89af77358250bf908bf04ba94a6e8c3ba87775564a41d269a05e4ce";
+        let mut header_hash = [0u8; 32];
+        header_hash.copy_from_slice(&hex::decode(header_hash_hex).unwrap());
+        let nonce = u64::from_str_radix("4242424242424242", 16).unwrap();
+
+        let (our_mix, our_final) = ethash_hashimoto_light(
+            &header_hash,
+            nonce,
+            ethash_get_full_size(0),
+            &ethash_cache_for_epoch(0).0,
+        );
+
+        let mut cache = vec![0u8; ethash::get_cache_size(0)];
+        let seed = ethash::get_seedhash(0);
+        ethash::make_cache(&mut cache, seed);
+        let (crate_mix, crate_final) = ethash::hashimoto_light(
+            H256::from(header_hash),
+            H64::from(nonce.to_be_bytes()),
+            ethash::get_full_size(0),
+            &cache,
+        );
+
+        assert_eq!(hash_to_hex(&our_mix), hex::encode(crate_mix.as_bytes()));
+        assert_eq!(hash_to_hex(&our_final), hex::encode(crate_final.as_bytes()));
+    }
+
+    #[test]
+    fn ethash_crate_matches_chfast() {
+        use ethereum_types::{H256, H64};
+        let header_hash_hex = "2a8de2adf89af77358250bf908bf04ba94a6e8c3ba87775564a41d269a05e4ce";
+        let mut header_hash = [0u8; 32];
+        header_hash.copy_from_slice(&hex::decode(header_hash_hex).unwrap());
+        let nonce = u64::from_str_radix("4242424242424242", 16).unwrap();
+        let mut cache = vec![0u8; ethash::get_cache_size(0)];
+        let seed = ethash::get_seedhash(0);
+        ethash::make_cache(&mut cache, seed);
+        let (mix, final_hash) = ethash::hashimoto_light(
+            H256::from(header_hash),
+            H64::from(nonce.to_be_bytes()),
+            ethash::get_full_size(0),
+            &cache,
+        );
+        assert_eq!(hex::encode(mix.as_bytes()), "58f759ede17a706c93f13030328bcea40c1d1341fb26f2facd21ceb0dae57017");
+        assert_eq!(hex::encode(final_hash.as_bytes()), "dd47fd2d98db51078356852d7c4014e6a5d6c387c35f40e2875b74a256ed7906");
+    }
+
+    #[test]
     fn ethash_known_vector_chfast() {
         // Reference vectors from chfast/ethash test/unittests/test_cases.hpp
         // (block 0, Ethereum mainnet-like test).
@@ -2819,7 +2810,10 @@ mod tests {
             ethash_get_full_size(0), // block 0 => epoch 0
             &ethash_cache_for_epoch(0).0,
         );
-        let _ = mix_hash;
+        assert_eq!(
+            hash_to_hex(&mix_hash),
+            "58f759ede17a706c93f13030328bcea40c1d1341fb26f2facd21ceb0dae57017"
+        );
         assert_eq!(
             hash_to_hex(&final_hash),
             "dd47fd2d98db51078356852d7c4014e6a5d6c387c35f40e2875b74a256ed7906"
