@@ -291,6 +291,13 @@ impl CudaExternalMiner {
 
             let module_name = algo.module_name();
             let kernel_name = algo.kernel_name();
+
+            // Debug: dump the preprocessed source for inspection
+            if std::env::var("ZION_DUMP_CUDA_KERNEL").is_ok() {
+                let dump_path = format!("C:\\Users\\anaha\\AppData\\Local\\Temp\\{}_processed.cu", module_name);
+                let _ = std::fs::write(&dump_path, &processed);
+            }
+
             dev.load_ptx(ptx, module_name, &[kernel_name])
                 .map_err(|e| anyhow::anyhow!("PTX load failed for {}: {e}", algorithm))?;
         }
