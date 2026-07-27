@@ -275,3 +275,53 @@ All CUDA kernels compiled and ran against the synthetic easy target (`00000000ff
 * `V3/L1/miner/src/cuda_external.rs`: `ensure_dag()` now launches `ethash_calculate_dag` in 524,288-node batches and synchronizes every 4 batches, reducing epoch-0 DAG build time from an extrapolated ~3 h to ~7 s.
 * `AuXpow/csrc/cuda/ethash_kernel.cu`: corrected FNV to FNV-1 (`(a * PRIME) ^ b`) and index formula to `fnv(i ^ seed0, mix[i % 32])` (was FNV-1a with `mix[0]` for both arguments).
 * `V3/L1/miner/src/gpu_backend.rs`: DAG-based external algorithms (`ethash`, `kawpow`, `progpow`, `evrprogpow`, `meowpow`) now pass the 32-byte `header_hash` directly to `mine_batch_raw` instead of reparsing it into an 80-byte `MiningHeader`.
+
+## 8. CUDA kernel verification sweep (2026-07-27)
+
+Hardware: local Windows rig, NVIDIA GeForce GTX 1070 Ti 8 GB (compute 6.1), driver 581.57.
+Command:
+```powershell
+$env:ZION_GPU_WORK_SIZE = '8192'
+$env:ZION_BENCH_SECS    = '3'
+V3\target\release\zion-miner.exe --test-cuda-kernel <algo>
+```
+For `ethash` a longer run with the default `work_size=262144` and `bench_secs=5` was also performed to obtain a representative hashrate and confirm the CPU/GPU match.
+
+### 8.1 Verification matrix
+
+| Algorithm | Coin(s) | CUDA status | H/s (GTX 1070 Ti) | CPU/GPU match | Notes |
+|-----------|---------|-------------|-------------------|---------------|-------|
+| `kheavyhash` | KAS | PASS | 22,013,777 | ⚠️ not checked in this sweep | Kernel compiles, benchmarks, produces nonces against easy target. Correctness already verified for benchmark vector (`1cff8de2...914a93e`) in §7.5. |
+| `blake3_alph` | ALPH | PASS | 55,795,375 | ⚠️ not checked | BLAKE3 variant for Alephium. Kernel compiles and runs. |
+| `blake3_dcr` | DCR | PASS | 52,513,398 | ⚠️ not checked | BLAKE3 variant for Decred. Kernel compiles and runs. |
+| `autolykos` | ERG | PASS | 30,675,272 | ⚠️ not checked | Kernel compiles and runs against easy target. **Kernel still needs full Autolykos v2 correctness validation** (see §6.3/6.4). |
+| `zelhash` | FLUX | PASS | 50,772,519 | ⚠️ not checked | Equihash 125,4 solver compiles and runs. No CPU reference. |
+| `ethash` | ETC | PASS | **117,585,952** (default work_size) | ✅ `ETHASH_CPU_GPU_MATCH` | CPU reference switched to canonical `ethash` 0.4 crate; CUDA kernel hash matches CPU byte-for-byte. |
+| `kawpow` | RVN/CLORE/QUAI | PASS | 45,073,110 | ⚠️ not checked | Kernel compiles and runs. DAG generation parallel. Live share / CPU reference still pending. |
+| `progpow` | EPIC/ZANO | PASS | 6,004,499 | ⚠️ not checked | Kernel compiles, period-0 DAG + recompilation OK. No CPU comparison. |
+| `evrprogpow` | EVR | PASS | 6,157,093 | ⚠️ not checked | 12000-block epoch routed correctly. No CPU comparison. |
+| `meowpow` | MEWC | PASS | 5,960,545 | ⚠️ not checked | 12000-block epoch routed correctly. No CPU comparison. |
+| `verushash` | VRSC | FAIL | — | — | `CudaExternalMiner::new` refuses to initialize without `native-verushash` feature (key precomputation). Build with `cargo build ... --features "gpu-cuda native-verushash"`. |
+
+### 8.2 Canonical overview: what is verified / what is not
+
+* ✅ **CUDA compile/run** — 10 of 11 tested algorithms compile with NVRTC (arch `compute_61`) and complete a 3 s benchmark against the synthetic easy target.
+* ✅ **ETC/Ethash CPU/GPU match** — fixed by removing the `native-hashers` shortcut in `AuXpow/src/external_hashers.rs::hash_ethash` and `hash_ethash_with_dag`; both now use the canonical `ethash` 0.4 crate (`hashimoto_light` / `hashimoto_full`). `zion-miner --test-cuda-kernel ethash` reports `ETHASH_CPU_GPU_MATCH` and ~117 MH/s on the test rig.
+* ⚠️ **Live accepted upstream shares** — still pending for all CUDA algorithms except the ETC CPU/GPU correctness check. The benchmark only proves the kernel compiles and hashes against an easy target.
+* ⚠️ **CPU reference for DAG-based non-Ethash algorithms** — KawPow, ProgPow variants and Autolykos still need CPU/GPU hash comparison or a known-answer test.
+* ⚠️ **VerusHash CUDA** — cannot be tested without enabling the `native-verushash` feature.
+* ⚠️ **FLUX/ZelHash** — deprecated (FLUX moved to PoUW v2), but the `zelhash` CUDA kernel compiles and runs.
+
+### 8.3 Code changes this sweep
+
+* `AuXpow/src/external_hashers.rs`
+  * `hash_ethash()` and `hash_ethash_with_dag()` now always use the `ethash` 0.4 reference crate instead of `zion-native-ffi` C paths when `native-hashers` is enabled. This removes a CPU/GPU mismatch source for ETC.
+* `V3/L1/miner/src/main.rs` (no change required)
+  * Existing `--test-cuda-kernel ethash` CPU/GGPU comparison path now produces `ETHASH_CPU_GPU_MATCH` after the `hash_ethash` fix.
+
+### 8.4 Remaining next steps
+
+1. Add CPU/GPU comparison to `--test-cuda-kernel` for `kawpow` (use `ethash_final_hash` with GPU `mix_hash`) and `progpow`/`evrprogpow`/`meowpow` (use `progpow_final_hash` with GPU `mix_hash`).
+2. Build and test `verushash` CUDA with `--features "gpu-cuda native-verushash"`.
+3. Replace the placeholder `autolykos_mine` CUDA kernel with real Autolykos v2 and run a CPU/GPU comparison.
+4. Run live upstream debug-pool tests for at least one coin per algorithm to confirm `mining.submit` acceptance.

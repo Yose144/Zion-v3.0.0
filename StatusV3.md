@@ -6,7 +6,7 @@
 > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
 > **Hard genesis reset:** 2026-07-20 — viz [`docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md`](./docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md). Bloky 0–~10913 předchozího řetězce jsou trvale ztraceny; aktuální chain startuje od genesis s unlimited retention.
-> **Dnešní update:** Verze bumped na 3.0.7. DAO integration test fix (`choice.clone()`). Workspace version, protocol version, miner UI/pool version a web package.json synchronizovány. All Green matice: ZION Deeksha live, EPIC/RVN/DCR/ERG/VTC/ZCL/RTM/QTC/NEXA/BEAM/QUAI/VRSC E2E accepted, ETC CPU/GPU hash match ověřen, XMR RandomX hash OK, PRL deferred do 3.1.0.
+> **Dnešní update:** Verze bumped na 3.0.7. DAO integration test fix (`choice.clone()`). Workspace version, protocol version, miner UI/pool version a web package.json synchronizovány. All Green matice: ZION Deeksha live, EPIC/RVN/DCR/ERG/VTC/ZCL/RTM/QTC/NEXA/BEAM/QUAI/VRSC E2E accepted, ETC CPU/GPU hash match ověřen, XMR RandomX hash OK, PRL deferred do 3.1.0. **CUDA kernel verification sweep:** 10/11 `--test-cuda-kernel` algorithms compile + benchmark PASS on GTX 1070 Ti (kheavyhash, blake3_alph, blake3_dcr, autolykos, zelhash, ethash, kawpow, progpow, evrprogpow, meowpow); ETC `ETHASH_CPU_GPU_MATCH` ~117.6 MH/s. Verushash CUDA init FAIL — needs `native-verushash` build. Detail: [`V3/docs/AUXPOW_ALGORITHM_VERIFICATION_REPORT.md`](./V3/docs/AUXPOW_ALGORITHM_VERIFICATION_REPORT.md) §8.
 > **Plánovaná V3.1 migrace (po 3.0.9):** [`V3.1_MIGRATION_PLAN.md`](./docs/3.0.6/V3.1_MIGRATION_PLAN.md) — migrace čistého kódu do nového adresáře `V31/` (nová větev). WARP a ZionDex přesunuty do L2, AuxPoW přímo v mineru, L3 vyhrazeno pro AI/orchestraci/automatizaci/NCL/PoC. L4 Oasis, L5 Free World a L6 Issobella zůstávají jako samostatné nadstavbové vrstvy. Detailní nativní propojení integrací: [`V3.1_INTEGRATION_PLAN.md`](./docs/3.0.6/V3.1_INTEGRATION_PLAN.md).
 > **Předchozí archiv:** [`docs/3.0.5/StatusV3_archive_2026-07-13.md`](./docs/3.0.5/StatusV3_archive_2026-07-13.md) (5239 řádků, historické incident reporty)
 
@@ -228,14 +228,14 @@ All revenue streams live INSIDE the Deeksha Chv3 hash pipeline. GPU always runs 
 
 | Algorithm | Coin | OpenCL (H/s) | Metal (H/s) | CUDA |
 |-----------|------|-------------|-------------|------|
-| blake3 | ALPH | 640M | **18.1B** | ⚠️ kernel only |
-| blake3_dcr | DCR | 650M | **23.3B** | ⚠️ kernel only |
-| kheavyhash | KAS | 320M | **21.1B** | ⚠️ kernel only |
-| autolykos | ERG | 82M | **18.4B** | ✅ E2E (OpenCL kernel + GPU thread) |
-| ethash | ETC | — | — (needs DAG) | ⚠️ kernel only |
-| kawpow | RVN | — | — (needs DAG) | ⚠️ kernel only |
-| zelhash | FLUX | 495M | **19.5B** | ⚠️ kernel only |
-| progpow | EPIC | DAG ✅ (OpenMP) | — (needs DAG) | ⚠️ kernel only |
+| blake3 | ALPH | 640M | **18.1B** | ✅ benchmark PASS ~55.8 MH/s (work_size=8192) |
+| blake3_dcr | DCR | 650M | **23.3B** | ✅ benchmark PASS ~52.5 MH/s (work_size=8192) |
+| kheavyhash | KAS | 320M | **21.1B** | ✅ benchmark PASS ~22.0 MH/s (work_size=8192); known-answer vector matches CPU |
+| autolykos | ERG | 82M | **18.4B** | ✅ benchmark PASS ~30.7 MH/s (work_size=8192); full Autolykos v2 correctness still needs validation |
+| ethash | ETC | — | — (needs DAG) | ✅ CPU/GPU match ~117.6 MH/s; canonical `ethash` 0.4 crate reference |
+| kawpow | RVN/CLORE/QUAI | — | — (needs DAG) | ✅ benchmark PASS ~45.1 MH/s (work_size=8192); live share / CPU reference pending |
+| zelhash | FLUX | 495M | **19.5B** | ✅ benchmark PASS ~50.8 MH/s (work_size=8192); no CPU reference (FLUX deprecated) |
+| progpow | EPIC/ZANO/EVR/MEWC | DAG ✅ (OpenMP) | — (needs DAG) | ✅ benchmark PASS ~6.0 MH/s (work_size=8192); EVR/MEWC routed with 12000-block epochs, CPU reference pending |
 | pearlhash | PRL | Placeholder | Placeholder | ❌ TODO (full PoUW) ★★★ |
 | beamhash | BEAM | SipHash-2-4 ✅ | Equihash 144,5 ✅ | ✅ Implemented (`beamhash.rs` + `beamhash_kernel.cl`) |
 | fishhash | IRON | Kernel ✅ (580 lines) | Stratum ✅ | 5-param submit ✅ — DAG-based, `fishhash_kernel.cl` |

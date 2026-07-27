@@ -50,7 +50,7 @@
 | **KLS** | karlsenhash | 2 | 🟡 Auth OK | E2E PASS, needs native Karlsen wallet | StatusV3 §5 |
 | **DNX** | dynexsolve | 2 | 🟡 Auth OK | Login OK, needs native DNX wallet | StatusV3 §5 |
 | **PRL** | pearlhash | 2 | ⏸️ Deferred | PoUW ZK kernels TODO — **officially deferred to 3.1.0** (2026-07-19) | — |
-| **ETC** | ethash | 2 | ✅ Green | Pure-Rust `hash_ethash` CPU reference aligned with `ethash` 0.4 crate and chfast vectors; CUDA kernel verified byte-for-byte against CPU via `zion-miner --test-cuda-kernel ethash` (`ETHASH_CPU_GPU_MATCH`, ~121 MH/s on GTX 1070 Ti, epoch 0). Remaining step is live upstream share. | Commit `92bb87b78` |
+| **ETC** | ethash | 2 | ✅ Green | Pure-Rust `hash_ethash` CPU reference aligned with `ethash` 0.4 crate and chfast vectors; CUDA kernel verified byte-for-byte against CPU via `zion-miner --test-cuda-kernel ethash` (`ETHASH_CPU_GPU_MATCH`, ~117.6 MH/s on GTX 1070 Ti, epoch 0). `hash_ethash`/`hash_ethash_with_dag` now always use the `ethash` 0.4 crate, even with `native-hashers`, to avoid C-FFI drift. Remaining step is live upstream share. | Commit `92bb87b78` |
 | **CKB / CFX / ZEC / PHX / KRX** | various | 2 | 🟡 Code ready | ExternalCoin variants in enum, profit router entries — E2E not tested | `profit_router.rs` |
 
 ---
