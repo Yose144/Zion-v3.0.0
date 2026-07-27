@@ -189,7 +189,7 @@ Rozpis testů:
 - `d91ec96d` — `feat(v31): Bitcoin deposit watching via mempool.space`
 - `98a46b5e` — `feat(v31): Bitcoin P2WPKH send_payment and execute_outbound`
 - `1ac40f9b` — `feat(v31): pool/miner/doctor CLI extensions`
-- `<novy>` — `feat(v31): automatic pool payout execution via ZionL1Adapter`
+- `b90e7c4e` — `feat(v31): automatic pool payout execution via ZionL1Adapter`
 
 ## Další plán (Mainnet Alpha milestones)
 
