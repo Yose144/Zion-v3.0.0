@@ -2041,7 +2041,8 @@ function scheduleStatsUpdate(stats) {
   if (!stats) return;
   _pendingStats = stats;
   if (_statsRafId) return;
-  _statsRafId = requestAnimationFrame(() => {
+
+  const flush = () => {
     _statsRafId = null;
     const s = _pendingStats;
     _pendingStats = null;
@@ -2060,7 +2061,18 @@ function scheduleStatsUpdate(stats) {
       updateControlButtons();
       updateStatusBadge(s.isRunning ? 'mining' : 'stopped');
     }
-  });
+  };
+
+  _statsRafId = requestAnimationFrame(flush);
+  // Fallback: RAF can be throttled/paused by Electron when the window is
+  // unfocused or the renderer is backgrounded.  setTimeout ensures stats
+  // still update even when RAF doesn't fire.
+  setTimeout(() => {
+    if (_statsRafId !== null) {
+      cancelAnimationFrame(_statsRafId);
+      flush();
+    }
+  }, 500);
 }
 
 async function pollStats() {
