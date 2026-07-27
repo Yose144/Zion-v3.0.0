@@ -1988,3 +1988,12 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
   ```
 - **Why:** `ZION_GPU_WORK_SIZE=16000` gets rounded to 16384 and produced a high rate of `SHARE_REJECTED` / `NoSolution` on ZION. Using the autotuned `8192` drops the reject rate. `ZION_EXT_GPU_BATCH_SIZE` should stay at the 2 M default on a shared GPU; 4 M starves the ZION stream and increases stale shares.
 - **Dashboard `miner` service health:** The Edge dashboard `miner` health check was pointing at `http://127.0.0.1:8444` (stratum port, not HTTP) and failing with `Remote end closed connection`. Change the `miner` service `health_endpoint` to `http://127.0.0.1:8455/metrics` and parse `zion_pool_active_sessions` / `zion_pool_miners_tracked` instead. The Windows remote miner is then reflected as active when the pool has connected sessions.
+
+### AuXpow algorithm verification status (2026-07-27)
+
+- RTM/GhostRider is the only coin that has been live-verified to produce a pool-accepted share (`*** SHARE ACCEPTED! ***` on zpool).
+- A full readiness matrix and gap checklist is maintained in [`V3/docs/AUXPOW_ALGORITHM_VERIFICATION_REPORT.md`](../V3/docs/AUXPOW_ALGORITHM_VERIFICATION_REPORT.md).
+- The main blockers for "full green all algos" are:
+  - KawPow/Ethash CPU scans need per-epoch DAG management (`generate_kawpow_dag` / `generate_ethash_dag`).
+  - ProgPow variants (EVR, MEWC, EPIC, ZANO) and Pearl (PRL) need real algorithms or GPU-only dispatch.
+  - Several coins have no `miner_harness.rs` route or no implementation at all (FLUX/zelhash, BEAM/beamhash, VTC, IRON, NEXA, DNX, KRX, CKB, CFX, ZEC, PHX).
