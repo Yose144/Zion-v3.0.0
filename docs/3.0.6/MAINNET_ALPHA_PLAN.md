@@ -116,7 +116,7 @@ Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyči
 
 ### 4.3 Repo purification — „pure code“
 
-> Detailed V3.1 migration into a clean `V31/` tree (post-3.0.9): [`V3.1_MIGRATION_PLAN.md`](./V3.1_MIGRATION_PLAN.md) — WARP → L2, ZionDex → L2, AuxPoW → miner, L3 → AI/orchestration/automation/NCL/PoC; L4 Oasis / L5 Free World / L6 Issobella stay as superstructures. Native integration seams for the four moves: [`V3.1_INTEGRATION_PLAN.md`](./V3.1_INTEGRATION_PLAN.md).
+> Detailed V3.1 migration into a clean `V31/` tree (post-3.0.9): [`V3.1_MIGRATION_PLAN.md`](./V3.1_MIGRATION_PLAN.md) — **L2 unifies into a single Multi-Chain crate (`V31/L2/multichain`)** absorbing bridge/warp/atomic-swap/ziondex/swap-aggregator per [`MAINNET_ALPHA_L2_UNIFICATION.md`](../../MAINNET_ALPHA_L2_UNIFICATION.md); AuxPoW → miner, L3 → AI/orchestration/automation/NCL/PoC; L4 Oasis / L5 Free World / L6 Issobella stay as superstructures. Native integration seams for the four moves: [`V3.1_INTEGRATION_PLAN.md`](./V3.1_INTEGRATION_PLAN.md).
 
 | # | Úkol | Akce |
 |------|------|------|
