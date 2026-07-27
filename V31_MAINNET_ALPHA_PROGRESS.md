@@ -154,7 +154,7 @@ Rozpis testů:
 - `6e76d23f` — `feat(v31): live mining jobs from zion-l1 getBlockTemplate`
 - `b00daa77` — `feat(v31): block detection and PPLNS payouts endpoint`
 - `1c96ffcd` — `feat(v31): real block reward and worker payout addresses`
-- `<novy>` — `feat(v31): Dash31 pool payouts panel`
+- `9b0ce9c5` — `feat(v31): Dash31 pool payouts panel`
 
 ## Další plán (Mainnet Alpha milestones)
 
