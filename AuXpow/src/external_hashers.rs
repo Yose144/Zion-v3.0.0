@@ -1179,34 +1179,24 @@ fn ethash_cache_for_epoch(epoch: u32) -> (Arc<Vec<u8>>, usize) {
     (lc.cache, lc.full_size)
 }
 
-/// Compute Ethash/EtcHash mix hash for Ethereum Classic (ETC) mining.
+/// Compute Ethash/EtcHash final hash for Ethereum Classic (ETC) mining.
 ///
-/// Ethash requires a DAG computed per-epoch (~3GB for current epochs).  The
-/// pure-Rust fallback is NOT valid for real mining; enable the
-/// `native-hashers` feature for the C implementation with DAG.
+/// Uses the canonical `ethash` 0.4 reference crate for light-cache evaluation.
+/// This is the same implementation used for chfast known-vector tests and is
+/// kept independent of the `native-hashers` C FFI path to avoid drift between
+/// CPU and GPU reference hashes.
 pub fn hash_ethash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
-    #[cfg(feature = "native-hashers")]
-    {
-        return crate::native_ffi::hash_ethash_native(header, nonce, height);
-    }
-
-    // Pure-Rust light-client implementation.  Builds/caches a 16-128 MB
-    // cache per epoch and computes dataset items on demand.
-    #[allow(unreachable_code)]
-    {
-        let header_hash: [u8; 32] = if header.len() == 32 {
-            header.try_into().unwrap()
-        } else {
-            ethash_keccak256(header)
-        };
-        let epoch = height / ETHASH_EPOCH_LENGTH;
-        let (cache, full_size) = ethash_cache_for_epoch(epoch);
-        ethash_hashimoto_light(&header_hash, nonce, full_size, &cache).1
-    }
+    let header_hash: [u8; 32] = if header.len() == 32 {
+        header.try_into().unwrap()
+    } else {
+        ethash_keccak256(header)
+    };
+    let epoch = height / ETHASH_EPOCH_LENGTH;
+    let (cache, full_size) = ethash_cache_for_epoch(epoch);
+    ethash_hashimoto_light(&header_hash, nonce, full_size, &cache).1
 }
 
-/// Compute the real Ethash hash over a precomputed DAG (requires the
-/// `native-hashers` feature).
+/// Compute the real Ethash hash over a precomputed DAG.
 ///
 /// This is the full Dagger-Hashimoto algorithm:
 ///   1. `seed   = Keccak-512(header_hash || nonce_le)`        → 64 bytes
@@ -1214,6 +1204,9 @@ pub fn hash_ethash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
 ///   3. 64 DAG accesses with FNV-1a mixing (`hash = (hash ^ elem) * 0x01000193`)
 ///   4. FNV-fold each 4-word group                             → 32 bytes
 ///   5. `hash   = Keccak-256(seed || compressed_mix)`          → 32 bytes
+///
+/// Uses the canonical `ethash` 0.4 reference crate (`hashimoto_full`) so the
+/// CPU reference stays identical to the GPU DAG implementation.
 ///
 /// `header_hash` is the 32-byte block header hash, `dag` is the raw DAG buffer
 /// (128 bytes per entry), and `dag_size_entries` is the number of 128-byte
@@ -1224,29 +1217,15 @@ pub fn hash_ethash_with_dag(
     dag: &[u8],
     dag_size_entries: u64,
 ) -> [u8; 32] {
-    #[cfg(feature = "native-hashers")]
-    {
-        return crate::native_ffi::hash_ethash_with_dag_native(
-            header_hash,
-            nonce,
-            dag,
-            dag_size_entries,
-        );
-    }
-
-    // Pure-Rust fallback over a precomputed DAG buffer (128 bytes per entry).
-    #[allow(unreachable_code)]
-    {
-        let full_size = (dag_size_entries as usize) * 128;
-        let (mix, result) = ethash::hashimoto_full(
-            ethash_h256_from_bytes(header_hash),
-            ethash_h64_from_nonce(nonce),
-            full_size,
-            dag,
-        );
-        let _ = mix;
-        ethash_bytes_from_h256(&result)
-    }
+    let full_size = (dag_size_entries as usize) * 128;
+    let (mix, result) = ethash::hashimoto_full(
+        ethash_h256_from_bytes(header_hash),
+        ethash_h64_from_nonce(nonce),
+        full_size,
+        dag,
+    );
+    let _ = mix;
+    ethash_bytes_from_h256(&result)
 }
 
 /// Mine a single Ethash nonce against a precomputed DAG (requires the

@@ -2992,7 +2992,7 @@ fn run_remote_session(
         // Send external stream job to the appropriate persistent thread.
         // GPU-capable external algorithms go to the generic external GPU thread.
         // CPU-only algorithms (VerusHash, RandomX) go to the persistent CPU thread.
-        // Pearl (PRL) jobs are ignored in v3.0.6 canonical mode because the Pearl
+        // Pearl (PRL) jobs are ignored in v3.0.7 canonical mode because the Pearl
         // GPU thread is not yet debugged.
         // ZION_DISABLE_EXT_GPU=1 skips all external GPU stream jobs (ZANO/ProgPoW)
         // to free memory and CPU for the primary deeksha stream.  This is essential
@@ -3823,7 +3823,7 @@ impl SessionTelemetry {
             // Compact dashboard — designed to fit SMOS 19-line buffer
             raw_stdout("\n");
             raw_stdout(&format!("╔══════════════════════════════════════════════╗\n"));
-            raw_stdout(&format!("║  ZION Trinity Miner   v3.0.6           ║\n"));
+            raw_stdout(&format!("║  ZION Trinity Miner   v3.0.7           ║\n"));
             raw_stdout(&format!("╠══════════════════════════════════════════════╣\n"));
             raw_stdout(&format!("║  Uptime: {:<6}  Pool: {:<20}   ║\n",
                 uptime_str, &pool_addr[..pool_addr.len().min(20)]));

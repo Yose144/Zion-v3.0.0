@@ -1,0 +1,11 @@
+[Unit]
+Description=ZION Backup Node Beacon Timer (every 15s)
+
+[Timer]
+OnBootSec=15
+OnUnitActiveSec=15s
+AccuracySec=1s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

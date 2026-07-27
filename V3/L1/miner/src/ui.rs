@@ -779,7 +779,7 @@ pub struct StreamStats {
 /// Example output:
 /// ```
 /// ┌─────────────────────────────────────────────────────────────────────────┐
-/// │  ZION v3.0.6 Trinity                              uptime 01:23:45 │
+/// │  ZION v3.0.7 Trinity                              uptime 01:23:45 │
 /// ├─────────────────────────────────────────────────────────────────────────┤
 /// │  STREAM 1  ZION       deeksha_lite_v1     12.34 MH/s  ████░░░  45/0  ✓  │
 /// │  STREAM 2  GPU PROFIT EPIC / progpow      SKIPPED (DAG-based on Metal)   │
@@ -849,9 +849,9 @@ fn build_trinity_box(
     s.push_str(BOLD);
     s.push_str(WHITE);
     #[cfg(feature = "public_build")]
-    let title_str = "  ZION v3.0.6 Miner";
+    let title_str = "  ZION v3.0.7 Miner";
     #[cfg(not(feature = "public_build"))]
-    let title_str = "  ZION v3.0.6 Trinity";
+    let title_str = "  ZION v3.0.7 Trinity";
     s.push_str(title_str);
     s.push_str(RESET);
     let title_len = title_str.chars().count();

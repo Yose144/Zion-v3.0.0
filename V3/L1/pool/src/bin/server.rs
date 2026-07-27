@@ -8429,7 +8429,7 @@ fn build_stats_payload(
         "uptime_s": uptime_s,
         "pool": {
             "uptime_secs": uptime_s,
-            "version": "3.0.6"
+            "version": "3.0.7"
         },
         "fee_split": {
             "miner_pct": fees.miner_pct,
