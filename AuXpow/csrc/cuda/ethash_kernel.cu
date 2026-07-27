@@ -170,12 +170,14 @@ __device__ void keccak256(const unsigned char *input, const unsigned int len, un
             output[i*8 + j] = (unsigned char)(state[i] >> (j*8));
 }
 
-// -- FNV-1a (32-bit) --
+// -- FNV-1 (32-bit) --
+// Ethash (ETC/ETHW) uses the original FNV-1: (v1 * FNV_PRIME) ^ v2.
+// This is NOT FNV-1a, which KawPow/ProgPoW use.
 
 #define FNV_PRIME 0x01000193u
 
-__device__ __forceinline__ unsigned int fnv1a(unsigned int a, unsigned int b) {
-    return (a ^ b) * FNV_PRIME;
+__device__ __forceinline__ unsigned int fnv1(unsigned int a, unsigned int b) {
+    return (a * FNV_PRIME) ^ b;
 }
 
 // -- Mining kernel --
@@ -231,23 +233,25 @@ __global__ __launch_bounds__(256) void ethash_mine(
         mix[j + 16] = w;
     }
 
-    // -- Step 3: 64 DAG accesses with FNV-1a mixing --
+    // -- Step 3: 64 DAG accesses with FNV-1 mixing --
+    // The index uses the first word of the seed (constant) and the i-th mix word.
+    const unsigned int seed0 = mix[0];
     for (int i = 0; i < 64; i++) {
-        unsigned int index = fnv1a((unsigned int)i ^ mix[0], mix[0]) % (unsigned int)dag_size;
+        unsigned int index = fnv1(((unsigned int)i ^ seed0), mix[i % 32]) % (unsigned int)dag_size;
 
         // Load 128-byte DAG node = 16 x u64, split into 32 x u32 (little-endian).
         const uint64_t *node = dag + (uint64_t)index * 16ULL;
         for (int j = 0; j < 16; j++) {
             uint64_t w = node[j];
-            mix[2*j]     = fnv1a(mix[2*j],     (unsigned int)(w & 0xFFFFFFFFu));
-            mix[2*j + 1] = fnv1a(mix[2*j + 1], (unsigned int)(w >> 32));
+            mix[2*j]     = fnv1(mix[2*j],     (unsigned int)(w & 0xFFFFFFFFu));
+            mix[2*j + 1] = fnv1(mix[2*j + 1], (unsigned int)(w >> 32));
         }
     }
 
     // -- Step 4: compress mix -- FNV-fold each group of 4 u32 words -> 8 u32 (32 bytes) --
     unsigned int cmix[8];
     for (int i = 0; i < 32; i += 4) {
-        cmix[i/4] = fnv1a(fnv1a(fnv1a(mix[i], mix[i+1]), mix[i+2]), mix[i+3]);
+        cmix[i/4] = fnv1(fnv1(fnv1(mix[i], mix[i+1]), mix[i+2]), mix[i+3]);
     }
 
     // -- Step 5: hash = Keccak-256(seed || compressed_mix) -> 32 bytes --

@@ -170,26 +170,20 @@ All CUDA kernels compiled and ran against the synthetic easy target (`00000000ff
 
 ### 6.3 Live debug-pool runs
 
-#### ETC (`ethash`) — blocked by DAG generation
+#### ETC (`ethash`) — DAG generation fixed, kernel updated, live share pending
 
 * Pool: `etc.2miners.com:1010` via Edge debug pool, authorized with the repo `DEFAULT_BTC_WALLET` (`bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh`) + `c=BTC`.
-* Primary ZION stream (`deeksha_lite_v1`) mined and submitted accepted shares immediately.
-* External `ethash` stream started DAG generation for epoch 834.
-* Generation speed was ~8,192 DAG nodes every ~0.7 s. For the 126,091,226-node (7.52 GB) DAG this extrapolates to **~3 hours**.
-* The miner never reached `ext_gpu_dag_ready` in a 180 s run, so no ETC share was attempted.
+* `cuda_external.rs` `ensure_dag()` now launches `ethash_calculate_dag` in 524,288-node batches and synchronizes every 4 batches instead of after each 8,192-node batch. Epoch-0 DAG generation (~1 GB) completes in ~7 s on a GTX 1070 Ti, so real epochs should finish in minutes rather than hours.
+* The `ethash_mine` CUDA kernel in `AuXpow/csrc/cuda/ethash_kernel.cu` was corrected to use Ethash's original FNV-1 (`(a * PRIME) ^ b`) and the proper index formula `fnv(i ^ seed0, mix[i % 32])`; it previously used FNV-1a and `mix[0]` for both arguments, which does not match the Ethash spec.
+* `gpu_backend.rs` now routes the 32-byte `header_hash` directly to `mine_batch_raw` for DAG-based algorithms (`ethash`, `kawpow`, `progpow`, `evrprogpow`, `meowpow`) instead of reparsing it into an 80-byte `MiningHeader`.
+* Local `--profile benchmark --algorithm ethash` reaches `ext_gpu_dag_ready` and finds a nonce. CPU reference is still a stub, so `GPU_CPU_MISMATCH` is expected; a live debug-pool share is the next validation step.
 
-Root cause: `cuda_external.rs` `ensure_dag()` launches the `ethash_calculate_dag` kernel in tiny 8,192-node batches with a full `synchronize()` after each batch, and the per-node work is far too heavy. Real epochs are therefore not usable in the current CUDA path.
-
-#### KAS (`kheavyhash`) — runs but no accepted share in 120 s
+#### KAS (`kheavyhash`) — benchmark fixed, live share still pending
 
 * Pool: `kas.2miners.com:2020` via Edge debug pool, BTC wallet.
-* External stream initialized, `ext_gpu_batch_done` reported batches of 2,097,152 nonces with `solutions=0`.
-* Primary ZION shares were accepted; KAS shares were not found.
-
-Likely blockers:
-1. `kheavyhash` CUDA throughput is ~7 MH/s on a GTX 1070 Ti; reference miners reach ~100-200 MH/s, so the kernel is 10-30x slower.
-2. At 7 MH/s the expected time to find a 2miners KAS share can be many minutes; a 120 s run is not conclusive.
-3. Share correctness is not yet proven against a known test vector.
+* The benchmark vector (`version=3`, `previous_hash=[0x11;32]`, `timestamp=1_762_000_200`, nonce `4682`) now matches between the CUDA kernel and the CPU reference (`1cff8de2...914a93e`).
+* A 120 s debug-pool run connected and submitted external `kheavyhash` jobs, but the `GPU PROFIT` row remained `0/0`; only primary ZION shares were accepted. The slow throughput (~3.3 MH/s on a GTX 1070 Ti) and the debug pool's use of the real upstream target make a 120 s window inconclusive.
+* Next: a longer debug-pool run or a lower-difficulty test target to confirm an accepted KAS share.
 
 #### ERG (`autolykos`) — table cache fixed, share format fixed, but upstream rejects hashes
 
@@ -203,21 +197,21 @@ Likely blockers:
 ### 6.4 Additional blockers discovered
 
 1. **Autolykos table cache fixed, but kernel invalid:** `cuda_external.rs` `ensure_autolykos_table()` now caches the table per `(header, height)` and uses the 32-byte pre-pow hash and the real block height. The remaining ERG blocker is that the `autolykos_mine` CUDA kernel is a simplified placeholder and does not implement the real Autolykos v2 algorithm.
-2. **ProgPow variants not routed in CUDA external miner:** `CudaExtAlgo::from_name()` does not match `evrprogpow` / `meowpow`, so EVR and MEWC fall through even though the `kawpow` kernel is essentially the same DAG family.
+2. **ProgPow variants not routed in CUDA external miner:** `CudaExtAlgo::from_name()` now matches `evrprogpow` / `meowpow` and routes them to the ProgPow kernel with a 12000-block epoch. Live GPU test still pending.
 3. **Wallet generation:** For coins not on 2miners/zpool BTC payout (e.g. `DCR`, `ALPH`, `FLUX`, `VTC`, `IRON`, `NEXA`, `DNX`, `KRX`, `CKB`, `CFX`, `ZEC`, `PHX`) a coin-specific payout address is required. The repo already contains `DEFAULT_BTC_WALLET` for the BTC-payout coins.
 
-### 6.5 CUDA verification status
+### 6.5 GPU algorithm status — what works / what does not
 
-| Coin | CUDA path | Live share accepted | Blocker |
-|------|-----------|---------------------|---------|
-| ETC | `ethash` | **no** | DAG generation ~3 h for epoch 834 |
-| KAS | `kheavyhash` | **in progress** | Long live test running at ~3.3 MH/s on GTX 1070 Ti through debug pool; no KAS share yet after ~4 min, ~20 min run in progress |
-| ERG | `autolykos` | **no** | Table cache and nonce2 format fixed; `autolykos_mine` CUDA kernel is a placeholder and produces invalid hashes |
-| RVN/CLORE/QUAI | `kawpow` | **not tested** | DAG generation; likely same as ETC |
-| EVR/MEWC | `evrprogpow`/`meowpow` | **not tested** | `CudaExtAlgo` now recognises `evrprogpow`/`meowpow` and uses 12000-block epochs; no live GPU test yet (DAG generation still likely too slow) |
-| FLUX | `zelhash` | **not tested** | Equihash solver; no known test vector |
-| EPIC/ZANO | `progpow` | **not tested** | DAG + per-period kernel recompilation; no live test |
-| BEAM/VTC/IRON/NEXA/DNX/KRX/CKB/CFX/ZEC/PHX | various | **not tested** | Missing CUDA kernel or coin-specific wallet |
+| Coin | CUDA path | Status | Blocker / next step |
+|------|-----------|--------|---------------------|
+| KAS | `kheavyhash` | **benchmark fixed** | Live share pending (long debug-pool run needed; ~3.3 MH/s on GTX 1070 Ti). GPU and CPU hashes now match for the benchmark header. |
+| ERG | `autolykos` | **not working** | `autolykos_mine` CUDA kernel and `native-ffi` C implementation are simplified 9-iteration placeholders. Real Autolykos v2 requires 32 permutation indices, 32 table lookups summed, and a final BLAKE2b over the 32-byte sum. |
+| ETC | `ethash` | **DAG generation fixed, kernel updated** | Epoch-0 benchmark reaches `ext_gpu_dag_ready` and finds a nonce in ~7 s. FNV-1 and index formula fixed. Live share pending; CPU `hash_ethash` reference is still a stub. |
+| RVN/CLORE/QUAI | `kawpow` | **not tested** | DAG-generation bottleneck fixed; header routing fixed. Kernel correctness still unverified. |
+| EVR/MEWC | `evrprogpow`/`meowpow` | **routed, not tested** | `CudaExtAlgo` recognises names and uses 12000-block epochs/periods; header routing fixed. Real DAG size formula may differ and DAG build is pending. |
+| FLUX | `zelhash` | **not tested** | Equihash solver; no known test vector; no live test. |
+| EPIC/ZANO | `progpow` | **not tested** | DAG + per-period kernel recompilation; no live test. |
+| BEAM/VTC/IRON/NEXA/DNX/KRX/CKB/CFX/ZEC/PHX | various | **not tested** | Missing CUDA kernel, missing coin-specific wallet, or missing stratum support. |
 
 ### 6.6 Next-step options
 
@@ -272,6 +266,12 @@ Likely blockers:
 
 * **KAS:** CUDA benchmark is fixed, but a live pool share still needs to be accepted to confirm end-to-end correctness.
 * **EVR/MEWC:** code routing and epoch length are fixed, but the ProgPow DAG for a real EVR/MEWC epoch will likely take too long on this GTX 1070 Ti (8 GB) and may also use a coin-specific DAG-size formula not yet implemented.
-* **ETC/RVN/CLORE/QUAI:** blocked by slow single-threaded `ethash_calculate_dag`.
+* **ETC/RVN/CLORE/QUAI:** CUDA DAG generation is now parallel and fast enough for real epochs; `ethash` kernel FNV/index corrected and header routing fixed. Live shares and CPU reference verification still pending.
 * **ERG:** blocked by the placeholder `autolykos_mine` CUDA kernel.
 * **zion-pool default build:** `zion-native-ffi` `ghostrider/real/gr.c` currently fails to compile on MSVC due to a variable-length array (`bool selectedAlgo[algoCount]`), unrelated to this session's changes.
+
+### 7.5 Ethash/CUDA fixes (this session)
+
+* `V3/L1/miner/src/cuda_external.rs`: `ensure_dag()` now launches `ethash_calculate_dag` in 524,288-node batches and synchronizes every 4 batches, reducing epoch-0 DAG build time from an extrapolated ~3 h to ~7 s.
+* `AuXpow/csrc/cuda/ethash_kernel.cu`: corrected FNV to FNV-1 (`(a * PRIME) ^ b`) and index formula to `fnv(i ^ seed0, mix[i % 32])` (was FNV-1a with `mix[0]` for both arguments).
+* `V3/L1/miner/src/gpu_backend.rs`: DAG-based external algorithms (`ethash`, `kawpow`, `progpow`, `evrprogpow`, `meowpow`) now pass the 32-byte `header_hash` directly to `mine_batch_raw` instead of reparsing it into an 80-byte `MiningHeader`.

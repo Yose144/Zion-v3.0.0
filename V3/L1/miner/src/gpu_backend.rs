@@ -2834,11 +2834,16 @@ pub fn gpu_scan_job(
     }
 
     // Use raw header bytes for external algorithms that need the full header
-    // (e.g. DCR blake3 with 180-byte headers).  Fall back to mine_batch for
-    // ZION algorithms and kheavyhash (which only uses first 32 bytes).
+    // (e.g. DCR blake3 with 180-byte headers) or the 32-byte header hash
+    // (ethash/kawpow/progpow DAG-based algorithms).  Fall back to mine_batch
+    // for ZION algorithms and kheavyhash (which only uses first 32 bytes).
+    let is_dag_algo = algorithm.contains("ethash")
+        || algorithm.contains("kawpow")
+        || algorithm.contains("progpow")
+        || algorithm.contains("meowpow");
     let use_raw = is_external_algorithm(algorithm)
         && !algorithm.starts_with("kheavyhash")
-        && raw_header_bytes.len() > 80;
+        && (raw_header_bytes.len() > 80 || is_dag_algo);
 
     // Cap the batch size to avoid stale jobs.  With the batched launch
     // optimization (all chunks launched back-to-back, single sync at end),
@@ -3124,9 +3129,13 @@ impl GpuPipelineState {
             effective_header.timestamp = job.height;
         }
 
+        let is_dag_algo = algorithm.contains("ethash")
+            || algorithm.contains("kawpow")
+            || algorithm.contains("progpow")
+            || algorithm.contains("meowpow");
         let use_raw = is_external_algorithm(algorithm)
             && !algorithm.starts_with("kheavyhash")
-            && raw_header_bytes.len() > 80;
+            && (raw_header_bytes.len() > 80 || is_dag_algo);
 
         let launch_result: Result<(), String> = if use_raw {
             // For raw headers, we need to use mine_batch_raw which is synchronous.
