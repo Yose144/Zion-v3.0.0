@@ -1519,6 +1519,36 @@ pub fn auto_tune_work_sizes() -> AutoTuneResult {
     }
 }
 
+/// Probe whether the CUDA runtime is actually usable end-to-end.
+///
+/// Checks BOTH halves of the CUDA stack, because they ship separately:
+///   1. Driver API (`nvcuda.dll` / `libcuda.so`) — comes with the GPU driver.
+///   2. NVRTC (`nvrtc64_*.dll` / `libnvrtc.so`) — comes with the CUDA toolkit
+///      or the standalone `cuda_nvrtc` redistributable.
+///
+/// The miner JIT-compiles every kernel through NVRTC at startup, so a machine
+/// with the driver but no NVRTC would initialise a CUDA device and then fail
+/// at kernel compile time — and `gpu_init_fallback` drops all the way to CPU,
+/// not to OpenCL.  Probing both here lets auto-detection pick OpenCL instead.
+///
+/// Result is cached: the probe JIT-compiles a trivial kernel (~50 ms).
+#[cfg(feature = "gpu-cuda")]
+pub fn cuda_runtime_usable() -> bool {
+    use std::sync::OnceLock;
+    static USABLE: OnceLock<bool> = OnceLock::new();
+    *USABLE.get_or_init(|| {
+        if cudarc::driver::CudaDevice::new(0).is_err() {
+            return false;
+        }
+        // Minimal kernel — verifies NVRTC is present and can emit PTX.
+        cudarc::nvrtc::compile_ptx_with_opts(
+            "extern \"C\" __global__ void zion_nvrtc_probe() {}",
+            cudarc::nvrtc::CompileOptions::default(),
+        )
+        .is_ok()
+    })
+}
+
 /// Resolve `Auto` to the concrete backend that will actually be used on this
 /// platform. This is critical for memory safety: on macOS with only
 /// `gpu-metal` compiled, `Auto` falls through OpenCL → CUDA → Metal, so it
@@ -1527,6 +1557,23 @@ pub fn auto_tune_work_sizes() -> AutoTuneResult {
 /// freezes from unified-memory OOM.
 #[allow(unreachable_code)]
 pub fn resolve_auto_backend() -> GpuBackendKind {
+    // ── CUDA first on NVIDIA ──────────────────────────────────────────────
+    // On NVIDIA hardware the CUDA backend is dramatically faster than OpenCL
+    // for the ZION deeksha kernels (measured on a GTX 1070 Ti / sm_61:
+    // 211 kH/s CUDA vs 35 kH/s OpenCL on deeksha_lite_v1 — 6x).
+    // Only take this path when the full CUDA stack (driver + NVRTC) is
+    // verified usable, otherwise fall through to OpenCL below.
+    // `ZION_PREFER_OPENCL=1` forces the old OpenCL-first behaviour.
+    #[cfg(all(feature = "gpu-cuda", not(target_os = "macos")))]
+    {
+        let prefer_opencl = std::env::var("ZION_PREFER_OPENCL")
+            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+            .unwrap_or(false);
+        if !prefer_opencl && cuda_runtime_usable() {
+            return GpuBackendKind::Cuda;
+        }
+    }
+
     // Check which GPU features are compiled, in priority order
     #[cfg(feature = "gpu-opencl")]
     {
@@ -6364,7 +6411,9 @@ pub mod cuda_deeksha {
                 let _ = self.collect_batch(0)?;
             }
 
-            self.update_npu_epoch(header.height)?;
+            // NOTE: NPU epoch updates are driven by the caller via
+            // `update_epoch(job.height)` (same as `mine_batch`).  MiningHeader
+            // carries no height field, so there is nothing to derive here.
 
             let header_bytes = header.to_bytes();
             // v5: async htod copy — queued on the stream before kernel launches
