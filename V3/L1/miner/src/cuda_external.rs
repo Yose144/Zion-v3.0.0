@@ -1100,6 +1100,7 @@ impl CudaExternalMiner {
                                     &mut self.output_nonce,  // 6: output_nonce
                                     &mut self.output_mix,    // 7: output_mix
                                     &mut self.found_flag,    // 8: found
+                                    &mut self.output_hash,   // 9: output_hash
                                 ),
                             )
                             .map_err(|e| anyhow::anyhow!("kawpow launch: {e}"))?;
