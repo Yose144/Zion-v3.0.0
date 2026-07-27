@@ -990,7 +990,7 @@ __device__ void cosmic_fusion_ekam(const uint8_t in64[64], uint8_t hash32[32])
 /* Main Kernel: deeksha_mine                                                   */
 /* ========================================================================== */
 
-extern "C" __global__ void deeksha_mine(
+extern "C" __global__ __launch_bounds__(256) void deeksha_mine(
     const uint8_t  *__restrict__ header,          /* block header bytes         */
     uint32_t                     header_len,      /* actual header length       */
     uint64_t                     nonce_base,      /* starting nonce             */
@@ -1063,7 +1063,7 @@ extern "C" __global__ void deeksha_mine(
 /* Steps 1-3: same. Step 4: Blake3 XOF scratchpad. Step 6: 8-round fusion.    */
 /* ========================================================================== */
 
-extern "C" __global__ void ekam_deeksha_mine(
+extern "C" __global__ __launch_bounds__(256) void ekam_deeksha_mine(
     const uint8_t  *__restrict__ header,
     uint32_t                     header_len,
     uint64_t                     nonce_base,
@@ -1133,7 +1133,7 @@ extern "C" __global__ void ekam_deeksha_mine(
 /* Debug kernel — outputs per-stage hashes for verification                    */
 /* ========================================================================== */
 
-extern "C" __global__ void ekam_deeksha_debug(
+extern "C" __global__ __launch_bounds__(256) void ekam_deeksha_debug(
     const uint8_t  *__restrict__ header,
     uint32_t                     header_len,
     uint64_t                     nonce,

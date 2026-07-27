@@ -6065,19 +6065,32 @@ pub mod cuda_deeksha {
                 .name()
                 .unwrap_or_else(|_| "unknown CUDA device".to_string());
 
-            // Compile PTX with arch-specific optimization
-            // Note: cosmic_harmony kernel is 1187 lines with complex NPU code.
-            // --ptxas-options=-O3 and -lineinfo both cause ptxas to hang.
-            // Use minimal flags for this kernel.
+            // Compile PTX with arch-specific optimization.
+            // The cosmic_harmony ekam kernel is 1187 lines with complex NPU code.
+            // --ptxas-options=-O3 causes ptxas to hang on this kernel due to
+            // excessive register spilling optimization. We use -O2 instead,
+            // which provides most of the optimization without the hang.
+            // __launch_bounds__(256) added to all kernels helps ptxas make
+            // better register allocation decisions.
+            // Override via ZION_CUDA_PTXAS_OPT env var (e.g. "-O3", "-O1", "-O0").
             let arch = detect_cuda_arch(&dev);
+            let ptxas_opt = std::env::var("ZION_CUDA_PTXAS_OPT")
+                .unwrap_or_else(|_| "-O2".to_string());
+            let mut opts = vec![
+                "--use_fast_math".to_string(),
+                format!("-arch={}", arch),
+                "--std=c++14".to_string(),
+                "-lineinfo".to_string(),
+                format!("--ptxas-options={}", ptxas_opt),
+            ];
+            // Allow override of max registers per thread
+            if let Ok(maxreg) = std::env::var("ZION_CUDA_MAXREG") {
+                opts.push(format!("--maxrregcount={}", maxreg));
+            }
             let ptx = compile_ptx_with_opts(
                 CUDA_KERNEL_SRC,
                 CompileOptions {
-                    options: vec![
-                        "--use_fast_math".to_string(),
-                        format!("-arch={}", arch),
-                        "--std=c++14".to_string(),
-                    ],
+                    options: opts,
                     ..Default::default()
                 },
             )
