@@ -2437,8 +2437,10 @@ async function updateConnectedMiners(){
 
     // Sort: active hashers first, then by valid shares
     const sorted = [...d.miners].sort((a,b) => {
-      if(b.hashrate_hps !== a.hashrate_hps) return b.hashrate_hps - a.hashrate_hps;
-      return b.valid_shares - a.valid_shares;
+      const aHr = a.hashrate_hps ?? a.hashrate ?? 0;
+      const bHr = b.hashrate_hps ?? b.hashrate ?? 0;
+      if(bHr !== aHr) return bHr - aHr;
+      return (b.valid_shares || 0) - (a.valid_shares || 0);
     });
 
     const payoutByKey = new Map();
@@ -2451,11 +2453,12 @@ async function updateConnectedMiners(){
     });
 
     tbody.innerHTML = sorted.map(m => {
-      const mAddr = m.miner_id || '';
+      const mAddr = m.miner_id || m.address || '';
       const mWorker = m.worker_name || '';
       const mComposite = mWorker ? `${mAddr}/${mWorker}` : mAddr;
       const payoutMiner = payoutByKey.get(mComposite) || payoutByKey.get(mWorker) || null;
-      const isActive = m.hashrate_hps > 0;
+      const hrHps = m.hashrate_hps ?? m.hashrate ?? 0;
+      const isActive = hrHps > 0;
       const nowSec = Math.floor(Date.now() / 1000);
       const lastSeenAgo = (m.last_seen > 0) ? (nowSec - m.last_seen) : null;
       const isRecent = lastSeenAgo !== null && lastSeenAgo < 300;
@@ -2467,20 +2470,20 @@ async function updateConnectedMiners(){
       const lastSeenStr = lastSeenAgo !== null
         ? (lastSeenAgo < 60 ? lastSeenAgo + 's' : Math.floor(lastSeenAgo/60) + 'm') + ' ago'
         : '—';
-      const hashrate = m.hashrate_hps > 0 ? (m.hashrate_hps/1000).toFixed(2) + ' KH/s' : '—';
+      const hashrate = hrHps > 0 ? (hrHps/1000).toFixed(2) + ' KH/s' : '—';
       const paidZion = payoutMiner?.paid_total ?? (payoutMiner?.paid_total_atomic != null ? payoutMiner.paid_total_atomic / 1_000_000 : null) ?? m.paid_total ?? 0;
       const paid = paidZion > 0 ? _zionFmt(paidZion) + ' ZION' : '0 ZION';
-      const onChainZion = payoutMiner?.on_chain_balance_zion;
+      const onChainZion = payoutMiner?.on_chain_balance_zion ?? m.on_chain_balance_zion;
       const onChain = onChainZion != null ? _zionFmt(onChainZion) + ' ZION' : '—';
       const blocks = payoutMiner?.blocks_found ?? m.blocks_found ?? '—';
-      const minerIdShort = m.miner_id.length > 28 ? m.miner_id.slice(0,14)+'…'+m.miner_id.slice(-12) : m.miner_id;
+      const minerIdShort = mAddr.length > 28 ? mAddr.slice(0,14)+'…'+mAddr.slice(-12) : mAddr;
       const rowCls = isActive ? '' : (isRecent ? 'opacity-75' : 'opacity-40');
       return `<tr class="border-b border-white/5 hover:bg-white/5 transition ${rowCls}">
-        <td class="py-2 px-2 font-mono text-[10px] text-gray-300" title="${escapeHtml(m.miner_id)}">${escapeHtml(minerIdShort)}</td>
-        <td class="py-2 px-2 text-gray-300">${escapeHtml(m.worker_name || '—')}</td>
+        <td class="py-2 px-2 font-mono text-[10px] text-gray-300" title="${escapeHtml(mAddr)}">${escapeHtml(minerIdShort)}</td>
+        <td class="py-2 px-2 text-gray-300">${escapeHtml(mWorker || '—')}</td>
         <td class="py-2 px-2 text-right font-mono ${isActive?'text-amber-400':'text-gray-500'}">${hashrate}</td>
-        <td class="py-2 px-2 text-right font-mono text-emerald-400">${m.valid_shares.toLocaleString()}</td>
-        <td class="py-2 px-2 text-right font-mono text-red-400">${m.invalid_shares.toLocaleString()}</td>
+        <td class="py-2 px-2 text-right font-mono text-emerald-400">${(m.valid_shares || 0).toLocaleString()}</td>
+        <td class="py-2 px-2 text-right font-mono text-red-400">${(m.invalid_shares || 0).toLocaleString()}</td>
         <td class="py-2 px-2 text-right font-mono text-zion-gold">${blocks}</td>
         <td class="py-2 px-2 text-right font-mono text-gray-300">${paid}</td>
         <td class="py-2 px-2 text-right font-mono text-purple-400">${onChain}</td>
@@ -4466,7 +4469,8 @@ async function triggerPayoutNow(){
   try {
     const res = await fetch('/api/payout/trigger',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
     const d = await res.json();
-    toast(d.ok ? 'Payout triggered successfully' : ('Payout failed: '+(d.error||'unknown')), d.ok?'success':'error');
+    const msg = d.ok ? (d.message || 'Payout triggered successfully') : ('Payout failed: '+(d.error||'unknown'));
+    toast(msg, d.ok ? 'success' : 'error');
     if(d.ok) loadPayoutTab();
   } catch(e){
     toast('Payout trigger error: '+e.message, 'error');
