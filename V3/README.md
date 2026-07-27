@@ -7,7 +7,7 @@ reuse audited source material during migration, while remaining isolated from th
 
 Active planning for `V3/` now lives in `V3/ROADMAP.md`.
 
-**Planned V3.1 migration (post-3.0.9):** [`V3.1_MIGRATION_PLAN.md`](../V3.1_MIGRATION_PLAN.md) — migrate clean code into a brand-new `V31/` directory (new branch). WARP and ZionDex move to `L2`, AuxPoW merges into the miner, `L3` is dedicated to AI/orchestration/automation/NCL/PoC, and `L4 Oasis` / `L5 Free World` / `L6 Issobella` stay as their own superstructure layers. Native integration seams for the four moves: [`V3.1_INTEGRATION_PLAN.md`](../V3.1_INTEGRATION_PLAN.md).
+**Planned V3.1 migration (post-3.0.9):** [`V3.1_MIGRATION_PLAN.md`](../docs/3.0.6/V3.1_MIGRATION_PLAN.md) — migrate clean code into a brand-new `V31/` directory (new branch). WARP and ZionDex move to `L2`, AuxPoW merges into the miner, `L3` is dedicated to AI/orchestration/automation/NCL/PoC, and `L4 Oasis` / `L5 Free World` / `L6 Issobella` stay as their own superstructure layers. Native integration seams for the four moves: [`V3.1_INTEGRATION_PLAN.md`](../docs/3.0.6/V3.1_INTEGRATION_PLAN.md).
 
 Comprehensive mainnet completion plan (L1 finish + L2/L3 migration): `V3/PLAN.md`.
 

@@ -29,12 +29,12 @@ The project is now driving toward **Mainnet Alpha (3.1.0)** in three planned ste
 | Version | Name | Goal | Plan |
 |---------|------|------|------|
 | **3.0.7** | Trinity All Green | Every active mining stream has verified accepted shares | [`TRINITY_ALL_GREEN_PLAN.md`](./TRINITY_ALL_GREEN_PLAN.md) / [`3.0.7.md`](./3.0.7.md) |
-| **3.0.8** | Full Stack Stable | All active components work; no placeholders in hot paths | [`3.0.8.md`](./3.0.8.md) |
-| **3.0.9** | Pre-Alpha Hardening | Security audit, chaos tests, repo purification, public sync | [`3.0.9.md`](./3.0.9.md) |
-| **3.1.0** | Mainnet Alpha | Clean repo, feature freeze, release ready | [`3.1.0.md`](./3.1.0.md) |
+| **3.0.8** | Full Stack Stable | All active components work; no placeholders in hot paths | [`3.0.8.md`](./docs/3.0.6/3.0.8.md) |
+| **3.0.9** | Pre-Alpha Hardening | Security audit, chaos tests, repo purification, public sync | [`3.0.9.md`](./docs/3.0.6/3.0.9.md) |
+| **3.1.0** | Mainnet Alpha | Clean repo, feature freeze, release ready | [`3.1.0.md`](./docs/3.0.6/3.1.0.md) |
 
-Overall coordination: [`MAINNET_ALPHA_PLAN.md`](./MAINNET_ALPHA_PLAN.md).  
-**V3.1 migration (post-3.0.9):** [`V3.1_MIGRATION_PLAN.md`](./V3.1_MIGRATION_PLAN.md) — migrate clean code into a new `V31/` directory. WARP → L2, ZionDex → L2, AuxPoW → miner, L3 → AI/orchestration/automation/NCL/PoC; L4 Oasis / L5 Free World / L6 Issobella stay as superstructures. Native integration seams: [`V3.1_INTEGRATION_PLAN.md`](./V3.1_INTEGRATION_PLAN.md).
+Overall coordination: [`MAINNET_ALPHA_PLAN.md`](./docs/3.0.6/MAINNET_ALPHA_PLAN.md).  
+**V3.1 migration (post-3.0.9):** [`V3.1_MIGRATION_PLAN.md`](./docs/3.0.6/V3.1_MIGRATION_PLAN.md) — migrate clean code into a new `V31/` directory. WARP → L2, ZionDex → L2, AuxPoW → miner, L3 → AI/orchestration/automation/NCL/PoC; L4 Oasis / L5 Free World / L6 Issobella stay as superstructures. Native integration seams: [`V3.1_INTEGRATION_PLAN.md`](./docs/3.0.6/V3.1_INTEGRATION_PLAN.md).
 
 ---
 
