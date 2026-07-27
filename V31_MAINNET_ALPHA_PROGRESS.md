@@ -76,7 +76,7 @@ Rozpis testů:
 - `df4d30b4` — `feat(v31): add Triple Stream support to zion-miner`
 - `9e720dc4` — `feat(v31): add pool, bridge and wallet modules for Mainnet Alpha`
 - `23e8ecec` — `docs: add V31 Mainnet Alpha progress report and next plan`
-- `<novy>` — `feat(v31): add CLI commands for wallet, bridge and swap`
+- `91bdd696` — `feat(v31): add CLI commands for wallet, bridge and swap`
 
 ## Další plán (Mainnet Alpha milestones)
 
