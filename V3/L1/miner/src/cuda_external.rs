@@ -276,14 +276,17 @@ impl CudaExternalMiner {
         let progpow_deferred = algo.needs_period_recompile();
         if !progpow_deferred {
             let processed = preprocess_kernel(algo.kernel_source());
+            // KawPow: disable --use_fast_math to test if NVRTC fast-math
+            // causes the keccak512 miscompilation.
+            let use_fast_math = !matches!(algo, CudaExtAlgo::Kawpow);
+            let mut opts = vec![format!("-arch={}", arch), "--std=c++14".to_string()];
+            if use_fast_math {
+                opts.push("--use_fast_math".to_string());
+            }
             let ptx = compile_ptx_with_opts(
                 &processed,
                 CompileOptions {
-                    options: vec![
-                        "--use_fast_math".to_string(),
-                        format!("-arch={}", arch),
-                        "--std=c++14".to_string(),
-                    ],
+                    options: opts,
                     ..Default::default()
                 },
             )
