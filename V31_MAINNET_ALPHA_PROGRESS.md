@@ -125,11 +125,18 @@
 - `submitBlock` payload obsahuje `template_id`, `header_hex`, `nonce`, `target_hex` a `algorithm: "deeksha_lite_v1"`.
 - `reqwest` přidán do `zion-pool` pro HTTP RPC.
 
+### 20. Bitcoin adapter — deposit watching
+- `Keyring` umí odvodit BIP84 P2WPKH adresu pro Bitcoin (`m/84'/0'/...` mainnet, `m/84'/1'/...` testnet/signet) pomocí `bitcoin` crate a `secp256k1`.
+- `BitcoinAdapter` přijímá `Keyring` a ukládá si deposit adresu.
+- `BitcoinAdapter::watch_events` volá mempool.space `/api/address/{addr}/txs`, najde UTXO výstupy na deposit adresu a parsuje OP_RETURN memo.
+- `balance` používá `/api/address/{addr}/utxo` a `confirmations` používá `/api/tx/{txid}`.
+- `send_payment` / `execute_outbound` zatím neimplementovány (potřebují P2WPKH tx build + sign).
+
 ## Verifikace
 
 ```bash
 cd V31
-cargo test      # 70 testů OK
+cargo test      # 71 testů OK
 cargo clippy -- -D warnings   # OK
 cargo fmt       # OK
 ```
@@ -162,6 +169,7 @@ Rozpis testů:
 - `1c96ffcd` — `feat(v31): real block reward and worker payout addresses`
 - `9b0ce9c5` — `feat(v31): Dash31 pool payouts panel`
 - `9cbcaba7` — `feat(v31): submit solved blocks to zion-l1 RPC`
+- `<novy>` — `feat(v31): Bitcoin deposit watching via mempool.space`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -182,7 +190,7 @@ Rozpis testů:
 2. **Real chain adapters (další kroky)**
    - `EvmAdapter` ✅ — provider + wallet + contract addresses; zbývá nasadit validator wallet a testovat `submitLockProof` na Base.
    - `ZionL1Adapter` ✅ — `getBridgeLocks` a `submitBridgeUnlock` s proofem; zbývá testovat na živém L1 RPC.
-   - `BitcoinAdapter`: UTXO lock/mint a burn/release.
+   - `BitcoinAdapter` ✅ — BIP84 P2WPKH adresy z `Keyring`, `watch_events` pro BTC deposity přes mempool.space (OP_RETURN memo), `balance` přes UTXO API a `confirmations`; `send_payment` / `execute_outbound` (burn release) zbývá.
    - Testovací bridge end-to-end mezi `zion-l1` a `base` (nejprve na testnet fork).
 
 3. **Bridge watcher finalizace**

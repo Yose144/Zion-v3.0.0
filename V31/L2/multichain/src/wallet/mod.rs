@@ -149,11 +149,20 @@ impl Keyring {
         Ok(EdSigner::sign(&signing_key, message).to_bytes().to_vec())
     }
 
-    fn bitcoin_xpriv(&self, network: bitcoin::Network, account: u32, index: u32) -> MultichainResult<Xpriv> {
+    fn bitcoin_xpriv(
+        &self,
+        network: bitcoin::Network,
+        account: u32,
+        index: u32,
+    ) -> MultichainResult<Xpriv> {
         let seed = self.seed.unwrap_or_else(|| self.mnemonic.to_seed(""));
         let master = Xpriv::new_master(network, &seed)
             .map_err(|e| MultichainError::Internal(format!("bitcoin xpriv: {e}")))?;
-        let coin_type = if network == bitcoin::Network::Bitcoin { 0 } else { 1 };
+        let coin_type = if network == bitcoin::Network::Bitcoin {
+            0
+        } else {
+            1
+        };
         let path = format!("m/84'/{coin_type}'/{account}'/0/{index}");
         let derivation = DerivationPath::from_str(&path)
             .map_err(|e| MultichainError::Internal(format!("bitcoin derivation path: {e}")))?;
@@ -164,7 +173,12 @@ impl Keyring {
         Ok(xpriv)
     }
 
-    fn bitcoin_address(&self, chain: ChainId, account: u32, index: u32) -> MultichainResult<Address> {
+    fn bitcoin_address(
+        &self,
+        chain: ChainId,
+        account: u32,
+        index: u32,
+    ) -> MultichainResult<Address> {
         let network = match chain {
             ChainId::Bitcoin => bitcoin::Network::Bitcoin,
             _ => bitcoin::Network::Testnet,
