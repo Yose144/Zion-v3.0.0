@@ -53,9 +53,11 @@ impl std::fmt::Display for Address {
 
 fn expected_length(family: ChainFamily) -> &'static [usize] {
     match family {
-        ChainFamily::Evm | ChainFamily::Zion => &[20],
+        ChainFamily::Evm => &[20],
         ChainFamily::Solana | ChainFamily::Near => &[32],
-        // UTXO / Cosmos / Move / etc. have variable-length address formats.
+        // Zion, UTXO, Cosmos, Move, etc. use string-encoded addresses with
+        // variable or chain-specific byte lengths. Adapters validate the encoded
+        // form; this layer only rejects known fixed-length mismatches.
         _ => &[],
     }
 }
