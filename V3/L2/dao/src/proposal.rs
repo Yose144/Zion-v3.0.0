@@ -10,6 +10,8 @@
 //! | Grant      | Fund a project / team                | 10%    | 7 days |
 //! | Humanitarian | Allocate humanitarian funds        | 10%    | 7 days |
 
+use std::collections::BTreeMap;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -82,6 +84,12 @@ pub enum ProposalType {
         inner_proposal_id: u64,
         description: String,
     },
+    /// Parliamentary election — vote for one party/list among named options
+    ParliamentaryElection {
+        title: String,
+        parties: Vec<String>,
+        seats: u32,
+    },
 }
 
 impl ProposalType {
@@ -99,6 +107,7 @@ impl ProposalType {
             ProposalType::Bodhisattva { .. } => 60.0, // 60% of Guardians
             ProposalType::Expulsion { .. } => 75.0, // 75% quadratic consent
             ProposalType::CrossLayer { .. } => 15.0, // Standard cross-layer
+            ProposalType::ParliamentaryElection { .. } => 15.0, // 15% turnout for elections
         }
     }
 
@@ -125,6 +134,7 @@ impl ProposalType {
             ProposalType::Bodhisattva { .. } => "bodhisattva",
             ProposalType::Expulsion { .. } => "expulsion",
             ProposalType::CrossLayer { .. } => "cross_layer",
+            ProposalType::ParliamentaryElection { .. } => "parliamentary_election",
         }
     }
 
@@ -145,7 +155,8 @@ impl ProposalType {
             | ProposalType::Treasury { .. }
             | ProposalType::Emergency { .. }
             | ProposalType::Grant { .. }
-            | ProposalType::Humanitarian { .. } => 2,
+            | ProposalType::Humanitarian { .. }
+            | ProposalType::ParliamentaryElection { .. } => 2,
             ProposalType::Admission { .. }
             | ProposalType::Bodhisattva { .. }
             | ProposalType::Expulsion { .. } => 5,
@@ -210,6 +221,8 @@ pub struct Proposal {
     pub votes_against: u64,
     /// Total abstentions
     pub votes_abstain: u64,
+    /// Per-candidate/party tally for election proposals
+    pub election_tallies: BTreeMap<String, u64>,
     /// Number of unique voters
     pub voter_count: u32,
     /// When the proposal was created
@@ -250,6 +263,7 @@ impl Proposal {
             votes_for: 0,
             votes_against: 0,
             votes_abstain: 0,
+            election_tallies: BTreeMap::new(),
             voter_count: 0,
             created_at: now,
             voting_ends_at: now + voting_period,
@@ -275,6 +289,11 @@ impl Proposal {
             VoteChoice::Yes => self.votes_for += weight,
             VoteChoice::No => self.votes_against += weight,
             VoteChoice::Abstain => self.votes_abstain += weight,
+            VoteChoice::Candidate(ref party) => {
+                *self.election_tallies.entry(party.clone()).or_insert(0) += weight;
+                // Also track total candidate weight under votes_for for backward-compatible totals
+                self.votes_for += weight;
+            }
         }
         self.voter_count += 1;
     }

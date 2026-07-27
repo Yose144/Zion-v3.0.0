@@ -7830,6 +7830,7 @@ const DAO_API = '';
 const DAO_PAGE_SIZE = 10;
 let _daoPage = 0;
 let _daoTotalProposals = 0;
+let _daoProposalsCache = [];
 
 // DAO hook merged into switchTab directly
 
@@ -7880,6 +7881,7 @@ async function loadDaoProposals() {
     const r = await fetch(url, { signal: AbortSignal.timeout(5000) }).then(r => r.json());
     const d = r.data || r;
     const proposals = d.proposals || [];
+    _daoProposalsCache = proposals;
     _daoTotalProposals = d.total || proposals.length;
 
     if(!proposals.length) {
@@ -7901,6 +7903,20 @@ async function loadDaoProposals() {
   }
 }
 
+function getDaoTypeName(p) {
+  const pt = p.proposal_type;
+  if (pt && typeof pt === 'object' && !Array.isArray(pt)) {
+    return Object.keys(pt)[0] || 'Unknown';
+  }
+  return String(pt || 'Unknown');
+}
+
+function getDaoTypeData(p) {
+  const name = getDaoTypeName(p);
+  const pt = p.proposal_type;
+  return (pt && typeof pt === 'object' && pt[name]) || {};
+}
+
 function renderDaoProposalCard(p) {
   const statusColor = {
     'Active': 'bg-emerald-700/40 text-emerald-300',
@@ -7911,22 +7927,70 @@ function renderDaoProposalCard(p) {
     'Timelocked': 'bg-purple-700/40 text-purple-300',
   }[p.status] || 'bg-gray-700/40 text-gray-300';
 
+  const typeName = getDaoTypeName(p);
   const typeIcon = {
-    'TreasurySpend': '💰',
-    'ParameterChange': '⚙️',
-    'HumanitarianGrant': '🕊️',
-    'BridgeUpgrade': '🌉',
-    'EmergencyPause': '🚨',
-    'GeneralVote': '🗳️',
-  }[p.proposal_type] || '📋';
-
-  // Vote bar (yes/no/abstain)
-  const yes = p.votes_yes || 0, no = p.votes_no || 0, abs = p.votes_abstain || 0;
-  const total = yes + no + abs;
-  const yesPct = total ? Math.round(yes / total * 100) : 0;
-  const noPct  = total ? Math.round(no  / total * 100) : 0;
+    'Treasury': '💰',
+    'Parameter': '⚙️',
+    'Humanitarian': '🕊️',
+    'Grant': '🌱',
+    'Emergency': '🚨',
+    'ParliamentaryElection': '🗳️',
+    'Admission': '🌟',
+    'Bodhisattva': '🪷',
+    'Expulsion': '⚖️',
+    'CrossLayer': '🔗',
+  }[typeName] || '📋';
 
   const votingEnds = p.voting_ends_at ? new Date(p.voting_ends_at).toLocaleDateString() : '—';
+  const isElection = typeName === 'ParliamentaryElection';
+  let voteBar = '';
+
+  if (isElection) {
+    const tallies = p.election_tallies || {};
+    const abs = p.votes_abstain || 0;
+    const parties = Object.keys(tallies);
+    const total = parties.reduce((s, k) => s + (tallies[k] || 0), 0) + abs;
+    if (total > 0) {
+      const partyBars = parties.map(k => {
+        const v = tallies[k] || 0;
+        const pct = Math.round(v / total * 100);
+        return `<div class="bg-cyan-600" style="width:${pct}%" title="${escapeHtml(k)}: ${v.toLocaleString()}"></div>`;
+      }).join('');
+      const absPct = Math.round(abs / total * 100);
+      voteBar = `<div class="mt-2">
+        <div class="flex gap-0.5 h-1.5 rounded-full overflow-hidden bg-white/5 mb-1">${partyBars}<div class="bg-gray-600 rounded-r-full" style="width:${absPct}%"></div></div>
+        <div class="flex flex-wrap gap-2 text-[10px]">
+          ${parties.map(k => `<span class="text-cyan-400">● ${escapeHtml(k)}: ${(tallies[k]||0).toLocaleString()}</span>`).join('')}
+          <span class="text-gray-500 ml-auto">Total weight: ${total.toLocaleString()}</span>
+        </div>
+      </div>`;
+    } else {
+      voteBar = '<div class="text-[10px] text-gray-600 mt-1">No votes yet</div>';
+    }
+  } else {
+    const yes = p.votes_yes || 0, no = p.votes_no || 0, abs = p.votes_abstain || 0;
+    const total = yes + no + abs;
+    if (total > 0) {
+      const yesPct = Math.round(yes / total * 100);
+      const noPct  = Math.round(no  / total * 100);
+      voteBar = `<div class="mt-2">
+        <div class="flex gap-0.5 h-1.5 rounded-full overflow-hidden bg-white/5 mb-1">
+          <div class="bg-emerald-500 rounded-l-full" style="width:${yesPct}%"></div>
+          <div class="bg-red-500" style="width:${noPct}%"></div>
+          <div class="bg-gray-600 rounded-r-full flex-1"></div>
+        </div>
+        <div class="flex gap-3 text-[10px]">
+          <span class="text-emerald-400">✓ ${yesPct}% Yes</span>
+          <span class="text-red-400">✗ ${noPct}% No</span>
+          <span class="text-gray-500 ml-auto">Total weight: ${total.toLocaleString()}</span>
+        </div>
+      </div>`;
+    } else {
+      voteBar = '<div class="text-[10px] text-gray-600 mt-1">No votes yet</div>';
+    }
+  }
+
+  const typeLabel = typeName.replace(/([A-Z])/g, ' $1').trim();
 
   return `<div class="bg-black/30 rounded-xl p-4 border border-white/5 hover:border-white/10 transition">
     <div class="flex items-start justify-between gap-3 mb-2">
@@ -7934,27 +7998,16 @@ function renderDaoProposalCard(p) {
         <span class="text-base shrink-0">${typeIcon}</span>
         <div class="min-w-0">
           <div class="font-semibold text-sm text-white truncate">#${p.id} — ${escapeHtml(p.title || '(no title)')}</div>
-          <div class="text-[10px] text-gray-500 mt-0.5">by <span class="font-mono text-gray-400">${(p.proposer || '').substring(0,20)}…</span> · votes end ${votingEnds}</div>
+          <div class="text-[10px] text-gray-500 mt-0.5"><span class="text-gray-400">${typeLabel}</span> · by <span class="font-mono text-gray-400">${(p.proposer || '').substring(0,20)}…</span> · votes end ${votingEnds}</div>
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${statusColor}">${p.status}</span>
-        ${p.status === 'Active' ? `<button data-dao-id="${p.id}" data-dao-title="${escapeHtml(p.title || '')}" class="daovote-btn text-[10px] px-2 py-0.5 bg-purple-700/50 hover:bg-purple-600 rounded-full font-semibold transition">Vote</button>` : ''}
+        ${p.status === 'Active' ? `<button data-dao-id="${p.id}" class="daovote-btn text-[10px] px-2 py-0.5 bg-purple-700/50 hover:bg-purple-600 rounded-full font-semibold transition">Vote</button>` : ''}
       </div>
     </div>
     ${p.description ? `<div class="text-[11px] text-gray-400 line-clamp-2 mb-2">${escapeHtml(p.description)}</div>` : ''}
-    ${total > 0 ? `<div class="mt-2">
-      <div class="flex gap-0.5 h-1.5 rounded-full overflow-hidden bg-white/5 mb-1">
-        <div class="bg-emerald-500 rounded-l-full" style="width:${yesPct}%"></div>
-        <div class="bg-red-500" style="width:${noPct}%"></div>
-        <div class="bg-gray-600 rounded-r-full flex-1"></div>
-      </div>
-      <div class="flex gap-3 text-[10px]">
-        <span class="text-emerald-400">✓ ${yesPct}% Yes</span>
-        <span class="text-red-400">✗ ${noPct}% No</span>
-        <span class="text-gray-500 ml-auto">Total weight: ${total.toLocaleString()}</span>
-      </div>
-    </div>` : '<div class="text-[10px] text-gray-600 mt-1">No votes yet</div>'}
+    ${voteBar}
   </div>`;
 }
 
@@ -8021,6 +8074,7 @@ async function loadDaoCoAdmins() {
 function openCreateProposalModal() {
   const modal = document.getElementById('dao-proposal-modal');
   if(modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+  renderDaoCreateFields();
 }
 
 function closeCreateProposalModal() {
@@ -8028,6 +8082,101 @@ function closeCreateProposalModal() {
   if(modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
   const st = document.getElementById('dao-modal-status');
   if(st) st.classList.add('hidden');
+}
+
+function _daoField(id, label, type='text', placeholder='', rows=0) {
+  const input = rows
+    ? `<textarea id="${id}" rows="${rows}" placeholder="${placeholder}" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition resize-none"></textarea>`
+    : `<input type="${type}" id="${id}" placeholder="${placeholder}" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">`;
+  return `<div><label class="text-[10px] text-gray-400 uppercase tracking-wider">${label}</label>${input}</div>`;
+}
+
+function _daoGetVal(id) { return document.getElementById(id)?.value?.trim() || ''; }
+function _daoGetNum(id) { const n = parseInt(document.getElementById(id)?.value, 10); return isNaN(n) ? 0 : n; }
+function _daoGetList(id) { return _daoGetVal(id).split('\n').map(s => s.trim()).filter(Boolean); }
+
+function renderDaoCreateFields() {
+  const ptype = document.getElementById('dao-new-type')?.value || 'Parameter';
+  const container = document.getElementById('dao-dynamic-fields');
+  if(!container) return;
+  const fields = {
+    'Parameter': [
+      _daoField('dao-f-param-name', 'Parameter Name'),
+      _daoField('dao-f-param-current', 'Current Value'),
+      _daoField('dao-f-param-proposed', 'Proposed Value'),
+    ],
+    'Treasury': [
+      _daoField('dao-f-treas-recipient', 'Recipient Address (zion1…)'),
+      _daoField('dao-f-treas-amount', 'Amount (ZION)', 'number'),
+      _daoField('dao-f-treas-purpose', 'Purpose'),
+    ],
+    'Emergency': [
+      _daoField('dao-f-emergency-action', 'Action'),
+      _daoField('dao-f-emergency-just', 'Justification', 'text', '', 2),
+    ],
+    'Grant': [
+      _daoField('dao-f-grant-recipient', 'Recipient Address (zion1…)'),
+      _daoField('dao-f-grant-amount', 'Amount (ZION)', 'number'),
+      _daoField('dao-f-grant-milestones', 'Milestones (one per line)', 'text', '', 3),
+      _daoField('dao-f-grant-duration', 'Duration (days)', 'number'),
+    ],
+    'Humanitarian': [
+      _daoField('dao-f-hum-category', 'Category'),
+      _daoField('dao-f-hum-amount', 'Amount (ZION)', 'number'),
+      _daoField('dao-f-hum-region', 'Region'),
+      _daoField('dao-f-hum-desc', 'Detailed Description', 'text', '', 2),
+    ],
+    'ParliamentaryElection': [
+      _daoField('dao-f-election-title', 'Election Title'),
+      _daoField('dao-f-election-parties', 'Parties / Candidate Lists (one per line)', 'text', '', 4),
+      _daoField('dao-f-election-seats', 'Number of Seats', 'number'),
+    ],
+  }[ptype] || [];
+  container.innerHTML = fields.join('');
+}
+
+function buildDaoCreateBody(ptype) {
+  switch(ptype) {
+    case 'Parameter':
+      return {
+        parameter_name: _daoGetVal('dao-f-param-name'),
+        current_value: _daoGetVal('dao-f-param-current'),
+        proposed_value: _daoGetVal('dao-f-param-proposed'),
+      };
+    case 'Treasury':
+      return {
+        recipient: _daoGetVal('dao-f-treas-recipient'),
+        amount: _daoGetNum('dao-f-treas-amount') * 1_000_000,
+        purpose: _daoGetVal('dao-f-treas-purpose'),
+      };
+    case 'Emergency':
+      return {
+        action: _daoGetVal('dao-f-emergency-action'),
+        justification: _daoGetVal('dao-f-emergency-just'),
+      };
+    case 'Grant':
+      return {
+        recipient: _daoGetVal('dao-f-grant-recipient'),
+        amount: _daoGetNum('dao-f-grant-amount') * 1_000_000,
+        milestones: _daoGetList('dao-f-grant-milestones'),
+        duration_days: _daoGetNum('dao-f-grant-duration'),
+      };
+    case 'Humanitarian':
+      return {
+        category: _daoGetVal('dao-f-hum-category'),
+        amount: _daoGetNum('dao-f-hum-amount') * 1_000_000,
+        region: _daoGetVal('dao-f-hum-region'),
+        description: _daoGetVal('dao-f-hum-desc'),
+      };
+    case 'ParliamentaryElection':
+      return {
+        title: _daoGetVal('dao-f-election-title'),
+        parties: _daoGetList('dao-f-election-parties'),
+        seats: _daoGetNum('dao-f-election-seats'),
+      };
+    default:
+      return {};
+  }
 }
 
 async function submitCreateProposal() {
@@ -8049,9 +8198,12 @@ async function submitCreateProposal() {
   if(!proposer.startsWith('zion1')) return setStatus('Proposer must be a valid zion1… address.', false);
   if(!apiKey) return setStatus('DAO API Key is required for write operations.', false);
 
+  const typePayload = buildDaoCreateBody(ptype);
+  if(!typePayload || Object.keys(typePayload).length === 0) return setStatus('Invalid proposal type payload.', false);
+
   const body = {
     title, description: desc, proposer,
-    proposal_type: { [ptype]: {} }
+    proposal_type: { [ptype]: typePayload }
   };
 
   try {
@@ -8075,11 +8227,34 @@ async function submitCreateProposal() {
 
 // ── Vote Modal ───────────────────────────────────────────────────────
 
-function openDaoVoteModal(proposalId, proposalTitle) {
-  document.getElementById('dao-vote-proposal-id').value = proposalId;
-  document.getElementById('dao-vote-proposal-title').textContent = `Proposal #${proposalId}: ${proposalTitle}`;
+function openDaoVoteModal(proposal) {
+  document.getElementById('dao-vote-proposal-id').value = proposal.id;
+  document.getElementById('dao-vote-proposal-title').textContent = `Proposal #${proposal.id}: ${proposal.title || ''}`;
+  document.getElementById('dao-vote-proposal-type').value = JSON.stringify(proposal.proposal_type || {});
   const stEl = document.getElementById('dao-vote-status');
   if(stEl) stEl.classList.add('hidden');
+
+  const typeName = getDaoTypeName(proposal);
+  const typeData = getDaoTypeData(proposal);
+  const optionsContainer = document.getElementById('dao-vote-options');
+  const isElection = typeName === 'ParliamentaryElection';
+  const parties = isElection ? (typeData.parties || []) : [];
+
+  if(optionsContainer) {
+    if(isElection && parties.length) {
+      optionsContainer.innerHTML = parties.map(party =>
+        `<button onclick="submitDaoVote('${escapeHtml(party).replace(/'/g, "\\'")}')" class="px-3 py-2 bg-cyan-700/50 hover:bg-cyan-600 rounded-lg text-sm font-semibold transition text-left">🗳️ ${escapeHtml(party)}</button>`
+      ).join('') +
+      `<button onclick="submitDaoVote('abstain')" class="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-semibold transition text-left">~ Abstain</button>`;
+    } else {
+      optionsContainer.innerHTML = `
+        <button onclick="submitDaoVote('yes')" class="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 rounded-lg text-sm font-semibold transition text-left">✓ Yes</button>
+        <button onclick="submitDaoVote('no')" class="px-3 py-2 bg-red-700 hover:bg-red-600 rounded-lg text-sm font-semibold transition text-left">✗ No</button>
+        <button onclick="submitDaoVote('abstain')" class="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-semibold transition text-left">~ Abstain</button>
+      `;
+    }
+  }
+
   const modal = document.getElementById('dao-vote-modal');
   if(modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
 }
@@ -8829,7 +9004,11 @@ document.body.addEventListener('click', (e) => {
   const tbtn = e.target.closest('.tab-btn');
   if(tbtn && tbtn.dataset.tab){ switchTab(tbtn.dataset.tab); return; }
   const dao = e.target.closest('.daovote-btn');
-  if(dao && dao.dataset.daoId){ openDaoVoteModal(parseInt(dao.dataset.daoId, 10), dao.dataset.daoTitle); return; }
+  if(dao && dao.dataset.daoId){
+    const proposal = _daoProposalsCache.find(p => String(p.id) === dao.dataset.daoId);
+    if(proposal) openDaoVoteModal(proposal);
+    return;
+  }
   const ncl = e.target.closest('.ncl-toggle');
   if(ncl && ncl.dataset.toggleDetail){ ncl.querySelector('.ncl-detail')?.classList.toggle('hidden'); return; }
 });

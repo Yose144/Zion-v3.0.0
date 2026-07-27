@@ -198,6 +198,30 @@ struct Pagination {
     status: Option<String>,
 }
 
+/// Convert a raw DB row into a frontend-friendly JSON object with parsed JSON fields.
+fn proposal_row_to_value(row: &crate::db::ProposalRow) -> serde_json::Value {
+    let proposal_type = serde_json::from_str::<serde_json::Value>(&row.proposal_type_json)
+        .unwrap_or_else(|_| serde_json::Value::String(row.proposal_type_json.clone()));
+    let election_tallies = serde_json::from_str::<serde_json::Value>(&row.election_tallies)
+        .unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new()));
+
+    serde_json::json!({
+        "id": row.id,
+        "status": row.status,
+        "proposal_type": proposal_type,
+        "title": row.title,
+        "description": row.description,
+        "proposer": row.proposer,
+        "votes_yes": row.votes_yes,
+        "votes_no": row.votes_no,
+        "votes_abstain": row.votes_abstain,
+        "election_tallies": election_tallies,
+        "created_at": row.created_at,
+        "voting_ends_at": row.voting_ends_at,
+        "executed_at": row.executed_at,
+    })
+}
+
 /// GET /api/dao/proposals
 async fn list_proposals(
     State(state): State<AppState>,
@@ -215,7 +239,12 @@ async fn list_proposals(
     let total = rows.len();
     let offset = params.offset.unwrap_or(0) as usize;
     let limit = params.limit.unwrap_or(20) as usize;
-    let page: Vec<_> = rows.into_iter().skip(offset).take(limit).collect();
+    let page: Vec<_> = rows
+        .into_iter()
+        .skip(offset)
+        .take(limit)
+        .map(|r| proposal_row_to_value(&r))
+        .collect();
 
     ok(serde_json::json!({
         "proposals": page,
@@ -232,7 +261,7 @@ async fn get_proposal(
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     let db = state.db.lock().await;
     match db.get_proposal(id) {
-        Ok(Some(row)) => Ok(ok(row)),
+        Ok(Some(row)) => Ok(ok(proposal_row_to_value(&row))),
         Ok(None) => Err(err(
             format!("Proposal {} not found", id),
             StatusCode::NOT_FOUND,
@@ -347,19 +376,29 @@ async fn get_votes(
     let (yes, no, abstain) = db
         .vote_totals(id)
         .map_err(|e| err(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR))?;
+    let election_tallies = db
+        .election_tallies(id)
+        .map_err(|e| err(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR))?;
+    let election_total: u64 = election_tallies.values().sum();
 
-    let total = yes + no + abstain;
-    let yes_pct = if total > 0 {
-        yes as f64 / total as f64 * 100.0
-    } else {
-        0.0
+    // For election proposals, "yes" weight is the total candidate/party weight
+    let total = yes + no + abstain + election_total;
+    let effective_yes = yes + election_total;
+
+    let pct = |w: u64| {
+        if total > 0 {
+            format!("{:.1}", w as f64 / total as f64 * 100.0)
+        } else {
+            "0.0".to_string()
+        }
     };
 
     Ok(ok(serde_json::json!({
         "proposal_id": id,
-        "yes":  { "weight": yes,     "pct": format!("{:.1}", yes_pct) },
-        "no":   { "weight": no,      "pct": format!("{:.1}", if total > 0 { no     as f64 / total as f64 * 100.0 } else { 0.0 }) },
-        "abstain": { "weight": abstain, "pct": format!("{:.1}", if total > 0 { abstain as f64 / total as f64 * 100.0 } else { 0.0 }) },
+        "yes":  { "weight": effective_yes, "pct": pct(effective_yes) },
+        "no":   { "weight": no,            "pct": pct(no) },
+        "abstain": { "weight": abstain,    "pct": pct(abstain) },
+        "election_tallies": election_tallies,
         "total_weight": total,
     })))
 }
@@ -383,18 +422,6 @@ async fn cast_vote(
         return Err(err("Unauthorized", StatusCode::UNAUTHORIZED));
     }
 
-    let choice = match req.choice.as_str() {
-        "yes" => VoteChoice::Yes,
-        "no" => VoteChoice::No,
-        "abstain" => VoteChoice::Abstain,
-        other => {
-            return Err(err(
-                format!("Invalid choice '{}' — use yes/no/abstain", other),
-                StatusCode::BAD_REQUEST,
-            ))
-        }
-    };
-
     if !req.voter.starts_with("zion1") {
         return Err(err(
             "voter must be a valid ZION L1 address",
@@ -404,8 +431,8 @@ async fn cast_vote(
 
     let db = state.db.lock().await;
 
-    // Check proposal is active
-    match db.get_proposal(id) {
+    // Check proposal exists and is active; also determine allowed choices
+    let proposal_type = match db.get_proposal(id) {
         Ok(None) => {
             return Err(err(
                 format!("Proposal {} not found", id),
@@ -418,9 +445,38 @@ async fn cast_vote(
                 StatusCode::CONFLICT,
             ));
         }
+        Ok(Some(ref p)) => {
+            serde_json::from_str::<ProposalType>(&p.proposal_type_json)
+                .map_err(|e| err(format!("Invalid stored proposal_type: {}", e), StatusCode::INTERNAL_SERVER_ERROR))?
+        }
         Err(e) => return Err(err(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
-        _ => {}
-    }
+    };
+
+    let choice = match proposal_type {
+        ProposalType::ParliamentaryElection { ref parties, .. } => {
+            if parties.iter().any(|p| p == &req.choice) {
+                VoteChoice::Candidate(req.choice.clone())
+            } else if req.choice == "abstain" {
+                VoteChoice::Abstain
+            } else {
+                return Err(err(
+                    format!("Invalid choice '{}'. Valid parties: {}", req.choice, parties.join(", ")),
+                    StatusCode::BAD_REQUEST,
+                ));
+            }
+        }
+        _ => match req.choice.as_str() {
+            "yes" => VoteChoice::Yes,
+            "no" => VoteChoice::No,
+            "abstain" => VoteChoice::Abstain,
+            other => {
+                return Err(err(
+                    format!("Invalid choice '{}' — use yes/no/abstain", other),
+                    StatusCode::BAD_REQUEST,
+                ))
+            }
+        },
+    };
 
     let recorded = db
         .record_vote(

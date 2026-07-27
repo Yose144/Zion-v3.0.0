@@ -312,6 +312,20 @@ pub fn execute_proposal(
                 inner_proposal_id, target_layers
             )
         }
+
+        ProposalType::ParliamentaryElection { title, seats, .. } => {
+            // Election results are recorded on-chain; treasury/execution is symbolic here.
+            let winner = proposal
+                .election_tallies
+                .iter()
+                .max_by_key(|(_, w)| *w)
+                .map(|(p, _)| p.as_str())
+                .unwrap_or("no votes");
+            format!(
+                "Parliamentary election '{}' concluded for {} seats. Winning list: {}",
+                title, seats, winner
+            )
+        }
     };
 
     // Update status

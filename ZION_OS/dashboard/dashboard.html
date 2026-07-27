@@ -7433,15 +7433,16 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
       <div>
         <label class="text-[10px] text-gray-400 uppercase tracking-wider">Proposal Type</label>
-        <select id="dao-new-type" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
-          <option value="GeneralVote">General Vote</option>
-          <option value="TreasurySpend">Treasury Spend</option>
-          <option value="ParameterChange">Parameter Change</option>
-          <option value="HumanitarianGrant">Humanitarian Grant</option>
-          <option value="BridgeUpgrade">Bridge Upgrade</option>
-          <option value="EmergencyPause">Emergency Pause</option>
+        <select id="dao-new-type" onchange="renderDaoCreateFields()" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+          <option value="Parameter">Parameter Change</option>
+          <option value="Treasury">Treasury Spend</option>
+          <option value="Emergency">Emergency Action</option>
+          <option value="Grant">Grant</option>
+          <option value="Humanitarian">Humanitarian Grant</option>
+          <option value="ParliamentaryElection">Parliamentary Election</option>
         </select>
       </div>
+      <div id="dao-dynamic-fields" class="space-y-3"></div>
       <div>
         <label class="text-[10px] text-gray-400 uppercase tracking-wider">DAO API Key</label>
         <input type="password" id="dao-new-apikey" placeholder="X-DAO-Key…" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
@@ -7462,6 +7463,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     <h2 class="text-lg font-bold mb-1 text-gradient">🗳️ Cast Vote</h2>
     <div id="dao-vote-proposal-title" class="text-sm text-gray-300 mb-4"></div>
     <input type="hidden" id="dao-vote-proposal-id">
+    <input type="hidden" id="dao-vote-proposal-type">
     <div class="space-y-3">
       <div>
         <label class="text-[10px] text-gray-400 uppercase tracking-wider">Your Address</label>
@@ -7475,12 +7477,11 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <label class="text-[10px] text-gray-400 uppercase tracking-wider">DAO API Key</label>
         <input type="password" id="dao-vote-apikey" placeholder="X-DAO-Key…" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
       </div>
-      <div id="dao-vote-status" class="text-xs rounded-lg p-2 hidden"></div>
-      <div class="flex gap-2 pt-2">
-        <button onclick="submitDaoVote('yes')" class="flex-1 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 rounded-lg text-sm font-bold transition">✓ Yes</button>
-        <button onclick="submitDaoVote('no')" class="flex-1 px-4 py-2.5 bg-red-700 hover:bg-red-600 rounded-lg text-sm font-bold transition">✗ No</button>
-        <button onclick="submitDaoVote('abstain')" class="flex-1 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-bold transition">~ Abstain</button>
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase tracking-wider">Choice</label>
+        <div id="dao-vote-options" class="grid grid-cols-1 gap-2 mt-1"></div>
       </div>
+      <div id="dao-vote-status" class="text-xs rounded-lg p-2 hidden"></div>
     </div>
   </div>
 </div>
@@ -7735,7 +7736,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
   </div>
 </div>
 
-<script src="/dashboard.js?v=119" defer></script>
+<script src="/dashboard.js?v=120" defer></script>
 <script>
 // ═══ Supported AuxPoW coin tickers (keep in sync with app.py AUXPOW_SUPPORTED_COINS) ═══
 const STREAM_COIN_TICKERS = [
