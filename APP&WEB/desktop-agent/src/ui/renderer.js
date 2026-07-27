@@ -1202,6 +1202,33 @@ function parseMinerEventForFeed(line) {
   m = stripped.match(/(\w+)_SHARE_FOUND\s+nonce=\d+\s+hash=[0-9a-fA-F]+\s+\((\S+)\)/i);
   if (m) return { msg: `${m[1]} share found (${m[2]})`, type: 'ok' };
 
+  // ── External streams (Stream 2 GPU profit / Stream 3 CPU profit) ──
+  // These were previously dropped wholesale, so a triple-stream session
+  // looked single-stream in the log. Surface the meaningful events.
+  m = stripped.match(/external_share_accepted\s+coin=(\S+)(?:\s+status=(\S+))?/i);
+  if (m) return { msg: `${m[1]} share accepted`, type: 'ok' };
+
+  m = stripped.match(/external_share_rejected\s+coin=(\S+)(?:\s+status=(\S+))?/i);
+  if (m) return { msg: `${m[1]} share rejected${m[2] ? ` — ${m[2]}` : ''}`, type: 'error' };
+
+  m = stripped.match(/external_share_stale\s+.*?coin=(\S+)/i);
+  if (m) return { msg: `${m[1]} share stale — job rotated`, type: 'warn' };
+
+  m = stripped.match(/ext_gpu_share_found\s+coin=(\S+)/i);
+  if (m) return { msg: `${m[1]} share found (GPU)`, type: 'ok' };
+
+  m = stripped.match(/ext_gpu_backend_init\s+algo=(\S+)\s+backend=(\S+)\s+work_size=(\d+)/i);
+  if (m) return { msg: `Stream 2 init — ${m[1]} on ${m[2]} (ws ${m[3]})`, type: 'info' };
+
+  m = stripped.match(/ext_gpu_dag_loading\s+algo=(\S+)\s+epoch=(\d+)/i);
+  if (m) return { msg: `Stream 2 DAG loading — ${m[1]} epoch ${m[2]}`, type: 'info' };
+
+  m = stripped.match(/ext_gpu_job_received\s+coin=(\S+)\s+algo=(\S+)/i);
+  if (m) return { msg: `Stream 2 job — ${m[1]} (${m[2]})`, type: 'info' };
+
+  m = stripped.match(/stream(\d)_(?:gpu_external|ext_cpu)_(started|disabled)/i);
+  if (m) return { msg: `Stream ${m[1]} ${m[2]}`, type: m[2] === 'started' ? 'ok' : 'info' };
+
   // pool_set_difficulty
   m = stripped.match(/pool_set_difficulty=(\d+)/i);
   if (m) return { msg: `Pool difficulty → ${m[1]}`, type: 'info' };
@@ -1310,17 +1337,23 @@ function logStreamLine(stream, line) {
   } else {
     // Buffer for lazy flush when user switches to Logs
     _mcDeferredQueue.push(line);
-    if (_mcDeferredQueue.length > 100) _mcDeferredQueue.shift();
+    if (_mcDeferredQueue.length > MC_DEFERRED_MAX) _mcDeferredQueue.shift();
   }
 }
 
 // ────────────────────────────────────────────────────────────
 // MINING CONSOLE — Professional XMRig/SRBMiner-style terminal
 // ────────────────────────────────────────────────────────────
-const MC_MAX_LINES = 80;
+// Scrollback for the Logs tab. 80 lines was far too small to follow a
+// triple-stream session: ZION, ZANO and VRSC interleave, so stream 2/3
+// activity scrolled out of view within seconds.
+const MC_MAX_LINES = 2000;
 let _mcQueue = [];
 let _mcFlushScheduled = false;
-let _mcDeferredQueue = []; // lines buffered while Logs tab is hidden
+// Lines buffered while the Logs tab is hidden. Must be >= MC_MAX_LINES,
+// otherwise switching to Logs shows a truncated window of history.
+const MC_DEFERRED_MAX = 2000;
+let _mcDeferredQueue = [];
 let _lastPanelLines = null; // cached panel lines for instant render on tab switch
 
 function appendMiningConsole(raw) {
@@ -1777,6 +1810,8 @@ function setupEventListeners() {
     if (!data) return;
     _shareLogBuffer.push(data);
     if (_shareLogBuffer.length > _SHARE_LOG_MAX) _shareLogBuffer.shift();
+    const si = Number(data.stream);
+    if (si >= 1 && si <= 3) _streamLastShareAt[si] = data.ts || Date.now();
     renderShareLog();
     if (data.accepted) {
       const detail = data.coin === 'ZION'
@@ -1977,6 +2012,9 @@ function updateStats(stats) {
   // ---- Trinity per-stream telemetry ----
   updateTripleStreamPanel(stats);
 
+  // ---- Static session metrics (replaces the old Live Activity feed) ----
+  updateSessionMetrics(stats);
+
   // ---- Live static panel (SRBMiner-style dashboard from stats) ----
   updateStaticPanelFromStats(stats);
 
@@ -2131,6 +2169,12 @@ const _maxLogQueue = 100;
 let _shareLogBuffer = [];
 const _SHARE_LOG_MAX = 50;
 
+// Timestamp (ms) of the most recent share per stream index (1/2/3).
+// The miner's stats JSON has no per-stream "last share" field, so this is
+// derived from the live share-event IPC stream and rendered in the Trinity
+// detail rows.
+const _streamLastShareAt = { 1: 0, 2: 0, 3: 0 };
+
 // ── Hashrate sparkline (rolling history + canvas renderer) ──
 let _hrSparkHistory = [];
 const _HR_SPARK_MAX = 120; // ~2 minutes at 1 sample/sec
@@ -2225,26 +2269,10 @@ function renderShareLog() {
 function addLogEntry(message, type = 'info') {
   const timestamp = new Date().toLocaleTimeString();
 
-  // ── Dashboard home feed: mirror important events on the main view ──
-  // Don't flood the feed with long repetitive xmrig-style [STATUS]/[METRICS]
-  // lines; those belong in the Mining Console (Logs tab).
-  const isStatusOrMetrics = /\[(STATUS|METRICS)\]/.test(message);
-  const dashFeed = document.getElementById('dashboard-feed-body');
-  if (dashFeed && !isStatusOrMetrics) {
-    // Remove placeholder text on first real entry
-    const placeholder = dashFeed.querySelector('.feed-entry.info');
-    if (placeholder && /Mining activity will appear here/i.test(placeholder.textContent)) {
-      placeholder.remove();
-    }
-    const dashEntry = document.createElement('div');
-    dashEntry.className = `feed-entry ${type}`;
-    dashEntry.textContent = `[${timestamp}] ${message}`;
-    dashFeed.appendChild(dashEntry);
-    while (dashFeed.children.length > 40) {
-      dashFeed.removeChild(dashFeed.firstChild);
-    }
-    dashFeed.scrollTop = dashFeed.scrollHeight;
-  }
+  // NOTE: the dashboard no longer mirrors log lines. The old scrolling
+  // "Live Activity" feed was replaced by the static Session Metrics panel
+  // (see #session-metrics). Scrolling miner output lives in the Logs tab,
+  // which shows every stream unfiltered.
 
   const logViewer = document.getElementById('log-viewer');
   if (!logViewer) return;
@@ -3123,6 +3151,112 @@ function updateCH3Dashboard(stats) {
   }
 }
 
+// ── Shared formatters for the static metric panels ────────────────────────
+function fmtHashrate(v) {
+  if (!v || !Number.isFinite(v) || v <= 0) return '—';
+  if (v >= 1e12) return (v / 1e12).toFixed(2) + ' TH/s';
+  if (v >= 1e9) return (v / 1e9).toFixed(2) + ' GH/s';
+  if (v >= 1e6) return (v / 1e6).toFixed(2) + ' MH/s';
+  if (v >= 1e3) return (v / 1e3).toFixed(2) + ' kH/s';
+  return v.toFixed(1) + ' H/s';
+}
+
+function fmtCount(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return '0';
+  if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'G';
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'k';
+  return String(n);
+}
+
+function fmtDuration(totalSec) {
+  const s = Math.max(0, Math.floor(Number(totalSec) || 0));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
+  if (m > 0) return `${m}m ${String(sec).padStart(2, '0')}s`;
+  return `${sec}s`;
+}
+
+function fmtAgo(tsMs) {
+  const t = Number(tsMs);
+  if (!Number.isFinite(t) || t <= 0) return '—';
+  const deltaSec = Math.max(0, Math.round((Date.now() - t) / 1000));
+  return `${fmtDuration(deltaSec)} ago`;
+}
+
+// Accept rate as a percentage, plus a severity class for colouring.
+function computeEfficiency(accepted, rejected) {
+  const acc = Number(accepted) || 0;
+  const rej = Number(rejected) || 0;
+  const total = acc + rej;
+  if (total <= 0) return { text: '—', cls: '' };
+  const pct = (acc / total) * 100;
+  const cls = pct >= 98 ? 'good' : pct >= 90 ? 'warn' : 'bad';
+  return { text: `${pct.toFixed(1)}%`, cls };
+}
+
+// ── Static session metrics panel (professional-miner style) ───────────────
+// Replaces the old scrolling "Live Activity" feed with stable numbers that
+// mirror what pool dashboards (2miners) and XMRig/SRBMiner report.
+function updateSessionMetrics(stats) {
+  const panel = document.getElementById('session-metrics');
+  if (!panel) return;
+
+  const set = (id, text, cls) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = (text === undefined || text === null || text === '') ? '—' : text;
+    el.className = `metric-value${cls ? ' ' + cls : ''}`;
+  };
+
+  const backendEl = document.getElementById('metrics-backend');
+  if (backendEl) {
+    const backend = String(stats.backend || stats.minerBackendResolved || '').trim();
+    const gpu = String(stats.gpu_name || '').trim();
+    backendEl.textContent = backend
+      ? (gpu ? `${backend.toUpperCase()} · ${gpu}` : backend.toUpperCase())
+      : '—';
+  }
+
+  set('metric-pool', stats.pool_addr || stats.pool || '—');
+  set('metric-worker', stats.worker || '—');
+  set('metric-algo', stats.algorithm || '—');
+
+  const lat = Number(stats.pool_latency_ms);
+  if (Number.isFinite(lat) && lat > 0) {
+    set('metric-latency', `${Math.round(lat)} ms`,
+      lat < 150 ? 'good' : lat < 400 ? 'warn' : 'bad');
+  } else {
+    set('metric-latency', '—');
+  }
+
+  const acc = Number(stats.shares_accepted ?? stats.accepted) || 0;
+  const rej = Number(stats.shares_rejected ?? stats.rejected) || 0;
+  set('metric-accepted', String(acc), acc > 0 ? 'good' : '');
+  set('metric-rejected', String(rej), rej > 0 ? 'bad' : 'muted');
+
+  const eff = computeEfficiency(acc, rej);
+  set('metric-efficiency', eff.text, eff.cls);
+  set('metric-last-share', fmtAgo(stats.last_share_time), 'muted');
+
+  set('metric-avg60', fmtHashrate(Number(stats.hashrate_60s)));
+  set('metric-avg15m', fmtHashrate(Number(stats.hashrate_15m)));
+  set('metric-peak', fmtHashrate(Number(stats.hashrate_max)));
+  set('metric-total-hashes', fmtCount(stats.total_hashes), 'muted');
+
+  const diff = Number(stats.difficulty);
+  set('metric-difficulty', Number.isFinite(diff) && diff > 0 ? fmtCount(diff) : '—', 'muted');
+  const height = Number(stats.pool_height);
+  set('metric-height', Number.isFinite(height) && height > 0 ? String(height) : '—', 'muted');
+  const epoch = stats.current_epoch;
+  set('metric-epoch', (epoch !== null && epoch !== undefined) ? String(epoch) : '—', 'muted');
+  set('metric-uptime', fmtDuration(stats.uptime_sec), 'muted');
+}
+
 // ═══ Trinity panel renderer (DeekshaChv3 parallel streaming) ═══
 // Renders per-stream hashrate, shares, coin, and algorithm for the 3-stream
 // dashboard cards. Reads `stats.streams` — an array of:
@@ -3133,15 +3267,7 @@ function updateTripleStreamPanel(stats) {
   const panel = document.getElementById('trinity-panel');
   if (!panel) return;
 
-  // Local hashrate formatter (mirrors the one in updateStats)
-  const fmtHr = (v) => {
-    if (!v || !Number.isFinite(v) || v <= 0) return '—';
-    if (v >= 1e12) return (v / 1e12).toFixed(2) + ' TH/s';
-    if (v >= 1e9) return (v / 1e9).toFixed(2) + ' GH/s';
-    if (v >= 1e6) return (v / 1e6).toFixed(2) + ' MH/s';
-    if (v >= 1e3) return (v / 1e3).toFixed(2) + ' kH/s';
-    return v.toFixed(1) + ' H/s';
-  };
+  const fmtHr = fmtHashrate;
 
   const streams = Array.isArray(stats.streams) ? stats.streams : [];
   const statusEl = document.getElementById('trinity-status');
@@ -3173,6 +3299,13 @@ function updateTripleStreamPanel(stats) {
     const algoEl = document.getElementById(`stream-${i}-algo`);
     const sharesEl = document.getElementById(`stream-${i}-shares`);
     const statusBadge = document.getElementById(`stream-${i}-status`);
+    // Extra detail row: 60s average, accept rate, time since last share.
+    const setDetail = (suffix, text, cls) => {
+      const el = document.getElementById(`stream-${i}-${suffix}`);
+      if (!el) return;
+      el.textContent = text || '—';
+      el.className = `stream-detail-value${cls ? ' ' + cls : ''}`;
+    };
 
     if (!stream) {
       // No telemetry for this stream — show idle placeholder
@@ -3186,8 +3319,16 @@ function updateTripleStreamPanel(stats) {
         statusBadge.textContent = 'inactive';
         statusBadge.className = 'stream-status inactive';
       }
+      setDetail('avg60', '—');
+      setDetail('eff', '—');
+      setDetail('last', '—');
       continue;
     }
+
+    setDetail('avg60', fmtHr(Number(stream.hashrate_60s)));
+    const sEff = computeEfficiency(stream.accepted, stream.rejected);
+    setDetail('eff', sEff.text, sEff.cls);
+    setDetail('last', fmtAgo(_streamLastShareAt[i]), '');
 
     // Active/inactive styling
     if (stream.active) {
