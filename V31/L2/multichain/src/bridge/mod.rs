@@ -36,7 +36,9 @@ impl Bridge {
         let _adapter = self
             .adapters
             .get(transfer.target.address.chain)
-            .ok_or_else(|| MultichainError::AdapterNotFound(transfer.target.address.chain.as_str().to_string()))?;
+            .ok_or_else(|| {
+                MultichainError::AdapterNotFound(transfer.target.address.chain.as_str().to_string())
+            })?;
 
         // Placeholder: real implementation calls `execute_outbound`.
         Ok(Hash::default())
@@ -48,7 +50,9 @@ impl Bridge {
         let _adapter = self
             .adapters
             .get(transfer.target.address.chain)
-            .ok_or_else(|| MultichainError::AdapterNotFound(transfer.target.address.chain.as_str().to_string()))?;
+            .ok_or_else(|| {
+                MultichainError::AdapterNotFound(transfer.target.address.chain.as_str().to_string())
+            })?;
 
         transfer.status = TransferStatus::Executing;
         Ok(Hash::default())

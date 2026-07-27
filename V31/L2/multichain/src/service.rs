@@ -38,12 +38,30 @@ impl MultichainService {
             adapters.register(chain_id, adapter);
         }
 
-        Ok(Self {
+        Ok(Self::from_parts(config, db, adapters))
+    }
+
+    /// Build a service from an already-constructed registry. Useful in tests
+    /// and for advanced callers that create adapters programmatically.
+    pub fn new_with_adapters(
+        config: MultichainConfig,
+        adapters: ChainAdapterRegistry,
+    ) -> MultichainResult<Self> {
+        let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
+        Ok(Self::from_parts(config, db, adapters))
+    }
+
+    fn from_parts(
+        config: MultichainConfig,
+        db: Arc<Mutex<Db>>,
+        adapters: ChainAdapterRegistry,
+    ) -> Self {
+        Self {
             config,
             _db: db,
             adapters,
             credits: CreditsLedger::new(),
-        })
+        }
     }
 
     /// Returns a snapshot of health for every registered chain.
@@ -106,7 +124,14 @@ impl MultichainService {
 fn build_adapter(cfg: &AdapterConfig) -> MultichainResult<Box<dyn ChainAdapter>> {
     let name_lower = cfg.chain.to_lowercase();
     match name_lower.as_str() {
-        "bitcoin" | "btc" => Ok(Box::new(BitcoinAdapter::new("bitcoin")?)),
+        "bitcoin" | "btc" => {
+            let url = if cfg.rpc_url.is_empty() {
+                None
+            } else {
+                Some(cfg.rpc_url.as_str())
+            };
+            Ok(Box::new(BitcoinAdapter::new("bitcoin", url)?))
+        }
         "base" => Ok(Box::new(EvmAdapter::new(
             "base",
             ChainId::Base,

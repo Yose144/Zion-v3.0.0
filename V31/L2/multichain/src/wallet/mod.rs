@@ -17,7 +17,12 @@ impl Keyring {
         Self
     }
 
-    pub fn address(&self, _chain: ChainId, _account: u32, _index: u32) -> MultichainResult<Address> {
+    pub fn address(
+        &self,
+        _chain: ChainId,
+        _account: u32,
+        _index: u32,
+    ) -> MultichainResult<Address> {
         // Placeholder: derive chain-specific address from BIP44/SLIP44 path.
         Err(MultichainError::Unsupported(
             "address derivation not yet implemented".to_string(),
