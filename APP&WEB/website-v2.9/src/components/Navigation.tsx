@@ -22,7 +22,7 @@ export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
-  const pathname = usePathname();
+  const pathname = usePathname() ?? '';
   const { lang, setLang } = useLang();
 
   /* Shrink nav into a thin bar after scrolling down */
