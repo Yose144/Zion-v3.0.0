@@ -1950,3 +1950,24 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 - Node health, pool stratum listener, web, dashboard, and RPC all recovered.
 
 **Prevention:** Do not set `MALLOC_ARENA_MAX=1` for the node/pool binaries. The default glibc arena count scales with core count and avoids single-arena `mmap` bloat. If huge pages are reserved, keep only what the active workload (e.g. RandomX dataset) actually needs.
+
+### Windows 11 AMD RX 5700 XT triple-stream tuning (2026-07-24)
+
+- **Autotune (`zion-miner.exe --auto-tune`) reports:**
+  - GPU: `gfx1010:xnack-` 18 CU / 6128 MiB
+  - `ZION_GPU_WORK_SIZE=8192` (autotuned from `nearest_pow2(CUs * 512)`)
+  - `ZION_SECONDARY_GPU_WORK_SIZE=4194304`
+  - `ZION_THREADS=6`
+  - `ZION_EXT_CPU_NONCE_COUNT=2000000`
+- **Working `.bat` settings for ZION + ZANO + VRSC on a single RX 5700 XT:**
+  ```batch
+  set ZION_THREADS=12
+  set ZION_GPU_WORK_SIZE=8192
+  set ZION_SECONDARY_GPU_WORK_SIZE=4194304
+  set ZION_EXT_GPU_BATCH_SIZE=2097152
+  set ZION_EXT_CPU_NONCE_COUNT=2000000
+  set ZION_AUXPOW_GPU_DAG_LWS=128
+  set ZION_DAG_CACHE_DIR=%USERPROFILE%\.zion\dag-cache
+  ```
+- **Why:** `ZION_GPU_WORK_SIZE=16000` gets rounded to 16384 and produced a high rate of `SHARE_REJECTED` / `NoSolution` on ZION. Using the autotuned `8192` drops the reject rate. `ZION_EXT_GPU_BATCH_SIZE` should stay at the 2 M default on a shared GPU; 4 M starves the ZION stream and increases stale shares.
+- **Dashboard `miner` service health:** The Edge dashboard `miner` health check was pointing at `http://127.0.0.1:8444` (stratum port, not HTTP) and failing with `Remote end closed connection`. Change the `miner` service `health_endpoint` to `http://127.0.0.1:8455/metrics` and parse `zion_pool_active_sessions` / `zion_pool_miners_tracked` instead. The Windows remote miner is then reflected as active when the pool has connected sessions.
