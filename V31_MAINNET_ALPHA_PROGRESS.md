@@ -50,6 +50,25 @@
 - `zion wallet address/sign/balance` — odvození adresy a podpis přes `Keyring`.
 - `zion bridge lock/burn` — vytvoření a submit bridge `Transfer`.
 - `zion swap quote/execute` — DEX quote a execution.
+- `zion api` — spuštění HTTP API serveru (Axum) pro dashboard.
+
+### 8. V3 contract addresses v `zion-multichain`
+- Nový modul `contracts.rs` s kanonickými adresami 3.0.4/3.0.5: wZION, ZIONBridge, AtomicSwap, Staking, Farm, Governance, Treasury.
+- `ZionContracts::base_mainnet()` a `ZionContracts::non_base()` pro generic EVM bridge proxy.
+- Exponováno přes `/v1/multichain/contracts` a `/v1/multichain/contracts/:chain`.
+
+### 9. V31 HTTP API gateway
+- Rozšířen `ApiServer` v `server.rs` o endpointy:
+  - `/v1/wallet/address`, `/v1/wallet/sign`
+  - `/v1/swap/quote`, `/v1/swap/execute`
+  - `/v1/bridge/submit`
+  - `/v1/multichain/contracts`
+- Přidán `CorsLayer` pro integraci s externím dashboardem (`dashboard.zionterranova.com`).
+
+### 10. `Dash31/` — statický dashboard pro V31 Alpha
+- `index.html` + `app.js` volající V31 HTTP API.
+- Sekce: status, kontrakty, wallet, bridge, swap, pool placeholder.
+- Default API base `http://127.0.0.1:8453` (konfigurovatelné v UI).
 
 ## Verifikace
 
@@ -77,6 +96,7 @@ Rozpis testů:
 - `9e720dc4` — `feat(v31): add pool, bridge and wallet modules for Mainnet Alpha`
 - `23e8ecec` — `docs: add V31 Mainnet Alpha progress report and next plan`
 - `91bdd696` — `feat(v31): add CLI commands for wallet, bridge and swap`
+- `<novy>` — `feat(v31): add V3 contracts, HTTP API, CORS and Dash31 dashboard`
 
 ## Další plán (Mainnet Alpha milestones)
 

@@ -6,6 +6,7 @@ use clap::{Parser, Subcommand};
 
 use zion_l1_types::{Address, Amount, Asset, ChainId};
 use zion_multichain::config::MultichainConfig;
+use zion_multichain::server::ApiServer;
 use zion_multichain::types::{Transfer, TransferDirection, TransferEndpoint};
 use zion_multichain::MultichainService;
 
@@ -32,6 +33,8 @@ enum Command {
     Bridge(BridgeArgs),
     /// DEX swap commands.
     Swap(SwapArgs),
+    /// Serve the V31 HTTP API gateway.
+    Api,
 }
 
 #[derive(Parser)]
@@ -182,6 +185,7 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     let config = load_config(cli.config)?;
+    let server_config = config.server.clone();
     let service = Arc::new(MultichainService::new(config)?);
 
     match cli.command {
@@ -309,6 +313,15 @@ async fn main() -> anyhow::Result<()> {
                 println!("executed swap: out = {}", out.0);
             }
         },
+        Command::Api => {
+            println!(
+                "Starting V31 HTTP API on {}:{}",
+                server_config.bind, server_config.port
+            );
+            ApiServer::new(server_config, Arc::clone(&service))
+                .run()
+                .await?;
+        }
     }
 
     Ok(())
