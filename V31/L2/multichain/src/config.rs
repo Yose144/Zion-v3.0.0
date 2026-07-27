@@ -59,6 +59,8 @@ pub struct PoolConfigFile {
     pub pool_address: Address,
     pub worker: String,
     pub password: String,
+    #[serde(default)]
+    pub l1_rpc_url: Option<String>,
 }
 
 impl Default for PoolConfigFile {
@@ -75,6 +77,7 @@ impl Default for PoolConfigFile {
                 .unwrap(),
             worker: String::new(),
             password: String::new(),
+            l1_rpc_url: None,
         }
     }
 }
@@ -92,6 +95,7 @@ impl PoolConfigFile {
             pool_address: self.pool_address.clone(),
             worker: self.worker.clone(),
             password: self.password.clone(),
+            l1_rpc_url: self.l1_rpc_url.clone(),
         }
     }
 }

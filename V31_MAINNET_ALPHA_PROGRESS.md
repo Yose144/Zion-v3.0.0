@@ -119,6 +119,12 @@
 - Pool sekce v `Dash31/index.html` rozšířena o tabulku `Latest payouts`.
 - `Dash31/app.js` při `loadPool` načítá `/v1/pool/payouts` a vykresluje adresy + částky (zkrácené adresy, tooltip s plnou adresou).
 
+### 19. Submit nalezeného bloku do L1
+- `PoolConfig` rozšířena o `l1_rpc_url` a `PoolConfigFile` o `#[serde(default)] l1_rpc_url`.
+- Když `StratumServer` detekuje nalezený blok, kromě PPLNS payouts spustí `tokio::spawn` s JSON-RPC `submitBlock` voláním na `l1_rpc_url`.
+- `submitBlock` payload obsahuje `template_id`, `header_hex`, `nonce`, `target_hex` a `algorithm: "deeksha_lite_v1"`.
+- `reqwest` přidán do `zion-pool` pro HTTP RPC.
+
 ## Verifikace
 
 ```bash
@@ -155,6 +161,7 @@ Rozpis testů:
 - `b00daa77` — `feat(v31): block detection and PPLNS payouts endpoint`
 - `1c96ffcd` — `feat(v31): real block reward and worker payout addresses`
 - `9b0ce9c5` — `feat(v31): Dash31 pool payouts panel`
+- `<novy>` — `feat(v31): submit solved blocks to zion-l1 RPC`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -170,6 +177,7 @@ Rozpis testů:
    - Real block reward ✅ — `BlockTemplate` parsuje `estimated_miner_reward_zion`/`reward_zion` z `getBlockTemplate`; stratum job obsahuje block reward pro payouts.
    - Worker jako payout adresa ✅ — pokud stratum worker začíná `zion1...`, je použita jako payout adresa pro PPLNS.
    - `Dash31` payouts panel ✅ — zobrazuje nejnovější payouts z `/v1/pool/payouts` v pool sekci.
+   - Submit nalezeného bloku ✅ — `StratumServer` volá `submitBlock` JSON-RPC na `l1_rpc_url` (config `[pool].l1_rpc_url`) při nalezení bloku.
 
 2. **Real chain adapters (další kroky)**
    - `EvmAdapter` ✅ — provider + wallet + contract addresses; zbývá nasadit validator wallet a testovat `submitLockProof` na Base.
