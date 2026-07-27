@@ -139,7 +139,7 @@ impl CudaExtAlgo {
             Self::Autolykos => "autolykos_mine",
             Self::Zelhash => "zelhash_mine",
             Self::Ethash => "ethash_mine",
-            Self::Kawpow => "kawpow_mine",
+            Self::Kawpow => "progpow_search",
             Self::Progpow => "progpow_mine",
             Self::Verushash => "verus_mine",
         }
@@ -190,13 +190,14 @@ impl CudaExtAlgo {
     /// Returns true if this algorithm requires period-based kernel recompilation
     /// (random math changes every PERIOD blocks).
     fn needs_period_recompile(&self) -> bool {
-        matches!(self, Self::Progpow)
+        matches!(self, Self::Progpow | Self::Kawpow)
     }
 
     /// Period length for random math recompilation.
     fn period_length(&self) -> u32 {
         match self {
             Self::Progpow => 50,
+            Self::Kawpow => 10, // KAWPOW_PARAMS.period = 10
             _ => 0,
         }
     }
@@ -248,6 +249,10 @@ pub struct CudaExternalMiner {
     progpow_dag_elements: u64,
     // ProgPoW: g_output buffer for the kernel's compatibility output slots.
     progpow_g_output: Option<CudaSlice<u32>>,
+    // KawPow: job_blob buffer (10 uint32 = 40 bytes), results (16 uint32), stop (2 uint32)
+    kawpow_job_blob: Option<CudaSlice<u32>>,
+    kawpow_results: Option<CudaSlice<u32>>,
+    kawpow_stop: Option<CudaSlice<u32>>,
 }
 
 impl CudaExternalMiner {
@@ -276,18 +281,8 @@ impl CudaExternalMiner {
         let progpow_deferred = algo.needs_period_recompile();
         if !progpow_deferred {
             let processed = preprocess_kernel(algo.kernel_source());
-            // KawPow: disable --use_fast_math to test if NVRTC fast-math
-            // causes the keccak512 miscompilation.
-            let use_fast_math = !matches!(algo, CudaExtAlgo::Kawpow);
             let mut opts = vec![format!("-arch={}", arch), "--std=c++14".to_string()];
-            if use_fast_math {
-                opts.push("--use_fast_math".to_string());
-            }
-            // KawPow: add -G (device debug, no optimizations) to work
-            // around NVRTC compiler bug on compute_61 (Pascal).
-            if matches!(algo, CudaExtAlgo::Kawpow) {
-                opts.push("-G".to_string());
-            }
+            opts.push("--use_fast_math".to_string());
             let ptx = compile_ptx_with_opts(
                 &processed,
                 CompileOptions {
@@ -363,6 +358,20 @@ impl CudaExternalMiner {
             None
         };
 
+        // KawPow: allocate job_blob (10 u32), results (16 u32), stop (2 u32)
+        let (kawpow_job_blob, kawpow_results, kawpow_stop) = if algo == CudaExtAlgo::Kawpow {
+            (
+                Some(dev.htod_copy(vec![0u32; 10])
+                    .map_err(|e| anyhow::anyhow!("kawpow_job_blob alloc: {e}"))?),
+                Some(dev.htod_copy(vec![0u32; 16])
+                    .map_err(|e| anyhow::anyhow!("kawpow_results alloc: {e}"))?),
+                Some(dev.htod_copy(vec![0u32; 2])
+                    .map_err(|e| anyhow::anyhow!("kawpow_stop alloc: {e}"))?),
+            )
+        } else {
+            (None, None, None)
+        };
+
         // Allow larger work sizes for ProgPoW to reduce kernel launch
         // overhead and improve occupancy on Pascal+.  The previous 1M cap
         // was conservative; 4M gives the GPU bigger batches to chew on
@@ -409,6 +418,9 @@ impl CudaExternalMiner {
             progpow_period: 0xFFFFFFFF,
             progpow_dag_elements: 0,
             progpow_g_output,
+            kawpow_job_blob,
+            kawpow_results,
+            kawpow_stop,
         })
     }
 
@@ -748,6 +760,92 @@ impl CudaExternalMiner {
         Ok(())
     }
 
+    /// Recompile the KawPow kernel via NVRTC when the period or DAG size changes.
+    /// KawPow uses keccak_f800 with "RAVENCOINKAWPOW" constant and a 40-byte
+    /// job_blob input. The random math sequence changes every 10 blocks.
+    fn ensure_kawpow_kernel(&mut self, block_height: u64) -> Result<()> {
+        let period = (block_height / self.progpow_period()) as u32;
+        // KawPow DAG elements = dag_size_entries / 2 (each dag_t = 4 uint32 = 2 uint64)
+        let dag_elements = if self.dag_buf.is_some() {
+            self.dag_size_entries / 2
+        } else {
+            1
+        };
+
+        if self.progpow_period == period && self.progpow_dag_elements == dag_elements {
+            return Ok(());
+        }
+
+        eprintln!(
+            "kawpow_cuda: recompiling kernel period={} dag_elements={} block_height={}",
+            period, dag_elements, block_height,
+        );
+        let start = Instant::now();
+
+        // Step 1: Get the base CUDA kernel source
+        let base_src = self.algo.kernel_source();
+
+        // Step 2: Inject random math + data loads via codegen
+        let prepared_src = zion_auxpow::progpow_codegen::prepare_kawpow_kernel_source_for_algo(
+            base_src,
+            &self.algorithm,
+            block_height,
+        );
+
+        // Step 3: Inject launch bounds and offset mod (simple mod, not fast mod)
+        let prepared_src = prepared_src
+            .replace("XMRIG_INCLUDE_LAUNCH_BOUNDS", "__launch_bounds__(128, 3)")
+            .replace(
+                "XMRIG_INCLUDE_OFFSET_MOD_DAG_ELEMENTS",
+                &format!("offset %= {};", dag_elements),
+            );
+
+        // Step 4: Preprocess (strip #pragma once, #include, fix NVRTC issues)
+        let processed = preprocess_kernel(&prepared_src);
+
+        // Debug: dump the preprocessed source for inspection
+        if std::env::var("ZION_DUMP_CUDA_KERNEL").is_ok() {
+            let _ = std::fs::write(
+                "C:\\Users\\anaha\\AppData\\Local\\Temp\\kawpow_cuda_source.cu",
+                &processed,
+            );
+        }
+
+        // Step 5: Compile via NVRTC
+        let arch = detect_cuda_arch(&self.dev);
+        let ptx = compile_ptx_with_opts(
+            &processed,
+            CompileOptions {
+                options: vec![
+                    format!("-arch={}", arch),
+                    "--std=c++14".to_string(),
+                    format!("-DPROGPOW_DAG_ELEMENTS={}", dag_elements),
+                    format!("-DGROUP_SIZE=128"),
+                ],
+                ..Default::default()
+            },
+        )
+        .map_err(|e| anyhow::anyhow!("NVRTC compile failed for kawpow period={}: {e}", period))?;
+
+        // Step 6: Load the PTX
+        let module_name = self.algo.module_name();
+        let kernel_name = self.algo.kernel_name();
+        self.dev
+            .load_ptx(ptx, module_name, &[kernel_name])
+            .map_err(|e| anyhow::anyhow!("PTX load failed for kawpow period={}: {e}", period))?;
+
+        self.progpow_period = period;
+        self.progpow_dag_elements = dag_elements;
+
+        eprintln!(
+            "kawpow_cuda: kernel ready period={} dag_elements={} ({:.1}s)",
+            period, dag_elements,
+            start.elapsed().as_secs_f64(),
+        );
+
+        Ok(())
+    }
+
     fn run_kernel(
         &mut self,
         header: &[u8],
@@ -942,21 +1040,64 @@ impl CudaExternalMiner {
                             .dag_buf
                             .as_ref()
                             .ok_or_else(|| anyhow::anyhow!("kawpow DAG not loaded"))?;
-                        let dag_entries = self.dag_size_entries;
+                        let job_blob = self
+                            .kawpow_job_blob
+                            .as_mut()
+                            .ok_or_else(|| anyhow::anyhow!("kawpow job_blob not allocated"))?;
+                        let results = self
+                            .kawpow_results
+                            .as_mut()
+                            .ok_or_else(|| anyhow::anyhow!("kawpow results not allocated"))?;
+                        let stop = self
+                            .kawpow_stop
+                            .as_mut()
+                            .ok_or_else(|| anyhow::anyhow!("kawpow stop not allocated"))?;
+
+                        // Build job_blob: header[32] + nonce[8] = 40 bytes = 10 uint32
+                        // The kernel adds gid to job_blob[8], so we put base_nonce there.
+                        let mut blob = [0u32; 10];
+                        for i in 0..8 {
+                            blob[i] = u32::from_le_bytes([
+                                header[i * 4],
+                                header[i * 4 + 1],
+                                header[i * 4 + 2],
+                                header[i * 4 + 3],
+                            ]);
+                        }
+                        blob[8] = (current_nonce & 0xFFFFFFFF) as u32;
+                        blob[9] = (current_nonce >> 32) as u32;
+                        self.dev
+                            .htod_copy_into(blob.to_vec(), job_blob)
+                            .map_err(|e| anyhow::anyhow!("kawpow job_blob upload: {e}"))?;
+
+                        // Reset results and stop buffers
+                        self.dev
+                            .htod_copy_into(vec![0u32; 16], results)
+                            .map_err(|e| anyhow::anyhow!("kawpow results reset: {e}"))?;
+                        self.dev
+                            .htod_copy_into(vec![0u32; 2], stop)
+                            .map_err(|e| anyhow::anyhow!("kawpow stop reset: {e}"))?;
+
+                        // Convert 32-byte big-endian target to u64
+                        let target_u64 = u64::from_be_bytes([
+                            target[0], target[1], target[2], target[3],
+                            target[4], target[5], target[6], target[7],
+                        ]);
+                        let hack_false: u32 = 0;
                         func
                             .clone()
                             .launch(
                                 cfg,
                                 (
-                                    &self.header_buf,
-                                    &self.target_buf,
-                                    current_nonce,
-                                    dag,
-                                    dag_entries,
-                                    &mut self.output_nonce,
-                                    &mut self.output_hash,
-                                    &mut self.output_mix,
-                                    &mut self.found_flag,
+                                    dag,             // 0: g_dag (u64 buffer)
+                                    job_blob,        // 1: job_blob (10 u32)
+                                    target_u64,      // 2: target
+                                    hack_false,      // 3: hack_false
+                                    results,         // 4: results
+                                    stop,            // 5: stop
+                                    &mut self.output_nonce,  // 6: output_nonce
+                                    &mut self.output_mix,    // 7: output_mix
+                                    &mut self.found_flag,    // 8: found
                                 ),
                             )
                             .map_err(|e| anyhow::anyhow!("kawpow launch: {e}"))?;
@@ -1186,9 +1327,13 @@ impl GpuMiner for CudaExternalMiner {
             let epoch = (height / self.dag_epoch_length()) as u32;
             self.ensure_dag(epoch)?;
         }
-        // ProgPoW: recompile kernel when period or DAG size changes
+        // ProgPoW/KawPow: recompile kernel when period or DAG size changes
         if self.algo.needs_period_recompile() {
-            self.ensure_progpow_kernel(height)?;
+            if self.algo == CudaExtAlgo::Kawpow {
+                self.ensure_kawpow_kernel(height)?;
+            } else {
+                self.ensure_progpow_kernel(height)?;
+            }
         }
         Ok(())
     }
@@ -1236,9 +1381,13 @@ impl GpuMiner for CudaExternalMiner {
             if self.dag_epoch == 0xFFFFFFFF {
                 self.ensure_dag(0)?;
             }
-            // ProgPoW: compile kernel if not yet compiled (first run)
+            // ProgPoW/KawPow: compile kernel if not yet compiled (first run)
             if self.algo.needs_period_recompile() && self.progpow_period == 0xFFFFFFFF {
-                self.ensure_progpow_kernel(0)?;
+                if self.algo == CudaExtAlgo::Kawpow {
+                    self.ensure_kawpow_kernel(0)?;
+                } else {
+                    self.ensure_progpow_kernel(0)?;
+                }
             }
             // For ethash/kawpow/progpow, only the first 32 bytes (header hash) are used
             let header_hash = &header_bytes[..32.min(header_bytes.len())];
@@ -1282,7 +1431,11 @@ impl GpuMiner for CudaExternalMiner {
                 self.ensure_dag(0)?;
             }
             if self.algo.needs_period_recompile() && self.progpow_period == 0xFFFFFFFF {
-                self.ensure_progpow_kernel(0)?;
+                if self.algo == CudaExtAlgo::Kawpow {
+                    self.ensure_kawpow_kernel(0)?;
+                } else {
+                    self.ensure_progpow_kernel(0)?;
+                }
             }
             let header_hash = &raw_header[..32.min(raw_header.len())];
             return self.run_kernel(header_hash, &target.bytes, nonce_start, batch_size);
@@ -1295,9 +1448,13 @@ impl GpuMiner for CudaExternalMiner {
         // For DAG-based algorithms, use mine_batch_raw which calls ensure_dag(0)
         if self.algo.needs_dag() {
             self.ensure_dag(0)?;
-            // ProgPoW: also compile the kernel for period 0
+            // ProgPoW/KawPow: also compile the kernel for period 0
             if self.algo.needs_period_recompile() {
-                self.ensure_progpow_kernel(0)?;
+                if self.algo == CudaExtAlgo::Kawpow {
+                    self.ensure_kawpow_kernel(0)?;
+                } else {
+                    self.ensure_progpow_kernel(0)?;
+                }
             }
             let start = Instant::now();
             let mut total: u64 = 0;
