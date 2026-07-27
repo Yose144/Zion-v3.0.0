@@ -49,6 +49,23 @@ __constant__ const int KECCAK_PI[24] = {
 };
 
 __device__ void keccak_f1600(uint64_t state[25]) {
+    // Local copies of constants (test: __constant__ init bug on Pascal?)
+    const uint64_t RC[24] = {
+        0x0000000000000001ULL, 0x0000000000008082ULL, 0x800000000000808aULL,
+        0x8000000080008000ULL, 0x000000000000808bULL, 0x0000000080000001ULL,
+        0x8000000080008081ULL, 0x8000000000008009ULL, 0x000000000000008aULL,
+        0x0000000000000088ULL, 0x0000000080008009ULL, 0x000000008000000aULL,
+        0x800000008000808bULL, 0x800000000000008bULL, 0x8000000000008089ULL,
+        0x8000000000008003ULL, 0x8000000000008002ULL, 0x8000000000000080ULL,
+        0x000000000000800aULL, 0x800000008000000aULL, 0x8000000080008081ULL,
+        0x8000000000008080ULL, 0x0000000080000001ULL, 0x8000000080008008ULL
+    };
+    const unsigned int RHO[24] = {
+        1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44
+    };
+    const int PI[24] = {
+        10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1
+    };
     for (int round = 0; round < 24; round++) {
         // Theta
         uint64_t c[5], d[5];
@@ -62,9 +79,9 @@ __device__ void keccak_f1600(uint64_t state[25]) {
         // Rho and Pi
         uint64_t temp = state[1];
         for (int t = 0; t < 24; t++) {
-            int idx = KECCAK_PI[t];
+            int idx = PI[t];
             uint64_t tmp2 = state[idx];
-            state[idx] = ROTL64(temp, KECCAK_RHO[t]);
+            state[idx] = ROTL64(temp, RHO[t]);
             temp = tmp2;
         }
 
@@ -77,7 +94,7 @@ __device__ void keccak_f1600(uint64_t state[25]) {
         }
 
         // Iota
-        state[0] ^= KECCAK_RC[round];
+        state[0] ^= RC[round];
     }
 }
 
