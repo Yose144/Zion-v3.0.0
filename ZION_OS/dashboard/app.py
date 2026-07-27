@@ -1436,7 +1436,7 @@ def check_service_health(svc: dict) -> dict:
             proc_info = {"has_pid": True, "alive": True, "pid": miner_pid}
             register_process("miner", miner_pid, image="zion-miner")
 
-    # Miner edge-primary: check Edge pool metrics for active miners
+    # Miner edge-primary: check Edge pool metrics for active/tracked miners
     if sid == "miner" and TOPOLOGY == "edge-primary" and svc.get("health_endpoint"):
         try:
             import urllib.request as _ur
@@ -1449,7 +1449,7 @@ def check_service_health(svc: dict) -> dict:
                     _active = int(float(_line.split()[-1]))
                 elif _line.startswith("zion_pool_miners_tracked "):
                     _miners = int(float(_line.split()[-1]))
-            if _active > 0:
+            if _active > 0 or _miners > 0:
                 log_alive = True
                 log_age = 0
                 proc_info = {"has_pid": True, "alive": True, "pid": -1}
@@ -1730,14 +1730,14 @@ def inspect_database(path_str: str, limit: int = 50) -> dict:
 # ── Log parsers ─────────────────────────────────────────────────────────
 
 def tail_log(filename: str, n: int = 100) -> list[str]:
-    path = LOG_DIR / filename
+    path = Path(filename) if Path(filename).is_absolute() else LOG_DIR / filename
     if not path.exists():
         return []
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
         return [ln.rstrip("\n") for ln in deque(f, maxlen=n)]
 
 def head_log(filename: str, n: int = 50) -> list[str]:
-    path = LOG_DIR / filename
+    path = Path(filename) if Path(filename).is_absolute() else LOG_DIR / filename
     if not path.exists():
         return []
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
@@ -1752,16 +1752,24 @@ def latest_log_path(name: str) -> Path | None:
     """Find the most recent log file for a service.
     Supports both dotted (name.YYYYMMDD_HHMMSS.log) and underscore (name_TIMESTAMP.log) formats.
     Always picks the newest by mtime, including the plain name.log fallback.
-    Accepts name with or without .log suffix."""
+    Accepts name with or without .log suffix.
+    Searches LOG_DIR first, then REPO_ROOT and SCRIPT_DIR/logs for legacy/deploy layouts."""
     base = name.removesuffix(".log")
-    # Collect timestamped variants AND plain name.log, pick newest by mtime
-    candidates = (
-        list(LOG_DIR.glob(f"{base}.*.log")) +
-        list(LOG_DIR.glob(f"{base}_*.log"))
-    )
-    fallback = LOG_DIR / f"{base}.log"
-    if fallback.exists():
-        candidates.append(fallback)
+    candidates = []
+    search_dirs = [LOG_DIR]
+    if REPO_ROOT.resolve() != LOG_DIR.resolve():
+        search_dirs.append(REPO_ROOT)
+    script_logs = SCRIPT_DIR / "logs"
+    if script_logs.resolve() != LOG_DIR.resolve() and script_logs.resolve() != REPO_ROOT.resolve():
+        search_dirs.append(script_logs)
+    for d in search_dirs:
+        if not d.exists():
+            continue
+        candidates.extend(d.glob(f"{base}.*.log"))
+        candidates.extend(d.glob(f"{base}_*.log"))
+        fallback = d / f"{base}.log"
+        if fallback.exists():
+            candidates.append(fallback)
     if not candidates:
         return None
     candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
@@ -1769,8 +1777,8 @@ def latest_log_path(name: str) -> Path | None:
 
 def parse_node_log(name: str) -> dict:
     log_path = latest_log_path(name)
-    recent = tail_log(log_path.name, 200) if log_path else []
-    startup = head_log(log_path.name, 50) if log_path else []
+    recent = tail_log(str(log_path), 200) if log_path else []
+    startup = head_log(str(log_path), 50) if log_path else []
     # Log-based running: log must exist AND be recent (< 5 min) AND not end with ^C
     log_alive = False
     if log_path and log_path.exists() and recent:
@@ -1946,6 +1954,36 @@ def load_nodes_config() -> dict:
 
 ORCHESTRATOR_MANIFEST = REPO_ROOT / "ZION_OS" / "orchestrator" / "manifest.yaml"
 
+# Map generic manifest service names to the Edge deployment systemd units.
+# A value of None means the service has no Edge unit and should be reported stopped.
+ORCHESTRATOR_EDGE_SERVICE_UNITS = {
+    "zion-node": "zion-edge-node1",
+    "zion-node2": "zion-edge-node2",
+    "zion-pool": "zion-edge-pool",
+    "zion-miner": None,
+    "zion-bridge": "zion-edge-bridge",
+    "zion-dao": "zion-edge-dao",
+    "zion-atomic-swap": "zion-edge-atomic-swap",
+    "zion-warp": "zion-edge-warp",
+    "zion-oasis": "zion-edge-oasis",
+    "zion-hiranyagarbha": None,
+    "zion-hiran-inference": None,
+    "zion-cli": None,
+    "zion-mining-agent": None,
+    "zion-dashboard": "zion-edge-dashboard",
+    "zion-dashboard-web": "zion-edge-python-dashboard",
+    "zion-desktop-dashboard": None,
+    "zion-mobile-app": None,
+    "zion-website": None,
+    "zion-wallet-sdk": None,
+    "zion-prometheus": "prometheus",
+    "zion-grafana": "grafana-server",
+    "zion-alertmanager": "alertmanager",
+    "zion-node-exporter": "prometheus-node-exporter",
+    "zion-auto-update": None,
+    "zion-watchdog": "zion-edge-watchdog",
+}
+
 def load_orchestrator_manifest() -> dict:
     """Load Zion OS Orchestrator manifest"""
     try:
@@ -1972,24 +2010,59 @@ def get_orchestrator_services() -> dict:
         }
     return {"services": result, "profiles": manifest.get("profiles", {}), "layers": sorted(set(s.get("layer", "unknown") for s in services.values()))}
 
+def _orchestrator_systemd_state(unit: str) -> tuple[str | None, int | None]:
+    """Return (state, pid) for a systemd unit, or (None, None) if unit not known to systemd."""
+    try:
+        r = subprocess.run(["systemctl", "is-active", unit + ".service"], capture_output=True, text=True, timeout=5)
+        active = r.stdout.strip() == "active"
+        pid = None
+        if active:
+            rp = subprocess.run(["systemctl", "show", "--property=MainPID", unit + ".service"], capture_output=True, text=True, timeout=5)
+            try:
+                pid = int(rp.stdout.strip().split("=")[-1])
+                if pid <= 0:
+                    pid = None
+            except Exception:
+                pass
+        return ("running" if active else "stopped", pid)
+    except Exception:
+        return (None, None)
+
+
 def get_orchestrator_status() -> dict:
-    """Check status of all services defined in manifest"""
+    """Check status of all services defined in manifest.
+    On Edge deployments this prefers the real systemd units (zion-edge-*)."""
     manifest = load_orchestrator_manifest()
     services = manifest.get("services", {})
     status = {}
     for name, cfg in services.items():
         binary = cfg.get("binary", "")
-        # Check if process is running
         pid = None
         state = "stopped"
-        try:
-            if binary:
-                result = subprocess.run(["pgrep", "-f", binary], capture_output=True, text=True)
-                if result.returncode == 0:
-                    pid = int(result.stdout.strip().split('\n')[0])
-                    state = "running"
-        except Exception:
-            pass
+
+        # Edge-first: map manifest name to the deployed systemd unit
+        edge_unit = ORCHESTRATOR_EDGE_SERVICE_UNITS.get(name) if TOPOLOGY == "edge-primary" else None
+        if edge_unit is not None:
+            _state, _pid = _orchestrator_systemd_state(edge_unit)
+            if _state is not None:
+                state, pid = _state, _pid
+        elif TOPOLOGY == "edge-primary":
+            # Explicitly mapped to None on Edge means the service is not deployed
+            state = "stopped"
+        else:
+            # Local / fallback: check process table, but avoid false substring matches
+            try:
+                if binary:
+                    # Match the binary path followed by end-of-string or whitespace so
+                    # e.g. V3/target/release/zion does not match zion-atomic-swap.
+                    pattern = f"{re.escape(binary)}($|[[:space:]])"
+                    result = subprocess.run(["pgrep", "-f", pattern], capture_output=True, text=True)
+                    if result.returncode == 0:
+                        pid = int(result.stdout.strip().split('\n')[0])
+                        state = "running"
+            except Exception:
+                pass
+
         status[name] = {
             "name": name,
             "layer": cfg.get("layer", "unknown"),
@@ -2001,22 +2074,55 @@ def get_orchestrator_status() -> dict:
     return {"timestamp": datetime.now().isoformat(), "services": status}
 
 def orchestrator_control(action: str, service: str) -> dict:
-    """Start, stop, or restart a service"""
+    """Start, stop, or restart a service.
+    On Edge deployments this uses the mapped systemd units via sudo systemctl."""
     manifest = load_orchestrator_manifest()
     services = manifest.get("services", {})
     if service not in services:
         return {"ok": False, "error": f"Service '{service}' not found in manifest"}
     cfg = services[service]
+
+    edge_unit = ORCHESTRATOR_EDGE_SERVICE_UNITS.get(service) if TOPOLOGY == "edge-primary" else None
+    if edge_unit:
+        unit = f"{edge_unit}.service"
+        if action == "start":
+            _state, _pid = _orchestrator_systemd_state(edge_unit)
+            if _state == "running":
+                return {"ok": True, "message": f"{service} is already running", "pid": _pid, "action": "start"}
+            try:
+                subprocess.run(["sudo", "-n", "systemctl", "start", unit], capture_output=True, text=True, timeout=30)
+                _state, _pid = _orchestrator_systemd_state(edge_unit)
+                return {"ok": _state == "running", "message": f"Started {service}", "pid": _pid, "action": "start"}
+            except Exception as e:
+                return {"ok": False, "error": str(e), "action": "start"}
+        elif action == "stop":
+            try:
+                subprocess.run(["sudo", "-n", "systemctl", "stop", unit], capture_output=True, text=True, timeout=30)
+                return {"ok": True, "message": f"Stopped {service}", "action": "stop"}
+            except Exception as e:
+                return {"ok": False, "error": str(e), "action": "stop"}
+        elif action == "restart":
+            try:
+                subprocess.run(["sudo", "-n", "systemctl", "restart", unit], capture_output=True, text=True, timeout=30)
+                _state, _pid = _orchestrator_systemd_state(edge_unit)
+                return {"ok": _state == "running", "message": f"Restarted {service}", "pid": _pid, "action": "restart"}
+            except Exception as e:
+                return {"ok": False, "error": str(e), "action": "restart"}
+        return {"ok": False, "error": f"Unknown action: {action}"}
+
+    # Local / fallback: launch/stop by binary path
     binary = cfg.get("binary", "")
     args = cfg.get("args", [])
     env = cfg.get("env", {})
     log_file = cfg.get("log_file", f"logs/{service}.log")
     if action == "start":
-        # Check if already running
+        # Check if already running (avoid false substring matches)
         try:
-            result = subprocess.run(["pgrep", "-f", binary], capture_output=True, text=True)
-            if result.returncode == 0:
-                return {"ok": True, "message": f"{service} is already running", "action": "start"}
+            if binary:
+                pattern = f"{re.escape(binary)}($|[[:space:]])"
+                result = subprocess.run(["pgrep", "-f", pattern], capture_output=True, text=True)
+                if result.returncode == 0:
+                    return {"ok": True, "message": f"{service} is already running", "action": "start"}
         except Exception:
             pass
         # Start service
@@ -2033,7 +2139,9 @@ def orchestrator_control(action: str, service: str) -> dict:
             return {"ok": False, "error": str(e), "action": "start"}
     elif action == "stop":
         try:
-            result = subprocess.run(["pkill", "-f", binary], capture_output=True, text=True)
+            if binary:
+                pattern = f"{re.escape(binary)}($|[[:space:]])"
+                subprocess.run(["pkill", "-f", pattern], capture_output=True, text=True)
             return {"ok": True, "message": f"Stopped {service}", "action": "stop"}
         except Exception as e:
             return {"ok": False, "error": str(e), "action": "stop"}
@@ -2278,6 +2386,34 @@ def get_miner_live_stats() -> dict:
     stats = parse_miner_log()
     agent_gpu = fetch_agent_gpu()
 
+    # Edge-primary: no local miner; reflect active pool miners via Prometheus metrics
+    if not stats.get("running") and TOPOLOGY == "edge-primary":
+        try:
+            import urllib.request as _ur
+            with _ur.urlopen(f"http://{EDGE_RPC_HOST}:8455/metrics", timeout=2.0) as _r:
+                _txt = _r.read().decode("utf-8", errors="ignore")
+            _active = _tracked = _hashrate = _accepted = _rejected = 0
+            for _ln in _txt.splitlines():
+                if _ln.startswith("zion_pool_active_sessions "):
+                    _active = int(float(_ln.split()[-1]))
+                elif _ln.startswith("zion_pool_miners_tracked "):
+                    _tracked = int(float(_ln.split()[-1]))
+                elif _ln.startswith("zion_pool_hashrate_hps "):
+                    _hashrate = float(_ln.split()[-1]) / 1000.0
+                elif _ln.startswith("zion_pool_accepted_total "):
+                    _accepted = int(float(_ln.split()[-1]))
+                elif _ln.startswith("zion_pool_rejected_total "):
+                    _rejected = int(float(_ln.split()[-1]))
+            if _active > 0 or _tracked > 0:
+                stats["running"] = True
+                stats["hashrate"] = _hashrate if _hashrate > 0 else stats.get("hashrate")
+                stats["shares_accepted"] = _accepted
+                stats["shares_rejected"] = _rejected
+                stats["pool_addr"] = f"{EDGE_PUBLIC_IP}:8444"
+                stats["gpu_backend"] = "pool"
+        except Exception:
+            pass
+
     # Fallback to mock data if miner is running but log parsing fails
     if not stats.get("running") and is_process_running("zion-miner.exe"):
         stats["running"] = True
@@ -2451,12 +2587,13 @@ def parse_miner_log() -> dict:
                 best_mtime = mt
                 best_path = p
     if best_path:
-        recent = tail_log(best_path.name, 200)
+        log_file = str(best_path)
+        recent = tail_log(log_file, 200)
         # Read from both head and tail to find the most-recent startup block
         # (log may have multiple sessions; the last session's startup data is
         # in the tail region, while head_log would find the first/oldest one).
-        startup_head = head_log(best_path.name, 50)
-        startup_tail = tail_log(best_path.name, 300)  # large enough to include last startup
+        startup_head = head_log(log_file, 50)
+        startup_tail = tail_log(log_file, 300)  # large enough to include last startup
     else:
         recent = []
         startup_head = []
@@ -2882,6 +3019,16 @@ def _build_status_edge_primary() -> dict:
     # v3.0.4: No Tailscale — single server topology, not needed
 
     miner_status = parse_miner_log()
+
+    # Edge-primary: no local miner process; reflect active pool miners instead
+    active_miners = (edge_metrics.get("active_miners") or 0) if edge_metrics else 0
+    tracked_miners = (edge_metrics.get("miners_tracked") or 0) if edge_metrics else 0
+    if not miner_status.get("running") and (active_miners > 0 or tracked_miners > 0):
+        miner_status["running"] = True
+        miner_status["pool_addr"] = f"{EDGE_PUBLIC_IP}:8444"
+        miner_status["hashrate"] = edge_metrics.get("hashrate") if edge_metrics else None
+        miner_status["shares_accepted"] = edge_metrics.get("shares_accepted") or 0
+        miner_status["shares_rejected"] = edge_metrics.get("shares_rejected") or 0
 
     # ── L2/L3 Edge services health — TCP port check on Edge (fast, 0.5s) ────
     _edge = "127.0.0.1"
@@ -4099,7 +4246,7 @@ def get_edge_server_status() -> dict:
 
     try:
         # Single command: combine all metrics to avoid multiple calls
-        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-node zion-pool zion-dao zion-warp zion-bridge nginx 2>/dev/null"
+        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-dao zion-edge-warp zion-edge-bridge zion-edge-atomic-swap nginx 2>/dev/null"
         result = _run_edge_cmd(combined_cmd, timeout=8)
         if result.returncode != 0:
             return {"ok": False, "error": result.stderr.strip() or "Edge command failed"}
@@ -4154,7 +4301,7 @@ def get_edge_server_status() -> dict:
 
         # Service status
         services = []
-        svc_names = ["node", "pool", "dao", "warp", "bridge", "nginx"]
+        svc_names = ["node1", "node2", "pool", "dao", "warp", "bridge", "atomic-swap", "nginx"]
         states = svc_part.splitlines() if svc_part else []
         for i, name in enumerate(svc_names):
             if i < len(states):
@@ -4458,17 +4605,31 @@ def get_pool_connection_history(limit: int = 100, since_hours: int = 24) -> dict
         ):
             return {"ok": True, "events": _POOL_HISTORY_CACHE["data"][:limit], "cached": True}
 
-    cmd = (
-        f"journalctl -u zion-pool --no-pager --since '{since_hours} hours ago' -n 5000 "
-        "| grep -E 'peer_addr=|session_start|session_miner_id|session_worker_name|session_duration_secs|wire_bye'"
-    )
-    try:
-        result = _run_edge_cmd(cmd, timeout=10)
-        if result.returncode != 0:
-            return {"ok": False, "events": [], "error": result.stderr.strip()[:120]}
-        raw = result.stdout.strip()
-    except Exception as e:
-        return {"ok": False, "events": [], "error": str(e)[:120]}
+    # Try the current Edge pool unit first, then legacy zion-pool. Fall back to pool.log.
+    raw = ""
+    for unit in ["zion-edge-pool", "zion-pool"]:
+        cmd = (
+            f"journalctl -q -u {unit} --no-pager --since '{since_hours} hours ago' -n 5000 "
+            "| grep -E 'peer_addr=|session_start|session_miner_id|session_worker_name|session_duration_secs|wire_bye'"
+        )
+        try:
+            result = _run_edge_cmd(cmd, timeout=10)
+            if result.returncode == 0:
+                raw = result.stdout.strip()
+                if raw:
+                    break
+        except Exception:
+            pass
+
+    if not raw:
+        # Fallback: read pool.log directly (no journal permissions / unit not logging)
+        log_path = (LOG_DIR / "pool.log") if (LOG_DIR / "pool.log").exists() else Path("/opt/zion/pool.log")
+        if log_path.exists():
+            try:
+                with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                    raw = "".join(deque(f, maxlen=5000))
+            except Exception:
+                raw = ""
 
     if not raw:
         return {"ok": True, "events": [], "cached": False}
@@ -6311,11 +6472,12 @@ def get_servers_setup() -> dict:
     except Exception:
         result["memory"] = {"total": "—", "used": "—", "free": "—", "pct": 0}
 
-    # ── ZION services ────────────────────────────────────────────────
+    # ── ZION services (Edge deployment units) ──────────────────────
     zion_services = [
-        "zion-node", "zion-node2", "zion-pool", "zion-bridge", "zion-dao",
-        "zion-atomic-swap", "zion-warp", "zion-oasis", "zion-free-world",
-        "zion-issobella", "zion-dashboard", "zion-watchdog",
+        "zion-edge-node1", "zion-edge-node2", "zion-edge-pool",
+        "zion-edge-bridge", "zion-edge-dao", "zion-edge-atomic-swap",
+        "zion-edge-warp", "zion-edge-oasis", "zion-edge-dex",
+        "zion-edge-dashboard", "zion-edge-python-dashboard", "zion-edge-watchdog",
     ]
     services = []
     for svc in zion_services:
@@ -10651,7 +10813,7 @@ def _build_health_map() -> dict:
     health["pool-edge"] = "up" if pool_edge.get("running") else "down"
 
     miner = status.get("miner", {})
-    health["miner"] = "up" if miner.get("running") and miner.get("hashrate") else "down"
+    health["miner"] = "up" if miner.get("running") else "down"
 
     # Extended services — TCP probes to 127.0.0.1 (all on same server)
     ext_ports = {
@@ -10872,10 +11034,13 @@ def build_security_status() -> dict:
         alerts[name] = lines
 
     # 4. Firewall status
+    # ufw status requires root; prefer the ufw systemd unit state, which the
+    # dashboard user is allowed to query and accurately reflects whether the
+    # firewall is enabled.
     fw_status = "unknown"
     try:
-        result = subprocess.run(["ufw", "status"], capture_output=True, text=True, timeout=5)
-        fw_status = "active" if "Status: active" in result.stdout else "inactive"
+        result = subprocess.run(["systemctl", "is-active", "ufw"], capture_output=True, text=True, timeout=5)
+        fw_status = "active" if result.stdout.strip() == "active" else "inactive"
     except Exception:
         pass
 
@@ -11088,13 +11253,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"success": False, "error": f"Hiran orchestrator unreachable: {str(e)[:120]}", "offline": True})
 
     def _get_service_log(self, svc_name, lines=50):
-        """Read last N lines from a service's log file."""
+        """Read last N lines from a service's log file.
+        Searches LOG_DIR, REPO_ROOT, and SCRIPT_DIR/logs for the log file."""
         import collections
         log_name = SERVICE_LOG_MAP.get(svc_name)
         if not log_name:
             return {"ok": False, "error": f"Unknown service: {svc_name}"}
-        log_path = LOG_DIR / log_name
-        if not log_path.exists():
+        log_path = latest_log_path(log_name)
+        if not log_path or not log_path.exists():
             return {"ok": False, "error": f"No log file for {svc_name}"}
         try:
             with open(log_path, "r", encoding="utf-8", errors="replace") as f:
@@ -11742,7 +11908,42 @@ class DashboardHandler(BaseHTTPRequestHandler):
             from concurrent.futures import ThreadPoolExecutor, as_completed
 
             def _probe_node(label, host, port):
-                """Probe a node via RPC getChainInfo + getNodeInfo, return status dict."""
+                """Probe a node via RPC getChainInfo + getNodeInfo, return status dict.
+                On Edge the Local Backup node is not on localhost; use the backup beacon instead."""
+                if label == "Local Backup" and TOPOLOGY == "edge-primary":
+                    beacon = {}
+                    beacon_age = None
+                    with _BACKUP_BEACON_LOCK:
+                        beacon_age = _time.time() - _BACKUP_BEACON_TIME
+                        if beacon_age < BACKUP_BEACON_TTL_SEC:
+                            beacon = dict(_BACKUP_BEACON)
+                    if beacon:
+                        return {
+                            "label": label,
+                            "host": beacon.get("host", "local-pc"),
+                            "rpc_port": beacon.get("rpc_bind", "127.0.0.1:8446").split(":")[-1],
+                            "alive": True,
+                            "latency_ms": None,
+                            "height": beacon.get("chain_height"),
+                            "tip_hash": beacon.get("tip_hash"),
+                            "node_id": beacon.get("node_id", "local-backup-node"),
+                            "p2p_bind": beacon.get("p2p_bind", "0.0.0.0:8333"),
+                            "known_peers": beacon.get("known_peers", 0) or 0,
+                            "beacon_age_s": round(beacon_age, 1),
+                        }
+                    return {
+                        "label": label,
+                        "host": "local-pc",
+                        "rpc_port": 8446,
+                        "alive": False,
+                        "latency_ms": None,
+                        "height": None,
+                        "tip_hash": None,
+                        "node_id": None,
+                        "p2p_bind": None,
+                        "known_peers": 0,
+                    }
+
                 t0 = _time.time()
                 chain = rpc_call(host, port, "getChainInfo", {}, timeout=2.5)
                 latency = round((_time.time() - t0) * 1000) if chain and not chain.get("_rpc_error") else None
@@ -12789,12 +12990,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             if not log_name:
                 self._json({"error": "unknown service", "lines": ""})
             else:
-                log_file = LOG_DIR / log_name
-                if not log_file.exists():
+                log_path = latest_log_path(log_name)
+                if not log_path or not log_path.exists():
                     self._json({"lines": f"(log file {log_name} not found)", "exists": False})
                 else:
                     try:
-                        with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                        with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
                             all_lines = f.readlines()
                         tail = "".join(all_lines[-n_lines:])
                         self._json({"lines": tail, "exists": True, "total_lines": len(all_lines)})
