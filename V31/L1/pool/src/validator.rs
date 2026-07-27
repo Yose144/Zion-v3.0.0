@@ -14,8 +14,11 @@ impl ShareValidator {
     }
 
     pub fn validate_zion(&self, header: &[u8], nonce: u64, target: &[u8; 32]) -> bool {
-        let hash = self.ekam.hash(header, nonce);
-        meets_target(hash.as_bytes(), target)
+        meets_target(self.zion_hash(header, nonce).as_bytes(), target)
+    }
+
+    pub fn zion_hash(&self, header: &[u8], nonce: u64) -> zion_l1_types::Hash {
+        self.ekam.hash(header, nonce)
     }
 
     pub fn validate_auxpow(
@@ -25,8 +28,11 @@ impl ShareValidator {
         nonce: u64,
         target: &[u8; 32],
     ) -> bool {
-        let hash = hash_for_coin(coin, header, nonce);
-        meets_target(&hash, target)
+        meets_target(&self.auxpow_hash(coin, header, nonce), target)
+    }
+
+    pub fn auxpow_hash(&self, coin: ExternalCoin, header: &[u8], nonce: u64) -> [u8; 32] {
+        hash_for_coin(coin, header, nonce)
     }
 }
 

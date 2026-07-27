@@ -19,7 +19,7 @@ pub struct PplnsState {
     pub fee_bps: u16,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
 pub struct Payout {
     pub address: Address,
     pub amount: Amount,
