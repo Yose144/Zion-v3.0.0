@@ -107,6 +107,7 @@ impl ApiServer {
             .route("/v1/swap/execute", post(swap_execute))
             .route("/v1/bridge/submit", post(bridge_submit))
             .route("/v1/pool/stats", get(pool_stats))
+            .route("/v1/pool/payouts", get(pool_payouts))
             .layer(
                 CorsLayer::new()
                     .allow_origin(AllowOrigin::any())
@@ -135,6 +136,15 @@ async fn pool_stats(State(state): State<AppState>) -> Result<Json<serde_json::Va
     match state.service.pool_stats() {
         Some(stats) => Ok(Json(stats)),
         None => Ok(Json(serde_json::json!({"enabled": false}))),
+    }
+}
+
+async fn pool_payouts(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    match state.service.pool_payouts() {
+        Some(payouts) => Ok(Json(payouts)),
+        None => Ok(Json(serde_json::json!({"payouts": []}))),
     }
 }
 

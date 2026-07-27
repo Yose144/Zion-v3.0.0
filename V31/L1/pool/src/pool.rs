@@ -8,6 +8,10 @@ use crate::pplns::{Payout, PplnsState, ShareRecord};
 use crate::share::ShareSubmission;
 use crate::validator::ShareValidator;
 
+/// Placeholder block reward used for PPLNS payout calculation until the pool
+/// is wired to the node's coinbase output.
+const DEFAULT_BLOCK_REWARD_ZION: u128 = 6_000_000;
+
 #[derive(Clone, Copy, Debug, thiserror::Error)]
 pub enum PoolError {
     #[error("nonce parse error")]
@@ -28,6 +32,8 @@ pub struct Pool {
     pub current_job_id: AtomicU64,
     pub accepted: AtomicU64,
     pub rejected: AtomicU64,
+    /// Last computed payouts for a found block, keyed by block height.
+    pub last_payouts: Option<(u64, Vec<Payout>)>,
 }
 
 impl Pool {
@@ -41,6 +47,7 @@ impl Pool {
             current_job_id: AtomicU64::new(1),
             accepted: AtomicU64::new(0),
             rejected: AtomicU64::new(0),
+            last_payouts: None,
         }
     }
 
@@ -108,6 +115,13 @@ impl Pool {
 
     pub fn payouts(&self, block_reward: Amount) -> Vec<Payout> {
         self.pplns.payouts_for(block_reward)
+    }
+
+    /// Record a found block, compute PPLNS payouts for it and store them.
+    pub fn on_block_found(&mut self, block_height: u64) {
+        let block_reward = Amount::new(DEFAULT_BLOCK_REWARD_ZION);
+        let payouts = self.pplns.payouts_for(block_reward);
+        self.last_payouts = Some((block_height, payouts));
     }
 
     pub fn stats(&self) -> (u64, u64) {

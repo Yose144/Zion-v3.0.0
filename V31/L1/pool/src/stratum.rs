@@ -12,11 +12,15 @@ use crate::config::PoolConfig;
 use crate::pool::{Pool, PoolError};
 use crate::share::ShareSubmission;
 
+/// Header bytes together with the 32-byte network target for a stratum job.
+type JobEntry = (Vec<u8>, [u8; 32]);
+
 #[derive(Clone)]
 pub struct StratumServer {
     pub pool: Arc<Mutex<Pool>>,
     pub config: PoolConfig,
-    jobs: Arc<Mutex<HashMap<String, Vec<u8>>>>,
+    /// Stored jobs: job_id -> (header bytes, 32-byte network target).
+    jobs: Arc<Mutex<HashMap<String, JobEntry>>>,
     notify_tx: broadcast::Sender<String>,
 }
 
@@ -70,15 +74,20 @@ impl StratumServer {
         let submission = ShareSubmission {
             worker,
             job_id: job_id.clone(),
-            nonce_hex,
+            nonce_hex: nonce_hex.clone(),
         };
 
-        let header = {
+        let (header, target) = {
             let jobs = self.jobs.lock().unwrap();
             match jobs.get(&job_id) {
-                Some(h) => h.clone(),
+                Some((h, t)) => (h.clone(), *t),
                 None => return error_response(Some(id), -32602, "unknown job"),
             }
+        };
+
+        let nonce = match Self::parse_nonce(&nonce_hex) {
+            Ok(n) => n,
+            Err(_) => return error_response(Some(id), -32602, "invalid nonce"),
         };
 
         let result = if job_id.starts_with("zion_") {
@@ -94,19 +103,51 @@ impl StratumServer {
         };
 
         match result {
-            Ok(true) => success_response(id, Value::Bool(true)),
+            Ok(true) => {
+                self.check_and_record_block(&job_id, &header, nonce, &target);
+                success_response(id, Value::Bool(true))
+            }
             _ => success_response(id, Value::Bool(false)),
+        }
+    }
+
+    fn parse_nonce(nonce_hex: &str) -> Result<u64, PoolError> {
+        let s = nonce_hex
+            .trim()
+            .trim_start_matches("0x")
+            .trim_start_matches("0X");
+        u64::from_str_radix(s, 16).map_err(|_| PoolError::Parse)
+    }
+
+    fn check_and_record_block(&self, job_id: &str, header: &[u8], nonce: u64, target: &[u8; 32]) {
+        let mut pool = self.pool.lock().unwrap();
+        let is_block = if job_id.starts_with("zion_") {
+            let hash = pool.validator.zion_hash(header, nonce);
+            hash.as_bytes() <= target
+        } else if job_id.starts_with("aux_") {
+            let coin = parse_aux_coin(job_id);
+            let hash = pool.validator.auxpow_hash(coin, header, nonce);
+            &hash <= target
+        } else {
+            false
+        };
+        if is_block {
+            pool.on_block_found(0);
         }
     }
 
     /// Build and store a `mining.notify` message for the given job.
     pub fn job_notification(&self, job_id: &str, header_hex: &str, target_hex: &str) -> String {
-        let trimmed = header_hex
+        let header_trim = header_hex
             .trim()
             .trim_start_matches("0x")
             .trim_start_matches("0X");
-        if let Ok(bytes) = hex::decode(trimmed) {
-            self.jobs.lock().unwrap().insert(job_id.to_string(), bytes);
+        let target = parse_target_hex(target_hex).unwrap_or([0xFF; 32]);
+        if let Ok(bytes) = hex::decode(header_trim) {
+            self.jobs
+                .lock()
+                .unwrap()
+                .insert(job_id.to_string(), (bytes, target));
         }
         json!({
             "id": null,
@@ -168,6 +209,19 @@ fn parse_aux_coin(job_id: &str) -> ExternalCoin {
         }
     }
     ExternalCoin::Bitcoin
+}
+
+fn parse_target_hex(target_hex: &str) -> Option<[u8; 32]> {
+    let hex = target_hex
+        .trim()
+        .trim_start_matches("0x")
+        .trim_start_matches("0X");
+    if hex.len() != 64 {
+        return None;
+    }
+    let mut out = [0u8; 32];
+    hex::decode_to_slice(hex, &mut out).ok()?;
+    Some(out)
 }
 
 fn success_response(id: Value, result: Value) -> String {

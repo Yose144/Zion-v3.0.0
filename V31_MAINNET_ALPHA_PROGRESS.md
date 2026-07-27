@@ -103,6 +103,13 @@
 - `MultichainService` vystavuje `block_template(chain)`.
 - Stratum broadcast task každých 10s fetchne template z `zion-l1`; pokud je dostupný, pushne `mining.notify` pro `zion_{template_id}`, jinak dummy.
 
+### 16. Detekce nalezeného bloku a PPLNS payouts
+- `StratumServer` ukládá pro každý job i `target_hex` (network target).
+- Po úspěšném `mining.submit` se zkontroluje, zda hash share splňuje network target; pokud ano, zavolá se `Pool::on_block_found`.
+- `ShareValidator` nově exportuje `zion_hash` a `auxpow_hash`.
+- `Pool` má `last_payouts` a `on_block_found(block_height)` s placeholder block reward 6 ZION.
+- Nový endpoint `GET /v1/pool/payouts` vrací `block_height` a seznam `Payout` adres a částek.
+
 ## Verifikace
 
 ```bash
@@ -136,6 +143,7 @@ Rozpis testů:
 - `18405d25` — `feat(v31): integrate zion-pool stats into HTTP API + Dash31`
 - `ff2b8840` — `feat(v31): TCP stratum server with mining.notify broadcast`
 - `6e76d23f` — `feat(v31): live mining jobs from zion-l1 getBlockTemplate`
+- `<novy>` — `feat(v31): block detection and PPLNS payouts endpoint`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -146,6 +154,8 @@ Rozpis testů:
    - `Dash31` `/v1/pool/stats` ✅.
    - TCP stratum ✅ — `ApiServer` spouští `StratumServer` na portu z `[pool]` configu.
    - Živé `mining.notify` joby ✅ — `ChainAdapter::block_template` a `ZionL1Adapter::getBlockTemplate` RPC; stratum broadcast každých 10s fetchne reálný template z `zion-l1` a pushne ho minerům, jinak fallback dummy.
+   - Detekce nalezeného bloku ✅ — `StratumServer` porovnává hash share s network targetem; při bloku volá `Pool::on_block_found` a vypočítá PPLNS payouts.
+   - `/v1/pool/payouts` ✅ — endpoint vrací poslední payouts (placeholder block reward 6 ZION).
 
 2. **Real chain adapters (další kroky)**
    - `EvmAdapter` ✅ — provider + wallet + contract addresses; zbývá nasadit validator wallet a testovat `submitLockProof` na Base.

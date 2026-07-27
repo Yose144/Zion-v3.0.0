@@ -235,6 +235,17 @@ impl MultichainService {
             "pool_address": pool.config.pool_address.encoded,
         }))
     }
+
+    /// Return the last computed pool payouts, or `None` if none exist.
+    pub fn pool_payouts(&self) -> Option<serde_json::Value> {
+        let pool = self.pool.as_ref()?;
+        let pool = pool.lock().ok()?;
+        let (block_height, payouts) = pool.last_payouts.as_ref()?;
+        Some(serde_json::json!({
+            "block_height": block_height,
+            "payouts": payouts,
+        }))
+    }
 }
 
 fn build_adapter(
