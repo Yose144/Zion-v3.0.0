@@ -1,0 +1,18 @@
+[package]
+name = "zion-cosmic-harmony"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Canonical ZION PoW layer (Ekam Deeksha) and future PoC algorithm superstructure."
+
+[dependencies]
+zion-l1-types = { workspace = true }
+
+aes = { workspace = true }
+blake3 = { workspace = true }
+sha3 = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+hex = { workspace = true }

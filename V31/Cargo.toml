@@ -1,6 +1,8 @@
 [workspace]
 members = [
     "L1/types",
+    "L1/cosmic-harmony",
+    "L1/core",
     "L2/multichain",
     "cli",
 ]
@@ -16,6 +18,7 @@ authors = ["Yose144"]
 anyhow = "1"
 async-trait = "0.1"
 axum = { version = "0.7", features = ["macros"] }
+aes = "=0.9.1"
 bip39 = "2.0"
 bitcoin = { version = "0.31", default-features = false, features = ["std"] }
 blake3 = "1"
@@ -41,7 +44,9 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 zeroize = { version = "1", features = ["derive"] }
 
+zion-cosmic-harmony = { path = "L1/cosmic-harmony" }
 zion-l1-types = { path = "L1/types" }
+zion-multichain = { path = "L2/multichain" }
 
 [profile.release]
 opt-level = 3
