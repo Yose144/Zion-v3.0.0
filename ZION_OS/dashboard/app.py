@@ -141,6 +141,14 @@ PORT = CONFIG["port"]
 TOPOLOGY = CONFIG["topology"]
 PAYOUT_HIGHWATER_FILE = DATA_DIR / "dashboard-payout-highwater.json"
 
+# Canonical Edge systemd units used by servers-setup, processes, and health maps.
+EDGE_SERVICE_ORDER = [
+    "zion-edge-node1", "zion-edge-node2", "zion-edge-pool",
+    "zion-edge-bridge", "zion-edge-dao", "zion-edge-atomic-swap",
+    "zion-edge-warp", "zion-edge-oasis", "zion-edge-dex",
+    "zion-edge-dashboard", "zion-edge-python-dashboard", "zion-edge-watchdog",
+]
+
 # ── Basic Auth (HTTP 401) — multi-user ───────────────────────────────────
 # Supports multiple user accounts. Credentials are stored as SHA-256 hashes
 # for security. Plaintext passwords are NEVER stored on disk.
@@ -4058,7 +4066,8 @@ def get_mempool_detail() -> dict:
 # ── Miner shares history ──────────────────────────────────────────────
 
 def get_miner_shares_history(limit: int = 50) -> dict:
-    """Parse miner.log (or miner-low.log) for accepted/rejected shares over time."""
+    """Parse miner.log (or miner-low.log) for accepted/rejected shares over time.
+    On Edge (no local miner log) fall back to the in-memory pool metrics history."""
     recent = tail_log("miner.log", 500)
     if not recent:
         recent = tail_log("miner-low.log", 500)
@@ -4070,16 +4079,47 @@ def get_miner_shares_history(limit: int = 50) -> dict:
                 "rejected": int(m.group(2)),
                 "line": line[:120],
             })
+
+    # Edge fallback: use the live pool metrics history recorded by the dashboard
+    if not history and (TOPOLOGY == "edge-primary" or not miner_log_exists()):
+        for s in HISTORY.snapshot()[-limit:]:
+            history.append({
+                "t": s.get("t"),
+                "accepted": s.get("shares_ok", 0),
+                "rejected": s.get("shares_bad", 0),
+                "hashrate": s.get("hashrate", 0),
+            })
+        # If we still have no history, return the current live pool sample
+        if not history:
+            ps = get_pool_status() or {}
+            history = [{
+                "accepted": ps.get("shares_accepted", 0),
+                "rejected": ps.get("shares_rejected", 0),
+                "hashrate": ps.get("hashrate", 0),
+            }]
+
     # Deduplicate by accepted count (keep last occurrence)
     seen = set()
     dedup = []
     for h in reversed(history):
-        key = (h["accepted"], h["rejected"])
+        key = (h.get("accepted"), h.get("rejected"))
         if key not in seen:
             seen.add(key)
             dedup.append(h)
     dedup.reverse()
     return {"samples": dedup[-limit:]}
+
+
+def miner_log_exists() -> bool:
+    """Return True if a non-empty local miner log file exists."""
+    for name in ("miner.log", "miner-low.log"):
+        for path in _log_search_paths(name):
+            try:
+                if path.exists() and path.stat().st_size > 0:
+                    return True
+            except Exception:
+                pass
+    return False
 
 # ── Service dependency graph data ─────────────────────────────────────
 
@@ -6473,12 +6513,7 @@ def get_servers_setup() -> dict:
         result["memory"] = {"total": "—", "used": "—", "free": "—", "pct": 0}
 
     # ── ZION services (Edge deployment units) ──────────────────────
-    zion_services = [
-        "zion-edge-node1", "zion-edge-node2", "zion-edge-pool",
-        "zion-edge-bridge", "zion-edge-dao", "zion-edge-atomic-swap",
-        "zion-edge-warp", "zion-edge-oasis", "zion-edge-dex",
-        "zion-edge-dashboard", "zion-edge-python-dashboard", "zion-edge-watchdog",
-    ]
+    zion_services = EDGE_SERVICE_ORDER
     services = []
     for svc in zion_services:
         try:
@@ -6736,18 +6771,19 @@ def get_backup_status() -> dict:
                 "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
             })
     # Auto-backups (Linux path — was C:/ZION-AutoBackups on Windows)
-    auto_backups = []
     auto_dir = REPO_ROOT / "backups" / "auto"
-    if auto_dir.exists():
-        for f in sorted(auto_dir.glob("zion-auto-*.tar.gz"), key=lambda p: p.stat().st_mtime, reverse=True):
-            s = f.stat()
-            size_mb = round(s.st_size / (1024*1024), 2)
-            total_backup_mb += size_mb
-            auto_backups.append({
-                "name": f.name,
-                "size_mb": size_mb,
-                "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
-            })
+    auto_backups = []
+    for sub_dir in (auto_dir, REPO_ROOT / "backups" / "daily", REPO_ROOT / "backups" / "weekly"):
+        if sub_dir.exists():
+            for f in sorted(sub_dir.glob("*.tar.gz"), key=lambda p: p.stat().st_mtime, reverse=True):
+                s = f.stat()
+                size_mb = round(s.st_size / (1024*1024), 2)
+                total_backup_mb += size_mb
+                auto_backups.append({
+                    "name": f"{sub_dir.name}/{f.name}" if f.parent != REPO_ROOT / "backups" / "auto" else f.name,
+                    "size_mb": size_mb,
+                    "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
+                })
     # Datadir sizes — per-service DB files (not all pointing to V3/data)
     _data_dir = REPO_ROOT / "V3" / "data"
     datadirs = {}
@@ -11077,11 +11113,11 @@ def _maestro_cli(args: list, timeout: int = 10) -> dict:
 
     Returns {"ok": True, "data": <json>} on success, {"ok": False, "error": str} on failure.
     """
-    import subprocess as _sp
+    
     try:
         if not Path(MAESTRO_BIN).exists():
             return {"ok": False, "error": f"maestro binary not found at {MAESTRO_BIN}", "binary": MAESTRO_BIN}
-        proc = _sp.run(
+        proc = subprocess.run(
             [MAESTRO_BIN] + args,
             capture_output=True, text=True, timeout=timeout,
         )
@@ -11095,7 +11131,7 @@ def _maestro_cli(args: list, timeout: int = 10) -> dict:
             return {"ok": True, "data": json.loads(out)}
         except json.JSONDecodeError as e:
             return {"ok": False, "error": f"JSON parse error: {e}", "raw": out[:300]}
-    except _sp.TimeoutExpired:
+    except subprocess.TimeoutExpired:
         return {"ok": False, "error": f"maestro timed out after {timeout}s"}
     except Exception as e:
         return {"ok": False, "error": str(e)[:200]}
@@ -11654,10 +11690,38 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
         elif route == "/api/processes":
-            # Return process registry snapshot
+            # Return process registry snapshot as a list (the dashboard UI expects an array).
+            # On Edge the registry only tracks processes we launched directly, so also include
+            # the active zion-edge-* systemd units so the page is not empty.
+            procs = []
             with PROCESS_LOCK:
-                procs = {k: {"pid": v["pid"], "age_min": int((time.time() - v["ts"]) / 60),
-                             "alive": is_process_alive(v["pid"])} for k, v in PROCESS_REGISTRY.items()}
+                for sid, v in PROCESS_REGISTRY.items():
+                    procs.append({
+                        "name": sid,
+                        "pid": v["pid"],
+                        "age_min": int((time.time() - v["ts"]) / 60),
+                        "alive": is_process_alive(v["pid"]),
+                        "cpu_percent": None,
+                        "memory_mb": None,
+                    })
+            if TOPOLOGY == "edge-primary" and not procs:
+                for sid in EDGE_SERVICE_ORDER:
+                    unit = f"{sid}.service"
+                    try:
+                        state = subprocess.run(["systemctl", "is-active", unit], capture_output=True, text=True, timeout=3)
+                        if state.stdout.strip() == "active":
+                            pid_out = subprocess.run(["systemctl", "show", "--property=MainPID", unit], capture_output=True, text=True, timeout=3)
+                            pid = int(pid_out.stdout.strip().split("=")[-1]) if pid_out.returncode == 0 else None
+                            procs.append({
+                                "name": sid,
+                                "pid": pid,
+                                "age_min": None,
+                                "alive": True,
+                                "cpu_percent": None,
+                                "memory_mb": None,
+                            })
+                    except Exception:
+                        pass
             self._json({"processes": procs})
         elif route == "/api/logs/stream":
             # SSE live log streaming: /api/logs/stream?svc=node1&lines=200
@@ -12342,7 +12406,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
             # On edge-primary topology, an `edge-sync-*` branch is treated as clean.
             git_status = {"clean": True, "branch": "main"}
             try:
-                import subprocess
                 result = subprocess.run(["git", "status", "--porcelain", "-uno"],
                                       cwd=REPO_ROOT, capture_output=True, text=True, timeout=5)
                 # Ignore runtime state files (dashboard state.json, etc.)
@@ -12736,18 +12799,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/systemd":
             # Local systemd user service status — autonomous monitoring
             try:
-                import subprocess as _sp
+                
                 services = ["zion-ssh-tunnel", "zion-backup-node", "zion-dashboard"]
                 result = {}
                 for svc in services:
                     try:
-                        proc = _sp.run(
+                        proc = subprocess.run(
                             ["systemctl", "--user", "is-active", svc],
                             capture_output=True, text=True, timeout=3
                         )
                         active = proc.stdout.strip() == "active"
                         # Get uptime
-                        proc2 = _sp.run(
+                        proc2 = subprocess.run(
                             ["systemctl", "--user", "show", svc, "--property=ActiveEnterTimestamp,MainPID,ExecMainStatus"],
                             capture_output=True, text=True, timeout=3
                         )
@@ -12767,7 +12830,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         result[svc] = {"active": False, "status": "error", "error": str(e)}
                 # Backup timer
                 try:
-                    proc = _sp.run(
+                    proc = subprocess.run(
                         ["systemctl", "--user", "list-timers", "zion-backup.timer", "--no-pager", "--plain"],
                         capture_output=True, text=True, timeout=3
                     )
@@ -12780,7 +12843,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     result["zion-backup-timer"] = {"active": False, "raw": ""}
                 # Linger status
                 try:
-                    proc = _sp.run(
+                    proc = subprocess.run(
                         ["loginctl", "show-user", os.environ.get("USER", "zionserver"), "--property=Linger"],
                         capture_output=True, text=True, timeout=3
                     )
@@ -12795,10 +12858,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             try:
                 _st = build_status()
                 _sysd = {}
-                import subprocess as _sp
+                
                 for svc in ["zion-ssh-tunnel", "zion-backup-node", "zion-dashboard"]:
                     try:
-                        proc = _sp.run(["systemctl", "--user", "is-active", svc],
+                        proc = subprocess.run(["systemctl", "--user", "is-active", svc],
                                       capture_output=True, text=True, timeout=2)
                         _sysd[svc] = proc.stdout.strip()
                     except Exception:
@@ -12910,13 +12973,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
             backups = []
             backup_dir = REPO_ROOT / "backups"
             if backup_dir.exists():
-                for f in sorted(backup_dir.glob("backup_*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
-                    s = f.stat()
-                    backups.append({
-                        "name": f.name,
-                        "size_mb": round(s.st_size / (1024*1024), 2),
-                        "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
-                    })
+                patterns = ["backup_*.tar.gz", "backup_*.zip"]
+                for pattern in patterns:
+                    for f in sorted(backup_dir.glob(pattern), key=lambda p: p.stat().st_mtime, reverse=True):
+                        s = f.stat()
+                        backups.append({
+                            "name": f.name,
+                            "size_mb": round(s.st_size / (1024*1024), 2),
+                            "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
+                        })
+                # Daily / weekly subdirectories used by the edge backup system
+                for sub in ("daily", "weekly"):
+                    sub_dir = backup_dir / sub
+                    if sub_dir.exists():
+                        for f in sorted(sub_dir.glob("*.tar.gz"), key=lambda p: p.stat().st_mtime, reverse=True):
+                            s = f.stat()
+                            backups.append({
+                                "name": f"{sub}/{f.name}",
+                                "size_mb": round(s.st_size / (1024*1024), 2),
+                                "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
+                            })
             self._json({"backups": backups})
         elif route == "/api/backup/verify":
             res = run_control("verify-chain")
@@ -13269,16 +13345,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 cmd.extend(["--hiran-url", "http://127.0.0.1:8002"])
             # Live Hiran is slow (~5 tok/s CPU) — allow 300s for live, 30s for stub
             timeout_sec = 300 if use_live else 30
-            _sp = __import__('subprocess')
             try:
-                result = _sp.run(cmd, capture_output=True, text=True, timeout=timeout_sec)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_sec)
                 if result.returncode != 0:
                     self._json({"ok": False, "error": result.stderr[:500]})
                 else:
                     data = json.loads(result.stdout)
                     data["ok"] = True
                     self._json(data)
-            except _sp.TimeoutExpired:
+            except subprocess.TimeoutExpired:
                 self._json({"ok": False, "error": f"Simulation timed out ({timeout_sec}s limit). Use stub mode or fewer epochs for live Hiran."})
             except json.JSONDecodeError as e:
                 self._json({"ok": False, "error": f"JSON parse error: {e}", "raw": result.stdout[:500]})
