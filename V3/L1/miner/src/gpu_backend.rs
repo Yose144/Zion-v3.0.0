@@ -2792,10 +2792,17 @@ pub fn gpu_scan_job(
     // we can safely process larger batches.  Default 262144 = 8× work_size
     // for deeksha_lite_fire, which takes ~3s on RTX 3090 — well within the
     // 60s job TTL.  Override with ZION_GPU_MAX_BATCH env var.
+    //
+    // ADAPTIVE: On slower GPUs (GTX 1070 Ti @ ~25 KH/s), 262144 nonces takes
+    // ~10s. The pool rotates jobs every ~5s, so the miner submits stale nonces
+    // → NoSolution rejects (observed 41% reject rate).  Use a smaller default
+    // that targets ~3s per batch: 3s × 25KH/s ≈ 75000.  Round to 65536 (8×
+    // 8192 work_size).  This keeps reject rate < 5% on mid-range GPUs while
+    // not hurting fast GPUs (RTX 3090 does 65536 in <1s).
     let max_batch = std::env::var("ZION_GPU_MAX_BATCH")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(262_144);
+        .unwrap_or(65_536);
     let effective_batch = job.nonce_count.min(max_batch);
 
     let result = if use_raw {
@@ -3048,10 +3055,11 @@ impl GpuPipelineState {
         };
 
         // Launch new batch (async)
+        // ADAPTIVE: Default 65536 (not 262144) — see gpu_scan_job() for rationale.
         let max_batch = std::env::var("ZION_GPU_MAX_BATCH")
             .ok()
             .and_then(|v| v.parse::<u64>().ok())
-            .unwrap_or(262_144);
+            .unwrap_or(65_536);
         let effective_batch = job.nonce_count.min(max_batch);
 
         let mut effective_header = job.header;

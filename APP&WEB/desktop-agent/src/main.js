@@ -2326,7 +2326,22 @@ function startMiningV3(config, v3Path) {
       env.ZION_OCL_LOCAL_SIZE = String(localSize);
     }
 
-    log(`[V3-FAST] GPU detected: ${gpuInfo?.name || 'unknown'} (${gpuInfo?.type || '?'}) | Backend: ${backend} | BatchSize: ${batchSize}\n`);
+    // ── Stale-job prevention: cap GPU batch to avoid pool job rotation ──
+    // The pool rotates ZION jobs every ~5s. If the GPU batch takes longer,
+    // the miner submits stale nonces → NoSolution rejects (observed 41%
+    // reject rate on GTX 1070 Ti with batch=262144 taking ~10s).
+    // Default 65536 = ~2.5s at 25 KH/s, well within job TTL.
+    // Override: ZION_GPU_MAX_BATCH env var or config.gpuMaxBatch.
+    if (!env.ZION_GPU_MAX_BATCH) {
+      const cfgMaxBatch = Number(config?.gpuMaxBatch);
+      if (Number.isFinite(cfgMaxBatch) && cfgMaxBatch > 0) {
+        env.ZION_GPU_MAX_BATCH = String(Math.floor(cfgMaxBatch));
+      } else {
+        env.ZION_GPU_MAX_BATCH = '65536';
+      }
+    }
+
+    log(`[V3-FAST] GPU detected: ${gpuInfo?.name || 'unknown'} (${gpuInfo?.type || '?'}) | Backend: ${backend} | BatchSize: ${batchSize} | MaxBatch: ${env.ZION_GPU_MAX_BATCH}\n`);
     if (gpuInfo?.memory) log(`[V3-FAST] GPU VRAM: ${gpuInfo.memory} | Driver: ${gpuInfo.driver || 'n/a'}\n`);
   }
 

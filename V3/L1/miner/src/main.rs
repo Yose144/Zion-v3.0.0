@@ -1937,6 +1937,11 @@ fn run_local_session(
         hashrate.record_gpu_hashes(gpu_nonces_tested);
         hashrate.record_cpu_hashes(cpu_nonces_tested);
         hashrate.record_zion_hashes(gpu_nonces_tested.saturating_add(cpu_nonces_tested));
+        // FIX: record GPU hashes in telemetry too (was missing in local mode,
+        // causing gpu_hps=0.00 in session_status even when GPU was mining).
+        if can_gpu {
+            telemetry.record_gpu_hashes(gpu_nonces_tested);
+        }
         let Some(solution) = scan_result else {
             let tested = if can_gpu {
                 gpu_nonces_tested
@@ -3069,10 +3074,15 @@ fn run_remote_session(
                     }
                 } else {
                     // ── SYNCHRONOUS GPU SCAN (default, no lag) ──
+                    // ADAPTIVE: Default 65536 (not 262144) to avoid stale jobs.
+                    // On GTX 1070 Ti @ ~25 KH/s, 262144 nonces takes ~10s,
+                    // but the pool rotates jobs every ~5s → NoSolution rejects
+                    // (observed 41% reject rate). 65536 takes ~2.5s, well
+                    // within job TTL. Override with ZION_GPU_MAX_BATCH env var.
                     let max_batch = std::env::var("ZION_GPU_MAX_BATCH")
                         .ok()
                         .and_then(|v| v.parse::<u64>().ok())
-                        .unwrap_or(262_144);
+                        .unwrap_or(65_536);
                     let effective_batch = job.nonce_count.min(max_batch);
 
                     let mut effective_header = job.header;
@@ -4991,6 +5001,7 @@ fn mine_external_stream_cpu(
 
     // For VerusHash, initialize the hasher
     if ext.algorithm == "verushash" {
+        #[cfg(any(feature = "native-verushash", feature = "native-hashers"))]
         zion_auxpow::external_hashers::init_verushash();
     }
 
