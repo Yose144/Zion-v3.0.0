@@ -4,7 +4,11 @@
 //! requests the appropriate key material from the keyring; the keyring never
 //! exposes the master seed.
 
+use std::str::FromStr;
+
 use bip39::Mnemonic;
+use bitcoin::bip32::{DerivationPath, Xpriv};
+use bitcoin::secp256k1::Secp256k1;
 use ed25519_dalek::{Signer as EdSigner, SigningKey as EdSigningKey};
 use ethers::core::{types::PathOrString, utils::hash_message};
 use ethers::signers::{coins_bip39::English, LocalWallet, MnemonicBuilder, Signer as EthSigner};
@@ -62,6 +66,7 @@ impl Keyring {
         match chain.family() {
             ChainFamily::Evm => self.evm_address(chain, account, index),
             ChainFamily::Zion => self.zion_address(chain, account, index),
+            ChainFamily::Utxo => self.bitcoin_address(chain, account, index),
             _ => Err(MultichainError::Unsupported(format!(
                 "address derivation for {}",
                 chain.as_str()
@@ -143,6 +148,55 @@ impl Keyring {
         let signing_key = self.zion_signing_key(account, index)?;
         Ok(EdSigner::sign(&signing_key, message).to_bytes().to_vec())
     }
+
+    fn bitcoin_xpriv(&self, network: bitcoin::Network, account: u32, index: u32) -> MultichainResult<Xpriv> {
+        let seed = self.seed.unwrap_or_else(|| self.mnemonic.to_seed(""));
+        let master = Xpriv::new_master(network, &seed)
+            .map_err(|e| MultichainError::Internal(format!("bitcoin xpriv: {e}")))?;
+        let coin_type = if network == bitcoin::Network::Bitcoin { 0 } else { 1 };
+        let path = format!("m/84'/{coin_type}'/{account}'/0/{index}");
+        let derivation = DerivationPath::from_str(&path)
+            .map_err(|e| MultichainError::Internal(format!("bitcoin derivation path: {e}")))?;
+        let secp = Secp256k1::new();
+        let xpriv = master
+            .derive_priv(&secp, &derivation)
+            .map_err(|e| MultichainError::Internal(format!("bitcoin derive: {e}")))?;
+        Ok(xpriv)
+    }
+
+    fn bitcoin_address(&self, chain: ChainId, account: u32, index: u32) -> MultichainResult<Address> {
+        let network = match chain {
+            ChainId::Bitcoin => bitcoin::Network::Bitcoin,
+            _ => bitcoin::Network::Testnet,
+        };
+        let xpriv = self.bitcoin_xpriv(network, account, index)?;
+        let secp = Secp256k1::new();
+        let private_key = bitcoin::PrivateKey::new(xpriv.private_key, xpriv.network);
+        let public_key = bitcoin::PublicKey::from_private_key(&secp, &private_key);
+        let btc_address = bitcoin::Address::p2wpkh(&public_key, xpriv.network)
+            .map_err(|e| MultichainError::Internal(format!("bitcoin p2wpkh: {e}")))?;
+        let encoded = btc_address.to_string();
+        let bytes = btc_address.script_pubkey().as_bytes().to_vec();
+        Ok(Address::new(chain, bytes, &encoded)?)
+    }
+
+    /// Derive a Bitcoin P2WPKH address for a specific `network`, `account` and `index`.
+    pub fn bitcoin_address_for_network(
+        &self,
+        network: bitcoin::Network,
+        account: u32,
+        index: u32,
+    ) -> MultichainResult<Address> {
+        let xpriv = self.bitcoin_xpriv(network, account, index)?;
+        let secp = Secp256k1::new();
+        let private_key = bitcoin::PrivateKey::new(xpriv.private_key, xpriv.network);
+        let public_key = bitcoin::PublicKey::from_private_key(&secp, &private_key);
+        let btc_address = bitcoin::Address::p2wpkh(&public_key, xpriv.network)
+            .map_err(|e| MultichainError::Internal(format!("bitcoin p2wpkh: {e}")))?;
+        let encoded = btc_address.to_string();
+        let bytes = btc_address.script_pubkey().as_bytes().to_vec();
+        Ok(Address::new(ChainId::Bitcoin, bytes, &encoded)?)
+    }
 }
 
 #[cfg(test)]
@@ -211,9 +265,17 @@ mod tests {
     }
 
     #[test]
+    fn bitcoin_address_creates_successfully() {
+        let keyring = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
+        let addr = keyring.address(ChainId::Bitcoin, 0, 0).unwrap();
+        assert_eq!(addr.family(), ChainFamily::Utxo);
+        assert!(addr.encoded.starts_with("bc1") || addr.encoded.starts_with("tb1"));
+    }
+
+    #[test]
     fn unsupported_family_returns_error() {
         let keyring = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
-        assert!(keyring.address(ChainId::Bitcoin, 0, 0).is_err());
         assert!(keyring.sign(ChainId::Bitcoin, b"x", 0, 0).is_err());
+        assert!(keyring.sign(ChainId::Solana, b"x", 0, 0).is_err());
     }
 }
