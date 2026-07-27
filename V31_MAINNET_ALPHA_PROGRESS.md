@@ -128,7 +128,7 @@ Rozpis testů:
 - `0f2eef54` — `feat(v31): ZionL1 bridge locks + submitBridgeUnlock with validator proof`
 - `441e327f` — `fix(v31): decimal scaling in EvmAdapter submitLockProof + fmt`
 - `18405d25` — `feat(v31): integrate zion-pool stats into HTTP API + Dash31`
-- `<novy>` — `feat(v31): TCP stratum server with mining.notify broadcast`
+- `ff2b8840` — `feat(v31): TCP stratum server with mining.notify broadcast`
 
 ## Další plán (Mainnet Alpha milestones)
 
