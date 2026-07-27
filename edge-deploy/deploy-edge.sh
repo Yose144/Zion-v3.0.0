@@ -1,30 +1,30 @@
 #!/usr/bin/env bash
 # ZION Edge Server — Full Stack Deployment
-# Pushes latest code to Edge (Hetzner) and restarts all services.
+# Pushes latest code to Edge (Contabo VPS) and restarts all services.
 #
 # Run from any machine with SSH access to Edge:
 #   bash edge-deploy/deploy-edge.sh
 #
 # Prerequisites:
 #   - Edge server reachable via SSH (62.171.141.136)
-#   - SSH key at ../ssh-key-zion-edge
+#   - SSH key at ~/.ssh/zion-new-server (override with $ZION_EDGE_SSH_KEY)
 #   - /etc/zion/edge-environment.sh exists on the Edge with real secrets
 #
 # Deploys:
 #   - 2 P2P nodes (primary + follower)
 #   - Primary mining pool
 #   - L2/L3 services (bridge, DAO, atomic-swap, WARP)
-#   - Next.js website (PM2)
+#   - Next.js website (Docker)
 #   - Agent, dashboards, and DEX router
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-EDGE_USER="root"
-EDGE_HOST="62.171.141.136"
-SSH_KEY="${REPO_ROOT}/ssh-key-zion-edge"
+EDGE_USER="${ZION_EDGE_USER:-root}"
+EDGE_HOST="${ZION_EDGE_HOST:-62.171.141.136}"
+SSH_KEY="${ZION_EDGE_SSH_KEY:-$HOME/.ssh/zion-new-server}"
 REMOTE_ROOT="/opt/zion"
-REMOTE_WEB="${REMOTE_ROOT}/APP&WEB/website-v2.9"
+REMOTE_WEB="/opt/zion/website-v2.9"
 BACKUP_PATH="${REMOTE_ROOT}/backups/deploy-backup-$(date +%Y%m%d-%H%M%S)"
 
 # Colors
@@ -128,17 +128,8 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     fi
 "
 
-# ── Step 3: Sync website code ──
-log "Syncing website code..."
-# NOTE: The path contains '&' which breaks rsync on macOS (v2.x lacks --protect-args).
-# Using tar over SSH avoids shell interpretation issues with special characters.
-tar czf - \
-    --exclude='node_modules' --exclude='.next' --exclude='out' \
-    -C "${REPO_ROOT}/APP&WEB" website-v2.9/ 2>/dev/null | \
-    ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
-    "mkdir -p '${REMOTE_ROOT}/APP&WEB' && cd '${REMOTE_ROOT}/APP&WEB' && tar xzf -"
-
-# Ensure all files in /opt/zion are owned by zion after sync
+# ── Step 3: Ensure /opt/zion ownership ──
+# Website code is deployed separately via Docker in Step 9.
 log "Fixing ownership of /opt/zion..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "chown -R zion:zion '${REMOTE_ROOT}'"
 
@@ -200,15 +191,16 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     chmod 755 /usr/local/bin/zion-agent /usr/local/bin/zionos-dashboard /usr/local/bin/ziondex-router
 "
 
-# ── Step 6: Rebuild website on Edge ──
-log "Rebuilding website on Edge..."
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
-    set -euo pipefail
-    cd '${REMOTE_WEB}'
-    rm -f package-lock.json
-    npm install 2>&1 | tail -n 5
-    npm run build 2>&1 | tail -n 20
-"
+# ── Step 6: Deploy website via Docker ──
+log "Deploying website (Docker)..."
+WEB_DEPLOY_SCRIPT="${REPO_ROOT}/APP&WEB/website-v2.9/scripts/deploy.sh"
+if [[ -x "$WEB_DEPLOY_SCRIPT" ]]; then
+    # The dedicated web deploy script rsyncs source, rebuilds the image, and recreates the container.
+    REMOTE_HOST="$EDGE_HOST" REMOTE_USER="$EDGE_USER" SSH_KEY="$SSH_KEY" \
+        bash "$WEB_DEPLOY_SCRIPT" --remote-src "$REMOTE_WEB" --remote-compose "$REMOTE_WEB"
+else
+    warn "Website deploy script not found at $WEB_DEPLOY_SCRIPT — skipping web deploy"
+fi
 
 # ── Step 7: Install systemd services and timers ──
 log "Installing systemd services..."
@@ -324,9 +316,14 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-dashboard
 # Restart timers (will not start oneshot services, just activate timers)
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-watchdog.timer zion-edge-backup.timer zion-edge-maintenance.timer || true"
 
-# ── Step 9: Restart website (PM2) ──
-log "Restarting website (PM2)..."
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "pm2 restart zion-website 2>/dev/null || pm2 start '${REMOTE_WEB}/node_modules/next/dist/bin/next' --name zion-website -- start 2>/dev/null || true"
+# ── Step 9: Website already deployed via Docker in Step 6 ──
+log "Verifying website container..."
+WEB_CONTAINER=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "docker ps -q -f name=zion-web" 2>/dev/null || true)
+if [[ -n "$WEB_CONTAINER" ]]; then
+    info "zion-web container is running"
+else
+    warn "zion-web container not detected after deploy"
+fi
 
 # ── Step 10: Wait and verify ──
 log "Waiting for services to come up..."
@@ -343,9 +340,9 @@ for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-
     fi
 done
 
-WEB_STATUS=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "pm2 show zion-website 2>/dev/null | grep status" || true)
-if echo "$WEB_STATUS" | grep -q "online"; then
-    echo -e "${GREEN}  zion-website : ONLINE (PM2)${NC}"
+WEB_STATUS=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "curl -fsS http://127.0.0.1:3000/ >/dev/null 2>&1 && echo healthy" 2>/dev/null || true)
+if [[ "$WEB_STATUS" == "healthy" ]]; then
+    echo -e "${GREEN}  zion-website : HEALTHY (Docker)${NC}"
 else
     echo -e "${RED}  zion-website : OFFLINE${NC}"
 fi

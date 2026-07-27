@@ -1,11 +1,11 @@
-# ZION TerraNova v3.0.7
+# ZION TerraNova v3.0.6
 
 > **Proof of Work Layer 1 for the next 100 years.**
 > From blockchain to the stars.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Status:** Mainnet Beta · 3.0.7 "Trinity" planning · 14/15 services active (zion-free-world, zion-issobella disabled) · Chain Height 2584+ · Mainnet Alpha target: 3.1.0 — [`MAINNET_ALPHA_PLAN.md`](MAINNET_ALPHA_PLAN.md) + V3.1 migration [`V3.1_MIGRATION_PLAN.md`](V3.1_MIGRATION_PLAN.md) + native integration [`V3.1_INTEGRATION_PLAN.md`](V3.1_INTEGRATION_PLAN.md) · Public Launch: 31 December 2026
+**Status:** Mainnet Beta · 3.0.6 "Triple Parallel" live · 3.0.7 "Trinity" planning · 14/15 services active (zion-free-world, zion-issobella disabled) · Chain Height 6735+ · Mainnet Alpha target: 3.1.0 — [`MAINNET_ALPHA_PLAN.md`](MAINNET_ALPHA_PLAN.md) + V3.1 migration [`V3.1_MIGRATION_PLAN.md`](V3.1_MIGRATION_PLAN.md) + native integration [`V3.1_INTEGRATION_PLAN.md`](V3.1_INTEGRATION_PLAN.md) · Public Launch: 31 December 2026
 
 **Current plan:** [`TRINITY_ALL_GREEN_PLAN.md`](TRINITY_ALL_GREEN_PLAN.md) · **Version overview:** [`3.0.7.md`](3.0.7.md) · **Previous 3.0.6 archive:** [`docs/3.0.6/`](docs/3.0.6/)
 
@@ -186,7 +186,7 @@ All other root `.md` files were archived to [`docs/3.0.3/`](docs/3.0.3/) as part
 ## Network Topology
 
 ```
-Edge Server (Hetzner Cloud)     Core (Local machine)
+Edge Server (Contabo VPS)       Core (Local machine)
 62.171.141.136                  zionserver-144 (109.81.27.87)
     |                               |
 Node 1 (PRIMARY, mining)        Backup Node (P2P peer)
@@ -203,12 +203,12 @@ RPC: 127.0.0.1:8443 (localhost only)
 
 | Role | Host | Public IP | Ports |
 |------|------|-----------|-------|
-| **Edge** | Hetzner Cloud | `62.171.141.136` | P2P: 8333, Pool: 8444, RPC: 8443 (localhost), Web: 80/443 |
+| **Edge** | Contabo VPS | `62.171.141.136` | P2P: 8333, Pool: 8444, RPC: 8443 (localhost), Web: 80/443 |
 | **Core** | Local machine | `109.81.27.87` | P2P: 8333, RPC: 8446 |
 
 - **Edge**: Primary 24/7 node + pool. Source of chain truth. Accepts public miner connections. 13 active services + watchdog timer + web Docker container (free-world and issobella are disabled).
 - **Core**: Local backup node (P2P peer, same genesis) + Dashboard + AI services.
-- **Chain live since:** 2026-07-07 (hard genesis reset), re-reset 2026-07-20 for retention fix · **Current protocol:** `zion-v3-node/3.0.6` · **Chain height:** 2584+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` · **Next milestone:** 3.0.7 "Trinity" — [`TRINITY_ALL_GREEN_PLAN.md`](TRINITY_ALL_GREEN_PLAN.md)
+- **Chain live since:** 2026-07-07 (hard genesis reset), re-reset 2026-07-20 for retention fix · **Current protocol:** `zion-v3-node/3.0.6` · **Chain height:** 6735+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` · **Next milestone:** 3.0.7 "Trinity" — [`TRINITY_ALL_GREEN_PLAN.md`](TRINITY_ALL_GREEN_PLAN.md)
 
 ---
 

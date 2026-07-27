@@ -317,8 +317,10 @@ fn parse_bridge_memo(memo: &str) -> Option<(&str, &str)> {
     Some((chain, recipient))
 }
 
-fn utxo_balance_at_height(rt: &NodeRuntime, address: &str, height: u64) -> u64 {
-    let mut utxos: HashMap<(String, u32), u64> = HashMap::new();
+fn scaled_utxo_balance_at_height(rt: &NodeRuntime, address: &str, height: u64) -> u128 {
+    // Replay UTXOs up to the requested height and remember each output's
+    // creation height so we can scale legacy 1e12 amounts to current 1e6 flowers.
+    let mut utxos: HashMap<(String, u32), (u64, u64)> = HashMap::new();
     for block in rt
         .accepted_blocks()
         .iter()
@@ -332,28 +334,24 @@ fn utxo_balance_at_height(rt: &NodeRuntime, address: &str, height: u64) -> u64 {
         for utxo_tx in &block.utxo_transactions {
             let tx_hash = crypto::to_hex(&utxo_tx.id);
             for (index, output) in utxo_tx.outputs.iter().enumerate() {
-                utxos.insert((tx_hash.clone(), index as u32), output.amount);
-            }
-        }
-    }
-
-    let mut balance = 0u64;
-    for block in rt
-        .accepted_blocks()
-        .iter()
-        .filter(|block| block.height <= height)
-    {
-        for utxo_tx in &block.utxo_transactions {
-            let tx_hash = crypto::to_hex(&utxo_tx.id);
-            for (index, output) in utxo_tx.outputs.iter().enumerate() {
-                if output.address == address && utxos.contains_key(&(tx_hash.clone(), index as u32))
-                {
-                    balance = balance.saturating_add(output.amount);
+                if output.address == address {
+                    utxos.insert((tx_hash.clone(), index as u32), (output.amount, block.height));
                 }
             }
         }
     }
-    balance
+
+    let is_bridge_vault = address == fee::BRIDGE_VAULT_ADDRESS;
+    utxos
+        .values()
+        .map(|&(amount, block_height)| {
+            if is_bridge_vault {
+                bridge_vault_utxo_scaled_amount(amount, block_height) as u128
+            } else {
+                scaled_amount(amount as u128, block_height)
+            }
+        })
+        .sum()
 }
 
 // ── Helper: build a router with standard node methods ──────────────────
@@ -609,12 +607,21 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                         });
 
                         if is_recipient || is_sender {
-                            // Calculate total amount sent to this address
-                            let received: u64 = utxo_tx
+                            // Calculate total amount sent to this address, scaling
+                            // legacy 1e12 amounts to current 1e6 flowers to avoid
+                            // u64 overflow on genesis premine / bridge vault UTXOs.
+                            let is_bridge_vault = address == fee::BRIDGE_VAULT_ADDRESS;
+                            let received: u128 = utxo_tx
                                 .outputs
                                 .iter()
                                 .filter(|o| o.address == address)
-                                .map(|o| o.amount)
+                                .map(|o| {
+                                    if is_bridge_vault {
+                                        bridge_vault_utxo_scaled_amount(o.amount, block.height) as u128
+                                    } else {
+                                        scaled_amount(o.amount as u128, block.height)
+                                    }
+                                })
                                 .sum();
 
                             transactions.push(json!({
@@ -627,7 +634,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                                 "confirmed": true,
                                 "is_sender": is_sender,
                                 "is_recipient": is_recipient,
-                                "received_amount_flowers": received,
+                                "received_amount_flowers": received.to_string(),
                             }));
                         }
                     }
@@ -807,6 +814,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     return Ok(json!({
                         "address": account_id,
                         "balance_flowers": total.to_string(),
+                        "balance_zion": format_flowers_as_zion(total),
                         "utxo_balance_flowers": utxo_balance.to_string(),
                         "account_balance_flowers": account_balance.to_string(),
                         "utxo_count": utxo_count,
@@ -866,7 +874,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
                 let effective_height = height.min(rt.chain_height());
                 if looks_like_utxo_address(account_id) {
-                    let utxo_balance = utxo_balance_at_height(&rt, account_id, effective_height);
+                    let utxo_balance = scaled_utxo_balance_at_height(&rt, account_id, effective_height);
                     let mut account_balance: i128 = 0;
                     for block in rt
                         .accepted_blocks()
@@ -885,7 +893,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                         }
                     }
                     let account_balance = account_balance.max(0) as u128;
-                    let total = utxo_balance as u128 + account_balance;
+                    let total = utxo_balance + account_balance;
                     return Ok(json!({
                         "address": account_id,
                         "height": effective_height,

@@ -1,94 +1,81 @@
-# ZION V3 — Local Backup Node + Miners (Edge-Primary Topology)
+# ZION V3 — Local Backup Node (Edge-Primary Topology)
 #
-# This script is for the LOCAL PC (Windows 11) acting as backup + miner host.
-# Edge (Hetzner VPS, 62.171.141.136) runs the primary node + pool 24/7.
-# Local PC runs:
-#   - 1 node (backup, syncing from Edge via Tailscale VPN)
-#   - 1+ miners (connecting to Edge pool via Tailscale VPN)
-#
-# Prerequisites:
-#   - Tailscale VPN active on both Edge and local PC
-#   - Edge node is running and accessible at 62.171.141.136:8333
-#   - Edge pool is running and accessible at 62.171.141.136:8444
+# This script launches a local Windows backup node that syncs from the Edge primary.
+# Data, logs, and PID files are placed under D:\Zion by default (override with
+# $env:ZION_BACKUP_DIR). The script uses the repo tree only for binaries.
 #
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File scripts\launch-local-backup.ps1
 
 $ErrorActionPreference = "Stop"
 
-$RepoRoot = "C:\Users\yosef\Desktop\Zion\2.9.6-main"
-$LogDir   = "$RepoRoot\logs"
-$DataDir  = "$RepoRoot\V3\data"
-$PidDir   = "$RepoRoot\.pids"
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+$BackupRoot = if ($env:ZION_BACKUP_DIR) { $env:ZION_BACKUP_DIR } else { "D:\Zion" }
+$LogDir   = Join-Path $BackupRoot "logs"
+$DataDir  = Join-Path $BackupRoot "V3\data"
+$PidDir   = Join-Path $BackupRoot ".pids"
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
 New-Item -ItemType Directory -Path $PidDir -Force | Out-Null
 
-# Clean old logs
-Remove-Item -Path "$LogDir\*.log" -ErrorAction SilentlyContinue
-Remove-Item -Path "$LogDir\*.err" -ErrorAction SilentlyContinue
+$NodeExe  = Join-Path $RepoRoot "V3\target\release\node.exe"
 
-$NodeExe  = "$RepoRoot\V3\target\release\node.exe"
-$MinerExe = "$RepoRoot\V3\target\release\zion-miner.exe"
-
-foreach ($exe in @($NodeExe, $MinerExe)) {
-    if (-not (Test-Path $exe)) {
-        Write-Error "[ERROR] Binary not found: $exe`n        Run: cargo build --release --manifest-path V3/Cargo.toml --workspace"
-        exit 1
-    }
+if (-not (Test-Path $NodeExe)) {
+    Write-Error "[ERROR] Node binary not found: $NodeExe`n        Run: cargo build --release --manifest-path V3/Cargo.toml -p zion-core --bin node"
+    exit 1
 }
 
 function Stop-ByPidFile($name) {
-    $f = "$PidDir\$name.pid"
+    $f = Join-Path $PidDir "$name.pid"
     if (Test-Path $f) {
         $old = Get-Content $f -ErrorAction SilentlyContinue
         if ($old) {
             $proc = Get-Process -Id $old -ErrorAction SilentlyContinue
             if ($proc) { $proc | Stop-Process -Force; Start-Sleep -Seconds 1 }
         }
+        Remove-Item $f -ErrorAction SilentlyContinue
     }
 }
 
-# ── Backup Node (syncs from Edge primary) ──
+# ── Backup Node (syncs from Edge primary and its follower) ──
 Stop-ByPidFile "node1"
+
 [Environment]::SetEnvironmentVariable('ZION_NODE_ID', 'local-backup-node', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_P2P_BIND', '0.0.0.0:8333', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_RPC_BIND', '0.0.0.0:8443', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_RPC_BIND', '0.0.0.0:8446', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_NODE_STATE_PATH', "$DataDir\zion-node-state.db", 'Process')
-# Connect to Edge primary via Tailscale VPN
-[Environment]::SetEnvironmentVariable('ZION_SEED_PEERS', '62.171.141.136:8333', 'Process')
-# Burn model: 89/5/5, no pool fee wallet
-[Environment]::SetEnvironmentVariable('ZION_MINER_ADDRESS', 'zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion1c245e7f5d8h427r4p4s2s607d7v4c255z7x96t3', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_ISSOBELLA_WALLET', 'zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_SEED_PEERS', '62.171.141.136:8333,62.171.141.136:8334', 'Process')
+
+# Full-history backup node — no pruning
+[Environment]::SetEnvironmentVariable('ZION_BLOCK_RETENTION', '0', 'Process')
+
+# Consensus gate heights (same as Edge post-2026-07-06 hard reset)
+[Environment]::SetEnvironmentVariable('ZION_MIGRATION_HEIGHT', '1', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_BALANCE_CHECK_HEIGHT', '0', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_MAX_TX_AMOUNT_HEIGHT', '1', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_ACCOUNT_TX_MEMO_V1_HEIGHT', '0', 'Process')
+
+# Canonical fee split addresses (mirror edge-deploy/config/edge-environment.sh)
+[Environment]::SetEnvironmentVariable('ZION_MINER_ADDRESS', 'zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_ISSOBELLA_WALLET', 'zion1f7y7l5k678y0v408e8s654d2282346k375526t2', 'Process')
+
+# Bridge validator allowlist (same as Edge) — required for bridge-unlock validation
+[Environment]::SetEnvironmentVariable('ZION_BRIDGE_VALIDATOR_PUBKEYS', '0x02d6406dab8cc71d88f55abca3fe8bae91c26a60162ad3dd1ee55a6aa9cfc96368,0x03e45622f0bad22e34bd1f331219f8d39ed20c4720ce70363b65560df408fc2081,0x025e4b708a7c6dacd484c4fb2a93e80c18f0288aa9b736d4251c6eb8f09d045611,0x02eb3f020ac5a4a647061ffc38b69013a7969c21241e7153a3b196186efd3b185e,0x02a6b18aa50814ac9e9e1f70a69e49ee9a61407a48f83ad2ae914e7676f440ca97', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_BRIDGE_VALIDATOR_THRESHOLD', '5', 'Process')
 
 $p = Start-Process -FilePath $NodeExe -WorkingDirectory $RepoRoot -RedirectStandardOutput "$LogDir\node1.log" -RedirectStandardError "$LogDir\node1.err" -WindowStyle Hidden -PassThru
 $p.Id | Out-File "$PidDir\node1.pid" -Encoding utf8
 $P1 = $p.Id
-Write-Host "Started Backup Node  PID=$P1 (seeding from 62.171.141.136:8333)"
+Write-Host "Started Backup Node  PID=$P1 (seeding from 62.171.141.136:8333,62.171.141.136:8334)"
 Start-Sleep -Seconds 3
 
-# ── Miner: GPU (OpenCL) ──
-Stop-ByPidFile "miner"
-# Connects to Edge pool via Tailscale VPN
-[Environment]::SetEnvironmentVariable('ZION_POOL_ADDR', '62.171.141.136:8444', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_LOOP_COUNT', '1000000', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_MINER_THREADS', '2', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_WORKER_NAME', 'gpu-worker-local', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_MINER_ID', 'gpu-miner-local-01', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_GPU_BACKEND', 'opencl', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_GPU_WORK_SIZE', '4096', 'Process')
-
-$p = Start-Process -FilePath $MinerExe -WorkingDirectory $RepoRoot -RedirectStandardOutput "$LogDir\miner.log" -RedirectStandardError "$LogDir\miner.err" -WindowStyle Hidden -PassThru
-$p.Id | Out-File "$PidDir\miner.pid" -Encoding utf8
-$PM = $p.Id
-Write-Host "Started Miner GPU (OpenCL)  PID=$PM -> Edge pool 62.171.141.136:8444"
-
 Write-Host ""
-Write-Host "[launch] All processes started. PIDs: backup-node=$P1 gpu-miner=$PM"
-Write-Host "[launch] Logs: $LogDir"
-Write-Host "[launch] To watch live:   Get-Content $LogDir\node1.log -Tail 20 -Wait"
-Write-Host "[launch] To stop:         .\scripts\stop-stack.ps1"
+Write-Host "[launch] Backup node started. PID=$P1"
+Write-Host "[launch] Logs : $LogDir\node1.log"
+Write-Host "[launch] Data  : $DataDir"
+Write-Host "[launch] RPC   : http://127.0.0.1:8446"
+Write-Host "[launch] To stop: .\scripts\stop-stack.ps1"
 Write-Host ""
 Write-Host "[topology] Edge (62.171.141.136) = primary node + pool"
-Write-Host "[topology] Local PC       = backup node + miners"
+Write-Host "[topology] Local PC = backup node"
