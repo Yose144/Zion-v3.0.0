@@ -3440,10 +3440,18 @@ fn assignment_to_candidate(assignment: &WorkAssignment, nonce: u64) -> zion_core
             let mut header_bytes = [0u8; 80];
             let len = bytes.len().min(80);
             header_bytes[..len].copy_from_slice(&bytes[..len]);
+            let mut header = MiningHeader::from_bytes(header_bytes);
+            // kHeavyHash/KAS stores the external block timestamp in the
+            // MiningHeader.timestamp slot (bytes 68..76), not in the
+            // pre_pow_hash. Make sure CPU validation uses the same timestamp
+            // the GPU kernel will read from job.header.timestamp.
+            if j.algorithm == "kheavyhash" || j.algorithm == "kheavyhash_kas" {
+                header.timestamp = j.timestamp;
+            }
             zion_core::BlockCandidate {
-                header: MiningHeader::from_bytes(header_bytes),
+                header,
                 nonce,
-                height: j.timestamp,
+                height: j.block_number.unwrap_or(j.timestamp),
             }
         }
     }

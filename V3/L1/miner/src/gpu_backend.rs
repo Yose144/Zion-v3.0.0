@@ -2785,11 +2785,17 @@ pub fn gpu_scan_job(
     algorithm: &str,
     raw_header_bytes: &[u8],
 ) -> GpuScanOutcome {
-    // For external AuxPoW algorithms (kheavyhash, blake3, etc.), the pool
-    // encodes the external block timestamp in job.height.  Inject it into
-    // the MiningHeader.timestamp field so the GPU kernel receives it.
+    // For some external AuxPoW algorithms the pool encodes the external block
+    // timestamp in job.height.  Inject it into the MiningHeader.timestamp field
+    // so the GPU kernel receives it.  kHeavyHash uses the MiningHeader.timestamp
+    // slot directly: benchmark jobs set it in job.header.timestamp, while pool
+    // jobs carry it in job.height because the KAS header_hex is only 32 bytes.
     let mut effective_header = job.header;
-    if is_external_algorithm(algorithm) {
+    if algorithm.starts_with("kheavyhash") {
+        if effective_header.timestamp == 0 && job.height != 0 {
+            effective_header.timestamp = job.height;
+        }
+    } else if is_external_algorithm(algorithm) {
         effective_header.timestamp = job.height;
     }
 
@@ -3110,7 +3116,11 @@ impl GpuPipelineState {
         let effective_batch = job.nonce_count.min(max_batch);
 
         let mut effective_header = job.header;
-        if is_external_algorithm(algorithm) {
+        if algorithm.starts_with("kheavyhash") {
+            if effective_header.timestamp == 0 && job.height != 0 {
+                effective_header.timestamp = job.height;
+            }
+        } else if is_external_algorithm(algorithm) {
             effective_header.timestamp = job.height;
         }
 

@@ -222,9 +222,19 @@ impl BlockCandidate {
                 // with empty extranonce1.
                 zion_auxpow::hash_blake3_alph(&header_bytes, &[], self.nonce)
             }
-            // For KAS jobs the pool sends the block timestamp in the `height` field.
+            // kHeavyHash (KAS): the pre_pow_hash is the first 32 bytes of the
+            // serialized header and the block timestamp is header.timestamp.
+            // Pool jobs encode the timestamp in job.height because the KAS
+            // header_hex is only the 32-byte pre_pow_hash, so fall back to
+            // self.height when header.timestamp is not set.
             "kheavyhash" | "kheavy" => {
-                zion_auxpow::hash_kheavyhash(&header_bytes, self.height, self.nonce)
+                let pre_pow_hash = &header_bytes[..32];
+                let timestamp = if self.header.timestamp != 0 {
+                    self.header.timestamp
+                } else {
+                    self.height
+                };
+                zion_auxpow::hash_kheavyhash(pre_pow_hash, timestamp, self.nonce)
             }
             "autolykos" => {
                 zion_auxpow::hash_autolykos(&header_bytes, self.nonce, self.height as u32)

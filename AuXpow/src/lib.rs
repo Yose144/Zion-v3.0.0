@@ -47,6 +47,7 @@ pub use external_hashers::{
     hash_autolykos, hash_blake3, hash_blake3_alph, hash_ethash, hash_ethash_with_dag, hash_kawpow,
     hash_keryxhash, hash_keryxhash_extranonce, hash_kheavyhash, hash_verushash,
     hash_verushash_header, hash_zelhash, is_valid_autolykos_solution, is_valid_zelhash_solution,
+    kheavyhash_matrix_flat,
     mine_ethash, mine_zelhash, ExternalAlgorithm, KERYX_MATRIX_SALT_V1, KERYX_MATRIX_SALT_V2,
     KERYX_MATRIX_SALT_V4, KERYX_SALT_V2_ACTIVATION_DAA, KERYX_SALT_V4_ACTIVATION_DAA,
     generate_keryx_matrix, keryx_active_salt, keryx_active_salt_version,

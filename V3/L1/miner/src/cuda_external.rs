@@ -124,7 +124,8 @@ impl CudaExtAlgo {
             "zelhash" | "zelhash_flux" => Some(Self::Zelhash),
             "ethash" | "ethash_etc" | "ethash_ethw" => Some(Self::Ethash),
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => Some(Self::Kawpow),
-            "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => Some(Self::Progpow),
+            "progpow" | "progpow_epic" | "progpow_zano" | "progpowz"
+            | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => Some(Self::Progpow),
             "verushash" | "verushash_vrsc" | "verus" => Some(Self::Verushash),
             _ => None,
         }
@@ -633,7 +634,7 @@ impl CudaExternalMiner {
     /// Uses the AuXpow codegen to inject random math + data load code into the
     /// CUDA kernel template, then compiles with NVRTC.
     fn ensure_progpow_kernel(&mut self, block_height: u64) -> Result<()> {
-        let period = (block_height / self.algo.period_length() as u64) as u32;
+        let period = (block_height / self.progpow_period()) as u32;
         let dag_elements = if self.dag_buf.is_some() {
             self.dag_size_entries / 2  // PROGPOW_DAG_ELEMENTS = dag_entries / 2
         } else {
@@ -1069,6 +1070,40 @@ impl CudaExternalMiner {
             })
         }
     }
+
+    /// Return ProgPow parameters (period, lane/regs/cache/math counts) for the
+    /// configured algorithm.  This lets EVR/MEWC use their own ProgPow variants
+    /// while still routing through the same CudaExtAlgo::Progpow enum.
+    fn progpow_params(&self) -> Option<&'static zion_auxpow::progpow_codegen::ProgPowParams> {
+        if self.algo == CudaExtAlgo::Progpow {
+            Some(zion_auxpow::progpow_codegen::select_progpow_params(&self.algorithm))
+        } else {
+            None
+        }
+    }
+
+    /// DAG epoch length for the current algorithm.  For ProgPow coins with
+    /// non-standard epoch lengths (EVR/MEWC = 12000 blocks), return the correct
+    /// value instead of the CudaExtAlgo default.
+    fn dag_epoch_length(&self) -> u64 {
+        if self.progpow_params().is_some() {
+            match self.algorithm.as_str() {
+                "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => 12000,
+                _ => 30000,
+            }
+        } else {
+            self.algo.epoch_length() as u64
+        }
+    }
+
+    /// ProgPow period length (random-math seed changes every `period` blocks).
+    fn progpow_period(&self) -> u64 {
+        if let Some(p) = self.progpow_params() {
+            p.period as u64
+        } else {
+            self.algo.period_length() as u64
+        }
+    }
 }
 
 impl GpuMiner for CudaExternalMiner {
@@ -1089,7 +1124,7 @@ impl GpuMiner for CudaExternalMiner {
             self.autolykos_height = height;
         }
         if self.algo.needs_dag() {
-            let epoch = (height / self.algo.epoch_length() as u64) as u32;
+            let epoch = (height / self.dag_epoch_length()) as u32;
             self.ensure_dag(epoch)?;
         }
         // ProgPoW: recompile kernel when period or DAG size changes
@@ -1245,36 +1280,12 @@ impl GpuMiner for CudaExternalMiner {
 // ── Host-side helper functions ─────────────────────────────────────────────
 
 /// Generate the 64x64 kHeavyHash matrix (4096 u16 values).
+/// Delegates to the canonical CPU implementation so the GPU matrix is
+/// identical to the one used by `zion_auxpow::hash_kheavyhash`.
 fn generate_kheavy_matrix_cuda() -> [u16; 4096] {
     use std::sync::OnceLock;
     static MATRIX: OnceLock<[u16; 4096]> = OnceLock::new();
-    *MATRIX.get_or_init(|| {
-        use sha3::{Digest, Sha3_256};
-        let seed = Sha3_256::digest(b"KHeavyHash");
-        let mut rng = XoShiRo256PlusPlus::new(seed.into());
-        loop {
-            let mut mat = [[0u16; 64]; 64];
-            for row in &mut mat {
-                let mut val = 0u64;
-                for (j, elem) in row.iter_mut().enumerate() {
-                    let shift = j % 16;
-                    if shift == 0 {
-                        val = rng.next();
-                    }
-                    *elem = ((val >> (4 * shift)) & 0x0F) as u16;
-                }
-            }
-            if compute_rank_64(&mat) == 64 {
-                let mut flat = [0u16; 4096];
-                for i in 0..64 {
-                    for j in 0..64 {
-                        flat[i * 64 + j] = mat[i][j];
-                    }
-                }
-                return flat;
-            }
-        }
-    })
+    *MATRIX.get_or_init(zion_auxpow::kheavyhash_matrix_flat)
 }
 
 fn autolykos_table_size_cuda() -> usize {
@@ -1303,85 +1314,6 @@ fn gen_autolykos_element_cuda(i: u64, seed: &[u8; 32], height: u32) -> u64 {
     let mut out = [0u8; 32];
     hasher.finalize_variable(&mut out).expect("blake2b256 finalize");
     u64::from_be_bytes(out[0..8].try_into().unwrap())
-}
-
-// ── XoShiRo256++ PRNG ──────────────────────────────────────────────────────
-
-struct XoShiRo256PlusPlus {
-    state: [u64; 4],
-}
-
-impl XoShiRo256PlusPlus {
-    fn new(seed: [u8; 32]) -> Self {
-        let mut s = [0u64; 4];
-        for i in 0..4 {
-            s[i] = u64::from_le_bytes(seed[i * 8..(i + 1) * 8].try_into().unwrap());
-        }
-        Self { state: s }
-    }
-
-    fn next(&mut self) -> u64 {
-        let result = Self::rotl(self.state[0].wrapping_add(self.state[3]), 23)
-            .wrapping_add(self.state[0]);
-        let t = self.state[1] << 17;
-        self.state[2] ^= self.state[0];
-        self.state[3] ^= self.state[1];
-        self.state[1] ^= self.state[2];
-        self.state[0] ^= self.state[3];
-        self.state[2] ^= t;
-        self.state[3] = Self::rotl(self.state[3], 45);
-        result
-    }
-
-    fn rotl(x: u64, k: u32) -> u64 {
-        (x << k) | (x >> (64 - k))
-    }
-}
-
-/// Compute the rank of a 64x64 matrix over GF(2^4) (4-bit entries).
-fn compute_rank_64(mat: &[[u16; 64]; 64]) -> usize {
-    let mut m = mat.map(|row| row.map(|v| v as u32));
-    let mut rank = 0;
-    let mut col = 0;
-    while col < 64 && rank < 64 {
-        let mut pivot = None;
-        for r in rank..64 {
-            if m[r][col] != 0 {
-                pivot = Some(r);
-                break;
-            }
-        }
-        if let Some(p) = pivot {
-            m.swap(rank, p);
-            let pivot_val = m[rank][col];
-            if pivot_val != 0 {
-                let inv = mod_inv_15(pivot_val);
-                for c in col..64 {
-                    m[rank][c] = (m[rank][c] * inv) & 0x0F;
-                }
-            }
-            for r in 0..64 {
-                if r != rank && m[r][col] != 0 {
-                    let factor = m[r][col];
-                    for c in col..64 {
-                        m[r][c] = ((m[r][c] + 16) - ((m[rank][c] * factor) & 0x0F)) & 0x0F;
-                    }
-                }
-            }
-            rank += 1;
-        }
-        col += 1;
-    }
-    rank
-}
-
-fn mod_inv_15(a: u32) -> u32 {
-    for x in 1..16u32 {
-        if (a * x) & 0x0F == 1 {
-            return x;
-        }
-    }
-    1
 }
 
 // ── Ethash/Kawpow DAG generation (CPU-side) ────────────────────────────────

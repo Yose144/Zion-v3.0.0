@@ -348,6 +348,19 @@ fn kheavy_matrix() -> &'static KheavyMatrix {
     MATRIX.get_or_init(KheavyMatrix::generate)
 }
 
+/// Return the cached kHeavyHash matrix as a flat 4096-element u16 array.
+/// Used by the CUDA kernel to ensure GPU and CPU use exactly the same matrix.
+pub fn kheavyhash_matrix_flat() -> [u16; 4096] {
+    let m = kheavy_matrix();
+    let mut flat = [0u16; 4096];
+    for i in 0..64 {
+        for j in 0..64 {
+            flat[i * 64 + j] = m.0[i][j];
+        }
+    }
+    flat
+}
+
 // ── KeryxHash (Keryx / KRX) ──────────────────────────────────────────
 //
 // KeryxHash is a modified kHeavyHash with two additions (see
@@ -2704,6 +2717,20 @@ mod tests {
         let h2 = hash_kheavyhash(&[1u8; 32], 0, 0u64);
         let diff = h1.iter().zip(h2.iter()).filter(|(a, b)| a != b).count();
         assert!(diff >= 4, "kHeavyHash avalanche: >= 4 bytes must differ (got {})", diff);
+    }
+
+    #[test]
+    fn kheavyhash_benchmark_vector() {
+        // The CUDA benchmark builds a MiningHeader:
+        //   version=3, previous_hash=[0x11;32], merkle_root=[0x22;32],
+        //   timestamp=1_762_000_200, difficulty_bits=0x1f00ffff
+        // and the GPU kernel uses the first 32 bytes as pre_pow_hash
+        // and header.timestamp as the KAS timestamp.
+        let mut pre_pow = [0x11u8; 32];
+        pre_pow[0..4].copy_from_slice(&3u32.to_le_bytes());
+        let expected = "1cff8de2f856c9a5c7970f35cb2642496bff0b5be2a42c61e3ca4a657914a93e";
+        let h = hash_kheavyhash(&pre_pow, 1_762_000_200u64, 4682u64);
+        assert_eq!(hash_to_hex(&h), expected);
     }
 
     // ── Target comparison ────────────────────────────────────────────
