@@ -149,7 +149,7 @@ Rozpis testů:
 - `ff2b8840` — `feat(v31): TCP stratum server with mining.notify broadcast`
 - `6e76d23f` — `feat(v31): live mining jobs from zion-l1 getBlockTemplate`
 - `b00daa77` — `feat(v31): block detection and PPLNS payouts endpoint`
-- `<novy>` — `feat(v31): real block reward and worker payout addresses`
+- `1c96ffcd` — `feat(v31): real block reward and worker payout addresses`
 
 ## Další plán (Mainnet Alpha milestones)
 
