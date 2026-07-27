@@ -2,7 +2,9 @@
 //! the domain modules (bridge, swap, DEX, credits) into one runtime.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
+use tokio::sync::Mutex;
 use zion_l1_types::{Address, Amount, ChainId};
 
 use crate::chain::adapters::{BitcoinAdapter, EvmAdapter, ZionL1Adapter};
@@ -14,15 +16,17 @@ use crate::error::{MultichainError, MultichainResult};
 
 /// Top-level runtime for `zion-multichain`.
 pub struct MultichainService {
+    #[allow(dead_code)]
     config: MultichainConfig,
-    _db: Db,
+    #[allow(dead_code)]
+    _db: Arc<Mutex<Db>>,
     adapters: ChainAdapterRegistry,
     credits: CreditsLedger,
 }
 
 impl MultichainService {
     pub fn new(config: MultichainConfig) -> MultichainResult<Self> {
-        let db = Db::open(&config.database.path)?;
+        let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
         let mut adapters = ChainAdapterRegistry::new();
 
         for cfg in &config.adapters {
