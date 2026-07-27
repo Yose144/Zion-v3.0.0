@@ -536,10 +536,12 @@ extern "C" __global__ void deeksha_lite_fire_mine(
     uint64_t *slot = (uint64_t*)(output_hashes + (uint64_t)tid * 32);
     slot[0] = hash[0]; slot[1] = hash[1]; slot[2] = hash[2]; slot[3] = hash[3];
 
-    /* Target check */
+    /* Target check — big-endian u32 of first 4 hash bytes (matches
+     * DifficultyTarget::allows() lexicographic comparison). */
     if (target_u32 != 0) {
-        uint32_t hash_le = (uint32_t)(hash[0] & 0xFFFFFFFFULL);
-        if (hash_le <= target_u32) {
+        uint32_t hash_low = (uint32_t)(hash[0] & 0xFFFFFFFFULL);
+        uint32_t hash_be = __byte_perm(hash_low, 0u, 0x3210u);
+        if (hash_be <= target_u32) {
             uint64_t old = atomicExch(result_nonce, nonce);
             if (old == 0xFFFFFFFFFFFFFFFFULL) {
                 uint8_t *rh = result_hash;
