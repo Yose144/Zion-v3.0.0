@@ -99,3 +99,20 @@ fn chain_name_to_id(name: &str) -> anyhow::Result<ChainId> {
         _ => anyhow::bail!("unknown chain: {name}"),
     }
 }
+
+/// Decode the canonical address string into raw bytes for validation.
+fn address_bytes(chain_id: &ChainId, encoded: &str) -> anyhow::Result<Vec<u8>> {
+    use zion_l1_types::ChainFamily;
+    match chain_id.family() {
+        ChainFamily::Evm => {
+            let hex = encoded.strip_prefix("0x").unwrap_or(encoded);
+            let mut out = [0u8; 20];
+            hex::decode_to_slice(hex, &mut out)
+                .map_err(|e| anyhow::anyhow!("invalid EVM address hex: {e}"))?;
+            Ok(out.to_vec())
+        }
+        // UTXO and Zion addresses are validated by the adapter against the
+        // encoded string; we do not need the raw bytes here.
+        _ => Ok(vec![]),
+    }
+}
