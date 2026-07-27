@@ -115,6 +115,10 @@
 - Stratum `JobEntry` nyní obsahuje i block reward; `broadcast_job` ho předává a `on_block_found` počítá payouts z reálné odměny.
 - `Pool::record_share` použije worker jméno jako `zion1...` payout adresu, pokud je validní; jinak padne na pool adresu.
 
+### 18. Dash31 payouts panel
+- Pool sekce v `Dash31/index.html` rozšířena o tabulku `Latest payouts`.
+- `Dash31/app.js` při `loadPool` načítá `/v1/pool/payouts` a vykresluje adresy + částky (zkrácené adresy, tooltip s plnou adresou).
+
 ## Verifikace
 
 ```bash
@@ -150,6 +154,7 @@ Rozpis testů:
 - `6e76d23f` — `feat(v31): live mining jobs from zion-l1 getBlockTemplate`
 - `b00daa77` — `feat(v31): block detection and PPLNS payouts endpoint`
 - `1c96ffcd` — `feat(v31): real block reward and worker payout addresses`
+- `<novy>` — `feat(v31): Dash31 pool payouts panel`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -164,6 +169,7 @@ Rozpis testů:
    - `/v1/pool/payouts` ✅ — endpoint vrací poslední payouts.
    - Real block reward ✅ — `BlockTemplate` parsuje `estimated_miner_reward_zion`/`reward_zion` z `getBlockTemplate`; stratum job obsahuje block reward pro payouts.
    - Worker jako payout adresa ✅ — pokud stratum worker začíná `zion1...`, je použita jako payout adresa pro PPLNS.
+   - `Dash31` payouts panel ✅ — zobrazuje nejnovější payouts z `/v1/pool/payouts` v pool sekci.
 
 2. **Real chain adapters (další kroky)**
    - `EvmAdapter` ✅ — provider + wallet + contract addresses; zbývá nasadit validator wallet a testovat `submitLockProof` na Base.

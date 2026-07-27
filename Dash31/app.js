@@ -122,6 +122,20 @@ $('swapExecute').onclick = async () => {
 
 async function loadPool() {
   await req('/v1/pool/stats', { out: 'poolOut' });
+  const payouts = await req('/v1/pool/payouts');
+  const tbody = $('poolPayoutsOut');
+  tbody.innerHTML = '';
+  if (!payouts.ok || !payouts.data || !payouts.data.payouts || payouts.data.payouts.length === 0) {
+    tbody.innerHTML = '<tr><td class="muted" colspan="2">No payouts yet</td></tr>';
+    return;
+  }
+  for (const p of payouts.data.payouts) {
+    const tr = document.createElement('tr');
+    const encoded = p.address && p.address.encoded ? p.address.encoded : String(p.address);
+    const amount = p.amount !== undefined ? String(p.amount) : '?';
+    tr.innerHTML = `<td title="${encoded}">${shortAddr(encoded)}</td><td>${amount}</td>`;
+    tbody.appendChild(tr);
+  }
 }
 
 $('refreshPool').onclick = loadPool;
