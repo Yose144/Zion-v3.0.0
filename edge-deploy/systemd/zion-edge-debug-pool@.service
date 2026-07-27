@@ -1,0 +1,35 @@
+[Unit]
+Description=ZION Debug Pool for coin %i (Trinity 3.0.7 E2E tests)
+After=network-online.target zion-edge-node1.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion/V3
+EnvironmentFile=/etc/zion/debug-pool-environment.sh
+Environment="ZION_POOL_AUXPOW_COIN=%i"
+Environment="RUST_LOG=info,zion_pool=debug,auxpow_client=debug"
+Environment="ZION_POOL_BIND=0.0.0.0:8461"
+Environment="ZION_NODE_RPC_ADDR=127.0.0.1:9443"
+Environment="ZION_ROUTING_METRICS_BIND=127.0.0.1:8471"
+Environment="ZION_PPLNS_STATE_PATH=/data/zion/pplns-state-debug-%i.json"
+ExecStart=/opt/zion/V3/target/release/server
+Restart=on-failure
+RestartSec=10
+KillMode=process
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening (unprivileged zion user)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=yes
+ReadWritePaths=/data/zion /opt/zion/V3/data /opt/zion/logs /var/log/zion
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

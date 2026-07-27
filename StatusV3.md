@@ -297,7 +297,7 @@ ZION_POOL_AUXPOW_WALLET_BEAM=<beam_wallet>  # BEAM payout wallet
 
 ### Node
 ```bash
-ZION_BLOCK_RETENTION=1000       # keep last 1000 blocks in memory
+ZION_BLOCK_RETENTION=0          # keep full chain history since 2026-07-20 hard genesis reset
 ZION_MIGRATION_HEIGHT=1         # fresh chain post-3.0.4
 ZION_BALANCE_CHECK_HEIGHT=0     # F5 balance check active from genesis
 ZION_RPC_DEBUG=0                # verbose RPC logging (default off)
