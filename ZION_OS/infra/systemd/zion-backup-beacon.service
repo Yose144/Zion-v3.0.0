@@ -1,0 +1,11 @@
+[Unit]
+Description=ZION Backup Node Dashboard Beacon
+Documentation=https://dashboard.zionterranova.com
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/Zion-v3.0.0-main
+ExecStart=%h/Zion-v3.0.0-main/scripts/backup-beacon.sh
+StandardOutput=journal
+StandardError=journal

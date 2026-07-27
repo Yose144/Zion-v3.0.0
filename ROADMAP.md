@@ -1,7 +1,7 @@
 # ZION Roadmap — From 3.0.5 to Public Mainnet Launch
 
-> **Version:** 3.0.7 "Trinity All Green" planning  
-> **Last updated:** 2026-07-19
+> **Version:** 3.0.7 "Trinity All Green"  
+> **Last updated:** 2026-07-27
 > **One source of truth:** [`3.0.7.md`](./3.0.7.md) + [`TRINITY_ALL_GREEN_PLAN.md`](./TRINITY_ALL_GREEN_PLAN.md) · Previous: [`docs/3.0.6/3.0.6.md`](./docs/3.0.6/3.0.6.md) · Live status: [`StatusV3.md`](./StatusV3.md) · Security: [`SecurityFirst.md`](./docs/3.0.4/SecurityFirst.md)  
 > **Engineering detail:** [`V3/ROADMAP.md`](./V3/ROADMAP.md)
 
@@ -38,7 +38,18 @@ Overall coordination: [`MAINNET_ALPHA_PLAN.md`](./docs/3.0.6/MAINNET_ALPHA_PLAN.
 
 ---
 
-## 1. Current State — 3.0.6 "Trinity" (2026-07-22)
+## 1. Current State — 3.0.7 "Trinity All Green" (2026-07-27)
+
+✅ **3.0.7 "Trinity All Green" Done (2026-07-27)**
+- Protocol version bumped to `zion-v3-node/3.0.7` (`V3/L1/core/src/lib.rs`)
+- Workspace version bumped to `3.0.7` (`Cargo.toml`, `V3/Cargo.toml`)
+- Miner UI / pool JSON / CLI update version strings bumped to 3.0.7
+- DAO integration test fix (`VoteChoice` clone in `V3/L2/dao/tests/integration.rs`)
+- All Green matrix verified: ZION Deeksha, EPIC/RVN/DCR/ERG/VTC/ZCL/RTM/QTC/NEXA/BEAM/QUAI GPU streams, VRSC/RTM CPU streams — accepted shares on upstream pools
+- ETC Ethash CPU reference aligned with `ethash` 0.4 crate and CUDA kernel (`ETHASH_CPU_GPU_MATCH`)
+- XMR RandomX hash verify OK (native-randomx), stale job_id propagation fix pending
+- Pearl (PRL) officially deferred to 3.1.0
+- Chain height 7101+ on Edge, 14/15 services active
 
 ✅ **3.0.5 Done (2026-07-09)**
 - Protocol version bumped to `zion-v3-node/3.0.5` (from stale 3.0.3)

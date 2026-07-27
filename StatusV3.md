@@ -1,11 +1,12 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
 > **Datum poslední aktualizace:** 2026-07-27
-> **Protokol:** `zion-v3-node/3.0.6` (bump na 3.0.7 po splnění All Green)
+> **Verze:** 3.0.7 "Trinity All Green"
+> **Protokol:** `zion-v3-node/3.0.7`
 > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
 > **Hard genesis reset:** 2026-07-20 — viz [`docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md`](./docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md). Bloky 0–~10913 předchozího řetězce jsou trvale ztraceny; aktuální chain startuje od genesis s unlimited retention.
-> **Dnešní update:** ETC/Ethash CPU reference opraven — `ethash` 0.4 crate vs CUDA kernel `ETHASH_CPU_GPU_MATCH` (~121 MH/s na GTX 1070 Ti, epoch 1). Kořenová dokumentace vyčištěna, starší plány a reporty přesunuty do [`docs/3.0.6/`](./docs/3.0.6/).
+> **Dnešní update:** Verze bumped na 3.0.7. DAO integration test fix (`choice.clone()`). Workspace version, protocol version, miner UI/pool version a web package.json synchronizovány. All Green matice: ZION Deeksha live, EPIC/RVN/DCR/ERG/VTC/ZCL/RTM/QTC/NEXA/BEAM/QUAI/VRSC E2E accepted, ETC CPU/GPU hash match ověřen, XMR RandomX hash OK, PRL deferred do 3.1.0.
 > **Plánovaná V3.1 migrace (po 3.0.9):** [`V3.1_MIGRATION_PLAN.md`](./docs/3.0.6/V3.1_MIGRATION_PLAN.md) — migrace čistého kódu do nového adresáře `V31/` (nová větev). WARP a ZionDex přesunuty do L2, AuxPoW přímo v mineru, L3 vyhrazeno pro AI/orchestraci/automatizaci/NCL/PoC. L4 Oasis, L5 Free World a L6 Issobella zůstávají jako samostatné nadstavbové vrstvy. Detailní nativní propojení integrací: [`V3.1_INTEGRATION_PLAN.md`](./docs/3.0.6/V3.1_INTEGRATION_PLAN.md).
 > **Předchozí archiv:** [`docs/3.0.5/StatusV3_archive_2026-07-13.md`](./docs/3.0.5/StatusV3_archive_2026-07-13.md) (5239 řádků, historické incident reporty)
 
@@ -15,8 +16,8 @@
 
 | Metric | Value |
 |--------|-------|
-| **Height** | 2585+ (2026-07-23, 2-node P2P mesh on Edge + local backup synced) |
-| **Protocol** | `zion-v3-node/3.0.6` (v2) |
+| **Height** | 7101+ (2026-07-27, 2-node P2P mesh on Edge + local backup synced) |
+| **Protocol** | `zion-v3-node/3.0.7` (v2) |
 | **Genesis** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
 | **Decimals** | 6 (1 ZION = 1,000,000 flowers, post-3.0.3 fork) |
 | **Total Supply** | 144B ZION (144e15 flowers) |

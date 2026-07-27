@@ -37,12 +37,26 @@ function Stop-ByPidFile($name) {
     }
 }
 
+function Stop-ByBinaryPath($binaryPath) {
+    # Fallback: kill any running process that matches this exact binary path
+    # (useful when PID files are missing after a crash or manual start).
+    Get-Process | Where-Object {
+        try { $_.Path -and ($_.Path -eq (Resolve-Path $binaryPath).Path) } catch { $false }
+    } | ForEach-Object {
+        Write-Host "Stopping existing process PID=$($_.Id) for $binaryPath"
+        $_ | Stop-Process -Force; Start-Sleep -Seconds 1
+    }
+}
+
 # ── Backup Node (syncs from Edge primary and its follower) ──
 Stop-ByPidFile "node1"
+Stop-ByBinaryPath $NodeExe
 
 [Environment]::SetEnvironmentVariable('ZION_NODE_ID', 'local-backup-node', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_NETWORK', 'Mainnet', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_P2P_BIND', '0.0.0.0:8333', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_RPC_BIND', '0.0.0.0:8446', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_RPC_BIND', '127.0.0.1:8446', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_WEBSOCKET_BIND', '127.0.0.1:8447', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_NODE_STATE_PATH', "$DataDir\zion-node-state.db", 'Process')
 [Environment]::SetEnvironmentVariable('ZION_SEED_PEERS', '62.171.141.136:8333,62.171.141.136:8334', 'Process')
 
@@ -73,7 +87,7 @@ Start-Sleep -Seconds 3
 # ── Backup beacon loop (reports to dashboard every 15s) ──
 Stop-ByPidFile "backup-beacon-loop"
 $beacon = Join-Path $PSScriptRoot "backup-beacon-loop.ps1"
-$bp = Start-Process -FilePath powershell.exe -ArgumentList "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$beacon`"" -WindowStyle Hidden -PassThru
+$bp = Start-Process -FilePath powershell.exe -ArgumentList "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$beacon`"" -WorkingDirectory $RepoRoot -WindowStyle Hidden -RedirectStandardOutput "$LogDir\backup-beacon.log" -RedirectStandardError "$LogDir\backup-beacon.err" -PassThru
 $bp.Id | Out-File "$PidDir\backup-beacon-loop.pid" -Encoding utf8
 Write-Host "Started Backup Beacon  PID=$($bp.Id)"
 

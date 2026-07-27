@@ -1,0 +1,19 @@
+[Unit]
+Description=ZION V3 Local Backup Node
+Documentation=https://dashboard.zionterranova.com
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Zion-v3.0.0-main
+ExecStart=%h/Zion-v3.0.0-main/scripts/start-backup-node.sh --foreground
+Restart=always
+RestartSec=10
+KillMode=process
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

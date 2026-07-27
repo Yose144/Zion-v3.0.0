@@ -13,7 +13,7 @@ use crate::config::{self, Config};
 use crate::ui;
 
 const DOWNLOADS_BASE: &str = "https://zionterranova.com/api/downloads";
-const RELEASE_LINE: &str = "v3.0.6 Trinity";
+const RELEASE_LINE: &str = "v3.0.7 Trinity";
 const WORKSPACE_TRACK: &str = "V3 clean-room mainnet track";
 
 #[derive(Debug, Deserialize)]

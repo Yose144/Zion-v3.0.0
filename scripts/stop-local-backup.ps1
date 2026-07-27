@@ -1,11 +1,12 @@
-# ZION V3 — Stop Local Backup Node + Miner (Edge-Primary Topology)
-# Uses PID files created by launch-local-backup.ps1
+# ZION V3 — Stop Local Backup Node + Beacon (Edge-Primary Topology)
+# Stops processes started by launch-local-backup.ps1
 
-$RepoRoot = "C:\Users\yosef\Desktop\Zion\2.9.6-main"
-$PidDir   = "$RepoRoot\.pids"
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+$BackupRoot = if ($env:ZION_BACKUP_DIR) { $env:ZION_BACKUP_DIR } else { "D:\Zion" }
+$PidDir = Join-Path $BackupRoot ".pids"
 
 function Stop-ByPidFile($name) {
-    $f = "$PidDir\$name.pid"
+    $f = Join-Path $PidDir "$name.pid"
     if (Test-Path $f) {
         $pidVal = Get-Content $f -ErrorAction SilentlyContinue
         if ($pidVal) {
@@ -20,7 +21,24 @@ function Stop-ByPidFile($name) {
     }
 }
 
+function Stop-ByBinaryPath($binaryPath) {
+    $target = (Resolve-Path $binaryPath -ErrorAction SilentlyContinue).Path
+    if (-not $target) { return }
+    Get-Process | Where-Object {
+        try { $_.Path -and ($_.Path -eq $target) } catch { $false }
+    } | ForEach-Object {
+        Write-Host "Stopping process $($_.Path) PID=$($_.Id)"
+        $_ | Stop-Process -Force
+        Start-Sleep -Seconds 1
+    }
+}
+
 Stop-ByPidFile "node1"
+Stop-ByPidFile "backup-beacon-loop"
 Stop-ByPidFile "miner"
 
-Write-Host "[stop-local-backup] Local backup node and miner stopped."
+# Fallback for any stray repo binary instances
+$NodeExe = Join-Path $RepoRoot "V3\target\release\node.exe"
+Stop-ByBinaryPath $NodeExe
+
+Write-Host "[stop-local-backup] Local backup node, beacon and miner stopped."

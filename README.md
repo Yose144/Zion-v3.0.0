@@ -61,7 +61,7 @@
 
 ZION is a decentralized **Layer 1 blockchain** built from scratch in **Rust**, running a canonical Proof-of-Work consensus with CPU and GPU acceleration.
 
-v3.0.6 is the current mainnet line under [`V3/`](V3/). It features a 6-layer architecture, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale humanitarian and space projects. The 3.0.6 "Trinity" release — all 11 services active, protocol bumped to 3.0.6, E2E memo tests verified on live chain, web deploy optimized (Docker image 2.57 GB → 377 MB).
+v3.0.7 is the current mainnet line under [`V3/`](V3/). It features a 6-layer architecture, a **Decade Decay** emission schedule designed for **100+ years**, and dedicated funding for planetary-scale humanitarian and space projects. The 3.0.7 "Trinity All Green" release — 14/15 services active, protocol bumped to 3.0.7, E2E memo tests verified on live chain, web deploy optimized (Docker image 2.57 GB → 377 MB).
 
 ---
 
@@ -210,7 +210,7 @@ RPC: 127.0.0.1:8443 (localhost only)
 
 - **Edge**: Primary 24/7 node + pool. Source of chain truth. Accepts public miner connections. 13 active services + watchdog timer + web Docker container (free-world and issobella are disabled).
 - **Core**: Local backup node (P2P peer, same genesis) + Dashboard + AI services.
-- **Chain live since:** 2026-07-07 (hard genesis reset), re-reset 2026-07-20 for retention fix · **Current protocol:** `zion-v3-node/3.0.6` · **Chain height:** 6735+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` · **Next milestone:** 3.0.7 "Trinity" — [`TRINITY_ALL_GREEN_PLAN.md`](TRINITY_ALL_GREEN_PLAN.md)
+- **Chain live since:** 2026-07-07 (hard genesis reset), re-reset 2026-07-20 for retention fix · **Current protocol:** `zion-v3-node/3.0.7` · **Chain height:** 7101+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` · **Next milestone:** 3.0.8+ / 3.1.0 Mainnet Alpha — [`TRINITY_ALL_GREEN_PLAN.md`](TRINITY_ALL_GREEN_PLAN.md)
 
 ---
 
@@ -220,4 +220,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-07-18 · Version: v3.0.6 "Triple Parallel" + CUDA Backend (303.8 KH/s RTX 3090) · Report: [`docs/3.0.6/CUDA_TUNING_RTX.md`](docs/3.0.6/CUDA_TUNING_RTX.md)*
+*Last updated: 2026-07-27 · Version: v3.0.7 "Trinity All Green" + CUDA Backend (303.8 KH/s RTX 3090) · Report: [`docs/3.0.6/CUDA_TUNING_RTX.md`](docs/3.0.6/CUDA_TUNING_RTX.md)*
