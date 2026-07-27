@@ -2348,11 +2348,21 @@ function startMiningV3(config, v3Path) {
   if (tripleStreamEnabled) {
     const cpuCoinEnv = String(config.cpuCoin || 'auto').trim();
     const gpuCoinEnv = String(config.gpuCoin || 'auto').trim();
-    if (cpuCoinEnv && cpuCoinEnv.toLowerCase() !== 'auto') {
+    const gpuIsAuto = !gpuCoinEnv || gpuCoinEnv.toLowerCase() === 'auto';
+    const cpuIsAuto = !cpuCoinEnv || cpuCoinEnv.toLowerCase() === 'auto';
+    if (cpuCoinEnv && !cpuIsAuto) {
       env.ZION_MINER_CPU_COIN = cpuCoinEnv;
     }
-    if (gpuCoinEnv && gpuCoinEnv.toLowerCase() !== 'auto') {
+    if (gpuCoinEnv && !gpuIsAuto) {
       env.ZION_MINER_GPU_COIN = gpuCoinEnv;
+    }
+    // When the user explicitly selects a specific GPU or CPU coin (not "auto"),
+    // disable the autonomous profit router so it does NOT override their
+    // manual choice. The autonomous router re-evaluates every 5 min and
+    // switches to whatever coin it thinks is most profitable, ignoring the
+    // user's selection. Only enable autonomy when BOTH coins are "auto".
+    if (!gpuIsAuto || !cpuIsAuto) {
+      env.ZION_AUTONOMOUS = '0';
     }
   }
   // Always tell the miner which backend to use.  When the user disables GPU,
