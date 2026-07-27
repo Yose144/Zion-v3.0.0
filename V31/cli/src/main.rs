@@ -3,8 +3,11 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, bail};
 use clap::{Parser, Subcommand};
+use tokio::sync::watch;
 
 use zion_l1_types::{Address, Amount, Asset, ChainId};
+use zion_miner::config::MinerConfig;
+use zion_miner::runtime::MinerRuntime;
 use zion_multichain::config::MultichainConfig;
 use zion_multichain::server::ApiServer;
 use zion_multichain::types::{Transfer, TransferDirection, TransferEndpoint};
@@ -33,6 +36,12 @@ enum Command {
     Bridge(BridgeArgs),
     /// DEX swap commands.
     Swap(SwapArgs),
+    /// Mining pool commands.
+    Pool(PoolArgs),
+    /// Miner commands.
+    Miner(MinerArgs),
+    /// Verify configuration and adapter connectivity.
+    Doctor,
     /// Serve the V31 HTTP API gateway.
     Api,
 }
@@ -80,6 +89,53 @@ enum WalletCommand {
         /// Address index.
         #[arg(short, long, default_value = "0")]
         index: u32,
+    },
+}
+
+#[derive(Parser)]
+struct PoolArgs {
+    #[command(subcommand)]
+    command: PoolCommand,
+}
+
+#[derive(Subcommand)]
+enum PoolCommand {
+    /// Show pool status (accepted/rejected shares and config).
+    Status,
+    /// Show the latest computed PPLNS payouts.
+    Payouts,
+    /// Show pool share statistics (same as status).
+    Shares,
+}
+
+#[derive(Parser)]
+struct MinerArgs {
+    #[command(subcommand)]
+    command: MinerCommand,
+}
+
+#[derive(Subcommand)]
+enum MinerCommand {
+    /// Start the triple-stream miner (ZION + AuxPoW GPU + AuxPoW CPU).
+    Start {
+        /// ZION address that receives mining rewards.
+        #[arg(short, long)]
+        reward_address: Option<String>,
+        /// Optional external stratum pool URL for AuxPoW shares.
+        #[arg(short, long)]
+        auxpow_pool: Option<String>,
+        /// Worker name used on AuxPoW pools.
+        #[arg(short, long, default_value = "zion_worker")]
+        worker: String,
+        /// Disable the ZION canonical mining stream.
+        #[arg(long)]
+        no_zion: bool,
+        /// Disable the GPU AuxPoW stream.
+        #[arg(long)]
+        no_gpu: bool,
+        /// Disable the CPU AuxPoW stream.
+        #[arg(long)]
+        no_cpu: bool,
     },
 }
 
@@ -313,6 +369,63 @@ async fn main() -> anyhow::Result<()> {
                 println!("executed swap: out = {}", out.0);
             }
         },
+        Command::Pool(pool) => match pool.command {
+            PoolCommand::Status | PoolCommand::Shares => match service.pool_stats() {
+                Some(stats) => println!("{}", serde_json::to_string_pretty(&stats)?),
+                None => println!("Pool not configured."),
+            },
+            PoolCommand::Payouts => match service.pool_payouts() {
+                Some(payouts) => println!("{}", serde_json::to_string_pretty(&payouts)?),
+                None => println!("No payouts computed yet or pool not configured."),
+            },
+        },
+        Command::Miner(miner) => match miner.command {
+            MinerCommand::Start {
+                reward_address,
+                auxpow_pool,
+                worker,
+                no_zion,
+                no_gpu,
+                no_cpu,
+            } => {
+                let reward_address = match reward_address {
+                    Some(encoded) => Address::new(ChainId::ZionL1, vec![], encoded)?,
+                    None => service.wallet_address(ChainId::ZionL1, 0, 0)?,
+                };
+                let mut miner_config = MinerConfig::new(reward_address);
+                miner_config.auxpow_pool = auxpow_pool;
+                miner_config.worker = worker;
+                miner_config.stream1_enabled = !no_zion;
+                miner_config.stream2_enabled = !no_gpu;
+                miner_config.stream3_enabled = !no_cpu;
+
+                let runtime = MinerRuntime::new(miner_config);
+                let (shutdown_tx, shutdown_rx) = watch::channel(false);
+                tokio::spawn(async move {
+                    let _ = tokio::signal::ctrl_c().await;
+                    let _ = shutdown_tx.send(true);
+                });
+                println!("Starting triple-stream miner. Press Ctrl-C to stop.");
+                runtime.run(shutdown_rx).await?;
+            }
+        },
+        Command::Doctor => {
+            let health = service.health().await;
+            let mut all_ok = true;
+            for (chain, ok) in &health {
+                println!("  {chain}: {}", if *ok { "ok" } else { "unreachable" });
+                if !ok {
+                    all_ok = false;
+                }
+            }
+            if health.is_empty() {
+                println!("No adapters configured.");
+            } else if all_ok {
+                println!("All configured adapters are reachable.");
+            } else {
+                bail!("One or more adapters are unreachable.");
+            }
+        }
         Command::Api => {
             println!(
                 "Starting V31 HTTP API on {}:{}",
