@@ -1771,7 +1771,24 @@ function setupEventListeners() {
       : 'GRATULUJI! Našel jsi blok!';
     addLogEntry(msg, 'success');
   });
-  
+
+  // ── Share event log (per-share accept/reject with timestamps) ──
+  window.electronAPI.onShareEvent((data) => {
+    if (!data) return;
+    _shareLogBuffer.push(data);
+    if (_shareLogBuffer.length > _SHARE_LOG_MAX) _shareLogBuffer.shift();
+    renderShareLog();
+    if (data.accepted) {
+      const detail = data.coin === 'ZION'
+        ? `job=${data.job} h=${data.height} nonce=${data.nonce} ${data.latencyMs}ms`
+        : `status=${data.status}`;
+      addLogEntry(`✓ ${data.coin} share accepted (${detail})`, 'success');
+    } else {
+      const reason = data.reason || data.status || 'rejected';
+      addLogEntry(`✗ ${data.coin} share rejected (${reason})`, 'error');
+    }
+  });
+
   window.electronAPI.onStatsUpdate((stats) => {
     _lastIpcStatsAt = Date.now();
     scheduleStatsUpdate(stats);
@@ -1863,6 +1880,10 @@ function updateStats(stats) {
     const nextUnit = hashrateUnitMode === 'auto' ? formatted.unit : hashrateUnitMode;
     if (unitEl.textContent !== nextUnit) unitEl.textContent = nextUnit;
   }
+
+  // Push hashrate sample to sparkline history (prefer 10s window)
+  pushHrSparkSample(stats.hashrate_10s || stats.hashrate_60s || primaryHr);
+  renderHrSparkline();
 
   // Rolling hashrate windows (10s / 60s / 15m / max)
   const fmtHr = (v) => {
@@ -2105,6 +2126,101 @@ async function pollStats() {
 let _logQueue = [];
 let _logFlushScheduled = false;
 const _maxLogQueue = 100;
+
+// ── Share event log (rolling buffer + renderer) ──
+let _shareLogBuffer = [];
+const _SHARE_LOG_MAX = 50;
+
+// ── Hashrate sparkline (rolling history + canvas renderer) ──
+let _hrSparkHistory = [];
+const _HR_SPARK_MAX = 120; // ~2 minutes at 1 sample/sec
+
+function pushHrSparkSample(hps) {
+  if (typeof hps !== 'number' || !isFinite(hps) || hps <= 0) return;
+  _hrSparkHistory.push(hps);
+  if (_hrSparkHistory.length > _HR_SPARK_MAX) _hrSparkHistory.shift();
+}
+
+function renderHrSparkline() {
+  const canvas = document.getElementById('hashrate-spark');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  if (_hrSparkHistory.length < 2) {
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '10px monospace';
+    ctx.fillText('collecting…', 8, h / 2 + 3);
+    return;
+  }
+  const max = Math.max(..._hrSparkHistory);
+  const min = Math.min(..._hrSparkHistory);
+  const range = (max - min) || 1;
+  const stepX = w / (_HR_SPARK_MAX - 1);
+  // Fill area
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  for (let i = 0; i < _hrSparkHistory.length; i++) {
+    const x = i * stepX;
+    const y = h - ((_hrSparkHistory[i] - min) / range) * (h - 4) - 2;
+    ctx.lineTo(x, y);
+  }
+  ctx.lineTo((_hrSparkHistory.length - 1) * stepX, h);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, 'rgba(6,182,212,0.35)');
+  grad.addColorStop(1, 'rgba(6,182,212,0.02)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+  // Line
+  ctx.beginPath();
+  for (let i = 0; i < _hrSparkHistory.length; i++) {
+    const x = i * stepX;
+    const y = h - ((_hrSparkHistory[i] - min) / range) * (h - 4) - 2;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#06b6d4';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+function renderShareLog() {
+  const el = document.getElementById('share-log-body');
+  if (!el) return;
+  if (!_shareLogBuffer || _shareLogBuffer.length === 0) {
+    el.innerHTML = '<div class="share-log-empty">No shares yet</div>';
+    return;
+  }
+  // Render newest first
+  const rows = [];
+  for (let i = _shareLogBuffer.length - 1; i >= 0; i--) {
+    const s = _shareLogBuffer[i];
+    const time = new Date(s.ts || Date.now()).toLocaleTimeString();
+    const ok = s.accepted;
+    const icon = ok ? '✓' : '✗';
+    const cls = ok ? 'share-acc' : 'share-rej';
+    let detail = '';
+    if (s.coin === 'ZION') {
+      detail = ok
+        ? `job=${s.job} h=${s.height} ${s.latencyMs}ms`
+        : `job=${s.job} reason=${s.reason || '?'}`;
+    } else {
+      detail = s.status || (ok ? 'accepted' : 'rejected');
+    }
+    rows.push(
+      `<div class="share-log-row ${cls}">` +
+      `<span class="share-log-ts">${time}</span>` +
+      `<span class="share-log-icon">${icon}</span>` +
+      `<span class="share-log-coin">${s.coin || '—'}</span>` +
+      `<span class="share-log-detail">${detail}</span>` +
+      `<span class="share-log-algo">${s.algorithm || ''}</span>` +
+      `</div>`
+    );
+  }
+  el.innerHTML = rows.join('');
+}
 
 function addLogEntry(message, type = 'info') {
   const timestamp = new Date().toLocaleTimeString();

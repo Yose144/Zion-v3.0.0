@@ -87,6 +87,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onBlockFound: (callback) => {
     ipcRenderer.on('block-found', (event, data) => callback(data));
   },
+  onShareEvent: (callback) => {
+    ipcRenderer.on('share-event', (event, data) => callback(data));
+  },
   onStatsUpdate: (callback) => {
     ipcRenderer.on('stats-update', (event, data) => callback(data));
   },
