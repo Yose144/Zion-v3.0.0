@@ -161,7 +161,7 @@ Rozpis testů:
 - `b00daa77` — `feat(v31): block detection and PPLNS payouts endpoint`
 - `1c96ffcd` — `feat(v31): real block reward and worker payout addresses`
 - `9b0ce9c5` — `feat(v31): Dash31 pool payouts panel`
-- `<novy>` — `feat(v31): submit solved blocks to zion-l1 RPC`
+- `9cbcaba7` — `feat(v31): submit solved blocks to zion-l1 RPC`
 
 ## Další plán (Mainnet Alpha milestones)
 
