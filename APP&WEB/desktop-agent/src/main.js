@@ -1025,11 +1025,14 @@ function findRustMiner() {
     }
 
     if (candidates.length > 0) {
+      // Prefer the canonical bundled location (lowest pathIndex) so dev tests
+      // don't accidentally pick up a stale/broken build from V3/target/release.
+      // Break ties by mtime to still allow intentional local rebuilds.
       candidates.sort((left, right) => {
-        if (right.mtimeMs !== left.mtimeMs) {
-          return right.mtimeMs - left.mtimeMs;
+        if (left.pathIndex !== right.pathIndex) {
+          return left.pathIndex - right.pathIndex;
         }
-        return left.pathIndex - right.pathIndex;
+        return right.mtimeMs - left.mtimeMs;
       });
       const chosen = candidates[0].fullPath;
       console.log(`[V3-FAST] findRustMiner selected ${chosen} (mtime=${candidates[0].mtimeMs}, pathIndex=${candidates[0].pathIndex})`);
