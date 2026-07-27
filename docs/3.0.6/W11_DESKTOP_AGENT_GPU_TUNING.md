@@ -224,57 +224,110 @@ Override with `ZION_GPU_MAX_BATCH` env var or `config.gpuMaxBatch`.
 
 ---
 
-## 6. Thermal Management
+## 6. Triple-Stream Parallel Mining (Claymore Dual Style)
+
+### How it works
+
+The miner runs three streams in parallel:
+- **Stream 1 · ZION**: primary GPU algorithm (`deeksha_lite_v1`)
+- **Stream 2 · GPU Profit**: AuxPoW GPU coin (currently `progpow_zano` / ZANO)
+- **Stream 3 · CPU Profit**: CPU-only AuxPoW coin (currently `verushash` / VRSC)
+
+On NVIDIA, the optimal configuration is:
+- **ZION on CUDA** — much faster than OpenCL for the deeksha kernels
+- **ZANO on OpenCL** — the CUDA ProgPoWZ kernel is currently slower and
+  destabilises ZION in triple-stream mode
+- **VRSC on CPU threads**
+
+The driver time-slices the GPU between the CUDA and OpenCL contexts,
+exactly like Claymore Dual did on NVIDIA cards.
+
+### Measured results (GTX 1070 Ti, 3 min run)
+
+| Configuration | ZION | ZANO | VRSC | GPU temp | Power | Total accept |
+|---------------|------|------|------|----------|-------|--------------|
+| ZION CUDA + ZANO CUDA | ~46 kH/s | 0.45 MH/s | 2.25 MH/s | 74°C | 40W | 27/1 |
+| **ZION CUDA + ZANO OpenCL** | **~117 kH/s** | **3.6 MH/s** | **4.7 MH/s** | **79°C** | 41W | **35/1 (97%)** |
+| ZION only | 211 kH/s | — | — | 72°C | 44W | 13/0 |
+
+Therefore the miner now **defaults the external GPU stream to OpenCL
+when the primary backend is CUDA**. Override with:
+```powershell
+$env:ZION_EXT_GPU_BACKEND = "cuda"   # or "opencl"
+```
+
+### Tuneables
+
+```powershell
+$env:ZION_EXT_GPU_BATCH_SIZE = "1048576"   # ext GPU batch (default 2M)
+$env:ZION_EXT_GPU_TIME_DUTY_PCT = "50"      # % of wall time for ext GPU
+$env:ZION_SECONDARY_GPU_WORK_SIZE = "5242880"  # ext GPU work size
+```
+
+For a single GPU shared between ZION and ZANO, `ZION_EXT_GPU_TIME_DUTY_PCT=50`
+gives a 50/50 split. Increase to 70 to favour ZANO, decrease to 30 to favour
+ZION.
+
+## 7. Thermal Management
 
 ### Observed Temperatures
 
 | Mode | GPU Temp | GPU Power | Notes |
 |------|----------|-----------|-------|
 | Idle | 50°C | 11W | Fan 45% |
-| ZION only (deeksha_lite) | 60°C | 44W | Single stream |
-| Triple-stream (ZION+ZANO+VRSC) | **81°C** | 43W | **Red zone** |
+| ZION only (deeksha_lite) | 60-72°C | 44W | Single stream |
+| Triple-stream (ZION+ZANO+VRSC) | **79°C** | 41W | After 3 min, acceptable but warm |
 
 ### Recommendations for GTX 1070 Ti
 
-The 81°C under triple-stream is caused by the ZANO ProgPoW stream which
-is GPU-intensive. While the GTX 1070 Ti can handle up to 94°C, sustained
-81°C reduces GPU lifespan.
+ZANO ProgPoW is the hottest stream. Under triple-stream the GPU settles
+around 79°C after a few minutes (improved from the earlier 81°C by better
+batch sizing and backend selection).
 
-**Option 1: Power limit (recommended)**
+**Option 1: Power limit (recommended, requires admin)**
 ```powershell
-# Reduce power limit from 144W to 120W (requires admin)
+# Reduce power limit from 144W to 120W to drop ~8-10°C
 nvidia-smi -pl 120
 # Restore default
 nvidia-smi -pl 144
 ```
-This reduces temp by ~8-10°C with minimal hashrate loss (~5%).
+Run PowerShell as Administrator. This costs ~5% hashrate but is the most
+reliable way to keep the card under 75°C.
 
-**Option 2: Disable ZANO stream**
+**Option 2: Give ZANO less GPU time**
+```powershell
+$env:ZION_EXT_GPU_TIME_DUTY_PCT = "30"
+```
+This reduces the ZANO time slice, lowering total GPU load and temperature.
+
+**Option 3: Disable ZANO stream**
 Set `ZION_STREAM2_ENABLED=0` in miner config or disable triple-stream
 in desktop agent settings. GPU only mines ZION → temp drops to ~60°C.
 
-**Option 3: Custom fan curve**
+**Option 4: Custom fan curve**
 Use MSI Afterburner or EVGA Precision XOC to set a more aggressive
 fan curve (e.g., 80% fan at 70°C).
 
 ---
 
-## 7. Files Changed
+## 8. Files Changed
 
 | File | Change |
 |------|--------|
-| `V3/L1/miner/src/main.rs` | MinerMetricsSnapshot GPU fields, stats.json, HTTP /stats, GPU refresh, batch size fix (pool mode), local mode telemetry fix, init_verushash cfg guard |
-| `V3/L1/miner/src/gpu_backend.rs` | nvidia-smi/rocm-smi helpers, v5 async copies, v6 launch_batch/collect_batch, PTXAS opts, batch size fix (local + pipeline mode) |
+| `V3/L1/miner/src/main.rs` | MinerMetricsSnapshot GPU fields, stats.json, HTTP /stats, GPU refresh, batch size fix (pool mode), local mode telemetry fix, init_verushash cfg guard, CUDA auto-detect priority, ext GPU OpenCL default for CUDA primary, triple-stream scheduling |
+| `V3/L1/miner/src/gpu_backend.rs` | nvidia-smi/rocm-smi helpers, v5 async copies, v6 launch_batch/collect_batch, PTXAS opts, batch size fix (local + pipeline mode), CUDA runtime probe |
 | `V3/L1/miner/src/cosmic_harmony_deeksha.cu` | __launch_bounds__(256) on all kernels |
 | `V3/L1/miner/build.rs` | V3/L1/native-libs link search path |
-| `APP&WEB/desktop-agent/src/main.js` | GPU field parsing, share event parsing, IPC, ZION_GPU_MAX_BATCH env setup |
+| `APP&WEB/desktop-agent/src/main.js` | GPU field parsing, share event parsing, IPC, ZION_GPU_MAX_BATCH env setup, NVRTC runtime probe |
 | `APP&WEB/desktop-agent/src/preload.js` | onShareEvent IPC channel |
-| `APP&WEB/desktop-agent/src/ui/renderer.js` | GPU panel, share log, sparkline rendering |
-| `APP&WEB/desktop-agent/src/ui/index.html` | GPU rows, share log panel, sparkline canvas, CSS |
+| `APP&WEB/desktop-agent/src/ui/renderer.js` | GPU panel, share log, sparkline rendering, static Session Metrics panel, Trinity detail rows, 2000-line log buffer |
+| `APP&WEB/desktop-agent/src/ui/index.html` | GPU rows, share log panel, sparkline canvas, CSS, Session Metrics panel, Trinity detail rows |
+| `APP&WEB/desktop-agent/scripts/prepare-rust-miner.js` | Fix duplicate `const base` SyntaxError, NVRTC runtime warning |
+| `APP&WEB/desktop-agent/resources/zion-miner.exe` | Rebuilt with CUDA + OpenCL + nvrtc DLLs |
 
 ---
 
-## 8. Commits
+## 9. Commits
 
 | Commit | Description |
 |--------|-------------|
@@ -283,3 +336,7 @@ fan curve (e.g., 80% fan at 70°C).
 | `d8e8b4f3e` | fix(cuda): resolve PTXAS O3 hang for ekam kernel |
 | `ec45b37b1` | feat(desktop-agent): professional TUI mode for terminal mining dashboard |
 | `366820af5` | fix(gpu): reduce default batch size to 65536 to eliminate stale job rejects |
+| `a17188def` | docs(3.0.6): stale job reject fix + thermal management |
+| `44e0ab9f2` | perf(gpu): enable CUDA backend on NVIDIA — 6x hashrate |
+| `97fe522f9` | feat(desktop-agent): static session metrics panel and UI cleanup |
+| *(pending)* | fix(miner): default external GPU to OpenCL for CUDA primary (Claymore dual) |

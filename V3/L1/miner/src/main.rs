@@ -1740,9 +1740,15 @@ fn run_local_session(
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
         // Allow Stream 2 (external GPU) to use a different backend than Stream 1
-        // in local benchmark mode too (same as pool mode).  Set
-        // ZION_EXT_GPU_BACKEND=opencl to force OpenCL for ZANO ProgPoWZ while
-        // ZION deeksha runs on CUDA.
+        // in local benchmark mode too.  See pool mode for the rationale:
+        // ZION deeksha is much faster on CUDA, but ZANO ProgPoWZ performs
+        // better on OpenCL in triple-stream mode, so default ext stream to
+        // OpenCL when the primary backend is CUDA.
+        let default_ext_backend = if effective_gpu_backend == gpu_backend::GpuBackendKind::Cuda {
+            gpu_backend::GpuBackendKind::OpenCL
+        } else {
+            effective_gpu_backend
+        };
         let bk = std::env::var("ZION_EXT_GPU_BACKEND")
             .ok()
             .and_then(|v| match v.to_lowercase().as_str() {
@@ -1751,7 +1757,7 @@ fn run_local_session(
                 "metal" => Some(gpu_backend::GpuBackendKind::Metal),
                 _ => None,
             })
-            .unwrap_or(effective_gpu_backend);
+            .unwrap_or(default_ext_backend);
         #[cfg(feature = "gpu-cuda")]
         let shared_cuda: Option<std::sync::Arc<cudarc::driver::CudaDevice>> = None;
         #[cfg(not(feature = "gpu-cuda"))]
@@ -2556,9 +2562,19 @@ fn run_remote_session(
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
         // Allow Stream 2 (external GPU) to use a different backend than Stream 1.
-        // This is essential when the primary backend is CUDA (for ZION deeksha)
-        // but the external algorithm (e.g. ProgPoWZ/ZANO) is only implemented in
-        // OpenCL.  Set ZION_EXT_GPU_BACKEND=opencl to force OpenCL for Stream 2.
+        // Benchmarks on a GTX 1070 Ti showed that ZION deeksha is ~6x faster on
+        // CUDA than on OpenCL, but the CUDA ProgPoWZ/ZANO kernel is currently far
+        // worse in triple-stream mode (~0.45 MH/s and it starves ZION down to
+        // ~46 kH/s) than OpenCL ZANO (~3.6 MH/s while ZION stays ~117 kH/s).
+        // Therefore, when the primary backend is CUDA, default the external GPU
+        // stream to OpenCL so the two algorithms run on different APIs and the
+        // driver can time-slice them like Claymore Dual.
+        // Override with ZION_EXT_GPU_BACKEND=cuda or =opencl if desired.
+        let default_ext_backend = if effective_gpu_backend == gpu_backend::GpuBackendKind::Cuda {
+            gpu_backend::GpuBackendKind::OpenCL
+        } else {
+            effective_gpu_backend
+        };
         let bk = std::env::var("ZION_EXT_GPU_BACKEND")
             .ok()
             .and_then(|v| match v.to_lowercase().as_str() {
@@ -2567,7 +2583,7 @@ fn run_remote_session(
                 "metal" => Some(gpu_backend::GpuBackendKind::Metal),
                 _ => None,
             })
-            .unwrap_or(effective_gpu_backend);
+            .unwrap_or(default_ext_backend);
         // Share the CUDA device with the external GPU thread to avoid
         // creating a second CUDA context (deadlock on consumer GPUs).
         #[cfg(feature = "gpu-cuda")]
