@@ -104,7 +104,7 @@ Rozpis testů:
 - `23e8ecec` — `docs: add V31 Mainnet Alpha progress report and next plan`
 - `91bdd696` — `feat(v31): add CLI commands for wallet, bridge and swap`
 - `eb7bcda7` — `feat(v31): add V3 contracts, HTTP API, CORS and Dash31 dashboard`
-- `<novy>` — `feat(v31): wire EvmAdapter with ethers provider, signer and V3 contracts`
+- `49b8e76c` — `feat(v31): wire EvmAdapter with ethers provider, signer and V3 contracts`
 
 ## Další plán (Mainnet Alpha milestones)
 
