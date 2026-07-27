@@ -3,6 +3,7 @@ members = [
     "L1/types",
     "L1/cosmic-harmony",
     "L1/core",
+    "L1/miner",
     "L2/multichain",
     "cli",
 ]
@@ -28,6 +29,8 @@ ed25519-dalek = { version = "2", features = ["rand_core"] }
 ethers = { version = "2", features = ["rustls"] }
 hex = "0.4"
 k256 = { version = "0.13", features = ["ecdsa"] }
+num-bigint = "0.4"
+num-traits = "0.2"
 rand = "0.8"
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 rusqlite = { version = "0.31", features = ["bundled"] }
@@ -44,8 +47,10 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 zeroize = { version = "1", features = ["derive"] }
 
+zion-core = { path = "L1/core" }
 zion-cosmic-harmony = { path = "L1/cosmic-harmony" }
 zion-l1-types = { path = "L1/types" }
+zion-miner = { path = "L1/miner" }
 zion-multichain = { path = "L2/multichain" }
 
 [profile.release]

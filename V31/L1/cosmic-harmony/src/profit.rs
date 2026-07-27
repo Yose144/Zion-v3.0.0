@@ -1,0 +1,229 @@
+//! Profit routing data for AuxPoW merged mining.
+//!
+//! `ExternalCoin` and `CoinProfile` are canonical here so `zion-miner`
+//! (and any future consumer) uses the same definitions as the profit layer.
+
+use std::fmt;
+use std::str::FromStr;
+
+use zion_l1_types::Amount;
+
+/// External coin mined through AuxPoW / merged mining.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+pub enum ExternalCoin {
+    Kaspa,
+    Alephium,
+    Decred,
+    Vertcoin,
+    Ravencoin,
+    Monero,
+    EpicCash,
+    Zano,
+    Meowcoin,
+    Clore,
+    Flux,
+    Neoxa,
+    EthereumClassic,
+    Bitcoin,
+}
+
+impl ExternalCoin {
+    pub const ALL: &[ExternalCoin] = &[
+        ExternalCoin::Kaspa,
+        ExternalCoin::Alephium,
+        ExternalCoin::Decred,
+        ExternalCoin::Vertcoin,
+        ExternalCoin::Ravencoin,
+        ExternalCoin::Monero,
+        ExternalCoin::EpicCash,
+        ExternalCoin::Zano,
+        ExternalCoin::Meowcoin,
+        ExternalCoin::Clore,
+        ExternalCoin::Flux,
+        ExternalCoin::Neoxa,
+        ExternalCoin::EthereumClassic,
+        ExternalCoin::Bitcoin,
+    ];
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ExternalCoin::Kaspa => "KAS",
+            ExternalCoin::Alephium => "ALPH",
+            ExternalCoin::Decred => "DCR",
+            ExternalCoin::Vertcoin => "VTC",
+            ExternalCoin::Ravencoin => "RVN",
+            ExternalCoin::Monero => "XMR",
+            ExternalCoin::EpicCash => "EPIC",
+            ExternalCoin::Zano => "ZANO",
+            ExternalCoin::Meowcoin => "MEWC",
+            ExternalCoin::Clore => "CLORE",
+            ExternalCoin::Flux => "FLUX",
+            ExternalCoin::Neoxa => "NEOX",
+            ExternalCoin::EthereumClassic => "ETC",
+            ExternalCoin::Bitcoin => "BTC",
+        }
+    }
+
+    pub fn algorithm(&self) -> &'static str {
+        match self {
+            ExternalCoin::Kaspa => "kheavyhash",
+            ExternalCoin::Alephium => "blake3_alph",
+            ExternalCoin::Decred => "blake3_dcr",
+            ExternalCoin::Vertcoin => "verthash",
+            ExternalCoin::Ravencoin => "kawpow",
+            ExternalCoin::Monero => "randomx",
+            ExternalCoin::EpicCash => "progpow",
+            ExternalCoin::Zano => "progpowz",
+            ExternalCoin::Meowcoin => "meowpow",
+            ExternalCoin::Clore => "kawpow",
+            ExternalCoin::Flux => "zelhash",
+            ExternalCoin::Neoxa => "kawpow",
+            ExternalCoin::EthereumClassic => "etchash",
+            ExternalCoin::Bitcoin => "sha256d",
+        }
+    }
+}
+
+impl fmt::Display for ExternalCoin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl FromStr for ExternalCoin {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.to_uppercase();
+        for coin in Self::ALL {
+            if coin.as_str() == s {
+                return Ok(*coin);
+            }
+        }
+        Err(format!("unknown external coin: {s}"))
+    }
+}
+
+/// Static mining profile for an external coin.
+#[derive(Clone, Debug)]
+pub struct CoinProfile {
+    pub coin: ExternalCoin,
+    /// Normalized hashrate unit for this algorithm (MH/s).
+    pub hashrate_unit_mhs: f64,
+    /// USD value of one unit of `hashrate_unit_mhs` over 24h.
+    /// This is a placeholder for live profit estimates; it can be updated from an oracle.
+    pub profit_per_unit_usd: f64,
+    pub fee_bps: u16,
+    pub enabled: bool,
+    pub stratum_urls: Vec<String>,
+    /// Block reward in the coin's smallest unit.
+    pub block_reward: Amount,
+    /// Approximate network difficulty at 1 TH/s normalized to the unit.
+    pub network_difficulty: f64,
+}
+
+impl CoinProfile {
+    /// Estimated 24h USD profit for `hashrate` units of this algorithm.
+    pub fn estimate_profit(&self, hashrate: f64) -> f64 {
+        if self.fee_bps >= 10_000 || !self.enabled {
+            return 0.0;
+        }
+        let gross = hashrate * self.profit_per_unit_usd;
+        gross * (1.0 - self.fee_bps as f64 / 10_000.0)
+    }
+
+    /// Placeholder defaults for Mainnet Alpha. These are not live quotes.
+    pub fn defaults() -> Vec<Self> {
+        vec![
+            Self::new(ExternalCoin::Kaspa, 1000.0, 0.05),
+            Self::new(ExternalCoin::Alephium, 1000.0, 0.03),
+            Self::new(ExternalCoin::Decred, 1000.0, 0.02),
+            Self::new(ExternalCoin::Vertcoin, 1000.0, 0.01),
+            Self::new(ExternalCoin::Ravencoin, 1000.0, 0.015),
+        ]
+    }
+
+    fn new(coin: ExternalCoin, hashrate_unit_mhs: f64, profit_per_unit_usd: f64) -> Self {
+        Self {
+            coin,
+            hashrate_unit_mhs,
+            profit_per_unit_usd,
+            fee_bps: 100,
+            enabled: true,
+            stratum_urls: vec![format!(
+                "stratum+tcp://{}.pool.example:3333",
+                coin.as_str().to_lowercase()
+            )],
+            block_reward: Amount::new(0),
+            network_difficulty: 1.0,
+        }
+    }
+}
+
+/// One profit entry produced for a specific rig configuration.
+#[derive(Clone, Debug)]
+pub struct ProfitEntry {
+    pub coin: ExternalCoin,
+    pub hashrate: f64,
+    pub profit_usd_per_day: f64,
+}
+
+impl ProfitEntry {
+    pub fn from_profile(profile: &CoinProfile, hashrate: f64) -> Self {
+        Self {
+            coin: profile.coin,
+            hashrate,
+            profit_usd_per_day: profile.estimate_profit(hashrate),
+        }
+    }
+}
+
+/// Profit-switching router for AuxPoW mining.
+#[derive(Clone, Debug, Default)]
+pub struct ProfitRouter {
+    entries: Vec<ProfitEntry>,
+}
+
+impl ProfitRouter {
+    pub fn new(entries: Vec<ProfitEntry>) -> Self {
+        Self { entries }
+    }
+
+    pub fn update(&mut self, entries: Vec<ProfitEntry>) {
+        self.entries = entries;
+    }
+
+    /// Return the most profitable coin, if any.
+    pub fn best(&self) -> Option<&ProfitEntry> {
+        self.entries
+            .iter()
+            .max_by(|a, b| a.profit_usd_per_day.total_cmp(&b.profit_usd_per_day))
+    }
+
+    pub fn entries(&self) -> &[ProfitEntry] {
+        &self.entries
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn coin_from_str() {
+        assert_eq!("KAS".parse::<ExternalCoin>().unwrap(), ExternalCoin::Kaspa);
+        assert!("unknown".parse::<ExternalCoin>().is_err());
+    }
+
+    #[test]
+    fn router_picks_highest_profit() {
+        let profiles = CoinProfile::defaults();
+        let entries: Vec<_> = profiles
+            .iter()
+            .map(|p| ProfitEntry::from_profile(p, 100.0))
+            .collect();
+        let router = ProfitRouter::new(entries);
+        let best = router.best().expect("has best");
+        assert_eq!(best.coin, ExternalCoin::Kaspa); // highest profit_per_unit in defaults
+    }
+}
