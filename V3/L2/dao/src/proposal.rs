@@ -306,7 +306,7 @@ impl Proposal {
     /// Allocate seats for a parliamentary election using the D'Hondt method.
     pub fn allocate_seats(&self) -> BTreeMap<String, u64> {
         if let ProposalType::ParliamentaryElection { ref parties, seats, .. } = self.proposal_type {
-            allocate_seats_dhondt(parties, *seats, &self.election_tallies)
+            allocate_seats_dhondt(parties, seats, &self.election_tallies)
         } else {
             BTreeMap::new()
         }

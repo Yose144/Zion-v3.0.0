@@ -314,16 +314,17 @@ pub fn execute_proposal(
         }
 
         ProposalType::ParliamentaryElection { title, seats, .. } => {
-            // Election results are recorded on-chain; treasury/execution is symbolic here.
-            let winner = proposal
-                .election_tallies
+            // Allocate seats by D'Hondt and build a human-readable result table.
+            let allocated = proposal.allocate_seats();
+            let total_allocated: u64 = allocated.values().sum();
+            let table = allocated
                 .iter()
-                .max_by_key(|(_, w)| *w)
-                .map(|(p, _)| p.as_str())
-                .unwrap_or("no votes");
+                .map(|(party, s)| format!("{}: {}", party, s))
+                .collect::<Vec<_>>()
+                .join(", ");
             format!(
-                "Parliamentary election '{}' concluded for {} seats. Winning list: {}",
-                title, seats, winner
+                "Parliamentary election '{}' concluded for {} seats ({} allocated). Results: {}",
+                title, seats, total_allocated, if table.is_empty() { "no votes" } else { &table }
             )
         }
     };
