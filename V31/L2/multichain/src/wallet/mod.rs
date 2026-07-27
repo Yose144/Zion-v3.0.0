@@ -4,34 +4,215 @@
 //! requests the appropriate key material from the keyring; the keyring never
 //! exposes the master seed.
 
-use zion_l1_types::{Address, ChainId};
+use bip39::Mnemonic;
+use ed25519_dalek::{Signer as EdSigner, SigningKey as EdSigningKey};
+use ethers::core::{types::PathOrString, utils::hash_message};
+use ethers::signers::{coins_bip39::English, LocalWallet, MnemonicBuilder, Signer as EthSigner};
+use sha3::{Digest, Keccak256};
+use zion_l1_types::{Address, ChainFamily, ChainId};
 
 use crate::error::{MultichainError, MultichainResult};
 
-/// In-memory keyring stub. Real implementation stores seed encrypted at rest.
-#[derive(Debug, Default)]
-pub struct Keyring;
+/// In-memory keyring derived from a single BIP39 mnemonic.
+pub struct Keyring {
+    mnemonic: Mnemonic,
+    seed: Option<[u8; 64]>,
+}
+
+impl std::fmt::Debug for Keyring {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Keyring")
+            .field("mnemonic", &"[REDACTED]")
+            .finish_non_exhaustive()
+    }
+}
 
 impl Keyring {
-    pub fn new() -> Self {
-        Self
+    /// Generate a random 24-word English mnemonic.
+    pub fn generate() -> MultichainResult<Self> {
+        let entropy: [u8; 32] = rand::random();
+        let mnemonic = Mnemonic::from_entropy(&entropy)
+            .map_err(|e| MultichainError::Internal(e.to_string()))?;
+        let seed = mnemonic.to_seed("");
+        Ok(Self {
+            mnemonic,
+            seed: Some(seed),
+        })
     }
 
-    pub fn address(
+    /// Parse an existing BIP39 mnemonic phrase.
+    pub fn from_mnemonic(phrase: &str) -> MultichainResult<Self> {
+        let mnemonic =
+            Mnemonic::parse(phrase).map_err(|e| MultichainError::Internal(e.to_string()))?;
+        let seed = mnemonic.to_seed("");
+        Ok(Self {
+            mnemonic,
+            seed: Some(seed),
+        })
+    }
+
+    /// Return the mnemonic phrase.
+    pub fn mnemonic(&self) -> String {
+        self.mnemonic.to_string()
+    }
+
+    /// Derive a chain-specific address for `account` / `index`.
+    pub fn address(&self, chain: ChainId, account: u32, index: u32) -> MultichainResult<Address> {
+        match chain.family() {
+            ChainFamily::Evm => self.evm_address(chain, account, index),
+            ChainFamily::Zion => self.zion_address(chain, account, index),
+            _ => Err(MultichainError::Unsupported(format!(
+                "address derivation for {}",
+                chain.as_str()
+            ))),
+        }
+    }
+
+    /// Sign `message` with the key derived for `account` / `index` on `chain`.
+    pub fn sign(
         &self,
-        _chain: ChainId,
-        _account: u32,
-        _index: u32,
-    ) -> MultichainResult<Address> {
-        // Placeholder: derive chain-specific address from BIP44/SLIP44 path.
-        Err(MultichainError::Unsupported(
-            "address derivation not yet implemented".to_string(),
-        ))
+        chain: ChainId,
+        message: &[u8],
+        account: u32,
+        index: u32,
+    ) -> MultichainResult<Vec<u8>> {
+        match chain.family() {
+            ChainFamily::Evm => self.sign_evm(message, account, index),
+            ChainFamily::Zion => self.sign_zion(message, account, index),
+            _ => Err(MultichainError::Unsupported(format!(
+                "signing for {}",
+                chain.as_str()
+            ))),
+        }
     }
 
-    pub fn sign(&self, _chain: ChainId, _message: &[u8]) -> MultichainResult<Vec<u8>> {
-        Err(MultichainError::Unsupported(
-            "signing not yet implemented".to_string(),
-        ))
+    fn evm_wallet(&self, account: u32, index: u32) -> MultichainResult<LocalWallet> {
+        let path = format!("m/44'/60'/{account}'/0/{index}");
+        MnemonicBuilder::<English>::default()
+            .phrase(PathOrString::String(self.mnemonic.to_string()))
+            .derivation_path(&path)
+            .map_err(|e| MultichainError::Internal(e.to_string()))?
+            .build()
+            .map_err(|e| MultichainError::Internal(e.to_string()))
+    }
+
+    fn evm_address(&self, chain: ChainId, account: u32, index: u32) -> MultichainResult<Address> {
+        let wallet = self.evm_wallet(account, index)?;
+        let bytes = wallet.address().as_bytes().to_vec();
+        let encoded = format!("0x{}", hex::encode(&bytes));
+        Ok(Address::new(chain, bytes, encoded)?)
+    }
+
+    fn sign_evm(&self, message: &[u8], account: u32, index: u32) -> MultichainResult<Vec<u8>> {
+        let wallet = self.evm_wallet(account, index)?;
+        let hash = hash_message(message);
+        let sig = wallet
+            .sign_hash(hash)
+            .map_err(|e| MultichainError::Internal(e.to_string()))?;
+        Ok(sig.to_vec())
+    }
+
+    fn zion_seed(&self, account: u32, index: u32) -> [u8; 32] {
+        let seed = self.seed.unwrap_or_else(|| self.mnemonic.to_seed(""));
+        let path = format!("m/44'/9999'/{account}'/0/{index}");
+        let mut hasher = Keccak256::new();
+        hasher.update(path.as_bytes());
+        hasher.update(seed);
+        let hash = hasher.finalize();
+        hash[..32].try_into().expect("keccak256 output is 32 bytes")
+    }
+
+    fn zion_signing_key(&self, account: u32, index: u32) -> MultichainResult<EdSigningKey> {
+        let seed = self.zion_seed(account, index);
+        Ok(EdSigningKey::from_bytes(&seed))
+    }
+
+    fn zion_address(&self, chain: ChainId, account: u32, index: u32) -> MultichainResult<Address> {
+        let signing_key = self.zion_signing_key(account, index)?;
+        let public = signing_key.verifying_key().to_bytes();
+        let mut hasher = Keccak256::new();
+        hasher.update(public);
+        let hash = hasher.finalize();
+        let bytes = hash[..20].to_vec();
+        let encoded = format!("0x{}", hex::encode(&bytes));
+        Ok(Address::new(chain, bytes, encoded)?)
+    }
+
+    fn sign_zion(&self, message: &[u8], account: u32, index: u32) -> MultichainResult<Vec<u8>> {
+        let signing_key = self.zion_signing_key(account, index)?;
+        Ok(EdSigner::sign(&signing_key, message).to_bytes().to_vec())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const TEST_MNEMONIC: &str =
+        "fire evolve buddy tenant talent favorite ankle stem regret myth dream fresh";
+
+    #[test]
+    fn generates_and_round_trips_phrase() {
+        let keyring = Keyring::generate().unwrap();
+        let phrase = keyring.mnemonic();
+        assert_eq!(phrase.split_whitespace().count(), 24);
+        let parsed = Keyring::from_mnemonic(&phrase).unwrap();
+        assert_eq!(parsed.mnemonic(), phrase);
+    }
+
+    #[test]
+    fn evm_address_parses_as_ethers_address() {
+        let keyring = Keyring::generate().unwrap();
+        let addr = keyring.address(ChainId::Base, 0, 0).unwrap();
+        let parsed: ethers::types::Address = addr.encoded.parse().unwrap();
+        assert_eq!(parsed.as_bytes().to_vec(), addr.bytes);
+    }
+
+    #[test]
+    fn evm_address_is_deterministic_for_known_mnemonic() {
+        let keyring = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
+        let addr = keyring.address(ChainId::Ethereum, 0, 2).unwrap();
+        let expected = "0x1D86AD5eBb2380dAdEAF52f61f4F428C485460E9";
+        assert_eq!(addr.encoded.to_lowercase(), expected.to_lowercase());
+    }
+
+    #[test]
+    fn same_mnemonic_yields_same_address() {
+        let k1 = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
+        let k2 = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
+        assert_eq!(
+            k1.address(ChainId::Base, 0, 1).unwrap(),
+            k2.address(ChainId::Base, 0, 1).unwrap()
+        );
+    }
+
+    #[test]
+    fn zion_address_creates_successfully() {
+        let keyring = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
+        let addr = keyring.address(ChainId::ZionL1, 0, 0).unwrap();
+        assert_eq!(addr.family(), ChainFamily::Zion);
+        assert_eq!(addr.bytes.len(), 20);
+        assert!(addr.encoded.starts_with("0x"));
+    }
+
+    #[test]
+    fn sign_evm_returns_65_byte_signature() {
+        let keyring = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
+        let sig = keyring.sign(ChainId::Base, b"hello zion", 0, 0).unwrap();
+        assert_eq!(sig.len(), 65);
+    }
+
+    #[test]
+    fn sign_zion_returns_64_byte_signature() {
+        let keyring = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
+        let sig = keyring.sign(ChainId::ZionL1, b"hello zion", 0, 0).unwrap();
+        assert_eq!(sig.len(), 64);
+    }
+
+    #[test]
+    fn unsupported_family_returns_error() {
+        let keyring = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
+        assert!(keyring.address(ChainId::Bitcoin, 0, 0).is_err());
+        assert!(keyring.sign(ChainId::Bitcoin, b"x", 0, 0).is_err());
     }
 }

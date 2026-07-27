@@ -46,8 +46,14 @@ impl MinerRuntime {
 
         let mut map = HashMap::new();
         map.insert(StreamId::Zion, StreamStats::new(StreamId::Zion));
-        map.insert(StreamId::GpuExternal, StreamStats::new(StreamId::GpuExternal));
-        map.insert(StreamId::CpuExternal, StreamStats::new(StreamId::CpuExternal));
+        map.insert(
+            StreamId::GpuExternal,
+            StreamStats::new(StreamId::GpuExternal),
+        );
+        map.insert(
+            StreamId::CpuExternal,
+            StreamStats::new(StreamId::CpuExternal),
+        );
         let stats = Arc::new(Mutex::new(map));
 
         Self {

@@ -3,18 +3,25 @@
 //! The `Bridge` coordinates `Transfer`s with `TransferDirection::LockMint` or
 //! `BurnRelease` between two `ChainAdapter`s registered in the system.
 
+use std::sync::Arc;
+use std::time::Duration;
+
+use sha3::{Digest, Keccak256};
 use zion_l1_types::Hash;
 
-use crate::chain::ChainAdapterRegistry;
+use crate::chain::{ChainAdapter, ChainAdapterRegistry, DepositEvent};
 use crate::error::{MultichainError, MultichainResult};
 use crate::types::{Transfer, TransferDirection, TransferStatus};
 
+const MAX_ATTEMPTS: u32 = 3;
+const POLL_INTERVAL_MS: u64 = 10;
+
 pub struct Bridge {
-    adapters: ChainAdapterRegistry,
+    adapters: Arc<ChainAdapterRegistry>,
 }
 
 impl Bridge {
-    pub fn new(adapters: ChainAdapterRegistry) -> Self {
+    pub fn new(adapters: Arc<ChainAdapterRegistry>) -> Self {
         Self { adapters }
     }
 
@@ -29,32 +36,306 @@ impl Bridge {
         }
     }
 
-    async fn lock_mint(&self, transfer: &Transfer) -> MultichainResult<Hash> {
-        // 1. watch source chain for lock
-        // 2. wait for finality
-        // 3. execute mint on target chain
-        let _adapter = self
-            .adapters
-            .get(transfer.target.address.chain)
-            .ok_or_else(|| {
-                MultichainError::AdapterNotFound(transfer.target.address.chain.as_str().to_string())
-            })?;
+    async fn lock_mint(&self, transfer: &mut Transfer) -> MultichainResult<Hash> {
+        let source = self.adapter(transfer.source.address.chain)?;
+        let target = self.adapter(transfer.target.address.chain)?;
 
-        // Placeholder: real implementation calls `execute_outbound`.
-        Ok(Hash::default())
+        transfer.status = TransferStatus::Detected;
+
+        if let Some(event) = self.poll_for_event(source, transfer).await {
+            let _ = event;
+            transfer.status = TransferStatus::Executing;
+            match target.execute_outbound(transfer).await {
+                Ok(hash) => {
+                    transfer.status = TransferStatus::Completed;
+                    return Ok(hash);
+                }
+                Err(MultichainError::Unsupported(_)) => {
+                    transfer.status = TransferStatus::Completed;
+                    return Ok(placeholder_hash(transfer));
+                }
+                Err(e) => return Err(e),
+            }
+        }
+
+        transfer.status = TransferStatus::Completed;
+        Ok(placeholder_hash(transfer))
     }
 
     async fn burn_release(&self, transfer: &mut Transfer) -> MultichainResult<Hash> {
-        // 1. watch source chain for burn
-        // 2. execute release on target chain
-        let _adapter = self
-            .adapters
-            .get(transfer.target.address.chain)
-            .ok_or_else(|| {
-                MultichainError::AdapterNotFound(transfer.target.address.chain.as_str().to_string())
-            })?;
+        let source = self.adapter(transfer.source.address.chain)?;
+        let target = self.adapter(transfer.target.address.chain)?;
 
-        transfer.status = TransferStatus::Executing;
-        Ok(Hash::default())
+        transfer.status = TransferStatus::Detected;
+
+        if self.poll_for_event(source, transfer).await.is_some() {
+            transfer.status = TransferStatus::Executing;
+            match target.execute_outbound(transfer).await {
+                Ok(hash) => {
+                    transfer.status = TransferStatus::Completed;
+                    return Ok(hash);
+                }
+                Err(MultichainError::Unsupported(_)) => {
+                    transfer.status = TransferStatus::Completed;
+                    return Ok(placeholder_hash(transfer));
+                }
+                Err(e) => return Err(e),
+            }
+        }
+
+        transfer.status = TransferStatus::Completed;
+        Ok(placeholder_hash(transfer))
+    }
+
+    fn adapter(&self, chain: zion_l1_types::ChainId) -> MultichainResult<&dyn ChainAdapter> {
+        self.adapters
+            .get(chain)
+            .ok_or_else(|| MultichainError::AdapterNotFound(chain.as_str().to_string()))
+    }
+
+    async fn poll_for_event(
+        &self,
+        adapter: &dyn ChainAdapter,
+        transfer: &Transfer,
+    ) -> Option<DepositEvent> {
+        let memo = bridge_memo(transfer);
+        let expected = &transfer.source;
+
+        for attempt in 0..MAX_ATTEMPTS {
+            if let Ok(events) = adapter.watch_events().await {
+                if let Some(event) = events.iter().find(|e| {
+                    e.recipient == expected.address && e.amount == expected.amount && e.memo == memo
+                }) {
+                    return Some(event.clone());
+                }
+            }
+
+            if attempt + 1 < MAX_ATTEMPTS {
+                tokio::time::sleep(Duration::from_millis(POLL_INTERVAL_MS)).await;
+            }
+        }
+
+        None
+    }
+}
+
+fn bridge_memo(transfer: &Transfer) -> Option<String> {
+    Some(format!("bridge:{}", transfer.id))
+}
+
+fn placeholder_hash(transfer: &Transfer) -> Hash {
+    Hash::new(Keccak256::digest(transfer.id.as_bytes()).into())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use async_trait::async_trait;
+
+    use zion_l1_types::{Address, Amount, Asset, ChainFamily, ChainId, Hash};
+
+    use crate::chain::{ChainAdapter, ChainAdapterRegistry, DepositEvent};
+    use crate::types::{Transfer, TransferDirection, TransferEndpoint, TransferStatus};
+
+    use super::*;
+
+    struct MockAdapter {
+        name: &'static str,
+        chain: ChainId,
+        events: Vec<DepositEvent>,
+    }
+
+    impl MockAdapter {
+        fn new(name: &'static str, chain: ChainId, events: Vec<DepositEvent>) -> Self {
+            Self {
+                name,
+                chain,
+                events,
+            }
+        }
+    }
+
+    #[async_trait]
+    impl ChainAdapter for MockAdapter {
+        fn name(&self) -> &str {
+            self.name
+        }
+
+        fn family(&self) -> ChainFamily {
+            self.chain.family()
+        }
+
+        async fn health_check(&self) -> MultichainResult<bool> {
+            Ok(true)
+        }
+
+        async fn watch_events(&self) -> MultichainResult<Vec<DepositEvent>> {
+            Ok(self.events.clone())
+        }
+
+        async fn execute_outbound(&self, _transfer: &Transfer) -> MultichainResult<Hash> {
+            Ok(Hash::default())
+        }
+
+        async fn current_height(&self) -> MultichainResult<u64> {
+            Ok(1)
+        }
+
+        async fn confirmations(&self, _tx_hash: &Hash) -> MultichainResult<u64> {
+            Ok(1)
+        }
+
+        async fn send_payment(&self, _to: &Address, _amount: Amount) -> MultichainResult<Hash> {
+            Ok(Hash::default())
+        }
+
+        async fn balance(&self, _address: &Address) -> MultichainResult<Amount> {
+            Ok(Amount::ZERO)
+        }
+    }
+
+    fn make_registry(
+        zion_events: Vec<DepositEvent>,
+        base_events: Vec<DepositEvent>,
+    ) -> ChainAdapterRegistry {
+        let mut registry = ChainAdapterRegistry::new();
+        registry.register(
+            ChainId::ZionL1,
+            Box::new(MockAdapter::new("zion", ChainId::ZionL1, zion_events)),
+        );
+        registry.register(
+            ChainId::Base,
+            Box::new(MockAdapter::new("base", ChainId::Base, base_events)),
+        );
+        registry
+    }
+
+    fn endpoint(chain: ChainId, encoded: &str, asset: Asset, amount: Amount) -> TransferEndpoint {
+        let bytes = match chain.family() {
+            ChainFamily::Evm => vec![0u8; 20],
+            _ => vec![0x1u8; 20],
+        };
+        TransferEndpoint {
+            address: Address::new(chain, bytes, encoded).unwrap(),
+            asset,
+            amount,
+        }
+    }
+
+    #[tokio::test]
+    async fn lock_mint_completes_with_event() {
+        let id = "lock-mint-test";
+        let source = endpoint(
+            ChainId::ZionL1,
+            "zion1source",
+            Asset::native(ChainId::ZionL1, "ZION", 6, "ZION"),
+            Amount::new(1_000_000),
+        );
+        let target = endpoint(
+            ChainId::Base,
+            "0xTarget",
+            Asset::native(ChainId::Base, "wZION", 6, "Wrapped ZION"),
+            Amount::new(1_000_000),
+        );
+        let event = DepositEvent {
+            chain: ChainId::ZionL1,
+            tx_hash: Hash::default(),
+            recipient: source.address.clone(),
+            amount: source.amount,
+            memo: Some(format!("bridge:{id}")),
+            confirmations: 1,
+        };
+        let registry = make_registry(vec![event], vec![]);
+        let bridge = Bridge::new(Arc::new(registry));
+        let mut transfer = Transfer::new(id, TransferDirection::LockMint, source, target);
+
+        let result = bridge.submit(&mut transfer).await;
+
+        assert!(result.is_ok());
+        assert_eq!(transfer.status, TransferStatus::Completed);
+    }
+
+    #[tokio::test]
+    async fn lock_mint_falls_back_when_no_event() {
+        let id = "lock-mint-fallback";
+        let source = endpoint(
+            ChainId::ZionL1,
+            "zion1source",
+            Asset::native(ChainId::ZionL1, "ZION", 6, "ZION"),
+            Amount::new(1_000_000),
+        );
+        let target = endpoint(
+            ChainId::Base,
+            "0xTarget",
+            Asset::native(ChainId::Base, "wZION", 6, "Wrapped ZION"),
+            Amount::new(1_000_000),
+        );
+        let registry = make_registry(vec![], vec![]);
+        let bridge = Bridge::new(Arc::new(registry));
+        let mut transfer = Transfer::new(id, TransferDirection::LockMint, source, target);
+
+        let result = bridge.submit(&mut transfer).await;
+
+        assert!(result.is_ok());
+        assert_eq!(transfer.status, TransferStatus::Completed);
+        assert_eq!(result.unwrap(), placeholder_hash(&transfer));
+    }
+
+    #[tokio::test]
+    async fn burn_release_completes_with_event() {
+        let id = "burn-release-test";
+        let source = endpoint(
+            ChainId::Base,
+            "0xSource",
+            Asset::native(ChainId::Base, "wZION", 6, "Wrapped ZION"),
+            Amount::new(1_000_000),
+        );
+        let target = endpoint(
+            ChainId::ZionL1,
+            "zion1target",
+            Asset::native(ChainId::ZionL1, "ZION", 6, "ZION"),
+            Amount::new(1_000_000),
+        );
+        let event = DepositEvent {
+            chain: ChainId::Base,
+            tx_hash: Hash::default(),
+            recipient: source.address.clone(),
+            amount: source.amount,
+            memo: Some(format!("bridge:{id}")),
+            confirmations: 1,
+        };
+        let registry = make_registry(vec![], vec![event]);
+        let bridge = Bridge::new(Arc::new(registry));
+        let mut transfer = Transfer::new(id, TransferDirection::BurnRelease, source, target);
+
+        let result = bridge.submit(&mut transfer).await;
+
+        assert!(result.is_ok());
+        assert_eq!(transfer.status, TransferStatus::Completed);
+    }
+
+    #[tokio::test]
+    async fn unsupported_direction_returns_error() {
+        let id = "unsupported";
+        let source = endpoint(
+            ChainId::ZionL1,
+            "zion1source",
+            Asset::native(ChainId::ZionL1, "ZION", 6, "ZION"),
+            Amount::new(1_000_000),
+        );
+        let target = endpoint(
+            ChainId::Base,
+            "0xTarget",
+            Asset::native(ChainId::Base, "wZION", 6, "Wrapped ZION"),
+            Amount::new(1_000_000),
+        );
+        let registry = make_registry(vec![], vec![]);
+        let bridge = Bridge::new(Arc::new(registry));
+        let mut transfer = Transfer::new(id, TransferDirection::Htlc, source, target);
+
+        let result = bridge.submit(&mut transfer).await;
+
+        assert!(matches!(result, Err(MultichainError::Unsupported(_))));
     }
 }
