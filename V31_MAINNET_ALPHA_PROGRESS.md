@@ -175,7 +175,7 @@ Rozpis testů:
 - `9b0ce9c5` — `feat(v31): Dash31 pool payouts panel`
 - `9cbcaba7` — `feat(v31): submit solved blocks to zion-l1 RPC`
 - `d91ec96d` — `feat(v31): Bitcoin deposit watching via mempool.space`
-- `<novy>` — `feat(v31): Bitcoin P2WPKH send_payment and execute_outbound`
+- `98a46b5e` — `feat(v31): Bitcoin P2WPKH send_payment and execute_outbound`
 
 ## Další plán (Mainnet Alpha milestones)
 
