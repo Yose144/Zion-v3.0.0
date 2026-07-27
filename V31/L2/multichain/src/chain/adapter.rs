@@ -5,6 +5,15 @@ use zion_l1_types::{Address, Amount, ChainFamily, ChainId, Hash};
 use crate::error::MultichainResult;
 use crate::types::Transfer;
 
+/// Mining / PoW block template for pool job generation.
+#[derive(Clone, Debug)]
+pub struct BlockTemplate {
+    pub template_id: u64,
+    pub height: u64,
+    pub header_hex: String,
+    pub target_hex: String,
+}
+
 /// Abstract interface every supported chain must implement.
 ///
 /// This is the single integration point for bridges, swaps, DEX, and wallets.
@@ -32,6 +41,11 @@ pub trait ChainAdapter: Send + Sync {
 
     /// Query the spendable balance for `address` of the native asset.
     async fn balance(&self, address: &Address) -> MultichainResult<Amount>;
+
+    /// Return a mining block template, if this chain supports PoW job generation.
+    async fn block_template(&self) -> MultichainResult<Option<BlockTemplate>> {
+        Ok(None)
+    }
 }
 
 /// Event observed on a chain that can advance a `Transfer`.

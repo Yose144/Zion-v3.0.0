@@ -58,13 +58,28 @@ impl ApiServer {
         });
 
         let stratum_broadcast = stratum;
+        let service = Arc::clone(&self.service);
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(Duration::from_secs(10));
             loop {
                 interval.tick().await;
-                let header = "00".repeat(80);
-                let target = "f".repeat(64);
-                stratum_broadcast.broadcast_job("zion_1", &header, &target);
+                match service.block_template(ChainId::ZionL1).await {
+                    Ok(Some(tpl)) => {
+                        stratum_broadcast.broadcast_job(
+                            &format!("zion_{}", tpl.template_id),
+                            &tpl.header_hex,
+                            &tpl.target_hex,
+                        );
+                    }
+                    Ok(None) => {
+                        let header = "00".repeat(80);
+                        let target = "f".repeat(64);
+                        stratum_broadcast.broadcast_job("zion_1", &header, &target);
+                    }
+                    Err(e) => {
+                        tracing::warn!("failed to fetch zion block template: {}", e);
+                    }
+                }
             }
         });
 

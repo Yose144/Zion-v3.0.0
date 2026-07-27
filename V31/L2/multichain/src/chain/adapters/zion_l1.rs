@@ -12,7 +12,7 @@ use sha2::{Digest, Sha256};
 
 use zion_l1_types::{Address, Amount, ChainFamily, ChainId, Hash};
 
-use crate::chain::adapter::{ChainAdapter, DepositEvent};
+use crate::chain::adapter::{BlockTemplate, ChainAdapter, DepositEvent};
 use crate::error::{MultichainError, MultichainResult};
 use crate::types::{Transfer, TransferDirection};
 use crate::wallet::Keyring;
@@ -266,6 +266,31 @@ impl ChainAdapter for ZionL1Adapter {
             .parse::<u128>()
             .map(Amount::new)
             .map_err(|e| MultichainError::Internal(format!("zion balance parse failed: {e}")))
+    }
+
+    async fn block_template(&self) -> MultichainResult<Option<BlockTemplate>> {
+        let tpl: serde_json::Value = self.call("getBlockTemplate", json!(null)).await?;
+        let template_id = tpl.get("template_id").and_then(|v| v.as_u64()).unwrap_or(0);
+        let height = tpl.get("height").and_then(|v| v.as_u64()).unwrap_or(0);
+        let header_hex = tpl
+            .get("header_hex")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let target_hex = tpl
+            .get("target_hex")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if header_hex.is_empty() || target_hex.is_empty() {
+            return Ok(None);
+        }
+        Ok(Some(BlockTemplate {
+            template_id,
+            height,
+            header_hex,
+            target_hex,
+        }))
     }
 }
 
