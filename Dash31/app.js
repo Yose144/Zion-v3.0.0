@@ -120,6 +120,13 @@ $('swapExecute').onclick = async () => {
   await req('/v1/swap/execute', { method: 'POST', body, out: 'swapOut' });
 };
 
+async function loadPool() {
+  await req('/v1/pool/stats', { out: 'poolOut' });
+}
+
+$('refreshPool').onclick = loadPool;
+
 // Boot
 refreshStatus();
 loadContracts();
+loadPool();

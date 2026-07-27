@@ -85,6 +85,13 @@
 - `Keyring` je `Clone`, aby ho mohl service sdílet s adaptéry.
 - `EvmAdapter` převádí ZION flowers (6 dec) na wZION wei (18 dec) při `submitLockProof` pro `LockMint`.
 
+### 13. Pool integrace do `zion-multichain` API
+- `zion-pool` přidán jako dependency `zion-multichain`.
+- `MultichainConfig` nyní obsahuje volitelnou `[pool]` konfiguraci (`PoolConfigFile`).
+- `MultichainService` drží instanci `zion_pool::Pool` a exportuje `pool_stats()`.
+- Nový HTTP endpoint `GET /v1/pool/stats` vrací `accepted`, `rejected`, fee a PPLNS okno.
+- `Dash31` dashboard pool panel načítá statistiky z `/v1/pool/stats`.
+
 ## Verifikace
 
 ```bash
@@ -115,6 +122,7 @@ Rozpis testů:
 - `49b8e76c` — `feat(v31): wire EvmAdapter with ethers provider, signer and V3 contracts`
 - `0f2eef54` — `feat(v31): ZionL1 bridge locks + submitBridgeUnlock with validator proof`
 - `441e327f` — `fix(v31): decimal scaling in EvmAdapter submitLockProof + fmt`
+- `<novy>` — `feat(v31): integrate zion-pool stats into HTTP API + Dash31`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -122,6 +130,7 @@ Rozpis testů:
    - Bind `StratumServer` na TCP port (Edge: `62.171.141.136:8444` nebo podobně podle `AGENTS.md`).
    - Generovat reálné `mining.notify` joby z `zion-core` / `zion-node`.
    - Propojit PPLNS payouts se skutečnými block rewards.
+   - `Dash31` `/v1/pool/stats` ✅ — zbývá TCP stratum a share broadcast.
 
 2. **Real chain adapters (další kroky)**
    - `EvmAdapter` ✅ — provider + wallet + contract addresses; zbývá nasadit validator wallet a testovat `submitLockProof` na Base.

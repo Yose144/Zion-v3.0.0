@@ -8,6 +8,7 @@ description = "Unified Multi-Chain L2 for ZION Mainnet Alpha: bridge, swap, DEX,
 
 [dependencies]
 zion-l1-types = { workspace = true }
+zion-pool = { workspace = true }
 
 async-trait = { workspace = true }
 axum = { workspace = true }
