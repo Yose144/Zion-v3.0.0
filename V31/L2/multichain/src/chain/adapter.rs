@@ -12,6 +12,7 @@ pub struct BlockTemplate {
     pub height: u64,
     pub header_hex: String,
     pub target_hex: String,
+    pub block_reward: u64,
 }
 
 /// Abstract interface every supported chain must implement.

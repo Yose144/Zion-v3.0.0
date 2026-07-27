@@ -12,8 +12,8 @@ use crate::config::PoolConfig;
 use crate::pool::{Pool, PoolError};
 use crate::share::ShareSubmission;
 
-/// Header bytes together with the 32-byte network target for a stratum job.
-type JobEntry = (Vec<u8>, [u8; 32]);
+/// Header bytes, 32-byte network target and block reward (flowers) for a stratum job.
+type JobEntry = (Vec<u8>, [u8; 32], u64);
 
 #[derive(Clone)]
 pub struct StratumServer {
@@ -77,10 +77,10 @@ impl StratumServer {
             nonce_hex: nonce_hex.clone(),
         };
 
-        let (header, target) = {
+        let (header, target, reward) = {
             let jobs = self.jobs.lock().unwrap();
             match jobs.get(&job_id) {
-                Some((h, t)) => (h.clone(), *t),
+                Some((h, t, r)) => (h.clone(), *t, *r),
                 None => return error_response(Some(id), -32602, "unknown job"),
             }
         };
@@ -104,7 +104,7 @@ impl StratumServer {
 
         match result {
             Ok(true) => {
-                self.check_and_record_block(&job_id, &header, nonce, &target);
+                self.check_and_record_block(&job_id, &header, nonce, &target, reward);
                 success_response(id, Value::Bool(true))
             }
             _ => success_response(id, Value::Bool(false)),
@@ -119,7 +119,14 @@ impl StratumServer {
         u64::from_str_radix(s, 16).map_err(|_| PoolError::Parse)
     }
 
-    fn check_and_record_block(&self, job_id: &str, header: &[u8], nonce: u64, target: &[u8; 32]) {
+    fn check_and_record_block(
+        &self,
+        job_id: &str,
+        header: &[u8],
+        nonce: u64,
+        target: &[u8; 32],
+        block_reward: u64,
+    ) {
         let mut pool = self.pool.lock().unwrap();
         let is_block = if job_id.starts_with("zion_") {
             let hash = pool.validator.zion_hash(header, nonce);
@@ -132,12 +139,18 @@ impl StratumServer {
             false
         };
         if is_block {
-            pool.on_block_found(0);
+            pool.on_block_found(0, block_reward);
         }
     }
 
     /// Build and store a `mining.notify` message for the given job.
-    pub fn job_notification(&self, job_id: &str, header_hex: &str, target_hex: &str) -> String {
+    pub fn job_notification(
+        &self,
+        job_id: &str,
+        header_hex: &str,
+        target_hex: &str,
+        block_reward: u64,
+    ) -> String {
         let header_trim = header_hex
             .trim()
             .trim_start_matches("0x")
@@ -147,7 +160,7 @@ impl StratumServer {
             self.jobs
                 .lock()
                 .unwrap()
-                .insert(job_id.to_string(), (bytes, target));
+                .insert(job_id.to_string(), (bytes, target, block_reward));
         }
         json!({
             "id": null,
@@ -158,8 +171,14 @@ impl StratumServer {
     }
 
     /// Broadcast a `mining.notify` message to all connected clients.
-    pub fn broadcast_job(&self, job_id: &str, header_hex: &str, target_hex: &str) {
-        let msg = self.job_notification(job_id, header_hex, target_hex);
+    pub fn broadcast_job(
+        &self,
+        job_id: &str,
+        header_hex: &str,
+        target_hex: &str,
+        block_reward: u64,
+    ) {
+        let msg = self.job_notification(job_id, header_hex, target_hex, block_reward);
         let _ = self.notify_tx.send(msg);
     }
 
@@ -268,7 +287,7 @@ mod tests {
         let server = make_server();
         let target = "f".repeat(64);
         let header = "00".repeat(80);
-        server.job_notification("zion_1", &header, &target);
+        server.job_notification("zion_1", &header, &target, 6_000_000);
         let resp = server.handle_request(
             r#"{"id":3,"method":"mining.submit","params":["worker","zion_1","0000000000000000"]}"#,
         );
@@ -280,7 +299,7 @@ mod tests {
         let server = make_server();
         let target = "f".repeat(64);
         let header = "00".repeat(80);
-        server.job_notification("aux_bitcoin_1", &header, &target);
+        server.job_notification("aux_bitcoin_1", &header, &target, 6_000_000);
         let resp = server.handle_request(
             r#"{"id":4,"method":"mining.submit","params":["worker","aux_bitcoin_1","0000000000000000"]}"#,
         );

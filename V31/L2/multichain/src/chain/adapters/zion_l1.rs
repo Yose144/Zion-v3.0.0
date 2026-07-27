@@ -282,6 +282,11 @@ impl ChainAdapter for ZionL1Adapter {
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
+        let block_reward = tpl
+            .get("estimated_miner_reward_zion")
+            .or_else(|| tpl.get("reward_zion"))
+            .and_then(|v| v.as_u64())
+            .unwrap_or(6_000_000);
         if header_hex.is_empty() || target_hex.is_empty() {
             return Ok(None);
         }
@@ -290,6 +295,7 @@ impl ChainAdapter for ZionL1Adapter {
             height,
             header_hex,
             target_hex,
+            block_reward,
         }))
     }
 }
