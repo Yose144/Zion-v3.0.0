@@ -6122,6 +6122,23 @@ function applyFriendlyMode(){
 // Layer tabs (L1–L6)
 // ─────────────────────────────────────────────────────────────────────
 
+// Helper: mark all numeric/badge elements inside a layer pane as offline/not-deployed
+function markLayerNotDeployed(prefix, notDeployed=true){
+  const suffix = notDeployed ? 'Not deployed' : 'Offline';
+  document.querySelectorAll('[id^="' + prefix + '-"]').forEach(el => {
+    const id = el.id;
+    if(id.includes('-badge') || id === 'l5-status' || id === 'l6-status'){
+      el.textContent = suffix;
+      el.className = 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400';
+    } else if(id.endsWith('-list')){
+      el.innerHTML = '<div class="text-gray-500 text-center py-4 text-xs">' + suffix + '</div>';
+    } else if(!id.endsWith('-label') && !id.endsWith('-title') && !id.endsWith('-badge')){
+      // Skip text-only labels; set numeric readouts to —
+      el.textContent = '—';
+    }
+  });
+}
+
 async function loadLayer(layer){
   const grid = document.getElementById('layer-' + layer + '-grid');
   if(!grid) return;
@@ -6133,8 +6150,9 @@ async function loadLayer(layer){
       return;
     }
     grid.innerHTML = data.services.map(s => {
-      const aliveClass = s.alive ? 'border-emerald-600 bg-emerald-900/15' : 'border-red-600 bg-red-900/15';
-      const aliveText = s.alive ? '✓ Live' : '✗ Down';
+      const notDeployed = !s.alive && (s.purpose || '').toLowerCase().includes('not yet');
+      const aliveClass = s.alive ? 'border-emerald-600 bg-emerald-900/15' : (notDeployed ? 'border-gray-700 bg-gray-900/15' : 'border-red-600 bg-red-900/15');
+      const aliveText = s.alive ? '✓ Live' : (notDeployed ? '⊘ Not deployed' : '✗ Down');
       const dbSection = s.databases && s.databases.length > 0
         ? s.databases.map(db => {
             const sz = db.size ? (db.size > 1024*1024 ? (db.size/(1024*1024)).toFixed(1)+' MB' : (db.size/1024).toFixed(0)+' KB') : '0 B';
@@ -6160,7 +6178,7 @@ async function loadLayer(layer){
                 <div class="text-[10px] text-gray-400">${escapeHtml(s.kind)} · ${escapeHtml(s.id)}</div>
               </div>
             </div>
-            <span class="text-[10px] px-2 py-0.5 rounded-full ${s.alive ? 'bg-emerald-700 text-emerald-300' : 'bg-red-700 text-red-300'}">${aliveText}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full ${s.alive ? 'bg-emerald-700 text-emerald-300' : (notDeployed ? 'bg-gray-700 text-gray-300' : 'bg-red-700 text-red-300')}">${aliveText}</span>
           </div>
           <div class="text-xs text-gray-300 mb-2">${escapeHtml(s.purpose)}</div>
           <div class="flex flex-wrap gap-1 mb-2">
@@ -6311,20 +6329,27 @@ async function populateL3(){
 async function populateL4(){
   const data = await fetch('/api/layer/l4').then(r=>r.json()).catch(()=>({}));
   const el = id => document.getElementById(id);
-  const oasis = (data.services || []).find(s=>s.id==='oasis') || {};
-  // Simulated OASIS stats from metrics or defaults
-  if(el('l4-avatars')) el('l4-avatars').textContent = oasis.metrics_count || '—';
-  if(el('l4-guilds')) el('l4-guilds').textContent = '—';
-  if(el('l4-territories')) el('l4-territories').textContent = '—';
+  const oasisSvc = (data.services || []).find(s=>s.id==='oasis') || {};
+
+  // Prefer live OASIS stats endpoint for real counts
+  let stats = {};
+  try {
+    stats = await fetch('/api/oasis/stats', { signal: AbortSignal.timeout(3000) }).then(r=>r.json());
+  } catch(e) { stats = {}; }
+
+  const alive = oasisSvc.alive || stats.ok;
+  const avatars = stats.avatars ?? (alive ? 0 : '—');
+  if(el('l4-avatars')) el('l4-avatars').textContent = avatars;
+  if(el('l4-guilds')) el('l4-guilds').textContent = stats.guilds ?? (alive ? 0 : '—');
+  if(el('l4-territories')) el('l4-territories').textContent = stats.territories ?? (alive ? 0 : '—');
   if(el('l4-avg-cl')) el('l4-avg-cl').textContent = '—';
-  // CL distribution bars (mock for now - will pull from oasis DB when available)
-  const clDist = [40, 25, 15, 10, 5, 3, 1, 0.5, 0.5]; // percent distribution
-  const total = clDist.reduce((a,b)=>a+b, 0);
+
+  // CL distribution bars — zero out until OASIS emits real data
   for(let i=1;i<=9;i++){
     const bar = el('l4-cl-'+i);
     const num = el('l4-cl-'+i+'-n');
-    if(bar) bar.style.width = (clDist[i-1]/Math.max(...clDist)*100)+'%';
-    if(num) num.textContent = clDist[i-1]+'%';
+    if(bar) bar.style.width = '0%';
+    if(num) num.textContent = '—';
   }
 }
 
@@ -6332,6 +6357,11 @@ async function populateL5(){
   const data = await fetch('/api/layer/l5').then(r=>r.json()).catch(()=>({}));
   const el = id => document.getElementById(id);
   const fw = (data.services || []).find(s=>s.id==='free-world') || {};
+  const notDeployed = !fw.alive && (fw.purpose || '').toLowerCase().includes('not yet');
+  if(notDeployed){
+    markLayerNotDeployed('l5', true);
+    return;
+  }
   if(el('l5-regions')) el('l5-regions').textContent = fw.alive ? '3' : '0';
   if(el('l5-aid')) el('l5-aid').textContent = '—';
   if(el('l5-mesh')) el('l5-mesh').textContent = fw.alive ? '7' : '0';
@@ -6344,6 +6374,11 @@ async function populateL6(){
   const data = await fetch('/api/layer/l6').then(r=>r.json()).catch(()=>({}));
   const el = id => document.getElementById(id);
   const isso = (data.services || []).find(s=>s.id==='issobella') || {};
+  const notDeployed = !isso.alive && (isso.purpose || '').toLowerCase().includes('not yet');
+  if(notDeployed){
+    markLayerNotDeployed('l6', true);
+    return;
+  }
   if(el('l6-satellites')) el('l6-satellites').textContent = isso.alive ? '2' : '0';
   if(el('l6-orbital-daos')) el('l6-orbital-daos').textContent = '—';
   if(el('l6-settlements')) el('l6-settlements').textContent = '—';
@@ -8401,6 +8436,10 @@ async function loadL4Quests() {
 async function loadL5Data() {
   try {
     const r = await fetch('/api/freeworld/stats', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    if(!r.ok){
+      markLayerNotDeployed('l5', true);
+      return;
+    }
     const el = id => document.getElementById(id);
     if(el('l5-nodes')) el('l5-nodes').textContent = r.projects_active ?? '—';
     if(el('l5-mesh-nodes')) el('l5-mesh-nodes').textContent = r.projects_active ?? '—';
@@ -8429,6 +8468,10 @@ async function loadL5Data() {
 async function loadL6Data() {
   try {
     const r = await fetch('/api/space/stats', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    if(!r.ok){
+      markLayerNotDeployed('l6', true);
+      return;
+    }
     const el = id => document.getElementById(id);
     if(el('l6-satellites')) el('l6-satellites').textContent = r.satellites ?? '—';
     if(el('l6-sat-active')) el('l6-sat-active').textContent = r.satellites ?? '—';
