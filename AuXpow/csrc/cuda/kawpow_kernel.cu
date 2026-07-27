@@ -262,7 +262,8 @@ __global__ XMRIG_INCLUDE_LAUNCH_BOUNDS void progpow_search(
     // ZION extensions:
     uint64_t* output_nonce,          // 6: found nonce
     unsigned char* output_mix,       // 7: 32-byte mix hash
-    unsigned int* found              // 8: found flag
+    unsigned int* found,             // 8: found flag
+    unsigned char* output_hash       // 9: 32-byte final hash (byte-swapped state[0..7])
 )
 {
     if (*stop) {
@@ -376,6 +377,7 @@ __global__ XMRIG_INCLUDE_LAUNCH_BOUNDS void progpow_search(
 
     // Absorb phase for last round of keccak (256 bits)
     uint64_t result;
+    uint32_t final_state_words[8];  // Save state[0..7] for output_hash
 
     {
         uint32_t state[25] = {0x0};     // Keccak's state
@@ -398,15 +400,12 @@ __global__ XMRIG_INCLUDE_LAUNCH_BOUNDS void progpow_search(
         // Run keccak loop
         keccak_f800(state);
 
+        // Save state[0..7] for output_hash
+        #pragma unroll
+        for (int i = 0; i < 8; i++)
+            final_state_words[i] = state[i];
+
         // Extract result: byte-swap state[0] and state[1] for big-endian comparison
-        // result = (uint64_t)cuda_swab32(state[0]) << 32 | cuda_swab32(state[1]);
-        // Actually xmrig uses: result = (uint64_t)cuda_swab32(state[0]) << 32 | cuda_swab32(state[1])
-        // But OpenCL uses: res = (uint64_t)state[1] << 32 | state[0]; result = as_ulong(as_uchar8(res).s76543210)
-        // which is byte-swap of the full 64-bit value.
-        // (uint64_t)cuda_swab32(state[0]) << 32 | cuda_swab32(state[1])
-        //   = byte_swap(state[0]) << 32 | byte_swap(state[1])
-        //   = byte_swap64(state[1] << 32 | state[0])
-        // So both are equivalent.
         result = (uint64_t)cuda_swab32(state[0]) << 32 | cuda_swab32(state[1]);
     }
 
@@ -430,6 +429,14 @@ __global__ XMRIG_INCLUDE_LAUNCH_BOUNDS void progpow_search(
                 output_mix[i * 4 + 1] = (unsigned char)(digest.uint32s[i] >> 8);
                 output_mix[i * 4 + 2] = (unsigned char)(digest.uint32s[i] >> 16);
                 output_mix[i * 4 + 3] = (unsigned char)(digest.uint32s[i] >> 24);
+            }
+            // Write final hash: byte-swap state[0..7] for big-endian 256-bit hash
+            for (int i = 0; i < 8; i++) {
+                uint32_t swab = cuda_swab32(final_state_words[i]);
+                output_hash[i * 4]     = (unsigned char)(swab);
+                output_hash[i * 4 + 1] = (unsigned char)(swab >> 8);
+                output_hash[i * 4 + 2] = (unsigned char)(swab >> 16);
+                output_hash[i * 4 + 3] = (unsigned char)(swab >> 24);
             }
         }
     }
