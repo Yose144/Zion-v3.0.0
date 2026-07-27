@@ -1030,7 +1030,9 @@ function findRustMiner() {
         }
         return left.pathIndex - right.pathIndex;
       });
-      return candidates[0].fullPath;
+      const chosen = candidates[0].fullPath;
+      log(`[V3-FAST] findRustMiner selected ${chosen} (mtime=${candidates[0].mtimeMs}, pathIndex=${candidates[0].pathIndex})\n`);
+      return chosen;
     }
   }
 

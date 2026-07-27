@@ -106,19 +106,23 @@ function detectPlatformFeatures() {
     const cudaCheck = checkCudaCapability();
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
     const winFeatures = windowsMinerFeatures();
-    if (forceCuda || cudaCheck.hasCuda) {
-      console.log('[prepare-v3] Windows + NVIDIA CUDA toolkit detected -> adding CUDA backend');
+    if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
+      console.log('[prepare-v3] Windows + NVIDIA GPU + NVRTC runtime detected -> building with CUDA backend');
       return `${winFeatures},gpu-cuda`;
     }
-    console.log('[prepare-v3] Windows detected -> enabling focused native stack for W11 triple-stream (OpenCL)');
+    if (cudaCheck.hasCuda && !cudaCheck.hasNvrtc) {
+      console.log('[prepare-v3] Windows + NVIDIA GPU detected but no NVRTC runtime -> OpenCL-only build (place nvrtc64_*.dll in resources for CUDA)');
+    } else {
+      console.log('[prepare-v3] Windows detected -> enabling focused native stack for W11 triple-stream (OpenCL)');
+    }
     return winFeatures;
   }
 
   if (platform === 'linux') {
     const cudaCheck = checkCudaCapability();
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
-    if (forceCuda || cudaCheck.hasCuda) {
-      console.log('[prepare-v3] Linux + NVIDIA CUDA detected -> enabling CUDA + full native stack');
+    if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
+      console.log('[prepare-v3] Linux + NVIDIA CUDA + NVRTC detected -> building with CUDA backend');
       return `${base},gpu-cuda`;
     }
     console.log('[prepare-v3] Linux detected -> enabling full native stack (OpenCL, safe default)');
@@ -129,8 +133,34 @@ function detectPlatformFeatures() {
   return base;
 }
 
+function findNvrtcRuntime() {
+  // The CUDA backend needs NVRTC at runtime (not the full CUDA Toolkit).
+  // Look for the redistributable DLLs that ship with the miner or may already
+  // be present in the target/release directory.
+  const resourcesDir = path.resolve(__dirname, '..', 'resources');
+  const targetDir = path.resolve(__dirname, '..', '..', '..', 'V3', 'target', 'release');
+  const searchPaths = [resourcesDir, targetDir];
+  for (const dir of searchPaths) {
+    try {
+      const files = fs.readdirSync(dir);
+      const nvrtc = files.find((f) => /^nvrtc64_.*\.dll$/i.test(f));
+      if (nvrtc) return path.join(dir, nvrtc);
+    } catch { /* ignore */ }
+  }
+  // Fallback: search PATH
+  const pathDirs = (process.env.PATH || '').split(path.delimiter);
+  for (const dir of pathDirs) {
+    try {
+      const files = fs.readdirSync(dir);
+      const nvrtc = files.find((f) => /^nvrtc64_.*\.dll$/i.test(f));
+      if (nvrtc) return path.join(dir, nvrtc);
+    } catch { /* ignore */ }
+  }
+  return null;
+}
+
 function checkCudaCapability() {
-  const result = { hasCuda: false, gpuCount: 0, driverVersion: 'unknown' };
+  const result = { hasCuda: false, gpuCount: 0, driverVersion: 'unknown', hasNvrtc: false };
   try {
     const nvSmi = spawnSync('nvidia-smi', ['--query-gpu=count', '--format=csv,noheader,nounits'], { stdio: 'pipe' });
     if (nvSmi.status === 0) {
@@ -142,17 +172,21 @@ function checkCudaCapability() {
         if (driverCheck.status === 0) {
           result.driverVersion = driverCheck.stdout.toString().trim().split('\n')[0];
         }
-        // Having an NVIDIA GPU + driver is enough to try the CUDA backend at
-        // build time; the CUDA toolkit (nvcc) is only required for compilation.
+        // NVRTC (runtime JIT compiler) is what the miner actually uses. It is
+        // bundled as the standalone ~40 MB cuda_nvrtc redistributable, no full
+        // 3 GB CUDA Toolkit required. Prefer a local copy over nvcc.
+        const nvrtcPath = findNvrtcRuntime();
+        if (nvrtcPath) {
+          result.hasNvrtc = true;
+          console.log(`[prepare-v3] NVRTC runtime found: ${nvrtcPath}`);
+        }
         const cudaVersion = spawnSync('nvcc', ['--version'], { stdio: 'pipe' });
         if (cudaVersion.status === 0) {
-          result.hasCuda = true;
           result.driverVersion += ` (nvcc: ${cudaVersion.stdout.toString().trim().split('\n')[0]})`;
+        } else if (result.hasNvrtc) {
+          console.log('[prepare-v3] nvidia-smi found GPU and NVRTC runtime available -> building with CUDA backend');
         } else {
-          // No nvcc, but a modern GeForce driver may still run OpenCL/CUDA
-          // binaries if they are built elsewhere. For local W11 builds we stay
-          // with OpenCL and the full native algorithm stack.
-          console.log('[prepare-v3] nvidia-smi found GPU but nvcc not in PATH -> building OpenCL/full stack, use a CI-built CUDA binary for runtime');
+          console.log('[prepare-v3] nvidia-smi found GPU but no NVRTC runtime -> building OpenCL/full stack, add nvrtc64_*.dll for CUDA runtime');
         }
       }
     }
@@ -197,25 +231,22 @@ function buildV3Workspace(workspaceRoot, features) {
   const minerRes = spawnSync('cargo', minerArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
   if (minerRes.error) throw minerRes.error;
   if (minerRes.status !== 0) {
-    // Fallback chain for W11 / mixed environments:
-    //   1. If CUDA was requested, retry with OpenCL + native stack.
-    //   2. If that fails too, retry with native algorithms but no GPU backend.
-    //      (CPU-only still requires native-verushash / native-randomx.)
+    if (features && features.includes('gpu-cuda')) {
+      // A CUDA build that falls back to OpenCL would silently ship a broken
+      // deeksha_lite_v1 kernel on NVIDIA (observed 43-45 % reject rate on
+      // GTX 1070 Ti). Fail loudly instead of hiding it.
+      throw new Error(
+        `CUDA build for zion-miner failed (exit ${minerRes.status}). ` +
+        `Install the CUDA Toolkit or place nvrtc64_*.dll in V3/target/release/. ` +
+        `To force OpenCL anyway, run with ZION_FORCE_CUDA=0.`
+      );
+    }
     if (features && features !== 'default') {
-      const fallbackFeatures = features.includes('gpu-cuda')
-        ? 'full'
-        : 'native-all';
-      console.warn(`[prepare-v3] Build with [${features}] failed, retrying with [${fallbackFeatures}]...`);
-      const fallbackArgs = [...cargoArgs, '-p', 'zion-miner', '--features', fallbackFeatures];
+      console.warn(`[prepare-v3] Build with [${features}] failed, retrying with [native-all]...`);
+      const fallbackArgs = [...cargoArgs, '-p', 'zion-miner', '--features', 'native-all'];
       const fallbackRes = spawnSync('cargo', fallbackArgs, { cwd: workspaceRoot, stdio: 'inherit', env: process.env });
       if (fallbackRes.error) throw fallbackRes.error;
-      if (fallbackRes.status !== 0) {
-        console.warn('[prepare-v3] Retrying CPU-only with native algorithms...');
-        const cpuFallbackArgs = [...cargoArgs, '-p', 'zion-miner', '--features', 'native-all'];
-        const cpuFallbackRes = spawnSync('cargo', cpuFallbackArgs, { cwd: workspaceRoot, stdio: 'inherit', env: process.env });
-        if (cpuFallbackRes.error) throw cpuFallbackRes.error;
-        if (cpuFallbackRes.status !== 0) throw new Error(`cargo build for zion-miner failed (exit ${cpuFallbackRes.status})`);
-      }
+      if (fallbackRes.status !== 0) throw new Error(`cargo build for zion-miner failed (exit ${fallbackRes.status})`);
     } else {
       throw new Error(`cargo build for zion-miner failed (exit ${minerRes.status})`);
     }
