@@ -540,7 +540,7 @@ extern "C" __global__ void deeksha_lite_fire_mine(
      * DifficultyTarget::allows() lexicographic comparison). */
     if (target_u32 != 0) {
         uint32_t hash_low = (uint32_t)(hash[0] & 0xFFFFFFFFULL);
-        uint32_t hash_be = __byte_perm(hash_low, 0u, 0x3210u);
+        uint32_t hash_be = __byte_perm(hash_low, 0u, 0x0123u);
         if (hash_be <= target_u32) {
             uint64_t old = atomicExch(result_nonce, nonce);
             if (old == 0xFFFFFFFFFFFFFFFFULL) {
