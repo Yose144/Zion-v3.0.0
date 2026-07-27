@@ -3003,6 +3003,23 @@ mod tests {
     }
 
     #[test]
+    fn ethash_final_hash_agrees_with_hash_ethash() {
+        // Verify ethash_final_hash (used for kawpow/progpow share verification)
+        // produces the same final hash as the canonical ethash crate for a
+        // real DAG-derived mix.
+        let header = [0xAAu8; 32];
+        let nonce = 0u64;
+        let epoch = 0u32;
+        let (cache, full_size) = ethash_cache_for_epoch(epoch);
+        let (mix, final_from_crate) = ethash_hashimoto_light(&header, nonce, full_size, &cache);
+        let final_from_fn = ethash_final_hash(&header, nonce, &mix);
+        assert_eq!(
+            final_from_fn, final_from_crate,
+            "ethash_final_hash disagrees with ethash crate final hash"
+        );
+    }
+
+    #[test]
     fn ethash_final_hash_deterministic() {
         // The final hash must be deterministic for fixed inputs.
         let header = [0x42u8; 32];

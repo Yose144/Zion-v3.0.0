@@ -325,3 +325,49 @@ For `ethash` a longer run with the default `work_size=262144` and `bench_secs=5`
 2. ✅ Build and test `verushash` CUDA with `--features "gpu-cuda native-verushash"` — kernel compiles/runs at ~484 kH/s on GTX 1070 Ti. CPU/GPU hash match remains non-trivial and is not required for 3.0.7.
 3. Replace the placeholder `autolykos_mine` CUDA kernel with real Autolykos v2 and run a CPU/GPU comparison.
 4. Run live upstream debug-pool tests for at least one coin per algorithm to confirm `mining.submit` acceptance.
+
+## 9. GPU share verification commands (this session, 2026-07-27)
+
+Added CPU/GPU share verification to the existing `--test-cuda-kernel` and new `--test-opencl-kernel` commands in `zion-miner`.
+
+### 9.1 Commands used
+
+CUDA:
+```powershell
+$env:PATH = "C:\Users\anaha\AppData\Local\Temp\cuda_nvrtc_x\cuda_nvrtc-windows-x86_64-12.4.127-archive\bin;" + $env:PATH
+$env:ZION_GPU_WORK_SIZE = "65536"
+cargo run --manifest-path V3/Cargo.toml -p zion-miner --bin zion-miner --features gpu-cuda -- --test-cuda-kernel <algo>
+```
+
+OpenCL:
+```powershell
+$env:ZION_GPU_WORK_SIZE = "65536"
+cargo run --manifest-path V3/Cargo.toml -p zion-miner --bin zion-miner --features gpu-opencl -- --test-opencl-kernel <algo>
+```
+
+### 9.2 Results
+
+| Backend | Algorithm | Status | CPU/GPU match | Notes |
+|---------|-----------|--------|---------------|-------|
+| CUDA | `ethash` | PASS | ✅ `ETHASH_CPU_GPU_MATCH` | Already verified in §8; full 32-byte GPU hash matches canonical `ethash` 0.4 crate. |
+| CUDA | `kheavyhash` | PASS | ✅ `KHEAVYHASH_CPU_GPU_MATCH` | GPU share matches pure-Rust `hash_kheavyhash` reference. |
+| CUDA | `blake3` | PASS | ✅ `BLAKE3_ALPH_CPU_GPU_MATCH` | Maps to `blake3_alph` (`hash_blake3_alph` CPU reference). |
+| CUDA | `blake3_dcr` | PASS | ✅ `BLAKE3_DCR_CPU_GPU_MATCH` | Matches `hash_blake3_dcr` CPU reference. |
+| CUDA | `kawpow` | PASS (benchmark) | ❌ `KAWPOW_CPU_GPU_MISMATCH` | Kernel runs (~442 MH/s) but the GPU `output_hash` does not equal `ethash_final_hash(header, nonce, output_mix)`. The Keccak domain separator in `kawpow_kernel.cu` was corrected from SHA3 `0x06` to original Keccak `0x01` (matching `ethash_kernel.cu` and `kawpow_native.c`); mismatch persists, indicating a deeper kernel/output consistency issue. |
+| CUDA | `progpow` | PASS (benchmark) | ❌ `PROGPOW_CPU_GPU_MISMATCH` | `progpow_kernel.cu` does **not** write `output_hash`; it only writes `output_mix` and the 64-bit pre-check `g_output`. `cuda_verify_share` therefore compares a stale/zeroed `output_hash` against `progpow_final_hash`. |
+| OpenCL | `blake3` | PASS | ✅ `BLAKE3_ALPH_OPENCL_CPU_GPU_MATCH` | NVIDIA OpenCL on GTX 1070 Ti; share matches `hash_blake3_alph`. |
+| OpenCL | `kheavyhash` | PASS | ✅ `KHEAVYHASH_OPENCL_CPU_GPU_MATCH` | Share matches `hash_kheavyhash`. |
+
+### 9.3 Code changes
+
+* `V3/L1/miner/src/main.rs` — added `--test-opencl-kernel <algo>` CLI path and `opencl_verify_setup` CPU reference map (blake3/blake3_dcr/kheavyhash/zelhash/ethash/kawpow/progpow variants).
+* `V3/L1/miner/src/cuda_external.rs` `cuda_verify_share` — returns the CPU/GPU verification label together with the benchmark result.
+* `AuXpow/csrc/cuda/kawpow_kernel.cu` — changed Keccak domain separator from `0x06` (SHA3) to `0x01` (original Keccak/Ethereum) in both `keccak512` and `keccak256` to match `ethash_kernel.cu` and the C `kawpow_native.c` reference.
+* `AuXpow/src/external_hashers.rs` — added `ethash_final_hash_agrees_with_hash_ethash` test confirming the `ethash_final_hash` helper used for KawPow/ProgPow verification produces the same final hash as the canonical `ethash` 0.4 crate.
+
+### 9.4 Blockers / next steps
+
+1. **KawPow CUDA CPU/GPU mismatch** — `ethash_final_hash` is correct (verified against `ethash` crate), but the `kawpow_mine` kernel's `output_hash` is not `keccak256(seed || output_mix)` for the reported nonce. Needs kernel audit (possible race in `output_mix`/`output_hash` write, or the kernel is using a different `seed`/`mix` path than expected).
+2. **ProgPow CUDA `output_hash` missing** — `progpow_kernel.cu` only writes `output_mix` and the 64-bit target pre-check. For share verification the kernel must either (a) write the 64-bit `final_hash` into `output_hash` and compare against `progpow_final_hash`'s top 64 bits, or (b) the Rust side must read the `g_output` debug value and compare it to the CPU reference.
+3. **OpenCL** — only `blake3` and `kheavyhash` verified so far. Extend to `zelhash`, `ethash`, `kawpow`, and ProgPow variants once the CUDA-side CPU references are stable.
+4. **Live pool acceptance** remains the ultimate verification step for all GPU algorithms.
