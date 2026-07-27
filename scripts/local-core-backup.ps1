@@ -6,20 +6,24 @@
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File scripts\local-core-backup.ps1
 #
-# Cron / Task Scheduler:
-#   Every 15 minutes — runs silently, logs to backup_dir\backup.log
+# Defaults:
+#   - Backup destination: D:\Zion  (override with $env:ZION_BACKUP_DIR or -BackupRoot)
+#   - Node data:          D:\Zion\V3\data  (override with $env:ZION_DATA_DIR or -DataDir)
+#   - Config source:      parent of scripts/
 # ============================================================================
 
 param(
-    [string]$RepoRoot = "C:\Users\yosef\Desktop\Zion\2.9.6-main",
+    [string]$RepoRoot = (Split-Path -Parent $PSScriptRoot),
+    [string]$DataDir = $env:ZION_DATA_DIR,
     [string]$BackupRoot = $env:ZION_BACKUP_DIR
 )
 
-$BackupRoot = if (-not $BackupRoot) { "C:\ZION-AutoBackups" } else { $BackupRoot }
+$BackupRoot = if (-not $BackupRoot) { "D:\Zion" } else { $BackupRoot }
+$DataDir    = if (-not $DataDir) { Join-Path $BackupRoot "V3\data" } else { $DataDir }
 
-$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$WorkDir = Join-Path $BackupRoot "zion-local-$timestamp"
-$logFile   = Join-Path $BackupRoot "backup.log"
+$timestamp  = Get-Date -Format "yyyyMMdd-HHmmss"
+$WorkDir    = Join-Path $BackupRoot "zion-local-$timestamp"
+$logFile    = Join-Path $BackupRoot "backup.log"
 $healthFile = Join-Path $BackupRoot "health.json"
 
 function Log-Message($msg, $level="INFO") {
@@ -28,12 +32,13 @@ function Log-Message($msg, $level="INFO") {
     Add-Content -Path $logFile -Value $line -ErrorAction SilentlyContinue
 }
 
-# Ensure backup directory exists
+# Ensure directories exist
 New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
 New-Item -ItemType Directory -Path $BackupRoot -Force | Out-Null
 
 Log-Message "=== ZION Local Core Backup Started ===" "INFO"
 Log-Message "Repo : $RepoRoot" "INFO"
+Log-Message "Data : $DataDir" "INFO"
 Log-Message "Dest : $WorkDir" "INFO"
 
 $itemsBackedUp = 0
@@ -41,16 +46,15 @@ $totalSizeMB   = 0
 $status = "ok"
 
 # ── 1. V3/data (node state, dashboard metrics, peers) ──────────────────────
-$dataSource = Join-Path $RepoRoot "V3\data"
-if (Test-Path $dataSource) {
+if (Test-Path $DataDir) {
     $dataDest = Join-Path $WorkDir "V3-data"
-    Copy-Item -Recurse -Force $dataSource $dataDest
-    $sz = [math]::Round((Get-ChildItem $dataSource -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB, 2)
+    Copy-Item -Recurse -Force $DataDir $dataDest
+    $sz = [math]::Round((Get-ChildItem $DataDir -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB, 2)
     Log-Message "Backed up V3\data ($sz MB)" "OK"
     $itemsBackedUp++
     $totalSizeMB += $sz
 } else {
-    Log-Message "V3\data not found" "WARN"
+    Log-Message "V3\data not found at $DataDir" "WARN"
 }
 
 # ── 2. Root data dir (if exists) ────────────────────────────────────────────
@@ -66,7 +70,12 @@ if (Test-Path $rootData) {
 
 # ── 3. Find ALL .db files (exclude build/cache dirs) ───────────────────────
 $excludePatterns = @('target*', 'node_modules', '__pycache__', '.git', 'backups', '*.tmp', 'ue5')
-$dbFiles = Get-ChildItem -Path $RepoRoot -Recurse -Filter '*.db' -File -ErrorAction SilentlyContinue | Where-Object {
+$searchRoots = @($RepoRoot)
+if ($DataDir -and (Test-Path $DataDir)) {
+    $searchRoots += $DataDir
+}
+
+$dbFiles = Get-ChildItem -Path $searchRoots -Recurse -Filter '*.db' -File -ErrorAction SilentlyContinue | Where-Object {
     $f = $_
     $skip = $false
     foreach ($pat in $excludePatterns) {
@@ -79,7 +88,15 @@ if ($dbFiles) {
     $dbDest = Join-Path $WorkDir "databases"
     New-Item -ItemType Directory -Path $dbDest -Force | Out-Null
     foreach ($db in $dbFiles) {
-        $relative = $db.FullName.Substring($RepoRoot.Length + 1)
+        # Compute a safe relative path; prefix data-dir DBs with V3-data/
+        $relative = $null
+        if ($db.FullName.StartsWith($RepoRoot, [System.StringComparison]::InvariantCultureIgnoreCase)) {
+            $relative = $db.FullName.Substring($RepoRoot.Length).TrimStart('\', '/')
+        } elseif ($db.FullName.StartsWith($DataDir, [System.StringComparison]::InvariantCultureIgnoreCase)) {
+            $relative = "V3-data" + $db.FullName.Substring($DataDir.Length).TrimStart('\', '/')
+        } else {
+            $relative = $db.Name
+        }
         $destPath = Join-Path $dbDest $relative
         $destParent = Split-Path $destPath -Parent
         New-Item -ItemType Directory -Path $destParent -Force | Out-Null
@@ -108,7 +125,7 @@ if ($envFiles) {
     Log-Message "No .env files found" "WARN"
 }
 
-# ── 5. Key config / toml files ─────────────────────────────────────────────
+# ── 5. Key config / toml files ───────────────────────────────────────────────
 $configPatterns = @(
     'AGENTS.md',
     'StatusV3.md',
@@ -183,7 +200,7 @@ Remove-Item -Recurse -Force $WorkDir
 
 # ── 9. Health status file for dashboard ────────────────────────────────────
 $zipSizeBytes = (Get-Item $zipFile).Length
-$disk = Get-PSDrive C | Select-Object Used, Free
+$disk = Get-PSDrive D | Select-Object Used, Free
 $diskTotal = $disk.Used + $disk.Free
 $diskPct = [math]::Round(($disk.Used / $diskTotal) * 100, 1)
 

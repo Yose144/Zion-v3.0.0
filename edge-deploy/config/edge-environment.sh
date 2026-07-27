@@ -121,7 +121,8 @@ ZION_MIGRATION_HEIGHT=1
 ZION_ACCOUNT_TX_MEMO_V1_HEIGHT=0
 
 # Block retention window (Session 9 memory patch)
-ZION_BLOCK_RETENTION=10000
+# Edge primary keeps full chain history after 2026-07-20 hard genesis reset.
+ZION_BLOCK_RETENTION=0
 
 # Per-coin AuxPow wallet overrides are intentionally NOT stored in this file.
 # Set them securely on the server (e.g. in the systemd EnvironmentFile override)

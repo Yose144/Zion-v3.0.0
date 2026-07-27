@@ -2,7 +2,8 @@
 # Kills only ZION release binaries by matching their FULL path.
 # Will NOT kill Node.js, system services, or unrelated processes.
 
-$ReleaseDir = "C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release"
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+$ReleaseDir = Join-Path $RepoRoot "V3\target\release"
 
 $binaries = @(
     @{ Name = "node";   Path = "$ReleaseDir\node.exe" },

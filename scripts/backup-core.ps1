@@ -1,20 +1,28 @@
 # ZION Core Backup Script (Windows)
 # ================================
-# Backs up V3/data/, .env files, and node state to external storage.
+# Backs up V3/data, .env files, and node state to external storage.
 #
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File scripts\backup-core.ps1
 #
-# Default backup path: C:\ZION-Backups\
-# Override with: $env:ZION_BACKUP_PATH = "D:\ZION-Backups"
+# Defaults:
+#   - Backup path: D:\Zion  (override with $env:ZION_BACKUP_PATH or -BackupPath)
+#   - Source path: parent of scripts/  (override with -SourcePath)
+#
+# Set ZION_DATA_DIR env var to back up a non-default node data directory.
 
 param(
     [string]$BackupPath = $env:ZION_BACKUP_PATH,
-    [string]$SourcePath = "C:\Users\yosef\Desktop\Zion\2.9.6-main"
+    [string]$SourcePath = (Split-Path -Parent $PSScriptRoot),
+    [string]$DataPath = $env:ZION_DATA_DIR
 )
 
 if (-not $BackupPath) {
-    $BackupPath = "C:\ZION-Backups"
+    $BackupPath = "D:\Zion"
+}
+
+if (-not $DataPath) {
+    $DataPath = Join-Path $SourcePath "V3\data"
 }
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -22,19 +30,19 @@ $backupDir = Join-Path $BackupPath "zion-backup-$timestamp"
 
 Write-Host "=== ZION Core Backup ===" -ForegroundColor Cyan
 Write-Host "Source : $SourcePath"
+Write-Host "Data   : $DataPath"
 Write-Host "Backup : $backupDir"
 Write-Host ""
 
 New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
 
 # Data directory
-$dataSource = Join-Path $SourcePath "V3\data"
-if (Test-Path $dataSource) {
+if (Test-Path $DataPath) {
     Write-Host "Backing up V3\data ..." -ForegroundColor Yellow
-    Copy-Item -Recurse -Force $dataSource $backupDir\data
+    Copy-Item -Recurse -Force $DataPath "$backupDir\data"
     Write-Host "  OK" -ForegroundColor Green
 } else {
-    Write-Host "  WARNING: V3\data not found" -ForegroundColor Yellow
+    Write-Host "  WARNING: V3\data not found at $DataPath" -ForegroundColor Yellow
 }
 
 # .env files
@@ -43,7 +51,7 @@ foreach ($f in $envFiles) {
     $src = Join-Path $SourcePath $f
     if (Test-Path $src) {
         Write-Host "Backing up $f ..." -ForegroundColor Yellow
-        Copy-Item -Force $src $backupDir\$f
+        Copy-Item -Force $src "$backupDir\$f"
         Write-Host "  OK" -ForegroundColor Green
     }
 }
@@ -54,7 +62,7 @@ foreach ($k in $sshKeys) {
     $src = Join-Path $SourcePath $k
     if (Test-Path $src) {
         Write-Host "Backing up $k ..." -ForegroundColor Yellow
-        Copy-Item -Force $src $backupDir\$k
+        Copy-Item -Force $src "$backupDir\$k"
         Write-Host "  OK" -ForegroundColor Green
     }
 }
@@ -63,7 +71,7 @@ foreach ($k in $sshKeys) {
 $serversMd = Join-Path $SourcePath "Servers.md"
 if (Test-Path $serversMd) {
     Write-Host "Backing up Servers.md ..." -ForegroundColor Yellow
-    Copy-Item -Force $serversMd $backupDir\Servers.md
+    Copy-Item -Force $serversMd "$backupDir\Servers.md"
     Write-Host "  OK" -ForegroundColor Green
 }
 

@@ -179,6 +179,22 @@ impl ShareForwarder {
         // the upstream pool's own verification matches our pre-check.
         let hash_hex = hash_to_hex(&effective_hash);
         let mix_hash_hex = mix_hash.map(hash_to_hex);
+
+        // Stale-job pre-rejection for CPU-only coins (XMR/VRSC/RTM).  These
+        // pools expire jobs very quickly; forwarding a share for a superseded
+        // job wastes a round-trip and inflates the reject rate.
+        if self.client.profile().coin.is_cpu() {
+            if let Some(current) = self.client.current_job().await {
+                if current.job_id != job_id {
+                    println!(
+                        "auxpow: {} stale share pre-rejected job_id={} current_job_id={}",
+                        self.client.profile().coin, job_id, current.job_id
+                    );
+                    return Ok(ShareForwardResult::Rejected("stale job".to_string()));
+                }
+            }
+        }
+
         match self.client.submit_share(job_id, nonce, &hash_hex, mix_hash_hex.as_deref()).await {
             Ok(ShareResult::Accepted) => Ok(ShareForwardResult::Accepted),
             Ok(ShareResult::Rejected(reason)) => Ok(ShareForwardResult::Rejected(reason)),
