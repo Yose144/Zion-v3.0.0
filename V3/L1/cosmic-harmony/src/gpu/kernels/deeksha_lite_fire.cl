@@ -559,22 +559,11 @@ void deeksha_lite_fire_mine(
     hash_u64[0] = st[0]; hash_u64[1] = st[1]; hash_u64[2] = st[2]; hash_u64[3] = st[3];
     __private uchar * restrict hash = (__private uchar*)hash_u64;
 
-    /* Stream-profit byproduct work (does not affect PoW hash).
-     * NOTE: stream_byproduct_* write to pad[0..16] which is already consumed
-     * by random_read_mix. The compiler cannot DCE because it's a global
-     * memory write with a dependency on hash. */
-    if (stream_weights) {
-        int keccak_iter = (int)(stream_weights[SW_KECCAK_BONUS] * STREAM_ITERS_SCALE);
-        stream_byproduct_keccak(hash, keccak_iter, pad);
-
-        int sha3_iter = (int)(stream_weights[SW_SHA3_BONUS] * STREAM_ITERS_SCALE);
-        stream_byproduct_sha3(hash, sha3_iter, pad);
-
-        float aes_weight = stream_weights[SW_NCL_AI] + stream_weights[SW_DEEKSHA_LITE] + stream_weights[SW_THERMAL];
-        int aes_iter = (int)(aes_weight * STREAM_ITERS_SCALE);
-        stream_byproduct_aes(hash, nonce, aes_iter, pad);
-
-        int zion_iter = (int)(stream_weights[SW_ZION] * STREAM_ITERS_SCALE);
-        stream_byproduct_keccak(hash, zion_iter, pad);
-    }
+    /* Stream-profit byproduct work REMOVED for hashrate parity with CUDA.
+     * The byproduct work (extra keccak/SHA3/AES iterations) did not affect
+     * the PoW hash but wasted ~10% extra keccak and ~79,000% extra AES
+     * cycles per hash, making OpenCL unfairly slower than CUDA which
+     * does no byproduct work. The stream_weights buffer is still passed
+     * to maintain kernel signature compatibility but is ignored. */
+    (void)stream_weights;
 }
