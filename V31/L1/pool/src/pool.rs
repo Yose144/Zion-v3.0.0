@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use zion_cosmic_harmony::ExternalCoin;
-use zion_l1_types::{Address, Amount};
+use zion_l1_types::{Address, Amount, ChainId};
 
 use crate::config::PoolConfig;
 use crate::pplns::{Payout, PplnsState, ShareRecord};
@@ -10,7 +10,7 @@ use crate::validator::ShareValidator;
 
 /// Placeholder block reward used for PPLNS payout calculation until the pool
 /// is wired to the node's coinbase output.
-const DEFAULT_BLOCK_REWARD_ZION: u128 = 6_000_000;
+pub const DEFAULT_BLOCK_REWARD_ZION: u64 = 6_000_000;
 
 #[derive(Clone, Copy, Debug, thiserror::Error)]
 pub enum PoolError {
@@ -67,11 +67,20 @@ impl Pool {
         let value = 1u64;
         let record = ShareRecord {
             worker: worker.to_string(),
-            address: self.config.pool_address.clone(),
+            address: self.worker_address(worker),
             value,
             timestamp: chrono::Utc::now(),
         };
         self.pplns.add_share(record);
+    }
+
+    fn worker_address(&self, worker: &str) -> Address {
+        if worker.starts_with("zion1") {
+            Address::new(ChainId::ZionL1, worker.as_bytes().to_vec(), worker)
+                .unwrap_or_else(|_| self.config.pool_address.clone())
+        } else {
+            self.config.pool_address.clone()
+        }
     }
 
     pub fn submit_zion(
@@ -118,8 +127,8 @@ impl Pool {
     }
 
     /// Record a found block, compute PPLNS payouts for it and store them.
-    pub fn on_block_found(&mut self, block_height: u64) {
-        let block_reward = Amount::new(DEFAULT_BLOCK_REWARD_ZION);
+    pub fn on_block_found(&mut self, block_height: u64, block_reward: u64) {
+        let block_reward = Amount::new(block_reward as u128);
         let payouts = self.pplns.payouts_for(block_reward);
         self.last_payouts = Some((block_height, payouts));
     }

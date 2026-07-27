@@ -110,6 +110,11 @@
 - `Pool` má `last_payouts` a `on_block_found(block_height)` s placeholder block reward 6 ZION.
 - Nový endpoint `GET /v1/pool/payouts` vrací `block_height` a seznam `Payout` adres a částek.
 
+### 17. Skutečný block reward a worker payout adresy
+- `BlockTemplate` rozšířen o `block_reward: u64` (flowers). `ZionL1Adapter::block_template` parsuje `estimated_miner_reward_zion` nebo `reward_zion` z `getBlockTemplate`.
+- Stratum `JobEntry` nyní obsahuje i block reward; `broadcast_job` ho předává a `on_block_found` počítá payouts z reálné odměny.
+- `Pool::record_share` použije worker jméno jako `zion1...` payout adresu, pokud je validní; jinak padne na pool adresu.
+
 ## Verifikace
 
 ```bash
@@ -144,6 +149,7 @@ Rozpis testů:
 - `ff2b8840` — `feat(v31): TCP stratum server with mining.notify broadcast`
 - `6e76d23f` — `feat(v31): live mining jobs from zion-l1 getBlockTemplate`
 - `b00daa77` — `feat(v31): block detection and PPLNS payouts endpoint`
+- `<novy>` — `feat(v31): real block reward and worker payout addresses`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -155,7 +161,9 @@ Rozpis testů:
    - TCP stratum ✅ — `ApiServer` spouští `StratumServer` na portu z `[pool]` configu.
    - Živé `mining.notify` joby ✅ — `ChainAdapter::block_template` a `ZionL1Adapter::getBlockTemplate` RPC; stratum broadcast každých 10s fetchne reálný template z `zion-l1` a pushne ho minerům, jinak fallback dummy.
    - Detekce nalezeného bloku ✅ — `StratumServer` porovnává hash share s network targetem; při bloku volá `Pool::on_block_found` a vypočítá PPLNS payouts.
-   - `/v1/pool/payouts` ✅ — endpoint vrací poslední payouts (placeholder block reward 6 ZION).
+   - `/v1/pool/payouts` ✅ — endpoint vrací poslední payouts.
+   - Real block reward ✅ — `BlockTemplate` parsuje `estimated_miner_reward_zion`/`reward_zion` z `getBlockTemplate`; stratum job obsahuje block reward pro payouts.
+   - Worker jako payout adresa ✅ — pokud stratum worker začíná `zion1...`, je použita jako payout adresa pro PPLNS.
 
 2. **Real chain adapters (další kroky)**
    - `EvmAdapter` ✅ — provider + wallet + contract addresses; zbývá nasadit validator wallet a testovat `submitLockProof` na Base.
