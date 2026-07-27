@@ -13,6 +13,7 @@
 pub mod bridge;
 pub mod chain;
 pub mod config;
+pub mod contracts;
 pub mod credits;
 pub mod db;
 pub mod error;
@@ -25,6 +26,7 @@ pub mod wallet;
 pub use bridge::Bridge;
 pub use chain::{ChainAdapter, ChainAdapterRegistry};
 pub use config::MultichainConfig;
+pub use contracts::{all_contracts, contracts_for_chain, ZionContracts};
 pub use error::{MultichainError, MultichainResult};
 pub use service::MultichainService;
 pub use types::{Transfer, TransferDirection, TransferStatus};

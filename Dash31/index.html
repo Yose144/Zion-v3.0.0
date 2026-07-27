@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZION V31 Alpha Dashboard</title>
+  <style>
+    :root { --bg:#0b0f17; --panel:#121826; --text:#e6eef7; --accent:#00d2ff; --ok:#2ecc71; --err:#e74c3c; --muted:#8aa0b3; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+    header { padding:1rem 2rem; border-bottom:1px solid #1f2a3a; display:flex; align-items:center; justify-content:space-between; }
+    h1 { margin:0; font-size:1.25rem; color:var(--accent); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:1rem; padding:1.5rem; }
+    .panel { background:var(--panel); border:1px solid #1f2a3a; border-radius:.75rem; padding:1rem; }
+    .panel h2 { margin-top:0; font-size:1rem; color:var(--accent); }
+    label { display:block; margin:.5rem 0 .25rem; font-size:.8rem; color:var(--muted); }
+    input, select, button, textarea { width:100%; padding:.5rem; border-radius:.4rem; border:1px solid #2a3a4d; background:#0b0f17; color:var(--text); }
+    button { margin-top:.6rem; background:var(--accent); color:#001; font-weight:600; border:none; cursor:pointer; }
+    button.secondary { background:#2a3a4d; color:var(--text); }
+    pre { background:#0b0f17; border:1px solid #1f2a3a; border-radius:.4rem; padding:.75rem; overflow:auto; font-size:.8rem; white-space:pre-wrap; word-break:break-all; max-height:220px; }
+    .ok { color:var(--ok); }
+    .err { color:var(--err); }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; }
+    .muted { color:var(--muted); font-size:.75rem; }
+    table { width:100%; border-collapse:collapse; font-size:.8rem; }
+    th, td { text-align:left; padding:.4rem; border-bottom:1px solid #1f2a3a; }
+    th { color:var(--muted); font-weight:500; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ZION V31 Mainnet Alpha — Dashboard</h1>
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <label style="margin:0;">API base</label>
+      <input id="apiBase" value="http://127.0.0.1:8453" style="width:220px;" />
+      <button id="refreshStatus" style="width:auto;margin:0;">Refresh status</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Node / Multichain status</h2>
+      <pre id="statusOut">Click Refresh status...</pre>
+    </div>
+
+    <div class="panel">
+      <h2>V3 Contract addresses</h2>
+      <p class="muted">Reused by V31 until V31-specific deployments are live.</p>
+      <table>
+        <thead><tr><th>Chain</th><th>wZION</th><th>Bridge</th></tr></thead>
+        <tbody id="contractsOut"></tbody>
+      </table>
+      <pre id="contractsRaw" class="muted" style="max-height:120px;"></pre>
+    </div>
+
+    <div class="panel">
+      <h2>Wallet</h2>
+      <label>Chain</label>
+      <select id="walletChain"><option value="base">base</option><option value="zion-l1">zion-l1</option><option value="ethereum">ethereum</option><option value="bitcoin">bitcoin</option></select>
+      <div class="row">
+        <div><label>Account</label><input id="walletAccount" type="number" value="0" /></div>
+        <div><label>Index</label><input id="walletIndex" type="number" value="0" /></div>
+      </div>
+      <button id="deriveAddress">Derive address</button>
+      <pre id="walletOut"></pre>
+
+      <label>Message to sign</label>
+      <input id="signMessage" value="hello zion" />
+      <button id="signMessageBtn" class="secondary">Sign message</button>
+      <pre id="signOut"></pre>
+    </div>
+
+    <div class="panel">
+      <h2>Bridge</h2>
+      <label>Direction</label>
+      <select id="bridgeDir"><option value="lock">Lock ZION → mint wZION</option><option value="burn">Burn wZION → release ZION</option></select>
+      <div class="row">
+        <div><label>From chain</label><input id="bridgeFrom" value="zion-l1" /></div>
+        <div><label>To chain</label><input id="bridgeTo" value="base" /></div>
+      </div>
+      <label>Amount (smallest units)</label>
+      <input id="bridgeAmount" type="number" value="1000000" />
+      <div class="row">
+        <div><label>Source address (optional)</label><input id="bridgeSource" placeholder="0x..." /></div>
+        <div><label>Target address (optional)</label><input id="bridgeTarget" placeholder="0x..." /></div>
+      </div>
+      <button id="bridgeSubmit">Submit bridge transfer</button>
+      <pre id="bridgeOut"></pre>
+    </div>
+
+    <div class="panel">
+      <h2>Swap (DEX router)</h2>
+      <p class="muted">Asset format: <code>chain:TICKER[:contract]</code> &nbsp; Example: <code>base:wZION:0x0c49...</code></p>
+      <label>From asset</label>
+      <input id="swapFrom" value="base:wZION:0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6" />
+      <label>To asset</label>
+      <input id="swapTo" value="zion-l1:ZION" />
+      <label>Amount (smallest units)</label>
+      <input id="swapAmount" type="number" value="1000000" />
+      <div class="row">
+        <button id="swapQuote" class="secondary">Get quote</button>
+        <button id="swapExecute">Execute swap</button>
+      </div>
+      <pre id="swapOut"></pre>
+    </div>
+
+    <div class="panel">
+      <h2>Pool (V31 stratum pool)</h2>
+      <p class="muted">Pool status endpoint not exposed via multichain API yet. Run <code>cargo test -p zion-pool</code> locally.</p>
+      <pre id="poolOut">Placeholder — wire to future /v1/pool/status</pre>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
