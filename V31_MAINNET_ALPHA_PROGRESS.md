@@ -77,6 +77,13 @@
 - `execute_outbound` pro `LockMint` volá `ZIONBridge.submitLockProof`, ale jen když je wallet oprávněným validátorem (`hasRole` check).
 - `MultichainService` předává EVM adaptérům wallet z `Keyring` a V3 contract addresses.
 
+### 12. `ZionL1Adapter` pro bridge lock/unlock
+- Adapter nyní přijímá `Keyring` pro podepisování `submitBridgeUnlock`.
+- `watch_events` volá RPC `getBridgeLocks` a mapuje je na `DepositEvent`.
+- `execute_outbound` pro `BurnRelease` sestaví validator proof (secp256k1 ECDSA přes `evm_wallet`) a volá `submitBridgeUnlock`.
+- `Bridge` matching nyní podporuje mema `BRIDGE:<chain>:<recipient>` z V3 a po detekci eventu přepíše `transfer.id` na source tx hash.
+- `Keyring` je `Clone`, aby ho mohl service sdílet s adaptéry.
+
 ## Verifikace
 
 ```bash
@@ -105,6 +112,7 @@ Rozpis testů:
 - `91bdd696` — `feat(v31): add CLI commands for wallet, bridge and swap`
 - `eb7bcda7` — `feat(v31): add V3 contracts, HTTP API, CORS and Dash31 dashboard`
 - `49b8e76c` — `feat(v31): wire EvmAdapter with ethers provider, signer and V3 contracts`
+- `<novy>` — `feat(v31): ZionL1 bridge locks + submitBridgeUnlock with validator proof`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -115,9 +123,9 @@ Rozpis testů:
 
 2. **Real chain adapters (další kroky)**
    - `EvmAdapter` ✅ — provider + wallet + contract addresses; zbývá nasadit validator wallet a testovat `submitLockProof` na Base.
-   - `ZionL1Adapter`: RPC call pro lock/burn a mint/release.
+   - `ZionL1Adapter` ✅ — `getBridgeLocks` a `submitBridgeUnlock` s proofem; zbývá testovat na živém L1 RPC.
    - `BitcoinAdapter`: UTXO lock/mint a burn/release.
-   - Testovací bridge end-to-end mezi `zion-l1` a `base`.
+   - Testovací bridge end-to-end mezi `zion-l1` a `base` (nejprve na testnet fork).
 
 3. **Bridge watcher finalizace**
    - Kontraktní adresy pro Base (wZION) a ZION L1 bridge vault.

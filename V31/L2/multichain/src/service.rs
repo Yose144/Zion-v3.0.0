@@ -230,7 +230,7 @@ fn build_adapter(cfg: &AdapterConfig, keyring: &Keyring) -> MultichainResult<Box
                 contracts,
             )?))
         }
-        "zion-l1" | "zion" | "zionl1" => Ok(Box::new(ZionL1Adapter::new(&cfg.rpc_url))),
+        "zion-l1" | "zion" | "zionl1" => Ok(Box::new(ZionL1Adapter::new(&cfg.rpc_url, keyring.clone()))),
         _ => Err(MultichainError::AdapterNotFound(format!(
             "no adapter builder for chain '{}': add it to build_adapter()",
             cfg.chain

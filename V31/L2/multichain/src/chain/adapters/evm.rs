@@ -154,14 +154,14 @@ impl EvmAdapter {
 
     fn decode_burn_log(&self, log: &ethers::types::Log) -> Option<DepositEvent> {
         let from = Self::address_from_topic(log.topics.get(1).copied()?);
-        let burn_id = log.topics.get(2).copied()?;
+        let _burn_id = log.topics.get(2).copied()?;
         let tokens = decode(
             &[ParamType::Uint(256), ParamType::String, ParamType::Uint(256)],
             log.data.as_ref(),
         )
         .ok()?;
         let amount = tokens[0].clone().into_uint()?;
-        let _l1_recipient = tokens[1].clone().into_string()?;
+        let l1_recipient = tokens[1].clone().into_string()?;
 
         let from_addr = Address::new(self.chain, from.as_bytes().to_vec(), format!("0x{}", hex::encode(from.as_bytes()))).ok()?;
 
@@ -170,14 +170,14 @@ impl EvmAdapter {
             tx_hash: log.transaction_hash.map(|h| Hash::new(*h.as_fixed_bytes())).unwrap_or_default(),
             recipient: from_addr,
             amount: Amount::new(amount.as_u128()),
-            memo: Some(format!("bridge:{}", hex::encode(burn_id.as_bytes()))),
+            memo: Some(format!("BRIDGE:zion-l1:{}", l1_recipient)),
             confirmations: 1,
         })
     }
 
     fn decode_mint_log(&self, log: &ethers::types::Log) -> Option<DepositEvent> {
         let recipient = Self::address_from_topic(log.topics.get(1).copied()?);
-        let l1_tx_hash = log.topics.get(2).copied()?;
+        let _l1_tx_hash = log.topics.get(2).copied()?;
         let tokens = decode(
             &[ParamType::Uint(256), ParamType::Uint(256)],
             log.data.as_ref(),
@@ -192,7 +192,7 @@ impl EvmAdapter {
             tx_hash: log.transaction_hash.map(|h| Hash::new(*h.as_fixed_bytes())).unwrap_or_default(),
             recipient: recipient_addr,
             amount: Amount::new(amount.as_u128()),
-            memo: Some(format!("bridge:{}", hex::encode(l1_tx_hash.as_bytes()))),
+            memo: None,
             confirmations: 1,
         })
     }
