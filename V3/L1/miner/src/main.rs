@@ -1346,6 +1346,29 @@ fn main() -> Result<()> {
                             println!("status=FAIL");
                         }
                     }
+
+                    // ── Ethash CPU/GPU reference comparison ──
+                    if algo == "ethash" || algo == "etchash" {
+                        use zion_core::DifficultyTarget;
+                        let header = [0xAAu8; 32];
+                        let target = DifficultyTarget { bytes: [0xFFu8; 32] };
+                        let batch = work_size as u64;
+                        match miner.mine_batch_raw(&header, target, 0, batch) {
+                            Ok(result) => {
+                                if let Some((nonce, gpu_hash, _mix)) = result.solutions.first() {
+                                    let cpu_hash = zion_auxpow::external_hashers::hash_ethash(&header, *nonce, 0);
+                                    if cpu_hash == *gpu_hash {
+                                        println!("ETHASH_CPU_GPU_MATCH nonce={} hash_prefix={}", nonce, hex::encode(&cpu_hash[..8]));
+                                    } else {
+                                        println!("ETHASH_CPU_GPU_MISMATCH nonce={} gpu_prefix={} cpu_prefix={}", nonce, hex::encode(gpu_hash), hex::encode(&cpu_hash));
+                                    }
+                                } else {
+                                    println!("ETHASH_CPU_GPU no solution in batch");
+                                }
+                            }
+                            Err(e) => eprintln!("ethash_mine_batch_raw error=\"{}\"", e),
+                        }
+                    }
                 }
                 Err(e) => {
                     eprintln!("init_failed algorithm={} error=\"{}\"", algo, e);

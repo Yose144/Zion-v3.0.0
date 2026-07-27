@@ -302,6 +302,59 @@ impl Proposal {
     pub fn has_passed(&self) -> bool {
         self.votes_for > self.votes_against
     }
+
+    /// Allocate seats for a parliamentary election using the D'Hondt method.
+    pub fn allocate_seats(&self) -> BTreeMap<String, u64> {
+        if let ProposalType::ParliamentaryElection { ref parties, seats, .. } = self.proposal_type {
+            allocate_seats_dhondt(parties, *seats, &self.election_tallies)
+        } else {
+            BTreeMap::new()
+        }
+    }
+}
+
+/// Allocate parliamentary seats by the D'Hondt (Jefferson) method.
+/// `parties` is the ordered ballot, `seats` total seats to allocate, `tallies`
+/// the per-party vote weight. Parties with 0 votes are ignored.
+pub fn allocate_seats_dhondt(
+    parties: &[String],
+    seats: u32,
+    tallies: &BTreeMap<String, u64>,
+) -> BTreeMap<String, u64> {
+    let seats = seats as u64;
+    if parties.is_empty() || seats == 0 || tallies.is_empty() {
+        return BTreeMap::new();
+    }
+
+    let mut won: BTreeMap<String, u64> = BTreeMap::new();
+    let mut votes: BTreeMap<String, u64> = BTreeMap::new();
+    for party in parties {
+        if let Some(&w) = tallies.get(party) {
+            if w > 0 {
+                votes.insert(party.clone(), w);
+                won.insert(party.clone(), 0);
+            }
+        }
+    }
+
+    for _ in 0..seats {
+        let mut best_party: Option<String> = None;
+        let mut best_quotient: f64 = 0.0;
+        for (party, &party_votes) in &votes {
+            let s = won.get(party).copied().unwrap_or(0) as f64;
+            let quotient = party_votes as f64 / (s + 1.0);
+            if quotient > best_quotient {
+                best_quotient = quotient;
+                best_party = Some(party.clone());
+            }
+        }
+        if let Some(party) = best_party {
+            *won.entry(party).or_insert(0) += 1;
+        } else {
+            break;
+        }
+    }
+    won
 }
 
 #[cfg(test)]

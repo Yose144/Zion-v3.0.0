@@ -12,7 +12,7 @@
 
 use anyhow::Result;
 use std::time::{SystemTime, UNIX_EPOCH};
-use zion_auxpow::external_hashers::hash_blake3;
+use zion_auxpow::external_hashers::{hash_blake3, hash_ethash};
 use zion_core::{DifficultyTarget, MiningHeader, MiningJob, MiningSolution};
 
 #[cfg(feature = "gpu-opencl")]
@@ -2883,8 +2883,12 @@ pub fn gpu_scan_job(
                 // ── CPU audit hash (independent path, diagnostic only) ────
                 // For DCR the GPU scans the full 180-byte raw header; the CPU
                 // audit must hash the same bytes to be comparable.
+                // For Ethash/Etchash the GPU scans the 32-byte header hash, so
+                // the CPU audit must also use that raw header hash.
                 let cpu_hash = if use_raw && algorithm == "blake3_dcr" {
                     hash_blake3(raw_header_bytes, 0, *nonce)
+                } else if use_raw && (algorithm == "ethash" || algorithm == "etchash") {
+                    hash_ethash(raw_header_bytes, *nonce, job.height as u32)
                 } else {
                     candidate.hash_with_algorithm(algorithm)
                 };
@@ -3053,7 +3057,11 @@ impl GpuPipelineState {
                             nonce: *nonce,
                             height: prev_job.height,
                         };
-                        let cpu_hash = candidate.hash_with_algorithm(algorithm);
+                        let cpu_hash = if algorithm == "ethash" || algorithm == "etchash" {
+                            hash_ethash(&prev_raw, *nonce, prev_job.height as u32)
+                        } else {
+                            candidate.hash_with_algorithm(algorithm)
+                        };
                         let is_mismatch = cpu_hash != *gpu_hash;
                         let gpu_above_target = !current_target.allows(gpu_hash);
 

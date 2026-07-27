@@ -19,6 +19,8 @@ APP&WEB/desktop-agent/send-to-escrow.js
 .tmp_*
 decode_console.py
 /tmp_*.py
+commit_msg*.txt
+2miners/gminer/
 
 # Build artifacts
 /target/
