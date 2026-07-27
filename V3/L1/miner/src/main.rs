@@ -2899,7 +2899,13 @@ fn run_remote_session(
         // creating a second CUDA context (deadlock on consumer GPUs).
         #[cfg(feature = "gpu-cuda")]
         let shared_cuda = if bk == gpu_backend::GpuBackendKind::Cuda {
-            tri_gpu.shared_cuda_device()
+            let dev = tri_gpu.shared_cuda_device();
+            println!(
+                "[{}] ext_gpu_shared_cuda_resolve bk=cuda shared={}",
+                log_timestamp(),
+                dev.is_some(),
+            );
+            dev
         } else {
             None
         };
