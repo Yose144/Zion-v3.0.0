@@ -1683,6 +1683,94 @@ def list_databases() -> list:
             })
     return out
 
+def get_bridge_db_path() -> Path:
+    """Return the live bridge SQLite DB path (Edge or local)."""
+    for path, kind, sid, _ in DB_LOCATIONS:
+        if sid == "bridge" and kind == "sqlite":
+            if path.exists():
+                return path
+    # Fallback to legacy local path
+    return REPO_ROOT / "V3" / "data" / "bridge.db"
+
+def get_dao_db_path() -> Path:
+    """Return the live DAO SQLite DB path (Edge or local)."""
+    for path, kind, sid, _ in DB_LOCATIONS:
+        if sid == "dao" and kind == "sqlite":
+            if path.exists():
+                return path
+    return REPO_ROOT / "V3" / "data" / "dao.db"
+
+def _build_bridge_transfers(db_path: Path, limit: int = 50) -> list:
+    """Read L1 locks and EVM burns from the bridge DB and normalize for the UI."""
+    if not db_path.exists():
+        return []
+    transfers = []
+    try:
+        con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        con.row_factory = sqlite3.Row
+        cur = con.cursor()
+
+        # L1 -> EVM (locks / mints)
+        if "l1_locks" in [t[0] for t in cur.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]:
+            cur.execute("""
+                SELECT l1_tx_hash, l1_block_height, l1_sender, amount_flowers, target_chain, evm_recipient,
+                       status, detected_at, completed_at, evm_tx_hash
+                FROM l1_locks
+                ORDER BY detected_at DESC
+                LIMIT ?
+            """, (limit,))
+            for row in cur.fetchall():
+                amount_zion = int(row["amount_flowers"] or 0) / 1_000_000.0
+                ts = row["completed_at"] or row["detected_at"] or "—"
+                tx_hash = row["evm_tx_hash"] or row["l1_tx_hash"] or "—"
+                explorer = ""
+                if tx_hash.startswith("0x"):
+                    explorer = f"https://basescan.org/tx/{tx_hash}"
+                transfers.append({
+                    "tx_hash": tx_hash,
+                    "from_chain": "zion",
+                    "to_chain": row["target_chain"] or "base",
+                    "amount": round(amount_zion, 4),
+                    "status": (row["status"] or "unknown").lower(),
+                    "timestamp": ts,
+                    "block_height": row["l1_block_height"],
+                    "explorer_url": explorer,
+                })
+
+        # EVM -> L1 (burns / unlocks)
+        if "evm_burns" in [t[0] for t in cur.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]:
+            cur.execute("""
+                SELECT evm_tx_hash, evm_block_number, evm_chain, evm_burner, amount_flowers, l1_recipient,
+                       status, detected_at, completed_at, l1_unlock_tx
+                FROM evm_burns
+                ORDER BY detected_at DESC
+                LIMIT ?
+            """, (limit,))
+            for row in cur.fetchall():
+                amount_zion = int(row["amount_flowers"] or 0) / 1_000_000.0
+                ts = row["completed_at"] or row["detected_at"] or "—"
+                tx_hash = row["evm_tx_hash"] or row["l1_unlock_tx"] or "—"
+                explorer = ""
+                if tx_hash.startswith("0x"):
+                    explorer = f"https://basescan.org/tx/{tx_hash}"
+                transfers.append({
+                    "tx_hash": tx_hash,
+                    "from_chain": row["evm_chain"] or "base",
+                    "to_chain": "zion",
+                    "amount": round(amount_zion, 4),
+                    "status": (row["status"] or "unknown").lower(),
+                    "timestamp": ts,
+                    "block_height": row["evm_block_number"],
+                    "explorer_url": explorer,
+                })
+
+        con.close()
+    except Exception:
+        pass
+    # Sort all transfers by timestamp, newest first, then trim
+    transfers.sort(key=lambda x: x["timestamp"] if x["timestamp"] and x["timestamp"] != "—" else "", reverse=True)
+    return transfers[:limit]
+
 def inspect_database(path_str: str, limit: int = 50) -> dict:
     # Whitelist: must match one of the known DB locations
     matched = next((d for d in DB_LOCATIONS if str(d[0]) == path_str), None)
@@ -3625,34 +3713,57 @@ def persist_new_alerts(alerts: list):
 
 # ── Block events feed (parsed from logs) ────────────────────────────────
 
+def _add_block_event(key: str, ts: int, source: str, height: int, hash_hex: str | None, etype: str):
+    with BLOCK_EVENTS_LOCK:
+        if key not in (e["key"] for e in BLOCK_EVENTS):
+            BLOCK_EVENTS.append({
+                "key": key,
+                "ts": ts,
+                "source": source,
+                "height": height,
+                "hash": hash_hex,
+                "type": etype,
+            })
+
 def scan_block_events():
-    """Scan logs for newly discovered blocks and push to event feed."""
+    """Scan logs, the live chain, and the pool DB for new block events."""
+    # Log-derived events (local-dev / non-Edge setups where node writes log files)
     for name in ("node1", "node2"):
-        lines = tail_log(f"{name}.log", 500)
-        for line in lines:
+        for line in tail_log(f"{name}.log", 500):
             if m := re.search(r'relay_block height=(\d+) hash=([a-f0-9…]+)', line):
-                key = f"{name}-{m.group(1)}-{m.group(2)}"
-                with BLOCK_EVENTS_LOCK:
-                    if key not in (e["key"] for e in BLOCK_EVENTS):
-                        BLOCK_EVENTS.append({
-                            "key": key,
-                            "ts": int(time.time()),
-                            "source": name,
-                            "height": int(m.group(1)),
-                            "hash": m.group(2),
-                            "type": "block_relay",
-                        })
-    # Pool block_found events
-    pool_lines = tail_log("pool.log", 500)
-    for line in pool_lines:
+                _add_block_event(
+                    f"{name}-{m.group(1)}-{m.group(2)}",
+                    int(time.time()), name, int(m.group(1)), m.group(2), "block_relay"
+                )
+    for line in tail_log("pool.log", 500):
         if m := re.search(r'BLOCK_FOUND.*height=(\d+)', line):
-            key = f"pool-found-{m.group(1)}"
-            with BLOCK_EVENTS_LOCK:
-                if key not in (e["key"] for e in BLOCK_EVENTS):
-                    BLOCK_EVENTS.append({
-                        "key": key, "ts": int(time.time()), "source": "pool",
-                        "height": int(m.group(1)), "hash": None, "type": "block_found",
-                    })
+            _add_block_event(f"pool-found-{m.group(1)}", int(time.time()), "pool",
+                            int(m.group(1)), None, "block_found")
+
+    # Edge / log-less setups: use the live chain + pool DB
+    try:
+        explorer = build_explorer()
+        now_ts = int(time.time())
+        for blk in explorer.get("recent_blocks", [])[:20]:
+            h = blk.get("height")
+            if h is None:
+                continue
+            _add_block_event(f"node1-{h}", now_ts, "node1", h,
+                             blk.get("hash"), "block_relay")
+    except Exception:
+        pass
+
+    try:
+        pool_data = get_pool_blocks(limit=20)
+        now_ts = int(time.time())
+        for blk in pool_data.get("blocks", [])[:20]:
+            h = blk.get("height")
+            if h is None:
+                continue
+            _add_block_event(f"pool-db-{h}", blk.get("ts", now_ts), "pool", h,
+                             blk.get("hash"), "block_found")
+    except Exception:
+        pass
 
 # ── Env file discovery ──────────────────────────────────────────────────
 
@@ -4035,20 +4146,46 @@ def get_block_detail(height: int = None, hash_hex: str = None) -> dict:
 
 # ── Mempool detail ────────────────────────────────────────────────────
 
+def _parse_mempool_tx(tx: dict) -> dict:
+    """Normalize a transaction dict for the mempool UI."""
+    return {
+        "tx_id": tx.get("tx_id") or tx.get("txid") or tx.get("hash") or "—",
+        "from": tx.get("from") or "—",
+        "to": tx.get("to") or "—",
+        "amount_zion": float(tx.get("amount_zion", 0)) if tx.get("amount_zion") is not None else 0,
+        "fee_zion": float(tx.get("fee_zion", 0)) if tx.get("fee_zion") is not None else 0,
+    }
+
 @_ttl_cache_fn(2.0)
 def get_mempool_detail() -> dict:
-    """Fetch mempool transactions and stats via getMempoolInfo RPC."""
+    """Fetch mempool transactions and stats via getMempoolInfo + getBlockTemplate RPC."""
     rpc_host, rpc_port = "127.0.0.1", 9443
     # Try getMempoolInfo first (richer data)
     info = rpc_call(rpc_host, rpc_port, "getMempoolInfo", {}, timeout=1.5)
     if info and not info.get("_rpc_error"):
+        template = rpc_call(rpc_host, rpc_port, "getBlockTemplate", {}, timeout=1.5) or {}
+        tx_ids = template.get("transaction_ids", [])
+        tx_count = info.get("size", 0) or len(tx_ids)
+        transactions = []
+        for txid in tx_ids[:50]:
+            tx = rpc_call(rpc_host, rpc_port, "getTransaction", {"txid": txid}, timeout=0.8)
+            if tx and not tx.get("_rpc_error") and (tx.get("tx_id") or tx.get("txid")):
+                transactions.append(_parse_mempool_tx(tx))
+            else:
+                transactions.append({
+                    "tx_id": txid,
+                    "from": "—",
+                    "to": "—",
+                    "amount_zion": 0,
+                    "fee_zion": 0,
+                })
         return {
             "rpc_reachable": True,
-            "tx_count": info.get("size", 0),
-            "template_tx_count": info.get("template_transactions", 0),
-            "total_fees_zion": info.get("template_total_fees_zion", 0),
+            "tx_count": tx_count,
+            "template_tx_count": info.get("template_transactions", len(tx_ids)),
+            "total_fees_zion": info.get("template_total_fees_zion", template.get("total_fees_zion", 0)),
             "transaction_model": info.get("transaction_model", "hybrid"),
-            "transactions": [],
+            "transactions": transactions,
         }
     # Fallback to getChainInfo
     info = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
@@ -13169,10 +13306,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/bridge/status":
             svc = get_service("bridge")
             h = check_service_health(svc) if svc else {"alive": False, "details": "bridge not in registry"}
-            bridge_db = REPO_ROOT / "V3" / "data" / "bridge.db"
+            bridge_db = get_bridge_db_path()
             pending = 0
             last_block = None
-            total_volume = 0
+            total_volume = 0.0
             last_l1_height = None
             last_evm_block = None
             locks_detected = 0
@@ -13181,18 +13318,44 @@ class DashboardHandler(BaseHTTPRequestHandler):
             unlocks_confirmed = 0
             try:
                 if bridge_db.exists():
-                    con = sqlite3.connect(str(bridge_db))
+                    con = sqlite3.connect(f"file:{bridge_db}?mode=ro", uri=True)
+                    con.row_factory = sqlite3.Row
                     cur = con.cursor()
-                    cur.execute("SELECT COUNT(*) FROM transfers WHERE status = 'pending'")
-                    pending = cur.fetchone()[0]
-                    cur.execute("SELECT MAX(block_height) FROM transfers")
-                    row = cur.fetchone()
-                    last_block = row[0] if row and row[0] else None
-                    cur.execute("SELECT SUM(amount_flowers) FROM transfers WHERE status = 'completed'")
-                    row = cur.fetchone()
-                    if row and row[0]:
-                        total_volume = round(row[0] / 1_000_000, 2)
+                    tables = [t[0] for t in cur.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
+                    if "l1_locks" in tables:
+                        # Pending = not completed
+                        cur.execute("SELECT COUNT(*) FROM l1_locks WHERE LOWER(status) != 'completed'")
+                        pending += cur.fetchone()[0]
+                        cur.execute("SELECT MAX(l1_block_height) FROM l1_locks")
+                        row = cur.fetchone()
+                        if row and row[0]:
+                            last_block = max(last_block or 0, row[0])
+                        cur.execute("SELECT SUM(amount_flowers) FROM l1_locks WHERE LOWER(status) = 'completed'")
+                        row = cur.fetchone()
+                        if row and row[0]:
+                            total_volume += int(row[0]) / 1_000_000.0
+                        cur.execute("SELECT COUNT(*) FROM l1_locks")
+                        locks_detected = cur.fetchone()[0]
+                        cur.execute("SELECT COUNT(*) FROM l1_locks WHERE LOWER(status) = 'completed'")
+                        mints_confirmed = cur.fetchone()[0]
+                    if "evm_burns" in tables:
+                        cur.execute("SELECT COUNT(*) FROM evm_burns WHERE LOWER(status) != 'completed'")
+                        pending += cur.fetchone()[0]
+                        cur.execute("SELECT MAX(evm_block_number) FROM evm_burns")
+                        row = cur.fetchone()
+                        if row and row[0]:
+                            last_block = max(last_block or 0, row[0])
+                        cur.execute("SELECT SUM(amount_flowers) FROM evm_burns WHERE LOWER(status) = 'completed'")
+                        row = cur.fetchone()
+                        if row and row[0]:
+                            total_volume += int(row[0]) / 1_000_000.0
+                        cur.execute("SELECT COUNT(*) FROM evm_burns")
+                        burns_detected = cur.fetchone()[0]
+                        cur.execute("SELECT COUNT(*) FROM evm_burns WHERE LOWER(status) = 'completed'")
+                        unlocks_confirmed = cur.fetchone()[0]
                     con.close()
+                    last_block = last_block if last_block else None
+                    total_volume = round(total_volume, 2)
             except Exception:
                 pass
             # Try to read live relay metrics from the bridge metrics endpoint
@@ -13239,32 +13402,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 },
             })
         elif route == "/api/bridge/history":
-            bridge_db = REPO_ROOT / "V3" / "data" / "bridge.db"
-            transfers = []
-            try:
-                if bridge_db.exists():
-                    con = sqlite3.connect(str(bridge_db))
-                    cur = con.cursor()
-                    cur.execute("SELECT tx_hash, from_chain, to_chain, amount_flowers, status, created_at, block_height FROM transfers ORDER BY created_at DESC LIMIT 50")
-                    for row in cur.fetchall():
-                        tx_hash, from_chain, to_chain, amt, status, created, block = row
-                        explorer = ""
-                        if tx_hash and tx_hash.startswith("0x"):
-                            explorer = f"https://sepolia.basescan.org/tx/{tx_hash}"
-                        transfers.append({
-                            "tx_hash": tx_hash,
-                            "from_chain": from_chain or "zion",
-                            "to_chain": to_chain or "base-sepolia",
-                            "amount": round(amt / 1_000_000, 4) if amt else 0,
-                            "status": status or "unknown",
-                            "timestamp": created or "—",
-                            "block_height": block,
-                            "explorer_url": explorer,
-                        })
-                    con.close()
-            except Exception as e:
-                self._json({"transfers": [], "error": str(e)[:80]})
-                return
+            bridge_db = get_bridge_db_path()
+            transfers = _build_bridge_transfers(bridge_db, limit=50)
             self._json({"transfers": transfers, "count": len(transfers)})
         elif route == "/api/bridge/chains":
             self._json({
