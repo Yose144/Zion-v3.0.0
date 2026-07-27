@@ -101,13 +101,14 @@ function checkCudaCapability() {
       const gpuCount = parseInt(nvSmi.stdout.toString().trim());
       if (gpuCount > 0) {
         result.gpuCount = gpuCount;
+        result.hasCuda = true; // Runtime CUDA only needs the driver + libcuda; nvcc is optional.
         const driverCheck = spawnSync('nvidia-smi', ['--query-gpu=driver_version', '--format=csv,noheader,nounits'], { stdio: 'pipe' });
         if (driverCheck.status === 0) {
           result.driverVersion = driverCheck.stdout.toString().trim().split('\n')[0];
         }
         const cudaVersion = spawnSync('nvcc', ['--version'], { stdio: 'pipe' });
         if (cudaVersion.status === 0) {
-          result.hasCuda = true;
+          result.driverVersion += ` (nvcc: ${cudaVersion.stdout.toString().trim().split('\n')[0]})`;
         }
       }
     }
