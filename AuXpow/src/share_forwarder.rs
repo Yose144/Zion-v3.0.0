@@ -183,15 +183,38 @@ impl ShareForwarder {
         // Stale-job pre-rejection for CPU-only coins (XMR/VRSC/RTM).  These
         // pools expire jobs very quickly; forwarding a share for a superseded
         // job wastes a round-trip and inflates the reject rate.
+        // Use an age-based threshold keyed on when the upstream job was last
+        // seen/distributed instead of strict "must be latest" logic, because
+        // the pool keeps a small queue of recent jobs and miners may still be
+        // working on a job that is no longer the absolute latest.
         if self.client.profile().coin.is_cpu() {
-            if let Some(current) = self.client.current_job().await {
-                if current.job_id != job_id {
-                    println!(
-                        "auxpow: {} stale share pre-rejected job_id={} current_job_id={}",
-                        self.client.profile().coin, job_id, current.job_id
-                    );
-                    return Ok(ShareForwardResult::Rejected("stale job".to_string()));
+            let stale_secs = match self.client.profile().coin {
+                ExternalCoin::RTM => {
+                    std::env::var("ZION_RTM_STALE_SECS")
+                        .ok()
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or(60u64)
                 }
+                ExternalCoin::XMR => {
+                    std::env::var("ZION_XMR_STALE_SECS")
+                        .ok()
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or(120u64)
+                }
+                ExternalCoin::VRSC => {
+                    std::env::var("ZION_VRSC_STALE_SECS")
+                        .ok()
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or(0u64)
+                }
+                _ => 0u64,
+            };
+            if stale_secs > 0 && self.client.is_job_stale(job_id, stale_secs).await {
+                println!(
+                    "auxpow: {} stale share pre-rejected job_id={} (age > {}s)",
+                    self.client.profile().coin, job_id, stale_secs
+                );
+                return Ok(ShareForwardResult::Rejected("stale job".to_string()));
             }
         }
 
