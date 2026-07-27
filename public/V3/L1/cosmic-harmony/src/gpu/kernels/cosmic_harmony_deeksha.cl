@@ -241,8 +241,8 @@ void keccak256(const uchar *in, int inlen, uchar *out)
  * Eliminates all absorb overhead: no position tracking, no alignment checks.
  * Input as pre-loaded ulongs, output as 4 ulongs (32 bytes).
  */
-void keccak256_136_mix(const ulong acc64[8], const ulong chunk64[8],
-                       ulong r_val, ulong out64[4])
+void keccak256_136_mix(__private const ulong *acc64, __private const ulong *chunk64,
+                       ulong r_val, __private ulong *out64)
 {
     ulong st[25];
     #pragma unroll 25
@@ -443,7 +443,7 @@ void random_read_mix(const uchar seed[64], __global const uchar *pad,
 
         /* d = Keccak-256(acc || chunk || r_le) — specialized 136B fast path */
         ulong d64[4];
-        keccak256_136_mix((const ulong *)acc, chunk64, (ulong)r, d64);
+        keccak256_136_mix((__private const ulong *)acc, chunk64, (ulong)r, d64);
 
         /* Update accumulator — ulong XOR for first 32 bytes */
         {
@@ -507,7 +507,7 @@ void random_read_mix_sha3(const uchar seed[64], __global const uchar *pad,
         }
 
         ulong d64[4];
-        keccak256_136_mix((const ulong *)acc, chunk64, (ulong)r, d64);
+        keccak256_136_mix((__private const ulong *)acc, chunk64, (ulong)r, d64);
 
         {
             ulong *a64 = (ulong *)acc;
