@@ -655,10 +655,6 @@ function switchView(view) {
 
   // When switching to Logs, flush deferred mining console lines
   if (view === 'logs' && typeof _mcDeferredQueue !== 'undefined') {
-    // Render live static panel from last stats snapshot
-    if (typeof _lastStatsSnapshot !== 'undefined' && _lastStatsSnapshot) {
-      updateStaticPanelFromStats(_lastStatsSnapshot);
-    }
     const lines = _mcDeferredQueue.splice(0);
     for (const line of lines) {
       appendMiningConsole(line);
@@ -1354,17 +1350,14 @@ let _mcFlushScheduled = false;
 // otherwise switching to Logs shows a truncated window of history.
 const MC_DEFERRED_MAX = 2000;
 let _mcDeferredQueue = [];
-let _lastPanelLines = null; // cached panel lines for instant render on tab switch
 
 function appendMiningConsole(raw) {
   const body = document.getElementById('console-body');
   if (!body) return;
 
-  // Skip box-drawing panel lines (handled by updateStaticPanel)
-  if (/^[\u250c\u2502\u2514]/.test(raw) || /^\s*(SPEED|SHARES|DIFF|UPTIME|HW|NET|EVENT)\b(?!\s*:)/i.test(raw)) return;
-  // [STATUS] lines are verbose xmrig-style summaries — skip (we have [METRICS] + session_status)
+  // Drop verbose/duplicate status lines; the Session Metrics panel and
+  // [METRICS] line already display this data compactly.
   if (/^\[STATUS\]/i.test(raw)) return;
-  // Skip raw session_status lines — the [METRICS] line already covers this data
   if (/^session_status\b/.test(raw)) return;
 
   const html = colorizeConsoleLine(raw);
@@ -1523,94 +1516,6 @@ function colorizeConsoleLine(raw) {
   return { html: `${tsHtml}${esc(raw)}` };
 }
 
-// ═══════════════════════════════════════════════════════════
-// STATIC MINER PANEL — Live dashboard from stats data
-// ═══════════════════════════════════════════════════════════
-let _lastStatsSnapshot = null;
-
-function updateStaticPanel(panelLines) {
-  // Legacy path: if the miner emits box-drawing panel lines, render them.
-  // (The V3 Rust miner does NOT emit these — see updateStaticPanelFromStats.)
-  if (!panelLines || panelLines.length === 0) return;
-  const el = document.getElementById('miner-static-panel');
-  if (!el) return;
-  el.style.display = 'block';
-  el.classList.remove('view-hidden');
-
-  const esc = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const htmlLines = panelLines.map(raw => {
-    if (/^[┌└]/.test(raw)) return `<span class="sp-border">${esc(raw)}</span>`;
-    let line = esc(raw);
-    line = line.replace(/\b(SPEED|SHARES|DIFF|UPTIME|HW|NET|EVENT)\b/g, '<span class="sp-label">$1</span>');
-    line = line.replace(/(\d+\.\d+)\s*(MH\/s|kH\/s|GH\/s|TH\/s|H\/s)/gi, '<span class="sp-value">$1</span> <span class="sp-unit">$2</span>');
-    line = line.replace(/A:\s*(\d+)/g, 'A: <span class="sp-good">$1</span>');
-    line = line.replace(/R:\s*(\d+)/g, 'R: <span class="sp-bad">$1</span>');
-    line = line.replace(/│/g, '<span class="sp-dim">│</span>');
-    return line;
-  });
-  el.innerHTML = htmlLines.join('\n');
-}
-
-function updateStaticPanelFromStats(stats) {
-  if (!stats) return;
-  _lastStatsSnapshot = stats;
-  const el = document.getElementById('miner-static-panel');
-  if (!el) return;
-
-  // Only show when mining
-  if (!stats.isRunning) {
-    el.style.display = 'none';
-    el.classList.add('view-hidden');
-    return;
-  }
-  el.style.display = 'block';
-  el.classList.remove('view-hidden');
-
-  const fmtHr = (v) => {
-    if (!v || !Number.isFinite(v) || v <= 0) return '0.00 H/s';
-    if (v >= 1e9) return (v / 1e9).toFixed(2) + ' GH/s';
-    if (v >= 1e6) return (v / 1e6).toFixed(2) + ' MH/s';
-    if (v >= 1e3) return (v / 1e3).toFixed(2) + ' kH/s';
-    return v.toFixed(2) + ' H/s';
-  };
-  const fmtUptime = (sec) => {
-    const s = Math.max(0, Math.floor(sec || 0));
-    const h = String(Math.floor(s / 3600)).padStart(2, '0');
-    const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-    const ss = String(s % 60).padStart(2, '0');
-    return `${h}:${m}:${ss}`;
-  };
-  const fmtDiff = (d) => {
-    if (!d) return '—';
-    if (typeof d === 'string') return d;
-    if (d >= 1e9) return (d / 1e9).toFixed(2) + 'G';
-    if (d >= 1e6) return (d / 1e6).toFixed(2) + 'M';
-    if (d >= 1e3) return (d / 1e3).toFixed(2) + 'K';
-    return String(Math.round(d));
-  };
-
-  const acc = Number(stats.accepted) || 0;
-  const rej = Number(stats.rejected) || 0;
-  const total = acc + rej;
-  const pct = total > 0 ? ((acc / total) * 100).toFixed(1) + '%' : '—';
-  const algo = stats.stream_algorithm || stats.algorithm || '—';
-  const height = stats.last_job_height || '—';
-  const diff = fmtDiff(stats.difficulty);
-  const poolDiff = fmtDiff(stats.last_pool_diff);
-  const gpu = stats.gpu_info || stats.gpu_name || 'none';
-  const gpuHr = fmtHr(stats.hashrate_gpu);
-  const cpuThr = stats.cpu_threads || stats.threads || '—';
-  const epoch = stats.current_epoch != null ? stats.current_epoch : '—';
-
-  el.innerHTML = [
-    `<span class="sp-label">HASHRATE</span>  <span class="sp-value">${fmtHr(stats.hashrate)}</span>  <span class="sp-unit">| 10s ${fmtHr(stats.hashrate_10s)} | 60s ${fmtHr(stats.hashrate_60s)} | 15m ${fmtHr(stats.hashrate_15m)}</span>`,
-    `<span class="sp-label">SHARES</span>    <span class="sp-good">A: ${acc}</span>  <span class="sp-bad">R: ${rej}</span>  <span class="sp-value">${pct}</span>  <span class="sp-unit">| blocks: ${Number(stats.blocks_found) || 0}</span>`,
-    `<span class="sp-label">DIFF</span>      <span class="sp-value">${diff}</span>  <span class="sp-unit">| pool: ${poolDiff} | epoch: ${epoch}</span>`,
-    `<span class="sp-label">UPTIME</span>    <span class="sp-value">${fmtUptime(stats.uptime)}</span>  <span class="sp-unit">| height: ${height} | algo: ${algo}</span>`,
-    `<span class="sp-label">HW</span>        <span class="sp-unit">CPU ${cpuThr}T</span>  <span class="sp-value">${fmtHr(stats.hashrate_cpu)}</span>  <span class="sp-unit">| GPU ${gpu} ${gpuHr}</span>`,
-  ].join('\n');
-}
-
 // Console controls
 function setupMiningConsole() {
   const clearBtn = document.getElementById('console-clear-btn');
@@ -1750,30 +1655,7 @@ function setupEventListeners() {
       .replace(/\x1B\[\?[0-9;]*[A-Za-z]/g, '') // ANSI private
       .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
 
-    const lines = clean.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-
-    // Collect TUI panel lines (SRBMiner ┌│└─ and compact dashboard ╔║╠╚═)
-    // so they don't flood the Live Activity / console log.
-    const panelLines = [];
-    const logLines = [];
-    const panelRe = /^[┌┐└┘│─├┤┴┬┼╔╗╚╝║═╠╣╦╩╬]/;
-    const hbarRe = /^[─═━]+$/;
-    for (const line of lines) {
-      if (panelRe.test(line) || hbarRe.test(line)) {
-        panelLines.push(line);
-      } else {
-        // Include [STATUS] lines for real-time mining stats
-        logLines.push(line);
-      }
-    }
-
-    // Update static panel — only if Logs tab visible (perf)
-    if (panelLines.length > 0) {
-      _lastPanelLines = panelLines; // always cache latest
-      if (currentView === 'logs') {
-        updateStaticPanel(panelLines);
-      }
-    }
+    const logLines = clean.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
     // Split into priority (always shown) vs bulk (limited) lines
     const priorityRe = /SHARE_ACCEPTED|SHARE_REJECTED|accepted|rejected|speed\s+10s|new job|BLOCK FOUND|\[METRICS\]|gpu_init|wire_hello|wire_welcome|mode=remote|pool_addr=|pool_set_difficulty|VRSC_SHARE_FOUND|MEMORY_CRITICAL|First share/i;
@@ -2012,11 +1894,8 @@ function updateStats(stats) {
   // ---- Trinity per-stream telemetry ----
   updateTripleStreamPanel(stats);
 
-  // ---- Static session metrics (replaces the old Live Activity feed) ----
+  // ---- Static session metrics (replaces the old scrolling feed) ----
   updateSessionMetrics(stats);
-
-  // ---- Live static panel (SRBMiner-style dashboard from stats) ----
-  updateStaticPanelFromStats(stats);
 
   // ---- Mining Console status dot ----
   updateConsoleDot(!!stats?.isRunning);
