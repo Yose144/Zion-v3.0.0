@@ -2,6 +2,17 @@
 
 > **Poznámka k rozsahu:** Tato práce probíhá v `V31/` jako čistá přípravná větev pro budoucí migraci. Dle `AGENTS.md` je aktivní mainnet-track zatím `V3/` a plná V31 migrace je plánována až po `3.0.9`. Všechny změny v tomto souhrnu jsou v `V31/`; `V3/`, `AuXpow/` a `APP&WEB/` zůstaly nedotčené.
 
+## Super shrnutí posledních autonomních kroků
+
+| Commit | Co přibylo |
+|--------|-----------|
+| `9cbcaba7` | Submit nalezených bloků z poolu na `zion-l1` přes `submitBlock` JSON-RPC. |
+| `d91ec96d` | Bitcoin deposit watching přes mempool.space (`watch_events`, `balance`, `confirmations`). |
+| `98a46b5e` | Bitcoin P2WPKH `send_payment` + `execute_outbound` pro `BurnRelease` bridge. |
+| `1ac40f9b` | `zion pool`, `zion miner start`, `zion doctor` CLI příkazy. |
+| `b90e7c4e` | Automatické odesílání PPLNS payoutů přes `ZionL1Adapter::send_payment` (každých 30s). |
+| `87620480` | V3 miner fix: výchozí externí GPU backend OpenCL pro ProgPoWZ na NVIDIA (přepínače `ZION_EXT_GPU_BACKEND`). |
+
 ## Co bylo dnes hotovo
 
 ### 1. `V31/L1/miner` — Triple Stream merged mining
