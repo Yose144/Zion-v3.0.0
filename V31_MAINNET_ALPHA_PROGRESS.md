@@ -1,0 +1,113 @@
+# V31 Mainnet Alpha — průběžný report (2026-07-27)
+
+> **Poznámka k rozsahu:** Tato práce probíhá v `V31/` jako čistá přípravná větev pro budoucí migraci. Dle `AGENTS.md` je aktivní mainnet-track zatím `V3/` a plná V31 migrace je plánována až po `3.0.9`. Všechny změny v tomto souhrnu jsou v `V31/`; `V3/`, `AuXpow/` a `APP&WEB/` zůstaly nedotčené.
+
+## Co bylo dnes hotovo
+
+### 1. `V31/L1/miner` — Triple Stream merged mining
+- Nový crate `zion-miner` s `MinerRuntime`.
+- **Stream 1:** ZION blokový mining přes `EkamDeeksha`.
+- **Stream 2:** GPU external AuxPoW (KAS/ALPH/RVN/ZANO/Flux...).
+- **Stream 3:** CPU external AuxPoW (XMR/VRSC/EPIC...).
+- Profit router vybírá nejvýnosnější coin podle zařízení (`Device::Cpu/Gpu/Both`).
+- Per-stream statistiky (`StreamId`, `StreamStats`) a test `triple_stream_runs`.
+
+### 2. `V31/L2/multichain` — ZionDex AMM router
+- `swap/dex.rs` nahradil placeholder `DexRouter` reálnou constant-product AMM logikou.
+- `num-bigint` matematika pro přesné quote/execution bez overflow.
+- Direct swap + one-intermediate route discovery (aggregator preview).
+- `MultichainService` má `add_dex_pool`, `dex_quote`, `dex_swap`.
+
+### 3. `V31/L1/pool` — stratum pool s PPLNS
+- Nový crate `zion-pool`.
+- `PplnsState` s fee-aware výpočtem `Payout`.
+- `ShareValidator` validuje ZION i AuxPoW share.
+- `Pool` přijímá `submit_zion` a `submit_auxpow`.
+- Minimální stratum v1 TCP server `StratumServer` (`mining.subscribe`, `mining.authorize`, `mining.submit`).
+
+### 4. `V31/L2/multichain` — Bridge (lock/mint, burn/release)
+- `Bridge` koordinuje `Transfer` mezi dvěma `ChainAdapter`.
+- Poll `watch_events` na source chain, `execute_outbound` na target chain.
+- Fallback placeholder hash pro scaffold fázi, když adaptéry ještě nemají real RPC/signing.
+- Testy s mock registry pro `LockMint` a `BurnRelease`.
+
+### 5. `V31/L2/multichain` — Wallet / Keyring
+- `Keyring` z jednoho BIP39 seedu.
+- EVM adresy a podpis přes `ethers::signers::MnemonicBuilder` (BIP44 `m/44'/60'/...`).
+- Zion adresy a Ed25519 podpis.
+- Deterministické testy pro známý mnemonic.
+
+### 6. Integrace do `MultichainService`
+- Sdílený `Arc<ChainAdapterRegistry>`.
+- `MultichainService` vystavuje:
+  - `bridge_submit(...)`
+  - `wallet_address(chain, account, index)`
+  - `wallet_sign(chain, message, account, index)`
+  - `add_dex_pool`, `dex_quote`, `dex_swap`
+
+## Verifikace
+
+```bash
+cd V31
+cargo test      # 55 testů OK
+cargo clippy -- -D warnings   # OK
+cargo fmt       # OK
+```
+
+Rozpis testů:
+- `zion_core`: 2
+- `zion_cosmic_harmony`: 27
+- `zion_l1_types`: 4
+- `zion_miner`: 4 (vč. Triple Stream)
+- `zion_multichain`: 14 (DEX, bridge, wallet) + 1 `service.rs` test
+- `zion_pool`: 17
+- **celkem: 55**
+
+## Commity dnes
+
+- `0678e164` — původní `main` před dnešní prací.
+- `48fd9cf1` — `feat(v31): add unified miner with AuxPoW and DEX inside multichain`
+- `df4d30b4` — `feat(v31): add Triple Stream support to zion-miner`
+- `9e720dc4` — `feat(v31): add pool, bridge and wallet modules for Mainnet Alpha`
+
+## Další plán (Mainnet Alpha milestones)
+
+1. **Pool server live**
+   - Bind `StratumServer` na TCP port (Edge: `62.171.141.136:8444` nebo podobně podle `AGENTS.md`).
+   - Generovat reálné `mining.notify` joby z `zion-core` / `zion-node`.
+   - Propojit PPLNS payouts se skutečnými block rewards.
+
+2. **Real chain adapters**
+   - `EvmAdapter`: přidat `LocalWallet` z `Keyring`, implementovat `send_payment` a `execute_outbound`.
+   - `ZionL1Adapter`: RPC call pro lock/burn a mint/release.
+   - `BitcoinAdapter`: UTXO lock/mint a burn/release.
+
+3. **Bridge watcher finalizace**
+   - Kontraktní adresy pro Base (wZION) a ZION L1 bridge vault.
+   - Event filters (`Deposit`, `Burn`) místo placeholderu.
+   - Quorum / guardian signatures pro L1 → L2 mint.
+
+4. **CLI rozhraní**
+   - `zion bridge --from --to --amount`
+   - `zion swap --from-asset --to-asset --amount`
+   - `zion wallet address --chain`
+   - `zion wallet sign --chain --message`
+
+5. **DEX deployment**
+   - Real AMM pool contracts na Base.
+   - Multi-hop execution hop-by-hop s aktualizovanými rezervami.
+   - Intent-based routing mezi chainy.
+
+6. **V31 workspace v `public/` subtree**
+   - Až bude V31 stabilní, připravit subset pro public repo (`public/V31/`).
+   - Two-step push: `origin` (private) → `public` (subtree).
+
+7. **Deploy runbook pro V31 Edge node**
+   - `ZION_OS/infra/` scripts a systemd services pro `zion-node-v31`, `zion-pool-v31`, `zion-multichain-v31`.
+   - Migrace dat z V3 na V31 cutover block.
+
+## Bezpečnost / provozní poznámky
+
+- Žádné privátní klíče, mnemonics ani server credentials nebyly commitnuty.
+- `V3/`, `AuXpow/`, `APP&WEB/` zůstaly beze změn; všechny náhodné subagent-edity v těchto stromech byly před commitem vráceny.
+- Pool TCP server a bridge outbound txs jsou zatím scaffoldy — před mainnet nasazením je potřeba real RPC + signer.
