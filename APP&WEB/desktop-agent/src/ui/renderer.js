@@ -1359,6 +1359,10 @@ function appendMiningConsole(raw) {
   // [METRICS] line already display this data compactly.
   if (/^\[STATUS\]/i.test(raw)) return;
   if (/^session_status\b/.test(raw)) return;
+  // Drop the legacy box-drawing TUI panel; the new sticky console-metrics-panel
+  // at the top of the Logs tab renders the same data in modern HTML.
+  if (/^[\u250c\u2510\u2502\u251c\u2524\u2514\u2518\u2550\u2551\u2554\u2557\u255a\u255d\u2560\u2563\u2566\u2569\u2500\u2501\u252c\u2534\u253c]/.test(raw)) return;
+  if (/^\s*[\u250c\u2510\u2502\u251c\u2524\u2514\u2518\u2550\u2551\u2554\u2557\u255a\u255d\u2560\u2563\u2566\u2569\u2500\u2501\u252c\u2534\u253c]/.test(raw)) return;
 
   const html = colorizeConsoleLine(raw);
   if (!html) return;
@@ -1896,6 +1900,9 @@ function updateStats(stats) {
 
   // ---- Static session metrics (replaces the old scrolling feed) ----
   updateSessionMetrics(stats);
+
+  // ---- Sticky metrics panel in Mining Console (new TUI-style header) ----
+  updateConsoleMetrics(stats);
 
   // ---- Mining Console status dot ----
   updateConsoleDot(!!stats?.isRunning);
@@ -3134,6 +3141,63 @@ function updateSessionMetrics(stats) {
   const epoch = stats.current_epoch;
   set('metric-epoch', (epoch !== null && epoch !== undefined) ? String(epoch) : '—', 'muted');
   set('metric-uptime', fmtDuration(stats.uptime_sec), 'muted');
+}
+
+// ── Sticky Mining Console metrics panel (modern TUI-style header) ───────────
+// Renders a compact Trinity overview at the top of the Logs tab so users get
+// live numbers without scrolling through the raw miner output.
+function updateConsoleMetrics(stats) {
+  const panel = document.getElementById('console-metrics-panel');
+  if (!panel) return;
+
+  if (!stats?.isRunning) {
+    panel.classList.add('view-hidden');
+    return;
+  }
+  panel.classList.remove('view-hidden');
+
+  const fmtHr = fmtHashrate;
+  const fmtUptime = (sec) => {
+    const s = Math.max(0, Math.floor(sec || 0));
+    const h = String(Math.floor(s / 3600)).padStart(2, '0');
+    const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+    const ss = String(s % 60).padStart(2, '0');
+    return `uptime ${h}:${m}:${ss}`;
+  };
+
+  const uptimeEl = document.getElementById('console-metrics-uptime');
+  if (uptimeEl) uptimeEl.textContent = fmtUptime(stats.uptime_sec);
+
+  const streamsEl = document.getElementById('console-metrics-streams');
+  if (streamsEl) {
+    const streams = Array.isArray(stats.streams) ? stats.streams : [];
+    const rows = streams.map((s) => {
+      const label = s.label || (s.index === 1 ? 'ZION' : s.index === 2 ? 'GPU PROFIT' : 'CPU PROFIT');
+      const coin = s.coin || '—';
+      const algo = s.algorithm || '';
+      const hr = fmtHr(Number(s.hashrate_60s) || Number(s.hashrate) || 0);
+      const acc = Number(s.accepted) || 0;
+      const rej = Number(s.rejected) || 0;
+      const active = s.active !== false;
+      return `<div class="console-metrics-row ${active ? 'active' : ''}">
+        <span class="console-metrics-label">${escapeHtml(label)}</span>
+        <span class="console-metrics-coin">${escapeHtml(coin)}</span>
+        <span class="console-metrics-algo">${escapeHtml(algo)}</span>
+        <span class="console-metrics-hr">${hr}</span>
+        <span class="console-metrics-shares">${acc > 0 ? `<span class="good">${acc}</span>` : '0'}${rej > 0 ? ' / <span class="bad">' + rej + '</span>' : ''}</span>
+      </div>`;
+    }).join('');
+    streamsEl.innerHTML = rows || '<div class="console-metrics-row"><span class="console-metrics-label">IDLE</span></div>';
+  }
+
+  const footerEl = document.getElementById('console-metrics-footer');
+  if (footerEl) {
+    const pool = stats.pool_addr || stats.pool || '—';
+    const height = Number.isFinite(Number(stats.pool_height)) && Number(stats.pool_height) > 0 ? String(stats.pool_height) : '—';
+    const lat = Number(stats.pool_latency_ms);
+    const latencyText = Number.isFinite(lat) && lat > 0 ? `${Math.round(lat)} ms` : '—';
+    footerEl.textContent = `pool ${pool} | height ${height} | latency ${latencyText}`;
+  }
 }
 
 // ═══ Trinity panel renderer (DeekshaChv3 parallel streaming) ═══
