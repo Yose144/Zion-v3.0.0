@@ -222,7 +222,7 @@ DEV_INLINE void progPowLoop(
     uint32_t mix[PROGPOW_REGS],
     const dag_t *g_dag,
     const uint32_t c_dag[PROGPOW_CACHE_WORDS],
-    const bool hack_false)
+    const uint32_t hack_false)
 {
     dag_t data_dag;
     uint32_t offset, data;
@@ -253,10 +253,10 @@ DEV_INLINE void progPowLoop(
 extern "C" {
 
 __global__ XMRIG_INCLUDE_LAUNCH_BOUNDS void progpow_search(
-    const dag_t *g_dag,              // 0: DAG buffer (dag_t = 4 × uint32)
+    const uint64_t *g_dag_u64,       // 0: DAG buffer (as u64, reinterpreted as dag_t inside)
     const uint32_t* job_blob,        // 1: 40-byte job blob (10 uint32)
     const uint64_t target,           // 2: u64 target (big-endian)
-    bool hack_false,                 // 3: always false
+    uint32_t hack_false,             // 3: always false (u32 for cudarc compatibility)
     uint32_t* results,               // 4: results buffer (16 uint32)
     uint32_t* stop,                  // 5: stop flag (2 uint32)
     // ZION extensions:
@@ -272,6 +272,10 @@ __global__ XMRIG_INCLUDE_LAUNCH_BOUNDS void progpow_search(
         return;
     }
 
+    // Reinterpret DAG as uint32_t (4 bytes per element, 4 per dag_t)
+    const uint32_t *g_dag = (const uint32_t *)g_dag_u64;
+    const dag_t *g_dag_t = (const dag_t *)g_dag;
+
     __shared__ shuffle_t share[HASHES_PER_GROUP];
     __shared__ uint32_t c_dag[PROGPOW_CACHE_WORDS];
 
@@ -285,7 +289,7 @@ __global__ XMRIG_INCLUDE_LAUNCH_BOUNDS void progpow_search(
     for (uint32_t word = lid * PROGPOW_DAG_LOADS; word < PROGPOW_CACHE_WORDS;
          word += GROUP_SIZE * PROGPOW_DAG_LOADS)
     {
-        dag_t load = g_dag[word / PROGPOW_DAG_LOADS];
+        dag_t load = g_dag_t[word / PROGPOW_DAG_LOADS];
         #pragma unroll
         for (int i = 0; i < PROGPOW_DAG_LOADS; i++)
             c_dag[word + i] = load.s[i];
@@ -344,7 +348,7 @@ __global__ XMRIG_INCLUDE_LAUNCH_BOUNDS void progpow_search(
         #pragma unroll 1
         for (uint32_t loop = 0; loop < PROGPOW_CNT_DAG; loop++)
         {
-            progPowLoop(loop, mix, g_dag, c_dag, hack_false);
+            progPowLoop(loop, mix, g_dag_t, c_dag, hack_false);
         }
 
         // Reduce mix data to a per-lane 32-bit digest
