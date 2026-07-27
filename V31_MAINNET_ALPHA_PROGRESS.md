@@ -45,6 +45,12 @@
   - `wallet_sign(chain, message, account, index)`
   - `add_dex_pool`, `dex_quote`, `dex_swap`
 
+### 7. `V31/cli` — `zion` CLI příkazy
+- `zion status` — seznam a health registrovaných chainů.
+- `zion wallet address/sign/balance` — odvození adresy a podpis přes `Keyring`.
+- `zion bridge lock/burn` — vytvoření a submit bridge `Transfer`.
+- `zion swap quote/execute` — DEX quote a execution.
+
 ## Verifikace
 
 ```bash
@@ -69,6 +75,8 @@ Rozpis testů:
 - `48fd9cf1` — `feat(v31): add unified miner with AuxPoW and DEX inside multichain`
 - `df4d30b4` — `feat(v31): add Triple Stream support to zion-miner`
 - `9e720dc4` — `feat(v31): add pool, bridge and wallet modules for Mainnet Alpha`
+- `23e8ecec` — `docs: add V31 Mainnet Alpha progress report and next plan`
+- `<novy>` — `feat(v31): add CLI commands for wallet, bridge and swap`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -87,16 +95,15 @@ Rozpis testů:
    - Event filters (`Deposit`, `Burn`) místo placeholderu.
    - Quorum / guardian signatures pro L1 → L2 mint.
 
-4. **CLI rozhraní**
-   - `zion bridge --from --to --amount`
-   - `zion swap --from-asset --to-asset --amount`
-   - `zion wallet address --chain`
-   - `zion wallet sign --chain --message`
-
-5. **DEX deployment**
+4. **DEX deployment**
    - Real AMM pool contracts na Base.
    - Multi-hop execution hop-by-hop s aktualizovanými rezervami.
    - Intent-based routing mezi chainy.
+
+5. **CLI rozšíření**
+   - Přidat `zion pool` příkazy (status, shares, payouts).
+   - `zion miner` start/stop Triple Stream.
+   - `zion doctor` pro ověření konfigurace a připojení.
 
 6. **V31 workspace v `public/` subtree**
    - Až bude V31 stabilní, připravit subset pro public repo (`public/V31/`).

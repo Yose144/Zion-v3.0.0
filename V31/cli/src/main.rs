@@ -1,10 +1,12 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use anyhow::{anyhow, bail};
 use clap::{Parser, Subcommand};
 
-use zion_l1_types::{Address, ChainId};
+use zion_l1_types::{Address, Amount, Asset, ChainId};
 use zion_multichain::config::MultichainConfig;
+use zion_multichain::types::{Transfer, TransferDirection, TransferEndpoint};
 use zion_multichain::MultichainService;
 
 #[derive(Parser)]
@@ -26,6 +28,10 @@ enum Command {
     Status,
     /// Wallet commands.
     Wallet(WalletArgs),
+    /// Cross-chain bridge commands.
+    Bridge(BridgeArgs),
+    /// DEX swap commands.
+    Swap(SwapArgs),
 }
 
 #[derive(Parser)]
@@ -44,6 +50,119 @@ enum WalletCommand {
         /// Encoded address string.
         #[arg(short, long)]
         address: String,
+    },
+    /// Derive a wallet address from the service keyring.
+    Address {
+        /// Chain id.
+        #[arg(short, long)]
+        chain: String,
+        /// BIP44 account.
+        #[arg(short, long, default_value = "0")]
+        account: u32,
+        /// Address index.
+        #[arg(short, long, default_value = "0")]
+        index: u32,
+    },
+    /// Sign a message with the service keyring.
+    Sign {
+        /// Chain id.
+        #[arg(short, long)]
+        chain: String,
+        /// Message to sign.
+        #[arg(short, long)]
+        message: String,
+        /// BIP44 account.
+        #[arg(short, long, default_value = "0")]
+        account: u32,
+        /// Address index.
+        #[arg(short, long, default_value = "0")]
+        index: u32,
+    },
+}
+
+#[derive(Parser)]
+struct BridgeArgs {
+    #[command(subcommand)]
+    command: BridgeCommand,
+}
+
+#[derive(Subcommand)]
+enum BridgeCommand {
+    /// Lock native asset on source chain and mint wrapped asset on target.
+    Lock {
+        /// Source chain id.
+        #[arg(short, long)]
+        from: String,
+        /// Target chain id.
+        #[arg(short, long)]
+        to: String,
+        /// Amount in smallest units.
+        #[arg(short, long)]
+        amount: u128,
+        /// Source / vault address (defaults to keyring address on source chain).
+        #[arg(long)]
+        source_address: Option<String>,
+        /// Destination address (defaults to keyring address on target chain).
+        #[arg(long)]
+        target_address: Option<String>,
+    },
+    /// Burn wrapped asset on source chain and release native asset on target.
+    Burn {
+        /// Source chain id.
+        #[arg(short, long)]
+        from: String,
+        /// Target chain id.
+        #[arg(short, long)]
+        to: String,
+        /// Amount in smallest units.
+        #[arg(short, long)]
+        amount: u128,
+        /// Source address (defaults to keyring address on source chain).
+        #[arg(long)]
+        source_address: Option<String>,
+        /// Destination address (defaults to keyring address on target chain).
+        #[arg(long)]
+        target_address: Option<String>,
+    },
+}
+
+#[derive(Parser)]
+struct SwapArgs {
+    #[command(subcommand)]
+    command: SwapCommand,
+}
+
+#[derive(Subcommand)]
+enum SwapCommand {
+    /// Get a DEX quote.
+    Quote {
+        /// From asset, e.g. `zion-l1:ZION` or `base:USDC:0x...`.
+        #[arg(short, long)]
+        from: String,
+        /// To asset.
+        #[arg(short, long)]
+        to: String,
+        /// Amount in smallest units.
+        #[arg(short, long)]
+        amount: u128,
+        /// Decimals override (default 6).
+        #[arg(long)]
+        decimals: Option<u8>,
+    },
+    /// Execute a DEX swap against the service router.
+    Execute {
+        /// From asset.
+        #[arg(short, long)]
+        from: String,
+        /// To asset.
+        #[arg(short, long)]
+        to: String,
+        /// Amount in smallest units.
+        #[arg(short, long)]
+        amount: u128,
+        /// Decimals override (default 6).
+        #[arg(long)]
+        decimals: Option<u8>,
     },
 }
 
@@ -84,6 +203,111 @@ async fn main() -> anyhow::Result<()> {
                 let balance = service.balance(&addr).await?;
                 println!("{chain}: {balance}");
             }
+            WalletCommand::Address {
+                chain,
+                account,
+                index,
+            } => {
+                let chain_id = chain_name_to_id(&chain)?;
+                let addr = service.wallet_address(chain_id, account, index)?;
+                println!("{}", addr.encoded);
+            }
+            WalletCommand::Sign {
+                chain,
+                message,
+                account,
+                index,
+            } => {
+                let chain_id = chain_name_to_id(&chain)?;
+                let sig = service.wallet_sign(chain_id, message.as_bytes(), account, index)?;
+                println!("0x{}", hex::encode(sig));
+            }
+        },
+        Command::Bridge(bridge) => {
+            let (direction, from, to, amount, source_addr, target_addr) = match bridge.command {
+                BridgeCommand::Lock {
+                    from,
+                    to,
+                    amount,
+                    source_address,
+                    target_address,
+                } => (
+                    TransferDirection::LockMint,
+                    from,
+                    to,
+                    amount,
+                    source_address,
+                    target_address,
+                ),
+                BridgeCommand::Burn {
+                    from,
+                    to,
+                    amount,
+                    source_address,
+                    target_address,
+                } => (
+                    TransferDirection::BurnRelease,
+                    from,
+                    to,
+                    amount,
+                    source_address,
+                    target_address,
+                ),
+            };
+            let from_id = chain_name_to_id(&from)?;
+            let to_id = chain_name_to_id(&to)?;
+            let source = endpoint_from_cli(
+                &service,
+                from_id,
+                source_addr,
+                amount,
+                default_ticker(from_id),
+            )?;
+            let target =
+                endpoint_from_cli(&service, to_id, target_addr, amount, default_ticker(to_id))?;
+            let id = format!(
+                "cli-{}-{}-{}",
+                from,
+                to,
+                std::time::SystemTime::now().elapsed()?.as_secs()
+            );
+            let mut transfer = Transfer::new(id, direction, source, target);
+            let hash = service.bridge_submit(&mut transfer).await?;
+            println!(
+                "bridge transfer 0x{} -> status {:?}",
+                hash.to_hex(),
+                transfer.status
+            );
+        }
+        Command::Swap(swap) => match swap.command {
+            SwapCommand::Quote {
+                from,
+                to,
+                amount,
+                decimals,
+            } => {
+                let from_asset = parse_asset(&from, decimals)?;
+                let to_asset = parse_asset(&to, decimals)?;
+                let quote = service
+                    .dex_quote(&from_asset, &to_asset, Amount::new(amount))
+                    .await?;
+                println!("route: {:?}", quote.route);
+                println!("expected_out: {}", quote.expected_out.0);
+                println!("slippage_bps: {}", quote.slippage_bps);
+            }
+            SwapCommand::Execute {
+                from,
+                to,
+                amount,
+                decimals,
+            } => {
+                let from_asset = parse_asset(&from, decimals)?;
+                let to_asset = parse_asset(&to, decimals)?;
+                let out = service
+                    .dex_swap(&from_asset, &to_asset, Amount::new(amount))
+                    .await?;
+                println!("executed swap: out = {}", out.0);
+            }
         },
     }
 
@@ -96,11 +320,56 @@ fn chain_name_to_id(name: &str) -> anyhow::Result<ChainId> {
         "base" => Ok(ChainId::Base),
         "ethereum" | "eth" => Ok(ChainId::Ethereum),
         "zion-l1" | "zion" | "zionl1" => Ok(ChainId::ZionL1),
-        _ => anyhow::bail!("unknown chain: {name}"),
+        _ => bail!("unknown chain: {name}"),
     }
 }
 
-/// Decode the canonical address string into raw bytes for validation.
+fn parse_asset(s: &str, decimals: Option<u8>) -> anyhow::Result<Asset> {
+    let parts: Vec<&str> = s.split(':').collect();
+    if parts.len() < 2 {
+        bail!("asset format: chain:TICKER[:contract]");
+    }
+    let chain = chain_name_to_id(parts[0])?;
+    let ticker = parts[1].to_string();
+    let contract = parts.get(2).map(|c| c.to_string());
+    let decimals = decimals.unwrap_or(6);
+    let name = ticker.clone();
+    Ok(Asset {
+        id: zion_l1_types::AssetId::new(chain, ticker, contract),
+        decimals,
+        name,
+    })
+}
+
+fn default_ticker(chain: ChainId) -> &'static str {
+    match chain {
+        ChainId::ZionL1 => "ZION",
+        ChainId::Base => "wZION",
+        ChainId::Ethereum => "ETH",
+        ChainId::Bitcoin => "BTC",
+        _ => "ZION",
+    }
+}
+
+fn endpoint_from_cli(
+    service: &MultichainService,
+    chain: ChainId,
+    encoded: Option<String>,
+    amount: u128,
+    ticker: &str,
+) -> anyhow::Result<TransferEndpoint> {
+    let address = match encoded {
+        Some(e) => Address::new(chain, address_bytes(&chain, &e)?, e)?,
+        None => service.wallet_address(chain, 0, 0)?,
+    };
+    let asset = Asset::native(chain, ticker, 6, ticker);
+    Ok(TransferEndpoint {
+        address,
+        asset,
+        amount: Amount::new(amount),
+    })
+}
+
 fn address_bytes(chain_id: &ChainId, encoded: &str) -> anyhow::Result<Vec<u8>> {
     use zion_l1_types::ChainFamily;
     match chain_id.family() {
@@ -108,11 +377,9 @@ fn address_bytes(chain_id: &ChainId, encoded: &str) -> anyhow::Result<Vec<u8>> {
             let hex = encoded.strip_prefix("0x").unwrap_or(encoded);
             let mut out = [0u8; 20];
             hex::decode_to_slice(hex, &mut out)
-                .map_err(|e| anyhow::anyhow!("invalid EVM address hex: {e}"))?;
+                .map_err(|e| anyhow!("invalid EVM address hex: {e}"))?;
             Ok(out.to_vec())
         }
-        // UTXO and Zion addresses are validated by the adapter against the
-        // encoded string; we do not need the raw bytes here.
         _ => Ok(vec![]),
     }
 }
