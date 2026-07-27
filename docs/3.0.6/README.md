@@ -23,6 +23,7 @@ This directory contains the root-level reports, plans and session notes that wer
 
 ### Performance & tuning
 - [`CUDA_TUNING_RTX.md`](./CUDA_TUNING_RTX.md) — RTX 3090 CUDA tuning (303.8 KH/s)
+- [`W11_DESKTOP_AGENT_GPU_TUNING.md`](./W11_DESKTOP_AGENT_GPU_TUNING.md) — W11 desktop agent UI + GPU stats + CUDA v5/v6/PTXAS fix (2026-07-27)
 - [`MINING_OPT_REPORT_2026-07-16.md`](./MINING_OPT_REPORT_2026-07-16.md) — SHA3-512 specialization, sequential passes cache
 - [`30khsDeeksha.md`](./30khsDeeksha.md) — RX 5700 XT 28-32 KH/s settings
 - [`TripleStream_AutoTune.md`](./TripleStream_AutoTune.md) — auto-tune GPU memory budget, M1-M5 compatibility
