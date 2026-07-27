@@ -21,6 +21,7 @@ decode_console.py
 /tmp_*.py
 commit_msg*.txt
 2miners/gminer/
+auxpow-deploy.zip
 
 # Build artifacts
 /target/
