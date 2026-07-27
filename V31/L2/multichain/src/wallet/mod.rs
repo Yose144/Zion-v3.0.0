@@ -86,7 +86,7 @@ impl Keyring {
         }
     }
 
-    fn evm_wallet(&self, account: u32, index: u32) -> MultichainResult<LocalWallet> {
+    pub(crate) fn evm_wallet(&self, account: u32, index: u32) -> MultichainResult<LocalWallet> {
         let path = format!("m/44'/60'/{account}'/0/{index}");
         MnemonicBuilder::<English>::default()
             .phrase(PathOrString::String(self.mnemonic.to_string()))

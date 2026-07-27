@@ -70,6 +70,13 @@
 - Sekce: status, kontrakty, wallet, bridge, swap, pool placeholder.
 - Default API base `http://127.0.0.1:8453` (konfigurovatelné v UI).
 
+### 11. Real `EvmAdapter` s `ethers`
+- `EvmAdapter` nyní drží `Provider<Http>`, volitelný `LocalWallet` a `ZionContracts`.
+- `send_payment` odesílá nativní EVM transfer přes `SignerMiddleware`.
+- `watch_events` scanuje posledních 100 bloků a dekóduje `BridgeBurn` / `BridgeMint` eventy z `wZION`.
+- `execute_outbound` pro `LockMint` volá `ZIONBridge.submitLockProof`, ale jen když je wallet oprávněným validátorem (`hasRole` check).
+- `MultichainService` předává EVM adaptérům wallet z `Keyring` a V3 contract addresses.
+
 ## Verifikace
 
 ```bash
@@ -97,6 +104,7 @@ Rozpis testů:
 - `23e8ecec` — `docs: add V31 Mainnet Alpha progress report and next plan`
 - `91bdd696` — `feat(v31): add CLI commands for wallet, bridge and swap`
 - `eb7bcda7` — `feat(v31): add V3 contracts, HTTP API, CORS and Dash31 dashboard`
+- `<novy>` — `feat(v31): wire EvmAdapter with ethers provider, signer and V3 contracts`
 
 ## Další plán (Mainnet Alpha milestones)
 
@@ -105,10 +113,11 @@ Rozpis testů:
    - Generovat reálné `mining.notify` joby z `zion-core` / `zion-node`.
    - Propojit PPLNS payouts se skutečnými block rewards.
 
-2. **Real chain adapters**
-   - `EvmAdapter`: přidat `LocalWallet` z `Keyring`, implementovat `send_payment` a `execute_outbound`.
+2. **Real chain adapters (další kroky)**
+   - `EvmAdapter` ✅ — provider + wallet + contract addresses; zbývá nasadit validator wallet a testovat `submitLockProof` na Base.
    - `ZionL1Adapter`: RPC call pro lock/burn a mint/release.
    - `BitcoinAdapter`: UTXO lock/mint a burn/release.
+   - Testovací bridge end-to-end mezi `zion-l1` a `base`.
 
 3. **Bridge watcher finalizace**
    - Kontraktní adresy pro Base (wZION) a ZION L1 bridge vault.
