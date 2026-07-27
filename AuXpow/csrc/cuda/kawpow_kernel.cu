@@ -48,7 +48,7 @@ __constant__ const int KECCAK_PI[24] = {
     10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1
 };
 
-__device__ void keccak_f1600(uint64_t state[25]) {
+__device__ __forceinline__ void keccak_f1600(uint64_t state[25]) {
     // Local copies of constants (test: __constant__ init bug on Pascal?)
     const uint64_t RC[24] = {
         0x0000000000000001ULL, 0x0000000000008082ULL, 0x800000000000808aULL,
