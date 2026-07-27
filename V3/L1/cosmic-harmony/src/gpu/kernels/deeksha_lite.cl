@@ -569,19 +569,11 @@ void deeksha_lite_mine(
     ulong4 h = vload4(0, (__private ulong*)hash);
     vstore4(h, 0, (__global ulong*)slot);
 
-    /* Stream-profit byproduct work (does not affect PoW hash) */
-    if (stream_weights) {
-        int keccak_iters = (int)(stream_weights[SW_KECCAK_BONUS] * STREAM_ITERS_SCALE);
-        stream_byproduct_keccak(hash, keccak_iters, pad);
-
-        int sha3_iters = (int)(stream_weights[SW_SHA3_BONUS] * STREAM_ITERS_SCALE);
-        stream_byproduct_sha3(hash, sha3_iters, pad);
-
-        float aes_weight = stream_weights[SW_NCL_AI] + stream_weights[SW_DEEKSHA_LITE] + stream_weights[SW_THERMAL];
-        int aes_iters = (int)(aes_weight * STREAM_ITERS_SCALE);
-        stream_byproduct_aes(hash, nonce, aes_iters, pad);
-
-        int zion_iters = (int)(stream_weights[SW_ZION] * STREAM_ITERS_SCALE);
-        stream_byproduct_keccak(hash, zion_iters, pad);
-    }
+    /* Stream-profit byproduct work REMOVED for hashrate parity with CUDA.
+     * The byproduct work (extra keccak/SHA3/AES iterations) did not affect
+     * the PoW hash but wasted ~10% extra keccak and ~79,000% extra AES
+     * cycles per hash, making OpenCL unfairly slower than CUDA which
+     * does no byproduct work. The stream_weights buffer is still passed
+     * to maintain kernel signature compatibility but is ignored. */
+    (void)stream_weights;
 }
