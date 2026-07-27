@@ -187,7 +187,7 @@ __device__ void keccak256(const unsigned char *input, const unsigned int len, un
 //   found         -- atomic flag: 0 = not found, 1 = found
 extern "C" {
 
-__global__ __launch_bounds__(256) void kawpow_mine(
+__global__ void kawpow_mine(
     const unsigned char *header_hash,  // 32 bytes
     const unsigned char *target,       // 32 bytes
     const uint64_t base_nonce,
