@@ -2059,13 +2059,14 @@ fn run_local_session(
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
         // Allow Stream 2 (external GPU) to use a different backend than Stream 1
-        // in local benchmark mode too.  Auto-detect: when the primary backend is
-        // CUDA (NVIDIA GPU detected), default the external stream to CUDA as well
-        // so both streams share the same CUDA device via shared_cuda_dev.
-        // The CUDA ProgPoWZ kernel (AuXpow/csrc/cuda/progpow_kernel.cu) gives
-        // ~11 MH/s standalone on GTX 1070 Ti (2x faster than OpenCL's 5.6 MH/s).
-        // Override with ZION_EXT_GPU_BACKEND=opencl if desired.
-        let default_ext_backend = effective_gpu_backend;
+        // in local benchmark mode too.  On NVIDIA, ZANO ProgPoWZ on OpenCL is
+        // 2x faster than CUDA in triple-stream mode (Claymore Dual time-slicing).
+        // See docs/3.0.6/W11_DESKTOP_AGENT_GPU_TUNING.md §6.
+        let default_ext_backend = if effective_gpu_backend == gpu_backend::GpuBackendKind::Cuda {
+            gpu_backend::GpuBackendKind::OpenCL
+        } else {
+            effective_gpu_backend
+        };
         let bk = std::env::var("ZION_EXT_GPU_BACKEND")
             .ok()
             .and_then(|v| match v.to_lowercase().as_str() {
@@ -2879,13 +2880,16 @@ fn run_remote_session(
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
         // Allow Stream 2 (external GPU) to use a different backend than Stream 1.
-        // Auto-detect: when the primary backend is CUDA (NVIDIA GPU detected),
-        // default the external stream to CUDA as well so both streams share the
-        // same CUDA device via shared_cuda_dev.  The CUDA ProgPoWZ kernel
-        // (AuXpow/csrc/cuda/progpow_kernel.cu, commit e6d311d0) gives ~11 MH/s
-        // standalone on GTX 1070 Ti — 2x faster than OpenCL.
-        // Override with ZION_EXT_GPU_BACKEND=opencl if desired.
-        let default_ext_backend = effective_gpu_backend;
+        // On NVIDIA, ZANO ProgPoWZ on OpenCL is 2x faster than CUDA in
+        // triple-stream mode (3.6 MH/s vs 0.45 MH/s) because the driver
+        // time-slices between CUDA and OpenCL contexts (Claymore Dual style),
+        // while CUDA+CUDA serialises.  See docs/3.0.6/W11_DESKTOP_AGENT_GPU_TUNING.md §6.
+        // Override with ZION_EXT_GPU_BACKEND=cuda if desired.
+        let default_ext_backend = if effective_gpu_backend == gpu_backend::GpuBackendKind::Cuda {
+            gpu_backend::GpuBackendKind::OpenCL
+        } else {
+            effective_gpu_backend
+        };
         let bk = std::env::var("ZION_EXT_GPU_BACKEND")
             .ok()
             .and_then(|v| match v.to_lowercase().as_str() {
@@ -2897,15 +2901,10 @@ fn run_remote_session(
             .unwrap_or(default_ext_backend);
         // Share the CUDA device with the external GPU thread to avoid
         // creating a second CUDA context (deadlock on consumer GPUs).
+        // Only relevant when ext backend == CUDA (override mode).
         #[cfg(feature = "gpu-cuda")]
         let shared_cuda = if bk == gpu_backend::GpuBackendKind::Cuda {
-            let dev = tri_gpu.shared_cuda_device();
-            println!(
-                "[{}] ext_gpu_shared_cuda_resolve bk=cuda shared={}",
-                log_timestamp(),
-                dev.is_some(),
-            );
-            dev
+            tri_gpu.shared_cuda_device()
         } else {
             None
         };
