@@ -292,6 +292,13 @@ impl CudaExternalMiner {
             )
             .map_err(|e| anyhow::anyhow!("NVRTC compile failed for {}: {e}", algorithm))?;
 
+            // Debug: dump PTX for inspection
+            if std::env::var("ZION_DUMP_CUDA_KERNEL").is_ok() {
+                let ptx_str = std::str::from_utf8(&ptx).unwrap_or("<invalid utf8>");
+                let ptx_path = format!("C:\\Users\\anaha\\AppData\\Local\\Temp\\{}_kernel.ptx", algorithm);
+                let _ = std::fs::write(&ptx_path, ptx_str);
+            }
+
             let module_name = algo.module_name();
             let kernel_name = algo.kernel_name();
 
