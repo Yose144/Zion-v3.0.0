@@ -197,11 +197,23 @@ Cíl: `V31/` nahradí `V3/` na Edge staging.
 
 ## 7. V3 -> V31 chain migration
 
+### 7.1 State snapshot migration (aktuální default)
+
 - `zion-core/src/migration.rs` cte V3 `zion-node-state.db` JSON export a vytvari migration block (height 0) se snapshotem finalnich account/UTXO balances.
 - `zion-migrate` binary: `--v3-state <path> --db-path <sqlite>`.
 - Node se spousti s `--no-genesis` nad uz migrateovanym `--db-path`.
 - Verified proti edge state: 7423 bloku, 22 unikatnich adres, total supply zachovan.
-- Faze 5 cutover: snapshotovat V3 state, spustit `zion-migrate`, pote `zion-node --no-genesis`.
+- **Poznámka:** toto je **state-snapshot / soft reset řetězce** — vytváří se nový genesis block s novým hashem. Historické block hashe 0..tip se nekopírují.
+
+### 7.2 Block-by-block sync bez hard resetu (otevřené rozhodnutí)
+
+- Pokud má Fáze 5 proběhnout **bez dalšího hard resetu**, migration block nepostačuje. V31 musí produkovat **identické block hashe** jako V3 od posledního V3 bloku dále (Cesta B — checkpoint, nebo Cesta A — full port).
+- Technicky to nyní není možné: `V3/L1/core` má ~7700 řádků runtime, dual account/UTXO model, `cosmic_harmony_ekam_deeksha_v2`, LWMA-60, Decade Decay atd. V31 `zion-core` je zatím scaffold.
+- Detailní analýza v `V31/V3_SYNC_ASSESSMENT.md`.
+- Fáze 5 cutover varianty:
+  1. **Snapshot cutover** — snapshotovat V3 state, spustit `zion-migrate`, poté `zion-node --no-genesis`. (Nový genesis, jednodušší.)
+  2. **Checkpoint sync** — importovat V3 state jako checkpoint pod posledním V3 block hashem, validovat nové bloky V3 pravidly. (Bez hard resetu, ale vyžaduje plný consensus port.)
+- Rozhodnutí, kterou variantu Fáze 5 použít, musí být explicitní. Dokud není, zůstává default **7.1**.
 
 ## 8. Pool + miner integrace (F6)
 

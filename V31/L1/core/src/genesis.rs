@@ -2,12 +2,22 @@
 //!
 //! V31 keeps the same launch timestamp and constitutional supply constants as V3.
 //! The merkle hashing and block layout are the V31-canonical model.
+//!
+//! V3 mainnet genesis hash (current beta, 2026-07-20 hard reset):
+//! `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`.
+//! V31 still uses a different canonical block layout, so the computed
+//! `genesis_hash()` below intentionally differs. See `V31/V3_SYNC_ASSESSMENT.md`.
 
 use zion_l1_types::{Address, Amount, ChainId, Hash};
 
 use crate::block::{Block, BlockHeader};
 use crate::difficulty::GENESIS_DIFFICULTY as DIFFICULTY;
 use crate::transaction::{Transaction, TransactionOutput};
+
+/// Frozen V3 mainnet beta genesis hash. Used as the trusted root for any
+/// V31 → V3 checkpoint/cutover mode.
+pub const V3_GENESIS_HASH: &str =
+    "4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e";
 
 /// Genesis timestamp (seconds since UNIX epoch): 2026-01-01 00:00:00 UTC.
 pub const GENESIS_TIMESTAMP: u64 = 1_767_225_600;
