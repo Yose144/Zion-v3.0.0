@@ -193,7 +193,16 @@ impl V3State {
         }
 
         let subsidy = block_subsidy(block.height);
-        let expected_total = minted_subsidy(subsidy) as u128;
+        let expected_total = match coinbase_count {
+            1 => subsidy as u128,
+            3 => minted_subsidy(subsidy) as u128,
+            _ => {
+                return Err(V3StateError::Coinbase(format!(
+                    "unsupported coinbase count {}",
+                    coinbase_count
+                )));
+            }
+        };
 
         if coinbase_total != expected_total {
             return Err(V3StateError::Coinbase(format!(
@@ -232,7 +241,7 @@ impl V3State {
             }
 
             let expected_amount = match coinbase_count {
-                1 => minted_subsidy(subsidy) as u128,
+                1 => subsidy as u128,
                 3 => {
                     let (miner, human, issobella, _) = emission::fee_split(subsidy);
                     match index {

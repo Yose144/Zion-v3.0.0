@@ -553,7 +553,7 @@ fn merkle_root(hashes: &[[u8; 32]]) -> [u8; 32] {
 }
 
 /// V3 post-fork merkle root derivation (account + UTXO transactions).
-fn derive_template_merkle_root_v2_blake3(
+pub(crate) fn derive_template_merkle_root_v2_blake3(
     transactions: &[AccountTransaction],
     utxo_transactions: &[UtxoTransaction],
 ) -> [u8; 32] {
