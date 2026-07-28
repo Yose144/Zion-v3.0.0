@@ -2,7 +2,7 @@
 
 > **Verze:** 3.1.0-alpha.2  
 > **Datum:** 2026-07-28  
-> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync in progress  
+> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented  
 > **Princip:** `V3/` zůstává produkční, `V31/` se staví jako čistý Mainnet Alpha strom.  
 
 Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozhodnutí o architektuře, vrstvách a prioritách se zde zaznamenávají a aktualizují.
@@ -58,7 +58,8 @@ Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozho
 - `cargo test` v `V31/` projde (workspace 7 crateů).
 - `zion-l1-types` má čisté primitivy a testy.
 - `zion-cosmic-harmony` má `EkamDeeksha` s KAT vektory a `ExternalCoin`/`ProfitRouter`.
-- `zion-core` má `Storage` (SQLite), `Block`/`BlockHeader`, `Transaction`, `ConsensusEngine`, `Mempool`, `P2P` skeleton, `RPC`, `genesis`, `emission`, `difficulty` (LWMA-60) a `migration` modul.
+- `zion-core` má `Storage` (SQLite), `Block`/`BlockHeader`, `Transaction`, `ConsensusEngine`, `Mempool`, `RPC`, `genesis`, `emission`, `difficulty` (LWMA-60) a `migration` modul.
+- `zion-core` V3 compat vrstva: `v3_compat`, `v3_checkpoint`, `v3_p2p`, `v3_state`, `v3_template`, `v3_rpc`, `v3_reorg` — vše pokryto testy (`cargo test -p zion-core` prochází).
 - `zion-miner` má Triple Stream runtime (3 tokio tasky).
 - `zion-pool` má základní PPLNS a stratum server skeleton.
 - `zion-multichain` má `ChainAdapter` trait, HTTP API, wallet keyring (BIP39 → EVM/Zion/BTC), bridge lock/burnRelease, DEX router, HTLC, Dharma Credits a payout integration.
@@ -66,7 +67,7 @@ Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozho
 
 ### 2.2 Co je ještě scaffold / stub
 
-- `zion-core`: P2P je listen-only placeholder, RPC má základní status/submit, IBD/sync a checkpointy chybí.
+- `zion-core`: P2P má V3 wire client (`v3_p2p`) pro Hello/GetBlocksSince/AnnounceBlock, ale listen/gossip server ještě není; RPC má V3 JSON-RPC handler (`v3_rpc`), ale není zatím zapojen do hlavního TCP serveru (`rpc.rs`); IBD/sync checkpoint import funguje.
 - `zion-miner/auxpow`: `StratumClient` je scaffold, `find_share` je CPU brute force, žádné real stratum wire, žádné GPU/CUDA/Metal/OpenCL, žádné native hashers.
 - `zion-multichain/chain/adapters`: EVM/Bitcoin/ZionL1 adaptery mají jen základní RPC mock, žádné reálné EVM contract volání, žádné HTLC, žádný DEX AMM routing.
 - `zion-pool`: PPLNS je statický, stratum odpovídá jen `mining.subscribe`/`authorize`/`submit`, žádné real job broadcasting z node.
@@ -79,9 +80,9 @@ Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozho
 | Node runtime | 7700+ řádků `chain.rs`, `bin/node.rs` | 3 malé soubory | Portovat postupně |
 | PoW | `deeksha_lite_v1`, `deeksha_chv3`, `deeksha_lite_fire` | jen `ekam_deeksha` (bit-identical s `deeksha_lite_v1`) | Height-aware fork gating přidat |
 | AuxPoW | `zion-auxpow` crate, 24 coinů | stub 15 coinů | Portovat stratum + hasher subset |
-| Storage | LMDB/SQLite hybrid | nic | Vybrat jeden backend (SQLite nebo LMDB) |
-| P2P | wire protocol v `p2p.rs` | nic | Přidat minimal P2P pro Alpha |
-| RPC | JSON-RPC v `rpc.rs` | nic v core | Přidat JSON-RPC gateway |
+| Storage | LMDB/SQLite hybrid | SQLite pro V3 checkpoint sync | Vybrat jeden backend (SQLite nebo LMDB) |
+| P2P | wire protocol v `p2p.rs` | V3 client v `v3_p2p` | Přidat P2P listen/gossip server pro Alpha |
+| RPC | JSON-RPC v `rpc.rs` | V3 handler v `v3_rpc` | Zapojit `v3_rpc` do node TCP serveru |
 | Multichain | 6 samostatných crateů | 1 scaffold crate | Implementovat adaptery |
 | CLI | `zion` single binary (menu) | clap subcommands | Sjednotit UX |
 
@@ -103,12 +104,12 @@ Cíl: `zion-miner` spustitelný a otestovatelný; Triple Stream běží; AuxPoW 
 
 Cíl: `zion-node` binary nahradí V3 node pro lokální testnet.
 
-1. Přidat `storage` modul (SQLite/LMDB) pro bloky, UTXO/account state, mempool.
-2. Přidat `genesis` modul (hard reset genesis hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` jako konstanta).
-3. Přidat `emission` a `difficulty` (LWMA-60, 5400.067 ZION reward, fee split 89/5/5/1).
-4. Přidat `mempool` a `rpc` (JSON-RPC kompatibilní s V3 node API).
-5. Přidat `p2p` (minimální gossip + block sync).
-6. Přidat `bin/node.rs`.
+- [x] 1. Přidat `storage` modul (SQLite/LMDB) pro bloky, UTXO/account state, mempool.
+- [x] 2. Přidat `genesis` modul (hard reset genesis hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` jako konstanta).
+- [x] 3. Přidat `emission` a `difficulty` (LWMA-60, 5400.067 ZION reward, fee split 89/5/5/1).
+- [x] 4. Přidat `mempool` a `rpc` (JSON-RPC kompatibilní s V3 node API).
+- [x] 5. Přidat `p2p` (minimální gossip + block sync).
+- [ ] 6. Přidat `bin/node.rs` (V3-aware runtime s P2P listen, RPC, mining loop).
 
 ### Fáze 2 — Multichain adaptery
 
@@ -163,11 +164,11 @@ Cíl: `V31/` nahradí `V3/` na Edge staging.
 
 ## 4. Prioritní úkoly (next 48h)
 
-1. **Feature-gate AuxPoW** v `zion-miner` a udělat Triple Stream robustnější.
-2. **Real stratum client** pro Stream 2/3 (subscribe/authorize/submit).
-3. **Pool block template** — pool musí umět dostat reálný block template z externího RPC (nejen z `MultichainService`).
-4. **Dokumentovat** rozhodnutí o `V31/L2/multichain` jako jediném L2 crate.
-5. **Refactor `zion-miner/auxpow`** tak, aby nepoužívalo žádné duplicitní `ExternalCoin`/`CoinProfile` — vše z `zion-cosmic-harmony`.
+1. **Zapojit `v3_rpc` do node runtime** — `Node`/`RpcServer` musí dispatchovat V3 metody a přijímat `submitBlock` z mineru/poolu.
+2. **P2P listen + IBD download loop** — server pro `Hello`/`GetBlocksSince`/`AnnounceBlock` a stahování chybějících hlaviček/těl z V3 peerů.
+3. **`bin/node.rs` V3-aware runtime** — spustitelný node s `--checkpoint` importem, P2P, RPC, mining a shutdown handling.
+4. **Pool block template feed** — `zion-pool` si bere `getTemplate` z node a broadcastuje `mining.notify`.
+5. **Feature-gate AuxPoW + stratum client** v `zion-miner` pro Stream 2/3 (subscribe/authorize/submit).
 
 ---
 
@@ -211,12 +212,19 @@ Cíl: `V31/` nahradí `V3/` na Edge staging.
 - Implementováno:
   - `V31/L1/cosmic-harmony-v3` — přenesen celý `V3/L1/cosmic-harmony` crate (Ekam Deeksha v1/v2/v3, NPU mixing, GPU kernely). 200+ testů prochází.
   - `V31/L1/core/src/v3_compat.rs` — V3 `MiningHeader`, account+UTXO transakce, BLAKE3 merkle root, compact target, genesis block builder, `v3_genesis_hash()`.
+  - `V31/L1/core/src/v3_checkpoint.rs` — import trusted V3 snapshotu do SQLite storage.
+  - `V31/L1/core/src/v3_p2p.rs` — V3 wire client (Hello, GetBlocksSince, AnnounceBlock).
+  - `V31/L1/core/src/v3_state.rs` — aplikace a validace V3 bloků, account/UTXO transakcí, coinbase split.
+  - `V31/L1/core/src/v3_template.rs` — stavitel V3 block template s LWMA obtížností a miner s nonce scanem.
+  - `V31/L1/core/src/v3_rpc.rs` — V3 JSON-RPC handler (status, block/template, submit, tx, balance, utxos).
+  - `V31/L1/core/src/v3_reorg.rs` — reorg na delší fork s nalezením společného předka a replay stavu.
   - `ConsensusEngine::verify_v3_block()` — validátor V3 bloků (height, prev hash, timestamp, difficulty bits, merkle root, PoW).
-  - **Ověření:** `v3_genesis_hash()` reprodukuje mainnet hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`; `validate_v3_block` akceptuje V3 genesis blok.
+  - **Ověření:** `v3_genesis_hash()` reprodukuje mainnet hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`; `validate_v3_block` akceptuje V3 genesis blok; `cargo test -p zion-core` prochází.
 - Zbývá:
-  - Výpočet `difficulty` pro nové bloky (LWMA-60 reuse z `difficulty.rs`).
-  - Uložení V3 checkpointu do `Storage` a P2P/download loop (stahovat hlavičky + tx, validovat řetězec).
-  - Úprava `migration.rs` na `checkpoint.rs` — import snapshotu pod posledním V3 hashem místo migration blocku na height 0.
+  - P2P listen/gossip server a reálný IBD download loop proti živé síti.
+  - Zapojit `V3RpcHandler` do hlavního node TCP serveru (`Node`/`RpcServer`).
+  - `bin/node.rs` V3-aware runtime (P2P, RPC, mining loop, shutdown handling).
+  - Pool block template feed + stratum job broadcast z node.
 - Detailní analýza v `V31/V3_SYNC_ASSESSMENT.md`.
 
 ## 8. Pool + miner integrace (F6)
