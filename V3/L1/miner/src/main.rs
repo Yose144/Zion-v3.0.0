@@ -1940,8 +1940,10 @@ fn run_local_session(
     };
 
     // ── GPU backend init (TriGpuManager — 3-stream Claymore-style) ──
+    // GPU is needed if either stream1 (primary/deeksha) OR stream2
+    // (external GPU) is enabled.
     let mut gpu_available = effective_gpu_backend != gpu_backend::GpuBackendKind::Cpu
-        && config.stream1_enabled;
+        && (config.stream1_enabled || config.stream2_enabled);
     let mut tri_gpu = match gpu_backend::TriGpuManager::with_work_sizes(
         effective_gpu_backend,
         config.gpu_work_size,
@@ -1958,7 +1960,7 @@ fn run_local_session(
             )?
         }
     };
-    if gpu_available {
+    if gpu_available && config.stream1_enabled {
         match tri_gpu.primary() {
             Ok(g) => {
                 println!(
@@ -2216,8 +2218,10 @@ fn run_local_session(
         // TriGpuManager keeps the primary backend alive for the entire session.
         // Skip GPU for CPU-only algorithms (verushash, randomx) — they have no
         // GPU kernel and must use CPU mining.
+        // Also skip when stream1 is disabled — GPU reserved for stream2.
         let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
         if effective_gpu_backend != gpu_backend::GpuBackendKind::Cpu
+            && config.stream1_enabled
             && !gpu_backend::is_cpu_only_algorithm(&current_algorithm)
         {
             match tri_gpu.primary() {
@@ -2770,8 +2774,11 @@ fn run_remote_session(
     // ── GPU backend init (TriGpuManager — 3-stream Claymore-style) ──
     // Primary (Deeksha) is created immediately. Pearl + secondary are
     // lazy-created by their respective persistent threads on demand.
+    // GPU is needed if either stream1 (primary/deeksha) OR stream2
+    // (external GPU) is enabled — external GPU mining should work even
+    // when the operator disables the primary ZION stream.
     let mut gpu_available = effective_gpu_backend != gpu_backend::GpuBackendKind::Cpu
-        && config.stream1_enabled;
+        && (config.stream1_enabled || config.stream2_enabled);
     let mut tri_gpu = match gpu_backend::TriGpuManager::with_work_sizes(
         effective_gpu_backend,
         config.gpu_work_size,
@@ -2790,7 +2797,7 @@ fn run_remote_session(
             )?
         }
     };
-    if gpu_available {
+    if gpu_available && config.stream1_enabled {
         match tri_gpu.primary() {
             Ok(g) => {
                 println!(
@@ -2823,8 +2830,18 @@ fn run_remote_session(
                 hashrate.set_gpu_info(gpu_lines);
             }
             Err(e) => {
-                println!("gpu_init_fallback reason=\"{e}\" using=cpu");
-                gpu_available = false;
+                // Primary (deeksha) init failed — but if stream2 (external
+                // GPU) is enabled, keep gpu_available=true so the external
+                // GPU thread can still use the GPU.  Only fully fall back
+                // to CPU if neither stream needs the GPU.
+                if config.stream2_enabled {
+                    println!(
+                        "gpu_primary_init_failed_but_stream2_active reason=\"{e}\" — primary GPU disabled, external GPU stream retained"
+                    );
+                } else {
+                    println!("gpu_init_fallback reason=\"{e}\" using=cpu");
+                    gpu_available = false;
+                }
             }
         }
     }
@@ -3254,8 +3271,11 @@ fn run_remote_session(
         // ensure_primary_algorithm() to match the pool's requested algorithm.
         // Skip GPU for CPU-only algorithms (verushash, randomx) — they have no
         // GPU kernel and must use CPU mining.
+        // Also skip when stream1 is disabled — the GPU is reserved for the
+        // external GPU stream (stream2) in that case.
         let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
         if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu && gpu_on
+            && config.stream1_enabled
             && !gpu_backend::is_cpu_only_algorithm(&current_algorithm)
         {
             match tri_gpu.primary() {
