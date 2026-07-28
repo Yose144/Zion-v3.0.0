@@ -356,17 +356,19 @@ void verushash_mining_reset(void) {
  * job on this thread.
  * ==================================================================== */
 
-/* Target comparison: VerusHash v2.2 hash is compared big-endian.
- * Both the 32-byte hash and the 32-byte target are treated as big-endian
- * 256-bit integers.  This matches the VerusCoin reference, node-verushash,
- * and the node-stratum-pool-verus / LuckPool share validator.
+/* Target comparison: VerusHash v2.2 returns the PoW hash in little-endian
+ * byte order (byte 0 = LSB, byte 31 = MSB), as per Bitcoin's uint256
+ * convention.  The target bytes are big-endian (byte 0 = MSB).  We compare
+ * the reversed hash (LE -> BE) against the target as-is (BE).  This matches
+ * node-stratum-pool-verus / LuckPool's share validator.
  * Returns 1 if hash <= target, 0 otherwise. */
-VERUSHASH_ALWAYS_INLINE int meets_target_be(
+VERUSHASH_ALWAYS_INLINE int meets_target_le(
     const uint8_t hash[32], const uint8_t target[32])
 {
-    for (int i = 0; i < 32; i++) {
-        if (hash[i] < target[i]) return 1;
-        if (hash[i] > target[i]) return 0;
+    /* Compare reversed hash (LE -> BE) against target (BE) */
+    for (int i = 31; i >= 0; i--) {
+        if (hash[i] < target[31 - i]) return 1;
+        if (hash[i] > target[31 - i]) return 0;
     }
     return 1; /* equal */
 }
@@ -448,8 +450,8 @@ int64_t verushash_scan_nonces(
         uint64_t keyOffset = intermediate & (keyMask >> 4);
         (*CVerusHashV2::haraka512KeyedFunction)(hash, tl_curBuf, key + keyOffset);
 
-        /* Target check — hash and target as big-endian 256-bit integers */
-        if (meets_target_be(hash, target)) {
+        /* Target check — LE hash vs BE target */
+        if (meets_target_le(hash, target)) {
             memcpy(out_hash, hash, 32);
             *out_nonce = nonce;
             return 0; /* found */

@@ -365,32 +365,13 @@ fn scan_verushash_full(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
         }
 
         let hash = crate::external_hashers::hash_verushash_header(&work_header);
-        // VerusHash v2.2 hash and the stratum target are both interpreted as
-        // big-endian 256-bit integers by the VerusCoin reference, node-verushash,
-        // and LuckPool's share validator. Compare directly with meets_target.
-        if meets_target(&hash, target) {
-            println!(
+        // VerusHash v2.2 returns the hash in raw (little-endian) byte order;
+        // node-stratum-pool-verus / LuckPool interpret it as a little-endian
+        // 256-bit integer against the big-endian target. Use the LE helper.
+        if meets_target_little_endian(&hash, target) {
+            eprintln!(
                 "VRSC_SHARE_FOUND nonce={} hash={}",
                 nonce,
-                hex::encode(hash),
-            );
-            // Debug: dump key header offsets to diagnose hash mismatch
-            println!(
-                "VRSC_DEBUG header_len={} version={} ntime={} nbits={} nonce_field={} varint={} sol_ver={} sol_numPBAAS={} mmr_first8={} ns_full={}",
-                work_header.len(),
-                hex::encode(&work_header[0..4]),
-                hex::encode(&work_header[100..104]),
-                hex::encode(&work_header[104..108]),
-                hex::encode(&work_header[108..140]),
-                hex::encode(&work_header[140..143]),
-                hex::encode(&work_header[143..147]),
-                work_header[148],
-                hex::encode(&work_header[151..159]),
-                hex::encode(&work_header[work_header.len().saturating_sub(15)..]),
-            );
-            println!(
-                "VRSC_DEBUG target={} hash={}",
-                hex::encode(target),
                 hex::encode(hash),
             );
             return Some(FoundShare {
@@ -1041,7 +1022,7 @@ fn scan_verushash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
         let hash = crate::external_hashers::hash_verushash_header(&work_header);
         if best
             .as_ref()
-            .map(|b| is_hash_better(&hash, &b.hash, false))
+            .map(|b| is_hash_better(&hash, &b.hash, true))
             .unwrap_or(true)
         {
             best = Some(FoundShare {
