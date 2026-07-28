@@ -70,6 +70,9 @@ pub enum WarpError {
 
     #[error("Emergency pause active for chain: {0}")]
     EmergencyPause(String),
+
+    #[error("Internal error: {0}")]
+    Internal(String),
 }
 
 pub type WarpResult<T> = Result<T, WarpError>;
