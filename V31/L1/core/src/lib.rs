@@ -4,10 +4,13 @@
 //! engine, chain state, storage, difficulty/emission rules, and minimal P2P + RPC
 //! for a launch-ready node.
 
+pub mod admin;
 pub mod block;
 pub mod consensus;
+pub mod crypto;
 pub mod difficulty;
 pub mod emission;
+pub mod fee;
 pub mod genesis;
 pub mod mempool;
 pub mod migration;
