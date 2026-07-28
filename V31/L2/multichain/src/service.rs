@@ -19,6 +19,8 @@ use crate::error::{MultichainError, MultichainResult};
 use crate::swap::dex::{DexRouter, Pool, Quote};
 use crate::types::Transfer;
 use crate::wallet::Keyring;
+use crate::warp::runtime::WarpRuntime;
+use crate::warp::config::WarpConfig;
 
 /// Top-level runtime for `zion-multichain`.
 pub struct MultichainService {
@@ -332,6 +334,37 @@ impl MultichainService {
             "block_height": block_height,
             "payouts": payouts,
         }))
+    }
+
+    /// Spawn the WARP bridge runtime if a `warp` config is present.
+    ///
+    /// Returns `Some(join_handle)` if WARP was started, `None` if no WARP
+    /// configuration was provided.
+    pub fn start_warp(&self) -> MultichainResult<Option<tokio::task::JoinHandle<()>>> {
+        let warp_config = match self.config.warp.as_ref() {
+            Some(c) => c.clone(),
+            None => return Ok(None),
+        };
+
+        let runtime = WarpRuntime::new(warp_config)
+            .map_err(|e| MultichainError::Internal(format!("WARP runtime init failed: {e}")))?;
+
+        let handle = tokio::spawn(async move {
+            if let Err(e) = runtime.run().await {
+                tracing::error!("[MultichainService] WARP runtime exited: {e}");
+            }
+        });
+
+        Ok(Some(handle))
+    }
+
+    /// Build a `WarpRuntime` from an explicit `WarpConfig` without spawning.
+    ///
+    /// Useful for callers that want full control over task spawning.
+    pub fn warp_runtime(&self, config: WarpConfig) -> MultichainResult<WarpRuntime> {
+        WarpRuntime::new(config).map_err(|e| {
+            MultichainError::Internal(format!("WARP runtime init failed: {e}"))
+        })
     }
 }
 

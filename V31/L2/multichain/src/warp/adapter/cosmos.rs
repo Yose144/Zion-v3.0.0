@@ -1,4 +1,5 @@
 use crate::warp::adapter::ChainAdapter;
+use crate::warp::config::ChainConfig;
 use crate::warp::cosmos_signer::CosmosSigner;
 use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::protocol::{DepositProof, MintInstruction};
@@ -17,23 +18,38 @@ use tracing::{debug, info, warn};
 // After deploying the CW20 contract (zion_cw20.rs) to a CosmWasm-enabled
 // chain, replace the placeholder addresses below with the real bech32
 // contract address (e.g., cosmos1...).
-fn zion_contract(network: &str) -> Option<&'static str> {
+fn zion_contract_with_override(network: &str, contract_override: Option<&str>) -> Option<String> {
+    if let Some(contract) = contract_override {
+        if !contract.is_empty() {
+            return Some(contract.to_string());
+        }
+    }
+    if let Ok(contract) = std::env::var("WARP_COSMOS_CONTRACT") {
+        if !contract.is_empty() {
+            return Some(contract);
+        }
+    }
     match network {
         "cosmoshub-4" => {
             // TODO: Replace with real cosmoshub-4 ZION CW20 contract address.
             // Deploy zion_cw20.rs via: wasmd tx wasm store + wasmd tx wasm instantiate
             // The contract address will be a cosmos1... bech32 address.
             warn!("[WARP][cosmos] cosmoshub-4 ZION contract is a placeholder — deploy CW20 from V3/L2/bridge/contracts/non-evm/cosmos/ and update this address");
-            Some("cosmos1zionwarpxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+            Some("cosmos1zionwarpxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".to_string())
         }
         "theta-testnet-001" => {
             // TODO: Replace with real theta-testnet ZION CW20 contract address.
             // Deploy zion_cw20.rs to the theta testnet for testing.
             warn!("[WARP][cosmos] theta-testnet ZION contract is a placeholder — deploy CW20 from V3/L2/bridge/contracts/non-evm/cosmos/ and update this address");
-            Some("cosmos1ziontexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+            Some("cosmos1ziontexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".to_string())
         }
         _ => None,
     }
+}
+
+#[allow(dead_code)]
+fn zion_contract(network: &str) -> Option<String> {
+    zion_contract_with_override(network, None)
 }
 
 fn default_rest(network: &str) -> &'static str {
@@ -108,6 +124,7 @@ pub struct CosmosAdapter {
     network: String,
     rest_url: String,
     client: reqwest::Client,
+    contract_override: Option<String>,
 }
 
 impl Default for CosmosAdapter {
@@ -128,7 +145,21 @@ impl CosmosAdapter {
                 .timeout(std::time::Duration::from_secs(15))
                 .build()
                 .unwrap(),
+            contract_override: None,
         }
+    }
+
+    pub fn from_config(cfg: &ChainConfig) -> Self {
+        let mut adapter = Self::new();
+        if !cfg.rpc_url.is_empty() {
+            adapter.rest_url = cfg.rpc_url.clone();
+        }
+        if let Some(contract) = &cfg.contract_address {
+            if !contract.is_empty() {
+                adapter.contract_override = Some(contract.clone());
+            }
+        }
+        adapter
     }
 
     async fn latest_height(&self) -> WarpResult<u64> {
@@ -262,7 +293,7 @@ impl ChainAdapter for CosmosAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let contract = match zion_contract(&self.network) {
+        let contract = match zion_contract_with_override(&self.network, self.contract_override.as_deref()) {
             Some(c) => c,
             None => {
                 debug!("[WARP][cosmos] No ZION contract configured");
@@ -270,7 +301,7 @@ impl ChainAdapter for CosmosAdapter {
             }
         };
         let tip = self.latest_height().await?;
-        let txs = self.query_bridge_burn_txs(contract).await?;
+        let txs = self.query_bridge_burn_txs(&contract).await?;
         let proofs: Vec<_> = txs
             .iter()
             .filter_map(|tx| self.parse_tx_response(tx, tip))
@@ -280,7 +311,7 @@ impl ChainAdapter for CosmosAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        let contract = zion_contract(&self.network).ok_or_else(|| WarpError::AdapterError {
+        let contract = zion_contract_with_override(&self.network, self.contract_override.as_deref()).ok_or_else(|| WarpError::AdapterError {
             chain: "cosmos".into(),
             reason: format!("no ZION contract configured for network '{}'", self.network),
         })?;
@@ -300,7 +331,7 @@ impl ChainAdapter for CosmosAdapter {
             .execute_contract_mint(
                 &self.client,
                 &self.rest_url,
-                contract,
+                &contract,
                 &instruction.recipient,
                 amount,
             )

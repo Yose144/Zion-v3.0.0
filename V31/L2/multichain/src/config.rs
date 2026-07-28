@@ -14,6 +14,8 @@ pub struct MultichainConfig {
     #[serde(default)]
     pub adapters: Vec<AdapterConfig>,
     pub pool: Option<PoolConfigFile>,
+    #[serde(default)]
+    pub warp: Option<crate::warp::config::WarpConfig>,
 }
 
 impl Default for MultichainConfig {
@@ -24,6 +26,7 @@ impl Default for MultichainConfig {
             l1_rpc_url: default_l1_rpc_url(),
             adapters: Vec::new(),
             pool: None,
+            warp: None,
         }
     }
 }

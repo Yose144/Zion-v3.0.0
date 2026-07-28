@@ -1,5 +1,6 @@
 use crate::warp::adapter::ChainAdapter;
 use crate::warp::bolt11::Bolt11Invoice;
+use crate::warp::config::ChainConfig;
 use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::lightning_signer::LndClient;
 use crate::warp::protocol::{DepositProof, MintInstruction};
@@ -58,6 +59,22 @@ impl LightningAdapter {
     /// Create with an explicit LND client (for testing).
     pub fn with_lnd(lnd: LndClient) -> Self {
         Self { lnd: Some(lnd) }
+    }
+
+    /// Build from a `ChainConfig`.
+    /// - `cfg.rpc_url` is used as the LND base URL.
+    /// - `cfg.contract_address` is used as the macaroon hex; falls back to `WARP_LN_MACAROON` env.
+    pub fn from_config(cfg: &ChainConfig) -> Self {
+        if cfg.rpc_url.is_empty() {
+            return Self::new();
+        }
+        let macaroon = cfg
+            .contract_address
+            .clone()
+            .filter(|m| !m.is_empty())
+            .or_else(|| std::env::var("WARP_LN_MACAROON").ok());
+        let lnd = LndClient::new(&cfg.rpc_url, macaroon).ok();
+        Self { lnd }
     }
 
     /// Check if LND is configured.

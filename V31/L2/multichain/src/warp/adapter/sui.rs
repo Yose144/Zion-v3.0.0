@@ -17,6 +17,7 @@
 
 use crate::warp::adapter::ChainAdapter;
 use crate::warp::bcs::BcsEncoder;
+use crate::warp::config::ChainConfig;
 use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::protocol::{DepositProof, MintInstruction};
 use crate::warp::sui_signer::SuiSigner;
@@ -156,6 +157,7 @@ struct SuiTxBlock {
 pub struct SuiAdapter {
     rpc_url: String,
     client: reqwest::Client,
+    package_override: Option<String>,
 }
 
 impl Default for SuiAdapter {
@@ -180,6 +182,27 @@ impl SuiAdapter {
                 .timeout(std::time::Duration::from_secs(15))
                 .build()
                 .unwrap(),
+            package_override: None,
+        }
+    }
+
+    /// Construct from a `ChainConfig`.
+    pub fn from_config(cfg: &ChainConfig) -> Self {
+        let rpc_url = if cfg.rpc_url.is_empty() {
+            std::env::var("WARP_SUI_RPC").unwrap_or_else(|_| DEFAULT_SUI_RPC.to_string())
+        } else {
+            cfg.rpc_url.clone()
+        };
+        let package_override = cfg.contract_address.as_ref().and_then(|p| {
+            if p.is_empty() { None } else { Some(p.clone()) }
+        });
+        Self {
+            rpc_url,
+            client: reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(15))
+                .build()
+                .unwrap(),
+            package_override,
         }
     }
 
@@ -191,7 +214,15 @@ impl SuiAdapter {
                 .timeout(std::time::Duration::from_millis(200))
                 .build()
                 .unwrap(),
+            package_override: None,
         }
+    }
+
+    fn package_from_env_or_override(&self, env_var: &str, default: &str) -> String {
+        self.package_override
+            .clone()
+            .or_else(|| std::env::var(env_var).ok().filter(|s| !s.is_empty()))
+            .unwrap_or_else(|| default.to_string())
     }
 
     /// Parse a hex Sui address string (e.g. "0xabc...") into 32 bytes.
@@ -397,7 +428,7 @@ impl SuiAdapter {
         // package, replace with the real package object ID from `sui client publish`.
         // Set the WARP_SUI_PACKAGE env var or update this filter directly.
         // The ZION coin module emits BridgeBurnEvent (for Aptos→L1 burns).
-        let package_id = std::env::var("WARP_SUI_PACKAGE").unwrap_or_else(|_| "0x2".into());
+        let package_id = self.package_from_env_or_override("WARP_SUI_PACKAGE", "0x2");
         let filter = json!({"MoveModule": {"module": "zion_coin", "package": package_id}});
         let v = rpc(
             &self.client,
@@ -596,9 +627,8 @@ impl ChainAdapter for SuiAdapter {
         };
         let pure_args = vec![arg_recipient, arg_amount];
 
-        // 5. Parse the bridge package ID from env or use default
-        let package_id =
-            std::env::var("WARP_SUI_BRIDGE_PACKAGE").unwrap_or_else(|_| "0x2".to_string());
+        // 5. Parse the bridge package ID from config, env, or use default
+        let package_id = self.package_from_env_or_override("WARP_SUI_BRIDGE_PACKAGE", "0x2");
         let package_bytes = Self::parse_address_hex(&package_id)?;
 
         // 6. BCS-encode the TransactionData

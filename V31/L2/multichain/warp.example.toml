@@ -1,0 +1,164 @@
+# Example WARP bridge node configuration.
+# Copy this file to `warp.toml` and fill in real RPC endpoints, contract
+# addresses, and validator keys before running `cargo run -p zion-multichain --bin warpd`.
+
+node_id = "warp-node-1"
+listen_addr = "0.0.0.0"
+listen_port = 9333
+database_path = "data/warp.db"
+
+quorum = 3
+daily_limit_zion = 10000000      # 10 000 000 ZION per 24h
+timelock_threshold_zion = 1000000 # ZION timelock above 1M
+
+l1_rpc_url = "http://127.0.0.1:9443"
+l1_vault_address = "zion1warp_vault_address"
+
+poll_interval_secs = 15
+
+[[chains]]
+name = "base"
+family = "evm"
+enabled = true
+rpc_url = "https://mainnet.base.org"
+contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+finality_blocks = 12
+
+[[chains]]
+name = "arbitrum"
+family = "evm"
+enabled = false
+rpc_url = "https://arb1.arbitrum.io/rpc"
+contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+finality_blocks = 20
+
+[[chains]]
+name = "optimism"
+family = "evm"
+enabled = false
+rpc_url = "https://mainnet.optimism.io"
+contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+finality_blocks = 20
+
+[[chains]]
+name = "bsc"
+family = "evm"
+enabled = false
+rpc_url = "https://bsc-dataseed.binance.org"
+contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+finality_blocks = 15
+
+[[chains]]
+name = "polygon"
+family = "evm"
+enabled = false
+rpc_url = "https://polygon-rpc.com"
+contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+finality_blocks = 128
+
+[[chains]]
+name = "avalanche"
+family = "evm"
+enabled = false
+rpc_url = "https://api.avax.network/ext/bc/C/rpc"
+contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+finality_blocks = 20
+
+[[chains]]
+name = "solana"
+family = "solana"
+enabled = false
+rpc_url = "https://api.mainnet-beta.solana.com"
+# ZION SPL token mint address; override with real deployed mint.
+contract_address = "HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H"
+finality_blocks = 31
+
+[[chains]]
+name = "cardano"
+family = "cardano"
+enabled = false
+rpc_url = "https://cardano-mainnet.blockfrost.io/api/v0"
+# policy_id (28 bytes) + asset_name "ZION" (4 bytes = 5a494f4e)
+contract_address = "5a71011c726573745a494f4e"
+finality_blocks = 20
+
+[[chains]]
+name = "stellar"
+family = "stellar"
+enabled = false
+rpc_url = "https://horizon.stellar.org"
+# ZION asset issuer public key.
+contract_address = "GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT"
+finality_blocks = 3
+
+[[chains]]
+name = "bitcoin"
+family = "bitcoin"
+enabled = false
+rpc_url = "https://mempool.space/api"
+# HTLC / watch address for inbound proofs.
+contract_address = "bc1qplaceholderhtlcaddress"
+finality_blocks = 3
+
+[[chains]]
+name = "cosmos"
+family = "cosmos"
+enabled = false
+rpc_url = "https://api.cosmos.network"
+contract_address = "cosmos1placeholder"
+finality_blocks = 3
+
+[[chains]]
+name = "tron"
+family = "tron"
+enabled = false
+rpc_url = "https://api.trongrid.io"
+# TRC-20 ZION contract / jetton master.
+contract_address = "TPlaceholderTronContract"
+finality_blocks = 20
+
+[[chains]]
+name = "sui"
+family = "sui"
+enabled = false
+rpc_url = "https://fullnode.mainnet.sui.io:443"
+# Sui package object ID that emits BridgeBurn/BridgeMint events.
+contract_address = "0x2"
+finality_blocks = 3
+
+[[chains]]
+name = "aptos"
+family = "aptos"
+enabled = false
+rpc_url = "https://fullnode.mainnet.aptoslabs.com"
+# Bridge account / module publisher.
+contract_address = "0x0000000000000000000000000000000000000000000000000000000000000001"
+finality_blocks = 3
+
+[[chains]]
+name = "near"
+family = "near"
+enabled = false
+rpc_url = "https://rpc.mainnet.near.org"
+contract_address = "warp.near"
+finality_blocks = 3
+
+[[chains]]
+name = "ton"
+family = "ton"
+enabled = false
+rpc_url = "https://toncenter.com/api/v2/jsonRPC"
+# TON jetton master address (EQ... / UQ...).
+contract_address = "EQPlaceholderTonJettonMaster"
+finality_blocks = 3
+
+[[chains]]
+name = "lightning"
+family = "lightning"
+enabled = false
+# LND REST base URL, e.g. "https://localhost:8080".
+rpc_url = "https://localhost:8080"
+# Hex-encoded LND invoice macaroon. In production prefer WARP_LN_MACAROON env var
+# and leave this line empty or set to a placeholder.
+contract_address = "hexmacaroonplaceholder"
+finality_blocks = 0

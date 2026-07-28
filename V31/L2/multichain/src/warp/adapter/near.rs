@@ -25,6 +25,7 @@
 //! | `broadcast_tx_async`  | `[base64_signed_tx]`            | Submit signed TX         |
 
 use crate::warp::adapter::ChainAdapter;
+use crate::warp::config::ChainConfig;
 use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::near_signer::NearSigner;
 use crate::warp::protocol::{DepositProof, MintInstruction};
@@ -224,6 +225,30 @@ impl NearAdapter {
             rpc_url: rpc_url.to_string(),
             bridge_contract: std::env::var("WARP_NEAR_BRIDGE_CONTRACT")
                 .unwrap_or_else(|_| "warp.near".into()),
+            client: reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(15))
+                .build()
+                .unwrap(),
+        }
+    }
+
+    /// Build from a `ChainConfig`.
+    pub fn from_config(cfg: &ChainConfig) -> Self {
+        let rpc_url = if cfg.rpc_url.is_empty() {
+            std::env::var("WARP_NEAR_RPC")
+                .unwrap_or_else(|_| "https://rpc.mainnet.near.org".into())
+        } else {
+            cfg.rpc_url.clone()
+        };
+        let bridge_contract = cfg
+            .contract_address
+            .as_ref()
+            .and_then(|a| if a.is_empty() { None } else { Some(a.clone()) })
+            .or_else(|| std::env::var("WARP_NEAR_BRIDGE_CONTRACT").ok())
+            .unwrap_or_else(|| "warp.near".into());
+        Self {
+            rpc_url,
+            bridge_contract,
             client: reqwest::Client::builder()
                 .timeout(std::time::Duration::from_secs(15))
                 .build()
