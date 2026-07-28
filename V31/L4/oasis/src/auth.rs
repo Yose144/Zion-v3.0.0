@@ -280,7 +280,7 @@ fn derive_address(public_key_bytes: &[u8]) -> String {
     let key_hash = Ripemd160::digest(sha);
 
     let mut data = String::with_capacity(40);
-    for &byte in key_hash.as_slice() {
+    for &byte in key_hash.iter() {
         data.push(ZION_BASE32_ALPHABET[(byte % 32) as usize] as char);
         data.push(ZION_BASE32_ALPHABET[((byte / 32) % 32) as usize] as char);
     }

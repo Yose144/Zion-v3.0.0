@@ -565,8 +565,8 @@ mod tests {
         assert_eq!(hash1, hash2);
 
         // Deterministic ed25519 — same key + same message → same sig
-        let sig1 = s1.signing_key.sign(hash1.as_slice());
-        let sig2 = s2.signing_key.sign(hash2.as_slice());
+        let sig1 = s1.signing_key.sign(&hash1);
+        let sig2 = s2.signing_key.sign(&hash2);
         assert_eq!(sig1.to_bytes(), sig2.to_bytes());
     }
 
@@ -591,7 +591,7 @@ mod tests {
         p.u32(ENVELOPE_TYPE_TX);
         p.raw(&tx);
         let sig_hash = Sha256::digest(p.into_bytes());
-        let sig = s.signing_key.sign(sig_hash.as_slice());
+        let sig = s.signing_key.sign(&sig_hash);
 
         let mut env = Xdr::new();
         env.u32(ENVELOPE_TYPE_TX);

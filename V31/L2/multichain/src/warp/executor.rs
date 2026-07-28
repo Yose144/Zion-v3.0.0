@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info};
 
 /// How often to check for executable transfers (seconds)
 const EXECUTOR_POLL_SECS: u64 = 10;
@@ -148,7 +148,7 @@ impl OutboundExecutor {
             transfer.amount_flowers.saturating_sub(transfer.fee_flowers),
             6, // ZION L1 = 6 decimals (flowers)
             transfer.dest_chain.decimals,
-        ).ok_or_else(|| WarpError::DecimalOverflow {
+        ).ok_or(WarpError::DecimalOverflow {
             from_decimals: 6,
             to_decimals: transfer.dest_chain.decimals,
         })? as u128;
@@ -180,7 +180,7 @@ impl OutboundExecutor {
         }
 
         // Wait for confirmations on destination chain
-        self.wait_for_confirmations(transfer_id, &*adapter, &tx_hash).await?;
+        self.wait_for_confirmations(transfer_id, adapter.as_ref(), &tx_hash).await?;
 
         // Mark as completed
         {
@@ -196,7 +196,7 @@ impl OutboundExecutor {
     async fn wait_for_confirmations(
         &self,
         transfer_id: uuid::Uuid,
-        adapter: &Box<dyn ChainAdapter>,
+        adapter: &dyn ChainAdapter,
         tx_hash: &str,
     ) -> WarpResult<()> {
         let required = {

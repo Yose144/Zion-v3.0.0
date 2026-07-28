@@ -166,10 +166,10 @@ impl ExecutionPlan {
         let mut visited: HashMap<u32, bool> = HashMap::new();
         let mut stack: HashMap<u32, bool> = HashMap::new();
         for step in &self.steps {
-            if !visited.get(&step.id).copied().unwrap_or(false) {
-                if self.dfs_cycle(step.id, &mut visited, &mut stack) {
-                    return true;
-                }
+            if !visited.get(&step.id).copied().unwrap_or(false)
+                && self.dfs_cycle(step.id, &mut visited, &mut stack)
+            {
+                return true;
             }
         }
         false
