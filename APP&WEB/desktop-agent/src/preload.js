@@ -157,6 +157,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cliDaoProposals: () => ipcRenderer.invoke('cli-dao-proposals'),
   cliDaoTreasury: () => ipcRenderer.invoke('cli-dao-treasury'),
   cliDaoParams: () => ipcRenderer.invoke('cli-dao-params'),
+  daoGetProposals: () => ipcRenderer.invoke('dao-get-proposals'),
+  daoGetTreasury: () => ipcRenderer.invoke('dao-get-treasury'),
 
   // ── Pool CLI ─────────────────────────────────────────────────────
   cliPoolStats: (data) => ipcRenderer.invoke('cli-pool-stats', data),

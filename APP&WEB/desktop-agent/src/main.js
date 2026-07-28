@@ -4195,6 +4195,7 @@ async function nodeRpc(method, params = {}) {
 }
 
 ipcMain.handle('node-get-status', async () => {
+  // Try local node first
   try {
     const [sync, peers] = await Promise.all([
       nodeRpc('getSyncStatus'),
@@ -4203,11 +4204,36 @@ ipcMain.handle('node-get-status', async () => {
     return {
       success: true,
       running: true,
+      local: true,
       pid: nodeProcess?.pid ?? null,
       sync,
       peers,
     };
   } catch (e) {
+    // Local node not running — fall back to remote Edge node status
+    try {
+      const rpcUrl = `http://${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
+      const info = await zionRpcCall(rpcUrl, 'getChainInfo', {});
+      if (info && info.chain_height) {
+        return {
+          success: true,
+          running: true,
+          local: false,
+          remote: true,
+          remoteHost: PRIMARY_MAINNET_HOST,
+          pid: null,
+          sync: {
+            current_height: info.chain_height,
+            target_height: info.chain_height,
+            synced: true,
+            ibd: false,
+          },
+          chainInfo: info,
+        };
+      }
+    } catch (e2) {
+      // Both failed
+    }
     return {
       success: false,
       running: nodeProcess != null && !nodeProcess.killed,
@@ -4218,10 +4244,28 @@ ipcMain.handle('node-get-status', async () => {
 });
 
 ipcMain.handle('node-get-peers', async () => {
+  // Try local node first
   try {
     const peers = await nodeRpc('getPeers');
-    return { success: true, ...peers };
+    return { success: true, local: true, ...peers };
   } catch (e) {
+    // Fall back to remote Edge node
+    try {
+      const rpcUrl = `http://${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
+      const result = await zionRpcCall(rpcUrl, 'getPeerList', []);
+      const peers = result?.peers || [];
+      return {
+        success: true,
+        local: false,
+        remote: true,
+        active: peers,
+        known: peers,
+        active_count: peers.length,
+        known_count: peers.length,
+      };
+    } catch (e2) {
+      // Both failed
+    }
     return { success: false, error: e.message, active: [], known: [], active_count: 0, known_count: 0 };
   }
 });
@@ -5896,6 +5940,31 @@ ipcMain.handle('cli-dao-treasury', async () => {
 });
 ipcMain.handle('cli-dao-params', async () => {
   return runZionCli(['dao', 'params']);
+});
+
+// ── DAO data from Edge server HTTP API (fallback when CLI binary absent) ──
+const DAO_API_BASE = 'https://zionterranova.com/api/dao';
+
+ipcMain.handle('dao-get-proposals', async () => {
+  try {
+    const resp = await fetch(`${DAO_API_BASE}/proposals?limit=20`);
+    if (!resp.ok) return { success: false, error: `HTTP ${resp.status}` };
+    const data = await resp.json();
+    return { success: true, ...data };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('dao-get-treasury', async () => {
+  try {
+    const resp = await fetch(`${DAO_API_BASE}/treasury`);
+    if (!resp.ok) return { success: false, error: `HTTP ${resp.status}` };
+    const data = await resp.json();
+    return { success: true, ...data };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 });
 
 // ── Pool CLI ───────────────────────────────────────────────────────

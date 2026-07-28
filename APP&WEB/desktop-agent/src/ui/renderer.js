@@ -631,6 +631,7 @@ const _viewInitFns = {
   bridge:    () => initBridgeView(),
   dex:       () => initDexView(),
   defi:      () => initDefiView(),
+  dao:       () => initDaoView(),
   cli:       () => initCliView(),
 };
 
@@ -4310,7 +4311,8 @@ async function _nodeRefresh() {
     const r = await window.electronAPI.nodeGetStatus();
 
     if (r.running && r.sync) {
-      _nodeSetStatus(true, `Běží · PID ${r.pid || '?'}`);
+      const isRemote = r.remote === true;
+      _nodeSetStatus(true, isRemote ? `Remote · ${r.remoteHost || 'Edge'}` : `Běží · PID ${r.pid || '?'}`);
       const s = r.sync;
 
       // Timestamp
@@ -4322,8 +4324,8 @@ async function _nodeRefresh() {
       const peersEl  = document.getElementById('node-stat-peers');
       const syncEl   = document.getElementById('node-stat-sync');
       const bpsEl    = document.getElementById('node-stat-bps');
-      if (heightEl) heightEl.textContent = _nodeFmt(s.download_height);
-      if (syncEl)   syncEl.textContent   = s.syncing ? `${s.percent?.toFixed(1) ?? 0}%` : (s.state === 'Steady' ? '✓ Synced' : '—');
+      if (heightEl) heightEl.textContent = _nodeFmt(s.current_height || s.download_height);
+      if (syncEl)   syncEl.textContent   = isRemote ? '✓ Remote' : (s.syncing ? `${s.percent?.toFixed(1) ?? 0}%` : (s.state === 'Steady' ? '✓ Synced' : '—'));
       if (bpsEl)    bpsEl.textContent    = s.blocks_per_sec > 0 ? `${s.blocks_per_sec.toFixed(0)}` : '—';
 
       // Peer counts (overview + peers tab)
@@ -4349,13 +4351,17 @@ async function _nodeRefresh() {
       const syncTxt  = document.getElementById('node-sync-text');
       if (syncBar && syncTxt) {
         syncBar.classList.remove('ibd', 'synced');
-        if (s.state === 'IBD') {
+        if (isRemote) {
+          if (syncIcon) syncIcon.textContent = '🌐';
+          syncTxt.innerHTML = `Připojeno k <b>Edge node</b> (${r.remoteHost || '62.171.141.136'}) — blok <b>#${s.current_height ?? 0}</b>`;
+          syncBar.classList.add('synced');
+        } else if (s.state === 'IBD') {
           if (syncIcon) syncIcon.textContent = '⬇';
           syncTxt.innerHTML = `Synchronizuji bloky… <b>${s.percent?.toFixed(1) ?? 0}%</b>`;
           syncBar.classList.add('ibd');
         } else if (s.state === 'Steady') {
           if (syncIcon) syncIcon.textContent = '✓';
-          syncTxt.innerHTML = `Node je plně synchronizován — blok <b>#${s.download_height ?? 0}</b>`;
+          syncTxt.innerHTML = `Node je plně synchronizován — blok <b>#${s.current_height ?? s.download_height ?? 0}</b>`;
           syncBar.classList.add('synced');
         } else {
           if (syncIcon) syncIcon.textContent = '⚡';
@@ -4419,7 +4425,7 @@ async function _nodeRefresh() {
         const syncTxt = document.getElementById('node-sync-text');
         const syncIcon = document.getElementById('node-sync-icon');
         const syncBar = document.getElementById('node-sync-bar');
-        if (syncTxt)  syncTxt.innerHTML = 'Node není spuštěn — klikni na <b>Spustit Node</b>';
+        if (syncTxt)  syncTxt.innerHTML = 'Node není spuštěn — klikni na <b>Spustit Node</b> nebo se připoj k <b>Edge node</b>';
         if (syncIcon) syncIcon.textContent = '⚡';
         if (syncBar)  syncBar.classList.remove('ibd', 'synced');
       }
@@ -5187,6 +5193,101 @@ function initNclView() {
   // Auto-refresh every 10s
   let nclInterval = setInterval(refreshNclStatus, 10000);
   refreshNclStatus();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DAO View — Proposals, Treasury, Guardians (data from Edge HTTP API)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _daoPollTimer = null;
+
+function initDaoView() {
+  if (_daoPollTimer) return; // already initialized
+  refreshDaoData();
+  _daoPollTimer = setInterval(refreshDaoData, 30000);
+}
+
+async function refreshDaoData() {
+  await Promise.all([refreshDaoProposals(), refreshDaoTreasury()]);
+}
+
+async function refreshDaoProposals() {
+  const listEl = document.getElementById('dao-proposal-list');
+  if (!listEl) return;
+  try {
+    const resp = await window.electronAPI.daoGetProposals();
+    if (!resp || !resp.success) {
+      listEl.innerHTML = '<div style="color:rgba(255,255,255,0.35);text-align:center;margin-top:40px">Unable to load proposals.</div>';
+      return;
+    }
+    const proposals = resp.data?.proposals || [];
+    if (proposals.length === 0) {
+      listEl.innerHTML = '<div style="color:rgba(255,255,255,0.35);text-align:center;margin-top:40px">No active proposals.</div>';
+      return;
+    }
+    listEl.innerHTML = proposals.map(p => {
+      const statusColor = p.status === 'Active' ? 'var(--zion-green)' : 'rgba(255,255,255,0.4)';
+      const yesPct = p.votes_yes > 0 ? '100%' : '0%';
+      const endDate = p.voting_ends_at ? new Date(p.voting_ends_at).toLocaleDateString() : '—';
+      let tallyHtml = '';
+      if (p.election_tallies) {
+        const tallies = Object.entries(p.election_tallies).map(([party, votes]) =>
+          `<span style="margin-right:16px;color:rgba(255,255,255,0.6)">${party}: <b style="color:var(--zion-cyan)">${(votes / 1e6).toFixed(1)}M</b></span>`
+        ).join('');
+        tallyHtml = `<div style="margin-top:8px;font-size:12px">${tallies}</div>`;
+      }
+      return `
+        <div class="dao-proposal-card" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <h4 style="margin:0;font-size:15px;color:var(--zion-cyan)">${p.title || 'Untitled'}</h4>
+              <p style="margin:4px 0 0;font-size:13px;color:rgba(255,255,255,0.5)">${p.description || ''}</p>
+            </div>
+            <span style="color:${statusColor};font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">${p.status || 'Unknown'}</span>
+          </div>
+          <div style="display:flex;gap:24px;margin-top:12px;font-size:12px;color:rgba(255,255,255,0.5)">
+            <span>ID: <b style="color:rgba(255,255,255,0.8)">#${p.id}</b></span>
+            <span>Yes: <b style="color:var(--zion-green)">${(p.votes_yes / 1e6).toFixed(1)}M</b></span>
+            <span>No: <b style="color:var(--zion-red,#e74c3c)">${(p.votes_no / 1e6).toFixed(1)}M</b></span>
+            <span>Ends: <b style="color:rgba(255,255,255,0.8)">${endDate}</b></span>
+          </div>
+          ${tallyHtml}
+        </div>`;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = '<div style="color:rgba(255,255,255,0.35);text-align:center;margin-top:40px">Error loading proposals.</div>';
+  }
+}
+
+async function refreshDaoTreasury() {
+  try {
+    const resp = await window.electronAPI.daoGetTreasury();
+    if (!resp || !resp.success) return;
+    const d = resp.data;
+    if (!d) return;
+    const balEl = document.getElementById('dao-treasury-balance');
+    if (balEl) balEl.textContent = `${(d.available_zion / 1e9).toFixed(0)} ZION`;
+    const dailyEl = document.getElementById('dao-daily-spent');
+    if (dailyEl) dailyEl.textContent = '0';
+    const opsEl = document.getElementById('dao-ops-pending');
+    if (opsEl) opsEl.textContent = String(d.pending_operations || 0);
+    const totalEl = document.getElementById('dao-total-disbursed');
+    if (totalEl) totalEl.textContent = '0';
+    const signersEl = document.getElementById('dao-signers');
+    if (signersEl) signersEl.textContent = d.multisig || '5-of-7';
+    // Guardian grid
+    const gridEl = document.getElementById('dao-guardian-grid');
+    if (gridEl && d.addresses) {
+      gridEl.innerHTML = d.addresses.map((addr, i) => `
+        <div class="dao-guardian-card" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center">
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--zion-gradient,linear-gradient(135deg,#00d4ff,#7b61ff));margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff">${i + 1}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);font-family:monospace;word-break:break-all">${addr.substring(0, 20)}...${addr.substring(addr.length - 6)}</div>
+          <div style="margin-top:6px;font-size:11px;color:var(--zion-green)">✓ Active</div>
+        </div>`).join('');
+    }
+  } catch (e) {
+    // silent fail
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
