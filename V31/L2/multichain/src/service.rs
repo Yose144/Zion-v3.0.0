@@ -50,6 +50,12 @@ impl MultichainService {
             adapters.register(chain_id, adapter);
         }
 
+        // Always register a ZION L1 adapter if an L1 RPC URL is configured.
+        if !config.l1_rpc_url.is_empty() {
+            let l1_adapter = Box::new(ZionL1Adapter::new(&config.l1_rpc_url, keyring.clone()));
+            adapters.register(ChainId::ZionL1, l1_adapter);
+        }
+
         Ok(Self::from_parts(config, db, Arc::new(adapters), keyring))
     }
 

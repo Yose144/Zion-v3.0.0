@@ -144,6 +144,16 @@ mod tests {
     }
 
     #[test]
+    fn test_registry_get_bsc() {
+        let reg = ChainRegistry::with_defaults();
+        let bsc = reg.get("bsc").unwrap();
+        assert_eq!(bsc.family, ChainFamily::Evm);
+        assert_eq!(bsc.chain_id_numeric, Some(56));
+        assert_eq!(bsc.decimals, 18);
+        assert_eq!(bsc.finality_blocks, 15);
+    }
+
+    #[test]
     fn test_registry_get_solana() {
         let reg = ChainRegistry::with_defaults();
         let sol = reg.get("solana").unwrap();
