@@ -584,10 +584,19 @@ fn build_randomx(target_os: &str, is_msvc: bool, using_zig: bool) {
             b.file(&asm_path);
         }
     } else if target_arch == "x86_64" {
-        // x86_64: add GNU assembler static code for the x86 JIT compiler
-        let asm_path = format!("{}/jit_compiler_x86_static.S", rx_dir);
-        if std::path::Path::new(&asm_path).exists() {
-            b.file(&asm_path);
+        // x86_64: add static code for the x86 JIT compiler.
+        // On MSVC (Windows), use the MASM `.asm` file; on other toolchains
+        // (gcc/clang/zig), use the GNU assembler `.S` file.
+        if is_msvc {
+            let asm_path = format!("{}/jit_compiler_x86_static.asm", rx_dir);
+            if std::path::Path::new(&asm_path).exists() {
+                b.file(&asm_path);
+            }
+        } else {
+            let asm_path = format!("{}/jit_compiler_x86_static.S", rx_dir);
+            if std::path::Path::new(&asm_path).exists() {
+                b.file(&asm_path);
+            }
         }
     }
 
