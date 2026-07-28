@@ -41,6 +41,16 @@ CREATE TABLE IF NOT EXISTS transfers (
 );
 CREATE INDEX IF NOT EXISTS idx_transfers_status     ON transfers(status);
 CREATE INDEX IF NOT EXISTS idx_transfers_created    ON transfers(created_at);
+
+-- Dedup table: tracks source-chain tx hashes already processed by the watcher.
+-- Survives restarts (unlike in-memory HashSet).
+CREATE TABLE IF NOT EXISTS seen_txs (
+    tx_hash      TEXT    PRIMARY KEY,
+    chain        TEXT    NOT NULL,
+    seen_at      TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_seen_txs_chain ON seen_txs(chain);
+CREATE INDEX IF NOT EXISTS idx_seen_txs_seen  ON seen_txs(seen_at);
 "#;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -191,6 +201,48 @@ impl TransferDb {
             )
             .map_err(db_err)?;
         Ok(n as usize)
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Seen-tx dedup (persistent, survives restarts)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// Check if a source-chain tx hash has already been processed.
+    pub fn is_seen(&self, tx_hash: &str) -> WarpResult<bool> {
+        let conn = self.conn.lock().unwrap();
+        let n: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM seen_txs WHERE tx_hash=?1",
+                params![tx_hash],
+                |r| r.get(0),
+            )
+            .map_err(db_err)?;
+        Ok(n > 0)
+    }
+
+    /// Mark a source-chain tx hash as processed.
+    pub fn mark_seen(&self, tx_hash: &str, chain: &str) -> WarpResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR IGNORE INTO seen_txs (tx_hash, chain, seen_at) VALUES (?1, ?2, ?3)",
+            params![tx_hash, chain, chrono::Utc::now().to_rfc3339()],
+        )
+        .map_err(db_err)?;
+        Ok(())
+    }
+
+    /// Purge seen_txs entries older than `days` days.
+    /// Prevents unbounded growth of the dedup table.
+    pub fn purge_seen_old(&self, days: u32) -> WarpResult<usize> {
+        let conn = self.conn.lock().unwrap();
+        let cutoff = chrono::Utc::now() - chrono::Duration::days(days as i64);
+        let n = conn
+            .execute(
+                "DELETE FROM seen_txs WHERE seen_at < ?1",
+                params![cutoff.to_rfc3339()],
+            )
+            .map_err(db_err)?;
+        Ok(n)
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -355,5 +407,44 @@ mod tests {
         db.save(&dummy_transfer()).unwrap();
         let n = db.count_by_status("pending").unwrap();
         assert_eq!(n, 1);
+    }
+
+    #[test]
+    fn test_seen_tx_dedup() {
+        let db = TransferDb::in_memory().unwrap();
+
+        // Initially nothing is seen
+        assert!(!db.is_seen("0xabc").unwrap());
+
+        // Mark as seen
+        db.mark_seen("0xabc", "base").unwrap();
+        assert!(db.is_seen("0xabc").unwrap());
+
+        // Different tx not seen
+        assert!(!db.is_seen("0xdef").unwrap());
+    }
+
+    #[test]
+    fn test_seen_tx_idempotent() {
+        let db = TransferDb::in_memory().unwrap();
+        db.mark_seen("0xabc", "base").unwrap();
+        // Second mark should not error (INSERT OR IGNORE)
+        db.mark_seen("0xabc", "base").unwrap();
+        assert!(db.is_seen("0xabc").unwrap());
+    }
+
+    #[test]
+    fn test_purge_seen_old() {
+        let db = TransferDb::in_memory().unwrap();
+        db.mark_seen("0xold", "base").unwrap();
+        db.mark_seen("0xnew", "solana").unwrap();
+
+        // Purge entries older than 0 days (removes everything seen before now)
+        // Since both were just inserted, purge_old(0) may or may not remove them
+        // depending on sub-second timing. Use a negative approach: purge(30) should remove nothing.
+        let deleted = db.purge_seen_old(30).unwrap();
+        assert_eq!(deleted, 0);
+        assert!(db.is_seen("0xold").unwrap());
+        assert!(db.is_seen("0xnew").unwrap());
     }
 }

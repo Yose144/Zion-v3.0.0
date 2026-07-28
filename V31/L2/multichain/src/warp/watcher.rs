@@ -42,7 +42,7 @@ pub struct WarpWatcher {
     db: Option<TransferDb>,
     /// Adapters for each enabled chain, keyed by chain id.
     adapters: Vec<(String, Box<dyn ChainAdapter>)>,
-    /// Set of source_tx_hash values already submitted (in-memory dedup).
+    /// Fallback in-memory dedup (used only when db is None).
     seen: HashSet<String>,
 }
 
@@ -85,9 +85,10 @@ impl WarpWatcher {
             Duration::from_secs(self.config.poll_interval_secs.unwrap_or(POLL_INTERVAL_SECS));
 
         info!(
-            "[Watcher] Starting — {} adapters, poll every {}s",
+            "[Watcher] Starting — {} adapters, poll every {}s, dedup={}",
             self.adapters.len(),
-            interval.as_secs()
+            interval.as_secs(),
+            if self.db.is_some() { "DB" } else { "in-memory" }
         );
 
         loop {
@@ -124,16 +125,33 @@ impl WarpWatcher {
         }
     }
 
+    /// Check if a tx hash has already been processed (DB or in-memory fallback).
+    fn is_seen(&self, tx_hash: &str) -> bool {
+        if let Some(db) = &self.db {
+            db.is_seen(tx_hash).unwrap_or(false)
+        } else {
+            self.seen.contains(tx_hash)
+        }
+    }
+
+    /// Mark a tx hash as seen (DB or in-memory fallback).
+    fn mark_seen(&mut self, tx_hash: &str, chain: &str) {
+        if let Some(db) = &self.db {
+            let _ = db.mark_seen(tx_hash, chain);
+        } else {
+            // Trim in-memory cache to avoid unbounded growth
+            if self.seen.len() >= SEEN_CACHE_MAX {
+                self.seen.clear();
+                debug!("[Watcher] in-memory seen-cache cleared (hit {})", SEEN_CACHE_MAX);
+            }
+            self.seen.insert(tx_hash.to_string());
+        }
+    }
+
     /// Process one `DepositProof`: dedup → route → persist.
     async fn handle_proof(&mut self, chain_name: String, proof: DepositProof) {
-        // Trim seen cache to avoid unbounded growth
-        if self.seen.len() >= SEEN_CACHE_MAX {
-            self.seen.clear();
-            debug!("[Watcher] seen-cache cleared (hit {})", SEEN_CACHE_MAX);
-        }
-
         // Dedup: skip if we already processed this tx hash
-        if self.seen.contains(&proof.tx_hash) {
+        if self.is_seen(&proof.tx_hash) {
             debug!(
                 "[Watcher][{}] Duplicate tx {}, skipping",
                 chain_name, proof.tx_hash
@@ -162,7 +180,7 @@ impl WarpWatcher {
                     "[Watcher][{}] Inbound transfer {} created",
                     chain_name, transfer_id
                 );
-                self.seen.insert(proof.tx_hash.clone());
+                self.mark_seen(&proof.tx_hash, &chain_name);
 
                 // Persist if DB is available
                 if let Some(db) = &self.db {
@@ -181,7 +199,7 @@ impl WarpWatcher {
                 );
                 // Mark as seen to avoid retry storms on permanent errors
                 if is_permanent_error(&e) {
-                    self.seen.insert(proof.tx_hash);
+                    self.mark_seen(&proof.tx_hash, &chain_name);
                 }
             }
         }
@@ -282,11 +300,11 @@ mod tests {
     }
 
     #[test]
-    fn test_seen_cache_dedup() {
+    fn test_seen_cache_dedup_in_memory() {
         let router = make_router();
         let mut w = WarpWatcher::from_config(make_config_no_chains(), router, None);
 
-        // Insert fake tx hashes
+        // Insert fake tx hashes (in-memory fallback mode)
         w.seen.insert("0xabc".into());
         assert!(w.seen.contains("0xabc"));
         assert!(!w.seen.contains("0xdef"));
@@ -305,6 +323,20 @@ mod tests {
         // One more should NOT clear yet
         w.seen.insert("0xfinal".into());
         assert_eq!(w.seen.len(), SEEN_CACHE_MAX);
+    }
+
+    #[test]
+    fn test_dedup_with_db() {
+        let router = make_router();
+        let db = TransferDb::in_memory().unwrap();
+        let w = WarpWatcher::from_config(make_config_no_chains(), router, Some(db));
+
+        // DB-based dedup: initially nothing seen
+        assert!(!w.is_seen("0xabc"));
+        // Can't call mark_seen without &mut, but we can test via DB directly
+        w.db.as_ref().unwrap().mark_seen("0xabc", "base").unwrap();
+        assert!(w.is_seen("0xabc"));
+        assert!(!w.is_seen("0xdef"));
     }
 
     #[test]
