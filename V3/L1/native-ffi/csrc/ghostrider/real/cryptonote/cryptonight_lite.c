@@ -15,7 +15,11 @@
 #include "crypto/int-util.h"
 #include "crypto/hash-ops.h"
 #include "crypto/variant2_int_sqrt.h"
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#include <io.h>
+#endif
 
 #if defined(_MSC_VER)
 #include <stdlib.h>
