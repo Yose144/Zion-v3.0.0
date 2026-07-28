@@ -101,12 +101,59 @@ mod linux {
 #[cfg(target_os = "linux")]
 pub use linux::{pin_to_core, physical_core_ids};
 
-#[cfg(not(target_os = "linux"))]
-pub fn pin_to_core(_core_id: usize) -> std::io::Result<()> {
-    Ok(()) // No-op on non-Linux
+#[cfg(target_os = "windows")]
+mod windows {
+    use std::io;
+
+    // Windows API for thread affinity.
+    // GetActiveProcessorCount(ALL_PROCESSOR_GROUPS) returns total logical CPUs.
+    // SetThreadAffinityMask pins the current thread to a CPU set (bitmask).
+    extern "system" {
+        fn SetThreadAffinityMask(hThread: usize, dwThreadAffinityMask: usize) -> usize;
+        fn GetCurrentThread() -> usize;
+    }
+
+    /// Pin the current thread to a specific CPU core on Windows.
+    ///
+    /// Uses SetThreadAffinityMask with a 64-bit mask (sufficient for up to
+    /// 64 logical CPUs).  Returns Ok(()) on success.
+    pub fn pin_to_core(core_id: usize) -> io::Result<()> {
+        if core_id >= 64 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("core_id {} exceeds 64-bit mask", core_id),
+            ));
+        }
+        let mask: usize = 1usize << core_id;
+        unsafe {
+            let h = GetCurrentThread();
+            let prev = SetThreadAffinityMask(h, mask);
+            if prev == 0 {
+                Err(io::Error::last_os_error())
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    /// On Windows, we cannot easily detect physical vs SMT cores from userspace
+    /// without WMI.  Return 0..N (all logical cores) and let the caller decide.
+    /// The caller (maybe_pin_thread) will use logical IDs; for RandomX, the
+    /// first N logical IDs are typically physical cores on Intel/AMD.
+    pub fn physical_core_ids() -> Vec<usize> {
+        (0..num_cpus::get()).collect()
+    }
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "windows")]
+pub use windows::{pin_to_core, physical_core_ids};
+
+#[cfg(not(any(target_os = "linux", target_os = "windows")))]
+pub fn pin_to_core(_core_id: usize) -> std::io::Result<()> {
+    Ok(()) // No-op on other platforms
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "windows")))]
 pub fn physical_core_ids() -> Vec<usize> {
     (0..num_cpus::get()).collect()
 }
@@ -147,14 +194,17 @@ pub fn maybe_pin_thread(thread_idx: usize, total_threads: usize, algorithm: &str
             physical[thread_idx]
         } else {
             // Overflow: use SMT siblings.
-            // On AMD Zen, SMT siblings are at processor_id + num_physical
+            // On AMD Zen (Linux), SMT siblings are at processor_id + num_physical
             // (e.g., core 0's sibling is processor 6 on a 6C/12T Ryzen).
-            // Map: thread N (N >= num_physical) → physical[N - num_physical] + num_physical
+            // On Windows, physical_core_ids() returns all logical IDs, so
+            // num_physical == total_logical — just spread across logical cores.
             let smt_idx = thread_idx - num_physical;
-            if smt_idx < num_physical {
+            if num_physical < total_logical && smt_idx < num_physical {
+                // Linux AMD Zen: map to SMT sibling
                 physical[smt_idx] + num_physical
             } else {
-                smt_idx % total_logical
+                // Windows or non-SMT: spread across logical cores
+                thread_idx % total_logical
             }
         }
     } else {

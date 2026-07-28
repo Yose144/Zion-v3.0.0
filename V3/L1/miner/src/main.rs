@@ -5130,10 +5130,11 @@ fn ext_cpu_thread(
     // thread stays responsive to new jobs.
     //   VerusHash: ~5 MH/s per thread → 2M nonces ≈ 0.4s per batch
     //   RandomX:   ~500 H/s per thread → 2M nonces ≈ 4000s per batch (!)
-    // With randomx_nonce_count=10000 and 4 threads, each thread gets ~2500
-    // nonces, taking ~5s per batch at 500 H/s — reasonable update frequency.
-    let randomx_nonce_count = parse_env_u64("ZION_EXT_CPU_RANDOMX_NONCE_COUNT", 10_000)
-        .unwrap_or(10_000);
+    // With randomx_nonce_count=50000 and 3 threads, each thread gets ~16666
+    // nonces, taking ~33s per batch at 500 H/s — good throughput with
+    // acceptable job-update latency (MoneroOcean jobs rotate every ~60s).
+    let randomx_nonce_count = parse_env_u64("ZION_EXT_CPU_RANDOMX_NONCE_COUNT", 50_000)
+        .unwrap_or(50_000);
 
     // Ghostrider is ~500,000× slower than VerusHash per hash.  Using the
     // VerusHash nonce_count (5M) would block the thread for ~500,000 seconds
@@ -5151,12 +5152,12 @@ fn ext_cpu_thread(
     // RandomX is memory-bandwidth bound.  Using all logical cores (HT) for
     // RandomX starves the main mining loop (GPU share submission, TUI, etc.)
     // causing 10× slowdown from scheduler contention.  Use fewer threads:
-    // default = threads/3 (e.g. 4 for 12T), leaving 8 logical cores for the
-    // main loop.  Override with ZION_EXT_CPU_RANDOMX_THREADS.
+    // default = threads/2 (e.g. 3 for 6T, 6 for 12T), leaving half the logical
+    // cores for the main loop.  Override with ZION_EXT_CPU_RANDOMX_THREADS.
     let randomx_threads = std::env::var("ZION_EXT_CPU_RANDOMX_THREADS")
         .ok()
         .and_then(|s| s.parse::<usize>().ok())
-        .unwrap_or((threads / 3).max(2));
+        .unwrap_or((threads / 2).max(2));
 
     println!(
         "[{}] ext_cpu_thread: started (persistent, threads={}, randomx_threads={}, verushash_nonce_count={}, randomx_nonce_count={}, ghostrider_nonce_count={})",
