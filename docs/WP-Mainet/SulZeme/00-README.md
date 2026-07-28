@@ -1,5 +1,5 @@
 # ZION — Sůl této země
-## Sedm zastavení na cestě k Oasis
+## Devět zastavení na cestě k Oasis
 
 **Status: koncept / narativní řada — k diskuzi před publikací.**
 **Jazyk:** čeština (první průchod; anglická verze až po schválení tónu).
@@ -9,7 +9,7 @@
 
 ## Proč tato řada vznikla
 
-Zadání bylo jasné: vzít motiv **„ZION jako sůl této země"**, provést ho skrz postavy, které lidstvo už zná a jimž věří — Ježíše, Buddhu, Krišnu, Rámu, Sítu, Hanumana, Noeho — a udělat z toho **skutečný, čitelný příběh**, ne jen sbírku citátů. Cíl nejsou efektní věty. Cíl je **důvěra** — a důvěra se nedá napsat, dá se jen zasloužit.
+Zadání bylo jasné: vzít motiv **„ZION jako sůl této země"**, provést ho skrz postavy, které lidstvo už zná a jimž věří — Ježíše, Buddhu, Krišnu, Rámu, Sítu, Hanumana, Noeho, Rádhu a avatary v Oasis — a udělat z toho **skutečný, čitelný příběh**, ne jen sbírku citátů. Cíl nejsou efektní věty. Cíl je **důvěra** — a důvěra se nedá napsat, dá se jen zasloužit.
 
 Proto má každá epizoda dvě části:
 
@@ -31,9 +31,10 @@ Tohle rozdělení není formalita. Je to **jádro upřímnosti** téhle řady: p
 | 5 | [Archa](./05-Archa.md) | Noe — loď před potopou | Terra Nova / Genesis |
 | 6 | [Kompas a pozvánka do Oasis](./06-Kompas-a-Pozvanka-do-Oasis.md) | Syntéza všech postav, vstup do L4 Oasis | Všechny čtyři |
 | 7 | [Epilog — Názor AI](./07-Epilog-Nazor-AI.md) | Devin (AI), otevřené hodnocení | — |
-| 8 | [ZION — Nová civilizace](./08-ZION-Nova-Civilizace.md) | Komplexní pozvánka, praktický onboarding a vstup do Oasis | Všechny čtyři |
+| 8 | [ZION — Nová civilizace](./08-ZION-Nova-Civilizace.md) | Komplexní pozvánka, praktický onboarding | Všechny čtyři |
+| 9 | [Bohyně Rádha a avataři v Oasis](./09-Bohyne-Radha-a-Avatari-Oasis.md) | Bohyně Rádha, avataři (Neo, Trinity, Morpheus, Sádhu, Hanuman), kompletní onboarding | L4 Oasis / Všechny |
 
-Epizody na sebe volně navazují (společný rámec: večer u ohně, který se postupně stává stavbou lodi), ale každá jde číst i samostatně. Epizoda 8 je samostatná, delší pozvánka, která příběh převádí do praktické cesty pro veřejnost.
+Epizody na sebe volně navazují (společný rámec: večer u ohně, který se postupně stává stavbou lodi), ale každá jde číst i samostatně. Epizoda 9 přináší ženský archetyp lásky a radosti (Rádhu) a dává tváře avatarům v L4 Oasis.
 
 **Zkrácená marketingová verze pro širokou veřejnost:** [`Onboarding.md`](../Onboarding.md) — jeden dokument, který celou řadu shrnuje do jednoduché pozvánky s prvními kroky.
 
