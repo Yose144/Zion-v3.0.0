@@ -1376,17 +1376,39 @@ pub fn parse_randomx_target_hex(hex: &str) -> Option<[u8; 32]> {
 /// Check whether a RandomX hash meets the upstream pool target.
 ///
 /// Monero/xmrig compare the hash as a 256-bit LITTLE-ENDIAN number against
-/// the target.  In a 256-bit LE value, the MOST significant 64 bits are at
-/// bytes 24-31.  For Monero's difficulty range (target < 2^64), only the
-/// MSB 64 bits need to be checked: if MSB_64 < target_64, the hash is valid.
+/// the target.  The hash is valid iff hash (as LE uint256) < target (as LE
+/// uint256).
 ///
-/// This matches xmrig's check:
+/// xmrig uses an **optimistic** 64-bit shortcut:
 ///   `*reinterpret_cast<uint64_t*>(m_hash + 24) < job.target()`
-/// and Monero's `check_hash_64` which starts from `((uint64_t*)&hash)[3]`.
+/// This only checks the MSB 64 bits (bytes 24-31).  It is correct when the
+/// target is very small (high difficulty — Monero network diff ≈ 400M,
+/// target_64 ≈ 2^36), because a valid hash must have MSB_64 ≈ 0, which
+/// guarantees the lower bytes are also small enough.
+///
+/// **However**, for share targets (low difficulty — MoneroOcean share diff
+/// ≈ 430K, target_64 ≈ 2^60), the 64-bit shortcut is **optimistic**: it
+/// accepts shares where MSB_64 < target_64 but the full 256-bit hash is
+/// actually larger than the target.  MoneroOcean (and most pools) perform a
+/// full 256-bit comparison on the server side and reject these shares with
+/// "Low difficulty share".
+///
+/// Fix: perform a full 256-bit little-endian comparison.  This is slightly
+/// slower than the 64-bit shortcut but is mathematically correct for all
+/// target ranges.
 pub fn meets_randomx_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
-    let hash_msb = u64::from_le_bytes(hash[24..32].try_into().unwrap());
-    let target_le = u64::from_le_bytes(target[..8].try_into().unwrap());
-    hash_msb < target_le
+    // 256-bit little-endian comparison: hash < target.
+    // In LE, byte[0] = LSB, byte[31] = MSB.
+    // Compare from MSB (byte 31) down to LSB (byte 0).
+    for i in (0..32).rev() {
+        if hash[i] < target[i] {
+            return true;
+        }
+        if hash[i] > target[i] {
+            return false;
+        }
+    }
+    false // equal — not strictly less
 }
 
 /// Convert a 32-byte hash to a hex string (big-endian display).
@@ -3657,15 +3679,31 @@ mod tests {
         assert_eq!(target[..8], [0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00]);
         assert!(target[8..].iter().all(|b| *b == 0x00));
 
-        // Monero/xmrig compare bytes 24-31 (MSB of 256-bit LE hash) against target.
-        // A hash whose MSB 64 bits (bytes 24-31 LE) are below the target passes.
-        let mut hash = [0xFFu8; 32];
-        hash[24..32].copy_from_slice(&[0x00, 0x00, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00]);
+        // Full 256-bit LE comparison: hash < target.
+        // A hash that is entirely below the target passes.
+        let mut hash = [0x00u8; 32];
+        hash[0] = 0x01; // small LSB
         assert!(meets_randomx_target(&hash, &target));
 
-        // A hash whose MSB 64 bits are above the target fails.
-        hash[24..32].copy_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]);
+        // A hash whose MSB (byte 31) is above target's MSB (byte 31 = 0) fails.
+        hash = [0x00u8; 32];
+        hash[31] = 0x01;
         assert!(!meets_randomx_target(&hash, &target));
+
+        // A hash with a non-zero byte above the target's highest non-zero byte
+        // fails.  target[3] = 0xff is the highest non-zero target byte; setting
+        // hash[4] = 0x01 makes hash > target (hash = 2^32 > 0xffffff00).
+        hash = [0x00u8; 32];
+        hash[4] = 0x01;
+        assert!(!meets_randomx_target(&hash, &target));
+
+        // A hash just below the target at the first differing byte passes.
+        // target[1] = 0xff; hash[1] = 0xfe < 0xff, all higher bytes equal.
+        hash = [0x00u8; 32];
+        hash[1] = 0xfe;
+        hash[2] = 0xff;
+        hash[3] = 0xff;
+        assert!(meets_randomx_target(&hash, &target));
     }
 
     #[test]
