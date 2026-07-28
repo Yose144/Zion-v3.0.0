@@ -193,6 +193,51 @@ __device__ __forceinline__ uint64_t keccak_f800(
     return ((uint64_t)hi << 32) | lo;
 }
 
+// Full keccak-f800 that writes the complete 32-byte hash (state[0..7])
+// to output_hash.  Used for CPU/GPU verification — the 64-bit return value
+// is for target comparison, the 32-byte output is for share submission.
+__device__ __forceinline__ uint64_t keccak_f800_full(
+    const uint32_t g_header[8],
+    uint64_t seed,
+    const uint32_t digest[8],
+    unsigned char *output_hash)
+{
+    uint32_t st[25];
+    #pragma unroll
+    for (int i = 0; i < 25; i++)
+        st[i] = 0;
+    #pragma unroll
+    for (int i = 0; i < 8; i++)
+        st[i] = g_header[i];
+    st[8] = (uint32_t)seed;
+    st[9] = (uint32_t)(seed >> 32);
+    #pragma unroll
+    for (int i = 0; i < 8; i++)
+        st[10 + i] = digest[i];
+
+    #pragma unroll
+    for (int r = 0; r < 22; r++) {
+        keccak_f800_round(st, r);
+    }
+
+    // Write 32-byte hash: state[0..7] as little-endian bytes (matches CPU
+    // progpow_final_hash which uses st[i].to_le_bytes()).
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        output_hash[i * 4]     = (unsigned char)(st[i]);
+        output_hash[i * 4 + 1] = (unsigned char)(st[i] >> 8);
+        output_hash[i * 4 + 2] = (unsigned char)(st[i] >> 16);
+        output_hash[i * 4 + 3] = (unsigned char)(st[i] >> 24);
+    }
+
+    // 64-bit result for target comparison
+    uint32_t lo = ((st[1] & 0xFFu) << 24) | ((st[1] & 0xFF00u) << 8) |
+                  ((st[1] & 0xFF0000u) >> 8) | ((st[1] & 0xFF000000u) >> 24);
+    uint32_t hi = ((st[0] & 0xFFu) << 24) | ((st[0] & 0xFF00u) << 8) |
+                  ((st[0] & 0xFF0000u) >> 8) | ((st[0] & 0xFF000000u) >> 24);
+    return ((uint64_t)hi << 32) | lo;
+}
+
 // ── FNV-1a ──────────────────────────────────────────────────────────
 #define fnv1a(h, d) (h = (h ^ d) * 0x1000193)
 
@@ -269,7 +314,8 @@ __global__ __launch_bounds__(256) void progpow_mine(
     uint32_t hack_false,
     uint64_t *output_nonce,
     unsigned char *output_mix,      // 32-byte mix hash
-    unsigned int *found
+    unsigned int *found,
+    unsigned char *output_hash      // 32-byte final hash (for share submission)
 )
 {
     __shared__ shuffle_t share[HASHES_PER_GROUP];
@@ -411,6 +457,10 @@ __global__ __launch_bounds__(256) void progpow_mine(
                 output_mix[i * 4 + 2] = (unsigned char)(digest[i] >> 16);
                 output_mix[i * 4 + 3] = (unsigned char)(digest[i] >> 24);
             }
+            // Write final 32-byte hash to output_hash (only by the first
+            // solution thread — same pattern as kawpow_kernel.cu).
+            // Recompute keccak with full output to get state[0..7].
+            keccak_f800_full(header_u32, seed, digest, output_hash);
             // Debug: write seed and final hash from the found thread only
             g_output[10] = (unsigned int)seed;
             g_output[11] = (unsigned int)(seed >> 32);

@@ -865,6 +865,10 @@ impl CudaExternalMiner {
         self.dev
             .htod_copy_into(vec![SENTINEL_NONCE], &mut self.output_nonce)
             .map_err(|e| anyhow::anyhow!("reset nonce: {e}"))?;
+        // Reset output_hash (32 bytes) — kernels write here on solution
+        self.dev
+            .htod_copy_into(vec![0u8; 32], &mut self.output_hash)
+            .map_err(|e| anyhow::anyhow!("reset output_hash: {e}"))?;
 
         // Upload header (pad to buffer size — htod_copy_into requires matching lengths)
         let header_len = header.len().min(256);
@@ -1143,6 +1147,7 @@ impl CudaExternalMiner {
                                     &mut self.output_nonce,
                                     &mut self.output_mix,
                                     &mut self.found_flag,
+                                    &mut self.output_hash,
                                 ),
                             )
                             .map_err(|e| anyhow::anyhow!("progpow launch: {e}"))?;
