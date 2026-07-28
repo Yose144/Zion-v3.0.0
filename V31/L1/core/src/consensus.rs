@@ -3,7 +3,7 @@ use std::sync::Arc;
 use zion_cosmic_harmony::algorithm::PowAlgorithm;
 use zion_l1_types::Hash;
 
-use crate::block::{BlockHeader, POW_HEADER_SIZE};
+use crate::block::BlockHeader;
 
 /// Consensus validation error.
 #[derive(Debug, thiserror::Error, Eq, PartialEq)]
@@ -43,7 +43,7 @@ impl ConsensusEngine {
                 actual: header.height,
             });
         }
-        if header.previous_hash != compute_header_hash(previous) {
+        if header.previous_hash != previous.header_hash() {
             return Err(ConsensusError::PreviousHashMismatch);
         }
         if header.timestamp < previous.timestamp {
@@ -61,14 +61,15 @@ impl ConsensusEngine {
     /// Search for a nonce that makes `header` meet `target`.
     ///
     /// On success, `header.nonce` is set to the winning value and the resulting
-    /// hash is returned. The search range is `[start, start + limit)`.
+    /// PoW hash is returned. The block identity hash is available via
+    /// [`BlockHeader::header_hash`].
     pub fn mine(
         &self,
         header: &mut BlockHeader,
         target: &[u8; 32],
         start: u64,
         limit: u64,
-    ) -> Option<Hash> {
+    ) -> Option<zion_l1_types::Hash> {
         let pow_header = header.pow_header();
         let (nonce, hash) = self.algo.find_nonce(&pow_header, start, limit, target)?;
         header.nonce = nonce;
@@ -77,16 +78,8 @@ impl ConsensusEngine {
 
     /// Compute a block header's identity hash (used for `previous_hash` links).
     pub fn header_hash(&self, header: &BlockHeader) -> Hash {
-        compute_header_hash(header)
+        header.header_hash()
     }
-}
-
-fn compute_header_hash(header: &BlockHeader) -> Hash {
-    use sha3::{Digest, Keccak256};
-    let mut bytes = [0u8; POW_HEADER_SIZE + 8];
-    bytes[..POW_HEADER_SIZE].copy_from_slice(&header.pow_header());
-    bytes[POW_HEADER_SIZE..].copy_from_slice(&header.nonce.to_le_bytes());
-    Hash::new(Keccak256::digest(bytes).into())
 }
 
 #[cfg(test)]

@@ -10,7 +10,7 @@ description = "ZION L1 stratum pool with PPLNS share accounting."
 zion-l1-types = { workspace = true }
 zion-core = { workspace = true }
 zion-cosmic-harmony = { workspace = true }
-zion-miner = { workspace = true }
+zion-miner = { workspace = true, features = ["auxpow"] }
 
 anyhow = { workspace = true }
 chrono = { workspace = true }

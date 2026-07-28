@@ -1,6 +1,6 @@
 //! Triple-stream mining statistics and identifiers.
 
-use crate::auxpow::ExternalCoin;
+use zion_cosmic_harmony::ExternalCoin;
 
 /// Identifies one of the three concurrent mining streams.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]

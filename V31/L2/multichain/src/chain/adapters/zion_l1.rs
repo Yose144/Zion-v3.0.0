@@ -343,7 +343,8 @@ impl ChainAdapter for ZionL1Adapter {
             .unwrap_or("")
             .to_string();
         let block_reward = tpl
-            .get("estimated_miner_reward_zion")
+            .get("block_reward")
+            .or_else(|| tpl.get("estimated_miner_reward_zion"))
             .or_else(|| tpl.get("reward_zion"))
             .and_then(|v| v.as_u64())
             .unwrap_or(6_000_000);
@@ -356,6 +357,7 @@ impl ChainAdapter for ZionL1Adapter {
             header_hex,
             target_hex,
             block_reward,
+            raw: tpl,
         }))
     }
 }

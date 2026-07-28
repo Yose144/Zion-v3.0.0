@@ -365,33 +365,14 @@ fn scan_verushash_full(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
         }
 
         let hash = crate::external_hashers::hash_verushash_header(&work_header);
-        // VerusHash v2.2 returns the hash in raw byte order; professional pools
-        // (node-stratum-pool-verus / LuckPool) interpret it as a little-endian
-        // 256-bit integer when comparing against the target. Use the LE helper.
+        // VerusHash v2.2 returns the hash in raw (little-endian) byte order;
+        // node-stratum-pool-verus / LuckPool interpret it as a little-endian
+        // 256-bit integer against the big-endian target. Use the LE helper.
         if meets_target_little_endian(&hash, target) {
-            println!(
+            eprintln!(
                 "VRSC_SHARE_FOUND nonce={} hash={}",
                 nonce,
                 hex::encode(hash),
-            );
-            // Debug: dump key header offsets to diagnose hash mismatch
-            println!(
-                "VRSC_DEBUG header_len={} version={} ntime={} nbits={} nonce_field={} varint={} sol_ver={} sol_numPBAAS={} mmr_first8={} ns_full={}",
-                work_header.len(),
-                hex::encode(&work_header[0..4]),
-                hex::encode(&work_header[100..104]),
-                hex::encode(&work_header[104..108]),
-                hex::encode(&work_header[108..140]),
-                hex::encode(&work_header[140..143]),
-                hex::encode(&work_header[143..147]),
-                work_header[148],
-                hex::encode(&work_header[151..159]),
-                hex::encode(&work_header[work_header.len().saturating_sub(15)..]),
-            );
-            println!(
-                "VRSC_DEBUG target={} hash_le_reversed={}",
-                hex::encode(target),
-                hex::encode(hash.iter().rev().copied().collect::<Vec<u8>>()),
             );
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
