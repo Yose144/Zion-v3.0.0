@@ -1455,7 +1455,7 @@ impl GpuMiner {
 
         let result: Result<Option<GpuFoundShare>> = (|| {
             let buffers = cached.as_ref().unwrap();
-            let pro_que = self.ensure_proque("beamhash_kernel.cl")?;
+            let pro_que = self.ensure_proque("beamhash_solver.cl")?;
 
             let enqueue_kernel = |name: &str, gws: usize, lws: usize| -> Result<()> {
             let kernel = Kernel::builder()
@@ -2630,6 +2630,7 @@ typedef unsigned long ulong;
                     "neoscrypt_kernel.cl" => include_str!("../csrc/opencl/neoscrypt_kernel.cl").to_string(),
                     "nexapow_kernel.cl" => include_str!("../csrc/opencl/nexapow_kernel.cl").to_string(),
                     "beamhash_kernel.cl" => include_str!("../csrc/opencl/beamhash_kernel.cl").to_string(),
+                    "beamhash_solver.cl" => include_str!("../csrc/opencl/beamhash_solver.cl").to_string(),
                     "ghostrider_kernel.cl" => {
                         // Concatenate embedded SPH + CN + main kernel
                         let sph = include_str!("../csrc/opencl/ghostrider_sph.cl");
