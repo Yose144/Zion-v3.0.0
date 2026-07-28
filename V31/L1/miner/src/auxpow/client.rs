@@ -170,15 +170,8 @@ async fn run_stratum_loop(
     state: StratumState,
 ) {
     loop {
-        if let Err(e) = stratum_session(
-            &url,
-            &worker,
-            &password,
-            &job_tx,
-            &mut submit_rx,
-            &state,
-        )
-        .await
+        if let Err(e) =
+            stratum_session(&url, &worker, &password, &job_tx, &mut submit_rx, &state).await
         {
             warn!(url = %url, error = %e, "stratum session failed, reconnecting in 5s");
         } else {
@@ -317,10 +310,7 @@ async fn handle_line(
     Ok(())
 }
 
-async fn parse_subscribe_response(
-    value: &Value,
-    state: &StratumState,
-) -> anyhow::Result<()> {
+async fn parse_subscribe_response(value: &Value, state: &StratumState) -> anyhow::Result<()> {
     let result = value.get("result").and_then(Value::as_array);
     if let Some(arr) = result {
         // Standard response: [session_id, extranonce1, extranonce2_size]
@@ -558,14 +548,13 @@ mod tests {
             }
         });
 
-        let mut client = StratumClient::new(
-            format!("127.0.0.1:{}", port),
-            "worker",
-            "x",
-        );
+        let mut client = StratumClient::new(format!("127.0.0.1:{}", port), "worker", "x");
 
         let job = client
-            .next_job(zion_cosmic_harmony::ExternalCoin::Kaspa, Duration::from_secs(5))
+            .next_job(
+                zion_cosmic_harmony::ExternalCoin::Kaspa,
+                Duration::from_secs(5),
+            )
             .await
             .unwrap();
         assert_eq!(job.job_id, "mock_job");
@@ -599,11 +588,7 @@ mod tests {
             }
         });
 
-        let client = StratumClient::new(
-            format!("127.0.0.1:{}", port),
-            "worker",
-            "x",
-        );
+        let client = StratumClient::new(format!("127.0.0.1:{}", port), "worker", "x");
 
         let share = Share {
             job_id: "mock_job".to_string(),

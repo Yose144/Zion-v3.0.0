@@ -101,8 +101,7 @@ impl Storage {
         // Parent must exist unless this is genesis.
         if header.height > 0 {
             let conn = self.conn.lock().await;
-            let parent = self
-                .get_by_hash_internal(&header.previous_hash, &conn)?;
+            let parent = self.get_by_hash_internal(&header.previous_hash, &conn)?;
             if parent.is_none() {
                 return Err(StorageError::MissingParent(header.previous_hash));
             }
@@ -264,20 +263,15 @@ impl Storage {
     /// Number of blocks stored.
     pub async fn height(&self) -> Result<u64, StorageError> {
         let conn = self.conn.lock().await;
-        let height: i64 = conn.query_row(
-            "SELECT COALESCE(MAX(height), -1) FROM blocks",
-            [],
-            |row| row.get(0),
-        )?;
+        let height: i64 =
+            conn.query_row("SELECT COALESCE(MAX(height), -1) FROM blocks", [], |row| {
+                row.get(0)
+            })?;
         Ok(if height < 0 { 0 } else { height as u64 })
     }
 
     /// Retrieve a contiguous range of blocks by height (inclusive).
-    pub async fn get_blocks_range(
-        &self,
-        start: u64,
-        end: u64,
-    ) -> Result<Vec<Block>, StorageError> {
+    pub async fn get_blocks_range(&self, start: u64, end: u64) -> Result<Vec<Block>, StorageError> {
         let conn = self.conn.lock().await;
         let mut stmt = conn.prepare(
             "SELECT hash FROM blocks

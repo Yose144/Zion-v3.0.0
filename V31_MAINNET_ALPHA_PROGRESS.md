@@ -270,7 +270,17 @@ Rozpis testů:
    - Až bude V31 stabilní, připravit subset pro public repo (`public/V31/`).
    - Two-step push: `origin` (private) → `public` (subtree).
 
-7. **Deploy runbook pro V31 Edge node**
+7. **Checkpoint sync s V3 (bez hard resetu)**
+   - **Cíl:** umožnit `V31/zion-node` validovat V3 bloky od posledního V3 tipu, aniž by se zakládal nový genesis.
+   - **Implementováno:**
+     - `V31/L1/cosmic-harmony-v3` — přenesen celý V3 `cosmic-harmony` crate (Ekam Deeksha v1/v2/v3, NPU, GPU kernely). 201 testů prochází.
+     - `V31/L1/core/src/v3_compat.rs` — V3 `MiningHeader`, account+UTXO transakce, BLAKE3 merkle root, compact target, genesis block builder, `v3_genesis_hash()`.
+     - `ConsensusEngine::verify_v3_block()` — validátor V3 bloků (height, prev hash, timestamp, difficulty bits, merkle root, PoW).
+     - **Ověření:** `v3_genesis_hash()` reprodukuje V3 mainnet hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` a `validate_v3_block` akceptuje V3 genesis blok.
+     - `cargo test --workspace` prochází 525 testy.
+   - **Zbývá:** napojit validátor na P2P/download loop, uložit V3 checkpoint do `Storage`, upravit `migration.rs` na checkpoint import a replikovat LWMA-60 retarget pro nové bloky.
+
+8. **Deploy runbook pro V31 Edge node**
    - `ZION_OS/infra/` scripts a systemd services pro `zion-node-v31`, `zion-pool-v31`, `zion-multichain-v31`.
    - Migrace dat z V3 na V31 cutover block.
 

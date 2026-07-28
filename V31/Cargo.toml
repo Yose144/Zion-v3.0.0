@@ -2,6 +2,7 @@
 members = [
     "L1/types",
     "L1/cosmic-harmony",
+    "L1/cosmic-harmony-v3",
     "L1/core",
     "L1/miner",
     "L1/pool",

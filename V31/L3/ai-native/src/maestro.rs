@@ -77,7 +77,10 @@ pub enum ExecutionStatus {
 
 impl PlanExecutionResult {
     pub fn is_success(&self) -> bool {
-        matches!(self.status, ExecutionStatus::Success | ExecutionStatus::PartialSuccess)
+        matches!(
+            self.status,
+            ExecutionStatus::Success | ExecutionStatus::PartialSuccess
+        )
     }
 
     /// Count steps by status.
@@ -183,12 +186,7 @@ impl Maestro {
             let mut dep_failed = false;
             for dep_id in &step.depends_on {
                 match step_results.get(dep_id) {
-                    Some(r)
-                        if matches!(
-                            r.status,
-                            StepStatus::Failed | StepStatus::Skipped
-                        ) =>
-                    {
+                    Some(r) if matches!(r.status, StepStatus::Failed | StepStatus::Skipped) => {
                         dep_failed = true;
                         break;
                     }
@@ -378,7 +376,11 @@ mod tests {
             Intent::WatchdogStatus,
         ] {
             let plan = m.plan_for_intent(intent.clone(), "test").unwrap();
-            assert!(!plan.steps.is_empty(), "Plan for {:?} should have steps", intent);
+            assert!(
+                !plan.steps.is_empty(),
+                "Plan for {:?} should have steps",
+                intent
+            );
         }
     }
 

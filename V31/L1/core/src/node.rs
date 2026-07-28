@@ -114,7 +114,10 @@ impl Node {
     }
 
     /// Run the node until the shutdown signal is received.
-    pub async fn run(self: Arc<Self>, mut shutdown: watch::Receiver<bool>) -> Result<(), NodeError> {
+    pub async fn run(
+        self: Arc<Self>,
+        mut shutdown: watch::Receiver<bool>,
+    ) -> Result<(), NodeError> {
         let rpc_shutdown = shutdown.clone();
         let p2p_shutdown = shutdown.clone();
         let sync_shutdown = shutdown.clone();
@@ -124,14 +127,10 @@ impl Node {
         let seed_peers = self.config.seed_peers.clone();
 
         let rpc = RpcServer::new(Arc::clone(&self));
-        let rpc_handle = tokio::spawn(async move {
-            rpc.run(rpc_addr, rpc_shutdown).await
-        });
+        let rpc_handle = tokio::spawn(async move { rpc.run(rpc_addr, rpc_shutdown).await });
 
         let p2p = crate::p2p::P2P::new(Arc::clone(&self));
-        let p2p_handle = tokio::spawn(async move {
-            p2p.listen(p2p_addr, p2p_shutdown).await
-        });
+        let p2p_handle = tokio::spawn(async move { p2p.listen(p2p_addr, p2p_shutdown).await });
 
         let sync_handle = tokio::spawn(async move {
             crate::p2p::sync_loop(Arc::clone(&self), seed_peers, sync_shutdown).await;
@@ -204,7 +203,10 @@ impl Node {
         });
 
         let next_height = tip_header.height + 1;
-        let window = self.storage.difficulty_window(difficulty::LWMA_WINDOW + 1).await?;
+        let window = self
+            .storage
+            .difficulty_window(difficulty::LWMA_WINDOW + 1)
+            .await?;
         let next_difficulty = lwma_next_difficulty(&window);
         let target = difficulty_to_target(next_difficulty);
 
@@ -215,9 +217,18 @@ impl Node {
             version: 1,
             inputs: vec![],
             outputs: vec![
-                TransactionOutput { amount: Amount::new(miner_amount as u128), address: miner },
-                TransactionOutput { amount: Amount::new(human_amount as u128), address: self.config.human_address.clone() },
-                TransactionOutput { amount: Amount::new(issobella_amount as u128), address: self.config.issobella_address.clone() },
+                TransactionOutput {
+                    amount: Amount::new(miner_amount as u128),
+                    address: miner,
+                },
+                TransactionOutput {
+                    amount: Amount::new(human_amount as u128),
+                    address: self.config.human_address.clone(),
+                },
+                TransactionOutput {
+                    amount: Amount::new(issobella_amount as u128),
+                    address: self.config.issobella_address.clone(),
+                },
             ],
             memo: b"coinbase".to_vec(),
         };
@@ -281,11 +292,7 @@ impl Node {
                 return Err(NodeError::Consensus(ConsensusError::TargetNotMet));
             };
             let expected_subsidy = block_subsidy(block.header.height);
-            let actual_subsidy: u64 = coinbase
-                .outputs
-                .iter()
-                .map(|o| o.amount.0 as u64)
-                .sum();
+            let actual_subsidy: u64 = coinbase.outputs.iter().map(|o| o.amount.0 as u64).sum();
             let (miner, human, issobella, _burn) = fee_split(expected_subsidy);
             let expected = miner + human + issobella;
             if actual_subsidy != expected {
@@ -366,8 +373,7 @@ mod tests {
         };
         let node = Arc::new(Node::new(config).await.unwrap());
 
-        let miner = Address::new(zion_l1_types::ChainId::ZionL1, vec![], "zion1test")
-            .unwrap();
+        let miner = Address::new(zion_l1_types::ChainId::ZionL1, vec![], "zion1test").unwrap();
         let template = node.block_template(miner).await.unwrap();
 
         // Mine the header with an easy target for the unit test, then set the
@@ -375,7 +381,8 @@ mod tests {
         let mut header: BlockHeader = serde_json::from_str(&template.header_json).unwrap();
         header.difficulty = 1;
         let target = [0xff; 32];
-        node.consensus.mine(&mut header, &target, 0, 1_000)
+        node.consensus
+            .mine(&mut header, &target, 0, 1_000)
             .expect("block should be mineable in test");
 
         let block = Block::new(header, template.transactions);

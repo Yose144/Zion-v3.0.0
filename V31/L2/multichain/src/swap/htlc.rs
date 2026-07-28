@@ -20,9 +20,9 @@ impl HtlcSwap {
                 "HTLC initiate called on non-HTLC transfer".to_string(),
             ));
         }
-        let hashlock = transfer.hashlock.ok_or_else(|| {
-            MultichainError::Validation("HTLC requires hashlock".to_string())
-        })?;
+        let hashlock = transfer
+            .hashlock
+            .ok_or_else(|| MultichainError::Validation("HTLC requires hashlock".to_string()))?;
         if transfer.timelock.is_none() {
             return Err(MultichainError::Validation(
                 "HTLC requires timelock".to_string(),
@@ -34,9 +34,9 @@ impl HtlcSwap {
     }
 
     pub async fn claim(&self, secret: &[u8], transfer: &mut Transfer) -> MultichainResult<()> {
-        let expected = transfer.hashlock.ok_or_else(|| {
-            MultichainError::Validation("HTLC missing hashlock".to_string())
-        })?;
+        let expected = transfer
+            .hashlock
+            .ok_or_else(|| MultichainError::Validation("HTLC missing hashlock".to_string()))?;
         let actual = hash_sha256(secret);
         if actual != expected {
             return Err(MultichainError::Validation(
@@ -48,9 +48,9 @@ impl HtlcSwap {
     }
 
     pub async fn refund(&self, transfer: &mut Transfer) -> MultichainResult<()> {
-        let timelock = transfer.timelock.ok_or_else(|| {
-            MultichainError::Validation("HTLC missing timelock".to_string())
-        })?;
+        let timelock = transfer
+            .timelock
+            .ok_or_else(|| MultichainError::Validation("HTLC missing timelock".to_string()))?;
         let now = Utc::now().timestamp() as u64;
         if now < timelock {
             return Err(MultichainError::Validation(format!(

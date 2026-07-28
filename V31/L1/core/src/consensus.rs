@@ -80,6 +80,28 @@ impl ConsensusEngine {
     pub fn header_hash(&self, header: &BlockHeader) -> Hash {
         header.header_hash()
     }
+
+    /// Validate a downloaded V3 block against the previous V3 block.
+    ///
+    /// This is the entry point for block-sync without a hard reset: V31 can now
+    /// verify V3 blocks using the original Ekam Deeksha v2 PoW, merkle root and
+    /// header layout.
+    pub fn verify_v3_block(
+        &self,
+        block: &crate::v3_compat::V3Block,
+        previous_hash: [u8; 32],
+        previous_timestamp: u64,
+        previous_height: u64,
+        expected_difficulty: u64,
+    ) -> Result<(), &'static str> {
+        crate::v3_compat::validate_v3_block(
+            block,
+            previous_hash,
+            previous_timestamp,
+            previous_height,
+            expected_difficulty,
+        )
+    }
 }
 
 #[cfg(test)]

@@ -16,8 +16,7 @@ use crate::transaction::{Transaction, TransactionOutput};
 
 /// Frozen V3 mainnet beta genesis hash. Used as the trusted root for any
 /// V31 → V3 checkpoint/cutover mode.
-pub const V3_GENESIS_HASH: &str =
-    "4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e";
+pub use crate::v3_compat::V3_GENESIS_HASH;
 
 /// Genesis timestamp (seconds since UNIX epoch): 2026-01-01 00:00:00 UTC.
 pub const GENESIS_TIMESTAMP: u64 = 1_767_225_600;
@@ -75,13 +74,25 @@ pub fn genesis_hash() -> Hash {
 fn premine_outputs() -> Vec<TransactionOutput> {
     vec![
         // OASIS + Golden Egg (8.25 B)
-        output("zion1n3t6v6w3m8g4v6q8g7h7j4j6f7s8q2m7g7un8u0", 8_250_000_000),
+        output(
+            "zion1n3t6v6w3m8g4v6q8g7h7j4j6f7s8q2m7g7un8u0",
+            8_250_000_000,
+        ),
         // DAO Treasury (4.0 B)
-        output("zion1d4o9q2w3e4r5t6y7u8i9o0p1a2s3d4f5g6h7j8k9", 4_000_000_000),
+        output(
+            "zion1d4o9q2w3e4r5t6y7u8i9o0p1a2s3d4f5g6h7j8k9",
+            4_000_000_000,
+        ),
         // Infrastructure (2.59 B)
-        output("zion1i2f3r4a5c6t7y8u9i0o1p2a3s4d5f6g7h8j9k0l1", 2_590_000_000),
+        output(
+            "zion1i2f3r4a5c6t7y8u9i0o1p2a3s4d5f6g7h8j9k0l1",
+            2_590_000_000,
+        ),
         // Humanitarian (1.0 B)
-        output("zion1h3u4m5a6n7i8t9a0r1i2a3n4s5h6i7p8e9r0o1r2", 1_000_000_000),
+        output(
+            "zion1h3u4m5a6n7i8t9a0r1i2a3n4s5h6i7p8e9r0o1r2",
+            1_000_000_000,
+        ),
         // Bridge Seed (0.4 B)
         output("zion1b4r5i6d7g8e9s0e1d2s3e4e5d6f7g8h9i0j1k2l3", 400_000_000),
         // Bridge Vault UTXO (0.1 B)
@@ -92,8 +103,8 @@ fn premine_outputs() -> Vec<TransactionOutput> {
 }
 
 fn output(encoded: &str, zion: u64) -> TransactionOutput {
-    let address = Address::new(ChainId::ZionL1, vec![], encoded)
-        .expect("genesis address must be valid");
+    let address =
+        Address::new(ChainId::ZionL1, vec![], encoded).expect("genesis address must be valid");
     TransactionOutput {
         amount: Amount::new(zion as u128 * 1_000_000),
         address,

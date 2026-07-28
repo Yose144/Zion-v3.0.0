@@ -17,6 +17,7 @@ path = "src/bin/migrate.rs"
 [dependencies]
 zion-l1-types = { workspace = true }
 zion-cosmic-harmony = { workspace = true }
+zion-cosmic-harmony-v3 = { path = "../cosmic-harmony-v3" }
 
 async-trait = { workspace = true }
 blake3 = { workspace = true }

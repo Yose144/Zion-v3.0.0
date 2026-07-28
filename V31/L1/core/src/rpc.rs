@@ -83,7 +83,11 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         "getBlockTemplate" => block_template(node, &params).await,
         "submitBlock" => submit_block(node, &params).await,
         "submitTransaction" => submit_transaction(node, &params).await,
-        _ => Ok(error_response(id.clone(), -32601, &format!("method not found: {method}"))),
+        _ => Ok(error_response(
+            id.clone(),
+            -32601,
+            &format!("method not found: {method}"),
+        )),
     };
 
     match result {
@@ -125,9 +129,8 @@ async fn block_template(node: &Node, params: &Value) -> Result<Value, NodeError>
         .get("miner")
         .and_then(Value::as_str)
         .unwrap_or("zion1test");
-    let miner_addr =
-        zion_l1_types::Address::new(zion_l1_types::ChainId::ZionL1, vec![], miner)
-            .map_err(|e| NodeError::Address(e.to_string()))?;
+    let miner_addr = zion_l1_types::Address::new(zion_l1_types::ChainId::ZionL1, vec![], miner)
+        .map_err(|e| NodeError::Address(e.to_string()))?;
     let template = node.block_template(miner_addr).await?;
     Ok(serde_json::to_value(template)?)
 }

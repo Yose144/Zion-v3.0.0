@@ -1,8 +1,8 @@
 # V31 Mainnet Alpha — Build Plan (kanonický)
 
-> **Verze:** 3.1.0-alpha.1  
+> **Verze:** 3.1.0-alpha.2  
 > **Datum:** 2026-07-28  
-> **Status:** scaffold exists, `cargo check` passes, ready for staged migration  
+> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync in progress  
 > **Princip:** `V3/` zůstává produkční, `V31/` se staví jako čistý Mainnet Alpha strom.  
 
 Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozhodnutí o architektuře, vrstvách a prioritách se zde zaznamenávají a aktualizují.
@@ -205,15 +205,19 @@ Cíl: `V31/` nahradí `V3/` na Edge staging.
 - Verified proti edge state: 7423 bloku, 22 unikatnich adres, total supply zachovan.
 - **Poznámka:** toto je **state-snapshot / soft reset řetězce** — vytváří se nový genesis block s novým hashem. Historické block hashe 0..tip se nekopírují.
 
-### 7.2 Block-by-block sync bez hard resetu (otevřené rozhodnutí)
+### 7.2 Block-by-block sync bez hard resetu (checkpoint sync — aktivně implementováno)
 
-- Pokud má Fáze 5 proběhnout **bez dalšího hard resetu**, migration block nepostačuje. V31 musí produkovat **identické block hashe** jako V3 od posledního V3 bloku dále (Cesta B — checkpoint, nebo Cesta A — full port).
-- Technicky to nyní není možné: `V3/L1/core` má ~7700 řádků runtime, dual account/UTXO model, `cosmic_harmony_ekam_deeksha_v2`, LWMA-60, Decade Decay atd. V31 `zion-core` je zatím scaffold.
+- Rozhodnuto pokračovat **Cestou B (checkpoint sync)**: V31 nebude produkovat nové genesis, ale začne z trusted snapshotu posledního V3 stavu a dále validovat nové bloky původními V3 pravidly.
+- Implementováno:
+  - `V31/L1/cosmic-harmony-v3` — přenesen celý `V3/L1/cosmic-harmony` crate (Ekam Deeksha v1/v2/v3, NPU mixing, GPU kernely). 200+ testů prochází.
+  - `V31/L1/core/src/v3_compat.rs` — V3 `MiningHeader`, account+UTXO transakce, BLAKE3 merkle root, compact target, genesis block builder, `v3_genesis_hash()`.
+  - `ConsensusEngine::verify_v3_block()` — validátor V3 bloků (height, prev hash, timestamp, difficulty bits, merkle root, PoW).
+  - **Ověření:** `v3_genesis_hash()` reprodukuje mainnet hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`; `validate_v3_block` akceptuje V3 genesis blok.
+- Zbývá:
+  - Výpočet `difficulty` pro nové bloky (LWMA-60 reuse z `difficulty.rs`).
+  - Uložení V3 checkpointu do `Storage` a P2P/download loop (stahovat hlavičky + tx, validovat řetězec).
+  - Úprava `migration.rs` na `checkpoint.rs` — import snapshotu pod posledním V3 hashem místo migration blocku na height 0.
 - Detailní analýza v `V31/V3_SYNC_ASSESSMENT.md`.
-- Fáze 5 cutover varianty:
-  1. **Snapshot cutover** — snapshotovat V3 state, spustit `zion-migrate`, poté `zion-node --no-genesis`. (Nový genesis, jednodušší.)
-  2. **Checkpoint sync** — importovat V3 state jako checkpoint pod posledním V3 block hashem, validovat nové bloky V3 pravidly. (Bez hard resetu, ale vyžaduje plný consensus port.)
-- Rozhodnutí, kterou variantu Fáze 5 použít, musí být explicitní. Dokud není, zůstává default **7.1**.
 
 ## 8. Pool + miner integrace (F6)
 

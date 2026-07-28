@@ -311,21 +311,14 @@ impl EvmAdapter {
         Ok(Amount::new(raw.as_u128()))
     }
 
-    pub async fn transfer_wzion(
-        &self,
-        to: &Address,
-        amount: Amount,
-    ) -> MultichainResult<Hash> {
+    pub async fn transfer_wzion(&self, to: &Address, amount: Amount) -> MultichainResult<Hash> {
         let wzion = self
             .wzion_address()
             .ok_or_else(|| MultichainError::Config("wZION contract not configured".to_string()))?;
         let to_eth = self.to_eth_address(to)?;
 
         let mut data = Self::function_selector(ERC20_TRANSFER_SIG).to_vec();
-        let args = encode(&[
-            Token::Address(to_eth),
-            Token::Uint(U256::from(amount.0)),
-        ]);
+        let args = encode(&[Token::Address(to_eth), Token::Uint(U256::from(amount.0))]);
         data.extend_from_slice(&args);
 
         self.send_transaction(wzion, data, U256::zero()).await
@@ -404,12 +397,8 @@ impl ChainAdapter for EvmAdapter {
         }
 
         match transfer.direction {
-            TransferDirection::LockMint => {
-                self.submit_lock_proof(transfer, bridge).await
-            }
-            TransferDirection::BurnRelease => {
-                self.confirm_burn_release(transfer, bridge).await
-            }
+            TransferDirection::LockMint => self.submit_lock_proof(transfer, bridge).await,
+            TransferDirection::BurnRelease => self.confirm_burn_release(transfer, bridge).await,
             _ => Err(MultichainError::Unsupported(format!(
                 "EVM adapter cannot handle transfer direction {:?}",
                 transfer.direction

@@ -120,12 +120,16 @@ async fn main() -> anyhow::Result<()> {
                             event.block_height, event.miner_address, event.subsidy_flowers
                         );
                         // Award XP to the miner
-                        if let Ok(mut player) = db_for_listener.get_or_create_player(&event.miner_address) {
+                        if let Ok(mut player) =
+                            db_for_listener.get_or_create_player(&event.miner_address)
+                        {
                             let xp_gain = event.subsidy_flowers / 1_000_000; // 1 XP per ZION mined
                             if xp_gain > 0 {
                                 player.total_xp = player.total_xp.saturating_add(xp_gain);
                                 player.level =
-                                    zion_oasis::consciousness::ConsciousnessLevel::from_xp(player.total_xp);
+                                    zion_oasis::consciousness::ConsciousnessLevel::from_xp(
+                                        player.total_xp,
+                                    );
                                 let _ = db_for_listener.save_player(&player);
                             }
                         }

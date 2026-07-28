@@ -111,6 +111,21 @@ Jako první krok navrhuji:
 
 Dokud nebude Cesta A/B hotová, `V31` zůstává testovací větev a produkční track zůstává `V3/`.
 
+## 7. Postup implementace (checkpoint sync)
+
+Po rozhodnutí pokračovat **Cestou B — checkpoint sync** byly provedeny následující kroky:
+
+1. **V3 PoW crate přenesen do V31** — `V31/L1/cosmic-harmony-v3` je kompletní kopie `V3/L1/cosmic-harmony` s přejmenovaným packagem `zion-cosmic-harmony-v3`. Kompiluje se v rámci `V31/` workspace a prochází všemi 200+ vlastními testy.
+2. **`v3_compat.rs` v `zion-core`** — obsahuje:
+   - `MiningHeader` (80B verze/prev/merkle/timestamp/difficulty_bits),
+   - V3 account a UTXO transakční typy a hashování (v1/v2),
+   - `derive_template_merkle_root_v2_blake3` s Bitcoin-style duplikací lichých listů,
+   - `difficulty_to_target` / `target_to_compact` / `compact_to_target` shodné s V3,
+   - `build_v3_genesis_block()` a `v3_genesis_hash()`.
+3. **Ověření proti V3 mainnet** — `cargo test -p zion-core --lib v3_compat` potvrzuje, že V31 reprodukuje přesný V3 genesis hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`.
+4. **Validátor V3 bloků** — `validate_v3_block()` v `v3_compat.rs` a `ConsensusEngine::verify_v3_block()` ověřují height, previous hash, timestamp, difficulty_bits, merkle root a PoW (pro height > 0; genesis je trustovaný root). Genesis blok prochází validací.
+5. **Zbývá** — napojit validátor na P2P/download loop, uložit V3 block do `Storage`/checkpoint a replikovat difficulty/LWMA retarget pro nové bloky.
+
 ## 6. Reference
 
 - V3 `genesis_hash()`: `V3/L1/core/src/bin/get-genesis-hash.rs`

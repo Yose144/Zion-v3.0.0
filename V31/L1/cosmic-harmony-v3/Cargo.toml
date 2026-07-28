@@ -1,0 +1,33 @@
+[package]
+name = "zion-cosmic-harmony-v3"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[features]
+default = []
+native-npu = ["dep:ort"]
+testnet = []
+# Public build: suppress profit_router / stream_profit log lines that
+# reveal external coin names.  Enabled only by MinerP3.0.6/miner.
+# V3 workspace never enables this, so V3 behavior is unchanged.
+public_build = []
+# Local/docker hard-fork rehearsal only — sets TX/BODY v2 gates to the same low height.
+testnet_fork_rehearsal = []
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+aes = "0.8"
+blake3.workspace = true
+chrono.workspace = true
+libc = "0.2"
+log = "0.4"
+ort = { version = "2.0.0-rc.10", optional = true, default-features = false, features = ["load-dynamic"] }
+reqwest.workspace = true
+sha3.workspace = true
+tokio.workspace = true

@@ -5,8 +5,8 @@ use anyhow::{anyhow, bail};
 use clap::{Parser, Subcommand};
 use tokio::sync::watch;
 
-use zion_l1_types::{Address, Amount, Asset, ChainId};
 use std::net::SocketAddr;
+use zion_l1_types::{Address, Amount, Asset, ChainId};
 
 mod menu;
 

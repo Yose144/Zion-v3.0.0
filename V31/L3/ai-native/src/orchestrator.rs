@@ -6,8 +6,8 @@ use uuid::Uuid;
 use crate::error::{AiError, AiResult};
 use crate::task::{AiTask, AiTaskType};
 use crate::types::{Agent, AgentCapability, AgentMessage, AgentStatus};
-use zion_ncl::{ComputeBackend, JobScheduler, NclJob, NclTaskType};
 use zion_multichain::warp::{ChainFamily, ChainId, WarpRouter};
+use zion_ncl::{ComputeBackend, JobScheduler, NclJob, NclTaskType};
 
 /// Bridge operation types that AI agents can initiate.
 #[derive(Debug, Clone)]

@@ -87,7 +87,9 @@ impl AuxPoWScheduler {
     pub fn gpu_url(&self) -> (Option<ExternalCoin>, Option<&str>) {
         (
             self.current_gpu,
-            self.profile_gpu.as_ref().and_then(|p| p.stratum_urls.first().map(|s| s.as_str())),
+            self.profile_gpu
+                .as_ref()
+                .and_then(|p| p.stratum_urls.first().map(|s| s.as_str())),
         )
     }
 
@@ -95,7 +97,9 @@ impl AuxPoWScheduler {
     pub fn cpu_url(&self) -> (Option<ExternalCoin>, Option<&str>) {
         (
             self.current_cpu,
-            self.profile_cpu.as_ref().and_then(|p| p.stratum_urls.first().map(|s| s.as_str())),
+            self.profile_cpu
+                .as_ref()
+                .and_then(|p| p.stratum_urls.first().map(|s| s.as_str())),
         )
     }
 }

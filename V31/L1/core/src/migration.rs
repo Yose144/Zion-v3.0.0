@@ -137,9 +137,7 @@ pub async fn migrate_v3_state<P: AsRef<Path>>(
             if tx.from == "genesis" || tx.from == "coinbase" {
                 *account_balances.entry(tx.to.clone()).or_insert(0) += amount;
             } else {
-                let sender = account_balances
-                    .entry(tx.from.clone())
-                    .or_insert(0);
+                let sender = account_balances.entry(tx.from.clone()).or_insert(0);
                 *sender = sender.saturating_sub(amount + fee);
                 *account_balances.entry(tx.to.clone()).or_insert(0) += amount;
             }
@@ -151,9 +149,7 @@ pub async fn migrate_v3_state<P: AsRef<Path>>(
             for input in &tx.inputs {
                 let key = (Hash::new(input.prev_tx_hash), input.output_index);
                 if let Some((addr, raw, f)) = utxo_pool.remove(&key) {
-                    *utxo_unspent_raw
-                        .entry((addr, f))
-                        .or_insert(0) = utxo_unspent_raw
+                    *utxo_unspent_raw.entry((addr, f)).or_insert(0) = utxo_unspent_raw
                         .get(&(addr.clone(), f))
                         .copied()
                         .unwrap_or(0)
@@ -163,10 +159,7 @@ pub async fn migrate_v3_state<P: AsRef<Path>>(
 
             for (i, output) in tx.outputs.iter().enumerate() {
                 let raw = output.amount as u128;
-                utxo_pool.insert(
-                    (tx_hash, i as u32),
-                    (output.address.clone(), raw, factor),
-                );
+                utxo_pool.insert((tx_hash, i as u32), (output.address.clone(), raw, factor));
                 *utxo_unspent_raw
                     .entry((output.address.clone(), factor))
                     .or_insert(0) += raw;
@@ -308,10 +301,8 @@ mod tests {
             ]
         }"#;
 
-        let state_path = std::env::temp_dir().join(format!(
-            "zion-migration-test-{}.json",
-            std::process::id()
-        ));
+        let state_path =
+            std::env::temp_dir().join(format!("zion-migration-test-{}.json", std::process::id()));
         tokio::fs::write(&state_path, json).await.unwrap();
 
         let storage = Storage::open_in_memory().await.unwrap();
