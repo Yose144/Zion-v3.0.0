@@ -109,8 +109,10 @@ static void getAlgoString(void *mem, unsigned int size,
                           uint8_t* selectedAlgoOutput, int algoCount) {
   unsigned char *p = (unsigned char *)mem;
   unsigned int len = size / 2;
-  bool selectedAlgo[algoCount];
-  for (int z = 0; z < algoCount; z++) {
+  /* MSVC does not support VLA (C99 variable-length arrays).
+     Use a fixed-size array — algoCount is at most 15 (HASH_FUNC_COUNT). */
+  bool selectedAlgo[15];
+  for (int z = 0; z < algoCount && z < 15; z++) {
     selectedAlgo[z] = false;
   }
   int selectedCount = 0;

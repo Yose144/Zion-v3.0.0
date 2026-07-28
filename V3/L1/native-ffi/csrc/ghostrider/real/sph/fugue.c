@@ -954,7 +954,7 @@ fugue4_core(sph_fugue_context *sc, const void *data, size_t len)
 	memcpy(S + rms, sc->S, ((s) - rms) * sizeof(sph_u32));
 
 #define ROR(n, s)   do { \
-		sph_u32 tmp[n]; \
+		sph_u32 tmp[15]; \
 		memcpy(tmp, S + ((s) - (n)), (n) * sizeof(sph_u32)); \
 		memmove(S + (n), S, ((s) - (n)) * sizeof(sph_u32)); \
 		memcpy(S, tmp, (n) * sizeof(sph_u32)); \

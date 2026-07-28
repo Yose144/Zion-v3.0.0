@@ -78,6 +78,10 @@ fn add_msvc_includes(b: &mut cc::Build) {
     // 4. Force-include the POSIX compat shim (provides clock_gettime etc.)
     b.include("csrc/compat");
     b.flag_if_supported("/FIzion_time_compat.h");
+
+    // 5. Treat source files as UTF-8 (some ghostrider sphlib sources contain
+    //    em-dash/en-dash in comments; without /utf-8 MSVC fails silently).
+    b.flag_if_supported("/utf-8");
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -173,6 +177,7 @@ fn base_build(src: &str, lib: &str, target_os: &str, is_msvc: bool) {
         }
     } else {
         b.flag_if_supported("/std:c11");
+        b.flag_if_supported("/utf-8");
         add_msvc_includes(&mut b);
     }
     b.compile(lib);
@@ -820,6 +825,8 @@ fn build_ghostrider(target_os: &str, is_msvc: bool) {
 
     if is_msvc {
         add_msvc_includes(&mut b);
+        // MSVC uses _alloca (from <malloc.h>); GCC/Clang use alloca.
+        b.define("alloca", "_alloca");
     } else {
         b.define("_GNU_SOURCE", None);
         b.flag_if_supported("-std=c11");
