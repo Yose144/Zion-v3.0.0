@@ -5109,7 +5109,116 @@ fn external_gpu_thread(
     }
 }
 
+// ── Persistent RandomX worker pool ──────────────────────────────────────
+// RandomX VMs are expensive to create (~256MB scratchpad allocation + dataset
+// init).  Spawning new threads per batch means each thread creates a new VM,
+// uses it for a few thousand hashes, then destroys it.  This pool keeps N
+// worker threads alive for the entire mining session — each creates its VM
+// once (via thread_local in the C wrapper) and reuses it across batches.
+//
+// This is the single biggest RandomX performance optimization: xmrig does
+// the same thing (persistent threads with per-thread VMs).
 
+struct RandomXWorkItem {
+    job: std::sync::Arc<zion_auxpow::types::JobPackage>,
+    start: u64,
+    end: u64,
+    stop: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    found: std::sync::Arc<std::sync::Mutex<Option<zion_auxpow::miner_harness::FoundShare>>>,
+    done: std::sync::Arc<std::sync::atomic::AtomicU64>,
+}
+
+struct RandomXWorkerPool {
+    senders: Vec<std::sync::mpsc::Sender<RandomXWorkItem>>,
+    handles: Vec<std::thread::JoinHandle<()>>,
+}
+
+impl RandomXWorkerPool {
+    fn new(num_workers: usize) -> Self {
+        let mut senders = Vec::with_capacity(num_workers);
+        let mut handles = Vec::with_capacity(num_workers);
+
+        for worker_idx in 0..num_workers {
+            let (tx, rx) = std::sync::mpsc::channel::<RandomXWorkItem>();
+            senders.push(tx);
+
+            let handle = std::thread::spawn(move || {
+                // Pin this worker to a physical core (cache-sensitive for RandomX)
+                thread_affinity::maybe_pin_thread(worker_idx, num_workers, "randomx");
+
+                // Worker loop: wait for work, scan, signal done, repeat.
+                // The RandomX VM is created on first hash() call (thread_local
+                // in C wrapper) and reused for all subsequent calls.
+                while let Ok(item) = rx.recv() {
+                    // Check if already found by another worker
+                    if item.stop.load(std::sync::atomic::Ordering::Relaxed) {
+                        item.done.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                        continue;
+                    }
+                    let range = item.start..item.end;
+                    match zion_auxpow::miner_harness::mine(&item.job, range) {
+                        Ok(Some(share)) => {
+                            let mut guard = item.found.lock().unwrap();
+                            if guard.is_none() {
+                                *guard = Some(share);
+                            }
+                            item.stop.store(true, std::sync::atomic::Ordering::Relaxed);
+                        }
+                        _ => {}
+                    }
+                    item.done.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                }
+                // Channel closed — worker exits, VM is destroyed
+            });
+            handles.push(handle);
+        }
+
+        Self { senders, handles }
+    }
+
+    /// Scan a nonce range across all workers.  Returns a found share if any
+    /// worker found one.  Blocks until all workers complete their chunk.
+    fn scan(
+        &self,
+        job: &std::sync::Arc<zion_auxpow::types::JobPackage>,
+        start_nonce: u64,
+        nonce_count: u64,
+    ) -> Option<zion_auxpow::miner_harness::FoundShare> {
+        let num_workers = self.senders.len();
+        let chunk = (nonce_count / num_workers as u64).max(1);
+        let scan_end = start_nonce.wrapping_add(nonce_count);
+
+        let found = std::sync::Arc::new(std::sync::Mutex::new(None::<zion_auxpow::miner_harness::FoundShare>));
+        let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let done = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
+
+        for (i, sender) in self.senders.iter().enumerate() {
+            let t_start = start_nonce.wrapping_add((i as u64) * chunk);
+            let t_end = if i == num_workers - 1 {
+                scan_end
+            } else {
+                t_start.wrapping_add(chunk)
+            };
+            let item = RandomXWorkItem {
+                job: std::sync::Arc::clone(job),
+                start: t_start,
+                end: t_end,
+                stop: std::sync::Arc::clone(&stop),
+                found: std::sync::Arc::clone(&found),
+                done: std::sync::Arc::clone(&done),
+            };
+            let _ = sender.send(item);
+        }
+
+        // Wait for all workers to signal completion
+        while done.load(std::sync::atomic::Ordering::SeqCst) < num_workers as u64 {
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+
+        let mut guard = found.lock().unwrap();
+        guard.take()
+    }
+}
 
 
 /// Persistent CPU external stream thread (Stream 3c: VerusHash/RandomX).
@@ -5125,16 +5234,14 @@ fn ext_cpu_thread(
     nonce_count: u64,
     hashrate: Arc<HashrateTracker>,
 ) {
-    // RandomX is ~1000× slower than VerusHash per hash.  Use a much smaller
-    // nonce batch for RandomX so that hashrate updates frequently and the
-    // thread stays responsive to new jobs.
-    //   VerusHash: ~5 MH/s per thread → 2M nonces ≈ 0.4s per batch
-    //   RandomX:   ~500 H/s per thread → 2M nonces ≈ 4000s per batch (!)
-    // With randomx_nonce_count=50000 and 3 threads, each thread gets ~16666
-    // nonces, taking ~33s per batch at 500 H/s — good throughput with
-    // acceptable job-update latency (MoneroOcean jobs rotate every ~60s).
-    let randomx_nonce_count = parse_env_u64("ZION_EXT_CPU_RANDOMX_NONCE_COUNT", 50_000)
-        .unwrap_or(50_000);
+    // RandomX is ~1000× slower than VerusHash per hash.  Use a smaller nonce
+    // batch so batches complete faster than the job rotation interval (~30-60s
+    // on MoneroOcean).  With the persistent worker pool, VM creation overhead
+    // is zero, so we can afford smaller batches for better job responsiveness.
+    //   6 threads × ~500 H/s = ~3000 H/s total
+    //   10000 nonces / 3000 H/s ≈ 3.3s per batch — well under job rotation
+    let randomx_nonce_count = parse_env_u64("ZION_EXT_CPU_RANDOMX_NONCE_COUNT", 10_000)
+        .unwrap_or(10_000);
 
     // Ghostrider is ~500,000× slower than VerusHash per hash.  Using the
     // VerusHash nonce_count (5M) would block the thread for ~500,000 seconds
@@ -5149,15 +5256,17 @@ fn ext_cpu_thread(
     let ghostrider_nonce_count = parse_env_u64("ZION_EXT_CPU_GHOSTRIDER_NONCE_COUNT", 600)
         .unwrap_or(600);
 
-    // RandomX is memory-bandwidth bound.  Using all logical cores (HT) for
-    // RandomX starves the main mining loop (GPU share submission, TUI, etc.)
-    // causing 10× slowdown from scheduler contention.  Use fewer threads:
-    // default = threads/2 (e.g. 3 for 6T, 6 for 12T), leaving half the logical
-    // cores for the main loop.  Override with ZION_EXT_CPU_RANDOMX_THREADS.
+    // RandomX: use ALL logical cores (12 on a 6c/12t CPU).  Hyperthreads do
+    // help somewhat for RandomX despite L3 sharing — the bottleneck is often
+    // compute, not just memory bandwidth.  Override with ZION_EXT_CPU_RANDOMX_THREADS.
     let randomx_threads = std::env::var("ZION_EXT_CPU_RANDOMX_THREADS")
         .ok()
         .and_then(|s| s.parse::<usize>().ok())
-        .unwrap_or((threads / 2).max(2));
+        .unwrap_or_else(|| {
+            // Default: all logical cores (12 on a 6c/12t CPU)
+            let logical = num_cpus::get();
+            if logical > threads { logical } else { threads }
+        });
 
     println!(
         "[{}] ext_cpu_thread: started (persistent, threads={}, randomx_threads={}, verushash_nonce_count={}, randomx_nonce_count={}, ghostrider_nonce_count={})",
@@ -5167,6 +5276,16 @@ fn ext_cpu_thread(
         nonce_count,
         randomx_nonce_count,
         ghostrider_nonce_count,
+    );
+
+    // Create persistent RandomX worker pool — VMs are created once per worker
+    // and reused across all batches.  This avoids the ~5s VM creation overhead
+    // per batch that occurs when spawning new threads each time.
+    let rx_pool = RandomXWorkerPool::new(randomx_threads);
+    println!(
+        "[{}] ext_cpu_thread: RandomX worker pool created ({} persistent workers)",
+        log_timestamp(),
+        randomx_threads,
     );
 
     let mut current_job: Option<zion_pool::ExternalStreamJob> = None;
@@ -5228,16 +5347,29 @@ fn ext_cpu_thread(
                 }
                 // Update hashrate tracker for trinity display
                 hashrate.set_cpu_ext_job(&job.coin, &job.algorithm);
+
+                // For RandomX, initialize the dataset once when a new job
+                // arrives (the seed may have changed).  This avoids calling
+                // init_with_seed 6× per batch inside scan_randomx (which
+                // acquires a mutex even when the seed hasn't changed).
+                if job.algorithm == "randomx" {
+                    let seed = if job.seed_hash_hex.is_empty() {
+                        vec![0u8; 32]
+                    } else {
+                        hex::decode(job.seed_hash_hex.trim_start_matches("0x"))
+                            .unwrap_or_else(|_| vec![0u8; 32])
+                    };
+                    #[cfg(feature = "native-randomx")]
+                    zion_native_ffi::randomx::init_with_seed(&seed);
+                }
             }
             current_job = Some(job);
         }
 
         // Mine current job (if any)
         if let Some(ref ext) = current_job {
-            // Use smaller nonce batches and fewer threads for RandomX
-            // (memory-bandwidth bound, HT doesn't help, and we need to leave
-            // CPU cores for the main GPU mining loop).
-            let (effective_threads, effective_nonce_count) = if ext.algorithm == "randomx" {
+            let is_randomx = ext.algorithm == "randomx";
+            let (effective_threads, effective_nonce_count) = if is_randomx {
                 (randomx_threads, randomx_nonce_count)
             } else if ext.algorithm == "ghostrider" {
                 (threads, ghostrider_nonce_count)
@@ -5246,9 +5378,83 @@ fn ext_cpu_thread(
             };
 
             let start_nonce = nonce_base.wrapping_add(nonce_offset);
-            if let Some(share) = mine_external_stream_cpu(ext, effective_threads, start_nonce, effective_nonce_count) {
-                // Stale-job guard: if a newer VRSC/CPU job arrived while we were
-                // scanning, discard the share — it would be rejected as "job not found".
+
+            // For RandomX, use the persistent worker pool (VMs reused).
+            // For other algorithms, use the per-batch thread spawning path.
+            let share_opt = if is_randomx {
+                // Build JobPackage for the pool
+                let coin = match zion_auxpow::types::ExternalCoin::from_str_loose(&ext.coin) {
+                    Some(c) => Some(c),
+                    None => {
+                        println!("external_stream_unknown_coin: {}", ext.coin);
+                        None
+                    }
+                };
+                match coin {
+                    None => None,
+                    Some(coin) => {
+                        let header_bytes = match hex::decode(ext.header_hex.trim_start_matches("0x")) {
+                            Ok(b) => b,
+                            Err(e) => {
+                                println!("external_stream_header_decode_error: {e}");
+                                Vec::new()
+                            }
+                        };
+                        let target_bytes = match zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external target") {
+                            Ok(t) => t,
+                            Err(e) => {
+                                println!("external_stream_target_parse_error: {e}");
+                                [0u8; 32]
+                            }
+                        };
+                        let extranonce1 = if ext.extranonce1_hex.is_empty() {
+                            Vec::new()
+                        } else {
+                            hex::decode(ext.extranonce1_hex.trim_start_matches("0x")).unwrap_or_default()
+                        };
+                        let job_pkg = std::sync::Arc::new(zion_auxpow::types::JobPackage {
+                            external_coin: coin,
+                            external_job_id: ext.job_id.clone(),
+                            algorithm: ext.algorithm.clone(),
+                            header_bytes,
+                            target_bytes,
+                            share_target_bytes: target_bytes,
+                            timestamp: ext.height,
+                            block_number: Some(ext.height),
+                            extranonce1,
+                            start_nonce,
+                            nonce_count: effective_nonce_count,
+                            seed_hash: if ext.seed_hash_hex.is_empty() {
+                                None
+                            } else {
+                                hex::decode(ext.seed_hash_hex.trim_start_matches("0x")).ok()
+                            },
+                        });
+                        // Scan using persistent pool — VMs are reused across batches
+                        rx_pool.scan(&job_pkg, start_nonce, effective_nonce_count)
+                            .map(|found| ExternalShareResult {
+                                coin: ext.coin.clone(),
+                                algorithm: ext.algorithm.clone(),
+                                external_job_id: found.external_job_id,
+                                nonce: found.nonce,
+                                hash: found.hash,
+                                mix_hash: None,
+                                extranonce1_hex: ext.extranonce1_hex.clone(),
+                            })
+                    }
+                }
+            } else {
+                mine_external_stream_cpu(ext, effective_threads, start_nonce, effective_nonce_count)
+            };
+
+            // Record hashrate BEFORE stale check — the work was done regardless
+            // of whether the share is stale.  This ensures the TUI shows actual
+            // hashrate even when jobs rotate faster than batches complete.
+            hashrate.record_cpu_ext_hashes(effective_nonce_count);
+
+            if let Some(share) = share_opt {
+                // Stale-job guard: if a newer job arrived while we were
+                // scanning, discard the share — it would be rejected.
                 let mut newer_job: Option<zion_pool::ExternalStreamJob> = None;
                 while let Ok(j) = rx.try_recv() { newer_job = Some(j); }
                 if let Some(newer) = newer_job {
@@ -5291,7 +5497,6 @@ fn ext_cpu_thread(
             } else {
                 nonce_offset = nonce_offset.wrapping_add(effective_nonce_count);
             }
-            hashrate.record_cpu_ext_hashes(effective_nonce_count);
         } else {
             // No job — brief sleep to avoid busy-loop
             std::thread::sleep(std::time::Duration::from_millis(200));

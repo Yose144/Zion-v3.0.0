@@ -235,6 +235,13 @@ EXPORT void randomx_zion_init(const uint8_t* seed, size_t seed_len) {
         /* If already initialized, keep current dataset (no reinit) */
         return;
     }
+    /* Fast path: if seed hasn't changed, skip entirely (lock-free).
+     * This avoids mutex contention when 6+ threads call init_with_seed
+     * every batch — the seed only changes every ~2h on Monero. */
+    if (g_initialized && seed_matches(seed, seed_len)) {
+        return;
+    }
+    /* Slow path: seed changed, acquire lock and reinit */
     std::lock_guard<std::mutex> lock(g_init_mutex);
     update_seed(seed, seed_len);
 }

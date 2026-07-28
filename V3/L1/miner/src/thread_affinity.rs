@@ -113,6 +113,22 @@ mod windows {
         fn GetCurrentThread() -> usize;
     }
 
+    // GetLogicalProcessorInformation for physical core detection.
+    // Returns an array of SYSTEM_LOGICAL_PROCESSOR_INFORMATION entries.
+    extern "system" {
+        fn GetLogicalProcessorInformation(
+            buffer: *mut u8,
+            length: *mut u32,
+        ) -> i32;
+    }
+
+    // SYSTEM_LOGICAL_PROCESSOR_INFORMATION layout (x64):
+    //   offset 0:  ULONG_PTR ProcessorMask  (8 bytes — bitmask of logical CPUs)
+    //   offset 8:  DWORD Relationship        (4 bytes — 0=ProcessorCore, 1=NumaNode, 2=Cache)
+    //   offset 12: BYTE   ProcessorCore.Flags (1 byte — bit0: SMT capable)
+    //   padding to 16 bytes alignment → total 24 bytes per entry on x64
+    const SLPI_ENTRY_SIZE: usize = 24;
+
     /// Pin the current thread to a specific CPU core on Windows.
     ///
     /// Uses SetThreadAffinityMask with a 64-bit mask (sufficient for up to
@@ -136,12 +152,56 @@ mod windows {
         }
     }
 
-    /// On Windows, we cannot easily detect physical vs SMT cores from userspace
-    /// without WMI.  Return 0..N (all logical cores) and let the caller decide.
-    /// The caller (maybe_pin_thread) will use logical IDs; for RandomX, the
-    /// first N logical IDs are typically physical cores on Intel/AMD.
+    /// Detect physical core IDs on Windows using GetLogicalProcessorInformation.
+    ///
+    /// For each RelationProcessorCore entry, the first (lowest) logical processor
+    /// in the ProcessorMask is the physical core's primary LP.  We return those
+    /// primary LPs — pinning to them gives exclusive use of a physical core.
+    ///
+    /// Falls back to (0..num_cpus) if the API call fails.
     pub fn physical_core_ids() -> Vec<usize> {
-        (0..num_cpus::get()).collect()
+        // First call with NULL/0 to get required buffer size.
+        let mut buf_len: u32 = 0;
+        unsafe {
+            GetLogicalProcessorInformation(std::ptr::null_mut(), &mut buf_len);
+        }
+        if buf_len == 0 {
+            return (0..num_cpus::get()).collect();
+        }
+
+        let n_entries = (buf_len as usize) / SLPI_ENTRY_SIZE;
+        let mut buf = vec![0u8; buf_len as usize];
+        let ret = unsafe {
+            GetLogicalProcessorInformation(buf.as_mut_ptr(), &mut buf_len)
+        };
+        if ret == 0 {
+            return (0..num_cpus::get()).collect();
+        }
+
+        let mut result = Vec::new();
+        for i in 0..n_entries {
+            let offset = i * SLPI_ENTRY_SIZE;
+            // Read ProcessorMask (8 bytes at offset 0)
+            let proc_mask = usize::from_le_bytes(
+                buf[offset..offset + 8].try_into().unwrap_or([0u8; 8])
+            );
+            // Read Relationship (4 bytes at offset 8)
+            let rel = u32::from_le_bytes(
+                buf[offset + 8..offset + 12].try_into().unwrap_or([0u8; 4])
+            );
+            // RelationProcessorCore == 0
+            if rel == 0 && proc_mask != 0 {
+                // Find the lowest set bit — that's the primary LP of this physical core
+                let primary = proc_mask.trailing_zeros() as usize;
+                result.push(primary);
+            }
+        }
+
+        if result.is_empty() {
+            (0..num_cpus::get()).collect()
+        } else {
+            result
+        }
     }
 }
 
