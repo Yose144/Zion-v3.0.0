@@ -10,8 +10,8 @@ use std::sync::Arc;
 
 use crate::auxpow_client::{AuxPowClient, ShareResult};
 use crate::external_hashers::{
-    ethash_final_hash, ethash_header_hash, hash_blake3, hash_to_hex, meets_randomx_target,
-    meets_target, meets_target_little_endian, progpow_final_hash,
+    ethash_final_hash, ethash_header_hash, hash_blake3, hash_to_hex, kawpow_final_hash_real,
+    meets_randomx_target, meets_target, meets_target_little_endian, progpow_final_hash,
 };
 use crate::types::{ExternalCoin, ShareForwardResult};
 
@@ -47,6 +47,21 @@ fn is_dag_algorithm(algo: &str) -> bool {
 /// Zano uses a permuted math op table.
 fn is_progpow_algorithm(algo: &str) -> bool {
     matches!(algo, "progpow" | "progpow_epic" | "progpowz" | "progpow_zano")
+}
+
+/// KawPow variants (RVN, CLORE, QUAI, EVR, MEWC) use keccak-f800 with
+/// RAVENCOINKAWPOW domain constant — NOT ethash's keccak-256.
+/// The header is NOT pre-hashed; the raw 32-byte header is used directly
+/// as the first 8 uint32 words of the keccak state.
+fn is_kawpow_algorithm(algo: &str) -> bool {
+    matches!(
+        algo,
+        "kawpow"
+            | "kawpow_rvn"
+            | "kawpow_clore"
+            | "kawpow_evr"
+            | "kawpow_mewc"
+    )
 }
 
 /// Forwards shares to the external pool currently selected by the multiplexer.
@@ -89,11 +104,20 @@ impl ShareForwarder {
         let (effective_hash, recomputed) = if is_dag_algorithm(algorithm) {
             if let Some(mix) = mix_hash {
                 if !header_bytes.is_empty() {
-                    let header_hash = ethash_header_hash(header_bytes);
-                    let real_hash = if is_progpow_algorithm(algorithm) {
-                        progpow_final_hash(&header_hash, nonce, mix)
+                    let real_hash = if is_kawpow_algorithm(algorithm) {
+                        // KawPow: keccak_f800 with RAVENCOINKAWPOW domain.
+                        // Header is NOT pre-hashed — use raw 32 bytes directly.
+                        let header_arr: [u8; 32] = header_bytes[..32]
+                            .try_into()
+                            .unwrap_or([0u8; 32]);
+                        kawpow_final_hash_real(&header_arr, nonce, mix)
                     } else {
-                        ethash_final_hash(&header_hash, nonce, mix)
+                        let header_hash = ethash_header_hash(header_bytes);
+                        if is_progpow_algorithm(algorithm) {
+                            progpow_final_hash(&header_hash, nonce, mix)
+                        } else {
+                            ethash_final_hash(&header_hash, nonce, mix)
+                        }
                     };
                     if real_hash != *hash {
                         println!(
