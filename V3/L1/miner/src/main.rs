@@ -3567,7 +3567,7 @@ fn run_remote_session(
                 println!("wire_result={result_line_raw}");
             }
             match result_message {
-                PoolMessage::Result { accepted, status } => {
+                PoolMessage::Result { accepted, status, block_found: _, block_height: _ } => {
                     if accepted {
                         accepted_iterations += 1;
                     }
@@ -3699,7 +3699,7 @@ fn run_remote_session(
         last_result_line = Some(result_line_raw.clone());
 
         let status = match result_message {
-            PoolMessage::Result { accepted, status } => {
+            PoolMessage::Result { accepted, status, block_found, block_height } => {
                 let latency_ms = submit_started_at.elapsed().as_millis();
                 if accepted {
                     accepted_iterations += 1;
@@ -3720,6 +3720,15 @@ fn run_remote_session(
                         current_algorithm,
                         latency_ms,
                     );
+                    // F9.1: Pool signalled block found — celebrate!
+                    if block_found {
+                        let hash_prefix: String = solution.hash[..6]
+                            .iter()
+                            .map(|x| format!("{:02x}", x))
+                            .collect();
+                        let height = block_height.unwrap_or(job.height);
+                        crate::ui::log_block_found(height, solution.candidate.nonce, &hash_prefix);
+                    }
                 } else {
                     rejected_iterations += 1;
                     hashrate.record_zion_share(false);

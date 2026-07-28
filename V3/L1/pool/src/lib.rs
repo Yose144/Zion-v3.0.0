@@ -153,6 +153,15 @@ pub enum PoolMessage {
     Result {
         accepted: bool,
         status: String,
+        /// F9.1: Block found flag — set to true when the submitted share
+        /// also met the network target and was sealed as a block.
+        /// Miners use this to fire the block-found celebration.
+        /// `#[serde(default)]` for backward compat with old pools.
+        #[serde(default)]
+        block_found: bool,
+        /// F9.1: Block height (present only when block_found == true).
+        #[serde(default)]
+        block_height: Option<u64>,
     },
     Stale {
         job_id: u64,
@@ -724,10 +733,50 @@ impl MiningPool {
         }
     }
 
+    /// Like `solution_message` but includes a variable-length solution blob
+    /// for Equihash/BeamHash algorithms (ZelHash 52 bytes, BeamHash III 104 bytes).
+    /// The blob is carried in the `mix_hash_hex` field as a hex string so the
+    /// pool server can forward it to the upstream BeamStratum/ZcashStratum pool.
+    pub fn solution_message_with_solution_blob(
+        &self,
+        miner_id: &str,
+        worker_name: &str,
+        solution: MiningSolution,
+        solution_blob: &[u8],
+    ) -> PoolMessage {
+        PoolMessage::Submit {
+            job_id: solution.job_id,
+            miner_id: miner_id.to_string(),
+            worker_name: worker_name.to_string(),
+            nonce: solution.candidate.nonce,
+            hash_hex: to_hex(&solution.hash),
+            attempted_hashes: None,
+            elapsed_ms: None,
+            mix_hash_hex: Some(to_hex(solution_blob)),
+        }
+    }
+
     pub fn result_message(&self, decision: &ShareDecision) -> PoolMessage {
         PoolMessage::Result {
             accepted: matches!(decision.status, ShareStatus::Accepted),
             status: format!("{:?}", decision.status),
+            block_found: decision.sealed_block.is_some(),
+            block_height: decision.sealed_block.as_ref().map(|sb| {
+                // Height is not stored in SealedBlock; callers that need it
+                // should use result_message_with_height instead.
+                0u64
+            }),
+        }
+    }
+
+    /// F9.1: Like result_message but includes the block height when a
+    /// block was found.  Used by the pool server to notify miners.
+    pub fn result_message_with_height(&self, decision: &ShareDecision, height: u64) -> PoolMessage {
+        PoolMessage::Result {
+            accepted: matches!(decision.status, ShareStatus::Accepted),
+            status: format!("{:?}", decision.status),
+            block_found: decision.sealed_block.is_some(),
+            block_height: if decision.sealed_block.is_some() { Some(height) } else { None },
         }
     }
 
@@ -1198,6 +1247,8 @@ mod tests {
             PoolMessage::Result {
                 accepted: true,
                 status: "Accepted".to_string(),
+                block_found: false,
+                block_height: None,
             },
             PoolMessage::Stale { job_id: 1 },
             PoolMessage::Cancel {

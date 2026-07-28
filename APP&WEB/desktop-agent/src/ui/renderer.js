@@ -1690,6 +1690,7 @@ function setupEventListeners() {
       ? `GRATULUJI! Našel jsi blok #${height}!`
       : 'GRATULUJI! Našel jsi blok!';
     addLogEntry(msg, 'success');
+    showBlockFoundToast(height);
   });
 
   // ── Share event log (per-share accept/reject with timestamps) ──
@@ -2202,6 +2203,41 @@ function addLogEntry(message, type = 'info') {
     if (atBottom) viewer.scrollTop = viewer.scrollHeight;
   });
 }
+
+// ── Block Found Toast — celebratory notification ──
+let _blockFoundToastTimer = null;
+function showBlockFoundToast(height) {
+  const toast = document.getElementById('block-found-toast');
+  if (!toast) return;
+  const subtitle = document.getElementById('block-found-toast-subtitle');
+  if (subtitle) {
+    subtitle.textContent = height != null
+      ? `Block #${height.toLocaleString()}`
+      : 'Block found!';
+  }
+  toast.classList.remove('view-hidden', 'fading');
+  // Auto-hide after 15 seconds
+  if (_blockFoundToastTimer) clearTimeout(_blockFoundToastTimer);
+  _blockFoundToastTimer = setTimeout(() => hideBlockFoundToast(), 15000);
+}
+
+function hideBlockFoundToast() {
+  const toast = document.getElementById('block-found-toast');
+  if (!toast || toast.classList.contains('view-hidden')) return;
+  toast.classList.add('fading');
+  setTimeout(() => {
+    toast.classList.add('view-hidden');
+    toast.classList.remove('fading');
+  }, 400);
+}
+
+// Close button handler
+document.addEventListener('DOMContentLoaded', () => {
+  const closeBtn = document.getElementById('block-found-toast-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', hideBlockFoundToast);
+  }
+});
 
 // Wallet management
 let generatedWallet = null;
