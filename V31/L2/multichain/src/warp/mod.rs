@@ -47,7 +47,7 @@ pub use registry::ChainRegistry;
 pub use router::WarpRouter;
 pub use server::{create_router as create_api_router, WarpState};
 pub use state::TransferStateMachine;
-pub use types::{Asset, ChainFamily, WarpStatus, WarpTransfer};
+pub use types::{Asset, ChainFamily, ChainId, WarpStatus, WarpTransfer};
 pub use validator::WarpValidatorSet;
 pub use watcher::WarpWatcher;
 pub use executor::OutboundExecutor;

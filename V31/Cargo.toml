@@ -7,6 +7,7 @@ members = [
     "L1/pool",
     "L2/multichain",
     "L3/ncl",
+    "L3/ai-native",
     "cli",
 ]
 resolver = "2"
@@ -37,7 +38,7 @@ k256 = { version = "0.13", features = ["ecdsa"] }
 num-bigint = "0.4"
 num-traits = "0.2"
 rand = "0.8"
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12", features = ["json", "blocking", "rustls-tls"], default-features = false }
 rlp = "0.5"
 rusqlite = { version = "0.31", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
@@ -53,6 +54,7 @@ tower-http = { version = "0.5", features = ["cors", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1", features = ["v4", "serde"] }
+walkdir = "2"
 zeroize = { version = "1", features = ["derive"] }
 
 zion-core = { path = "L1/core" }
@@ -61,6 +63,7 @@ zion-l1-types = { path = "L1/types" }
 zion-miner = { path = "L1/miner" }
 zion-pool = { path = "L1/pool" }
 zion-multichain = { path = "L2/multichain" }
+zion-ncl = { path = "L3/ncl" }
 
 [profile.release]
 opt-level = 3
