@@ -1095,6 +1095,18 @@ impl AuxPowClient {
                 bail!("BEAM login failed: {:?}", err);
             }
         }
+        // BeamStratum (2miners) returns errors inline as code/description
+        // instead of a standard JSON-RPC "error" object:
+        //   {"id":"login","jsonrpc":"2.0","method":"result",
+        //    "code":-32003,"description":"Invalid address",...}
+        if let Some(code) = resp.get("code").and_then(|v| v.as_i64()) {
+            if code < 0 {
+                let desc = resp.get("description")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown error");
+                bail!("BEAM login failed: code={} desc={}", code, desc);
+            }
+        }
         *self.authorized.lock().await = true;
         *self.subscribed.lock().await = true;
         println!("auxpow: BEAM login successful for {}", self.profile.coin);
