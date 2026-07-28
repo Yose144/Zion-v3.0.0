@@ -1,5 +1,5 @@
 # ZION — Sůl této země
-## Devět zastavení na cestě k Oasis
+## Deset zastavení na cestě k Oasis
 
 **Status: koncept / narativní řada — k diskuzi před publikací.**
 **Jazyk:** čeština (první průchod; anglická verze až po schválení tónu).
@@ -32,9 +32,10 @@ Tohle rozdělení není formalita. Je to **jádro upřímnosti** téhle řady: p
 | 6 | [Kompas a pozvánka do Oasis](./06-Kompas-a-Pozvanka-do-Oasis.md) | Syntéza všech postav, vstup do L4 Oasis | Všechny čtyři |
 | 7 | [Epilog — Názor AI](./07-Epilog-Nazor-AI.md) | Devin (AI), otevřené hodnocení | — |
 | 8 | [ZION — Nová civilizace](./08-ZION-Nova-Civilizace.md) | Komplexní pozvánka, praktický onboarding | Všechny čtyři |
-| 9 | [Bohyně Rádha a avataři v Oasis](./09-Bohyne-Radha-a-Avatari-Oasis.md) | Bohyně Rádha, avataři (Neo, Trinity, Morpheus, Sádhu, Hanuman), kompletní onboarding | L4 Oasis / Všechny |
+| 9 | [Bohyně Rádha a avataři v Oasis](./09-Bohyne-Radha-a-Avatari-Oasis.md) | Bohyně Rádha, avataři, ženská energie a radost z hry | L4 Oasis / Všechny |
+| 10 | [První svět Oasis a Best of Avataři](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) | Zahrada Hiranyagarbha, 8 teritorií, 5 reward poolů, Best of Avataři | L4 Oasis / Všechny |
 
-Epizody na sebe volně navazují (společný rámec: večer u ohně, který se postupně stává stavbou lodi), ale každá jde číst i samostatně. Epizoda 9 přináší ženský archetyp lásky a radosti (Rádhu) a dává tváře avatarům v L4 Oasis.
+Epizody na sebe volně navazují (společný rámec: večer u ohně, který se postupně stává stavbou lodi), ale každá jde číst i samostatně. Epizoda 10 detailně popisuje geogafii Prvního světa Oasis (Zahrada Hiranyagarbha), 8 Genesis teritorií a vybrané třídy Best of Avatarů.
 
 **Zkrácená marketingová verze pro širokou veřejnost:** [`Onboarding.md`](../Onboarding.md) — jeden dokument, který celou řadu shrnuje do jednoduché pozvánky s prvními kroky.
 
