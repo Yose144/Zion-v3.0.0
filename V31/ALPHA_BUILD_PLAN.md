@@ -135,10 +135,20 @@ Cíl: pool a miner si rozumí, stratum jobs se generují z node block template.
 
 Cíl: feature parity s V3 superstructures a jednotný CLI.
 
-1. Přesunout `ai-native`, `ncl`, `hiran` z `V3/L3` a `HiranV2.x/`.
-2. Přidat `oasis`, `free-world`, `issobella` jako samostatné crate.
-3. Doplnit `sdk` crate.
-4. Sjednotit CLI s V3 `zion` interactive menu.
+1. [x] Přesunout `ai-native`, `ncl`, `hiran` z `V3/L3` a `HiranV2.x/`.
+   - `V31/L3/ncl` — NCL neural compute layer (42 tests).
+   - `V31/L3/ai-native` — autonomous agent framework (337 tests), includes `hiran_inference` + `hiranyagarbha` modules.
+   - HiranV2.x obsahuje jen Python training scripts — Rust kód je v ai-native.
+2. [x] Přidat `oasis`, `free-world`, `issobella` jako samostatné crate.
+   - `V31/L4/oasis` — consciousness mining game (124 tests).
+   - `V31/L5/free-world` — humanitarian grants (3 tests).
+   - `V31/L6/issobella` — orbital observatory (3 tests).
+3. [x] Doplnit `sdk` crate.
+   - `V31/sdk` — async NodeClient + WalletClient wrapping zion-multichain Keyring (4 tests).
+4. [x] Sjednotit CLI s V3 `zion` interactive menu.
+   - `zion menu` — arrow-key operator dashboard (status, wallet, bridge, swap, pool, miner, doctor).
+   - V3 `zion-warp` merged into `zion-multichain::warp` module (505 tests).
+   - Workspace: 13 crates, 1134 tests, clippy clean.
 
 ### Fáze 5 — Cutover
 

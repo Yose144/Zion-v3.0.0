@@ -8,6 +8,8 @@ use tokio::sync::watch;
 use zion_l1_types::{Address, Amount, Asset, ChainId};
 use std::net::SocketAddr;
 
+mod menu;
+
 use zion_core::node::{Node, NodeConfig};
 use zion_miner::config::MinerConfig;
 use zion_miner::runtime::MinerRuntime;
@@ -31,6 +33,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Open the interactive operator menu (arrow-key navigation).
+    Menu,
     /// Status of the Multi-Chain layer.
     Status,
     /// Wallet commands.
@@ -281,6 +285,9 @@ async fn main() -> anyhow::Result<()> {
     let service = Arc::new(MultichainService::new(config)?);
 
     match cli.command {
+        Command::Menu => {
+            menu::run_menu(&service).await?;
+        }
         Command::Status => {
             println!("Registered chains: {:?}", service.chains());
             let health = service.health().await;
