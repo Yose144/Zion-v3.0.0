@@ -1067,7 +1067,9 @@ if (rustMinerPath) {
   MINER_IS_RUST = true;
   dbg('[MINER] Using Rust native miner:', rustMinerPath);
 } else {
-  throw new Error('V3 Rust miner not found. Build V3/L1/miner release or package zion-miner.exe into resources.');
+  console.error('[MINER] V3 Rust miner not found at app startup. Build V3/L1/miner release or package zion-miner.exe into resources. Mining will be unavailable until the binary is present.');
+  MINER_PATH = null;
+  MINER_IS_RUST = false;
 }
 
 const CONFIG_PATH = path.join(USER_DATA_PATH, 'miner_config.json');
@@ -2686,6 +2688,13 @@ function startMining(config) {
         if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
         return { success: false, error: `V3 startup error: ${v3Err?.message}` };
       }
+    } else {
+      const msg = 'V3 Rust miner binary not found. Run "npm run prepare:rust-miner" or package zion-miner into resources.';
+      console.error('[V3-FAST]', msg);
+      try { sendToRenderer('miner-output', { stream: 'stderr', text: `${msg}\n` }); } catch {}
+      startMiningInProgress = false;
+      if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
+      return { success: false, error: msg };
     }
   }
 }
