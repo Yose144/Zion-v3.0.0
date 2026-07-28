@@ -4808,6 +4808,44 @@ fn handle_client(
                                 }
                             }
                         }
+                        // ── XMR latest-job-only check ─────────────────────
+                        // MoneroOcean expires XMR job_ids when a new block
+                        // template is sent (~15-30s).  Shares submitted with
+                        // an old job_id are rejected with "Invalid job id".
+                        // The multi-hop delay (MoneroOcean→Edge→miner→Edge→
+                        // MoneroOcean, 2-8s) means the miner sometimes finds
+                        // shares for a job that has already been superseded.
+                        //
+                        // Same approach as VRSC: only forward shares for the
+                        // LATEST job_id.  Shares for older job_ids are silently
+                        // skipped.  This eliminates "Invalid job id" rejects
+                        // without reducing accepted shares (MoneroOcean never
+                        // accepts stale XMR shares anyway).
+                        //
+                        // Env: ZION_XMR_LATEST_ONLY=0 to disable (default: 1).
+                        let xmr_latest_only = std::env::var("ZION_XMR_LATEST_ONLY")
+                            .ok()
+                            .and_then(|v| v.parse::<u32>().ok())
+                            .unwrap_or(1);
+                        if xmr_latest_only > 0 && coin.to_ascii_uppercase() == "XMR" {
+                            if let Some(latest_id) = valid_job_ids.first() {
+                                if latest_id != &external_job_id {
+                                    info!(
+                                        "external_share_xmr_skip miner={} coin=XMR share_job_id={} latest_job_id={} — skipping (not latest, MoneroOcean will reject)",
+                                        sub_miner_id, external_job_id, latest_id
+                                    );
+                                    let ext_result = PoolMessage::ExternalResult {
+                                        accepted: false,
+                                        status: "stale_skip".to_string(),
+                                        coin: coin.clone(),
+                                    };
+                                    let _ = write_wire_message(&mut writer, &ext_result);
+                                    // Do NOT record in routing stats — this is
+                                    // not a real reject, just a stale skip.
+                                    continue;
+                                }
+                            }
+                        }
                         // Parse hash bytes
                         let hash_bytes = match zion_pool::parse_fixed_hex::<32>(&hash_hex, "external share hash") {
                             Ok(h) => h,

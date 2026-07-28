@@ -225,7 +225,7 @@ impl ShareForwarder {
                     std::env::var("ZION_XMR_STALE_SECS")
                         .ok()
                         .and_then(|v| v.parse().ok())
-                        .unwrap_or(120u64)
+                        .unwrap_or(30u64)
                 }
                 ExternalCoin::VRSC => {
                     std::env::var("ZION_VRSC_STALE_SECS")
