@@ -159,6 +159,13 @@ pub fn compact_to_target(bits: u32) -> DifficultyTarget {
         return DifficultyTarget { bytes: [0u8; 32] };
     }
 
+    // A size of 32 or more means the mantissa overflows the 32-byte target.
+    // The only valid case is the absolute maximum target (all 0xff bytes),
+    // which `target_to_compact` encodes as size 33 / mantissa 0x00ffff.
+    if size >= 32 {
+        return DifficultyTarget::MAX;
+    }
+
     let mut bytes = [0u8; 32];
 
     if size <= 3 {

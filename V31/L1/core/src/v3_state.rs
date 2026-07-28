@@ -525,7 +525,7 @@ fn validate_coinbase_tx_format(tx: &AccountTransaction, height: u64) -> Result<(
     Ok(())
 }
 
-fn verify_account_signature(tx: &AccountTransaction) -> bool {
+pub fn verify_account_signature(tx: &AccountTransaction) -> bool {
     if tx.from == "coinbase" || tx.from == "genesis" {
         return true;
     }
