@@ -2,7 +2,7 @@
 
 > **Verze:** 3.1.0-alpha.2  
 > **Datum:** 2026-07-28  
-> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented  
+> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented, V3 RPC wired into node runtime, V3 P2P listen server + IBD loop, bin/node.rs V3-aware runtime, pool template feed, miner stratum client for Stream 1/2/3
 > **Princip:** `V3/` zůstává produkční, `V31/` se staví jako čistý Mainnet Alpha strom.  
 
 Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozhodnutí o architektuře, vrstvách a prioritách se zde zaznamenávají a aktualizují.
@@ -67,11 +67,11 @@ Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozho
 
 ### 2.2 Co je ještě scaffold / stub
 
-- `zion-core`: P2P má V3 wire client (`v3_p2p`) pro Hello/GetBlocksSince/AnnounceBlock, ale listen/gossip server ještě není; RPC má V3 JSON-RPC handler (`v3_rpc`), ale není zatím zapojen do hlavního TCP serveru (`rpc.rs`); IBD/sync checkpoint import funguje.
-- `zion-miner/auxpow`: `StratumClient` je scaffold, `find_share` je CPU brute force, žádné real stratum wire, žádné GPU/CUDA/Metal/OpenCL, žádné native hashers.
+- `zion-core`: P2P V3 listen/gossip server implementován (`v3_p2p::V3P2PServer`), V3 RPC handler zapojen do `RpcServer` (dispatchuje `getStatus`/`getBlockByHeight`/`getTemplate`/`submitBlock`/… do `V3RpcHandler`), `bin/node.rs` má V3-aware runtime s `--v3-checkpoint`, `--v3-miner`, `--v3-human`, `--v3-issobella`, `--v3-no-genesis` CLI flagy a spouští V3 P2P listen + V3 sync loop paralelně s legacy P2P/RPC. IBD/sync checkpoint import funguje.
+- `zion-miner/auxpow`: `StratumClient` je plně funkční (subscribe, authorize, notify, submit, reconnect). Stream 1 má pool stratum režim (`mine_zion_pool_share`). `find_share` je CPU brute force, žádné GPU/CUDA/Metal/OpenCL, žádné native hashers (feature-gate `native-hashers` existuje).
 - `zion-multichain/chain/adapters`: EVM/Bitcoin/ZionL1 adaptery mají jen základní RPC mock, žádné reálné EVM contract volání, žádné HTLC, žádný DEX AMM routing.
-- `zion-pool`: PPLNS je statický, stratum odpovídá jen `mining.subscribe`/`authorize`/`submit`, žádné real job broadcasting z node.
-- L3–L6 neexistují.
+- `zion-pool`: PPLNS je statický, stratum odpovídá `mining.subscribe`/`authorize`/`submit` + `template_feed_loop` periodicky fetchuje `getTemplate` z node RPC a broadcastuje `mining.notify`.
+- L3–L6: viz sekce 1.5 + Fáze 4 (portováno).
 
 ### 2.3 Gaps proti V3
 
@@ -81,8 +81,8 @@ Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozho
 | PoW | `deeksha_lite_v1`, `deeksha_chv3`, `deeksha_lite_fire` | jen `ekam_deeksha` (bit-identical s `deeksha_lite_v1`) | Height-aware fork gating přidat |
 | AuxPoW | `zion-auxpow` crate, 24 coinů | stub 15 coinů | Portovat stratum + hasher subset |
 | Storage | LMDB/SQLite hybrid | SQLite pro V3 checkpoint sync | Vybrat jeden backend (SQLite nebo LMDB) |
-| P2P | wire protocol v `p2p.rs` | V3 client v `v3_p2p` | Přidat P2P listen/gossip server pro Alpha |
-| RPC | JSON-RPC v `rpc.rs` | V3 handler v `v3_rpc` | Zapojit `v3_rpc` do node TCP serveru |
+| P2P | wire protocol v `p2p.rs` | V3 client + listen server v `v3_p2p` | Hotovo pro Alpha; production hardening (peer discovery, rate limit) později |
+| RPC | JSON-RPC v `rpc.rs` | V3 handler zapojen do `rpc.rs` dispatch | Hotovo pro Alpha |
 | Multichain | 6 samostatných crateů | 1 scaffold crate | Implementovat adaptery |
 | CLI | `zion` single binary (menu) | clap subcommands | Sjednotit UX |
 
@@ -109,7 +109,7 @@ Cíl: `zion-node` binary nahradí V3 node pro lokální testnet.
 - [x] 3. Přidat `emission` a `difficulty` (LWMA-60, 5400.067 ZION reward, fee split 89/5/5/1).
 - [x] 4. Přidat `mempool` a `rpc` (JSON-RPC kompatibilní s V3 node API).
 - [x] 5. Přidat `p2p` (minimální gossip + block sync).
-- [ ] 6. Přidat `bin/node.rs` (V3-aware runtime s P2P listen, RPC, mining loop).
+- [x] 6. Přidat `bin/node.rs` (V3-aware runtime s P2P listen, RPC, mining loop, checkpoint import, shutdown handling).
 
 ### Fáze 2 — Multichain adaptery
 
@@ -164,11 +164,13 @@ Cíl: `V31/` nahradí `V3/` na Edge staging.
 
 ## 4. Prioritní úkoly (next 48h)
 
-1. **Zapojit `v3_rpc` do node runtime** — `Node`/`RpcServer` musí dispatchovat V3 metody a přijímat `submitBlock` z mineru/poolu.
-2. **P2P listen + IBD download loop** — server pro `Hello`/`GetBlocksSince`/`AnnounceBlock` a stahování chybějících hlaviček/těl z V3 peerů.
-3. **`bin/node.rs` V3-aware runtime** — spustitelný node s `--checkpoint` importem, P2P, RPC, mining a shutdown handling.
-4. **Pool block template feed** — `zion-pool` si bere `getTemplate` z node a broadcastuje `mining.notify`.
-5. **Feature-gate AuxPoW + stratum client** v `zion-miner` pro Stream 2/3 (subscribe/authorize/submit).
+Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další práce:
+
+1. **E2E smoke testy** — spustit `zion-node` + `zion-pool` + `zion-miner` lokálně, ověřit že block se vytěží, propaguje se přes P2P, pool broadcastuje `mining.notify`, miner submituje share, node přijme `submitBlock`.
+2. **Production P2P hardening** — peer discovery (GetPeers/Peers), rate limiting, max peers, ban score.
+3. **Real EVM adapter** — nahradit RPC mock v `zion-multichain/chain/adapters/evm` reálným `ethers` voláním `ZIONBridge` na Base.
+4. **Height-aware PoW fork gating** — přidat `deeksha_chv3`/`deeksha_lite_fire` do `zion-core` consensus s height-gated dispatch.
+5. **Tag `v3.1.0-alpha.1`** po úspěšných E2E smoke testech.
 
 ---
 
@@ -221,10 +223,10 @@ Cíl: `V31/` nahradí `V3/` na Edge staging.
   - `ConsensusEngine::verify_v3_block()` — validátor V3 bloků (height, prev hash, timestamp, difficulty bits, merkle root, PoW).
   - **Ověření:** `v3_genesis_hash()` reprodukuje mainnet hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`; `validate_v3_block` akceptuje V3 genesis blok; `cargo test -p zion-core` prochází.
 - Zbývá:
-  - P2P listen/gossip server a reálný IBD download loop proti živé síti.
-  - Zapojit `V3RpcHandler` do hlavního node TCP serveru (`Node`/`RpcServer`).
-  - `bin/node.rs` V3-aware runtime (P2P, RPC, mining loop, shutdown handling).
-  - Pool block template feed + stratum job broadcast z node.
+  - E2E smoke testy (node + pool + miner lokálně).
+  - Production P2P hardening (peer discovery, rate limit, ban score).
+  - Real EVM adapter pro `zion-multichain`.
+  - Height-aware PoW fork gating (`deeksha_chv3`/`deeksha_lite_fire`).
 - Detailní analýza v `V31/V3_SYNC_ASSESSMENT.md`.
 
 ## 8. Pool + miner integrace (F6)
