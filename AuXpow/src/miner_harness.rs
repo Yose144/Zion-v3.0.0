@@ -455,27 +455,10 @@ fn scan_randomx(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
     let header = &job.header_bytes;
     let target = &job.target_bytes;
 
-    // Decode seed hash for RandomX cache initialization
-    let seed: Vec<u8> = job.seed_hash.clone().unwrap_or_else(|| vec![0u8; 32]);
-
-    // Debug: log blob/seed/target info for XMR share diagnosis
-    let target_le = u64::from_le_bytes(target[..8].try_into().unwrap_or([0u8; 8]));
-    eprintln!(
-        "scan_randomx: job_id={} blob_len={} blob[:43]={} seed={:.16}... target_le=0x{:016x} nonce_range=[{},{})",
-        job.external_job_id,
-        header.len(),
-        hex::encode(&header[..header.len().min(43)]),
-        hex::encode(&seed[..seed.len().min(16)]),
-        target_le,
-        start,
-        end,
-    );
-
-    // Initialize RandomX with the seed (reinit only if seed changed)
-    #[cfg(feature = "native-randomx")]
-    {
-        zion_native_ffi::randomx::init_with_seed(&seed);
-    }
+    // NOTE: init_with_seed is now called once in ext_cpu_thread when a new
+    // job arrives, not here per-thread-per-batch.  This avoids 6× mutex
+    // acquisitions per batch.  The C wrapper also has a lock-free fast path
+    // for the case where the seed hasn't changed.
 
     // Monero blob: nonce is at offset 39 (4 bytes LE)
     // The blob from stratum already has the correct structure; we just
@@ -495,20 +478,20 @@ fn scan_randomx(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
 
         #[cfg(not(feature = "native-randomx"))]
         let hash = {
-            let _ = &seed; // suppress unused warning
             crate::external_hashers::hash_blake3(&work_blob, 0, nonce)
         };
 
         // RandomX/Monero: compare MSB 64 bits (bytes 24-31) of 256-bit LE hash
         if crate::external_hashers::meets_randomx_target(&hash, target) {
             let hash_msb = u64::from_le_bytes(hash[24..32].try_into().unwrap());
+            let tgt_le = u64::from_le_bytes(target[..8].try_into().unwrap_or([0u8; 8]));
             eprintln!(
                 "XMR_SHARE_FOUND nonce={} nonce_hex={} hash={} hash_msb=0x{:016x} target_le=0x{:016x} blob_with_nonce={}",
                 nonce,
                 hex::encode((nonce as u32).to_le_bytes()),
                 hex::encode(hash),
                 hash_msb,
-                target_le,
+                tgt_le,
                 hex::encode(&work_blob),
             );
             return Some(FoundShare {
@@ -523,12 +506,8 @@ fn scan_randomx(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
 
 fn scan_randomx_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
     let header = &job.header_bytes;
-    let _seed: Vec<u8> = job.seed_hash.clone().unwrap_or_else(|| vec![0u8; 32]);
 
-    #[cfg(feature = "native-randomx")]
-    {
-        zion_native_ffi::randomx::init_with_seed(&_seed);
-    }
+    // NOTE: init_with_seed is called once in ext_cpu_thread when a new job arrives.
 
     let nonce_offset = 39usize;
     let mut work_blob = header.to_vec();
