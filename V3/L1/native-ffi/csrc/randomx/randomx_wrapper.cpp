@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <mutex>
 #include <vector>
+#include <thread>
 
 /* macOS: thread QoS for performance cores + mlockall */
 #if defined(__APPLE__)
@@ -102,28 +103,88 @@ static randomx_vm* create_thread_vm() {
     randomx_flags flags = get_vm_flags();
     randomx_vm* vm = nullptr;
 
-    /* On macOS, boost thread QoS to user-interactive for max performance.
-     * This schedules the thread on performance cores (P-cores) on M1. */
+    /* On macOS, boost thread QoS to user-interactive for max performance. */
 #if defined(__APPLE__)
     pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
 #endif
 
     if (g_dataset) {
         vm = randomx_create_vm(flags, g_cache, g_dataset);
+        if (vm) {
+            fprintf(stderr, "randomx_zion: VM created (FULL_MEM mode, thread=%zu)\n",
+                    (size_t)std::hash<std::thread::id>{}(std::this_thread::get_id()));
+        }
     }
     if (!vm) {
-        /* Fallback: light mode (cache only, still JIT+HARD_AES if available) */
+        /* Fallback: light mode (cache only, ~10x slower) */
         randomx_flags light_flags = randomx_get_flags();
 #if defined(__APPLE__) && defined(__aarch64__)
         light_flags |= RANDOMX_FLAG_SECURE;
 #endif
         vm = randomx_create_vm(light_flags, g_cache, nullptr);
+        if (vm) {
+            fprintf(stderr, "randomx_zion: WARNING VM created in LIGHT mode (no dataset) — hashrate will be ~10x lower!\n");
+        }
     }
     if (!vm) {
         /* Last resort: default flags (interpreted, soft AES) */
         vm = randomx_create_vm(RANDOMX_FLAG_DEFAULT, g_cache, nullptr);
+        if (vm) {
+            fprintf(stderr, "randomx_zion: WARNING VM created with DEFAULT flags (soft AES, no JIT) — very slow!\n");
+        }
     }
     return vm;
+}
+
+/* ---- Windows large pages privilege ---- */
+#if defined(_WIN32)
+static bool enable_large_pages_privilege() {
+    HANDLE hToken;
+    TOKEN_PRIVILEGES tp;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
+        return false;
+    if (!LookupPrivilegeValueA(NULL, "SeLockMemoryPrivilege", &tp.Privileges[0].Luid)) {
+        CloseHandle(hToken);
+        return false;
+    }
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    bool ok = AdjustTokenPrivileges(hToken, FALSE, &tp, 0, NULL, NULL) != 0;
+    DWORD err = GetLastError();
+    CloseHandle(hToken);
+    /* AdjustTokenPrivileges returns TRUE even if not all privileges were assigned */
+    return ok && err == ERROR_SUCCESS;
+}
+#endif
+
+/* ---- Parallel dataset initialization (xmrig-style) ---- */
+static void init_dataset_parallel(randomx_dataset* dataset, randomx_cache* cache) {
+    unsigned long count = randomx_dataset_item_count();
+    unsigned n_threads = std::thread::hardware_concurrency();
+    if (n_threads == 0) n_threads = 4;
+    if (n_threads > count) n_threads = (unsigned)count;
+
+    fprintf(stderr, "randomx_zion: initializing dataset (%lu items, %u threads)...\n",
+            count, n_threads);
+
+    if (n_threads <= 1) {
+        randomx_init_dataset(dataset, cache, 0, count);
+        return;
+    }
+
+    std::vector<std::thread> threads;
+    unsigned long items_per_thread = count / n_threads;
+    unsigned long remainder = count % n_threads;
+    unsigned long start = 0;
+
+    for (unsigned i = 0; i < n_threads; i++) {
+        unsigned long chunk = items_per_thread + (i < remainder ? 1 : 0);
+        threads.emplace_back([dataset, cache, start, chunk]() {
+            randomx_init_dataset(dataset, cache, start, chunk);
+        });
+        start += chunk;
+    }
+    for (auto& t : threads) t.join();
 }
 
 static void update_seed(const uint8_t* seed, size_t len) {
@@ -136,19 +197,22 @@ static void update_seed(const uint8_t* seed, size_t len) {
     if (g_initialized && seed_matches(seed, len)) return;
 
     /* Destroy old state */
-    /* Note: per-thread VMs are destroyed lazily when threads exit or
-     * when they detect a seed change on next hash call */
     if (g_dataset) { randomx_release_dataset(g_dataset); g_dataset = nullptr; }
     if (g_cache)   { randomx_release_cache(g_cache);   g_cache = nullptr; }
 
-    /* Allocate + init cache using auto-detected flags (JIT + HARD_AES + LARGE_PAGES) */
+    /* On Windows, try to enable SeLockMemoryPrivilege for large pages */
+#if defined(_WIN32)
+    bool lp_priv = enable_large_pages_privilege();
+    fprintf(stderr, "randomx_zion: SeLockMemoryPrivilege=%s\n", lp_priv ? "enabled" : "not available");
+#endif
+
+    /* Allocate + init cache */
     randomx_flags alloc_flags = get_vm_flags();
     bool large_pages_requested = (alloc_flags & RANDOMX_FLAG_LARGE_PAGES) != 0;
     g_cache = randomx_alloc_cache(alloc_flags);
-    bool large_pages_ok = (g_cache != nullptr);
+    bool cache_large_pages = (g_cache != nullptr) && large_pages_requested;
     if (!g_cache) {
-        /* LARGE_PAGES failed — retry without it (common on Windows without
-         * "Lock pages in memory" privilege, or Linux without vm.nr_hugepages). */
+        /* LARGE_PAGES failed — retry without it */
         randomx_flags fallback_flags = (randomx_flags)(alloc_flags & ~RANDOMX_FLAG_LARGE_PAGES);
         g_cache = randomx_alloc_cache(fallback_flags);
     }
@@ -161,12 +225,13 @@ static void update_seed(const uint8_t* seed, size_t len) {
     }
     randomx_init_cache(g_cache, seed, 32);
 
-    /* Allocate + init dataset (full mode for max hashrate).
-     * Skip in light mode (ZION_RANDOMX_LIGHT_MODE=1) to save 2 GB RAM. */
+    /* Allocate + init dataset (full mode for max hashrate) */
+    bool dataset_large_pages = false;
     if (alloc_flags & RANDOMX_FLAG_FULL_MEM) {
         g_dataset = randomx_alloc_dataset(alloc_flags);
+        dataset_large_pages = (g_dataset != nullptr) && large_pages_requested;
         if (!g_dataset) {
-            /* Retry without LARGE_PAGES if dataset alloc failed */
+            /* Retry without LARGE_PAGES */
             randomx_flags fallback_flags = (randomx_flags)(alloc_flags & ~RANDOMX_FLAG_LARGE_PAGES);
             g_dataset = randomx_alloc_dataset(fallback_flags);
         }
@@ -174,7 +239,8 @@ static void update_seed(const uint8_t* seed, size_t len) {
             g_dataset = randomx_alloc_dataset(RANDOMX_FLAG_DEFAULT);
         }
         if (g_dataset) {
-            randomx_init_dataset(g_dataset, g_cache, 0, randomx_dataset_item_count());
+            /* Parallel dataset init (xmrig-style) — ~10x faster than single-threaded */
+            init_dataset_parallel(g_dataset, g_cache);
         }
     } else {
         g_dataset = nullptr; /* light mode — cache only */
@@ -184,20 +250,17 @@ static void update_seed(const uint8_t* seed, size_t len) {
     g_initialized = true;
 
 #if defined(__APPLE__)
-    /* mlockall: lock all current and future pages in RAM (no swap).
-     * macOS has unlimited RLIMIT_MEMLOCK by default, so this always succeeds.
-     * This prevents the 256MB cache + 2MB/thread scratchpads from being
-     * swapped out, which would cause 100x slowdown on 8GB M1. */
     (void)mlockall(MCL_CURRENT | MCL_FUTURE);
 #endif
 
-    /* Log active flags for debugging */
+    /* Log active flags */
     randomx_flags vm_flags = get_vm_flags();
-    fprintf(stderr, "randomx_zion: initialized (full_mem=%s, jit=%s, hard_aes=%s, large_pages=%s, secure=%s)\n",
+    fprintf(stderr, "randomx_zion: initialized (full_mem=%s, jit=%s, hard_aes=%s, large_pages_cache=%s, large_pages_dataset=%s, secure=%s)\n",
             g_dataset ? "yes" : "no (light mode)",
             (vm_flags & RANDOMX_FLAG_JIT) ? "yes" : "no",
             (vm_flags & RANDOMX_FLAG_HARD_AES) ? "yes" : "no",
-            large_pages_ok ? "yes" : "no",
+            cache_large_pages ? "yes" : "no",
+            dataset_large_pages ? "yes" : "no",
             (vm_flags & RANDOMX_FLAG_SECURE) ? "yes" : "no");
 }
 

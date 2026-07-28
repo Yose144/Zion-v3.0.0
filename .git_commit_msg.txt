@@ -1,0 +1,35 @@
+perf(randomx): persistent worker pool + lock-free seed check + physical core pinning
+
+RandomX performance optimizations for XMR mining:
+
+V3/L1/miner/src/main.rs:
+- Add RandomXWorkerPool: persistent worker threads that reuse RandomX VMs
+  across batches instead of spawning new threads per batch. Each worker
+  creates its VM once (thread_local in C wrapper) and reuses it — the
+  single biggest RandomX perf optimization (same approach as xmrig).
+- Workers are pinned to physical cores via thread_affinity::maybe_pin_thread.
+- scan() distributes nonce range across workers, blocks until all complete.
+- Stop flag allows early exit when one worker finds a share.
+
+V3/L1/miner/src/thread_affinity.rs:
+- Implement physical_core_ids() on Windows using GetLogicalProcessorInformation
+  (was previously returning 0..N logical cores, now returns primary LP per
+  physical core — pinning to these gives exclusive physical core access).
+- Parse SYSTEM_LOGICAL_PROCESSOR_INFORMATION entries (24 bytes each on x64).
+- Falls back to logical cores if API call fails.
+
+AuXpow/src/miner_harness.rs:
+- Remove per-batch init_with_seed() calls from scan_randomx/scan_randomx_best.
+  Seed init now happens once in ext_cpu_thread when a new job arrives, avoiding
+  6× mutex acquisitions per batch.
+- Move target_le computation inside the share-found branch (only needed there).
+
+V3/L1/native-ffi/csrc/randomx/randomx_wrapper.cpp:
+- Add lock-free fast path in randomx_zion_init(): if seed hasn't changed,
+  return immediately without acquiring mutex. Eliminates contention when
+  6+ threads call init_with_seed every batch (seed only changes every ~2h
+  on Monero).
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
