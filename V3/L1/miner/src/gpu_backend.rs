@@ -2676,15 +2676,21 @@ fn create_gpu_backend_inner(
                 if is_external_algorithm(algorithm) {
                     // Algorithms with dedicated CUDA kernels
                     if crate::cuda_external::CudaExtAlgo::from_name(algorithm).is_some() {
-                        let miner_result = if let Some(ref dev) = shared_dev {
-                            crate::cuda_external::CudaExternalMiner::new_with_device(algorithm, work_size, std::sync::Arc::clone(dev))
+                        // Try to reuse the primary ZION CUDA device so both
+                        // streams share the same context and stream, which
+                        // avoids context-switch overhead and non-blocking
+                        // stream serialization on Pascal/Turing.  If no
+                        // shared device is available, fall back to a fresh
+                        // non-blocking stream device.
+                        let miner_result = if let Some(dev) = shared_dev {
+                            crate::cuda_external::CudaExternalMiner::new_with_device(algorithm, work_size, dev)
                         } else {
                             crate::cuda_external::CudaExternalMiner::new(algorithm, work_size)
                         };
                         match miner_result {
                             Ok(miner) => return Ok(Box::new(miner)),
                             Err(e) => {
-                                eprintln!("[gpu_backend] CUDA external kernel failed for {}: {} — falling back to CPU", algorithm, e);
+                                eprintln!("[gpu_backend] CUDA external kernel failed for {}: {} -- falling back to CPU", algorithm, e);
                             }
                         }
                     }
@@ -7164,6 +7170,11 @@ pub mod cuda_deeksha_lite {
 
         fn update_epoch(&mut self, _height: u64) -> Result<()> {
             Ok(())
+        }
+
+        #[cfg(feature = "gpu-cuda")]
+        fn shared_cuda_device(&self) -> Option<std::sync::Arc<cudarc::driver::CudaDevice>> {
+            Some(std::sync::Arc::clone(&self.dev))
         }
 
         fn mine_batch(

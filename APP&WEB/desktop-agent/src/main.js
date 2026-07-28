@@ -1257,6 +1257,10 @@ const DEFAULT_CONFIG = {
   cpuCoin: 'auto',
   gpuCoin: 'auto',
   tripleStream: true,
+  // Triple-stream tuning (CUDA primary + ext coin)
+  extGpuBackend: 'cuda',
+  extGpuDutyPct: 50,
+  extGpuBatchSize: 262144,
 };
 
 function normalizeAlgorithmName(algo) {
@@ -2389,6 +2393,31 @@ function startMiningV3(config, v3Path) {
       if (tuningCfg) {
         const cudaOverrides = applyCudaTuning(gpuInfo, tuningCfg);
         Object.assign(env, cudaOverrides);
+      }
+      // Triple-stream tuning: external GPU (ZANO) backend, duty cycle and batch.
+      // On NVIDIA the ProgPoWZ CUDA kernel is ~2x faster than OpenCL in
+      // isolation, but it must share the GPU with the main ZION deeksha
+      // kernel.  Empirically OpenCL ProgPoWZ does not submit work on some
+      // Pascal/Turing drivers, so we default the ext backend to CUDA and
+      // rely on the time-based duty cycle to share the GPU.  Users can override
+      // with config.extGpuBackend or env.ZION_EXT_GPU_BACKEND.
+      if (!env.ZION_EXT_GPU_BACKEND) {
+        const cfgExtBackend = String(config?.extGpuBackend || '').toLowerCase();
+        env.ZION_EXT_GPU_BACKEND = (cfgExtBackend === 'cuda' || cfgExtBackend === 'opencl')
+          ? cfgExtBackend
+          : 'cuda';
+      }
+      if (!env.ZION_EXT_GPU_TIME_DUTY_PCT) {
+        const cfgDuty = Number(config?.extGpuDutyPct);
+        env.ZION_EXT_GPU_TIME_DUTY_PCT = (Number.isFinite(cfgDuty) && cfgDuty > 0 && cfgDuty <= 100)
+          ? String(Math.floor(cfgDuty))
+          : '50';
+      }
+      if (!env.ZION_EXT_GPU_BATCH_SIZE) {
+        const cfgExtBatch = Number(config?.extGpuBatchSize);
+        env.ZION_EXT_GPU_BATCH_SIZE = (Number.isFinite(cfgExtBatch) && cfgExtBatch > 0)
+          ? String(Math.floor(cfgExtBatch))
+          : '262144';
       }
     } else if (backend === 'opencl') {
       env.ZION_OCL_WORK_CAP = String(batchSize);

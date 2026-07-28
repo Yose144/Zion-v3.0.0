@@ -257,7 +257,12 @@ pub struct CudaExternalMiner {
 
 impl CudaExternalMiner {
     pub fn new(algorithm: &str, work_size: usize) -> Result<Self> {
-        let dev = CudaDevice::new(0)
+        // Use a non-blocking CUDA stream so this external-miner work can
+        // overlap with the main ZION deeksha miner on the default stream.
+        // This is the same primary CUDA context (no second context is
+        // created), just a different stream, so there is no consumer-GPU
+        // deadlock risk while still getting true concurrency.
+        let dev = CudaDevice::new_with_stream(0)
             .map_err(|e| anyhow::anyhow!("CUDA device init failed: {e}"))?;
         Self::new_with_device(algorithm, work_size, dev)
     }
@@ -1214,30 +1219,6 @@ impl CudaExternalMiner {
             } else {
                 None
             };
-
-            // ProgPoW debug: read g_output[10..17] for seed, final hash, initial seed, header
-            if self.algo == CudaExtAlgo::Progpow {
-                if let Some(g_out) = &self.progpow_g_output {
-                    if let Ok(g_host) = self.dev.dtoh_sync_copy(g_out) {
-                        if g_host.len() >= 18 {
-                            let cuda_seed = (g_host[10] as u64) | ((g_host[11] as u64) << 32);
-                            let cuda_final = (g_host[12] as u64) | ((g_host[13] as u64) << 32);
-                            let cuda_initial_seed = (g_host[14] as u64) | ((g_host[15] as u64) << 32);
-                            let cuda_hdr0 = g_host[16];
-                            let cuda_hdr1 = g_host[17];
-                            println!(
-                                "cuda_progpow_debug nonce={} cuda_seed=0x{:016x} cuda_final_u64=0x{:016x} initial_seed=0x{:016x} hdr0=0x{:08x} hdr1=0x{:08x}",
-                                nonce_host[0],
-                                cuda_seed,
-                                cuda_final,
-                                cuda_initial_seed,
-                                cuda_hdr0,
-                                cuda_hdr1,
-                            );
-                        }
-                    }
-                }
-            }
 
             Ok(GpuBatchResult {
                 solutions: vec![(nonce_host[0], hash, mix_hash)],

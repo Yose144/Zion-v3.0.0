@@ -2059,14 +2059,10 @@ fn run_local_session(
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
         // Allow Stream 2 (external GPU) to use a different backend than Stream 1
-        // in local benchmark mode too.  On NVIDIA, ZANO ProgPoWZ on OpenCL is
-        // 2x faster than CUDA in triple-stream mode (Claymore Dual time-slicing).
-        // See docs/3.0.6/W11_DESKTOP_AGENT_GPU_TUNING.md §6.
-        let default_ext_backend = if effective_gpu_backend == gpu_backend::GpuBackendKind::Cuda {
-            gpu_backend::GpuBackendKind::OpenCL
-        } else {
-            effective_gpu_backend
-        };
+        // in local benchmark mode too.  On NVIDIA the CUDA ProgPoWZ kernel is
+        // ~2x faster than OpenCL in isolation.  When both run on CUDA they share
+        // the primary context and time-slice via ZION_EXT_GPU_TIME_DUTY_PCT.
+        let default_ext_backend = effective_gpu_backend;
         let bk = std::env::var("ZION_EXT_GPU_BACKEND")
             .ok()
             .and_then(|v| match v.to_lowercase().as_str() {
@@ -2880,16 +2876,11 @@ fn run_remote_session(
         let ws = config.secondary_gpu_work_size;
         let hr = Arc::clone(hashrate);
         // Allow Stream 2 (external GPU) to use a different backend than Stream 1.
-        // On NVIDIA, ZANO ProgPoWZ on OpenCL is 2x faster than CUDA in
-        // triple-stream mode (3.6 MH/s vs 0.45 MH/s) because the driver
-        // time-slices between CUDA and OpenCL contexts (Claymore Dual style),
-        // while CUDA+CUDA serialises.  See docs/3.0.6/W11_DESKTOP_AGENT_GPU_TUNING.md §6.
-        // Override with ZION_EXT_GPU_BACKEND=cuda if desired.
-        let default_ext_backend = if effective_gpu_backend == gpu_backend::GpuBackendKind::Cuda {
-            gpu_backend::GpuBackendKind::OpenCL
-        } else {
-            effective_gpu_backend
-        };
+        // On NVIDIA the CUDA ProgPoWZ kernel is ~2x faster than OpenCL
+        // standalone (~11 MH/s vs ~5.6 MH/s on GTX 1070 Ti).  Both CUDA kernels
+        // share the primary context and time-slice via ZION_EXT_GPU_TIME_DUTY_PCT
+        // (default 50%).  Override with ZION_EXT_GPU_BACKEND=opencl if desired.
+        let default_ext_backend = effective_gpu_backend;
         let bk = std::env::var("ZION_EXT_GPU_BACKEND")
             .ok()
             .and_then(|v| match v.to_lowercase().as_str() {
