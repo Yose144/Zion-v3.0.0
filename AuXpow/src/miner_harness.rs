@@ -365,10 +365,10 @@ fn scan_verushash_full(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
         }
 
         let hash = crate::external_hashers::hash_verushash_header(&work_header);
-        // VerusHash v2.2 returns the hash in raw byte order; professional pools
-        // (node-stratum-pool-verus / LuckPool) interpret it as a little-endian
-        // 256-bit integer when comparing against the target. Use the LE helper.
-        if meets_target_little_endian(&hash, target) {
+        // VerusHash v2.2 hash and the stratum target are both interpreted as
+        // big-endian 256-bit integers by the VerusCoin reference, node-verushash,
+        // and LuckPool's share validator. Compare directly with meets_target.
+        if meets_target(&hash, target) {
             println!(
                 "VRSC_SHARE_FOUND nonce={} hash={}",
                 nonce,
@@ -389,9 +389,9 @@ fn scan_verushash_full(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
                 hex::encode(&work_header[work_header.len().saturating_sub(15)..]),
             );
             println!(
-                "VRSC_DEBUG target={} hash_le_reversed={}",
+                "VRSC_DEBUG target={} hash={}",
                 hex::encode(target),
-                hex::encode(hash.iter().rev().copied().collect::<Vec<u8>>()),
+                hex::encode(hash),
             );
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
@@ -1041,7 +1041,7 @@ fn scan_verushash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundSh
         let hash = crate::external_hashers::hash_verushash_header(&work_header);
         if best
             .as_ref()
-            .map(|b| is_hash_better(&hash, &b.hash, true))
+            .map(|b| is_hash_better(&hash, &b.hash, false))
             .unwrap_or(true)
         {
             best = Some(FoundShare {

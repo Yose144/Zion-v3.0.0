@@ -131,9 +131,10 @@ impl ShareForwarder {
             // little-endian integer when comparing against the target.
             meets_target_little_endian(&effective_hash, target)
         } else if self.client.profile().coin == ExternalCoin::VRSC {
-            // VerusHash v2.2: professional pools (node-stratum-pool-verus /
-            // LuckPool) interpret the 32-byte hash as a little-endian integer.
-            meets_target_little_endian(&effective_hash, target)
+            // VerusHash v2.2: the 32-byte PoW hash and the stratum target are
+            // both compared as big-endian 256-bit integers, matching the
+            // VerusCoin reference and LuckPool's share validator.
+            meets_target(&effective_hash, target)
         } else if self.client.profile().coin == ExternalCoin::RTM {
             // GhostRider (Raptoreum): wrapper outputs hash in LE (gr_hash order,
             // same as yiimp's hash_bin), target from pool is BE.
