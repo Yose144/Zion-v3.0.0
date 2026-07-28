@@ -27,6 +27,17 @@
 - **`zion-sdk`** — veřejné SDK s node, wallet a typy.
 - **`zion-cli`** — interaktivní `menu.rs` pro `zion` binárku (subcommands + menu).
 
+## Kontrola syncu s aktuální V3 betou
+
+Ověřeno, zda V31 může syncovat s běžící V3 mainnet betou **bez dalšího hard resetu**.
+
+- **V3 `genesis_hash`**: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`.
+- **V31 `genesis_hash`**: `3cb07fdc5d153d4da16637d0cc1d8ece72a54abe58c96c9b61d18c1fab11d1d4`.
+- Hashe se **neliší jen v detailech** — V31 má odlišný block header, tx model, PoW hash a merkle root.
+- Stávající `V31/L1/core/src/migration.rs` dělá **state-snapshot migration block** na height 0 — to je efektivně nový genesis (soft reset), nikoli block-by-block sync.
+- Detailní analýza a dvě možné cesty (full port vs checkpoint cutover) jsou v [`V31/V3_SYNC_ASSESSMENT.md`](./V3_SYNC_ASSESSMENT.md).
+- `V31/ALPHA_BUILD_PLAN.md` §7 byl upraven tak, aby rozlišoval **state snapshot cutover** a **checkpoint sync bez hard resetu**.
+
 ## Co bylo dnes hotovo
 
 ### 1. `V31/L1/miner` — Triple Stream merged mining
