@@ -8,11 +8,36 @@
 use std::fmt::Write;
 
 use num_bigint::BigUint;
+use serde::{Deserialize, Serialize};
 use zion_cosmic_harmony_v3::{cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height};
 
 /// Frozen V3 mainnet beta genesis hash.
 pub const V3_GENESIS_HASH: &str =
     "4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e";
+
+/// Serde helper for u128 values that may be represented as strings in JSON
+/// (V3 `amount_zion` is serialized as a decimal string).
+mod u128_str {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum StringOrNum {
+        Str(String),
+        Num(u64),
+    }
+
+    pub fn serialize<S: Serializer>(value: &u128, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.collect_str(value)
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<u128, D::Error> {
+        match StringOrNum::deserialize(deserializer)? {
+            StringOrNum::Str(s) => s.parse::<u128>().map_err(serde::de::Error::custom),
+            StringOrNum::Num(n) => Ok(n as u128),
+        }
+    }
+}
 
 /// V3 genesis timestamp.
 pub const GENESIS_TIMESTAMP: u64 = 1_767_225_600;
@@ -34,7 +59,7 @@ pub const TX_HASH_V2_VERSION: u32 = 2;
 pub const DAO_TREASURY_LOCK_HEIGHT: u64 = 144_000;
 
 /// V3 MiningHeader — 80-byte prefix used as PoW input.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MiningHeader {
     pub version: u32,
     pub previous_hash: [u8; 32],
@@ -55,6 +80,19 @@ impl MiningHeader {
         bytes[68..76].copy_from_slice(&self.timestamp.to_le_bytes());
         bytes[76..80].copy_from_slice(&self.difficulty_bits.to_le_bytes());
         bytes
+    }
+
+    /// Deserialize an 80-byte header.
+    pub fn from_bytes(bytes: [u8; Self::HEADER_SIZE]) -> Self {
+        Self {
+            version: u32::from_le_bytes(bytes[0..4].try_into().expect("version slice")),
+            previous_hash: bytes[4..36].try_into().expect("previous hash slice"),
+            merkle_root: bytes[36..68].try_into().expect("merkle root slice"),
+            timestamp: u64::from_le_bytes(bytes[68..76].try_into().expect("timestamp slice")),
+            difficulty_bits: u32::from_le_bytes(
+                bytes[76..80].try_into().expect("difficulty bits slice"),
+            ),
+        }
     }
 }
 
@@ -154,38 +192,45 @@ pub fn hex(bytes: &[u8]) -> String {
 }
 
 /// V3 account-model transaction (used for the 13 non-vault premine outputs).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AccountTransaction {
     pub tx_id: String,
     pub from: String,
     pub to: String,
+    #[serde(with = "u128_str")]
     pub amount_zion: u128,
     pub fee_zion: u64,
     pub nonce: u64,
+    #[serde(default)]
     pub signature: String,
+    #[serde(default)]
     pub public_key: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memo: Option<String>,
 }
 
 /// Input for a V3 UTXO transaction.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TxInput {
     pub prev_tx_hash: [u8; 32],
     pub output_index: u32,
+    #[serde(default)]
     pub signature: Vec<u8>,
+    #[serde(default)]
     pub public_key: Vec<u8>,
 }
 
 /// Output for a V3 UTXO transaction.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TxOutput {
     pub amount: u64,
     pub address: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memo: Option<String>,
 }
 
 /// V3 UTXO transaction (used for the bridge vault coinbase).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UtxoTransaction {
     pub id: [u8; 32],
     pub version: u32,
@@ -524,7 +569,7 @@ fn derive_template_merkle_root_v2_blake3(
 }
 
 /// V3 block body used for validation / sync.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct V3Block {
     pub height: u64,
     pub nonce: u64,
@@ -538,6 +583,77 @@ impl V3Block {
     /// Compute the V3 block hash (PoW hash of the 80-byte header + nonce + height).
     pub fn header_hash(&self) -> [u8; 32] {
         cosmic_harmony_with_height(&self.header.to_bytes(), self.nonce, self.height).data
+    }
+}
+
+/// V3 wire-format block as sent over P2P / RPC (`AcceptedBlock`).
+///
+/// `header_hex` contains the serialized 80-byte `MiningHeader`; the remaining
+/// metadata is carried alongside for storage / RPC convenience.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct V3AcceptedBlock {
+    pub template_id: u64,
+    pub height: u64,
+    pub timestamp: u64,
+    pub difficulty: u64,
+    pub nonce: u64,
+    pub hash_hex: String,
+    pub header_hex: String,
+    #[serde(default)]
+    pub previous_hash_hex: String,
+    #[serde(default)]
+    pub algorithm: String,
+    #[serde(default)]
+    pub transaction_ids: Vec<String>,
+    pub transactions: Vec<AccountTransaction>,
+    #[serde(default)]
+    pub total_fees_zion: u64,
+    #[serde(default)]
+    pub body_hash_hex: String,
+    #[serde(default)]
+    pub subsidy_zion: u64,
+    #[serde(default)]
+    pub miner_reward_zion: u64,
+    #[serde(default)]
+    pub miner_address: String,
+    #[serde(default)]
+    pub humanitarian_address: String,
+    #[serde(default)]
+    pub issobella_address: String,
+    #[serde(default)]
+    pub pool_fee_address: String,
+    #[serde(default)]
+    pub utxo_transaction_ids: Vec<String>,
+    pub utxo_transactions: Vec<UtxoTransaction>,
+}
+
+impl V3AcceptedBlock {
+    /// Convert the wire block into the internal `V3Block` used by the validator.
+    ///
+    /// Fails if `header_hex` is not a valid 80-byte hex header.
+    pub fn into_v3_block(self) -> Result<V3Block, String> {
+        let header_bytes =
+            hex::decode(&self.header_hex).map_err(|e| format!("invalid header hex: {e}"))?;
+        if header_bytes.len() != MiningHeader::HEADER_SIZE {
+            return Err(format!(
+                "header length {} != {} expected",
+                header_bytes.len(),
+                MiningHeader::HEADER_SIZE
+            ));
+        }
+        let header_bytes: [u8; MiningHeader::HEADER_SIZE] = header_bytes
+            .try_into()
+            .map_err(|_| "header length mismatch".to_string())?;
+        let header = MiningHeader::from_bytes(header_bytes);
+
+        Ok(V3Block {
+            height: self.height,
+            nonce: self.nonce,
+            difficulty: self.difficulty,
+            header,
+            transactions: self.transactions,
+            utxo_transactions: self.utxo_transactions,
+        })
     }
 }
 

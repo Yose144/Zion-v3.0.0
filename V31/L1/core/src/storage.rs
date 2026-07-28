@@ -13,6 +13,7 @@ use zion_l1_types::Hash;
 
 use crate::block::{Block, BlockHeader};
 use crate::difficulty::BlockInfo;
+use crate::v3_compat::V3Block;
 
 /// Storage-layer error.
 #[derive(Debug, thiserror::Error)]
@@ -81,6 +82,31 @@ impl Storage {
         )?;
         conn.execute(
             "CREATE TABLE IF NOT EXISTS chain_state (
+                singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+                tip_hash BLOB NOT NULL,
+                tip_height INTEGER NOT NULL,
+                tip_difficulty INTEGER NOT NULL,
+                tip_timestamp INTEGER NOT NULL
+            )",
+            [],
+        )?;
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS v3_blocks (
+                hash BLOB PRIMARY KEY,
+                height INTEGER NOT NULL UNIQUE,
+                previous_hash BLOB NOT NULL,
+                timestamp INTEGER NOT NULL,
+                difficulty INTEGER NOT NULL,
+                body_json TEXT NOT NULL
+            )",
+            [],
+        )?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_v3_blocks_height ON v3_blocks(height)",
+            [],
+        )?;
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS v3_chain_state (
                 singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
                 tip_hash BLOB NOT NULL,
                 tip_height INTEGER NOT NULL,
@@ -293,6 +319,158 @@ impl Storage {
         }
         Ok(out)
     }
+
+    // ------------------------------------------------------------------
+    // V3 block storage (checkpoint sync)
+    // ------------------------------------------------------------------
+
+    /// Store a V3 block and update the V3 chain tip.
+    pub async fn put_v3_block(&self, block: &V3Block) -> Result<(), StorageError> {
+        let hash = block.header_hash();
+        let body_json = serde_json::to_string(block)?;
+
+        let conn = self.conn.lock().await;
+        conn.execute(
+            "INSERT OR REPLACE INTO v3_blocks
+             (hash, height, previous_hash, timestamp, difficulty, body_json)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                hash.as_slice(),
+                block.height as i64,
+                block.header.previous_hash.as_slice(),
+                block.header.timestamp as i64,
+                block.difficulty as i64,
+                body_json,
+            ],
+        )?;
+
+        // Update tip if this block extends the current best height.
+        let current_tip: i64 = conn
+            .query_row(
+                "SELECT COALESCE(tip_height, -1) FROM v3_chain_state WHERE singleton = 1",
+                [],
+                |row| row.get(0),
+            )
+            .optional()?
+            .unwrap_or(-1);
+        if block.height as i64 > current_tip {
+            conn.execute(
+                "INSERT OR REPLACE INTO v3_chain_state
+                 (singleton, tip_hash, tip_height, tip_difficulty, tip_timestamp)
+                 VALUES (1, ?1, ?2, ?3, ?4)",
+                params![
+                    hash.as_slice(),
+                    block.height as i64,
+                    block.difficulty as i64,
+                    block.header.timestamp as i64,
+                ],
+            )?;
+        }
+        Ok(())
+    }
+
+    /// Retrieve a V3 block by its PoW hash.
+    pub async fn get_v3_block_by_hash(
+        &self,
+        hash: &[u8; 32],
+    ) -> Result<Option<V3Block>, StorageError> {
+        let conn = self.conn.lock().await;
+        self.get_v3_block_by_hash_internal(hash, &conn)
+    }
+
+    fn get_v3_block_by_hash_internal(
+        &self,
+        hash: &[u8; 32],
+        conn: &Connection,
+    ) -> Result<Option<V3Block>, StorageError> {
+        let row = conn
+            .query_row(
+                "SELECT body_json FROM v3_blocks WHERE hash = ?1",
+                [hash.as_slice()],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?;
+        match row {
+            Some(body_json) => Ok(Some(serde_json::from_str(&body_json)?)),
+            None => Ok(None),
+        }
+    }
+
+    /// Retrieve a V3 block by height.
+    pub async fn get_v3_block_by_height(
+        &self,
+        height: u64,
+    ) -> Result<Option<V3Block>, StorageError> {
+        let conn = self.conn.lock().await;
+        let hash: Option<Vec<u8>> = conn
+            .query_row(
+                "SELECT hash FROM v3_blocks WHERE height = ?1",
+                [height as i64],
+                |row| row.get(0),
+            )
+            .optional()?;
+        match hash {
+            Some(h) => {
+                let h: [u8; 32] = h.try_into().map_err(|_| StorageError::CorruptHash)?;
+                self.get_v3_block_by_hash_internal(&h, &conn)
+            }
+            None => Ok(None),
+        }
+    }
+
+    /// Return the current V3 chain tip, if any.
+    pub async fn v3_tip(&self) -> Result<Option<V3Block>, StorageError> {
+        let conn = self.conn.lock().await;
+        let hash: Option<Vec<u8>> = conn
+            .query_row(
+                "SELECT tip_hash FROM v3_chain_state WHERE singleton = 1",
+                [],
+                |row| row.get(0),
+            )
+            .optional()?;
+        match hash {
+            Some(h) => {
+                let h: [u8; 32] = h.try_into().map_err(|_| StorageError::CorruptHash)?;
+                self.get_v3_block_by_hash_internal(&h, &conn)
+            }
+            None => Ok(None),
+        }
+    }
+
+    /// Return the most recent `count` V3 blocks as `BlockInfo` for LWMA.
+    pub async fn v3_difficulty_window(&self, count: usize) -> Result<Vec<BlockInfo>, StorageError> {
+        let conn = self.conn.lock().await;
+        let mut stmt = conn.prepare(
+            "SELECT timestamp, difficulty FROM v3_blocks
+             ORDER BY height DESC LIMIT ?1",
+        )?;
+        let rows = stmt.query_map([count as i64], |row| {
+            let timestamp: i64 = row.get(0)?;
+            let difficulty: i64 = row.get(1)?;
+            Ok(BlockInfo {
+                timestamp: timestamp as u64,
+                difficulty: difficulty as u64,
+            })
+        })?;
+
+        let mut out = Vec::with_capacity(count);
+        for row in rows {
+            out.push(row?);
+        }
+        out.reverse();
+        Ok(out)
+    }
+
+    /// Height of the highest stored V3 block (or 0 if none).
+    pub async fn v3_height(&self) -> Result<u64, StorageError> {
+        let conn = self.conn.lock().await;
+        let height: i64 = conn.query_row(
+            "SELECT COALESCE(MAX(height), -1) FROM v3_blocks",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(if height < 0 { 0 } else { height as u64 })
+    }
 }
 
 fn bytes_to_hash(bytes: &[u8]) -> Result<Hash, StorageError> {
@@ -306,6 +484,7 @@ fn bytes_to_hash(bytes: &[u8]) -> Result<Hash, StorageError> {
 mod tests {
     use super::*;
     use crate::genesis;
+    use crate::v3_compat;
 
     #[tokio::test]
     async fn round_trip_genesis() {
@@ -321,5 +500,25 @@ mod tests {
 
         let by_height = storage.get_by_height(0).await.unwrap().unwrap();
         assert_eq!(by_height.header.merkle_root, block.header.merkle_root);
+    }
+
+    #[tokio::test]
+    async fn v3_genesis_storage_roundtrip() {
+        let storage = Storage::open_in_memory().await.unwrap();
+        let block = v3_compat::build_v3_genesis_block();
+        let hash = block.header_hash();
+        storage.put_v3_block(&block).await.unwrap();
+
+        let tip = storage.v3_tip().await.unwrap().unwrap();
+        assert_eq!(tip.height, 0);
+
+        let by_hash = storage.get_v3_block_by_hash(&hash).await.unwrap().unwrap();
+        assert_eq!(by_hash.header.merkle_root, block.header.merkle_root);
+
+        let by_height = storage.get_v3_block_by_height(0).await.unwrap().unwrap();
+        assert_eq!(by_height.header_hash(), hash);
+
+        let window = storage.v3_difficulty_window(10).await.unwrap();
+        assert_eq!(window.len(), 1);
     }
 }
