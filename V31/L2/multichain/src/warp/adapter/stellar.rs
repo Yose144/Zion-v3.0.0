@@ -19,7 +19,14 @@ use tracing::{debug, info, warn};
 // The issuer account is a 5/5 multisig controlled by WARP validators.
 // After running setup_zion_asset.py, replace the placeholder issuer
 // addresses below with the real bridge account public key (G...).
-fn zion_contract(network: &str) -> Option<&'static str> {
+fn zion_contract(network: &str) -> Option<String> {
+    // Allow override via env var.
+    if let Ok(issuer) = std::env::var("WARP_STELLAR_ZION_ISSUER") {
+        if !issuer.is_empty() {
+            return Some(issuer);
+        }
+    }
+
     match network {
         "mainnet" => {
             // ✅ DEPLOYED 2026-07-13 — ZION native asset on Stellar mainnet
@@ -29,13 +36,11 @@ fn zion_contract(network: &str) -> Option<&'static str> {
             // Home domain: zionterranova.com
             // TODO: Add 5 WARP validators as multi-sig signers (5/5 quorum)
             // TODO: Set WARP_STELLAR_RELAY_KEY for relay signing
-            Some("GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT")
+            Some("GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT".to_string())
         }
         "testnet" => {
-            // TODO: Replace with real testnet ZION issuer account (G...).
-            // Run: python setup_zion_asset.py --network testnet
-            warn!("[WARP][stellar] testnet ZION issuer is a placeholder — run setup_zion_asset.py from V3/L2/bridge/contracts/non-evm/stellar/ and update this address");
-            Some("CZIONTEXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+            warn!("[WARP][stellar] testnet ZION issuer is a placeholder — run setup_zion_asset.py and set WARP_STELLAR_ZION_ISSUER env var");
+            Some("CZIONTEXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".to_string())
         }
         _ => None,
     }
@@ -290,7 +295,7 @@ impl ChainAdapter for StellarAdapter {
         };
         let ledger = self.latest_ledger().await?;
         let start = ledger.saturating_sub(100); // look back ~100 ledgers (~8 mins)
-        let proofs = self.get_bridge_burn_events(contract, start).await?;
+        let proofs = self.get_bridge_burn_events(&contract, start).await?;
         info!(
             "[WARP][stellar] {} BridgeBurn events (ledgers {}-{})",
             proofs.len(),
