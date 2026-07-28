@@ -11,7 +11,7 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 // ZION SPL token mint address per cluster
 // ─────────────────────────────────────────────────────────────────────────────
-fn zion_mint(cluster: &str) -> Option<&'static str> {
+fn zion_mint(cluster: &str) -> Option<String> {
     // ── ZION SPL Token Mint Address ──────────────────────────────────────
     // Contract source: V3/L2/bridge/contracts/non-evm/solana/zion_spl_token.rs
     // Deployment steps: V3/L2/bridge/contracts/non-evm/solana/README.md
@@ -22,17 +22,23 @@ fn zion_mint(cluster: &str) -> Option<&'static str> {
     // TODO: Deploy custom Anchor program (zion_spl_token.rs) for bridge mint/burn
     //       events + validator quorum. Standard SPL Token works for basic transfers
     //       but doesn't emit BridgeBurnEvent for WARP relay tracking.
+
+    // Allow override via env var.
+    if let Ok(mint) = std::env::var("WARP_SOLANA_ZION_MINT") {
+        if !mint.is_empty() {
+            return Some(mint);
+        }
+    }
+
     match cluster {
         "mainnet-beta" => {
             // ✅ DEPLOYED — ZION SPL Token on Solana mainnet
             // TX: 425qNNcDyWAGCMmEc7D5mJri2wxVxkJmmBGzqfVM7JRNC8PrZa81ASCe3NpqrRhmfzBVyHUYxZKANfvUE3xnTZKp
-            Some("HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H")
+            Some("HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H".to_string())
         }
         "devnet" => {
-            // TODO: Replace with real devnet ZION mint after test deployment.
-            // Use `anchor deploy --provider.cluster devnet` then call initialize.
-            warn!("[WARP][solana] devnet ZION mint is a placeholder — deploy contract from V3/L2/bridge/contracts/non-evm/solana/ and update this address");
-            Some("ZIONdevXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+            warn!("[WARP][solana] devnet ZION mint is a placeholder — deploy contract and set WARP_SOLANA_ZION_MINT env var");
+            Some("ZIONdevXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".to_string())
         }
         _ => None,
     }
@@ -292,7 +298,7 @@ impl ChainAdapter for SolanaAdapter {
             }
         };
         let slot = self.get_slot().await?;
-        let sigs = self.get_signatures_for_address(mint, 40).await?;
+        let sigs = self.get_signatures_for_address(&mint, 40).await?;
         debug!("[WARP][solana] {} recent sigs on mint {}", sigs.len(), mint);
 
         let mut proofs = Vec::new();
@@ -336,7 +342,7 @@ impl ChainAdapter for SolanaAdapter {
                 &self.client,
                 &self.rpc_url,
                 &instruction.recipient,
-                mint,
+                &mint,
                 amount,
             )
             .await

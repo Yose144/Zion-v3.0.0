@@ -10,7 +10,7 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 // ZION Cardano Native Token (policy_id + asset_name hex)
 // ─────────────────────────────────────────────────────────────────────────────
-fn zion_asset(network: &str) -> Option<&'static str> {
+fn zion_asset(network: &str) -> Option<String> {
     // ── ZION Cardano Native Token (policy_id + asset_name hex) ───────────
     // Contract source: V3/L2/bridge/contracts/non-evm/cardano/mint_zion_token.hs
     // Deployment steps: V3/L2/bridge/contracts/non-evm/cardano/README.md
@@ -19,22 +19,27 @@ fn zion_asset(network: &str) -> Option<&'static str> {
     //   policy_id (28 bytes hex) + asset_name (4 bytes hex: "ZION" = 5a494f4e)
     //
     // After compiling and deploying the Plutus minting policy, compute the
-    // policy_id as the hash of the policy script, then replace the placeholder
-    // hex strings below with: <policy_id_hex>5a494f4e
+    // policy_id as the hash of the policy script, then set the full asset hex
+    // via the `WARP_CARDANO_ZION_ASSET` env var: <policy_id_hex>5a494f4e
+
+    // Allow override via env var (works for any network).
+    if let Ok(asset) = std::env::var("WARP_CARDANO_ZION_ASSET") {
+        if !asset.is_empty() {
+            return Some(asset);
+        }
+    }
+
     match network {
         "mainnet" => {
-            // TODO: Replace with real mainnet policy_id + asset_name.
-            // Compile mint_zion_token.hs with the bridge multisig validator hash,
-            // then compute: cardano-cli transaction policyid --script-file zion_mint_policy.plutus
-            // The full asset hex = <policy_id_hex>5a494f4e
-            warn!("[WARP][cardano] mainnet ZION asset is a placeholder — deploy minting policy from V3/L2/bridge/contracts/non-evm/cardano/ and update with real policy_id+asset_name");
-            Some("5a71011c726573745a494f4e")
+            // Placeholder until the Plutus minting policy is deployed to
+            // Cardano mainnet. Set WARP_CARDANO_ZION_ASSET env var after
+            // deployment to override without code change.
+            warn!("[WARP][cardano] mainnet ZION asset is a placeholder — deploy minting policy from V3/L2/bridge/contracts/non-evm/cardano/ and set WARP_CARDANO_ZION_ASSET env var");
+            Some("5a71011c726573745a494f4e".to_string())
         }
         "preprod" => {
-            // TODO: Replace with real preprod policy_id + asset_name.
-            // Deploy the minting policy to Cardano preprod testnet first.
-            warn!("[WARP][cardano] preprod ZION asset is a placeholder — deploy minting policy from V3/L2/bridge/contracts/non-evm/cardano/ and update with real policy_id+asset_name");
-            Some("5a71011c726573745a494f4e74")
+            warn!("[WARP][cardano] preprod ZION asset is a placeholder — deploy minting policy and set WARP_CARDANO_ZION_ASSET env var");
+            Some("5a71011c726573745a494f4e74".to_string())
         }
         _ => None,
     }
@@ -323,7 +328,7 @@ impl ChainAdapter for CardanoAdapter {
         }
 
         let tip = self.get_latest_block().await?.height.unwrap_or(0);
-        let asset_txs = self.get_asset_txs(asset).await?;
+        let asset_txs = self.get_asset_txs(&asset).await?;
         debug!(
             "[WARP][cardano] {} asset txs found for {}",
             asset_txs.len(),
@@ -332,7 +337,7 @@ impl ChainAdapter for CardanoAdapter {
 
         let mut proofs = Vec::new();
         for tx in &asset_txs {
-            if let Some(proof) = self.build_proof_from_tx(asset, tx, tip).await {
+            if let Some(proof) = self.build_proof_from_tx(&asset, tx, tip).await {
                 proofs.push(proof);
             }
         }
@@ -362,7 +367,7 @@ impl ChainAdapter for CardanoAdapter {
                 &self.client,
                 &self.api_url,
                 &instruction.recipient,
-                asset,
+                &asset,
                 amount,
             )
             .await

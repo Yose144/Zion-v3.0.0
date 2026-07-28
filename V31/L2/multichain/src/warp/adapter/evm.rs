@@ -18,15 +18,28 @@ use tracing::{debug, info, warn};
 const BRIDGE_BURN_TOPIC: &str =
     "0x4e2ca0515ed1aef1395f66b5303bb5d6f1bf9d61a353fa53f73f8ac9973fa9f6";
 
-fn wzion_contract(chain: &str) -> Option<&'static str> {
+/// Default wZION contract address (deployed on all EVM chains in the
+/// 3.0.4 bridge session — same address on every chain).
+///
+/// Override per-chain via `WARP_{CHAIN}_WZION_ADDR` env var.
+const DEFAULT_WZION: &str = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6";
+
+fn wzion_contract(chain: &str) -> Option<String> {
+    // Allow per-chain override via env var.
+    let env_key = format!(
+        "WARP_{}_WZION_ADDR",
+        chain.to_uppercase().replace('-', "_")
+    );
+    if let Ok(addr) = std::env::var(&env_key) {
+        if !addr.is_empty() {
+            return Some(addr);
+        }
+    }
+    // All deployed EVM chains share the same wZION address.
     match chain {
-        // Mainnet wZION — update with real deployed address after T1 bridge deploy.
-        // Until then Base mainnet adapter returns Err("No wZION contract") on mint.
-        "base" => Some("0x742d35Cc6634C0532925a3b8D4C9C5B2C39b8F2"),
-        "base-sepolia" => Some("0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"), // wZION Base Sepolia
-        "arbitrum" => Some("0x8B3a85D1d0a7B99dC5b1C6c36f7894D8E4C99aA"),
-        "bsc" => Some("0x3c9B8D7e9f1A2b5C6d4E3F2a1B0c9D8e7F6a5B4"),
-        "polygon" => Some("0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0"),
+        "base" | "base-sepolia" | "arbitrum" | "bsc" | "polygon" | "optimism" | "avalanche" => {
+            Some(DEFAULT_WZION.to_string())
+        }
         _ => None,
     }
 }
@@ -38,6 +51,8 @@ fn default_rpc(chain: &str) -> &'static str {
         "arbitrum" => "https://arb1.arbitrum.io/rpc",
         "bsc" => "https://bsc-dataseed.binance.org",
         "polygon" => "https://polygon-rpc.com",
+        "optimism" => "https://mainnet.optimism.io",
+        "avalanche" => "https://api.avax.network/ext/bc/C/rpc",
         _ => "https://mainnet.base.org",
     }
 }
@@ -49,6 +64,8 @@ fn evm_chain_id(chain: &str) -> u64 {
         "arbitrum" => 42161,
         "bsc" => 56,
         "polygon" => 137,
+        "optimism" => 10,
+        "avalanche" => 43114,
         _ => 1,
     }
 }
@@ -368,7 +385,7 @@ impl ChainAdapter for EvmAdapter {
                         &self.client,
                         &self.rpc_url,
                         chain_id,
-                        contract,
+                        &contract,
                         &calldata,
                         0,       // value: 0 ETH
                         300_000, // gas limit
@@ -458,8 +475,21 @@ mod tests {
 
     #[test]
     fn test_wzion_contract_addresses() {
+        // All deployed EVM chains should return the real wZION address.
         assert!(wzion_contract("base").is_some());
+        assert_eq!(
+            wzion_contract("base").unwrap(),
+            "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+        );
+        assert!(wzion_contract("bsc").is_some());
+        assert_eq!(
+            wzion_contract("bsc").unwrap(),
+            "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+        );
         assert!(wzion_contract("arbitrum").is_some());
+        assert!(wzion_contract("polygon").is_some());
+        assert!(wzion_contract("optimism").is_some());
+        assert!(wzion_contract("avalanche").is_some());
         assert!(wzion_contract("unknown").is_none());
     }
 
@@ -469,6 +499,19 @@ mod tests {
         assert!(default_rpc("arbitrum").contains("arbitrum"));
         assert!(default_rpc("bsc").contains("binance"));
         assert!(default_rpc("polygon").contains("polygon"));
+        assert!(default_rpc("optimism").contains("optimism"));
+        assert!(default_rpc("avalanche").contains("avax"));
+    }
+
+    #[test]
+    fn test_evm_chain_ids() {
+        assert_eq!(evm_chain_id("base"), 8453);
+        assert_eq!(evm_chain_id("base-sepolia"), 84532);
+        assert_eq!(evm_chain_id("arbitrum"), 42161);
+        assert_eq!(evm_chain_id("bsc"), 56);
+        assert_eq!(evm_chain_id("polygon"), 137);
+        assert_eq!(evm_chain_id("optimism"), 10);
+        assert_eq!(evm_chain_id("avalanche"), 43114);
     }
 
     /// Integration test — only runs if WARP_BASE_RPC is set in env.
