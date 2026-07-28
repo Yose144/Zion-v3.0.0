@@ -93,6 +93,7 @@ impl ShareForwarder {
         hash: &[u8; 32],
         target: &[u8; 32],
         mix_hash: Option<&[u8; 32]>,
+        solution: Option<&[u8]>,
         algorithm: &str,
         header_bytes: &[u8],
     ) -> Result<ShareForwardResult> {
@@ -205,6 +206,11 @@ impl ShareForwarder {
         // the upstream pool's own verification matches our pre-check.
         let hash_hex = hash_to_hex(&effective_hash);
         let mix_hash_hex = mix_hash.map(hash_to_hex);
+        // For Equihash/BeamHash algorithms, the variable-length solution blob
+        // is carried in the `mix_hash_hex` stratum field so the upstream
+        // BeamStratum/ZcashStratum pool receives it as `output`/`solution`.
+        let solution_hex = solution.map(|s| hex::encode(s));
+        let submit_mix_hash_hex = solution_hex.or(mix_hash_hex);
 
         // Stale-job pre-rejection for CPU-only coins (XMR/VRSC/RTM).  These
         // pools expire jobs very quickly; forwarding a share for a superseded
@@ -244,7 +250,7 @@ impl ShareForwarder {
             }
         }
 
-        match self.client.submit_share(job_id, nonce, &hash_hex, mix_hash_hex.as_deref()).await {
+        match self.client.submit_share(job_id, nonce, &hash_hex, submit_mix_hash_hex.as_deref()).await {
             Ok(ShareResult::Accepted) => Ok(ShareForwardResult::Accepted),
             Ok(ShareResult::Rejected(reason)) => Ok(ShareForwardResult::Rejected(reason)),
             Ok(ShareResult::Unknown) => Ok(ShareForwardResult::Unknown),
@@ -262,7 +268,7 @@ impl ShareForwarder {
         target: &[u8; 32],
     ) -> Result<ShareForwardResult> {
         let hash = hash_blake3(header, 0, nonce);
-        self.try_forward(job_id, nonce, &hash, target, None, "blake3", &[]).await
+        self.try_forward(job_id, nonce, &hash, target, None, None, "blake3", &[]).await
     }
 }
 
@@ -352,7 +358,7 @@ mod tests {
         let hash = [0xFFu8; 32]; // definitely above target
         let mut target = [0x00u8; 32];
         target[31] = 0x01; // very hard target
-        let result = forwarder.try_forward("job_forward", 0, &hash, &target, None, "blake3", &[]).await.unwrap();
+        let result = forwarder.try_forward("job_forward", 0, &hash, &target, None, None, "blake3", &[]).await.unwrap();
         assert_eq!(result, ShareForwardResult::BelowTarget);
     }
 
@@ -371,7 +377,7 @@ mod tests {
         let forwarder = ShareForwarder::new(client);
         let target = [0xFFu8; 32]; // trivial target
         let hash = hash_blake3(b"header", 0, 42);
-        let result = forwarder.try_forward("job_forward", 42, &hash, &target, None, "blake3", &[]).await.unwrap();
+        let result = forwarder.try_forward("job_forward", 42, &hash, &target, None, None, "blake3", &[]).await.unwrap();
         assert_eq!(result, ShareForwardResult::Accepted);
     }
 
@@ -388,7 +394,7 @@ mod tests {
         let forwarder = ShareForwarder::new(client);
         let target = [0xFFu8; 32];
         let hash = hash_blake3(b"header", 0, 7);
-        let result = forwarder.try_forward("job_forward", 7, &hash, &target, None, "blake3", &[]).await.unwrap();
+        let result = forwarder.try_forward("job_forward", 7, &hash, &target, None, None, "blake3", &[]).await.unwrap();
         assert_eq!(result, ShareForwardResult::Rejected("low diff".to_string()));
     }
 
@@ -426,7 +432,7 @@ mod tests {
         target[31] = 0x01; // very hard target — real hash won't meet it
 
         let result = forwarder
-            .try_forward("etc_job_001", 0x1234, &kernel_hash, &target, Some(&mix_hash), "ethash", &header_bytes)
+            .try_forward("etc_job_001", 0x1234, &kernel_hash, &target, Some(&mix_hash), None, "ethash", &header_bytes)
             .await
             .unwrap();
 
@@ -455,7 +461,7 @@ mod tests {
         let target = [0xFFu8; 32]; // trivial target — any hash meets it
 
         let result = forwarder
-            .try_forward("etc_job_001", 0x1234, &kernel_hash, &target, Some(&mix_hash), "ethash", &header_bytes)
+            .try_forward("etc_job_001", 0x1234, &kernel_hash, &target, Some(&mix_hash), None, "ethash", &header_bytes)
             .await
             .unwrap();
 
