@@ -496,6 +496,11 @@ async fn main() -> anyhow::Result<()> {
                 issobella_address: issobella,
                 no_genesis: node.no_genesis,
                 seed_peers: node.peer,
+                v3_miner_address: String::new(),
+                v3_humanitarian_address: String::new(),
+                v3_issobella_address: String::new(),
+                v3_no_genesis: false,
+                v3_checkpoint_path: None,
             };
 
             println!(
