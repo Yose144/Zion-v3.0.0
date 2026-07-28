@@ -180,6 +180,10 @@ pub struct GpuBatchResult {
     pub nonces_tested: u64,
     /// Device name that produced this batch (for per-GPU attribution).
     pub device_name: String,
+    /// Equihash/BeamHash solution blob for algorithms that produce one
+    /// (ZelHash 52 bytes, BeamHash III 104 bytes).  None for hash-based
+    /// algorithms.  Carried alongside the first entry in `solutions`.
+    pub solution: Option<Vec<u8>>,
 }
 
 /// Convert `StreamWeights` into the fixed 6-element float array consumed by
@@ -283,6 +287,7 @@ pub trait GpuMiner: Send {
     fn collect_batch(&mut self, _token: u64) -> Result<GpuBatchResult> {
         Ok(GpuBatchResult {
             solutions: Vec::new(),
+            solution: None,
             nonces_tested: 0,
             device_name: String::new(),
         })
@@ -762,6 +767,7 @@ impl GpuMiner for MultiGpuMiner {
         // Merge results from all GPUs.
         let mut merged = GpuBatchResult {
             solutions: Vec::new(),
+            solution: None,
             nonces_tested: 0,
             device_name: self.device_name_cache.clone(),
         };
@@ -775,6 +781,9 @@ impl GpuMiner for MultiGpuMiner {
                         merged.device_name = self.miners[i].device_name();
                     }
                     merged.solutions.extend(r.solutions);
+                    if merged.solution.is_none() {
+                        merged.solution = r.solution;
+                    }
                 }
                 Err(e) => {
                     eprintln!("multi_gpu: sub-miner[{}] batch error: {e}", i);
@@ -828,6 +837,7 @@ impl GpuMiner for MultiGpuMiner {
 
         let mut merged = GpuBatchResult {
             solutions: Vec::new(),
+            solution: None,
             nonces_tested: 0,
             device_name: self.device_name_cache.clone(),
         };
@@ -841,6 +851,9 @@ impl GpuMiner for MultiGpuMiner {
                         merged.device_name = self.miners[i].device_name();
                     }
                     merged.solutions.extend(r.solutions);
+                    if merged.solution.is_none() {
+                        merged.solution = r.solution;
+                    }
                 }
                 Err(e) => {
                     eprintln!("multi_gpu: sub-miner[{}] raw batch error: {e}", i);
@@ -2770,6 +2783,11 @@ pub struct GpuScanOutcome {
     /// Mix hash for Ethash/KawPow (needed for eth_submitWork).  None for
     /// algorithms that don't produce a mix hash.
     pub mix_hash: Option<[u8; 32]>,
+    /// Variable-length solution blob for Equihash/BeamHash algorithms
+    /// (ZelHash 52 bytes, BeamHash III 104 bytes).  None for hash-based
+    /// algorithms.  Carried in the `mix_hash_hex` stratum field so the pool
+    /// can forward it to the upstream BeamStratum/ZcashStratum pool.
+    pub solution_blob: Option<Vec<u8>>,
     pub nonces_tested: u64,
     pub candidates_found: u64,
     pub candidates_verified: u64,
@@ -2941,6 +2959,7 @@ pub fn gpu_scan_job(
                     return GpuScanOutcome {
                         solution: None,
                         mix_hash,
+                        solution_blob: None,
                         nonces_tested,
                         candidates_found: 1,
                         candidates_verified: 0,
@@ -2958,6 +2977,7 @@ pub fn gpu_scan_job(
                         hash: *gpu_hash,
                     }),
                     mix_hash,
+                    solution_blob: result.solution,
                     nonces_tested,
                     candidates_found: 1,
                     candidates_verified: 1,
@@ -2968,6 +2988,7 @@ pub fn gpu_scan_job(
                 GpuScanOutcome {
                     solution: None,
                     mix_hash: None,
+                    solution_blob: None,
                     nonces_tested,
                     candidates_found: 0,
                     candidates_verified: 0,
@@ -2981,6 +3002,7 @@ pub fn gpu_scan_job(
             GpuScanOutcome {
                 solution: None,
                 mix_hash: None,
+                solution_blob: None,
                 nonces_tested: 0,
                 candidates_found: 0,
                 candidates_verified: 0,
@@ -3075,6 +3097,7 @@ impl GpuPipelineState {
                             GpuScanOutcome {
                                 solution: None,
                                 mix_hash,
+                                solution_blob: result.solution,
                                 nonces_tested,
                                 candidates_found: 1,
                                 candidates_verified: 0,
@@ -3089,6 +3112,7 @@ impl GpuPipelineState {
                                     hash: *gpu_hash,
                                 }),
                                 mix_hash,
+                                solution_blob: result.solution,
                                 nonces_tested,
                                 candidates_found: 1,
                                 candidates_verified: 1,
@@ -3100,6 +3124,7 @@ impl GpuPipelineState {
                         GpuScanOutcome {
                             solution: None,
                             mix_hash: None,
+                            solution_blob: None,
                             nonces_tested,
                             candidates_found: 0,
                             candidates_verified: 0,
@@ -3113,6 +3138,7 @@ impl GpuPipelineState {
                     GpuScanOutcome {
                         solution: None,
                         mix_hash: None,
+                        solution_blob: None,
                         nonces_tested: 0,
                         candidates_found: 0,
                         candidates_verified: 0,
@@ -3206,6 +3232,7 @@ impl GpuPipelineState {
                         return Some(GpuScanOutcome {
                             solution: None,
                             mix_hash,
+                            solution_blob: result.solution,
                             nonces_tested,
                             candidates_found: 1,
                             candidates_verified: 0,
@@ -3220,6 +3247,7 @@ impl GpuPipelineState {
                             hash: *gpu_hash,
                         }),
                         mix_hash,
+                        solution_blob: result.solution,
                         nonces_tested,
                         candidates_found: 1,
                         candidates_verified: 1,
@@ -3230,6 +3258,7 @@ impl GpuPipelineState {
                     Some(GpuScanOutcome {
                         solution: None,
                         mix_hash: None,
+                        solution_blob: None,
                         nonces_tested,
                         candidates_found: 0,
                         candidates_verified: 0,
@@ -4072,6 +4101,7 @@ pub mod opencl_deeksha {
 
             Ok(GpuBatchResult {
                 solutions: all_solutions,
+                solution: None,
                 nonces_tested: total_tested,
                 device_name: self.device_name_cached.clone(),
             })
@@ -4146,6 +4176,7 @@ pub mod opencl_deeksha {
 
             Ok(GpuBatchResult {
                 solutions: all_solutions,
+                solution: None,
                 nonces_tested: total_tested,
                 device_name: self.device_name_cached.clone(),
             })
@@ -4903,6 +4934,7 @@ pub mod opencl_deeksha_lite {
                             return Ok(GpuBatchResult {
                                 nonces_tested: total_tested,
                                 solutions: all_solutions,
+                solution: None,
                                 device_name: self.device_name_cached.clone(),
                             });
                         }
@@ -4947,6 +4979,7 @@ pub mod opencl_deeksha_lite {
                 Ok(GpuBatchResult {
                     nonces_tested: total_tested,
                     solutions: all_solutions,
+                solution: None,
                     device_name: self.device_name_cached.clone(),
                 })
             } else {
@@ -5012,6 +5045,7 @@ pub mod opencl_deeksha_lite {
                 Ok(GpuBatchResult {
                     nonces_tested: total_tested,
                     solutions: all_solutions,
+                solution: None,
                     device_name: self.device_name_cached.clone(),
                 })
             }
@@ -5215,6 +5249,7 @@ pub mod opencl_deeksha_lite {
 
             Ok(GpuBatchResult {
                 solutions: all_solutions,
+                solution: None,
                 nonces_tested: total_tested,
                 device_name: self.device_name_cached.clone(),
             })
@@ -5711,6 +5746,7 @@ pub mod opencl_deeksha_lite_fire {
                             return Ok(GpuBatchResult {
                                 nonces_tested: total_tested,
                                 solutions: all_solutions,
+                solution: None,
                                 device_name: self.device_name_cached.clone(),
                             });
                         }
@@ -5754,6 +5790,7 @@ pub mod opencl_deeksha_lite_fire {
                 Ok(GpuBatchResult {
                     nonces_tested: total_tested,
                     solutions: all_solutions,
+                solution: None,
                     device_name: self.device_name_cached.clone(),
                 })
             } else {
@@ -5829,6 +5866,7 @@ pub mod opencl_deeksha_lite_fire {
                 Ok(GpuBatchResult {
                     nonces_tested: total_tested,
                     solutions: all_solutions,
+                solution: None,
                     device_name: self.device_name_cached.clone(),
                 })
             }
@@ -6060,6 +6098,7 @@ pub mod opencl_deeksha_lite_fire {
 
             Ok(GpuBatchResult {
                 solutions: all_solutions,
+                solution: None,
                 nonces_tested: total_tested,
                 device_name: self.device_name_cached.clone(),
             })
@@ -6426,6 +6465,7 @@ pub mod cuda_deeksha {
 
             Ok(GpuBatchResult {
                 solutions: all_solutions,
+                solution: None,
                 nonces_tested: total_tested,
                 device_name: self.device_name_cached.clone(),
             })
@@ -6563,6 +6603,7 @@ pub mod cuda_deeksha {
 
             Ok(GpuBatchResult {
                 solutions: all_solutions,
+                solution: None,
                 nonces_tested: pending.total_tested,
                 device_name: self.device_name_cached.clone(),
             })
@@ -6860,6 +6901,7 @@ pub mod cuda_deeksha_lite_fire {
 
             Ok(GpuBatchResult {
                 solutions: all_solutions,
+                solution: None,
                 nonces_tested: total_tested,
                 device_name: self.device_name_cached.clone(),
             })
@@ -7005,6 +7047,7 @@ pub mod cuda_deeksha_lite_fire {
 
             Ok(GpuBatchResult {
                 solutions: all_solutions,
+                solution: None,
                 nonces_tested: pending.total_tested,
                 device_name: self.device_name_cached.clone(),
             })
@@ -7271,6 +7314,7 @@ pub mod cuda_deeksha_lite {
 
             Ok(GpuBatchResult {
                 solutions: all_solutions,
+                solution: None,
                 nonces_tested: total_tested,
                 device_name: self.device_name_cached.clone(),
             })
@@ -7404,6 +7448,7 @@ pub mod cuda_deeksha_lite {
 
             Ok(GpuBatchResult {
                 solutions: all_solutions,
+                solution: None,
                 nonces_tested: pending.total_tested,
                 device_name: self.device_name_cached.clone(),
             })
@@ -7777,6 +7822,7 @@ pub mod metal_deeksha {
 
             Ok(GpuBatchResult {
                 solutions: all_solutions,
+                solution: None,
                 nonces_tested: total_tested,
                 device_name: self.device_name_cached.clone(),
             })
@@ -7890,12 +7936,13 @@ pub mod cpu_external_fallback {
                         if hash_le_meets_target(&hash, &target.bytes)? {
                             return Ok(GpuBatchResult {
                                 solutions: vec![(nonce, hash, None)],
+                                solution: None,
                                 nonces_tested: i + 1,
                                 device_name: self.device_name_cached.clone(),
                             });
                         }
                     }
-                    Ok(GpuBatchResult { solutions: Vec::new(), nonces_tested: actual_batch, device_name: self.device_name_cached.clone() })
+                    Ok(GpuBatchResult { solutions: Vec::new(), solution: None, nonces_tested: actual_batch, device_name: self.device_name_cached.clone() })
                 }
                 #[cfg(feature = "native-blake3-algo")]
                 "blake3" | "blake3_alph" | "blake3_dcr" => {
@@ -7911,12 +7958,13 @@ pub mod cpu_external_fallback {
                         if hash_le_meets_target(&hash, &target.bytes)? {
                             return Ok(GpuBatchResult {
                                 solutions: vec![(nonce, hash, None)],
+                                solution: None,
                                 nonces_tested: i + 1,
                                 device_name: self.device_name_cached.clone(),
                             });
                         }
                     }
-                    Ok(GpuBatchResult { solutions: Vec::new(), nonces_tested: actual_batch, device_name: self.device_name_cached.clone() })
+                    Ok(GpuBatchResult { solutions: Vec::new(), solution: None, nonces_tested: actual_batch, device_name: self.device_name_cached.clone() })
                 }
                 other => anyhow::bail!("cpu_external_fallback: unsupported algorithm '{}'", other),
             }
@@ -7940,12 +7988,13 @@ pub mod cpu_external_fallback {
                         if hash_le_meets_target(&hash, &target.bytes)? {
                             return Ok(GpuBatchResult {
                                 solutions: vec![(nonce, hash, None)],
+                                solution: None,
                                 nonces_tested: i + 1,
                                 device_name: self.device_name_cached.clone(),
                             });
                         }
                     }
-                    Ok(GpuBatchResult { solutions: Vec::new(), nonces_tested: actual_batch, device_name: self.device_name_cached.clone() })
+                    Ok(GpuBatchResult { solutions: Vec::new(), solution: None, nonces_tested: actual_batch, device_name: self.device_name_cached.clone() })
                 }
                 #[cfg(feature = "native-blake3-algo")]
                 "blake3" | "blake3_alph" | "blake3_dcr" => {
@@ -7960,12 +8009,13 @@ pub mod cpu_external_fallback {
                         if hash_le_meets_target(&hash, &target.bytes)? {
                             return Ok(GpuBatchResult {
                                 solutions: vec![(nonce, hash, None)],
+                                solution: None,
                                 nonces_tested: i + 1,
                                 device_name: self.device_name_cached.clone(),
                             });
                         }
                     }
-                    Ok(GpuBatchResult { solutions: Vec::new(), nonces_tested: actual_batch, device_name: self.device_name_cached.clone() })
+                    Ok(GpuBatchResult { solutions: Vec::new(), solution: None, nonces_tested: actual_batch, device_name: self.device_name_cached.clone() })
                 }
                 other => anyhow::bail!("cpu_external_fallback: unsupported algorithm '{}'", other),
             }
@@ -8267,6 +8317,7 @@ pub mod metal_deeksha_lite_fire {
 
             Ok(GpuBatchResult {
                 solutions: all_solutions,
+                solution: None,
                 nonces_tested: total_tested,
                 device_name: self.device_name_cached.clone(),
             })
@@ -8559,15 +8610,17 @@ pub mod opencl_external {
             }
             .map_err(|e| anyhow::anyhow!("auxpow_gpu_mine_failed algorithm={} err={}", self.algorithm, e))?;
 
-            if let Some(GpuFoundShare { nonce, hash, mix_hash, .. }) = found {
+            if let Some(GpuFoundShare { nonce, hash, mix_hash, solution, .. }) = found {
                 Ok(GpuBatchResult {
                     solutions: vec![(nonce, hash, mix_hash)],
+                    solution,
                     nonces_tested: actual_batch,
                     device_name: self.device_name_cached.clone(),
                 })
             } else {
                 Ok(GpuBatchResult {
                     solutions: Vec::new(),
+                    solution: None,
                     nonces_tested: actual_batch,
                     device_name: self.device_name_cached.clone(),
                 })
@@ -8609,15 +8662,17 @@ pub mod opencl_external {
             // caller advances nonce_offset correctly (no skipped nonces).
             let real_nonces = actual_batch.min(self.miner.internal_work_size() as u64);
 
-            if let Some(GpuFoundShare { nonce, hash, mix_hash, .. }) = found {
+            if let Some(GpuFoundShare { nonce, hash, mix_hash, solution, .. }) = found {
                 Ok(GpuBatchResult {
                     solutions: vec![(nonce, hash, mix_hash)],
+                    solution,
                     nonces_tested: real_nonces,
                     device_name: self.device_name_cached.clone(),
                 })
             } else {
                 Ok(GpuBatchResult {
                     solutions: Vec::new(),
+                    solution: None,
                     nonces_tested: real_nonces,
                     device_name: self.device_name_cached.clone(),
                 })
@@ -8786,15 +8841,17 @@ pub mod metal_external {
                     anyhow::anyhow!("metal_external_mine_failed algorithm={} err={}", self.algorithm, e)
                 })?;
 
-            if let Some(zion_auxpow::gpu_backend::GpuFoundShare { nonce, hash, mix_hash, .. }) = found {
+            if let Some(zion_auxpow::gpu_backend::GpuFoundShare { nonce, hash, mix_hash, solution, .. }) = found {
                 Ok(GpuBatchResult {
                     solutions: vec![(nonce, hash, mix_hash)],
+                    solution,
                     nonces_tested: actual_batch,
                     device_name: self.device_name(),
                 })
             } else {
                 Ok(GpuBatchResult {
                     solutions: Vec::new(),
+                    solution: None,
                     nonces_tested: actual_batch,
                     device_name: self.device_name(),
                 })
@@ -8827,15 +8884,17 @@ pub mod metal_external {
                     )
                 })?;
 
-            if let Some(zion_auxpow::gpu_backend::GpuFoundShare { nonce, hash, mix_hash, .. }) = found {
+            if let Some(zion_auxpow::gpu_backend::GpuFoundShare { nonce, hash, mix_hash, solution, .. }) = found {
                 Ok(GpuBatchResult {
                     solutions: vec![(nonce, hash, mix_hash)],
+                    solution,
                     nonces_tested: actual_batch,
                     device_name: self.device_name(),
                 })
             } else {
                 Ok(GpuBatchResult {
                     solutions: Vec::new(),
+                    solution: None,
                     nonces_tested: actual_batch,
                     device_name: self.device_name(),
                 })
