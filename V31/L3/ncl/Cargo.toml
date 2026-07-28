@@ -1,0 +1,28 @@
+[package]
+name = "zion-ncl"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "NCL — Neural Compute Layer: Decentralized AI task marketplace (V31 Mainnet Alpha)"
+
+[dependencies]
+axum = { workspace = true }
+chrono = { workspace = true }
+rusqlite = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+
+# Optional ONNX Runtime backend (heavy — not enabled by default)
+ort = { version = "2.0.0-rc.12", optional = true }
+
+[features]
+default = []
+onnx = ["dep:ort"]
+
+[dev-dependencies]
+tokio = { workspace = true }
