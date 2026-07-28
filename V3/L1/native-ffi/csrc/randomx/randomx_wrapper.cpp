@@ -143,7 +143,15 @@ static void update_seed(const uint8_t* seed, size_t len) {
 
     /* Allocate + init cache using auto-detected flags (JIT + HARD_AES + LARGE_PAGES) */
     randomx_flags alloc_flags = get_vm_flags();
+    bool large_pages_requested = (alloc_flags & RANDOMX_FLAG_LARGE_PAGES) != 0;
     g_cache = randomx_alloc_cache(alloc_flags);
+    bool large_pages_ok = (g_cache != nullptr);
+    if (!g_cache) {
+        /* LARGE_PAGES failed — retry without it (common on Windows without
+         * "Lock pages in memory" privilege, or Linux without vm.nr_hugepages). */
+        randomx_flags fallback_flags = (randomx_flags)(alloc_flags & ~RANDOMX_FLAG_LARGE_PAGES);
+        g_cache = randomx_alloc_cache(fallback_flags);
+    }
     if (!g_cache) {
         g_cache = randomx_alloc_cache(RANDOMX_FLAG_DEFAULT);
     }
@@ -157,6 +165,11 @@ static void update_seed(const uint8_t* seed, size_t len) {
      * Skip in light mode (ZION_RANDOMX_LIGHT_MODE=1) to save 2 GB RAM. */
     if (alloc_flags & RANDOMX_FLAG_FULL_MEM) {
         g_dataset = randomx_alloc_dataset(alloc_flags);
+        if (!g_dataset) {
+            /* Retry without LARGE_PAGES if dataset alloc failed */
+            randomx_flags fallback_flags = (randomx_flags)(alloc_flags & ~RANDOMX_FLAG_LARGE_PAGES);
+            g_dataset = randomx_alloc_dataset(fallback_flags);
+        }
         if (!g_dataset) {
             g_dataset = randomx_alloc_dataset(RANDOMX_FLAG_DEFAULT);
         }
@@ -184,11 +197,7 @@ static void update_seed(const uint8_t* seed, size_t len) {
             g_dataset ? "yes" : "no (light mode)",
             (vm_flags & RANDOMX_FLAG_JIT) ? "yes" : "no",
             (vm_flags & RANDOMX_FLAG_HARD_AES) ? "yes" : "no",
-#if defined(__APPLE__)
-            "n/a (16KB native pages)",
-#else
-            (vm_flags & RANDOMX_FLAG_LARGE_PAGES) ? "yes" : "no",
-#endif
+            large_pages_ok ? "yes" : "no",
             (vm_flags & RANDOMX_FLAG_SECURE) ? "yes" : "no");
 }
 

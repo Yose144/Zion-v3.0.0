@@ -287,20 +287,27 @@ impl ExternalCoin {
             Self::PRL,
             Self::QUAI,
             Self::BEAM,
-            Self::KLS,
+            // KLS removed — no working pool/wallet
             Self::ZCL,
             Self::QTC,
             Self::VTC,
-            Self::IRON,
+            // IRON removed — no working pool/wallet
             Self::NEXA,
             Self::RTM,
-            Self::DNX,
+            // DNX removed — no working pool/wallet
             Self::CKB,
             Self::CFX,
             Self::ZEC,
             Self::PHX,
             Self::KRX,
         ]
+    }
+
+    /// Coins that have been disabled (no working pool/wallet).
+    /// These are kept in the enum for backwards compatibility but excluded
+    /// from profit routing and pool selection.
+    pub fn is_disabled(self) -> bool {
+        matches!(self, Self::IRON | Self::KLS | Self::DNX)
     }
 
     pub fn blake3_coins() -> &'static [ExternalCoin] {
@@ -423,14 +430,12 @@ pub fn fallback_estimates() -> Vec<ProfitEntry> {
         // RTX 4090: ~$4.33/day profit at 125 Th/s. Normalized per 100 MH/s
         // equivalent: very high revenue, moderate power (GPU MatMul).
         ProfitEntry { coin: ExternalCoin::PRL, revenue_per_day_usd: 4.33, power_cost_usd: 0.67 },
-        ProfitEntry { coin: ExternalCoin::KLS, revenue_per_day_usd: 0.21, power_cost_usd: 0.22 },
+        // KLS/IRON/DNX removed — disabled (no working pool/wallet)
         ProfitEntry { coin: ExternalCoin::ZCL, revenue_per_day_usd: 0.20, power_cost_usd: 0.26 },
         ProfitEntry { coin: ExternalCoin::QTC, revenue_per_day_usd: 0.10, power_cost_usd: 0.26 },
         ProfitEntry { coin: ExternalCoin::VTC, revenue_per_day_usd: 0.04, power_cost_usd: 0.26 },
-        ProfitEntry { coin: ExternalCoin::IRON, revenue_per_day_usd: 0.04, power_cost_usd: 0.26 },
         ProfitEntry { coin: ExternalCoin::NEXA, revenue_per_day_usd: 0.03, power_cost_usd: 0.24 },
         ProfitEntry { coin: ExternalCoin::RTM, revenue_per_day_usd: 0.03, power_cost_usd: 0.24 },
-        ProfitEntry { coin: ExternalCoin::DNX, revenue_per_day_usd: 0.02, power_cost_usd: 0.22 },
         ProfitEntry { coin: ExternalCoin::CKB, revenue_per_day_usd: 0.08, power_cost_usd: 0.25 },
         ProfitEntry { coin: ExternalCoin::CFX, revenue_per_day_usd: 0.15, power_cost_usd: 0.31 },
         ProfitEntry { coin: ExternalCoin::ZEC, revenue_per_day_usd: 0.10, power_cost_usd: 0.25 },
@@ -450,12 +455,17 @@ pub fn select_best_coin(
     current: Option<ExternalCoin>,
     hysteresis_pct: f64,
 ) -> Option<ExternalCoin> {
+    // Filter out disabled coins (IRON/KLS/DNX — no working pool/wallet)
+    let entries: Vec<&ProfitEntry> = entries
+        .iter()
+        .filter(|e| !e.coin.is_disabled())
+        .collect();
     if entries.is_empty() {
         return None;
     }
 
-    let mut best = &entries[0];
-    for entry in &entries[1..] {
+    let mut best = entries[0];
+    for &entry in &entries[1..] {
         if entry.profit_per_day_usd() > best.profit_per_day_usd() {
             best = entry;
         }
@@ -971,15 +981,21 @@ mod tests {
     fn new_coin_all_array_complete() {
         let all = ExternalCoin::all();
         // 16 original + 8 new + 4 NiceHash + 1 Keryx + 1 Zano = 30
-        assert_eq!(all.len(), 30);
-        assert!(all.contains(&ExternalCoin::KLS));
+        // minus 3 disabled (KLS, IRON, DNX) = 27
+        assert_eq!(all.len(), 27);
+        // Disabled coins are NOT in all()
+        assert!(!all.contains(&ExternalCoin::KLS));
+        assert!(!all.contains(&ExternalCoin::IRON));
+        assert!(!all.contains(&ExternalCoin::DNX));
+        // But still in the enum and disabled
+        assert!(ExternalCoin::KLS.is_disabled());
+        assert!(ExternalCoin::IRON.is_disabled());
+        assert!(ExternalCoin::DNX.is_disabled());
         assert!(all.contains(&ExternalCoin::ZCL));
         assert!(all.contains(&ExternalCoin::QTC));
         assert!(all.contains(&ExternalCoin::VTC));
-        assert!(all.contains(&ExternalCoin::IRON));
         assert!(all.contains(&ExternalCoin::NEXA));
         assert!(all.contains(&ExternalCoin::RTM));
-        assert!(all.contains(&ExternalCoin::DNX));
         assert!(all.contains(&ExternalCoin::CKB));
         assert!(all.contains(&ExternalCoin::CFX));
         assert!(all.contains(&ExternalCoin::ZEC));
