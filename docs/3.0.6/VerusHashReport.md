@@ -1,8 +1,9 @@
 # VerusHash (VRSC) CPU Mining Report — Apple M1 + Edge Pool Server
 
 > **Datum:** 2026-07-15
+> **Aktualizace:** 2026-07-28
 > **Autor:** Devin (ZION Ops)
-> **Status:** Native VerusHash v2.2 ✅ | Target comparison fix ✅ | Pool server sync ⚠️ | LuckPool acceptance ❌ (header hash mismatch)
+> **Status:** Native VerusHash v2.2 ✅ | PBaaS v7+ header normalization ✅ | Pool server rebuild & LuckPool acceptance ✅ | Target comparison: little-endian (see §3.5 update)
 
 ---
 
@@ -98,13 +99,15 @@ To je nesprávné protože:
 
 ### 3.2 Správné chování
 
-VerusHash C reference implementace (`verushash_verify` v `ffi_wrapper_v3.cpp`, lines 90-102) dělá **přímý big-endian byte-by-byte comparison**:
+> **Korekce 2026-07-28:** Původní text této sekce tvrdil, že se hash porovnává jako big-endian.  Live testy proti LuckPool ukázaly, že VerusHash v2.2 vrací hash v **little-endian** (Bitcoin `uint256`) pořadí a upstream validátor porovnává `reverse(hash)` proti big-endian targetu.
+
+VerusHash v2.2 reference implementace tedy musí reversovat hash (LE → BE) a porovnat s targetem ponechaným v BE:
 
 ```cpp
-// C reference: direct BE comparison
-for (int i = 0; i < 32; i++) {
-    if (hash[i] < target[i]) return true;
-    if (hash[i] > target[i]) return false;
+// C reference: reverse LE hash and compare against BE target
+for (int i = 31; i >= 0; i--) {
+    if (hash[i] < target[31 - i]) return true;
+    if (hash[i] > target[31 - i]) return false;
 }
 return true;
 ```
@@ -113,21 +116,22 @@ return true;
 
 ```rust
 // AuXpow/src/external_hashers.rs — meets_target_little_endian
-// Fixed: reverse ONLY hash (LE→BE), target stays BE
+// Hash is LE (Bitcoin uint256), target is BE. Reverse ONLY the hash.
 pub fn meets_target_little_endian(hash: &[u8; 32], target: &[u8; 32]) -> bool {
     hash.iter().rev().cmp(target.iter()).is_le()  // ✅ hash reversed, target BE
 }
 
-// AuXpow/src/share_forwarder.rs — VRSC uses meets_target (plain BE)
-// VerusHash returns BE hash, so direct comparison is correct
+// AuXpow/src/share_forwarder.rs — VRSC uses meets_target_little_endian
 } else if self.client.profile().coin == ExternalCoin::DCR {
-    meets_target_little_endian(hash, target)  // DCR still LE
+    meets_target_little_endian(hash, target)  // DCR: LE hash
+} else if self.client.profile().coin == ExternalCoin::VRSC {
+    meets_target_little_endian(hash, target)  // VRSC: LE hash
 } else {
-    meets_target(hash, target)  // VRSC + others: plain BE
+    meets_target(hash, target)  // others: BE hash
 }
 
 // AuXpow/src/miner_harness.rs — scan_verushash
-if meets_target(&hash, target) {  // was: meets_target_little_endian
+if meets_target_little_endian(&hash, target) {  // VRSC: LE hash
     // share found!
 }
 ```
@@ -137,10 +141,48 @@ if meets_target(&hash, target) {  // was: meets_target_little_endian
 | Soubor | Změna |
 |--------|-------|
 | `AuXpow/src/external_hashers.rs` | `meets_target_little_endian` doc + fix (reverse only hash) |
-| `AuXpow/src/share_forwarder.rs` | VRSC → `meets_target` (else branch), DCR stays LE |
-| `AuXpow/src/miner_harness.rs` | `scan_verushash` → `meets_target`, odstraněn DEBUG log |
+| `AuXpow/src/share_forwarder.rs` | VRSC → `meets_target_little_endian` (else branch), DCR stays LE |
+| `AuXpow/src/miner_harness.rs` | `scan_verushash` → `meets_target_little_endian` |
 | `AuXpow/src/lib.rs` | Export `hash_verushash_header` + `init_verushash` |
+|| `V3/L1/native-ffi/csrc/verushash/real/ffi_wrapper_v3.cpp` | `verushash_scan_nonces` → `meets_target_le` (LE hash vs BE target) |
 | `V3/L1/miner/src/main.rs` | `--verus-bench` benchmark, native-verushash init |
+
+---
+
+### 3.5 Korekce 2026-07-28 — target comparison je little-endian
+
+Původní verze tohoto reportu (§3.2–3.3) tvrdila, že VerusHash v2.2 hash a target se porovnávají jako big-endian (přímé `meets_target`).  To vedlo k **opravě do špatného stavu**: po nasazení na Edge pool vracel LuckPool opět `[23,"low difficulty share"]`.
+
+Live test lokálního `zion-miner` proti `62.171.141.136:8444` potvrdil, že správné chování je:
+
+- VerusHash v2.2 vrací 32-byte hash v **little-endian** pořadí (Bitcoin `uint256` konvence, byte 0 = LSB).
+- Target z `difficulty_to_target` / stratum je **big-endian** (byte 0 = MSB).
+- `node-stratum-pool-verus` / LuckPool tedy porovnávají **reverse(hash) ≤ target** (hash převrácený do BE, target ponechán BE).
+
+Správná implementace proto zůstává u `meets_target_little_endian`:
+
+```rust
+pub fn meets_target_little_endian(hash: &[u8; 32], target: &[u8; 32]) -> bool {
+    hash.iter().rev().cmp(target.iter()).is_le()  // hash reversed, target BE
+}
+```
+
+A všechny VRSC cesty používají tento helper:
+
+| Soubor | Funkce | Porovnání |
+|--------|--------|-----------|
+| `V3/L1/native-ffi/csrc/verushash/real/ffi_wrapper_v3.cpp` | `verushash_scan_nonces` | `meets_target_le(hash, target)` — LE hash vs BE target |
+| `AuXpow/src/miner_harness.rs` | `scan_verushash_full` / `scan_verushash_best` | `meets_target_little_endian(&hash, target)` |
+| `AuXpow/src/share_forwarder.rs` | `try_forward` pro `ExternalCoin::VRSC` | `meets_target_little_endian(&effective_hash, target)` |
+
+**Live výsledek po korekci (2026-07-28):**
+
+```
+external_share_accepted coin=VRSC status=accepted
+session_status ... accepted=14 rejected=0 accept_pct=100.00
+```
+
+Pool server na Edge nyní správně forwarduje VRSC share a LuckPool je přijímá.
 
 ---
 
