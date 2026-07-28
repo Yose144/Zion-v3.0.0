@@ -20,6 +20,7 @@ pub mod rpc;
 pub mod storage;
 pub mod transaction;
 pub mod v3_compat;
+pub mod v3_p2p;
 
 pub use block::{Block, BlockHeader};
 pub use consensus::{ConsensusEngine, ConsensusError};
