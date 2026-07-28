@@ -124,18 +124,31 @@ Cíl: L1 <-> Base bridge E2E, BTC <-> ZION HTLC, wZION/USDC swap quote.
 
 Cíl: pool a miner si rozumí, stratum jobs se generují z node block template.
 
-1. Pool si bere block template z `zion-multichain`/`zion-core` RPC.
-2. Miner dostává jobs z poolu nebo lokálně těží block pro vlastní node.
-3. PPLNS payout se provede přes `MultichainService::execute_payouts`.
+1. [x] Pool si bere block template z `zion-multichain`/`zion-core` RPC.
+2. [x] Miner dostává jobs z poolu nebo lokálně těží block pro vlastní node.
+   - `MinerConfig.node_rpc_url` — pokud je nastaveno, miner fetchuje `getBlockTemplate` a submituje `submitBlock`.
+   - `MinerConfig.pool_url` — rezervováno pro stratum pool client mode.
+   - CLI: `zion miner start --node-rpc-url http://127.0.0.1:9443`.
+3. [x] PPLNS payout se provede přes `MultichainService::execute_payouts`.
 
 ### Fáze 4 — L3–L6, SDK, CLI polish
 
 Cíl: feature parity s V3 superstructures a jednotný CLI.
 
-1. Přesunout `ai-native`, `ncl`, `hiran` z `V3/L3` a `HiranV2.x/`.
-2. Přidat `oasis`, `free-world`, `issobella` jako samostatné crate.
-3. Doplnit `sdk` crate.
-4. Sjednotit CLI s V3 `zion` interactive menu.
+1. [x] Přesunout `ai-native`, `ncl`, `hiran` z `V3/L3` a `HiranV2.x/`.
+   - `V31/L3/ncl` — NCL neural compute layer (42 tests).
+   - `V31/L3/ai-native` — autonomous agent framework (337 tests), includes `hiran_inference` + `hiranyagarbha` modules.
+   - HiranV2.x obsahuje jen Python training scripts — Rust kód je v ai-native.
+2. [x] Přidat `oasis`, `free-world`, `issobella` jako samostatné crate.
+   - `V31/L4/oasis` — consciousness mining game (124 tests).
+   - `V31/L5/free-world` — humanitarian grants (3 tests).
+   - `V31/L6/issobella` — orbital observatory (3 tests).
+3. [x] Doplnit `sdk` crate.
+   - `V31/sdk` — async NodeClient + WalletClient wrapping zion-multichain Keyring (4 tests).
+4. [x] Sjednotit CLI s V3 `zion` interactive menu.
+   - `zion menu` — arrow-key operator dashboard (status, wallet, bridge, swap, pool, miner, doctor).
+   - V3 `zion-warp` merged into `zion-multichain::warp` module (505 tests).
+   - Workspace: 13 crates, 1134 tests, clippy clean.
 
 ### Fáze 5 — Cutover
 

@@ -10,6 +10,18 @@ use zion_l1_types::Address;
 pub struct MinerConfig {
     /// ZION address that receives mining rewards.
     pub reward_address: Address,
+    /// Optional ZION L1 node RPC URL for solo mining (template fetch + block submit).
+    ///
+    /// When set, Stream 1 fetches `getBlockTemplate` from the node and submits
+    /// solved blocks via `submitBlock`. When `None`, the miner builds blocks
+    /// locally from the genesis header (useful for unit tests).
+    pub node_rpc_url: Option<String>,
+    /// Optional stratum pool URL for ZION share mining.
+    ///
+    /// When set, Stream 1 connects to the pool as a stratum v1 client
+    /// (subscribe/authorize/notify/submit) instead of solo mining.
+    /// Takes precedence over `node_rpc_url` when both are set.
+    pub pool_url: Option<String>,
     /// Optional external stratum pool URL for AuxPoW shares.
     pub auxpow_pool: Option<String>,
     /// Worker name used on AuxPoW pools.
@@ -45,6 +57,8 @@ impl MinerConfig {
     pub fn new(reward_address: Address) -> Self {
         Self {
             reward_address,
+            node_rpc_url: None,
+            pool_url: None,
             auxpow_pool: None,
             worker: "zion_worker".to_string(),
             password: "x".to_string(),
