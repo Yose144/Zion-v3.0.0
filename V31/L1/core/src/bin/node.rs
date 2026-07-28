@@ -10,6 +10,9 @@ use clap::Parser;
 use tokio::sync::watch;
 use tracing::info;
 use zion_core::node::{Node, NodeConfig};
+use zion_core::v3_compat::{
+    MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET, MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET,
+};
 use zion_l1_types::{Address, ChainId};
 
 #[derive(Parser, Debug)]
@@ -28,11 +31,11 @@ struct Args {
     p2p: SocketAddr,
 
     /// Humanitarian coinbase recipient.
-    #[arg(long, default_value = "zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7")]
+    #[arg(long, default_value = MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET)]
     human: String,
 
     /// Issobella coinbase recipient.
-    #[arg(long, default_value = "zion1f7y7l5k678y0v408e8s654d2282346k375526t2")]
+    #[arg(long, default_value = MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET)]
     issobella: String,
 
     /// Skip seeding the genesis block (used when importing a migration snapshot).

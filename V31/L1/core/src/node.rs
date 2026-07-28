@@ -47,13 +47,13 @@ impl Default for NodeConfig {
             human_address: Address::new(
                 zion_l1_types::ChainId::ZionL1,
                 vec![],
-                "zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7",
+                crate::v3_compat::MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET,
             )
             .expect("human address"),
             issobella_address: Address::new(
                 zion_l1_types::ChainId::ZionL1,
                 vec![],
-                "zion1f7y7l5k678y0v408e8s654d2282346k375526t2",
+                crate::v3_compat::MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET,
             )
             .expect("issobella address"),
             no_genesis: false,

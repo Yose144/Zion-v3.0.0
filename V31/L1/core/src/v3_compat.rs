@@ -30,6 +30,9 @@ pub const GENESIS_MESSAGE: &str = concat!(
 /// V3 UTXO transaction version that activates the length-prefixed v2 preimage.
 pub const TX_HASH_V2_VERSION: u32 = 2;
 
+/// Block height at which DAO Treasury addresses unlock (post-3.0.3 fork).
+pub const DAO_TREASURY_LOCK_HEIGHT: u64 = 144_000;
+
 /// V3 MiningHeader — 80-byte prefix used as PoW input.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MiningHeader {
@@ -270,16 +273,23 @@ pub struct PremineOutput {
     pub amount_zion: u64,
     pub amount_flowers: u128,
     pub category: &'static str,
+    /// Block height time-lock, if any.
+    pub unlock_height: Option<u64>,
+    /// Requires 3-of-3 admin multisig + DAO vote to transfer (all mainnet premine outputs).
+    pub admin_locked: bool,
 }
 
 /// V3 premine allocations (14 outputs).
 pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
+    // --- OASIS + Golden Egg (5 × 1.65B = 8.25B) ---
     PremineOutput {
         address: "zion1n3t6v6w3m8g4v6q8g7h7j4j6f7s8q2m7g7un8u0",
         purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 1)",
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
         category: "oasis_golden_egg",
+        unlock_height: None,
+        admin_locked: true,
     },
     PremineOutput {
         address: "zion16854w6h7a800k6h8n052s0h4k2v625x0w0z2320",
@@ -287,6 +297,8 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
         category: "oasis_golden_egg",
+        unlock_height: None,
+        admin_locked: true,
     },
     PremineOutput {
         address: "zion1j8s2d6s6f248j7z3m80676p6m074x2q5p5er3w2",
@@ -294,6 +306,8 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
         category: "oasis_golden_egg",
+        unlock_height: None,
+        admin_locked: true,
     },
     PremineOutput {
         address: "zion155k300w6x726p4x0w473s704d5k35865r2q75z8",
@@ -301,6 +315,8 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
         category: "oasis_golden_egg",
+        unlock_height: None,
+        admin_locked: true,
     },
     PremineOutput {
         address: "zion1y293r8c6l5p3u0y7j8q8366372t7y070n3rp5r8",
@@ -308,13 +324,18 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
         category: "oasis_golden_egg",
+        unlock_height: None,
+        admin_locked: true,
     },
+    // --- DAO Treasury (3 slots = 4.0B) — locked until height 144,000 ---
     PremineOutput {
         address: "zion1u5u7k43240d5l4d0x7q5m3c4a838z4k000cv3q0",
         purpose: "DAO Treasury — Community Governance (main)",
         amount_zion: 2_500_000_000,
         amount_flowers: 2_500_000_000_000_000_000_000,
         category: "dao_treasury",
+        unlock_height: Some(DAO_TREASURY_LOCK_HEIGHT),
+        admin_locked: true,
     },
     PremineOutput {
         address: "zion1m8d235x268h8d887s036m8c3x7s356d3r37k6m6",
@@ -322,6 +343,8 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         amount_zion: 1_000_000_000,
         amount_flowers: 1_000_000_000_000_000_000_000,
         category: "dao_treasury",
+        unlock_height: Some(DAO_TREASURY_LOCK_HEIGHT),
+        admin_locked: true,
     },
     PremineOutput {
         address: "zion102s8k4k0w783d657j255z865e47054s342u87v3",
@@ -329,13 +352,18 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         amount_zion: 500_000_000,
         amount_flowers: 500_000_000_000_000_000_000,
         category: "dao_treasury",
+        unlock_height: Some(DAO_TREASURY_LOCK_HEIGHT),
+        admin_locked: true,
     },
+    // --- Infrastructure (3 slots = 2.59B) ---
     PremineOutput {
         address: "zion1e8j5z6v8e4c6s5x7r0w7e2r673h8k3a6d4xx877",
         purpose: "Core Development Fund",
         amount_zion: 1_000_000_000,
         amount_flowers: 1_000_000_000_000_000_000_000,
         category: "infrastructure",
+        unlock_height: None,
+        admin_locked: true,
     },
     PremineOutput {
         address: "zion1f7z374q068r3p657m8z220v7y6k045q255xp2d3",
@@ -343,6 +371,8 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         amount_zion: 1_000_000_000,
         amount_flowers: 1_000_000_000_000_000_000_000,
         category: "infrastructure",
+        unlock_height: None,
+        admin_locked: true,
     },
     PremineOutput {
         address: "zion1s2j5s2a6f5k740k4d8s2k3y8v0t8d4k0u6my2k0",
@@ -350,29 +380,99 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         amount_zion: 590_000_000,
         amount_flowers: 590_000_000_000_000_000_000,
         category: "infrastructure",
+        unlock_height: None,
+        admin_locked: true,
     },
+    // --- Humanitarian (1 slot = 1.44B) ---
     PremineOutput {
         address: "zion10797m0k3u356f2l443r062d4e49665f6n20j6x0",
         purpose: "Children Future Fund — Humanitarian DAO",
         amount_zion: 1_440_000_000,
         amount_flowers: 1_440_000_000_000_000_000_000,
         category: "humanitarian",
+        unlock_height: None,
+        admin_locked: true,
     },
+    // --- Bridge Seed Fund (1 slot = 0.4B) — immediate unlock for EVM bridge liquidity ---
     PremineOutput {
         address: "zion1p3y7w4z7d2m3j0f00657r354y4f3q5k6y8ca0g7",
         purpose: "Bridge Seed Fund — EVM Bridge Liquidity",
         amount_zion: 400_000_000,
         amount_flowers: 400_000_000_000_000_000_000,
         category: "bridge_seed",
+        unlock_height: None,
+        admin_locked: true,
     },
+    // --- Bridge Vault UTXO Seed (1 slot = 0.1B) — UTXO liquidity for bridge unlocks ---
     PremineOutput {
         address: "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7",
         purpose: "Bridge Vault UTXO Seed — EVM Bridge Unlock Liquidity",
         amount_zion: 100_000_000,
         amount_flowers: 100_000_000_000_000_000_000,
         category: "bridge_vault_utxo",
+        unlock_height: None,
+        admin_locked: true,
     },
 ];
+
+/// V3 canonical subsidy / operational wallet addresses.
+pub const MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET: &str =
+    "zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7";
+pub const MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET: &str =
+    "zion1f7y7l5k678y0v408e8s654d2282346k375526t2";
+pub const MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET: &str =
+    "zion1062522x6a083x6r4d24303l5h20698z7j8qk433";
+pub const MAINNET_CANONICAL_DEFAULT_MINER_WALLET: &str =
+    "zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3";
+pub const MAINNET_CANONICAL_POOL_PAYOUT_WALLET: &str =
+    "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2";
+
+/// Check whether a premine output may be spent.
+///
+/// Two-layer lock:
+/// 1. Time-lock (`unlock_height`): block height that must be reached.
+/// 2. Admin-lock (`admin_locked`): requires 3-of-3 admin multisig + DAO vote.
+///
+/// Both locks must be satisfied.
+pub fn is_premine_transfer_allowed(
+    address: &str,
+    current_height: u64,
+    admin_unlocked: &dyn Fn(&str) -> bool,
+) -> Result<(), String> {
+    if let Some(output) = PREMINE_OUTPUTS.iter().find(|o| o.address == address) {
+        if let Some(h) = output.unlock_height {
+            if current_height < h {
+                return Err(format!(
+                    "premine address {} time-locked until height {} (current {})",
+                    address, h, current_height
+                ));
+            }
+        }
+        if output.admin_locked && !admin_unlocked(address) {
+            return Err(format!(
+                "premine address {} admin-locked — requires 3-of-3 admin multisig + DAO vote",
+                address
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Convenience wrapper: all admin-locked addresses rejected (tests, IBD).
+pub fn is_premine_transfer_allowed_no_admin(
+    address: &str,
+    current_height: u64,
+) -> Result<(), String> {
+    is_premine_transfer_allowed(address, current_height, &|_| false)
+}
+
+/// Convenience wrapper: all admin-locks satisfied, only time-lock is checked.
+pub fn is_premine_transfer_allowed_admin_ok(
+    address: &str,
+    current_height: u64,
+) -> Result<(), String> {
+    is_premine_transfer_allowed(address, current_height, &|_| true)
+}
 
 /// Deterministic genesis account tx_id from a tag string and nonce.
 fn genesis_tx_id(tag: &str, nonce: u64) -> String {
