@@ -1,12 +1,14 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-07-27
+> **Datum poslední aktualizace:** 2026-07-28
 > **Verze:** 3.0.7 "Trinity All Green"
 > **Protokol:** `zion-v3-node/3.0.7`
 > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
 > **Hard genesis reset:** 2026-07-20 — viz [`docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md`](./docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md). Bloky 0–~10913 předchozího řetězce jsou trvale ztraceny; aktuální chain startuje od genesis s unlimited retention.
-> **Dnešní update:** Verze bumped na 3.0.7. DAO integration test fix (`choice.clone()`). Workspace version, protocol version, miner UI/pool version a web package.json synchronizovány. All Green matice: ZION Deeksha live, EPIC/RVN/DCR/ERG/VTC/ZCL/RTM/QTC/NEXA/BEAM/QUAI/VRSC E2E accepted, ETC CPU/GPU hash match ověřen, XMR RandomX hash OK, PRL deferred do 3.1.0. **CUDA kernel verification sweep:** 10/10 GPU-relevant `--test-cuda-kernel` algorithms compile + benchmark PASS on GTX 1070 Ti (kheavyhash, blake3_alph, blake3_dcr, autolykos, zelhash, ethash, kawpow, progpow, evrprogpow, meowpow); ETC `ETHASH_CPU_GPU_MATCH` ~117.6 MH/s. `verushash` is CPU-only for VRSC; CUDA init FAIL is not a 3.0.7 blocker. **Autonomous profit router:** RTM je nyní CPU-compatible, CUDA `gpu_kernel_available` rozšířeno o EVR/MEWC/FLUX/EPIC/ZANO/CLORE/QUAI, přidána `ZION_STREAM3_FORCE_COIN` — build + unit testy PASS. **3.0.9 / V3.1 prep:** Vytvořen [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md), tag `pre-purification-3.0.9` pushnut na origin, základní secrets scan neodhalil plaintext klíče. Detail: [`V3/docs/AUXPOW_ALGORITHM_VERIFICATION_REPORT.md`](./V3/docs/AUXPOW_ALGORITHM_VERIFICATION_REPORT.md) §8.
+> **Dnešní update (2026-07-28):** Edge úklid a stabilizace: vypnut `zion-rtm-debug-pool` a vyčištěny failed `zion-edge-debug-pool@ERG/ETC/RTM`; opraven `/etc/logrotate.d/rsyslog` (`su root syslog`) a `/etc/rsyslog.d/10-zion-edge.conf` + `49-zion-pool-ratelimit.conf` pro správné `programname` (`node`/`server`); syslog přestal růst GB/hod, pool logy přesměrovány do `/var/log/zion-pool.log`; sníženy log levely node/pool z `debug` na `info`. Služby `zion-edge-*` potvrzeny jako aktuální produkční názvy. Výška chainu ~7342. Disk 80G/145G (56 %). Docker runtime image `zion-web:runtime` je 2.68 GB (377 MB označuje standalone build artefakt).
+>
+> **Předchozí update (2026-07-27):** Verze bumped na 3.0.7. DAO integration test fix (`choice.clone()`). Workspace version, protocol version, miner UI/pool version a web package.json synchronizovány. All Green matice: ZION Deeksha live, EPIC/RVN/DCR/ERG/VTC/ZCL/RTM/QTC/NEXA/BEAM/QUAI/VRSC E2E accepted, ETC CPU/GPU hash match ověřen, XMR RandomX hash OK, PRL deferred do 3.1.0. **CUDA kernel verification sweep:** 10/10 GPU-relevant `--test-cuda-kernel` algorithms compile + benchmark PASS on GTX 1070 Ti (kheavyhash, blake3_alph, blake3_dcr, autolykos, zelhash, ethash, kawpow, progpow, evrprogpow, meowpow); ETC `ETHASH_CPU_GPU_MATCH` ~117.6 MH/s. `verushash` is CPU-only for VRSC; CUDA init FAIL is not a 3.0.7 blocker. **Autonomous profit router:** RTM je nyní CPU-compatible, CUDA `gpu_kernel_available` rozšířeno o EVR/MEWC/FLUX/EPIC/ZANO/CLORE/QUAI, přidána `ZION_STREAM3_FORCE_COIN` — build + unit testy PASS. **3.0.9 / V3.1 prep:** Vytvořen [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md), tag `pre-purification-3.0.9` pushnut na origin, základní secrets scan neodhalil plaintext klíče. Detail: [`V3/docs/AUXPOW_ALGORITHM_VERIFICATION_REPORT.md`](./V3/docs/AUXPOW_ALGORITHM_VERIFICATION_REPORT.md) §8.
 > **Plánovaná V3.1 migrace (po 3.0.9):** [`V3.1_MIGRATION_PLAN.md`](./docs/3.0.6/V3.1_MIGRATION_PLAN.md) — migrace čistého kódu do nového adresáře `V31/` (nová větev). WARP a ZionDex přesunuty do L2, AuxPoW přímo v mineru, L3 vyhrazeno pro AI/orchestraci/automatizaci/NCL/PoC. L4 Oasis, L5 Free World a L6 Issobella zůstávají jako samostatné nadstavbové vrstvy. Detailní nativní propojení integrací: [`V3.1_INTEGRATION_PLAN.md`](./docs/3.0.6/V3.1_INTEGRATION_PLAN.md).
 > **Předchozí archiv:** [`docs/3.0.5/StatusV3_archive_2026-07-13.md`](./docs/3.0.5/StatusV3_archive_2026-07-13.md) (5239 řádků, historické incident reporty)
 
@@ -16,7 +18,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **Height** | 7101+ (2026-07-27, 2-node P2P mesh on Edge + local backup synced) |
+| **Height** | 7342+ (2026-07-28, 2-node P2P mesh on Edge + local backup synced) |
 | **Protocol** | `zion-v3-node/3.0.7` (v2) |
 | **Genesis** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
 | **Decimals** | 6 (1 ZION = 1,000,000 flowers, post-3.0.3 fork) |
@@ -48,19 +50,20 @@
 |---------|---------|------|-------|--------|
 | zion-edge-node1 | 8333 (P2P), 9443 (RPC), 8445 (WS), 9100 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active |
 | zion-edge-node2 | 8334 (P2P), 8448 (RPC), 8449 (WS), 9116 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active (follower) |
-| zion-pool | 8444 (Stratum), 8455 (stats/metrics HTTP) | 8444 0.0.0.0, 8455 127.0.0.1 | L1 | ✅ active (mining) |
-| zion-bridge | 9101 (metrics) | 127.0.0.1 | L2 | ✅ active |
-| zion-dao | 8450 (API) | 127.0.0.1 | L2 | ✅ active |
-| zion-atomic-swap | 8452 (API) | 0.0.0.0 | L2 | ✅ active |
-| zion-warp | 8453 (WARP API) | 0.0.0.0 | L3 | ✅ active |
-| zion-dex | 8454 (DEX Router API) | 0.0.0.0 | L3 | ✅ active |
+| zion-edge-pool | 8444 (Stratum), 8455 (stats/metrics HTTP) | 8444 0.0.0.0, 8455 127.0.0.1 | L1 | ✅ active (mining) |
+| zion-edge-bridge | 9101 (metrics) | 127.0.0.1 | L2 | ✅ active |
+| zion-edge-dao | 8450 (API) | 127.0.0.1 | L2 | ✅ active |
+| zion-edge-atomic-swap | 8452 (API) | 0.0.0.0 | L2 | ✅ active |
+| zion-edge-warp | 8453 (WARP API) | 0.0.0.0 | L3 | ✅ active |
+| zion-edge-dex | 8454 (DEX Router API) | 0.0.0.0 | L3 | ✅ active |
 | zion-edge-oasis | 8094 (API), 9102 (metrics) | 127.0.0.1 | L4 | ✅ active |
 | zion-free-world | — | — | L5 | ⚠️ inactive (disabled) |
 | zion-issobella | — | — | L6 | ⚠️ inactive (disabled) |
-| zion-rtm-debug-pool | 8460 | 0.0.0.0 | L1 (RTM) | ✅ active (restarted 2026-07-23) |
+| zion-edge-debug-pool@KAS | 8461 | 0.0.0.0 | L1 (debug) | ✅ active (Trinity 3.0.7 E2E) |
+| zion-rtm-debug-pool | 8460 | 0.0.0.0 | L1 (RTM) | ⚠️ disabled (stopped 2026-07-28) |
 | zion-edge-python-dashboard | 8766 | 127.0.0.1 | — | ✅ active |
 | zion-watchdog.timer | — | — | — | ✅ active (2 min) |
-| zion-web (Docker) | 3000 | 127.0.0.1 | — | ✅ Up (377 MB) |
+| zion-web (Docker) | 3000 | 127.0.0.1 | — | ✅ Up (runtime image 2.68 GB; 377 MB = standalone build artifact) |
 | nginx | 80, 443 | 0.0.0.0 | — | ✅ active |
 
 ### Local Backup Node: `zionserver-144` (109.81.27.87)
@@ -89,9 +92,9 @@
 
 | Resource | Used | Total | % |
 |----------|------|-------|---|
-| RAM | ~2.7 GB | 7.8 GB | 35% |
-| Disk | 62 GB | 145 GB | 43% |
-| Node1 RSS | ~3.5 MB | — | stable (post memory-leak fix) |
+| RAM | ~3.5 GB | 7.8 GB | 45% |
+| Disk | 80 GB | 145 GB | 56% |
+| Node1 RSS | ~142 MB | — | stable (post memory-leak fix) |
 | Node2 RSS | ~3.5 MB | — | stable |
 
 ---
