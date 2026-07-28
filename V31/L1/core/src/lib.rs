@@ -19,6 +19,7 @@ pub mod p2p;
 pub mod rpc;
 pub mod storage;
 pub mod transaction;
+pub mod v3_checkpoint;
 pub mod v3_compat;
 pub mod v3_p2p;
 
