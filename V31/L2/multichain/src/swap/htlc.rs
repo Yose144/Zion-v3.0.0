@@ -11,6 +11,11 @@
 //!   `SWAP:CLAIM:<hash_hex>:<preimage_hex>`
 //!   `SWAP:REFUND:<hash_hex>`
 
+use crate::db::Db;
+use crate::error::{MultichainError, MultichainResult};
+use crate::types::{Transfer, TransferDirection, TransferStatus};
+use crate::chain::ChainAdapterRegistry;
+
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -18,10 +23,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use zion_l1_types::Hash;
-
-use crate::chain::ChainAdapterRegistry;
-use crate::error::{MultichainError, MultichainResult};
-use crate::types::{Transfer, TransferDirection, TransferStatus};
 
 // ---------------------------------------------------------------------------
 // Hash / Preimage newtypes
@@ -275,11 +276,12 @@ impl SwapMemo {
 
 /// HTLC atomic-swap coordinator with on-chain execution via `ChainAdapter`.
 ///
-/// Holds an in-memory record store. Production deployments should persist
-/// records to SQLite (the `HtlcRecord` type is `Serialize`/`Deserialize`).
+/// Records are persisted to SQLite if `db` is provided, otherwise kept
+/// in memory (useful for tests and dev mode).
 pub struct HtlcSwap {
     records: Arc<Mutex<HashMap<String, HtlcRecord>>>,
     adapters: Arc<ChainAdapterRegistry>,
+    db: Option<Arc<Mutex<Db>>>,
 }
 
 impl HtlcSwap {
@@ -288,6 +290,16 @@ impl HtlcSwap {
         Self {
             records: Arc::new(Mutex::new(HashMap::new())),
             adapters,
+            db: None,
+        }
+    }
+
+    /// Create a coordinator with an optional database for persistence.
+    pub fn with_db(adapters: Arc<ChainAdapterRegistry>, db: Arc<Mutex<Db>>) -> Self {
+        Self {
+            records: Arc::new(Mutex::new(HashMap::new())),
+            adapters,
+            db: Some(db),
         }
     }
 
@@ -296,7 +308,35 @@ impl HtlcSwap {
         Self {
             records: Arc::new(Mutex::new(HashMap::new())),
             adapters: Arc::new(ChainAdapterRegistry::new()),
+            db: None,
         }
+    }
+
+    /// Set the database after construction.
+    pub fn set_db(&mut self, db: Arc<Mutex<Db>>) {
+        self.db = Some(db);
+    }
+
+    /// Persist a record to the DB if configured.
+    async fn persist(&self, record: &HtlcRecord) {
+        if let Some(db) = &self.db {
+            if let Err(e) = db.lock().await.save_htlc(record) {
+                tracing::warn!("[HtlcSwap] failed to persist record {}: {}", record.hash_hex, e);
+            }
+        }
+    }
+
+    /// Load all records from DB into memory.
+    pub async fn load_from_db(&self) -> MultichainResult<()> {
+        let db = self.db.as_ref().ok_or_else(|| {
+            MultichainError::Internal("no HTLC database configured".to_string())
+        })?;
+        let stored = db.lock().await.list_htlc()?;
+        let mut records = self.records.lock().await;
+        for r in stored {
+            records.insert(r.hash_hex.clone(), r);
+        }
+        Ok(())
     }
 
     // ── Initiate (lock funds on source chain) ──────────────────────────
@@ -354,7 +394,8 @@ impl HtlcSwap {
             updated_at: Utc::now(),
         };
 
-        self.records.lock().await.insert(hash_hex, record);
+        self.records.lock().await.insert(hash_hex.clone(), record.clone());
+        self.persist(&record).await;
         transfer.status = TransferStatus::Executing;
         Ok(hashlock)
     }
@@ -432,6 +473,12 @@ impl HtlcSwap {
         record.preimage_hex = Some(preimage_hex);
         record.updated_at = Utc::now();
 
+        // Need to drop the records guard before persist() can acquire it.
+        let record = record.clone();
+        drop(records);
+        self.records.lock().await.insert(hash_hex.clone(), record.clone());
+        self.persist(&record).await;
+
         transfer.status = TransferStatus::Completed;
         Ok(())
     }
@@ -482,6 +529,12 @@ impl HtlcSwap {
         record.release_tx_id = Some(release_tx.to_hex());
         record.release_recipient = Some(record.locker_address.clone());
         record.updated_at = Utc::now();
+
+        // Need to drop the records guard before persist() can acquire it.
+        let record = record.clone();
+        drop(records);
+        self.records.lock().await.insert(hash_hex.clone(), record.clone());
+        self.persist(&record).await;
 
         transfer.status = TransferStatus::Refunded;
         Ok(())
@@ -795,5 +848,73 @@ mod tests {
         let hex = preimage.to_hex();
         let recovered = SwapPreimage::from_hex(&hex).unwrap();
         assert_eq!(preimage.0, recovered.0);
+    }
+
+    // ── HTLC persistence tests ─────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn htlc_persists_and_reloads_from_db() {
+        use crate::db::Db;
+        use std::sync::Arc;
+        use tokio::sync::Mutex;
+
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let preimage = SwapPreimage::random();
+        let hash = preimage.hash();
+        let secret = preimage.0;
+
+        // First coordinator creates a record.
+        {
+            let swap = HtlcSwap::with_db(Arc::new(ChainAdapterRegistry::new()), db.clone());
+            let mut transfer = htlc_transfer_with_timelock(&secret, 4_077_782_400);
+            swap.initiate(&mut transfer).await.unwrap();
+
+            let record = swap.get_record(&hash.to_hex()).await.unwrap();
+            assert_eq!(record.state, SwapState::Pending);
+
+            // Advance to claimed with same preimage.
+            swap.claim(&secret, "recipient1", &mut transfer)
+                .await
+                .unwrap();
+
+            let record = swap.get_record(&hash.to_hex()).await.unwrap();
+            assert_eq!(record.state, SwapState::Claimed);
+        }
+
+        // Second coordinator loads the same DB.
+        {
+            let swap = HtlcSwap::with_db(Arc::new(ChainAdapterRegistry::new()), db.clone());
+            swap.load_from_db().await.unwrap();
+            let record = swap.get_record(&hash.to_hex()).await.unwrap();
+            assert_eq!(record.state, SwapState::Claimed);
+            assert_eq!(record.release_recipient, Some("recipient1".to_string()));
+            assert_eq!(record.preimage_hex, Some(preimage.to_hex()));
+        }
+    }
+
+    #[tokio::test]
+    async fn htlc_refund_persists_to_db() {
+        use crate::db::Db;
+        use std::sync::Arc;
+        use tokio::sync::Mutex;
+
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let preimage = SwapPreimage::random();
+        let hash = preimage.hash();
+        let secret = preimage.0;
+
+        let swap = HtlcSwap::with_db(Arc::new(ChainAdapterRegistry::new()), db);
+        let mut transfer = htlc_transfer_with_timelock(&secret, 4_077_782_400);
+        swap.initiate(&mut transfer).await.unwrap();
+
+        // Force record and transfer timelock to the past so refund() passes.
+        swap.records.lock().await.get_mut(&hash.to_hex()).unwrap().expires_at = 0;
+        transfer.timelock = Some(0);
+
+        swap.refund(&mut transfer).await.unwrap();
+
+        let record = swap.get_record(&hash.to_hex()).await.unwrap();
+        assert_eq!(record.state, SwapState::Refunded);
+        assert_eq!(record.preimage_hex, None);
     }
 }

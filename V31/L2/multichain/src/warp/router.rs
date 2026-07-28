@@ -1,3 +1,4 @@
+use crate::warp::db::TransferDb;
 use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::fees::FeeEngine;
 use crate::warp::metrics::WarpMetrics;
@@ -11,15 +12,16 @@ use crate::warp::xp_bridge::WarpXpEvent;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::info;
+use tracing::{info, warn};
 use uuid::Uuid;
 
-/// Orchestrates cross-chain transfers end-to-end.
+/// Orchestrates cross-chain transfers end-to-end with optional SQLite persistence.
 pub struct WarpRouter {
     pub registry: ChainRegistry,
     pub fee_engine: FeeEngine,
     pub validator_set: Arc<Mutex<WarpValidatorSet>>,
     pub metrics: WarpMetrics,
+    pub db: Option<TransferDb>,
     transfers: HashMap<Uuid, WarpTransfer>,
     state_machines: HashMap<Uuid, TransferStateMachine>,
     daily_volume: HashMap<String, u64>,
@@ -43,12 +45,57 @@ impl WarpRouter {
             fee_engine,
             validator_set,
             metrics: WarpMetrics::new(),
+            db: None,
             transfers: HashMap::new(),
             state_machines: HashMap::new(),
             daily_volume: HashMap::new(),
             daily_limit: 10_000_000_000_000,
             timelock_threshold: 1_000_000_000_000,
             xp_events: Vec::new(),
+        }
+    }
+
+    /// Create a router with SQLite persistence.
+    pub fn with_db(
+        registry: ChainRegistry,
+        fee_engine: FeeEngine,
+        validator_set: Arc<Mutex<WarpValidatorSet>>,
+        db: TransferDb,
+    ) -> WarpResult<Self> {
+        let mut router = Self::new(registry, fee_engine, validator_set);
+        router.db = Some(db.clone());
+
+        // Load all persisted transfers from DB.
+        let stored = db.list_all().map_err(|e| {
+            WarpError::Internal(format!("failed to load transfers from DB: {e}"))
+        })?;
+
+        for t in stored {
+            let id = t.id;
+            let sm = TransferStateMachine::new(t.status);
+            router.transfers.insert(id, t);
+            router.state_machines.insert(id, sm);
+        }
+
+        info!("[Router] Loaded {} transfer(s) from database", router.transfers.len());
+        Ok(router)
+    }
+
+    fn save_transfer(&self, transfer: &WarpTransfer) {
+        if let Some(db) = &self.db {
+            if let Err(e) = db.save(transfer) {
+                warn!(transfer_id = %transfer.id, "[Router] DB save failed: {}", e);
+            }
+        }
+    }
+
+    fn update_transfer_db(&self, id: Uuid) {
+        if let Some(db) = &self.db {
+            if let Some(t) = self.transfers.get(&id) {
+                if let Err(e) = db.save(t) {
+                    warn!(transfer_id = %id, "[Router] DB update failed: {}", e);
+                }
+            }
         }
     }
 
@@ -103,9 +150,12 @@ impl WarpRouter {
 
         // 7. Track
         let sm = TransferStateMachine::new(transfer.status);
-        self.transfers.insert(transfer_id, transfer);
+        self.transfers.insert(transfer_id, transfer.clone());
         self.state_machines.insert(transfer_id, sm);
         *self.daily_volume.entry(chain_name).or_insert(0) += proof.amount_flowers;
+
+        // Persist to DB
+        self.save_transfer(&transfer);
 
         self.metrics.record_transfer_initiated();
         info!(transfer_id = %transfer_id, "Outbound WARP transfer initiated");
@@ -141,8 +191,11 @@ impl WarpRouter {
 
         let transfer_id = transfer.id;
         let sm = TransferStateMachine::new(transfer.status);
-        self.transfers.insert(transfer_id, transfer);
+        self.transfers.insert(transfer_id, transfer.clone());
         self.state_machines.insert(transfer_id, sm);
+
+        // Persist to DB
+        self.save_transfer(&transfer);
 
         self.metrics.record_transfer_initiated();
         info!(transfer_id = %transfer_id, "Inbound WARP transfer initiated");
@@ -164,6 +217,9 @@ impl WarpRouter {
             .ok_or_else(|| WarpError::TransferNotFound(id.to_string()))?;
         transfer.status = new_status;
         transfer.updated_at = chrono::Utc::now();
+
+        // Persist state change to DB
+        self.update_transfer_db(id);
 
         if new_status == WarpStatus::Completed {
             self.metrics.record_transfer_completed();
@@ -451,5 +507,51 @@ mod tests {
             .unwrap();
         router.advance_transfer(id, WarpStatus::Failed).unwrap();
         assert!(router.drain_xp_events().is_empty());
+    }
+
+    #[test]
+    fn test_router_persists_to_db_and_reloads() {
+        use crate::warp::db::TransferDb;
+
+        let db = TransferDb::in_memory().unwrap();
+        let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(3)));
+
+        // First router instance creates a transfer and persists it.
+        {
+            let mut router = WarpRouter::with_db(
+                ChainRegistry::with_defaults(),
+                FeeEngine::with_defaults(),
+                validator_set.clone(),
+                db.clone(),
+            )
+            .unwrap();
+            let proof = test_deposit(1_000_000, "WARP:1:base:0xRecipient");
+            let id = router.initiate_outbound(proof).unwrap();
+            assert_eq!(router.transfer_count(), 1);
+
+            // Advance and persist
+            router.advance_transfer(id, WarpStatus::AwaitingFinality).unwrap();
+        }
+
+        // Second router instance loads from the same DB.
+        {
+            let mut router = WarpRouter::with_db(
+                ChainRegistry::with_defaults(),
+                FeeEngine::with_defaults(),
+                validator_set,
+                db.clone(),
+            )
+            .unwrap();
+            assert_eq!(router.transfer_count(), 1);
+
+            // Find the loaded transfer
+            let transfer = router.list_transfers().pop().unwrap();
+            assert_eq!(transfer.status, WarpStatus::AwaitingFinality);
+            assert_eq!(transfer.dest_chain.name, "base");
+            assert_eq!(transfer.recipient, "0xRecipient");
+
+            // We can continue advancing it
+            router.advance_transfer(transfer.id, WarpStatus::Validating).unwrap();
+        }
     }
 }

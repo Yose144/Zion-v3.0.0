@@ -3,27 +3,39 @@ use serde::{Deserialize, Serialize};
 use zion_l1_types::Address;
 
 /// Top-level configuration for `zion-multichain`.
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MultichainConfig {
+    #[serde(default)]
     pub server: ServerConfig,
+    #[serde(default)]
     pub database: DatabaseConfig,
+    #[serde(default = "default_l1_rpc_url")]
+    pub l1_rpc_url: String,
+    #[serde(default)]
     pub adapters: Vec<AdapterConfig>,
     pub pool: Option<PoolConfigFile>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+impl Default for MultichainConfig {
+    fn default() -> Self {
+        Self {
+            server: ServerConfig::default(),
+            database: DatabaseConfig::default(),
+            l1_rpc_url: default_l1_rpc_url(),
+            adapters: Vec::new(),
+            pool: None,
+        }
+    }
+}
+
+fn default_l1_rpc_url() -> String {
+    "http://127.0.0.1:9443".to_string()
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct ServerConfig {
     pub bind: String,
     pub port: u16,
-}
-
-impl Default for ServerConfig {
-    fn default() -> Self {
-        Self {
-            bind: "127.0.0.1".to_string(),
-            port: 8453,
-        }
-    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

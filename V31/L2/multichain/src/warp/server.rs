@@ -72,7 +72,8 @@ impl WarpState {
         let registry = ChainRegistry::with_defaults();
         let fee_engine = FeeEngine::with_defaults();
         let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(config.quorum)));
-        let router = WarpRouter::new(registry, fee_engine, validator_set);
+        // WarpRouter::with_db loads existing transfers from the DB.
+        let router = WarpRouter::with_db(registry, fee_engine, validator_set, db.clone())?;
         Ok(Self {
             router: Arc::new(Mutex::new(router)),
             config,
