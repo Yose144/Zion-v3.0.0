@@ -1838,11 +1838,24 @@ pub(crate) fn draw_dashboard_redesign(
         MiningMode::Dual => "DUAL",
     };
     let backend = if control.gpu_enabled && !gpu_info.is_empty() {
-        "OPENCL"
+        let metrics_guard = metrics.lock().unwrap();
+        let name = if metrics_guard.backend.is_empty() {
+            "GPU"
+        } else {
+            &metrics_guard.backend
+        };
+        let name = name.to_uppercase();
+        drop(metrics_guard);
+        // Keep the label short for the 60-column dashboard
+        if name == "OPENCL" || name == "CUDA" || name == "METAL" {
+            name
+        } else {
+            "GPU".to_string()
+        }
     } else if control.gpu_enabled {
-        "GPU"
+        "GPU".to_string()
     } else {
-        "CPU"
+        "CPU".to_string()
     };
     frame.parts(&[
         (status_color, format!(" {}", status)),

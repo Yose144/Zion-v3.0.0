@@ -135,15 +135,19 @@ function detectPlatformFeatures() {
 
 function findNvrtcRuntime() {
   // The CUDA backend needs NVRTC at runtime (not the full CUDA Toolkit).
-  // Look for the redistributable DLLs that ship with the miner or may already
-  // be present in the target/release directory.
+  // Look for the redistributable DLLs / shared libraries that ship with the miner
+  // or may already be present in the target/release directory.
   const resourcesDir = path.resolve(__dirname, '..', 'resources');
   const targetDir = path.resolve(__dirname, '..', '..', '..', 'V3', 'target', 'release');
-  const searchPaths = [resourcesDir, targetDir];
+  const isWindows = process.platform === 'win32';
+  const searchPaths = isWindows
+    ? [resourcesDir, targetDir]
+    : [resourcesDir, targetDir, '/usr/lib/x86_64-linux-gnu', '/usr/local/cuda/lib64', '/usr/lib'];
+  const nvrtcPattern = isWindows ? /^nvrtc64_.*\.dll$/i : /^libnvrtc\.so/i;
   for (const dir of searchPaths) {
     try {
       const files = fs.readdirSync(dir);
-      const nvrtc = files.find((f) => /^nvrtc64_.*\.dll$/i.test(f));
+      const nvrtc = files.find((f) => nvrtcPattern.test(f));
       if (nvrtc) return path.join(dir, nvrtc);
     } catch { /* ignore */ }
   }
@@ -152,7 +156,7 @@ function findNvrtcRuntime() {
   for (const dir of pathDirs) {
     try {
       const files = fs.readdirSync(dir);
-      const nvrtc = files.find((f) => /^nvrtc64_.*\.dll$/i.test(f));
+      const nvrtc = files.find((f) => nvrtcPattern.test(f));
       if (nvrtc) return path.join(dir, nvrtc);
     } catch { /* ignore */ }
   }
