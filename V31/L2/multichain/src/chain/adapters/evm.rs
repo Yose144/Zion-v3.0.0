@@ -21,12 +21,15 @@ use zion_l1_types::{Address, Amount, ChainFamily, ChainId, Hash};
 use crate::chain::adapter::{ChainAdapter, DepositEvent};
 use crate::contracts::ZionContracts;
 use crate::error::{MultichainError, MultichainResult};
-use crate::types::Transfer;
+use crate::types::{Transfer, TransferDirection};
 
 const BRIDGE_BURN_SIG: &str = "BridgeBurn(address,uint256,string,bytes32,uint256)";
 const BRIDGE_MINT_SIG: &str = "BridgeMint(address,uint256,bytes32,uint256)";
 const SUBMIT_LOCK_PROOF_SIG: &str = "submitLockProof(bytes32,address,uint256,uint256,string)";
+const CONFIRM_BURN_RELEASE_SIG: &str = "confirmBurnRelease(bytes32,address,uint256,string)";
 const HAS_ROLE_SIG: &str = "hasRole(bytes32,address)";
+const ERC20_BALANCE_OF_SIG: &str = "balanceOf(address)";
+const ERC20_TRANSFER_SIG: &str = "transfer(address,uint256)";
 
 /// EVM adapter configured for a specific RPC, optional signer and contracts.
 pub struct EvmAdapter {
@@ -224,6 +227,111 @@ impl EvmAdapter {
     }
 }
 
+impl EvmAdapter {
+    async fn submit_lock_proof(
+        &self,
+        transfer: &Transfer,
+        bridge: EthAddress,
+    ) -> MultichainResult<Hash> {
+        let l1_tx_hash = Self::parse_tx_hash(&transfer.id);
+        let recipient = self.to_eth_address(&transfer.target.address)?;
+        // Zion L1 flowers (6 decimals) -> wZION wei (18 decimals).
+        let amount_flowers = transfer.target.amount.0;
+        let amount_wei = if transfer.source.address.chain == ChainId::ZionL1 {
+            amount_flowers.saturating_mul(1_000_000_000_000u128)
+        } else {
+            amount_flowers
+        };
+        let amount = U256::from(amount_wei);
+        let l1_block_height = U256::from(0u64);
+        let l1_sender = transfer.source.address.encoded.clone();
+
+        let mut data = Self::function_selector(SUBMIT_LOCK_PROOF_SIG).to_vec();
+        let args = encode(&[
+            Token::FixedBytes(l1_tx_hash.as_bytes().to_vec()),
+            Token::Address(recipient),
+            Token::Uint(amount),
+            Token::Uint(l1_block_height),
+            Token::String(l1_sender),
+        ]);
+        data.extend_from_slice(&args);
+
+        self.send_transaction(bridge, data, U256::zero()).await
+    }
+
+    async fn confirm_burn_release(
+        &self,
+        transfer: &Transfer,
+        bridge: EthAddress,
+    ) -> MultichainResult<Hash> {
+        let burn_id = Self::parse_tx_hash(&transfer.id);
+        let evm_burner = self.to_eth_address(&transfer.source.address)?;
+        // wZION amount is already in 18-decimal wei on the EVM side.
+        let amount = U256::from(transfer.source.amount.0);
+        let l1_recipient = transfer.target.address.encoded.clone();
+
+        let mut data = Self::function_selector(CONFIRM_BURN_RELEASE_SIG).to_vec();
+        let args = encode(&[
+            Token::FixedBytes(burn_id.as_bytes().to_vec()),
+            Token::Address(evm_burner),
+            Token::Uint(amount),
+            Token::String(l1_recipient),
+        ]);
+        data.extend_from_slice(&args);
+
+        self.send_transaction(bridge, data, U256::zero()).await
+    }
+
+    fn parse_tx_hash(id: &str) -> H256 {
+        match hex::decode(id) {
+            Ok(v) if v.len() == 32 => H256::from_slice(&v),
+            _ => H256::from(keccak256(id.as_bytes())),
+        }
+    }
+
+    pub async fn wzion_balance(&self, owner: &Address) -> MultichainResult<Amount> {
+        let wzion = self
+            .wzion_address()
+            .ok_or_else(|| MultichainError::Config("wZION contract not configured".to_string()))?;
+        let owner_eth = self.to_eth_address(owner)?;
+
+        let mut call = Self::function_selector(ERC20_BALANCE_OF_SIG).to_vec();
+        let args = encode(&[Token::Address(owner_eth)]);
+        call.extend_from_slice(&args);
+
+        let tx = TransactionRequest::new().to(wzion).data(call);
+        let bytes = self
+            .provider
+            .call(&tx.into(), None)
+            .await
+            .map_err(|e| MultichainError::Internal(format!("wZION balanceOf failed: {e}")))?;
+        let tokens = decode(&[ParamType::Uint(256)], &bytes)
+            .map_err(|e| MultichainError::Internal(format!("decode wZION balance: {e}")))?;
+        let raw = tokens[0].clone().into_uint().unwrap_or_default();
+        Ok(Amount::new(raw.as_u128()))
+    }
+
+    pub async fn transfer_wzion(
+        &self,
+        to: &Address,
+        amount: Amount,
+    ) -> MultichainResult<Hash> {
+        let wzion = self
+            .wzion_address()
+            .ok_or_else(|| MultichainError::Config("wZION contract not configured".to_string()))?;
+        let to_eth = self.to_eth_address(to)?;
+
+        let mut data = Self::function_selector(ERC20_TRANSFER_SIG).to_vec();
+        let args = encode(&[
+            Token::Address(to_eth),
+            Token::Uint(U256::from(amount.0)),
+        ]);
+        data.extend_from_slice(&args);
+
+        self.send_transaction(wzion, data, U256::zero()).await
+    }
+}
+
 #[async_trait]
 impl ChainAdapter for EvmAdapter {
     fn name(&self) -> &str {
@@ -295,33 +403,18 @@ impl ChainAdapter for EvmAdapter {
             ));
         }
 
-        let l1_tx_hash = match hex::decode(&transfer.id) {
-            Ok(v) if v.len() == 32 => H256::from_slice(&v),
-            _ => H256::from(keccak256(transfer.id.as_bytes())),
-        };
-        let recipient = self.to_eth_address(&transfer.target.address)?;
-        // Zion L1 flowers (6 decimals) -> wZION wei (18 decimals).
-        let amount_flowers = transfer.target.amount.0;
-        let amount_wei = if transfer.source.address.chain == ChainId::ZionL1 {
-            amount_flowers.saturating_mul(1_000_000_000_000u128)
-        } else {
-            amount_flowers
-        };
-        let amount = U256::from(amount_wei);
-        let l1_block_height = U256::from(0u64);
-        let l1_sender = transfer.source.address.encoded.clone();
-
-        let mut data = Self::function_selector(SUBMIT_LOCK_PROOF_SIG).to_vec();
-        let args = encode(&[
-            Token::FixedBytes(l1_tx_hash.as_bytes().to_vec()),
-            Token::Address(recipient),
-            Token::Uint(amount),
-            Token::Uint(l1_block_height),
-            Token::String(l1_sender),
-        ]);
-        data.extend_from_slice(&args);
-
-        self.send_transaction(bridge, data, U256::zero()).await
+        match transfer.direction {
+            TransferDirection::LockMint => {
+                self.submit_lock_proof(transfer, bridge).await
+            }
+            TransferDirection::BurnRelease => {
+                self.confirm_burn_release(transfer, bridge).await
+            }
+            _ => Err(MultichainError::Unsupported(format!(
+                "EVM adapter cannot handle transfer direction {:?}",
+                transfer.direction
+            ))),
+        }
     }
 
     async fn current_height(&self) -> MultichainResult<u64> {

@@ -43,6 +43,12 @@ impl ApiServer {
         let Some(pool) = self.service.pool() else {
             return Ok(());
         };
+
+        {
+            let mut p = pool.lock().unwrap();
+            p.restore();
+        }
+
         let port = pool.lock().unwrap().config.port;
         let stratum = StratumServer::new(Arc::clone(&pool));
         let bind = format!("0.0.0.0:{}", port);
@@ -65,21 +71,34 @@ impl ApiServer {
                 interval.tick().await;
                 match service.block_template(ChainId::ZionL1).await {
                     Ok(Some(tpl)) => {
+                        let template_json = serde_json::to_string(&tpl.raw).unwrap_or_default();
                         stratum_broadcast.broadcast_job(
                             &format!("zion_{}", tpl.template_id),
                             &tpl.header_hex,
                             &tpl.target_hex,
                             tpl.block_reward,
+                            &template_json,
                         );
                     }
                     Ok(None) => {
                         let header = "00".repeat(80);
                         let target = "f".repeat(64);
-                        stratum_broadcast.broadcast_job("zion_1", &header, &target, 6_000_000);
+                        stratum_broadcast.broadcast_job("zion_1", &header, &target, 6_000_000, "");
                     }
                     Err(e) => {
                         tracing::warn!("failed to fetch zion block template: {}", e);
                     }
+                }
+            }
+        });
+
+        let pool_save = Arc::clone(&pool);
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(30));
+            loop {
+                interval.tick().await;
+                if let Err(e) = pool_save.lock().unwrap().save() {
+                    tracing::warn!("failed to save pplns state: {}", e);
                 }
             }
         });

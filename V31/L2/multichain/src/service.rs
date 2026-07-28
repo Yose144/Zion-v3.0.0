@@ -222,8 +222,10 @@ impl MultichainService {
         self.pool.as_ref().map(Arc::clone)
     }
 
-    /// Execute any pending PPLNS payouts for the configured pool using the
-    /// Zion L1 adapter. Each payout is sent only once per `(block, address)`.
+    /// Execute any pending PPLNS payouts for the configured pool. Each payout
+    /// is first recorded as a Dharma Credit and then settled on-chain through
+    /// the Zion L1 adapter, debited only after a successful transfer. Each
+    /// `(block, address)` pair is processed at most once.
     pub async fn execute_payouts(&self) -> MultichainResult<()> {
         let pool = match self.pool.as_ref() {
             Some(p) => p,
@@ -253,8 +255,28 @@ impl MultichainService {
                 }
             }
 
+            if let Err(e) = self.credits.credit(&payout.address, payout.amount) {
+                tracing::warn!(
+                    "payout credit failed: block={} to={} amount={} error={}",
+                    block_height,
+                    payout.address.encoded,
+                    payout.amount.0,
+                    e
+                );
+                continue;
+            }
+
             match adapter.send_payment(&payout.address, payout.amount).await {
                 Ok(hash) => {
+                    if let Err(e) = self.credits.debit(&payout.address, payout.amount) {
+                        tracing::warn!(
+                            "payout debit failed after settlement: block={} to={} amount={} error={}",
+                            block_height,
+                            payout.address.encoded,
+                            payout.amount.0,
+                            e
+                        );
+                    }
                     tracing::info!(
                         "payout executed: block={} to={} amount={} tx={}",
                         block_height,
@@ -266,7 +288,7 @@ impl MultichainService {
                 }
                 Err(e) => {
                     tracing::warn!(
-                        "payout failed: block={} to={} amount={} error={}",
+                        "payout settlement failed: block={} to={} amount={} error={}; credit retained",
                         block_height,
                         payout.address.encoded,
                         payout.amount.0,

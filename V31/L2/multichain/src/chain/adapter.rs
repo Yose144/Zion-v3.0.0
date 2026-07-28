@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use serde_json::Value;
 
 use zion_l1_types::{Address, Amount, ChainFamily, ChainId, Hash};
 
@@ -13,6 +14,8 @@ pub struct BlockTemplate {
     pub header_hex: String,
     pub target_hex: String,
     pub block_reward: u64,
+    /// Raw JSON as returned by the L1 node; used to reconstruct the solved block.
+    pub raw: Value,
 }
 
 /// Abstract interface every supported chain must implement.
