@@ -20,37 +20,39 @@
 
 ---
 
-## 2. Current state matrix (verified 2026-07-27 — code + Edge + dashboard)
+## 2. Current state matrix (verified 2026-07-28 — code + Edge + dashboard)
 
 > **Note:** This matrix reflects the **actual code state**, not documentation claims.
-> Verified via: `cargo build --workspace` ✅, `cargo test -p zion-auxpow --lib ethash` ✅ (11 pass, 0 fail), `zion-miner --test-cuda-kernel ethash` ✅ (`ETHASH_CPU_GPU_MATCH`, ~121 MH/s on GTX 1070 Ti, epoch 0),
-> Edge RPC `getChainInfo` (height 2584+ after 2026-07-20 reset), pool `/miners` stats, web `/explorer` routes inspection.
+> Verified via: `cargo build --workspace` ✅, `cargo test -p zion-auxpow --lib ethash` ✅ (11 pass, 0 fail), `zion-miner --test-cuda-kernel ethash` ✅ (`ETHASH_CPU_GPU_MATCH`, ~117 MH/s on GTX 1070 Ti, epoch 0),
+> **10/10 CUDA kernels CPU/GPU MATCH** (2026-07-28 sweep on GTX 1070 Ti), Edge RPC `getChainInfo` (height 7342+), pool `/miners` stats, web `/explorer` routes inspection.
 
 | Coin | Algo | Stream | Status | Blocker | Verified by |
 |------|------|--------|--------|---------|-------------|
 | **ZION** | deeksha_lite_fire | 1 | ✅ Green | — | Pool stats: vega-smos 31 KH/s, 629 valid ZION shares |
-| **EPIC** | progpow | 2 | ✅ Green | 3-phase fix complete (TLS submit + stale forward + hash verify) | `EPIC_PROGPOW_SHARE_FIX_REPORT_2026-07-19.md` |
-| **RVN** | kawpow | 2 | ✅ Green | E2E live, shares forwarded to 2miners | StatusV3 §5 |
-| **DCR** | blake3 | 2 | ✅ Green | LIVE, blake3 GPU kernel embedded in pool stream | StatusV3 §5 |
-| **ERG** | autolykos | 2 | ✅ Green | E2E complete, Autolykos v2 GPU thread, 2miners | Commit `d4e03cb97` |
+| **EPIC** | progpow | 2 | ✅ Green | 3-phase fix complete (TLS submit + stale forward + hash verify). **CUDA kernel CPU/GPU MATCH** (11.1 MH/s, output_hash fix 2026-07-28). | `EPIC_PROGPOW_SHARE_FIX_REPORT_2026-07-19.md`, commit `eb98dc694` |
+| **RVN** | kawpow | 2 | ✅ Green | E2E live, shares forwarded to 2miners. **CUDA kernel CPU/GPU MATCH** (93.5 MH/s epoch 0). Pool-side share verify fixed (`kawpow_final_hash_real`). E2E pool test on epoch 596 needs >8GB VRAM GPU (DAG = 5.66 GB). | StatusV3 §5, commit `eb98dc694` |
+| **DCR** | blake3 | 2 | ✅ Green | LIVE, blake3 GPU kernel embedded in pool stream. **CUDA kernel CPU/GPU MATCH** (1.23 GH/s). | StatusV3 §5 |
+| **ERG** | autolykos | 2 | ✅ Green | E2E complete, Autolykos v2 GPU thread, 2miners. CUDA benchmark PASS (1.26 GH/s, no CPU ref). | Commit `d4e03cb97` |
 | **VTC** | verthash | 2 | ✅ Green | E2E PASS (zpool), 1.2GB loader done | Commits `646d14f59`, `e8e237448` |
 | **ZCL** | equihashzero | 2 | ✅ Green | E2E PASS (zpool), Wagner dispatch done | Commit `f6df75b64` |
 | **RTM** | ghostrider | 2+3 | ✅ Green | GPU: 15/15 SPH match, E2E PASS (zpool). **CPU E2E share verify PASS** (zpool.ca, accepted) — 3 root causes fixed: target endian (LE), hash output byte order (BE→LE reversal), prevhash per-word reversal (ser_string_be). | Commit `51a34409a`, Edge test pool 2026-07-19 |
 | **QTC** | qhash | 2 | ✅ Green | E2E PASS (suprnova) | Commit `0e5ef6c40` |
 | **NEXA** | nexapow | 2 | ✅ Green | E2E PASS (nexa.2miners.com) | Commit `77613ad50` |
 | **BEAM** | beamhash III | 2 | ✅ Green | Implemented (CPU+GPU), 2miners TLS | Commit `525835d4e` |
-| **QUAI** | kawpow | 2 | ✅ Green | E2E, 2miners BTC payout | StatusV3 §5 |
-| **KAS / ALPH** | kheavyhash / blake3 | 2 | 🟡 0 shares | Kernel OK, hashrate insufficient on test rigs (TH/s difficulty) — needs long run or stronger GPU | M1 report §3.2-3.4 |
-| **FLUX** | zelhash | 2 | ⏸️ Deprecated | FLUX switched to PoUW v2 (Oct 2025), mining pools disabled. WoolyPooly NXDOMAIN, minerpool.org unreachable. | Web search 2026-07-19 |
-| **EVR / MEWC** | evrprogpow / meowpow | 2 | ✅ Green | Protocol fixed: EthStratum → Stratum v1. Authorized + KawPow notify on Edge test pool. | `auxpow_client.rs` line 135, Edge test pool 2026-07-19 |
-| **CLORE** | kawpow | 2 | ✅ Green | Pool moved to 2miners:5050 (WoolyPooly NXDOMAIN). Authorized + job queued on Edge test pool. | `types.rs` line 169, Edge test pool 2026-07-19 |
+| **QUAI** | kawpow | 2 | ✅ Green | E2E, 2miners BTC payout. **CUDA kernel CPU/GPU MATCH** (93.5 MH/s). | StatusV3 §5 |
+| **KAS** | kheavyhash | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (638 MH/s). E2E: 0 shares (pool difficulty too high for GTX 1070 Ti at 14.5 MH/s — needs stronger GPU or long run). | `zion-miner --test-cuda-kernel kheavyhash` 2026-07-28 |
+| **ALPH** | blake3 (double) | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (1.58 GH/s). E2E: 0 shares (needs long run). | `zion-miner --test-cuda-kernel blake3_alph` 2026-07-28 |
+| **FLUX** | zelhash | 2 | ⏸️ Deprecated | FLUX switched to PoUW v2 (Oct 2025), mining pools disabled. WoolyPooly NXDOMAIN, minerpool.org unreachable. CUDA benchmark PASS (1.54 GH/s, no CPU ref). | Web search 2026-07-19 |
+| **EVR** | evrprogpow | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (11.1 MH/s, output_hash fix 2026-07-28). Protocol fixed: EthStratum → Stratum v1. Authorized + KawPow notify on Edge test pool. | Commit `eb98dc694`, `auxpow_client.rs` line 135 |
+| **MEWC** | meowpow | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (11.1 MH/s, output_hash fix 2026-07-28). Protocol fixed: EthStratum → Stratum v1. | Commit `eb98dc694` |
+| **CLORE** | kawpow | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (93.5 MH/s). Pool moved to 2miners:5050. | `types.rs` line 169 |
 | **VRSC** | verushash | 3 | ✅ Green | **E2E share verify PASS** — CPU miner → ZION pool → LuckPool upstream → **accepted** (37ms). Full pipeline verified on Edge test pool 2026-07-19. | Edge test pool log: `share_forwarded result=Accepted elapsed_ms=37` |
 | **XMR** | randomx | 3 | 🟡 Hash OK | RandomX hash verify OK (native-randomx, shares pass pool-side target check). Remaining issue: stale job_id — pool receives new jobs from MoneroOcean every ~15-30s but miner submits with old job_id → "Invalid job id" reject. Job propagation pipeline fix needed. | Edge test pool 2026-07-19 |
 | **IRON** | fishhash | 2 | 🟡 Auth OK | Subscribe OK, needs 64-char IronFish wallet | StatusV3 §5 |
 | **KLS** | karlsenhash | 2 | 🟡 Auth OK | E2E PASS, needs native Karlsen wallet | StatusV3 §5 |
 | **DNX** | dynexsolve | 2 | 🟡 Auth OK | Login OK, needs native DNX wallet | StatusV3 §5 |
 | **PRL** | pearlhash | 2 | ⏸️ Deferred | PoUW ZK kernels TODO — **officially deferred to 3.1.0** (2026-07-19) | — |
-| **ETC** | ethash | 2 | ✅ Green | Pure-Rust `hash_ethash` CPU reference aligned with `ethash` 0.4 crate and chfast vectors; CUDA kernel verified byte-for-byte against CPU via `zion-miner --test-cuda-kernel ethash` (`ETHASH_CPU_GPU_MATCH`, ~117.6 MH/s on GTX 1070 Ti, epoch 0). `hash_ethash`/`hash_ethash_with_dag` now always use the `ethash` 0.4 crate, even with `native-hashers`, to avoid C-FFI drift. Remaining step is live upstream share. | Commit `92bb87b78` |
+| **ETC** | ethash | 2 | ✅ Green | Pure-Rust `hash_ethash` CPU reference aligned with `ethash` 0.4 crate and chfast vectors; **CUDA kernel CPU/GPU MATCH** (~117 MH/s on GTX 1070 Ti, epoch 0). `hash_ethash`/`hash_ethash_with_dag` now always use the `ethash` 0.4 crate, even with `native-hashers`, to avoid C-FFI drift. Remaining step is live upstream share. | Commit `92bb87b78` |
 | **CKB / CFX / ZEC / PHX / KRX** | various | 2 | 🟡 Code ready | ExternalCoin variants in enum, profit router entries — E2E not tested | `profit_router.rs` |
 
 ---
