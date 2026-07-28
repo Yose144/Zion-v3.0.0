@@ -8,6 +8,8 @@ use tokio::sync::watch;
 use zion_l1_types::{Address, Amount, Asset, ChainId};
 use std::net::SocketAddr;
 
+mod menu;
+
 use zion_core::node::{Node, NodeConfig};
 use zion_miner::config::MinerConfig;
 use zion_miner::runtime::MinerRuntime;
@@ -31,6 +33,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Open the interactive operator menu (arrow-key navigation).
+    Menu,
     /// Status of the Multi-Chain layer.
     Status,
     /// Wallet commands.
@@ -126,6 +130,12 @@ enum MinerCommand {
         /// ZION address that receives mining rewards.
         #[arg(short, long)]
         reward_address: Option<String>,
+        /// ZION L1 node RPC URL for solo mining (template fetch + block submit).
+        #[arg(long)]
+        node_rpc_url: Option<String>,
+        /// Stratum pool URL for ZION share mining.
+        #[arg(long)]
+        pool_url: Option<String>,
         /// Optional external stratum pool URL for AuxPoW shares.
         #[arg(short, long)]
         auxpow_pool: Option<String>,
@@ -275,6 +285,9 @@ async fn main() -> anyhow::Result<()> {
     let service = Arc::new(MultichainService::new(config)?);
 
     match cli.command {
+        Command::Menu => {
+            menu::run_menu(&service).await?;
+        }
         Command::Status => {
             println!("Registered chains: {:?}", service.chains());
             let health = service.health().await;
@@ -412,6 +425,8 @@ async fn main() -> anyhow::Result<()> {
         Command::Miner(miner) => match miner.command {
             MinerCommand::Start {
                 reward_address,
+                node_rpc_url,
+                pool_url,
                 auxpow_pool,
                 worker,
                 no_zion,
@@ -423,6 +438,8 @@ async fn main() -> anyhow::Result<()> {
                     None => service.wallet_address(ChainId::ZionL1, 0, 0)?,
                 };
                 let mut miner_config = MinerConfig::new(reward_address);
+                miner_config.node_rpc_url = node_rpc_url;
+                miner_config.pool_url = pool_url;
                 miner_config.auxpow_pool = auxpow_pool;
                 miner_config.worker = worker;
                 miner_config.stream1_enabled = !no_zion;

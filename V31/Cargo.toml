@@ -6,6 +6,12 @@ members = [
     "L1/miner",
     "L1/pool",
     "L2/multichain",
+    "L3/ncl",
+    "L3/ai-native",
+    "L4/oasis",
+    "L5/free-world",
+    "L6/issobella",
+    "sdk",
     "cli",
 ]
 resolver = "2"
@@ -19,26 +25,32 @@ authors = ["Yose144"]
 [workspace.dependencies]
 anyhow = "1"
 async-trait = "0.1"
-axum = { version = "0.7", features = ["macros"] }
-aes = "=0.9.1"
+axum = { version = "0.7", features = ["macros", "ws"] }
+base64 = "0.22"
+blake2 = "0.10"
+blake3 = "1"
+bs58 = "0.5"
 bip39 = "2.0"
 bitcoin = { version = "0.31", default-features = false, features = ["std"] }
-blake3 = "1"
+aes = "=0.9.1"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive", "env"] }
-ed25519-dalek = { version = "2", features = ["rand_core"] }
+ed25519-dalek = { version = "2", features = ["rand_core", "serde"] }
 ethers = { version = "2", features = ["rustls"] }
 hex = "0.4"
 k256 = { version = "0.13", features = ["ecdsa"] }
 num-bigint = "0.4"
 num-traits = "0.2"
 rand = "0.8"
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12", features = ["json", "blocking", "rustls-tls"], default-features = false }
+ripemd = "0.1"
+rlp = "0.5"
 rusqlite = { version = "0.31", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
 sha3 = "0.10"
+stellar-strkey = "0.0.8"
 thiserror = "2"
 tokio = { version = "1", features = ["full"] }
 toml = "0.8"
@@ -46,6 +58,8 @@ tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+walkdir = "2"
 zeroize = { version = "1", features = ["derive"] }
 
 zion-core = { path = "L1/core" }
@@ -54,6 +68,7 @@ zion-l1-types = { path = "L1/types" }
 zion-miner = { path = "L1/miner" }
 zion-pool = { path = "L1/pool" }
 zion-multichain = { path = "L2/multichain" }
+zion-ncl = { path = "L3/ncl" }
 
 [profile.release]
 opt-level = 3

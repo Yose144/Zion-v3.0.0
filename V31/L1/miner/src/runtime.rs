@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use chrono::Utc;
+use serde_json::{json, Value};
 use sha3::{Digest, Sha3_256};
 use tokio::sync::{watch, Mutex};
 use tokio::time::sleep;
@@ -135,6 +136,40 @@ impl MinerRuntime {
         Ok(Block::new(header, transactions))
     }
 
+    /// Fetch a block template from the configured node RPC and mine it.
+    ///
+    /// Returns the solved block ready for submission.
+    pub async fn mine_node_template(&self) -> Result<Block, MinerError> {
+        let rpc_url = self
+            .config
+            .node_rpc_url
+            .as_ref()
+            .ok_or_else(|| MinerError::Consensus("no node_rpc_url configured".to_string()))?;
+
+        let template = fetch_block_template(rpc_url).await?;
+        let mut header: BlockHeader = serde_json::from_str(&template.header_json)
+            .map_err(|e| MinerError::Consensus(format!("template parse: {e}")))?;
+
+        let target = parse_target_hex(&template.target_hex).unwrap_or([0xFF; 32]);
+
+        self.consensus
+            .mine(&mut header, &target, 0, self.config.zion_nonce_batch)
+            .ok_or_else(|| MinerError::Consensus("no nonce found in batch".to_string()))?;
+
+        Ok(Block::new(header, template.transactions))
+    }
+
+    /// Submit a solved block to the configured node RPC.
+    pub async fn submit_block_to_node(&self, block: &Block) -> Result<(), MinerError> {
+        let rpc_url = self
+            .config
+            .node_rpc_url
+            .as_ref()
+            .ok_or_else(|| MinerError::Consensus("no node_rpc_url configured".to_string()))?;
+
+        submit_block_rpc(rpc_url, block).await
+    }
+
     /// Return a snapshot of all stream statistics.
     pub async fn stats(&self) -> HashMap<StreamId, StreamStats> {
         self.stats.lock().await.clone()
@@ -184,19 +219,33 @@ impl MinerRuntime {
             let this = self.clone();
             let mut shutdown = shutdown.clone();
             tokio::spawn(async move {
+                // If node_rpc_url is configured, use node template mode;
+                // otherwise fall back to local solo mining from genesis.
+                let use_node = this.config.node_rpc_url.is_some();
                 let mut parent = genesis_header();
                 loop {
                     tokio::select! {
                         _ = shutdown.changed() => break,
-                        result = this.mine_zion_block(&parent) => {
+                        result = async {
+                            if use_node {
+                                let block = this.mine_node_template().await?;
+                                this.submit_block_to_node(&block).await?;
+                                Ok(block)
+                            } else {
+                                this.mine_zion_block(&parent).await
+                            }
+                        } => {
                             this.mark_active(StreamId::Zion).await;
                             match result {
                                 Ok(block) => {
-                                    parent = block.header.clone();
+                                    if !use_node {
+                                        parent = block.header.clone();
+                                    }
                                     this.record_accepted(StreamId::Zion).await;
                                     info!(
                                         height = block.header.height,
                                         nonce = block.header.nonce,
+                                        mode = if use_node { "node" } else { "solo" },
                                         "mined zion block"
                                     );
                                 }
@@ -422,6 +471,124 @@ fn merkle_root(transactions: &[Transaction]) -> Hash {
         hasher.update(&bytes);
     }
     Hash::new(hasher.finalize().into())
+}
+
+// ============================================================
+// Node RPC helpers (JSON-RPC over HTTP)
+// ============================================================
+
+/// Block template fetched from the node RPC.
+struct NodeTemplate {
+    header_json: String,
+    target_hex: String,
+    transactions: Vec<Transaction>,
+}
+
+/// Call `getBlockTemplate` on the node and parse the response.
+async fn fetch_block_template(rpc_url: &str) -> Result<NodeTemplate, MinerError> {
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(15))
+        .build()
+        .map_err(|e| MinerError::Consensus(format!("http client: {e}")))?;
+
+    let payload = json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "getBlockTemplate",
+        "params": { "miner": "zion1miner" }
+    });
+
+    let resp: Value = client
+        .post(rpc_url)
+        .json(&payload)
+        .send()
+        .await
+        .map_err(|e| MinerError::Consensus(format!("rpc request: {e}")))?
+        .json()
+        .await
+        .map_err(|e| MinerError::Consensus(format!("rpc decode: {e}")))?;
+
+    let result = resp
+        .get("result")
+        .ok_or_else(|| MinerError::Consensus("rpc: missing result".to_string()))?;
+
+    let header_json = result
+        .get("header_json")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let target_hex = result
+        .get("target_hex")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let transactions: Vec<Transaction> = result
+        .get("transactions")
+        .map(|v| serde_json::from_value(v.clone()).unwrap_or_default())
+        .unwrap_or_default();
+
+    if header_json.is_empty() {
+        return Err(MinerError::Consensus(
+            "rpc: empty header_json in template".to_string(),
+        ));
+    }
+
+    Ok(NodeTemplate {
+        header_json,
+        target_hex,
+        transactions,
+    })
+}
+
+/// Call `submitBlock` on the node with a solved block.
+async fn submit_block_rpc(rpc_url: &str, block: &Block) -> Result<(), MinerError> {
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(15))
+        .build()
+        .map_err(|e| MinerError::Consensus(format!("http client: {e}")))?;
+
+    let payload = json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "submitBlock",
+        "params": serde_json::to_value(block).map_err(|e| MinerError::Consensus(format!("block serialize: {e}")))?
+    });
+
+    let resp: Value = client
+        .post(rpc_url)
+        .json(&payload)
+        .send()
+        .await
+        .map_err(|e| MinerError::Consensus(format!("rpc request: {e}")))?
+        .json()
+        .await
+        .map_err(|e| MinerError::Consensus(format!("rpc decode: {e}")))?;
+
+    if let Some(err) = resp.get("error") {
+        if !err.is_null() {
+            return Err(MinerError::Consensus(format!(
+                "rpc error: {}",
+                serde_json::to_string(err).unwrap_or_default()
+            )));
+        }
+    }
+
+    info!("block submitted to node: height={}", block.header.height);
+    Ok(())
+}
+
+/// Parse a 64-char hex target string into a 32-byte array.
+fn parse_target_hex(target_hex: &str) -> Option<[u8; 32]> {
+    let hex = target_hex
+        .trim()
+        .trim_start_matches("0x")
+        .trim_start_matches("0X");
+    if hex.len() != 64 {
+        return None;
+    }
+    let mut out = [0u8; 32];
+    hex::decode_to_slice(hex, &mut out).ok()?;
+    Some(out)
 }
 
 #[cfg(test)]
