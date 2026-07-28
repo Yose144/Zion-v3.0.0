@@ -15,7 +15,7 @@ pub struct BlockHeader {
     pub height: u64,
     pub timestamp: u64,
     pub nonce: u64,
-    pub difficulty: u32,
+    pub difficulty: u64,
 }
 
 impl BlockHeader {
@@ -30,6 +30,18 @@ impl BlockHeader {
         out[64..72].copy_from_slice(&self.height.to_le_bytes());
         out[72..80].copy_from_slice(&self.timestamp.to_le_bytes());
         out
+    }
+
+    /// Compute the block identity hash used for `previous_hash` links.
+    ///
+    /// This is `Keccak256(pow_header || nonce_le)`, distinct from the PoW hash.
+    pub fn header_hash(&self) -> Hash {
+        use sha3::{Digest, Keccak256};
+        let pow_header = self.pow_header();
+        let mut bytes = [0u8; POW_HEADER_SIZE + 8];
+        bytes[..POW_HEADER_SIZE].copy_from_slice(&pow_header);
+        bytes[POW_HEADER_SIZE..].copy_from_slice(&self.nonce.to_le_bytes());
+        Hash::new(Keccak256::digest(bytes).into())
     }
 }
 

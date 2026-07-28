@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use sha3::{Digest, Keccak256};
 
 use zion_l1_types::{Address, Amount, Hash};
 
@@ -39,5 +40,27 @@ impl Transaction {
             outputs,
             memo,
         }
+    }
+
+    /// Deterministic transaction hash used in merkle roots.
+    pub fn hash(&self) -> Hash {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&self.version.to_le_bytes());
+        for input in &self.inputs {
+            bytes.extend_from_slice(&input.previous_output.0);
+            bytes.extend_from_slice(&input.index.to_le_bytes());
+            bytes.extend_from_slice(&input.script);
+        }
+        for output in &self.outputs {
+            bytes.extend_from_slice(&output.amount.0.to_le_bytes());
+            bytes.extend_from_slice(output.address.encoded.as_bytes());
+        }
+        bytes.extend_from_slice(&self.memo);
+        Hash::new(Keccak256::digest(bytes).into())
+    }
+
+    /// A coinbase transaction has no inputs and creates new coins.
+    pub fn is_coinbase(&self) -> bool {
+        self.inputs.is_empty()
     }
 }

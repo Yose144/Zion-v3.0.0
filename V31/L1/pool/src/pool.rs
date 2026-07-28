@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use zion_cosmic_harmony::ExternalCoin;
@@ -32,6 +33,8 @@ pub struct Pool {
     pub current_job_id: AtomicU64,
     pub accepted: AtomicU64,
     pub rejected: AtomicU64,
+    /// Authorized worker name -> payout address (anonymous mining).
+    pub worker_addresses: HashMap<String, Address>,
     /// Last computed payouts for a found block, keyed by block height.
     pub last_payouts: Option<(u64, Vec<Payout>)>,
 }
@@ -47,6 +50,7 @@ impl Pool {
             current_job_id: AtomicU64::new(1),
             accepted: AtomicU64::new(0),
             rejected: AtomicU64::new(0),
+            worker_addresses: HashMap::new(),
             last_payouts: None,
         }
     }
@@ -75,11 +79,18 @@ impl Pool {
     }
 
     fn worker_address(&self, worker: &str) -> Address {
-        if worker.starts_with("zion1") {
-            Address::new(ChainId::ZionL1, worker.as_bytes().to_vec(), worker)
-                .unwrap_or_else(|_| self.config.pool_address.clone())
-        } else {
-            self.config.pool_address.clone()
+        if let Some(addr) = self.worker_addresses.get(worker) {
+            return addr.clone();
+        }
+        if let Some(addr) = parse_worker_address(worker) {
+            return addr;
+        }
+        self.config.pool_address.clone()
+    }
+
+    pub fn register_worker(&mut self, worker: &str) {
+        if let Some(addr) = parse_worker_address(worker) {
+            self.worker_addresses.insert(worker.to_string(), addr);
         }
     }
 
@@ -142,6 +153,33 @@ impl Pool {
 
     pub fn pool_address(&self) -> &Address {
         &self.config.pool_address
+    }
+
+    /// Persist the current PPLNS state, if a state path is configured.
+    pub fn save(&self) -> std::io::Result<()> {
+        if let Some(path) = self.config.state_path.as_ref() {
+            self.pplns.save_to(path)?;
+        }
+        Ok(())
+    }
+
+    /// Restore PPLNS state from the configured path, if any.
+    pub fn restore(&mut self) {
+        if let Some(path) = self.config.state_path.as_ref() {
+            if let Some(state) = PplnsState::restore(path) {
+                self.pplns = state;
+                self.pplns.set_fee_bps(self.config.pool_fee_bps);
+            }
+        }
+    }
+}
+
+fn parse_worker_address(worker: &str) -> Option<Address> {
+    let wallet = worker.split('.').next().unwrap_or(worker).trim();
+    if wallet.starts_with("zion1") {
+        Address::new(ChainId::ZionL1, wallet.as_bytes().to_vec(), wallet).ok()
+    } else {
+        None
     }
 }
 
@@ -234,5 +272,13 @@ mod tests {
         let pool = Pool::new(config());
         assert_eq!(pool.next_job_id(), 2);
         assert_eq!(pool.next_job_id(), 3);
+    }
+
+    #[test]
+    fn anonymous_worker_address_parsed_from_username() {
+        let mut pool = Pool::new(config());
+        pool.register_worker("zion1abc.worker1");
+        let addr = pool.worker_address("zion1abc.worker1");
+        assert_eq!(addr.encoded, "zion1abc");
     }
 }

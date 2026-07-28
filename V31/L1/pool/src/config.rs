@@ -13,6 +13,8 @@ pub struct PoolConfig {
     pub password: String,
     /// Optional Zion L1 RPC URL where solved blocks are submitted.
     pub l1_rpc_url: Option<String>,
+    /// Optional path for PPLNS state persistence.
+    pub state_path: Option<String>,
 }
 
 impl Default for PoolConfig {
@@ -28,6 +30,7 @@ impl Default for PoolConfig {
             worker: String::new(),
             password: String::new(),
             l1_rpc_url: None,
+            state_path: None,
         }
     }
 }

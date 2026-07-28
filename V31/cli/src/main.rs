@@ -6,6 +6,9 @@ use clap::{Parser, Subcommand};
 use tokio::sync::watch;
 
 use zion_l1_types::{Address, Amount, Asset, ChainId};
+use std::net::SocketAddr;
+
+use zion_core::node::{Node, NodeConfig};
 use zion_miner::config::MinerConfig;
 use zion_miner::runtime::MinerRuntime;
 use zion_multichain::config::MultichainConfig;
@@ -44,6 +47,8 @@ enum Command {
     Doctor,
     /// Serve the V31 HTTP API gateway.
     Api,
+    /// Start the ZION L1 node.
+    Node(NodeArgs),
 }
 
 #[derive(Parser)]
@@ -137,6 +142,31 @@ enum MinerCommand {
         #[arg(long)]
         no_cpu: bool,
     },
+}
+
+#[derive(Parser)]
+struct NodeArgs {
+    /// SQLite database path.
+    #[arg(short, long, default_value = "zion-node.db")]
+    db_path: String,
+    /// RPC bind address.
+    #[arg(short, long, default_value = "127.0.0.1:9443")]
+    rpc: SocketAddr,
+    /// P2P bind address.
+    #[arg(short, long, default_value = "0.0.0.0:8333")]
+    p2p: SocketAddr,
+    /// Humanitarian coinbase recipient.
+    #[arg(long, default_value = "zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7")]
+    human: String,
+    /// Issobella coinbase recipient.
+    #[arg(long, default_value = "zion1f7y7l5k678y0v408e8s654d2282346k375526t2")]
+    issobella: String,
+    /// Skip seeding the genesis block (used when importing a migration snapshot).
+    #[arg(long, default_value_t = false)]
+    no_genesis: bool,
+    /// Seed peer(s) for P2P block sync. Repeat for multiple peers.
+    #[arg(long, short = 'P')]
+    peer: Vec<SocketAddr>,
 }
 
 #[derive(Parser)]
@@ -434,6 +464,36 @@ async fn main() -> anyhow::Result<()> {
             ApiServer::new(server_config, Arc::clone(&service))
                 .run()
                 .await?;
+        }
+        Command::Node(node) => {
+            let human = Address::new(ChainId::ZionL1, vec![], &node.human)
+                .map_err(|e| anyhow!("invalid human address: {e}"))?;
+            let issobella = Address::new(ChainId::ZionL1, vec![], &node.issobella)
+                .map_err(|e| anyhow!("invalid issobella address: {e}"))?;
+
+            let node_config = NodeConfig {
+                db_path: node.db_path,
+                rpc_addr: node.rpc,
+                p2p_addr: node.p2p,
+                human_address: human,
+                issobella_address: issobella,
+                no_genesis: node.no_genesis,
+                seed_peers: node.peer,
+            };
+
+            println!(
+                "Starting ZION L1 node; RPC={} P2P={}. Press Ctrl-C to stop.",
+                node_config.rpc_addr, node_config.p2p_addr
+            );
+
+            let node = Arc::new(Node::new(node_config).await?);
+            let (shutdown_tx, shutdown_rx) = watch::channel(false);
+            tokio::spawn(async move {
+                let _ = tokio::signal::ctrl_c().await;
+                let _ = shutdown_tx.send(true);
+            });
+
+            node.run(shutdown_rx).await?;
         }
     }
 

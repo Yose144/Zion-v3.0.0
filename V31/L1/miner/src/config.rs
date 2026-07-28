@@ -1,6 +1,11 @@
 use zion_l1_types::Address;
 
 /// Miner runtime configuration.
+///
+/// Triple Stream model:
+///   - Stream 1: ZION canonical mining (always primary, never disabled by default).
+///   - Stream 2: external GPU AuxPoW (optional fallback revenue).
+///   - Stream 3: external CPU AuxPoW (optional fallback revenue).
 #[derive(Clone, Debug)]
 pub struct MinerConfig {
     /// ZION address that receives mining rewards.
@@ -11,7 +16,10 @@ pub struct MinerConfig {
     pub worker: String,
     /// Password used on AuxPoW pools.
     pub password: String,
-    /// Whether to enable AuxPoW merged mining.
+    /// Whether to enable AuxPoW merged mining (Stream 2/3).
+    ///
+    /// When `false`, the miner runs ZION-only — useful for testing, SMOS public
+    /// builds, or when external pools are unreachable.
     pub auxpow_enabled: bool,
     /// Normalized rig hashrate used for profit estimation.
     pub hashrate_per_unit: f64,
@@ -29,6 +37,8 @@ pub struct MinerConfig {
     pub stream2_batch: u64,
     /// Nonce batch for Stream 3 (CPU).
     pub stream3_batch: u64,
+    /// How long to wait (ms) before retrying a failed AuxPoW operation.
+    pub auxpow_retry_ms: u64,
 }
 
 impl MinerConfig {
@@ -47,6 +57,12 @@ impl MinerConfig {
             stream3_enabled: true,
             stream2_batch: 100_000,
             stream3_batch: 1_000_000,
+            auxpow_retry_ms: 5000,
         }
+    }
+
+    /// Return true if any AuxPoW stream is enabled.
+    pub fn any_auxpow_enabled(&self) -> bool {
+        self.auxpow_enabled && (self.stream2_enabled || self.stream3_enabled)
     }
 }

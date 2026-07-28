@@ -2,9 +2,12 @@
 
 use zion_cosmic_harmony::{CoinProfile, Device, ExternalCoin, ProfitEntry, ProfitRouter};
 
-use super::StratumClient;
-
 /// Manages the active AuxPoW coin selection for a mining rig.
+///
+/// The scheduler does not keep open stratum connections. It only selects the
+/// most profitable coin/profile for the GPU and CPU streams. The `runtime`
+/// creates and owns the `StratumClient` instances based on the URLs returned
+/// here.
 #[derive(Clone, Debug)]
 pub struct AuxPoWScheduler {
     hashrate: f64,
@@ -80,29 +83,19 @@ impl AuxPoWScheduler {
         self.router.entries()
     }
 
-    /// Construct a stratum client for the currently selected coin.
-    pub fn client(&self, worker: &str, password: &str) -> Option<StratumClient> {
-        self.client_for(self.profile.as_ref(), worker, password)
+    /// Return the selected GPU coin and the primary stratum URL, if any.
+    pub fn gpu_url(&self) -> (Option<ExternalCoin>, Option<&str>) {
+        (
+            self.current_gpu,
+            self.profile_gpu.as_ref().and_then(|p| p.stratum_urls.first().map(|s| s.as_str())),
+        )
     }
 
-    /// Construct a stratum client for the currently selected GPU coin.
-    pub fn gpu_client(&self, worker: &str, password: &str) -> Option<StratumClient> {
-        self.client_for(self.profile_gpu.as_ref(), worker, password)
-    }
-
-    /// Construct a stratum client for the currently selected CPU coin.
-    pub fn cpu_client(&self, worker: &str, password: &str) -> Option<StratumClient> {
-        self.client_for(self.profile_cpu.as_ref(), worker, password)
-    }
-
-    fn client_for(
-        &self,
-        profile: Option<&CoinProfile>,
-        worker: &str,
-        password: &str,
-    ) -> Option<StratumClient> {
-        let profile = profile?;
-        let url = profile.stratum_urls.first()?;
-        Some(StratumClient::new(url, worker, password))
+    /// Return the selected CPU coin and the primary stratum URL, if any.
+    pub fn cpu_url(&self) -> (Option<ExternalCoin>, Option<&str>) {
+        (
+            self.current_cpu,
+            self.profile_cpu.as_ref().and_then(|p| p.stratum_urls.first().map(|s| s.as_str())),
+        )
     }
 }

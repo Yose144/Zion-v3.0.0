@@ -1,9 +1,10 @@
 use std::collections::HashMap;
+use std::path::Path;
 
 use chrono::{DateTime, Utc};
 use zion_l1_types::{Address, Amount};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ShareRecord {
     pub worker: String,
     pub address: Address,
@@ -11,7 +12,7 @@ pub struct ShareRecord {
     pub timestamp: DateTime<Utc>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct PplnsState {
     pub window: std::collections::VecDeque<ShareRecord>,
     pub total: u64,
@@ -89,6 +90,21 @@ impl PplnsState {
             .filter(|p| p.amount.0 > 0)
             .collect()
     }
+
+    /// Persist the current PPLNS window to `path`.
+    pub fn save_to<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
+        let bytes = serde_json::to_vec_pretty(self)?;
+        let tmp = path.as_ref().with_extension("tmp");
+        std::fs::write(&tmp, bytes)?;
+        std::fs::rename(&tmp, path)?;
+        Ok(())
+    }
+
+    /// Load a previously persisted PPLNS window, if the file exists and parses.
+    pub fn restore<P: AsRef<Path>>(path: P) -> Option<Self> {
+        let bytes = std::fs::read(path).ok()?;
+        serde_json::from_slice(&bytes).ok()
+    }
 }
 
 #[cfg(test)]
@@ -165,5 +181,23 @@ mod tests {
     fn empty_payouts() {
         let p = PplnsState::new(10);
         assert!(p.payouts_for(Amount(100)).is_empty());
+    }
+
+    #[test]
+    fn save_and_restore_pplns_state() {
+        let mut p = PplnsState::new(3);
+        let a1 = addr(1);
+        p.add_share(ShareRecord {
+            worker: "a".into(),
+            address: a1.clone(),
+            value: 5,
+            timestamp: Utc::now(),
+        });
+
+        let tmp = std::env::temp_dir().join("zion_pool_pplns_test.json");
+        p.save_to(&tmp).unwrap();
+        let restored = PplnsState::restore(&tmp).unwrap();
+        assert_eq!(restored.window_total(), 5);
+        std::fs::remove_file(&tmp).ok();
     }
 }

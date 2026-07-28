@@ -1,0 +1,205 @@
+# V31 Mainnet Alpha — Build Plan (kanonický)
+
+> **Verze:** 3.1.0-alpha.1  
+> **Datum:** 2026-07-28  
+> **Status:** scaffold exists, `cargo check` passes, ready for staged migration  
+> **Princip:** `V3/` zůstává produkční, `V31/` se staví jako čistý Mainnet Alpha strom.  
+
+Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozhodnutí o architektuře, vrstvách a prioritách se zde zaznamenávají a aktualizují.
+
+---
+
+## 1. Rozhodnutí (canonical decisions)
+
+### 1.1 Triple Stream jako primární mining model
+
+- **Stream 1** — ZION canonical (`EkamDeeksha`/`deeksha_lite_v1` kompatibilní). Hlavní příjem v ZION.
+- **Stream 2** — externí GPU coin (KAS/ALPH/RVN/EPIC/ZANO/…). Přes AuxPoW stratum.
+- **Stream 3** — externí CPU coin (VRSC/XMR/RTM/…). Přes AuxPoW stratum.
+
+`zion-miner` bude mít vždy **alespoň Stream 1**. Stream 2 a 3 jsou **volitelné fallback revenue streamy**. Pokud se externí pool nepodaří kontaktovat, miner padne zpět do ZION-only režimu bez pádu procesu.
+
+### 1.2 AuxPoW = fallback, ne samostatný crate
+
+- Standalone `AuXpow/` crate se **nechává jako fallback knihovna** v rootu, dokud není plně portován do `V31/L1/miner/src/auxpow/`.
+- V `V31/` je `auxpow` podmodulem `zion-miner`, nikoli samostatným cratem.
+- Pokud se ukáže, že externí AuxPoW pooly nejsou pro Mainnet Alpha kritické, lze Stream 2/3 vypnout feature flagem `--no-gpu`/`--no-cpu` nebo v `MinerConfig`.
+
+### 1.3 Jeden zdroj pravdy pro typy
+
+- `zion-l1-types` — `Address`, `Amount`, `Asset`, `ChainId`, `Hash`.
+- `zion-cosmic-harmony` — `ExternalCoin`, `CoinProfile`, `ProfitRouter`, `EkamDeeksha`.
+- Žádné duplikáty `ExternalCoin`/`CoinProfile` v `V31/`.
+
+### 1.4 L2 = jeden `zion-multichain` crate
+
+- Bridge, WARP, atomic-swap, ZionDex, swap-aggregator, wallet a Dharma Credits patří do `V31/L2/multichain`.
+- `ChainAdapter` trait je jediným integration pointem.
+- V3 `L2/bridge`, `L3/warp`, `ZionDex/`, `L2/atomic-swap` se postupně portují sem, nikoli živí vedle sebe.
+
+### 1.5 Layer identita
+
+| Layer | Obsah | Status v V31 |
+|-------|-------|--------------|
+| L1 | core, cosmic-harmony, miner, pool, types, native-ffi | core je scaffold, ostatní existuje |
+| L2 | multichain (bridge, swap/dex, wallet, credits) | scaffold, API kompiluje |
+| L3 | ai-native, ncl, hiran, orchestrator, automation, poc | chybí |
+| L4 | oasis | chybí |
+| L5 | free-world | chybí |
+| L6 | issobella | chybí |
+| sdk, cli | veřejné SDK a `zion` CLI | cli existuje |
+
+---
+
+## 2. Aktuální stav `V31/` (2026-07-28)
+
+### 2.1 Co funguje (aktualizováno 2026-07-28)
+
+- `cargo test` v `V31/` projde (workspace 7 crateů).
+- `zion-l1-types` má čisté primitivy a testy.
+- `zion-cosmic-harmony` má `EkamDeeksha` s KAT vektory a `ExternalCoin`/`ProfitRouter`.
+- `zion-core` má `Storage` (SQLite), `Block`/`BlockHeader`, `Transaction`, `ConsensusEngine`, `Mempool`, `P2P` skeleton, `RPC`, `genesis`, `emission`, `difficulty` (LWMA-60) a `migration` modul.
+- `zion-miner` má Triple Stream runtime (3 tokio tasky).
+- `zion-pool` má základní PPLNS a stratum server skeleton.
+- `zion-multichain` má `ChainAdapter` trait, HTTP API, wallet keyring (BIP39 → EVM/Zion/BTC), bridge lock/burnRelease, DEX router, HTLC, Dharma Credits a payout integration.
+- `zion-cli` má subcommands: status, wallet, bridge, swap, pool, miner, doctor, api, node, migrate.
+
+### 2.2 Co je ještě scaffold / stub
+
+- `zion-core`: P2P je listen-only placeholder, RPC má základní status/submit, IBD/sync a checkpointy chybí.
+- `zion-miner/auxpow`: `StratumClient` je scaffold, `find_share` je CPU brute force, žádné real stratum wire, žádné GPU/CUDA/Metal/OpenCL, žádné native hashers.
+- `zion-multichain/chain/adapters`: EVM/Bitcoin/ZionL1 adaptery mají jen základní RPC mock, žádné reálné EVM contract volání, žádné HTLC, žádný DEX AMM routing.
+- `zion-pool`: PPLNS je statický, stratum odpovídá jen `mining.subscribe`/`authorize`/`submit`, žádné real job broadcasting z node.
+- L3–L6 neexistují.
+
+### 2.3 Gaps proti V3
+
+| Oblast | V3 | V31 | Akce |
+|--------|-----|-----|------|
+| Node runtime | 7700+ řádků `chain.rs`, `bin/node.rs` | 3 malé soubory | Portovat postupně |
+| PoW | `deeksha_lite_v1`, `deeksha_chv3`, `deeksha_lite_fire` | jen `ekam_deeksha` (bit-identical s `deeksha_lite_v1`) | Height-aware fork gating přidat |
+| AuxPoW | `zion-auxpow` crate, 24 coinů | stub 15 coinů | Portovat stratum + hasher subset |
+| Storage | LMDB/SQLite hybrid | nic | Vybrat jeden backend (SQLite nebo LMDB) |
+| P2P | wire protocol v `p2p.rs` | nic | Přidat minimal P2P pro Alpha |
+| RPC | JSON-RPC v `rpc.rs` | nic v core | Přidat JSON-RPC gateway |
+| Multichain | 6 samostatných crateů | 1 scaffold crate | Implementovat adaptery |
+| CLI | `zion` single binary (menu) | clap subcommands | Sjednotit UX |
+
+---
+
+## 3. Fázový plán
+
+### Fáze 0 — Kanonizace mineru (Triple Stream + AuxPoW fallback)
+
+Cíl: `zion-miner` spustitelný a otestovatelný; Triple Stream běží; AuxPoW je odpojitelný.
+
+- [x] 1. Přidat feature flagy `auxpow` (default off pro CPU/GPU fallback) a `native-hashers`.
+- [x] 2. Přepsat `MinerRuntime::run` tak, aby Stream 2/3 selhaly tiše, pokud není AuxPoW nakonfigurováno.
+- [x] 3. Implementovat reálný `StratumClient` pro stratum v1 (subscribe, authorize, notify, submit).
+- [x] 4. Přidat `ExternalCoin`→stratum URL mapování z `CoinProfile`.
+- [x] 5. Přidat integrační test `triple_stream_runs` s mock stratum serverem.
+
+### Fáze 1 — Node core
+
+Cíl: `zion-node` binary nahradí V3 node pro lokální testnet.
+
+1. Přidat `storage` modul (SQLite/LMDB) pro bloky, UTXO/account state, mempool.
+2. Přidat `genesis` modul (hard reset genesis hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` jako konstanta).
+3. Přidat `emission` a `difficulty` (LWMA-60, 5400.067 ZION reward, fee split 89/5/5/1).
+4. Přidat `mempool` a `rpc` (JSON-RPC kompatibilní s V3 node API).
+5. Přidat `p2p` (minimální gossip + block sync).
+6. Přidat `bin/node.rs`.
+
+### Fáze 2 — Multichain adaptery
+
+Cíl: L1 <-> Base bridge E2E, BTC <-> ZION HTLC, wZION/USDC swap quote.
+
+1. [x] EVM adapter: `ethers` volání `ZIONBridge` (`submitLockProof`/`confirmBurnRelease`), `wZION` ERC-20 balance/transfer.
+2. [x] Bitcoin adapter: `bitcoin` crate, P2WPKH payments + mempool.space API (Electrum TCP fallback zůstává jako budoucí enhancement).
+3. [x] HTLC modul v `swap/htlc.rs` — state machine s hashlock/timelock a testy.
+4. [x] DEX router v `swap/dex.rs` s konstantním produktovým AMM invariantem a multi-hop quote.
+5. [x] Připojit `credits` k `zion-pool` payouts — `CreditsLedger` ukládá balance a `MultichainService::execute_payouts` credituje/debetuje.
+
+### Fáze 3 — Pool + Miner integrace
+
+Cíl: pool a miner si rozumí, stratum jobs se generují z node block template.
+
+1. Pool si bere block template z `zion-multichain`/`zion-core` RPC.
+2. Miner dostává jobs z poolu nebo lokálně těží block pro vlastní node.
+3. PPLNS payout se provede přes `MultichainService::execute_payouts`.
+
+### Fáze 4 — L3–L6, SDK, CLI polish
+
+Cíl: feature parity s V3 superstructures a jednotný CLI.
+
+1. Přesunout `ai-native`, `ncl`, `hiran` z `V3/L3` a `HiranV2.x/`.
+2. Přidat `oasis`, `free-world`, `issobella` jako samostatné crate.
+3. Doplnit `sdk` crate.
+4. Sjednotit CLI s V3 `zion` interactive menu.
+
+### Fáze 5 — Cutover
+
+Cíl: `V31/` nahradí `V3/` na Edge staging.
+
+1. E2E smoke testy: node + pool + miner + bridge + dex 24h.
+2. Tag `v3.1.0-alpha.1`, následně `v3.1.0-beta`.
+3. Archivovat `V3/` do tagu `pre-v31-cutover`.
+4. `public/` subtree sync.
+
+---
+
+## 4. Prioritní úkoly (next 48h)
+
+1. **Feature-gate AuxPoW** v `zion-miner` a udělat Triple Stream robustnější.
+2. **Real stratum client** pro Stream 2/3 (subscribe/authorize/submit).
+3. **Pool block template** — pool musí umět dostat reálný block template z externího RPC (nejen z `MultichainService`).
+4. **Dokumentovat** rozhodnutí o `V31/L2/multichain` jako jediném L2 crate.
+5. **Refactor `zion-miner/auxpow`** tak, aby nepoužívalo žádné duplicitní `ExternalCoin`/`CoinProfile` — vše z `zion-cosmic-harmony`.
+
+---
+
+## 5. Rizika a mitigace
+
+| Riziko | Mitigace |
+|--------|----------|
+| Přepsat celý V3 core do V31 trvá moc dlouho | Dělit na fáze; core začít jako light node, ne full replica |
+| AuXpow merge do mineru je složitý | Ponechat `AuXpow/` jako fallback knihovnu, importovat selectivně |
+| Multichain monolit přeroste | Moduly `chain`, `bridge`, `swap`, `wallet`, `credits` zůstávají separátní v rámci crate |
+| Testy V31 neodchytí drift oproti V3 | Přenést known-answer testy z V3 do V31 |
+| Public subtree desync | Po každé V31 změně v MIT-safe částech spustit `git subtree push --dry-run` |
+
+---
+
+## 6. Definice "hotovo" pro 3.1.0-alpha.1
+
+- `cargo test` v `V31/` passuje.
+- `zion-miner --no-gpu --no-cpu` těží ZION block.
+- `zion-cli miner start` běží Triple Stream proti mock poolu.
+- `zion-multichain` API odpovídá `/v1/multichain/*` a `/v1/wallet/*`.
+- Dokumentace v `V31/ALPHA_BUILD_PLAN.md` a `V31/README.md` je aktuální.
+
+---
+
+*Generated with [Devin](https://devin.ai) — V31 Mainnet Alpha kanonizace.*
+
+## 7. V3 -> V31 chain migration
+
+- `zion-core/src/migration.rs` cte V3 `zion-node-state.db` JSON export a vytvari migration block (height 0) se snapshotem finalnich account/UTXO balances.
+- `zion-migrate` binary: `--v3-state <path> --db-path <sqlite>`.
+- Node se spousti s `--no-genesis` nad uz migrateovanym `--db-path`.
+- Verified proti edge state: 7423 bloku, 22 unikatnich adres, total supply zachovan.
+- Faze 5 cutover: snapshotovat V3 state, spustit `zion-migrate`, pote `zion-node --no-genesis`.
+
+## 8. Pool + miner integrace (F6)
+
+- `zion-core` `getBlockTemplate` nyni vraci `template_id`, `header_hex`, `target_hex` a `block_reward`.
+- `zion-multichain` `ZionL1Adapter::block_template` preposila raw JSON do `zion-pool`.
+- `zion-pool` `StratumServer` uklada cely template, rozesila `mining.notify` a po nalezeni bloku rekonstruuje `Block` a posila `submitBlock` na node RPC.
+
+## 9. Pool operability (F1) a Stratum v1 (F2)
+
+- `zion-pool` `PplnsState` lze ukladat/restorovat z JSON souboru (`save_to` / `restore`).
+- `zion-multichain` pri startu stratum nacita PPLNS state a kazdych 30s uklada.
+- `PoolConfig` ma nove pole `state_path` pro cestu k PPLNS snapshotu.
+- `StratumServer` podporuje anonymous mining: `mining.authorize` `WALLET.worker` -> vyplata na `WALLET` (pokud zacina `zion1`).
+- `cargo test --workspace` a `cargo clippy --workspace` passuji.

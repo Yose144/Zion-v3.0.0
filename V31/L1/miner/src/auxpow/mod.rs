@@ -1,11 +1,18 @@
 //! AuxPoW (merged mining) support merged into `zion-miner`.
+//!
+//! AuxPoW is treated as an optional fallback revenue stream. If the external
+//! stratum pool is unreachable or disabled, the miner falls back to ZION-only
+//! operation.
 
 pub mod client;
 pub mod hasher;
+#[cfg(feature = "native-hashers")]
+pub mod native;
+pub(crate) mod pure;
 pub mod scheduler;
 pub mod types;
 
-pub use client::StratumClient;
+pub use client::{StratumClient, StratumJob};
 pub use scheduler::AuxPoWScheduler;
 pub use types::{Job, Share};
 
@@ -23,6 +30,8 @@ pub fn find_share(coin: ExternalCoin, job: &Job, start: u64, limit: u64) -> Opti
                 coin,
                 nonce,
                 hash,
+                extranonce2: job.extranonce2.clone(),
+                ntime: job.ntime.clone(),
             });
         }
     }
