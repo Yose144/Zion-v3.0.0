@@ -21,7 +21,7 @@ use std::time::Duration;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 
-use crate::warp::adapter::{create_adapter, ChainAdapter};
+use crate::warp::adapter::{create_adapter_from_config, ChainAdapter};
 use crate::warp::config::WarpConfig;
 use crate::warp::db::TransferDb;
 use crate::warp::protocol::DepositProof;
@@ -61,7 +61,7 @@ impl WarpWatcher {
                 debug!("[Watcher] Chain '{}' disabled — skipping", chain.name);
                 continue;
             }
-            match create_adapter(&chain.name) {
+            match create_adapter_from_config(&chain, &config) {
                 Some(adapter) => {
                     info!("[Watcher] Registered adapter for '{}'", chain.name);
                     adapters.push((chain.name.clone(), adapter));
