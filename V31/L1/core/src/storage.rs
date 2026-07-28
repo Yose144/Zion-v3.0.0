@@ -15,6 +15,9 @@ use crate::block::{Block, BlockHeader};
 use crate::difficulty::BlockInfo;
 use crate::v3_compat::V3Block;
 
+/// 32-byte hash used for V3 UTXO outpoints and block hashes.
+type TxHash = [u8; 32];
+
 /// Storage-layer error.
 #[derive(Debug, thiserror::Error)]
 pub enum StorageError {
@@ -112,6 +115,29 @@ impl Storage {
                 tip_height INTEGER NOT NULL,
                 tip_difficulty INTEGER NOT NULL,
                 tip_timestamp INTEGER NOT NULL
+            )",
+            [],
+        )?;
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS v3_utxos (
+                tx_hash BLOB NOT NULL,
+                output_index INTEGER NOT NULL,
+                amount INTEGER NOT NULL,
+                address TEXT NOT NULL,
+                spent INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (tx_hash, output_index)
+            )",
+            [],
+        )?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_v3_utxos_address ON v3_utxos(address)",
+            [],
+        )?;
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS v3_accounts (
+                address TEXT PRIMARY KEY,
+                balance TEXT NOT NULL,
+                nonce INTEGER NOT NULL DEFAULT 0
             )",
             [],
         )?;
@@ -470,6 +496,147 @@ impl Storage {
             |row| row.get(0),
         )?;
         Ok(if height < 0 { 0 } else { height as u64 })
+    }
+
+    // ------------------------------------------------------------------
+    // V3 state (UTXO + account) storage
+    // ------------------------------------------------------------------
+
+    /// Bulk-insert checkpoint UTXOs. Existing rows with the same outpoint are
+    /// replaced, but `spent` is preserved if already present.
+    pub async fn put_v3_utxos(
+        &self,
+        utxos: &[(TxHash, u32, u64, String)],
+    ) -> Result<(), StorageError> {
+        let conn = self.conn.lock().await;
+        let mut stmt = conn.prepare(
+            "INSERT OR REPLACE INTO v3_utxos
+             (tx_hash, output_index, amount, address, spent)
+             VALUES (?1, ?2, ?3, ?4,
+                COALESCE((SELECT spent FROM v3_utxos WHERE tx_hash = ?1 AND output_index = ?2), 0)
+             )",
+        )?;
+        for (tx_hash, output_index, amount, address) in utxos {
+            stmt.execute(params![
+                tx_hash.as_slice(),
+                *output_index as i64,
+                *amount as i64,
+                address,
+            ])?;
+        }
+        Ok(())
+    }
+
+    /// Bulk-insert checkpoint account balances.
+    pub async fn put_v3_accounts(
+        &self,
+        accounts: &[(String, u128, u64)],
+    ) -> Result<(), StorageError> {
+        let conn = self.conn.lock().await;
+        let mut stmt = conn.prepare(
+            "INSERT OR REPLACE INTO v3_accounts
+             (address, balance, nonce)
+             VALUES (?1, ?2, ?3)",
+        )?;
+        for (address, balance, nonce) in accounts {
+            stmt.execute(params![address, balance.to_string(), *nonce as i64])?;
+        }
+        Ok(())
+    }
+
+    /// Look up an unspent V3 UTXO. Returns `(amount, address, spent)`.
+    pub async fn v3_utxo(
+        &self,
+        tx_hash: &TxHash,
+        output_index: u32,
+    ) -> Result<Option<(u64, String, bool)>, StorageError> {
+        let conn = self.conn.lock().await;
+        let row = conn
+            .query_row(
+                "SELECT amount, address, spent FROM v3_utxos
+                 WHERE tx_hash = ?1 AND output_index = ?2",
+                params![tx_hash.as_slice(), output_index as i64],
+                |row| {
+                    Ok((
+                        row.get::<_, i64>(0)? as u64,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, i64>(2)? != 0,
+                    ))
+                },
+            )
+            .optional()?;
+        Ok(row)
+    }
+
+    /// Mark an existing UTXO as spent.
+    pub async fn spend_v3_utxo(
+        &self,
+        tx_hash: &TxHash,
+        output_index: u32,
+    ) -> Result<(), StorageError> {
+        let conn = self.conn.lock().await;
+        conn.execute(
+            "UPDATE v3_utxos SET spent = 1 WHERE tx_hash = ?1 AND output_index = ?2",
+            params![tx_hash.as_slice(), output_index as i64],
+        )?;
+        Ok(())
+    }
+
+    /// Create a new UTXO output.
+    pub async fn create_v3_utxo(
+        &self,
+        tx_hash: &TxHash,
+        output_index: u32,
+        amount: u64,
+        address: &str,
+    ) -> Result<(), StorageError> {
+        let conn = self.conn.lock().await;
+        conn.execute(
+            "INSERT OR REPLACE INTO v3_utxos
+             (tx_hash, output_index, amount, address, spent)
+             VALUES (?1, ?2, ?3, ?4, 0)",
+            params![
+                tx_hash.as_slice(),
+                output_index as i64,
+                amount as i64,
+                address
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Look up a V3 account balance and nonce.
+    pub async fn v3_account(&self, address: &str) -> Result<Option<(u128, u64)>, StorageError> {
+        let conn = self.conn.lock().await;
+        let row = conn
+            .query_row(
+                "SELECT balance, nonce FROM v3_accounts WHERE address = ?1",
+                [address],
+                |row| {
+                    let balance: String = row.get(0)?;
+                    let nonce: i64 = row.get(1)?;
+                    Ok((balance.parse::<u128>().unwrap_or(0), nonce as u64))
+                },
+            )
+            .optional()?;
+        Ok(row)
+    }
+
+    /// Set a V3 account balance and nonce.
+    pub async fn set_v3_account(
+        &self,
+        address: &str,
+        balance: u128,
+        nonce: u64,
+    ) -> Result<(), StorageError> {
+        let conn = self.conn.lock().await;
+        conn.execute(
+            "INSERT OR REPLACE INTO v3_accounts
+             (address, balance, nonce)
+             VALUES (?1, ?2, ?3)",
+            params![address, balance.to_string(), nonce as i64],
+        )?;
+        Ok(())
     }
 }
 
