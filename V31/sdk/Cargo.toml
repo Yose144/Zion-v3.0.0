@@ -1,0 +1,26 @@
+[package]
+name = "zion-sdk"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Zion SDK — async client library for ZION V31 nodes, wallet, and multichain"
+
+[features]
+default = []
+tracing = ["dep:tracing"]
+
+[dependencies]
+zion-core = { workspace = true }
+zion-l1-types = { workspace = true }
+zion-multichain = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true, optional = true }
+reqwest = { workspace = true }
+bip39 = { workspace = true }
+ed25519-dalek = { workspace = true }
+hex = { workspace = true }
