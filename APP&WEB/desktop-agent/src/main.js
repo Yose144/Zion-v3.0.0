@@ -2417,7 +2417,13 @@ function startMiningV3(config, v3Path) {
         const cfgExtBatch = Number(config?.extGpuBatchSize);
         env.ZION_EXT_GPU_BATCH_SIZE = (Number.isFinite(cfgExtBatch) && cfgExtBatch > 0)
           ? String(Math.floor(cfgExtBatch))
-          : '262144';
+          : '2097152'; // 2M default (was 256K — far too small for ProgPoWZ)
+      }
+      // Reduce max gap between ZANO batches for more responsive time-slicing.
+      // Default 5000ms is too long — with 70% duty, ZION gets 30% which means
+      // ~1.5s gaps.  Cap at 2000ms to keep ZION responsive.
+      if (!env.ZION_EXT_GPU_MAX_GAP_MS) {
+        env.ZION_EXT_GPU_MAX_GAP_MS = '2000';
       }
     } else if (backend === 'opencl') {
       env.ZION_OCL_WORK_CAP = String(batchSize);
