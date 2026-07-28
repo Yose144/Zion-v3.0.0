@@ -1,5 +1,5 @@
 # ZION — Sůl této země
-## Deset zastavení na cestě k Oasis
+## Jedenáct zastavení na cestě k Oasis
 
 **Status: koncept / narativní řada — k diskuzi před publikací.**
 **Jazyk:** čeština (první průchod; anglická verze až po schválení tónu).
@@ -34,8 +34,9 @@ Tohle rozdělení není formalita. Je to **jádro upřímnosti** téhle řady: p
 | 8 | [ZION — Nová civilizace](./08-ZION-Nova-Civilizace.md) | Komplexní pozvánka, praktický onboarding | Všechny čtyři |
 | 9 | [Bohyně Rádha a avataři v Oasis](./09-Bohyne-Radha-a-Avatari-Oasis.md) | Bohyně Rádha, avataři, ženská energie a radost z hry | L4 Oasis / Všechny |
 | 10 | [První svět Oasis a Best of Avataři](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) | Zahrada Hiranyagarbha, 8 teritorií, 5 reward poolů, Best of Avataři | L4 Oasis / Všechny |
+| 11 | [Brána prvního hráče — volba cesty](./11-Brana-Prvniho-Hrace-a-Volba-Cesty.md) | Vstup do Oasis, vlastní postava, sedm cest a první výzvy | L4 Oasis / Všechny |
 
-Epizody na sebe volně navazují (společný rámec: večer u ohně, který se postupně stává stavbou lodi), ale každá jde číst i samostatně. Epizoda 10 detailně popisuje geogafii Prvního světa Oasis (Zahrada Hiranyagarbha), 8 Genesis teritorií a vybrané třídy Best of Avatarů.
+Epizody na sebe volně navazují (společný rámec: večer u ohně, který se postupně stává stavbou lodi), ale každá jde číst i samostatně. Epizoda 10 popisuje První svět Oasis a jeho teritoria. Epizoda 11 navazuje prvním vstupem hráče a poctivě odděluje implementovaný backend, archivní herní návrh a budoucí klientské rozhraní.
 
 **Zkrácená marketingová verze pro širokou veřejnost:** [`Onboarding.md`](../Onboarding.md) — jeden dokument, který celou řadu shrnuje do jednoduché pozvánky s prvními kroky.
 
