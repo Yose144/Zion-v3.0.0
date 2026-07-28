@@ -12,6 +12,7 @@ pub mod ton;
 pub mod tron;
 pub mod zion_l1;
 
+use crate::warp::config::{ChainConfig, WarpConfig};
 use crate::warp::error::WarpResult;
 use crate::warp::protocol::{DepositProof, MintInstruction};
 use crate::warp::types::ChainFamily;
@@ -46,9 +47,35 @@ pub trait ChainAdapter: Send + Sync {
 /// Returns real chain adapters with RPC connectivity. Contract addresses
 /// are configured via env vars (see each adapter's `from_env` / `new`).
 pub fn create_adapter(chain_name: &str) -> Option<Box<dyn ChainAdapter>> {
-    match chain_name {
+    let cfg = ChainConfig {
+        name: chain_name.to_string(),
+        family: "evm".to_string(),
+        enabled: true,
+        rpc_url: String::new(),
+        contract_address: None,
+        finality_blocks: 12,
+    };
+    create_adapter_from_config(&cfg, &WarpConfig::default())
+}
+
+/// Factory function from `WarpConfig` — uses per-chain `rpc_url` and
+/// `contract_address` overrides when present, falling back to env vars.
+pub fn create_adapter_from_config(
+    cfg: &ChainConfig,
+    warp: &WarpConfig,
+) -> Option<Box<dyn ChainAdapter>> {
+    let name = cfg.name.as_str();
+    let rpc = if cfg.rpc_url.is_empty() {
+        None
+    } else {
+        Some(cfg.rpc_url.as_str())
+    };
+    let contract = cfg.contract_address.as_deref();
+    match name {
         "ethereum" | "base" | "arbitrum" | "optimism" | "bsc" | "polygon" | "avalanche"
-        | "zksync" | "linea" => Some(Box::new(evm::EvmAdapter::new(chain_name))),
+        | "zksync" | "linea" => Some(Box::new(evm::EvmAdapter::new_with_config(
+            name, rpc, contract,
+        ))),
         "solana" => Some(Box::new(solana::SolanaAdapter::new())),
         "tron" => Some(Box::new(tron::TronAdapter::new())),
         "stellar" => Some(Box::new(stellar::StellarAdapter::new())),
@@ -60,9 +87,7 @@ pub fn create_adapter(chain_name: &str) -> Option<Box<dyn ChainAdapter>> {
         "near" => Some(Box::new(near::NearAdapter::new())),
         "ton" => Some(Box::new(ton::TonAdapter::new())),
         "lightning" => Some(Box::new(lightning::LightningAdapter::new())),
-        "zion-l1" => Some(Box::new(zion_l1::ZionL1Adapter::from_config(
-            &crate::warp::config::WarpConfig::default(),
-        ))),
+        "zion-l1" => Some(Box::new(zion_l1::ZionL1Adapter::from_config(warp))),
         _ => None,
     }
 }

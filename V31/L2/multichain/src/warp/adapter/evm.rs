@@ -25,6 +25,16 @@ const BRIDGE_BURN_TOPIC: &str =
 const DEFAULT_WZION: &str = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6";
 
 fn wzion_contract(chain: &str) -> Option<String> {
+    wzion_contract_with_override(chain, None)
+}
+
+fn wzion_contract_with_override(chain: &str, override_addr: Option<&str>) -> Option<String> {
+    if let Some(addr) = override_addr {
+        if !addr.is_empty() {
+            return Some(addr.to_string());
+        }
+    }
+
     // Allow per-chain override via env var.
     let env_key = format!(
         "WARP_{}_WZION_ADDR",
@@ -167,25 +177,55 @@ fn hex_to_u64(hex: &str) -> u64 {
 pub struct EvmAdapter {
     chain_name: String,
     rpc_url: String,
+    wzion_override: Option<String>,
     client: reqwest::Client,
 }
 
 impl EvmAdapter {
     pub fn new(chain_name: &str) -> Self {
-        let rpc_url = std::env::var(format!(
-            "WARP_{}_RPC",
-            chain_name.to_uppercase().replace('-', "_")
-        ))
-        .unwrap_or_else(|_| default_rpc(chain_name).to_string());
+        Self::new_with_config(chain_name, None, None)
+    }
+
+    pub fn new_with_config(
+        chain_name: &str,
+        rpc_url_override: Option<&str>,
+        wzion_addr_override: Option<&str>,
+    ) -> Self {
+        let rpc_url = if let Some(url) = rpc_url_override {
+            if !url.is_empty() {
+                url.to_string()
+            } else {
+                Self::resolve_rpc_url(chain_name)
+            }
+        } else {
+            Self::resolve_rpc_url(chain_name)
+        };
+
+        let wzion_override = wzion_addr_override
+            .filter(|a| !a.is_empty())
+            .map(|a| a.to_string());
 
         Self {
             chain_name: chain_name.to_string(),
             rpc_url,
+            wzion_override,
             client: reqwest::Client::builder()
                 .timeout(std::time::Duration::from_secs(10))
                 .build()
                 .expect("Failed to build HTTP client"),
         }
+    }
+
+    fn resolve_rpc_url(chain_name: &str) -> String {
+        std::env::var(format!(
+            "WARP_{}_RPC",
+            chain_name.to_uppercase().replace('-', "_")
+        ))
+        .unwrap_or_else(|_| default_rpc(chain_name).to_string())
+    }
+
+    fn wzion_addr(&self) -> Option<String> {
+        wzion_contract_with_override(&self.chain_name, self.wzion_override.as_deref())
     }
 
     /// Fetch current block number from EVM node.
@@ -220,7 +260,7 @@ impl EvmAdapter {
 
     /// Fetch BridgeBurn logs for the last N blocks.
     async fn fetch_burn_logs(&self, from_block: u64, to_block: u64) -> WarpResult<Vec<EthLog>> {
-        let contract = match wzion_contract(&self.chain_name) {
+        let contract = match self.wzion_addr() {
             Some(addr) => addr,
             None => return Ok(vec![]),
         };
@@ -346,7 +386,7 @@ impl ChainAdapter for EvmAdapter {
     /// When key is not set, performs a simulation-only eth_call and returns an error
     /// so the operator can diagnose connectivity before keying the relayer.
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        let contract = wzion_contract(&self.chain_name).ok_or_else(|| WarpError::AdapterError {
+        let contract = self.wzion_addr().ok_or_else(|| WarpError::AdapterError {
             chain: self.chain_name.clone(),
             reason: "No wZION contract address for this chain".into(),
         })?;
