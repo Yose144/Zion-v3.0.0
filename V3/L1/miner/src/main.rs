@@ -2239,6 +2239,7 @@ fn run_local_session(
         let mut gpu_nonces_tested = 0u64;
         let mut cpu_nonces_tested = 0u64;
         let mut gpu_mix_hash: Option<[u8; 32]> = None;
+        let mut gpu_solution_blob: Option<Vec<u8>> = None;
         let scan_result = if can_gpu {
             let g = gpu_ref.unwrap();
             if let Err(e) = g.update_epoch(job.height) {
@@ -2252,6 +2253,7 @@ fn run_local_session(
                 let result = gpu_backend::gpu_scan_job(g, job, &current_algorithm, &raw_header_bytes);
                 gpu_nonces_tested = result.nonces_tested;
                 gpu_mix_hash = result.mix_hash;
+                gpu_solution_blob = result.solution_blob;
                 result.solution
             }
         } else {
@@ -2377,7 +2379,14 @@ fn run_local_session(
         let submit_started_at = Instant::now();
 
         let job_line = encode_message(&pool.job_message(job, &current_algorithm))?;
-        let submit_line = if let Some(mh) = gpu_mix_hash {
+        let submit_line = if let Some(blob) = gpu_solution_blob {
+            encode_message(&pool.solution_message_with_solution_blob(
+                &config.miner_id,
+                &config.worker_name,
+                solution,
+                &blob,
+            ))?
+        } else if let Some(mh) = gpu_mix_hash {
             encode_message(&pool.solution_message_with_mix(
                 &config.miner_id,
                 &config.worker_name,
@@ -3375,6 +3384,7 @@ fn run_remote_session(
         let mut gpu_nonces_tested = 0u64;
         let mut cpu_nonces_tested = 0u64;
         let mut gpu_mix_hash: Option<[u8; 32]> = None;
+        let mut gpu_solution_blob: Option<Vec<u8>> = None;
         let mut gpu_found_device: String = String::new();
 
         // Re-clamp right before hashing in case SetDifficulty changed while we
@@ -3410,6 +3420,7 @@ fn run_remote_session(
                     if let Some(outcome) = prev_outcome {
                         gpu_nonces_tested = outcome.nonces_tested;
                         gpu_mix_hash = outcome.mix_hash;
+                        gpu_solution_blob = outcome.solution_blob;
                         outcome.solution
                     } else {
                         gpu_nonces_tested = 0;
@@ -3454,6 +3465,7 @@ fn run_remote_session(
                             }
                             if let Some((nonce, gpu_hash, mix_hash)) = result.solutions.first() {
                                 gpu_mix_hash = *mix_hash;
+                                gpu_solution_blob = result.solution.clone();
                                 let candidate = zion_core::BlockCandidate {
                                     header: job.header,
                                     nonce: *nonce,
@@ -3665,9 +3677,13 @@ fn run_remote_session(
         }
 
         let submit_started_at = Instant::now();
-        let mix_hash_hex = gpu_mix_hash.map(|mh| {
-            mh.iter().map(|b| format!("{:02x}", b)).collect::<String>()
-        });
+        let mix_hash_hex = if let Some(blob) = &gpu_solution_blob {
+            Some(blob.iter().map(|b| format!("{:02x}", b)).collect::<String>())
+        } else {
+            gpu_mix_hash.map(|mh| {
+                mh.iter().map(|b| format!("{:02x}", b)).collect::<String>()
+            })
+        };
         let submit_message = PoolMessage::Submit {
             job_id: solution.job_id,
             miner_id: config.miner_id.clone(),
@@ -4244,6 +4260,10 @@ struct ExternalShareResult {
     hash: [u8; 32],
     /// Mix hash for Ethash/KawPow/ProgPow shares (needed by upstream pool).
     mix_hash: Option<[u8; 32]>,
+    /// Variable-length solution blob for Equihash/BeamHash algorithms
+    /// (ZelHash 52 bytes, BeamHash III 104 bytes).  Carried in the
+    /// `mix_hash_hex` stratum field so the pool can forward it upstream.
+    solution_blob: Option<Vec<u8>>,
     extranonce1_hex: String,
 }
 
@@ -4258,6 +4278,11 @@ fn submit_external_share(
     verbose: bool,
     record: impl Fn(bool),
 ) {
+    let mix_hash_hex = if let Some(blob) = &share.solution_blob {
+        Some(hex::encode(blob))
+    } else {
+        share.mix_hash.map(|m| hex::encode(m))
+    };
     let ext_submit = PoolMessage::ExternalSubmit {
         miner_id: config.miner_id.clone(),
         worker_name: config.worker_name.clone(),
@@ -4266,7 +4291,7 @@ fn submit_external_share(
         external_job_id: share.external_job_id.clone(),
         nonce: share.nonce,
         hash_hex: hex::encode(share.hash),
-        mix_hash_hex: share.mix_hash.map(|m| hex::encode(m)),
+        mix_hash_hex,
         extranonce1_hex: share.extranonce1_hex.clone(),
     };
     if let Err(e) = write_wire_message(writer, &ext_submit) {
@@ -4971,6 +4996,7 @@ fn external_gpu_thread(
                         nonce: *found_nonce,
                         hash: *hash,
                         mix_hash: *mix_hash,
+                        solution_blob: br.solution.clone(),
                         extranonce1_hex: job.extranonce1_hex.clone(),
                     };
                     println!(
@@ -5448,6 +5474,7 @@ fn ext_cpu_thread(
                                 nonce: found.nonce,
                                 hash: found.hash,
                                 mix_hash: None,
+                                solution_blob: None,
                                 extranonce1_hex: ext.extranonce1_hex.clone(),
                             })
                     }
@@ -5640,6 +5667,7 @@ fn mine_external_stream_cpu(
                 nonce: share.nonce,
                 hash: share.hash,
                 mix_hash: None,
+                solution_blob: None,
                 extranonce1_hex: ext.extranonce1_hex.clone(),
             });
         }
@@ -5655,6 +5683,7 @@ fn mine_external_stream_cpu(
             nonce: share.nonce,
             hash: share.hash,
             mix_hash: None,
+            solution_blob: None,
             extranonce1_hex: ext.extranonce1_hex.clone(),
         }),
         Ok(None) => None,

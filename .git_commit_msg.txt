@@ -1,34 +1,32 @@
-perf(randomx): persistent worker pool + lock-free seed check + physical core pinning
+feat(beam): pass 104-byte BeamHash III solution through miner→pool→upstream
 
-RandomX performance optimizations for XMR mining:
+The GPU solver for BEAM (BeamHash III) produces a 104-byte solution blob,
+but the existing share-forwarding pipeline only carried 32-byte mix hashes
+(Ethash/KawPow). The solution was silently dropped at multiple stages,
+causing upstream beam.2miners.com to reject every share with "invalid
+solution" / "wrong solution length".
 
-V3/L1/miner/src/main.rs:
-- Add RandomXWorkerPool: persistent worker threads that reuse RandomX VMs
-  across batches instead of spawning new threads per batch. Each worker
-  creates its VM once (thread_local in C wrapper) and reuses it — the
-  single biggest RandomX perf optimization (same approach as xmrig).
-- Workers are pinned to physical cores via thread_affinity::maybe_pin_thread.
-- scan() distributes nonce range across workers, blocks until all complete.
-- Stop flag allows early exit when one worker finds a share.
+Changes (end-to-end solution plumbing):
+- V3/L1/miner/src/gpu_backend.rs: GpuBatchResult gains `solution: Option<Vec<u8>>`;
+  GpuScanOutcome gains `solution_blob`; multi-GPU merge preserves the first
+  solution found; all construction sites updated.
+- V3/L1/miner/src/main.rs: ExternalShareResult gains `solution_blob`; both
+  mining loops (synchronous + pipelined) propagate the blob from
+  GpuBatchResult → GpuScanOutcome → ExternalShareResult; submit_external_share
+  and the ZION submit path encode the blob as mix_hash_hex when present.
+- V3/L1/pool/src/lib.rs: new `solution_message_with_solution_blob()` helper
+  for the ZION stratum path (miner→pool).
+- V3/L1/pool/src/bin/server.rs: ShareForwardRequest gains `solution` field;
+  both mix_hash_hex parse sites now fall back to a variable-length solution
+  blob when the hex is not a 32-byte mix hash; handle_external_share forwards
+  the blob to the bridge; both try_forward call sites pass req.solution.
+- AuXpow/src/share_forwarder.rs: try_forward accepts `solution: Option<&[u8]>`
+  and encodes it as mix_hash_hex (which BEAM's submit_share already reads as
+  the `output` field for BeamStratum). All call sites + tests updated.
+- AuXpow/examples/e2e_pool_test.rs: updated for the new try_forward signature.
 
-V3/L1/miner/src/thread_affinity.rs:
-- Implement physical_core_ids() on Windows using GetLogicalProcessorInformation
-  (was previously returning 0..N logical cores, now returns primary LP per
-  physical core — pinning to these gives exclusive physical core access).
-- Parse SYSTEM_LOGICAL_PROCESSOR_INFORMATION entries (24 bytes each on x64).
-- Falls back to logical cores if API call fails.
-
-AuXpow/src/miner_harness.rs:
-- Remove per-batch init_with_seed() calls from scan_randomx/scan_randomx_best.
-  Seed init now happens once in ext_cpu_thread when a new job arrives, avoiding
-  6× mutex acquisitions per batch.
-- Move target_le computation inside the share-found branch (only needed there).
-
-V3/L1/native-ffi/csrc/randomx/randomx_wrapper.cpp:
-- Add lock-free fast path in randomx_zion_init(): if seed hasn't changed,
-  return immediately without acquiring mutex. Eliminates contention when
-  6+ threads call init_with_seed every batch (seed only changes every ~2h
-  on Monero).
+Verified: `cargo build --release -p zion-pool -p zion-miner -p zion-auxpow`
+passes on Windows/MSVC.
 
 Generated with [Devin](https://devin.ai)
 
