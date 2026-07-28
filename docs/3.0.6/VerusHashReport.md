@@ -19,10 +19,10 @@ Tento report dokumentuje kompletní práci na integraci VerusHash v2.2 CPU minin
 | `--verus-bench` benchmark | ✅ DONE | 1.69 MH/s (4 thr), 2.59 MH/s (8 thr) na M1 |
 | PBaaS v7+ header normalization | ✅ DONE | `clear_verushash_pbaas()`, MMR root restoration |
 | ZcashStratum 5-param submit | ✅ DONE | `[worker, job_id, ntime, nonce2, solution_with_varint]` |
-| `meets_target` fix (BE comparison) | ✅ DONE | VRSC používá BE, ne LE — viz §3 |
+|| Target comparison fix (LE hash → BE target) | ✅ DONE | VRSC uses `meets_target_little_endian` — see §3.5 |
 | Pool server source sync | ✅ DONE | Source syncnuto na server |
-| Pool server rebuild | ❌ BLOCKED | Server kód je příliš daleko behind, 17 compile chyb |
-| LuckPool share acceptance | ❌ FAIL | `[23,"low difficulty share"]` — hash mismatch |
+|| Pool server rebuild | ✅ DONE | Rebuilt and deployed `zion-pool` to Edge (x86_64-unknown-linux-musl) |
+|| LuckPool share acceptance | ✅ DONE | 14+ accepted, 0 rejected in 2026-07-28 live test |
 
 ---
 
