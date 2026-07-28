@@ -11,9 +11,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::watch;
 use tracing::{info, warn};
-use zion_l1_types::Hash;
 
-use crate::block::Block;
 use crate::node::{Node, NodeError};
 use crate::transaction::Transaction;
 
@@ -76,12 +74,26 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
     let method = req.get("method").and_then(Value::as_str).unwrap_or("");
     let params = req.get("params").cloned().unwrap_or(Value::Null);
 
+    // V3 methods are dispatched to the V3 RPC handler.
+    let v3_methods = [
+        "getStatus",
+        "getBlockByHeight",
+        "getBlockByHash",
+        "getTemplate",
+        "submitBlock",
+        "submitAccountTransaction",
+        "submitUtxoTransaction",
+        "getBalance",
+        "getUtxos",
+    ];
+    if v3_methods.contains(&method) {
+        let result = node.v3_rpc.dispatch(method, params).await;
+        return wrap_v3_response(id, result);
+    }
+
+    // Legacy methods (getBlockTemplate, submitTransaction) use the old path.
     let result = match method {
-        "getStatus" => status(node).await,
-        "getBlockByHeight" => block_by_height(node, &params).await,
-        "getBlockByHash" => block_by_hash(node, &params).await,
         "getBlockTemplate" => block_template(node, &params).await,
-        "submitBlock" => submit_block(node, &params).await,
         "submitTransaction" => submit_transaction(node, &params).await,
         _ => Ok(error_response(
             id.clone(),
@@ -96,31 +108,20 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
     }
 }
 
-async fn status(node: &Node) -> Result<Value, NodeError> {
-    let status = node.status().await?;
-    Ok(json!({
-        "height": status.height,
-        "tip_hash": status.tip_hash.to_hex(),
-        "difficulty": status.difficulty,
-        "target": status.target,
-        "mempool_size": status.mempool_size,
-    }))
-}
-
-async fn block_by_height(node: &Node, params: &Value) -> Result<Value, NodeError> {
-    let height = params.get("height").and_then(Value::as_u64).unwrap_or(0);
-    match node.block_by_height(height).await? {
-        Some(block) => Ok(serde_json::to_value(block)?),
-        None => Ok(Value::Null),
-    }
-}
-
-async fn block_by_hash(node: &Node, params: &Value) -> Result<Value, NodeError> {
-    let hash_hex = params.get("hash").and_then(Value::as_str).unwrap_or("");
-    let hash = Hash::from_hex(hash_hex).unwrap_or_default();
-    match node.block_by_hash(&hash).await? {
-        Some(block) => Ok(serde_json::to_value(block)?),
-        None => Ok(Value::Null),
+/// Wrap a V3 RPC handler result into a JSON-RPC 2.0 response.
+fn wrap_v3_response(id: Option<Value>, result: Value) -> Value {
+    if let Some(err) = result.get("error") {
+        json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "error": err,
+        })
+    } else {
+        json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "result": result["result"],
+        })
     }
 }
 
@@ -133,12 +134,6 @@ async fn block_template(node: &Node, params: &Value) -> Result<Value, NodeError>
         .map_err(|e| NodeError::Address(e.to_string()))?;
     let template = node.block_template(miner_addr).await?;
     Ok(serde_json::to_value(template)?)
-}
-
-async fn submit_block(node: &Node, params: &Value) -> Result<Value, NodeError> {
-    let block: Block = serde_json::from_value(params.clone())?;
-    node.submit_block(block).await?;
-    Ok(json!("ok"))
 }
 
 async fn submit_transaction(node: &Node, params: &Value) -> Result<Value, NodeError> {
