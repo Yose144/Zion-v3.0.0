@@ -2453,6 +2453,22 @@ function startMiningV3(config, v3Path) {
       }
     }
 
+    // ── GPU pipeline: overlap GPU compute with pool I/O (commit d93cd232) ──
+    // ZION_GPU_PIPELINE=1 enables async launch_batch/collect_batch so the
+    // miner can submit the previous batch's solution while the GPU computes
+    // the current batch.  This hides pool network latency behind GPU time.
+    // The 1-iteration lag is safe because the pool reuses template_id as
+    // job_id (same across iterations when block template hasn't changed),
+    // and ZION block time is ~30s >> batch time ~2.5s.
+    if (!env.ZION_GPU_PIPELINE) {
+      env.ZION_GPU_PIPELINE = '1';
+    }
+    // Ensure double-buffered async readback is enabled (commit 0ecaba4a).
+    // ZION_GPU_EARLY_BREAK=0 → early_break=false → double-buffering active.
+    if (!env.ZION_GPU_EARLY_BREAK) {
+      env.ZION_GPU_EARLY_BREAK = '0';
+    }
+
     log(`[V3-FAST] GPU detected: ${gpuInfo?.name || 'unknown'} (${gpuInfo?.type || '?'}) | Backend: ${backend} | BatchSize: ${batchSize} | MaxBatch: ${env.ZION_GPU_MAX_BATCH}\n`);
     if (gpuInfo?.memory) log(`[V3-FAST] GPU VRAM: ${gpuInfo.memory} | Driver: ${gpuInfo.driver || 'n/a'}\n`);
   }
