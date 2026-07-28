@@ -7,20 +7,23 @@ use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpListener;
 use tokio::sync::broadcast;
+use zion_core::node::BlockTemplate as CoreBlockTemplate;
+use zion_core::{Block, BlockHeader};
 use zion_cosmic_harmony::ExternalCoin;
 
 use crate::config::PoolConfig;
 use crate::pool::{Pool, PoolError};
 use crate::share::ShareSubmission;
 
-/// Header bytes, 32-byte network target and block reward (flowers) for a stratum job.
-type JobEntry = (Vec<u8>, [u8; 32], u64);
+/// Stored job data: pow header bytes, network target, block reward (flowers),
+/// and the full node template needed to rebuild the solved block.
+type JobEntry = (Vec<u8>, [u8; 32], u64, Option<CoreBlockTemplate>);
 
 #[derive(Clone)]
 pub struct StratumServer {
     pub pool: Arc<Mutex<Pool>>,
     pub config: PoolConfig,
-    /// Stored jobs: job_id -> (header bytes, 32-byte network target).
+    /// Stored jobs: job_id -> (header bytes, 32-byte network target, reward, template).
     jobs: Arc<Mutex<HashMap<String, JobEntry>>>,
     notify_tx: broadcast::Sender<String>,
 }
@@ -58,7 +61,17 @@ impl StratumServer {
                 ]);
                 success_response(id, result)
             }
-            "mining.authorize" => success_response(id, Value::Bool(true)),
+            "mining.authorize" => {
+                let username = params
+                    .get(0)
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_string();
+                if !username.is_empty() {
+                    self.pool.lock().unwrap().register_worker(&username);
+                }
+                success_response(id, Value::Bool(true))
+            }
             "mining.submit" => self.handle_submit(id, params),
             _ => error_response(Some(id), -32601, "method not found"),
         }
@@ -78,10 +91,10 @@ impl StratumServer {
             nonce_hex: nonce_hex.clone(),
         };
 
-        let (header, target, reward) = {
+        let (header, target, reward, template) = {
             let jobs = self.jobs.lock().unwrap();
             match jobs.get(&job_id) {
-                Some((h, t, r)) => (h.clone(), *t, *r),
+                Some((h, t, r, tpl)) => (h.clone(), *t, *r, tpl.clone()),
                 None => return error_response(Some(id), -32602, "unknown job"),
             }
         };
@@ -105,7 +118,7 @@ impl StratumServer {
 
         match result {
             Ok(true) => {
-                self.check_and_record_block(&job_id, &header, nonce, &target, reward);
+                self.check_and_record_block(&job_id, &header, nonce, &target, reward, template);
                 success_response(id, Value::Bool(true))
             }
             _ => success_response(id, Value::Bool(false)),
@@ -127,6 +140,7 @@ impl StratumServer {
         nonce: u64,
         target: &[u8; 32],
         block_reward: u64,
+        template: Option<CoreBlockTemplate>,
     ) {
         let mut pool = self.pool.lock().unwrap();
         let is_block = if job_id.starts_with("zion_") {
@@ -139,20 +153,27 @@ impl StratumServer {
         } else {
             false
         };
-        if is_block {
-            pool.on_block_found(0, block_reward);
-            if let Some(rpc_url) = pool.config.l1_rpc_url.clone() {
-                let template_id = parse_template_id(job_id);
-                let header_hex = hex::encode(header);
-                let target_hex = hex::encode(target);
-                tokio::spawn(async move {
-                    if let Err(e) =
-                        submit_block_rpc(&rpc_url, template_id, header_hex, nonce, target_hex).await
-                    {
-                        tracing::warn!("submitBlock failed for template {}: {}", template_id, e);
-                    }
-                });
-            }
+        if !is_block {
+            return;
+        }
+
+        let block_height = template.as_ref().map(|t| t.height).unwrap_or(0);
+        pool.on_block_found(block_height, block_reward);
+
+        if let (Some(rpc_url), Some(tpl)) = (pool.config.l1_rpc_url.clone(), template) {
+            let block = match build_solved_block(tpl, nonce) {
+                Ok(b) => b,
+                Err(e) => {
+                    tracing::warn!("failed to build solved block for {}: {}", job_id, e);
+                    return;
+                }
+            };
+            let job_id = job_id.to_string();
+            tokio::spawn(async move {
+                if let Err(e) = submit_block_rpc(&rpc_url, &block).await {
+                    tracing::warn!("submitBlock failed for {}: {}", job_id, e);
+                }
+            });
         }
     }
 
@@ -163,22 +184,36 @@ impl StratumServer {
         header_hex: &str,
         target_hex: &str,
         block_reward: u64,
+        template_json: &str,
     ) -> String {
         let header_trim = header_hex
             .trim()
             .trim_start_matches("0x")
             .trim_start_matches("0X");
         let target = parse_target_hex(target_hex).unwrap_or([0xFF; 32]);
+        let template: Option<CoreBlockTemplate> = if template_json.is_empty() {
+            None
+        } else {
+            match serde_json::from_str(template_json) {
+                Ok(t) => Some(t),
+                Err(e) => {
+                    tracing::warn!("failed to parse block template for {}: {}", job_id, e);
+                    None
+                }
+            }
+        };
+
         if let Ok(bytes) = hex::decode(header_trim) {
             self.jobs
                 .lock()
                 .unwrap()
-                .insert(job_id.to_string(), (bytes, target, block_reward));
+                .insert(job_id.to_string(), (bytes, target, block_reward, template));
         }
+
         json!({
             "id": null,
             "method": "mining.notify",
-            "params": [job_id, header_hex, target_hex]
+            "params": [job_id, header_hex, target_hex, true]
         })
         .to_string()
     }
@@ -190,8 +225,9 @@ impl StratumServer {
         header_hex: &str,
         target_hex: &str,
         block_reward: u64,
+        template_json: &str,
     ) {
-        let msg = self.job_notification(job_id, header_hex, target_hex, block_reward);
+        let msg = self.job_notification(job_id, header_hex, target_hex, block_reward, template_json);
         let _ = self.notify_tx.send(msg);
     }
 
@@ -233,6 +269,12 @@ impl StratumServer {
     }
 }
 
+fn build_solved_block(tpl: CoreBlockTemplate, nonce: u64) -> Result<Block, serde_json::Error> {
+    let mut header: BlockHeader = serde_json::from_str(&tpl.header_json)?;
+    header.nonce = nonce;
+    Ok(Block::new(header, tpl.transactions))
+}
+
 fn parse_aux_coin(job_id: &str) -> ExternalCoin {
     let parts: Vec<&str> = job_id.split('_').collect();
     if parts.len() >= 2 {
@@ -256,20 +298,7 @@ fn parse_target_hex(target_hex: &str) -> Option<[u8; 32]> {
     Some(out)
 }
 
-fn parse_template_id(job_id: &str) -> u64 {
-    job_id
-        .strip_prefix("zion_")
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(0)
-}
-
-async fn submit_block_rpc(
-    rpc_url: &str,
-    template_id: u64,
-    header_hex: String,
-    nonce: u64,
-    target_hex: String,
-) -> Result<(), reqwest::Error> {
+async fn submit_block_rpc(rpc_url: &str, block: &Block) -> Result<(), reqwest::Error> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(15))
         .build()?;
@@ -277,13 +306,7 @@ async fn submit_block_rpc(
         "jsonrpc": "2.0",
         "id": 1,
         "method": "submitBlock",
-        "params": {
-            "template_id": template_id,
-            "header_hex": header_hex,
-            "nonce": nonce,
-            "target_hex": target_hex,
-            "algorithm": "deeksha_lite_v1"
-        }
+        "params": serde_json::to_value(block).expect("block serializes"),
     });
     let response: serde_json::Value = client
         .post(rpc_url)
@@ -292,11 +315,7 @@ async fn submit_block_rpc(
         .await?
         .json()
         .await?;
-    tracing::info!(
-        "submitBlock response for template {}: {}",
-        template_id,
-        response
-    );
+    tracing::info!("submitBlock response: {}", response);
     Ok(())
 }
 
@@ -344,7 +363,7 @@ mod tests {
         let server = make_server();
         let target = "f".repeat(64);
         let header = "00".repeat(80);
-        server.job_notification("zion_1", &header, &target, 6_000_000);
+        server.job_notification("zion_1", &header, &target, 6_000_000, "");
         let resp = server.handle_request(
             r#"{"id":3,"method":"mining.submit","params":["worker","zion_1","0000000000000000"]}"#,
         );
@@ -356,7 +375,7 @@ mod tests {
         let server = make_server();
         let target = "f".repeat(64);
         let header = "00".repeat(80);
-        server.job_notification("aux_bitcoin_1", &header, &target, 6_000_000);
+        server.job_notification("aux_bitcoin_1", &header, &target, 6_000_000, "");
         let resp = server.handle_request(
             r#"{"id":4,"method":"mining.submit","params":["worker","aux_bitcoin_1","0000000000000000"]}"#,
         );

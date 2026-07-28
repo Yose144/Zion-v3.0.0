@@ -21,6 +21,7 @@ toml = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 
+zion-core = { path = "../L1/core" }
 zion-l1-types = { path = "../L1/types" }
-zion-miner = { path = "../L1/miner" }
+zion-miner = { path = "../L1/miner", features = ["auxpow"] }
 zion-multichain = { path = "../L2/multichain" }

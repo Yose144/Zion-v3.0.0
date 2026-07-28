@@ -1306,10 +1306,11 @@ pub fn ethash_header_hash(pre_pow: &[u8]) -> [u8; 32] {
 /// Check if a hash meets the target when the hash is interpreted as a
 /// little-endian 256-bit integer.
 ///
-/// VerusHash v2.2, Decred BLAKE3 (DCP-0011), and GhostRider (RTM) return the
-/// PoW hash in little-endian byte order (byte 0 = LSB, byte 31 = MSB), as per
-/// Bitcoin's uint256 convention.  The target bytes are big-endian (byte 0 =
-/// MSB), as produced by `difficulty_to_target` or received from a stratum pool.
+/// Decred BLAKE3 (DCP-0011), GhostRider (RTM), and VerusHash v2.2 (VRSC)
+/// return the PoW hash in little-endian byte order (byte 0 = LSB, byte 31 =
+/// MSB), as per Bitcoin's uint256 convention.  The target bytes are
+/// big-endian (byte 0 = MSB), as produced by `difficulty_to_target` or
+/// received from a stratum pool.
 ///
 /// To compare correctly we must reverse ONLY the hash (LE → BE) and compare
 /// against the target as-is (BE).  Reversing both would compare hash_BE
