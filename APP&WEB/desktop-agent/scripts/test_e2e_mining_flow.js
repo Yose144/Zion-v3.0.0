@@ -39,6 +39,8 @@ class E2EMiningTest {
   constructor(options = {}) {
     this.timeoutSec = options.timeout || TEST_TIMEOUT_DEFAULT;
     this.pool = options.pool || PRIMARY_POOL;
+    this.cpuCoin = options.cpuCoin || 'XMR';
+    this.gpuCoin = options.gpuCoin || 'KAS';
     this.worker = `e2e-w11-${Date.now()}`;
     this.results = {
       binaryPrepared: false,
@@ -130,8 +132,8 @@ class E2EMiningTest {
       '--threads', '2',
       '--gpu', 'opencl',
       '--algorithm', 'cosmic_harmony_ekam_deeksha_v2',
-      '--cpu-coin', 'VRSC',
-      '--gpu-coin', 'KAS',
+      '--cpu-coin', this.cpuCoin,
+      '--gpu-coin', this.gpuCoin,
       '--stats-file', statsFile,
       '--no-tui'
     ];
@@ -153,8 +155,9 @@ class E2EMiningTest {
       ZION_STREAM1_ENABLED: '1',
       ZION_STREAM2_ENABLED: '1',
       ZION_STREAM3_ENABLED: '1',
-      ZION_MINER_CPU_COIN: 'VRSC',
-      ZION_MINER_GPU_COIN: 'KAS',
+      ZION_AUTONOMOUS: '0',
+      ZION_MINER_CPU_COIN: this.cpuCoin,
+      ZION_MINER_GPU_COIN: this.gpuCoin,
       ZION_BACKEND: 'opencl',
       ZION_HAS_GPU: '1'
     };
@@ -341,6 +344,12 @@ if (require.main === module) {
         break;
       case '--pool':
         options.pool = args[++i];
+        break;
+      case '--cpu-coin':
+        options.cpuCoin = args[++i];
+        break;
+      case '--gpu-coin':
+        options.gpuCoin = args[++i];
         break;
       default:
         console.error(`Unknown argument: ${args[i]}`);
