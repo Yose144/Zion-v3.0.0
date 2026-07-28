@@ -22,6 +22,7 @@ pub mod transaction;
 pub mod v3_checkpoint;
 pub mod v3_compat;
 pub mod v3_p2p;
+pub mod v3_state;
 
 pub use block::{Block, BlockHeader};
 pub use consensus::{ConsensusEngine, ConsensusError};
