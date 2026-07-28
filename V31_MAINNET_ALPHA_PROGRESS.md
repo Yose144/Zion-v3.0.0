@@ -1,4 +1,4 @@
-# V31 Mainnet Alpha — průběžný report (2026-07-27)
+# V31 Mainnet Alpha — průběžný report (2026-07-28)
 
 > **Poznámka k rozsahu:** Tato práce probíhá v `V31/` jako čistá přípravná větev pro budoucí migraci. Dle `AGENTS.md` je aktivní mainnet-track zatím `V3/` a plná V31 migrace je plánována až po `3.0.9`. Všechny změny v tomto souhrnu jsou v `V31/`; `V3/`, `AuXpow/` a `APP&WEB/` zůstaly nedotčené.
 
@@ -12,6 +12,20 @@
 | `1ac40f9b` | `zion pool`, `zion miner start`, `zion doctor` CLI příkazy. |
 | `b90e7c4e` | Automatické odesílání PPLNS payoutů přes `ZionL1Adapter::send_payment` (každých 30s). |
 | `87620480` | V3 miner fix: výchozí externí GPU backend OpenCL pro ProgPoWZ na NVIDIA (přepínače `ZION_EXT_GPU_BACKEND`). |
+
+## Fáze 4 — L3–L6 superstruktury, SDK, CLI menu
+
+`git pull` načetl velkou várku portů a rozšíření. Detailní report je v [`V31/F4_VERIFICATION_REPORT.md`](./F4_VERIFICATION_REPORT.md).
+
+- **Workspace nyní 13 cratů, 61 198 řádků Rustu, 1 134 testů** — vše prochází (`cargo test --workspace`).
+- **`zion-multichain` WARP** — univerzální bridge/warp modul s adaptry pro Aptos, Bitcoin, Cardano, Cosmos, EVM, Lightning, NEAR, Solana, Stellar, Sui, TON, Tron a Zion L1; registry, executor, watcher, validator, timelock a cross-chain protocol.
+- **`zion-ncl`** — L3 Neural Compute Layer (pricing, reputation, scheduler, store).
+- **`zion-ai-native`** — autonomní agent framework (orchestrator, planner, RAG, LLM backend, tool registry, health poller, consciousness engine, WARP agent).
+- **`zion-oasis`** — L4 herní vrstva (hráči, gildy, questy, combat, leaderboard, golden egg).
+- **`zion-free-world`** — L5 DAO governance bridge.
+- **`zion-issobella`** — L6 humanitarian / social layer.
+- **`zion-sdk`** — veřejné SDK s node, wallet a typy.
+- **`zion-cli`** — interaktivní `menu.rs` pro `zion` binárku (subcommands + menu).
 
 ## Co bylo dnes hotovo
 
