@@ -35,6 +35,17 @@ pub struct NodeConfig {
     pub no_genesis: bool,
     /// Static seed peers for P2P block sync (IBD).
     pub seed_peers: Vec<SocketAddr>,
+    /// V3 miner coinbase payout address (string form, e.g. "zion1...").
+    /// Empty = no coinbase generated in V3 templates.
+    pub v3_miner_address: String,
+    /// V3 humanitarian fund address (string form). Empty = no split.
+    pub v3_humanitarian_address: String,
+    /// V3 issobella fund address (string form). Empty = no split.
+    pub v3_issobella_address: String,
+    /// Skip V3 genesis seeding (use when importing a checkpoint snapshot).
+    pub v3_no_genesis: bool,
+    /// Optional path to a V3 checkpoint snapshot JSON for import at startup.
+    pub v3_checkpoint_path: Option<std::path::PathBuf>,
 }
 
 impl Default for NodeConfig {
@@ -58,6 +69,11 @@ impl Default for NodeConfig {
             .expect("issobella address"),
             no_genesis: false,
             seed_peers: Vec::new(),
+            v3_miner_address: String::new(),
+            v3_humanitarian_address: crate::v3_compat::MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET.to_string(),
+            v3_issobella_address: crate::v3_compat::MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET.to_string(),
+            v3_no_genesis: false,
+            v3_checkpoint_path: None,
         }
     }
 }
@@ -77,6 +93,8 @@ pub enum NodeError {
     Address(String),
     #[error("task error: {0}")]
     Task(String),
+    #[error("V3 P2P error: {0}")]
+    V3P2P(#[from] crate::v3_p2p::V3P2PError),
 }
 
 /// Chain node.
@@ -84,6 +102,10 @@ pub struct Node {
     pub storage: Storage,
     pub mempool: Mempool,
     pub consensus: ConsensusEngine,
+    /// V3 RPC handler (parallel V3 chain path).
+    pub v3_rpc: Arc<crate::v3_rpc::V3RpcHandler>,
+    /// V3 P2P sync client.
+    pub v3_sync: crate::v3_p2p::V3Sync,
     config: NodeConfig,
     next_template_id: AtomicU64,
 }
@@ -103,11 +125,51 @@ impl Node {
             info!(hash = %genesis.header.header_hash().to_hex(), "seeded genesis block");
         }
 
+        // V3 path: seed V3 genesis or import checkpoint snapshot.
+        let storage_arc = Arc::new(storage.clone());
+        if let Some(ref checkpoint_path) = config.v3_checkpoint_path {
+            if storage_arc.v3_tip().await?.is_none() {
+                info!(path = %checkpoint_path.display(), "importing V3 checkpoint snapshot");
+                let checkpoint_json = std::fs::read_to_string(checkpoint_path)
+                    .map_err(|e| NodeError::Task(format!("failed to read checkpoint file: {e}")))?;
+                let checkpoint: crate::v3_checkpoint::Checkpoint = serde_json::from_str(&checkpoint_json)
+                    .map_err(|e| NodeError::Task(format!("failed to parse checkpoint JSON: {e}")))?;
+                crate::v3_checkpoint::import_checkpoint(&storage_arc, &checkpoint)
+                    .await
+                    .map_err(|e| NodeError::Task(format!("checkpoint import failed: {e}")))?;
+                info!("V3 checkpoint import complete");
+            }
+        } else if !config.v3_no_genesis && storage_arc.v3_tip().await?.is_none() {
+            let v3_genesis = crate::v3_compat::build_v3_genesis_block();
+            storage_arc.put_v3_block(&v3_genesis).await?;
+            info!(hash = %crate::v3_compat::hex(&v3_genesis.header_hash()), "seeded V3 genesis block");
+        }
+
+        // V3 RPC handler.
+        let v3_rpc = Arc::new(crate::v3_rpc::V3RpcHandler::new(storage_arc.clone()));
+        v3_rpc
+            .set_addresses(
+                config.v3_miner_address.clone(),
+                config.v3_humanitarian_address.clone(),
+                config.v3_issobella_address.clone(),
+            )
+            .await;
+
+        // V3 P2P sync client.
+        let v3_sync = crate::v3_p2p::V3Sync::new(
+            storage_arc.clone(),
+            "zion-v31-node",
+            "3.1.0-alpha",
+            crate::v3_p2p::NetworkId::Mainnet,
+        );
+
         let consensus = ConsensusEngine::new(Arc::new(EkamDeeksha::new()));
         Ok(Self {
             storage,
             mempool: Mempool::new(),
             consensus,
+            v3_rpc,
+            v3_sync,
             config,
             next_template_id: AtomicU64::new(1),
         })
@@ -121,10 +183,24 @@ impl Node {
         let rpc_shutdown = shutdown.clone();
         let p2p_shutdown = shutdown.clone();
         let sync_shutdown = shutdown.clone();
+        let v3_sync_shutdown = shutdown.clone();
+        let v3_p2p_shutdown = shutdown.clone();
 
         let rpc_addr = self.config.rpc_addr;
         let p2p_addr = self.config.p2p_addr;
         let seed_peers = self.config.seed_peers.clone();
+        let v3_seed_peers = self.config.seed_peers.clone();
+        let v3_sync = self.v3_sync.clone();
+        let v3_p2p_addr = self.config.p2p_addr;
+        let v3_p2p_server = crate::v3_p2p::V3P2PServer::new(
+            Arc::new(self.storage.clone()),
+            "zion-v31-node",
+            "3.1.0-alpha",
+            crate::v3_p2p::NetworkId::Mainnet,
+            v3_p2p_addr.to_string(),
+            rpc_addr.to_string(),
+            "0.0.0.0:0".to_string(),
+        );
 
         let rpc = RpcServer::new(Arc::clone(&self));
         let rpc_handle = tokio::spawn(async move { rpc.run(rpc_addr, rpc_shutdown).await });
@@ -137,27 +213,60 @@ impl Node {
             Ok(()) as Result<(), NodeError>
         });
 
-        tokio::pin!(rpc_handle, p2p_handle, sync_handle);
+        // V3 sync loop: periodically download missing V3 blocks from seed peers.
+        let v3_sync_handle = tokio::spawn(async move {
+            crate::v3_p2p::sync_loop(v3_sync, v3_seed_peers, v3_sync_shutdown).await;
+            Ok(()) as Result<(), NodeError>
+        });
+
+        // V3 P2P listen server: accept inbound V3 peers.
+        let v3_p2p_handle = tokio::spawn(async move {
+            v3_p2p_server.listen(v3_p2p_addr, v3_p2p_shutdown).await
+        });
+
+        tokio::pin!(rpc_handle, p2p_handle, sync_handle, v3_sync_handle, v3_p2p_handle);
         tokio::select! {
             r = &mut rpc_handle => {
                 p2p_handle.abort();
                 sync_handle.abort();
+                v3_sync_handle.abort();
+                v3_p2p_handle.abort();
                 r.map_err(|e| NodeError::Task(e.to_string()))??;
             }
             r = &mut p2p_handle => {
                 rpc_handle.abort();
                 sync_handle.abort();
+                v3_sync_handle.abort();
+                v3_p2p_handle.abort();
                 r.map_err(|e| NodeError::Task(e.to_string()))??;
             }
             r = &mut sync_handle => {
                 rpc_handle.abort();
                 p2p_handle.abort();
+                v3_sync_handle.abort();
+                v3_p2p_handle.abort();
+                r.map_err(|e| NodeError::Task(e.to_string()))??;
+            }
+            r = &mut v3_sync_handle => {
+                rpc_handle.abort();
+                p2p_handle.abort();
+                sync_handle.abort();
+                v3_p2p_handle.abort();
+                r.map_err(|e| NodeError::Task(e.to_string()))??;
+            }
+            r = &mut v3_p2p_handle => {
+                rpc_handle.abort();
+                p2p_handle.abort();
+                sync_handle.abort();
+                v3_sync_handle.abort();
                 r.map_err(|e| NodeError::Task(e.to_string()))??;
             }
             _ = shutdown.changed() => {
                 rpc_handle.abort();
                 p2p_handle.abort();
                 sync_handle.abort();
+                v3_sync_handle.abort();
+                v3_p2p_handle.abort();
             }
         }
         Ok(())

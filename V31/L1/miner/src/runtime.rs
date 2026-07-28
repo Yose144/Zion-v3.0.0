@@ -170,6 +170,42 @@ impl MinerRuntime {
         submit_block_rpc(rpc_url, block).await
     }
 
+    #[cfg(feature = "auxpow")]
+    /// Mine a ZION share received from a stratum pool (Stream 1 pool mode).
+    ///
+    /// Fetches the next job from the pool, brute-forces a nonce that meets the
+    /// pool target, and submits the share. Returns a dummy block so the caller
+    /// can record stats uniformly.
+    async fn mine_zion_pool_share(
+        &self,
+        client: &mut crate::auxpow::StratumClient,
+    ) -> Result<Block, MinerError> {
+        let job = client
+            .next_job(zion_cosmic_harmony::ExternalCoin::Bitcoin, Duration::from_secs(30))
+            .await
+            .map_err(|e| MinerError::Consensus(format!("stratum job error: {e}")))?;
+
+        let job: crate::auxpow::Job = job.into();
+        let share = crate::auxpow::find_share(job.coin, &job, 0, self.config.zion_nonce_batch)
+            .ok_or(MinerError::NoAuxPoWSolution)?;
+
+        if let Err(e) = client.submit_share(&share).await {
+            warn!(error = %e, "zion pool share submit failed");
+        }
+
+        // Return a dummy block for stats tracking; real block assembly happens
+        // on the pool side.
+        let header = BlockHeader {
+            previous_hash: Hash::default(),
+            merkle_root: Hash::default(),
+            height: 0,
+            timestamp: Utc::now().timestamp() as u64,
+            nonce: share.nonce,
+            difficulty: 1,
+        };
+        Ok(Block::new(header, vec![]))
+    }
+
     /// Return a snapshot of all stream statistics.
     pub async fn stats(&self) -> HashMap<StreamId, StreamStats> {
         self.stats.lock().await.clone()
@@ -219,14 +255,38 @@ impl MinerRuntime {
             let this = self.clone();
             let mut shutdown = shutdown.clone();
             tokio::spawn(async move {
-                // If node_rpc_url is configured, use node template mode;
-                // otherwise fall back to local solo mining from genesis.
-                let use_node = this.config.node_rpc_url.is_some();
+                // Mode selection: pool_url > node_rpc_url > solo.
+                let use_pool = this.config.pool_url.is_some();
+                let use_node = !use_pool && this.config.node_rpc_url.is_some();
                 let mut parent = genesis_header();
+
+                // Stratum client for pool mode (Stream 1).
+                #[cfg(feature = "auxpow")]
+                let mut pool_client: Option<crate::auxpow::StratumClient> = if use_pool {
+                    let url = this.config.pool_url.clone().unwrap_or_default();
+                    let worker = this.config.worker.clone();
+                    let password = this.config.password.clone();
+                    let client = crate::auxpow::StratumClient::new(&url, &worker, &password);
+                    if let Err(e) = client.connect().await {
+                        warn!(error = %e, "zion pool stratum connect failed, falling back to solo");
+                        None
+                    } else {
+                        info!(url = %url, "zion pool stratum connected");
+                        Some(client)
+                    }
+                } else {
+                    None
+                };
+
                 loop {
                     tokio::select! {
                         _ = shutdown.changed() => break,
                         result = async {
+                            #[cfg(feature = "auxpow")]
+                            if let Some(client) = pool_client.as_mut() {
+                                return this.mine_zion_pool_share(client).await;
+                            }
+                            let _ = use_pool; // silence unused warning when auxpow disabled
                             if use_node {
                                 let block = this.mine_node_template().await?;
                                 this.submit_block_to_node(&block).await?;
@@ -245,7 +305,7 @@ impl MinerRuntime {
                                     info!(
                                         height = block.header.height,
                                         nonce = block.header.nonce,
-                                        mode = if use_node { "node" } else { "solo" },
+                                        mode = if use_pool { "pool" } else if use_node { "node" } else { "solo" },
                                         "mined zion block"
                                     );
                                 }

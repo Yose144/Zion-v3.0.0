@@ -45,6 +45,26 @@ struct Args {
     /// Seed peer(s) for P2P block sync. Repeat for multiple peers.
     #[arg(long, short = 'P')]
     peer: Vec<SocketAddr>,
+
+    /// V3 miner coinbase payout address (empty = no coinbase).
+    #[arg(long, env = "ZION_V3_MINER_ADDRESS", default_value = "")]
+    v3_miner: String,
+
+    /// V3 humanitarian fund address.
+    #[arg(long, env = "ZION_V3_HUMAN_ADDRESS")]
+    v3_human: Option<String>,
+
+    /// V3 issobella fund address.
+    #[arg(long, env = "ZION_V3_ISSOBELLA_ADDRESS")]
+    v3_issobella: Option<String>,
+
+    /// Skip V3 genesis seeding.
+    #[arg(long, default_value_t = false)]
+    v3_no_genesis: bool,
+
+    /// Optional V3 checkpoint snapshot JSON file for startup import.
+    #[arg(long, env = "ZION_V3_CHECKPOINT")]
+    v3_checkpoint: Option<std::path::PathBuf>,
 }
 
 #[tokio::main]
@@ -65,6 +85,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         issobella_address: issobella,
         no_genesis: args.no_genesis,
         seed_peers: args.peer,
+        v3_miner_address: args.v3_miner,
+        v3_humanitarian_address: args
+            .v3_human
+            .unwrap_or_else(|| MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET.to_string()),
+        v3_issobella_address: args
+            .v3_issobella
+            .unwrap_or_else(|| MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET.to_string()),
+        v3_no_genesis: args.v3_no_genesis,
+        v3_checkpoint_path: args.v3_checkpoint,
     };
 
     let node = Arc::new(Node::new(config).await?);

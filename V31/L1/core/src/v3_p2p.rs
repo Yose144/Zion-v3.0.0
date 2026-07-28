@@ -11,7 +11,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
-use tokio::net::TcpStream;
+use tokio::net::{TcpListener, TcpStream};
 use tracing::{info, warn};
 
 use crate::difficulty::{self, lwma_next_difficulty};
@@ -133,6 +133,7 @@ pub enum V3P2PError {
 // ---------------------------------------------------------------------------
 
 /// V3 block-sync client.
+#[derive(Clone)]
 pub struct V3Sync {
     storage: Arc<Storage>,
     node_id: String,
@@ -296,6 +297,314 @@ impl V3Sync {
         writer.write_all(b"\n").await?;
         writer.flush().await?;
         Ok(())
+    }
+}
+
+/// Periodically sync missing V3 blocks from a set of seed peers.
+pub async fn sync_loop(
+    sync: V3Sync,
+    peers: Vec<SocketAddr>,
+    mut shutdown: tokio::sync::watch::Receiver<bool>,
+) {
+    if peers.is_empty() {
+        return;
+    }
+
+    let interval = std::time::Duration::from_secs(30);
+    let mut first = true;
+
+    loop {
+        let sleep_fut = if first {
+            first = false;
+            tokio::time::sleep(std::time::Duration::from_secs(2))
+        } else {
+            tokio::time::sleep(interval)
+        };
+
+        tokio::select! {
+            _ = shutdown.changed() => break,
+            _ = sleep_fut => {
+                for peer in &peers {
+                    match sync.sync_from(*peer).await {
+                        Ok(n) if n > 0 => {
+                            info!(peer = %peer, synced = n, "V3 sync batch complete");
+                        }
+                        Ok(_) => {}
+                        Err(e) => {
+                            warn!(peer = %peer, "V3 sync failed: {}", e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// P2P listen server
+// ---------------------------------------------------------------------------
+
+/// V3 P2P server: listens for inbound peers and responds to V3 wire messages.
+///
+/// Handles:
+/// - `Hello` → replies with `Welcome` + `Status`.
+/// - `GetBlocksSince` → returns stored V3 blocks as `Blocks`.
+/// - `AnnounceBlock` → validates and stores the announced block.
+/// - `GetStatus` → replies with `Status`.
+pub struct V3P2PServer {
+    storage: Arc<Storage>,
+    node_id: String,
+    protocol_version: String,
+    network: NetworkId,
+    listen_addr: String,
+    rpc_addr: String,
+    pool_addr: String,
+}
+
+impl V3P2PServer {
+    pub fn new(
+        storage: Arc<Storage>,
+        node_id: impl Into<String>,
+        protocol_version: impl Into<String>,
+        network: NetworkId,
+        listen_addr: impl Into<String>,
+        rpc_addr: impl Into<String>,
+        pool_addr: impl Into<String>,
+    ) -> Self {
+        Self {
+            storage,
+            node_id: node_id.into(),
+            protocol_version: protocol_version.into(),
+            network,
+            listen_addr: listen_addr.into(),
+            rpc_addr: rpc_addr.into(),
+            pool_addr: pool_addr.into(),
+        }
+    }
+
+    /// Listen for inbound V3 peers until shutdown is signalled.
+    pub async fn listen(
+        &self,
+        addr: SocketAddr,
+        mut shutdown: tokio::sync::watch::Receiver<bool>,
+    ) -> Result<(), V3P2PError> {
+        let listener = TcpListener::bind(addr).await?;
+        info!(%addr, "V3 P2P listening");
+
+        loop {
+            tokio::select! {
+                _ = shutdown.changed() => break,
+                accept = listener.accept() => {
+                    let (socket, peer) = accept?;
+                    let handler = V3PeerHandler {
+                        storage: self.storage.clone(),
+                        node_id: self.node_id.clone(),
+                        protocol_version: self.protocol_version.clone(),
+                        network: self.network,
+                        listen_addr: self.listen_addr.clone(),
+                        rpc_addr: self.rpc_addr.clone(),
+                        pool_addr: self.pool_addr.clone(),
+                    };
+                    tokio::spawn(async move {
+                        if let Err(e) = handler.handle(socket).await {
+                            warn!(%peer, "V3 P2P peer disconnected: {}", e);
+                        }
+                    });
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Per-connection handler for inbound V3 P2P peers.
+struct V3PeerHandler {
+    storage: Arc<Storage>,
+    node_id: String,
+    protocol_version: String,
+    network: NetworkId,
+    listen_addr: String,
+    rpc_addr: String,
+    pool_addr: String,
+}
+
+impl V3PeerHandler {
+    async fn handle(&self, socket: TcpStream) -> Result<(), V3P2PError> {
+        let (reader, mut writer) = socket.into_split();
+        let mut lines = BufReader::new(reader).lines();
+
+        while let Some(line) = lines.next_line().await? {
+            let msg: P2pMessage = match serde_json::from_str(&line) {
+                Ok(m) => m,
+                Err(e) => {
+                    warn!("invalid V3 P2P message: {}", e);
+                    continue;
+                }
+            };
+
+            match msg {
+                P2pMessage::Hello { .. } => {
+                    let welcome = P2pMessage::Welcome {
+                        node_id: self.node_id.clone(),
+                        protocol_version: self.protocol_version.clone(),
+                        profile: "v3".to_string(),
+                        peers: vec![],
+                    };
+                    self.write_msg(&mut writer, &welcome).await?;
+
+                    // Also send our status so the peer knows our chain height.
+                    if let Some(tip) = self.storage.v3_tip().await? {
+                        let status = P2pMessage::Status {
+                            status: NodeStatus {
+                                node_id: self.node_id.clone(),
+                                network: self.network,
+                                protocol_version: self.protocol_version.clone(),
+                                consensus_profile: "v3".to_string(),
+                                chain_height: tip.height,
+                                tip_hash_hex: hex::encode(tip.header_hash()),
+                                p2p_bind: parse_endpoint(&self.listen_addr),
+                                rpc_bind: parse_endpoint(&self.rpc_addr),
+                                pool_bind: parse_endpoint(&self.pool_addr),
+                            },
+                        };
+                        self.write_msg(&mut writer, &status).await?;
+                    }
+                }
+                P2pMessage::GetStatus => {
+                    let tip = self.storage.v3_tip().await?;
+                    let (height, tip_hash) = match tip {
+                        Some(b) => (b.height, hex::encode(b.header_hash())),
+                        None => (0, hex::encode([0u8; 32])),
+                    };
+                    let status = P2pMessage::Status {
+                        status: NodeStatus {
+                            node_id: self.node_id.clone(),
+                            network: self.network,
+                            protocol_version: self.protocol_version.clone(),
+                            consensus_profile: "v3".to_string(),
+                            chain_height: height,
+                            tip_hash_hex: tip_hash,
+                            p2p_bind: parse_endpoint(&self.listen_addr),
+                            rpc_bind: parse_endpoint(&self.rpc_addr),
+                            pool_bind: parse_endpoint(&self.pool_addr),
+                        },
+                    };
+                    self.write_msg(&mut writer, &status).await?;
+                }
+                P2pMessage::GetBlocksSince {
+                    from_height,
+                    limit,
+                } => {
+                    let tip_height = self
+                        .storage
+                        .v3_tip()
+                        .await?
+                        .map(|t| t.height)
+                        .unwrap_or(0);
+                    let end = std::cmp::min(from_height + limit as u64, tip_height + 1);
+                    let mut blocks = Vec::new();
+                    for h in from_height..end {
+                        if let Some(block) = self.storage.get_v3_block_by_height(h).await? {
+                            blocks.push(block_to_accepted(&block));
+                        }
+                    }
+                    let reply = P2pMessage::Blocks { blocks };
+                    self.write_msg(&mut writer, &reply).await?;
+                }
+                P2pMessage::AnnounceBlock { block } => {
+                    match block.into_v3_block() {
+                        Ok(v3_block) => {
+                            info!(height = v3_block.height, "received announced V3 block");
+                            // Basic validation: check height continuity.
+                            if let Some(tip) = self.storage.v3_tip().await? {
+                                if v3_block.height == tip.height + 1
+                                    && v3_block.header.previous_hash == tip.header_hash()
+                                {
+                                    if let Err(e) = self.storage.put_v3_block(&v3_block).await {
+                                        warn!("failed to store announced block: {}", e);
+                                    }
+                                } else if v3_block.height > tip.height + 1 {
+                                    warn!(
+                                        announced = v3_block.height,
+                                        tip = tip.height,
+                                        "announced block too far ahead, skipping"
+                                    );
+                                }
+                            } else if v3_block.height == 0 {
+                                let _ = self.storage.put_v3_block(&v3_block).await;
+                            }
+                        }
+                        Err(e) => {
+                            warn!("invalid announced block: {}", e);
+                        }
+                    }
+                }
+                // Ignore unsolicited replies.
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    async fn write_msg(
+        &self,
+        writer: &mut OwnedWriteHalf,
+        msg: &P2pMessage,
+    ) -> Result<(), V3P2PError> {
+        let body = serde_json::to_string(msg)
+            .map_err(|e| V3P2PError::InvalidMessage(format!("serialization failed: {e}")))?;
+        writer.write_all(body.as_bytes()).await?;
+        writer.write_all(b"\n").await?;
+        writer.flush().await?;
+        Ok(())
+    }
+}
+
+/// Parse a `host:port` string into a `PeerEndpoint`.
+fn parse_endpoint(addr: &str) -> PeerEndpoint {
+    if let Some(idx) = addr.rfind(':') {
+        let host = &addr[..idx];
+        let port = addr[idx + 1..].parse().unwrap_or(0);
+        PeerEndpoint {
+            host: host.to_string(),
+            port,
+        }
+    } else {
+        PeerEndpoint {
+            host: addr.to_string(),
+            port: 0,
+        }
+    }
+}
+
+/// Convert a `V3Block` to `V3AcceptedBlock` for wire serialization.
+fn block_to_accepted(block: &crate::v3_compat::V3Block) -> V3AcceptedBlock {
+    V3AcceptedBlock {
+        template_id: 0,
+        height: block.height,
+        timestamp: block.header.timestamp,
+        difficulty: block.difficulty,
+        nonce: block.nonce,
+        hash_hex: hex::encode(block.header_hash()),
+        header_hex: hex::encode(block.header.to_bytes()),
+        previous_hash_hex: hex::encode(block.header.previous_hash),
+        algorithm: "deeksha_lite_v1".to_string(),
+        transaction_ids: block.transactions.iter().map(|t| t.tx_id.clone()).collect(),
+        transactions: block.transactions.clone(),
+        total_fees_zion: 0,
+        body_hash_hex: hex::encode(block.header.merkle_root),
+        subsidy_zion: 0,
+        miner_reward_zion: 0,
+        miner_address: String::new(),
+        humanitarian_address: String::new(),
+        issobella_address: String::new(),
+        pool_fee_address: String::new(),
+        utxo_transaction_ids: block
+            .utxo_transactions
+            .iter()
+            .map(|t| hex::encode(t.id))
+            .collect(),
+        utxo_transactions: block.utxo_transactions.clone(),
     }
 }
 

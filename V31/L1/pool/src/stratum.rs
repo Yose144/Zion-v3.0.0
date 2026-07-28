@@ -268,6 +268,92 @@ impl StratumServer {
             });
         }
     }
+
+    /// Periodically fetch `getTemplate` from the node RPC and broadcast
+    /// `mining.notify` to all connected miners. Runs until `shutdown` fires.
+    pub async fn template_feed_loop(
+        &self,
+        rpc_url: String,
+        miner_address: String,
+        mut shutdown: tokio::sync::watch::Receiver<bool>,
+    ) {
+        if rpc_url.is_empty() {
+            tracing::warn!("template_feed_loop: no l1_rpc_url configured, skipping");
+            return;
+        }
+
+        let client = match reqwest::Client::builder()
+            .timeout(Duration::from_secs(10))
+            .build()
+        {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("failed to build HTTP client for template feed: {}", e);
+                return;
+            }
+        };
+
+        let interval = Duration::from_secs(15);
+        let mut job_counter: u64 = 0u64;
+        let mut first = true;
+
+        loop {
+            let sleep_fut = if first {
+                first = false;
+                tokio::time::sleep(Duration::from_secs(2))
+            } else {
+                tokio::time::sleep(interval)
+            };
+
+            tokio::select! {
+                _ = shutdown.changed() => break,
+                _ = sleep_fut => {
+                    job_counter += 1;
+                    let job_id = format!("zion_{}", job_counter);
+
+                    let payload = json!({
+                        "jsonrpc": "2.0",
+                        "id": 1,
+                        "method": "getTemplate",
+                        "params": { "miner_address": miner_address },
+                    });
+
+                    match client.post(&rpc_url).json(&payload).send().await {
+                        Ok(resp) => {
+                            match resp.json::<Value>().await {
+                                Ok(v) => {
+                                    if let Some(err) = v.get("error") {
+                                        if !err.is_null() {
+                                            tracing::warn!("getTemplate error: {}", err);
+                                            continue;
+                                        }
+                                    }
+                                    let result = v.get("result").unwrap_or(&Value::Null);
+                                    let header_hex = result.get("header_hex")
+                                        .and_then(Value::as_str)
+                                        .unwrap_or("");
+                                    let target_hex = result.get("target_hex")
+                                        .and_then(Value::as_str)
+                                        .unwrap_or("");
+                                    let reward = result.get("block_reward")
+                                        .and_then(Value::as_u64)
+                                        .unwrap_or(0);
+                                    let template_json = serde_json::to_string(result).unwrap_or_default();
+
+                                    if !header_hex.is_empty() {
+                                        tracing::info!(job = %job_id, "broadcasting mining.notify");
+                                        self.broadcast_job(&job_id, header_hex, target_hex, reward, &template_json);
+                                    }
+                                }
+                                Err(e) => tracing::warn!("getTemplate JSON parse failed: {}", e),
+                            }
+                        }
+                        Err(e) => tracing::warn!("getTemplate request failed: {}", e),
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn build_solved_block(tpl: CoreBlockTemplate, nonce: u64) -> Result<Block, serde_json::Error> {
