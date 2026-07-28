@@ -3382,13 +3382,22 @@ function parseMinerOutput(output) {
     minerStats.last_pool_diff = deekshaJobMatch[3];
   }
 
-  // ─── XMRig block found: "█ BLOCK FOUND █ ★ height 1523 (total: 2)" ───
+  // ─── Block found: "[BLOCK FOUND] height=1523 nonce=... hash=..." or XMRig "BLOCK FOUND height 1523 (total: 2)" ───
   const blockMatch = output.match(/BLOCK FOUND.*?height\s+(\d+).*?\(total:\s*(\d+)\)/i);
   if (blockMatch) {
     const height = parseInt(blockMatch[1]);
     minerStats.last_block_height = height;
     minerStats.blocks_found = parseInt(blockMatch[2]);
     try { sendToRenderer('block-found', { height }); } catch {}
+  } else {
+    // F9.1: V3 miner format — "[BLOCK FOUND] height=1523 nonce=... hash=..."
+    const v3BlockMatch = output.match(/\[?BLOCK FOUND\]?.*height[=:]\s*(\d+)/i);
+    if (v3BlockMatch) {
+      const height = parseInt(v3BlockMatch[1]);
+      minerStats.last_block_height = height;
+      minerStats.blocks_found = (minerStats.blocks_found || 0) + 1;
+      // maybeEmitBlockFound already sent the event, but ensure stats are updated
+    }
   }
 
   // ─── Full status panel fields ───

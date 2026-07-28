@@ -5111,6 +5111,8 @@ fn handle_client(
                     let reject = PoolMessage::Result {
                         accepted: false,
                         status: "rate_limited".to_string(),
+                        block_found: false,
+                        block_height: None,
                     };
                     let _ = write_wire_message(&mut writer, &reject);
                     continue;
@@ -5734,7 +5736,7 @@ fn handle_client(
                 let result_message = pool
                     .lock()
                     .expect("pool lock poisoned")
-                    .result_message(&decision);
+                    .result_message_with_height(&decision, job_height);
                 let result_line = write_wire_message(&mut writer, &result_message)?;
                 log_ch.log_verbose(format!("share_status={:?}", decision.status));
                 log_ch.log_verbose(format!("wire_result={result_line}"));
@@ -5758,6 +5760,8 @@ fn handle_client(
                 let result_message = PoolMessage::Result {
                     accepted: false,
                     status: "NoSolution".to_string(),
+                    block_found: false,
+                    block_height: None,
                 };
                 let result_line = write_wire_message(&mut writer, &result_message)?;
                 log_ch.log_verbose("share_status=NoSolution".to_string());
