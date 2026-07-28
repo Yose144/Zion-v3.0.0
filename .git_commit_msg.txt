@@ -1,14 +1,14 @@
-fix(beam): detect BeamStratum inline error codes in login response
+fix(beam): load beamhash_solver.cl instead of beamhash_kernel.cl
 
-beam.2miners.com returns login errors as inline code/description
-fields (e.g. code:-32003 "Invalid address") rather than a standard
-JSON-RPC error object. The previous code only checked resp["error"],
-so an "Invalid address" response was silently treated as a successful
-login, causing an immediate disconnect loop with no diagnostic.
+The BeamHash III GPU solver calls cleanUp, beamHashIII_seed, and
+beamHashIII_R1..R5 kernels, which are all defined in
+csrc/opencl/beamhash_solver.cl. But ensure_proque was asked to load
+beamhash_kernel.cl (which only contains the SipHash-2-4 hash generation
+kernel), so clCreateKernel("cleanUp") failed with CL_INVALID_KERNEL_NAME
+(-46) on every BEAM batch.
 
-Now beam_login also checks for a negative code field and bails with
-the description, so the multiplexer reports the real cause instead of
-"connection closed by remote - reconnecting in 5s".
+Also add beamhash_solver.cl to the include_str! dispatch table in
+ensure_proque so the embedded kernel source is available at runtime.
 
 Generated with [Devin](https://devin.ai)
 
