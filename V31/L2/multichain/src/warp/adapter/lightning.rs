@@ -77,9 +77,10 @@ impl LightningAdapter {
         memo: &str,
         expiry: Option<u64>,
     ) -> WarpResult<String> {
-        let lnd = self.lnd.as_ref().ok_or_else(|| {
-            ln_setup_error("LND not configured — cannot create invoice")
-        })?;
+        let lnd = self
+            .lnd
+            .as_ref()
+            .ok_or_else(|| ln_setup_error("LND not configured — cannot create invoice"))?;
 
         let resp = lnd.add_invoice(amount_msat, memo, expiry).await?;
         resp.payment_request.ok_or_else(|| WarpError::AdapterError {
@@ -90,9 +91,10 @@ impl LightningAdapter {
 
     /// Pay a BOLT11 invoice for outbound transfers via LND.
     pub async fn pay_invoice(&self, invoice: &str) -> WarpResult<String> {
-        let lnd = self.lnd.as_ref().ok_or_else(|| {
-            ln_setup_error("LND not configured — cannot pay invoice")
-        })?;
+        let lnd = self
+            .lnd
+            .as_ref()
+            .ok_or_else(|| ln_setup_error("LND not configured — cannot pay invoice"))?;
 
         // Decode invoice first to validate it
         let parsed = self.decode_invoice(invoice)?;
@@ -124,9 +126,10 @@ impl LightningAdapter {
 
     /// Check if a payment hash has been settled.
     pub async fn is_payment_settled(&self, payment_hash_hex: &str) -> WarpResult<bool> {
-        let lnd = self.lnd.as_ref().ok_or_else(|| {
-            ln_setup_error("LND not configured — cannot check payment status")
-        })?;
+        let lnd = self
+            .lnd
+            .as_ref()
+            .ok_or_else(|| ln_setup_error("LND not configured — cannot check payment status"))?;
         lnd.is_settled(payment_hash_hex).await
     }
 }
@@ -182,7 +185,10 @@ impl ChainAdapter for LightningAdapter {
         let outbound_msat = match lnd.outbound_capacity_msat().await {
             Ok(cap) => cap,
             Err(e) => {
-                warn!("[WARP][LN] Health WARN: cannot query channel balance — {}", e);
+                warn!(
+                    "[WARP][LN] Health WARN: cannot query channel balance — {}",
+                    e
+                );
                 0
             }
         };
@@ -191,7 +197,10 @@ impl ChainAdapter for LightningAdapter {
         let onchain_sat = match lnd.wallet_balance_sat().await {
             Ok(bal) => bal,
             Err(e) => {
-                warn!("[WARP][LN] Health WARN: cannot query on-chain balance — {}", e);
+                warn!(
+                    "[WARP][LN] Health WARN: cannot query on-chain balance — {}",
+                    e
+                );
                 0
             }
         };

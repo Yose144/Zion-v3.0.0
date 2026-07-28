@@ -15,7 +15,10 @@ use zion_core::migration::migrate_v3_state;
 use zion_core::storage::Storage;
 
 #[derive(Parser, Debug)]
-#[command(name = "zion-migrate", about = "Migrate a V3 chain state snapshot to V31")]
+#[command(
+    name = "zion-migrate",
+    about = "Migrate a V3 chain state snapshot to V31"
+)]
 struct Args {
     /// Path to the V3 `zion-node-state.db` JSON file.
     #[arg(long, short = 's')]

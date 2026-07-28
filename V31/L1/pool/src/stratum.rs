@@ -227,7 +227,8 @@ impl StratumServer {
         block_reward: u64,
         template_json: &str,
     ) {
-        let msg = self.job_notification(job_id, header_hex, target_hex, block_reward, template_json);
+        let msg =
+            self.job_notification(job_id, header_hex, target_hex, block_reward, template_json);
         let _ = self.notify_tx.send(msg);
     }
 

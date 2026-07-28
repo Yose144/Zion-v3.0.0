@@ -81,7 +81,10 @@ impl StepResult {
     }
 
     pub fn is_success(&self) -> bool {
-        matches!(self.status, StepStatus::Success | StepStatus::PartialSuccess)
+        matches!(
+            self.status,
+            StepStatus::Success | StepStatus::PartialSuccess
+        )
     }
 }
 
@@ -449,7 +452,10 @@ mod tests {
             .iter()
             .map(|l| sub_agents_for_layer(*l).len())
             .sum();
-        assert_eq!(total, 32, "Total sub-agents: L1=8 + L2=7 + L3=6 + L4=1 + L5=1 + L6=1 + Sys=8 = 32");
+        assert_eq!(
+            total, 32,
+            "Total sub-agents: L1=8 + L2=7 + L3=6 + L4=1 + L5=1 + L6=1 + Sys=8 = 32"
+        );
     }
 
     // ── LayerAgent ─────────────────────────────────────────────────────────────
@@ -518,8 +524,8 @@ mod tests {
         // On dev machine (no services): Failed. On edge (services up): Success.
         // Either way, the step should produce a tool_outputs entry.
         let agent = LayerAgent::for_layer(Layer::L1);
-        let step = PlanStep::new(1, "test", SubAgent::NodeSync)
-            .with_tools(&["zion_rpc_getblockcount"]);
+        let step =
+            PlanStep::new(1, "test", SubAgent::NodeSync).with_tools(&["zion_rpc_getblockcount"]);
         let result = agent.execute_step(&step).await;
         assert!(matches!(
             result.status,
@@ -541,7 +547,11 @@ mod tests {
     fn test_registry_get_each_layer() {
         let reg = LayerAgentRegistry::new();
         for layer in LayerAgentRegistry::all_layers() {
-            assert!(reg.get(layer).is_some(), "Should have agent for {:?}", layer);
+            assert!(
+                reg.get(layer).is_some(),
+                "Should have agent for {:?}",
+                layer
+            );
         }
         // All agents should have correct layer
         for layer in LayerAgentRegistry::all_layers() {

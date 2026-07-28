@@ -24,20 +24,27 @@ impl CreditsLedger {
     }
 
     pub fn balance(&self, address: &Address) -> MultichainResult<Amount> {
-        let balances = self.balances.read().map_err(|_| {
-            MultichainError::Internal("credits ledger poisoned".to_string())
-        })?;
-        Ok(balances.get(&address.encoded).copied().unwrap_or(Amount::ZERO))
+        let balances = self
+            .balances
+            .read()
+            .map_err(|_| MultichainError::Internal("credits ledger poisoned".to_string()))?;
+        Ok(balances
+            .get(&address.encoded)
+            .copied()
+            .unwrap_or(Amount::ZERO))
     }
 
     pub fn credit(&self, address: &Address, amount: Amount) -> MultichainResult<()> {
         if amount == Amount::ZERO {
             return Ok(());
         }
-        let mut balances = self.balances.write().map_err(|_| {
-            MultichainError::Internal("credits ledger poisoned".to_string())
-        })?;
-        let entry = balances.entry(address.encoded.clone()).or_insert(Amount::ZERO);
+        let mut balances = self
+            .balances
+            .write()
+            .map_err(|_| MultichainError::Internal("credits ledger poisoned".to_string()))?;
+        let entry = balances
+            .entry(address.encoded.clone())
+            .or_insert(Amount::ZERO);
         *entry = entry.saturating_add(amount);
         Ok(())
     }
@@ -46,10 +53,13 @@ impl CreditsLedger {
         if amount == Amount::ZERO {
             return Ok(());
         }
-        let mut balances = self.balances.write().map_err(|_| {
-            MultichainError::Internal("credits ledger poisoned".to_string())
-        })?;
-        let entry = balances.entry(address.encoded.clone()).or_insert(Amount::ZERO);
+        let mut balances = self
+            .balances
+            .write()
+            .map_err(|_| MultichainError::Internal("credits ledger poisoned".to_string()))?;
+        let entry = balances
+            .entry(address.encoded.clone())
+            .or_insert(Amount::ZERO);
         if *entry < amount {
             return Err(MultichainError::Validation(
                 "insufficient Dharma Credits balance".to_string(),

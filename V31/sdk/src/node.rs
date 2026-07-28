@@ -43,7 +43,12 @@ impl NodeClient {
         #[cfg(feature = "tracing")]
         tracing::debug!(method, "rpc request");
 
-        let resp = self.http.post(&self.config.node_rpc_url).json(&payload).send().await?;
+        let resp = self
+            .http
+            .post(&self.config.node_rpc_url)
+            .json(&payload)
+            .send()
+            .await?;
 
         let body: serde_json::Value = resp.json().await?;
 
@@ -67,7 +72,8 @@ impl NodeClient {
 
     /// Fetch a block template for mining.
     pub async fn get_block_template(&self, miner: &str) -> SdkResult<BlockTemplate> {
-        self.call("getBlockTemplate", json!({ "miner": miner })).await
+        self.call("getBlockTemplate", json!({ "miner": miner }))
+            .await
     }
 
     /// Submit a solved block (as serialized JSON).
@@ -78,8 +84,9 @@ impl NodeClient {
 
     /// Get the balance of an address.
     pub async fn get_balance(&self, address: &str) -> SdkResult<u64> {
-        let result: serde_json::Value =
-            self.call("getBalance", json!({ "address": address })).await?;
+        let result: serde_json::Value = self
+            .call("getBalance", json!({ "address": address }))
+            .await?;
         result
             .get("balance")
             .and_then(|v| v.as_u64())

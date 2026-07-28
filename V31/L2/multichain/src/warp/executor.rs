@@ -27,16 +27,30 @@ pub struct OutboundExecutor {
 
 impl OutboundExecutor {
     /// Create a new executor with the given router and validator set
-    pub fn new(
-        router: Arc<Mutex<WarpRouter>>,
-        validators: Arc<Mutex<WarpValidatorSet>>,
-    ) -> Self {
+    pub fn new(router: Arc<Mutex<WarpRouter>>, validators: Arc<Mutex<WarpValidatorSet>>) -> Self {
         // Pre-create adapters for all supported destination chains
         let mut adapters = HashMap::new();
         for chain_name in &[
-            "base", "arbitrum", "optimism", "bsc", "polygon", "avalanche",
-            "zksync", "linea", "ethereum", "solana", "tron", "stellar",
-            "cardano", "cosmos", "bitcoin", "sui", "aptos", "near", "ton", "lightning",
+            "base",
+            "arbitrum",
+            "optimism",
+            "bsc",
+            "polygon",
+            "avalanche",
+            "zksync",
+            "linea",
+            "ethereum",
+            "solana",
+            "tron",
+            "stellar",
+            "cardano",
+            "cosmos",
+            "bitcoin",
+            "sui",
+            "aptos",
+            "near",
+            "ton",
+            "lightning",
         ] {
             if let Some(adapter) = create_adapter(chain_name) {
                 adapters.insert(chain_name.to_string(), adapter);
@@ -81,12 +95,18 @@ impl OutboundExecutor {
             return Ok(());
         }
 
-        info!("[Executor] Found {} transfer(s) ready for execution", to_execute.len());
+        info!(
+            "[Executor] Found {} transfer(s) ready for execution",
+            to_execute.len()
+        );
 
         for transfer_id in to_execute {
             if let Err(e) = self.execute_transfer(transfer_id).await {
-                error!("[Executor] Failed to execute transfer {}: {}", transfer_id, e);
-                
+                error!(
+                    "[Executor] Failed to execute transfer {}: {}",
+                    transfer_id, e
+                );
+
                 // Mark as failed
                 let mut router = self.router.lock().await;
                 let _ = router.advance_transfer(transfer_id, WarpStatus::Failed);
@@ -141,14 +161,18 @@ impl OutboundExecutor {
 
         // Get destination chain adapter
         let dest_chain_name = &transfer.dest_chain.name;
-        let adapter = self.adapters.get(dest_chain_name).ok_or_else(|| WarpError::UnsupportedChain(dest_chain_name.clone()))?;
+        let adapter = self
+            .adapters
+            .get(dest_chain_name)
+            .ok_or_else(|| WarpError::UnsupportedChain(dest_chain_name.clone()))?;
 
         // Convert amount to destination chain atomic units
         let amount_dest_atomic = crate::warp::types::convert_decimals(
             transfer.amount_flowers.saturating_sub(transfer.fee_flowers),
             6, // ZION L1 = 6 decimals (flowers)
             transfer.dest_chain.decimals,
-        ).ok_or(WarpError::DecimalOverflow {
+        )
+        .ok_or(WarpError::DecimalOverflow {
             from_decimals: 6,
             to_decimals: transfer.dest_chain.decimals,
         })? as u128;
@@ -180,7 +204,8 @@ impl OutboundExecutor {
         }
 
         // Wait for confirmations on destination chain
-        self.wait_for_confirmations(transfer_id, adapter.as_ref(), &tx_hash).await?;
+        self.wait_for_confirmations(transfer_id, adapter.as_ref(), &tx_hash)
+            .await?;
 
         // Mark as completed
         {
@@ -188,7 +213,10 @@ impl OutboundExecutor {
             router.advance_transfer(transfer_id, WarpStatus::Completed)?;
         }
 
-        info!("[Executor] Transfer {} completed on {}", transfer_id, dest_chain_name);
+        info!(
+            "[Executor] Transfer {} completed on {}",
+            transfer_id, dest_chain_name
+        );
         Ok(())
     }
 
@@ -207,9 +235,10 @@ impl OutboundExecutor {
                 .unwrap_or(1)
         };
 
-        for _ in 0..60 { // Max 60 attempts (10 min at 10s intervals)
+        for _ in 0..60 {
+            // Max 60 attempts (10 min at 10s intervals)
             tokio::time::sleep(Duration::from_secs(10)).await;
-            
+
             let confirmations = adapter.confirmations(tx_hash).await.unwrap_or(0);
             if confirmations >= required {
                 debug!(

@@ -72,7 +72,11 @@ async fn status_menu(service: &Arc<MultichainService>) -> Result<()> {
     println!("Registered chains: {:?}", service.chains());
     let health = service.health().await;
     for (chain, ok) in &health {
-        let status = if *ok { "ok".green() } else { "unreachable".red() };
+        let status = if *ok {
+            "ok".green()
+        } else {
+            "unreachable".red()
+        };
         println!("  {chain}: {status}");
     }
     if health.is_empty() {
@@ -96,14 +100,8 @@ async fn wallet_menu(service: &Arc<MultichainService>) -> Result<()> {
                 let chain: String = Input::new()
                     .with_prompt("Chain (e.g. zion-l1, base, bitcoin)")
                     .interact()?;
-                let account: u32 = Input::new()
-                    .with_prompt("Account")
-                    .default(0)
-                    .interact()?;
-                let index: u32 = Input::new()
-                    .with_prompt("Index")
-                    .default(0)
-                    .interact()?;
+                let account: u32 = Input::new().with_prompt("Account").default(0).interact()?;
+                let index: u32 = Input::new().with_prompt("Index").default(0).interact()?;
                 match service.wallet_address(parse_chain(&chain)?, account, index) {
                     Ok(addr) => println!("Address: {}", addr.encoded.green()),
                     Err(e) => println!("Error: {e}"),
@@ -113,14 +111,15 @@ async fn wallet_menu(service: &Arc<MultichainService>) -> Result<()> {
                 let chain: String = Input::new()
                     .with_prompt("Chain (e.g. zion-l1, base)")
                     .interact()?;
-                let address: String = Input::new()
-                    .with_prompt("Address")
-                    .interact()?;
+                let address: String = Input::new().with_prompt("Address").interact()?;
                 let chain_id = parse_chain(&chain)?;
-                let addr = Address::new(chain_id, vec![], address)
-                    .map_err(|e| anyhow::anyhow!("{e}"))?;
+                let addr =
+                    Address::new(chain_id, vec![], address).map_err(|e| anyhow::anyhow!("{e}"))?;
                 match service.balance(&addr).await {
-                    Ok(bal) => println!("Balance: {}", format!("{:.6} ZION", bal.0 as f64 / 1_000_000.0).green()),
+                    Ok(bal) => println!(
+                        "Balance: {}",
+                        format!("{:.6} ZION", bal.0 as f64 / 1_000_000.0).green()
+                    ),
                     Err(e) => println!("Error: {e}"),
                 }
             }
@@ -169,7 +168,11 @@ async fn doctor_menu(service: &Arc<MultichainService>) -> Result<()> {
     let health = service.health().await;
     let mut all_ok = true;
     for (chain, ok) in &health {
-        let status = if *ok { "ok".green() } else { "unreachable".red() };
+        let status = if *ok {
+            "ok".green()
+        } else {
+            "unreachable".red()
+        };
         println!("  {chain}: {status}");
         if !ok {
             all_ok = false;

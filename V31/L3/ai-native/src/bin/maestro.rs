@@ -18,7 +18,11 @@ use zion_ai_native::maestro::Maestro;
 use zion_ai_native::tool_registry::{Intent, SubAgent, ToolRegistry};
 
 #[derive(Parser)]
-#[command(name = "maestro", version, about = "Hiran v2.4 Maestro — Zion ecosystem orchestrator CLI")]
+#[command(
+    name = "maestro",
+    version,
+    about = "Hiran v2.4 Maestro — Zion ecosystem orchestrator CLI"
+)]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -139,10 +143,20 @@ fn intent_count() -> usize {
 
 fn intent_list() -> Vec<&'static str> {
     vec![
-        "SystemHealth", "MinerControl", "NodeInfo", "WalletQuery",
-        "BridgeStatus", "DaoGovernance", "SwapOperation", "L3Query",
-        "L456Status", "SystemOps", "DefiStatus", "BackupQuery",
-        "DatabaseInspect", "WatchdogStatus",
+        "SystemHealth",
+        "MinerControl",
+        "NodeInfo",
+        "WalletQuery",
+        "BridgeStatus",
+        "DaoGovernance",
+        "SwapOperation",
+        "L3Query",
+        "L456Status",
+        "SystemOps",
+        "DefiStatus",
+        "BackupQuery",
+        "DatabaseInspect",
+        "WatchdogStatus",
     ]
 }
 
@@ -152,16 +166,38 @@ fn sub_agent_count() -> usize {
 
 fn sub_agent_list() -> Vec<&'static str> {
     vec![
-        "NodeSync", "NodeConsensus", "PoolWorkers", "PoolEconomics",
-        "MinerThermal", "MinerPerformance", "WalletOps", "NodeMetrics",
-        "BridgeValidators", "BridgeWatcher", "DaoProposals", "DaoTreasury",
-        "SwapExecutor", "SwapMarket", "DefiMonitor",
-        "NclScheduler", "NclMarket", "WarpRouter", "WarpValidators",
-        "AiNativeRuntime", "AiNativeMemory",
-        "OasisManager", "FreeWorldOps", "IsobellaOps",
-        "DockerHealth", "PrometheusAlerts", "ResourceOptimizer",
-        "BackupManager", "UpdateEngine", "DashboardOps",
-        "DatabaseInspector", "WatchdogController",
+        "NodeSync",
+        "NodeConsensus",
+        "PoolWorkers",
+        "PoolEconomics",
+        "MinerThermal",
+        "MinerPerformance",
+        "WalletOps",
+        "NodeMetrics",
+        "BridgeValidators",
+        "BridgeWatcher",
+        "DaoProposals",
+        "DaoTreasury",
+        "SwapExecutor",
+        "SwapMarket",
+        "DefiMonitor",
+        "NclScheduler",
+        "NclMarket",
+        "WarpRouter",
+        "WarpValidators",
+        "AiNativeRuntime",
+        "AiNativeMemory",
+        "OasisManager",
+        "FreeWorldOps",
+        "IsobellaOps",
+        "DockerHealth",
+        "PrometheusAlerts",
+        "ResourceOptimizer",
+        "BackupManager",
+        "UpdateEngine",
+        "DashboardOps",
+        "DatabaseInspector",
+        "WatchdogController",
     ]
 }
 

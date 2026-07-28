@@ -158,14 +158,20 @@ mod tests {
     fn fast_blocks_raise_difficulty() {
         let window = make_window(TARGET_BLOCK_TIME / 2, 10_000, LWMA_WINDOW + 1);
         let next = lwma_next_difficulty(&window);
-        assert!(next > 10_000, "fast blocks should increase difficulty: {next}");
+        assert!(
+            next > 10_000,
+            "fast blocks should increase difficulty: {next}"
+        );
     }
 
     #[test]
     fn slow_blocks_lower_difficulty() {
         let window = make_window(TARGET_BLOCK_TIME * 2, 10_000, LWMA_WINDOW + 1);
         let next = lwma_next_difficulty(&window);
-        assert!(next < 10_000, "slow blocks should decrease difficulty: {next}");
+        assert!(
+            next < 10_000,
+            "slow blocks should decrease difficulty: {next}"
+        );
     }
 
     #[test]
@@ -186,7 +192,10 @@ mod tests {
             let back = target_to_difficulty(&target);
             // The approximation is intentionally coarse; within an order of magnitude is fine.
             let ratio = (difficulty as f64 / back as f64).max(back as f64 / difficulty as f64);
-            assert!(ratio < 10.0, "difficulty round-trip too far: {difficulty} vs {back}");
+            assert!(
+                ratio < 10.0,
+                "difficulty round-trip too far: {difficulty} vs {back}"
+            );
         }
     }
 

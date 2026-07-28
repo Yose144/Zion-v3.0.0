@@ -347,12 +347,7 @@ impl MinerRuntime {
             return Ok(());
         };
 
-        let url = self
-            .config
-            .auxpow_pool
-            .clone()
-            .or(url)
-            .unwrap_or_default();
+        let url = self.config.auxpow_pool.clone().or(url).unwrap_or_default();
 
         if url.is_empty() {
             warn!(stream = ?stream, coin = %coin, "no stratum url for auxpow coin");
@@ -367,10 +362,7 @@ impl MinerRuntime {
         };
 
         let mut guard = client_cell.lock().await;
-        let should_recreate = guard
-            .as_ref()
-            .map(|c| c.url != url)
-            .unwrap_or(true);
+        let should_recreate = guard.as_ref().map(|c| c.url != url).unwrap_or(true);
         if should_recreate {
             *guard = Some(StratumClient::new(
                 &url,
@@ -378,9 +370,9 @@ impl MinerRuntime {
                 &self.config.password,
             ));
         }
-        let client = guard.as_mut().ok_or_else(|| {
-            MinerError::Consensus("stratum client missing".to_string())
-        })?;
+        let client = guard
+            .as_mut()
+            .ok_or_else(|| MinerError::Consensus("stratum client missing".to_string()))?;
 
         let next_timeout = Duration::from_secs(10);
         let stratum_job = client
@@ -803,6 +795,9 @@ mod tests {
         handle.await.unwrap().unwrap();
         server.abort();
 
-        assert!(runtime.total_shares().await >= 3, "expected at least 3 shares");
+        assert!(
+            runtime.total_shares().await >= 3,
+            "expected at least 3 shares"
+        );
     }
 }

@@ -22,8 +22,7 @@ impl WalletClient {
 
     /// Generate a new random wallet.
     pub fn generate() -> SdkResult<Self> {
-        let keyring =
-            Keyring::generate().map_err(|e| SdkError::Wallet(e.to_string()))?;
+        let keyring = Keyring::generate().map_err(|e| SdkError::Wallet(e.to_string()))?;
         Ok(Self {
             keyring: Arc::new(keyring),
         })
@@ -89,6 +88,9 @@ mod tests {
         let w = WalletClient::generate().unwrap();
         let mnemonic = w.mnemonic();
         let w2 = WalletClient::from_mnemonic(&mnemonic).unwrap();
-        assert_eq!(w.zion_address(0, 0).unwrap(), w2.zion_address(0, 0).unwrap());
+        assert_eq!(
+            w.zion_address(0, 0).unwrap(),
+            w2.zion_address(0, 0).unwrap()
+        );
     }
 }
