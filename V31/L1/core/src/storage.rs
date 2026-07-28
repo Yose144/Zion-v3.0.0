@@ -380,18 +380,44 @@ impl Storage {
             .optional()?
             .unwrap_or(-1);
         if block.height as i64 > current_tip {
-            conn.execute(
-                "INSERT OR REPLACE INTO v3_chain_state
-                 (singleton, tip_hash, tip_height, tip_difficulty, tip_timestamp)
-                 VALUES (1, ?1, ?2, ?3, ?4)",
-                params![
-                    hash.as_slice(),
-                    block.height as i64,
-                    block.difficulty as i64,
-                    block.header.timestamp as i64,
-                ],
-            )?;
+            self.set_v3_tip_internal(&hash, block, &conn)?;
         }
+        Ok(())
+    }
+
+    fn set_v3_tip_internal(
+        &self,
+        hash: &[u8; 32],
+        block: &V3Block,
+        conn: &rusqlite::Connection,
+    ) -> Result<(), StorageError> {
+        conn.execute(
+            "INSERT OR REPLACE INTO v3_chain_state
+             (singleton, tip_hash, tip_height, tip_difficulty, tip_timestamp)
+             VALUES (1, ?1, ?2, ?3, ?4)",
+            params![
+                hash.as_slice(),
+                block.height as i64,
+                block.difficulty as i64,
+                block.header.timestamp as i64,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Set the V3 chain tip to a specific block.
+    pub async fn set_v3_tip(&self, block: &V3Block) -> Result<(), StorageError> {
+        let hash = block.header_hash();
+        let conn = self.conn.lock().await;
+        self.set_v3_tip_internal(&hash, block, &conn)
+    }
+
+    /// Clear the V3 account and UTXO state. Used before replaying a chain
+    /// during a reorg.
+    pub async fn clear_v3_state(&self) -> Result<(), StorageError> {
+        let conn = self.conn.lock().await;
+        conn.execute("DELETE FROM v3_accounts", [])?;
+        conn.execute("DELETE FROM v3_utxos", [])?;
         Ok(())
     }
 
@@ -603,6 +629,33 @@ impl Storage {
             ],
         )?;
         Ok(())
+    }
+
+    /// Return unspent V3 UTXOs for an address as `(tx_hash, output_index, amount)`.
+    pub async fn v3_utxos_by_address(
+        &self,
+        address: &str,
+    ) -> Result<Vec<(TxHash, u32, u64)>, StorageError> {
+        let conn = self.conn.lock().await;
+        let mut stmt = conn.prepare(
+            "SELECT tx_hash, output_index, amount FROM v3_utxos
+             WHERE address = ?1 AND spent = 0
+             ORDER BY tx_hash, output_index",
+        )?;
+        let rows = stmt.query_map([address], |row| {
+            let hash: Vec<u8> = row.get(0)?;
+            let hash: TxHash = hash.try_into().map_err(|_| rusqlite::Error::InvalidQuery)?;
+            Ok((
+                hash,
+                row.get::<_, i64>(1)? as u32,
+                row.get::<_, i64>(2)? as u64,
+            ))
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
     }
 
     /// Look up a V3 account balance and nonce.
