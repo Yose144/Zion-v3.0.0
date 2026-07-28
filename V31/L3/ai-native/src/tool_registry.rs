@@ -584,22 +584,28 @@ const BRIDGE_API: &str = "http://127.0.0.1:9101";
 const DAO_API: &str = "http://127.0.0.1:8450";
 const SWAP_API: &str = "http://127.0.0.1:8452";
 const WARP_API: &str = "http://127.0.0.1:8453";
+#[allow(dead_code)]
 const DEX_API: &str = "http://127.0.0.1:8454";
 const NCL_API: &str = "http://127.0.0.1:8080";
 const OASIS_API: &str = "http://127.0.0.1:8094";
 const FREE_WORLD_API: &str = "http://127.0.0.1:8095";
 const ISOBELLA_API: &str = "http://127.0.0.1:8096";
 const HIRAN_ORCH: &str = "http://127.0.0.1:8004";
+#[allow(dead_code)]
 const HIRAN_INFER: &str = "http://127.0.0.1:8002";
 const PROMETHEUS_API: &str = "http://127.0.0.1:9090";
 // NEW endpoints for full ecosystem coverage
 const DASHBOARD_API: &str = "http://127.0.0.1:8766";
+#[allow(dead_code)]
 const NODE1_RPC: &str = "http://127.0.0.1:9443/rpc";
 const NODE2_RPC: &str = "http://127.0.0.1:8448/rpc";
 const NODE1_METRICS: &str = "http://127.0.0.1:9100";
+#[allow(dead_code)]
 const NODE2_METRICS: &str = "http://127.0.0.1:9116";
 const POOL_STATS_API: &str = "http://127.0.0.1:8455";
+#[allow(dead_code)]
 const BASE_RPC: &str = "https://mainnet.base.org";
+#[allow(dead_code)]
 const BASESCAN_API: &str = "https://api.basescan.org/api";
 
 /// Returns all v2.4 Maestro tools (37 original + 18 new = 55 total).

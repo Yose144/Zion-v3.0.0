@@ -190,12 +190,6 @@ pub enum ProbeMethod {
     TcpConnect,
 }
 
-impl Default for ProbeMethod {
-    fn default() -> Self {
-        ProbeMethod::HttpGet
-    }
-}
-
 /// All Zion ecosystem services (Edge server 62.171.141.136 topology).
 ///
 /// Sources: StatusV3.md service table, dashboard app.py SERVICE_REGISTRY_EDGE,

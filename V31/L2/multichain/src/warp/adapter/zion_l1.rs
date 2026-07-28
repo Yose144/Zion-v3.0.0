@@ -41,6 +41,7 @@ struct RpcError {
 struct L1Block {
     height: u64,
     #[serde(rename = "blockHash")]
+    #[allow(dead_code)]
     block_hash: String,
     #[serde(rename = "hashHex")]
     hash_hex: String,
