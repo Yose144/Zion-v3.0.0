@@ -191,7 +191,7 @@ async fn main() -> anyhow::Result<()> {
                 if submit_enabled {
                     println!("[4/4] Submitting share (job_id={} nonce={} hash_prefix={})...", job.job_id, nonce, hex::encode(&hash[..8]));
                     let forwarder = zion_auxpow::ShareForwarder::new(client.clone());
-                    let result = forwarder.try_forward(&job.job_id, nonce, &hash, &share_target, mix_hash.as_ref(), &job.algorithm, &job.header_bytes).await?;
+                    let result = forwarder.try_forward(&job.job_id, nonce, &hash, &share_target, mix_hash.as_ref(), None, &job.algorithm, &job.header_bytes).await?;
                     println!("[4/4] Submit result: {:?}", result);
                 } else {
                     println!("[4/4] Submission skipped (AUXPOW_E2E_SUBMIT != 1).");

@@ -1259,7 +1259,7 @@ async fn run_auxpow_bridge(
             let started = Instant::now();
             let result = if let Some(client) = mux.client() {
                 let forwarder = ShareForwarder::new(client);
-                match forwarder.try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target, req.mix_hash.as_ref(), &req.algorithm, &req.header_bytes).await {
+                match forwarder.try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target, req.mix_hash.as_ref(), req.solution.as_deref(), &req.algorithm, &req.header_bytes).await {
                     Ok(r) => {
                         info!(
                             "auxpow_bridge: share_forwarded job_id={} nonce={} result={:?} elapsed_ms={}",
@@ -3467,6 +3467,7 @@ fn handle_external_share(
     worker_name: &str,
     job_id: String,
     mix_hash: Option<[u8; 32]>,
+    solution: Option<Vec<u8>>,
 ) -> ShareDecision {
     let external_job = match assignment {
         WorkAssignment::External(j) => j,
@@ -3484,6 +3485,7 @@ fn handle_external_share(
         hash: *hash,
         target: external_job.target_bytes,
         mix_hash,
+        solution,
         algorithm: external_job.algorithm.clone(),
         header_bytes: external_job.header_bytes.clone(),
     };
@@ -4900,10 +4902,19 @@ fn handle_client(
                             }
                             None => ([0xFFu8; 32], Vec::new()),
                         };
-                        // Parse mix hash if present
+                        // Parse mix hash (32 bytes for Ethash/KawPow) or
+                        // solution blob (variable-length for BeamHash/ZelHash).
                         let mix_hash = mix_hash_hex
                             .as_deref()
                             .and_then(|h| zion_pool::parse_fixed_hex::<32>(h, "mix hash").ok());
+                        let solution = if mix_hash.is_none() {
+                            mix_hash_hex
+                                .as_deref()
+                                .and_then(|h| hex::decode(h).ok())
+                                .filter(|b| !b.is_empty() && b.len() != 32)
+                        } else {
+                            None
+                        };
                         // header_bytes_for_forward was already set above from
                         // the per-coin bridge lookup.  This is needed for DAG
                         // algorithms (ProgPow/Ethash/KawPow) where the GPU
@@ -4916,6 +4927,7 @@ fn handle_client(
                             hash: hash_bytes,
                             target: target_bytes,
                             mix_hash,
+                            solution,
                             algorithm: submit_algorithm.clone(),
                             header_bytes: header_bytes_for_forward,
                         };
@@ -5272,10 +5284,19 @@ fn handle_client(
                     // For external jobs this means the share meets the external pool's
                     // target and should be forwarded upstream.
                     let decision = if assignment.is_external() {
-                        // Parse mix_hash from hex if present (Ethash/KawPow).
+                        // Parse mix_hash (32 bytes for Ethash/KawPow) or
+                        // solution blob (variable-length for BeamHash/ZelHash).
                         let mix_hash = mix_hash_hex
                             .as_deref()
                             .and_then(|h| parse_hash_hex(h).ok());
+                        let solution = if mix_hash.is_none() {
+                            mix_hash_hex
+                                .as_deref()
+                                .and_then(|h| hex::decode(h).ok())
+                                .filter(|b| !b.is_empty() && b.len() != 32)
+                        } else {
+                            None
+                        };
                         handle_external_share(
                             &assignment,
                             &multi_bridge,
@@ -5284,6 +5305,7 @@ fn handle_client(
                             &worker_name,
                             job_id.to_string(),
                             mix_hash,
+                            solution,
                         )
                     } else if network_target.allows(target_hash) {
                         // Block found! Submit to the node.
@@ -6242,6 +6264,10 @@ struct ShareForwardRequest {
     target: [u8; 32],
     /// Mix hash for Ethash/KawPow (eth_submitWork).  None for other algorithms.
     mix_hash: Option<[u8; 32]>,
+    /// Variable-length solution blob for Equihash/BeamHash algorithms
+    /// (ZelHash 52 bytes, BeamHash III 104 bytes).  Carried in the
+    /// `mix_hash_hex` stratum field from the miner.
+    solution: Option<Vec<u8>>,
     /// Algorithm name (e.g. "progpow_epic", "kawpow_rvn", "kheavyhash").
     /// Used by the forwarder to compute the real final hash for DAG algorithms
     /// whose GPU kernel only produces a u64 pre-check value.
@@ -10130,7 +10156,7 @@ mod tests {
             };
             let started = std::time::Instant::now();
             let result = match forwarder
-                .try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target, req.mix_hash.as_ref(), &req.algorithm, &req.header_bytes)
+                .try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target, req.mix_hash.as_ref(), req.solution.as_deref(), &req.algorithm, &req.header_bytes)
                 .await
             {
                 Ok(r) => r,
