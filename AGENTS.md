@@ -1881,7 +1881,7 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 ### Triple stream pokus — ZION + GPU BEAM + CPU RTM (2026-07-20)
 
 - **Konfigurace:** `ZION_POOL_AUXPOW_ENABLED=1`, `ZION_POOL_AUXPOW_COIN=BEAM`, `ZION_POOL_AUXPOW_CPU_COIN=RTM`, všechny ostatní `ZION_POOL_AUXPOW_WALLET_*` vyprázdněny, aby multi_bridge spustil jen BEAM a RTM. MinerOptions `--gpu-coin BEAM --cpu-coin RTM`.
-- **BEAM (GPU):** Bridge se nepřipojí k `beam.2miners.com:5252` — `connection closed by remote`. Příčina: payout wallet je BTC (`3Qyd...`) a BeamStratum na 2miners vyžaduje BEAM adresu. **Potřebuji BEAM wallet.**
+- **BEAM (GPU):** Bridge se nepřipojí k `beam.2miners.com:5252` — `connection closed by remote`. Příčina: payout wallet je BTC (`3Qyd...`) a BeamStratum na 2miners vyžaduje BEAM adresu. **Potřebuji BEAM wallet.** **[RESOLVED 2026-07-28]**: BEAM wallet nastaven na hex adresu (`3d88c373c094...`, BeamV3 formát, 64-char hex). Bridge se připojuje úspěšně (`code:0 "Login successful"`), přijímá joby (height 3968216+, difficulty 150994944). Starý base58 formát v `debug-beam-environment.sh` byl neplatný — 2miners vyžaduje hex adresu.
 - **RTM (CPU):** Bridge se připojí k zpool, dostává joby, ale všechny share jsou rejected (`Invalid share`). Příčina: build minera nemá feature `native-ghostrider`, takže `miner_harness.rs` pro `ghostrider` fallbackne na `hash_blake3` místo pravého GhostRider hashe. **Fix: překompilovat s `--features gpu-opencl,native-ghostrider`.**
 - **Výsledek:** Vracím zpět na stabilní `ZION_POOL_AUXPOW_ENABLED=0` a ZION-only, dokud nebude BEAM wallet a opravený RTM build. TUI je opět viditelné, ~20.6 KH/s, 100% accept.
 
@@ -1894,7 +1894,15 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 - **VRAM:** ~4.5 GB GPU paměti pro BeamHash III solver (2× hash tabulka ~2.3 GB + drobné buffery). Na integrovaných GPU/APU může selhat; potřebuje dedikovanou VRAM.
 - **Build:** `cargo test -p zion-auxpow --release --lib beamhash` = 11/11 passed; `cargo build --release -p zion-miner --features gpu-opencl` úspěšně vyprodukuje `./target/release/zion-miner`.
 - **Debug pool:** `edge-deploy/config/debug-beam-environment.sh` nastavuje `ZION_POOL_AUXPOW_COIN=BEAM` a `ZION_POOL_AUXPOW_WALLET_BEAM` (neposílá se na Edge main pool). Pro lokální test: `source edge-deploy/config/debug-beam-environment.sh && cargo run --release -p zion-pool-server --features gpu-opencl,native-hashers`.
-- **TODO end-to-end:** V3 miner už předává raw pre-PoW header (`use_raw_header` pro `beamhash`/`beamhash_beam` v `V3/L1/miner/src/main.rs`); zbývá ověřit, že 104bytové `GpuFoundShare.solution` projde až do `AuxPowClient::submit_share()` jako `output` pro BeamStratum při skutečném share.
+- **TODO end-to-end:** V3 miner už předává raw pre-PoW header (`use_raw_header` pro `beamhash`/`beamhash_beam` v `V3/L1/miner/src/main.rs`); zbývá ověřit, že 104bytové `GpuFoundShare.solution` projde až do `AuxPowClient::submit_share()` jako `output` pro BeamStratum při skutečném share. **[DONE 2026-07-28]**: Kompletní solution plumbing implementován:
+  - `GpuBatchResult.solution: Option<Vec<u8>>` + `GpuScanOutcome.solution_blob` (gpu_backend.rs)
+  - `ExternalShareResult.solution_blob` (main.rs) — propagován přes oba mining loopy (synchronous + pipelined)
+  - `PoolMessage::solution_message_with_solution_blob()` (pool/lib.rs) — ZION stratum path
+  - `ShareForwardRequest.solution` (pool/server.rs) — pool→bridge forward
+  - `try_forward(solution: Option<&[u8]>)` (share_forwarder.rs) — encoduje jako `mix_hash_hex` → BEAM `submit_share` čte jako `output` pro BeamStratum
+  - Pool server parsuje `mix_hash_hex` jako variable-length solution blob když není 32-byte mix hash
+  - `beam_login` error handling opraven: detekuje inline `code`/`description` error (2miners vrací `code:-32003` místo JSON-RPC `error` objektu)
+  - Edge pool: BEAM bridge připojen, joby přijímány (height 3968216+). `src_beamhash` zatím 0 shares (žádný GPU miner ještě neminuje BEAM).
 
 ### Metal ProgPoWZ (ZANO) kernel verification (2026-07-21)
 
