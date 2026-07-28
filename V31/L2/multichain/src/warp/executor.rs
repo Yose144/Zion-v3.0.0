@@ -118,7 +118,7 @@ impl OutboundExecutor {
 
     /// Execute a single outbound transfer
     async fn execute_transfer(&self, transfer_id: uuid::Uuid) -> WarpResult<()> {
-        // Get transfer details
+        // Get transfer details and sign the WarpMessage
         let (transfer, warp_message, signatures) = {
             let router = self.router.lock().await;
             let transfer = router
@@ -139,11 +139,21 @@ impl OutboundExecutor {
                 deposit_proof_hash: transfer.source_tx_hash.clone().unwrap_or_default(),
             };
 
-            // Verify quorum signatures
+            // Sign the message with locally-held validator keys.
+            // In single-node Alpha mode, all validator keys are loaded from
+            // WARP_VALIDATOR_KEYS env var. In multi-node mode, signatures
+            // would be collected via P2P gossip from other validators.
             let validators = self.validators.lock().await;
-            // In production, signatures would be collected from validator network
-            // For now, simulate with empty signatures (will fail quorum check unless quorum=0)
-            let sigs: Vec<(String, Vec<u8>)> = vec![];
+            let sigs = validators.sign_locally(&warp_message);
+
+            if sigs.is_empty() {
+                return Err(WarpError::QuorumNotReached {
+                    signatures: 0,
+                    required: validators.quorum,
+                });
+            }
+
+            // Verify quorum of the locally-produced signatures
             validators.verify_quorum(&warp_message, &sigs)?;
 
             // Convert to ValidatorSignature for mint instruction

@@ -43,7 +43,8 @@ pub trait ChainAdapter: Send + Sync {
 }
 
 /// Factory function — create an adapter by chain name.
-/// Currently returns stub adapters; real implementations will use chain-specific SDKs.
+/// Returns real chain adapters with RPC connectivity. Contract addresses
+/// are configured via env vars (see each adapter's `from_env` / `new`).
 pub fn create_adapter(chain_name: &str) -> Option<Box<dyn ChainAdapter>> {
     match chain_name {
         "ethereum" | "base" | "arbitrum" | "optimism" | "bsc" | "polygon" | "avalanche"
