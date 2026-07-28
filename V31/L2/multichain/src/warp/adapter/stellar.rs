@@ -1,4 +1,5 @@
 use crate::warp::adapter::ChainAdapter;
+use crate::warp::config::ChainConfig;
 use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::protocol::{DepositProof, MintInstruction};
 use crate::warp::stellar_signer::StellarSigner;
@@ -19,7 +20,14 @@ use tracing::{debug, info, warn};
 // The issuer account is a 5/5 multisig controlled by WARP validators.
 // After running setup_zion_asset.py, replace the placeholder issuer
 // addresses below with the real bridge account public key (G...).
-fn zion_contract(network: &str) -> Option<String> {
+fn zion_contract_with_override(network: &str, issuer_override: Option<&str>) -> Option<String> {
+    // Config override takes priority.
+    if let Some(issuer) = issuer_override {
+        if !issuer.is_empty() {
+            return Some(issuer.to_string());
+        }
+    }
+
     // Allow override via env var.
     if let Ok(issuer) = std::env::var("WARP_STELLAR_ZION_ISSUER") {
         if !issuer.is_empty() {
@@ -44,6 +52,11 @@ fn zion_contract(network: &str) -> Option<String> {
         }
         _ => None,
     }
+}
+
+#[allow(dead_code)]
+fn zion_contract(network: &str) -> Option<String> {
+    zion_contract_with_override(network, None)
 }
 
 fn default_horizon(network: &str) -> &'static str {
@@ -127,6 +140,7 @@ pub struct StellarAdapter {
     horizon_url: String,
     soroban_url: String,
     client: reqwest::Client,
+    issuer_override: Option<String>,
 }
 
 impl Default for StellarAdapter {
@@ -150,7 +164,21 @@ impl StellarAdapter {
                 .timeout(std::time::Duration::from_secs(15))
                 .build()
                 .unwrap(),
+            issuer_override: None,
         }
+    }
+
+    pub fn from_config(cfg: &ChainConfig) -> Self {
+        let mut adapter = Self::new();
+        if !cfg.rpc_url.is_empty() {
+            adapter.horizon_url = cfg.rpc_url.clone();
+        }
+        if let Some(issuer) = &cfg.contract_address {
+            if !issuer.is_empty() {
+                adapter.issuer_override = Some(issuer.clone());
+            }
+        }
+        adapter
     }
 
     async fn latest_ledger(&self) -> WarpResult<u64> {
@@ -286,7 +314,7 @@ impl ChainAdapter for StellarAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let contract = match zion_contract(&self.network) {
+        let contract = match zion_contract_with_override(&self.network, self.issuer_override.as_deref()) {
             Some(c) => c,
             None => {
                 debug!("[WARP][stellar] No ZION contract configured");

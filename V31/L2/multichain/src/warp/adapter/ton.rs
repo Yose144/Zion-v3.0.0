@@ -1,4 +1,5 @@
 use crate::warp::adapter::ChainAdapter;
+use crate::warp::config::ChainConfig;
 use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::protocol::{DepositProof, MintInstruction};
 use crate::warp::ton_cell;
@@ -197,6 +198,30 @@ impl TonAdapter {
         let api_url = std::env::var("WARP_TON_API").unwrap_or_else(|_| DEFAULT_API_URL.to_string());
         let api_key = std::env::var("WARP_TON_API_KEY").ok();
         let bridge_account = std::env::var("WARP_TON_BRIDGE_ACCOUNT").ok();
+        Self {
+            api_url,
+            client: reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(15))
+                .build()
+                .unwrap_or_else(|_| reqwest::Client::new()),
+            api_key,
+            bridge_account,
+        }
+    }
+
+    /// Build from a `ChainConfig`.
+    pub fn from_config(cfg: &ChainConfig) -> Self {
+        let api_url = if cfg.rpc_url.is_empty() {
+            std::env::var("WARP_TON_API").unwrap_or_else(|_| DEFAULT_API_URL.to_string())
+        } else {
+            cfg.rpc_url.clone()
+        };
+        let api_key = std::env::var("WARP_TON_API_KEY").ok();
+        let bridge_account = cfg
+            .contract_address
+            .as_ref()
+            .and_then(|a| if a.is_empty() { None } else { Some(a.clone()) })
+            .or_else(|| std::env::var("WARP_TON_BRIDGE_ACCOUNT").ok());
         Self {
             api_url,
             client: reqwest::Client::builder()

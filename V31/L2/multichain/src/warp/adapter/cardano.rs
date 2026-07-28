@@ -1,5 +1,6 @@
 use crate::warp::adapter::ChainAdapter;
 use crate::warp::cardano_signer::CardanoSigner;
+use crate::warp::config::ChainConfig;
 use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::protocol::{DepositProof, MintInstruction};
 use crate::warp::types::ChainFamily;
@@ -10,7 +11,7 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 // ZION Cardano Native Token (policy_id + asset_name hex)
 // ─────────────────────────────────────────────────────────────────────────────
-fn zion_asset(network: &str) -> Option<String> {
+fn zion_asset_with_override(network: &str, asset_override: Option<&str>) -> Option<String> {
     // ── ZION Cardano Native Token (policy_id + asset_name hex) ───────────
     // Contract source: V3/L2/bridge/contracts/non-evm/cardano/mint_zion_token.hs
     // Deployment steps: V3/L2/bridge/contracts/non-evm/cardano/README.md
@@ -21,6 +22,13 @@ fn zion_asset(network: &str) -> Option<String> {
     // After compiling and deploying the Plutus minting policy, compute the
     // policy_id as the hash of the policy script, then set the full asset hex
     // via the `WARP_CARDANO_ZION_ASSET` env var: <policy_id_hex>5a494f4e
+
+    // Config override takes priority.
+    if let Some(asset) = asset_override {
+        if !asset.is_empty() {
+            return Some(asset.to_string());
+        }
+    }
 
     // Allow override via env var (works for any network).
     if let Ok(asset) = std::env::var("WARP_CARDANO_ZION_ASSET") {
@@ -43,6 +51,11 @@ fn zion_asset(network: &str) -> Option<String> {
         }
         _ => None,
     }
+}
+
+#[allow(dead_code)]
+fn zion_asset(network: &str) -> Option<String> {
+    zion_asset_with_override(network, None)
 }
 
 fn default_blockfrost(network: &str) -> &'static str {
@@ -116,6 +129,7 @@ pub struct CardanoAdapter {
     api_url: String,
     project_id: Option<String>,
     client: reqwest::Client,
+    asset_override: Option<String>,
 }
 
 impl Default for CardanoAdapter {
@@ -149,7 +163,21 @@ impl CardanoAdapter {
             api_url,
             project_id,
             client,
+            asset_override: None,
         }
+    }
+
+    pub fn from_config(cfg: &ChainConfig) -> Self {
+        let mut adapter = Self::new();
+        if !cfg.rpc_url.is_empty() {
+            adapter.api_url = cfg.rpc_url.clone();
+        }
+        if let Some(asset) = &cfg.contract_address {
+            if !asset.is_empty() {
+                adapter.asset_override = Some(asset.clone());
+            }
+        }
+        adapter
     }
 
     async fn get_latest_block(&self) -> WarpResult<BFBlock> {
@@ -315,7 +343,7 @@ impl ChainAdapter for CardanoAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let asset = match zion_asset(&self.network) {
+        let asset = match zion_asset_with_override(&self.network, self.asset_override.as_deref()) {
             Some(a) => a,
             None => {
                 debug!("[WARP][cardano] No ZION asset configured");
@@ -346,7 +374,7 @@ impl ChainAdapter for CardanoAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        let asset = zion_asset(&self.network).ok_or_else(|| WarpError::AdapterError {
+        let asset = zion_asset_with_override(&self.network, self.asset_override.as_deref()).ok_or_else(|| WarpError::AdapterError {
             chain: "cardano".into(),
             reason: format!("no ZION asset configured for network '{}'", self.network),
         })?;

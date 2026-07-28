@@ -24,6 +24,7 @@ const BRIDGE_BURN_TOPIC: &str =
 /// Override per-chain via `WARP_{CHAIN}_WZION_ADDR` env var.
 const DEFAULT_WZION: &str = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6";
 
+#[allow(dead_code)]
 fn wzion_contract(chain: &str) -> Option<String> {
     wzion_contract_with_override(chain, None)
 }

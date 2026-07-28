@@ -1,5 +1,6 @@
 use crate::warp::adapter::ChainAdapter;
 use crate::warp::btc_signer::BtcSigner;
+use crate::warp::config::ChainConfig;
 use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::protocol::{DepositProof, MintInstruction};
 use crate::warp::types::ChainFamily;
@@ -14,20 +15,35 @@ use tracing::{debug, info, warn};
 const WARP_OP_RETURN_PREFIX: &str = "WARP_INBOUND:bitcoin:";
 // OP_RETURN data is hex-encoded — we look for the prefix in decoded ASCII.
 
-fn htlc_address(network: &str) -> Option<&'static str> {
+fn htlc_address_with_override(network: &str, htlc_override: Option<&str>) -> Option<String> {
+    if let Some(addr) = htlc_override {
+        if !addr.is_empty() {
+            return Some(addr.to_string());
+        }
+    }
+    if let Ok(addr) = std::env::var("WARP_BITCOIN_HTLC_ADDRESS") {
+        if !addr.is_empty() {
+            return Some(addr);
+        }
+    }
     match network {
         "mainnet" => {
             warn!(
                 "[WARP][bitcoin] mainnet HTLC address is a placeholder — update after deployment"
             );
-            Some("bc1qzionhtlcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+            Some("bc1qzionhtlcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".to_string())
         }
         "testnet" => {
             warn!("[WARP][bitcoin] testnet HTLC address is a placeholder");
-            Some("tb1qzionhtlctest0000000000000000000000000000")
+            Some("tb1qzionhtlctest0000000000000000000000000000".to_string())
         }
         _ => None,
     }
+}
+
+#[allow(dead_code)]
+fn htlc_address(network: &str) -> Option<String> {
+    htlc_address_with_override(network, None)
 }
 
 fn default_api(network: &str) -> &'static str {
@@ -83,6 +99,7 @@ pub struct BitcoinAdapter {
     network: String,
     api_url: String,
     client: reqwest::Client,
+    htlc_override: Option<String>,
 }
 
 impl Default for BitcoinAdapter {
@@ -103,7 +120,21 @@ impl BitcoinAdapter {
                 .timeout(std::time::Duration::from_secs(20))
                 .build()
                 .unwrap(),
+            htlc_override: None,
         }
+    }
+
+    pub fn from_config(cfg: &ChainConfig) -> Self {
+        let mut adapter = Self::new();
+        if !cfg.rpc_url.is_empty() {
+            adapter.api_url = cfg.rpc_url.clone();
+        }
+        if let Some(addr) = &cfg.contract_address {
+            if !addr.is_empty() {
+                adapter.htlc_override = Some(addr.clone());
+            }
+        }
+        adapter
     }
 
     async fn get_tip_height(&self) -> WarpResult<u64> {
@@ -238,7 +269,7 @@ impl ChainAdapter for BitcoinAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let address = match htlc_address(&self.network) {
+        let address = match htlc_address_with_override(&self.network, self.htlc_override.as_deref()) {
             Some(a) => a,
             None => {
                 debug!("[WARP][bitcoin] No HTLC address configured");
@@ -246,7 +277,7 @@ impl ChainAdapter for BitcoinAdapter {
             }
         };
         let tip = self.get_tip_height().await?;
-        let txs = self.get_address_txs(address).await?;
+        let txs = self.get_address_txs(&address).await?;
         let proofs: Vec<_> = txs
             .iter()
             .filter_map(|tx| self.tx_to_proof(tx, tip))

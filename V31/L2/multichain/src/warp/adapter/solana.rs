@@ -1,4 +1,5 @@
 use crate::warp::adapter::ChainAdapter;
+use crate::warp::config::ChainConfig;
 use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::protocol::{DepositProof, MintInstruction};
 use crate::warp::solana_signer::SolanaSigner;
@@ -11,7 +12,7 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 // ZION SPL token mint address per cluster
 // ─────────────────────────────────────────────────────────────────────────────
-fn zion_mint(cluster: &str) -> Option<String> {
+fn zion_mint_with_override(cluster: &str, mint_override: Option<&str>) -> Option<String> {
     // ── ZION SPL Token Mint Address ──────────────────────────────────────
     // Contract source: V3/L2/bridge/contracts/non-evm/solana/zion_spl_token.rs
     // Deployment steps: V3/L2/bridge/contracts/non-evm/solana/README.md
@@ -22,6 +23,13 @@ fn zion_mint(cluster: &str) -> Option<String> {
     // TODO: Deploy custom Anchor program (zion_spl_token.rs) for bridge mint/burn
     //       events + validator quorum. Standard SPL Token works for basic transfers
     //       but doesn't emit BridgeBurnEvent for WARP relay tracking.
+
+    // Config override takes priority.
+    if let Some(mint) = mint_override {
+        if !mint.is_empty() {
+            return Some(mint.to_string());
+        }
+    }
 
     // Allow override via env var.
     if let Ok(mint) = std::env::var("WARP_SOLANA_ZION_MINT") {
@@ -42,6 +50,11 @@ fn zion_mint(cluster: &str) -> Option<String> {
         }
         _ => None,
     }
+}
+
+#[allow(dead_code)]
+fn zion_mint(cluster: &str) -> Option<String> {
+    zion_mint_with_override(cluster, None)
 }
 
 fn default_rpc(cluster: &str) -> &'static str {
@@ -111,6 +124,7 @@ pub struct SolanaAdapter {
     cluster: String,
     rpc_url: String,
     client: reqwest::Client,
+    mint_override: Option<String>,
 }
 
 impl Default for SolanaAdapter {
@@ -131,7 +145,21 @@ impl SolanaAdapter {
                 .timeout(std::time::Duration::from_secs(15))
                 .build()
                 .unwrap(),
+            mint_override: None,
         }
+    }
+
+    pub fn from_config(cfg: &ChainConfig) -> Self {
+        let mut adapter = Self::new();
+        if !cfg.rpc_url.is_empty() {
+            adapter.rpc_url = cfg.rpc_url.clone();
+        }
+        if let Some(mint) = &cfg.contract_address {
+            if !mint.is_empty() {
+                adapter.mint_override = Some(mint.clone());
+            }
+        }
+        adapter
     }
 
     /// `getSlot` → current confirmed slot.
@@ -290,7 +318,7 @@ impl ChainAdapter for SolanaAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let mint = match zion_mint(&self.cluster) {
+        let mint = match zion_mint_with_override(&self.cluster, self.mint_override.as_deref()) {
             Some(m) => m,
             None => {
                 debug!("[WARP][solana] No ZION mint configured");
@@ -319,7 +347,7 @@ impl ChainAdapter for SolanaAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        let mint = match zion_mint(&self.cluster) {
+        let mint = match zion_mint_with_override(&self.cluster, self.mint_override.as_deref()) {
             Some(m) => m,
             None => {
                 return Err(WarpError::AdapterError {

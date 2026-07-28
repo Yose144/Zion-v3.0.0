@@ -20,6 +20,7 @@
 use crate::warp::adapter::ChainAdapter;
 use crate::warp::aptos_signer::AptosSigner;
 use crate::warp::bcs::BcsEncoder;
+use crate::warp::config::ChainConfig;
 use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::protocol::{DepositProof, MintInstruction};
 use crate::warp::types::ChainFamily;
@@ -157,6 +158,36 @@ impl AptosAdapter {
             event_field: DEFAULT_EVENT_FIELD.to_string(),
             client: reqwest::Client::builder()
                 .timeout(std::time::Duration::from_millis(200))
+                .build()
+                .unwrap(),
+        }
+    }
+
+    /// Construct from a `ChainConfig`.
+    pub fn from_config(cfg: &ChainConfig) -> Self {
+        let rpc_url = if cfg.rpc_url.is_empty() {
+            std::env::var("WARP_APTOS_RPC")
+                .unwrap_or_else(|_| DEFAULT_APTOS_RPC.to_string())
+        } else {
+            cfg.rpc_url.clone()
+        };
+        let bridge_account = cfg
+            .contract_address
+            .as_ref()
+            .and_then(|a| if a.is_empty() { None } else { Some(a.clone()) })
+            .or_else(|| std::env::var("WARP_APTOS_BRIDGE_ACCOUNT").ok())
+            .unwrap_or_else(|| DEFAULT_BRIDGE_ACCOUNT.to_string());
+        let event_handle = std::env::var("WARP_APTOS_EVENT_HANDLE")
+            .unwrap_or_else(|_| DEFAULT_EVENT_HANDLE.to_string());
+        let event_field = std::env::var("WARP_APTOS_EVENT_FIELD")
+            .unwrap_or_else(|_| DEFAULT_EVENT_FIELD.to_string());
+        Self {
+            rpc_url,
+            bridge_account,
+            event_handle,
+            event_field,
+            client: reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(15))
                 .build()
                 .unwrap(),
         }

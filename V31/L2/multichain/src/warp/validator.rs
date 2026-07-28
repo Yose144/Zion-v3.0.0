@@ -390,7 +390,7 @@ mod tests {
     #[test]
     fn test_add_validator_from_key_hex() {
         let mut vs = WarpValidatorSet::new(1);
-        let (v, sk) = make_validator("v1");
+        let (_v, sk) = make_validator("v1");
         let key_hex = hex::encode(sk.to_bytes());
 
         vs.add_validator_from_key_hex("v1", "Test Validator", &key_hex).unwrap();

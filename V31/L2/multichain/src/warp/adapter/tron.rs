@@ -1,4 +1,5 @@
 use crate::warp::adapter::ChainAdapter;
+use crate::warp::config::ChainConfig;
 use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::protocol::{DepositProof, MintInstruction};
 use crate::warp::tron_signer::TronSigner;
@@ -10,7 +11,7 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 // ZION TRC-20 contract address per network
 // ─────────────────────────────────────────────────────────────────────────────
-fn zion_contract(network: &str) -> Option<&'static str> {
+fn zion_contract_with_override(network: &str, contract_override: Option<&str>) -> Option<String> {
     // ── ZION TRC-20 Contract Address ─────────────────────────────────────
     // Contract source: V3/L2/bridge/contracts/non-evm/tron/ZionToken.sol
     // Deployment steps: V3/L2/bridge/contracts/non-evm/tron/README.md
@@ -18,22 +19,37 @@ fn zion_contract(network: &str) -> Option<&'static str> {
     // After deploying the TRC-20 contract on Tron, replace the placeholder
     // addresses below with the real T-address (starts with 'T').
     // Constructor args: admin (multisig), bridge (relay contract), guardian.
+    if let Some(contract) = contract_override {
+        if !contract.is_empty() {
+            return Some(contract.to_string());
+        }
+    }
+    if let Ok(contract) = std::env::var("WARP_TRON_CONTRACT") {
+        if !contract.is_empty() {
+            return Some(contract);
+        }
+    }
     match network {
         "mainnet" => {
             // TODO: Replace with real mainnet ZION TRC-20 contract address.
             // Deploy ZionToken.sol via TronBox/TronIDE to Tron mainnet.
             // The deployed contract address will be a T-address (base58).
             warn!("[WARP][tron] mainnet ZION contract is a placeholder — deploy contract from V3/L2/bridge/contracts/non-evm/tron/ and update this address");
-            Some("TWZIONxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+            Some("TWZIONxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".to_string())
         }
         "nile" => {
             // TODO: Replace with real nile testnet ZION contract address.
             // Deploy ZionToken.sol to Tron Nile testnet for testing.
             warn!("[WARP][tron] nile testnet ZION contract is a placeholder — deploy contract from V3/L2/bridge/contracts/non-evm/tron/ and update this address");
-            Some("TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxtest")
+            Some("TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxtest".to_string())
         }
         _ => None,
     }
+}
+
+#[allow(dead_code)]
+fn zion_contract(network: &str) -> Option<String> {
+    zion_contract_with_override(network, None)
 }
 
 fn default_api(network: &str) -> &'static str {
@@ -101,6 +117,7 @@ pub struct TronAdapter {
     #[allow(dead_code)]
     api_key: Option<String>,
     client: reqwest::Client,
+    contract_override: Option<String>,
 }
 
 impl Default for TronAdapter {
@@ -129,7 +146,21 @@ impl TronAdapter {
             api_url,
             api_key,
             client: builder.build().unwrap(),
+            contract_override: None,
         }
+    }
+
+    pub fn from_config(cfg: &ChainConfig) -> Self {
+        let mut adapter = Self::new();
+        if !cfg.rpc_url.is_empty() {
+            adapter.api_url = cfg.rpc_url.clone();
+        }
+        if let Some(contract) = &cfg.contract_address {
+            if !contract.is_empty() {
+                adapter.contract_override = Some(contract.clone());
+            }
+        }
+        adapter
     }
 
     async fn get_now_block(&self) -> WarpResult<u64> {
@@ -227,7 +258,7 @@ impl ChainAdapter for TronAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let contract = match zion_contract(&self.network) {
+        let contract = match zion_contract_with_override(&self.network, self.contract_override.as_deref()) {
             Some(c) => c,
             None => {
                 debug!("[WARP][tron] No ZION contract configured");
@@ -235,7 +266,7 @@ impl ChainAdapter for TronAdapter {
             }
         };
         let tip = self.get_now_block().await?;
-        let events = self.get_contract_events(contract).await?;
+        let events = self.get_contract_events(&contract).await?;
         let proofs: Vec<_> = events
             .iter()
             .filter_map(|e| self.event_to_proof(e, tip))
@@ -245,7 +276,7 @@ impl ChainAdapter for TronAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        let contract = match zion_contract(&self.network) {
+        let contract = match zion_contract_with_override(&self.network, self.contract_override.as_deref()) {
             Some(c) => c,
             None => {
                 return Err(WarpError::AdapterError {
@@ -267,7 +298,7 @@ impl ChainAdapter for TronAdapter {
             .mint_trc20(
                 &self.client,
                 &self.api_url,
-                contract,
+                &contract,
                 &instruction.recipient,
                 amount,
             )
