@@ -1902,7 +1902,8 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
   - `try_forward(solution: Option<&[u8]>)` (share_forwarder.rs) — encoduje jako `mix_hash_hex` → BEAM `submit_share` čte jako `output` pro BeamStratum
   - Pool server parsuje `mix_hash_hex` jako variable-length solution blob když není 32-byte mix hash
   - `beam_login` error handling opraven: detekuje inline `code`/`description` error (2miners vrací `code:-32003` místo JSON-RPC `error` objektu)
-  - Edge pool: BEAM bridge připojen, joby přijímány (height 3968216+). `src_beamhash` zatím 0 shares (žádný GPU miner ještě neminuje BEAM).
+  - **Kernel fix:** `gpu_miner.rs` `mine_beamhash_solver()` loadoval `beamhash_kernel.cl` (jen SipHash) místo `beamhash_solver.cl` (cleanUp + beamHashIII_seed + R1..R5) → `CL_INVALID_KERNEL_NAME (-46)` na každém batchi. Opraveno + `beamhash_solver.cl` přidán do `include_str!` dispatch tabulky v `ensure_proque()`.
+  - Edge pool: BEAM bridge připojen, joby přijímány (height 3968216+). Miner potvrzuje `parallel_stream_embedded coin=BEAM algo=beamhash` a `auxpow_gpu_opencl using embedded kernel=beamhash_solver.cl` — solver běží bez chyb. `src_beamhash` zatím 0 shares (GTX 1070 Ti @ difficulty 150M — share nalezen probabilisticky).
 
 ### Metal ProgPoWZ (ZANO) kernel verification (2026-07-21)
 
