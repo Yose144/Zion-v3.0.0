@@ -12,6 +12,15 @@ Host zion-new
     IdentitiesOnly yes
     StrictHostKeyChecking accept-new
 
+# Post-wipe Edge (Contabo reinstall), new SSH key generated 2026-07-29
+Host zion-post-wipe
+    HostName 62.171.141.136
+    Port 2222
+    User root
+    IdentityFile ~/.ssh/zion-edge-post-wipe-2026-07-29
+    IdentitiesOnly yes
+    StrictHostKeyChecking accept-new
+
 # For Windows PowerShell / OpenSSH:
-# Copy the private key to %USERPROFILE%\.ssh\zion-edge-2026-07-29
-# Then: ssh zion-new
+# Copy the private key to %USERPROFILE%\.ssh\zion-edge-post-wipe-2026-07-29
+# Then: ssh zion-post-wipe
