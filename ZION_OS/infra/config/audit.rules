@@ -1,0 +1,43 @@
+# ZION Edge — auditd rules for critical security monitoring
+# Monitor root SSH keys, system auth files, zion binaries, and privileged commands
+
+# Delete all existing rules
+-D
+
+# Set buffer size
+-b 8192
+
+# Monitor /root/.ssh/authorized_keys and directory
+-w /root/.ssh/ -p wa -k zion_ssh_keys
+-w /root/.ssh/authorized_keys -p wa -k zion_root_auth
+
+# Monitor /etc/ssh/sshd_config
+-w /etc/ssh/sshd_config -p wa -k zion_sshd_config
+-w /etc/ssh/sshd_config.d/ -p wa -k zion_sshd_config
+
+# Monitor user / group files
+-w /etc/passwd -p wa -k zion_user_changes
+-w /etc/shadow -p wa -k zion_user_changes
+-w /etc/group -p wa -k zion_user_changes
+-w /etc/gshadow -p wa -k zion_user_changes
+-w /etc/sudoers -p wa -k zion_sudoers
+-w /etc/sudoers.d/ -p wa -k zion_sudoers
+
+# Monitor UFW / firewall
+-w /etc/ufw/ -p wa -k zion_firewall
+-w /usr/sbin/ufw -p x -k zion_firewall
+
+# Monitor zion binaries
+-w /opt/zion/V3/target/release/server -p wa -k zion_binary
+-w /opt/zion/V3/target/release/node -p wa -k zion_binary
+
+# Monitor zion environment / config files
+-w /etc/zion/ -p wa -k zion_config
+-w /opt/zion/ZION_OS/dashboard/app.py -p wa -k zion_dashboard
+
+# Monitor privileged commands
+-a always,exit -F arch=b64 -S setuid -S setgid -S setreuid -S setregid -k zion_priv_esc
+-a always,exit -F arch=b64 -S execve -C uid!=euid -k zion_suid_exec
+
+# Make rules immutable (requires reboot to change)
+-e 2
