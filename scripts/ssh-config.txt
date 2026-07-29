@@ -4,13 +4,14 @@
 #
 # Then connect with: ssh zion-edge
 
-Host zion-edge
+Host zion-new
     HostName 62.171.141.136
+    Port 2222
     User root
-    IdentityFile ~/.ssh/ssh-key-zion-edge
+    IdentityFile ~/.ssh/zion-edge-2026-07-29
     IdentitiesOnly yes
     StrictHostKeyChecking accept-new
 
 # For Windows PowerShell / OpenSSH:
-# Copy ssh-key-zion-edge to %USERPROFILE%\.ssh\
-# Then: ssh zion-edge
+# Copy the private key to %USERPROFILE%\.ssh\zion-edge-2026-07-29
+# Then: ssh zion-new

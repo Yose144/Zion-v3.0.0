@@ -2,11 +2,11 @@
 
 This file provides operating guidance to Devin, WARP, Copilot, and future automated agents working in this repository.
 
-> **⚠️ SERVER MIGRATION 2026-07-07:** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** (Contabo VPS, hostname `vmi3425821.contaboserver.net`, IPv6 `2a02:c207:2342:5821::1`) following the 2026-07-20 hard genesis reset (post block-retention fix; previous chain 0–~10913 lost). New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. SSH: `ssh zion-new` (key: `~/.ssh/zion-new-server`, **port 22 (default) + port 2222 (alias), IPv4 + IPv6**). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) for current live topology (2 nodes active on Edge: primary + follower, height 2584+ as of 2026-07-23; local backup node online and synced). Web: `https://zionterranova.com` (Next.js Docker, image 377 MB standalone). Dashboard: `https://dashboard.zionterranova.com` (Basic Auth). Pool: `62.171.141.136:8444`. RPC: `rpc.zionterranova.com:8443` (public, nginx TCP stream proxy → `127.0.0.1:9443` node RPC). All L2 services (bridge, dao, warp, swap, dashboard) use `127.0.0.1:9443` internally.
+> **⚠️ SERVER MIGRATION 2026-07-07:** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** (Contabo VPS, hostname `vmi3425821.contaboserver.net`, IPv6 `2a02:c207:2342:5821::1`) following the 2026-07-20 hard genesis reset (post block-retention fix; previous chain 0–~10913 lost). New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. SSH: `ssh zion-new` (key: `~/.ssh/zion-edge-2026-07-29`, **port 22 (default) + port 2222 (alias), IPv4 + IPv6**). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) for current live topology (2 nodes active on Edge: primary + follower, height 2584+ as of 2026-07-23; local backup node online and synced). Web: `https://zionterranova.com` (Next.js Docker, image 377 MB standalone). Dashboard: `https://dashboard.zionterranova.com` (Basic Auth). Pool: `62.171.141.136:8444`. RPC: `rpc.zionterranova.com:8443` (public, nginx TCP stream proxy → `127.0.0.1:9443` node RPC). All L2 services (bridge, dao, warp, swap, dashboard) use `127.0.0.1:9443` internally.
 >
 > **⚠️ INCIDENT 2026-07-19 (SSH + fail2ban recovery):** Po rebootu sshd naslouchalo jen na IPv6 (`[::]:2222`) kvůli broken `ssh.socket.d/override.conf` (`ListenStream=2222` bez IP → IPv6-only s `BindIPv6Only=ipv6-only`). IPv4 SSH byl `Connection refused`, root heslo ztraceno. Obnovení: (1) root heslo resetnuto přes Contabo panel, (2) IPv6 adresa nalezena přes `dig AAAA vmi3425821.contaboserver.net` → `2a02:c207:2342:5821::1`, (3) SSH přes `ssh -6 -p 2222 root@2a02:c207:2342:5821::1` fungovalo, (4) `override.conf` opraven na `0.0.0.0:2222` + `[::]:2222`, (5) přidán `port22.conf` drop-in pro alias na port 22. **Druhý incident:** fail2ban `zion-p2p` jail (maxretry=50/10min, bantime=24h) banoval IPv4 `109.81.31.210` (Mac) při spuštění lokálního backup node — backup node dělal rychlé P2P connect/disconnect na porty 8333/8334, fail2ban vyhodnotil jako port scan → REJECT na všechny porty (SSH/web/RPC přes IPv4 přestaly fungovat, IPv6 fungovalo). Opraveno: `ignoreip` v `/etc/fail2ban/jail.d/zion-p2p.conf` rozšířeno o `109.81.31.210` + `109.81.27.87` (perzistentní, přežije reboot). **Root heslo resetnuto — uložit do 1Password.** VNC fallback: `95.111.232.25:63061` (RFB, password `h4neV76S`).
 >
-> **⚠️ BLOCK RETENTION FIX 2026-07-20:** Bug v `V3/L1/core/src/bin/node.rs:179` — `if config.block_retention > 0 { rt.set_block_retention(...) }` přeskočil `set_block_retention(0)`, takže `ChainState` default (`DEFAULT_BLOCK_RETENTION=1000`) nebyl nikdy přepsán. Všechny uzly (Edge node1/node2 + lokální backup) ořezávaly historii na posledních 1000 bloků i přes `ZION_BLOCK_RETENTION=0` v env. Fix: odstraněn `> 0` guard — `rt.set_block_retention(config.block_retention)` se volá vždy. **Následek:** bloky 0–~10913 jsou trvale ztraceny (žádná záloha DB s plnou historií neexistuje — bug byl v kódu od genesisu). Od fixu (height ~10914+) se všechny bloky uchovávají. Nová binárka nasazena na Edge (`/opt/zion/V3/target/release/node`) i lokální backup (`target/release/node`). **Legacy `zion-node.service`** (old binary `/usr/local/bin/zion-node`) byl deaktivován — service file přesunut na `.DISABLED-legacy-2026-07-20`. **fail2ban ignoreip** rozšířeno o `109.81.89.176` + `109.81.83.205` (IP lokálního backup node a Mac) a později o `109.81.81.86` (aktuální vývojový PC). Při rychlém P2P reconnectu lokálního backup nodu může fail2ban `zion-p2p` jail IPv4 zabanovat — vždy zkuste `ssh -6 -p 2222 -i ~/.ssh/zion-new-server root@2a02:c207:2342:5821::1` jako fallback.
+> **⚠️ BLOCK RETENTION FIX 2026-07-20:** Bug v `V3/L1/core/src/bin/node.rs:179` — `if config.block_retention > 0 { rt.set_block_retention(...) }` přeskočil `set_block_retention(0)`, takže `ChainState` default (`DEFAULT_BLOCK_RETENTION=1000`) nebyl nikdy přepsán. Všechny uzly (Edge node1/node2 + lokální backup) ořezávaly historii na posledních 1000 bloků i přes `ZION_BLOCK_RETENTION=0` v env. Fix: odstraněn `> 0` guard — `rt.set_block_retention(config.block_retention)` se volá vždy. **Následek:** bloky 0–~10913 jsou trvale ztraceny (žádná záloha DB s plnou historií neexistuje — bug byl v kódu od genesisu). Od fixu (height ~10914+) se všechny bloky uchovávají. Nová binárka nasazena na Edge (`/opt/zion/V3/target/release/node`) i lokální backup (`target/release/node`). **Legacy `zion-node.service`** (old binary `/usr/local/bin/zion-node`) byl deaktivován — service file přesunut na `.DISABLED-legacy-2026-07-20`. **fail2ban ignoreip** rozšířeno o `109.81.89.176` + `109.81.83.205` (IP lokálního backup node a Mac) a později o `109.81.81.86` (aktuální vývojový PC). Při rychlém P2P reconnectu lokálního backup nodu může fail2ban `zion-p2p` jail IPv4 zabanovat — vždy zkuste `ssh -6 -p 2222 -i ~/.ssh/zion-edge-2026-07-29 root@2a02:c207:2342:5821::1` jako fallback.
 >
 > **⚠️ BACKUP SYSTEM OVERHAUL 2026-07-20:** Kompletní audit + rozšíření backup systému. **`ZION_OS/infra/scripts/backup-edge.sh`** přepsán na comprehensive L1-L6 backup: SQLite DBs s `sqlite3 .backup` (konzistentní snapshot i s WAL), `peers.json`, `pplns-state.json`, `pplns-state-test.json`, OASIS game state JSONs (`golden_egg`, `avatars`, `world`, `prize_tiers`), dashboard `state.json`, `revenue_journal/*.jsonl`, všechny env files (`edge-environment.sh`, `edge-node2-environment.sh`, `test-pool-environment.sh`, `xmr-pool-environment.sh`), `/etc/zion/config/*.toml` + repo TOMLs včetně `chains.toml`, systemd services + timers, nginx sites-enabled, fail2ban jail.d, Let's Encrypt certs (live + archive). Edge retention: 14 daily + 4 weekly, timer every 4h (`zion-edge-backup.timer`). **Off-site replication:** `ZION_OS/infra/scripts/sync-edge-backups.sh` rsyncne Edge backups → lokální `~/2.9.6-main/backups/edge/{daily,weekly}/` přes SSH IPv6. Lokální retention: 30 daily + 8 weekly (delší než Edge). Systemd user timer `zion-offsite-sync.timer` běží každých 6h (`~/.config/systemd/user/zion-offsite-sync.{service,timer}`). Integrity check: `tar tzf` + `PRAGMA integrity_check` na všech SQLite DBs. MD5 checksumy state souborů match live Edge. **Pozn:** bloky 0–10913 ztraceny i v zálohách (všechny historické backupy obsahují jen ~1000 pruned blocks) — od fixu se kompletní historie zálohuje.
 
@@ -327,7 +327,7 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
   - **Production build:** `npx next build --webpack` (MUST use `--webpack` — Next.js 16 Turbopack cannot resolve local `.tgz` deps)
   - **Theme system:** `.zion-rainbow-card` / `.zion-rainbow-sub` CSS classes with inline `style={{ '--rc': 'R, G, B' } as React.CSSProperties}`. Each page has its own accent color. See `APP&WEB/website-v2.9/README.md` for the full color map.
   - **Production deployment (v3.0.4 — new server):**
-    - SSH: `ssh zion-new` (key: `~/.ssh/zion-new-server`)
+    - SSH: `ssh zion-new` (key: `~/.ssh/zion-edge-2026-07-29`)
     - Source on server: `/root/zion-web-next/` (extracted from tar, Dockerfile.production)
     - Docker image: `zion-web` (multi-stage build: node:22-alpine, 73+ Next.js routes)
     - Docker compose: `/root/zion-web-next/docker-compose.yml` — port `127.0.0.1:3000`, restart `unless-stopped`
@@ -572,8 +572,8 @@ Dashboard: https://dashboard.zionterranova.com (nginx → Python)
 
 - **SSH config:** `ssh zion-new` (alias in `~/.ssh/config`, port 2222)
 - **SSH ports:** `22` (default alias) + `2222` (primary), both IPv4 + IPv6
-- **SSH key:** `~/.ssh/zion-new-server` (ed25519, fingerprint `SHA256:wnq2p9n17icqkpkJMAjPZto0axRtkVTVXPMBuD9tz64`)
-- **IPv6 fallback:** `ssh -i ~/.ssh/zion-new-server -p 2222 -6 root@2a02:c207:2342:5821::1` (when IPv4 refused but server up)
+- **SSH key:** `~/.ssh/zion-edge-2026-07-29` (ed25519, fingerprint `SHA256:mTh5FLAQoFLMzlQX6JlKBYXQEzeKOL6j9C3FS1oVVWw`)
+- **IPv6 fallback:** `ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` (when IPv4 refused but server up)
 - **Password auth:** DISABLED (keys only)
 - **Never commit private keys.** Private SSH keys, Ed25519 signing keys, EVM private keys, and mnemonics must NEVER be placed in the repo root or any tracked directory — even if `.gitignore` covers them. The only valid location for SSH keys is `~/.ssh/` (chmod 600). A stray `newzionssh.md` containing the production SSH private key was found and deleted 2026-07-09; do not recreate it.
 
@@ -811,8 +811,8 @@ If genesis corruption is suspected:
 ### New Server Recovery (v3.0.4 + 2026-07-19 SSH incident)
 
 If the new server (62.171.141.136) becomes unresponsive:
-1. SSH directly: `ssh zion-new` (key: `~/.ssh/zion-new-server`, port 22 or 2222, IPv4)
-2. **If IPv4 SSH refused but server is up (ping OK, web/RPC OK):** sshd may be IPv6-only. Try IPv6 fallback: `ssh -i ~/.ssh/zion-new-server -p 2222 -6 root@2a02:c207:2342:5821::1` (IPv6 addr from `dig AAAA vmi3425821.contaboserver.net`)
+1. SSH directly: `ssh zion-new` (key: `~/.ssh/zion-edge-2026-07-29`, port 22 or 2222, IPv4)
+2. **If IPv4 SSH refused but server is up (ping OK, web/RPC OK):** sshd may be IPv6-only. Try IPv6 fallback: `ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` (IPv6 addr from `dig AAAA vmi3425821.contaboserver.net`)
 3. **If SSH completely fails:** use VNC console: `95.111.232.25:63061` (RFB protocol, password `h4neV76S`). If root password lost, reset via Contabo panel (my.contabo.com → VPS → Reset root password).
 4. **If sshd listens only on IPv6** (root cause of 2026-07-19 incident): fix `/etc/systemd/system/ssh.socket.d/override.conf` to include both `ListenStream=0.0.0.0:2222` and `ListenStream=[::]:2222`, then `systemctl daemon-reload && systemctl restart ssh.socket`. Verify with `ss -tlnp | grep -E ':22|:2222'` — should show 4 listeners (IPv4+IPv6 × port 22+2222).
 5. Check systemd services: `systemctl status zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp zion-edge-dex zion-edge-oasis nginx`
@@ -1047,14 +1047,14 @@ This address is no longer active after the 2026-07-06 hard genesis reset.
 
 | Resource | Value |
 |---|---|
-| New server SSH | `ssh zion-new` (key: `~/.ssh/zion-new-server`, ed25519, **port 22 (default) + 2222 (alias), IPv4 + IPv6**) |
+| New server SSH | `ssh zion-new` (key: `~/.ssh/zion-edge-2026-07-29`, ed25519, **port 22 (default) + 2222 (alias), IPv4 + IPv6**) |
 | New server IP (IPv4) | `62.171.141.136` (Ubuntu 24.04.4 LTS, Contabo VPS) |
 | New server IP (IPv6) | `2a02:c207:2342:5821::1` (AAAA of `vmi3425821.contaboserver.net`) — fallback when IPv4 refused |
 | New server hostname | `vmi3425821.contaboserver.net` (Contabo internal) |
 | New server source | `/root/zion/2.9.6/` (git clone at commit `690b6dfe`) |
 | New server Cargo | `source ~/.cargo/env` (Rust 1.96.1 stable) |
 | New server VNC | `95.111.232.25:63061` (RFB, password `h4neV76S`) — fallback if SSH fails |
-| IPv6 SSH fallback cmd | `ssh -i ~/.ssh/zion-new-server -p 2222 -6 root@2a02:c207:2342:5821::1` |
+| IPv6 SSH fallback cmd | `ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` |
 | fail2ban ignoreip (perzistentní) | `/etc/fail2ban/jail.d/zion-p2p.conf` — `127.0.0.1/8 ::1 109.81.31.210 109.81.27.87` (Mac + backup node whitelisted z P2P jail) |
 | Environment file | `/root/zion/edge-environment.sh` (chmod 600, `<REPLACE_*>` placeholders) |
 | SMOS API key | `api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8` (rotated 2026-07-08) |
@@ -1343,8 +1343,8 @@ Restart after change: `systemctl restart zion-pool.service`
 | Param | Value |
 |-------|-------|
 | Alias | `ssh zion-new` (in `~/.ssh/config`) |
-| Key | `~/.ssh/zion-new-server` (ed25519) |
-| Fingerprint | `SHA256:wnq2p9n17icqkpkJMAjPZto0axRtkVTVXPMBuD9tz64` |
+| Key | `~/.ssh/zion-edge-2026-07-29` (ed25519) |
+| Fingerprint | `SHA256:mTh5FLAQoFLMzlQX6JlKBYXQEzeKOL6j9C3FS1oVVWw` |
 | Password auth | DISABLED (keys only) |
 | VNC fallback | `95.111.232.25:63061` (RFB, password `h4neV76S`) |
 

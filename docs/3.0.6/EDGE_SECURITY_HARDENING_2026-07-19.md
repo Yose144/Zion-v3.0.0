@@ -35,7 +35,7 @@ Host zion-new
     HostName 62.171.141.136
     Port 2222
     User root
-    IdentityFile ~/.ssh/zion-new-server
+    IdentityFile ~/.ssh/zion-edge-2026-07-29
 ```
 
 ### Result

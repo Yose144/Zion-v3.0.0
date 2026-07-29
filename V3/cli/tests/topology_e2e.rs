@@ -205,5 +205,5 @@ fn agent_url_defaults_to_localhost_hiran_v2_2() {
 fn deploy_defaults_to_edge_with_canonical_ssh_key() {
     let cfg = Config::default();
     assert_eq!(cfg.deploy.default_server, "edge");
-    assert_eq!(cfg.deploy.ssh_key, "~/.ssh/ssh-key-zion-edge");
+    assert_eq!(cfg.deploy.ssh_key, "~/.ssh/zion-edge-2026-07-29");
 }
