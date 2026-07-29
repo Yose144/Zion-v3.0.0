@@ -81,36 +81,47 @@ def api_headers(token):
     }
 
 
+def _first(data):
+    if isinstance(data, list) and data:
+        return data[0]
+    return data
+
+
 def find_instance(token):
     resp = requests.get(f"{API_BASE}/compute/instances", headers=api_headers(token))
     resp.raise_for_status()
     data = resp.json().get("data", [])
     for inst in data:
-        if inst.get("ipv4") == EDGE_IP:
+        ip_config = inst.get("ipConfig") or {}
+        v4 = ip_config.get("v4") or {}
+        if v4.get("ip") == EDGE_IP:
             return inst
     fail(f"No Contabo instance with IPv4 {EDGE_IP} found.")
 
 
 def find_ubuntu_image(token):
-    resp = requests.get(f"{API_BASE}/compute/images", headers=api_headers(token))
+    # Fetch enough images to find the plain ubuntu-24.04 image
+    resp = requests.get(f"{API_BASE}/compute/images?size=100", headers=api_headers(token))
     resp.raise_for_status()
     data = resp.json().get("data", [])
+    # Prefer the plain Ubuntu 24.04 image (no cpanel/cuda/plesk suffix)
+    for img in data:
+        if img.get("name") == "ubuntu-24.04":
+            return img
+    # Fallback to any Ubuntu 24.04 (lower-cased match)
     for img in data:
         name = img.get("name", "").lower()
-        if "ubuntu" in name and ("24.04" in name or "noble" in name):
+        if "ubuntu" in name and "24.04" in name:
             return img
-    # Fallback: latest Ubuntu
-    for img in data:
-        if "ubuntu" in img.get("name", "").lower():
-            return img
-    fail("No Ubuntu image found in Contabo.")
+    fail("No Ubuntu 24.04 image found in Contabo.")
 
 
 def create_secret(token, name, secret_type, value):
     body = {"name": name, "type": secret_type, "value": value}
     resp = requests.post(f"{API_BASE}/secrets", headers=api_headers(token), json=body)
     resp.raise_for_status()
-    return resp.json().get("data", {}).get("secretId")
+    data = _first(resp.json().get("data", {}))
+    return data.get("secretId")
 
 
 def ensure_key_pair():
@@ -140,7 +151,7 @@ def build_cloud_init(pub_key: str) -> str:
     # cloud-init YAML user-data
     return f"""#cloud-config
 ssh_authorized_keys:
-  - {pub_key}
+  - "{pub_key}"
 ssh_pwauth: false
 chpasswd:
   expire: false
@@ -209,12 +220,10 @@ def reinstall(token, instance_id, image_id, root_pass_secret_id, ssh_key_secret_
     print(f"[INFO] Cloud-init saved to: {ref}")
 
 
-def wait_for_ssh(timeout_seconds=1800):
-    print(f"[INFO] Waiting for SSH on {EDGE_IP}:2222 (timeout {timeout_seconds}s)...")
-    start = time.time()
-    cmd = [
+def _ssh_probe(port):
+    return [
         "ssh",
-        "-4", "-p", "2222",
+        "-4", "-p", str(port),
         "-i", str(NEW_KEY),
         "-o", "StrictHostKeyChecking=accept-new",
         "-o", "UserKnownHostsFile=/dev/null",
@@ -223,11 +232,17 @@ def wait_for_ssh(timeout_seconds=1800):
         f"root@{EDGE_IP}",
         "echo 'POST-WIPE-SSH-OK'",
     ]
+
+
+def wait_for_ssh(timeout_seconds=1800):
+    print(f"[INFO] Waiting for SSH on {EDGE_IP}:2222 (then 22) (timeout {timeout_seconds}s)...")
+    start = time.time()
     while time.time() - start < timeout_seconds:
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        if "POST-WIPE-SSH-OK" in result.stdout:
-            print("[OK] SSH reachable with new key.")
-            return True
+        for port in (2222, 22):
+            result = subprocess.run(_ssh_probe(port), capture_output=True, text=True)
+            if "POST-WIPE-SSH-OK" in result.stdout:
+                print(f"[OK] SSH reachable with new key on port {port}.")
+                return port
         print(f"[INFO] Not yet reachable ({int(time.time()-start)}s)...")
         time.sleep(20)
     fail("Timed out waiting for SSH after reinstall.")
@@ -246,8 +261,8 @@ def main():
 
     inst = find_instance(token)
     image = find_ubuntu_image(token)
-    print(f"[OK] Instance: {inst.get('displayName')} ({inst['id']}) @ {inst.get('ipv4')}")
-    print(f"[OK] Image: {image.get('name')} ({image['id']})")
+    print(f"[OK] Instance: {inst.get('displayName')} ({inst['instanceId']}) @ {EDGE_IP}")
+    print(f"[OK] Image: {image.get('name')} ({image['imageId']})")
 
     print("[INFO] Creating Contabo secrets for root password and SSH key...")
     ts = time.strftime("%Y%m%d-%H%M%S")
@@ -256,10 +271,10 @@ def main():
     print(f"[OK] rootPassword secretId: {root_secret}")
     print(f"[OK] sshKeys secretId: {ssh_secret}")
 
-    reinstall(token, inst["id"], image["id"], root_secret, ssh_secret)
-    wait_for_ssh()
+    reinstall(token, inst["instanceId"], image["imageId"], root_secret, ssh_secret)
+    port = wait_for_ssh()
     print("\n[OK] Edge VPS reinstalled and accessible via:")
-    print(f"  ssh -p 2222 -i {NEW_KEY} root@{EDGE_IP}")
+    print(f"  ssh -p {port} -i {NEW_KEY} root@{EDGE_IP}")
     print("  or: ssh zion-post-wipe")
     print(f"\n[OK] Next step: run `edge-deploy/restore-edge-from-backup.sh` to restore data.")
 
