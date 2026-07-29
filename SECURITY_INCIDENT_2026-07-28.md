@@ -394,4 +394,126 @@ With root SSH access to `62.171.141.136`, the attacker could have:
 
 ---
 
-*Report generated 2026-07-28 by Devin security audit. Updated 2026-07-29 with lateral movement and USB analysis.*
+## 9. Ubuntu system — pending forensic check
+
+The user also runs an **Ubuntu system** (development machine, IP `109.81.81.86` per AGENTS.md fail2ban ignoreip). Since the attacker had SSH access to the Zion server and the Ubuntu machine connects to the same server, the Ubuntu system **must also be checked for compromise**.
+
+### Vectors by which Ubuntu could have been compromised
+
+1. **Lateral movement from Zion server**: If the attacker installed a backdoor on the Zion server, they could have used it to pivot to the Ubuntu machine (SSH, rsync, or any trust relationship between the two systems).
+
+2. **Same phishing campaign**: The attacker's campaign (Hybrid Analysis report) targets crypto users across platforms. If the user visited `zanowallet.io` or similar fake wallet sites from Ubuntu and downloaded a `.deb`/`.AppImage`/`.sh` installer, the same attack could have been executed on Ubuntu.
+
+3. **Shared SSH keys**: If the same SSH key is used on both Windows and Ubuntu for the Zion server, and the key was on the Windows PC during the attack, the attacker already has it. If a **different** key is used on Ubuntu, that key may be safe — but only if the Ubuntu machine was not itself compromised.
+
+4. **Shared credentials**: If any credentials (passwords, API tokens, mnemonics) are shared between the Windows PC and Ubuntu (e.g., synced via browser, password manager, or git), they must be considered compromised.
+
+### Ubuntu forensic checklist (to be performed)
+
+The following checks should be run on the Ubuntu system to determine if it was compromised:
+
+#### SSH / access logs
+- `last` — show all login sessions, look for logins on 2026-07-27 and 2026-07-28
+- `lastb` — show failed login attempts
+- `sudo grep 'Accepted\|Failed' /var/log/auth.log` — SSH auth events
+- `sudo journalctl -u ssh --since "2026-07-27" --until "2026-07-29"` — sshd journal
+- `cat ~/.ssh/authorized_keys` — check for unauthorized keys
+- `cat ~/.ssh/known_hosts` — check for new entries during attack window
+- `ls -la ~/.ssh/` — check key modification times
+
+#### Persistence mechanisms
+- `crontab -l` and `sudo crontab -l` — cron jobs
+- `cat /etc/crontab` and `ls /etc/cron.d/` — system cron
+- `systemctl list-unit-files --state=enabled` — enabled services
+- `ls -la ~/.config/autostart/` — autostart entries
+- `cat ~/.bashrc ~/.bash_profile ~/.profile` — check for injected commands
+- `ls -la /etc/systemd/system/` — custom systemd services (sort by date)
+
+#### Recently modified files
+- `find /home -newer /tmp -mtime -4 -type f 2>/dev/null` — files modified in last 4 days
+- `find /etc -newer /tmp -mtime -4 -type f 2>/dev/null` — config changes
+- `find /usr/local/bin /opt -mtime -4 -type f 2>/dev/null` — new binaries
+- `find /tmp /var/tmp -mtime -4 -type f 2>/dev/null` — temp file drops
+
+#### Network connections
+- `ss -tulpn` — listening ports
+- `ss -tn` — established connections
+- `sudo iptables -L -n` — firewall rules
+- `cat /etc/hosts` — check for DNS hijacking
+
+#### Processes
+- `ps auxf` — process tree (look for suspicious processes)
+- `ps -eo pid,lstart,cmd --sort=-lstart | head -30` — recently started processes
+
+#### Malware scanners
+- `sudo apt install clamav && sudo freshclam && sudo clamscan -r /home --max-filesize=4000M` — ClamAV scan
+- `sudo apt install rkhunter && sudo rkhunter --check` — rootkit hunter
+- `sudo apt install chkrootkit && sudo chkrootkit` — chkrootkit scan
+
+#### Browser history (same as Windows check)
+- Chrome: `~/.config/google-chrome/Default/History` (SQLite)
+- Firefox: `~/.mozilla/firefox/*/places.sqlite` (SQLite)
+- Check for visits to `zanowallet.io`, `anchorwallet.org`, `darkwallet.is` or similar phishing domains
+- Check downloads for `zano-wallet*.deb`, `zano-wallet*.AppImage`, or similar
+
+#### Package history
+- `grep "2026-07-2[78]" /var/log/dpkg.log` — packages installed on attack dates
+- `grep "2026-07-2[78]" /var/log/apt/history.log` — apt operations on attack dates
+
+### Ubuntu vs Windows — attack surface comparison
+
+| Factor | Windows (this incident) | Ubuntu | Impact |
+|---|---|---|---|
+| Phishing site (fake wallet) | ✅ Worked | ✅ Would work | Same — social engineering is OS-agnostic |
+| User grants admin | UAC "Run anyway" | `sudo` / `chmod +x` | Same — user gives consent |
+| Silent MSI install | ✅ Worked (Caphyon Advanced Installer) | ❌ No MSI on Linux | This specific technique blocked |
+| Alternative RAT deployment | Remote Utilities (Windows-native) | AnyDesk / RustDesk / xrdp / reverse shell | Different tool, same result |
+| Persistence via registry | ✅ Registry Run keys, services | ❌ No registry | Different mechanism (cron, systemd, autostart) |
+| SSH key theft | ✅ `~/.ssh/` on Windows | ✅ `~/.ssh/` on Linux | Identical |
+| SCP exfiltration | ✅ `scp.exe` | ✅ `scp` | Identical |
+| Antivirus detection | AVG (did not flag — legit RMM tool) | ClamAV (weaker, fewer signatures) | Ubuntu slightly worse for detection |
+| Executable bit requirement | Not needed (.exe runs by default) | Required (`chmod +x`) | Minor friction — fake site instructs user |
+| Package signing | SmartScreen (weak) | apt GPG (stronger, but bypassable with `--allow-unauthenticated` or PPA) | Ubuntu slightly better if user respects signing |
+| Snap/Flatpak sandbox | N/A | Available but not enforced for .deb/AppImage | Only helps if app is sandboxed |
+
+### Conclusion on Ubuntu risk
+
+**Ubuntu is NOT immune to this type of attack.** The core vulnerability was **social engineering** (user tricked into downloading from a fake site and granting admin privileges), which works on any OS. The specific Caphyon Advanced Installer / MSI technique would not work on Ubuntu, but the attacker would simply use a different delivery method (`.deb`, `.AppImage`, or a shell script with `curl | bash`).
+
+**The real protection is not the OS — it is operational discipline:**
+- Verify download URLs against official project documentation
+- Verify GPG signatures / checksums on downloaded files
+- Use SSH key passphrases (so stolen keys are useless without the passphrase)
+- Use hardware security keys (YubiKey) for SSH — cannot be copied
+- Keep premine keys on air-gapped cold storage, never on a networked machine
+- Never run `sudo` / "Run as admin" for software from unverified sources
+
+### Post-incident hardening plan (applies to both Windows and Ubuntu)
+
+1. **SSH hardening** (both OS):
+   - Add passphrase to all SSH keys: `ssh-keygen -p -f ~/.ssh/zion-new-server`
+   - Consider YubiKey for SSH: `ssh-keygen -t ed25519-sk` (requires YubiKey hardware)
+   - Disable password SSH on Zion server (key-only auth)
+   - Different SSH keys per device (don't share keys across machines)
+
+2. **Cold storage for premine keys**:
+   - Generate new premine keys on an air-gapped machine (Tails OS or fresh Ubuntu install, no network)
+   - Store keys on encrypted USB (LUKS) or hardware wallet
+   - Never store premine keys on a networked machine
+
+3. **Download verification protocol**:
+   - Always verify URL against official docs (e.g., `zano.org/wallets` lists official download at `build.zano.org`)
+   - Verify SHA256 checksum against official source
+   - Verify GPG signature if available
+   - If SmartScreen / antivirus warns — **investigate, don't bypass**
+
+4. **Server-side hardening** (Zion server):
+   - Rotate all SSH keys (remove compromised `zion-new-server` key)
+   - Change root password
+   - Audit `authorized_keys`, cron, systemd for backdoors
+   - Enable SSH 2FA (Google Authenticator PAM) or require hardware key
+   - Restrict SSH to known IPs (fail2ban + `AllowUsers` + `Match Address`)
+
+---
+
+*Report generated 2026-07-28 by Devin security audit. Updated 2026-07-29 with lateral movement, USB analysis, and Ubuntu risk assessment.*
