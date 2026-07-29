@@ -13,7 +13,7 @@ Comprehensive security hardening of the ZION Edge server (`62.171.141.136`, Cont
 - **PermitRootLogin**: `prohibit-password` (key-only root login, unchanged — needed for ops)
 - **X11Forwarding**: yes → **no** (no X11 needed on server)
 - **AllowUsers**: `zion root` (only these two users can SSH in)
-- **PasswordAuthentication**: `no` (already set in `/etc/ssh/sshd_config.d/`)
+- **PasswordAuthentication**: `no` (enforced 2026-07-29 by adding `PasswordAuthentication no` + `KbdInteractiveAuthentication no` + `AuthenticationMethods publickey` to `/etc/ssh/sshd_config` and `/etc/ssh/sshd_config.d/50-cloud-init.conf`; the original `50-cloud-init.conf` with `yes` was being read and exposed the server to ongoing password brute force)
 
 ### systemd socket activation
 Ubuntu 24.04 uses systemd socket activation for SSH. The `Port` directive in `sshd_config` is ignored — the listening port is controlled by `ssh.socket`. Created override:
