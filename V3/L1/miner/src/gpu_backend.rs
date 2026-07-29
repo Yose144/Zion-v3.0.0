@@ -2708,7 +2708,7 @@ fn create_gpu_backend_inner(
                         }
                     }
                     // Fall back to CPU for algorithms without CUDA kernels
-                    // (ethash, kawpow, progpow, beamhash, eaglesong, octopus, equihash, neoscrypt)
+                    // (ethash, kawpow, progpow, eaglesong, octopus, equihash, neoscrypt)
                     #[cfg(any(feature = "native-kheavyhash", feature = "native-blake3-algo"))]
                     {
                         eprintln!("[gpu_backend] CUDA CPU fallback for algorithm={}", algorithm);

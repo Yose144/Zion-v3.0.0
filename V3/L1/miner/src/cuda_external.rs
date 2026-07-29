@@ -1,5 +1,5 @@
 /// CUDA miner for external AuxPoW algorithms (kheavyhash, blake3, autolykos, zelhash,
-/// ethash, kawpow).
+/// ethash, kawpow, beamhash).
 ///
 /// Uses the existing CUDA kernels from AuXpow/csrc/cuda/ and compiles them
 /// via NVRTC at runtime. This eliminates the CPU fallback for external
@@ -13,6 +13,7 @@
 ///   - zelhash / zelhash_flux (FLUX)
 ///   - ethash / ethash_etc (Ethereum Classic / ETHW)
 ///   - kawpow / kawpow_rvn (Ravencoin / CLORE / EVR / MEWC)
+///   - beamhash / beamhash_beam (Beam — BeamHash III Wagner solver)
 
 use anyhow::{Context, Result};
 use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
@@ -61,6 +62,7 @@ const KAWPOW_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/kawpow_kernel
 const PROGPOW_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/progpow_kernel.cu");
 const ETHASH_DAG_GEN_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/ethash_dag_gen.cu");
 const VERUSHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/verushash_kernel.cu");
+const BEAMHASH_SOLVER_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/beamhash_solver.cu");
 
 /// Preprocess kernel source: strip #pragma once and #include lines,
 /// prepend standard typedefs, fix NVRTC-incompatible constructs.
@@ -112,6 +114,7 @@ pub enum CudaExtAlgo {
     Kawpow,
     Progpow,
     Verushash,
+    Beamhash,
 }
 
 impl CudaExtAlgo {
@@ -127,6 +130,7 @@ impl CudaExtAlgo {
             "progpow" | "progpow_epic" | "progpow_zano" | "progpowz"
             | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => Some(Self::Progpow),
             "verushash" | "verushash_vrsc" | "verus" => Some(Self::Verushash),
+            "beamhash" | "beamhash_beam" => Some(Self::Beamhash),
             _ => None,
         }
     }
@@ -142,6 +146,8 @@ impl CudaExtAlgo {
             Self::Kawpow => "progpow_search",
             Self::Progpow => "progpow_mine",
             Self::Verushash => "verus_mine",
+            // Beamhash uses 7 kernels — the primary entry point is cleanUp
+            Self::Beamhash => "cleanUp",
         }
     }
 
@@ -156,6 +162,7 @@ impl CudaExtAlgo {
             Self::Kawpow => "kawpow",
             Self::Progpow => "progpow",
             Self::Verushash => "verushash",
+            Self::Beamhash => "beamhash_solver",
         }
     }
 
@@ -169,6 +176,7 @@ impl CudaExtAlgo {
             Self::Kawpow => KAWPOW_CU,
             Self::Progpow => PROGPOW_CU,
             Self::Verushash => VERUSHASH_CU,
+            Self::Beamhash => BEAMHASH_SOLVER_CU,
         }
     }
 
@@ -253,6 +261,11 @@ pub struct CudaExternalMiner {
     kawpow_job_blob: Option<CudaSlice<u32>>,
     kawpow_results: Option<CudaSlice<u32>>,
     kawpow_stop: Option<CudaSlice<u32>>,
+    // BeamHash III solver buffers
+    beamhash_buf0: Option<CudaSlice<u64>>,
+    beamhash_buf1: Option<CudaSlice<u64>>,
+    beamhash_counters: Option<CudaSlice<u32>>,
+    beamhash_results: Option<CudaSlice<u32>>,
 }
 
 impl CudaExternalMiner {
@@ -313,7 +326,22 @@ impl CudaExternalMiner {
                 let _ = std::fs::write(&dump_path, &processed);
             }
 
-            dev.load_ptx(ptx, module_name, &[kernel_name])
+            // Beamhash has 7 kernels — register all of them
+            let kernel_names: &[&str] = if algo == CudaExtAlgo::Beamhash {
+                &[
+                    "cleanUp",
+                    "beamHashIII_seed",
+                    "beamHashIII_R1",
+                    "beamHashIII_R2",
+                    "beamHashIII_R3",
+                    "beamHashIII_R4",
+                    "beamHashIII_R5",
+                ]
+            } else {
+                &[kernel_name]
+            };
+
+            dev.load_ptx(ptx, module_name, kernel_names)
                 .map_err(|e| anyhow::anyhow!("PTX load failed for {}: {e}", algorithm))?;
         }
 
@@ -426,6 +454,10 @@ impl CudaExternalMiner {
             kawpow_job_blob,
             kawpow_results,
             kawpow_stop,
+            beamhash_buf0: None,
+            beamhash_buf1: None,
+            beamhash_counters: None,
+            beamhash_results: None,
         })
     }
 
@@ -922,6 +954,10 @@ impl CudaExternalMiner {
 
             unsafe {
                 match self.algo {
+                    // Beamhash uses a separate multi-kernel path (run_beamhash_solver)
+                    CudaExtAlgo::Beamhash => {
+                        anyhow::bail!("Beamhash should use run_beamhash_solver, not run_kernel");
+                    }
                     CudaExtAlgo::Kheavyhash => {
                         let matrix = self.kheavy_matrix.as_ref().unwrap();
                         func
@@ -1229,12 +1265,14 @@ impl CudaExternalMiner {
                 solutions: vec![(nonce_host[0], hash, mix_hash)],
                 nonces_tested: total_tested,
                 device_name: self.device_name_cached.clone(),
+                solution: None,
             })
         } else {
             Ok(GpuBatchResult {
                 solutions: Vec::new(),
                 nonces_tested: total_tested,
                 device_name: self.device_name_cached.clone(),
+                solution: None,
             })
         }
     }
@@ -1271,6 +1309,219 @@ impl CudaExternalMiner {
         } else {
             self.algo.period_length() as u64
         }
+    }
+
+    /// Run the BeamHash III Wagner solver on CUDA.
+    ///
+    /// Launches 7 kernels sequentially: cleanUp → seed → R1 → R2 → R3 → R4 → R5.
+    /// Each kernel uses the same buffer arguments (buf0, buf1, counters, results, prePow).
+    /// After R5, reads the results buffer and validates solutions against the target.
+    fn run_beamhash_solver(
+        &mut self,
+        header: &[u8],
+        target: &[u8; 32],
+        nonce_start: u64,
+        _batch_size: u64,
+    ) -> Result<GpuBatchResult> {
+        use zion_auxpow::beamhash;
+
+        eprintln!(
+            "cuda_beamhash_solver_start nonce={} header_len={} target_first8={:016x}",
+            nonce_start,
+            header.len(),
+            u64::from_be_bytes([
+                target[0], target[1], target[2], target[3],
+                target[4], target[5], target[6], target[7],
+            ]),
+        );
+
+        const WG_SIZE: u32 = 256;
+        const NUM_BUCKETS: usize = 4096;
+        const BUCKET_SIZE: usize = 8720;
+        // Each ulong8 = 8 u64 = 64 bytes
+        const HASH_TABLE_U64: usize = NUM_BUCKETS * BUCKET_SIZE * 8;
+        const COUNTERS_LEN: usize = 20480;
+        const RESULTS_LEN: usize = 324;
+
+        // Build the full header + nonce (same logic as OpenCL mine_beamhash_solver)
+        let prefix_len = 0usize; // no extra prefix for external jobs
+        let mut full_nonce = [0u8; 8];
+        full_nonce[..8].copy_from_slice(&nonce_start.to_le_bytes());
+        let extra_nonce_len = 4usize;
+        let extra_nonce = full_nonce[prefix_len..prefix_len + extra_nonce_len].to_vec();
+
+        let mut full_header = header.to_vec();
+        full_header.extend_from_slice(&full_nonce);
+        let pre_pow_u64 = beamhash::compute_prepow(&full_header);
+        let (pp0, pp1, pp2, pp3) = (
+            pre_pow_u64[0], pre_pow_u64[1],
+            pre_pow_u64[2], pre_pow_u64[3],
+        );
+
+        // Allocate beamhash buffers if not yet allocated
+        if self.beamhash_buf0.is_none() {
+            let buf0 = self.dev.alloc_zeros::<u64>(HASH_TABLE_U64)
+                .map_err(|e| anyhow::anyhow!("beamhash buf0 alloc: {e}"))?;
+            let buf1 = self.dev.alloc_zeros::<u64>(HASH_TABLE_U64)
+                .map_err(|e| {
+                    // Reset buf0 so the next call retries the full init
+                    self.beamhash_buf0 = None;
+                    anyhow::anyhow!("beamhash buf1 alloc: {e}")
+                })?;
+            let counters = self.dev.alloc_zeros::<u32>(COUNTERS_LEN)
+                .map_err(|e| {
+                    self.beamhash_buf0 = None;
+                    self.beamhash_buf1 = None;
+                    anyhow::anyhow!("beamhash counters alloc: {e}")
+                })?;
+            let results = self.dev.alloc_zeros::<u32>(RESULTS_LEN)
+                .map_err(|e| {
+                    self.beamhash_buf0 = None;
+                    self.beamhash_buf1 = None;
+                    self.beamhash_counters = None;
+                    anyhow::anyhow!("beamhash results alloc: {e}")
+                })?;
+            self.beamhash_buf0 = Some(buf0);
+            self.beamhash_buf1 = Some(buf1);
+            self.beamhash_counters = Some(counters);
+            self.beamhash_results = Some(results);
+            eprintln!(
+                "cuda_beamhash_solver_init buf0={:.1}MB buf1={:.1}MB counters={}KB results={}B",
+                (HASH_TABLE_U64 * 8) as f64 / 1_048_576.0,
+                (HASH_TABLE_U64 * 8) as f64 / 1_048_576.0,
+                (COUNTERS_LEN * 4) / 1024,
+                RESULTS_LEN * 4,
+            );
+        }
+
+        let buf0 = self.beamhash_buf0.as_ref().unwrap();
+        let buf1 = self.beamhash_buf1.as_ref().unwrap();
+        let counters = self.beamhash_counters.as_ref().unwrap();
+        let results = self.beamhash_results.as_ref().unwrap();
+
+        let module = self.algo.module_name();
+
+        // Helper to launch a kernel by name
+        let launch = |kernel_name: &str, grid: u32, block: u32| -> Result<()> {
+            let func = self.dev.get_func(module, kernel_name)
+                .ok_or_else(|| anyhow::anyhow!("beamhash kernel '{}' not found", kernel_name))?;
+            let cfg = LaunchConfig {
+                grid_dim: (grid, 1, 1),
+                block_dim: (block, 1, 1),
+                shared_mem_bytes: 0,
+            };
+            unsafe {
+                func.clone().launch(
+                    cfg,
+                    (buf0, buf1, counters, results, pp0, pp1, pp2, pp3),
+                ).map_err(|e| anyhow::anyhow!("beamhash kernel '{}' launch: {}", kernel_name, e))?;
+            }
+            Ok(())
+        };
+
+        // Launch the 7 kernels in sequence
+        // cleanUp: 20480 threads (clear all counters)
+        eprintln!("cuda_beamhash_kernel_launch cleanUp");
+        launch("cleanUp", (COUNTERS_LEN as u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+        // seed: 33,554,432 threads (2^25 — generates initial hash table)
+        eprintln!("cuda_beamhash_kernel_launch seed");
+        launch("beamHashIII_seed", (33_554_432u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+        // R1-R5: 4,194,304 threads each (4096 buckets × 4 masks × 256 wgSize)
+        eprintln!("cuda_beamhash_kernel_launch R1");
+        launch("beamHashIII_R1", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+        eprintln!("cuda_beamhash_kernel_launch R2");
+        launch("beamHashIII_R2", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+        eprintln!("cuda_beamhash_kernel_launch R3");
+        launch("beamHashIII_R3", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+        eprintln!("cuda_beamhash_kernel_launch R4");
+        launch("beamHashIII_R4", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+        eprintln!("cuda_beamhash_kernel_launch R5");
+        launch("beamHashIII_R5", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+
+        eprintln!("cuda_beamhash_kernels_done syncing");
+
+        // Synchronize and read results
+        self.dev.synchronize()
+            .map_err(|e| anyhow::anyhow!("beamhash sync: {e}"))?;
+
+        let results_host = self.dev.dtoh_sync_copy(results)
+            .map_err(|e| anyhow::anyhow!("beamhash results download: {e}"))?;
+
+        let solution_count = results_host[0] as usize;
+        if solution_count == 0 {
+            return Ok(GpuBatchResult {
+                solutions: Vec::new(),
+                solution: None,
+                nonces_tested: 1, // BeamHash tests 1 nonce per solver run
+                device_name: self.device_name_cached.clone(),
+            });
+        }
+
+        // Parse solutions — each solution is 32 u32 (128 bytes) starting at u32 index 4
+        for pos in 0..solution_count.min(10) {
+            let start_u32 = 4 + pos * 32;
+            let end_u32 = start_u32 + 32;
+            if end_u32 > results_host.len() {
+                break;
+            }
+
+            let mut sol_bytes = Vec::with_capacity(128);
+            for w in &results_host[start_u32..end_u32] {
+                sol_bytes.extend_from_slice(&w.to_le_bytes());
+            }
+            // The R5 kernel stores two 512-bit rows (64 bytes each) after shift56.
+            // Each row contains 400 bits (50 bytes) of packed 25-bit indices,
+            // followed by 112 bits (14 bytes) of padding/garbage.
+            // We must extract the first 50 bytes from each row and concatenate
+            // them to get the 100-byte (800-bit) solution.
+            let row0 = &sol_bytes[..64.min(sol_bytes.len())];
+            let row1 = &sol_bytes[64..128.min(sol_bytes.len())];
+            let mut indices_100 = Vec::with_capacity(100);
+            indices_100.extend_from_slice(&row0[..50.min(row0.len())]);
+            indices_100.extend_from_slice(&row1[..50.min(row1.len())]);
+
+            // Debug: print solution bytes and decompressed indices
+            let decompressed = beamhash::decompress_indices(&indices_100);
+            match &decompressed {
+                Ok(idx) => eprintln!("cuda_beamhash_solution pos={} indices={:?}", pos, &idx[..idx.len().min(8)]),
+                Err(e) => eprintln!("cuda_beamhash_solution pos={} decompress_err={}", pos, e),
+            }
+            eprintln!("cuda_beamhash_solution pos={} sol_bytes_hex={}", pos, indices_100.iter().map(|b| format!("{:02x}", b)).collect::<String>());
+
+            // Check validation error
+            if let Err(val_err) = beamhash::is_valid_solution(&full_header, &indices_100) {
+                eprintln!("cuda_beamhash_validation_err pos={} err={}", pos, val_err);
+            }
+
+            // Validate the solution by hashing it
+            let hash = beamhash::hash_beamhash(&full_header, &indices_100);
+            if hash.as_slice() <= target.as_slice() {
+                let mut solution = indices_100.clone();
+                solution.extend_from_slice(&extra_nonce);
+
+                eprintln!(
+                    "auxpow_cuda_beamhash_share_found nonce={} hash_first8={:016x} sol_count={}",
+                    nonce_start,
+                    u64::from_le_bytes(hash[0..8].try_into().unwrap()),
+                    solution_count,
+                );
+
+                return Ok(GpuBatchResult {
+                    solutions: vec![(nonce_start, hash, None)],
+                    solution: Some(solution),
+                    nonces_tested: 1,
+                    device_name: self.device_name_cached.clone(),
+                });
+            }
+        }
+
+        // Solutions found but none met the target
+        Ok(GpuBatchResult {
+            solutions: Vec::new(),
+            solution: None,
+            nonces_tested: 1,
+            device_name: self.device_name_cached.clone(),
+        })
     }
 }
 
@@ -1336,6 +1587,12 @@ impl GpuMiner for CudaExternalMiner {
     ) -> Result<GpuBatchResult> {
         let header_bytes = header.to_bytes();
 
+        // BeamHash III: multi-kernel Wagner solver (7 sequential launches)
+        if self.algo == CudaExtAlgo::Beamhash {
+            let header_hash = &header_bytes[..32.min(header_bytes.len())];
+            return self.run_beamhash_solver(header_hash, &target.bytes, nonce_start, batch_size);
+        }
+
         if self.algo == CudaExtAlgo::Kheavyhash {
             let pre_pow_hash = &header_bytes[..32];
             self.kheavy_timestamp = header.timestamp;
@@ -1393,6 +1650,17 @@ impl GpuMiner for CudaExternalMiner {
         nonce_start: u64,
         batch_size: u64,
     ) -> Result<GpuBatchResult> {
+        eprintln!("cuda_mine_batch_raw ENTRY algo={} header_len={} nonce={}", self.algo.module_name(), raw_header.len(), nonce_start);
+        // BeamHash III: multi-kernel Wagner solver
+        if self.algo == CudaExtAlgo::Beamhash {
+            eprintln!(
+                "cuda_beamhash_mine_batch_raw called header_len={} nonce={} batch_size={}",
+                raw_header.len(), nonce_start, batch_size,
+            );
+            let header_hash = &raw_header[..32.min(raw_header.len())];
+            return self.run_beamhash_solver(header_hash, &target.bytes, nonce_start, batch_size);
+        }
+
         if self.algo == CudaExtAlgo::Kheavyhash {
             let pre_pow_hash = &raw_header[..32.min(raw_header.len())];
             self.kheavy_timestamp = 0;

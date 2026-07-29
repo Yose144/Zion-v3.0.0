@@ -4809,6 +4809,8 @@ fn external_gpu_thread(
             }
         };
 
+        eprintln!("ext_gpu_debug after backend_init algo={} job_algo={} has_job={}", current_algo.as_deref().unwrap_or("none"), algo, current_job.is_some());
+
         // Ensure DAG is loaded for DAG-based algorithms.
         // Also check the ProgPow random-math period — ProgPoWZ (ZANO) changes
         // its math sequence every 50 blocks, but the DAG epoch is 30000 blocks.
@@ -4820,6 +4822,7 @@ fn external_gpu_thread(
         let progpow_period = progpow_period_for_algorithm(algo, job.height);
         let epoch_changed = epoch != last_epoch;
         let period_changed = progpow_period != last_progpow_period;
+        eprintln!("ext_gpu_debug epoch={:?} progpow_period={:?} epoch_changed={} period_changed={}", epoch, progpow_period, epoch_changed, period_changed);
         if epoch_changed || period_changed {
             if epoch_changed {
                 if let Some(ep) = epoch {
@@ -4916,6 +4919,9 @@ fn external_gpu_thread(
                 | "progpow" | "progpow_epic" | "progpow_zano" | "progpowz"
                 | "beamhash" | "beamhash_beam"
         );
+
+        eprintln!("ext_gpu_debug before mine_batch algo={} header_len={} use_raw={} nonce={} batch_size={}", algo, header_bytes.len(), use_raw_header, nonce, batch_size);
+
         let result = if header_bytes.len() > 80 || use_raw_header {
             gpu_miner.mine_batch_raw(&header_bytes, target, nonce, batch_size)
         } else {
