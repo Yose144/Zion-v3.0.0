@@ -149,9 +149,10 @@ def ensure_root_password():
 
 def build_cloud_init(pub_key: str) -> str:
     # cloud-init YAML user-data
+    # NOTE: SSH public key is injected via Contabo `sshKeys` secret,
+    # so we do NOT set ssh_authorized_keys here to avoid the API error
+    # "SSH keys were provided in both param and user data".
     return f"""#cloud-config
-ssh_authorized_keys:
-  - "{pub_key}"
 ssh_pwauth: false
 chpasswd:
   expire: false
