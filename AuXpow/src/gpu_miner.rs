@@ -1545,11 +1545,20 @@ impl GpuMiner {
             for w in &results[start_u32..end_u32] {
                 sol_bytes.extend_from_slice(&w.to_le_bytes());
             }
-            let indices_100 = &sol_bytes[..100.min(sol_bytes.len())];
+            // The R5 kernel stores two 512-bit rows (64 bytes each) after shift56.
+            // Each row contains 400 bits (50 bytes) of packed 25-bit indices,
+            // followed by 112 bits (14 bytes) of padding/garbage.
+            // We must extract the first 50 bytes from each row and concatenate
+            // them to get the 100-byte (800-bit) solution.
+            let row0 = &sol_bytes[..64.min(sol_bytes.len())];
+            let row1 = &sol_bytes[64..128.min(sol_bytes.len())];
+            let mut indices_100 = Vec::with_capacity(100);
+            indices_100.extend_from_slice(&row0[..50.min(row0.len())]);
+            indices_100.extend_from_slice(&row1[..50.min(row1.len())]);
 
-            let hash = crate::beamhash::hash_beamhash(&full_header, indices_100);
+            let hash = crate::beamhash::hash_beamhash(&full_header, &indices_100);
             if hash.as_slice() <= target.as_slice() {
-                let mut solution = indices_100.to_vec();
+                let mut solution = indices_100.clone();
                 solution.extend_from_slice(&extra_nonce);
 
                 println!(
