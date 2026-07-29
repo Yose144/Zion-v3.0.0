@@ -6,7 +6,7 @@
 
 - **Live URL:** https://zionterranova.com
 - **Host:** New Edge server `62.171.141.136` (decommissioned: `77.42.71.94`)
-- **SSH:** `ssh zion-new` (key: `~/.ssh/zion-new-server`)
+- **SSH:** `ssh zion-new` (key: `~/.ssh/zion-edge-2026-07-29`)
 - **Runtime:** Docker container `zion-web-next` (host network mode, port 3000)
 - **Reverse proxy:** Caddy → `localhost:3000`
 - **Runtime source on server:** `/root/zion-web-runtime`
@@ -42,12 +42,12 @@ cd APP\&WEB/website-v2.9
 npm run build
 
 # 2. Sync standalone output + public assets to server
-rsync -avz --delete -e "ssh -i ~/.ssh/zion-new-server" \
+rsync -avz --delete -e "ssh -i ~/.ssh/zion-edge-2026-07-29" \
   .next/standalone .next/static public Dockerfile.runtime \
   root@62.171.141.136:/root/zion-web-runtime/
 
 # 3. On server: stop old container, build tiny runtime image, restart
-ssh -i ~/.ssh/zion-new-server root@62.171.141.136 <<'REMOTECMD'
+ssh -i ~/.ssh/zion-edge-2026-07-29 root@62.171.141.136 <<'REMOTECMD'
 cd /root/zion-web-runtime
 docker stop zion-web-next || true
 docker rm zion-web-next || true
@@ -63,11 +63,11 @@ curl -s https://zionterranova.com/api/health | jq
 ### Method 2: One-liner (local + remote)
 
 ```bash
-ssh -i ~/.ssh/zion-new-server root@62.171.141.136 "rm -rf /root/zion-web-runtime && mkdir -p /root/zion-web-runtime" && \
-rsync -avz --delete -e "ssh -i ~/.ssh/zion-new-server" \
+ssh -i ~/.ssh/zion-edge-2026-07-29 root@62.171.141.136 "rm -rf /root/zion-web-runtime && mkdir -p /root/zion-web-runtime" && \
+rsync -avz --delete -e "ssh -i ~/.ssh/zion-edge-2026-07-29" \
   .next/standalone .next/static public Dockerfile.runtime \
   root@62.171.141.136:/root/zion-web-runtime/ && \
-ssh -i ~/.ssh/zion-new-server root@62.171.141.136 \
+ssh -i ~/.ssh/zion-edge-2026-07-29 root@62.171.141.136 \
   "cd /root/zion-web-runtime && docker stop zion-web-next || true && docker rm zion-web-next || true && \
    DOCKER_BUILDKIT=1 docker build -f Dockerfile.runtime -t zion-web:runtime . && \
    docker run -d --network host --name zion-web-next zion-web:runtime"
@@ -100,7 +100,7 @@ CMD ["node", "server.js"]
 curl -s https://zionterranova.com/api/health | jq
 
 # Container status (on server)
-ssh -i ~/.ssh/zion-new-server root@62.171.141.136 \
+ssh -i ~/.ssh/zion-edge-2026-07-29 root@62.171.141.136 \
   "docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' | grep zion-web-next"
 
 # Public URL
@@ -116,7 +116,7 @@ curl -s https://zionterranova.com/zohar | head -5
 The previous image is overwritten on every deploy. To keep a rollback image, tag it before deploying:
 
 ```bash
-ssh -i ~/.ssh/zion-new-server root@62.171.141.136 \
+ssh -i ~/.ssh/zion-edge-2026-07-29 root@62.171.141.136 \
   "docker tag zion-web:runtime zion-web:runtime-backup-$(date +%Y%m%d-%H%M)"
 ```
 
@@ -134,9 +134,9 @@ Use `Dockerfile` only if you must build on the server (not recommended). `Docker
 ## Connecting to Edge Server
 
 ```bash
-ssh zion-new   # configured in ~/.ssh/config with IdentityFile ~/.ssh/zion-new-server
+ssh zion-new   # configured in ~/.ssh/config with IdentityFile ~/.ssh/zion-edge-2026-07-29
 # or explicitly:
-ssh -i ~/.ssh/zion-new-server root@62.171.141.136
+ssh -i ~/.ssh/zion-edge-2026-07-29 root@62.171.141.136
 ```
 
 ## Deployment History

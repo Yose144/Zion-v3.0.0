@@ -15,7 +15,7 @@
 #   ./sync-edge-backups.sh            # one-shot sync
 #   systemctl --user start zion-offsite-sync.timer   # via timer
 #
-# Requires: ssh key at ~/.ssh/zion-new-server with root access to Edge.
+# Requires: ssh key at ~/.ssh/zion-edge-2026-07-29 with root access to Edge.
 # ============================================================================
 
 set -euo pipefail
@@ -24,7 +24,7 @@ set -euo pipefail
 EDGE_HOST="2a02:c207:2342:5821::1"
 EDGE_PORT="2222"
 EDGE_USER="root"
-SSH_KEY="${HOME}/.ssh/zion-new-server"
+SSH_KEY="${HOME}/.ssh/zion-edge-2026-07-29"
 SSH_OPTS="-6 -p ${EDGE_PORT} -i ${SSH_KEY} -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o ServerAliveInterval=60"
 # rsync requires IPv6 addresses wrapped in brackets
 EDGE_RSYNC_HOST="[${EDGE_HOST}]"
