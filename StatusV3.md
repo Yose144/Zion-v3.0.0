@@ -94,7 +94,9 @@
 
 | Endpoint | URL | Notes |
 |----------|-----|-------|
-| Web | `https://zionterranova.com` | OASIS intro landing page — static `maintenance.html` served by system nginx from `/var/www/maintenance/`. Next.js web2.9 is built and ready but currently offline. |
+| Intro | `https://zionterranova.com` | OASIS intro landing page — `maintenance.html` from `/var/www/maintenance/` (system nginx) |
+| Web2.9 | `https://app.zionterranova.com` | Full Next.js 16.2.9 website — `zion-website.service` on `127.0.0.1:3000`, nginx proxy |
+| OASIS Web | `https://oasis.zionterranova.com` | Static OASIS web build in `/var/www/oasis/` (system nginx) |
 | Dashboard | `https://dashboard.zionterranova.com` | Basic Auth |
 | RPC | `http://rpc.zionterranova.com:8443` | nginx HTTP proxy → `127.0.0.1:8447` read-only Python filter → `127.0.0.1:8443` node RPC (**plain HTTP**, no TLS) |
 | Pool | `62.171.141.136:8444` | Stratum |

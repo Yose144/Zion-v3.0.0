@@ -10,7 +10,13 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 >
 > **⚠️ BACKUP SYSTEM OVERHAUL 2026-07-20:** Kompletní audit + rozšíření backup systému. **`ZION_OS/infra/scripts/backup-edge.sh`** přepsán na comprehensive L1-L6 backup: SQLite DBs s `sqlite3 .backup` (konzistentní snapshot i s WAL), `peers.json`, `pplns-state.json`, `pplns-state-test.json`, OASIS game state JSONs (`golden_egg`, `avatars`, `world`, `prize_tiers`), dashboard `state.json`, `revenue_journal/*.jsonl`, všechny env files (`edge-environment.sh`, `edge-node2-environment.sh`, `test-pool-environment.sh`, `xmr-pool-environment.sh`), `/etc/zion/config/*.toml` + repo TOMLs včetně `chains.toml`, systemd services + timers, nginx sites-enabled, fail2ban jail.d, Let's Encrypt certs (live + archive). Edge retention: 14 daily + 4 weekly, timer every 4h (`zion-edge-backup.timer`). **Off-site replication:** `ZION_OS/infra/scripts/sync-edge-backups.sh` rsyncne Edge backups → lokální `~/2.9.6-main/backups/edge/{daily,weekly}/` přes SSH IPv6. Lokální retention: 30 daily + 8 weekly (delší než Edge). Systemd user timer `zion-offsite-sync.timer` běží každých 6h (`~/.config/systemd/user/zion-offsite-sync.{service,timer}`). Integrity check: `tar tzf` + `PRAGMA integrity_check` na všech SQLite DBs. MD5 checksumy state souborů match live Edge. **Pozn:** bloky 0–10913 ztraceny i v zálohách (všechny historické backupy obsahují jen ~1000 pruned blocks) — od fixu se kompletní historie zálohuje.
 >
-> **⚠️ OASIS INTRO / PUBLIC WEB (2026-07-31):** `https://zionterranova.com` nyní slouží jako **jednostránkový vstup do celého ZION multichain ekosystému a portálu do OASIS**. Zdroj: [`APP&WEB/website-v2.9/public/maintenance.html`](./APP&WEB/website-v2.9/public/maintenance.html) — centrální Stargate s živým odkazem na `https://oasis.zionterranova.com`, glass/rainbow UI, L1–L6 karty a CTA. Na Edge je nasazen do `/var/www/maintenance/maintenance.html` a servírován přímo nginxem (systémový `zion.conf`), nikoli Next.js Dockerem. `zion-website.service` / `zion-web-next` kontejner jsou vypnuté. Plný Next.js web-v2.9 zůstává připravený k okamžitému nasazení, ale není veřejně aktivní. L1–L6 služby běží normálně.
+> **⚠️ PUBLIC WEB TRIO (2026-07-31):** ZION webové služby jsou rozděleny na tři samostatné domény:
+>
+> 1. **Intro:** `https://zionterranova.com` — jednostránkový vstup do celého ZION multichain ekosystému a portálu do OASIS. Zdroj: [`APP&WEB/website-v2.9/public/maintenance.html`](./APP&WEB/website-v2.9/public/maintenance.html) nasazen v `/var/www/maintenance/maintenance.html` a servírován systémovým nginxem.
+> 2. **Web2.9:** `https://app.zionterranova.com` — plný Next.js 16.2.9 web (`website-v2.9`), běží jako systemd `zion-website.service`, proxy přes nginx na `127.0.0.1:3000`.
+> 3. **OASIS Web:** `https://oasis.zionterranova.com` — samostatná vizuální OASIS aplikace (`APP&WEB/OasisWeb`), nasazená v `/var/www/oasis/` a servírovaná systémovým nginxem.
+>
+> L1–L6 služby běží normálně.
 
 ## Scope and working area
 
@@ -146,7 +152,10 @@ public/ README files (EN + 4 translations) include a **Network Status** section 
 - **ZionDex L3 WARP Integration + Non-EVM Contracts + Cross-Chain AMM Routing (2026-07-12):** [`docs/3.0.5/archive-root-md/ZionDex.md`](./docs/3.0.5/archive-root-md/ZionDex.md) + [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) — ZionDex Router integrated with L3 WARP API (port 8453). `executor.rs` uses POST /transfers/outbound + /transfers/inbound + polling. `aggregator.rs` (~740 lines) — LiquidityAggregator with Dijkstra path finding, returns top 3 optimal cross-chain paths, 30s price cache. `quote.rs` — MultiPathQuote. `api.rs` — GET /quote/multi. 28/28 Rust tests. Web UI live at `/dex` and `/ziondex` on zionterranova.com. **Non-EVM ZION token contracts created** for 9 chains (Solana SPL, Tron TRC-20, Stellar asset, Cardano Plutus, Cosmos CW20, Aptos Move, Sui Move, NEAR NEP-141, TON jetton) in `V3/L2/bridge/contracts/non-evm/` — all implement bridgeMint/bridgeBurn with 5/5 quorum. Pending: deploy contracts to mainnet, ZionDex Router service on Edge (port 8454), relay keys. Contract address template: [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) — vyplň adresy po deploy.
 - **Vision documents (2026-06-30):** [`docs/3.0.3/nativeZion.md`](./docs/3.0.3/nativeZion.md) (WARP token naming: wZION EVM, ZION non-EVM) + [`docs/3.0.3/ZionDex.md`](./docs/3.0.3/ZionDex.md) (cross-chain DEX concept powered by WARP — path to Top 100) + [`docs/3.0.3/evoluZion.md`](./docs/3.0.3/evoluZion.md) (ZION as Tree of Life — evolution from PoW to Proof-of-Care / Protokol Péče, NPU-based caring computation, with full source references to TerraNova book + NPU_HARDWARE_MINING_THEORY.md + cosmic-harmony NPU Mix code).
 - **Zohar — kabalistický Strom života ZIONu (2026-07-03):** [`docs/Zohar/README.md`](./docs/Zohar/README.md) · [`docs/Zohar/01-SEFIROT-VRSTVY.md`](./docs/Zohar/01-SEFIROT-VRSTVY.md) · [`docs/Zohar/02-ROADMAP.md`](./docs/Zohar/02-ROADMAP.md) · [`docs/Zohar/03-O-KNIZE-ZOHAR.md`](./docs/Zohar/03-O-KNIZE-ZOHAR.md) — Mapování 10 sefirot + Da'at na ZION vrstvy L1-L6 (Keter=L1 Consensus, Chokmah=L1 PoW, Binah=L1 Validation, Chesed=L2 Multichain, Gevurah=L2 DAO, Tiferet=L3 WARP, Netzach=L3 AI/Hiran, Hod=L4 Oasis, Yesod=L5 Komunity, Malkhut=L6 Issobella). Tři pilíře: Milosrdenství (dávání) / Přísnost (disciplína) / Rovnováha (manifestace). Syntéza evoluZion.md (Strom života metafora) + TerraNova kniha (filosofie péče) v jazyce kabaly. **Fáze 0 (manifest) + Fáze 1 (web /app/zohar) + Fáze 2 (sefirot vow — [`V3/L5/docs/GOVERNANCE/sefirot-vow.md`](./V3/L5/docs/GOVERNANCE/sefirot-vow.md), 11 slibů pro validátory) + Fáze 4 (getTreeHealth API — [`/api/zohar/tree-health`](./APP&WEB/website-v2.9/src/app/api/zohar/tree-health/route.ts), živá data z blockchain/DeFi/bridge/NCL API mapovaná na 10 sefirot health score) hotové.** Fáze 2 on-chain: `SefirotVowToken` (soulbound ERC-721, [`V3/L2/contracts/hardhat/sol/SefirotVowToken.sol`](./V3/L2/contracts/hardhat/sol/SefirotVowToken.sol), 19 tests pass) + `SefirotVowRegistry` (proposal lifecycle, [`V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol`](./V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol), 10 tests pass) — kompilováno, deploy na Base mainnet pending (vyžaduje owner approval + gas). Fáze 3 (care task kategorie pro Protokol Péče) horizont — závisí na L1 consensus (2028+). Čistá dokumentační/web/governance/L2-contract vrstva — netýká se L1 consensus kódu.
-- **OASIS intro landing page (2026-07-31):** [`APP&WEB/website-v2.9/public/maintenance.html`](./APP&WEB/website-v2.9/public/maintenance.html) — jednostránkový vstup do ZION multichain ekosystému a portálu do OASIS. Centrální interaktivní Stargate odkazuje na `https://oasis.zionterranova.com`; obsahuje glass/rainbow karty, L1–L6 vrstvy a CTA. **Aktuálně LIVE jako `https://zionterranova.com`** (nasazený do `/var/www/maintenance/maintenance.html` a servírovaný systémovým nginxem; Next.js web2.9 není aktivní). Deploy script: [`APP&WEB/website-v2.9/deploy/deploy-oasis-intro.sh`](./APP&WEB/website-v2.9/deploy/deploy-oasis-intro.sh) (rsync do `/var/www/maintenance/` + `nginx -s reload`). Nginx config: [`APP&WEB/website-v2.9/deploy/maintenance-nginx.conf`](./APP&WEB/website-v2.9/deploy/maintenance-nginx.conf) (používá se jako reference; aktivní je `/etc/nginx/sites-enabled/zion.conf`). Pro obnovu plného Next.js webu: spusť `APP&WEB/website-v2.9/scripts/deploy.sh` a uprav nginx na proxy k `127.0.0.1:3000`.
+- **Public web trio (2026-07-31):** Tři nezávislé veřejné služby běží současně:
+  - **Intro:** `https://zionterranova.com` — [`APP&WEB/website-v2.9/public/maintenance.html`](./APP&WEB/website-v2.9/public/maintenance.html), nasazený v `/var/www/maintenance/maintenance.html`, servírovaný systémovým nginxem. Stargate portál do OASIS.
+  - **Web2.9:** `https://app.zionterranova.com` — plný Next.js 16.2.9 web (`website-v2.9`), systemd `zion-website.service` na `127.0.0.1:3000`, proxy přes nginx. Deploy: [`APP&WEB/website-v2.9/deploy/deploy-web2.9.sh`](./APP&WEB/website-v2.9/deploy/deploy-web2.9.sh) (lokální build → rsync → `systemctl restart zion-website.service`).
+  - **OASIS Web:** `https://oasis.zionterranova.com` — separátní vizuální OASIS prezentace (`APP&WEB/OasisWeb`), build nasazený v `/var/www/oasis/`. Deploy: [`APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh`](./APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh) (Next.js export → rsync → `nginx -s reload`).
 - **Website design system unification (2026-07-03):** `APP&WEB/website-v2.9/src/app/globals.css` definuje unified design třídy: `.zion-container` (max-w-80rem wrapper), `.zion-section` (rounded panel s border + blur), `.zion-tile` (soft inner grid item s hover), `.zion-cta-banner` (gradient CTA sekce), `.zion-rainbow-card` / `.zion-rainbow-sub` (hero/feature cards s per-color `--rc` CSS variable). Audit 73 page.tsx souborů hotový. Refaktorované: `/ai-native`, `/roadmap-295`, `/admin/revenue-v3` (ad-hoc `bg-black/60 backdrop-blur-xl` → `zion-section`/`zion-tile`), `/account` (přidány CZ/EN překlady), `/login` (grid-cols-3 → responsive). Referenční implementace: `/admin/page.tsx`.
 - **PoC-lab Fáze 3 — Hiran HTTP integrace, MockHiranServer, live llama-server (2026-07-08):** [`PoC-lab/`](./PoC-lab/) — standalone Rust workspace (mimo `V3/`) implementující Proof-of-Care prototyp. **Fáze 1 (commit `2936fcb1`)** — kompletní základ: INT8 NPU VM (`poc-npu`), multi-backend cross-validace (`poc-verifier`), validator registry + Sefirot Vow lifecycle (`poc-registry`), reward split + slashing (`poc-economics`), E2E síťový simulátor s guardian/Bodhisattva Vow demo (`poc-sim`). **Fáze 2 (commit `5d0aefea`)** — 119 testů PASS: `DharmaValidator` (5-pilířový pipeline) + `HiranAwareVerifier` + `NclReputationRegistry` + `ConsciousnessLevel` enum + multi-epoch stress testy + CLI. **Fáze 3 (commit `75b79256` + nový commit)** — 145 testů PASS: `poc-hiran` nový crate (`HiranClient` trait, `LiveHiranClient` via `ureq` + `/v1/chat/completions`, `StubHiranClient`, `build_client()` factory, `MockHiranServer` via `tiny_http` na náhodném portu); `HiranNpuBackend` v `poc-npu` nyní volá živý HTTP endpoint; `poc-sim` výstup zobrazuje `hiran[live]` vs `hiran[stub]`; integrační testy `poc-sim/tests/integration_mock_hiran.rs` (6 testů — MockServer spawn/shutdown, 3 validátoři, multi-epoch, guardian bonus). **Live Hiran:** llama-server v2.2 Q4_K_M spuštěn lokálně na portu 8002 (`~5 tok/s` CPU), `poc-sim --hiran-url http://127.0.0.1:8002` ověřeno. Spec: [`docs/3.0.4/POC_HIRAN_INTEGRATION_SPEC.md`](./docs/3.0.4/POC_HIRAN_INTEGRATION_SPEC.md). Konceptuální základ: [`docs/3.0.4/PoC_CONCEPT.md`](./docs/3.0.4/PoC_CONCEPT.md). **Netýká se L1 consensus — čistě výzkumný prototyp.**
 
@@ -328,12 +337,10 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
   - `npm --prefix "APP&WEB/website-v2.9" run lint`
   - **Production build:** `npx next build --webpack` (MUST use `--webpack` — Next.js 16 Turbopack cannot resolve local `.tgz` deps)
   - **Theme system:** `.zion-rainbow-card` / `.zion-rainbow-sub` CSS classes with inline `style={{ '--rc': 'R, G, B' } as React.CSSProperties}`. Each page has its own accent color. See `APP&WEB/website-v2.9/README.md` for the full color map.
-  - **Production web status (2026-07-31):**
-    - SSH: `ssh zion-post-wipe` (key: `~/.ssh/zion-edge-post-wipe-2026-07-29`)
-    - Public web: `https://zionterranova.com` serves the **OASIS intro landing page** from `/var/www/maintenance/maintenance.html` (system nginx, `zion.conf`)
-    - Next.js v2.9.6: **not currently active**; source is built locally (`npm run build` in `APP&WEB/website-v2.9`) and can be deployed via `APP&WEB/website-v2.9/scripts/deploy.sh` when needed
-    - To switch back to full Next.js: run `deploy.sh`, then change `/etc/nginx/sites-enabled/zion.conf` to proxy `/` to `127.0.0.1:3000` and `nginx -s reload`
-    - OASIS intro deploy: `bash APP&WEB/website-v2.9/deploy/deploy-oasis-intro.sh` (rsync `public/maintenance.html` + `public/stargate/` to `/var/www/maintenance/`, reload nginx)
+  - **Production web trio (2026-07-31):** Tři služby běží současně:
+    - `https://zionterranova.com` — OASIS intro landing page z `/var/www/maintenance/maintenance.html` (systémový nginx, `zion.conf`). Deploy: `bash APP&WEB/website-v2.9/deploy/deploy-oasis-intro.sh`.
+    - `https://app.zionterranova.com` — web2.9 Next.js (`zion-website.service` → `127.0.0.1:3000`, nginx proxy). Deploy: `bash APP&WEB/website-v2.9/deploy/deploy-web2.9.sh`.
+    - `https://oasis.zionterranova.com` — separátní OASIS web v `/var/www/oasis/` (systémový nginx). Deploy: `bash APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh`.
     - Full guide: `APP&WEB/website-v2.9/DEPLOYMENT.md`
 - Mobile app:
   - `npm --prefix "APP&WEB/mobile-app" install`
@@ -592,13 +599,15 @@ The new server runs as the canonical primary node + pool + full stack. It must s
 - `zion-edge-dex.service` — ZionDex router (L3)
 - `zion-edge-oasis.service` — OASIS avatar hub (L4)
 - `zion-edge-python-dashboard.service` — ZION V3 Dashboard (Python, port 8766)
+- `zion-website.service` — Next.js 16.2.9 web2.9 (`app.zionterranova.com`)
 - `zion-edge-watchdog.timer` — Health monitor (2-minute timer)
 - `zion-edge-backup.timer` — Database backup
 - `nginx` — Reverse proxy + SSL (ports 80/443)
 
-**Docker container:**
-- `zion-web` — Next.js 16.2.9 website (Docker container, port 127.0.0.1:3000) — **currently stopped**, available for full-site deploy
-- Public web `https://zionterranova.com` — OASIS intro landing page served by system nginx from `/var/www/maintenance/maintenance.html` (Next.js not running)
+**Web / public landing:**
+- Public web `https://zionterranova.com` — OASIS intro landing page served by system nginx from `/var/www/maintenance/maintenance.html`
+- `zion-website.service` — Next.js 16.2.9 web2.9 (`https://app.zionterranova.com`, `127.0.0.1:3000`)
+- `zion-web` Docker image — legacy fallback path (currently not used)
 
 **Environment file:** `/root/zion/edge-environment.sh` (chmod 600, `<REPLACE_*>` placeholders for air-gapped keys)
 
@@ -1448,21 +1457,23 @@ ZION_LOG_BLOCK_SUBMITTER=1
 
 ### Docker
 
-| Container | Image | Port | Purpose |
-|-----------|-------|------|---------|
-| `zion-web` | `zion-web` | 127.0.0.1:3000 | **Currently stopped** — Next.js 16.2.9 web (73+ routes) |
-| OASIS intro | `nginx` (system) | 80/443 | One-page intro to ZION + Stargate to `oasis.zionterranova.com` |
+| Process | Type | Port | Purpose |
+|---------|------|------|---------|
+| `zion-website.service` | systemd / `npm start` (`next start`) | 127.0.0.1:3000 | Web2.9 Next.js at `app.zionterranova.com` |
+| `zion-web` Docker image | `zion-web` | 127.0.0.1:3000 | Fallback/legacy Docker path (currently not used) |
+| OASIS intro | `nginx` (system) | 80/443 | One-page intro at `zionterranova.com` |
+| OASIS Web | `nginx` (system) | 80/443 | Visual OASIS at `oasis.zionterranova.com` |
 
-**Docker compose:** `/root/zion-web-next/docker-compose.yml`
-- `restart: unless-stopped`
-- `read_only: true` (Next.js container)
-- tmpfs for nginx cache
+**Web2.9 service:** `zion-website.service` — `next start` on `127.0.0.1:3000`, runs as `zion` user from `/opt/zion/APP&WEB/website-v2.9/`, source updated via `deploy-web2.9.sh`.
+**Legacy Docker compose:** `/root/zion-web-next/docker-compose.yml` — not currently used.
 
 ### Nginx Reverse Proxy
 
 | Domain | Upstream | SSL Cert |
 |--------|----------|----------|
-| `zionterranova.com` | `127.0.0.1:3000` (Next.js) | Let's Encrypt (zionterranova.com + www) |
+| `zionterranova.com` | `/var/www/maintenance/maintenance.html` (static intro) | Let's Encrypt (zionterranova.com + www) |
+| `app.zionterranova.com` | `127.0.0.1:3000` (Next.js web2.9) | Let's Encrypt (app.zionterranova.com) |
+| `oasis.zionterranova.com` | `/var/www/oasis/index.html` (static OASIS) | Let's Encrypt (oasis.zionterranova.com) |
 | `dashboard.zionterranova.com` | `127.0.0.1:8766` (Dashboard) | Let's Encrypt (dashboard.zionterranova.com) |
 | `/api/rpc` | `127.0.0.1:9443` (node RPC, nginx 8443 → 9443) | (via main domain) |
 | `/api/dao` | `127.0.0.1:8450` (DAO API) | (via main domain) |
@@ -1528,18 +1539,11 @@ curl -s http://127.0.0.1:9443/jsonrpc -d '{"jsonrpc":"2.0","method":"getSupplyIn
 # Check genesis hash
 journalctl -u zion-node --no-pager -n 50 | grep tip_hash_hex | tail -1
 
-# Restart web (Docker)
-cd /root/zion-web-next && docker compose restart
-
-# Rebuild web from source
-cd /root/zion-web-next && docker compose down && docker compose build --no-cache && docker compose up -d
+# Deploy web2.9 (Next.js) to app.zionterranova.com
+cd <repo>/APP&WEB/website-v2.9 && bash deploy/deploy-web2.9.sh  # build, rsync to /opt/zion/APP&WEB/website-v2.9, chown, restart zion-website.service
 
 # Update OASIS intro landing page (served from /var/www/maintenance)
 cd <repo>/APP&WEB/website-v2.9 && bash deploy/deploy-oasis-intro.sh  # rsync public/maintenance.html + stargate/ + reload nginx
-
-# Switch from OASIS intro to full Next.js website:
-# 1. deploy web2.9:  npm run build && bash scripts/deploy.sh
-# 2. change /etc/nginx/sites-enabled/zion.conf to proxy / to 127.0.0.1:3000 and nginx -s reload
 
 # View logs
 journalctl -u zion-node -f
