@@ -1,11 +1,13 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-07-28
+> **Datum poslední aktualizace:** 2026-07-30
 > **Verze:** 3.0.7 "Trinity All Green"
 > **Protokol:** `zion-v3-node/3.0.7`
 > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
 > **Hard genesis reset:** 2026-07-20 — viz [`docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md`](./docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md). Bloky 0–~10913 předchozího řetězce jsou trvale ztraceny; aktuální chain startuje od genesis s unlimited retention.
+> **Update (2026-07-30):** **PRL (Pearl) označen jako `disabled_reason` ve `V3/L1/cosmic-harmony/src/profit_router.rs`.** `ExternalCoin::disabled_reason()` vrací důvod pro PRL, `CoinProfile` má `disabled_reason` a `enabled=false` pro PRL, `select_best_coin` ho automaticky vynechává. Řeší 3.0.8 Go/No-Go "každý aktivní coin má accepted share nebo `disabled_reason`". VTC/ZCL zůstávají aktivní (GPU E2E accepted v 3.0.7).
+>
 > **Dnešní update (2026-07-28):** **Trinity All Green — CUDA kernel verification complete.** Tři kritické bugy opraveny a pushnuty na `main`:
 > 1. **KawPow pool-side share verify fix** — `share_forwarder.rs` používal `ethash_final_hash` místo `kawpow_final_hash_real` pro KawPow share verification → valid shares odmítány. Fix deploynut na Edge server.
 > 2. **ProgPow kernel output_hash fix** — `progpow_kernel.cu` nepíše 32-byte final hash do `output_hash` bufferu → GPU vrací `0000000000000000` → CPU/GPU mismatch. Opraveno přidáním `keccak_f800_full()` + `output_hash` parametru. **3 varianty CPU_GPU_MATCH:** progpow, evrprogpow, meowpow.
