@@ -199,6 +199,7 @@ impl Node {
         let v3_seed_peers = self.config.seed_peers.clone();
         let v3_sync = self.v3_sync.clone();
         let v3_p2p_addr = self.config.v3_p2p_addr;
+        let peers = Arc::new(crate::peer_manager::PeerManager::default_manager());
         let v3_p2p_server = crate::v3_p2p::V3P2PServer::new(
             Arc::new(self.storage.clone()),
             "zion-v31-node",
@@ -207,22 +208,25 @@ impl Node {
             v3_p2p_addr.to_string(),
             rpc_addr.to_string(),
             "0.0.0.0:0".to_string(),
+            Arc::clone(&peers),
         );
 
         let rpc = RpcServer::new(Arc::clone(&self));
         let rpc_handle = tokio::spawn(async move { rpc.run(rpc_addr, rpc_shutdown).await });
 
-        let p2p = crate::p2p::P2P::new(Arc::clone(&self));
+        let p2p = crate::p2p::P2P::new(Arc::clone(&self), Arc::clone(&peers));
         let p2p_handle = tokio::spawn(async move { p2p.listen(p2p_addr, p2p_shutdown).await });
 
+        let peers_for_sync = Arc::clone(&peers);
         let sync_handle = tokio::spawn(async move {
-            crate::p2p::sync_loop(Arc::clone(&self), seed_peers, sync_shutdown).await;
+            crate::p2p::sync_loop(Arc::clone(&self), peers_for_sync, seed_peers, sync_shutdown).await;
             Ok(()) as Result<(), NodeError>
         });
 
         // V3 sync loop: periodically download missing V3 blocks from seed peers.
+        let peers_for_v3_sync = Arc::clone(&peers);
         let v3_sync_handle = tokio::spawn(async move {
-            crate::v3_p2p::sync_loop(v3_sync, v3_seed_peers, v3_sync_shutdown).await;
+            crate::v3_p2p::sync_loop(v3_sync, peers_for_v3_sync, v3_seed_peers, v3_sync_shutdown).await;
             Ok(()) as Result<(), NodeError>
         });
 

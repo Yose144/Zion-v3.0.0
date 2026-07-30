@@ -15,6 +15,7 @@ use tokio::net::{TcpListener, TcpStream};
 use tracing::{info, warn};
 
 use crate::difficulty::{self, lwma_next_difficulty};
+use crate::peer_manager::{PeerManager, PeerSource};
 use crate::storage::{Storage, StorageError};
 use crate::v3_compat::{validate_v3_block, V3AcceptedBlock};
 
@@ -158,7 +159,12 @@ impl V3Sync {
 
     /// Connect to `peer`, handshake, and download/validate/store all blocks
     /// the peer has beyond our local V3 tip.
-    pub async fn sync_from(&self, peer: SocketAddr) -> Result<u64, V3P2PError> {
+    pub async fn sync_from(
+        &self,
+        peer: SocketAddr,
+        peers: &PeerManager,
+    ) -> Result<u64, V3P2PError> {
+        peers.add_known(peer, PeerSource::Seed).await;
         let stream = TcpStream::connect(peer).await?;
         let (reader, mut writer) = stream.into_split();
         let mut lines = BufReader::new(reader).lines();
@@ -303,6 +309,7 @@ impl V3Sync {
 /// Periodically sync missing V3 blocks from a set of seed peers.
 pub async fn sync_loop(
     sync: V3Sync,
+    manager: Arc<PeerManager>,
     peers: Vec<SocketAddr>,
     mut shutdown: tokio::sync::watch::Receiver<bool>,
 ) {
@@ -321,13 +328,18 @@ pub async fn sync_loop(
             _ = shutdown.changed() => break,
             _ = sleep_fut => {
                 for peer in &peers {
-                    match sync.sync_from(*peer).await {
+                    manager.add_known(*peer, PeerSource::Seed).await;
+                    match sync.sync_from(*peer, &manager).await {
                         Ok(n) if n > 0 => {
                             info!(peer = %peer, synced = n, "V3 sync batch complete");
+                            manager.record_good(*peer).await;
                         }
-                        Ok(_) => {}
+                        Ok(_) => {
+                            manager.record_good(*peer).await;
+                        }
                         Err(e) => {
                             warn!(peer = %peer, "V3 sync failed: {}", e);
+                            manager.record_bad(*peer, 1).await;
                         }
                     }
                 }
@@ -355,6 +367,7 @@ pub struct V3P2PServer {
     listen_addr: String,
     rpc_addr: String,
     pool_addr: String,
+    peers: Arc<PeerManager>,
 }
 
 impl V3P2PServer {
@@ -366,6 +379,7 @@ impl V3P2PServer {
         listen_addr: impl Into<String>,
         rpc_addr: impl Into<String>,
         pool_addr: impl Into<String>,
+        peers: Arc<PeerManager>,
     ) -> Self {
         Self {
             storage,
@@ -375,6 +389,7 @@ impl V3P2PServer {
             listen_addr: listen_addr.into(),
             rpc_addr: rpc_addr.into(),
             pool_addr: pool_addr.into(),
+            peers,
         }
     }
 
@@ -385,6 +400,7 @@ impl V3P2PServer {
         mut shutdown: tokio::sync::watch::Receiver<bool>,
     ) -> Result<(), V3P2PError> {
         let listener = TcpListener::bind(addr).await?;
+        self.peers.set_local_addr(addr).await;
         info!(%addr, "V3 P2P listening");
 
         loop {
@@ -392,6 +408,7 @@ impl V3P2PServer {
                 _ = shutdown.changed() => break,
                 accept = listener.accept() => {
                     let (socket, peer) = accept?;
+                    let peers = Arc::clone(&self.peers);
                     let handler = V3PeerHandler {
                         storage: self.storage.clone(),
                         node_id: self.node_id.clone(),
@@ -400,10 +417,20 @@ impl V3P2PServer {
                         listen_addr: self.listen_addr.clone(),
                         rpc_addr: self.rpc_addr.clone(),
                         pool_addr: self.pool_addr.clone(),
+                        peers: Arc::clone(&peers),
                     };
                     tokio::spawn(async move {
+                        let _guard = match peers.acquire(peer).await {
+                            Some(g) => g,
+                            None => {
+                                warn!(%peer, "V3 P2P peer rejected");
+                                return;
+                            }
+                        };
                         if let Err(e) = handler.handle(socket).await {
                             warn!(%peer, "V3 P2P peer disconnected: {}", e);
+                        } else {
+                            peers.record_good(peer).await;
                         }
                     });
                 }
@@ -422,10 +449,12 @@ struct V3PeerHandler {
     listen_addr: String,
     rpc_addr: String,
     pool_addr: String,
+    peers: Arc<PeerManager>,
 }
 
 impl V3PeerHandler {
     async fn handle(&self, socket: TcpStream) -> Result<(), V3P2PError> {
+        let peer_addr = socket.peer_addr().map_err(V3P2PError::Io)?;
         let (reader, mut writer) = socket.into_split();
         let mut lines = BufReader::new(reader).lines();
 
@@ -434,17 +463,19 @@ impl V3PeerHandler {
                 Ok(m) => m,
                 Err(e) => {
                     warn!("invalid V3 P2P message: {}", e);
+                    self.peers.record_bad(peer_addr, 1).await;
                     continue;
                 }
             };
 
             match msg {
                 P2pMessage::Hello { .. } => {
+                    let peers = self.peers.random_endpoints(8).await;
                     let welcome = P2pMessage::Welcome {
                         node_id: self.node_id.clone(),
                         protocol_version: self.protocol_version.clone(),
                         profile: "v3".to_string(),
-                        peers: vec![],
+                        peers,
                     };
                     self.write_msg(&mut writer, &welcome).await?;
 
@@ -465,6 +496,11 @@ impl V3PeerHandler {
                         };
                         self.write_msg(&mut writer, &status).await?;
                     }
+                }
+                P2pMessage::GetPeers => {
+                    let peers = self.peers.random_endpoints(8).await;
+                    let reply = P2pMessage::Peers { peers };
+                    self.write_msg(&mut writer, &reply).await?;
                 }
                 P2pMessage::GetStatus => {
                     let tip = self.storage.v3_tip().await?;
@@ -524,6 +560,7 @@ impl V3PeerHandler {
                         }
                         Err(e) => {
                             warn!("invalid announced block: {}", e);
+                            self.peers.record_bad(peer_addr, 2).await;
                         }
                     }
                 }
@@ -702,7 +739,8 @@ mod tests {
             NetworkId::Mainnet,
         );
 
-        let synced = sync.sync_from(addr).await.unwrap();
+        let peers = PeerManager::default_manager();
+        let synced = sync.sync_from(addr, &peers).await.unwrap();
         assert_eq!(synced, 1);
 
         let tip = storage.v3_tip().await.unwrap().unwrap();

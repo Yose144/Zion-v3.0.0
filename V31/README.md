@@ -15,7 +15,7 @@ Workspace se nachází v `/Users/yeshuae/Projects/2.9.6/V31/`; produkční V3 b�
 | `L1/types` | `zion-l1-types` | Sdílená L1 primitiva (`Address`, `ChainId`, `Asset`, `Hash`, `Amount`). |
 | `L1/cosmic-harmony` | `zion-cosmic-harmony` | Kanonický PoW `EkamDeeksha`, `ExternalCoin`, `CoinProfile`, `ProfitRouter` a podpora disabled coinů. |
 | `L1/cosmic-harmony-v3` | `zion-cosmic-harmony-v3` | Legacy v3/v2 PoW algoritmy (`deeksha_lite`, `chv3`, `lite_fire`) a CHV3 body root / NPU mixing scaffolding. |
-| `L1/core` | `zion-core` | Node runtime s V3 checkpoint sync, V3 P2P listen/IBD, V3 RPC, state/template/reorg a SQLite storage. |
+| `L1/core` | `zion-core` | Node runtime s V3 checkpoint sync, V3 P2P listen/IBD, V3 RPC, state/template/reorg, SQLite storage a `PeerManager` (max peers, ban score, discovery). |
 | `L1/miner` | `zion-miner` | Triple Stream miner, AuxPoW GPU/CPU fallback (`auxpow` feature), `StratumClient`, `ZION_STREAM3_FORCE_COIN`, disabled-coin filtering a `HeightAwareDeeksha`. |
 | `L1/pool` | `zion-pool` | Stratum server + PPLNS, share validator s `HeightAwareDeeksha`, reconnect rate limiter a `template_feed_loop` z `zion-core`. |
 | `L2/multichain` | `zion-multichain` | `ChainAdapter` trait, EVM/BTC/ZionL1 adaptery, HTLC s SQLite persistencí, DEX router, WARP, wallet keyring, Dharma Credits a HTTP API. |
@@ -78,7 +78,8 @@ Pro plný Mainnet Alpha release použij `cargo build --release` — profil má `
 - **Triple Stream mining** — kanonický ZION stream + AuxPoW GPU a CPU fallback přes `auxpow` feature.
 - **V3 checkpoint sync** — V3 stav slouží jako checkpoint pro V31, nikoliv jako genesis reset.
 - **V3 P2P + RPC** — `zion-core` umí V3 P2P listen/IBD a V3 RPC pro kompatibilitu s Edge.
-- **Reconnect rate limiter** — `zion-pool` chrání proti reconnect stormu a zneužití.
+- **E2E smoke node+pool+miner** — lokálně vytěžen a přijat block výška 1+; pool posílá `mining.notify`, miner `mining.submit`, node `submitBlock`.
+- **Production P2P hardening** — `PeerManager` sdílený canonical/V3 P2P, max inbound limit, ban score, `GetPeers`/`Peers` discovery.
 - **Forced coin override** — proměnná prostředí `ZION_STREAM3_FORCE_COIN` přepíše automatický výběr coiny.
 - **Disabled-coin filtering** — filtr zakázaných coinů v `zion-miner` i `zion-cosmic-harmony`.
 - **DAO skeleton** — `zion-dao` má základní návrh/quorum/timelock typy a smoke test.
@@ -91,8 +92,8 @@ Pro plný Mainnet Alpha release použij `cargo build --release` — profil má `
 
 Následující položky jsou aktivní nebo čekají na E2E ověření před cut-over z V3:
 
-- End-to-end smoke test node + pool + miner v jednom lokálním runu.
-- P2P production hardening — peer discovery, ban score a resiliance proti reconnect stormu.
+- ~~End-to-end smoke test node + pool + miner v jednom lokálním runu.~~ **Hotovo (2026-07-30).**
+- ~~P2P production hardening — peer discovery, ban score a resiliance proti reconnect stormu.~~ **Hotovo (2026-07-30).**
 - Custom AMM deploy a integrace v `zion-multichain`.
 - Plná L3–L6 end-to-end verifikace — Oasis game, NCL compute marketplace, AI-native agenti, Free World a Issobella.
 - WARP API rate limiting a autentizace v `zion-multichain`.

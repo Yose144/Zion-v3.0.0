@@ -16,6 +16,7 @@ pub mod mempool;
 pub mod migration;
 pub mod node;
 pub mod p2p;
+pub mod peer_manager;
 pub mod rpc;
 pub mod storage;
 pub mod transaction;

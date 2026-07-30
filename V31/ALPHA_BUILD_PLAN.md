@@ -2,7 +2,7 @@
 
 > **Verze:** 3.1.0-alpha.2  
 > **Datum:** 2026-07-30  
-> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented, V3 RPC wired into node runtime, V3 P2P listen server + IBD loop, `bin/node.rs` V3-aware runtime, `zion-pool` standalone stratum binary, `zion miner start` pool mode, E2E smoke (node + pool + miner) produces and accepts blocks height 1+
+> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented, V3 RPC wired into node runtime, V3 P2P listen server + IBD loop, `bin/node.rs` V3-aware runtime, `zion-pool` standalone stratum binary, `zion miner start` pool mode, E2E smoke (node + pool + miner) produces and accepts blocks height 1+, production P2P hardening (peer manager, ban score, max peers, discovery)
 > **Princip:** `V3/` zůstává produkční, `V31/` se staví jako čistý Mainnet Alpha strom.  
 
 Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozhodnutí o architektuře, vrstvách a prioritách se zde zaznamenávají a aktualizují.
@@ -168,7 +168,7 @@ Cíl: `V31/` nahradí `V3/` na Edge staging.
 Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další práce:
 
 1. ~~**E2E smoke testy**~~ — **Hotovo (2026-07-30):** `zion-node` + `zion-pool` + `zion-miner` lokálně vytěží, submitne a přijme block (výška 1+). Pool broadcastuje `mining.notify`, miner připojí stratum a submituje share.
-2. **Production P2P hardening** — peer discovery (GetPeers/Peers), max peers, ban score. (Rate limit pro reconnect storm hotovo.)
+2. ~~**Production P2P hardening**~~ — **Hotovo (2026-07-30):** `PeerManager` sdílený mezi canonical a V3 P2P, max inbound limit, ban score, `GetPeers`/`Peers` odpovědi ve welcome zprávě.
 3. **Height-aware PoW fork gating** — `HeightAwareDeeksha` s height-gated dispatch implementován v `zion-core`, `zion-miner` i `zion-pool`.
 4. **HTLC persistence** — SQLite backend pro HTLC hotovo v `zion-multichain`.
 5. **Tag `v3.1.0-alpha.1`** po úspěšných E2E smoke testech.
@@ -225,7 +225,7 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
   - **Ověření:** `v3_genesis_hash()` reprodukuje mainnet hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`; `validate_v3_block` akceptuje V3 genesis blok; `cargo test -p zion-core` prochází.
 - Zbývá:
   - ~~E2E smoke testy (node + pool + miner lokálně).~~ **Hotovo (2026-07-30).**
-  - Production P2P hardening (peer discovery, max peers, ban score); rate limit hotovo.
+  - ~~Production P2P hardening (peer discovery, max peers, ban score); rate limit hotovo.~~ **Hotovo (2026-07-30).**
   - Height-aware PoW fork gating — hotovo.
   - HTLC SQLite persistence — hotovo.
 - Detailní analýza v `V31/V3_SYNC_ASSESSMENT.md`.
