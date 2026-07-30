@@ -172,8 +172,8 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
 3. ~~**Custom AMM deploy v `zion-multichain`**~~ — **Hotovo (2026-07-30):** SQLite persistence AMM poolů, `deploy_pool`, `/v1/swap/pool/deploy` + `/v1/swap/pools`, načítání poolů při startu.
 4. ~~**WARP API rate limiting + auth v `zion-multichain`**~~ — **Hotovo (2026-07-30):** per-IP token bucket, optional `Authorization: Bearer <api_key>`, `/health` public, `ConnectInfo` zapojen.
 5. ~~**Height-aware PoW fork gating + stress testy**~~ — **Hotovo (2026-07-30):** `HeightAwareDeeksha` dispatchuje dle výšky, `zion-core` obsahuje unit testy napříč fork boundary (CHV3 4500, Fire 5000) a sweep 0–5500.
-6. **HTLC persistence** — SQLite backend pro HTLC hotovo v `zion-multichain`.
-7. **Tag `v3.1.0-alpha.2`** po úspěšných E2E smoke testech.
+6. ~~**HTLC persistence**~~ — **Hotovo (2026-07-30):** SQLite backend pro HTLC v `zion-multichain`.
+7. ~~**Tag `v3.1.0-alpha.2`**~~ — **Hotovo (2026-07-30):** tag vytvořen a pushnut; workspace build prochází.
 
 ---
 
@@ -231,7 +231,8 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
   - ~~Custom AMM deploy (`/v1/swap/pool/deploy`, SQLite persistence poolů).~~ **Hotovo (2026-07-30).**
   - ~~WARP API rate limiting + auth (per-IP token bucket, optional `Authorization: Bearer`).~~ **Hotovo (2026-07-30).**
   - ~~Height-aware PoW fork gating + stress testy (boundary CHV3/Fire + sweep 0–5500).~~ **Hotovo (2026-07-30).**
-  - HTLC SQLite persistence — hotovo.
+  - ~~HTLC SQLite persistence.~~ **Hotovo (2026-07-30).**
+  - ~~Tag `v3.1.0-alpha.2`.~~ **Hotovo (2026-07-30).**
 - Detailní analýza v `V31/V3_SYNC_ASSESSMENT.md`.
 
 ## 8. Pool + miner integrace (F6)
