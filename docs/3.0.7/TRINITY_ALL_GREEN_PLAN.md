@@ -3,7 +3,7 @@
 > **Goal:** Every active mining stream (ZION Deeksha, external GPU, external CPU) produces verified accepted shares on at least one reference rig, with no critical regressions, and the stack is ready for wider public use.
 > **Target version:** 3.0.7  
 > **Owner:** ZION core ops  
-> **Related docs:** [`3.0.7.md`](./3.0.7.md), [`StatusV3.md`](./StatusV3.md), [`docs/3.0.6/`](./docs/3.0.6/)  
+> **Related docs:** [`3.0.7.md`](3.0.7.md), [`StatusV3.md`](../../StatusV3.md), [`docs/3.0.6/`](../3.0.6)  
 
 ---
 

@@ -1,7 +1,7 @@
 # ZION Mainnet Launch Checklist — 3.0.9 → 3.1.0
 
 > **Scope:** Gates that must be closed before ZION is declared **Mainnet Alpha** (3.1.0) and the public launch countdown begins.
-> **Source:** [`3.0.9.md`](./docs/3.0.6/3.0.9.md) + [`3.1.0.md`](./docs/3.0.6/3.1.0.md) + [`MAINNET_ALPHA_PLAN.md`](./docs/3.0.6/MAINNET_ALPHA_PLAN.md).
+> **Source:** [`3.0.9.md`](../3.0.6/3.0.9.md) + [`3.1.0.md`](../3.0.6/3.1.0.md) + [`MAINNET_ALPHA_PLAN.md`](../3.0.6/MAINNET_ALPHA_PLAN.md).
 > **Status:** In preparation — migrated from the 3.0.9/3.1.0 plans into this single canonical checklist.
 
 ---

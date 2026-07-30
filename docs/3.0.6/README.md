@@ -10,8 +10,8 @@ This directory contains the root-level reports, plans and session notes that wer
 | Forward roadmap | [`ROADMAP.md`](../../ROADMAP.md) |
 | Agent rules | [`AGENTS.md`](../../AGENTS.md) |
 | Main README | [`README.md`](../../README.md) |
-| Current version overview | [`3.0.7.md`](../../3.0.7.md) |
-| Trinity All Green plan | [`TRINITY_ALL_GREEN_PLAN.md`](../../TRINITY_ALL_GREEN_PLAN.md) |
+| Current version overview | [`3.0.7.md`](../3.0.7/3.0.7.md) |
+| Trinity All Green plan | [`TRINITY_ALL_GREEN_PLAN.md`](../3.0.7/TRINITY_ALL_GREEN_PLAN.md) |
 
 ## 3.0.6 archive contents
 

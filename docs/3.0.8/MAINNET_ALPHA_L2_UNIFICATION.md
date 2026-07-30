@@ -210,10 +210,10 @@ Celkem: **3–4 měsíce** pro funkční Mainnet Alpha `V31/L2/multichain` bez z
 
 ## 10. Vztah k existujícím plánům
 
-- [`V3.1_MIGRATION_PLAN.md`](./docs/3.0.6/V3.1_MIGRATION_PLAN.md) říká *co* se má přesunout a kam.
-- [`V3.1_INTEGRATION_PLAN.md`](./docs/3.0.6/V3.1_INTEGRATION_PLAN.md) říká *jak* spojit Bridge↔WARP a AuxPoW→Miner.
+- [`V3.1_MIGRATION_PLAN.md`](../3.0.6/V3.1_MIGRATION_PLAN.md) říká *co* se má přesunout a kam.
+- [`V3.1_INTEGRATION_PLAN.md`](../3.0.6/V3.1_INTEGRATION_PLAN.md) říká *jak* spojit Bridge↔WARP a AuxPoW→Miner.
 - **Tento koncept** navrhuje jít dál: ne jen spojit Bridge↔WARP, ale vytvořit jediný `V31/L2/multichain` crate pro všechny value-moving operace.
-- [`MULTICHAIN_WALLET_POOL_CONCEPT.md`](./MULTICHAIN_WALLET_POOL_CONCEPT.md) doplňuje wallet a pool stranu.
+- [`MULTICHAIN_WALLET_POOL_CONCEPT.md`](MULTICHAIN_WALLET_POOL_CONCEPT.md) doplňuje wallet a pool stranu.
 
 ---
 

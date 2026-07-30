@@ -3,7 +3,7 @@
 > **Verze:** 1.0 (draft)  
 > **Datum:** 2026-07-27  
 > **Status:** koncept / není implementační plán  
-> **Scope:** navrženo pro **čistý `V31/` strom** — mimo `V3/`. Souvisí s L2 unifikací v [`MAINNET_ALPHA_L2_UNIFICATION.md`](./MAINNET_ALPHA_L2_UNIFICATION.md).
+> **Scope:** navrženo pro **čistý `V31/` strom** — mimo `V3/`. Souvisí s L2 unifikací v [`MAINNET_ALPHA_L2_UNIFICATION.md`](MAINNET_ALPHA_L2_UNIFICATION.md).
 > **Cíl:** zhodnotit, zda a jak by `zion` Wallet a ZION Pool mohly nativně podporovat všechny coiny z "Trinity engine", a uložit první koncept do kořene repa.
 
 ---
@@ -197,7 +197,7 @@ Pro nativní multichain pool by Edge potřeboval:
 
 **Největší práce** je postavit **per-coin block template provider + block submitter** a zajistit bezpečný payout. Pro první 3–5 coinů (DCR, ALPH, VRSC, XMR, RTM) je to reálné v řádech týdnů/měsíců. Plná podpora 30+ coinů a Dharma Credits vrstva je projekt na půl roku až rok.
 
-**Doporučení:** začít jako `V31/L1/pool` feature (`native_multichain`) — čistý strom, žádné zásahy do produkčního `V3/` poolu, dokud nebude E2E ověřeno. Wallet a Dharma Credits payout by se měly integrovat s `V31/L2/multichain` podle [`MAINNET_ALPHA_L2_UNIFICATION.md`](./MAINNET_ALPHA_L2_UNIFICATION.md).
+**Doporučení:** začít jako `V31/L1/pool` feature (`native_multichain`) — čistý strom, žádné zásahy do produkčního `V3/` poolu, dokud nebude E2E ověřeno. Wallet a Dharma Credits payout by se měly integrovat s `V31/L2/multichain` podle [`MAINNET_ALPHA_L2_UNIFICATION.md`](MAINNET_ALPHA_L2_UNIFICATION.md).
 
 ---
 
@@ -212,7 +212,7 @@ Pro nativní multichain pool by Edge potřeboval:
 - `V3/cli/src/config.rs` — konfigurační schéma.
 - `StatusV3.md` — aktuální Edge topologie a coin E2E status.
 - `docs/3.0.6/V3.1_MIGRATION_PLAN.md` — kam by tento kód patřil ve `V31/`.
-- [`MAINNET_ALPHA_L2_UNIFICATION.md`](./MAINNET_ALPHA_L2_UNIFICATION.md) — navrhované sjednocení wallet/bridge/swap/dex do jednoho `V31/L2/multichain` crate.
+- [`MAINNET_ALPHA_L2_UNIFICATION.md`](MAINNET_ALPHA_L2_UNIFICATION.md) — navrhované sjednocení wallet/bridge/swap/dex do jednoho `V31/L2/multichain` crate.
 
 ---
 
