@@ -19,6 +19,7 @@ use crate::config::ServerConfig;
 use crate::contracts::ZionContracts;
 use crate::error::{MultichainError, MultichainResult};
 use crate::service::MultichainService;
+use crate::swap::Pool;
 use crate::types::{Transfer, TransferDirection, TransferEndpoint};
 use zion_pool::StratumServer;
 
@@ -108,6 +109,7 @@ impl ApiServer {
 
     pub async fn run(&self) -> MultichainResult<()> {
         self.start_stratum_if_configured().await?;
+        self.service.load_dex_pools().await?;
 
         let payout_service = Arc::clone(&self.service);
         tokio::spawn(async move {
@@ -134,6 +136,8 @@ impl ApiServer {
             .route("/v1/multichain/contracts/:chain", get(get_contracts))
             .route("/v1/wallet/address", post(wallet_address))
             .route("/v1/wallet/sign", post(wallet_sign))
+            .route("/v1/swap/pool/deploy", post(deploy_pool))
+            .route("/v1/swap/pools", get(list_pools))
             .route("/v1/swap/quote", post(swap_quote))
             .route("/v1/swap/execute", post(swap_execute))
             .route("/v1/bridge/submit", post(bridge_submit))
@@ -321,6 +325,24 @@ async fn swap_execute(
         }))),
         Err(_) => Err(StatusCode::BAD_REQUEST),
     }
+}
+
+async fn deploy_pool(
+    State(state): State<AppState>,
+    Json(pool): Json<Pool>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    match state.service.deploy_pool(pool).await {
+        Ok(()) => Ok(Json(serde_json::json!({"ok": true}))),
+        Err(e) => Ok(Json(serde_json::json!({
+            "ok": false,
+            "error": e.to_string(),
+        }))),
+    }
+}
+
+async fn list_pools(State(state): State<AppState>) -> Json<serde_json::Value> {
+    let pools = state.service.list_dex_pools().await;
+    Json(serde_json::json!({"pools": pools}))
 }
 
 #[derive(Deserialize)]

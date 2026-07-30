@@ -2,6 +2,7 @@ use rusqlite::Connection;
 
 use crate::error::MultichainError;
 use crate::error::MultichainResult;
+use crate::swap::dex::Pool;
 use crate::swap::htlc::{HtlcRecord, SwapState};
 
 /// SQLite connection manager for `zion-multichain`.
@@ -67,6 +68,12 @@ impl Db {
                 data_json TEXT NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_htlc_state ON htlc_records(state);
+
+            CREATE TABLE IF NOT EXISTS pools (
+                pool_id TEXT PRIMARY KEY,
+                data_json TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
             "#,
         )?;
         Ok(())
@@ -161,6 +168,50 @@ impl Db {
         Ok(out)
     }
 
+    // ------------------------------------------------------------------------
+    // AMM pool persistence
+    // ------------------------------------------------------------------------
+
+    /// Persist an AMM pool (insert or replace).
+    pub fn save_pool(&self, pool: &Pool) -> MultichainResult<()> {
+        let data_json = serde_json::to_string(pool)
+            .map_err(|e| MultichainError::Internal(format!("serialize pool: {e}")))?;
+        let created_at = chrono::Utc::now().to_rfc3339();
+        self.conn.execute(
+            r#"
+            INSERT OR REPLACE INTO pools
+            (pool_id, data_json, created_at)
+            VALUES (?1, ?2, ?3)
+            "#,
+            rusqlite::params![pool.id.to_string(), data_json, created_at],
+        )?;
+        Ok(())
+    }
+
+    /// Load all persisted AMM pools.
+    pub fn load_pools(&self) -> MultichainResult<Vec<Pool>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT data_json FROM pools ORDER BY created_at DESC")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+        let mut out = Vec::new();
+        for r in rows {
+            let json = r?;
+            let pool: Pool = serde_json::from_str(&json)
+                .map_err(|e| MultichainError::Internal(format!("deserialize pool: {e}")))?;
+            out.push(pool);
+        }
+        Ok(out)
+    }
+
+    /// Delete an AMM pool by id.
+    pub fn delete_pool(&self, pool_id: u64) -> MultichainResult<usize> {
+        let n = self
+            .conn
+            .execute("DELETE FROM pools WHERE pool_id = ?1", rusqlite::params![pool_id.to_string()])?;
+        Ok(n)
+    }
+
     /// Delete HTLC records in terminal states older than `days` days.
     pub fn purge_old_htlc(&self, days: u32) -> MultichainResult<usize> {
         let cutoff = chrono::Utc::now() - chrono::Duration::days(days as i64);
@@ -169,5 +220,44 @@ impl Db {
             rusqlite::params![cutoff.to_rfc3339()],
         )?;
         Ok(n)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use zion_l1_types::{Amount, Asset, AssetId, ChainId};
+
+    fn test_asset(chain: ChainId, ticker: &str) -> Asset {
+        Asset {
+            id: AssetId::new(chain, ticker, None),
+            decimals: 6,
+            name: ticker.to_string(),
+        }
+    }
+
+    #[test]
+    fn pool_persists_and_reloads() {
+        let db = Db::open_in_memory().unwrap();
+        let zion = test_asset(ChainId::ZionL1, "ZION");
+        let usdc = test_asset(ChainId::Base, "USDC");
+        let pool = Pool {
+            id: 1,
+            asset_a: zion,
+            asset_b: usdc,
+            reserve_a: Amount::new(100_000_000),
+            reserve_b: Amount::new(1_000_000_000),
+            fee_bps: 30,
+        };
+
+        db.save_pool(&pool).unwrap();
+        let loaded = db.load_pools().unwrap();
+        assert_eq!(loaded.len(), 1);
+        assert_eq!(loaded[0].id, 1);
+        assert_eq!(loaded[0].reserve_a.0, 100_000_000);
+        assert_eq!(loaded[0].fee_bps, 30);
+
+        db.delete_pool(1).unwrap();
+        assert!(db.load_pools().unwrap().is_empty());
     }
 }

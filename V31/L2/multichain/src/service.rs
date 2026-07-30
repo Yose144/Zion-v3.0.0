@@ -26,8 +26,7 @@ use crate::warp::runtime::WarpRuntime;
 pub struct MultichainService {
     #[allow(dead_code)]
     config: MultichainConfig,
-    #[allow(dead_code)]
-    _db: Arc<Mutex<Db>>,
+    db: Arc<Mutex<Db>>,
     adapters: Arc<ChainAdapterRegistry>,
     bridge: Bridge,
     keyring: Keyring,
@@ -88,7 +87,7 @@ impl MultichainService {
         });
         Self {
             config,
-            _db: db,
+            db,
             adapters,
             bridge,
             keyring,
@@ -97,6 +96,64 @@ impl MultichainService {
             pool,
             processed_payouts: Arc::new(StdMutex::new(HashSet::new())),
         }
+    }
+
+    /// Load persisted AMM pools into the in-memory router.
+    pub async fn load_dex_pools(&self) -> MultichainResult<()> {
+        let pools = self.db.lock().await.load_pools()?;
+        let mut dex = self.dex.write().await;
+        for pool in pools {
+            dex.add_pool(pool);
+        }
+        Ok(())
+    }
+
+    /// Validate and deploy a new custom AMM pool. Persists to DB and router.
+    pub async fn deploy_pool(&self, mut pool: Pool) -> MultichainResult<()> {
+        if pool.fee_bps >= 10_000 {
+            return Err(MultichainError::Validation("fee_bps must be < 10000".to_string()));
+        }
+        if pool.reserve_a == Amount::ZERO || pool.reserve_b == Amount::ZERO {
+            return Err(MultichainError::Validation("reserves must be non-zero".to_string()));
+        }
+        if pool.asset_a.id == pool.asset_b.id {
+            return Err(MultichainError::Validation("pool assets must be different".to_string()));
+        }
+
+        // Auto-assign a unique id when the caller passes 0.
+        if pool.id == 0 {
+            let guard = self.dex.read().await;
+            let existing = guard.pools();
+            let max_id = existing.iter().map(|p| p.id).max().unwrap_or(0);
+            drop(guard);
+            pool.id = max_id + 1;
+        }
+
+        // Reject duplicate pool id or duplicate asset pair.
+        {
+            let dex = self.dex.read().await;
+            if dex.pools().iter().any(|p| p.id == pool.id) {
+                return Err(MultichainError::Validation(format!(
+                    "pool id {} already exists",
+                    pool.id
+                )));
+            }
+            if dex.find_pool(&pool.asset_a.id, &pool.asset_b.id).is_some() {
+                return Err(MultichainError::Validation(format!(
+                    "pool for {}-{} already exists",
+                    pool.asset_a.id, pool.asset_b.id
+                )));
+            }
+        }
+
+        self.db.lock().await.save_pool(&pool)?;
+        self.dex.write().await.add_pool(pool);
+        Ok(())
+    }
+
+    /// List all deployed AMM pools.
+    pub async fn list_dex_pools(&self) -> Vec<Pool> {
+        self.dex.read().await.pools().to_vec()
     }
 
     /// Returns a snapshot of health for every registered chain.
