@@ -87,8 +87,10 @@ Fáze D — Full cut-over (H-0):
 | Data loss DB | `sqlite3 .backup` před cut-over + off-site rsync dle `ZION_OS/infra/scripts/`. |
 | Miner s `--v3-miner` nekompatibilní | Ponechat V3 pool port 8444 alias dokud se klienti neaktualizují. |
 
-## 8. Otevřené E2E před plným cut-over
+## 8. E2E před plným cut-over — ✓ kompletní
 
 - ~~Plná L3–L6 end-to-end verifikace: Oasis game, NCL compute marketplace, AI-native agenti, Free World, Issobella.~~ **Hotovo (2026-07-30):** `V31/smoke` crate s cross-layer testem NCL → AI-Native → Oasis → Free World → Issobella prochází.
 - ~~Cross-chain WARP transfer (Base ↔ ZionL1) přes `zion-multichain`.~~ **Hotovo (2026-07-30):** `V31/smoke` obsahuje `warp_htlc_cross_chain_smoke` s HTLC mezi Base a ZionL1.
 - ~~Governance DAO proposal + vote na V31.~~ **Hotovo (2026-07-30):** `V31/smoke` obsahuje `dao_governance_proposal_smoke` s proposal, vote a quorum check.
+
+**Zbývá spustit cut-over:** viz fáze 1–7 výše. Před tím doporučeno vytvořit `v3.1.0-beta` release a 7d/30d smoke run na neprodukčním prostředí.

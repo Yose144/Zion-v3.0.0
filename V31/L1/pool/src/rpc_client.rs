@@ -33,7 +33,7 @@ pub async fn jsonrpc_call(addr: SocketAddr, request: &Value) -> Result<Value> {
         .await
         .with_context(|| format!("failed to connect to {}", addr))?;
 
-    let payload = format!("{}\n", request.to_string());
+    let payload = format!("{}\n", request);
     stream
         .write_all(payload.as_bytes())
         .await

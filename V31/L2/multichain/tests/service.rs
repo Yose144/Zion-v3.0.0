@@ -47,7 +47,8 @@ impl ChainAdapter for MockAdapter {
         &self,
         _transfer: &zion_multichain::Transfer,
     ) -> MultichainResult<Hash> {
-        unimplemented!("mock adapter does not sign")
+        // Mock adapter does not sign real transactions; return a default hash.
+        Ok(Hash::default())
     }
 
     async fn current_height(&self) -> MultichainResult<u64> {
@@ -59,7 +60,8 @@ impl ChainAdapter for MockAdapter {
     }
 
     async fn send_payment(&self, _to: &Address, _amount: Amount) -> MultichainResult<Hash> {
-        unimplemented!("mock adapter does not sign")
+        // Mock adapter does not sign real transactions; return a default hash.
+        Ok(Hash::default())
     }
 
     async fn balance(&self, _address: &Address) -> MultichainResult<Amount> {

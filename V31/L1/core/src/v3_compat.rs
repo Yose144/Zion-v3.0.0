@@ -794,7 +794,7 @@ pub fn validate_v3_block(
         // PoW target must be met.
         let hash = block.header_hash();
         let target = compact_to_target(block.header.difficulty_bits);
-        if &hash > &target.bytes {
+        if hash > target.bytes {
             return Err("PoW target not met");
         }
     }

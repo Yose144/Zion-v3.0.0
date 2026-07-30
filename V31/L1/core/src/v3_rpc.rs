@@ -172,7 +172,7 @@ impl V3RpcHandler {
                 // Accept the wire-format V3AcceptedBlock as well.
                 let accepted: V3AcceptedBlock = serde_json::from_value(params.clone())
                     .map_err(|e| V3RpcError::Parse(e.to_string()))?;
-                accepted.into_v3_block().map_err(|e| V3RpcError::Parse(e))?
+                accepted.into_v3_block().map_err(V3RpcError::Parse)?
             }
         };
 

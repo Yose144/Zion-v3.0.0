@@ -61,7 +61,7 @@ impl WarpWatcher {
                 debug!("[Watcher] Chain '{}' disabled — skipping", chain.name);
                 continue;
             }
-            match create_adapter_from_config(&chain, &config) {
+            match create_adapter_from_config(chain, &config) {
                 Some(adapter) => {
                     info!("[Watcher] Registered adapter for '{}'", chain.name);
                     adapters.push((chain.name.clone(), adapter));
