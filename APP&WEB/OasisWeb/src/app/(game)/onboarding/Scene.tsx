@@ -7,7 +7,6 @@ import { chapters } from '@/lib/onboarding';
 import { getZonePosition } from '@/lib/zones';
 import InteractiveObject from '@/components/InteractiveObject';
 import GlassPanel from '@/components/GlassPanel';
-import ErrorBoundary from '@/components/ErrorBoundary';
 
 const zonePos = getZonePosition('onboarding');
 
@@ -24,7 +23,6 @@ export default function OnboardingScene() {
   }, []);
 
   return (
-    <ErrorBoundary>
       <group position={zonePos}>
         {chapters.map((chapter, i) => {
           const pos = positions[i] ?? new THREE.Vector3();
@@ -61,7 +59,6 @@ export default function OnboardingScene() {
           </GlassPanel>
         </Html>
       </group>
-    </ErrorBoundary>
   );
 }
 

@@ -4,7 +4,6 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import InteractiveObject from '@/components/InteractiveObject';
-import ErrorBoundary from '@/components/ErrorBoundary';
 import { getZonePosition } from '@/lib/zones';
 
 const zonePos = getZonePosition('dashboard');
@@ -19,7 +18,6 @@ export default function DashboardScene() {
   });
 
   return (
-    <ErrorBoundary>
       <group ref={groupRef} position={zonePos}>
         {[0, 1, 2, 3].map((i) => {
         const a = (i / 4) * Math.PI * 2;
@@ -50,6 +48,5 @@ export default function DashboardScene() {
         );
       })}
       </group>
-    </ErrorBoundary>
   );
 }

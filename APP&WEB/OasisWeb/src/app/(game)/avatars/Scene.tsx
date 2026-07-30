@@ -9,7 +9,6 @@ import { getZonePosition } from '@/lib/zones';
 import InteractiveObject from '@/components/InteractiveObject';
 import GlassPanel from '@/components/GlassPanel';
 import Skeleton from '@/components/Skeleton';
-import ErrorBoundary from '@/components/ErrorBoundary';
 
 const zonePos = getZonePosition('avatars');
 
@@ -35,7 +34,6 @@ export default function AvatarsScene() {
   }, [selected, avatars, positions]);
 
   return (
-    <ErrorBoundary>
       <group position={zonePos}>
         {loading && (
           <Html transform center distanceFactor={8} position={[0, 1, 0]}>
@@ -81,7 +79,6 @@ export default function AvatarsScene() {
           </Html>
         )}
       </group>
-    </ErrorBoundary>
   );
 }
 

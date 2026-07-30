@@ -10,7 +10,6 @@ import { getZonePosition } from '@/lib/zones';
 import InteractiveObject from '@/components/InteractiveObject';
 import GlassPanel from '@/components/GlassPanel';
 import Skeleton from '@/components/Skeleton';
-import ErrorBoundary from '@/components/ErrorBoundary';
 
 const zonePos = getZonePosition('guilds');
 const GUILD_COLORS = ['#ec4899', '#a855f7', '#22d3ee', '#f59e0b', '#10b981', '#f43f5e'];
@@ -47,7 +46,6 @@ export default function GuildsScene() {
   };
 
   return (
-    <ErrorBoundary>
       <group position={zonePos}>
         <group ref={platformRef}>
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
@@ -115,7 +113,6 @@ export default function GuildsScene() {
           </Html>
         )}
       </group>
-    </ErrorBoundary>
   );
 }
 
