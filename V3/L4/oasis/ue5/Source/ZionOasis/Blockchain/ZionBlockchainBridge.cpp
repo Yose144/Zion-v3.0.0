@@ -52,6 +52,29 @@ void UZionBlockchainBridge::GetGuild(const FString& GuildId, FZionHttpCallback C
 	SendGet(FString::Printf(TEXT("%s/api/v1/oasis/guild/%s"), *OasisBaseUrl, *GuildId), CB);
 }
 
+void UZionBlockchainBridge::GetGuilds(FZionHttpCallback CB)
+{
+	SendGet(OasisBaseUrl + TEXT("/api/v1/oasis/guilds"), CB);
+}
+
+void UZionBlockchainBridge::GetAvatars(const FString& Query, FZionHttpCallback CB)
+{
+	const FString Path = Query.IsEmpty()
+		? TEXT("/api/v1/oasis/avatars")
+		: FString::Printf(TEXT("/api/v1/oasis/avatars?%s"), *Query);
+	SendGet(OasisBaseUrl + Path, CB);
+}
+
+void UZionBlockchainBridge::GetAvatar(int32 AvatarId, FZionHttpCallback CB)
+{
+	SendGet(FString::Printf(TEXT("%s/api/v1/oasis/avatars/%d"), *OasisBaseUrl, AvatarId), CB);
+}
+
+void UZionBlockchainBridge::GetAvatarQuests(int32 AvatarId, FZionHttpCallback CB)
+{
+	SendGet(FString::Printf(TEXT("%s/api/v1/oasis/avatars/%d/quests"), *OasisBaseUrl, AvatarId), CB);
+}
+
 void UZionBlockchainBridge::GetTerritoryMap(FZionHttpCallback CB)
 {
 	SendGet(OasisBaseUrl + TEXT("/api/v1/oasis/map"), CB);
