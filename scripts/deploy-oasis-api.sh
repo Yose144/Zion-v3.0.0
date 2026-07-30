@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Deploy only the V3 zion-oasis API to the Edge server.
 #
-# Pulls latest main in /opt/zion, builds zion-oasis, and restarts
-# zion-edge-oasis.service.
+# Stashes local changes in /opt/zion, pulls latest main, builds zion-oasis,
+# chowns the binary to zion, and restarts zion-edge-oasis.service.
 
 set -euo pipefail
 
@@ -17,26 +17,37 @@ echo "[deploy-oasis-api] Deploying zion-oasis to ${EDGE_HOST}:${EDGE_PORT}..."
 
 ssh ${SSH_OPTS} "root@${EDGE_HOST}" "
   set -euo pipefail
+
+  git config --global --add safe.directory '${REMOTE_ROOT}' || true
+
   cd '${REMOTE_ROOT}'
 
+  if [ -n \"\$(git status --porcelain)\" ]; then
+    echo '[deploy-oasis-api] Stashing local changes...'
+    git stash push -u -m \"oasis-api-deploy-\$(date +%Y%m%d-%H%M%S)\"
+  fi
+
   echo '[deploy-oasis-api] Pulling latest main...'
-  git stash -u || true
-  git pull origin main || true
+  git pull origin main
 
   echo '[deploy-oasis-api] Building zion-oasis (release)...'
+  export PATH=\"/root/.cargo/bin:\${PATH}\"
   cd '${REMOTE_ROOT}/V3'
   cargo build --release -p zion-oasis
+
+  echo '[deploy-oasis-api] Setting binary ownership to zion...'
+  chown zion:zion '${REMOTE_ROOT}/V3/target/release/zion-oasis'
 
   echo '[deploy-oasis-api] Restarting service...'
   systemctl restart zion-edge-oasis
 
   echo '[deploy-oasis-api] Waiting for health...'
-  for i in {1..30}; do
+  for i in \$(seq 1 60); do
     if curl -s http://127.0.0.1:8094/health >/dev/null 2>&1; then
       echo '[deploy-oasis-api] zion-oasis healthy'
       break
     fi
-    sleep 0.5
+    sleep 1
   done
 "
 
