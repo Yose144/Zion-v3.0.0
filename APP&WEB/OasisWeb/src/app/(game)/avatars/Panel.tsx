@@ -1,30 +1,20 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Star, Sparkles, type LucideIcon } from 'lucide-react';
 import { getAvatars, type AvatarDef } from '@/lib/api';
+import { useApi } from '@/lib/useApi';
 import GlassPanel from '@/components/GlassPanel';
+import Skeleton from '@/components/Skeleton';
 
 export default function AvatarsPanel() {
-  const [avatars, setAvatars] = useState<AvatarDef[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: avatars = [], loading, error, retry } = useApi(getAvatars, []);
   const [search, setSearch] = useState('');
   const [ray, setRay] = useState('');
   const [rarity, setRarity] = useState('');
   const [cl, setCl] = useState('');
   const [selected, setSelected] = useState<AvatarDef | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    getAvatars().then((data) => {
-      if (mounted) setAvatars(data ?? []);
-      setLoading(false);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const rays = useMemo(
     () => Array.from(new Set(avatars.map((a) => a.ray))).sort(),
@@ -106,10 +96,11 @@ export default function AvatarsPanel() {
         </select>
       </div>
 
-      {loading && (
-        <div className="text-center text-gray-400">
-          <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-2 border-oasis-cyan border-t-transparent" />
-          Summoning avatars…
+      {loading && <Skeleton lines={6} className="mb-4" />}
+
+      {error && !loading && (
+        <div className="mb-4 rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">
+          {error} <button onClick={retry} className="ml-2 underline">Retry</button>
         </div>
       )}
 
@@ -121,25 +112,7 @@ export default function AvatarsPanel() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((avatar) => (
-          <motion.button
-            key={avatar.id}
-            onClick={() => setSelected(avatar)}
-            whileHover={{ y: -4, scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            className="rounded-2xl border border-white/10 bg-white/5 p-5 text-left transition-colors hover:border-oasis-cyan/40"
-          >
-            <div className="mb-2 flex items-start justify-between">
-              <h3 className="text-lg font-bold text-oasis-cyan">{avatar.name}</h3>
-              <span className="rounded-full bg-oasis-gold/10 px-2 py-0.5 text-xs font-medium text-oasis-gold">
-                {avatar.rarity}
-              </span>
-            </div>
-            <p className="mb-4 text-sm text-gray-400">{avatar.subtitle}</p>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <Badge icon={Sparkles} text={avatar.ray} color="text-oasis-purple" />
-              <Badge icon={Star} text={`CL ${avatar.consciousness_level_required}`} color="text-oasis-emerald" />
-            </div>
-          </motion.button>
+          <AvatarCard key={avatar.id} avatar={avatar} onSelect={setSelected} />
         ))}
       </div>
 
@@ -202,6 +175,35 @@ export default function AvatarsPanel() {
     </GlassPanel>
   );
 }
+
+const AvatarCard = memo(function AvatarCard({
+  avatar,
+  onSelect,
+}: {
+  avatar: AvatarDef;
+  onSelect: (a: AvatarDef) => void;
+}) {
+  return (
+    <motion.button
+      onClick={() => onSelect(avatar)}
+      whileHover={{ y: -4, scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      className="rounded-2xl border border-white/10 bg-white/5 p-5 text-left transition-colors hover:border-oasis-cyan/40"
+    >
+      <div className="mb-2 flex items-start justify-between">
+        <h3 className="text-lg font-bold text-oasis-cyan">{avatar.name}</h3>
+        <span className="rounded-full bg-oasis-gold/10 px-2 py-0.5 text-xs font-medium text-oasis-gold">
+          {avatar.rarity}
+        </span>
+      </div>
+      <p className="mb-4 text-sm text-gray-400">{avatar.subtitle}</p>
+      <div className="flex flex-wrap gap-2 text-xs">
+        <Badge icon={Sparkles} text={avatar.ray} color="text-oasis-purple" />
+        <Badge icon={Star} text={`CL ${avatar.consciousness_level_required}`} color="text-oasis-emerald" />
+      </div>
+    </motion.button>
+  );
+});
 
 function Badge({
   icon: Icon,

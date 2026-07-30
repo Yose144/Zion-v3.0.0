@@ -10,6 +10,9 @@ import {
   Swords,
   Trophy,
   BookOpen,
+  Globe,
+  Shield,
+  Egg,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -25,6 +28,9 @@ const navItems: NavItem[] = [
   { href: '/avatars', label: 'Avatars', icon: Users },
   { href: '/quests', label: 'Quests', icon: Swords },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { href: '/territories', label: 'Territories', icon: Globe },
+  { href: '/guilds', label: 'Guilds', icon: Shield },
+  { href: '/golden-egg', label: 'Golden Egg', icon: Egg },
   { href: '/onboarding', label: 'Onboarding', icon: BookOpen },
 ];
 

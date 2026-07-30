@@ -3,15 +3,14 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Sparkles, Pickaxe, Flame, Award, Heart, Globe, Crown } from 'lucide-react';
-import { getPlayer, getPrizeTiers, type Player, type PrizeConfig } from '@/lib/api';
+import { getPlayer, getPrizeTiers } from '@/lib/api';
+import { useApi } from '@/lib/useApi';
 import GlassPanel from '@/components/GlassPanel';
+import Skeleton from '@/components/Skeleton';
 
 export default function DashboardPanel() {
   const [input, setInput] = useState('pilgrim-0001');
   const [address, setAddress] = useState('pilgrim-0001');
-  const [player, setPlayer] = useState<Player | null>(null);
-  const [prizes, setPrizes] = useState<PrizeConfig | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('oasis-address') : null;
@@ -21,22 +20,9 @@ export default function DashboardPanel() {
     }
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
-    async function load() {
-      setLoading(true);
-      const [p, pt] = await Promise.all([getPlayer(address), getPrizeTiers()]);
-      if (mounted) {
-        setPlayer(p);
-        setPrizes(pt);
-      }
-      setLoading(false);
-    }
-    load();
-    return () => {
-      mounted = false;
-    };
-  }, [address]);
+  const { data: player, loading: loadingPlayer } = useApi(() => getPlayer(address), [address], { treatNullAsError: false });
+  const { data: prizes, loading: loadingPrizes, error: prizesError, retry: retryPrizes } = useApi(getPrizeTiers, []);
+  const loading = loadingPlayer || loadingPrizes;
 
   const saveAddress = () => {
     if (typeof window !== 'undefined') {
@@ -71,10 +57,11 @@ export default function DashboardPanel() {
         </button>
       </div>
 
-      {loading && (
-        <div className="text-center text-gray-400">
-          <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-2 border-oasis-cyan border-t-transparent" />
-          Loading pilgrim…
+      {loading && <Skeleton lines={6} className="mb-6" />}
+
+      {prizesError && !loading && (
+        <div className="mb-4 rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">
+          {prizesError} <button onClick={retryPrizes} className="ml-2 underline">Retry</button>
         </div>
       )}
 
