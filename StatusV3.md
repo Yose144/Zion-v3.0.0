@@ -94,7 +94,7 @@
 
 | Endpoint | URL | Notes |
 |----------|-----|-------|
-| Web | `https://zionterranova.com` | Next.js Docker, 377 MB standalone |
+| Web | `https://zionterranova.com` | OASIS intro landing page — static `maintenance.html` served by system nginx from `/var/www/maintenance/`. Next.js web2.9 is built and ready but currently offline. |
 | Dashboard | `https://dashboard.zionterranova.com` | Basic Auth |
 | RPC | `http://rpc.zionterranova.com:8443` | nginx HTTP proxy → `127.0.0.1:8447` read-only Python filter → `127.0.0.1:8443` node RPC (**plain HTTP**, no TLS) |
 | Pool | `62.171.141.136:8444` | Stratum |
