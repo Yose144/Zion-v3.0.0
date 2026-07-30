@@ -99,7 +99,10 @@ cargo build --release
 ./target/release/zion-pool --bind 127.0.0.1:3333 --l1-rpc-url http://127.0.0.1:9443 --miner-address <miner_addr>
 ./target/release/zion miner start --pool-url 127.0.0.1:3333 --reward-address <miner_addr> --no-gpu --no-cpu
 
-# Lokální OASIS web
+# Lokální OASIS stack (API + web) jedním příkazem
+./scripts/run-oasis-local.sh
+
+# Nebo ručně:
 cd APP&WEB/OasisWeb
 npm install
 npm run build
@@ -137,6 +140,7 @@ npm run start
 - ~~Finální cut-over z V3 Edge na V31.~~ **Hotovo (2026-07-30):** viz [`V31/CUTOVER_PLAN.md`](V31/CUTOVER_PLAN.md).
 - ~~Plná L4–L6 end-to-end verifikace (Oasis, Free World, Issobella).~~ **Hotovo (2026-07-30):** `V31/smoke` cross-layer test propojuje Oasis player, Free World grant a Issobella proposal přes AI-Native bridge.
 - **OASIS web v0.0.1** — galaxy + tree of life nasazeno (2026-07-31).
+- **OASIS web v0.1.0** — multi-page herní klient: `/dashboard`, `/avatars`, `/quests`, `/leaderboard`, `/onboarding`, navbar, API integration.
 - **Další vizuální iterace** — leaves/petals na stromu, interakce se světy, guild avataři, OASIS HUD.
 
 ---
