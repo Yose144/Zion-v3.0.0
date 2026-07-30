@@ -99,6 +99,7 @@ pub fn build_router(state: OasisState) -> Router {
         .route("/api/v1/oasis/player/:address", get(get_player))
         .route("/api/v1/oasis/leaderboard", get(leaderboard))
         .route("/api/v1/oasis/leaderboard/top100", get(top_100_leaderboard))
+        .route("/api/v1/oasis/guilds", get(list_guilds))
         .route("/api/v1/oasis/guild/:id", get(get_guild))
         .route("/api/v1/oasis/map", get(territory_map))
         .route("/api/v1/oasis/rewards/pools", get(reward_pools))
@@ -424,6 +425,18 @@ async fn get_guild(State(state): State<OasisState>, Path(id): Path<String>) -> i
             Json(ApiResponse::<()>::error("Guild not found")),
         )
             .into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<()>::error(&e.to_string())),
+        )
+            .into_response(),
+    }
+}
+
+/// GET /api/v1/oasis/guilds
+async fn list_guilds(State(state): State<OasisState>) -> impl IntoResponse {
+    match state.db.list_guilds(100) {
+        Ok(guilds) => (StatusCode::OK, Json(ApiResponse::ok(guilds))).into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ApiResponse::<()>::error(&e.to_string())),
