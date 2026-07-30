@@ -456,7 +456,7 @@ function renderTransferDetails(order) {
                         <i class="fa-solid fa-building-columns"></i> Platební údaje
                     </h3>
                     <div style="color: #ddd; line-height: 2;">
-                        <p><strong>Příjemce:</strong><br/>Omnity.One s.r.o.</p>
+                        <p><strong>Příjemce:</strong><br/>ZION TerraNova</p>
                         <p><strong>IBAN:</strong><br/>CZ63 2010 0000 0029 0180 9148</p>
                         <p><strong>SWIFT:</strong><br/>FIOBCZPPXXX</p>
                         <p><strong>Částka:</strong><br/><span style="font-size: 1.3em; color: var(--rasta-gold);">€${amount}</span></p>
@@ -478,7 +478,7 @@ function renderTransferDetails(order) {
                         <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
                             <img src="${qrUrl}" alt="ZION Wallet QR" style="width: 220px; height: 220px; display: block;"/>
                         </div>
-                        <p style="color: #888; font-size: 0.85rem; margin-top: 15px;">Naskenujte po spuštění mainnetu</p>
+                        <p style="color: #888; font-size: 0.85rem; margin-top: 15px;">Naskenujte pro připojení k síti ZION</p>
                     ` : '<p style="color: #888;">QR kód bude vygenerován po připsání platby</p>'}
                     <div style="margin-top: 20px; text-align: left; color: #ddd; font-size: 0.95rem;">
                         <p><strong>Wallet ID:</strong><br/>${walletId}</p>

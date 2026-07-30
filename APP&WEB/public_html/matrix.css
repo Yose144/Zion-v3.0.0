@@ -120,3 +120,15 @@ canvas {
     0% { transform: translateY(-100%); }
     100% { transform: translateY(100%); }
 }
+
+/* === GLOBAL RESPONSIVE FIXES === */
+img, video, canvas, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 480px) {
+  body {
+    overflow: hidden;
+  }
+}

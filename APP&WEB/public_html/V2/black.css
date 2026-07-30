@@ -37,3 +37,27 @@ body {
   border-radius: 50%;
   box-shadow: inset 0px 1px 20px var(--sun);
 }
+
+/* === GLOBAL RESPONSIVE FIXES === */
+img, video, canvas, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  .sun {
+    margin: 120px auto;
+    width: min(250px, 60vw);
+    height: min(250px, 60vw);
+  }
+  .moon {
+    width: min(245px, 58vw);
+    height: min(245px, 58vw);
+  }
+}
+
+@media (max-width: 480px) {
+  .sun {
+    margin: 80px auto;
+  }
+}

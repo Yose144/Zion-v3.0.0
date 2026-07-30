@@ -5,7 +5,7 @@
 
 // Configuration
 const API_BASE = './api';
-const MAINNET_LAUNCH_DATE = new Date('2027-12-31T23:59:59');
+const MAINNET_LAUNCH_DATE = new Date('2026-12-31T23:59:59');
 const REFRESH_INTERVAL = 30000; // 30 seconds
 const TARGET_TOKENS = 500000000; // 500M ZION
 

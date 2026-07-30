@@ -1327,3 +1327,26 @@ th {
     border-bottom: 2px solid #c0c0c0;
     border-right: 2px solid #c0c0c0;
 }
+
+/* === GLOBAL RESPONSIVE FIXES === */
+video, canvas, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  .showcase-header,
+  .showcase-grid,
+  .content-wrapper {
+    max-width: 100%;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-container {
+    border-radius: 0;
+    width: 100%;
+  }
+}
