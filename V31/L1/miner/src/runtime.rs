@@ -58,6 +58,8 @@ impl MinerRuntime {
         let consensus = Arc::new(ConsensusEngine::new(algorithm));
         #[cfg(feature = "auxpow")]
         let hashrate_per_unit = config.hashrate_per_unit;
+        #[cfg(feature = "auxpow")]
+        let stream3_force_coin = config.stream3_force_coin;
 
         let mut map = HashMap::new();
         map.insert(StreamId::Zion, StreamStats::new(StreamId::Zion));
@@ -78,7 +80,10 @@ impl MinerRuntime {
                 config,
                 consensus,
                 stats,
-                scheduler: Arc::new(Mutex::new(AuxPoWScheduler::new(hashrate_per_unit))),
+                scheduler: Arc::new(Mutex::new(AuxPoWScheduler::new(
+                    hashrate_per_unit,
+                    stream3_force_coin,
+                ))),
                 gpu_client: Arc::new(Mutex::new(None)),
                 cpu_client: Arc::new(Mutex::new(None)),
             }

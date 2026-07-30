@@ -115,6 +115,7 @@ impl PoolConfigFile {
             password: self.password.clone(),
             l1_rpc_url: self.l1_rpc_url.clone(),
             state_path: self.state_path.clone(),
+            reconnect_rate_limit: Default::default(),
         }
     }
 }

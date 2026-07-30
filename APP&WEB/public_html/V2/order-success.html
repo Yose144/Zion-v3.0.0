@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Objednávka odeslána | ZION eShop</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./rasta.css">
+    <script src="./script.js" defer></script>
+    <script src="https://kit.fontawesome.com/16464afad1.js" crossorigin="anonymous"></script>
+    <style>
+        .success-container {
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, var(--rasta-green), #34d399);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            animation: scaleIn 0.5s ease;
+            box-shadow: 0 10px 40px rgba(0, 128, 0, 0.3);
+        }
+
+        .success-icon i {
+            font-size: 3.5rem;
+            color: #000;
+        }
+
+        @keyframes scaleIn {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .success-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--rasta-gold);
+        }
+
+        .success-subtitle {
+            font-size: 1.2rem;
+            color: #888;
+            margin-bottom: 2rem;
+        }
+
+        .order-info-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--rasta-gold);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .order-info-card h3 {
+            color: var(--rasta-gold);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .order-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .order-detail:last-child {
+            border-bottom: none;
+        }
+
+        .order-detail span:first-child {
+            color: #888;
+        }
+
+        .order-detail span:last-child {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .payment-info-card {
+            background: rgba(0, 128, 0, 0.15);
+            border: 1px solid var(--rasta-green);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .payment-info-card h4 {
+            color: var(--rasta-green);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .payment-info-card p {
+            color: #ccc;
+            margin: 0.75rem 0;
+            font-size: 0.95rem;
+        }
+
+        .payment-info-card strong {
+            color: var(--rasta-gold);
+        }
+
+        .zion-bonus-card {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(0, 128, 0, 0.1));
+            border: 2px solid var(--rasta-gold);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .zion-bonus-card h4 {
+            color: var(--rasta-gold);
+            margin-bottom: 1rem;
+        }
+
+        .zion-bonus-card .token-amount {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--rasta-green);
+        }
+
+        .confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            animation: confettiFall 3s ease-in-out infinite;
+        }
+
+        .confetti-piece:nth-child(3n) { background: var(--rasta-red); }
+        .confetti-piece:nth-child(3n+1) { background: var(--rasta-gold); }
+        .confetti-piece:nth-child(3n+2) { background: var(--rasta-green); }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NHF25ZZ97S"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-NHF25ZZ97S');
+</script>
+
+<body>
+    <!-- Confetti animation -->
+    <div class="confetti" id="confetti"></div>
+
+    <header id="header">
+      <div class="container">
+        <div class="subcontainer">
+          <nav class="navbar-container">
+            <div class="navbar-left">
+              <a href="./main.html" class="nav-branding-1">Zion<span> ® TerraNova</span></a>
+              <div class="nav-menu">
+                <a href="#" class="nav-branding-2">Gene<span>sis</span></a>
+
+                <div class="nav-dropdown">
+                  <button class="nav-link nav-dropdown-toggle" type="button">
+                    Realms
+                    <i class="fa-solid fa-chevron-down"></i>
+                  </button>
+                  <div class="nav-dropdown-panel">
+                    <a href="./main.html" class="nav-dropdown-link">Home</a>
+                    <a href="./camp.html" class="nav-dropdown-link">Camps</a>
+                    <a href="./arts.html" class="nav-dropdown-link">Arts</a>
+                    <a href="./halls.html" class="nav-dropdown-link">Amenti</a>
+                    <a href="./evoluzion.html" class="nav-dropdown-link">Evoluzion</a>
+                  </div>
+                </div>
+
+                <div class="nav-dropdown">
+                  <button class="nav-link nav-dropdown-toggle" type="button">
+                    Portals
+                    <i class="fa-solid fa-chevron-down"></i>
+                  </button>
+                  <div class="nav-dropdown-panel">
+                    <a href="./blog.html" class="nav-dropdown-link">Blog</a>
+                    <a href="./links.html" class="nav-dropdown-link">Links</a>
+                    <a href="./about.html" class="nav-dropdown-link">About</a>
+                    <a href="./dev.html" class="nav-dropdown-link">DeV</a>
+                    <!-- <a href="./hemp.html" class="nav-dropdown-link">Hemp</a> -->
+                    <a href="./woodart.html" class="nav-dropdown-link">WoodArt</a>
+                  </div>
+                </div>
+
+                <a href="./shop.html" class="nav-link">Shop</a>
+                <a href="./dashboard.html" class="nav-link">Dashboard</a>
+                <span class="nav-link lang-switch"><span class="active-lang">CZ</span> | <a href="./main-en.html">EN</a></span>
+
+                <a href="./cart.html" class="nav-link cart-link">
+                  <span class="cart-icon-wrapper">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span id="cart-count" class="cart-badge">0</span>
+                  </span>
+                </a>
+              </div>
+            </div>
+  
+            <div class="navbar-right">
+              <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <!-- === HERO === -->
+    <section class="rasta-hero" style="background-image: url('./img/org1.jpg'); min-height: 30vh;">
+      <div class="rasta-hero-inner">
+        <h1>✅ Objednávka přijata!</h1>
+      </div>
+    </section>
+
+    <!-- === DIVIDER === -->
+    <div class="rasta-divider">
+      <div class="line"></div>
+      <span class="icon">🎉</span>
+      <div class="line"></div>
+    </div>
+
+    <!-- === SUCCESS CONTENT === -->
+    <section class="rasta-section">
+      <div class="success-container">
+        
+        <div class="success-icon">
+          <i class="fa-solid fa-check"></i>
+        </div>
+
+        <h2 class="success-title">Děkujeme za objednávku!</h2>
+        <p class="success-subtitle">Vaše objednávka byla úspěšně přijata a zpracovává se.</p>
+
+        <!-- Order Info -->
+        <div class="order-info-card">
+          <h3><i class="fa-solid fa-box"></i> Detaily objednávky</h3>
+          <div class="order-detail">
+            <span>Číslo objednávky:</span>
+            <span id="order-id">---</span>
+          </div>
+          <div class="order-detail">
+            <span>Způsob platby:</span>
+            <span id="payment-method">---</span>
+          </div>
+          <div class="order-detail">
+            <span>Doprava:</span>
+            <span id="shipping-method">---</span>
+          </div>
+          <div class="order-detail">
+            <span>Celkem:</span>
+            <span id="order-total" style="color: var(--rasta-green); font-size: 1.2rem;">---</span>
+          </div>
+        </div>
+
+        <!-- Bank Transfer Info (hidden by default) -->
+        <div class="payment-info-card" id="transfer-info" style="display: none;">
+          <h4><i class="fa-solid fa-building-columns"></i> Platební údaje pro převod</h4>
+          <p><strong>Příjemce:</strong> Omnity.One s.r.o.</p>
+          <p><strong>Banka:</strong> Fio banka, a.s.</p>
+          <p><strong>Číslo účtu:</strong> 2901809148 / 2010</p>
+          <p><strong>IBAN:</strong> CZ63 2010 0000 0029 0180 9148</p>
+          <p><strong>SWIFT:</strong> FIOBCZPPXXX</p>
+          <p><strong>Variabilní symbol:</strong> <span id="vs">---</span></p>
+          <p><strong>Částka:</strong> <span id="amount">---</span></p>
+          <p style="margin-top: 1rem; color: #888; font-size: 0.85rem; text-align: center;">
+            <i class="fa-solid fa-info-circle"></i> Po připsání platby Vám zboží obratem odešleme.
+          </p>
+        </div>
+
+        <!-- ZION Token Bonus -->
+        <div class="zion-bonus-card" id="zion-bonus" style="display: none;">
+          <h4><i class="fa-solid fa-coins"></i> ZION Token Bonus</h4>
+          <p style="color: #888;">Za tuto objednávku získáváte:</p>
+          <div class="token-amount" id="token-amount">0 ZION</div>
+          <p style="color: #666; font-size: 0.85rem; margin-top: 0.5rem;">
+            QR kód s wallet adresou jsme vám zaslali e-mailem.
+          </p>
+        </div>
+
+        <!-- Digital downloads (book) -->
+        <div class="payment-info-card" id="digital-downloads" style="display: none;">
+          <h4><i class="fa-solid fa-download"></i> Digitální obsah</h4>
+          <p style="text-align:center;">
+            <a id="download-book" href="#" class="rasta-btn" style="text-decoration:none;">Stáhnout PDF</a>
+            <a id="download-bonus" href="#" class="rasta-btn rasta-btn-outline" style="text-decoration:none;">Stáhnout bonusy</a>
+          </p>
+          <p style="margin-top: 1rem; color: #888; font-size: 0.85rem; text-align: center;">
+            Pokud se stažení nezobrazí hned, počkejte chvíli a obnovte stránku (čekáme na potvrzení platby ze Stripe).
+          </p>
+        </div>
+
+        <!-- Confirmation message -->
+        <div class="rasta-quote" style="margin: 2rem 0;">
+          <i class="fa-solid fa-envelope"></i> Na váš email jsme zaslali potvrzení s veškerými detaily.
+          O průběhu zpracování vás budeme informovat.
+        </div>
+
+        <!-- Action buttons -->
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+          <a href="./shop.html" class="rasta-btn">
+            <i class="fa-solid fa-cart-shopping"></i> Pokračovat v nákupu
+          </a>
+          <a href="./main.html" class="rasta-btn rasta-btn-outline">
+            <i class="fa-solid fa-home"></i> Zpět na hlavní
+          </a>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- === DIVIDER === -->
+    <div class="rasta-divider">
+      <div class="line"></div>
+      <span class="icon">🦁</span>
+      <div class="line"></div>
+    </div>
+
+    <!-- === FOOTER === -->
+    <footer>
+      <div class="footer-content">
+        <br>
+        <div style="display: flex; justify-content: center; gap: 30px; margin: 20px 0; flex-wrap: wrap;">
+          <a href="./shopping-guide.html" style="color: var(--rasta-green); text-decoration: none;">
+            <i class="fa-solid fa-book-open"></i> Nákupní rád
+          </a>
+          <a href="./terms.html" style="color: var(--rasta-gold); text-decoration: none;">
+            <i class="fa-solid fa-file-contract"></i> Obchodní podmínky
+          </a>
+          <a href="mailto:eshop@newearth.cz" style="color: var(--rasta-red); text-decoration: none;">
+            <i class="fa-solid fa-envelope"></i> Kontakt
+          </a>
+        </div>
+        <div class="logo">
+          <a href="./shop.html">
+            <img class="zoom" src="./img/logo.jpg" alt="Logo" style="width: 25%; max-width: 150px; border-radius: 50%;" />
+          </a>
+        </div>
+        <br>
+        <p style="color: var(--rasta-gold); font-style: italic; margin-bottom: 20px;">
+          "One good thing about music, when it hits you, you feel no pain."
+        </p>
+        <div class="social-icons" style="font-size: 1.5rem;">
+          <a href="https://www.facebook.com/OmnityCompany/" style="color: var(--rasta-green); margin: 0 15px;"><i class="fa-brands fa-facebook"></i></a>
+          <a href="https://x.com/OmnityCompany" style="color: var(--rasta-gold); margin: 0 15px;"><i class="fa-brands fa-twitter"></i></a>
+          <a href="https://www.instagram.com/terranova_project/" style="color: var(--rasta-red); margin: 0 15px;"><i class="fa-brands fa-instagram"></i></a>
+          <a href="https://github.com/Zion-TerraNova" style="color: #fff; margin: 0 15px;"><i class="fa-brands fa-github"></i></a>
+          <a href="https://discord.gg/eatGYDbd" style="color: #7289da; margin: 0 15px;"><i class="fa-brands fa-discord"></i></a>
+        </div>
+      </div>
+      <div class="footer-bottom" style="border-top: 3px solid; border-image: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green)) 1; padding-top: 20px; margin-top: 20px;">
+        <p>&copy; 2025 ZION Terra Nova ® | Omnity.One s.r.o. | <a href="./terms.html" style="color: var(--rasta-gold);">Obchodní podmínky</a> | <a href="./legal.html" style="color: var(--rasta-gold);">Legal</a></p>
+      </div>
+    </footer>
+
+  <script>
+    // Generování confetti v rasta barvách
+    const confettiContainer = document.getElementById('confetti');
+    for (let i = 0; i < 50; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + '%';
+      piece.style.animationDelay = Math.random() * 3 + 's';
+      piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+      confettiContainer.appendChild(piece);
+    }
+
+    const orderIdEl = document.getElementById('order-id');
+    const paymentMethodEl = document.getElementById('payment-method');
+    const shippingMethodEl = document.getElementById('shipping-method');
+    const orderTotalEl = document.getElementById('order-total');
+    const subtitleEl = document.querySelector('.success-subtitle');
+    const transferInfoEl = document.getElementById('transfer-info');
+    const vsEl = document.getElementById('vs');
+    const amountEl = document.getElementById('amount');
+    const zionBonusEl = document.getElementById('zion-bonus');
+    const tokenAmountEl = document.getElementById('token-amount');
+    const digitalDownloadsEl = document.getElementById('digital-downloads');
+    const downloadBookEl = document.getElementById('download-book');
+    const downloadBonusEl = document.getElementById('download-bonus');
+
+    const paymentNames = {
+      'card': 'Kartou online',
+      'transfer': 'Bankovní převod',
+      'cash': 'Dobírka / Hotově'
+    };
+
+    const shippingNames = {
+      'zasilkovna': 'Zásilkovna - Výdejní místo',
+      'zasilkovna-home': 'Zásilkovna - Na adresu',
+      'virtualni-nakup': 'Virtuální nákup',
+      'osobni': 'Osobní odběr'
+    };
+
+    function safeParse(json) {
+      if (!json) return {};
+      try {
+        return JSON.parse(json);
+      } catch (err) {
+        console.warn('Cannot parse stored order payload:', err);
+        return {};
+      }
+    }
+
+    function requiresServerFetch(data, expectedOrderId) {
+      if (!expectedOrderId) return false;
+      if (!data || Object.keys(data).length === 0) return true;
+      if (data.orderId && data.orderId !== expectedOrderId) return true;
+      if (!data.payment || !data.shipping || !data.total) return true;
+      return false;
+    }
+
+    async function fetchOrderFromServer(orderId) {
+      if (!orderId) return null;
+      try {
+        const response = await fetch(`./api/get-order.php?order=${encodeURIComponent(orderId)}`, {
+          cache: 'no-store'
+        });
+
+        if (!response.ok) {
+          throw new Error('Server returned ' + response.status);
+        }
+
+        const payload = await response.json();
+        if (!payload.success) {
+          throw new Error(payload.error || 'Unknown error');
+        }
+
+        const { success, ...orderPayload } = payload;
+        return orderPayload;
+      } catch (error) {
+        console.error('Order fetch failed:', error);
+        return null;
+      }
+    }
+
+    function formatCurrency(value) {
+      if (value === null || value === undefined || value === '') {
+        return '---';
+      }
+      const numeric = Number(value);
+      if (Number.isNaN(numeric)) {
+        return value;
+      }
+      return new Intl.NumberFormat('cs-CZ', {
+        style: 'currency',
+        currency: 'CZK',
+        maximumFractionDigits: 0
+      }).format(numeric);
+    }
+
+    function extractTokenBonus(data) {
+      if (!data) return 0;
+      if (typeof data.zionTokens === 'number') return data.zionTokens;
+      if (data.zion && data.zion.tokens && typeof data.zion.tokens.totalTokens === 'number') {
+        return data.zion.tokens.totalTokens;
+      }
+      return 0;
+    }
+
+    function renderOrderDetails(orderId, data) {
+      orderIdEl.textContent = orderId || 'N/A';
+
+      const paymentKey = data.payment || data.paymentMethod || null;
+      paymentMethodEl.textContent = paymentNames[paymentKey] || paymentKey || '---';
+
+      if (paymentKey === 'transfer') {
+        transferInfoEl.style.display = 'block';
+        vsEl.textContent = orderId || '---';
+        amountEl.textContent = formatCurrency(data.total);
+      } else {
+        transferInfoEl.style.display = 'none';
+      }
+
+      const shippingData = data.shipping || {};
+      const shippingKey = shippingData.method || data.shippingMethod || null;
+      shippingMethodEl.textContent = shippingNames[shippingKey] || shippingKey || '---';
+
+      orderTotalEl.textContent = formatCurrency(data.total);
+
+      const tokens = extractTokenBonus(data);
+      if (tokens > 0) {
+        zionBonusEl.style.display = 'block';
+        tokenAmountEl.textContent = tokens + ' ZION';
+      } else {
+        zionBonusEl.style.display = 'none';
+      }
+
+      // Digital book downloads: available only for Stripe card payments (session_id)
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session_id');
+        const hasBook = Array.isArray(data.items) && data.items.some((it) => {
+          const id = (it && (it.id || it.sku) || '').toString().toLowerCase();
+          const cat = (it && it.category || '').toString().toLowerCase();
+          return cat === 'books' || id.startsWith('book-');
+        });
+
+        if (hasBook && sessionId) {
+          digitalDownloadsEl.style.display = 'block';
+          const base = './api/download-digital.php';
+          downloadBookEl.href = `${base}?orderId=${encodeURIComponent(orderId)}&session_id=${encodeURIComponent(sessionId)}&type=book`;
+          downloadBonusEl.href = `${base}?orderId=${encodeURIComponent(orderId)}&session_id=${encodeURIComponent(sessionId)}&type=bonus`;
+        } else {
+          digitalDownloadsEl.style.display = 'none';
+        }
+      } catch (e) {
+        console.warn('Digital downloads render failed', e);
+        digitalDownloadsEl.style.display = 'none';
+      }
+    }
+
+    async function initOrderSuccess() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get('order') || localStorage.getItem('lastOrderId');
+
+      if (!orderId) {
+        orderIdEl.textContent = 'N/A';
+        subtitleEl.textContent = 'Objednávku jsme přijali, ale chybí ID. Zkontrolujte prosím emailové potvrzení.';
+        return;
+      }
+
+      orderIdEl.textContent = orderId;
+      localStorage.setItem('lastOrderId', orderId);
+
+      let orderData = safeParse(localStorage.getItem('lastOrder'));
+      if (orderData && orderData.orderId && orderData.orderId !== orderId) {
+        orderData = {};
+      }
+
+      if (requiresServerFetch(orderData, orderId)) {
+        const serverData = await fetchOrderFromServer(orderId);
+        if (serverData) {
+          orderData = Object.assign({}, orderData, serverData);
+          localStorage.setItem('lastOrder', JSON.stringify(orderData));
+        }
+      }
+
+      if (!orderData || Object.keys(orderData).length === 0) {
+        subtitleEl.textContent = 'Objednávku jsme přijali, ale detaily se nepodařilo načíst. Napište nám na eshop@newearth.cz s číslem objednávky.';
+        return;
+      }
+
+      renderOrderDetails(orderId, orderData);
+    }
+
+    initOrderSuccess();
+
+    // Vyčistit košík po úspěšné objednávce
+    localStorage.removeItem('zion_cart');
+  </script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./slider.css" />
+    <link rel="stylesheet" href="./rasta.css" />
+    <script src="./sliders.js" defer></script>
+    <script src="./script.js" defer></script>
+    <script src="./blog-posts.js"></script>
+    <script src="https://kit.fontawesome.com/16464afad1.js" crossorigin="anonymous"></script>
+    <title>Blog ®Genesis | ZION TerraNova</title>
+    <style>
+      /* ─── FILTER BAR ─── */
+      .blog-filter-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 30px auto; max-width: 900px; }
+      .blog-filter-btn { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); color: #bbb; padding: 9px 20px; border-radius: 28px; cursor: pointer; font-size: 0.85rem; transition: all 0.35s ease; font-family: inherit; backdrop-filter: blur(6px); }
+      .blog-filter-btn:hover { background: rgba(252,209,22,0.1); border-color: var(--rasta-gold); color: var(--rasta-gold); }
+      .blog-filter-btn.active { background: linear-gradient(135deg, var(--rasta-green), var(--rasta-gold)); color: #000; border-color: var(--rasta-gold); font-weight: 700; box-shadow: 0 2px 12px rgba(252,209,22,0.25); }
+      /* ─── YEAR SECTIONS ─── */
+      .blog-year-section { max-width: 960px; margin: 0 auto 55px; padding: 0 20px; }
+      .blog-year-header { display: flex; align-items: center; gap: 15px; margin-bottom: 28px; }
+      .blog-year-badge { background: linear-gradient(135deg, var(--rasta-red), var(--rasta-gold)); color: #000; font-weight: 800; font-size: 1.5rem; padding: 8px 24px; border-radius: 14px; letter-spacing: 1.5px; box-shadow: 0 3px 15px rgba(228,30,43,0.2); }
+      .blog-year-line { flex: 1; height: 2px; background: linear-gradient(90deg, var(--rasta-gold) 0%, rgba(252,209,22,0.1) 100%); }
+      .blog-year-count { color: var(--rasta-gold); font-size: 0.85rem; opacity: 0.6; }
+      /* ─── TIMELINE ─── */
+      .blog-timeline { position: relative; padding-left: 32px; }
+      .blog-timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, var(--rasta-green), var(--rasta-gold) 50%, var(--rasta-red) 85%, transparent); border-radius: 2px; }
+      /* ─── POST CARDS ─── */
+      .blog-post-card { position: relative; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 18px; padding: 22px 26px; margin-bottom: 16px; transition: all 0.35s ease; text-decoration: none; display: flex; gap: 20px; align-items: flex-start; color: inherit; backdrop-filter: blur(4px); }
+      .blog-post-card:hover { background: rgba(252,209,22,0.04); border-color: rgba(252,209,22,0.35); transform: translateX(6px); box-shadow: 0 6px 28px rgba(255,215,0,0.08); }
+      .blog-post-thumb { width: 115px; min-width: 115px; height: 78px; border-radius: 12px; object-fit: cover; border: 1px solid rgba(255,255,255,0.06); opacity: 0.8; transition: all 0.35s ease; }
+      .blog-post-card:hover .blog-post-thumb { opacity: 1; border-color: rgba(252,209,22,0.2); }
+      .blog-post-body { flex: 1; min-width: 0; }
+      /* ─── TIMELINE DOTS ─── */
+      .blog-post-card::before { content: ''; position: absolute; left: -28px; top: 28px; width: 12px; height: 12px; border-radius: 50%; background: var(--rasta-gold); border: 2px solid #111; z-index: 1; box-shadow: 0 0 6px rgba(252,209,22,0.3); transition: box-shadow 0.3s; }
+      .blog-post-card:hover::before { box-shadow: 0 0 12px rgba(252,209,22,0.6); }
+      .blog-post-card[data-category="tech"]::before { background: #00d4ff; box-shadow: 0 0 6px rgba(0,212,255,0.3); }
+      .blog-post-card[data-category="journey"]::before { background: #4CAF50; box-shadow: 0 0 6px rgba(76,175,80,0.3); }
+      .blog-post-card[data-category="story"]::before { background: #FF9800; box-shadow: 0 0 6px rgba(255,152,0,0.3); }
+      .blog-post-card[data-category="spiritual"]::before { background: #E040FB; box-shadow: 0 0 6px rgba(224,64,251,0.3); }
+      .blog-post-card[data-category="announcement"]::before { background: #FFD700; box-shadow: 0 0 6px rgba(255,215,0,0.3); }
+      /* ─── POST META ─── */
+      .blog-post-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+      .blog-post-date { color: rgba(255,255,255,0.45); font-size: 0.8rem; letter-spacing: 0.3px; }
+      .blog-post-category { font-size: 0.7rem; padding: 3px 11px; border-radius: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; }
+      .blog-post-category[data-cat="tech"] { background: rgba(0,212,255,0.12); color: #00d4ff; }
+      .blog-post-category[data-cat="journey"] { background: rgba(76,175,80,0.12); color: #4CAF50; }
+      .blog-post-category[data-cat="story"] { background: rgba(255,152,0,0.12); color: #FF9800; }
+      .blog-post-category[data-cat="spiritual"] { background: rgba(224,64,251,0.12); color: #E040FB; }
+      .blog-post-category[data-cat="announcement"] { background: rgba(255,215,0,0.12); color: #FFD700; }
+      /* ─── POST CONTENT ─── */
+      .blog-post-title { font-size: 1.12rem; font-weight: 700; color: #f0f0f0; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; line-height: 1.4; }
+      .blog-post-title i { color: var(--rasta-gold); font-size: 0.9rem; opacity: 0.6; }
+      .blog-post-excerpt { color: rgba(255,255,255,0.5); font-size: 0.88rem; line-height: 1.55; }
+      .blog-post-arrow { position: absolute; right: 22px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.15); font-size: 1.1rem; transition: all 0.35s; }
+      .blog-post-card:hover .blog-post-arrow { color: var(--rasta-gold); right: 16px; }
+      /* ─── STATS ─── */
+      .blog-stats { display: flex; justify-content: center; gap: 35px; margin: 35px auto; flex-wrap: wrap; }
+      .blog-stat { text-align: center; }
+      .blog-stat-num { font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--rasta-green), var(--rasta-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+      .blog-stat-label { color: rgba(255,255,255,0.45); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.2px; margin-top: 4px; }
+      .blog-no-results { text-align: center; padding: 60px 20px; color: rgba(255,255,255,0.4); font-size: 1.1rem; display: none; }
+      @media (max-width: 600px) { .blog-post-title { font-size: 0.98rem; } .blog-post-card { padding: 16px 18px; gap: 14px; } .blog-post-thumb { width: 80px; min-width: 80px; height: 55px; } .blog-post-arrow { display: none; } .blog-timeline { padding-left: 26px; } .blog-year-badge { font-size: 1.2rem; padding: 6px 16px; } .blog-stats { gap: 20px; } .blog-stat-num { font-size: 1.8rem; } }
+    </style>
+  </head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NHF25ZZ97S"></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date()); gtag('config', 'G-NHF25ZZ97S');
+  </script>
+  <body>
+    <header id="header">
+      <div class="container"><div class="subcontainer">
+        <nav class="navbar-container">
+          <div class="navbar-left">
+            <a href="#" class="nav-branding-1">Zion<span> ® TerraNova</span></a>
+            <div class="nav-menu">
+              <a href="#" class="nav-branding-2">Gene<span>sis</span></a>
+              <div class="nav-dropdown">
+                <button class="nav-link nav-dropdown-toggle" type="button">Realms <i class="fa-solid fa-chevron-down"></i></button>
+                <div class="nav-dropdown-panel">
+                  <a href="./main-en.html" class="nav-dropdown-link">Home</a>
+                  <a href="./camp-en.html" class="nav-dropdown-link">Camps</a>
+                  <a href="./arts-en.html" class="nav-dropdown-link">Arts</a>
+                  <a href="./halls-en.html" class="nav-dropdown-link">Amenti</a>
+                  <a href="./evoluzion-en.html" class="nav-dropdown-link">Evoluzion</a>
+                </div>
+              </div>
+              <div class="nav-dropdown">
+                <button class="nav-link nav-dropdown-toggle" type="button">Portals <i class="fa-solid fa-chevron-down"></i></button>
+                <div class="nav-dropdown-panel">
+                  <a href="./blog-en.html" class="nav-dropdown-link active">Blog</a>
+                  <a href="./links-en.html" class="nav-dropdown-link">Links</a>
+                  <a href="./about-en.html" class="nav-dropdown-link">About</a>
+                  <a href="./dev-en.html" class="nav-dropdown-link">DeV</a>
+                  <a href="./hemp-en.html" class="nav-dropdown-link">Hemp</a>
+                  <a href="./woodart-en.html" class="nav-dropdown-link">WoodArt</a>
+                </div>
+              </div>
+              <a href="./shop-en.html" class="nav-link">Shop</a>
+              <a href="./dashboard-en.html" class="nav-link">Dashboard</a>
+              <a href="./mining-start.html" class="nav-link presale-nav-link"><span class="presale-badge-nav">⛏️</span> Start Mining</a>
+              <span class="nav-link lang-switch"><a href="./blog.html">CZ</a> | <span class="active-lang">EN</span></span>
+              <a href="./cart.html" class="nav-link cart-link"><span class="cart-icon-wrapper"><i class="fa-solid fa-cart-shopping"></i><span id="cart-count" class="cart-badge">0</span></span></a>
+            </div>
+          </div>
+          <div class="navbar-right"><div class="hamburger"><span class="bar"></span><span class="bar"></span><span class="bar"></span></div></div>
+        </nav>
+      </div></div>
+    </header>
+
+    <!-- ═══ HERO ═══ -->
+    <section class="rasta-hero" style="background-image: url('./img/org1.jpg');">
+      <div class="rasta-hero-inner">
+        <span class="version-badge">📝 ®GENESIS BLOG</span>
+        <h1>Chronicle</h1>
+        <h2>of the New Earth</h2>
+        <p class="subtitle">From the first day of the journey — to the ZION network awakening</p>
+      </div>
+    </section>
+
+    <div class="blog-stats" id="blogStats"></div>
+    <div class="rasta-divider"><div class="line"></div><span class="icon">☸️</span><div class="line"></div></div>
+
+    <!-- ═══ FILTER + TIMELINE ═══ -->
+    <section class="rasta-section">
+      <h2>Post <span>Archive</span></h2>
+      <p class="rasta-text">Complete chronicle of the New Earth project — from the first day in 2023 to ZION Native Awakening 2026.</p>
+      <div class="blog-filter-bar" id="filterBar"></div>
+    </section>
+
+    <div id="blogTimeline"></div>
+    <div class="blog-no-results" id="noResults"><i class="fa-solid fa-search" style="font-size: 2rem; margin-bottom: 15px; opacity: 0.3;"></i><p>No posts in this category.</p></div>
+
+    <div class="rasta-divider"><div class="line"></div><span class="icon">🕉️</span><div class="line"></div></div>
+
+    <section class="rasta-section">
+      <div class="rasta-quote">In unity there is strength. In consciousness there is truth. In love there is all.</div>
+      <br>
+      <a href="./main-en.html" class="rasta-btn"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
+    </section>
+    <br>
+
+      <!-- ═══ MASTERS SLIDER ═══ -->
+    <section class="rasta-section">
+      <h2>Masters of <span>Wisdom</span></h2>
+      <p class="rasta-text">We draw inspiration from great teachers who showed the path to <strong>awakening, love, and peace</strong>.</p>
+      <br>
+      <div class="slideshow-container" id="slider5">
+        <div class="mySlides fade"><div class="numbertext">1 / 10</div><img src="./img/Mooji_23.jpg" style="width:50%; opacity: 0.9;"><div class="text">Mooji Baba</div></div>
+        <div class="mySlides fade"><div class="numbertext">2 / 10</div><img src="./img/bob.jpeg" style="width:50%; opacity: 0.9;"><div class="text">Bob Marley</div></div>
+        <div class="mySlides fade"><div class="numbertext">3 / 10</div><img src="./img/Albert.jpg" style="width:50%; opacity: 0.9;"><div class="text">Albert Einstein</div></div>
+        <div class="mySlides fade"><div class="numbertext">4 / 10</div><img src="./img/tesla.jpg" style="width:50%; opacity: 0.9;"><div class="text">Nikola Tesla</div></div>
+        <div class="mySlides fade"><div class="numbertext">5 / 10</div><img src="./img/cayce.jpg" style="width:50%; opacity: 0.9;"><div class="text">Edgar Cayce</div></div>
+        <div class="mySlides fade"><div class="numbertext">6 / 10</div><img src="./img/jesus.jpg" style="width:50%; opacity: 0.9;"><div class="text">Jesus</div></div>
+        <div class="mySlides fade"><div class="numbertext">7 / 10</div><img src="./img/maria1.jpg" style="width:50%; opacity: 0.9;"><div class="text">Maria</div></div>
+        <div class="mySlides fade"><div class="numbertext">8 / 10</div><img src="./img/anast1.jpg" style="width:50%; opacity: 0.9;"><div class="text">Anastasia</div></div>
+        <div class="mySlides fade"><div class="numbertext">9 / 10</div><img src="./img/buddha.png" style="width:50%; opacity: 0.9;"><div class="text">Buddha</div></div>
+        <div class="mySlides fade"><div class="numbertext">10 / 10</div><img src="./img/mahatma.jpg" style="width:50%; opacity: 0.9;"><div class="text">Mahatma Gandhi</div></div>
+        <a class="prev" onclick="plusSlides(-1,'slider5')">&#10094;</a>
+        <a class="next" onclick="plusSlides(1,'slider5')">&#10095;</a>
+      </div>
+      <br>
+      <div style="text-align:center">
+        <span class="dot" onclick="currentSlide(1,'slider5')"></span><span class="dot" onclick="currentSlide(2,'slider5')"></span>
+        <span class="dot" onclick="currentSlide(3,'slider5')"></span><span class="dot" onclick="currentSlide(4,'slider5')"></span>
+        <span class="dot" onclick="currentSlide(5,'slider5')"></span><span class="dot" onclick="currentSlide(6,'slider5')"></span>
+        <span class="dot" onclick="currentSlide(7,'slider5')"></span><span class="dot" onclick="currentSlide(8,'slider5')"></span>
+        <span class="dot" onclick="currentSlide(9,'slider5')"></span><span class="dot" onclick="currentSlide(10,'slider5')"></span>
+      </div>
+    </section>
+
+    <footer>
+      <div class="footer-content">
+        <br>
+        <div class="rasta-divider" style="margin: 20px 0;"><div class="line"></div><span class="icon">🦁</span><div class="line"></div></div>
+        <div class="logo"><a href="./shop-en.html"><img class="zoom" src="./img/logo.jpg" alt="Logo" style="width: 25%; max-width: 150px; border-radius: 50%;" /></a></div>
+        <br>
+        <p style="color: var(--rasta-gold); font-style: italic; margin-bottom: 20px;">"Truth is love, love is peace. One Love is the way."</p>
+        <br>
+        <div class="social-icons" style="font-size: 1.5rem;">
+          <a href="https://www.facebook.com/OmnityCompany/" style="color: var(--rasta-green); margin: 0 15px;"><i class="fa-brands fa-facebook"></i></a>
+          <a href="https://x.com/OmnityCompany" style="color: var(--rasta-gold); margin: 0 15px;"><i class="fa-brands fa-twitter"></i></a>
+          <a href="https://www.instagram.com/terranova_project/" style="color: var(--rasta-red); margin: 0 15px;"><i class="fa-brands fa-instagram"></i></a>
+          <a href="https://github.com/Zion-TerraNova" style="color: #fff; margin: 0 15px;"><i class="fa-brands fa-github"></i></a>
+          <a href="https://discord.gg/eatGYDbd" style="color: #7289da; margin: 0 15px;"><i class="fa-brands fa-discord"></i></a>
+        </div>
+      </div>
+      <div class="footer-bottom" style="border-top: 3px solid; border-image: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green)) 1; padding-top: 20px; margin-top: 20px;">
+        <p>&copy; 2025 ZION Terra Nova ® | <a href="./terms-en.html" style="color: var(--rasta-gold);">Terms</a> | <a href="./legal-en.html" style="color: var(--rasta-gold);">Legal</a> | <a href="./gdpr-en.html" style="color: var(--rasta-green);">GDPR</a> | One Love</p>
+      </div>
+    </footer>
+
+    <script>
+    (function() {
+      var LANG = "en";
+      var activeFilter = "all";
+      var statsEl = document.getElementById("blogStats");
+      var years = [];
+      BLOG_POSTS.forEach(function(p){var y=getPostYear(p.date);if(years.indexOf(y)===-1)years.push(y)});
+      statsEl.innerHTML = '<div class="blog-stat"><div class="blog-stat-num">'+BLOG_POSTS.length+'</div><div class="blog-stat-label">Posts</div></div>'
+        +'<div class="blog-stat"><div class="blog-stat-num">'+years.length+'</div><div class="blog-stat-label">Years</div></div>'
+        +'<div class="blog-stat"><div class="blog-stat-num">'+BLOG_POSTS.filter(function(p){return p.category==="tech"}).length+'</div><div class="blog-stat-label">ZION Tech</div></div>'
+        +'<div class="blog-stat"><div class="blog-stat-num">'+BLOG_POSTS.filter(function(p){return p.category==="journey"}).length+'</div><div class="blog-stat-label">Journeys</div></div>';
+
+      var filterBar = document.getElementById("filterBar");
+      Object.keys(BLOG_CATEGORIES).forEach(function(key) {
+        var cat = BLOG_CATEGORIES[key];
+        var btn = document.createElement("button");
+        btn.className = "blog-filter-btn" + (key === "all" ? " active" : "");
+        btn.textContent = cat.labelEn;
+        btn.dataset.filter = key;
+        btn.addEventListener("click", function() {
+          activeFilter = key;
+          document.querySelectorAll(".blog-filter-btn").forEach(function(b){b.classList.remove("active")});
+          btn.classList.add("active");
+          renderTimeline();
+        });
+        filterBar.appendChild(btn);
+      });
+
+      function renderTimeline() {
+        var container = document.getElementById("blogTimeline");
+        var filtered = activeFilter === "all" ? BLOG_POSTS : BLOG_POSTS.filter(function(p){return p.category === activeFilter});
+        if (filtered.length === 0) { container.innerHTML = ""; document.getElementById("noResults").style.display = "block"; return; }
+        document.getElementById("noResults").style.display = "none";
+        var grouped = groupByYear(filtered);
+        var sortedYears = Object.keys(grouped).sort(function(a,b){return b-a});
+        var html = "";
+        sortedYears.forEach(function(year) {
+          var posts = grouped[year].sort(function(a,b){return b.date.localeCompare(a.date)});
+          html += '<div class="blog-year-section"><div class="blog-year-header"><span class="blog-year-badge">'+year+'</span><div class="blog-year-line"></div><span class="blog-year-count">'+posts.length+' posts</span></div><div class="blog-timeline">';
+          posts.forEach(function(post) {
+            var cat = BLOG_CATEGORIES[post.category] || {};
+            var title = post.titleEn || post.title;
+            var excerpt = post.excerptEn || post.excerpt;
+            var href = post.file ? './'+post.file : './blog-post.html?post='+post.slug+'&lang=en';
+            var thumbHtml = post.image ? '<img src="'+post.image+'" alt="" class="blog-post-thumb" onerror="this.style.display=\'none\'">' : '';
+            html += '<a href="'+href+'" class="blog-post-card" data-category="'+post.category+'">' + thumbHtml
+              +'<div class="blog-post-body"><div class="blog-post-meta"><span class="blog-post-date">'+formatDate(post.date, LANG)+'</span>'
+              +'<span class="blog-post-category" data-cat="'+post.category+'">'+(cat.labelEn||post.category)+'</span></div>'
+              +'<div class="blog-post-title"><i class="'+post.icon+'"></i> '+title+'</div>'
+              +'<div class="blog-post-excerpt">'+excerpt+'</div></div>'
+              +'<span class="blog-post-arrow"><i class="fa-solid fa-chevron-right"></i></span></a>';
+          });
+          html += '</div></div>';
+        });
+        container.innerHTML = html;
+      }
+      renderTimeline();
+    })();
+    </script>
+  </body>
+</html>

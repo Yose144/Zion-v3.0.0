@@ -492,6 +492,7 @@ async fn main() -> anyhow::Result<()> {
                 db_path: node.db_path,
                 rpc_addr: node.rpc,
                 p2p_addr: node.p2p,
+                v3_p2p_addr: "0.0.0.0:0".parse().unwrap(),
                 human_address: human,
                 issobella_address: issobella,
                 no_genesis: node.no_genesis,
