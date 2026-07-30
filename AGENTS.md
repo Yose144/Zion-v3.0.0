@@ -1828,6 +1828,17 @@ ZION_POOL_AUXPOW_POOL_HOST_KAS=de.kaspa.herominers.com
 ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 ```
 
+### ExternalCoin `disabled_reason` convention (v3.0.8+, 2026-07-30)
+
+- If an `ExternalCoin` is not yet live / not producing accepted shares, add a
+  static `disabled_reason()` returning a short explanation.
+- `CoinProfile::enabled` and `CoinProfile::disabled_reason` derive from it.
+- `select_best_coin` in `zion-cosmic-harmony/profit_router.rs` and
+  `AutonomousProfitRouter` in `zion-miner/src/autonomous.rs` must filter out
+  coins with `disabled_reason` so the profit router never picks them.
+- Update `StatusV3.md` and the matching `docs/3.0.x/*.md` plan when a coin's
+  status changes.
+
 ### External coin pool endpoints (defaults v AuXpow/src/types.rs)
 
 | Coin | Default Pool | NiceHash Pool |
@@ -2047,3 +2058,11 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
   - `AuXpow/src/external_hashers.rs::hash_ethash()` and `hash_ethash_with_dag()` were changed to always use the canonical `ethash` 0.4 crate (`hashimoto_light`/`hashimoto_full`), removing a `native-hashers` C-FFI shortcut that caused `ETHASH_CPU_GPU_MISMATCH` in builds with `native-hashers` enabled.
   - For coins not on 2miners/zpool BTC payout, coin-specific payout addresses are required; test wallets were saved to the desktop.
   - **GhostRider (RTM) native-ghostrider Windows/MSVC fix (2026-07-28):** The `native-ghostrider` feature (RTM / Raptoreum) could not be compiled with MSVC on Windows. Five root causes were identified and fixed in `V3/L1/native-ffi/`: (1) **VLA in `gr.c`** — `bool selectedAlgo[algoCount]` (C99 variable-length array, unsupported by MSVC) replaced with fixed-size `bool selectedAlgo[15]` (`HASH_FUNC_COUNT` is 15); (2) **VLA in `sph/fugue.c`** — the `ROR(n, s)` macro used `sph_u32 tmp[n]`, replaced with `sph_u32 tmp[15]` (n is at most 15); (3) **`#ifdef WIN32` → `#ifdef _WIN32`** in `oaes_lib.c` — MSVC defines `_WIN32`, not `WIN32`, so the POSIX branch (`<unistd.h>`) was taken on Windows; (4) **unguarded `#include <unistd.h>`** in all 8 `cryptonight*.c` files wrapped in `#ifndef _WIN32 … #else #include <io.h> #endif`; (5) **`alloca` linker error** — MSVC uses `_alloca` (from `<malloc.h>`), so `build.rs` now adds `b.define("alloca", "_alloca")` for MSVC builds. Additionally `/utf-8` is passed to MSVC (some sphlib sources contain em-dash/en-dash in comments; without `/utf-8` MSVC fails silently). Build command: `cargo build --release -p zion-miner --features "gpu-opencl,native-randomx,native-ghostrider,native-verushash"`. **Live verification:** miner run with `--cpu-coin RTM` against Edge pool `62.171.141.136:8444` (payout `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604`) produced RTM GhostRider shares at ~125–430 H/s; the Edge pool forwarded them to upstream zpool.ca and received `result=true` (accepted) — `external_share_result miner=local-miner coin=RTM accepted=true status=accepted`. Two RTM shares accepted upstream within ~90 s of mining. The `native-ghostrider` feature is now production-ready on Windows/MSVC alongside Linux.
+
+### OASIS web (2026-07-30)
+
+- **Location:** `APP&WEB/OasisWeb`
+- **Stack:** Next.js 16 + React 19 + TypeScript, Tailwind CSS v4, React Three Fiber (`@react-three/fiber` + `@react-three/drei`), `three`, `zustand`, `framer-motion`.
+- **Purpose:** Interactive 3D multiverse portal — display and explore OASIS worlds.
+- **Build:** `cd APP&WEB/OasisWeb && npm install && npm run build`.
+- **Deploy (static export):** `dist/` is exported to `/var/www/oasis` on Edge; nginx serves `https://oasis.zionterranova.com` (Let’s Encrypt SSL, HTTP/2).
