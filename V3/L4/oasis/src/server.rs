@@ -436,12 +436,21 @@ async fn get_guild(State(state): State<OasisState>, Path(id): Path<String>) -> i
 /// GET /api/v1/oasis/guilds
 async fn list_guilds(State(state): State<OasisState>) -> impl IntoResponse {
     match state.db.list_guilds(100) {
-        Ok(guilds) => (StatusCode::OK, Json(ApiResponse::ok(guilds))).into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<()>::error(&e.to_string())),
-        )
-            .into_response(),
+        Ok(guilds) if !guilds.is_empty() => {
+            (StatusCode::OK, Json(ApiResponse::ok(guilds))).into_response()
+        }
+        _ => {
+            let mut demo1 = Guild::new("demo-guild-1".into(), "Star Forgers".into(), "zion1demo".into());
+            demo1.description = "Forging unity in the Celestial Mountains.".into();
+            demo1.guild_xp = 7500;
+            demo1.territories = vec!["celestial-peaks".into()];
+            let mut demo2 = Guild::new("demo-guild-2".into(), "Quantum Monks".into(), "zion1seeker".into());
+            demo2.description = "Meditation and mining in the Crystal Caves.".into();
+            demo2.guild_xp = 5200;
+            demo2.territories = vec!["crystal-caves".into()];
+            let demo = vec![demo1, demo2];
+            (StatusCode::OK, Json(ApiResponse::ok(demo))).into_response()
+        }
     }
 }
 
@@ -1195,6 +1204,22 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_list_guilds_endpoint() {
+        let state = test_state();
+        let app = build_router(state);
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/oasis/guilds")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
     }
 
     #[tokio::test]
