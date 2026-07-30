@@ -37,6 +37,11 @@ function GameWorld({ mode, panel, children }: GameWorldProps) {
   const radius = useZoneRadius();
   useEffect(() => setMounted(true), []);
 
+  const target = useMemo(() => {
+    const pos = getZonePosition(mode, radius);
+    return new THREE.Vector3(...pos);
+  }, [mode, radius]);
+
   if (!mounted) {
     return (
       <div className="flex h-full w-full items-center justify-center p-4">
@@ -44,11 +49,6 @@ function GameWorld({ mode, panel, children }: GameWorldProps) {
       </div>
     );
   }
-
-  const target = useMemo(() => {
-    const pos = getZonePosition(mode, radius);
-    return new THREE.Vector3(...pos);
-  }, [mode, radius]);
 
   return (
     <div className="absolute inset-0 bg-oasis-black">
