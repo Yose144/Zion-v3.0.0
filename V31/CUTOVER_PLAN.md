@@ -89,6 +89,6 @@ Fáze D — Full cut-over (H-0):
 
 ## 8. Otevřené E2E před plným cut-over
 
-- Plná L3–L6 end-to-end verifikace: Oasis game, NCL marketplace, AI-native agenti, Free World, Issobella.
+- Plná L3–L6 end-to-end verifikace: Oasis game, NCL compute marketplace, AI-native agenti, Free World, Issobella. **Status 2026-07-30:** unit testy všech L3–L6 cratech procházejí (`zion-ai-native`: 337, `zion-ncl`: 42, `zion-oasis`: 124, `zion-free-world`: 3, `zion-issobella`: 3), chybí cross-layer runtime smoke test.
 - Cross-chain WARP transfer (Base ↔ ZionL1) přes `zion-multichain`.
 - Governance DAO proposal + vote na V31.
