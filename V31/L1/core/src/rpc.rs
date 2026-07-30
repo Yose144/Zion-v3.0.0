@@ -74,13 +74,26 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
     let method = req.get("method").and_then(Value::as_str).unwrap_or("");
     let params = req.get("params").cloned().unwrap_or(Value::Null);
 
+    // New-chain template and block submission methods.
+    if method == "getTemplate" || method == "getBlockTemplate" {
+        return match block_template(node, &params).await {
+            Ok(v) => success_response(id, v),
+            Err(e) => error_response(id, -32000, &e.to_string()),
+        };
+    }
+
+    if method == "submitBlock" {
+        return match submit_block_rpc(node, &params).await {
+            Ok(v) => success_response(id, v),
+            Err(e) => error_response(id, -32000, &e.to_string()),
+        };
+    }
+
     // V3 methods are dispatched to the V3 RPC handler.
     let v3_methods = [
         "getStatus",
         "getBlockByHeight",
         "getBlockByHash",
-        "getTemplate",
-        "submitBlock",
         "submitAccountTransaction",
         "submitUtxoTransaction",
         "getBalance",
@@ -91,9 +104,8 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         return wrap_v3_response(id, result);
     }
 
-    // Legacy methods (getBlockTemplate, submitTransaction) use the old path.
+    // Legacy transaction submission.
     let result = match method {
-        "getBlockTemplate" => block_template(node, &params).await,
         "submitTransaction" => submit_transaction(node, &params).await,
         _ => Ok(error_response(
             id.clone(),
@@ -127,13 +139,28 @@ fn wrap_v3_response(id: Option<Value>, result: Value) -> Value {
 
 async fn block_template(node: &Node, params: &Value) -> Result<Value, NodeError> {
     let miner = params
-        .get("miner")
+        .get("miner_address")
+        .or(params.get("miner"))
         .and_then(Value::as_str)
         .unwrap_or("zion1test");
     let miner_addr = zion_l1_types::Address::new(zion_l1_types::ChainId::ZionL1, vec![], miner)
         .map_err(|e| NodeError::Address(e.to_string()))?;
     let template = node.block_template(miner_addr).await?;
     Ok(serde_json::to_value(template)?)
+}
+
+async fn submit_block_rpc(node: &Node, params: &Value) -> Result<Value, NodeError> {
+    // Try the new-chain Block first.
+    if let Ok(block) = serde_json::from_value::<crate::Block>(params.clone()) {
+        node.submit_block(block).await?;
+        return Ok(json!({"accepted": true}));
+    }
+    // Fall back to V3 handlers.
+    let result = node.v3_rpc.dispatch("submitBlock", params.clone()).await;
+    if let Some(err) = result.get("error").filter(|v| !v.is_null()) {
+        return Err(NodeError::Task(err.to_string()));
+    }
+    Ok(result.get("result").cloned().unwrap_or(Value::Null))
 }
 
 async fn submit_transaction(node: &Node, params: &Value) -> Result<Value, NodeError> {

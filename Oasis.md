@@ -1,7 +1,7 @@
 # Oasis — ZION TerraNova Master Index
 
 > **Poslední update:** 2026-07-30  
-> **Aktivní workspace:** `V31/` (3.1.0-alpha.1) — Mainnet Alpha  
+> **Aktivní workspace:** `V31/` (3.1.0-alpha.2) — Mainnet Alpha  
 > **Produkční runtime:** `V3/` na Edge (`62.171.141.136`)
 
 Tento soubor je rychlý přehled celého projektu a vstupní bod pro každého, kdo se vrací po pauze. Obsahuje stav, klíčové dokumenty, co je hotové a co je další krok.
@@ -65,9 +65,9 @@ cargo test
 cargo build --release
 
 # Lokální node / pool / miner (příklad)
-./target/release/zion-node --config config/node.toml
-./target/release/zion-pool --config config/pool.toml
-./target/release/zion-miner --pool 127.0.0.1:3333 --worker worker1 --address <zion_address>
+./target/release/zion-node --db-path ./node.db --rpc 127.0.0.1:9443 --p2p 0.0.0.0:0 --human <human_addr> --issobella <issobella_addr>
+./target/release/zion-pool --bind 127.0.0.1:3333 --l1-rpc-url http://127.0.0.1:9443 --miner-address <miner_addr>
+./target/release/zion miner start --pool-url 127.0.0.1:3333 --reward-address <miner_addr> --no-gpu --no-cpu
 ```
 
 ---
@@ -90,7 +90,7 @@ cargo build --release
 
 ## 5. Co je další / otevřené
 
-- E2E smoke test node + pool + miner lokálně.
+- ~~E2E smoke test node + pool + miner lokálně.~~ **Hotovo (2026-07-30):** node vytěží block, pool přijme share a submitne `submitBlock`, node přijme block (výška 1+).
 - Production P2P hardening — peer discovery, ban score, max peers.
 - Custom AMM deploy v `zion-multichain`.
 - Plná L4–L6 end-to-end verifikace (Oasis, Free World, Issobella).
