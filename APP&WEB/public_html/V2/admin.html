@@ -31,7 +31,7 @@
     .mainnet-panel-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
     .mainnet-panel-header h2 { color: var(--rasta-gold); font-size: 1.3rem; margin: 0; }
     .mainnet-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
-    .mainnet-status.testnet { background: rgba(255,165,0,0.2); color: #ffa500; border: 1px solid #ffa500; }
+    .mainnet-status.Mainnet { background: rgba(255,165,0,0.2); color: #ffa500; border: 1px solid #ffa500; }
     .mainnet-status.mainnet { background: rgba(0,255,0,0.2); color: #0f0; border: 1px solid #0f0; }
     .mainnet-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
     .mainnet-stat { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
@@ -210,7 +210,7 @@
       <div class="mainnet-panel" id="mainnet-panel">
         <div class="mainnet-panel-header">
           <h2><i class="fa-solid fa-rocket"></i> MainNet Token Distribution</h2>
-          <span class="mainnet-status testnet" id="network-status"><i class="fa-solid fa-flask"></i> <span>TestNet</span></span>
+          <span class="mainnet-status Mainnet" id="network-status"><i class="fa-solid fa-flask"></i> <span>Mainnet</span></span>
         </div>
         <div class="mainnet-stats">
           <div class="mainnet-stat"><div class="value" id="pending-presale-count">0</div><div class="label">Software objednávek k distribuci</div></div>
@@ -230,7 +230,7 @@
             <div class="desc"><span id="bonus-amount">0 ZION</span> na wallety zákazníků</div>
           </button>
         </div>
-        <div class="mainnet-warning" id="mainnet-warning"><i class="fa-solid fa-triangle-exclamation"></i> <span>MainNet není aktivní. Distribuce proběhne na TestNetu.</span></div>
+        <div class="mainnet-warning" id="mainnet-warning"><i class="fa-solid fa-triangle-exclamation"></i> <span>MainNet není aktivní. Distribuce proběhne na Mainnetu.</span></div>
       </div>
 
       <!-- Stats Grid -->
@@ -556,7 +556,7 @@
 
   <!-- ══════ SCRIPTS ══════ -->
   <!-- eShop admin logic from external file -->
-  <script src="./js/admin.js?v=2.9.2" defer></script>
+  <script src="./js/admin.js?v=3.1.2" defer></script>
 
   <!-- Blog admin logic (inline) -->
   <script>

@@ -28,7 +28,7 @@
 | **Python API** | FastAPI + SQLite (presale_endpoints.py) | Objednávky, statistiky |
 | **Database** | SQLite + JSON files | Data persistence |
 | **Payments** | Stripe API | Platební brána |
-| **Blockchain** | ZION v2.9.0 | 16.28B premine, 500M presale |
+| **Blockchain** | ZION v3.1.0 | 16.28B premine, 500M presale |
 
 ### Data Flow
 
@@ -118,7 +118,7 @@ function zion_generate_wallet(array $options): array
 
 ```php
 // GET: Načíst záznamy
-GET /V2/api/wallet-ledger.php?status=pending&network=testnet
+GET /V2/api/wallet-ledger.php?status=pending&network=Mainnet
 
 // POST: Aktualizovat status
 POST /V2/api/wallet-ledger.php
@@ -142,7 +142,7 @@ POST /V2/api/wallet-ledger.php
     "qrImage": "zw_abc123.png",
     "tokens": 50000,
     "status": "pending",
-    "network": "testnet",
+    "network": "Mainnet",
     "source": "presale",
     "createdAt": "2025-12-02T12:00:00+00:00",
     "history": [...]
@@ -285,7 +285,7 @@ python scripts/sync_php_python_presale.py --mode=sync --dry-run
 **Cron job (automatická synchronizace každou hodinu):**
 
 ```bash
-0 * * * * cd /var/www/Zion-2.9 && python scripts/sync_php_python_presale.py --mode=sync >> /var/log/presale-sync.log 2>&1
+0 * * * * cd /var/www/Zion-3.1 && python scripts/sync_php_python_presale.py --mode=sync >> /var/log/presale-sync.log 2>&1
 ```
 
 ---
@@ -457,9 +457,9 @@ After=network.target
 Type=simple
 User=www-data
 Group=www-data
-WorkingDirectory=/var/www/Zion-2.9
-Environment="PATH=/var/www/Zion-2.9/venv/bin"
-ExecStart=/var/www/Zion-2.9/venv/bin/uvicorn api.presale_endpoints:app --host 127.0.0.1 --port 8000 --workers 4
+WorkingDirectory=/var/www/Zion-3.1
+Environment="PATH=/var/www/Zion-3.1/venv/bin"
+ExecStart=/var/www/Zion-3.1/venv/bin/uvicorn api.presale_endpoints:app --host 127.0.0.1 --port 8000 --workers 4
 Restart=always
 RestartSec=5
 
@@ -491,7 +491,7 @@ PRESALE_DB_PATH=data/presale.db
 PRESALE_ENCRYPTION_KEY_PATH=data/presale_encryption_key.bin
 
 # Network
-ZION_NETWORK=testnet
+ZION_NETWORK=Mainnet
 MAINNET_LAUNCH_DATE=2026-12-31
 
 # API

@@ -934,8 +934,8 @@ async function loadDistributionStats() {
                 statusEl.innerHTML = '<i class="fa-solid fa-globe"></i><span>MainNet</span>';
                 warningEl.style.display = 'none';
             } else {
-                statusEl.className = 'mainnet-status testnet';
-                statusEl.innerHTML = '<i class="fa-solid fa-flask"></i><span>TestNet</span>';
+                statusEl.className = 'mainnet-status Mainnet';
+                statusEl.innerHTML = '<i class="fa-solid fa-flask"></i><span>Mainnet</span>';
                 warningEl.style.display = 'flex';
             }
         }

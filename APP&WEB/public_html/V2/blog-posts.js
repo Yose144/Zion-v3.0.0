@@ -36,22 +36,22 @@ const BLOG_POSTS = [
     excerpt: "Nativní Dashboard, Pool a Explorer jsou živé na zionterranova.com. Kompletní přepis infrastruktury v Rustu.",
     excerptEn: "Native Dashboard, Pool and Explorer are live on zionterranova.com. Complete infrastructure rewrite in Rust.",
     image: "./img/blog/2026-02-rebirth-native.jpg",
-    content: '<p>Live Dashboard, Pool, Explorer a Network — celá nativní infrastruktura ZION 2.9.5 je online na <a href="https://zionterranova.com" target="_blank">zionterranova.com</a>.</p><h3>Co je nového</h3><ul><li>✅ Nativní Pool — stratum server v Rustu</li><li>✅ Live Dashboard — real-time statistiky sítě</li><li>✅ Block Explorer — procházení bloků a transakcí</li><li>✅ Network Status — health check nodů</li><li>✅ Dokumentace — kompletní whitepaper a docs</li></ul><p>Těžba běží, síť pulzuje. Připojte se a staňte se součástí Cosmic Harmony.</p><blockquote>"Where technology meets spirit. Code is Law. Consciousness is Freedom."</blockquote>',
-    contentEn: '<p>Live Dashboard, Pool, Explorer and Network — the entire ZION 2.9.5 native infrastructure is live at <a href="https://zionterranova.com" target="_blank">zionterranova.com</a>.</p><h3>What\'s New</h3><ul><li>✅ Native Pool — stratum server in Rust</li><li>✅ Live Dashboard — real-time network stats</li><li>✅ Block Explorer — browsing blocks and transactions</li><li>✅ Network Status — node health checks</li><li>✅ Documentation — complete whitepaper and docs</li></ul><p>Mining is running, the network is pulsing. Join and become part of Cosmic Harmony.</p><blockquote>"Where technology meets spirit. Code is Law. Consciousness is Freedom."</blockquote>'
+    content: '<p>Live Dashboard, Pool, Explorer a Network — celá nativní infrastruktura ZION 3.1.0 je online na <a href="https://zionterranova.com" target="_blank">zionterranova.com</a>.</p><h3>Co je nového</h3><ul><li>✅ Nativní Pool — stratum server v Rustu</li><li>✅ Live Dashboard — real-time statistiky sítě</li><li>✅ Block Explorer — procházení bloků a transakcí</li><li>✅ Network Status — health check nodů</li><li>✅ Dokumentace — kompletní whitepaper a docs</li></ul><p>Těžba běží, síť pulzuje. Připojte se a staňte se součástí Cosmic Harmony.</p><blockquote>"Where technology meets spirit. Code is Law. Consciousness is Freedom."</blockquote>',
+    contentEn: '<p>Live Dashboard, Pool, Explorer and Network — the entire ZION 3.1.0 native infrastructure is live at <a href="https://zionterranova.com" target="_blank">zionterranova.com</a>.</p><h3>What\'s New</h3><ul><li>✅ Native Pool — stratum server in Rust</li><li>✅ Live Dashboard — real-time network stats</li><li>✅ Block Explorer — browsing blocks and transactions</li><li>✅ Network Status — node health checks</li><li>✅ Documentation — complete whitepaper and docs</li></ul><p>Mining is running, the network is pulsing. Join and become part of Cosmic Harmony.</p><blockquote>"Where technology meets spirit. Code is Law. Consciousness is Freedom."</blockquote>'
   },
   {
     id: 31,
     slug: "native-awakening-quantum-revolution",
-    title: "2.9.5 Native Awakening: Kvantová Revoluce & Pre-Mainnet",
-    titleEn: "2.9.5 Native Awakening: Quantum Revolution & Pre-Mainnet",
+    title: "3.1.0 MAINNET ALPHA: Kvantová Revoluce & Pre-Mainnet",
+    titleEn: "3.1.0 MAINNET ALPHA: Quantum Revolution & Pre-Mainnet",
     date: "2026-02-04",
     category: "tech",
     icon: "fa-solid fa-bolt",
     excerpt: "Příběh z Camino de Santiago, María Mayor, Sarah. Cesta ZION vývoje, pre-mainnet plány, kniha Kvantová Revoluce.",
     excerptEn: "Story from Camino de Santiago, María Mayor, Sarah. ZION development journey, pre-mainnet plans, Quantum Revolution book.",
     image: "./img/blog/2026-02-native-awakening.jpg",
-    content: '<h3>Příběh poutníka</h3><p>Cesta začala na Caminu de Santiago. Přes Marii Mayor, přes Fatimu a Sarah, přes noci pod hvězdami a dny plné kódu. Tento příběh není jen o blockchainu — je o hledání smyslu, o cestě domů.</p><h3>ZION 2.9.5 — Native Awakening</h3><p>Kompletní přepis do Rust/C++. Nativní pool, nativní core, nativní mining. Cosmic Harmony v2 algoritmus odolný ASICům. CPU/GPU friendly pro všechny.</p><h3>Quantum Revolution — Kniha</h3><p>Vznikla první kniha projektu: <em>Kvantová revoluce & Native Awakening</em>. Shrnutí celé cesty, filozofie i technologie.</p><h3>Pre-Mainnet plány</h3><ul><li>🔧 Core 2.9.5 — Rust rewrite</li><li>⛏️ Cosmic Harmony v2 — ASIC-resistant</li><li>🌉 Multi-chain bridges — Solana, Stellar, Cardano</li><li>🎮 ZION OASIS — Unreal Engine 5</li><li>📅 MainNet target: Q4 2027</li></ul><blockquote>"Tady začíná evoluZion v2 — Zion Native. One Love, One Heart, One Destiny."</blockquote>',
-    contentEn: '<h3>Pilgrim\'s Story</h3><p>The journey began on the Camino de Santiago. Through Maria Mayor, through Fatima and Sarah, through nights under the stars and days filled with code. This story is not just about blockchain — it\'s about finding meaning, about the way home.</p><h3>ZION 2.9.5 — Native Awakening</h3><p>Complete rewrite in Rust/C++. Native pool, native core, native mining. Cosmic Harmony v2 algorithm resistant to ASICs. CPU/GPU friendly for everyone.</p><h3>Quantum Revolution — Book</h3><p>The first book of the project: <em>Quantum Revolution & Native Awakening</em>.</p><h3>Pre-Mainnet Plans</h3><ul><li>🔧 Core 2.9.5 — Rust rewrite</li><li>⛏️ Cosmic Harmony v2 — ASIC-resistant</li><li>🌉 Multi-chain bridges — Solana, Stellar, Cardano</li><li>🎮 ZION OASIS — Unreal Engine 5</li><li>📅 MainNet target: Q4 2027</li></ul><blockquote>"Here begins evoluZion v2 — Zion Native. One Love, One Heart, One Destiny."</blockquote>'
+    content: '<h3>Příběh poutníka</h3><p>Cesta začala na Caminu de Santiago. Přes Marii Mayor, přes Fatimu a Sarah, přes noci pod hvězdami a dny plné kódu. Tento příběh není jen o blockchainu — je o hledání smyslu, o cestě domů.</p><h3>ZION 3.1.0 — MAINNET ALPHA</h3><p>Kompletní přepis do Rust/C++. Nativní pool, nativní core, nativní mining. Cosmic Harmony v2 algoritmus odolný ASICům. CPU/GPU friendly pro všechny.</p><h3>Quantum Revolution — Kniha</h3><p>Vznikla první kniha projektu: <em>Kvantová revoluce & MAINNET ALPHA</em>. Shrnutí celé cesty, filozofie i technologie.</p><h3>Pre-Mainnet plány</h3><ul><li>🔧 Core 3.1.0 — Rust rewrite</li><li>⛏️ Cosmic Harmony v2 — ASIC-resistant</li><li>🌉 Multi-chain bridges — Solana, Stellar, Cardano</li><li>🎮 ZION OASIS — Unreal Engine 5</li><li>📅 MainNet target: Q4 2027</li></ul><blockquote>"Tady začíná evoluZion v2 — Zion Native. One Love, One Heart, One Destiny."</blockquote>',
+    contentEn: '<h3>Pilgrim\'s Story</h3><p>The journey began on the Camino de Santiago. Through Maria Mayor, through Fatima and Sarah, through nights under the stars and days filled with code. This story is not just about blockchain — it\'s about finding meaning, about the way home.</p><h3>ZION 3.1.0 — MAINNET ALPHA</h3><p>Complete rewrite in Rust/C++. Native pool, native core, native mining. Cosmic Harmony v2 algorithm resistant to ASICs. CPU/GPU friendly for everyone.</p><h3>Quantum Revolution — Book</h3><p>The first book of the project: <em>Quantum Revolution & MAINNET ALPHA</em>.</p><h3>Pre-Mainnet Plans</h3><ul><li>🔧 Core 3.1.0 — Rust rewrite</li><li>⛏️ Cosmic Harmony v2 — ASIC-resistant</li><li>🌉 Multi-chain bridges — Solana, Stellar, Cardano</li><li>🎮 ZION OASIS — Unreal Engine 5</li><li>📅 MainNet target: Q4 2027</li></ul><blockquote>"Here begins evoluZion v2 — Zion Native. One Love, One Heart, One Destiny."</blockquote>'
   },
   {
     id: 30,
@@ -70,27 +70,27 @@ const BLOG_POSTS = [
   {
     id: 29,
     slug: "manifesto-native-awakening",
-    title: "Manifesto: Rozhodnutí k Native Awakening",
-    titleEn: "Manifesto: Decision for Native Awakening",
+    title: "Manifesto: Rozhodnutí k MAINNET ALPHA",
+    titleEn: "Manifesto: Decision for MAINNET ALPHA",
     date: "2026-01-15",
     category: "tech",
     icon: "fa-solid fa-scroll",
     excerpt: "Předprodej tokenu zrušen. Fair Launch cestou Satoshiho. Cosmic Harmony v2 algoritmus. ZION pro všechny.",
     excerptEn: "Token presale cancelled. Fair Launch Satoshi way. Cosmic Harmony v2 algorithm. ZION for everyone.",
     image: "./img/blog/2026-01-manifesto.jpg",
-    content: '<h3>I. Prohlášení</h3><p>Centrální banky zklamaly. Vlády zklamaly. ZION není jen další kryptoměna. ZION je manifest svobody.</p><h3>Předprodej zrušen</h3><p>Rozhodli jsme se vydat cestou Satoshiho Nakamota — fair, open source, pro všechny. Proto jsme vytvořili Cosmic Harmony v2 — CPU/GPU friendly, odolný ASICům.</p><h3>II. Pět Dharma Principů</h3><ol><li><strong>Ahimsa</strong> — Neubližování: Fair přístup, žádné MEV</li><li><strong>Satya</strong> — Pravda: 100% open source</li><li><strong>Asteya</strong> — Nekrást: Žádná VC extrakce</li><li><strong>Brahmacharya</strong> — Disciplína: Efektivní algoritmy</li><li><strong>Aparigraha</strong> — Nepřivlastňování: Sdílené dobro</li></ol><h3>Ekonomika</h3><p>Total Supply: 144,000,000,000 ZION · Block Time: 60s · Algorithm: Cosmic Harmony · Privacy: CryptoNote</p><blockquote>"Code is Law. Math is Truth. Consciousness is Freedom." — JAI ZION 🕉️</blockquote>',
-    contentEn: '<h3>I. Declaration</h3><p>Central banks failed. Governments failed. ZION is not just another cryptocurrency. ZION is a manifest of freedom.</p><h3>Presale Cancelled</h3><p>We chose the path of Satoshi Nakamoto — fair, open source, for everyone. We created Cosmic Harmony v2 — CPU/GPU friendly, ASIC-resistant.</p><h3>II. Five Dharma Principles</h3><ol><li><strong>Ahimsa</strong> — Non-violence: Fair access, no MEV</li><li><strong>Satya</strong> — Truth: 100% open source</li><li><strong>Asteya</strong> — Non-stealing: No VC extraction</li><li><strong>Brahmacharya</strong> — Discipline: Efficient algorithms</li><li><strong>Aparigraha</strong> — Non-possessiveness: Shared good</li></ol><h3>Economics</h3><p>Total Supply: 144,000,000,000 ZION · Block Time: 60s · Algorithm: Cosmic Harmony · Privacy: CryptoNote</p><blockquote>"Code is Law. Math is Truth. Consciousness is Freedom." — JAI ZION 🕉️</blockquote>'
+    content: '<h3>I. Prohlášení</h3><p>Centrální banky zklamaly. Vlády zklamaly. ZION není jen další kryptoměna. ZION je manifest svobody.</p><h3>Předprodej zrušen</h3><p>Rozhodli jsme se vydat cestou Satoshiho Nakamota — fair, open source, pro všechny. Proto jsme vytvořili Cosmic Harmony v2 — CPU/GPU friendly, odolný ASICům.</p><h3>II. Pět Dharma Principů</h3><ol><li><strong>Ahimsa</strong> — Neubližování: Fair přístup, žádné MEV</li><li><strong>Satya</strong> — Pravda: 100% open source</li><li><strong>Asteya</strong> — Nekrást: Žádná VC extrakce</li><li><strong>Brahmacharya</strong> — Disciplína: Efektivní algoritmy</li><li><strong>Aparigraha</strong> — Nepřivlastňování: Sdílené dobro</li></ol><h3>Ekonomika</h3><p>Total Supply: 144,000,000,000 ZION · Block Time: 60s · Algorithm: Cosmic Harmony · Privacy: hybrid account/UTXO</p><blockquote>"Code is Law. Math is Truth. Consciousness is Freedom." — JAI ZION 🕉️</blockquote>',
+    contentEn: '<h3>I. Declaration</h3><p>Central banks failed. Governments failed. ZION is not just another cryptocurrency. ZION is a manifest of freedom.</p><h3>Presale Cancelled</h3><p>We chose the path of Satoshi Nakamoto — fair, open source, for everyone. We created Cosmic Harmony v2 — CPU/GPU friendly, ASIC-resistant.</p><h3>II. Five Dharma Principles</h3><ol><li><strong>Ahimsa</strong> — Non-violence: Fair access, no MEV</li><li><strong>Satya</strong> — Truth: 100% open source</li><li><strong>Asteya</strong> — Non-stealing: No VC extraction</li><li><strong>Brahmacharya</strong> — Discipline: Efficient algorithms</li><li><strong>Aparigraha</strong> — Non-possessiveness: Shared good</li></ol><h3>Economics</h3><p>Total Supply: 144,000,000,000 ZION · Block Time: 60s · Algorithm: Cosmic Harmony · Privacy: hybrid account/UTXO</p><blockquote>"Code is Law. Math is Truth. Consciousness is Freedom." — JAI ZION 🕉️</blockquote>'
   },
   {
     id: 28,
     slug: "finalni-report-quantum-leap",
-    title: "Finální Report 2.9 Quantum Leap",
-    titleEn: "Final Report 2.9 Quantum Leap",
+    title: "Finální Report 3.1 Quantum Leap",
+    titleEn: "Final Report 3.1 Quantum Leap",
     date: "2026-01-03",
     category: "tech",
     icon: "fa-solid fa-file-lines",
-    excerpt: "Novoroční zrození ZION TestNet 2.9. Kvantový skok k Golden Age v multichain dharma ekosystému.",
-    excerptEn: "New Year birth of ZION TestNet 2.9. Quantum leap to Golden Age in multichain dharma ecosystem.",
+    excerpt: "Novoroční zrození ZION Mainnet 3.1. Kvantový skok k Golden Age v multichain dharma ekosystému.",
+    excerptEn: "New Year birth of ZION Mainnet 3.1. Quantum leap to Golden Age in multichain dharma ecosystem.",
     image: "./img/blog/2026-01-finalni-report.jpg",
     content: '<h3>🌌 Co je ZION?</h3><p>Představte si ZION jako velký strom v zahradě Nové Země. Kořeny v dávné moudrosti, kmen je robustní blockchain, listy jsou multichain dharma ecosystem.</p><h3>Klíčové prvky</h3><ul><li><strong>Blockchain srdce:</strong> PoW blockchain</li><li><strong>Cosmic Map:</strong> 15-dimenzionální atlas (3024 úrovní)</li><li><strong>9 Consciousness Levels:</strong> CL1–CL9</li><li><strong>ZION OASIS:</strong> AAA MMORPG s Golden Egg ($10B)</li><li><strong>Warp:</strong> Multi-chain mosty</li><li><strong>DAO:</strong> 144k Guardians</li></ul><h3>Jak se zapojit</h3><ol><li>Stáhněte ZION Native Miner z <a href="https://zionterranova.com/download" target="_blank">zionterranova.com</a></li><li>Vygenerujte si peněženku</li><li>Připojte se k poolu</li><li>Těžte a zvyšujte svůj CL!</li></ol><blockquote>"Nechte svou duši zpívat, zapojte se do těžby. Peace and One Love — Jai SitaRam! 🌟🕉️✨"</blockquote>',
     contentEn: '<h3>🌌 What is ZION?</h3><p>Imagine ZION as a great tree in the garden of New Earth. Roots in ancient wisdom, trunk is a robust blockchain, leaves are the multichain dharma ecosystem.</p><h3>Key Elements</h3><ul><li><strong>Blockchain Heart:</strong> PoW blockchain</li><li><strong>Cosmic Map:</strong> 15-dimensional atlas (3024 levels)</li><li><strong>9 Consciousness Levels:</strong> CL1–CL9</li><li><strong>ZION OASIS:</strong> AAA MMORPG with Golden Egg ($10B)</li><li><strong>Warp:</strong> Multi-chain bridges</li><li><strong>DAO:</strong> 144k Guardians</li></ul><h3>How to Join</h3><ol><li>Download ZION Native Miner from <a href="https://zionterranova.com/download" target="_blank">zionterranova.com</a></li><li>Generate a wallet</li><li>Connect to pool</li><li>Mine and raise your CL!</li></ol><blockquote>"Let your soul sing, join the mining. Peace and One Love — Jai SitaRam! 🌟🕉️✨"</blockquote>'
@@ -101,43 +101,43 @@ const BLOG_POSTS = [
   // ═══════════════════════════════════════════
   {
     id: 27,
-    slug: "testnet-launch-pf2026",
-    title: "✨ 2.9 TestNet Launch ✨ Live! 🚀 Pf 2026",
-    titleEn: "✨ 2.9 TestNet Launch ✨ Live! 🚀 HNY 2026",
+    slug: "Mainnet-launch-pf2026",
+    title: "✨ 3.1 Mainnet Launch ✨ Live! 🚀 Pf 2026",
+    titleEn: "✨ 3.1 Mainnet Launch ✨ Live! 🚀 HNY 2026",
     date: "2025-12-30",
     category: "tech",
     icon: "fa-solid fa-rocket",
-    excerpt: "TESTNET LIVE · QUANTUM LEAP. Nativní Zion Miner s algoritmem Cosmic Harmony je připraven.",
-    excerptEn: "TESTNET LIVE · QUANTUM LEAP. Native Zion Miner with Cosmic Harmony algorithm is ready.",
-    image: "./img/blog/2025-12-testnet-launch.jpg",
-    content: '<p style="font-size:1.3em;text-align:center;color:var(--rasta-gold);">TESTNET LIVE · QUANTUM LEAP</p><h3>ZION 2.9 "Native Awakening Coming..."</h3><p>POW CPU MINING · ZION OASIS · DAO/HUMANITY TITHE · 144K 🎆 FAMILY</p><p>Stáhni si desktop miner, vygeneruj si ZION peněženku a vstup do ®evoluZion.</p><table class="blog-table"><tr><td>WEB</td><td><a href="https://zionterranova.com" target="_blank">zionterranova.com</a></td></tr><tr><td>STRATUM</td><td>91.98.122.165:3333</td></tr><tr><td>STATUS</td><td>Pool · API · Nodes · 90%</td></tr><tr><td>DOWNLOAD</td><td><a href="https://zionterranova.com/download" target="_blank">CLI · Desktop Agent</a></td></tr></table><blockquote>"Přeji všem krásné Vánoce a šťastný nový rok 2026. ON THE STAR."</blockquote>',
-    contentEn: '<p style="font-size:1.3em;text-align:center;color:var(--rasta-gold);">TESTNET LIVE · QUANTUM LEAP</p><h3>ZION 2.9 "Native Awakening Coming..."</h3><p>POW CPU MINING · ZION OASIS · DAO/HUMANITY TITHE · 144K 🎆 FAMILY</p><p>Download desktop miner, generate your ZION wallet and enter ®evoluZion.</p><table class="blog-table"><tr><td>WEB</td><td><a href="https://zionterranova.com" target="_blank">zionterranova.com</a></td></tr><tr><td>STRATUM</td><td>91.98.122.165:3333</td></tr><tr><td>STATUS</td><td>Pool · API · Nodes · 90%</td></tr><tr><td>DOWNLOAD</td><td><a href="https://zionterranova.com/download" target="_blank">CLI · Desktop Agent</a></td></tr></table><blockquote>"Wishing everyone Merry Christmas and Happy New Year 2026. ON THE STAR."</blockquote>'
+    excerpt: "MAINNET BETA · QUANTUM LEAP. Nativní Zion Miner s algoritmem Cosmic Harmony je připraven.",
+    excerptEn: "MAINNET BETA · QUANTUM LEAP. Native Zion Miner with Cosmic Harmony algorithm is ready.",
+    image: "./img/blog/2025-12-Mainnet-launch.jpg",
+    content: '<p style="font-size:1.3em;text-align:center;color:var(--rasta-gold);">MAINNET BETA · QUANTUM LEAP</p><h3>ZION 3.1 "MAINNET ALPHA Coming..."</h3><p>POW CPU MINING · ZION OASIS · DAO/HUMANITY TITHE · 144K 🎆 FAMILY</p><p>Stáhni si desktop miner, vygeneruj si ZION peněženku a vstup do ®evoluZion.</p><table class="blog-table"><tr><td>WEB</td><td><a href="https://zionterranova.com" target="_blank">zionterranova.com</a></td></tr><tr><td>STRATUM</td><td>91.98.122.165:3333</td></tr><tr><td>STATUS</td><td>Pool · API · Nodes · 90%</td></tr><tr><td>DOWNLOAD</td><td><a href="https://zionterranova.com/download" target="_blank">CLI · Desktop Agent</a></td></tr></table><blockquote>"Přeji všem krásné Vánoce a šťastný nový rok 2026. ON THE STAR."</blockquote>',
+    contentEn: '<p style="font-size:1.3em;text-align:center;color:var(--rasta-gold);">MAINNET BETA · QUANTUM LEAP</p><h3>ZION 3.1 "MAINNET ALPHA Coming..."</h3><p>POW CPU MINING · ZION OASIS · DAO/HUMANITY TITHE · 144K 🎆 FAMILY</p><p>Download desktop miner, generate your ZION wallet and enter ®evoluZion.</p><table class="blog-table"><tr><td>WEB</td><td><a href="https://zionterranova.com" target="_blank">zionterranova.com</a></td></tr><tr><td>STRATUM</td><td>91.98.122.165:3333</td></tr><tr><td>STATUS</td><td>Pool · API · Nodes · 90%</td></tr><tr><td>DOWNLOAD</td><td><a href="https://zionterranova.com/download" target="_blank">CLI · Desktop Agent</a></td></tr></table><blockquote>"Wishing everyone Merry Christmas and Happy New Year 2026. ON THE STAR."</blockquote>'
   },
   {
     id: 26,
     slug: "zion-29-quantum-leap",
-    title: "Zion 2.9 – Quantum Leap & Rebirth evoluZion eshop v2",
-    titleEn: "Zion 2.9 – Quantum Leap & Rebirth evoluZion eshop v2",
+    title: "ZION 3.1 – Quantum Leap & Rebirth evoluZion eshop v2",
+    titleEn: "ZION 3.1 – Quantum Leap & Rebirth evoluZion eshop v2",
     date: "2025-11-13",
     category: "tech",
     icon: "fa-solid fa-wand-magic-sparkles",
-    excerpt: "TestNet Rising 60%. Vánoční poselství a kniha Genesis. ZION NATIVE — první vánoční kniha.",
-    excerptEn: "TestNet Rising 60%. Christmas message and Genesis book. ZION NATIVE — first Christmas book.",
+    excerpt: "Mainnet Rising 60%. Vánoční poselství a kniha Genesis. ZION NATIVE — první vánoční kniha.",
+    excerptEn: "Mainnet Rising 60%. Christmas message and Genesis book. ZION NATIVE — first Christmas book.",
     image: "./img/blog/2025-11-quantum-leap.jpg",
-    content: '<h3>TestNet Rising (60%)</h3><p>V srdci zimního slunovratu se probouzí nový cyklus. Backend Zion 2.9 stojí na prahu spuštění.</p><h3>Dárek pro komunitu — Kniha Genesis</h3><p>ZION NATIVE — první vánoční kniha Genesis. Příběh poutníka a kam míříme.</p><h3>🎄 Rebirth of evoluZion Web v2</h3><ul><li>💠 Nový eShop</li><li>💠 Zimní kolekce artefaktů</li><li>💠 StarWars laser-cut stíhačky</li><li>💠 Dharma Credits = ZION Tokeny</li></ul><blockquote>"Ať jsou vaše Vánoce požehnané. ON THE STAR."</blockquote>',
-    contentEn: '<h3>TestNet Rising (60%)</h3><p>In the heart of winter solstice, a new cycle awakens. Backend Zion 2.9 stands on the threshold of launch.</p><h3>Gift for Community — Genesis Book</h3><p>ZION NATIVE — the first Christmas Genesis book. A pilgrim\'s story and where we are heading.</p><h3>🎄 Rebirth of evoluZion Web v2</h3><ul><li>💠 New eShop</li><li>💠 Winter artifact collection</li><li>💠 StarWars laser-cut fighters</li><li>💠 Dharma Credits = ZION Tokens</li></ul><blockquote>"May your Christmas be blessed. ON THE STAR."</blockquote>'
+    content: '<h3>Mainnet Rising (60%)</h3><p>V srdci zimního slunovratu se probouzí nový cyklus. Backend ZION 3.1 stojí na prahu spuštění.</p><h3>Dárek pro komunitu — Kniha Genesis</h3><p>ZION NATIVE — první vánoční kniha Genesis. Příběh poutníka a kam míříme.</p><h3>🎄 Rebirth of evoluZion Web v2</h3><ul><li>💠 Nový eShop</li><li>💠 Zimní kolekce artefaktů</li><li>💠 StarWars laser-cut stíhačky</li><li>💠 Dharma Credits = ZION Tokeny</li></ul><blockquote>"Ať jsou vaše Vánoce požehnané. ON THE STAR."</blockquote>',
+    contentEn: '<h3>Mainnet Rising (60%)</h3><p>In the heart of winter solstice, a new cycle awakens. Backend ZION 3.1 stands on the threshold of launch.</p><h3>Gift for Community — Genesis Book</h3><p>ZION NATIVE — the first Christmas Genesis book. A pilgrim\'s story and where we are heading.</p><h3>🎄 Rebirth of evoluZion Web v2</h3><ul><li>💠 New eShop</li><li>💠 Winter artifact collection</li><li>💠 StarWars laser-cut fighters</li><li>💠 Dharma Credits = ZION Tokens</li></ul><blockquote>"May your Christmas be blessed. ON THE STAR."</blockquote>'
   },
   {
     id: 25,
-    slug: "testnet-285-estrella",
-    title: "TestNet 2.8.5 Estrella with Warp — Nebula — Milky Way",
-    titleEn: "TestNet 2.8.5 Estrella with Warp — Nebula — Milky Way",
+    slug: "Mainnet-285-estrella",
+    title: "Mainnet 2.8.5 Estrella with Warp — Nebula — Milky Way",
+    titleEn: "Mainnet 2.8.5 Estrella with Warp — Nebula — Milky Way",
     date: "2025-10-28",
     category: "tech",
     icon: "fa-solid fa-star",
     excerpt: "ZION Terra Nova nový návrh loga, nová URL zionterranova.com. Whitepaper LITE 2.8.5, COSMIC MAP 15D.",
     excerptEn: "ZION Terra Nova new logo, new URL zionterranova.com. Whitepaper LITE 2.8.5, COSMIC MAP 15D.",
-    image: "./img/blog/2025-10-testnet285.jpg",
+    image: "./img/blog/2025-10-Mainnet285.jpg",
     content: '<h3>Nový návrh loga: ZION — Terra Nova</h3><p>Nova URL: <a href="https://zionterranova.com" target="_blank">www.zionterranova.com</a></p><h3>Klíčové inovace v2.8.5</h3><ul><li>🎮 <strong>ZION OASIS</strong> — AAA MMORPG s Prize Pool 1.75B ZION</li><li>🌌 <strong>COSMIC MAP</strong> — 15-dimenzionální framework</li><li>📚 <strong>Sacred Library</strong> — 39,036 řádků védské moudrosti on-chain</li><li>🌉 <strong>Multi-Chain Bridges</strong></li><li>⛏️ <strong>Consciousness Mining</strong> — 9 úrovní CL</li></ul><table class="blog-table"><tr><td>Total Supply</td><td>144,000,000,000 ZION</td></tr><tr><td>Premine</td><td>15,780,000,000 (~11%)</td></tr><tr><td>GitHub</td><td><a href="https://github.com/Zion-TerraNova" target="_blank">github.com/Zion-TerraNova</a></td></tr></table>',
     contentEn: '<h3>New Logo Design: ZION — Terra Nova</h3><p>New URL: <a href="https://zionterranova.com" target="_blank">www.zionterranova.com</a></p><h3>Key Innovations v2.8.5</h3><ul><li>🎮 <strong>ZION OASIS</strong> — AAA MMORPG with Prize Pool 1.75B ZION</li><li>🌌 <strong>COSMIC MAP</strong> — 15-dimensional framework</li><li>📚 <strong>Sacred Library</strong> — 39,036 lines of Vedic wisdom on-chain</li><li>🌉 <strong>Multi-Chain Bridges</strong></li><li>⛏️ <strong>Consciousness Mining</strong> — 9 CL levels</li></ul><table class="blog-table"><tr><td>Total Supply</td><td>144,000,000,000 ZION</td></tr><tr><td>Premine</td><td>15,780,000,000 (~11%)</td></tr><tr><td>GitHub</td><td><a href="https://github.com/Zion-TerraNova" target="_blank">github.com/Zion-TerraNova</a></td></tr></table>'
   },
@@ -249,8 +249,8 @@ const BLOG_POSTS = [
     excerpt: "Peace, One Love & Nirvana. Bodhi Tree. Maitreya, Issobela, Elizabet. Dohrmanovo proroctví.",
     excerptEn: "Peace, One Love & Nirvana. Bodhi Tree. Maitreya, Issobela, Elizabet. Dohrman Prophecy.",
     image: "./img/blog/2024-10-oraculum.jpg",
-    content: '<p style="text-align:center;">🌼 Peace, One Love & Nirvana 🌼<br>~ ∞ ~<br>🌳 Bodhi Tree 🌴<br>~ ∞ ~<br>🌞 Maitreya, Issobela, Elizabe† 🪶<br>~ ∞ ~<br>∞ = phi = oraculum</p><p style="text-align:center;font-size:1.3em;color:var(--rasta-gold);">18:20:13:9:3:11:8</p><p>DOHRMAN PROPHECY — <a href="http://www.newearth.cz/src/Dohrmanovo-proroctvi.pdf" target="_blank">Přečíst proroctví</a></p><p style="text-align:center;">FREE TIBET ! 🇲🇰</p><blockquote>"For Lady Keporkak / my Bodhisattva soulflame"</blockquote>',
-    contentEn: '<p style="text-align:center;">🌼 Peace, One Love & Nirvana 🌼<br>~ ∞ ~<br>🌳 Bodhi Tree 🌴<br>~ ∞ ~<br>🌞 Maitreya, Issobela, Elizabe† 🪶<br>~ ∞ ~<br>∞ = phi = oraculum</p><p style="text-align:center;font-size:1.3em;color:var(--rasta-gold);">18:20:13:9:3:11:8</p><p>DOHRMAN PROPHECY — <a href="http://www.newearth.cz/src/Dohrmanovo-proroctvi.pdf" target="_blank">Read the prophecy</a></p><p style="text-align:center;">FREE TIBET ! 🇲🇰</p><blockquote>"For Lady Keporkak / my Bodhisattva soulflame"</blockquote>'
+    content: '<p style="text-align:center;">🌼 Peace, One Love & Nirvana 🌼<br>~ ∞ ~<br>🌳 Bodhi Tree 🌴<br>~ ∞ ~<br>🌞 Maitreya, Issobela, Elizabe† 🪶<br>~ ∞ ~<br>∞ = phi = oraculum</p><p style="text-align:center;font-size:1.3em;color:var(--rasta-gold);">18:20:13:9:3:11:8</p><p>DOHRMAN PROPHECY — <a href="http://www.zionterranova.com/src/Dohrmanovo-proroctvi.pdf" target="_blank">Přečíst proroctví</a></p><p style="text-align:center;">FREE TIBET ! 🇲🇰</p><blockquote>"For Lady Keporkak / my Bodhisattva soulflame"</blockquote>',
+    contentEn: '<p style="text-align:center;">🌼 Peace, One Love & Nirvana 🌼<br>~ ∞ ~<br>🌳 Bodhi Tree 🌴<br>~ ∞ ~<br>🌞 Maitreya, Issobela, Elizabe† 🪶<br>~ ∞ ~<br>∞ = phi = oraculum</p><p style="text-align:center;font-size:1.3em;color:var(--rasta-gold);">18:20:13:9:3:11:8</p><p>DOHRMAN PROPHECY — <a href="http://www.zionterranova.com/src/Dohrmanovo-proroctvi.pdf" target="_blank">Read the prophecy</a></p><p style="text-align:center;">FREE TIBET ! 🇲🇰</p><blockquote>"For Lady Keporkak / my Bodhisattva soulflame"</blockquote>'
   },
   {
     id: 16,
@@ -297,16 +297,16 @@ const BLOG_POSTS = [
   {
     id: 13,
     slug: "new-web-newearth",
-    title: "New web page www.newearth.cz",
-    titleEn: "New web page www.newearth.cz",
+    title: "New web page www.zionterranova.com",
+    titleEn: "New web page www.zionterranova.com",
     date: "2024-04-19",
     category: "announcement",
     icon: "fa-solid fa-globe",
-    excerpt: "Spuštění nových webových stránek projektu na www.newearth.cz.",
-    excerptEn: "Launch of new project web pages at www.newearth.cz.",
+    excerpt: "Spuštění nových webových stránek projektu na www.zionterranova.com.",
+    excerptEn: "Launch of new project web pages at www.zionterranova.com.",
     image: "./img/blog/2024-04-newweb.jpg",
-    content: '<p>Po dlouhé době nová webová stránka projektu.</p><p><a href="https://newearth.cz" target="_blank" class="rasta-btn">WWW.NEWEARTH.CZ</a></p>',
-    contentEn: '<p>After a long time, new project website is live.</p><p><a href="https://newearth.cz" target="_blank" class="rasta-btn">WWW.NEWEARTH.CZ</a></p>'
+    content: '<p>Po dlouhé době nová webová stránka projektu.</p><p><a href="https://zionterranova.com" target="_blank" class="rasta-btn">WWW.zionterranova.com</a></p>',
+    contentEn: '<p>After a long time, new project website is live.</p><p><a href="https://zionterranova.com" target="_blank" class="rasta-btn">WWW.zionterranova.com</a></p>'
   },
 
   // ═══════════════════════════════════════════
@@ -450,9 +450,9 @@ const BLOG_IMPORTED_FULL_SLUGS = new Set([
   "manifesto-native-awakening",
   "finalni-report-quantum-leap",
   // 2025
-  "testnet-launch-pf2026",
+  "Mainnet-launch-pf2026",
   "zion-29-quantum-leap",
-  "testnet-285-estrella",
+  "Mainnet-285-estrella",
   "baltic-express-bikepacking",
   "dalajlama-90",
   "skola-vzestupu-human-design",

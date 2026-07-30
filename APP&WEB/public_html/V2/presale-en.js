@@ -66,7 +66,7 @@ let stripe = null;
 function addBookToCart() {
     const book = {
         id: 'book-001',
-        name: 'Quantum Revolution & Native Awakening',
+        name: 'Quantum Revolution & MAINNET ALPHA',
         price: 5.80,
         priceEur: 5.80,
         tokens: 144,

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZION Miner Dashboard v2.9.5 - Native Awakening</title>
+    <title>ZION Miner Dashboard v3.1.0 - MAINNET ALPHA</title>
     <style>
         :root {
             --zion-gold: #F9D976;
@@ -119,7 +119,7 @@
             padding: 20px;
         }
         
-        /* Header v2.9 style */
+        /* Header v3.1 style */
         header {
             text-align: center;
             margin-bottom: 30px;
@@ -191,7 +191,7 @@
             margin-bottom: 20px;
         }
         
-        /* Cards v2.9 glassmorphism */
+        /* Cards v3.1 glassmorphism */
         .card {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
@@ -242,7 +242,7 @@
             color: rgba(255, 255, 255, 0.6);
         }
         
-        /* Progress bar v2.9 */
+        /* Progress bar v3.1 */
         .progress-bar {
             width: 100%;
             height: 8px;
@@ -289,7 +289,7 @@
             background: rgba(255, 255, 255, 0.08);
         }
         
-        /* Table v2.9 */
+        /* Table v3.1 */
         .info-table {
             width: 100%;
             margin-top: 15px;
@@ -446,7 +446,7 @@
         <!-- Header -->
         <header>
             <h1><span class="text-gradient">ZION MINER</span> DASHBOARD</h1>
-            <div class="subtitle">Native Awakening v2.9.5</div>
+            <div class="subtitle">MAINNET ALPHA v3.1.0</div>
             <div class="status-badge online" id="status">
                 <div class="pulse-dot"></div>
                 <span>ONLINE</span>
@@ -535,7 +535,7 @@
             </div>
 
             <div class="card">
-                <div class="card-title">💰 Expected Rewards (2025)</div>
+                <div class="card-title">💰 Expected Rewards (2026)</div>
                 <div class="reward-box">
                     <div style="text-align: center;">
                         <div class="reward-value" id="block-reward">6,969.70</div>
@@ -574,7 +574,7 @@
             </div>
             <div class="stat-item">
                 <div class="stat-icon">🔧</div>
-                <div class="stat-value" id="algorithm">RandomX</div>
+                <div class="stat-value" id="algorithm">Deeksha</div>
                 <div class="stat-label">Algorithm</div>
             </div>
         </div>
@@ -590,7 +590,7 @@
                     </div>
                     <div class="info-row">
                         <span class="info-label">Network:</span>
-                        <span class="info-value">ZION TestNet</span>
+                        <span class="info-value">ZION Mainnet</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Protocol:</span>
@@ -804,7 +804,7 @@
                 document.getElementById('pool-url').textContent = data.pool_url || 'localhost:3333';
                 document.getElementById('blockchain-height').textContent = data.blockchain_height || 17;
                 document.getElementById('difficulty').textContent = data.difficulty || 100;
-                document.getElementById('algorithm').textContent = data.algorithm || 'RandomX';
+                document.getElementById('algorithm').textContent = data.algorithm || 'Deeksha';
                 document.getElementById('worker-name').textContent = data.worker_name || 'miner-01';
                 document.getElementById('wallet-address').textContent = (data.wallet_address || 'ZION...').substring(0, 20) + '...';
                 document.getElementById('session-id').textContent = data.session_id ? data.session_id.substring(0, 12) + '...' : 'Not connected';
@@ -834,7 +834,7 @@
         }
 
         // Initialize
-        addLog('⚡ ZION Miner Dashboard v2.9.5 "Native Awakening" initialized', 'info');
+        addLog('⚡ ZION Miner Dashboard v3.1.0 "Mainnet Alpha" initialized', 'info');
         addLog('🌌 WARP background active - consciousness mining enabled', 'info');
         addLog('🔍 Connecting to mining pool...', 'info');
         
