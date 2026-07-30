@@ -9,11 +9,10 @@ use std::sync::Arc;
 
 use tokio::sync::watch;
 use tracing::{info, warn};
-use zion_cosmic_harmony::EkamDeeksha;
 use zion_l1_types::{Address, Amount, Hash};
 
 use crate::block::{Block, BlockHeader};
-use crate::consensus::{ConsensusEngine, ConsensusError};
+use crate::consensus::{ConsensusEngine, ConsensusError, HeightAwareDeeksha};
 use crate::difficulty::{self, difficulty_to_target, lwma_next_difficulty};
 use crate::emission::{block_subsidy, fee_split};
 use crate::genesis;
@@ -28,6 +27,9 @@ pub struct NodeConfig {
     pub db_path: String,
     pub rpc_addr: SocketAddr,
     pub p2p_addr: SocketAddr,
+    /// V3 compatibility P2P bind address. Defaults to `0.0.0.0:0` so it does
+    /// not collide with the canonical P2P port.
+    pub v3_p2p_addr: SocketAddr,
     pub human_address: Address,
     pub issobella_address: Address,
     /// Skip automatic genesis seeding. Set this when importing a migration
@@ -54,6 +56,7 @@ impl Default for NodeConfig {
             db_path: "zion-node.db".into(),
             rpc_addr: "127.0.0.1:9443".parse().unwrap(),
             p2p_addr: "0.0.0.0:8333".parse().unwrap(),
+            v3_p2p_addr: "0.0.0.0:0".parse().unwrap(),
             // V3 mainnet canonical subsidy addresses.
             human_address: Address::new(
                 zion_l1_types::ChainId::ZionL1,
@@ -163,7 +166,7 @@ impl Node {
             crate::v3_p2p::NetworkId::Mainnet,
         );
 
-        let consensus = ConsensusEngine::new(Arc::new(EkamDeeksha::new()));
+        let consensus = ConsensusEngine::new(Arc::new(HeightAwareDeeksha::new()));
         Ok(Self {
             storage,
             mempool: Mempool::new(),
@@ -191,7 +194,7 @@ impl Node {
         let seed_peers = self.config.seed_peers.clone();
         let v3_seed_peers = self.config.seed_peers.clone();
         let v3_sync = self.v3_sync.clone();
-        let v3_p2p_addr = self.config.p2p_addr;
+        let v3_p2p_addr = self.config.v3_p2p_addr;
         let v3_p2p_server = crate::v3_p2p::V3P2PServer::new(
             Arc::new(self.storage.clone()),
             "zion-v31-node",

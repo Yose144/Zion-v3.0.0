@@ -56,7 +56,8 @@ pub use ncl_integration::{
 };
 pub use profit_router::{
     fallback_estimates, fetch_live_profit_estimates, fetch_live_profit_estimates_with_nicehash,
-    select_best_coin, CoinProfile, ExternalCoin, ProfitEntry, StratumProtocol,
+    select_best_coin, best_coin_for_gpu, best_coin_for_cpu, CoinProfile, ExternalCoin,
+    ProfitEntry, StratumProtocol,
 };
 pub use revenue::{
     NclStats, RevenueCollector, RevenueEvent, RevenueHealth, RevenueSource, RevenueStats,

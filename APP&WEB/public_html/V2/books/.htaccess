@@ -1,0 +1,21 @@
+Options -Indexes
+
+# Allow PDF downloads, block everything else
+<FilesMatch "\.(pdf|zip)$">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Allow from all
+  </IfModule>
+</FilesMatch>
+
+# Block all other file types
+<FilesMatch "^(?!.*\.(pdf|zip)$)">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Deny from all
+  </IfModule>
+</FilesMatch>

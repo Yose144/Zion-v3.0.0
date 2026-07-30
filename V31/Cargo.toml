@@ -7,6 +7,7 @@ members = [
     "L1/miner",
     "L1/pool",
     "L2/multichain",
+    "L2/dao",
     "L3/ncl",
     "L3/ai-native",
     "L4/oasis",

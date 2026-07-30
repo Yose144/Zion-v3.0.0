@@ -1,0 +1,429 @@
+<?php
+/**
+ * ZION Presale API Configuration
+ * Database connection, security settings, constants
+ */
+
+// Security: Prevent direct access
+if (!defined('PRESALE_API')) {
+    http_response_code(403);
+    die('Direct access forbidden');
+}
+
+
+// Load .env (shop/presale secrets) if available
+if (file_exists(__DIR__ . '/env-loader.php')) {
+    require_once __DIR__ . '/env-loader.php';
+}
+// ============================================
+// DATABASE CONFIGURATION
+// ============================================
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_NAME', getenv('DB_NAME') ?: 'zion');
+define('DB_USER', getenv('DB_USER') ?: 'zion_presale');
+define('DB_PASS', getenv('DB_PASS') ?: ''); // SET IN .env FILE!
+define('DB_CHARSET', 'utf8mb4');
+
+// ============================================
+// PRESALE CONFIGURATION
+// ============================================
+define('PRESALE_ENABLED', true);
+define('PRESALE_TARGET_TOKENS', 500000000); // 500M ZION
+define('PRESALE_MIN_EUR', 5);
+define('PRESALE_MAX_EUR', 50000);
+
+// Token pricing (Phase 1)
+define('TOKEN_PRICE_EUR', 0.008); // €0.008 per ZION
+
+// Bonus tiers
+define('BONUS_TIERS', json_encode([
+    ['min' => 0, 'max' => 49, 'bonus' => 0],
+    ['min' => 50, 'max' => 99, 'bonus' => 0.10],
+    ['min' => 100, 'max' => 499, 'bonus' => 0.20],
+    ['min' => 500, 'max' => PHP_INT_MAX, 'bonus' => 0.50]
+]));
+
+// Wallet expiration (unpaid orders)
+define('WALLET_EXPIRY_HOURS', 720); // 30 days
+
+// MainNet distribution date
+define('MAINNET_LAUNCH_DATE', '2026-12-31 23:59:59');
+
+// ============================================
+// STRIPE CONFIGURATION
+// ============================================
+define('STRIPE_SECRET_KEY', getenv('STRIPE_SECRET_KEY') ?: 'sk_test_XXXXXXXXXXXXXXXXXXXXXXXX');
+define('STRIPE_PUBLISHABLE_KEY', getenv('STRIPE_PUBLISHABLE_KEY') ?: 'pk_test_XXXXXXXXXXXXXXXXXXXXXXXX');
+define('STRIPE_WEBHOOK_SECRET', getenv('STRIPE_WEBHOOK_SECRET') ?: 'whsec_XXXXXXXXXXXXXXXXXXXXXXXX');
+define('STRIPE_SUCCESS_URL', getenv('BASE_URL') . '/V2/presale-success.html');
+define('STRIPE_CANCEL_URL', getenv('BASE_URL') . '/V2/presale.html');
+
+// ============================================
+// EMAIL CONFIGURATION
+// ============================================
+if (!defined('SMTP_HOST')) define('SMTP_HOST', getenv('SMTP_HOST') ?: 'smtp.gmail.com');
+if (!defined('SMTP_PORT')) define('SMTP_PORT', getenv('SMTP_PORT') ?: 587);
+if (!defined('SMTP_USER')) define('SMTP_USER', getenv('SMTP_USER') ?: 'presale@zion.omnity.one');
+if (!defined('SMTP_PASS')) define('SMTP_PASS', getenv('SMTP_PASS') ?: ''); // APP PASSWORD
+define('SMTP_SECURE', getenv('SMTP_SECURE') ?: 'tls'); // tls (587) or ssl (465)
+define('SMTP_FROM_EMAIL', getenv('SMTP_FROM_EMAIL') ?: 'admin@newearth.cz');
+define('SMTP_FROM_NAME', getenv('SMTP_FROM_NAME') ?: 'ZION Presale');
+
+// ============================================
+// ZASILKOVNA / PACKETA CONFIGURATION
+// ============================================
+define('ZASILKOVNA_API_KEY', getenv('ZASILKOVNA_API_KEY') ?: '');
+define('ZASILKOVNA_API_PASSWORD', getenv('ZASILKOVNA_API_PASSWORD') ?: '');
+define('ZASILKOVNA_API_URL', getenv('ZASILKOVNA_API_URL') ?: 'https://api.zasilkovna.cz/v1');
+
+// ============================================
+// SECURITY CONFIGURATION
+// ============================================
+define('API_KEY_REQUIRED', false); // Set true for production
+define('RATE_LIMIT_ENABLED', true);
+define('RATE_LIMIT_PER_HOUR', 50); // Max 50 requests/hour per IP
+define('ENCRYPTION_KEY', getenv('ENCRYPTION_KEY') ?: hash('sha256', 'CHANGE_THIS_IN_PRODUCTION'));
+define('ENCRYPTION_METHOD', 'AES-256-CBC');
+
+// CORS (adjust for production domain)
+define('CORS_ORIGINS', json_encode([
+    'http://localhost',
+    'http://localhost:8080',
+    'https://zion.omnity.one'
+]));
+
+// ============================================
+// FILE PATHS
+// ============================================
+define('QR_STORAGE_PATH', __DIR__ . '/../../storage/qr_codes/');
+define('LOG_PATH', __DIR__ . '/../../storage/logs/');
+define('BACKUP_PATH', __DIR__ . '/../../storage/backups/');
+
+// Create directories if not exist
+if (!file_exists(QR_STORAGE_PATH)) {
+    mkdir(QR_STORAGE_PATH, 0755, true);
+}
+if (!file_exists(LOG_PATH)) {
+    mkdir(LOG_PATH, 0755, true);
+}
+
+// ============================================
+// DATABASE CONNECTION
+// ============================================
+function getDbConnection() {
+    static $pdo = null;
+    
+    if ($pdo === null) {
+        try {
+            $dsn = sprintf(
+                'mysql:host=%s;dbname=%s;charset=%s',
+                DB_HOST,
+                DB_NAME,
+                DB_CHARSET
+            );
+            
+            $options = [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET
+            ];
+            
+            $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+        } catch (PDOException $e) {
+            error_log('DB Connection Error: ' . $e->getMessage());
+            throw new Exception('Database connection failed');
+        }
+    }
+    
+    return $pdo;
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+/**
+ * Encrypt sensitive data (private keys)
+ */
+function encryptData($data) {
+    $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(ENCRYPTION_METHOD));
+    $encrypted = openssl_encrypt($data, ENCRYPTION_METHOD, ENCRYPTION_KEY, 0, $iv);
+    return base64_encode($encrypted . '::' . $iv);
+}
+
+/**
+ * Decrypt sensitive data
+ */
+function decryptData($data) {
+    list($encrypted, $iv) = explode('::', base64_decode($data), 2);
+    return openssl_decrypt($encrypted, ENCRYPTION_METHOD, ENCRYPTION_KEY, 0, $iv);
+}
+
+/**
+ * Generate secure random string
+ */
+function generateSecureToken($length = 32) {
+    return bin2hex(random_bytes($length / 2));
+}
+
+/**
+ * Validate email address
+ */
+function isValidEmail($email) {
+    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+}
+
+/**
+ * Get client IP address
+ */
+function getClientIp() {
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        return $_SERVER['HTTP_CLIENT_IP'];
+    }
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        return explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+    }
+    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+}
+
+/**
+ * Rate limiting check
+ */
+function checkRateLimit($identifier) {
+    if (!RATE_LIMIT_ENABLED) return true;
+    
+    $cacheFile = LOG_PATH . 'rate_limit_' . md5($identifier) . '.txt';
+    $now = time();
+    $window = 3600; // 1 hour
+    
+    if (file_exists($cacheFile)) {
+        $data = json_decode(file_get_contents($cacheFile), true);
+        $data['requests'] = array_filter($data['requests'], function($ts) use ($now, $window) {
+            return $ts > ($now - $window);
+        });
+        
+        if (count($data['requests']) >= RATE_LIMIT_PER_HOUR) {
+            return false;
+        }
+        
+        $data['requests'][] = $now;
+    } else {
+        $data = ['requests' => [$now]];
+    }
+    
+    file_put_contents($cacheFile, json_encode($data));
+    return true;
+}
+
+/**
+ * Log API activity
+ */
+function logActivity($action, $data = []) {
+    $logEntry = [
+        'timestamp' => date('Y-m-d H:i:s'),
+        'action' => $action,
+        'ip' => getClientIp(),
+        'data' => $data
+    ];
+    
+    $logFile = LOG_PATH . 'activity_' . date('Y-m-d') . '.log';
+    file_put_contents($logFile, json_encode($logEntry) . PHP_EOL, FILE_APPEND);
+}
+
+/**
+ * Send JSON response
+ */
+function sendJson($data, $statusCode = 200) {
+    http_response_code($statusCode);
+    header('Content-Type: application/json');
+    echo json_encode($data);
+    exit;
+}
+
+/**
+ * Handle CORS
+ */
+function handleCors() {
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    $allowedOrigins = json_decode(CORS_ORIGINS, true);
+    
+    if (in_array($origin, $allowedOrigins)) {
+        header('Access-Control-Allow-Origin: ' . $origin);
+    }
+    
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization');
+    header('Access-Control-Max-Age: 86400');
+    
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(200);
+        exit;
+    }
+}
+
+/**
+ * Validate API key (if required)
+ */
+function validateApiKey() {
+    if (!API_KEY_REQUIRED) return true;
+    
+    $apiKey = $_SERVER['HTTP_X_API_KEY'] ?? '';
+    $validKeys = json_decode(getenv('API_KEYS') ?: '[]', true);
+    
+    return in_array($apiKey, $validKeys);
+}
+
+/**
+ * Generate CSRF token
+ */
+function generateCsrfToken() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    if (!isset($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = generateSecureToken(32);
+        $_SESSION['csrf_token_time'] = time();
+    }
+    
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Validate CSRF token
+ */
+function validateCsrfToken($token) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    // Check if token exists and matches
+    if (!isset($_SESSION['csrf_token']) || !isset($_SESSION['csrf_token_time'])) {
+        return false;
+    }
+    
+    // Check token expiration (24 hours)
+    if (time() - $_SESSION['csrf_token_time'] > 86400) {
+        unset($_SESSION['csrf_token'], $_SESSION['csrf_token_time']);
+        return false;
+    }
+    
+    // Validate token
+    $valid = hash_equals($_SESSION['csrf_token'], $token);
+    
+    // Rotate token after successful validation
+    if ($valid) {
+        $_SESSION['csrf_token'] = generateSecureToken(32);
+        $_SESSION['csrf_token_time'] = time();
+    }
+    
+    return $valid;
+}
+
+/**
+ * Get CSRF token for client
+ */
+function getCsrfTokenForClient() {
+    return [
+        'csrf_token' => generateCsrfToken(),
+        'csrf_expires' => date('c', time() + 86400)
+    ];
+}
+
+// ============================================
+// ERROR HANDLER
+// ============================================
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    $error = [
+        'error' => $errstr,
+        'file' => $errfile,
+        'line' => $errline
+    ];
+
+    // File log (for production debugging)
+    try {
+        $logDir = __DIR__ . '/../logs';
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0755, true);
+        }
+        $uri = $_SERVER['REQUEST_URI'] ?? '-';
+        $method = $_SERVER['REQUEST_METHOD'] ?? '-';
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '-';
+        $line = sprintf(
+            "[%s] errno=%s %s in %s:%s uri=%s method=%s ip=%s\n",
+            date('Y-m-d H:i:s'),
+            $errno,
+            $errstr,
+            $errfile,
+            $errline,
+            $uri,
+            $method,
+            $ip
+        );
+        file_put_contents($logDir . '/php-errors.log', $line, FILE_APPEND | LOCK_EX);
+    } catch (Throwable $e) {
+        // ignore
+    }
+
+    error_log(json_encode($error));
+
+    if (ini_get('display_errors')) {
+        return false; // Show error
+    }
+
+    sendJson(['success' => false, 'error' => 'Internal server error'], 500);
+});
+
+// Capture fatal errors that bypass set_error_handler
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if (!$error) {
+        return;
+    }
+
+    $fatalTypes = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR];
+    if (!in_array($error['type'], $fatalTypes, true)) {
+        return;
+    }
+
+    try {
+        $logDir = __DIR__ . '/../logs';
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0755, true);
+        }
+        $uri = $_SERVER['REQUEST_URI'] ?? '-';
+        $method = $_SERVER['REQUEST_METHOD'] ?? '-';
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '-';
+        $line = sprintf(
+            "[%s] FATAL type=%s %s in %s:%s uri=%s method=%s ip=%s\n",
+            date('Y-m-d H:i:s'),
+            $error['type'] ?? '-',
+            $error['message'] ?? '-',
+            $error['file'] ?? '-',
+            $error['line'] ?? '-',
+            $uri,
+            $method,
+            $ip
+        );
+        file_put_contents($logDir . '/php-errors.log', $line, FILE_APPEND | LOCK_EX);
+    } catch (Throwable $e) {
+        // ignore
+    }
+});
+
+
+// ============================================
+// ENVIRONMENT VALIDATION
+// ============================================
+if (DB_PASS === '') {
+    error_log('WARNING: DB_PASS not set. Check .env file.');
+}
+
+if (strpos(STRIPE_SECRET_KEY, 'XXXX') !== false) {
+    error_log('WARNING: Stripe keys not configured. Payment processing will fail.');
+}
+
+if (SMTP_PASS === '') {
+    error_log('WARNING: SMTP_PASS not set. Email notifications disabled.');
+}
