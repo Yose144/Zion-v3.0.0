@@ -148,11 +148,43 @@ export interface PrizeConfig {
   donation_requirement: string;
 }
 
+export interface Guild {
+  id: string;
+  name: string;
+  description: string;
+  founder: string;
+  officers: string[];
+  members: string[];
+  guild_xp: number;
+  guild_level: number;
+  active_quests: unknown[];
+  quests_completed: number;
+  territories: string[];
+  treasury?: number;
+  created_at: number;
+}
+
 async function fetchJson<T>(path: string): Promise<T | null> {
   try {
     const res = await fetch(`${API}${path}`, {
       mode: 'cors',
       headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as ApiResponse<T>;
+    return json.success ? (json.data ?? null) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function postJson<T>(path: string, body: unknown): Promise<T | null> {
+  try {
+    const res = await fetch(`${API}${path}`, {
+      method: 'POST',
+      mode: 'cors',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
     if (!res.ok) return null;
     const json = (await res.json()) as ApiResponse<T>;
@@ -196,3 +228,17 @@ export const getTerritories = () =>
 
 export const getPrizeTiers = () =>
   fetchJson<PrizeConfig>('/api/v1/oasis/prize-tiers');
+
+export const getGuilds = () => fetchJson<Guild[]>('/api/v1/oasis/guilds');
+
+export const getGuild = (id: string) =>
+  fetchJson<Guild>(`/api/v1/oasis/guild/${encodeURIComponent(id)}`);
+
+export const createGuild = (name: string, founder: string, description?: string) =>
+  postJson<Guild>('/api/v1/oasis/guild', { name, founder, description });
+
+export const joinGuild = (id: string, address: string) =>
+  postJson<Guild>(
+    `/api/v1/oasis/guild/${encodeURIComponent(id)}/join`,
+    { address }
+  );

@@ -8,14 +8,14 @@ const Scene = dynamic(() => import('./Scene'), { ssr: false, loading: () => <Ske
 const Panel = dynamic(() => import('./Panel'), { ssr: false });
 
 export const metadata: Metadata = {
-  title: 'ZION OASIS · Avatars',
-  description: 'Browse the Avatar Codex and find your guide.',
+  title: 'ZION OASIS · Guilds',
+  description: 'Join or create a mining guild in the OASIS.',
 };
 
-export default function AvatarsPage() {
+export default function GuildsPage() {
   return (
     <Suspense fallback={<Skeleton lines={4} className="m-auto max-w-sm" />}>
-      <GameWorld mode="avatars" panel={<Panel />}>
+      <GameWorld mode="guilds" panel={<Panel />}>
         <Scene />
       </GameWorld>
     </Suspense>

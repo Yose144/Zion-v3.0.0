@@ -50,8 +50,8 @@ export default function OasisClient() {
               <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-oasis-cyan to-oasis-purple">
                 ZION OASIS
               </h1>
-              <p className="text-sm text-gray-400 mt-1">
-                Klikni na svět pro detail. Tahni myší, scrolluj pro zoom.
+              <p className="mt-2 text-sm leading-relaxed text-gray-300">
+                Enter an interactive 3D multiverse of mining, quests, guilds, and the legendary Golden Egg hunt.
               </p>
               <Link href="/dashboard">
                 <motion.div
@@ -63,6 +63,9 @@ export default function OasisClient() {
                   <ChevronRight className="h-4 w-4" />
                 </motion.div>
               </Link>
+              <p className="mt-3 text-xs text-gray-500">
+                Play as a pilgrim, claim territories, join a guild, and decode 108 sacred clues.
+              </p>
             </motion.div>
           )}
         </AnimatePresence>

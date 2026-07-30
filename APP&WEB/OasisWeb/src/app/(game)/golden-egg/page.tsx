@@ -8,14 +8,14 @@ const Scene = dynamic(() => import('./Scene'), { ssr: false, loading: () => <Ske
 const Panel = dynamic(() => import('./Panel'), { ssr: false });
 
 export const metadata: Metadata = {
-  title: 'ZION OASIS · Avatars',
-  description: 'Browse the Avatar Codex and find your guide.',
+  title: 'ZION OASIS · Golden Egg',
+  description: 'Hunt 108 sacred clues and unlock the three Master Keys.',
 };
 
-export default function AvatarsPage() {
+export default function GoldenEggPage() {
   return (
     <Suspense fallback={<Skeleton lines={4} className="m-auto max-w-sm" />}>
-      <GameWorld mode="avatars" panel={<Panel />}>
+      <GameWorld mode="golden-egg" panel={<Panel />}>
         <Scene />
       </GameWorld>
     </Suspense>

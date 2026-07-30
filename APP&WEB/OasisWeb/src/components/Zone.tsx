@@ -193,6 +193,86 @@ function ZoneArtifact({
           </mesh>
         </group>
       );
+    case 'territories':
+      return (
+        <group>
+          <mesh>
+            <icosahedronGeometry args={[0.45, 0]} />
+            <meshStandardMaterial
+              color={color}
+              emissive={color}
+              emissiveIntensity={intensity}
+              roughness={0.25}
+              metalness={0.5}
+            />
+          </mesh>
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.7, 0.8, 0.06, 6]} />
+            <meshStandardMaterial
+              color={color}
+              emissive={color}
+              emissiveIntensity={intensity * 0.4}
+              transparent
+              opacity={0.7}
+            />
+          </mesh>
+        </group>
+      );
+    case 'guilds':
+      return (
+        <group>
+          {[0, 1, 2].map((i) => {
+            const a = (i / 3) * Math.PI * 2;
+            return (
+              <mesh key={i} position={[Math.cos(a) * 0.45, 0, Math.sin(a) * 0.45]}>
+                <boxGeometry args={[0.16, 0.6, 0.16]} />
+                <meshStandardMaterial
+                  color={color}
+                  emissive={color}
+                  emissiveIntensity={intensity}
+                  roughness={0.2}
+                  metalness={0.5}
+                />
+              </mesh>
+            );
+          })}
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.55, 0.55, 0.05, 32]} />
+            <meshStandardMaterial
+              color={color}
+              emissive={color}
+              emissiveIntensity={intensity * 0.5}
+              transparent
+              opacity={0.8}
+            />
+          </mesh>
+        </group>
+      );
+    case 'golden-egg':
+      return (
+        <group>
+          <mesh>
+            <sphereGeometry args={[0.45, 32, 32]} />
+            <meshStandardMaterial
+              color={color}
+              emissive={color}
+              emissiveIntensity={intensity * 1.2}
+              roughness={0.15}
+              metalness={0.7}
+            />
+          </mesh>
+          <mesh scale={[1.1, 1.2, 1.1]}>
+            <sphereGeometry args={[0.45, 32, 32]} />
+            <meshStandardMaterial
+              color={color}
+              emissive={color}
+              emissiveIntensity={intensity * 0.3}
+              transparent
+              opacity={0.35}
+            />
+          </mesh>
+        </group>
+      );
     default:
       return null;
   }
