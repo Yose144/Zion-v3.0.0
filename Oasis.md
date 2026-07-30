@@ -5,6 +5,7 @@
 > **Produkční runtime:** `V3/` na Edge (`62.171.141.136`)
 > **Lokální OASIS Game:** `cargo run -p zion-oasis` (port 8094) + `APP&WEB/OasisWeb` (Next.js 16, port 3000) — 200 avatarů, live HUD, CORS.
 > **OASIS Web vizuál v0.0.1:** live na `https://oasis.zionterranova.com` — spirálová galaxie 30k částic, 3D Strom života, bloom.
+> **Veřejný web trio:** `https://zionterranova.com` (intro) → `https://oasis.zionterranova.com` (OASIS web) ; `https://app.zionterranova.com` (web2.9).
 
 Tento soubor je rychlý přehled celého projektu a vstupní bod pro každého, kdo se vrací po pauze. Obsahuje stav, klíčové dokumenty, co je hotové a co je další krok.
 
@@ -67,8 +68,9 @@ Live na: `https://oasis.zionterranova.com`
 - Zdroj: [`APP&WEB/website-v2.9/public/maintenance.html`](APP&WEB/website-v2.9/public/maintenance.html)
 - Hlavní prvek: interaktivní Stargate → `https://oasis.zionterranova.com/`.
 - Obsah: hero s glass/rainbow card, L1–L6 mikro karty (2 řady po 3), status bar, CTA tlačítka, glass footer.
-- Plný Next.js web2.9 je připravený, ale není veřejně aktivní — zobrazí se až po přepnutí nginx proxy na `127.0.0.1:3000`.
-- Deploy: `bash APP&WEB/website-v2.9/deploy/deploy-oasis-intro.sh` (rsync + `nginx -s reload`).
+- Současně běží plný Next.js web2.9 na `https://app.zionterranova.com` (oddělená doména, systemd `zion-website.service` → nginx proxy → `127.0.0.1:3000`).
+- Deploy intro: `bash APP&WEB/website-v2.9/deploy/deploy-oasis-intro.sh` (rsync + `nginx -s reload`).
+- Deploy web2.9: `bash APP&WEB/website-v2.9/deploy/deploy-web2.9.sh` (build, rsync, restart `zion-website.service`).
 
 ### 2.4 Dokumentace
 
@@ -125,7 +127,8 @@ npm run start
 | **Live status** | [`StatusV3.md`](StatusV3.md) |
 | **Kořenový README** | [`README.md`](README.md) |
 | **OASIS web zdroj** | [`APP&WEB/OasisWeb/`](APP&WEB/OasisWeb/) |
-| **Maintenance page** | [`APP&WEB/website-v2.9/public/maintenance.html`](APP&WEB/website-v2.9/public/maintenance.html) |
+| **OASIS intro page** | [`APP&WEB/website-v2.9/public/maintenance.html`](APP&WEB/website-v2.9/public/maintenance.html) |
+| **Web2.9 source** | [`APP&WEB/website-v2.9/`](APP&WEB/website-v2.9/) |
 | **3.0.7 archiv** | [`docs/3.0.7/`](docs/3.0.7/) |
 | **3.0.8 / V31 prep archiv** | [`docs/3.0.8/`](docs/3.0.8/) |
 | **3.0.6 archiv** | [`docs/3.0.6/`](docs/3.0.6/) |
