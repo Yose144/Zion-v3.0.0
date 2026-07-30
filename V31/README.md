@@ -18,7 +18,7 @@ Workspace se nachází v `/Users/yeshuae/Projects/2.9.6/V31/`; produkční V3 b�
 | `L1/core` | `zion-core` | Node runtime s V3 checkpoint sync, V3 P2P listen/IBD, V3 RPC, state/template/reorg, SQLite storage a `PeerManager` (max peers, ban score, discovery). |
 | `L1/miner` | `zion-miner` | Triple Stream miner, AuxPoW GPU/CPU fallback (`auxpow` feature), `StratumClient`, `ZION_STREAM3_FORCE_COIN`, disabled-coin filtering a `HeightAwareDeeksha`. |
 | `L1/pool` | `zion-pool` | Stratum server + PPLNS, share validator s `HeightAwareDeeksha`, reconnect rate limiter a `template_feed_loop` z `zion-core`. |
-| `L2/multichain` | `zion-multichain` | `ChainAdapter` trait, EVM/BTC/ZionL1 adaptery, HTLC s SQLite persistencí, DEX router, WARP, wallet keyring, Dharma Credits a HTTP API. |
+| `L2/multichain` | `zion-multichain` | `ChainAdapter` trait, EVM/BTC/ZionL1 adaptery, HTLC s SQLite persistencí, DEX router + custom AMM deploy, WARP, wallet keyring, Dharma Credits a HTTP API. |
 | `L2/dao` | `zion-dao` | Návrh/quorum/timelock typy, smoke test, zapojený do workspace. |
 | `L3/ncl` | `zion-ncl` | NCL compute marketplace — scaffold s unit testy. |
 | `L3/ai-native` | `zion-ai-native` | AI-native orchestrace a agenti — scaffold s unit testy. |
@@ -84,7 +84,8 @@ Pro plný Mainnet Alpha release použij `cargo build --release` — profil má `
 - **Disabled-coin filtering** — filtr zakázaných coinů v `zion-miner` i `zion-cosmic-harmony`.
 - **DAO skeleton** — `zion-dao` má základní návrh/quorum/timelock typy a smoke test.
 - **HTLC persistence** — `zion-multichain` persistuje HTLC stav do SQLite.
-- **DEX router + WARP** — `zion-multichain` obsahuje DEX routing a WARP cross-chain infrastrukturu.
+- **DEX router + custom AMM deploy** — `zion-multichain` obsahuje constant-product AMM, multi-hop quote, HTTP `POST /v1/swap/pool/deploy` a `GET /v1/swap/pools` s SQLite persistencí.
+- **WARP cross-chain** — WARP cross-chain infrastruktura.
 - **Wallet keyring + Dharma Credits** — multichain vrstva spravuje wallet a Dharma Credits.
 - **SQLite storage napříč L1** — chain state, mempool index, account store, pool PPLNS a HTLC sdílí jednotný přístup k SQLite.
 
@@ -94,7 +95,7 @@ Následující položky jsou aktivní nebo čekají na E2E ověření před cut-
 
 - ~~End-to-end smoke test node + pool + miner v jednom lokálním runu.~~ **Hotovo (2026-07-30).**
 - ~~P2P production hardening — peer discovery, ban score a resiliance proti reconnect stormu.~~ **Hotovo (2026-07-30).**
-- Custom AMM deploy a integrace v `zion-multichain`.
+- ~~Custom AMM deploy a integrace v `zion-multichain`.~~ **Hotovo (2026-07-30):** `/v1/swap/pool/deploy`, `/v1/swap/pools`, SQLite persistence, načítání při startu.
 - Plná L3–L6 end-to-end verifikace — Oasis game, NCL compute marketplace, AI-native agenti, Free World a Issobella.
 - WARP API rate limiting a autentizace v `zion-multichain`.
 - Stress test `HeightAwareDeeksha` fork gating pro všechny výšky a algoritmy.

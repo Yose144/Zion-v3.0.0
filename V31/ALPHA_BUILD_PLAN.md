@@ -2,7 +2,7 @@
 
 > **Verze:** 3.1.0-alpha.2  
 > **Datum:** 2026-07-30  
-> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented, V3 RPC wired into node runtime, V3 P2P listen server + IBD loop, `bin/node.rs` V3-aware runtime, `zion-pool` standalone stratum binary, `zion miner start` pool mode, E2E smoke (node + pool + miner) produces and accepts blocks height 1+, production P2P hardening (peer manager, ban score, max peers, discovery)
+> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented, V3 RPC wired into node runtime, V3 P2P listen server + IBD loop, `bin/node.rs` V3-aware runtime, `zion-pool` standalone stratum binary, `zion miner start` pool mode, E2E smoke (node + pool + miner) produces and accepts blocks height 1+, production P2P hardening (peer manager, ban score, max peers, discovery), custom AMM deploy in `zion-multichain` (SQLite persistence, HTTP API)
 > **Princip:** `V3/` zůstává produkční, `V31/` se staví jako čistý Mainnet Alpha strom.  
 
 Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozhodnutí o architektuře, vrstvách a prioritách se zde zaznamenávají a aktualizují.
@@ -119,7 +119,7 @@ Cíl: L1 <-> Base bridge E2E, BTC <-> ZION HTLC, wZION/USDC swap quote.
 1. [x] EVM adapter: `ethers` volání `ZIONBridge` (`submitLockProof`/`confirmBurnRelease`), `wZION` ERC-20 balance/transfer.
 2. [x] Bitcoin adapter: `bitcoin` crate, P2WPKH payments + mempool.space API (Electrum TCP fallback zůstává jako budoucí enhancement).
 3. [x] HTLC modul v `swap/htlc.rs` — state machine s hashlock/timelock a testy.
-4. [x] DEX router v `swap/dex.rs` s konstantním produktovým AMM invariantem a multi-hop quote.
+4. [x] DEX router v `swap/dex.rs` s konstantním produktovým AMM invariantem a multi-hop quote. Custom AMM deploy (`/v1/swap/pool/deploy`) a persistence v SQLite hotovo.
 5. [x] Připojit `credits` k `zion-pool` payouts — `CreditsLedger` ukládá balance a `MultichainService::execute_payouts` credituje/debetuje.
 
 ### Fáze 3 — Pool + Miner integrace
@@ -169,9 +169,10 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
 
 1. ~~**E2E smoke testy**~~ — **Hotovo (2026-07-30):** `zion-node` + `zion-pool` + `zion-miner` lokálně vytěží, submitne a přijme block (výška 1+). Pool broadcastuje `mining.notify`, miner připojí stratum a submituje share.
 2. ~~**Production P2P hardening**~~ — **Hotovo (2026-07-30):** `PeerManager` sdílený mezi canonical a V3 P2P, max inbound limit, ban score, `GetPeers`/`Peers` odpovědi ve welcome zprávě.
-3. **Height-aware PoW fork gating** — `HeightAwareDeeksha` s height-gated dispatch implementován v `zion-core`, `zion-miner` i `zion-pool`.
-4. **HTLC persistence** — SQLite backend pro HTLC hotovo v `zion-multichain`.
-5. **Tag `v3.1.0-alpha.1`** po úspěšných E2E smoke testech.
+3. ~~**Custom AMM deploy v `zion-multichain`**~~ — **Hotovo (2026-07-30):** SQLite persistence AMM poolů, `deploy_pool`, `/v1/swap/pool/deploy` + `/v1/swap/pools`, načítání poolů při startu.
+4. **Height-aware PoW fork gating** — `HeightAwareDeeksha` s height-gated dispatch implementován v `zion-core`, `zion-miner` i `zion-pool`.
+5. **HTLC persistence** — SQLite backend pro HTLC hotovo v `zion-multichain`.
+6. **Tag `v3.1.0-alpha.2`** po úspěšných E2E smoke testech.
 
 ---
 
@@ -226,6 +227,7 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
 - Zbývá:
   - ~~E2E smoke testy (node + pool + miner lokálně).~~ **Hotovo (2026-07-30).**
   - ~~Production P2P hardening (peer discovery, max peers, ban score); rate limit hotovo.~~ **Hotovo (2026-07-30).**
+  - ~~Custom AMM deploy (`/v1/swap/pool/deploy`, SQLite persistence poolů).~~ **Hotovo (2026-07-30).**
   - Height-aware PoW fork gating — hotovo.
   - HTLC SQLite persistence — hotovo.
 - Detailní analýza v `V31/V3_SYNC_ASSESSMENT.md`.
