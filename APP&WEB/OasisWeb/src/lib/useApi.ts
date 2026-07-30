@@ -35,14 +35,17 @@ export function useApi<T>(
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const mounted = useRef(true);
+  const fetcherRef = useRef(fetcher);
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  fetcherRef.current = fetcher;
 
   const run = useCallback(
     async (isManual = false) => {
       if (isManual) setLoading(true);
       try {
-        const res = await fetcher();
+        const res = await fetcherRef.current();
         if (!mounted.current) return;
         if (treatNullAsError && res === null) {
           throw new Error('No data');
@@ -53,19 +56,21 @@ export function useApi<T>(
       } catch (e) {
         if (!mounted.current) return;
         setError(String(e));
-        if (retryCount < maxRetries) {
-          const next = retryCount + 1;
-          setRetryCount(next);
-          const delay = 1000 * 2 ** retryCount;
-          retryTimer.current = setTimeout(() => {
-            if (mounted.current) run(true);
-          }, delay);
-        }
+        setRetryCount((c) => {
+          if (c < maxRetries) {
+            const delay = 1000 * 2 ** c;
+            retryTimer.current = setTimeout(() => {
+              if (mounted.current) run(true);
+            }, delay);
+            return c + 1;
+          }
+          return c;
+        });
       } finally {
         if (mounted.current) setLoading(false);
       }
     },
-    [fetcher, retryCount, treatNullAsError, maxRetries]
+    [treatNullAsError, maxRetries]
   );
 
   const retry = useCallback(() => {
@@ -87,7 +92,7 @@ export function useApi<T>(
       if (retryTimer.current) clearTimeout(retryTimer.current);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [run, ...deps]);
+  }, [...deps, run]);
 
   useEffect(() => {
     if (!enableRefetch || refetchMs <= 0) return;
@@ -95,7 +100,7 @@ export function useApi<T>(
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [run, refetchMs, enableRefetch]);
+  }, [refetchMs, enableRefetch, run]);
 
   return { data, loading, error, retryCount, retry, refetch };
 }
