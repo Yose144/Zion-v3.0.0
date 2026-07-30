@@ -65,14 +65,14 @@ Every successful order also appends a ledger entry stored in `V2/wallets/ledger.
 
 - `id`, `orderId`, `walletId`, `walletUri`, `qrImage`
 - `tokens` (total ZION bonus) and `details` (per line breakdown)
-- `network` (defaults to `testnet`) and `status` (`pending`, `queued`, `sent`, `failed`)
+- `network` (defaults to `Mainnet`) and `status` (`pending`, `queued`, `sent`, `failed`)
 - History array that records every change so the native wallet can audit payouts.
 
 ## `wallet-ledger.php`
-Provides a thin API for reading and updating the ledger so the native wallet (or any admin utility) can pick up outstanding payouts after the testnet phase.
+Provides a thin API for reading and updating the ledger so the native wallet (or any admin utility) can pick up outstanding payouts after the Mainnet phase.
 
 ### List entries
-`GET /V2/api/wallet-ledger.php?status=pending&network=testnet`
+`GET /V2/api/wallet-ledger.php?status=pending&network=Mainnet`
 
 ```json
 {
@@ -85,7 +85,7 @@ Provides a thin API for reading and updating the ledger so the native wallet (or
       "walletId": "zw_ff11ee22",
       "tokens": 42,
       "status": "pending",
-      "network": "testnet",
+      "network": "Mainnet",
       "walletUri": "zion://wallet/zw_ff11ee22?tokens=42&label=ZION+order+ZTNABC123",
       "qrImage": "zw_ff11ee22.png",
       "history": [
@@ -137,8 +137,8 @@ Response:
 ```
 
 ### Native wallet automation flow
-1. Testnet phase: keep using the storefront; each order produces a ledger entry with `network=testnet` so you can verify UX without touching on-chain balances.
-2. When moving to production, have the native wallet poll `wallet-ledger.php?status=pending&network=testnet` (or `mainnet`) to download all outstanding payouts.
+1. Mainnet phase: keep using the storefront; each order produces a ledger entry with `network=Mainnet` so you can verify UX without touching on-chain balances.
+2. When moving to production, have the native wallet poll `wallet-ledger.php?status=pending&network=Mainnet` (or `mainnet`) to download all outstanding payouts.
 3. For every entry:
    - Decode the `walletUri` or `qrImage` to display the destination in the wallet UI.
    - Execute the on-chain transfer when ready.

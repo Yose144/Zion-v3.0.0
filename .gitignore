@@ -61,6 +61,7 @@ dashboard/
 # Runtime / misc
 /APP/
 lact-*.deb
+node.pid
 
 # Logs
 *.log
@@ -76,6 +77,7 @@ logs/
 
 # Leaked / sensitive material — must NEVER be committed (defense-in-depth
 # above the V3/.gitignore wallet rules)
+docs/WP-Mainet/api-contabo.md
 **/zion-wallet*.json
 **/*.wallet.json
 **/test-*.json

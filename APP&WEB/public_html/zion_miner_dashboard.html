@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ ZION Miner Dashboard v2.9.5</title>
+    <title>⚡ ZION Miner Dashboard v3.1.0</title>
     <style>
         * {
             margin: 0;
@@ -231,7 +231,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>⚡ ZION MINER DASHBOARD v2.9.5</h1>
+            <h1>⚡ ZION MINER DASHBOARD v3.1.0</h1>
             <div class="status online" id="status">🟢 ONLINE</div>
         </header>
 
@@ -309,7 +309,7 @@
             </div>
 
             <div class="card">
-                <div class="card-title">💰 Expected Rewards (2025)</div>
+                <div class="card-title">💰 Expected Rewards (2026)</div>
                 <div class="reward-estimate">
                     <div>
                         <div style="font-size: 1.5em; font-weight: bold;" id="block-reward">6,969.70</div>
@@ -353,7 +353,7 @@
                     </tr>
                     <tr>
                         <td><strong>Algorithm:</strong></td>
-                        <td id="algorithm">RandomX</td>
+                        <td id="algorithm">Deeksha</td>
                     </tr>
                 </table>
             </div>
@@ -546,7 +546,7 @@
                 document.getElementById('pool-url').textContent = data.pool_url || 'localhost:3333';
                 document.getElementById('blockchain-height').textContent = data.blockchain_height || 17;
                 document.getElementById('difficulty').textContent = data.difficulty || 100;
-                document.getElementById('algorithm').textContent = data.algorithm || 'RandomX';
+                document.getElementById('algorithm').textContent = data.algorithm || 'Deeksha';
                 document.getElementById('worker-name').textContent = data.worker_name || 'miner-01';
                 document.getElementById('wallet-address').textContent = (data.wallet_address || 'ZION...').substring(0, 20) + '...';
                 document.getElementById('session-id').textContent = data.session_id ? data.session_id.substring(0, 8) + '...' : 'Not connected';
@@ -594,7 +594,7 @@
                 document.getElementById('pool-url').textContent = data.pool_url || 'localhost:3333';
                 document.getElementById('blockchain-height').textContent = data.blockchain_height || 17;
                 document.getElementById('difficulty').textContent = data.difficulty || 100;
-                document.getElementById('algorithm').textContent = data.algorithm || 'RandomX';
+                document.getElementById('algorithm').textContent = data.algorithm || 'Deeksha';
                 document.getElementById('worker-name').textContent = data.worker_name || 'miner-01';
                 document.getElementById('wallet-address').textContent = (data.wallet_address || 'ZION...').substring(0, 20) + '...';
                 document.getElementById('session-id').textContent = data.session_id ? data.session_id.substring(0, 8) + '...' : 'Not connected';
@@ -625,7 +625,7 @@
         }
 
         // Initialize
-        addLog('⚡ ZION Miner Dashboard v2.9.5 initialized', 'info');
+        addLog('⚡ ZION Miner Dashboard v3.1.0 initialized', 'info');
         addLog('🔍 Checking for REAL miner...', 'info');
         
         let usingRealData = false;

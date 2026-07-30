@@ -68,7 +68,7 @@ define('PYTHON_PRESALE_WEBHOOK_URL', 'http://127.0.0.1:8000/presale/webhook/stri
 
 **Stripe Dashboard:**
 1. https://dashboard.stripe.com/apikeys
-2. Webhooks → Add endpoint: `https://newearth.cz/V2/api/stripe-webhook.php`
+2. Webhooks → Add endpoint: `https://zionterranova.com/V2/api/stripe-webhook.php`
 3. Events: `checkout.session.completed`, `payment_intent.succeeded`
 4. (Volitelné) Metadata flag pro presale: přidat `presale=true` do Checkout Session metadata, aby se webhook forwardnul do Pythonu.
 
@@ -215,8 +215,8 @@ Všechny právní dokumenty obsahují:
 
 ## 📞 Podpora
 
-- **Email:** eshop@newearth.cz
-- **GDPR:** gdpr@newearth.cz
+- **Email:** hello@zionterranova.com
+- **GDPR:** gdpr@zionterranova.com
 - **Discord:** https://discord.gg/eatGYDbd
 
 ---

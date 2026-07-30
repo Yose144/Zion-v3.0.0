@@ -1,5 +1,5 @@
 /**
- * ZION Presale Dashboard - Frontend Logic v2.9.5 (EN Version)
+ * ZION Presale Dashboard - Frontend Logic v3.1.0 (EN Version)
  * Real-time stats from presale-stats.php API
  */
 
@@ -11,7 +11,7 @@ const TARGET_TOKENS = 500000000; // 500M ZION
 
 // Initialize dashboard on page load
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 ZION Presale Dashboard v2.9.5 initialized (EN)');
+  console.log('🚀 ZION Presale Dashboard v3.1.0 initialized (EN)');
   
   // Start countdown timer
   updateCountdown();

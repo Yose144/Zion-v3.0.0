@@ -25,7 +25,7 @@ ZION Wallet Reward System poskytuje:
 
 - **Automatický výpočet tokenových bonusů** při nákupu (1 ZION za každých 100 Kč nebo explicitně definovaná hodnota `tokens` u produktu).
 - **Generování unikátních peněženek** s QR kódy pro snadné načtení v mobilní/desktopové aplikaci.
-- **Ledger dlužných tokenů** – databáze všech nevyplacených bonusů, kterou lze po testnet fázi hromadně zpracovat.
+- **Ledger dlužných tokenů** – databáze všech nevyplacených bonusů, kterou lze po Mainnet fázi hromadně zpracovat.
 - **REST API** pro listing, filtrování a aktualizaci stavu payoutů.
 
 ### Klíčové vlastnosti
@@ -35,7 +35,7 @@ ZION Wallet Reward System poskytuje:
 | QR generátor | Volá externí službu (QuickChart) a ukládá PNG + JSON metadata |
 | Ledger | Flat-file JSON databáze s auditní historií změn |
 | Status workflow | `pending` → `queued` → `sent` / `failed` |
-| Síťová podpora | `testnet` (výchozí) nebo `mainnet` |
+| Síťová podpora | `Mainnet` (výchozí) nebo `mainnet` |
 | E-mail integrace | QR odkazy jsou automaticky vkládány do potvrzovacích e-mailů |
 
 ---
@@ -113,7 +113,7 @@ ZION Wallet Reward System poskytuje:
   "qrImage": "zw_a1b2c3d4e5f6.png",
   "tokens": 42,
   "status": "pending",
-  "network": "testnet",
+  "network": "Mainnet",
   "source": "order",
   "createdAt": "2025-01-05T10:20:30+00:00",
   "updatedAt": "2025-01-05T10:20:30+00:00",
@@ -230,7 +230,7 @@ Vytvoří objednávku, vygeneruje wallet + QR, zapíše ledger entry a odešle e
   "total": 849,
   "note": "",
   "createdAt": "2025-01-05T10:20:30+00:00",
-  "network": "testnet"
+  "network": "Mainnet"
 }
 ```
 
@@ -247,7 +247,7 @@ Vytvoří objednávku, vygeneruje wallet + QR, zapíše ledger entry a odešle e
     "wallet": { "id": "zw_...", "uri": "zion://wallet/...", ... },
     "qr": { "serviceUrl": "...", "imageFile": "...", "dataUrl": "..." },
     "storage": { "json": "...", "image": "..." },
-    "network": "testnet",
+    "network": "Mainnet",
     "ledger": { "id": "ledger_...", "status": "pending", ... }
   }
 }
@@ -265,12 +265,12 @@ Vrací seznam ledger záznamů.
 |----------|-------|
 | `id` | Vrátí jeden konkrétní záznam |
 | `status` | Filtr podle statusu (lze více oddělených čárkou: `pending,queued`) |
-| `network` | Filtr podle sítě (`testnet` / `mainnet`) |
+| `network` | Filtr podle sítě (`Mainnet` / `mainnet`) |
 
 #### Příklad
 
 ```
-GET /V2/api/wallet-ledger.php?status=pending&network=testnet
+GET /V2/api/wallet-ledger.php?status=pending&network=Mainnet
 ```
 
 #### Response
@@ -384,7 +384,7 @@ Ledger je JSON pole uložené v `V2/wallets/ledger.json`. Každý záznam sleduj
     "walletId": "zw_aaa111",
     "tokens": 25,
     "status": "pending",
-    "network": "testnet",
+    "network": "Mainnet",
     "history": [
       { "status": "pending", "timestamp": "2025-01-01T00:00:00+00:00", "note": "Created" }
     ]
@@ -413,8 +413,8 @@ Ledger je JSON pole uložené v `V2/wallets/ledger.json`. Každý záznam sleduj
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Testnet fáze                         │
-│  • Všechny objednávky generují ledger s network=testnet │
+│                    Mainnet fáze                         │
+│  • Všechny objednávky generují ledger s network=Mainnet │
 │  • QR kódy lze skenovat, ale tokeny nejsou reálné       │
 │  • Ověřování UX bez finančního rizika                   │
 └─────────────────────────────────────────────────────────┘
@@ -514,7 +514,7 @@ define('ZION_WALLET_LEDGER_FILE', ZION_WALLET_STORAGE_DIR . '/ledger.json');
 V `create-order.php` změňte výchozí síť:
 
 ```php
-$network = $order['network'] ?? 'mainnet'; // bylo 'testnet'
+$network = $order['network'] ?? 'mainnet'; // bylo 'Mainnet'
 ```
 
 Nebo posílejte `network` z frontendu v checkout payloadu.
@@ -547,7 +547,7 @@ $qrService = $options['qrService'] ?? 'https://your-qr-service.com/generate';
 ### Vytvoření standalone peněženky (bez objednávky)
 
 ```bash
-curl -X POST https://newearth.cz/V2/api/wallet-qr.php \
+curl -X POST https://zionterranova.com/V2/api/wallet-qr.php \
   -H 'Content-Type: application/json' \
   -d '{
     "label": "Promo bonus Q1 2025",
@@ -556,16 +556,16 @@ curl -X POST https://newearth.cz/V2/api/wallet-qr.php \
   }'
 ```
 
-### Načtení všech pending záznamů pro testnet
+### Načtení všech pending záznamů pro Mainnet
 
 ```bash
-curl 'https://newearth.cz/V2/api/wallet-ledger.php?status=pending&network=testnet'
+curl 'https://zionterranova.com/V2/api/wallet-ledger.php?status=pending&network=Mainnet'
 ```
 
 ### Označení záznamu jako odeslaný
 
 ```bash
-curl -X POST https://newearth.cz/V2/api/wallet-ledger.php \
+curl -X POST https://zionterranova.com/V2/api/wallet-ledger.php \
   -H 'Content-Type: application/json' \
   -d '{
     "id": "ledger_8f3e2a1b",
@@ -579,7 +579,7 @@ curl -X POST https://newearth.cz/V2/api/wallet-ledger.php \
 ### Zobrazení konkrétního ledger záznamu
 
 ```bash
-curl 'https://newearth.cz/V2/api/wallet-ledger.php?id=ledger_8f3e2a1b'
+curl 'https://zionterranova.com/V2/api/wallet-ledger.php?id=ledger_8f3e2a1b'
 ```
 
 ---
@@ -651,9 +651,9 @@ V2/
 
 ## Kontakt & podpora
 
-- **E-mail:** admin@newearth.cz
-- **GitHub:** https://github.com/Yose144/Zion-2.9
-- **Web:** https://newearth.cz
+- **E-mail:** hello@zionterranova.com
+- **GitHub:** https://github.com/Yose144/Zion-3.1
+- **Web:** https://zionterranova.com
 
 ---
 
