@@ -144,6 +144,7 @@ npm run start
 - ~~Plná L4–L6 end-to-end verifikace (Oasis, Free World, Issobella).~~ **Hotovo (2026-07-30):** `V31/smoke` cross-layer test propojuje Oasis player, Free World grant a Issobella proposal přes AI-Native bridge.
 - **OASIS web v0.0.1** — galaxy + tree of life nasazeno (2026-07-31).
 - **OASIS web v0.1.0** — multi-page herní klient: `/dashboard`, `/avatars`, `/quests`, `/leaderboard`, `/onboarding`, navbar, API integration.
+- **OASIS web v0.2.0** — plně 3D interaktivní UI v React Three Fiber: centrální hub, 5 zón, let kamery, klikatelné objekty, plovoucí HTML panely v `<Html transform>`.
 - **Další vizuální iterace** — leaves/petals na stromu, interakce se světy, guild avataři, OASIS HUD.
 
 ---

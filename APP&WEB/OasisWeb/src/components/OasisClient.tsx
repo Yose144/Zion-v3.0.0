@@ -66,6 +66,29 @@ export default function OasisClient() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <AnimatePresence>
+          {phase === 'scene' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.8, delay: 1.5 }}
+              className="pointer-events-auto absolute bottom-8 left-1/2 z-20 -translate-x-1/2"
+            >
+              <Link href="/dashboard">
+                <motion.div
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-r from-oasis-cyan via-oasis-purple to-oasis-gold px-8 py-4 text-sm font-bold text-white shadow-[0_0_60px_rgba(34,211,238,0.35)] transition-shadow hover:shadow-[0_0_90px_rgba(168,85,247,0.55)]"
+                >
+                  Enter the Dashboard
+                  <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </motion.div>
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <AnimatePresence>

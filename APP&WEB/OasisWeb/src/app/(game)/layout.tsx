@@ -1,5 +1,4 @@
 import Navbar from '@/components/Navbar';
-import OasisBackground from '@/components/OasisBackground';
 
 export default function GameLayout({
   children,
@@ -7,12 +6,9 @@ export default function GameLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-screen w-full overflow-y-auto text-white">
-      <OasisBackground />
+    <div className="fixed inset-0 h-screen w-screen overflow-hidden bg-oasis-black text-white">
       <Navbar />
-      <main className="relative z-10 mx-auto max-w-7xl px-4 pb-24 pt-24 sm:px-6">
-        {children}
-      </main>
+      <main className="relative h-full w-full">{children}</main>
     </div>
   );
 }
