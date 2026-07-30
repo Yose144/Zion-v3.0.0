@@ -2,7 +2,8 @@
 
 > **Poslední update:** 2026-07-30  
 > **Aktivní workspace:** `V31/` (3.1.0-alpha.2) — Mainnet Alpha  
-> **Produkční runtime:** `V3/` na Edge (`62.171.141.136`)
+> **Produkční runtime:** `V3/` na Edge (`62.171.141.136`)  
+> **Lokální OASIS Game:** `cargo run -p zion-oasis` (port 8094) + `APP&WEB/OasisWeb` (Next.js 16, port 3000) — 200 avatarů, live HUD, CORS.
 
 Tento soubor je rychlý přehled celého projektu a vstupní bod pro každého, kdo se vrací po pauze. Obsahuje stav, klíčové dokumenty, co je hotové a co je další krok.
 
