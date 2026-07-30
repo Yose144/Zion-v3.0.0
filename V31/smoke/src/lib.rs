@@ -143,4 +143,91 @@ mod tests {
         assert_eq!(grants[0].applicant_address.as_deref(), Some(ADDRESS));
         assert_eq!(proposals[0].researcher.as_deref(), Some(ADDRESS));
     }
+
+    /// WARP cross-chain smoke: an HTLC atomic swap between Base (EVM) and ZionL1.
+    #[tokio::test]
+    async fn warp_htlc_cross_chain_smoke() {
+        use sha2::{Digest, Sha256};
+        use zion_l1_types::{Address, Amount, Asset, ChainId, Hash};
+        use zion_multichain::{
+            swap::htlc::{HtlcSwap, SwapState},
+            types::{Transfer, TransferDirection, TransferEndpoint, TransferStatus},
+        };
+
+        const SECRET: &[u8] = b"zion-smoke-secret";
+        const RECIPIENT: &str = "zion1recipient";
+
+        let hashlock = Hash::new(Sha256::digest(SECRET).into());
+        let far_future = (chrono::Utc::now().timestamp() as u64) + 86_400;
+
+        let base_addr = Address::new(ChainId::Base, vec![0u8; 20], "0xbase").unwrap();
+        let zion_addr = Address::new(ChainId::ZionL1, vec![0u8; 20], "zion1sender").unwrap();
+
+        let source = TransferEndpoint {
+            address: base_addr,
+            asset: Asset::native(ChainId::Base, "ETH", 18, "Ether"),
+            amount: Amount::new(1_000_000),
+        };
+        let target = TransferEndpoint {
+            address: zion_addr,
+            asset: Asset::native(ChainId::ZionL1, "ZION", 6, "ZION"),
+            amount: Amount::new(1_000_000_000),
+        };
+
+        let mut transfer = Transfer::new("warp-smoke", TransferDirection::Htlc, source, target);
+        transfer.hashlock = Some(hashlock);
+        transfer.timelock = Some(far_future);
+
+        let swap = HtlcSwap::new_offline();
+        let initiated_hash = swap.initiate(&mut transfer).await.unwrap();
+        assert_eq!(initiated_hash, hashlock);
+        assert_eq!(transfer.status, TransferStatus::Executing);
+
+        swap.claim(SECRET, RECIPIENT, &mut transfer).await.unwrap();
+        assert_eq!(transfer.status, TransferStatus::Completed);
+
+        let record = swap
+            .get_record(&hashlock.to_hex())
+            .await
+            .expect("record exists");
+        assert_eq!(record.state, SwapState::Claimed);
+        assert_eq!(record.release_recipient, Some(RECIPIENT.to_string()));
+        assert!(
+            record.preimage_hex.is_some(),
+            "preimage must be recorded after claim"
+        );
+    }
+
+    /// DAO governance smoke: proposal, vote and quorum across L2 governance.
+    #[test]
+    fn dao_governance_proposal_smoke() {
+        use zion_dao::{check_quorum, Proposal, ProposalType, VoteChoice};
+
+        const PROPOSER: &str = "zion1proposer";
+        const CIRCULATING: u64 = 100_000_000_000_000; // 100M ZION in flowers
+
+        let mut proposal = Proposal::new(
+            1,
+            "L3-L6 Integration Fund".into(),
+            "Fund cross-layer smoke tests".into(),
+            ProposalType::Treasury {
+                recipient: "zion1smoke".into(),
+                amount: 1_000_000_000_000, // 1M ZION
+                purpose: "cross-layer smoke testing".into(),
+            },
+            PROPOSER.into(),
+            1_000_000_000_000,
+            0,
+        );
+
+        // Required quorum for Treasury is 15 %.
+        let required_votes = (CIRCULATING as f64 * 15.0 / 100.0) as u64;
+        proposal.add_vote(VoteChoice::Yes, required_votes + 1);
+
+        assert!(
+            check_quorum(&proposal, CIRCULATING).is_ok(),
+            "DAO proposal should reach quorum"
+        );
+        assert!(proposal.votes_for > proposal.votes_against);
+    }
 }

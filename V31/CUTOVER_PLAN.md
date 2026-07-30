@@ -90,5 +90,5 @@ Fáze D — Full cut-over (H-0):
 ## 8. Otevřené E2E před plným cut-over
 
 - ~~Plná L3–L6 end-to-end verifikace: Oasis game, NCL compute marketplace, AI-native agenti, Free World, Issobella.~~ **Hotovo (2026-07-30):** `V31/smoke` crate s cross-layer testem NCL → AI-Native → Oasis → Free World → Issobella prochází.
-- Cross-chain WARP transfer (Base ↔ ZionL1) přes `zion-multichain`.
-- Governance DAO proposal + vote na V31.
+- ~~Cross-chain WARP transfer (Base ↔ ZionL1) přes `zion-multichain`.~~ **Hotovo (2026-07-30):** `V31/smoke` obsahuje `warp_htlc_cross_chain_smoke` s HTLC mezi Base a ZionL1.
+- ~~Governance DAO proposal + vote na V31.~~ **Hotovo (2026-07-30):** `V31/smoke` obsahuje `dao_governance_proposal_smoke` s proposal, vote a quorum check.

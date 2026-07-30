@@ -102,6 +102,8 @@ Následující položky jsou aktivní nebo čekají na E2E ověření před cut-
 - ~~Stress test `HeightAwareDeeksha` fork gating pro všechny výšky a algoritmy.~~ **Hotovo (2026-07-30):** boundary CHV3/Fire + sweep 0–5500 v `zion-core`.
 - ~~Tag `v3.1.0-alpha.2`.~~ **Hotovo (2026-07-30):** tag vytvořen a pushnut, workspace build prochází.
 - ~~Finální cut-over plán z V3 Edge (`62.171.141.136`) na V31.~~ **Hotovo (2026-07-30):** viz [`V31/CUTOVER_PLAN.md`](./CUTOVER_PLAN.md).
+- ~~Cross-chain WARP transfer (Base ↔ ZionL1).~~ **Hotovo (2026-07-30):** `V31/smoke` HTLC lock/claim smoke mezi Base a ZionL1.
+- ~~DAO governance proposal + vote.~~ **Hotovo (2026-07-30):** `V31/smoke` proposal, vote a quorum check.
 
 ## Bezpečnost a provoz
 

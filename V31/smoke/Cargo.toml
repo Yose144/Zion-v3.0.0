@@ -8,10 +8,14 @@ description = "L3–L6 cross-layer runtime smoke tests for V31 Mainnet Alpha."
 
 [dependencies]
 chrono = { workspace = true }
+sha2 = { workspace = true }
 tokio = { workspace = true }
 
 zion-ai-native = { path = "../L3/ai-native" }
+zion-dao = { path = "../L2/dao" }
 zion-free-world = { path = "../L5/free-world" }
 zion-issobella = { path = "../L6/issobella" }
+zion-l1-types = { path = "../L1/types" }
+zion-multichain = { path = "../L2/multichain" }
 zion-ncl = { path = "../L3/ncl" }
 zion-oasis = { path = "../L4/oasis" }
