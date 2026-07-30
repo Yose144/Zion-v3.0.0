@@ -269,7 +269,8 @@ impl ChainAdapter for BitcoinAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let address = match htlc_address_with_override(&self.network, self.htlc_override.as_deref()) {
+        let address = match htlc_address_with_override(&self.network, self.htlc_override.as_deref())
+        {
             Some(a) => a,
             None => {
                 debug!("[WARP][bitcoin] No HTLC address configured");

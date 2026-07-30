@@ -314,13 +314,14 @@ impl ChainAdapter for StellarAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let contract = match zion_contract_with_override(&self.network, self.issuer_override.as_deref()) {
-            Some(c) => c,
-            None => {
-                debug!("[WARP][stellar] No ZION contract configured");
-                return Ok(vec![]);
-            }
-        };
+        let contract =
+            match zion_contract_with_override(&self.network, self.issuer_override.as_deref()) {
+                Some(c) => c,
+                None => {
+                    debug!("[WARP][stellar] No ZION contract configured");
+                    return Ok(vec![]);
+                }
+            };
         let ledger = self.latest_ledger().await?;
         let start = ledger.saturating_sub(100); // look back ~100 ledgers (~8 mins)
         let proofs = self.get_bridge_burn_events(&contract, start).await?;

@@ -9,9 +9,9 @@ use tokio::sync::{watch, Mutex};
 use tokio::time::sleep;
 use tracing::{info, warn};
 use zion_core::{
-    Block, BlockHeader, ConsensusEngine, Transaction, TransactionInput, TransactionOutput,
+    Block, BlockHeader, ConsensusEngine, HeightAwareDeeksha, Transaction, TransactionInput,
+    TransactionOutput,
 };
-use zion_cosmic_harmony::EkamDeeksha;
 use zion_l1_types::{Amount, Hash};
 
 #[cfg(feature = "auxpow")]
@@ -54,7 +54,8 @@ pub struct MinerRuntime {
 
 impl MinerRuntime {
     pub fn new(config: MinerConfig) -> Self {
-        let algorithm = Arc::new(EkamDeeksha::new()) as Arc<dyn zion_cosmic_harmony::PowAlgorithm>;
+        let algorithm =
+            Arc::new(HeightAwareDeeksha::new()) as Arc<dyn zion_cosmic_harmony::PowAlgorithm>;
         let consensus = Arc::new(ConsensusEngine::new(algorithm));
         #[cfg(feature = "auxpow")]
         let hashrate_per_unit = config.hashrate_per_unit;
@@ -186,7 +187,10 @@ impl MinerRuntime {
         client: &mut crate::auxpow::StratumClient,
     ) -> Result<Block, MinerError> {
         let job = client
-            .next_job(zion_cosmic_harmony::ExternalCoin::Bitcoin, Duration::from_secs(30))
+            .next_job(
+                zion_cosmic_harmony::ExternalCoin::Bitcoin,
+                Duration::from_secs(30),
+            )
             .await
             .map_err(|e| MinerError::Consensus(format!("stratum job error: {e}")))?;
 

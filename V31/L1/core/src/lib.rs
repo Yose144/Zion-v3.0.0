@@ -22,13 +22,13 @@ pub mod transaction;
 pub mod v3_checkpoint;
 pub mod v3_compat;
 pub mod v3_p2p;
-pub mod v3_rpc;
 pub mod v3_reorg;
+pub mod v3_rpc;
 pub mod v3_state;
 pub mod v3_template;
 
 pub use block::{Block, BlockHeader};
-pub use consensus::{ConsensusEngine, ConsensusError};
+pub use consensus::{ConsensusEngine, ConsensusError, HeightAwareDeeksha};
 pub use difficulty::{difficulty_to_target, lwma_next_difficulty, target_to_difficulty, BlockInfo};
 pub use emission::{block_subsidy, fee_split, flowers_to_zion, format_zion, zion_to_flowers};
 pub use genesis::{genesis_block, genesis_hash, GENESIS_DIFFICULTY, GENESIS_TIMESTAMP};

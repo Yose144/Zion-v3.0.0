@@ -19,8 +19,8 @@ use crate::error::{MultichainError, MultichainResult};
 use crate::swap::dex::{DexRouter, Pool, Quote};
 use crate::types::Transfer;
 use crate::wallet::Keyring;
-use crate::warp::runtime::WarpRuntime;
 use crate::warp::config::WarpConfig;
+use crate::warp::runtime::WarpRuntime;
 
 /// Top-level runtime for `zion-multichain`.
 pub struct MultichainService {
@@ -362,9 +362,8 @@ impl MultichainService {
     ///
     /// Useful for callers that want full control over task spawning.
     pub fn warp_runtime(&self, config: WarpConfig) -> MultichainResult<WarpRuntime> {
-        WarpRuntime::new(config).map_err(|e| {
-            MultichainError::Internal(format!("WARP runtime init failed: {e}"))
-        })
+        WarpRuntime::new(config)
+            .map_err(|e| MultichainError::Internal(format!("WARP runtime init failed: {e}")))
     }
 }
 

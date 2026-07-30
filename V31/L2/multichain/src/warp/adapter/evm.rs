@@ -37,10 +37,7 @@ fn wzion_contract_with_override(chain: &str, override_addr: Option<&str>) -> Opt
     }
 
     // Allow per-chain override via env var.
-    let env_key = format!(
-        "WARP_{}_WZION_ADDR",
-        chain.to_uppercase().replace('-', "_")
-    );
+    let env_key = format!("WARP_{}_WZION_ADDR", chain.to_uppercase().replace('-', "_"));
     if let Ok(addr) = std::env::var(&env_key) {
         if !addr.is_empty() {
             return Some(addr);

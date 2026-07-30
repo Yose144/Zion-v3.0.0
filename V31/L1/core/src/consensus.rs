@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use zion_cosmic_harmony::algorithm::PowAlgorithm;
 use zion_cosmic_harmony_v3::{
-    CHV3_FORK_HEIGHT, FIRE_FORK_HEIGHT, deeksha_chv3_find_nonce,
-    deeksha_chv3_with_height, deeksha_lite_find_nonce, deeksha_lite_fire_find_nonce,
-    deeksha_lite_fire_with_height, deeksha_lite_with_height,
+    deeksha_chv3_find_nonce, deeksha_chv3_with_height, deeksha_lite_find_nonce,
+    deeksha_lite_fire_find_nonce, deeksha_lite_fire_with_height, deeksha_lite_with_height,
+    CHV3_FORK_HEIGHT, FIRE_FORK_HEIGHT,
 };
 use zion_l1_types::Hash;
 

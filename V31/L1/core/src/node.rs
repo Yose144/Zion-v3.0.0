@@ -73,8 +73,10 @@ impl Default for NodeConfig {
             no_genesis: false,
             seed_peers: Vec::new(),
             v3_miner_address: String::new(),
-            v3_humanitarian_address: crate::v3_compat::MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET.to_string(),
-            v3_issobella_address: crate::v3_compat::MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET.to_string(),
+            v3_humanitarian_address:
+                crate::v3_compat::MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET.to_string(),
+            v3_issobella_address: crate::v3_compat::MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET
+                .to_string(),
             v3_no_genesis: false,
             v3_checkpoint_path: None,
         }
@@ -135,8 +137,10 @@ impl Node {
                 info!(path = %checkpoint_path.display(), "importing V3 checkpoint snapshot");
                 let checkpoint_json = std::fs::read_to_string(checkpoint_path)
                     .map_err(|e| NodeError::Task(format!("failed to read checkpoint file: {e}")))?;
-                let checkpoint: crate::v3_checkpoint::Checkpoint = serde_json::from_str(&checkpoint_json)
-                    .map_err(|e| NodeError::Task(format!("failed to parse checkpoint JSON: {e}")))?;
+                let checkpoint: crate::v3_checkpoint::Checkpoint =
+                    serde_json::from_str(&checkpoint_json).map_err(|e| {
+                        NodeError::Task(format!("failed to parse checkpoint JSON: {e}"))
+                    })?;
                 crate::v3_checkpoint::import_checkpoint(&storage_arc, &checkpoint)
                     .await
                     .map_err(|e| NodeError::Task(format!("checkpoint import failed: {e}")))?;
@@ -223,11 +227,16 @@ impl Node {
         });
 
         // V3 P2P listen server: accept inbound V3 peers.
-        let v3_p2p_handle = tokio::spawn(async move {
-            v3_p2p_server.listen(v3_p2p_addr, v3_p2p_shutdown).await
-        });
+        let v3_p2p_handle =
+            tokio::spawn(async move { v3_p2p_server.listen(v3_p2p_addr, v3_p2p_shutdown).await });
 
-        tokio::pin!(rpc_handle, p2p_handle, sync_handle, v3_sync_handle, v3_p2p_handle);
+        tokio::pin!(
+            rpc_handle,
+            p2p_handle,
+            sync_handle,
+            v3_sync_handle,
+            v3_p2p_handle
+        );
         tokio::select! {
             r = &mut rpc_handle => {
                 p2p_handle.abort();

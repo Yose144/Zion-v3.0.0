@@ -11,10 +11,10 @@
 //!   `SWAP:CLAIM:<hash_hex>:<preimage_hex>`
 //!   `SWAP:REFUND:<hash_hex>`
 
+use crate::chain::ChainAdapterRegistry;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
 use crate::types::{Transfer, TransferDirection, TransferStatus};
-use crate::chain::ChainAdapterRegistry;
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -321,16 +321,21 @@ impl HtlcSwap {
     async fn persist(&self, record: &HtlcRecord) {
         if let Some(db) = &self.db {
             if let Err(e) = db.lock().await.save_htlc(record) {
-                tracing::warn!("[HtlcSwap] failed to persist record {}: {}", record.hash_hex, e);
+                tracing::warn!(
+                    "[HtlcSwap] failed to persist record {}: {}",
+                    record.hash_hex,
+                    e
+                );
             }
         }
     }
 
     /// Load all records from DB into memory.
     pub async fn load_from_db(&self) -> MultichainResult<()> {
-        let db = self.db.as_ref().ok_or_else(|| {
-            MultichainError::Internal("no HTLC database configured".to_string())
-        })?;
+        let db = self
+            .db
+            .as_ref()
+            .ok_or_else(|| MultichainError::Internal("no HTLC database configured".to_string()))?;
         let stored = db.lock().await.list_htlc()?;
         let mut records = self.records.lock().await;
         for r in stored {
@@ -394,7 +399,10 @@ impl HtlcSwap {
             updated_at: Utc::now(),
         };
 
-        self.records.lock().await.insert(hash_hex.clone(), record.clone());
+        self.records
+            .lock()
+            .await
+            .insert(hash_hex.clone(), record.clone());
         self.persist(&record).await;
         transfer.status = TransferStatus::Executing;
         Ok(hashlock)
@@ -476,7 +484,10 @@ impl HtlcSwap {
         // Need to drop the records guard before persist() can acquire it.
         let record = record.clone();
         drop(records);
-        self.records.lock().await.insert(hash_hex.clone(), record.clone());
+        self.records
+            .lock()
+            .await
+            .insert(hash_hex.clone(), record.clone());
         self.persist(&record).await;
 
         transfer.status = TransferStatus::Completed;
@@ -533,7 +544,10 @@ impl HtlcSwap {
         // Need to drop the records guard before persist() can acquire it.
         let record = record.clone();
         drop(records);
-        self.records.lock().await.insert(hash_hex.clone(), record.clone());
+        self.records
+            .lock()
+            .await
+            .insert(hash_hex.clone(), record.clone());
         self.persist(&record).await;
 
         transfer.status = TransferStatus::Refunded;
@@ -624,7 +638,10 @@ mod tests {
         swap.claim(secret, "0xdead", &mut transfer).await.unwrap();
         assert_eq!(transfer.status, TransferStatus::Completed);
 
-        let record = swap.get_record(&hash_sha256(secret).to_hex()).await.unwrap();
+        let record = swap
+            .get_record(&hash_sha256(secret).to_hex())
+            .await
+            .unwrap();
         assert_eq!(record.state, SwapState::Claimed);
         assert_eq!(record.preimage_hex, Some(hex::encode(secret)));
     }
@@ -707,15 +724,21 @@ mod tests {
 
         // Inject a pre-committed claimant.
         let hash_hex = hash_sha256(secret).to_hex();
-        swap.records.lock().await.get_mut(&hash_hex).unwrap().claimant_address =
-            Some("zion1claimant".to_string());
+        swap.records
+            .lock()
+            .await
+            .get_mut(&hash_hex)
+            .unwrap()
+            .claimant_address = Some("zion1claimant".to_string());
 
         // Wrong recipient → rejected.
         let err = swap.claim(secret, "0xwrong", &mut transfer).await;
         assert!(matches!(err, Err(MultichainError::Validation(_))));
 
         // Correct recipient → accepted.
-        swap.claim(secret, "zion1claimant", &mut transfer).await.unwrap();
+        swap.claim(secret, "zion1claimant", &mut transfer)
+            .await
+            .unwrap();
         assert_eq!(transfer.status, TransferStatus::Completed);
     }
 
@@ -769,7 +792,9 @@ mod tests {
         let memo = format!("SWAP:LOCK:{hash}:120:base:0xabc:zion1claimant");
         let parsed = SwapMemo::parse(&memo).unwrap();
         match parsed {
-            SwapMemo::Lock { claimant_address, .. } => {
+            SwapMemo::Lock {
+                claimant_address, ..
+            } => {
                 assert_eq!(claimant_address, Some("zion1claimant".to_string()));
             }
             _ => panic!("expected Lock"),
@@ -785,8 +810,8 @@ mod tests {
         match parsed {
             SwapMemo::Claim {
                 hash_hex,
-                    preimage_hex,
-                } => {
+                preimage_hex,
+            } => {
                 assert_eq!(hash_hex, hash);
                 assert_eq!(preimage_hex, preimage);
             }
@@ -908,7 +933,12 @@ mod tests {
         swap.initiate(&mut transfer).await.unwrap();
 
         // Force record and transfer timelock to the past so refund() passes.
-        swap.records.lock().await.get_mut(&hash.to_hex()).unwrap().expires_at = 0;
+        swap.records
+            .lock()
+            .await
+            .get_mut(&hash.to_hex())
+            .unwrap()
+            .expires_at = 0;
         transfer.timelock = Some(0);
 
         swap.refund(&mut transfer).await.unwrap();
