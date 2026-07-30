@@ -4,6 +4,7 @@ pub mod config;
 pub mod pool;
 pub mod pplns;
 pub mod rate_limit;
+pub mod rpc_client;
 pub mod share;
 pub mod stratum;
 pub mod validator;

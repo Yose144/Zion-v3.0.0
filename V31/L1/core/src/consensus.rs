@@ -132,6 +132,20 @@ impl ConsensusEngine {
         Some(hash)
     }
 
+    /// Search for a nonce that makes the raw `pow_header` bytes meet `target`.
+    ///
+    /// Useful for pool-mode mining where the miner only receives the 80-byte
+    /// PoW header, not a full [`BlockHeader`].
+    pub fn mine_header_bytes(
+        &self,
+        pow_header: &[u8],
+        target: &[u8; 32],
+        start: u64,
+        limit: u64,
+    ) -> Option<(u64, Hash)> {
+        self.algo.find_nonce(pow_header, start, limit, target)
+    }
+
     /// Compute a block header's identity hash (used for `previous_hash` links).
     pub fn header_hash(&self, header: &BlockHeader) -> Hash {
         header.header_hash()

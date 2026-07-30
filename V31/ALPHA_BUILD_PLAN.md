@@ -1,8 +1,8 @@
 # V31 Mainnet Alpha — Build Plan (kanonický)
 
 > **Verze:** 3.1.0-alpha.2  
-> **Datum:** 2026-07-28  
-> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented, V3 RPC wired into node runtime, V3 P2P listen server + IBD loop, bin/node.rs V3-aware runtime, pool template feed, miner stratum client for Stream 1/2/3
+> **Datum:** 2026-07-30  
+> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented, V3 RPC wired into node runtime, V3 P2P listen server + IBD loop, `bin/node.rs` V3-aware runtime, `zion-pool` standalone stratum binary, `zion miner start` pool mode, E2E smoke (node + pool + miner) produces and accepts blocks height 1+
 > **Princip:** `V3/` zůstává produkční, `V31/` se staví jako čistý Mainnet Alpha strom.  
 
 Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozhodnutí o architektuře, vrstvách a prioritách se zde zaznamenávají a aktualizují.
@@ -64,6 +64,7 @@ Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozho
 - `zion-pool` má základní PPLNS a stratum server skeleton.
 - `zion-multichain` má `ChainAdapter` trait, HTTP API, wallet keyring (BIP39 → EVM/Zion/BTC), bridge lock/burnRelease, DEX router, HTLC, Dharma Credits a payout integration.
 - `zion-cli` má subcommands: status, wallet, bridge, swap, pool, miner, doctor, api, node, migrate.
+- **E2E smoke test `zion-node` + `zion-pool` + `zion-miner` projde:** pool fetchuje `getTemplate` z node, broadcastuje `mining.notify`, miner připojí stratum, najde share, pool validuje, skládá block a odesílá `submitBlock`; node přijme block a chain roste (ověřeno výška 1+).
 
 ### 2.2 Co je ještě scaffold / stub
 
@@ -166,7 +167,7 @@ Cíl: `V31/` nahradí `V3/` na Edge staging.
 
 Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další práce:
 
-1. **E2E smoke testy** — spustit `zion-node` + `zion-pool` + `zion-miner` lokálně, ověřit že block se vytěží, propaguje se přes P2P, pool broadcastuje `mining.notify`, miner submituje share, node přijme `submitBlock`.
+1. ~~**E2E smoke testy**~~ — **Hotovo (2026-07-30):** `zion-node` + `zion-pool` + `zion-miner` lokálně vytěží, submitne a přijme block (výška 1+). Pool broadcastuje `mining.notify`, miner připojí stratum a submituje share.
 2. **Production P2P hardening** — peer discovery (GetPeers/Peers), max peers, ban score. (Rate limit pro reconnect storm hotovo.)
 3. **Height-aware PoW fork gating** — `HeightAwareDeeksha` s height-gated dispatch implementován v `zion-core`, `zion-miner` i `zion-pool`.
 4. **HTLC persistence** — SQLite backend pro HTLC hotovo v `zion-multichain`.
@@ -223,7 +224,7 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
   - `ConsensusEngine::verify_v3_block()` — validátor V3 bloků (height, prev hash, timestamp, difficulty bits, merkle root, PoW).
   - **Ověření:** `v3_genesis_hash()` reprodukuje mainnet hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`; `validate_v3_block` akceptuje V3 genesis blok; `cargo test -p zion-core` prochází.
 - Zbývá:
-  - E2E smoke testy (node + pool + miner lokálně).
+  - ~~E2E smoke testy (node + pool + miner lokálně).~~ **Hotovo (2026-07-30).**
   - Production P2P hardening (peer discovery, max peers, ban score); rate limit hotovo.
   - Height-aware PoW fork gating — hotovo.
   - HTLC SQLite persistence — hotovo.
@@ -231,9 +232,10 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
 
 ## 8. Pool + miner integrace (F6)
 
-- `zion-core` `getBlockTemplate` nyni vraci `template_id`, `header_hex`, `target_hex` a `block_reward`.
-- `zion-multichain` `ZionL1Adapter::block_template` preposila raw JSON do `zion-pool`.
-- `zion-pool` `StratumServer` uklada cely template, rozesila `mining.notify` a po nalezeni bloku rekonstruuje `Block` a posila `submitBlock` na node RPC.
+- `zion-core` `getTemplate` nyní vrací `BlockTemplate` s `template_id`, `header_hex`, `target_hex`, `header_json`, `transactions` a `block_reward`.
+- `zion-pool` `StratumServer` ukládá celý template, rozesílá 3-param `mining.notify` a po nalezení bloku rekonstruuje `Block` a posílá `submitBlock` na node RPC.
+- `zion-miner` `mine_zion_pool_share` používá `ConsensusEngine::mine_header_bytes` pro ZION PoW nad 80-bajtovým `header_hex` z poolu a odesílá share ve stratum `mining.submit` formátu.
+- **E2E smoke ověřeno (2026-07-30):** `zion-node` + `zion-pool` + `zion-miner` vytěží a přijme řetězový block výška 1+.
 
 ## 9. Pool operability (F1) a Stratum v1 (F2)
 

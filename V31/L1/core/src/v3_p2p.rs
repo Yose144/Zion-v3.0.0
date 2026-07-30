@@ -306,10 +306,6 @@ pub async fn sync_loop(
     peers: Vec<SocketAddr>,
     mut shutdown: tokio::sync::watch::Receiver<bool>,
 ) {
-    if peers.is_empty() {
-        return;
-    }
-
     let interval = std::time::Duration::from_secs(30);
     let mut first = true;
 
