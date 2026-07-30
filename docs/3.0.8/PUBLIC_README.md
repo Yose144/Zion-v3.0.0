@@ -178,8 +178,8 @@ cargo run --release -p zion-core --bin zion-node
 
 ## Security
 
-- **Reporting vulnerabilities:** See [SECURITY.md](./SECURITY.md)
-- **Known vulnerabilities:** [docs/security/SECURITY_DISCLOSURE_2026-07.md](./docs/security/SECURITY_DISCLOSURE_2026-07.md)
+- **Reporting vulnerabilities:** See [SECURITY.md](../../SECURITY.md)
+- **Known vulnerabilities:** [docs/security/SECURITY_DISCLOSURE_2026-07.md](../security/SECURITY_DISCLOSURE_2026-07.md)
 - **All disclosed vulnerabilities (F1-F5, C1-C8) have been remediated**
 
 ## Canonical Constants
@@ -198,15 +198,15 @@ cargo run --release -p zion-core --bin zion-node
 
 ## Documentation
 
-- [Architecture](./V3/docs/) — L1/L2 architecture docs
-- [Mainnet Constants](./V3/docs/MAINNET_CONSTANTS.md) — Canonical chain parameters
-- [Security Disclosures](./docs/security/) — Public vulnerability disclosures
-- [Contributing](./CONTRIBUTING.md) — How to contribute
-- [Code of Conduct](./CODE_OF_CONDUCT.md) — Community standards
+- [Architecture](../../V3/docs) — L1/L2 architecture docs
+- [Mainnet Constants](../../V3/docs/MAINNET_CONSTANTS.md) — Canonical chain parameters
+- [Security Disclosures](../security) — Public vulnerability disclosures
+- [Contributing](../../CONTRIBUTING.md) — How to contribute
+- [Code of Conduct](../../CODE_OF_CONDUCT.md) — Community standards
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE).
+This project is licensed under the [MIT License](../../LICENSE).
 
 ## Links
 
