@@ -93,6 +93,7 @@ cargo build --release
 - ~~E2E smoke test node + pool + miner lokálně.~~ **Hotovo (2026-07-30):** node vytěží block, pool přijme share a submitne `submitBlock`, node přijme block (výška 1+).
 - ~~Production P2P hardening — peer discovery, ban score, max peers.~~ **Hotovo (2026-07-30).**
 - ~~Custom AMM deploy v `zion-multichain`.~~ **Hotovo (2026-07-30):** `/v1/swap/pool/deploy` a `/v1/swap/pools`, persistence do SQLite, načítání při startu.
+- ~~WARP API rate limiting + auth v `zion-multichain`.~~ **Hotovo (2026-07-30):** per-IP token bucket, optional `Authorization: Bearer <api_key>`, `/health` public.
 - Plná L4–L6 end-to-end verifikace (Oasis, Free World, Issobella).
 - Finální cut-over z V3 Edge na V31.
 
