@@ -149,28 +149,27 @@ export default function GoldenEggScene() {
             </GlassPanel>
           </Html>
         )}
-      </group>
-
-      <Html transform center distanceFactor={10} position={[-3.5, 2.5, 0]} className="pointer-events-none hidden sm:block">
-        <GlassPanel className="px-3 py-2 text-xs">
-          <h4 className="mb-1 font-bold text-oasis-gold">Master Keys</h4>
-          <div className="space-y-1 text-gray-300">
-            {Object.entries(progress).map(([key, p]) => (
-              <div key={key} className="flex items-center justify-between gap-4">
-                <span>{key}</span>
-                <div className="h-1.5 w-16 rounded bg-white/10">
-                  <div
-                    className="h-1.5 rounded bg-oasis-gold"
-                    style={{ width: `${(p.found / p.total) * 100}%` }}
-                  />
+        <Html transform center distanceFactor={10} position={[-3.5, 2.5, 0]} className="pointer-events-none hidden sm:block">
+          <GlassPanel className="px-3 py-2 text-xs">
+            <h4 className="mb-1 font-bold text-oasis-gold">Master Keys</h4>
+            <div className="space-y-1 text-gray-300">
+              {Object.entries(progress).map(([key, p]) => (
+                <div key={key} className="flex items-center justify-between gap-4">
+                  <span>{key}</span>
+                  <div className="h-1.5 w-16 rounded bg-white/10">
+                    <div
+                      className="h-1.5 rounded bg-oasis-gold"
+                      style={{ width: `${(p.found / p.total) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px]">{p.found}/{p.total}</span>
                 </div>
-                <span className="text-[10px]">{p.found}/{p.total}</span>
-              </div>
-            ))}
-          </div>
-          <p className="mt-2 text-[10px] text-gray-400">Discovered: {discovered}/108</p>
-        </GlassPanel>
-      </Html>
+              ))}
+            </div>
+            <p className="mt-2 text-[10px] text-gray-400">Discovered: {discovered}/108</p>
+          </GlassPanel>
+        </Html>
+      </group>
     </ErrorBoundary>
   );
 }

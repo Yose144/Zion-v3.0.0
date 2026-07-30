@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, memo, type ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Stars } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -21,8 +21,20 @@ interface GameWorldProps {
   children?: ReactNode;
 }
 
-export default function GameWorld({ mode, panel, children }: GameWorldProps) {
+function useZoneRadius() {
+  const [radius, setRadius] = useState(6);
+  useEffect(() => {
+    const update = () => setRadius(window.innerWidth < 640 ? 4 : 6);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+  return radius;
+}
+
+function GameWorld({ mode, panel, children }: GameWorldProps) {
   const [mounted, setMounted] = useState(false);
+  const radius = useZoneRadius();
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
@@ -34,9 +46,9 @@ export default function GameWorld({ mode, panel, children }: GameWorldProps) {
   }
 
   const target = useMemo(() => {
-    const pos = getZonePosition(mode);
+    const pos = getZonePosition(mode, radius);
     return new THREE.Vector3(...pos);
-  }, [mode]);
+  }, [mode, radius]);
 
   return (
     <div className="absolute inset-0 bg-oasis-black">
@@ -58,7 +70,7 @@ export default function GameWorld({ mode, panel, children }: GameWorldProps) {
               key={zone.id}
               zone={zone}
               active={zone.id === mode}
-              position={getZonePosition(zone.id)}
+              position={getZonePosition(zone.id, radius)}
               panel={zone.id === mode ? panel : undefined}
             />
           ))}
@@ -81,3 +93,5 @@ export default function GameWorld({ mode, panel, children }: GameWorldProps) {
     </div>
   );
 }
+
+export default memo(GameWorld);

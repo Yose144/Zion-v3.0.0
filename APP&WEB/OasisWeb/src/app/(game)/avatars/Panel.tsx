@@ -9,7 +9,8 @@ import GlassPanel from '@/components/GlassPanel';
 import Skeleton from '@/components/Skeleton';
 
 export default function AvatarsPanel() {
-  const { data: avatars = [], loading, error, retry } = useApi(getAvatars, []);
+  const { data, loading, error, retry } = useApi(getAvatars, []);
+  const avatars = data ?? [];
   const [search, setSearch] = useState('');
   const [ray, setRay] = useState('');
   const [rarity, setRarity] = useState('');

@@ -15,11 +15,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 const zonePos = getZonePosition('guilds');
 const GUILD_COLORS = ['#ec4899', '#a855f7', '#22d3ee', '#f59e0b', '#10b981', '#f43f5e'];
 
-interface GuildsSceneProps {
-  onRefetch?: () => void;
-}
-
-export default function GuildsScene({ onRefetch }: GuildsSceneProps) {
+export default function GuildsScene() {
   const { data, loading, error, retry, refetch } = useApi<Guild[]>(getGuilds, []);
   const [selected, setSelected] = useState<Guild | null>(null);
   const platformRef = useRef<THREE.Group>(null);
@@ -48,7 +44,6 @@ export default function GuildsScene({ onRefetch }: GuildsSceneProps) {
 
   const handleRefetch = () => {
     refetch();
-    onRefetch?.();
   };
 
   return (
@@ -59,8 +54,8 @@ export default function GuildsScene({ onRefetch }: GuildsSceneProps) {
             <cylinderGeometry args={[3, 3, 0.1, 48]} />
             <meshStandardMaterial color="#1a1a2e" emissive="#ec4899" emissiveIntensity={0.15} roughness={0.4} metalness={0.6} />
           </mesh>
-          <mesh position={[0, -0.15, 0]}>
-            <torusGeometry args={[2.2, 0.04, 16, 64]} rotation={[Math.PI / 2, 0, 0]} />
+          <mesh position={[0, -0.15, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[2.2, 0.04, 16, 64]} />
             <meshStandardMaterial color="#ec4899" emissive="#ec4899" emissiveIntensity={0.3} transparent opacity={0.8} />
           </mesh>
         </group>
@@ -131,7 +126,7 @@ function GuildDetail({
 }: {
   guild: Guild;
   onClose: () => void;
-  onRefetch: () => void;
+  onRefetch?: () => void;
 }) {
   const [address, setAddress] = useState('');
   const [status, setStatus] = useState<string | null>(null);
@@ -139,7 +134,7 @@ function GuildDetail({
   const join = async () => {
     const res = await import('@/lib/api').then((m) => m.joinGuild(guild.id, address || 'pilgrim-0001'));
     setStatus(res ? `Joined ${guild.name}` : 'Join failed');
-    onRefetch();
+    onRefetch?.();
   };
 
   const treasury = guild.treasury ?? guild.guild_xp * 0.1;

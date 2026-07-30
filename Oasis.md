@@ -148,6 +148,7 @@ npm run start
 - **OASIS web v0.0.1** — galaxy + tree of life nasazeno (2026-07-31).
 - **OASIS web v0.1.0** — multi-page herní klient: `/dashboard`, `/avatars`, `/quests`, `/leaderboard`, `/onboarding`, navbar, API integration.
 - **OASIS web v0.2.0** — plně 3D interaktivní UI v React Three Fiber: centrální hub, 5 zón, let kamery, klikatelné objekty, plovoucí HTML panely v `<Html transform>`.
+- **OASIS web v0.3.0** — 8 zón: Dashboard, Avatars, Quests, Leaderboard, Onboarding, Territories, Guilds, Golden Egg. Error boundaries, `useApi` s retry, skeletony, lazy loading, memoizace, responzivní 3D UI.
 - **Další vizuální iterace** — leaves/petals na stromu, interakce se světy, guild avataři, OASIS HUD.
 
 ---
