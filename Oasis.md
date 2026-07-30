@@ -97,7 +97,7 @@ cargo build --release
 - ~~Stress test `HeightAwareDeeksha` fork gating.~~ **Hotovo (2026-07-30):** boundary CHV3/Fire + sweep 0–5500 v `zion-core`.
 - ~~Tag `v3.1.0-alpha.2`.~~ **Hotovo (2026-07-30):** tag vytvořen a pushnut, workspace build prochází.
 - ~~Finální cut-over z V3 Edge na V31.~~ **Hotovo (2026-07-30):** viz [`V31/CUTOVER_PLAN.md`](V31/CUTOVER_PLAN.md).
-- Plná L4–L6 end-to-end verifikace (Oasis, Free World, Issobella). **Status 2026-07-30:** unit testy procházejí (`zion-oasis`: 124, `zion-free-world`: 3, `zion-issobella`: 3), zbývá cross-layer runtime smoke test.
+- ~~Plná L4–L6 end-to-end verifikace (Oasis, Free World, Issobella).~~ **Hotovo (2026-07-30):** `V31/smoke` cross-layer test propojuje Oasis player, Free World grant a Issobella proposal přes AI-Native bridge.
 
 ---
 
