@@ -649,6 +649,17 @@ impl ExternalCoin {
         &[Self::DCR, Self::ALPH]
     }
 
+    /// Returns `Some(reason)` if the coin is intentionally disabled for this
+    /// release because it is not yet live / not producing accepted shares.
+    /// `None` means the coin is considered active and may be selected by the
+    /// profit router.
+    pub fn disabled_reason(self) -> Option<&'static str> {
+        match self {
+            Self::PRL => Some("Pearl PoUW not implemented — deferred to v3.1.0"),
+            _ => None,
+        }
+    }
+
     /// Map this external coin to the canonical revenue source used by the
     /// pool-side revenue collector.
     pub fn revenue_source(self) -> crate::revenue::RevenueSource {
@@ -736,6 +747,8 @@ pub struct CoinProfile {
     pub protocol: StratumProtocol,
     pub worker_name: String,
     pub enabled: bool,
+    /// If `Some`, the coin is disabled and should not be mined.
+    pub disabled_reason: Option<String>,
 }
 
 impl CoinProfile {
@@ -750,7 +763,8 @@ impl CoinProfile {
             pool_port: port,
             protocol: coin.protocol(),
             worker_name: "zion_dynamic".to_string(),
-            enabled: true,
+            enabled: coin.disabled_reason().is_none(),
+            disabled_reason: coin.disabled_reason().map(|s| s.to_string()),
         }
     }
 
@@ -766,7 +780,8 @@ impl CoinProfile {
             pool_port: port,
             protocol: coin.protocol(),
             worker_name: "zion_dynamic".to_string(),
-            enabled: true,
+            enabled: coin.disabled_reason().is_none(),
+            disabled_reason: coin.disabled_reason().map(|s| s.to_string()),
         }
     }
 
@@ -1209,6 +1224,11 @@ pub fn select_best_coin(
     current: Option<ExternalCoin>,
     hysteresis_pct: f64,
 ) -> Option<ExternalCoin> {
+    // Filter out intentionally disabled coins (e.g. PRL in v3.0.8).
+    let entries: Vec<&ProfitEntry> = entries
+        .iter()
+        .filter(|e| e.coin.disabled_reason().is_none())
+        .collect();
     if entries.is_empty() {
         return None;
     }
@@ -1404,6 +1424,61 @@ mod tests {
         pools.sort();
         pools.dedup();
         assert_eq!(pools.len(), all.len());
+    }
+
+    #[test]
+    fn prl_is_disabled_for_308() {
+        assert!(
+            ExternalCoin::PRL.disabled_reason().is_some(),
+            "PRL should be disabled in v3.0.8"
+        );
+        assert!(ExternalCoin::PRL.disabled_reason().unwrap().contains("deferred"));
+    }
+
+    #[test]
+    fn active_coins_have_no_disabled_reason() {
+        assert!(ExternalCoin::DCR.disabled_reason().is_none());
+        assert!(ExternalCoin::KAS.disabled_reason().is_none());
+        assert!(ExternalCoin::RTM.disabled_reason().is_none());
+    }
+
+    #[test]
+    fn coin_profile_disabled_for_prl() {
+        let profile = CoinProfile::default_for(ExternalCoin::PRL);
+        assert!(!profile.enabled);
+        assert_eq!(
+            profile.disabled_reason.as_deref(),
+            Some("Pearl PoUW not implemented — deferred to v3.1.0")
+        );
+    }
+
+    #[test]
+    fn select_best_coin_skips_disabled() {
+        let entries = vec![
+            ProfitEntry {
+                coin: ExternalCoin::PRL,
+                revenue_per_day_usd: 100.0,
+                power_cost_usd: 0.0,
+            },
+            ProfitEntry {
+                coin: ExternalCoin::KAS,
+                revenue_per_day_usd: 0.85,
+                power_cost_usd: 0.10,
+            },
+        ];
+        let best = select_best_coin(&entries, None, 5.0);
+        assert_eq!(best, Some(ExternalCoin::KAS));
+    }
+
+    #[test]
+    fn select_best_coin_returns_none_when_all_disabled() {
+        let entries = vec![ProfitEntry {
+            coin: ExternalCoin::PRL,
+            revenue_per_day_usd: 100.0,
+            power_cost_usd: 0.0,
+        }];
+        let best = select_best_coin(&entries, None, 5.0);
+        assert_eq!(best, None);
     }
 
     #[test]
