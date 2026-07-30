@@ -78,10 +78,10 @@ Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozho
 | Oblast | V3 | V31 | Akce |
 |--------|-----|-----|------|
 | Node runtime | 7700+ řádků `chain.rs`, `bin/node.rs` | 3 malé soubory | Portovat postupně |
-| PoW | `deeksha_lite_v1`, `deeksha_chv3`, `deeksha_lite_fire` | jen `ekam_deeksha` (bit-identical s `deeksha_lite_v1`) | Height-aware fork gating přidat |
+| PoW | `deeksha_lite_v1`, `deeksha_chv3`, `deeksha_lite_fire` | `HeightAwareDeeksha` s height-gated dispatch | Hotovo pro Alpha |
 | AuxPoW | `zion-auxpow` crate, 24 coinů | stub 15 coinů | Portovat stratum + hasher subset |
 | Storage | LMDB/SQLite hybrid | SQLite pro V3 checkpoint sync | Vybrat jeden backend (SQLite nebo LMDB) |
-| P2P | wire protocol v `p2p.rs` | V3 client + listen server v `v3_p2p` | Hotovo pro Alpha; production hardening (peer discovery, rate limit) později |
+| P2P | wire protocol v `p2p.rs` | V3 client + listen server v `v3_p2p` | Hotovo pro Alpha; reconnect rate limit implementován |
 | RPC | JSON-RPC v `rpc.rs` | V3 handler zapojen do `rpc.rs` dispatch | Hotovo pro Alpha |
 | Multichain | 6 samostatných crateů | 1 sjednocený crate (reálné adaptery + HTLC + DEX + WARP) | Hotovo pro Alpha |
 | CLI | `zion` single binary (menu) | clap subcommands | Sjednotit UX |
@@ -167,9 +167,9 @@ Cíl: `V31/` nahradí `V3/` na Edge staging.
 Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další práce:
 
 1. **E2E smoke testy** — spustit `zion-node` + `zion-pool` + `zion-miner` lokálně, ověřit že block se vytěží, propaguje se přes P2P, pool broadcastuje `mining.notify`, miner submituje share, node přijme `submitBlock`.
-2. **Production P2P hardening** — peer discovery (GetPeers/Peers), rate limiting, max peers, ban score.
-3. **Height-aware PoW fork gating** — přidat `deeksha_chv3`/`deeksha_lite_fire` do `zion-core` consensus s height-gated dispatch.
-4. **HTLC persistence** — `HtlcSwap` aktuálně drží records in-memory; pro produkci přidat SQLite backend (stejně jako V3 `SwapDb`).
+2. **Production P2P hardening** — peer discovery (GetPeers/Peers), max peers, ban score. (Rate limit pro reconnect storm hotovo.)
+3. **Height-aware PoW fork gating** — `HeightAwareDeeksha` s height-gated dispatch implementován v `zion-core`, `zion-miner` i `zion-pool`.
+4. **HTLC persistence** — SQLite backend pro HTLC hotovo v `zion-multichain`.
 5. **Tag `v3.1.0-alpha.1`** po úspěšných E2E smoke testech.
 
 ---
@@ -224,9 +224,9 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
   - **Ověření:** `v3_genesis_hash()` reprodukuje mainnet hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`; `validate_v3_block` akceptuje V3 genesis blok; `cargo test -p zion-core` prochází.
 - Zbývá:
   - E2E smoke testy (node + pool + miner lokálně).
-  - Production P2P hardening (peer discovery, rate limit, ban score).
-  - Height-aware PoW fork gating (`deeksha_chv3`/`deeksha_lite_fire`).
-  - HTLC SQLite persistence (aktuálně in-memory).
+  - Production P2P hardening (peer discovery, max peers, ban score); rate limit hotovo.
+  - Height-aware PoW fork gating — hotovo.
+  - HTLC SQLite persistence — hotovo.
 - Detailní analýza v `V31/V3_SYNC_ASSESSMENT.md`.
 
 ## 8. Pool + miner integrace (F6)

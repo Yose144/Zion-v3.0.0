@@ -1227,7 +1227,9 @@ pub fn select_best_coin(
         if disabled.contains(&entry.coin) || entry.profit_per_day_usd() <= 0.0 {
             continue;
         }
-        if best.map_or(true, |b| entry.profit_per_day_usd() > b.profit_per_day_usd()) {
+        if best.map_or(true, |b| {
+            entry.profit_per_day_usd() > b.profit_per_day_usd()
+        }) {
             best = Some(entry);
         }
     }
@@ -1261,7 +1263,10 @@ fn coin_disabled(coin: ExternalCoin, profiles: &[CoinProfile]) -> bool {
 }
 
 /// Return the most profitable active GPU coin from `entries`.
-pub fn best_coin_for_gpu(entries: &[ProfitEntry], profiles: &[CoinProfile]) -> Option<ExternalCoin> {
+pub fn best_coin_for_gpu(
+    entries: &[ProfitEntry],
+    profiles: &[CoinProfile],
+) -> Option<ExternalCoin> {
     let active: Vec<_> = entries
         .iter()
         .filter(|e| e.coin.is_gpu() && !coin_disabled(e.coin, profiles))
@@ -1271,7 +1276,10 @@ pub fn best_coin_for_gpu(entries: &[ProfitEntry], profiles: &[CoinProfile]) -> O
 }
 
 /// Return the most profitable active CPU coin from `entries`.
-pub fn best_coin_for_cpu(entries: &[ProfitEntry], profiles: &[CoinProfile]) -> Option<ExternalCoin> {
+pub fn best_coin_for_cpu(
+    entries: &[ProfitEntry],
+    profiles: &[CoinProfile],
+) -> Option<ExternalCoin> {
     let active: Vec<_> = entries
         .iter()
         .filter(|e| e.coin.is_cpu() && !coin_disabled(e.coin, profiles))
@@ -1470,17 +1478,21 @@ mod tests {
 
     #[test]
     fn coin_profile_can_be_disabled_with_reason() {
-        let profile =
-            CoinProfile::default_for(ExternalCoin::DCR).disabled("no accepted shares");
+        let profile = CoinProfile::default_for(ExternalCoin::DCR).disabled("no accepted shares");
         assert!(profile.disabled);
-        assert_eq!(profile.disabled_reason, Some("no accepted shares".to_string()));
+        assert_eq!(
+            profile.disabled_reason,
+            Some("no accepted shares".to_string())
+        );
         assert!(!profile.enabled);
     }
 
     #[test]
     fn best_coin_for_gpu_skips_disabled_high_profit_coin() {
-        let mut profiles: Vec<CoinProfile> =
-            ExternalCoin::all().iter().map(|&c| CoinProfile::default_for(c)).collect();
+        let mut profiles: Vec<CoinProfile> = ExternalCoin::all()
+            .iter()
+            .map(|&c| CoinProfile::default_for(c))
+            .collect();
         let kas_idx = profiles
             .iter()
             .position(|p| p.coin == ExternalCoin::KAS)
@@ -1494,8 +1506,10 @@ mod tests {
 
     #[test]
     fn best_coin_for_cpu_skips_disabled() {
-        let mut profiles: Vec<CoinProfile> =
-            ExternalCoin::all().iter().map(|&c| CoinProfile::default_for(c)).collect();
+        let mut profiles: Vec<CoinProfile> = ExternalCoin::all()
+            .iter()
+            .map(|&c| CoinProfile::default_for(c))
+            .collect();
         let xmr_idx = profiles
             .iter()
             .position(|p| p.coin == ExternalCoin::XMR)

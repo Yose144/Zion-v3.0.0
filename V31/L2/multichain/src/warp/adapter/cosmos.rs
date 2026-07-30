@@ -293,13 +293,14 @@ impl ChainAdapter for CosmosAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let contract = match zion_contract_with_override(&self.network, self.contract_override.as_deref()) {
-            Some(c) => c,
-            None => {
-                debug!("[WARP][cosmos] No ZION contract configured");
-                return Ok(vec![]);
-            }
-        };
+        let contract =
+            match zion_contract_with_override(&self.network, self.contract_override.as_deref()) {
+                Some(c) => c,
+                None => {
+                    debug!("[WARP][cosmos] No ZION contract configured");
+                    return Ok(vec![]);
+                }
+            };
         let tip = self.latest_height().await?;
         let txs = self.query_bridge_burn_txs(&contract).await?;
         let proofs: Vec<_> = txs
@@ -311,10 +312,12 @@ impl ChainAdapter for CosmosAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        let contract = zion_contract_with_override(&self.network, self.contract_override.as_deref()).ok_or_else(|| WarpError::AdapterError {
-            chain: "cosmos".into(),
-            reason: format!("no ZION contract configured for network '{}'", self.network),
-        })?;
+        let contract =
+            zion_contract_with_override(&self.network, self.contract_override.as_deref())
+                .ok_or_else(|| WarpError::AdapterError {
+                    chain: "cosmos".into(),
+                    reason: format!("no ZION contract configured for network '{}'", self.network),
+                })?;
 
         let signer = CosmosSigner::from_env().map_err(|e| WarpError::AdapterError {
             chain: "cosmos".into(),

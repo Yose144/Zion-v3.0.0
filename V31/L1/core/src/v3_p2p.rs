@@ -491,16 +491,8 @@ impl V3PeerHandler {
                     };
                     self.write_msg(&mut writer, &status).await?;
                 }
-                P2pMessage::GetBlocksSince {
-                    from_height,
-                    limit,
-                } => {
-                    let tip_height = self
-                        .storage
-                        .v3_tip()
-                        .await?
-                        .map(|t| t.height)
-                        .unwrap_or(0);
+                P2pMessage::GetBlocksSince { from_height, limit } => {
+                    let tip_height = self.storage.v3_tip().await?.map(|t| t.height).unwrap_or(0);
                     let end = std::cmp::min(from_height + limit as u64, tip_height + 1);
                     let mut blocks = Vec::new();
                     for h in from_height..end {

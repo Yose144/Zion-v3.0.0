@@ -61,14 +61,20 @@ impl WarpValidatorSet {
 
     /// Add a validator from a hex-encoded ed25519 private key (64 hex chars).
     /// Derives the public key automatically.
-    pub fn add_validator_from_key_hex(&mut self, id: &str, name: &str, key_hex: &str) -> WarpResult<()> {
-        let key_bytes = hex::decode(key_hex).map_err(|e| WarpError::Internal(format!(
-            "invalid validator key hex for {}: {}", id, e
-        )))?;
+    pub fn add_validator_from_key_hex(
+        &mut self,
+        id: &str,
+        name: &str,
+        key_hex: &str,
+    ) -> WarpResult<()> {
+        let key_bytes = hex::decode(key_hex).map_err(|e| {
+            WarpError::Internal(format!("invalid validator key hex for {}: {}", id, e))
+        })?;
         if key_bytes.len() != 32 {
             return Err(WarpError::Internal(format!(
                 "validator key must be 32 bytes (64 hex chars), got {} for {}",
-                key_bytes.len(), id
+                key_bytes.len(),
+                id
             )));
         }
         let mut seed = [0u8; 32];
@@ -125,12 +131,7 @@ impl WarpValidatorSet {
         let msg_hash = message.signing_hash();
         self.signing_keys
             .iter()
-            .filter(|(id, _)| {
-                self.validators
-                    .get(*id)
-                    .map(|v| v.active)
-                    .unwrap_or(false)
-            })
+            .filter(|(id, _)| self.validators.get(*id).map(|v| v.active).unwrap_or(false))
             .map(|(id, sk)| {
                 let sig = sk.sign(&msg_hash);
                 (id.clone(), sig.to_bytes().to_vec())
@@ -143,12 +144,7 @@ impl WarpValidatorSet {
         let active_local = self
             .signing_keys
             .keys()
-            .filter(|id| {
-                self.validators
-                    .get(*id)
-                    .map(|v| v.active)
-                    .unwrap_or(false)
-            })
+            .filter(|id| self.validators.get(*id).map(|v| v.active).unwrap_or(false))
             .count();
         active_local >= self.quorum
     }
@@ -393,7 +389,8 @@ mod tests {
         let (_v, sk) = make_validator("v1");
         let key_hex = hex::encode(sk.to_bytes());
 
-        vs.add_validator_from_key_hex("v1", "Test Validator", &key_hex).unwrap();
+        vs.add_validator_from_key_hex("v1", "Test Validator", &key_hex)
+            .unwrap();
 
         assert_eq!(vs.total_count(), 1);
         assert!(vs.can_sign_quorum_locally());

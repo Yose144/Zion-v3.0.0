@@ -66,9 +66,9 @@ impl WarpRouter {
         router.db = Some(db.clone());
 
         // Load all persisted transfers from DB.
-        let stored = db.list_all().map_err(|e| {
-            WarpError::Internal(format!("failed to load transfers from DB: {e}"))
-        })?;
+        let stored = db
+            .list_all()
+            .map_err(|e| WarpError::Internal(format!("failed to load transfers from DB: {e}")))?;
 
         for t in stored {
             let id = t.id;
@@ -77,7 +77,10 @@ impl WarpRouter {
             router.state_machines.insert(id, sm);
         }
 
-        info!("[Router] Loaded {} transfer(s) from database", router.transfers.len());
+        info!(
+            "[Router] Loaded {} transfer(s) from database",
+            router.transfers.len()
+        );
         Ok(router)
     }
 
@@ -530,7 +533,9 @@ mod tests {
             assert_eq!(router.transfer_count(), 1);
 
             // Advance and persist
-            router.advance_transfer(id, WarpStatus::AwaitingFinality).unwrap();
+            router
+                .advance_transfer(id, WarpStatus::AwaitingFinality)
+                .unwrap();
         }
 
         // Second router instance loads from the same DB.
@@ -551,7 +556,9 @@ mod tests {
             assert_eq!(transfer.recipient, "0xRecipient");
 
             // We can continue advancing it
-            router.advance_transfer(transfer.id, WarpStatus::Validating).unwrap();
+            router
+                .advance_transfer(transfer.id, WarpStatus::Validating)
+                .unwrap();
         }
     }
 }

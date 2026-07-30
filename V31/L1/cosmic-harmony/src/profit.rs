@@ -133,6 +133,10 @@ pub struct CoinProfile {
     pub profit_per_unit_usd: f64,
     pub fee_bps: u16,
     pub enabled: bool,
+    /// If true, the coin is excluded from profit switching.
+    pub disabled: bool,
+    /// Optional human-readable reason the coin is disabled.
+    pub disabled_reason: Option<String>,
     pub stratum_urls: Vec<String>,
     /// Block reward in the coin's smallest unit.
     pub block_reward: Amount,
@@ -145,11 +149,19 @@ pub struct CoinProfile {
 impl CoinProfile {
     /// Estimated 24h USD profit for `hashrate` units of this algorithm.
     pub fn estimate_profit(&self, hashrate: f64) -> f64 {
-        if self.fee_bps >= 10_000 || !self.enabled {
+        if self.fee_bps >= 10_000 || !self.enabled || self.disabled {
             return 0.0;
         }
         let gross = hashrate * self.profit_per_unit_usd;
         gross * (1.0 - self.fee_bps as f64 / 10_000.0)
+    }
+
+    /// Mark this profile as disabled with an optional reason.
+    pub fn with_disabled(mut self, reason: impl Into<String>) -> Self {
+        self.disabled = true;
+        self.disabled_reason = Some(reason.into());
+        self.enabled = false;
+        self
     }
 
     /// Placeholder defaults for Mainnet Alpha. These are not live quotes.
@@ -180,6 +192,8 @@ impl CoinProfile {
             profit_per_unit_usd,
             fee_bps: 100,
             enabled: true,
+            disabled: false,
+            disabled_reason: None,
             stratum_urls: vec![format!(
                 "stratum+tcp://{}.pool.example:3333",
                 coin.as_str().to_lowercase()
@@ -198,6 +212,8 @@ pub struct ProfitEntry {
     pub device: Device,
     pub hashrate: f64,
     pub profit_usd_per_day: f64,
+    /// Whether the coin is disabled and should be skipped by the router.
+    pub is_disabled: bool,
 }
 
 impl ProfitEntry {
@@ -207,6 +223,7 @@ impl ProfitEntry {
             device: profile.device,
             hashrate,
             profit_usd_per_day: profile.estimate_profit(hashrate),
+            is_disabled: profile.disabled,
         }
     }
 }
@@ -226,18 +243,19 @@ impl ProfitRouter {
         self.entries = entries;
     }
 
-    /// Return the most profitable coin, if any.
+    /// Return the most profitable active coin, if any.
     pub fn best(&self) -> Option<&ProfitEntry> {
         self.entries
             .iter()
+            .filter(|e| !e.is_disabled)
             .max_by(|a, b| a.profit_usd_per_day.total_cmp(&b.profit_usd_per_day))
     }
 
-    /// Return the most profitable coin compatible with `device`.
+    /// Return the most profitable active coin compatible with `device`.
     pub fn best_for(&self, device: Device) -> Option<&ProfitEntry> {
         self.entries
             .iter()
-            .filter(|e| e.device.is_compatible_with(device))
+            .filter(|e| !e.is_disabled && e.device.is_compatible_with(device))
             .max_by(|a, b| a.profit_usd_per_day.total_cmp(&b.profit_usd_per_day))
     }
 
@@ -280,5 +298,18 @@ mod tests {
         let cpu = router.best_for(Device::Cpu).expect("has cpu");
         assert_eq!(gpu.coin, ExternalCoin::Kaspa);
         assert_eq!(cpu.coin, ExternalCoin::Monero);
+    }
+
+    #[test]
+    fn router_skips_disabled_coin() {
+        let mut profiles = CoinProfile::defaults();
+        profiles[0] = profiles[0].clone().with_disabled("test");
+        let entries: Vec<_> = profiles
+            .iter()
+            .map(|p| ProfitEntry::from_profile(p, 100.0))
+            .collect();
+        let router = ProfitRouter::new(entries);
+        let best = router.best().expect("has best");
+        assert_ne!(best.coin, ExternalCoin::Kaspa);
     }
 }

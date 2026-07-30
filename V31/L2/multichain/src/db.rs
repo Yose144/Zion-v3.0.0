@@ -78,9 +78,8 @@ impl Db {
 
     /// Persist an HTLC record (insert or replace).
     pub fn save_htlc(&self, record: &HtlcRecord) -> MultichainResult<()> {
-        let data_json = serde_json::to_string(record).map_err(|e| {
-            MultichainError::Internal(format!("serialize HTLC record: {e}"))
-        })?;
+        let data_json = serde_json::to_string(record)
+            .map_err(|e| MultichainError::Internal(format!("serialize HTLC record: {e}")))?;
         self.conn.execute(
             r#"
             INSERT OR REPLACE INTO htlc_records
@@ -120,9 +119,8 @@ impl Db {
         let mut rows = stmt.query(rusqlite::params![hash_hex])?;
         if let Some(row) = rows.next()? {
             let json: String = row.get(0)?;
-            let record: HtlcRecord = serde_json::from_str(&json).map_err(|e| {
-                MultichainError::Internal(format!("deserialize HTLC record: {e}"))
-            })?;
+            let record: HtlcRecord = serde_json::from_str(&json)
+                .map_err(|e| MultichainError::Internal(format!("deserialize HTLC record: {e}")))?;
             Ok(Some(record))
         } else {
             Ok(None)
@@ -138,9 +136,8 @@ impl Db {
         let mut out = Vec::new();
         for r in rows {
             let json = r?;
-            let record: HtlcRecord = serde_json::from_str(&json).map_err(|e| {
-                MultichainError::Internal(format!("deserialize HTLC record: {e}"))
-            })?;
+            let record: HtlcRecord = serde_json::from_str(&json)
+                .map_err(|e| MultichainError::Internal(format!("deserialize HTLC record: {e}")))?;
             out.push(record);
         }
         Ok(out)
@@ -148,18 +145,17 @@ impl Db {
 
     /// List HTLC records filtered by state.
     pub fn list_htlc_by_state(&self, state: SwapState) -> MultichainResult<Vec<HtlcRecord>> {
-        let mut stmt = self
-            .conn
-            .prepare("SELECT data_json FROM htlc_records WHERE state = ?1 ORDER BY created_at DESC")?;
+        let mut stmt = self.conn.prepare(
+            "SELECT data_json FROM htlc_records WHERE state = ?1 ORDER BY created_at DESC",
+        )?;
         let rows = stmt.query_map(rusqlite::params![state.to_string()], |row| {
             row.get::<_, String>(0)
         })?;
         let mut out = Vec::new();
         for r in rows {
             let json = r?;
-            let record: HtlcRecord = serde_json::from_str(&json).map_err(|e| {
-                MultichainError::Internal(format!("deserialize HTLC record: {e}"))
-            })?;
+            let record: HtlcRecord = serde_json::from_str(&json)
+                .map_err(|e| MultichainError::Internal(format!("deserialize HTLC record: {e}")))?;
             out.push(record);
         }
         Ok(out)

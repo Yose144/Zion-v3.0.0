@@ -53,8 +53,7 @@ impl V3State {
 
     /// Validate and apply a V3 block to the current state.
     pub async fn apply_block(&self, block: &V3Block) -> Result<(), V3StateError> {
-        let (coinbase_count, coinbase_total) =
-            self.validate_account_transactions(block).await?;
+        let (coinbase_count, coinbase_total) = self.validate_account_transactions(block).await?;
         self.validate_utxo_transactions(block).await?;
         self.validate_coinbase_total(block, coinbase_count, coinbase_total)
             .await?;
@@ -120,11 +119,7 @@ impl V3State {
                 }
 
                 // Cross-block nonce replay guard.
-                let (_balance, nonce) = self
-                    .storage
-                    .v3_account(&tx.from)
-                    .await?
-                    .unwrap_or((0, 0));
+                let (_balance, nonce) = self.storage.v3_account(&tx.from).await?.unwrap_or((0, 0));
                 if tx.nonce != nonce {
                     return Err(V3StateError::AccountTx(format!(
                         "nonce {} for {} does not match expected {}",
@@ -138,7 +133,8 @@ impl V3State {
                 {
                     return Err(V3StateError::AccountTx(format!(
                         "amount {} exceeds TOTAL_SUPPLY {}",
-                        tx.amount_zion, emission::TOTAL_SUPPLY
+                        tx.amount_zion,
+                        emission::TOTAL_SUPPLY
                     )));
                 }
 
@@ -150,11 +146,14 @@ impl V3State {
                         .await?
                         .map(|(b, _)| b)
                         .unwrap_or(0);
-                    let running = running_balance_within_block(block, index, &tx.from, sender_balance)?;
-                    let needed = tx
-                        .amount_zion
-                        .checked_add(tx.fee_zion as u128)
-                        .ok_or_else(|| V3StateError::AccountTx("amount+fee overflow".to_string()))?;
+                    let running =
+                        running_balance_within_block(block, index, &tx.from, sender_balance)?;
+                    let needed =
+                        tx.amount_zion
+                            .checked_add(tx.fee_zion as u128)
+                            .ok_or_else(|| {
+                                V3StateError::AccountTx("amount+fee overflow".to_string())
+                            })?;
                     if running < needed {
                         return Err(V3StateError::AccountTx(format!(
                             "insufficient balance for {}: {} < {}",
@@ -212,12 +211,7 @@ impl V3State {
         }
 
         // Validate each coinbase tx_id is deterministic and amount matches.
-        for (index, tx) in block
-            .transactions
-            .iter()
-            .take(coinbase_count)
-            .enumerate()
-        {
+        for (index, tx) in block.transactions.iter().take(coinbase_count).enumerate() {
             let label = match coinbase_count {
                 1 => format!("coinbase:{}:{}", block.height, tx.to),
                 3 if index == 0 => format!("coinbase:{}:{}", block.height, tx.to),
@@ -414,7 +408,9 @@ impl V3State {
 
         // Persist updated accounts.
         for (address, (balance, nonce)) in cache {
-            self.storage.set_v3_account(&address, balance, nonce).await?;
+            self.storage
+                .set_v3_account(&address, balance, nonce)
+                .await?;
         }
 
         Ok(())
@@ -449,10 +445,14 @@ fn validate_account_tx_format(tx: &AccountTransaction) -> Result<(), V3StateErro
         ));
     }
     if tx.from.is_empty() || tx.to.is_empty() {
-        return Err(V3StateError::AccountTx("from/to must not be empty".to_string()));
+        return Err(V3StateError::AccountTx(
+            "from/to must not be empty".to_string(),
+        ));
     }
     if tx.from == tx.to {
-        return Err(V3StateError::AccountTx("from and to must differ".to_string()));
+        return Err(V3StateError::AccountTx(
+            "from and to must differ".to_string(),
+        ));
     }
     if tx.amount_zion == 0 {
         return Err(V3StateError::AccountTx("amount must be > 0".to_string()));
@@ -461,7 +461,9 @@ fn validate_account_tx_format(tx: &AccountTransaction) -> Result<(), V3StateErro
         return Err(V3StateError::AccountTx("fee must be > 0".to_string()));
     }
     if (tx.fee_zion as u128) > tx.amount_zion {
-        return Err(V3StateError::AccountTx("fee must not exceed amount".to_string()));
+        return Err(V3StateError::AccountTx(
+            "fee must not exceed amount".to_string(),
+        ));
     }
     if let Some(ref memo) = tx.memo {
         if memo.len() > 256 {
@@ -481,13 +483,19 @@ fn validate_genesis_tx_format(tx: &AccountTransaction) -> Result<(), V3StateErro
         ));
     }
     if tx.from != "genesis" {
-        return Err(V3StateError::AccountTx("from must be 'genesis'".to_string()));
+        return Err(V3StateError::AccountTx(
+            "from must be 'genesis'".to_string(),
+        ));
     }
     if tx.to.is_empty() {
-        return Err(V3StateError::AccountTx("genesis to must not be empty".to_string()));
+        return Err(V3StateError::AccountTx(
+            "genesis to must not be empty".to_string(),
+        ));
     }
     if tx.amount_zion == 0 {
-        return Err(V3StateError::AccountTx("genesis amount must be > 0".to_string()));
+        return Err(V3StateError::AccountTx(
+            "genesis amount must be > 0".to_string(),
+        ));
     }
     if tx.fee_zion != 0 {
         return Err(V3StateError::AccountTx("genesis fee must be 0".to_string()));
@@ -502,7 +510,9 @@ fn validate_coinbase_tx_format(tx: &AccountTransaction, height: u64) -> Result<(
         ));
     }
     if tx.from != "coinbase" {
-        return Err(V3StateError::Coinbase("coinbase from must be 'coinbase'".to_string()));
+        return Err(V3StateError::Coinbase(
+            "coinbase from must be 'coinbase'".to_string(),
+        ));
     }
     if tx.fee_zion != 0 {
         return Err(V3StateError::Coinbase("coinbase fee must be 0".to_string()));
@@ -514,7 +524,9 @@ fn validate_coinbase_tx_format(tx: &AccountTransaction, height: u64) -> Result<(
         )));
     }
     if tx.to.is_empty() {
-        return Err(V3StateError::Coinbase("coinbase to must not be empty".to_string()));
+        return Err(V3StateError::Coinbase(
+            "coinbase to must not be empty".to_string(),
+        ));
     }
     if !is_valid_address(&tx.to) && !is_valid_account_id(&tx.to) {
         return Err(V3StateError::Coinbase(format!(
@@ -640,10 +652,7 @@ mod tests {
         let mut state = V3State::new(storage.clone());
         state.set_balance_check_height(0);
 
-        storage
-            .set_v3_account("miner", 0, 0)
-            .await
-            .unwrap();
+        storage.set_v3_account("miner", 0, 0).await.unwrap();
 
         let height = 1u64;
         let subsidy = block_subsidy(height);
@@ -723,10 +732,7 @@ mod tests {
         let to = "zion1burn0000000000000000000000000000000dead".to_string();
 
         let storage = Arc::new(Storage::open_in_memory().await.unwrap());
-        storage
-            .set_v3_account(&from, 1_000_000, 0)
-            .await
-            .unwrap();
+        storage.set_v3_account(&from, 1_000_000, 0).await.unwrap();
 
         let amount = 100_000u128;
         let fee = 1_000u64;
@@ -764,7 +770,11 @@ mod tests {
         // Add coinbase so the block is structurally valid.
         let subsidy = block_subsidy(1);
         let (miner, human, issobella, _burn) = emission::fee_split(subsidy);
-        let coinbase_tos = vec!["miner".to_string(), "human".to_string(), "issobella".to_string()];
+        let coinbase_tos = vec![
+            "miner".to_string(),
+            "human".to_string(),
+            "issobella".to_string(),
+        ];
         let coinbase_amounts = vec![miner, human, issobella];
         for (i, (to_addr, amount)) in coinbase_tos.iter().zip(coinbase_amounts.iter()).enumerate() {
             let label = match i {
