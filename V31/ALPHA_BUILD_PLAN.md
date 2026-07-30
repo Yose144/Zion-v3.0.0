@@ -176,6 +176,8 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
 7. ~~**Tag `v3.1.0-alpha.2`**~~ — **Hotovo (2026-07-30):** tag vytvořen a pushnut; workspace build prochází.
 8. ~~**Finální cut-over plán V3 → V31**~~ — **Hotovo (2026-07-30):** vytvořen `V31/CUTOVER_PLAN.md` s rolling blue/green strategií.
 9. ~~**Plná L3–L6 end-to-end verifikace**~~ — **Hotovo (2026-07-30):** vytvořen `V31/smoke` crate s cross-layer smoke testem (`l3_l6_cross_layer_smoke`), který propojuje NCL compute job → AI-Native consciousness engine → Oasis bridge → Oasis player → Free World grant → Issobella proposal. Test prochází.
+10. ~~**Cross-chain WARP transfer (Base ↔ ZionL1)**~~ — **Hotovo (2026-07-30):** `V31/smoke` obsahuje `warp_htlc_cross_chain_smoke` s HTLC lock/claim mezi Base a ZionL1.
+11. ~~**DAO governance proposal + vote**~~ — **Hotovo (2026-07-30):** `V31/smoke` obsahuje `dao_governance_proposal_smoke` s proposal, hlasováním a quorum check.
 
 ---
 
