@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 
 export type ObservatoryMode =
+  | "maintenance"
   | "planet-orbit"
   | "warp-speed"
   | "galaxy-core"
@@ -17,6 +18,7 @@ type ObservatoryContextType = {
 const ObservatoryContext = createContext<ObservatoryContextType | null>(null);
 
 const MODES: ObservatoryContextType["availableModes"] = [
+  { id: "maintenance", label: "Maintenance Starfield", description: "Gold starfield — clean and fast" },
   { id: "planet-orbit", label: "Turquoise Core", description: "Default turquoise atmosphere" },
   { id: "galaxy-core", label: "Galaxy Core", description: "Contact approach — inward starflow" },
   { id: "desktop-agent", label: "Desktop Agent", description: "Purple starfield — desktop agent match" },
@@ -24,7 +26,7 @@ const MODES: ObservatoryContextType["availableModes"] = [
 ];
 
 export function ObservatoryProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<ObservatoryMode>('planet-orbit');
+  const [mode, setMode] = useState<ObservatoryMode>('maintenance');
 
   const value = useMemo(
     () => ({ mode, setMode, availableModes: MODES }),
