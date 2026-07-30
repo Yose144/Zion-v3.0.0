@@ -38,6 +38,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::net::TcpListener;
+use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
 
 /// Shared application state.
@@ -133,6 +134,12 @@ pub fn build_router(state: OasisState) -> Router {
         )
         .route("/api/v1/oasis/ai/npc-dialogue", post(ai_npc_dialogue))
         .route("/api/v1/oasis/ai/hiran-health", get(ai_hiran_health))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any),
+        )
         .with_state(state)
 }
 
