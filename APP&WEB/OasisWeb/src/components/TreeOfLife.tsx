@@ -94,10 +94,22 @@ export default function TreeOfLife() {
 
     const glowTexture = createGlowTexture();
 
-    return { branches, fruits, branchGeometries, rootGeometries, glowTexture };
+    const leafPalette = ['#10b981', '#22d3ee', '#a855f7', '#ec4899', '#f59e0b'];
+    const leaves = fruits.flatMap((pos, fruitIdx) => {
+      return Array.from({ length: 5 }).map((_, i) => {
+        const dir = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+        const position = pos.clone().add(dir.multiplyScalar(0.22 + Math.random() * 0.12));
+        const rotation = new THREE.Euler(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+        const color = leafPalette[(fruitIdx + i) % leafPalette.length];
+        const scale = 0.08 + Math.random() * 0.06;
+        return { position, rotation, color, scale };
+      });
+    });
+
+    return { branches, fruits, branchGeometries, rootGeometries, glowTexture, leaves };
   }, []);
 
-  const { branches, fruits, branchGeometries, rootGeometries, glowTexture } = sceneData;
+  const { branches, fruits, branchGeometries, rootGeometries, glowTexture, leaves } = sceneData;
 
   useFrame((state) => {
     if (groupRef.current) {
@@ -150,6 +162,20 @@ export default function TreeOfLife() {
             roughness={0.6}
             metalness={0.2}
             toneMapped={false}
+          />
+        </mesh>
+      ))}
+
+      {leaves.map((leaf, i) => (
+        <mesh key={`leaf-${i}`} position={leaf.position} rotation={leaf.rotation} scale={leaf.scale}>
+          <planeGeometry args={[1, 1]} />
+          <meshStandardMaterial
+            color={leaf.color}
+            emissive={leaf.color}
+            emissiveIntensity={0.5}
+            side={THREE.DoubleSide}
+            transparent
+            opacity={0.9}
           />
         </mesh>
       ))}
