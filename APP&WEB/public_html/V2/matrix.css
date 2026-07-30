@@ -5,3 +5,15 @@
 
 body {background: black;}
 canvas {display:block;}
+
+/* === GLOBAL RESPONSIVE FIXES === */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  body {
+    overflow: hidden;
+  }
+}

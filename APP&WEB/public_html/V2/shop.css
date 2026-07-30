@@ -1107,3 +1107,19 @@ html {
 ::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(180deg, #7a5fe0, #e85ab3);
 }
+
+/* === GLOBAL RESPONSIVE FIXES === */
+img, video, canvas, iframe {
+    max-width: 100%;
+    height: auto;
+}
+
+@media (max-width: 768px) {
+    .products-grid,
+    .shop-hero,
+    .shop-section {
+        max-width: 100%;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+}

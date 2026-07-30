@@ -156,3 +156,17 @@
     width: 8px;
   }
 }
+
+/* === GLOBAL RESPONSIVE FIXES === */
+img, video, canvas, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  .slideshow-container img,
+  .slideshow-container1 img {
+    width: 100%;
+    height: auto;
+  }
+}

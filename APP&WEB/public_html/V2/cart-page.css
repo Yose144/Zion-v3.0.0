@@ -649,3 +649,15 @@
 .terms-note a:hover {
     text-decoration: underline;
 }
+
+/* === GLOBAL RESPONSIVE FIXES === */
+img, video, canvas, iframe {
+    max-width: 100%;
+    height: auto;
+}
+
+@media (max-width: 768px) {
+    .cart-page {
+        padding: 100px 12px 60px;
+    }
+}

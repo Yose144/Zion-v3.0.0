@@ -1780,3 +1780,26 @@ html {
     justify-content: center;
   }
 }
+
+/* === GLOBAL RESPONSIVE FIXES === */
+img, video, canvas, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  .rasta-hero-inner,
+  .rasta-section-inner,
+  .rasta-container {
+    max-width: 100%;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rasta-hero {
+    min-height: auto;
+    padding: clamp(40px, 10vh, 80px) 14px;
+  }
+}

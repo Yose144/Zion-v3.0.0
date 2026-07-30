@@ -57,3 +57,16 @@
   .video-close { top: -1rem; right: -1rem; }
   #video-modal .video-container { width: 95vw; }
 }
+
+/* === GLOBAL RESPONSIVE FIXES === */
+img, video, canvas, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  #video-modal .video-container {
+    width: 95vw;
+    max-width: 100%;
+  }
+}
