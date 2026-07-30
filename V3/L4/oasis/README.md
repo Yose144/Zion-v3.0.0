@@ -1,6 +1,6 @@
 # ZION OASIS — V3 L4 Consciousness Mining Game
 
-> **AAA Spiritual MMORPG** built on ZION blockchain. Players earn XP through mining, meditation, quests with 51 sacred avatars, guild warfare, and the Golden Egg treasure hunt.
+> **AAA Spiritual MMORPG** built on ZION blockchain. Players earn XP through mining, meditation, quests with 199 sacred avatars, guild warfare, and the Golden Egg treasure hunt.
 
 ## Architecture
 
@@ -61,6 +61,13 @@ Backend endpoints:
 - `ws://localhost:8095` — WebSocket events
 - `http://localhost:9101/metrics` — Prometheus
 
+To point the UE5 client at the live server instead of localhost, set these environment variables before launching the editor:
+
+```bash
+export OASIS_API_HOST=https://oasis.zionterranova.com
+export CHAIN_RPC_HOST=http://localhost:8444
+```
+
 ### 3. Launch UE5 Editor
 
 ```bash
@@ -91,18 +98,20 @@ See [`ue5/README_UE5.md`](ue5/README_UE5.md) for step-by-step Blueprint creation
 | 8 | Unity | Da'at | 2,000,000 | 12.0x |
 | 9 | On The Star | Keter | 10,000,000 | 15.0x |
 
-### 51 Sacred Avatars
+### 199 Sacred Avatars
 
-51 NFT avatars across 7 spiritual traditions:
-- Hindu Deities (0-6): Krishna-Maitreya, Rama, Sita, Hanuman, Saraswati...
-- Ascended Masters (7-16): El Morya, Saint Germain, Sanat Kumara...
-- Buddhist Masters (17-20): Avalokiteshvara, Dalai Lama XIV...
-- Christian Saints (21-24): Yeshua Sananda, Panna Maria...
-- Historical Legends (25-30): King Arthur, Gandhi, Einstein, Karel IV...
-- Matrix Heroes (31-34): Neo, Trinity, Morpheus, ZION
-- ZION Originals (35-50): Issobela Guardian, Shanti, Sri Kalki Avatar...
+199 NFT avatars across dozens of spiritual traditions (Vedic, Buddhist, Christian, Indigenous, Māori, Yoruba, Egyptian, Norse, Atlantean, and more):
 
-Each avatar has 5 quests. Complete all = 255 quests total.
+```bash
+# Regenerate UE5 DataTables and the EAvatarID enum from data/avatars.json
+python3 scripts/gen_ue5_avatar_pipeline.py
+```
+
+- Avatar data: `data/avatars.json` (199 entries)
+- Quest data: `UE5_AvatarQuestTable.csv` / `UE5_AvatarDataTable.csv`
+- Enum: `ue5/Source/ZionOasis/Avatar/AvatarTypes.h` (auto-updated between `GENERATED` markers)
+
+Quest counts vary by avatar; the DataTable reflects the actual number per avatar.
 
 ### Golden Egg Treasure Hunt
 
@@ -129,13 +138,25 @@ Each avatar has 5 quests. Complete all = 255 quests total.
 | GET | `/api/v1/oasis/player/:address` | Player profile |
 | POST | `/api/v1/oasis/player/:address/xp` | Award XP |
 | GET | `/api/v1/oasis/leaderboard` | Top players |
+| GET | `/api/v1/oasis/leaderboard/top100` | Top 100 players |
+| GET | `/api/v1/oasis/avatars` | List avatars (opt. `ray`, `min_cl`, `rarity`) |
+| GET | `/api/v1/oasis/avatars/:id` | Avatar details |
+| GET | `/api/v1/oasis/avatars/:id/quests` | Avatar quests |
+| GET | `/api/v1/oasis/quests` | All quest definitions |
 | POST | `/api/v1/oasis/guild` | Create guild |
+| GET | `/api/v1/oasis/guilds` | List guilds |
 | GET | `/api/v1/oasis/guild/:id` | Guild info |
 | POST | `/api/v1/oasis/guild/:id/join` | Join guild |
 | GET | `/api/v1/oasis/map` | Territory map |
 | GET | `/api/v1/oasis/rewards/pools` | Reward status |
+| GET | `/api/v1/oasis/prize-tiers` | Prize tier config |
 | GET | `/api/v1/oasis/golden-egg/progress/:address` | Egg progress |
+| GET | `/api/v1/oasis/golden-egg/leaderboard` | Egg leaderboard |
 | POST | `/api/v1/oasis/combat/resolve` | Resolve combat |
+| POST | `/api/v1/oasis/raid-team` | Create raid team |
+| GET | `/api/v1/oasis/raid-team/:id` | Raid team info |
+| POST | `/api/v1/oasis/raid-team/:id/join` | Join raid team |
+| GET | `/api/v1/oasis/raid-leaderboard` | Raid leaderboard |
 
 Full API docs in `src/server.rs`.
 
@@ -180,7 +201,7 @@ oasis/
 │   ├── websocket.rs            # WS broadcast hub
 │   └── error.rs                # Error types
 ├── data/                       # Static game data
-│   ├── avatars.json            # 51 avatar definitions
+│   ├── avatars.json            # 199 avatar definitions
 │   ├── golden_egg.json         # 108 clue definitions
 │   ├── prize_tiers.json        # Reward distribution
 │   └── world.json              # Territory genesis map
