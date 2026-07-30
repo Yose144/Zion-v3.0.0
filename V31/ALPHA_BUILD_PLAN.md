@@ -175,7 +175,7 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
 6. ~~**HTLC persistence**~~ — **Hotovo (2026-07-30):** SQLite backend pro HTLC v `zion-multichain`.
 7. ~~**Tag `v3.1.0-alpha.2`**~~ — **Hotovo (2026-07-30):** tag vytvořen a pushnut; workspace build prochází.
 8. ~~**Finální cut-over plán V3 → V31**~~ — **Hotovo (2026-07-30):** vytvořen `V31/CUTOVER_PLAN.md` s rolling blue/green strategií.
-9. **Plná L3–L6 end-to-end verifikace** — Oasis game, NCL compute marketplace, AI-native agenti, Free World, Issobella. Toto je další major milestone po `v3.1.0-alpha.2` a před plným cut-over.
+9. **Plná L3–L6 end-to-end verifikace** — Oasis game, NCL compute marketplace, AI-native agenti, Free World, Issobella. **Status 2026-07-30:** unit testy všech L3–L6 cratech procházejí (`zion-ai-native`: 337, `zion-ncl`: 42, `zion-oasis`: 124, `zion-free-world`: 3, `zion-issobella`: 3), chybí cross-layer runtime smoke test. Toto je další major milestone po `v3.1.0-alpha.2` a před plným cut-over.
 
 ---
 
