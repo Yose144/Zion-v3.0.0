@@ -76,7 +76,7 @@ const CexCopy = {
   faq: { cs: `Časté dotazy`, en: `FAQ` },
   startTrading: { cs: `Začni obchodovat`, en: `Start Trading` },
   wzionIsAvailableOnUniswapV3Bas: { cs: `wZION je dostupný na Uniswap V3 (Base). Žádné KYC, žádné čekání. CEX listování plánováno na později.`, en: `wZION is available on Uniswap V3 (Base). No KYC, no waiting. CEX listings planned for later.` },
-  defiHub: { cs: `DeFi Hub`, en: `DeFi Hub` },
+  defiHub: { cs: `Multichain Hub`, en: `Multichain Hub` },
   bridge: { cs: `Bridge`, en: `Bridge` },
 };
 

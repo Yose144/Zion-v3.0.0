@@ -62,7 +62,7 @@ const TreeOfLifeTreeOfLifePageClientCopy = {
   threePillars: { cs: `Tři pilíře`, en: `Three Pillars` },
   organismDiagnosticsLiveData: { cs: `Diagnostika organismu — živá data`, en: `Organism diagnostics — live data` },
   emanationStatus: { cs: `Stav emanace`, en: `Emanation status` },
-  whichAspectsOfZionAreAliveInRu: { cs: `Které aspekty ZIONu jsou živé v runtime, které čekají na manifestaci. Strom života jako diagnostický nástroj. Data z /api/tree-of-life/tree-health — agregováno z blockchain, DeFi, bridge a NCL API.`, en: `Which aspects of ZION are alive in runtime, which await manifestation. The Tree of Life as a diagnostic tool. Data from /api/tree-of-life/tree-health — aggregated from blockchain, DeFi, bridge and NCL APIs.` },
+  whichAspectsOfZionAreAliveInRu: { cs: `Které aspekty ZIONu jsou živé v runtime, které čekají na manifestaci. Strom života jako diagnostický nástroj. Data z /api/tree-of-life/tree-health — agregováno z blockchain, Multichain, bridge a NCL API.`, en: `Which aspects of ZION are alive in runtime, which await manifestation. The Tree of Life as a diagnostic tool. Data from /api/tree-of-life/tree-health — aggregated from blockchain, Multichain, bridge and NCL APIs.` },
   treeOverall: { cs: `Strom celkem`, en: `Tree overall` },
   pillarOfMercy: { cs: `Pilíř Milosrdenství`, en: `Pillar of Mercy` },
   chokmahChesedNetzach: { cs: `Chokmah, Chesed, Netzach`, en: `Chokmah, Chesed, Netzach` },
@@ -177,7 +177,7 @@ const SEPHIROT: Sephira[] = [
   {
     id: 'chesed', name: 'Chesed', hebrew: 'חֶסֶד',
     meaning: { cs: 'Milosrdenství', en: 'Mercy' },
-    zionLayer: 'L2 DeFi (Staking, Farming, Atomic Swap)',
+    zionLayer: 'L2 Multichain (Staking, Farming, Atomic Swap)',
     zionPath: 'V3/L2/contracts/hardhat/sol/ZIONStaking.sol, ZIONFarm.sol',
     pillar: 'mercy',
     emanates: {

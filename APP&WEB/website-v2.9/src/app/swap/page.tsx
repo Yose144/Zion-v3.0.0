@@ -117,9 +117,9 @@ const SwapCopy = {
   noActiveHtlcLocksInTheDaemon: { cs: `Žádné aktivní HTLC zámky v daemonu`, en: `No active HTLC locks in the daemon` },
   faq: { cs: `FAQ`, en: `FAQ` },
   frequentlyAskedQuestions: { cs: `Často kladené dotazy`, en: `Frequently Asked Questions` },
-  learnMoreAboutZionDefi: { cs: `Více o ZION DeFi`, en: `Learn more about ZION DeFi` },
+  learnMoreAboutZionDefi: { cs: `Více o ZION Multichain`, en: `Learn more about ZION Multichain` },
   bridge: { cs: `Bridge`, en: `Bridge` },
-  defiHub: { cs: `DeFi Hub`, en: `DeFi Hub` },
+  defiHub: { cs: `Multichain Hub`, en: `Multichain Hub` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
 };
 

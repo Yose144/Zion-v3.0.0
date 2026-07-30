@@ -29,7 +29,7 @@ const t = {
     philosophy: { cs: 'Filozofie',   en: 'Philosophy' },
     ai_native:  { cs: 'AI Native',   en: 'AI Native' },
     monitoring: { cs: 'Monitoring',  en: 'Monitoring' },
-    defi:       { cs: 'DeFi Hub',    en: 'DeFi Hub' },
+    defi:       { cs: 'Multichain Hub',    en: 'Multichain Hub' },
     meme_lab:   { cs: 'Meme Lab',    en: 'Meme Lab' },
     kompas:     { cs: 'Zlatý Kompas', en: 'Golden Compass' },
     info_group: { cs: 'Info', en: 'Info' },
@@ -38,7 +38,7 @@ const t = {
     mission_group: { cs: 'Mise', en: 'Mission' },
     network_group: { cs: 'Síť & Mining', en: 'Network & Mining' },
     operator_group: { cs: 'Operátor', en: 'Operator' },
-    defi_group: { cs: 'DeFi', en: 'DeFi' },
+    defi_group: { cs: 'Multichain', en: 'Multichain' },
     learn_group: { cs: 'Učení', en: 'Learn' },
     l3_hiran:   { cs: 'L3 Hiran', en: 'L3 Hiran' },
     l4_oasis:   { cs: 'L4 Oasis', en: 'L4 Oasis' },
@@ -359,8 +359,8 @@ const t = {
   features: {
     heading: { cs: 'Vrstvy protokolu', en: 'Protocol Layers' },
     subheading: {
-      cs: 'Šestisložková architektura: L1 Rust jádro, L2 Bridge · DAO · DeFi, L3 AI Native · WARP · NCL, L4 Oasis, L5 Free World, L6 Issobella.',
-      en: 'Six-layer architecture: L1 Rust core, L2 Bridge · DAO · DeFi, L3 AI Native · WARP · NCL, L4 Oasis, L5 Free World, L6 Issobella.',
+      cs: 'Šestisložková architektura: L1 Rust jádro, L2 Multichain (Bridge · DAO · DEX), L3 AI Native · WARP · NCL, L4 Oasis, L5 Free World, L6 Issobella.',
+      en: 'Six-layer architecture: L1 Rust core, L2 Multichain (Bridge · DAO · DEX), L3 AI Native · WARP · NCL, L4 Oasis, L5 Free World, L6 Issobella.',
     },
     tracks: {
       chv3: {
