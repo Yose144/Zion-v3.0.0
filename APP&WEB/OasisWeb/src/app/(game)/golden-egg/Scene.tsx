@@ -10,7 +10,6 @@ import { getZonePosition } from '@/lib/zones';
 import InteractiveObject from '@/components/InteractiveObject';
 import GlassPanel from '@/components/GlassPanel';
 import Skeleton from '@/components/Skeleton';
-import ErrorBoundary from '@/components/ErrorBoundary';
 import { CLUES, CATEGORIES, type Clue } from './clues';
 
 const zonePos = getZonePosition('golden-egg');
@@ -87,7 +86,6 @@ export default function GoldenEggScene() {
   }, [selected, cluePositions]);
 
   return (
-    <ErrorBoundary>
       <group position={zonePos} ref={groupRef}>
         <GoldenEgg />
 
@@ -170,7 +168,6 @@ export default function GoldenEggScene() {
           </GlassPanel>
         </Html>
       </group>
-    </ErrorBoundary>
   );
 }
 

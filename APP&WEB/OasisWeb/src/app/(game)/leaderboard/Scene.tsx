@@ -9,7 +9,6 @@ import { RoundedBox } from '@react-three/drei';
 import InteractiveObject from '@/components/InteractiveObject';
 import GlassPanel from '@/components/GlassPanel';
 import Skeleton from '@/components/Skeleton';
-import ErrorBoundary from '@/components/ErrorBoundary';
 import { getZonePosition } from '@/lib/zones';
 
 const zonePos = getZonePosition('leaderboard');
@@ -21,7 +20,6 @@ export default function LeaderboardScene() {
   const top3 = useMemo(() => entries.slice(0, 3), [entries]);
 
   return (
-    <ErrorBoundary>
       <group position={zonePos}>
         {loading && (
           <Html transform center distanceFactor={8} position={[0, 1, 0]}>
@@ -74,7 +72,6 @@ export default function LeaderboardScene() {
           );
         })}
       </group>
-    </ErrorBoundary>
   );
 }
 
