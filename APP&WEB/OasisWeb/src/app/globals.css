@@ -12,6 +12,9 @@ html,
 body {
   background: #05070a;
   color: #fff;
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
 }

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronRight } from 'lucide-react';
 
 const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
 const OasisScene = dynamic(() => import('./OasisScene'), { ssr: false });
@@ -43,7 +45,7 @@ export default function OasisClient() {
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1.2, delay: 3.5 }}
-              className="pointer-events-none absolute top-6 left-6 z-10 max-w-sm"
+              className="pointer-events-auto absolute top-6 left-6 z-10 max-w-sm"
             >
               <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-oasis-cyan to-oasis-purple">
                 ZION OASIS
@@ -51,6 +53,16 @@ export default function OasisClient() {
               <p className="text-sm text-gray-400 mt-1">
                 Klikni na svět pro detail. Tahni myší, scrolluj pro zoom.
               </p>
+              <Link href="/dashboard">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-6 py-2.5 text-sm font-bold text-white shadow-lg"
+                >
+                  Enter the Game
+                  <ChevronRight className="h-4 w-4" />
+                </motion.div>
+              </Link>
             </motion.div>
           )}
         </AnimatePresence>

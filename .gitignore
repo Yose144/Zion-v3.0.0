@@ -57,6 +57,9 @@ dashboard/
 # But track the website dashboard pages
 !APP&WEB/website-v2.9/src/app/dashboard/
 !APP&WEB/website-v2.9/src/app/dashboard/**
+# And track OasisWeb dashboard
+!APP&WEB/OasisWeb/src/app/(game)/dashboard/
+!APP&WEB/OasisWeb/src/app/(game)/dashboard/**
 
 # Runtime / misc
 /APP/
