@@ -54,11 +54,16 @@ export default function World({ name, color, position, size, info }: WorldProps)
         />
       </Sphere>
 
-      {selected && (
-        <Html distanceFactor={10} center>
-          <div className="rounded-xl border border-white/10 bg-black/80 p-4 shadow-xl backdrop-blur-sm min-w-[220px] pointer-events-none select-none">
-            <h3 className="font-bold text-lg" style={{ color }}>{name}</h3>
-            <p className="text-sm text-gray-300 mt-1">{info}</p>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[size * 1.5, size * 1.54, 64]} />
+        <meshBasicMaterial color={color} transparent opacity={hovered ? 0.6 : 0.25} side={THREE.DoubleSide} />
+      </mesh>
+
+      {(hovered || selected) && (
+        <Html distanceFactor={10} center position={[0, size + 0.45, 0]}>
+          <div className="rounded-xl border border-white/10 bg-black/80 p-3 shadow-xl backdrop-blur-sm min-w-[180px] pointer-events-none select-none text-center">
+            <h3 className="font-bold text-sm" style={{ color }}>{name}</h3>
+            {selected && <p className="text-xs text-gray-300 mt-1">{info}</p>}
           </div>
         </Html>
       )}

@@ -88,6 +88,10 @@ function TerritoryRing() {
 
   return (
     <group ref={groupRef}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[radius - 0.04, radius + 0.04, 128]} />
+        <meshBasicMaterial color="#22d3ee" transparent opacity={0.12} side={THREE.DoubleSide} />
+      </mesh>
       {worlds.map((w) => (
         <World key={w.id} id={w.id} name={w.name} color={w.color} position={w.position} size={w.size} info={w.info} />
       ))}

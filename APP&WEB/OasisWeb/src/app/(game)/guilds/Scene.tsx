@@ -94,6 +94,7 @@ export default function GuildsScene() {
                 <octahedronGeometry args={[0.18, 0]} />
                 <meshStandardMaterial color="#ffffff" emissive={color} emissiveIntensity={0.6} />
               </mesh>
+              <GuildAvatars count={Math.min(g.members.length, 8)} color={color} />
             </InteractiveObject>
           );
         })}
@@ -166,5 +167,31 @@ function GuildDetail({
       </div>
       <button onClick={onClose} className="mt-1 text-xs text-gray-400 hover:text-white">Close</button>
     </div>
+  );
+}
+
+function GuildAvatars({ count, color }: { count: number; color: string }) {
+  if (count <= 0) return null;
+  return (
+    <group position={[0, 0.1, 0]}>
+      {[...Array(count)].map((_, i) => {
+        const a = (i / count) * Math.PI * 2;
+        const r = 0.55;
+        const x = Math.cos(a) * r;
+        const z = Math.sin(a) * r;
+        return (
+          <group key={i} position={[x, 0, z]}>
+            <mesh position={[0, 0.18, 0]}>
+              <sphereGeometry args={[0.08, 16, 16]} />
+              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.4} />
+            </mesh>
+            <mesh position={[0, 0.05, 0]}>
+              <cylinderGeometry args={[0.05, 0.07, 0.12, 12]} />
+              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.3} />
+            </mesh>
+          </group>
+        );
+      })}
+    </group>
   );
 }
