@@ -48,7 +48,7 @@ import { CONTRACTS, SEED_PRICE_USD, CCA_AUCTION_PARAMS, PANCAKE_V3 } from '@/lib
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
 
 const DefiCopy = {
-  defiHubBaseMainnet: { cs: `DeFi Hub · Base Mainnet`, en: `DeFi Hub · Base Mainnet` },
+  defiHubBaseMainnet: { cs: `Multichain Hub · Base Mainnet`, en: `Multichain Hub · Base Mainnet` },
   wzionEcosystem: { cs: `wZION ekosystém`, en: `wZION ecosystem` },
   manageWzion: { cs: `Spravuj wZION`, en: `Manage wZION` },
   swapBridgeAndManageWzionOnBase: { cs: `Swapuj, přemosťuj a spravuj wZION na Base. Reálné kontrakty, reálná likvidita, živé ceny z on-chain poolů.`, en: `Swap, bridge, and manage wZION on Base. Real contracts, real liquidity, live prices from on-chain pools.` },
@@ -64,12 +64,12 @@ const DefiCopy = {
   switch: { cs: `Přepnout`, en: `Switch` },
   connectWallet: { cs: `Připojit peněženku`, en: `Connect Wallet` },
   openUniswapUsdt: { cs: `Otevřít Uniswap (USDT)`, en: `Open Uniswap (USDT)` },
-  defiHubEarlyBeta: { cs: `DeFi Hub — raná beta`, en: `DeFi Hub — Early Beta` },
+  defiHubEarlyBeta: { cs: `Multichain Hub — raná beta`, en: `Multichain Hub — Early Beta` },
   wzionContractsAreDeployedOnBas: { cs: `wZION kontrakty jsou nasazeny na Base mainnetu, ale likvidita je zatím nízká. Používejte malé částky a buďte opatrní při velkých swapech.`, en: `wZION contracts are deployed on Base mainnet, but liquidity is still low. Use small amounts and be cautious with large swaps.` },
-  defiSections: { cs: `DeFi sekce`, en: `DeFi sections` },
+  defiSections: { cs: `Multichain sekce`, en: `Multichain sections` },
   lowDexLiquidity: { cs: `Nízká DEX likvidita`, en: `Low DEX Liquidity` },
   telemetry: { cs: `Telemetrie`, en: `Telemetry` },
-  defiTelemetry: { cs: `DeFi telemetrie`, en: `DeFi Telemetry` },
+  defiTelemetry: { cs: `Multichain telemetrie`, en: `Multichain Telemetry` },
   wzionMetricsAggregatedFromBase: { cs: `Metriky wZION agregované z Base kontraktů, pool API a bridge relayeru v reálném čase.`, en: `wZION metrics aggregated from Base contracts, pool API, and bridge relayer in real time.` },
   currentPriceFromThePrimaryWzio: { cs: `Aktuální cena z primárního wZION/USDT poolu nebo seed cena.`, en: `Current price from the primary wZION/USDT pool or seed price.` },
   totalInPools: { cs: `celkem v poolech`, en: `total in pools` },
@@ -301,7 +301,7 @@ function StatCard({
   );
 }
 
-// ─── DeFi Sections (same pattern as /pool) ──────────────────────────────────
+// ─── Multichain Sections (same pattern as /pool) ──────────────────────────────────
 
 type SectionTab = 'overview' | 'swap' | 'earn' | 'bridge' | 'governance' | 'pools' | 'auction';
 
@@ -712,7 +712,7 @@ export default function DefiPage() {
         </div>
       </section>
 
-      {/* ═══════ DeFi SECTION TABS ═══════ */}
+      {/* ═══════ Multichain SECTION TABS ═══════ */}
       <section className="zion-container relative z-10 mb-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -777,7 +777,7 @@ export default function DefiPage() {
           </section>
         )}
 
-        {/* ═══════ DeFi TELEMETRY ═══════ */}
+        {/* ═══════ Multichain TELEMETRY ═══════ */}
         <section className="zion-container relative z-10 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 24 }}

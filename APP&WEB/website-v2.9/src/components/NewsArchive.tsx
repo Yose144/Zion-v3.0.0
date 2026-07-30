@@ -9,7 +9,7 @@ const NewsArchiveCopy = {
   backToHomepage: { cs: `Zpět na hlavní stránku`, en: `Back to homepage` },
   newsArchive: { cs: `Archív novinek`, en: `News Archive` },
   news: { cs: `Novinky`, en: `News` },
-  allUpdatesFromTheZionEcosystem: { cs: `Všechny zprávy z vývoje ZION ekosystému — DeFi, těžba, benchmarky, síť a releases.`, en: `All updates from the ZION ecosystem — DeFi, mining, benchmarks, network, and releases.` },
+  allUpdatesFromTheZionEcosystem: { cs: `Všechny zprávy z vývoje ZION ekosystému — Multichain, OASIS, těžba, benchmarky, síť a releases.`, en: `All updates from the ZION ecosystem — Multichain, OASIS, mining, benchmarks, network, and releases.` },
   readMore: { cs: `Číst více`, en: `Read more` },
 };
 

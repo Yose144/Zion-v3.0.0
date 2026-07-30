@@ -516,7 +516,7 @@ export default function AccountPage() {
                 <Globe2 className="h-4 w-4" /> Explorer
               </Link>
               <Link href="/defi" className="zion-button-secondary">
-                <TrendingUp className="h-4 w-4" /> DeFi
+                <TrendingUp className="h-4 w-4" /> Multichain
               </Link>
             </div>
           </motion.div>

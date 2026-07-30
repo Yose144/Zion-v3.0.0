@@ -54,7 +54,7 @@ export default function Navigation() {
     },
     {
       title: tr('nav', 'defi_group', lang),
-      icon: Coins,
+      icon: Globe2,
       color: '251, 191, 36',
       items: [
         { href: '/defi', label: tr('nav', 'defi', lang) },
@@ -112,7 +112,7 @@ export default function Navigation() {
   /* ── Secondary icons — medium, core ecosystem ── */
   const secondaryIcons = [
     { href: '/mining', icon: HardHat, color: '245, 158, 11', label: tr('nav', 'mining', lang) },
-    { href: '/defi', icon: Coins, color: '16, 185, 129', label: tr('nav', 'defi', lang) },
+    { href: '/defi', icon: Globe2, color: '16, 185, 129', label: tr('nav', 'defi', lang) },
     { href: '/download', icon: Download, color: '251, 191, 36', label: tr('nav', 'download', lang) },
   ];
 
