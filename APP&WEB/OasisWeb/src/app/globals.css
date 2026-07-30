@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --color-oasis-black: #05070a;
+  --color-oasis-cyan: #22d3ee;
+  --color-oasis-purple: #a855f7;
+  --color-oasis-emerald: #10b981;
+  --color-oasis-gold: #f59e0b;
+}
+
+html,
+body {
+  background: #05070a;
+  color: #fff;
+  height: 100%;
+  overflow: hidden;
+}
