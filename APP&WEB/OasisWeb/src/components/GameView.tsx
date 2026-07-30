@@ -7,14 +7,14 @@ import Skeleton from './Skeleton';
 import type { ZoneId } from '@/lib/zones';
 
 const Scenes: Record<ZoneId, ReturnType<typeof dynamic>> = {
-  dashboard: dynamic(() => import('@/app/(game)/dashboard/Scene'), { ssr: false, loading: () => <Skeleton /> }),
-  avatars: dynamic(() => import('@/app/(game)/avatars/Scene'), { ssr: false, loading: () => <Skeleton /> }),
-  quests: dynamic(() => import('@/app/(game)/quests/Scene'), { ssr: false, loading: () => <Skeleton /> }),
-  leaderboard: dynamic(() => import('@/app/(game)/leaderboard/Scene'), { ssr: false, loading: () => <Skeleton /> }),
-  onboarding: dynamic(() => import('@/app/(game)/onboarding/Scene'), { ssr: false, loading: () => <Skeleton /> }),
-  territories: dynamic(() => import('@/app/(game)/territories/Scene'), { ssr: false, loading: () => <Skeleton /> }),
-  guilds: dynamic(() => import('@/app/(game)/guilds/Scene'), { ssr: false, loading: () => <Skeleton /> }),
-  'golden-egg': dynamic(() => import('@/app/(game)/golden-egg/Scene'), { ssr: false, loading: () => <Skeleton /> }),
+  dashboard: dynamic(() => import('@/app/(game)/dashboard/Scene'), { ssr: false }),
+  avatars: dynamic(() => import('@/app/(game)/avatars/Scene'), { ssr: false }),
+  quests: dynamic(() => import('@/app/(game)/quests/Scene'), { ssr: false }),
+  leaderboard: dynamic(() => import('@/app/(game)/leaderboard/Scene'), { ssr: false }),
+  onboarding: dynamic(() => import('@/app/(game)/onboarding/Scene'), { ssr: false }),
+  territories: dynamic(() => import('@/app/(game)/territories/Scene'), { ssr: false }),
+  guilds: dynamic(() => import('@/app/(game)/guilds/Scene'), { ssr: false }),
+  'golden-egg': dynamic(() => import('@/app/(game)/golden-egg/Scene'), { ssr: false }),
 };
 
 const Panels: Record<ZoneId, ReturnType<typeof dynamic>> = {
