@@ -26,7 +26,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "3.0.4"
+version = "3.0.7"
 edition = "2021"
 license = "MIT"
 authors = ["Yose144"]
@@ -53,6 +53,9 @@ tokio = "1"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 zeroize = { version = "1", features = ["derive"] }
+bip39 = "2"
+hmac = "0.12"
+pbkdf2 = "0.12"
 
 [profile.release]
 opt-level = 3

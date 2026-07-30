@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.6-beta] — 2026-07-15 (Protocol + Pool + Docs Sync)
+
+### Added
+- **AuxPow B2b stream profit system** — RVN kawpow live on Edge pool, auto coin switching, revenue tracking
+- **GPU-native Pearl PoUW pipeline** — Merkle proof reconstruction, E2E verification
+- **PearlStratum protocol** — PRL (Pearl) external coin support
+- **BridgeValidator contract tracking** — Base Mainnet 5/5 guardian multisig address
+
+### Fixed
+- **Pool CLI earnings** — switched from non-existent JSON-RPC to pool HTTP API
+- **Edge environment** — added missing `ZION_POOL_AUXPOW_*` and stream-profit env vars
+- **Protocol version** — synced live node, code, and docs to `zion-v3-node/3.0.6`
+- **Backup node documentation** — noted offline status and seed peers
+
+---
+
 ## [3.0.5-beta] — 2026-07-10 (Community CLI)
 
 ### Added
@@ -25,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Visual README redesign** — Stargate hero, shields.io badges, emoji portal, footer
 
 ### Fixed
-- **Server addresses** — replaced decommissioned `77.42.71.94` with `62.171.141.136` / `pool.zionterranova.com` in all config defaults, menu prompts, and help text
+- **Server addresses** — replaced decommissioned old Edge server IP with domain `pool.zionterranova.com` in all config defaults, menu prompts, and help text
 - **Wallet send** — sender address now read from wallet file (was broken using `cfg.miner.wallet`)
 - **Wallet address/balance** — fallback to `zion-wallet.json` when config `miner.wallet` is empty
 - **Doctor on Linux** — searches for `zion-miner` (not `zion-miner.exe`)
@@ -34,9 +50,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **CLI package** — renamed `V3/cli/` → `V3/community-cli/` (package `zion-public`)
-- **Pool default** — `pool.zionterranova.com:8444` (resolves to `62.171.141.136`)
-- **Seed peers** — `62.171.141.136:8333`
-- **AI endpoint** — `http://62.171.141.136:8080`
+- **Pool default** — `stratum.zionterranova.com:8444`
+- **Seed peers** — `rpc.zionterranova.com:8333`
+- **AI endpoint** — `http://ai.zionterranova.com:8080`
 
 ---
 
@@ -65,7 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **USB backup audit** — SHA256 verified, GPG signatures verified, 19/19 addresses cross-checked with genesis.rs
 
 ### Changed
-- **Server migration** — old Edge server (77.42.71.94) decommissioned, new server at 62.171.141.136
+- **Server migration** — old Edge server decommissioned, new Edge server deployed
 - **Label rename** — "Genesis Creator" replaced with neutral label across 40 files
 - **Canonical topology** — hardcoded seed peers moved to new server, Tailscale removed
 - **L2 security patch** — claimant guard, threshold 5/5, reorg safety, key hygiene, escrow key zeroing, memo cap
@@ -143,7 +159,7 @@ ZION uses a modified semantic versioning scheme:
 
 | Component | Format | Example |
 |-----------|--------|---------|
-| Protocol | `MAJOR.MINOR.PATCH` | `3.0.4` |
+| Protocol | `MAJOR.MINOR.PATCH` | `3.0.6` |
 | Release tag | `vMAJOR.MINOR.PATCH[-suffix]` | `v3.0.4-beta` |
 | Suffix | `-beta`, `-rc`, `-stable` | `v3.1.0-rc1` |
 

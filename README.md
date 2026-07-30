@@ -14,7 +14,7 @@
 <p>
 
 ![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange?style=for-the-badge)
-![Protocol](https://img.shields.io/badge/Protocol-3.0.4-blue?style=for-the-badge)
+![Protocol](https://img.shields.io/badge/Protocol-3.0.8-blue?style=for-the-badge)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Rust](https://img.shields.io/badge/Rust-2021-orange?style=for-the-badge)
 ![PoW](https://img.shields.io/badge/Consensus-PoW-purple?style=for-the-badge)
@@ -71,9 +71,12 @@
 
 | Portal | Path |
 |:------:|:-----|
-| ⛏️ **Mine** | Run a node or miner on the ZION L1. Start with [`V3/cli/README.md`](./V3/cli/README.md). |
+| ⛏️ **Mine (desktop)** | Download a ready-to-use binary and start in minutes. See the [Desktop Miner Quick Start](#desktop-miner-quick-start) below. |
+| ⛏️ **Mine (SMOS/HiveOS)** | Run the miner on mining OS rigs. See [`docs/SMOS_HIVEOS_GUIDE.md`](./docs/SMOS_HIVEOS_GUIDE.md). |
+| ⛏️ **Mine (build from source)** | Build the node, CLI, and miner from source. Start with [`V3/cli/README.md`](./V3/cli/README.md). |
 | 🎮 **Play** | Enter the L4 Oasis world — avatars, quests, guilds, and the Golden Egg. See [`V3/L4/oasis/README.md`](./V3/L4/oasis/README.md). |
 | 🔨 **Build** | Explore the codebase, contracts, RPC, and bridge docs in [`V3/docs/`](./V3/docs/) and [`docs/`](./docs/). |
+| ❓ **FAQ** | Common questions for beginners and rig operators. See [`docs/FAQ.md`](./docs/FAQ.md). |
 
 ---
 
@@ -88,7 +91,7 @@
 | Parameter | Value |
 |:----------|:------|
 | **Status** | Mainnet Beta |
-| **Protocol** | 3.0.4 |
+| **Protocol** | 3.0.8 "Full Stack Stable" |
 | **Genesis hash** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
 | **Official launch** | 2026-12-31 |
 | **Block time** | ~60 seconds |
@@ -97,6 +100,94 @@
 | **Premine** | 14 slots (founders, treasury, OASIS pool, liquidity) |
 
 All disclosed security issues have been remediated. See [Security](./SECURITY.md) and the [disclosure report](./docs/security/SECURITY_DISCLOSURE_2026-07.md).
+
+---
+
+## Desktop Miner Quick Start
+
+> Don't want to build from source? Download a ready-made binary and start mining in 2 minutes.
+
+### 1. Download the miner for your system
+
+| Your system | Download file |
+|:------------|:--------------|
+| **Linux x86_64** (Ubuntu, Debian, SMOS, HiveOS) | `zion-miner-linux-x86_64.tar.gz` |
+| **Linux ARM64** (Raspberry Pi 4/5, Ampere, Jetson) | `zion-miner-linux-aarch64.tar.gz` |
+| **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-miner-macos-aarch64.tar.gz` |
+| **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` |
+| **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.zip` |
+
+Latest release: **[v3.0.8-beta](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.8-beta)**
+
+### 2. Extract
+
+**Linux / macOS:**
+```bash
+tar xzf zion-miner-linux-x86_64.tar.gz   # replace with your file
+chmod +x zion-miner start.sh
+```
+
+**Windows:**
+Right-click the downloaded `.zip` → **Extract All**, then open the extracted folder.
+
+### 3. Run the interactive setup
+
+**Linux / macOS:**
+```bash
+./zion-miner
+```
+
+**Windows:**
+Double-click `zion-miner.exe` or run `zion-miner.exe` in Command Prompt.
+
+The miner asks for:
+- your ZION **wallet address** (`zion1...`)
+- a **worker name** (e.g. `desktop-rig`)
+- **GPU backend** (`auto`, `opencl`, `cuda`, `metal`, or `cpu`)
+- number of **CPU threads**
+- mining **algorithm**
+- mining **profile** (`pool` is recommended)
+
+Then it launches with the right settings.
+
+### 4. Advanced wrapper script (optional)
+
+Use `start.sh` (Linux/macOS) or `start.bat` (Windows) for the same questions
+plus extra pass-through arguments. Set `ZION_EASY_MENU=0` to skip prompts
+and supply command-line arguments directly.
+
+### 5. Manual start (optional)
+
+If you prefer the command line:
+
+```bash
+./zion-miner \
+    --pool 62.171.141.136:8444 \
+    --wallet zion1YOUR_WALLET_ADDRESS \
+    --worker my-rig \
+    --gpu auto \
+    --algorithm deeksha_lite_v1 \
+    --profile pool
+```
+
+On Windows use `zion-miner.exe` in Command Prompt or PowerShell.
+
+### Which GPU backend should I choose?
+
+| GPU | Backend | Notes |
+|:----|:--------|:------|
+| NVIDIA on Linux x86_64 | `auto` / `cuda` | Fastest |
+| AMD / Intel on Linux x86_64 | `auto` / `opencl` | |
+| Apple Silicon (M1-M4) | `auto` / `metal` | |
+| Older Mac (Intel/AMD) | `opencl` / `cpu` | OpenCL may be limited on macOS |
+| NVIDIA on Windows | `auto` / `cuda` | Windows build currently ships CUDA |
+| AMD / Intel on Windows | `opencl` / `cpu` | OpenCL support is coming in a future release |
+| No / unknown GPU | `cpu` | Slow but works everywhere |
+
+### Need more help?
+- **Full FAQ:** [`docs/FAQ.md`](./docs/FAQ.md)
+- **SMOS / HiveOS rigs:** [`docs/SMOS_HIVEOS_GUIDE.md`](./docs/SMOS_HIVEOS_GUIDE.md)
+- **Build from source:** continue below in "Begin Guide".
 
 ---
 
@@ -185,6 +276,10 @@ A node connects to the ZION network, downloads the blockchain, and verifies tran
 
 Mining is how new ZION is created. Your computer solves math puzzles (proof-of-work), and when it finds a solution, you earn a block reward.
 
+**Option A — the standalone desktop miner (recommended for most users):**
+Download a pre-built binary from the [releases page](https://github.com/Zion-TerraNova/v3-Mainnet/releases) and run the included `start.sh` / `start.bat` menu. See the [Desktop Miner Quick Start](#desktop-miner-quick-start) above.
+
+**Option B — build from source with the CLI:**
 ```bash
 # The easiest way — run the onboarding wizard
 ./target/release/zion config init
@@ -199,9 +294,9 @@ Mining is how new ZION is created. Your computer solves math puzzles (proof-of-w
 ./target/release/zion mine stop
 ```
 
-> **CPU vs GPU:** Mining with a CPU works but is slow. A GPU (graphics card) is much faster. Run `zion mine bench --gpu` to test your GPU hashrate.
+> **CPU vs GPU:** Mining with a CPU works but is slow. A GPU (graphics card) is much faster. Run `zion mine bench --gpu` or the standalone miner's `--profile benchmark` to test your GPU hashrate.
 >
-> **Pool vs Solo:** By default, the CLI mines to the official pool (`pool.zionterranova.com:8444`). In pool mode, you earn a share of every block the pool finds. In solo mode, you only earn when *you* find a block — which could take a long time. Pool mode is recommended for beginners.
+> **Pool vs Solo:** By default, the CLI mines to the official pool (`pool.zionterranova.com:8444`) and the standalone miner defaults to `62.171.141.136:8444`. In pool mode, you earn a share of every block the pool finds. In solo mode, you only earn when *you* find a block — which could take a long time. Pool mode is recommended for beginners.
 
 ### Step 6 — Check your balance and send ZION
 

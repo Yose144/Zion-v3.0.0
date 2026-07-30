@@ -4,7 +4,10 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY || "0x0000000000000000000000000000000000000000000000000000000000000001";
+const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY || "";
+if (!PRIVATE_KEY && ((process.env.HARDHAT_TARGET || "").includes("-sepolia") || process.env.HARDHAT_TARGET === "mainnet")) {
+  throw new Error("DEPLOYER_PRIVATE_KEY must be set for non-local deployments");
+}
 
 const config: HardhatUserConfig = {
   solidity: {
