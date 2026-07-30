@@ -2,7 +2,7 @@
 
 > **Verze:** 3.1.0-alpha.2  
 > **Datum:** 2026-07-30  
-> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented, V3 RPC wired into node runtime, V3 P2P listen server + IBD loop, `bin/node.rs` V3-aware runtime, `zion-pool` standalone stratum binary, `zion miner start` pool mode, E2E smoke (node + pool + miner) produces and accepts blocks height 1+, production P2P hardening (peer manager, ban score, max peers, discovery), custom AMM deploy in `zion-multichain` (SQLite persistence, HTTP API), WARP API rate limiting + auth (per-IP token bucket, optional Bearer key).
+> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented, V3 RPC wired into node runtime, V3 P2P listen server + IBD loop, `bin/node.rs` V3-aware runtime, `zion-pool` standalone stratum binary, `zion miner start` pool mode, E2E smoke (node + pool + miner) produces and accepts blocks height 1+, production P2P hardening (peer manager, ban score, max peers, discovery), custom AMM deploy in `zion-multichain` (SQLite persistence, HTTP API), WARP API rate limiting + auth (per-IP token bucket, optional Bearer key), height-aware PoW fork gating stress-tested across CHV3/Fire boundaries.
 > **Princip:** `V3/` zůstává produkční, `V31/` se staví jako čistý Mainnet Alpha strom.  
 
 Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozhodnutí o architektuře, vrstvách a prioritách se zde zaznamenávají a aktualizují.
@@ -171,7 +171,7 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
 2. ~~**Production P2P hardening**~~ — **Hotovo (2026-07-30):** `PeerManager` sdílený mezi canonical a V3 P2P, max inbound limit, ban score, `GetPeers`/`Peers` odpovědi ve welcome zprávě.
 3. ~~**Custom AMM deploy v `zion-multichain`**~~ — **Hotovo (2026-07-30):** SQLite persistence AMM poolů, `deploy_pool`, `/v1/swap/pool/deploy` + `/v1/swap/pools`, načítání poolů při startu.
 4. ~~**WARP API rate limiting + auth v `zion-multichain`**~~ — **Hotovo (2026-07-30):** per-IP token bucket, optional `Authorization: Bearer <api_key>`, `/health` public, `ConnectInfo` zapojen.
-5. **Height-aware PoW fork gating** — `HeightAwareDeeksha` s height-gated dispatch implementován v `zion-core`, `zion-miner` i `zion-pool`.
+5. ~~**Height-aware PoW fork gating + stress testy**~~ — **Hotovo (2026-07-30):** `HeightAwareDeeksha` dispatchuje dle výšky, `zion-core` obsahuje unit testy napříč fork boundary (CHV3 4500, Fire 5000) a sweep 0–5500.
 6. **HTLC persistence** — SQLite backend pro HTLC hotovo v `zion-multichain`.
 7. **Tag `v3.1.0-alpha.2`** po úspěšných E2E smoke testech.
 
@@ -230,7 +230,7 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
   - ~~Production P2P hardening (peer discovery, max peers, ban score); rate limit hotovo.~~ **Hotovo (2026-07-30).**
   - ~~Custom AMM deploy (`/v1/swap/pool/deploy`, SQLite persistence poolů).~~ **Hotovo (2026-07-30).**
   - ~~WARP API rate limiting + auth (per-IP token bucket, optional `Authorization: Bearer`).~~ **Hotovo (2026-07-30).**
-  - Height-aware PoW fork gating — hotovo.
+  - ~~Height-aware PoW fork gating + stress testy (boundary CHV3/Fire + sweep 0–5500).~~ **Hotovo (2026-07-30).**
   - HTLC SQLite persistence — hotovo.
 - Detailní analýza v `V31/V3_SYNC_ASSESSMENT.md`.
 

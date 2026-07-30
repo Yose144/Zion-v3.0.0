@@ -289,4 +289,52 @@ mod tests {
         assert_eq!(got, expected);
         assert_ne!(got.0, deeksha_lite_with_height(&header, nonce, height).data);
     }
+
+    #[test]
+    fn stress_mine_across_fork_boundaries() {
+        let algo: Arc<dyn PowAlgorithm> = Arc::new(HeightAwareDeeksha::new());
+        let engine = ConsensusEngine::new(algo);
+        let target = [0xFFu8; 32];
+
+        for &height in &[
+            1,
+            CHV3_FORK_HEIGHT - 1,
+            CHV3_FORK_HEIGHT,
+            FIRE_FORK_HEIGHT - 1,
+            FIRE_FORK_HEIGHT,
+            10_000,
+            100_000,
+        ] {
+            let previous = header_at_height(height - 1);
+            let mut header = header_at_height(height);
+            header.previous_hash = engine.header_hash(&previous);
+            let result = engine.mine(&mut header, &target, 0, 1_000);
+            assert!(result.is_some(), "mine should succeed at height {height}");
+
+            let verify = engine.verify_header(&header, &previous, &target);
+            assert!(verify.is_ok(), "verify should pass at height {height}: {verify:?}");
+        }
+    }
+
+    #[test]
+    fn stress_all_heights_dispatch_correctly() {
+        let algo = HeightAwareDeeksha::new();
+        let target = [0xFFu8; 32];
+
+        for height in (0..=5_500).step_by(100) {
+            let header = header_at_height(height).pow_header();
+            let (nonce, hash) = algo
+                .find_nonce(&header, 0, 500, &target)
+                .expect(&format!("easy target should mine at height {height}"));
+
+            let expected = if height < CHV3_FORK_HEIGHT {
+                Hash::new(deeksha_lite_with_height(&header, nonce, height).data)
+            } else if height < FIRE_FORK_HEIGHT {
+                Hash::new(deeksha_chv3_with_height(&header, nonce, height).data)
+            } else {
+                Hash::new(deeksha_lite_fire_with_height(&header, nonce, height).data)
+            };
+            assert_eq!(hash, expected, "height {height} dispatched to wrong algorithm");
+        }
+    }
 }
