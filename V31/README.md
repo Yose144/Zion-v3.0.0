@@ -22,7 +22,7 @@ Workspace se nachází v `/Users/yeshuae/Projects/2.9.6/V31/`; produkční V3 b�
 | `L2/dao` | `zion-dao` | Návrh/quorum/timelock typy, smoke test, zapojený do workspace. |
 | `L3/ncl` | `zion-ncl` | NCL compute marketplace — scaffold s unit testy. |
 | `L3/ai-native` | `zion-ai-native` | AI-native orchestrace a agenti — scaffold s unit testy. |
-| `L4/oasis` | `zion-oasis` | Oasis game — funkcionální scaffold s unit testy. |
+| `L4/oasis` | `zion-oasis` | Oasis game — 200 avatarů, questy, CORS API, `APP&WEB/OasisWeb` Next.js 16 client s live HUD. |
 | `L5/free-world` | `zion-free-world` | Free World vrstva — funkcionální scaffold s unit testy. |
 | `L6/issobella` | `zion-issobella` | Issobella superstruktura — funkcionální scaffold s unit testy. |
 | `sdk` | `zion-sdk` | SDK pro integrace třetích stran a interních nástrojů. |
