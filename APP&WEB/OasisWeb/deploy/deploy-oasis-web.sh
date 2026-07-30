@@ -22,7 +22,7 @@ SSH_OPTS="-i ${SSH_KEY} -p ${EDGE_PORT} -o StrictHostKeyChecking=no -o UserKnown
 
 echo "[deploy-oasis-web] Building static export..."
 cd "$ROOT_DIR"
-NEXT_PUBLIC_OASIS_API_URL=/api npm run build
+NEXT_PUBLIC_OASIS_API_URL= npm run build
 
 echo "[deploy-oasis-web] Syncing ${ROOT_DIR}/dist/ to ${REMOTE}:${REMOTE_DIR}"
 ssh ${SSH_OPTS} "${REMOTE}" "mkdir -p ${REMOTE_DIR}"

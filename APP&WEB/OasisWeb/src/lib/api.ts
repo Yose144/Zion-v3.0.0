@@ -1,4 +1,4 @@
-const API = process.env.NEXT_PUBLIC_OASIS_API_URL || 'http://127.0.0.1:8094';
+const API = process.env.NEXT_PUBLIC_OASIS_API_URL ?? 'http://127.0.0.1:8094';
 
 export interface ApiResponse<T> {
   success: boolean;
