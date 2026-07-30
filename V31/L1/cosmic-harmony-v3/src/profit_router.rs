@@ -1227,7 +1227,7 @@ pub fn select_best_coin(
         if disabled.contains(&entry.coin) || entry.profit_per_day_usd() <= 0.0 {
             continue;
         }
-        if best.map_or(true, |b| {
+        if best.is_none_or(|b| {
             entry.profit_per_day_usd() > b.profit_per_day_usd()
         }) {
             best = Some(entry);

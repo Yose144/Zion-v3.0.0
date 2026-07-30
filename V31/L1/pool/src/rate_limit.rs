@@ -23,7 +23,7 @@ impl IpRateLimiter {
     pub fn allow(&self, ip: IpAddr) -> bool {
         let now = Instant::now();
         let mut history = self.history.lock().unwrap();
-        let attempts = history.entry(ip).or_insert_with(VecDeque::new);
+        let attempts = history.entry(ip).or_default();
 
         while let Some(front) = attempts.front() {
             match now.checked_duration_since(*front) {

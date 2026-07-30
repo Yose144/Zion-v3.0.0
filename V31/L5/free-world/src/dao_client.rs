@@ -1,7 +1,7 @@
 //! DAO client — submits grant/project proposals to the L2 DAO for governance approval.
 //!
-//! This is a placeholder integration. In production it would call the DAO REST API
-//! at `ZION_DAO_API_ADDR` to create treasury proposals.
+//! Calls the DAO REST API at `ZION_DAO_API_ADDR` (default `http://127.0.0.1:8080`).
+//! Falls back to defaults if the environment variables are not configured.
 
 use serde::{Deserialize, Serialize};
 

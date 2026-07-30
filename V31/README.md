@@ -92,7 +92,7 @@ Pro plný Mainnet Alpha release použij `cargo build --release` — profil má `
 
 ## Co ještě běží / E2E
 
-Následující položky jsou aktivní nebo čekají na E2E ověření před cut-over z V3:
+Všechny naplánované E2E položky pro `v3.1.0-alpha.2` jsou hotové. Zbývá ops/externí krok:
 
 - ~~End-to-end smoke test node + pool + miner v jednom lokálním runu.~~ **Hotovo (2026-07-30).**
 - ~~P2P production hardening — peer discovery, ban score a resiliance proti reconnect stormu.~~ **Hotovo (2026-07-30).**
@@ -104,6 +104,13 @@ Následující položky jsou aktivní nebo čekají na E2E ověření před cut-
 - ~~Finální cut-over plán z V3 Edge (`62.171.141.136`) na V31.~~ **Hotovo (2026-07-30):** viz [`V31/CUTOVER_PLAN.md`](./CUTOVER_PLAN.md).
 - ~~Cross-chain WARP transfer (Base ↔ ZionL1).~~ **Hotovo (2026-07-30):** `V31/smoke` HTLC lock/claim smoke mezi Base a ZionL1.
 - ~~DAO governance proposal + vote.~~ **Hotovo (2026-07-30):** `V31/smoke` proposal, vote a quorum check.
+
+### Další krok — `v3.1.0-beta` release
+
+1. Build release binárky (Linux, Windows, macOS) + `SHA256SUMS.txt`.
+2. Spustit 7d/30d continuous run na non-prod prostředí.
+3. Reálné non-EVM WARP deploye + nahrazení placeholder kontraktů env proměnnými.
+4. Provedení cut-over dle [`V31/CUTOVER_PLAN.md`](./CUTOVER_PLAN.md).
 
 ## Bezpečnost a provoz
 

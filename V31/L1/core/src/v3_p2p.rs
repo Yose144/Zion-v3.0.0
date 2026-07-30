@@ -217,7 +217,7 @@ impl V3Sync {
                     for accepted in blocks {
                         let block = accepted
                             .into_v3_block()
-                            .map_err(|e| V3P2PError::InvalidMessage(e))?;
+                            .map_err(V3P2PError::InvalidMessage)?;
 
                         if block.height == 0 {
                             // Genesis is the trusted root; only accept it at
@@ -371,6 +371,7 @@ pub struct V3P2PServer {
 }
 
 impl V3P2PServer {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         storage: Arc<Storage>,
         node_id: impl Into<String>,
