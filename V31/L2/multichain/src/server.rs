@@ -15,9 +15,12 @@ use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 
 use zion_l1_types::{Address, Amount, Asset, ChainId};
 
+use std::net::SocketAddr;
+
 use crate::config::ServerConfig;
 use crate::contracts::ZionContracts;
 use crate::error::{MultichainError, MultichainResult};
+use crate::rate_limit::{auth_rate_limit, RateLimiter};
 use crate::service::MultichainService;
 use crate::swap::Pool;
 use crate::types::{Transfer, TransferDirection, TransferEndpoint};
@@ -27,6 +30,7 @@ use zion_pool::StratumServer;
 #[derive(Clone)]
 pub struct AppState {
     service: Arc<MultichainService>,
+    limiter: RateLimiter,
 }
 
 /// HTTP API gateway for `zion-multichain`.
@@ -124,6 +128,7 @@ impl ApiServer {
 
         let state = AppState {
             service: Arc::clone(&self.service),
+            limiter: RateLimiter::new(&self.config),
         };
 
         let app = Router::new()
@@ -143,21 +148,29 @@ impl ApiServer {
             .route("/v1/bridge/submit", post(bridge_submit))
             .route("/v1/pool/stats", get(pool_stats))
             .route("/v1/pool/payouts", get(pool_payouts))
+            .layer(axum::middleware::from_fn_with_state(
+                state.limiter.clone(),
+                auth_rate_limit,
+            ))
             .layer(
                 CorsLayer::new()
                     .allow_origin(AllowOrigin::any())
                     .allow_methods(AllowMethods::any())
                     .allow_headers(AllowHeaders::any()),
-            );
+            )
+            .with_state(state);
 
         let bind = format!("{}:{}", self.config.bind, self.config.port);
         let listener = tokio::net::TcpListener::bind(&bind)
             .await
             .map_err(|e| MultichainError::Internal(e.to_string()))?;
 
-        axum::serve(listener, app.with_state(state))
-            .await
-            .map_err(|e| MultichainError::Internal(e.to_string()))?;
+        axum::serve(
+            listener,
+            app.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .await
+        .map_err(|e| MultichainError::Internal(e.to_string()))?;
 
         Ok(())
     }
@@ -166,6 +179,7 @@ impl ApiServer {
 async fn health() -> &'static str {
     "ok"
 }
+
 
 async fn pool_stats(State(state): State<AppState>) -> Result<Json<serde_json::Value>, StatusCode> {
     match state.service.pool_stats() {
