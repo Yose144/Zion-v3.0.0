@@ -4,13 +4,15 @@
 
 ## Current Production Status
 
+> **2026-07-31 update:** `https://zionterranova.com` is running the **OASIS intro landing page** from `/var/www/maintenance/maintenance.html` (served directly by system nginx), not the full Next.js website. The intro is the canonical public entry point to the ZION multichain ecosystem and the Stargate portal to `https://oasis.zionterranova.com`.
+
 - **Live URL:** https://zionterranova.com
 - **Host:** New Edge server `62.171.141.136` (decommissioned: `77.42.71.94`)
-- **SSH:** `ssh zion-new` (key: `~/.ssh/zion-edge-2026-07-29`)
-- **Runtime:** Docker container `zion-web-next` (host network mode, port 3000)
-- **Reverse proxy:** Caddy → `localhost:3000`
-- **Runtime source on server:** `/root/zion-web-runtime`
-- **Current image:** `zion-web:runtime`
+- **SSH:** `ssh zion-post-wipe` (key: `~/.ssh/zion-edge-post-wipe-2026-07-29`)
+- **Current public page source:** `APP&WEB/website-v2.9/public/maintenance.html`
+- **Runtime source on server:** `/var/www/maintenance/maintenance.html` + `/var/www/maintenance/stargate/`
+- **Reverse proxy:** system `nginx` (`/etc/nginx/sites-enabled/zion.conf`)
+- **Full Next.js web2.9:** built and ready, but currently offline (see below for deploy/rollback)
 - **Live topology:** 3-node P2P mesh — Edge 1 (primary + pool), Edge 2 (follower), Local Backup (Prague via SSH tunnel)
 
 ## Build Requirements
@@ -29,6 +31,48 @@ npx next build --webpack
 - `public/` — public assets
 
 The project is therefore deployed by **building locally**, syncing the standalone output to the server, and running a tiny **runtime-only** Docker image.
+
+## OASIS Intro Landing Page (current public page)
+
+The file `public/maintenance.html` is the canonical one-page intro for the ZION multichain ecosystem and the Stargate portal to OASIS. It is served directly by the Edge nginx as `https://zionterranova.com`.
+
+### Deploy the OASIS intro
+
+```bash
+cd APP\&WEB/website-v2.9
+bash deploy/deploy-oasis-intro.sh
+```
+
+This rsyncs `public/maintenance.html` and `public/stargate/` to `/var/www/maintenance/` on the Edge server, validates nginx, and reloads.
+
+### Switch from OASIS intro to full Next.js website
+
+1. Build and deploy web2.9:
+```bash
+cd APP\&WEB/website-v2.9
+npm run build
+bash scripts/deploy.sh   # or manual Method 1/2 below
+```
+
+2. Update Edge nginx to proxy to Next.js (run on the server):
+```bash
+# /etc/nginx/sites-enabled/zion.conf
+# Replace the `root /var/www/maintenance;` / `try_files` block with:
+#   location / {
+#       proxy_pass http://127.0.0.1:3000;
+#       proxy_set_header Host $host;
+#       proxy_set_header X-Real-IP $remote_addr;
+#       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#       proxy_set_header X-Forwarded-Proto $scheme;
+#   }
+nginx -t && nginx -s reload
+```
+
+### Rollback to OASIS intro
+
+If the full Next.js site needs to be taken offline, revert `/etc/nginx/sites-enabled/zion.conf` to the static `root /var/www/maintenance;` / `try_files $uri $uri/ /maintenance.html;` block and reload nginx.
+
+---
 
 ## Deployment Steps
 
@@ -153,9 +197,10 @@ ssh -i ~/.ssh/zion-edge-2026-07-29 root@62.171.141.136
 | 2026-06-27 | v3.7.4-doge-fix | Fix Doge ATH timeline (7.5 years, not 2) |
 | 2026-06-27 | v3.7.3-rainbow-theme | ZION rainbow-card theme across all 53 pages |
 | 2026-06-26 | v3.7.2-doge-price-fork | Doge vs ZION $0.0002 seed price + 3.0.3 fork news |
+| 2026-07-31 | v3.0.7-oasis-intro | OASIS intro landing page (glass/rainbow, Stargate to oasis.zionterranova.com) deployed as the public face of zionterranova.com; full Next.js web2.9 built and ready but offline |
 
 ---
 
-**Version:** v3.0.5  
-**Last updated:** 10 July 2026  
-**Status:** ✅ Deployed and verified on 62.171.141.136
+**Version:** v3.0.7  
+**Last updated:** 31 July 2026  
+**Status:** OASIS intro landing page active; full Next.js v2.9.6 built and ready on 62.171.141.136

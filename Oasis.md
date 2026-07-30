@@ -60,12 +60,15 @@ Live na: `https://oasis.zionterranova.com`
   - Soubor: [`APP&WEB/OasisWeb/src/components/TreeOfLife.tsx`](APP&WEB/OasisWeb/src/components/TreeOfLife.tsx)
 - **Další vizuální prvky:** `GalaxyCore` (zářící jádro), `Nebula` (průhledné sprite oblaky), `TerritoryRing` (8 světů kolem stromu), `World` (interaktivní planety).
 
-### 2.3 Maintenance landing page
+### 2.3 OASIS intro landing page (zionterranova.com)
 
-- Live na: `https://www.zionterranova.com` (nginx servuje `maintenance.html`).
+- **Není maintenance — je to vstupní portál do OASIS a celého ZION ekosystému.**
+- Live na: `https://zionterranova.com` (systémový nginx servuje `maintenance.html` z `/var/www/maintenance/`).
 - Zdroj: [`APP&WEB/website-v2.9/public/maintenance.html`](APP&WEB/website-v2.9/public/maintenance.html)
 - Hlavní prvek: interaktivní Stargate → `https://oasis.zionterranova.com/`.
 - Obsah: hero s glass/rainbow card, L1–L6 mikro karty (2 řady po 3), status bar, CTA tlačítka, glass footer.
+- Plný Next.js web2.9 je připravený, ale není veřejně aktivní — zobrazí se až po přepnutí nginx proxy na `127.0.0.1:3000`.
+- Deploy: `bash APP&WEB/website-v2.9/deploy/deploy-oasis-intro.sh` (rsync + `nginx -s reload`).
 
 ### 2.4 Dokumentace
 
