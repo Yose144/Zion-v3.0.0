@@ -2,7 +2,7 @@
 
 > **Verze:** 3.1.0-alpha.2  
 > **Datum:** 2026-07-30  
-> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented, V3 RPC wired into node runtime, V3 P2P listen server + IBD loop, `bin/node.rs` V3-aware runtime, `zion-pool` standalone stratum binary, `zion miner start` pool mode, E2E smoke (node + pool + miner) produces and accepts blocks height 1+, production P2P hardening (peer manager, ban score, max peers, discovery), custom AMM deploy in `zion-multichain` (SQLite persistence, HTTP API), WARP API rate limiting + auth (per-IP token bucket, optional Bearer key), height-aware PoW fork gating stress-tested across CHV3/Fire boundaries.
+> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented, V3 RPC wired into node runtime, V3 P2P listen server + IBD loop, `bin/node.rs` V3-aware runtime, `zion-pool` standalone stratum binary, `zion miner start` pool mode, E2E smoke (node + pool + miner) produces and accepts blocks height 1+, production P2P hardening (peer manager, ban score, max peers, discovery), custom AMM deploy in `zion-multichain` (SQLite persistence, HTTP API), WARP API rate limiting + auth (per-IP token bucket, optional Bearer key), height-aware PoW fork gating stress-tested across CHV3/Fire boundaries, L3–L6 cross-layer smoke (NCL → AI-Native → Oasis → Free World → Issobella) passing.
 > **Princip:** `V3/` zůstává produkční, `V31/` se staví jako čistý Mainnet Alpha strom.  
 
 Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozhodnutí o architektuře, vrstvách a prioritách se zde zaznamenávají a aktualizují.
@@ -175,7 +175,7 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
 6. ~~**HTLC persistence**~~ — **Hotovo (2026-07-30):** SQLite backend pro HTLC v `zion-multichain`.
 7. ~~**Tag `v3.1.0-alpha.2`**~~ — **Hotovo (2026-07-30):** tag vytvořen a pushnut; workspace build prochází.
 8. ~~**Finální cut-over plán V3 → V31**~~ — **Hotovo (2026-07-30):** vytvořen `V31/CUTOVER_PLAN.md` s rolling blue/green strategií.
-9. **Plná L3–L6 end-to-end verifikace** — Oasis game, NCL compute marketplace, AI-native agenti, Free World, Issobella. **Status 2026-07-30:** unit testy všech L3–L6 cratech procházejí (`zion-ai-native`: 337, `zion-ncl`: 42, `zion-oasis`: 124, `zion-free-world`: 3, `zion-issobella`: 3), chybí cross-layer runtime smoke test. Toto je další major milestone po `v3.1.0-alpha.2` a před plným cut-over.
+9. ~~**Plná L3–L6 end-to-end verifikace**~~ — **Hotovo (2026-07-30):** vytvořen `V31/smoke` crate s cross-layer smoke testem (`l3_l6_cross_layer_smoke`), který propojuje NCL compute job → AI-Native consciousness engine → Oasis bridge → Oasis player → Free World grant → Issobella proposal. Test prochází.
 
 ---
 
