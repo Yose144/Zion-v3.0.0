@@ -364,6 +364,92 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
   - **Pool remote control (v3.0.4):** `POST /api/control {"action":"restart-pool"}` — SSH via `ssh zion-new`. Dashboard runs on new server at 127.0.0.1:8766, proxied via nginx at `https://dashboard.zionterranova.com` (Basic Auth).
   - **UFW on Edge (2026-06-14):** Ports 8444 (stratum) and 8333 (P2P) changed from `LIMIT` to `ALLOW` — miners can now connect from public internet.
 
+## OASIS Web / UE5 — 3D universe portability rules
+
+`APP&WEB/OasisWeb` is the **living sketch / prototype** for the ZION OASIS 3D universe. The long-term target is **Unreal Engine 5 (UE5)**. TypeScript code must therefore be written as a portable game design that can later be:
+
+- executed inside UE5 via a TypeScript runtime such as **Puerts** or **Unreal.js**, or
+- hand-ported to C++/Blueprints with minimal friction.
+
+The codebase is split into **domain** (engine-agnostic design) and **adapters** (engine-specific rendering / I/O). All future work must respect this split.
+
+### Target directory layout (move toward this over time)
+
+```
+APP&WEB/OasisWeb/src
+  domain/           # canonical game universe — no React/Three/DOM/browser APIs
+    models/         # DTOs: Player, Avatar, Quest, Territory, Clue, Zone, etc.
+    config/         # static data: zones, territories, clues, onboarding, galaxy, assets
+    math/           # Vec3, Color, Quaternion, seeded RNG, noise, easing
+    state/          # OasisState, actions, serializable state tree
+    systems/        # simulation: zone rotation, camera path, input, time, network sync
+    ports/          # platform-agnostic interfaces: Renderer, Input, Clock, Network, Audio, Storage
+  adapters/
+    web/            # React/Three/Fiber/Zustand implementation of ports
+    ue5/            # future: Puerts/C++ or Blueprint adapters
+  app/              # Next.js routes (thin shells)
+  components/       # React view components (use domain via web adapters)
+  lib/              # transitional; avoid adding new domain code here
+```
+
+### Core rules
+
+1. **Domain code must not depend on any web framework or browser API.**
+   Forbidden imports in `src/domain/**`: `react`, `react-dom`, `three`, `@react-three/**`, `next`, `framer-motion`, `lucide-react`, `zustand`, `tailwindcss`.
+   Forbidden globals in domain code: `window`, `document`, `navigator`, `localStorage`, `fetch`, `setTimeout`, `setInterval`, `requestAnimationFrame`, `Math.random`, `Date.now`, `performance.now`.
+
+2. **All platform specifics are implemented through ports.**
+   Every I/O or rendering need is declared as a TypeScript interface in `src/domain/ports/`. The web build provides an implementation under `src/adapters/web/`. UE5 will provide its own implementation later. Examples: `Clock`, `InputPort`, `NetworkPort`, `RendererPort`, `AudioPort`, `StoragePort`.
+
+3. **Geometry and color are plain data in the domain, never Three.js objects.**
+   Use `Vec3`, `Quat`, `Color` from `src/domain/math/`. Do not use `THREE.Vector3`, `THREE.Color`, `THREE.Quaternion`, `THREE.Euler` in domain code. Example: `Galaxy` should expose a `GalaxyData` object with `Float32Array` positions and colors; `Galaxy.tsx` in components creates the `THREE.Points`.
+
+4. **Use deterministic, seeded randomness for anything that affects state or generation.**
+   Use the seeded PRNG in `src/domain/math/rng.ts`. Unseeded `Math.random()` is allowed only for harmless visual-only jitter in components, never in domain logic or procedural generation that must be reproducible, networked, or saved.
+
+5. **Time is injected through a `Clock` port.**
+   Domain code reads `clock.now()` and `clock.deltaTime`. No `Date.now()` or `performance.now()` in domain. The web adapter can use `performance.now()`; the UE5 adapter can use `UGameplayStatics::GetTimeSeconds()`.
+
+6. **Network calls go through `NetworkPort`.**
+   `lib/api.ts` DTOs stay in `src/domain/models/`. The `fetch`-based implementation becomes `src/adapters/web/network.ts`. UE5 can reuse the same DTOs with its HTTP module or the Rust OASIS backend.
+
+7. **State is a plain, serializable object.**
+   `OasisState` in `src/domain/state/` must be `JSON.stringify`-safe (no functions, no cycles, no class instances). `useOasisStore` is a thin web-only wrapper around a `StateManager` port.
+
+8. **Assets are referenced by ID, not by URL or path.**
+   All 3D models, textures, sounds, fonts, particle sprites, and UI strings are declared in `src/domain/config/assets.ts` (or `public/oasis-assets.json`). The web renderer maps IDs to `public/**` files; UE5 maps IDs to `Content/**` assets.
+
+9. **Input is an event stream.**
+   React/Three `onClick`, `onPointerOver`, `onPointerOut`, keyboard, and gamepad events are translated into `InputEvent` DTOs in `src/adapters/web/input.ts`. Domain systems consume `InputEvent[]` from the `InputPort`.
+
+10. **Coordinate system is explicit and engine-agnostic.**
+    Domain uses **Y-up, right-handed, meters**. The web adapter (Three.js) uses the same convention. The UE5 adapter must perform the Z-up / left-handed conversion in the adapter layer, never in domain code.
+
+11. **Keep React, Next.js, Tailwind, and Framer Motion in the view layer.**
+    `src/app/` and `src/components/` are web-specific. They may import from `src/domain/`, but the reverse is forbidden.
+
+12. **No `any` or `unknown` in domain code.**
+    All data must be typed. Use `JsonValue` or explicit DTOs. For lists with future extensions, prefer `unknown[]` only when truly unavoidable and document the schema.
+
+13. **Prefer simple classes and plain functions.**
+    Avoid advanced TypeScript features (decorators, conditional types, mapped types, template literal types, complex generics) in `src/domain/`. Use public fields, `readonly` where possible, and methods with simple signatures. This makes hand-translation to C++ straightforward.
+
+14. **Config is the source of truth.**
+    Zone definitions, territory data, clue lists, onboarding chapters, and galaxy parameters are pure configuration. Keep them in `src/domain/config/`. Procedural generation functions must be pure and return serializable DTOs.
+
+15. **Refactor existing mixed components incrementally.**
+    `World.tsx`, `OasisScene.tsx`, `Galaxy.tsx`, `TreeOfLife.tsx`, `GameWorld.tsx`, and `CameraFlight.tsx` currently mix domain and rendering. When adding new features, first extract the declarative design into `src/domain/`, then keep the component as a thin renderer. Do not expand the existing mixing pattern.
+
+16. **Document domain code with UE5 porting in mind.**
+    Every port, DTO, system, and config file should have JSDoc describing: purpose, coordinate space, units, seeding behavior, and expected UE5 equivalent (Actor/Component/Blueprint).
+
+### Verification
+
+- `npx tsc --noEmit` must pass for `src/domain/` with `strict: true`.
+- No `import * as THREE from 'three'` in `src/domain/`.
+- No `import React` or framework hooks in `src/domain/`.
+- The `src/domain/` tree must be testable in Node.js without a browser environment.
+
 ## High-level architecture (big picture)
 
 ## 0) Zion OS - ZION Mainnet Operations System
