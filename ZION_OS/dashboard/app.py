@@ -24,6 +24,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import v31
 
 # ── TTL cache helper for expensive RPC/log scrapers ─────────────────────
 
@@ -11732,6 +11733,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             else:
                 self.send_error(404)
             return
+        # ── V31 Mainnet Alpha dashboard ──────────────────────────────────────
+        elif v31.handle_get(self, route, params):
+            return
         elif route == "/api/v2/status":
             # Batch endpoint: single call returns everything dashboard v2 needs on boot
             st = build_status()
@@ -14122,6 +14126,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 _BACKUP_BEACON = payload
                 _BACKUP_BEACON_TIME = time.time()
             self._json({"ok": True, "received_at": datetime.now().isoformat()})
+        elif v31.handle_post(self, route, payload):
+            return
         else:
             self.send_error(404)
 
