@@ -33,7 +33,7 @@ All backups are on this Mac at `~/2.9.6-main/backups/edge/` with `MANIFEST-2026-
      - `AllowUsers zion root`.
      - `MaxAuthTries 3`, `LoginGraceTime 30`.
      - Restart sshd.
-   - Upload the **new** key only (`~/.ssh/zion-edge-2026-07-29`) to `/root/.ssh/authorized_keys`.
+   - Upload the **new** key only (`~/.ssh/zion-edge-post-wipe-2026-07-29`) to `/root/.ssh/authorized_keys`.
    - Enable UFW and auditd, deploy `ZION_OS/infra/config/audit.rules` and `fail2ban` jails.
 
 3. **Copy source code**

@@ -579,8 +579,8 @@ Dashboard: https://dashboard.zionterranova.com (nginx → Python)
 
 - **SSH config:** `ssh zion-new` (alias in `~/.ssh/config`, port 2222)
 - **SSH ports:** `22` (default alias) + `2222` (primary), both IPv4 + IPv6
-- **SSH key:** `~/.ssh/zion-edge-2026-07-29` (ed25519, fingerprint `SHA256:mTh5FLAQoFLMzlQX6JlKBYXQEzeKOL6j9C3FS1oVVWw`)
-- **IPv6 fallback:** `ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` (when IPv4 refused but server up)
+- **SSH key:** `~/.ssh/zion-edge-post-wipe-2026-07-29` (ed25519, fingerprint `SHA256:UOjWE5K22kyJ0Xgxdt/+cySZlErHFQ/y+M9uM/2zmY4`)
+- **IPv6 fallback:** `ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` (when IPv4 refused but server up)
 - **Password auth:** DISABLED (keys only)
 - **Never commit private keys.** Private SSH keys, Ed25519 signing keys, EVM private keys, and mnemonics must NEVER be placed in the repo root or any tracked directory — even if `.gitignore` covers them. The only valid location for SSH keys is `~/.ssh/` (chmod 600). A stray `newzionssh.md` containing the production SSH private key was found and deleted 2026-07-09; do not recreate it.
 
@@ -820,8 +820,8 @@ If genesis corruption is suspected:
 ### New Server Recovery (v3.0.4 + 2026-07-19 SSH incident)
 
 If the new server (62.171.141.136) becomes unresponsive:
-1. SSH directly: `ssh zion-new` (key: `~/.ssh/zion-edge-2026-07-29`, port 22 or 2222, IPv4)
-2. **If IPv4 SSH refused but server is up (ping OK, web/RPC OK):** sshd may be IPv6-only. Try IPv6 fallback: `ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` (IPv6 addr from `dig AAAA vmi3425821.contaboserver.net`)
+1. SSH directly: `ssh zion-new` (key: `~/.ssh/zion-edge-post-wipe-2026-07-29`, port 22 or 2222, IPv4)
+2. **If IPv4 SSH refused but server is up (ping OK, web/RPC OK):** sshd may be IPv6-only. Try IPv6 fallback: `ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` (IPv6 addr from `dig AAAA vmi3425821.contaboserver.net`)
 3. **If SSH completely fails:** use VNC console: `95.111.232.25:63061` (RFB protocol, password `h4neV76S`). If root password lost, reset via Contabo panel (my.contabo.com → VPS → Reset root password).
 4. **If sshd listens only on IPv6** (root cause of 2026-07-19 incident): fix `/etc/systemd/system/ssh.socket.d/override.conf` to include both `ListenStream=0.0.0.0:2222` and `ListenStream=[::]:2222`, then `systemctl daemon-reload && systemctl restart ssh.socket`. Verify with `ss -tlnp | grep -E ':22|:2222'` — should show 4 listeners (IPv4+IPv6 × port 22+2222).
 5. Check systemd services: `systemctl status zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp zion-edge-dex zion-edge-oasis nginx`
@@ -1056,14 +1056,14 @@ This address is no longer active after the 2026-07-06 hard genesis reset.
 
 | Resource | Value |
 |---|---|
-| New server SSH | `ssh zion-new` (key: `~/.ssh/zion-edge-2026-07-29`, ed25519, **port 22 (default) + 2222 (alias), IPv4 + IPv6**) |
+| New server SSH | `ssh zion-new` (key: `~/.ssh/zion-edge-post-wipe-2026-07-29`, ed25519, **port 22 (default) + 2222 (alias), IPv4 + IPv6**) |
 | New server IP (IPv4) | `62.171.141.136` (Ubuntu 24.04.4 LTS, Contabo VPS) |
 | New server IP (IPv6) | `2a02:c207:2342:5821::1` (AAAA of `vmi3425821.contaboserver.net`) — fallback when IPv4 refused |
 | New server hostname | `vmi3425821.contaboserver.net` (Contabo internal) |
 | New server source | `/root/zion/2.9.6/` (git clone at commit `690b6dfe`) |
 | New server Cargo | `source ~/.cargo/env` (Rust 1.96.1 stable) |
 | New server VNC | `95.111.232.25:63061` (RFB, password `h4neV76S`) — fallback if SSH fails |
-| IPv6 SSH fallback cmd | `ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` |
+| IPv6 SSH fallback cmd | `ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` |
 | fail2ban ignoreip (perzistentní) | `/etc/fail2ban/jail.d/zion-p2p.conf` — `127.0.0.1/8 ::1 109.81.31.210 109.81.27.87` (Mac + backup node whitelisted z P2P jail) |
 | Environment file | `/root/zion/edge-environment.sh` (chmod 600, `<REPLACE_*>` placeholders) |
 | SMOS API key | `api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8` (rotated 2026-07-08) |
@@ -1352,8 +1352,8 @@ Restart after change: `systemctl restart zion-pool.service`
 | Param | Value |
 |-------|-------|
 | Alias | `ssh zion-new` (in `~/.ssh/config`) |
-| Key | `~/.ssh/zion-edge-2026-07-29` (ed25519) |
-| Fingerprint | `SHA256:mTh5FLAQoFLMzlQX6JlKBYXQEzeKOL6j9C3FS1oVVWw` |
+| Key | `~/.ssh/zion-edge-post-wipe-2026-07-29` (ed25519) |
+| Fingerprint | `SHA256:UOjWE5K22kyJ0Xgxdt/+cySZlErHFQ/y+M9uM/2zmY4` |
 | Password auth | DISABLED (keys only) |
 | VNC fallback | `95.111.232.25:63061` (RFB, password `h4neV76S`) |
 

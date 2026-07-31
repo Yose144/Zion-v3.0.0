@@ -29,11 +29,11 @@ rsync -avz --exclude='.git' --exclude='target' --exclude='node_modules' \
   --exclude='PoC-lab' --exclude='HiranV2.x' --exclude='edge-deploy' \
   --exclude='*.log' --exclude='*.db' --exclude='*.db-wal' --exclude='*.db-shm' \
   --exclude='.DS_Store' --delete \
-  -e 'ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 -o StrictHostKeyChecking=no' \
+  -e 'ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 -o StrictHostKeyChecking=no' \
   . root@62.171.141.136:/home/zionserver/zion-build-local/
 
 # Edge: Docker build (Linux x86_64, GLIBC 2.31)
-ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 root@62.171.141.136 \
+ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 root@62.171.141.136 \
   'sed -i "s/VERSION=\"v3.1.9-vega-complete-[0-9]*\"/VERSION=\"v3.1.9-vega-complete-70\"/" /tmp/build_complete.sh && /tmp/build_complete.sh'
 ```
 
@@ -42,7 +42,7 @@ Build trvá ~8 min. Binárka se instaluje do `/var/www/zion-miner/zion-miner`.
 ## 2. Vytvoření ZIP balíčku
 
 ```bash
-ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 root@62.171.141.136 << 'EOF'
+ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 root@62.171.141.136 << 'EOF'
 V="v3.1.9-vega-complete-70"
 Z="zion-miner-${V}.zip"
 F="zion-miner-${V}"
@@ -116,7 +116,7 @@ external_stream_cpu coin=VRSC algo=verushash
 ### Pool log (Edge)
 
 ```bash
-ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 root@62.171.141.136 << 'EOF'
+ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 root@62.171.141.136 << 'EOF'
 echo "=== Accepted shares last 5 min ==="
 journalctl --no-pager -u zion-edge-pool.service --since "5 min ago" 2>&1 | \
   grep -cE "share_status=Accepted"

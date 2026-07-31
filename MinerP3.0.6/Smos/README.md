@@ -78,11 +78,11 @@ cargo build --release -p zion-miner \
 
 # 2. Sync zdroje na Edge
 rsync -avz --exclude='.git' --exclude='target' \
-  -e 'ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222' \
+  -e 'ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222' \
   . root@62.171.141.136:/home/zionserver/zion-build-local/
 
 # 3. Docker build na Edge (Linux x86_64, GLIBC 2.31)
-ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 root@62.171.141.136 \
+ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 root@62.171.141.136 \
   '/tmp/build_complete.sh'
 ```
 
@@ -98,7 +98,7 @@ Viz `build_complete.sh` pro detaily. Binárka se instaluje do
 SMOS očekává ZIP s adresářovou strukturou `<name>/miner` (spustitelný wrapper):
 
 ```bash
-ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 root@62.171.141.136 << 'EOF'
+ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 root@62.171.141.136 << 'EOF'
 V="v3.1.9-vega-complete-70"
 Z="zion-miner-${V}.zip"
 F="zion-miner-${V}"
@@ -241,7 +241,7 @@ odtlačují miner output. Neposílat zbytečně bash commandy přes SMOS API.
 ## Edge Server
 
 - **IP:** `62.171.141.136`
-- **SSH:** `ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 root@62.171.141.136`
+- **SSH:** `ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 root@62.171.141.136`
 - **Pool:** `62.171.141.136:8444` (stratum)
 - **Miner binary URL:** `http://62.171.141.136/zion-miner/zion-miner`
 - **ZIP URL:** `http://62.171.141.136/zion-miner/zion-miner-v3.1.9-vega-complete-70.zip`
