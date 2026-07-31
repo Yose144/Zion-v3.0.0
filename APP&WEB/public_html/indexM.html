@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./matrix.css" />
+    <script src="./matrix.js" defer></script>
+    <title>Matrix</title>
+<body>
+  <div id="matrixLoader" class="matrix-loader" aria-live="polite" aria-label="Matrix data uplink loading">
+    <div class="loader-inner">
+      <p class="loader-label">ZION MAINFRAME</p>
+      <p class="loader-sub">webSIDe uploaDing...</p>
+      <div class="loader-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <span></span>
+      </div>
+      <p class="loader-status">status: &lt;UPLOAD&gt; <span id="loaderPercent">0%</span></p>
+    </div>
+    <div class="loader-scan"></div>
+  </div>
+  <canvas id="c"></canvas>
+</body>
+</html>

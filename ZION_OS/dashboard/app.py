@@ -24,6 +24,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import v31
 
 # ── TTL cache helper for expensive RPC/log scrapers ─────────────────────
 
@@ -222,7 +223,7 @@ def _run_edge_cmd(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
     """Run a command on the Edge server — locally if we're on Edge, via SSH otherwise."""
     if EDGE_IS_LOCAL:
         return subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
-    # v3.0.4: Use SSH config alias "zion-new" (key in ~/.ssh/zion-new-server)
+    # v3.0.7: Use repo symlink "ssh-key-zion-edge" -> ~/.ssh/zion-edge-2026-07-29, or SSH alias "zion-new"
     ssh_key = REPO_ROOT / "ssh-key-zion-edge"
     if ssh_key.exists():
         return subprocess.run(
@@ -11200,6 +11201,63 @@ def _read_alert_log(path: str, max_lines: int = 20) -> list[str]:
         return []
 
 
+def build_security_warnings(limit: int = 200) -> dict:
+    """Build real-time server security warnings from zion-security.log and live probes."""
+    warnings = []
+    try:
+        path = Path("/var/log/zion-security.log")
+        if path.exists():
+            with open(path, "r") as f:
+                lines = f.readlines()
+            for line in lines[-limit:]:
+                try:
+                    warnings.append(json.loads(line))
+                except Exception:
+                    continue
+    except Exception as e:
+        warnings.append({"ts": int(time.time()), "level": "ERROR", "message": f"cannot read security log: {e}"})
+
+    # Live fail2ban banned IPs
+    banned = []
+    try:
+        result = subprocess.run(["fail2ban-client", "status", "sshd"], capture_output=True, text=True, timeout=5)
+        for line in result.stdout.splitlines():
+            if "Banned IP list" in line:
+                ips = line.split(":")[-1].strip()
+                if ips and ips != "":
+                    banned = [ip.strip() for ip in ips.split(",") if ip.strip()]
+    except Exception:
+        pass
+
+    # Currently active SSH connections
+    ssh_conns = []
+    try:
+        result = subprocess.run(["ss", "-tnp"], capture_output=True, text=True, timeout=5)
+        for line in result.stdout.splitlines():
+            if "sshd" in line and "ESTAB" in line:
+                parts = line.split()
+                if len(parts) >= 5:
+                    ssh_conns.append({"local": parts[4], "peer": parts[5]})
+    except Exception:
+        pass
+
+    # UFW active status
+    fw_active = False
+    try:
+        result = subprocess.run(["ufw", "status"], capture_output=True, text=True, timeout=5)
+        fw_active = "Status: active" in result.stdout
+    except Exception:
+        pass
+
+    return {
+        "warnings": warnings,
+        "banned_ips": banned,
+        "active_ssh": ssh_conns,
+        "firewall_active": fw_active,
+        "timestamp": int(time.time()),
+    }
+
+
 def build_security_status() -> dict:
     """Build security status for /api/security endpoint."""
     # 1. Attacker address watch
@@ -11541,6 +11599,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 return
 
         # ── Dashboard v2 SPA static files ────────────────────────────────────
+        if route == "/security-warnings" or route == "/security":
+            html_path = SCRIPT_DIR / "security-warnings.html"
+            if html_path.exists():
+                self._html(html_path.read_text(encoding="utf-8"))
+            else:
+                self.send_error(404)
+            return
+
         if route == "/" or route == "/index.html":
             v2_index = V2_DIST / "index.html"
             if v2_index.exists():
@@ -11666,6 +11732,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
             else:
                 self.send_error(404)
+            return
+        # ── V31 Mainnet Alpha dashboard ──────────────────────────────────────
+        elif v31.handle_get(self, route, params):
             return
         elif route == "/api/v2/status":
             # Batch endpoint: single call returns everything dashboard v2 needs on boot
@@ -11826,6 +11895,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"alerts": build_alerts(build_status())})
         elif route == "/api/security":
             self._json(build_security_status())
+        elif route == "/api/security-warnings":
+            limit = int(params.get("limit", ["200"])[0])
+            self._json(build_security_warnings(limit=limit))
         elif route == "/api/history":
             self._json({"samples": HISTORY.snapshot()})
         elif route == "/api/events":
@@ -14054,6 +14126,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 _BACKUP_BEACON = payload
                 _BACKUP_BEACON_TIME = time.time()
             self._json({"ok": True, "received_at": datetime.now().isoformat()})
+        elif v31.handle_post(self, route, payload):
+            return
         else:
             self.send_error(404)
 

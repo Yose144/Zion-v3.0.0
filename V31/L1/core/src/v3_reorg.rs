@@ -148,7 +148,7 @@ pub async fn reorg_to_block(storage: Arc<Storage>, block: &V3Block) -> Result<()
 mod tests {
     use super::*;
     use crate::v3_compat::build_v3_genesis_block;
-    use crate::v3_template::{V3TemplateBuilder, V3Miner};
+    use crate::v3_template::{V3Miner, V3TemplateBuilder};
 
     #[tokio::test]
     async fn no_reorg_for_shorter_or_equal_chain() {

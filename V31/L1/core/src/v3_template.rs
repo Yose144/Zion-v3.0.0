@@ -10,7 +10,8 @@ use crate::crypto::is_valid_address;
 use crate::emission::{block_subsidy, fee_split};
 use crate::storage::Storage;
 use crate::v3_compat::{
-    derive_template_merkle_root_v2_blake3, AccountTransaction, MiningHeader, UtxoTransaction, V3Block,
+    derive_template_merkle_root_v2_blake3, AccountTransaction, MiningHeader, UtxoTransaction,
+    V3Block,
 };
 
 /// Template builder error.
@@ -62,10 +63,16 @@ impl V3TemplateBuilder {
         humanitarian: String,
         issobella: String,
     ) -> Result<(), V3TemplateError> {
-        if !humanitarian.is_empty() && !is_valid_address(&humanitarian) && !is_valid_account_id(&humanitarian) {
+        if !humanitarian.is_empty()
+            && !is_valid_address(&humanitarian)
+            && !is_valid_account_id(&humanitarian)
+        {
             return Err(V3TemplateError::InvalidAddress(humanitarian));
         }
-        if !issobella.is_empty() && !is_valid_address(&issobella) && !is_valid_account_id(&issobella) {
+        if !issobella.is_empty()
+            && !is_valid_address(&issobella)
+            && !is_valid_account_id(&issobella)
+        {
             return Err(V3TemplateError::InvalidAddress(issobella));
         }
         self.humanitarian_address = humanitarian;
@@ -101,7 +108,8 @@ impl V3TemplateBuilder {
         // Coinbase.
         if !self.miner_address.is_empty() {
             let subsidy = block_subsidy(next_height);
-            let has_split = !self.humanitarian_address.is_empty() && !self.issobella_address.is_empty();
+            let has_split =
+                !self.humanitarian_address.is_empty() && !self.issobella_address.is_empty();
 
             if has_split {
                 let (miner_amt, human_amt, issobella_amt, _) = fee_split(subsidy);
@@ -257,9 +265,7 @@ mod tests {
     async fn build_split_template() {
         let storage = Arc::new(Storage::open_in_memory().await.unwrap());
         let mut builder = V3TemplateBuilder::new(storage);
-        builder
-            .set_miner_address("miner".to_string())
-            .unwrap();
+        builder.set_miner_address("miner".to_string()).unwrap();
         builder
             .set_fee_addresses("human".to_string(), "issobella".to_string())
             .unwrap();
@@ -278,7 +284,11 @@ mod tests {
             fee_split(block_subsidy(1)).0 as u128
         );
         assert_eq!(
-            template.transactions.iter().map(|t| t.amount_zion).sum::<u128>(),
+            template
+                .transactions
+                .iter()
+                .map(|t| t.amount_zion)
+                .sum::<u128>(),
             minted_subsidy(block_subsidy(1)) as u128
         );
     }

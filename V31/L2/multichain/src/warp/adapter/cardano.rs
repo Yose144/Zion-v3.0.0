@@ -374,10 +374,11 @@ impl ChainAdapter for CardanoAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        let asset = zion_asset_with_override(&self.network, self.asset_override.as_deref()).ok_or_else(|| WarpError::AdapterError {
-            chain: "cardano".into(),
-            reason: format!("no ZION asset configured for network '{}'", self.network),
-        })?;
+        let asset = zion_asset_with_override(&self.network, self.asset_override.as_deref())
+            .ok_or_else(|| WarpError::AdapterError {
+                chain: "cardano".into(),
+                reason: format!("no ZION asset configured for network '{}'", self.network),
+            })?;
 
         let signer = CardanoSigner::from_env().map_err(|e| WarpError::AdapterError {
             chain: "cardano".into(),

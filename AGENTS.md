@@ -2,21 +2,29 @@
 
 This file provides operating guidance to Devin, WARP, Copilot, and future automated agents working in this repository.
 
-> **⚠️ SERVER MIGRATION 2026-07-07:** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** (Contabo VPS, hostname `vmi3425821.contaboserver.net`, IPv6 `2a02:c207:2342:5821::1`) following the 2026-07-20 hard genesis reset (post block-retention fix; previous chain 0–~10913 lost). New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. SSH: `ssh zion-new` (key: `~/.ssh/zion-new-server`, **port 22 (default) + port 2222 (alias), IPv4 + IPv6**). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) for current live topology (2 nodes active on Edge: primary + follower, height 2584+ as of 2026-07-23; local backup node online and synced). Web: `https://zionterranova.com` (Next.js Docker, image 377 MB standalone). Dashboard: `https://dashboard.zionterranova.com` (Basic Auth). Pool: `62.171.141.136:8444`. RPC: `rpc.zionterranova.com:8443` (public, nginx TCP stream proxy → `127.0.0.1:9443` node RPC). All L2 services (bridge, dao, warp, swap, dashboard) use `127.0.0.1:9443` internally.
+> **⚠️ SERVER MIGRATION 2026-07-07:** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** (Contabo VPS, hostname `vmi3425821.contaboserver.net`, IPv6 `2a02:c207:2342:5821::1`) following the 2026-07-20 hard genesis reset (post block-retention fix; previous chain 0–~10913 lost). New genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`. SSH: `ssh zion-new` (key: `~/.ssh/zion-edge-post-wipe-2026-07-29`, **port 22 (default) + port 2222 (alias), IPv4 + IPv6**). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) for current live topology (2 nodes active on Edge: primary + follower, height 2584+ as of 2026-07-23; local backup node online and synced). Web: `https://zionterranova.com` (Next.js Docker, image 377 MB standalone). Dashboard: `https://dashboard.zionterranova.com` (Basic Auth). Pool: `62.171.141.136:8444`. RPC: `rpc.zionterranova.com:8443` (public, nginx TCP stream proxy → `127.0.0.1:9443` node RPC). All L2 services (bridge, dao, warp, swap, dashboard) use `127.0.0.1:9443` internally.
 >
 > **⚠️ INCIDENT 2026-07-19 (SSH + fail2ban recovery):** Po rebootu sshd naslouchalo jen na IPv6 (`[::]:2222`) kvůli broken `ssh.socket.d/override.conf` (`ListenStream=2222` bez IP → IPv6-only s `BindIPv6Only=ipv6-only`). IPv4 SSH byl `Connection refused`, root heslo ztraceno. Obnovení: (1) root heslo resetnuto přes Contabo panel, (2) IPv6 adresa nalezena přes `dig AAAA vmi3425821.contaboserver.net` → `2a02:c207:2342:5821::1`, (3) SSH přes `ssh -6 -p 2222 root@2a02:c207:2342:5821::1` fungovalo, (4) `override.conf` opraven na `0.0.0.0:2222` + `[::]:2222`, (5) přidán `port22.conf` drop-in pro alias na port 22. **Druhý incident:** fail2ban `zion-p2p` jail (maxretry=50/10min, bantime=24h) banoval IPv4 `109.81.31.210` (Mac) při spuštění lokálního backup node — backup node dělal rychlé P2P connect/disconnect na porty 8333/8334, fail2ban vyhodnotil jako port scan → REJECT na všechny porty (SSH/web/RPC přes IPv4 přestaly fungovat, IPv6 fungovalo). Opraveno: `ignoreip` v `/etc/fail2ban/jail.d/zion-p2p.conf` rozšířeno o `109.81.31.210` + `109.81.27.87` (perzistentní, přežije reboot). **Root heslo resetnuto — uložit do 1Password.** VNC fallback: `95.111.232.25:63061` (RFB, password `h4neV76S`).
 >
-> **⚠️ BLOCK RETENTION FIX 2026-07-20:** Bug v `V3/L1/core/src/bin/node.rs:179` — `if config.block_retention > 0 { rt.set_block_retention(...) }` přeskočil `set_block_retention(0)`, takže `ChainState` default (`DEFAULT_BLOCK_RETENTION=1000`) nebyl nikdy přepsán. Všechny uzly (Edge node1/node2 + lokální backup) ořezávaly historii na posledních 1000 bloků i přes `ZION_BLOCK_RETENTION=0` v env. Fix: odstraněn `> 0` guard — `rt.set_block_retention(config.block_retention)` se volá vždy. **Následek:** bloky 0–~10913 jsou trvale ztraceny (žádná záloha DB s plnou historií neexistuje — bug byl v kódu od genesisu). Od fixu (height ~10914+) se všechny bloky uchovávají. Nová binárka nasazena na Edge (`/opt/zion/V3/target/release/node`) i lokální backup (`target/release/node`). **Legacy `zion-node.service`** (old binary `/usr/local/bin/zion-node`) byl deaktivován — service file přesunut na `.DISABLED-legacy-2026-07-20`. **fail2ban ignoreip** rozšířeno o `109.81.89.176` + `109.81.83.205` (IP lokálního backup node a Mac) a později o `109.81.81.86` (aktuální vývojový PC). Při rychlém P2P reconnectu lokálního backup nodu může fail2ban `zion-p2p` jail IPv4 zabanovat — vždy zkuste `ssh -6 -p 2222 -i ~/.ssh/zion-new-server root@2a02:c207:2342:5821::1` jako fallback.
+> **⚠️ BLOCK RETENTION FIX 2026-07-20:** Bug v `V3/L1/core/src/bin/node.rs:179` — `if config.block_retention > 0 { rt.set_block_retention(...) }` přeskočil `set_block_retention(0)`, takže `ChainState` default (`DEFAULT_BLOCK_RETENTION=1000`) nebyl nikdy přepsán. Všechny uzly (Edge node1/node2 + lokální backup) ořezávaly historii na posledních 1000 bloků i přes `ZION_BLOCK_RETENTION=0` v env. Fix: odstraněn `> 0` guard — `rt.set_block_retention(config.block_retention)` se volá vždy. **Následek:** bloky 0–~10913 jsou trvale ztraceny (žádná záloha DB s plnou historií neexistuje — bug byl v kódu od genesisu). Od fixu (height ~10914+) se všechny bloky uchovávají. Nová binárka nasazena na Edge (`/opt/zion/V3/target/release/node`) i lokální backup (`target/release/node`). **Legacy `zion-node.service`** (old binary `/usr/local/bin/zion-node`) byl deaktivován — service file přesunut na `.DISABLED-legacy-2026-07-20`. **fail2ban ignoreip** rozšířeno o `109.81.89.176` + `109.81.83.205` (IP lokálního backup node a Mac) a později o `109.81.81.86` (aktuální vývojový PC). Při rychlém P2P reconnectu lokálního backup nodu může fail2ban `zion-p2p` jail IPv4 zabanovat — vždy zkuste `ssh -6 -p 2222 -i ~/.ssh/zion-edge-post-wipe-2026-07-29 root@2a02:c207:2342:5821::1` jako fallback.
 >
 > **⚠️ BACKUP SYSTEM OVERHAUL 2026-07-20:** Kompletní audit + rozšíření backup systému. **`ZION_OS/infra/scripts/backup-edge.sh`** přepsán na comprehensive L1-L6 backup: SQLite DBs s `sqlite3 .backup` (konzistentní snapshot i s WAL), `peers.json`, `pplns-state.json`, `pplns-state-test.json`, OASIS game state JSONs (`golden_egg`, `avatars`, `world`, `prize_tiers`), dashboard `state.json`, `revenue_journal/*.jsonl`, všechny env files (`edge-environment.sh`, `edge-node2-environment.sh`, `test-pool-environment.sh`, `xmr-pool-environment.sh`), `/etc/zion/config/*.toml` + repo TOMLs včetně `chains.toml`, systemd services + timers, nginx sites-enabled, fail2ban jail.d, Let's Encrypt certs (live + archive). Edge retention: 14 daily + 4 weekly, timer every 4h (`zion-edge-backup.timer`). **Off-site replication:** `ZION_OS/infra/scripts/sync-edge-backups.sh` rsyncne Edge backups → lokální `~/2.9.6-main/backups/edge/{daily,weekly}/` přes SSH IPv6. Lokální retention: 30 daily + 8 weekly (delší než Edge). Systemd user timer `zion-offsite-sync.timer` běží každých 6h (`~/.config/systemd/user/zion-offsite-sync.{service,timer}`). Integrity check: `tar tzf` + `PRAGMA integrity_check` na všech SQLite DBs. MD5 checksumy state souborů match live Edge. **Pozn:** bloky 0–10913 ztraceny i v zálohách (všechny historické backupy obsahují jen ~1000 pruned blocks) — od fixu se kompletní historie zálohuje.
+>
+> **⚠️ PUBLIC WEB TRIO (2026-07-31):** ZION webové služby jsou rozděleny na tři samostatné domény:
+>
+> 1. **Intro:** `https://zionterranova.com` — jednostránkový vstup do celého ZION multichain ekosystému a portálu do OASIS. Zdroj: [`APP&WEB/website-v2.9/public/maintenance.html`](./APP&WEB/website-v2.9/public/maintenance.html) nasazen v `/var/www/maintenance/maintenance.html` a servírován systémovým nginxem.
+> 2. **Web2.9:** `https://app.zionterranova.com` — plný Next.js 16.2.9 web (`website-v2.9`), běží jako systemd `zion-website.service`, proxy přes nginx na `127.0.0.1:3000`.
+> 3. **OASIS Web:** `https://oasis.zionterranova.com` — samostatná vizuální OASIS aplikace (`APP&WEB/OasisWeb`), nasazená v `/var/www/oasis/` a servírovaná systémovým nginxem.
+>
+> L1–L6 služby běží normálně.
 
 ## Scope and working area
 
 - This is a multi-layer monorepo, but **active mainnet-track development is in `V3/`**.
-- **ZionDex backend** currently lives in `ZionDex/`; planned V3.1 location is `V31/L2/multichain` (absorbed into the unified **Multi-Chain** crate alongside bridge/warp/atomic-swap/swap-aggregator). See `ZionDex/README.md` (current), [`V3.1_MIGRATION_PLAN.md`](./docs/3.0.6/V3.1_MIGRATION_PLAN.md) and [`MAINNET_ALPHA_L2_UNIFICATION.md`](./MAINNET_ALPHA_L2_UNIFICATION.md) for the migration/unification plan. **Status: Live Beta** — Router integrated with WARP API (port 8453), web UI live at `/dex` and `/ziondex` on zionterranova.com. Cross-chain AMM routing implemented (`aggregator.rs`). Multi-path quote API: `GET /quote/multi`. Pending: custom AMM deploy, intent-based execution. ZionDex Router service LIVE on Edge (port 8454, 7 chains). Contract addresses template: [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md).
+- **ZionDex backend** currently lives in `ZionDex/`; planned V3.1 location is `V31/L2/multichain` (absorbed into the unified **Multi-Chain** crate alongside bridge/warp/atomic-swap/swap-aggregator). See `ZionDex/README.md` (current), [`V3.1_MIGRATION_PLAN.md`](./docs/3.0.6/V3.1_MIGRATION_PLAN.md) and [`MAINNET_ALPHA_L2_UNIFICATION.md`](docs/3.0.8/MAINNET_ALPHA_L2_UNIFICATION.md) for the migration/unification plan. **Status: Live Beta** — Router integrated with WARP API (port 8453), web UI live at `/dex` and `/ziondex` on zionterranova.com. Cross-chain AMM routing implemented (`aggregator.rs`). Multi-path quote API: `GET /quote/multi`. Pending: custom AMM deploy, intent-based execution. ZionDex Router service LIVE on Edge (port 8454, 7 chains). Contract addresses template: [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md).
 - Treat legacy root trees (`L1/`, `L2/`, `L3/`, older docs/archive content) as migration/reference material unless a task explicitly targets them.
 - For `V3` work, prefer changing only `V3/**` unless the task explicitly requires cross-tree sync.
-- **V3.1 migration is planned (starts after 3.0.9):** clean code is migrated into a brand-new `V31/` directory on a dedicated branch (NOT an in-place reorg of `V3/`). **L2 target:** bridge/warp/atomic-swap/ziondex/swap-aggregator unify into a single **Multi-Chain** crate (`V31/L2/multichain`) per [`MAINNET_ALPHA_L2_UNIFICATION.md`](./MAINNET_ALPHA_L2_UNIFICATION.md); AuxPoW (root `AuXpow/`) merges into `V31/L1/miner/`; `L3` = AI/orchestration/automation/NCL/PoC; **L4 Oasis / L5 Free World / L6 Issobella stay as their own superstructure layers**. See [`V3.1_MIGRATION_PLAN.md`](./docs/3.0.6/V3.1_MIGRATION_PLAN.md) and the native integration plan [`V3.1_INTEGRATION_PLAN.md`](./docs/3.0.6/V3.1_INTEGRATION_PLAN.md). Until migration/cutover, keep using current `V3/`, `AuXpow/`, and `ZionDex/` paths.
+- **V3.1 / V31 status (updated 2026-07-30):** A clean `V31/` workspace is active and all workspace tests pass. Development on `V31/` is now the main track for Mainnet Alpha (3.1.0). The `V3/` tree remains the current production runtime on Edge until `V31/` is cut over. **L2 target:** bridge/warp/atomic-swap/ziondex/swap-aggregator unify into a single **Multi-Chain** crate (`V31/L2/multichain`) per [`MAINNET_ALPHA_L2_UNIFICATION.md`](docs/3.0.8/MAINNET_ALPHA_L2_UNIFICATION.md); AuxPoW (root `AuXpow/`) merges into `V31/L1/miner/`; `L3` = AI/orchestration/automation/NCL/PoC; **L4 Oasis / L5 Free World / L6 Issobella stay as their own superstructure layers**. See [`V3.1_MIGRATION_PLAN.md`](./docs/3.0.6/V3.1_MIGRATION_PLAN.md) and the native integration plan [`V3.1_INTEGRATION_PLAN.md`](./docs/3.0.6/V3.1_INTEGRATION_PLAN.md). Until migration/cutover, keep using current `V3/`, `AuXpow/`, and `ZionDex/` paths.
 - Avoid incidental edits in `APP&WEB/**` when the task is unrelated to website, desktop, or mobile work.
 - If deployment behavior changes, update every source of operational truth together: compose files, Docker docs, runbooks, scripts, and status docs.
 - If docs disagree, use this order of truth: `StatusV3.md` → `ROADMAP.md` / `V3/README.md` / `V3/ROADMAP.md` → `V3/docs/**` → older `STATUS.md`, root README, and archived docs.
@@ -143,8 +151,11 @@ public/ README files (EN + 4 translations) include a **Network Status** section 
 - **WARP Lightning Network bridge (2026-06-30):** [`docs/WARP_LIGHTNING_PLAN.md`](./docs/WARP_LIGHTNING_PLAN.md) — Native ZION L1 ↔ BTC Lightning bridge via BOLT11 invoices. BOLT11 parser + LND REST client + adapter implemented (`bolt11.rs`, `lightning_signer.rs`, `adapter/lightning.rs`). **Fáze A COMPLETE (2026-07-12):** Docker setup created at `V3/L3/warp/docker/lightning/` (bitcoind testnet + LND v0.18.2 + Redis), channel management scripts at `V3/L3/warp/scripts/lightning/`, systemd service `edge-deploy/systemd/zion-edge-lnd.service`. `lightning.rs` updated with Docker-aware errors + enhanced health_check (LND connectivity, channel balance, on-chain balance). Pending: deploy to Edge (`docker compose up`), sync testnet, open channels, extract macaroon.
 - **ZionDex L3 WARP Integration + Non-EVM Contracts + Cross-Chain AMM Routing (2026-07-12):** [`docs/3.0.5/archive-root-md/ZionDex.md`](./docs/3.0.5/archive-root-md/ZionDex.md) + [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) — ZionDex Router integrated with L3 WARP API (port 8453). `executor.rs` uses POST /transfers/outbound + /transfers/inbound + polling. `aggregator.rs` (~740 lines) — LiquidityAggregator with Dijkstra path finding, returns top 3 optimal cross-chain paths, 30s price cache. `quote.rs` — MultiPathQuote. `api.rs` — GET /quote/multi. 28/28 Rust tests. Web UI live at `/dex` and `/ziondex` on zionterranova.com. **Non-EVM ZION token contracts created** for 9 chains (Solana SPL, Tron TRC-20, Stellar asset, Cardano Plutus, Cosmos CW20, Aptos Move, Sui Move, NEAR NEP-141, TON jetton) in `V3/L2/bridge/contracts/non-evm/` — all implement bridgeMint/bridgeBurn with 5/5 quorum. Pending: deploy contracts to mainnet, ZionDex Router service on Edge (port 8454), relay keys. Contract address template: [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) — vyplň adresy po deploy.
 - **Vision documents (2026-06-30):** [`docs/3.0.3/nativeZion.md`](./docs/3.0.3/nativeZion.md) (WARP token naming: wZION EVM, ZION non-EVM) + [`docs/3.0.3/ZionDex.md`](./docs/3.0.3/ZionDex.md) (cross-chain DEX concept powered by WARP — path to Top 100) + [`docs/3.0.3/evoluZion.md`](./docs/3.0.3/evoluZion.md) (ZION as Tree of Life — evolution from PoW to Proof-of-Care / Protokol Péče, NPU-based caring computation, with full source references to TerraNova book + NPU_HARDWARE_MINING_THEORY.md + cosmic-harmony NPU Mix code).
-- **Zohar — kabalistický Strom života ZIONu (2026-07-03):** [`docs/Zohar/README.md`](./docs/Zohar/README.md) · [`docs/Zohar/01-SEFIROT-VRSTVY.md`](./docs/Zohar/01-SEFIROT-VRSTVY.md) · [`docs/Zohar/02-ROADMAP.md`](./docs/Zohar/02-ROADMAP.md) · [`docs/Zohar/03-O-KNIZE-ZOHAR.md`](./docs/Zohar/03-O-KNIZE-ZOHAR.md) — Mapování 10 sefirot + Da'at na ZION vrstvy L1-L6 (Keter=L1 Consensus, Chokmah=L1 PoW, Binah=L1 Validation, Chesed=L2 DeFi, Gevurah=L2 DAO, Tiferet=L3 WARP, Netzach=L3 AI/Hiran, Hod=L4 Oasis, Yesod=L5 Komunity, Malkhut=L6 Issobella). Tři pilíře: Milosrdenství (dávání) / Přísnost (disciplína) / Rovnováha (manifestace). Syntéza evoluZion.md (Strom života metafora) + TerraNova kniha (filosofie péče) v jazyce kabaly. **Fáze 0 (manifest) + Fáze 1 (web /app/zohar) + Fáze 2 (sefirot vow — [`V3/L5/docs/GOVERNANCE/sefirot-vow.md`](./V3/L5/docs/GOVERNANCE/sefirot-vow.md), 11 slibů pro validátory) + Fáze 4 (getTreeHealth API — [`/api/zohar/tree-health`](./APP&WEB/website-v2.9/src/app/api/zohar/tree-health/route.ts), živá data z blockchain/DeFi/bridge/NCL API mapovaná na 10 sefirot health score) hotové.** Fáze 2 on-chain: `SefirotVowToken` (soulbound ERC-721, [`V3/L2/contracts/hardhat/sol/SefirotVowToken.sol`](./V3/L2/contracts/hardhat/sol/SefirotVowToken.sol), 19 tests pass) + `SefirotVowRegistry` (proposal lifecycle, [`V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol`](./V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol), 10 tests pass) — kompilováno, deploy na Base mainnet pending (vyžaduje owner approval + gas). Fáze 3 (care task kategorie pro Protokol Péče) horizont — závisí na L1 consensus (2028+). Čistá dokumentační/web/governance/L2-contract vrstva — netýká se L1 consensus kódu.
-- **Website maintenance mode (2026-07-03):** [`APP&WEB/website-v2.9/public/maintenance.html`](./APP&WEB/website-v2.9/public/maintenance.html) — static maintenance page s animovaným gold starfield canvasem (desktop-agent style: 350 hvězd, line trails, radial gradient overlay, 24 FPS). Deploy script: [`APP&WEB/website-v2.9/deploy/deploy_maintenance.py`](./APP&WEB/website-v2.9/deploy/deploy_maintenance.py) — nahradí Next.js kontejner za `nginx:alpine` servírující maintenance.html na portu 3000. Nginx config: [`APP&WEB/website-v2.9/deploy/maintenance-nginx.conf`](./APP&WEB/website-v2.9/deploy/maintenance-nginx.conf). **Aktuálně LIVE na zionterranova.com** (Security Upgrade 3.0.4). Pro obnovu webu: spusť normální deploy script který přepíše docker-compose.yml zpět na Next.js image. Edge cesty: maintenance page `/root/zion-web/maintenance.html`, nginx config `/root/zion-web/nginx.conf`, compose `/root/zion-web/docker-compose.yml`.
+- **Zohar — kabalistický Strom života ZIONu (2026-07-03):** [`docs/Zohar/README.md`](./docs/Zohar/README.md) · [`docs/Zohar/01-SEFIROT-VRSTVY.md`](./docs/Zohar/01-SEFIROT-VRSTVY.md) · [`docs/Zohar/02-ROADMAP.md`](./docs/Zohar/02-ROADMAP.md) · [`docs/Zohar/03-O-KNIZE-ZOHAR.md`](./docs/Zohar/03-O-KNIZE-ZOHAR.md) — Mapování 10 sefirot + Da'at na ZION vrstvy L1-L6 (Keter=L1 Consensus, Chokmah=L1 PoW, Binah=L1 Validation, Chesed=L2 Multichain, Gevurah=L2 DAO, Tiferet=L3 WARP, Netzach=L3 AI/Hiran, Hod=L4 Oasis, Yesod=L5 Komunity, Malkhut=L6 Issobella). Tři pilíře: Milosrdenství (dávání) / Přísnost (disciplína) / Rovnováha (manifestace). Syntéza evoluZion.md (Strom života metafora) + TerraNova kniha (filosofie péče) v jazyce kabaly. **Fáze 0 (manifest) + Fáze 1 (web /app/zohar) + Fáze 2 (sefirot vow — [`V3/L5/docs/GOVERNANCE/sefirot-vow.md`](./V3/L5/docs/GOVERNANCE/sefirot-vow.md), 11 slibů pro validátory) + Fáze 4 (getTreeHealth API — [`/api/zohar/tree-health`](./APP&WEB/website-v2.9/src/app/api/zohar/tree-health/route.ts), živá data z blockchain/DeFi/bridge/NCL API mapovaná na 10 sefirot health score) hotové.** Fáze 2 on-chain: `SefirotVowToken` (soulbound ERC-721, [`V3/L2/contracts/hardhat/sol/SefirotVowToken.sol`](./V3/L2/contracts/hardhat/sol/SefirotVowToken.sol), 19 tests pass) + `SefirotVowRegistry` (proposal lifecycle, [`V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol`](./V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol), 10 tests pass) — kompilováno, deploy na Base mainnet pending (vyžaduje owner approval + gas). Fáze 3 (care task kategorie pro Protokol Péče) horizont — závisí na L1 consensus (2028+). Čistá dokumentační/web/governance/L2-contract vrstva — netýká se L1 consensus kódu.
+- **Public web trio (2026-07-31):** Tři nezávislé veřejné služby běží současně:
+  - **Intro:** `https://zionterranova.com` — [`APP&WEB/website-v2.9/public/maintenance.html`](./APP&WEB/website-v2.9/public/maintenance.html), nasazený v `/var/www/maintenance/maintenance.html`, servírovaný systémovým nginxem. Stargate portál do OASIS.
+  - **Web2.9:** `https://app.zionterranova.com` — plný Next.js 16.2.9 web (`website-v2.9`), systemd `zion-website.service` na `127.0.0.1:3000`, proxy přes nginx. Deploy: [`APP&WEB/website-v2.9/deploy/deploy-web2.9.sh`](./APP&WEB/website-v2.9/deploy/deploy-web2.9.sh) (lokální build → rsync → `systemctl restart zion-website.service`).
+  - **OASIS Web:** `https://oasis.zionterranova.com` — separátní vizuální OASIS prezentace (`APP&WEB/OasisWeb`), build nasazený v `/var/www/oasis/`. Deploy: [`APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh`](./APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh) (Next.js export → rsync → `nginx -s reload`).
 - **Website design system unification (2026-07-03):** `APP&WEB/website-v2.9/src/app/globals.css` definuje unified design třídy: `.zion-container` (max-w-80rem wrapper), `.zion-section` (rounded panel s border + blur), `.zion-tile` (soft inner grid item s hover), `.zion-cta-banner` (gradient CTA sekce), `.zion-rainbow-card` / `.zion-rainbow-sub` (hero/feature cards s per-color `--rc` CSS variable). Audit 73 page.tsx souborů hotový. Refaktorované: `/ai-native`, `/roadmap-295`, `/admin/revenue-v3` (ad-hoc `bg-black/60 backdrop-blur-xl` → `zion-section`/`zion-tile`), `/account` (přidány CZ/EN překlady), `/login` (grid-cols-3 → responsive). Referenční implementace: `/admin/page.tsx`.
 - **PoC-lab Fáze 3 — Hiran HTTP integrace, MockHiranServer, live llama-server (2026-07-08):** [`PoC-lab/`](./PoC-lab/) — standalone Rust workspace (mimo `V3/`) implementující Proof-of-Care prototyp. **Fáze 1 (commit `2936fcb1`)** — kompletní základ: INT8 NPU VM (`poc-npu`), multi-backend cross-validace (`poc-verifier`), validator registry + Sefirot Vow lifecycle (`poc-registry`), reward split + slashing (`poc-economics`), E2E síťový simulátor s guardian/Bodhisattva Vow demo (`poc-sim`). **Fáze 2 (commit `5d0aefea`)** — 119 testů PASS: `DharmaValidator` (5-pilířový pipeline) + `HiranAwareVerifier` + `NclReputationRegistry` + `ConsciousnessLevel` enum + multi-epoch stress testy + CLI. **Fáze 3 (commit `75b79256` + nový commit)** — 145 testů PASS: `poc-hiran` nový crate (`HiranClient` trait, `LiveHiranClient` via `ureq` + `/v1/chat/completions`, `StubHiranClient`, `build_client()` factory, `MockHiranServer` via `tiny_http` na náhodném portu); `HiranNpuBackend` v `poc-npu` nyní volá živý HTTP endpoint; `poc-sim` výstup zobrazuje `hiran[live]` vs `hiran[stub]`; integrační testy `poc-sim/tests/integration_mock_hiran.rs` (6 testů — MockServer spawn/shutdown, 3 validátoři, multi-epoch, guardian bonus). **Live Hiran:** llama-server v2.2 Q4_K_M spuštěn lokálně na portu 8002 (`~5 tok/s` CPU), `poc-sim --hiran-url http://127.0.0.1:8002` ověřeno. Spec: [`docs/3.0.4/POC_HIRAN_INTEGRATION_SPEC.md`](./docs/3.0.4/POC_HIRAN_INTEGRATION_SPEC.md). Konceptuální základ: [`docs/3.0.4/PoC_CONCEPT.md`](./docs/3.0.4/PoC_CONCEPT.md). **Netýká se L1 consensus — čistě výzkumný prototyp.**
 
@@ -326,14 +337,10 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
   - `npm --prefix "APP&WEB/website-v2.9" run lint`
   - **Production build:** `npx next build --webpack` (MUST use `--webpack` — Next.js 16 Turbopack cannot resolve local `.tgz` deps)
   - **Theme system:** `.zion-rainbow-card` / `.zion-rainbow-sub` CSS classes with inline `style={{ '--rc': 'R, G, B' } as React.CSSProperties}`. Each page has its own accent color. See `APP&WEB/website-v2.9/README.md` for the full color map.
-  - **Production deployment (v3.0.4 — new server):**
-    - SSH: `ssh zion-new` (key: `~/.ssh/zion-new-server`)
-    - Source on server: `/root/zion-web-next/` (extracted from tar, Dockerfile.production)
-    - Docker image: `zion-web` (multi-stage build: node:22-alpine, 73+ Next.js routes)
-    - Docker compose: `/root/zion-web-next/docker-compose.yml` — port `127.0.0.1:3000`, restart `unless-stopped`
-    - Nginx reverse proxy: `https://zionterranova.com` → `127.0.0.1:3000` (SSL Let's Encrypt, HTTP/2, security headers)
-    - Maintenance fallback: `zion-web:maintenance` image (nginx:alpine + maintenance.html)
-    - CSP in `next.config.ts` updated to new server IP `62.171.141.136`
+  - **Production web trio (2026-07-31):** Tři služby běží současně:
+    - `https://zionterranova.com` — OASIS intro landing page z `/var/www/maintenance/maintenance.html` (systémový nginx, `zion.conf`). Deploy: `bash APP&WEB/website-v2.9/deploy/deploy-oasis-intro.sh`.
+    - `https://app.zionterranova.com` — web2.9 Next.js (`zion-website.service` → `127.0.0.1:3000`, nginx proxy). Deploy: `bash APP&WEB/website-v2.9/deploy/deploy-web2.9.sh`.
+    - `https://oasis.zionterranova.com` — separátní OASIS web v `/var/www/oasis/` (systémový nginx). Deploy: `bash APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh`.
     - Full guide: `APP&WEB/website-v2.9/DEPLOYMENT.md`
 - Mobile app:
   - `npm --prefix "APP&WEB/mobile-app" install`
@@ -572,8 +579,8 @@ Dashboard: https://dashboard.zionterranova.com (nginx → Python)
 
 - **SSH config:** `ssh zion-new` (alias in `~/.ssh/config`, port 2222)
 - **SSH ports:** `22` (default alias) + `2222` (primary), both IPv4 + IPv6
-- **SSH key:** `~/.ssh/zion-new-server` (ed25519, fingerprint `SHA256:wnq2p9n17icqkpkJMAjPZto0axRtkVTVXPMBuD9tz64`)
-- **IPv6 fallback:** `ssh -i ~/.ssh/zion-new-server -p 2222 -6 root@2a02:c207:2342:5821::1` (when IPv4 refused but server up)
+- **SSH key:** `~/.ssh/zion-edge-2026-07-29` (ed25519, fingerprint `SHA256:mTh5FLAQoFLMzlQX6JlKBYXQEzeKOL6j9C3FS1oVVWw`)
+- **IPv6 fallback:** `ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` (when IPv4 refused but server up)
 - **Password auth:** DISABLED (keys only)
 - **Never commit private keys.** Private SSH keys, Ed25519 signing keys, EVM private keys, and mnemonics must NEVER be placed in the repo root or any tracked directory — even if `.gitignore` covers them. The only valid location for SSH keys is `~/.ssh/` (chmod 600). A stray `newzionssh.md` containing the production SSH private key was found and deleted 2026-07-09; do not recreate it.
 
@@ -592,13 +599,15 @@ The new server runs as the canonical primary node + pool + full stack. It must s
 - `zion-edge-dex.service` — ZionDex router (L3)
 - `zion-edge-oasis.service` — OASIS avatar hub (L4)
 - `zion-edge-python-dashboard.service` — ZION V3 Dashboard (Python, port 8766)
+- `zion-website.service` — Next.js 16.2.9 web2.9 (`app.zionterranova.com`)
 - `zion-edge-watchdog.timer` — Health monitor (2-minute timer)
 - `zion-edge-backup.timer` — Database backup
 - `nginx` — Reverse proxy + SSL (ports 80/443)
 
-**Docker container:**
-- `zion-web` — Next.js 16.2.9 website (Docker container, port 127.0.0.1:3000)
-- `zion-web:maintenance` — Maintenance page fallback image (available, not running)
+**Web / public landing:**
+- Public web `https://zionterranova.com` — OASIS intro landing page served by system nginx from `/var/www/maintenance/maintenance.html`
+- `zion-website.service` — Next.js 16.2.9 web2.9 (`https://app.zionterranova.com`, `127.0.0.1:3000`)
+- `zion-web` Docker image — legacy fallback path (currently not used)
 
 **Environment file:** `/root/zion/edge-environment.sh` (chmod 600, `<REPLACE_*>` placeholders for air-gapped keys)
 
@@ -811,8 +820,8 @@ If genesis corruption is suspected:
 ### New Server Recovery (v3.0.4 + 2026-07-19 SSH incident)
 
 If the new server (62.171.141.136) becomes unresponsive:
-1. SSH directly: `ssh zion-new` (key: `~/.ssh/zion-new-server`, port 22 or 2222, IPv4)
-2. **If IPv4 SSH refused but server is up (ping OK, web/RPC OK):** sshd may be IPv6-only. Try IPv6 fallback: `ssh -i ~/.ssh/zion-new-server -p 2222 -6 root@2a02:c207:2342:5821::1` (IPv6 addr from `dig AAAA vmi3425821.contaboserver.net`)
+1. SSH directly: `ssh zion-new` (key: `~/.ssh/zion-edge-2026-07-29`, port 22 or 2222, IPv4)
+2. **If IPv4 SSH refused but server is up (ping OK, web/RPC OK):** sshd may be IPv6-only. Try IPv6 fallback: `ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` (IPv6 addr from `dig AAAA vmi3425821.contaboserver.net`)
 3. **If SSH completely fails:** use VNC console: `95.111.232.25:63061` (RFB protocol, password `h4neV76S`). If root password lost, reset via Contabo panel (my.contabo.com → VPS → Reset root password).
 4. **If sshd listens only on IPv6** (root cause of 2026-07-19 incident): fix `/etc/systemd/system/ssh.socket.d/override.conf` to include both `ListenStream=0.0.0.0:2222` and `ListenStream=[::]:2222`, then `systemctl daemon-reload && systemctl restart ssh.socket`. Verify with `ss -tlnp | grep -E ':22|:2222'` — should show 4 listeners (IPv4+IPv6 × port 22+2222).
 5. Check systemd services: `systemctl status zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp zion-edge-dex zion-edge-oasis nginx`
@@ -1047,14 +1056,14 @@ This address is no longer active after the 2026-07-06 hard genesis reset.
 
 | Resource | Value |
 |---|---|
-| New server SSH | `ssh zion-new` (key: `~/.ssh/zion-new-server`, ed25519, **port 22 (default) + 2222 (alias), IPv4 + IPv6**) |
+| New server SSH | `ssh zion-new` (key: `~/.ssh/zion-edge-2026-07-29`, ed25519, **port 22 (default) + 2222 (alias), IPv4 + IPv6**) |
 | New server IP (IPv4) | `62.171.141.136` (Ubuntu 24.04.4 LTS, Contabo VPS) |
 | New server IP (IPv6) | `2a02:c207:2342:5821::1` (AAAA of `vmi3425821.contaboserver.net`) — fallback when IPv4 refused |
 | New server hostname | `vmi3425821.contaboserver.net` (Contabo internal) |
 | New server source | `/root/zion/2.9.6/` (git clone at commit `690b6dfe`) |
 | New server Cargo | `source ~/.cargo/env` (Rust 1.96.1 stable) |
 | New server VNC | `95.111.232.25:63061` (RFB, password `h4neV76S`) — fallback if SSH fails |
-| IPv6 SSH fallback cmd | `ssh -i ~/.ssh/zion-new-server -p 2222 -6 root@2a02:c207:2342:5821::1` |
+| IPv6 SSH fallback cmd | `ssh -i ~/.ssh/zion-edge-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` |
 | fail2ban ignoreip (perzistentní) | `/etc/fail2ban/jail.d/zion-p2p.conf` — `127.0.0.1/8 ::1 109.81.31.210 109.81.27.87` (Mac + backup node whitelisted z P2P jail) |
 | Environment file | `/root/zion/edge-environment.sh` (chmod 600, `<REPLACE_*>` placeholders) |
 | SMOS API key | `api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8` (rotated 2026-07-08) |
@@ -1343,8 +1352,8 @@ Restart after change: `systemctl restart zion-pool.service`
 | Param | Value |
 |-------|-------|
 | Alias | `ssh zion-new` (in `~/.ssh/config`) |
-| Key | `~/.ssh/zion-new-server` (ed25519) |
-| Fingerprint | `SHA256:wnq2p9n17icqkpkJMAjPZto0axRtkVTVXPMBuD9tz64` |
+| Key | `~/.ssh/zion-edge-2026-07-29` (ed25519) |
+| Fingerprint | `SHA256:mTh5FLAQoFLMzlQX6JlKBYXQEzeKOL6j9C3FS1oVVWw` |
 | Password auth | DISABLED (keys only) |
 | VNC fallback | `95.111.232.25:63061` (RFB, password `h4neV76S`) |
 
@@ -1448,21 +1457,23 @@ ZION_LOG_BLOCK_SUBMITTER=1
 
 ### Docker
 
-| Container | Image | Port | Purpose |
-|-----------|-------|------|---------|
-| `zion-web` | `zion-web` | 127.0.0.1:3000 | Next.js 16.2.9 web (73+ routes) |
-| (fallback) | `zion-web:maintenance` | 127.0.0.1:3001 | Maintenance page (nginx:alpine) |
+| Process | Type | Port | Purpose |
+|---------|------|------|---------|
+| `zion-website.service` | systemd / `npm start` (`next start`) | 127.0.0.1:3000 | Web2.9 Next.js at `app.zionterranova.com` |
+| `zion-web` Docker image | `zion-web` | 127.0.0.1:3000 | Fallback/legacy Docker path (currently not used) |
+| OASIS intro | `nginx` (system) | 80/443 | One-page intro at `zionterranova.com` |
+| OASIS Web | `nginx` (system) | 80/443 | Visual OASIS at `oasis.zionterranova.com` |
 
-**Docker compose:** `/root/zion-web-next/docker-compose.yml`
-- `restart: unless-stopped`
-- `read_only: true` (maintenance image only)
-- tmpfs for nginx cache
+**Web2.9 service:** `zion-website.service` — `next start` on `127.0.0.1:3000`, runs as `zion` user from `/opt/zion/APP&WEB/website-v2.9/`, source updated via `deploy-web2.9.sh`.
+**Legacy Docker compose:** `/root/zion-web-next/docker-compose.yml` — not currently used.
 
 ### Nginx Reverse Proxy
 
 | Domain | Upstream | SSL Cert |
 |--------|----------|----------|
-| `zionterranova.com` | `127.0.0.1:3000` (Next.js) | Let's Encrypt (zionterranova.com + www) |
+| `zionterranova.com` | `/var/www/maintenance/maintenance.html` (static intro) | Let's Encrypt (zionterranova.com + www) |
+| `app.zionterranova.com` | `127.0.0.1:3000` (Next.js web2.9) | Let's Encrypt (app.zionterranova.com) |
+| `oasis.zionterranova.com` | `/var/www/oasis/index.html` (static OASIS) | Let's Encrypt (oasis.zionterranova.com) |
 | `dashboard.zionterranova.com` | `127.0.0.1:8766` (Dashboard) | Let's Encrypt (dashboard.zionterranova.com) |
 | `/api/rpc` | `127.0.0.1:9443` (node RPC, nginx 8443 → 9443) | (via main domain) |
 | `/api/dao` | `127.0.0.1:8450` (DAO API) | (via main domain) |
@@ -1528,15 +1539,11 @@ curl -s http://127.0.0.1:9443/jsonrpc -d '{"jsonrpc":"2.0","method":"getSupplyIn
 # Check genesis hash
 journalctl -u zion-node --no-pager -n 50 | grep tip_hash_hex | tail -1
 
-# Restart web (Docker)
-cd /root/zion-web-next && docker compose restart
+# Deploy web2.9 (Next.js) to app.zionterranova.com
+cd <repo>/APP&WEB/website-v2.9 && bash deploy/deploy-web2.9.sh  # build, rsync to /opt/zion/APP&WEB/website-v2.9, chown, restart zion-website.service
 
-# Rebuild web from source
-cd /root/zion-web-next && docker compose down && docker compose build --no-cache && docker compose up -d
-
-# Switch to maintenance page
-cd /root/zion-web && docker compose up -d  # starts maintenance container on :3001
-# Then update nginx to proxy to :3001 instead of :3000
+# Update OASIS intro landing page (served from /var/www/maintenance)
+cd <repo>/APP&WEB/website-v2.9 && bash deploy/deploy-oasis-intro.sh  # rsync public/maintenance.html + stargate/ + reload nginx
 
 # View logs
 journalctl -u zion-node -f
@@ -1826,6 +1833,17 @@ ZION_POOL_AUXPOW_POOL_HOST_KAS=de.kaspa.herominers.com
 ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 ```
 
+### ExternalCoin `disabled_reason` convention (v3.0.8+, 2026-07-30)
+
+- If an `ExternalCoin` is not yet live / not producing accepted shares, add a
+  static `disabled_reason()` returning a short explanation.
+- `CoinProfile::enabled` and `CoinProfile::disabled_reason` derive from it.
+- `select_best_coin` in `zion-cosmic-harmony/profit_router.rs` and
+  `AutonomousProfitRouter` in `zion-miner/src/autonomous.rs` must filter out
+  coins with `disabled_reason` so the profit router never picks them.
+- Update `StatusV3.md` and the matching `docs/3.0.x/*.md` plan when a coin's
+  status changes.
+
 ### External coin pool endpoints (defaults v AuXpow/src/types.rs)
 
 | Coin | Default Pool | NiceHash Pool |
@@ -2045,3 +2063,11 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
   - `AuXpow/src/external_hashers.rs::hash_ethash()` and `hash_ethash_with_dag()` were changed to always use the canonical `ethash` 0.4 crate (`hashimoto_light`/`hashimoto_full`), removing a `native-hashers` C-FFI shortcut that caused `ETHASH_CPU_GPU_MISMATCH` in builds with `native-hashers` enabled.
   - For coins not on 2miners/zpool BTC payout, coin-specific payout addresses are required; test wallets were saved to the desktop.
   - **GhostRider (RTM) native-ghostrider Windows/MSVC fix (2026-07-28):** The `native-ghostrider` feature (RTM / Raptoreum) could not be compiled with MSVC on Windows. Five root causes were identified and fixed in `V3/L1/native-ffi/`: (1) **VLA in `gr.c`** — `bool selectedAlgo[algoCount]` (C99 variable-length array, unsupported by MSVC) replaced with fixed-size `bool selectedAlgo[15]` (`HASH_FUNC_COUNT` is 15); (2) **VLA in `sph/fugue.c`** — the `ROR(n, s)` macro used `sph_u32 tmp[n]`, replaced with `sph_u32 tmp[15]` (n is at most 15); (3) **`#ifdef WIN32` → `#ifdef _WIN32`** in `oaes_lib.c` — MSVC defines `_WIN32`, not `WIN32`, so the POSIX branch (`<unistd.h>`) was taken on Windows; (4) **unguarded `#include <unistd.h>`** in all 8 `cryptonight*.c` files wrapped in `#ifndef _WIN32 … #else #include <io.h> #endif`; (5) **`alloca` linker error** — MSVC uses `_alloca` (from `<malloc.h>`), so `build.rs` now adds `b.define("alloca", "_alloca")` for MSVC builds. Additionally `/utf-8` is passed to MSVC (some sphlib sources contain em-dash/en-dash in comments; without `/utf-8` MSVC fails silently). Build command: `cargo build --release -p zion-miner --features "gpu-opencl,native-randomx,native-ghostrider,native-verushash"`. **Live verification:** miner run with `--cpu-coin RTM` against Edge pool `62.171.141.136:8444` (payout `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604`) produced RTM GhostRider shares at ~125–430 H/s; the Edge pool forwarded them to upstream zpool.ca and received `result=true` (accepted) — `external_share_result miner=local-miner coin=RTM accepted=true status=accepted`. Two RTM shares accepted upstream within ~90 s of mining. The `native-ghostrider` feature is now production-ready on Windows/MSVC alongside Linux.
+
+### OASIS web (2026-07-30)
+
+- **Location:** `APP&WEB/OasisWeb`
+- **Stack:** Next.js 16 + React 19 + TypeScript, Tailwind CSS v4, React Three Fiber (`@react-three/fiber` + `@react-three/drei`), `three`, `zustand`, `framer-motion`.
+- **Purpose:** Interactive 3D multiverse portal — display and explore OASIS worlds.
+- **Build:** `cd APP&WEB/OasisWeb && npm install && npm run build`.
+- **Deploy (static export):** `dist/` is exported to `/var/www/oasis` on Edge; nginx serves `https://oasis.zionterranova.com` (Let’s Encrypt SSL, HTTP/2).

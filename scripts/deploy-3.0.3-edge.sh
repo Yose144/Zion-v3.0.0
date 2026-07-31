@@ -11,7 +11,7 @@
 #   ./scripts/deploy-3.0.3-edge.sh --rollback # rollback to pre-deploy state
 #
 # Prerequisites:
-#   - SSH key for Edge server (~/.ssh/ssh-key-zion-edge or similar)
+#   - SSH key for Edge server (~/.ssh/zion-edge-2026-07-29 or ssh-key-zion-edge symlink)
 #   - Edge server reachable via Tailscale (62.171.141.136) or public IP (62.171.141.136)
 #   - 3.0.3 code pushed to git on Edge server
 # =============================================================================

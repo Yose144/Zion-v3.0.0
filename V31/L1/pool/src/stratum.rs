@@ -3,6 +3,7 @@ use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use anyhow::Context;
 use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpListener;
@@ -13,6 +14,8 @@ use zion_cosmic_harmony::ExternalCoin;
 
 use crate::config::PoolConfig;
 use crate::pool::{Pool, PoolError};
+use crate::rate_limit::IpRateLimiter;
+use crate::rpc_client::{jsonrpc_call, parse_rpc_addr};
 use crate::share::ShareSubmission;
 
 /// Stored job data: pow header bytes, network target, block reward (flowers),
@@ -84,7 +87,9 @@ impl StratumServer {
         };
         let worker = arr[0].as_str().unwrap_or("").to_string();
         let job_id = arr[1].as_str().unwrap_or("").to_string();
-        let nonce_hex = arr[2].as_str().unwrap_or("").to_string();
+        // Accept both short [worker, job_id, nonce] and standard stratum v1
+        // [worker, job_id, extranonce2, ntime, nonce] forms.
+        let nonce_hex = arr.last().and_then(Value::as_str).unwrap_or("").to_string();
         let submission = ShareSubmission {
             worker,
             job_id: job_id.clone(),
@@ -213,7 +218,7 @@ impl StratumServer {
         json!({
             "id": null,
             "method": "mining.notify",
-            "params": [job_id, header_hex, target_hex, true]
+            "params": [job_id, header_hex, target_hex]
         })
         .to_string()
     }
@@ -233,8 +238,14 @@ impl StratumServer {
     }
 
     pub async fn run(&self, listener: TcpListener) -> std::io::Result<()> {
+        let limiter = IpRateLimiter::new(self.config.reconnect_rate_limit);
         loop {
-            let (socket, _) = listener.accept().await?;
+            let (socket, peer) = listener.accept().await?;
+            if !limiter.allow(peer.ip()) {
+                tracing::warn!("reconnect rate limit exceeded for {}", peer.ip());
+                drop(socket);
+                continue;
+            }
             let server = self.clone();
             tokio::spawn(async move {
                 let (reader, writer) = tokio::io::split(socket);
@@ -282,13 +293,10 @@ impl StratumServer {
             return;
         }
 
-        let client = match reqwest::Client::builder()
-            .timeout(Duration::from_secs(10))
-            .build()
-        {
-            Ok(c) => c,
+        let rpc_addr = match parse_rpc_addr(&rpc_url) {
+            Ok(a) => a,
             Err(e) => {
-                tracing::error!("failed to build HTTP client for template feed: {}", e);
+                tracing::error!("invalid L1 RPC URL '{}': {}", rpc_url, e);
                 return;
             }
         };
@@ -318,34 +326,29 @@ impl StratumServer {
                         "params": { "miner_address": miner_address },
                     });
 
-                    match client.post(&rpc_url).json(&payload).send().await {
-                        Ok(resp) => {
-                            match resp.json::<Value>().await {
-                                Ok(v) => {
-                                    if let Some(err) = v.get("error") {
-                                        if !err.is_null() {
-                                            tracing::warn!("getTemplate error: {}", err);
-                                            continue;
-                                        }
-                                    }
-                                    let result = v.get("result").unwrap_or(&Value::Null);
-                                    let header_hex = result.get("header_hex")
-                                        .and_then(Value::as_str)
-                                        .unwrap_or("");
-                                    let target_hex = result.get("target_hex")
-                                        .and_then(Value::as_str)
-                                        .unwrap_or("");
-                                    let reward = result.get("block_reward")
-                                        .and_then(Value::as_u64)
-                                        .unwrap_or(0);
-                                    let template_json = serde_json::to_string(result).unwrap_or_default();
-
-                                    if !header_hex.is_empty() {
-                                        tracing::info!(job = %job_id, "broadcasting mining.notify");
-                                        self.broadcast_job(&job_id, header_hex, target_hex, reward, &template_json);
-                                    }
+                    match jsonrpc_call(rpc_addr, &payload).await {
+                        Ok(v) => {
+                            if let Some(err) = v.get("error") {
+                                if !err.is_null() {
+                                    tracing::warn!("getTemplate error: {}", err);
+                                    continue;
                                 }
-                                Err(e) => tracing::warn!("getTemplate JSON parse failed: {}", e),
+                            }
+                            let result = v.get("result").unwrap_or(&Value::Null);
+                            let header_hex = result.get("header_hex")
+                                .and_then(Value::as_str)
+                                .unwrap_or("");
+                            let target_hex = result.get("target_hex")
+                                .and_then(Value::as_str)
+                                .unwrap_or("");
+                            let reward = result.get("block_reward")
+                                .and_then(Value::as_u64)
+                                .unwrap_or(0);
+                            let template_json = serde_json::to_string(result).unwrap_or_default();
+
+                            if !header_hex.is_empty() {
+                                tracing::info!(job = %job_id, "broadcasting mining.notify");
+                                self.broadcast_job(&job_id, header_hex, target_hex, reward, &template_json);
                             }
                         }
                         Err(e) => tracing::warn!("getTemplate request failed: {}", e),
@@ -385,23 +388,16 @@ fn parse_target_hex(target_hex: &str) -> Option<[u8; 32]> {
     Some(out)
 }
 
-async fn submit_block_rpc(rpc_url: &str, block: &Block) -> Result<(), reqwest::Error> {
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(15))
-        .build()?;
+async fn submit_block_rpc(rpc_url: &str, block: &Block) -> anyhow::Result<()> {
+    let rpc_addr = parse_rpc_addr(rpc_url)
+        .with_context(|| format!("invalid submitBlock RPC URL: {}", rpc_url))?;
     let payload = json!({
         "jsonrpc": "2.0",
         "id": 1,
         "method": "submitBlock",
         "params": serde_json::to_value(block).expect("block serializes"),
     });
-    let response: serde_json::Value = client
-        .post(rpc_url)
-        .json(&payload)
-        .send()
-        .await?
-        .json()
-        .await?;
+    let response: serde_json::Value = jsonrpc_call(rpc_addr, &payload).await?;
     tracing::info!("submitBlock response: {}", response);
     Ok(())
 }
@@ -422,7 +418,12 @@ fn error_response(id: Option<Value>, code: i32, message: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::net::{IpAddr, Ipv4Addr};
     use std::sync::Arc;
+    use std::time::Duration;
+
+    use crate::config::RateLimitConfig;
+    use crate::rate_limit::IpRateLimiter;
 
     fn make_server() -> StratumServer {
         let pool = Arc::new(Mutex::new(Pool::new(PoolConfig::default())));
@@ -476,5 +477,21 @@ mod tests {
             r#"{"id":5,"method":"mining.submit","params":["worker","zion_99","0000000000000000"]}"#,
         );
         assert!(resp.contains("unknown job"));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn rate_limiter_accepts_first_rejects_second_then_accepts_after_window() {
+        let config = RateLimitConfig {
+            max_reconnects_per_minute: 1,
+            window: Duration::from_secs(60),
+        };
+        let limiter = IpRateLimiter::new(config);
+        let ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+
+        assert!(limiter.allow(ip));
+        assert!(!limiter.allow(ip));
+
+        tokio::time::advance(Duration::from_secs(61)).await;
+        assert!(limiter.allow(ip));
     }
 }

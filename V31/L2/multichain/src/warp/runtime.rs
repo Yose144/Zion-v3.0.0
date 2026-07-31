@@ -39,7 +39,9 @@ impl WarpRuntime {
     pub fn new(config: WarpConfig) -> WarpResult<Self> {
         let db_path = config.database_path.clone();
         std::fs::create_dir_all(
-            std::path::Path::new(&db_path).parent().unwrap_or(std::path::Path::new(".")),
+            std::path::Path::new(&db_path)
+                .parent()
+                .unwrap_or(std::path::Path::new(".")),
         )
         .ok();
         let transfer_db = TransferDb::open(&db_path).ok();
@@ -108,7 +110,8 @@ impl WarpRuntime {
         });
 
         let watcher_db = self.db.clone();
-        let watcher = WarpWatcher::from_config(self.config.clone(), self.router.clone(), watcher_db);
+        let watcher =
+            WarpWatcher::from_config(self.config.clone(), self.router.clone(), watcher_db);
         let watcher_handle = tokio::spawn(watcher.run());
 
         let executor = OutboundExecutor::new(self.router.clone(), self.validators.clone());

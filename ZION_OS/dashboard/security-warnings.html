@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="zion">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>ZION — Security Warnings</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+tailwind.config={theme:{extend:{colors:{'zion-gold':'#ffd700','zion-purple':'#9333ea','zion-cyan':'#06b6d4','zion-red':'#ef4444','zion-amber':'#f59e0b','zion-green':'#22c55e'}}});
+</script>
+<style>
+:root{--bg:#070a14;--panel:rgba(15,23,42,0.78);--border:rgba(255,255,255,0.08);}
+body{background:var(--bg);color:#e2e8f0;font-family:Inter,system-ui,sans-serif;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:1rem;padding:1.25rem;}
+.mono{font-family:'JetBrains Mono',monospace;}
+.level-CRITICAL{background:rgba(239,68,68,0.15);border-left:3px solid #ef4444;}
+.level-WARNING{background:rgba(245,158,11,0.12);border-left:3px solid #f59e0b;}
+.level-INFO{background:rgba(6,182,212,0.10);border-left:3px solid #06b6d4;}
+.badge{display:inline-block;padding:0.15rem 0.5rem;border-radius:0.35rem;font-size:0.75rem;font-weight:700;}
+</style>
+</head>
+<body class="p-4 md:p-8">
+<div class="max-w-7xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl md:text-3xl font-bold text-zion-gold">Security Warnings</h1>
+    <div class="flex gap-2 text-sm">
+      <span id="firewall-badge" class="badge bg-gray-800">Firewall: ?</span>
+      <span id="refresh-timer" class="badge bg-gray-800">Auto-refresh: 5s</span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="panel">
+      <div class="text-sm text-gray-400">Banned IPs</div>
+      <div id="banned-count" class="text-3xl font-bold text-zion-green mono">-</div>
+      <ul id="banned-list" class="mt-2 text-sm mono text-gray-300 max-h-24 overflow-auto"></ul>
+    </div>
+    <div class="panel">
+      <div class="text-sm text-gray-400">Active SSH</div>
+      <div id="ssh-count" class="text-3xl font-bold text-zion-cyan mono">-</div>
+      <ul id="ssh-list" class="mt-2 text-sm mono text-gray-300 max-h-24 overflow-auto"></ul>
+    </div>
+    <div class="panel">
+      <div class="text-sm text-gray-400">Total Warnings</div>
+      <div id="warn-count" class="text-3xl font-bold text-zion-gold mono">-</div>
+      <div id="warn-breakdown" class="mt-2 text-sm text-gray-300"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold text-white">Live Warnings Log</h2>
+      <button onclick="loadData()" class="px-3 py-1 bg-zion-purple hover:bg-purple-600 rounded text-sm font-semibold">Refresh</button>
+    </div>
+    <div id="warnings" class="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
+      <p class="text-gray-500">Loading...</p>
+    </div>
+  </div>
+
+  <div class="mt-6 text-xs text-gray-500 text-right" id="last-updated">-</div>
+</div>
+
+<script>
+let lastData = null;
+
+function fmt(ts) {
+  const d = new Date(ts * 1000);
+  return d.toLocaleString();
+}
+
+function levelClass(l) { return 'level-' + (l || 'INFO'); }
+
+async function loadData() {
+  try {
+    const r = await fetch('/api/security-warnings?limit=200');
+    const data = await r.json();
+    lastData = data;
+    render(data);
+  } catch (e) {
+    document.getElementById('warnings').innerHTML = `<p class="text-red-400">Error loading data: ${e.message}</p>`;
+  }
+}
+
+function render(data) {
+  const fw = data.firewall_active;
+  const fwBadge = document.getElementById('firewall-badge');
+  fwBadge.textContent = 'Firewall: ' + (fw ? 'ACTIVE' : 'INACTIVE');
+  fwBadge.className = 'badge ' + (fw ? 'bg-zion-green text-black' : 'bg-zion-red text-white');
+
+  const banned = data.banned_ips || [];
+  document.getElementById('banned-count').textContent = banned.length;
+  document.getElementById('banned-list').innerHTML = banned.length
+    ? banned.map(ip => `<li>${ip}</li>`).join('')
+    : '<li class="text-gray-500">none</li>';
+
+  const ssh = data.active_ssh || [];
+  document.getElementById('ssh-count').textContent = ssh.length;
+  document.getElementById('ssh-list').innerHTML = ssh.length
+    ? ssh.map(c => `<li>${c.peer} → ${c.local}</li>`).join('')
+    : '<li class="text-gray-500">none</li>';
+
+  const warnings = data.warnings || [];
+  document.getElementById('warn-count').textContent = warnings.length;
+
+  const counts = {};
+  warnings.forEach(w => { counts[w.level] = (counts[w.level] || 0) + 1; });
+  document.getElementById('warn-breakdown').innerHTML = Object.entries(counts)
+    .map(([k, v]) => `<span class="mr-3 ${k === 'CRITICAL' ? 'text-red-400' : k === 'WARNING' ? 'text-amber-400' : 'text-cyan-400'}">${k}: ${v}</span>`)
+    .join('');
+
+  const container = document.getElementById('warnings');
+  if (!warnings.length) {
+    container.innerHTML = '<p class="text-gray-500">No warnings.</p>';
+  } else {
+    container.innerHTML = warnings.slice().reverse().map(w => {
+      const details = w.details ? `<pre class="mt-1 text-xs text-gray-400 mono">${JSON.stringify(w.details, null, 2)}</pre>` : '';
+      return `<div class="p-3 rounded ${levelClass(w.level)}">
+        <div class="flex items-center gap-2 text-sm">
+          <span class="badge ${w.level === 'CRITICAL' ? 'bg-red-600' : w.level === 'WARNING' ? 'bg-amber-600' : 'bg-cyan-600'}">${w.level}</span>
+          <span class="text-gray-400 mono">${fmt(w.ts)}</span>
+        </div>
+        <div class="mt-1 text-gray-100">${w.message}</div>
+        ${details}
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleString();
+}
+
+loadData();
+setInterval(loadData, 5000);
+</script>
+</body>
+</html>

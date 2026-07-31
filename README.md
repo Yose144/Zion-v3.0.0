@@ -1,17 +1,22 @@
-# ZION TerraNova v3.0.7
+# ZION TerraNova — Mainnet Alpha prep (v3.0.8 / V31)
 
 > **Proof of Work Layer 1 for the next 100 years.**
 > From blockchain to the stars.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Status:** Mainnet Beta · 3.0.7 "Trinity" in final verification · 14/15 services active (zion-free-world, zion-issobella disabled) · Chain Height 6735+ · Mainnet Alpha target: 3.1.0 — [`MAINNET_ALPHA_PLAN.md`](docs/3.0.6/MAINNET_ALPHA_PLAN.md) + V3.1 migration [`V3.1_MIGRATION_PLAN.md`](docs/3.0.6/V3.1_MIGRATION_PLAN.md) + native integration [`V3.1_INTEGRATION_PLAN.md`](docs/3.0.6/V3.1_INTEGRATION_PLAN.md) · Public Launch: 31 December 2026
+**Status:**
+- **Production Edge:** Mainnet Beta · 3.0.8 / 3.0.9 prep · [`StatusV3.md`](StatusV3.md)
+- **Active dev track:** `V31/` workspace (3.1.0-alpha.1) — clean Mainnet Alpha tree, full `cargo test` passes
+- **Public Launch target:** 31 December 2026
 
-**Latest win:** ETC/Ethash CPU reference aligned with `ethash` 0.4 crate and CUDA kernel byte-for-byte (`ETHASH_CPU_GPU_MATCH`, ~121 MH/s on GTX 1070 Ti, epoch 1). Root documentation cleaned — non-3.0.7 plans and reports moved to [`docs/3.0.6/`](docs/3.0.6/).
+**Latest wins:**
+- Root `.md` docs cleaned — 3.0.7 reports moved to [`docs/3.0.7/`](docs/3.0.7/), 3.0.8 / V31 prep moved to [`docs/3.0.8/`](docs/3.0.8/).
+- `V31/` features landed: height-aware PoW fork gating (`HeightAwareDeeksha`), pool reconnect rate limit, `ZION_STREAM3_FORCE_COIN`, disabled coin flags, `zion-dao` skeleton, HTLC SQLite persistence. See [`V31/README.md`](V31/README.md).
 
-**Current plan:** [`TRINITY_ALL_GREEN_PLAN.md`](TRINITY_ALL_GREEN_PLAN.md) · **Version overview:** [`3.0.7.md`](3.0.7.md) · **Previous 3.0.6 archive:** [`docs/3.0.6/`](docs/3.0.6/)
+**Current plan:** [`V31/ALPHA_BUILD_PLAN.md`](V31/ALPHA_BUILD_PLAN.md) · **V31 entry doc:** [`V31/README.md`](V31/README.md) · **Security rules:** [`V31/AGENTS.md`](V31/AGENTS.md) · **Version 3.0.7 archive:** [`docs/3.0.7/`](docs/3.0.7/) · **3.0.6 archive:** [`docs/3.0.6/`](docs/3.0.6/)
 
-**DeekshaChv3 Parallel Streaming:** ZION Deeksha on GPU + external coins (VRSC, KAS, ALPH, DCR, ERG, ETC, RVN, FLUX) on CPU — all algorithms run **simultaneously**, not alternating. Deployed to Edge pool 2026-07-13.
+**DeekshaChv3 / Height-Aware PoW:** ZION canonical, `deeksha_chv3`, and `deeksha_lite_fire` are selected by block height in `V31/L1/core`. Parallel external GPU + CPU mining runs through `zion-miner` Stream 2/3.
 
 **CUDA Backend (NEW 2026-07-18):** Native CUDA kernel for `deeksha_lite_fire` achieving **303.8 KH/s on RTX 3090** (46.7x faster than OpenCL port). Async host-device copies + pool I/O pipelining + PTXAS O3. See [`CUDA_TUNING_RTX.md`](docs/3.0.6/CUDA_TUNING_RTX.md) for full optimization report.
 
@@ -30,14 +35,16 @@
 
 | What | Where |
 |------|-------|
+| **V31 Mainnet Alpha workspace** | [`V31/README.md`](V31/README.md) |
+| **V31 build plan** | [`V31/ALPHA_BUILD_PLAN.md`](V31/ALPHA_BUILD_PLAN.md) |
+| **V31 security rules** | [`V31/AGENTS.md`](V31/AGENTS.md) |
+| **3.0.8 / V31 prep** | [`docs/3.0.8/`](docs/3.0.8/) |
+| **3.0.7 plan** | [`TRINITY_ALL_GREEN_PLAN.md`](docs/3.0.7/TRINITY_ALL_GREEN_PLAN.md) |
+| **3.0.7 overview** | [`3.0.7.md`](docs/3.0.7/3.0.7.md) |
+| **3.0.6 archive** | [`docs/3.0.6/`](docs/3.0.6/) |
 | **3.0.5 All Green report (CZ)** | [`docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md`](docs/3.0.5/REPORT_3.0.5_ALL_GREEN_CZ.md) |
 | **3.0.5 runbook** | [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) |
 | **3.0.4 release overview** | [`docs/3.0.4/3.0.4.md`](docs/3.0.4/3.0.4.md) |
-| **3.0.7 plan** | [`TRINITY_ALL_GREEN_PLAN.md`](TRINITY_ALL_GREEN_PLAN.md) |
-| **3.0.7 overview** | [`3.0.7.md`](3.0.7.md) |
-| **3.0.8 overview** | [`3.0.8.md`](docs/3.0.6/3.0.8.md) |
-| **3.0.9 overview** | [`3.0.9.md`](docs/3.0.6/3.0.9.md) |
-| **3.1.0 overview** | [`3.1.0.md`](docs/3.0.6/3.1.0.md) |
 | **Mainnet Alpha roadmap** | [`MAINNET_ALPHA_PLAN.md`](docs/3.0.6/MAINNET_ALPHA_PLAN.md) |
 | **V3.1 migration plan** | [`V3.1_MIGRATION_PLAN.md`](docs/3.0.6/V3.1_MIGRATION_PLAN.md) |
 | **V3.1 integration plan** | [`V3.1_INTEGRATION_PLAN.md`](docs/3.0.6/V3.1_INTEGRATION_PLAN.md) |
@@ -210,7 +217,7 @@ RPC: 127.0.0.1:8443 (localhost only)
 
 - **Edge**: Primary 24/7 node + pool. Source of chain truth. Accepts public miner connections. 13 active services + watchdog timer + web Docker container (free-world and issobella are disabled).
 - **Core**: Local backup node (P2P peer, same genesis) + Dashboard + AI services.
-- **Chain live since:** 2026-07-07 (hard genesis reset), re-reset 2026-07-20 for retention fix · **Current protocol:** `zion-v3-node/3.0.7` · **Chain height:** 7101+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` · **Next milestone:** 3.0.8+ / 3.1.0 Mainnet Alpha — [`TRINITY_ALL_GREEN_PLAN.md`](TRINITY_ALL_GREEN_PLAN.md)
+- **Chain live since:** 2026-07-07 (hard genesis reset), re-reset 2026-07-20 for retention fix · **Current protocol:** `zion-v3-node/3.0.7` · **Chain height:** 7101+ · **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` · **Next milestone:** 3.0.8+ / 3.1.0 Mainnet Alpha — [`TRINITY_ALL_GREEN_PLAN.md`](docs/3.0.7/TRINITY_ALL_GREEN_PLAN.md)
 
 ---
 

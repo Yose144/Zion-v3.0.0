@@ -9,7 +9,7 @@ import DogeVsZionBanner from '@/components/DogeVsZionBanner';
 const NewsFeedCopy = {
   newsUpdates: { cs: `Novinky a aktualizace`, en: `News & Updates` },
   news: { cs: `Novinky`, en: `News` },
-  latestUpdatesFromTheZionEcosys: { cs: `Poslední zprávy z vývoje ZION ekosystému, DeFi, listingu a sítě.`, en: `Latest updates from the ZION ecosystem development, DeFi, listings, and network.` },
+  latestUpdatesFromTheZionEcosys: { cs: `Poslední zprávy z vývoje ZION ekosystému, Multichain, OASIS a sítě.`, en: `Latest updates from the ZION ecosystem development, Multichain, OASIS, and network.` },
   readMore: { cs: `Číst více`, en: `Read more` },
 };
 
@@ -30,6 +30,37 @@ export interface NewsArticle {
 // ─── Articles data ────────────────────────────────────────────────────────────
 
 export const NEWS_ARTICLES: NewsArticle[] = [
+  {
+    slug: 'v3-1-0-mainnet-alpha-website',
+    date: '2026-07-31',
+    tag: { cs: 'Aktualizace', en: 'Update' },
+    tagColor: 'text-cyan-400',
+    title: {
+      cs: 'Web 2.9 se aktualizuje na v3.1.0 Mainnet Alpha',
+      en: 'Web 2.9 updated to v3.1.0 Mainnet Alpha',
+    },
+    summary: {
+      cs: 'ZION web 2.9 přechází na V31 Mainnet Alpha. Veřejná linka nyní ukazuje v3.1.0, dokumentace a přehledy jsou synchronizované. Tři samostatné veřejné služby běží současně: intro na zionterranova.com, web2.9 na app.zionterranova.com a OASIS Web na oasis.zionterranova.com.',
+      en: 'ZION web 2.9 is moving to V31 Mainnet Alpha. The public line now shows v3.1.0; docs and dashboards are in sync. Three separate public services run at the same time: the intro at zionterranova.com, web2.9 at app.zionterranova.com, and OASIS Web at oasis.zionterranova.com.',
+    },
+    href: '/docs',
+  },
+  {
+    slug: 'oasis-construction-v0-0-1',
+    date: '2026-07-31',
+    tag: { cs: 'OASIS', en: 'OASIS' },
+    tagColor: 'text-fuchsia-400',
+    title: {
+      cs: 'OASIS se staví — L4 herní vrstva ZIONu dostává vizuál v0.0.1',
+      en: 'OASIS under construction — ZION L4 gaming layer gets v0.0.1 visuals',
+    },
+    summary: {
+      cs: 'Právě probíhá stavba OASIS, L4 herní vrstvy ZION TerraNova. První vizuální iterace v0.0.1 je live na oasis.zionterranova.com: spirálová galaxie 30 000 částic inspirovaná Three.js Journey, 3D Strom života s trubičkovými větvemi a svítícími plody, bloom postprocessing a kamerový přílet do centra. Následují interaktivní světy, avataři a guild mechaniky.',
+      en: 'OASIS, the L4 gaming layer of ZION TerraNova, is currently under construction. The first visual iteration v0.0.1 is live at oasis.zionterranova.com: a 30,000-particle spiral galaxy inspired by Three.js Journey, a 3D Tree of Life with tube branches and glowing fruits, bloom postprocessing, and a camera fly-in to the center. Interactive worlds, avatars, and guild mechanics are next.',
+    },
+    href: 'https://oasis.zionterranova.com',
+    external: true,
+  },
   {
     slug: 'roadmap-to-mainnet-alpha-31',
     date: '2026-07-23',
@@ -94,13 +125,13 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     external: true,
   },
   {
-    slug: 'defi-ecosystem-live',
+    slug: 'multichain-ecosystem-live',
     date: '2026-06-30',
-    tag: { cs: 'DeFi', en: 'DeFi' },
+    tag: { cs: 'Multichain', en: 'Multichain' },
     tagColor: 'text-zion-gold',
     title: {
-      cs: 'ZION DeFi ekosystém LIVE — 2 DEX, 6 chainů, CCA aukce, bridge',
-      en: 'ZION DeFi ecosystem LIVE — 2 DEX, 6 chains, CCA auction, bridge',
+      cs: 'ZION Multichain ekosystém LIVE — 2 DEX, 6 chainů, CCA aukce, bridge',
+      en: 'ZION Multichain ecosystem LIVE — 2 DEX, 6 chains, CCA auction, bridge',
     },
     summary: {
       cs: 'wZION je dostupný na 2 DEX platformách (Uniswap V4 + PancakeSwap V3), na 6 EVM chainech (Base, BSC, Polygon, Arbitrum, Optimism, Avalanche), s aktivní Uniswap CCA aukcí (66.47M wZION za USDC) a obousměrným bridge (lock ZION na L1 → mint wZION, burn → unlock). LiFi agregátor přidává 30+ DEX a 20+ bridge protokolů. Live cenový graf, swap widget a portfolio dashboard na /defi.',

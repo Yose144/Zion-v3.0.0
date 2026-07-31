@@ -1,8 +1,8 @@
 # V31 Mainnet Alpha — Build Plan (kanonický)
 
 > **Verze:** 3.1.0-alpha.2  
-> **Datum:** 2026-07-28  
-> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented, V3 RPC wired into node runtime, V3 P2P listen server + IBD loop, bin/node.rs V3-aware runtime, pool template feed, miner stratum client for Stream 1/2/3
+> **Datum:** 2026-07-30  
+> **Status:** V3 PoW + genesis hash reproduced, V3 block validator implemented, checkpoint sync implemented, V3 state/template/RPC/reorg implemented, V3 RPC wired into node runtime, V3 P2P listen server + IBD loop, `bin/node.rs` V3-aware runtime, `zion-pool` standalone stratum binary, `zion miner start` pool mode, E2E smoke (node + pool + miner) produces and accepts blocks height 1+, production P2P hardening (peer manager, ban score, max peers, discovery), custom AMM deploy in `zion-multichain` (SQLite persistence, HTTP API), WARP API rate limiting + auth (per-IP token bucket, optional Bearer key), height-aware PoW fork gating stress-tested across CHV3/Fire boundaries, L3–L6 cross-layer smoke (NCL → AI-Native → Oasis → Free World → Issobella) passing, runtime panics and `unimplemented!` placeholders removed, `cargo clippy --workspace` clean, all workspace tests pass. Zůstává: reálné non-EVM WARP deploye + `v3.1.0-beta` release.
 > **Princip:** `V3/` zůstává produkční, `V31/` se staví jako čistý Mainnet Alpha strom.  
 
 Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozhodnutí o architektuře, vrstvách a prioritách se zde zaznamenávají a aktualizují.
@@ -64,6 +64,7 @@ Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozho
 - `zion-pool` má základní PPLNS a stratum server skeleton.
 - `zion-multichain` má `ChainAdapter` trait, HTTP API, wallet keyring (BIP39 → EVM/Zion/BTC), bridge lock/burnRelease, DEX router, HTLC, Dharma Credits a payout integration.
 - `zion-cli` má subcommands: status, wallet, bridge, swap, pool, miner, doctor, api, node, migrate.
+- **E2E smoke test `zion-node` + `zion-pool` + `zion-miner` projde:** pool fetchuje `getTemplate` z node, broadcastuje `mining.notify`, miner připojí stratum, najde share, pool validuje, skládá block a odesílá `submitBlock`; node přijme block a chain roste (ověřeno výška 1+).
 
 ### 2.2 Co je ještě scaffold / stub
 
@@ -78,10 +79,10 @@ Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozho
 | Oblast | V3 | V31 | Akce |
 |--------|-----|-----|------|
 | Node runtime | 7700+ řádků `chain.rs`, `bin/node.rs` | 3 malé soubory | Portovat postupně |
-| PoW | `deeksha_lite_v1`, `deeksha_chv3`, `deeksha_lite_fire` | jen `ekam_deeksha` (bit-identical s `deeksha_lite_v1`) | Height-aware fork gating přidat |
+| PoW | `deeksha_lite_v1`, `deeksha_chv3`, `deeksha_lite_fire` | `HeightAwareDeeksha` s height-gated dispatch | Hotovo pro Alpha |
 | AuxPoW | `zion-auxpow` crate, 24 coinů | stub 15 coinů | Portovat stratum + hasher subset |
 | Storage | LMDB/SQLite hybrid | SQLite pro V3 checkpoint sync | Vybrat jeden backend (SQLite nebo LMDB) |
-| P2P | wire protocol v `p2p.rs` | V3 client + listen server v `v3_p2p` | Hotovo pro Alpha; production hardening (peer discovery, rate limit) později |
+| P2P | wire protocol v `p2p.rs` | V3 client + listen server v `v3_p2p` | Hotovo pro Alpha; reconnect rate limit implementován |
 | RPC | JSON-RPC v `rpc.rs` | V3 handler zapojen do `rpc.rs` dispatch | Hotovo pro Alpha |
 | Multichain | 6 samostatných crateů | 1 sjednocený crate (reálné adaptery + HTLC + DEX + WARP) | Hotovo pro Alpha |
 | CLI | `zion` single binary (menu) | clap subcommands | Sjednotit UX |
@@ -118,7 +119,7 @@ Cíl: L1 <-> Base bridge E2E, BTC <-> ZION HTLC, wZION/USDC swap quote.
 1. [x] EVM adapter: `ethers` volání `ZIONBridge` (`submitLockProof`/`confirmBurnRelease`), `wZION` ERC-20 balance/transfer.
 2. [x] Bitcoin adapter: `bitcoin` crate, P2WPKH payments + mempool.space API (Electrum TCP fallback zůstává jako budoucí enhancement).
 3. [x] HTLC modul v `swap/htlc.rs` — state machine s hashlock/timelock a testy.
-4. [x] DEX router v `swap/dex.rs` s konstantním produktovým AMM invariantem a multi-hop quote.
+4. [x] DEX router v `swap/dex.rs` s konstantním produktovým AMM invariantem a multi-hop quote. Custom AMM deploy (`/v1/swap/pool/deploy`) a persistence v SQLite hotovo.
 5. [x] Připojit `credits` k `zion-pool` payouts — `CreditsLedger` ukládá balance a `MultichainService::execute_payouts` credituje/debetuje.
 
 ### Fáze 3 — Pool + Miner integrace
@@ -166,11 +167,17 @@ Cíl: `V31/` nahradí `V3/` na Edge staging.
 
 Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další práce:
 
-1. **E2E smoke testy** — spustit `zion-node` + `zion-pool` + `zion-miner` lokálně, ověřit že block se vytěží, propaguje se přes P2P, pool broadcastuje `mining.notify`, miner submituje share, node přijme `submitBlock`.
-2. **Production P2P hardening** — peer discovery (GetPeers/Peers), rate limiting, max peers, ban score.
-3. **Height-aware PoW fork gating** — přidat `deeksha_chv3`/`deeksha_lite_fire` do `zion-core` consensus s height-gated dispatch.
-4. **HTLC persistence** — `HtlcSwap` aktuálně drží records in-memory; pro produkci přidat SQLite backend (stejně jako V3 `SwapDb`).
-5. **Tag `v3.1.0-alpha.1`** po úspěšných E2E smoke testech.
+1. ~~**E2E smoke testy**~~ — **Hotovo (2026-07-30):** `zion-node` + `zion-pool` + `zion-miner` lokálně vytěží, submitne a přijme block (výška 1+). Pool broadcastuje `mining.notify`, miner připojí stratum a submituje share.
+2. ~~**Production P2P hardening**~~ — **Hotovo (2026-07-30):** `PeerManager` sdílený mezi canonical a V3 P2P, max inbound limit, ban score, `GetPeers`/`Peers` odpovědi ve welcome zprávě.
+3. ~~**Custom AMM deploy v `zion-multichain`**~~ — **Hotovo (2026-07-30):** SQLite persistence AMM poolů, `deploy_pool`, `/v1/swap/pool/deploy` + `/v1/swap/pools`, načítání poolů při startu.
+4. ~~**WARP API rate limiting + auth v `zion-multichain`**~~ — **Hotovo (2026-07-30):** per-IP token bucket, optional `Authorization: Bearer <api_key>`, `/health` public, `ConnectInfo` zapojen.
+5. ~~**Height-aware PoW fork gating + stress testy**~~ — **Hotovo (2026-07-30):** `HeightAwareDeeksha` dispatchuje dle výšky, `zion-core` obsahuje unit testy napříč fork boundary (CHV3 4500, Fire 5000) a sweep 0–5500.
+6. ~~**HTLC persistence**~~ — **Hotovo (2026-07-30):** SQLite backend pro HTLC v `zion-multichain`.
+7. ~~**Tag `v3.1.0-alpha.2`**~~ — **Hotovo (2026-07-30):** tag vytvořen a pushnut; workspace build prochází.
+8. ~~**Finální cut-over plán V3 → V31**~~ — **Hotovo (2026-07-30):** vytvořen `V31/CUTOVER_PLAN.md` s rolling blue/green strategií.
+9. ~~**Plná L3–L6 end-to-end verifikace**~~ — **Hotovo (2026-07-30):** vytvořen `V31/smoke` crate s cross-layer smoke testem (`l3_l6_cross_layer_smoke`), který propojuje NCL compute job → AI-Native consciousness engine → Oasis bridge → Oasis player → Free World grant → Issobella proposal. Test prochází.
+10. ~~**Cross-chain WARP transfer (Base ↔ ZionL1)**~~ — **Hotovo (2026-07-30):** `V31/smoke` obsahuje `warp_htlc_cross_chain_smoke` s HTLC lock/claim mezi Base a ZionL1.
+11. ~~**DAO governance proposal + vote**~~ — **Hotovo (2026-07-30):** `V31/smoke` obsahuje `dao_governance_proposal_smoke` s proposal, hlasováním a quorum check.
 
 ---
 
@@ -223,17 +230,21 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
   - `ConsensusEngine::verify_v3_block()` — validátor V3 bloků (height, prev hash, timestamp, difficulty bits, merkle root, PoW).
   - **Ověření:** `v3_genesis_hash()` reprodukuje mainnet hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`; `validate_v3_block` akceptuje V3 genesis blok; `cargo test -p zion-core` prochází.
 - Zbývá:
-  - E2E smoke testy (node + pool + miner lokálně).
-  - Production P2P hardening (peer discovery, rate limit, ban score).
-  - Height-aware PoW fork gating (`deeksha_chv3`/`deeksha_lite_fire`).
-  - HTLC SQLite persistence (aktuálně in-memory).
+  - ~~E2E smoke testy (node + pool + miner lokálně).~~ **Hotovo (2026-07-30).**
+  - ~~Production P2P hardening (peer discovery, max peers, ban score); rate limit hotovo.~~ **Hotovo (2026-07-30).**
+  - ~~Custom AMM deploy (`/v1/swap/pool/deploy`, SQLite persistence poolů).~~ **Hotovo (2026-07-30).**
+  - ~~WARP API rate limiting + auth (per-IP token bucket, optional `Authorization: Bearer`).~~ **Hotovo (2026-07-30).**
+  - ~~Height-aware PoW fork gating + stress testy (boundary CHV3/Fire + sweep 0–5500).~~ **Hotovo (2026-07-30).**
+  - ~~HTLC SQLite persistence.~~ **Hotovo (2026-07-30).**
+  - ~~Tag `v3.1.0-alpha.2`.~~ **Hotovo (2026-07-30).**
 - Detailní analýza v `V31/V3_SYNC_ASSESSMENT.md`.
 
 ## 8. Pool + miner integrace (F6)
 
-- `zion-core` `getBlockTemplate` nyni vraci `template_id`, `header_hex`, `target_hex` a `block_reward`.
-- `zion-multichain` `ZionL1Adapter::block_template` preposila raw JSON do `zion-pool`.
-- `zion-pool` `StratumServer` uklada cely template, rozesila `mining.notify` a po nalezeni bloku rekonstruuje `Block` a posila `submitBlock` na node RPC.
+- `zion-core` `getTemplate` nyní vrací `BlockTemplate` s `template_id`, `header_hex`, `target_hex`, `header_json`, `transactions` a `block_reward`.
+- `zion-pool` `StratumServer` ukládá celý template, rozesílá 3-param `mining.notify` a po nalezení bloku rekonstruuje `Block` a posílá `submitBlock` na node RPC.
+- `zion-miner` `mine_zion_pool_share` používá `ConsensusEngine::mine_header_bytes` pro ZION PoW nad 80-bajtovým `header_hex` z poolu a odesílá share ve stratum `mining.submit` formátu.
+- **E2E smoke ověřeno (2026-07-30):** `zion-node` + `zion-pool` + `zion-miner` vytěží a přijme řetězový block výška 1+.
 
 ## 9. Pool operability (F1) a Stratum v1 (F2)
 

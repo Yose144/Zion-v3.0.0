@@ -20,7 +20,7 @@ model = "hiran-v2.2"
 
 [deploy]
 default_server = "edge"
-ssh_key = "~/.ssh/ssh-key-zion-edge"
+ssh_key = "~/.ssh/zion-edge-2026-07-29"
 ssh_user = "root"
 
 [bridge]

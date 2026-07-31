@@ -1,0 +1,10 @@
+{
+  "walletId": "zw_68923e68580872b59d841c1bcee40888",
+  "tokens": 50,
+  "label": "eShop Bonus",
+  "orderId": "TEST-STATUS-001",
+  "customerEmail": "status@example.com",
+  "created": "2025-12-04T16:04:30.130035",
+  "expiresAt": "2026-12-04T16:04:30.130046",
+  "status": "active"
+}

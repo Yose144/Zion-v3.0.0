@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
 """
-Emergency maintenance mode deploy script.
+[LEGACY] Docker-based maintenance fallback.
 
-Replaces the live Next.js website with a static nginx container serving
-public/maintenance.html on port 3000. To restore the website, run the
-normal deploy script which overwrites docker-compose.yml with the Next.js
-image and restarts the container.
+This was the original emergency maintenance deploy. The current public
+page (2026-07-31) is the OASIS intro landing page served by the system
+nginx from /var/www/maintenance. Use deploy-oasis-intro.sh instead.
+
+For reference: this script replaces the live Next.js website with a
+static nginx container serving public/maintenance.html on port 3000.
 
 Usage:
     ZION_EDGE_HOST=mainnetedge ZION_SSH_KEY=~/.ssh/id_ed25519 python3 deploy_maintenance.py
-
-Prerequisites:
-    - SSH key configured in ZION_SSH_KEY or default ~/.ssh/id_ed25519
-    - Remote host configured in ZION_EDGE_HOST or default mainnetedge
-    - maintenance.html uploaded to /opt/zion/web/maintenance.html on Edge
-    - maintenance-nginx.conf uploaded to /opt/zion/web/nginx.conf on Edge
 """
 import os, subprocess, time
 

@@ -6,12 +6,13 @@
 
 use num_bigint::BigUint;
 use num_traits::cast::ToPrimitive;
+use serde::{Deserialize, Serialize};
 use zion_l1_types::{Amount, Asset, AssetId};
 
 use crate::error::{MultichainError, MultichainResult};
 
 /// A single constant-product AMM pool.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Pool {
     pub id: u64,
     pub asset_a: Asset,
@@ -175,7 +176,7 @@ impl DexRouter {
         pool.quote_by_id(&from, &to, amount)
     }
 
-    fn find_pool(&self, from: &AssetId, to: &AssetId) -> Option<&Pool> {
+    pub fn find_pool(&self, from: &AssetId, to: &AssetId) -> Option<&Pool> {
         self.pools.iter().find(|p| p.contains(from, to))
     }
 

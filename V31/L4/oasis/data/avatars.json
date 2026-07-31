@@ -4212,6 +4212,59 @@
       "key": "",
       "rarity": "Rare",
       "quests": []
+    },
+    {
+      "id": 202,
+      "name": "Bolon Yokte' K'uh",
+      "subtitle": "God of Nine Steps",
+      "ray": "Obsidian",
+      "role": "bak'tun reset, transformation",
+      "location": "Tortuguero Ruins (Tabasco)",
+      "quest_line": "\"Devět Kroků Přechodu\"",
+      "teaching": "Accept that some things must end so others can begin.",
+      "ability": "**Bak'tun Shift** — reset local game state in a zone once per season",
+      "consciousness_level_required": 7,
+      "consciousness_level_name": "Healing Compassion",
+      "key": "Maya Cycle Key",
+      "rarity": "Legendary",
+      "quests": [
+        {
+          "title": "Krok 1: Rozpoznání",
+          "description": "Find Tortuguero Monument 6 in the rainforest and read the eroded glyphs."
+        },
+        {
+          "title": "Krok 2: Pouta",
+          "description": "Reveal the rope symbol: who is the prisoner and who is the guard?"
+        },
+        {
+          "title": "Krok 3: Xibalba",
+          "description": "Descend into the nine lords of the underworld."
+        },
+        {
+          "title": "Krok 4: Strom",
+          "description": "Find the Ceiba tree growing on the border of three worlds."
+        },
+        {
+          "title": "Krok 5: Čas",
+          "description": "Understand the difference between linear and cyclical time."
+        },
+        {
+          "title": "Krok 6: Smrt jako tvorba",
+          "description": "Accept death as creation through the Fountain vision."
+        },
+        {
+          "title": "Krok 7: Investitura",
+          "description": "Ceremony of changing: remove the old avatar skin and take the new."
+        },
+        {
+          "title": "Krok 8: Slunce",
+          "description": "Birth a new cycle by activating the Genesis block in the temple courtyard."
+        },
+        {
+          "title": "Krok 9: Zobrazení",
+          "description": "Bolon Yokte manifests in full form; the player gains a permanent ability."
+        }
+      ]
     }
   ]
 }

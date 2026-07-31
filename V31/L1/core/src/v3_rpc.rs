@@ -60,12 +60,7 @@ impl V3RpcHandler {
     }
 
     /// Set the coinbase payout addresses.
-    pub async fn set_addresses(
-        &self,
-        miner: String,
-        humanitarian: String,
-        issobella: String,
-    ) {
+    pub async fn set_addresses(&self, miner: String, humanitarian: String, issobella: String) {
         *self.miner_address.lock().await = miner;
         *self.humanitarian_address.lock().await = humanitarian;
         *self.issobella_address.lock().await = issobella;
@@ -84,7 +79,10 @@ impl V3RpcHandler {
             "submitUtxoTransaction" => self.submit_utxo_tx(&params).await,
             "getBalance" => self.get_balance(&params).await,
             "getUtxos" => self.get_utxos(&params).await,
-            _ => Err(V3RpcError::Validation(format!("unknown method: {}", method))),
+            _ => Err(V3RpcError::Validation(format!(
+                "unknown method: {}",
+                method
+            ))),
         };
 
         match result {
@@ -174,9 +172,7 @@ impl V3RpcHandler {
                 // Accept the wire-format V3AcceptedBlock as well.
                 let accepted: V3AcceptedBlock = serde_json::from_value(params.clone())
                     .map_err(|e| V3RpcError::Parse(e.to_string()))?;
-                accepted
-                    .into_v3_block()
-                    .map_err(|e| V3RpcError::Parse(e))?
+                accepted.into_v3_block().map_err(V3RpcError::Parse)?
             }
         };
 
@@ -189,7 +185,10 @@ impl V3RpcHandler {
         };
 
         let previous = previous.ok_or_else(|| {
-            V3RpcError::Validation(format!("missing previous block for height {}", block.height))
+            V3RpcError::Validation(format!(
+                "missing previous block for height {}",
+                block.height
+            ))
         })?;
 
         let expected_difficulty = block.difficulty;
@@ -210,12 +209,10 @@ impl V3RpcHandler {
         self.storage.put_v3_block(&block).await?;
 
         // Remove mined transactions from the mempool.
-        let mined_ids: HashSet<String> = block.transactions.iter().map(|t| t.tx_id.clone()).collect();
-        let mined_utxo: HashSet<String> = block
-            .utxo_transactions
-            .iter()
-            .map(|t| hex(&t.id))
-            .collect();
+        let mined_ids: HashSet<String> =
+            block.transactions.iter().map(|t| t.tx_id.clone()).collect();
+        let mined_utxo: HashSet<String> =
+            block.utxo_transactions.iter().map(|t| hex(&t.id)).collect();
         self.mempool_account
             .lock()
             .await
@@ -233,8 +230,8 @@ impl V3RpcHandler {
     }
 
     async fn submit_account_tx(&self, params: &Value) -> Result<Value, V3RpcError> {
-        let tx: AccountTransaction = serde_json::from_value(params.clone())
-            .map_err(|e| V3RpcError::Parse(e.to_string()))?;
+        let tx: AccountTransaction =
+            serde_json::from_value(params.clone()).map_err(|e| V3RpcError::Parse(e.to_string()))?;
 
         validate_account_tx_for_mempool(&tx)?;
 
@@ -246,7 +243,9 @@ impl V3RpcHandler {
 
         let mut mempool = self.mempool_account.lock().await;
         if mempool.iter().any(|t| t.tx_id == tx.tx_id) {
-            return Err(V3RpcError::Validation("transaction already in mempool".to_string()));
+            return Err(V3RpcError::Validation(
+                "transaction already in mempool".to_string(),
+            ));
         }
         mempool.push(tx.clone());
 
@@ -254,8 +253,8 @@ impl V3RpcHandler {
     }
 
     async fn submit_utxo_tx(&self, params: &Value) -> Result<Value, V3RpcError> {
-        let tx: UtxoTransaction = serde_json::from_value(params.clone())
-            .map_err(|e| V3RpcError::Parse(e.to_string()))?;
+        let tx: UtxoTransaction =
+            serde_json::from_value(params.clone()).map_err(|e| V3RpcError::Parse(e.to_string()))?;
 
         if tx.id != tx.calculate_hash() {
             return Err(V3RpcError::Validation(
@@ -275,7 +274,11 @@ impl V3RpcHandler {
                     "UTXO transaction signature verification failed".to_string(),
                 ));
             }
-            match self.storage.v3_utxo(&input.prev_tx_hash, input.output_index).await? {
+            match self
+                .storage
+                .v3_utxo(&input.prev_tx_hash, input.output_index)
+                .await?
+            {
                 Some(utxo) if !utxo.2 => {
                     let derived = crypto::derive_address(&input.public_key);
                     if derived != utxo.1 {
@@ -294,7 +297,9 @@ impl V3RpcHandler {
 
         let mut mempool = self.mempool_utxo.lock().await;
         if mempool.iter().any(|t| t.id == tx.id) {
-            return Err(V3RpcError::Validation("transaction already in mempool".to_string()));
+            return Err(V3RpcError::Validation(
+                "transaction already in mempool".to_string(),
+            ));
         }
         mempool.push(tx.clone());
 
@@ -306,11 +311,7 @@ impl V3RpcHandler {
             .get("address")
             .and_then(Value::as_str)
             .ok_or_else(|| V3RpcError::Parse("address required".to_string()))?;
-        let (balance, nonce) = self
-            .storage
-            .v3_account(address)
-            .await?
-            .unwrap_or((0, 0));
+        let (balance, nonce) = self.storage.v3_account(address).await?.unwrap_or((0, 0));
         Ok(json!({ "address": address, "balance": balance.to_string(), "nonce": nonce }))
     }
 
@@ -341,10 +342,14 @@ fn validate_account_tx_for_mempool(tx: &AccountTransaction) -> Result<(), V3RpcE
         ));
     }
     if tx.from.is_empty() || tx.to.is_empty() {
-        return Err(V3RpcError::Validation("from/to must not be empty".to_string()));
+        return Err(V3RpcError::Validation(
+            "from/to must not be empty".to_string(),
+        ));
     }
     if tx.from == tx.to {
-        return Err(V3RpcError::Validation("from and to must differ".to_string()));
+        return Err(V3RpcError::Validation(
+            "from and to must differ".to_string(),
+        ));
     }
     if tx.amount_zion == 0 {
         return Err(V3RpcError::Validation("amount must be > 0".to_string()));
@@ -353,7 +358,9 @@ fn validate_account_tx_for_mempool(tx: &AccountTransaction) -> Result<(), V3RpcE
         return Err(V3RpcError::Validation("fee must be > 0".to_string()));
     }
     if (tx.fee_zion as u128) > tx.amount_zion {
-        return Err(V3RpcError::Validation("fee must not exceed amount".to_string()));
+        return Err(V3RpcError::Validation(
+            "fee must not exceed amount".to_string(),
+        ));
     }
     if let Some(ref memo) = tx.memo {
         if memo.len() > 256 {
@@ -408,10 +415,7 @@ mod tests {
         // Build and submit block 1.
         let mut builder = V3TemplateBuilder::new(storage.clone());
         builder.set_miner_address("miner".to_string()).unwrap();
-        let mut block = builder
-            .build(&build_v3_genesis_block(), 1)
-            .await
-            .unwrap();
+        let mut block = builder.build(&build_v3_genesis_block(), 1).await.unwrap();
 
         // Sign a transfer from the funded account.
         let to = "zion1burn0000000000000000000000000000000dead";
@@ -448,7 +452,10 @@ mod tests {
             .await;
         assert_eq!(retrieved["result"]["height"], 1);
         assert_eq!(
-            retrieved["result"]["transactions"].as_array().unwrap().len(),
+            retrieved["result"]["transactions"]
+                .as_array()
+                .unwrap()
+                .len(),
             2
         );
     }

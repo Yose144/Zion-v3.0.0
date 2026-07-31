@@ -235,8 +235,7 @@ impl NearAdapter {
     /// Build from a `ChainConfig`.
     pub fn from_config(cfg: &ChainConfig) -> Self {
         let rpc_url = if cfg.rpc_url.is_empty() {
-            std::env::var("WARP_NEAR_RPC")
-                .unwrap_or_else(|_| "https://rpc.mainnet.near.org".into())
+            std::env::var("WARP_NEAR_RPC").unwrap_or_else(|_| "https://rpc.mainnet.near.org".into())
         } else {
             cfg.rpc_url.clone()
         };

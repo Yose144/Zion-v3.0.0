@@ -81,6 +81,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         db_path: args.db_path,
         rpc_addr: args.rpc,
         p2p_addr: args.p2p,
+        v3_p2p_addr: "0.0.0.0:0".parse().unwrap(),
         human_address: human,
         issobella_address: issobella,
         no_genesis: args.no_genesis,

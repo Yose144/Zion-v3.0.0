@@ -9,11 +9,10 @@ use std::sync::Arc;
 
 use tokio::sync::watch;
 use tracing::{info, warn};
-use zion_cosmic_harmony::EkamDeeksha;
 use zion_l1_types::{Address, Amount, Hash};
 
 use crate::block::{Block, BlockHeader};
-use crate::consensus::{ConsensusEngine, ConsensusError};
+use crate::consensus::{ConsensusEngine, ConsensusError, HeightAwareDeeksha};
 use crate::difficulty::{self, difficulty_to_target, lwma_next_difficulty};
 use crate::emission::{block_subsidy, fee_split};
 use crate::genesis;
@@ -28,6 +27,9 @@ pub struct NodeConfig {
     pub db_path: String,
     pub rpc_addr: SocketAddr,
     pub p2p_addr: SocketAddr,
+    /// V3 compatibility P2P bind address. Defaults to `0.0.0.0:0` so it does
+    /// not collide with the canonical P2P port.
+    pub v3_p2p_addr: SocketAddr,
     pub human_address: Address,
     pub issobella_address: Address,
     /// Skip automatic genesis seeding. Set this when importing a migration
@@ -54,6 +56,7 @@ impl Default for NodeConfig {
             db_path: "zion-node.db".into(),
             rpc_addr: "127.0.0.1:9443".parse().unwrap(),
             p2p_addr: "0.0.0.0:8333".parse().unwrap(),
+            v3_p2p_addr: "0.0.0.0:0".parse().unwrap(),
             // V3 mainnet canonical subsidy addresses.
             human_address: Address::new(
                 zion_l1_types::ChainId::ZionL1,
@@ -70,8 +73,10 @@ impl Default for NodeConfig {
             no_genesis: false,
             seed_peers: Vec::new(),
             v3_miner_address: String::new(),
-            v3_humanitarian_address: crate::v3_compat::MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET.to_string(),
-            v3_issobella_address: crate::v3_compat::MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET.to_string(),
+            v3_humanitarian_address:
+                crate::v3_compat::MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET.to_string(),
+            v3_issobella_address: crate::v3_compat::MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET
+                .to_string(),
             v3_no_genesis: false,
             v3_checkpoint_path: None,
         }
@@ -132,8 +137,10 @@ impl Node {
                 info!(path = %checkpoint_path.display(), "importing V3 checkpoint snapshot");
                 let checkpoint_json = std::fs::read_to_string(checkpoint_path)
                     .map_err(|e| NodeError::Task(format!("failed to read checkpoint file: {e}")))?;
-                let checkpoint: crate::v3_checkpoint::Checkpoint = serde_json::from_str(&checkpoint_json)
-                    .map_err(|e| NodeError::Task(format!("failed to parse checkpoint JSON: {e}")))?;
+                let checkpoint: crate::v3_checkpoint::Checkpoint =
+                    serde_json::from_str(&checkpoint_json).map_err(|e| {
+                        NodeError::Task(format!("failed to parse checkpoint JSON: {e}"))
+                    })?;
                 crate::v3_checkpoint::import_checkpoint(&storage_arc, &checkpoint)
                     .await
                     .map_err(|e| NodeError::Task(format!("checkpoint import failed: {e}")))?;
@@ -163,7 +170,7 @@ impl Node {
             crate::v3_p2p::NetworkId::Mainnet,
         );
 
-        let consensus = ConsensusEngine::new(Arc::new(EkamDeeksha::new()));
+        let consensus = ConsensusEngine::new(Arc::new(HeightAwareDeeksha::new()));
         Ok(Self {
             storage,
             mempool: Mempool::new(),
@@ -191,7 +198,8 @@ impl Node {
         let seed_peers = self.config.seed_peers.clone();
         let v3_seed_peers = self.config.seed_peers.clone();
         let v3_sync = self.v3_sync.clone();
-        let v3_p2p_addr = self.config.p2p_addr;
+        let v3_p2p_addr = self.config.v3_p2p_addr;
+        let peers = Arc::new(crate::peer_manager::PeerManager::default_manager());
         let v3_p2p_server = crate::v3_p2p::V3P2PServer::new(
             Arc::new(self.storage.clone()),
             "zion-v31-node",
@@ -200,31 +208,39 @@ impl Node {
             v3_p2p_addr.to_string(),
             rpc_addr.to_string(),
             "0.0.0.0:0".to_string(),
+            Arc::clone(&peers),
         );
 
         let rpc = RpcServer::new(Arc::clone(&self));
         let rpc_handle = tokio::spawn(async move { rpc.run(rpc_addr, rpc_shutdown).await });
 
-        let p2p = crate::p2p::P2P::new(Arc::clone(&self));
+        let p2p = crate::p2p::P2P::new(Arc::clone(&self), Arc::clone(&peers));
         let p2p_handle = tokio::spawn(async move { p2p.listen(p2p_addr, p2p_shutdown).await });
 
+        let peers_for_sync = Arc::clone(&peers);
         let sync_handle = tokio::spawn(async move {
-            crate::p2p::sync_loop(Arc::clone(&self), seed_peers, sync_shutdown).await;
+            crate::p2p::sync_loop(Arc::clone(&self), peers_for_sync, seed_peers, sync_shutdown).await;
             Ok(()) as Result<(), NodeError>
         });
 
         // V3 sync loop: periodically download missing V3 blocks from seed peers.
+        let peers_for_v3_sync = Arc::clone(&peers);
         let v3_sync_handle = tokio::spawn(async move {
-            crate::v3_p2p::sync_loop(v3_sync, v3_seed_peers, v3_sync_shutdown).await;
+            crate::v3_p2p::sync_loop(v3_sync, peers_for_v3_sync, v3_seed_peers, v3_sync_shutdown).await;
             Ok(()) as Result<(), NodeError>
         });
 
         // V3 P2P listen server: accept inbound V3 peers.
-        let v3_p2p_handle = tokio::spawn(async move {
-            v3_p2p_server.listen(v3_p2p_addr, v3_p2p_shutdown).await
-        });
+        let v3_p2p_handle =
+            tokio::spawn(async move { v3_p2p_server.listen(v3_p2p_addr, v3_p2p_shutdown).await });
 
-        tokio::pin!(rpc_handle, p2p_handle, sync_handle, v3_sync_handle, v3_p2p_handle);
+        tokio::pin!(
+            rpc_handle,
+            p2p_handle,
+            sync_handle,
+            v3_sync_handle,
+            v3_p2p_handle
+        );
         tokio::select! {
             r = &mut rpc_handle => {
                 p2p_handle.abort();

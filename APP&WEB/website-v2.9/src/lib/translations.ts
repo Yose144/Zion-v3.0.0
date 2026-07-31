@@ -29,7 +29,7 @@ const t = {
     philosophy: { cs: 'Filozofie',   en: 'Philosophy' },
     ai_native:  { cs: 'AI Native',   en: 'AI Native' },
     monitoring: { cs: 'Monitoring',  en: 'Monitoring' },
-    defi:       { cs: 'DeFi Hub',    en: 'DeFi Hub' },
+    defi:       { cs: 'Multichain Hub',    en: 'Multichain Hub' },
     meme_lab:   { cs: 'Meme Lab',    en: 'Meme Lab' },
     kompas:     { cs: 'Zlatý Kompas', en: 'Golden Compass' },
     info_group: { cs: 'Info', en: 'Info' },
@@ -38,7 +38,7 @@ const t = {
     mission_group: { cs: 'Mise', en: 'Mission' },
     network_group: { cs: 'Síť & Mining', en: 'Network & Mining' },
     operator_group: { cs: 'Operátor', en: 'Operator' },
-    defi_group: { cs: 'DeFi', en: 'DeFi' },
+    defi_group: { cs: 'Multichain', en: 'Multichain' },
     learn_group: { cs: 'Učení', en: 'Learn' },
     l3_hiran:   { cs: 'L3 Hiran', en: 'L3 Hiran' },
     l4_oasis:   { cs: 'L4 Oasis', en: 'L4 Oasis' },
@@ -73,10 +73,10 @@ const t = {
 
   /* ─── Hero ─── */
   hero: {
-    badge_version:  { cs: 'V3 Mainnet Beta · 3.0.6 Trinity', en: 'V3 Mainnet Beta · 3.0.6 Trinity' },
+    badge_version:  { cs: 'V31 Mainnet Alpha · 3.1.0', en: 'V31 Mainnet Alpha · 3.1.0' },
     badge_chv4:     { cs: 'Edge server topologie', en: 'Edge server topology' },
     tagline:        { cs: 'Nativní Rust blockchain s Proof-of-Work konsensem', en: 'Native Rust blockchain with Proof-of-Work consensus' },
-    title_sub:      { cs: 'Genesis Live · Edge server · canonical runtime v3.0.6 Ekam Deeksha · 6-decimal flowers', en: 'Genesis Live · Edge server · canonical runtime v3.0.6 Ekam Deeksha · 6-decimal flowers' },
+    title_sub:      { cs: 'Genesis Live · Edge server · canonical runtime v3.1.0 V31 · 6-decimal flowers', en: 'Genesis Live · Edge server · canonical runtime v3.1.0 V31 · 6-decimal flowers' },
     description:    {
       cs: 'Odpočítávání ke spuštění ZION TerraNova mainnetu — 31. prosince 2026 (Silvestr). Příprava V3 mainnetu v Edge server topologii (Edge server) s veřejným poolem, mining binárkami a provozní telemetrií.',
       en: 'ZION TerraNova mainnet launch countdown — 31 December 2026 (New Year\'s Eve). Preparing the V3 mainnet in Edge server topology (Edge server), with public pool, mining binaries, and operational telemetry.',
@@ -89,7 +89,7 @@ const t = {
     signal_mainnet: { cs: 'Launch Countdown', en: 'Launch Countdown' },
     signal_loc:     { cs: 'Edge server + Edge server · ShareRelay', en: 'Edge server + Edge server · ShareRelay' },
     signal_target:  { cs: '31. prosince 2026', en: '31 December 2026' },
-    signal_status_l1: { cs: 'Genesis Launch active · runtime v3.0.6', en: 'Genesis Launch active · runtime v3.0.6' },
+    signal_status_l1: { cs: 'Genesis Launch active · runtime v3.1.0', en: 'Genesis Launch active · runtime v3.1.0' },
     signal_status_nodes: { cs: 'Edge server online', en: 'Edge server online' },
     signal_status_mainnet: { cs: 'Launch Countdown · 31. prosince 2026', en: 'Launch Countdown · 31 December 2026' },
     metric_loc:     { cs: 'Řádků kódu (Rust)', en: 'Rust LOC' },
@@ -359,8 +359,8 @@ const t = {
   features: {
     heading: { cs: 'Vrstvy protokolu', en: 'Protocol Layers' },
     subheading: {
-      cs: 'Šestisložková architektura: L1 Rust jádro, L2 Bridge · DAO · DeFi, L3 AI Native · WARP · NCL, L4 Oasis, L5 Free World, L6 Issobella.',
-      en: 'Six-layer architecture: L1 Rust core, L2 Bridge · DAO · DeFi, L3 AI Native · WARP · NCL, L4 Oasis, L5 Free World, L6 Issobella.',
+      cs: 'Šestisložková architektura: L1 Rust jádro, L2 Multichain (Bridge · DAO · DEX), L3 AI Native · WARP · NCL, L4 Oasis, L5 Free World, L6 Issobella.',
+      en: 'Six-layer architecture: L1 Rust core, L2 Multichain (Bridge · DAO · DEX), L3 AI Native · WARP · NCL, L4 Oasis, L5 Free World, L6 Issobella.',
     },
     tracks: {
       chv3: {

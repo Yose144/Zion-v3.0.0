@@ -258,13 +258,14 @@ impl ChainAdapter for TronAdapter {
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
-        let contract = match zion_contract_with_override(&self.network, self.contract_override.as_deref()) {
-            Some(c) => c,
-            None => {
-                debug!("[WARP][tron] No ZION contract configured");
-                return Ok(vec![]);
-            }
-        };
+        let contract =
+            match zion_contract_with_override(&self.network, self.contract_override.as_deref()) {
+                Some(c) => c,
+                None => {
+                    debug!("[WARP][tron] No ZION contract configured");
+                    return Ok(vec![]);
+                }
+            };
         let tip = self.get_now_block().await?;
         let events = self.get_contract_events(&contract).await?;
         let proofs: Vec<_> = events
@@ -276,15 +277,19 @@ impl ChainAdapter for TronAdapter {
     }
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
-        let contract = match zion_contract_with_override(&self.network, self.contract_override.as_deref()) {
-            Some(c) => c,
-            None => {
-                return Err(WarpError::AdapterError {
-                    chain: "tron".into(),
-                    reason: format!("no ZION contract configured for network '{}'", self.network),
-                });
-            }
-        };
+        let contract =
+            match zion_contract_with_override(&self.network, self.contract_override.as_deref()) {
+                Some(c) => c,
+                None => {
+                    return Err(WarpError::AdapterError {
+                        chain: "tron".into(),
+                        reason: format!(
+                            "no ZION contract configured for network '{}'",
+                            self.network
+                        ),
+                    });
+                }
+            };
         let signer = TronSigner::from_env().map_err(|e| WarpError::AdapterError {
             chain: "tron".into(),
             reason: format!("relay key unavailable: {}", e),

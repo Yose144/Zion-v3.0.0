@@ -166,8 +166,7 @@ impl AptosAdapter {
     /// Construct from a `ChainConfig`.
     pub fn from_config(cfg: &ChainConfig) -> Self {
         let rpc_url = if cfg.rpc_url.is_empty() {
-            std::env::var("WARP_APTOS_RPC")
-                .unwrap_or_else(|_| DEFAULT_APTOS_RPC.to_string())
+            std::env::var("WARP_APTOS_RPC").unwrap_or_else(|_| DEFAULT_APTOS_RPC.to_string())
         } else {
             cfg.rpc_url.clone()
         };

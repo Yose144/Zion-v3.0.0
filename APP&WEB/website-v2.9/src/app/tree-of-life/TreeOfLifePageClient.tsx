@@ -14,7 +14,7 @@ import { useLang } from '@/contexts/LanguageContext';
 
 const TreeOfLifeTreeOfLifePageClientCopy = {
   projectUnderConstantDevelopmen: { cs: `Projekt v neustálém vývoji — Work in Progress`, en: `Project under constant development — Work in Progress` },
-  zionTerranovaIsAnExperimentalP: { cs: `ZION TerraNova je experimentální projekt v aktivním vývoji. Všechny funkce, vizualizace, roadmapy a technické koncepty na této stránce jsou návrhy, které se mohou kdykoli změnit. evoluZion V2 (Proof-of-Care, NPU mining, Bodhisattva Vow) je vize budoucnosti, nikoli současná realita. Současná síť běží na Proof-of-Work (Mainnet Beta v3.0.6). Nic na této stránce není investiční doporučení.`, en: `ZION TerraNova is an experimental project under active development. All features, visualizations, roadmaps, and technical concepts on this page are proposals that may change at any time. evoluZion V2 (Proof-of-Care, NPU mining, Bodhisattva Vow) is a vision of the future, not current reality. The current network runs on Proof-of-Work (Mainnet Beta v3.0.6). Nothing on this page is investment advice.` },
+  zionTerranovaIsAnExperimentalP: { cs: `ZION TerraNova je experimentální projekt v aktivním vývoji. Všechny funkce, vizualizace, roadmapy a technické koncepty na této stránce jsou návrhy, které se mohou kdykoli změnit. evoluZion V2 (Proof-of-Care, NPU mining, Bodhisattva Vow) je vize budoucnosti, nikoli současná realita. Současná síť běží na Proof-of-Work (Mainnet Alpha v3.1.0). Nic na této stránce není investiční doporučení.`, en: `ZION TerraNova is an experimental project under active development. All features, visualizations, roadmaps, and technical concepts on this page are proposals that may change at any time. evoluZion V2 (Proof-of-Care, NPU mining, Bodhisattva Vow) is a vision of the future, not current reality. The current network runs on Proof-of-Work (Mainnet Alpha v3.1.0). Nothing on this page is investment advice.` },
   experimental: { cs: `Experimentální`, en: `Experimental` },
   activelyBuilding: { cs: `Aktivně se staví`, en: `Actively building` },
   mainnetBetaAtYourOwnRisk: { cs: `Mainnet Beta — riziko vlastní`, en: `Mainnet Beta — at your own risk` },
@@ -62,7 +62,7 @@ const TreeOfLifeTreeOfLifePageClientCopy = {
   threePillars: { cs: `Tři pilíře`, en: `Three Pillars` },
   organismDiagnosticsLiveData: { cs: `Diagnostika organismu — živá data`, en: `Organism diagnostics — live data` },
   emanationStatus: { cs: `Stav emanace`, en: `Emanation status` },
-  whichAspectsOfZionAreAliveInRu: { cs: `Které aspekty ZIONu jsou živé v runtime, které čekají na manifestaci. Strom života jako diagnostický nástroj. Data z /api/tree-of-life/tree-health — agregováno z blockchain, DeFi, bridge a NCL API.`, en: `Which aspects of ZION are alive in runtime, which await manifestation. The Tree of Life as a diagnostic tool. Data from /api/tree-of-life/tree-health — aggregated from blockchain, DeFi, bridge and NCL APIs.` },
+  whichAspectsOfZionAreAliveInRu: { cs: `Které aspekty ZIONu jsou živé v runtime, které čekají na manifestaci. Strom života jako diagnostický nástroj. Data z /api/tree-of-life/tree-health — agregováno z blockchain, Multichain, bridge a NCL API.`, en: `Which aspects of ZION are alive in runtime, which await manifestation. The Tree of Life as a diagnostic tool. Data from /api/tree-of-life/tree-health — aggregated from blockchain, Multichain, bridge and NCL APIs.` },
   treeOverall: { cs: `Strom celkem`, en: `Tree overall` },
   pillarOfMercy: { cs: `Pilíř Milosrdenství`, en: `Pillar of Mercy` },
   chokmahChesedNetzach: { cs: `Chokmah, Chesed, Netzach`, en: `Chokmah, Chesed, Netzach` },
@@ -177,7 +177,7 @@ const SEPHIROT: Sephira[] = [
   {
     id: 'chesed', name: 'Chesed', hebrew: 'חֶסֶד',
     meaning: { cs: 'Milosrdenství', en: 'Mercy' },
-    zionLayer: 'L2 DeFi (Staking, Farming, Atomic Swap)',
+    zionLayer: 'L2 Multichain (Staking, Farming, Atomic Swap)',
     zionPath: 'V3/L2/contracts/hardhat/sol/ZIONStaking.sol, ZIONFarm.sol',
     pillar: 'mercy',
     emanates: {

@@ -3,7 +3,7 @@
 > **Cíl:** Dostat ZION z Mainnet Beta do **Mainnet Alpha** (3.1.0) — všechno funguje, repo je vyčištěné na "pure code", a síť je připravená na veřejný launch 31. 12. 2026.
 > **Aktuální verze:** 3.0.7 "Trinity All Green" plánování  
 > **Další milníky:** 3.0.8 "Full Stack Stable" → 3.0.9 "Pre-Alpha Hardening" → 3.1.0 "Mainnet Alpha"  
-> **Související:** [`3.0.7.md`](./3.0.7.md), [`TRINITY_ALL_GREEN_PLAN.md`](./TRINITY_ALL_GREEN_PLAN.md), [`StatusV3.md`](./StatusV3.md), [`ROADMAP.md`](./ROADMAP.md), [`AGENTS.md`](./AGENTS.md)
+> **Související:** [`3.0.7.md`](../3.0.7/3.0.7.md), [`TRINITY_ALL_GREEN_PLAN.md`](../3.0.7/TRINITY_ALL_GREEN_PLAN.md), [`StatusV3.md`](./StatusV3.md), [`ROADMAP.md`](./ROADMAP.md), [`AGENTS.md`](./AGENTS.md)
 
 ---
 
@@ -34,7 +34,7 @@ Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyči
 
 | Verze | Název | Cíl | Kdy | Hlavní výstup |
 |-------|-------|-----|-----|---------------|
-| **3.0.7** | Trinity All Green | Každý aktivní stream má ověřené accepted shares | 2026-07 | [`TRINITY_ALL_GREEN_PLAN.md`](./TRINITY_ALL_GREEN_PLAN.md) |
+| **3.0.7** | Trinity All Green | Každý aktivní stream má ověřené accepted shares | 2026-07 | [`TRINITY_ALL_GREEN_PLAN.md`](../3.0.7/TRINITY_ALL_GREEN_PLAN.md) |
 | **3.0.8** | Full Stack Stable | Všechny služby, coiny a UI fungují; žádné placeholder kernely v aktivní cestě | 2026-08 | [`3.0.8.md`](./3.0.8.md) |
 | **3.0.9** | Pre-Alpha Hardening | Security audit, chaos testy, repo purification, public subtree sync | 2026-09 | [`3.0.9.md`](./3.0.9.md) |
 | **3.1.0** | Mainnet Alpha | Čistý repo, freeze features, launch readiness, public release | 2026-10 | [`3.1.0.md`](./3.1.0.md) |
@@ -116,7 +116,7 @@ Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyči
 
 ### 4.3 Repo purification — „pure code“
 
-> Detailed V3.1 migration into a clean `V31/` tree (post-3.0.9): [`V3.1_MIGRATION_PLAN.md`](./V3.1_MIGRATION_PLAN.md) — **L2 unifies into a single Multi-Chain crate (`V31/L2/multichain`)** absorbing bridge/warp/atomic-swap/ziondex/swap-aggregator per [`MAINNET_ALPHA_L2_UNIFICATION.md`](../../MAINNET_ALPHA_L2_UNIFICATION.md); AuxPoW → miner, L3 → AI/orchestration/automation/NCL/PoC; L4 Oasis / L5 Free World / L6 Issobella stay as superstructures. Native integration seams for the four moves: [`V3.1_INTEGRATION_PLAN.md`](./V3.1_INTEGRATION_PLAN.md).
+> Detailed V3.1 migration into a clean `V31/` tree (post-3.0.9): [`V3.1_MIGRATION_PLAN.md`](./V3.1_MIGRATION_PLAN.md) — **L2 unifies into a single Multi-Chain crate (`V31/L2/multichain`)** absorbing bridge/warp/atomic-swap/ziondex/swap-aggregator per [`MAINNET_ALPHA_L2_UNIFICATION.md`](../3.0.8/MAINNET_ALPHA_L2_UNIFICATION.md); AuxPoW → miner, L3 → AI/orchestration/automation/NCL/PoC; L4 Oasis / L5 Free World / L6 Issobella stay as superstructures. Native integration seams for the four moves: [`V3.1_INTEGRATION_PLAN.md`](./V3.1_INTEGRATION_PLAN.md).
 
 | # | Úkol | Akce |
 |------|------|------|
@@ -165,7 +165,7 @@ Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyči
 |---|------|-----------|
 | 2.1 | GitHub release v3.1.0-beta | Binaries + SHA256SUMS + release notes |
 | 2.2 | SMOS package oficiální | `zion-miner-v3.1.0-mainnet-alpha.zip` |
-| 2.3 | Public launch checklist | Dokončit [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md) (vytvořit) |
+| 2.3 | Public launch checklist | Dokončit [`LAUNCH_CHECKLIST.md`](../3.0.8/LAUNCH_CHECKLIST.md) (vytvořit) |
 | 2.4 | Monitoring & alerting | Grafana/alertmanager nebo ekvivalent, page na downtime |
 | 2.5 | Backup & disaster recovery | DB snapshoty, genesis recovery, cold keys |
 

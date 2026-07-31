@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZION TerraNova® | v3.1.0 MAINNET ALPHA</title>
+  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./slider.css" />
+  <link rel="stylesheet" href="./rasta.css" />
+  <link rel="stylesheet" href="./presale.css?v=20260117" />
+    <style>
+      .mining-products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 28px;
+        max-width: 1100px;
+        margin: 40px auto 0;
+      }
+
+      .mining-card {
+        background: linear-gradient(145deg, #0d0d0d, #080808);
+        border: 2px solid #1a1a1a;
+        border-radius: 18px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+        transition: all 0.4s ease;
+      }
+
+      .mining-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .mining-card:hover {
+        transform: translateY(-8px);
+        border-color: var(--rasta-gold);
+        box-shadow: 0 20px 40px rgba(252, 209, 22, 0.25);
+      }
+
+      .mining-card:hover::before {
+        opacity: 1;
+      }
+
+      .mining-card-image {
+        position: relative;
+        height: 210px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #111, #050505);
+      }
+
+      .mining-card-image img {
+        width: auto;
+        height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+        border-radius: 12px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      }
+
+      .variant-book .mining-card-image {
+        height: 280px;
+        padding: 25px;
+      }
+
+      .mining-card-image .card-icon {
+        font-size: 3rem;
+        color: var(--rasta-gold);
+        text-shadow: 0 0 25px rgba(252, 209, 22, 0.65);
+      }
+
+      .mining-card-body {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .product-category {
+        font-size: 0.75rem;
+        color: var(--rasta-gold);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      .product-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--rasta-gold) !important;
+      }
+
+      .mining-card .product-title {
+        color: var(--rasta-gold) !important;
+      }
+
+      .product-description {
+        font-size: 0.95rem;
+        color: #bbb;
+        line-height: 1.6;
+      }
+
+      .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 8px 18px;
+      }
+
+      .feature-list li {
+        font-size: 0.9rem;
+        color: #ccc;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .feature-list i {
+        color: var(--rasta-gold);
+      }
+
+      .price-row {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .price-main {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--rasta-gold);
+      }
+
+      .token-bonus {
+        font-size: 0.95rem;
+        color: var(--rasta-gold);
+      }
+
+      .token-bonus.muted {
+        color: #aaa;
+      }
+
+      .compare-price {
+        font-size: 0.85rem;
+        color: #888;
+        text-decoration: line-through;
+      }
+
+      .vat-note {
+        font-size: 0.75rem;
+        color: #777;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+      }
+
+      .mining-card-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 12px 20px;
+        border-radius: 999px;
+        border: 1px solid var(--rasta-gold);
+        background: linear-gradient(90deg, rgba(255, 215, 0, 0.15), rgba(0, 128, 0, 0.25));
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+      }
+
+      .mining-card-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+      }
+
+      .mining-card-btn.ghost {
+        border-color: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .mining-card-btn.highlight {
+        background: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+        color: #041016;
+      }
+
+      .mining-card.wide {
+        grid-column: span 2;
+      }
+
+      .mining-products-grid.centered {
+        display: flex;
+        justify-content: center;
+      }
+
+      .mining-products-grid.centered .mining-card.wide {
+        max-width: 700px;
+        width: 100%;
+      }
+
+      .variant-free .mining-card-image {
+        background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1), transparent 60%),
+          linear-gradient(135deg, rgba(10, 27, 56, 0.9), rgba(6, 14, 28, 0.95));
+      }
+
+      .variant-pro .mining-card-image {
+        background: radial-gradient(circle at 80% 0, rgba(255, 255, 255, 0.18), transparent 60%),
+          linear-gradient(135deg, rgba(57, 14, 66, 0.95), rgba(21, 7, 32, 0.95));
+      }
+
+      .variant-pool .mining-card-image {
+        background: radial-gradient(circle at 20% 0, rgba(255, 255, 255, 0.18), transparent 60%),
+          linear-gradient(135deg, rgba(5, 43, 73, 0.95), rgba(3, 17, 28, 0.95));
+      }
+
+      .variant-rig .mining-card-image {
+        background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.18), transparent 60%),
+          linear-gradient(135deg, rgba(255, 165, 0, 0.9), rgba(255, 69, 0, 0.9));
+      }
+
+      .variant-book .mining-card-image {
+        background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.15), transparent 65%),
+          linear-gradient(135deg, rgba(16, 64, 50, 0.95), rgba(10, 29, 23, 0.95));
+      }
+
+      .model-tag,
+      .product-badge {
+        position: absolute;
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 0.65rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 700;
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .model-tag {
+        top: 20px;
+        right: 20px;
+        color: var(--rasta-gold);
+        background: rgba(0, 0, 0, 0.4);
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .product-badge {
+        top: 20px;
+        left: 20px;
+        background: linear-gradient(90deg, var(--rasta-green), var(--rasta-gold));
+        color: #041016;
+      }
+
+      @media (max-width: 768px) {
+        .mining-products-grid {
+          grid-template-columns: 1fr;
+          margin-top: 20px;
+        }
+
+        .mining-card.wide {
+          grid-column: span 1;
+        }
+      }
+    </style>
+    <script src="./products.js" defer></script>
+    <script src="./cart.js" defer></script>
+    <script src="./script.js?v=20260117" defer></script>
+    <script src="https://kit.fontawesome.com/16464afad1.js" crossorigin="anonymous"></script>
+  </head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NHF25ZZ97S"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-NHF25ZZ97S');
+  </script>
+  <body class="rasta-body">
+    <div id="__next">
+      <header id="header">
+        <div class="container">
+          <div class="subcontainer">
+            <nav class="navbar-container">
+            <div class="navbar-left">
+              <a href="./main.html" class="nav-branding-1">ZION TerraNova®</a>
+              <div class="nav-menu">
+                <a href="#" class="nav-branding-2">Mine<span>r</span></a>
+                <a href="./main.html" class="nav-link">Home</a>
+                <a href="./mining-start.html" class="nav-link presale-nav-link active">
+                  <span class="presale-badge-nav">⛏️</span> Start Mining
+                </a>
+                <a href="./dashboard.html" class="nav-link">Dashboard</a>
+                <a href="./whitepaper.html" class="nav-link">Whitepaper</a>
+                <a href="./roadmap.html" class="nav-link">Roadmap</a>
+                <a href="./shop.html" class="nav-link">Shop</a>
+                <span class="nav-link lang-switch"><span class="active-lang">CZ</span> | <a href="./mining-start-en.html">EN</a></span>
+                <a href="./cart.html" class="nav-link cart-link">
+                  <span class="cart-icon-wrapper">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span id="cart-count" class="cart-badge">0</span>
+                  </span>
+                </a>
+              </div>
+            </div>
+            <div class="navbar-right">
+              <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+              </div>
+            </div>
+          </nav>
+          </div>
+        </div>
+      </header>
+
+      <!-- Hero Section -->
+      <section class="rasta-hero presale-hero" style="background: linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(26,26,26,0.95) 100%), url('./img/cosmic-bg.jpg');">
+        <div class="rasta-hero-inner">
+          <h1>ZION <span class="gold-text">Fair Launch</span></h1>
+          <h2>Těžba od bloku 1 — Žádné ICO, žádný předprodej</h2>
+          <p class="subtitle">Mainnet aktivní — začni těžit ZION s consciousness-based odměnami ještě dnes</p>
+          <div class="presale-stats-hero">
+            <div class="stat">
+              <span class="value">7342+</span>
+              <span class="label">Block Height</span>
+            </div>
+            <div class="stat">
+              <span class="value">5400.067</span>
+              <span class="label">Block Reward (ZION)</span>
+            </div>
+            <div class="stat">
+              <span class="value">89/5/5/1</span>
+              <span class="label">Fee Split</span>
+            </div>
+            <div class="stat">
+              <span class="value">100%</span>
+              <span class="label">Fair Launch</span>
+            </div>
+            <div class="stat">
+              <span class="value">9 úrovní</span>
+              <span class="label">Consciousness Mining</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+            <a href="#download" class="rasta-btn pulse-btn">
+              <i class="fa-solid fa-download"></i> Stáhnout miner
+            </a>
+            <a href="./roadmap.html" class="rasta-btn-outline rasta-btn">
+              <i class="fa-solid fa-road"></i> Roadmapa
+            </a>
+            <a href="https://discord.gg/eatGYDbd" class="rasta-btn" style="background: linear-gradient(90deg,var(--rasta-red),var(--rasta-gold),var(--rasta-green));" target="_blank">
+              <i class="fa-brands fa-discord"></i> Připoj se na Discord
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div class="rasta-divider">
+        <div class="line"></div>
+        <span class="icon">🦁</span>
+        <div class="line"></div>
+      </div>
+
+      <!-- Info Banner -->
+      <section class="rasta-section" style="padding: 30px 20px;">
+        <div style="max-width: 800px; margin: 0 auto; background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(0,128,0,0.1)); padding: 30px; border-radius: 12px; border: 2px solid var(--rasta-gold); text-align: center;">
+          <h3 style="color: var(--rasta-gold); margin-bottom: 15px; font-size: 1.6rem;">
+            <i class="fa-solid fa-lightbulb"></i> Co je Fair Launch?
+          </h3>
+          <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;">
+            <strong>Žádný předprodej, žádné ICO, žádný KYC.</strong> Inspirováno Satoshi Nakamoto — každý může těžit od prvního bloku.
+            Token získáte pouze těžbou nebo nákupem našeho software (mining agent, pool license). 
+            <strong>144B ZION</strong> je celkový strop; zbytek se těží postupně komunitou.
+          </p>
+          <a href="./whitepaper.html" class="rasta-btn" style="font-size: 1.1rem; padding: 12px 30px;">
+            <i class="fa-solid fa-book-open"></i> Přečíst Fair Launch Manifesto
+          </a>
+        </div>
+      </section>
+
+      <div class="rasta-divider">
+        <div class="line"></div>
+        <span class="icon">💎</span>
+        <div class="line"></div>
+      </div>
+
+      <!-- Token Info Section -->
+      <section class="rasta-section token-info-section">
+        <h2>Co jsou <span>ZION Dharma Credits?</span></h2>
+        <p class="rasta-text">
+          ZION Dharma Credits jsou consciousness-based kryptoměna s maximálním supply 144 miliard (12×12×1B).
+          Těžba využívá Ekam Deeksha PoW (6 fází), který odměňuje vědomí nad výpočetní silou.
+          <strong>~16.692B ZION</strong> je v oběhu (premine + vytěžené) pro DAO, infrastrukturu a humanitární projekty.
+        </p>
+        <div class="pillar-grid">
+          <div class="pillar-card">
+            <div class="icon"><i class="fa-solid fa-infinity"></i></div>
+            <h4>144B Max Supply</h4>
+            <p>Limitovaná emise inspirovaná posvátnou geometrií a kosmickými cykly.</p>
+          </div>
+          <div class="pillar-card">
+            <div class="icon"><i class="fa-solid fa-brain"></i></div>
+            <h4>Consciousness Mining</h4>
+            <p>9 úrovní vědomí s odměnami 1.0x-10.0x podle spirituální evoluce.</p>
+          </div>
+          <div class="pillar-card">
+            <div class="icon"><i class="fa-solid fa-hand-holding-heart"></i></div>
+            <h4>Fee Split 89/5/5/1</h4>
+            <p>Z každého bloku: 89 % miner / 5 % treasury / 5 % community / 1 % burn.</p>
+          </div>
+          <div class="pillar-card">
+            <div class="icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <h4>ASIC Resistant</h4>
+            <p>Deeksha jako primární algoritmus zajišťuje férovou decentralizovanou těžbu.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mining Packages (Software Products) -->
+      <section class="rasta-section presale-packages" id="download">
+        <h2>Mining <span>Software</span></h2>
+        <p class="rasta-text">Vyber si software balíček podle svých potřeb. Bonusové ZION tokeny dostaneš z DAO treasury jako dárek k nákupu (ne jako "prodej tokenu").</p>
+        
+        <div class="mining-products-grid">
+          <div class="mining-card variant-free" data-package="free">
+            <div class="mining-card-image">
+              <span class="product-badge">Community</span>
+              <span class="model-tag"><i class="fa-solid fa-terminal"></i> CLI miner</span>
+              <div class="card-icon"><i class="fa-solid fa-code"></i></div>
+            </div>
+            <div class="mining-card-body">
+              <p class="product-category">Free & Open Source</p>
+              <h3 class="product-title">⛏️ Community Miner</h3>
+              <p class="product-description">CLI miner (Python/Rust) pro rychlý start na CPU s Deeksha.</p>
+              <ul class="feature-list">
+                <li><i class="fa-solid fa-check"></i> Deeksha optimalizace</li>
+                <li><i class="fa-solid fa-check"></i> Pool ready konfigurace</li>
+                <li><i class="fa-solid fa-check"></i> MIT licence</li>
+                <li><i class="fa-solid fa-check"></i> Discord komunita</li>
+              </ul>
+              <div class="price-row">
+                <div>
+                  <div class="price-main">0 Kč</div>
+                  <div class="token-bonus muted">GitHub release</div>
+                </div>
+              </div>
+              <a href="https://zionterranova.com/download" target="_blank" class="mining-card-btn ghost">
+                <i class="fa-solid fa-download"></i> Stáhnout zdarma
+              </a>
+            </div>
+          </div>
+
+          <div class="mining-card variant-pro" data-package="miner-pro">
+            <div class="mining-card-image">
+              <span class="product-badge">GUI</span>
+              <span class="model-tag"><i class="fa-solid fa-desktop"></i> Miner Pro</span>
+              <div class="card-icon"><i class="fa-solid fa-gauge-high"></i></div>
+            </div>
+            <div class="mining-card-body">
+              <p class="product-category">Desktop Suite</p>
+              <h3 class="product-title">🖥️ Miner Pro Desktop</h3>
+              <p class="product-description">Plnohodnotná GUI aplikace pro Win / Mac / Linux se statistikami v reálném čase.</p>
+              <ul class="feature-list">
+                <li><i class="fa-solid fa-check"></i> Auto-tune optimalizace</li>
+                <li><i class="fa-solid fa-check"></i> Multi-pool routing</li>
+                <li><i class="fa-solid fa-check"></i> Consciousness XP tracking</li>
+                <li><i class="fa-solid fa-check"></i> Dashboard s telemetrií</li>
+              </ul>
+              <div class="price-row">
+                <div>
+                  <div class="price-main">990 Kč</div>
+                  <div class="token-bonus">+ 9 900 ZION bonus</div>
+                </div>
+                <span class="vat-note">21% DPH</span>
+              </div>
+              <!-- COMING SOON - tlačítko dočasně deaktivováno
+              <button class="mining-card-btn highlight" onclick="Cart.add('soft-001'); window.location.href='./cart.html';">
+                <i class="fa-solid fa-cart-plus"></i> Koupit Miner Pro
+              </button>
+              -->
+              <span class="mining-card-btn ghost" style="cursor: not-allowed; opacity: 0.6;">
+                <i class="fa-solid fa-clock"></i> Již brzy
+              </span>
+            </div>
+          </div>
+
+          <div class="mining-card variant-pool" data-package="pool">
+            <div class="mining-card-image">
+              <span class="product-badge">Enterprise</span>
+              <span class="model-tag"><i class="fa-solid fa-network-wired"></i> Pool stack</span>
+              <div class="card-icon"><i class="fa-solid fa-server"></i></div>
+            </div>
+            <div class="mining-card-body">
+              <p class="product-category">DAO License</p>
+              <h3 class="product-title">🌐 DAO Pool License</h3>
+              <p class="product-description">Software balíček pro vlastní ZION pool s whitelabel dashboardem.</p>
+              <ul class="feature-list">
+                <li><i class="fa-solid fa-check"></i> Multi-algo + VarDiff</li>
+                <li><i class="fa-solid fa-check"></i> Consciousness hra</li>
+                <li><i class="fa-solid fa-check"></i> Email support 30 dní</li>
+                <li><i class="fa-solid fa-check"></i> Whitelabel UI</li>
+              </ul>
+              <div class="price-row">
+                <div>
+                  <div class="price-main">9 990 Kč</div>
+                  <div class="token-bonus">+ 99 000 ZION bonus</div>
+                </div>
+                <span class="vat-note">21% DPH</span>
+              </div>
+              <!-- COMING SOON - tlačítko dočasně deaktivováno
+              <button class="mining-card-btn" onclick="Cart.add('soft-002'); window.location.href='./cart.html';">
+                <i class="fa-solid fa-cart-plus"></i> Objednat Pool
+              </button>
+              -->
+              <span class="mining-card-btn ghost" style="cursor: not-allowed; opacity: 0.6;">
+                <i class="fa-solid fa-clock"></i> Již brzy
+              </span>
+            </div>
+          </div>
+         </div>
+
+        <div class="mining-products-grid centered" style="margin-top: 28px;">
+          <div class="mining-card variant-rig wide" data-package="rig">
+            <div class="mining-card-image">
+              <span class="product-badge">🔥 Mega bonus</span>
+              <span class="model-tag"><i class="fa-solid fa-microchip"></i> Rig v3.1</span>
+              <div class="card-icon"><i class="fa-solid fa-bolt"></i></div>
+            </div>
+            <div class="mining-card-body">
+              <p class="product-category">Ready-to-mine stack</p>
+              <h3 class="product-title">⚡ ZION Rtx 5060 Miner &amp; Oasis Ready</h3>
+              <p class="product-description">Optimalizovaný CPU/GPU rig s předinstalovaným ZION OS a premium supportem.</p>
+              <ul class="feature-list">
+                <li><i class="fa-solid fa-check"></i> Plug & Play setup</li>
+                <li><i class="fa-solid fa-check"></i> 6 měsíců záruka</li>
+                <li><i class="fa-solid fa-check"></i> Premium Discord podpora</li>
+                <li><i class="fa-solid fa-check"></i> +269 000 ZION z DAO</li>
+              </ul>
+              <div class="price-row">
+                <div>
+                  <div class="price-main">25 900 Kč</div>
+                  <div class="token-bonus">+ 259 000 ZION bonus</div>
+                  <div class="compare-price">Původně 49 900 Kč</div>
+                </div>
+              </div>
+              <!-- COMING SOON - tlačítko dočasně deaktivováno
+              <button class="mining-card-btn highlight" onclick="Cart.add('soft-003'); window.location.href='./cart.html';">
+                <i class="fa-solid fa-bolt"></i> Objednat Mining Rig
+              </button>
+              -->
+              <span class="mining-card-btn ghost" style="cursor: not-allowed; opacity: 0.6;">
+                <i class="fa-solid fa-clock"></i> Již brzy
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <p style="text-align: center; margin-top: 40px; color: #bbb; font-size: 0.95rem;">
+          💡 <strong>Bonusové ZION tokeny nejsou "prodej"</strong> — jsou to dárky z DAO treasury pro podporu community. 
+          Platíte pouze za software/hardware licence (standardní DPH 21%).
+        </p>
+      </section>
+
+      <div class="rasta-divider">
+        <div class="line"></div>
+        <span class="icon"></span>
+        <div class="line"></div>
+      </div>
+
+      <!-- Quick Start Guide -->
+      <section class="rasta-section" style="padding: 60px 20px; background: rgba(0,0,0,0.3);">
+        <div style="max-width: 900px; margin: 0 auto;">
+          <h2 style="text-align: center; margin-bottom: 40px;">Jak začít <span style="color: var(--rasta-gold);">těžit ZION</span>?</h2>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px;">
+            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(0,100,0,0.05)); padding: 25px; border-radius: 12px; border: 1px solid var(--rasta-gold);">
+              <div style="font-size: 2.5rem; margin-bottom: 15px;">1️⃣</div>
+              <h4 style="color: var(--rasta-gold); margin-bottom: 10px;">Stáhni miner</h4>
+              <p style="line-height: 1.6; color: #ccc;">Vyber Community Miner (free) nebo Miner Pro (GUI). Instalace na Win/Mac/Linux za 2 minuty.</p>
+            </div>
+
+            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(0,100,0,0.05)); padding: 25px; border-radius: 12px; border: 1px solid var(--rasta-gold);">
+              <div style="font-size: 2.5rem; margin-bottom: 15px;">2️⃣</div>
+              <h4 style="color: var(--rasta-gold); margin-bottom: 10px;">Připoj se k poolu</h4>
+              <p style="line-height: 1.6; color: #ccc;">Zadej pool adresu <code>62.171.141.136:8444</code> a svou ZION wallet adresu.</p>
+            </div>
+
+            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(0,100,0,0.05)); padding: 25px; border-radius: 12px; border: 1px solid var(--rasta-gold);">
+              <div style="font-size: 2.5rem; margin-bottom: 15px;">3️⃣</div>
+              <h4 style="color: var(--rasta-gold); margin-bottom: 10px;">Začni těžit!</h4>
+              <p style="line-height: 1.6; color: #ccc;">Klikni "Start Mining" a sleduj svůj hashrate. Odměny dostaneš každý nalezený blok (60s interval).</p>
+            </div>
+          </div>
+
+          <div style="margin-top: 40px; text-align: center;">
+            <a href="./faq.html" class="rasta-btn" style="font-size: 1.1rem; padding: 12px 30px;">
+              <i class="fa-solid fa-circle-question"></i> Kompletní průvodce (FAQ)
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div class="rasta-divider">
+        <div class="line"></div>
+        <span class="icon">💚</span>
+        <div class="line"></div>
+      </div>
+
+      <!-- Footer CTA -->
+      <section class="rasta-section" style="padding: 60px 20px; text-align: center;">
+        <h2 style="margin-bottom: 20px;">Připoj se k <span style="color: var(--rasta-gold);">Fair Launch revoluci</span></h2>
+        <p style="font-size: 1.2rem; line-height: 1.8; max-width: 700px; margin: 0 auto 30px; color: #ddd;">
+          Bez předprodeje. Bez ICO. Bez KYC. Jen férová těžba od bloku 1, 
+          kde každý má stejnou šanci. <strong>Satoshi style.</strong>
+        </p>
+        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+          <a href="https://discord.gg/eatGYDbd" class="rasta-btn" target="_blank">
+            <i class="fa-brands fa-discord"></i> Discord Community
+          </a>
+          <a href="https://x.com/ZionTerraNova" class="rasta-btn-outline rasta-btn" target="_blank">
+            <i class="fa-brands fa-twitter"></i> Twitter
+          </a>
+          <a href="https://github.com/Zion-TerraNova" class="rasta-btn-outline rasta-btn" target="_blank">
+            <i class="fa-brands fa-github"></i> GitHub
+          </a>
+        </div>
+      </section>
+
+      <footer style="background: rgba(0,0,0,0.5); padding: 30px 20px; text-align: center; border-top: 1px solid var(--rasta-gold);">
+        <p style="color: #888; margin-bottom: 10px;">
+          ZION TerraNova® 2026 | Where Technology Meets Spirit
+        </p>
+        <p style="color: #666; font-size: 0.9rem;">
+          <a href="./terms.html" style="color: var(--rasta-gold); text-decoration: none;">Terms</a> | 
+          <a href="./legal.html" style="color: var(--rasta-gold); text-decoration: none;">Legal</a> | 
+          <a href="./gdpr-cs.html" style="color: var(--rasta-gold); text-decoration: none;">GDPR</a> | 
+          <a href="mailto:hello@zionterranova.com" style="color: var(--rasta-gold); text-decoration: none;">Contact</a>
+        </p>
+      </footer>
+
+    </div>
+  </body>
+</html>

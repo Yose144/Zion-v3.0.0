@@ -61,7 +61,7 @@ impl WarpWatcher {
                 debug!("[Watcher] Chain '{}' disabled — skipping", chain.name);
                 continue;
             }
-            match create_adapter_from_config(&chain, &config) {
+            match create_adapter_from_config(chain, &config) {
                 Some(adapter) => {
                     info!("[Watcher] Registered adapter for '{}'", chain.name);
                     adapters.push((chain.name.clone(), adapter));
@@ -142,7 +142,10 @@ impl WarpWatcher {
             // Trim in-memory cache to avoid unbounded growth
             if self.seen.len() >= SEEN_CACHE_MAX {
                 self.seen.clear();
-                debug!("[Watcher] in-memory seen-cache cleared (hit {})", SEEN_CACHE_MAX);
+                debug!(
+                    "[Watcher] in-memory seen-cache cleared (hit {})",
+                    SEEN_CACHE_MAX
+                );
             }
             self.seen.insert(tx_hash.to_string());
         }

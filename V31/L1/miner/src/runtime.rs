@@ -9,9 +9,9 @@ use tokio::sync::{watch, Mutex};
 use tokio::time::sleep;
 use tracing::{info, warn};
 use zion_core::{
-    Block, BlockHeader, ConsensusEngine, Transaction, TransactionInput, TransactionOutput,
+    Block, BlockHeader, ConsensusEngine, HeightAwareDeeksha, Transaction, TransactionInput,
+    TransactionOutput,
 };
-use zion_cosmic_harmony::EkamDeeksha;
 use zion_l1_types::{Amount, Hash};
 
 #[cfg(feature = "auxpow")]
@@ -54,10 +54,13 @@ pub struct MinerRuntime {
 
 impl MinerRuntime {
     pub fn new(config: MinerConfig) -> Self {
-        let algorithm = Arc::new(EkamDeeksha::new()) as Arc<dyn zion_cosmic_harmony::PowAlgorithm>;
+        let algorithm =
+            Arc::new(HeightAwareDeeksha::new()) as Arc<dyn zion_cosmic_harmony::PowAlgorithm>;
         let consensus = Arc::new(ConsensusEngine::new(algorithm));
         #[cfg(feature = "auxpow")]
         let hashrate_per_unit = config.hashrate_per_unit;
+        #[cfg(feature = "auxpow")]
+        let stream3_force_coin = config.stream3_force_coin;
 
         let mut map = HashMap::new();
         map.insert(StreamId::Zion, StreamStats::new(StreamId::Zion));
@@ -78,7 +81,10 @@ impl MinerRuntime {
                 config,
                 consensus,
                 stats,
-                scheduler: Arc::new(Mutex::new(AuxPoWScheduler::new(hashrate_per_unit))),
+                scheduler: Arc::new(Mutex::new(AuxPoWScheduler::new(
+                    hashrate_per_unit,
+                    stream3_force_coin,
+                ))),
                 gpu_client: Arc::new(Mutex::new(None)),
                 cpu_client: Arc::new(Mutex::new(None)),
             }
@@ -174,20 +180,34 @@ impl MinerRuntime {
     /// Mine a ZION share received from a stratum pool (Stream 1 pool mode).
     ///
     /// Fetches the next job from the pool, brute-forces a nonce that meets the
-    /// pool target, and submits the share. Returns a dummy block so the caller
-    /// can record stats uniformly.
+    /// pool target using the canonical ZION PoW, and submits the share. Returns
+    /// a dummy block so the caller can record stats uniformly.
     async fn mine_zion_pool_share(
         &self,
         client: &mut crate::auxpow::StratumClient,
     ) -> Result<Block, MinerError> {
         let job = client
-            .next_job(zion_cosmic_harmony::ExternalCoin::Bitcoin, Duration::from_secs(30))
+            .next_job(
+                zion_cosmic_harmony::ExternalCoin::Bitcoin,
+                Duration::from_secs(30),
+            )
             .await
             .map_err(|e| MinerError::Consensus(format!("stratum job error: {e}")))?;
 
         let job: crate::auxpow::Job = job.into();
-        let share = crate::auxpow::find_share(job.coin, &job, 0, self.config.zion_nonce_batch)
+        let (nonce, _hash) = self
+            .consensus
+            .mine_header_bytes(&job.header, &job.target, 0, self.config.zion_nonce_batch)
             .ok_or(MinerError::NoAuxPoWSolution)?;
+
+        let share = crate::auxpow::Share {
+            job_id: job.job_id,
+            coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
+            nonce,
+            hash: _hash.0,
+            extranonce2: job.extranonce2,
+            ntime: job.ntime,
+        };
 
         if let Err(e) = client.submit_share(&share).await {
             warn!(error = %e, "zion pool share submit failed");
@@ -200,7 +220,7 @@ impl MinerRuntime {
             merkle_root: Hash::default(),
             height: 0,
             timestamp: Utc::now().timestamp() as u64,
-            nonce: share.nonce,
+            nonce,
             difficulty: 1,
         };
         Ok(Block::new(header, vec![]))
