@@ -14,9 +14,9 @@ MULTICHAIN_DB="${DATA_DIR}/multichain.db"
 MULTICHAIN_TOML="${DATA_DIR}/multichain.toml"
 LOG_DIR="${DATA_DIR}/logs"
 
-NODE_RPC="127.0.0.1:9444"
+NODE_RPC="127.0.0.1:9445"
 NODE_P2P="0.0.0.0:8335"
-POOL_BIND="0.0.0.0:8445"
+POOL_BIND="0.0.0.0:8446"
 MINER_WORKER="zion1smokeminer.worker1"
 MINER_REWARD="zion1smokeminer"
 POOL_COINBASE="zion1smokepool"
@@ -32,7 +32,7 @@ rm -f "${NODE_DB}" "${POOL_STATE}" "${MULTICHAIN_DB}"
 cat > "${MULTICHAIN_TOML}" <<TOML
 [server]
 bind = "127.0.0.1"
-port = 8455
+port = 8456
 
 [database]
 path = "${MULTICHAIN_DB}"
