@@ -288,8 +288,8 @@ export default function Navigation() {
         </div>
 
         {/* ═══ FLOOR 2 — TEXT MENU (group dropdowns) ═══ */}
-        <div className="flex items-center justify-between gap-2 relative rounded-2xl border border-white/[0.07] bg-black/20 backdrop-blur-md px-2 py-1 shadow-none transition-all duration-300 mt-1 h-auto opacity-100 overflow-visible">
-          <div className="flex items-center gap-1.5 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
+        <div className="flex items-center justify-center gap-2 relative rounded-full border border-white/[0.06] bg-black/25 backdrop-blur-md px-3 py-1 shadow-none transition-all duration-300 mt-1.5 h-auto opacity-100 overflow-visible">
+          <div className="flex items-center gap-2 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
             {/* Group dropdown buttons */}
             {navGroups.map((group) => {
               const isActive = openGroup === group.title;
@@ -299,17 +299,17 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={() => setOpenGroup(isActive ? null : group.title)}
-                    className={`group inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] transition-all ${
+                    className={`group inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] transition-all ${
                       isActive
-                        ? 'border-zion-gold/40 bg-linear-to-br from-emerald-500/15 via-zion-gold/12 to-red-500/12 text-white shadow-[0_8px_20px_rgba(0,0,0,0.25),0_0_12px_rgba(251,191,36,0.12)]'
+                        ? 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold shadow-[0_0_12px_rgba(251,191,36,0.12)]'
                         : groupHasActiveChild
-                          ? 'border-emerald-500/30 bg-black/60 text-white hover:border-zion-gold/40'
-                          : 'border-white/8 bg-black/60 text-gray-400 hover:border-zion-gold/30 hover:bg-black/80 hover:text-white'
+                          ? 'border-emerald-500/25 bg-black/50 text-white hover:border-zion-gold/30 hover:bg-black/70'
+                          : 'border-white/[0.08] bg-black/40 text-gray-400 hover:border-zion-gold/25 hover:bg-black/60 hover:text-white'
                     }`}
                     aria-expanded={isActive}
                   >
                     <span className="group-hover:text-zion-gold transition-colors">{groupLabels[group.title] ?? group.title}</span>
-                    <ChevronDown className={`h-2 w-2 transition-transform ${isActive ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`h-[10px] w-[10px] transition-transform ${isActive ? 'rotate-180 text-zion-gold' : 'text-current'}`} />
                   </button>
                 </div>
               );
