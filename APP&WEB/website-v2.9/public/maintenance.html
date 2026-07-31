@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, minimum-scale=1, viewport-fit=cover, shrink-to-fit=no">
 <title>ZION — Multichain Dharma Ecosystem · V3.1 Alpha</title>
 <meta name="description" content="ZION — Multichain Dharma Ecosystem. Vstup do OASIS přes Stargate.">
 <meta name="theme-color" content="#05070a">
@@ -338,12 +338,14 @@
     .card { padding: 1rem 1rem; }
   }
   @media (max-width: 480px) {
-    .page { justify-content: flex-start; padding-top: 0.75rem; padding-bottom: 0.75rem; gap: 0.5rem; }
+    .page { justify-content: flex-start; padding-top: max(0.75rem, env(safe-area-inset-top, 0px)); padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)); padding-left: max(0.75rem, env(safe-area-inset-left, 0px)); padding-right: max(0.75rem, env(safe-area-inset-right, 0px)); gap: 0.5rem; }
     .hero { gap: 2rem; padding: 1.2rem 0.75rem; }
+    .hero h1, .hero .tagline, .hero p { word-break: break-word; overflow-wrap: anywhere; }
     .layers { grid-template-columns: repeat(2, 1fr); }
     .bar { font-size: 0.65rem; gap: 0.45rem 0.85rem; }
-    .btn { padding: 0.55rem 1.1rem; font-size: 0.74rem; }
-    .portal > a { width: min(320px, 62vw); }
+    .btn { padding: 0.55rem 1.1rem; font-size: 0.74rem; min-height: 44px; }
+    .portal > a { width: min(320px, 62vw); min-height: 44px; }
+    .card, .portal, .hero, .cta, .bar { max-width: 100%; }
   }
 </style>
 </head>

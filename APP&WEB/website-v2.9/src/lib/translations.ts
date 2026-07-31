@@ -73,10 +73,10 @@ const t = {
 
   /* ─── Hero ─── */
   hero: {
-    badge_version:  { cs: 'V3 Mainnet Beta · 3.0.6 Trinity', en: 'V3 Mainnet Beta · 3.0.6 Trinity' },
+    badge_version:  { cs: 'V31 Mainnet Alpha · 3.1.0', en: 'V31 Mainnet Alpha · 3.1.0' },
     badge_chv4:     { cs: 'Edge server topologie', en: 'Edge server topology' },
     tagline:        { cs: 'Nativní Rust blockchain s Proof-of-Work konsensem', en: 'Native Rust blockchain with Proof-of-Work consensus' },
-    title_sub:      { cs: 'Genesis Live · Edge server · canonical runtime v3.0.6 Ekam Deeksha · 6-decimal flowers', en: 'Genesis Live · Edge server · canonical runtime v3.0.6 Ekam Deeksha · 6-decimal flowers' },
+    title_sub:      { cs: 'Genesis Live · Edge server · canonical runtime v3.1.0 V31 · 6-decimal flowers', en: 'Genesis Live · Edge server · canonical runtime v3.1.0 V31 · 6-decimal flowers' },
     description:    {
       cs: 'Odpočítávání ke spuštění ZION TerraNova mainnetu — 31. prosince 2026 (Silvestr). Příprava V3 mainnetu v Edge server topologii (Edge server) s veřejným poolem, mining binárkami a provozní telemetrií.',
       en: 'ZION TerraNova mainnet launch countdown — 31 December 2026 (New Year\'s Eve). Preparing the V3 mainnet in Edge server topology (Edge server), with public pool, mining binaries, and operational telemetry.',
@@ -89,7 +89,7 @@ const t = {
     signal_mainnet: { cs: 'Launch Countdown', en: 'Launch Countdown' },
     signal_loc:     { cs: 'Edge server + Edge server · ShareRelay', en: 'Edge server + Edge server · ShareRelay' },
     signal_target:  { cs: '31. prosince 2026', en: '31 December 2026' },
-    signal_status_l1: { cs: 'Genesis Launch active · runtime v3.0.6', en: 'Genesis Launch active · runtime v3.0.6' },
+    signal_status_l1: { cs: 'Genesis Launch active · runtime v3.1.0', en: 'Genesis Launch active · runtime v3.1.0' },
     signal_status_nodes: { cs: 'Edge server online', en: 'Edge server online' },
     signal_status_mainnet: { cs: 'Launch Countdown · 31. prosince 2026', en: 'Launch Countdown · 31 December 2026' },
     metric_loc:     { cs: 'Řádků kódu (Rust)', en: 'Rust LOC' },

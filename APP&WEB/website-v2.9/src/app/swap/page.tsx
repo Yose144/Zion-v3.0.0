@@ -600,7 +600,7 @@ export default function SwapPage() {
                 bgClass="bg-purple-400/10"
                 rc="147, 51, 234"
                 label={SwapCopy.protocol[cs ? 'cs' : 'en']}
-                value="v3.0.6"
+                value="v3.1.0"
                 sub={SwapCopy.htlcAtomicSwap[cs ? 'cs' : 'en']}
                 tip={SwapCopy.currentVersionOfTheZionAtomicS[cs ? 'cs' : 'en']}
               />
