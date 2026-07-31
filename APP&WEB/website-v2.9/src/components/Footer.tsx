@@ -1,15 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Github, MessageCircle } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION } from '@/lib/site';
-
-const socialLinks = [
-  { href: 'https://github.com/Zion-TerraNova', label: 'GitHub', Icon: Github },
-  { href: 'https://discord.gg/zion-terranova', label: 'Discord', Icon: MessageCircle },
-];
 
 export default function Footer() {
   const { lang } = useLang();
@@ -72,20 +66,7 @@ export default function Footer() {
             <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
               {tr('footer', 'tagline', lang)}
             </p>
-            <div className="flex items-center gap-3 pt-2">
-              {socialLinks.map(({ href, label, Icon }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all hover:-translate-y-0.5"
-                >
-                  <Icon className="w-4 h-4" />
-                </a>
-              ))}
-            </div>
+
           </div>
 
           {/* Link columns */}
@@ -97,9 +78,8 @@ export default function Footer() {
                   <li key={href}>
                     <Link
                       href={href}
-                      className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors group"
+                      className="text-sm text-gray-400 hover:text-white transition-colors"
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-gray-600 group-hover:bg-zion-gold transition-colors" />
                       {label}
                     </Link>
                   </li>
@@ -128,10 +108,7 @@ export default function Footer() {
           <p className="text-xs text-gray-600">
             © 2026 ZION Blockchain · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_VERSION}
           </p>
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-gray-500">{tr('footer', 'test_mainnet_active', lang)}</span>
-          </div>
+          <span className="text-xs text-gray-500">{tr('footer', 'test_mainnet_active', lang)}</span>
         </div>
       </div>
     </footer>
