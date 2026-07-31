@@ -223,7 +223,7 @@ def _run_edge_cmd(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
     """Run a command on the Edge server — locally if we're on Edge, via SSH otherwise."""
     if EDGE_IS_LOCAL:
         return subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
-    # v3.0.7: Use repo symlink "ssh-key-zion-edge" -> ~/.ssh/zion-edge-2026-07-29, or SSH alias "zion-new"
+    # v3.0.7: Use repo symlink "ssh-key-zion-edge" -> ~/.ssh/zion-edge-post-wipe-2026-07-29, or SSH alias "zion-new"
     ssh_key = REPO_ROOT / "ssh-key-zion-edge"
     if ssh_key.exists():
         return subprocess.run(

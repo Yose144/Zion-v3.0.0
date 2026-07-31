@@ -8,6 +8,8 @@ zion-validator-key.env
 newzionssh.md
 *ssh*.md
 *ssh*key*
+zion-edge-*-2026-07-29
+zion-edge-*-2026-07-29.pub
 
 # Scripts with hardcoded private keys / mnemonics — DO NOT COMMIT
 revoke_old_bridge.js
@@ -329,6 +331,8 @@ KeyforLaunch.md
 UsersyosefDesktopsmos-api-test/
 "C\357\200\272UsersyosefDesktopzion-miner-new"
 zion-miner
+zion-miner-built
+zion-miner-public-release
 
 # Desktop agent legacy backup
 **/legacy_backup/

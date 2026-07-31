@@ -7,7 +7,7 @@
 #
 # Prerequisites:
 #   - Edge server reachable via SSH (62.171.141.136)
-#   - SSH key at ~/.ssh/zion-edge-2026-07-29 (override with $ZION_EDGE_SSH_KEY)
+#   - SSH key at ~/.ssh/zion-edge-post-wipe-2026-07-29 (override with $ZION_EDGE_SSH_KEY)
 #   - /etc/zion/edge-environment.sh exists on the Edge with real secrets
 #
 # Deploys:
@@ -22,7 +22,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 EDGE_USER="${ZION_EDGE_USER:-root}"
 EDGE_HOST="${ZION_EDGE_HOST:-62.171.141.136}"
-SSH_KEY="${ZION_EDGE_SSH_KEY:-$HOME/.ssh/zion-edge-2026-07-29}"
+SSH_KEY="${ZION_EDGE_SSH_KEY:-$HOME/.ssh/zion-edge-post-wipe-2026-07-29}"
 REMOTE_ROOT="/opt/zion"
 REMOTE_WEB="/opt/zion/website-v2.9"
 BACKUP_PATH="${REMOTE_ROOT}/backups/deploy-backup-$(date +%Y%m%d-%H%M%S)"

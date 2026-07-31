@@ -303,7 +303,7 @@ impl Default for DeployConfig {
     fn default() -> Self {
         Self {
             default_server: "edge".into(),
-            ssh_key: "~/.ssh/zion-edge-2026-07-29".into(),
+            ssh_key: "~/.ssh/zion-edge-post-wipe-2026-07-29".into(),
             ssh_user: "root".into(),
         }
     }
