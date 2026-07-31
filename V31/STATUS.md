@@ -49,6 +49,7 @@ Tyto položky nelze v kódu „dokončit“ bez nasazení nebo rozhodnutí; jsou
 - **2026-07-31:** V31 runtime smoke (`scripts/smoke-runtime.sh`) spuštěn na Edge (`62.171.141.136`) na izolovaných portech (`9445/8446/8335`), mimo V3 služby. `zion-node` + `zion-pool` + `zion miner` vytěřily a přijaly kanonický block height 1.
 - `cargo test -p zion-smoke` prošel na Edge (L3–L6 cross-layer, WARP HTLC, DAO governance).
 - **Dashboard page:** `/v31/` na `https://dashboard.zionterranova.com` zobrazuje live stav V31, ovládání start/stop, logy a výšky řetězce.
+- **V31 ↔ V3 sync:** Dashboard umí importovat V3 state (`/opt/zion/data/state`) jako checkpoint. V31 node po importu hlásí V3 výšku 9712+ a canonical výšku 0 (migration block). P2P sync se zkouší, ale V3 mainnet peer zatím odpojuje spojení (handshake/protokol není plně kompatibilní).
 
 ## Další krok
 

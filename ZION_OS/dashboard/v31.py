@@ -242,7 +242,7 @@ def sync(payload: dict) -> dict:
     if mode == "state":
         _record_sync("state", "running", "migrating V3 state and building checkpoint")
         _run_background(["bash", str(script), "state"], SYNC_LOG)
-        return {"ok": True, "message": "V3 state sync spawend in the background. Watch sync log."}
+        return {"ok": True, "message": "V3 state sync started in the background. Watch sync log."}
     elif mode == "p2p":
         peers = payload.get("peers", [])
         if not peers:
@@ -255,7 +255,7 @@ def sync(payload: dict) -> dict:
             pass
         _record_sync("p2p", "running", f"peers={','.join(peers)}")
         _run_background(["bash", str(script), "p2p"] + [str(p) for p in peers], SYNC_LOG)
-        return {"ok": True, "message": f"V3 P2P sync spawend with peers {', '.join(peers)}"}
+        return {"ok": True, "message": f"V3 P2P sync started with peers {', '.join(peers)}"}
     else:
         return {"ok": False, "error": f"Unknown sync mode: {mode}"}
 
