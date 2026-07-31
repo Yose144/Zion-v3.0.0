@@ -4,13 +4,17 @@
 
 ## Current Production Status
 
-- **Live URL:** https://zionterranova.com
+> **2026-07-31 update:** ZION public web runs as a **trio of separate services**:
+> 1. `https://zionterranova.com` — OASIS intro landing page (static `maintenance.html` in `/var/www/maintenance/`).
+> 2. `https://app.zionterranova.com` — full Next.js web2.9 (systemd `zion-website.service` on `127.0.0.1:3000`, nginx proxy).
+> 3. `https://oasis.zionterranova.com` — separate visual OASIS web (build in `/var/www/oasis/`).
+
 - **Host:** New Edge server `62.171.141.136` (decommissioned: `77.42.71.94`)
-- **SSH:** `ssh zion-new` (key: `~/.ssh/zion-new-server`)
-- **Runtime:** Docker container `zion-web-next` (host network mode, port 3000)
-- **Reverse proxy:** Caddy → `localhost:3000`
-- **Runtime source on server:** `/root/zion-web-runtime`
-- **Current image:** `zion-web:runtime`
+- **SSH:** `ssh zion-post-wipe` (key: `~/.ssh/zion-edge-post-wipe-2026-07-29`)
+- **Intro source:** `APP&WEB/website-v2.9/public/maintenance.html`
+- **Web2.9 source on server:** `/opt/zion/APP&WEB/website-v2.9/`
+- **Web2.9 service:** `zion-website.service` → `127.0.0.1:3000`
+- **Reverse proxy:** system `nginx` (`/etc/nginx/sites-enabled/zion.conf` / `zion-edge-download.conf` / `oasis.zionterranova.com.conf`)
 - **Live topology:** 3-node P2P mesh — Edge 1 (primary + pool), Edge 2 (follower), Local Backup (Prague via SSH tunnel)
 
 ## Build Requirements
@@ -30,113 +34,119 @@ npx next build --webpack
 
 The project is therefore deployed by **building locally**, syncing the standalone output to the server, and running a tiny **runtime-only** Docker image.
 
-## Deployment Steps
+## OASIS Intro Landing Page (current public page)
 
-### Method 1: Fast runtime deploy (recommended)
+The file `public/maintenance.html` is the canonical one-page intro for the ZION multichain ecosystem and the Stargate portal to OASIS. It is served directly by the Edge nginx as `https://zionterranova.com`.
 
-Build locally, then ship only the pre-built standalone output. The server-side Docker build is now only a few COPY layers and takes ~10–15 seconds.
+### Deploy OASIS Web
 
 ```bash
-# 1. Build locally (this is the slow part; run on dev machine)
+cd APP\&WEB/OasisWeb
+bash deploy/deploy-oasis-web.sh
+```
+
+This builds the static Next.js export and rsyncs it to `/var/www/oasis/` on the Edge server, then reloads nginx.
+
+### Deploy Web2.9 (Next.js)
+
+```bash
 cd APP\&WEB/website-v2.9
-npm run build
-
-# 2. Sync standalone output + public assets to server
-rsync -avz --delete -e "ssh -i ~/.ssh/zion-new-server" \
-  .next/standalone .next/static public Dockerfile.runtime \
-  root@62.171.141.136:/root/zion-web-runtime/
-
-# 3. On server: stop old container, build tiny runtime image, restart
-ssh -i ~/.ssh/zion-new-server root@62.171.141.136 <<'REMOTECMD'
-cd /root/zion-web-runtime
-docker stop zion-web-next || true
-docker rm zion-web-next || true
-DOCKER_BUILDKIT=1 docker build -f Dockerfile.runtime -t zion-web:runtime .
-docker run -d --network host --name zion-web-next zion-web:runtime
-REMOTECMD
-
-# 4. Verify
-sleep 2
-curl -s https://zionterranova.com/api/health | jq
+bash deploy/deploy-web2.9.sh
 ```
 
-### Method 2: One-liner (local + remote)
+This builds locally with `npm run build` (using `--webpack`), rsyncs the result to `/opt/zion/APP&WEB/website-v2.9/` on the Edge server (excluding `node_modules` and local env files), fixes ownership to the `zion` user, and restarts `zion-website.service`. The service runs `next start` on `127.0.0.1:3000`; nginx for `app.zionterranova.com` proxies to it.
+
+### Deploy the OASIS intro
 
 ```bash
-ssh -i ~/.ssh/zion-new-server root@62.171.141.136 "rm -rf /root/zion-web-runtime && mkdir -p /root/zion-web-runtime" && \
-rsync -avz --delete -e "ssh -i ~/.ssh/zion-new-server" \
-  .next/standalone .next/static public Dockerfile.runtime \
-  root@62.171.141.136:/root/zion-web-runtime/ && \
-ssh -i ~/.ssh/zion-new-server root@62.171.141.136 \
-  "cd /root/zion-web-runtime && docker stop zion-web-next || true && docker rm zion-web-next || true && \
-   DOCKER_BUILDKIT=1 docker build -f Dockerfile.runtime -t zion-web:runtime . && \
-   docker run -d --network host --name zion-web-next zion-web:runtime"
+cd APP\&WEB/website-v2.9
+bash deploy/deploy-oasis-intro.sh
 ```
 
-### Runtime Dockerfile
+This rsyncs `public/maintenance.html` and `public/stargate/` to `/var/www/maintenance/` on the Edge server, validates nginx, and reloads.
 
-`Dockerfile.runtime` (committed in repo):
+### All three public services run together
 
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-COPY standalone ./
-COPY static ./.next/static
-COPY public ./public
-EXPOSE 3000
-CMD ["node", "server.js"]
+No need to switch nginx between intro and web2.9. They use different domains:
+
+- `https://zionterranova.com` → `root /var/www/maintenance;` (OASIS intro)
+- `https://app.zionterranova.com` → `proxy_pass http://127.0.0.1:3000;` (Next.js web2.9)
+- `https://oasis.zionterranova.com` → `root /var/www/oasis;` (OASIS web)
+
+To take web2.9 offline, stop the service:
+
+```bash
+ssh zion-post-wipe 'systemctl stop zion-website.service'
 ```
 
-> **Why this is fast:** no `npm install`, no `next build`, no source copy. The heavy build runs once on the dev machine; the server only copies pre-built artifacts into a Node image.
+To bring it back:
+
+```bash
+bash deploy/deploy-web2.9.sh
+```
+
+---
+
+## Deploy scripts
+
+### Summary
+
+| Service | Domain | Deploy script |
+|---------|--------|---------------|
+| OASIS intro | `https://zionterranova.com` | `deploy/deploy-oasis-intro.sh` |
+| Web2.9 | `https://app.zionterranova.com` | `deploy/deploy-web2.9.sh` |
+| OASIS Web | `https://oasis.zionterranova.com` | `APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh` |
+
+### `deploy-web2.9.sh`
+
+Builds locally (`npm run build` with `--webpack`), rsyncs source + `.next` to `/opt/zion/APP&WEB/website-v2.9/`, fixes ownership for the `zion` user, and restarts `zion-website.service`.
+
+```bash
+cd APP\&WEB/website-v2.9
+bash deploy/deploy-web2.9.sh
+```
+
+### `deploy-oasis-intro.sh`
+
+Rsyncs `public/maintenance.html` + `public/stargate/` to `/var/www/maintenance/`, validates nginx, and reloads.
+
+```bash
+cd APP\&WEB/website-v2.9
+bash deploy/deploy-oasis-intro.sh
+```
+
+### `deploy-oasis-web.sh`
+
+Builds `APP&WEB/OasisWeb` as a static Next.js export and rsyncs `dist/` to `/var/www/oasis/`, then reloads nginx.
+
+```bash
+cd APP\&WEB/OasisWeb
+bash deploy/deploy-oasis-web.sh
+```
 
 ## Verification
 
 ```bash
-# Health check (from anywhere)
-curl -s https://zionterranova.com/api/health | jq
-
-# Container status (on server)
-ssh -i ~/.ssh/zion-new-server root@62.171.141.136 \
-  "docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' | grep zion-web-next"
-
-# Public URL
+# Intro page
 curl -I https://zionterranova.com/
 
-# Specific pages
-curl -s https://zionterranova.com/ | head -5
-curl -s https://zionterranova.com/zohar | head -5
+# Web2.9
+curl -I https://app.zionterranova.com/
+curl -s https://app.zionterranova.com/api/health | jq
+
+# OASIS Web
+curl -I https://oasis.zionterranova.com/
+
+# Service status on server
+ssh zion-post-wipe 'systemctl status zion-website.service --no-pager'
 ```
-
-## Rollback
-
-The previous image is overwritten on every deploy. To keep a rollback image, tag it before deploying:
-
-```bash
-ssh -i ~/.ssh/zion-new-server root@62.171.141.136 \
-  "docker tag zion-web:runtime zion-web:runtime-backup-$(date +%Y%m%d-%H%M)"
-```
-
-Or simply re-run the deploy with the previous git commit checked out locally.
-
-## Dockerfiles
-
-| File | Purpose |
-|---|---|
-| `Dockerfile` | Legacy multi-stage build — installs deps and builds inside Docker. **Slow on server.** |
-| `Dockerfile.runtime` | **Current** — runtime-only, copies locally built `.next/standalone`, `.next/static`, and `public`. |
-
-Use `Dockerfile` only if you must build on the server (not recommended). `Dockerfile.runtime` is the production path.
 
 ## Connecting to Edge Server
 
 ```bash
-ssh zion-new   # configured in ~/.ssh/config with IdentityFile ~/.ssh/zion-new-server
+ssh zion-post-wipe   # configured in ~/.ssh/config with IdentityFile ~/.ssh/zion-edge-post-wipe-2026-07-29
 # or explicitly:
-ssh -i ~/.ssh/zion-new-server root@62.171.141.136
+ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 root@62.171.141.136
 ```
 
 ## Deployment History
@@ -153,9 +163,10 @@ ssh -i ~/.ssh/zion-new-server root@62.171.141.136
 | 2026-06-27 | v3.7.4-doge-fix | Fix Doge ATH timeline (7.5 years, not 2) |
 | 2026-06-27 | v3.7.3-rainbow-theme | ZION rainbow-card theme across all 53 pages |
 | 2026-06-26 | v3.7.2-doge-price-fork | Doge vs ZION $0.0002 seed price + 3.0.3 fork news |
+| 2026-07-31 | v3.0.7-oasis-intro | OASIS intro landing page (glass/rainbow, Stargate to oasis.zionterranova.com) deployed as the public face of zionterranova.com; full Next.js web2.9 built and ready but offline |
 
 ---
 
-**Version:** v3.0.5  
-**Last updated:** 10 July 2026  
-**Status:** ✅ Deployed and verified on 62.171.141.136
+**Version:** v3.0.7  
+**Last updated:** 31 July 2026  
+**Status:** OASIS intro landing page active; full Next.js v2.9.6 built and ready on 62.171.141.136

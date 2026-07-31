@@ -26,7 +26,9 @@ impl PowAlgorithm for PocAlgorithm {
     }
 
     fn hash(&self, _header: &[u8], _nonce: u64) -> Hash {
-        unimplemented!("PoC algorithm is not activated in Mainnet Alpha")
+        // PoC algorithm is not activated in Mainnet Alpha; return a safely
+        // invalid default hash so it never satisfies any target.
+        Hash::default()
     }
 
     fn find_nonce(

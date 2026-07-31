@@ -237,7 +237,8 @@ pub struct HiranStatus {
     pub gpu_memory_total: Option<u64>,
 }
 
-/// Hybrid inference backend that can use either remote LLM or local Hiran
+/// Hybrid inference backend that can use either remote LLM, local Hiran, or an
+/// echo-only fallback for bootstrap / no-dependency operation.
 pub enum HybridInferenceBackend {
     Remote {
         client: crate::llm_backend::RemoteHttpBackend,
@@ -250,6 +251,24 @@ pub enum HybridInferenceBackend {
         hiran_client: HiranInferenceClient,
         prefer_local: bool,
     },
+    Echo {
+        client: crate::llm_backend::EchoBackend,
+    },
+}
+
+fn run_backend(
+    client: &dyn crate::llm_backend::LlmBackend,
+    prompt: &str,
+    context: Option<&str>,
+) -> Result<String> {
+    let final_prompt = if let Some(ctx) = context {
+        format!("KONTEXT Z DOKUMENTACE:\n{}\n---\nDOTAZ: {}", ctx, prompt)
+    } else {
+        prompt.to_string()
+    };
+    let request = crate::LlmRequest::new(crate::MmlModality::Text, final_prompt);
+    let response = client.generate(request)?;
+    Ok(response.content)
 }
 
 impl HybridInferenceBackend {
@@ -303,7 +322,12 @@ impl HybridInferenceBackend {
             }
             (None, None) => {
                 // Fallback to echo backend if neither is configured
-                panic!("Neither HIRAN_INFERENCE_URL nor LLM_BASE_URL configured");
+                tracing::warn!(
+                    "Neither HIRAN_INFERENCE_URL nor LLM_BASE_URL configured; using Echo backend"
+                );
+                Self::Echo {
+                    client: crate::llm_backend::EchoBackend::new("hiran-fallback"),
+                }
             }
         }
     }
@@ -311,11 +335,8 @@ impl HybridInferenceBackend {
     /// Generate response using hybrid backend
     pub async fn generate(&self, prompt: &str) -> Result<String> {
         match self {
-            Self::Remote { client } => {
-                let request = crate::LlmRequest::new(crate::MmlModality::Text, prompt.to_string());
-                let response = client.generate(request)?;
-                Ok(response.content)
-            }
+            Self::Remote { client } => run_backend(client, prompt, None),
+            Self::Echo { client } => run_backend(client, prompt, None),
             Self::LocalHiran { client } => client.chat(prompt).await,
             Self::Hybrid {
                 remote_client,
@@ -364,19 +385,8 @@ impl HybridInferenceBackend {
     /// Generate response with RAG context
     pub async fn generate_with_context(&self, prompt: &str, context: &str) -> Result<String> {
         match self {
-            Self::Remote { client } => {
-                let final_prompt = if context.is_empty() {
-                    prompt.to_string()
-                } else {
-                    format!(
-                        "KONTEXT Z DOKUMENTACE:\n{}\n---\nDOTAZ: {}",
-                        context, prompt
-                    )
-                };
-                let request = crate::LlmRequest::new(crate::MmlModality::Text, final_prompt);
-                let response = client.generate(request)?;
-                Ok(response.content)
-            }
+            Self::Remote { client } => run_backend(client, prompt, Some(context)),
+            Self::Echo { client } => run_backend(client, prompt, Some(context)),
             Self::LocalHiran { client } => client.chat_with_context(prompt, context).await,
             Self::Hybrid {
                 remote_client,

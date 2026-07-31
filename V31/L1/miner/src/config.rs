@@ -1,3 +1,4 @@
+use zion_cosmic_harmony::ExternalCoin;
 use zion_l1_types::Address;
 
 /// Miner runtime configuration.
@@ -49,6 +50,9 @@ pub struct MinerConfig {
     pub stream2_batch: u64,
     /// Nonce batch for Stream 3 (CPU).
     pub stream3_batch: u64,
+    /// Force Stream 3 (CPU) to this external coin, ignoring profit estimates.
+    /// Parsed from `ZION_STREAM3_FORCE_COIN`.
+    pub stream3_force_coin: Option<ExternalCoin>,
     /// How long to wait (ms) before retrying a failed AuxPoW operation.
     pub auxpow_retry_ms: u64,
 }
@@ -71,6 +75,9 @@ impl MinerConfig {
             stream3_enabled: true,
             stream2_batch: 100_000,
             stream3_batch: 1_000_000,
+            stream3_force_coin: std::env::var("ZION_STREAM3_FORCE_COIN")
+                .ok()
+                .and_then(|s| s.trim().to_uppercase().parse().ok()),
             auxpow_retry_ms: 5000,
         }
     }

@@ -733,6 +733,10 @@ pub struct CoinProfile {
     pub protocol: StratumProtocol,
     pub worker_name: String,
     pub enabled: bool,
+    #[serde(default)]
+    pub disabled: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub disabled_reason: Option<String>,
 }
 
 impl CoinProfile {
@@ -748,6 +752,8 @@ impl CoinProfile {
             protocol: coin.protocol(),
             worker_name: "zion_dynamic".to_string(),
             enabled: true,
+            disabled: false,
+            disabled_reason: None,
         }
     }
 
@@ -764,12 +770,22 @@ impl CoinProfile {
             protocol: coin.protocol(),
             worker_name: "zion_dynamic".to_string(),
             enabled: true,
+            disabled: false,
+            disabled_reason: None,
         }
     }
 
     /// Stratum address as "host:port" string.
     pub fn pool_address(&self) -> String {
         format!("{}:{}", self.pool_host, self.pool_port)
+    }
+
+    /// Mark this profile as disabled with a reason.
+    pub fn disabled(mut self, reason: &str) -> Self {
+        self.disabled = true;
+        self.disabled_reason = Some(reason.to_string());
+        self.enabled = false;
+        self
     }
 }
 
@@ -1197,27 +1213,28 @@ fn fetch_url_blocking_internal(url: &str, timeout_secs: u64) -> Result<String, S
 
 /// Pick the most profitable coin from `entries`, applying hysteresis:
 /// only switch away from `current` if another coin beats it by ≥ `hysteresis_pct`%.
+/// Coins listed in `disabled` are filtered out before picking.
 ///
-/// Returns `None` if `entries` is empty.
+/// Returns `None` if `entries` is empty or all active entries are unprofitable.
 pub fn select_best_coin(
     entries: &[ProfitEntry],
     current: Option<ExternalCoin>,
     hysteresis_pct: f64,
+    disabled: &[ExternalCoin],
 ) -> Option<ExternalCoin> {
-    if entries.is_empty() {
-        return None;
-    }
-
-    let mut best = &entries[0];
-    for entry in &entries[1..] {
-        if entry.profit_per_day_usd() > best.profit_per_day_usd() {
-            best = entry;
+    let mut best: Option<&ProfitEntry> = None;
+    for entry in entries {
+        if disabled.contains(&entry.coin) || entry.profit_per_day_usd() <= 0.0 {
+            continue;
+        }
+        if best.is_none_or(|b| {
+            entry.profit_per_day_usd() > b.profit_per_day_usd()
+        }) {
+            best = Some(entry);
         }
     }
 
-    if best.profit_per_day_usd() <= 0.0 {
-        return None;
-    }
+    let best = best?;
 
     // Apply hysteresis: only switch if the new coin is `hysteresis_pct`% better
     if let Some(cur) = current {
@@ -1226,7 +1243,7 @@ pub fn select_best_coin(
         }
         let cur_profit = entries
             .iter()
-            .find(|e| e.coin == cur)
+            .find(|e| e.coin == cur && !disabled.contains(&e.coin))
             .map(|e| e.profit_per_day_usd())
             .unwrap_or(0.0);
 
@@ -1239,6 +1256,36 @@ pub fn select_best_coin(
     }
 
     Some(best.coin)
+}
+
+fn coin_disabled(coin: ExternalCoin, profiles: &[CoinProfile]) -> bool {
+    profiles.iter().any(|p| p.coin == coin && p.disabled)
+}
+
+/// Return the most profitable active GPU coin from `entries`.
+pub fn best_coin_for_gpu(
+    entries: &[ProfitEntry],
+    profiles: &[CoinProfile],
+) -> Option<ExternalCoin> {
+    let active: Vec<_> = entries
+        .iter()
+        .filter(|e| e.coin.is_gpu() && !coin_disabled(e.coin, profiles))
+        .cloned()
+        .collect();
+    select_best_coin(&active, None, 0.0, &[])
+}
+
+/// Return the most profitable active CPU coin from `entries`.
+pub fn best_coin_for_cpu(
+    entries: &[ProfitEntry],
+    profiles: &[CoinProfile],
+) -> Option<ExternalCoin> {
+    let active: Vec<_> = entries
+        .iter()
+        .filter(|e| e.coin.is_cpu() && !coin_disabled(e.coin, profiles))
+        .cloned()
+        .collect();
+    select_best_coin(&active, None, 0.0, &[])
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -1317,6 +1364,8 @@ mod tests {
         assert_eq!(profile.pool_port, 3152);
         assert_eq!(profile.protocol, StratumProtocol::Stratum);
         assert!(profile.enabled);
+        assert!(!profile.disabled);
+        assert!(profile.disabled_reason.is_none());
     }
 
     #[test]
@@ -1338,7 +1387,7 @@ mod tests {
                 power_cost_usd: 0.08,
             },
         ];
-        let best = select_best_coin(&entries, None, 5.0);
+        let best = select_best_coin(&entries, None, 5.0, &[]);
         assert_eq!(best, Some(ExternalCoin::KAS));
     }
 
@@ -1357,7 +1406,7 @@ mod tests {
             },
         ];
         // ALPH is ~10.8% better, but hysteresis is 15% → stay on DCR
-        let best = select_best_coin(&entries, Some(ExternalCoin::DCR), 15.0);
+        let best = select_best_coin(&entries, Some(ExternalCoin::DCR), 15.0, &[]);
         assert_eq!(best, Some(ExternalCoin::DCR));
     }
 
@@ -1376,7 +1425,7 @@ mod tests {
             },
         ];
         // KAS is ~240% better → switch even with 15% hysteresis
-        let best = select_best_coin(&entries, Some(ExternalCoin::DCR), 15.0);
+        let best = select_best_coin(&entries, Some(ExternalCoin::DCR), 15.0, &[]);
         assert_eq!(best, Some(ExternalCoin::KAS));
     }
 
@@ -1425,5 +1474,58 @@ mod tests {
             CoinProfile::for_preference(ExternalCoin::KAS, PoolPreference::NiceHash, "eu");
         assert_eq!(profile.pool_host, "kheavyhash.auto.nicehash.com");
         assert_eq!(profile.pool_port, 9200);
+    }
+
+    #[test]
+    fn coin_profile_can_be_disabled_with_reason() {
+        let profile = CoinProfile::default_for(ExternalCoin::DCR).disabled("no accepted shares");
+        assert!(profile.disabled);
+        assert_eq!(
+            profile.disabled_reason,
+            Some("no accepted shares".to_string())
+        );
+        assert!(!profile.enabled);
+    }
+
+    #[test]
+    fn best_coin_for_gpu_skips_disabled_high_profit_coin() {
+        let mut profiles: Vec<CoinProfile> = ExternalCoin::all()
+            .iter()
+            .map(|&c| CoinProfile::default_for(c))
+            .collect();
+        let kas_idx = profiles
+            .iter()
+            .position(|p| p.coin == ExternalCoin::KAS)
+            .unwrap();
+        profiles[kas_idx] = profiles[kas_idx].clone().disabled("no accepted shares");
+
+        let best = best_coin_for_gpu(&fallback_estimates(), &profiles);
+        assert_ne!(best, Some(ExternalCoin::KAS));
+        assert!(best.map_or(false, |c| c.is_gpu()));
+    }
+
+    #[test]
+    fn best_coin_for_cpu_skips_disabled() {
+        let mut profiles: Vec<CoinProfile> = ExternalCoin::all()
+            .iter()
+            .map(|&c| CoinProfile::default_for(c))
+            .collect();
+        let xmr_idx = profiles
+            .iter()
+            .position(|p| p.coin == ExternalCoin::XMR)
+            .unwrap();
+        profiles[xmr_idx] = profiles[xmr_idx].clone().disabled("no accepted shares");
+
+        let best = best_coin_for_cpu(&fallback_estimates(), &profiles);
+        assert_ne!(best, Some(ExternalCoin::XMR));
+        assert!(best.map_or(false, |c| c.is_cpu()));
+    }
+
+    #[test]
+    fn disabled_high_profit_coin_is_still_skipped() {
+        let disabled = vec![ExternalCoin::KAS];
+        let best = select_best_coin(&fallback_estimates(), None, 5.0, &disabled);
+        assert_ne!(best, Some(ExternalCoin::KAS));
+        assert!(best.is_some());
     }
 }

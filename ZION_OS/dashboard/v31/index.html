@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="zion">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>V31 Mainnet Alpha — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+<style>
+:root{--gold:255 215 0;--purple:147 51 234;--cyan:6 182 212;}
+body{font-family:'Inter',system-ui,sans-serif;background:
+  radial-gradient(circle at 18% -8%,rgba(147,51,234,0.22),transparent 34rem),
+  radial-gradient(circle at 86% 8%,rgba(6,182,212,0.16),transparent 30rem),
+  radial-gradient(circle at 50% 110%,rgba(255,215,0,0.12),transparent 40rem),
+  linear-gradient(180deg,rgba(2,4,12,0.92),rgba(0,0,0,0.95));color:#fff;min-height:100vh;}
+.card{background:linear-gradient(145deg,rgba(15,20,35,0.9),rgba(10,14,26,0.95));border:1px solid rgba(255,255,255,0.1);border-radius:1.25rem;box-shadow:0 16px 50px rgba(0,0,0,0.35);}
+.log-box{font-family:'JetBrains Mono',monospace;max-height:22rem;overflow-y:auto;font-size:0.78rem;line-height:1.35;background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.08);border-radius:0.75rem;padding:0.75rem;}
+.status-dot{width:0.65rem;height:0.65rem;border-radius:999px;display:inline-block;margin-right:0.5rem;}
+.status-up{background:#22c55e;box-shadow:0 0 8px #22c55e;}
+.status-down{background:#ef4444;box-shadow:0 0 8px #ef4444;}
+.status-warn{background:#eab308;box-shadow:0 0 8px #eab308;}
+.btn{border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;border-radius:0.6rem;padding:0.55rem 1rem;font-weight:600;transition:all .15s;}
+.btn:hover{background:rgba(255,255,255,0.1);}
+.btn:disabled{opacity:0.45;cursor:not-allowed;}
+.btn-gold{background:rgba(255,215,0,0.12);border-color:rgba(255,215,0,0.35);color:rgb(255 215 0);}
+.btn-gold:hover{background:rgba(255,215,0,0.2);}
+.btn-red{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.35);color:rgb(252 165 165);}
+.btn-red:hover{background:rgba(239,68,68,0.2);}
+.btn-purple{background:rgba(147,51,234,0.15);border-color:rgba(147,51,234,0.35);color:rgb(216 180 254);}
+.btn-purple:hover{background:rgba(147,51,234,0.25);}
+.tab{opacity:0.6;border-bottom:2px solid transparent;transition:all .15s;}
+.tab.active{opacity:1;border-bottom-color:rgb(255 215 0);color:rgb(255 215 0);}
+.tab:hover{opacity:0.9;}
+.stat-card .label{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;}
+.stat-card .value{font-size:1.45rem;font-weight:800;}
+.stat-card .sub{font-size:0.75rem;color:#64748b;}
+</style>
+</head>
+<body class="p-4 md:p-8">
+<div class="max-w-7xl mx-auto">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight"><span style="color:rgb(255 215 0)">V31</span> Mainnet Alpha</h1>
+      <p class="text-sm text-gray-400 mt-1">Izolované porty <span style="color:rgb(6 182 212)">9445 / 8446 / 8335</span> — žádný konflikt s V3.</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="/" class="btn"><i class="fas fa-arrow-left mr-2"></i>Zpět</a>
+      <button id="btn-refresh" class="btn" title="Aktualizovat"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>
+    </div>
+  </div>
+
+  <div class="card p-2 mb-6">
+    <nav class="flex gap-6 px-2" id="tabs">
+      <button data-tab="overview" class="tab active py-3 px-1 font-semibold text-sm"><i class="fas fa-tachometer-alt mr-2"></i>Přehled</button>
+      <button data-tab="logs" class="tab py-3 px-1 font-semibold text-sm"><i class="fas fa-file-alt mr-2"></i>Logy</button>
+      <button data-tab="sync" class="tab py-3 px-1 font-semibold text-sm"><i class="fas fa-project-diagram mr-2"></i>Synchronizace</button>
+    </nav>
+  </div>
+
+  <div id="error-box" class="hidden bg-red-900/30 border border-red-500/30 text-red-200 rounded-xl p-4 mb-4 text-sm"></div>
+
+  <!-- OVERVIEW -->
+  <div id="tab-overview" class="tab-pane">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4" id="status-grid">
+      <div class="card p-4 stat-card"><div class="label">Node</div><div class="value" id="kpi-node">…</div><div class="sub" id="kpi-node-sub">—</div></div>
+      <div class="card p-4 stat-card"><div class="label">Pool</div><div class="value" id="kpi-pool">…</div><div class="sub" id="kpi-pool-sub">—</div></div>
+      <div class="card p-4 stat-card"><div class="label">Výška kanonického řetězce</div><div class="value" style="color:rgb(6 182 212)" id="kpi-canonical">—</div><div class="sub" id="kpi-canonical-sub">—</div></div>
+      <div class="card p-4 stat-card"><div class="label">V3 checkpoint výška</div><div class="value" style="color:rgb(147 51 234)" id="kpi-v3">—</div><div class="sub" id="kpi-v3-sub">—</div></div>
+      <div class="card p-4 stat-card"><div class="label">Mempool</div><div class="value" id="kpi-mempool">—</div><div class="sub" id="kpi-mempool-sub">—</div></div>
+      <div class="card p-4 stat-card"><div class="label">Obtížnost</div><div class="value" id="kpi-difficulty">—</div><div class="sub" id="kpi-difficulty-sub">—</div></div>
+      <div class="card p-4 stat-card"><div class="label">Cíl</div><div class="value text-sm" id="kpi-target">—</div><div class="sub" id="kpi-target-sub">—</div></div>
+      <div class="card p-4 stat-card"><div class="label">Sync režim</div><div class="value" id="kpi-sync-mode">—</div><div class="sub" id="kpi-sync-mode-sub">—</div></div>
+    </div>
+
+    <div class="card p-5 mb-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <h2 class="text-lg font-bold"><i class="fas fa-server mr-2" style="color:rgb(255 215 0)"></i>Ovládání runtime</h2>
+        <div class="flex gap-2">
+          <button id="btn-start" class="btn btn-gold"><i class="fas fa-play mr-2"></i>Start V31</button>
+          <button id="btn-stop" class="btn btn-red"><i class="fas fa-stop mr-2"></i>Stop V31</button>
+        </div>
+      </div>
+      <div class="text-sm text-gray-400" id="last-update">Poslední update: —</div>
+      <div class="text-sm text-cyan-300 mt-2 hidden" id="control-status"></div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="card p-4">
+        <h3 class="font-bold mb-2 text-sm uppercase text-gray-400">Node log (tail 40)</h3>
+        <pre class="log-box" id="overview-node-log">Loading…</pre>
+      </div>
+      <div class="card p-4">
+        <h3 class="font-bold mb-2 text-sm uppercase text-gray-400">Pool log (tail 40)</h3>
+        <pre class="log-box" id="overview-pool-log">Loading…</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGS -->
+  <div id="tab-logs" class="tab-pane hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="card p-5">
+        <h2 class="text-lg font-bold mb-3"><i class="fas fa-cube mr-2" style="color:rgb(6 182 212)"></i>Node Log</h2>
+        <pre class="log-box" id="node-log">Loading…</pre>
+      </div>
+      <div class="card p-5">
+        <h2 class="text-lg font-bold mb-3"><i class="fas fa-users mr-2" style="color:rgb(147 51 234)"></i>Pool Log</h2>
+        <pre class="log-box" id="pool-log">Loading…</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- SYNC -->
+  <div id="tab-sync" class="tab-pane hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div class="card p-5">
+        <h2 class="text-lg font-bold mb-3"><i class="fas fa-database mr-2" style="color:rgb(6 182 212)"></i>Stav V3</h2>
+        <p class="text-sm text-gray-400 mb-4">Importuje aktuální V3 state z <span class="font-mono text-cyan-300">/opt/zion/data/state</span> jako checkpoint. Nereplayuje celou historii, ale zachová finální zůstatky a UTXO.</p>
+        <div class="text-sm mb-4 font-mono" id="v3-source-info">V3 state: —</div>
+        <button id="btn-sync-state" class="btn btn-purple w-full"><i class="fas fa-download mr-2"></i>Import z V3 state</button>
+      </div>
+
+      <div class="card p-5">
+        <h2 class="text-lg font-bold mb-3"><i class="fas fa-network-wired mr-2" style="color:rgb(255 215 0)"></i>P2P sync</h2>
+        <p class="text-sm text-gray-400 mb-4">Připojí se k běžící V3 síti jako peer a pokusí se stáhnout nové bloky. Vyžaduje, aby V3 uzel běžel na stejném serveru.</p>
+        <div class="flex gap-2 mb-4">
+          <label class="text-sm text-gray-400">Seedy:</label>
+          <input id="v3-peers" type="text" value="127.0.0.1:8333,127.0.0.1:8334" class="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-sm font-mono text-cyan-300" />
+        </div>
+        <button id="btn-sync-p2p" class="btn btn-purple w-full"><i class="fas fa-sync mr-2"></i>Start P2P sync</button>
+      </div>
+
+      <div class="card p-5">
+        <h2 class="text-lg font-bold mb-3"><i class="fas fa-info-circle mr-2" style="color:rgb(147 51 234)"></i>Sync info</h2>
+        <div id="sync-info" class="text-sm space-y-2 text-gray-300">
+          <p>Žádná sync akce dosud neproběhla.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-5">
+      <h2 class="text-lg font-bold mb-3"><i class="fas fa-list-ul mr-2" style="color:rgb(6 182 212)"></i>Sync log</h2>
+      <pre class="log-box" id="sync-log">Připraveno k akci…</pre>
+    </div>
+  </div>
+</div>
+
+<script src="/v31/v31.js"></script>
+</body>
+</html>

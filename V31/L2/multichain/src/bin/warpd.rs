@@ -37,15 +37,14 @@ struct Cli {
     db: Option<String>,
 }
 
-fn load_config(cli: &Cli) -> WarpConfig {
+fn load_config(cli: &Cli) -> Result<WarpConfig, String> {
     if std::path::Path::new(&cli.config).exists() {
         let toml_str = std::fs::read_to_string(&cli.config)
-            .unwrap_or_else(|e| panic!("failed to read config {}: {}", cli.config, e));
-        WarpConfig::load_from_str(&toml_str)
-            .unwrap_or_else(|e| panic!("failed to parse TOML: {}", e))
+            .map_err(|e| format!("failed to read config {}: {}", cli.config, e))?;
+        WarpConfig::load_from_str(&toml_str).map_err(|e| format!("failed to parse TOML: {}", e))
     } else {
         tracing::warn!("config file '{}' not found — using defaults", cli.config);
-        WarpConfig::default()
+        Ok(WarpConfig::default())
     }
 }
 
@@ -54,7 +53,13 @@ async fn main() -> ExitCode {
     tracing_subscriber::fmt::init();
 
     let cli = Cli::parse();
-    let mut config = load_config(&cli);
+    let mut config = match load_config(&cli) {
+        Ok(c) => c,
+        Err(e) => {
+            error!("[warpd] {}", e);
+            return ExitCode::FAILURE;
+        }
+    };
 
     if let Some(addr) = &cli.listen {
         let parts: Vec<&str> = addr.split(':').collect();

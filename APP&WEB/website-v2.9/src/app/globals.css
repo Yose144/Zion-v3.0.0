@@ -935,3 +935,58 @@ body.menu-open {
     white-space: normal;
   }
 }
+
+/* ── iPhone / small screen safety fixes ── */
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    min-height: -webkit-fill-available;
+  }
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+input, textarea, select, button {
+  font-size: inherit;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+textarea,
+select {
+  font-size: 16px; /* prevent iOS zoom on focus */
+}
+
+/* Safe area insets for notched devices */
+.zion-page,
+.zion-container,
+.zion-section {
+  padding-inline: max(1rem, env(safe-area-inset-left, 0px)) max(1rem, env(safe-area-inset-right, 0px));
+}
+
+/* Ensure media never overflows */
+img, video, svg, canvas, iframe, embed, object {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Minimum touch target */
+a, button, [role="button"], input, select, textarea, [tabindex]:not([tabindex="-1"]) {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Break long URLs/words */
+.zion-docs-prose,
+.zion-section,
+.zion-tile,
+.zion-panel {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

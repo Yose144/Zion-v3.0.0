@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./rasta.css" />
+    <script src="./script.js" defer></script>
+    <script src="https://kit.fontawesome.com/16464afad1.js" crossorigin="anonymous"></script>
+    <title>Reklamační řád | ZION TerraNova® eShop</title>
+    <style>
+      .legal-content {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 12px;
+        color: var(--rasta-text);
+        line-height: 1.8;
+      }
+      .legal-content h1 {
+        color: var(--rasta-gold);
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 2.5rem;
+      }
+      .legal-content .subtitle {
+        text-align: center;
+        color: #888;
+        margin-bottom: 30px;
+        font-size: 0.95rem;
+      }
+      .legal-content h2 {
+        color: var(--rasta-gold);
+        margin-top: 40px;
+        margin-bottom: 15px;
+        border-left: 4px solid var(--rasta-gold);
+        padding-left: 15px;
+        font-size: 1.8rem;
+      }
+      .legal-content h3 {
+        color: var(--rasta-yellow);
+        margin-top: 25px;
+        margin-bottom: 12px;
+        font-size: 1.3rem;
+      }
+      .info-box {
+        background: rgba(255, 215, 0, 0.1);
+        border-left: 4px solid var(--rasta-gold);
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 6px;
+      }
+      .warning-box {
+        background: rgba(255, 165, 0, 0.1);
+        border-left: 4px solid #FFA500;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 6px;
+      }
+      .legal-content ul, .legal-content ol {
+        margin: 15px 0;
+        padding-left: 30px;
+      }
+      .legal-content li {
+        margin: 10px 0;
+      }
+      .contact-box {
+        background: rgba(255, 215, 0, 0.05);
+        padding: 20px;
+        border-radius: 8px;
+        margin: 25px 0;
+        border: 1px solid rgba(255, 215, 0, 0.2);
+      }
+      .legal-content a {
+        color: var(--rasta-gold);
+        text-decoration: none;
+        transition: all 0.3s ease;
+      }
+      .legal-content a:hover {
+        text-decoration: underline;
+        color: var(--rasta-yellow);
+      }
+      .footer-legal {
+        text-align: center;
+        margin-top: 50px;
+        padding-top: 30px;
+        border-top: 1px solid rgba(255, 215, 0, 0.2);
+        color: #888;
+        font-size: 0.9em;
+      }
+    </style>
+  </head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NHF25ZZ97S"></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-NHF25ZZ97S');
+  </script>
+  
+  <body>
+    <header id="header">
+      <div class="container">
+        <div class="subcontainer">
+          <nav class="navbar-container">
+
+            <div class="navbar-left">
+              <a href="#" class="nav-branding-1">ZION TerraNova®</a>
+              <div class="nav-menu">
+                <a href="#" class="nav-branding-2">Gene<span>sis</span></a>
+
+                <div class="nav-dropdown">
+                  <button class="nav-link nav-dropdown-toggle" type="button">
+                    Realms
+                    <i class="fa-solid fa-chevron-down"></i>
+                  </button>
+                  <div class="nav-dropdown-panel">
+                    <a href="./main.html" class="nav-dropdown-link">Home</a>
+                    <a href="./camp.html" class="nav-dropdown-link">Camps</a>
+                    <a href="./arts.html" class="nav-dropdown-link">Arts</a>
+                    <a href="./halls.html" class="nav-dropdown-link">Amenti</a>
+                    <a href="./evoluzion.html" class="nav-dropdown-link">Evoluzion</a>
+                  </div>
+                </div>
+
+                <div class="nav-dropdown">
+                  <button class="nav-link nav-dropdown-toggle" type="button">
+                    Portals
+                    <i class="fa-solid fa-chevron-down"></i>
+                  </button>
+                  <div class="nav-dropdown-panel">
+                    <a href="./blog.html" class="nav-dropdown-link">Blog</a>
+                    <a href="./links.html" class="nav-dropdown-link">Links</a>
+                    <a href="./about.html" class="nav-dropdown-link">About</a>
+                    <a href="./dev.html" class="nav-dropdown-link">DeV</a>
+                    <!-- <a href="./hemp.html" class="nav-dropdown-link">Hemp</a> -->
+                    <a href="./woodart.html" class="nav-dropdown-link">WoodArt</a>
+                  </div>
+                </div>
+
+                <a href="./shop.html" class="nav-link">Shop</a>
+                <a href="./mining-start.html" class="nav-link presale-nav-link">
+                  <span class="presale-badge-nav">⛏️</span> Start Mining
+                </a>
+                <a href="./dashboard.html" class="nav-link">Dashboard</a>
+                <span class="nav-link lang-switch"><span class="active-lang">CZ</span> | <a href="./reklamacni-rad-en.html">EN</a></span>
+
+                <a href="./cart.html" class="nav-link cart-link">
+                  <span class="cart-icon-wrapper">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span id="cart-count" class="cart-badge">0</span>
+                  </span>
+                </a>
+                <!-- <a href="#" class="nav-link login-link">Login</a> -->
+              </div>
+            </div>
+
+            <div class="navbar-right">
+              <!-- <button>LOGIN</button> -->
+              <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+              </div>
+            </div>
+
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <!-- === HERO SECTION === -->
+    <section class="rasta-hero" style="background-image: url('./img/org1.jpg'); min-height: 300px;">
+      <div class="rasta-hero-inner">
+        <h1>📋 Reklamační řád</h1>
+        <p class="subtitle">ZION TerraNova E-shop - Platnost od 1. 1. 2026</p>
+      </div>
+    </section>
+
+    <!-- === LEGAL CONTENT === -->
+    <section style="background: rgba(0, 0, 0, 0.88); padding: 40px 16px; min-height: 70vh;">
+      <div class="legal-content">
+
+        <div class="info-box">
+          <strong>💡 Důležité:</strong> Tento reklamační řád je v souladu se zákonem č. 89/2012 Sb., občanský zákoník, 
+          a zákonem č. 634/1992 Sb., o ochraně spotřebitele. Vaše práva jako spotřebitele jsou plně chráněna zákonem.
+        </div>
+
+        <h2>1. Základní ustanovení</h2>
+        <p>
+          Tento reklamační řád upravuje vzájemná práva a povinnosti prodávajícího a kupujícího 
+          při uplatnění práv z vadného plnění (reklamace).
+        </p>
+
+        <h3>1.1 Prodávající</h3>
+        <p>
+          <strong>ZION TerraNova</strong><br>
+          E-mail: <a href="mailto:shop@zionterranova.com">shop@zionterranova.com</a><br>
+          Web: <a href="https://zionterranova.com">www.zionterranova.com</a>
+        </p>
+
+        <h2>2. Záruční podmínky</h2>
+
+        <h3>2.1 Záruční doba</h3>
+        <ul>
+          <li><strong>24 měsíců</strong> pro spotřebitele (fyzické osoby kupující mimo podnikání)</li>
+          <li><strong>12 měsíců</strong> pro podnikatele (právnické osoby a OSVČ)</li>
+          <li>Záruční doba začíná běžet <strong>dnem převzetí zboží</strong> kupujícím</li>
+        </ul>
+
+        <div class="warning-box">
+          <strong>⚠️ Pozor:</strong> Na digitální obsah (ZION tokeny, digitální key, software) 
+          se vztahuje záruční doba pouze při prokázání technické vady, nikoliv při změně názoru.
+        </div>
+
+        <h3>2.2 Co není zahrnuto v záruce</h3>
+        <p>Záruka se nevztahuje na vady:</p>
+        <ul>
+          <li>Vzniklé <strong>nesprávným používáním</strong> nebo údržbou</li>
+          <li>Způsobené <strong>mechanickým poškozením</strong> kupujícím</li>
+          <li>Vzniklé v důsledku <strong>živelné události</strong></li>
+          <li>Způsobené <strong>neoprávněným zásahem</strong> do zboží</li>
+          <li>U použitého zboží označeného jako <strong>"použité"</strong> nebo <strong>"B-stock"</strong></li>
+        </ul>
+
+        <h2>3. Jak reklamovat</h2>
+
+        <h3>3.1 Způsoby uplatnění reklamace</h3>
+        <ol>
+          <li><strong>E-mailem:</strong> <a href="mailto:shop@zionterranova.com">shop@zionterranova.com</a></li>
+          <li><strong>Formulářem:</strong> Vyplňte reklamační formulář na našem webu</li>
+          <li><strong>Poštou:</strong> Zašlete doporučeně s popisem vady a kopií dokladu o koupi</li>
+        </ol>
+
+        <div class="contact-box">
+          <strong>📧 Reklamační kontakt:</strong><br>
+          E-mail: <a href="mailto:shop@zionterranova.com">shop@zionterranova.com</a><br>
+          Tel: +420 XXX XXX XXX (pracovní dny 9:00-17:00)
+        </div>
+
+        <h3>3.2 Co zahrnout do reklamace</h3>
+        <p>Při uplatnění reklamace prosím uveďte:</p>
+        <ul>
+          <li>✅ <strong>Číslo objednávky</strong> (např. ORD-1736122900-abc)</li>
+          <li>✅ <strong>Datum nákupu</strong></li>
+          <li>✅ <strong>Popis vady</strong> (co přesně nefunguje)</li>
+          <li>✅ <strong>Fotografie vady</strong> (pokud je viditelná)</li>
+          <li>✅ <strong>Váš návrh řešení</strong> (oprava, výměna, vrácení peněz)</li>
+          <li>✅ <strong>Kontaktní údaje</strong> (e-mail, telefon)</li>
+        </ul>
+
+        <h2>4. Lhůty pro vyřízení reklamace</h2>
+
+        <div class="info-box">
+          <strong>⏱️ Zákonné lhůty:</strong>
+          <ul style="margin: 10px 0 0 0;">
+            <li><strong>30 dnů</strong> - standardní lhůta pro vyřízení reklamace</li>
+            <li><strong>3 pracovní dny</strong> - informujeme vás o přijetí reklamace</li>
+            <li><strong>Do 7 dnů</strong> - vrácení peněz na účet (po schválení reklamace)</li>
+          </ul>
+        </div>
+
+        <p>
+          Pokud reklamaci nevyřídíme do <strong>30 dnů</strong>, máte právo odstoupit od smlouvy 
+          nebo požadovat slevu z ceny.
+        </p>
+
+        <h2>5. Možnosti řešení reklamace</h2>
+
+        <h3>5.1 Podle zákona můžete požadovat</h3>
+        <ul>
+          <li>🔧 <strong>Odstranění vady</strong> (opravu zboží)</li>
+          <li>🔄 <strong>Výměnu za bezvadné zboží</strong></li>
+          <li>💰 <strong>Přiměřenou slevu z ceny</strong></li>
+          <li>🔙 <strong>Odstoupení od smlouvy</strong> (vrácení peněz)</li>
+        </ul>
+
+        <h3>5.2 Vrácení peněz</h3>
+        <p>
+          Pokud je reklamace <strong>oprávněná</strong> a zvolíte odstoupení od smlouvy:
+        </p>
+        <ul>
+          <li>Peníze vám vrátíme <strong>do 7 pracovních dnů</strong> od schválení reklamace</li>
+          <li>Peníze vrátíme <strong>stejným způsobem</strong>, jakým jste platili (pokud neuvedete jinak)</li>
+          <li>Pro ZION tokeny: <strong>vrácení v CZK</strong> podle kurzu v den nákupu</li>
+        </ul>
+
+        <h2>6. Právo na odstoupení od smlouvy (14 dní)</h2>
+
+        <div class="warning-box">
+          <strong>🛒 Důležité pro online nákupy:</strong><br>
+          Máte právo <strong>odstoupit od smlouvy do 14 dnů</strong> bez udání důvodu 
+          (dle § 1829 občanského zákoníku).
+        </div>
+
+        <h3>6.1 Jak odstoupit</h3>
+        <ol>
+          <li>Zašlete nám e-mail na <a href="mailto:shop@zionterranova.com">shop@zionterranova.com</a></li>
+          <li>Uveďte číslo objednávky a důvod odstoupení (nepovinné)</li>
+          <li>Zboží <strong>nepoškozené</strong> zašlete zpět na naši adresu</li>
+          <li>Peníze vám vrátíme <strong>do 14 dnů</strong> od doručení zboží</li>
+        </ol>
+
+        <h3>6.2 Výjimky (kdy nelze odstoupit)</h3>
+        <p>Právo na odstoupení <strong>nemáte</strong> u:</p>
+        <ul>
+          <li>❌ <strong>Digitálního obsahu</strong> (ZION tokeny, klíče) - po dodání do wallet</li>
+          <li>❌ <strong>Softwarových licencí</strong> - po aktivaci</li>
+          <li>❌ <strong>Zboží na míru</strong> vyrobeného speciálně pro vás</li>
+          <li>❌ <strong>Zapečetěného zboží</strong> - po rozbalení (zdravotní/hygienické důvody)</li>
+        </ul>
+
+        <h2>7. Mimosoudní řešení sporů</h2>
+
+        <p>
+          Pokud se neshodneme na řešení reklamace, máte právo obrátit se na orgán mimosoudního řešení sporů:
+        </p>
+
+        <div class="contact-box">
+          <strong>🏛️ Česká obchodní inspekce</strong><br>
+          <a href="https://www.coi.cz" target="_blank">www.coi.cz</a><br>
+          Adresa dle kraje: <a href="https://www.coi.cz/informace-o-adr/" target="_blank">https://www.coi.cz/informace-o-adr/</a><br>
+          Podání: <a href="https://adr.coi.cz" target="_blank">https://adr.coi.cz</a>
+        </div>
+
+        <p>
+          Můžete také využít platformu EU pro online řešení sporů: 
+          <a href="https://ec.europa.eu/consumers/odr" target="_blank">https://ec.europa.eu/consumers/odr</a>
+        </p>
+
+        <h2>8. Kontaktní informace</h2>
+
+        <div class="contact-box">
+          <strong>📞 Zákaznická podpora:</strong><br>
+          E-mail: <a href="mailto:shop@zionterranova.com">shop@zionterranova.com</a><br>
+          <br>
+          <strong>🌐 Online formuláře:</strong><br>
+          <a href="https://zionterranova.com/V2/">www.zionterranova.com</a>
+        </div>
+
+        <h2>9. Závěrečná ustanovení</h2>
+
+        <p>
+          Tento reklamační řád je nedílnou součástí <strong>obchodních podmínek</strong>. 
+          Zákaznické reklamace vyřizujeme v souladu s:
+        </p>
+        <ul>
+          <li>📜 Zákonem č. 89/2012 Sb., občanský zákoník</li>
+          <li>📜 Zákonem č. 634/1992 Sb., o ochraně spotřebitele</li>
+          <li>📜 Zákonem č. 121/2000 Sb., autorský zákon (pro digitální obsah)</li>
+        </ul>
+
+        <div class="info-box">
+          <strong>💚 Náš závazek:</strong><br>
+          Víme, že spokojenost zákazníků je klíčová. Snažíme se všechny reklamace vyřešit rychle, 
+          férově a v duchu <strong>AI Native</strong> principů - s respektem, transparentností a láskou k lidem.
+        </div>
+
+        <div class="footer-legal">
+          <p>
+            <strong>ZION TerraNova E-shop</strong><br>
+            Reklamační řád v platnosti od 1. 1. 2026<br>
+            <a href="https://zionterranova.com">www.zionterranova.com</a> | 
+            <a href="mailto:shop@zionterranova.com">shop@zionterranova.com</a>
+          </p>
+          <p style="color: #666; font-size: 0.85em; margin-top: 20px;">
+            🌟 "Where technology meets spirit" 🌟
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- === FOOTER === -->
+    <footer>
+      <div class="container">
+        <p>&copy; 2026 ZION TerraNova®. All Rights Reserved.</p>
+        <div style="margin-top: 10px;">
+          <a href="./reklamacni-rad-cs.html" style="color: var(--rasta-gold); margin: 0 10px;">Reklamační řád</a>
+          <a href="./terms.html" style="color: var(--rasta-gold); margin: 0 10px;">Obchodní podmínky</a>
+        </div>
+      </div>
+    </footer>
+
+  </body>
+</html>

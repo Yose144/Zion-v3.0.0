@@ -39,6 +39,30 @@ fn default_l1_rpc_url() -> String {
 pub struct ServerConfig {
     pub bind: String,
     pub port: u16,
+    #[serde(default)]
+    pub rate_limit: RateLimitConfig,
+    #[serde(default)]
+    pub auth: AuthConfig,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RateLimitConfig {
+    pub requests_per_second: f64,
+    pub burst: u32,
+}
+
+impl Default for RateLimitConfig {
+    fn default() -> Self {
+        Self {
+            requests_per_second: 10.0,
+            burst: 100,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct AuthConfig {
+    pub api_key: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -115,6 +139,7 @@ impl PoolConfigFile {
             password: self.password.clone(),
             l1_rpc_url: self.l1_rpc_url.clone(),
             state_path: self.state_path.clone(),
+            reconnect_rate_limit: Default::default(),
         }
     }
 }

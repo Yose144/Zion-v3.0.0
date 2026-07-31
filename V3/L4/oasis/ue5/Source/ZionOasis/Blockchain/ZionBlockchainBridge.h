@@ -55,6 +55,18 @@ public:
 	/** GET /api/v1/oasis/guild/:id */
 	void GetGuild(const FString& GuildId, FZionHttpCallback Callback);
 
+	/** GET /api/v1/oasis/guilds */
+	void GetGuilds(FZionHttpCallback Callback);
+
+	/** GET /api/v1/oasis/avatars?ray=Blue&min_cl=4&rarity=Epic */
+	void GetAvatars(const FString& Query, FZionHttpCallback Callback);
+
+	/** GET /api/v1/oasis/avatars/:id */
+	void GetAvatar(int32 AvatarId, FZionHttpCallback Callback);
+
+	/** GET /api/v1/oasis/avatars/:id/quests */
+	void GetAvatarQuests(int32 AvatarId, FZionHttpCallback Callback);
+
 	/** POST /api/v1/oasis/guild/:id/join  { address } */
 	void JoinGuild(const FString& GuildId, const FString& WalletAddress,
 				   FZionHttpCallback Callback);

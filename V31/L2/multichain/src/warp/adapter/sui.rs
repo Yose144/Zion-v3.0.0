@@ -194,7 +194,11 @@ impl SuiAdapter {
             cfg.rpc_url.clone()
         };
         let package_override = cfg.contract_address.as_ref().and_then(|p| {
-            if p.is_empty() { None } else { Some(p.clone()) }
+            if p.is_empty() {
+                None
+            } else {
+                Some(p.clone())
+            }
         });
         Self {
             rpc_url,

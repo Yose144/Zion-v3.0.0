@@ -7,18 +7,20 @@ members = [
     "L1/miner",
     "L1/pool",
     "L2/multichain",
+    "L2/dao",
     "L3/ncl",
     "L3/ai-native",
     "L4/oasis",
     "L5/free-world",
     "L6/issobella",
+    "smoke",
     "sdk",
     "cli",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "3.1.0-alpha.1"
+version = "3.1.0-alpha.2"
 edition = "2021"
 license = "MIT"
 authors = ["Yose144"]

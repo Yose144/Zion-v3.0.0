@@ -15,10 +15,14 @@ use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 
 use zion_l1_types::{Address, Amount, Asset, ChainId};
 
+use std::net::SocketAddr;
+
 use crate::config::ServerConfig;
 use crate::contracts::ZionContracts;
 use crate::error::{MultichainError, MultichainResult};
+use crate::rate_limit::{auth_rate_limit, RateLimiter};
 use crate::service::MultichainService;
+use crate::swap::Pool;
 use crate::types::{Transfer, TransferDirection, TransferEndpoint};
 use zion_pool::StratumServer;
 
@@ -26,6 +30,7 @@ use zion_pool::StratumServer;
 #[derive(Clone)]
 pub struct AppState {
     service: Arc<MultichainService>,
+    limiter: RateLimiter,
 }
 
 /// HTTP API gateway for `zion-multichain`.
@@ -108,6 +113,7 @@ impl ApiServer {
 
     pub async fn run(&self) -> MultichainResult<()> {
         self.start_stratum_if_configured().await?;
+        self.service.load_dex_pools().await?;
 
         let payout_service = Arc::clone(&self.service);
         tokio::spawn(async move {
@@ -122,6 +128,7 @@ impl ApiServer {
 
         let state = AppState {
             service: Arc::clone(&self.service),
+            limiter: RateLimiter::new(&self.config),
         };
 
         let app = Router::new()
@@ -134,26 +141,36 @@ impl ApiServer {
             .route("/v1/multichain/contracts/:chain", get(get_contracts))
             .route("/v1/wallet/address", post(wallet_address))
             .route("/v1/wallet/sign", post(wallet_sign))
+            .route("/v1/swap/pool/deploy", post(deploy_pool))
+            .route("/v1/swap/pools", get(list_pools))
             .route("/v1/swap/quote", post(swap_quote))
             .route("/v1/swap/execute", post(swap_execute))
             .route("/v1/bridge/submit", post(bridge_submit))
             .route("/v1/pool/stats", get(pool_stats))
             .route("/v1/pool/payouts", get(pool_payouts))
+            .layer(axum::middleware::from_fn_with_state(
+                state.limiter.clone(),
+                auth_rate_limit,
+            ))
             .layer(
                 CorsLayer::new()
                     .allow_origin(AllowOrigin::any())
                     .allow_methods(AllowMethods::any())
                     .allow_headers(AllowHeaders::any()),
-            );
+            )
+            .with_state(state);
 
         let bind = format!("{}:{}", self.config.bind, self.config.port);
         let listener = tokio::net::TcpListener::bind(&bind)
             .await
             .map_err(|e| MultichainError::Internal(e.to_string()))?;
 
-        axum::serve(listener, app.with_state(state))
-            .await
-            .map_err(|e| MultichainError::Internal(e.to_string()))?;
+        axum::serve(
+            listener,
+            app.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .await
+        .map_err(|e| MultichainError::Internal(e.to_string()))?;
 
         Ok(())
     }
@@ -162,6 +179,7 @@ impl ApiServer {
 async fn health() -> &'static str {
     "ok"
 }
+
 
 async fn pool_stats(State(state): State<AppState>) -> Result<Json<serde_json::Value>, StatusCode> {
     match state.service.pool_stats() {
@@ -321,6 +339,24 @@ async fn swap_execute(
         }))),
         Err(_) => Err(StatusCode::BAD_REQUEST),
     }
+}
+
+async fn deploy_pool(
+    State(state): State<AppState>,
+    Json(pool): Json<Pool>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    match state.service.deploy_pool(pool).await {
+        Ok(()) => Ok(Json(serde_json::json!({"ok": true}))),
+        Err(e) => Ok(Json(serde_json::json!({
+            "ok": false,
+            "error": e.to_string(),
+        }))),
+    }
+}
+
+async fn list_pools(State(state): State<AppState>) -> Json<serde_json::Value> {
+    let pools = state.service.list_dex_pools().await;
+    Json(serde_json::json!({"pools": pools}))
 }
 
 #[derive(Deserialize)]

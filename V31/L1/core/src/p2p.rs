@@ -1,8 +1,7 @@
 //! Minimal P2P gossip + IBD module for the ZION L1 node.
 //!
-//! Alpha scope: listen for inbound connections, accept `Block` gossip, and
-//! respond to `GetStatus`/`GetBlocks` requests for Initial Block Download (IBD).
-//! Full handshake, peer discovery, and robust sync are future work.
+//! Alpha scope: listen for inbound connections, accept `Block` gossip, respond to
+//! `GetStatus`/`GetBlocks` requests and peer discovery (`GetPeers`/`Peers`).
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -16,6 +15,7 @@ use tracing::{info, warn};
 
 use crate::block::Block;
 use crate::node::Node;
+use crate::peer_manager::{PeerManager, PeerSource};
 
 /// Wire message types exchanged between Alpha nodes.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -26,16 +26,19 @@ enum Message {
     Status { height: u64, tip_hash: String },
     GetBlocks { start_height: u64, end_height: u64 },
     Blocks { blocks: Vec<Block> },
+    GetPeers,
+    Peers { peers: Vec<SocketAddr> },
 }
 
 /// P2P listener.
 pub struct P2P {
     node: Arc<Node>,
+    peers: Arc<PeerManager>,
 }
 
 impl P2P {
-    pub fn new(node: Arc<Node>) -> Self {
-        Self { node }
+    pub fn new(node: Arc<Node>, peers: Arc<PeerManager>) -> Self {
+        Self { node, peers }
     }
 
     /// Listen for inbound peers until shutdown is signalled.
@@ -45,6 +48,7 @@ impl P2P {
         mut shutdown: tokio::sync::watch::Receiver<bool>,
     ) -> Result<(), crate::node::NodeError> {
         let listener = TcpListener::bind(addr).await?;
+        self.peers.set_local_addr(addr).await;
         info!("P2P listening on {}", addr);
 
         loop {
@@ -52,10 +56,20 @@ impl P2P {
                 _ = shutdown.changed() => break,
                 accept = listener.accept() => {
                     let (socket, peer) = accept?;
+                    let peers = Arc::clone(&self.peers);
                     let node = Arc::clone(&self.node);
                     tokio::spawn(async move {
-                        if let Err(e) = handle_peer(socket, node).await {
+                        let _guard = match peers.acquire(peer).await {
+                            Some(g) => g,
+                            None => {
+                                warn!("P2P peer {} rejected", peer);
+                                return;
+                            }
+                        };
+                        if let Err(e) = handle_peer(socket, &peers, node).await {
                             warn!("P2P peer {} disconnected: {}", peer, e);
+                        } else {
+                            peers.record_good(peer).await;
                         }
                     });
                 }
@@ -65,7 +79,12 @@ impl P2P {
     }
 }
 
-async fn handle_peer(mut socket: TcpStream, node: Arc<Node>) -> Result<(), crate::node::NodeError> {
+async fn handle_peer(
+    mut socket: TcpStream,
+    peers: &PeerManager,
+    node: Arc<Node>,
+) -> Result<(), crate::node::NodeError> {
+    let peer_addr = socket.peer_addr()?;
     let (reader, mut writer) = socket.split();
     let mut lines = BufReader::new(reader).lines();
 
@@ -74,6 +93,7 @@ async fn handle_peer(mut socket: TcpStream, node: Arc<Node>) -> Result<(), crate
             Ok(m) => m,
             Err(e) => {
                 warn!("invalid P2P message: {}", e);
+                peers.record_bad(peer_addr, 1).await;
                 continue;
             }
         };
@@ -103,7 +123,12 @@ async fn handle_peer(mut socket: TcpStream, node: Arc<Node>) -> Result<(), crate
                 let reply = Message::Blocks { blocks };
                 write_message(&mut writer, &reply).await?;
             }
-            Message::Status { .. } | Message::Blocks { .. } => {}
+            Message::GetPeers => {
+                let peers = peers.random_peers(8).await;
+                let reply = Message::Peers { peers };
+                write_message(&mut writer, &reply).await?;
+            }
+            Message::Status { .. } | Message::Blocks { .. } | Message::Peers { .. } => {}
         }
     }
     Ok(())
@@ -178,13 +203,10 @@ pub async fn get_blocks(
 /// Periodically sync missing blocks from a set of seed peers.
 pub async fn sync_loop(
     node: Arc<Node>,
+    manager: Arc<PeerManager>,
     peers: Vec<SocketAddr>,
     mut shutdown: tokio::sync::watch::Receiver<bool>,
 ) {
-    if peers.is_empty() {
-        return;
-    }
-
     let interval = Duration::from_secs(30);
     let mut first = true;
 
@@ -200,8 +222,12 @@ pub async fn sync_loop(
             _ = shutdown.changed() => break,
             _ = sleep_fut => {
                 for peer in &peers {
-                    if let Err(e) = sync_peer(&node, *peer).await {
+                    manager.add_known(*peer, PeerSource::Seed).await;
+                    if let Err(e) = sync_peer(&node, &manager, *peer).await {
                         warn!("P2P sync from {} failed: {}", peer, e);
+                        manager.record_bad(*peer, 1).await;
+                    } else {
+                        manager.record_good(*peer).await;
                     }
                 }
             }
@@ -209,7 +235,12 @@ pub async fn sync_loop(
     }
 }
 
-async fn sync_peer(node: &Node, peer: SocketAddr) -> Result<(), crate::node::NodeError> {
+async fn sync_peer(
+    node: &Node,
+    manager: &PeerManager,
+    peer: SocketAddr,
+) -> Result<(), crate::node::NodeError> {
+    manager.add_known(peer, PeerSource::Seed).await;
     let (peer_height, _peer_hash) = get_status(peer).await?;
     let our_height = node.storage.height().await?;
 

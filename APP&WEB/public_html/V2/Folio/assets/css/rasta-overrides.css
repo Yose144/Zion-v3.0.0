@@ -1,0 +1,38 @@
+/* Folio -> ZION V2 Rasta theme overrides (minimal, structure-preserving)
+   Only color tokens + CSS variables. No layout/spacing overrides.
+*/
+
+:root {
+  /* Rasta palette tokens (mirrors public_html/V2/rasta.css) */
+  --rasta-red: #e41e2b;
+  --rasta-gold: #fcd116;
+  --rasta-green: #078930;
+  --rasta-dark: #1a1a1a;
+  --rasta-black: #0d0d0d;
+
+  --background-color: var(--rasta-black);
+  --default-color: #f7f7f7;
+  --heading-color: #ffffff;
+  --accent-color: var(--rasta-gold);
+  --surface-color: rgba(26, 26, 26, 0.9);
+  --contrast-color: #000000;
+
+  --nav-color: rgba(255, 255, 255, 0.8);
+  --nav-hover-color: var(--rasta-gold);
+  --nav-dropdown-background-color: var(--rasta-dark);
+  --nav-dropdown-color: rgba(255, 255, 255, 0.85);
+  --nav-dropdown-hover-color: var(--rasta-gold);
+}
+
+.light-background {
+  --background-color: var(--rasta-dark);
+  --surface-color: rgba(26, 26, 26, 0.9);
+}
+
+.dark-background {
+  --background-color: var(--rasta-dark);
+  --default-color: #f7f7f7;
+  --heading-color: #ffffff;
+  --surface-color: rgba(0, 0, 0, 0.4);
+  --contrast-color: #ffffff;
+}

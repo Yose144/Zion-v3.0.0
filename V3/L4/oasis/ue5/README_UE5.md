@@ -134,7 +134,19 @@ Backend runs on:
 - WebSocket: `ws://localhost:8095`
 - Metrics: `http://localhost:9101`
 
-### 8. Launch Editor
+### 8. Point to a remote backend (optional)
+
+The `UZionGameInstance` reads two environment variables at startup:
+
+```bash
+# Linux / macOS
+export OASIS_API_HOST=https://oasis.zionterranova.com
+export CHAIN_RPC_HOST=http://localhost:8444
+```
+
+If unset, it falls back to the defaults in `ZionGameInstance.h` (`localhost:8094` / `localhost:8444`).
+
+### 9. Launch Editor
 
 ```powershell
 .\RunEditor.ps1 -Map LV_MainMenu
@@ -142,12 +154,24 @@ Backend runs on:
 
 ## Data Import
 
+The avatar / quest DataTables and the `EAvatarID` enum are generated from `data/avatars.json`:
+
+```bash
+cd V3/L4/oasis
+python3 scripts/gen_ue5_avatar_pipeline.py
+```
+
+This updates:
+- `Content/DataTables/UE5_AvatarDataTable.csv`
+- `Content/DataTables/UE5_AvatarQuestTable.csv`
+- `Source/ZionOasis/Avatar/AvatarTypes.h` (the `EAvatarID` enum between `GENERATED` markers)
+
 ### Avatar DataTable
 
 Import `Content/DataTables/UE5_AvatarDataTable.csv`:
 1. Content Browser → Right-click → `Miscellaneous → Data Table`
-2. Row Structure: Create `FAvatarRow` (auto-detected from AvatarTypes.h)
-3. Import the CSV
+2. Row Structure: `FAvatarRow`
+3. Import the CSV (CSV column `AvatarID` uses the generated `EAvatarID` enum)
 
 ### Avatar Quest DataTable
 
@@ -179,11 +203,11 @@ Same process with `UE5_AvatarQuestTable.csv` and `FAvatarQuestRow`.
 
 ## Next Steps
 
-1. Add MetaHuman character assets
-2. Create UMG widgets (login, HUD, quest dialog)
+1. Add MetaHuman / stylised character assets
+2. Create UMG widgets (login, HUD, quest dialog, guild list, avatar browser)
 3. Implement L1 blockchain listener for real-time block-mined XP
 4. Add Niagara VFX for meditation / level-up
-5. Populate 51 avatar NPCs with dialog trees
+5. Populate 199 avatar NPCs with dialog trees
 
 ---
 
