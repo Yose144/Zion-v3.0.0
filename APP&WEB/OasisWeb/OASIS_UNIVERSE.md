@@ -127,7 +127,44 @@ Detaily architektury viz [`AGENTS.md`](/AGENTS.md) sekce “OASIS Web / UE5 — 
 
 ---
 
-## 9. Otevřené otázky a další kroky
+## 9. Intro & onboarding flow
+
+Celý start OASIS je navržen jako **postupné probuzení** — od iluze k realitě, od průvodce k volnosti.
+
+### 9.1 Přílet do středu galaxie
+
+Po `WarpIntro` hráč přilétá ke středu spirálové galaxie. Kamera se nejprve ukáže celou galaxii z nadhledu — spirálová ramena, jádro, Strom života, rozmístění hlavních hvězdných systémů. Tento okamžik slouží jako **mapa a lákadlo**: hráč vidí, kam všude se může dostat.
+
+### 9.2 Avatar a Matrix volba — Morpheus
+
+Do scény vstoupí průvodce ve stylu **Morpheuse** (nebo jeho OASIS ekvivalent). Hráč dostane volbu:
+
+- **Modrá pilule** — zůstat v pohodlné iluzi, ukončit intro, vrátit se na web/dashboard.
+- **Červená pilule** — vstoupit do skutečného OASIS, pokračovat dál.
+
+Tato volba je stále součástí intra a zároveň první meta-ukázka: OASIS je simulace, ve které se hráč rozhoduje.
+
+### 9.3 Cyberpunkový avatár a volba postavy
+
+Po červené piluli se přechází do **kyberpunkové sekvence** — neon, déšť, mrakodrapy, hologramy. Hráč si upravuje avatara:
+
+- výběr těla, tváře, oblečení, augmentací,
+- výběr základního archetypu (obchodník, válečník, hacker, průzkumník, mudrc),
+- možná ještě krátké **Neo / Trinity trailery**, kde učí pohybovat se v ZION multiversu: skákat mezi dimenzemi, používat warp, rozpoznávat Matrix vrstvu.
+
+Tento moment slouží jako **tutoriál a onboarding** — ne textový, ale přímo v 3D scéně.
+
+### 9.4 První loď — warp-ready
+
+Jakmile si hráč doladí avatara, dostane **základní loď**. Ta není jen kosmická loď, ale **multivrstevný transportér**:
+
+- umí warp skoky mezi hvězdnými systémy,
+- umí přecházet mezi dimenzemi a časovými liniemi,
+- má vlastní loadout: zbraně, štíty, cargo, posádka.
+
+Od začátku je jasné, že existují stovky lodí — od malých **starfighterů** přes průzkumné **explorery**, transportéry, gildové **defendery** až po obří **mega-carriers/dreadnoughty**. Základní loď je jen první krok; lepší lodě se odemykají questy, craftem, obchodem a těžbou.
+
+## 10. Otevřené otázky a další kroky
 
 - [ ] Jaké jsou přesné herní mechaniky na každém světě?
 - [ ] Jak se bude cestovat mezi hvězdnými systémy — animace, lodě, brány?
@@ -135,6 +172,9 @@ Detaily architektury viz [`AGENTS.md`](/AGENTS.md) sekce “OASIS Web / UE5 — 
 - [ ] Jaký je vztah mezi ZION blockchain a ekonomikou OASIS?
 - [ ] Budou existovat “uctívané” licence pro známé značky, nebo vše jako vlastní archetypy?
 - [ ] Jaká je minimální MVP — jeden hvězdný systém + jedna planeta s jedním žánrem?
+- [ ] Jak vypadá Morpheus/Neo/Trinity ve scéně — NPC, video, stylizovaní průvodci?
+- [ ] Jaké jsou lodní třídy (starfighter, defender, mega-carrier) a jak se odemykají?
+- [ ] Jak se warp skok ovládá — z galaktické mapy, z kokpitu, z quest menu?
 
 ---
 
