@@ -139,7 +139,7 @@ def control(action: str) -> dict:
             time.sleep(2)
         else:
             subprocess.run(["bash", str(script), action], capture_output=True, text=True, timeout=30)
-        return {"ok": True, "action": action, "status": status().get("result", {})}
+        return {"ok": True, "action": action, "status": status()}
     except Exception as e:
         return {"ok": False, "action": action, "error": str(e)}
 
