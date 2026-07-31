@@ -5,10 +5,8 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import {
-  Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe, Shield,
-  HardHat, Download, Coins, ArrowLeftRight, Landmark, Wallet, BookOpen,
-  Newspaper, Map, Sparkles, Rocket, Brain, Flower2, Globe2, Zap, Atom, Building2,
-  CircuitBoard, Github, Layers, Network as NetworkIcon, ArrowRightLeft,
+  Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe,
+  Wallet, BookOpen, Github,
 } from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
 import { useLang } from '@/contexts/LanguageContext';
@@ -16,7 +14,7 @@ import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 type NavItem = { href: string; label: string; children?: NavItem[] };
-type NavGroup = { title: string; icon: typeof SignalHigh; color: string; items: NavItem[] };
+type NavGroup = { title: string; color: string; items: NavItem[] };
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,11 +36,10 @@ export default function Navigation() {
   const navItemMatches = (href: string) =>
     pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/quantum-revolution' && pathname.startsWith('/quantum-revolution')) || (href === '/tree-of-life' && pathname.startsWith('/tree-of-life')) || (href === '/wiki' && pathname === '/wiki');
 
-  /* ── 4 groups with icons + RASTA accent colors ── */
+  /* ── 4 menu groups ── */
   const navGroups: NavGroup[] = [
     {
       title: tr('nav', 'network_group', lang),
-      icon: NetworkIcon,
       color: '16, 185, 129',
       items: [
         { href: '/network', label: tr('nav', 'network', lang) },
@@ -54,7 +51,6 @@ export default function Navigation() {
     },
     {
       title: tr('nav', 'defi_group', lang),
-      icon: Globe2,
       color: '251, 191, 36',
       items: [
         { href: '/defi', label: tr('nav', 'defi', lang) },
@@ -68,7 +64,6 @@ export default function Navigation() {
     },
     {
       title: tr('nav', 'layers_group', lang),
-      icon: Layers,
       color: '239, 68, 68',
       items: [
         { href: '/l3-hiran', label: tr('nav', 'l3_hiran', lang) },
@@ -79,7 +74,6 @@ export default function Navigation() {
     },
     {
       title: tr('nav', 'learn_group', lang),
-      icon: BookOpen,
       color: '16, 185, 129',
       items: [
         { href: '/docs', label: tr('nav', 'docs', lang) },
@@ -107,33 +101,6 @@ export default function Navigation() {
     { href: '/network', icon: SignalHigh, color: '239, 68, 68', label: tr('nav', 'network', lang) },      /* red */
     { href: '/docs', icon: BookOpen, color: '16, 185, 129', label: tr('nav', 'docs', lang) },             /* green */
     { href: '/wallet', icon: Wallet, color: '251, 191, 36', label: tr('nav', 'wallet', lang) },            /* gold */
-  ];
-
-  /* ── Secondary icons — medium, core ecosystem ── */
-  const secondaryIcons = [
-    { href: '/mining', icon: HardHat, color: '245, 158, 11', label: tr('nav', 'mining', lang) },
-    { href: '/defi', icon: Globe2, color: '16, 185, 129', label: tr('nav', 'defi', lang) },
-    { href: '/download', icon: Download, color: '251, 191, 36', label: tr('nav', 'download', lang) },
-  ];
-
-  /* ── Tertiary icons — small, rest of ecosystem ── */
-  const tertiaryIcons = [
-    { href: '/bridge', icon: ArrowLeftRight, color: '59, 130, 246', label: tr('nav', 'bridge', lang) },
-    { href: '/ziondex', icon: ArrowRightLeft, color: '16, 185, 129', label: 'ZionDex' },
-    { href: '/dao', icon: Landmark, color: '147, 51, 234', label: tr('nav', 'dao', lang) },
-    { href: '/cex', icon: Building2, color: '236, 72, 153', label: tr('nav', 'cex', lang) },
-    { href: '/warp', icon: CircuitBoard, color: '99, 102, 241', label: tr('nav', 'warp', lang) },
-    { href: '/l3-hiran', icon: Brain, color: '139, 92, 246', label: tr('nav', 'l3_hiran', lang) },
-    { href: '/l4-oasis', icon: Flower2, color: '217, 70, 239', label: tr('nav', 'l4_oasis', lang) },
-    { href: '/l5-free-world', icon: Rocket, color: '14, 165, 233', label: tr('nav', 'l5_free_world', lang) },
-    { href: '/l6-issobella', icon: Zap, color: '244, 63, 94', label: tr('nav', 'l6_issobella', lang) },
-    { href: '/terranova', icon: Globe2, color: '34, 197, 94', label: tr('nav', 'terranova', lang) },
-    { href: '/tree-of-life', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'tree_of_life', lang) },
-    { href: '/news', icon: Newspaper, color: '249, 115, 22', label: tr('nav', 'news', lang) },
-    { href: '/roadmap', icon: Map, color: '99, 102, 241', label: tr('nav', 'roadmap', lang) },
-    { href: '/whitepapers', icon: BookOpen, color: '147, 51, 234', label: tr('nav', 'whitepapers', lang) },
-    { href: '/genesis', icon: Sparkles, color: '251, 191, 36', label: tr('nav', 'genesis', lang) },
-    { href: '/quantum-revolution', icon: Atom, color: '251, 191, 36', label: tr('nav', 'quantum_revolution', lang) },
   ];
 
   const groupLabels: Record<string, string> = {
@@ -320,66 +287,9 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* ═══ FLOOR 2 — MINI ICONS + GROUP DROPDOWNS + BACKGROUND TOGGLE ═══ */}
+        {/* ═══ FLOOR 2 — TEXT MENU (group dropdowns) ═══ */}
         <div className="flex items-center justify-between gap-2 relative rounded-2xl border border-white/[0.07] bg-black/20 backdrop-blur-md px-2 py-1 shadow-none transition-all duration-300 mt-1 h-auto opacity-100 overflow-visible">
-          {/* Icons + group dropdowns */}
-          <div className="flex items-center gap-0.5 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
-            {/* Secondary icons — medium */}
-            {secondaryIcons.map((ml) => {
-              const isActive = navItemMatches(ml.href);
-              return (
-                <Link
-                  key={ml.href}
-                  href={ml.href}
-                  title={ml.label}
-                  className="group relative flex flex-col items-center justify-center w-7 h-7 rounded-md border transition-all hover:scale-110 shrink-0"
-                  style={{
-                    borderColor: isActive ? `rgba(${ml.color}, 0.45)` : 'rgba(255,255,255,0.06)',
-                    backgroundColor: isActive ? `rgba(${ml.color}, 0.11)` : 'rgba(0,0,0,0.3)',
-                  }}
-                >
-                  <ml.icon
-                    className="w-3 h-3"
-                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.55)' }}
-                  />
-                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                    {ml.label}
-                  </span>
-                </Link>
-              );
-            })}
-
-            {/* Divider */}
-            <div className="mx-0.5 h-4 w-px bg-white/[0.08] shrink-0" />
-
-            {/* Tertiary icons — small */}
-            {tertiaryIcons.map((ml) => {
-              const isActive = navItemMatches(ml.href);
-              return (
-                <Link
-                  key={ml.href}
-                  href={ml.href}
-                  title={ml.label}
-                  className="group relative flex flex-col items-center justify-center w-6 h-6 rounded-md border transition-all hover:scale-110 shrink-0"
-                  style={{
-                    borderColor: isActive ? `rgba(${ml.color}, 0.4)` : 'rgba(255,255,255,0.03)',
-                    backgroundColor: isActive ? `rgba(${ml.color}, 0.09)` : 'transparent',
-                  }}
-                >
-                  <ml.icon
-                    className="w-2.5 h-2.5"
-                    style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.35)' }}
-                  />
-                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] bg-black/95 border border-white/10 rounded px-1.5 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                    {ml.label}
-                  </span>
-                </Link>
-              );
-            })}
-
-            {/* Divider */}
-            <div className="mx-0.5 h-4 w-px bg-white/[0.08] shrink-0" />
-
+          <div className="flex items-center gap-1.5 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
             {/* Group dropdown buttons */}
             {navGroups.map((group) => {
               const isActive = openGroup === group.title;
@@ -389,7 +299,7 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={() => setOpenGroup(isActive ? null : group.title)}
-                    className={`group inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] transition-all ${
+                    className={`group inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] transition-all ${
                       isActive
                         ? 'border-zion-gold/40 bg-linear-to-br from-emerald-500/15 via-zion-gold/12 to-red-500/12 text-white shadow-[0_8px_20px_rgba(0,0,0,0.25),0_0_12px_rgba(251,191,36,0.12)]'
                         : groupHasActiveChild
@@ -398,10 +308,6 @@ export default function Navigation() {
                     }`}
                     aria-expanded={isActive}
                   >
-                    <group.icon
-                      className="w-2.5 h-2.5"
-                      style={{ color: isActive ? `rgb(${group.color})` : `rgba(${group.color}, 0.7)` }}
-                    />
                     <span className="group-hover:text-zion-gold transition-colors">{groupLabels[group.title] ?? group.title}</span>
                     <ChevronDown className={`h-2 w-2 transition-transform ${isActive ? 'rotate-180' : ''}`} />
                   </button>
@@ -416,8 +322,7 @@ export default function Navigation() {
         {activeGroup && (
           <div className="mt-1 absolute left-1/2 -translate-x-1/2 w-[min(20rem,90vw)] rounded-2xl border border-white/10 bg-black/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl z-50">
             <div className="mb-2 h-0.5 w-full rounded-full bg-linear-to-r from-emerald-500/50 via-zion-gold/60 to-red-500/40" />
-            <div className="flex items-center gap-2 mb-3">
-              <activeGroup.icon className="w-4 h-4" style={{ color: `rgb(${activeGroup.color})` }} />
+            <div className="mb-3">
               <p className="text-[10px] uppercase tracking-[0.35em] text-zion-gold/70">{groupLabels[activeGroup.title] ?? activeGroup.title}</p>
             </div>
             <div className="flex flex-col gap-1">
@@ -496,10 +401,7 @@ export default function Navigation() {
                         className="w-full flex items-center justify-between rounded-xl px-3 py-3 text-sm uppercase tracking-[0.2em] text-gray-300 hover:text-white hover:bg-white/5 min-h-[48px]"
                         aria-expanded={isExpanded}
                       >
-                        <span className="flex items-center gap-2">
-                          <group.icon className="w-3.5 h-3.5" style={{ color: `rgba(${group.color}, 0.8)` }} />
-                          {groupLabels[group.title] ?? group.title}
-                        </span>
+                        <span>{groupLabels[group.title] ?? group.title}</span>
                         <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180 text-white' : ''}`} />
                       </button>
                       {isExpanded && (
@@ -550,37 +452,37 @@ export default function Navigation() {
                   <Link
                     href="/explorer"
                     onClick={() => setIsOpen(false)}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center gap-2 min-h-[44px] active:bg-white/10"
+                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center justify-center min-h-[44px] active:bg-white/10 text-center"
                   >
-                    <Orbit className="w-3 h-3 text-zion-gold shrink-0" /> {tr('nav', 'explorer', lang)}
+                    {tr('nav', 'explorer', lang)}
                   </Link>
                   <Link
                     href="/pool"
                     onClick={() => setIsOpen(false)}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center gap-2 min-h-[44px] active:bg-white/10"
+                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center justify-center min-h-[44px] active:bg-white/10 text-center"
                   >
-                    <Pickaxe className="w-3 h-3 text-zion-purple shrink-0" /> {tr('nav', 'pool', lang)}
+                    {tr('nav', 'pool', lang)}
                   </Link>
                   <Link
                     href="/dashboard"
                     onClick={() => setIsOpen(false)}
-                    className="rounded-xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-3 py-3 inline-flex items-center gap-2 text-white min-h-[44px] font-semibold"
+                    className="rounded-xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-3 py-3 inline-flex items-center justify-center text-white min-h-[44px] font-semibold text-center"
                   >
                     {tr('nav', 'dashboard', lang)}
                   </Link>
                   <Link
                     href="/dashboard/mission-control"
                     onClick={() => setIsOpen(false)}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center gap-2 min-h-[44px] active:bg-white/10"
+                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center justify-center min-h-[44px] active:bg-white/10 text-center"
                   >
-                    <LayoutDashboard className="w-3 h-3 text-zion-gold shrink-0" /> Mission Control
+                    Mission Control
                   </Link>
                   <Link
                     href="/dashboard/guardian"
                     onClick={() => setIsOpen(false)}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center gap-2 min-h-[44px] active:bg-white/10"
+                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center justify-center min-h-[44px] active:bg-white/10 text-center"
                   >
-                    <Shield className="w-3 h-3 text-zion-gold shrink-0" /> {tr('nav', 'guardian', lang)}
+                    {tr('nav', 'guardian', lang)}
                   </Link>
                 </div>
                 {/* GitHub — highlighted in mobile menu */}
@@ -589,9 +491,8 @@ export default function Navigation() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setIsOpen(false)}
-                  className="mt-2 rounded-xl border border-zion-gold/30 bg-linear-to-r from-zion-gold/10 to-amber-600/8 px-3 py-3 inline-flex items-center justify-center gap-2 min-h-[44px] text-zion-gold font-semibold shadow-[0_0_14px_rgba(251,191,36,0.12)]"
+                  className="mt-2 rounded-xl border border-zion-gold/30 bg-linear-to-r from-zion-gold/10 to-amber-600/8 px-3 py-3 inline-flex items-center justify-center min-h-[44px] text-zion-gold font-semibold shadow-[0_0_14px_rgba(251,191,36,0.12)]"
                 >
-                  <Github className="w-4 h-4" />
                   GitHub · Mainnet Beta
                 </a>
               </div>
