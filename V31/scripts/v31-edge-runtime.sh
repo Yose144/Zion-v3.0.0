@@ -35,7 +35,7 @@ start() {
       checkpoint_arg="--v3-checkpoint ${DATA_DIR}/v3-checkpoint.json"
     fi
     # shellcheck disable=SC2086
-    RUST_LOG=info stdbuf -oL -eL "${RELEASE_DIR}/zion-node" \
+    RUST_LOG=info nohup "${RELEASE_DIR}/zion-node" \
       --db-path "${DATA_DIR}/node.db" \
       --rpc "${NODE_RPC}" \
       --p2p "${NODE_P2P}" \
@@ -54,7 +54,7 @@ start() {
     echo "V31 pool already running (PID $(cat "${POOL_PID}"))"
   else
     rm -f "${POOL_PID}"
-    RUST_LOG=info stdbuf -oL -eL "${RELEASE_DIR}/zion-pool" \
+    RUST_LOG=info nohup "${RELEASE_DIR}/zion-pool" \
       --bind "${POOL_BIND}" \
       --l1-rpc-url "http://${NODE_RPC}" \
       --miner-address zion1v31pool \
