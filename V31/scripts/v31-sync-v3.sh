@@ -43,7 +43,7 @@ stop_runtime() {
 }
 
 start_pool() {
-  RUST_LOG=info stdbuf -oL -eL "${POOL_BIN}" \
+  RUST_LOG=info nohup "${POOL_BIN}" \
     --bind "0.0.0.0:8446" \
     --l1-rpc-url "http://127.0.0.1:9445" \
     --miner-address zion1v31pool \
@@ -56,7 +56,7 @@ start_pool() {
 start_node() {
   local db_path="${1}"
   shift
-  RUST_LOG=info stdbuf -oL -eL "${NODE_BIN}" \
+  RUST_LOG=info nohup "${NODE_BIN}" \
     --db-path "${db_path}" \
     --rpc 127.0.0.1:9445 \
     --p2p 0.0.0.0:8335 \
