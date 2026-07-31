@@ -31,6 +31,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'v3-1-0-mainnet-alpha-website',
+    date: '2026-07-31',
+    tag: { cs: 'Aktualizace', en: 'Update' },
+    tagColor: 'text-cyan-400',
+    title: {
+      cs: 'Web 2.9 se aktualizuje na v3.1.0 Mainnet Alpha',
+      en: 'Web 2.9 updated to v3.1.0 Mainnet Alpha',
+    },
+    summary: {
+      cs: 'ZION web 2.9 přechází na V31 Mainnet Alpha. Veřejná linka nyní ukazuje v3.1.0, dokumentace a přehledy jsou synchronizované. Tři samostatné veřejné služby běží současně: intro na zionterranova.com, web2.9 na app.zionterranova.com a OASIS Web na oasis.zionterranova.com.',
+      en: 'ZION web 2.9 is moving to V31 Mainnet Alpha. The public line now shows v3.1.0; docs and dashboards are in sync. Three separate public services run at the same time: the intro at zionterranova.com, web2.9 at app.zionterranova.com, and OASIS Web at oasis.zionterranova.com.',
+    },
+    href: '/docs',
+  },
+  {
     slug: 'oasis-construction-v0-0-1',
     date: '2026-07-31',
     tag: { cs: 'OASIS', en: 'OASIS' },
