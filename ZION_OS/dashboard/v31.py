@@ -120,8 +120,7 @@ def tail(svc: str = "node", lines: int = 50):
 
 
 def control(action: str) -> dict:
-    script = SCRIPT_DIR / ".." / "V31" / "scripts" / "v31-edge-runtime.sh"
-    script = script.resolve()
+    script = REPO_ROOT / "V31" / "scripts" / "v31-edge-runtime.sh"
     if not script.exists():
         return {"ok": False, "error": f"Runtime script not found: {script}"}
     if action not in ("start", "stop"):
