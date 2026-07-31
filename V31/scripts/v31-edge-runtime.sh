@@ -30,12 +30,18 @@ start() {
     echo "V31 node already running (PID $(cat "${NODE_PID}"))"
   else
     rm -f "${NODE_PID}"
+    local checkpoint_arg=""
+    if [[ -f "${DATA_DIR}/v3-checkpoint.json" ]]; then
+      checkpoint_arg="--v3-checkpoint ${DATA_DIR}/v3-checkpoint.json"
+    fi
+    # shellcheck disable=SC2086
     RUST_LOG=info stdbuf -oL -eL "${RELEASE_DIR}/zion-node" \
       --db-path "${DATA_DIR}/node.db" \
       --rpc "${NODE_RPC}" \
       --p2p "${NODE_P2P}" \
       --human zion1v31human \
       --issobella zion1v31issobella \
+      ${checkpoint_arg} \
       > "${LOG_DIR}/v31-node.log" 2>&1 &
     echo $! > "${NODE_PID}"
     echo "V31 node started (PID $(cat "${NODE_PID}"))"

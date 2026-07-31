@@ -21,6 +21,10 @@ NODE_RPC_PORT = 9445
 POOL_PORT = 8446
 NODE_PID = V31_DATA_DIR / "v31-node.pid"
 POOL_PID = V31_DATA_DIR / "v31-pool.pid"
+V3_STATE_FILE = REPO_ROOT / "data" / "state"
+SYNC_LOG = V31_DATA_DIR / "sync.log"
+SYNC_STATE_FILE = V31_DATA_DIR / "sync-state.json"
+SYNC_MODE_FILE = V31_DATA_DIR / "sync-mode.txt"
 
 
 def _strip_ansi(s: str) -> str:
@@ -69,6 +73,16 @@ def _v31_process_status():
     }
 
 
+def _detect_sync_mode(v3_height: int) -> str:
+    if v3_height > 0:
+        return "v3-checkpoint"
+    if SYNC_MODE_FILE.exists():
+        return SYNC_MODE_FILE.read_text(encoding="utf-8").strip()
+    if (V31_DATA_DIR / "v3-checkpoint.json").exists():
+        return "v3-checkpoint"
+    return "genesis"
+
+
 def status():
     """Return V31 runtime + chain status for the dashboard."""
     out = _v31_process_status()
@@ -79,6 +93,8 @@ def status():
     out["tip_hash"] = None
     out["difficulty"] = 0
     out["target"] = None
+    out["mempool_account"] = 0
+    out["mempool_utxo"] = 0
 
     if out["node_reachable"]:
         # Canonical chain height from the new-chain block template.
@@ -96,7 +112,10 @@ def status():
             r = st["result"]
             out["v3_height"] = int(r.get("chain_height", 0))
             out["tip_hash"] = r.get("tip_hash")
+            out["mempool_account"] = int(r.get("mempool_account_transactions", 0))
+            out["mempool_utxo"] = int(r.get("mempool_utxo_transactions", 0))
 
+    out["sync_mode"] = _detect_sync_mode(out["v3_height"])
     out["log_dir"] = str(LOG_DIR)
     return {"ok": True, **out}
 
@@ -117,6 +136,76 @@ def logs(svc: str = "node", lines: int = 50):
 
 def tail(svc: str = "node", lines: int = 50):
     return logs(svc, lines)
+
+
+def _record_sync(mode: str, status: str, detail: str = ""):
+    state = {}
+    if SYNC_STATE_FILE.exists():
+        try:
+            state = json.loads(SYNC_STATE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            state = {}
+    state["last_sync"] = {
+        "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "mode": mode,
+        "status": status,
+        "detail": detail,
+    }
+    try:
+        with open(SYNC_STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2)
+    except Exception:
+        pass
+
+
+def _read_sync_log():
+    if not SYNC_LOG.exists():
+        return ""
+    try:
+        return _strip_ansi(SYNC_LOG.read_text(encoding="utf-8", errors="replace"))[-4000:]
+    except Exception as e:
+        return f"error reading sync log: {e}"
+
+
+def sync_info():
+    state = {}
+    if SYNC_STATE_FILE.exists():
+        try:
+            state = json.loads(SYNC_STATE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            state = {}
+
+    v3_state_height = 0
+    if V3_STATE_FILE.exists():
+        try:
+            with open(V3_STATE_FILE, "r", encoding="utf-8") as f:
+                v3_state = json.load(f)
+            v3_state_height = int(v3_state.get("height", 0))
+        except Exception:
+            pass
+
+    return {
+        "ok": True,
+        "v3_state_height": v3_state_height,
+        "v3_state_path": str(V3_STATE_FILE),
+        "last_sync": state.get("last_sync"),
+        "log": _read_sync_log(),
+    }
+
+
+def _run_background(cmd: list, log_path: Path):
+    """Run a command in the background, redirecting stdout/stderr to a log file."""
+    try:
+        with open(log_path, "w", encoding="utf-8") as lf:
+            subprocess.Popen(
+                cmd,
+                stdout=lf,
+                stderr=subprocess.STDOUT,
+                stdin=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+    except Exception as e:
+        raise RuntimeError(f"failed to start background process: {e}")
 
 
 def control(action: str) -> dict:
@@ -142,6 +231,33 @@ def control(action: str) -> dict:
         return {"ok": True, "action": action, "status": status()}
     except Exception as e:
         return {"ok": False, "action": action, "error": str(e)}
+
+
+def sync(payload: dict) -> dict:
+    """Handle V3 sync requests from the dashboard."""
+    mode = str(payload.get("mode", "")).strip()
+    script = REPO_ROOT / "V31" / "scripts" / "v31-sync-v3.sh"
+    if not script.exists():
+        return {"ok": False, "error": f"Sync script not found: {script}"}
+    if mode == "state":
+        _record_sync("state", "running", "migrating V3 state and building checkpoint")
+        _run_background(["bash", str(script), "state"], SYNC_LOG)
+        return {"ok": True, "message": "V3 state sync spawend in the background. Watch sync log."}
+    elif mode == "p2p":
+        peers = payload.get("peers", [])
+        if not peers:
+            return {"ok": False, "error": "No V3 peers provided"}
+        # Mark mode for status display.
+        try:
+            with open(SYNC_MODE_FILE, "w", encoding="utf-8") as f:
+                f.write("v3-p2p")
+        except Exception:
+            pass
+        _record_sync("p2p", "running", f"peers={','.join(peers)}")
+        _run_background(["bash", str(script), "p2p"] + [str(p) for p in peers], SYNC_LOG)
+        return {"ok": True, "message": f"V3 P2P sync spawend with peers {', '.join(peers)}"}
+    else:
+        return {"ok": False, "error": f"Unknown sync mode: {mode}"}
 
 
 def _serve_static(handler, route: str):
@@ -204,6 +320,10 @@ def handle_get(handler, route: str, params: dict):
         handler._json(control(action))
         return True
 
+    if route == "/api/v31/sync-info":
+        handler._json(sync_info())
+        return True
+
     return False
 
 
@@ -211,5 +331,8 @@ def handle_post(handler, route: str, payload: dict):
     if route == "/api/v31/control":
         action = str(payload.get("action", "")).strip()
         handler._json(control(action))
+        return True
+    if route == "/api/v31/sync":
+        handler._json(sync(payload))
         return True
     return False
