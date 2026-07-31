@@ -89,7 +89,7 @@ echo "[smoke] Starting triple-stream miner (ZION only) for up to 90s..."
 run_logged miner.log "${RELEASE_DIR}/zion" \
   --config "${MULTICHAIN_TOML}" \
   miner start \
-  --pool-url "stratum+tcp://127.0.0.1:8445" \
+  --pool-url "stratum+tcp://127.0.0.1:8446" \
   --worker "${MINER_WORKER}" \
   --reward-address "${MINER_REWARD}" \
   --no-gpu --no-cpu
