@@ -62,6 +62,21 @@ def _is_pid_alive(pid: int) -> bool:
         return False
 
 
+def _is_edge_local() -> bool:
+    """Detect if we're running on the Edge server itself."""
+    try:
+        import socket
+        hostname = socket.gethostname()
+        if "edge" in hostname.lower() or "mainnet" in hostname.lower() or "vmi" in hostname.lower():
+            return True
+    except Exception:
+        pass
+    return False
+
+
+_EDGE_LOCAL = _is_edge_local()
+
+
 def _v31_process_status():
     node_pid = int(NODE_PID.read_text().strip()) if NODE_PID.exists() else None
     pool_pid = int(POOL_PID.read_text().strip()) if POOL_PID.exists() else None
@@ -87,7 +102,16 @@ def status():
     """Return V31 runtime + chain status for the dashboard."""
     out = _v31_process_status()
     out["node_reachable"] = _probe_port(NODE_RPC_HOST, NODE_RPC_PORT)
-    out["pool_reachable"] = _probe_port("0.0.0.0", POOL_PORT)
+    # Only probe V31 pool port locally if we are on Edge or have a local PID;
+    # otherwise port 8446 may be the local V3 backup node RPC.
+    out["pool_reachable"] = (
+        _probe_port("0.0.0.0", POOL_PORT)
+        if _EDGE_LOCAL or POOL_PID.exists()
+        else False
+    )
+    # If no local PID, trust TCP reachability (e.g. SSH tunnel to Edge V31).
+    if not out["node_running"]:
+        out["node_running"] = out["node_reachable"]
     out["canonical_height"] = 0
     out["v3_height"] = 0
     out["tip_hash"] = None
