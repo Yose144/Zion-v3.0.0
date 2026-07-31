@@ -147,12 +147,12 @@ def control(action: str) -> dict:
 
 def _serve_static(handler, route: str):
     """Serve /v31/ static assets."""
-    if route == "/v31" or route == "/v31/":
+    if route == "/v31":
         handler.send_response(302)
         handler.send_header("Location", "/v31/")
         handler.end_headers()
         return True
-    if route == "/v31/index.html":
+    if route == "/v31/" or route == "/v31/index.html":
         index = SCRIPT_DIR / "v31" / "index.html"
         if index.exists():
             handler._html(index.read_text(encoding="utf-8"))
