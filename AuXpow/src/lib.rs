@@ -21,7 +21,7 @@ pub mod gpu_miner;
 pub mod gpu_opencl;
 #[cfg(feature = "gpu-cuda")]
 pub mod gpu_cuda;
-#[cfg(feature = "gpu-metal")]
+#[cfg(all(feature = "gpu-metal", target_os = "macos"))]
 pub mod gpu_metal;
 #[cfg(feature = "native-hashers")]
 pub mod native_ffi;

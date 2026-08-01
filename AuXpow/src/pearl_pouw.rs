@@ -1121,7 +1121,7 @@ mod tests {
         assert!(!b64.is_empty());
     }
 
-    #[cfg(feature = "gpu-metal")]
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     #[test]
     fn test_gpu_pouw_kernel_compiles() {
         // Verify the Metal kernel compiles by running a minimal mining call
@@ -1149,7 +1149,7 @@ mod tests {
         assert!(result.is_ok(), "GPU mining call failed: {:?}", result.err());
     }
 
-    #[cfg(feature = "gpu-metal")]
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     #[test]
     fn test_gpu_pouw_matches_cpu() {
         // Generate one nonce's data on CPU, run GPU, and verify the GPU
@@ -1315,7 +1315,7 @@ mod tests {
 /// Try to mine one proof using GPU for MatMul + jackpot scanning.
 /// CPU handles matrix generation, noise, and Merkle proof construction.
 /// GPU handles the 4096-tile MatMul + jackpot hash computation.
-#[cfg(feature = "gpu-metal")]
+#[cfg(all(feature = "gpu-metal", target_os = "macos"))]
 pub fn try_mine_one_gpu(
     nonce: u64,
     m: usize,
@@ -1433,7 +1433,7 @@ pub fn try_mine_one_gpu(
 }
 
 /// Mine using GPU. Scans nonces, each nonce = one GPU dispatch.
-#[cfg(feature = "gpu-metal")]
+#[cfg(all(feature = "gpu-metal", target_os = "macos"))]
 pub fn mine_gpu(
     m: usize,
     n: usize,
@@ -1458,7 +1458,7 @@ pub fn mine_gpu(
 /// Try to mine one proof using the fully GPU-native pipeline.
 /// GPU handles: matrix gen, BLAKE3 commitment, noise gen, MatMul, jackpot.
 /// CPU only computes job_key and builds Merkle proof if GPU finds a winner.
-#[cfg(feature = "gpu-metal")]
+#[cfg(all(feature = "gpu-metal", target_os = "macos"))]
 pub fn try_mine_one_gpu_native(
     nonce: u64,
     m: usize,
@@ -1545,7 +1545,7 @@ pub fn try_mine_one_gpu_native(
 
 /// Mine using GPU-native pipeline. Scans nonces, each nonce = one GPU dispatch
 /// (all steps on GPU, no CPU data preparation).
-#[cfg(feature = "gpu-metal")]
+#[cfg(all(feature = "gpu-metal", target_os = "macos"))]
 pub fn mine_gpu_native(
     m: usize,
     n: usize,

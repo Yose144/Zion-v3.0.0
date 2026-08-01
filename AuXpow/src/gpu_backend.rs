@@ -132,7 +132,7 @@ pub fn detect_backend(_work_size: usize) -> Result<Box<dyn GpuBackend>> {
     }
 
     // Try Metal (Apple Silicon)
-    #[cfg(feature = "gpu-metal")]
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     {
         match crate::gpu_metal::MetalBackend::new(_work_size) {
             Ok(backend) => {
@@ -180,7 +180,7 @@ pub fn list_devices() -> Vec<String> {
         devices.extend(crate::gpu_cuda::list_cuda_devices());
     }
 
-    #[cfg(feature = "gpu-metal")]
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     {
         devices.extend(crate::gpu_metal::list_metal_devices());
     }
