@@ -89,7 +89,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: desktop-linux
-          path: DesktopAgentP3.0.6/dist/*
+          path: |
+            DesktopAgentP3.0.6/dist/*.AppImage
+            DesktopAgentP3.0.6/dist/*.deb
+            DesktopAgentP3.0.6/dist/latest-linux.yml
           if-no-files-found: error
 
   build-windows:
@@ -136,13 +139,17 @@ jobs:
           INCLUDE: ${{ env.INCLUDE }}
         run: |
           node scripts/prepare-rust-miner.js --features "full,gpu-cuda"
-          npx electron-builder --win nsis --x64
+          npx electron-builder --win --x64
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: desktop-windows
-          path: DesktopAgentP3.0.6/dist/*
+          path: |
+            DesktopAgentP3.0.6/dist/*.exe
+            DesktopAgentP3.0.6/dist/*.zip
+            DesktopAgentP3.0.6/dist/*.exe.blockmap
+            DesktopAgentP3.0.6/dist/latest.yml
           if-no-files-found: error
 
   build-macos:
@@ -172,7 +179,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: desktop-macos
-          path: DesktopAgentP3.0.6/dist/*
+          path: |
+            DesktopAgentP3.0.6/dist/*.dmg
+            DesktopAgentP3.0.6/dist/*.dmg.blockmap
+            DesktopAgentP3.0.6/dist/latest-mac.yml
           if-no-files-found: error
 
   release:
@@ -193,9 +203,15 @@ jobs:
         working-directory: artifacts
         run: |
           mkdir -p release
-          mv desktop-*/* release/ 2>/dev/null || true
+          find . -type f \( \
+            -name '*.AppImage' -o -name '*.deb' -o \
+            -name '*.exe' -o -name '*.zip' -o \
+            -name '*.dmg' -o -name '*.blockmap' -o \
+            -name 'latest*.yml' \
+          \) -exec cp {} release/ \;
           cd release
-          sha256sum *.* > SHA256SUMS.txt
+          mapfile -t files < <(find . -maxdepth 1 -type f ! -name 'SHA256SUMS.txt' -printf '%P\n' | sort)
+          sha256sum "${files[@]}" > SHA256SUMS.txt
           ls -lh
 
       - name: Check release token
@@ -217,9 +233,10 @@ jobs:
           NOTES_FILE: ${{ github.workspace }}/DesktopAgentP3.0.6/RELEASE_NOTES.md
         run: |
           set -e
+          mapfile -t assets < <(find . -maxdepth 1 -type f -printf '%P\n' | sort)
           if gh release view "${RELEASE_TAG}" --repo "${PUBLIC_REPO}" >/dev/null 2>&1; then
             echo "Release ${RELEASE_TAG} already exists. Uploading assets with --clobber."
-            gh release upload --repo "${PUBLIC_REPO}" "${RELEASE_TAG}" ./* --clobber
+            gh release upload --repo "${PUBLIC_REPO}" "${RELEASE_TAG}" "${assets[@]}" --clobber
             gh release edit --repo "${PUBLIC_REPO}" "${RELEASE_TAG}" --notes-file "${NOTES_FILE}"
           else
             echo "Creating new release ${RELEASE_TAG}."
@@ -228,5 +245,5 @@ jobs:
               --title "ZION Public Desktop Miner v3.0.6" \
               --notes-file "${NOTES_FILE}" \
               ${DRAFT_FLAG} \
-              ./*
+              "${assets[@]}"
           fi
