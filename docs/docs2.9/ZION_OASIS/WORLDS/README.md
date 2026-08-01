@@ -63,6 +63,8 @@ Pro nové světy použij šablonu [`TEMPLATE.md`](TEMPLATE.md).
 - `WORLD_CHINA.md`
 - `WORLD_AFRICA.md`
 - `WORLD_ABORIGINAL_AUSTRALIA.md`
+- `WORLD_AOTEAROA.md`
+- `WORLD_INDONESIA.md`
 
 ### Dimenzní / meta světy
 - `DIMENSION_8BIT.md`
