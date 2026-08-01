@@ -1880,8 +1880,6 @@ fn generate_light_cache(epoch: u32) -> Vec<u8> {
 fn generate_light_cache_from(cache_size: usize, cache_items: usize, seed: &[u8; 32]) -> Vec<u8> {
     use sha3::{Digest, Keccak512};
 
-use crate::{private_print, private_eprint};
-
     let mut cache = vec![0u8; cache_size];
 
     // First item = keccak512(seed)

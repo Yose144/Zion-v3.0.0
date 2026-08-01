@@ -168,8 +168,7 @@ fn log_always(msg: &str) {
 #[macro_export]
 macro_rules! private_print {
     ($($arg:tt)*) => {
-        #[cfg(not(feature = "public_build"))]
-        {
+        if cfg!(not(feature = "public_build")) {
             println!($($arg)*);
         }
     };
@@ -179,8 +178,7 @@ macro_rules! private_print {
 #[macro_export]
 macro_rules! private_eprint {
     ($($arg:tt)*) => {
-        #[cfg(not(feature = "public_build"))]
-        {
+        if cfg!(not(feature = "public_build")) {
             eprintln!($($arg)*);
         }
     };
