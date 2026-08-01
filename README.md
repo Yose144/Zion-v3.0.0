@@ -14,7 +14,7 @@
 <p>
 
 ![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange?style=for-the-badge)
-![Protocol](https://img.shields.io/badge/Protocol-3.0.8-blue?style=for-the-badge)
+![Protocol](https://img.shields.io/badge/Protocol-3.0.7-blue?style=for-the-badge)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Rust](https://img.shields.io/badge/Rust-2021-orange?style=for-the-badge)
 ![PoW](https://img.shields.io/badge/Consensus-PoW-purple?style=for-the-badge)
@@ -91,7 +91,7 @@
 | Parameter | Value |
 |:----------|:------|
 | **Status** | Mainnet Beta |
-| **Protocol** | 3.0.8 "Full Stack Stable" |
+| **Protocol** | 3.0.7 "Trinity All Green" |
 | **Genesis hash** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
 | **Official launch** | 2026-12-31 |
 | **Block time** | ~60 seconds |
@@ -117,7 +117,7 @@ All disclosed security issues have been remediated. See [Security](./SECURITY.md
 | **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` |
 | **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.zip` |
 
-Latest release: **[v3.0.8-beta](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.8-beta)**
+Latest release: **[v3.0.7-beta](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.7-beta)**
 
 ### 2. Extract
 

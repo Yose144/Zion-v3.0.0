@@ -241,7 +241,7 @@ impl SwapExecutor {
         let needed = amount.saturating_add(fee);
 
         let mut sorted = utxos;
-        sorted.sort_by(|a, b| b.amount.cmp(&a.amount));
+        sorted.sort_by_key(|b| std::cmp::Reverse(b.amount));
 
         let mut selected: Vec<L1SpendableUtxo> = Vec::new();
         let mut total_in: u64 = 0;

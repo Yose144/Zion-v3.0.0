@@ -132,7 +132,7 @@ fn vote_n(
             .cast_vote(
                 proposal,
                 format!("{}{:04}", prefix, i),
-                choice,
+                choice.clone(),
                 weight,
                 None,
             )
@@ -577,7 +577,7 @@ fn test_full_e2e_treasury_proposal() {
             .cast_vote(
                 &mut proposal,
                 voter.clone(),
-                choice,
+                choice.clone(),
                 1_000_000_000_000,
                 None,
             )

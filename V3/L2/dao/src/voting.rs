@@ -83,7 +83,7 @@ impl VotingEngine {
         let vote = Vote {
             proposal_id: proposal.id,
             voter: voter.clone(),
-            choice,
+            choice: choice.clone(),
             weight,
             tx_hash,
             voted_at: Utc::now(),

@@ -12,6 +12,10 @@ path = "src/lib.rs"
 default = []
 native-npu = ["dep:ort"]
 testnet = []
+# Public build: suppress profit_router / stream_profit log lines that
+# reveal external coin names.  Enabled only by MinerP3.0.6/miner.
+# V3 workspace never enables this, so V3 behavior is unchanged.
+public_build = []
 # Local/docker hard-fork rehearsal only — sets TX/BODY v2 gates to the same low height.
 testnet_fork_rehearsal = []
 

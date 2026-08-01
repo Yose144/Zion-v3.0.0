@@ -16,10 +16,19 @@
 
 fn main() {
     let wallets = [
-        ("humanitarian_subsidy", "Humanitarian tithe recipient (5% of coinbase)"),
-        ("issobella_subsidy", "Issobella fund recipient (5% of coinbase)"),
+        (
+            "humanitarian_subsidy",
+            "Humanitarian tithe recipient (5% of coinbase)",
+        ),
+        (
+            "issobella_subsidy",
+            "Issobella fund recipient (5% of coinbase)",
+        ),
         ("pool_fee_subsidy", "Pool fee subsidy / burn address (1%)"),
-        ("default_miner", "Default solo miner coinbase fallback (89%)"),
+        (
+            "default_miner",
+            "Default solo miner coinbase fallback (89%)",
+        ),
         ("pool_payout", "Pool PPLNS payout signing key"),
     ];
 

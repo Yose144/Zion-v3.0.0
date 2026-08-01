@@ -93,7 +93,7 @@ pub struct BridgeIdentity {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct L1Config {
-    /// ZION L1 raw TCP JSON-RPC address (e.g., "127.0.0.1:8443")
+    /// ZION L1 raw TCP JSON-RPC address (e.g., "127.0.0.1:9443")
     pub rpc_url: String,
 
     /// Optional backup L1 raw TCP JSON-RPC address
@@ -384,7 +384,7 @@ impl Default for BridgeConfig {
                 network: "testnet".into(),
             },
             l1: L1Config {
-                rpc_url: "127.0.0.1:8443".into(),
+                rpc_url: "127.0.0.1:9443".into(),
                 rpc_url_backup: None,
                 bridge_address: "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7".into(),
                 finality_blocks: 60,
@@ -437,7 +437,7 @@ mod tests {
         let cfg = BridgeConfig::default();
         assert_eq!(cfg.bridge.name, "ZION Bridge Relay");
         assert_eq!(cfg.bridge.network, "testnet");
-        assert_eq!(cfg.l1.rpc_url, "127.0.0.1:8443");
+        assert_eq!(cfg.l1.rpc_url, "127.0.0.1:9443");
         assert_eq!(
             cfg.l1.bridge_address,
             "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7"
@@ -506,7 +506,7 @@ version = "0.1.0"
 network = "testnet"
 
 [l1]
-rpc_url = "127.0.0.1:8443"
+rpc_url = "127.0.0.1:9443"
 bridge_address = "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7"
 finality_blocks = 60
 poll_interval_secs = 15
@@ -549,7 +549,7 @@ log_level = "info"
 "#;
         let config: BridgeConfig = toml::from_str(toml_str).unwrap();
         assert_eq!(config.bridge.name, "Test Bridge");
-        assert_eq!(config.l1.rpc_url, "127.0.0.1:8443");
+        assert_eq!(config.l1.rpc_url, "127.0.0.1:9443");
         assert_eq!(config.evm_chains.len(), 1);
         assert_eq!(config.evm_chains[0].chain_id, "base");
         assert_eq!(config.evm_chains[0].evm_chain_id, 84532);

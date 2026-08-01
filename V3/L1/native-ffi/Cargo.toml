@@ -21,6 +21,7 @@ native-blake3-algo    = []
 native-cosmic-harmony = []
 native-verushash      = []
 native-randomx        = []
+native-ghostrider     = []
 
 # Convenience: enable all at once
 native-all = [
@@ -32,6 +33,7 @@ native-all = [
     "native-cosmic-harmony",
     "native-verushash",
     "native-randomx",
+    "native-ghostrider",
 ]
 
 [build-dependencies]
