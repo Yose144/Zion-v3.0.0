@@ -12,7 +12,7 @@ use zion_core::{
     encode_p2p_message, encode_rpc_response,
     ibd::{IbdCommand, IbdEngine},
     migration, node_protocol_version,
-    p2p_security::PeerSecurity,
+    p2p_security::{PeerSecurity, MAX_CONNECTIONS},
     peer_manager::{PeerAction, PeerDirection, PeerManager, MIN_OUTBOUND},
     propagation::{PropagationStats, SeenBlocks, SeenTransactions},
     rpc::{build_node_router, RpcRouter},
@@ -269,8 +269,16 @@ fn main() -> Result<()> {
         lock_peer_mgr(&peer_mgr).add_seeds(&seeds);
     }
 
-    // P2P security — rate limiting, banning, connection limits
-    let peer_sec = Arc::new(Mutex::new(PeerSecurity::new()));
+    // P2P security — rate limiting, banning, connection limits.
+    // Respect ZION_P2P_ACCEPT_LIMIT (or ZION_ACCEPT_LIMIT) as the active
+    // connection ceiling. PeerSecurity enforces this per the configured
+    // maximum and clean_connection() releases slots as peers disconnect.
+    let peer_sec = Arc::new(Mutex::new(PeerSecurity::with_max_connections(
+        config
+            .p2p_accept_limit
+            .map(|l| l as usize)
+            .unwrap_or(MAX_CONNECTIONS),
+    )));
 
     // JSON-RPC 2.0 router (shared across all RPC client threads)
     let jsonrpc_router = Arc::new(build_node_router(Arc::clone(&runtime)));
@@ -328,17 +336,16 @@ fn main() -> Result<()> {
     let p2p_stats = Arc::clone(&prop_stats);
     let p2p_peer_mgr = Arc::clone(&peer_mgr);
     let p2p_peer_sec = Arc::clone(&peer_sec);
-    let p2p_limit = config.p2p_accept_limit;
     let p2p_thread = thread::spawn(move || -> Result<()> {
         let mut handles = Vec::new();
-        let mut accepted = 0u32;
         loop {
-            if matches!(p2p_limit, Some(limit) if accepted >= limit) {
-                break;
-            }
+            // Reap finished peer handler threads before accepting the next
+            // connection so the handles vector does not grow unbounded.
+            handles.retain(|h: &std::thread::JoinHandle<Result<()>>| !h.is_finished());
+
             let (stream, peer_addr) = p2p_listener.accept().context("failed to accept P2P peer")?;
 
-            // Security gate: check ban + connection limit
+            // Security gate: check ban + active connection limit
             let peer_ip = peer_addr.ip();
             let now_epoch = epoch_secs();
             {
@@ -368,13 +375,10 @@ fn main() -> Result<()> {
                 lock_peer_sec(&sec).release_connection();
                 result
             }));
-            accepted = accepted.saturating_add(1);
         }
-        for handle in handles {
-            handle
-                .join()
-                .map_err(|_| anyhow!("P2P client thread panicked"))??;
-        }
+        // The accept loop runs for the lifetime of the node. Reaching this
+        // point is only possible if the listener is shut down.
+        #[allow(unreachable_code)]
         Ok(())
     });
 
@@ -410,7 +414,7 @@ fn main() -> Result<()> {
             // Periodically drain completed thread handles to prevent
             // unbounded Vec growth (each JoinHandle retains thread metadata).
             if handles.len() >= 128 {
-                handles.retain(|h| !h.is_finished());
+                handles.retain(|h: &std::thread::JoinHandle<Result<()>>| !h.is_finished());
             }
         }
         for handle in handles {

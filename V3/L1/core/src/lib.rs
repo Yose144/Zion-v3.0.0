@@ -245,8 +245,13 @@ impl BlockCandidate {
                 h32[..len].copy_from_slice(&header_bytes[..len]);
                 zion_auxpow::hash_kawpow(&h32, self.nonce, self.height as u32).1
             }
-            "ethash" | "etchash" => {
-                zion_auxpow::hash_ethash(&header_bytes, self.nonce, self.height as u32)
+            "ethash" => {
+                // Ethash (ETHW) pools send the 32-byte pre-hashed block header.
+                // The 80-byte MiningHeader wrapper places it in `previous_hash`.
+                zion_auxpow::hash_ethash(&self.header.previous_hash, self.nonce, self.height as u32)
+            }
+            "etchash" | "ethash_etc" => {
+                zion_auxpow::hash_etchash(&self.header.previous_hash, self.nonce, self.height as u32)
             }
             // VerusHash / RandomX have no pure-Rust fallback — use deeksha_lite
             // as placeholder.  Real validation requires native-ffi feature.
