@@ -25,7 +25,7 @@ impl Default for FreeWorldConfig {
             bind: "0.0.0.0".to_string(),
             port: 8095,
             db_path: "./free_world.db".to_string(),
-            l1_rpc_url: "http://127.0.0.1:8443/jsonrpc".to_string(),
+            l1_rpc_url: "http://127.0.0.1:9443/jsonrpc".to_string(),
             scan_interval_secs: 60,
             api_key: std::env::var("FREE_WORLD_API_KEY").unwrap_or_default(),
             humanitarian_fund_address: "zion1humanitarian0000000000000000000000".to_string(),

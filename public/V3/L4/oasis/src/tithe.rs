@@ -140,7 +140,7 @@ impl TitheTracker {
             *totals.entry(c.player_address.clone()).or_default() += c.amount;
         }
         let mut sorted: Vec<(String, u64)> = totals.into_iter().collect();
-        sorted.sort_by(|a, b| b.1.cmp(&a.1));
+        sorted.sort_by_key(|b| std::cmp::Reverse(b.1));
         sorted.truncate(limit);
         sorted
     }

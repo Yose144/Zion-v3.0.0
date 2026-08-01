@@ -664,8 +664,7 @@ mod tests {
             assert!(
                 output.admin_locked,
                 "premine slot {} ({}) is NOT admin-locked — all must be locked",
-                output.address,
-                output.category
+                output.address, output.category
             );
         }
     }

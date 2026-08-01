@@ -222,7 +222,7 @@ impl GuildRegistry {
     /// Top guilds by XP
     pub fn top_guilds(&self, limit: usize) -> Vec<&Guild> {
         let mut sorted: Vec<&Guild> = self.guilds.values().collect();
-        sorted.sort_by(|a, b| b.guild_xp.cmp(&a.guild_xp));
+        sorted.sort_by_key(|b| std::cmp::Reverse(b.guild_xp));
         sorted.truncate(limit);
         sorted
     }

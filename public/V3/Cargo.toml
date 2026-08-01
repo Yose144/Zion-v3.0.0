@@ -3,6 +3,7 @@ members = [
     "L1/cosmic-harmony",
     "L1/core",
     "L1/native-ffi",
+    "L1/types",
     "L1/pool",
     "L1/miner",
     "L2/bridge",
@@ -16,7 +17,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "3.0.5"
+version = "3.0.7"
 edition = "2021"
 license = "MIT"
 authors = ["Yose144"]

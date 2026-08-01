@@ -5684,13 +5684,13 @@ mod tests {
         let mut runtime = NodeRuntime::new("node-mainnet", NodeConfig::mainnet());
         let before = runtime.known_peers().len();
 
-        runtime.register_peer(PeerEndpoint::new("157.180.41.213", 8333));
+        runtime.register_peer(PeerEndpoint::new("198.51.100.1", 8333));
 
         assert_eq!(runtime.known_peers().len(), before);
         assert!(runtime
             .known_peers()
             .iter()
-            .all(|peer| peer.address() != "157.180.41.213:8333"));
+            .all(|peer| peer.address() != "198.51.100.1:8333"));
     }
 
     // ── Phase 12: Block Validation Hardening tests ─────────────────────
