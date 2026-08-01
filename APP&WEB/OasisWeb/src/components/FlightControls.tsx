@@ -4,11 +4,15 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
+import { WORLDS } from '../domain/config/worlds';
+import type { World } from '../domain/types/world';
 
 interface FlightControlsProps {
   enabled: boolean;
   onExit: () => void;
   onSpeedChange?: (speed: number) => void;
+  onCanLand?: (world: World | null) => void;
+  onApproach?: (world: World) => void;
   baseSpeed?: number;
 }
 
@@ -42,11 +46,12 @@ export interface FlightControlsHandle {
 }
 
 const FlightControls = forwardRef<FlightControlsHandle, FlightControlsProps>(
-  function FlightControls({ enabled, onExit, onSpeedChange, baseSpeed = 3.5 }, ref) {
+  function FlightControls({ enabled, onExit, onSpeedChange, onCanLand, onApproach, baseSpeed = 3.5 }, ref) {
     const { camera } = useThree();
     const controlsRef = useRef<any>(null);
     const keys = useRef({ ...keysInitial });
     const speedRef = useRef(0);
+    const canLandWorld = useRef<World | null>(null);
 
     useImperativeHandle(ref, () => ({
       lock: () => controlsRef.current?.lock(),
@@ -66,6 +71,10 @@ const FlightControls = forwardRef<FlightControlsHandle, FlightControlsProps>(
         const k = e.key.toLowerCase();
         if (k === 'f') {
           onExit();
+          return;
+        }
+        if (k === 'l' && canLandWorld.current) {
+          onApproach?.(canLandWorld.current);
           return;
         }
         if (k === ' ') keys.current.boost = true;
@@ -96,6 +105,31 @@ const FlightControls = forwardRef<FlightControlsHandle, FlightControlsProps>(
       const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
       const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
       const up = new THREE.Vector3(0, 1, 0);
+
+      // Landing detection
+      let best: World | null = null;
+      let bestScore = 0;
+      for (const w of WORLDS) {
+        if (!w.galaxyPosition) continue;
+        const size = w.category === 'star-system' ? 0.28 : w.category === 'planet' ? 0.22 : w.category === 'world' ? 0.24 : 0.2;
+        const pos = new THREE.Vector3(w.galaxyPosition.x, w.galaxyPosition.y, w.galaxyPosition.z);
+        const dist = pos.distanceTo(camera.position);
+        const dir = pos.clone().sub(camera.position).normalize();
+        const dot = forward.dot(dir);
+        const maxDist = size * 7;
+        if (dist < maxDist && dot > 0.82) {
+          const score = dot * (1 - dist / maxDist);
+          if (score > bestScore) {
+            bestScore = score;
+            best = w;
+          }
+        }
+      }
+
+      if (best?.id !== canLandWorld.current?.id) {
+        canLandWorld.current = best;
+        onCanLand?.(best);
+      }
 
       const move = new THREE.Vector3();
       if (keys.current.forward) move.add(forward);

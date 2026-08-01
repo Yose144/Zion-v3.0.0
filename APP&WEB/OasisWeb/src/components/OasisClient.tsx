@@ -35,6 +35,7 @@ export default function OasisClient() {
   const [warping, setWarping] = useState(false);
   const [flightMode, setFlightMode] = useState(false);
   const [flightSpeed, setFlightSpeed] = useState(0);
+  const [landTarget, setLandTarget] = useState<World | null>(null);
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
   const { muted, toggle, start, playWarp } = useAudio();
 
@@ -97,6 +98,19 @@ export default function OasisClient() {
 
   const handleExitFlight = () => {
     setFlightMode(false);
+    setLandTarget(null);
+  };
+
+  const handleCanLand = (world: World | null) => {
+    setLandTarget(world);
+  };
+
+  const handleApproachWorld = (world: World) => {
+    playWarp();
+    setFlightMode(false);
+    setLandTarget(null);
+    setSelectedWorld(world);
+    setView('galaxy');
   };
 
   return (
@@ -114,6 +128,8 @@ export default function OasisClient() {
           flightControlsRef={flightControlsRef}
           onFlightSpeedChange={setFlightSpeed}
           flightSpeed={flightSpeed}
+          onCanLand={handleCanLand}
+          onApproach={handleApproachWorld}
         />
         {phase !== 'intro' && view === 'galaxy' && !flightMode && <OasisHud />}
 
@@ -253,6 +269,18 @@ export default function OasisClient() {
                   <p className="text-xs text-gray-300">Mouse — look</p>
                   <p className="text-xs text-gray-300">ESC or F — exit</p>
                 </div>
+
+                {landTarget && (
+                  <button
+                    onClick={() => handleApproachWorld(landTarget)}
+                    className="rounded-xl border border-oasis-gold/30 bg-oasis-gold/10 px-4 py-2 text-right shadow-lg backdrop-blur-md transition hover:bg-oasis-gold/20"
+                  >
+                    <p className="text-[10px] uppercase tracking-wider text-oasis-gold">Approach</p>
+                    <p className="text-sm font-bold text-white">{landTarget.name}</p>
+                    <p className="text-[10px] text-gray-400">Press L or click</p>
+                  </button>
+                )}
+
                 <button
                   onClick={handleExitFlight}
                   className="flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-4 py-2 text-xs font-bold text-white backdrop-blur-md transition hover:bg-white/10"
