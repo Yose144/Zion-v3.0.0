@@ -312,6 +312,21 @@ pub fn execute_proposal(
                 inner_proposal_id, target_layers
             )
         }
+
+        ProposalType::ParliamentaryElection { title, seats, .. } => {
+            // Allocate seats by D'Hondt and build a human-readable result table.
+            let allocated = proposal.allocate_seats();
+            let total_allocated: u64 = allocated.values().sum();
+            let table = allocated
+                .iter()
+                .map(|(party, s)| format!("{}: {}", party, s))
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!(
+                "Parliamentary election '{}' concluded for {} seats ({} allocated). Results: {}",
+                title, seats, total_allocated, if table.is_empty() { "no votes" } else { &table }
+            )
+        }
     };
 
     // Update status

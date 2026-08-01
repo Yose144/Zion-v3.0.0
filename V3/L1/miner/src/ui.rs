@@ -412,6 +412,15 @@ pub fn log_ext_rejected(stream_label: &str, coin: &str, algorithm: &str, reason:
 
 /// Print a block found celebration with ASCII art flag
 pub fn log_block_found(height: u64, nonce: u64, hash_prefix: &str) {
+    // Desktop agents get a compact machine-parseable line instead of ASCII art.
+    if std::env::var("ZION_NO_FANCY")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false)
+    {
+        println!("[BLOCK FOUND] height={} nonce={} hash={}...", height, nonce, hash_prefix);
+        return;
+    }
+
     let flag = r#"
                                     ╔══════════════════════════════════════════════════════════════════╗
                                     ║                    🐋 KEPORKAK BLOCK FOUND! 🐋                   ║
@@ -770,7 +779,7 @@ pub struct StreamStats {
 /// Example output:
 /// ```
 /// ┌─────────────────────────────────────────────────────────────────────────┐
-/// │  ZION v3.0.6 Trinity                              uptime 01:23:45 │
+/// │  ZION v3.0.7 Trinity                              uptime 01:23:45 │
 /// ├─────────────────────────────────────────────────────────────────────────┤
 /// │  STREAM 1  ZION       deeksha_lite_v1     12.34 MH/s  ████░░░  45/0  ✓  │
 /// │  STREAM 2  GPU PROFIT EPIC / progpow      SKIPPED (DAG-based on Metal)   │
@@ -840,9 +849,9 @@ fn build_trinity_box(
     s.push_str(BOLD);
     s.push_str(WHITE);
     #[cfg(feature = "public_build")]
-    let title_str = "  ZION v3.0.6 Miner";
+    let title_str = "  ZION v3.0.7 Miner";
     #[cfg(not(feature = "public_build"))]
-    let title_str = "  ZION v3.0.6 Trinity";
+    let title_str = "  ZION v3.0.7 Trinity";
     s.push_str(title_str);
     s.push_str(RESET);
     let title_len = title_str.chars().count();
@@ -1197,6 +1206,13 @@ pub fn exit_sticky_header() {
 /* ========================================================================= */
 
 pub fn print_fancy_banner(threads: usize, version: &str, backend: &str) {
+    // Desktop agents have their own splash/branding; suppress ASCII banner.
+    if std::env::var("ZION_NO_FANCY")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false)
+    {
+        return;
+    }
     let mut s = String::new();
     s.push_str(CYAN);
     s.push_str("╔══════════════════════════════════════════════════════════════════╗\n");

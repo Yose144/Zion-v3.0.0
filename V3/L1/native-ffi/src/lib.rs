@@ -275,6 +275,45 @@ pub mod etchash {
         /// Return a `'static` pointer to the linked C library's version
         /// literal (read-only, must not be freed). May be null on stub builds.
         pub fn ethash_version() -> *const std::ffi::c_char;
+
+        // ── Primary DAG-based API (real Ethash) ───────────────────────
+        /// Compute the full Ethash hash over a precomputed DAG.
+        ///
+        /// # Safety
+        /// - `header_hash` must point to 32 readable bytes.
+        /// - `dag` must point to `dag_size_entries * 128` readable bytes.
+        /// - `output` must point to 32 writable bytes, non-aliasing.
+        pub fn ethash_hash_dag(
+            header_hash: *const u8,
+            nonce: u64,
+            dag: *const u8,
+            dag_size_entries: u64,
+            output: *mut u8,
+        );
+
+        /// Compute the full Ethash hash over a precomputed DAG and return 1
+        /// if it meets `target` (big-endian comparison), else 0.
+        ///
+        /// # Safety
+        /// Same as [`ethash_hash_dag`], plus `target` must point to 32
+        /// readable bytes.
+        pub fn ethash_mine(
+            header_hash: *const u8,
+            nonce: u64,
+            dag: *const u8,
+            dag_size_entries: u64,
+            target: *const u8,
+            output: *mut u8,
+        ) -> i32;
+
+        /// Register a precomputed DAG for the legacy `ethash_hash`/`
+        /// ethash_verify` path.  The DAG memory is owned by the caller and
+        /// must remain valid until the next `ethash_set_dag` or `ethash_cleanup`.
+        ///
+        /// # Safety
+        /// - `dag` must point to `dag_size_entries * 128` readable bytes that
+        ///   remain valid until the next call invalidates the reference.
+        pub fn ethash_set_dag(dag: *const u8, dag_size_entries: u64);
     }
 
     /// Compute the Ethash/EtcHash of a block header.
@@ -370,6 +409,79 @@ pub mod etchash {
         // SAFETY: `ethash_version` returns a pointer into static read-only
         // memory or null. `read_c_version_string` bounds the strlen scan.
         unsafe { safety::read_c_version_string(ethash_version()) }
+    }
+
+    // ── Primary DAG-based API (real Ethash) ───────────────────────────
+
+    /// Compute the real Ethash hash over a precomputed DAG.
+    ///
+    /// `header_hash` is the 32-byte block header hash, `dag` is the raw DAG
+    /// buffer (128 bytes per entry), and `dag_size_entries` is the number of
+    /// 128-byte entries.  Returns the 32-byte final Ethash hash.
+    pub fn hash_with_dag(
+        header_hash: &[u8; 32],
+        nonce: u64,
+        dag: &[u8],
+        dag_size_entries: u64,
+    ) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        // SAFETY: `header_hash` is a 32-byte array reference (non-null, valid);
+        // `dag.as_ptr()` is valid for `dag.len()` bytes; `out` is fresh stack
+        // memory and cannot alias either input. The C side only reads
+        // `dag_size_entries * 128` bytes from `dag`, so the caller must ensure
+        // `dag.len() >= dag_size_entries * 128`.
+        unsafe {
+            ethash_hash_dag(
+                header_hash.as_ptr(),
+                nonce,
+                dag.as_ptr(),
+                dag_size_entries,
+                out.as_mut_ptr(),
+            );
+        }
+        out
+    }
+
+    /// Compute the real Ethash hash over a precomputed DAG and check it
+    /// against `target`.  Returns `Some(hash)` if `hash <= target`
+    /// (big-endian comparison), else `None`.
+    pub fn mine(
+        header_hash: &[u8; 32],
+        nonce: u64,
+        dag: &[u8],
+        dag_size_entries: u64,
+        target: &[u8; 32],
+    ) -> Option<[u8; 32]> {
+        let mut out = [0u8; 32];
+        // SAFETY: same invariants as `hash_with_dag`; `target` is a 32-byte
+        // array reference (non-null, valid for 32 readable bytes).
+        let met = unsafe {
+            ethash_mine(
+                header_hash.as_ptr(),
+                nonce,
+                dag.as_ptr(),
+                dag_size_entries,
+                target.as_ptr(),
+                out.as_mut_ptr(),
+            )
+        };
+        if met == 1 {
+            Some(out)
+        } else {
+            None
+        }
+    }
+
+    /// Register a precomputed DAG for use by the legacy [`hash`] / [`verify`]
+    /// path.  The DAG buffer is borrowed (not copied) and must outlive
+    /// subsequent calls.
+    pub fn set_dag(dag: &[u8], dag_size_entries: u64) {
+        // SAFETY: `dag.as_ptr()` is valid for `dag.len()` bytes; the caller
+        // guarantees the buffer remains valid until the next `set_dag` /
+        // `cleanup` call. The C side stores only the pointer + length.
+        unsafe {
+            ethash_set_dag(dag.as_ptr(), dag_size_entries);
+        }
     }
 }
 
@@ -523,22 +635,21 @@ pub mod autolykos {
     //! # Safety / threading model
     //!
     //! - **Re-entrant / thread-safe.** No global mutable state; multiple
-    //!   threads may call [`hash`] / [`verify_u64`] concurrently with
-    //!   independent inputs.
-    //! - This module does not expose a `*_version()` C symbol.
+    //!   threads may call [`hash`] / [`verify_u64`] / [`mine`] / [`generate_table`]
+    //!   concurrently with independent inputs.
+    //! - [`hash`] generates a table internally on every call (malloc + free).
+    //!   For high-throughput mining, precompute the table once with
+    //!   [`generate_table`] and use [`mine`] per nonce.
+    //! - The `*_version()` pointer is `'static` read-only memory.
     use super::safety::{self, FfiError};
 
     unsafe extern "C" {
-        /// Compute Autolykos v2 hash.
+        /// Convenience: compute Autolykos v2 hash by generating the table
+        /// internally.  Returns the first 8 bytes of `output` as a LE u64.
         ///
         /// # Safety
         /// - `header` must be valid for `header_len` readable bytes.
-        /// - `output` must be valid for 32 writable bytes and may not alias
-        ///   `header`.
-        ///
-        /// # Returns
-        /// The first 8 bytes of `output` interpreted as a little-endian
-        /// `u64`, for caller convenience.
+        /// - `output` must be valid for 32 writable bytes, non-aliasing with header.
         pub fn autolykos_hash(
             header: *const u8,
             header_len: usize,
@@ -546,6 +657,39 @@ pub mod autolykos {
             height: u32,
             output: *mut u8,
         ) -> u64;
+
+        /// Generate the Autolykos v2 precomputed table.
+        ///
+        /// # Safety
+        /// - `header` must be valid for `header_len` readable bytes.
+        /// - `table` must be valid for `table_size * 8` writable bytes.
+        pub fn autolykos_generate_table(
+            header: *const u8,
+            header_len: usize,
+            height: u32,
+            table: *mut u64,
+            table_size: u64,
+        );
+
+        /// Mine a single nonce using a precomputed table.
+        ///
+        /// Returns 1 if hash <= `target` (big-endian), 0 otherwise.
+        /// If `table` is null, the table is generated internally.
+        ///
+        /// # Safety
+        /// - `header` valid for `header_len` bytes.
+        /// - `table` null or valid for `table_size * 8` readable bytes.
+        /// - `target` 32 readable bytes (or null to skip check).
+        /// - `output` 32 writable bytes, non-aliasing.
+        pub fn autolykos_mine(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            table: *const u64,
+            table_size: u64,
+            target: *const u8,
+            output: *mut u8,
+        ) -> i32;
 
         /// Verify a share against a 64-bit difficulty target.
         ///
@@ -562,9 +706,16 @@ pub mod autolykos {
 
         /// CPU microbenchmark; thread-safe.
         pub fn autolykos_benchmark_cpu(iterations: i32) -> f64;
+
+        /// `'static` read-only version literal; must not be freed.
+        pub fn autolykos_version() -> *const std::ffi::c_char;
     }
 
     /// Compute Autolykos v2 hash.  Returns 32-byte output hash.
+    ///
+    /// This convenience function generates the table internally on every call.
+    /// For production mining, precompute the table once with [`generate_table`]
+    /// and use [`mine`] per nonce.
     pub fn hash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
         let mut out = [0u8; 32];
         // SAFETY: `header` slice is valid for its length; `out` is a fresh
@@ -585,6 +736,82 @@ pub mod autolykos {
     pub fn try_hash(header: &[u8], nonce: u64, height: u32) -> Result<[u8; 32], FfiError> {
         safety::validate_input_len(header)?;
         Ok(hash(header, nonce, height))
+    }
+
+    /// Generate the Autolykos v2 precomputed table on the host.
+    ///
+    /// `table` must be pre-allocated with `table_size` entries (each 8 bytes).
+    /// The table is derived from `SHA256(header)` and `height`.
+    pub fn generate_table(header: &[u8], height: u32, table: &mut [u64]) {
+        // SAFETY: `header` slice is valid; `table` slice is valid for its
+        // length. Both are non-aliasing (different types).
+        unsafe {
+            autolykos_generate_table(
+                header.as_ptr(),
+                header.len(),
+                height,
+                table.as_mut_ptr(),
+                table.len() as u64,
+            );
+        }
+    }
+
+    /// Fallible variant of [`generate_table`].
+    pub fn try_generate_table(
+        header: &[u8],
+        height: u32,
+        table: &mut [u64],
+    ) -> Result<(), FfiError> {
+        safety::validate_input_len(header)?;
+        generate_table(header, height, table);
+        Ok(())
+    }
+
+    /// Mine a single nonce using a precomputed table.
+    ///
+    /// Returns `(hash, meets_target)`.  The 32-byte BLAKE2b-256 hash is
+    /// always computed; `meets_target` is `true` if `hash <= target`
+    /// (big-endian byte comparison).
+    ///
+    /// If `table` is empty, the table is generated internally (slower).
+    pub fn mine(
+        header: &[u8],
+        nonce: u64,
+        table: &[u64],
+        target: &[u8; 32],
+    ) -> ([u8; 32], bool) {
+        let mut out = [0u8; 32];
+        let table_ptr = if table.is_empty() {
+            std::ptr::null()
+        } else {
+            table.as_ptr()
+        };
+        // SAFETY: `header` valid for its length; `table_ptr` is null or valid
+        // for `table.len() * 8` bytes; `target` is 32 bytes; `out` is fresh
+        // stack memory, non-aliasing.
+        let meets = unsafe {
+            autolykos_mine(
+                header.as_ptr(),
+                header.len(),
+                nonce,
+                table_ptr,
+                table.len() as u64,
+                target.as_ptr(),
+                out.as_mut_ptr(),
+            )
+        };
+        (out, meets != 0)
+    }
+
+    /// Fallible variant of [`mine`].
+    pub fn try_mine(
+        header: &[u8],
+        nonce: u64,
+        table: &[u64],
+        target: &[u8; 32],
+    ) -> Result<([u8; 32], bool), FfiError> {
+        safety::validate_input_len(header)?;
+        Ok(mine(header, nonce, table, target))
     }
 
     /// Returns `true` if the hash value (first 8 bytes as LE u64) is below `target`.
@@ -610,6 +837,13 @@ pub mod autolykos {
     pub fn benchmark(iterations: i32) -> f64 {
         // SAFETY: thread-safe per module docs.
         unsafe { autolykos_benchmark_cpu(iterations) }
+    }
+
+    /// Return the C library's version string, or an [`FfiError`] if the
+    /// pointer is null / unterminated.
+    pub fn version() -> Result<String, FfiError> {
+        // SAFETY: `autolykos_version` returns a `'static` literal or null.
+        unsafe { safety::read_c_version_string(autolykos_version()) }
     }
 }
 
@@ -792,6 +1026,28 @@ pub mod blake3_algo {
         /// Same as [`blake3_hash`].
         pub fn blake3_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
 
+        /// ALPH (Alephium) double-Blake3: `blake3(blake3(nonce_24B || header))`.
+        ///
+        /// # Safety
+        /// `header_blob` valid for `header_len` bytes; `extranonce1` valid
+        /// for `extranonce1_len` bytes; `output` valid for 32 bytes.
+        pub fn blake3_alph(
+            header_blob: *const u8,
+            header_len: usize,
+            extranonce1: *const u8,
+            extranonce1_len: usize,
+            nonce: u64,
+            output: *mut u8,
+        );
+
+        /// ALPH with direct 64-bit candidate (no extranonce1 base).
+        pub fn blake3_alph_simple(
+            header_blob: *const u8,
+            header_len: usize,
+            nonce: u64,
+            output: *mut u8,
+        );
+
         /// Verify mining hash against 32-byte target.
         ///
         /// # Safety
@@ -803,6 +1059,19 @@ pub mod blake3_algo {
             nonce: u64,
             target: *const u8,
         ) -> i32;
+
+        /// Verify ALPH double-hash against 32-byte target.
+        pub fn blake3_alph_verify(
+            header_blob: *const u8,
+            header_len: usize,
+            extranonce1: *const u8,
+            extranonce1_len: usize,
+            nonce: u64,
+            target: *const u8,
+        ) -> i32;
+
+        /// Self-test: verifies blake3("") matches known vector. Returns 1/0.
+        pub fn blake3_selftest() -> i32;
 
         /// CPU microbenchmark; thread-safe.
         pub fn blake3_benchmark(iterations: i32) -> f64;
@@ -833,6 +1102,44 @@ pub mod blake3_algo {
             blake3_mine(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
         }
         out
+    }
+
+    /// ALPH (Alephium) double-Blake3 mining hash:
+    /// `blake3(blake3(nonce_24B || header_blob))`.
+    ///
+    /// The 24-byte nonce is: 8-byte big-endian candidate + 16 zero bytes.
+    /// candidate = base + nonce, where base is derived from extranonce1.
+    pub fn mine_alph(header_blob: &[u8], extranonce1: &[u8], nonce: u64) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        // SAFETY: same as `hash`; extranonce1 may be empty (ptr may be
+        // dangling but len=0 so no read occurs).
+        unsafe {
+            blake3_alph(
+                header_blob.as_ptr(),
+                header_blob.len(),
+                extranonce1.as_ptr(),
+                extranonce1.len(),
+                nonce,
+                out.as_mut_ptr(),
+            );
+        }
+        out
+    }
+
+    /// ALPH with a direct 64-bit candidate (no extranonce1 base).
+    pub fn mine_alph_simple(header_blob: &[u8], nonce: u64) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        // SAFETY: same as `hash`.
+        unsafe {
+            blake3_alph_simple(header_blob.as_ptr(), header_blob.len(), nonce, out.as_mut_ptr());
+        }
+        out
+    }
+
+    /// Run the BLAKE3 self-test (verifies blake3("") matches known vector).
+    pub fn selftest() -> bool {
+        // SAFETY: thread-safe, no pointers.
+        unsafe { blake3_selftest() == 1 }
     }
 
     /// Fallible variant of [`mine`] that rejects empty / oversized inputs.
@@ -1021,6 +1328,10 @@ pub mod verushash {
         /// - `verushash_init` must have completed at least once.
         pub fn verushash_hash(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
 
+        /// Compute VerusHash v2.2 of a complete header (no nonce appended).
+        /// The caller must embed the nonce in the header before calling.
+        pub fn verushash_hash_raw(header: *const u8, header_len: usize, output: *mut u8);
+
         /// Verify VerusHash v2.2 against 32-byte target.
         ///
         /// # Safety
@@ -1038,6 +1349,51 @@ pub mod verushash {
 
         /// `'static` read-only version literal; must not be freed.
         pub fn verushash_version() -> *const std::ffi::c_char;
+
+        // ── Two-stage mining hash (50-100x faster per nonce) ──────────
+        // Each thread must call hash_half + prepare_key once per job,
+        // then hash_with_nonce for each nonce.
+
+        /// Stage 1: Haraka512 chain → 64-byte intermediate (ONCE per job).
+        pub fn verushash_hash_half(
+            data: *const u8,
+            data_len: usize,
+            intermediate64: *mut u8,
+        );
+
+        /// Stage 2: GenNewCLKey from intermediate (ONCE per job).
+        pub fn verushash_prepare_key(intermediate64: *const u8);
+
+        /// Stage 3: CLHash + final Haraka512 (PER NONCE).
+        pub fn verushash_hash_with_nonce(
+            intermediate64: *const u8,
+            nonce_space15: *const u8,
+            output: *mut u8,
+        );
+
+        /// Reset thread-local two-stage state (call on new job).
+        pub fn verushash_mining_reset();
+
+        /// Batch nonce scan — entire loop in C++ (no per-nonce FFI overhead).
+        /// Returns 0 if found (out_hash + out_nonce populated), -1 if not found.
+        pub fn verushash_scan_nonces(
+            intermediate64: *const u8,
+            nonceSpace15_template: *const u8,
+            nonce_offset: u32,
+            start_nonce: u64,
+            end_nonce: u64,
+            target: *const u8,
+            out_hash: *mut u8,
+            out_nonce: *mut u64,
+        ) -> i64;
+
+        /// Extract precomputed key (8832 bytes) and blockhash_half (64 bytes)
+        /// for GPU kernel upload. Must be called after prepare_key.
+        /// Returns 0 on success, -1 if key not prepared.
+        pub fn verushash_get_gpu_keydata(
+            key_out: *mut u8,
+            blockhash_half_out: *mut u8,
+        ) -> i32;
     }
 
     use std::sync::Once;
@@ -1061,6 +1417,112 @@ pub mod verushash {
             verushash_hash(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
         }
         out
+    }
+
+    /// Hash a complete block header as-is (no nonce appended).
+    /// The caller must embed the nonce in the header's nonce field
+    /// and/or solution nonceSpace before calling.
+    pub fn hash_raw(header: &[u8]) -> [u8; 32] {
+        init();
+        let mut out = [0u8; 32];
+        unsafe {
+            verushash_hash_raw(header.as_ptr(), header.len(), out.as_mut_ptr());
+        }
+        out
+    }
+
+    // ── Two-stage mining hash (optimized path) ───────────────────────
+    // 50-100x faster per nonce than `hash_raw` for VRSC mining.
+    // Each thread: hash_half → prepare_key (once per job) → hash_with_nonce (per nonce).
+
+    /// Stage 1: Compute 64-byte intermediate state from full block data.
+    /// Call once per job. Returns 64-byte intermediate.
+    pub fn hash_half(data: &[u8]) -> [u8; 64] {
+        init();
+        let mut intermediate = [0u8; 64];
+        unsafe {
+            verushash_hash_half(data.as_ptr(), data.len(), intermediate.as_mut_ptr());
+        }
+        intermediate
+    }
+
+    /// Stage 2: Generate CLHash key from intermediate.
+    /// Call once per job after `hash_half`. Thread-local.
+    pub fn prepare_key(intermediate64: &[u8; 64]) {
+        init();
+        unsafe {
+            verushash_prepare_key(intermediate64.as_ptr());
+        }
+    }
+
+    /// Extract the precomputed GPU key data (8832 bytes) and blockhash_half (64 bytes).
+    /// Must be called after `prepare_key`. Returns None if key not prepared.
+    pub fn get_gpu_keydata() -> Option<([u8; 8832], [u8; 64])> {
+        init();
+        let mut key = [0u8; 8832];
+        let mut blockhash_half = [0u8; 64];
+        let ret = unsafe {
+            verushash_get_gpu_keydata(key.as_mut_ptr(), blockhash_half.as_mut_ptr())
+        };
+        if ret == 0 {
+            Some((key, blockhash_half))
+        } else {
+            None
+        }
+    }
+
+    /// Stage 3: Compute final 32-byte hash from intermediate + 15-byte nonceSpace.
+    /// Call per nonce. `prepare_key` must have been called first.
+    pub fn hash_with_nonce(intermediate64: &[u8; 64], nonce_space15: &[u8; 15]) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        unsafe {
+            verushash_hash_with_nonce(
+                intermediate64.as_ptr(),
+                nonce_space15.as_ptr(),
+                out.as_mut_ptr(),
+            );
+        }
+        out
+    }
+
+    /// Reset thread-local two-stage state. Call on new job.
+    pub fn mining_reset() {
+        unsafe {
+            verushash_mining_reset();
+        }
+    }
+
+    /// Batch nonce scan — entire loop runs in C++ (no per-nonce FFI overhead).
+    /// Prerequisites: `hash_half` + `prepare_key` must have been called on this thread.
+    /// Returns `Some((nonce, hash))` if a winning nonce is found, `None` otherwise.
+    pub fn scan_nonces(
+        intermediate64: &[u8; 64],
+        nonce_space_template: &[u8; 15],
+        nonce_offset: u32,
+        start_nonce: u64,
+        end_nonce: u64,
+        target: &[u8; 32],
+    ) -> Option<(u64, [u8; 32])> {
+        let mut out_hash = [0u8; 32];
+        let mut out_nonce: u64 = 0;
+        // SAFETY: all pointers are valid, sizes are correct.
+        let rc = unsafe {
+            verushash_scan_nonces(
+                intermediate64.as_ptr(),
+                nonce_space_template.as_ptr(),
+                nonce_offset,
+                start_nonce,
+                end_nonce,
+                target.as_ptr(),
+                out_hash.as_mut_ptr(),
+                &mut out_nonce as *mut u64,
+            )
+        };
+        if rc == 0 {
+            Some((out_nonce, out_hash))
+        } else {
+            None
+        }
     }
 
     /// Fallible variant of [`hash`] that rejects empty / oversized inputs.
@@ -1107,20 +1569,23 @@ pub mod verushash {
 pub mod randomx {
     //! # Safety / threading model
     //!
-    //! - **Thread-safe after init.** [`init`] is wrapped in a `std::sync::Once`
-    //!   and invoked transparently by every safe wrapper. After init returns,
-    //!   the C-side dataset/cache is treated as read-only and per-call
-    //!   hashing is re-entrant.
+    //! - **Seed-aware init.** [`init_with_seed`] reinitializes the RandomX
+    //!   cache/dataset when the seed hash changes (new epoch). [`init`]
+    //!   uses a zero seed for benchmarking.
+    //! - **Thread-safe hashing.** The C wrapper uses a mutex around
+    //!   `randomx_calculate_hash` so multiple threads can call [`hash`]
+    //!   concurrently.
     //! - The `*_version()` pointer is `'static` read-only memory.
     use super::safety::{self, FfiError};
 
     unsafe extern "C" {
-        /// Build the RandomX dataset / VM caches.
+        /// Build the RandomX dataset / VM caches from a seed hash.
+        /// Can be called multiple times — reinitializes only if seed changed.
         ///
         /// # Safety
-        /// May allocate large memory regions; thread-safety is provided
-        /// externally via the `Once` in this module.
-        pub fn randomx_zion_init();
+        /// - `seed` must be valid for `seed_len` readable bytes (typically 32).
+        /// - May allocate large memory regions (~2 GB for full dataset).
+        pub fn randomx_zion_init(seed: *const u8, seed_len: usize);
 
         /// Compute RandomX-Zion of `(header, nonce)` into 32 bytes.
         ///
@@ -1149,20 +1614,40 @@ pub mod randomx {
         pub fn randomx_zion_version() -> *const std::ffi::c_char;
     }
 
-    use std::sync::Once;
-    static INIT: Once = Once::new();
-
+    /// Initialize with a zero seed (for benchmarking / testing).
     pub fn init() {
-        INIT.call_once(|| {
-            // SAFETY: `Once` ensures the C-side init runs at most once.
-            unsafe {
-                randomx_zion_init();
-            }
-        });
+        let zero_seed = [0u8; 32];
+        init_with_seed(&zero_seed);
+    }
+
+    /// Initialize with a specific seed hash (from stratum mining.notify).
+    /// Reinitializes the cache/dataset only if the seed has changed.
+    pub fn init_with_seed(seed: &[u8]) {
+        // SAFETY: seed is a valid slice; C side handles reinit logic.
+        unsafe {
+            randomx_zion_init(seed.as_ptr(), seed.len());
+        }
     }
 
     pub fn hash(header: &[u8], nonce: u64) -> [u8; 32] {
-        init();
+        // NOTE: Do NOT call init() here — it would reinitialize with a zero
+        // seed on every hash, overriding the correct epoch seed set by
+        // init_with_seed(). The caller MUST call init() or init_with_seed()
+        // before calling hash(). See scan_randomx in miner_harness.rs.
+        let mut out = [0u8; 32];
+        // SAFETY: init has been called by the caller; slice + fresh 32-byte output.
+        unsafe {
+            randomx_zion_hash(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
+        }
+        out
+    }
+
+    /// Hash with a specific seed — reinitializes cache if seed changed.
+    /// If seed is empty, uses the currently initialized dataset (no reinit).
+    pub fn hash_with_seed(seed: &[u8], header: &[u8], nonce: u64) -> [u8; 32] {
+        if !seed.is_empty() {
+            init_with_seed(seed);
+        }
         let mut out = [0u8; 32];
         // SAFETY: init has completed; slice + fresh 32-byte stack output.
         unsafe {
@@ -1208,6 +1693,117 @@ pub mod randomx {
 }
 
 // ---------------------------------------------------------------------------
+// GhostRider (Raptoreum / RTM) — 15 sphlib core hashes + 6 CryptoNight variants
+// ---------------------------------------------------------------------------
+
+/// GhostRider FFI bindings for Raptoreum (RTM) CPU mining.
+///
+/// GhostRider is a stateless algorithm (no VM/dataset like RandomX), so
+/// `init()` is a no-op. The hash function injects a 4-byte LE nonce at
+/// offset 76 in the 80-byte block header before calling `gr_hash`.
+///
+/// Requires `native-ghostrider` feature.
+#[cfg(feature = "native-ghostrider")]
+pub mod ghostrider {
+    use super::safety::{self, FfiError};
+
+    unsafe extern "C" {
+        /// No-op — GhostRider is stateless.
+        pub fn ghostrider_zion_init();
+
+        /// Compute GhostRider hash of (header, nonce) into 32 bytes.
+        ///
+        /// # Safety
+        /// - `header` must be valid for `header_len` readable bytes.
+        /// - `output` must be valid for 32 writable bytes, non-aliasing.
+        pub fn ghostrider_zion_hash(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            output: *mut u8,
+        );
+
+        /// Verify GhostRider hash against 32-byte target. Returns 1/0.
+        pub fn ghostrider_zion_verify(
+            header: *const u8,
+            header_len: usize,
+            nonce: u64,
+            target: *const u8,
+        ) -> i32;
+
+        /// `'static` version literal; must not be freed.
+        pub fn ghostrider_zion_version() -> *const std::ffi::c_char;
+
+        /// Debug: call cryptonightdarklite_hash directly.
+        pub fn ghostrider_zion_cn_darklite_debug(
+            input: *const u8,
+            input_len: usize,
+            output: *mut u8,
+        );
+    }
+
+    /// Initialize GhostRider (no-op — algorithm is stateless).
+    pub fn init() {
+        unsafe {
+            ghostrider_zion_init();
+        }
+    }
+
+    /// Compute GhostRider hash of `(header, nonce)` → 32 bytes.
+    ///
+    /// The nonce is a 4-byte LE value injected at offset 76 in the 80-byte
+    /// Raptoreum block header. If `header` is shorter than 80 bytes, it is
+    /// zero-padded; if longer, only the first 80 bytes are used.
+    ///
+    /// **Thread-safety**: The C code is thread-safe — no global mutable state.
+    /// `oaes_alloc()` does NOT call srand()/rand() (IV is deterministic zeros).
+    /// All sphlib static tables are read-only. CryptoNight scratchpads use
+    /// alloca (per-thread stack). Safe to call from multiple threads.
+    pub fn hash(header: &[u8], nonce: u64) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        // SAFETY: Thread-safe — no global mutable state in gr_hash path.
+        unsafe {
+            ghostrider_zion_hash(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
+        }
+        out
+    }
+
+    /// Fallible variant of [`hash`].
+    pub fn try_hash(header: &[u8], nonce: u64) -> Result<[u8; 32], FfiError> {
+        safety::validate_input_len(header)?;
+        Ok(hash(header, nonce))
+    }
+
+    /// Verify GhostRider hash meets the 32-byte target (LE comparison).
+    pub fn verify(header: &[u8], nonce: u64, target: &[u8; 32]) -> bool {
+        // SAFETY: slice + fixed-size target.
+        unsafe { ghostrider_zion_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) == 1 }
+    }
+
+    /// Debug: call cryptonightdarklite_hash directly with given input.
+    pub fn cn_darklite_debug(input: &[u8]) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        unsafe {
+            ghostrider_zion_cn_darklite_debug(input.as_ptr(), input.len(), out.as_mut_ptr());
+        }
+        out
+    }
+
+    /// Strict variant of [`verify`] surfacing unexpected C return codes.
+    pub fn try_verify(header: &[u8], nonce: u64, target: &[u8; 32]) -> Result<bool, FfiError> {
+        safety::validate_input_len(header)?;
+        let code =
+            unsafe { ghostrider_zion_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) };
+        safety::parse_c_bool("ghostrider_zion_verify", code)
+    }
+
+    /// Return the C library's version string.
+    pub fn version() -> Result<String, FfiError> {
+        unsafe { safety::read_c_version_string(ghostrider_zion_version()) }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Algorithm registry  — enumerate which features are compiled in
 // ---------------------------------------------------------------------------
 
@@ -1246,6 +1842,10 @@ pub fn compiled_algorithms() -> Vec<&'static str> {
     #[cfg(feature = "native-randomx")]
     {
         v.push("randomx");
+    }
+    #[cfg(feature = "native-ghostrider")]
+    {
+        v.push("ghostrider");
     }
     v
 }
@@ -1405,8 +2005,28 @@ pub fn runtime_self_test() -> Vec<AlgoTestResult> {
     {
         let name = "randomx";
         let header = [0xA8u8; 76];
+        randomx::init();
         let h1 = randomx::hash(&header, 1);
         let h2 = randomx::hash(&header, 1);
+        let ok = h1 != [0u8; 32] && h1 == h2;
+        results.push(AlgoTestResult {
+            name,
+            passed: ok,
+            detail: if ok {
+                "deterministic, non-zero".into()
+            } else {
+                "FAILED: zero or non-deterministic".into()
+            },
+        });
+    }
+
+    #[cfg(feature = "native-ghostrider")]
+    {
+        let name = "ghostrider";
+        let header = [0xA9u8; 80];
+        ghostrider::init();
+        let h1 = ghostrider::hash(&header, 1);
+        let h2 = ghostrider::hash(&header, 1);
         let ok = h1 != [0u8; 32] && h1 == h2;
         results.push(AlgoTestResult {
             name,
@@ -1522,6 +2142,24 @@ mod tests {
         println!("blake3 smoke: {:02x?}", &hash[..8]);
     }
 
+    #[cfg(feature = "native-blake3-algo")]
+    #[test]
+    fn blake3_algo_selftest() {
+        assert!(blake3_algo::selftest(), "blake3 self-test must pass");
+    }
+
+    #[cfg(feature = "native-blake3-algo")]
+    #[test]
+    fn blake3_algo_alph_smoke() {
+        let header = [0x05u8; 32];
+        let hash = blake3_algo::mine_alph_simple(&header, 5678);
+        assert_ne!(hash, [0u8; 32], "blake3-alph must produce non-zero output");
+        // Double hash should differ from single hash
+        let single = blake3_algo::mine(&header, 5678);
+        assert_ne!(hash, single, "ALPH double-hash must differ from DCR single hash");
+        println!("blake3 alph smoke: {:02x?}", &hash[..8]);
+    }
+
     #[cfg(feature = "native-cosmic-harmony")]
     #[test]
     fn cosmic_harmony_smoke() {
@@ -1551,6 +2189,7 @@ mod tests {
     #[test]
     fn randomx_smoke() {
         let header = [0x08u8; 76];
+        randomx::init(); // ensure dataset is initialized before hashing
         let h1 = randomx::hash(&header, 0);
         let h2 = randomx::hash(&header, 0);
         assert_eq!(h1, h2, "randomx must be deterministic");

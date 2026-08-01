@@ -106,6 +106,17 @@ fn run_gpu_kat(
         .build()
         .unwrap();
 
+    // Stream weights set to zero so byproduct work is skipped and KAT hashes
+    // match the canonical CPU reference (same as ZION_GPU_NO_STREAM_BYPRODUCT).
+    let stream_weights_zero = [0.0f32; 6];
+    let stream_weights_buf: Buffer<f32> = Buffer::builder()
+        .queue(pro_que.queue().clone())
+        .flags(MemFlags::READ_ONLY)
+        .len(6)
+        .copy_host_slice(&stream_weights_zero)
+        .build()
+        .unwrap();
+
     // ── KAT verification: one nonce per enqueue (KAT nonces are sparse) ──
     println!("\n  KAT verification ({} vectors):", kat_vectors.len());
     let mut all_pass = true;
@@ -131,6 +142,7 @@ fn run_gpu_kat(
             .arg(1u32)
             .arg(&output_buf)
             .arg(&scratch_buf)
+            .arg(&stream_weights_buf)
             .build()
             .unwrap();
 
@@ -183,6 +195,7 @@ fn run_gpu_kat(
         .arg(bench_count)
         .arg(&bench_output)
         .arg(&bench_scratch)
+        .arg(&stream_weights_buf)
         .build()
         .unwrap();
 
@@ -247,6 +260,14 @@ fn main() {
         FIRE_KAT,
     );
 
+    let chv3_result = run_gpu_kat(
+        "DeekshaChv3",
+        opencl_kernel::DEEKSHA_CHV3_KERNEL,
+        opencl_kernel::DEEKSHA_CHV3_KERNEL_NAME,
+        LITE_KAT_HEADER,
+        LITE_KAT,
+    );
+
     // ── Summary ──
     println!("\n========================================");
     println!("  SUMMARY");
@@ -266,15 +287,24 @@ fn main() {
         if fire_result.all_pass { "PASS" } else { "FAIL" },
         fire_result.gpu_throughput_hps
     );
+    println!(
+        "  {:24} {:8} {:>12.0}",
+        chv3_result.algo_name,
+        if chv3_result.all_pass { "PASS" } else { "FAIL" },
+        chv3_result.gpu_throughput_hps
+    );
     println!();
 
-    if !lite_result.all_pass || !fire_result.all_pass {
+    if !lite_result.all_pass || !fire_result.all_pass || !chv3_result.all_pass {
         println!("  RESULT: FAILED — GPU kernel diverges from KAT vectors!");
         for m in &lite_result.mismatches {
             println!("    [Lite] {}", m);
         }
         for m in &fire_result.mismatches {
             println!("    [Fire] {}", m);
+        }
+        for m in &chv3_result.mismatches {
+            println!("    [Chv3] {}", m);
         }
         std::process::exit(1);
     }

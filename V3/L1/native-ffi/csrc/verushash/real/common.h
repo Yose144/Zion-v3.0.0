@@ -37,22 +37,22 @@
 #define htole64(x) (x)
 #endif
 #ifndef htobe16
-#define htobe16(x) __builtin_bswap16(x)
+#define htobe16(x) _byteswap_ushort(x)
 #endif
 #ifndef htobe32
-#define htobe32(x) __builtin_bswap32(x)
+#define htobe32(x) _byteswap_ulong(x)
 #endif
 #ifndef htobe64
-#define htobe64(x) __builtin_bswap64(x)
+#define htobe64(x) _byteswap_uint64(x)
 #endif
 #ifndef be16toh
-#define be16toh(x) __builtin_bswap16(x)
+#define be16toh(x) _byteswap_ushort(x)
 #endif
 #ifndef be32toh
-#define be32toh(x) __builtin_bswap32(x)
+#define be32toh(x) _byteswap_ulong(x)
 #endif
 #ifndef be64toh
-#define be64toh(x) __builtin_bswap64(x)
+#define be64toh(x) _byteswap_uint64(x)
 #endif
 #elif defined(__APPLE__)
 #include <machine/endian.h>

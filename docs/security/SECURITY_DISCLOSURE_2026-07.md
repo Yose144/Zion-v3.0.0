@@ -386,7 +386,7 @@ Following the Ethereum Foundation model:
 The following will **never** be published:
 
 1. **Private keys** — no secret key material, mnemonics, or key derivation seeds (current or historical)
-2. **Encrypted key archives** — `/home/zionserver/zion-keys-2026-07-06-encrypted.tar.gz.aes`
+2. **Encrypted key archives** — `/home/user/zion-keys-encrypted.tar.gz.aes`
 3. **Attacker forensics** — IP addresses, session logs, and artifacts preserved for law enforcement (NCOZ)
 4. **SSH credentials** — server access keys (rotated)
 5. **Historical git objects containing secrets** — will be removed via BFG Repo-Cleaner before publication

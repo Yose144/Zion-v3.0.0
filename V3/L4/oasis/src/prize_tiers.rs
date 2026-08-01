@@ -220,7 +220,7 @@ impl PrizeLedger {
 
     pub fn top_awards(&self, limit: usize) -> Vec<&PlayerPrize> {
         let mut sorted: Vec<&PlayerPrize> = self.awards.iter().collect();
-        sorted.sort_by(|a, b| b.zion_awarded.cmp(&a.zion_awarded));
+        sorted.sort_by_key(|b| std::cmp::Reverse(b.zion_awarded));
         sorted.truncate(limit);
         sorted
     }

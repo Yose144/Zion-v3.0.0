@@ -20,7 +20,15 @@ typedef unsigned long u64;
 #endif
 typedef __m128i u128;
 
+// Ensure C linkage when included from C++ files (zig cc compiles .c as C
+// and .cpp as C++, so without extern "C" the symbol names won't match).
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern void aesenc(unsigned char *s, const unsigned char *rk);
+#ifdef __cplusplus
+}
+#endif
 
 #define AES2_EMU(s0, s1, rci) \
   aesenc((unsigned char *)&s0, (unsigned char *)&(rc[rci])); \

@@ -43,9 +43,23 @@
 #include <sys/auxv.h>
 #include <asm/hwcap.h>
 #endif
+#elif defined(_WIN32)
+/* MSVC: intrin.h already included above; cpuid.h does not exist. Provide the
+   feature-bit constants used by IsCPUVerusOptimized(). */
+#ifndef bit_AVX
+#define bit_AVX (1 << 28)
+#endif
+#ifndef bit_AES
+#define bit_AES (1 << 25)
+#endif
+#ifndef bit_PCLMUL
+#define bit_PCLMUL (1 << 1)
+#endif
 #else
+/* <x86intrin.h> is already included by compat.h; <cpuid.h> is not
+   (avoiding a redefinition on GCC 9).  Include it here for the
+   __get_cpuid / bit_* constants used in IsCPUVerusOptimized(). */
 #include <cpuid.h>
-#include <x86intrin.h>
 #endif // !WIN32
 
 /* boost stubbed by compat.h */
@@ -129,6 +143,14 @@ inline bool IsCPUVerusOptimized()
     else
         __cpuverusoptimized = false;
 #endif
+    #elif defined(_WIN32)
+    if (__cpuverusoptimized & 0x80)
+    {
+        int cpuInfo[4];
+        __cpuid(cpuInfo, 1);
+        unsigned int ecx = cpuInfo[2];
+        __cpuverusoptimized = ((ecx & (bit_AVX | bit_AES | bit_PCLMUL)) == (bit_AVX | bit_AES | bit_PCLMUL));
+    }
     #else
     if (__cpuverusoptimized & 0x80)
     {
