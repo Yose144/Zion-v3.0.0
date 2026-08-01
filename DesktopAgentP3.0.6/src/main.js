@@ -1,4 +1,4 @@
-// ZION V3 Mainnet Ready v3.1.0 "Triple Parallel" - Main Process
+// ZION V3 Mainnet Ready v3.1.0 - Public Desktop Miner
 // Electron main process with system tray, auto-start, GPU mining, IPC
 
 // Public build flag: this is the public DesktopAgentP3.0.6 release.
@@ -2137,7 +2137,7 @@ function createTray() {
   
   trayMenu = Menu.buildFromTemplate([
     {
-      label: 'ZION Miner v3.1.0 Ekam Deeksha',
+      label: 'ZION Public Miner v3.1.0',
       enabled: false
     },
     { type: 'separator' },
@@ -2191,7 +2191,7 @@ function createTray() {
   ]);
 
   tray.setContextMenu(trayMenu);
-  tray.setToolTip('ZION Miner v3.1.0 Ekam Deeksha');
+  tray.setToolTip('ZION Public Miner v3.1.0');
   
   tray.on('click', () => {
     showWindow();
@@ -4409,7 +4409,7 @@ ipcMain.handle('get-gpu-info', () => {
   }
 });
 
-// ── Ekam Deeksha v3.0.5 — GPU device enumeration ──
+// ── GPU device enumeration ──
 ipcMain.handle('get-gpu-devices', () => {
   try {
     const info = detectGPU();
@@ -4419,7 +4419,7 @@ ipcMain.handle('get-gpu-devices', () => {
   }
 });
 
-// ── Ekam Deeksha v3.0.5 — GPU benchmark (runs miner in benchmark mode) ──
+// ── GPU benchmark (runs miner in benchmark mode) ──
 ipcMain.handle('run-gpu-benchmark', async (_event, options = {}) => {
   try {
     const gpuInfo = detectGPU();
