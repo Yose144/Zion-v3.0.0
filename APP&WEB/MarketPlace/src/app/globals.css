@@ -112,17 +112,33 @@
     background: rgba(7, 10, 20, 0.88);
   }
 
-  /* ── Card — standard dark card with subtle border glow ── */
+  /* ── ZION Section — standard dark panel (legacy .card alias) ── */
+  .zion-section,
   .card {
     @apply border border-zion-border rounded-2xl backdrop-blur-sm transition-all duration-300;
     background: rgba(7, 10, 20, 0.82);
   }
+  .zion-section:hover,
   .card:hover {
     @apply border-zion-border/80;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   }
 
-  /* ── Glow card — for featured/important items ── */
+  /* ── ZION Tile — soft inner tile for grids and sub-panels ── */
+  .zion-tile {
+    border-radius: var(--zion-radius-lg);
+    border: 1px solid var(--zion-border-subtle);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    backdrop-filter: blur(16px);
+    transition: border-color 180ms ease, background-color 180ms ease;
+  }
+  .zion-tile:hover {
+    border-color: var(--zion-border-strong);
+    background-color: rgba(255, 255, 255, 0.075);
+  }
+
+  /* ── Glow card — for featured/important items (legacy; use .zion-rainbow-sub for new code) ── */
   .card-glow {
     @apply card;
     box-shadow:
@@ -240,51 +256,77 @@
   /* ── ZION gradient text ── */
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background: linear-gradient(90deg, #06b6d4, #9333ea, #ffd700);
+    background-image: linear-gradient(90deg, #06b6d4, #9333ea, #ffd700);
     background-size: 200% auto;
   }
   .text-gradient-gold {
     @apply bg-clip-text text-transparent;
-    background: linear-gradient(90deg, #ffd700, #f59e0b, #ffd700);
+    background-image: linear-gradient(90deg, #ffd700, #f59e0b, #ffd700);
     background-size: 200% auto;
   }
   .text-gradient-cyan {
     @apply bg-clip-text text-transparent;
-    background: linear-gradient(90deg, #06b6d4, #22d3ee);
+    background-image: linear-gradient(90deg, #06b6d4, #22d3ee);
   }
   .text-gradient-animated {
     @apply bg-clip-text text-transparent;
-    background: linear-gradient(90deg, #06b6d4, #9333ea, #ffd700, #06b6d4);
+    background-image: linear-gradient(90deg, #06b6d4, #9333ea, #ffd700, #06b6d4);
     background-size: 300% auto;
     animation: gradientX 6s ease infinite;
   }
 
-  /* ── Buttons ── */
+  /* ── ZION Buttons (canonical) + legacy aliases ── */
+  .zion-button-primary,
   .btn-primary {
-    @apply px-5 py-2.5 rounded-xl font-bold text-white transition-all duration-200 relative overflow-hidden;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white transition-all duration-200 relative overflow-hidden;
     background: linear-gradient(110deg, #ffd700, #9333ea 52%, #06b6d4);
     background-size: 200% auto;
     box-shadow: 0 18px 45px rgba(147, 51, 234, 0.34);
   }
+  .zion-button-primary:hover,
   .btn-primary:hover {
     background-position: right center;
     box-shadow: 0 24px 60px rgba(147, 51, 234, 0.44);
     transform: translateY(-1px);
     filter: saturate(1.08);
   }
+  .zion-button-primary:active,
   .btn-primary:active {
     transform: translateY(0);
   }
-  .btn-secondary {
-    @apply px-5 py-2.5 rounded-xl font-bold text-white bg-white/5 border border-white/10 transition-all duration-200;
+  .zion-button-primary:disabled,
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
+
+  .zion-button-secondary,
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white bg-white/5 border border-white/10 transition-all duration-200;
+  }
+  .zion-button-secondary:hover,
   .btn-secondary:hover {
     @apply bg-white/10 border-white/20;
     transform: translateY(-1px);
   }
-  .btn-ghost {
-    @apply px-4 py-2.5 rounded-xl font-bold text-gray-300 bg-white/5 border border-white/10 transition-all hover:bg-white/10;
+  .zion-button-secondary:disabled,
+  .btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
+
+  .zion-button-ghost,
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-gray-300 bg-white/5 border border-white/10 transition-all hover:bg-white/10;
+  }
+  .zion-button-ghost:hover,
+  .btn-ghost:hover {
+    transform: translateY(-1px);
+  }
+
+  .zion-button-icon,
   .btn-icon {
     @apply p-2.5 w-11 h-11 flex items-center justify-center rounded-xl;
   }
@@ -410,6 +452,70 @@
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.6), transparent);
     pointer-events: none;
+  }
+
+  /* ── ZION Hero grid — dashboard-style status cards ── */
+  .zion-hero-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  @media (min-width: 640px) {
+    .zion-hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1024px) {
+    .zion-hero-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+
+  .zion-hero-card {
+    --rc: 16, 185, 129;
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--zion-radius-lg);
+    border: 1px solid rgba(var(--rc), 0.2);
+    background:
+      linear-gradient(135deg, rgba(var(--rc), 0.08), rgba(var(--rc), 0.03)),
+      rgba(7, 10, 20, 0.82);
+    padding: 1.25rem;
+    transition: border-color 250ms ease, box-shadow 250ms ease, transform 250ms ease;
+  }
+  .zion-hero-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(var(--rc), 0.5), transparent);
+    pointer-events: none;
+  }
+  .zion-hero-card:hover {
+    border-color: rgba(var(--rc), 0.4);
+    box-shadow: 0 12px 40px rgba(var(--rc), 0.15);
+    transform: translateY(-2px);
+  }
+
+  /* ── ZION Table ── */
+  .zion-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .zion-table th,
+  .zion-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .zion-table th {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .zion-table tbody tr {
+    transition: background-color 150ms ease;
+  }
+  .zion-table tbody tr:hover {
+    background-color: rgba(var(--rc, 16, 185, 129), 0.06);
   }
 
   /* ── Input styles ── */

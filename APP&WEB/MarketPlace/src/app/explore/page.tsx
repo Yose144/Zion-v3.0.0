@@ -1,8 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
+import { Globe, Zap, Gavel, SearchX } from 'lucide-react';
 import ItemCard, { type ArtifactCardData, type Rarity } from '@/components/ItemCard';
+import { getItems, type ItemsFilters, type ItemsResponse } from '@/lib/market-api';
 
+const rarities: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'unique'];
+const collections = ['All', 'OASIS Genesis', 'OASIS Quest', 'OASIS Ships', 'OASIS Territory', 'Golden Eggs', 'OASIS Cosmetics'];
+
+// Fallback mock data for dev without a populated DB
 const mockItems: ArtifactCardData[] = [
   { id: '1', name: 'Tree of Life Avatar', image: '', collection: 'OASIS Genesis', rarity: 'mythic', price: '2,500', listingType: 'fixed' },
   { id: '2', name: 'Warp Gate Key', image: '', collection: 'OASIS Quest', rarity: 'legendary', price: '800', listingType: 'auction', bestBid: '1,200', endsAt: Date.now() + 36e5 * 5 },
@@ -18,12 +24,10 @@ const mockItems: ArtifactCardData[] = [
   { id: '12', name: 'Genesis Crown', image: '', collection: 'OASIS Genesis', rarity: 'mythic', listingType: 'none' },
 ];
 
-const rarities: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'unique'];
-const collections = ['All', 'OASIS Genesis', 'OASIS Quest', 'OASIS Ships', 'OASIS Territory', 'Golden Eggs', 'OASIS Cosmetics'];
 const sortOptions = [
   { value: 'recent', label: 'Recently Listed' },
-  { value: 'price-low', label: 'Price: Low → High' },
-  { value: 'price-high', label: 'Price: High → Low' },
+  { value: 'price_low', label: 'Price: Low → High' },
+  { value: 'price_high', label: 'Price: High → Low' },
   { value: 'rarity', label: 'Rarity' },
 ];
 
@@ -33,26 +37,47 @@ export default function ExplorePage() {
   const [listingFilter, setListingFilter] = useState<'all' | 'fixed' | 'auction'>('all');
   const [sort, setSort] = useState('recent');
   const [search, setSearch] = useState('');
+  const [items, setItems] = useState<ArtifactCardData[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = useMemo(() => {
-    let items = [...mockItems];
-    if (collection !== 'All') items = items.filter(i => i.collection === collection);
-    if (selectedRarities.size > 0) items = items.filter(i => selectedRarities.has(i.rarity));
-    if (listingFilter !== 'all') items = items.filter(i => i.listingType === listingFilter);
-    if (search) {
-      const q = search.toLowerCase();
-      items = items.filter(i => i.name.toLowerCase().includes(q) || i.collection.toLowerCase().includes(q));
-    }
-    const priceNum = (i: ArtifactCardData) => parseFloat((i.bestBid || i.price || '0').replace(/,/g, ''));
-    switch (sort) {
-      case 'price-low': items.sort((a, b) => priceNum(a) - priceNum(b)); break;
-      case 'price-high': items.sort((a, b) => priceNum(b) - priceNum(a)); break;
-      case 'rarity': {
-        const order: Record<Rarity, number> = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, mythic: 5, unique: 6 };
-        items.sort((a, b) => order[b.rarity] - order[a.rarity]); break;
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    const filters: ItemsFilters = {
+      sort: sort as ItemsFilters['sort'],
+      page: 1,
+      pageSize: 60,
+    };
+
+    if (collection !== 'All') filters.category = collection.toLowerCase().replace(/\s+/g, '_');
+    if (selectedRarities.size === 1) filters.rarity = Array.from(selectedRarities)[0];
+
+    getItems(filters).then((res: ItemsResponse | null) => {
+      if (cancelled) return;
+      const base = res?.data ?? mockItems;
+      let data = [...base];
+      if (search) {
+        const q = search.toLowerCase();
+        data = data.filter((i) => i.name.toLowerCase().includes(q) || (i.collection ?? '').toLowerCase().includes(q));
       }
-    }
-    return items;
+      if (listingFilter !== 'all') {
+        data = data.filter((i) => (i.listingType ?? 'none') === listingFilter);
+      }
+      if (selectedRarities.size > 0) {
+        data = data.filter((i) => selectedRarities.has(i.rarity));
+      }
+      // Client-side collection filter for fallback mock data
+      if (collection !== 'All') {
+        data = data.filter((i) => i.collection === collection);
+      }
+      setItems(data);
+      setTotal(res?.total ?? base.length);
+      setLoading(false);
+    });
+
+    return () => { cancelled = true; };
   }, [collection, selectedRarities, listingFilter, sort, search]);
 
   const toggleRarity = (r: Rarity) => {
@@ -91,7 +116,7 @@ export default function ExplorePage() {
         {/* Filters sidebar */}
         <aside className="space-y-4">
           {/* Collection */}
-          <div className="card p-4">
+          <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-purple" />
               Collection
@@ -114,7 +139,7 @@ export default function ExplorePage() {
           </div>
 
           {/* Rarity */}
-          <div className="card p-4">
+          <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-gold" />
               Rarity
@@ -135,7 +160,7 @@ export default function ExplorePage() {
           </div>
 
           {/* Listing type */}
-          <div className="card p-4">
+          <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
               Listing
@@ -151,7 +176,10 @@ export default function ExplorePage() {
                       : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                   }`}
                 >
-                  {t === 'all' ? '🌐 All listings' : t === 'fixed' ? '⚡ Buy now' : '🔨 Auctions'}
+                  <span className="inline-flex items-center gap-2">
+                    {t === 'all' ? <Globe className="w-4 h-4" /> : t === 'fixed' ? <Zap className="w-4 h-4" /> : <Gavel className="w-4 h-4" />}
+                    {t === 'all' ? 'All listings' : t === 'fixed' ? 'Buy now' : 'Auctions'}
+                  </span>
                 </button>
               ))}
             </div>
@@ -162,7 +190,7 @@ export default function ExplorePage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-500">
-              <span className="text-white font-bold">{filtered.length}</span> items
+              <span className="text-white font-bold">{total}</span> items
             </span>
             <select
               value={sort}
@@ -175,15 +203,20 @@ export default function ExplorePage() {
             </select>
           </div>
 
-          {filtered.length === 0 ? (
-            <div className="card p-16 text-center">
-              <div className="text-5xl mb-4 opacity-30">🔍</div>
+          {loading ? (
+            <div className="zion-section p-16 text-center">
+              <div className="w-10 h-10 border-2 border-oasis-cyan/30 border-t-oasis-cyan rounded-full animate-spin mx-auto mb-4" />
+              <div className="text-gray-500">Loading artifacts…</div>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="zion-section p-16 text-center">
+              <SearchX className="w-16 h-16 mx-auto mb-4 opacity-30" />
               <div className="text-gray-500 mb-1">No items match your filters</div>
               <div className="text-xs text-gray-600">Try adjusting your search or filters</div>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filtered.map((item, i) => (
+              {items.map((item, i) => (
                 <div key={item.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 0.04}s` }}>
                   <ItemCard item={item} />
                 </div>

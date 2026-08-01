@@ -30,12 +30,12 @@ export default function ConnectButton() {
         <button
           onClick={() => setWalletMenu(!walletMenu)}
           disabled={isPending}
-          className="btn-primary text-sm"
+          className="zion-button-primary text-sm"
         >
           {isPending ? 'Connecting…' : 'Connect Wallet'}
         </button>
         {walletMenu && (
-          <div className="absolute right-0 mt-2 w-64 card p-2 z-50">
+          <div className="absolute right-0 mt-2 w-64 zion-section p-2 z-50">
             <div className="px-3 py-2 text-xs text-gray-500 border-b border-white/5 mb-1">
               Choose wallet
             </div>
@@ -71,7 +71,7 @@ export default function ConnectButton() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className={`btn-secondary flex items-center gap-2 ${wrongChain ? 'border-oasis-rose/50 text-oasis-rose' : ''}`}
+        className={`zion-button-secondary flex items-center gap-2 ${wrongChain ? 'border-oasis-rose/50 text-oasis-rose' : ''}`}
       >
         <span className={`status-dot ${wrongChain ? 'status-inactive' : 'status-active'}`} />
         <span className="font-mono text-sm">{short}</span>
@@ -80,7 +80,7 @@ export default function ConnectButton() {
         </svg>
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-56 card p-2 z-50">
+        <div className="absolute right-0 mt-2 w-56 zion-section p-2 z-50">
           {wrongChain && (
             <div className="px-3 py-2 text-xs text-oasis-rose border-b border-white/5 mb-1">
               Wrong network — switch to Base

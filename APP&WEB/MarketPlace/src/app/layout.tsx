@@ -4,6 +4,7 @@ import './globals.css';
 import { Providers } from './providers';
 import Navbar from '@/components/Navbar';
 import StarfieldCanvas from '@/components/StarfieldCanvas';
+import { CartProvider } from '@/components/shop/CartContext';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
@@ -40,11 +41,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="orb orb-purple" aria-hidden="true" />
         <div className="orb orb-cyan" aria-hidden="true" />
         <Providers>
-          <Navbar />
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 min-h-[calc(100vh-4rem)]">
-            {children}
-          </main>
-          <footer className="border-t border-white/5 mt-16 relative">
+          <CartProvider>
+            <Navbar />
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 min-h-[calc(100vh-4rem)]">
+              {children}
+            </main>
+            <footer className="border-t border-white/5 mt-16 relative">
             <div className="section-line absolute top-0 inset-x-0" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
@@ -91,6 +93,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
             </div>
           </footer>
+          </CartProvider>
         </Providers>
       </body>
     </html>

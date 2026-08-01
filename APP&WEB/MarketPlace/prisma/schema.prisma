@@ -168,3 +168,60 @@ model EventLog {
   @@index([contractAddress])
   @@index([eventName])
 }
+
+// ── eShop (physical + digital products & orders) ───────────────────
+
+model ShopProduct {
+  id              String   @id @default(cuid())
+  externalId      String   @unique
+  name            String
+  category        String
+  description     String   @db.Text
+  priceCzk        Int
+  oldPriceCzk     Int?
+  image           String
+  badge           String?
+  inStock         Boolean  @default(true)
+  size            String?
+  stock           Int      @default(0)
+  tokens          Int      @default(0)
+  modelUrl        String?
+  filesUrl        String?
+  instructionsUrl String?
+  digital         Boolean  @default(false)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([category])
+  @@index([active])
+  @@index([inStock])
+}
+
+model ShopOrder {
+  id             String   @id @default(cuid())
+  orderId        String   @unique
+  status         String   @default("pending") // pending | paid | processing | shipped | completed | cancelled
+  customerName   String
+  customerEmail  String
+  customerPhone  String
+  shipping       String   // zasilkovna | zasilkovna-home | virtualni-nakup | virtualni-odber
+  payment        String   // transfer | card | crypto
+  addressStreet  String?
+  addressCity    String?
+  addressZip     String?
+  pickupPoint    Json?
+  note           String?  @db.Text
+  totalCzk       Int
+  shippingCzk    Int
+  items          Json
+  zionTokens     Int      @default(0)
+  termsAccepted  Boolean  @default(false)
+  newsletter     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status])
+  @@index([customerEmail])
+  @@index([orderId])
+}
