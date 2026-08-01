@@ -150,6 +150,8 @@ interface OasisSceneProps {
   view: 'galaxy' | 'world';
   flightMode: boolean;
   onExitFlight: () => void;
+  flightControlsRef: React.RefObject<import('./FlightControls').FlightControlsHandle | null>;
+  onFlightSpeedChange: (speed: number) => void;
 }
 
 export default function OasisScene({
@@ -161,6 +163,8 @@ export default function OasisScene({
   view,
   flightMode,
   onExitFlight,
+  flightControlsRef,
+  onFlightSpeedChange,
 }: OasisSceneProps) {
   return (
     <Canvas camera={{ position: [0, 3.5, 34], fov: 55 }} dpr={[1, 2]}>
@@ -213,7 +217,14 @@ export default function OasisScene({
       />
 
       {/* First-person flight controls */}
-      {flightMode && <FlightControls enabled={flightMode} onExit={onExitFlight} />}
+      {flightMode && (
+        <FlightControls
+          ref={flightControlsRef}
+          enabled={flightMode}
+          onExit={onExitFlight}
+          onSpeedChange={onFlightSpeedChange}
+        />
+      )}
 
       {/* Bloom for glow */}
       <EffectComposer>

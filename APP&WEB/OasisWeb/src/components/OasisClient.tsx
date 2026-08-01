@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import WarpFlash from './WarpFlash';
 import { ChevronRight, Plane, X } from 'lucide-react';
 import { useAudio, AudioToggle } from './AudioEngine';
+import type { FlightControlsHandle } from './FlightControls';
 import type { World, WorldCategory } from '../domain/types/world';
 
 const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
@@ -33,6 +34,8 @@ export default function OasisClient() {
   const [view, setView] = useState<'galaxy' | 'world'>('galaxy');
   const [warping, setWarping] = useState(false);
   const [flightMode, setFlightMode] = useState(false);
+  const [flightSpeed, setFlightSpeed] = useState(0);
+  const flightControlsRef = useRef<FlightControlsHandle | null>(null);
   const { muted, toggle, start, playWarp } = useAudio();
 
   useEffect(() => {
@@ -108,6 +111,8 @@ export default function OasisClient() {
           view={view}
           flightMode={flightMode}
           onExitFlight={handleExitFlight}
+          flightControlsRef={flightControlsRef}
+          onFlightSpeedChange={setFlightSpeed}
         />
         {phase !== 'intro' && view === 'galaxy' && !flightMode && <OasisHud />}
 
@@ -145,7 +150,10 @@ export default function OasisClient() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setFlightMode(true)}
+                  onClick={() => {
+                    setFlightMode(true);
+                    setTimeout(() => flightControlsRef.current?.lock(), 0);
+                  }}
                   className="inline-flex items-center gap-2 rounded-full border border-oasis-cyan/30 bg-oasis-cyan/10 px-4 py-2.5 text-sm font-bold text-oasis-cyan shadow-lg backdrop-blur-sm transition hover:bg-oasis-cyan/20"
                 >
                   <Plane className="h-4 w-4" />
@@ -229,7 +237,15 @@ export default function OasisClient() {
               <div className="pointer-events-auto absolute right-5 top-5 z-50 flex flex-col items-end gap-2">
                 <div className="rounded-xl border border-oasis-cyan/30 bg-black/70 p-3 text-right shadow-xl backdrop-blur-md">
                   <p className="text-[10px] uppercase tracking-wider text-oasis-cyan">Flight Mode</p>
-                  <p className="mt-1 text-xs text-gray-300">WASD / Arrows — move</p>
+                  <p className="mt-1 text-2xl font-bold text-white tabular-nums">{flightSpeed.toFixed(1)}</p>
+                  <p className="text-[10px] text-gray-400">units / s</p>
+                  <div className="my-2 h-1.5 w-32 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full bg-gradient-to-r from-oasis-cyan to-oasis-purple transition-all"
+                      style={{ width: `${Math.min(100, (flightSpeed / 12) * 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-300">WASD / Arrows — move</p>
                   <p className="text-xs text-gray-300">Q / E — up / down</p>
                   <p className="text-xs text-gray-300">Space — boost</p>
                   <p className="text-xs text-gray-300">Shift — slow</p>
