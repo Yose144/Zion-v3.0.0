@@ -66,6 +66,7 @@ export default function ExplorePage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
+          <div className="zion-kicker mb-3">Marketplace</div>
           <h1 className="text-3xl font-black font-display mb-1">
             <span className="text-gradient">Explore</span> <span className="text-white">Artifacts</span>
           </h1>
@@ -90,7 +91,7 @@ export default function ExplorePage() {
         {/* Filters sidebar */}
         <aside className="space-y-4">
           {/* Collection */}
-          <div className="card p-4">
+          <div className="zion-rainbow-card p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-purple" />
               Collection
@@ -113,7 +114,7 @@ export default function ExplorePage() {
           </div>
 
           {/* Rarity */}
-          <div className="card p-4">
+          <div className="zion-rainbow-card p-4" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-gold" />
               Rarity
@@ -134,7 +135,7 @@ export default function ExplorePage() {
           </div>
 
           {/* Listing type */}
-          <div className="card p-4">
+          <div className="zion-rainbow-card p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
               Listing
@@ -175,7 +176,7 @@ export default function ExplorePage() {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="card p-16 text-center">
+            <div className="zion-rainbow-card p-16 text-center" style={{ '--rc': '120, 120, 130' } as React.CSSProperties}>
               <div className="text-5xl mb-4 opacity-30">🔍</div>
               <div className="text-gray-500 mb-1">No items match your filters</div>
               <div className="text-xs text-gray-600">Try adjusting your search or filters</div>

@@ -43,12 +43,10 @@ export default function CreatePage() {
 
   if (!isConnected) {
     return (
-      <div className="glass-panel max-w-md mx-auto mt-20">
-        <div className="glass-panel-inner text-center py-16">
-          <div className="text-5xl mb-4 opacity-40">🔐</div>
-          <h2 className="text-xl font-bold mb-2 font-display">Connect your wallet</h2>
-          <p className="text-sm text-gray-400">Connect to Base L2 to create a listing.</p>
-        </div>
+      <div className="zion-rainbow-card max-w-md mx-auto mt-20 p-8 text-center" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+        <div className="text-5xl mb-4 opacity-40">🔐</div>
+        <h2 className="text-xl font-bold mb-2 font-display">Connect your wallet</h2>
+        <p className="text-sm text-gray-400">Connect to Base L2 to create a listing.</p>
       </div>
     );
   }
@@ -56,6 +54,7 @@ export default function CreatePage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
+        <div className="zion-kicker mb-3">Mint</div>
         <h1 className="text-3xl font-black font-display mb-1">
           <span className="text-gradient">Create</span> <span className="text-white">Listing</span>
         </h1>
@@ -64,7 +63,7 @@ export default function CreatePage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Asset */}
-        <section className="card p-6 space-y-5">
+        <section className="zion-rainbow-card p-6 space-y-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
           <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
             <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
             Asset
@@ -143,7 +142,7 @@ export default function CreatePage() {
         </section>
 
         {/* Traits */}
-        <section className="card p-6 space-y-4">
+        <section className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-purple" />
@@ -181,7 +180,7 @@ export default function CreatePage() {
         </section>
 
         {/* Listing */}
-        <section className="card p-6 space-y-5">
+        <section className="zion-rainbow-card p-6 space-y-5" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
           <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
             <span className="w-1 h-3 rounded-full bg-oasis-gold" />
             Listing
