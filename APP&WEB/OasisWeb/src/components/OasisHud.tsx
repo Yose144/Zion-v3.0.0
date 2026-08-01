@@ -6,7 +6,7 @@ import { getHealth, getLeaderboard, getPlayer, getAvatars, type Player, type Lea
 import { useGameStore } from '../store/gameStore';
 
 export default function OasisHud() {
-  const { address, realQuests } = useGameStore();
+  const { address, realQuests, territories } = useGameStore();
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
   const [avatarCount, setAvatarCount] = useState(0);
   const [player, setPlayer] = useState<Player | null>(null);
@@ -71,6 +71,24 @@ export default function OasisHud() {
 
         <p>Avatars in Codex: <span className="font-mono text-oasis-purple">{avatarCount}</span></p>
         <p>Live Quests: <span className="font-mono text-oasis-gold">{realQuests.length}</span></p>
+
+        {territories.length > 0 && (
+          <div className="rounded-lg border border-white/10 bg-white/5 p-2">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">Hot Territories</p>
+            <div className="space-y-1">
+              {territories
+                .slice()
+                .sort((a: any, b: any) => (b.defense_power ?? 0) - (a.defense_power ?? 0))
+                .slice(0, 3)
+                .map((t: any) => (
+                  <div key={t.id} className="flex items-center justify-between text-xs">
+                    <span className="text-gray-300">{t.name}</span>
+                    <span className="font-mono text-oasis-purple">{t.controller ?? 'Unclaimed'}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
 
         {leaders.length > 0 && (
           <div className="rounded-lg border border-white/10 bg-white/5 p-2">

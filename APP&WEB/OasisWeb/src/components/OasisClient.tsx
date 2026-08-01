@@ -12,7 +12,7 @@ import type { MobileInput } from './MobileControls';
 import MobileControls from './MobileControls';
 import PlayerHud from './PlayerHud';
 import { useGameStore } from '../store/gameStore';
-import { getQuests, getAvatars } from '../lib/api';
+import { getQuests, getAvatars, getTerritories } from '../lib/api';
 import type { World, WorldCategory } from '../domain/types/world';
 
 const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
@@ -45,7 +45,7 @@ export default function OasisClient() {
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
   const mobileInputRef = useRef<MobileInput | null>(null);
   const { muted, toggle, start, playWarp, playBoost, startEngine, stopEngine, setEngine } = useAudio();
-  const { discoverWorld, scanWorld, addXp, setRealQuests, setAvatars, setAddress, address, shipLoadout } = useGameStore();
+  const { discoverWorld, scanWorld, addXp, setRealQuests, setAvatars, setTerritories, setAddress, address, shipLoadout } = useGameStore();
 
   useEffect(() => {
     setMounted(true);
@@ -59,16 +59,21 @@ export default function OasisClient() {
     if (!address) return;
     let mounted = true;
     async function load() {
-      const [quests, avatars] = await Promise.all([getQuests(), getAvatars()]);
+      const [quests, avatars, territories] = await Promise.all([
+        getQuests(),
+        getAvatars(),
+        getTerritories().then((map) => (map ? Object.values(map.territories) : null)),
+      ]);
       if (!mounted) return;
       if (quests) setRealQuests(quests);
       if (avatars) setAvatars(avatars);
+      if (territories) setTerritories(territories);
     }
     load();
     return () => {
       mounted = false;
     };
-  }, [address, setRealQuests, setAvatars]);
+  }, [address, setRealQuests, setAvatars, setTerritories]);
 
   useEffect(() => {
     const check = () => {

@@ -133,7 +133,7 @@ Remaining:
 - 🔄 **Persistent player profile** from backend (`getPlayer(address)` is used; wallet login is next).
 - ✅ **Ship upgrades / loadout** UI (engine, cargo, scanner) with color picker and local persistence.
 - **Composed SFX / ambient music** instead of synthesized oscillators.
-- **Golden Egg / territory hunting** mini-game loop.
+- ✅ **Golden Egg / territory hunting** mini-game loop (collect clue for 100 Z, +500 XP; territory map in HUD).
 
 ---
 
@@ -216,7 +216,7 @@ The next work was explicitly requested as a slow, careful pass through these six
 - Spend credits to upgrade; persist to local storage.
 - Visual changes to `PilgrimShip` based on loadout (color, thruster size).
 
-### 6.12 Golden Egg + territory loop
+### 6.12 Golden Egg + territory loop ✅
 
 - Surface `goldenEggClue` in world view with a scanner puzzle.
 - Show territory map with hot zones; allow claiming / mining actions.

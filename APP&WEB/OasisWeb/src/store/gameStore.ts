@@ -19,15 +19,19 @@ interface GameState {
   scannedWorlds: string[];
   realQuests: any[];
   avatars: any[];
+  territories: any[];
+  collectedEggs: string[];
   shipLoadout: ShipLoadout;
   setAddress: (address: string | null) => void;
   setAvatars: (avatars: any[]) => void;
+  setTerritories: (territories: any[]) => void;
   addXp: (amount: number) => void;
   addCredits: (amount: number) => void;
   completeQuest: (id: string, xp: number) => void;
   discoverWorld: (id: string) => void;
   scanWorld: (id: string) => void;
   setRealQuests: (quests: any[]) => void;
+  claimGoldenEgg: (worldId: string) => boolean;
   upgradeShip: (part: keyof ShipLoadout) => boolean;
   setShipColor: (color: string) => void;
   reset: () => void;
@@ -46,6 +50,8 @@ export const useGameStore = create<GameState>()(
       scannedWorlds: [],
       realQuests: [],
       avatars: [],
+      territories: [],
+      collectedEggs: [],
       shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#22d3ee' },
 
       setAddress: (address) => set({ address }),
@@ -85,6 +91,19 @@ export const useGameStore = create<GameState>()(
 
       setRealQuests: (realQuests) => set({ realQuests }),
       setAvatars: (avatars) => set({ avatars }),
+      setTerritories: (territories) => set({ territories }),
+
+      claimGoldenEgg: (worldId) => {
+        const state = get();
+        if (state.collectedEggs.includes(worldId)) return false;
+        if (state.credits < 100) return false;
+        set((s) => ({
+          credits: s.credits - 100,
+          xp: s.xp + 500,
+          collectedEggs: [...s.collectedEggs, worldId],
+        }));
+        return true;
+      },
 
       upgradeShip: (part) => {
         const state = get();
@@ -114,6 +133,8 @@ export const useGameStore = create<GameState>()(
           scannedWorlds: [],
           realQuests: [],
           avatars: [],
+          territories: [],
+          collectedEggs: [],
           shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#22d3ee' },
         }),
     }),
@@ -127,6 +148,8 @@ export const useGameStore = create<GameState>()(
         discoveredWorlds: state.discoveredWorlds,
         scannedWorlds: state.scannedWorlds,
         avatars: state.avatars,
+        territories: state.territories,
+        collectedEggs: state.collectedEggs,
         shipLoadout: state.shipLoadout,
       }),
     }

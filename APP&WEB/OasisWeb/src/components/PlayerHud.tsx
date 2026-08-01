@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Star, MapPin, Scroll, Rocket } from 'lucide-react';
+import { Coins, Star, MapPin, Scroll, Rocket, Egg } from 'lucide-react';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
 import ShipLoadout from './ShipLoadout';
 
 const XP_PER_LEVEL = 1000;
 
 export default function PlayerHud() {
-  const { xp, credits, completedQuests, discoveredWorlds, scannedWorlds, realQuests } = useGameStore();
+  const { xp, credits, completedQuests, discoveredWorlds, scannedWorlds, realQuests, collectedEggs } = useGameStore();
   const [showShip, setShowShip] = useState(false);
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
@@ -49,7 +49,7 @@ export default function PlayerHud() {
         </button>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
         <div className="flex items-center gap-1.5 text-[10px] text-gray-300">
           <Coins className="h-3.5 w-3.5 text-oasis-gold" />
           <span className="font-semibold">{credits}</span>
@@ -65,6 +65,10 @@ export default function PlayerHud() {
         <div className="flex items-center gap-1.5 text-[10px] text-gray-300">
           <Scroll className="h-3.5 w-3.5 text-oasis-gold" />
           <span className="font-semibold">{realQuests.length}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px] text-gray-300">
+          <Egg className="h-3.5 w-3.5 text-oasis-gold" />
+          <span className="font-semibold">{collectedEggs.length}</span>
         </div>
       </div>
     </motion.div>
