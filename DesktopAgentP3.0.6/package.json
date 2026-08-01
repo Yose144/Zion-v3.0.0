@@ -1,0 +1,122 @@
+{
+  "name": "zion-public-miner",
+  "version": "3.0.6",
+  "description": "ZION Public Miner v3.0.6 — one-click desktop mining for the ZION mainnet. No Trinity / AuxPoW coin names or external streams exposed in the UI.",
+  "homepage": "https://zionterranova.com",
+  "main": "src/main.js",
+  "scripts": {
+    "prestart": "node scripts/prepare-rust-miner.js --no-build --require || node scripts/prepare-rust-miner.js --auto",
+    "start": "node scripts/launch-electron.js",
+    "dev": "node scripts/launch-electron.js",
+    "dev:wallet": "node scripts/launch-electron.js",
+    "test": "node test/test_mining_modes.js && python3 test_deeksha_revenue.py",
+    "test:e2e": "node scripts/test_e2e_mining_flow.js",
+    "test:revenue": "node scripts/test_revenue_system_e2e.js",
+    "test:wallet": "node scripts/test-wallet-e2e.js",
+    "prepare:rust-miner": "node scripts/prepare-rust-miner.js --auto",
+    "build": "npm run prepare:rust-miner && electron-builder",
+    "build:win": "npm run prepare:rust-miner && electron-builder --win nsis --x64",
+    "build:win:nsis": "npm run prepare:rust-miner && electron-builder --win nsis --x64",
+    "build:win:portable": "npm run prepare:rust-miner && electron-builder --win portable --x64",
+    "build:mac": "npm run prepare:rust-miner && electron-builder --mac",
+    "build:linux": "npm run prepare:rust-miner && electron-builder --linux --x64",
+    "build:all": "npm run prepare:rust-miner && electron-builder --mac --win --linux --x64",
+    "tui": "node src/tui/index.js"
+  },
+  "keywords": [
+    "zion",
+    "blockchain",
+    "mining",
+    "cryptocurrency"
+  ],
+  "author": {
+    "name": "ZION TerraNova",
+    "email": "support@zionterranova.com",
+    "url": "https://zionterranova.com"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@noble/ed25519": "^3.0.0",
+    "@noble/hashes": "^1.7.0",
+    "bip39": "^3.1.0",
+    "blessed": "^0.1.81",
+    "electron-updater": "^6.8.3",
+    "ethers": "^5.8.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.zionterranova.public-miner",
+    "productName": "ZION Public Miner",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/",
+        "to": ".",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "src/assets/tray-icon.png",
+        "to": "tray-icon.png"
+      },
+      {
+        "from": "src/assets/icon.png",
+        "to": "icon.png"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "icon": "src/assets/icon.ico",
+      "signAndEditExecutable": false,
+      "artifactName": "zion-public-miner-v${version}-windows-${arch}.${ext}"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "src/assets/icon.icns",
+      "category": "public.app-category.utilities",
+      "artifactName": "zion-public-miner-v${version}-mac-${arch}.${ext}"
+    },
+    "dmg": {
+      "icon": "src/assets/icon.icns"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "src/assets/icon.png",
+      "category": "Utility",
+      "maintainer": "ZION TerraNova <support@zionterranova.com>",
+      "synopsis": "ZION Public Miner",
+      "description": "Public desktop mining client for ZION (single ZION/Deeksha stream, no Trinity coin names exposed)",
+      "artifactName": "zion-public-miner-v${version}-linux-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://updates.zionterranova.com/api/releases",
+        "channel": "latest"
+      }
+    ]
+  }
+}

