@@ -30,14 +30,14 @@ const DownloadCopy = {
   k3CheckBalance: { cs: `3. Zkontroluj zůstatek`, en: `3. Check Balance` },
   orVisitTheExplorerAtZionterran: { cs: `Nebo navštiv Explorer na zionterranova.com/explorer`, en: `Or visit the Explorer at zionterranova.com/explorer` },
   needAWalletUseV305CliBelow: { cs: `Potřebuješ peněženku? Použij v3.0.5-beta Community CLI níže`, en: `Need a wallet? Use the v3.0.5-beta Community CLI below` },
-  tripleStreamMinerGpuCpuZionLiq: { cs: `Triple Stream Miner · GPU + CPU · Zion Liquidity`, en: `Triple Stream Miner · GPU + CPU · Zion Liquidity` },
+  tripleStreamMinerGpuCpuZionLiq: { cs: `Trinity Miner · GPU + CPU · Zion Liquidity`, en: `Trinity Miner · GPU + CPU · Zion Liquidity` },
   downloadMineEarn: { cs: `Stáhni. Těž. Vydělávej.`, en: `Download. Mine. Earn.` },
-  zionV306BetaTripleStreamMinerG: { cs: `ZION v3.0.6-beta — Triple Stream Miner. GPU + CPU současně, `, en: `ZION v3.0.6-beta — Triple Stream Miner. GPU + CPU simultaneously, ` },
-  invertsTraditionalMiningMineHo: { cs: `inverzuje tradiční mining: těž → drž ZION → likvidita roste. Žádné burzy, žádný sell pressure. Dostupné pro Linux x86_64/ARM64, macOS Apple Silicon/Intel a Windows x86_64.`, en: `inverts traditional mining: mine → hold ZION → liquidity grows. No exchanges, no sell pressure. Available for Linux x86_64/ARM64, macOS Apple Silicon/Intel and Windows x86_64.` },
+  zionV306BetaTripleStreamMinerG: { cs: `ZION v3.0.6-beta — Trinity Miner. GPU + CPU současně, `, en: `ZION v3.0.6-beta — Trinity Miner. GPU + CPU simultaneously, ` },
+  invertsTraditionalMiningMineHo: { cs: `inverzuje tradiční mining: těž → drž ZION → likvidita roste. Žádné burzy, žádný sell pressure. Plné GPU backendy (CUDA + OpenCL + Metal) a nativní algoritmy (VerusHash, RandomX, BLAKE3). Dostupné pro Linux x86_64/ARM64, macOS Apple Silicon/Intel a Windows x86_64.`, en: `inverts traditional mining: mine → hold ZION → liquidity grows. No exchanges, no sell pressure. Full GPU backends (CUDA + OpenCL + Metal) and native algorithms (VerusHash, RandomX, BLAKE3). Available for Linux x86_64/ARM64, macOS Apple Silicon/Intel and Windows x86_64.` },
   downloadBinaries: { cs: `Stáhnout binárky`, en: `Download binaries` },
   githubReleases: { cs: `GitHub Releases`, en: `GitHub Releases` },
   publicMainnetRelease: { cs: `Veřejný mainnet release`, en: `Public mainnet release` },
-  theLatestReleaseBringsTheTripl: { cs: `Nejnovější release přináší Triple Stream mining engine — GPU a CPU pracují současně pro maximalizaci ZION earnings. OpenCL (AMD/Intel) a CUDA (NVIDIA) na Linuxu, Metal + OpenCL na macOS, CUDA na Windows. Všechny 5 binárek je na GitHub Releases s SHA256 verifikací.`, en: `The latest release brings the Triple Stream mining engine — GPU and CPU work together to maximize ZION earnings. OpenCL (AMD/Intel) and CUDA (NVIDIA) on Linux, Metal + OpenCL on macOS, CUDA on Windows. All 5 binaries are on GitHub Releases with SHA256 verification.` },
+  theLatestReleaseBringsTheTripl: { cs: `Nejnovější release přináší Trinity mining engine — GPU a CPU pracují současně pro maximalizaci ZION earnings. Plné GPU backendy: OpenCL (AMD/Intel) + CUDA (NVIDIA) + Metal (macOS). Nativní algoritmy: VerusHash v2.2, RandomX, BLAKE3. Všechny 5 binárek je na GitHub Releases s SHA256 verifikací.`, en: `The latest release brings the Trinity mining engine — GPU and CPU work together to maximize ZION earnings. Full GPU backends: OpenCL (AMD/Intel) + CUDA (NVIDIA) + Metal (macOS). Native algorithms: VerusHash v2.2, RandomX, BLAKE3. All 5 binaries are on GitHub Releases with SHA256 verification.` },
   sourceOfTruth: { cs: `Zdroj pravdy:`, en: `Source of truth:` },
   operatorCommandsGuideFaqRefere: { cs: `operátorské příkazy, guide, FAQ, reference a troubleshooting jsou v sekci `, en: `operator commands, guide, FAQ, reference, and troubleshooting live in the ` },
   sectionOfTheDocsSourceCodeIsOp: { cs: ` v dokumentaci. Zdrojový kód je open-source na `, en: ` section of the docs. Source code is open-source on ` },
@@ -45,15 +45,29 @@ const DownloadCopy = {
   comingSoon: { cs: `Brzy`, en: `Coming Soon` },
   oneClickGuiForMiningWalletMana: { cs: `GUI na jedno kliknutí pro těžbu, správu peněženky a monitoring — bez terminálu`, en: `One-click GUI for mining, wallet management and monitoring — no terminal needed` },
   inDevelopment: { cs: `VE VYVOJI`, en: `IN DEVELOPMENT` },
-  fullGuiApplicationWithBuiltInM: { cs: `Plná GUI aplikace s vestavěným minerem, peněženkou a dashboardem v reálném čase. Brzy dostupná pro Windows, macOS a Linux.`, en: `Full GUI application with built-in miner, wallet, and real-time dashboard. Available soon for Windows, macOS & Linux.` },
+  fullGuiApplicationWithBuiltInM: { cs: `Plná GUI aplikace s vestavěným minerem, peněženkou a dashboardem v reálném čase. Dostupné pro Windows, macOS a Linux.`, en: `Full GUI application with built-in miner, wallet, and real-time dashboard. Available for Windows, macOS & Linux.` },
+  allPlatforms: { cs: `Windows, macOS a Linux`, en: `Windows, macOS & Linux` },
   windowsComingSoon: { cs: `Windows — Brzy`, en: `Windows — Coming Soon` },
   macosComingSoon: { cs: `macOS — Brzy`, en: `macOS — Coming Soon` },
-  linuxComingSoon: { cs: `Linux — Brzy`, en: `Linux — Coming Soon` },
+  linuxPreview: { cs: `Linux — Stáhnout preview`, en: `Linux — Download preview` },
+  desktopLinuxAppImage: { cs: `AppImage`, en: `AppImage` },
+  desktopLinuxAppImageDesc: { cs: `Staňte se spustitelným — žádná instalace`, en: `Run anywhere — no install needed` },
+  desktopLinuxDeb: { cs: `DEB balíček`, en: `DEB package` },
+  desktopLinuxDebDesc: { cs: `Pro Debian/Ubuntu — instalace přes dpkg`, en: `For Debian/Ubuntu — install via dpkg` },
+  desktopWindowsExe: { cs: `Windows instalátor`, en: `Windows installer` },
+  desktopWindowsZip: { cs: `Windows ZIP`, en: `Windows ZIP` },
+  desktopWindowsExeDesc: { cs: `Stáhni a spusť NSIS instalátor`, en: `Download and run the NSIS installer` },
+  desktopWindowsZipDesc: { cs: `Přenosná verze — rozbal a spusť`, en: `Portable — extract and run` },
+  desktopMacDmg: { cs: `macOS DMG`, en: `macOS DMG` },
+  desktopMacDmgDesc: { cs: `Pro macOS Apple Silicon`, en: `For macOS Apple Silicon` },
+  desktopReleaseNotes: { cs: `Poznámky k vydání`, en: `Release notes` },
   wantEarlyAccess: { cs: `Chcete předběžný přístup?`, en: `Want early access?` },
   theDesktopAgentWillBeAvailable: { cs: `Desktop Agent bude dostupný v našem `, en: `The Desktop Agent will be available in our ` },
   shop: { cs: `Shopu`, en: `Shop` },
   asAPremiumDownloadWithPriority: { cs: `jako premium download s prioritní podporou a auto-updaty. Připojte se na `, en: `as a premium download with priority support and auto-updates. Join ` },
   toBeNotifiedWhenItLaunches: { cs: `a dostanete upozornění při launchi.`, en: `to be notified when it launches.` },
+  desktopNeedHelp: { cs: `Potřebuješ pomoc?`, en: `Need help?` },
+  desktopJoinDiscordForSupport: { cs: `Připoj se na Discord pro podporu s instalací a aktuality.`, en: `Join our Discord for setup support and updates.` },
   quickStart: { cs: `Rychlý start`, en: `Quick Start` },
   k3StepsToMining: { cs: `3 kroky k těžbě`, en: `3 steps to mining` },
   step: { cs: `Krok`, en: `Step` },
@@ -167,42 +181,17 @@ export default function DownloadPage() {
           </div>
         </section>
 
+        {/* ─── Desktop Agent — top spotlight ─── */}
         <section className="space-y-6">
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadCopy.publicMainnetRelease[cs ? 'cs' : 'en']}</p>
-            <h2 className="text-3xl font-semibold text-white">ZION v3.0.6-beta · Triple Stream Miner</h2>
-            <p className="text-gray-400 max-w-3xl">
-              {DownloadCopy.theLatestReleaseBringsTheTripl[cs ? 'cs' : 'en']}
-            </p>
-          </div>
-
-          <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-            <p className="text-sm text-gray-300">
-              <span className="text-zion-cyan font-semibold">{DownloadCopy.sourceOfTruth[cs ? 'cs' : 'en']}</span>{' '}
-              {DownloadCopy.operatorCommandsGuideFaqRefere[cs ? 'cs' : 'en']}
-              <Link href="/docs" className="text-zion-cyan underline hover:no-underline">ZION CLI</Link>
-              {DownloadCopy.sectionOfTheDocsSourceCodeIsOp[cs ? 'cs' : 'en']}
-              <Link href="https://github.com/Zion-TerraNova/v3-Mainnet" target="_blank" className="text-zion-cyan underline hover:no-underline">GitHub</Link>
-              {DownloadCopy.mitLicense[cs ? 'cs' : 'en']}
-            </p>
-          </div>
-        </section>
-
-        <section id="downloads">
-          <DownloadToolBrowser cs={cs} />
-        </section>
-
-        {/* ─── Desktop Agent — placeholder ─── */}
-        <section className="space-y-6">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadCopy.comingSoon[cs ? 'cs' : 'en']}</p>
-            <h2 className="text-3xl font-semibold text-white">Desktop Agent · {SITE_VERSION}</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-emerald-400">Desktop Agent</p>
+            <h2 className="text-3xl font-semibold text-white">ZION Desktop Agent · {SITE_VERSION}</h2>
             <p className="text-gray-400">{DownloadCopy.oneClickGuiForMiningWalletMana[cs ? 'cs' : 'en']}</p>
           </div>
 
           <div className="relative overflow-hidden zion-rainbow-card p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-            <div className="absolute top-4 right-4 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-3 py-1 text-xs font-semibold tracking-wider text-zion-gold">
-              🚧 {DownloadCopy.inDevelopment[cs ? 'cs' : 'en']}
+            <div className="absolute top-4 right-4 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold tracking-wider text-emerald-400">
+              ✅ {DownloadCopy.allPlatforms[cs ? 'cs' : 'en']}
             </div>
 
             <div className="flex items-start gap-4 mb-6">
@@ -225,44 +214,120 @@ export default function DownloadPage() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <button
-                disabled
-                className="zion-button-secondary opacity-50 cursor-not-allowed text-sm"
+              <Link
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-desktop/zion-public-miner-v3.0.6-linux-x86_64.AppImage"
+                target="_blank"
+                rel="noreferrer"
+                className="zion-button-primary text-sm"
               >
                 <Package className="h-4 w-4" />
-                {DownloadCopy.windowsComingSoon[cs ? 'cs' : 'en']}
-              </button>
-              <button
-                disabled
-                className="zion-button-secondary opacity-50 cursor-not-allowed text-sm"
+                {DownloadCopy.desktopLinuxAppImage[cs ? 'cs' : 'en']}
+              </Link>
+              <Link
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-desktop/zion-public-miner-v3.0.6-linux-amd64.deb"
+                target="_blank"
+                rel="noreferrer"
+                className="zion-button-primary text-sm"
               >
                 <Package className="h-4 w-4" />
-                {DownloadCopy.macosComingSoon[cs ? 'cs' : 'en']}
-              </button>
-              <button
-                disabled
-                className="zion-button-secondary opacity-50 cursor-not-allowed text-sm"
+                {DownloadCopy.desktopLinuxDeb[cs ? 'cs' : 'en']}
+              </Link>
+              <Link
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-desktop/zion-public-miner-v3.0.6-windows-x64.exe"
+                target="_blank"
+                rel="noreferrer"
+                className="zion-button-secondary text-sm"
               >
                 <Package className="h-4 w-4" />
-                {DownloadCopy.linuxComingSoon[cs ? 'cs' : 'en']}
-              </button>
+                {DownloadCopy.desktopWindowsExe[cs ? 'cs' : 'en']}
+              </Link>
+              <Link
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-desktop/zion-public-miner-v3.0.6-windows-x64.zip"
+                target="_blank"
+                rel="noreferrer"
+                className="zion-button-secondary text-sm"
+              >
+                <Package className="h-4 w-4" />
+                {DownloadCopy.desktopWindowsZip[cs ? 'cs' : 'en']}
+              </Link>
+              <Link
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.0.6-desktop/zion-public-miner-v3.0.6-mac-arm64.dmg"
+                target="_blank"
+                rel="noreferrer"
+                className="zion-button-secondary text-sm"
+              >
+                <Package className="h-4 w-4" />
+                {DownloadCopy.desktopMacDmg[cs ? 'cs' : 'en']}
+              </Link>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-400">
+              <span className="flex items-center gap-1.5">
+                <Package className="h-3.5 w-3.5 text-emerald-400" />
+                {DownloadCopy.desktopLinuxAppImageDesc[cs ? 'cs' : 'en']}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Package className="h-3.5 w-3.5 text-emerald-400" />
+                {DownloadCopy.desktopLinuxDebDesc[cs ? 'cs' : 'en']}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Package className="h-3.5 w-3.5 text-emerald-400" />
+                {DownloadCopy.desktopWindowsExeDesc[cs ? 'cs' : 'en']}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Package className="h-3.5 w-3.5 text-emerald-400" />
+                {DownloadCopy.desktopWindowsZipDesc[cs ? 'cs' : 'en']}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Package className="h-3.5 w-3.5 text-emerald-400" />
+                {DownloadCopy.desktopMacDmgDesc[cs ? 'cs' : 'en']}
+              </span>
+              <Link
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.6-desktop"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-zion-cyan hover:underline"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                {DownloadCopy.desktopReleaseNotes[cs ? 'cs' : 'en']}
+              </Link>
             </div>
 
             <div className="mt-6 zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-sm text-gray-300">
-                <span className="text-zion-gold font-semibold">💡 {DownloadCopy.wantEarlyAccess[cs ? 'cs' : 'en']}</span>{' '}
-                {DownloadCopy.theDesktopAgentWillBeAvailable[cs ? 'cs' : 'en']}
-                <Link href="/shop" className="text-zion-gold underline hover:no-underline">
-                  {DownloadCopy.shop[cs ? 'cs' : 'en']}
-                </Link>{' '}
-                {DownloadCopy.asAPremiumDownloadWithPriority[cs ? 'cs' : 'en']}
+                <span className="text-zion-gold font-semibold">💡 {DownloadCopy.desktopNeedHelp[cs ? 'cs' : 'en']}</span>{' '}
+                {DownloadCopy.desktopJoinDiscordForSupport[cs ? 'cs' : 'en']}{' '}
                 <Link href="https://discord.gg/zion-terranova" target="_blank" className="text-zion-gold underline hover:no-underline">
                   Discord
-                </Link>{' '}
-                {DownloadCopy.toBeNotifiedWhenItLaunches[cs ? 'cs' : 'en']}
+                </Link>
               </p>
             </div>
           </div>
+        </section>
+
+        <section className="space-y-6">
+          <div className="flex flex-col gap-2">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadCopy.publicMainnetRelease[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-3xl font-semibold text-white">ZION v3.0.6-beta · Trinity Miner</h2>
+            <p className="text-gray-400 max-w-3xl">
+              {DownloadCopy.theLatestReleaseBringsTheTripl[cs ? 'cs' : 'en']}
+            </p>
+          </div>
+
+          <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <p className="text-sm text-gray-300">
+              <span className="text-zion-cyan font-semibold">{DownloadCopy.sourceOfTruth[cs ? 'cs' : 'en']}</span>{' '}
+              {DownloadCopy.operatorCommandsGuideFaqRefere[cs ? 'cs' : 'en']}
+              <Link href="/docs" className="text-zion-cyan underline hover:no-underline">ZION CLI</Link>
+              {DownloadCopy.sectionOfTheDocsSourceCodeIsOp[cs ? 'cs' : 'en']}
+              <Link href="https://github.com/Zion-TerraNova/v3-Mainnet" target="_blank" className="text-zion-cyan underline hover:no-underline">GitHub</Link>
+              {DownloadCopy.mitLicense[cs ? 'cs' : 'en']}
+            </p>
+          </div>
+        </section>
+
+        <section id="downloads">
+          <DownloadToolBrowser cs={cs} />
         </section>
 
         {/* ─── 3-step onboarding ─── */}
