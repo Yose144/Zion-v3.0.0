@@ -303,7 +303,7 @@ dolů — k těm, kdo pracují.
 Trinity nic nevyžaduje: není to poplatek, registrace ani
 nastavení. Je to vlastnost oficiálního ZION mineru v3.0.6 a novějšího.
 Jádro a pool ZIONu zůstávají plně otevřené pod MIT licencí; Triple
-Stream engine je proprietární bonusová vrstva nad nimi — dostupná
+Stream engine je bonusová vrstva nad nimi — dostupná
 zdarma každému, kdo těží oficiálním minerem.
 
 ---
