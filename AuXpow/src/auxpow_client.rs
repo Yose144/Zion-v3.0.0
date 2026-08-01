@@ -325,7 +325,7 @@ pub struct AuxPowClient {
     job_received_at: Arc<Mutex<HashMap<String, std::time::Instant>>>,
     /// GPU backend for PoUW mining (Metal on Apple Silicon).
     /// None = CPU-only mining.
-    #[cfg(feature = "gpu-metal")]
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     gpu_backend: Arc<Mutex<Option<crate::gpu_metal::MetalBackend>>>,
     /// GPU backend for PoUW mining (OpenCL on AMD/ROCm).
     /// None = CPU-only mining.
@@ -388,7 +388,7 @@ impl AuxPowClient {
             job_extranonce1: Arc::new(Mutex::new(HashMap::new())),
             latest_job_id: Arc::new(Mutex::new(None)),
             job_received_at: Arc::new(Mutex::new(HashMap::new())),
-            #[cfg(feature = "gpu-metal")]
+            #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
             gpu_backend: Arc::new(Mutex::new(None)),
             #[cfg(feature = "gpu-opencl")]
             gpu_opencl_backend: Arc::new(Mutex::new(None)),
@@ -400,7 +400,7 @@ impl AuxPowClient {
 
     /// Enable GPU mining (Metal on Apple Silicon).
     /// Call this before connect() for Pearl PoUW GPU acceleration.
-    #[cfg(feature = "gpu-metal")]
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     pub async fn with_gpu(self) -> Self {
         match crate::gpu_metal::MetalBackend::new(256) {
             Ok(backend) => {
@@ -415,7 +415,7 @@ impl AuxPowClient {
     }
 
     /// Check if GPU backend is available.
-    #[cfg(feature = "gpu-metal")]
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     pub async fn has_gpu(&self) -> bool {
         self.gpu_backend.lock().await.is_some()
     }

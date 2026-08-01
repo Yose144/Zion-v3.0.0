@@ -1536,7 +1536,7 @@ pub fn resolve_auto_backend() -> GpuBackendKind {
             // Try to detect if OpenCL is actually available
             // On Apple Silicon, OpenCL is not available — fall through to Metal
             if !std::env::var("ZION_FORCE_OPENCL").is_ok() {
-                #[cfg(feature = "gpu-metal")]
+                #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
                 {
                     return GpuBackendKind::Metal;
                 }
@@ -1553,7 +1553,7 @@ pub fn resolve_auto_backend() -> GpuBackendKind {
         return GpuBackendKind::Cuda;
     }
 
-    #[cfg(feature = "gpu-metal")]
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     {
         return GpuBackendKind::Metal;
     }
@@ -2610,7 +2610,7 @@ fn create_gpu_backend_inner(
             }
 
             // Auto fallback: try Metal
-            #[cfg(feature = "gpu-metal")]
+            #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
             {
                 match metal_deeksha::MetalDeekshaMiner::new(work_size) {
                     Ok(miner) => return Ok(Box::new(miner)),
@@ -2667,7 +2667,7 @@ fn create_gpu_backend_inner(
             anyhow::bail!("CUDA support not compiled — rebuild with --features gpu-cuda");
         }
         GpuBackendKind::Metal => {
-            #[cfg(feature = "gpu-metal")]
+            #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
             {
                 // ProgPoWZ now has a native Metal kernel with per-period source
                 // generation. Route it to the dedicated Metal external miner.
@@ -2705,8 +2705,8 @@ fn create_gpu_backend_inner(
                     return Ok(Box::new(miner));
                 }
             }
-            #[cfg(not(feature = "gpu-metal"))]
-            anyhow::bail!("Metal support not compiled — rebuild with --features gpu-metal");
+            #[cfg(not(all(feature = "gpu-metal", target_os = "macos")))]
+            anyhow::bail!("Metal support not compiled — rebuild with --features gpu-metal on macOS");
         }
     }
 }
@@ -7163,7 +7163,7 @@ pub mod cuda_deeksha_lite {
 
 // ─── Metal Backend (Apple Silicon) ───────────────────────────────────────────
 
-#[cfg(feature = "gpu-metal")]
+#[cfg(all(feature = "gpu-metal", target_os = "macos"))]
 pub mod metal_deeksha {
     use super::*;
     use metal::{Device, MTLResourceOptions, MTLSize};
@@ -7753,7 +7753,7 @@ pub mod cpu_external_fallback {
 
 // ─── Metal Backend: DeekshaLite Fire ─────────────────────────────────────────
 
-#[cfg(feature = "gpu-metal")]
+#[cfg(all(feature = "gpu-metal", target_os = "macos"))]
 pub mod metal_deeksha_lite_fire {
     use super::*;
     use metal::{Device, MTLResourceOptions, MTLSize};
@@ -8390,7 +8390,7 @@ pub mod opencl_external {
 ///
 /// Wraps `zion_auxpow::gpu_metal::MetalBackend`, which already has per-period
 /// dynamic source generation for `progpow_zano`.
-#[cfg(all(feature = "gpu-metal", feature = "native-hashers"))]
+#[cfg(all(feature = "gpu-metal", target_os = "macos", feature = "native-hashers"))]
 pub mod metal_external {
     use super::*;
     use std::time::Instant;
@@ -8650,7 +8650,7 @@ pub fn detect_gpus() -> Vec<String> {
         }
     }
 
-    #[cfg(feature = "gpu-metal")]
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     {
         if let Some(device) = metal::Device::system_default() {
             devices.push(format!("metal:{}", device.name()));
