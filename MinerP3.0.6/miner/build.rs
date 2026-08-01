@@ -39,7 +39,7 @@ fn main() {
         }
     }
 
-    #[cfg(feature = "gpu-metal")]
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     {
         println!("cargo:rustc-link-lib=framework=Metal");
         println!("cargo:rustc-link-lib=framework=CoreGraphics");
