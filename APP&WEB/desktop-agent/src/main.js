@@ -1,10 +1,25 @@
 // ZION V3 Mainnet Ready v3.0.6 "Triple Parallel" - Main Process
 // Electron main process with system tray, auto-start, GPU mining, IPC
 
-// Fix NVIDIA/Wayland GPU segfaults on Linux (also helps the packaged AppImage).
-// ozone-platform must be set via env before the Electron module is loaded.
-if (process.platform === 'linux') {
+// Work around NVIDIA/Wayland GPU sandbox segfaults by forcing the X11 Ozone
+// backend and disabling the GPU sandbox.  In the packaged AppImage there is no
+// wrapper to pass Chromium flags, so the first main-process instance re-execs
+// itself with the required switches and then exits.
+if (process.platform === 'linux' &&
+    process.env.ZION_GPU_FLAGS_SET !== '1' &&
+    !process.argv.includes('--ozone-platform=x11')) {
+  const { execFileSync } = require('child_process');
+  process.env.ZION_GPU_FLAGS_SET = '1';
   process.env.ELECTRON_OZONE_PLATFORM_HINT = 'x11';
+  try {
+    execFileSync(process.execPath, process.argv.slice(1).concat(['--ozone-platform=x11', '--disable-gpu-sandbox']), {
+      stdio: 'inherit',
+      env: process.env
+    });
+  } catch (err) {
+    process.exit(err.status || 1);
+  }
+  process.exit(0);
 }
 
 const { app, BrowserWindow, Tray, Menu, ipcMain, dialog, shell } = require('electron');
