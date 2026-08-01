@@ -191,6 +191,8 @@ Cílem je, aby se hráči potkávali, spolupracovali, soutěžili a tvořili jed
 
 ## 11. Multikulturní multiverse — od Atari po budoucnost
 
+> **Detailní koncepty jednotlivých světů:** viz adresář [`docs/docs2.9/ZION_OASIS/WORLDS/`](../../docs/docs2.9/ZION_OASIS/WORLDS/). Každý svět má vlastní `.md` soubor s lore, vizuálem, mechanikami, frakcemi a questy.
+
 OASIS je otevřený všem kulturám, žánrům a médiím. Hráč se může propadnout z 8-bitové Atari planety rovnou do neonové budoucnosti, z westernového filmu do japonského RPG, z Matrixu do starověkého Egypta.
 
 ### 11.1 Žánry a epochy
