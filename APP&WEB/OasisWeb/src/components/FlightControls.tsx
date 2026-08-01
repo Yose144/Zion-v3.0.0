@@ -6,6 +6,7 @@ import { PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { WORLDS } from '../domain/config/worlds';
 import type { World } from '../domain/types/world';
+import type { MobileInput } from './MobileControls';
 
 interface FlightControlsProps {
   enabled: boolean;
@@ -14,6 +15,7 @@ interface FlightControlsProps {
   onCanLand?: (world: World | null) => void;
   onApproach?: (world: World) => void;
   onBoost?: () => void;
+  mobileInputRef?: React.RefObject<MobileInput | null>;
   baseSpeed?: number;
 }
 
@@ -47,7 +49,7 @@ export interface FlightControlsHandle {
 }
 
 const FlightControls = forwardRef<FlightControlsHandle, FlightControlsProps>(
-  function FlightControls({ enabled, onExit, onSpeedChange, onCanLand, onApproach, onBoost, baseSpeed = 3.5 }, ref) {
+  function FlightControls({ enabled, onExit, onSpeedChange, onCanLand, onApproach, onBoost, mobileInputRef, baseSpeed = 3.5 }, ref) {
     const { camera } = useThree();
     const controlsRef = useRef<any>(null);
     const keys = useRef({ ...keysInitial });
@@ -135,16 +137,33 @@ const FlightControls = forwardRef<FlightControlsHandle, FlightControlsProps>(
         onCanLand?.(best);
       }
 
-      const move = new THREE.Vector3();
-      if (keys.current.forward) move.add(forward);
-      if (keys.current.backward) move.sub(forward);
-      if (keys.current.right) move.add(right);
-      if (keys.current.left) move.sub(right);
-      if (keys.current.up) move.add(up);
-      if (keys.current.down) move.sub(up);
+      const mobile = mobileInputRef?.current;
 
-      const boost = keys.current.boost ? 3.5 : keys.current.slow ? 0.35 : 1;
-      const targetSpeed = move.length() > 0 ? baseSpeed * boost : 0;
+      // Mobile look
+      if (mobile && (Math.abs(mobile.look.x) > 0.05 || Math.abs(mobile.look.y) > 0.05)) {
+        const yaw = -mobile.look.x * 2.2 * delta;
+        const pitch = -mobile.look.y * 1.8 * delta;
+        camera.rotateY(yaw);
+        camera.rotateX(pitch);
+      }
+
+      const move = new THREE.Vector3();
+      if (mobile) {
+        if (Math.abs(mobile.move.y) > 0.05) move.add(forward.clone().multiplyScalar(mobile.move.y));
+        if (Math.abs(mobile.move.x) > 0.05) move.add(right.clone().multiplyScalar(mobile.move.x));
+        if (mobile.up) move.add(up);
+        if (mobile.down) move.sub(up);
+      } else {
+        if (keys.current.forward) move.add(forward);
+        if (keys.current.backward) move.sub(forward);
+        if (keys.current.right) move.add(right);
+        if (keys.current.left) move.sub(right);
+        if (keys.current.up) move.add(up);
+        if (keys.current.down) move.sub(up);
+      }
+
+      const boost = (keys.current.boost || mobile?.boost) ? 3.5 : keys.current.slow ? 0.35 : 1;
+      const targetSpeed = move.length() > 0.05 ? baseSpeed * boost : 0;
       speedRef.current += (targetSpeed - speedRef.current) * 5 * delta;
       onSpeedChange?.(speedRef.current);
 
@@ -153,6 +172,8 @@ const FlightControls = forwardRef<FlightControlsHandle, FlightControlsProps>(
         camera.position.add(move);
       }
     });
+
+    if (mobileInputRef?.current) return null;
 
     return (
       <PointerLockControls

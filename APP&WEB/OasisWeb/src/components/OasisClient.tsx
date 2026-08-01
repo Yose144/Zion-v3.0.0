@@ -8,6 +8,8 @@ import WarpFlash from './WarpFlash';
 import { ChevronRight, Plane, X } from 'lucide-react';
 import { useAudio, AudioToggle } from './AudioEngine';
 import type { FlightControlsHandle } from './FlightControls';
+import type { MobileInput } from './MobileControls';
+import MobileControls from './MobileControls';
 import type { World, WorldCategory } from '../domain/types/world';
 
 const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
@@ -36,11 +38,26 @@ export default function OasisClient() {
   const [flightMode, setFlightMode] = useState(false);
   const [flightSpeed, setFlightSpeed] = useState(0);
   const [landTarget, setLandTarget] = useState<World | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
+  const mobileInputRef = useRef<MobileInput | null>(null);
   const { muted, toggle, start, playWarp, playBoost, startEngine, stopEngine, setEngine } = useAudio();
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const check = () => {
+      const mobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches;
+      setIsMobile(mobile);
+      if (mobile && !mobileInputRef.current) {
+        mobileInputRef.current = { move: { x: 0, y: 0 }, look: { x: 0, y: 0 }, up: false, down: false, boost: false };
+      }
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   useEffect(() => {
@@ -144,6 +161,7 @@ export default function OasisClient() {
           onCanLand={handleCanLand}
           onApproach={handleApproachWorld}
           onBoost={playBoost}
+          mobileInputRef={isMobile ? mobileInputRef : undefined}
         />
         {phase !== 'intro' && view === 'galaxy' && !flightMode && <OasisHud />}
 
@@ -305,6 +323,10 @@ export default function OasisClient() {
               </div>
             </motion.div>
           )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {flightMode && isMobile && <MobileControls inputRef={mobileInputRef} onExit={handleExitFlight} />}
         </AnimatePresence>
       </div>
 
