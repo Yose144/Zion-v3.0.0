@@ -8,7 +8,7 @@
 
 <h3>Terra Nova — 100 years of evoluZion</h3>
 
-<p><em>A multichain Dharma ecosystem secured by proof-of-work consensus.</em></p>
+<p><em>Mine ZION. Enter the OASIS. Find the Golden Egg.</em></p>
 
 <!-- Badges -->
 <p>
@@ -31,6 +31,8 @@
 [🎮 Oasis Web](https://oasis.zionterranova.com)
 &nbsp;·&nbsp;
 [📖 Whitepaper](./docs/whitepaper.md)
+&nbsp;·&nbsp;
+[🏗️ OASIS Build Journal](./docs/OASIS_DEVLOG.md)
 &nbsp;·&nbsp;
 [⚡ CLI](./V3/cli/README.md)
 &nbsp;·&nbsp;
@@ -421,6 +423,7 @@ This opens an interactive arrow-key menu with all options — wallet, node, mini
 - **Hub:** [zionterranova.com](https://zionterranova.com)
 - **Explorer & dApp:** [app.zionterranova.com](https://app.zionterranova.com)
 - **Oasis Web:** [oasis.zionterranova.com](https://oasis.zionterranova.com)
+- **GitHub:** [Zion-TerraNova/v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet)
 - **Issues:** [GitHub Issues](https://github.com/Zion-TerraNova/v3-Mainnet/issues)
 
 ---
@@ -459,6 +462,6 @@ This project is licensed under the [MIT License](./LICENSE).
 
 ### Built with care, secured by consensus.
 
-[🌐 Hub](https://zionterranova.com) · [📊 Explorer & dApp](https://app.zionterranova.com) · [🎮 Oasis Web](https://oasis.zionterranova.com) · [🔒 Security](./SECURITY.md) · [📜 Whitepaper](./docs/whitepaper.md) · [⚖️ Legal](./docs/LEGAL_DISCLAIMER.md)
+[🌐 Hub](https://zionterranova.com) · [📊 Explorer & dApp](https://app.zionterranova.com) · [🎮 Oasis Web](https://oasis.zionterranova.com) · [📦 GitHub](https://github.com/Zion-TerraNova/v3-Mainnet) · [🔒 Security](./SECURITY.md) · [📜 Whitepaper](./docs/whitepaper.md) · [⚖️ Legal](./docs/LEGAL_DISCLAIMER.md)
 
 </div>
