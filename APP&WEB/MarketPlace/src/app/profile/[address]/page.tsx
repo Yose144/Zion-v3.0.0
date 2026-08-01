@@ -30,7 +30,7 @@ export default function ProfilePage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+      <div className="card-glow p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
           <div className="relative">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-oasis-cyan via-oasis-purple to-oasis-gold flex items-center justify-center text-3xl font-black text-oasis-black font-display">
@@ -104,7 +104,7 @@ export default function ProfilePage() {
       )}
 
       {tab === 'activity' && (
-        <div className="zion-rainbow-card p-5" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
+        <div className="card p-5">
           <div className="space-y-1">
             {mockActivity.map((a, i) => (
               <div key={i} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">

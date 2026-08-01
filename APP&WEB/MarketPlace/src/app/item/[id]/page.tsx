@@ -66,7 +66,7 @@ export default function ItemDetailPage() {
 
       <div className="grid md:grid-cols-2 gap-8">
         {/* Image */}
-        <div className="zion-rainbow-card p-4" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+        <div className="card-glow p-4">
           <div className="aspect-square rounded-xl overflow-hidden artifact-placeholder flex items-center justify-center relative">
             {imgError || !item.image ? (
               <span className="text-9xl text-gradient font-black font-display relative z-10">Z</span>
@@ -98,7 +98,7 @@ export default function ItemDetailPage() {
           </div>
 
           {/* Price card */}
-          <div className="zion-rainbow-card p-6" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
+          <div className="card-glow p-6">
             {item.listingType === 'fixed' && (
               <>
                 <div className="text-xs text-gray-500 mb-1">Current Price</div>
@@ -233,7 +233,7 @@ export default function ItemDetailPage() {
           </div>
 
           {/* Description */}
-          <div className="zion-rainbow-card p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+          <div className="card p-5">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
               Description
@@ -242,7 +242,7 @@ export default function ItemDetailPage() {
           </div>
 
           {/* Properties */}
-          <div className="zion-rainbow-card p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <div className="card p-5">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-purple" />
               Properties
@@ -260,7 +260,7 @@ export default function ItemDetailPage() {
       </div>
 
       {/* History */}
-      <div className="zion-rainbow-card p-5" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
+      <div className="card p-5">
         <h3 className="text-xs font-bold text-gray-400 uppercase mb-4 flex items-center gap-2">
           <span className="w-1 h-3 rounded-full bg-oasis-gold" />
           Activity
