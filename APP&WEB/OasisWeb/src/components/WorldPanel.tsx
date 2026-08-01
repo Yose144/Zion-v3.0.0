@@ -1,11 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag, Swords, Compass, Pickaxe, Brain, Users } from 'lucide-react';
+import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag, Swords, Compass, Pickaxe, Brain, Users, CheckCircle, Circle } from 'lucide-react';
 import type { World } from '../domain/types/world';
-import { generateQuests } from '../domain/quests';
+import { generateQuests, type Quest } from '../domain/quests';
+import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
 
-const TYPE_ICONS = {
+const TYPE_ICONS: Record<Quest['type'], typeof Compass> = {
   exploration: Compass,
   combat: Swords,
   harvest: Pickaxe,
@@ -35,9 +36,43 @@ interface WorldPanelProps {
   onEnter: () => void;
 }
 
+function guessQuestType(text: string): Quest['type'] {
+  const t = text.toLowerCase();
+  if (t.includes('fight') || t.includes('battle') || t.includes('defend') || t.includes('combat')) return 'combat';
+  if (t.includes('mine') || t.includes('harvest') || t.includes('collect') || t.includes('gather')) return 'harvest';
+  if (t.includes('puzzle') || t.includes('solve') || t.includes('decode') || t.includes('riddle')) return 'puzzle';
+  if (t.includes('help') || t.includes('meet') || t.includes('speak') || t.includes('negotiate') || t.includes('guide')) return 'social';
+  return 'exploration';
+}
+
+function mapRealQuests(world: World, realQuests: any[]): Quest[] {
+  const matches = realQuests.filter((q) => {
+    const loc = (q.location ?? '').toLowerCase();
+    const name = (q.avatar_name ?? '').toLowerCase();
+    const wn = world.name.toLowerCase();
+    return loc.includes(wn) || wn.includes(loc) || name.includes(wn) || wn.includes(name);
+  });
+
+  return matches.map((q) => ({
+    id: q.quest_id,
+    title: q.title,
+    type: guessQuestType(`${q.title} ${q.description}`),
+    difficulty: Math.min(10, Math.max(1, q.min_consciousness_level ?? 1)),
+    reward: q.xp_reward ?? 100,
+    description: q.description,
+    real: true,
+    avatarName: q.avatar_name,
+  }));
+}
+
 export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
   const color = CATEGORY_COLORS[world.category] || '#ffffff';
-  const quests = generateQuests(world);
+  const { xp, credits, completeQuest, completedQuests, realQuests } = useGameStore();
+  const generated = generateQuests(world);
+  const real = mapRealQuests(world, realQuests);
+  const quests = real.length > 0 ? real : generated;
+  const level = getLevel(xp);
+  const levelProgress = getLevelProgress(xp);
 
   return (
     <motion.div
@@ -65,6 +100,18 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
           <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
             <Layers className="h-3 w-3" />
             <span>Layer {world.layer}</span>
+          </div>
+          <div className="mt-2 w-24">
+            <div className="flex items-center justify-between text-[10px] text-gray-400">
+              <span>Level {level}</span>
+              <span>{credits} Z</span>
+            </div>
+            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full transition-all"
+                style={{ width: `${levelProgress * 100}%`, backgroundColor: color }}
+              />
+            </div>
           </div>
         </div>
         <button
@@ -107,20 +154,43 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Active Quests</p>
           <div className="space-y-2">
-            {quests.map((quest, i) => {
+            {quests.map((quest) => {
               const Icon = TYPE_ICONS[quest.type];
+              const done = completedQuests.includes(quest.id);
               return (
-                <div key={quest.id} className="flex items-start gap-2.5 rounded-lg bg-white/5 p-2">
+                <div
+                  key={quest.id}
+                  className={`flex items-start gap-2.5 rounded-lg p-2 transition ${done ? 'bg-white/[0.02]' : 'bg-white/5'}`}
+                >
                   <div className="mt-0.5 rounded p-1" style={{ backgroundColor: `${color}20`, color }}>
                     <Icon className="h-3.5 w-3.5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-white">{quest.title}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className={`text-xs font-semibold ${done ? 'text-gray-500 line-through' : 'text-white'}`}>{quest.title}</p>
+                      {quest.real && (
+                        <span className="rounded bg-oasis-gold/20 px-1 text-[9px] font-bold text-oasis-gold">LIVE</span>
+                      )}
+                    </div>
+                    {quest.avatarName && (
+                      <p className="text-[10px] text-oasis-cyan">From: {quest.avatarName}</p>
+                    )}
                     <p className="text-[10px] text-gray-400">{quest.description}</p>
                   </div>
-                  <div className="text-right text-[10px] text-gray-400">
+                  <div className="flex flex-col items-end gap-1 text-right text-[10px] text-gray-400">
                     <p style={{ color }}>★ {quest.difficulty}</p>
                     <p>{quest.reward} XP</p>
+                    <button
+                      onClick={() => !done && completeQuest(quest.id, quest.reward)}
+                      disabled={done}
+                      className={`rounded px-2 py-0.5 text-[10px] font-bold transition ${
+                        done
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-oasis-cyan/20 text-oasis-cyan hover:bg-oasis-cyan/30'
+                      }`}
+                    >
+                      {done ? 'Done' : 'Complete'}
+                    </button>
                   </div>
                 </div>
               );
