@@ -113,6 +113,7 @@ export default function OasisClient() {
           onExitFlight={handleExitFlight}
           flightControlsRef={flightControlsRef}
           onFlightSpeedChange={setFlightSpeed}
+          flightSpeed={flightSpeed}
         />
         {phase !== 'intro' && view === 'galaxy' && !flightMode && <OasisHud />}
 
