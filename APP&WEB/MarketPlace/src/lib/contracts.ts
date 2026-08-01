@@ -12,6 +12,9 @@ export const ZION_GOVERNANCE_ADDRESS = '0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623
 export const ZION_TREASURY_ADDRESS = '0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD' as const;
 export const ZION_ATOMIC_SWAP_ADDRESS = '0x3DE9Ad42716854083ab837706E3961d10B0e63Eb' as const;
 
+// ── L1 bridge vault address (where buyers send native ZION for marketplace purchases) ───
+export const ZION_BRIDGE_L1_VAULT = 'zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7' as const;
+
 // ── Marketplace contracts (to be deployed) ─────────────────────────
 export const ZION_ARTIFACT_NFT_ADDRESS = process.env.NEXT_PUBLIC_ARTIFACT_NFT_ADDRESS ?? '';
 export const ZION_MARKETPLACE_ADDRESS = process.env.NEXT_PUBLIC_MARKETPLACE_ADDRESS ?? '';
@@ -254,6 +257,39 @@ export const MARKETPLACE_ABI = [
     inputs: [],
     name: 'totalListings',
     outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  // ── L1 hybrid payment ──
+  {
+    inputs: [
+      { name: 'listingId', type: 'uint256' },
+      { name: 'buyer', type: 'address' },
+      { name: 'quantity', type: 'uint256' },
+    ],
+    name: 'relayerSettle',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'listingId', type: 'uint256' }],
+    name: 'relayerSettleAuction',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'relayer', type: 'address' }],
+    name: 'grantRelayerRole',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'RELAYER_ROLE',
+    outputs: [{ name: '', type: 'bytes32' }],
     stateMutability: 'view',
     type: 'function',
   },

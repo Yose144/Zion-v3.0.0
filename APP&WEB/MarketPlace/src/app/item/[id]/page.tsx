@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
+import { WZION_ADDRESS, ZION_BRIDGE_L1_VAULT } from '@/lib/contracts';
 
 const mockItem = {
   id: '1',
@@ -34,9 +35,24 @@ export default function ItemDetailPage() {
   const { address, isConnected } = useAccount();
   const [bidAmount, setBidAmount] = useState('');
   const [imgError, setImgError] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'l2' | 'l1'>('l2');
+  const [l1Qty, setL1Qty] = useState('1');
+  const [copied, setCopied] = useState(false);
   const item = mockItem; // TODO: fetch by params.id
 
   const isOwner = isConnected && address?.toLowerCase() === item.owner.toLowerCase();
+
+  // L1 payment memo: MARKETBUY:listingId:buyerL2Address:quantity
+  const l1Memo = address
+    ? `MARKETBUY:${item.id}:${address}:${l1Qty || '1'}`
+    : `MARKETBUY:${item.id}:<YOUR_L2_ADDRESS>:1`;
+
+  const copyL1Instructions = () => {
+    const text = `Send ${item.price} ZION to ${ZION_BRIDGE_L1_VAULT}\nMemo: ${l1Memo}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="space-y-8">
@@ -78,14 +94,96 @@ export default function ItemDetailPage() {
               <>
                 <div className="text-xs text-gray-500 mb-1">Current Price</div>
                 <div className="text-3xl font-black text-gradient-gold mb-4">
-                  {item.price} ETH
+                  {item.price} wZION
                 </div>
-                <button
-                  disabled={!isConnected || isOwner}
-                  className="btn-primary w-full disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {!isConnected ? 'Connect wallet to buy' : isOwner ? 'You own this item' : 'Buy Now'}
-                </button>
+
+                {/* Payment method selector */}
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => setPaymentMethod('l2')}
+                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                      paymentMethod === 'l2'
+                        ? 'bg-oasis-cyan/20 border border-oasis-cyan/50 text-oasis-cyan'
+                        : 'bg-white/5 border border-white/10 text-gray-500 hover:text-gray-300'
+                    }`}
+                  >
+                    Pay with wZION (L2)
+                  </button>
+                  <button
+                    onClick={() => setPaymentMethod('l1')}
+                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                      paymentMethod === 'l1'
+                        ? 'bg-oasis-gold/20 border border-oasis-gold/50 text-oasis-gold'
+                        : 'bg-white/5 border border-white/10 text-gray-500 hover:text-gray-300'
+                    }`}
+                  >
+                    Pay with ZION (L1)
+                  </button>
+                </div>
+
+                {paymentMethod === 'l2' ? (
+                  <button
+                    disabled={!isConnected || isOwner}
+                    className="btn-primary w-full disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {!isConnected ? 'Connect wallet to buy' : isOwner ? 'You own this item' : 'Buy Now'}
+                  </button>
+                ) : (
+                  <div className="space-y-3">
+                    {/* L1 payment instructions */}
+                    <div className="rounded-lg bg-oasis-gold/5 border border-oasis-gold/20 p-3 space-y-2">
+                      <div className="text-xs text-oasis-gold font-bold flex items-center gap-1">
+                        <span className="status-dot status-active" />
+                        Pay with native ZION on L1
+                      </div>
+                      <div className="text-[11px] text-gray-400 leading-relaxed">
+                        Send <span className="text-oasis-gold font-mono font-bold">{item.price} ZION</span> to the bridge vault with the memo below. After L1 confirmation (~60 blocks), the NFT will be delivered to your L2 address automatically.
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <div>
+                          <div className="text-[10px] text-gray-500 uppercase mb-0.5">Bridge Vault Address</div>
+                          <div className="font-mono text-[11px] text-gray-300 break-all bg-black/30 rounded px-2 py-1">
+                            {ZION_BRIDGE_L1_VAULT}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-gray-500 uppercase mb-0.5">Memo (required)</div>
+                          <div className="font-mono text-[11px] text-oasis-cyan break-all bg-black/30 rounded px-2 py-1">
+                            {l1Memo}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-gray-500 uppercase mb-0.5">Quantity</div>
+                          <input
+                            type="number"
+                            min="1"
+                            value={l1Qty}
+                            onChange={(e) => setL1Qty(e.target.value)}
+                            className="w-full px-2 py-1 rounded bg-white/5 border border-white/10 text-xs font-mono focus:border-oasis-gold/50 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={copyL1Instructions}
+                        className="w-full mt-2 px-3 py-1.5 rounded-lg bg-oasis-gold/10 border border-oasis-gold/30 text-xs text-oasis-gold font-bold hover:bg-oasis-gold/20 transition-all"
+                      >
+                        {copied ? '✓ Copied!' : 'Copy payment instructions'}
+                      </button>
+
+                      {!isConnected && (
+                        <div className="text-[10px] text-rose-400/70">
+                          Connect your L2 wallet first — your address is included in the memo so the NFT is delivered to you.
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-[10px] text-gray-600 leading-relaxed">
+                      The L1 watcher service detects your payment, waits for finality, then calls <span className="font-mono text-gray-500">relayerSettle()</span> on the L2 marketplace contract to transfer the NFT to your address. Seller receives wZION via the bridge.
+                    </div>
+                  </div>
+                )}
               </>
             )}
             {item.listingType === 'auction' && (

@@ -102,4 +102,47 @@ contract ZIONMarketplaceTest is Test {
         assertEq(artifact.balanceOf(seller, 1), 10);
         assertEq(artifact.balanceOf(address(marketplace), 1), 0);
     }
+
+    /// @dev L1 hybrid payment: relayer settles a listing paid on L1
+    function test_RelayerSettleL1Payment() public {
+        address relayer = makeAddr("relayer");
+
+        // Grant relayer role
+        marketplace.grantRelayerRole(relayer);
+
+        // Seller creates listing
+        vm.startPrank(seller);
+        artifact.setApprovalForAll(address(marketplace), true);
+        uint256 listingId = marketplace.createListing(
+            address(artifact), 1, 5, 10 * 10 ** 18, 0
+        );
+        vm.stopPrank();
+
+        // Relayer settles on behalf of buyer (L1 payment already happened)
+        vm.startPrank(relayer);
+        marketplace.relayerSettle(listingId, buyer, 2);
+        vm.stopPrank();
+
+        // Buyer got NFTs without spending wZION on L2
+        assertEq(artifact.balanceOf(buyer, 1), 2);
+        assertEq(artifact.balanceOf(address(marketplace), 1), 3);
+        // Buyer's wZION balance unchanged (paid on L1)
+        assertEq(wzion.balanceOf(buyer), 1000 * 10 ** 18);
+    }
+
+    /// @dev Non-relayer cannot call relayerSettle
+    function test_RelayerSettle_Unauthorized() public {
+        vm.startPrank(seller);
+        artifact.setApprovalForAll(address(marketplace), true);
+        uint256 listingId = marketplace.createListing(
+            address(artifact), 1, 5, 10 * 10 ** 18, 0
+        );
+        vm.stopPrank();
+
+        // Random user tries to settle — should revert
+        vm.startPrank(buyer);
+        vm.expectRevert();
+        marketplace.relayerSettle(listingId, buyer, 1);
+        vm.stopPrank();
+    }
 }
