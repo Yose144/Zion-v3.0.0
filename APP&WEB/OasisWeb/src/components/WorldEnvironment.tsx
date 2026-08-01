@@ -277,11 +277,12 @@ function planetSecondaryColor(color: string): string {
   return `#${c.getHexString()}`;
 }
 
-export default function WorldEnvironment({ world }: { world: World }) {
+export default function WorldEnvironment({ world, isMobile = false }: { world: World; isMobile?: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   const color = CATEGORY_COLORS[world.category] || '#ffffff';
   const size = SIZES[world.category] || 1.0;
   const seed = useMemo(() => world.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0), [world.id]);
+  const mobileFactor = isMobile ? 0.5 : 1;
 
   useFrame((state) => {
     if (groupRef.current) {
@@ -290,20 +291,22 @@ export default function WorldEnvironment({ world }: { world: World }) {
   });
 
   const centralGeometry = useMemo(() => {
+    const seg = isMobile ? 32 : 64;
+    const torusSeg = isMobile ? 80 : 160;
     switch (world.category) {
       case 'star-system':
-        return new THREE.SphereGeometry(size, 64, 64);
+        return new THREE.SphereGeometry(size, seg, seg);
       case 'planet':
       case 'world':
-        return new THREE.SphereGeometry(size, 64, 64);
+        return new THREE.SphereGeometry(size, seg, seg);
       case 'sector':
         return new THREE.DodecahedronGeometry(size, 0);
       case 'dimension':
-        return new THREE.TorusKnotGeometry(size * 0.55, size * 0.18, 160, 24);
+        return new THREE.TorusKnotGeometry(size * 0.55, size * 0.18, torusSeg, 24);
       default:
-        return new THREE.SphereGeometry(size, 64, 64);
+        return new THREE.SphereGeometry(size, seg, seg);
     }
-  }, [world.category, size]);
+  }, [world.category, size, isMobile]);
 
   const planetTexture = useMemo(() => {
     if (world.category === 'planet' || world.category === 'world') {
@@ -319,7 +322,7 @@ export default function WorldEnvironment({ world }: { world: World }) {
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
       {/* distant star backdrop */}
-      <Stars radius={140} depth={90} count={5000} factor={3} saturation={0} fade speed={0.3} />
+      <Stars radius={140} depth={90} count={isMobile ? 1500 : 5000} factor={3} saturation={0} fade speed={0.3} />
 
       {world.category === 'star-system' && (
         <>
@@ -327,9 +330,9 @@ export default function WorldEnvironment({ world }: { world: World }) {
             <meshBasicMaterial color="#fff7d6" toneMapped={false} />
           </mesh>
           <StarCorona color={color} size={size} />
-          <SatelliteRing count={8} color="#22d3ee" distance={4.2} sizeBase={0.1} />
+          <SatelliteRing count={Math.floor(8 * mobileFactor)} color="#22d3ee" distance={4.2} sizeBase={0.1} />
           <OrbitRing radius={4.2} color={color} />
-          <WorldParticles count={260} color={color} seed={seed} radius={9} />
+          <WorldParticles count={Math.floor(260 * mobileFactor)} color={color} seed={seed} radius={9} />
         </>
       )}
 
@@ -348,8 +351,8 @@ export default function WorldEnvironment({ world }: { world: World }) {
           </mesh>
           <AtmosphereSphere color={color} size={size} />
           <OrbitRing radius={size * 2.2} color={color} texture={ringTexture} />
-          {world.category === 'planet' && <SatelliteRing count={3} color="#cbd5e1" distance={size * 2.4} sizeBase={0.06} />}
-          <WorldParticles count={200} color={color} seed={seed} radius={6} />
+          {world.category === 'planet' && <SatelliteRing count={Math.max(1, Math.floor(3 * mobileFactor))} color="#cbd5e1" distance={size * 2.4} sizeBase={0.06} />}
+          <WorldParticles count={Math.floor(200 * mobileFactor)} color={color} seed={seed} radius={6} />
         </>
       )}
 
@@ -369,7 +372,7 @@ export default function WorldEnvironment({ world }: { world: World }) {
             <meshBasicMaterial color={color} wireframe transparent opacity={0.22} blending={THREE.AdditiveBlending} depthWrite={false} />
           </mesh>
           <OrbitRing radius={size * 1.8} color={color} texture={ringTexture} />
-          <WorldParticles count={160} color={color} seed={seed} radius={5} />
+          <WorldParticles count={Math.floor(160 * mobileFactor)} color={color} seed={seed} radius={5} />
         </>
       )}
 
@@ -378,13 +381,13 @@ export default function WorldEnvironment({ world }: { world: World }) {
           <mesh geometry={centralGeometry}>
             <meshBasicMaterial color={color} transparent opacity={0.9} blending={THREE.AdditiveBlending} depthWrite={false} />
           </mesh>
-          <mesh geometry={new THREE.TorusKnotGeometry(size * 0.85, size * 0.08, 160, 24)}>
+          <mesh geometry={new THREE.TorusKnotGeometry(size * 0.85, size * 0.08, isMobile ? 80 : 160, 24)}>
             <meshBasicMaterial color={color} wireframe transparent opacity={0.18} blending={THREE.AdditiveBlending} depthWrite={false} />
           </mesh>
           <sprite position={[0, 0, 0]} scale={[size * 3.5, size * 3.5, 1]}>
             <spriteMaterial map={createGlowTexture(color)} transparent opacity={0.25} blending={THREE.AdditiveBlending} depthWrite={false} />
           </sprite>
-          <WorldParticles count={220} color={color} seed={seed} radius={6} />
+          <WorldParticles count={Math.floor(220 * mobileFactor)} color={color} seed={seed} radius={6} />
         </>
       )}
 

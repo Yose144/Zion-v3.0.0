@@ -162,6 +162,7 @@ export default function OasisClient() {
           onApproach={handleApproachWorld}
           onBoost={playBoost}
           mobileInputRef={isMobile ? mobileInputRef : undefined}
+          isMobile={isMobile}
         />
         {phase !== 'intro' && view === 'galaxy' && !flightMode && <OasisHud />}
 

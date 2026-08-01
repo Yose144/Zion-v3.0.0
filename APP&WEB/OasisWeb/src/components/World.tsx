@@ -17,6 +17,7 @@ export interface WorldNodeProps {
   category: string;
   showLabel?: boolean;
   isSelected?: boolean;
+  isMobile?: boolean;
   onSelect?: (id: string) => void;
 }
 
@@ -30,6 +31,7 @@ export default function World({
   category,
   showLabel = false,
   isSelected = false,
+  isMobile = false,
   onSelect,
 }: WorldNodeProps) {
   const groupRef = useRef<THREE.Group>(null);
@@ -108,7 +110,7 @@ export default function World({
       </mesh>
 
       {/* Warp gate ring (star systems + selected) */}
-      {(isStarSystem || selected) && (
+      {(isStarSystem || selected) && (!isMobile || hovered || selected) && (
         <group ref={gateRef}>
           <mesh>
             <torusGeometry args={[size * (isStarSystem ? 2.4 : 2.0), size * 0.07, 10, 48]} />
@@ -127,7 +129,7 @@ export default function World({
       )}
 
       {/* Permanent small label for star systems / selected */}
-      {(showLabel || selected) && (
+      {((showLabel || selected) && (!isMobile || selected)) && (
         <Html distanceFactor={14} center position={[0, size + 0.65, 0]}>
           <div className="pointer-events-none select-none rounded border border-white/10 bg-black/70 px-2 py-1 text-center shadow-lg backdrop-blur-sm">
             <span className="text-[10px] font-semibold tracking-wide text-white/90" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}>{name}</span>

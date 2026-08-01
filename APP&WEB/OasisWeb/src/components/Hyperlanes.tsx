@@ -6,6 +6,10 @@ import * as THREE from 'three';
 import { WORLDS } from '../domain/config/worlds';
 import { createRandom } from '../domain/ports/random';
 
+interface HyperlanesProps {
+  isMobile?: boolean;
+}
+
 const MAX_LINKS = 2;
 const PARTICLES_PER_LINK = 2;
 
@@ -25,10 +29,11 @@ interface Streamer {
   color: THREE.Color;
 }
 
-export default function Hyperlanes() {
+export default function Hyperlanes({ isMobile = false }: HyperlanesProps) {
   const linesRef = useRef<THREE.LineSegments>(null);
   const materialRef = useRef<THREE.LineBasicMaterial>(null);
   const pointsRef = useRef<THREE.Points>(null);
+  const particlesPerLink = isMobile ? 1 : PARTICLES_PER_LINK;
 
   const { lineGeometry, lineMaterial, pointGeometry, pointMaterial, streamers } = useMemo(() => {
     const links = new Set<string>();
@@ -68,7 +73,7 @@ export default function Hyperlanes() {
           137
         );
 
-        for (let i = 0; i < PARTICLES_PER_LINK; i++) {
+        for (let i = 0; i < particlesPerLink; i++) {
           streamers.push({
             start: wp,
             end: op,

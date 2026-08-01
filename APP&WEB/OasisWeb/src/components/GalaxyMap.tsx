@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { WORLDS } from '../domain/config/worlds';
 import type { World, WorldCategory } from '../domain/types/world';
 import WorldNode from './World';
+import Hyperlanes from './Hyperlanes';
 
 const CATEGORY_COLORS: Record<string, string> = {
   'star-system': '#f59e0b',
@@ -29,9 +30,10 @@ interface GalaxyMapProps {
   activeCategories: WorldCategory[];
   selectedWorldId?: string | null;
   onWorldSelect?: (world: World) => void;
+  isMobile?: boolean;
 }
 
-export default function GalaxyMap({ activeCategories, selectedWorldId, onWorldSelect }: GalaxyMapProps) {
+export default function GalaxyMap({ activeCategories, selectedWorldId, onWorldSelect, isMobile = false }: GalaxyMapProps) {
   const groupRef = useRef<THREE.Group>(null);
   const linesRef = useRef<THREE.LineSegments>(null);
 
@@ -76,7 +78,11 @@ export default function GalaxyMap({ activeCategories, selectedWorldId, onWorldSe
 
   return (
     <group ref={groupRef}>
+      {/* Constellation lines to galactic core */}
       <lineSegments ref={linesRef} geometry={lineGeometry} material={lineMaterial} />
+
+      {/* Inter-world hyperlane / warp-gate network */}
+      <Hyperlanes isMobile={isMobile} />
 
       {visibleWorlds.map((w) => {
         const color = CATEGORY_COLORS[w.category] || '#ffffff';
@@ -95,6 +101,7 @@ export default function GalaxyMap({ activeCategories, selectedWorldId, onWorldSe
             category={w.category}
             showLabel={w.category === 'star-system' || isSelected}
             isSelected={isSelected}
+            isMobile={isMobile}
             onSelect={() => onWorldSelect?.(w)}
           />
         );

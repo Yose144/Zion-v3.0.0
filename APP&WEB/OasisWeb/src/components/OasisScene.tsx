@@ -158,6 +158,7 @@ interface OasisSceneProps {
   onBoost: () => void;
   flightSpeed?: number;
   mobileInputRef?: React.RefObject<import('./MobileControls').MobileInput | null>;
+  isMobile?: boolean;
 }
 
 export default function OasisScene({
@@ -176,9 +177,10 @@ export default function OasisScene({
   onBoost,
   flightSpeed = 0,
   mobileInputRef,
+  isMobile = false,
 }: OasisSceneProps) {
   return (
-    <Canvas camera={{ position: [0, 3.5, 34], fov: 55 }} dpr={[1, 2]}>
+    <Canvas camera={{ position: [0, 3.5, 34], fov: 55 }} dpr={[1, isMobile ? 1.25 : 2]}>
       <color attach="background" args={['#02030a']} />
       <fog attach="fog" args={['#02030a', 22, 55]} />
       <ambientLight intensity={0.15} />
@@ -189,7 +191,7 @@ export default function OasisScene({
       {view === 'galaxy' && (
         <>
           {/* Distant star backdrop */}
-          <Stars radius={180} depth={120} count={8000} factor={4} saturation={0} fade speed={0.4} />
+          <Stars radius={180} depth={120} count={isMobile ? 3000 : 8000} factor={4} saturation={0} fade speed={0.4} />
 
           {/* Galaxy disk + core + nebula */}
           <Galaxy />
@@ -212,11 +214,12 @@ export default function OasisScene({
             activeCategories={activeCategories}
             selectedWorldId={selectedWorld?.id}
             onWorldSelect={onWorldSelect}
+            isMobile={isMobile}
           />
         </>
       )}
 
-      {view === 'world' && selectedWorld && <WorldEnvironment world={selectedWorld} />}
+      {view === 'world' && selectedWorld && <WorldEnvironment world={selectedWorld} isMobile={isMobile} />}
 
       {/* Arrival flight and controls */}
       <CameraRig
