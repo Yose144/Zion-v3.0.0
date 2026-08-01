@@ -2137,7 +2137,7 @@ mod tests {
     use super::*;
 
     /// Test that the GPU autolykos kernel produces the same hash as the CPU
-    /// reference implementation. Uses height=0 (N=2^26=67M, table=~2.15GB).
+    /// reference implementation. Uses height=0 (N=2^21=2M, table=~64MB).
     #[test]
     fn test_autolykos_gpu_vs_cpu() {
         // Skip if no CUDA device available
@@ -2150,7 +2150,7 @@ mod tests {
         };
 
         // Check free VRAM — need ~2.2 GB for the R table at height 0
-        // (N=67M * 32 bytes = 2.15 GB)
+        // (N=2M * 32 bytes = 64 MB)
         let free_info = std::process::Command::new("nvidia-smi")
             .args(["--query-gpu=memory.free", "--format=csv,noheader,nounits"])
             .output();
@@ -2175,7 +2175,7 @@ mod tests {
             }
         };
 
-        // Set height=0 → N=67,108,864, table=2.15 GB
+        // Set height=0 → N=2,097,152, table=64 MB
         miner.update_epoch(0).expect("update_epoch");
 
         // Test header (32 bytes of known data)
@@ -2220,7 +2220,7 @@ mod tests {
         eprintln!("autolykos GPU vs CPU test PASSED!");
     }
 
-    /// Benchmark the autolykos kernel hashrate at height=0 (N=67M, table=2.15GB).
+    /// Benchmark the autolykos kernel hashrate at height=0 (N=2M, table=64MB).
     #[test]
     fn bench_autolykos_hashrate() {
         let dev = match CudaDevice::new_with_stream(0) {

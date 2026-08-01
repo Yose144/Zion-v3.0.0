@@ -10,11 +10,11 @@
 
 #![allow(dead_code)]
 
+use crate::{private_eprint, private_print};
 use anyhow::Result;
 use std::time::{SystemTime, UNIX_EPOCH};
-use zion_auxpow::external_hashers::{hash_blake3, hash_ethash, hash_etchash};
+use zion_auxpow::external_hashers::{hash_blake3, hash_etchash, hash_ethash};
 use zion_core::{DifficultyTarget, MiningHeader, MiningJob, MiningSolution};
-use crate::{private_eprint, private_print};
 
 #[cfg(feature = "gpu-opencl")]
 use crate::gpu_guard::{GpuAlgorithm, GpuDeviceFamily, GpuGuard, GpuTuning};
@@ -53,9 +53,7 @@ pub fn init_gpu_memory_budget_with_threads(cpu_threads: usize) -> bool {
     if budget == 0 {
         GPU_MEM_BUDGET_BYTES.store(0, AtomicOrdering::SeqCst);
         GPU_MEM_CLAIMED_BYTES.store(0, AtomicOrdering::SeqCst);
-        println!(
-            "gpu_mem_budget_init DISABLED — auto-tune kill switch active (CPU only mode)"
-        );
+        println!("gpu_mem_budget_init DISABLED — auto-tune kill switch active (CPU only mode)");
         return false;
     }
 
@@ -189,9 +187,7 @@ pub struct GpuBatchResult {
 
 /// Convert `StreamWeights` into the fixed 6-element float array consumed by
 /// the OpenCL Deeksha kernels.
-fn stream_weights_f32(
-    weights: &zion_cosmic_harmony::stream_profit::StreamWeights,
-) -> [f32; 6] {
+fn stream_weights_f32(weights: &zion_cosmic_harmony::stream_profit::StreamWeights) -> [f32; 6] {
     use zion_cosmic_harmony::revenue::RevenueSource;
     [
         weights.weight_for(RevenueSource::Zion) as f32,
@@ -371,7 +367,11 @@ impl GpuBackendManager {
             .filter(|algo| !backend_supports_algorithm(self.kind, algo))
             .collect();
         if !skipped.is_empty() {
-            println!("benchmark_skip_unsafe backend={} algos={:?}", self.kind.as_str(), skipped);
+            println!(
+                "benchmark_skip_unsafe backend={} algos={:?}",
+                self.kind.as_str(),
+                skipped
+            );
         }
         let mut results = Vec::new();
         for algo in algos {
@@ -446,8 +446,8 @@ impl TriGpuManager {
                 primary_algo: String::new(),
             });
         }
-        let primary_algo = std::env::var("ZION_MINER_ALGORITHM")
-            .unwrap_or_else(|_| "deeksha_lite_v1".to_string());
+        let primary_algo =
+            std::env::var("ZION_MINER_ALGORITHM").unwrap_or_else(|_| "deeksha_lite_v1".to_string());
         let primary = create_gpu_backend(kind, primary_work_size, &primary_algo, "")?;
 
         Ok(Self {
@@ -672,9 +672,7 @@ impl MultiGpuMiner {
         self.batch_count += 1;
         // Log every 50 batches
         if self.batch_count % 50 == 0 {
-            let hr_str: Vec<String> = self.hashrates.iter()
-                .map(|h| format!("{:.0}", h))
-                .collect();
+            let hr_str: Vec<String> = self.hashrates.iter().map(|h| format!("{:.0}", h)).collect();
             println!(
                 "multi_gpu_weights batch={} hashrates=[{}] total={:.0}",
                 self.batch_count,
@@ -885,9 +883,7 @@ impl GpuMiner for MultiGpuMiner {
             let handles: Vec<_> = self
                 .miners
                 .iter_mut()
-                .map(|miner| {
-                    s.spawn(move || miner.benchmark(secs))
-                })
+                .map(|miner| s.spawn(move || miner.benchmark(secs)))
                 .collect();
             handles.into_iter().map(|h| h.join().unwrap()).collect()
         });
@@ -941,10 +937,14 @@ pub fn is_external_algorithm(algorithm: &str) -> bool {
             | "beamhash_beam"
             | "verushash"
             | "randomx"
-            | "eaglesong" | "eaglesong_ckb"
-            | "octopus" | "octopus_cfx"
-            | "equihash" | "equihash_zec"
-            | "neoscrypt" | "neoscrypt_phx"
+            | "eaglesong"
+            | "eaglesong_ckb"
+            | "octopus"
+            | "octopus_cfx"
+            | "equihash"
+            | "equihash_zec"
+            | "neoscrypt"
+            | "neoscrypt_phx"
     )
 }
 
@@ -1005,12 +1005,13 @@ pub fn algorithm_extra_gpu_memory_bytes(algorithm: &str, height: u64) -> u64 {
     // DAG-based: DAG size = 1 GB + epoch × 8 MB
     if is_dag_based_algorithm(algorithm) {
         let epoch_divisor = match algorithm {
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr"
-            | "kawpow_mewc" | "kawpow_quai"
-            | "evrprogpow" | "evrprogpow_evr"
-            | "meowpow" | "meowpow_mewc" => 7500u64,
-            "progpow" | "progpow_epic" | "progpow_zano"
-            | "ethash" | "etchash" | "ethash_etc" => 30000u64,
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            | "kawpow_quai" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
+                7500u64
+            }
+            "progpow" | "progpow_epic" | "progpow_zano" | "ethash" | "etchash" | "ethash_etc" => {
+                30000u64
+            }
             _ => 30000u64,
         };
         let epoch = height / epoch_divisor;
@@ -1280,11 +1281,21 @@ fn detect_cpu_info() -> (String, String, usize, usize) {
     #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
     {
         let _ = physical; // suppress unused on non-target platforms
-        return ("unknown".to_string(), "unknown".to_string(), physical, logical);
+        return (
+            "unknown".to_string(),
+            "unknown".to_string(),
+            physical,
+            logical,
+        );
     }
 
     // Fallback (only reached on Linux if /proc/cpuinfo parsing failed)
-    ("unknown".to_string(), "unknown".to_string(), physical, logical)
+    (
+        "unknown".to_string(),
+        "unknown".to_string(),
+        physical,
+        logical,
+    )
 }
 
 /// Detect physical CPU cores (not logical/SMT threads).
@@ -1360,7 +1371,11 @@ fn detect_physical_cores() -> Option<usize> {
             .output()
         {
             if let Ok(text) = String::from_utf8(output.stdout) {
-                if let Some(n) = text.lines().nth(1).and_then(|s| s.trim().parse::<usize>().ok()) {
+                if let Some(n) = text
+                    .lines()
+                    .nth(1)
+                    .and_then(|s| s.trim().parse::<usize>().ok())
+                {
                     return Some(n);
                 }
             }
@@ -1398,32 +1413,65 @@ pub enum CpuArch {
 ///   - But not more than physical+6 (oversubscription degrades due to 8.8KB key per thread)
 ///   - nonce_count: 5M for ≥8 threads, 2M for 4-7, 1M for ≤3
 ///   - Apple Silicon: fewer threads (unified memory with GPU)
-fn auto_tune_verushash(physical: usize, logical: usize, arch: CpuArch, has_gpu: bool) -> (usize, u64) {
+fn auto_tune_verushash(
+    physical: usize,
+    logical: usize,
+    arch: CpuArch,
+    has_gpu: bool,
+) -> (usize, u64) {
     let (threads, nonce_count) = match arch {
         CpuArch::AmdZen => {
             // AMD Zen: SMT helps, use all logical cores but cap at physical+6
             // to avoid L3 cache thrashing (each thread needs ~8.8KB CLHash key)
             let t = logical.min(physical + 6).max(1);
-            let n = if t >= 8 { 5_000_000 } else if t >= 4 { 2_000_000 } else { 1_000_000 };
+            let n = if t >= 8 {
+                5_000_000
+            } else if t >= 4 {
+                2_000_000
+            } else {
+                1_000_000
+            };
             (t, n)
         }
         CpuArch::IntelCore => {
             // Intel HT also helps, similar to AMD SMT
             let t = logical.min(physical + 4).max(1);
-            let n = if t >= 8 { 5_000_000 } else if t >= 4 { 2_000_000 } else { 1_000_000 };
+            let n = if t >= 8 {
+                5_000_000
+            } else if t >= 4 {
+                2_000_000
+            } else {
+                1_000_000
+            };
             (t, n)
         }
         CpuArch::AppleSilicon => {
             // Apple Silicon: unified memory, GPU competes for bandwidth
             // Use physical cores - 1 (leave 1 for OS + GPU driver)
-            let t = if has_gpu { physical.saturating_sub(1).max(2) } else { physical };
-            let n = if t >= 6 { 5_000_000 } else if t >= 3 { 2_000_000 } else { 1_000_000 };
+            let t = if has_gpu {
+                physical.saturating_sub(1).max(2)
+            } else {
+                physical
+            };
+            let n = if t >= 6 {
+                5_000_000
+            } else if t >= 3 {
+                2_000_000
+            } else {
+                1_000_000
+            };
             (t, n)
         }
         CpuArch::Other => {
             // Conservative: use physical cores only
             let t = physical.max(1);
-            let n = if t >= 8 { 5_000_000 } else if t >= 4 { 2_000_000 } else { 1_000_000 };
+            let n = if t >= 8 {
+                5_000_000
+            } else if t >= 4 {
+                2_000_000
+            } else {
+                1_000_000
+            };
             (t, n)
         }
     };
@@ -1438,8 +1486,11 @@ fn classify_cpu(vendor: &str, model: &str) -> CpuArch {
     if v.contains("apple") || m.contains("apple m") || m.contains("apple silicon") {
         return CpuArch::AppleSilicon;
     }
-    if v.contains("amd") || m.contains("amd ryzen") || m.contains("amd epic")
-        || m.contains("ryzen") || m.contains("epyc")
+    if v.contains("amd")
+        || m.contains("amd ryzen")
+        || m.contains("amd epic")
+        || m.contains("ryzen")
+        || m.contains("epyc")
     {
         // Check for Zen architecture (all modern AMD CPUs are Zen)
         if m.contains("ryzen") || m.contains("epyc") || m.contains("threadripper") {
@@ -1447,8 +1498,12 @@ fn classify_cpu(vendor: &str, model: &str) -> CpuArch {
         }
         return CpuArch::AmdZen; // default AMD = Zen
     }
-    if v.contains("intel") || m.contains("intel") || m.contains("core i")
-        || m.contains("xeon") || m.contains("pentium") || m.contains("celeron")
+    if v.contains("intel")
+        || m.contains("intel")
+        || m.contains("core i")
+        || m.contains("xeon")
+        || m.contains("pentium")
+        || m.contains("celeron")
     {
         return CpuArch::IntelCore;
     }
@@ -1513,7 +1568,13 @@ pub fn auto_tune_work_sizes() -> AutoTuneResult {
     // Log CPU detection for diagnostics
     private_eprint!(
         "[auto-tune] CPU: {} \"{}\" | physical={} logical={} arch={:?} | threads={} nonce_count={}",
-        cpu_vendor, cpu_model, cpu_physical_cores, cpu_cores, cpu_arch, threads, verushash_nonce_count
+        cpu_vendor,
+        cpu_model,
+        cpu_physical_cores,
+        cpu_cores,
+        cpu_arch,
+        threads,
+        verushash_nonce_count
     );
 
     AutoTuneResult {
@@ -1691,9 +1752,7 @@ pub fn detect_available_memory_bytes() -> u64 {
     {
         // vm_stat reports page counts; page size is typically 16384 on Apple Silicon
         let page_size = get_macos_page_size();
-        if let Ok(out) = std::process::Command::new("vm_stat")
-            .output()
-        {
+        if let Ok(out) = std::process::Command::new("vm_stat").output() {
             if out.status.success() {
                 let s = String::from_utf8_lossy(&out.stdout);
                 let mut free: u64 = 0;
@@ -1764,9 +1823,7 @@ pub fn detect_available_memory_bytes() -> u64 {
 /// Get macOS VM page size (typically 16384 on Apple Silicon, 4096 on Intel)
 #[cfg(target_os = "macos")]
 fn get_macos_page_size() -> u64 {
-    if let Ok(out) = std::process::Command::new("vm_stat")
-        .output()
-    {
+    if let Ok(out) = std::process::Command::new("vm_stat").output() {
         let s = String::from_utf8_lossy(&out.stdout);
         // First line: "Mach Virtual Memory Statistics: (page size of 16384 bytes)"
         if let Some(start) = s.find("page size of ") {
@@ -2154,9 +2211,7 @@ pub fn create_gpu_backend(
     // when the gpu-opencl feature is enabled.  On Apple Silicon / Metal-only
     // builds this branch would reference a non-existent function.
     #[cfg(feature = "gpu-opencl")]
-    if multi_gpu_enabled
-        && (kind == GpuBackendKind::OpenCL || kind == GpuBackendKind::Auto)
-    {
+    if multi_gpu_enabled && (kind == GpuBackendKind::OpenCL || kind == GpuBackendKind::Auto) {
         // Enumerate all OpenCL GPU devices with detailed info for robust assignment.
         let gpu_devices = enumerate_opencl_gpu_devices();
         let gpu_count = gpu_devices.len();
@@ -2189,8 +2244,8 @@ pub fn create_gpu_backend(
                 Ok(v) => !v.eq_ignore_ascii_case("false") && v != "0",
                 Err(_) => true, // default: reserve a GPU for ZANO
             };
-            let zano_filter = std::env::var("ZION_ZANO_DEVICE_NAME")
-                .unwrap_or_else(|_| "vega".to_string());
+            let zano_filter =
+                std::env::var("ZION_ZANO_DEVICE_NAME").unwrap_or_else(|_| "vega".to_string());
             let zano_idx_explicit = std::env::var("ZION_ZANO_DEVICE_IDX")
                 .ok()
                 .and_then(|v| v.trim().parse::<usize>().ok());
@@ -2202,19 +2257,25 @@ pub fn create_gpu_backend(
                 if idx < gpu_count {
                     Some(idx)
                 } else {
-                    private_eprint!("multi_gpu: ZION_ZANO_DEVICE_IDX={} out of range ({} devices)", idx, gpu_count);
+                    private_eprint!(
+                        "multi_gpu: ZION_ZANO_DEVICE_IDX={} out of range ({} devices)",
+                        idx,
+                        gpu_count
+                    );
                     None
                 }
             } else {
                 // Try name-based matching first
-                let name_match = gpu_devices.iter().find(|d| {
-                    device_name_matches_filter(&d.name, &zano_filter)
-                }).map(|d| d.global_idx);
+                let name_match = gpu_devices
+                    .iter()
+                    .find(|d| device_name_matches_filter(&d.name, &zano_filter))
+                    .map(|d| d.global_idx);
                 if name_match.is_some() {
                     name_match
                 } else {
                     // Auto-select: highest ProgPoW priority
-                    let best = gpu_devices.iter()
+                    let best = gpu_devices
+                        .iter()
                         .max_by_key(|d| d.classification.progpow_priority())
                         .map(|d| d.global_idx);
                     if let Some(idx) = best {
@@ -2230,13 +2291,15 @@ pub fn create_gpu_backend(
                 }
             };
 
-            let zion_indices: Vec<usize> = (0..gpu_count)
-                .filter(|i| Some(*i) != zano_idx)
-                .collect();
+            let zion_indices: Vec<usize> =
+                (0..gpu_count).filter(|i| Some(*i) != zano_idx).collect();
 
             private_print!(
                 "multi_gpu_init devices={} algorithm={} zano_device_idx={:?} zion_devices={:?}",
-                gpu_count, algorithm, zano_idx, zion_indices
+                gpu_count,
+                algorithm,
+                zano_idx,
+                zion_indices
             );
 
             let mut sub_miners: Vec<Box<dyn GpuMiner>> = Vec::new();
@@ -2258,7 +2321,9 @@ pub fn create_gpu_backend(
                     Err(e) => {
                         eprintln!(
                             "multi_gpu_sub_init device_idx={} device=\"{}\" class={} failed: {e}",
-                            i, dev.name, dev.classification.as_str(),
+                            i,
+                            dev.name,
+                            dev.classification.as_str(),
                         );
                     }
                 }
@@ -2298,7 +2363,8 @@ pub fn create_gpu_backend(
                     // Set ZION_OCL_DEVICE_NAME to the best ProgPoW device so AuxPoW
                     // picks the right one (not just the first device).
                     std::env::remove_var("ZION_OCL_DEVICE_IDX");
-                    let best_progpow = gpu_devices.iter()
+                    let best_progpow = gpu_devices
+                        .iter()
                         .max_by_key(|d| d.classification.progpow_priority())
                         .map(|d| d.name.clone())
                         .unwrap_or_default();
@@ -2379,18 +2445,21 @@ impl GpuClassification {
     /// Returns true if this GPU is well-suited for ProgPoW mining.
     /// Vega (GCN5) has excellent ProgPoW performance due to wave64 + ds_bpermute.
     fn is_progpow_capable(&self) -> bool {
-        matches!(self, GpuClassification::Vega | GpuClassification::Rdna2 | GpuClassification::Rdna3)
+        matches!(
+            self,
+            GpuClassification::Vega | GpuClassification::Rdna2 | GpuClassification::Rdna3
+        )
     }
 
     /// Priority for ZANO ProgPoWZ assignment (higher = better for ProgPoW).
     fn progpow_priority(&self) -> i32 {
         match self {
-            GpuClassification::Vega => 100,   // Best: wave64, ds_bpermute, 8GB HBM
-            GpuClassification::Rdna2 => 80,   // Good: RDNA2 has good ProgPoW
-            GpuClassification::Rdna3 => 70,   // Good: RDNA3
-            GpuClassification::Rdna1 => 50,   // Moderate: RDNA1 can do ProgPoW
-            GpuClassification::Gcn => 30,     // Weak: older GCN
-            GpuClassification::Nvidia => 60,  // NVIDIA is decent at ProgPoW
+            GpuClassification::Vega => 100,  // Best: wave64, ds_bpermute, 8GB HBM
+            GpuClassification::Rdna2 => 80,  // Good: RDNA2 has good ProgPoW
+            GpuClassification::Rdna3 => 70,  // Good: RDNA3
+            GpuClassification::Rdna1 => 50,  // Moderate: RDNA1 can do ProgPoW
+            GpuClassification::Gcn => 30,    // Weak: older GCN
+            GpuClassification::Nvidia => 60, // NVIDIA is decent at ProgPoW
             GpuClassification::Other => 10,
         }
     }
@@ -2413,26 +2482,43 @@ impl GpuClassification {
 fn classify_gpu_name(name: &str) -> GpuClassification {
     let n = name.to_ascii_lowercase();
     // gfx codenames (ROCm/PRO driver)
-    if n.contains("gfx900") || n.contains("gfx906") || n.contains("gfx908") || n.contains("gfx909") {
+    if n.contains("gfx900") || n.contains("gfx906") || n.contains("gfx908") || n.contains("gfx909")
+    {
         return GpuClassification::Vega;
     }
     if n.contains("gfx1010") || n.contains("gfx1011") || n.contains("gfx1012") {
         return GpuClassification::Rdna1;
     }
-    if n.contains("gfx1030") || n.contains("gfx1031") || n.contains("gfx1032") || n.contains("gfx1034") || n.contains("gfx1035") {
+    if n.contains("gfx1030")
+        || n.contains("gfx1031")
+        || n.contains("gfx1032")
+        || n.contains("gfx1034")
+        || n.contains("gfx1035")
+    {
         return GpuClassification::Rdna2;
     }
-    if n.contains("gfx1100") || n.contains("gfx1101") || n.contains("gfx1102") || n.contains("gfx1103") {
+    if n.contains("gfx1100")
+        || n.contains("gfx1101")
+        || n.contains("gfx1102")
+        || n.contains("gfx1103")
+    {
         return GpuClassification::Rdna3;
     }
-    if n.contains("gfx800") || n.contains("gfx802") || n.contains("gfx803") || n.contains("gfx812") || n.contains("gfx813") {
+    if n.contains("gfx800")
+        || n.contains("gfx802")
+        || n.contains("gfx803")
+        || n.contains("gfx812")
+        || n.contains("gfx813")
+    {
         return GpuClassification::Gcn;
     }
     // Marketing names
     if n.contains("vega") || n.contains("radeon vii") || n.contains("frontier edition") {
         return GpuClassification::Vega;
     }
-    if n.contains("rx 5") && (n.contains("600") || n.contains("700") || n.contains("800") || n.contains("900")) {
+    if n.contains("rx 5")
+        && (n.contains("600") || n.contains("700") || n.contains("800") || n.contains("900"))
+    {
         return GpuClassification::Rdna1;
     }
     if n.contains("rx 6") {
@@ -2489,9 +2575,7 @@ fn enumerate_opencl_gpu_devices() -> Vec<GpuDeviceInfo> {
             .unwrap_or_else(|_| "unknown-platform".to_string());
         if let Ok(devs) = ocl::Device::list(platform, Some(ocl::flags::DeviceType::GPU)) {
             for (didx, dev) in devs.into_iter().enumerate() {
-                let name = dev
-                    .name()
-                    .unwrap_or_else(|_| "unknown-device".to_string());
+                let name = dev.name().unwrap_or_else(|_| "unknown-device".to_string());
                 let cu_count = dev
                     .info(ocl::enums::DeviceInfo::MaxComputeUnits)
                     .ok()
@@ -2534,7 +2618,10 @@ fn enumerate_opencl_gpu_devices() -> Vec<GpuDeviceInfo> {
 /// List all OpenCL GPU device names in global enumeration order.
 #[cfg(feature = "gpu-opencl")]
 fn list_opencl_gpu_device_names() -> Vec<String> {
-    enumerate_opencl_gpu_devices().iter().map(|d| d.name.clone()).collect()
+    enumerate_opencl_gpu_devices()
+        .iter()
+        .map(|d| d.name.clone())
+        .collect()
 }
 
 #[cfg(not(feature = "gpu-opencl"))]
@@ -2602,7 +2689,9 @@ fn create_gpu_backend_inner(
                             if kind == GpuBackendKind::OpenCL {
                                 anyhow::bail!("External OpenCL init failed: {e}");
                             }
-                            private_print!("external_opencl_unavailable algorithm={algorithm} reason=\"{e}\"");
+                            private_print!(
+                                "external_opencl_unavailable algorithm={algorithm} reason=\"{e}\""
+                            );
                         }
                     }
                 }
@@ -2664,9 +2753,33 @@ fn create_gpu_backend_inner(
             // Auto fallback: try CUDA
             #[cfg(feature = "gpu-cuda")]
             {
-                match cuda_deeksha::CudaDeekshaMiner::new(work_size) {
-                    Ok(miner) => return Ok(Box::new(miner)),
-                    Err(e) => println!("gpu_cuda_unavailable reason=\"{e}\""),
+                // External AuxPoW algorithms — try CUDA external kernel
+                // (same logic as the explicit Cuda branch below).
+                if is_external_algorithm(algorithm) {
+                    if crate::cuda_external::CudaExtAlgo::from_name(algorithm).is_some() {
+                        let miner_result = if let Some(dev) = shared_dev {
+                            crate::cuda_external::CudaExternalMiner::new_with_device(
+                                algorithm, work_size, dev,
+                            )
+                        } else {
+                            crate::cuda_external::CudaExternalMiner::new(algorithm, work_size)
+                        };
+                        match miner_result {
+                            Ok(miner) => return Ok(Box::new(miner)),
+                            Err(e) => {
+                                private_eprint!(
+                                    "[gpu_backend] Auto→CUDA external kernel failed for {}: {}",
+                                    algorithm,
+                                    e
+                                );
+                            }
+                        }
+                    }
+                } else {
+                    match cuda_deeksha::CudaDeekshaMiner::new(work_size) {
+                        Ok(miner) => return Ok(Box::new(miner)),
+                        Err(e) => println!("gpu_cuda_unavailable reason=\"{e}\""),
+                    }
                 }
             }
 
@@ -2697,7 +2810,9 @@ fn create_gpu_backend_inner(
                         // shared device is available, fall back to a fresh
                         // non-blocking stream device.
                         let miner_result = if let Some(dev) = shared_dev {
-                            crate::cuda_external::CudaExternalMiner::new_with_device(algorithm, work_size, dev)
+                            crate::cuda_external::CudaExternalMiner::new_with_device(
+                                algorithm, work_size, dev,
+                            )
                         } else {
                             crate::cuda_external::CudaExternalMiner::new(algorithm, work_size)
                         };
@@ -2712,17 +2827,28 @@ fn create_gpu_backend_inner(
                     // (ethash, kawpow, progpow, eaglesong, octopus, equihash, neoscrypt)
                     #[cfg(any(feature = "native-kheavyhash", feature = "native-blake3-algo"))]
                     {
-                        eprintln!("[gpu_backend] CUDA CPU fallback for algorithm={}", algorithm);
-                        let miner = crate::gpu_backend::cpu_external_fallback::CpuExternalMiner::new(algorithm, coin, work_size)?;
+                        eprintln!(
+                            "[gpu_backend] CUDA CPU fallback for algorithm={}",
+                            algorithm
+                        );
+                        let miner =
+                            crate::gpu_backend::cpu_external_fallback::CpuExternalMiner::new(
+                                algorithm, coin, work_size,
+                            )?;
                         return Ok(Box::new(miner));
                     }
-                    #[cfg(not(any(feature = "native-kheavyhash", feature = "native-blake3-algo")))]
+                    #[cfg(not(any(
+                        feature = "native-kheavyhash",
+                        feature = "native-blake3-algo"
+                    )))]
                     {
                         anyhow::bail!("External algorithm '{}' on CUDA requires native-kheavyhash or native-blake3-algo feature", algorithm);
                     }
                 }
                 let miner: Box<dyn GpuMiner> = if algorithm == "deeksha_lite_fire" {
-                    Box::new(cuda_deeksha_lite_fire::CudaDeekshaLiteFireMiner::new(work_size)?)
+                    Box::new(cuda_deeksha_lite_fire::CudaDeekshaLiteFireMiner::new(
+                        work_size,
+                    )?)
                 } else if algorithm == "deeksha_lite_v1" || algorithm == "deeksha_chv3" {
                     Box::new(cuda_deeksha_lite::CudaDeekshaLiteMiner::new(work_size)?)
                 } else {
@@ -2741,7 +2867,9 @@ fn create_gpu_backend_inner(
                 if algorithm == "progpow_zano" {
                     #[cfg(feature = "native-hashers")]
                     {
-                        let miner = crate::gpu_backend::metal_external::MetalExternalMiner::new(algorithm, coin, work_size)?;
+                        let miner = crate::gpu_backend::metal_external::MetalExternalMiner::new(
+                            algorithm, coin, work_size,
+                        )?;
                         return Ok(Box::new(miner));
                     }
                     #[cfg(not(feature = "native-hashers"))]
@@ -2755,11 +2883,20 @@ fn create_gpu_backend_inner(
                 if is_external_algorithm(algorithm) {
                     #[cfg(any(feature = "native-kheavyhash", feature = "native-blake3-algo"))]
                     {
-                        eprintln!("[gpu_backend] Metal CPU fallback for algorithm={}", algorithm);
-                        let miner = crate::gpu_backend::cpu_external_fallback::CpuExternalMiner::new(algorithm, coin, work_size)?;
+                        eprintln!(
+                            "[gpu_backend] Metal CPU fallback for algorithm={}",
+                            algorithm
+                        );
+                        let miner =
+                            crate::gpu_backend::cpu_external_fallback::CpuExternalMiner::new(
+                                algorithm, coin, work_size,
+                            )?;
                         return Ok(Box::new(miner));
                     }
-                    #[cfg(not(any(feature = "native-kheavyhash", feature = "native-blake3-algo")))]
+                    #[cfg(not(any(
+                        feature = "native-kheavyhash",
+                        feature = "native-blake3-algo"
+                    )))]
                     {
                         anyhow::bail!("External algorithm '{}' on Metal requires native-kheavyhash or native-blake3-algo feature", algorithm);
                     }
@@ -2830,13 +2967,23 @@ pub fn gpu_scan_job(
     if is_external_algorithm(algorithm)
         && matches!(
             algorithm,
-            "ethash" | "etchash" | "ethash_etc"
-                | "kawpow" | "kawpow_rvn" | "kawpow_clore"
-                | "kawpow_evr" | "kawpow_mewc"
-                | "progpow" | "progpow_epic" | "progpow_zano"
+            "ethash"
+                | "etchash"
+                | "ethash_etc"
+                | "kawpow"
+                | "kawpow_rvn"
+                | "kawpow_clore"
+                | "kawpow_evr"
+                | "kawpow_mewc"
+                | "progpow"
+                | "progpow_epic"
+                | "progpow_zano"
         )
     {
-        let epoch = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc" | "progpow" | "progpow_epic" | "progpow_zano") {
+        let epoch = if matches!(
+            algorithm,
+            "ethash" | "etchash" | "ethash_etc" | "progpow" | "progpow_epic" | "progpow_zano"
+        ) {
             (job.height / 30000) as u32
         } else {
             (job.height / 7500) as u32
@@ -2854,7 +3001,9 @@ pub fn gpu_scan_job(
         // For now, we log the epoch for diagnostics.
         private_eprint!(
             "auxpow_dag_epoch_hint algorithm={} height={} epoch={}",
-            algorithm, job.height, epoch
+            algorithm,
+            job.height,
+            epoch
         );
     }
 
@@ -2889,9 +3038,19 @@ pub fn gpu_scan_job(
     let effective_batch = job.nonce_count.min(max_batch);
 
     let result = if use_raw {
-        gpu.mine_batch_raw(raw_header_bytes, job.target, job.start_nonce, effective_batch)
+        gpu.mine_batch_raw(
+            raw_header_bytes,
+            job.target,
+            job.start_nonce,
+            effective_batch,
+        )
     } else {
-        gpu.mine_batch(effective_header, job.target, job.start_nonce, effective_batch)
+        gpu.mine_batch(
+            effective_header,
+            job.target,
+            job.start_nonce,
+            effective_batch,
+        )
     };
 
     match result {
@@ -3183,13 +3342,23 @@ impl GpuPipelineState {
         let launch_result: Result<(), String> = if use_raw {
             // For raw headers, we need to use mine_batch_raw which is synchronous.
             // Fall back to synchronous mine_batch for raw algorithms.
-            gpu.mine_batch_raw(raw_header_bytes, job.target, job.start_nonce, effective_batch)
-                .map(|_| ())
-                .map_err(|e| e.to_string())
+            gpu.mine_batch_raw(
+                raw_header_bytes,
+                job.target,
+                job.start_nonce,
+                effective_batch,
+            )
+            .map(|_| ())
+            .map_err(|e| e.to_string())
         } else {
-            gpu.launch_batch(effective_header, job.target, job.start_nonce, effective_batch)
-                .map(|_| ())
-                .map_err(|e| e.to_string())
+            gpu.launch_batch(
+                effective_header,
+                job.target,
+                job.start_nonce,
+                effective_batch,
+            )
+            .map(|_| ())
+            .map_err(|e| e.to_string())
         };
 
         if let Err(e) = launch_result {
@@ -3205,11 +3374,7 @@ impl GpuPipelineState {
     }
 
     /// Collect the final pending batch (call after the loop ends).
-    pub fn collect(
-        &mut self,
-        gpu: &mut dyn GpuMiner,
-        algorithm: &str,
-    ) -> Option<GpuScanOutcome> {
+    pub fn collect(&mut self, gpu: &mut dyn GpuMiner, algorithm: &str) -> Option<GpuScanOutcome> {
         if !self.has_pending {
             return None;
         }
@@ -3556,7 +3721,12 @@ pub mod opencl_deeksha {
                         "gpu_opencl_pick mode=name filter=\"{}\" platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
                         filter, pidx, didx, platform_name, device_name
                     );
-                    return Ok((*platform, *device, platform_name.clone(), device_name.clone()));
+                    return Ok((
+                        *platform,
+                        *device,
+                        platform_name.clone(),
+                        device_name.clone(),
+                    ));
                 }
                 eprintln!(
                     "gpu_opencl_pick name filter=\"{}\" matched no device, falling back to score/index",
@@ -4548,7 +4718,12 @@ pub mod opencl_deeksha_lite {
                         "gpu_opencl_lite_pick mode=name filter=\"{}\" platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
                         filter, pidx, didx, platform_name, device_name
                     );
-                    return Ok((*platform, *device, platform_name.clone(), device_name.clone()));
+                    return Ok((
+                        *platform,
+                        *device,
+                        platform_name.clone(),
+                        device_name.clone(),
+                    ));
                 }
                 eprintln!(
                     "gpu_opencl_lite_pick name filter=\"{}\" matched no device, falling back to index/score",
@@ -4677,11 +4852,7 @@ pub mod opencl_deeksha_lite {
             // Dedicated read queue for double-buffered async readback.
             // Using a separate queue allows the GPU to execute the next kernel
             // on the compute queue while a buffer read is in-flight on this queue.
-            let read_queue = Queue::new(
-                &pro_que.context(),
-                pro_que.queue().device(),
-                None,
-            )?;
+            let read_queue = Queue::new(&pro_que.context(), pro_que.queue().device(), None)?;
             let stream_weights_zero = [0.0f32; 6];
             let stream_weights_buf = Buffer::<f32>::builder()
                 .queue(q.clone())
@@ -4763,7 +4934,10 @@ pub mod opencl_deeksha_lite {
             let arr = stream_weights_f32(weights);
             self.stream_weights_buf.write(&arr[..]).enq()?;
             self.pro_que.queue().finish()?;
-            if std::env::var("ZION_QUIET").map(|v| v == "1").unwrap_or(false) {
+            if std::env::var("ZION_QUIET")
+                .map(|v| v == "1")
+                .unwrap_or(false)
+            {
                 // suppressed in quiet/sticky mode
             } else {
                 private_print!("gpu_opencl_lite_stream_weights {}", weights.describe());
@@ -4879,7 +5053,11 @@ pub mod opencl_deeksha_lite {
                     let mut r_event = Event::empty();
                     {
                         let guard = GpuGuard::new();
-                        let dst = if buf_idx == 0 { &mut host_a[..] } else { &mut host_b[..] };
+                        let dst = if buf_idx == 0 {
+                            &mut host_a[..]
+                        } else {
+                            &mut host_b[..]
+                        };
                         unsafe {
                             out_buf
                                 .read(&mut dst[..chunk * 32])
@@ -4917,7 +5095,11 @@ pub mod opencl_deeksha_lite {
                                 );
                             }
                         }
-                        let prev_host = if prev_buf_idx == 0 { &host_a[..] } else { &host_b[..] };
+                        let prev_host = if prev_buf_idx == 0 {
+                            &host_a[..]
+                        } else {
+                            &host_b[..]
+                        };
                         for i in 0..prev_chunk {
                             let hash: [u8; 32] =
                                 prev_host[i * 32..(i + 1) * 32].try_into().unwrap();
@@ -4937,7 +5119,7 @@ pub mod opencl_deeksha_lite {
                             return Ok(GpuBatchResult {
                                 nonces_tested: total_tested,
                                 solutions: all_solutions,
-                solution: None,
+                                solution: None,
                                 device_name: self.device_name_cached.clone(),
                             });
                         }
@@ -4966,10 +5148,13 @@ pub mod opencl_deeksha_lite {
                             );
                         }
                     }
-                    let prev_host = if prev_buf_idx == 0 { &host_a[..] } else { &host_b[..] };
+                    let prev_host = if prev_buf_idx == 0 {
+                        &host_a[..]
+                    } else {
+                        &host_b[..]
+                    };
                     for i in 0..prev_chunk {
-                        let hash: [u8; 32] =
-                            prev_host[i * 32..(i + 1) * 32].try_into().unwrap();
+                        let hash: [u8; 32] = prev_host[i * 32..(i + 1) * 32].try_into().unwrap();
                         if target.allows(&hash) {
                             let nonce = prev_nonce.wrapping_add(i as u64);
                             all_solutions.push((nonce, hash, None));
@@ -4982,7 +5167,7 @@ pub mod opencl_deeksha_lite {
                 Ok(GpuBatchResult {
                     nonces_tested: total_tested,
                     solutions: all_solutions,
-                solution: None,
+                    solution: None,
                     device_name: self.device_name_cached.clone(),
                 })
             } else {
@@ -5048,7 +5233,7 @@ pub mod opencl_deeksha_lite {
                 Ok(GpuBatchResult {
                     nonces_tested: total_tested,
                     solutions: all_solutions,
-                solution: None,
+                    solution: None,
                     device_name: self.device_name_cached.clone(),
                 })
             }
@@ -5146,7 +5331,8 @@ pub mod opencl_deeksha_lite {
                 {
                     let guard = GpuGuard::new();
                     unsafe {
-                        let mut cmd = self.kernel
+                        let mut cmd = self
+                            .kernel
                             .cmd()
                             .global_work_size(global_size)
                             .local_work_size(local_size)
@@ -5169,7 +5355,11 @@ pub mod opencl_deeksha_lite {
                 let mut r_event = Event::empty();
                 {
                     let guard = GpuGuard::new();
-                    let dst = if buf_idx == 0 { &mut host_a[..] } else { &mut host_b[..] };
+                    let dst = if buf_idx == 0 {
+                        &mut host_a[..]
+                    } else {
+                        &mut host_b[..]
+                    };
                     unsafe {
                         out_buf
                             .read(&mut dst[..chunk * 32])
@@ -5238,7 +5428,11 @@ pub mod opencl_deeksha_lite {
                     }
                 }
 
-                let host = if buf_idx == 0 { &pending.host_a[..] } else { &pending.host_b[..] };
+                let host = if buf_idx == 0 {
+                    &pending.host_a[..]
+                } else {
+                    &pending.host_b[..]
+                };
                 for j in 0..chunk {
                     let hash: [u8; 32] = host[j * 32..(j + 1) * 32].try_into().unwrap();
                     if pending.target.allows(&hash) {
@@ -5417,7 +5611,12 @@ pub mod opencl_deeksha_lite_fire {
                         "gpu_opencl_fire_pick mode=name filter=\"{}\" platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
                         filter, pidx, didx, platform_name, device_name
                     );
-                    return Ok((*platform, *device, platform_name.clone(), device_name.clone()));
+                    return Ok((
+                        *platform,
+                        *device,
+                        platform_name.clone(),
+                        device_name.clone(),
+                    ));
                 }
                 eprintln!(
                     "gpu_opencl_fire_pick name filter=\"{}\" matched no device, falling back to index/score",
@@ -5523,11 +5722,7 @@ pub mod opencl_deeksha_lite_fire {
                 .queue(q.clone())
                 .len(actual_work_size * 32)
                 .build()?;
-            let read_queue = Queue::new(
-                &pro_que.context(),
-                pro_que.queue().device(),
-                None,
-            )?;
+            let read_queue = Queue::new(&pro_que.context(), pro_que.queue().device(), None)?;
             let stream_weights_zero = [0.0f32; 6];
             let stream_weights_buf = Buffer::<f32>::builder()
                 .queue(q.clone())
@@ -5697,7 +5892,11 @@ pub mod opencl_deeksha_lite_fire {
                     let mut r_event = Event::empty();
                     {
                         let guard = GpuGuard::new();
-                        let dst = if buf_idx == 0 { &mut host_a[..] } else { &mut host_b[..] };
+                        let dst = if buf_idx == 0 {
+                            &mut host_a[..]
+                        } else {
+                            &mut host_b[..]
+                        };
                         unsafe {
                             out_buf
                                 .read(&mut dst[..chunk * 32])
@@ -5732,7 +5931,11 @@ pub mod opencl_deeksha_lite_fire {
                                 );
                             }
                         }
-                        let prev_host = if prev_buf_idx == 0 { &host_a[..] } else { &host_b[..] };
+                        let prev_host = if prev_buf_idx == 0 {
+                            &host_a[..]
+                        } else {
+                            &host_b[..]
+                        };
                         for i in 0..prev_chunk {
                             let hash: [u8; 32] =
                                 prev_host[i * 32..(i + 1) * 32].try_into().unwrap();
@@ -5749,7 +5952,7 @@ pub mod opencl_deeksha_lite_fire {
                             return Ok(GpuBatchResult {
                                 nonces_tested: total_tested,
                                 solutions: all_solutions,
-                solution: None,
+                                solution: None,
                                 device_name: self.device_name_cached.clone(),
                             });
                         }
@@ -5777,10 +5980,13 @@ pub mod opencl_deeksha_lite_fire {
                             );
                         }
                     }
-                    let prev_host = if prev_buf_idx == 0 { &host_a[..] } else { &host_b[..] };
+                    let prev_host = if prev_buf_idx == 0 {
+                        &host_a[..]
+                    } else {
+                        &host_b[..]
+                    };
                     for i in 0..prev_chunk {
-                        let hash: [u8; 32] =
-                            prev_host[i * 32..(i + 1) * 32].try_into().unwrap();
+                        let hash: [u8; 32] = prev_host[i * 32..(i + 1) * 32].try_into().unwrap();
                         if target.allows(&hash) {
                             let nonce = prev_nonce.wrapping_add(i as u64);
                             all_solutions.push((nonce, hash, None));
@@ -5793,7 +5999,7 @@ pub mod opencl_deeksha_lite_fire {
                 Ok(GpuBatchResult {
                     nonces_tested: total_tested,
                     solutions: all_solutions,
-                solution: None,
+                    solution: None,
                     device_name: self.device_name_cached.clone(),
                 })
             } else {
@@ -5869,7 +6075,7 @@ pub mod opencl_deeksha_lite_fire {
                 Ok(GpuBatchResult {
                     nonces_tested: total_tested,
                     solutions: all_solutions,
-                solution: None,
+                    solution: None,
                     device_name: self.device_name_cached.clone(),
                 })
             }
@@ -5985,7 +6191,8 @@ pub mod opencl_deeksha_lite_fire {
                 {
                     let guard = GpuGuard::new();
                     unsafe {
-                        let mut cmd = self.kernel
+                        let mut cmd = self
+                            .kernel
                             .cmd()
                             .global_work_size(global_size)
                             .local_work_size(local_size)
@@ -6008,7 +6215,11 @@ pub mod opencl_deeksha_lite_fire {
                 let mut r_event = Event::empty();
                 {
                     let guard = GpuGuard::new();
-                    let dst = if buf_idx == 0 { &mut host_a[..] } else { &mut host_b[..] };
+                    let dst = if buf_idx == 0 {
+                        &mut host_a[..]
+                    } else {
+                        &mut host_b[..]
+                    };
                     unsafe {
                         out_buf
                             .read(&mut dst[..chunk * 32])
@@ -6087,7 +6298,11 @@ pub mod opencl_deeksha_lite_fire {
                     }
                 }
 
-                let host = if buf_idx == 0 { &pending.host_a[..] } else { &pending.host_b[..] };
+                let host = if buf_idx == 0 {
+                    &pending.host_a[..]
+                } else {
+                    &pending.host_b[..]
+                };
                 for j in 0..chunk {
                     let hash: [u8; 32] = host[j * 32..(j + 1) * 32].try_into().unwrap();
                     if pending.target.allows(&hash) {
@@ -6126,11 +6341,16 @@ fn detect_cuda_arch(dev: &cudarc::driver::CudaDevice) -> String {
             // NVRTC requires virtual arch (compute_XX) not real arch (sm_XX).
             // The generated PTX is then JIT-compiled to SASS by the driver.
             let arch = format!("compute_{}{}", maj, min);
-            eprintln!("cuda_arch_detect: compute_capability={}.{} => arch={}", maj, min, arch);
+            eprintln!(
+                "cuda_arch_detect: compute_capability={}.{} => arch={}",
+                maj, min, arch
+            );
             arch
         }
         _ => {
-            eprintln!("cuda_arch_detect: failed to query compute capability, falling back to compute_86");
+            eprintln!(
+                "cuda_arch_detect: failed to query compute capability, falling back to compute_86"
+            );
             "compute_86".to_string()
         }
     }
@@ -6204,8 +6424,8 @@ pub mod cuda_deeksha {
             // better register allocation decisions.
             // Override via ZION_CUDA_PTXAS_OPT env var (e.g. "-O3", "-O1", "-O0").
             let arch = detect_cuda_arch(&dev);
-            let ptxas_opt = std::env::var("ZION_CUDA_PTXAS_OPT")
-                .unwrap_or_else(|_| "-O2".to_string());
+            let ptxas_opt =
+                std::env::var("ZION_CUDA_PTXAS_OPT").unwrap_or_else(|_| "-O2".to_string());
             let mut opts = vec![
                 "--use_fast_math".to_string(),
                 format!("-arch={}", arch),
@@ -7069,7 +7289,11 @@ pub mod cuda_deeksha_lite_fire {
                 nonce += 4096;
             }
             let elapsed = start.elapsed().as_secs_f64();
-            let khps = if elapsed > 0.0 { total as f64 / elapsed / 1_000.0 } else { 0.0 };
+            let khps = if elapsed > 0.0 {
+                total as f64 / elapsed / 1_000.0
+            } else {
+                0.0
+            };
             Ok((total, elapsed, khps))
         }
 
@@ -7470,7 +7694,11 @@ pub mod cuda_deeksha_lite {
                 nonce += 4096;
             }
             let elapsed = start.elapsed().as_secs_f64();
-            let khps = if elapsed > 0.0 { total as f64 / elapsed / 1_000.0 } else { 0.0 };
+            let khps = if elapsed > 0.0 {
+                total as f64 / elapsed / 1_000.0
+            } else {
+                0.0
+            };
             Ok((total, elapsed, khps))
         }
     }
@@ -7945,12 +8173,18 @@ pub mod cpu_external_fallback {
                             });
                         }
                     }
-                    Ok(GpuBatchResult { solutions: Vec::new(), solution: None, nonces_tested: actual_batch, device_name: self.device_name_cached.clone() })
+                    Ok(GpuBatchResult {
+                        solutions: Vec::new(),
+                        solution: None,
+                        nonces_tested: actual_batch,
+                        device_name: self.device_name_cached.clone(),
+                    })
                 }
                 #[cfg(feature = "native-blake3-algo")]
                 "blake3" | "blake3_alph" | "blake3_dcr" => {
                     let header_bytes = header.to_bytes();
-                    let is_alph = self.algorithm == "blake3_alph" || self.coin.eq_ignore_ascii_case("ALPH");
+                    let is_alph =
+                        self.algorithm == "blake3_alph" || self.coin.eq_ignore_ascii_case("ALPH");
                     for i in 0..actual_batch {
                         let nonce = nonce_start.wrapping_add(i);
                         let hash = if is_alph {
@@ -7967,7 +8201,12 @@ pub mod cpu_external_fallback {
                             });
                         }
                     }
-                    Ok(GpuBatchResult { solutions: Vec::new(), solution: None, nonces_tested: actual_batch, device_name: self.device_name_cached.clone() })
+                    Ok(GpuBatchResult {
+                        solutions: Vec::new(),
+                        solution: None,
+                        nonces_tested: actual_batch,
+                        device_name: self.device_name_cached.clone(),
+                    })
                 }
                 other => anyhow::bail!("cpu_external_fallback: unsupported algorithm '{}'", other),
             }
@@ -7997,11 +8236,17 @@ pub mod cpu_external_fallback {
                             });
                         }
                     }
-                    Ok(GpuBatchResult { solutions: Vec::new(), solution: None, nonces_tested: actual_batch, device_name: self.device_name_cached.clone() })
+                    Ok(GpuBatchResult {
+                        solutions: Vec::new(),
+                        solution: None,
+                        nonces_tested: actual_batch,
+                        device_name: self.device_name_cached.clone(),
+                    })
                 }
                 #[cfg(feature = "native-blake3-algo")]
                 "blake3" | "blake3_alph" | "blake3_dcr" => {
-                    let is_alph = self.algorithm == "blake3_alph" || self.coin.eq_ignore_ascii_case("ALPH");
+                    let is_alph =
+                        self.algorithm == "blake3_alph" || self.coin.eq_ignore_ascii_case("ALPH");
                     for i in 0..actual_batch {
                         let nonce = nonce_start.wrapping_add(i);
                         let hash = if is_alph {
@@ -8018,7 +8263,12 @@ pub mod cpu_external_fallback {
                             });
                         }
                     }
-                    Ok(GpuBatchResult { solutions: Vec::new(), solution: None, nonces_tested: actual_batch, device_name: self.device_name_cached.clone() })
+                    Ok(GpuBatchResult {
+                        solutions: Vec::new(),
+                        solution: None,
+                        nonces_tested: actual_batch,
+                        device_name: self.device_name_cached.clone(),
+                    })
                 }
                 other => anyhow::bail!("cpu_external_fallback: unsupported algorithm '{}'", other),
             }
@@ -8039,7 +8289,8 @@ pub mod cpu_external_fallback {
                         #[cfg(feature = "native-blake3-algo")]
                         "blake3" | "blake3_alph" | "blake3_dcr" => {
                             if self.algorithm == "blake3_alph" {
-                                let _ = zion_native_ffi::blake3_algo::mine_alph_simple(&header, nonce);
+                                let _ =
+                                    zion_native_ffi::blake3_algo::mine_alph_simple(&header, nonce);
                             } else {
                                 let _ = zion_native_ffi::blake3_algo::mine(&header, nonce);
                             }
@@ -8051,7 +8302,11 @@ pub mod cpu_external_fallback {
                 }
             }
             let elapsed = start.elapsed().as_secs_f64();
-            let khps = if elapsed > 0.0 { total as f64 / elapsed / 1000.0 } else { 0.0 };
+            let khps = if elapsed > 0.0 {
+                total as f64 / elapsed / 1000.0
+            } else {
+                0.0
+            };
             Ok((total, elapsed, khps))
         }
     }
@@ -8064,8 +8319,12 @@ pub mod cpu_external_fallback {
         for i in 0..32 {
             let h = hash[31 - i];
             let t = target[i];
-            if h < t { return Ok(true); }
-            if h > t { return Ok(false); }
+            if h < t {
+                return Ok(true);
+            }
+            if h > t {
+                return Ok(false);
+            }
         }
         Ok(true)
     }
@@ -8394,8 +8653,9 @@ pub mod opencl_external {
 
     impl OpenClExternalMiner {
         pub fn new(algorithm: &str, work_size: usize) -> Result<Self> {
-            let mut miner = AuxPowGpuMiner::new()
-                .map_err(|e| anyhow::anyhow!("auxpow_gpu_init_failed algorithm={algorithm} err={e}"))?;
+            let mut miner = AuxPowGpuMiner::new().map_err(|e| {
+                anyhow::anyhow!("auxpow_gpu_init_failed algorithm={algorithm} err={e}")
+            })?;
 
             // Verthash (VTC) requires a ~1.2GB data file (verthash.dat).
             // Try to load it from common locations. If not found, the miner
@@ -8456,7 +8716,8 @@ pub mod opencl_external {
                 self.current_epoch_hint = Some(ep);
                 #[cfg(feature = "native-hashers")]
                 {
-                    self.dag_manager.ensure_dag(&mut self.miner, &self.algorithm, ep)?;
+                    self.dag_manager
+                        .ensure_dag(&mut self.miner, &self.algorithm, ep)?;
                 }
                 #[cfg(not(feature = "native-hashers"))]
                 {
@@ -8467,10 +8728,21 @@ pub mod opencl_external {
                     // failing later with a confusing "DAG not set" message.
                     if matches!(
                         self.algorithm.as_str(),
-                        "ethash" | "etchash" | "ethash_etc"
-                            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
-                            | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-                            | "progpow" | "progpow_epic" | "progpow_zano"
+                        "ethash"
+                            | "etchash"
+                            | "ethash_etc"
+                            | "kawpow"
+                            | "kawpow_rvn"
+                            | "kawpow_clore"
+                            | "kawpow_evr"
+                            | "kawpow_mewc"
+                            | "evrprogpow"
+                            | "evrprogpow_evr"
+                            | "meowpow"
+                            | "meowpow_mewc"
+                            | "progpow"
+                            | "progpow_epic"
+                            | "progpow_zano"
                     ) {
                         anyhow::bail!(
                             "DAG-based algorithm '{}' requires the 'native-hashers' feature \
@@ -8508,9 +8780,18 @@ pub mod opencl_external {
             // KawPow period = 10 blocks, EPIC ProgPow period = 50 blocks.
             if matches!(
                 self.algorithm.as_str(),
-                "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
-                    | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-                    | "progpow" | "progpow_epic" | "progpow_zano"
+                "kawpow"
+                    | "kawpow_rvn"
+                    | "kawpow_clore"
+                    | "kawpow_evr"
+                    | "kawpow_mewc"
+                    | "evrprogpow"
+                    | "evrprogpow_evr"
+                    | "meowpow"
+                    | "meowpow_mewc"
+                    | "progpow"
+                    | "progpow_epic"
+                    | "progpow_zano"
             ) {
                 self.miner.set_block_height(height);
             }
@@ -8519,11 +8800,21 @@ pub mod opencl_external {
                 Some((height / 30000) as u32)
             } else if matches!(
                 self.algorithm.as_str(),
-                "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
-                    | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
+                "kawpow"
+                    | "kawpow_rvn"
+                    | "kawpow_clore"
+                    | "kawpow_evr"
+                    | "kawpow_mewc"
+                    | "evrprogpow"
+                    | "evrprogpow_evr"
+                    | "meowpow"
+                    | "meowpow_mewc"
             ) {
                 Some((height / 7500) as u32)
-            } else if matches!(self.algorithm.as_str(), "progpow" | "progpow_epic" | "progpow_zano") {
+            } else if matches!(
+                self.algorithm.as_str(),
+                "progpow" | "progpow_epic" | "progpow_zano"
+            ) {
                 Some((height / 30000) as u32)
             } else {
                 None
@@ -8547,51 +8838,23 @@ pub mod opencl_external {
             let actual_batch = batch_size.min(internal_ws.max(self.work_size as u64));
 
             let found = match self.algorithm.as_str() {
-                "blake3"
-                | "blake3_alph"
-                | "blake3_dcr"
-                | "autolykos"
-                | "autolykos_erg"
-                | "ethash"
-                | "etchash"
-                | "ethash_etc"
-                | "kawpow"
-                | "kawpow_rvn"
-                | "kawpow_clore"
-                | "kawpow_evr"
-                | "kawpow_mewc"
-                | "evrprogpow"
-                | "evrprogpow_evr"
-                | "meowpow"
-                | "meowpow_mewc"
-                | "zelhash"
-                | "zelhash_flux"
-                | "progpow"
-                | "progpow_epic"
-                | "progpow_zano"
-                | "beamhash"
-                | "beamhash_beam"
-                | "fishhash"
-                | "fishhash_iron"
-                | "karlsenhash"
-                | "karlsenhash_kls"
-                | "verthash"
-                | "verthash_vtc"
-                | "equihashzero"
-                | "equihashzero_zcl"
-                | "nexapow"
-                | "nexapow_nexa"
-                | "qhash"
-                | "qhash_qtc"
-                | "dynexsolve"
-                | "dynexsolve_dnx" => self.miner.mine(
-                    &self.algorithm,
-                    &header_bytes,
-                    &[],
-                    &target.bytes,
-                    nonce_start,
-                    actual_batch,
-                ),
+                "blake3" | "blake3_alph" | "blake3_dcr" | "autolykos" | "autolykos_erg"
+                | "ethash" | "etchash" | "ethash_etc" | "kawpow" | "kawpow_rvn"
+                | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow"
+                | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" | "zelhash" | "zelhash_flux"
+                | "progpow" | "progpow_epic" | "progpow_zano" | "beamhash" | "beamhash_beam"
+                | "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" | "verthash"
+                | "verthash_vtc" | "equihashzero" | "equihashzero_zcl" | "nexapow"
+                | "nexapow_nexa" | "qhash" | "qhash_qtc" | "dynexsolve" | "dynexsolve_dnx" => {
+                    self.miner.mine(
+                        &self.algorithm,
+                        &header_bytes,
+                        &[],
+                        &target.bytes,
+                        nonce_start,
+                        actual_batch,
+                    )
+                }
                 "kheavyhash" | "kheavyhash_kas" => {
                     // KAS external jobs send a 32-byte pre_pow_hash in header_hex.
                     // The pool pads it to 80 bytes (MiningHeader); the pre_pow_hash
@@ -8611,9 +8874,22 @@ pub mod opencl_external {
                 }
                 other => anyhow::bail!("unsupported external GPU algorithm: {other}"),
             }
-            .map_err(|e| anyhow::anyhow!("auxpow_gpu_mine_failed algorithm={} err={}", self.algorithm, e))?;
+            .map_err(|e| {
+                anyhow::anyhow!(
+                    "auxpow_gpu_mine_failed algorithm={} err={}",
+                    self.algorithm,
+                    e
+                )
+            })?;
 
-            if let Some(GpuFoundShare { nonce, hash, mix_hash, solution, .. }) = found {
+            if let Some(GpuFoundShare {
+                nonce,
+                hash,
+                mix_hash,
+                solution,
+                ..
+            }) = found
+            {
                 Ok(GpuBatchResult {
                     solutions: vec![(nonce, hash, mix_hash)],
                     solution,
@@ -8665,7 +8941,14 @@ pub mod opencl_external {
             // caller advances nonce_offset correctly (no skipped nonces).
             let real_nonces = actual_batch.min(self.miner.internal_work_size() as u64);
 
-            if let Some(GpuFoundShare { nonce, hash, mix_hash, solution, .. }) = found {
+            if let Some(GpuFoundShare {
+                nonce,
+                hash,
+                mix_hash,
+                solution,
+                ..
+            }) = found
+            {
                 Ok(GpuBatchResult {
                     solutions: vec![(nonce, hash, mix_hash)],
                     solution,
@@ -8719,9 +9002,9 @@ pub mod opencl_external {
 pub mod metal_external {
     use super::*;
     use std::time::Instant;
+    use zion_auxpow::generate_ethash_dag;
     use zion_auxpow::gpu_backend::GpuBackend;
     use zion_auxpow::gpu_metal::MetalBackend;
-    use zion_auxpow::generate_ethash_dag;
 
     pub struct MetalExternalMiner {
         algorithm: String,
@@ -8739,8 +9022,9 @@ pub mod metal_external {
                 );
             }
 
-            let backend = MetalBackend::new(work_size)
-                .map_err(|e| anyhow::anyhow!("metal_external_init_failed algorithm={algorithm} err={e}"))?;
+            let backend = MetalBackend::new(work_size).map_err(|e| {
+                anyhow::anyhow!("metal_external_init_failed algorithm={algorithm} err={e}")
+            })?;
 
             Ok(Self {
                 algorithm: algorithm.to_string(),
@@ -8766,8 +9050,9 @@ pub mod metal_external {
                 }
 
                 // ProgPow / ProgPoWZ uses the same DAG as Ethash (epoch length 30000).
-                let dag = generate_ethash_dag(ep)
-                    .ok_or_else(|| anyhow::anyhow!("metal_external_dag_generation_failed epoch={ep}"))?;
+                let dag = generate_ethash_dag(ep).ok_or_else(|| {
+                    anyhow::anyhow!("metal_external_dag_generation_failed epoch={ep}")
+                })?;
 
                 let dag_u64 = dag.as_u64_slice();
                 debug_assert_eq!(
@@ -8841,10 +9126,21 @@ pub mod metal_external {
                     actual_batch,
                 )
                 .map_err(|e| {
-                    anyhow::anyhow!("metal_external_mine_failed algorithm={} err={}", self.algorithm, e)
+                    anyhow::anyhow!(
+                        "metal_external_mine_failed algorithm={} err={}",
+                        self.algorithm,
+                        e
+                    )
                 })?;
 
-            if let Some(zion_auxpow::gpu_backend::GpuFoundShare { nonce, hash, mix_hash, solution, .. }) = found {
+            if let Some(zion_auxpow::gpu_backend::GpuFoundShare {
+                nonce,
+                hash,
+                mix_hash,
+                solution,
+                ..
+            }) = found
+            {
                 Ok(GpuBatchResult {
                     solutions: vec![(nonce, hash, mix_hash)],
                     solution,
@@ -8887,7 +9183,14 @@ pub mod metal_external {
                     )
                 })?;
 
-            if let Some(zion_auxpow::gpu_backend::GpuFoundShare { nonce, hash, mix_hash, solution, .. }) = found {
+            if let Some(zion_auxpow::gpu_backend::GpuFoundShare {
+                nonce,
+                hash,
+                mix_hash,
+                solution,
+                ..
+            }) = found
+            {
                 Ok(GpuBatchResult {
                     solutions: vec![(nonce, hash, mix_hash)],
                     solution,
@@ -9007,7 +9310,8 @@ fn query_cuda_details() -> Vec<GpuInfo> {
             Ok(d) => d,
             Err(_) => continue,
         };
-        let name = result::device::get_name(cu).unwrap_or_else(|_| "unknown CUDA device".to_string());
+        let name =
+            result::device::get_name(cu).unwrap_or_else(|_| "unknown CUDA device".to_string());
         let global_mem_bytes = unsafe { result::device::total_mem(cu).unwrap_or(0) } as u64;
         let attr = |a: sys::CUdevice_attribute| unsafe {
             result::device::get_attribute(cu, a).unwrap_or(0)
@@ -9077,18 +9381,36 @@ fn query_rocm_smi_temp_power() -> Option<(u32, u32)> {
         .lines()
         .find(|l| l.contains("Temperature (Sensor edge) (C)"))
         .and_then(|l| l.split(':').nth(1))
-        .and_then(|v| v.trim().trim_matches('"').trim_end_matches('.').parse::<u32>().ok())
+        .and_then(|v| {
+            v.trim()
+                .trim_matches('"')
+                .trim_end_matches('.')
+                .parse::<u32>()
+                .ok()
+        })
         .or_else(|| {
             text.lines()
                 .find(|l| l.contains("Temperature (Sensor junction) (C)"))
                 .and_then(|l| l.split(':').nth(1))
-                .and_then(|v| v.trim().trim_matches('"').trim_end_matches('.').parse::<u32>().ok())
+                .and_then(|v| {
+                    v.trim()
+                        .trim_matches('"')
+                        .trim_end_matches('.')
+                        .parse::<u32>()
+                        .ok()
+                })
         });
     let power = text
         .lines()
         .find(|l| l.contains("Average Graphics Package Power (W)"))
         .and_then(|l| l.split(':').nth(1))
-        .and_then(|v| v.trim().trim_matches('"').trim_end_matches('.').parse::<u32>().ok());
+        .and_then(|v| {
+            v.trim()
+                .trim_matches('"')
+                .trim_end_matches('.')
+                .parse::<u32>()
+                .ok()
+        });
     match (temp, power) {
         (Some(t), Some(p)) => Some((t, p)),
         (Some(t), None) => Some((t, 0)),
