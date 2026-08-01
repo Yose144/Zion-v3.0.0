@@ -1,0 +1,18 @@
+[Unit]
+Description=ZION MarketPlace L1 Watcher — hybrid L1/L2 payment settlement
+After=network.target
+
+[Service]
+Type=simple
+User=zion
+WorkingDirectory=/opt/zion/APP&WEB/MarketPlace
+EnvironmentFile=/opt/zion/APP&WEB/MarketPlace/.env.watcher
+ExecStart=/usr/bin/npx tsx scripts/l1-watcher.ts
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=zion-marketplace-watcher
+
+[Install]
+WantedBy=multi-user.target
