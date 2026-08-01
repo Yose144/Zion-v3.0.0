@@ -200,7 +200,7 @@ async fn effective_share_target(client: &AuxPowClient, job: &ExternalJob) -> [u8
     let uses_notify_target = matches!(
         algo.as_str(),
         "randomx" | "ghostrider" | "ethash" | "etchash" | "kawpow"
-            | "evrprogpow" | "meowpow" | "progpow"
+            | "evrprogpow" | "meowpow" | "progpow" | "autolykos"
     );
     if uses_notify_target {
         // Use the target from the job notification directly
