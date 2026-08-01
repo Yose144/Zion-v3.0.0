@@ -15,8 +15,13 @@ const appRoot = path.join(__dirname, '..');
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
 delete env.ELECTRON_NO_ATTACH_CONSOLE;
+// Tell main.js not to re-exec itself: we already pass the required flags.
+env.ZION_GPU_FLAGS_SET = '1';
 
 const args = [appRoot];
+if (process.platform === 'linux') {
+  args.push('--ozone-platform=x11', '--disable-gpu-sandbox');
+}
 
 try {
   execFileSync(electronPath, args, {
