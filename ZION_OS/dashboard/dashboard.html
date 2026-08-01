@@ -834,6 +834,15 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         </div>
       </div>
       <div class="zion-nav-group">
+        <button><i class="fas fa-shopping-bag"></i> Marketplace ▾</button>
+        <div class="zion-nav-dropdown">
+          <button onclick="switchTab('marketplace-orders')" id="tab-marketplace-orders"><i class="fas fa-shopping-bag"></i> Orders</button>
+          <button onclick="switchTab('marketplace-invoices')" id="tab-marketplace-invoices"><i class="fas fa-file-invoice"></i> Invoices</button>
+          <button onclick="switchTab('marketplace-shipping')" id="tab-marketplace-shipping"><i class="fas fa-truck"></i> Shipping</button>
+          <button onclick="switchTab('marketplace-stripe')" id="tab-marketplace-stripe"><i class="fab fa-stripe"></i> Stripe</button>
+        </div>
+      </div>
+      <div class="zion-nav-group">
         <button><i class="fas fa-gears"></i> Ops ▾</button>
         <div class="zion-nav-dropdown">
           <button onclick="switchTab('services')" id="tab-services"><i class="fas fa-heart-pulse"></i> Services Health</button>
@@ -871,7 +880,6 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <button onclick="switchTab('wizard')" id="tab-wizard" class="zion-quick-link zql-ai"><i class="fas fa-wand-magic-sparkles"></i> Wizard</button>
       <button onclick="switchTab('agent')" id="tab-agent" class="zion-quick-link zql-ai"><i class="fas fa-user-astronaut"></i> Agent</button>
       <a href="/v31/" id="tab-v31" class="zion-quick-link zql-network" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;"><i class="fas fa-rocket"></i> V31</a>
-      <button onclick="switchTab('marketplace')" id="tab-marketplace" class="zion-quick-link zql-ops"><i class="fas fa-shopping-bag"></i> Marketplace</button>
     </div>
   </nav>
 
@@ -7724,19 +7732,67 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     </div>
   </div>
 
-  <!-- ═════════ TAB: Marketplace ═════════ -->
-  <div id="pane-marketplace" class="hidden space-y-4">
+  <!-- ═════════ TAB: Marketplace Orders ═════════ -->
+  <div id="pane-marketplace-orders" class="hidden space-y-4">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gradient">🛒 Marketplace Admin</h1>
-        <p class="text-xs text-gray-400 mt-1">Objednávky, faktury, shipping a Stripe platby</p>
+        <h1 class="text-2xl font-bold text-gradient">🛒 Marketplace — Orders</h1>
+        <p class="text-xs text-gray-400 mt-1">Správa objednávek, statusů a plateb</p>
       </div>
       <div class="flex gap-2">
-        <button onclick="window.open('/marketplace/','_blank')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs transition">↗ Otevřít na celou obrazovku</button>
+        <button onclick="window.open('/marketplace/#orders','_blank')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs transition">↗ Otevřít na celou obrazovku</button>
       </div>
     </div>
     <div class="zion-panel p-0 overflow-hidden" style="min-height:70vh;">
-      <iframe id="marketplace-iframe" src="/marketplace/" class="w-full" style="min-height:70vh;border:none;" title="Marketplace Admin"></iframe>
+      <iframe class="marketplace-iframe w-full" data-hash="orders" src="/marketplace/#orders" style="min-height:70vh;border:none;" title="Marketplace Orders"></iframe>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Marketplace Invoices ═════════ -->
+  <div id="pane-marketplace-invoices" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🧾 Marketplace — Invoices</h1>
+        <p class="text-xs text-gray-400 mt-1">Generování a správa faktur</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="window.open('/marketplace/#invoices','_blank')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs transition">↗ Otevřít na celou obrazovku</button>
+      </div>
+    </div>
+    <div class="zion-panel p-0 overflow-hidden" style="min-height:70vh;">
+      <iframe class="marketplace-iframe w-full" data-hash="invoices" src="/marketplace/#invoices" style="min-height:70vh;border:none;" title="Marketplace Invoices"></iframe>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Marketplace Shipping ═════════ -->
+  <div id="pane-marketplace-shipping" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🚚 Marketplace — Shipping</h1>
+        <p class="text-xs text-gray-400 mt-1">Tracking a zásilky</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="window.open('/marketplace/#shipping','_blank')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs transition">↗ Otevřít na celou obrazovku</button>
+      </div>
+    </div>
+    <div class="zion-panel p-0 overflow-hidden" style="min-height:70vh;">
+      <iframe class="marketplace-iframe w-full" data-hash="shipping" src="/marketplace/#shipping" style="min-height:70vh;border:none;" title="Marketplace Shipping"></iframe>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Marketplace Stripe ═════════ -->
+  <div id="pane-marketplace-stripe" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">💳 Marketplace — Stripe</h1>
+        <p class="text-xs text-gray-400 mt-1">Stripe checkout a webhook nastavení</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="window.open('/marketplace/#stripe','_blank')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs transition">↗ Otevřít na celou obrazovku</button>
+      </div>
+    </div>
+    <div class="zion-panel p-0 overflow-hidden" style="min-height:70vh;">
+      <iframe class="marketplace-iframe w-full" data-hash="stripe" src="/marketplace/#stripe" style="min-height:70vh;border:none;" title="Marketplace Stripe"></iframe>
     </div>
   </div>
 
@@ -7807,7 +7863,10 @@ const STREAM_COIN_TICKERS = [
     'pane-warp':              {rc:'147 51 234',  icon:'🌀', label:'WARP',             sub:'L3 WARP relay'},
     'pane-ai-agents':         {rc:'217 70 239',  icon:'🤖', label:'AI Agents',        sub:'AI agent management'},
     'pane-ncl-jobs':          {rc:'147 51 234',  icon:'📋', label:'NCL Jobs',         sub:'NCL compute jobs'},
-    'pane-marketplace':       {rc:'255 215 0',   icon:'🛒', label:'Marketplace',      sub:'Orders · invoices · shipping · Stripe'},
+    'pane-marketplace-orders':   {rc:'255 215 0',   icon:'🛒', label:'Marketplace Orders',   sub:'Orders · status · payments'},
+    'pane-marketplace-invoices': {rc:'245 158 11',  icon:'🧾', label:'Marketplace Invoices', sub:'Invoice generation & PDF'},
+    'pane-marketplace-shipping': {rc:'6 182 212',   icon:'🚚', label:'Marketplace Shipping', sub:'Tracking & shipments'},
+    'pane-marketplace-stripe':   {rc:'99 102 241',  icon:'💳', label:'Marketplace Stripe',   sub:'Card payments & webhooks'},
   };
 
   function applyPaneAccent(paneEl){
