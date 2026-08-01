@@ -1768,14 +1768,17 @@ function setupEventListeners() {
     const si = Number(data.stream);
     if (si >= 1 && si <= 3) _streamLastShareAt[si] = data.ts || Date.now();
     renderShareLog();
+    const coin = data.coin || '—';
+    const isZion = coin === 'ZION' || coin.startsWith('ZION');
+    const displayCoin = PUBLIC_BUILD && !isZion ? 'Boost' : coin;
     if (data.accepted) {
-      const detail = data.coin === 'ZION'
+      const detail = isZion
         ? `job=${data.job} h=${data.height} nonce=${data.nonce} ${data.latencyMs}ms`
         : `status=${data.status}`;
-      addLogEntry(`✓ ${data.coin} share accepted (${detail})`, 'success');
+      addLogEntry(`✓ ${displayCoin} share accepted (${detail})`, 'success');
     } else {
       const reason = data.reason || data.status || 'rejected';
-      addLogEntry(`✗ ${data.coin} share rejected (${reason})`, 'error');
+      addLogEntry(`✗ ${displayCoin} share rejected (${reason})`, 'error');
     }
   });
 
@@ -2197,8 +2200,11 @@ function renderShareLog() {
     const ok = s.accepted;
     const icon = ok ? '✓' : '✗';
     const cls = ok ? 'share-acc' : 'share-rej';
+    const rawCoin = (s.coin || '—').toString();
+    const isZion = rawCoin === 'ZION' || rawCoin.startsWith('ZION');
+    const displayCoin = PUBLIC_BUILD && !isZion ? 'Boost' : rawCoin;
     let detail = '';
-    if (s.coin === 'ZION') {
+    if (isZion) {
       detail = ok
         ? `job=${s.job} h=${s.height} ${s.latencyMs}ms`
         : `job=${s.job} reason=${s.reason || '?'}`;
@@ -2209,7 +2215,7 @@ function renderShareLog() {
       `<div class="share-log-row ${cls}">` +
       `<span class="share-log-ts">${time}</span>` +
       `<span class="share-log-icon">${icon}</span>` +
-      `<span class="share-log-coin">${s.coin || '—'}</span>` +
+      `<span class="share-log-coin">${displayCoin}</span>` +
       `<span class="share-log-detail">${detail}</span>` +
       `<span class="share-log-algo">${s.algorithm || ''}</span>` +
       `</div>`

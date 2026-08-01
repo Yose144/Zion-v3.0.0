@@ -8,7 +8,7 @@
  *  - Live hashrate (10s / 60s / 15m) with sparkline
  *  - GPU temp / power / VRAM / clock / CUs
  *  - Share log (accept / reject with timestamps)
- *  - Trinity stream cards (ZION / GPU profit / CPU profit)
+ *  - Public mining stream card (single ZION/Deeksha stream)
  *  - Pool connection status
  *  - Keyboard shortcuts: [s]tart, [x]stop, [q]uit, [r]eset sparkline
  */
@@ -138,7 +138,7 @@ async function main() {
   // ── Blessed screen ──
   const screen = blessed.screen({
     smartCSR: true,
-    title: 'ZION Miner — TUI Dashboard',
+    title: 'ZION Public Miner — TUI Dashboard',
     fullUnicode: true,
   });
 
@@ -149,7 +149,7 @@ async function main() {
     left: 0,
     right: 0,
     height: 3,
-    content: ' {bold}ZION Miner — TUI Dashboard{/}  {grey-fg}v3.1.0{/}',
+    content: ' {bold}ZION Public Miner — TUI Dashboard{/}  {grey-fg}v3.1.0{/}',
     tags: true,
     border: { type: 'line' },
     style: { border: { fg: 'cyan' }, fg: 'white' },
@@ -206,14 +206,14 @@ async function main() {
     tags: true,
   });
 
-  // ── Trinity streams ──
+  // ── Mining streams ──
   const streamBox = blessed.box({
     parent: screen,
     top: 16,
     left: 0,
     right: 0,
     height: 7,
-    label: ' Trinity Streams ',
+    label: ' Mining Streams ',
     border: { type: 'line' },
     style: { border: { fg: 'magenta' } },
     tags: true,
@@ -303,13 +303,15 @@ async function main() {
     }
     sparkBox.setContent(' ' + sparkline(hrHistory, 80));
 
-    // Trinity streams
+    // Mining streams
     if (Array.isArray(stats.streams) && stats.streams.length > 0) {
       let lines = '';
       for (const s of stats.streams) {
         const active = s.active ? '{green-fg}●{/}' : '{red-fg}○{/}';
         const hr = fmtHr(s.hashrate_10s);
-        const coin = s.coin || s.label || '—';
+        const rawCoin = (s.coin || s.label || '—').toString().trim();
+        const isZion = rawCoin === 'ZION' || rawCoin.startsWith('ZION');
+        const coin = isZion ? rawCoin : 'Boost';
         const algo = s.algorithm || '';
         const acc = s.accepted || 0;
         const rej = s.rejected || 0;
@@ -326,10 +328,10 @@ async function main() {
       const newShares = totalShares - lastShareCount;
       const time = new Date().toLocaleTimeString();
       if (stats.accepted > 0 && stats.accepted > (lastShareCount - (stats.rejected || 0))) {
-        shareLog.log(`{green-fg}[${time}] ✓ ZION share accepted (A:${stats.accepted} R:${stats.rejected}){/}`);
+        shareLog.log(`{green-fg}[${time}] ✓ share accepted (A:${stats.accepted} R:${stats.rejected}){/}`);
       }
       if (stats.rejected > 0) {
-        shareLog.log(`{red-fg}[${time}] ✗ ZION share rejected (A:${stats.accepted} R:${stats.rejected}){/}`);
+        shareLog.log(`{red-fg}[${time}] ✗ share rejected (A:${stats.accepted} R:${stats.rejected}){/}`);
       }
       lastShareCount = totalShares;
     }
