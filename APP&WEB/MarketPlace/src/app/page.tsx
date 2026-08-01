@@ -1,32 +1,32 @@
 import Link from 'next/link';
 
 const categories = [
-  { name: 'Avatars', desc: 'Playable OASIS characters', icon: '🧬', rarity: 'unique' as const, count: '2.1k', rc: '6, 182, 212' },
-  { name: 'Ships', desc: 'Warp-capable vessels', icon: '🚀', rarity: 'legendary' as const, count: '847', rc: '255, 215, 0' },
-  { name: 'Quest Items', desc: 'Earned through OASIS quests', icon: '⚔️', rarity: 'epic' as const, count: '5.3k', rc: '147, 51, 234' },
-  { name: 'Territory', desc: 'Land deeds in the OASIS world', icon: '🗺️', rarity: 'rare' as const, count: '312', rc: '59, 130, 246' },
-  { name: 'Golden Eggs', desc: 'Limited mythic treasures', icon: '🥚', rarity: 'mythic' as const, count: '24', rc: '244, 63, 94' },
-  { name: 'Cosmetics', desc: 'Skins, trails, effects', icon: '✨', rarity: 'uncommon' as const, count: '4.2k', rc: '16, 185, 129' },
+  { name: 'Avatars', desc: 'Playable OASIS characters', icon: '🧬', rarity: 'unique' as const, count: '2.1k' },
+  { name: 'Ships', desc: 'Warp-capable vessels', icon: '🚀', rarity: 'legendary' as const, count: '847' },
+  { name: 'Quest Items', desc: 'Earned through OASIS quests', icon: '⚔️', rarity: 'epic' as const, count: '5.3k' },
+  { name: 'Territory', desc: 'Land deeds in the OASIS world', icon: '🗺️', rarity: 'rare' as const, count: '312' },
+  { name: 'Golden Eggs', desc: 'Limited mythic treasures', icon: '🥚', rarity: 'mythic' as const, count: '24' },
+  { name: 'Cosmetics', desc: 'Skins, trails, effects', icon: '✨', rarity: 'uncommon' as const, count: '4.2k' },
 ];
 
 const featured = [
-  { id: '1', name: 'Tree of Life Avatar', collection: 'OASIS Genesis', rarity: 'mythic' as const, price: '2,500', img: '', rc: '244, 63, 94' },
-  { id: '2', name: 'Warp Gate Key', collection: 'OASIS Quest', rarity: 'legendary' as const, price: '800', img: '', rc: '255, 215, 0' },
-  { id: '3', name: 'Galaxy Core Shard', collection: 'OASIS Genesis', rarity: 'epic' as const, price: '350', img: '', rc: '147, 51, 234' },
-  { id: '4', name: 'Ship HUD Mk-III', collection: 'OASIS Ships', rarity: 'rare' as const, price: '120', img: '', rc: '59, 130, 246' },
+  { id: '1', name: 'Tree of Life Avatar', collection: 'OASIS Genesis', rarity: 'mythic' as const, price: '2,500' },
+  { id: '2', name: 'Warp Gate Key', collection: 'OASIS Quest', rarity: 'legendary' as const, price: '800' },
+  { id: '3', name: 'Galaxy Core Shard', collection: 'OASIS Genesis', rarity: 'epic' as const, price: '350' },
+  { id: '4', name: 'Ship HUD Mk-III', collection: 'OASIS Ships', rarity: 'rare' as const, price: '120' },
 ];
 
 const stats = [
-  { label: 'Items Listed', value: '12,847', icon: '📦', rc: '6, 182, 212' },
-  { label: 'Total Volume', value: '847k', sub: 'wZION', icon: '📊', rc: '255, 215, 0' },
-  { label: 'Active Auctions', value: '34', icon: '🔨', rc: '147, 51, 234' },
-  { label: 'Holders', value: '2,193', icon: '👥', rc: '16, 185, 129' },
+  { label: 'Items Listed', value: '12,847', icon: '📦' },
+  { label: 'Total Volume', value: '847k', sub: 'wZION', icon: '📊' },
+  { label: 'Active Auctions', value: '34', icon: '🔨' },
+  { label: 'Holders', value: '2,193', icon: '👥' },
 ];
 
 const steps = [
-  { step: '01', title: 'Connect & Browse', desc: 'Connect your Base L2 wallet and explore OASIS artifacts. Filter by rarity, collection, or listing type.', icon: '🔗', rc: '6, 182, 212' },
-  { step: '02', title: 'Buy or Bid', desc: 'Pay with wZION on L2 for instant settlement, or send native ZION on L1 with a memo for hybrid settlement.', icon: '⚡', rc: '147, 51, 234' },
-  { step: '03', title: 'Use in OASIS', desc: 'Every artifact is usable in the OASIS game universe. Equip avatars, fly ships, claim territory.', icon: '🎮', rc: '255, 215, 0' },
+  { step: '01', title: 'Connect & Browse', desc: 'Connect your Base L2 wallet and explore OASIS artifacts. Filter by rarity, collection, or listing type.', icon: '🔗' },
+  { step: '02', title: 'Buy or Bid', desc: 'Pay with wZION on L2 for instant settlement, or send native ZION on L1 with a memo for hybrid settlement.', icon: '⚡' },
+  { step: '03', title: 'Use in OASIS', desc: 'Every artifact is usable in the OASIS game universe. Equip avatars, fly ships, claim territory.', icon: '🎮' },
 ];
 
 export default function HomePage() {
@@ -62,15 +62,11 @@ export default function HomePage() {
 
       {/* ── Stats ── */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {stats.map((s, i) => (
-          <div
-            key={s.label}
-            className="zion-rainbow-card p-5 text-center"
-            style={{ '--rc': s.rc, animationDelay: `${i * 0.05}s` } as React.CSSProperties}
-          >
+        {stats.map((s) => (
+          <div key={s.label} className="card p-5 text-center">
             <div className="text-2xl mb-2 opacity-60">{s.icon}</div>
             <div className="text-2xl md:text-3xl font-black mb-1 font-mono">
-              <span className="text-gradient">{s.value}</span>
+              <span className="text-gradient-gold">{s.value}</span>
               {s.sub && <span className="text-sm text-gray-500 ml-1">{s.sub}</span>}
             </div>
             <div className="text-xs text-gray-500 uppercase tracking-wider">{s.label}</div>
@@ -86,12 +82,11 @@ export default function HomePage() {
           <div className="section-line flex-1" />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {categories.map((cat, i) => (
+          {categories.map((cat) => (
             <Link
               key={cat.name}
               href={`/explore?category=${cat.name.toLowerCase().replace(/\s+/g, '-')}`}
-              className="zion-rainbow-card group p-5 text-center"
-              style={{ '--rc': cat.rc, animationDelay: `${i * 0.05}s` } as React.CSSProperties}
+              className="card group p-5 text-center"
             >
               <div className="text-3xl mb-3 group-hover:scale-125 transition-transform duration-300">
                 {cat.icon}
@@ -119,12 +114,11 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {featured.map((item, i) => (
+          {featured.map((item) => (
             <Link
               key={item.name}
               href={`/item/${item.id}`}
-              className="zion-rainbow-card group p-4"
-              style={{ '--rc': item.rc, animationDelay: `${i * 0.08}s` } as React.CSSProperties}
+              className="card-glow group p-4"
             >
               <div className="relative aspect-square rounded-xl artifact-placeholder overflow-hidden mb-3 flex items-center justify-center">
                 <span className="text-5xl text-gradient font-black font-display relative z-10 group-hover:scale-110 transition-transform duration-500">
@@ -157,12 +151,8 @@ export default function HomePage() {
           <div className="section-line flex-1" />
         </div>
         <div className="grid md:grid-cols-3 gap-5">
-          {steps.map((s, i) => (
-            <div
-              key={s.step}
-              className="zion-rainbow-card p-6"
-              style={{ '--rc': s.rc, animationDelay: `${i * 0.1}s` } as React.CSSProperties}
-            >
+          {steps.map((s) => (
+            <div key={s.step} className="card p-6">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-3xl">{s.icon}</span>
                 <span className="text-3xl font-black text-white/5 font-mono">{s.step}</span>

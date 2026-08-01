@@ -43,7 +43,7 @@ export default function CreatePage() {
 
   if (!isConnected) {
     return (
-      <div className="zion-rainbow-card max-w-md mx-auto mt-20 p-8 text-center" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
+      <div className="card max-w-md mx-auto mt-20 p-8 text-center">
         <div className="text-5xl mb-4 opacity-40">🔐</div>
         <h2 className="text-xl font-bold mb-2 font-display">Connect your wallet</h2>
         <p className="text-sm text-gray-400">Connect to Base L2 to create a listing.</p>
@@ -63,7 +63,7 @@ export default function CreatePage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Asset */}
-        <section className="zion-rainbow-card p-6 space-y-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+        <section className="card-glow p-6 space-y-5">
           <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
             <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
             Asset
@@ -142,7 +142,7 @@ export default function CreatePage() {
         </section>
 
         {/* Traits */}
-        <section className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+        <section className="card p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-purple" />
@@ -180,7 +180,7 @@ export default function CreatePage() {
         </section>
 
         {/* Listing */}
-        <section className="zion-rainbow-card p-6 space-y-5" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
+        <section className="card p-6 space-y-5">
           <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
             <span className="w-1 h-3 rounded-full bg-oasis-gold" />
             Listing

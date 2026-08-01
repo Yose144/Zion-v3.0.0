@@ -31,17 +31,6 @@ const rarityGlow: Record<Rarity, string> = {
   unique: 'shadow-[0_0_25px_rgba(6,182,212,0.25)]',
 };
 
-/* ZION rainbow-card --rc color per rarity (RGB triplet string) */
-const rarityRC: Record<Rarity, string> = {
-  common: '120, 120, 130',
-  uncommon: '16, 185, 129',
-  rare: '59, 130, 246',
-  epic: '147, 51, 234',
-  legendary: '255, 215, 0',
-  mythic: '244, 63, 94',
-  unique: '6, 182, 212',
-};
-
 function timeLeft(ts?: number): string | null {
   if (!ts) return null;
   const ms = ts - Date.now();
@@ -58,8 +47,7 @@ export default function ItemCard({ item }: { item: ArtifactCardData }) {
   return (
     <Link href={`/item/${item.id}`} className="block group">
       <div
-        className={`zion-rainbow-card h-full p-4 ${rarityGlow[item.rarity]}`}
-        style={{ ['--rc' as string]: rarityRC[item.rarity] }}
+        className={`card-glow h-full p-4 ${rarityGlow[item.rarity]}`}
       >
         {/* Image */}
         <div className="relative aspect-square rounded-xl overflow-hidden mb-3 artifact-placeholder">
