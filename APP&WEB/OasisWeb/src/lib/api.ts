@@ -84,6 +84,14 @@ export interface QuestProgress {
   completed_at?: number | null;
 }
 
+export interface XpAwardResponse {
+  address: string;
+  xp_awarded: number;
+  total_xp: number;
+  level: string;
+  leveled_up: boolean;
+}
+
 export interface LeaderboardEntry {
   rank: number;
   address: string;
@@ -198,6 +206,23 @@ export const getHealth = () => fetchJson<Health>('/health');
 
 export const getPlayer = (address: string) =>
   fetchJson<Player>(`/api/v1/oasis/player/${encodeURIComponent(address)}`);
+
+export const awardPlayerXp = (
+  address: string,
+  amount: number,
+  source: string,
+  details?: unknown,
+) =>
+  postJson<XpAwardResponse>(
+    `/api/v1/oasis/player/${encodeURIComponent(address)}/xp`,
+    { source, amount, details },
+  );
+
+export const completePlayerQuest = (address: string, questId: string) =>
+  postJson<QuestProgress>(
+    `/api/v1/oasis/player/${encodeURIComponent(address)}/quests/${encodeURIComponent(questId)}/complete`,
+    {},
+  );
 
 export const getAvatars = (params?: {
   ray?: string;

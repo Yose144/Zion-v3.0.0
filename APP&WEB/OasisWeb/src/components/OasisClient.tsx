@@ -14,7 +14,7 @@ import PlayerHud from './PlayerHud';
 import OnboardingHint from './OnboardingHint';
 import { useGameStore } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
-import { getQuests, getAvatars, getTerritories } from '../lib/api';
+import { getQuests, getAvatars, getTerritories, awardPlayerXp } from '../lib/api';
 import type { World, WorldCategory } from '../domain/types/world';
 
 const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
@@ -47,7 +47,7 @@ export default function OasisClient() {
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
   const mobileInputRef = useRef<MobileInput | null>(null);
   const { muted, toggle, start, playWarp, playBoost, playScanComplete, playApproach, startEngine, stopEngine, setEngine } = useAudio();
-  const { discoverWorld, scanWorld, addXp, setRealQuests, setAvatars, setTerritories, setAddress, address, shipLoadout } = useGameStore();
+  const { discoverWorld, scanWorld, addXp, setRealQuests, setAvatars, setTerritories, setAddress, address, shipLoadout, syncPlayer, scannedWorlds, discoveredWorlds } = useGameStore();
   const addToast = useToastStore((s) => s.add);
 
   useEffect(() => {
@@ -71,12 +71,13 @@ export default function OasisClient() {
       if (quests) setRealQuests(quests);
       if (avatars) setAvatars(avatars);
       if (territories) setTerritories(territories);
+      await syncPlayer();
     }
     load();
     return () => {
       mounted = false;
     };
-  }, [address, setRealQuests, setAvatars, setTerritories]);
+  }, [address, setRealQuests, setAvatars, setTerritories, syncPlayer]);
 
   useEffect(() => {
     const check = () => {
@@ -144,15 +145,22 @@ export default function OasisClient() {
     setWarping(false);
   };
 
-  const handleEnterWorld = () => {
+  const handleEnterWorld = async () => {
     if (selectedWorld) {
       playWarp();
       playScanComplete();
       setWarping(true);
       setView('world');
+      const xp = 75 + shipLoadout.scanner * 25;
+      const firstScan = !scannedWorlds.includes(selectedWorld.id);
       scanWorld(selectedWorld.id);
-      addXp(75 + shipLoadout.scanner * 25);
-      addToast(`Entering ${selectedWorld.name}: +${75 + shipLoadout.scanner * 25} XP`, 'info', 3000);
+      addXp(xp);
+      addToast(`Entering ${selectedWorld.name}: +${xp} XP`, 'info', 3000);
+      if (address && firstScan) {
+        const shares = Math.min(100, Math.max(1, Math.round(xp / 10)));
+        await awardPlayerXp(address, shares, 'scan', { world: selectedWorld.name });
+        await syncPlayer();
+      }
       setTimeout(() => setWarping(false), 1500);
     }
   };
@@ -171,16 +179,21 @@ export default function OasisClient() {
     setLandTarget(world);
   };
 
-  const handleApproachWorld = (world: World) => {
+  const handleApproachWorld = async (world: World) => {
     playApproach();
     playWarp();
     setFlightMode(false);
     setLandTarget(null);
     setSelectedWorld(world);
     setView('galaxy');
+    const firstDiscovery = !discoveredWorlds.includes(world.id);
     discoverWorld(world.id);
     addToast(`Approaching ${world.name}`, 'info', 3000);
     addXp(25);
+    if (address && firstDiscovery) {
+      await awardPlayerXp(address, 3, 'exploration', { world: world.name });
+      await syncPlayer();
+    }
   };
 
   return (
