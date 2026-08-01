@@ -3,19 +3,18 @@
 import { useState, useMemo } from 'react';
 import ItemCard, { type ArtifactCardData, type Rarity } from '@/components/ItemCard';
 
-// Mock data — will be replaced with API + on-chain data
 const mockItems: ArtifactCardData[] = [
-  { id: '1', name: 'Tree of Life Avatar', image: '', collection: 'OASIS Genesis', rarity: 'mythic', price: '2.5', listingType: 'fixed' },
-  { id: '2', name: 'Warp Gate Key', image: '', collection: 'OASIS Quest', rarity: 'legendary', price: '0.8', listingType: 'auction', bestBid: '1.2', endsAt: Date.now() + 36e5 * 5 },
-  { id: '3', name: 'Galaxy Core Shard', image: '', collection: 'OASIS Genesis', rarity: 'epic', price: '0.35', listingType: 'fixed' },
-  { id: '4', name: 'Ship HUD Mk-III', image: '', collection: 'OASIS Ships', rarity: 'rare', price: '0.12', listingType: 'fixed' },
-  { id: '5', name: 'Golden Egg #001', image: '', collection: 'Golden Eggs', rarity: 'mythic', price: '5.0', listingType: 'auction', bestBid: '7.5', endsAt: Date.now() + 36e5 * 12 },
-  { id: '6', name: 'Stellar Trail Skin', image: '', collection: 'OASIS Cosmetics', rarity: 'uncommon', price: '0.02', listingType: 'fixed' },
-  { id: '7', name: 'Sector 7 Deed', image: '', collection: 'OASIS Territory', rarity: 'rare', price: '0.45', listingType: 'fixed' },
+  { id: '1', name: 'Tree of Life Avatar', image: '', collection: 'OASIS Genesis', rarity: 'mythic', price: '2,500', listingType: 'fixed' },
+  { id: '2', name: 'Warp Gate Key', image: '', collection: 'OASIS Quest', rarity: 'legendary', price: '800', listingType: 'auction', bestBid: '1,200', endsAt: Date.now() + 36e5 * 5 },
+  { id: '3', name: 'Galaxy Core Shard', image: '', collection: 'OASIS Genesis', rarity: 'epic', price: '350', listingType: 'fixed' },
+  { id: '4', name: 'Ship HUD Mk-III', image: '', collection: 'OASIS Ships', rarity: 'rare', price: '120', listingType: 'fixed' },
+  { id: '5', name: 'Golden Egg #001', image: '', collection: 'Golden Eggs', rarity: 'mythic', price: '5,000', listingType: 'auction', bestBid: '7,500', endsAt: Date.now() + 36e5 * 12 },
+  { id: '6', name: 'Stellar Trail Skin', image: '', collection: 'OASIS Cosmetics', rarity: 'uncommon', price: '20', listingType: 'fixed' },
+  { id: '7', name: 'Sector 7 Deed', image: '', collection: 'OASIS Territory', rarity: 'rare', price: '450', listingType: 'fixed' },
   { id: '8', name: 'Void Walker Avatar', image: '', collection: 'OASIS Genesis', rarity: 'unique', listingType: 'none' },
-  { id: '9', name: 'Plasma Cannon Mk-II', image: '', collection: 'OASIS Ships', rarity: 'epic', price: '0.28', listingType: 'fixed' },
-  { id: '10', name: 'Crystal of Insight', image: '', collection: 'OASIS Quest', rarity: 'rare', price: '0.15', listingType: 'auction', bestBid: '0.18', endsAt: Date.now() + 36e5 * 2 },
-  { id: '11', name: 'Iron Shield', image: '', collection: 'OASIS Quest', rarity: 'common', price: '0.005', listingType: 'fixed' },
+  { id: '9', name: 'Plasma Cannon Mk-II', image: '', collection: 'OASIS Ships', rarity: 'epic', price: '280', listingType: 'fixed' },
+  { id: '10', name: 'Crystal of Insight', image: '', collection: 'OASIS Quest', rarity: 'rare', price: '150', listingType: 'auction', bestBid: '180', endsAt: Date.now() + 36e5 * 2 },
+  { id: '11', name: 'Iron Shield', image: '', collection: 'OASIS Quest', rarity: 'common', price: '5', listingType: 'fixed' },
   { id: '12', name: 'Genesis Crown', image: '', collection: 'OASIS Genesis', rarity: 'mythic', listingType: 'none' },
 ];
 
@@ -44,7 +43,7 @@ export default function ExplorePage() {
       const q = search.toLowerCase();
       items = items.filter(i => i.name.toLowerCase().includes(q) || i.collection.toLowerCase().includes(q));
     }
-    const priceNum = (i: ArtifactCardData) => parseFloat(i.bestBid || i.price || '0');
+    const priceNum = (i: ArtifactCardData) => parseFloat((i.bestBid || i.price || '0').replace(/,/g, ''));
     switch (sort) {
       case 'price-low': items.sort((a, b) => priceNum(a) - priceNum(b)); break;
       case 'price-high': items.sort((a, b) => priceNum(b) - priceNum(a)); break;
@@ -64,31 +63,44 @@ export default function ExplorePage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-3xl font-black">
-          <span className="text-gradient">Explore</span> <span className="text-white">Artifacts</span>
-        </h1>
-        <input
-          type="text"
-          placeholder="Search items…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm w-full sm:w-64 focus:border-oasis-cyan/50 focus:outline-none"
-        />
+        <div>
+          <h1 className="text-3xl font-black font-display mb-1">
+            <span className="text-gradient">Explore</span> <span className="text-white">Artifacts</span>
+          </h1>
+          <p className="text-sm text-gray-500">Discover and trade OASIS universe artifacts</p>
+        </div>
+        <div className="relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search items…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="input-zion pl-10 w-full sm:w-64"
+          />
+        </div>
       </div>
 
-      <div className="grid lg:grid-cols-[240px_1fr] gap-6">
+      <div className="grid lg:grid-cols-[260px_1fr] gap-6">
         {/* Filters sidebar */}
-        <aside className="space-y-5">
+        <aside className="space-y-4">
           {/* Collection */}
           <div className="card p-4">
-            <h3 className="text-xs font-bold text-gray-400 uppercase mb-3">Collection</h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+              <span className="w-1 h-3 rounded-full bg-oasis-purple" />
+              Collection
+            </h3>
             <div className="space-y-1">
               {collections.map(c => (
                 <button
                   key={c}
                   onClick={() => setCollection(c)}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-all ${
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                     collection === c
                       ? 'bg-oasis-purple/20 text-white border border-oasis-purple/30'
                       : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
@@ -102,14 +114,17 @@ export default function ExplorePage() {
 
           {/* Rarity */}
           <div className="card p-4">
-            <h3 className="text-xs font-bold text-gray-400 uppercase mb-3">Rarity</h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+              <span className="w-1 h-3 rounded-full bg-oasis-gold" />
+              Rarity
+            </h3>
             <div className="flex flex-wrap gap-2">
               {rarities.map(r => (
                 <button
                   key={r}
                   onClick={() => toggleRarity(r)}
-                  className={`rarity-badge rarity-${r} cursor-pointer transition-all ${
-                    selectedRarities.has(r) ? 'ring-2 ring-white/30' : 'opacity-60 hover:opacity-100'
+                  className={`rarity-badge rarity-${r} cursor-pointer transition-all duration-200 ${
+                    selectedRarities.has(r) ? 'ring-2 ring-white/30 scale-105' : 'opacity-50 hover:opacity-100'
                   }`}
                 >
                   {r}
@@ -120,19 +135,22 @@ export default function ExplorePage() {
 
           {/* Listing type */}
           <div className="card p-4">
-            <h3 className="text-xs font-bold text-gray-400 uppercase mb-3">Listing</h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+              <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
+              Listing
+            </h3>
             <div className="space-y-1">
               {(['all', 'fixed', 'auction'] as const).map(t => (
                 <button
                   key={t}
                   onClick={() => setListingFilter(t)}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg text-sm capitalize transition-all ${
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm capitalize transition-all duration-200 ${
                     listingFilter === t
                       ? 'bg-oasis-cyan/20 text-white border border-oasis-cyan/30'
                       : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                   }`}
                 >
-                  {t === 'all' ? 'All listings' : t === 'fixed' ? 'Buy now' : 'Auctions'}
+                  {t === 'all' ? '🌐 All listings' : t === 'fixed' ? '⚡ Buy now' : '🔨 Auctions'}
                 </button>
               ))}
             </div>
@@ -142,11 +160,13 @@ export default function ExplorePage() {
         {/* Grid */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">{filtered.length} items</span>
+            <span className="text-sm text-gray-500">
+              <span className="text-white font-bold">{filtered.length}</span> items
+            </span>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm focus:border-oasis-cyan/50 focus:outline-none"
+              className="input-zion w-auto"
             >
               {sortOptions.map(o => (
                 <option key={o.value} value={o.value} className="bg-zion-card">{o.label}</option>
@@ -155,13 +175,17 @@ export default function ExplorePage() {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="card p-12 text-center text-gray-500">
-              No items match your filters.
+            <div className="card p-16 text-center">
+              <div className="text-5xl mb-4 opacity-30">🔍</div>
+              <div className="text-gray-500 mb-1">No items match your filters</div>
+              <div className="text-xs text-gray-600">Try adjusting your search or filters</div>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filtered.map(item => (
-                <ItemCard key={item.id} item={item} />
+              {filtered.map((item, i) => (
+                <div key={item.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 0.04}s` }}>
+                  <ItemCard item={item} />
+                </div>
               ))}
             </div>
           )}
