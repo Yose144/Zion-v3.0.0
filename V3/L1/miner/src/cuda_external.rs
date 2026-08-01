@@ -1062,8 +1062,8 @@ impl CudaExternalMiner {
         } else if self.algo == CudaExtAlgo::Kawpow {
             128 // KawPow kernel uses GROUP_SIZE=128 (HASHES_PER_GROUP=8)
         } else if self.algo == CudaExtAlgo::Autolykos {
-            // Autolykos kernel uses __launch_bounds__(128, 8).
-            128
+            // Autolykos kernel uses __launch_bounds__(64, 8) with 4 nonces/thread.
+            64
         } else {
             // Configurable via ZION_CUDA_BLOCK_SIZE env var.
             // Default 256 (optimal for Ampere/Ada). For Pascal/Turing (GTX 1080, etc.),
@@ -1083,7 +1083,14 @@ impl CudaExternalMiner {
 
         while left > 0 {
             let chunk = (left as u32).min(self.work_size as u32);
-            let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+            // Autolykos kernel processes 4 nonces per thread, so divide block count by 4.
+            let nonces_per_thread: u32 = if self.algo == CudaExtAlgo::Autolykos {
+                4
+            } else {
+                1
+            };
+            let blocks =
+                (chunk + threads_per_block * nonces_per_thread - 1) / (threads_per_block * nonces_per_thread);
             let cfg = LaunchConfig {
                 grid_dim: (blocks, 1, 1),
                 block_dim: (threads_per_block, 1, 1),

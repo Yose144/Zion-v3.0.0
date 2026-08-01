@@ -28,7 +28,8 @@ forwarded to 2miners.
 | Version | Approach | Hashrate | Commit |
 |---------|----------|----------|--------|
 | v1 (tableless) | On-the-fly blake2b for all 33 index computations per nonce | 14.37 MH/s | `26d98de4f` |
-| v2 (R table / DAG) | Precomputed R table (N×32B) + uint4 table lookups | **21 MH/s** | `b7fc2a180` |
+| v2 (R table / DAG) | Precomputed R table (N×32B) + uint4 table lookups | 21 MH/s | `b7fc2a180` |
+| v3 (R table optimized) | __ldg() + shared mem header + 4 nonces/thread + (64,4) launch bounds | **25.35 MH/s** | (this commit) |
 
 The v2 kernel uses a two-kernel approach:
 - `autolykos_precompute` — builds the R table: N elements × 32 bytes
@@ -125,7 +126,8 @@ The pool correctly parses `arr[6]` as a big-endian 256-bit target via
 | Mode | Hashrate | Notes |
 |------|----------|-------|
 | Dedicated, tableless kernel (v1) | ~14.37 MH/s | `--test-cuda-kernel autolykos` benchmark |
-| Dedicated, R table kernel (v2) | **~21 MH/s** | R table lookups, height=0 (N=67M, 2.15 GB table) |
+| Dedicated, R table kernel (v2) | ~21 MH/s | R table lookups, height=0 (N=67M, 2.15 GB table) |
+| Dedicated, R table optimized (v3) | **~25.35 MH/s** | __ldg + shared mem + 4 nonces/thread + (64,4) bounds |
 | Shared with deeksha | ~250K H/s | Live pool test, GPU split between ERG + ZION |
 
 The shared mode hashrate is ~57x lower than dedicated because the GPU
