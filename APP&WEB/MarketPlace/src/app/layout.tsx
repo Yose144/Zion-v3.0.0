@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import Navbar from '@/components/Navbar';
+import StarfieldCanvas from '@/components/StarfieldCanvas';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: '#05070a',
+  themeColor: '#090A0F',
   width: 'device-width',
   initialScale: 1,
 };
@@ -34,6 +35,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${inter.variable} ${mono.variable} ${display.variable}`}>
       <body className="antialiased font-sans">
+        <StarfieldCanvas />
+        <div className="orb orb-gold" aria-hidden="true" />
+        <div className="orb orb-purple" aria-hidden="true" />
+        <div className="orb orb-cyan" aria-hidden="true" />
         <Providers>
           <Navbar />
           <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 min-h-[calc(100vh-4rem)]">

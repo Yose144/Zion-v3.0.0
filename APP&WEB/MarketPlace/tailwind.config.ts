@@ -9,18 +9,22 @@ const config: Config = {
     extend: {
       colors: {
         oasis: {
-          black: '#05070a',
-          cyan: '#22d3ee',
-          purple: '#a855f7',
+          black: '#090A0F',
+          cyan: '#06b6d4',
+          purple: '#9333ea',
           emerald: '#10b981',
-          gold: '#f59e0b',
+          gold: '#ffd700',
           rose: '#f43f5e',
+          blue: '#1e3a8a',
         },
         zion: {
-          dark: '#05070a',
+          dark: '#090A0F',
           card: '#0a0c14',
           border: '#1a1d2e',
-          gold: '#FFD700',
+          gold: '#ffd700',
+          purple: '#9333ea',
+          cyan: '#06b6d4',
+          blue: '#1e3a8a',
         },
       },
       fontFamily: {
