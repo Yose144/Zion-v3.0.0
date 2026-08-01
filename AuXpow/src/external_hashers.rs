@@ -13,8 +13,8 @@
 //!   - `ethash`      — for ETC (needs DAG)
 //!   - `randomx`     — for XMR (needs RandomX VM)
 
-use blake2::Blake2bVar;
 use blake2::digest::VariableOutput;
+use blake2::Blake2bVar;
 use blake3::Hasher as Blake3Hasher;
 use sha3::{Digest, Keccak256, Keccak512};
 use std::collections::HashMap;
@@ -121,8 +121,7 @@ pub fn hash_blake3(header: &[u8], _timestamp: u64, nonce: u64) -> [u8; 32] {
     full_header[..copy_len].copy_from_slice(&header[..copy_len]);
     // Insert 4-byte LE nonce at offset 140
     let nonce_bytes = (nonce as u32).to_le_bytes();
-    full_header[DCR_NONCE_OFFSET..DCR_NONCE_OFFSET + DCR_NONCE_SIZE]
-        .copy_from_slice(&nonce_bytes);
+    full_header[DCR_NONCE_OFFSET..DCR_NONCE_OFFSET + DCR_NONCE_SIZE].copy_from_slice(&nonce_bytes);
     blake3::hash(&full_header).into()
 }
 
@@ -461,11 +460,23 @@ fn keryx_wave_mix(bytes: [u8; 32]) -> [u8; 32] {
     ];
     for r in 0..4usize {
         // Step A — vertical pairs (w0,w1) and (w2,w3) are independent.
-        w[0] = w[0].wrapping_add(w[1]).rotate_left(KERYX_WAVE_MIX_ROTATIONS[0]) ^ KERYX_WAVE_MIX_KEYS[r & 3];
-        w[2] = w[2].wrapping_add(w[3]).rotate_left(KERYX_WAVE_MIX_ROTATIONS[2]) ^ KERYX_WAVE_MIX_KEYS[(r + 2) & 3];
+        w[0] = w[0]
+            .wrapping_add(w[1])
+            .rotate_left(KERYX_WAVE_MIX_ROTATIONS[0])
+            ^ KERYX_WAVE_MIX_KEYS[r & 3];
+        w[2] = w[2]
+            .wrapping_add(w[3])
+            .rotate_left(KERYX_WAVE_MIX_ROTATIONS[2])
+            ^ KERYX_WAVE_MIX_KEYS[(r + 2) & 3];
         // Step B — diagonal pairs: cross-pollinate all 256 bits.
-        w[1] = w[1].wrapping_add(w[2]).rotate_left(KERYX_WAVE_MIX_ROTATIONS[1]) ^ KERYX_WAVE_MIX_KEYS[(r + 1) & 3];
-        w[3] = w[3].wrapping_add(w[0]).rotate_left(KERYX_WAVE_MIX_ROTATIONS[3]) ^ KERYX_WAVE_MIX_KEYS[(r + 3) & 3];
+        w[1] = w[1]
+            .wrapping_add(w[2])
+            .rotate_left(KERYX_WAVE_MIX_ROTATIONS[1])
+            ^ KERYX_WAVE_MIX_KEYS[(r + 1) & 3];
+        w[3] = w[3]
+            .wrapping_add(w[0])
+            .rotate_left(KERYX_WAVE_MIX_ROTATIONS[3])
+            ^ KERYX_WAVE_MIX_KEYS[(r + 3) & 3];
     }
     let mut out = [0u8; 32];
     out[0..8].copy_from_slice(&w[0].to_le_bytes());
@@ -489,9 +500,10 @@ fn keryx_wave_mix(bytes: [u8; 32]) -> [u8; 32] {
 pub fn generate_keryx_matrix(pre_pow_hash: &[u8], daa_score: u64) -> [[u16; 64]; 64] {
     let salt = keryx_active_salt(daa_score);
     let mut salted = [0u8; 32];
-    salted.iter_mut().zip(pre_pow_hash.iter().zip(salt.iter())).for_each(
-        |(out, (h, s))| *out = *h ^ *s,
-    );
+    salted
+        .iter_mut()
+        .zip(pre_pow_hash.iter().zip(salt.iter()))
+        .for_each(|(out, (h, s))| *out = *h ^ *s);
     // Seed XoShiRo256++ with the salted hash (LE u64 words).
     let mut rng = XoShiRo256PlusPlus::new(salted);
     // Reuse the same matrix-generation logic as KAS (rand_matrix + rank check).
@@ -645,7 +657,12 @@ pub fn hash_keryxhash_extranonce(
     if suffix_len > 0 {
         full_nonce[en1_len..8].copy_from_slice(&suffix.to_le_bytes()[..suffix_len]);
     }
-    hash_keryxhash(pre_pow_hash, timestamp, u64::from_le_bytes(full_nonce), daa_score)
+    hash_keryxhash(
+        pre_pow_hash,
+        timestamp,
+        u64::from_le_bytes(full_nonce),
+        daa_score,
+    )
 }
 
 /// Compute KeryxHash with an explicit 8-byte nonce prefix (stratum extranonce).
@@ -733,26 +750,22 @@ const KAWPOW_PERIOD: u32 = 10;
 const KAWPOW_L1_CACHE_NUM_ITEMS: usize = 4096; // PROGPOW_CACHE_WORDS
 
 const KAWPOW_RAVENCOIN: [u32; 15] = [
-    0x00000072, 0x00000041, 0x00000056, 0x00000045, 0x0000004E,
-    0x00000043, 0x0000004F, 0x00000049, 0x0000004E, 0x0000004B,
-    0x00000041, 0x00000057, 0x00000050, 0x0000004F, 0x00000057,
+    0x00000072, 0x00000041, 0x00000056, 0x00000045, 0x0000004E, 0x00000043, 0x0000004F, 0x00000049,
+    0x0000004E, 0x0000004B, 0x00000041, 0x00000057, 0x00000050, 0x0000004F, 0x00000057,
 ];
 
 const KAWPOW_KECCAK_RNDC: [u32; 24] = [
-    0x00000001, 0x00008082, 0x0000808a, 0x80008000, 0x0000808b, 0x80000001,
-    0x80008081, 0x00008009, 0x0000008a, 0x00000088, 0x80008009, 0x8000000a,
-    0x8000808b, 0x0000008b, 0x00008089, 0x00008003, 0x00008002, 0x00000080,
-    0x0000800a, 0x8000000a, 0x80008081, 0x00008080, 0x80000001, 0x80008008,
+    0x00000001, 0x00008082, 0x0000808a, 0x80008000, 0x0000808b, 0x80000001, 0x80008081, 0x00008009,
+    0x0000008a, 0x00000088, 0x80008009, 0x8000000a, 0x8000808b, 0x0000008b, 0x00008089, 0x00008003,
+    0x00008002, 0x00000080, 0x0000800a, 0x8000000a, 0x80008081, 0x00008080, 0x80000001, 0x80008008,
 ];
 
 const KAWPOW_KECCAK_ROTC: [u32; 24] = [
-    1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14,
-    27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44,
+    1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44,
 ];
 
 const KAWPOW_KECCAK_PILN: [usize; 24] = [
-    10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4,
-    15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1,
+    10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1,
 ];
 
 #[inline]
@@ -828,13 +841,20 @@ fn kawpow_keccak_f800(st: &mut [u32; 25]) {
 
 // KISS99 RNG
 struct KawpowKiss99 {
-    z: u32, w: u32, jsr: u32, jcong: u32,
+    z: u32,
+    w: u32,
+    jsr: u32,
+    jcong: u32,
 }
 
 impl KawpowKiss99 {
     fn next(&mut self) -> u32 {
-        self.z = 36969u32.wrapping_mul(self.z & 0xFFFF).wrapping_add(self.z >> 16);
-        self.w = 18000u32.wrapping_mul(self.w & 0xFFFF).wrapping_add(self.w >> 16);
+        self.z = 36969u32
+            .wrapping_mul(self.z & 0xFFFF)
+            .wrapping_add(self.z >> 16);
+        self.w = 18000u32
+            .wrapping_mul(self.w & 0xFFFF)
+            .wrapping_add(self.w >> 16);
         let mwc = (self.z << 16).wrapping_add(self.w);
         self.jsr ^= self.jsr << 17;
         self.jsr ^= self.jsr >> 13;
@@ -1050,14 +1070,54 @@ pub fn kawpow_hash_real(
 ) -> ([u8; 32], [u8; 32]) {
     // Convert header to 8 uint32 (little-endian)
     let header_u32: [u32; 8] = [
-        u32::from_le_bytes([header_hash[0], header_hash[1], header_hash[2], header_hash[3]]),
-        u32::from_le_bytes([header_hash[4], header_hash[5], header_hash[6], header_hash[7]]),
-        u32::from_le_bytes([header_hash[8], header_hash[9], header_hash[10], header_hash[11]]),
-        u32::from_le_bytes([header_hash[12], header_hash[13], header_hash[14], header_hash[15]]),
-        u32::from_le_bytes([header_hash[16], header_hash[17], header_hash[18], header_hash[19]]),
-        u32::from_le_bytes([header_hash[20], header_hash[21], header_hash[22], header_hash[23]]),
-        u32::from_le_bytes([header_hash[24], header_hash[25], header_hash[26], header_hash[27]]),
-        u32::from_le_bytes([header_hash[28], header_hash[29], header_hash[30], header_hash[31]]),
+        u32::from_le_bytes([
+            header_hash[0],
+            header_hash[1],
+            header_hash[2],
+            header_hash[3],
+        ]),
+        u32::from_le_bytes([
+            header_hash[4],
+            header_hash[5],
+            header_hash[6],
+            header_hash[7],
+        ]),
+        u32::from_le_bytes([
+            header_hash[8],
+            header_hash[9],
+            header_hash[10],
+            header_hash[11],
+        ]),
+        u32::from_le_bytes([
+            header_hash[12],
+            header_hash[13],
+            header_hash[14],
+            header_hash[15],
+        ]),
+        u32::from_le_bytes([
+            header_hash[16],
+            header_hash[17],
+            header_hash[18],
+            header_hash[19],
+        ]),
+        u32::from_le_bytes([
+            header_hash[20],
+            header_hash[21],
+            header_hash[22],
+            header_hash[23],
+        ]),
+        u32::from_le_bytes([
+            header_hash[24],
+            header_hash[25],
+            header_hash[26],
+            header_hash[27],
+        ]),
+        u32::from_le_bytes([
+            header_hash[28],
+            header_hash[29],
+            header_hash[30],
+            header_hash[31],
+        ]),
     ];
 
     // Initial keccak: state[0..7] = header, state[8..9] = nonce, state[10..24] = ravencoin
@@ -1135,21 +1195,57 @@ pub fn kawpow_hash_real(
 /// KawPow final hash from mix_hash (keccak_f800 with RAVENCOINKAWPOW domain).
 /// This is used to verify GPU solutions: given the header_hash, nonce, and
 /// mix_hash from the GPU, compute the final 32-byte hash.
-pub fn kawpow_final_hash_real(
-    header_hash: &[u8; 32],
-    nonce: u64,
-    mix_hash: &[u8; 32],
-) -> [u8; 32] {
+pub fn kawpow_final_hash_real(header_hash: &[u8; 32], nonce: u64, mix_hash: &[u8; 32]) -> [u8; 32] {
     // Convert header to 8 uint32 (little-endian)
     let header_u32: [u32; 8] = [
-        u32::from_le_bytes([header_hash[0], header_hash[1], header_hash[2], header_hash[3]]),
-        u32::from_le_bytes([header_hash[4], header_hash[5], header_hash[6], header_hash[7]]),
-        u32::from_le_bytes([header_hash[8], header_hash[9], header_hash[10], header_hash[11]]),
-        u32::from_le_bytes([header_hash[12], header_hash[13], header_hash[14], header_hash[15]]),
-        u32::from_le_bytes([header_hash[16], header_hash[17], header_hash[18], header_hash[19]]),
-        u32::from_le_bytes([header_hash[20], header_hash[21], header_hash[22], header_hash[23]]),
-        u32::from_le_bytes([header_hash[24], header_hash[25], header_hash[26], header_hash[27]]),
-        u32::from_le_bytes([header_hash[28], header_hash[29], header_hash[30], header_hash[31]]),
+        u32::from_le_bytes([
+            header_hash[0],
+            header_hash[1],
+            header_hash[2],
+            header_hash[3],
+        ]),
+        u32::from_le_bytes([
+            header_hash[4],
+            header_hash[5],
+            header_hash[6],
+            header_hash[7],
+        ]),
+        u32::from_le_bytes([
+            header_hash[8],
+            header_hash[9],
+            header_hash[10],
+            header_hash[11],
+        ]),
+        u32::from_le_bytes([
+            header_hash[12],
+            header_hash[13],
+            header_hash[14],
+            header_hash[15],
+        ]),
+        u32::from_le_bytes([
+            header_hash[16],
+            header_hash[17],
+            header_hash[18],
+            header_hash[19],
+        ]),
+        u32::from_le_bytes([
+            header_hash[20],
+            header_hash[21],
+            header_hash[22],
+            header_hash[23],
+        ]),
+        u32::from_le_bytes([
+            header_hash[24],
+            header_hash[25],
+            header_hash[26],
+            header_hash[27],
+        ]),
+        u32::from_le_bytes([
+            header_hash[28],
+            header_hash[29],
+            header_hash[30],
+            header_hash[31],
+        ]),
     ];
 
     // Convert mix_hash to 8 uint32 (little-endian)
@@ -1239,12 +1335,8 @@ pub fn kawpow_hash_from_dag(
         let entry_start = index * 128;
         for w in 0..16usize {
             let off = entry_start + w * 4;
-            let node_word = u32::from_le_bytes([
-                dag[off],
-                dag[off + 1],
-                dag[off + 2],
-                dag[off + 3],
-            ]);
+            let node_word =
+                u32::from_le_bytes([dag[off], dag[off + 1], dag[off + 2], dag[off + 3]]);
             mix[w] = (mix[w] ^ node_word).wrapping_mul(FNV_PRIME);
         }
     }
@@ -1470,14 +1562,14 @@ pub const PROGPOW_PERIOD: u32 = 10;
 
 pub const AUTOLYKOS_K: usize = 32;
 pub const AUTOLYKOS_M_SIZE: usize = 8192;
-const AUTOLYKOS_N_BASE: u64 = 67_108_864; // 2^26
+const AUTOLYKOS_N_BASE: u64 = 2_097_152; // 2^21 — Autolykos v2 (post-fork block 417,792)
 const AUTOLYKOS_INCREASE_START: u64 = 614_400;
 const AUTOLYKOS_INCREASE_PERIOD: u64 = 51_200;
 const AUTOLYKOS_N_INCREASE_HEIGHT_MAX: u64 = 4_198_400;
 
 /// Calculate the Autolykos v2 N parameter from block height.
 ///
-/// N starts at 2^26 = 67,108,864 until block 614,400, then grows by 5% every
+/// N starts at 2^21 = 2,097,152 until block 614,400, then grows by 5% every
 /// 51,200 blocks (integer arithmetic: N = N / 100 * 105).  From block
 /// 4,198,400 onward N is fixed at 2,143,944,600.
 pub fn autolykos_calc_n(height: u32) -> u32 {
@@ -1515,7 +1607,8 @@ fn blake2b256(input: &[u8]) -> [u8; 32] {
     let mut hasher = Blake2bVar::new(32).expect("blake2b256");
     blake2::digest::Update::update(&mut hasher, input);
     let mut out = [0u8; 32];
-    hasher.finalize_variable(&mut out)
+    hasher
+        .finalize_variable(&mut out)
         .expect("blake2b256 finalize");
     out
 }
@@ -1821,7 +1914,10 @@ fn ethash_hashimoto_light(
         full_size,
         cache,
     );
-    (ethash_bytes_from_h256(&mix), ethash_bytes_from_h256(&result))
+    (
+        ethash_bytes_from_h256(&mix),
+        ethash_bytes_from_h256(&result),
+    )
 }
 
 #[derive(Clone)]
@@ -2389,11 +2485,7 @@ impl EquihashNode {
 /// `input` is the block header (without nonce or solution).
 /// `nonce` is the 32-byte nonce (ZcashStratum uses 32-byte nonces).
 /// `soln` is the compressed solution bytes.
-pub fn is_valid_zelhash_solution(
-    input: &[u8],
-    nonce: &[u8],
-    soln: &[u8],
-) -> Result<(), String> {
+pub fn is_valid_zelhash_solution(input: &[u8], nonce: &[u8], soln: &[u8]) -> Result<(), String> {
     let indices = decompress_indices(soln)?;
     if indices.len() != ZELHASH_SOLUTION_INDICES {
         return Err(format!(
@@ -2427,10 +2519,7 @@ pub fn is_valid_zelhash_solution(
     })?
 }
 
-fn validate_tree(
-    state: &blake2b_simd::State,
-    indices: &[u32],
-) -> Result<EquihashNode, String> {
+fn validate_tree(state: &blake2b_simd::State, indices: &[u32]) -> Result<EquihashNode, String> {
     if indices.len() == 1 {
         return Ok(EquihashNode::new(state, indices[0]));
     }
@@ -2446,11 +2535,7 @@ fn validate_tree(
         return Err("indices out of order".to_string());
     }
 
-    Ok(EquihashNode::from_children(
-        a,
-        b,
-        ZELHASH_COLLISION_BYTES,
-    ))
+    Ok(EquihashNode::from_children(a, b, ZELHASH_COLLISION_BYTES))
 }
 
 /// Compute the final PoW hash from an Equihash solution.
@@ -2466,12 +2551,10 @@ fn validate_tree(
 /// solution for target comparison.
 pub fn hash_zelhash(header: &[u8], nonce: &[u8], solution: &[u8]) -> [u8; 32] {
     // The FLUX block hash is Blake2b-256 of:
-      //   header_without_solution || solution_size_varint || solution
+    //   header_without_solution || solution_size_varint || solution
     // For pool-side validation, we use a simplified hash:
     //   Blake2b-256(header || nonce || solution)
-    let mut state = blake2b_simd::Params::new()
-        .hash_length(32)
-        .to_state();
+    let mut state = blake2b_simd::Params::new().hash_length(32).to_state();
     state.update(header);
     state.update(nonce);
     state.update(solution);
@@ -2656,15 +2739,19 @@ impl Kiss99 {
         Self {
             z: 362436069,
             w: 521288629,
-            jsr: (prog_seed ^ 0x5DEECE6D) | 0x1,  // ensure non-zero
+            jsr: (prog_seed ^ 0x5DEECE6D) | 0x1, // ensure non-zero
             jcong: 380116160,
         }
     }
 
     #[inline]
     pub fn next(&mut self) -> u32 {
-        self.z = 36969u32.wrapping_mul(self.z & 0xFFFF).wrapping_add(self.z >> 16);
-        self.w = 18000u32.wrapping_mul(self.w & 0xFFFF).wrapping_add(self.w >> 16);
+        self.z = 36969u32
+            .wrapping_mul(self.z & 0xFFFF)
+            .wrapping_add(self.z >> 16);
+        self.w = 18000u32
+            .wrapping_mul(self.w & 0xFFFF)
+            .wrapping_add(self.w >> 16);
         let mwc = (self.w << 16).wrapping_add(self.z);
         self.jsr ^= self.jsr << 17;
         self.jsr ^= self.jsr >> 15;
@@ -2684,12 +2771,10 @@ pub fn keccak_f800(st: &mut [u32; 25]) {
         10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1,
     ];
     const KECCAKF_RNDC: [u32; 22] = [
-        0x00000001, 0x00008082, 0x0000808a, 0x80008000,
-        0x0000808b, 0x80000001, 0x80008081, 0x00008009,
-        0x0000008a, 0x00000088, 0x80008009, 0x8000000a,
-        0x8000808b, 0x0000008b, 0x00008089, 0x00008003,
-        0x00008002, 0x00000080, 0x0000800a, 0x8000000a,
-        0x80008081, 0x00008080,
+        0x00000001, 0x00008082, 0x0000808a, 0x80008000, 0x0000808b, 0x80000001, 0x80008081,
+        0x00008009, 0x0000008a, 0x00000088, 0x80008009, 0x8000000a, 0x8000808b, 0x0000008b,
+        0x00008089, 0x00008003, 0x00008002, 0x00000080, 0x0000800a, 0x8000000a, 0x80008081,
+        0x00008080,
     ];
 
     for r in 0..22 {
@@ -2739,9 +2824,7 @@ fn keccak_f800_state(
 ) {
     *st = [0u32; 25];
     for i in 0..8 {
-        st[i] = u32::from_le_bytes(
-            header_hash[i * 4..(i + 1) * 4].try_into().unwrap(),
-        );
+        st[i] = u32::from_le_bytes(header_hash[i * 4..(i + 1) * 4].try_into().unwrap());
     }
     st[8] = value as u32;
     st[9] = (value >> 32) as u32;
@@ -2778,9 +2861,7 @@ pub fn progpow_final_hash(header_hash: &[u8; 32], nonce: u64, mix_hash: &[u8; 32
 
     let mut mix_u32 = [0u32; 8];
     for i in 0..8 {
-        mix_u32[i] = u32::from_le_bytes(
-            mix_hash[i * 4..(i + 1) * 4].try_into().unwrap(),
-        );
+        mix_u32[i] = u32::from_le_bytes(mix_hash[i * 4..(i + 1) * 4].try_into().unwrap());
     }
 
     let mut st = [0u32; 25];
@@ -2814,7 +2895,9 @@ pub fn progpow_final_hash(header_hash: &[u8; 32], nonce: u64, mix_hash: &[u8; 32
 pub fn hash_progpow(header_hash: &[u8; 32], nonce: u64, height: u32) -> ([u8; 32], [u8; 32]) {
     #[cfg(feature = "native-hashers")]
     {
-        if let Ok((mix, final_hash)) = crate::native_ffi::hash_progpow_native(header_hash, nonce, height) {
+        if let Ok((mix, final_hash)) =
+            crate::native_ffi::hash_progpow_native(header_hash, nonce, height)
+        {
             return (mix, final_hash);
         }
     }
@@ -2882,7 +2965,7 @@ pub fn hash_progpow_with_dag(
     #[allow(unreachable_code)]
     {
         let _ = (dag, dag_size_entries); // suppress unused warnings
-        // Use height 0 for the simplified version — caller should use native FFI
+                                         // Use height 0 for the simplified version — caller should use native FFI
         hash_progpow(header_hash, nonce, 0)
     }
 }
@@ -3096,7 +3179,7 @@ fn compute_expectation(state: &[Complex], q: usize) -> f32 {
 /// 5. Convert to fixed-point int16 (× 32768)
 /// 6. SHA-256([initial_hash(32) | expectations(32)]) → 32-byte final hash
 pub fn hash_qhash(header: &[u8], nonce: u64) -> [u8; 32] {
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
 
     // Step 1: SHA-256 of 80-byte header with nonce at bytes 0-3 (LE)
     let mut hdr = [0u8; 80];
@@ -3292,8 +3375,18 @@ mod tests {
 
     #[test]
     fn progpow_kiss99_deterministic() {
-        let mut rng1 = Kiss99 { z: 362436069, w: 521288629, jsr: 123456789, jcong: 380116160 };
-        let mut rng2 = Kiss99 { z: 362436069, w: 521288629, jsr: 123456789, jcong: 380116160 };
+        let mut rng1 = Kiss99 {
+            z: 362436069,
+            w: 521288629,
+            jsr: 123456789,
+            jcong: 380116160,
+        };
+        let mut rng2 = Kiss99 {
+            z: 362436069,
+            w: 521288629,
+            jsr: 123456789,
+            jcong: 380116160,
+        };
         for _ in 0..100 {
             assert_eq!(rng1.next(), rng2.next());
         }
@@ -3382,11 +3475,19 @@ mod tests {
         // the exact value depends on the matrix generated from SHA3-256("KHeavyHash").
         let h = hash_kheavyhash(&[42u8; 32], 5_435_345_234, 432_432_432);
         let h2 = hash_kheavyhash(&[42u8; 32], 5_435_345_234, 432_432_432);
-        assert_eq!(hash_to_hex(&h), hash_to_hex(&h2), "kHeavyHash must be deterministic");
+        assert_eq!(
+            hash_to_hex(&h),
+            hash_to_hex(&h2),
+            "kHeavyHash must be deterministic"
+        );
         assert_ne!(h, [0u8; 32], "kHeavyHash must not be all zeros");
         // The old (incorrect, no-matrix) hash was b0b5b47d… — verify we differ
         let old_wrong = "b0b5b47de00be8f689cbe89818f8a075350055c5e9dbcda7d834395b08be2252";
-        assert_ne!(hash_to_hex(&h), old_wrong, "kHeavyHash with matrix must differ from no-matrix version");
+        assert_ne!(
+            hash_to_hex(&h),
+            old_wrong,
+            "kHeavyHash with matrix must differ from no-matrix version"
+        );
         // Verified against GPU OpenCL kernel: both produce
         // 430ee3e8261c539b1ff403cc0adc3587e74753a24f628be52b9dea8a6cfe3e66
         assert_eq!(
@@ -3432,8 +3533,16 @@ mod tests {
         let mut crate_cache = vec![0u8; ethash::get_cache_size(0)];
         ethash::make_cache(&mut crate_cache, seed);
         let (our_cache, _) = ethash_cache_for_epoch(0);
-        assert_eq!(&our_cache[..64], &crate_cache[..64], "first cache item mismatch");
-        assert_eq!(&our_cache[64..128], &crate_cache[64..128], "second cache item mismatch");
+        assert_eq!(
+            &our_cache[..64],
+            &crate_cache[..64],
+            "first cache item mismatch"
+        );
+        assert_eq!(
+            &our_cache[64..128],
+            &crate_cache[64..128],
+            "second cache item mismatch"
+        );
     }
 
     #[test]
@@ -3481,8 +3590,14 @@ mod tests {
             ethash::get_full_size(0),
             &cache,
         );
-        assert_eq!(hex::encode(mix.as_bytes()), "58f759ede17a706c93f13030328bcea40c1d1341fb26f2facd21ceb0dae57017");
-        assert_eq!(hex::encode(final_hash.as_bytes()), "dd47fd2d98db51078356852d7c4014e6a5d6c387c35f40e2875b74a256ed7906");
+        assert_eq!(
+            hex::encode(mix.as_bytes()),
+            "58f759ede17a706c93f13030328bcea40c1d1341fb26f2facd21ceb0dae57017"
+        );
+        assert_eq!(
+            hex::encode(final_hash.as_bytes()),
+            "dd47fd2d98db51078356852d7c4014e6a5d6c387c35f40e2875b74a256ed7906"
+        );
     }
 
     #[test]
@@ -3541,8 +3656,14 @@ mod tests {
             &dataset,
         );
 
-        assert_eq!(mix_light, mix_full, "mix mismatch between light and full DAG");
-        assert_eq!(final_light, final_full, "final hash mismatch between light and full DAG");
+        assert_eq!(
+            mix_light, mix_full,
+            "mix mismatch between light and full DAG"
+        );
+        assert_eq!(
+            final_light, final_full,
+            "final hash mismatch between light and full DAG"
+        );
     }
 
     #[test]
@@ -3596,7 +3717,10 @@ mod tests {
         let pre_pow_hash = &[42u8; 32];
         let kas = hash_kheavyhash(pre_pow_hash, 5_435_345_234, 432_432_432);
         let krx = hash_keryxhash(pre_pow_hash, 5_435_345_234, 432_432_432, 22_000_000);
-        assert_ne!(kas, krx, "KeryxHash must differ from kHeavyHash (wave_mix + salt)");
+        assert_ne!(
+            kas, krx,
+            "KeryxHash must differ from kHeavyHash (wave_mix + salt)"
+        );
     }
 
     #[test]
@@ -3619,7 +3743,10 @@ mod tests {
         // Same salt version (v4) at two DAA scores above the v4 threshold → same hash
         let h_v4_a = hash_keryxhash(pre_pow_hash, 1_000_000, 42, 22_000_000);
         let h_v4_b = hash_keryxhash(pre_pow_hash, 1_000_000, 42, 50_000_000);
-        assert_eq!(h_v4_a, h_v4_b, "DAA score within the same salt version must not change the hash");
+        assert_eq!(
+            h_v4_a, h_v4_b,
+            "DAA score within the same salt version must not change the hash"
+        );
     }
 
     #[test]
@@ -3649,7 +3776,8 @@ mod tests {
         // hash_keryxhash_extranonce with empty extranonce1 must equal hash_keryxhash
         let pre_pow_hash = &[42u8; 32];
         let direct = hash_keryxhash(pre_pow_hash, 1234, 0xAABBCCDD_EEFF0011u64, 22_000_000);
-        let via_en = hash_keryxhash_extranonce(pre_pow_hash, 1234, &[], 0xAABBCCDD_EEFF0011u64, 22_000_000);
+        let via_en =
+            hash_keryxhash_extranonce(pre_pow_hash, 1234, &[], 0xAABBCCDD_EEFF0011u64, 22_000_000);
         assert_eq!(direct, via_en);
 
         // With extranonce1 prefix [0x11, 0x00, 0xFF, 0xEE] + suffix 0xAABBCCDD (u32)
@@ -3658,7 +3786,13 @@ mod tests {
         expected_nonce_bytes[0..4].copy_from_slice(&[0x11, 0x00, 0xFF, 0xEE]);
         expected_nonce_bytes[4..8].copy_from_slice(&0xAABBCCDDu32.to_le_bytes());
         let expected_nonce = u64::from_le_bytes(expected_nonce_bytes);
-        let via_en2 = hash_keryxhash_extranonce(pre_pow_hash, 1234, &[0x11, 0x00, 0xFF, 0xEE], 0xAABBCCDDu64, 22_000_000);
+        let via_en2 = hash_keryxhash_extranonce(
+            pre_pow_hash,
+            1234,
+            &[0x11, 0x00, 0xFF, 0xEE],
+            0xAABBCCDDu64,
+            22_000_000,
+        );
         let direct2 = hash_keryxhash(pre_pow_hash, 1234, expected_nonce, 22_000_000);
         assert_eq!(direct2, via_en2);
     }
@@ -3666,10 +3800,22 @@ mod tests {
     #[test]
     fn keryxhash_algorithm_enum() {
         assert_eq!(ExternalAlgorithm::KeryxHash.as_str(), "keryxhash");
-        assert_eq!(ExternalAlgorithm::from_str_loose("keryxhash"), Some(ExternalAlgorithm::KeryxHash));
-        assert_eq!(ExternalAlgorithm::from_str_loose("keryx"), Some(ExternalAlgorithm::KeryxHash));
-        assert_eq!(ExternalAlgorithm::from_str_loose("KERYX"), Some(ExternalAlgorithm::KeryxHash));
-        assert_eq!(ExternalAlgorithm::from_str_loose("keryxhash "), Some(ExternalAlgorithm::KeryxHash));
+        assert_eq!(
+            ExternalAlgorithm::from_str_loose("keryxhash"),
+            Some(ExternalAlgorithm::KeryxHash)
+        );
+        assert_eq!(
+            ExternalAlgorithm::from_str_loose("keryx"),
+            Some(ExternalAlgorithm::KeryxHash)
+        );
+        assert_eq!(
+            ExternalAlgorithm::from_str_loose("KERYX"),
+            Some(ExternalAlgorithm::KeryxHash)
+        );
+        assert_eq!(
+            ExternalAlgorithm::from_str_loose("keryxhash "),
+            Some(ExternalAlgorithm::KeryxHash)
+        );
         assert_eq!(ExternalAlgorithm::from_str_loose("unknown"), None);
     }
 
@@ -3690,7 +3836,11 @@ mod tests {
         let h1 = hash_blake3(b"avalanche\x00", 0, 0u64);
         let h2 = hash_blake3(b"avalanche\x01", 0, 0u64);
         let diff = h1.iter().zip(h2.iter()).filter(|(a, b)| a != b).count();
-        assert!(diff >= 8, "Blake3 avalanche: >= 8 bytes must differ (got {})", diff);
+        assert!(
+            diff >= 8,
+            "Blake3 avalanche: >= 8 bytes must differ (got {})",
+            diff
+        );
     }
 
     #[test]
@@ -3698,7 +3848,11 @@ mod tests {
         let h1 = hash_kheavyhash(&[0u8; 32], 0, 0u64);
         let h2 = hash_kheavyhash(&[1u8; 32], 0, 0u64);
         let diff = h1.iter().zip(h2.iter()).filter(|(a, b)| a != b).count();
-        assert!(diff >= 4, "kHeavyHash avalanche: >= 4 bytes must differ (got {})", diff);
+        assert!(
+            diff >= 4,
+            "kHeavyHash avalanche: >= 4 bytes must differ (got {})",
+            diff
+        );
     }
 
     #[test]
@@ -3865,7 +4019,10 @@ mod tests {
         // 16-char LE target: value = 0x00000000ffffff00
         let target = parse_randomx_target_hex("00ffffff00000000").unwrap();
         // First 8 bytes are the LE value; remaining bytes are zero.
-        assert_eq!(target[..8], [0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00]);
+        assert_eq!(
+            target[..8],
+            [0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00]
+        );
         assert!(target[8..].iter().all(|b| *b == 0x00));
 
         // 64-bit MSB comparison (xmrig style):
@@ -3992,8 +4149,9 @@ mod tests {
 
     #[test]
     fn zelhash_compress_decompress_roundtrip() {
-        let indices: Vec<u32> = vec![3, 7, 15, 31, 63, 127, 255, 511,
-                                      1023, 2047, 4095, 8191, 16383, 32767, 65535, 131071];
+        let indices: Vec<u32> = vec![
+            3, 7, 15, 31, 63, 127, 255, 511, 1023, 2047, 4095, 8191, 16383, 32767, 65535, 131071,
+        ];
         let compressed = compress_indices(&indices);
         let decompressed = decompress_indices(&compressed).unwrap();
         assert_eq!(decompressed, indices);
@@ -4010,12 +4168,9 @@ mod tests {
     #[test]
     fn zelhash_protocol_is_zcash_stratum() {
         // Verify FLUX uses ZcashStratum protocol
-        use crate::types::ExternalCoin;
         use crate::auxpow_client::StratumProtocol;
-        assert_eq!(
-            ExternalCoin::FLUX.protocol(),
-            StratumProtocol::ZcashStratum
-        );
+        use crate::types::ExternalCoin;
+        assert_eq!(ExternalCoin::FLUX.protocol(), StratumProtocol::ZcashStratum);
     }
 
     // ── Autolykos v2 (ERG) share verification ─────────────────────
@@ -4026,14 +4181,20 @@ mod tests {
         // pow_hash was verified against the official Ergo Autolykos v2
         // reference and the legacy ZION C implementation in
         // archive/2.9.9/legacy-code/L1/native-libs/all/autolykos_v2_native.c.
-        let header = hex::decode("03204e2e63c5a414d713456b1f7f8c8bbaa27032eae9f07800f358c07c1bfc38")
-            .unwrap();
-        let expected = hex::decode("6f0fb9eb168461a1690de447f3917934ada046cbbccc97ed7471722c86a9df8f")
-            .unwrap();
+        let header =
+            hex::decode("03204e2e63c5a414d713456b1f7f8c8bbaa27032eae9f07800f358c07c1bfc38")
+                .unwrap();
+        let expected =
+            hex::decode("6f0fb9eb168461a1690de447f3917934ada046cbbccc97ed7471722c86a9df8f")
+                .unwrap();
         let nonce = 15149056377224471904u64;
         let height = 1841858u32;
         let hash = hash_autolykos(&header, nonce, height);
-        assert_eq!(hash.as_slice(), expected.as_slice(), "Autolykos pow_hash mismatch for known ERG vector");
+        assert_eq!(
+            hash.as_slice(),
+            expected.as_slice(),
+            "Autolykos pow_hash mismatch for known ERG vector"
+        );
     }
 
     #[test]
@@ -4060,10 +4221,11 @@ mod tests {
         let header = [0x42u8; 32];
         let height = 1000000u32;
         // Very easy target: first byte must be 0x00.
-        let target = [0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+        let target = [
+            0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff,
+        ];
         // Try to find a nonce that satisfies the target.
         let mut found = false;
         for nonce in 0..100_000u64 {
@@ -4072,7 +4234,10 @@ mod tests {
                 break;
             }
         }
-        assert!(found, "should find a valid Autolykos share within 100k nonces");
+        assert!(
+            found,
+            "should find a valid Autolykos share within 100k nonces"
+        );
     }
 
     #[test]
@@ -4083,7 +4248,9 @@ mod tests {
         // Impossible target: all bytes must be 0x00.
         let target = [0x00u8; 32];
         let nonce = 12345u64;
-        assert!(!is_valid_autolykos_solution(&header, nonce, height, &target));
+        assert!(!is_valid_autolykos_solution(
+            &header, nonce, height, &target
+        ));
     }
 
     // ── PearlHash (PRL) ─────────────────────────────────────────────
@@ -4114,13 +4281,17 @@ mod tests {
     #[test]
     fn pearl_mine_finds_solution() {
         // Very easy target — first byte must be 0x00
-        let target = [0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                       0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                       0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                       0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+        let target = [
+            0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff,
+        ];
         let header = [0x99u8; 32];
         let result = mine_pearl(&header, 0, 1_000_000, &target);
-        assert!(result.is_some(), "mine_pearl should find a solution within 1M nonces");
+        assert!(
+            result.is_some(),
+            "mine_pearl should find a solution within 1M nonces"
+        );
         let (nonce, hash) = result.unwrap();
         assert!(hash_le_target(&hash, &target));
         // Verify nonce is within range
@@ -4147,7 +4318,10 @@ mod tests {
         assert_eq!(ExternalCoin::PRL.algorithm(), "pearlhash");
         assert_eq!(ExternalCoin::PRL.default_pool(), "prl.2miners.com:1818");
         assert_eq!(ExternalCoin::from_str_loose("prl"), Some(ExternalCoin::PRL));
-        assert_eq!(ExternalCoin::from_str_loose("pearl"), Some(ExternalCoin::PRL));
+        assert_eq!(
+            ExternalCoin::from_str_loose("pearl"),
+            Some(ExternalCoin::PRL)
+        );
         assert!(ExternalCoin::all().contains(&ExternalCoin::PRL));
     }
 
@@ -4156,38 +4330,35 @@ mod tests {
         // Regression: using a different job header with the same nonce/mix
         // must NOT reproduce the correct final hash.  This guards against the
         // server forwarding ETC shares with the wrong job header.
-        let share_header: [u8; 32] = hex::decode(
-            "7f6e44d98d9caa9a76f09a4ef98374f1cf9afcb201e208c4ce1054553dbcdc38",
-        )
-        .unwrap()
-        .as_slice()
-        .try_into()
-        .unwrap();
-        let mix: [u8; 32] = hex::decode(
-            "990330c5ed72bf36fe558daf45c391f41ed5fc51aa760e23db506980b65ef30b",
-        )
-        .unwrap()
-        .as_slice()
-        .try_into()
-        .unwrap();
+        let share_header: [u8; 32] =
+            hex::decode("7f6e44d98d9caa9a76f09a4ef98374f1cf9afcb201e208c4ce1054553dbcdc38")
+                .unwrap()
+                .as_slice()
+                .try_into()
+                .unwrap();
+        let mix: [u8; 32] =
+            hex::decode("990330c5ed72bf36fe558daf45c391f41ed5fc51aa760e23db506980b65ef30b")
+                .unwrap()
+                .as_slice()
+                .try_into()
+                .unwrap();
         let nonce: u64 = 1974573565626296326;
 
         let real_hash = ethash_final_hash(&share_header, nonce, &mix);
-        let expected = hex::decode("e5ee0964192c52408dae8c978d8a82d5c8a3ea5d0246376dca7f2b73340aab66")
-            .unwrap();
+        let expected =
+            hex::decode("e5ee0964192c52408dae8c978d8a82d5c8a3ea5d0246376dca7f2b73340aab66")
+                .unwrap();
         assert_eq!(real_hash.as_slice(), expected.as_slice());
 
         // A different (newer) job header with the same nonce/mix must give a
         // different final hash.
-        let latest_header: [u8; 32] = hex::decode(
-            "69a5615a7a78e1fd44f0cccadb7a2465d55fa3216e05a0a5012b6932241796e0",
-        )
-        .unwrap()
-        .as_slice()
-        .try_into()
-        .unwrap();
+        let latest_header: [u8; 32] =
+            hex::decode("69a5615a7a78e1fd44f0cccadb7a2465d55fa3216e05a0a5012b6932241796e0")
+                .unwrap()
+                .as_slice()
+                .try_into()
+                .unwrap();
         let wrong_real_hash = ethash_final_hash(&latest_header, nonce, &mix);
         assert_ne!(real_hash, wrong_real_hash);
     }
-
 }

@@ -18,7 +18,7 @@
 //   stored as 32 bytes: [0x00, hash[1], hash[2], ..., hash[31]]
 //
 // M = (0..1024).flatMap(i => Longs.toByteArray(i))  (8192 bytes, big-endian)
-// N depends on block height (2^26, then +5% every 51,200 blocks).
+// N depends on block height (2^21, then +5% every 51,200 blocks).
 //
 // This kernel is compiled at runtime via NVRTC.
 
