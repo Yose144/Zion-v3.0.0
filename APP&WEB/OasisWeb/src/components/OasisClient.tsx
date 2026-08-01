@@ -37,11 +37,19 @@ export default function OasisClient() {
   const [flightSpeed, setFlightSpeed] = useState(0);
   const [landTarget, setLandTarget] = useState<World | null>(null);
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
-  const { muted, toggle, start, playWarp } = useAudio();
+  const { muted, toggle, start, playWarp, playBoost, startEngine, stopEngine, setEngine } = useAudio();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (flightMode) {
+      startEngine();
+    } else {
+      stopEngine();
+    }
+  }, [flightMode, startEngine, stopEngine]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -101,6 +109,11 @@ export default function OasisClient() {
     setLandTarget(null);
   };
 
+  const handleFlightSpeedChange = (speed: number) => {
+    setFlightSpeed(speed);
+    setEngine(speed);
+  };
+
   const handleCanLand = (world: World | null) => {
     setLandTarget(world);
   };
@@ -126,10 +139,11 @@ export default function OasisClient() {
           flightMode={flightMode}
           onExitFlight={handleExitFlight}
           flightControlsRef={flightControlsRef}
-          onFlightSpeedChange={setFlightSpeed}
+          onFlightSpeedChange={handleFlightSpeedChange}
           flightSpeed={flightSpeed}
           onCanLand={handleCanLand}
           onApproach={handleApproachWorld}
+          onBoost={playBoost}
         />
         {phase !== 'intro' && view === 'galaxy' && !flightMode && <OasisHud />}
 

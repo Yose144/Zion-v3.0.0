@@ -13,6 +13,7 @@ interface FlightControlsProps {
   onSpeedChange?: (speed: number) => void;
   onCanLand?: (world: World | null) => void;
   onApproach?: (world: World) => void;
+  onBoost?: () => void;
   baseSpeed?: number;
 }
 
@@ -46,7 +47,7 @@ export interface FlightControlsHandle {
 }
 
 const FlightControls = forwardRef<FlightControlsHandle, FlightControlsProps>(
-  function FlightControls({ enabled, onExit, onSpeedChange, onCanLand, onApproach, baseSpeed = 3.5 }, ref) {
+  function FlightControls({ enabled, onExit, onSpeedChange, onCanLand, onApproach, onBoost, baseSpeed = 3.5 }, ref) {
     const { camera } = useThree();
     const controlsRef = useRef<any>(null);
     const keys = useRef({ ...keysInitial });
@@ -77,7 +78,10 @@ const FlightControls = forwardRef<FlightControlsHandle, FlightControlsProps>(
           onApproach?.(canLandWorld.current);
           return;
         }
-        if (k === ' ') keys.current.boost = true;
+        if (k === ' ') {
+          if (!keys.current.boost) onBoost?.();
+          keys.current.boost = true;
+        }
         if (k === 'shift') keys.current.slow = true;
         const dir = MOVEMENT[k];
         if (dir) keys.current[dir] = true;

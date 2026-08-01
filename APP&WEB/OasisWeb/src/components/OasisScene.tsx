@@ -155,6 +155,7 @@ interface OasisSceneProps {
   onFlightSpeedChange: (speed: number) => void;
   onCanLand: (world: World | null) => void;
   onApproach: (world: World) => void;
+  onBoost: () => void;
   flightSpeed?: number;
 }
 
@@ -171,6 +172,7 @@ export default function OasisScene({
   onFlightSpeedChange,
   onCanLand,
   onApproach,
+  onBoost,
   flightSpeed = 0,
 }: OasisSceneProps) {
   return (
@@ -232,6 +234,7 @@ export default function OasisScene({
           onSpeedChange={onFlightSpeedChange}
           onCanLand={onCanLand}
           onApproach={onApproach}
+          onBoost={onBoost}
         />
       )}
 

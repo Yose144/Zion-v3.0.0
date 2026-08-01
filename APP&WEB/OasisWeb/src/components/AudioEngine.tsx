@@ -11,6 +11,9 @@ class AmbientAudio {
   private masterGain: GainNode | null = null;
   private oscillators: OscillatorNode[] = [];
   private noiseNode: AudioBufferSourceNode | null = null;
+  private engineOsc: OscillatorNode | null = null;
+  private engineFilter: BiquadFilterNode | null = null;
+  private engineGain: GainNode | null = null;
   private muted = true;
 
   isMuted() {
@@ -96,7 +99,74 @@ class AmbientAudio {
     osc.stop(t + 3.3);
   }
 
+  startEngine() {
+    if (!this.ctx || this.muted || this.engineOsc) return;
+    this.engineOsc = this.ctx.createOscillator();
+    this.engineOsc.type = 'sawtooth';
+    this.engineOsc.frequency.value = 60;
+
+    this.engineFilter = this.ctx.createBiquadFilter();
+    this.engineFilter.type = 'lowpass';
+    this.engineFilter.frequency.value = 180;
+    this.engineFilter.Q.value = 0.7;
+
+    this.engineGain = this.ctx.createGain();
+    this.engineGain.gain.value = 0;
+
+    this.engineOsc.connect(this.engineFilter);
+    this.engineFilter.connect(this.engineGain);
+    this.engineGain.connect(this.masterGain!);
+    this.engineOsc.start();
+  }
+
+  stopEngine() {
+    try {
+      this.engineOsc?.stop();
+    } catch {}
+    this.engineOsc?.disconnect();
+    this.engineFilter?.disconnect();
+    this.engineGain?.disconnect();
+    this.engineOsc = null;
+    this.engineFilter = null;
+    this.engineGain = null;
+  }
+
+  setEngine(speed: number) {
+    if (!this.ctx || !this.engineOsc || !this.engineFilter || !this.engineGain || this.muted) return;
+    const t = this.ctx.currentTime;
+    const targetFreq = 60 + Math.min(speed, 12) * 18;
+    const targetFilter = 180 + Math.min(speed, 12) * 120;
+    const targetGain = 0.01 + Math.min(speed / 12, 1) * 0.08;
+
+    this.engineOsc.frequency.setTargetAtTime(targetFreq, t, 0.12);
+    this.engineFilter.frequency.setTargetAtTime(targetFilter, t, 0.12);
+    this.engineGain.gain.setTargetAtTime(targetGain, t, 0.12);
+  }
+
+  playBoost() {
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, t);
+    osc.frequency.exponentialRampToValueAtTime(900, t + 0.8);
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.1, t + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(300, t);
+    filter.frequency.exponentialRampToValueAtTime(5000, t + 0.7);
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain!);
+    osc.start(t);
+    osc.stop(t + 1.3);
+  }
+
   dispose() {
+    this.stopEngine();
     this.oscillators.forEach((o) => o.stop());
     this.noiseNode?.stop();
     this.ctx?.close();
@@ -131,8 +201,12 @@ export function useAudio() {
 
   const start = useCallback(() => audio.current.start(), []);
   const playWarp = useCallback(() => audio.current.playWarp(), []);
+  const playBoost = useCallback(() => audio.current.playBoost(), []);
+  const startEngine = useCallback(() => audio.current.startEngine(), []);
+  const stopEngine = useCallback(() => audio.current.stopEngine(), []);
+  const setEngine = useCallback((speed: number) => audio.current.setEngine(speed), []);
 
-  return { muted, toggle, start, playWarp, setMuted };
+  return { muted, toggle, start, playWarp, playBoost, startEngine, stopEngine, setEngine, setMuted };
 }
 
 export function AudioToggle({
