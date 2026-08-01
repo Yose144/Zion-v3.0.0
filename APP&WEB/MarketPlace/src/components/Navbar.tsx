@@ -16,7 +16,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-xl bg-oasis-black/70 border-b border-white/5">
+    <nav className="sticky top-0 z-50 backdrop-blur-xl bg-oasis-black/80 border-b border-white/5">
       {/* Top accent line */}
       <div className="section-line absolute top-0 inset-x-0" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -33,7 +33,7 @@ export default function Navbar() {
               <span className="text-lg font-black tracking-tight text-gradient font-display">
                 ZION Market
               </span>
-              <span className="text-[9px] text-gray-600 font-mono tracking-wider uppercase">
+              <span className="zion-kicker mt-1" style={{ padding: '0.1rem 0.5rem', fontSize: '0.55rem' }}>
                 OASIS Artifacts
               </span>
             </div>

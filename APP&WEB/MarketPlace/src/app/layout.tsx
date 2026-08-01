@@ -63,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </div>
                 {/* Links */}
                 <div>
-                  <h4 className="text-xs font-bold text-gray-400 uppercase mb-3">Marketplace</h4>
+                  <div className="zion-kicker mb-3">Marketplace</div>
                   <div className="flex flex-col gap-2 text-sm">
                     <a href="/explore" className="text-gray-500 hover:text-oasis-cyan transition-colors">Explore</a>
                     <a href="/create" className="text-gray-500 hover:text-oasis-cyan transition-colors">Create Listing</a>
@@ -71,7 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-gray-400 uppercase mb-3">Ecosystem</h4>
+                  <div className="zion-kicker mb-3">Ecosystem</div>
                   <div className="flex flex-col gap-2 text-sm">
                     <a href="https://zionterranova.com" className="text-gray-500 hover:text-oasis-cyan transition-colors">Home</a>
                     <a href="https://oasis.zionterranova.com" className="text-gray-500 hover:text-oasis-cyan transition-colors">OASIS</a>
