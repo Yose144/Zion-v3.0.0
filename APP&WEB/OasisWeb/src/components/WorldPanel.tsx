@@ -67,10 +67,14 @@ function mapRealQuests(world: World, realQuests: any[]): Quest[] {
 
 export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
   const color = CATEGORY_COLORS[world.category] || '#ffffff';
-  const { xp, credits, completeQuest, completedQuests, realQuests } = useGameStore();
+  const { xp, credits, completeQuest, completedQuests, realQuests, avatars } = useGameStore();
   const generated = generateQuests(world);
   const real = mapRealQuests(world, realQuests);
   const quests = real.length > 0 ? real : generated;
+  const firstRealQuest = real[0];
+  const matchingAvatar = firstRealQuest?.avatarName
+    ? avatars.find((a) => a.name?.toLowerCase() === firstRealQuest.avatarName?.toLowerCase())
+    : null;
   const level = getLevel(xp);
   const levelProgress = getLevelProgress(xp);
 
@@ -148,6 +152,25 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
                 {tag}
               </span>
             ))}
+          </div>
+        )}
+
+        {matchingAvatar && (
+          <div
+            className="flex items-start gap-3 rounded-xl border p-3"
+            style={{ borderColor: `${color}30`, backgroundColor: `${color}10` }}
+          >
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-xs font-bold"
+              style={{ borderColor: `${color}50`, color, backgroundColor: `${color}20` }}
+            >
+              {matchingAvatar.name?.slice(0, 2) ?? '??'}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-white">{matchingAvatar.name}</p>
+              <p className="text-[10px] text-oasis-cyan">{matchingAvatar.subtitle}</p>
+              <p className="mt-1 text-[10px] italic leading-snug text-gray-300">“{matchingAvatar.teaching}”</p>
+            </div>
           </div>
         )}
 
