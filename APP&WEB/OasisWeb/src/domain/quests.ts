@@ -8,6 +8,8 @@ export interface Quest {
   difficulty: number;
   reward: number;
   description: string;
+  real?: boolean;
+  avatarName?: string;
 }
 
 const TEMPLATES: Record<string, Record<string, string[]>> = {

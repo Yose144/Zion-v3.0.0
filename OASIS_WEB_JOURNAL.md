@@ -119,13 +119,21 @@ State shape in `OasisClient`:
 
 ## 5. Known Limitations / TODO
 
-- **Mobile controls**: Flight Mode relies on `PointerLockControls`, which does not work on mobile and is awkward without a keyboard. A virtual joystick / touch-look is needed.
-- **Audio**: Ambient is synthetic oscillators; real composed ambient track or SFX would improve atmosphere.
-- **Flight interaction**: You can fly around, but there is no "land on a world" interaction yet.
-- **Ship model**: The camera is a floating point; there is no visible pilot/ship/avatar.
-- **Warp-gate visuals**: Rings are plain additive tori; a vortex / energy beam interior would sell the effect more.
-- **Performance**: 55 world nodes + hyperlanes + 8000 background stars + particles may be heavy on low-end devices. LOD / distance-based culling is not implemented.
-- **World depth**: Quests are generated text; real quest state, rewards, and NPCs are not yet wired to the OASIS backend.
+- **Mobile controls**: ✅ virtual joysticks for move/look, up/down/boost buttons, mobile detection.
+- **Audio**: ✅ engine drone + boost sweep; still synthetic — composed ambient track / SFX would improve.
+- **Flight interaction**: ✅ distance/dot check, "Approach" prompt, L / click to land, exits flight.
+- **Ship model**: ✅ `PilgrimShip` visible in flight, follows camera.
+- **Warp-gate visuals**: ✅ vortex shader, hyperlane streamers, glow flares.
+- **Performance**: ✅ mobile LOD, DPR capping, particle/geometry reduction.
+- **World depth**: 🔄 real quest state wired via `gameStore` + `getQuests()`; generated quest fallback. NPCs, full backend reward sync, and persistent player state are next.
+
+Remaining:
+- **NPC presence** in world view / panel (avatar guide, dialog).
+- **Leaderboard / social** integration (`getLeaderboard`, top pilgrims).
+- **Persistent player profile** from backend (`getPlayer(address)` + optional wallet login).
+- **Ship upgrades / loadout** UI (engine, cargo, scanner).
+- **Composed SFX / ambient music** instead of synthesized oscillators.
+- **Golden Egg / territory hunting** mini-game loop.
 
 ---
 
@@ -176,6 +184,43 @@ The next work was explicitly requested as a slow, careful pass through these six
 - Throttle `useFrame` updates for distant objects.
 - Consider `instancedMesh` for stars or hyperlanes if geometry becomes a bottleneck.
 - Profile with Chrome DevTools and set budgets.
+
+### 6.7 Gameplay state (local + API)
+
+- Add `gameStore` with `zustand/persist` (XP, credits, completed quests, discovered/scanned worlds).
+- Award XP for approach (25), scan (75), quest completion (reward).
+- Fetch real quests from `/api/v1/oasis/quests` and map to worlds by `location` / `avatar_name`.
+- Add `PlayerHud` with level, XP bar, credits, quest/world counts.
+
+### 6.8 Quest completion in `WorldPanel`
+
+- "Complete" button per quest; marks quest done, adds XP + credits.
+- Differentiate live OASIS quests (LIVE tag + avatar) from generated ones.
+- Use `Quest` type with optional `real` and `avatarName`.
+
+### 6.9 NPC / Avatar guide
+
+- Show an NPC card in `WorldPanel` when a real quest has an `avatar_name`.
+- Add a 3D hologram or sprite in `WorldEnvironment` for the world’s guide.
+- Simple dialog lines / lore snippets per avatar.
+
+### 6.10 Leaderboard & social
+
+- Fetch `getLeaderboard()` and show top 3 pilgrims in `OasisHud` or a panel.
+- Show player guild / territory status if backend returns it.
+- Display discovered worlds vs total as a completion %.
+
+### 6.11 Ship loadout & upgrades
+
+- Add a ship loadout panel (boost, cargo, scanner levels).
+- Spend credits to upgrade; persist to local storage.
+- Visual changes to `PilgrimShip` based on loadout (color, thruster size).
+
+### 6.12 Golden Egg + territory loop
+
+- Surface `goldenEggClue` in world view with a scanner puzzle.
+- Show territory map with hot zones; allow claiming / mining actions.
+- Add backend calls for territory participation if endpoints exist.
 
 ---
 

@@ -10,6 +10,9 @@ import { useAudio, AudioToggle } from './AudioEngine';
 import type { FlightControlsHandle } from './FlightControls';
 import type { MobileInput } from './MobileControls';
 import MobileControls from './MobileControls';
+import PlayerHud from './PlayerHud';
+import { useGameStore } from '../store/gameStore';
+import { getQuests } from '../lib/api';
 import type { World, WorldCategory } from '../domain/types/world';
 
 const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
@@ -42,10 +45,28 @@ export default function OasisClient() {
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
   const mobileInputRef = useRef<MobileInput | null>(null);
   const { muted, toggle, start, playWarp, playBoost, startEngine, stopEngine, setEngine } = useAudio();
+  const { discoverWorld, scanWorld, addXp, setRealQuests, setAddress, address } = useGameStore();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!address) setAddress('pilgrim-0001');
+  }, [address, setAddress]);
+
+  useEffect(() => {
+    if (!address) return;
+    let mounted = true;
+    async function load() {
+      const quests = await getQuests();
+      if (mounted && quests) setRealQuests(quests);
+    }
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [address, setRealQuests]);
 
   useEffect(() => {
     const check = () => {
@@ -104,6 +125,7 @@ export default function OasisClient() {
     if (flightMode) setFlightMode(false);
     setSelectedWorld(world);
     setView('galaxy');
+    discoverWorld(world.id);
   };
 
   const handleCloseWorld = () => {
@@ -117,6 +139,8 @@ export default function OasisClient() {
       playWarp();
       setWarping(true);
       setView('world');
+      scanWorld(selectedWorld.id);
+      addXp(75);
       setTimeout(() => setWarping(false), 1000);
     }
   };
@@ -141,6 +165,8 @@ export default function OasisClient() {
     setLandTarget(null);
     setSelectedWorld(world);
     setView('galaxy');
+    discoverWorld(world.id);
+    addXp(25);
   };
 
   return (
@@ -164,6 +190,7 @@ export default function OasisClient() {
           mobileInputRef={isMobile ? mobileInputRef : undefined}
           isMobile={isMobile}
         />
+        {phase !== 'intro' && <PlayerHud />}
         {phase !== 'intro' && view === 'galaxy' && !flightMode && <OasisHud />}
 
         <AnimatePresence>
