@@ -11,7 +11,9 @@ interface GameState {
   discoveredWorlds: string[];
   scannedWorlds: string[];
   realQuests: any[];
+  avatars: any[];
   setAddress: (address: string | null) => void;
+  setAvatars: (avatars: any[]) => void;
   addXp: (amount: number) => void;
   addCredits: (amount: number) => void;
   completeQuest: (id: string, xp: number) => void;
@@ -33,6 +35,7 @@ export const useGameStore = create<GameState>()(
       discoveredWorlds: [],
       scannedWorlds: [],
       realQuests: [],
+      avatars: [],
 
       setAddress: (address) => set({ address }),
 
@@ -69,6 +72,7 @@ export const useGameStore = create<GameState>()(
         }),
 
       setRealQuests: (realQuests) => set({ realQuests }),
+      setAvatars: (avatars) => set({ avatars }),
 
       reset: () =>
         set({
@@ -79,6 +83,7 @@ export const useGameStore = create<GameState>()(
           discoveredWorlds: [],
           scannedWorlds: [],
           realQuests: [],
+          avatars: [],
         }),
     }),
     {
@@ -90,6 +95,7 @@ export const useGameStore = create<GameState>()(
         completedQuests: state.completedQuests,
         discoveredWorlds: state.discoveredWorlds,
         scannedWorlds: state.scannedWorlds,
+        avatars: state.avatars,
       }),
     }
   )

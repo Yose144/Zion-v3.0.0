@@ -12,7 +12,7 @@ import type { MobileInput } from './MobileControls';
 import MobileControls from './MobileControls';
 import PlayerHud from './PlayerHud';
 import { useGameStore } from '../store/gameStore';
-import { getQuests } from '../lib/api';
+import { getQuests, getAvatars } from '../lib/api';
 import type { World, WorldCategory } from '../domain/types/world';
 
 const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
@@ -45,7 +45,7 @@ export default function OasisClient() {
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
   const mobileInputRef = useRef<MobileInput | null>(null);
   const { muted, toggle, start, playWarp, playBoost, startEngine, stopEngine, setEngine } = useAudio();
-  const { discoverWorld, scanWorld, addXp, setRealQuests, setAddress, address } = useGameStore();
+  const { discoverWorld, scanWorld, addXp, setRealQuests, setAvatars, setAddress, address } = useGameStore();
 
   useEffect(() => {
     setMounted(true);
@@ -59,14 +59,16 @@ export default function OasisClient() {
     if (!address) return;
     let mounted = true;
     async function load() {
-      const quests = await getQuests();
-      if (mounted && quests) setRealQuests(quests);
+      const [quests, avatars] = await Promise.all([getQuests(), getAvatars()]);
+      if (!mounted) return;
+      if (quests) setRealQuests(quests);
+      if (avatars) setAvatars(avatars);
     }
     load();
     return () => {
       mounted = false;
     };
-  }, [address, setRealQuests]);
+  }, [address, setRealQuests, setAvatars]);
 
   useEffect(() => {
     const check = () => {

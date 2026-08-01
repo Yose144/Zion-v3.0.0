@@ -6,6 +6,7 @@ import { Html, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import type { World } from '../domain/types/world';
 import { createRandom } from '../domain/ports/random';
+import { useGameStore } from '../store/gameStore';
 
 const CATEGORY_COLORS: Record<string, string> = {
   'star-system': '#f59e0b',
@@ -269,6 +270,50 @@ function StarCorona({ color, size }: { color: string; size: number }) {
   );
 }
 
+function AvatarHologram({ world, color, size }: { world: World; color: string; size: number }) {
+  const { realQuests, avatars } = useGameStore();
+  const spriteRef = useRef<THREE.Sprite>(null);
+  const quest = realQuests.find((q) => {
+    const loc = (q.location ?? '').toLowerCase();
+    const name = (q.avatar_name ?? '').toLowerCase();
+    const wn = world.name.toLowerCase();
+    return loc.includes(wn) || wn.includes(loc) || name.includes(wn) || wn.includes(name);
+  });
+  const avatar = quest?.avatar_name
+    ? avatars.find((a) => a.name?.toLowerCase() === quest.avatar_name.toLowerCase())
+    : null;
+
+  useFrame((state) => {
+    if (spriteRef.current) {
+      spriteRef.current.position.y = size * 1.3 + Math.sin(state.clock.elapsedTime * 2) * 0.08;
+    }
+  });
+
+  if (!quest || !avatar) return null;
+
+  return (
+    <group position={[0, 0, 0]}>
+      <sprite ref={spriteRef} position={[0, size * 1.3, 0]} scale={[size * 1.6, size * 1.6, 1]}>
+        <spriteMaterial
+          map={createGlowTexture(color)}
+          transparent
+          opacity={0.45}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </sprite>
+      <Html position={[0, size * 1.7, 0]} center distanceFactor={8}>
+        <div className="pointer-events-none select-none text-center">
+          <p className="text-[10px] font-bold text-white" style={{ textShadow: `0 0 8px ${color}` }}>
+            {avatar.name}
+          </p>
+          <p className="text-[9px] text-oasis-cyan">{avatar.subtitle}</p>
+        </div>
+      </Html>
+    </group>
+  );
+}
+
 function planetSecondaryColor(color: string): string {
   const c = new THREE.Color(color);
   const hsl = {} as { h: number; s: number; l: number };
@@ -333,6 +378,7 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
           <SatelliteRing count={Math.floor(8 * mobileFactor)} color="#22d3ee" distance={4.2} sizeBase={0.1} />
           <OrbitRing radius={4.2} color={color} />
           <WorldParticles count={Math.floor(260 * mobileFactor)} color={color} seed={seed} radius={9} />
+          <AvatarHologram world={world} color={color} size={size} />
         </>
       )}
 
@@ -353,6 +399,7 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
           <OrbitRing radius={size * 2.2} color={color} texture={ringTexture} />
           {world.category === 'planet' && <SatelliteRing count={Math.max(1, Math.floor(3 * mobileFactor))} color="#cbd5e1" distance={size * 2.4} sizeBase={0.06} />}
           <WorldParticles count={Math.floor(200 * mobileFactor)} color={color} seed={seed} radius={6} />
+          <AvatarHologram world={world} color={color} size={size} />
         </>
       )}
 
@@ -373,6 +420,7 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
           </mesh>
           <OrbitRing radius={size * 1.8} color={color} texture={ringTexture} />
           <WorldParticles count={Math.floor(160 * mobileFactor)} color={color} seed={seed} radius={5} />
+          <AvatarHologram world={world} color={color} size={size} />
         </>
       )}
 
@@ -388,6 +436,7 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
             <spriteMaterial map={createGlowTexture(color)} transparent opacity={0.25} blending={THREE.AdditiveBlending} depthWrite={false} />
           </sprite>
           <WorldParticles count={Math.floor(220 * mobileFactor)} color={color} seed={seed} radius={6} />
+          <AvatarHologram world={world} color={color} size={size} />
         </>
       )}
 
