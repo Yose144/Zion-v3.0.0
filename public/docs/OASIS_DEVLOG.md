@@ -1,8 +1,11 @@
 # OASIS — Build Journal
 
 > **Live now:** [oasis.zionterranova.com](https://oasis.zionterranova.com)
+> **Source code:** [github.com/Zion-TerraNova/v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet)
 > **First published:** 2026-08-01
 > **Status:** Early access — the galaxy is awake, the worlds are forming.
+
+**Languages:** [English](./OASIS_DEVLOG.md) · [Čeština](./OASIS_DEVLOG.cs.md) · [Español](./OASIS_DEVLOG.es.md) · [Français](./OASIS_DEVLOG.fr.md) · [Português](./OASIS_DEVLOG.pt.md)
 
 ---
 
