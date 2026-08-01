@@ -1,26 +1,15 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
-import World from './World';
 import TreeOfLife from './TreeOfLife';
 import Galaxy from './Galaxy';
 import GalaxyCore from './GalaxyCore';
+import GalaxyMap from './GalaxyMap';
 import Nebula from './Nebula';
-
-const TERRITORIES = [
-  { id: 'sadhu', name: 'Údolí Ticha', color: '#8b5cf6', angle: 0, size: 0.55, info: 'Sádhové, meditace a Ekam Deeksha.' },
-  { id: 'neo', name: 'Věž Kódu', color: '#22d3ee', angle: 45, size: 0.5, info: 'Neo — objevitel pravdy, audit a stop Golden Egg.' },
-  { id: 'trinity', name: 'Mostní Přístav', color: '#f59e0b', angle: 90, size: 0.5, info: 'Trinity — propojení světů a cross-chain mosty.' },
-  { id: 'morpheus', name: 'Strážcová Pevnost', color: '#10b981', angle: 135, size: 0.55, info: 'Morpheus — ochrana, uzly a vedení guild.' },
-  { id: 'hanuman', name: 'Seva Zahrada', color: '#ec4899', angle: 180, size: 0.5, info: 'Dárce/Hanuman — služba bez ega a humanitární tithe.' },
-  { id: 'sita', name: 'Zelená Země', color: '#14b8a6', angle: 225, size: 0.55, info: 'Sítá — péče o půdu a obnova krajiny.' },
-  { id: 'arjuna', name: 'Bojovnice Pravdy', color: '#ef4444', angle: 270, size: 0.5, info: 'Arjuna — ochrana cesty a dharma rozhodnutí.' },
-  { id: 'radha', name: 'Zahrada Radhy', color: '#f97316', angle: 315, size: 0.55, info: 'Rádha — radost, hudba a uvítání nováčků.' },
-];
 
 interface CameraRigProps {
   started: boolean;
@@ -75,40 +64,6 @@ function CameraRig({ started, onArrived }: CameraRigProps) {
   );
 }
 
-function TerritoryRing() {
-  const groupRef = useRef<THREE.Group>(null);
-  const radius = 5.5;
-
-  useFrame((state) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y = state.clock.elapsedTime * 0.03;
-    }
-  });
-
-  const worlds = useMemo(
-    () =>
-      TERRITORIES.map((t) => {
-        const rad = (t.angle * Math.PI) / 180;
-        const x = Math.cos(rad) * radius;
-        const z = Math.sin(rad) * radius;
-        return { ...t, position: [x, 0, z] as [number, number, number] };
-      }),
-    []
-  );
-
-  return (
-    <group ref={groupRef}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[radius - 0.04, radius + 0.04, 128]} />
-        <meshBasicMaterial color="#22d3ee" transparent opacity={0.12} side={THREE.DoubleSide} />
-      </mesh>
-      {worlds.map((w) => (
-        <World key={w.id} id={w.id} name={w.name} color={w.color} position={w.position} size={w.size} info={w.info} />
-      ))}
-    </group>
-  );
-}
-
 interface OasisSceneProps {
   started?: boolean;
   onArrived?: () => void;
@@ -134,7 +89,9 @@ export default function OasisScene({ started = true, onArrived }: OasisSceneProp
 
       {/* Oasis center */}
       <TreeOfLife />
-      <TerritoryRing />
+
+      {/* 55 OASIS worlds as a holographic galaxy map */}
+      <GalaxyMap />
 
       {/* Arrival flight and controls */}
       <CameraRig started={started} onArrived={onArrived} />

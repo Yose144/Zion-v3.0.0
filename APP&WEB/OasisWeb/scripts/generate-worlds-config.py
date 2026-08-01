@@ -5,6 +5,8 @@ This is a maintenance script — safe to re-run whenever world MD files change.
 """
 
 import json
+import math
+import random
 import re
 from pathlib import Path
 
@@ -194,14 +196,54 @@ def ts_literal(value) -> str:
     if isinstance(value, str):
         # json.dumps gives valid double-quoted TS string with escaped quotes.
         return json.dumps(value, ensure_ascii=False)
-    if isinstance(value, int):
+    if isinstance(value, (int, float)):
         return str(value)
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, list):
         items = ", ".join(ts_literal(v) for v in value)
         return f"[{items}]"
+    if isinstance(value, dict):
+        items = ", ".join(f"{k}: {ts_literal(v)}" for k, v in value.items())
+        return f"{{ {items} }}"
     return "undefined"
+
+
+GOLDEN_ANGLE = math.pi * (3 - math.sqrt(5))  # ~2.39996 rad
+
+
+def assign_galaxy_positions(entries):
+    """Assign deterministic 3D galaxy coordinates to every world."""
+    rng = random.Random("oasis-galaxy-2026-07-31")
+    cat_bases = {
+        "star-system": (10.0, 28.0, 1.8),
+        "planet": (3.2, 8.0, 1.2),
+        "sector": (4.0, 9.5, 1.0),
+        "world": (5.0, 11.0, 1.4),
+        "dimension": (6.0, 13.0, 2.2),
+    }
+    cat_angle_offset = {
+        "star-system": 0.0,
+        "planet": 2 * math.pi * 0.2,
+        "sector": 2 * math.pi * 0.4,
+        "world": 2 * math.pi * 0.6,
+        "dimension": 2 * math.pi * 0.8,
+    }
+
+    for i, e in enumerate(entries):
+        cat = e["category"]
+        r_min, r_max, y_range = cat_bases.get(cat, (5.0, 12.0, 1.0))
+        radius = r_min + (r_max - r_min) * math.sqrt(rng.random())
+        angle = i * GOLDEN_ANGLE + cat_angle_offset.get(cat, 0.0) + rng.random() * 0.35
+        y = (rng.random() - 0.5) * y_range
+
+        x = math.cos(angle) * radius
+        z = math.sin(angle) * radius
+        e["galaxyPosition"] = {
+            "x": round(x, 3),
+            "y": round(y, 3),
+            "z": round(z, 3),
+        }
 
 
 def generate():
@@ -213,6 +255,8 @@ def generate():
             entries.append(parse_md(path))
         except Exception as e:
             print(f"[warn] failed to parse {path.name}: {e}")
+
+    assign_galaxy_positions(entries)
 
     world_ids = [e["id"] for e in entries]
     star_ids = [e["id"] for e in entries if e["category"] == "star-system"]
