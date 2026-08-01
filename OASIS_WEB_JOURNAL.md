@@ -128,9 +128,9 @@ State shape in `OasisClient`:
 - **World depth**: 🔄 real quest state wired via `gameStore` + `getQuests()`; generated quest fallback. NPCs, full backend reward sync, and persistent player state are next.
 
 Remaining:
-- **NPC presence** in world view / panel (avatar guide, dialog).
-- **Leaderboard / social** integration (`getLeaderboard`, top pilgrims).
-- **Persistent player profile** from backend (`getPlayer(address)` + optional wallet login).
+- ✅ **NPC presence** in world view / panel (avatar guide card + floating hologram).
+- ✅ **Leaderboard / social** integration (`getLeaderboard`, top pilgrims in `OasisHud`).
+- 🔄 **Persistent player profile** from backend (`getPlayer(address)` is used; wallet login is next).
 - **Ship upgrades / loadout** UI (engine, cargo, scanner).
 - **Composed SFX / ambient music** instead of synthesized oscillators.
 - **Golden Egg / territory hunting** mini-game loop.
@@ -198,13 +198,13 @@ The next work was explicitly requested as a slow, careful pass through these six
 - Differentiate live OASIS quests (LIVE tag + avatar) from generated ones.
 - Use `Quest` type with optional `real` and `avatarName`.
 
-### 6.9 NPC / Avatar guide
+### 6.9 NPC / Avatar guide ✅
 
 - Show an NPC card in `WorldPanel` when a real quest has an `avatar_name`.
 - Add a 3D hologram or sprite in `WorldEnvironment` for the world’s guide.
 - Simple dialog lines / lore snippets per avatar.
 
-### 6.10 Leaderboard & social
+### 6.10 Leaderboard & social ✅
 
 - Fetch `getLeaderboard()` and show top 3 pilgrims in `OasisHud` or a panel.
 - Show player guild / territory status if backend returns it.
