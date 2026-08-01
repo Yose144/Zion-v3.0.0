@@ -24,11 +24,13 @@
 <!-- Links -->
 <p>
 
-[🌐 Website](https://www.zionterranova.com)
+[🌐 Hub](https://zionterranova.com)
+&nbsp;·&nbsp;
+[📊 Explorer & dApp](https://app.zionterranova.com)
+&nbsp;·&nbsp;
+[🎮 Oasis Web](https://oasis.zionterranova.com)
 &nbsp;·&nbsp;
 [📖 Whitepaper](./docs/whitepaper.md)
-&nbsp;·&nbsp;
-[🎮 Oasis](./V3/L4/oasis/README.md)
 &nbsp;·&nbsp;
 [⚡ CLI](./V3/cli/README.md)
 &nbsp;·&nbsp;
@@ -65,16 +67,32 @@
 
 <div align="center">
 
-## Enter the Oasis
+## Enter the Ecosystem
 
 </div>
 
-| Portal | Path |
+ZION's web presence is organised across three domains:
+
+| Portal | URL | What's there |
+|:------:|:----|:-------------|
+| 🌐 **Hub** | [zionterranova.com](https://zionterranova.com) | The front door — an overview of the entire ZION multichain ecosystem and a portal into everything below. |
+| 📊 **Explorer & dApp** | [app.zionterranova.com](https://app.zionterranova.com) | Full web application — block explorer, wallet, DeFi dashboard, ZionDex, bridge, governance, and all dApp functionality. |
+| 🎮 **Oasis Web** | [oasis.zionterranova.com](https://oasis.zionterranova.com) | The OASIS 3D galaxy — fly through 55 worlds, explore warp-gate networks, and enter individual worlds in your browser. |
+
+---
+
+<div align="center">
+
+## Get Started
+
+</div>
+
+| Path | How |
 |:------:|:-----|
 | ⛏️ **Mine (desktop)** | Download a ready-to-use binary and start in minutes. See the [Desktop Miner Quick Start](#desktop-miner-quick-start) below. |
 | ⛏️ **Mine (SMOS/HiveOS)** | Run the miner on mining OS rigs. See [`docs/SMOS_HIVEOS_GUIDE.md`](./docs/SMOS_HIVEOS_GUIDE.md). |
 | ⛏️ **Mine (build from source)** | Build the node, CLI, and miner from source. Start with [`V3/cli/README.md`](./V3/cli/README.md). |
-| 🎮 **Play** | Enter the L4 Oasis world — avatars, quests, guilds, and the Golden Egg. See [`V3/L4/oasis/README.md`](./V3/L4/oasis/README.md). |
+| 🎮 **Play** | Enter the L4 Oasis world — avatars, quests, guilds, and the Golden Egg. See [`docs/OASIS_DEVLOG.md`](./docs/OASIS_DEVLOG.md) and [`V3/L4/oasis/README.md`](./V3/L4/oasis/README.md). |
 | 🔨 **Build** | Explore the codebase, contracts, RPC, and bridge docs in [`V3/docs/`](./V3/docs/) and [`docs/`](./docs/). |
 | ❓ **FAQ** | Common questions for beginners and rig operators. See [`docs/FAQ.md`](./docs/FAQ.md). |
 
@@ -400,7 +418,9 @@ This opens an interactive arrow-key menu with all options — wallet, node, mini
 - **Full documentation:** [README_FULL.md](./README_FULL.md)
 - **CLI reference:** [`V3/cli/README.md`](./V3/cli/README.md) — every command explained
 - **Node docs:** [`V3/docs/`](./V3/docs/) — architecture, constants, runbooks
-- **Website:** [zionterranova.com](https://www.zionterranova.com)
+- **Hub:** [zionterranova.com](https://zionterranova.com)
+- **Explorer & dApp:** [app.zionterranova.com](https://app.zionterranova.com)
+- **Oasis Web:** [oasis.zionterranova.com](https://oasis.zionterranova.com)
 - **Issues:** [GitHub Issues](https://github.com/Zion-TerraNova/v3-Mainnet/issues)
 
 ---
@@ -439,6 +459,6 @@ This project is licensed under the [MIT License](./LICENSE).
 
 ### Built with care, secured by consensus.
 
-[🌐 zionterranova.com](https://www.zionterranova.com) · [🔒 Security](./SECURITY.md) · [📜 Whitepaper](./docs/whitepaper.md) · [⚖️ Legal](./docs/LEGAL_DISCLAIMER.md)
+[🌐 Hub](https://zionterranova.com) · [📊 Explorer & dApp](https://app.zionterranova.com) · [🎮 Oasis Web](https://oasis.zionterranova.com) · [🔒 Security](./SECURITY.md) · [📜 Whitepaper](./docs/whitepaper.md) · [⚖️ Legal](./docs/LEGAL_DISCLAIMER.md)
 
 </div>
