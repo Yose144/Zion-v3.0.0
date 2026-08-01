@@ -44,7 +44,7 @@ export default function OasisClient() {
   const [isMobile, setIsMobile] = useState(false);
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
   const mobileInputRef = useRef<MobileInput | null>(null);
-  const { muted, toggle, start, playWarp, playBoost, startEngine, stopEngine, setEngine } = useAudio();
+  const { muted, toggle, start, playWarp, playBoost, playScanComplete, playApproach, startEngine, stopEngine, setEngine } = useAudio();
   const { discoverWorld, scanWorld, addXp, setRealQuests, setAvatars, setTerritories, setAddress, address, shipLoadout } = useGameStore();
 
   useEffect(() => {
@@ -144,11 +144,12 @@ export default function OasisClient() {
   const handleEnterWorld = () => {
     if (selectedWorld) {
       playWarp();
+      playScanComplete();
       setWarping(true);
       setView('world');
       scanWorld(selectedWorld.id);
       addXp(75 + shipLoadout.scanner * 25);
-      setTimeout(() => setWarping(false), 1000);
+      setTimeout(() => setWarping(false), 1500);
     }
   };
 
@@ -167,6 +168,7 @@ export default function OasisClient() {
   };
 
   const handleApproachWorld = (world: World) => {
+    playApproach();
     playWarp();
     setFlightMode(false);
     setLandTarget(null);

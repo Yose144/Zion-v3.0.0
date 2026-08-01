@@ -14,6 +14,10 @@ class AmbientAudio {
   private engineOsc: OscillatorNode | null = null;
   private engineFilter: BiquadFilterNode | null = null;
   private engineGain: GainNode | null = null;
+  private padNodes: { osc: OscillatorNode; gain: GainNode; filter: BiquadFilterNode }[] = [];
+  private padLfo: OscillatorNode | null = null;
+  private padLfoGain: GainNode | null = null;
+  private chimeTimer: ReturnType<typeof setInterval> | null = null;
   private muted = true;
 
   isMuted() {
@@ -75,6 +79,46 @@ class AmbientAudio {
     noiseGain.connect(this.masterGain!);
     noise.start();
     this.noiseNode = noise;
+
+    // Chord pad: Am(add9) with slow filter sweep
+    const chordFreqs = [55, 110, 130.81, 164.81, 196]; // A1 A2 C3 E3 G3
+    chordFreqs.forEach((f) => {
+      const osc = this.ctx!.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      const filter = this.ctx!.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 600;
+      filter.Q.value = 1.5;
+      const gain = this.ctx!.createGain();
+      gain.gain.value = 0.04;
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain!);
+      osc.start();
+      this.padNodes.push({ osc, gain, filter });
+    });
+
+    // LFO slowly sweeping the pad filter 200-1000 Hz
+    this.padLfo = this.ctx.createOscillator();
+    this.padLfo.type = 'sine';
+    this.padLfo.frequency.value = 0.05;
+    this.padLfoGain = this.ctx.createGain();
+    this.padLfoGain.gain.value = 400; // +/- 400 Hz around base
+    this.padLfo.connect(this.padLfoGain);
+    this.padLfoGain.connect(this.padNodes[0].filter.frequency);
+    this.padLfo.start();
+
+    // Random space chimes
+    this.scheduleChimes();
+  }
+
+  private scheduleChimes() {
+    if (this.chimeTimer) clearInterval(this.chimeTimer);
+    this.chimeTimer = setInterval(() => {
+      if (this.muted || Math.random() > 0.4) return;
+      this.playChime();
+    }, 7000 + Math.random() * 8000);
   }
 
   playWarp() {
@@ -143,6 +187,90 @@ class AmbientAudio {
     this.engineGain.gain.setTargetAtTime(targetGain, t, 0.12);
   }
 
+  private playChime() {
+    if (!this.ctx || this.muted) return;
+    const scale = [261.63, 311.13, 392, 466.16, 523.25, 622.25, 784, 932.33]; // C pentatonic-ish
+    const f = scale[Math.floor(Math.random() * scale.length)];
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = f;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.035, t + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 2.5);
+    const delay = this.ctx.createDelay(1);
+    delay.delayTime.value = 0.3;
+    const feedback = this.ctx.createGain();
+    feedback.gain.value = 0.25;
+    osc.connect(gain);
+    gain.connect(this.masterGain!);
+    gain.connect(delay);
+    delay.connect(feedback);
+    feedback.connect(delay);
+    feedback.connect(this.masterGain!);
+    osc.start(t);
+    osc.stop(t + 3);
+  }
+
+  playQuestComplete() {
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime;
+    const freqs = [523.25, 659.25, 783.99, 1046.5]; // C major arpeggio
+    freqs.forEach((f, i) => {
+      const osc = this.ctx!.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      const gain = this.ctx!.createGain();
+      gain.gain.setValueAtTime(0, t + i * 0.12);
+      gain.gain.linearRampToValueAtTime(0.05, t + i * 0.12 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.12 + 1.2);
+      osc.connect(gain);
+      gain.connect(this.masterGain!);
+      osc.start(t + i * 0.12);
+      osc.stop(t + i * 0.12 + 1.5);
+    });
+  }
+
+  playScanComplete() {
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(200, t);
+    osc.frequency.exponentialRampToValueAtTime(1200, t + 0.6);
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.05, t + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1);
+    osc.connect(gain);
+    gain.connect(this.masterGain!);
+    osc.start(t);
+    osc.stop(t + 1.2);
+  }
+
+  playApproach() {
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, t);
+    osc.frequency.exponentialRampToValueAtTime(40, t + 1.2);
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.06, t + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.8);
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(2000, t);
+    filter.frequency.exponentialRampToValueAtTime(120, t + 1.5);
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain!);
+    osc.start(t);
+    osc.stop(t + 2);
+  }
+
   playBoost() {
     if (!this.ctx || this.muted) return;
     const t = this.ctx.currentTime;
@@ -168,12 +296,19 @@ class AmbientAudio {
   dispose() {
     this.stopEngine();
     this.oscillators.forEach((o) => o.stop());
+    this.padNodes.forEach((p) => p.osc.stop());
+    this.padLfo?.stop();
+    if (this.chimeTimer) clearInterval(this.chimeTimer);
     this.noiseNode?.stop();
     this.ctx?.close();
     this.ctx = null;
     this.masterGain = null;
     this.oscillators = [];
+    this.padNodes = [];
     this.noiseNode = null;
+    this.padLfo = null;
+    this.padLfoGain = null;
+    this.chimeTimer = null;
   }
 }
 
@@ -202,11 +337,14 @@ export function useAudio() {
   const start = useCallback(() => audio.current.start(), []);
   const playWarp = useCallback(() => audio.current.playWarp(), []);
   const playBoost = useCallback(() => audio.current.playBoost(), []);
+  const playQuestComplete = useCallback(() => audio.current.playQuestComplete(), []);
+  const playScanComplete = useCallback(() => audio.current.playScanComplete(), []);
+  const playApproach = useCallback(() => audio.current.playApproach(), []);
   const startEngine = useCallback(() => audio.current.startEngine(), []);
   const stopEngine = useCallback(() => audio.current.stopEngine(), []);
   const setEngine = useCallback((speed: number) => audio.current.setEngine(speed), []);
 
-  return { muted, toggle, start, playWarp, playBoost, startEngine, stopEngine, setEngine, setMuted };
+  return { muted, toggle, start, playWarp, playBoost, playQuestComplete, playScanComplete, playApproach, startEngine, stopEngine, setEngine, setMuted };
 }
 
 export function AudioToggle({
