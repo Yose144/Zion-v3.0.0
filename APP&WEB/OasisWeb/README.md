@@ -21,6 +21,7 @@ Next.js 16 herní klient pro ZION OASIS (L4). Staticky exportovaná 3D vizuáln�
 - **Pilgrim Ship**: 3D model lodi viditelný během letu, vylepšitelný (boost, cargo, scanner) a přebarvitelný.
 - **Audio Engine**: syntetický ambient, engine drone s pitch dle rychlosti, boost sweep.
 - **Game State**: lokální persistovaný stav (XP, credits, questy, objevené/skanované světy, vajíčka, vybavení lodi) s integrací na `/api/v1/oasis/*`.
+- **ZION Wallet Login**: `PlayerSettings` supports `zion1` address validation, mnemonic import, and in-browser wallet generation using Ed25519 + SHA-256/RIPEMD160 (same derivation as desktop agent / V3 core).
 - **Quests**: live questy z backendu mapované na světy, generované fallback questy, tlačítko Complete s odměnou.
 - **NPC / Avatar Guides**: karta NPC ve WorldPanel a plovoucí hologram ve WorldEnvironment.
 - **Leaderboard & Territories**: top 3 poutníci a hot teritoria v `OasisHud`.
