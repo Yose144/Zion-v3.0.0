@@ -3,7 +3,7 @@
 > Location: `APP&WEB/OasisWeb/`  
 > Live URL: https://oasis.zionterranova.com  
 > Edge server: `62.171.141.136` / `oasis.zionterranova.com` → `/var/www/oasis`  
-> Last update: 2026-08-01 10:29 CEST  
+> Last update: 2026-08-01 12:05 CEST  
 > Branch: `main` on `origin` (private repo: `Yose144/Zion-v3.0.0`)
 
 ---
@@ -68,11 +68,29 @@ The work began from an earlier conversation state where the `WarpIntro`, `TreeOf
 - `deploy/deploy-oasis-web.sh` builds a static export and rsyncs `dist/` to `/var/www/oasis` on the Edge server, reloads nginx, runs a health check.
 - `deploy/nginx-oasis.conf` serves the static export and proxies `/health` and `/api/` to the local OASIS backend.
 
+### 2.8 Gameplay, Progression & Backend Sync
+
+- **gameStore** — persistent (localStorage) player state: `xp`, `credits`, `completedQuests`, `discoveredWorlds`, `scannedWorlds`, `collectedEggs`, `shipLoadout`.
+- **PlayerHud** — level, XP bar, credits, completed quests, discovered worlds, live quests, linked wallet address with type badge.
+- **WorldPanel** — real backend quests with avatar cards, quest completion, Golden Egg claim.
+- **PilgrimShip** — visible in flight, color/thruster changes based on `shipLoadout`.
+- **ShipLoadout** — upgrade engine/cargo/scanner and pick hull color.
+- **AudioEngine** — procedural chord pad, random space chimes, SFX for quest complete, scan, approach.
+- **Toast / feedback UI** — notifications for key actions.
+- **OnboardingHint** — dismissible first-visit overlay with controls, flight, quests, eggs, wallet hints.
+- **OasisHud** — live connection, manual refresh, error state, leaderboard, hot territories.
+- **ZION Wallet Login** — `zion1` address validation, mnemonic import, in-browser wallet generation (same derivation as desktop agent / V3 core).
+- **Backend sync** — `awardPlayerXp` and `completePlayerQuest` API calls; local XP synced from `getPlayer`.
+
 ---
 
 ## 3. Key Commits (newest first)
 
 ```
+d2c8a4dfc Backend sync for OASIS player progress.
+c3cfd2877 UX/UI polish: PlayerHud address, onboarding overlay, OasisHud refresh.
+1ea79c4da Add real ZION wallet login to OASIS Web.
+765765d58 Add toast notification system and wire feedback for key actions.
 83046fa9c Tune FlightControls: imperative lock, speed HUD, user-gesture pointer lock.
 2462a1e82 Add warp-gate network and free-flight game controls.
 1e33075b7 Polish UI round: responsive, camera FOV, audio, warp flash, quests, deploy fixes.
@@ -97,13 +115,18 @@ OasisClient (state orchestration)
 │   │   ├── GalaxyMap (55 World nodes)
 │   │   └── SelectionBeacon (if selected)
 │   ├── World view
-│   │   └── WorldEnvironment
+│   │   └── WorldEnvironment (with NPC hologram + PilgrimShip)
 │   ├── CameraRig (OrbitControls + cinematic flights)
 │   └── FlightControls (PointerLockControls) [when flightMode]
-├── WorldPanel (selected world info + quests)
+├── WorldPanel (selected world info, real backend quests, Golden Egg, NPC card)
 ├── WorldFilter (category filter)
-├── OasisHud (API status)
-├── AudioEngine (ambient + warp sounds)
+├── OasisHud (API status, leaderboard, hot territories)
+├── PlayerHud (player level, XP, credits, wallet address, ship loadout/settings buttons)
+├── ShipLoadout (upgrade engine/cargo/scanner, change hull color)
+├── PlayerSettings (pilgrim ID or ZION wallet link/import/generate)
+├── OnboardingHint (dismissible first-visit guide)
+├── ToastContainer (feedback notifications)
+├── AudioEngine (ambient, engine drone, boost, SFX)
 └── WarpFlash (world entry effect)
 ```
 
@@ -115,6 +138,11 @@ State shape in `OasisClient`:
 - `flightMode: boolean`
 - `flightSpeed: number`
 
+Persistent game state in `gameStore` (localStorage + backend sync):
+- `address`, `xp`, `credits`, `completedQuests`, `discoveredWorlds`, `scannedWorlds`, `collectedEggs`
+- `shipLoadout` (boost / cargo / scanner / color)
+- `realQuests`, `avatars`, `territories` (fetched from API)
+
 ---
 
 ## 5. Known Limitations / TODO
@@ -125,9 +153,9 @@ State shape in `OasisClient`:
 - **Ship model**: ✅ `PilgrimShip` visible in flight, follows camera.
 - **Warp-gate visuals**: ✅ vortex shader, hyperlane streamers, glow flares.
 - **Performance**: ✅ mobile LOD, DPR capping, particle/geometry reduction.
-- **World depth**: 🔄 real quest state wired via `gameStore` + `getQuests()`; generated quest fallback. NPCs, full backend reward sync, and persistent player state are next.
+- **World depth**: ✅ real quest state wired via `gameStore` + `getQuests()`; generated quest fallback. NPC avatar card + hologram implemented. Backend reward sync (quest complete, golden egg, scan/approach XP) implemented.
 
-Remaining:
+Remaining (all completed):
 - ✅ **NPC presence** in world view / panel (avatar guide card + floating hologram).
 - ✅ **Leaderboard / social** integration (`getLeaderboard`, top pilgrims in `OasisHud`).
 - ✅ **Persistent player profile + ZION wallet login** from backend (`getPlayer(address)` is used; `zion1` address validation, mnemonic import, and in-browser wallet generation are implemented).

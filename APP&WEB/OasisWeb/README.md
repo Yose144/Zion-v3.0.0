@@ -1,5 +1,8 @@
 # ZION OASIS Web
 
+> Live: https://oasis.zionterranova.com  
+> Last update: 2026-08-01
+
 Next.js 16 herní klient pro ZION OASIS (L4). Staticky exportovaná 3D vizuální aplikace, která umožňuje procházet galaxii 55 OASIS světů, létat mezi nimi, plnit questy a prozkoumávat jednotlivé světy.
 
 ## Struktura
