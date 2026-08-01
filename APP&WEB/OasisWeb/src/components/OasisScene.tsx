@@ -15,6 +15,8 @@ import SelectionBeacon from './SelectionBeacon';
 import FlightControls from './FlightControls';
 import PilgrimShip from './PilgrimShip';
 import Nebula from './Nebula';
+import CameraCompassTracker from './CameraCompassTracker';
+import type { CompassData } from './Compass';
 
 interface CameraRigProps {
   started: boolean;
@@ -159,6 +161,7 @@ interface OasisSceneProps {
   flightSpeed?: number;
   mobileInputRef?: React.RefObject<import('./MobileControls').MobileInput | null>;
   isMobile?: boolean;
+  compassRef?: React.RefObject<CompassData | null>;
 }
 
 export default function OasisScene({
@@ -178,6 +181,7 @@ export default function OasisScene({
   flightSpeed = 0,
   mobileInputRef,
   isMobile = false,
+  compassRef,
 }: OasisSceneProps) {
   return (
     <Canvas camera={{ position: [0, 3.5, 34], fov: 55 }} dpr={[1, isMobile ? 1.25 : 2]}>
@@ -257,6 +261,8 @@ export default function OasisScene({
           radius={0.6}
         />
       </EffectComposer>
+
+      {compassRef && <CameraCompassTracker compassRef={compassRef} />}
     </Canvas>
   );
 }

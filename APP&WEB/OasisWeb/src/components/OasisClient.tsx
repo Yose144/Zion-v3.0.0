@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,6 +12,9 @@ import type { MobileInput } from './MobileControls';
 import MobileControls from './MobileControls';
 import PlayerHud from './PlayerHud';
 import OnboardingHint from './OnboardingHint';
+import MusicPlayer from './MusicPlayer';
+import Compass from './Compass';
+import type { CompassData } from './Compass';
 import { useGameStore } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
 import { getQuests, getAvatars, getTerritories, awardPlayerXp } from '../lib/api';
@@ -46,7 +49,8 @@ export default function OasisClient() {
   const [isMobile, setIsMobile] = useState(false);
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
   const mobileInputRef = useRef<MobileInput | null>(null);
-  const { muted, toggle, start, playWarp, playBoost, playScanComplete, playApproach, startEngine, stopEngine, setEngine } = useAudio();
+  const compassRef = useRef<CompassData | null>(null);
+  const { muted, toggle, start, playWarp, playBoost, playScanComplete, playApproach, startEngine, stopEngine, setEngine, music } = useAudio();
   const { discoverWorld, scanWorld, addXp, setRealQuests, setAvatars, setTerritories, setAddress, address, shipLoadout, syncPlayer, scannedWorlds, discoveredWorlds } = useGameStore();
   const addToast = useToastStore((s) => s.add);
 
@@ -99,6 +103,27 @@ export default function OasisClient() {
       stopEngine();
     }
   }, [flightMode, startEngine, stopEngine]);
+
+  const compassTarget = useMemo(() => {
+    if (flightMode && landTarget) {
+      return {
+        pos: landTarget.galaxyPosition ?? { x: 0, y: 0, z: 0 },
+        name: landTarget.name,
+        color: CATEGORY_COLORS[landTarget.category],
+      };
+    }
+    if (selectedWorld) {
+      if (view === 'world') {
+        return { pos: { x: 0, y: 0, z: 0 }, name: selectedWorld.name, color: CATEGORY_COLORS[selectedWorld.category] };
+      }
+      return {
+        pos: selectedWorld.galaxyPosition ?? { x: 0, y: 0, z: 0 },
+        name: selectedWorld.name,
+        color: CATEGORY_COLORS[selectedWorld.category],
+      };
+    }
+    return { pos: { x: 0, y: 0, z: 0 }, name: 'Galactic Core', color: '#a855f7' };
+  }, [flightMode, landTarget, selectedWorld, view]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -216,6 +241,7 @@ export default function OasisClient() {
           onBoost={playBoost}
           mobileInputRef={isMobile ? mobileInputRef : undefined}
           isMobile={isMobile}
+          compassRef={compassRef}
         />
         {phase !== 'intro' && <PlayerHud />}
         {phase !== 'intro' && view === 'galaxy' && !flightMode && <OasisHud />}
@@ -295,9 +321,29 @@ export default function OasisClient() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ delay: 4, duration: 0.6 }}
-              className="pointer-events-auto absolute bottom-4 left-4 z-30"
+              className="pointer-events-auto absolute bottom-4 left-4 z-30 flex flex-col items-start gap-2 sm:flex-row sm:items-end"
             >
+              <MusicPlayer music={music} />
               <AudioToggle muted={muted} onToggle={toggle} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {phase !== 'intro' && (!isMobile || !flightMode) && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ delay: 4.2, duration: 0.6 }}
+              className="pointer-events-auto absolute bottom-4 right-4 z-30"
+            >
+              <Compass
+                target={compassTarget.pos}
+                targetName={compassTarget.name}
+                targetColor={compassTarget.color}
+                compassRef={compassRef}
+              />
             </motion.div>
           )}
         </AnimatePresence>
