@@ -21,6 +21,7 @@ use cudarc::driver::sys::CUdevice_attribute;
 use cudarc::nvrtc::{compile_ptx_with_opts, CompileOptions};
 use std::sync::Arc;
 use std::time::Instant;
+use crate::{private_eprint, private_print};
 use zion_auxpow::external_hashers::{
     autolykos_calc_n, autolykos_generate_padding_m, ETCHASH_EPOCH_LENGTH, ETCHASH_FORK_BLOCK,
 };
@@ -418,7 +419,7 @@ impl CudaExternalMiner {
             .unwrap_or(1 << 22); // 4M default
         let actual_work_size = work_size.max(256).min(max_work_size);
 
-        println!(
+        private_print!(
             "gpu_cuda_ext_init device=\"{}\" algorithm={} work_size={}",
             device_name, algorithm, actual_work_size,
         );
@@ -745,7 +746,7 @@ impl CudaExternalMiner {
             return Ok(());
         }
 
-        eprintln!(
+        private_eprint!(
             "progpow_cuda: recompiling kernel period={} dag_elements={} block_height={}",
             period, dag_elements, block_height,
         );
@@ -800,7 +801,7 @@ impl CudaExternalMiner {
         self.progpow_period = period;
         self.progpow_dag_elements = dag_elements;
 
-        eprintln!(
+        private_eprint!(
             "progpow_cuda: kernel ready period={} dag_elements={} ({:.1}s)",
             period, dag_elements,
             start.elapsed().as_secs_f64(),
@@ -1344,7 +1345,7 @@ impl CudaExternalMiner {
     ) -> Result<GpuBatchResult> {
         use zion_auxpow::beamhash;
 
-        eprintln!(
+        private_eprint!(
             "cuda_beamhash_solver_start nonce={} header_len={} target_first8={:016x}",
             nonce_start,
             header.len(),
@@ -1404,7 +1405,7 @@ impl CudaExternalMiner {
             self.beamhash_buf1 = Some(buf1);
             self.beamhash_counters = Some(counters);
             self.beamhash_results = Some(results);
-            eprintln!(
+            private_eprint!(
                 "cuda_beamhash_solver_init buf0={:.1}MB buf1={:.1}MB counters={}KB results={}B",
                 (HASH_TABLE_U64 * 8) as f64 / 1_048_576.0,
                 (HASH_TABLE_U64 * 8) as f64 / 1_048_576.0,
@@ -1440,24 +1441,24 @@ impl CudaExternalMiner {
 
         // Launch the 7 kernels in sequence
         // cleanUp: 20480 threads (clear all counters)
-        eprintln!("cuda_beamhash_kernel_launch cleanUp");
+        private_eprint!("cuda_beamhash_kernel_launch cleanUp");
         launch("cleanUp", (COUNTERS_LEN as u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
         // seed: 33,554,432 threads (2^25 — generates initial hash table)
-        eprintln!("cuda_beamhash_kernel_launch seed");
+        private_eprint!("cuda_beamhash_kernel_launch seed");
         launch("beamHashIII_seed", (33_554_432u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
         // R1-R5: 4,194,304 threads each (4096 buckets × 4 masks × 256 wgSize)
-        eprintln!("cuda_beamhash_kernel_launch R1");
+        private_eprint!("cuda_beamhash_kernel_launch R1");
         launch("beamHashIII_R1", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
-        eprintln!("cuda_beamhash_kernel_launch R2");
+        private_eprint!("cuda_beamhash_kernel_launch R2");
         launch("beamHashIII_R2", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
-        eprintln!("cuda_beamhash_kernel_launch R3");
+        private_eprint!("cuda_beamhash_kernel_launch R3");
         launch("beamHashIII_R3", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
-        eprintln!("cuda_beamhash_kernel_launch R4");
+        private_eprint!("cuda_beamhash_kernel_launch R4");
         launch("beamHashIII_R4", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
-        eprintln!("cuda_beamhash_kernel_launch R5");
+        private_eprint!("cuda_beamhash_kernel_launch R5");
         launch("beamHashIII_R5", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
 
-        eprintln!("cuda_beamhash_kernels_done syncing");
+        private_eprint!("cuda_beamhash_kernels_done syncing");
 
         // Synchronize and read results
         self.dev.synchronize()
@@ -1502,14 +1503,14 @@ impl CudaExternalMiner {
             // Debug: print solution bytes and decompressed indices
             let decompressed = beamhash::decompress_indices(&indices_100);
             match &decompressed {
-                Ok(idx) => eprintln!("cuda_beamhash_solution pos={} indices={:?}", pos, &idx[..idx.len().min(8)]),
-                Err(e) => eprintln!("cuda_beamhash_solution pos={} decompress_err={}", pos, e),
+                Ok(idx) => private_eprint!("cuda_beamhash_solution pos={} indices={:?}", pos, &idx[..idx.len().min(8)]),
+                Err(e) => private_eprint!("cuda_beamhash_solution pos={} decompress_err={}", pos, e),
             }
-            eprintln!("cuda_beamhash_solution pos={} sol_bytes_hex={}", pos, indices_100.iter().map(|b| format!("{:02x}", b)).collect::<String>());
+            private_eprint!("cuda_beamhash_solution pos={} sol_bytes_hex={}", pos, indices_100.iter().map(|b| format!("{:02x}", b)).collect::<String>());
 
             // Check validation error
             if let Err(val_err) = beamhash::is_valid_solution(&full_header, &indices_100) {
-                eprintln!("cuda_beamhash_validation_err pos={} err={}", pos, val_err);
+                private_eprint!("cuda_beamhash_validation_err pos={} err={}", pos, val_err);
             }
 
             // Validate the solution by hashing it
@@ -1518,7 +1519,7 @@ impl CudaExternalMiner {
                 let mut solution = indices_100.clone();
                 solution.extend_from_slice(&extra_nonce);
 
-                eprintln!(
+                private_eprint!(
                     "auxpow_cuda_beamhash_share_found nonce={} hash_first8={:016x} sol_count={}",
                     nonce_start,
                     u64::from_le_bytes(hash[0..8].try_into().unwrap()),
@@ -1674,7 +1675,7 @@ impl GpuMiner for CudaExternalMiner {
         eprintln!("cuda_mine_batch_raw ENTRY algo={} header_len={} nonce={}", self.algo.module_name(), raw_header.len(), nonce_start);
         // BeamHash III: multi-kernel Wagner solver
         if self.algo == CudaExtAlgo::Beamhash {
-            eprintln!(
+            private_eprint!(
                 "cuda_beamhash_mine_batch_raw called header_len={} nonce={} batch_size={}",
                 raw_header.len(), nonce_start, batch_size,
             );
@@ -1878,6 +1879,8 @@ fn generate_light_cache(epoch: u32) -> Vec<u8> {
 
 fn generate_light_cache_from(cache_size: usize, cache_items: usize, seed: &[u8; 32]) -> Vec<u8> {
     use sha3::{Digest, Keccak512};
+
+use crate::{private_print, private_eprint};
 
     let mut cache = vec![0u8; cache_size];
 

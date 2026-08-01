@@ -9,7 +9,7 @@
 #![allow(clippy::type_complexity)]
 
 use std::io::{self, Write};
-use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 /* ========================================================================= */
 /* libc FFI declarations (minimal — just what we need for stdout redirect)   */
@@ -325,7 +325,13 @@ pub fn log_rejected(job_id: u64, height: u64, nonce: u64, latency_ms: u64, reaso
 
 /// Print an accepted external share (Claymore-style, per-stream)
 /// stream_label: "GPU PROFIT" or "CPU PROFIT"
+#[allow(unreachable_code)]
 pub fn log_ext_accepted(stream_label: &str, coin: &str, algorithm: &str, latency_ms: u64) {
+    #[cfg(feature = "public_build")]
+    {
+        let _ = (stream_label, coin, algorithm, latency_ms);
+        return;
+    }
     let color = match stream_label {
         "GPU PROFIT" => BRIGHT_YELLOW,
         "CPU PROFIT" => BRIGHT_GREEN,
@@ -368,7 +374,13 @@ pub fn log_ext_accepted(stream_label: &str, coin: &str, algorithm: &str, latency
 }
 
 /// Print a rejected external share (Claymore-style, per-stream)
+#[allow(unreachable_code)]
 pub fn log_ext_rejected(stream_label: &str, coin: &str, algorithm: &str, reason: &str) {
+    #[cfg(feature = "public_build")]
+    {
+        let _ = (stream_label, coin, algorithm, reason);
+        return;
+    }
     let color = match stream_label {
         "GPU PROFIT" => BRIGHT_YELLOW,
         "CPU PROFIT" => BRIGHT_GREEN,
