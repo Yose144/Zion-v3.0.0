@@ -157,6 +157,7 @@ interface OasisSceneProps {
   onApproach: (world: World) => void;
   onBoost: () => void;
   flightSpeed?: number;
+  mobileInputRef?: React.RefObject<import('./MobileControls').MobileInput | null>;
 }
 
 export default function OasisScene({
@@ -174,6 +175,7 @@ export default function OasisScene({
   onApproach,
   onBoost,
   flightSpeed = 0,
+  mobileInputRef,
 }: OasisSceneProps) {
   return (
     <Canvas camera={{ position: [0, 3.5, 34], fov: 55 }} dpr={[1, 2]}>
@@ -235,6 +237,7 @@ export default function OasisScene({
           onCanLand={onCanLand}
           onApproach={onApproach}
           onBoost={onBoost}
+          mobileInputRef={mobileInputRef}
         />
       )}
 
