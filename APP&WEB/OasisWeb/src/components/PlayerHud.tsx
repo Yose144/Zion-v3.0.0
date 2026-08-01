@@ -1,17 +1,24 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { Coins, Star, MapPin, Scroll } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Coins, Star, MapPin, Scroll, Rocket } from 'lucide-react';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
+import ShipLoadout from './ShipLoadout';
 
 const XP_PER_LEVEL = 1000;
 
 export default function PlayerHud() {
   const { xp, credits, completedQuests, discoveredWorlds, scannedWorlds, realQuests } = useGameStore();
+  const [showShip, setShowShip] = useState(false);
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
 
   return (
+    <>
+      <AnimatePresence>
+        {showShip && <ShipLoadout onClose={() => setShowShip(false)} />}
+      </AnimatePresence>
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -33,6 +40,13 @@ export default function PlayerHud() {
             />
           </div>
         </div>
+        <button
+          onClick={() => setShowShip(true)}
+          className="ml-2 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-oasis-cyan transition hover:bg-white/10"
+          aria-label="Ship loadout"
+        >
+          <Rocket className="h-4 w-4" />
+        </button>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -54,5 +68,6 @@ export default function PlayerHud() {
         </div>
       </div>
     </motion.div>
+    </>
   );
 }
