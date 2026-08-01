@@ -13,7 +13,7 @@
 |--------|-------------------|---------------|
 | **Stream 1 — ZION Deeksha** | ≥99% share accept rate on live pool for ≥1 hour | Pool log `valid_share` vs `invalid_share` |
 | **Stream 2 — External GPU** | Each **active** external coin submits ≥1 accepted share on a reference rig within a bounded test window | Upstream pool response `accepted` |
-| **Stream 3 — External CPU** | VRSC E2E share verify PASS ✅ (LuckPool, 37ms). RTM E2E share verify PASS ✅ (zpool.ca, accepted). XMR RandomX hash verify OK (native-randomx); stale job_id fix pending. | Edge test pool 2026-07-19: `share_forwarded result=Accepted` |
+| **Stream 3 — External CPU** | VRSC E2E share verify PASS ✅ (LuckPool). RTM E2E share verify PASS ✅ (zpool.ca). **XMR E2E share verify PASS ✅ (MoneroOcean via Edge debug pool, 2026-07-31).** All three CPU coins verified with upstream `Accepted`. | Edge debug pool `62.171.141.136:8461`: `external_share_accepted coin=XMR status=accepted`, `auxpow_bridge: share_forwarded ... result=Accepted` |
 | **Infrastructure** | No SIGILL/GPU hang/reconnect storms; SMOS packages build and run on reference rigs | 24h soak test |
 
 **Important:** Coins marked as placeholders or intentionally disabled (Pearl, RTM/QTC/DNX GPU kernels until implemented) are out of scope for the GPU all-green gate unless explicitly enabled.
@@ -46,8 +46,8 @@
 | **EVR** | evrprogpow | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (11.1 MH/s, output_hash fix 2026-07-28). Protocol fixed: EthStratum → Stratum v1. Authorized + KawPow notify on Edge test pool. | Commit `eb98dc694`, `auxpow_client.rs` line 135 |
 | **MEWC** | meowpow | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (11.1 MH/s, output_hash fix 2026-07-28). Protocol fixed: EthStratum → Stratum v1. | Commit `eb98dc694` |
 | **CLORE** | kawpow | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (93.5 MH/s). Pool moved to 2miners:5050. | `types.rs` line 169 |
-| **VRSC** | verushash | 3 | ✅ Green | **E2E share verify PASS** — CPU miner → ZION pool → LuckPool upstream → **accepted** (37ms). Full pipeline verified on Edge test pool 2026-07-19. | Edge test pool log: `share_forwarded result=Accepted elapsed_ms=37` |
-| **XMR** | randomx | 3 | ✅ Green (stale fix) | RandomX hash verify OK (native-randomx, shares pass pool-side target check). **Stale job_id fix (2026-07-28):** Pool-side latest-job-only check (`ZION_XMR_LATEST_ONLY=1`) — shares for superseded job_ids silently skipped. Stale threshold reduced 120s→30s. E2E test pending deploy. | Edge test pool 2026-07-19, commit pending |
+| **VRSC** | verushash | 3 | ✅ Green | **E2E share verify PASS** — CPU miner → ZION pool → LuckPool upstream → **accepted**. Re-verified on Edge debug pool 2026-07-31. | Edge debug pool log: `auxpow_bridge: share_forwarded ... result=Accepted`, `external_share_result ... accepted=true` |
+| **XMR** | randomx | 3 | ✅ Green | RandomX hash verify OK (native-randomx). **Stale job_id fix (2026-07-28):** `ZION_XMR_LATEST_ONLY=1` + `ZION_XMR_STALE_SECS=30`. **E2E share verify PASS ✅ (2026-07-31):** local `zion-miner --cpu-coin XMR` → Edge debug pool `62.171.141.136:8461` → MoneroOcean upstream → `Accepted`. | Edge debug pool log: `auxpow_bridge: share_forwarded ... result=Accepted`, `external_share_result ... accepted=true` |
 | **IRON** | fishhash | 2 | 🟡 Auth OK | Subscribe OK, needs 64-char IronFish wallet | StatusV3 §5 |
 | **KLS** | karlsenhash | 2 | 🟡 Auth OK | E2E PASS, needs native Karlsen wallet | StatusV3 §5 |
 | **DNX** | dynexsolve | 2 | 🟡 Auth OK | Login OK, needs native DNX wallet | StatusV3 §5 |

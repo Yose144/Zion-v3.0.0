@@ -19,11 +19,9 @@ use crate::config::L1Config;
 use crate::types::{BridgeStatus, L1LockEvent};
 use anyhow::{anyhow, Context, Result};
 use chrono::Utc;
-use ripemd::Ripemd160;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -31,7 +29,8 @@ use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
 
-const ZION_BASE32_ALPHABET: &[u8; 32] = b"023456789acdefghjklmnpqrstuvwxyz";
+// Shared helpers from zion-l1-types (replaces previously duplicated copies).
+use zion_l1_types::{normalize_rpc_addr, zion_address_from_public_key};
 
 /// Maximum per-block fetch retries before skipping (height not advanced).
 const BLOCK_FETCH_MAX_RETRIES: u32 = 3;
@@ -499,48 +498,6 @@ impl L1Watcher {
     }
 }
 
-fn normalize_rpc_addr(value: &str) -> String {
-    let trimmed = value.trim().trim_end_matches('/');
-    let trimmed = trimmed.strip_suffix("/jsonrpc").unwrap_or(trimmed);
-    trimmed
-        .strip_prefix("tcp://")
-        .or_else(|| trimmed.strip_prefix("http://"))
-        .or_else(|| trimmed.strip_prefix("https://"))
-        .unwrap_or(trimmed)
-        .to_string()
-}
-
-fn compute_address_checksum(body_35: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(b"zion1");
-    hasher.update(body_35.as_bytes());
-    let hash = hasher.finalize();
-    let mut checksum = String::with_capacity(4);
-    for &byte in &hash[..2] {
-        checksum.push(ZION_BASE32_ALPHABET[(byte % 32) as usize] as char);
-        checksum.push(ZION_BASE32_ALPHABET[((byte / 32) % 32) as usize] as char);
-    }
-    checksum
-}
-
-fn zion_address_from_public_key(public_key_bytes: &[u8]) -> Option<String> {
-    if public_key_bytes.len() != 32 {
-        return None;
-    }
-
-    let sha = Sha256::digest(public_key_bytes);
-    let key_hash = Ripemd160::digest(sha);
-
-    let mut body = String::with_capacity(40);
-    for &byte in key_hash.as_slice() {
-        body.push(ZION_BASE32_ALPHABET[(byte % 32) as usize] as char);
-        body.push(ZION_BASE32_ALPHABET[((byte / 32) % 32) as usize] as char);
-    }
-    body.truncate(35);
-    let checksum = compute_address_checksum(&body);
-    Some(format!("zion1{body}{checksum}"))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -548,7 +505,7 @@ mod tests {
 
     fn test_watcher() -> L1Watcher {
         let config = L1Config {
-            rpc_url: "127.0.0.1:8443".into(),
+            rpc_url: "127.0.0.1:9443".into(),
             rpc_url_backup: None,
             bridge_address: "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7".into(),
             finality_blocks: 60,
@@ -652,7 +609,7 @@ mod tests {
     #[test]
     fn test_watcher_initial_height() {
         let config = L1Config {
-            rpc_url: "127.0.0.1:8443".into(),
+            rpc_url: "127.0.0.1:9443".into(),
             rpc_url_backup: None,
             bridge_address: "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7".into(),
             finality_blocks: 60,
@@ -673,8 +630,8 @@ mod tests {
             "127.0.0.1:8443"
         );
         assert_eq!(
-            normalize_rpc_addr("https://204.168.245.175:8443/"),
-            "204.168.245.175:8443"
+            normalize_rpc_addr("https://203.0.113.1:8443/"),
+            "203.0.113.1:8443"
         );
     }
 

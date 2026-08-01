@@ -66,7 +66,7 @@ pub fn parse_dao_memo(memo: &str) -> Option<DaoMemo> {
                 "yes" => VoteChoice::Yes,
                 "no" => VoteChoice::No,
                 "abstain" => VoteChoice::Abstain,
-                _ => return None,
+                candidate => VoteChoice::Candidate(candidate.to_string()),
             },
         }),
         "propose" => Some(DaoMemo::Propose {
@@ -97,11 +97,13 @@ pub enum DaoMemo {
 // Vote Types
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum VoteChoice {
     Yes,
     No,
     Abstain,
+    /// Vote for a specific candidate/party in parliamentary/election proposals
+    Candidate(String),
 }
 
 // ---------------------------------------------------------------------------

@@ -1,9 +1,12 @@
 pub mod ncl_gateway;
 pub mod pplns;
 pub mod revenue_proxy;
+pub mod store;
+pub mod stratum_v1;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use zion_core::{
@@ -17,11 +20,62 @@ pub fn advertised_algorithm() -> &'static str {
     consensus_profile()
 }
 
+/// Height-aware advertised algorithm name.
+///
+/// As of 3.0.6 the Edge node and pool binary fully support height-aware
+/// dispatch (`deeksha_lite_v1` → `deeksha_chv3` alias → `deeksha_lite_fire`).
+/// However, this function keeps advertising `deeksha_lite_v1` to miners as a
+/// compatibility workaround for the 2026-07-13 incident at block 4502, when
+/// external miners/nodes did not yet recognise `deeksha_chv3` and computed
+/// the wrong hash (569 `hash_mismatch` events in 24 h).
+///
+/// The workaround is safe because `deeksha_chv3` is a bit-identical alias of
+/// `deeksha_lite_v1`, and the pool validates shares against the canonical
+/// height-aware profile internally.  It can be removed once the majority of
+/// public hashrate is confirmed to run 3.0.5+.
+pub fn advertised_algorithm_for_height(_height: u64) -> &'static str {
+    "deeksha_lite_v1"
+}
+
 pub fn protocol_version() -> &'static str {
     PROTOCOL_VERSION
 }
 
+/// Parallel external stream job — attached to ZION Job messages so the miner
+/// can run an external algorithm (VRSC, KAS, ALPH, etc.) IN PARALLEL with
+/// the main Deeksha Chv3 GPU pipeline.  This is the DeekshaChv3 parallel
+/// streaming architecture: ZION on GPU + external on CPU/GPU simultaneously.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExternalStreamJob {
+    /// External coin ticker (VRSC, KAS, ALPH, DCR, RVN, ERG, ETC, etc.)
+    pub coin: String,
+    /// Algorithm name (verushash, kheavyhash, blake3, kawpow, etc.)
+    pub algorithm: String,
+    /// External job ID (from upstream pool)
+    pub job_id: String,
+    /// Header/blob hex (algorithm-specific format)
+    pub header_hex: String,
+    /// Share target hex (32 bytes, big-endian)
+    pub target_hex: String,
+    /// Block height on external chain
+    pub height: u64,
+    /// Extranonce1 hex (for coins that use it)
+    #[serde(default)]
+    pub extranonce1_hex: String,
+    /// Pool protocol (stratum, ethstratum, zcashstratum)
+    #[serde(default)]
+    pub protocol: String,
+    /// Seed hash for RandomX (XMR) — 32-byte hex (64 chars).  Required for
+    /// RandomX cache/dataset initialization.  None for non-RandomX coins.
+    #[serde(default)]
+    pub seed_hash_hex: String,
+    /// Timestamp from upstream pool notify (KAS kheavyhash needs this for
+    /// PoW hash computation).  Stored as little-endian u64.  0 if not provided.
+    #[serde(default)]
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum PoolMessage {
     Hello {
@@ -48,6 +102,29 @@ pub enum PoolMessage {
         target_hex: String,
         header_hex: String,
         height: u64,
+        /// Stream weights for Deeksha Chv3 pipeline parameterisation.
+        ///
+        /// Each entry is "source_name:weight_pct" (e.g. "zion:50.0,keccak_bonus:15.0,ncl_ai:25.0").
+        /// Empty string = use default 50/25/25 split.
+        /// Miners that don't recognise this field simply ignore it.
+        #[serde(default)]
+        stream_weights: String,
+        /// Parallel external stream job (DeekshaChv3 parallel streaming).
+        ///
+        /// When present, the miner should run this external algorithm IN PARALLEL
+        /// with the main ZION/Deeksha job — e.g. ZION on GPU + VerusHash on CPU.
+        /// Both streams submit shares independently.
+        /// None/absent = no external stream (ZION-only iteration).
+        #[serde(default)]
+        external_stream: Option<ExternalStreamJob>,
+        /// Second parallel external stream for CPU-only algorithms (VRSC, RandomX).
+        ///
+        /// Claymore-style triple parallel: ZION (GPU) + EPIC (GPU) + VRSC (CPU)
+        /// simultaneously.  This field carries the CPU-stream job so the miner
+        /// can route it to `ext_cpu_thread` without conflicting with the GPU
+        /// `external_stream`.  None/absent = no CPU external stream.
+        #[serde(default)]
+        external_stream_cpu: Option<ExternalStreamJob>,
     },
     Submit {
         job_id: u64,
@@ -59,6 +136,10 @@ pub enum PoolMessage {
         attempted_hashes: Option<u64>,
         #[serde(default)]
         elapsed_ms: Option<u64>,
+        /// Mix hash for Ethash/KawPow shares (eth_submitWork).  None for
+        /// algorithms that don't produce a mix hash.
+        #[serde(default)]
+        mix_hash_hex: Option<String>,
     },
     NoSolution {
         job_id: u64,
@@ -72,6 +153,15 @@ pub enum PoolMessage {
     Result {
         accepted: bool,
         status: String,
+        /// F9.1: Block found flag — set to true when the submitted share
+        /// also met the network target and was sealed as a block.
+        /// Miners use this to fire the block-found celebration.
+        /// `#[serde(default)]` for backward compat with old pools.
+        #[serde(default)]
+        block_found: bool,
+        /// F9.1: Block height (present only when block_found == true).
+        #[serde(default)]
+        block_height: Option<u64>,
     },
     Stale {
         job_id: u64,
@@ -113,6 +203,79 @@ pub enum PoolMessage {
         difficulty: u64,
         /// Which relay pool forwarded this share (for audit / debugging).
         relay_origin: String,
+    },
+    /// Miner → pool: external stream share submission (DeekshaChv3 parallel
+    /// streaming).  The pool forwards this to the upstream external pool.
+    ExternalSubmit {
+        miner_id: String,
+        worker_name: String,
+        /// External coin ticker (VRSC, KAS, ALPH, etc.)
+        coin: String,
+        /// Algorithm name
+        algorithm: String,
+        /// External job ID (from upstream pool, string format)
+        external_job_id: String,
+        /// Nonce that produced the share
+        nonce: u64,
+        /// Hash hex (32 bytes, big-endian)
+        hash_hex: String,
+        /// Mix hash for Ethash/KawPow (None for other algorithms)
+        #[serde(default)]
+        mix_hash_hex: Option<String>,
+        /// Extranonce1 hex (for coins that use it)
+        #[serde(default)]
+        extranonce1_hex: String,
+    },
+    /// Miner → pool: Pearl PoUW proof submission.
+    ///
+    /// Like ExternalSubmit but carries the full PlainProof blob (~178KB base64)
+    /// which is too large for ExternalSubmit's 32-byte hash_hex field.
+    ///
+    /// The pool forwards this to AlphaPool via `submitPlainProof` without
+    /// doing any mining itself — the miner has already mined the PoUW on GPU.
+    PearlSubmit {
+        miner_id: String,
+        worker_name: String,
+        /// "PRL"
+        coin: String,
+        /// "pearlhash"
+        algorithm: String,
+        /// External job ID from the external_stream
+        external_job_id: String,
+        /// Jackpot hash (32 bytes, big-endian hex) — for quick pool-side validation
+        hash_hex: String,
+        /// Full PlainProof (bincode → base64, ~178KB)
+        plain_proof_b64: String,
+        /// Mining job metadata: incomplete_header_bytes + target (base64-encoded JSON)
+        mining_job_b64: String,
+    },
+    /// Pool → miner: external stream share result.
+    ExternalResult {
+        accepted: bool,
+        status: String,
+        coin: String,
+    },
+    /// Miner → pool: coin preference for autonomous profit routing.
+    ///
+    /// Sent by the miner when `ZION_AUTONOMOUS=1` to tell the pool which
+    /// external coins it wants to mine on Stream 2 (GPU) and Stream 3 (CPU).
+    /// The pool should respect this preference when constructing Job messages.
+    /// If the pool cannot serve the requested coin, it falls back to its own
+    /// selection.
+    CoinPreference {
+        miner_id: String,
+        /// Preferred GPU coin ticker (e.g. "KAS", "ALPH"), or empty for pool default.
+        #[serde(default)]
+        gpu_coin: String,
+        /// Preferred CPU coin ticker (e.g. "VRSC", "XMR"), or empty for pool default.
+        #[serde(default)]
+        cpu_coin: String,
+        /// Net profit estimate for GPU coin (USD/day) — for pool-side logging.
+        #[serde(default)]
+        gpu_profit_usd_day: f64,
+        /// Net profit estimate for CPU coin (USD/day) — for pool-side logging.
+        #[serde(default)]
+        cpu_profit_usd_day: f64,
     },
 }
 
@@ -174,10 +337,10 @@ struct TrackedJob {
 
 pub struct MiningPool {
     runtime: CoreRuntime,
-    accepted_shares: u64,
-    rejected_shares: u64,
-    stale_shares: u64,
-    next_job_id: u64,
+    accepted_shares: AtomicU64,
+    rejected_shares: AtomicU64,
+    stale_shares: AtomicU64,
+    next_job_id: AtomicU64,
     job_ttl_ms: u64,
     active_jobs: HashMap<u64, TrackedJob>,
 }
@@ -196,10 +359,10 @@ impl MiningPool {
     pub fn with_job_ttl(runtime: CoreRuntime, job_ttl_ms: u64) -> Self {
         Self {
             runtime,
-            accepted_shares: 0,
-            rejected_shares: 0,
-            stale_shares: 0,
-            next_job_id: 1,
+            accepted_shares: AtomicU64::new(0),
+            rejected_shares: AtomicU64::new(0),
+            stale_shares: AtomicU64::new(0),
+            next_job_id: AtomicU64::new(1),
             job_ttl_ms,
             active_jobs: HashMap::new(),
         }
@@ -220,14 +383,13 @@ impl MiningPool {
         nonce_count: u64,
     ) -> MiningJob {
         let job = MiningJob {
-            job_id: self.next_job_id,
+            job_id: self.next_job_id.fetch_add(1, Ordering::Relaxed),
             header,
             target,
             start_nonce,
             nonce_count,
             height: 0,
         };
-        self.next_job_id = self.next_job_id.wrapping_add(1);
         self.active_jobs.insert(
             job.job_id,
             TrackedJob {
@@ -257,7 +419,17 @@ impl MiningPool {
             nonce_count,
             height: template.height,
         };
-        self.next_job_id = self.next_job_id.max(template.template_id.wrapping_add(1));
+        // Advance next_job_id past the template ID to avoid collisions.
+        let current = self.next_job_id.load(Ordering::Relaxed);
+        let needed = template.template_id.wrapping_add(1);
+        if current < needed {
+            let _ = self.next_job_id.compare_exchange(
+                current,
+                needed,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+            );
+        }
         self.active_jobs.insert(
             job.job_id,
             TrackedJob {
@@ -312,6 +484,19 @@ impl MiningPool {
     }
 
     pub fn job_message(&self, job: MiningJob, algorithm: &str) -> PoolMessage {
+        self.job_message_with_weights(job, algorithm, "")
+    }
+
+    /// Job message with explicit stream weights string.
+    ///
+    /// Format: "source_name:weight_pct,source_name:weight_pct,..."
+    /// Empty string = default 50/25/25 split (miners ignore the field).
+    pub fn job_message_with_weights(
+        &self,
+        job: MiningJob,
+        algorithm: &str,
+        stream_weights: &str,
+    ) -> PoolMessage {
         PoolMessage::Job {
             job_id: job.job_id,
             algorithm: algorithm.to_string(),
@@ -320,6 +505,34 @@ impl MiningPool {
             target_hex: to_hex(&job.target.bytes),
             header_hex: to_hex(&job.header.to_bytes()),
             height: job.height,
+            stream_weights: stream_weights.to_string(),
+            external_stream: None,
+            external_stream_cpu: None,
+        }
+    }
+
+    /// Job message with an embedded external stream job for parallel mining.
+    /// The miner runs ZION Deeksha on GPU while simultaneously mining the
+    /// external coin on CPU/GPU.  This is the DeekshaChv3 parallel streaming
+    /// architecture.
+    pub fn job_message_with_external_stream(
+        &self,
+        job: MiningJob,
+        algorithm: &str,
+        stream_weights: &str,
+        external: ExternalStreamJob,
+    ) -> PoolMessage {
+        PoolMessage::Job {
+            job_id: job.job_id,
+            algorithm: algorithm.to_string(),
+            start_nonce: job.start_nonce,
+            nonce_count: job.nonce_count,
+            target_hex: to_hex(&job.target.bytes),
+            header_hex: to_hex(&job.header.to_bytes()),
+            height: job.height,
+            stream_weights: stream_weights.to_string(),
+            external_stream: Some(external),
+            external_stream_cpu: None,
         }
     }
 
@@ -335,7 +548,7 @@ impl MiningPool {
             algo,
         ) {
             Some(sealed_block) => {
-                self.accepted_shares += 1;
+                self.accepted_shares.fetch_add(1, Ordering::Relaxed);
                 self.runtime.record_revenue(
                     submission.revenue_source,
                     submission.revenue_value_usd,
@@ -347,7 +560,7 @@ impl MiningPool {
                 }
             }
             None => {
-                self.rejected_shares += 1;
+                self.rejected_shares.fetch_add(1, Ordering::Relaxed);
                 ShareDecision {
                     status: ShareStatus::RejectedLowDifficulty,
                     sealed_block: None,
@@ -391,7 +604,7 @@ impl MiningPool {
         F: FnOnce(MiningJob, MiningSolution, SealedBlock) -> ShareStatus,
     {
         let Some(tracked) = self.active_jobs.get(&solution.job_id).copied() else {
-            self.rejected_shares += 1;
+            self.rejected_shares.fetch_add(1, Ordering::Relaxed);
             return ShareDecision {
                 status: ShareStatus::InvalidJob,
                 sealed_block: None,
@@ -400,7 +613,7 @@ impl MiningPool {
 
         if Self::now_ms().saturating_sub(tracked.issued_at_ms) >= self.job_ttl_ms {
             self.active_jobs.remove(&solution.job_id);
-            self.rejected_shares += 1;
+            self.rejected_shares.fetch_add(1, Ordering::Relaxed);
             return ShareDecision {
                 status: ShareStatus::StaleJob,
                 sealed_block: None,
@@ -410,7 +623,7 @@ impl MiningPool {
         let job = tracked.job;
 
         if solution.candidate.header != job.header {
-            self.rejected_shares += 1;
+            self.rejected_shares.fetch_add(1, Ordering::Relaxed);
             return ShareDecision {
                 status: ShareStatus::JobMismatch,
                 sealed_block: None,
@@ -437,7 +650,7 @@ impl MiningPool {
         }
 
         if !job.target.allows(&solution.hash) {
-            self.rejected_shares += 1;
+            self.rejected_shares.fetch_add(1, Ordering::Relaxed);
             return ShareDecision {
                 status: ShareStatus::RejectedLowDifficulty,
                 sealed_block: None,
@@ -452,7 +665,7 @@ impl MiningPool {
 
         let final_status = finalize(job, solution, sealed_block);
         if matches!(final_status, ShareStatus::Accepted) {
-            self.accepted_shares += 1;
+            self.accepted_shares.fetch_add(1, Ordering::Relaxed);
             self.runtime.record_revenue(
                 submission.revenue_source,
                 submission.revenue_value_usd,
@@ -465,7 +678,7 @@ impl MiningPool {
             };
         }
 
-        self.rejected_shares += 1;
+        self.rejected_shares.fetch_add(1, Ordering::Relaxed);
         if matches!(
             final_status,
             ShareStatus::StaleJob
@@ -496,6 +709,50 @@ impl MiningPool {
             hash_hex: to_hex(&solution.hash),
             attempted_hashes: None,
             elapsed_ms: None,
+            mix_hash_hex: None,
+        }
+    }
+
+    /// Like `solution_message` but includes a mix hash for Ethash/KawPow.
+    pub fn solution_message_with_mix(
+        &self,
+        miner_id: &str,
+        worker_name: &str,
+        solution: MiningSolution,
+        mix_hash: &[u8; 32],
+    ) -> PoolMessage {
+        PoolMessage::Submit {
+            job_id: solution.job_id,
+            miner_id: miner_id.to_string(),
+            worker_name: worker_name.to_string(),
+            nonce: solution.candidate.nonce,
+            hash_hex: to_hex(&solution.hash),
+            attempted_hashes: None,
+            elapsed_ms: None,
+            mix_hash_hex: Some(to_hex(mix_hash)),
+        }
+    }
+
+    /// Like `solution_message` but includes a variable-length solution blob
+    /// for Equihash/BeamHash algorithms (ZelHash 52 bytes, BeamHash III 104 bytes).
+    /// The blob is carried in the `mix_hash_hex` field as a hex string so the
+    /// pool server can forward it to the upstream BeamStratum/ZcashStratum pool.
+    pub fn solution_message_with_solution_blob(
+        &self,
+        miner_id: &str,
+        worker_name: &str,
+        solution: MiningSolution,
+        solution_blob: &[u8],
+    ) -> PoolMessage {
+        PoolMessage::Submit {
+            job_id: solution.job_id,
+            miner_id: miner_id.to_string(),
+            worker_name: worker_name.to_string(),
+            nonce: solution.candidate.nonce,
+            hash_hex: to_hex(&solution.hash),
+            attempted_hashes: None,
+            elapsed_ms: None,
+            mix_hash_hex: Some(to_hex(solution_blob)),
         }
     }
 
@@ -503,6 +760,23 @@ impl MiningPool {
         PoolMessage::Result {
             accepted: matches!(decision.status, ShareStatus::Accepted),
             status: format!("{:?}", decision.status),
+            block_found: decision.sealed_block.is_some(),
+            block_height: decision.sealed_block.as_ref().map(|sb| {
+                // Height is not stored in SealedBlock; callers that need it
+                // should use result_message_with_height instead.
+                0u64
+            }),
+        }
+    }
+
+    /// F9.1: Like result_message but includes the block height when a
+    /// block was found.  Used by the pool server to notify miners.
+    pub fn result_message_with_height(&self, decision: &ShareDecision, height: u64) -> PoolMessage {
+        PoolMessage::Result {
+            accepted: matches!(decision.status, ShareStatus::Accepted),
+            status: format!("{:?}", decision.status),
+            block_found: decision.sealed_block.is_some(),
+            block_height: if decision.sealed_block.is_some() { Some(height) } else { None },
         }
     }
 
@@ -532,9 +806,9 @@ impl MiningPool {
 
     pub fn stats(&self) -> PoolStats {
         PoolStats {
-            accepted_shares: self.accepted_shares,
-            rejected_shares: self.rejected_shares,
-            stale_shares: self.stale_shares,
+            accepted_shares: self.accepted_shares.load(Ordering::Relaxed),
+            rejected_shares: self.rejected_shares.load(Ordering::Relaxed),
+            stale_shares: self.stale_shares.load(Ordering::Relaxed),
             active_jobs: self.active_jobs.len(),
             revenue: self.runtime.revenue_snapshot(),
         }
@@ -551,18 +825,18 @@ impl MiningPool {
 
     /// Increment the accepted-share counter (for two-tier vardiff flow where
     /// share validation is done externally).
-    pub fn record_accepted_share(&mut self) {
-        self.accepted_shares += 1;
+    pub fn record_accepted_share(&self) {
+        self.accepted_shares.fetch_add(1, Ordering::Relaxed);
     }
 
     /// Increment the rejected-share counter.
-    pub fn record_rejected_share(&mut self) {
-        self.rejected_shares += 1;
+    pub fn record_rejected_share(&self) {
+        self.rejected_shares.fetch_add(1, Ordering::Relaxed);
     }
 
     /// Increment the stale-share counter.
-    pub fn record_stale_share(&mut self) {
-        self.stale_shares += 1;
+    pub fn record_stale_share(&self) {
+        self.stale_shares.fetch_add(1, Ordering::Relaxed);
     }
 }
 
@@ -949,6 +1223,9 @@ mod tests {
                 target_hex: "ff".repeat(32),
                 header_hex: "aa".repeat(80),
                 height: 10,
+                stream_weights: String::new(),
+                external_stream: None,
+                external_stream_cpu: None,
             },
             PoolMessage::Submit {
                 job_id: 42,
@@ -958,6 +1235,7 @@ mod tests {
                 hash_hex: "bb".repeat(32),
                 attempted_hashes: Some(100),
                 elapsed_ms: Some(250),
+                mix_hash_hex: None,
             },
             PoolMessage::NoSolution {
                 job_id: 42,
@@ -969,6 +1247,8 @@ mod tests {
             PoolMessage::Result {
                 accepted: true,
                 status: "Accepted".to_string(),
+                block_found: false,
+                block_height: None,
             },
             PoolMessage::Stale { job_id: 1 },
             PoolMessage::Cancel {

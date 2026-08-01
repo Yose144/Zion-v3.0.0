@@ -232,7 +232,7 @@ impl PlayerStore {
     /// Top players by XP
     pub fn top_by_xp(&self, limit: usize) -> Vec<&Player> {
         let mut sorted: Vec<&Player> = self.players.values().collect();
-        sorted.sort_by(|a, b| b.total_xp.cmp(&a.total_xp));
+        sorted.sort_by_key(|b| std::cmp::Reverse(b.total_xp));
         sorted.truncate(limit);
         sorted
     }

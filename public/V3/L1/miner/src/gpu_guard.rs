@@ -363,6 +363,10 @@ impl GpuTuning {
             }
         };
 
+        // Expose the chosen local work size to the kernel so it can use
+        // __attribute__((work_group_size_hint(LOCAL_SIZE, 1, 1))).
+        let build_opts = format!("{} -DLOCAL_SIZE={}", build_opts, local_ws);
+
         Self {
             work_size,
             local_ws,

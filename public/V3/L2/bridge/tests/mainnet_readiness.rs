@@ -1019,7 +1019,7 @@ fn test_parse_bridge_testnet_toml() {
         base.bridge_contract_address,
         "0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1"
     );
-    assert_eq!(cfg.l1.rpc_url, "http://127.0.0.1:8443");
+    assert_eq!(cfg.l1.rpc_url, "http://127.0.0.1:9443");
     assert_eq!(cfg.l1.finality_blocks, 60);
     assert!(cfg.ankr.enabled);
     assert!(cfg.security.auto_pause_on_anomaly);

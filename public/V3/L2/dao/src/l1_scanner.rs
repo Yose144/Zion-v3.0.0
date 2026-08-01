@@ -32,9 +32,13 @@ use tokio::sync::Mutex;
 use tokio::time::sleep;
 use tracing::{debug, info, warn};
 
+// Shared helpers from zion-l1-types (replaces previously duplicated copies).
+use zion_l1_types::{bytes_to_hex, normalize_rpc_addr, zion_address_from_public_key};
+
 use crate::db::DaoDb;
 use crate::error::{DaoError, DaoResult};
-use crate::types::{parse_dao_memo, DaoMemo};
+use crate::proposal::ProposalType;
+use crate::types::{parse_dao_memo, DaoMemo, VoteChoice};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // L1 RPC types (minimal — only what we need)
@@ -103,7 +107,7 @@ struct BalanceAtHeightInfo {
 
 #[derive(Debug, Clone)]
 pub struct ScannerConfig {
-    /// L1 RPC address, e.g. `127.0.0.1:8443`
+    /// L1 RPC address, e.g. `127.0.0.1:9443`
     pub rpc_url: String,
     /// Poll interval (how often to ask for new blocks)
     pub poll_interval: Duration,
@@ -116,7 +120,7 @@ pub struct ScannerConfig {
 impl Default for ScannerConfig {
     fn default() -> Self {
         Self {
-            rpc_url: "127.0.0.1:8443".to_string(),
+            rpc_url: "127.0.0.1:9443".to_string(),
             poll_interval: Duration::from_secs(30),
             min_vote_weight: 1_000_000, // 1 ZION in flowers (6-decimal)
             finality_blocks: 6,
@@ -271,7 +275,7 @@ impl L1Scanner {
             .inputs
             .first()
             .filter(|input| input.public_key.len() == 32)
-            .map(|input| zion_address_from_public_key(&input.public_key))
+            .map(|input| zion_address_from_public_key(&input.public_key).unwrap_or_default())
             .ok_or_else(|| {
                 DaoError::Internal("DAO memo tx missing valid sender public key".into())
             })?;
@@ -353,7 +357,7 @@ impl L1Scanner {
                         let db = self.db.lock().await;
 
                         let row = db.get_proposal(pid)?;
-                        match row {
+                        let (_is_active, proposal_type) = match row {
                             None => {
                                 debug!("[DAO-SCANNER] Proposal {} not found, ignoring vote", pid);
                                 continue;
@@ -365,7 +369,42 @@ impl L1Scanner {
                                 );
                                 continue;
                             }
-                            _ => {}
+                            Some(ref r) => {
+                                let pt: Option<ProposalType> =
+                                    serde_json::from_str(&r.proposal_type_json).ok();
+                                (true, pt)
+                            }
+                        };
+
+                        // Validate choice against proposal type
+                        let valid = match (&choice, &proposal_type) {
+                            (VoteChoice::Yes | VoteChoice::No | VoteChoice::Abstain, Some(ProposalType::ParliamentaryElection { .. })) => {
+                                debug!(
+                                    "[DAO-SCANNER] Invalid choice for election proposal {}: {:?}",
+                                    pid, choice
+                                );
+                                continue;
+                            }
+                            (VoteChoice::Candidate(ref party), Some(ProposalType::ParliamentaryElection { ref parties, .. })) => {
+                                parties.contains(party)
+                            }
+                            (VoteChoice::Candidate(_), _) => {
+                                debug!(
+                                    "[DAO-SCANNER] Candidate vote not allowed for non-election proposal {}",
+                                    pid
+                                );
+                                continue;
+                            }
+                            _ => true,
+                        };
+
+                        if !valid {
+                            debug!(
+                                "[DAO-SCANNER] Party '{}' not on ballot for proposal {}",
+                                match &choice { VoteChoice::Candidate(p) => p.as_str(), _ => "?" },
+                                pid
+                            );
+                            continue;
                         }
 
                         db.record_vote(pid, sender, choice, weight, Some(txid))?
@@ -475,49 +514,6 @@ impl L1Scanner {
             .await?;
         Ok(bal.balance_flowers)
     }
-}
-
-fn normalize_rpc_addr(raw: &str) -> String {
-    raw.trim()
-        .trim_start_matches("http://")
-        .trim_start_matches("https://")
-        .trim_start_matches("tcp://")
-        .split('/')
-        .next()
-        .unwrap_or(raw)
-        .to_string()
-}
-
-fn bytes_to_hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|byte| format!("{:02x}", byte)).collect()
-}
-
-fn zion_address_from_public_key(public_key: &[u8]) -> String {
-    use ripemd::Ripemd160;
-    use sha2::{Digest, Sha256};
-
-    const ALPHABET: &[u8; 32] = b"023456789acdefghjklmnpqrstuvwxyz";
-
-    let sha = Sha256::digest(public_key);
-    let key_hash = Ripemd160::digest(sha);
-
-    let mut body = String::with_capacity(40);
-    for &byte in key_hash.as_slice() {
-        body.push(ALPHABET[(byte % 32) as usize] as char);
-        body.push(ALPHABET[((byte / 32) % 32) as usize] as char);
-    }
-    body.truncate(35);
-
-    let mut hasher = Sha256::new();
-    hasher.update(b"zion1");
-    hasher.update(body.as_bytes());
-    let hash = hasher.finalize();
-    let mut checksum = String::with_capacity(4);
-    for &byte in &hash[..2] {
-        checksum.push(ALPHABET[(byte % 32) as usize] as char);
-        checksum.push(ALPHABET[((byte / 32) % 32) as usize] as char);
-    }
-    format!("zion1{body}{checksum}")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
