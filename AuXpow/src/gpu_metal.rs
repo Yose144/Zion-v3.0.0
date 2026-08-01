@@ -11,7 +11,7 @@
 //!   - kawpow / kawpow_rvn / kawpow_clore / kawpow_evr / kawpow_mewc
 //!   - zelhash / zelhash_flux
 
-#![cfg(feature = "gpu-metal")]
+#![cfg(all(feature = "gpu-metal", target_os = "macos"))]
 
 use anyhow::{anyhow, Context, Result};
 use metal::{Device, MTLResourceOptions, MTLSize};

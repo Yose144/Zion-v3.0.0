@@ -60,8 +60,10 @@ native-all = [
 native-hashers = ["zion-auxpow/native-hashers"]
 
 # Full build: every GPU backend + every native algorithm.
+# Use this for maximum compatibility — CUDA (NVIDIA), Metal (Apple Silicon),
+# OpenCL (AMD/Intel/everything else), and all native CPU algorithms.
 full = [
-    "gpu-opencl",
+    "gpu-all",
     "native-all",
     "native-hashers",
 ]

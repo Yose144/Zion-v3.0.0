@@ -42,12 +42,15 @@ ethereum-types = "0.8"
 ocl = { version = "0.19", optional = true }
 # NVIDIA CUDA GPU acceleration (requires CUDA toolkit)
 cudarc = { version = "0.12", optional = true, features = ["cuda-12040", "driver", "nvrtc"] }
-# Apple Metal GPU acceleration (macOS only)
+# Real VerusHash v2.2 C++ (Haraka+CLHash from VerusCoin upstream)
+zion-native-ffi = { path = "../V3/L1/native-ffi", optional = true }
+
+# Apple Metal GPU acceleration (macOS only — target-gated so gpu-metal
+# is a no-op on Linux/Windows, allowing gpu-all/full to be used everywhere)
+[target.'cfg(target_os = "macos")'.dependencies]
 metal = { version = "0.33", optional = true }
 objc = { version = "0.2", optional = true }
 block = { version = "0.1", optional = true }
-# Real VerusHash v2.2 C++ (Haraka+CLHash from VerusCoin upstream)
-zion-native-ffi = { path = "../V3/L1/native-ffi", optional = true }
 
 [dev-dependencies]
 tempfile = "3"

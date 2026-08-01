@@ -3192,7 +3192,7 @@ fn run_remote_session(
                 println!("wire_result={result_line_raw}");
             }
             match result_message {
-                PoolMessage::Result { accepted, status } => {
+                PoolMessage::Result { accepted, status, .. } => {
                     if accepted {
                         accepted_iterations += 1;
                     }
@@ -3324,7 +3324,7 @@ fn run_remote_session(
         last_result_line = Some(result_line_raw.clone());
 
         let status = match result_message {
-            PoolMessage::Result { accepted, status } => {
+            PoolMessage::Result { accepted, status, .. } => {
                 let latency_ms = submit_started_at.elapsed().as_millis();
                 if accepted {
                     accepted_iterations += 1;

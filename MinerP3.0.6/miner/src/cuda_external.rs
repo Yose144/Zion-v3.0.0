@@ -52,15 +52,15 @@ const SENTINEL_NONCE: u64 = 0xFFFF_FFFF_FFFF_FFFF;
 const SENTINEL_FOUND: u32 = 0;
 
 // Kernel sources — included at compile time from AuXpow/csrc/cuda/
-const KHEAVYHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/kheavyhash_kernel.cu");
-const BLAKE3_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/blake3_kernel.cu");
-const AUTOLYKOS_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/autolykos_kernel.cu");
-const ZELHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/zelhash_kernel.cu");
-const ETHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/ethash_kernel.cu");
-const KAWPOW_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/kawpow_kernel.cu");
-const PROGPOW_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/progpow_kernel.cu");
-const ETHASH_DAG_GEN_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/ethash_dag_gen.cu");
-const VERUSHASH_CU: &str = include_str!("../../../../AuXpow/csrc/cuda/verushash_kernel.cu");
+const KHEAVYHASH_CU: &str = include_str!("../../../AuXpow/csrc/cuda/kheavyhash_kernel.cu");
+const BLAKE3_CU: &str = include_str!("../../../AuXpow/csrc/cuda/blake3_kernel.cu");
+const AUTOLYKOS_CU: &str = include_str!("../../../AuXpow/csrc/cuda/autolykos_kernel.cu");
+const ZELHASH_CU: &str = include_str!("../../../AuXpow/csrc/cuda/zelhash_kernel.cu");
+const ETHASH_CU: &str = include_str!("../../../AuXpow/csrc/cuda/ethash_kernel.cu");
+const KAWPOW_CU: &str = include_str!("../../../AuXpow/csrc/cuda/kawpow_kernel.cu");
+const PROGPOW_CU: &str = include_str!("../../../AuXpow/csrc/cuda/progpow_kernel.cu");
+const ETHASH_DAG_GEN_CU: &str = include_str!("../../../AuXpow/csrc/cuda/ethash_dag_gen.cu");
+const VERUSHASH_CU: &str = include_str!("../../../AuXpow/csrc/cuda/verushash_kernel.cu");
 
 /// Preprocess kernel source: strip #pragma once and #include lines,
 /// prepend standard typedefs, fix NVRTC-incompatible constructs.
