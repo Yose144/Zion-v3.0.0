@@ -1,16 +1,18 @@
 name: ZION Public Desktop Miner — Multi-OS Release
 
-# Builds the public desktop miner for Linux, Windows and macOS, then creates a
-# release on the public repository: https://github.com/Zion-TerraNova/v3-Mainnet
+# Builds the public desktop miner for Linux, Windows and macOS, then uploads
+# the artifacts to the public repository:
+#   https://github.com/Zion-TerraNova/v3-Mainnet
 #
 # Required repository secret:
-#   PUBLIC_RELEASE_TOKEN  -- GitHub PAT with 'repo' (or 'public_repo') scope,
+#   PUBLIC_RELEASE_TOKEN  -- GitHub PAT with 'repo' or 'public_repo' scope,
 #                            used to upload assets to the public repo.
 #
 # Usage:
 #   1. Set PUBLIC_RELEASE_TOKEN in repository secrets.
-#   2. Run this workflow manually and enter the desired release tag.
-#   3. Review the draft release on Zion-TerraNova/v3-Mainnet and publish it.
+#   2. Run the workflow manually and choose which platforms to build.
+#   3. If a release with the same tag already exists on the public repo, the
+#      new assets are uploaded with --clobber and the release notes are updated.
 
 on:
   workflow_dispatch:
@@ -20,7 +22,22 @@ on:
         required: true
         type: string
       draft:
-        description: 'Create as draft release (recommended)'
+        description: 'Create as draft release (only used when creating a new release)'
+        required: false
+        default: true
+        type: boolean
+      build_linux:
+        description: 'Build Linux packages (already built for v3.0.6)'
+        required: false
+        default: false
+        type: boolean
+      build_windows:
+        description: 'Build Windows packages'
+        required: false
+        default: true
+        type: boolean
+      build_macos:
+        description: 'Build macOS packages'
         required: false
         default: true
         type: boolean
@@ -40,7 +57,10 @@ defaults:
 jobs:
   build-linux:
     name: Build Linux (AppImage + DEB)
+    if: github.event_name == 'push' || inputs.build_linux == true
     runs-on: ubuntu-latest
+    env:
+      ZION_FORCE_CUDA: 1
     steps:
       - uses: actions/checkout@v6
 
@@ -61,7 +81,9 @@ jobs:
         run: npm ci
 
       - name: Build Linux packages
-        run: npm run build:linux
+        run: |
+          node scripts/prepare-rust-miner.js --auto
+          npx electron-builder --linux --x64
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -72,7 +94,10 @@ jobs:
 
   build-windows:
     name: Build Windows (NSIS + ZIP)
+    if: github.event_name == 'push' || inputs.build_windows == true
     runs-on: windows-latest
+    env:
+      ZION_FORCE_CUDA: 1
     steps:
       - uses: actions/checkout@v6
 
@@ -95,13 +120,23 @@ jobs:
 
       - name: Install NSIS
         shell: pwsh
-        run: choco install nsis -y
+        run: |
+          choco install nsis -y
+          $nsisPath = "C:\Program Files (x86)\NSIS"
+          if (Test-Path $nsisPath) {
+            echo "$nsisPath" >> ${env:GITHUB_PATH}
+          }
 
       - name: Install Node dependencies
         run: npm ci
 
       - name: Build Windows packages
-        run: npm run build:win
+        env:
+          LIB: ${{ env.LIB }}
+          INCLUDE: ${{ env.INCLUDE }}
+        run: |
+          node scripts/prepare-rust-miner.js --features "full,gpu-cuda"
+          npx electron-builder --win nsis --x64
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -112,6 +147,7 @@ jobs:
 
   build-macos:
     name: Build macOS (DMG)
+    if: github.event_name == 'push' || inputs.build_macos == true
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
@@ -128,7 +164,9 @@ jobs:
         run: npm ci
 
       - name: Build macOS package
-        run: npm run build:mac
+        run: |
+          node scripts/prepare-rust-miner.js --features "full,gpu-metal"
+          npx electron-builder --mac
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -138,8 +176,9 @@ jobs:
           if-no-files-found: error
 
   release:
-    name: Create public release
+    name: Create or update public release
     needs: [build-linux, build-windows, build-macos]
+    if: always() && !cancelled() && (needs.build-linux.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -175,10 +214,19 @@ jobs:
           GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
           DRAFT_FLAG: ${{ inputs.draft == true && '--draft' || '' }}
+          NOTES_FILE: ${{ github.workspace }}/DesktopAgentP3.0.6/RELEASE_NOTES.md
         run: |
-          gh release create "${RELEASE_TAG}" \
-            --repo "${PUBLIC_REPO}" \
-            --title "ZION Public Desktop Miner v3.0.6" \
-            --notes-file "${GITHUB_WORKSPACE}/DesktopAgentP3.0.6/RELEASE_NOTES.md" \
-            ${DRAFT_FLAG} \
-            ./*
+          set -e
+          if gh release view "${RELEASE_TAG}" --repo "${PUBLIC_REPO}" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} already exists. Uploading assets with --clobber."
+            gh release upload --repo "${PUBLIC_REPO}" "${RELEASE_TAG}" ./* --clobber
+            gh release edit --repo "${PUBLIC_REPO}" "${RELEASE_TAG}" --notes-file "${NOTES_FILE}"
+          else
+            echo "Creating new release ${RELEASE_TAG}."
+            gh release create "${RELEASE_TAG}" \
+              --repo "${PUBLIC_REPO}" \
+              --title "ZION Public Desktop Miner v3.0.6" \
+              --notes-file "${NOTES_FILE}" \
+              ${DRAFT_FLAG} \
+              ./*
+          fi
