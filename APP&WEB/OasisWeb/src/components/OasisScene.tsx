@@ -12,6 +12,7 @@ import GalaxyCore from './GalaxyCore';
 import GalaxyMap from './GalaxyMap';
 import WorldEnvironment from './WorldEnvironment';
 import SelectionBeacon from './SelectionBeacon';
+import FlightControls from './FlightControls';
 import Nebula from './Nebula';
 
 interface CameraRigProps {
@@ -19,6 +20,7 @@ interface CameraRigProps {
   onArrived?: () => void;
   view: 'galaxy' | 'world';
   focusTarget?: { x: number; y: number; z: number } | null;
+  disabled?: boolean;
 }
 
 const GALAXY_HOME = { position: new THREE.Vector3(0, 0.9, 7.5), lookAt: new THREE.Vector3(0, 0.6, 0), fov: 55 };
@@ -41,7 +43,7 @@ function computeFocusPlan(focusTarget: { x: number; y: number; z: number }) {
   return { position, lookAt: target };
 }
 
-function CameraRig({ started, onArrived, view, focusTarget }: CameraRigProps) {
+function CameraRig({ started, onArrived, view, focusTarget, disabled = false }: CameraRigProps) {
   const { camera } = useThree();
   const cam = camera as THREE.PerspectiveCamera;
   const controlsRef = useRef<ReturnType<typeof OrbitControls> | null>(null);
@@ -67,7 +69,7 @@ function CameraRig({ started, onArrived, view, focusTarget }: CameraRigProps) {
   };
 
   useEffect(() => {
-    if (!started) return;
+    if (!started || disabled) return;
     const key = planKey(view, focusTarget);
     if (key === currentPlan.current) return;
     currentPlan.current = key;
@@ -80,9 +82,11 @@ function CameraRig({ started, onArrived, view, focusTarget }: CameraRigProps) {
     } else {
       startFlight(GALAXY_HOME.position, GALAXY_HOME.lookAt, GALAXY_HOME.fov);
     }
-  }, [started, view, focusTarget, cam.position]);
+  }, [started, view, focusTarget, disabled]);
 
   useFrame((_, delta) => {
+    if (disabled) return;
+
     if (isFlying.current) {
       flightProgress.current = Math.min(1, flightProgress.current + delta * 0.32);
       const t = 1 - Math.pow(1 - flightProgress.current, 3);
@@ -144,6 +148,8 @@ interface OasisSceneProps {
   selectedWorld: World | null;
   onWorldSelect: (world: World) => void;
   view: 'galaxy' | 'world';
+  flightMode: boolean;
+  onExitFlight: () => void;
 }
 
 export default function OasisScene({
@@ -153,6 +159,8 @@ export default function OasisScene({
   selectedWorld,
   onWorldSelect,
   view,
+  flightMode,
+  onExitFlight,
 }: OasisSceneProps) {
   return (
     <Canvas camera={{ position: [0, 3.5, 34], fov: 55 }} dpr={[1, 2]}>
@@ -201,7 +209,11 @@ export default function OasisScene({
         onArrived={onArrived}
         view={view}
         focusTarget={selectedWorld?.galaxyPosition ?? null}
+        disabled={flightMode}
       />
+
+      {/* First-person flight controls */}
+      {flightMode && <FlightControls enabled={flightMode} onExit={onExitFlight} />}
 
       {/* Bloom for glow */}
       <EffectComposer>

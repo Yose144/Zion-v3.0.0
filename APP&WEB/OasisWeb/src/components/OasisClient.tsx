@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import WarpFlash from './WarpFlash';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Plane, X } from 'lucide-react';
 import { useAudio, AudioToggle } from './AudioEngine';
 import type { World, WorldCategory } from '../domain/types/world';
 
@@ -32,11 +32,23 @@ export default function OasisClient() {
   const [selectedWorld, setSelectedWorld] = useState<World | null>(null);
   const [view, setView] = useState<'galaxy' | 'world'>('galaxy');
   const [warping, setWarping] = useState(false);
+  const [flightMode, setFlightMode] = useState(false);
   const { muted, toggle, start, playWarp } = useAudio();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (phase === 'intro') return;
+      if (e.key.toLowerCase() === 'f' && !flightMode && view === 'galaxy') {
+        setFlightMode(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [phase, flightMode, view]);
 
   if (!mounted) {
     return (
@@ -60,6 +72,7 @@ export default function OasisClient() {
   };
 
   const handleWorldSelect = (world: World) => {
+    if (flightMode) setFlightMode(false);
     setSelectedWorld(world);
     setView('galaxy');
   };
@@ -79,6 +92,10 @@ export default function OasisClient() {
     }
   };
 
+  const handleExitFlight = () => {
+    setFlightMode(false);
+  };
+
   return (
     <>
       <div className="relative h-full w-full">
@@ -89,11 +106,13 @@ export default function OasisClient() {
           selectedWorld={selectedWorld}
           onWorldSelect={handleWorldSelect}
           view={view}
+          flightMode={flightMode}
+          onExitFlight={handleExitFlight}
         />
-        {phase !== 'intro' && view === 'galaxy' && <OasisHud />}
+        {phase !== 'intro' && view === 'galaxy' && !flightMode && <OasisHud />}
 
         <AnimatePresence>
-          {phase !== 'intro' && view === 'galaxy' && (
+          {phase !== 'intro' && view === 'galaxy' && !flightMode && (
             <motion.div
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -105,23 +124,34 @@ export default function OasisClient() {
                 ZION OASIS
               </h1>
               <p className="mt-2 text-sm leading-relaxed text-gray-300">
-                55 worlds across one living galaxy. Click any world to focus, open the detail panel, and enter its 3D space.
+                55 worlds across one living galaxy. Click any world to focus, or press <kbd className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px]">F</kbd> for free flight.
               </p>
               {selectedWorld && (
                 <p className="mt-2 text-xs font-medium" style={{ color: CATEGORY_COLORS[selectedWorld.category] }}>
                   Selected: {selectedWorld.name}
                 </p>
               )}
-              <Link href="/dashboard">
-                <motion.div
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <Link href="/dashboard">
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-6 py-2.5 text-sm font-bold text-white shadow-lg"
+                  >
+                    Enter the Game
+                    <ChevronRight className="h-4 w-4" />
+                  </motion.div>
+                </Link>
+                <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
-                  className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-6 py-2.5 text-sm font-bold text-white shadow-lg"
+                  onClick={() => setFlightMode(true)}
+                  className="inline-flex items-center gap-2 rounded-full border border-oasis-cyan/30 bg-oasis-cyan/10 px-4 py-2.5 text-sm font-bold text-oasis-cyan shadow-lg backdrop-blur-sm transition hover:bg-oasis-cyan/20"
                 >
-                  Enter the Game
-                  <ChevronRight className="h-4 w-4" />
-                </motion.div>
-              </Link>
+                  <Plane className="h-4 w-4" />
+                  Flight Mode
+                </motion.button>
+              </div>
               <p className="mt-3 text-xs text-gray-500">
                 Play as a pilgrim, claim territories, join a guild, and decode 108 sacred clues.
               </p>
@@ -130,13 +160,13 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {phase !== 'intro' && view === 'galaxy' && (
+          {phase !== 'intro' && view === 'galaxy' && !flightMode && (
             <WorldFilter active={activeCategories} onChange={setActiveCategories} />
           )}
         </AnimatePresence>
 
         <AnimatePresence>
-          {selectedWorld && view === 'galaxy' && (
+          {selectedWorld && view === 'galaxy' && !flightMode && (
             <WorldPanel
               world={selectedWorld}
               onClose={handleCloseWorld}
@@ -146,7 +176,7 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {phase !== 'intro' && (
+          {phase !== 'intro' && !flightMode && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -160,7 +190,7 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {view === 'world' && (
+          {view === 'world' && !flightMode && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -177,6 +207,43 @@ export default function OasisClient() {
                 Return to Galaxy
                 <ChevronRight className="h-4 w-4 rotate-180 transition-transform group-hover:-translate-x-1" />
               </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {flightMode && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="pointer-events-none fixed inset-0 z-40"
+            >
+              {/* Crosshair */}
+              <div className="absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2">
+                <div className="h-4 w-4 rounded-full border border-white/40" />
+                <div className="absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/60" />
+              </div>
+
+              {/* Flight HUD */}
+              <div className="pointer-events-auto absolute right-5 top-5 z-50 flex flex-col items-end gap-2">
+                <div className="rounded-xl border border-oasis-cyan/30 bg-black/70 p-3 text-right shadow-xl backdrop-blur-md">
+                  <p className="text-[10px] uppercase tracking-wider text-oasis-cyan">Flight Mode</p>
+                  <p className="mt-1 text-xs text-gray-300">WASD / Arrows — move</p>
+                  <p className="text-xs text-gray-300">Q / E — up / down</p>
+                  <p className="text-xs text-gray-300">Space — boost</p>
+                  <p className="text-xs text-gray-300">Shift — slow</p>
+                  <p className="text-xs text-gray-300">Mouse — look</p>
+                  <p className="text-xs text-gray-300">ESC or F — exit</p>
+                </div>
+                <button
+                  onClick={handleExitFlight}
+                  className="flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-4 py-2 text-xs font-bold text-white backdrop-blur-md transition hover:bg-white/10"
+                >
+                  <X className="h-3 w-3" />
+                  Exit Flight
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

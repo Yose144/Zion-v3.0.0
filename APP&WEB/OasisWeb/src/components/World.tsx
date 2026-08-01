@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useLayoutEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -31,7 +31,16 @@ export default function World({
   onSelect,
 }: WorldNodeProps) {
   const groupRef = useRef<THREE.Group>(null);
+  const gateRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
+
+  const isStarSystem = category === 'star-system';
+
+  useLayoutEffect(() => {
+    if (gateRef.current) {
+      gateRef.current.lookAt(0, 0.4, 0);
+    }
+  }, []);
 
   const selected = isSelected;
 
@@ -95,6 +104,21 @@ export default function World({
         <ringGeometry args={[size * 1.7, size * 1.76, 64]} />
         <meshBasicMaterial color={color} transparent opacity={hovered || selected ? 0.7 : 0.32} side={THREE.DoubleSide} />
       </mesh>
+
+      {/* Warp gate ring (star systems + selected) */}
+      {(isStarSystem || selected) && (
+        <mesh ref={gateRef}>
+          <torusGeometry args={[size * (isStarSystem ? 2.4 : 2.0), size * 0.07, 10, 48]} />
+          <meshBasicMaterial
+            color={color}
+            transparent
+            opacity={hovered || selected ? 0.55 : 0.25}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
 
       {/* Permanent small label for star systems / selected */}
       {(showLabel || selected) && (
