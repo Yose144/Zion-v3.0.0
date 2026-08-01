@@ -125,12 +125,14 @@ class E2EMiningTest {
     const statsFile = path.join(os.tmpdir(), `zion-e2e-stats-${Date.now()}.json`);
     const [poolHost, poolPort] = this.pool.split(':');
 
+    const cpuThreads = Math.max(1, os.cpus().length - 1);
+    const gpuBackend = 'auto'; // let the compiled miner pick CUDA / OpenCL / CPU
     const args = [
       '--pool', this.pool,
       '--wallet', wallet,
       '--worker', this.worker,
-      '--threads', '2',
-      '--gpu', 'opencl',
+      '--threads', String(cpuThreads),
+      '--gpu', gpuBackend,
       '--algorithm', 'cosmic_harmony_ekam_deeksha_v2',
       '--cpu-coin', this.cpuCoin,
       '--gpu-coin', this.gpuCoin,
