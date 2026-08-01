@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db';
 import { Prisma } from '@prisma/client';
 import QRCode from 'qrcode';
 import type { ShopOrderInput } from '@/types/shop';
+import { sendAdminOrderNotification, sendCustomerOrderConfirmation } from '@/lib/email';
+import { createInvoiceForOrder } from '@/lib/invoice';
 
 const BANK_ACCOUNT = 'CZ680600000000259251079';
 const BANK_BIC = 'AGBACZPP';
@@ -54,10 +56,58 @@ export async function POST(req: NextRequest) {
     const qrSvg = await QRCode.toString(qrData, { type: 'svg', margin: 2, width: 280 });
     const qrCode = `data:image/svg+xml;base64,${Buffer.from(qrSvg).toString('base64')}`;
 
+    const invoiceResult = await createInvoiceForOrder({
+      orderId: order.orderId,
+      orderDatabaseId: order.id,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      customerAddress: body.customer.address
+        ? {
+            street: body.customer.address.street,
+            city: body.customer.address.city,
+            zip: body.customer.address.zip,
+          }
+        : null,
+      payment: order.payment,
+      totalCzk: order.totalCzk,
+      shippingCzk: order.shippingCzk,
+      items: order.items,
+    }).catch((err) => {
+      console.error('Invoice auto-generation failed:', err);
+      return null;
+    });
+
+    const emailData = {
+      orderId: order.orderId,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      shipping: order.shipping,
+      payment: order.payment,
+      totalCzk: order.totalCzk,
+      shippingCzk: order.shippingCzk,
+      items: order.items,
+      addressStreet: order.addressStreet,
+      addressCity: order.addressCity,
+      addressZip: order.addressZip,
+      pickupPoint: order.pickupPoint,
+      note: order.note,
+      zionTokens: order.zionTokens,
+      trackingNumber: order.trackingNumber,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+    };
+
+    // Send notifications in background; don't block the response
+    sendAdminOrderNotification(emailData).catch(console.error);
+    sendCustomerOrderConfirmation(emailData).catch(console.error);
+
     return NextResponse.json({
       success: true,
       data: {
         order,
+        invoice: invoiceResult?.invoice ?? null,
         bank: {
           account: '259251079/0600',
           iban: 'CZ68 0600 0000 0002 5925 1079',

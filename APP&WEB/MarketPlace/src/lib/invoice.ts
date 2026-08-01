@@ -214,3 +214,80 @@ function escapeHtml(input: string | null | undefined): string {
 function formatDate(d: Date): string {
   return d.toLocaleDateString('cs-CZ');
 }
+
+interface CreateInvoiceInput {
+  orderId: string;
+  orderDatabaseId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  customerAddress?: { street?: string; city?: string; zip?: string } | null;
+  payment: string;
+  totalCzk: number;
+  shippingCzk: number;
+  items: unknown;
+  stripeSession?: string | null;
+  dueDays?: number;
+}
+
+export async function createInvoiceForOrder(input: CreateInvoiceInput) {
+  const dueDays = Math.max(1, input.dueDays ?? 14);
+  const issueDate = new Date();
+  const dueDate = new Date(issueDate);
+  dueDate.setDate(dueDate.getDate() + dueDays);
+
+  const invoiceNumber = await generateInvoiceNumber(issueDate);
+  const vs = input.orderId.replace(/\D/g, '').slice(0, 10);
+  const qrData = `SPD*1.0*ACC:${COMPANY.bankAccount}*AM:${input.totalCzk}.00*CC:CZK*MSG:Objednavka ${input.orderId}*X-VS:${vs}`;
+  const qrSvg = await import('qrcode').then((QRCode) =>
+    QRCode.toString(qrData, { type: 'svg', margin: 2, width: 280 })
+  );
+  const qrCodeData = `data:image/svg+xml;base64,${Buffer.from(qrSvg).toString('base64')}`;
+
+  const rawItems = Array.isArray(input.items) ? input.items : [];
+  const typedItems = rawItems.map((it) => ({
+    name: String((it as Record<string, unknown>).name ?? 'Produkt'),
+    quantity: Math.max(1, Math.round((it as Record<string, unknown>).quantity as number) || 1),
+    priceCzk: Math.round((it as Record<string, unknown>).priceCzk as number) || 0,
+  }));
+
+  const html = buildInvoiceHtml({
+    invoiceNumber,
+    orderId: input.orderId,
+    issueDate,
+    dueDate,
+    customerName: input.customerName,
+    customerAddress: input.customerAddress,
+    customerEmail: input.customerEmail,
+    customerPhone: input.customerPhone,
+    paymentMethod: input.payment,
+    totalCzk: input.totalCzk,
+    shippingCzk: input.shippingCzk,
+    items: typedItems,
+    bankAccount: '259251079/0600',
+    variableSymbol: vs,
+    qrCodeData,
+  });
+
+  // Deactivate any previous draft invoices for this order
+  await prisma.invoice.updateMany({
+    where: { orderId: input.orderDatabaseId, status: 'draft' },
+    data: { status: 'cancelled' },
+  });
+
+  const invoice = await prisma.invoice.create({
+    data: {
+      invoiceNumber,
+      orderId: input.orderDatabaseId,
+      status: 'issued',
+      totalCzk: input.totalCzk,
+      vatCzk: Math.round(input.totalCzk - input.totalCzk / 1.21),
+      dueDate,
+      issuedAt: issueDate,
+      html,
+      stripeSession: input.stripeSession ?? null,
+    },
+  });
+
+  return { invoice, html, invoiceNumber };
+}

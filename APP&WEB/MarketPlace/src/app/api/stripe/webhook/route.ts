@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from '@/lib/db';
+import { sendPaymentConfirmation } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,6 +54,30 @@ export async function POST(request: NextRequest) {
             where: { order: { orderId } },
             data: { status: 'paid', paidAt: now },
           });
+
+          const order = await prisma.shopOrder.findFirst({ where: { orderId } });
+          if (order) {
+            sendPaymentConfirmation({
+              orderId: order.orderId,
+              customerName: order.customerName,
+              customerEmail: order.customerEmail,
+              customerPhone: order.customerPhone,
+              shipping: order.shipping,
+              payment: order.payment,
+              totalCzk: order.totalCzk,
+              shippingCzk: order.shippingCzk,
+              items: order.items,
+              addressStreet: order.addressStreet,
+              addressCity: order.addressCity,
+              addressZip: order.addressZip,
+              pickupPoint: order.pickupPoint,
+              note: order.note,
+              zionTokens: order.zionTokens,
+              trackingNumber: order.trackingNumber,
+              status: order.status,
+              paymentStatus: 'paid',
+            }).catch(console.error);
+          }
         }
         break;
       }

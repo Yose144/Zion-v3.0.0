@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { sendShippingNotification } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +52,29 @@ export async function POST(request: NextRequest, context: RouteContext) {
       where: { OR: [{ id }, { orderId: id }] },
       include: { invoices: true },
     });
+
+    if (updated && body.trackingNumber) {
+      sendShippingNotification({
+        orderId: updated.orderId,
+        customerName: updated.customerName,
+        customerEmail: updated.customerEmail,
+        customerPhone: updated.customerPhone,
+        shipping: updated.shipping,
+        payment: updated.payment,
+        totalCzk: updated.totalCzk,
+        shippingCzk: updated.shippingCzk,
+        items: updated.items,
+        addressStreet: updated.addressStreet,
+        addressCity: updated.addressCity,
+        addressZip: updated.addressZip,
+        pickupPoint: updated.pickupPoint,
+        note: updated.note,
+        zionTokens: updated.zionTokens,
+        trackingNumber: updated.trackingNumber,
+        status: updated.status,
+        paymentStatus: updated.paymentStatus,
+      }).catch(console.error);
+    }
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {

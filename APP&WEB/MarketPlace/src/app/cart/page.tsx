@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ShoppingCart, Trash2, Minus, Plus, Truck, User, CreditCard, Check, AlertTriangle, X } from 'lucide-react';
 import { useCart } from '@/components/shop/CartContext';
 import { SHIPPING_PRICES, type ShippingMethod } from '@/types/shop';
-import { isVirtualOnlyCart, createShopOrder } from '@/lib/shop-api';
+import { isVirtualOnlyCart, createShopOrder, createStripeCheckoutSession } from '@/lib/shop-api';
 
 const shippingOptions: { value: ShippingMethod; label: string; desc: string; price: number }[] = [
   { value: 'zasilkovna', label: 'Zásilkovna', desc: 'Výdejní místo', price: SHIPPING_PRICES.zasilkovna },
@@ -97,6 +97,14 @@ export default function CartPage() {
       });
       if (payment === 'transfer') {
         setShowQr(true);
+      } else if (payment === 'card') {
+        const stripeResult = await createStripeCheckoutSession(orderId, form.email.trim());
+        if (stripeResult?.success && stripeResult.data?.url) {
+          clear();
+          window.location.href = stripeResult.data.url;
+          return;
+        }
+        alert(stripeResult?.error || 'Chyba při vytváření Stripe platby');
       } else {
         clear();
         router.push(`/order-success?order=${encodeURIComponent(orderId)}`);
@@ -330,11 +338,20 @@ export default function CartPage() {
                   <div className="text-xs text-gray-500">QR platba nebo klasický převod</div>
                 </div>
               </label>
-              <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all opacity-60 cursor-not-allowed`}>
-                <input type="radio" disabled className="accent-oasis-rose" />
+              <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                payment === 'card' ? 'border-oasis-rose bg-oasis-rose/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
+              }`}>
+                <input
+                  type="radio"
+                  name="payment"
+                  value="card"
+                  checked={payment === 'card'}
+                  onChange={() => setPayment('card')}
+                  className="accent-oasis-rose"
+                />
                 <div className="flex-1">
                   <div className="font-bold text-sm">Platební karta</div>
-                  <div className="text-xs text-gray-500">Coming soon (Stripe)</div>
+                  <div className="text-xs text-gray-500">Rychlá platba přes Stripe</div>
                 </div>
               </label>
             </div>
