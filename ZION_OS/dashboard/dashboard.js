@@ -41,7 +41,7 @@
   };
 })();
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','pool-miners','pool-blocks','pool-setup','pool-debug','revenue','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','pool-miners','pool-blocks','pool-setup','pool-debug','revenue','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab','marketplace'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events

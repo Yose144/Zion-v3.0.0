@@ -871,6 +871,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <button onclick="switchTab('wizard')" id="tab-wizard" class="zion-quick-link zql-ai"><i class="fas fa-wand-magic-sparkles"></i> Wizard</button>
       <button onclick="switchTab('agent')" id="tab-agent" class="zion-quick-link zql-ai"><i class="fas fa-user-astronaut"></i> Agent</button>
       <a href="/v31/" id="tab-v31" class="zion-quick-link zql-network" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;"><i class="fas fa-rocket"></i> V31</a>
+      <button onclick="switchTab('marketplace')" id="tab-marketplace" class="zion-quick-link zql-ops"><i class="fas fa-shopping-bag"></i> Marketplace</button>
     </div>
   </nav>
 
@@ -7723,6 +7724,22 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     </div>
   </div>
 
+  <!-- ═════════ TAB: Marketplace ═════════ -->
+  <div id="pane-marketplace" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🛒 Marketplace Admin</h1>
+        <p class="text-xs text-gray-400 mt-1">Objednávky, faktury, shipping a Stripe platby</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="window.open('/marketplace/','_blank')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs transition">↗ Otevřít na celou obrazovku</button>
+      </div>
+    </div>
+    <div class="zion-panel p-0 overflow-hidden" style="min-height:70vh;">
+      <iframe id="marketplace-iframe" src="/marketplace/" class="w-full" style="min-height:70vh;border:none;" title="Marketplace Admin"></iframe>
+    </div>
+  </div>
+
   </main>
   </div>
 
@@ -7790,6 +7807,7 @@ const STREAM_COIN_TICKERS = [
     'pane-warp':              {rc:'147 51 234',  icon:'🌀', label:'WARP',             sub:'L3 WARP relay'},
     'pane-ai-agents':         {rc:'217 70 239',  icon:'🤖', label:'AI Agents',        sub:'AI agent management'},
     'pane-ncl-jobs':          {rc:'147 51 234',  icon:'📋', label:'NCL Jobs',         sub:'NCL compute jobs'},
+    'pane-marketplace':       {rc:'255 215 0',   icon:'🛒', label:'Marketplace',      sub:'Orders · invoices · shipping · Stripe'},
   };
 
   function applyPaneAccent(paneEl){
