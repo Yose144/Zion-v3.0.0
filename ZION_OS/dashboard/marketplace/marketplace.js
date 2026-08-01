@@ -8,6 +8,7 @@
   };
 
   let state = {
+    view: 'orders',
     page: 1,
     limit: 25,
     filterStatus: '',
@@ -73,6 +74,38 @@
     }
   }
 
+  function defaultFiltersForView(view) {
+    switch (view) {
+      case 'shipping':
+        return { status: '', paymentStatus: '', search: '' };
+      case 'stripe':
+        return { status: '', paymentStatus: '', search: '' };
+      case 'invoices':
+        return { status: '', paymentStatus: '', search: '' };
+      default:
+        return { status: '', paymentStatus: '', search: '' };
+    }
+  }
+
+  function setView(view) {
+    state.view = view;
+    const defaults = defaultFiltersForView(view);
+    state.filterStatus = defaults.status;
+    state.filterPayment = defaults.paymentStatus;
+    state.search = defaults.search;
+    state.page = 1;
+
+    document.querySelectorAll('#tabs .tab').forEach((t) => {
+      t.classList.toggle('active', t.dataset.tab === view);
+    });
+
+    byId('filter-status').value = state.filterStatus;
+    byId('filter-payment').value = state.filterPayment;
+    byId('filter-search').value = state.search;
+
+    loadOrders();
+  }
+
   function loadOrders() {
     const params = new URLSearchParams();
     params.set('page', String(state.page));
@@ -88,12 +121,27 @@
     });
   }
 
+  function orderMatchesView(o) {
+    if (state.view === 'shipping') {
+      return ['paid', 'processing', 'shipped', 'completed'].includes(o.status);
+    }
+    if (state.view === 'stripe') {
+      return o.payment === 'card' || o.payment === 'stripe';
+    }
+    if (state.view === 'invoices') {
+      return true;
+    }
+    return true;
+  }
+
   function renderOrders() {
     const tbody = byId('orders-body');
-    if (!state.orders.length) {
+    const filtered = state.orders.filter(orderMatchesView);
+
+    if (!filtered.length) {
       tbody.innerHTML = '<tr><td colspan="7" class="text-gray-500">Žádné objednávky</td></tr>';
     } else {
-      tbody.innerHTML = state.orders.map((o) => `
+      tbody.innerHTML = filtered.map((o) => `
         <tr data-id="${o.id}">
           <td><div class="font-semibold">${o.orderId}</div><div class="text-xs text-gray-500">${o.payment || '—'}</div></td>
           <td><div class="font-semibold">${o.customerName}</div><div class="text-xs text-gray-500">${o.customerEmail}</div></td>
@@ -109,7 +157,8 @@
     }
 
     const pages = Math.ceil(state.total / state.limit) || 1;
-    byId('orders-meta').textContent = `Strana ${state.page} / ${pages} · Celkem ${state.total} objednávek`;
+    const label = state.view === 'invoices' ? 'faktur' : state.view === 'shipping' ? 'zasilek' : state.view === 'stripe' ? 'plateb' : 'objednavek';
+    byId('orders-meta').textContent = `Strana ${state.page} / ${pages} · Celkem ${state.total} ${label}`;
     byId('btn-prev').disabled = state.page <= 1;
     byId('btn-next').disabled = state.page >= pages;
 
@@ -120,7 +169,7 @@
 
   async function openDetail(id) {
     clearError();
-    const modal = byId('modal-detail');n
+    const modal = byId('modal-detail');
     byId('detail-content').innerHTML = '<p class="text-gray-400">Načítání…</p>';
     modal.classList.remove('hidden');
 
@@ -147,6 +196,66 @@
     const invoices = o.invoices?.length ? o.invoices.map((inv) => `
       <span class="badge badge-paid mr-1">${inv.invoiceNumber} · ${inv.status}</span>
     `).join('') : '<span class="text-gray-500">—</span>';
+
+    const showStatus = state.view === 'orders' || state.view === 'shipping';
+    const showPayment = state.view === 'orders' || state.view === 'stripe';
+    const showInvoice = state.view === 'orders' || state.view === 'invoices';
+    const showTracking = state.view === 'orders' || state.view === 'shipping';
+    const showStripe = state.view === 'orders' || state.view === 'stripe';
+
+    let actions = '';
+
+    if (showStatus) {
+      actions += `
+        <div class="flex gap-2 items-center">
+          <select id="action-status" class="input bg-black/40 flex-1">
+            <option value="">Změnit status objednávky</option>
+            <option value="pending">pending</option>
+            <option value="paid">paid</option>
+            <option value="processing">processing</option>
+            <option value="shipped">shipped</option>
+            <option value="completed">completed</option>
+            <option value="cancelled">cancelled</option>
+          </select>
+          <button id="btn-set-status" class="btn btn-purple">Uložit</button>
+        </div>`;
+    }
+
+    if (showPayment) {
+      actions += `
+        <div class="flex gap-2 items-center">
+          <select id="action-payment" class="input bg-black/40 flex-1">
+            <option value="">Změnit status platby</option>
+            <option value="pending">pending</option>
+            <option value="paid">paid</option>
+            <option value="failed">failed</option>
+          </select>
+          <button id="btn-set-payment" class="btn btn-purple">Uložit</button>
+        </div>`;
+    }
+
+    if (showTracking) {
+      actions += `
+        <div class="flex gap-2 items-center">
+          <input type="text" id="action-tracking" class="input flex-1" placeholder="Tracking číslo" value="${o.trackingNumber || ''}" />
+          <button id="btn-set-tracking" class="btn btn-cyan">Uložit</button>
+        </div>`;
+    }
+
+    if (showStripe) {
+      actions += `
+        <button id="btn-stripe" class="btn btn-gold" ${o.paymentStatus === 'paid' ? 'disabled' : ''}><i class="fab fa-stripe mr-2"></i>Odeslat Stripe platbu</button>`;
+    }
+
+    if (showInvoice) {
+      actions += `
+        <div class="card p-4 mb-4">
+          <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Faktury</h3>
+          <div class="mb-2">${invoices}</div>
+          <button id="btn-create-invoice" class="btn btn-gold mr-2"><i class="fas fa-file-invoice mr-2"></i>Vytvořit fakturu</button>
+          <button id="btn-view-invoice" class="btn btn-cyan ${o.invoices?.length ? '' : 'hidden'}"><i class="fas fa-eye mr-2"></i>Zobrazit fakturu</button>
+        </div>`;
+    }
 
     byId('detail-content').innerHTML = `
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -178,51 +287,15 @@
               <span style="color:rgb(255 215 0)">${money(o.totalCzk)}</span>
             </div>
           </div>
-          <div class="card p-4 mb-4">
-            <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Faktury</h3>
-            <div class="mb-2">${invoices}</div>
-            <button id="btn-create-invoice" class="btn btn-gold mr-2"><i class="fas fa-file-invoice mr-2"></i>Vytvořit fakturu</button>
-            <button id="btn-view-invoice" class="btn btn-cyan hidden"><i class="fas fa-eye mr-2"></i>Zobrazit fakturu</button>
-          </div>
           <div class="card p-4">
             <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Akce</h3>
             <div class="grid grid-cols-1 gap-2">
-              <div class="flex gap-2 items-center">
-                <select id="action-status" class="input bg-black/40 flex-1">
-                  <option value="">Změnit status objednávky</option>
-                  <option value="pending">pending</option>
-                  <option value="paid">paid</option>
-                  <option value="processing">processing</option>
-                  <option value="shipped">shipped</option>
-                  <option value="completed">completed</option>
-                  <option value="cancelled">cancelled</option>
-                </select>
-                <button id="btn-set-status" class="btn btn-purple">Uložit</button>
-              </div>
-              <div class="flex gap-2 items-center">
-                <select id="action-payment" class="input bg-black/40 flex-1">
-                  <option value="">Změnit status platby</option>
-                  <option value="pending">pending</option>
-                  <option value="paid">paid</option>
-                  <option value="failed">failed</option>
-                </select>
-                <button id="btn-set-payment" class="btn btn-purple">Uložit</button>
-              </div>
-              <div class="flex gap-2 items-center">
-                <input type="text" id="action-tracking" class="input flex-1" placeholder="Tracking číslo" value="${o.trackingNumber || ''}" />
-                <button id="btn-set-tracking" class="btn btn-cyan">Uložit</button>
-              </div>
-              <button id="btn-stripe" class="btn btn-gold" ${o.paymentStatus === 'paid' ? 'disabled' : ''}><i class="fab fa-stripe mr-2"></i>Odeslat Stripe platbu</button>
-              ${o.payment === 'card' || o.payment === 'stripe' ? `<p class="text-xs text-gray-500 mt-1">Zákazník zvolil platbu kartou. Odkaz na Stripe checkout se zobrazí po kliknutí.</p>` : ''}
+              ${actions}
             </div>
           </div>
         </div>
       </div>
     `;
-
-    if (o.invoices?.length) {
-      byId('btn-view-invoice')?.classList.remove('hidden');
-    }
 
     byId('btn-close-detail')?.addEventListener('click', closeDetail);
     byId('btn-set-status')?.addEventListener('click', () => setOrderStatus(o.id, byId('action-status').value));
@@ -247,7 +320,7 @@
     if (!status) return;
     await api('POST', `/api/admin/orders/${id}/status`, { status });
     showError(`Status objednávky byl změněn na ${status}.`);
-    clearError(); // remove error styling — it's a success message
+    setTimeout(clearError, 100);
     openDetail(id);
     loadOrders();
   }
@@ -309,11 +382,18 @@
   function initTabs() {
     document.querySelectorAll('#tabs .tab').forEach((tab) => {
       tab.addEventListener('click', () => {
-        document.querySelectorAll('#tabs .tab').forEach((t) => t.classList.remove('active'));
-        tab.classList.add('active');
-        document.querySelectorAll('.tab-pane').forEach((p) => p.classList.add('hidden'));
-        byId(`tab-${tab.dataset.tab}`).classList.remove('hidden');
+        setView(tab.dataset.tab);
+        if (window.location.hash !== `#${tab.dataset.tab}`) {
+          window.location.hash = tab.dataset.tab;
+        }
       });
+    });
+
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.replace('#', '') || 'orders';
+      if (['orders', 'invoices', 'shipping', 'stripe', 'settings'].includes(hash)) {
+        setView(hash);
+      }
     });
   }
 
@@ -336,11 +416,16 @@
     byId('btn-close-detail').addEventListener('click', closeDetail);
     byId('btn-close-invoice').addEventListener('click', closeInvoice);
 
-    if (!config.apiKey) {
-      document.querySelector('[data-tab="settings"]').click();
-      showError('Zadejte Admin API Key v nastavení.');
+    const hash = window.location.hash.replace('#', '') || 'orders';
+    if (['orders', 'invoices', 'shipping', 'stripe', 'settings'].includes(hash)) {
+      setView(hash);
     } else {
-      loadOrders();
+      setView('orders');
+    }
+
+    if (!config.apiKey) {
+      setView('settings');
+      showError('Zadejte Admin API Key v nastavení.');
     }
   }
 
