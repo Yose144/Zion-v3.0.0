@@ -134,6 +134,7 @@ Remaining:
 - ✅ **Ship upgrades / loadout** UI (engine, cargo, scanner) with color picker and local persistence.
 - ✅ **Composed SFX / ambient music** — procedural chord pad, random chimes, quest/scan/approach sounds.
 - ✅ **Golden Egg / territory hunting** mini-game loop (collect clue for 100 Z, +500 XP; territory map in HUD).
+- ✅ **Toast / feedback UI** — notifications for quest complete, egg claim, upgrades, address save, world entry.
 
 ---
 

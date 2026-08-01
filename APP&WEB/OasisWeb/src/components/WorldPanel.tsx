@@ -6,6 +6,7 @@ import type { World } from '../domain/types/world';
 import { generateQuests, type Quest } from '../domain/quests';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
 import { useAudio } from './AudioEngine';
+import { useToastStore } from '../store/toastStore';
 
 const TYPE_ICONS: Record<Quest['type'], typeof Compass> = {
   exploration: Compass,
@@ -70,6 +71,7 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
   const color = CATEGORY_COLORS[world.category] || '#ffffff';
   const { xp, credits, completeQuest, completedQuests, realQuests, avatars, claimGoldenEgg, collectedEggs } = useGameStore();
   const { playQuestComplete } = useAudio();
+  const addToast = useToastStore((s) => s.add);
   const generated = generateQuests(world);
   const real = mapRealQuests(world, realQuests);
   const quests = real.length > 0 ? real : generated;
@@ -210,6 +212,7 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
                         if (!done) {
                           completeQuest(quest.id, quest.reward);
                           playQuestComplete();
+                          addToast(`Quest completed: +${quest.reward} XP`, 'success', 3000);
                         }
                       }}
                       disabled={done}
@@ -231,7 +234,11 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
         <div className="grid grid-cols-2 gap-3">
           {world.goldenEggClue !== undefined && (
             <button
-              onClick={() => claimGoldenEgg(world.id)}
+              onClick={() => {
+                const ok = claimGoldenEgg(world.id);
+                if (ok) addToast(`Golden Egg found on ${world.name}: +500 XP`, 'success', 4000);
+                else if (credits < 100) addToast('Not enough credits (100 Z needed)', 'warning', 3000);
+              }}
               disabled={collectedEggs.includes(world.id) || credits < 100}
               className="flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition"
               style={{

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { X, Rocket, Zap, Package, Scan, Palette } from 'lucide-react';
 import { useGameStore, type ShipLoadout } from '../store/gameStore';
+import { useToastStore } from '../store/toastStore';
 
 interface ShipLoadoutProps {
   onClose: () => void;
@@ -33,6 +34,7 @@ const ICONS: Record<keyof ShipLoadout, typeof Zap> = {
 
 export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
   const { credits, shipLoadout, upgradeShip, setShipColor } = useGameStore();
+  const addToast = useToastStore((s) => s.add);
 
   return (
     <motion.div
@@ -82,7 +84,12 @@ export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
                     <div className="text-right">
                       <p className="text-sm font-bold text-white">Lv {level}</p>
                       <button
-                        onClick={() => canAfford && !maxed && upgradeShip(key)}
+                        onClick={() => {
+                          if (!canAfford || maxed) return;
+                          const ok = upgradeShip(key);
+                          if (ok) addToast(`${key} upgraded to Lv ${level + 1}`, 'success', 2500);
+                          else addToast('Not enough credits', 'warning', 2500);
+                        }}
                         disabled={!canAfford || maxed}
                         className={`mt-1 rounded px-2 py-0.5 text-[10px] font-bold transition ${
                           maxed
@@ -115,7 +122,10 @@ export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
               {PRESETS.map((p) => (
                 <button
                   key={p.hex}
-                  onClick={() => setShipColor(p.hex)}
+                  onClick={() => {
+                    setShipColor(p.hex);
+                    addToast(`Hull color changed to ${p.name}`, 'info', 2000);
+                  }}
                   className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition ${
                     shipLoadout.color === p.hex ? 'border-white' : 'border-transparent'
                   }`}
