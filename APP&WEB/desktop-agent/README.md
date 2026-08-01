@@ -2,7 +2,7 @@
   <img src="../assets/logo/Z.gif" alt="ZION" width="120"/>
 </p>
 
-<h1 align="center">ZION Desktop Mining Agent v3.0.5</h1>
+<h1 align="center">ZION Desktop Mining Agent v3.1.0</h1>
 
 <p align="center">
   <strong>Professional desktop application for ZION TerraNova mining with consciousness evolution tracking.</strong>
@@ -366,4 +366,4 @@ MIT - See LICENSE file
 
 ---
 
-**ZION TerraNova v3.0.5** - Where Technology Meets Spirit 🌟
+**ZION TerraNova v3.1.0** - Where Technology Meets Spirit 🌟

@@ -1,4 +1,4 @@
-// ZION V3 Mainnet Ready v3.0.6 "Triple Parallel" - Renderer Process
+// ZION V3 Mainnet Ready v3.1.0 - Renderer Process
 // UI logic and state management
 
 // Public build: hide Trinity/AuxPoW external coin names (ZANO, VRSC, etc.)
@@ -644,12 +644,16 @@ function setupSectionTabs() {
       tabBar.querySelectorAll('.section-tab.active').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
 
-      // Find the parent view-shell and toggle section-panels within it
-      const viewShell = tabBar.closest('.view-shell');
+      // Find the parent view-shell or section-panel and toggle direct-child section-panels
+      const viewShell = tabBar.closest('.view-shell, .section-panel');
       if (!viewShell) return;
-      viewShell.querySelectorAll('.section-panel.active').forEach(p => p.classList.remove('active'));
+      viewShell.querySelectorAll(':scope > .section-panel.active').forEach(p => p.classList.remove('active'));
       const target = document.getElementById(sectionId);
       if (target) target.classList.add('active');
+
+      // Lazy-initialize section content if an init function exists
+      const initFn = _sectionInitFns[sectionId];
+      if (typeof initFn === 'function') initFn();
     });
   });
 }
@@ -666,15 +670,31 @@ function _getViewEls() {
   return _viewCache;
 }
 
+function initMultichainView() {
+  // Bridge is the default Multichain tab; ensure it is initialized.
+  initBridgeView();
+}
+
+function initMarketView() {}
+function initOasisView() {}
+
+// Section lazy-init dispatch table (used by setupSectionTabs for nested panels)
+const _sectionInitFns = {
+  'bridge-view': () => initBridgeView(),
+  'dex-view':    () => initDexView(),
+  'defi-view':   () => initDefiView(),
+  'dao-view':    () => initDaoView(),
+  'node-view':   () => initNodeView(),
+};
+
 // Lazy-init dispatch table — avoids long if-else chain
 const _viewInitFns = {
-  node:      () => initNodeView(),
-  about:     () => { initUpdateUI(); initSecurityUI(); },
-  bridge:    () => initBridgeView(),
-  dex:       () => initDexView(),
-  defi:      () => initDefiView(),
-  dao:       () => initDaoView(),
-  cli:       () => initCliView(),
+  node:        () => initNodeView(),
+  about:       () => { initUpdateUI(); initSecurityUI(); },
+  multichain:  () => initMultichainView(),
+  market:      () => initMarketView(),
+  oasis:       () => initOasisView(),
+  cli:         () => initCliView(),
 };
 
 function switchView(view) {
@@ -708,10 +728,6 @@ function switchView(view) {
   const initFn = _viewInitFns[view];
   if (initFn) initFn();
 
-  // Refresh network data only when user opens Network view
-  if (view === 'network') {
-    void refreshServerStatus();
-  }
 
   // Auto-fetch balance when wallet view is opened (if address is configured)
   if (view === 'wallet') {
@@ -1638,7 +1654,7 @@ function setupEventListeners() {
     addLogEntry('Mining started successfully', 'info');
     // Mining Console banner
     appendMiningConsole('─'.repeat(60));
-    appendMiningConsole(' * ZION V3 Mainnet Ready v3.0.6 — Mining started');
+    appendMiningConsole(' * ZION V3 Mainnet Ready v3.1.0 — Mining started');
     appendMiningConsole('─'.repeat(60));
   });
   
@@ -3050,7 +3066,8 @@ let ch3ServerStatus = [];
 let ch3ServerPollInterval = null;
 
 function shouldRunNetworkPolling() {
-  return currentView === 'network' && !document.hidden;
+  const net = document.getElementById('network-view');
+  return net?.classList.contains('active') && !document.hidden;
 }
 
 async function initCH3Features() {
@@ -3580,7 +3597,7 @@ async function refreshPeerList() {
   }, 15000);
   // Initial fetch after 2s
   setTimeout(() => {
-    if (currentView === 'network') {
+    if (document.getElementById('network-view')?.classList.contains('active')) {
       void refreshPeerList();
     }
   }, 2000);
@@ -4208,7 +4225,7 @@ function initBridgeView() {
   void fetchBridgeStatus().then(updateBridgeStats);
 
   _bridgePollTimer = setInterval(() => {
-    if (currentView !== 'bridge') return;
+    if (!document.getElementById('bridge-view')?.classList.contains('active')) return;
     if (document.hidden) return;
     void fetchBridgeStatus().then(updateBridgeStats);
   }, 30000);
@@ -4300,7 +4317,7 @@ function initNodeView() {
           // Start auto-refresh
           void _nodeRefresh();
           _nodeRefreshTimer = setInterval(() => {
-            if (currentView === 'node') void _nodeRefresh();
+            if (document.getElementById('node-view')?.classList.contains('active')) void _nodeRefresh();
             else { clearInterval(_nodeRefreshTimer); _nodeRefreshTimer = null; }
           }, 10000);
         } else {
@@ -5005,7 +5022,7 @@ function initDefiView() {
 
   // Auto-refresh every 30s while on DeFi view
   _defiRefreshTimer = setInterval(() => {
-    if (currentView !== 'defi') return;
+    if (!document.getElementById('defi-view')?.classList.contains('active')) return;
     if (document.hidden) return;
     void refreshDefiData();
   }, 30000);

@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag, e.g. v3.0.6-desktop'
+        description: 'Release tag, e.g. v3.1.0-desktop'
         required: true
         type: string
       draft:
@@ -27,7 +27,7 @@ on:
         default: true
         type: boolean
       build_linux:
-        description: 'Build Linux packages (already built for v3.0.6)'
+        description: 'Build Linux packages (already built for v3.1.0)'
         required: false
         default: false
         type: boolean
@@ -43,7 +43,7 @@ on:
         type: boolean
   push:
     tags:
-      - 'v3.0.6-desktop*'
+      - 'v3.1.0-desktop*'
       - 'desktop-v*'
 
 env:
@@ -242,7 +242,7 @@ jobs:
             echo "Creating new release ${RELEASE_TAG}."
             gh release create "${RELEASE_TAG}" \
               --repo "${PUBLIC_REPO}" \
-              --title "ZION Public Desktop Miner v3.0.6" \
+              --title "ZION Public Desktop Miner v3.1.0" \
               --notes-file "${NOTES_FILE}" \
               ${DRAFT_FLAG} \
               "${assets[@]}"

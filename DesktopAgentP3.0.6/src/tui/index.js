@@ -149,7 +149,7 @@ async function main() {
     left: 0,
     right: 0,
     height: 3,
-    content: ' {bold}ZION Miner — TUI Dashboard{/}  {grey-fg}v3.0.6{/}',
+    content: ' {bold}ZION Miner — TUI Dashboard{/}  {grey-fg}v3.1.0{/}',
     tags: true,
     border: { type: 'line' },
     style: { border: { fg: 'cyan' }, fg: 'white' },

@@ -1,6 +1,6 @@
 # ZION Public Desktop Miner — Build Guide
 
-**Version:** `v3.0.6`
+**Version:** `v3.1.0`
 **Directory:** `DesktopAgentP3.0.6/`
 **Purpose:** Public-facing Electron GUI for ZION/Deeksha mining with the external GPU/CPU streams hidden from the UI.
 
@@ -12,14 +12,14 @@
 
 `build.sh` (and `npm run build:linux`) produce:
 
-- `dist/zion-public-miner-v3.0.6-linux-x86_64.AppImage`
-- `dist/zion-public-miner-v3.0.6-linux-amd64.deb`
+- `dist/zion-public-miner-v3.1.0-linux-x86_64.AppImage`
+- `dist/zion-public-miner-v3.1.0-linux-amd64.deb`
 - `dist/SHA256SUMS.txt`
 
 Windows and macOS packaging scripts are also available:
 
-- `npm run build:win` — `dist/zion-public-miner-v3.0.6-windows-x64.exe` (NSIS installer) + `.zip`
-- `npm run build:mac` — `dist/zion-public-miner-v3.0.6-mac-arm64.dmg`
+- `npm run build:win` — `dist/zion-public-miner-v3.1.0-windows-x64.exe` (NSIS installer) + `.zip`
+- `npm run build:mac` — `dist/zion-public-miner-v3.1.0-mac-arm64.dmg`
 
 ---
 
@@ -64,8 +64,8 @@ ZION_CPU_TARGET=x86-64 npm run build:linux
 
 # Compute checksums
 cd dist
-sha256sum zion-public-miner-v3.0.6-linux-x86_64.AppImage \
-          zion-public-miner-v3.0.6-linux-amd64.deb > SHA256SUMS.txt
+sha256sum zion-public-miner-v3.1.0-linux-x86_64.AppImage \
+          zion-public-miner-v3.1.0-linux-amd64.deb > SHA256SUMS.txt
 ```
 
 ### Build with AVX2/BMI2 optimizations
@@ -120,7 +120,7 @@ On some Linux systems (especially NVIDIA + Wayland) Electron can fail to start t
 If the AppImage still fails, extract and run it directly:
 
 ```bash
-./zion-public-miner-v3.0.6-linux-x86_64.AppImage --appimage-extract
+./zion-public-miner-v3.1.0-linux-x86_64.AppImage --appimage-extract
 cd squashfs-root
 ./AppRun --no-sandbox --ozone-platform=x11 --disable-gpu-sandbox
 ```
@@ -149,12 +149,12 @@ sudo apt install libfuse2
 
 ```bash
 cd dist
-gh release create v3.0.6-desktop --repo Zion-TerraNova/v3-Mainnet \
-  --title "ZION Public Desktop Miner v3.0.6" \
+gh release create v3.1.0-desktop --repo Zion-TerraNova/v3-Mainnet \
+  --title "ZION Public Desktop Miner v3.1.0" \
   --notes-file ../RELEASE_NOTES.md \
   --prerelease \
-  zion-public-miner-v3.0.6-linux-x86_64.AppImage \
-  zion-public-miner-v3.0.6-linux-amd64.deb \
+  zion-public-miner-v3.1.0-linux-x86_64.AppImage \
+  zion-public-miner-v3.1.0-linux-amd64.deb \
   SHA256SUMS.txt
 ```
 
@@ -163,7 +163,7 @@ gh release create v3.0.6-desktop --repo Zion-TerraNova/v3-Mainnet \
 Use the repository workflow `.github/workflows/desktop-release.yml`:
 
 1. Set the `PUBLIC_RELEASE_TOKEN` repository secret (GitHub PAT with `repo` or `public_repo` scope).
-2. Run the workflow manually (`workflow_dispatch`) and enter the desired tag, e.g. `v3.0.6-desktop`.
+2. Run the workflow manually (`workflow_dispatch`) and enter the desired tag, e.g. `v3.1.0-desktop`.
 3. The workflow builds Linux (AppImage + DEB), Windows (NSIS + ZIP) and macOS (DMG) packages.
 4. After all builds pass, it creates a draft release on `Zion-TerraNova/v3-Mainnet` with all artifacts and SHA256 checksums.
 5. Review the draft and click **Publish release** when ready.

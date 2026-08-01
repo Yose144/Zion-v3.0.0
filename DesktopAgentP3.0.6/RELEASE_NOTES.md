@@ -1,19 +1,22 @@
-# ZION Public Desktop Miner v3.0.6 — Release Notes
+# ZION Public Desktop Miner v3.1.0 — Release Notes
 
-**Release:** `v3.0.6`  
+**Release:** `v3.1.0`  
 **Date:** 2026-08-01  
 **Status:** Public preview / prerelease
 
 ## Overview
 
-This is the first public-facing desktop build of the ZION v3.0.6 miner. It packages the Electron GUI with a `zion-miner` compiled with the `public_build` feature. The UI shows only the ZION/Deeksha work stream and hides all Trinity/AuxPoW external coin names, while the miner continues to run the external GPU and CPU streams in the background for revenue.
+This release restructures the ZION desktop client around a simpler v3.1 layout: a single **Multichain** page groups Bridge, ZionDex, DeFi and DAO; Network and Node controls live under **Settings**; and two new embedded pages bring the **MarketPlace** and **OASIS** web apps directly into the app.
 
-## What changed from the private desktop agent
+## What changed from v3.0.6
 
-- **Public build flag** — `public_build` is enabled in `prepare-rust-miner.js` and propagated to both the Rust miner and the Electron UI.
-- **UI-only single stream** — stream 2/3 cards and coin selectors are removed from `index.html` and `renderer.js`. The public miner still runs Trinity streams 2/3 in the background for revenue.
-- **Branding** — product and window title changed to `ZION Public Miner v3.0.6` and binary/package names changed to `zion-public-miner`.
-- **GPU sandbox workaround** — Linux re-exec logic adds `--ozone-platform=x11` and `--disable-gpu-sandbox` before Electron creates the GPU process.
+- **Simplified dock** — `Home`, `Wallet`, `Multichain`, `Market`, `Oasis`, `CLI`, `Settings`, `Logs`, `About`.
+- **Multichain page** — Bridge, ZionDex, DeFi and DAO are now tabs inside one view.
+- **Settings** — now contains `Identity`, `Pools`, `Performance`, `Engine`, `Network` and `Node` tabs.
+- **MarketPlace** — embedded `https://market.zionterranova.com` in a sandboxed iframe.
+- **OASIS** — embedded `https://oasis.zionterranova.com` in a sandboxed iframe.
+- **Public build flag** — still enabled in `prepare-rust-miner.js`; the Rust miner and Electron UI hide Trinity / AuxPoW external coin names.
+- **GPU sandbox workaround** — Linux re-exec logic adds `--ozone-platform=x11` and `--disable-gpu-sandbox`.
 
 ## Downloads
 
@@ -21,11 +24,11 @@ Multi-OS builds are produced by the `.github/workflows/desktop-release.yml` GitH
 
 | File | Platform | Format |
 |------|----------|--------|
-| `zion-public-miner-v3.0.6-linux-x86_64.AppImage` | Linux x86_64 | AppImage |
-| `zion-public-miner-v3.0.6-linux-amd64.deb` | Linux x86_64 | DEB package |
-| `zion-public-miner-v3.0.6-windows-x64.exe` | Windows x64 | NSIS installer |
-| `zion-public-miner-v3.0.6-windows-x64.zip` | Windows x64 | Portable ZIP |
-| `zion-public-miner-v3.0.6-mac-arm64.dmg` | macOS Apple Silicon | DMG |
+| `zion-public-miner-v3.1.0-linux-x86_64.AppImage` | Linux x86_64 | AppImage |
+| `zion-public-miner-v3.1.0-linux-amd64.deb` | Linux x86_64 | DEB package |
+| `zion-public-miner-v3.1.0-windows-x64.exe` | Windows x64 | NSIS installer |
+| `zion-public-miner-v3.1.0-windows-x64.zip` | Windows x64 | Portable ZIP |
+| `zion-public-miner-v3.1.0-mac-arm64.dmg` | macOS Apple Silicon | DMG |
 | `SHA256SUMS.txt` | — | Checksums |
 
 ## Installation
@@ -33,14 +36,14 @@ Multi-OS builds are produced by the `.github/workflows/desktop-release.yml` GitH
 ### AppImage
 
 ```bash
-chmod +x zion-public-miner-v3.0.6-linux-x86_64.AppImage
-./zion-public-miner-v3.0.6-linux-x86_64.AppImage
+chmod +x zion-public-miner-v3.1.0-linux-x86_64.AppImage
+./zion-public-miner-v3.1.0-linux-x86_64.AppImage
 ```
 
 ### Debian/Ubuntu
 
 ```bash
-sudo dpkg -i zion-public-miner-v3.0.6-linux-amd64.deb
+sudo dpkg -i zion-public-miner-v3.1.0-linux-amd64.deb
 sudo apt-get -f install   # if dependencies are missing
 zion-public-miner
 ```
@@ -50,7 +53,7 @@ zion-public-miner
 Run the NSIS installer and follow the setup wizard:
 
 ```powershell
-zion-public-miner-v3.0.6-windows-x64.exe
+zion-public-miner-v3.1.0-windows-x64.exe
 ```
 
 A portable `.zip` is also available. Extract it and run `ZION Public Miner.exe`.
@@ -60,7 +63,7 @@ A portable `.zip` is also available. Extract it and run `ZION Public Miner.exe`.
 Open the DMG and drag **ZION Public Miner** into **Applications**:
 
 ```bash
-open zion-public-miner-v3.0.6-mac-arm64.dmg
+open zion-public-miner-v3.1.0-mac-arm64.dmg
 ```
 
 On Apple Silicon Macs you may need to allow the app in **System Settings → Privacy & Security** the first time it is launched.
@@ -77,9 +80,10 @@ On Apple Silicon Macs you may need to allow the app in **System Settings → Pri
 
 - The AppImage may not start on some Wayland/NVIDIA desktops. If the window does not appear, launch from a terminal and the built-in re-exec should add the required `--ozone-platform=x11 --disable-gpu-sandbox` flags. As a fallback, run:
   ```bash
-  ./zion-public-miner-v3.0.6-linux-x86_64.AppImage --no-sandbox --ozone-platform=x11 --disable-gpu-sandbox
+  ./zion-public-miner-v3.1.0-linux-x86_64.AppImage --no-sandbox --ozone-platform=x11 --disable-gpu-sandbox
   ```
 - AppImage requires `libfuse2` on Ubuntu 22.04+. Install with `sudo apt install libfuse2` if you see a FUSE error.
+- The MarketPlace and OASIS pages are served inside a sandboxed iframe. Some site features (e.g., external pop-ups or service workers) may be restricted.
 
 ## Network
 
