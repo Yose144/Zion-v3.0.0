@@ -11,14 +11,24 @@ export interface ArtifactCardData {
   image: string;
   collection: string;
   rarity: Rarity;
-  price?: string;        // ETH
-  bestBid?: string;      // ETH
+  price?: string;        // wZION
+  bestBid?: string;      // wZION
   listingType?: 'fixed' | 'auction' | 'none';
   endsAt?: number;       // auction end timestamp
 }
 
 const rarityOrder: Record<Rarity, number> = {
   common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, mythic: 5, unique: 6,
+};
+
+const rarityGlow: Record<Rarity, string> = {
+  common: '',
+  uncommon: 'shadow-[0_0_15px_rgba(16,185,129,0.15)]',
+  rare: 'shadow-[0_0_15px_rgba(59,130,246,0.15)]',
+  epic: 'shadow-[0_0_20px_rgba(168,85,247,0.2)]',
+  legendary: 'shadow-[0_0_20px_rgba(245,158,11,0.2)]',
+  mythic: 'shadow-[0_0_25px_rgba(244,63,94,0.25)]',
+  unique: 'shadow-[0_0_25px_rgba(34,211,238,0.25)]',
 };
 
 function timeLeft(ts?: number): string | null {
@@ -36,13 +46,15 @@ export default function ItemCard({ item }: { item: ArtifactCardData }) {
 
   return (
     <Link href={`/item/${item.id}`} className="block group">
-      <div className="glass-panel h-full">
+      <div className={`glass-panel h-full ${rarityGlow[item.rarity]}`}>
         <div className="glass-panel-inner flex flex-col h-full">
           {/* Image */}
-          <div className="relative aspect-square rounded-xl overflow-hidden bg-zion-card mb-3">
-            {imgError ? (
-              <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-oasis-purple/20 to-oasis-cyan/20">
-                <span className="text-gradient font-black">Z</span>
+          <div className="relative aspect-square rounded-xl overflow-hidden mb-3 artifact-placeholder">
+            {imgError || !item.image ? (
+              <div className="w-full h-full flex items-center justify-center relative">
+                <span className="text-5xl text-gradient font-black font-display relative z-10 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                  Z
+                </span>
               </div>
             ) : (
               <img
@@ -53,29 +65,31 @@ export default function ItemCard({ item }: { item: ArtifactCardData }) {
               />
             )}
             {/* Rarity badge */}
-            <div className="absolute top-2 left-2">
+            <div className="absolute top-2 left-2 z-20">
               <span className={`rarity-badge rarity-${item.rarity}`}>
                 {item.rarity}
               </span>
             </div>
             {/* Listing type badge */}
             {item.listingType && item.listingType !== 'none' && (
-              <div className="absolute top-2 right-2">
+              <div className="absolute top-2 right-2 z-20">
                 <span className={`rarity-badge ${
                   item.listingType === 'auction'
                     ? 'rarity-unique'
                     : 'rarity-legendary'
                 }`}>
-                  {item.listingType === 'auction' ? 'Auction' : 'Buy'}
+                  {item.listingType === 'auction' ? '🔨 Auction' : '⚡ Buy'}
                 </span>
               </div>
             )}
+            {/* Hover overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-oasis-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
 
           {/* Info */}
           <div className="flex-1 flex flex-col">
             <div className="text-xs text-gray-500 mb-0.5">{item.collection}</div>
-            <h3 className="font-bold text-white text-sm leading-tight mb-2 line-clamp-1">
+            <h3 className="font-bold text-white text-sm leading-tight mb-2 line-clamp-1 group-hover:text-oasis-cyan transition-colors">
               {item.name}
             </h3>
 
@@ -85,7 +99,7 @@ export default function ItemCard({ item }: { item: ArtifactCardData }) {
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">Price</span>
                   <span className="font-mono text-sm text-gradient-gold font-bold">
-                    {item.price} ETH
+                    {item.price} <span className="text-gray-500 text-xs">wZION</span>
                   </span>
                 </div>
               )}
@@ -96,16 +110,18 @@ export default function ItemCard({ item }: { item: ArtifactCardData }) {
                   </span>
                   <div className="text-right">
                     <div className="font-mono text-sm text-oasis-cyan font-bold">
-                      {item.bestBid || item.price || '—'} ETH
+                      {item.bestBid || item.price || '—'} <span className="text-gray-500 text-xs">wZION</span>
                     </div>
                     {timeLeft(item.endsAt) && (
-                      <div className="text-[10px] text-gray-500">{timeLeft(item.endsAt)}</div>
+                      <div className={`text-[10px] ${timeLeft(item.endsAt) === 'Ended' ? 'text-oasis-rose' : 'text-gray-500'}`}>
+                        {timeLeft(item.endsAt)}
+                      </div>
                     )}
                   </div>
                 </div>
               )}
               {(!item.listingType || item.listingType === 'none') && (
-                <div className="text-xs text-gray-600 text-center">Not listed</div>
+                <div className="text-xs text-gray-600 text-center py-1">Not listed</div>
               )}
             </div>
           </div>

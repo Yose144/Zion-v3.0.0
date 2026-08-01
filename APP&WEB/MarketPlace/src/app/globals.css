@@ -5,90 +5,218 @@
 @layer base {
   body {
     background:
-      radial-gradient(circle at 18% -8%, rgba(147, 51, 234, 0.12), transparent 34rem),
-      radial-gradient(circle at 86% 8%, rgba(6, 182, 212, 0.08), transparent 30rem),
-      radial-gradient(ellipse at bottom, #1B2735 0%, #05070a 100%);
+      radial-gradient(circle at 15% -5%, rgba(147, 51, 234, 0.15), transparent 40rem),
+      radial-gradient(circle at 85% 5%, rgba(6, 182, 212, 0.10), transparent 35rem),
+      radial-gradient(circle at 50% 100%, rgba(245, 158, 11, 0.06), transparent 30rem),
+      #05070a;
     min-height: 100vh;
     color: #fff;
+    overflow-x: hidden;
   }
+
+  /* Animated grid background overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(34, 211, 238, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34, 211, 238, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  /* Twinkling stars */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 60% 70%, rgba(34,211,238,0.3), transparent),
+      radial-gradient(1px 1px at 80% 20%, rgba(168,85,247,0.3), transparent),
+      radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1.5px 1.5px at 90% 50%, rgba(245,158,11,0.3), transparent),
+      radial-gradient(1px 1px at 10% 60%, rgba(255,255,255,0.3), transparent);
+    background-size: 200% 200%;
+    pointer-events: none;
+    z-index: 0;
+    animation: twinkle 8s ease-in-out infinite;
+  }
+
+  main { position: relative; z-index: 1; }
+  nav { position: relative; z-index: 50; }
+  footer { position: relative; z-index: 1; }
 }
 
 @layer components {
-  /* GlassPanel — gradient border card (OasisWeb pattern) */
+  /* ── GlassPanel — gradient border card with inner glow ── */
   .glass-panel {
-    @apply rounded-2xl p-[1px] shadow-xl transition-all duration-300;
-    background: linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(168, 85, 247, 0.3), rgba(245, 158, 11, 0.2));
+    @apply rounded-2xl p-[1px] transition-all duration-300;
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.25), rgba(168, 85, 247, 0.25), rgba(245, 158, 11, 0.15));
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   }
   .glass-panel:hover {
-    @apply scale-[1.01];
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.4), rgba(168, 85, 247, 0.4), rgba(245, 158, 11, 0.25));
+    box-shadow: 0 12px 40px rgba(168, 85, 247, 0.15);
+    transform: translateY(-2px);
   }
   .glass-panel-inner {
-    @apply h-full w-full rounded-2xl bg-oasis-black/70 p-5 backdrop-blur-md;
+    @apply h-full w-full rounded-2xl bg-oasis-black/80 p-5 backdrop-blur-xl;
   }
 
-  /* Card — standard dark card */
+  /* ── Card — standard dark card with subtle border glow ── */
   .card {
-    @apply bg-zion-card border border-zion-border rounded-2xl backdrop-blur-sm;
+    @apply bg-zion-card border border-zion-border rounded-2xl backdrop-blur-sm transition-all duration-300;
+  }
+  .card:hover {
+    @apply border-zion-border/80;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   }
 
-  /* ZION gradient text */
+  /* ── Glow card — for featured/important items ── */
+  .card-glow {
+    @apply card;
+    box-shadow:
+      0 0 0 1px rgba(34, 211, 238, 0.1),
+      0 4px 20px rgba(34, 211, 238, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+  .card-glow:hover {
+    box-shadow:
+      0 0 0 1px rgba(34, 211, 238, 0.2),
+      0 8px 30px rgba(34, 211, 238, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* ── ZION gradient text ── */
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background: linear-gradient(90deg, #22d3ee, #a855f7, #f59e0b);
+    background-size: 200% auto;
   }
   .text-gradient-gold {
     @apply bg-clip-text text-transparent;
-    background: linear-gradient(90deg, #FFD700, #f59e0b);
+    background: linear-gradient(90deg, #FFD700, #f59e0b, #FFD700);
+    background-size: 200% auto;
+  }
+  .text-gradient-cyan {
+    @apply bg-clip-text text-transparent;
+    background: linear-gradient(90deg, #22d3ee, #06b6d4);
+  }
+  .text-gradient-animated {
+    @apply bg-clip-text text-transparent;
+    background: linear-gradient(90deg, #22d3ee, #a855f7, #f59e0b, #22d3ee);
+    background-size: 300% auto;
+    animation: gradientX 6s ease infinite;
   }
 
-  /* Buttons — ZION themed */
+  /* ── Buttons ── */
   .btn-primary {
-    @apply px-5 py-2.5 rounded-xl font-bold text-white transition-all hover:scale-[1.02] duration-200;
+    @apply px-5 py-2.5 rounded-xl font-bold text-white transition-all duration-200 relative overflow-hidden;
     background: linear-gradient(110deg, #FFD700, #a855f7 52%, #22d3ee);
-    box-shadow: 0 12px 35px rgba(168, 85, 247, 0.3);
+    background-size: 200% auto;
+    box-shadow: 0 8px 25px rgba(168, 85, 247, 0.3);
   }
   .btn-primary:hover {
-    box-shadow: 0 16px 45px rgba(168, 85, 247, 0.4);
+    background-position: right center;
+    box-shadow: 0 12px 35px rgba(168, 85, 247, 0.45);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
   }
   .btn-secondary {
-    @apply px-5 py-2.5 rounded-xl font-bold text-white bg-white/5 border border-white/10 transition-all hover:bg-white/10 hover:border-white/20 duration-200;
+    @apply px-5 py-2.5 rounded-xl font-bold text-white bg-white/5 border border-white/10 transition-all duration-200;
+  }
+  .btn-secondary:hover {
+    @apply bg-white/10 border-white/20;
+    transform: translateY(-1px);
   }
   .btn-ghost {
     @apply px-4 py-2.5 rounded-xl font-bold text-gray-300 bg-white/5 border border-white/10 transition-all hover:bg-white/10;
   }
   .btn-icon {
-    @apply p-2.5 w-11 h-11 flex items-center justify-center;
+    @apply p-2.5 w-11 h-11 flex items-center justify-center rounded-xl;
   }
 
-  /* Rarity badges */
+  /* ── Rarity badges with glow ── */
   .rarity-badge {
     @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border backdrop-blur-sm;
   }
   .rarity-common { @apply text-zinc-400 border-zinc-600 bg-zinc-900/50; }
-  .rarity-uncommon { @apply text-oasis-emerald border-oasis-emerald/50 bg-oasis-emerald/10; }
-  .rarity-rare { @apply text-blue-400 border-blue-600/50 bg-blue-900/30; }
-  .rarity-epic { @apply text-oasis-purple border-oasis-purple/50 bg-oasis-purple/10; }
-  .rarity-legendary { @apply text-oasis-gold border-oasis-gold/50 bg-oasis-gold/10; }
-  .rarity-mythic { @apply text-oasis-rose border-oasis-rose/50 bg-oasis-rose/10; }
-  .rarity-unique { @apply text-oasis-cyan border-oasis-cyan/50 bg-oasis-cyan/10; }
+  .rarity-uncommon { @apply text-oasis-emerald border-oasis-emerald/50 bg-oasis-emerald/10; box-shadow: 0 0 8px rgba(16,185,129,0.15); }
+  .rarity-rare { @apply text-blue-400 border-blue-600/50 bg-blue-900/30; box-shadow: 0 0 8px rgba(59,130,246,0.15); }
+  .rarity-epic { @apply text-oasis-purple border-oasis-purple/50 bg-oasis-purple/10; box-shadow: 0 0 10px rgba(168,85,247,0.2); }
+  .rarity-legendary { @apply text-oasis-gold border-oasis-gold/50 bg-oasis-gold/10; box-shadow: 0 0 10px rgba(245,158,11,0.2); }
+  .rarity-mythic { @apply text-oasis-rose border-oasis-rose/50 bg-oasis-rose/10; box-shadow: 0 0 12px rgba(244,63,94,0.25); }
+  .rarity-unique { @apply text-oasis-cyan border-oasis-cyan/50 bg-oasis-cyan/10; box-shadow: 0 0 12px rgba(34,211,238,0.25); }
 
-  /* Status dots */
+  /* ── Status dots ── */
   .status-dot {
     @apply inline-block w-2 h-2 rounded-full;
   }
-  .status-active { @apply bg-oasis-emerald shadow-[0_0_6px_#10b981]; }
-  .status-pending { @apply bg-oasis-gold shadow-[0_0_6px_#f59e0b]; }
+  .status-active { @apply bg-oasis-emerald; box-shadow: 0 0 6px #10b981, 0 0 12px rgba(16,185,129,0.3); }
+  .status-pending { @apply bg-oasis-gold; box-shadow: 0 0 6px #f59e0b, 0 0 12px rgba(245,158,11,0.3); }
   .status-inactive { @apply bg-zinc-600; }
 
-  /* Shimmer effect for loading */
+  /* ── Shimmer loading ── */
   .shimmer {
     background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.1), transparent);
     background-size: 200% 100%;
     @apply animate-shimmer;
   }
+
+  /* ── Artifact placeholder — animated OASIS orb ── */
+  .artifact-placeholder {
+    background:
+      radial-gradient(circle at 30% 30%, rgba(34, 211, 238, 0.15), transparent 50%),
+      radial-gradient(circle at 70% 70%, rgba(168, 85, 247, 0.15), transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.08), transparent 60%),
+      #0a0c14;
+  }
+  .artifact-placeholder::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: conic-gradient(from 0deg, transparent, rgba(34,211,238,0.05), transparent, rgba(168,85,247,0.05), transparent);
+    animation: spin 15s linear infinite;
+    pointer-events: none;
+  }
+
+  /* ── Section divider ── */
+  .section-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(34,211,238,0.3), rgba(168,85,247,0.3), transparent);
+  }
+
+  /* ── Input styles ── */
+  .input-zion {
+    @apply w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm transition-all duration-200;
+  }
+  .input-zion:focus {
+    @apply border-oasis-cyan/50 outline-none;
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1);
+  }
+  .input-zion::placeholder {
+    @apply text-gray-600;
+  }
+
+  /* ── Tab styles ── */
+  .tab-zion {
+    @apply px-5 py-2.5 text-sm font-semibold capitalize transition-all border-b-2;
+  }
+  .tab-zion-active {
+    @apply text-white border-oasis-cyan;
+  }
+  .tab-zion-inactive {
+    @apply text-gray-500 border-transparent hover:text-white;
+  }
 }
 
-/* Custom scrollbar — ZION themed */
+/* ── Custom scrollbar ── */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -97,9 +225,29 @@
   background: #05070a;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1a1d2e;
+  background: linear-gradient(180deg, #1a1d2e, #2a2d3e);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a2d3e;
+  background: linear-gradient(180deg, #2a2d3e, #3a3d4e);
+}
+
+/* ── Selection ── */
+::selection {
+  background: rgba(34, 211, 238, 0.25);
+  color: #fff;
+}
+
+/* ── Line clamp utility ── */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
