@@ -15,6 +15,14 @@ const WorldFilter = dynamic(() => import('./WorldFilter'), { ssr: false });
 
 const ALL_CATEGORIES: WorldCategory[] = ['star-system', 'planet', 'sector', 'world', 'dimension'];
 
+const CATEGORY_COLORS: Record<WorldCategory, string> = {
+  'star-system': '#f59e0b',
+  'planet': '#22d3ee',
+  'sector': '#a855f7',
+  'world': '#10b981',
+  'dimension': '#ec4899',
+};
+
 export default function OasisClient() {
   const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState<'intro' | 'arrival' | 'scene'>('intro');
@@ -85,8 +93,13 @@ export default function OasisClient() {
                 ZION OASIS
               </h1>
               <p className="mt-2 text-sm leading-relaxed text-gray-300">
-                55 worlds, one galaxy. Click any node to focus. Filter by category below.
+                55 worlds across one living galaxy. Click any world to focus, open the detail panel, and enter its 3D space.
               </p>
+              {selectedWorld && (
+                <p className="mt-2 text-xs font-medium" style={{ color: CATEGORY_COLORS[selectedWorld.category] }}>
+                  Selected: {selectedWorld.name}
+                </p>
+              )}
               <Link href="/dashboard">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
