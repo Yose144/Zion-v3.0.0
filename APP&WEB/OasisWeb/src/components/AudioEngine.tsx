@@ -29,7 +29,7 @@ class OasisAudio {
 
   private muted = true;
   private musicTrackIndex = 0;
-  private musicPlaying = true;
+  private musicPlaying = false;
   private musicVolume = 0.5;
 
   isMuted() {
@@ -275,7 +275,7 @@ export function useAudio() {
   const audio = useRef(new OasisAudio());
   const [muted, setMutedState] = useState(false);
   const [musicTrack, setMusicTrack] = useState(0);
-  const [musicPlaying, setMusicPlaying] = useState(true);
+  const [musicPlaying, setMusicPlaying] = useState(false);
   const [musicVolume, setMusicVolumeState] = useState(0.5);
 
   useEffect(() => {
