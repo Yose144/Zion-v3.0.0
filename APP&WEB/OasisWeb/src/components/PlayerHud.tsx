@@ -2,15 +2,17 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Star, MapPin, Scroll, Rocket, Egg } from 'lucide-react';
+import { Coins, Star, MapPin, Scroll, Rocket, Egg, User } from 'lucide-react';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
 import ShipLoadout from './ShipLoadout';
+import PlayerSettings from './PlayerSettings';
 
 const XP_PER_LEVEL = 1000;
 
 export default function PlayerHud() {
   const { xp, credits, completedQuests, discoveredWorlds, scannedWorlds, realQuests, collectedEggs } = useGameStore();
   const [showShip, setShowShip] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
 
@@ -18,6 +20,7 @@ export default function PlayerHud() {
     <>
       <AnimatePresence>
         {showShip && <ShipLoadout onClose={() => setShowShip(false)} />}
+        {showSettings && <PlayerSettings onClose={() => setShowSettings(false)} />}
       </AnimatePresence>
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -46,6 +49,13 @@ export default function PlayerHud() {
           aria-label="Ship loadout"
         >
           <Rocket className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => setShowSettings(true)}
+          className="ml-1.5 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-oasis-cyan transition hover:bg-white/10"
+          aria-label="Pilgrim settings"
+        >
+          <User className="h-4 w-4" />
         </button>
       </div>
 

@@ -130,9 +130,9 @@ State shape in `OasisClient`:
 Remaining:
 - ✅ **NPC presence** in world view / panel (avatar guide card + floating hologram).
 - ✅ **Leaderboard / social** integration (`getLeaderboard`, top pilgrims in `OasisHud`).
-- 🔄 **Persistent player profile** from backend (`getPlayer(address)` is used; wallet login is next).
+- ✅ **Persistent player profile** from backend (`getPlayer(address)` is used; wallet login is next).
 - ✅ **Ship upgrades / loadout** UI (engine, cargo, scanner) with color picker and local persistence.
-- **Composed SFX / ambient music** instead of synthesized oscillators.
+- ✅ **Composed SFX / ambient music** — procedural chord pad, random chimes, quest/scan/approach sounds.
 - ✅ **Golden Egg / territory hunting** mini-game loop (collect clue for 100 Z, +500 XP; territory map in HUD).
 
 ---

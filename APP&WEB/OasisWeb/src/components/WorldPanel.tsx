@@ -5,6 +5,7 @@ import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag, Swords, Compass, Pic
 import type { World } from '../domain/types/world';
 import { generateQuests, type Quest } from '../domain/quests';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
+import { useAudio } from './AudioEngine';
 
 const TYPE_ICONS: Record<Quest['type'], typeof Compass> = {
   exploration: Compass,
@@ -68,6 +69,7 @@ function mapRealQuests(world: World, realQuests: any[]): Quest[] {
 export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
   const color = CATEGORY_COLORS[world.category] || '#ffffff';
   const { xp, credits, completeQuest, completedQuests, realQuests, avatars, claimGoldenEgg, collectedEggs } = useGameStore();
+  const { playQuestComplete } = useAudio();
   const generated = generateQuests(world);
   const real = mapRealQuests(world, realQuests);
   const quests = real.length > 0 ? real : generated;
@@ -204,7 +206,12 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
                     <p style={{ color }}>★ {quest.difficulty}</p>
                     <p>{quest.reward} XP</p>
                     <button
-                      onClick={() => !done && completeQuest(quest.id, quest.reward)}
+                      onClick={() => {
+                        if (!done) {
+                          completeQuest(quest.id, quest.reward);
+                          playQuestComplete();
+                        }
+                      }}
                       disabled={done}
                       className={`rounded px-2 py-0.5 text-[10px] font-bold transition ${
                         done
