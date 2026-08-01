@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag, Swords, Compass, Pickaxe, Brain, Users, CheckCircle, Circle } from 'lucide-react';
+import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag, Swords, Compass, Pickaxe, Brain, Users } from 'lucide-react';
 import type { World } from '../domain/types/world';
 import { generateQuests, type Quest } from '../domain/quests';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
@@ -67,7 +67,7 @@ function mapRealQuests(world: World, realQuests: any[]): Quest[] {
 
 export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
   const color = CATEGORY_COLORS[world.category] || '#ffffff';
-  const { xp, credits, completeQuest, completedQuests, realQuests, avatars } = useGameStore();
+  const { xp, credits, completeQuest, completedQuests, realQuests, avatars, claimGoldenEgg, collectedEggs } = useGameStore();
   const generated = generateQuests(world);
   const real = mapRealQuests(world, realQuests);
   const quests = real.length > 0 ? real : generated;
@@ -223,13 +223,27 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
 
         <div className="grid grid-cols-2 gap-3">
           {world.goldenEggClue !== undefined && (
-            <div className="flex items-center gap-2.5 rounded-xl border p-2.5" style={{ borderColor: `${color}30`, backgroundColor: `${color}10` }}>
+            <button
+              onClick={() => claimGoldenEgg(world.id)}
+              disabled={collectedEggs.includes(world.id) || credits < 100}
+              className="flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition"
+              style={{
+                borderColor: `${color}30`,
+                backgroundColor: collectedEggs.includes(world.id) ? `${color}10` : `${color}20`,
+                opacity: collectedEggs.includes(world.id) || credits < 100 ? 0.6 : 1,
+              }}
+            >
               <Egg className="h-4 w-4" style={{ color }} />
               <div>
                 <p className="text-[10px] uppercase tracking-wider" style={{ color: `${color}cc` }}>Golden Egg</p>
-                <p className="text-sm font-semibold text-white">Clue {world.goldenEggClue}</p>
+                <p className="text-sm font-semibold text-white">
+                  {collectedEggs.includes(world.id) ? 'Collected' : `Clue ${world.goldenEggClue}`}
+                </p>
+                <p className="text-[9px] text-gray-400">
+                  {collectedEggs.includes(world.id) ? '+500 XP' : '100 Z to claim'}
+                </p>
               </div>
-            </div>
+            </button>
           )}
 
           <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-2.5">
