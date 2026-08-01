@@ -1,21 +1,24 @@
 {
-  "timestamp": "2026-03-16T21:52:49.299Z",
-  "duration": 30,
-  "platform": "win32 x64",
-  "nodeVersion": "v22.19.0",
+  "timestamp": "2026-08-01T09:51:44.531Z",
+  "durationSec": 60,
+  "platform": "linux x64",
+  "nodeVersion": "v26.1.0",
+  "pool": "62.171.141.136:8444",
+  "worker": "e2e-w11-1785577896862",
   "results": {
-    "electronLaunch": true,
-    "miningInit": true,
-    "hashrate": 0,
-    "sharesSubmitted": 0,
-    "gpuAcceleration": false,
-    "revenueMode": false,
-    "poolConnection": false,
+    "binaryPrepared": true,
+    "minerSpawned": true,
+    "poolConnected": true,
+    "tripleStreamNegotiated": true,
+    "tripleStreamDetected": true,
+    "sharesSubmitted": 1,
+    "hashrateHs": 0,
+    "streams": [],
     "errors": []
   },
   "summary": {
     "passed": true,
-    "totalChecks": 7,
-    "passedChecks": 2
+    "totalChecks": 5,
+    "passedChecks": 5
   }
 }
