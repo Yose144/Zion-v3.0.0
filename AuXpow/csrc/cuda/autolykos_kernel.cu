@@ -1,22 +1,26 @@
-// Autolykos v2 (Ergo / ERG) tableless CUDA mining kernel.
+// Autolykos v2 (Ergo / ERG) CUDA mining kernel — optimized with precomputed R table.
 //
-// This is the real Ergo k-sum PoW used by Autolykos v2.  Instead of the
-// impractical N×31-byte R table (tens of GB at current heights), the kernel
-// computes every R element on-the-fly from the 8192-byte M constant.
+// This implements the real Ergo k-sum PoW used by Autolykos v2.
+// The R table (N elements × 32 bytes) is precomputed once per block height
+// and stored in GPU memory. The mining kernel then only needs 3 blake2b
+// compressions per nonce + 33 table lookups, instead of ~2147 compressions
+// in the tableless approach.
 //
 // Algorithm (per thread, one nonce):
 //   1. i  = takeRight(8, Blake2b256(msg || nonce_BE8)) mod N
-//   2. e  = takeRight(31, Blake2b256(i_BE4 || height_BE4 || M))
+//   2. e  = takeRight(31, R[i])  (table lookup)
 //   3. indexes = genIndexes(e || msg || nonce_BE8)  (k = 32)
-//   4. f  = sum_{j in indexes} takeRight(31, Blake2b256(j_BE4 || height_BE4 || M))
+//   4. f  = sum_{j in indexes} takeRight(31, R[j])  (table lookups)
 //   5. pow_hash = Blake2b256(32-byte BE(f))
 //   6. accept if pow_hash <= target (big-endian byte comparison)
+//
+// R table element j = takeRight(31, Blake2b256(j_BE4 || height_BE4 || M))
+//   stored as 32 bytes: [0x00, hash[1], hash[2], ..., hash[31]]
 //
 // M = (0..1024).flatMap(i => Longs.toByteArray(i))  (8192 bytes, big-endian)
 // N depends on block height (2^26, then +5% every 51,200 blocks).
 //
-// This kernel is compiled at runtime via NVRTC, so it avoids any CUDA toolkit
-// dependency on the build machine.
+// This kernel is compiled at runtime via NVRTC.
 
 // ----------------------------------------------------------------------------
 // Blake2b constants
@@ -194,16 +198,6 @@ __device__ __forceinline__ void blake2b_emit(const uint64_t h[8], uint8_t output
 }
 
 // ----------------------------------------------------------------------------
-// Byte-swap a 64-bit word (big-endian <-> little-endian)
-// ----------------------------------------------------------------------------
-
-__device__ __forceinline__ uint64_t bswap64(uint64_t x) {
-    x = ((x & 0x00FF00FF00FF00FFULL) << 8)  | ((x >> 8)  & 0x00FF00FF00FF00FFULL);
-    x = ((x & 0x0000FFFF0000FFFFULL) << 16) | ((x >> 16) & 0x0000FFFF0000FFFFULL);
-    return (x << 32) | (x >> 32);
-}
-
-// ----------------------------------------------------------------------------
 // Load one 8-byte M word from the big-endian byte buffer.
 // M_raw is an 8192-byte big-endian byte array (1024 x uint64be).  When we
 // view it as a little-endian uint64_t array, each device load already returns
@@ -218,6 +212,7 @@ __device__ __forceinline__ uint64_t load_m_word_le(const uint64_t *M_words, int 
 // ----------------------------------------------------------------------------
 // Blake2b-256 for the R-element pattern: j(4B) || height(4B) || M(8192B)
 // Total input: 8200 bytes = 64 full 128B blocks + 8 bytes remainder.
+// Used by the precompute kernel.
 // ----------------------------------------------------------------------------
 
 __device__ __forceinline__ void blake2b_256_jhm(
@@ -293,23 +288,6 @@ __device__ __forceinline__ void blake2b_256_oneblock(
 }
 
 // ----------------------------------------------------------------------------
-// Compute one R element on-the-fly: takeRight(31, Blake2b256(j || h || M))
-// ----------------------------------------------------------------------------
-
-__device__ __forceinline__ void compute_r_element(
-    uint32_t j_index,
-    uint32_t height,
-    const uint64_t *M_words,
-    uint8_t r_out[31]
-) {
-    uint8_t hash[32];
-    blake2b_256_jhm(j_index, height, M_words, hash);
-    for (int i = 0; i < 31; i++) {
-        r_out[i] = hash[i + 1];
-    }
-}
-
-// ----------------------------------------------------------------------------
 // Generate the k = 32 pseudorandom indexes from seed
 // ----------------------------------------------------------------------------
 
@@ -340,17 +318,19 @@ __device__ __forceinline__ void gen_indexes(
 
 // ----------------------------------------------------------------------------
 // Big-int addition in-place: 32-byte big-endian accumulator += 32-byte addend
+// Uses uint32_t arithmetic for speed (8 x uint32_t instead of 32 x uint8_t).
 // ----------------------------------------------------------------------------
 
-__device__ __forceinline__ void add_bigint_be32_inplace(
-    uint8_t result[32],
-    const uint8_t addend[32]
+__device__ __forceinline__ void add_be256_inplace(
+    uint32_t acc[8],
+    const uint32_t addend[8]
 ) {
     uint32_t carry = 0;
-    for (int i = 31; i >= 0; i--) {
-        uint32_t sum = (uint32_t)result[i] + (uint32_t)addend[i] + carry;
-        result[i] = (uint8_t)(sum & 0xFF);
-        carry = sum >> 8;
+    #pragma unroll
+    for (int i = 7; i >= 0; i--) {
+        uint64_t sum = (uint64_t)acc[i] + addend[i] + carry;
+        acc[i] = (uint32_t)sum;
+        carry = (uint32_t)(sum >> 32);
     }
 }
 
@@ -366,32 +346,111 @@ __device__ __forceinline__ int hash_le_target(
         if (hash[i] < target[i]) return 1;
         if (hash[i] > target[i]) return 0;
     }
-    return 1; // equal
+    return 1;
 }
 
 // ----------------------------------------------------------------------------
-// Main mining kernel
+// Precompute kernel: fill the R table.
+// Each thread computes one R element: R[j] = takeRight(31, H(j || h || M))
+// stored as 32 bytes: [0x00, hash[1], ..., hash[31]] in big-endian byte order.
+// The table is stored as uint32_t array (8 per element) for fast uint32 reads.
+// Element j occupies table[j*8 .. j*8+7] as big-endian uint32_t values.
 // ----------------------------------------------------------------------------
 
 extern "C" {
 
-__global__ __launch_bounds__(256) void autolykos_mine(
+__global__ __launch_bounds__(256) void autolykos_precompute(
+    const uint32_t height,
+    const uint32_t N,
+    const uint8_t *M_raw,
+    uint32_t *r_table  // N * 8 uint32_t = N * 32 bytes
+) {
+    const uint32_t j = blockIdx.x * blockDim.x + threadIdx.x;
+    if (j >= N) return;
+
+    const uint64_t *M_words = (const uint64_t *)M_raw;
+
+    uint8_t hash[32];
+    blake2b_256_jhm(j, height, M_words, hash);
+
+    // Store as big-endian uint32_t with leading zero byte.
+    //
+    // takeRight(31, hash) = hash[1..31] (drops byte 0 of the Blake2b output).
+    // The 32-byte big-endian representation: [0x00, hash[1], hash[2], ..., hash[31]]
+    //
+    // Both CPU and GPU produce the same Blake2b output byte order (LE state
+    // serialization). Ergo treats the output bytes as a big-endian integer,
+    // so byte 0 is the MSB. takeRight(31) drops the MSB (byte 0).
+    //
+    // As big-endian uint32_t:
+    //   r_table[j*8+0] = (0x00 << 24) | (hash[1] << 16) | (hash[2] << 8) | hash[3]
+    //   r_table[j*8+1] = (hash[4] << 24) | (hash[5] << 16) | (hash[6] << 8) | hash[7]
+    //   ...
+    //   r_table[j*8+7] = (hash[28] << 24) | (hash[29] << 16) | (hash[30] << 8) | hash[31]
+    r_table[(uint64_t)j * 8 + 0] =
+        ((uint32_t)0 << 24) |
+        ((uint32_t)hash[1] << 16) |
+        ((uint32_t)hash[2] << 8) |
+        ((uint32_t)hash[3]);
+    r_table[(uint64_t)j * 8 + 1] =
+        ((uint32_t)hash[4] << 24) |
+        ((uint32_t)hash[5] << 16) |
+        ((uint32_t)hash[6] << 8) |
+        ((uint32_t)hash[7]);
+    r_table[(uint64_t)j * 8 + 2] =
+        ((uint32_t)hash[8] << 24) |
+        ((uint32_t)hash[9] << 16) |
+        ((uint32_t)hash[10] << 8) |
+        ((uint32_t)hash[11]);
+    r_table[(uint64_t)j * 8 + 3] =
+        ((uint32_t)hash[12] << 24) |
+        ((uint32_t)hash[13] << 16) |
+        ((uint32_t)hash[14] << 8) |
+        ((uint32_t)hash[15]);
+    r_table[(uint64_t)j * 8 + 4] =
+        ((uint32_t)hash[16] << 24) |
+        ((uint32_t)hash[17] << 16) |
+        ((uint32_t)hash[18] << 8) |
+        ((uint32_t)hash[19]);
+    r_table[(uint64_t)j * 8 + 5] =
+        ((uint32_t)hash[20] << 24) |
+        ((uint32_t)hash[21] << 16) |
+        ((uint32_t)hash[22] << 8) |
+        ((uint32_t)hash[23]);
+    r_table[(uint64_t)j * 8 + 6] =
+        ((uint32_t)hash[24] << 24) |
+        ((uint32_t)hash[25] << 16) |
+        ((uint32_t)hash[26] << 8) |
+        ((uint32_t)hash[27]);
+    r_table[(uint64_t)j * 8 + 7] =
+        ((uint32_t)hash[28] << 24) |
+        ((uint32_t)hash[29] << 16) |
+        ((uint32_t)hash[30] << 8) |
+        ((uint32_t)hash[31]);
+}
+
+// ----------------------------------------------------------------------------
+// Main mining kernel — uses precomputed R table for O(1) element lookups.
+// Each thread processes one nonce.
+// ----------------------------------------------------------------------------
+
+__global__ __launch_bounds__(128, 8) void autolykos_mine(
     const uint8_t *header,
     const uint32_t header_len,
     const uint32_t height,
     const uint32_t N,
     const uint8_t *target,
     const uint64_t base_nonce,
-    const uint8_t *M_raw,
+    const uint8_t *M_raw,       // still passed for compatibility (unused in mining)
+    const uint32_t *r_table,    // precomputed R table (N * 8 uint32_t)
     uint64_t *output_nonce,
     uint8_t *output_hash,
     uint32_t *found
 ) {
     if (*found) return;
 
+    const uint4 *r_table_v4 = (const uint4 *)r_table;
     const uint64_t nonce = base_nonce + ((uint64_t)blockIdx.x * blockDim.x + (uint64_t)threadIdx.x);
-
-    const uint64_t *M_words = (const uint64_t *)M_raw;
 
     // Copy header into local 32-byte buffer, padded with zero
     uint8_t header_hash[32];
@@ -421,9 +480,47 @@ __global__ __launch_bounds__(256) void autolykos_mine(
         ((uint64_t)hash_i[30] <<  8) | ((uint64_t)hash_i[31]      );
     uint32_t i_idx = (uint32_t)(prei8 % (uint64_t)N);
 
-    // Step 2: e = takeRight(31, Blake2b256(i || height || M))
+    // Step 2: e = takeRight(31, R[i]) — table lookup using uint4 (128-bit) loads
+    uint4 e_v4_0 = r_table_v4[(uint64_t)i_idx * 2 + 0];
+    uint4 e_v4_1 = r_table_v4[(uint64_t)i_idx * 2 + 1];
+    uint32_t e_elem[8] = {
+        e_v4_0.x, e_v4_0.y, e_v4_0.z, e_v4_0.w,
+        e_v4_1.x, e_v4_1.y, e_v4_1.z, e_v4_1.w
+    };
+
+    // Convert big-endian uint32_t to byte array for seed
     uint8_t e[31];
-    compute_r_element(i_idx, height, M_words, e);
+    e[ 0] = (uint8_t)(e_elem[0] >> 16);
+    e[ 1] = (uint8_t)(e_elem[0] >> 8);
+    e[ 2] = (uint8_t)(e_elem[0]);
+    e[ 3] = (uint8_t)(e_elem[1] >> 24);
+    e[ 4] = (uint8_t)(e_elem[1] >> 16);
+    e[ 5] = (uint8_t)(e_elem[1] >> 8);
+    e[ 6] = (uint8_t)(e_elem[1]);
+    e[ 7] = (uint8_t)(e_elem[2] >> 24);
+    e[ 8] = (uint8_t)(e_elem[2] >> 16);
+    e[ 9] = (uint8_t)(e_elem[2] >> 8);
+    e[10] = (uint8_t)(e_elem[2]);
+    e[11] = (uint8_t)(e_elem[3] >> 24);
+    e[12] = (uint8_t)(e_elem[3] >> 16);
+    e[13] = (uint8_t)(e_elem[3] >> 8);
+    e[14] = (uint8_t)(e_elem[3]);
+    e[15] = (uint8_t)(e_elem[4] >> 24);
+    e[16] = (uint8_t)(e_elem[4] >> 16);
+    e[17] = (uint8_t)(e_elem[4] >> 8);
+    e[18] = (uint8_t)(e_elem[4]);
+    e[19] = (uint8_t)(e_elem[5] >> 24);
+    e[20] = (uint8_t)(e_elem[5] >> 16);
+    e[21] = (uint8_t)(e_elem[5] >> 8);
+    e[22] = (uint8_t)(e_elem[5]);
+    e[23] = (uint8_t)(e_elem[6] >> 24);
+    e[24] = (uint8_t)(e_elem[6] >> 16);
+    e[25] = (uint8_t)(e_elem[6] >> 8);
+    e[26] = (uint8_t)(e_elem[6]);
+    e[27] = (uint8_t)(e_elem[7] >> 24);
+    e[28] = (uint8_t)(e_elem[7] >> 16);
+    e[29] = (uint8_t)(e_elem[7] >> 8);
+    e[30] = (uint8_t)(e_elem[7]);
 
     // Step 3: seed = e || header || nonce (71 bytes)
     uint8_t seed[71];
@@ -438,30 +535,40 @@ __global__ __launch_bounds__(256) void autolykos_mine(
     seed[69] = (uint8_t)(nonce >>  8);
     seed[70] = (uint8_t)(nonce      );
 
-    // Step 3: generate k indexes
     uint32_t indexes[32];
     gen_indexes(seed, 71, N, indexes);
 
-    // Step 4+5: sum 31-byte R elements into a 32-byte big-endian accumulator
-    uint8_t f[32];
-    for (int i = 0; i < 32; i++) f[i] = 0;
+    // Step 4: sum 31-byte R elements
+    uint32_t f[8];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) f[i] = 0;
 
+    #pragma unroll 32
     for (int k = 0; k < 32; k++) {
-        uint8_t r_elem[31];
-        compute_r_element(indexes[k], height, M_words, r_elem);
-
-        uint8_t elem32[32];
-        elem32[0] = 0;
-        for (int i = 0; i < 31; i++) elem32[i + 1] = r_elem[i];
-
-        add_bigint_be32_inplace(f, elem32);
+        uint64_t r_idx = (uint64_t)indexes[k] * 2;
+        uint4 r_v4_0 = r_table_v4[r_idx + 0];
+        uint4 r_v4_1 = r_table_v4[r_idx + 1];
+        uint32_t r_elem[8] = {
+            r_v4_0.x, r_v4_0.y, r_v4_0.z, r_v4_0.w,
+            r_v4_1.x, r_v4_1.y, r_v4_1.z, r_v4_1.w
+        };
+        add_be256_inplace(f, r_elem);
     }
 
-    // Step 6: pow_hash = Blake2b256(f)
-    uint8_t pow_hash[32];
-    blake2b_256_oneblock(f, 32, pow_hash);
+    // Step 5: pow_hash = Blake2b256(f)
+    uint8_t f_bytes[32];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        f_bytes[i * 4 + 0] = (uint8_t)(f[i] >> 24);
+        f_bytes[i * 4 + 1] = (uint8_t)(f[i] >> 16);
+        f_bytes[i * 4 + 2] = (uint8_t)(f[i] >> 8);
+        f_bytes[i * 4 + 3] = (uint8_t)(f[i]);
+    }
 
-    // Step 7: compare with target (big-endian byte comparison)
+    uint8_t pow_hash[32];
+    blake2b_256_oneblock(f_bytes, 32, pow_hash);
+
+    // Step 6: compare with target
     if (hash_le_target(pow_hash, target)) {
         unsigned int old = atomicExch(found, 1u);
         if (old == 0u) {

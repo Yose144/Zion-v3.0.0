@@ -1,3 +1,4 @@
+use crate::{private_eprint, private_print};
 /// CUDA miner for external AuxPoW algorithms (kheavyhash, blake3, autolykos, zelhash,
 /// ethash, kawpow, beamhash).
 ///
@@ -14,14 +15,13 @@
 ///   - ethash / ethash_etc (Ethereum Classic / ETHW)
 ///   - kawpow / kawpow_rvn (Ravencoin / CLORE / EVR / MEWC)
 ///   - beamhash / beamhash_beam (Beam — BeamHash III Wagner solver)
-
 use anyhow::{Context, Result};
-use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
+use cudarc::driver::result::mem_get_info;
 use cudarc::driver::sys::CUdevice_attribute;
+use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
 use cudarc::nvrtc::{compile_ptx_with_opts, CompileOptions};
 use std::sync::Arc;
 use std::time::Instant;
-use crate::{private_eprint, private_print};
 use zion_auxpow::external_hashers::{
     autolykos_calc_n, autolykos_generate_padding_m, ETCHASH_EPOCH_LENGTH, ETCHASH_FORK_BLOCK,
 };
@@ -40,17 +40,22 @@ fn detect_cuda_arch(dev: &CudaDevice) -> String {
     match (major, minor) {
         (Ok(maj), Ok(min)) => {
             let arch = format!("compute_{}{}", maj, min);
-            eprintln!("cuda_arch_detect: compute_capability={}.{} => arch={}", maj, min, arch);
+            eprintln!(
+                "cuda_arch_detect: compute_capability={}.{} => arch={}",
+                maj, min, arch
+            );
             arch
         }
         _ => {
-            eprintln!("cuda_arch_detect: failed to query compute capability, falling back to compute_86");
+            eprintln!(
+                "cuda_arch_detect: failed to query compute capability, falling back to compute_86"
+            );
             "compute_86".to_string()
         }
     }
 }
 
-use crate::gpu_backend::{GpuBatchResult, GpuMiner, GpuBackendKind};
+use crate::gpu_backend::{GpuBackendKind, GpuBatchResult, GpuMiner};
 use zion_core::{DifficultyTarget, MiningHeader};
 
 const SENTINEL_NONCE: u64 = 0xFFFF_FFFF_FFFF_FFFF;
@@ -130,9 +135,11 @@ impl CudaExtAlgo {
             "autolykos" | "autolykos_erg" => Some(Self::Autolykos),
             "zelhash" | "zelhash_flux" => Some(Self::Zelhash),
             "ethash" | "etchash" | "ethash_etc" | "ethash_ethw" => Some(Self::Ethash),
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => Some(Self::Kawpow),
-            "progpow" | "progpow_epic" | "progpow_zano" | "progpowz"
-            | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => Some(Self::Progpow),
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
+                Some(Self::Kawpow)
+            }
+            "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" | "evrprogpow"
+            | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => Some(Self::Progpow),
             "verushash" | "verushash_vrsc" | "verus" => Some(Self::Verushash),
             "beamhash" | "beamhash_beam" => Some(Self::Beamhash),
             _ => None,
@@ -232,12 +239,14 @@ pub struct CudaExternalMiner {
     // Algorithm-specific buffers
     kheavy_matrix: Option<CudaSlice<u16>>,
     autolykos_m: Option<CudaSlice<u8>>,
+    autolykos_r_table: Option<CudaSlice<u32>>,
+    autolykos_r_table_height: u32,
     autolykos_n: u32,
     autolykos_height: u64,
     // DAG buffer for ethash/kawpow
     dag_buf: Option<CudaSlice<u64>>,
     dag_size_entries: u64,
-    dag_epoch: u32, // 0xFFFFFFFF = no DAG loaded
+    dag_epoch: u32,  // 0xFFFFFFFF = no DAG loaded
     dag_height: u64, // last block height used to size the DAG (for Etchash)
     // Light cache for DAG generation (uploaded to GPU for on-GPU DAG gen)
     light_cache_buf: Option<CudaSlice<u64>>,
@@ -288,7 +297,11 @@ impl CudaExternalMiner {
     /// device used by the main ZION deeksha miner). This avoids creating a
     /// second CUDA context on the same GPU, which causes deadlocks on
     /// consumer GPUs (GTX 1080, etc.) that don't support MPS.
-    pub fn new_with_device(algorithm: &str, work_size: usize, dev: Arc<CudaDevice>) -> Result<Self> {
+    pub fn new_with_device(
+        algorithm: &str,
+        work_size: usize,
+        dev: Arc<CudaDevice>,
+    ) -> Result<Self> {
         let algo = CudaExtAlgo::from_name(algorithm)
             .ok_or_else(|| anyhow::anyhow!("unsupported CUDA external algorithm: {}", algorithm))?;
 
@@ -317,7 +330,10 @@ impl CudaExternalMiner {
             // Debug: dump PTX for inspection
             if std::env::var("ZION_DUMP_CUDA_KERNEL").is_ok() {
                 let ptx_str = ptx.to_src();
-                let ptx_path = format!("C:\\Users\\anaha\\AppData\\Local\\Temp\\{}_kernel.ptx", algorithm);
+                let ptx_path = format!(
+                    "C:\\Users\\anaha\\AppData\\Local\\Temp\\{}_kernel.ptx",
+                    algorithm
+                );
                 let _ = std::fs::write(&ptx_path, &ptx_str);
             }
 
@@ -326,11 +342,15 @@ impl CudaExternalMiner {
 
             // Debug: dump the preprocessed source for inspection
             if std::env::var("ZION_DUMP_CUDA_KERNEL").is_ok() {
-                let dump_path = format!("C:\\Users\\anaha\\AppData\\Local\\Temp\\{}_processed.cu", module_name);
+                let dump_path = format!(
+                    "C:\\Users\\anaha\\AppData\\Local\\Temp\\{}_processed.cu",
+                    module_name
+                );
                 let _ = std::fs::write(&dump_path, &processed);
             }
 
             // Beamhash has 7 kernels — register all of them
+            // Autolykos has 2 kernels: precompute (R table) + mine
             let kernel_names: &[&str] = if algo == CudaExtAlgo::Beamhash {
                 &[
                     "cleanUp",
@@ -341,6 +361,8 @@ impl CudaExternalMiner {
                     "beamHashIII_R4",
                     "beamHashIII_R5",
                 ]
+            } else if algo == CudaExtAlgo::Autolykos {
+                &["autolykos_precompute", "autolykos_mine"]
             } else {
                 &[kernel_name]
             };
@@ -398,12 +420,18 @@ impl CudaExternalMiner {
         // KawPow: allocate job_blob (10 u32), results (16 u32), stop (2 u32)
         let (kawpow_job_blob, kawpow_results, kawpow_stop) = if algo == CudaExtAlgo::Kawpow {
             (
-                Some(dev.htod_copy(vec![0u32; 10])
-                    .map_err(|e| anyhow::anyhow!("kawpow_job_blob alloc: {e}"))?),
-                Some(dev.htod_copy(vec![0u32; 16])
-                    .map_err(|e| anyhow::anyhow!("kawpow_results alloc: {e}"))?),
-                Some(dev.htod_copy(vec![0u32; 2])
-                    .map_err(|e| anyhow::anyhow!("kawpow_stop alloc: {e}"))?),
+                Some(
+                    dev.htod_copy(vec![0u32; 10])
+                        .map_err(|e| anyhow::anyhow!("kawpow_job_blob alloc: {e}"))?,
+                ),
+                Some(
+                    dev.htod_copy(vec![0u32; 16])
+                        .map_err(|e| anyhow::anyhow!("kawpow_results alloc: {e}"))?,
+                ),
+                Some(
+                    dev.htod_copy(vec![0u32; 2])
+                        .map_err(|e| anyhow::anyhow!("kawpow_stop alloc: {e}"))?,
+                ),
             )
         } else {
             (None, None, None)
@@ -421,7 +449,9 @@ impl CudaExternalMiner {
 
         private_print!(
             "gpu_cuda_ext_init device=\"{}\" algorithm={} work_size={}",
-            device_name, algorithm, actual_work_size,
+            device_name,
+            algorithm,
+            actual_work_size,
         );
 
         Ok(Self {
@@ -439,6 +469,8 @@ impl CudaExternalMiner {
             found_flag,
             kheavy_matrix,
             autolykos_m,
+            autolykos_r_table: None,
+            autolykos_r_table_height: 0xFFFFFFFF,
             autolykos_n: 0,
             autolykos_height: 0,
             dag_buf: None,
@@ -468,6 +500,8 @@ impl CudaExternalMiner {
     /// Upload the 8192-byte Autolykos v2 padding constant M and cache the
     /// current block height/N.  M is height-independent, so it is only
     /// allocated once per miner session.
+    /// Also (re)builds the precomputed R table when the block height changes.
+    /// The R table has N elements × 32 bytes (8 × uint32_t), stored in VRAM.
     fn ensure_autolykos_constants(&mut self, height: u32) -> Result<()> {
         if self.autolykos_m.is_none() {
             let m = autolykos_generate_padding_m().to_vec();
@@ -477,8 +511,89 @@ impl CudaExternalMiner {
                 .map_err(|e| anyhow::anyhow!("autolykos M upload: {e}"))?;
             self.autolykos_m = Some(m_buf);
         }
-        self.autolykos_n = autolykos_calc_n(height);
+        let n = autolykos_calc_n(height);
+        self.autolykos_n = n;
         self.autolykos_height = height as u64;
+
+        // (Re)build the R table if height changed or table not yet allocated.
+        // The R table depends on height (each element = H(j || height || M)),
+        // so it must be rebuilt on every new block.
+        if self.autolykos_r_table_height != height || self.autolykos_r_table.is_none() {
+            // Free old table first (if any) to release VRAM before reallocating.
+            self.autolykos_r_table = None;
+
+            // R table: N elements × 8 uint32_t = N × 32 bytes
+            let table_elems = n as usize * 8;
+            let table_bytes = table_elems * 4;
+
+            // Check available VRAM before attempting allocation.
+            // We need the table + some headroom for other GPU resources.
+            if let Ok((free_bytes, _total_bytes)) = mem_get_info() {
+                let headroom = 512 * 1024 * 1024; // 512 MB headroom
+                if table_bytes + headroom > free_bytes {
+                    anyhow::bail!(
+                        "autolykos R table too large for VRAM: {:.2} GB needed, {:.2} GB free (height={}, N={})",
+                        table_bytes as f64 / 1e9,
+                        free_bytes as f64 / 1e9,
+                        height, n
+                    );
+                }
+            }
+
+            eprintln!(
+                "autolykos: building R table height={} N={} size={:.2} GB",
+                height,
+                n,
+                table_bytes as f64 / 1e9
+            );
+
+            // Allocate zeroed buffer for the R table
+            let r_table = self.dev.alloc_zeros::<u32>(table_elems).map_err(|e| {
+                anyhow::anyhow!("autolykos R table alloc ({} elems): {e}", table_elems)
+            })?;
+
+            // Launch precompute kernel: each thread computes one R element
+            let func = self
+                .dev
+                .get_func("autolykos", "autolykos_precompute")
+                .ok_or_else(|| anyhow::anyhow!("autolykos_precompute kernel not found"))?;
+
+            let block: u32 = 256;
+            let grid: u32 = (n + block - 1) / block;
+            let cfg = LaunchConfig {
+                grid_dim: (grid, 1, 1),
+                block_dim: (block, 1, 1),
+                shared_mem_bytes: 0,
+            };
+
+            let m_buf = self
+                .autolykos_m
+                .as_ref()
+                .ok_or_else(|| anyhow::anyhow!("autolykos M not uploaded for precompute"))?;
+
+            unsafe {
+                func.launch(
+                    cfg,
+                    (
+                        height,   // height
+                        n,        // N
+                        m_buf,    // M raw bytes
+                        &r_table, // R table output
+                    ),
+                )
+                .map_err(|e| anyhow::anyhow!("autolykos_precompute launch: {e}"))?;
+            }
+
+            // Synchronize to ensure the table is fully built before mining
+            self.dev
+                .synchronize()
+                .map_err(|e| anyhow::anyhow!("autolykos_precompute sync: {e}"))?;
+
+            self.autolykos_r_table = Some(r_table);
+            self.autolykos_r_table_height = height;
+            eprintln!("autolykos: R table built successfully");
+        }
+
         Ok(())
     }
 
@@ -543,7 +658,9 @@ impl CudaExternalMiner {
         #[cfg(not(feature = "native-verushash"))]
         {
             let _ = header;
-            anyhow::bail!("Verushash CUDA kernel requires native-verushash feature for key precomputation");
+            anyhow::bail!(
+                "Verushash CUDA kernel requires native-verushash feature for key precomputation"
+            );
         }
 
         Ok(())
@@ -584,7 +701,7 @@ impl CudaExternalMiner {
         let cache_items = cache_bytes.len() / 64;
         let dag_size_entries = dataset_size_for_epoch(size_epoch) / 128;
         let dag_nodes = dag_size_entries * 2; // each 128-byte entry = 2 nodes
-        let dag_u64s = dag_nodes * 8;         // each 64-byte node = 8 u64
+        let dag_u64s = dag_nodes * 8; // each 64-byte node = 8 u64
 
         eprintln!(
             "dag_manager: light cache ready ({} items = {:.1} MB), DAG will be {} nodes = {:.2} GB",
@@ -701,7 +818,9 @@ impl CudaExternalMiner {
                 if pct % 10 == 0 || node_start + chunk >= dag_nodes {
                     eprintln!(
                         "dag_manager: DAG generation {}% ({}/{}, {:.1}s)",
-                        pct, node_start + chunk, dag_nodes,
+                        pct,
+                        node_start + chunk,
+                        dag_nodes,
                         start.elapsed().as_secs_f64(),
                     );
                 }
@@ -721,7 +840,8 @@ impl CudaExternalMiner {
 
         eprintln!(
             "dag_manager: {} DAG epoch={} ready on GPU ({:.1}s total)",
-            algo_name, epoch,
+            algo_name,
+            epoch,
             start.elapsed().as_secs_f64(),
         );
 
@@ -736,7 +856,7 @@ impl CudaExternalMiner {
     fn ensure_progpow_kernel(&mut self, block_height: u64) -> Result<()> {
         let period = (block_height / self.progpow_period()) as u32;
         let dag_elements = if self.dag_buf.is_some() {
-            self.dag_size_entries / 2  // PROGPOW_DAG_ELEMENTS = dag_entries / 2
+            self.dag_size_entries / 2 // PROGPOW_DAG_ELEMENTS = dag_entries / 2
         } else {
             1 // fallback (will be recompiled when DAG is loaded)
         };
@@ -748,7 +868,9 @@ impl CudaExternalMiner {
 
         private_eprint!(
             "progpow_cuda: recompiling kernel period={} dag_elements={} block_height={}",
-            period, dag_elements, block_height,
+            period,
+            dag_elements,
+            block_height,
         );
         let start = Instant::now();
 
@@ -803,7 +925,8 @@ impl CudaExternalMiner {
 
         private_eprint!(
             "progpow_cuda: kernel ready period={} dag_elements={} ({:.1}s)",
-            period, dag_elements,
+            period,
+            dag_elements,
             start.elapsed().as_secs_f64(),
         );
 
@@ -889,7 +1012,8 @@ impl CudaExternalMiner {
 
         eprintln!(
             "kawpow_cuda: kernel ready period={} dag_elements={} ({:.1}s)",
-            period, dag_elements,
+            period,
+            dag_elements,
             start.elapsed().as_secs_f64(),
         );
 
@@ -931,14 +1055,15 @@ impl CudaExternalMiner {
         let func = self
             .dev
             .get_func(self.algo.module_name(), self.algo.kernel_name())
-            .ok_or_else(|| {
-                anyhow::anyhow!("kernel {} not found", self.algo.kernel_name())
-            })?;
+            .ok_or_else(|| anyhow::anyhow!("kernel {} not found", self.algo.kernel_name()))?;
 
         let threads_per_block: u32 = if self.algo == CudaExtAlgo::Verushash {
             128 // Verushash kernel uses __launch_bounds__(128)
         } else if self.algo == CudaExtAlgo::Kawpow {
             128 // KawPow kernel uses GROUP_SIZE=128 (HASHES_PER_GROUP=8)
+        } else if self.algo == CudaExtAlgo::Autolykos {
+            // Autolykos kernel uses __launch_bounds__(128, 8).
+            128
         } else {
             // Configurable via ZION_CUDA_BLOCK_SIZE env var.
             // Default 256 (optimal for Ampere/Ada). For Pascal/Turing (GTX 1080, etc.),
@@ -973,8 +1098,7 @@ impl CudaExternalMiner {
                     }
                     CudaExtAlgo::Kheavyhash => {
                         let matrix = self.kheavy_matrix.as_ref().unwrap();
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -992,8 +1116,7 @@ impl CudaExternalMiner {
                     }
                     CudaExtAlgo::Blake3Alph => {
                         let header_len_u32 = header_len as u32;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -1010,8 +1133,7 @@ impl CudaExternalMiner {
                     }
                     CudaExtAlgo::Blake3Dcr => {
                         let header_len_u32 = header_len as u32;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -1031,11 +1153,14 @@ impl CudaExternalMiner {
                             .autolykos_m
                             .as_ref()
                             .ok_or_else(|| anyhow::anyhow!("autolykos M not uploaded"))?;
+                        let r_table = self
+                            .autolykos_r_table
+                            .as_ref()
+                            .ok_or_else(|| anyhow::anyhow!("autolykos R table not built"))?;
                         let header_len_u32 = header_len as u32;
                         let height_u32 = self.autolykos_height as u32;
                         let n_u32 = self.autolykos_n;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -1046,6 +1171,7 @@ impl CudaExternalMiner {
                                     &self.target_buf,
                                     current_nonce,
                                     m_buf,
+                                    r_table,
                                     &mut self.output_nonce,
                                     &mut self.output_hash,
                                     &mut self.found_flag,
@@ -1055,8 +1181,7 @@ impl CudaExternalMiner {
                     }
                     CudaExtAlgo::Zelhash => {
                         let header_len_u32 = header_len as u32;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -1078,8 +1203,7 @@ impl CudaExternalMiner {
                             .as_ref()
                             .ok_or_else(|| anyhow::anyhow!("ethash DAG not loaded"))?;
                         let dag_size = self.dag_size_entries;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -1142,25 +1266,24 @@ impl CudaExternalMiner {
 
                         // Convert 32-byte big-endian target to u64
                         let target_u64 = u64::from_be_bytes([
-                            target[0], target[1], target[2], target[3],
-                            target[4], target[5], target[6], target[7],
+                            target[0], target[1], target[2], target[3], target[4], target[5],
+                            target[6], target[7],
                         ]);
                         let hack_false: u32 = 0;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
-                                    dag,             // 0: g_dag (u64 buffer)
-                                    job_blob,        // 1: job_blob (10 u32)
-                                    target_u64,      // 2: target
-                                    hack_false,      // 3: hack_false
-                                    results,         // 4: results
-                                    stop,            // 5: stop
-                                    &mut self.output_nonce,  // 6: output_nonce
-                                    &mut self.output_mix,    // 7: output_mix
-                                    &mut self.found_flag,    // 8: found
-                                    &mut self.output_hash,   // 9: output_hash
+                                    dag,                    // 0: g_dag (u64 buffer)
+                                    job_blob,               // 1: job_blob (10 u32)
+                                    target_u64,             // 2: target
+                                    hack_false,             // 3: hack_false
+                                    results,                // 4: results
+                                    stop,                   // 5: stop
+                                    &mut self.output_nonce, // 6: output_nonce
+                                    &mut self.output_mix,   // 7: output_mix
+                                    &mut self.found_flag,   // 8: found
+                                    &mut self.output_hash,  // 9: output_hash
                                 ),
                             )
                             .map_err(|e| anyhow::anyhow!("kawpow launch: {e}"))?;
@@ -1180,12 +1303,11 @@ impl CudaExternalMiner {
                             .map_err(|e| anyhow::anyhow!("progpow g_output reset: {e}"))?;
                         // Convert 32-byte big-endian target to u64 (first 8 bytes)
                         let target_u64 = u64::from_be_bytes([
-                            target[0], target[1], target[2], target[3],
-                            target[4], target[5], target[6], target[7],
+                            target[0], target[1], target[2], target[3], target[4], target[5],
+                            target[6], target[7],
                         ]);
                         let hack_false: u32 = 0;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -1204,17 +1326,19 @@ impl CudaExternalMiner {
                             .map_err(|e| anyhow::anyhow!("progpow launch: {e}"))?;
                     }
                     CudaExtAlgo::Verushash => {
-                        let vkey = self.verus_vkey.as_ref().ok_or_else(|| {
-                            anyhow::anyhow!("verus vkey not precomputed")
-                        })?;
-                        let blockhash_half = self.verus_blockhash_half.as_ref().ok_or_else(|| {
-                            anyhow::anyhow!("verus blockhash_half not set")
-                        })?;
-                        let scratch = self.verus_scratch.as_ref().ok_or_else(|| {
-                            anyhow::anyhow!("verus scratch not allocated")
-                        })?;
-                        func
-                            .clone()
+                        let vkey = self
+                            .verus_vkey
+                            .as_ref()
+                            .ok_or_else(|| anyhow::anyhow!("verus vkey not precomputed"))?;
+                        let blockhash_half = self
+                            .verus_blockhash_half
+                            .as_ref()
+                            .ok_or_else(|| anyhow::anyhow!("verus blockhash_half not set"))?;
+                        let scratch = self
+                            .verus_scratch
+                            .as_ref()
+                            .ok_or_else(|| anyhow::anyhow!("verus scratch not allocated"))?;
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -1297,7 +1421,9 @@ impl CudaExternalMiner {
     /// while still routing through the same CudaExtAlgo::Progpow enum.
     fn progpow_params(&self) -> Option<&'static zion_auxpow::progpow_codegen::ProgPowParams> {
         if self.algo == CudaExtAlgo::Progpow {
-            Some(zion_auxpow::progpow_codegen::select_progpow_params(&self.algorithm))
+            Some(zion_auxpow::progpow_codegen::select_progpow_params(
+                &self.algorithm,
+            ))
         } else {
             None
         }
@@ -1350,8 +1476,8 @@ impl CudaExternalMiner {
             nonce_start,
             header.len(),
             u64::from_be_bytes([
-                target[0], target[1], target[2], target[3],
-                target[4], target[5], target[6], target[7],
+                target[0], target[1], target[2], target[3], target[4], target[5], target[6],
+                target[7],
             ]),
         );
 
@@ -1374,33 +1500,34 @@ impl CudaExternalMiner {
         full_header.extend_from_slice(&full_nonce);
         let pre_pow_u64 = beamhash::compute_prepow(&full_header);
         let (pp0, pp1, pp2, pp3) = (
-            pre_pow_u64[0], pre_pow_u64[1],
-            pre_pow_u64[2], pre_pow_u64[3],
+            pre_pow_u64[0],
+            pre_pow_u64[1],
+            pre_pow_u64[2],
+            pre_pow_u64[3],
         );
 
         // Allocate beamhash buffers if not yet allocated
         if self.beamhash_buf0.is_none() {
-            let buf0 = self.dev.alloc_zeros::<u64>(HASH_TABLE_U64)
+            let buf0 = self
+                .dev
+                .alloc_zeros::<u64>(HASH_TABLE_U64)
                 .map_err(|e| anyhow::anyhow!("beamhash buf0 alloc: {e}"))?;
-            let buf1 = self.dev.alloc_zeros::<u64>(HASH_TABLE_U64)
-                .map_err(|e| {
-                    // Reset buf0 so the next call retries the full init
-                    self.beamhash_buf0 = None;
-                    anyhow::anyhow!("beamhash buf1 alloc: {e}")
-                })?;
-            let counters = self.dev.alloc_zeros::<u32>(COUNTERS_LEN)
-                .map_err(|e| {
-                    self.beamhash_buf0 = None;
-                    self.beamhash_buf1 = None;
-                    anyhow::anyhow!("beamhash counters alloc: {e}")
-                })?;
-            let results = self.dev.alloc_zeros::<u32>(RESULTS_LEN)
-                .map_err(|e| {
-                    self.beamhash_buf0 = None;
-                    self.beamhash_buf1 = None;
-                    self.beamhash_counters = None;
-                    anyhow::anyhow!("beamhash results alloc: {e}")
-                })?;
+            let buf1 = self.dev.alloc_zeros::<u64>(HASH_TABLE_U64).map_err(|e| {
+                // Reset buf0 so the next call retries the full init
+                self.beamhash_buf0 = None;
+                anyhow::anyhow!("beamhash buf1 alloc: {e}")
+            })?;
+            let counters = self.dev.alloc_zeros::<u32>(COUNTERS_LEN).map_err(|e| {
+                self.beamhash_buf0 = None;
+                self.beamhash_buf1 = None;
+                anyhow::anyhow!("beamhash counters alloc: {e}")
+            })?;
+            let results = self.dev.alloc_zeros::<u32>(RESULTS_LEN).map_err(|e| {
+                self.beamhash_buf0 = None;
+                self.beamhash_buf1 = None;
+                self.beamhash_counters = None;
+                anyhow::anyhow!("beamhash results alloc: {e}")
+            })?;
             self.beamhash_buf0 = Some(buf0);
             self.beamhash_buf1 = Some(buf1);
             self.beamhash_counters = Some(counters);
@@ -1423,7 +1550,9 @@ impl CudaExternalMiner {
 
         // Helper to launch a kernel by name
         let launch = |kernel_name: &str, grid: u32, block: u32| -> Result<()> {
-            let func = self.dev.get_func(module, kernel_name)
+            let func = self
+                .dev
+                .get_func(module, kernel_name)
                 .ok_or_else(|| anyhow::anyhow!("beamhash kernel '{}' not found", kernel_name))?;
             let cfg = LaunchConfig {
                 grid_dim: (grid, 1, 1),
@@ -1431,10 +1560,11 @@ impl CudaExternalMiner {
                 shared_mem_bytes: 0,
             };
             unsafe {
-                func.clone().launch(
-                    cfg,
-                    (buf0, buf1, counters, results, pp0, pp1, pp2, pp3),
-                ).map_err(|e| anyhow::anyhow!("beamhash kernel '{}' launch: {}", kernel_name, e))?;
+                func.clone()
+                    .launch(cfg, (buf0, buf1, counters, results, pp0, pp1, pp2, pp3))
+                    .map_err(|e| {
+                        anyhow::anyhow!("beamhash kernel '{}' launch: {}", kernel_name, e)
+                    })?;
             }
             Ok(())
         };
@@ -1442,29 +1572,60 @@ impl CudaExternalMiner {
         // Launch the 7 kernels in sequence
         // cleanUp: 20480 threads (clear all counters)
         private_eprint!("cuda_beamhash_kernel_launch cleanUp");
-        launch("cleanUp", (COUNTERS_LEN as u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+        launch(
+            "cleanUp",
+            (COUNTERS_LEN as u32 + WG_SIZE - 1) / WG_SIZE,
+            WG_SIZE,
+        )?;
         // seed: 33,554,432 threads (2^25 — generates initial hash table)
         private_eprint!("cuda_beamhash_kernel_launch seed");
-        launch("beamHashIII_seed", (33_554_432u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+        launch(
+            "beamHashIII_seed",
+            (33_554_432u32 + WG_SIZE - 1) / WG_SIZE,
+            WG_SIZE,
+        )?;
         // R1-R5: 4,194,304 threads each (4096 buckets × 4 masks × 256 wgSize)
         private_eprint!("cuda_beamhash_kernel_launch R1");
-        launch("beamHashIII_R1", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+        launch(
+            "beamHashIII_R1",
+            (4_194_304u32 + WG_SIZE - 1) / WG_SIZE,
+            WG_SIZE,
+        )?;
         private_eprint!("cuda_beamhash_kernel_launch R2");
-        launch("beamHashIII_R2", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+        launch(
+            "beamHashIII_R2",
+            (4_194_304u32 + WG_SIZE - 1) / WG_SIZE,
+            WG_SIZE,
+        )?;
         private_eprint!("cuda_beamhash_kernel_launch R3");
-        launch("beamHashIII_R3", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+        launch(
+            "beamHashIII_R3",
+            (4_194_304u32 + WG_SIZE - 1) / WG_SIZE,
+            WG_SIZE,
+        )?;
         private_eprint!("cuda_beamhash_kernel_launch R4");
-        launch("beamHashIII_R4", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+        launch(
+            "beamHashIII_R4",
+            (4_194_304u32 + WG_SIZE - 1) / WG_SIZE,
+            WG_SIZE,
+        )?;
         private_eprint!("cuda_beamhash_kernel_launch R5");
-        launch("beamHashIII_R5", (4_194_304u32 + WG_SIZE - 1) / WG_SIZE, WG_SIZE)?;
+        launch(
+            "beamHashIII_R5",
+            (4_194_304u32 + WG_SIZE - 1) / WG_SIZE,
+            WG_SIZE,
+        )?;
 
         private_eprint!("cuda_beamhash_kernels_done syncing");
 
         // Synchronize and read results
-        self.dev.synchronize()
+        self.dev
+            .synchronize()
             .map_err(|e| anyhow::anyhow!("beamhash sync: {e}"))?;
 
-        let results_host = self.dev.dtoh_sync_copy(results)
+        let results_host = self
+            .dev
+            .dtoh_sync_copy(results)
             .map_err(|e| anyhow::anyhow!("beamhash results download: {e}"))?;
 
         let solution_count = results_host[0] as usize;
@@ -1503,10 +1664,23 @@ impl CudaExternalMiner {
             // Debug: print solution bytes and decompressed indices
             let decompressed = beamhash::decompress_indices(&indices_100);
             match &decompressed {
-                Ok(idx) => private_eprint!("cuda_beamhash_solution pos={} indices={:?}", pos, &idx[..idx.len().min(8)]),
-                Err(e) => private_eprint!("cuda_beamhash_solution pos={} decompress_err={}", pos, e),
+                Ok(idx) => private_eprint!(
+                    "cuda_beamhash_solution pos={} indices={:?}",
+                    pos,
+                    &idx[..idx.len().min(8)]
+                ),
+                Err(e) => {
+                    private_eprint!("cuda_beamhash_solution pos={} decompress_err={}", pos, e)
+                }
             }
-            private_eprint!("cuda_beamhash_solution pos={} sol_bytes_hex={}", pos, indices_100.iter().map(|b| format!("{:02x}", b)).collect::<String>());
+            private_eprint!(
+                "cuda_beamhash_solution pos={} sol_bytes_hex={}",
+                pos,
+                indices_100
+                    .iter()
+                    .map(|b| format!("{:02x}", b))
+                    .collect::<String>()
+            );
 
             // Check validation error
             if let Err(val_err) = beamhash::is_valid_solution(&full_header, &indices_100) {
@@ -1672,12 +1846,19 @@ impl GpuMiner for CudaExternalMiner {
         nonce_start: u64,
         batch_size: u64,
     ) -> Result<GpuBatchResult> {
-        eprintln!("cuda_mine_batch_raw ENTRY algo={} header_len={} nonce={}", self.algo.module_name(), raw_header.len(), nonce_start);
+        eprintln!(
+            "cuda_mine_batch_raw ENTRY algo={} header_len={} nonce={}",
+            self.algo.module_name(),
+            raw_header.len(),
+            nonce_start
+        );
         // BeamHash III: multi-kernel Wagner solver
         if self.algo == CudaExtAlgo::Beamhash {
             private_eprint!(
                 "cuda_beamhash_mine_batch_raw called header_len={} nonce={} batch_size={}",
-                raw_header.len(), nonce_start, batch_size,
+                raw_header.len(),
+                nonce_start,
+                batch_size,
             );
             let header_hash = &raw_header[..32.min(raw_header.len())];
             return self.run_beamhash_solver(header_hash, &target.bytes, nonce_start, batch_size);
@@ -1739,14 +1920,21 @@ impl GpuMiner for CudaExternalMiner {
             let mut total: u64 = 0;
             let mut nonce: u64 = 0;
             let header = [0xAAu8; 32];
-            let target = DifficultyTarget { bytes: [0xFFu8; 32] };
+            let target = DifficultyTarget {
+                bytes: [0xFFu8; 32],
+            };
             while start.elapsed().as_secs_f64() < secs {
-                let result = self.run_kernel(&header, &target.bytes, nonce, self.work_size as u64)?;
+                let result =
+                    self.run_kernel(&header, &target.bytes, nonce, self.work_size as u64)?;
                 total += result.nonces_tested;
                 nonce = nonce.wrapping_add(self.work_size as u64);
             }
             let elapsed = start.elapsed().as_secs_f64();
-            let hps = if elapsed > 0.0 { total as f64 / elapsed } else { 0.0 };
+            let hps = if elapsed > 0.0 {
+                total as f64 / elapsed
+            } else {
+                0.0
+            };
             return Ok((total, elapsed, hps));
         }
 
@@ -1760,14 +1948,20 @@ impl GpuMiner for CudaExternalMiner {
             timestamp: 1_762_000_200,
             difficulty_bits: 0x1f00ffff,
         };
-        let target = DifficultyTarget { bytes: [0xFFu8; 32] };
+        let target = DifficultyTarget {
+            bytes: [0xFFu8; 32],
+        };
         while start.elapsed().as_secs_f64() < secs {
             let result = self.mine_batch(header, target, nonce, self.work_size as u64)?;
             total += result.nonces_tested;
             nonce = nonce.wrapping_add(self.work_size as u64);
         }
         let elapsed = start.elapsed().as_secs_f64();
-        let hps = if elapsed > 0.0 { total as f64 / elapsed } else { 0.0 };
+        let hps = if elapsed > 0.0 {
+            total as f64 / elapsed
+        } else {
+            0.0
+        };
         Ok((total, elapsed, hps))
     }
 }
@@ -1791,11 +1985,11 @@ fn generate_kheavy_matrix_cuda() -> [u16; 4096] {
 
 const DAG_CACHE_ROUNDS: usize = 3;
 
-const CACHE_BYTES_INIT: u64 = 1 << 24;       // 16 MB
-const CACHE_BYTES_GROWTH: u64 = 1 << 17;     // 128 KB
+const CACHE_BYTES_INIT: u64 = 1 << 24; // 16 MB
+const CACHE_BYTES_GROWTH: u64 = 1 << 17; // 128 KB
 const HASH_BYTES: u64 = 64;
-const DATASET_BYTES_INIT: u64 = 1 << 30;     // 1 GB
-const DATASET_BYTES_GROWTH: u64 = 1 << 23;   // 8 MB
+const DATASET_BYTES_INIT: u64 = 1 << 30; // 1 GB
+const DATASET_BYTES_GROWTH: u64 = 1 << 23; // 8 MB
 const MIX_BYTES: u64 = 128;
 
 /// Primality test for u64 using trial division (sufficient for cache/dataset
@@ -1825,7 +2019,8 @@ fn is_prime_u64(n: u64) -> bool {
 /// Follows the Ethash/ProgPoW spec: linear growth rounded down to the largest
 /// size whose number of 64-byte items is prime.
 fn cache_size_for_epoch(epoch: u32) -> u64 {
-    let mut items = (CACHE_BYTES_INIT + (epoch as u64) * CACHE_BYTES_GROWTH - HASH_BYTES) / HASH_BYTES;
+    let mut items =
+        (CACHE_BYTES_INIT + (epoch as u64) * CACHE_BYTES_GROWTH - HASH_BYTES) / HASH_BYTES;
     while !is_prime_u64(items) {
         items = items.saturating_sub(2).max(1);
     }
@@ -1837,7 +2032,8 @@ fn cache_size_for_epoch(epoch: u32) -> u64 {
 /// Follows the Ethash/ProgPoW spec: linear growth rounded down to the largest
 /// size whose number of 128-byte items is prime.
 fn dataset_size_for_epoch(epoch: u32) -> u64 {
-    let mut items = (DATASET_BYTES_INIT + (epoch as u64) * DATASET_BYTES_GROWTH - MIX_BYTES) / MIX_BYTES;
+    let mut items =
+        (DATASET_BYTES_INIT + (epoch as u64) * DATASET_BYTES_GROWTH - MIX_BYTES) / MIX_BYTES;
     while !is_prime_u64(items) {
         items = items.saturating_sub(2).max(1);
     }
@@ -1927,4 +2123,160 @@ fn generate_light_cache_from(cache_size: usize, cache_items: usize, seed: &[u8; 
 /// FNV-1a hash for u32 pairs (used in light cache generation only).
 fn fnv1a_u32(a: u32, b: u32) -> u32 {
     a.wrapping_mul(0x01000193) ^ b
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Test that the GPU autolykos kernel produces the same hash as the CPU
+    /// reference implementation. Uses height=0 (N=2^26=67M, table=~2.15GB).
+    #[test]
+    fn test_autolykos_gpu_vs_cpu() {
+        // Skip if no CUDA device available
+        let dev = match CudaDevice::new_with_stream(0) {
+            Ok(d) => d,
+            Err(e) => {
+                eprintln!("Skipping autolykos GPU test: no CUDA device ({e})");
+                return;
+            }
+        };
+
+        // Check free VRAM — need ~2.2 GB for the R table at height 0
+        // (N=67M * 32 bytes = 2.15 GB)
+        let free_info = std::process::Command::new("nvidia-smi")
+            .args(["--query-gpu=memory.free", "--format=csv,noheader,nounits"])
+            .output();
+        if let Ok(out) = free_info {
+            let s = String::from_utf8_lossy(&out.stdout);
+            if let Ok(free_mib) = s.trim().parse::<u64>() {
+                if free_mib < 2500 {
+                    eprintln!(
+                        "Skipping autolykos GPU test: only {} MiB free (need ~2500)",
+                        free_mib
+                    );
+                    return;
+                }
+            }
+        }
+
+        let mut miner = match CudaExternalMiner::new_with_device("autolykos", 256, dev) {
+            Ok(m) => m,
+            Err(e) => {
+                eprintln!("Skipping autolykos GPU test: miner init failed ({e})");
+                return;
+            }
+        };
+
+        // Set height=0 → N=67,108,864, table=2.15 GB
+        miner.update_epoch(0).expect("update_epoch");
+
+        // Test header (32 bytes of known data)
+        let header: [u8; 32] = {
+            let mut h = [0u8; 32];
+            for i in 0..32 {
+                h[i] = (i as u8) * 7 + 13;
+            }
+            h
+        };
+
+        // Use max target so every nonce is a "solution"
+        let target = DifficultyTarget {
+            bytes: [0xFFu8; 32],
+        };
+
+        // Run a small batch (256 nonces starting from 0)
+        let result = miner
+            .mine_batch_raw(&header, target, 0, 256)
+            .expect("mine_batch_raw");
+
+        // The GPU should find at least one solution (nonce 0 with max target)
+        assert!(
+            !result.solutions.is_empty(),
+            "GPU found no solutions even with max target"
+        );
+
+        let (gpu_nonce, gpu_hash, _) = result.solutions[0];
+        eprintln!("GPU: nonce={} hash={}", gpu_nonce, hex::encode(gpu_hash));
+
+        // Compute CPU reference hash for the same nonce
+        let cpu_hash = zion_auxpow::external_hashers::hash_autolykos(&header, gpu_nonce, 0);
+        eprintln!("CPU: nonce={} hash={}", gpu_nonce, hex::encode(cpu_hash));
+
+        // Compare
+        assert_eq!(
+            gpu_hash, cpu_hash,
+            "GPU hash does not match CPU hash for nonce {}",
+            gpu_nonce
+        );
+
+        eprintln!("autolykos GPU vs CPU test PASSED!");
+    }
+
+    /// Benchmark the autolykos kernel hashrate at height=0 (N=67M, table=2.15GB).
+    #[test]
+    fn bench_autolykos_hashrate() {
+        let dev = match CudaDevice::new_with_stream(0) {
+            Ok(d) => d,
+            Err(e) => {
+                eprintln!("Skipping autolykos benchmark: no CUDA device ({e})");
+                return;
+            }
+        };
+
+        let free_info = std::process::Command::new("nvidia-smi")
+            .args(["--query-gpu=memory.free", "--format=csv,noheader,nounits"])
+            .output();
+        if let Ok(out) = free_info {
+            let s = String::from_utf8_lossy(&out.stdout);
+            if let Ok(free_mib) = s.trim().parse::<u64>() {
+                if free_mib < 2500 {
+                    eprintln!("Skipping autolykos benchmark: only {} MiB free", free_mib);
+                    return;
+                }
+            }
+        }
+
+        let mut miner = match CudaExternalMiner::new_with_device("autolykos", 1 << 20, dev) {
+            Ok(m) => m,
+            Err(e) => {
+                eprintln!("Skipping autolykos benchmark: miner init failed ({e})");
+                return;
+            }
+        };
+
+        miner.update_epoch(0).expect("update_epoch");
+
+        let header = [0x42u8; 32];
+        // Use zero target so NO solution is ever found — the kernel must
+        // process every nonce in the batch. This measures true throughput.
+        let target = DifficultyTarget {
+            bytes: [0x00u8; 32],
+        };
+
+        // Warm up
+        let _ = miner.mine_batch_raw(&header, target.clone(), 0, 1 << 18);
+
+        // Benchmark: run for ~3 seconds
+        let mut total_nonces: u64 = 0;
+        let start = std::time::Instant::now();
+        let duration = std::time::Duration::from_secs(3);
+        let mut nonce = 0u64;
+
+        while start.elapsed() < duration {
+            let batch = 1 << 20; // 1M nonces per batch
+            let _ = miner.mine_batch_raw(&header, target.clone(), nonce, batch);
+            total_nonces += batch;
+            nonce += batch;
+        }
+
+        let elapsed = start.elapsed().as_secs_f64();
+        let hashrate = total_nonces as f64 / elapsed;
+        eprintln!(
+            "autolykos benchmark: {:.2} MH/s ({} nonces in {:.2}s)",
+            hashrate / 1e6,
+            total_nonces,
+            elapsed
+        );
+    }
 }
