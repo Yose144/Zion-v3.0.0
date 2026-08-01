@@ -33,10 +33,14 @@ export default function OasisClient() {
     setPhase('arrival');
   };
 
+  const handleArrived = () => {
+    setPhase('scene');
+  };
+
   return (
     <>
       <div className="relative h-full w-full">
-        <OasisScene started={phase !== 'intro'} />
+        <OasisScene started={phase !== 'intro'} onArrived={handleArrived} />
         {phase !== 'intro' && <OasisHud />}
 
         <AnimatePresence>
