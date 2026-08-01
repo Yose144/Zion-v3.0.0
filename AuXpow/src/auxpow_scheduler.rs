@@ -22,8 +22,8 @@ use tracing::{error, info, warn};
 
 use crate::auxpow_client::{AuxPowClient, ShareResult};
 use crate::external_hashers::{
-    hash_blake3, hash_blake3_alph, hash_kheavyhash, hash_kheavyhash_extranonce, meets_target,
-    meets_target_little_endian, ExternalAlgorithm,
+    hash_blake3, hash_blake3_alph, hash_ethash, hash_etchash, hash_kheavyhash,
+    hash_kheavyhash_extranonce, meets_target, meets_target_little_endian, ExternalAlgorithm,
 };
 use crate::types::{
     select_best_coin, AuxPowConfig, AuxPowStats, CoinProfile, ExternalCoin,
@@ -362,7 +362,7 @@ impl AuxPowScheduler {
                     crate::external_hashers::hash_autolykos(
                         header,
                         nonce,
-                        job.timestamp.unwrap_or(0) as u32,
+                        job.block_number.unwrap_or(job.timestamp.unwrap_or(0)) as u32,
                     )
                 }
                 ExternalAlgorithm::KawPow => {
@@ -377,7 +377,14 @@ impl AuxPowScheduler {
                     final_hash
                 }
                 ExternalAlgorithm::Ethash => {
-                    crate::external_hashers::hash_ethash(header, nonce, job.timestamp.unwrap_or(0) as u32)
+                    let height = job
+                        .block_number
+                        .unwrap_or(job.timestamp.unwrap_or(0)) as u32;
+                    if job.external_coin == ExternalCoin::ETC {
+                        hash_etchash(header, nonce, height)
+                    } else {
+                        hash_ethash(header, nonce, height)
+                    }
                 }
                 ExternalAlgorithm::RandomX => {
                     // RandomX via native FFI (tevador/RandomX C++).

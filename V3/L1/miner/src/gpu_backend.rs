@@ -12,7 +12,7 @@
 
 use anyhow::Result;
 use std::time::{SystemTime, UNIX_EPOCH};
-use zion_auxpow::external_hashers::{hash_blake3, hash_ethash};
+use zion_auxpow::external_hashers::{hash_blake3, hash_ethash, hash_etchash};
 use zion_core::{DifficultyTarget, MiningHeader, MiningJob, MiningSolution};
 
 #[cfg(feature = "gpu-opencl")]
@@ -2911,8 +2911,10 @@ pub fn gpu_scan_job(
                 // the CPU audit must also use that raw header hash.
                 let cpu_hash = if use_raw && algorithm == "blake3_dcr" {
                     hash_blake3(raw_header_bytes, 0, *nonce)
-                } else if use_raw && (algorithm == "ethash" || algorithm == "etchash") {
+                } else if use_raw && (algorithm == "ethash" || algorithm == "ethash_ethw") {
                     hash_ethash(raw_header_bytes, *nonce, job.height as u32)
+                } else if use_raw && (algorithm == "etchash" || algorithm == "ethash_etc") {
+                    hash_etchash(raw_header_bytes, *nonce, job.height as u32)
                 } else {
                     candidate.hash_with_algorithm(algorithm)
                 };
@@ -3085,7 +3087,7 @@ impl GpuPipelineState {
                             nonce: *nonce,
                             height: prev_job.height,
                         };
-                        let cpu_hash = if algorithm == "ethash" || algorithm == "etchash" {
+                        let cpu_hash = if algorithm == "ethash" || algorithm == "ethash_ethw" {
                             hash_ethash(&prev_raw, *nonce, prev_job.height as u32)
                         } else {
                             candidate.hash_with_algorithm(algorithm)

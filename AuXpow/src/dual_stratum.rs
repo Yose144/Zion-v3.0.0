@@ -119,7 +119,12 @@ pub fn dispatch_hash(algorithm: &str, header: &[u8], timestamp: u64, nonce: u64)
             let (_mix, final_hash) = crate::external_hashers::hash_kawpow(&h32, nonce, timestamp as u32);
             Ok(final_hash)
         }
-        "ethash" | "etchash" => Ok(crate::external_hashers::hash_ethash(
+        "ethash" => Ok(crate::external_hashers::hash_ethash(
+            header,
+            nonce,
+            timestamp as u32,
+        )),
+        "etchash" => Ok(crate::external_hashers::hash_etchash(
             header,
             nonce,
             timestamp as u32,

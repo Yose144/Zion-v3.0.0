@@ -87,7 +87,7 @@ impl ExternalCoin {
             Self::KAS => "kheavyhash",
             Self::ERG => "autolykos",
             Self::RVN => "kawpow",
-            Self::ETC => "ethash",
+            Self::ETC => "etchash",
             Self::EVR => "evrprogpow",
             Self::MEWC => "meowpow",
             Self::FLUX => "zelhash",

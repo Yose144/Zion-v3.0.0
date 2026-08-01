@@ -19,8 +19,8 @@
 use anyhow::{anyhow, Result};
 
 use crate::external_hashers::{
-    clear_verushash_pbaas, hash_autolykos, hash_blake3, hash_blake3_alph, hash_ethash, hash_kawpow,
-    hash_kheavyhash, hash_kheavyhash_extranonce, hash_progpow, meets_target,
+    clear_verushash_pbaas, hash_autolykos, hash_blake3, hash_blake3_alph, hash_ethash, hash_etchash,
+    hash_kawpow, hash_kheavyhash, hash_kheavyhash_extranonce, hash_progpow, meets_target,
     meets_target_little_endian,
 };
 use crate::types::{ExternalCoin, JobPackage};
@@ -226,7 +226,7 @@ fn scan_kheavyhash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare>
 fn scan_autolykos(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
     let header = &job.header_bytes;
     let target = &job.target_bytes;
-    let height = job.timestamp as u32; // reuse timestamp field for block height
+    let height = job.block_number.unwrap_or(job.timestamp) as u32;
 
     for nonce in start..end {
         let hash = hash_autolykos(header, nonce, height);
@@ -284,10 +284,15 @@ fn scan_progpow(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
 fn scan_ethash(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
     let header = &job.header_bytes;
     let target = &job.target_bytes;
-    let height = job.timestamp as u32;
+    let height = job.block_number.unwrap_or(job.timestamp) as u32;
+    let is_etc = job.external_coin == ExternalCoin::ETC;
 
     for nonce in start..end {
-        let hash = hash_ethash(header, nonce, height);
+        let hash = if is_etc {
+            hash_etchash(header, nonce, height)
+        } else {
+            hash_ethash(header, nonce, height)
+        };
         if meets_target(&hash, target) {
             return Some(FoundShare {
                 external_job_id: job.external_job_id.clone(),
@@ -886,7 +891,7 @@ fn scan_kheavyhash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundS
 
 fn scan_autolykos_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
     let header = &job.header_bytes;
-    let height = job.timestamp as u32;
+    let height = job.block_number.unwrap_or(job.timestamp) as u32;
 
     let mut best: Option<FoundShare> = None;
     for nonce in start..end {
@@ -956,11 +961,16 @@ fn scan_progpow_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShar
 
 fn scan_ethash_best(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
     let header = &job.header_bytes;
-    let height = job.timestamp as u32;
+    let height = job.block_number.unwrap_or(job.timestamp) as u32;
+    let is_etc = job.external_coin == ExternalCoin::ETC;
 
     let mut best: Option<FoundShare> = None;
     for nonce in start..end {
-        let hash = hash_ethash(header, nonce, height);
+        let hash = if is_etc {
+            hash_etchash(header, nonce, height)
+        } else {
+            hash_ethash(header, nonce, height)
+        };
         if best
             .as_ref()
             .map(|b| is_hash_better(&hash, &b.hash, false))
