@@ -114,7 +114,7 @@ fn select_utxos(
     }
 
     let mut sorted: Vec<&SpendableUtxo> = available.iter().collect();
-    sorted.sort_by(|a, b| b.amount.cmp(&a.amount));
+    sorted.sort_by_key(|b| std::cmp::Reverse(b.amount));
 
     let mut selected = Vec::new();
     let mut total: u64 = 0;

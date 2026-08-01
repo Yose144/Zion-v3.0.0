@@ -37,7 +37,7 @@ pub const FULL_THRESHOLD: usize = 3;
 pub const BRIDGE_THRESHOLD: usize = 2;
 
 /// Time-lock durations in seconds.
-
+///
 /// Emergency pause: no time-lock (immediate).
 pub const TIMELOCK_EMERGENCY: u64 = 0;
 
@@ -113,10 +113,7 @@ impl AdminOpType {
     pub fn requires_dao_vote(&self) -> bool {
         matches!(
             self,
-            Self::TreasurySpend
-                | Self::AdminRotation
-                | Self::HardFork
-                | Self::AdminInheritance
+            Self::TreasurySpend | Self::AdminRotation | Self::HardFork | Self::AdminInheritance
         )
     }
 
@@ -285,8 +282,9 @@ impl AdminProposal {
         // Verify signature
         let pk_bytes = crypto::from_hex(&admin.public_key_hex)
             .ok_or(AdminError::InvalidPublicKey(admin_address.to_string()))?;
-        let sig_bytes = crypto::from_hex(signature_hex)
-            .ok_or(AdminError::InvalidSignatureFormat(signature_hex.to_string()))?;
+        let sig_bytes = crypto::from_hex(signature_hex).ok_or(
+            AdminError::InvalidSignatureFormat(signature_hex.to_string()),
+        )?;
         if !crypto::verify(&pk_bytes, message, &sig_bytes) {
             return Err(AdminError::InvalidSignature(admin_address.to_string()));
         }
@@ -457,10 +455,7 @@ pub enum AdminError {
     #[error("insufficient signatures: have {have}, need {need}")]
     InsufficientSignatures { have: usize, need: usize },
     #[error("timelock not expired: current {current}, executable at {executable_at}")]
-    TimelockNotExpired {
-        current: u64,
-        executable_at: u64,
-    },
+    TimelockNotExpired { current: u64, executable_at: u64 },
     #[error("proposal already executed")]
     AlreadyExecuted,
     #[error("DAO vote rejected")]
@@ -470,10 +465,7 @@ pub enum AdminError {
     #[error("address mismatch: expected {expected}, actual {actual}")]
     AddressMismatch { expected: String, actual: String },
     #[error("invalid successor: expected {expected}, actual {actual}")]
-    InvalidSuccessor {
-        expected: String,
-        actual: String,
-    },
+    InvalidSuccessor { expected: String, actual: String },
 }
 
 // ---------------------------------------------------------------------------
@@ -486,7 +478,11 @@ mod tests {
 
     /// Generate a test admin set with fresh keypairs.
     fn test_admin_set() -> AdminSet {
-        let names = [("Rama", "Protocol governance"), ("Sita", "Treasury oversight"), ("Hanuman", "Bridge admin")];
+        let names = [
+            ("Rama", "Protocol governance"),
+            ("Sita", "Treasury oversight"),
+            ("Hanuman", "Bridge admin"),
+        ];
         let successors = ["Maitreya Buddha", "Sarah Issobela", "Elizabeth"];
 
         let admins: Vec<Admin> = names
@@ -526,7 +522,10 @@ mod tests {
     fn admin_set_rejects_wrong_count() {
         let result = AdminSet::new(vec![], 0);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), AdminError::InvalidAdminCount(0)));
+        assert!(matches!(
+            result.unwrap_err(),
+            AdminError::InvalidAdminCount(0)
+        ));
     }
 
     #[test]
@@ -566,11 +565,20 @@ mod tests {
     #[test]
     fn op_type_thresholds() {
         assert_eq!(AdminOpType::EmergencyPause.threshold(), EMERGENCY_THRESHOLD);
-        assert_eq!(AdminOpType::EmergencyResume.threshold(), EMERGENCY_THRESHOLD);
+        assert_eq!(
+            AdminOpType::EmergencyResume.threshold(),
+            EMERGENCY_THRESHOLD
+        );
         assert_eq!(AdminOpType::ParameterChange.threshold(), FULL_THRESHOLD);
         assert_eq!(AdminOpType::AdminRotation.threshold(), FULL_THRESHOLD);
-        assert_eq!(AdminOpType::BridgeValidatorRotation.threshold(), BRIDGE_THRESHOLD);
-        assert_eq!(AdminOpType::PoolPayoutRotation.threshold(), BRIDGE_THRESHOLD);
+        assert_eq!(
+            AdminOpType::BridgeValidatorRotation.threshold(),
+            BRIDGE_THRESHOLD
+        );
+        assert_eq!(
+            AdminOpType::PoolPayoutRotation.threshold(),
+            BRIDGE_THRESHOLD
+        );
         assert_eq!(AdminOpType::HardFork.threshold(), FULL_THRESHOLD);
         assert_eq!(AdminOpType::AdminInheritance.threshold(), FULL_THRESHOLD);
     }
@@ -580,9 +588,15 @@ mod tests {
         assert_eq!(AdminOpType::EmergencyPause.timelock(), TIMELOCK_EMERGENCY);
         assert_eq!(AdminOpType::ParameterChange.timelock(), TIMELOCK_PARAMETER);
         assert_eq!(AdminOpType::TreasurySpend.timelock(), TIMELOCK_TREASURY);
-        assert_eq!(AdminOpType::AdminRotation.timelock(), TIMELOCK_ADMIN_ROTATION);
+        assert_eq!(
+            AdminOpType::AdminRotation.timelock(),
+            TIMELOCK_ADMIN_ROTATION
+        );
         assert_eq!(AdminOpType::HardFork.timelock(), TIMELOCK_HARD_FORK);
-        assert_eq!(AdminOpType::AdminInheritance.timelock(), TIMELOCK_INHERITANCE);
+        assert_eq!(
+            AdminOpType::AdminInheritance.timelock(),
+            TIMELOCK_INHERITANCE
+        );
     }
 
     #[test]
@@ -603,7 +617,10 @@ mod tests {
     #[test]
     fn hard_fork_requires_supermajority() {
         assert_eq!(AdminOpType::HardFork.dao_supermajority_pct(), Some(75.0));
-        assert_eq!(AdminOpType::AdminInheritance.dao_supermajority_pct(), Some(51.0));
+        assert_eq!(
+            AdminOpType::AdminInheritance.dao_supermajority_pct(),
+            Some(51.0)
+        );
         assert_eq!(AdminOpType::EmergencyPause.dao_supermajority_pct(), None);
     }
 
@@ -703,7 +720,10 @@ mod tests {
 
         let result = proposal.add_signature(&set, &rama.l1_address, &fake_sig, b"message");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), AdminError::InvalidSignature(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            AdminError::InvalidSignature(_)
+        ));
     }
 
     #[test]
@@ -729,7 +749,9 @@ mod tests {
         );
 
         // First signature OK
-        proposal.add_signature(&test_set, &l1_address, &sig_hex, message).unwrap();
+        proposal
+            .add_signature(&test_set, &l1_address, &sig_hex, message)
+            .unwrap();
         // Second should fail
         let result = proposal.add_signature(&test_set, &l1_address, &sig_hex, message);
         assert!(result.is_err());
@@ -753,7 +775,9 @@ mod tests {
             let (sk, vk) = crypto::generate_keypair();
             let pk_hex = crypto::to_hex(vk.as_bytes());
             let l1_address = crypto::derive_address(vk.as_bytes());
-            proposal.signatures.insert(l1_address.clone(), pk_hex.clone());
+            proposal
+                .signatures
+                .insert(l1_address.clone(), pk_hex.clone());
             // Bypass verification for test (we're testing quorum count, not sig validity)
             let _ = sk;
         }
@@ -771,34 +795,41 @@ mod tests {
         );
 
         // 2 signatures — not enough for 3-of-3
-        proposal.signatures.insert("addr1".to_string(), "sig1".to_string());
-        proposal.signatures.insert("addr2".to_string(), "sig2".to_string());
+        proposal
+            .signatures
+            .insert("addr1".to_string(), "sig1".to_string());
+        proposal
+            .signatures
+            .insert("addr2".to_string(), "sig2".to_string());
         assert!(!proposal.has_quorum());
 
         // 3 signatures — enough
-        proposal.signatures.insert("addr3".to_string(), "sig3".to_string());
+        proposal
+            .signatures
+            .insert("addr3".to_string(), "sig3".to_string());
         assert!(proposal.has_quorum());
     }
 
     #[test]
     fn executable_check_timelock() {
         let ts = 1_000_000u64;
-        let mut proposal = AdminProposal::new(
-            AdminOpType::ParameterChange,
-            100,
-            ts,
-            serde_json::json!({}),
-        );
+        let mut proposal =
+            AdminProposal::new(AdminOpType::ParameterChange, 100, ts, serde_json::json!({}));
 
         // Add 3 fake signatures
         for i in 0..3 {
-            proposal.signatures.insert(format!("addr{i}"), format!("sig{i}"));
+            proposal
+                .signatures
+                .insert(format!("addr{i}"), format!("sig{i}"));
         }
 
         // Before timelock expires — should fail
         let result = proposal.is_executable(ts + 100);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), AdminError::TimelockNotExpired { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            AdminError::TimelockNotExpired { .. }
+        ));
 
         // After timelock expires — ParameterChange does NOT require DAO vote, so this should pass
         let result = proposal.is_executable(ts + TIMELOCK_PARAMETER + 1);
@@ -808,16 +839,14 @@ mod tests {
     #[test]
     fn executable_check_emergency_no_timelock() {
         let ts = 1_000_000u64;
-        let mut proposal = AdminProposal::new(
-            AdminOpType::EmergencyPause,
-            100,
-            ts,
-            serde_json::json!({}),
-        );
+        let mut proposal =
+            AdminProposal::new(AdminOpType::EmergencyPause, 100, ts, serde_json::json!({}));
 
         // Add 2 fake signatures (emergency threshold)
         for i in 0..2 {
-            proposal.signatures.insert(format!("addr{i}"), format!("sig{i}"));
+            proposal
+                .signatures
+                .insert(format!("addr{i}"), format!("sig{i}"));
         }
 
         // Immediately executable (no timelock, no DAO vote)
@@ -828,16 +857,14 @@ mod tests {
     #[test]
     fn executable_check_dao_vote_required() {
         let ts = 1_000_000u64;
-        let mut proposal = AdminProposal::new(
-            AdminOpType::TreasurySpend,
-            100,
-            ts,
-            serde_json::json!({}),
-        );
+        let mut proposal =
+            AdminProposal::new(AdminOpType::TreasurySpend, 100, ts, serde_json::json!({}));
 
         // Add 3 fake signatures
         for i in 0..3 {
-            proposal.signatures.insert(format!("addr{i}"), format!("sig{i}"));
+            proposal
+                .signatures
+                .insert(format!("addr{i}"), format!("sig{i}"));
         }
 
         // After timelock, but DAO vote pending
@@ -860,14 +887,14 @@ mod tests {
     #[test]
     fn executable_check_already_executed() {
         let ts = 1_000_000u64;
-        let mut proposal = AdminProposal::new(
-            AdminOpType::EmergencyPause,
-            100,
-            ts,
-            serde_json::json!({}),
-        );
-        proposal.signatures.insert("addr".to_string(), "sig".to_string());
-        proposal.signatures.insert("addr2".to_string(), "sig2".to_string());
+        let mut proposal =
+            AdminProposal::new(AdminOpType::EmergencyPause, 100, ts, serde_json::json!({}));
+        proposal
+            .signatures
+            .insert("addr".to_string(), "sig".to_string());
+        proposal
+            .signatures
+            .insert("addr2".to_string(), "sig2".to_string());
         proposal.executed = true;
 
         let result = proposal.is_executable(ts);
@@ -902,13 +929,22 @@ mod tests {
         };
 
         // 4 years — no trigger
-        assert!(!check_dead_mans_switch(&admin, 1_000_000 + 4 * 365 * 24 * 3600));
+        assert!(!check_dead_mans_switch(
+            &admin,
+            1_000_000 + 4 * 365 * 24 * 3600
+        ));
 
         // 5 years — trigger
-        assert!(check_dead_mans_switch(&admin, 1_000_000 + DEAD_MANS_SWITCH_SECS));
+        assert!(check_dead_mans_switch(
+            &admin,
+            1_000_000 + DEAD_MANS_SWITCH_SECS
+        ));
 
         // 6 years — trigger
-        assert!(check_dead_mans_switch(&admin, 1_000_000 + 6 * 365 * 24 * 3600));
+        assert!(check_dead_mans_switch(
+            &admin,
+            1_000_000 + 6 * 365 * 24 * 3600
+        ));
     }
 
     #[test]
@@ -920,7 +956,7 @@ mod tests {
         set.admins[0].last_activity_ts = 1_000_000;
         // Sita active recently (within 5-year window)
         set.admins[1].last_activity_ts = current_ts - 1_000_000; // ~11.5 days ago
-        // Hanuman inactive for 6 years
+                                                                 // Hanuman inactive for 6 years
         set.admins[2].last_activity_ts = 1_000_000;
 
         let inactive = find_inactive_admins(&set, current_ts);
@@ -976,7 +1012,10 @@ mod tests {
 
         let result = validate_admin_rotation(&set, "Rama", &new_admin);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), AdminError::InvalidSuccessor { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            AdminError::InvalidSuccessor { .. }
+        ));
     }
 
     #[test]
@@ -999,7 +1038,10 @@ mod tests {
 
         let result = validate_admin_rotation(&set, "Rama", &new_admin);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), AdminError::AddressMismatch { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            AdminError::AddressMismatch { .. }
+        ));
     }
 
     #[test]
@@ -1020,7 +1062,10 @@ mod tests {
 
         let result = validate_admin_rotation(&set, "Rama", &new_admin);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), AdminError::AdminAlreadyExists(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            AdminError::AdminAlreadyExists(_)
+        ));
     }
 
     #[test]
@@ -1070,7 +1115,10 @@ mod tests {
             role: "Protocol governance (Gen Z)".to_string(),
             public_key_hex: crypto::to_hex(vk1.as_bytes()),
             l1_address: crypto::derive_address(vk1.as_bytes()),
-            evm_address: format!("0x{}", crypto::to_hex(&crypto::blake3_hash(vk1.as_bytes())[..20])),
+            evm_address: format!(
+                "0x{}",
+                crypto::to_hex(&crypto::blake3_hash(vk1.as_bytes())[..20])
+            ),
             successor: "TBD".to_string(),
             activated_at_height: 0,
             last_activity_ts: 5_000_000,
@@ -1085,7 +1133,10 @@ mod tests {
             role: "Treasury oversight (Gen Z)".to_string(),
             public_key_hex: crypto::to_hex(vk2.as_bytes()),
             l1_address: crypto::derive_address(vk2.as_bytes()),
-            evm_address: format!("0x{}", crypto::to_hex(&crypto::blake3_hash(vk2.as_bytes())[..20])),
+            evm_address: format!(
+                "0x{}",
+                crypto::to_hex(&crypto::blake3_hash(vk2.as_bytes())[..20])
+            ),
             successor: "TBD".to_string(),
             activated_at_height: 0,
             last_activity_ts: 5_000_000,
@@ -1100,7 +1151,10 @@ mod tests {
             role: "Bridge admin (Gen Z), Patroness of ZION".to_string(),
             public_key_hex: crypto::to_hex(vk3.as_bytes()),
             l1_address: crypto::derive_address(vk3.as_bytes()),
-            evm_address: format!("0x{}", crypto::to_hex(&crypto::blake3_hash(vk3.as_bytes())[..20])),
+            evm_address: format!(
+                "0x{}",
+                crypto::to_hex(&crypto::blake3_hash(vk3.as_bytes())[..20])
+            ),
             successor: "TBD".to_string(),
             activated_at_height: 0,
             last_activity_ts: 5_000_000,
@@ -1162,7 +1216,9 @@ mod tests {
             1_000_000,
             serde_json::json!({"old_admin": "Rama", "new_admin": "Maitreya Buddha"}),
         );
-        proposal.signatures.insert("addr".to_string(), "sig".to_string());
+        proposal
+            .signatures
+            .insert("addr".to_string(), "sig".to_string());
         proposal.dao_approved = Some(true);
 
         let json = serde_json::to_string(&proposal).unwrap();

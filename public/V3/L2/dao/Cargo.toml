@@ -39,6 +39,9 @@ anyhow = "1"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 
+# Shared L1 types (address encoding, hex, RPC normalisation)
+zion-l1-types = { path = "../../L1/types" }
+
 [[bin]]
 name = "zion-dao"
 path = "src/main.rs"

@@ -247,7 +247,7 @@ impl HardenedMempool {
     /// Select the highest-fee-rate transactions up to a size/count budget.
     pub fn select_for_block(&self, max_size: usize, max_count: usize) -> Vec<&Transaction> {
         let mut entries: Vec<&MempoolEntry> = self.entries.values().collect();
-        entries.sort_by(|a, b| b.fee_rate.cmp(&a.fee_rate));
+        entries.sort_by_key(|b| std::cmp::Reverse(b.fee_rate));
         let mut total_size = 0;
         let mut result = Vec::new();
         for entry in entries {

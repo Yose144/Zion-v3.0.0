@@ -431,7 +431,13 @@ pub fn validate_premine_locks(
         }
         for input in &tx.inputs {
             if let Some(utxo) = utxo_lookup(&input.prev_tx_hash, input.output_index) {
-                if genesis::is_premine_transfer_allowed(&utxo.address, current_height, admin_unlocked).is_err() {
+                if genesis::is_premine_transfer_allowed(
+                    &utxo.address,
+                    current_height,
+                    admin_unlocked,
+                )
+                .is_err()
+                {
                     // Find the unlock height for the error message
                     let unlock_height = genesis::PREMINE_OUTPUTS
                         .iter()
@@ -957,13 +963,18 @@ mod tests {
 
         // height 100 < 144_000 — should be rejected (admin unlocked =>
         // isolates the time-lock behaviour being tested here).
-        let result = validate_premine_locks(&[make_coinbase(100), tx.clone()], 100, &lookup, &|_| true);
+        let result =
+            validate_premine_locks(&[make_coinbase(100), tx.clone()], 100, &lookup, &|_| true);
         assert!(matches!(result, Err(ValidationError::LockedPremine { .. })));
 
         // height 144_000 — should be allowed (time-lock satisfied AND
         // admin-unlocked for the test).
-        let result2 =
-            validate_premine_locks(&[make_coinbase(144_000), tx.clone()], 144_000, &lookup, &|_| true);
+        let result2 = validate_premine_locks(
+            &[make_coinbase(144_000), tx.clone()],
+            144_000,
+            &lookup,
+            &|_| true,
+        );
         assert!(result2.is_ok());
 
         // Regression for PR #20 review: when the caller passes a slice

@@ -21,8 +21,7 @@ use rand::RngCore;
 fn gen_mnemonic() -> Mnemonic {
     let mut entropy = [0u8; 32]; // 256 bits → 24 words
     OsRng.fill_bytes(&mut entropy);
-    Mnemonic::from_entropy_in(Language::English, &entropy)
-        .expect("invalid entropy for mnemonic")
+    Mnemonic::from_entropy_in(Language::English, &entropy).expect("invalid entropy for mnemonic")
 }
 
 /// Derive Ed25519 keypair from BIP39 seed.
@@ -30,7 +29,9 @@ fn gen_mnemonic() -> Mnemonic {
 /// BIP39 produces a 64-byte seed from the mnemonic via PBKDF2-HMAC-SHA512.
 /// We hash that with BLAKE3 and take the first 32 bytes as the Ed25519 seed.
 /// This is deterministic: same mnemonic → same keypair.
-fn derive_ed25519_from_seed(seed: &[u8]) -> (ed25519_dalek::SigningKey, ed25519_dalek::VerifyingKey) {
+fn derive_ed25519_from_seed(
+    seed: &[u8],
+) -> (ed25519_dalek::SigningKey, ed25519_dalek::VerifyingKey) {
     let hash = zion_core::crypto::blake3_hash(seed);
     let ed_seed: [u8; 32] = hash[..32].try_into().expect("blake3 is 32 bytes");
     let signing = ed25519_dalek::SigningKey::from_bytes(&ed_seed);
@@ -147,13 +148,25 @@ fn print_wallet(w: &Wallet, is_first: bool) {
     println!("      \"description\": \"{}\",", w.description);
     println!("      \"mnemonic\": \"{}\",", w.mnemonic);
     println!("      \"ed25519_address\": \"{}\",", w.ed25519_address);
-    println!("      \"ed25519_public_key_hex\": \"{}\",", w.ed25519_public_key_hex);
+    println!(
+        "      \"ed25519_public_key_hex\": \"{}\",",
+        w.ed25519_public_key_hex
+    );
     if let Some(ref evm_addr) = w.evm_address {
-        println!("      \"ed25519_secret_key_hex\": \"{}\",", w.ed25519_secret_key_hex);
+        println!(
+            "      \"ed25519_secret_key_hex\": \"{}\",",
+            w.ed25519_secret_key_hex
+        );
         println!("      \"evm_address\": \"{}\",", evm_addr);
-        println!("      \"evm_secret_key_hex\": \"{}\"", w.evm_secret_key_hex.as_ref().unwrap());
+        println!(
+            "      \"evm_secret_key_hex\": \"{}\"",
+            w.evm_secret_key_hex.as_ref().unwrap()
+        );
     } else {
-        println!("      \"ed25519_secret_key_hex\": \"{}\"", w.ed25519_secret_key_hex);
+        println!(
+            "      \"ed25519_secret_key_hex\": \"{}\"",
+            w.ed25519_secret_key_hex
+        );
     }
     print!("    }}");
 }
@@ -193,7 +206,11 @@ fn main() {
     // ── 3 Admin keys (Ed25519 + EVM) ──
     println!("  \"admin_keys\": [");
     let admins = [
-        ("Rama", "Protocol governance, emergency pause", "Maitreya Buddha"),
+        (
+            "Rama",
+            "Protocol governance, emergency pause",
+            "Maitreya Buddha",
+        ),
         ("Sita", "Treasury oversight, DAO guardian", "Sarah Issobela"),
         ("Hanuman", "Bridge admin, EVM multisig", "Elizabeth"),
     ];
@@ -206,10 +223,22 @@ fn main() {
         println!("      \"successor\": \"{}\",", successor);
         println!("      \"mnemonic\": \"{}\",", w.mnemonic);
         println!("      \"ed25519_address\": \"{}\",", w.ed25519_address);
-        println!("      \"ed25519_public_key_hex\": \"{}\",", w.ed25519_public_key_hex);
-        println!("      \"ed25519_secret_key_hex\": \"{}\",", w.ed25519_secret_key_hex);
-        println!("      \"evm_address\": \"{}\",", w.evm_address.as_ref().unwrap());
-        println!("      \"evm_secret_key_hex\": \"{}\"", w.evm_secret_key_hex.as_ref().unwrap());
+        println!(
+            "      \"ed25519_public_key_hex\": \"{}\",",
+            w.ed25519_public_key_hex
+        );
+        println!(
+            "      \"ed25519_secret_key_hex\": \"{}\",",
+            w.ed25519_secret_key_hex
+        );
+        println!(
+            "      \"evm_address\": \"{}\",",
+            w.evm_address.as_ref().unwrap()
+        );
+        println!(
+            "      \"evm_secret_key_hex\": \"{}\"",
+            w.evm_secret_key_hex.as_ref().unwrap()
+        );
         if i < admins.len() - 1 {
             println!("    }},");
         } else {
@@ -248,8 +277,14 @@ fn main() {
         println!("      \"name\": \"{}\",", w.name);
         println!("      \"description\": \"{}\",", w.description);
         println!("      \"mnemonic\": \"{}\",", w.mnemonic);
-        println!("      \"evm_address\": \"{}\",", w.evm_address.as_ref().unwrap());
-        println!("      \"evm_secret_key_hex\": \"{}\"", w.evm_secret_key_hex.as_ref().unwrap());
+        println!(
+            "      \"evm_address\": \"{}\",",
+            w.evm_address.as_ref().unwrap()
+        );
+        println!(
+            "      \"evm_secret_key_hex\": \"{}\"",
+            w.evm_secret_key_hex.as_ref().unwrap()
+        );
         print!("    }}");
     }
     println!();
