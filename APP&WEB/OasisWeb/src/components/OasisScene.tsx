@@ -108,7 +108,6 @@ function CameraRig({ started, onArrived, view, focusTarget }: CameraRigProps) {
   return (
     <OrbitControls
       ref={controlsRef as any}
-      target={flightLookAt.current.toArray()}
       enablePan={!isFlying.current}
       enableZoom={!isFlying.current}
       enableRotate={!isFlying.current}
