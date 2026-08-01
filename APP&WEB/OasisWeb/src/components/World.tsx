@@ -4,6 +4,8 @@ import { useRef, useState, useLayoutEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
+import WarpGateVortex from './WarpGateVortex';
+import GlowSprite from './GlowSprite';
 
 export interface WorldNodeProps {
   id: string;
@@ -107,17 +109,21 @@ export default function World({
 
       {/* Warp gate ring (star systems + selected) */}
       {(isStarSystem || selected) && (
-        <mesh ref={gateRef}>
-          <torusGeometry args={[size * (isStarSystem ? 2.4 : 2.0), size * 0.07, 10, 48]} />
-          <meshBasicMaterial
-            color={color}
-            transparent
-            opacity={hovered || selected ? 0.55 : 0.25}
-            blending={THREE.AdditiveBlending}
-            side={THREE.DoubleSide}
-            depthWrite={false}
-          />
-        </mesh>
+        <group ref={gateRef}>
+          <mesh>
+            <torusGeometry args={[size * (isStarSystem ? 2.4 : 2.0), size * 0.07, 10, 48]} />
+            <meshBasicMaterial
+              color={color}
+              transparent
+              opacity={hovered || selected ? 0.55 : 0.25}
+              blending={THREE.AdditiveBlending}
+              side={THREE.DoubleSide}
+              depthWrite={false}
+            />
+          </mesh>
+          <WarpGateVortex color={color} size={size} active={hovered || selected} />
+          {(hovered || selected) && <GlowSprite color={color} size={size * 5} opacity={0.5} />}
+        </group>
       )}
 
       {/* Permanent small label for star systems / selected */}
