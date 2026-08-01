@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { RefreshCw } from 'lucide-react';
 import { getHealth, getLeaderboard, getPlayer, getAvatars, type Player, type LeaderboardEntry } from '../lib/api';
 import { useGameStore } from '../store/gameStore';
 
@@ -12,36 +13,42 @@ export default function OasisHud() {
   const [player, setPlayer] = useState<Player | null>(null);
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
 
+  const load = useCallback(async () => {
+    try {
+      const [health, lb, avatarsData, playerData] = await Promise.all([
+        getHealth(),
+        getLeaderboard(),
+        getAvatars(),
+        address ? getPlayer(address) : Promise.resolve(null),
+      ]);
+
+      setStatus(health?.status === 'ok' ? 'ok' : 'error');
+      setAvatarCount(Array.isArray(avatarsData) ? avatarsData.length : 0);
+      setLeaders(Array.isArray(lb) ? lb.slice(0, 3) : []);
+      setPlayer(playerData);
+    } catch {
+      setStatus('error');
+    }
+  }, [address]);
+
+  const refresh = () => {
+    setStatus('loading');
+    load();
+  };
+
   useEffect(() => {
     let mounted = true;
-
-    async function load() {
-      try {
-        const [health, lb, avatarsData, playerData] = await Promise.all([
-          getHealth(),
-          getLeaderboard(),
-          getAvatars(),
-          address ? getPlayer(address) : Promise.resolve(null),
-        ]);
-
-        if (!mounted) return;
-
-        setStatus(health?.status === 'ok' ? 'ok' : 'error');
-        setAvatarCount(Array.isArray(avatarsData) ? avatarsData.length : 0);
-        setLeaders(Array.isArray(lb) ? lb.slice(0, 3) : []);
-        setPlayer(playerData);
-      } catch {
-        if (mounted) setStatus('error');
-      }
-    }
-
-    load();
-    const t = setInterval(load, 15000);
+    const run = async () => {
+      if (!mounted) return;
+      await load();
+    };
+    run();
+    const t = setInterval(run, 15000);
     return () => {
       mounted = false;
       clearInterval(t);
     };
-  }, [address]);
+  }, [load]);
 
   return (
     <motion.div
@@ -50,7 +57,16 @@ export default function OasisHud() {
       transition={{ duration: 0.8, delay: 0.5 }}
       className="pointer-events-auto absolute right-4 top-4 z-20 w-64 rounded-xl border border-oasis-cyan/30 bg-oasis-black/80 p-3 backdrop-blur-md sm:right-6 sm:top-6 sm:w-72 sm:p-4"
     >
-      <h2 className="mb-2 text-lg font-bold text-oasis-cyan">OASIS Link</h2>
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-oasis-cyan">OASIS Link</h2>
+        <button
+          onClick={refresh}
+          className="rounded-full p-1.5 text-gray-400 transition hover:bg-white/10 hover:text-white"
+          aria-label="Refresh OASIS data"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </button>
+      </div>
       <div className="space-y-2 text-sm text-gray-300">
         <div className="flex items-center gap-2">
           <span
@@ -60,6 +76,10 @@ export default function OasisHud() {
           />
           <span>{status === 'ok' ? 'Connected' : status === 'error' ? 'Disconnected' : 'Connecting'}</span>
         </div>
+
+        {status === 'error' && (
+          <p className="text-[11px] text-red-300">Backend unreachable. Check connection and click refresh.</p>
+        )}
 
         {player && (
           <>

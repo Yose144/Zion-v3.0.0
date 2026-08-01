@@ -11,6 +11,7 @@ import type { FlightControlsHandle } from './FlightControls';
 import type { MobileInput } from './MobileControls';
 import MobileControls from './MobileControls';
 import PlayerHud from './PlayerHud';
+import OnboardingHint from './OnboardingHint';
 import { useGameStore } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
 import { getQuests, getAvatars, getTerritories } from '../lib/api';
@@ -205,6 +206,7 @@ export default function OasisClient() {
         />
         {phase !== 'intro' && <PlayerHud />}
         {phase !== 'intro' && view === 'galaxy' && !flightMode && <OasisHud />}
+        {phase !== 'intro' && view === 'galaxy' && !flightMode && <OnboardingHint />}
 
         <AnimatePresence>
           {phase !== 'intro' && view === 'galaxy' && !flightMode && (

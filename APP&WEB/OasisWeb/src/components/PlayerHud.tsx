@@ -2,15 +2,16 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Star, MapPin, Scroll, Rocket, Egg, User } from 'lucide-react';
+import { Coins, Star, MapPin, Scroll, Rocket, Egg, User, Wallet } from 'lucide-react';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
+import { getAddressType } from '../lib/zionWallet';
 import ShipLoadout from './ShipLoadout';
 import PlayerSettings from './PlayerSettings';
 
 const XP_PER_LEVEL = 1000;
 
 export default function PlayerHud() {
-  const { xp, credits, completedQuests, discoveredWorlds, scannedWorlds, realQuests, collectedEggs } = useGameStore();
+  const { xp, credits, completedQuests, discoveredWorlds, scannedWorlds, realQuests, collectedEggs, address } = useGameStore();
   const [showShip, setShowShip] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const level = getLevel(xp);
@@ -42,6 +43,17 @@ export default function PlayerHud() {
               style={{ width: `${progress * 100}%` }}
             />
           </div>
+          {address && (
+            <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-gray-300">
+              <Wallet className="h-3 w-3 text-oasis-cyan" />
+              <span className="font-mono" title={address}>
+                {address.length > 18 ? `${address.slice(0, 12)}...${address.slice(-6)}` : address}
+              </span>
+              <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] uppercase text-oasis-gold">
+                {getAddressType(address)}
+              </span>
+            </div>
+          )}
         </div>
         <button
           onClick={() => setShowShip(true)}

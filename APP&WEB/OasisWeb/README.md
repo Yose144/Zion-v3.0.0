@@ -26,6 +26,8 @@ Next.js 16 herní klient pro ZION OASIS (L4). Staticky exportovaná 3D vizuáln�
 - **NPC / Avatar Guides**: karta NPC ve WorldPanel a plovoucí hologram ve WorldEnvironment.
 - **Leaderboard & Territories**: top 3 poutníci a hot teritoria v `OasisHud`.
 - **Golden Egg**: sbírka vajíček ve WorldPanel za 100 Z → +500 XP.
+- **Onboarding**: dismissible welcome overlay with controls, quest, egg, and wallet hints.
+- **OASIS Link HUD**: live connection status, manual refresh, error message, top 3 pilgrims, hot territories.
 - **Mobile**: detekce touch zařízení, snížené DPR, LOD, virtuální joysticky.
 
 ## Lokální vývoj
