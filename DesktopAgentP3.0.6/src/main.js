@@ -35,7 +35,7 @@ if (process.platform === 'linux') {
   app.commandLine.appendSwitch('disable-gpu-sandbox');
 }
 const path = require('path');
-const { spawn, execFileSync } = require('child_process');
+const { spawn, spawnSync, execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const WalletGenerator = require('./wallet-generator');
@@ -5902,17 +5902,17 @@ ipcMain.handle('open-defender-settings', async () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 ipcMain.handle('cli-get-version', async () => {
-  return runZionCli(['--version']);
+  return runZionCli(['version']);
 });
 
 ipcMain.handle('cli-wallet-list', async () => {
-  return runZionCli(['wallet', 'list']);
+  return runZionCli(['wallet', 'address']);
 });
 
 ipcMain.handle('cli-wallet-new', async (_event, { name, outPath }) => {
   const args = ['wallet', 'new'];
   if (outPath) { args.push('-o', outPath); }
-  if (name) { args.push('--name', name); }
+  if (name) { args.push('--set-default'); }
   return runZionCli(args);
 });
 
@@ -5929,12 +5929,12 @@ ipcMain.handle('cli-wallet-send', async (_event, { wallet, to, amount, memo }) =
 });
 
 ipcMain.handle('cli-mine-start', async (_event, { pool, worker, wallet, threads, gpuBackend }) => {
-  const args = ['mine', 'start'];
-  if (pool) { process.env.ZION_POOL_ADDR = pool; }
+  const args = ['mine', 'start', '--profile', 'pool'];
+  if (pool) { args.push('--pool', pool); }
+  if (wallet) { args.push('--wallet', wallet); }
+  if (threads) { args.push('--threads', String(threads)); }
+  if (gpuBackend) { args.push('--backend', gpuBackend); }
   if (worker) { process.env.ZION_WORKER_NAME = ensureZionGroupHint(worker); }
-  if (wallet) { process.env.ZION_MINER_ID = wallet; }
-  if (threads) { process.env.ZION_THREADS = String(threads); }
-  if (gpuBackend) { process.env.ZION_GPU_BACKEND = gpuBackend; }
   return runZionCli(args);
 });
 
@@ -5960,9 +5960,14 @@ ipcMain.handle('cli-node-stop', async () => {
 });
 
 ipcMain.handle('cli-config-get', async (_event, { key }) => {
-  const args = ['config', 'get'];
-  if (key) { args.push(key); }
-  return runZionCli(args);
+  const result = runZionCli(['config', 'show']);
+  if (!result.success || !key) return result;
+  const needle = key.toLowerCase();
+  const lines = result.output.split('\n').filter((l) =>
+    l.toLowerCase().includes(needle) ||
+    l.split('=')[0]?.trim().toLowerCase() === needle
+  );
+  return { success: true, output: lines.length ? lines.join('\n') : `No config key matching "${key}"` };
 });
 
 ipcMain.handle('cli-config-set', async (_event, { key, value }) => {

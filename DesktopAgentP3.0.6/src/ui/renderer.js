@@ -5394,16 +5394,16 @@ function initCliView() {
     statusBadge.className = 'cli-badge ready';
   }
 
-  document.getElementById('cli-btn-version')?.addEventListener('click', () => runCli('cliGetVersion', '--version'));
+  document.getElementById('cli-btn-version')?.addEventListener('click', () => runCli('cliGetVersion', 'version'));
   document.getElementById('cli-btn-mine-status')?.addEventListener('click', () => runCli('cliMineStatus', 'mine status'));
-  document.getElementById('cli-btn-wallet-list')?.addEventListener('click', () => runCli('cliWalletList', 'wallet list'));
+  document.getElementById('cli-btn-wallet-list')?.addEventListener('click', () => runCli('cliWalletList', 'wallet address'));
   document.getElementById('cli-btn-wallet-balance')?.addEventListener('click', async () => {
     const address = prompt('Enter ZION address (or leave empty for config wallet):');
     await runCli('cliWalletBalance', 'wallet balance', { address: address || undefined });
   });
   document.getElementById('cli-btn-config-get')?.addEventListener('click', async () => {
     const key = prompt('Enter config key (or leave empty for all):');
-    await runCli('cliConfigGet', 'config get', { key: key || undefined });
+    await runCli('cliConfigGet', 'config show', { key: key || undefined });
   });
   document.getElementById('cli-btn-clear')?.addEventListener('click', clearConsole);
 
