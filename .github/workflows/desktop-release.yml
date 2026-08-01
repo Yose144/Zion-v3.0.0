@@ -1,0 +1,184 @@
+name: ZION Public Desktop Miner — Multi-OS Release
+
+# Builds the public desktop miner for Linux, Windows and macOS, then creates a
+# release on the public repository: https://github.com/Zion-TerraNova/v3-Mainnet
+#
+# Required repository secret:
+#   PUBLIC_RELEASE_TOKEN  -- GitHub PAT with 'repo' (or 'public_repo') scope,
+#                            used to upload assets to the public repo.
+#
+# Usage:
+#   1. Set PUBLIC_RELEASE_TOKEN in repository secrets.
+#   2. Run this workflow manually and enter the desired release tag.
+#   3. Review the draft release on Zion-TerraNova/v3-Mainnet and publish it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag, e.g. v3.0.6-desktop'
+        required: true
+        type: string
+      draft:
+        description: 'Create as draft release (recommended)'
+        required: false
+        default: true
+        type: boolean
+  push:
+    tags:
+      - 'v3.0.6-desktop*'
+      - 'desktop-v*'
+
+env:
+  DESKTOP_DIR: DesktopAgentP3.0.6
+  PUBLIC_REPO: Zion-TerraNova/v3-Mainnet
+
+defaults:
+  run:
+    working-directory: DesktopAgentP3.0.6
+
+jobs:
+  build-linux:
+    name: Build Linux (AppImage + DEB)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: DesktopAgentP3.0.6/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install system build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential cmake ocl-icd-opencl-dev libssl-dev pkg-config
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build Linux packages
+        run: npm run build:linux
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux
+          path: DesktopAgentP3.0.6/dist/*
+          if-no-files-found: error
+
+  build-windows:
+    name: Build Windows (NSIS + ZIP)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: DesktopAgentP3.0.6/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install OpenCL via vcpkg
+        shell: pwsh
+        run: |
+          vcpkg install opencl:x64-windows
+          $openclLib = "${env:VCPKG_ROOT}\installed\x64-windows\lib"
+          $openclInc = "${env:VCPKG_ROOT}\installed\x64-windows\include"
+          echo "LIB=$openclLib;${env:LIB}" >> ${env:GITHUB_ENV}
+          echo "INCLUDE=$openclInc;${env:INCLUDE}" >> ${env:GITHUB_ENV}
+
+      - name: Install NSIS
+        shell: pwsh
+        run: choco install nsis -y
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build Windows packages
+        run: npm run build:win
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows
+          path: DesktopAgentP3.0.6/dist/*
+          if-no-files-found: error
+
+  build-macos:
+    name: Build macOS (DMG)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: DesktopAgentP3.0.6/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build macOS package
+        run: npm run build:mac
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-macos
+          path: DesktopAgentP3.0.6/dist/*
+          if-no-files-found: error
+
+  release:
+    name: Create public release
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: desktop-*
+
+      - name: Prepare release assets and checksums
+        working-directory: artifacts
+        run: |
+          mkdir -p release
+          mv desktop-*/* release/ 2>/dev/null || true
+          cd release
+          sha256sum *.* > SHA256SUMS.txt
+          ls -lh
+
+      - name: Check release token
+        shell: bash
+        run: |
+          if [ -z "${PUBLIC_RELEASE_TOKEN}" ]; then
+            echo "::error::PUBLIC_RELEASE_TOKEN secret is missing. Cannot upload to public repo."
+            exit 1
+          fi
+        env:
+          PUBLIC_RELEASE_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
+
+      - name: Create or update public release
+        working-directory: artifacts/release
+        env:
+          GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+          DRAFT_FLAG: ${{ inputs.draft == true && '--draft' || '' }}
+        run: |
+          gh release create "${RELEASE_TAG}" \
+            --repo "${PUBLIC_REPO}" \
+            --title "ZION Public Desktop Miner v3.0.6" \
+            --notes-file "${GITHUB_WORKSPACE}/DesktopAgentP3.0.6/RELEASE_NOTES.md" \
+            ${DRAFT_FLAG} \
+            ./*
