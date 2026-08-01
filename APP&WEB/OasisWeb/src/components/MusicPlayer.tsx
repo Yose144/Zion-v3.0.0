@@ -10,9 +10,9 @@ interface MusicPlayerProps {
   music: MusicPlayerState;
 }
 
-const DEFAULT_PLAYLIST = 'https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO';
+const DEFAULT_PLAYLIST = 'https://open.spotify.com/playlist/4HvwefPlEhGlLM1LOpKlnV?si=1c1e7e39ebac43a8';
 const TAB_KEY = 'oasis-music-tab';
-const PLAYLIST_KEY = 'oasis-spotify-playlist';
+const PLAYLIST_KEY = 'oasis-spotify-playlist-v2';
 
 type Tab = 'spotify' | 'oasis';
 
