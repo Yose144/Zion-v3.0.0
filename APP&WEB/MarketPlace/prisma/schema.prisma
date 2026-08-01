@@ -1,0 +1,169 @@
+// ── ZION MarketPlace Database Schema ───────────────────────────────
+// PostgreSQL — off-chain metadata, listings, sales, user profiles
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Artifacts (ERC-1155 NFT metadata) ──────────────────────────────
+
+model Artifact {
+  id              String   @id @default(cuid())
+  tokenId         BigInt   @unique
+  contractAddress String
+  category        String   @default("quest_item")
+  name            String
+  description     String   @db.Text
+  rarity          String   @default("common")
+  source          String   @default("oasis")
+  imageUri        String
+  assetUri        String?
+  metadataUri     String
+
+  // Game stats (JSON)
+  stats           Json?
+
+  // Provenance
+  creator         String
+  createdAt       DateTime @default(now())
+  mintedAt        DateTime?
+
+  // Supply
+  totalSupply     Int      @default(1)
+  circulatingSupply Int    @default(1)
+
+  // Relations
+  listings        Listing[]
+  sales           Sale[]
+
+  @@index([category])
+  @@index([rarity])
+  @@index([creator])
+  @@index([contractAddress, tokenId])
+}
+
+// ── Collections (groups of artifacts) ──────────────────────────────
+
+model Collection {
+  id            String   @id @default(cuid())
+  name          String
+  description   String   @db.Text
+  bannerImage   String
+  logoImage     String
+  creator       String
+  artifactCount Int      @default(0)
+  floorPrice    BigInt?
+  totalVolume   BigInt?
+  createdAt     DateTime @default(now())
+
+  @@index([creator])
+}
+
+// ── Listings (marketplace sale offers) ─────────────────────────────
+
+model Listing {
+  id              String   @id @default(cuid())
+  artifactId      String
+  tokenId         BigInt
+  contractAddress String
+  seller          String
+  saleType        String   @default("fixed") // "fixed" | "auction"
+  price           BigInt   // wZION wei
+  priceUsd        Float?
+  quantity        Int      @default(1)
+  status          String   @default("active") // "active" | "sold" | "cancelled" | "expired"
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime?
+
+  // Auction-specific
+  highestBidder   String?
+  highestBid      BigInt?
+  bidCount        Int      @default(0)
+
+  // Relations
+  artifact        Artifact @relation(fields: [artifactId], references: [id])
+  bids            Bid[]
+  sales           Sale[]
+
+  @@index([seller])
+  @@index([status])
+  @@index([artifactId])
+  @@index([saleType, status])
+}
+
+// ── Bids (auction bids) ────────────────────────────────────────────
+
+model Bid {
+  id        String   @id @default(cuid())
+  listingId String
+  bidder    String
+  amount    BigInt
+  createdAt DateTime @default(now())
+
+  listing   Listing  @relation(fields: [listingId], references: [id])
+
+  @@index([listingId])
+  @@index([bidder])
+}
+
+// ── Sales (completed transactions) ─────────────────────────────────
+
+model Sale {
+  id        String   @id @default(cuid())
+  listingId String
+  artifactId String
+  tokenId   BigInt
+  buyer     String
+  seller    String
+  price     BigInt
+  quantity  Int      @default(1)
+  txHash    String
+  createdAt DateTime @default(now())
+
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  artifact  Artifact @relation(fields: [artifactId], references: [id])
+
+  @@index([buyer])
+  @@index([seller])
+  @@index([artifactId])
+  @@index([createdAt])
+}
+
+// ── User Profiles ──────────────────────────────────────────────────
+
+model UserProfile {
+  address       String   @id
+  username      String?
+  avatar        String?
+  bio           String?  @db.Text
+  joinedAt      DateTime @default(now())
+  itemsOwned    Int      @default(0)
+  itemsCreated  Int      @default(0)
+  totalSales    Int      @default(0)
+  totalPurchases Int     @default(0)
+
+  @@index([username])
+}
+
+// ── Event tracking (on-chain event indexer) ────────────────────────
+
+model EventLog {
+  id            String   @id @default(cuid())
+  blockNumber   BigInt
+  txHash        String
+  logIndex      Int
+  eventName     String
+  contractAddress String
+  data          Json
+  createdAt     DateTime @default(now())
+
+  @@unique([txHash, logIndex])
+  @@index([blockNumber])
+  @@index([contractAddress])
+  @@index([eventName])
+}
