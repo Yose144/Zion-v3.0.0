@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
+import { createRandom } from '../domain/ports/random';
 
 interface WarpIntroProps {
   speed?: number;
@@ -10,7 +11,8 @@ interface WarpIntroProps {
 }
 
 const BASE_SPEED = 18;
-const WARP_SPEED = 90;
+const WARP_SPEED = 120;
+const WARP_SEED = 420777;
 
 export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,9 +33,10 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
     let h = 0;
     let cx = 0;
     let cy = 0;
+    const rng = createRandom(WARP_SEED);
 
     const stars: { x: number; y: number; z: number; hue: number; sat: number; size: number }[] = [];
-    const DENSITY = 900;
+    const DENSITY = 1200;
 
     const resize = () => {
       w = canvas.width = window.innerWidth;
@@ -45,23 +48,22 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
     const seedStars = () => {
       stars.splice(0, stars.length);
       for (let i = 0; i < DENSITY; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = Math.random() * 240;
-        const hueBand = Math.random();
-        // Multispectrum warp: distinct color bands across the full rainbow
+        const angle = rng.next() * Math.PI * 2;
+        const dist = rng.next() * 240;
+        const hueBand = rng.next();
         let hue: number;
-        if (hueBand < 0.2) hue = 10 + Math.random() * 50;     // amber / gold
-        else if (hueBand < 0.4) hue = 160 + Math.random() * 80; // teal / aqua
-        else if (hueBand < 0.6) hue = 260 + Math.random() * 60; // violet / blue
-        else if (hueBand < 0.8) hue = 300 + Math.random() * 50; // magenta / pink
-        else hue = 45 + Math.random() * 35;                    // warm orange
+        if (hueBand < 0.2) hue = 10 + rng.next() * 50;     // amber / gold
+        else if (hueBand < 0.4) hue = 160 + rng.next() * 80; // teal / aqua
+        else if (hueBand < 0.6) hue = 260 + rng.next() * 60; // violet / blue
+        else if (hueBand < 0.8) hue = 300 + rng.next() * 50; // magenta / pink
+        else hue = 45 + rng.next() * 35;                    // warm orange
         stars.push({
           x: Math.cos(angle) * dist,
           y: Math.sin(angle) * dist,
-          z: Math.random() * w * 0.8 + w * 0.2,
+          z: rng.next() * w * 0.8 + w * 0.2,
           hue,
-          sat: 0.7 + Math.random() * 0.3,
-          size: Math.random() * 1.4 + 0.3,
+          sat: 0.7 + rng.next() * 0.3,
+          size: rng.next() * 1.4 + 0.3,
         });
       }
     };
@@ -86,27 +88,25 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
       if (!ctx || !canvas) return;
       time += 0.016;
 
-      currentSpeed.current += (targetSpeed.current - currentSpeed.current) * 0.04;
+      currentSpeed.current += (targetSpeed.current - currentSpeed.current) * 0.035;
 
-      // Longer trails when warping, crisp when still
       const fade = 0.92 - (currentSpeed.current / WARP_SPEED) * 0.78;
       ctx.fillStyle = `rgba(2, 3, 10, ${fade})`;
       ctx.fillRect(0, 0, w, h);
 
-      // Re-apply the soft nebula glow each frame (very low opacity so it builds)
       drawNebula();
 
-      const tailScaleK = 1 + (currentSpeed.current / BASE_SPEED) * 5;
+      const tailScaleK = 1 + (currentSpeed.current / BASE_SPEED) * 6;
 
       stars.forEach((star) => {
         star.z -= currentSpeed.current;
 
         if (star.z <= 1) {
-          const angle = Math.random() * Math.PI * 2;
-          const dist = Math.random() * 180;
+          const angle = rng.next() * Math.PI * 2;
+          const dist = rng.next() * 180;
           star.x = Math.cos(angle) * dist;
           star.y = Math.sin(angle) * dist;
-          star.z = w * (0.85 + Math.random() * 0.15);
+          star.z = w * (0.85 + rng.next() * 0.15);
         }
 
         const scale = (w * 0.6) / star.z;
@@ -122,7 +122,6 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
         const alpha = Math.min(1, 0.25 + depth * 0.75);
         const lineWidth = Math.max(0.4, depth * 2.5 * star.size);
 
-        // Multispectrum color: each star keeps its own hue, lightness grows as it comes closer
         const sat = Math.round(star.sat * 100);
         const light = Math.round(45 + depth * 35);
         const color = `hsla(${star.hue}, ${sat}%, ${light}%, ${alpha})`;
@@ -143,7 +142,6 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
         }
       });
 
-      // Central vortex glow — multispectrum core that shifts with warp speed
       const vortexHue = 30 + (currentSpeed.current / WARP_SPEED) * 80 + Math.sin(time * 0.4) * 20;
       const vortexIntensity = 0.08 + (currentSpeed.current / WARP_SPEED) * 0.22;
       const vortex = ctx.createRadialGradient(cx, cy, 0, cx, cy, w * 0.28);
@@ -182,7 +180,7 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
 
     setTimeout(() => {
       setExiting(true);
-      setTimeout(onEnter, 1400);
+      setTimeout(onEnter, 1600);
     }, 4200);
   };
 
@@ -190,12 +188,21 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#02030a]">
       <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
 
-      <div className="relative z-10 flex max-w-xl flex-col items-center px-6 text-center">
+      {/* Cinematic vignette */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: 'radial-gradient(circle at center, transparent 0%, rgba(2,3,10,0.2) 55%, rgba(2,3,10,0.85) 100%)',
+        }}
+      />
+
+      <div className="relative z-10 flex max-w-2xl flex-col items-center px-6 text-center">
         <motion.p
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2 }}
-          className="mb-4 text-[10px] font-semibold uppercase tracking-[0.5em] text-oasis-gold"
+          className="mb-6 text-[10px] font-semibold uppercase tracking-[0.55em] text-oasis-gold"
+          style={{ textShadow: '0 0 20px rgba(245,158,11,0.4)' }}
         >
           ZION · OASIS
         </motion.p>
@@ -204,41 +211,54 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
           {!exiting && (
             <motion.div
               key="quote"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, y: -20, filter: 'blur(10px)' }}
-              transition={{ duration: 1 }}
-              className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-md sm:p-8"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30, filter: 'blur(12px)' }}
+              transition={{ duration: 1.2 }}
+              className="rounded-3xl border border-white/10 bg-black/25 p-8 shadow-2xl shadow-black/50 backdrop-blur-lg sm:p-10"
             >
-              <blockquote className="text-sm font-light italic leading-relaxed text-white/95 sm:text-base md:text-lg" style={{ textShadow: '0 2px 24px rgba(0,0,0,0.7)' }}>
+              <blockquote
+                className="text-base font-light italic leading-relaxed text-white/95 sm:text-lg md:text-xl"
+                style={{ textShadow: '0 2px 28px rgba(0,0,0,0.7)' }}
+              >
                 “For small creatures such as we, the vastness is bearable only through love.”
               </blockquote>
-              <p className="mt-3 text-xs text-white/50">— Carl Sagan, Contact</p>
+              <p className="mt-4 text-xs tracking-wider text-white/45">— CARL SAGAN, CONTACT</p>
 
-              <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-                <motion.button
-                  onClick={handleEnter}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-6 py-3 text-xs font-bold text-white shadow-[0_0_60px_rgba(245,158,11,0.25)] transition-shadow hover:shadow-[0_0_80px_rgba(168,85,247,0.5)]"
-                >
-                  Enter the OASIS
-                  <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
-                </motion.button>
-              </div>
+              <motion.button
+                onClick={handleEnter}
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.97 }}
+                className="group mt-9 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-8 py-3.5 text-sm font-bold text-white shadow-[0_0_60px_rgba(245,158,11,0.25)] transition-shadow hover:shadow-[0_0_90px_rgba(168,85,247,0.55)]"
+              >
+                Enter the OASIS
+                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </motion.button>
+
+              <p className="mt-4 text-[10px] text-white/30">Click to initiate warp sequence</p>
             </motion.div>
           )}
         </AnimatePresence>
 
         {warping && !exiting && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
             className="absolute inset-0 flex items-center justify-center"
           >
-            <p className="text-xs uppercase tracking-[0.3em] text-oasis-gold" style={{ textShadow: '0 0 30px rgba(245,158,11,0.6)' }}>
-              Approaching the galactic center…
-            </p>
+            <div className="text-center">
+              <p className="text-xs uppercase tracking-[0.35em] text-oasis-gold" style={{ textShadow: '0 0 30px rgba(245,158,11,0.6)' }}>
+                Approaching the galactic center…
+              </p>
+              <div className="mx-auto mt-4 h-1 w-32 overflow-hidden rounded-full bg-white/10">
+                <motion.div
+                  initial={{ x: '-100%' }}
+                  animate={{ x: '100%' }}
+                  transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
+                  className="h-full w-1/2 bg-gradient-to-r from-transparent via-oasis-gold to-transparent"
+                />
+              </div>
+            </div>
           </motion.div>
         )}
       </div>
