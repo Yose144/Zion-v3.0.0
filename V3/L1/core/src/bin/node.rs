@@ -464,7 +464,9 @@ fn handle_p2p_stream(
     // After a valid first message, we relax to the long idle timeout.
     const HANDSHAKE_TIMEOUT_SECS: u64 = 10;
     const IDLE_TIMEOUT_SECS: u64 = 330;
-    stream.set_read_timeout(Some(Duration::from_secs(HANDSHAKE_TIMEOUT_SECS))).ok();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(HANDSHAKE_TIMEOUT_SECS)))
+        .ok();
     let reader_stream = stream.try_clone().context("failed to clone P2P stream")?;
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
@@ -531,7 +533,9 @@ fn handle_p2p_stream(
         // and mark that a handshake started (suppresses noisy disconnect log
         // for port scanners that send garbage data).
         if !got_handshake {
-            writer.set_read_timeout(Some(Duration::from_secs(IDLE_TIMEOUT_SECS))).ok();
+            writer
+                .set_read_timeout(Some(Duration::from_secs(IDLE_TIMEOUT_SECS)))
+                .ok();
             got_handshake = true;
             // Log peer address only after a valid handshake starts, not
             // for every TCP connect (avoids log spam from port scanners).
@@ -1199,21 +1203,32 @@ fn sync_from_peer(
         runtime.register_peers(status.known_peers.clone());
     }
 
+    // Request batches with a reorg window so `import_peer_blocks` has enough
+    // context to find a common ancestor and roll back if the peer is on a
+    // longer fork. Backtrack up to one extra window, then fall back to a
+    // genesis reset and full resync if the fork is deeper.
+    let mut backtrack_offset: u64 = 0;
+    let mut reset_once = false;
     loop {
-        let from_height = {
+        let (local_height, needs_sync) = {
             let runtime = runtime.lock().expect("node runtime lock poisoned");
-            if !runtime.needs_blocks_from(status.chain_height) {
-                break;
-            }
-            runtime.chain_height()
+            (
+                runtime.chain_height(),
+                runtime.needs_blocks_from(status.chain_height),
+            )
         };
+        if !needs_sync {
+            break;
+        }
+
+        let from_height = local_height
+            .saturating_sub(zion_core::MAX_REORG_DEPTH)
+            .saturating_sub(backtrack_offset);
+        let limit = batch_limit.saturating_add(zion_core::MAX_REORG_DEPTH as u16);
 
         let blocks = match p2p_roundtrip(
             peer,
-            &zion_core::P2pMessage::GetBlocksSince {
-                from_height,
-                limit: batch_limit,
-            },
+            &zion_core::P2pMessage::GetBlocksSince { from_height, limit },
         )? {
             zion_core::P2pMessage::Blocks { blocks } => blocks,
             other => return Err(anyhow!("unexpected block sync response: {other:?}")),
@@ -1228,13 +1243,53 @@ fn sync_from_peer(
             ));
         }
 
-        let imported = runtime
-            .lock()
-            .expect("node runtime lock poisoned")
-            .import_peer_blocks(blocks)
-            .map_err(anyhow::Error::msg)?;
-        if imported == 0 {
-            break;
+        let mut runtime = runtime.lock().expect("node runtime lock poisoned");
+        match runtime.import_peer_blocks(blocks) {
+            Ok(0) => {
+                // No progress; peer may be at the same height or batch was stale.
+                break;
+            }
+            Ok(_) => {
+                // Successfully imported at least one new block; reset backtrack.
+                backtrack_offset = 0;
+            }
+            Err(e) => {
+                if e.contains("reorg_context_missing") {
+                    eprintln!(
+                        "sync_reorg_context_missing peer={} from_height={} backtrack={}",
+                        peer.address(),
+                        from_height,
+                        backtrack_offset
+                    );
+                    if from_height == 0 {
+                        if reset_once {
+                            return Err(anyhow!(
+                                "reorg context missing from genesis for peer {}",
+                                peer.address()
+                            ));
+                        }
+                        reset_once = true;
+                        runtime.reset_to_genesis().map_err(anyhow::Error::msg)?;
+                        backtrack_offset = 0;
+                        continue;
+                    }
+                    backtrack_offset = backtrack_offset.saturating_add(zion_core::MAX_REORG_DEPTH);
+                } else if e.contains("reorg_too_deep") {
+                    eprintln!(
+                        "sync_reorg_too_deep peer={} depth exceeds {}",
+                        peer.address(),
+                        zion_core::MAX_REORG_DEPTH
+                    );
+                    if reset_once {
+                        return Err(anyhow!(e));
+                    }
+                    reset_once = true;
+                    runtime.reset_to_genesis().map_err(anyhow::Error::msg)?;
+                    backtrack_offset = 0;
+                } else {
+                    return Err(anyhow!(e));
+                }
+            }
         }
     }
 
@@ -1424,8 +1479,7 @@ fn outbound_peer_loop(
     // Track recent sync targets to prevent multiple one-shot connections
     // to the same peer within a single outbound cycle. Key = peer address
     // string, value = epoch seconds of last sync attempt.
-    let mut recent_syncs: std::collections::HashMap<String, u64> =
-        std::collections::HashMap::new();
+    let mut recent_syncs: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
     /// Minimum seconds between sync attempts to the same peer.
     const SYNC_COOLDOWN_SECS: u64 = 25;
 
@@ -1550,8 +1604,8 @@ fn outbound_peer_loop(
         let our_tip = runtime.lock().expect("lock").tip_hash_hex();
 
         // ── Fork detection: compare our tip with peer tips ─────────────
-        let peers_ahead = 0u32;
-        let peers_disagree_tip = 0u32;
+        let mut peers_ahead = 0u32;
+        let mut peers_disagree_tip = 0u32;
 
         for peer in &peers {
             // Quick status check via Ping to keep connection alive (persistent)
@@ -1569,6 +1623,10 @@ fn outbound_peer_loop(
                         // Feed height into IBD engine
                         ibd.update_peer(&peer.address(), status.chain_height);
                         if status.chain_height > our_height {
+                            peers_ahead += 1;
+                            if status.tip_hash_hex != our_tip {
+                                peers_disagree_tip += 1;
+                            }
                             // Rate-limit sync: skip if we already synced from
                             // this peer within the cooldown window.
                             let peer_key = peer.address();
@@ -1806,6 +1864,7 @@ fn outbound_peer_loop(
             let now = Instant::now();
             ibd.set_local_height(our_height);
             let ibd_commands = ibd.tick(now);
+            let mut ibd_needs_reset = false;
             for cmd in ibd_commands {
                 match cmd {
                     IbdCommand::RequestBatch {
@@ -1822,25 +1881,46 @@ fn outbound_peer_loop(
                             .find(|p| p.peer_id == peer_id)
                             .map(|p| PeerEndpoint::new(p.addr.to_string(), p.port));
                         if let Some(ep) = endpoint {
+                            let from_height =
+                                start_height.saturating_sub(zion_core::MAX_REORG_DEPTH);
+                            let limit =
+                                (count as u16).saturating_add(zion_core::MAX_REORG_DEPTH as u16);
                             match p2p_roundtrip(
                                 &ep,
-                                &P2pMessage::GetBlocksSince {
-                                    from_height: start_height,
-                                    limit: count.min(u16::MAX as u64) as u16,
-                                },
+                                &P2pMessage::GetBlocksSince { from_height, limit },
                             ) {
                                 Ok(P2pMessage::Blocks { blocks }) => {
                                     ibd.batch_received(start_height);
-                                    let imported = runtime
-                                        .lock()
-                                        .expect("lock")
-                                        .import_peer_blocks(blocks)
-                                        .unwrap_or(0);
-                                    if imported > 0 {
-                                        let new_height =
-                                            runtime.lock().expect("lock").chain_height();
-                                        ibd.blocks_applied(new_height);
-                                        println!("ibd_batch start={start_height} imported={imported} height={new_height}");
+                                    let mut rt = runtime.lock().expect("lock");
+                                    match rt.import_peer_blocks(blocks) {
+                                        Ok(imported) if imported > 0 => {
+                                            drop(rt);
+                                            let new_height =
+                                                runtime.lock().expect("lock").chain_height();
+                                            ibd.blocks_applied(new_height);
+                                            println!("ibd_batch start={start_height} from={from_height} imported={imported} height={new_height}");
+                                        }
+                                        Ok(_) => {}
+                                        Err(e) => {
+                                            if e.contains("reorg_context_missing")
+                                                || e.contains("reorg_too_deep")
+                                            {
+                                                eprintln!(
+                                                    "ibd_reorg_detected start={start_height} err={e}"
+                                                );
+                                                if let Err(reset_err) = rt.reset_to_genesis() {
+                                                    eprintln!(
+                                                        "ibd_reset_to_genesis_err err={reset_err}"
+                                                    );
+                                                } else {
+                                                    ibd_needs_reset = true;
+                                                }
+                                            } else {
+                                                eprintln!(
+                                                    "ibd_import_err start={start_height} err={e}"
+                                                );
+                                            }
+                                        }
                                     }
                                 }
                                 _ => {
@@ -1860,6 +1940,11 @@ fn outbound_peer_loop(
                         println!("ibd_complete height={}", ibd.local_height());
                     }
                 }
+            }
+
+            if ibd_needs_reset {
+                let new_height = runtime.lock().expect("lock").chain_height();
+                ibd = IbdEngine::new(new_height);
             }
         }
 

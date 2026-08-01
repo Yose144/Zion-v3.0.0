@@ -59,6 +59,12 @@ pub const MAX_TEMPLATE_UTXO_TRANSACTIONS: usize = 16;
 /// This prevents OOM on long-running nodes (each block ~100KB in memory).
 pub const DEFAULT_BLOCK_RETENTION: usize = 1000;
 
+/// Maximum chain rollback the node will perform to follow a longer peer chain.
+/// Forks deeper than this bound fall back to a full genesis reset and IBD.
+/// The value is chosen to handle typical network reorgs while limiting the
+/// CPU, memory, and disk cost of rebuilding chain state.
+pub const MAX_REORG_DEPTH: u64 = 500;
+
 pub mod bridge;
 pub use bridge::{
     bridge_operation_message, BridgeUnlockRequest, BridgeValidatorProof,
@@ -205,17 +211,14 @@ impl BlockCandidate {
             "deeksha_chv3" | "deeksha_lite_v1" => {
                 zion_cosmic_harmony::deeksha_lite::deeksha_lite(&header_bytes, self.nonce)
             }
-            "deeksha_lite_fire" => zion_cosmic_harmony::deeksha_lite_fire::deeksha_lite_fire(
-                &header_bytes,
-                self.nonce,
-            ),
+            "deeksha_lite_fire" => {
+                zion_cosmic_harmony::deeksha_lite_fire::deeksha_lite_fire(&header_bytes, self.nonce)
+            }
             "cosmic_harmony_v3" | "cosmic_harmony_ekam_deeksha_v2" => {
                 cosmic_harmony_with_height(&header_bytes, self.nonce, self.height).data
             }
             // ── External algorithms (pure-Rust via zion-auxpow) ──
-            "blake3" | "blake3_dcr" => {
-                zion_auxpow::hash_blake3(&header_bytes, 0, self.nonce)
-            }
+            "blake3" | "blake3_dcr" => zion_auxpow::hash_blake3(&header_bytes, 0, self.nonce),
             "blake3_alph" => {
                 // ALPH double-Blake3: blake3(blake3(nonce || header))
                 // For pool-side validation we use the same hash_blake3_alph
@@ -254,9 +257,11 @@ impl BlockCandidate {
                 // The 80-byte MiningHeader wrapper places it in `previous_hash`.
                 zion_auxpow::hash_ethash(&self.header.previous_hash, self.nonce, self.height as u32)
             }
-            "etchash" | "ethash_etc" => {
-                zion_auxpow::hash_etchash(&self.header.previous_hash, self.nonce, self.height as u32)
-            }
+            "etchash" | "ethash_etc" => zion_auxpow::hash_etchash(
+                &self.header.previous_hash,
+                self.nonce,
+                self.height as u32,
+            ),
             // VerusHash / RandomX have no pure-Rust fallback — use deeksha_lite
             // as placeholder.  Real validation requires native-ffi feature.
             "verushash" | "randomx" => {
@@ -2646,51 +2651,9 @@ impl ChainState {
         core: &CoreRuntime,
         block: AcceptedBlock,
     ) -> Result<(), String> {
-        // Early-return for duplicate blocks before expensive validation
-        // (avoids LWMA difficulty mismatch when seeds re-announce blocks
-        // that this node already accepted).
-        if let Some(existing) = self.accepted_by_height.get(&block.height) {
-            if existing.hash_hex == block.hash_hex {
-                return Ok(());
-            }
-            return Err(format!("conflicting peer block at height {}", block.height));
-        }
-
-        self.validate_peer_block(&block)?;
-
-        if block.height != self.height.saturating_add(1) {
-            return Err(format!(
-                "peer block height {} is not contiguous with local height {}",
-                block.height, self.height
-            ));
-        }
-
-        // Chain linkage: block must reference our current tip as parent.
-        let tip_hex = hex(&self.tip_hash);
-        if !block.previous_hash_hex.is_empty() {
-            if block.previous_hash_hex != tip_hex {
-                return Err(format!(
-                    "peer block previous_hash {} does not link to local tip {}",
-                    block.previous_hash_hex, tip_hex
-                ));
-            }
-        } else if !block.header_hex.is_empty() {
-            // Fall back to extracting previous_hash from header.
-            let header_bytes = parse_fixed_hex::<HEADER_SIZE>(
-                &block.header_hex,
-                "peer block header for chain linkage",
-            )?;
-            let header = MiningHeader::from_bytes(header_bytes);
-            if hex(&header.previous_hash) != tip_hex {
-                return Err(format!(
-                    "peer block header previous_hash does not link to local tip {}",
-                    tip_hex
-                ));
-            }
-        }
-
-        let tip_hash = parse_fixed_hex::<32>(&block.hash_hex, "peer block hash")?;
-        self.accept_block_record(node_id, core, block, tip_hash);
+        // Delegate to the batch path so single-block announcements and
+        // contiguous batch imports share the same fork/reorg logic.
+        self.import_peer_blocks(node_id, core, vec![block])?;
         Ok(())
     }
 
@@ -2704,7 +2667,32 @@ impl ChainState {
             return Ok(0);
         }
 
-        // Skip any leading blocks we already have (e.g. genesis).
+        // ── Structural pre-checks (no chain-state dependency) ──────────
+        // The batch must be internally contiguous in height. Parent linkage is
+        // verified for blocks that carry a parent reference; legacy blocks
+        // without one are accepted as long as heights are contiguous.
+        for window in blocks.windows(2) {
+            let prev = &window[0];
+            let block = &window[1];
+            if block.height != prev.height.saturating_add(1) {
+                return Err(format!(
+                    "peer batch is not contiguous: expected height {}, got {}",
+                    prev.height.saturating_add(1),
+                    block.height
+                ));
+            }
+            if let Some(parent) = Self::extract_previous_hash_hex(block) {
+                if parent != prev.hash_hex {
+                    return Err(format!(
+                        "peer batch block at height {} does not link to previous batch block (parent {})",
+                        block.height, parent
+                    ));
+                }
+            }
+        }
+
+        // Skip any leading blocks we already have with the same hash
+        // (e.g. the common prefix of the local chain and the peer batch).
         let skip_count = blocks
             .iter()
             .take_while(|block| {
@@ -2713,63 +2701,153 @@ impl ChainState {
                     .is_some_and(|existing| existing.hash_hex == block.hash_hex)
             })
             .count();
-        let blocks: Vec<AcceptedBlock> = blocks.into_iter().skip(skip_count).collect();
-        if blocks.is_empty() {
+        let tail: Vec<AcceptedBlock> = blocks.into_iter().skip(skip_count).collect();
+        if tail.is_empty() {
             return Ok(0);
         }
 
-        // ── Structural pre-checks (no chain-state dependency) ──────────
-        let mut expected_height = self.height.saturating_add(1);
-        let mut seen_heights = HashSet::new();
-        let mut seen_template_ids = HashSet::new();
-        let mut expected_parent_hex = hex(&self.tip_hash);
-        for block in &blocks {
-            if !seen_heights.insert(block.height) {
-                return Err(format!(
-                    "duplicate peer block height {} in batch",
-                    block.height
-                ));
+        let first = &tail[0];
+
+        // Genesis is immutable; if the batch starts with height 0, it must
+        // match the canonical genesis. A matching genesis was already skipped
+        // above, so any remaining height-0 block is a conflict.
+        if first.height == 0 {
+            if self
+                .accepted_by_height
+                .get(&0)
+                .is_some_and(|g| g.hash_hex == first.hash_hex)
+            {
+                return Ok(0);
             }
-            if !seen_template_ids.insert(block.template_id) {
-                return Err(format!(
-                    "duplicate peer template id {} in batch",
-                    block.template_id
-                ));
-            }
-            if let Some(existing) = self.accepted_by_height.get(&block.height) {
-                if existing.hash_hex != block.hash_hex {
-                    return Err(format!("conflicting peer block at height {}", block.height));
-                }
-                return Err(format!(
-                    "peer batch starts at already imported height {}",
-                    block.height
-                ));
-            }
-            if block.height != expected_height {
-                return Err(format!(
-                    "peer batch is not contiguous: expected height {}, got {}",
-                    expected_height, block.height
-                ));
-            }
-            // Chain linkage: every block must reference the previous one.
-            let parent_hex = Self::extract_previous_hash_hex(block);
-            if let Some(ref parent) = parent_hex {
-                if parent != &expected_parent_hex {
+            return self.validate_peer_block(first).map(|_| 0);
+        }
+
+        // If the first block has no parent reference, treat the whole tail as
+        // legacy blocks that can only extend the current tip by height.
+        match Self::extract_previous_hash_hex(first) {
+            None => {
+                if first.height != self.height.saturating_add(1) {
                     return Err(format!(
-                        "peer batch block at height {} does not link to expected parent {}",
-                        block.height, expected_parent_hex
+                        "peer batch starts at height {} but current tip is at height {} (legacy blocks must extend the current tip)",
+                        first.height, self.height
                     ));
                 }
+                if let Some(existing) = self.accepted_by_height.get(&first.height) {
+                    if existing.hash_hex != first.hash_hex {
+                        return Err(format!(
+                            "conflicting peer block at height {}: local block {} differs from peer block {}",
+                            first.height, existing.hash_hex, first.hash_hex
+                        ));
+                    }
+                }
             }
-            expected_parent_hex = block.hash_hex.clone();
-            expected_height = expected_height.saturating_add(1);
+            Some(first_parent) => {
+                // Strict parent-based linkage: determine the common ancestor and
+                // whether this fork would produce a strictly longer chain.
+                let (common_ancestor_height, needs_rollback) = if first.height
+                    == self.height.saturating_add(1)
+                    && first_parent == hex(&self.tip_hash)
+                {
+                    // Normal extension from the current tip, no rollback needed.
+                    (self.height, false)
+                } else if let Some(ancestor) = self.find_ancestor_by_hash(&first_parent) {
+                    let ancestor_height = ancestor.height;
+                    if first.height != ancestor_height.saturating_add(1) {
+                        // The batch does not contain the blocks between the common
+                        // ancestor and the first provided block. The caller needs to
+                        // request an earlier starting height to supply the full fork.
+                        return Err(format!(
+                            "reorg_context_missing: peer batch starts at height {} but common ancestor is at height {} (missing blocks {}..={})",
+                            first.height,
+                            ancestor_height,
+                            ancestor_height.saturating_add(1),
+                            first.height.saturating_sub(1)
+                        ));
+                    }
+                    let new_height = ancestor_height.saturating_add(tail.len() as u64);
+                    if new_height <= self.height {
+                        return Err(format!(
+                            "conflicting peer block at height {}: peer batch does not extend current chain (new height {} <= current height {})",
+                            first.height, new_height, self.height
+                        ));
+                    }
+                    (ancestor_height, ancestor_height < self.height)
+                } else {
+                    if first.height == self.height.saturating_add(1) {
+                        return Err(format!(
+                            "peer block {} previous_hash {} does not link to local tip {} (broken chain linkage)",
+                            first.height, first_parent, hex(&self.tip_hash)
+                        ));
+                    }
+                    return Err(format!(
+                        "peer batch block at height {} has unknown parent {} (no common ancestor in local chain)",
+                        first.height, first_parent
+                    ));
+                };
+
+                if needs_rollback {
+                    let reorg_depth = self.height.saturating_sub(common_ancestor_height);
+                    if reorg_depth > MAX_REORG_DEPTH {
+                        return Err(format!(
+                            "reorg_too_deep: reorg depth {} exceeds MAX_REORG_DEPTH {}",
+                            reorg_depth, MAX_REORG_DEPTH
+                        ));
+                    }
+                    self.rollback_to_height(node_id, core, common_ancestor_height)?;
+                }
+            }
         }
+
+        // After rollback/alignment, the first block must be a direct child of
+        // the current tip. This is a final sanity check before we start
+        // expensive validation.
+        if first.height != self.height.saturating_add(1) {
+            return Err(format!(
+                "peer batch block at height {} does not link to local tip (expected height {})",
+                first.height,
+                self.height.saturating_add(1)
+            ));
+        }
+        if let Some(parent) = Self::extract_previous_hash_hex(first) {
+            if parent != hex(&self.tip_hash) {
+                return Err(format!(
+                    "peer batch block at height {} does not link to local tip {} (parent {})",
+                    first.height,
+                    hex(&self.tip_hash),
+                    parent
+                ));
+            }
+        }
+
+        // Reserve local template ids above every block in the remaining batch
+        // and every remaining local block so that new local templates never
+        // collide with an accepted block.
+        let max_local_template_id = self
+            .accepted_blocks
+            .iter()
+            .map(|block| block.template_id)
+            .max()
+            .unwrap_or(0);
+        let max_batch_template_id = tail
+            .iter()
+            .map(|block| block.template_id)
+            .max()
+            .unwrap_or(0);
+        let max_template_id = max_local_template_id.max(max_batch_template_id);
+        self.next_template_id = max_template_id.wrapping_add(2);
 
         // ── Validate-and-accept one block at a time so that each
         //    subsequent block sees the updated accepted_blocks window
         //    (required for correct LWMA difficulty validation). ─────────
         let mut imported = 0usize;
-        for block in blocks {
+        for block in tail {
+            if block.height != self.height.saturating_add(1) {
+                return Err(format!(
+                    "peer batch is not contiguous: expected height {}, got {}",
+                    self.height.saturating_add(1),
+                    block.height
+                ));
+            }
             self.validate_peer_block(&block)?;
             let tip_hash = parse_fixed_hex::<32>(&block.hash_hex, "peer block hash")?;
             self.accept_block_record(node_id, core, block, tip_hash);
@@ -3390,7 +3468,8 @@ impl ChainState {
         // Coinbase and genesis TXs are exempt — they create new coins.
         if self.balance_check_active_at(self.height)
             && transaction.from != "coinbase"
-            && transaction.from != "genesis" {
+            && transaction.from != "genesis"
+        {
             let sender_balance = self.account_balance_for(&transaction.from);
             let needed = transaction.amount_zion + transaction.fee_zion as u128;
             if sender_balance < needed {
@@ -3448,17 +3527,16 @@ impl ChainState {
         if transaction.id != transaction.calculate_hash() {
             return Err("UTXO transaction id does not match calculated hash".to_string());
         }
-        let bridge_unlock_replay_key = match self
-            .validate_bridge_unlock_transaction_shape(&transaction, pending_height)?
-        {
-            Some(replay_key) => Some(replay_key),
-            None => {
-                if !transaction.verify_signatures() {
-                    return Err("UTXO transaction signature verification failed".to_string());
+        let bridge_unlock_replay_key =
+            match self.validate_bridge_unlock_transaction_shape(&transaction, pending_height)? {
+                Some(replay_key) => Some(replay_key),
+                None => {
+                    if !transaction.verify_signatures() {
+                        return Err("UTXO transaction signature verification failed".to_string());
+                    }
+                    None
                 }
-                None
-            }
-        };
+            };
         if self.mempool.len() >= MAX_MEMPOOL_TRANSACTIONS {
             return Err(format!(
                 "mempool capacity reached: {MAX_MEMPOOL_TRANSACTIONS}"
@@ -3673,6 +3751,92 @@ impl ChainState {
             self.mempool_by_id
                 .insert(transaction.tx_id(), transaction.clone());
         }
+    }
+
+    /// Find the highest accepted block whose hash matches `hash_hex`.
+    /// Returns `None` if no block in the local chain has this hash.
+    fn find_ancestor_by_hash(&self, hash_hex: &str) -> Option<&AcceptedBlock> {
+        self.accepted_blocks
+            .iter()
+            .filter(|block| block.hash_hex == hash_hex)
+            .max_by_key(|block| block.height)
+    }
+
+    /// Roll the chain state back to `fork_height`, discarding all blocks above it
+    /// and restoring their transactions to the mempool for reconsideration.
+    /// The active template and all indexes are rebuilt.
+    fn rollback_to_height(
+        &mut self,
+        node_id: &str,
+        core: &CoreRuntime,
+        fork_height: u64,
+    ) -> Result<(), String> {
+        if fork_height == self.height {
+            // No blocks to remove, but still re-sanitize so callers can rely on
+            // a consistent post-rollback state.
+            self.sanitize_recovered_state(node_id, core)?;
+            return Ok(());
+        }
+        if fork_height > self.height {
+            return Err(format!(
+                "rollback target height {} is above current tip {}",
+                fork_height, self.height
+            ));
+        }
+
+        let fork_hash = self
+            .accepted_by_height
+            .get(&fork_height)
+            .ok_or_else(|| format!("fork block at height {} not found", fork_height))?
+            .hash_hex
+            .clone();
+        let fork_hash = parse_fixed_hex::<32>(&fork_hash, "fork block hash")?;
+
+        let cut_idx = self
+            .accepted_blocks
+            .iter()
+            .position(|block| block.height == fork_height)
+            .ok_or_else(|| {
+                format!(
+                    "fork block at height {} not in accepted_blocks",
+                    fork_height
+                )
+            })?;
+
+        let removed: Vec<AcceptedBlock> = self.accepted_blocks.split_off(cut_idx + 1);
+
+        self.height = fork_height;
+        self.tip_hash = fork_hash;
+
+        // Return the transactions from the removed blocks to the mempool so they
+        // can be reconsidered on the new chain (and dropped if they are no
+        // longer valid or were mined in the new chain).
+        for block in removed {
+            for tx in block.transactions {
+                self.mempool.push(RuntimeTransaction::Account(tx));
+            }
+            for utxo_tx in block.utxo_transactions {
+                self.mempool.push(RuntimeTransaction::Utxo(utxo_tx));
+            }
+        }
+
+        self.rebuild_mempool_index();
+        self.rebuild_indexes();
+        self.rebuild_address_tx_index();
+
+        // Make sure the next local template id does not collide with any
+        // remaining accepted block. `sanitize_recovered_state` builds the active
+        // template with `next_template_id - 1`, so leave a one-id gap.
+        let max_remaining_template_id = self
+            .accepted_blocks
+            .iter()
+            .map(|block| block.template_id)
+            .max()
+            .unwrap_or(0);
+        self.next_template_id = max_remaining_template_id.wrapping_add(2);
+
+        self.sanitize_recovered_state(node_id, core)?;
+        Ok(())
     }
 
     fn sanitize_recovered_state(
@@ -4572,7 +4736,10 @@ mod tests {
         };
         let h_chv3 = candidate.hash_with_algorithm("deeksha_chv3");
         let h_lite = candidate.hash_with_algorithm("deeksha_lite_v1");
-        assert_eq!(h_chv3, h_lite, "chv3 and lite_v1 must produce identical hashes");
+        assert_eq!(
+            h_chv3, h_lite,
+            "chv3 and lite_v1 must produce identical hashes"
+        );
     }
 
     #[test]
@@ -5147,6 +5314,7 @@ mod tests {
     #[test]
     fn p2p_announce_block_rejects_conflicting_height() {
         let mut left = NodeRuntime::new("node-left", NodeConfig::mainnet());
+        left.set_miner_address("left-miner".to_string());
         let left_template = left.active_template();
         let left_nonce = find_valid_nonce(&left_template);
         let _ = left.handle_rpc_request(RpcRequest::SubmitCandidate {
@@ -5158,6 +5326,7 @@ mod tests {
         });
 
         let mut right = NodeRuntime::new("node-right", NodeConfig::mainnet());
+        right.set_miner_address("right-miner".to_string());
         let right_template = right.active_template();
         let right_nonce = find_valid_nonce(&right_template);
         let _ = right.handle_rpc_request(RpcRequest::SubmitCandidate {
@@ -6335,6 +6504,51 @@ mod tests {
             .import_peer_blocks(vec![block])
             .expect("legacy block without previous_hash should still be accepted");
         assert_eq!(imported, 1);
+    }
+
+    /// Slow: mines 3 blocks (two competing forks) in debug build. Run via:
+    ///   `cargo test --release -p zion-core --lib -- --ignored import_peer_blocks_performs_reorg_to_longer_fork`
+    #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
+    fn import_peer_blocks_performs_reorg_to_longer_fork() {
+        // Short fork A: genesis -> A1
+        let mut fork_a = NodeRuntime::new("fork-a", NodeConfig::mainnet());
+        fork_a.set_miner_address("fork-a-miner".to_string());
+        mine_one_block(&mut fork_a);
+
+        // Longer fork B: genesis -> B1 -> B2
+        let mut fork_b = NodeRuntime::new("fork-b", NodeConfig::mainnet());
+        fork_b.set_miner_address("fork-b-miner".to_string());
+        mine_one_block(&mut fork_b);
+        mine_one_block(&mut fork_b);
+
+        // Target imports the short fork, then reorgs to the longer fork.
+        let mut target = NodeRuntime::new("reorg-target", NodeConfig::mainnet());
+        let imported_a = target
+            .import_peer_blocks(vec![fork_a.accepted_blocks()[1].clone()])
+            .expect("short fork should be accepted");
+        assert_eq!(imported_a, 1);
+        assert_eq!(target.chain_height(), 1);
+
+        let fork_b_blocks = vec![
+            fork_b.accepted_blocks()[1].clone(),
+            fork_b.accepted_blocks()[2].clone(),
+        ];
+        let imported_b = target
+            .import_peer_blocks(fork_b_blocks)
+            .expect("longer fork should trigger reorg");
+        assert_eq!(imported_b, 2);
+        assert_eq!(target.chain_height(), 2);
+        assert_eq!(
+            target.tip_hash_hex(),
+            fork_b.accepted_blocks()[2].hash_hex,
+            "target tip should match the longer fork"
+        );
+        assert_eq!(
+            target.accepted_blocks()[1].hash_hex,
+            fork_b.accepted_blocks()[1].hash_hex,
+            "target should have rolled back to fork B's first block"
+        );
     }
 
     // ── Phase 14: Coinbase transaction tests ──────────────────────────
