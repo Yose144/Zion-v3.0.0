@@ -11617,9 +11617,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             html_path = SCRIPT_DIR / "dashboard.html"
             gz_path = SCRIPT_DIR / "dashboard.html.gz"
             if html_path.exists():
+                _ensure_gz_uptodate(html_path, gz_path)
                 accepts_gzip = "gzip" in (self.headers.get("Accept-Encoding", "").lower())
-                if accepts_gzip and gz_path.exists():
-                    body = gz_path.read_bytes()
+                if accepts_gzip:
+                    body = _get_gz_body(html_path)
                     self.send_response(200)
                     self.send_header("Content-Type", "text/html; charset=utf-8")
                     self.send_header("Content-Encoding", "gzip")
@@ -11645,8 +11646,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 }.get(v2_file.suffix, "application/octet-stream")
                 accepts_gzip = "gzip" in (self.headers.get("Accept-Encoding", "").lower())
                 gz_file = v2_file.with_suffix(v2_file.suffix + ".gz")
-                if accepts_gzip and gz_file.exists():
-                    body = gz_file.read_bytes()
+                _ensure_gz_uptodate(v2_file, gz_file)
+                if accepts_gzip:
+                    body = _get_gz_body(v2_file)
                     self.send_response(200)
                     self.send_header("Content-Type", content_type)
                     self.send_header("Content-Encoding", "gzip")
@@ -11679,9 +11681,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 js_path = SCRIPT_DIR / "dashboard.js"
                 gz_path = SCRIPT_DIR / "dashboard.js.gz"
             if js_path.exists():
+                _ensure_gz_uptodate(js_path, gz_path)
                 accepts_gzip = "gzip" in (self.headers.get("Accept-Encoding", "").lower())
-                if accepts_gzip and gz_path.exists():
-                    body = gz_path.read_bytes()
+                if accepts_gzip:
+                    body = _get_gz_body(js_path)
                     self.send_response(200)
                     self.send_header("Content-Type", "application/javascript; charset=utf-8")
                     self.send_header("Content-Encoding", "gzip")
@@ -14504,6 +14507,55 @@ setInterval(checkStatus, 10000);
 
 # ── Main ────────────────────────────────────────────────────────────────
 
+# ── Static gzip helpers ────────────────────────────────────────────────
+
+_GZ_BODY_CACHE: dict[str, tuple[float, bytes]] = {}
+_GZ_CACHE_LOCK = threading.Lock()
+_GZIP_ENSURE_TIMES: dict[str, float] = {}
+
+def _get_gz_body(src_path: Path) -> bytes:
+    """Return a gzip-compressed copy of *src_path*, caching by mtime.
+
+    This avoids relying on write permissions for on-disk `.gz` siblings;
+    the compressed bytes are generated in-memory and invalidated only when
+    the source file changes.
+    """
+    key = str(src_path)
+    src_mtime = src_path.stat().st_mtime
+    with _GZ_CACHE_LOCK:
+        cached_mtime, cached_body = _GZ_BODY_CACHE.get(key, (0.0, b""))
+        if cached_mtime == src_mtime:
+            return cached_body
+    raw = src_path.read_bytes()
+    compressed = gzip.compress(raw, compresslevel=6)
+    with _GZ_CACHE_LOCK:
+        _GZ_BODY_CACHE[key] = (src_mtime, compressed)
+    return compressed
+
+def _ensure_gz_uptodate(src_path: Path, gz_path: Path, min_interval: float = 1.0) -> None:
+    """Regenerate a .gz sibling if the source file is newer or the archive is missing.
+
+    Only checks the filesystem at most once per `min_interval` seconds per path
+    to avoid repeated stat/gzip work under load. Failures (e.g. permission
+    denied) are ignored because `_get_gz_body` provides an in-memory fallback.
+    """
+    if not src_path.exists():
+        return
+    key = str(gz_path)
+    now = time.monotonic()
+    last = _GZIP_ENSURE_TIMES.get(key, 0.0)
+    if now - last < min_interval:
+        return
+    _GZIP_ENSURE_TIMES[key] = now
+    try:
+        src_mtime = src_path.stat().st_mtime
+        if gz_path.exists() and gz_path.stat().st_mtime >= src_mtime:
+            return
+        with src_path.open("rb") as f_in, gzip.open(gz_path, "wb", compresslevel=6) as f_out:
+            shutil.copyfileobj(f_in, f_out)
+    except Exception:
+        pass
+
 def open_browser():
     import webbrowser
     threading.Timer(1.0, lambda: webbrowser.open(f"http://{HOST}:{PORT}")).start()
@@ -14523,6 +14575,11 @@ if __name__ == "__main__":
     # Records service health history every 5 min for the Health Timeline.
     sampler_thread = threading.Thread(target=background_sampler, daemon=True)
     sampler_thread.start()
+
+    # Ensure pre-compressed static files are fresh before the first request.
+    _ensure_gz_uptodate(SCRIPT_DIR / "dashboard.html", SCRIPT_DIR / "dashboard.html.gz", min_interval=0.0)
+    _ensure_gz_uptodate(SCRIPT_DIR / "dashboard.js", SCRIPT_DIR / "dashboard.js.gz", min_interval=0.0)
+    _ensure_gz_uptodate(SCRIPT_DIR / "dashboard.min.js", SCRIPT_DIR / "dashboard.min.js.gz", min_interval=0.0)
 
     open_browser()
     server = ThreadingHTTPServer((HOST, PORT), DashboardHandler)
