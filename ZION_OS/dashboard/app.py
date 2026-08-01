@@ -25,6 +25,7 @@ from datetime import datetime
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import v31
+import marketplace
 
 # ── TTL cache helper for expensive RPC/log scrapers ─────────────────────
 
@@ -11733,6 +11734,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             else:
                 self.send_error(404)
             return
+        # ── Marketplace admin dashboard ──────────────────────────────────────
+        elif marketplace.handle_get(self, route, params):
+            return
         # ── V31 Mainnet Alpha dashboard ──────────────────────────────────────
         elif v31.handle_get(self, route, params):
             return
@@ -14126,6 +14130,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 _BACKUP_BEACON = payload
                 _BACKUP_BEACON_TIME = time.time()
             self._json({"ok": True, "received_at": datetime.now().isoformat()})
+        elif marketplace.handle_post(self, route, payload):
+            return
         elif v31.handle_post(self, route, payload):
             return
         else:

@@ -202,6 +202,7 @@ model ShopOrder {
   id             String   @id @default(cuid())
   orderId        String   @unique
   status         String   @default("pending") // pending | paid | processing | shipped | completed | cancelled
+  paymentStatus  String   @default("pending") // pending | paid | failed
   customerName   String
   customerEmail  String
   customerPhone  String
@@ -216,12 +217,38 @@ model ShopOrder {
   shippingCzk    Int
   items          Json
   zionTokens     Int      @default(0)
+  trackingNumber String?
+  shippedAt      DateTime?
+  paidAt         DateTime?
   termsAccepted  Boolean  @default(false)
   newsletter     Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  invoices       Invoice[]
 
   @@index([status])
+  @@index([paymentStatus])
   @@index([customerEmail])
   @@index([orderId])
+}
+
+model Invoice {
+  id            String    @id @default(cuid())
+  invoiceNumber String    @unique
+  orderId       String
+  order         ShopOrder @relation(fields: [orderId], references: [id])
+  status        String    @default("draft") // draft | issued | paid | cancelled
+  totalCzk      Int
+  vatCzk        Int?
+  dueDate       DateTime?
+  issuedAt      DateTime  @default(now())
+  paidAt        DateTime?
+  html          String?   @db.Text
+  pdfUrl        String?
+  stripeSession String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([orderId])
+  @@index([status])
 }

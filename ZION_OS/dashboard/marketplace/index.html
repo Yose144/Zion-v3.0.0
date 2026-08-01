@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="cs" data-theme="zion">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>ZION Marketplace — Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+<style>
+:root{--gold:255 215 0;--purple:147 51 234;--cyan:6 182 212;}
+body{font-family:'Inter',system-ui,sans-serif;background:
+  radial-gradient(circle at 18% -8%,rgba(147,51,234,0.22),transparent 34rem),
+  radial-gradient(circle at 86% 8%,rgba(6,182,212,0.16),transparent 30rem),
+  radial-gradient(circle at 50% 110%,rgba(255,215,0,0.12),transparent 40rem),
+  linear-gradient(180deg,rgba(2,4,12,0.92),rgba(0,0,0,0.95));color:#fff;min-height:100vh;}
+.card{background:linear-gradient(145deg,rgba(15,20,35,0.9),rgba(10,14,26,0.95));border:1px solid rgba(255,255,255,0.1);border-radius:1.25rem;box-shadow:0 16px 50px rgba(0,0,0,0.35);}
+.btn{border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;border-radius:0.6rem;padding:0.55rem 1rem;font-weight:600;transition:all .15s;cursor:pointer;}
+.btn:hover{background:rgba(255,255,255,0.1);}
+.btn:disabled{opacity:0.45;cursor:not-allowed;}
+.btn-gold{background:rgba(255,215,0,0.12);border-color:rgba(255,215,0,0.35);color:rgb(255 215 0);}
+.btn-gold:hover{background:rgba(255,215,0,0.2);}
+.btn-red{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.35);color:rgb(252 165 165);}
+.btn-red:hover{background:rgba(239,68,68,0.2);}
+.btn-purple{background:rgba(147,51,234,0.15);border-color:rgba(147,51,234,0.35);color:rgb(216 180 254);}
+.btn-purple:hover{background:rgba(147,51,234,0.25);}
+.btn-cyan{background:rgba(6,182,212,0.15);border-color:rgba(6,182,212,0.35);color:rgb(103 232 249);}
+.btn-cyan:hover{background:rgba(6,182,212,0.25);}
+.tab{opacity:0.6;border-bottom:2px solid transparent;transition:all .15s;background:transparent;border:none;color:#fff;font-weight:600;padding:0.75rem 0.25rem;cursor:pointer;}
+.tab.active{opacity:1;border-bottom-color:rgb(255 215 0);color:rgb(255 215 0);}
+.tab:hover{opacity:0.9;}
+.input{background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);border-radius:0.5rem;color:#fff;padding:0.5rem 0.75rem;outline:none;}
+.input:focus{border-color:rgb(255 215 0);}
+.badge{font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:0.375rem;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;}
+.badge-pending{background:rgba(234,179,8,0.15);color:#facc15;border:1px solid rgba(234,179,8,0.3);}
+.badge-paid{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);}
+.badge-failed{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);}
+.badge-shipped{background:rgba(6,182,212,0.15);color:#22d3ee;border:1px solid rgba(6,182,212,0.3);}
+.badge-completed{background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);}
+.badge-cancelled{background:rgba(100,116,139,0.15);color:#94a3b8;border:1px solid rgba(100,116,139,0.3);}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:0.75rem;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);font-size:0.85rem;}
+th{color:#94a3b8;text-transform:uppercase;font-size:0.7rem;letter-spacing:0.04em;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.invoice-frame{width:100%;height:70vh;border:1px solid rgba(255,255,255,0.1);border-radius:0.75rem;background:#fff;}
+</style>
+</head>
+<body class="p-4 md:p-6">
+<div class="max-w-7xl mx-auto">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight"><span style="color:rgb(255 215 0)">ZION</span> Marketplace Admin</h1>
+      <p class="text-sm text-gray-400 mt-1">Objednávky, faktury, shipping a Stripe platby</p>
+    </div>
+    <div class="flex gap-2 items-center">
+      <a href="/" class="btn"><i class="fas fa-arrow-left mr-2"></i>Zpět</a>
+      <button id="btn-refresh" class="btn" title="Aktualizovat"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>
+    </div>
+  </div>
+
+  <div class="card p-2 mb-4">
+    <nav class="flex gap-4 px-2" id="tabs">
+      <button data-tab="orders" class="tab active py-3 px-1 font-semibold text-sm"><i class="fas fa-shopping-bag mr-2"></i>Objednávky</button>
+      <button data-tab="settings" class="tab py-3 px-1 font-semibold text-sm"><i class="fas fa-cog mr-2"></i>Nastavení</button>
+    </nav>
+  </div>
+
+  <div id="error-box" class="hidden bg-red-900/30 border border-red-500/30 text-red-200 rounded-xl p-4 mb-4 text-sm"></div>
+
+  <!-- SETTINGS -->
+  <div id="tab-settings" class="tab-pane hidden">
+    <div class="card p-5">
+      <h2 class="text-lg font-bold mb-4"><i class="fas fa-cog mr-2" style="color:rgb(255 215 0)"></i>Nastavení API</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Marketplace URL</label>
+          <input type="text" id="setting-url" class="input w-full" value="https://market.zionterranova.com" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Admin API Key</label>
+          <input type="password" id="setting-key" class="input w-full" placeholder="Bearer token" />
+        </div>
+      </div>
+      <button id="btn-save-settings" class="btn btn-gold"><i class="fas fa-save mr-2"></i>Uložit</button>
+      <p class="text-xs text-gray-500 mt-3">API key se ukládá pouze do localStorage tohoto prohlížeče.</p>
+    </div>
+  </div>
+
+  <!-- ORDERS -->
+  <div id="tab-orders" class="tab-pane">
+    <div class="card p-4 mb-4">
+      <div class="flex flex-col md:flex-row gap-3 flex-wrap items-end">
+        <div class="flex-1 min-w-[12rem]">
+          <label class="block text-xs text-gray-400 mb-1">Vyhledat</label>
+          <input type="text" id="filter-search" class="input w-full" placeholder="ID, jméno, e-mail…" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Status</label>
+          <select id="filter-status" class="input bg-black/40">
+            <option value="">Vše</option>
+            <option value="pending">pending</option>
+            <option value="paid">paid</option>
+            <option value="processing">processing</option>
+            <option value="shipped">shipped</option>
+            <option value="completed">completed</option>
+            <option value="cancelled">cancelled</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Platba</label>
+          <select id="filter-payment" class="input bg-black/40">
+            <option value="">Vše</option>
+            <option value="pending">pending</option>
+            <option value="paid">paid</option>
+            <option value="failed">failed</option>
+          </select>
+        </div>
+        <button id="btn-filter" class="btn btn-cyan"><i class="fas fa-filter mr-2"></i>Filtrovat</button>
+      </div>
+    </div>
+
+    <div class="card p-4 overflow-x-auto">
+      <table id="orders-table">
+        <thead>
+          <tr>
+            <th>Objednávka</th>
+            <th>Zákazník</th>
+            <th>Celkem</th>
+            <th>Status</th>
+            <th>Platba</th>
+            <th>Datum</th>
+            <th class="text-right">Akce</th>
+          </tr>
+        </thead>
+        <tbody id="orders-body"><tr><td colspan="7" class="text-gray-500">Načítání…</td></tr></tbody>
+      </table>
+      <div class="flex justify-between items-center mt-4 text-sm text-gray-400">
+        <span id="orders-meta"></span>
+        <div class="flex gap-2">
+          <button id="btn-prev" class="btn"><i class="fas fa-chevron-left"></i></button>
+          <button id="btn-next" class="btn"><i class="fas fa-chevron-right"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDER DETAIL MODAL -->
+  <div id="modal-detail" class="hidden fixed inset-0 z-50 bg-black/80 flex items-start justify-center p-4 overflow-y-auto">
+    <div class="card w-full max-w-4xl my-8 relative">
+      <button id="btn-close-detail" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+      <div class="p-6" id="detail-content">
+        <p class="text-gray-400">Načítání…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVOICE MODAL -->
+  <div id="modal-invoice" class="hidden fixed inset-0 z-50 bg-black/90 flex items-start justify-center p-4 overflow-y-auto">
+    <div class="card w-full max-w-4xl my-4 relative p-4">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg font-bold">Faktura</h3>
+        <button id="btn-close-invoice" class="btn"><i class="fas fa-times mr-1"></i>Zavřít</button>
+      </div>
+      <iframe id="invoice-frame" class="invoice-frame" sandbox="allow-same-origin allow-scripts"></iframe>
+    </div>
+  </div>
+</div>
+
+<script src="marketplace.js"></script>
+</body>
+</html>
