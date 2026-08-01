@@ -4,7 +4,8 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { WORLDS } from '../domain/config/worlds';
-import World from './World';
+import type { World, WorldCategory } from '../domain/types/world';
+import WorldNode from './World';
 
 const CATEGORY_COLORS: Record<string, string> = {
   'star-system': '#f59e0b',
@@ -15,24 +16,35 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 const CATEGORY_SIZES: Record<string, number> = {
-  'star-system': 0.42,
-  'planet': 0.25,
-  'sector': 0.28,
-  'world': 0.26,
-  'dimension': 0.23,
+  'star-system': 0.46,
+  'planet': 0.28,
+  'sector': 0.31,
+  'world': 0.29,
+  'dimension': 0.26,
 };
 
 const CORE = new THREE.Vector3(0, 0.4, 0);
 
-export default function GalaxyMap() {
+interface GalaxyMapProps {
+  activeCategories: WorldCategory[];
+  selectedWorldId?: string | null;
+  onWorldSelect?: (world: World) => void;
+}
+
+export default function GalaxyMap({ activeCategories, selectedWorldId, onWorldSelect }: GalaxyMapProps) {
   const groupRef = useRef<THREE.Group>(null);
   const linesRef = useRef<THREE.LineSegments>(null);
+
+  const visibleWorlds = useMemo(
+    () => WORLDS.filter((w) => activeCategories.includes(w.category as WorldCategory) && w.galaxyPosition),
+    [activeCategories]
+  );
 
   const { lineGeometry, lineMaterial } = useMemo(() => {
     const positions: number[] = [];
     const colors: number[] = [];
 
-    for (const w of WORLDS) {
+    for (const w of visibleWorlds) {
       if (!w.galaxyPosition) continue;
       const color = new THREE.Color(CATEGORY_COLORS[w.category] || '#ffffff');
       const p = w.galaxyPosition;
@@ -54,7 +66,7 @@ export default function GalaxyMap() {
     });
 
     return { lineGeometry: geometry, lineMaterial: material };
-  }, []);
+  }, [visibleWorlds]);
 
   useFrame((_, delta) => {
     if (groupRef.current) {
@@ -66,21 +78,24 @@ export default function GalaxyMap() {
     <group ref={groupRef}>
       <lineSegments ref={linesRef} geometry={lineGeometry} material={lineMaterial} />
 
-      {WORLDS.map((w) => {
-        if (!w.galaxyPosition) return null;
+      {visibleWorlds.map((w) => {
         const color = CATEGORY_COLORS[w.category] || '#ffffff';
-        const size = CATEGORY_SIZES[w.category] || 0.25;
+        const size = CATEGORY_SIZES[w.category] || 0.28;
+        const isSelected = w.id === selectedWorldId;
 
         return (
-          <World
+          <WorldNode
             key={w.id}
             id={w.id}
             name={w.name}
             color={color}
-            position={[w.galaxyPosition.x, w.galaxyPosition.y, w.galaxyPosition.z]}
+            position={[w.galaxyPosition!.x, w.galaxyPosition!.y, w.galaxyPosition!.z]}
             size={size}
             info={w.summary}
             category={w.category}
+            showLabel={w.category === 'star-system' || isSelected}
+            isSelected={isSelected}
+            onSelect={() => onWorldSelect?.(w)}
           />
         );
       })}
