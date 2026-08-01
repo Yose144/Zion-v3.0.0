@@ -38,9 +38,9 @@ export default function WorldFilter({ active, onChange }: WorldFilterProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 3.2 }}
-      className="pointer-events-auto absolute bottom-5 right-5 z-20 flex flex-col items-end gap-2"
+      className="pointer-events-auto absolute bottom-4 left-4 right-4 z-20 flex flex-col items-start gap-2 sm:bottom-5 sm:left-auto sm:right-5 sm:items-end"
     >
-      <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[#05060f]/85 p-2 shadow-2xl shadow-black/50 backdrop-blur-2xl">
+      <div className="flex w-full items-center gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-[#05060f]/85 p-2 shadow-2xl shadow-black/50 backdrop-blur-2xl sm:w-auto">
         <button
           onClick={toggleAll}
           className={`rounded-xl px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all ${

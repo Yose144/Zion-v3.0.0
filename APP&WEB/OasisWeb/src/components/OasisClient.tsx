@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import WarpFlash from './WarpFlash';
 import { ChevronRight } from 'lucide-react';
+import { useAudio, AudioToggle } from './AudioEngine';
 import type { World, WorldCategory } from '../domain/types/world';
 
 const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
@@ -29,6 +31,8 @@ export default function OasisClient() {
   const [activeCategories, setActiveCategories] = useState<WorldCategory[]>(ALL_CATEGORIES);
   const [selectedWorld, setSelectedWorld] = useState<World | null>(null);
   const [view, setView] = useState<'galaxy' | 'world'>('galaxy');
+  const [warping, setWarping] = useState(false);
+  const { muted, toggle, start, playWarp } = useAudio();
 
   useEffect(() => {
     setMounted(true);
@@ -46,6 +50,8 @@ export default function OasisClient() {
   }
 
   const handleEnter = () => {
+    start();
+    playWarp();
     setPhase('arrival');
   };
 
@@ -61,10 +67,16 @@ export default function OasisClient() {
   const handleCloseWorld = () => {
     setSelectedWorld(null);
     setView('galaxy');
+    setWarping(false);
   };
 
   const handleEnterWorld = () => {
-    if (selectedWorld) setView('world');
+    if (selectedWorld) {
+      playWarp();
+      setWarping(true);
+      setView('world');
+      setTimeout(() => setWarping(false), 1000);
+    }
   };
 
   return (
@@ -87,9 +99,9 @@ export default function OasisClient() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 1.2, delay: 3.5 }}
-              className="pointer-events-auto absolute top-6 left-6 z-10 max-w-sm"
+              className="pointer-events-auto absolute left-4 right-4 top-4 z-10 max-w-full sm:left-6 sm:right-auto sm:top-6 sm:max-w-sm"
             >
-              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-oasis-cyan to-oasis-purple">
+              <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-oasis-cyan to-oasis-purple sm:text-3xl">
                 ZION OASIS
               </h1>
               <p className="mt-2 text-sm leading-relaxed text-gray-300">
@@ -134,6 +146,20 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
+          {phase !== 'intro' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ delay: 4, duration: 0.6 }}
+              className="pointer-events-auto absolute bottom-4 left-4 z-30"
+            >
+              <AudioToggle muted={muted} onToggle={toggle} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
           {view === 'world' && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -146,7 +172,7 @@ export default function OasisClient() {
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleCloseWorld}
-                className="group inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-black/80 px-8 py-4 text-sm font-bold text-white shadow-2xl backdrop-blur-md transition hover:bg-white/10"
+                className="group inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-black/80 px-6 py-3 text-sm font-bold text-white shadow-2xl backdrop-blur-md transition hover:bg-white/10 sm:px-8 sm:py-4"
               >
                 Return to Galaxy
                 <ChevronRight className="h-4 w-4 rotate-180 transition-transform group-hover:-translate-x-1" />
@@ -159,6 +185,8 @@ export default function OasisClient() {
       <AnimatePresence>
         {phase === 'intro' && <WarpIntro onEnter={handleEnter} />}
       </AnimatePresence>
+
+      <WarpFlash active={warping} />
     </>
   );
 }
