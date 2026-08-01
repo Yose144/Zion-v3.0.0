@@ -153,6 +153,8 @@ interface OasisSceneProps {
   onExitFlight: () => void;
   flightControlsRef: React.RefObject<import('./FlightControls').FlightControlsHandle | null>;
   onFlightSpeedChange: (speed: number) => void;
+  onCanLand: (world: World | null) => void;
+  onApproach: (world: World) => void;
   flightSpeed?: number;
 }
 
@@ -167,6 +169,8 @@ export default function OasisScene({
   onExitFlight,
   flightControlsRef,
   onFlightSpeedChange,
+  onCanLand,
+  onApproach,
   flightSpeed = 0,
 }: OasisSceneProps) {
   return (
@@ -226,6 +230,8 @@ export default function OasisScene({
           enabled={flightMode}
           onExit={onExitFlight}
           onSpeedChange={onFlightSpeedChange}
+          onCanLand={onCanLand}
+          onApproach={onApproach}
         />
       )}
 
