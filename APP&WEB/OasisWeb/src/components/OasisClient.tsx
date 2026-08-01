@@ -12,6 +12,7 @@ import type { MobileInput } from './MobileControls';
 import MobileControls from './MobileControls';
 import PlayerHud from './PlayerHud';
 import { useGameStore } from '../store/gameStore';
+import { useToastStore } from '../store/toastStore';
 import { getQuests, getAvatars, getTerritories } from '../lib/api';
 import type { World, WorldCategory } from '../domain/types/world';
 
@@ -46,6 +47,7 @@ export default function OasisClient() {
   const mobileInputRef = useRef<MobileInput | null>(null);
   const { muted, toggle, start, playWarp, playBoost, playScanComplete, playApproach, startEngine, stopEngine, setEngine } = useAudio();
   const { discoverWorld, scanWorld, addXp, setRealQuests, setAvatars, setTerritories, setAddress, address, shipLoadout } = useGameStore();
+  const addToast = useToastStore((s) => s.add);
 
   useEffect(() => {
     setMounted(true);
@@ -149,6 +151,7 @@ export default function OasisClient() {
       setView('world');
       scanWorld(selectedWorld.id);
       addXp(75 + shipLoadout.scanner * 25);
+      addToast(`Entering ${selectedWorld.name}: +${75 + shipLoadout.scanner * 25} XP`, 'info', 3000);
       setTimeout(() => setWarping(false), 1500);
     }
   };
@@ -175,6 +178,7 @@ export default function OasisClient() {
     setSelectedWorld(world);
     setView('galaxy');
     discoverWorld(world.id);
+    addToast(`Approaching ${world.name}`, 'info', 3000);
     addXp(25);
   };
 

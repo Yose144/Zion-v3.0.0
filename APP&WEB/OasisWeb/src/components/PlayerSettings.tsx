@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, User, RotateCcw } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
+import { useToastStore } from '../store/toastStore';
 
 interface PlayerSettingsProps {
   onClose: () => void;
@@ -11,17 +12,20 @@ interface PlayerSettingsProps {
 
 export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
   const { address, setAddress, reset } = useGameStore();
+  const addToast = useToastStore((s) => s.add);
   const [input, setInput] = useState(address ?? '');
 
   const handleSave = () => {
     const trimmed = input.trim();
     setAddress(trimmed || null);
+    addToast(`Pilgrim address set: ${trimmed || 'default'}`, 'success', 2500);
     onClose();
   };
 
   const handleReset = () => {
     if (confirm('Reset all local progress? This cannot be undone.')) {
       reset();
+      addToast('Local progress reset', 'info', 2500);
       onClose();
     }
   };
