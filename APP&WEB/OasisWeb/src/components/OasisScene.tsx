@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import type { World, WorldCategory } from '../domain/types/world';
 import TreeOfLife from './TreeOfLife';
 import Galaxy from './Galaxy';
+import DistantGalaxies from './DistantGalaxies';
 import GalaxyCore from './GalaxyCore';
 import GalaxyMap from './GalaxyMap';
 import WorldEnvironment from './WorldEnvironment';
@@ -87,6 +88,7 @@ function CameraRig({ started, onArrived, view, focusTarget, disabled = false }: 
     }
   }, [started, view, focusTarget, disabled]);
 
+  // Run after drei's OrbitControls so our camera/target update takes precedence.
   useFrame((_, delta) => {
     if (disabled) return;
 
@@ -119,7 +121,7 @@ function CameraRig({ started, onArrived, view, focusTarget, disabled = false }: 
       // @ts-expect-error
       controlsRef.current.update();
     }
-  });
+  }, 1);
 
   return (
     <OrbitControls
@@ -131,7 +133,7 @@ function CameraRig({ started, onArrived, view, focusTarget, disabled = false }: 
       enableDamping
       dampingFactor={0.05}
       minDistance={0.8}
-      maxDistance={50}
+      maxDistance={120}
     />
   );
 }
@@ -165,6 +167,23 @@ interface OasisSceneProps {
   compassRef?: React.RefObject<CompassData | null>;
 }
 
+function UniverseRotator({
+  groupRef,
+  flightMode,
+  view,
+}: {
+  groupRef: React.RefObject<THREE.Group | null>;
+  flightMode: boolean;
+  view: 'galaxy' | 'world';
+}) {
+  useFrame((_, delta) => {
+    if (groupRef.current && view === 'galaxy' && !flightMode) {
+      groupRef.current.rotation.y += delta * 0.002;
+    }
+  });
+  return null;
+}
+
 export default function OasisScene({
   started = true,
   onArrived,
@@ -185,8 +204,10 @@ export default function OasisScene({
   isMobile = false,
   compassRef,
 }: OasisSceneProps) {
+  const universeRef = useRef<THREE.Group>(null);
+
   return (
-    <Canvas camera={{ position: [0, 3.5, 34], fov: 55 }} dpr={[1, isMobile ? 1.25 : 2]}>
+    <Canvas camera={{ position: [0, 0.9, 7.5], fov: 55 }} dpr={[1, isMobile ? 1.25 : 1.5]} gl={{ antialias: false, powerPreference: 'high-performance' }}>
       <color attach="background" args={['#02030a']} />
       <fog attach="fog" args={['#02030a', 22, 55]} />
       <ambientLight intensity={0.15} />
@@ -194,18 +215,25 @@ export default function OasisScene({
       <pointLight position={[-12, -6, -12]} intensity={0.6} color="#a855f7" />
       <pointLight position={[0, 10, 0]} intensity={0.5} color="#22d3ee" />
 
+      <UniverseRotator groupRef={universeRef} flightMode={flightMode} view={view} />
+
       {view === 'galaxy' && (
-        <>
+        <group ref={universeRef}>
           {/* Distant star backdrop */}
-          <Stars radius={180} depth={120} count={isMobile ? 3000 : 8000} factor={4} saturation={0} fade speed={0.4} />
+          <Stars radius={180} depth={120} count={isMobile ? 1000 : 2000} factor={3} saturation={0} fade speed={0.2} />
+
+          {/* Distant satellite galaxies around the Milky Way */}
+          <DistantGalaxies />
 
           {/* Galaxy disk + core + nebula */}
           <Galaxy />
           <GalaxyCore />
           <Nebula />
 
-          {/* Oasis center */}
-          <TreeOfLife />
+          {/* Oasis center — tighter, less obtrusive golden bubble */}
+          <group scale={0.55}>
+            <TreeOfLife />
+          </group>
 
           {/* Selection beacon for the focused world */}
           {selectedWorld?.galaxyPosition && (
@@ -222,7 +250,7 @@ export default function OasisScene({
             onWorldSelect={onWorldSelect}
             isMobile={isMobile}
           />
-        </>
+        </group>
       )}
 
       {view === 'world' && selectedWorld && <WorldEnvironment world={selectedWorld} isMobile={isMobile} />}
@@ -257,11 +285,11 @@ export default function OasisScene({
       {/* Bloom for glow */}
       <EffectComposer>
         <Bloom
-          intensity={0.75}
-          luminanceThreshold={0.2}
-          luminanceSmoothing={0.5}
+          intensity={0.45}
+          luminanceThreshold={0.25}
+          luminanceSmoothing={0.4}
           mipmapBlur
-          radius={0.6}
+          radius={0.4}
         />
       </EffectComposer>
 
