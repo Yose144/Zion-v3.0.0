@@ -3,17 +3,21 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { ShoppingCart } from 'lucide-react';
 import ConnectButton from './ConnectButton';
+import { useCart } from './shop/CartContext';
 
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/explore', label: 'Explore' },
+  { href: '/shop', label: 'Shop' },
   { href: '/create', label: 'Create' },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { count } = useCart();
 
   return (
     <nav className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5" style={{ background: 'rgba(9, 10, 15, 0.92)' }}>
@@ -61,10 +65,22 @@ export default function Navbar() {
 
           {/* Right side */}
           <div className="flex items-center gap-3">
+            <Link
+              href="/cart"
+              className="relative zion-button-icon zion-button-ghost text-gray-300 hover:text-white"
+              aria-label="Košík"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {count > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-oasis-gold text-oasis-black text-[10px] font-black rounded-full">
+                  {count > 99 ? '99+' : count}
+                </span>
+              )}
+            </Link>
             <ConnectButton />
             <button
               onClick={() => setOpen(!open)}
-              className="md:hidden btn-icon btn-ghost"
+              className="md:hidden zion-button-icon zion-button-ghost"
               aria-label="Menu"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

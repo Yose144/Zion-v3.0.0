@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { Zap, Gavel } from 'lucide-react';
 
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'unique';
 
@@ -9,7 +10,8 @@ export interface ArtifactCardData {
   id: string;
   name: string;
   image: string;
-  collection: string;
+  collection?: string;
+  category?: string;
   rarity: Rarity;
   price?: string;        // wZION
   bestBid?: string;      // wZION
@@ -21,14 +23,14 @@ const rarityOrder: Record<Rarity, number> = {
   common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, mythic: 5, unique: 6,
 };
 
-const rarityGlow: Record<Rarity, string> = {
-  common: '',
-  uncommon: 'shadow-[0_0_15px_rgba(16,185,129,0.15)]',
-  rare: 'shadow-[0_0_15px_rgba(59,130,246,0.15)]',
-  epic: 'shadow-[0_0_20px_rgba(147,51,234,0.2)]',
-  legendary: 'shadow-[0_0_20px_rgba(255,215,0,0.2)]',
-  mythic: 'shadow-[0_0_25px_rgba(244,63,94,0.25)]',
-  unique: 'shadow-[0_0_25px_rgba(6,182,212,0.25)]',
+const rarityColor: Record<Rarity, string> = {
+  common: '163, 163, 177',
+  uncommon: '16, 185, 129',
+  rare: '59, 130, 246',
+  epic: '147, 51, 234',
+  legendary: '255, 215, 0',
+  mythic: '244, 63, 94',
+  unique: '6, 182, 212',
 };
 
 function timeLeft(ts?: number): string | null {
@@ -47,7 +49,8 @@ export default function ItemCard({ item }: { item: ArtifactCardData }) {
   return (
     <Link href={`/item/${item.id}`} className="block group">
       <div
-        className={`card-glow h-full p-4 ${rarityGlow[item.rarity]}`}
+        className="zion-rainbow-sub h-full p-4"
+        style={{ '--rc': rarityColor[item.rarity] } as React.CSSProperties}
       >
         {/* Image */}
         <div className="relative aspect-square rounded-xl overflow-hidden mb-3 artifact-placeholder">
@@ -79,7 +82,15 @@ export default function ItemCard({ item }: { item: ArtifactCardData }) {
                   ? 'rarity-unique'
                   : 'rarity-legendary'
               }`}>
-                {item.listingType === 'auction' ? '🔨 Auction' : '⚡ Buy'}
+                {item.listingType === 'auction' ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Gavel className="w-3 h-3" /> Auction
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1">
+                    <Zap className="w-3 h-3" /> Buy
+                  </span>
+                )}
               </span>
             </div>
           )}
@@ -89,7 +100,7 @@ export default function ItemCard({ item }: { item: ArtifactCardData }) {
 
         {/* Info */}
         <div className="flex-1 flex flex-col">
-          <div className="text-xs text-gray-500 mb-0.5">{item.collection}</div>
+          <div className="text-xs text-gray-500 mb-0.5">{item.collection ?? item.category ?? 'Unknown'}</div>
           <h3 className="font-bold text-white text-sm leading-tight mb-2 line-clamp-1 group-hover:text-oasis-cyan transition-colors">
             {item.name}
           </h3>

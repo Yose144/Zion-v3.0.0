@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
+import { Zap, Gavel, Lock, X, Wallet } from 'lucide-react';
+import OasisImportPanel, { type OasisArtifactDraft } from '@/components/OasisImportPanel';
+import { useMintArtifact, useSetApprovalForAll, useIsApprovedForAll, useCreateListing, useCreateAuction } from '@/hooks/useMarket';
 
 const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'unique'] as const;
 const collections = ['OASIS Genesis', 'OASIS Quest', 'OASIS Ships', 'OASIS Territory', 'Golden Eggs', 'OASIS Cosmetics'];
@@ -10,7 +13,7 @@ const collections = ['OASIS Genesis', 'OASIS Quest', 'OASIS Ships', 'OASIS Terri
 type Rarity = typeof rarities[number];
 
 export default function CreatePage() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const router = useRouter();
 
   const [name, setName] = useState('');
@@ -23,6 +26,13 @@ export default function CreatePage() {
   const [auctionDuration, setAuctionDuration] = useState('24');
   const [traits, setTraits] = useState([{ trait: '', value: '' }]);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { mint: mintNft, isPending: minting } = useMintArtifact();
+  const { create: createListing, isPending: listing } = useCreateListing();
+  const { create: createAuction, isPending: auctioning } = useCreateAuction();
+  const { approve: approveAll, isPending: approving } = useSetApprovalForAll();
+  const { data: isApproved } = useIsApprovedForAll(address as `0x${string}` | undefined);
 
   const updateTrait = (i: number, field: 'trait' | 'value', val: string) => {
     const next = [...traits];
@@ -32,19 +42,94 @@ export default function CreatePage() {
   const addTrait = () => setTraits([...traits, { trait: '', value: '' }]);
   const removeTrait = (i: number) => setTraits(traits.filter((_, idx) => idx !== i));
 
+  const handleOasisImport = (draft: OasisArtifactDraft) => {
+    setName(draft.name);
+    setDescription(draft.description);
+    if (collections.includes(draft.collection)) {
+      setCollection(draft.collection);
+    }
+    setRarity(draft.rarity as Rarity);
+    setImageUrl(draft.image);
+    if (draft.traits.length > 0) {
+      setTraits(draft.traits);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isConnected) return;
+    if (!isConnected || !address) return;
     setSubmitting(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setSubmitting(false);
-    router.push('/explore');
+    setError(null);
+
+    try {
+      const attributes = traits
+        .filter((t) => t.trait.trim() && t.value.trim())
+        .map((t) => ({ trait_type: t.trait, value: t.value }));
+
+      const metadataRes = await fetch('/api/ipfs/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          description,
+          image: imageUrl,
+          attributes,
+          properties: {
+            category: collection.toLowerCase().replace(/\s+/g, '_'),
+            rarity,
+            collection,
+            source: 'marketplace',
+          },
+        }),
+      });
+      const metadataJson = (await metadataRes.json()) as { success: boolean; ipfsUrl?: string; error?: string };
+      if (!metadataRes.ok || !metadataJson.success) {
+        throw new Error(metadataJson.error ?? 'IPFS upload failed');
+      }
+
+      const tokenId = BigInt(Date.now());
+      const category = collection.toLowerCase().replace(/\s+/g, '_');
+
+      await mintNft({
+        to: address,
+        tokenId,
+        amount: 1n,
+        category,
+        rarity,
+      });
+
+      if (!isApproved) {
+        await approveAll();
+      }
+
+      if (listingType === 'fixed') {
+        await createListing({
+          tokenId,
+          quantity: 1n,
+          pricePerItem: price,
+          expiryHours: undefined,
+        });
+      } else if (listingType === 'auction') {
+        await createAuction({
+          tokenId,
+          quantity: 1n,
+          startingPrice: price,
+          durationHours: Number(auctionDuration) || 24,
+        });
+      }
+
+      router.push('/explore');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Transaction failed');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!isConnected) {
     return (
       <div className="card max-w-md mx-auto mt-20 p-8 text-center">
-        <div className="text-5xl mb-4 opacity-40">🔐</div>
+        <Wallet className="w-16 h-16 mx-auto mb-4 opacity-40" />
         <h2 className="text-xl font-bold mb-2 font-display">Connect your wallet</h2>
         <p className="text-sm text-gray-400">Connect to Base L2 to create a listing.</p>
       </div>
@@ -61,9 +146,20 @@ export default function CreatePage() {
         <p className="text-sm text-gray-500">Mint a new OASIS artifact and list it for sale</p>
       </div>
 
+      {error && (
+        <div className="p-4 rounded-xl bg-oasis-rose/10 border border-oasis-rose/20 text-sm text-oasis-rose">
+          {error}
+        </div>
+      )}
+
+      <OasisImportPanel onImport={handleOasisImport} />
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Asset */}
-        <section className="card-glow p-6 space-y-5">
+        <section
+          className="zion-rainbow-card p-6 space-y-5"
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+        >
           <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
             <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
             Asset
@@ -142,13 +238,13 @@ export default function CreatePage() {
         </section>
 
         {/* Traits */}
-        <section className="card p-6 space-y-4">
+        <section className="zion-section p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-purple" />
               Properties
             </h2>
-            <button type="button" onClick={addTrait} className="btn-ghost text-xs px-3 py-1.5">
+            <button type="button" onClick={addTrait} className="zion-button-ghost text-xs px-3 py-1.5">
               + Add trait
             </button>
           </div>
@@ -170,9 +266,9 @@ export default function CreatePage() {
                 <button
                   type="button"
                   onClick={() => removeTrait(i)}
-                  className="btn-icon btn-ghost text-oasis-rose"
+                  className="zion-button-icon zion-button-ghost text-oasis-rose"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
               )}
             </div>
@@ -180,7 +276,7 @@ export default function CreatePage() {
         </section>
 
         {/* Listing */}
-        <section className="card p-6 space-y-5">
+        <section className="zion-section p-6 space-y-5">
           <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
             <span className="w-1 h-3 rounded-full bg-oasis-gold" />
             Listing
@@ -197,7 +293,19 @@ export default function CreatePage() {
                     : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
                 }`}
               >
-                {t === 'fixed' ? '⚡ Fixed Price' : t === 'auction' ? '🔨 Auction' : '🔒 Not for sale'}
+                {t === 'fixed' ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Zap className="w-4 h-4" /> Fixed Price
+                </span>
+              ) : t === 'auction' ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Gavel className="w-4 h-4" /> Auction
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  <Lock className="w-4 h-4" /> Not for sale
+                </span>
+              )}
               </button>
             ))}
           </div>
@@ -249,13 +357,13 @@ export default function CreatePage() {
 
         <button
           type="submit"
-          disabled={submitting}
-          className="btn-primary w-full text-lg py-3.5 disabled:opacity-50"
+          disabled={submitting || minting || listing || auctioning || approving}
+          className="zion-button-primary w-full text-lg py-3.5 disabled:opacity-50"
         >
-          {submitting ? (
+          {submitting || minting || listing || auctioning || approving ? (
             <span className="flex items-center justify-center gap-2">
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Minting + listing…
+              {minting ? 'Minting…' : listing || auctioning ? 'Creating listing…' : approving ? 'Approving…' : 'Minting + listing…'}
             </span>
           ) : 'Create Listing'}
         </button>
