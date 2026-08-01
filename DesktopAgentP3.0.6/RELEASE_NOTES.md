@@ -45,6 +45,26 @@ sudo apt-get -f install   # if dependencies are missing
 zion-public-miner
 ```
 
+### Windows
+
+Run the NSIS installer and follow the setup wizard:
+
+```powershell
+zion-public-miner-v3.0.6-windows-x64.exe
+```
+
+A portable `.zip` is also available. Extract it and run `ZION Public Miner.exe`.
+
+### macOS
+
+Open the DMG and drag **ZION Public Miner** into **Applications**:
+
+```bash
+open zion-public-miner-v3.0.6-mac-arm64.dmg
+```
+
+On Apple Silicon Macs you may need to allow the app in **System Settings → Privacy & Security** the first time it is launched.
+
 ## First run
 
 1. Enter your ZION wallet address (`ZION_...`).
