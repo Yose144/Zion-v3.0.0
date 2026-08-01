@@ -3,6 +3,7 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { createRandom } from '../domain/ports/random';
 
 const PARAMETERS = {
   count: 30000,
@@ -41,6 +42,7 @@ export default function Galaxy() {
   const pointsRef = useRef<THREE.Points>(null);
 
   const { geometry, material } = useMemo(() => {
+    const rng = createRandom(31415);
     const positions = new Float32Array(PARAMETERS.count * 3);
     const colors = new Float32Array(PARAMETERS.count * 3);
 
@@ -51,24 +53,24 @@ export default function Galaxy() {
     for (let i = 0; i < PARAMETERS.count; i++) {
       const i3 = i * 3;
 
-      const radius = Math.random() * PARAMETERS.radius;
+      const radius = rng.next() * PARAMETERS.radius;
       const branch = i % PARAMETERS.branches;
       const branchAngle = (branch / PARAMETERS.branches) * Math.PI * 2;
       const spinAngle = radius * PARAMETERS.spin;
 
       const randomX =
-        Math.pow(Math.random(), PARAMETERS.randomnessPower) *
-        (Math.random() < 0.5 ? -1 : 1) *
+        Math.pow(rng.next(), PARAMETERS.randomnessPower) *
+        (rng.next() < 0.5 ? -1 : 1) *
         PARAMETERS.randomness *
         radius;
       const randomY =
-        Math.pow(Math.random(), PARAMETERS.randomnessPower) *
-        (Math.random() < 0.5 ? -1 : 1) *
+        Math.pow(rng.next(), PARAMETERS.randomnessPower) *
+        (rng.next() < 0.5 ? -1 : 1) *
         PARAMETERS.randomness *
         radius;
       const randomZ =
-        Math.pow(Math.random(), PARAMETERS.randomnessPower) *
-        (Math.random() < 0.5 ? -1 : 1) *
+        Math.pow(rng.next(), PARAMETERS.randomnessPower) *
+        (rng.next() < 0.5 ? -1 : 1) *
         PARAMETERS.randomness *
         radius;
 
