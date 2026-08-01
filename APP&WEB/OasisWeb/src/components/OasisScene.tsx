@@ -11,6 +11,7 @@ import Galaxy from './Galaxy';
 import GalaxyCore from './GalaxyCore';
 import GalaxyMap from './GalaxyMap';
 import WorldEnvironment from './WorldEnvironment';
+import SelectionBeacon from './SelectionBeacon';
 import Nebula from './Nebula';
 
 interface CameraRigProps {
@@ -118,6 +119,14 @@ function CameraRig({ started, onArrived, view, focusTarget }: CameraRigProps) {
   );
 }
 
+const CATEGORY_COLORS: Record<WorldCategory, string> = {
+  'star-system': '#f59e0b',
+  'planet': '#22d3ee',
+  'sector': '#a855f7',
+  'world': '#10b981',
+  'dimension': '#ec4899',
+};
+
 interface OasisSceneProps {
   started?: boolean;
   onArrived?: () => void;
@@ -156,6 +165,14 @@ export default function OasisScene({
 
           {/* Oasis center */}
           <TreeOfLife />
+
+          {/* Selection beacon for the focused world */}
+          {selectedWorld?.galaxyPosition && (
+            <SelectionBeacon
+              position={selectedWorld.galaxyPosition}
+              color={CATEGORY_COLORS[selectedWorld.category]}
+            />
+          )}
 
           {/* 55 OASIS worlds as a holographic galaxy map */}
           <GalaxyMap
