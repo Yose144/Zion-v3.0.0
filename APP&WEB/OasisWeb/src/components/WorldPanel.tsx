@@ -1,8 +1,17 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag } from 'lucide-react';
+import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag, Swords, Compass, Pickaxe, Brain, Users } from 'lucide-react';
 import type { World } from '../domain/types/world';
+import { generateQuests } from '../domain/quests';
+
+const TYPE_ICONS = {
+  exploration: Compass,
+  combat: Swords,
+  harvest: Pickaxe,
+  puzzle: Brain,
+  social: Users,
+};
 
 const CATEGORY_COLORS: Record<string, string> = {
   'star-system': '#f59e0b',
@@ -28,6 +37,7 @@ interface WorldPanelProps {
 
 export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
   const color = CATEGORY_COLORS[world.category] || '#ffffff';
+  const quests = generateQuests(world);
 
   return (
     <motion.div
@@ -35,7 +45,7 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 40 }}
       transition={{ duration: 0.4 }}
-      className="pointer-events-auto absolute right-5 top-5 z-30 w-80 overflow-hidden rounded-2xl border border-white/10 bg-[#05060f]/90 p-5 shadow-2xl shadow-black/60 backdrop-blur-2xl"
+      className="pointer-events-auto absolute left-2.5 right-2.5 top-2.5 z-30 max-w-full overflow-hidden rounded-2xl border border-white/10 bg-[#05060f]/90 p-4 shadow-2xl shadow-black/60 backdrop-blur-2xl sm:left-auto sm:right-5 sm:top-5 sm:w-80 sm:p-5"
     >
       <div className="mb-4 flex items-start justify-between">
         <div>
@@ -93,6 +103,30 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
             ))}
           </div>
         )}
+
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Active Quests</p>
+          <div className="space-y-2">
+            {quests.map((quest, i) => {
+              const Icon = TYPE_ICONS[quest.type];
+              return (
+                <div key={quest.id} className="flex items-start gap-2.5 rounded-lg bg-white/5 p-2">
+                  <div className="mt-0.5 rounded p-1" style={{ backgroundColor: `${color}20`, color }}>
+                    <Icon className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-white">{quest.title}</p>
+                    <p className="text-[10px] text-gray-400">{quest.description}</p>
+                  </div>
+                  <div className="text-right text-[10px] text-gray-400">
+                    <p style={{ color }}>★ {quest.difficulty}</p>
+                    <p>{quest.reward} XP</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           {world.goldenEggClue !== undefined && (

@@ -21,8 +21,9 @@ interface CameraRigProps {
   focusTarget?: { x: number; y: number; z: number } | null;
 }
 
-const GALAXY_HOME = { position: new THREE.Vector3(0, 0.9, 7.5), lookAt: new THREE.Vector3(0, 0.6, 0) };
-const WORLD_VIEW = { position: new THREE.Vector3(0, 0.35, 4.5), lookAt: new THREE.Vector3(0, 0, 0) };
+const GALAXY_HOME = { position: new THREE.Vector3(0, 0.9, 7.5), lookAt: new THREE.Vector3(0, 0.6, 0), fov: 55 };
+const WORLD_VIEW = { position: new THREE.Vector3(0, 0.35, 4.5), lookAt: new THREE.Vector3(0, 0, 0), fov: 38 };
+const FOCUS_FOV = 45;
 
 function planKey(view: 'galaxy' | 'world', focusTarget?: { x: number; y: number; z: number } | null) {
   if (view === 'world') return 'world';
@@ -42,6 +43,7 @@ function computeFocusPlan(focusTarget: { x: number; y: number; z: number }) {
 
 function CameraRig({ started, onArrived, view, focusTarget }: CameraRigProps) {
   const { camera } = useThree();
+  const cam = camera as THREE.PerspectiveCamera;
   const controlsRef = useRef<ReturnType<typeof OrbitControls> | null>(null);
 
   const introDone = useRef(false);
@@ -50,12 +52,16 @@ function CameraRig({ started, onArrived, view, focusTarget }: CameraRigProps) {
   const flightStart = useRef(new THREE.Vector3());
   const flightTargetPos = useRef(new THREE.Vector3());
   const flightLookAt = useRef(new THREE.Vector3());
+  const flightStartFov = useRef(cam.fov);
+  const flightTargetFov = useRef(cam.fov);
   const currentPlan = useRef('');
 
-  const startFlight = (targetPos: THREE.Vector3, lookAt: THREE.Vector3) => {
-    flightStart.current.copy(camera.position);
+  const startFlight = (targetPos: THREE.Vector3, lookAt: THREE.Vector3, fov: number) => {
+    flightStart.current.copy(cam.position);
+    flightStartFov.current = cam.fov;
     flightTargetPos.current.copy(targetPos);
     flightLookAt.current.copy(lookAt);
+    flightTargetFov.current = fov;
     flightProgress.current = 0;
     isFlying.current = true;
   };
@@ -67,22 +73,24 @@ function CameraRig({ started, onArrived, view, focusTarget }: CameraRigProps) {
     currentPlan.current = key;
 
     if (view === 'world') {
-      startFlight(WORLD_VIEW.position, WORLD_VIEW.lookAt);
+      startFlight(WORLD_VIEW.position, WORLD_VIEW.lookAt, WORLD_VIEW.fov);
     } else if (focusTarget) {
       const plan = computeFocusPlan(focusTarget);
-      startFlight(plan.position, plan.lookAt);
+      startFlight(plan.position, plan.lookAt, FOCUS_FOV);
     } else {
-      startFlight(GALAXY_HOME.position, GALAXY_HOME.lookAt);
+      startFlight(GALAXY_HOME.position, GALAXY_HOME.lookAt, GALAXY_HOME.fov);
     }
-  }, [started, view, focusTarget, camera.position]);
+  }, [started, view, focusTarget, cam.position]);
 
   useFrame((_, delta) => {
     if (isFlying.current) {
-      flightProgress.current = Math.min(1, flightProgress.current + delta * 0.35);
+      flightProgress.current = Math.min(1, flightProgress.current + delta * 0.32);
       const t = 1 - Math.pow(1 - flightProgress.current, 3);
 
-      camera.position.lerpVectors(flightStart.current, flightTargetPos.current, t);
-      camera.lookAt(flightLookAt.current);
+      cam.position.lerpVectors(flightStart.current, flightTargetPos.current, t);
+      cam.fov = THREE.MathUtils.lerp(flightStartFov.current, flightTargetFov.current, t);
+      cam.updateProjectionMatrix();
+      cam.lookAt(flightLookAt.current);
 
       if (controlsRef.current) {
         // @ts-expect-error - drei OrbitControls ref is untyped
@@ -115,6 +123,8 @@ function CameraRig({ started, onArrived, view, focusTarget }: CameraRigProps) {
       autoRotate={false}
       enableDamping
       dampingFactor={0.05}
+      minDistance={0.8}
+      maxDistance={50}
     />
   );
 }

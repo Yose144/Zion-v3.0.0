@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
-const API = process.env.NEXT_PUBLIC_OASIS_API_URL || 'http://127.0.0.1:8094';
+const API = process.env.NEXT_PUBLIC_OASIS_API_URL ?? 'http://127.0.0.1:8094';
 
 interface Avatar {
   id: number;
@@ -51,7 +51,7 @@ export default function OasisHud() {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.8, delay: 4 }}
-      className="pointer-events-auto absolute top-6 right-6 z-20 w-72 rounded-xl border border-oasis-cyan/30 bg-oasis-black/80 p-4 backdrop-blur-md"
+      className="pointer-events-auto absolute right-4 top-4 z-20 w-64 rounded-xl border border-oasis-cyan/30 bg-oasis-black/80 p-3 backdrop-blur-md sm:right-6 sm:top-6 sm:w-72 sm:p-4"
     >
       <h2 className="mb-2 text-lg font-bold text-oasis-cyan">OASIS Link</h2>
       <div className="space-y-2 text-sm text-gray-300">
