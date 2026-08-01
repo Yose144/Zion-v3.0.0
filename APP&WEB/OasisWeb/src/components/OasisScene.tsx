@@ -13,6 +13,7 @@ import GalaxyMap from './GalaxyMap';
 import WorldEnvironment from './WorldEnvironment';
 import SelectionBeacon from './SelectionBeacon';
 import FlightControls from './FlightControls';
+import PilgrimShip from './PilgrimShip';
 import Nebula from './Nebula';
 
 interface CameraRigProps {
@@ -152,6 +153,7 @@ interface OasisSceneProps {
   onExitFlight: () => void;
   flightControlsRef: React.RefObject<import('./FlightControls').FlightControlsHandle | null>;
   onFlightSpeedChange: (speed: number) => void;
+  flightSpeed?: number;
 }
 
 export default function OasisScene({
@@ -165,6 +167,7 @@ export default function OasisScene({
   onExitFlight,
   flightControlsRef,
   onFlightSpeedChange,
+  flightSpeed = 0,
 }: OasisSceneProps) {
   return (
     <Canvas camera={{ position: [0, 3.5, 34], fov: 55 }} dpr={[1, 2]}>
@@ -225,6 +228,9 @@ export default function OasisScene({
           onSpeedChange={onFlightSpeedChange}
         />
       )}
+
+      {/* Player craft visible during flight */}
+      {flightMode && <PilgrimShip speed={flightSpeed} />}
 
       {/* Bloom for glow */}
       <EffectComposer>
