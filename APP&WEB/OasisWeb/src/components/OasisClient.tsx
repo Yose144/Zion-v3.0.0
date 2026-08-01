@@ -45,7 +45,7 @@ export default function OasisClient() {
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
   const mobileInputRef = useRef<MobileInput | null>(null);
   const { muted, toggle, start, playWarp, playBoost, startEngine, stopEngine, setEngine } = useAudio();
-  const { discoverWorld, scanWorld, addXp, setRealQuests, setAvatars, setAddress, address } = useGameStore();
+  const { discoverWorld, scanWorld, addXp, setRealQuests, setAvatars, setAddress, address, shipLoadout } = useGameStore();
 
   useEffect(() => {
     setMounted(true);
@@ -142,7 +142,7 @@ export default function OasisClient() {
       setWarping(true);
       setView('world');
       scanWorld(selectedWorld.id);
-      addXp(75);
+      addXp(75 + shipLoadout.scanner * 25);
       setTimeout(() => setWarping(false), 1000);
     }
   };

@@ -3,12 +3,16 @@
 import { useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useGameStore } from '../store/gameStore';
 
 interface PilgrimShipProps {
   speed?: number;
 }
 
 export default function PilgrimShip({ speed = 0 }: PilgrimShipProps) {
+  const { shipLoadout } = useGameStore();
+  const color = shipLoadout.color;
+  const boostLevel = shipLoadout.boost;
   const groupRef = useRef<THREE.Group>(null);
   const engineRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
@@ -24,8 +28,8 @@ export default function PilgrimShip({ speed = 0 }: PilgrimShipProps) {
     groupRef.current.quaternion.copy(camera.quaternion);
 
     if (engineRef.current) {
-      const engineColor = new THREE.Color(0x22d3ee);
-      const intensity = 0.8 + Math.min(speed / 8, 1) * 2.5;
+      const engineColor = new THREE.Color(color);
+      const intensity = 0.8 + Math.min(speed / 8, 1) * (1 + boostLevel * 0.6);
       const material = engineRef.current.material as THREE.MeshStandardMaterial;
       material.emissive.copy(engineColor);
       material.emissiveIntensity = intensity;
@@ -37,7 +41,7 @@ export default function PilgrimShip({ speed = 0 }: PilgrimShipProps) {
       {/* Main hull */}
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.05]}>
         <coneGeometry args={[0.04, 0.22, 12]} />
-        <meshStandardMaterial color="#e2e8f0" metalness={0.6} roughness={0.3} emissive="#22d3ee" emissiveIntensity={0.15} />
+        <meshStandardMaterial color="#e2e8f0" metalness={0.6} roughness={0.3} emissive={color} emissiveIntensity={0.15} />
       </mesh>
 
       {/* Cockpit */}
@@ -58,14 +62,14 @@ export default function PilgrimShip({ speed = 0 }: PilgrimShipProps) {
 
       {/* Engine glow */}
       <mesh ref={engineRef} position={[0, 0, 0.16]}>
-        <sphereGeometry args={[0.018, 16, 16]} />
-        <meshStandardMaterial color="#ffffff" emissive="#22d3ee" emissiveIntensity={0.8} toneMapped={false} />
+        <sphereGeometry args={[0.018 + boostLevel * 0.004, 16, 16]} />
+        <meshStandardMaterial color="#ffffff" emissive={color} emissiveIntensity={0.8} toneMapped={false} />
       </mesh>
 
       {/* Engine ring */}
       <mesh position={[0, 0, 0.15]} rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.015, 0.025, 16]} />
-        <meshBasicMaterial color="#22d3ee" transparent opacity={0.6} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+        <ringGeometry args={[0.015 + boostLevel * 0.002, 0.025 + boostLevel * 0.004, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={0.6} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
       </mesh>
     </group>
   );

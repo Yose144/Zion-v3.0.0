@@ -131,7 +131,7 @@ Remaining:
 - ✅ **NPC presence** in world view / panel (avatar guide card + floating hologram).
 - ✅ **Leaderboard / social** integration (`getLeaderboard`, top pilgrims in `OasisHud`).
 - 🔄 **Persistent player profile** from backend (`getPlayer(address)` is used; wallet login is next).
-- **Ship upgrades / loadout** UI (engine, cargo, scanner).
+- ✅ **Ship upgrades / loadout** UI (engine, cargo, scanner) with color picker and local persistence.
 - **Composed SFX / ambient music** instead of synthesized oscillators.
 - **Golden Egg / territory hunting** mini-game loop.
 
@@ -210,7 +210,7 @@ The next work was explicitly requested as a slow, careful pass through these six
 - Show player guild / territory status if backend returns it.
 - Display discovered worlds vs total as a completion %.
 
-### 6.11 Ship loadout & upgrades
+### 6.11 Ship loadout & upgrades ✅
 
 - Add a ship loadout panel (boost, cargo, scanner levels).
 - Spend credits to upgrade; persist to local storage.

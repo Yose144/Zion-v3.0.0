@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { WORLDS } from '../domain/config/worlds';
 import type { World } from '../domain/types/world';
 import type { MobileInput } from './MobileControls';
+import { useGameStore } from '../store/gameStore';
 
 interface FlightControlsProps {
   enabled: boolean;
@@ -162,7 +163,8 @@ const FlightControls = forwardRef<FlightControlsHandle, FlightControlsProps>(
         if (keys.current.down) move.sub(up);
       }
 
-      const boost = (keys.current.boost || mobile?.boost) ? 3.5 : keys.current.slow ? 0.35 : 1;
+      const boostLevel = useGameStore.getState().shipLoadout.boost;
+      const boost = (keys.current.boost || mobile?.boost) ? 3.5 + boostLevel * 0.5 : keys.current.slow ? 0.35 : 1;
       const targetSpeed = move.length() > 0.05 ? baseSpeed * boost : 0;
       speedRef.current += (targetSpeed - speedRef.current) * 5 * delta;
       onSpeedChange?.(speedRef.current);
