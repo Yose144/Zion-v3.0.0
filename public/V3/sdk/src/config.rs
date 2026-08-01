@@ -2,9 +2,9 @@
 //!
 //! | Variable | Meaning | Default |
 //! |----------|---------|---------|
-//! | `ZION_RPC_ADDR` | `host:port` or socket address | `127.0.0.1:8443` |
+//! | `ZION_RPC_ADDR` | `host:port` or socket address | `127.0.0.1:9443` |
 //! | `ZION_RPC_HOST` | host (used with `ZION_RPC_PORT` if `ZION_RPC_ADDR` is not set) | — |
-//! | `ZION_RPC_PORT` | port | `8443` |
+//! | `ZION_RPC_PORT` | port | `9443` |
 //! | `ZION_RPC_CONNECT_TIMEOUT_MS` | TCP connect timeout | `15000` |
 //! | `ZION_RPC_REQUEST_TIMEOUT_MS` | write + read response | `90000` |
 //! | `ZION_RPC_MAX_LINE_BYTES` | max response line length | `16777216` (16 MiB) |
@@ -15,7 +15,7 @@ use std::time::Duration;
 
 use crate::error::{Result, ZionSdkError};
 
-/// Parse `host:port` or [`std::net::SocketAddr`] (e.g. `127.0.0.1:8443`).
+/// Parse `host:port` or [`std::net::SocketAddr`] (e.g. `127.0.0.1:9443`).
 pub fn parse_rpc_addr(raw: &str) -> Result<(String, u16)> {
     let s = raw.trim();
     if s.is_empty() {
@@ -76,7 +76,7 @@ impl NodeClientConfig {
             parse_rpc_addr(&addr)?
         } else {
             let host = std::env::var("ZION_RPC_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-            let port = parse_u64_env("ZION_RPC_PORT", 8443)? as u16;
+            let port = parse_u64_env("ZION_RPC_PORT", 9443)? as u16;
             (host, port)
         };
 

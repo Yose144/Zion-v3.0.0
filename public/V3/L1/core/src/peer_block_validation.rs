@@ -387,7 +387,11 @@ pub(crate) fn validate_accepted_peer_block(
                 hex(&utxo_tx.id)
             ));
         }
-        match validate_bridge_unlock_transaction_shape_with_utxos(utxo_tx, utxo_snapshot)? {
+        match validate_bridge_unlock_transaction_shape_with_utxos(
+            utxo_tx,
+            utxo_snapshot,
+            block.height,
+        )? {
             Some(replay_key) => {
                 if !seen_bridge_unlock_replay_keys.insert(replay_key.clone()) {
                     return Err(format!(
@@ -479,8 +483,13 @@ pub(crate) fn validate_accepted_peer_block(
         // Bridge-unlock spends only the keyless vault, so this still flags
         // general transactions that try to drain locked treasury balances.
         // Default: no admin unlocks (all admin-locked premine is frozen).
-        validation::validate_premine_locks(&block.utxo_transactions, block.height, &utxo_lookup, &|_| false)
-            .map_err(|err| format!("peer block premine lock violation: {err}"))?;
+        validation::validate_premine_locks(
+            &block.utxo_transactions,
+            block.height,
+            &utxo_lookup,
+            &|_| false,
+        )
+        .map_err(|err| format!("peer block premine lock violation: {err}"))?;
 
         // UTXO fee floor for non-coinbase, non-bridge-unlock
         // transactions. Bridge-unlock transactions already validate

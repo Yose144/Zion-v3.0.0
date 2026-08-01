@@ -11,7 +11,7 @@
 //! Configuration (env vars):
 //!   ZION_WALLET_SK_HEX  — Ed25519 secret key hex (64 hex chars)
 //!   ZION_WALLET_KEY_FILE — path to file containing secret key hex
-//!   ZION_RPC_ADDR       — node RPC address (default: 127.0.0.1:8443)
+//!   ZION_RPC_ADDR       — node RPC address (default: 127.0.0.1:9443)
 
 use std::env;
 use std::io::{BufRead, BufReader, Write};
@@ -70,7 +70,7 @@ fn usage() -> ! {
     eprintln!("Environment:");
     eprintln!("  ZION_WALLET_SK_HEX   Secret key (hex)");
     eprintln!("  ZION_WALLET_KEY_FILE File containing secret key hex");
-    eprintln!("  ZION_RPC_ADDR        Node RPC address (default: 127.0.0.1:8443)");
+    eprintln!("  ZION_RPC_ADDR        Node RPC address (default: 127.0.0.1:9443)");
     process::exit(1);
 }
 
@@ -109,7 +109,7 @@ fn own_address(sk: &SigningKey) -> String {
 // ── RPC ────────────────────────────────────────────────────────────────
 
 fn rpc_addr() -> String {
-    env::var("ZION_RPC_ADDR").unwrap_or_else(|_| "127.0.0.1:8443".into())
+    env::var("ZION_RPC_ADDR").unwrap_or_else(|_| "127.0.0.1:9443".into())
 }
 
 fn rpc_call(method: &str, params: Value) -> Value {
@@ -429,7 +429,7 @@ fn select_utxos_largest_first(
     target: u64,
 ) -> (Vec<&zion_core::wallet::SpendableUtxo>, u64) {
     let mut sorted: Vec<&zion_core::wallet::SpendableUtxo> = available.iter().collect();
-    sorted.sort_by(|a, b| b.amount.cmp(&a.amount));
+    sorted.sort_by_key(|b| std::cmp::Reverse(b.amount));
     let mut selected = Vec::new();
     let mut total: u64 = 0;
     for utxo in sorted {
