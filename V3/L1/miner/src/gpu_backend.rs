@@ -14,6 +14,7 @@ use anyhow::Result;
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_auxpow::external_hashers::{hash_blake3, hash_ethash, hash_etchash};
 use zion_core::{DifficultyTarget, MiningHeader, MiningJob, MiningSolution};
+use crate::{private_eprint, private_print};
 
 #[cfg(feature = "gpu-opencl")]
 use crate::gpu_guard::{GpuAlgorithm, GpuDeviceFamily, GpuGuard, GpuTuning};
@@ -1510,7 +1511,7 @@ pub fn auto_tune_work_sizes() -> AutoTuneResult {
         auto_tune_verushash(cpu_physical_cores, cpu_cores, cpu_arch, has_gpu);
 
     // Log CPU detection for diagnostics
-    eprintln!(
+    private_eprint!(
         "[auto-tune] CPU: {} \"{}\" | physical={} logical={} arch={:?} | threads={} nonce_count={}",
         cpu_vendor, cpu_model, cpu_physical_cores, cpu_cores, cpu_arch, threads, verushash_nonce_count
     );
@@ -2195,13 +2196,13 @@ pub fn create_gpu_backend(
                 .and_then(|v| v.trim().parse::<usize>().ok());
 
             let zano_idx: Option<usize> = if !zano_reserve {
-                println!("multi_gpu: ZION_ZANO_RESERVE=0 — all GPUs go to ZION, ZANO will share via time-slicing");
+                private_print!("multi_gpu: ZION_ZANO_RESERVE=0 — all GPUs go to ZION, ZANO will share via time-slicing");
                 None
             } else if let Some(idx) = zano_idx_explicit {
                 if idx < gpu_count {
                     Some(idx)
                 } else {
-                    eprintln!("multi_gpu: ZION_ZANO_DEVICE_IDX={} out of range ({} devices)", idx, gpu_count);
+                    private_eprint!("multi_gpu: ZION_ZANO_DEVICE_IDX={} out of range ({} devices)", idx, gpu_count);
                     None
                 }
             } else {
@@ -2217,7 +2218,7 @@ pub fn create_gpu_backend(
                         .max_by_key(|d| d.classification.progpow_priority())
                         .map(|d| d.global_idx);
                     if let Some(idx) = best {
-                        println!(
+                        private_print!(
                             "multi_gpu_auto_zano no name match for \"{}\", auto-selected device[{}] class={} (priority={})",
                             zano_filter,
                             idx,
@@ -2233,7 +2234,7 @@ pub fn create_gpu_backend(
                 .filter(|i| Some(*i) != zano_idx)
                 .collect();
 
-            println!(
+            private_print!(
                 "multi_gpu_init devices={} algorithm={} zano_device_idx={:?} zion_devices={:?}",
                 gpu_count, algorithm, zano_idx, zion_indices
             );
@@ -2266,7 +2267,7 @@ pub fn create_gpu_backend(
             if sub_miners.is_empty() {
                 // No ZION GPUs left (e.g. single GPU and it matches ZANO filter).
                 // Fall through to single-GPU mode on the ZANO device.
-                println!("multi_gpu: no ZION devices left after ZANO reservation, falling back to single-GPU");
+                private_print!("multi_gpu: no ZION devices left after ZANO reservation, falling back to single-GPU");
             } else {
                 if sub_miners.len() == 1 {
                     println!("multi_gpu: 1 ZION sub-miner — using single-GPU for ZION");
@@ -2281,7 +2282,7 @@ pub fn create_gpu_backend(
                     // but device names are stable.
                     std::env::remove_var("ZION_OCL_DEVICE_IDX");
                     std::env::set_var("ZION_OCL_DEVICE_NAME", &zano_dev.name);
-                    println!(
+                    private_print!(
                         "multi_gpu_ready zion_active_devices={} zion_names=\"{}\" zano_device_idx={} zano_device_name=\"{}\" zano_class={}",
                         sub_miners.len(),
                         sub_miners.iter().map(|m| m.device_name()).collect::<Vec<_>>().join(" + "),
@@ -2304,7 +2305,7 @@ pub fn create_gpu_backend(
                     if !best_progpow.is_empty() {
                         std::env::set_var("ZION_OCL_DEVICE_NAME", &best_progpow);
                     }
-                    println!(
+                    private_print!(
                         "multi_gpu_ready zion_active_devices={} zion_names=\"{}\" zano_device_idx=none (time-shared on \"{}\")",
                         sub_miners.len(),
                         sub_miners.iter().map(|m| m.device_name()).collect::<Vec<_>>().join(" + "),
@@ -2601,7 +2602,7 @@ fn create_gpu_backend_inner(
                             if kind == GpuBackendKind::OpenCL {
                                 anyhow::bail!("External OpenCL init failed: {e}");
                             }
-                            println!("external_opencl_unavailable algorithm={algorithm} reason=\"{e}\"");
+                            private_print!("external_opencl_unavailable algorithm={algorithm} reason=\"{e}\"");
                         }
                     }
                 }
@@ -2703,7 +2704,7 @@ fn create_gpu_backend_inner(
                         match miner_result {
                             Ok(miner) => return Ok(Box::new(miner)),
                             Err(e) => {
-                                eprintln!("[gpu_backend] CUDA external kernel failed for {}: {} -- falling back to CPU", algorithm, e);
+                                private_eprint!("[gpu_backend] CUDA external kernel failed for {}: {} -- falling back to CPU", algorithm, e);
                             }
                         }
                     }
@@ -2851,7 +2852,7 @@ pub fn gpu_scan_job(
         // algos; the DAG is managed via update_epoch_from_job() which is
         // called from a separate path.
         // For now, we log the epoch for diagnostics.
-        eprintln!(
+        private_eprint!(
             "auxpow_dag_epoch_hint algorithm={} height={} epoch={}",
             algorithm, job.height, epoch
         );
@@ -4765,7 +4766,7 @@ pub mod opencl_deeksha_lite {
             if std::env::var("ZION_QUIET").map(|v| v == "1").unwrap_or(false) {
                 // suppressed in quiet/sticky mode
             } else {
-                println!("gpu_opencl_lite_stream_weights {}", weights.describe());
+                private_print!("gpu_opencl_lite_stream_weights {}", weights.describe());
             }
             Ok(())
         }
@@ -5604,7 +5605,7 @@ pub mod opencl_deeksha_lite_fire {
             let arr = stream_weights_f32(weights);
             self.stream_weights_buf.write(&arr[..]).enq()?;
             self.pro_que.queue().finish()?;
-            println!("gpu_opencl_fire_stream_weights {}", weights.describe());
+            private_print!("gpu_opencl_fire_stream_weights {}", weights.describe());
             Ok(())
         }
 
@@ -8411,24 +8412,24 @@ pub mod opencl_external {
                 let mut loaded = false;
                 for path in &candidates {
                     if path.exists() {
-                        eprintln!("auxpow_gpu_verthash loading data file: {:?}", path);
+                        private_eprint!("auxpow_gpu_verthash loading data file: {:?}", path);
                         match std::fs::read(path) {
                             Ok(data) => {
                                 if let Err(e) = miner.set_verthash_data(&data) {
-                                    eprintln!("auxpow_gpu_verthash data load failed: {e}");
+                                    private_eprint!("auxpow_gpu_verthash data load failed: {e}");
                                 } else {
                                     loaded = true;
                                 }
                                 break;
                             }
                             Err(e) => {
-                                eprintln!("auxpow_gpu_verthash read error {:?}: {e}", path);
+                                private_eprint!("auxpow_gpu_verthash read error {:?}: {e}", path);
                             }
                         }
                     }
                 }
                 if !loaded {
-                    eprintln!(
+                    private_eprint!(
                         "auxpow_gpu_verthash WARNING: verthash.dat not found in any location. \
                          Set ZION_VERTHASH_DAT env var or place verthash.dat in the working \
                          directory. VTC mining will fail until the data file is loaded."
@@ -8992,6 +8993,7 @@ pub fn detect_gpus() -> Vec<String> {
 #[cfg(feature = "gpu-cuda")]
 fn query_cuda_details() -> Vec<GpuInfo> {
     use cudarc::driver::{result, sys};
+
     let mut out = Vec::new();
     if result::init().is_err() {
         return out;

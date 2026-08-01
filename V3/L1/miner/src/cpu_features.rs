@@ -12,6 +12,8 @@
 
 use std::sync::OnceLock;
 
+use crate::private_eprint;
+
 /// Detected CPU features at runtime.
 #[derive(Debug, Clone)]
 pub struct CpuFeatures {
@@ -159,6 +161,7 @@ fn cpu_brand() -> String {
 fn cpu_brand() -> String {
     // On Apple Silicon, sysctlbyname returns the chip model (e.g. "Apple M1").
     use std::ffi::CStr;
+
     extern "C" {
         fn sysctlbyname(
             name: *const std::os::raw::c_char,
@@ -218,7 +221,7 @@ pub fn log_features() {
         );
     }
     if !f.has_aes {
-        eprintln!(
+        private_eprint!(
             "cpu_features: WARNING — CPU lacks hardware AES, RandomX will use soft AES (~10x slower)"
         );
     }

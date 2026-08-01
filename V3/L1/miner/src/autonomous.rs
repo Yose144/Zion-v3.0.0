@@ -17,6 +17,8 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use zion_cosmic_harmony::profit_router::ExternalCoin;
 
+use crate::private_print;
+
 /// Hardware profile for compatibility checking.
 #[derive(Debug, Clone)]
 pub struct HardwareProfile {
@@ -392,7 +394,7 @@ impl AutonomousProfitRouter {
     /// Print the decision log.
     pub fn print_log(&self) {
         for entry in &self.log {
-            println!("[autonomous] {}", entry);
+            private_print!("[autonomous] {}", entry);
         }
     }
 
