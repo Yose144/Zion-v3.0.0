@@ -28,6 +28,7 @@ Next.js 16 herní klient pro ZION OASIS (L4). Staticky exportovaná 3D vizuáln�
 - **Golden Egg**: sbírka vajíček ve WorldPanel za 100 Z → +500 XP.
 - **Onboarding**: dismissible welcome overlay with controls, quest, egg, and wallet hints.
 - **OASIS Link HUD**: live connection status, manual refresh, error message, top 3 pilgrims, hot territories.
+- **Backend Sync**: player progress is sent to OASIS API — quest completions, golden eggs, scan/approach XP are awarded server-side and local XP is synced from `getPlayer`.
 - **Mobile**: detekce touch zařízení, snížené DPR, LOD, virtuální joysticky.
 
 ## Lokální vývoj

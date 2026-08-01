@@ -136,6 +136,7 @@ Remaining:
 - ✅ **Golden Egg / territory hunting** mini-game loop (collect clue for 100 Z, +500 XP; territory map in HUD).
 - ✅ **Toast / feedback UI** — notifications for quest complete, egg claim, upgrades, address save, world entry.
 - ✅ **UX / UI polish** — address + wallet type in PlayerHud, onboarding hint overlay, OasisHud manual refresh and error message.
+- ✅ **Backend sync** — quest completion, golden egg, scan/approach XP are sent to OASIS API; local XP is synced from `getPlayer`.
 
 ---
 

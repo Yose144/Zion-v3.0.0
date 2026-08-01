@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { getPlayer } from '../lib/api';
 
 export interface ShipLoadout {
   boost: number;
@@ -25,6 +26,8 @@ interface GameState {
   setAddress: (address: string | null) => void;
   setAvatars: (avatars: any[]) => void;
   setTerritories: (territories: any[]) => void;
+  setXp: (xp: number) => void;
+  syncPlayer: () => Promise<void>;
   addXp: (amount: number) => void;
   addCredits: (amount: number) => void;
   completeQuest: (id: string, xp: number) => void;
@@ -55,6 +58,17 @@ export const useGameStore = create<GameState>()(
       shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#22d3ee' },
 
       setAddress: (address) => set({ address }),
+
+      setXp: (xp) => set({ xp }),
+
+      syncPlayer: async () => {
+        const state = get();
+        if (!state.address) return;
+        const player = await getPlayer(state.address);
+        if (player && typeof player.total_xp === 'number') {
+          set({ xp: player.total_xp });
+        }
+      },
 
       addXp: (amount) =>
         set((state) => ({

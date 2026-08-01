@@ -20,7 +20,7 @@ interface PlayerSettingsProps {
 }
 
 export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
-  const { address, setAddress, reset } = useGameStore();
+  const { address, setAddress, reset, syncPlayer } = useGameStore();
   const addToast = useToastStore((s) => s.add);
   const [tab, setTab] = useState<Tab>('pilgrim');
 
@@ -42,6 +42,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
     }
     setAddress(trimmed || null);
     addToast(`Pilgrim address set: ${trimmed || 'default'}`, 'success', 2500);
+    syncPlayer();
     onClose();
   };
 
@@ -53,6 +54,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
     }
     setAddress(trimmed);
     addToast(`ZION wallet linked: ${trimmed.slice(0, 12)}...`, 'success', 2500);
+    syncPlayer();
     onClose();
   };
 
@@ -62,6 +64,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
       setAddress(wallet.address);
       addToast(`ZION wallet imported: ${wallet.address.slice(0, 12)}...`, 'success', 2500);
       setMnemonic('');
+      syncPlayer();
       onClose();
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Invalid mnemonic', 'error', 3000);
@@ -74,6 +77,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
       const wallet = generateZionWallet();
       setGenerated({ address: wallet.address, mnemonic: wallet.mnemonic });
       setAddress(wallet.address);
+      syncPlayer();
     } catch (err) {
       addToast('Wallet generation failed', 'error', 3000);
     } finally {

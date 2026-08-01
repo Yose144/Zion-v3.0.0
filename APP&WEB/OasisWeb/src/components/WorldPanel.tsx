@@ -5,6 +5,7 @@ import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag, Swords, Compass, Pic
 import type { World } from '../domain/types/world';
 import { generateQuests, type Quest } from '../domain/quests';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
+import { awardPlayerXp, completePlayerQuest } from '../lib/api';
 import { useAudio } from './AudioEngine';
 import { useToastStore } from '../store/toastStore';
 
@@ -69,7 +70,7 @@ function mapRealQuests(world: World, realQuests: any[]): Quest[] {
 
 export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
   const color = CATEGORY_COLORS[world.category] || '#ffffff';
-  const { xp, credits, completeQuest, completedQuests, realQuests, avatars, claimGoldenEgg, collectedEggs } = useGameStore();
+  const { xp, credits, address, completeQuest, completedQuests, realQuests, avatars, claimGoldenEgg, collectedEggs, syncPlayer } = useGameStore();
   const { playQuestComplete } = useAudio();
   const addToast = useToastStore((s) => s.add);
   const generated = generateQuests(world);
@@ -208,11 +209,15 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
                     <p style={{ color }}>★ {quest.difficulty}</p>
                     <p>{quest.reward} XP</p>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (!done) {
                           completeQuest(quest.id, quest.reward);
                           playQuestComplete();
                           addToast(`Quest completed: +${quest.reward} XP`, 'success', 3000);
+                          if (address && quest.real) {
+                            await completePlayerQuest(address, quest.id);
+                            await syncPlayer();
+                          }
                         }
                       }}
                       disabled={done}
@@ -234,10 +239,15 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
         <div className="grid grid-cols-2 gap-3">
           {world.goldenEggClue !== undefined && (
             <button
-              onClick={() => {
+              onClick={async () => {
                 const ok = claimGoldenEgg(world.id);
-                if (ok) addToast(`Golden Egg found on ${world.name}: +500 XP`, 'success', 4000);
-                else if (credits < 100) addToast('Not enough credits (100 Z needed)', 'warning', 3000);
+                if (ok) {
+                  addToast(`Golden Egg found on ${world.name}: +500 XP`, 'success', 4000);
+                  if (address) {
+                    await awardPlayerXp(address, 50, 'golden_egg', { world: world.name });
+                    await syncPlayer();
+                  }
+                } else if (credits < 100) addToast('Not enough credits (100 Z needed)', 'warning', 3000);
               }}
               disabled={collectedEggs.includes(world.id) || credits < 100}
               className="flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition"
