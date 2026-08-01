@@ -22,6 +22,18 @@ Hlavní myšlenka: **svět neomezených možností**. Galaxie je živá, plná c
 
 ---
 
+## 1.1 Hlavní příběh — Honba za Zlatým vejcem
+
+Celý OASIS drží pohromadě jeden cíl: **najít Zlaté vejce** (Golden Egg).
+
+- Kdokoliv jako první najde Zlaté vejce, vyhrává **1 miliardu** (v ZION ekvivalentu, plus NFT, titul a legacy v OASIS).
+- Vejce je ukryté někde v multivesmíru — může být v jakékoliv dimenzi, na jakékoliv planetě, v jakékoliv éře.
+- Hráči dostávají **108 stop**, nápovědy, questy a indície, které je vedou napříč galaxií, dimenzemi a médii.
+- Honba není jen běh — je to **initiace**. Každý svět, každý quest a každé rozhodnutí hráče přibližuje nebo vzdaluje od pravdy.
+- V jádru je Zlaté vejce metaforou pro **Hiranyagarbhu** — kosmický zárodek, jednotu, stav vědomí.
+
+Tento příběh propojuje vše: PvP, PvE, průzkum, obchod, craft, diplomacii, speedruny, hádanky a tvorbu.
+
 ## 2. Galaxie — živá Mléčná dráha
 
 Po intru a příletu hráče do středu galaxie se OASIS nejprve zobrazí jako **spirálová galaxie inspirovaná Mléčnou dráhou**.
@@ -164,7 +176,53 @@ Jakmile si hráč doladí avatara, dostane **základní loď**. Ta není jen kos
 
 Od začátku je jasné, že existují stovky lodí — od malých **starfighterů** přes průzkumné **explorery**, transportéry, gildové **defendery** až po obří **mega-carriers/dreadnoughty**. Základní loď je jen první krok; lepší lodě se odemykají questy, craftem, obchodem a těžbou.
 
-## 10. Otevřené otázky a další kroky
+## 10. Měřítko a MMO
+
+OASIS není single-player sandbox. Je to **persistentní online multiverse** pro tisíce hráčů současně, podobné Robloxu, ale s ambicí být technicky a esteticky daleko propracovanější.
+
+- **Persistentní svět** — galaxie, ekonomika, teritoria a objevy se vyvíjejí i bez přihlášeného hráče.
+- **Škálovatelné shardy / sektory** — každý hvězdný systém, planeta a dimenze může být samostatný server nebo instanční zóna, propojená přes warp.
+- **Tisíce hráčů** — PvP arény, gildové bitvy, trhy, raidové akce, společné objevy.
+- **Player-generated content** — gildy a hráči mohou zakládat vlastní sektory, dimenze, questy, lodě, světy.
+- **Ekonomika a trh** — ZION, květiny, suroviny, lodě, NFT, půda na planetách, služby.
+- **Eventy** — živé události, turnaje, aukce, hon na Zlaté vejce, sezóny.
+
+Cílem je, aby se hráči potkávali, spolupracovali, soutěžili a tvořili jeden obří živý svět.
+
+## 11. Multikulturní multiverse — od Atari po budoucnost
+
+OASIS je otevřený všem kulturám, žánrům a médiím. Hráč se může propadnout z 8-bitové Atari planety rovnou do neonové budoucnosti, z westernového filmu do japonského RPG, z Matrixu do starověkého Egypta.
+
+### 11.1 Žánry a epochy
+
+Každý svět reprezentuje jiný žánr nebo éru:
+
+- **Retro / 8-bit / 16-bit** — Atari, pixelové planety, chiptune, arkády.
+- **2D platformer / Metroidvania** — dimenze s bočním pohledem, sběratelské světy.
+- **3rd person / open world** — Cyberpunk, GTA, Red Dead, Assassin’s Creed.
+- **FPS / arena** — Doom, Quake, Counter-Strike, Overwatch.
+- **MMORPG / MOBA** — WoW, LoL, Final Fantasy.
+- **Space sim / 4X** — EVE, Elite Dangerous, X-Wing, Star Trek.
+- **Horror / survival** — Alien, Resident Evil, Silent Hill.
+- **Filmové světy** — Star Wars, Star Trek, Matrix, Blade Runner, Dune, Mad Max, Pán prstenů.
+- **Historické a mýtické** — starověký Egypt, Řecko, Vikingové, Atlantida, Lemurie.
+- **Budoucí a sci-fi** — AI dimenze, post-humánní civilizace, holografické světy.
+
+### 11.2 Multikulturní přístup
+
+- Každý hráč najde kousek své kultury — mytologie, hudba, architektura, příběhy.
+- Světy mohou být inspirovány skutečnými tradicemi (védská, keltská, domorodá, egyptská, čínská, japonská, africká, americká, oceánská).
+- Hra nepropaguje jednu kulturu jako nadřazenou — všechny jsou rovnocenné vrstvy multivesmíru.
+- Jazyky a lokalizace jsou součástí světů — některé planety mluví jedním jazykem, jiné jsou multilingvní.
+
+### 11.3 Film a média
+
+- Některé světy jsou přímo inspirovány filmovými universy (nebo jejich vlastními OASIS ekvivalenty).
+- Hráči mohou zažít scény, lokace a příběhy z filmů jako interaktivní questy.
+- V OASIS může existovat i “kino dimenze” — sledování, remixování a tvoření vlastních filmů/trailerů.
+- Cílem není kopírovat, ale **převést** atmosféru filmu do hratelného prostoru.
+
+## 12. Otevřené otázky a další kroky
 
 - [ ] Jaké jsou přesné herní mechaniky na každém světě?
 - [ ] Jak se bude cestovat mezi hvězdnými systémy — animace, lodě, brány?
