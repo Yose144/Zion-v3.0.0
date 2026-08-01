@@ -16,7 +16,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-xl bg-oasis-black/80 border-b border-white/5">
+    <nav className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5" style={{ background: 'rgba(9, 10, 15, 0.92)' }}>
       {/* Top accent line */}
       <div className="section-line absolute top-0 inset-x-0" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
