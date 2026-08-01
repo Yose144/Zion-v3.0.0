@@ -8,13 +8,13 @@
 
 <h3>Terra Nova — 100 anos de evoluZion</h3>
 
-<p><em>Um ecossistema Dharma multichain protegido por consenso proof-of-work.</em></p>
+<p><em>Mine ZION. Entre no OASIS. Encontre o Ovo de Ouro.</em></p>
 
 <!-- Badges -->
 <p>
 
 ![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange?style=for-the-badge)
-![Protocol](https://img.shields.io/badge/Protocol-3.0.6-blue?style=for-the-badge)
+![Protocol](https://img.shields.io/badge/Protocol-3.0.7-blue?style=for-the-badge)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Rust](https://img.shields.io/badge/Rust-2021-orange?style=for-the-badge)
 ![PoW](https://img.shields.io/badge/Consensus-PoW-purple?style=for-the-badge)
@@ -24,11 +24,15 @@
 <!-- Links -->
 <p>
 
-[🌐 Website](https://www.zionterranova.com)
+[🌐 Hub](https://zionterranova.com)
+&nbsp;·&nbsp;
+[📊 Explorer & dApp](https://app.zionterranova.com)
+&nbsp;·&nbsp;
+[🎮 Oasis Web](https://oasis.zionterranova.com)
 &nbsp;·&nbsp;
 [📖 Whitepaper](../../docs/whitepaper.md)
 &nbsp;·&nbsp;
-[🎮 Oasis](../../V3/L4/oasis/README.md)
+[🏗️ Diário de construção OASIS](../../docs/OASIS_DEVLOG.pt.md)
 &nbsp;·&nbsp;
 [⚡ CLI](../../V3/cli/README.md)
 &nbsp;·&nbsp;
