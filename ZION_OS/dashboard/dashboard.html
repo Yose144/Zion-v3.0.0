@@ -466,12 +466,22 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   margin-bottom:1.25rem;
 }
 .zion-nav-floor{
-  display:flex;align-items:center;flex-wrap:wrap;gap:0.5rem;
+  display:flex;align-items:center;flex-wrap:nowrap;gap:0.5rem;
   padding:0.5rem 0.75rem;
   border:1px solid rgba(255,255,255,0.1);
   background:rgba(15,20,35,0.9);
   backdrop-filter:blur(12px);
   position:relative;
+  overflow-x:auto;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,255,255,0.15) transparent;
+}
+.zion-nav-floor::-webkit-scrollbar{
+  height:4px;
+}
+.zion-nav-floor::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,0.15);
+  border-radius:2px;
 }
 .zion-nav-floor:first-child{
   border-radius:1rem 1rem 0 0;
