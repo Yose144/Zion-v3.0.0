@@ -237,7 +237,11 @@ impl BlockCandidate {
                 zion_auxpow::hash_kheavyhash(pre_pow_hash, timestamp, self.nonce)
             }
             "autolykos" => {
-                zion_auxpow::hash_autolykos(&header_bytes, self.nonce, self.height as u32)
+                // ERG pools send a 32-byte pre-pow hash; the 80-byte MiningHeader
+                // wrapper may pad it at the start.  Use the first 32 bytes as the
+                // Autolykos message to match the GPU and stratum paths.
+                let msg = &header_bytes[..header_bytes.len().min(32)];
+                zion_auxpow::hash_autolykos(msg, self.nonce, self.height as u32)
             }
             "kawpow" => {
                 let mut h32 = [0u8; 32];

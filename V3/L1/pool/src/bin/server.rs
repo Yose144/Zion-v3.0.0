@@ -1087,7 +1087,7 @@ fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
     match coin {
         ExternalCoin::DCR | ExternalCoin::ALPH => "blake3",
         ExternalCoin::KAS => "kheavyhash",
-        ExternalCoin::ETC => "ethash",
+        ExternalCoin::ETC => "etchash",
         ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::QUAI => "kawpow",
         ExternalCoin::ERG => "autolykos",
         ExternalCoin::XMR => "randomx",
@@ -4861,19 +4861,22 @@ fn handle_client(
                                 continue;
                             }
                         };
-                        // Get target from the external stream job we sent.
-                        // Look up the correct per-coin target from the bridge
-                        // queue, NOT from the single `external_stream_cpu_job`
-                        // variable which gets overwritten when the scheduler
-                        // switches between RTM/XMR/VRSC.
+                        // Get target/header from the exact external job the share
+                        // was mined against.  For DAG coins the header_bytes must
+                        // match the job_id's block; using the latest job caused
+                        // header/mix mismatches and upstream "Invalid share".
                         let is_cpu_share = multi_bridge.is_cpu_ticker(&coin);
                         let ext_coin_enum = ExternalCoin::from_str_loose(&coin);
 
-                        // Use the bridge's per-coin latest job to get the
-                        // correct target and header bytes for this share's coin.
                         let (target_bytes, header_bytes_for_forward) = match &ext_coin_enum {
                             Some(c) => {
-                                match multi_bridge.latest_job_for_coin(c) {
+                                // Prefer the specific job for this share, falling
+                                // back to the latest job if it has already aged
+                                // out of the queue.
+                                let job = multi_bridge
+                                    .job_for_coin_and_id(c, &external_job_id)
+                                    .or_else(|| multi_bridge.latest_job_for_coin(c));
+                                match job {
                                     Some(job) => (job.share_target_bytes, job.header_bytes.clone()),
                                     None => {
                                         // Fallback: use the external_stream_job
@@ -6365,6 +6368,17 @@ impl AuxPowBridge {
         q.front().cloned()
     }
 
+    /// Return a clone of the queued external job matching `job_id`, if any.
+    /// This is needed when forwarding a share so we use the header/target for
+    /// the specific job the share was mined against, not the freshest job.
+    fn get_job_by_id(&self, job_id: &str) -> Option<JobPackage> {
+        if !self.enabled {
+            return None;
+        }
+        let q = self.job_queue.lock().expect("auxpow job queue lock poisoned");
+        q.iter().find(|j| j.external_job_id == job_id).cloned()
+    }
+
     /// Send a share to be forwarded upstream.  Blocks until the tokio task
     /// processes the request (typically < 100 ms because it is local I/O).
     fn forward(&self, req: ShareForwardRequest) -> Option<ShareForwardOutcome> {
@@ -6510,6 +6524,17 @@ impl MultiAuxPowBridge {
     fn latest_job_for_coin(&self, coin: &ExternalCoin) -> Option<JobPackage> {
         let bridges = self.bridges.lock().expect("multi_bridge lock poisoned");
         bridges.get(coin).and_then(|b| b.pop_job())
+    }
+
+    /// Get the queued job for a specific coin and job_id.
+    ///
+    /// This is the correct lookup for share forwarding: each share was mined
+    /// against a specific job, and for DAG-based algorithms (Etchash/KawPow/
+    /// ProgPow) the header_bytes from that exact job must be used to recompute
+    /// the final hash and build the upstream `mining.submit` request.
+    fn job_for_coin_and_id(&self, coin: &ExternalCoin, job_id: &str) -> Option<JobPackage> {
+        let bridges = self.bridges.lock().expect("multi_bridge lock poisoned");
+        bridges.get(coin).and_then(|b| b.get_job_by_id(job_id))
     }
 
     /// Forward a share to the bridge for the given coin.

@@ -186,13 +186,23 @@ impl Drop for JobMultiplexer {
 
 /// Compute the effective share target for a job.
 ///
-/// For RandomX (XMR) and GhostRider (RTM), the upstream pool sends the
-/// share target directly in the job notification (not via mining.set_difficulty).
-/// In that case, use the job's target_bytes instead of computing from difficulty.
-/// For other coins, use the client's share_target() which computes from difficulty.
+/// For many external pools the share target (boundary) is sent directly in the
+/// job notification.  For these algorithms we must use the job's target_bytes,
+/// because `client.share_target()` is only updated by `mining.set_difficulty` /
+/// `mining.set_target` and falls back to the easiest possible target when the
+/// pool does not send those messages (e.g. 2miners ETC/RVN).  Using the global
+/// fallback produced all-0xFF share targets and caused low-difficulty
+/// "Invalid share" rejects upstream.
+///
+/// Coins that rely on dynamic difficulty updates keep using `client.share_target()`.
 async fn effective_share_target(client: &AuxPowClient, job: &ExternalJob) -> [u8; 32] {
     let algo = client.profile().algorithm.to_ascii_lowercase();
-    if algo == "randomx" || algo == "ghostrider" {
+    let uses_notify_target = matches!(
+        algo.as_str(),
+        "randomx" | "ghostrider" | "ethash" | "etchash" | "kawpow"
+            | "evrprogpow" | "meowpow" | "progpow"
+    );
+    if uses_notify_target {
         // Use the target from the job notification directly
         job.target_bytes
     } else {

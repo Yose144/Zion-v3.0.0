@@ -975,6 +975,7 @@ fn cuda_verify_label(algo: &str) -> Option<&'static str> {
         "blake3_dcr" => Some("BLAKE3_DCR"),
         "kheavyhash" | "kheavyhash_kas" => Some("KHEAVYHASH"),
         "ethash" | "etchash" | "ethash_etc" | "ethash_ethw" => Some("ETHASH"),
+        "autolykos" | "autolykos_erg" => Some("AUTOLYKOS"),
         "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
             Some("KAWPOW")
         }
@@ -1028,6 +1029,16 @@ fn cuda_verify_share(
                 Box::new(move |nonce, _gpu_hash, _mix| eh::hash_ethash(&header, nonce, 0)),
             )
         }
+        "autolykos" | "autolykos_erg" => {
+            const AUTOLYKOS_VERIFY_HEIGHT: u32 = 1_841_858;
+            let header = [0xAAu8; 32].to_vec();
+            (
+                header.clone(),
+                Box::new(move |nonce, _gpu_hash, _mix| {
+                    eh::hash_autolykos(&header, nonce, AUTOLYKOS_VERIFY_HEIGHT)
+                }),
+            )
+        }
         "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
             let header_arr = [0xAAu8; 32];
             let header = header_arr.to_vec();
@@ -1054,6 +1065,9 @@ fn cuda_verify_share(
         _ => return Ok(None),
     };
 
+    if algo == "autolykos" || algo == "autolykos_erg" {
+        miner.update_epoch(1_841_858)?;
+    }
     let result = miner.mine_batch_raw(&header, *target, 0, batch)?;
     if let Some((nonce, gpu_hash, mix_hash_opt)) = result.solutions.first().copied() {
         let mix = mix_hash_opt;
@@ -4914,7 +4928,8 @@ fn external_gpu_thread(
         // GpuMiner to re-hash it, producing a wrong header and rejected shares.
         let use_raw_header = matches!(
             algo,
-            "ethash" | "etchash" | "ethash_etc"
+            "autolykos" | "autolykos_erg"
+                | "ethash" | "etchash" | "ethash_etc"
                 | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
                 | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
                 | "progpow" | "progpow_epic" | "progpow_zano" | "progpowz"

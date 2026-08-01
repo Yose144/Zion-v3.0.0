@@ -21,6 +21,9 @@ use cudarc::driver::sys::CUdevice_attribute;
 use cudarc::nvrtc::{compile_ptx_with_opts, CompileOptions};
 use std::sync::Arc;
 use std::time::Instant;
+use zion_auxpow::external_hashers::{
+    autolykos_calc_n, autolykos_generate_padding_m, ETCHASH_EPOCH_LENGTH, ETCHASH_FORK_BLOCK,
+};
 
 /// Detect the GPU's compute capability and return an NVRTC-compatible arch string
 /// (e.g. "compute_61" for Pascal, "compute_86" for Ampere, "compute_89" for Ada).
@@ -125,7 +128,7 @@ impl CudaExtAlgo {
             "blake3_dcr" => Some(Self::Blake3Dcr),
             "autolykos" | "autolykos_erg" => Some(Self::Autolykos),
             "zelhash" | "zelhash_flux" => Some(Self::Zelhash),
-            "ethash" | "ethash_etc" | "ethash_ethw" => Some(Self::Ethash),
+            "ethash" | "etchash" | "ethash_etc" | "ethash_ethw" => Some(Self::Ethash),
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => Some(Self::Kawpow),
             "progpow" | "progpow_epic" | "progpow_zano" | "progpowz"
             | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => Some(Self::Progpow),
@@ -227,14 +230,14 @@ pub struct CudaExternalMiner {
     found_flag: CudaSlice<u32>,
     // Algorithm-specific buffers
     kheavy_matrix: Option<CudaSlice<u16>>,
-    autolykos_table: Option<CudaSlice<u64>>,
-    autolykos_table_size: u32,
-    autolykos_header: Vec<u8>,
+    autolykos_m: Option<CudaSlice<u8>>,
+    autolykos_n: u32,
     autolykos_height: u64,
     // DAG buffer for ethash/kawpow
     dag_buf: Option<CudaSlice<u64>>,
     dag_size_entries: u64,
     dag_epoch: u32, // 0xFFFFFFFF = no DAG loaded
+    dag_height: u64, // last block height used to size the DAG (for Etchash)
     // Light cache for DAG generation (uploaded to GPU for on-GPU DAG gen)
     light_cache_buf: Option<CudaSlice<u64>>,
     light_cache_items: u64,
@@ -379,7 +382,7 @@ impl CudaExternalMiner {
             None
         };
 
-        let autolykos_table = None; // Generated on first mine_batch
+        let autolykos_m = None; // Generated on first mine_batch
 
         // ProgPoW: allocate g_output buffer (18 × u32: 10 compatibility + 8 debug)
         let progpow_g_output = if algo == CudaExtAlgo::Progpow {
@@ -434,13 +437,13 @@ impl CudaExternalMiner {
             output_mix,
             found_flag,
             kheavy_matrix,
-            autolykos_table,
-            autolykos_table_size: 0,
-            autolykos_header: Vec::new(),
+            autolykos_m,
+            autolykos_n: 0,
             autolykos_height: 0,
             dag_buf: None,
             dag_size_entries: 0,
             dag_epoch: 0xFFFFFFFF,
+            dag_height: 0,
             light_cache_buf: None,
             light_cache_items: 0,
             dag_gen_loaded: false,
@@ -461,25 +464,20 @@ impl CudaExternalMiner {
         })
     }
 
-    /// Generate the Autolykos v2 table on the host and upload to GPU.
-    /// Caches the table per header so it is not rebuilt for every batch.
-    fn ensure_autolykos_table(&mut self, header: &[u8], height: u32) -> Result<()> {
-        if self.autolykos_table.is_some()
-            && self.autolykos_header == header
-            && self.autolykos_height == height as u64
-        {
-            return Ok(());
+    /// Upload the 8192-byte Autolykos v2 padding constant M and cache the
+    /// current block height/N.  M is height-independent, so it is only
+    /// allocated once per miner session.
+    fn ensure_autolykos_constants(&mut self, height: u32) -> Result<()> {
+        if self.autolykos_m.is_none() {
+            let m = autolykos_generate_padding_m().to_vec();
+            let m_buf = self
+                .dev
+                .htod_copy(m)
+                .map_err(|e| anyhow::anyhow!("autolykos M upload: {e}"))?;
+            self.autolykos_m = Some(m_buf);
         }
-        let table_size = autolykos_table_size_cuda();
-        let table = generate_autolykos_table_cuda(header, height, table_size);
-        self.autolykos_table_size = table_size as u32;
-        self.autolykos_header = header.to_vec();
+        self.autolykos_n = autolykos_calc_n(height);
         self.autolykos_height = height as u64;
-        let table_buf = self
-            .dev
-            .htod_copy(table)
-            .map_err(|e| anyhow::anyhow!("autolykos_table upload: {e}"))?;
-        self.autolykos_table = Some(table_buf);
         Ok(())
     }
 
@@ -566,10 +564,24 @@ impl CudaExternalMiner {
         );
         let start = Instant::now();
 
+        // For Etchash (ECIP-1099), the seed hash advances every 30000 blocks
+        // (seed_epoch), but the DAG/cache sizes use the 60000-block Etchash
+        // epoch (size_epoch). For Ethash/ETHW the two are the same.
+        let seed_epoch = epoch;
+        let size_epoch = if self.is_etchash() {
+            if self.dag_height >= ETCHASH_FORK_BLOCK {
+                (self.dag_height / ETCHASH_EPOCH_LENGTH as u64) as u32
+            } else {
+                seed_epoch
+            }
+        } else {
+            seed_epoch
+        };
+
         // Step 1: Generate light cache on CPU (small, ~16-100MB, fast)
-        let cache_bytes = generate_light_cache(epoch);
+        let cache_bytes = generate_light_cache_for(seed_epoch, size_epoch);
         let cache_items = cache_bytes.len() / 64;
-        let dag_size_entries = dataset_size_for_epoch(epoch) / 128;
+        let dag_size_entries = dataset_size_for_epoch(size_epoch) / 128;
         let dag_nodes = dag_size_entries * 2; // each 128-byte entry = 2 nodes
         let dag_u64s = dag_nodes * 8;         // each 64-byte node = 8 u64
 
@@ -1014,12 +1026,13 @@ impl CudaExternalMiner {
                             .map_err(|e| anyhow::anyhow!("blake3_dcr launch: {e}"))?;
                     }
                     CudaExtAlgo::Autolykos => {
-                        let table = self
-                            .autolykos_table
+                        let m_buf = self
+                            .autolykos_m
                             .as_ref()
-                            .ok_or_else(|| anyhow::anyhow!("autolykos table not generated"))?;
+                            .ok_or_else(|| anyhow::anyhow!("autolykos M not uploaded"))?;
                         let header_len_u32 = header_len as u32;
-                        let table_size_u32 = self.autolykos_table_size;
+                        let height_u32 = self.autolykos_height as u32;
+                        let n_u32 = self.autolykos_n;
                         func
                             .clone()
                             .launch(
@@ -1027,10 +1040,11 @@ impl CudaExternalMiner {
                                 (
                                     &self.header_buf,
                                     header_len_u32,
+                                    height_u32,
+                                    n_u32,
                                     &self.target_buf,
                                     current_nonce,
-                                    table,
-                                    table_size_u32,
+                                    m_buf,
                                     &mut self.output_nonce,
                                     &mut self.output_hash,
                                     &mut self.found_flag,
@@ -1302,6 +1316,11 @@ impl CudaExternalMiner {
         }
     }
 
+    /// Returns true if the current algorithm is Etchash (Ethereum Classic).
+    fn is_etchash(&self) -> bool {
+        matches!(self.algorithm.as_str(), "etchash" | "ethash_etc")
+    }
+
     /// ProgPow period length (random-math seed changes every `period` blocks).
     fn progpow_period(&self) -> u64 {
         if let Some(p) = self.progpow_params() {
@@ -1562,8 +1581,10 @@ impl GpuMiner for CudaExternalMiner {
     fn update_epoch(&mut self, height: u64) -> Result<()> {
         if self.algo == CudaExtAlgo::Autolykos {
             self.autolykos_height = height;
+            self.autolykos_n = autolykos_calc_n(height as u32);
         }
         if self.algo.needs_dag() {
+            self.dag_height = height;
             let epoch = (height / self.dag_epoch_length()) as u32;
             self.ensure_dag(epoch)?;
         }
@@ -1601,11 +1622,11 @@ impl GpuMiner for CudaExternalMiner {
 
         if self.algo == CudaExtAlgo::Autolykos {
             // Autolykos v2 uses the 32-byte pre-pow hash as the message and the
-            // block height for table generation. The padded 80-byte MiningHeader
-            // has the raw pre-pow hash in the first 32 bytes.
+            // block height for the N parameter. The pool's 32-byte header is
+            // placed in the previous_hash field of the 80-byte MiningHeader.
             let height = self.autolykos_height as u32;
-            let pre_pow = &header_bytes[..32];
-            self.ensure_autolykos_table(pre_pow, height)?;
+            let pre_pow = &header.previous_hash;
+            self.ensure_autolykos_constants(height)?;
             return self.run_kernel(pre_pow, &target.bytes, nonce_start, batch_size);
         }
 
@@ -1668,9 +1689,9 @@ impl GpuMiner for CudaExternalMiner {
         }
 
         if self.algo == CudaExtAlgo::Autolykos {
-            let height = 0u32;
+            let height = self.autolykos_height as u32;
             let pre_pow = &raw_header[..32.min(raw_header.len())];
-            self.ensure_autolykos_table(pre_pow, height)?;
+            self.ensure_autolykos_constants(height)?;
             return self.run_kernel(pre_pow, &target.bytes, nonce_start, batch_size);
         }
 
@@ -1761,34 +1782,6 @@ fn generate_kheavy_matrix_cuda() -> [u16; 4096] {
     *MATRIX.get_or_init(zion_auxpow::kheavyhash_matrix_flat)
 }
 
-fn autolykos_table_size_cuda() -> usize {
-    std::env::var("ZION_AUTOLYKOS_TABLE_SIZE")
-        .ok()
-        .and_then(|v| v.trim().parse::<usize>().ok())
-        .unwrap_or(1 << 23)
-}
-
-fn generate_autolykos_table_cuda(header: &[u8], height: u32, table_size: usize) -> Vec<u64> {
-    use sha2::Digest;
-    let mut h = sha2::Sha256::new();
-    h.update(header);
-    let seed: [u8; 32] = h.finalize().into();
-    (0..table_size)
-        .map(|i| gen_autolykos_element_cuda(i as u64, &seed, height))
-        .collect()
-}
-
-fn gen_autolykos_element_cuda(i: u64, seed: &[u8; 32], height: u32) -> u64 {
-    use blake2::digest::{Update, VariableOutput};
-    let mut hasher = blake2::Blake2bVar::new(32).expect("blake2b256");
-    hasher.update(seed);
-    hasher.update(&i.to_be_bytes());
-    hasher.update(&height.to_be_bytes());
-    let mut out = [0u8; 32];
-    hasher.finalize_variable(&mut out).expect("blake2b256 finalize");
-    u64::from_be_bytes(out[0..8].try_into().unwrap())
-}
-
 // ── Ethash/Kawpow DAG generation (CPU-side) ────────────────────────────────
 //
 // These functions implement the Ethash light cache + full DAG generation
@@ -1862,14 +1855,29 @@ fn seed_hash_for_epoch(epoch: u32) -> [u8; 32] {
     seed
 }
 
-/// Generate the Ethash/Kawpow light cache for a given epoch.
-/// Returns a Vec<u8> of size cache_size_for_epoch(epoch).
+/// Generate the Ethash/Kawpow light cache using a possibly different seed
+/// epoch and size epoch. For Etchash the seed advances every 30000 blocks
+/// while the cache/dataset sizes grow every 60000 blocks.
+fn generate_light_cache_for(seed_epoch: u32, size_epoch: u32) -> Vec<u8> {
+    use sha3::{Digest, Keccak512};
+
+    let cache_size = cache_size_for_epoch(size_epoch) as usize;
+    let cache_items = cache_size / 64;
+    let seed = seed_hash_for_epoch(seed_epoch);
+    generate_light_cache_from(cache_size, cache_items, &seed)
+}
+
 fn generate_light_cache(epoch: u32) -> Vec<u8> {
     use sha3::{Digest, Keccak512};
 
     let cache_size = cache_size_for_epoch(epoch) as usize;
     let cache_items = cache_size / 64;
     let seed = seed_hash_for_epoch(epoch);
+    generate_light_cache_from(cache_size, cache_items, &seed)
+}
+
+fn generate_light_cache_from(cache_size: usize, cache_items: usize, seed: &[u8; 32]) -> Vec<u8> {
+    use sha3::{Digest, Keccak512};
 
     let mut cache = vec![0u8; cache_size];
 

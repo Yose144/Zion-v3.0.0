@@ -13,6 +13,8 @@
 //!   - `ethash`      — for ETC (needs DAG)
 //!   - `randomx`     — for XMR (needs RandomX VM)
 
+use blake2::Blake2bVar;
+use blake2::digest::VariableOutput;
 use blake3::Hasher as Blake3Hasher;
 use sha3::{Digest, Keccak256, Keccak512};
 use std::collections::HashMap;
@@ -1444,6 +1446,12 @@ pub const KAWPOW_EPOCH_LENGTH: u32 = 7500;
 /// Ethash epoch length (30000 blocks per epoch).
 pub const ETHASH_EPOCH_LENGTH: u32 = 30000;
 
+/// Etchash epoch length (60000 blocks per epoch, post-ECIP-1099 for ETC).
+pub const ETCHASH_EPOCH_LENGTH: u32 = 60000;
+
+/// ECIP-1099 Etchash activation block for Ethereum Classic mainnet.
+pub const ETCHASH_FORK_BLOCK: u64 = 11_700_000;
+
 /// ProgPow epoch length (EPIC uses 30000 blocks per epoch, same as Ethash).
 pub const PROGPOW_EPOCH_LENGTH: u32 = 30000;
 
@@ -1460,41 +1468,142 @@ pub const PROGPOW_PERIOD: u32 = 10;
 
 // ── Autolykos v2 (ERG) ───────────────────────────────────────────────
 
+pub const AUTOLYKOS_K: usize = 32;
+pub const AUTOLYKOS_M_SIZE: usize = 8192;
+const AUTOLYKOS_N_BASE: u64 = 67_108_864; // 2^26
+const AUTOLYKOS_INCREASE_START: u64 = 614_400;
+const AUTOLYKOS_INCREASE_PERIOD: u64 = 51_200;
+const AUTOLYKOS_N_INCREASE_HEIGHT_MAX: u64 = 4_198_400;
+
+/// Calculate the Autolykos v2 N parameter from block height.
+///
+/// N starts at 2^26 = 67,108,864 until block 614,400, then grows by 5% every
+/// 51,200 blocks (integer arithmetic: N = N / 100 * 105).  From block
+/// 4,198,400 onward N is fixed at 2,143,944,600.
+pub fn autolykos_calc_n(height: u32) -> u32 {
+    let h = (height as u64).min(AUTOLYKOS_N_INCREASE_HEIGHT_MAX);
+    if h < AUTOLYKOS_INCREASE_START {
+        return AUTOLYKOS_N_BASE as u32;
+    }
+    let iters = ((h - AUTOLYKOS_INCREASE_START) / AUTOLYKOS_INCREASE_PERIOD + 1) as usize;
+    let mut step = AUTOLYKOS_N_BASE;
+    for _ in 0..iters {
+        step = step / 100 * 105;
+    }
+    step as u32
+}
+
+/// The 8192-byte Autolykos v2 padding constant M.
+///
+/// M = (0..1024).flatMap(i => Longs.toByteArray(i.toLong)) — each number is
+/// encoded as an 8-byte big-endian integer.  This is the same constant used
+/// by the official Ergo reference implementation.
+pub fn autolykos_generate_padding_m() -> &'static [u8] {
+    static M: OnceLock<Vec<u8>> = OnceLock::new();
+    M.get_or_init(|| {
+        let mut m = Vec::with_capacity(AUTOLYKOS_M_SIZE);
+        for i in 0u64..1024 {
+            m.extend_from_slice(&i.to_be_bytes());
+        }
+        m
+    })
+    .as_slice()
+}
+
+/// BLAKE2b-256 one-shot helper.
+fn blake2b256(input: &[u8]) -> [u8; 32] {
+    let mut hasher = Blake2bVar::new(32).expect("blake2b256");
+    blake2::digest::Update::update(&mut hasher, input);
+    let mut out = [0u8; 32];
+    hasher.finalize_variable(&mut out)
+        .expect("blake2b256 finalize");
+    out
+}
+
+/// Add a 31-byte big-endian value (the least significant 31 bytes of a
+/// 32-byte array) into a 32-byte big-endian accumulator, modulo 2^256.
+fn add_be31_in_place(dst: &mut [u8; 32], src: &[u8; 31]) {
+    let mut carry: u16 = 0;
+    for i in (1..=31).rev() {
+        let sum = dst[i] as u16 + src[i - 1] as u16 + carry;
+        dst[i] = (sum & 0xFF) as u8;
+        carry = (sum >> 8) as u16;
+    }
+    let top = dst[0] as u16 + carry;
+    dst[0] = (top & 0xFF) as u8;
+}
+
 /// Compute Autolykos v2 hash for Ergo (ERG) mining.
 ///
-/// Autolykos v2 is a memory-hard PoW based on Blake2b-256.  The algorithm:
-///   1. Compute `prei8 = Blake2b256(msg || nonce_BE8).takeRight(8)` as u64 BE
-///   2. Compute `i4 = prei8 mod N` as 4-byte BE
-///   3. Compute `f31 = Blake2b256(i4 || height_BE4 || M).drop(1)` (31 bytes)
-///   4. Generate permutation indices from `Blake2b256(f31 || msg || nonce_BE8)`
-///   5. Sum selected elements from the M table
-///   6. Final hash = `Blake2b256(f2_as_32bytes)`
+/// This is the real Autolykos v2 k-sum PoW as used by Ergo mainnet since
+/// block 417,792.  The algorithm:
+///   1. `i = takeRight(8, Blake2b256(msg || nonce_BE8)) mod N`
+///   2. `e = takeRight(31, Blake2b256(i_BE4 || height_BE4 || M))`
+///   3. `indexes = genIndexes(e || msg || nonce_BE8)` (k = 32 indexes)
+///   4. `f = Σ takeRight(31, Blake2b256(index_BE4 || height_BE4 || M))`
+///   5. `pow_hash = Blake2b256(32-byte BE(f))`
 ///
-/// For CPU mining this simplified version uses a small M table.  For full
-/// speed, use the `native-hashers` feature which calls the C implementation.
-///
-/// `header` is the message (block header without nonce), `height` is the
-/// block height, and `nonce` is the 64-bit nonce.
+/// `header` is the 32-byte message (block header hash without nonce),
+/// `height` is the block height, and `nonce` is the 64-bit nonce.
 pub fn hash_autolykos(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
-    // Use the native C implementation if available
+    // Use the native C implementation if available.
     #[cfg(feature = "native-hashers")]
     {
         return crate::native_ffi::hash_autolykos_native(header, nonce, height);
     }
 
-    // Pure-Rust fallback: simplified autolykos using blake3 as a stand-in
-    // for blake2b (blake3 crate is already a dependency; blake2b would need
-    // an additional crate).  This produces a deterministic but NOT
-    // Ergo-valid hash — it's only useful for testing the stratum pipeline.
-    // For real ERG mining, enable the `native-hashers` feature.
+    // Pure-Rust fallback: full Autolykos v2 using BLAKE2b-256.
     #[allow(unreachable_code)]
     {
-        let mut input = Vec::with_capacity(header.len() + 8 + 4);
-        input.extend_from_slice(header);
-        input.extend_from_slice(&nonce.to_be_bytes());
-        input.extend_from_slice(&height.to_be_bytes());
-        let h1 = blake3::hash(&input);
-        *blake3::hash(h1.as_bytes()).as_bytes()
+        let n = autolykos_calc_n(height);
+        let m = autolykos_generate_padding_m();
+        let nonce_bytes = nonce.to_be_bytes();
+        let height_bytes = height.to_be_bytes();
+
+        // Step 1: i = takeRight(8, Blake2b256(msg || nonce_BE8)) mod N
+        let mut mn = Vec::with_capacity(header.len() + 8);
+        mn.extend_from_slice(header);
+        mn.extend_from_slice(&nonce_bytes);
+        let hash_i = blake2b256(&mn);
+        let prei8 = u64::from_be_bytes(hash_i[24..32].try_into().expect("8 bytes"));
+        let i_idx = (prei8 % n as u64) as u32;
+
+        // Step 2: e = takeRight(31, Blake2b256(i_BE4 || height_BE4 || M))
+        let mut ihm = Vec::with_capacity(4 + 4 + AUTOLYKOS_M_SIZE);
+        ihm.extend_from_slice(&i_idx.to_be_bytes());
+        ihm.extend_from_slice(&height_bytes);
+        ihm.extend_from_slice(m);
+        let f_hash = blake2b256(&ihm);
+        let f31 = &f_hash[1..];
+
+        // Step 3+4: seed = f31 || msg || nonce_BE8, then genIndexes
+        let mut seed = Vec::with_capacity(31 + header.len() + 8);
+        seed.extend_from_slice(f31);
+        seed.extend_from_slice(header);
+        seed.extend_from_slice(&nonce_bytes);
+        let seed_hash = blake2b256(&seed);
+
+        let mut extended = [0u8; 35];
+        extended[..32].copy_from_slice(&seed_hash);
+        extended[32..35].copy_from_slice(&seed_hash[..3]);
+
+        // Step 5+6: sum k elements, final BLAKE2b-256
+        let mut sum32 = [0u8; 32];
+        let mut jhm = Vec::with_capacity(4 + 4 + AUTOLYKOS_M_SIZE);
+        for i in 0..AUTOLYKOS_K {
+            let window = u32::from_be_bytes(extended[i..i + 4].try_into().expect("4 bytes"));
+            let idx = window % n;
+
+            jhm.clear();
+            jhm.extend_from_slice(&idx.to_be_bytes());
+            jhm.extend_from_slice(&height_bytes);
+            jhm.extend_from_slice(m);
+            let elem_hash = blake2b256(&jhm);
+            let elem31: &[u8; 31] = elem_hash[1..].try_into().expect("31 bytes");
+            add_be31_in_place(&mut sum32, elem31);
+        }
+
+        blake2b256(&sum32)
     }
 }
 
@@ -1721,28 +1830,33 @@ struct EthashLightCache {
     full_size: usize,
 }
 
-fn ethash_cache_for_epoch(epoch: u32) -> (Arc<Vec<u8>>, usize) {
+fn ethash_cache_for_epochs(seed_epoch: u32, dag_epoch: u32) -> (Arc<Vec<u8>>, usize) {
+    // Cache key is the seed epoch, because the DAG content changes whenever
+    // the seed hash changes. The cache/dataset sizes are taken from dag_epoch.
     static ETHASH_LIGHT_CACHE: OnceLock<Mutex<HashMap<u32, EthashLightCache>>> = OnceLock::new();
     let caches = ETHASH_LIGHT_CACHE.get_or_init(|| Mutex::new(HashMap::new()));
     let mut guard = caches.lock().unwrap();
-    if let Some(lc) = guard.get(&epoch) {
+    if let Some(lc) = guard.get(&seed_epoch) {
         return (lc.cache.clone(), lc.full_size);
     }
-    let epoch_usize = epoch as usize;
-    let cache_size = ethash_get_cache_size(epoch_usize);
-    let full_size = ethash_get_full_size(epoch_usize);
-    let seed = ethash_get_seedhash(epoch_usize);
+    let seed = ethash_get_seedhash(seed_epoch as usize);
+    let cache_size = ethash_get_cache_size(dag_epoch as usize);
+    let full_size = ethash_get_full_size(dag_epoch as usize);
     let mut cache = vec![0u8; cache_size];
     ethash_make_cache(&mut cache, &seed);
     let lc = EthashLightCache {
         cache: Arc::new(cache),
         full_size,
     };
-    guard.insert(epoch, lc.clone());
+    guard.insert(seed_epoch, lc.clone());
     (lc.cache, lc.full_size)
 }
 
-/// Compute Ethash/EtcHash final hash for Ethereum Classic (ETC) mining.
+fn ethash_cache_for_epoch(epoch: u32) -> (Arc<Vec<u8>>, usize) {
+    ethash_cache_for_epochs(epoch, epoch)
+}
+
+/// Compute the Ethash (pre-ECIP-1099 / ETHW) final hash.
 ///
 /// Uses the canonical `ethash` 0.4 reference crate for light-cache evaluation.
 /// This is the same implementation used for chfast known-vector tests and is
@@ -1756,6 +1870,39 @@ pub fn hash_ethash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
     };
     let epoch = height / ETHASH_EPOCH_LENGTH;
     let (cache, full_size) = ethash_cache_for_epoch(epoch);
+    ethash_hashimoto_light(&header_hash, nonce, full_size, &cache).1
+}
+
+/// Return the (seed_epoch, dag_epoch) pair for a given ETC block height.
+///
+/// Pre-fork (< 11_700_000): both epochs are `height / 30000`.
+/// Post-fork: the seed hash still advances every 30000 blocks, but the
+/// DAG/cache sizes use the 60000-block Etchash epoch.
+pub fn etchash_epochs(height: u32) -> (u32, u32) {
+    let height_u64 = height as u64;
+    let seed_epoch = (height_u64 / ETHASH_EPOCH_LENGTH as u64) as u32;
+    let dag_epoch = if height_u64 < ETCHASH_FORK_BLOCK {
+        seed_epoch
+    } else {
+        (height_u64 / ETCHASH_EPOCH_LENGTH as u64) as u32
+    };
+    (seed_epoch, dag_epoch)
+}
+
+/// Compute the Etchash (Ethereum Classic, post-ECIP-1099) final hash.
+///
+/// ECIP-1099 changed the ETC epoch length from 30000 to 60000 blocks, but the
+/// seed hash continues to advance every 30000 blocks. The DAG/cache sizes are
+/// therefore derived from the (smaller) Etchash epoch, while the seed is taken
+/// from the legacy 30000-block epoch so that seeds do not overlap.
+pub fn hash_etchash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
+    let header_hash: [u8; 32] = if header.len() == 32 {
+        header.try_into().unwrap()
+    } else {
+        ethash_keccak256(header)
+    };
+    let (seed_epoch, dag_epoch) = etchash_epochs(height);
+    let (cache, full_size) = ethash_cache_for_epochs(seed_epoch, dag_epoch);
     ethash_hashimoto_light(&header_hash, nonce, full_size, &cache).1
 }
 
@@ -3362,6 +3509,56 @@ mod tests {
         );
     }
 
+    #[test]
+    fn ethash_full_dag_matches_light() {
+        // Sanity: a full DAG generated from the light cache must produce the
+        // same hashimoto result as the light-cache on-the-fly calc_dataset_item.
+        use ethereum_types::{H256, H64};
+        let header_hash_hex = "2a8de2adf89af77358250bf908bf04ba94a6e8c3ba87775564a41d269a05e4ce";
+        let mut header_hash = [0u8; 32];
+        header_hash.copy_from_slice(&hex::decode(header_hash_hex).unwrap());
+        let nonce = u64::from_str_radix("4242424242424242", 16).unwrap();
+
+        let cache_size = ethash::get_cache_size(0);
+        let full_size = ethash::get_full_size(0);
+        let mut cache = vec![0u8; cache_size];
+        let seed = ethash::get_seedhash(0);
+        ethash::make_cache(&mut cache, seed);
+
+        let mut dataset = vec![0u8; full_size];
+        ethash::make_dataset(&mut dataset, &cache);
+
+        let (mix_light, final_light) = ethash::hashimoto_light(
+            H256::from(header_hash),
+            H64::from(nonce.to_be_bytes()),
+            full_size,
+            &cache,
+        );
+        let (mix_full, final_full) = ethash::hashimoto_full(
+            H256::from(header_hash),
+            H64::from(nonce.to_be_bytes()),
+            full_size,
+            &dataset,
+        );
+
+        assert_eq!(mix_light, mix_full, "mix mismatch between light and full DAG");
+        assert_eq!(final_light, final_full, "final hash mismatch between light and full DAG");
+    }
+
+    #[test]
+    fn ethash_seed0_debug_vector() {
+        // Matches the standalone Keccak-512 self-test in ethash_kernel.cu:
+        // header = 32 x 0xAA, nonce = 0 -> seed[0..4] should be 0xc659f544.
+        let mut input = [0u8; 40];
+        input[..32].fill(0xAA);
+        let seed = ethash_keccak512(&input);
+        assert_eq!(
+            hex::encode(&seed[..4]),
+            "c659f544",
+            "Keccak-512 self-test seed0 mismatch"
+        );
+    }
+
     // ── KeryxHash (KRX) ──────────────────────────────────────────────
 
     #[test]
@@ -3824,6 +4021,22 @@ mod tests {
     // ── Autolykos v2 (ERG) share verification ─────────────────────
 
     #[test]
+    fn autolykos_hash_known_vector() {
+        // Rejected 2miners ERG share from height 1841858. The expected
+        // pow_hash was verified against the official Ergo Autolykos v2
+        // reference and the legacy ZION C implementation in
+        // archive/2.9.9/legacy-code/L1/native-libs/all/autolykos_v2_native.c.
+        let header = hex::decode("03204e2e63c5a414d713456b1f7f8c8bbaa27032eae9f07800f358c07c1bfc38")
+            .unwrap();
+        let expected = hex::decode("6f0fb9eb168461a1690de447f3917934ada046cbbccc97ed7471722c86a9df8f")
+            .unwrap();
+        let nonce = 15149056377224471904u64;
+        let height = 1841858u32;
+        let hash = hash_autolykos(&header, nonce, height);
+        assert_eq!(hash.as_slice(), expected.as_slice(), "Autolykos pow_hash mismatch for known ERG vector");
+    }
+
+    #[test]
     #[cfg(feature = "native-hashers")]
     fn autolykos_hash_deterministic() {
         let header = [0x42u8; 32];
@@ -3936,6 +4149,45 @@ mod tests {
         assert_eq!(ExternalCoin::from_str_loose("prl"), Some(ExternalCoin::PRL));
         assert_eq!(ExternalCoin::from_str_loose("pearl"), Some(ExternalCoin::PRL));
         assert!(ExternalCoin::all().contains(&ExternalCoin::PRL));
+    }
+
+    #[test]
+    fn etc_share_forward_header_mismatch_check() {
+        // Regression: using a different job header with the same nonce/mix
+        // must NOT reproduce the correct final hash.  This guards against the
+        // server forwarding ETC shares with the wrong job header.
+        let share_header: [u8; 32] = hex::decode(
+            "7f6e44d98d9caa9a76f09a4ef98374f1cf9afcb201e208c4ce1054553dbcdc38",
+        )
+        .unwrap()
+        .as_slice()
+        .try_into()
+        .unwrap();
+        let mix: [u8; 32] = hex::decode(
+            "990330c5ed72bf36fe558daf45c391f41ed5fc51aa760e23db506980b65ef30b",
+        )
+        .unwrap()
+        .as_slice()
+        .try_into()
+        .unwrap();
+        let nonce: u64 = 1974573565626296326;
+
+        let real_hash = ethash_final_hash(&share_header, nonce, &mix);
+        let expected = hex::decode("e5ee0964192c52408dae8c978d8a82d5c8a3ea5d0246376dca7f2b73340aab66")
+            .unwrap();
+        assert_eq!(real_hash.as_slice(), expected.as_slice());
+
+        // A different (newer) job header with the same nonce/mix must give a
+        // different final hash.
+        let latest_header: [u8; 32] = hex::decode(
+            "69a5615a7a78e1fd44f0cccadb7a2465d55fa3216e05a0a5012b6932241796e0",
+        )
+        .unwrap()
+        .as_slice()
+        .try_into()
+        .unwrap();
+        let wrong_real_hash = ethash_final_hash(&latest_header, nonce, &mix);
+        assert_ne!(real_hash, wrong_real_hash);
     }
 
 }

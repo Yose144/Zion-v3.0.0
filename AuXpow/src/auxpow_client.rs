@@ -194,7 +194,8 @@ impl ExternalCoin {
     }
 
     /// Epoch length for DAG-based coins.
-    /// Ethash/ETC: 30000 blocks per epoch.
+    /// Ethash/ETHW: 30000 blocks per epoch.
+    /// Etchash/ETC: 60000 blocks per epoch (ECIP-1099).
     /// KawPow/RVN: 7500 blocks per epoch.
     /// ProgPow/EPIC: 30000 blocks per epoch (same as Ethash).
     /// EVR/MEWC: 12000 blocks per epoch (EvrProgPow/MeowPow).
@@ -203,7 +204,7 @@ impl ExternalCoin {
         match self {
             Self::RVN | Self::CLORE => crate::external_hashers::KAWPOW_EPOCH_LENGTH,
             Self::EVR | Self::MEWC => 12000,
-            Self::ETC => crate::external_hashers::ETHASH_EPOCH_LENGTH,
+            Self::ETC => crate::external_hashers::ETCHASH_EPOCH_LENGTH,
             Self::EPIC | Self::ZANO => crate::external_hashers::PROGPOW_EPOCH_LENGTH,
             Self::PRL => crate::external_hashers::PEARL_EPOCH_LENGTH,
             _ => crate::external_hashers::ETHASH_EPOCH_LENGTH,
@@ -2669,22 +2670,25 @@ impl AuxPowClient {
         }
 
         // ETC / Ethash Stratum v1 hybrid (2miners):
-        // mining.notify params = [seed_hash, header_hash, boundary, target, clean_jobs]
+        // mining.notify params = [seed_hash, header_hash, difficulty, target, clean_jobs]
         // where seed_hash and header_hash are 0x-prefixed 32-byte hex strings,
-        // boundary is the share target, target is the network target, and
-        // clean_jobs is a bool.  The top-level "height" field gives the block
-        // height for DAG epoch derivation (height / 30000).
+        // difficulty is the block difficulty, target is the share boundary,
+        // and clean_jobs is a bool.  The top-level "height" field gives the
+        // block height for DAG epoch derivation (height / 30000).
         // NOTE: 2miners sends the same value for seed_hash and header_hash;
         // the real DAG seed hash is derived from the epoch, not from arr[0].
+        // Use arr[3] (target) as the share target; arr[2] is block difficulty.
         if let Some(arr) = params.as_array() {
-            if arr.len() >= 3
+            if arr.len() >= 4
                 && self.profile.coin == ExternalCoin::ETC
                 && arr[0].as_str().map(|s| s.starts_with("0x") && s.len() == 66).unwrap_or(false)
                 && arr[1].as_str().map(|s| s.starts_with("0x") && s.len() == 66).unwrap_or(false)
+                && arr[3].as_str().map(|s| s.starts_with("0x") && s.len() == 66).unwrap_or(false)
             {
                 let seed_hash = arr[0].as_str().unwrap_or("").to_string();
                 let header_hex = arr[1].as_str().unwrap_or("").to_string();
-                let target_hex = arr[2].as_str().unwrap_or("").to_string();
+                let _difficulty_hex = arr[2].as_str().unwrap_or("").to_string();
+                let target_hex = arr[3].as_str().unwrap_or("").to_string();
 
                 let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
                     .unwrap_or_default();
@@ -2919,10 +2923,29 @@ impl AuxPowClient {
 
                     let header_bytes = hex::decode(blob_hex.trim_start_matches("0x"))
                         .unwrap_or_default();
-                    // ERG target: compact hex (e.g. "00000002") or full 32-byte.
-                    // Also check arr[6] for decimal target string.
-                    let target_bytes = if target_hex.len() <= 8 {
-                        // Compact target — parse as LE bytes and pad
+                    // ERG target: 2miners sends a compact hex target in arr[5]
+                    // (e.g. "00000002") and the full 256-bit target as a decimal
+                    // string in arr[6]. The decimal target is authoritative for
+                    // share validation and must be used when present.
+                    let target_bytes = if arr.len() >= 7 {
+                        if let Some(decimal) = arr[6].as_str() {
+                            use num_bigint::BigUint;
+                            if let Some(n) = BigUint::parse_bytes(decimal.trim().as_bytes(), 10) {
+                                let bytes = n.to_bytes_be();
+                                let mut padded = [0u8; 32];
+                                let start = padded.len().saturating_sub(bytes.len());
+                                padded[start..].copy_from_slice(&bytes);
+                                padded
+                            } else {
+                                crate::external_hashers::parse_target_hex(&target_hex)
+                                    .unwrap_or([0xFFu8; 32])
+                            }
+                        } else {
+                            crate::external_hashers::parse_target_hex(&target_hex)
+                                .unwrap_or([0xFFu8; 32])
+                        }
+                    } else if target_hex.len() <= 8 {
+                        // Compact target — parse as LE bytes and pad (legacy fallback)
                         let raw = hex::decode(&target_hex).unwrap_or_default();
                         let mut padded = [0xFFu8; 32];
                         if !raw.is_empty() && raw.len() <= 32 {
@@ -3856,23 +3879,21 @@ impl AuxPowClient {
         } else if self.profile.coin == ExternalCoin::ETC {
             // ETC on 2miners uses Stratum v1 mining.submit with 5 params:
             //   [worker, job_id, nonce_hex, header_hash_hex, mix_hash_hex]
-            // job_id = short job_id from notify, nonce = 0x-prefixed hex,
-            // header_hash = 0x-prefixed 32-byte block header hash from notify,
+            // job_id = 0x-prefixed 32-byte block header hash from notify,
+            // header_hash = same 0x-prefixed 32-byte block header hash,
             // mix_hash = 0x-prefixed 32-byte PoW mix hash from GPU kernel.
+            //
+            // Use `job_id` directly as the header hash: the ETC job_id is the
+            // full header hash, and using the bridge's current_job could pick a
+            // newer block and cause an "Invalid share".
             let wallet = self.payout_wallet.lock().await.clone();
             let worker = format!("{}.{}", wallet, self.profile.worker_name);
             let nonce_hex = format!("0x{:016x}", nonce);
-            let current_job = self.current_job().await;
-            let header_hash_hex = current_job
-                .as_ref()
-                .map(|j| {
-                    if j.header_hex.starts_with("0x") {
-                        j.header_hex.clone()
-                    } else {
-                        format!("0x{}", j.header_hex)
-                    }
-                })
-                .unwrap_or_else(|| "0x0000000000000000000000000000000000000000000000000000000000000000".to_string());
+            let header_hash_hex = if job_id.starts_with("0x") {
+                job_id.to_string()
+            } else {
+                format!("0x{}", job_id)
+            };
             let mix_src = mix_hash_hex.unwrap_or(_hash_hex);
             let mix_hex = if mix_src.starts_with("0x") {
                 mix_src.to_string()
