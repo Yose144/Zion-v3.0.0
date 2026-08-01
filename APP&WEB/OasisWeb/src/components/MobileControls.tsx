@@ -33,12 +33,6 @@ export default function MobileControls({ inputRef, onExit }: MobileControlsProps
       exit={{ opacity: 0 }}
       className="pointer-events-none fixed inset-0 z-50"
     >
-      {/* Crosshair */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-        <div className="h-4 w-4 rounded-full border border-white/40" />
-        <div className="absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/60" />
-      </div>
-
       {/* Movement joystick */}
       <div className="pointer-events-auto absolute bottom-6 left-6">
         <VirtualJoystick

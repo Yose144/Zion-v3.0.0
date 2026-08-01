@@ -159,6 +159,7 @@ interface OasisSceneProps {
   onApproach: (world: World) => void;
   onBoost: () => void;
   flightSpeed?: number;
+  baseSpeed?: number;
   mobileInputRef?: React.RefObject<import('./MobileControls').MobileInput | null>;
   isMobile?: boolean;
   compassRef?: React.RefObject<CompassData | null>;
@@ -179,6 +180,7 @@ export default function OasisScene({
   onApproach,
   onBoost,
   flightSpeed = 0,
+  baseSpeed = 3.5,
   mobileInputRef,
   isMobile = false,
   compassRef,
@@ -244,6 +246,7 @@ export default function OasisScene({
           onCanLand={onCanLand}
           onApproach={onApproach}
           onBoost={onBoost}
+          baseSpeed={baseSpeed}
           mobileInputRef={mobileInputRef}
         />
       )}

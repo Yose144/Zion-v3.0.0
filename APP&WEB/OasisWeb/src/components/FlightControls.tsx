@@ -164,7 +164,11 @@ const FlightControls = forwardRef<FlightControlsHandle, FlightControlsProps>(
       }
 
       const boostLevel = useGameStore.getState().shipLoadout.boost;
-      const boost = (keys.current.boost || mobile?.boost) ? 3.5 + boostLevel * 0.5 : keys.current.slow ? 0.35 : 1;
+      const boost = (keys.current.boost || mobile?.boost)
+        ? 1.25 + boostLevel * 0.07
+        : keys.current.slow
+        ? 0.5
+        : 1;
       const targetSpeed = move.length() > 0.05 ? baseSpeed * boost : 0;
       speedRef.current += (targetSpeed - speedRef.current) * 5 * delta;
       onSpeedChange?.(speedRef.current);

@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import WarpFlash from './WarpFlash';
-import { ChevronRight, Plane, X } from 'lucide-react';
+import { ChevronRight, Plane } from 'lucide-react';
 import { useAudio, AudioToggle } from './AudioEngine';
 import type { FlightControlsHandle } from './FlightControls';
 import type { MobileInput } from './MobileControls';
@@ -15,6 +15,7 @@ import OnboardingHint from './OnboardingHint';
 import MusicPlayer from './MusicPlayer';
 import Compass from './Compass';
 import type { CompassData } from './Compass';
+import ShipHud from './ShipHud';
 import { useGameStore } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
 import { getQuests, getAvatars, getTerritories, awardPlayerXp } from '../lib/api';
@@ -27,6 +28,7 @@ const WorldPanel = dynamic(() => import('./WorldPanel'), { ssr: false });
 const WorldFilter = dynamic(() => import('./WorldFilter'), { ssr: false });
 
 const ALL_CATEGORIES: WorldCategory[] = ['star-system', 'planet', 'sector', 'world', 'dimension'];
+const MAX_FLIGHT_SPEED = 8;
 
 const CATEGORY_COLORS: Record<WorldCategory, string> = {
   'star-system': '#f59e0b',
@@ -45,6 +47,7 @@ export default function OasisClient() {
   const [warping, setWarping] = useState(false);
   const [flightMode, setFlightMode] = useState(false);
   const [flightSpeed, setFlightSpeed] = useState(0);
+  const [throttle, setThrottle] = useState(0.5);
   const [landTarget, setLandTarget] = useState<World | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
@@ -104,6 +107,11 @@ export default function OasisClient() {
     }
   }, [flightMode, startEngine, stopEngine]);
 
+  const flightBaseSpeed = MAX_FLIGHT_SPEED * throttle;
+  const flightMaxSpeed = useMemo(() => {
+    return MAX_FLIGHT_SPEED * (1.25 + shipLoadout.boost * 0.07);
+  }, [shipLoadout.boost]);
+
   const compassTarget = useMemo(() => {
     if (flightMode && landTarget) {
       return {
@@ -130,6 +138,16 @@ export default function OasisClient() {
       if (phase === 'intro') return;
       if (e.key.toLowerCase() === 'f' && !flightMode && view === 'galaxy') {
         setFlightMode(true);
+        return;
+      }
+      if (flightMode) {
+        if (e.key === '1') {
+          setThrottle(0);
+        } else if (e.key === '2') {
+          setThrottle(0.5);
+        } else if (e.key === '3') {
+          setThrottle(1);
+        }
       }
     };
     window.addEventListener('keydown', onKey);
@@ -239,6 +257,7 @@ export default function OasisClient() {
           onCanLand={handleCanLand}
           onApproach={handleApproachWorld}
           onBoost={playBoost}
+          baseSpeed={flightBaseSpeed}
           mobileInputRef={isMobile ? mobileInputRef : undefined}
           isMobile={isMobile}
           compassRef={compassRef}
@@ -330,7 +349,7 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {phase !== 'intro' && (!isMobile || !flightMode) && (
+          {phase !== 'intro' && !flightMode && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -372,58 +391,19 @@ export default function OasisClient() {
 
         <AnimatePresence>
           {flightMode && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="pointer-events-none fixed inset-0 z-40"
-            >
-              {/* Crosshair */}
-              <div className="absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2">
-                <div className="h-4 w-4 rounded-full border border-white/40" />
-                <div className="absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/60" />
-              </div>
-
-              {/* Flight HUD */}
-              <div className="pointer-events-auto absolute right-5 top-5 z-50 flex flex-col items-end gap-2">
-                <div className="rounded-xl border border-oasis-cyan/30 bg-black/70 p-3 text-right shadow-xl backdrop-blur-md">
-                  <p className="text-[10px] uppercase tracking-wider text-oasis-cyan">Flight Mode</p>
-                  <p className="mt-1 text-2xl font-bold text-white tabular-nums">{flightSpeed.toFixed(1)}</p>
-                  <p className="text-[10px] text-gray-400">units / s</p>
-                  <div className="my-2 h-1.5 w-32 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full bg-gradient-to-r from-oasis-cyan to-oasis-purple transition-all"
-                      style={{ width: `${Math.min(100, (flightSpeed / 12) * 100)}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-300">WASD / Arrows — move</p>
-                  <p className="text-xs text-gray-300">Q / E — up / down</p>
-                  <p className="text-xs text-gray-300">Space — boost</p>
-                  <p className="text-xs text-gray-300">Shift — slow</p>
-                  <p className="text-xs text-gray-300">Mouse — look</p>
-                  <p className="text-xs text-gray-300">ESC or F — exit</p>
-                </div>
-
-                {landTarget && (
-                  <button
-                    onClick={() => handleApproachWorld(landTarget)}
-                    className="rounded-xl border border-oasis-gold/30 bg-oasis-gold/10 px-4 py-2 text-right shadow-lg backdrop-blur-md transition hover:bg-oasis-gold/20"
-                  >
-                    <p className="text-[10px] uppercase tracking-wider text-oasis-gold">Approach</p>
-                    <p className="text-sm font-bold text-white">{landTarget.name}</p>
-                    <p className="text-[10px] text-gray-400">Press L or click</p>
-                  </button>
-                )}
-
-                <button
-                  onClick={handleExitFlight}
-                  className="flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-4 py-2 text-xs font-bold text-white backdrop-blur-md transition hover:bg-white/10"
-                >
-                  <X className="h-3 w-3" />
-                  Exit Flight
-                </button>
-              </div>
-            </motion.div>
+            <ShipHud
+              compassRef={compassRef}
+              target={compassTarget.pos}
+              targetName={compassTarget.name}
+              targetColor={compassTarget.color}
+              flightSpeed={flightSpeed}
+              maxSpeed={flightMaxSpeed}
+              throttle={throttle}
+              onThrottleChange={setThrottle}
+              landTarget={landTarget}
+              onApproach={handleApproachWorld}
+              onExit={handleExitFlight}
+            />
           )}
         </AnimatePresence>
 
