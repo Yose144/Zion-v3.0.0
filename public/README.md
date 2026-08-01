@@ -103,6 +103,68 @@ All disclosed security issues have been remediated. See [Security](./SECURITY.md
 
 ---
 
+## Trinity — Three Streams of One River
+
+> **Mine ZION. Earn ZION. Grow ZION.**
+
+Starting with v3.0.6-beta, the official ZION miner carries a new
+capability — a bonus for everyone who mines: **Trinity**.
+
+Trinity is a smart mining engine built directly into the official miner.
+It activates automatically — no configuration, no second wallet, no
+second application. It does one thing: **extract more value from your
+hardware than the core alone could, and pay all of it out in ZION.**
+
+### How it works — in plain language
+
+Your machine has a GPU and a CPU. In traditional mining, only one of
+them does useful work at a time — the other sits idle or mines a
+different coin that you then have to sell.
+
+Trinity runs **three streams simultaneously**:
+
+| Stream | What it does | What you receive |
+|:-------|:-------------|:-----------------|
+| **Stream 1 — ZION core** | Mines ZION blocks using the Deeksha algorithm | ZION |
+| **Stream 2 — GPU auxiliary** | Uses spare GPU cycles to mine external coins | ZION (auto-converted) |
+| **Stream 3 — CPU auxiliary** | Uses spare CPU cycles to mine external coins | ZION (auto-converted) |
+
+The engine internally distributes work so no cycle goes unused. All
+revenue — from all three streams — arrives as a single balance in your
+wallet: **ZION, growing.**
+
+### Zion Grow — a position that compounds by itself
+
+- Every block your hardware contributes to increases your balance.
+- You never need to sell, swap, or watch an exchange.
+- The longer you mine, the more ZION you hold — simply by leaving the
+  miner running.
+
+### Zion Liquidity — a river flowing the right way
+
+The old mining pattern: mine a coin → sell it on an exchange → crush the
+price → leave. The more people mine, the greater the sell pressure.
+
+**Trinity inverts the pattern:**
+
+- The engine internally converts all mined value into ZION before
+  anything touches an exchange.
+- The miner never needs to sell — they receive ZION directly.
+- Mining therefore **creates no sell pressure**. On the contrary: with
+  every hash, the liquidity depth of the whole network grows.
+
+### A bonus, not a condition
+
+Trinity demands nothing: it is not a fee, a registration, or a setting.
+It is a property of the official ZION miner v3.0.6 and later. ZION's
+core and pool remain fully open under the MIT license.
+
+> For the full philosophical and technical context, see
+> [**Part Four — Three Streams of One River**](./docs/WP/ZION_MASTER_WHITEPAPER_3.1_EN.md)
+> in the Master Whitepaper.
+
+---
+
 ## Desktop Miner Quick Start
 
 > Don't want to build from source? Download a ready-made binary and start mining in 2 minutes.

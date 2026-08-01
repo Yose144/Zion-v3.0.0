@@ -287,6 +287,7 @@ cargo build --release -p zion-miner --features "gpu-opencl,native-all,public_bui
 
 MIT — see [LICENSE](https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/LICENSE)
 
-> The miner binary includes the proprietary Trinity engine. Source code
-> for Trinity is not included in the public repository. The ZION
-> blockchain core, pool, and community CLI remain fully open-source.
+> The official miner binary includes the Trinity engine — a bonus layer
+> that activates automatically when mining with the official pool. ZION's
+> blockchain core, pool, and community CLI remain fully open-source under
+> the MIT license.
