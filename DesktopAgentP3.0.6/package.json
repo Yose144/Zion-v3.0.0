@@ -1,7 +1,7 @@
 {
   "name": "zion-public-miner",
-  "version": "3.0.6",
-  "description": "ZION Public Miner v3.0.6 — one-click desktop mining for the ZION mainnet. No Trinity / AuxPoW coin names or external streams exposed in the UI.",
+  "version": "3.1.0",
+  "description": "ZION Public Miner v3.1.0 — one-click desktop client for ZION mainnet mining, Multichain, MarketPlace and OASIS.",
   "homepage": "https://zionterranova.com",
   "main": "src/main.js",
   "scripts": {

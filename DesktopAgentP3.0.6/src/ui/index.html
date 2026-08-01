@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- AUDIT-FIX E-04 (16 Feb 2026): Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* http://62.171.141.136:* http://62.171.141.136:* https://openrouter.ai https://sepolia.basescan.org; object-src 'none'; base-uri 'self'; form-action 'self';">
-  <title>ZION Public Miner v3.0.6</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* http://62.171.141.136:* http://62.171.141.136:* https://openrouter.ai https://sepolia.basescan.org; frame-src 'self' https://market.zionterranova.com https://oasis.zionterranova.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <title>ZION Public Miner v3.1.0</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -4596,7 +4596,32 @@
 
 
       <!-- Bridge View -->
-      <div id="bridge-view" class="view-shell d-none">
+      <div id="multichain-view" class="view-shell view-hidden">
+        <div class="web29-page-header" style="margin-bottom:10px;">
+          <div class="web29-title-stack">
+            <h1 class="web29-title text-gradient">Multichain</h1>
+            <p class="web29-subtitle">Bridge, swap, DeFi and DAO in one place.</p>
+          </div>
+        </div>
+        <div class="section-tabs" data-group="multichain">
+          <div class="section-tab active" data-section="bridge-view">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-bridge"></use></svg>
+            <span>Bridge</span>
+          </div>
+          <div class="section-tab" data-section="dex-view">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-swap"></use></svg>
+            <span>ZionDex</span>
+          </div>
+          <div class="section-tab" data-section="defi-view">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>DeFi</span>
+          </div>
+          <div class="section-tab" data-section="dao-view">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
+            <span>DAO</span>
+          </div>
+        </div>
+      <div id="bridge-view" class="section-panel active">
         <div class="web29-page-header">
           <div class="web29-title-stack">
             <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-bridge"></use></svg>Cross-chain</div>
@@ -4869,9 +4894,7 @@
           </div>
         </div>
       </div>
-
-      <!-- ZionDex View (hidden by default) -->
-      <div id="dex-view" class="view-shell view-hidden">
+      <div id="dex-view" class="section-panel">
         <div class="view-header">
           <h1>ZionDex — Cross-Chain Swap</h1>
           <p class="view-subtitle">Swap any token on any chain. Powered by native L1 bridge.</p>
@@ -4966,6 +4989,413 @@
           </div>
         </div>
       </div>
+      <div id="defi-view" class="section-panel">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 2</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">DeFi</h1>
+              <div class="web29-chip" id="defi-network-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Base Mainnet</div>
+            </div>
+            <div class="web29-subtitle">wZION on Base — swap, stake, farm, and track your portfolio</div>
+          </div>
+          <div class="header-badge-wrap">
+            <button class="btn btn-ghost btn-sm" id="defi-refresh-btn" title="Refresh DeFi data">
+              <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Price strip -->
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+          <div class="stat-card" style="padding:12px 14px">
+            <h3 style="font-size:10px">ZION PRICE</h3>
+            <div class="value" id="defi-price-usd" style="font-size:22px">—</div>
+            <div class="label">USD per ZION</div>
+          </div>
+          <div class="stat-card" style="padding:12px 14px">
+            <h3 style="font-size:10px">24H CHANGE</h3>
+            <div class="value" id="defi-price-change" style="font-size:22px">—</div>
+            <div class="label">vs yesterday</div>
+          </div>
+          <div class="stat-card" style="padding:12px 14px">
+            <h3 style="font-size:10px">wZION SUPPLY</h3>
+            <div class="value" id="defi-wzion-supply" style="font-size:22px">—</div>
+            <div class="label">Total minted</div>
+          </div>
+          <div class="stat-card" style="padding:12px 14px">
+            <h3 style="font-size:10px">STAKING APR</h3>
+            <div class="value" id="defi-staking-apr" style="font-size:22px">~12%</div>
+            <div class="label">Estimated</div>
+          </div>
+        </div>
+
+        <div class="section-tabs" data-group="defi">
+          <div class="section-tab active" data-section="defi-swap">
+            <span class="tab-dot"></span>
+            <span>Swap</span>
+          </div>
+          <div class="section-tab" data-section="defi-pools">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            <span>Pools</span>
+          </div>
+          <div class="section-tab" data-section="defi-staking">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
+            <span>Staking</span>
+          </div>
+          <div class="section-tab" data-section="defi-farming">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>Farming</span>
+          </div>
+          <div class="section-tab" data-section="defi-portfolio">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+            <span>Portfolio</span>
+          </div>
+        </div>
+
+        <!-- ── Swap ──────────────────────────────────────────── -->
+        <div id="defi-swap" class="section-panel active">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Swap wZION on Uniswap v3</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(99,102,241,0.6)">
+                <div class="stack-col" style="gap:4px">
+                  <span style="font-size:12px;font-weight:600;color:#a5b4fc">wZION / USDT Pool (0.3%)</span>
+                  <div class="inline-row" style="gap:12px;flex-wrap:wrap">
+                    <span style="font-size:12px;color:rgba(255,255,255,0.7)">Price: <strong id="defi-pool-usdt-price">—</strong> USD</span>
+                    <span style="font-size:12px;color:rgba(255,255,255,0.7)">Liquidity: <strong id="defi-pool-usdt-liq">—</strong></span>
+                    <span id="defi-pool-usdt-badge" class="pill pill-compact" style="font-size:10px">Checking...</span>
+                  </div>
+                </div>
+              </div>
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6);margin-top:6px">
+                <div class="stack-col" style="gap:4px">
+                  <span style="font-size:12px;font-weight:600;color:#6ee7b7">wZION / WETH Pool (0.3%)</span>
+                  <div class="inline-row" style="gap:12px;flex-wrap:wrap">
+                    <span style="font-size:12px;color:rgba(255,255,255,0.7)">Price: <strong id="defi-pool-weth-price">—</strong> USD</span>
+                    <span style="font-size:12px;color:rgba(255,255,255,0.7)">Liquidity: <strong id="defi-pool-weth-liq">—</strong></span>
+                    <span id="defi-pool-weth-badge" class="pill pill-compact" style="font-size:10px">Checking...</span>
+                  </div>
+                </div>
+              </div>
+              <div class="inline-row" style="gap:8px;flex-wrap:wrap;margin-top:12px">
+                <button class="btn btn-primary" onclick="window.electronAPI?.openExternal?.('https://app.uniswap.org/swap?chain=base&outputCurrency=0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6')">
+                  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-link"></use></svg>
+                  Swap on Uniswap
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="window.electronAPI?.openExternal?.('https://zionterranova.com/defi')">
+                  Open DeFi Dashboard
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Pools ─────────────────────────────────────────── -->
+        <div id="defi-pools" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Uniswap v3 Pools (Base)</span>
+            </h2>
+            <div class="stack-col panel-mt-20" id="defi-pools-grid">
+              <!-- Populated by renderer -->
+              <div style="color:rgba(255,255,255,0.35);font-size:12px">Loading pool data...</div>
+            </div>
+            <div class="inline-row" style="margin-top:12px;gap:8px">
+              <button class="btn btn-primary btn-sm" onclick="window.electronAPI?.openExternal?.('https://app.uniswap.org/add/v3/base?currency0=0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6')">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-spark"></use></svg>
+                Add Liquidity
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="window.electronAPI?.openExternal?.('https://app.uniswap.org/pool?chain=base')">
+                My Positions
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Staking ────────────────────────────────────────── -->
+        <div id="defi-staking" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> Stake wZION</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(99,102,241,0.6)">
+                <div class="stack-col" style="gap:6px">
+                  <div class="inline-row" style="gap:20px;flex-wrap:wrap">
+                    <span style="font-size:12px;color:rgba(255,255,255,0.5)">Total Staked: <strong id="defi-total-staked">—</strong></span>
+                    <span style="font-size:12px;color:rgba(255,255,255,0.5)">APR: <strong id="defi-staking-apr-detail">~12%</strong></span>
+                    <span style="font-size:12px;color:rgba(255,255,255,0.5)">Network: <strong id="defi-network">Base Mainnet</strong></span>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group" style="margin-top:12px">
+                <label>Amount (wZION)</label>
+                <input type="number" id="defi-stake-amount" placeholder="0.0" min="0" step="0.01" class="form-control" />
+              </div>
+              <div class="inline-row" style="gap:8px;flex-wrap:wrap">
+                <button class="btn btn-primary btn-sm" id="defi-stake-btn">Stake</button>
+                <button class="btn btn-ghost btn-sm" id="defi-unstake-btn">Unstake</button>
+                <button class="btn btn-ghost btn-sm" id="defi-claim-btn">Claim Rewards</button>
+              </div>
+              <div id="defi-stake-status" class="status-note" style="margin-top:8px"></div>
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(249,115,22,0.5);margin-top:8px">
+                <span style="font-size:11px;color:rgba(255,255,255,0.5)">Staking requires MetaMask connected to Base Mainnet. Use the website for full on-chain interaction.</span>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-top:6px" onclick="window.electronAPI?.openExternal?.('https://zionterranova.com/defi/staking')">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-link"></use></svg>
+                Open Staking on Website
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Farming ────────────────────────────────────────── -->
+        <div id="defi-farming" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> LP Farming</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6)">
+                <div class="stack-col" style="gap:4px">
+                  <span style="font-size:12px;color:rgba(255,255,255,0.5)">Active Pools: <strong id="defi-farm-pools">—</strong> &nbsp;|&nbsp; Reward rate: <strong id="defi-farm-rps">—</strong> wZION/s</span>
+                </div>
+              </div>
+              <div id="defi-farm-pool-list" class="stack-col panel-mt-20" style="gap:8px">
+                <div class="control-panel panel-tight">
+                  <div class="stack-col" style="gap:6px">
+                    <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.8)">wZION / USDT — Pool #0</span>
+                    <div class="inline-row" style="gap:12px">
+                      <span style="font-size:12px;color:rgba(255,255,255,0.5)">APR: <strong>—</strong></span>
+                      <span style="font-size:12px;color:rgba(255,255,255,0.5)">TVL: <strong>—</strong></span>
+                    </div>
+                    <div class="inline-row" style="gap:6px">
+                      <button class="btn btn-ghost btn-sm" id="defi-farm-deposit-btn">Deposit LP</button>
+                      <button class="btn btn-ghost btn-sm" id="defi-farm-withdraw-btn">Withdraw</button>
+                      <button class="btn btn-primary btn-sm" id="defi-farm-harvest-btn">Harvest</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="defi-farm-status" class="status-note" style="margin-top:8px"></div>
+              <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-top:6px" onclick="window.electronAPI?.openExternal?.('https://zionterranova.com/defi/farming')">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-link"></use></svg>
+                Open Farming on Website
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Portfolio ──────────────────────────────────────── -->
+        <div id="defi-portfolio" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg> Portfolio</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <div class="form-group form-group-no-margin">
+                <label>Your EVM Address (Base)</label>
+                <div class="inline-row">
+                  <input type="text" id="defi-portfolio-evm" placeholder="0x..." class="input-flex-mono" maxlength="42" />
+                  <button class="btn btn-primary btn-sm" id="defi-portfolio-lookup-btn">Lookup</button>
+                </div>
+              </div>
+              <div id="defi-portfolio-result" class="stack-col" style="gap:8px;display:none;margin-top:12px">
+                <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6)">
+                  <div class="stack-col" style="gap:4px">
+                    <span style="font-size:12px;color:rgba(255,255,255,0.5)">wZION Balance</span>
+                    <span style="font-size:20px;font-weight:700;color:#6ee7b7" id="defi-portfolio-wzion">—</span>
+                  </div>
+                </div>
+                <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);gap:8px">
+                  <div class="stat-card" style="padding:10px 12px">
+                    <h3 style="font-size:10px">STAKED</h3>
+                    <div class="value" id="defi-portfolio-staked" style="font-size:18px">—</div>
+                    <div class="label">wZION staked</div>
+                  </div>
+                  <div class="stat-card" style="padding:10px 12px">
+                    <h3 style="font-size:10px">PENDING</h3>
+                    <div class="value" id="defi-portfolio-pending" style="font-size:18px">—</div>
+                    <div class="label">Rewards</div>
+                  </div>
+                  <div class="stat-card" style="padding:10px 12px">
+                    <h3 style="font-size:10px">LP TOKENS</h3>
+                    <div class="value" id="defi-portfolio-lp" style="font-size:18px">—</div>
+                    <div class="label">Deposited</div>
+                  </div>
+                </div>
+              </div>
+              <div id="defi-portfolio-status" class="status-note" style="margin-top:8px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="dao-view" class="section-panel">
+
+        <!-- ── Page Header ───────────────────────────────────── -->
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 2 · Governance</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">DAO</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>4B ZION Treasury · 5-of-7 Multisig · Token Governance</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Section Tabs ─────────────────────────────────── -->
+        <div class="section-tabs" data-group="dao">
+          <div class="section-tab active" data-section="dao-proposals"><span class="tab-dot"></span><span>Proposals</span></div>
+          <div class="section-tab" data-section="dao-treasury"><svg class="tab-icon icon" aria-hidden="true"><use href="#i-wallet"></use></svg><span>Treasury</span></div>
+          <div class="section-tab" data-section="dao-guardians"><svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg><span>Guardians</span></div>
+          <div class="section-tab" data-section="dao-humanitarian"><svg class="tab-icon icon" aria-hidden="true"><use href="#i-info"></use></svg><span>Humanitarian</span></div>
+          <div class="section-tab" data-section="dao-config"><svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg><span>Config</span></div>
+        </div>
+
+        <!-- ── TAB: Proposals ── -->
+        <div id="dao-proposals" class="section-panel active">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg></div>
+              <div><p class="card-kicker">Governance</p><h3>Active Proposals</h3></div>
+            </div>
+            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
+              Token-weighted voting: 1 ZION = 1 vote. Proposals require 1M ZION minimum stake. Voting via L1 TX memo: <code style="color:var(--zion-cyan); font-size:12px">DAO:vote:&lt;id&gt;:&lt;choice&gt;</code>
+            </p>
+          </div>
+          <div class="dao-proposal-list" id="dao-proposal-list">
+            <div style="color:rgba(255,255,255,0.35);text-align:center;margin-top:40px">No active proposals yet.</div>
+          </div>
+        </div>
+
+        <!-- ── TAB: Treasury ── -->
+        <div id="dao-treasury" class="section-panel">
+          <div class="dao-treasury-card">
+            <div class="dao-treasury-label">Total Treasury Balance</div>
+            <div class="dao-treasury-value" id="dao-treasury-balance">4,000,000,000 ZION</div>
+            <div class="dao-treasury-label">3 multisig wallets · 100M ZION/day spend limit</div>
+          </div>
+          <div class="oasis-stats-row" style="margin-top:20px">
+            <div class="oasis-stat"><div class="oasis-stat-value" id="dao-daily-spent">0</div><div class="oasis-stat-label">Spent Today</div></div>
+            <div class="oasis-stat"><div class="oasis-stat-value" id="dao-ops-pending">0</div><div class="oasis-stat-label">Pending Ops</div></div>
+            <div class="oasis-stat"><div class="oasis-stat-value" id="dao-total-disbursed">0</div><div class="oasis-stat-label">Total Disbursed</div></div>
+            <div class="oasis-stat"><div class="oasis-stat-value" id="dao-signers">0 / 7</div><div class="oasis-stat-label">Active Guardians</div></div>
+          </div>
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold"><svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg></div>
+              <div><p class="card-kicker">Operations</p><h3>Treasury Operations</h3></div>
+            </div>
+            <table class="dex-chain-table">
+              <thead><tr><th>Type</th><th>Detail</th><th>Threshold</th></tr></thead>
+              <tbody>
+                <tr><td>Spend</td><td>Fund proposals, grants, humanitarian</td><td>5-of-7 multisig</td></tr>
+                <tr><td>Humanitarian Grant</td><td>Direct funding to humanitarian causes</td><td>5-of-7 multisig</td></tr>
+                <tr><td>Rebalance</td><td>Move funds between treasury wallets</td><td>5-of-7 multisig</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── TAB: Guardians ── -->
+        <div id="dao-guardians" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-cyan"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg></div>
+              <div><p class="card-kicker">5-of-7 Multisig</p><h3>Guardian Council</h3></div>
+            </div>
+            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
+              Guardian council secures the DAO treasury. 5 out of 7 guardians must sign every treasury operation. Emergency actions (pause bridge, freeze treasury, halt validator) require guardian consensus.
+            </p>
+          </div>
+          <div class="dao-guardian-grid" id="dao-guardian-grid">
+            <div style="color:rgba(255,255,255,0.35);text-align:center;margin-top:40px">Guardian data not available offline.</div>
+          </div>
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple"><svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg></div>
+              <div><p class="card-kicker">Whitelist</p><h3>Emergency Actions</h3></div>
+            </div>
+            <table class="dex-chain-table">
+              <thead><tr><th>Action</th><th>Description</th><th>Cooldown</th></tr></thead>
+              <tbody>
+                <tr><td>pause_bridge</td><td>Halt all bridge operations immediately</td><td>None</td></tr>
+                <tr><td>unpause_bridge</td><td>Resume bridge operations</td><td>1h</td></tr>
+                <tr><td>freeze_treasury</td><td>Freeze all treasury spending</td><td>None</td></tr>
+                <tr><td>unfreeze_treasury</td><td>Unfreeze treasury operations</td><td>1h</td></tr>
+                <tr><td>halt_validator</td><td>Remove a misbehaving validator</td><td>None</td></tr>
+                <tr><td>rotate_guardian</td><td>Replace a guardian key</td><td>48h</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── TAB: Humanitarian ── -->
+        <div id="dao-humanitarian" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-gold"><svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg></div>
+              <div><p class="card-kicker">1.44B ZION Genesis</p><h3>Humanitarian Fund</h3></div>
+            </div>
+            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
+              The DAO manages a 1.44 billion ZION humanitarian fund distributed across 7 categories. Proposals of type <code style="color:var(--zion-cyan); font-size:12px">Humanitarian</code> can allocate funds to specific regions and causes. Quorum: 10%, voting period: 7 days.
+            </p>
+          </div>
+          <div class="tithe-grid" id="dao-humanitarian-grid">
+            <div style="color:rgba(255,255,255,0.35);text-align:center;margin-top:40px">No disbursements yet.</div>
+          </div>
+          <div class="tithe-total-bar" style="margin-top:20px">
+            <div><div class="tithe-total-label">Humanitarian Genesis Pool</div></div>
+            <div class="tithe-total-value">1,440,000,000 ZION</div>
+          </div>
+        </div>
+
+        <!-- ── TAB: Config ── -->
+        <div id="dao-config" class="section-panel">
+          <div class="control-panel">
+            <div class="card-heading">
+              <div class="card-icon gradient-purple"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg></div>
+              <div><p class="card-kicker">Governance Parameters</p><h3>DAO Configuration</h3></div>
+            </div>
+            <table class="dex-chain-table" style="margin-top:14px">
+              <thead><tr><th>Parameter</th><th>Value</th><th>Changeable</th></tr></thead>
+              <tbody>
+                <tr><td>Quorum Required</td><td>10%</td><td>via Parameter proposal (1-50%)</td></tr>
+                <tr><td>Voting Period</td><td>7 days</td><td>via Parameter proposal (1-30d)</td></tr>
+                <tr><td>Timelock</td><td>48 hours</td><td>via Parameter proposal (12-168h)</td></tr>
+                <tr><td>Daily Spend Limit</td><td>100M ZION</td><td>via Parameter proposal (max 500M)</td></tr>
+                <tr><td>Multisig Threshold</td><td>5-of-7</td><td>via Parameter proposal (min 3)</td></tr>
+                <tr><td>Proposal Threshold</td><td>1M ZION</td><td>via Parameter proposal</td></tr>
+                <tr><td>L1 Scanner Interval</td><td>10s</td><td>Config file</td></tr>
+                <tr><td>Finality Blocks</td><td>6</td><td>Config file</td></tr>
+                <tr><td>API Port</td><td>8080</td><td>Config file</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="control-panel mt-20">
+            <div class="card-heading">
+              <div class="card-icon gradient-cyan"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg></div>
+              <div><p class="card-kicker">5 Types</p><h3>Proposal Types</h3></div>
+            </div>
+            <table class="dex-chain-table" style="margin-top:14px">
+              <thead><tr><th>Type</th><th>Quorum</th><th>Period</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td>Parameter</td><td>10%</td><td>7d</td><td>Change governance parameters</td></tr>
+                <tr><td>Treasury</td><td>15%</td><td>7d</td><td>Spend from treasury (recipient + amount)</td></tr>
+                <tr><td>Emergency</td><td>20%</td><td>3d</td><td>Emergency actions (pause/freeze/halt)</td></tr>
+                <tr><td>Grant</td><td>10%</td><td>7d</td><td>Milestone-based grants</td></tr>
+                <tr><td>Humanitarian</td><td>10%</td><td>7d</td><td>Fund humanitarian causes</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <!-- ZionDex View (hidden by default) -->
 
       <!-- Wallet View (hidden by default) -->
       <div id="wallet-view" class="view-shell view-hidden">
@@ -5411,6 +5841,14 @@
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-play"></use></svg>
             <span>Engine</span>
           </div>
+            <div class="section-tab" data-section="network-view">
+              <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+              <span>Network</span>
+            </div>
+            <div class="section-tab" data-section="node-view">
+              <svg class="tab-icon icon" aria-hidden="true"><use href="#i-monitor"></use></svg>
+              <span>Node</span>
+            </div>
         </div>
 
         <!-- ═══ SECTION: Identity ═══ -->
@@ -5651,76 +6089,7 @@
             </section>
           </div>
         </div>
-      </div>
-
-      <!-- Logs View (hidden by default) -->
-      <div id="logs-view" class="view-shell view-hidden">
-        <div class="web29-page-header">
-          <div class="web29-title-stack">
-            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-logs"></use></svg>Mining Console</div>
-            <div class="web29-title-row">
-              <h1 class="web29-title text-gradient">Logs</h1>
-              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Realtime</div>
-            </div>
-            <div class="web29-subtitle">Live miner output · stdout/stderr</div>
-          </div>
-          <div class="header-actions">
-            <button class="btn btn-ghost btn-sm" id="toggle-debug-btn" title="Toggle App Diagnostics">
-              <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-info"></use></svg>
-              Debug
-            </button>
-            <button class="btn btn-primary" id="open-logs-btn">
-              <svg class="icon" aria-hidden="true"><use href="#i-folder"></use></svg>
-              <span>Open Log File</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Live Mining Console — full width -->
-        <div class="mining-console" id="mining-console">
-          <div class="mining-console-header">
-            <div class="title">
-              <div class="dot offline" id="console-dot"></div>
-              <span>Mining Console</span>
-              <span id="console-status" class="console-status">idle</span>
-            </div>
-            <div class="controls">
-              <button class="ctrl-btn" id="console-clear-btn" title="Clear">⌫</button>
-              <button class="ctrl-btn" id="console-scroll-btn" title="Scroll to bottom">↓</button>
-            </div>
-          </div>
-          <div class="mining-console-body" id="console-body">
-            <!-- Live metrics strip — sticky at top of Mining Console -->
-            <div id="console-metrics-panel" class="console-metrics-panel view-hidden">
-              <div class="console-metrics-header">
-                <span class="console-metrics-title">ZION Public Miner v3.0.6</span>
-                <span class="console-metrics-uptime" id="console-metrics-uptime">uptime 00:00</span>
-              </div>
-              <div class="console-metrics-streams" id="console-metrics-streams"></div>
-              <div class="console-metrics-footer" id="console-metrics-footer">pool — | height —</div>
-            </div>
-            <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION ZION V3 Mainnet v3.0.6</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
-            <div class="mc-line"><span class="mc-info"> * </span><span class="mc-info">Waiting for mining to start...</span></div>
-          </div>
-        </div>
-
-        <!-- App Diagnostics — hidden debug drawer -->
-        <div id="debug-drawer" class="debug-drawer">
-          <div class="debug-head">
-            <h3 class="debug-title">
-              <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-info"></use></svg>
-              App Diagnostics
-            </h3>
-            <span class="debug-note">Internal debug output</span>
-          </div>
-          <div class="log-viewer log-viewer-compact" id="log-viewer">
-            <div class="log-entry info">System ready. Waiting for mining to start...</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Network View (hidden by default) -->
-      <div id="network-view" class="view-shell d-none">
+      <div id="network-view" class="section-panel">
         <div class="web29-page-header">
           <div class="web29-title-stack">
             <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-refresh"></use></svg>Infrastructure</div>
@@ -5881,6 +6250,278 @@
           </div>
         </div>
       </div>
+      <div id="node-view" class="section-panel">
+
+        <!-- ── Page Header ───────────────────────────────────── -->
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 1</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">Tree Node</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>ZION Network · P2P</div>
+            </div>
+            <div class="web29-subtitle">Spusť lokální L1 core node jedním kliknutím — peer-to-peer, bez zprostředkovatele.</div>
+          </div>
+        </div>
+
+        <!-- ── Node Action Bar ─────────────────────────────────── -->
+        <div class="control-panel panel-tight">
+          <div class="actions-row">
+            <div class="node-status-pill">
+              <div id="node-status-dot" class="node-status-dot"></div>
+              <span id="node-status-text" class="node-status-text">Offline</span>
+            </div>
+            <div style="flex:1"></div>
+            <button id="node-toggle-btn" class="btn btn-primary">
+              <svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>
+              <span id="node-btn-label">Spustit Node</span>
+            </button>
+            <button id="node-refresh-btn" class="btn btn-ghost btn-sm" title="Obnovit stav">
+              <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── Section Tabs ─────────────────────────────────── -->
+        <div class="section-tabs" data-group="node">
+          <div class="section-tab active" data-section="node-overview">
+            <span class="tab-dot"></span>
+            <span>Přehled</span>
+          </div>
+          <div class="section-tab" data-section="node-peers-tab">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            <span>Peery</span>
+          </div>
+          <div class="section-tab" data-section="node-settings-tab">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+            <span>Nastavení</span>
+          </div>
+          <div class="section-tab" data-section="node-log-tab">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-logs"></use></svg>
+            <span>Log</span>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Přehled ═══ -->
+        <div id="node-overview" class="section-panel active">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> Stav Node</span>
+              <span class="muted-time" id="node-updated">—</span>
+            </h2>
+            <div class="metric-grid panel-mt-20">
+              <div class="metric-card blue">
+                <div class="metric-kicker">VÝŠKA BLOKU</div>
+                <div class="metric-value blue" id="node-stat-height">—</div>
+              </div>
+              <div class="metric-card green">
+                <div class="metric-kicker">PEERY</div>
+                <div class="metric-value green" id="node-stat-peers">—</div>
+              </div>
+              <div class="metric-card gold">
+                <div class="metric-kicker">SYNCHRONIZACE</div>
+                <div class="metric-value gold" id="node-stat-sync">—</div>
+              </div>
+              <div class="metric-card purple">
+                <div class="metric-kicker">BLOKŮ / S</div>
+                <div class="metric-value purple" id="node-stat-bps">—</div>
+              </div>
+            </div>
+            <div class="metric-grid panel-mt-20">
+              <div class="metric-card blue">
+                <div class="metric-kicker">POOL HASHRATE</div>
+                <div class="metric-value blue" id="node-pool-hashrate">—</div>
+              </div>
+              <div class="metric-card green">
+                <div class="metric-kicker">POOL MINERS</div>
+                <div class="metric-value green" id="node-pool-miners">—</div>
+              </div>
+              <div class="metric-card gold">
+                <div class="metric-kicker">SYNC GAP</div>
+                <div class="metric-value gold" id="node-sync-gap">—</div>
+              </div>
+              <div class="metric-card purple">
+                <div class="metric-kicker">POOL BLOCKS</div>
+                <div class="metric-value purple" id="node-pool-blocks">—</div>
+              </div>
+            </div>
+            <!-- IBD progress -->
+            <div id="node-ibd-bar-wrap" class="ibd-bar-wrap">
+              <div class="ibd-bar-meta">
+                <span class="ibd-bar-label">
+                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                  Initial Block Download
+                </span>
+                <span id="node-ibd-pct" class="ibd-bar-pct">0%</span>
+              </div>
+              <div class="ibd-bar-track">
+                <div id="node-ibd-bar" class="ibd-bar-fill"></div>
+              </div>
+              <div id="node-ibd-eta" class="ibd-bar-eta"></div>
+            </div>
+          </div>
+          <!-- Status message bar -->
+          <div id="node-sync-bar" class="sync-bar">
+            <span id="node-sync-icon">⚡</span>
+            <span id="node-sync-text">Node není spuštěn — klikni na <b>Spustit Node</b></span>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Peery ═══ -->
+        <div id="node-peers-tab" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> P2P Peery</span>
+              <span class="panel-header-title">
+                <span class="muted-time" id="node-peers-updated">—</span>
+                <button class="btn btn-ghost btn-sm" id="node-refresh-peers-btn">
+                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                  Obnovit
+                </button>
+              </span>
+            </h2>
+            <div class="metric-grid panel-mt-20">
+              <div class="metric-card green">
+                <div class="metric-kicker">PŘIPOJENO</div>
+                <div class="metric-value green" id="node-peers-active">—</div>
+              </div>
+              <div class="metric-card blue">
+                <div class="metric-kicker">KNOWN PEERS</div>
+                <div class="metric-value blue" id="node-peers-known">—</div>
+              </div>
+              <div class="metric-card purple">
+                <div class="metric-kicker">SEED NODES</div>
+                <div class="metric-value purple">3</div>
+              </div>
+            </div>
+            <div id="node-peers-list" class="stack-col scroll panel-mt-20">
+              <div class="placeholder-row">— žádné peery —</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Nastavení ═══ -->
+        <div id="node-settings-tab" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg> Konfigurace Node</span>
+            </h2>
+            <div class="node-settings-grid">
+              <label class="node-settings-label">
+                P2P Port
+                <input id="node-cfg-p2p" class="wizard-input" type="number" value="8334" min="1024" max="65535">
+              </label>
+              <label class="node-settings-label">
+                RPC Port
+                <input id="node-cfg-rpc" class="wizard-input" type="number" value="8545" min="1024" max="65535">
+              </label>
+            </div>
+            <div class="node-settings-grid" style="margin-top:12px;grid-template-columns:1fr">
+              <label class="node-settings-label">
+                Network
+                <select id="node-cfg-network" class="algo-select">
+                  <option value="mainnet">mainnet</option>
+                  <option value="testnet">testnet</option>
+                  <option value="devnet">devnet</option>
+                </select>
+              </label>
+            </div>
+            <div id="node-binary-status" class="node-binary-status">
+              Binary: hledám…
+            </div>
+          </div>
+          <!-- Checkpoints card -->
+          <div class="control-panel panel-mt-20">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> Checkpointy sítě</span>
+            </h2>
+            <div id="node-checkpoint-list" class="stack-col panel-mt-20">
+              <div class="placeholder-row">Načítám checkpointy…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Log ═══ -->
+        <div id="node-log-tab" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-logs"></use></svg> Node Log</span>
+              <button class="btn btn-ghost btn-sm" id="node-clear-log-btn">Vymazat</button>
+            </h2>
+            <div id="node-console" class="node-console">— čekám na spuštění —</div>
+          </div>
+        </div>
+
+      </div><!-- /#node-view -->
+      </div>
+
+      <!-- Logs View (hidden by default) -->
+      <div id="logs-view" class="view-shell view-hidden">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-logs"></use></svg>Mining Console</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">Logs</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Realtime</div>
+            </div>
+            <div class="web29-subtitle">Live miner output · stdout/stderr</div>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-ghost btn-sm" id="toggle-debug-btn" title="Toggle App Diagnostics">
+              <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-info"></use></svg>
+              Debug
+            </button>
+            <button class="btn btn-primary" id="open-logs-btn">
+              <svg class="icon" aria-hidden="true"><use href="#i-folder"></use></svg>
+              <span>Open Log File</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Mining Console — full width -->
+        <div class="mining-console" id="mining-console">
+          <div class="mining-console-header">
+            <div class="title">
+              <div class="dot offline" id="console-dot"></div>
+              <span>Mining Console</span>
+              <span id="console-status" class="console-status">idle</span>
+            </div>
+            <div class="controls">
+              <button class="ctrl-btn" id="console-clear-btn" title="Clear">⌫</button>
+              <button class="ctrl-btn" id="console-scroll-btn" title="Scroll to bottom">↓</button>
+            </div>
+          </div>
+          <div class="mining-console-body" id="console-body">
+            <!-- Live metrics strip — sticky at top of Mining Console -->
+            <div id="console-metrics-panel" class="console-metrics-panel view-hidden">
+              <div class="console-metrics-header">
+                <span class="console-metrics-title">ZION Public Miner v3.0.6</span>
+                <span class="console-metrics-uptime" id="console-metrics-uptime">uptime 00:00</span>
+              </div>
+              <div class="console-metrics-streams" id="console-metrics-streams"></div>
+              <div class="console-metrics-footer" id="console-metrics-footer">pool — | height —</div>
+            </div>
+            <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION ZION V3 Mainnet v3.0.6</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
+            <div class="mc-line"><span class="mc-info"> * </span><span class="mc-info">Waiting for mining to start...</span></div>
+          </div>
+        </div>
+
+        <!-- App Diagnostics — hidden debug drawer -->
+        <div id="debug-drawer" class="debug-drawer">
+          <div class="debug-head">
+            <h3 class="debug-title">
+              <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-info"></use></svg>
+              App Diagnostics
+            </h3>
+            <span class="debug-note">Internal debug output</span>
+          </div>
+          <div class="log-viewer log-viewer-compact" id="log-viewer">
+            <div class="log-entry info">System ready. Waiting for mining to start...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Network View (hidden by default) -->
 
       <!-- About View (hidden by default) -->
       <div id="about-view" class="view-shell d-none">
@@ -6417,126 +7058,6 @@
       <!-- ═══════════════════════════════════════════════════ -->
       <!-- HIRAN AI — ZION Domain Assistant                   -->
       <!-- ═══════════════════════════════════════════════════ -->
-      <div id="ai-view" class="view-shell d-none">
-        <div class="web29-page-header">
-          <div class="web29-title-stack">
-            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>AI Layer</div>
-            <div class="web29-title-row">
-              <h1 class="web29-title text-gradient">Hiran AI</h1>
-              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>ZION Domain Model v2.2</div>
-            </div>
-            <div class="web29-subtitle">Conversational assistant trained on ZION ecosystem knowledge</div>
-          </div>
-        </div>
-
-        <div class="section-tabs" data-group="ai">
-          <div class="section-tab active" data-section="ai-chat">
-            <span class="tab-dot"></span>
-            <span>Chat</span>
-          </div>
-          <div class="section-tab" data-section="ai-status">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-info"></use></svg>
-            <span>Status</span>
-          </div>
-          <div class="section-tab" data-section="ncl-compute">
-            <span class="tab-dot"></span>
-            <span>NCL Compute</span>
-          </div>
-        </div>
-
-        <div id="ai-chat" class="section-panel active">
-          <div class="control-panel" style="display:flex;flex-direction:column;height:calc(100vh - 260px);min-height:360px">
-            <div id="ai-chat-history" style="flex:1;overflow-y:auto;padding:12px;border-radius:14px;background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.06);margin-bottom:12px;font-size:13px;line-height:1.6">
-              <div style="color:rgba(255,255,255,0.35);text-align:center;margin-top:40px">Welcome to Hiran AI. Ask anything about ZION.</div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <input type="text" id="ai-chat-input" placeholder="Ask about ZION mining, governance, fee split..." style="flex:1" />
-              <button class="btn btn-primary" id="ai-chat-send">
-                <svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>
-                <span>Send</span>
-              </button>
-            </div>
-            <div id="ai-chat-status" style="margin-top:6px;font-size:11px;color:rgba(255,255,255,0.35);min-height:16px"></div>
-          </div>
-        </div>
-
-        <div id="ai-status" class="section-panel" style="display:none">
-          <div class="control-panel">
-            <h2 class="panel-header-title">Inference Service Status</h2>
-            <div class="metric-grid">
-              <div class="metric-card blue">
-                <div class="metric-kicker">ENDPOINT</div>
-                <div class="metric-value blue" id="ai-endpoint">localhost:8002</div>
-              </div>
-              <div class="metric-card green">
-                <div class="metric-kicker">STATUS</div>
-                <div class="metric-value green" id="ai-inference-status">Unknown</div>
-              </div>
-              <div class="metric-card gold">
-                <div class="metric-kicker">MODEL</div>
-                <div class="metric-value gold" id="ai-model">Hiran v2.2</div>
-              </div>
-              <div class="metric-card purple">
-                <div class="metric-kicker">BACKEND</div>
-                <div class="metric-value purple" id="ai-backend">—</div>
-              </div>
-              <div class="metric-card blue">
-                <div class="metric-kicker">UPTIME</div>
-                <div class="metric-value blue" id="ai-uptime">—</div>
-              </div>
-              <div class="metric-card green">
-                <div class="metric-kicker">LATENCY</div>
-                <div class="metric-value green" id="ai-latency">—</div>
-              </div>
-            </div>
-            <div style="margin-top:16px;display:flex;gap:8px">
-              <button class="btn btn-ghost btn-sm" id="ai-test-connection">Test Connection</button>
-              <button class="btn btn-primary btn-sm" id="ai-start-service">▶ Start Hiran Inference</button>
-            </div>
-            <div id="ai-start-result" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.45);min-height:14px"></div>
-          </div>
-        </div>
-
-        <div id="ncl-compute" class="section-panel" style="display:none">
-          <div class="control-panel">
-            <h2 class="panel-header-title">Neural Compute Layer</h2>
-            <div class="metric-grid">
-              <div class="metric-card blue">
-                <div class="metric-kicker">ORCHESTRATOR</div>
-                <div class="metric-value blue" id="ncl-orch-status">Unknown</div>
-              </div>
-              <div class="metric-card green">
-                <div class="metric-kicker">NCL STATUS</div>
-                <div class="metric-value green" id="ncl-health">Unknown</div>
-              </div>
-              <div class="metric-card gold">
-                <div class="metric-kicker">ACTIVE WORKERS</div>
-                <div class="metric-value gold" id="ncl-worker-count">0</div>
-              </div>
-              <div class="metric-card purple">
-                <div class="metric-kicker">COMPUTE PRICE</div>
-                <div class="metric-value purple" id="ncl-compute-price">--</div>
-              </div>
-            </div>
-
-            <h3 style="margin-top:20px;font-size:14px;color:rgba(255,255,255,0.7)">Submit Compute Job</h3>
-            <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
-              <select id="ncl-job-type" style="flex:1;padding:8px;border-radius:8px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:white">
-                <option value="inference">Inference</option>
-                <option value="embedding">Embedding</option>
-                <option value="training">Fine-tuning</option>
-              </select>
-              <button class="btn btn-primary btn-sm" id="ncl-submit-btn">Submit Job</button>
-            </div>
-            <div id="ncl-job-result" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.45);min-height:14px"></div>
-
-            <h3 style="margin-top:20px;font-size:14px;color:rgba(255,255,255,0.7)">Leaderboard</h3>
-            <div id="ncl-leaderboard-list" style="max-height:240px;overflow-y:auto;border-radius:10px;background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.06);padding:8px;margin-top:8px">
-              <div style="color:rgba(255,255,255,0.35);text-align:center;padding:20px">Loading...</div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- ── Bridge View ──────────────────────────────────────────────────── -->
 
@@ -6547,414 +7068,10 @@
       <!-- ═══════════════════════════════════════════════ -->
       <!-- DeFi — Staking, Farming, L2 Overview           -->
       <!-- ═══════════════════════════════════════════════ -->
-      <div id="defi-view" class="view-shell d-none">
-        <div class="web29-page-header">
-          <div class="web29-title-stack">
-            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 2</div>
-            <div class="web29-title-row">
-              <h1 class="web29-title text-gradient">DeFi</h1>
-              <div class="web29-chip" id="defi-network-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Base Mainnet</div>
-            </div>
-            <div class="web29-subtitle">wZION on Base — swap, stake, farm, and track your portfolio</div>
-          </div>
-          <div class="header-badge-wrap">
-            <button class="btn btn-ghost btn-sm" id="defi-refresh-btn" title="Refresh DeFi data">
-              <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh"></use></svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Price strip -->
-        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
-          <div class="stat-card" style="padding:12px 14px">
-            <h3 style="font-size:10px">ZION PRICE</h3>
-            <div class="value" id="defi-price-usd" style="font-size:22px">—</div>
-            <div class="label">USD per ZION</div>
-          </div>
-          <div class="stat-card" style="padding:12px 14px">
-            <h3 style="font-size:10px">24H CHANGE</h3>
-            <div class="value" id="defi-price-change" style="font-size:22px">—</div>
-            <div class="label">vs yesterday</div>
-          </div>
-          <div class="stat-card" style="padding:12px 14px">
-            <h3 style="font-size:10px">wZION SUPPLY</h3>
-            <div class="value" id="defi-wzion-supply" style="font-size:22px">—</div>
-            <div class="label">Total minted</div>
-          </div>
-          <div class="stat-card" style="padding:12px 14px">
-            <h3 style="font-size:10px">STAKING APR</h3>
-            <div class="value" id="defi-staking-apr" style="font-size:22px">~12%</div>
-            <div class="label">Estimated</div>
-          </div>
-        </div>
-
-        <div class="section-tabs" data-group="defi">
-          <div class="section-tab active" data-section="defi-swap">
-            <span class="tab-dot"></span>
-            <span>Swap</span>
-          </div>
-          <div class="section-tab" data-section="defi-pools">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
-            <span>Pools</span>
-          </div>
-          <div class="section-tab" data-section="defi-staking">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
-            <span>Staking</span>
-          </div>
-          <div class="section-tab" data-section="defi-farming">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-            <span>Farming</span>
-          </div>
-          <div class="section-tab" data-section="defi-portfolio">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
-            <span>Portfolio</span>
-          </div>
-        </div>
-
-        <!-- ── Swap ──────────────────────────────────────────── -->
-        <div id="defi-swap" class="section-panel active">
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Swap wZION on Uniswap v3</span>
-            </h2>
-            <div class="stack-col panel-mt-20">
-              <div class="control-panel panel-tight" style="border-left:3px solid rgba(99,102,241,0.6)">
-                <div class="stack-col" style="gap:4px">
-                  <span style="font-size:12px;font-weight:600;color:#a5b4fc">wZION / USDT Pool (0.3%)</span>
-                  <div class="inline-row" style="gap:12px;flex-wrap:wrap">
-                    <span style="font-size:12px;color:rgba(255,255,255,0.7)">Price: <strong id="defi-pool-usdt-price">—</strong> USD</span>
-                    <span style="font-size:12px;color:rgba(255,255,255,0.7)">Liquidity: <strong id="defi-pool-usdt-liq">—</strong></span>
-                    <span id="defi-pool-usdt-badge" class="pill pill-compact" style="font-size:10px">Checking...</span>
-                  </div>
-                </div>
-              </div>
-              <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6);margin-top:6px">
-                <div class="stack-col" style="gap:4px">
-                  <span style="font-size:12px;font-weight:600;color:#6ee7b7">wZION / WETH Pool (0.3%)</span>
-                  <div class="inline-row" style="gap:12px;flex-wrap:wrap">
-                    <span style="font-size:12px;color:rgba(255,255,255,0.7)">Price: <strong id="defi-pool-weth-price">—</strong> USD</span>
-                    <span style="font-size:12px;color:rgba(255,255,255,0.7)">Liquidity: <strong id="defi-pool-weth-liq">—</strong></span>
-                    <span id="defi-pool-weth-badge" class="pill pill-compact" style="font-size:10px">Checking...</span>
-                  </div>
-                </div>
-              </div>
-              <div class="inline-row" style="gap:8px;flex-wrap:wrap;margin-top:12px">
-                <button class="btn btn-primary" onclick="window.electronAPI?.openExternal?.('https://app.uniswap.org/swap?chain=base&outputCurrency=0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6')">
-                  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-link"></use></svg>
-                  Swap on Uniswap
-                </button>
-                <button class="btn btn-ghost btn-sm" onclick="window.electronAPI?.openExternal?.('https://zionterranova.com/defi')">
-                  Open DeFi Dashboard
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── Pools ─────────────────────────────────────────── -->
-        <div id="defi-pools" class="section-panel">
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Uniswap v3 Pools (Base)</span>
-            </h2>
-            <div class="stack-col panel-mt-20" id="defi-pools-grid">
-              <!-- Populated by renderer -->
-              <div style="color:rgba(255,255,255,0.35);font-size:12px">Loading pool data...</div>
-            </div>
-            <div class="inline-row" style="margin-top:12px;gap:8px">
-              <button class="btn btn-primary btn-sm" onclick="window.electronAPI?.openExternal?.('https://app.uniswap.org/add/v3/base?currency0=0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6')">
-                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-spark"></use></svg>
-                Add Liquidity
-              </button>
-              <button class="btn btn-ghost btn-sm" onclick="window.electronAPI?.openExternal?.('https://app.uniswap.org/pool?chain=base')">
-                My Positions
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── Staking ────────────────────────────────────────── -->
-        <div id="defi-staking" class="section-panel">
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> Stake wZION</span>
-            </h2>
-            <div class="stack-col panel-mt-20">
-              <div class="control-panel panel-tight" style="border-left:3px solid rgba(99,102,241,0.6)">
-                <div class="stack-col" style="gap:6px">
-                  <div class="inline-row" style="gap:20px;flex-wrap:wrap">
-                    <span style="font-size:12px;color:rgba(255,255,255,0.5)">Total Staked: <strong id="defi-total-staked">—</strong></span>
-                    <span style="font-size:12px;color:rgba(255,255,255,0.5)">APR: <strong id="defi-staking-apr-detail">~12%</strong></span>
-                    <span style="font-size:12px;color:rgba(255,255,255,0.5)">Network: <strong id="defi-network">Base Mainnet</strong></span>
-                  </div>
-                </div>
-              </div>
-              <div class="form-group" style="margin-top:12px">
-                <label>Amount (wZION)</label>
-                <input type="number" id="defi-stake-amount" placeholder="0.0" min="0" step="0.01" class="form-control" />
-              </div>
-              <div class="inline-row" style="gap:8px;flex-wrap:wrap">
-                <button class="btn btn-primary btn-sm" id="defi-stake-btn">Stake</button>
-                <button class="btn btn-ghost btn-sm" id="defi-unstake-btn">Unstake</button>
-                <button class="btn btn-ghost btn-sm" id="defi-claim-btn">Claim Rewards</button>
-              </div>
-              <div id="defi-stake-status" class="status-note" style="margin-top:8px"></div>
-              <div class="control-panel panel-tight" style="border-left:3px solid rgba(249,115,22,0.5);margin-top:8px">
-                <span style="font-size:11px;color:rgba(255,255,255,0.5)">Staking requires MetaMask connected to Base Mainnet. Use the website for full on-chain interaction.</span>
-              </div>
-              <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-top:6px" onclick="window.electronAPI?.openExternal?.('https://zionterranova.com/defi/staking')">
-                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-link"></use></svg>
-                Open Staking on Website
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── Farming ────────────────────────────────────────── -->
-        <div id="defi-farming" class="section-panel">
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> LP Farming</span>
-            </h2>
-            <div class="stack-col panel-mt-20">
-              <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6)">
-                <div class="stack-col" style="gap:4px">
-                  <span style="font-size:12px;color:rgba(255,255,255,0.5)">Active Pools: <strong id="defi-farm-pools">—</strong> &nbsp;|&nbsp; Reward rate: <strong id="defi-farm-rps">—</strong> wZION/s</span>
-                </div>
-              </div>
-              <div id="defi-farm-pool-list" class="stack-col panel-mt-20" style="gap:8px">
-                <div class="control-panel panel-tight">
-                  <div class="stack-col" style="gap:6px">
-                    <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.8)">wZION / USDT — Pool #0</span>
-                    <div class="inline-row" style="gap:12px">
-                      <span style="font-size:12px;color:rgba(255,255,255,0.5)">APR: <strong>—</strong></span>
-                      <span style="font-size:12px;color:rgba(255,255,255,0.5)">TVL: <strong>—</strong></span>
-                    </div>
-                    <div class="inline-row" style="gap:6px">
-                      <button class="btn btn-ghost btn-sm" id="defi-farm-deposit-btn">Deposit LP</button>
-                      <button class="btn btn-ghost btn-sm" id="defi-farm-withdraw-btn">Withdraw</button>
-                      <button class="btn btn-primary btn-sm" id="defi-farm-harvest-btn">Harvest</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div id="defi-farm-status" class="status-note" style="margin-top:8px"></div>
-              <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-top:6px" onclick="window.electronAPI?.openExternal?.('https://zionterranova.com/defi/farming')">
-                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-link"></use></svg>
-                Open Farming on Website
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── Portfolio ──────────────────────────────────────── -->
-        <div id="defi-portfolio" class="section-panel">
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg> Portfolio</span>
-            </h2>
-            <div class="stack-col panel-mt-20">
-              <div class="form-group form-group-no-margin">
-                <label>Your EVM Address (Base)</label>
-                <div class="inline-row">
-                  <input type="text" id="defi-portfolio-evm" placeholder="0x..." class="input-flex-mono" maxlength="42" />
-                  <button class="btn btn-primary btn-sm" id="defi-portfolio-lookup-btn">Lookup</button>
-                </div>
-              </div>
-              <div id="defi-portfolio-result" class="stack-col" style="gap:8px;display:none;margin-top:12px">
-                <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6)">
-                  <div class="stack-col" style="gap:4px">
-                    <span style="font-size:12px;color:rgba(255,255,255,0.5)">wZION Balance</span>
-                    <span style="font-size:20px;font-weight:700;color:#6ee7b7" id="defi-portfolio-wzion">—</span>
-                  </div>
-                </div>
-                <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);gap:8px">
-                  <div class="stat-card" style="padding:10px 12px">
-                    <h3 style="font-size:10px">STAKED</h3>
-                    <div class="value" id="defi-portfolio-staked" style="font-size:18px">—</div>
-                    <div class="label">wZION staked</div>
-                  </div>
-                  <div class="stat-card" style="padding:10px 12px">
-                    <h3 style="font-size:10px">PENDING</h3>
-                    <div class="value" id="defi-portfolio-pending" style="font-size:18px">—</div>
-                    <div class="label">Rewards</div>
-                  </div>
-                  <div class="stat-card" style="padding:10px 12px">
-                    <h3 style="font-size:10px">LP TOKENS</h3>
-                    <div class="value" id="defi-portfolio-lp" style="font-size:18px">—</div>
-                    <div class="label">Deposited</div>
-                  </div>
-                </div>
-              </div>
-              <div id="defi-portfolio-status" class="status-note" style="margin-top:8px"></div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- ═══════════════════════════════════════════════ -->
       <!-- DAO — On-Chain Governance                      -->
       <!-- ═══════════════════════════════════════════════ -->
-      <div id="dao-view" class="view-shell d-none">
-
-        <!-- ── Page Header ───────────────────────────────────── -->
-        <div class="web29-page-header">
-          <div class="web29-title-stack">
-            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 2 · Governance</div>
-            <div class="web29-title-row">
-              <h1 class="web29-title text-gradient">DAO</h1>
-              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>4B ZION Treasury · 5-of-7 Multisig · Token Governance</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── Section Tabs ─────────────────────────────────── -->
-        <div class="section-tabs" data-group="dao">
-          <div class="section-tab active" data-section="dao-proposals"><span class="tab-dot"></span><span>Proposals</span></div>
-          <div class="section-tab" data-section="dao-treasury"><svg class="tab-icon icon" aria-hidden="true"><use href="#i-wallet"></use></svg><span>Treasury</span></div>
-          <div class="section-tab" data-section="dao-guardians"><svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg><span>Guardians</span></div>
-          <div class="section-tab" data-section="dao-humanitarian"><svg class="tab-icon icon" aria-hidden="true"><use href="#i-info"></use></svg><span>Humanitarian</span></div>
-          <div class="section-tab" data-section="dao-config"><svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg><span>Config</span></div>
-        </div>
-
-        <!-- ── TAB: Proposals ── -->
-        <div id="dao-proposals" class="section-panel active">
-          <div class="control-panel">
-            <div class="card-heading">
-              <div class="card-icon gradient-purple"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg></div>
-              <div><p class="card-kicker">Governance</p><h3>Active Proposals</h3></div>
-            </div>
-            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
-              Token-weighted voting: 1 ZION = 1 vote. Proposals require 1M ZION minimum stake. Voting via L1 TX memo: <code style="color:var(--zion-cyan); font-size:12px">DAO:vote:&lt;id&gt;:&lt;choice&gt;</code>
-            </p>
-          </div>
-          <div class="dao-proposal-list" id="dao-proposal-list">
-            <div style="color:rgba(255,255,255,0.35);text-align:center;margin-top:40px">No active proposals yet.</div>
-          </div>
-        </div>
-
-        <!-- ── TAB: Treasury ── -->
-        <div id="dao-treasury" class="section-panel">
-          <div class="dao-treasury-card">
-            <div class="dao-treasury-label">Total Treasury Balance</div>
-            <div class="dao-treasury-value" id="dao-treasury-balance">4,000,000,000 ZION</div>
-            <div class="dao-treasury-label">3 multisig wallets · 100M ZION/day spend limit</div>
-          </div>
-          <div class="oasis-stats-row" style="margin-top:20px">
-            <div class="oasis-stat"><div class="oasis-stat-value" id="dao-daily-spent">0</div><div class="oasis-stat-label">Spent Today</div></div>
-            <div class="oasis-stat"><div class="oasis-stat-value" id="dao-ops-pending">0</div><div class="oasis-stat-label">Pending Ops</div></div>
-            <div class="oasis-stat"><div class="oasis-stat-value" id="dao-total-disbursed">0</div><div class="oasis-stat-label">Total Disbursed</div></div>
-            <div class="oasis-stat"><div class="oasis-stat-value" id="dao-signers">0 / 7</div><div class="oasis-stat-label">Active Guardians</div></div>
-          </div>
-          <div class="control-panel mt-20">
-            <div class="card-heading">
-              <div class="card-icon gradient-gold"><svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg></div>
-              <div><p class="card-kicker">Operations</p><h3>Treasury Operations</h3></div>
-            </div>
-            <table class="dex-chain-table">
-              <thead><tr><th>Type</th><th>Detail</th><th>Threshold</th></tr></thead>
-              <tbody>
-                <tr><td>Spend</td><td>Fund proposals, grants, humanitarian</td><td>5-of-7 multisig</td></tr>
-                <tr><td>Humanitarian Grant</td><td>Direct funding to humanitarian causes</td><td>5-of-7 multisig</td></tr>
-                <tr><td>Rebalance</td><td>Move funds between treasury wallets</td><td>5-of-7 multisig</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ── TAB: Guardians ── -->
-        <div id="dao-guardians" class="section-panel">
-          <div class="control-panel">
-            <div class="card-heading">
-              <div class="card-icon gradient-cyan"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg></div>
-              <div><p class="card-kicker">5-of-7 Multisig</p><h3>Guardian Council</h3></div>
-            </div>
-            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
-              Guardian council secures the DAO treasury. 5 out of 7 guardians must sign every treasury operation. Emergency actions (pause bridge, freeze treasury, halt validator) require guardian consensus.
-            </p>
-          </div>
-          <div class="dao-guardian-grid" id="dao-guardian-grid">
-            <div style="color:rgba(255,255,255,0.35);text-align:center;margin-top:40px">Guardian data not available offline.</div>
-          </div>
-          <div class="control-panel mt-20">
-            <div class="card-heading">
-              <div class="card-icon gradient-purple"><svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg></div>
-              <div><p class="card-kicker">Whitelist</p><h3>Emergency Actions</h3></div>
-            </div>
-            <table class="dex-chain-table">
-              <thead><tr><th>Action</th><th>Description</th><th>Cooldown</th></tr></thead>
-              <tbody>
-                <tr><td>pause_bridge</td><td>Halt all bridge operations immediately</td><td>None</td></tr>
-                <tr><td>unpause_bridge</td><td>Resume bridge operations</td><td>1h</td></tr>
-                <tr><td>freeze_treasury</td><td>Freeze all treasury spending</td><td>None</td></tr>
-                <tr><td>unfreeze_treasury</td><td>Unfreeze treasury operations</td><td>1h</td></tr>
-                <tr><td>halt_validator</td><td>Remove a misbehaving validator</td><td>None</td></tr>
-                <tr><td>rotate_guardian</td><td>Replace a guardian key</td><td>48h</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ── TAB: Humanitarian ── -->
-        <div id="dao-humanitarian" class="section-panel">
-          <div class="control-panel">
-            <div class="card-heading">
-              <div class="card-icon gradient-gold"><svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg></div>
-              <div><p class="card-kicker">1.44B ZION Genesis</p><h3>Humanitarian Fund</h3></div>
-            </div>
-            <p style="color:rgba(255,255,255,0.4); font-size:13px; margin-top:8px; line-height:1.6">
-              The DAO manages a 1.44 billion ZION humanitarian fund distributed across 7 categories. Proposals of type <code style="color:var(--zion-cyan); font-size:12px">Humanitarian</code> can allocate funds to specific regions and causes. Quorum: 10%, voting period: 7 days.
-            </p>
-          </div>
-          <div class="tithe-grid" id="dao-humanitarian-grid">
-            <div style="color:rgba(255,255,255,0.35);text-align:center;margin-top:40px">No disbursements yet.</div>
-          </div>
-          <div class="tithe-total-bar" style="margin-top:20px">
-            <div><div class="tithe-total-label">Humanitarian Genesis Pool</div></div>
-            <div class="tithe-total-value">1,440,000,000 ZION</div>
-          </div>
-        </div>
-
-        <!-- ── TAB: Config ── -->
-        <div id="dao-config" class="section-panel">
-          <div class="control-panel">
-            <div class="card-heading">
-              <div class="card-icon gradient-purple"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg></div>
-              <div><p class="card-kicker">Governance Parameters</p><h3>DAO Configuration</h3></div>
-            </div>
-            <table class="dex-chain-table" style="margin-top:14px">
-              <thead><tr><th>Parameter</th><th>Value</th><th>Changeable</th></tr></thead>
-              <tbody>
-                <tr><td>Quorum Required</td><td>10%</td><td>via Parameter proposal (1-50%)</td></tr>
-                <tr><td>Voting Period</td><td>7 days</td><td>via Parameter proposal (1-30d)</td></tr>
-                <tr><td>Timelock</td><td>48 hours</td><td>via Parameter proposal (12-168h)</td></tr>
-                <tr><td>Daily Spend Limit</td><td>100M ZION</td><td>via Parameter proposal (max 500M)</td></tr>
-                <tr><td>Multisig Threshold</td><td>5-of-7</td><td>via Parameter proposal (min 3)</td></tr>
-                <tr><td>Proposal Threshold</td><td>1M ZION</td><td>via Parameter proposal</td></tr>
-                <tr><td>L1 Scanner Interval</td><td>10s</td><td>Config file</td></tr>
-                <tr><td>Finality Blocks</td><td>6</td><td>Config file</td></tr>
-                <tr><td>API Port</td><td>8080</td><td>Config file</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="control-panel mt-20">
-            <div class="card-heading">
-              <div class="card-icon gradient-cyan"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg></div>
-              <div><p class="card-kicker">5 Types</p><h3>Proposal Types</h3></div>
-            </div>
-            <table class="dex-chain-table" style="margin-top:14px">
-              <thead><tr><th>Type</th><th>Quorum</th><th>Period</th><th>Description</th></tr></thead>
-              <tbody>
-                <tr><td>Parameter</td><td>10%</td><td>7d</td><td>Change governance parameters</td></tr>
-                <tr><td>Treasury</td><td>15%</td><td>7d</td><td>Spend from treasury (recipient + amount)</td></tr>
-                <tr><td>Emergency</td><td>20%</td><td>3d</td><td>Emergency actions (pause/freeze/halt)</td></tr>
-                <tr><td>Grant</td><td>10%</td><td>7d</td><td>Milestone-based grants</td></tr>
-                <tr><td>Humanitarian</td><td>10%</td><td>7d</td><td>Fund humanitarian causes</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
 
       <!-- ═══════════════════════════════════════════════ -->
       <!-- WARP — Cross-Chain Corridors                   -->
@@ -6968,209 +7085,6 @@
       <!-- ═══════════════════════════════════════════════════ -->
       <!-- TREE NODE — L1 Core Node Runner                     -->
       <!-- ═══════════════════════════════════════════════════ -->
-      <div id="node-view" class="view-shell d-none">
-
-        <!-- ── Page Header ───────────────────────────────────── -->
-        <div class="web29-page-header">
-          <div class="web29-title-stack">
-            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 1</div>
-            <div class="web29-title-row">
-              <h1 class="web29-title text-gradient">Tree Node</h1>
-              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>ZION Network · P2P</div>
-            </div>
-            <div class="web29-subtitle">Spusť lokální L1 core node jedním kliknutím — peer-to-peer, bez zprostředkovatele.</div>
-          </div>
-        </div>
-
-        <!-- ── Node Action Bar ─────────────────────────────────── -->
-        <div class="control-panel panel-tight">
-          <div class="actions-row">
-            <div class="node-status-pill">
-              <div id="node-status-dot" class="node-status-dot"></div>
-              <span id="node-status-text" class="node-status-text">Offline</span>
-            </div>
-            <div style="flex:1"></div>
-            <button id="node-toggle-btn" class="btn btn-primary">
-              <svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>
-              <span id="node-btn-label">Spustit Node</span>
-            </button>
-            <button id="node-refresh-btn" class="btn btn-ghost btn-sm" title="Obnovit stav">
-              <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- ── Section Tabs ─────────────────────────────────── -->
-        <div class="section-tabs" data-group="node">
-          <div class="section-tab active" data-section="node-overview">
-            <span class="tab-dot"></span>
-            <span>Přehled</span>
-          </div>
-          <div class="section-tab" data-section="node-peers-tab">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
-            <span>Peery</span>
-          </div>
-          <div class="section-tab" data-section="node-settings-tab">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg>
-            <span>Nastavení</span>
-          </div>
-          <div class="section-tab" data-section="node-log-tab">
-            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-logs"></use></svg>
-            <span>Log</span>
-          </div>
-        </div>
-
-        <!-- ═══ SECTION: Přehled ═══ -->
-        <div id="node-overview" class="section-panel active">
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> Stav Node</span>
-              <span class="muted-time" id="node-updated">—</span>
-            </h2>
-            <div class="metric-grid panel-mt-20">
-              <div class="metric-card blue">
-                <div class="metric-kicker">VÝŠKA BLOKU</div>
-                <div class="metric-value blue" id="node-stat-height">—</div>
-              </div>
-              <div class="metric-card green">
-                <div class="metric-kicker">PEERY</div>
-                <div class="metric-value green" id="node-stat-peers">—</div>
-              </div>
-              <div class="metric-card gold">
-                <div class="metric-kicker">SYNCHRONIZACE</div>
-                <div class="metric-value gold" id="node-stat-sync">—</div>
-              </div>
-              <div class="metric-card purple">
-                <div class="metric-kicker">BLOKŮ / S</div>
-                <div class="metric-value purple" id="node-stat-bps">—</div>
-              </div>
-            </div>
-            <div class="metric-grid panel-mt-20">
-              <div class="metric-card blue">
-                <div class="metric-kicker">POOL HASHRATE</div>
-                <div class="metric-value blue" id="node-pool-hashrate">—</div>
-              </div>
-              <div class="metric-card green">
-                <div class="metric-kicker">POOL MINERS</div>
-                <div class="metric-value green" id="node-pool-miners">—</div>
-              </div>
-              <div class="metric-card gold">
-                <div class="metric-kicker">SYNC GAP</div>
-                <div class="metric-value gold" id="node-sync-gap">—</div>
-              </div>
-              <div class="metric-card purple">
-                <div class="metric-kicker">POOL BLOCKS</div>
-                <div class="metric-value purple" id="node-pool-blocks">—</div>
-              </div>
-            </div>
-            <!-- IBD progress -->
-            <div id="node-ibd-bar-wrap" class="ibd-bar-wrap">
-              <div class="ibd-bar-meta">
-                <span class="ibd-bar-label">
-                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
-                  Initial Block Download
-                </span>
-                <span id="node-ibd-pct" class="ibd-bar-pct">0%</span>
-              </div>
-              <div class="ibd-bar-track">
-                <div id="node-ibd-bar" class="ibd-bar-fill"></div>
-              </div>
-              <div id="node-ibd-eta" class="ibd-bar-eta"></div>
-            </div>
-          </div>
-          <!-- Status message bar -->
-          <div id="node-sync-bar" class="sync-bar">
-            <span id="node-sync-icon">⚡</span>
-            <span id="node-sync-text">Node není spuštěn — klikni na <b>Spustit Node</b></span>
-          </div>
-        </div>
-
-        <!-- ═══ SECTION: Peery ═══ -->
-        <div id="node-peers-tab" class="section-panel">
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> P2P Peery</span>
-              <span class="panel-header-title">
-                <span class="muted-time" id="node-peers-updated">—</span>
-                <button class="btn btn-ghost btn-sm" id="node-refresh-peers-btn">
-                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
-                  Obnovit
-                </button>
-              </span>
-            </h2>
-            <div class="metric-grid panel-mt-20">
-              <div class="metric-card green">
-                <div class="metric-kicker">PŘIPOJENO</div>
-                <div class="metric-value green" id="node-peers-active">—</div>
-              </div>
-              <div class="metric-card blue">
-                <div class="metric-kicker">KNOWN PEERS</div>
-                <div class="metric-value blue" id="node-peers-known">—</div>
-              </div>
-              <div class="metric-card purple">
-                <div class="metric-kicker">SEED NODES</div>
-                <div class="metric-value purple">3</div>
-              </div>
-            </div>
-            <div id="node-peers-list" class="stack-col scroll panel-mt-20">
-              <div class="placeholder-row">— žádné peery —</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ SECTION: Nastavení ═══ -->
-        <div id="node-settings-tab" class="section-panel">
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg> Konfigurace Node</span>
-            </h2>
-            <div class="node-settings-grid">
-              <label class="node-settings-label">
-                P2P Port
-                <input id="node-cfg-p2p" class="wizard-input" type="number" value="8334" min="1024" max="65535">
-              </label>
-              <label class="node-settings-label">
-                RPC Port
-                <input id="node-cfg-rpc" class="wizard-input" type="number" value="8545" min="1024" max="65535">
-              </label>
-            </div>
-            <div class="node-settings-grid" style="margin-top:12px;grid-template-columns:1fr">
-              <label class="node-settings-label">
-                Network
-                <select id="node-cfg-network" class="algo-select">
-                  <option value="mainnet">mainnet</option>
-                  <option value="testnet">testnet</option>
-                  <option value="devnet">devnet</option>
-                </select>
-              </label>
-            </div>
-            <div id="node-binary-status" class="node-binary-status">
-              Binary: hledám…
-            </div>
-          </div>
-          <!-- Checkpoints card -->
-          <div class="control-panel panel-mt-20">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> Checkpointy sítě</span>
-            </h2>
-            <div id="node-checkpoint-list" class="stack-col panel-mt-20">
-              <div class="placeholder-row">Načítám checkpointy…</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ SECTION: Log ═══ -->
-        <div id="node-log-tab" class="section-panel">
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-logs"></use></svg> Node Log</span>
-              <button class="btn btn-ghost btn-sm" id="node-clear-log-btn">Vymazat</button>
-            </h2>
-            <div id="node-console" class="node-console">— čekám na spuštění —</div>
-          </div>
-        </div>
-
-      </div><!-- /#node-view -->
 
       <!-- ═══════════════════════════════════════════════════ -->
       <!-- CLI — ZION Unified Command Line Interface             -->
@@ -7312,6 +7226,28 @@ Click a button above to run a command.
       <!-- ═══════════════════════════════════════════════════ -->
       <!-- ISSOBELLA — Orbital Observatory & Station (L6)     -->
       <!-- ═══════════════════════════════════════════════════ -->
+      <div id="market-view" class="view-shell view-hidden">
+        <div class="web29-page-header" style="margin-bottom:10px;">
+          <div class="web29-title-stack">
+            <h1 class="web29-title text-gradient">MarketPlace</h1>
+            <p class="web29-subtitle">MarketPlace opens in the secure desktop frame below.</p>
+          </div>
+        </div>
+        <div class="web-embed-wrap" style="width:100%;height:calc(100vh - 230px);border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+          <iframe id="market-iframe" src="https://market.zionterranova.com" title="MarketPlace" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" style="width:100%;height:100%;border:none;"></iframe>
+        </div>
+      </div>
+      <div id="oasis-view" class="view-shell view-hidden">
+        <div class="web29-page-header" style="margin-bottom:10px;">
+          <div class="web29-title-stack">
+            <h1 class="web29-title text-gradient">OASIS</h1>
+            <p class="web29-subtitle">OASIS opens in the secure desktop frame below.</p>
+          </div>
+        </div>
+        <div class="web-embed-wrap" style="width:100%;height:calc(100vh - 230px);border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+          <iframe id="oasis-iframe" src="https://oasis.zionterranova.com" title="OASIS" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" style="width:100%;height:100%;border:none;"></iframe>
+        </div>
+      </div>
     </div> <!-- /main-content -->
 
     <!-- ═══ Dock Navigation (macOS-style) ═══ -->
@@ -7320,7 +7256,6 @@ Click a button above to run a command.
         <img src="../assets/logo.jpg" alt="ZION" />
       </div>
       <div class="dock-sep"></div>
-
       <div class="nav-item active" data-view="dashboard">
         <svg class="icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
         <span>Home</span>
@@ -7329,39 +7264,18 @@ Click a button above to run a command.
         <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
         <span>Wallet</span>
       </div>
-      <div class="nav-item" data-view="bridge">
-        <svg class="icon" aria-hidden="true"><use href="#i-bridge"></use></svg>
-        <span>Bridge</span>
+      <div class="nav-item" data-view="multichain">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 6.76l2.83-2.83"/></svg>
+        <span>Multichain</span>
       </div>
-      <div class="nav-item" data-view="dex">
-        <svg class="icon" aria-hidden="true"><use href="#i-swap"></use></svg>
-        <span>ZionDex</span>
+      <div class="nav-item" data-view="market">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22v-2a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2M3 8h18M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8H3V6Z"/></svg>
+        <span>Market</span>
       </div>
-      <div class="nav-item" data-view="defi">
-        <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-        <span>DeFi</span>
+      <div class="nav-item" data-view="oasis">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20 10 10 0 0 1 0-20"/><path d="M12 6a6 6 0 0 1 0 12 6 6 0 0 1 0-12"/></svg>
+        <span>Oasis</span>
       </div>
-      <div class="nav-item" data-view="dao">
-        <svg class="icon" aria-hidden="true">
-          <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M3 10h18M8 5v14M16 5v14" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-        </svg>
-        <span>DAO</span>
-      </div>
-      <div class="nav-item" data-view="network">
-        <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
-        <span>Network</span>
-      </div>
-      <div class="nav-item" data-view="node">
-        <svg class="icon" aria-hidden="true">
-          <circle cx="12" cy="12" r="3" fill="currentColor"/>
-          <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" stroke="currentColor" stroke-width="1.5" fill="none"/>
-        </svg>
-        <span>Node</span>
-      </div>
-
-      <div class="dock-sep"></div>
-
       <div class="nav-item" data-view="cli">
         <svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg>
         <span>CLI</span>
@@ -7373,12 +7287,6 @@ Click a button above to run a command.
       <div class="nav-item" data-view="logs">
         <svg class="icon" aria-hidden="true"><use href="#i-logs"></use></svg>
         <span>Logs</span>
-      </div>
-      <div class="nav-item" data-view="ai">
-        <svg class="icon" aria-hidden="true">
-          <path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7zM9 21h6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span>Hiran AI</span>
       </div>
       <div class="nav-item" data-view="about">
         <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>

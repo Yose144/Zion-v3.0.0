@@ -8,13 +8,13 @@
 # stream, but the miner still runs Trinity streams 2/3 in the background.
 #
 # Usage:  ./DesktopAgentP3.0.6/build.sh
-# Output: DesktopAgentP3.0.6/dist/zion-public-miner-v3.0.6-linux-x86_64.AppImage
-#         DesktopAgentP3.0.6/dist/zion-public-miner-v3.0.6-linux-amd64.deb
+# Output: DesktopAgentP3.0.6/dist/zion-public-miner-v3.1.0-linux-x86_64.AppImage
+#         DesktopAgentP3.0.6/dist/zion-public-miner-v3.1.0-linux-amd64.deb
 # ──────────────────────────────────────────────────────────────
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VERSION="v3.0.6"
+VERSION="v3.1.0"
 
 # Public release uses the generic x86-64 target by default for maximum
 # compatibility. Override with ZION_CPU_TARGET=x86-64-v3 for the AVX2/BMI2 build.
