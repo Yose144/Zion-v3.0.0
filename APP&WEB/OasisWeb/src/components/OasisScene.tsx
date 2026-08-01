@@ -22,20 +22,26 @@ const TERRITORIES = [
   { id: 'radha', name: 'Zahrada Radhy', color: '#f97316', angle: 315, size: 0.55, info: 'Rádha — radost, hudba a uvítání nováčků.' },
 ];
 
-function CameraRig({ started }: { started: boolean }) {
+interface CameraRigProps {
+  started: boolean;
+  onArrived?: () => void;
+}
+
+function CameraRig({ started, onArrived }: CameraRigProps) {
   const { camera } = useThree();
   const controlsRef = useRef<ReturnType<typeof OrbitControls> | null>(null);
   const progress = useRef(0);
   const arrived = useRef(false);
+  const notified = useRef(false);
 
   useFrame((state, delta) => {
     if (started && !arrived.current) {
-      progress.current = Math.min(1, progress.current + delta * 0.24);
+      progress.current = Math.min(1, progress.current + delta * 0.22);
       const t = 1 - Math.pow(1 - progress.current, 3); // ease-out cubic
 
       // Fly from the outer rim of the galaxy toward the glowing center
       const startPos = new THREE.Vector3(0, 3.5, 34);
-      const endPos = new THREE.Vector3(0, 1.2, 13);
+      const endPos = new THREE.Vector3(0, 0.9, 7.5);
       camera.position.lerpVectors(startPos, endPos, t);
       camera.lookAt(0, 0.6, 0);
 
@@ -46,6 +52,10 @@ function CameraRig({ started }: { started: boolean }) {
 
       if (progress.current >= 1) {
         arrived.current = true;
+        if (onArrived && !notified.current) {
+          notified.current = true;
+          onArrived();
+        }
       }
     }
   });
@@ -101,9 +111,10 @@ function TerritoryRing() {
 
 interface OasisSceneProps {
   started?: boolean;
+  onArrived?: () => void;
 }
 
-export default function OasisScene({ started = true }: OasisSceneProps) {
+export default function OasisScene({ started = true, onArrived }: OasisSceneProps) {
   return (
     <Canvas camera={{ position: [0, 3.5, 34], fov: 55 }} dpr={[1, 2]}>
       <color attach="background" args={['#02030a']} />
@@ -126,7 +137,7 @@ export default function OasisScene({ started = true }: OasisSceneProps) {
       <TerritoryRing />
 
       {/* Arrival flight and controls */}
-      <CameraRig started={started} />
+      <CameraRig started={started} onArrived={onArrived} />
 
       {/* Bloom for glow */}
       <EffectComposer>
