@@ -31,6 +31,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'nvidia-cuda-gpu-benchmark-300hs',
+    date: '2026-08-02',
+    tag: { cs: 'Mining', en: 'Mining' },
+    tagColor: 'text-cyan-400',
+    title: {
+      cs: 'Nvidia + CUDA vede na ZIONu — až 300 H/s, AMD/OpenCL se ladí',
+      en: 'Nvidia + CUDA leads on ZION — up to 300 H/s, AMD/OpenCL being tuned',
+    },
+    summary: {
+      cs: 'GPU těžba na ZION ekosystému ukazuje jasného lídra: Nvidia karty s CUDA backendem dosahují až 300 H/s. CUDA cesta je nyní nejvyladěnější — od stream synchronizace po memory management pro velké R tabulky. AMD karty přes OpenCL zatím zaostávají, ale aktivně na tom pracujeme. Pozitivní vedlejší efekt: AMD karty produkují více tepla — ideální pro zimní těžbu a vytápění. Cíl: plná OpenCL parity s CUDA, aby každá GPU mohla těžit ZION efektivně. Auto GPU backend detekce vybere nejlepší dostupný backend automaticky (CUDA > OpenCL > Metal > CPU).',
+      en: 'GPU mining on the ZION ecosystem shows a clear leader: Nvidia cards with the CUDA backend reach up to 300 H/s. The CUDA path is currently the most polished — from stream synchronization to memory management for large R tables. AMD cards via OpenCL are lagging for now, but we are actively working on it. Positive side effect: AMD cards produce more heat — ideal for winter mining and heating. Goal: full OpenCL parity with CUDA so every GPU can mine ZION efficiently. Auto GPU backend detection picks the best available backend automatically (CUDA > OpenCL > Metal > CPU).',
+    },
+    href: '/benchmarks',
+  },
+  {
     slug: 'boost-miner-v310-released',
     date: '2026-08-02',
     tag: { cs: 'Release', en: 'Release' },
