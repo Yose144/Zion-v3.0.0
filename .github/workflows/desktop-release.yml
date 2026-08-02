@@ -83,7 +83,7 @@ jobs:
       - name: Build Linux packages
         run: |
           node scripts/prepare-rust-miner.js --auto
-          npx electron-builder --linux --x64
+          npx electron-builder --linux --x64 --publish never
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -139,7 +139,7 @@ jobs:
           INCLUDE: ${{ env.INCLUDE }}
         run: |
           node scripts/prepare-rust-miner.js --features "full,gpu-cuda"
-          npx electron-builder --win --x64
+          npx electron-builder --win --x64 --publish never
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -173,7 +173,7 @@ jobs:
       - name: Build macOS package
         run: |
           node scripts/prepare-rust-miner.js --features "full,gpu-metal"
-          npx electron-builder --mac
+          npx electron-builder --mac --publish never
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
