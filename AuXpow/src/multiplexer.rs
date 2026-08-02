@@ -187,23 +187,30 @@ impl Drop for JobMultiplexer {
 /// Compute the effective share target for a job.
 ///
 /// For many external pools the share target (boundary) is sent directly in the
-/// job notification.  For these algorithms we must use the job's target_bytes,
-/// because `client.share_target()` is only updated by `mining.set_difficulty` /
-/// `mining.set_target` and falls back to the easiest possible target when the
-/// pool does not send those messages (e.g. 2miners ETC/RVN).  Using the global
-/// fallback produced all-0xFF share targets and caused low-difficulty
-/// "Invalid share" rejects upstream.
+/// job notification or via `mining.set_target`.  For these algorithms we must
+/// use the job's `target_bytes` (which preserves the raw 32-byte boundary),
+/// because `client.share_target()` recomputes from a float `current_difficulty`
+/// via `difficulty_to_target_with_max()`, causing precision loss that makes
+/// the target EASIER than what the upstream pool actually set.  The upstream
+/// pool then rejects shares with "low difficulty share" (error 23).
 ///
-/// Coins that rely on dynamic difficulty updates keep using `client.share_target()`.
+/// This is critical for VerusHash (VRSC / LuckPool): the raw target from
+/// `mining.set_target` is `0000004000000000...`, but the float round-trip
+/// produces `000000400200100080040020...` which is ~2^21× easier, causing
+/// 100% reject rate.
+///
+/// Coins that rely on dynamic difficulty updates and don't send a raw
+/// target in notify/set_target keep using `client.share_target()`.
 async fn effective_share_target(client: &AuxPowClient, job: &ExternalJob) -> [u8; 32] {
     let algo = client.profile().algorithm.to_ascii_lowercase();
     let uses_notify_target = matches!(
         algo.as_str(),
         "randomx" | "ghostrider" | "ethash" | "etchash" | "kawpow"
-            | "evrprogpow" | "meowpow" | "progpow" | "autolykos"
+            | "evrprogpow" | "meowpow" | "progpow" | "autolykos" | "verushash"
     );
     if uses_notify_target {
-        // Use the target from the job notification directly
+        // Use the raw target from the job notification / mining.set_target
+        // directly — avoids float precision loss in difficulty↔target round-trip.
         job.target_bytes
     } else {
         client.share_target().await
