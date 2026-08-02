@@ -212,24 +212,26 @@ jobs:
           if-no-files-found: error
 
   build-macos-x86_64:
-    name: Build macOS Intel
+    name: Build macOS Intel (cross from ARM64)
     if: github.event_name == 'push' || inputs.build_macos_x86_64 == true
-    runs-on: macos-13
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
 
       - name: Build miner
         working-directory: MinerP3.0.6/miner
         env:
           ZION_DISABLE_OPENMP: "1"
-        run: cargo build --release
+        run: cargo build --release --target x86_64-apple-darwin
 
       - name: Package
         run: |
           mkdir -p MinerP3.0.6/dist
-          cp MinerP3.0.6/miner/target/release/zion-miner MinerP3.0.6/dist/
+          cp MinerP3.0.6/miner/target/x86_64-apple-darwin/release/zion-miner MinerP3.0.6/dist/
           cd MinerP3.0.6/dist
           tar czf zion-miner-v${{ env.VERSION }}-macos-x86_64.tar.gz zion-miner
           shasum -a 256 zion-miner-v${{ env.VERSION }}-macos-x86_64.tar.gz
