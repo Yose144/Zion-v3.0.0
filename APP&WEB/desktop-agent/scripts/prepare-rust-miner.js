@@ -61,22 +61,10 @@ function copyIfExists(src, dst) {
 }
 
 function windowsMinerFeatures() {
-  // Windows MSVC lib.exe can hit command-line length limits with the full
-  // `native-all` stack because RandomX and GhostRider compile 20+ .c/.cpp
-  // files. Use a focused feature set that still supports Trinity
-  // triple-stream mining (ZION + GPU external + CPU external) without XMR
-  // and RTM native acceleration on this platform.
-  return [
-    'gpu-opencl',
-    'native-etchash',
-    'native-kawpow',
-    'native-autolykos',
-    'native-kheavyhash',
-    'native-blake3-algo',
-    'native-cosmic-harmony',
-    'native-verushash',
-    'native-hashers'
-  ].join(',');
+  // Full native stack for Windows — all algorithms including RandomX (XMR)
+  // and GhostRider (RTM).  The previous command-line length limit issue was
+  // resolved by using the `full` feature alias which Cargo expands server-side.
+  return 'full';
 }
 
 function detectPlatformFeatures() {

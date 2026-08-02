@@ -1630,7 +1630,7 @@ function detectGpuForStartupFast(config) {
     temperature: '',
     utilization: '',
     cpuOnly: !wantsGpu,
-    backendPreferred: (process.platform === 'darwin' && os.arch() === 'arm64') ? 'metal' : 'opencl',
+    backendPreferred: 'auto',
     cudaCapable: false,
   };
 
@@ -2302,18 +2302,21 @@ function startMiningV3(config, v3Path) {
   const worker = config.worker ? ensureZionGroupHint(sanitizeWorkerName(config.worker)) : ensureZionGroupHint('desktop');
   const miningMode = String(config.miningMode || (config.gpu ? 'dual' : 'cpu')).toLowerCase();
   const wantsGpu = miningMode === 'gpu' || miningMode === 'dual';
-  const explicitGpuBackend = String(config?.gpuBackend || process.env.ZION_BACKEND || '').trim().toLowerCase();
+  const explicitGpuBackend = String(config?.gpuBackend || '').trim().toLowerCase();
   let gpuInfo = null;
   if (wantsGpu) {
     try { gpuInfo = detectGPU(); } catch { /* ignore */ }
   }
+  // Let the miner's resolve_auto_backend() handle GPU detection — it checks
+  // CUDA runtime usability (NVRTC), OpenCL platform availability, and Metal
+  // support at runtime, which is more accurate than the desktop agent's
+  // external tool probing (nvidia-smi / rocm-smi / system_profiler).
+  //
+  // Only force a specific backend when the user explicitly set one in config.
+  // Otherwise pass "auto" and let the miner pick the best available backend.
   const selectedGpuBackend = !wantsGpu
     ? 'cpu'
-    : explicitGpuBackend || (
-      process.platform === 'darwin' && os.arch() === 'arm64'
-        ? 'metal'
-        : (gpuInfo?.backendPreferred === 'cuda' && gpuInfo?.cudaCapable ? 'cuda' : 'opencl')
-    );
+    : explicitGpuBackend || 'auto';
 
   // ── 6. Build CLI args ──────────────────────────────────────────────────────
   const args = ['--pool', pool, '--wallet', wallet];
