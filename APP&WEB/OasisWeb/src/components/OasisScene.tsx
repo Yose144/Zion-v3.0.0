@@ -2,8 +2,9 @@
 
 import { useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Stars } from '@react-three/drei';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { OrbitControls, Stars, Environment } from '@react-three/drei';
+import { EffectComposer, Bloom, Vignette, HueSaturation, BrightnessContrast, ChromaticAberration, Noise } from '@react-three/postprocessing';
+import { BlendFunction } from 'postprocessing';
 import * as THREE from 'three';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import TreeOfLife from './TreeOfLife';
@@ -17,6 +18,8 @@ import SelectionBeacon from './SelectionBeacon';
 import FlightControls from './FlightControls';
 import PilgrimShip from './PilgrimShip';
 import Nebula from './Nebula';
+import TwinkleStars from './TwinkleStars';
+import ShootingStars from './ShootingStars';
 import CameraCompassTracker from './CameraCompassTracker';
 import type { CompassData } from './Compass';
 
@@ -212,30 +215,39 @@ export default function OasisScene({
   return (
     <Canvas
       camera={{ position: [0, 3.5, 34], fov: 55 }}
-      dpr={[1, isMobile ? 1.5 : 2]}
+      dpr={[1, isMobile ? 1 : 1.75]}
       gl={{
-        antialias: true,
+        antialias: false,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.2,
+        toneMappingExposure: 1.15,
       }}
     >
       <color attach="background" args={['#02030a']} />
       <fog attach="fog" args={['#02030a', 42, 110]} />
-      <ambientLight intensity={0.22} />
-      <pointLight position={[10, 8, 10]} intensity={1.4} color="#ffffff" />
-      <pointLight position={[-12, -6, -12]} intensity={1.0} color="#a855f7" />
-      <pointLight position={[0, 10, 0]} intensity={0.8} color="#22d3ee" />
-      <pointLight position={[0, -8, 0]} intensity={0.5} color="#f59e0b" />
-      <pointLight position={[15, 0, -15]} intensity={0.6} color="#60a5fa" />
-      <pointLight position={[-15, 5, 15]} intensity={0.5} color="#ec4899" />
+
+      {/* HDRI-based image-based lighting — gives PBR materials real reflections
+          and ambient fill without needing hand-authored art or many lights. */}
+      <Environment preset="night" background={false} environmentIntensity={0.6} />
+
+      <ambientLight intensity={0.15} />
+      <pointLight position={[10, 8, 10]} intensity={1.0} color="#ffffff" />
+      <pointLight position={[-12, -6, -12]} intensity={0.65} color="#a855f7" />
+      <pointLight position={[0, 10, 0]} intensity={0.5} color="#22d3ee" />
 
       <UniverseRotator groupRef={universeRef} flightMode={flightMode} view={view} />
 
       {view === 'galaxy' && (
         <group ref={universeRef}>
-          {/* Distant star backdrop */}
-          <Stars radius={250} depth={160} count={isMobile ? 6000 : 16000} factor={6} saturation={0} fade speed={0.4} />
+          {/* Distant star backdrop — drei's fog-faded field for far depth,
+              plus a GPU-shader twinkle layer closer in for a living sky.
+              Kept subtle so it reads as depth behind the UI, not noise
+              competing with it. */}
+          <Stars radius={250} depth={160} count={isMobile ? 1800 : 5200} factor={4.5} saturation={0} fade speed={0.4} />
+          <TwinkleStars count={isMobile ? 900 : 2200} radius={150} />
+
+          {/* Occasional shooting stars for a sense of a living, moving sky */}
+          <ShootingStars count={4} isMobile={isMobile} />
 
           {/* Distant satellite galaxies around the Milky Way */}
           <DistantGalaxies />
@@ -244,11 +256,11 @@ export default function OasisScene({
           <Galaxy />
           <GalaxyCore />
           <MatrixCore />
-          <Nebula />
+          <Nebula isMobile={isMobile} />
 
           {/* Oasis center — the Tree of Life in full glory */}
           <group scale={1.1}>
-            <TreeOfLife />
+            <TreeOfLife isMobile={isMobile} />
           </group>
 
           {/* Selection beacon for the focused world */}
@@ -299,16 +311,26 @@ export default function OasisScene({
       {/* Player craft visible during flight */}
       {flightMode && <PilgrimShip speed={flightSpeed} />}
 
-      {/* Bloom for glow */}
-      <EffectComposer>
-        <Bloom
-          intensity={1.4}
-          luminanceThreshold={0.15}
-          luminanceSmoothing={0.6}
-          mipmapBlur
-          radius={0.8}
-        />
-      </EffectComposer>
+      {/* Bloom + cinematic color grade — skipped on mobile to keep frame time
+          low; anti-aliasing is handled here via multisampling instead of
+          canvas MSAA (cheaper). Grading (saturation/contrast/grain/aberration)
+          is what gives the scene a "produced" rather than "raw WebGL" look. */}
+      {!isMobile && (
+        <EffectComposer multisampling={4}>
+          <Bloom
+            intensity={0.68}
+            luminanceThreshold={0.34}
+            luminanceSmoothing={0.6}
+            mipmapBlur
+            radius={0.6}
+          />
+          <HueSaturation saturation={0.16} />
+          <BrightnessContrast brightness={-0.03} contrast={0.08} />
+          <ChromaticAberration offset={[0.0005, 0.0005]} radialModulation modulationOffset={0.4} />
+          <Noise premultiply blendFunction={BlendFunction.OVERLAY} opacity={0.03} />
+          <Vignette eskil={false} offset={0.18} darkness={0.7} />
+        </EffectComposer>
+      )}
 
       {compassRef && <CameraCompassTracker compassRef={compassRef} />}
     </Canvas>

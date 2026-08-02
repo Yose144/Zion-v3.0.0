@@ -104,19 +104,26 @@ function generateBranches(
 
   if (depth >= maxDepth) return;
 
-  const childCount = depth < 2 ? 3 : 2;
-  const childLength = length * (0.7 + rng.next() * 0.2);
+  // More splits at the base/scaffold levels (depth < 2) for a visibly
+  // fuller, richer branch structure — like the reference logo's dense fan
+  // of limbs — while keeping deeper twig levels at 2 to avoid an explosion
+  // in geometry/leaf count.
+  const childCount = depth < 2 ? 4 : 2;
+  const childLength = length * (0.78 + rng.next() * 0.22);
 
   const up = new THREE.Vector3(0, 1, 0);
   const tangentBase = new THREE.Vector3().crossVectors(direction, up).normalize();
   if (tangentBase.lengthSq() < 0.001) tangentBase.set(1, 0, 0);
 
   for (let i = 0; i < childCount; i++) {
-    const spreadAngle = ((i - (childCount - 1) / 2) / (childCount + 0.5)) * Math.PI * 0.7;
+    // Wide spread angle + a much smaller upward bias than before — branches
+    // fan outward more than they climb, producing a broad, flat-topped
+    // umbrella canopy (like a real oak) rather than a tall narrow spire.
+    const spreadAngle = ((i - (childCount - 1) / 2) / (childCount + 0.5)) * Math.PI * 1.15;
     const tangent = tangentBase.clone().applyAxisAngle(direction, rng.next() * Math.PI * 2);
-    const rotation = new THREE.Quaternion().setFromAxisAngle(tangent, spreadAngle + (rng.next() - 0.5) * 0.35);
+    const rotation = new THREE.Quaternion().setFromAxisAngle(tangent, spreadAngle + (rng.next() - 0.5) * 0.4);
     const newDirection = direction.clone().applyQuaternion(rotation);
-    newDirection.y += 0.22 + rng.next() * 0.12;
+    newDirection.y += 0.08 + rng.next() * 0.08;
     newDirection.normalize();
 
     const newEnd = end.clone().add(newDirection.multiplyScalar(childLength));
@@ -244,74 +251,147 @@ function SporeField({ count = 700, rng }: SporeFieldProps) {
   return <points ref={pointsRef} geometry={geometry} material={material} />;
 }
 
-function CanopyField({ count = 220, rng }: SporeFieldProps) {
-  const pointsRef = useRef<THREE.Points>(null);
+/** Flat, stylized "vector art" triangular leaf silhouette (thin and light)
+ *  instead of a soft glow dot — gives the canopy a clean, illustrated look
+ *  rather than a particle-cloud aesthetic. */
+function createLeafTexture(): THREE.Texture {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const cx = size / 2;
 
-  const { geometry, material, offsets } = useMemo(() => {
-    const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
-    const palette = [
-      new THREE.Color('#f59e0b'),
-      new THREE.Color('#fbbf24'),
-      new THREE.Color('#22d3ee'),
-      new THREE.Color('#a855f7'),
-    ];
-    const offsets: number[] = [];
+  ctx.beginPath();
+  ctx.moveTo(cx, 4);
+  ctx.lineTo(size - 10, size - 8);
+  ctx.lineTo(10, size - 8);
+  ctx.closePath();
 
-    for (let i = 0; i < count; i++) {
-      const i3 = i * 3;
-      const angle = rng.next() * Math.PI * 2;
-      const r = 0.4 + rng.next() * 2.2;
-      const y = 1.2 + rng.next() * 2.8;
-      positions[i3] = Math.cos(angle) * r;
-      positions[i3 + 1] = y;
-      positions[i3 + 2] = Math.sin(angle) * r;
+  const grad = ctx.createLinearGradient(0, 0, 0, size);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(1, 'rgba(255,255,255,0.6)');
+  ctx.fillStyle = grad;
+  ctx.fill();
 
-      const color = palette[rng.int(0, palette.length)];
-      colors[i3] = color.r;
-      colors[i3 + 1] = color.g;
-      colors[i3 + 2] = color.b;
-      offsets.push(rng.next() * Math.PI * 2);
+  // Center vein
+  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx, 8);
+  ctx.lineTo(cx, size - 10);
+  ctx.stroke();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
+
+interface LeafAnchor {
+  end: THREE.Vector3;
+  dir: THREE.Vector3;
+}
+
+interface LeafCanopyProps {
+  anchors: LeafAnchor[];
+  leavesPerAnchor?: number;
+  rng: ReturnType<typeof createRandom>;
+}
+
+// Mostly green, like a real canopy — with only a rare warm accent leaf.
+const LEAF_GREENS = ['#22c55e', '#4ade80', '#16a34a', '#86efac', '#15803d', '#65a30d'];
+
+function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const leafTexture = useMemo(() => createLeafTexture(), []);
+  const geometry = useMemo(() => new THREE.PlaneGeometry(0.4, 0.52), []);
+  const material = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        map: leafTexture,
+        transparent: true,
+        opacity: 0.88,
+        alphaTest: 0.3,
+        side: THREE.DoubleSide,
+        toneMapped: false,
+      }),
+    [leafTexture]
+  );
+
+  const leaves = useMemo(() => {
+    const palette = LEAF_GREENS.map((c) => new THREE.Color(c));
+    const accent = new THREE.Color('#fbbf24');
+    const result: {
+      pos: THREE.Vector3;
+      rot: THREE.Euler;
+      scale: number;
+      phase: number;
+      speed: number;
+      color: THREE.Color;
+    }[] = [];
+
+    for (const anchor of anchors) {
+      for (let i = 0; i < leavesPerAnchor; i++) {
+        // Spread leaves out past the twig tip, following its outward
+        // direction, so the canopy reads as reaching further out and up
+        // rather than clustering tight around the branch.
+        const spread = 0.18 + rng.next() * 0.4;
+        const along = 0.05 + rng.next() * 0.32;
+        const jitter = new THREE.Vector3((rng.next() - 0.5) * spread, (rng.next() - 0.5) * spread * 0.6, (rng.next() - 0.5) * spread);
+        const pos = anchor.end.clone().addScaledVector(anchor.dir, along).add(jitter);
+
+        result.push({
+          pos,
+          rot: new THREE.Euler(rng.next() * Math.PI, rng.next() * Math.PI, rng.next() * Math.PI),
+          scale: 0.55 + rng.next() * 0.6,
+          phase: rng.next() * Math.PI * 2,
+          speed: 0.5 + rng.next() * 0.6,
+          color: rng.next() < 0.06 ? accent : palette[rng.int(0, palette.length)],
+        });
+      }
     }
+    return result;
+  }, [anchors, leavesPerAnchor, rng]);
 
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const count = leaves.length;
 
-    const material = new THREE.PointsMaterial({
-      size: 0.16,
-      map: createSporeTexture(),
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.75,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      sizeAttenuation: true,
+  useEffect(() => {
+    if (!meshRef.current) return;
+    const dummy = new THREE.Object3D();
+    leaves.forEach((leaf, i) => {
+      dummy.position.copy(leaf.pos);
+      dummy.rotation.copy(leaf.rot);
+      dummy.scale.setScalar(leaf.scale);
+      dummy.updateMatrix();
+      meshRef.current!.setMatrixAt(i, dummy.matrix);
+      meshRef.current!.setColorAt(i, leaf.color);
     });
-
-    return { geometry, material, offsets };
-  }, [count, rng]);
+    meshRef.current.instanceMatrix.needsUpdate = true;
+    if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
+  }, [leaves]);
 
   useFrame((state) => {
-    if (!pointsRef.current) return;
-    const positions = pointsRef.current.geometry.attributes.position.array as Float32Array;
-    for (let i = 0; i < count; i++) {
-      const i3 = i * 3;
-      const t = state.clock.elapsedTime * 0.4 + offsets[i];
-      positions[i3 + 1] += Math.sin(t) * 0.002;
-      positions[i3] += Math.cos(t * 0.6) * 0.002;
-      positions[i3 + 2] += Math.sin(t * 0.6) * 0.002;
-    }
-    pointsRef.current.geometry.attributes.position.needsUpdate = true;
+    if (!meshRef.current) return;
+    const dummy = new THREE.Object3D();
+    const t = state.clock.elapsedTime;
+    leaves.forEach((leaf, i) => {
+      const sway = Math.sin(t * leaf.speed + leaf.phase) * 0.18;
+      dummy.position.copy(leaf.pos);
+      dummy.rotation.set(leaf.rot.x + sway, leaf.rot.y + t * 0.05, leaf.rot.z + sway * 0.5);
+      dummy.scale.setScalar(leaf.scale);
+      dummy.updateMatrix();
+      meshRef.current!.setMatrixAt(i, dummy.matrix);
+    });
+    meshRef.current.instanceMatrix.needsUpdate = true;
   });
 
-  return <points ref={pointsRef} geometry={geometry} material={material} />;
+  if (count === 0) return null;
+  return <instancedMesh ref={meshRef} args={[geometry, material, count]} />;
 }
 
 /* ── Contact-style light fountain: vertical streaks spiraling upward ── */
-function LightFountain({ rng }: { rng: ReturnType<typeof createRandom> }) {
+function LightFountain({ rng, count = 1200 }: { rng: ReturnType<typeof createRandom>; count?: number }) {
   const pointsRef = useRef<THREE.Points>(null);
-  const count = 1200;
 
   const { geometry, material, speeds, angles, radii, phases } = useMemo(() => {
     const positions = new Float32Array(count * 3);
@@ -497,7 +577,7 @@ function branchCurve(b: Branch): THREE.CatmullRomCurve3 {
   return new THREE.CatmullRomCurve3([b.start, b.mid, b.end]);
 }
 
-export default function TreeOfLife() {
+export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   const fruitRef = useRef<THREE.InstancedMesh>(null);
   const heartRef = useRef<THREE.Mesh>(null);
@@ -510,13 +590,35 @@ export default function TreeOfLife() {
     rootsGeometry,
     fruitData,
     glowTexture,
+    leafAnchors,
   } = useMemo(() => {
     const branches: Branch[] = [];
     const root = new THREE.Vector3(0, -3.2, 0);
-    const top = new THREE.Vector3(0, 1.6, 0);
+    // Shorter trunk before branching starts — like the reference logo, the
+    // canopy should read as a wide dome sitting on a modest trunk, not a
+    // tall spire.
+    const top = new THREE.Vector3(0, 0.5, 0);
     generateBranches(root, top, 0, 5, branches, rng);
 
     const fruits = branches.filter((b) => b.depth >= 4).map((b) => b.end);
+
+    // Leaves anchor along the branches themselves — starting fairly early in
+    // the branch structure (depth >= 2) and sampling multiple points along
+    // each qualifying branch's length — so foliage fills out the whole
+    // canopy densely instead of only sprouting from the outermost twig tips.
+    const leafAnchors: LeafAnchor[] = [];
+    for (const b of branches) {
+      if (b.depth < 2) continue;
+      const dir = new THREE.Vector3().subVectors(b.end, b.start).normalize();
+      const curve = branchCurve(b);
+      // With more branches now in the skeleton, fewer samples per branch
+      // keep total leaf count (and per-frame sway animation cost) in check
+      // while still covering the now-wider canopy.
+      const samples = isMobile ? 1 : b.depth >= 4 ? 2 : 1;
+      for (let s = 1; s <= samples; s++) {
+        leafAnchors.push({ end: curve.getPoint(s / samples), dir });
+      }
+    }
 
     const branchGeometries = branches.map((b) => {
       const radius = Math.max(0.006, b.width * 0.028);
@@ -563,16 +665,20 @@ export default function TreeOfLife() {
       'rgba(34, 211, 238, 0.1)'
     );
 
-    return { branches, branchGeometry, rootsGeometry, fruitData, glowTexture };
-  }, [rng]);
+    return { branches, branchGeometry, rootsGeometry, fruitData, glowTexture, leafAnchors };
+  }, [rng, isMobile]);
 
-  const fruitGeometry = useMemo(() => new THREE.IcosahedronGeometry(1, 1), []);
+  const fruitGeometry = useMemo(() => new THREE.IcosahedronGeometry(1, 2), []);
   const fruitMaterial = useMemo(
     () =>
-      new THREE.MeshBasicMaterial({
+      new THREE.MeshPhysicalMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 0.92,
+        opacity: 0.95,
+        roughness: 0.15,
+        metalness: 0.1,
+        clearcoat: 1,
+        clearcoatRoughness: 0.1,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         toneMapped: false,
@@ -598,12 +704,14 @@ export default function TreeOfLife() {
 
   const branchMaterial = useMemo(
     () =>
-      new THREE.MeshStandardMaterial({
-        color: 0x1a1028,
-        emissive: 0x7c3aed,
-        emissiveIntensity: 0.55,
-        roughness: 0.35,
-        metalness: 0.75,
+      new THREE.MeshPhysicalMaterial({
+        color: 0x241238,
+        emissive: 0x8b3ff0,
+        emissiveIntensity: 0.6,
+        roughness: 0.3,
+        metalness: 0.7,
+        clearcoat: 0.5,
+        clearcoatRoughness: 0.25,
         toneMapped: false,
       }),
     []
@@ -611,12 +719,13 @@ export default function TreeOfLife() {
 
   const rootMaterial = useMemo(
     () =>
-      new THREE.MeshStandardMaterial({
-        color: 0x241535,
-        emissive: 0x4c1d95,
-        emissiveIntensity: 0.25,
-        roughness: 0.7,
+      new THREE.MeshPhysicalMaterial({
+        color: 0x2d1a42,
+        emissive: 0x5b21b6,
+        emissiveIntensity: 0.3,
+        roughness: 0.6,
         metalness: 0.4,
+        clearcoat: 0.3,
         toneMapped: false,
       }),
     []
@@ -684,9 +793,10 @@ export default function TreeOfLife() {
         <spriteMaterial map={glowTexture} transparent opacity={0.35} blending={THREE.AdditiveBlending} depthWrite={false} />
       </sprite>
 
-      {/* Crown glow */}
-      <sprite position={[0, 2.2, 0]} scale={[3, 3, 1]}>
-        <spriteMaterial map={glowTexture} transparent opacity={0.25} blending={THREE.AdditiveBlending} depthWrite={false} />
+      {/* Crown glow — widened and lowered to match the broad, flat-topped
+          canopy shape instead of a tall narrow one. */}
+      <sprite position={[0, 1.3, 0]} scale={[5.5, 3.4, 1]}>
+        <spriteMaterial map={glowTexture} transparent opacity={0.22} blending={THREE.AdditiveBlending} depthWrite={false} />
       </sprite>
 
       {/* Ground aura */}
@@ -695,7 +805,7 @@ export default function TreeOfLife() {
       </sprite>
 
       {/* Contact-style light fountain — spiraling vertical streaks */}
-      <LightFountain rng={rng} />
+      <LightFountain rng={rng} count={isMobile ? 500 : 1000} />
 
       {/* Pulsing energy rings around the tree */}
       <EnergyRings />
@@ -705,11 +815,10 @@ export default function TreeOfLife() {
 
       {/* Extra point light at heart for bloom trigger */}
       <pointLight position={[0, 0.45, 0]} intensity={2.5} distance={12} decay={1.5} color="#fff7d6" />
-      <pointLight position={[0, 2, 0]} intensity={1.5} distance={10} decay={1.5} color="#a855f7" />
-      <pointLight position={[0, -2, 0]} intensity={1.0} distance={8} decay={1.5} color="#22d3ee" />
+      <pointLight position={[0, 2, 0]} intensity={1.2} distance={10} decay={1.5} color="#a855f7" />
 
-      <SporeField count={1200} rng={rng} />
-      <CanopyField count={300} rng={rng} />
+      <SporeField count={isMobile ? 400 : 800} rng={rng} />
+      <LeafCanopy anchors={leafAnchors} leavesPerAnchor={isMobile ? 1 : 2} rng={rng} />
     </group>
   );
 }

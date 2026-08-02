@@ -1,11 +1,91 @@
 'use client';
 
-import { useRef, useState, useLayoutEffect } from 'react';
+import { useMemo, useRef, useState, useLayoutEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import WarpGateVortex from './WarpGateVortex';
 import GlowSprite from './GlowSprite';
+import { createRandom } from '../domain/ports/random';
+
+/** Small procedural surface texture so planet/world/sector nodes on the
+ *  galaxy map read as tiny textured worlds instead of flat-shaded balls. */
+function createMiniSurfaceTexture(baseColor: string, seed: number): THREE.Texture {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const rng = createRandom(seed);
+  const base = new THREE.Color(baseColor);
+  const light = base.clone().offsetHSL(0, -0.1, 0.18);
+  const dark = base.clone().offsetHSL(0, 0.05, -0.12);
+
+  ctx.fillStyle = `#${base.getHexString()}`;
+  ctx.fillRect(0, 0, size, size);
+
+  for (let i = 0; i < 14; i++) {
+    const useLight = rng.next() > 0.5;
+    ctx.fillStyle = `#${(useLight ? light : dark).getHexString()}`;
+    ctx.globalAlpha = 0.35 + rng.next() * 0.25;
+    const cx = rng.next() * size;
+    const cy = rng.next() * size;
+    const r = 10 + rng.next() * 26;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, r, r * (0.5 + rng.next() * 0.5), rng.next() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  const shade = ctx.createRadialGradient(size * 0.38, size * 0.38, size * 0.2, size / 2, size / 2, size * 0.75);
+  shade.addColorStop(0, 'rgba(255,255,255,0.15)');
+  shade.addColorStop(0.6, 'rgba(0,0,0,0.05)');
+  shade.addColorStop(1, 'rgba(0,0,0,0.4)');
+  ctx.fillStyle = shade;
+  ctx.fillRect(0, 0, size, size);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
+
+/** Radiating sun-ray sprite so star-system nodes visibly radiate light,
+ *  matching their role as suns anchoring the galaxy map. */
+function createSunRayTexture(): THREE.Texture {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const c = size / 2;
+
+  ctx.save();
+  ctx.translate(c, c);
+  const rays = 12;
+  for (let i = 0; i < rays; i++) {
+    const angle = (i / rays) * Math.PI * 2;
+    const grad = ctx.createLinearGradient(0, 0, Math.cos(angle) * c, Math.sin(angle) * c);
+    grad.addColorStop(0, 'rgba(255,255,255,0.9)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 5 + (i % 2) * 4;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(angle) * c, Math.sin(angle) * c);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  const core = ctx.createRadialGradient(c, c, 0, c, c, size * 0.22);
+  core.addColorStop(0, 'rgba(255,255,255,1)');
+  core.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = core;
+  ctx.fillRect(0, 0, size, size);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
 
 export interface WorldNodeProps {
   id: string;
@@ -36,12 +116,20 @@ export default function World({
 }: WorldNodeProps) {
   const groupRef = useRef<THREE.Group>(null);
   const gateRef = useRef<THREE.Mesh>(null);
+  const rayRef = useRef<THREE.Sprite>(null);
   const [hovered, setHovered] = useState(false);
 
   const isStarSystem = category === 'star-system';
   const distance = Math.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2);
   const isDistant = distance > 55;
   const displaySize = isDistant ? size * 1.6 : size;
+
+  const seed = useMemo(() => id.split('').reduce((a, c) => a + c.charCodeAt(0), 0), [id]);
+  const surfaceTexture = useMemo(
+    () => (isStarSystem ? null : createMiniSurfaceTexture(color, seed)),
+    [isStarSystem, color, seed]
+  );
+  const rayTexture = useMemo(() => (isStarSystem ? createSunRayTexture() : null), [isStarSystem]);
 
   useLayoutEffect(() => {
     if (gateRef.current) {
@@ -60,6 +148,11 @@ export default function World({
       } else {
         groupRef.current.scale.setScalar(1);
       }
+    }
+    if (rayRef.current) {
+      rayRef.current.material.rotation = state.clock.elapsedTime * 0.15;
+      const pulse = 1 + Math.sin(state.clock.elapsedTime * 1.4) * 0.08;
+      rayRef.current.scale.set(displaySize * 5 * pulse, displaySize * 5 * pulse, 1);
     }
   });
 
@@ -81,11 +174,39 @@ export default function World({
         document.body.style.cursor = 'auto';
       }}
     >
-      {/* Core sphere */}
+      {/* Core sphere — physical material picks up HDRI reflections for a
+          polished look. Non-star worlds get a tiny procedural surface
+          texture so they read as little textured planets, not flat balls. */}
       <mesh>
-        <sphereGeometry args={[displaySize * (hovered ? 1.12 : 1), 16, 16]} />
-        <meshBasicMaterial color={color} toneMapped={false} />
+        <sphereGeometry args={[displaySize * (hovered ? 1.12 : 1), 24, 24]} />
+        <meshPhysicalMaterial
+          map={surfaceTexture ?? undefined}
+          color={surfaceTexture ? '#ffffff' : color}
+          emissive={color}
+          emissiveIntensity={surfaceTexture ? (hovered || selected ? 0.55 : 0.3) : hovered || selected ? 0.9 : 0.55}
+          roughness={0.3}
+          metalness={0.1}
+          clearcoat={0.6}
+          clearcoatRoughness={0.2}
+          toneMapped={false}
+        />
       </mesh>
+
+      {/* Radiating sun rays — star systems are the anchors of the galaxy
+          map, so they should visibly shine rather than just glow. */}
+      {isStarSystem && rayTexture && (
+        <sprite ref={rayRef} scale={[displaySize * 5, displaySize * 5, 1]}>
+          <spriteMaterial
+            map={rayTexture}
+            color={color}
+            transparent
+            opacity={0.5}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </sprite>
+      )}
 
       {/* Soft glow aura — only when hovered or selected to reduce overdraw */}
       {(hovered || selected) && (
