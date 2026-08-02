@@ -1,25 +1,32 @@
 import nodemailer from 'nodemailer';
+import { buildV2OrderConfirmationHtml } from './v2-email';
 
-const SMTP_HOST = process.env.SMTP_HOST ?? 'smtp.forpsi.com';
-const SMTP_PORT = parseInt(process.env.SMTP_PORT ?? '587', 10);
-const SMTP_USER = process.env.SMTP_USER ?? 'shop@newearth.cz';
-const SMTP_PASSWORD = process.env.SMTP_PASSWORD ?? '';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@newearth.cz';
-const SHOP_EMAIL = process.env.SHOP_EMAIL ?? 'shop@newearth.cz';
-const SHOP_NAME = process.env.SHOP_NAME ?? 'ZION eShop';
+function emailConfig() {
+  return {
+    host: process.env.SMTP_HOST ?? 'smtp.forpsi.com',
+    port: parseInt(process.env.SMTP_PORT ?? '587', 10),
+    user: process.env.SMTP_USER ?? 'shop@newearth.cz',
+    password: process.env.SMTP_PASSWORD ?? '',
+    adminEmail: process.env.ADMIN_EMAIL ?? 'admin@newearth.cz',
+    shopEmail: process.env.SHOP_EMAIL ?? 'shop@newearth.cz',
+    shopName: process.env.SHOP_NAME ?? 'ZION eShop',
+  };
+}
 
 function isEnabled(): boolean {
-  return Boolean(SMTP_USER && SMTP_PASSWORD);
+  const cfg = emailConfig();
+  return Boolean(cfg.user && cfg.password);
 }
 
 function createTransporter() {
+  const cfg = emailConfig();
   return nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_PORT === 465,
+    host: cfg.host,
+    port: cfg.port,
+    secure: cfg.port === 465,
     auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASSWORD,
+      user: cfg.user,
+      pass: cfg.password,
     },
   });
 }
@@ -76,15 +83,17 @@ export async function sendAdminOrderNotification(order: OrderEmailData): Promise
     return;
   }
 
+  const cfg = emailConfig();
+
   const shippingInfo = order.shipping === 'zasilkovna-home'
     ? `Doručovací adresa: ${formatAddress(order)}`
     : order.shipping === 'zasilkovna'
     ? 'Zásilkovna - výdejní místo (bude upřesněno)'
     : 'Digitální doručení / online převzetí';
 
-  const subject = `🛒 Nová objednávka #${order.orderId} - ${SHOP_NAME}`;
+  const subject = `🛒 Nová objednávka #${order.orderId} - ${cfg.shopName}`;
   const body = `=======================================
-NOVÁ OBJEDNÁVKA - ${SHOP_NAME}
+NOVÁ OBJEDNÁVKA - ${cfg.shopName}
 =======================================
 
 Číslo objednávky: ${order.orderId}
@@ -125,8 +134,8 @@ Poznámka: ${order.note || '—'}
   try {
     const transporter = createTransporter();
     await transporter.sendMail({
-      from: `${SHOP_NAME} <${SHOP_EMAIL}>`,
-      to: ADMIN_EMAIL,
+      from: `${cfg.shopName} <${cfg.shopEmail}>`,
+      to: cfg.adminEmail,
       replyTo: order.customerEmail,
       subject,
       text: body,
@@ -143,77 +152,32 @@ export async function sendCustomerOrderConfirmation(order: OrderEmailData): Prom
     return;
   }
 
-  const paymentInfo =
-    order.payment === 'card'
-      ? 'Platba kartou (Stripe)'
-      : order.payment === 'transfer'
-      ? 'Bankovní převod'
-      : order.payment;
+  const cfg = emailConfig();
 
-  const bankInfo = order.payment === 'transfer'
-    ? `
-Platební údaje:
-Příjemce: Omnity.One s.r.o.
-Banka: Fio banka, a.s.
-Číslo účtu: 2901809148 / 2010
-IBAN: CZ63 2010 0000 0029 0180 9148
-SWIFT: FIOBCZPPXXX
-Variabilní symbol: ${order.orderId.replace(/\D/g, '').slice(0, 10)}
-Částka: ${formatPrice(order.totalCzk)}
+  const subject = `✅ Potvrzení objednávky #${order.orderId} - ${cfg.shopName}`;
+  const plainText = `Dobrý den, ${order.customerName}!
 
-Po připsání platby Vám zboží obratem odešleme.
-`
-    : '';
+Děkujeme za Vaši objednávku v ${cfg.shopName}.
 
-  const shippingInfo = order.shipping === 'zasilkovna-home'
-    ? `Doručovací adresa: ${formatAddress(order)}`
-    : order.shipping === 'zasilkovna'
-    ? 'Zásilkovna - výdejní místo (bude upřesněno)'
-    : 'Digitální doručení / online převzetí';
-
-  const subject = `Potvrzení objednávky #${order.orderId} - ${SHOP_NAME}`;
-  const body = `Dobrý den, ${order.customerName}!
-
-Děkujeme za Vaši objednávku v ${SHOP_NAME}.
-
-=======================================
-OBJEDNÁVKA #${order.orderId}
-=======================================
-
-${formatItems(order.items)}
-
-Doprava: ${order.shipping} - ${order.shippingCzk === 0 ? 'Zdarma' : formatPrice(order.shippingCzk)}
-----------------------------------------
-CELKEM: ${formatPrice(order.totalCzk)}
-
-----------------------------------------
-PLATBA
-----------------------------------------
-Způsob platby: ${paymentInfo}
-${bankInfo}
-
-----------------------------------------
-DOPRAVA
-----------------------------------------
-${shippingInfo}
+Číslo objednávky: ${order.orderId}
+Celková částka: ${formatPrice(order.totalCzk)}
 
 O průběhu objednávky Vás budeme informovat emailem.
 
 S pozdravem,
 Tým ZION Terra Nova
-
-www.newearth.cz
-----------------------------------------
 `;
 
   try {
+    const html = await buildV2OrderConfirmationHtml(order);
     const transporter = createTransporter();
     await transporter.sendMail({
-      from: `${SHOP_NAME} <${SHOP_EMAIL}>`,
+      from: `${cfg.shopName} <${cfg.shopEmail}>`,
       to: order.customerEmail,
-      replyTo: SHOP_EMAIL,
+      replyTo: cfg.shopEmail,
       subject,
-      text: body,
+      text: plainText,
+      html,
     });
     console.log(`Customer order confirmation sent for ${order.orderId}`);
   } catch (error) {
@@ -227,7 +191,9 @@ export async function sendPaymentConfirmation(order: OrderEmailData): Promise<vo
     return;
   }
 
-  const subject = `Platba přijata - objednávka #${order.orderId} - ${SHOP_NAME}`;
+  const cfg = emailConfig();
+
+  const subject = `Platba přijata - objednávka #${order.orderId} - ${cfg.shopName}`;
   const body = `Dobrý den, ${order.customerName},
 
 Vaše platba za objednávku #${order.orderId} byla úspěšně přijata.
@@ -243,9 +209,9 @@ Tým ZION Terra Nova
   try {
     const transporter = createTransporter();
     await transporter.sendMail({
-      from: `${SHOP_NAME} <${SHOP_EMAIL}>`,
+      from: `${cfg.shopName} <${cfg.shopEmail}>`,
       to: order.customerEmail,
-      replyTo: SHOP_EMAIL,
+      replyTo: cfg.shopEmail,
       subject,
       text: body,
     });
@@ -261,7 +227,9 @@ export async function sendInvoiceEmail(order: OrderEmailData, invoiceHtml: strin
     return;
   }
 
-  const subject = `Faktura k objednávce #${order.orderId} - ${SHOP_NAME}`;
+  const cfg = emailConfig();
+
+  const subject = `📄 Faktura k objednávce #${order.orderId} - ${cfg.shopName}`;
   const body = `Dobrý den, ${order.customerName},
 
 v příloze Vám zasíláme fakturu k objednávce #${order.orderId}.
@@ -275,9 +243,9 @@ Tým ZION Terra Nova
   try {
     const transporter = createTransporter();
     await transporter.sendMail({
-      from: `${SHOP_NAME} <${SHOP_EMAIL}>`,
+      from: `${cfg.shopName} <${cfg.shopEmail}>`,
       to: order.customerEmail,
-      replyTo: SHOP_EMAIL,
+      replyTo: cfg.shopEmail,
       subject,
       text: body,
       html: `<p>Dobrý den ${escapeHtml(order.customerName)},</p><p>v příloze Vám zasíláme fakturu k objednávce <strong>#${escapeHtml(order.orderId)}</strong>.</p><p>Celková částka: <strong>${formatPrice(order.totalCzk)}</strong></p><p>S pozdravem,<br>Tým ZION Terra Nova</p>`,
@@ -310,11 +278,13 @@ export async function sendShippingNotification(order: OrderEmailData): Promise<v
     return;
   }
 
+  const cfg = emailConfig();
+
   const trackingInfo = order.trackingNumber
     ? `Sledovací číslo: ${order.trackingNumber}`
     : 'Sledovací číslo bude doplněno.';
 
-  const subject = `Zásilka odeslána - objednávka #${order.orderId} - ${SHOP_NAME}`;
+  const subject = `Zásilka odeslána - objednávka #${order.orderId} - ${cfg.shopName}`;
   const body = `Dobrý den, ${order.customerName},
 
 Vaše objednávka #${order.orderId} byla odeslana.
@@ -328,9 +298,9 @@ Tým ZION Terra Nova
   try {
     const transporter = createTransporter();
     await transporter.sendMail({
-      from: `${SHOP_NAME} <${SHOP_EMAIL}>`,
+      from: `${cfg.shopName} <${cfg.shopEmail}>`,
       to: order.customerEmail,
-      replyTo: SHOP_EMAIL,
+      replyTo: cfg.shopEmail,
       subject,
       text: body,
     });
