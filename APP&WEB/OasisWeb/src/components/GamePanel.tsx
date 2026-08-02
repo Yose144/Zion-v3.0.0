@@ -6,7 +6,7 @@ import {
   Coins, Star, MapPin, Rocket, Egg, User, Wallet, ScanLine, Zap, Package,
   ChevronRight, Plane, RefreshCw, Palette, Scan, RotateCcw, Eye, EyeOff,
   Volume2, VolumeX, Play, Pause, SkipBack, SkipForward, ListMusic, Music,
-  Settings, Radio, Trophy, Map as MapIcon, Sparkles, Copy,
+  Settings, Radio, Trophy, Map as MapIcon, Sparkles, Copy, Globe,
 } from 'lucide-react';
 import { useGameStore, getLevel, getLevelProgress, type ShipLoadout, SHIP_MODELS, type ShipModelId } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
@@ -16,6 +16,7 @@ import { getHealth, getLeaderboard, getPlayer, getAvatars, type Player, type Lea
 import type { World, WorldCategory } from '../domain/types/world';
 import type { MusicPlayerState } from './AudioEngine';
 import MiniMap from './MiniMap';
+import SocialPanel from './SocialPanel';
 
 const XP_PER_LEVEL = 1000;
 
@@ -655,6 +656,7 @@ export default function GamePanel({
   const { xp, credits, completedQuests, discoveredWorlds, scannedWorlds, collectedEggs, address, shipLoadout } = useGameStore();
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>('ship');
+  const [showSocial, setShowSocial] = useState(false);
 
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
@@ -774,6 +776,14 @@ export default function GamePanel({
               >
                 <Radio className="h-3.5 w-3.5 text-oasis-emerald" />
               </button>
+              <button
+                onClick={() => setShowSocial(true)}
+                className="zion-button-ghost !p-1.5"
+                aria-label="Social — leaderboard, guilds, quests"
+                title="Leaderboard · Guilds · Quests"
+              >
+                <Globe className="h-3.5 w-3.5 text-oasis-emerald" />
+              </button>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="flex items-center gap-0.5 text-oasis-cyan" title="Boost">
@@ -842,6 +852,10 @@ export default function GamePanel({
           )}
         </AnimatePresence>
       </div>
+
+      <AnimatePresence>
+        {showSocial && <SocialPanel onClose={() => setShowSocial(false)} />}
+      </AnimatePresence>
     </motion.div>
   );
 }
