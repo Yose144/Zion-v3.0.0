@@ -1,11 +1,38 @@
 @import "tailwindcss";
 
 @theme {
+  /* Zion core palette — source of truth: docs/3.0.3/ZIONTHEME.md */
+  --color-zion-gold: #ffd700;
+  --color-zion-purple: #9333ea;
+  --color-zion-cyan: #06b6d4;
+  --color-zion-blue: #1e3a8a;
+
+  /* OASIS aliases mapped to ZION theme */
   --color-oasis-black: #05070a;
-  --color-oasis-cyan: #22d3ee;
-  --color-oasis-purple: #a855f7;
+  --color-oasis-cyan: #06b6d4;
+  --color-oasis-purple: #9333ea;
   --color-oasis-emerald: #10b981;
-  --color-oasis-gold: #f59e0b;
+  --color-oasis-gold: #ffd700;
+
+  /* Functional colors */
+  --color-oasis-rose: #f43f5e;
+  --color-oasis-amber: #fbbf24;
+  --color-oasis-fuchsia: #d946ef;
+}
+
+:root {
+  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+  --zion-radius-sm: 0.85rem;
+  --zion-radius-md: 1.2rem;
+  --zion-radius-lg: 1.65rem;
+  --zion-radius-xl: 2rem;
+  --zion-border-subtle: rgba(255, 255, 255, 0.1);
+  --zion-border-strong: rgba(255, 255, 255, 0.18);
+  --zion-surface: rgba(7, 10, 20, 0.68);
+  --zion-surface-soft: rgba(255, 255, 255, 0.045);
+  --zion-surface-hover: rgba(255, 255, 255, 0.075);
+  --zion-shadow-panel: 0 24px 90px rgba(0, 0, 0, 0.42);
+  --zion-shadow-glow: 0 0 42px rgba(147, 51, 234, 0.28);
 }
 
 html,
@@ -13,6 +40,7 @@ body {
   background: #05070a;
   color: #fff;
   min-height: 100%;
+  font-family: var(--font-inter);
 }
 
 html {
@@ -45,4 +73,340 @@ input, textarea, select {
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
   }
+}
+
+@layer utilities {
+  /* ─────────────────────────────────────────────────────────────
+     ZION Theme components — ported from website-v2.9/globals.css
+     and adapted for the OASIS overlay UI.
+     ───────────────────────────────────────────────────────────── */
+
+  .zion-hud-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: clamp(1rem, 2.2vw, 1.5rem);
+    border: 1px solid var(--zion-border-subtle);
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028)),
+      var(--zion-surface);
+    backdrop-filter: blur(22px) saturate(140%);
+    box-shadow: var(--zion-shadow-panel);
+    transition:
+      border-color 180ms ease,
+      background-color 180ms ease,
+      transform 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .zion-hud-panel:hover {
+    border-color: var(--zion-border-strong);
+    background-color: rgba(255, 255, 255, 0.075);
+    box-shadow: var(--zion-shadow-panel), var(--zion-shadow-glow);
+  }
+
+  .zion-rainbow-card {
+    --rc: 16, 185, 129; /* default emerald */
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(var(--rc), 0.2);
+    background: linear-gradient(to right, rgba(var(--rc), 0.08), rgba(var(--rc), 0.04), transparent);
+    transition: border-color 250ms ease, box-shadow 250ms ease, transform 250ms ease;
+  }
+
+  .zion-rainbow-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(var(--rc), 0.4), transparent);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .zion-rainbow-card:hover {
+    border-color: rgba(var(--rc), 0.4);
+    box-shadow: 0 18px 60px rgba(var(--rc), 0.15);
+  }
+
+  .zion-rainbow-card::after {
+    content: '';
+    position: absolute;
+    top: -3rem;
+    right: -3rem;
+    width: 10rem;
+    height: 10rem;
+    border-radius: 9999px;
+    background: rgba(var(--rc), 0.06);
+    filter: blur(60px);
+    pointer-events: none;
+    transition: opacity 250ms ease;
+  }
+
+  .zion-rainbow-card:hover::after {
+    background: rgba(var(--rc), 0.12);
+  }
+
+  .zion-rainbow-sub {
+    --rc: 16, 185, 129;
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid rgba(var(--rc), 0.15);
+    background: linear-gradient(135deg, rgba(var(--rc), 0.06), rgba(var(--rc), 0.02));
+    transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+  }
+
+  .zion-rainbow-sub::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(var(--rc), 0.3), transparent);
+    pointer-events: none;
+  }
+
+  .zion-rainbow-sub:hover {
+    border-color: rgba(var(--rc), 0.35);
+    box-shadow: 0 8px 30px rgba(var(--rc), 0.12);
+    transform: translateY(-2px);
+  }
+
+  .zion-glass {
+    border: 1px solid var(--zion-border-subtle);
+    background:
+      radial-gradient(circle at top left, rgba(255, 215, 0, 0.12), transparent 28rem),
+      linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+    backdrop-filter: blur(24px) saturate(150%);
+  }
+
+  .zion-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035));
+    padding: 0.3rem 0.8rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgb(209 213 219);
+  }
+
+  .zion-button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    border-radius: var(--zion-radius-md);
+    background-image: linear-gradient(110deg, #ffd700, #9333ea 52%, #06b6d4);
+    padding: 0.75rem 1.1rem;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 18px 45px rgba(147, 51, 234, 0.34);
+    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+  }
+
+  .zion-button-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 24px 60px rgba(147, 51, 234, 0.44);
+    filter: saturate(1.08);
+  }
+
+  .zion-button-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    border-radius: var(--zion-radius-md);
+    border: 1px solid var(--zion-border-subtle);
+    background: rgba(255, 255, 255, 0.055);
+    padding: 0.75rem 1.1rem;
+    font-weight: 650;
+    color: white;
+    backdrop-filter: blur(16px);
+    transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+  }
+
+  .zion-button-secondary:hover {
+    transform: translateY(-1px);
+    border-color: var(--zion-border-strong);
+    background: rgba(255, 255, 255, 0.085);
+  }
+
+  .zion-button-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.55rem 0.9rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+  }
+
+  .zion-button-ghost:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .zion-divider {
+    height: 1px;
+    border: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+  }
+
+  .zion-section {
+    border-radius: clamp(1.25rem, 3vw, 1.75rem);
+    border: 1px solid var(--zion-border-subtle);
+    background: rgba(0, 0, 0, 0.42);
+    padding: clamp(1.25rem, 3.5vw, 1.75rem);
+    backdrop-filter: blur(20px) saturate(135%);
+  }
+
+  .zion-tile {
+    border-radius: var(--zion-radius-lg);
+    border: 1px solid var(--zion-border-subtle);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    backdrop-filter: blur(16px);
+    transition: border-color 180ms ease, background-color 180ms ease;
+  }
+
+  .zion-tile:hover {
+    border-color: var(--zion-border-strong);
+    background-color: rgba(255, 255, 255, 0.075);
+  }
+
+  .zion-cta-banner {
+    position: relative;
+    overflow: hidden;
+    border-radius: clamp(1.5rem, 3.5vw, 2rem);
+    border: 1px solid rgba(255, 215, 0, 0.32);
+    background:
+      linear-gradient(90deg,
+        rgba(147, 51, 234, 0.28),
+        rgba(255, 215, 0, 0.14) 50%,
+        rgba(147, 51, 234, 0.28));
+    padding: clamp(1.25rem, 4vw, 2rem);
+    text-align: center;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 24px 80px rgba(147, 51, 234, 0.18);
+  }
+
+  .zion-cta-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.6), transparent);
+    pointer-events: none;
+  }
+
+  .zion-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.25rem 0.6rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .zion-badge-gold {
+    border-color: rgba(255, 215, 0, 0.35);
+    background: rgba(255, 215, 0, 0.1);
+    color: #ffd700;
+  }
+
+  .zion-badge-cyan {
+    border-color: rgba(6, 182, 212, 0.35);
+    background: rgba(6, 182, 212, 0.1);
+    color: #06b6d4;
+  }
+
+  .zion-badge-purple {
+    border-color: rgba(147, 51, 234, 0.35);
+    background: rgba(147, 51, 234, 0.1);
+    color: #9333ea;
+  }
+
+  .zion-badge-green {
+    border-color: rgba(16, 185, 129, 0.35);
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+  }
+
+  .zion-badge-amber {
+    border-color: rgba(245, 158, 11, 0.35);
+    background: rgba(245, 158, 11, 0.1);
+    color: #fbbf24;
+  }
+
+  .zion-badge-red {
+    border-color: rgba(239, 68, 68, 0.35);
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+  }
+
+  .zion-progress {
+    height: 0.375rem;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .zion-progress > * {
+    height: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, #ffd700, #9333ea, #06b6d4);
+    transition: width 400ms ease;
+  }
+
+  .text-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(to right, #ffd700, #9333ea, #06b6d4);
+  }
+
+  .text-gradient-soft {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(110deg, #fff7c2, #ffd700, #06b6d4);
+  }
+
+  .glow {
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+
+  .card-glow {
+    box-shadow: 0 0 30px rgba(147, 51, 234, 0.3);
+  }
+
+  .hud-accent-gold { --rc: 251, 191, 36; }
+  .hud-accent-cyan { --rc: 6, 182, 212; }
+  .hud-accent-purple { --rc: 147, 51, 234; }
+  .hud-accent-emerald { --rc: 16, 185, 129; }
+  .hud-accent-rose { --rc: 244, 63, 94; }
+  .hud-accent-orange { --rc: 249, 115, 22; }
 }

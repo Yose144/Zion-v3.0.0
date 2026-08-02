@@ -1,10 +1,9 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { WORLDS } from '../domain/config/worlds';
-import type { World, WorldCategory } from '../domain/types/world';
+import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import WorldNode from './World';
 import Hyperlanes from './Hyperlanes';
 
@@ -17,29 +16,34 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 const CATEGORY_SIZES: Record<string, number> = {
-  'star-system': 0.46,
-  'planet': 0.28,
-  'sector': 0.31,
-  'world': 0.29,
-  'dimension': 0.26,
+  'star-system': 0.34,
+  'planet': 0.2,
+  'sector': 0.22,
+  'world': 0.21,
+  'dimension': 0.19,
 };
 
 const CORE = new THREE.Vector3(0, 0.4, 0);
 
 interface GalaxyMapProps {
   activeCategories: WorldCategory[];
+  activeLayers?: WorldLayer[];
   selectedWorldId?: string | null;
   onWorldSelect?: (world: World) => void;
   isMobile?: boolean;
 }
 
-export default function GalaxyMap({ activeCategories, selectedWorldId, onWorldSelect, isMobile = false }: GalaxyMapProps) {
+export default function GalaxyMap({ activeCategories, activeLayers, selectedWorldId, onWorldSelect, isMobile = false }: GalaxyMapProps) {
   const groupRef = useRef<THREE.Group>(null);
   const linesRef = useRef<THREE.LineSegments>(null);
 
   const visibleWorlds = useMemo(
-    () => WORLDS.filter((w) => activeCategories.includes(w.category as WorldCategory) && w.galaxyPosition),
-    [activeCategories]
+    () => WORLDS.filter((w) => {
+      const catOk = activeCategories.includes(w.category as WorldCategory);
+      const layerOk = !activeLayers || activeLayers.length === 0 || activeLayers.includes(w.layer);
+      return catOk && layerOk && w.galaxyPosition;
+    }),
+    [activeCategories, activeLayers]
   );
 
   const { lineGeometry, lineMaterial } = useMemo(() => {
@@ -62,19 +66,14 @@ export default function GalaxyMap({ activeCategories, selectedWorldId, onWorldSe
     const material = new THREE.LineBasicMaterial({
       vertexColors: true,
       transparent: true,
-      opacity: 0.11,
+      opacity: 0.06,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
+      fog: false,
     });
 
     return { lineGeometry: geometry, lineMaterial: material };
   }, [visibleWorlds]);
-
-  useFrame((_, delta) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.006;
-    }
-  });
 
   return (
     <group ref={groupRef}>
@@ -99,7 +98,7 @@ export default function GalaxyMap({ activeCategories, selectedWorldId, onWorldSe
             size={size}
             info={w.summary}
             category={w.category}
-            showLabel={w.category === 'star-system' || isSelected}
+            showLabel={isSelected}
             isSelected={isSelected}
             isMobile={isMobile}
             onSelect={() => onWorldSelect?.(w)}

@@ -13,6 +13,7 @@ import {
   Globe,
   Shield,
   Egg,
+  Pickaxe,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
   { href: '/territories', label: 'Territories', icon: Globe },
   { href: '/guilds', label: 'Guilds', icon: Shield },
   { href: '/golden-egg', label: 'Golden Egg', icon: Egg },
+  { href: '/miner', label: 'Miner', icon: Pickaxe },
   { href: '/onboarding', label: 'Onboarding', icon: BookOpen },
 ];
 

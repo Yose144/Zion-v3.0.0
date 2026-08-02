@@ -29,11 +29,11 @@ export default function SelectionBeacon({ position, color }: SelectionBeaconProp
   return (
     <group position={[position.x, position.y, position.z]}>
       <mesh ref={beamRef} position={[0, 0, 0]}>
-        <cylinderGeometry args={[0.03, 0.03, 5, 16]} />
+        <cylinderGeometry args={[0.03, 0.03, 5, 8]} />
         <meshBasicMaterial color={color} transparent opacity={0.25} blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
       <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.45, 0.48, 64]} />
+        <ringGeometry args={[0.45, 0.48, 32]} />
         <meshBasicMaterial color={color} transparent opacity={0.5} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
     </group>

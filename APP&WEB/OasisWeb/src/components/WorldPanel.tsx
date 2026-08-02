@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag, Swords, Compass, Pickaxe, Brain, Users } from 'lucide-react';
+import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag, Swords, Compass, Pickaxe, Brain, Users, Shield, Cpu, Gem, Users2, ScrollText, Zap, ScanLine } from 'lucide-react';
 import type { World } from '../domain/types/world';
 import { generateQuests, type Quest } from '../domain/quests';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
@@ -17,12 +17,21 @@ const TYPE_ICONS: Record<Quest['type'], typeof Compass> = {
   social: Users,
 };
 
+/* ZION-theme-aligned functional colors */
 const CATEGORY_COLORS: Record<string, string> = {
-  'star-system': '#f59e0b',
-  'planet': '#22d3ee',
-  'sector': '#a855f7',
+  'star-system': '#fbbf24',
+  'planet': '#06b6d4',
+  'sector': '#9333ea',
   'world': '#10b981',
   'dimension': '#ec4899',
+};
+
+const CATEGORY_RGB: Record<string, string> = {
+  'star-system': '251, 191, 36',
+  'planet': '6, 182, 212',
+  'sector': '147, 51, 234',
+  'world': '16, 185, 129',
+  'dimension': '236, 72, 153',
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -37,6 +46,83 @@ interface WorldPanelProps {
   world: World;
   onClose: () => void;
   onEnter: () => void;
+}
+
+/* ── World Intel generation ── */
+function generateWorldIntel(world: World) {
+  const seed = world.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const rng = (n: number) => ((seed * 9301 + 49297 + n * 233280) % 233280) / 233280;
+
+  const dangerBase: Record<string, number> = { 'star-system': 3, 'planet': 4, 'sector': 5, 'world': 6, 'dimension': 8 };
+  const techBase: Record<string, number> = { 'star-system': 5, 'planet': 4, 'sector': 7, 'world': 3, 'dimension': 9 };
+  const resourceBase: Record<string, number> = { 'star-system': 6, 'planet': 8, 'sector': 5, 'world': 7, 'dimension': 4 };
+  const popBase: Record<string, string> = {
+    'star-system': 'Sparse outposts',
+    'planet': 'Colonial settlements',
+    'sector': 'Diverse guilds',
+    'world': 'Ancient tribes',
+    'dimension': 'Beyond counting',
+  };
+
+  const danger = Math.min(10, Math.max(1, Math.round((dangerBase[world.category] ?? 5) + world.layer * 0.5 + rng(1) * 3)));
+  const tech = Math.min(10, Math.max(1, Math.round((techBase[world.category] ?? 5) + rng(2) * 4 - 1)));
+  const resources = Math.min(10, Math.max(1, Math.round((resourceBase[world.category] ?? 5) + rng(3) * 4 - 1)));
+  const population = popBase[world.category] ?? 'Unknown';
+
+  return { danger, tech, resources, population };
+}
+
+/* ── Lore fragment generation ── */
+const LORE_FRAGMENTS: Record<string, string[]> = {
+  'star-system': [
+    'Ancient star-charts mark this system as a convergence point for hyperspace lanes. Pilgrims who navigate its outer rings report hearing resonant frequencies that predate known civilization.',
+    'The central star pulses with an unusual cadence, as if transmitting a message. Local explorers have built shrines on the inner planets, believing the light carries instructions from the first architects.',
+    'Deep within the asteroid belt, dormant probes drift in silent formation — relics of a survey mission that vanished three centuries ago. Their data cores remain sealed.',
+  ],
+  'planet': [
+    'Beneath the surface of {name}, vast crystalline networks hum with stored energy. The first settlers called them the Veins of Light, and they have powered every civilization that has risen here.',
+    'The atmosphere of {name} shifts through spectral colors at dawn, a phenomenon the indigenous people read as omens. Today\'s hue suggests a time of gathering.',
+    'Orbital scans reveal geometric patterns carved into the polar ice — too precise to be natural. Whoever left them had technology that rivaled our own, millennia before the first colony ship arrived.',
+  ],
+  'sector': [
+    'This sector sits at the crossroads of three major trade routes. Guilds have fought over its relay stations for generations, but none have held them for long. The sector remembers.',
+    'Hidden within the nebula clouds of {name}, a decommissioned battlestation drifts in silent orbit. Its weapons are cold, but its archives are said to contain maps to lost worlds.',
+    'The comm buoys in this sector transmit fragments of an old dialect — one that no living linguist can fully parse. Some words match the chants used by Pilgrims during their Rite of Passage.',
+  ],
+  'world': [
+    'The elders of {name} speak of a time before the Layering, when this world existed in a single dimension. They guard the memory stones that hold those fragments of history.',
+    'Every cycle, the sacred geometry of {name} realigns. Pilgrims who witness the alignment report visions of their own future, though few can interpret what they see.',
+    'Beneath the temple ruins, a living consciousness stirs. It does not speak in words, but in patterns of light and warmth. Those who approach with reverence receive its blessing.',
+  ],
+  'dimension': [
+    'This dimension folds upon itself in ways that defy three-dimensional logic. Time here is not a river but an ocean, and those who enter may emerge before they arrived.',
+    'The walls between {name} and adjacent realities grow thin. Pilgrims report seeing echoes of themselves living different lives, making different choices, walking different paths.',
+    'At the center of this dimension lies a point of pure stillness — a place where all possibilities converge. Some call it the Nexus. Others call it the Throne. None have reached it and returned unchanged.',
+  ],
+};
+
+function generateLore(world: World): string {
+  const pool = LORE_FRAGMENTS[world.category] ?? LORE_FRAGMENTS['world'];
+  const seed = world.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return pool[seed % pool.length].replace('{name}', world.name);
+}
+
+/* ── Stat bar component ── */
+function StatBar({ icon: Icon, label, value, color }: { icon: typeof Shield; label: string; value: number; color: string }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between text-[9px]">
+        <span className="flex items-center gap-1 text-gray-400">
+          <Icon className="h-2.5 w-2.5" style={{ color }} />
+          {label}
+        </span>
+        <span className="font-mono font-bold" style={{ color }}>{value}/10</span>
+      </div>
+      <div className="zion-progress mt-0.5">
+        <div style={{ width: `${value * 10}%`, backgroundColor: color }} />
+      </div>
+    </div>
+  );
 }
 
 function guessQuestType(text: string): Quest['type'] {
@@ -70,7 +156,8 @@ function mapRealQuests(world: World, realQuests: any[]): Quest[] {
 
 export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
   const color = CATEGORY_COLORS[world.category] || '#ffffff';
-  const { xp, credits, address, completeQuest, completedQuests, realQuests, avatars, claimGoldenEgg, collectedEggs, syncPlayer } = useGameStore();
+  const rc = CATEGORY_RGB[world.category] || '255, 255, 255';
+  const { xp, credits, address, completeQuest, completedQuests, realQuests, avatars, claimGoldenEgg, collectedEggs, syncPlayer, shipLoadout, addXp, addCredits } = useGameStore();
   const { playQuestComplete } = useAudio();
   const addToast = useToastStore((s) => s.add);
   const generated = generateQuests(world);
@@ -82,6 +169,8 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
     : null;
   const level = getLevel(xp);
   const levelProgress = getLevelProgress(xp);
+  const intel = generateWorldIntel(world);
+  const lore = generateLore(world);
 
   return (
     <motion.div
@@ -89,13 +178,17 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 40 }}
       transition={{ duration: 0.4 }}
-      className="pointer-events-auto absolute left-2.5 right-2.5 top-2.5 z-30 max-w-full overflow-hidden rounded-2xl border border-white/10 bg-[#05060f]/90 p-4 shadow-2xl shadow-black/60 backdrop-blur-2xl sm:left-auto sm:right-5 sm:top-5 sm:w-80 sm:p-5"
+      className="pointer-events-auto absolute left-2.5 right-2.5 top-2.5 z-30 max-w-full overflow-hidden p-4 sm:left-auto sm:right-5 sm:top-5 sm:w-80 sm:p-5 zion-hud-panel"
     >
       <div className="mb-4 flex items-start justify-between">
         <div>
           <span
-            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
-            style={{ backgroundColor: `${color}18`, color, boxShadow: `0 0 12px ${color}22` }}
+            className="zion-badge text-[9px]"
+            style={{
+              borderColor: `rgba(${rc}, 0.35)`,
+              backgroundColor: `rgba(${rc}, 0.1)`,
+              color,
+            }}
           >
             <Globe className="h-3 w-3" />
             {CATEGORY_LABELS[world.category]}
@@ -107,7 +200,7 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
             {world.name}
           </h2>
           <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
-            <Layers className="h-3 w-3" />
+            <Layers className="h-3 w-3" style={{ color }} />
             <span>Layer {world.layer}</span>
           </div>
           <div className="mt-2 w-24">
@@ -115,17 +208,14 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
               <span>Level {level}</span>
               <span>{credits} Z</span>
             </div>
-            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full transition-all"
-                style={{ width: `${levelProgress * 100}%`, backgroundColor: color }}
-              />
+            <div className="zion-progress mt-1">
+              <div style={{ width: `${levelProgress * 100}%`, backgroundColor: color }} />
             </div>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="rounded-full p-1.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+          className="zion-button-ghost !p-2 text-gray-400"
         >
           <X className="h-4 w-4" />
         </button>
@@ -142,8 +232,35 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
           <span className="leading-snug italic">{world.vibe}</span>
         </div>
 
-        <div className="rounded-xl border border-white/5 bg-white/[0.03] p-3.5">
+        <div className="zion-rainbow-sub p-3.5" style={{ '--rc': rc } as React.CSSProperties}>
           <p className="text-sm leading-relaxed text-gray-200">{world.summary}</p>
+        </div>
+
+        {/* ── World Intel ── */}
+        <div className="zion-rainbow-sub p-3" style={{ '--rc': rc } as React.CSSProperties}>
+          <div className="mb-2 flex items-center gap-1.5">
+            <Compass className="h-3 w-3" style={{ color }} />
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300">World Intel</p>
+          </div>
+          <div className="space-y-2">
+            <StatBar icon={Shield} label="Danger" value={intel.danger} color="#ef4444" />
+            <StatBar icon={Cpu} label="Tech Level" value={intel.tech} color="#06b6d4" />
+            <StatBar icon={Gem} label="Resources" value={intel.resources} color="#fbbf24" />
+          </div>
+          <div className="mt-2 flex items-center gap-1.5 border-t border-white/5 pt-2 text-[9px]">
+            <Users2 className="h-2.5 w-2.5" style={{ color }} />
+            <span className="text-gray-400">Population:</span>
+            <span className="font-semibold text-white">{intel.population}</span>
+          </div>
+        </div>
+
+        {/* ── Lore Fragment ── */}
+        <div className="zion-rainbow-sub p-3.5" style={{ '--rc': rc } as React.CSSProperties}>
+          <div className="mb-1.5 flex items-center gap-1.5">
+            <ScrollText className="h-3 w-3" style={{ color }} />
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300">Lore Fragment</p>
+          </div>
+          <p className="text-[11px] italic leading-relaxed text-gray-300">{lore}</p>
         </div>
 
         {world.tags.length > 0 && (
@@ -151,7 +268,7 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
             {world.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] text-gray-300"
+                className="zion-badge text-[10px]"
               >
                 <Tag className="h-2.5 w-2.5" />
                 {tag}
@@ -162,25 +279,30 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
 
         {matchingAvatar && (
           <div
-            className="flex items-start gap-3 rounded-xl border p-3"
-            style={{ borderColor: `${color}30`, backgroundColor: `${color}10` }}
+            className="zion-rainbow-sub p-3"
+            style={{ '--rc': rc } as React.CSSProperties}
           >
-            <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-xs font-bold"
-              style={{ borderColor: `${color}50`, color, backgroundColor: `${color}20` }}
-            >
-              {matchingAvatar.name?.slice(0, 2) ?? '??'}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-white">{matchingAvatar.name}</p>
-              <p className="text-[10px] text-oasis-cyan">{matchingAvatar.subtitle}</p>
-              <p className="mt-1 text-[10px] italic leading-snug text-gray-300">“{matchingAvatar.teaching}”</p>
+            <div className="flex items-start gap-3">
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-xs font-bold"
+                style={{ borderColor: `${color}50`, color, backgroundColor: `${color}20` }}
+              >
+                {matchingAvatar.name?.slice(0, 2) ?? '??'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-white">{matchingAvatar.name}</p>
+                <p className="text-[10px] text-oasis-cyan">{matchingAvatar.subtitle}</p>
+                <p className="mt-1 text-[10px] italic leading-snug text-gray-300">“{matchingAvatar.teaching}”</p>
+              </div>
             </div>
           </div>
         )}
 
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Active Quests</p>
+        <div className="zion-rainbow-sub p-3" style={{ '--rc': rc } as React.CSSProperties}>
+          <div className="mb-2 flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3" style={{ color }} />
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300">Active Quests</p>
+          </div>
           <div className="space-y-2">
             {quests.map((quest) => {
               const Icon = TYPE_ICONS[quest.type];
@@ -188,7 +310,8 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
               return (
                 <div
                   key={quest.id}
-                  className={`flex items-start gap-2.5 rounded-lg p-2 transition ${done ? 'bg-white/[0.02]' : 'bg-white/5'}`}
+                  className={`zion-rainbow-sub flex items-start gap-2.5 p-2 ${done ? 'opacity-60' : ''}`}
+                  style={{ '--rc': rc } as React.CSSProperties}
                 >
                   <div className="mt-0.5 rounded p-1" style={{ backgroundColor: `${color}20`, color }}>
                     <Icon className="h-3.5 w-3.5" />
@@ -197,7 +320,7 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
                     <div className="flex items-center gap-1.5">
                       <p className={`text-xs font-semibold ${done ? 'text-gray-500 line-through' : 'text-white'}`}>{quest.title}</p>
                       {quest.real && (
-                        <span className="rounded bg-oasis-gold/20 px-1 text-[9px] font-bold text-oasis-gold">LIVE</span>
+                        <span className="zion-badge zion-badge-gold text-[8px] py-0.5 px-1">LIVE</span>
                       )}
                     </div>
                     {quest.avatarName && (
@@ -250,12 +373,8 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
                 } else if (credits < 100) addToast('Not enough credits (100 Z needed)', 'warning', 3000);
               }}
               disabled={collectedEggs.includes(world.id) || credits < 100}
-              className="flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition"
-              style={{
-                borderColor: `${color}30`,
-                backgroundColor: collectedEggs.includes(world.id) ? `${color}10` : `${color}20`,
-                opacity: collectedEggs.includes(world.id) || credits < 100 ? 0.6 : 1,
-              }}
+              className="zion-rainbow-sub flex items-center gap-2.5 p-2.5 text-left transition"
+              style={{ '--rc': rc } as React.CSSProperties}
             >
               <Egg className="h-4 w-4" style={{ color }} />
               <div>
@@ -270,13 +389,73 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
             </button>
           )}
 
-          <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-2.5">
-            <Sparkles className="h-4 w-4 text-oasis-cyan" />
+          <div
+            className="zion-rainbow-sub flex items-center gap-2.5 p-2.5"
+            style={{ '--rc': rc } as React.CSSProperties}
+          >
+            <Sparkles className="h-4 w-4" style={{ color }} />
             <div>
               <p className="text-[10px] uppercase tracking-wider text-gray-400">Archetype</p>
               <p className="text-sm font-semibold text-white">{CATEGORY_LABELS[world.category]}</p>
             </div>
           </div>
+        </div>
+
+        {/* ── Quick Actions ── */}
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={async () => {
+              const xpGain = 25 + shipLoadout.scanner * 10;
+              addXp(xpGain);
+              addToast(`Deep scan: +${xpGain} XP`, 'success', 2500);
+              if (address) {
+                await awardPlayerXp(address, Math.min(50, Math.round(xpGain / 10)), 'scan', { world: world.name });
+                await syncPlayer();
+              }
+            }}
+            className="zion-rainbow-sub flex flex-col items-center gap-1 rounded-lg p-2.5 transition hover:scale-105"
+            style={{ '--rc': rc } as React.CSSProperties}
+          >
+            <ScanLine className="h-4 w-4 text-oasis-cyan" />
+            <span className="text-[9px] font-bold text-gray-300">Scan</span>
+            <span className="text-[8px] text-gray-500">+{25 + shipLoadout.scanner * 10} XP</span>
+          </button>
+          <button
+            onClick={async () => {
+              const xpGain = 40 + level * 5;
+              const creditGain = Math.round(intel.resources * 15 + Math.random() * 50);
+              addXp(xpGain);
+              addCredits(creditGain);
+              addToast(`Exploration: +${xpGain} XP, +${creditGain} Z`, 'success', 3000);
+              if (address) {
+                await awardPlayerXp(address, Math.min(80, Math.round(xpGain / 10)), 'explore', { world: world.name });
+                await syncPlayer();
+              }
+            }}
+            className="zion-rainbow-sub flex flex-col items-center gap-1 rounded-lg p-2.5 transition hover:scale-105"
+            style={{ '--rc': rc } as React.CSSProperties}
+          >
+            <Compass className="h-4 w-4 text-oasis-emerald" />
+            <span className="text-[9px] font-bold text-gray-300">Explore</span>
+            <span className="text-[8px] text-gray-500">XP + Z</span>
+          </button>
+          <button
+            onClick={async () => {
+              const creditGain = Math.round(intel.resources * 25 + shipLoadout.cargo * 20);
+              addCredits(creditGain);
+              addToast(`Harvested: +${creditGain} Z`, 'success', 2500);
+              if (address) {
+                await awardPlayerXp(address, 5, 'harvest', { world: world.name });
+                await syncPlayer();
+              }
+            }}
+            className="zion-rainbow-sub flex flex-col items-center gap-1 rounded-lg p-2.5 transition hover:scale-105"
+            style={{ '--rc': rc } as React.CSSProperties}
+          >
+            <Gem className="h-4 w-4 text-oasis-gold" />
+            <span className="text-[9px] font-bold text-gray-300">Harvest</span>
+            <span className="text-[8px] text-gray-500">+{intel.resources * 25 + shipLoadout.cargo * 20} Z</span>
+          </button>
         </div>
 
         <button

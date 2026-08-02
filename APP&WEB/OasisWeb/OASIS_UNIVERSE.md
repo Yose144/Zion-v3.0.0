@@ -158,6 +158,8 @@ Tato volba je stále součástí intra a zároveň první meta-ukázka: OASIS je
 
 ### 9.3 Cyberpunkový avatár a volba postavy
 
+> **Status: Částečně implementováno (web).** PilgrimRite má 3-krokový flow: morpheus (červená/modrá pilule) → customize (avatar konfigurace: callsign, body type, neon accent, augmentace) → archetype (volba warrior/trader/explorer/sage s bonusy). Avatar config se persistuje v localStorage a zobrazuje v GamePanel Identity tab. zatím chybí: plná 3D kyberpunk scéna (neon, déšť, mrakodrapy), tvář/oblečení výběr, Neo/Trinity tutoriál trailery.
+
 Po červené piluli se přechází do **kyberpunkové sekvence** — neon, déšť, mrakodrapy, hologramy. Hráč si upravuje avatara:
 
 - výběr těla, tváře, oblečení, augmentací,
@@ -167,6 +169,8 @@ Po červené piluli se přechází do **kyberpunkové sekvence** — neon, déš
 Tento moment slouží jako **tutoriál a onboarding** — ne textový, ale přímo v 3D scéně.
 
 ### 9.4 První loď — warp-ready
+
+> **Status: Částečně implementováno (web).** Ship selection systém má 6 lodí (Pilgrim Scout + 5 Star Wars STL modelů: A-Wing, B-Wing, Snowspeeder, TIE Fighter, TIE Interceptor). STL modely se načítají přes STLLoader a renderují v flight mode. Ship loadout (boost/cargo/scanner) + hull color jsou upgradovatelné. Zatím chybí: odemykání lodí přes questy/craft/obchod, vizuální loadout (zbraně/štíty na modelu), posádka.
 
 Jakmile si hráč doladí avatara, dostane **základní loď**. Ta není jen kosmická loď, ale **multivrstevný transportér**:
 
@@ -228,13 +232,86 @@ Každý svět reprezentuje jiný žánr nebo éru:
 
 - [ ] Jaké jsou přesné herní mechaniky na každém světě?
 - [ ] Jak se bude cestovat mezi hvězdnými systémy — animace, lodě, brány?
-- [ ] Jak reprezentovat “Matrix jádro” herně a vizuálně?
+- [x] ~~Jak reprezentovat “Matrix jádro” herně a vizuálně?~~ — **Hotovo:** `MatrixCore.tsx` — rotující ikosaedr s gold wireframe, orbitující data nodes, vertikální světelné pilíře. Reprezentuje ZION blockchain substrát.
 - [ ] Jaký je vztah mezi ZION blockchain a ekonomikou OASIS?
 - [ ] Budou existovat “uctívané” licence pro známé značky, nebo vše jako vlastní archetypy?
 - [ ] Jaká je minimální MVP — jeden hvězdný systém + jedna planeta s jedním žánrem?
 - [ ] Jak vypadá Morpheus/Neo/Trinity ve scéně — NPC, video, stylizovaní průvodci?
-- [ ] Jaké jsou lodní třídy (starfighter, defender, mega-carrier) a jak se odemykají?
+- [x] ~~Jaké jsou lodní třídy (starfighter, defender, mega-carrier) a jak se odemykají?~~ — **Hotovo:** 6 tříd s level/credit požadavky (Pilgrim Scout, A-Wing, Snowspeeder, TIE Fighter, B-Wing, TIE Interceptor). STL modely pro každou loď.
 - [ ] Jak se warp skok ovládá — z galaktické mapy, z kokpitu, z quest menu?
+
+---
+
+## 13. Implementované feature (2026-08-01)
+
+### 13.1 Ship Unlocking System
+
+Lodě se odemykají na základě **levelu hráče** a **ZION kreditů**. Každá loď má STL model, vlastní barvu a třídu.
+
+| Loď | Třída | Level | Cena | STL Model |
+|-----|-------|-------|------|-----------|
+| Pilgrim Scout | Scout | 1 | 0 Z | — (default) |
+| A-Wing | Interceptor | 2 | 500 Z | `/models/awing.stl` |
+| Snowspeeder | Recon | 3 | 1000 Z | `/models/snowspeeder.stl` |
+| TIE Fighter | Patrol | 4 | 2500 Z | `/models/tiefighter.stl` |
+| B-Wing | Assault | 5 | 5000 Z | `/models/bwing.stl` |
+| TIE Interceptor | Elite Strike | 7 | 10000 Z | `/models/tieinterceptor.stl` |
+
+- **Stavy:** SELECTED (aktivní), UNLOCKED (odemčený), CAN_UNLOCK (gold border, splňuje požadavky), LOCKED (nedostatek levelu nebo kreditů).
+- **Persistence:** `unlockedShips` v `oasis-game-store` localStorage, s `merge` funkcí pro zustand v5 hydrataci.
+- **UI:** `ShipTab()` v `GamePanel.tsx` + `ShipLoadout.tsx` (modal v `PlayerHud`).
+
+### 13.2 World Interaction Panel
+
+`WorldPanel.tsx` rozšířen o tři nové sekce:
+
+1. **World Intel** — procedurálně generované staty světa:
+   - Danger (1-10, červený bar)
+   - Tech Level (1-10, cyan bar)
+   - Resources (1-10, gold bar)
+   - Population (textový popis podle kategorie)
+   - Generováno deterministicky ze `world.id` seed.
+
+2. **Lore Fragment** — procedurálně generovaný narativní text:
+   - 3 lore fragmenty per kategorie (star-system, planet, sector, world, dimension).
+   - Deterministicky vybrán na základě `world.id` seed.
+   - Obsahuje jméno světa (`{name}` placeholder).
+
+3. **Quick Actions** — 3 akční tlačítka před "Enter this world":
+   - **Scan** — +XP na základě scanner levelu (`25 + scanner * 10`).
+   - **Explore** — +XP a +Z na základě levelu a resources.
+   - **Harvest** — +Z na základě resources a cargo levelu.
+   - Každá akce volá `awardPlayerXp` API pokud je nastavena adresa.
+
+### 13.3 Matrix Core 3D
+
+`MatrixCore.tsx` — 3D objekt v centru galaxie reprezentující ZION blockchain substrát:
+
+- **Ikosaedr** s dark inner solid + gold wireframe edges (pulzující opacity).
+- **200 orbitujících data nodes** — gold/cyan/purple particles v eliptických orbitách.
+- **6 vertikálních světelných pilířů** — gold/cyan/purple beams.
+- **2 point lights** — gold (pulzující) + cyan.
+- **Animace:** rotace skupiny, counter-rotace ikosaedru, pulzující wireframe, orbitální pohyb data nodes.
+- **Pozice:** `[0, 0.4, 0]` — sdílí pozici s `GalaxyCore` (galaktické jádro).
+
+### 13.4 Avatar Customization (Cyberpunk)
+
+`PilgrimRite.tsx` — flow rozšířen o customize step:
+
+- **Flow:** morpheus → customize → archetype → scene
+- **Customize step:** Callsign (text input), Body Type (slim/standard/heavy), Neon Accent (6 barev), Augmentation (reflexes/neural/tech/bio/stealth).
+- **Persistence:** `avatarConfig` v `oasis-game-store`.
+- **Display:** Identity tab v `GamePanel.tsx` ukazuje avatar config (callsign, body, augment, archetype, neon).
+
+### 13.5 MinerLite Widget
+
+`WorldFilter.tsx` — pool status widget:
+
+- Pool status (ONLINE/OFFLINE via `getHealth()`).
+- Pool adresa `62.171.141.136:8444`.
+- Player blocks/ZION stats.
+- "Mine" link na `/miner`.
+- `shrink-0` na všech sekcích + `max-h-[calc(100vh-20rem)] overflow-y-auto` pro scroll.
 
 ---
 

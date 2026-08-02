@@ -55,6 +55,28 @@ function createSporeTexture(): THREE.Texture {
   return texture;
 }
 
+function createStreakTexture(): THREE.Texture {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+
+  const g = ctx.createLinearGradient(size / 2, 0, size / 2, size);
+  g.addColorStop(0, 'rgba(255, 255, 255, 0)');
+  g.addColorStop(0.4, 'rgba(200, 230, 255, 0.7)');
+  g.addColorStop(0.5, 'rgba(255, 255, 255, 1)');
+  g.addColorStop(0.6, 'rgba(200, 230, 255, 0.7)');
+  g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
+
 function generateBranches(
   start: THREE.Vector3,
   end: THREE.Vector3,
@@ -148,6 +170,7 @@ function SporeField({ count = 700, rng }: SporeFieldProps) {
       new THREE.Color('#f59e0b'),
       new THREE.Color('#10b981'),
       new THREE.Color('#ec4899'),
+      new THREE.Color('#60a5fa'),
     ];
     const speeds: number[] = [];
     const phases: number[] = [];
@@ -285,6 +308,191 @@ function CanopyField({ count = 220, rng }: SporeFieldProps) {
   return <points ref={pointsRef} geometry={geometry} material={material} />;
 }
 
+/* ── Contact-style light fountain: vertical streaks spiraling upward ── */
+function LightFountain({ rng }: { rng: ReturnType<typeof createRandom> }) {
+  const pointsRef = useRef<THREE.Points>(null);
+  const count = 1200;
+
+  const { geometry, material, speeds, angles, radii, phases } = useMemo(() => {
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const speeds: number[] = [];
+    const angles: number[] = [];
+    const radii: number[] = [];
+    const phases: number[] = [];
+
+    const palette = [
+      new THREE.Color('#60a5fa'),
+      new THREE.Color('#a855f7'),
+      new THREE.Color('#22d3ee'),
+      new THREE.Color('#fbbf24'),
+      new THREE.Color('#ffffff'),
+    ];
+
+    for (let i = 0; i < count; i++) {
+      const i3 = i * 3;
+      const angle = rng.next() * Math.PI * 2;
+      const radius = 0.15 + rng.next() * 1.8;
+      const y = -3.2 + rng.next() * 8;
+
+      positions[i3] = Math.cos(angle) * radius;
+      positions[i3 + 1] = y;
+      positions[i3 + 2] = Math.sin(angle) * radius;
+
+      const color = palette[rng.int(0, palette.length)];
+      colors[i3] = color.r;
+      colors[i3 + 1] = color.g;
+      colors[i3 + 2] = color.b;
+
+      angles.push(angle);
+      radii.push(radius);
+      speeds.push(0.015 + rng.next() * 0.04);
+      phases.push(rng.next() * Math.PI * 2);
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const material = new THREE.PointsMaterial({
+      size: 0.12,
+      map: createStreakTexture(),
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.7,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      sizeAttenuation: true,
+    });
+
+    return { geometry, material, speeds, angles, radii, phases };
+  }, [rng]);
+
+  useFrame((state, delta) => {
+    if (!pointsRef.current) return;
+    const positions = pointsRef.current.geometry.attributes.position.array as Float32Array;
+    const t = state.clock.elapsedTime;
+
+    for (let i = 0; i < count; i++) {
+      const i3 = i * 3;
+      // Spiral upward
+      positions[i3 + 1] += speeds[i];
+      // Rotate around center
+      const spiralSpeed = 0.5 + radii[i] * 0.3;
+      const currentAngle = angles[i] + t * spiralSpeed * 0.3;
+      positions[i3] = Math.cos(currentAngle) * radii[i];
+      positions[i3 + 2] = Math.sin(currentAngle) * radii[i];
+
+      // Reset at top
+      if (positions[i3 + 1] > 5.5) {
+        positions[i3 + 1] = -3.2;
+        angles[i] = rng.next() * Math.PI * 2;
+        radii[i] = 0.15 + rng.next() * 1.8;
+      }
+    }
+
+    pointsRef.current.geometry.attributes.position.needsUpdate = true;
+  });
+
+  return <points ref={pointsRef} geometry={geometry} material={material} />;
+}
+
+/* ── Pulsing energy rings around the tree (Contact wormhole rings) ── */
+function EnergyRings() {
+  const groupRef = useRef<THREE.Group>(null);
+  const rings = useMemo(() => {
+    return Array.from({ length: 12 }).map((_, i) => ({
+      radius: 0.8 + i * 0.35,
+      tube: 0.015 + (i < 6 ? 0.01 : 0),
+      color: i % 3 === 0 ? '#60a5fa' : i % 3 === 1 ? '#a855f7' : '#22d3ee',
+      speed: (0.08 + i * 0.02) * (i % 2 === 0 ? 1 : -1),
+      yOffset: -3 + i * 0.7,
+      phase: i * 0.5,
+    }));
+  }, []);
+
+  useFrame((state, delta) => {
+    if (!groupRef.current) return;
+    groupRef.current.children.forEach((child, i) => {
+      child.rotation.z += rings[i].speed * delta;
+      const pulse = 1 + Math.sin(state.clock.elapsedTime * 1.5 + rings[i].phase) * 0.05;
+      child.scale.set(pulse, pulse, 1);
+    });
+  });
+
+  return (
+    <group ref={groupRef}>
+      {rings.map((ring, i) => (
+        <mesh key={i} position={[0, ring.yOffset, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[ring.radius, ring.tube, 16, 80]} />
+          <meshBasicMaterial
+            color={ring.color}
+            transparent
+            opacity={0.3 - i * 0.015}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/* ── Rising energy beams — vertical light shafts ── */
+function EnergyBeams({ rng }: { rng: ReturnType<typeof createRandom> }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const beams = useMemo(() => {
+    return Array.from({ length: 8 }).map((_, i) => {
+      const angle = (i / 8) * Math.PI * 2 + rng.next() * 0.3;
+      const radius = 0.6 + rng.next() * 1.2;
+      return {
+        position: [Math.cos(angle) * radius, 0, Math.sin(angle) * radius] as [number, number, number],
+        color: ['#60a5fa', '#a855f7', '#22d3ee', '#fbbf24'][i % 4],
+        speed: 0.3 + rng.next() * 0.4,
+        phase: rng.next() * Math.PI * 2,
+        height: 4 + rng.next() * 2,
+        width: 0.04 + rng.next() * 0.03,
+      };
+    });
+  }, [rng]);
+
+  const glowTexture = useMemo(() => createGlowTexture(
+    'rgba(255, 255, 255, 0.9)',
+    'rgba(100, 160, 255, 0.3)',
+    'rgba(30, 60, 120, 0.05)'
+  ), []);
+
+  useFrame((state) => {
+    if (!groupRef.current) return;
+    groupRef.current.children.forEach((child, i) => {
+      const mat = (child as THREE.Mesh).material as THREE.MeshBasicMaterial;
+      if (mat) {
+        mat.opacity = 0.15 + Math.sin(state.clock.elapsedTime * beams[i].speed + beams[i].phase) * 0.1;
+      }
+    });
+  });
+
+  return (
+    <group ref={groupRef}>
+      {beams.map((beam, i) => (
+        <mesh key={i} position={[beam.position[0], 0.5, beam.position[2]]}>
+          <cylinderGeometry args={[beam.width, beam.width * 0.5, beam.height, 8, 1, true]} />
+          <meshBasicMaterial
+            color={beam.color}
+            transparent
+            opacity={0.2}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+            toneMapped={false}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function branchCurve(b: Branch): THREE.CatmullRomCurve3 {
   return new THREE.CatmullRomCurve3([b.start, b.mid, b.end]);
 }
@@ -292,6 +500,8 @@ function branchCurve(b: Branch): THREE.CatmullRomCurve3 {
 export default function TreeOfLife() {
   const groupRef = useRef<THREE.Group>(null);
   const fruitRef = useRef<THREE.InstancedMesh>(null);
+  const heartRef = useRef<THREE.Mesh>(null);
+  const auraRef = useRef<THREE.Sprite>(null);
   const rng = useMemo(() => createRandom(777), []);
 
   const {
@@ -431,6 +641,16 @@ export default function TreeOfLife() {
       }
       fruitRef.current.instanceMatrix.needsUpdate = true;
     }
+    // Pulsing heart
+    if (heartRef.current) {
+      const breath = 1 + Math.sin(state.clock.elapsedTime * 0.8) * 0.06;
+      heartRef.current.scale.set(breath, breath, breath);
+    }
+    // Pulsing aura
+    if (auraRef.current) {
+      const auraPulse = 1 + Math.sin(state.clock.elapsedTime * 0.5) * 0.08;
+      auraRef.current.scale.set(4.2 * auraPulse, 4.2 * auraPulse, 1);
+    }
   });
 
   return (
@@ -441,37 +661,55 @@ export default function TreeOfLife() {
 
       <instancedMesh ref={fruitRef} args={[fruitGeometry, fruitMaterial, fruitData.length]} castShadow receiveShadow />
 
-      {/* Tree heart — layered luminous core */}
-      <mesh position={[0, 0.45, 0]}>
+      {/* Tree heart — layered luminous core (Contact-style bright center) */}
+      <mesh ref={heartRef} position={[0, 0.45, 0]}>
         <sphereGeometry args={[0.55, 64, 64]} />
-        <meshBasicMaterial color="#fff7d6" transparent opacity={0.12} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial color="#fff7d6" transparent opacity={0.15} blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
       <mesh position={[0, 0.45, 0]}>
-        <sphereGeometry args={[0.28, 64, 64]} />
-        <meshBasicMaterial color="#fbbf24" transparent opacity={0.2} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <sphereGeometry args={[0.32, 64, 64]} />
+        <meshBasicMaterial color="#fbbf24" transparent opacity={0.25} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
       </mesh>
       <mesh position={[0, 0.45, 0]}>
-        <sphereGeometry args={[0.1, 32, 32]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.95} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <sphereGeometry args={[0.18, 64, 64]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.6} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+      </mesh>
+      <mesh position={[0, 0.45, 0]}>
+        <sphereGeometry args={[0.08, 32, 32]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={1} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
       </mesh>
 
       {/* Wide aura at the heart */}
-      <sprite position={[0, 0.45, 0]} scale={[4.2, 4.2, 1]}>
+      <sprite ref={auraRef} position={[0, 0.45, 0]} scale={[4.2, 4.2, 1]}>
         <spriteMaterial map={glowTexture} transparent opacity={0.35} blending={THREE.AdditiveBlending} depthWrite={false} />
       </sprite>
 
       {/* Crown glow */}
-      <sprite position={[0, 2.2, 0]} scale={[2.6, 2.6, 1]}>
-        <spriteMaterial map={glowTexture} transparent opacity={0.22} blending={THREE.AdditiveBlending} depthWrite={false} />
+      <sprite position={[0, 2.2, 0]} scale={[3, 3, 1]}>
+        <spriteMaterial map={glowTexture} transparent opacity={0.25} blending={THREE.AdditiveBlending} depthWrite={false} />
       </sprite>
 
       {/* Ground aura */}
-      <sprite position={[0, -3.6, 0]} scale={[5, 5, 1]} rotation={[Math.PI / 2, 0, 0]}>
-        <spriteMaterial map={glowTexture} transparent opacity={0.18} blending={THREE.AdditiveBlending} depthWrite={false} />
+      <sprite position={[0, -3.6, 0]} scale={[5.5, 5.5, 1]} rotation={[Math.PI / 2, 0, 0]}>
+        <spriteMaterial map={glowTexture} transparent opacity={0.2} blending={THREE.AdditiveBlending} depthWrite={false} />
       </sprite>
 
-      <SporeField count={900} rng={rng} />
-      <CanopyField count={260} rng={rng} />
+      {/* Contact-style light fountain — spiraling vertical streaks */}
+      <LightFountain rng={rng} />
+
+      {/* Pulsing energy rings around the tree */}
+      <EnergyRings />
+
+      {/* Rising energy beams */}
+      <EnergyBeams rng={rng} />
+
+      {/* Extra point light at heart for bloom trigger */}
+      <pointLight position={[0, 0.45, 0]} intensity={2.5} distance={12} decay={1.5} color="#fff7d6" />
+      <pointLight position={[0, 2, 0]} intensity={1.5} distance={10} decay={1.5} color="#a855f7" />
+      <pointLight position={[0, -2, 0]} intensity={1.0} distance={8} decay={1.5} color="#22d3ee" />
+
+      <SporeField count={1200} rng={rng} />
+      <CanopyField count={300} rng={rng} />
     </group>
   );
 }

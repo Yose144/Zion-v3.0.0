@@ -5,11 +5,12 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
-import type { World, WorldCategory } from '../domain/types/world';
+import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import TreeOfLife from './TreeOfLife';
 import Galaxy from './Galaxy';
 import DistantGalaxies from './DistantGalaxies';
 import GalaxyCore from './GalaxyCore';
+import MatrixCore from './MatrixCore';
 import GalaxyMap from './GalaxyMap';
 import WorldEnvironment from './WorldEnvironment';
 import SelectionBeacon from './SelectionBeacon';
@@ -27,9 +28,9 @@ interface CameraRigProps {
   disabled?: boolean;
 }
 
-const GALAXY_HOME = { position: new THREE.Vector3(0, 0.9, 7.5), lookAt: new THREE.Vector3(0, 0.6, 0), fov: 55 };
+const GALAXY_HOME = { position: new THREE.Vector3(0, 2.4, 15), lookAt: new THREE.Vector3(0, 0.5, 0), fov: 50 };
 const WORLD_VIEW = { position: new THREE.Vector3(0, 0.35, 4.5), lookAt: new THREE.Vector3(0, 0, 0), fov: 38 };
-const FOCUS_FOV = 45;
+const FOCUS_FOV = 42;
 
 function planKey(view: 'galaxy' | 'world', focusTarget?: { x: number; y: number; z: number } | null) {
   if (view === 'world') return 'world';
@@ -138,35 +139,6 @@ function CameraRig({ started, onArrived, view, focusTarget, disabled = false }: 
   );
 }
 
-const CATEGORY_COLORS: Record<WorldCategory, string> = {
-  'star-system': '#f59e0b',
-  'planet': '#22d3ee',
-  'sector': '#a855f7',
-  'world': '#10b981',
-  'dimension': '#ec4899',
-};
-
-interface OasisSceneProps {
-  started?: boolean;
-  onArrived?: () => void;
-  activeCategories: WorldCategory[];
-  selectedWorld: World | null;
-  onWorldSelect: (world: World) => void;
-  view: 'galaxy' | 'world';
-  flightMode: boolean;
-  onExitFlight: () => void;
-  flightControlsRef: React.RefObject<import('./FlightControls').FlightControlsHandle | null>;
-  onFlightSpeedChange: (speed: number) => void;
-  onCanLand: (world: World | null) => void;
-  onApproach: (world: World) => void;
-  onBoost: () => void;
-  flightSpeed?: number;
-  baseSpeed?: number;
-  mobileInputRef?: React.RefObject<import('./MobileControls').MobileInput | null>;
-  isMobile?: boolean;
-  compassRef?: React.RefObject<CompassData | null>;
-}
-
 function UniverseRotator({
   groupRef,
   flightMode,
@@ -184,10 +156,41 @@ function UniverseRotator({
   return null;
 }
 
+const CATEGORY_COLORS: Record<WorldCategory, string> = {
+  'star-system': '#f59e0b',
+  'planet': '#22d3ee',
+  'sector': '#a855f7',
+  'world': '#10b981',
+  'dimension': '#ec4899',
+};
+
+interface OasisSceneProps {
+  started?: boolean;
+  onArrived?: () => void;
+  activeCategories: WorldCategory[];
+  activeLayers?: WorldLayer[];
+  selectedWorld: World | null;
+  onWorldSelect: (world: World) => void;
+  view: 'galaxy' | 'world';
+  flightMode: boolean;
+  onExitFlight: () => void;
+  flightControlsRef: React.RefObject<import('./FlightControls').FlightControlsHandle | null>;
+  onFlightSpeedChange: (speed: number) => void;
+  onCanLand: (world: World | null) => void;
+  onApproach: (world: World) => void;
+  onBoost: () => void;
+  flightSpeed?: number;
+  baseSpeed?: number;
+  mobileInputRef?: React.RefObject<import('./MobileControls').MobileInput | null>;
+  isMobile?: boolean;
+  compassRef?: React.RefObject<CompassData | null>;
+}
+
 export default function OasisScene({
   started = true,
   onArrived,
   activeCategories,
+  activeLayers,
   selectedWorld,
   onWorldSelect,
   view,
@@ -207,20 +210,32 @@ export default function OasisScene({
   const universeRef = useRef<THREE.Group>(null);
 
   return (
-    <Canvas camera={{ position: [0, 0.9, 7.5], fov: 55 }} dpr={[1, isMobile ? 1.25 : 1.5]} gl={{ antialias: false, powerPreference: 'high-performance' }}>
+    <Canvas
+      camera={{ position: [0, 3.5, 34], fov: 55 }}
+      dpr={[1, isMobile ? 1.5 : 2]}
+      gl={{
+        antialias: true,
+        powerPreference: 'high-performance',
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 1.2,
+      }}
+    >
       <color attach="background" args={['#02030a']} />
-      <fog attach="fog" args={['#02030a', 22, 55]} />
-      <ambientLight intensity={0.15} />
-      <pointLight position={[10, 8, 10]} intensity={0.8} color="#ffffff" />
-      <pointLight position={[-12, -6, -12]} intensity={0.6} color="#a855f7" />
-      <pointLight position={[0, 10, 0]} intensity={0.5} color="#22d3ee" />
+      <fog attach="fog" args={['#02030a', 42, 110]} />
+      <ambientLight intensity={0.22} />
+      <pointLight position={[10, 8, 10]} intensity={1.4} color="#ffffff" />
+      <pointLight position={[-12, -6, -12]} intensity={1.0} color="#a855f7" />
+      <pointLight position={[0, 10, 0]} intensity={0.8} color="#22d3ee" />
+      <pointLight position={[0, -8, 0]} intensity={0.5} color="#f59e0b" />
+      <pointLight position={[15, 0, -15]} intensity={0.6} color="#60a5fa" />
+      <pointLight position={[-15, 5, 15]} intensity={0.5} color="#ec4899" />
 
       <UniverseRotator groupRef={universeRef} flightMode={flightMode} view={view} />
 
       {view === 'galaxy' && (
         <group ref={universeRef}>
           {/* Distant star backdrop */}
-          <Stars radius={180} depth={120} count={isMobile ? 1000 : 2000} factor={3} saturation={0} fade speed={0.2} />
+          <Stars radius={250} depth={160} count={isMobile ? 6000 : 16000} factor={6} saturation={0} fade speed={0.4} />
 
           {/* Distant satellite galaxies around the Milky Way */}
           <DistantGalaxies />
@@ -228,10 +243,11 @@ export default function OasisScene({
           {/* Galaxy disk + core + nebula */}
           <Galaxy />
           <GalaxyCore />
+          <MatrixCore />
           <Nebula />
 
-          {/* Oasis center — tighter, less obtrusive golden bubble */}
-          <group scale={0.55}>
+          {/* Oasis center — the Tree of Life in full glory */}
+          <group scale={1.1}>
             <TreeOfLife />
           </group>
 
@@ -246,6 +262,7 @@ export default function OasisScene({
           {/* 55 OASIS worlds as a holographic galaxy map */}
           <GalaxyMap
             activeCategories={activeCategories}
+            activeLayers={activeLayers}
             selectedWorldId={selectedWorld?.id}
             onWorldSelect={onWorldSelect}
             isMobile={isMobile}
@@ -285,11 +302,11 @@ export default function OasisScene({
       {/* Bloom for glow */}
       <EffectComposer>
         <Bloom
-          intensity={0.45}
-          luminanceThreshold={0.25}
-          luminanceSmoothing={0.4}
+          intensity={1.4}
+          luminanceThreshold={0.15}
+          luminanceSmoothing={0.6}
           mipmapBlur
-          radius={0.4}
+          radius={0.8}
         />
       </EffectComposer>
 

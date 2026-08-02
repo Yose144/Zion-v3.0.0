@@ -80,32 +80,32 @@ export default function Compass({ target, targetName, targetColor, compassRef }:
       transition={{ duration: 0.5, delay: 0.3 }}
       className="pointer-events-auto flex flex-col items-center"
     >
-      <div className="relative h-28 w-28 rounded-full border border-white/10 bg-black/70 shadow-2xl backdrop-blur-md sm:h-32 sm:w-32">
+      <div className="relative h-28 w-28 rounded-full zion-hud-panel p-1 sm:h-32 sm:w-32">
         {/* Rotating compass rose */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-2"
           style={{ transform: `rotate(${-heading}deg)` }}
         >
           <span
-            className="absolute left-1/2 top-0.5 text-[10px] font-bold text-white"
+            className="absolute left-1/2 top-0 text-[10px] font-bold text-white"
             style={{ transform: `translateX(-50%) rotate(${heading}deg)` }}
           >
             N
           </span>
           <span
-            className="absolute right-1 top-1/2 text-[10px] font-bold text-white"
+            className="absolute right-0 top-1/2 text-[10px] font-bold text-white"
             style={{ transform: `translateY(-50%) rotate(${heading}deg)` }}
           >
             E
           </span>
           <span
-            className="absolute bottom-0.5 left-1/2 text-[10px] font-bold text-white"
+            className="absolute bottom-0 left-1/2 text-[10px] font-bold text-white"
             style={{ transform: `translateX(-50%) rotate(${heading}deg)` }}
           >
             S
           </span>
           <span
-            className="absolute left-1 top-1/2 text-[10px] font-bold text-white"
+            className="absolute left-0 top-1/2 text-[10px] font-bold text-white"
             style={{ transform: `translateY(-50%) rotate(${heading}deg)` }}
           >
             W
@@ -141,8 +141,8 @@ export default function Compass({ target, targetName, targetColor, compassRef }:
         </div>
       </div>
 
-      <div className="mt-2 rounded-xl border border-white/10 bg-black/80 px-3 py-1.5 text-center shadow-lg backdrop-blur-md">
-        <p className="max-w-[140px] truncate text-xs font-semibold text-white" style={{ color: targetColor }}>
+      <div className="mt-2 zion-hud-panel px-3 py-1.5 text-center">
+        <p className="max-w-[150px] truncate text-xs font-semibold" style={{ color: targetColor }}>
           {targetName}
         </p>
         <p className="text-[10px] font-mono text-gray-400">

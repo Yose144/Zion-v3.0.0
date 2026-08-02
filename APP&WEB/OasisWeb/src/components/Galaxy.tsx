@@ -6,19 +6,20 @@ import * as THREE from 'three';
 import { createRandom } from '../domain/ports/random';
 
 const PARAMETERS = {
-  count: 30000,
-  radius: 38,
-  branches: 5,
-  spin: 1.05,
-  randomness: 0.55,
-  randomnessPower: 3,
-  insideColor: '#f59e0b',
-  outsideColor: '#7c3aed',
+  count: 65000,
+  radius: 48,
+  branches: 8,
+  spin: 1.35,
+  randomness: 0.45,
+  randomnessPower: 3.5,
+  insideColor: '#fbbf24',
+  midColor: '#a855f7',
+  outsideColor: '#3b82f6',
   size: 0.12,
 };
 
 function createParticleTexture(): THREE.Texture {
-  const size = 64;
+  const size = 128;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -26,8 +27,8 @@ function createParticleTexture(): THREE.Texture {
 
   const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
   gradient.addColorStop(0, 'rgba(255,255,255,1)');
-  gradient.addColorStop(0.25, 'rgba(255,255,255,0.55)');
-  gradient.addColorStop(0.6, 'rgba(255,255,255,0.08)');
+  gradient.addColorStop(0.2, 'rgba(255,255,255,0.7)');
+  gradient.addColorStop(0.5, 'rgba(255,255,255,0.15)');
   gradient.addColorStop(1, 'rgba(255,255,255,0)');
 
   ctx.fillStyle = gradient;
@@ -40,15 +41,18 @@ function createParticleTexture(): THREE.Texture {
 
 export default function Galaxy() {
   const pointsRef = useRef<THREE.Points>(null);
+  const dustRef = useRef<THREE.Points>(null);
 
-  const { geometry, material } = useMemo(() => {
+  const { geometry, material, dustGeometry, dustMaterial } = useMemo(() => {
     const rng = createRandom(31415);
     const positions = new Float32Array(PARAMETERS.count * 3);
     const colors = new Float32Array(PARAMETERS.count * 3);
 
     const insideColor = new THREE.Color(PARAMETERS.insideColor);
+    const midColor = new THREE.Color(PARAMETERS.midColor);
     const outsideColor = new THREE.Color(PARAMETERS.outsideColor);
     const color = new THREE.Color();
+    const radiusNorm = PARAMETERS.radius;
 
     for (let i = 0; i < PARAMETERS.count; i++) {
       const i3 = i * 3;
@@ -67,7 +71,8 @@ export default function Galaxy() {
         Math.pow(rng.next(), PARAMETERS.randomnessPower) *
         (rng.next() < 0.5 ? -1 : 1) *
         PARAMETERS.randomness *
-        radius;
+        radius *
+        0.3;
       const randomZ =
         Math.pow(rng.next(), PARAMETERS.randomnessPower) *
         (rng.next() < 0.5 ? -1 : 1) *
@@ -78,8 +83,12 @@ export default function Galaxy() {
       positions[i3 + 1] = randomY;
       positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
 
-      color.copy(insideColor);
-      color.lerp(outsideColor, radius / PARAMETERS.radius);
+      const t = radius / radiusNorm;
+      if (t < 0.5) {
+        color.copy(insideColor).lerp(midColor, t * 2);
+      } else {
+        color.copy(midColor).lerp(outsideColor, (t - 0.5) * 2);
+      }
 
       colors[i3] = color.r;
       colors[i3 + 1] = color.g;
@@ -98,22 +107,74 @@ export default function Galaxy() {
       vertexColors: true,
       map: texture,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.95,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       alphaTest: 0.001,
+      toneMapped: false,
     });
 
-    return { geometry, material };
+    // Dust lane particles — larger, dimmer, warm-toned
+    const dustCount = 8000;
+    const dustPositions = new Float32Array(dustCount * 3);
+    const dustColors = new Float32Array(dustCount * 3);
+    const dustColor = new THREE.Color();
+
+    for (let i = 0; i < dustCount; i++) {
+      const i3 = i * 3;
+      const radius = 5 + rng.next() * (PARAMETERS.radius - 5);
+      const branch = i % PARAMETERS.branches;
+      const branchAngle = (branch / PARAMETERS.branches) * Math.PI * 2;
+      const spinAngle = radius * PARAMETERS.spin * 0.9;
+
+      const randomX = (rng.next() - 0.5) * radius * 0.3;
+      const randomY = (rng.next() - 0.5) * radius * 0.08;
+      const randomZ = (rng.next() - 0.5) * radius * 0.3;
+
+      dustPositions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+      dustPositions[i3 + 1] = randomY;
+      dustPositions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
+
+      const t = radius / radiusNorm;
+      dustColor.setHSL(0.08 + t * 0.05, 0.6, 0.3 + rng.next() * 0.15);
+      dustColors[i3] = dustColor.r;
+      dustColors[i3 + 1] = dustColor.g;
+      dustColors[i3 + 2] = dustColor.b;
+    }
+
+    const dustGeometry = new THREE.BufferGeometry();
+    dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+    dustGeometry.setAttribute('color', new THREE.BufferAttribute(dustColors, 3));
+
+    const dustMaterial = new THREE.PointsMaterial({
+      size: 0.35,
+      sizeAttenuation: true,
+      vertexColors: true,
+      map: texture,
+      transparent: true,
+      opacity: 0.15,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      alphaTest: 0.001,
+      toneMapped: false,
+    });
+
+    return { geometry, material, dustGeometry, dustMaterial };
   }, []);
 
   useFrame((state, delta) => {
     if (pointsRef.current) {
-      pointsRef.current.rotation.y += delta * 0.03;
+      pointsRef.current.rotation.y += delta * 0.04;
+    }
+    if (dustRef.current) {
+      dustRef.current.rotation.y += delta * 0.035;
     }
   });
 
   return (
-    <points ref={pointsRef} geometry={geometry} material={material} position={[0, 0, 0]} />
+    <group>
+      <points ref={pointsRef} geometry={geometry} material={material} position={[0, 0, 0]} />
+      <points ref={dustRef} geometry={dustGeometry} material={dustMaterial} position={[0, 0, 0]} />
+    </group>
   );
 }

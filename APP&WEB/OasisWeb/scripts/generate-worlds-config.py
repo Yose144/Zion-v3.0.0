@@ -209,41 +209,260 @@ def ts_literal(value) -> str:
     return "undefined"
 
 
-GOLDEN_ANGLE = math.pi * (3 - math.sqrt(5))  # ~2.39996 rad
+ARM_COUNT = 4
+ARM_PITCH = 0.24  # ~13.7 degrees, Milky Way-ish
+
+
+def _outer_entry(id: str, name: str, category: str, layer: int, location: str, vibe: str, summary: str, pos: dict) -> dict:
+    tags = [category.replace("-", " ")]
+    return {
+        "id": id,
+        "name": name,
+        "category": category,
+        "layer": layer,
+        "location": location,
+        "vibe": vibe,
+        "summary": summary,
+        "tags": tags,
+        "galaxyPosition": pos,
+    }
+
+
+def build_outer_worlds() -> list:
+    """Hard-coded outer-galaxy worlds near Andromeda, Triangulum, Sombrero and Cartwheel."""
+    return [
+        # --- Andromeda satellite ---
+        _outer_entry(
+            "ANDROMEDA_CORE",
+            "Andromeda Core",
+            "star-system",
+            1,
+            "Andromeda satellite — central star-system beyond the Milky Way rim",
+            "A luminous anchor in the outer dark, guiding pilgrims past the galactic edge.",
+            "Andromeda Core is the brightest star-system of the Andromeda satellite, a close neighbor to the Milky Way in the OASIS map.",
+            {"x": 0, "y": 0.4, "z": -82},
+        ),
+        _outer_entry(
+            "ANDROMEDA_HALO",
+            "Andromeda Halo",
+            "planet",
+            1,
+            "Andromeda satellite — outer halo",
+            "Ancient light wrapped in a thin atmosphere of blue and silver dust.",
+            "Andromeda Halo is a quiet outpost planet drifting at the edge of the satellite galaxy.",
+            {"x": 7, "y": 0.2, "z": -79},
+        ),
+        _outer_entry(
+            "ANDROMEDA_RIFT",
+            "Andromeda Rift",
+            "dimension",
+            2,
+            "Andromeda satellite — folded space",
+            "A thin place where two galaxies almost touch and the rules of the Milky Way no longer apply.",
+            "Andromeda Rift is a transitional dimension that forms where the Milky Way and Andromeda fields overlap.",
+            {"x": -4, "y": -0.2, "z": -86},
+        ),
+        _outer_entry(
+            "ANDROMEDA_OUTPOST",
+            "Andromeda Outpost",
+            "sector",
+            1,
+            "Andromeda satellite — expedition sector",
+            "The last supply stop before the long dark between galaxies.",
+            "Andromeda Outpost is a small sector used by scouts and pilgrims as a forward base for journeys beyond the Milky Way.",
+            {"x": 5, "y": 0.1, "z": -76},
+        ),
+        _outer_entry(
+            "ANDROMEDA_ANCIENTS",
+            "Andromeda Ancients",
+            "world",
+            1,
+            "Andromeda satellite — precursor world",
+            "Ruins older than the local arms, waiting for someone who can read their silence.",
+            "Andromeda Ancients is a world of old monuments left by an unknown civilization at the edge of the Andromeda satellite.",
+            {"x": -5, "y": 0.3, "z": -83},
+        ),
+
+        # --- Triangulum satellite ---
+        _outer_entry(
+            "TRIANGULUM_CORE",
+            "Triangulum Core",
+            "star-system",
+            1,
+            "Triangulum satellite — core star-system",
+            "A pale spiral heart far beyond the outer arm, steady and remote.",
+            "Triangulum Core is the central star-system of the Triangulum satellite galaxy.",
+            {"x": 72, "y": -0.4, "z": 38},
+        ),
+        _outer_entry(
+            "TRIANGULUM_SPIRAL",
+            "Triangulum Spiral",
+            "planet",
+            1,
+            "Triangulum satellite — spiral arm",
+            "Where the arm thins, the sky becomes a river of distant stars.",
+            "Triangulum Spiral is a planet caught in one of the satellite galaxy's delicate arms.",
+            {"x": 66, "y": 0.2, "z": 42},
+        ),
+        _outer_entry(
+            "TRIANGULUM_DRIFT",
+            "Triangulum Drift",
+            "world",
+            1,
+            "Triangulum satellite — drifting world",
+            "A world without a star, kept warm by the faint glow of the whole galaxy.",
+            "Triangulum Drift is a rogue world wandering in the outer reaches of the Triangulum satellite.",
+            {"x": 75, "y": -0.1, "z": 32},
+        ),
+        _outer_entry(
+            "TRIANGULUM_NEBULA",
+            "Triangulum Nebula",
+            "sector",
+            1,
+            "Triangulum satellite — nebula sector",
+            "Clouds of ionized dream between the stars.",
+            "Triangulum Nebula is a faint sector of gas and dust at the edge of the Triangulum satellite.",
+            {"x": 69, "y": 0.3, "z": 44},
+        ),
+
+        # --- Sombrero satellite ---
+        _outer_entry(
+            "SOMBRERO_CORE",
+            "Sombrero Core",
+            "star-system",
+            1,
+            "Sombrero satellite — bright central star-system",
+            "A white core in a dark hat, watching the Milky Way from above the rim.",
+            "Sombrero Core is the brilliant heart of the Sombrero satellite galaxy.",
+            {"x": -58, "y": 0.2, "z": -68},
+        ),
+        _outer_entry(
+            "SOMBRERO_DISC",
+            "Sombrero Disc",
+            "planet",
+            1,
+            "Sombrero satellite — disc world",
+            "A world built on a perfectly flat plane, as if pressed between two dark mirrors.",
+            "Sombrero Disc is a planet embedded in the thin dust lane of the Sombrero satellite.",
+            {"x": -52, "y": 0.1, "z": -72},
+        ),
+        _outer_entry(
+            "SOMBRERO_HALO",
+            "Sombrero Halo",
+            "world",
+            1,
+            "Sombrero satellite — halo world",
+            "Quiet spheres of old light orbiting the great dark brim.",
+            "Sombrero Halo is a world drifting in the faint spherical halo of the Sombrero satellite.",
+            {"x": -62, "y": -0.2, "z": -65},
+        ),
+        _outer_entry(
+            "SOMBRERO_VOID",
+            "Sombrero Void",
+            "dimension",
+            2,
+            "Sombrero satellite — empty dimension",
+            "The silence between galaxies made habitable.",
+            "Sombrero Void is a sparse dimension that mirrors the empty spaces beyond the Sombrero galaxy.",
+            {"x": -54, "y": 0.0, "z": -70},
+        ),
+
+        # --- Cartwheel satellite ---
+        _outer_entry(
+            "CARTWHEEL_CORE",
+            "Cartwheel Core",
+            "star-system",
+            1,
+            "Cartwheel satellite — core star-system",
+            "The still center of a broken wheel turning in the outer dark.",
+            "Cartwheel Core is the remaining nucleus of the Cartwheel satellite galaxy.",
+            {"x": 70, "y": -0.6, "z": -55},
+        ),
+        _outer_entry(
+            "CARTWHEEL_RING",
+            "Cartwheel Ring",
+            "planet",
+            1,
+            "Cartwheel satellite — ring world",
+            "A planet stretched into a circle by the impact that made this galaxy.",
+            "Cartwheel Ring is a planet formed in the expanding ring of the Cartwheel satellite galaxy.",
+            {"x": 65, "y": -0.3, "z": -60},
+        ),
+        _outer_entry(
+            "CARTWHEEL_SPOKE",
+            "Cartwheel Spoke",
+            "sector",
+            1,
+            "Cartwheel satellite — spoke sector",
+            "The bridges of stars left behind by the ancient collision.",
+            "Cartwheel Spoke is a sector of star-bridges connecting the cartwheel's ring to its nucleus.",
+            {"x": 74, "y": -0.1, "z": -50},
+        ),
+        _outer_entry(
+            "CARTWHEEL_REMNANT",
+            "Cartwheel Remnant",
+            "world",
+            1,
+            "Cartwheel satellite — remnant world",
+            "Fragments of the old galaxy, still warm with the memory of their former shape.",
+            "Cartwheel Remnant is a world built from the debris of the Cartwheel galaxy's past.",
+            {"x": 68, "y": 0.2, "z": -58},
+        ),
+    ]
+
+
+def _stable_arm(id_str: str) -> int:
+    """Deterministic arm assignment from world id."""
+    return sum(ord(c) * (i + 1) for i, c in enumerate(id_str)) % ARM_COUNT
 
 
 def assign_galaxy_positions(entries):
-    """Assign deterministic 3D galaxy coordinates to every world."""
-    rng = random.Random("oasis-galaxy-2026-07-31")
+    """Assign Milky Way spiral-arm 3D coordinates to every world."""
+    rng = random.Random("oasis-milkyway-2026-08-01")
     cat_bases = {
-        "star-system": (10.0, 28.0, 1.8),
-        "planet": (3.2, 8.0, 1.2),
-        "sector": (4.0, 9.5, 1.0),
-        "world": (5.0, 11.0, 1.4),
-        "dimension": (6.0, 13.0, 2.2),
-    }
-    cat_angle_offset = {
-        "star-system": 0.0,
-        "planet": 2 * math.pi * 0.2,
-        "sector": 2 * math.pi * 0.4,
-        "world": 2 * math.pi * 0.6,
-        "dimension": 2 * math.pi * 0.8,
+        "star-system": (11.0, 30.0, 0.35),
+        "planet": (4.0, 9.0, 0.2),
+        "sector": (5.5, 11.5, 0.22),
+        "world": (5.0, 10.0, 0.25),
+        "dimension": (6.0, 12.0, 0.3),
     }
 
-    for i, e in enumerate(entries):
-        cat = e["category"]
-        r_min, r_max, y_range = cat_bases.get(cat, (5.0, 12.0, 1.0))
-        radius = r_min + (r_max - r_min) * math.sqrt(rng.random())
-        angle = i * GOLDEN_ANGLE + cat_angle_offset.get(cat, 0.0) + rng.random() * 0.35
-        y = (rng.random() - 0.5) * y_range
+    # group by arm and spread each arm from inner to outer
+    arms = [[] for _ in range(ARM_COUNT)]
+    for e in entries:
+        e["_arm"] = _stable_arm(e["id"])
+        arms[e["_arm"]].append(e)
 
-        x = math.cos(angle) * radius
-        z = math.sin(angle) * radius
-        e["galaxyPosition"] = {
-            "x": round(x, 3),
-            "y": round(y, 3),
-            "z": round(z, 3),
-        }
+    for arm, items in enumerate(arms):
+        # sort by category max radius ascending so smaller/layer-1 worlds sit
+        # closer to the core and star-systems extend to the outer arms
+        items.sort(key=lambda e: (cat_bases.get(e["category"], (5.0, 12.0, 1.0))[1], e["id"]))
+        n = max(1, len(items))
+        for j, e in enumerate(items):
+            cat = e["category"]
+            r_min, r_max, y_range = cat_bases.get(cat, (5.0, 12.0, 1.0))
+
+            # radial progression along the arm
+            t = j / n
+            r = r_min + (r_max - r_min) * (0.2 + 0.8 * t)
+            r += (rng.random() - 0.5) * 1.4
+            r = max(2.5, min(34.0, r))
+
+            # logarithmic spiral angle
+            arm_base = arm * 2 * math.pi / ARM_COUNT
+            angle = arm_base + (1 / math.tan(ARM_PITCH)) * math.log(r + 0.7)
+            angle += (rng.random() - 0.5) * 0.45
+
+            y = (rng.random() - 0.5) * y_range
+
+            x = math.cos(angle) * r
+            z = math.sin(angle) * r
+            e["galaxyPosition"] = {
+                "x": round(x, 3),
+                "y": round(y, 3),
+                "z": round(z, 3),
+            }
+            del e["_arm"]
 
 
 def generate():
@@ -258,20 +477,24 @@ def generate():
 
     assign_galaxy_positions(entries)
 
-    world_ids = [e["id"] for e in entries]
-    star_ids = [e["id"] for e in entries if e["category"] == "star-system"]
+    outer_entries = build_outer_worlds()
+    all_entries = entries + outer_entries
+
+    world_ids = [e["id"] for e in all_entries]
+    star_ids = [e["id"] for e in all_entries if e["category"] == "star-system"]
 
     lines = [
         "import { World } from '../types/world';",
         "",
         "/**",
         " * Engine-agnostic world registry. Auto-generated from",
-        " * docs/docs2.9/ZION_OASIS/WORLDS/*.md via scripts/generate-worlds-config.py",
+        " * docs/docs2.9/ZION_OASIS/WORLDS/*.md plus hard-coded outer-galaxy",
+        " * entries via scripts/generate-worlds-config.py",
         " */",
         "",
         "export const WORLDS: World[] = [",
     ]
-    for e in entries:
+    for e in all_entries:
         fields = []
         for k, v in e.items():
             if k == "tags" and not v:
@@ -300,7 +523,7 @@ def generate():
 
     OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     OUT_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"[ok] wrote {OUT_FILE} ({len(entries)} worlds)")
+    print(f"[ok] wrote {OUT_FILE} ({len(all_entries)} worlds, {len(outer_entries)} outer-galaxy)")
 
 
 def generate_readme(entries):
