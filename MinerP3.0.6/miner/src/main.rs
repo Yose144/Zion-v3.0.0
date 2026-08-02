@@ -3753,7 +3753,7 @@ impl SessionTelemetry {
             raw_stdout("\n");
             raw_stdout(&format!("╔══════════════════════════════════════════════╗\n"));
             #[cfg(feature = "public_build")]
-            raw_stdout(&format!("║  ZION Miner           v3.0.6           ║\n"));
+            raw_stdout(&format!("║  ZION Boost Miner     v3.1.0           ║\n"));
             #[cfg(not(feature = "public_build"))]
             raw_stdout(&format!("║  ZION Trinity Miner   v3.0.6           ║\n"));
             raw_stdout(&format!("╠══════════════════════════════════════════════╣\n"));
@@ -3770,8 +3770,18 @@ impl SessionTelemetry {
             // Per-stream lines
             for s in stream_stats {
                 let status = if s.active { "ACTIVE  " } else { "INACTIVE" };
+                // In public_build, mask coin/algo as Boost
+                #[cfg(feature = "public_build")]
+                let (display_coin, display_algo) = match s.label {
+                    "ZION" => (s.coin.clone(), s.algorithm.clone()),
+                    "GPU PROFIT" => ("Boost 1".to_string(), "Boost".to_string()),
+                    "CPU PROFIT" => ("Boost 2".to_string(), "Boost".to_string()),
+                    _ => ("Boost".to_string(), "Boost".to_string()),
+                };
+                #[cfg(not(feature = "public_build"))]
+                let (display_coin, display_algo) = (s.coin.clone(), s.algorithm.clone());
                 raw_stdout(&format!("║ {} {:<6} {:<14} {:>10} A:{:<4} R:{:<3}║\n",
-                    status, s.coin, s.algorithm,
+                    status, display_coin, display_algo,
                     fmt_hashrate(s.hashrate_60s),
                     s.accepted, s.rejected));
             }

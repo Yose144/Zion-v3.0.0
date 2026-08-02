@@ -55,6 +55,9 @@ fn prompt_choice(default: &str, text: &str, choices: &[&str]) -> String {
 fn run_menu() {
     println!();
     println!("============================================================");
+    #[cfg(feature = "public_build")]
+    println!("  ZION Boost Miner v3.1.0 — Interactive Setup");
+    #[cfg(not(feature = "public_build"))]
     println!("  ZION Miner v3.0.6 — Interactive Setup");
     println!("============================================================");
     println!();
