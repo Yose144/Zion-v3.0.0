@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 V3_DIR="${REPO_ROOT}/V3"
 ARTIFACT_DIR="${REPO_ROOT}/public/release-artifacts/v3.0.6-beta"
-VERSION="v3.0.6-beta"
+VERSION="v3.1.0"
 FEATURES="public_build,full"
 
 echo "=== ZION Miner macOS Public Build ==="
