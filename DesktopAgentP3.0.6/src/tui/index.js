@@ -311,8 +311,9 @@ async function main() {
         const hr = fmtHr(s.hashrate_10s);
         const rawCoin = (s.coin || s.label || '—').toString().trim();
         const isZion = rawCoin === 'ZION' || rawCoin.startsWith('ZION');
-        const coin = isZion ? rawCoin : 'Boost';
-        const algo = s.algorithm || '';
+        const idx = Number(s.index) || 0;
+        const coin = isZion ? rawCoin : (idx === 3 ? 'Boost Stream 2' : 'Boost Stream 1');
+        const algo = isZion ? (s.algorithm || '') : 'Boost';
         const acc = s.accepted || 0;
         const rej = s.rejected || 0;
         lines += ` ${active} ${coin.padEnd(10)} ${hr.padEnd(12)} ${algo.padEnd(20)} A:${acc} R:${rej}\n`;
