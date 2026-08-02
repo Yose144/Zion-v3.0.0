@@ -1253,36 +1253,58 @@ function parseMinerEventForFeed(line) {
   m = stripped.match(/new job\s+height\s+(\d+)\s+diff\s+([\d.]+[TGMK]?)\s+algo\s+(\S+)/i);
   if (m) return { msg: `New job — height ${m[1]} diff ${m[2]} algo ${m[3]}`, type: 'info' };
 
-  // VRSC_SHARE_FOUND (triple stream)
+  // VRSC_SHARE_FOUND (triple stream) — mask coin name in public build
   m = stripped.match(/(\w+)_SHARE_FOUND\s+nonce=\d+\s+hash=[0-9a-fA-F]+\s+\((\S+)\)/i);
-  if (m) return { msg: `${m[1]} share found (${m[2]})`, type: 'ok' };
+  if (m) {
+    const coinLabel = PUBLIC_BUILD ? 'Boost Stream 2' : m[1];
+    return { msg: `${coinLabel} share found (${m[2]})`, type: 'ok' };
+  }
 
   // ── External streams (Stream 2 GPU profit / Stream 3 CPU profit) ──
-  // These were previously dropped wholesale, so a triple-stream session
-  // looked single-stream in the log. Surface the meaningful events.
+  // In public build, all external coin/algo names are masked as "Boost
+  // Stream 1" (GPU, internal stream 2) or "Boost Stream 2" (CPU, internal
+  // stream 3). No real coin name ever appears in the feed.
   m = stripped.match(/external_share_accepted\s+coin=(\S+)(?:\s+status=(\S+))?/i);
-  if (m) return { msg: `${m[1]} share accepted`, type: 'ok' };
+  if (m) {
+    const label = PUBLIC_BUILD ? (m[1] === 'VRSC' ? 'Boost Stream 2' : 'Boost Stream 1') : m[1];
+    return { msg: `${label} share accepted`, type: 'ok' };
+  }
 
   m = stripped.match(/external_share_rejected\s+coin=(\S+)(?:\s+status=(\S+))?/i);
-  if (m) return { msg: `${m[1]} share rejected${m[2] ? ` — ${m[2]}` : ''}`, type: 'error' };
+  if (m) {
+    const label = PUBLIC_BUILD ? (m[1] === 'VRSC' ? 'Boost Stream 2' : 'Boost Stream 1') : m[1];
+    return { msg: `${label} share rejected${m[2] ? ` — ${m[2]}` : ''}`, type: 'error' };
+  }
 
   m = stripped.match(/external_share_stale\s+.*?coin=(\S+)/i);
-  if (m) return { msg: `${m[1]} share stale — job rotated`, type: 'warn' };
+  if (m) {
+    const label = PUBLIC_BUILD ? (m[1] === 'VRSC' ? 'Boost Stream 2' : 'Boost Stream 1') : m[1];
+    return { msg: `${label} share stale — job rotated`, type: 'warn' };
+  }
 
   m = stripped.match(/ext_gpu_share_found\s+coin=(\S+)/i);
-  if (m) return { msg: `${m[1]} share found (GPU)`, type: 'ok' };
+  if (m) {
+    const label = PUBLIC_BUILD ? 'Boost Stream 1' : m[1];
+    return { msg: `${label} share found (GPU)`, type: 'ok' };
+  }
 
   m = stripped.match(/ext_gpu_backend_init\s+algo=(\S+)\s+backend=(\S+)\s+work_size=(\d+)/i);
-  if (m) return { msg: `Stream 2 init — ${m[1]} on ${m[2]} (ws ${m[3]})`, type: 'info' };
+  if (m) return { msg: PUBLIC_BUILD ? 'Boost Stream 1 init' : `Stream 2 init — ${m[1]} on ${m[2]} (ws ${m[3]})`, type: 'info' };
 
   m = stripped.match(/ext_gpu_dag_loading\s+algo=(\S+)\s+epoch=(\d+)/i);
-  if (m) return { msg: `Stream 2 DAG loading — ${m[1]} epoch ${m[2]}`, type: 'info' };
+  if (m) return { msg: PUBLIC_BUILD ? `Boost Stream 1 DAG loading — epoch ${m[2]}` : `Stream 2 DAG loading — ${m[1]} epoch ${m[2]}`, type: 'info' };
 
   m = stripped.match(/ext_gpu_job_received\s+coin=(\S+)\s+algo=(\S+)/i);
-  if (m) return { msg: `Stream 2 job — ${m[1]} (${m[2]})`, type: 'info' };
+  if (m) return { msg: PUBLIC_BUILD ? 'Boost Stream 1 job received' : `Stream 2 job — ${m[1]} (${m[2]})`, type: 'info' };
 
   m = stripped.match(/stream(\d)_(?:gpu_external|ext_cpu)_(started|disabled)/i);
-  if (m) return { msg: `Stream ${m[1]} ${m[2]}`, type: m[2] === 'started' ? 'ok' : 'info' };
+  if (m) {
+    const internalStream = Number(m[1]);
+    const label = PUBLIC_BUILD
+      ? (internalStream === 3 ? 'Boost Stream 2' : 'Boost Stream 1')
+      : `Stream ${internalStream}`;
+    return { msg: `${label} ${m[2]}`, type: m[2] === 'started' ? 'ok' : 'info' };
+  }
 
   // pool_set_difficulty
   m = stripped.match(/pool_set_difficulty=(\d+)/i);
@@ -1485,9 +1507,11 @@ function colorizeConsoleLine(raw) {
 
   // ── V3 Rust miner: VRSC_SHARE_FOUND (triple-stream CPU coin) ──
   // "VRSC_SHARE_FOUND nonce=... hash=... (batch-scan)"
+  // Mask coin name in public build.
   m = raw.match(/(\w+)_SHARE_FOUND\s+nonce=(\d+)\s+hash=([0-9a-fA-F]+)\s+\((\S+)\)/i);
   if (m) {
-    return { html: `${tsHtml}<span class="mc-ok">[◆] ${esc(m[1])} SHARE FOUND</span> <span class="mc-info">(${esc(m[4])})</span> <span class="mc-ts">nonce=${m[2]}</span>` };
+    const coinLabel = PUBLIC_BUILD ? 'BOOST STREAM 2' : m[1];
+    return { html: `${tsHtml}<span class="mc-ok">[◆] ${esc(coinLabel)} SHARE FOUND</span> <span class="mc-info">(${esc(m[4])})</span> <span class="mc-ts">nonce=${m[2]}</span>` };
   }
 
   // ── V3 Rust miner: pool_set_difficulty ──
@@ -1512,6 +1536,14 @@ function colorizeConsoleLine(raw) {
 
   // ── V3 Rust miner: external_stream / ext_gpu ──
   if (/^external_stream|^ext_gpu|^ext_cpu|^ext_share/.test(raw)) {
+    if (PUBLIC_BUILD) {
+      // Mask all external coin/algo names so no real coin name appears
+      let masked = raw
+        .replace(/coin=\S+/gi, 'coin=Boost')
+        .replace(/algo=\S+/gi, 'algo=Boost')
+        .replace(/\bVRSC\b|\bZANO\b|\bERG\b|\bKAS\b|\bALPH\b|\bDCR\b|\bETC\b|\bRVN\b|\bCLORE\b|\bXMR\b|\bRTM\b|\bProgPoWZ\b|\bautolykos\b|\bkawpow\b|\betchash\b|\bsha256\b|\bRandomX\b/gi, 'Boost');
+      return { html: `${tsHtml}<span class="mc-info">${esc(masked)}</span>` };
+    }
     return { html: `${tsHtml}<span class="mc-info">${esc(raw)}</span>` };
   }
 
@@ -1770,7 +1802,9 @@ function setupEventListeners() {
     renderShareLog();
     const coin = data.coin || '—';
     const isZion = coin === 'ZION' || coin.startsWith('ZION');
-    const displayCoin = PUBLIC_BUILD && !isZion ? 'Boost' : coin;
+    const displayCoin = PUBLIC_BUILD && !isZion
+      ? (si === 3 ? 'Boost Stream 2' : 'Boost Stream 1')
+      : coin;
     if (data.accepted) {
       const detail = isZion
         ? `job=${data.job} h=${data.height} nonce=${data.nonce} ${data.latencyMs}ms`
@@ -2202,7 +2236,10 @@ function renderShareLog() {
     const cls = ok ? 'share-acc' : 'share-rej';
     const rawCoin = (s.coin || '—').toString();
     const isZion = rawCoin === 'ZION' || rawCoin.startsWith('ZION');
-    const displayCoin = PUBLIC_BUILD && !isZion ? 'Boost' : rawCoin;
+    const si = Number(s.stream);
+    const displayCoin = PUBLIC_BUILD && !isZion
+      ? (si === 3 ? 'Boost Stream 2' : 'Boost Stream 1')
+      : rawCoin;
     let detail = '';
     if (isZion) {
       detail = ok
@@ -2217,7 +2254,7 @@ function renderShareLog() {
       `<span class="share-log-icon">${icon}</span>` +
       `<span class="share-log-coin">${displayCoin}</span>` +
       `<span class="share-log-detail">${detail}</span>` +
-      `<span class="share-log-algo">${s.algorithm || ''}</span>` +
+      `<span class="share-log-algo">${(PUBLIC_BUILD && !isZion) ? 'Boost' : (s.algorithm || '')}</span>` +
       `</div>`
     );
   }
@@ -3363,13 +3400,25 @@ function updateTripleStreamPanel(stats) {
       card.classList.add('inactive');
     }
 
-    if (coinEl) coinEl.textContent = stream.coin || '—';
+    if (coinEl) {
+      if (PUBLIC_BUILD && i > 1) {
+        coinEl.textContent = i === 3 ? 'Boost Stream 2' : 'Boost Stream 1';
+      } else {
+        coinEl.textContent = stream.coin || '—';
+      }
+    }
     if (hrEl) {
       // Prefer 10s window, fallback to 60s
       const hr = Number(stream.hashrate_10s) || Number(stream.hashrate_60s) || 0;
       hrEl.textContent = fmtHr(hr);
     }
-    if (algoEl) algoEl.textContent = stream.algorithm || '—';
+    if (algoEl) {
+      if (PUBLIC_BUILD && i > 1) {
+        algoEl.textContent = 'Boost';
+      } else {
+        algoEl.textContent = stream.algorithm || '—';
+      }
+    }
     if (sharesEl) {
       const acc = Number(stream.accepted) || 0;
       const rej = Number(stream.rejected) || 0;
