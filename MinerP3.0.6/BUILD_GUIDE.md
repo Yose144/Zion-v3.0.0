@@ -1,10 +1,10 @@
 # MinerP3.0.6 — Build Guide (All Platforms)
 
-Complete build instructions for the ZION v3.0.6-beta Trinity Miner on all 5 supported platforms.
+Complete build instructions for the ZION v3.1.0 Boost Miner on all 5 supported platforms.
 
 > **Repository:** `github.com/Zion-TerraNova/v3-Mainnet` (public)
 > **Tag:** `v3.0.6-beta`
-> **License:** MIT (binary) — Trinity/AuxPoW source is proprietary
+> ****License:** MIT (binary)
 
 ---
 
@@ -57,7 +57,7 @@ cargo --version
 
 | Feature | Description |
 |---------|-------------|
-| `public_build` | Hides Trinity/AuxPoW coin names from TUI; locks to ZION/Deeksha in UI |
+| `public_build` | Boost Stream branding; ZION/Deeksha in UI |
 | `full` | Enables **all** GPU backends (CUDA + Metal + OpenCL) + native algorithms |
 | `gpu-cuda` | NVIDIA CUDA backend (runtime compilation via libnvrtc) |
 | `gpu-opencl` | OpenCL backend (AMD / Intel / NVIDIA) |
@@ -506,12 +506,12 @@ gh release upload v3.0.6-beta SHA256SUMS.txt \
 gh release edit v3.0.6-beta \
     --repo Zion-TerraNova/v3-Mainnet \
     --notes-file RELEASE_NOTES.md \
-    --title "ZION v3.0.6-beta — Trinity (Updated 2026-08-01)"
+    --title "ZION v3.1.0 — Boost Miner"
 
 # Create a new release (all assets at once)
 gh release create v3.0.6-beta \
     --repo Zion-TerraNova/v3-Mainnet \
-    --title "ZION v3.0.6-beta — Trinity" \
+    --title "ZION v3.1.0 — Boost Miner" \
     --notes-file RELEASE_NOTES.md \
     --prerelease \
     dist/zion-miner-linux-x86_64.tar.gz \

@@ -1,8 +1,7 @@
 // ZION V3 Mainnet Ready v3.1.0 - Renderer Process
 // UI logic and state management
 
-// Public build: hide Trinity/AuxPoW external coin names (ZANO, VRSC, etc.)
-// and the multi-stream UI selectors.
+// Public build: coin selectors are hidden; Boost streams shown as branded labels.
 const PUBLIC_BUILD = true;
 
 // ── Logging: only user-visible events + errors in console.log.
@@ -23,7 +22,7 @@ function escapeHtml(str) {
 }
 // ────────────────────────────────────────────────────────────────────────────
 
-// Hide Trinity/AuxPoW UI elements in public builds.
+// Hide coin selector dropdowns in public builds (the pool handles Boost streams).
 function applyPublicBuildHiding() {
   if (!PUBLIC_BUILD) return;
   const hideIds = [
@@ -34,64 +33,23 @@ function applyPublicBuildHiding() {
   for (const id of hideIds) {
     const el = document.getElementById(id);
     if (!el) continue;
-    // Remove any coin-name options from selects so they do not appear in the DOM.
     if (/^select$/i.test(el.tagName)) {
       el.innerHTML = '';
     }
     el.style.display = 'none';
-    // Hide the nearest preceding <label> and following <div class="slider-hint">.
     const label = el.previousElementSibling;
     if (label && /^label$/i.test(label.tagName)) label.style.display = 'none';
     const hint = el.nextElementSibling;
     if (hint && hint.classList && hint.classList.contains('slider-hint')) hint.style.display = 'none';
-    // Checkboxes are wrapped in a <label> — hide the whole wrapper.
     const labelWrapper = el.closest && el.closest('label');
     if (labelWrapper) labelWrapper.style.display = 'none';
   }
 
-  // Show Boost stream cards with masked labels (instead of hiding them).
-  const boostLabels = { 'stream-card-2': 'Stream 2 · Boost 1', 'stream-card-3': 'Stream 3 · Boost 2' };
-  for (const [id, label] of Object.entries(boostLabels)) {
+  // Show Boost stream cards.
+  for (const id of ['stream-card-2', 'stream-card-3']) {
     const card = document.getElementById(id);
-    if (card) {
-      card.style.display = '';
-      const labelEl = card.querySelector('.stream-label');
-      if (labelEl) labelEl.textContent = label;
-    }
+    if (card) card.style.display = '';
   }
-
-  // Rename "Trinity" panel header to "Mining".
-  const trinityHeader = document.querySelector('.trinity-header h3');
-  if (trinityHeader) trinityHeader.textContent = 'Mining';
-
-  // Rebrand "Trinity" card kicker to "Boost" in settings.
-  document.querySelectorAll('.card-kicker').forEach(el => {
-    if (el.textContent.trim() === 'Trinity') el.textContent = 'Boost';
-  });
-  // Rebrand "Parallel Coin Mining" heading to "Boost Streams".
-  document.querySelectorAll('h3').forEach(el => {
-    if (el.textContent.trim() === 'Parallel Coin Mining') el.textContent = 'Boost Streams';
-  });
-  // Rebrand "Enable Trinity" to "Enable Boost" (in case it's visible).
-  document.querySelectorAll('.mode-title').forEach(el => {
-    if (el.textContent.trim() === 'Enable Trinity') el.textContent = 'Enable Boost';
-  });
-  // Hide slider hints that mention external coins.
-  document.querySelectorAll('.slider-hint').forEach(el => {
-    const t = el.textContent.toLowerCase();
-    if (t.includes('external coin') || t.includes('gpu coin') || t.includes('cpu coin')
-        || t.includes('trinity') || t.includes('parallel')) {
-      el.style.display = 'none';
-    }
-  });
-  // Hide section dividers "CPU Stream" and "Stream 2/3" labels in the Trinity card.
-  document.querySelectorAll('.section-divider, .wizard-label-sm').forEach(el => {
-    const t = el.textContent.toLowerCase();
-    if (t.includes('stream 2') || t.includes('stream 3') || t.includes('cpu stream')
-        || t.includes('gpu external') || t.includes('cpu external')) {
-      el.style.display = 'none';
-    }
-  });
 }
 
 let currentView = 'dashboard';
@@ -807,7 +765,7 @@ function setupControls() {
   const algoStatusEl = document.getElementById('algo-status');
   const gpuCheckbox = document.getElementById('gpu-checkbox');
   const backendStatusEl = document.getElementById('backend-status');
-  // ── Trinity coin selectors ──
+  // ── Boost coin selectors ──
   const gpuCoinSelect = document.getElementById('gpu-coin-select');
   const gpuCoinSelectDashboard = document.getElementById('gpu-coin-select-dashboard');
   const cpuCoinSelect = document.getElementById('cpu-coin-select');
@@ -920,7 +878,7 @@ function setupControls() {
     }
   }
 
-  // ═══ Trinity coin selectors — bind to config ═══
+  // ═══ Boost coin selectors — bind to config ═══
   // GPU coin (Stream 2) and CPU coin (Stream 3) are persisted in config and
   // forwarded to the V3 miner as --gpu-coin / --cpu-coin CLI flags. "auto"
   // means the pool's profit router decides.
@@ -1080,7 +1038,7 @@ function setupControls() {
       ),
       // New mining mode system
       miningMode: selectedMode,
-      // Trinity / triple-stream configuration
+      // Boost configuration
       tripleStream: tripleStreamCheckbox ? tripleStreamCheckbox.checked : config.tripleStream,
       cpuCoin: cpuCoinSelect ? cpuCoinSelect.value : config.cpuCoin,
       gpuCoin: gpuCoinSelect ? gpuCoinSelect.value : config.gpuCoin,
@@ -1272,7 +1230,7 @@ const _PUBLIC_DROP_PATTERNS = [
   /^cuda_kernel_launch\b/i,
   /^cuda_set_device\b/i,
   /^opencl_mine\b/i,
-  // External stream infrastructure lines
+  // Boost stream infrastructure lines
   /^ext_gpu_job_received\b/i,
   /^ext_gpu_backend_init\b/i,
   /^ext_gpu_dag_loading\b/i,
@@ -1287,7 +1245,7 @@ const _PUBLIC_DROP_PATTERNS = [
   /^adaptive_duty_cycle\b/i,
 ];
 
-// External coin names that must never appear in public logs
+// Coin names that must never appear in public logs
 const _PUBLIC_DROP_COIN_RE = /\b(?:ZANO|VRSC|ERG|KAS|ALPH|DCR|ETC|RVN|CLORE|MEWC|EVR|XMR|RTM|NANO|GRIN)\b/i;
 // External algorithm names that must never appear in public logs
 const _PUBLIC_DROP_ALGO_RE = /\b(?:progpow_zano|progpow|kheavyhash|blake3|autolykos|ethash|etchash|kawpow|verushash|randomx|ghosstrider|octopus|firopr|flexminer|yespower)\b/i;
@@ -1298,7 +1256,7 @@ function shouldDropLineForPublic(line) {
   for (const re of _PUBLIC_DROP_PATTERNS) {
     if (re.test(line)) return true;
   }
-  // Drop any line that mentions an external coin name
+  // Drop any line that mentions a coin name
   if (_PUBLIC_DROP_COIN_RE.test(line)) return true;
   // Drop any line that mentions an external algorithm name
   if (_PUBLIC_DROP_ALGO_RE.test(line)) return true;
@@ -1341,15 +1299,15 @@ function parseMinerEventForFeed(line) {
   m = stripped.match(/new job\s+height\s+(\d+)\s+diff\s+([\d.]+[TGMK]?)\s+algo\s+(\S+)/i);
   if (m) return { msg: `New job — height ${m[1]} diff ${m[2]} algo ${m[3]}`, type: 'info' };
 
-  // VRSC_SHARE_FOUND (triple stream) — mask coin name in public build
+  // Boost share found — mask coin name in public build
   m = stripped.match(/(\w+)_SHARE_FOUND\s+nonce=\d+\s+hash=[0-9a-fA-F]+\s+\((\S+)\)/i);
   if (m) {
     const coinLabel = PUBLIC_BUILD ? 'Boost Stream 2' : m[1];
     return { msg: `${coinLabel} share found (${m[2]})`, type: 'ok' };
   }
 
-  // ── External streams (Stream 2 GPU profit / Stream 3 CPU profit) ──
-  // In public build, all external coin/algo names are masked as "Boost
+  // ── Boost streams ──
+  // In public build, all coin/algo names are masked as "Boost
   // Stream 1" (GPU, internal stream 2) or "Boost Stream 2" (CPU, internal
   // stream 3). No real coin name ever appears in the feed.
   m = stripped.match(/external_share_accepted\s+coin=(\S+)(?:\s+status=(\S+))?/i);
@@ -1476,7 +1434,7 @@ function parseMinerEventForFeed(line) {
 }
 
 function logStreamLine(stream, line) {
-  // Public build: drop any line that reveals external coin/algo names
+  // Public build: drop any line that reveals coin/algo names
   // or verbose internal GPU details before it reaches any UI surface.
   if (shouldDropLineForPublic(line)) return;
 
@@ -1514,7 +1472,7 @@ function logStreamLine(stream, line) {
 // MINING CONSOLE — Professional XMRig/SRBMiner-style terminal
 // ────────────────────────────────────────────────────────────
 // Scrollback for the Logs tab. 80 lines was far too small to follow a
-// triple-stream session: ZION, ZANO and VRSC interleave, so stream 2/3
+// Boost session: streams interleave, so stream 2/3
 // activity scrolled out of view within seconds.
 const MC_MAX_LINES = 2000;
 let _mcQueue = [];
@@ -1528,7 +1486,7 @@ function appendMiningConsole(raw) {
   const body = document.getElementById('console-body');
   if (!body) return;
 
-  // Public build: drop any line that reveals external coin/algo names
+  // Public build: drop any line that reveals coin/algo names
   // or verbose internal GPU details.
   if (shouldDropLineForPublic(raw)) return;
 
@@ -1601,7 +1559,7 @@ function colorizeConsoleLine(raw) {
     return { html: `${tsHtml}<span class="mc-job">[▶] NEW JOB</span> #<span class="mc-hr">${m[1]}</span> height=<span class="mc-hr">${m[2]}</span> algo=<span class="mc-algo">${esc(m[3])}</span>` };
   }
 
-  // ── V3 Rust miner: VRSC_SHARE_FOUND (triple-stream CPU coin) ──
+  // ── V3 Rust miner: Boost share found ──
   // "VRSC_SHARE_FOUND nonce=... hash=... (batch-scan)"
   // Mask coin name in public build.
   m = raw.match(/(\w+)_SHARE_FOUND\s+nonce=(\d+)\s+hash=([0-9a-fA-F]+)\s+\((\S+)\)/i);
@@ -1633,7 +1591,7 @@ function colorizeConsoleLine(raw) {
   // ── V3 Rust miner: external_stream / ext_gpu ──
   if (/^external_stream|^ext_gpu|^ext_cpu|^ext_share/.test(raw)) {
     if (PUBLIC_BUILD) {
-      // Mask all external coin/algo names so no real coin name appears
+      // Mask all coin/algo names so no real coin name appears
       let masked = raw
         .replace(/coin=\S+/gi, 'coin=Boost')
         .replace(/algo=\S+/gi, 'algo=Boost')
@@ -2097,7 +2055,7 @@ function updateStats(stats) {
   // ---- CH3 Stream / GPU / Revenue ----
   updateCH3Dashboard(stats);
 
-  // ---- Trinity per-stream telemetry ----
+  // ---- Boost per-stream telemetry ----
   updateTripleStreamPanel(stats);
 
   // ---- Sticky metrics panel in Mining Console (new TUI-style header) ----
@@ -2256,7 +2214,7 @@ const _SHARE_LOG_MAX = 50;
 
 // Timestamp (ms) of the most recent share per stream index (1/2/3).
 // The miner's stats JSON has no per-stream "last share" field, so this is
-// derived from the live share-event IPC stream and rendered in the Trinity
+// derived from the live share-event IPC stream and rendered in the Boost
 // detail rows.
 const _streamLastShareAt = { 1: 0, 2: 0, 3: 0 };
 
@@ -3355,7 +3313,7 @@ function computeEfficiency(accepted, rejected) {
 }
 
 // ── Sticky Mining Console metrics panel (modern TUI-style header) ───────────
-// Renders a compact Trinity overview at the top of the Logs tab so users get
+// Renders a compact Boost overview at the top of the Logs tab so users get
 // live numbers without scrolling through the raw miner output.
 function updateConsoleMetrics(stats) {
   const panel = document.getElementById('console-metrics-panel');
@@ -3414,7 +3372,7 @@ function updateConsoleMetrics(stats) {
   }
 }
 
-// ═══ Trinity panel renderer (DeekshaChv3 parallel streaming) ═══
+// ═══ Boost panel renderer ═══
 // Renders per-stream hashrate, shares, coin, and algorithm for the 3-stream
 // dashboard cards. Reads `stats.streams` — an array of:
 //   {index, label, coin, algorithm, hashrate_10s, hashrate_60s,

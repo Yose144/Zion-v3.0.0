@@ -1,9 +1,7 @@
 // ZION V3 Mainnet Ready v3.1.0 - Public Desktop Miner
 // Electron main process with system tray, auto-start, GPU mining, IPC
 
-// Public build flag: this is the public DesktopAgentP3.0.6 release.
-// Trinity/AuxPoW external coin names are hidden and the bundled miner is
-// compiled with the `public_build` feature (single ZION/Deeksha stream).
+// Public build: Boost streams run in the background; UI shows Boost branding.
 const PUBLIC_BUILD = true;
 
 // Work around NVIDIA/Wayland GPU sandbox segfaults by forcing the X11 Ozone
@@ -680,7 +678,7 @@ let minerStats = {
   gpu_power_w: null,
   cpu_only_mode: true,
   // Dual mining: ZION + XMR (DAO revenue)
-  // ── Trinity per-stream telemetry (DeekshaChv3 parallel streaming) ──
+  // ── Boost per-stream telemetry ──
   // Populated from V3 miner /stats `streams` array. Each entry:
   //   {index, label, coin, algorithm, hashrate_10s, hashrate_60s,
   //    hashrate_15m, accepted, rejected, active}
@@ -721,7 +719,7 @@ function resetMinerTelemetryForNewSpawn() {
   delete minerStats.current_epoch;
   delete minerStats.stream_algorithm;
   delete minerStats.miner_version;
-  // Reset trinity per-stream telemetry on new spawn
+  // Reset Boost per-stream telemetry on new spawn
   minerStats.streams = [];
   Object.assign(minerStats, {
     hashrate: 0,
@@ -1279,10 +1277,10 @@ const DEFAULT_CONFIG = {
   autoSelectPool: true,
   minimizeToTray: true,
   startMinimized: false,
-  // ── Trinity (DeekshaChv3 parallel streaming) ──
-  // cpuCoin: Stream 3 CPU external coin preference ("auto" = pool decides).
+  // ── Boost streams ──
+  // cpuCoin: Boost Stream 2 preference ("auto" = pool decides).
   //   Supported: "auto", "VRSC", "XMR", "RTM"
-  // gpuCoin:  Stream 2 GPU external coin preference ("auto" = pool decides).
+  // gpuCoin:  Boost Stream 1 preference ("auto" = pool decides).
   //   Supported: "auto", "KAS", "ALPH", "DCR", "ERG", "ETC", "RVN", "CLORE",
   //              "MEWC", "EVR", "FLUX", "EPIC"
   // tripleStream: master toggle. When true, ZION_ENABLE_STREAM_SWITCH=1 and
@@ -1292,7 +1290,7 @@ const DEFAULT_CONFIG = {
   gpuCoin: 'auto',
   tripleStream: !PUBLIC_BUILD,
   // ext tuning defaults are not used in public builds
-  // Triple-stream tuning (CUDA primary + ext coin)
+  // Boost tuning (CUDA primary + Boost stream)
   extGpuBackend: 'cuda',
   extGpuDutyPct: 50,
   extGpuBatchSize: 262144,
@@ -1326,7 +1324,7 @@ function ensureZionGroupHint(raw) {
   }
   // Append a pool group hint so the pool routes the session to the Zion group.
   // Without this, the pool may assign the session to Auto/Revenue and serve an
-  // external coin (e.g. ZANO ProgPoWZ) as the primary job, breaking Trinity.
+  // Boost coin as the primary job.
   return `${s}@g=zion`.slice(0, 32);
 }
 
@@ -2336,7 +2334,7 @@ function startMiningV3(config, v3Path) {
   // stdout is a clean stream of logs/telemetry for the agent to parse.
   args.push('--no-tui');
 
-  // ── 6a. Trinity CLI flags (DeekshaChv3 parallel streaming) ──────────
+  // ── 6a. Boost CLI flags ──────────
   // Forward the user's algorithm / coin preferences to the V3 miner so the
   // pool can assign the correct Stream 2 (GPU external) and Stream 3 (CPU
   // external) jobs. "auto" = let the pool's profit router decide.
@@ -2373,11 +2371,11 @@ function startMiningV3(config, v3Path) {
     ZION_METRICS_REPORT_SECS: '10',
     ZION_STATS_FILE: STATS_PATH,
     ZION_MINER_METRICS_BIND: '127.0.0.1:9116',
-    ZION_NO_DASHBOARD: '1', // desktop agent renders its own Trinity UI; suppress SMOS compact dashboard
+    ZION_NO_DASHBOARD: '1', // desktop agent renders its own Boost UI; suppress SMOS compact dashboard
     ZION_NO_FANCY: '1',     // suppress ASCII banner and block-found art; keep machine-parseable logs
     ZION_NONCE_BASE: String((Date.now() >>> 0) & 0x1fffffff),
     ZION_PAYOUT_ADDRESS: wallet,
-    // ── Trinity: enable parallel ZION (GPU) + external coin (CPU/GPU) ──
+    // ── Boost: enable parallel ZION + Boost streams ──
     // When enabled, the pool sends Job messages with external_stream /
     // external_stream_cpu fields and the miner runs them in parallel.
     // Public builds keep streams 2/3 running for revenue; UI hides names.
@@ -2418,7 +2416,7 @@ function startMiningV3(config, v3Path) {
   // or unsupported GPU kernel.
   env.ZION_BACKEND = selectedGpuBackend;
   // When GPU is off (or Apple Silicon where Metal ProgPoW is not implemented),
-  // disable the external GPU stream (ZANO/ProgPoW) to prevent memory exhaustion
+  // disable Boost Stream 1 to prevent memory exhaustion
   // and wasted CPU cycles.  The pool still sends external_stream jobs, but the
   // miner will skip them instead of spinning a useless GPU thread.
   if (!wantsGpu || (process.platform === 'darwin' && os.arch() === 'arm64')) {
@@ -2438,7 +2436,7 @@ function startMiningV3(config, v3Path) {
         const cudaOverrides = applyCudaTuning(gpuInfo, tuningCfg);
         Object.assign(env, cudaOverrides);
       }
-      // Triple-stream tuning: external GPU (ZANO) backend, duty cycle and batch.
+      // Boost Stream 1 tuning: backend, duty cycle and batch.
       // On NVIDIA the ProgPoWZ CUDA kernel is ~2x faster than OpenCL in
       // isolation, but it must share the GPU with the main ZION deeksha
       // kernel.  Empirically OpenCL ProgPoWZ does not submit work on some
@@ -2828,7 +2826,7 @@ function tryUpdateStatsFromFile() {
     else if (typeof payload.shares === 'number') minerStats.shares = payload.shares;
     if (typeof payload.uptime_sec === 'number') minerStats.uptime = Math.floor(payload.uptime_sec);
 
-    // ── Trinity per-stream telemetry (from stats file) ──
+    // ── Boost per-stream telemetry (from stats file) ──
     // The V3 miner writes a `streams` array to the stats file with the same
     // shape as the HTTP /stats endpoint. This is the fallback path when the
     // HTTP metrics endpoint is unreachable.
@@ -6455,7 +6453,7 @@ setInterval(() => {
             if (typeof stats.gpu_clock_mhz === 'number') minerStats.gpu_clock_mhz = stats.gpu_clock_mhz;
             if (stats.gpu_temp_c != null) minerStats.gpu_temp_c = stats.gpu_temp_c;
             if (stats.gpu_power_w != null) minerStats.gpu_power_w = stats.gpu_power_w;
-            // ── Trinity per-stream telemetry ──
+            // ── Boost per-stream telemetry ──
             // V3 miner exposes `streams` as an array of per-stream objects.
             // Forward to renderer for the 3-stream dashboard cards.
             if (Array.isArray(stats.streams)) {

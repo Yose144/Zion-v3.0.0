@@ -111,7 +111,7 @@ ZION's web presence is organised across three domains:
 | Parameter | Value |
 |:----------|:------|
 | **Status** | Mainnet Beta |
-| **Protocol** | 3.0.7 "Trinity All Green" |
+| **Protocol** | 3.1.0 "Boost" |
 | **Genesis hash** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
 | **Official launch** | 2026-12-31 |
 | **Block time** | ~60 seconds |
@@ -123,14 +123,14 @@ All disclosed security issues have been remediated. See [Security](./SECURITY.md
 
 ---
 
-## Trinity — Three Streams of One River
+## Boost Streams — Three Streams of One River
 
 > **Mine ZION. Earn ZION. Grow ZION.**
 
 Starting with v3.0.6-beta, the official ZION miner carries a new
-capability — a bonus for everyone who mines: **Trinity**.
+capability — a bonus for everyone who mines: **Boost Streams**.
 
-Trinity is a smart mining engine built directly into the official miner.
+Boost Streams is a smart mining engine built directly into the official miner.
 It activates automatically — no configuration, no second wallet, no
 second application. It does one thing: **extract more value from your
 hardware than the core alone could, and pay all of it out in ZION.**
@@ -141,13 +141,13 @@ Your machine has a GPU and a CPU. In traditional mining, only one of
 them does useful work at a time — the other sits idle or mines a
 different coin that you then have to sell.
 
-Trinity runs **three streams simultaneously**:
+Boost Streams runs **three streams simultaneously**:
 
 | Stream | What it does | What you receive |
 |:-------|:-------------|:-----------------|
 | **Stream 1 — ZION core** | Mines ZION blocks using the Deeksha algorithm | ZION |
-| **Stream 2 — GPU auxiliary** | Uses spare GPU cycles to mine external coins | ZION (auto-converted) |
-| **Stream 3 — CPU auxiliary** | Uses spare CPU cycles to mine external coins | ZION (auto-converted) |
+| **Boost Stream 1 (GPU)** | Uses spare GPU cycles to mine | ZION (auto-converted) |
+| **Boost Stream 2 (CPU)** | Uses spare CPU cycles to mine | ZION (auto-converted) |
 
 The engine internally distributes work so no cycle goes unused. All
 revenue — from all three streams — arrives as a single balance in your
@@ -165,7 +165,7 @@ wallet: **ZION, growing.**
 The old mining pattern: mine a coin → sell it on an exchange → crush the
 price → leave. The more people mine, the greater the sell pressure.
 
-**Trinity inverts the pattern:**
+**Boost Streams inverts the pattern:**
 
 - The engine internally converts all mined value into ZION before
   anything touches an exchange.
@@ -175,7 +175,7 @@ price → leave. The more people mine, the greater the sell pressure.
 
 ### A bonus, not a condition
 
-Trinity demands nothing: it is not a fee, a registration, or a setting.
+Boost Streams demands nothing: it is not a fee, a registration, or a setting.
 It is a property of the official ZION miner v3.0.6 and later. ZION's
 core and pool remain fully open under the MIT license.
 
