@@ -4,7 +4,7 @@
 # Cross-compile the public-facing ZION miner binary for Windows x86_64
 # using the `x86_64-pc-windows-gnu` target (mingw-w64 linker).
 #
-# The miner is built with `public_build` (Trinity hidden in TUI) and
+# The miner is built with `public_build` (Boost branding in TUI) and
 # `full` (OpenCL + CUDA + native-all + native-hashers).  Metal is
 # target-gated to macOS and is a no-op on Windows.
 #
@@ -21,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}") && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 V3_DIR="${REPO_ROOT}/V3"
 DIST_DIR="${SCRIPT_DIR}/dist"
-VERSION="v3.0.6-beta"
+VERSION="v3.1.0"
 
 echo "=== ZION Miner Windows Cross-Build ==="
 echo "Version: ${VERSION}"

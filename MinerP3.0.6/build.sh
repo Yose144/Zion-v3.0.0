@@ -18,11 +18,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 V3_DIR="${REPO_ROOT}/V3"
 DIST_DIR="${SCRIPT_DIR}/dist"
-VERSION="v3.0.6-beta"
+VERSION="v3.1.0"
 
 echo "=== ZION Miner Public Build ==="
 echo "Version: ${VERSION}"
-echo "Feature: public_build (Trinity hidden in TUI)"
+echo "Feature: public_build (Boost branding in TUI)"
 echo ""
 
 # ── Build ──
