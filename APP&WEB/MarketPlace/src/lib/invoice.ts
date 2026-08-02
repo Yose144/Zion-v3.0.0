@@ -1,4 +1,5 @@
 import { prisma } from './db';
+import { getActiveTheme, type ShopTheme } from './settings';
 
 const COMPANY = {
   name: 'Omnity.One s.r.o.',
@@ -134,21 +135,70 @@ function paymentMethodText(method: string): string {
   return 'Neuvedeno';
 }
 
-export function buildInvoiceHtml(opts: {
-  invoiceNumber: string;
-  orderId: string;
-  issueDate: Date;
-  dueDate: Date;
-  customerName: string;
-  customerAddress?: { street?: string; city?: string; zip?: string } | null;
-  customerEmail: string;
-  customerPhone: string;
-  paymentMethod: string;
-  totalCzk: number;
-  shippingCzk: number;
-  items: CartItemLike[];
-  qrCodeData?: string;
-}): string {
+const THEME_STYLES: Record<ShopTheme, Record<string, string>> = {
+  rasta: {
+    bg: '#0a0a0a',
+    card: '#0f0f0f',
+    text: '#e5e7eb',
+    muted: '#9af59a',
+    accent: '#FFD700',
+    accent2: '#c01026',
+    accent3: '#00ff7f',
+    headerGradient: 'linear-gradient(135deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%)',
+    infoBg: 'linear-gradient(135deg, #1c7b1c, #0a4a0a)',
+    tableHeader: '#1c7b1c',
+    totalsBg: 'linear-gradient(135deg, #FFD700, #b8860b)',
+    paymentBg: 'rgba(255,215,0,0.08)',
+    paymentBorder: 'rgba(255,215,0,0.3)',
+    paymentText: '#FFD700',
+    qrBg: 'rgba(0,0,0,0.3)',
+    border: 'rgba(255,255,255,0.08)',
+    footer: '#888',
+    footerLink: '#FFD700',
+    surface: 'rgba(255,255,255,0.04)',
+  },
+  zion: {
+    bg: '#0b0c10',
+    card: '#151725',
+    text: '#e5e7eb',
+    muted: '#94a3b8',
+    accent: '#ffd700',
+    accent2: '#06b6d4',
+    accent3: '#9333ea',
+    headerGradient: 'linear-gradient(135deg, #06b6d4 0%, #9333ea 50%, #ffd700 100%)',
+    infoBg: 'linear-gradient(135deg, #1e3a8a, #0f172a)',
+    tableHeader: '#1e3a8a',
+    totalsBg: 'linear-gradient(135deg, #ffd700, #9333ea)',
+    paymentBg: 'rgba(255,215,0,0.08)',
+    paymentBorder: 'rgba(255,215,0,0.3)',
+    paymentText: '#ffd700',
+    qrBg: 'rgba(0,0,0,0.3)',
+    border: 'rgba(255,255,255,0.08)',
+    footer: '#64748b',
+    footerLink: '#06b6d4',
+    surface: 'rgba(255,255,255,0.04)',
+  },
+};
+
+export function buildInvoiceHtml(
+  opts: {
+    invoiceNumber: string;
+    orderId: string;
+    issueDate: Date;
+    dueDate: Date;
+    customerName: string;
+    customerAddress?: { street?: string; city?: string; zip?: string } | null;
+    customerEmail: string;
+    customerPhone: string;
+    paymentMethod: string;
+    totalCzk: number;
+    shippingCzk: number;
+    items: CartItemLike[];
+    qrCodeData?: string;
+  },
+  theme: ShopTheme = 'rasta'
+): string {
+  const t = THEME_STYLES[theme];
   const items = buildItems(opts.items ?? [], opts.shippingCzk);
   const totals = calculateTotals(items);
 
@@ -163,20 +213,20 @@ export function buildInvoiceHtml(opts: {
     .map((item, index) => {
       return `
         <tr>
-          <td>${index + 1}</td>
-          <td>${escapeHtml(item.name)}</td>
-          <td class="center">${item.quantity} ${item.unit}</td>
-          <td class="right">${formatPrice(item.unitPriceWithoutVat)}</td>
-          <td class="center">${item.vatRate}%</td>
-          <td class="right">${formatPrice(item.vatAmount)}</td>
-          <td class="right"><strong>${formatPrice(item.totalPrice)}</strong></td>
+          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.text};">${index + 1}</td>
+          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.text};">${escapeHtml(item.name)}</td>
+          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.muted};text-align:center;">${item.quantity} ${item.unit}</td>
+          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.text};text-align:right;">${formatPrice(item.unitPriceWithoutVat)}</td>
+          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.text};text-align:center;">${item.vatRate}%</td>
+          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.text};text-align:right;">${formatPrice(item.vatAmount)}</td>
+          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.accent};text-align:right;font-weight:700;">${formatPrice(item.totalPrice)}</td>
         </tr>
       `;
     })
     .join('');
 
   const qrImg = opts.qrCodeData
-    ? `<img src="${opts.qrCodeData}" alt="QR platba" style="max-width:150px;" />`
+    ? `<img src="${opts.qrCodeData}" alt="QR platba" style="max-width:180px;border-radius:8px;background:#fff;padding:6px;" />`
     : '';
 
   return `<!DOCTYPE html>
@@ -187,46 +237,43 @@ export function buildInvoiceHtml(opts: {
   <title>Faktura ${opts.invoiceNumber}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 12px; line-height: 1.5; color: #333; background: #fff; }
-    .invoice { max-width: 800px; margin: 0 auto; padding: 40px; }
-    .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 3px solid #2c5530; }
-    .company-logo { font-size: 28px; font-weight: bold; color: #2c5530; }
-    .company-logo span { color: #c9a227; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 13px; line-height: 1.6; color: ${t.text}; background: ${t.bg}; }
+    .invoice { max-width: 800px; margin: 0 auto; padding: 40px; background: ${t.card}; border-radius: 16px; box-shadow: 0 28px 72px rgba(0,0,0,0.6); border: 1px solid ${t.border}; }
+    .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding: 30px; border-radius: 12px; background: ${t.headerGradient}; color: #000; }
+    .company-logo { font-size: 30px; font-weight: 900; color: #000; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    .company-logo span { color: #fff; font-weight: 700; }
     .invoice-title { text-align: right; }
-    .invoice-title h1 { font-size: 32px; color: #2c5530; margin-bottom: 5px; }
-    .invoice-number { font-size: 16px; color: #666; }
-    .parties { display: flex; gap: 40px; margin-bottom: 30px; }
-    .party { flex: 1; padding: 20px; background: #f8f9fa; border-radius: 8px; }
-    .party h3 { color: #2c5530; font-size: 14px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #c9a227; }
-    .party p { margin: 5px 0; }
-    .party strong { color: #2c5530; }
-    .invoice-info { display: flex; gap: 20px; margin-bottom: 30px; background: linear-gradient(135deg, #2c5530, #1a3a1e); padding: 20px; border-radius: 8px; color: #fff; }
+    .invoice-title h1 { font-size: 36px; color: #000; margin-bottom: 5px; font-weight: 900; }
+    .invoice-number { font-size: 16px; color: #000; font-weight: 600; }
+    .parties { display: flex; gap: 24px; margin-bottom: 30px; }
+    .party { flex: 1; padding: 24px; background: ${t.surface}; border-radius: 12px; border: 1px solid ${t.border}; }
+    .party h3 { color: ${t.accent}; font-size: 14px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid ${t.accent}; text-transform: uppercase; letter-spacing: 1px; }
+    .party p { margin: 6px 0; color: ${t.text}; }
+    .party strong { color: ${t.accent3}; }
+    .invoice-info { display: flex; gap: 16px; margin-bottom: 30px; background: ${t.infoBg}; padding: 24px; border-radius: 12px; color: #fff; border: 1px solid ${t.border}; }
     .info-item { flex: 1; text-align: center; }
-    .info-item label { display: block; font-size: 10px; text-transform: uppercase; opacity: 0.8; margin-bottom: 5px; }
-    .info-item span { font-size: 16px; font-weight: bold; }
+    .info-item label { display: block; font-size: 10px; text-transform: uppercase; opacity: 0.85; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .info-item span { font-size: 16px; font-weight: 700; }
     .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-    .items-table th { background: #2c5530; color: #fff; padding: 12px 10px; text-align: left; font-size: 11px; text-transform: uppercase; }
+    .items-table th { background: ${t.tableHeader}; color: #fff; padding: 14px 10px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
     .items-table th:first-child { border-radius: 8px 0 0 0; }
     .items-table th:last-child { border-radius: 0 8px 0 0; }
-    .items-table td { padding: 12px 10px; border-bottom: 1px solid #eee; }
     .items-table tr:last-child td { border-bottom: none; }
-    .items-table .center { text-align: center; }
-    .items-table .right { text-align: right; }
     .totals { display: flex; justify-content: flex-end; margin-bottom: 30px; }
-    .totals-box { width: 300px; background: #f8f9fa; border-radius: 8px; overflow: hidden; }
-    .totals-row { display: flex; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #eee; }
-    .totals-row:last-child { border-bottom: none; background: linear-gradient(135deg, #c9a227, #a88b1f); color: #000; font-size: 18px; font-weight: bold; }
-    .payment-info { background: #fff3cd; border: 1px solid #c9a227; border-radius: 8px; padding: 20px; margin-bottom: 30px; }
-    .payment-info h3 { color: #856404; margin-bottom: 15px; }
-    .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .totals-box { width: 320px; background: ${t.surface}; border-radius: 12px; overflow: hidden; border: 1px solid ${t.border}; }
+    .totals-row { display: flex; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid ${t.border}; color: ${t.text}; }
+    .totals-row:last-child { border-bottom: none; background: ${t.totalsBg}; color: #000; font-size: 18px; font-weight: 800; }
+    .payment-info { background: ${t.paymentBg}; border: 1px solid ${t.paymentBorder}; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    .payment-info h3 { color: ${t.paymentText}; margin-bottom: 15px; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; color: ${t.text}; }
     .payment-grid p { margin: 5px 0; }
-    .qr-section { text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 30px; }
-    .qr-section img { max-width: 150px; }
-    .invoice-footer { text-align: center; padding-top: 20px; border-top: 1px solid #eee; color: #888; font-size: 11px; }
-    .invoice-footer a { color: #2c5530; }
+    .payment-grid strong { color: ${t.muted}; }
+    .qr-section { text-align: center; padding: 24px; background: ${t.qrBg}; border-radius: 12px; margin-bottom: 24px; border: 1px solid ${t.border}; }
+    .invoice-footer { text-align: center; padding-top: 24px; border-top: 1px solid ${t.border}; color: ${t.footer}; font-size: 12px; }
+    .invoice-footer a { color: ${t.footerLink}; text-decoration: none; }
     @media print {
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .invoice { padding: 20px; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff; }
+      .invoice { box-shadow: none; border: none; }
     }
   </style>
 </head>
@@ -271,11 +318,11 @@ export function buildInvoiceHtml(opts: {
         <tr>
           <th style="width:30px;">#</th>
           <th>Položka</th>
-          <th class="center" style="width:80px;">Množství</th>
-          <th class="right" style="width:100px;">Cena/ks</th>
-          <th class="center" style="width:60px;">DPH</th>
-          <th class="right" style="width:80px;">DPH Kč</th>
-          <th class="right" style="width:100px;">Celkem</th>
+          <th style="width:80px;text-align:center;">Množství</th>
+          <th style="width:100px;text-align:right;">Cena/ks</th>
+          <th style="width:60px;text-align:center;">DPH</th>
+          <th style="width:80px;text-align:right;">DPH Kč</th>
+          <th style="width:100px;text-align:right;">Celkem</th>
         </tr>
       </thead>
       <tbody>${itemsHtml}</tbody>
@@ -304,9 +351,9 @@ export function buildInvoiceHtml(opts: {
     <div class="qr-section">${qrImg}</div>
 
     <div class="invoice-footer">
-      <p>Děkujeme za Vaši objednávku!</p>
+      <p style="margin-bottom:8px;">Děkujeme za Vaši objednávku!</p>
       <p>${escapeHtml(COMPANY.name)} | ${escapeHtml(COMPANY.email)} | <a href="https://${escapeHtml(COMPANY.web)}">${escapeHtml(COMPANY.web)}</a></p>
-      <p style="margin-top:10px;">Faktura byla vystavena elektronicky a je platná bez podpisu.</p>
+      <p style="margin-top:12px;">Faktura byla vystavena elektronicky a je platná bez podpisu.</p>
     </div>
   </div>
 </body>
@@ -350,21 +397,26 @@ export async function createInvoiceForOrder(input: CreateInvoiceInput) {
     priceCzk: Math.round((it as Record<string, unknown>).priceCzk as number) || 0,
   }));
 
-  const html = buildInvoiceHtml({
-    invoiceNumber,
-    orderId: input.orderId,
-    issueDate,
-    dueDate,
-    customerName: input.customerName,
-    customerAddress: input.customerAddress,
-    customerEmail: input.customerEmail,
-    customerPhone: input.customerPhone,
-    paymentMethod: input.payment,
-    totalCzk: input.totalCzk,
-    shippingCzk: input.shippingCzk,
-    items: typedItems,
-    qrCodeData,
-  });
+  const theme = await getActiveTheme();
+
+  const html = buildInvoiceHtml(
+    {
+      invoiceNumber,
+      orderId: input.orderId,
+      issueDate,
+      dueDate,
+      customerName: input.customerName,
+      customerAddress: input.customerAddress,
+      customerEmail: input.customerEmail,
+      customerPhone: input.customerPhone,
+      paymentMethod: input.payment,
+      totalCzk: input.totalCzk,
+      shippingCzk: input.shippingCzk,
+      items: typedItems,
+      qrCodeData,
+    },
+    theme
+  );
 
   // Deactivate any previous draft invoices for this order
   await prisma.invoice.updateMany({
