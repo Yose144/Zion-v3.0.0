@@ -143,12 +143,6 @@ different coin that you then have to sell.
 
 Trinity runs **three streams simultaneously**:
 
-| Stream | What it does | What you receive |
-|:-------|:-------------|:-----------------|
-| **Stream 1 — ZION core** | Mines ZION blocks using the Deeksha algorithm | ZION |
-| **Stream 2 — GPU auxiliary** | Uses spare GPU cycles to mine external coins | ZION (auto-converted) |
-| **Stream 3 — CPU auxiliary** | Uses spare CPU cycles to mine external coins | ZION (auto-converted) |
-
 The engine internally distributes work so no cycle goes unused. All
 revenue — from all three streams — arrives as a single balance in your
 wallet: **ZION, growing.**
