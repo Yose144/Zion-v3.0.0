@@ -15,7 +15,7 @@ This release restructures the ZION desktop client around a simpler v3.1 layout: 
 - **Settings** — now contains `Identity`, `Pools`, `Performance`, `Engine`, `Network` and `Node` tabs.
 - **MarketPlace** — embedded `https://market.zionterranova.com` in a sandboxed iframe.
 - **OASIS** — embedded `https://oasis.zionterranova.com` in a sandboxed iframe.
-- **Public build flag** — still enabled in `prepare-rust-miner.js`; the Rust miner and Electron UI hide Trinity / AuxPoW external coin names.
+- **Public build — Boost Stream 1 (GPU) and Boost Stream 2 (CPU) run in the background; UI shows Boost branding.
 - **GPU sandbox workaround** — Linux re-exec logic adds `--ozone-platform=x11` and `--disable-gpu-sandbox`.
 
 ## Downloads

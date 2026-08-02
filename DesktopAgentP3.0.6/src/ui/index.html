@@ -1149,7 +1149,7 @@
       background-clip: text;
     }
 
-    /* ═══ Trinity Panel (DeekshaChv3 parallel streaming) ═══ */
+    /* ═══ Boost Panel ═══ */
     .trinity-panel {
       background: rgba(0, 0, 0, 0.28);
       border: 1px solid rgba(255,255,255,0.07);
@@ -4375,7 +4375,7 @@
                 <option value="cosmic_harmony_ekam_deeksha_v2">Cosmic Harmony Ekam v2</option>
                 <option value="deeksha_lite_fire">Deeksha Lite Fire</option>
               </select>
-              <select id="gpu-coin-select-dashboard" class="algo-select" style="width: auto; min-width: 130px; padding: 6px 28px 6px 12px; font-size: 11px;" title="Stream 2 — GPU external coin (triple stream)">
+              <select id="gpu-coin-select-dashboard" class="algo-select" style="width: auto; min-width: 130px; padding: 6px 28px 6px 12px; font-size: 11px;" title="Boost Stream 1">
                 <option value="auto">GPU: Auto</option>
                 <option value="KAS">GPU: KAS</option>
                 <option value="ALPH">GPU: ALPH</option>
@@ -4389,7 +4389,7 @@
                 <option value="FLUX">GPU: FLUX</option>
                 <option value="EPIC">GPU: EPIC</option>
               </select>
-              <select id="cpu-coin-select-dashboard" class="algo-select" style="width: auto; min-width: 120px; padding: 6px 28px 6px 12px; font-size: 11px;" title="Stream 3 — CPU external coin (triple stream)">
+              <select id="cpu-coin-select-dashboard" class="algo-select" style="width: auto; min-width: 120px; padding: 6px 28px 6px 12px; font-size: 11px;" title="Boost Stream 2">
                 <option value="auto">CPU: Auto</option>
                 <option value="VRSC">CPU: VRSC</option>
                 <option value="XMR">CPU: XMR</option>
@@ -4484,7 +4484,7 @@
 
         </div>
 
-        <!-- ═══ Trinity Panel (DeekshaChv3 parallel streaming) ═══ -->
+        <!-- ═══ Boost Panel ═══ -->
         <div id="trinity-panel" class="trinity-panel">
           <div class="trinity-header">
             <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Mining</h3>
@@ -4520,10 +4520,10 @@
                 </div>
               </div>
             </div>
-            <!-- Stream 2: GPU external profit -->
+            <!-- Stream 2: Boost 1 -->
             <div class="stream-card stream-gpu" id="stream-card-2" style="display:none">
               <div class="stream-card-header">
-                <span class="stream-label">Stream 2 · GPU Profit</span>
+                <span class="stream-label">Stream 2 · Boost 1</span>
                 <span class="stream-coin" id="stream-2-coin">—</span>
               </div>
               <div class="stream-card-body">
@@ -4549,10 +4549,10 @@
                 </div>
               </div>
             </div>
-            <!-- Stream 3: CPU external profit -->
+            <!-- Stream 3: Boost 2 -->
             <div class="stream-card stream-cpu" id="stream-card-3" style="display:none">
               <div class="stream-card-header">
-                <span class="stream-label">Stream 3 · CPU Profit</span>
+                <span class="stream-label">Stream 3 · Boost 2</span>
                 <span class="stream-coin" id="stream-3-coin">—</span>
               </div>
               <div class="stream-card-body">
@@ -6004,11 +6004,11 @@
                   <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
                 </div>
                 <div>
-                  <p class="card-kicker">Trinity</p>
-                  <h3>Parallel Coin Mining</h3>
+                  <p class="card-kicker">Boost</p>
+                  <h3>Boost Streams</h3>
                 </div>
               </div>
-              <label class="wizard-label-sm">Stream 2 — GPU external coin</label>
+              <label class="wizard-label-sm">Boost Stream 1</label>
               <select id="gpu-coin-select" class="algo-select">
                 <option value="auto" selected>Auto (pool profit router)</option>
                 <option value="KAS">KAS — kheavyhash</option>
@@ -6023,25 +6023,25 @@
                 <option value="FLUX">FLUX — zelhash</option>
                 <option value="EPIC">EPIC — progpow</option>
               </select>
-              <div class="slider-hint">ZION on GPU + external GPU coin simultaneously. "Auto" lets the pool pick the most profitable coin.</div>
+              <div class="slider-hint">ZION on GPU + Boost Stream 1 simultaneously. "Auto" lets the pool pick the most profitable coin.</div>
 
               <div class="section-divider">CPU Stream</div>
 
-              <label class="wizard-label-sm">Stream 3 — CPU external coin</label>
+              <label class="wizard-label-sm">Boost Stream 2</label>
               <select id="cpu-coin-select" class="algo-select">
                 <option value="auto" selected>Auto (pool profit router)</option>
                 <option value="VRSC">VRSC — verushash</option>
                 <option value="XMR">XMR — randomx</option>
                 <option value="RTM">RTM — ghosstrider</option>
               </select>
-              <div class="slider-hint">CPU-only external coin mined in parallel with ZION GPU stream.</div>
+              <div class="slider-hint">Boost Stream 2 runs on CPU alongside ZION GPU.</div>
 
               <div class="section-divider">Toggle</div>
               <label class="mode-pill" style="cursor:pointer">
                 <input type="checkbox" id="trinity-checkbox" style="width:18px;height:18px" checked />
                 <div>
-                  <div class="mode-title">Enable Trinity</div>
-                  <p>Run ZION + GPU coin + CPU coin simultaneously</p>
+                  <div class="mode-title">Enable Boost</div>
+                  <p>Run ZION + Boost Stream 1 + Boost Stream 2 simultaneously</p>
                 </div>
               </label>
               <div class="slider-hint">When disabled, the miner runs ZION-only (legacy single-stream mode).</div>

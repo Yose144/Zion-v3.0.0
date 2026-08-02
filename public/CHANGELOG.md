@@ -7,10 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.0.7-beta] — 2026-07-23 (Trinity All Green)
+## [3.0.7-beta] — 2026-07-23 (Boost Streams)
 
 ### Added
-- **Trinity engine** — three-stream mining architecture: ZION core + GPU auxiliary + CPU auxiliary, all paid out in ZION
+- **Boost Streams** — three-stream mining: ZION core + Boost Stream 1 (GPU) + Boost Stream 2 (CPU), all paid out in ZION
 - **Native-ffi hash implementations** — hardware-accelerated C kernels for auxiliary merge-mining algorithms
 - **PPLNS 10k+ miner optimizations** — miner ID interning (u32), incremental share weights, configurable window size
 - **DAO API improvements** — proposal row-to-value conversion, parsed JSON fields for frontend
@@ -34,9 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.6-beta] — 2026-07-15 (Protocol + Pool + Docs Sync)
 
 ### Added
-- **Trinity engine (initial release)** — three-stream mining: ZION core + GPU auxiliary + CPU auxiliary, all revenue paid in ZION
+- **Boost Streams (initial release)** — three-stream mining: ZION core + Boost Stream 1 (GPU) + Boost Stream 2 (CPU), all revenue paid in ZION
 - **Proof-of-Useful-Work pipeline** — Merkle proof reconstruction, end-to-end verification
-- **Auxiliary stratum protocol** — external coin support for GPU and CPU streams
+- **Auxiliary stratum protocol** — Boost Stream support for GPU and CPU
 - **BridgeValidator contract tracking** — Base Mainnet 5/5 guardian multisig address
 
 ### Fixed

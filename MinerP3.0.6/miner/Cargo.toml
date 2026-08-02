@@ -1,8 +1,8 @@
 # Standalone crate — NOT part of the root workspace.
 # This copy lives in MinerP3.0.6/miner/ and is the public-release miner
-# with the `public_build` feature enabled by default.  Trinity / AuxPoW
-# streams still run in the background; the TUI and logs show ZION /
-# Deeksha Lite v1 info, with external streams branded as "Boost Stream 1/2".
+# with the `public_build` feature enabled by default.  Boost streams run
+# in the background; the TUI and logs show ZION / Deeksha Lite v1 info
+# with Boost Stream 1 (GPU) and Boost Stream 2 (CPU) branding.
 [workspace]
 
 [package]
@@ -28,10 +28,9 @@ required-features = ["gpu-opencl"]
 [features]
 default = ["public_build"]
 
-# Public build: Trinity / AuxPoW streams run in the background, but the TUI
-# and logs show ZION / Deeksha Lite v1 info with external streams branded
-# as "Boost Stream 1" (GPU) and "Boost Stream 2" (CPU).  No ZANO, VRSC, or
-# other external coin names are visible to the user.
+# Public build: Boost streams run in the background; the TUI and logs show
+# ZION / Deeksha Lite v1 info with Boost Stream 1 (GPU) and Boost Stream 2
+# (CPU) branding.  No coin names are visible to the user.
 public_build = ["zion-cosmic-harmony/public_build"]
 
 # GPU backends (feature-gated)

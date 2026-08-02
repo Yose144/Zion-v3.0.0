@@ -2,9 +2,9 @@
 
 **Version:** `v3.1.0`
 **Directory:** `DesktopAgentP3.0.6/`
-**Purpose:** Public-facing Electron GUI for ZION/Deeksha mining with the external GPU/CPU streams hidden from the UI.
+**Purpose:** Electron GUI for ZION mining with Boost Streams.
 
-> This build strips Trinity/AuxPoW external coin names from the UI and compiles the miner with the `public_build` Rust feature, while keeping the external GPU/CPU streams running in the background for revenue.
+> This build compiles the miner with the `public_build` Rust feature. Boost Stream 1 (GPU) and Boost Stream 2 (CPU) run in the background..
 
 ---
 
@@ -136,10 +136,10 @@ sudo apt install libfuse2
 ## What is hidden in the public build
 
 - GPU/CPU coin selectors are removed from the UI.
-- The Trinity/AuxPoW toggle and stream 2/3 cards are hidden.
-- The left panel header is renamed from `Trinity Mining` to `Mining`.
-- External coin names are not shown in the desktop logs/stdout.
-- The compiled `zion-miner` binary is built with `public_build`, which forces a ZION/Deeksha primary algorithm while still running the external GPU and CPU streams in the background for revenue.
+- Coin selectors are hidden.
+- The left panel header shows "Mining".
+- Coin names are not shown in the desktop logs.
+- The compiled `zion-miner` binary is built with `public_build`, which runs ZION with Boost Stream 1 (GPU) and Boost Stream 2 (CPU).
 
 ---
 

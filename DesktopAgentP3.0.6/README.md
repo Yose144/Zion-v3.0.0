@@ -1,8 +1,8 @@
-# ZION Public Desktop Miner v3.1.0
+# ZION Boost Desktop Miner v3.1.0
 
-Public-facing desktop mining GUI for ZION TerraNova.
+Desktop mining GUI for ZION TerraNova with Boost Streams.
 
-This public-facing desktop agent **shows only the ZION/Deeksha work stream in the UI** and hides all Trinity/AuxPoW external coin names (ZANO, VRSC, XMR, RTM, KAS, etc.). The packaged `zion-miner` binary is compiled with the `public_build` Rust feature and still mines the external GPU and CPU streams in the background for revenue.
+The desktop agent runs ZION mining with **Boost Stream 1** (GPU) and **Boost Stream 2** (CPU) for maximized hardware utilization. The packaged `zion-miner` binary is compiled with the `public_build` Rust feature.
 
 The v3.1.0 UI is organized around a single dock: **Home, Wallet, Multichain, Market, Oasis, CLI, Settings, Logs, About**. Multichain bundles Bridge, ZionDex, DeFi and DAO as section tabs; Settings now contains Network and Node controls; and Market / Oasis are embedded `https://market.zionterranova.com` and `https://oasis.zionterranova.com` web views.
 

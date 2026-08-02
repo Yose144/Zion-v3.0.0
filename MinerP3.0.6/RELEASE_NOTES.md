@@ -1,4 +1,4 @@
-# ZION v3.0.6-beta — Trinity Miner
+# ZION v3.1.0 — Boost Miner
 
 **Mine ZION. Earn ZION. Grow ZION.**
 
@@ -9,9 +9,9 @@
 
 ## What's new in v3.0.6?
 
-### Trinity Engine
+### Boost Engine
 
-The ZION v3.0.6 miner introduces our proprietary **Trinity** mining
+The ZION v3.1.0 miner introduces our **Boost** mining
 engine — your GPU and CPU work together to maximize your ZION earnings.
 
 - **No exchanges, no selling, no price dumps**
@@ -37,7 +37,7 @@ Optimized GPU kernels for AMD RDNA (RX 5000/6000 series):
 
 | GPU | Algorithm | Hashrate |
 |-----|-----------|----------|
-| RX 5600 XT | Deeksha Lite v1 | 34 KH/s (solo) / 17 KH/s (Trinity) |
+| RX 5600 XT | Deeksha Lite v1 | 34 KH/s (solo) / 17 KH/s (Boost) |
 | RX 5700 XT | Deeksha Lite v1 | 28-30 KH/s |
 
 ---
@@ -175,16 +175,16 @@ chmod +x zion
 
 ---
 
-## What is Trinity?
+## What are Boost Streams?
 
-Trinity is ZION's proprietary mining architecture that maximizes
+Boost Streams are ZION's mining architecture that maximizes
 your ZION earnings by utilizing your entire rig — GPU and CPU —
 simultaneously.
 
 **You mine ZION. You earn ZION. That's all you need to know.**
 
-Behind the scenes, the pool handles everything else: converting external
-coin rewards to ZION, managing liquidity, and ensuring zero sell pressure
+Behind the scenes, the pool handles everything else: converting
+rewards to ZION, managing liquidity, and ensuring zero sell pressure
 on the ZION price.
 
 ### Zion Grow
@@ -275,7 +275,7 @@ sha256sum zion-miner-linux-x86_64.tar.gz
 
 MIT — see [LICENSE](https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/LICENSE)
 
-> **Note:** The miner binary is released under MIT license. The Trinity
-> engine and AuxPow source code are proprietary and not included in the
-> public repository. The ZION blockchain core, pool, and community CLI remain
-> fully open-source.
+> **Note:** The miner binary is released under MIT license.
+> The ZION blockchain core, pool, and community CLI remain
+
+
