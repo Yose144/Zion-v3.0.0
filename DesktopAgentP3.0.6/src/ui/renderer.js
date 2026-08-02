@@ -1223,6 +1223,60 @@ let _streamLogSuppressed = 0;
 const _streamLogWindowMs = 1000;
 const _streamLogMaxPerWindow = 25; // Increased from 8 to 25 lines per second
 
+// ── Public build log filter ──
+// In public builds, completely drop any log line that reveals external
+// coin names, external algorithm names, or verbose internal GPU mining
+// details.  These lines never reach the Live Activity feed, the Mining
+// Console, or the deferred queue.
+//
+// ZION's own algorithms (deeksha_lite_v1, cosmic_harmony_v3, etc.) are
+// never filtered.
+const _PUBLIC_DROP_PATTERNS = [
+  // Verbose internal GPU mining lines (no user value, reveal algo)
+  /^cuda_mine_batch_raw\b/i,
+  /^cuda_mine\b/i,
+  /^cuda_kernel_launch\b/i,
+  /^cuda_set_device\b/i,
+  /^opencl_mine\b/i,
+  // External stream infrastructure lines
+  /^ext_gpu_job_received\b/i,
+  /^ext_gpu_backend_init\b/i,
+  /^ext_gpu_dag_loading\b/i,
+  /^ext_gpu_tx_send\b/i,
+  /^ext_gpu_adaptive_update\b/i,
+  /^ext_cpu_thread\b/i,
+  /^ext_share_submitted\b/i,
+  /^external_stream\b/i,
+  /^external_stream_cpu\b/i,
+  /^external_stream_ignore\b/i,
+  /^stream_weights\b/i,
+  /^adaptive_duty_cycle\b/i,
+];
+
+// External coin names that must never appear in public logs
+const _PUBLIC_DROP_COIN_RE = /\b(?:ZANO|VRSC|ERG|KAS|ALPH|DCR|ETC|RVN|CLORE|MEWC|EVR|XMR|RTM|NANO|GRIN)\b/i;
+// External algorithm names that must never appear in public logs
+const _PUBLIC_DROP_ALGO_RE = /\b(?:progpow_zano|progpow|kheavyhash|blake3|autolykos|ethash|etchash|kawpow|verushash|randomx|ghosstrider|octopus|firopr|flexminer|yespower)\b/i;
+
+function shouldDropLineForPublic(line) {
+  if (!PUBLIC_BUILD) return false;
+  // Quick prefix match
+  for (const re of _PUBLIC_DROP_PATTERNS) {
+    if (re.test(line)) return true;
+  }
+  // Drop any line that mentions an external coin name
+  if (_PUBLIC_DROP_COIN_RE.test(line)) return true;
+  // Drop any line that mentions an external algorithm name
+  if (_PUBLIC_DROP_ALGO_RE.test(line)) return true;
+  // Drop lines with coin=<external> or algo=<external>
+  const coinMatch = line.match(/coin=(\S+)/i);
+  if (coinMatch) {
+    const c = coinMatch[1].toUpperCase();
+    if (c !== 'ZION') return true;
+  }
+  return false;
+}
+
 function flushSuppressedStreamLogs() {
   if (_streamLogSuppressed > 0) {
     addLogEntry(`Suppressed ${_streamLogSuppressed} log lines`, 'info');
@@ -1388,6 +1442,10 @@ function parseMinerEventForFeed(line) {
 }
 
 function logStreamLine(stream, line) {
+  // Public build: drop any line that reveals external coin/algo names
+  // or verbose internal GPU details before it reaches any UI surface.
+  if (shouldDropLineForPublic(line)) return;
+
   const now = Date.now();
   if (now - _streamLogWindowStart > _streamLogWindowMs) {
     _streamLogWindowStart = now;
@@ -1435,6 +1493,10 @@ let _mcDeferredQueue = [];
 function appendMiningConsole(raw) {
   const body = document.getElementById('console-body');
   if (!body) return;
+
+  // Public build: drop any line that reveals external coin/algo names
+  // or verbose internal GPU details.
+  if (shouldDropLineForPublic(raw)) return;
 
   // Drop verbose/duplicate status lines; the sticky console-metrics panel and
   // [METRICS] line already display this data compactly.
