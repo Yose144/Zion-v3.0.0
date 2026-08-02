@@ -5,17 +5,20 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { createRandom } from '../domain/ports/random';
 
+// This disk IS the Milky Way — the main gaming workspace where the player
+// flies between worlds — so it should read as the visual centerpiece, not
+// a background layer. Slightly larger/brighter points than a pure backdrop.
 const PARAMETERS = {
-  count: 65000,
+  count: 34000,
   radius: 48,
   branches: 8,
   spin: 1.35,
   randomness: 0.45,
   randomnessPower: 3.5,
-  insideColor: '#fbbf24',
-  midColor: '#a855f7',
-  outsideColor: '#3b82f6',
-  size: 0.12,
+  insideColor: '#fde68a',
+  midColor: '#c084fc',
+  outsideColor: '#60a5fa',
+  size: 0.16,
 };
 
 function createParticleTexture(): THREE.Texture {
@@ -115,7 +118,7 @@ export default function Galaxy() {
     });
 
     // Dust lane particles — larger, dimmer, warm-toned
-    const dustCount = 8000;
+    const dustCount = 3500;
     const dustPositions = new Float32Array(dustCount * 3);
     const dustColors = new Float32Array(dustCount * 3);
     const dustColor = new THREE.Color();

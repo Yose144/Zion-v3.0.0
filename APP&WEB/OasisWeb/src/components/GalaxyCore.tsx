@@ -1,9 +1,54 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, extend, type ThreeElement } from '@react-three/fiber';
+import { shaderMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 import { createRandom } from '../domain/ports/random';
+
+/**
+ * GPU-driven tunnel streak material — the forward/backward motion and
+ * wraparound that used to be a per-frame JS loop over 1000 points now lives
+ * entirely in the vertex shader, driven by a single uTime uniform.
+ */
+const StreakMaterial = shaderMaterial(
+  { uTime: 0, uSize: 0.18 },
+  /* vertex */ `
+    attribute float aSpeed;
+    attribute float aOffset;
+    attribute vec3 aColor;
+    varying vec3 vColor;
+    uniform float uTime;
+    uniform float uSize;
+    void main() {
+      vColor = aColor;
+      vec3 pos = position;
+      // Loop the z position within a [-5, 5] tunnel using the per-point
+      // speed/offset so streaks continuously flow through the core.
+      float z = mod(pos.z + uTime * aSpeed * 10.0 + aOffset, 10.0) - 5.0;
+      pos.z = z;
+      vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+      gl_PointSize = uSize * (300.0 / -mvPosition.z);
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  `,
+  /* fragment */ `
+    varying vec3 vColor;
+    void main() {
+      vec2 uv = gl_PointCoord - 0.5;
+      float alpha = smoothstep(0.5, 0.0, length(uv));
+      gl_FragColor = vec4(vColor, alpha * 0.85);
+    }
+  `
+);
+
+extend({ StreakMaterial });
+
+declare module '@react-three/fiber' {
+  interface ThreeElements {
+    streakMaterial: ThreeElement<typeof StreakMaterial>;
+  }
+}
 
 function createLensTexture(): THREE.Texture {
   const size = 256;
@@ -27,40 +72,24 @@ function createLensTexture(): THREE.Texture {
   return texture;
 }
 
-function createStreakTexture(): THREE.Texture {
-  const size = 64;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d')!;
-
-  const g = ctx.createLinearGradient(0, size / 2, size, size / 2);
-  g.addColorStop(0, 'rgba(255, 255, 255, 0)');
-  g.addColorStop(0.5, 'rgba(200, 230, 255, 0.8)');
-  g.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  return texture;
-}
-
 export default function GalaxyCore() {
   const coreRef = useRef<THREE.Group>(null);
   const ringsRef = useRef<THREE.Group>(null);
-  const streaksRef = useRef<THREE.Points>(null);
+  const streaksGroupRef = useRef<THREE.Group>(null);
+  const streakMaterialRef = useRef<THREE.ShaderMaterial & { uTime: number }>(null);
   const lightRef = useRef<THREE.PointLight>(null);
 
   const rng = useMemo(() => createRandom(42), []);
   const lensTexture = useMemo(() => createLensTexture(), []);
 
-  const { streaksGeometry, streaksMaterial, streakSpeeds } = useMemo(() => {
+  // Tunnel streak geometry — motion is now entirely GPU-driven (see
+  // StreakMaterial above), so this only builds static base attributes once.
+  const streaksGeometry = useMemo(() => {
     const count = 1000;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
-    const speeds: number[] = [];
+    const speeds = new Float32Array(count);
+    const offsets = new Float32Array(count);
 
     const coreColor = new THREE.Color('#60a5fa');
     const edgeColor = new THREE.Color('#1e3a8a');
@@ -87,25 +116,16 @@ export default function GalaxyCore() {
       colors[i3 + 1] = temp.g;
       colors[i3 + 2] = temp.b;
 
-      speeds.push((rng.next() * 0.04 + 0.015) * (forward > 0 ? 1 : -1));
+      speeds[i] = (rng.next() * 0.4 + 0.15) * (forward > 0 ? 1 : -1);
+      offsets[i] = rng.next() * 10;
     }
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-    const material = new THREE.PointsMaterial({
-      size: 0.18,
-      map: createStreakTexture(),
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.85,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      sizeAttenuation: true,
-    });
-
-    return { streaksGeometry: geometry, streaksMaterial: material, streakSpeeds: speeds };
+    geometry.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('aSpeed', new THREE.BufferAttribute(speeds, 1));
+    geometry.setAttribute('aOffset', new THREE.BufferAttribute(offsets, 1));
+    return geometry;
   }, [rng]);
 
   const rings = useMemo(() => {
@@ -129,18 +149,11 @@ export default function GalaxyCore() {
     if (lightRef.current) {
       lightRef.current.intensity = 2.8 + Math.sin(state.clock.elapsedTime * 2.2) * 0.4;
     }
-    if (streaksRef.current) {
-      const positions = streaksRef.current.geometry.attributes.position.array as Float32Array;
-      for (let i = 0; i < streakSpeeds.length; i++) {
-        const i3 = i * 3;
-        positions[i3 + 2] += streakSpeeds[i];
-
-        // reset streaks as they pass through the tunnel
-        if (positions[i3 + 2] > 5) positions[i3 + 2] = -5;
-        if (positions[i3 + 2] < -5) positions[i3 + 2] = 5;
-      }
-      streaksRef.current.geometry.attributes.position.needsUpdate = true;
-      streaksRef.current.rotation.z -= delta * 0.05;
+    if (streakMaterialRef.current) {
+      streakMaterialRef.current.uTime = state.clock.elapsedTime;
+    }
+    if (streaksGroupRef.current) {
+      streaksGroupRef.current.rotation.z -= delta * 0.05;
     }
   });
 
@@ -208,8 +221,19 @@ export default function GalaxyCore() {
         ))}
       </group>
 
-      {/* Blue-white tunnel streaks */}
-      <points ref={streaksRef} geometry={streaksGeometry} material={streaksMaterial} />
+      {/* Blue-white tunnel streaks — GPU-animated, see StreakMaterial */}
+      <group ref={streaksGroupRef}>
+        <points geometry={streaksGeometry} frustumCulled={false}>
+          <streakMaterial
+            ref={streakMaterialRef}
+            uSize={0.18}
+            transparent
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            toneMapped={false}
+          />
+        </points>
+      </group>
 
       {/* Large lens-flare sprite */}
       <sprite position={[0, 0, 0]} scale={[9, 9, 1]}>

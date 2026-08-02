@@ -1,12 +1,51 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
-import { Html, Stars } from '@react-three/drei';
+import { useFrame, extend, type ThreeElement } from '@react-three/fiber';
+import { Html, Stars, shaderMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 import type { World } from '../domain/types/world';
 import { createRandom } from '../domain/ports/random';
 import { useGameStore } from '../store/gameStore';
+
+/**
+ * Fresnel-based atmosphere glow — the rim brightens with viewing angle like
+ * real planetary limb glow, instead of a flat back-side sphere. This alone
+ * makes planets read as atmospheric bodies rather than painted balls.
+ */
+const AtmosphereMaterial = shaderMaterial(
+  { uColor: new THREE.Color('#22d3ee'), uIntensity: 1.0, uPower: 2.2 },
+  /* vertex */ `
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+    void main() {
+      vNormal = normalize(normalMatrix * normal);
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      vViewDir = normalize(-mvPosition.xyz);
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  `,
+  /* fragment */ `
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+    uniform vec3 uColor;
+    uniform float uIntensity;
+    uniform float uPower;
+    void main() {
+      float rim = 1.0 - max(dot(vNormal, vViewDir), 0.0);
+      float fresnel = pow(rim, uPower);
+      gl_FragColor = vec4(uColor, fresnel * uIntensity);
+    }
+  `
+);
+
+extend({ AtmosphereMaterial });
+
+declare module '@react-three/fiber' {
+  interface ThreeElements {
+    atmosphereMaterial: ThreeElement<typeof AtmosphereMaterial>;
+  }
+}
 
 const CATEGORY_COLORS: Record<string, string> = {
   'star-system': '#f59e0b',
@@ -52,7 +91,7 @@ function createGlowTexture(color: string): THREE.Texture {
 }
 
 function createPlanetTexture(baseColor: string, secondaryColor: string, seed: number): THREE.Texture {
-  const size = 512;
+  const size = 768;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -63,28 +102,73 @@ function createPlanetTexture(baseColor: string, secondaryColor: string, seed: nu
   ctx.fillStyle = baseColor;
   ctx.fillRect(0, 0, size, size);
 
-  // Continents / landmasses
+  // Subtle base color banding (latitude variation) before continents
+  for (let y = 0; y < size; y += 4) {
+    const band = new THREE.Color(baseColor).offsetHSL(0, 0, (Math.sin(y * 0.02 + seed) * 0.03));
+    ctx.fillStyle = `#${band.getHexString()}`;
+    ctx.globalAlpha = 0.5;
+    ctx.fillRect(0, y, size, 4);
+  }
+  ctx.globalAlpha = 1;
+
+  // Continents / landmasses — irregular blobby shapes instead of perfect circles
   ctx.fillStyle = secondaryColor;
-  const blobs = 10 + rng.int(0, 8);
+  const blobs = 12 + rng.int(0, 10);
   for (let i = 0; i < blobs; i++) {
+    const cx = rng.next() * size;
+    const cy = rng.next() * size;
+    const baseR = 24 + rng.next() * 70;
+    const points = 10;
+    ctx.beginPath();
+    for (let p = 0; p <= points; p++) {
+      const angle = (p / points) * Math.PI * 2;
+      const r = baseR * (0.7 + rng.next() * 0.6);
+      const x = cx + Math.cos(angle) * r;
+      const y = cy + Math.sin(angle) * r;
+      if (p === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Fine surface detail / mottling
+  for (let i = 0; i < 400; i++) {
     const x = rng.next() * size;
     const y = rng.next() * size;
-    const r = 20 + rng.next() * 60;
+    const r = 2 + rng.next() * 6;
+    ctx.fillStyle = `rgba(255,255,255,${0.02 + rng.next() * 0.05})`;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Atmosphere / shadow gradient
-  const g = ctx.createRadialGradient(size / 2, size / 2, size * 0.35, size / 2, size / 2, size * 0.72);
-  g.addColorStop(0, 'rgba(255,255,255,0)');
-  g.addColorStop(0.7, 'rgba(0,0,0,0.15)');
-  g.addColorStop(1, 'rgba(0,0,0,0.55)');
+  // Wispy cloud layer for a lived-in, atmospheric look
+  for (let i = 0; i < 26; i++) {
+    const cx = rng.next() * size;
+    const cy = rng.next() * size;
+    const r = 30 + rng.next() * 90;
+    const cloud = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    cloud.addColorStop(0, 'rgba(255,255,255,0.22)');
+    cloud.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = cloud;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, r, r * 0.4, rng.next() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Atmosphere / terminator shadow gradient — softer than before so the lit
+  // side reads brighter
+  const g = ctx.createRadialGradient(size * 0.4, size * 0.4, size * 0.3, size / 2, size / 2, size * 0.75);
+  g.addColorStop(0, 'rgba(255,255,255,0.06)');
+  g.addColorStop(0.65, 'rgba(0,0,0,0.08)');
+  g.addColorStop(1, 'rgba(0,0,0,0.45)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
+  texture.anisotropy = 4;
   return texture;
 }
 
@@ -136,16 +220,19 @@ function createRingTexture(color: string): THREE.Texture {
 }
 
 function AtmosphereSphere({ color, size }: { color: string; size: number }) {
+  const colorObj = useMemo(() => new THREE.Color(color), [color]);
   return (
-    <mesh>
-      <sphereGeometry args={[size * 1.18, 64, 64]} />
-      <meshBasicMaterial
-        color={color}
+    <mesh scale={1.12}>
+      <sphereGeometry args={[size, 48, 48]} />
+      <atmosphereMaterial
+        uColor={colorObj}
+        uIntensity={1.1}
+        uPower={2.4}
         transparent
-        opacity={0.18}
         blending={THREE.AdditiveBlending}
         depthWrite={false}
-        side={THREE.BackSide}
+        side={THREE.FrontSide}
+        toneMapped={false}
       />
     </mesh>
   );
@@ -385,13 +472,15 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
       {(world.category === 'planet' || world.category === 'world') && (
         <>
           <mesh geometry={centralGeometry}>
-            <meshStandardMaterial
+            <meshPhysicalMaterial
               map={planetTexture}
               color="#ffffff"
               emissive={color}
-              emissiveIntensity={0.08}
-              roughness={0.65}
-              metalness={0.15}
+              emissiveIntensity={0.16}
+              roughness={0.45}
+              metalness={0.1}
+              clearcoat={0.25}
+              clearcoatRoughness={0.4}
               toneMapped={false}
             />
           </mesh>
@@ -406,12 +495,14 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
       {world.category === 'sector' && (
         <>
           <mesh geometry={centralGeometry}>
-            <meshStandardMaterial
+            <meshPhysicalMaterial
               color={color}
               emissive={color}
-              emissiveIntensity={0.25}
-              roughness={0.4}
-              metalness={0.6}
+              emissiveIntensity={0.35}
+              roughness={0.25}
+              metalness={0.55}
+              clearcoat={0.7}
+              clearcoatRoughness={0.15}
               toneMapped={false}
             />
           </mesh>
