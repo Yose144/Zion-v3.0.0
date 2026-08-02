@@ -22,20 +22,27 @@ import {
 import { SITE_POOL_PRIMARY } from '@/lib/site';
 import {
   LATEST_RELEASE,
+  TRINITY_RELEASE,
   COMMUNITY_CLI_RELEASE,
   GITHUB_REPO_URL,
   NETWORK_PARAMS,
 } from '@/lib/github-releases';
 
 const DownloadToolBrowserCopy = {
-  tripleStream: { cs: `Triple Stream`, en: `Triple Stream` },
+  boostMiner: { cs: `Boost`, en: `Boost` },
+  tripleStream: { cs: `Trinity`, en: `Trinity` },
+  threeStreamsZionPrimaryGpuCpu: { cs: `Tři streamy: ZION (primární) + GPU + CPU současně`, en: `Three streams: ZION (primary) + GPU + CPU simultaneously` },
   gpuCpuSimultaneouslyMaximumZio: { cs: `GPU + CPU současně — maximální ZION earnings`, en: `GPU + CPU simultaneously — maximum ZION earnings` },
   zionLiquidity: { cs: `Zion Liquidity`, en: `Zion Liquidity` },
   poolHandlesConversionsNoExchan: { cs: `Pool hlídá konverze — žádné burzy, žádný sell pressure`, en: `Pool handles conversions — no exchanges, no sell pressure` },
   zionGrow: { cs: `Zion Grow`, en: `Zion Grow` },
   theLongerYouMineTheMoreZionYou: { cs: `Čím déle těžíš, tím více ZION držíš — compounding`, en: `The longer you mine, the more ZION you hold — compounding` },
   gpuKernels: { cs: `GPU kernels`, en: `GPU kernels` },
-  openclAmdCudaNvidiaDeekshaLite: { cs: `OpenCL (AMD) + CUDA (NVIDIA) — Deeksha Lite v1`, en: `OpenCL (AMD) + CUDA (NVIDIA) — Deeksha Lite v1` },
+  openclAmdCudaNvidiaDeekshaLite: { cs: `OpenCL (AMD) + CUDA (NVIDIA) + Metal (macOS) — Deeksha + VerusHash + RandomX`, en: `OpenCL (AMD) + CUDA (NVIDIA) + Metal (macOS) — Deeksha + VerusHash + RandomX` },
+  autoGpuBackend: { cs: `Auto GPU backend`, en: `Auto GPU backend` },
+  autoGpuBackendDesc: { cs: `OpenCL/CUDA/Metal auto-detected na základě hardwaru`, en: `OpenCL/CUDA/Metal auto-detected based on hardware` },
+  tuiDashboard: { cs: `TUI dashboard`, en: `TUI dashboard` },
+  tuiDashboardDesc: { cs: `Real-time hashrate, shares a stream status v terminálu`, en: `Real-time hashrate, shares, and stream status in terminal` },
   wallet: { cs: `Wallet`, en: `Wallet` },
   ed25519Bip39MnemonicBalanceSen: { cs: `Ed25519 + BIP39 mnemotechnika, zustatek, odesilani`, en: `Ed25519 + BIP39 mnemonic, balance, send` },
   node: { cs: `Node`, en: `Node` },
@@ -48,20 +55,24 @@ const DownloadToolBrowserCopy = {
   latest: { cs: `Nejnovější`, en: `Latest` },
   published: { cs: `Publikováno`, en: `Published` },
   githubRelease: { cs: `GitHub Release`, en: `GitHub Release` },
-  tripleStreamEverythingYouNeed: { cs: `Triple Stream — vše, co potřebuješ`, en: `Triple Stream — everything you need` },
+  tripleStreamEverythingYouNeed: { cs: `Trinity — vše, co potřebuješ`, en: `Trinity — everything you need` },
+  boostMinerEverythingYouNeed: { cs: `Boost Miner — vše, co potřebuješ`, en: `Boost Miner — everything you need` },
   oneBinaryEverythingYouNeed: { cs: `Jeden binary — vše, co potřebuješ`, en: `One binary — everything you need` },
-  theTripleStreamMinerMinesZionA: { cs: `Triple Stream Miner těží ZION a buduje likviditu. Spusť binárku bez argumentů a projdi interaktivním menu, nebo použij příkazovou řádku pro pokročilé nastavení.`, en: `The Triple Stream Miner mines ZION and builds liquidity. Run the binary with no arguments and walk through the interactive menu, or use the command line for advanced settings.` },
+  theBoostMinerMinesZionWithThree: { cs: `Boost Miner těží ZION třemi streamy současně. Auto GPU backend (CUDA + OpenCL + Metal) a nativní algoritmy (VerusHash v2.2, RandomX, BLAKE3). Spusť binárku bez argumentů a projdi interaktivním menu, nebo použij příkazovou řádku pro pokročilé nastavení.`, en: `The Boost Miner mines ZION with three streams simultaneously. Auto GPU backend (CUDA + OpenCL + Metal) and native algorithms (VerusHash v2.2, RandomX, BLAKE3). Run the binary with no arguments and walk through the interactive menu, or use the command line for advanced settings.` },
+  theTripleStreamMinerMinesZionA: { cs: `Trinity Miner těží ZION a buduje likviditu. Plné GPU backendy (CUDA + OpenCL + Metal) a nativní algoritmy (VerusHash v2.2, RandomX, BLAKE3). Spusť binárku bez argumentů a projdi interaktivním menu, nebo použij příkazovou řádku pro pokročilé nastavení.`, en: `The Trinity Miner mines ZION and builds liquidity. Full GPU backends (CUDA + OpenCL + Metal) and native algorithms (VerusHash v2.2, RandomX, BLAKE3). Run the binary with no arguments and walk through the interactive menu, or use the command line for advanced settings.` },
   runZionWithNoArgumentsForAnInt: { cs: "Spusť `zion-miner` bez argumentů pro interaktivní menu. Pro vytvoření peněženky použij v3.0.5-beta Community CLI níže.", en: "Run `zion-miner` with no arguments for the interactive setup menu. To create a wallet, use the v3.0.5-beta Community CLI below." },
   downloads: { cs: `Stažení`, en: `Downloads` },
   packages: { cs: `balíčků`, en: `packages` },
   download: { cs: `Stáhnout`, en: `Download` },
   sha256Verification: { cs: `SHA256 verifikace`, en: `SHA256 verification` },
   downloadSha256sumsTxtAndVerify: { cs: `Stáhni SHA256SUMS.txt a ověř binárky před použitím:`, en: `Download SHA256SUMS.txt and verify binaries before use:` },
-  quickStartTripleStreamMiner: { cs: `Rychlý start — Triple Stream Miner`, en: `Quick start — Triple Stream Miner` },
+  quickStartTripleStreamMiner: { cs: `Rychlý start — Trinity Miner`, en: `Quick start — Trinity Miner` },
+  quickStartBoostMiner: { cs: `Rychlý start — Boost Miner`, en: `Quick start — Boost Miner` },
   theMinerConnectsToTheOfficialP: { cs: `Miner se připojí k oficiálnímu poolu a zobrazí live dashboard: hashrate, accepted/rejected shares, pool height. Na Linux/macOS spusť ./zion-miner, na Windows dvakrát klikni na zion-miner.exe.`, en: `The miner connects to the official pool and shows a live dashboard: hashrate, accepted/rejected shares, pool height. On Linux/macOS run ./zion-miner; on Windows double-click zion-miner.exe.` },
   quickStartCommunityCli: { cs: `Rychlý start — Community CLI`, en: `Quick start — Community CLI` },
   theInteractiveMenuGuidesYouWal: { cs: "Interaktivní menu tě provede: wallet → node → pool → miner. Nebo použij subcommandy: `zion wallet`, `zion node`, `zion mine`, `zion pool`.", en: "The interactive menu guides you: wallet → node → pool → miner. Or use subcommands: `zion wallet`, `zion node`, `zion mine`, `zion pool`." },
-  latestReleaseTripleStreamMiner: { cs: `Nejnovější release — Triple Stream Miner`, en: `Latest release — Triple Stream Miner` },
+  latestReleaseBoostMiner: { cs: `Nejnovější release — Boost Miner`, en: `Latest release — Boost Miner` },
+  trinityMinerFivePlatforms: { cs: `Trinity Miner — 5 platforem (macOS/Windows)`, en: `Trinity Miner — 5 platforms (macOS/Windows)` },
   communityCliWalletNodePoolBasi: { cs: `Community CLI — peněženka, node, pool, basic mining`, en: `Community CLI — wallet, node, pool, basic mining` },
   networkParameters: { cs: `Parametry sítě`, en: `Network parameters` },
   buildFromSource: { cs: `Build ze zdrojů`, en: `Build from source` },
@@ -101,6 +112,35 @@ type Feature = {
   label: string;
   desc: string;
 };
+
+function getBoostMinerFeatures(cs: boolean): Feature[] {
+  return [
+    {
+      id: 'boost-miner',
+      icon: <Zap className="h-5 w-5" />,
+      label: DownloadToolBrowserCopy.boostMiner[cs ? 'cs' : 'en'],
+      desc: DownloadToolBrowserCopy.threeStreamsZionPrimaryGpuCpu[cs ? 'cs' : 'en'],
+    },
+    {
+      id: 'zion-liquidity',
+      icon: <Droplets className="h-5 w-5" />,
+      label: DownloadToolBrowserCopy.zionLiquidity[cs ? 'cs' : 'en'],
+      desc: DownloadToolBrowserCopy.poolHandlesConversionsNoExchan[cs ? 'cs' : 'en'],
+    },
+    {
+      id: 'auto-gpu-backend',
+      icon: <Cpu className="h-5 w-5" />,
+      label: DownloadToolBrowserCopy.autoGpuBackend[cs ? 'cs' : 'en'],
+      desc: DownloadToolBrowserCopy.autoGpuBackendDesc[cs ? 'cs' : 'en'],
+    },
+    {
+      id: 'tui-dashboard',
+      icon: <Terminal className="h-5 w-5" />,
+      label: DownloadToolBrowserCopy.tuiDashboard[cs ? 'cs' : 'en'],
+      desc: DownloadToolBrowserCopy.tuiDashboardDesc[cs ? 'cs' : 'en'],
+    },
+  ];
+}
 
 function getTripleStreamFeatures(cs: boolean): Feature[] {
   return [
@@ -164,17 +204,18 @@ function getCliFeatures(cs: boolean): Feature[] {
 
 function ReleaseCard({
   release,
-  primary,
+  variant,
   cs,
 }: {
   release: typeof LATEST_RELEASE;
-  primary?: boolean;
+  variant: 'boost' | 'trinity' | 'cli';
   cs: boolean;
 }) {
   const binaries = release.assets.filter((a) => a.platform !== 'checksum');
   const checksum = release.assets.find((a) => a.platform === 'checksum');
-  const features = primary ? getTripleStreamFeatures(cs) : getCliFeatures(cs);
-  const accent = primary ? '16, 185, 129' : '6, 182, 212';
+  const features = variant === 'boost' ? getBoostMinerFeatures(cs) : variant === 'trinity' ? getTripleStreamFeatures(cs) : getCliFeatures(cs);
+  const accent = variant === 'cli' ? '6, 182, 212' : variant === 'trinity' ? '168, 85, 247' : '16, 185, 129';
+  const primary = variant === 'boost';
 
   return (
     <div className="space-y-6">
@@ -221,7 +262,9 @@ function ReleaseCard({
       {/* ─── What's in the box ─── */}
       <div className="space-y-3">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-          {primary
+          {variant === 'boost'
+            ? (DownloadToolBrowserCopy.boostMinerEverythingYouNeed[cs ? 'cs' : 'en'])
+            : variant === 'trinity'
             ? (DownloadToolBrowserCopy.tripleStreamEverythingYouNeed[cs ? 'cs' : 'en'])
             : (DownloadToolBrowserCopy.oneBinaryEverythingYouNeed[cs ? 'cs' : 'en'])}
         </p>
@@ -240,7 +283,11 @@ function ReleaseCard({
             </div>
           ))}
         </div>
-        {primary ? (
+        {variant === 'boost' ? (
+          <p className="text-xs text-gray-500">
+            {DownloadToolBrowserCopy.theBoostMinerMinesZionWithThree[cs ? 'cs' : 'en']}
+          </p>
+        ) : variant === 'trinity' ? (
           <p className="text-xs text-gray-500">
             {DownloadToolBrowserCopy.theTripleStreamMinerMinesZionA[cs ? 'cs' : 'en']}
           </p>
@@ -342,13 +389,33 @@ function ReleaseCard({
       </div>
 
       {/* ─── Quick start ─── */}
-      {primary ? (
+      {variant === 'boost' ? (
         <div
           className="zion-rainbow-sub p-5"
           style={{ '--rc': accent } as React.CSSProperties}
         >
           <div className="flex items-center gap-3 mb-3">
             <Terminal className="h-5 w-5 text-emerald-400" />
+            <h3 className="text-sm font-semibold text-white">
+              {DownloadToolBrowserCopy.quickStartBoostMiner[cs ? 'cs' : 'en']}
+            </h3>
+          </div>
+          <div className="rounded-lg bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto space-y-1">
+            <div><span className="text-gray-500">$</span> tar xzf zion-miner-v3.1.0-linux-x86_64.tar.gz</div>
+            <div><span className="text-gray-500">$</span> chmod +x zion-miner</div>
+            <div><span className="text-gray-500">$</span> ./zion-miner</div>
+          </div>
+          <p className="text-xs text-gray-400 mt-3">
+            {DownloadToolBrowserCopy.theMinerConnectsToTheOfficialP[cs ? 'cs' : 'en']}
+          </p>
+        </div>
+      ) : variant === 'trinity' ? (
+        <div
+          className="zion-rainbow-sub p-5"
+          style={{ '--rc': accent } as React.CSSProperties}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <Terminal className="h-5 w-5 text-purple-400" />
             <h3 className="text-sm font-semibold text-white">
               {DownloadToolBrowserCopy.quickStartTripleStreamMiner[cs ? 'cs' : 'en']}
             </h3>
@@ -395,12 +462,20 @@ function ReleaseCard({
 export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
   return (
     <section className="space-y-12">
-      {/* ─── v3.0.6-beta — Triple Stream Miner (primary) ─── */}
+      {/* ─── v3.1.0 — Boost Miner (primary, Linux x86_64) ─── */}
       <div className="space-y-3">
         <p className="text-sm uppercase tracking-[0.4em] text-emerald-400">
-          {DownloadToolBrowserCopy.latestReleaseTripleStreamMiner[cs ? 'cs' : 'en']}
+          {DownloadToolBrowserCopy.latestReleaseBoostMiner[cs ? 'cs' : 'en']}
         </p>
-        <ReleaseCard release={LATEST_RELEASE} primary cs={cs} />
+        <ReleaseCard release={LATEST_RELEASE} variant="boost" cs={cs} />
+      </div>
+
+      {/* ─── v3.0.6-beta — Trinity Miner (5 platforms, macOS/Windows) ─── */}
+      <div className="space-y-3 pt-6 border-t border-white/5">
+        <p className="text-sm uppercase tracking-[0.4em] text-purple-400">
+          {DownloadToolBrowserCopy.trinityMinerFivePlatforms[cs ? 'cs' : 'en']}
+        </p>
+        <ReleaseCard release={TRINITY_RELEASE} variant="trinity" cs={cs} />
       </div>
 
       {/* ─── v3.0.5-beta — Community CLI (secondary) ─── */}
@@ -408,7 +483,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
         <p className="text-sm uppercase tracking-[0.4em] text-zion-cyan">
           {DownloadToolBrowserCopy.communityCliWalletNodePoolBasi[cs ? 'cs' : 'en']}
         </p>
-        <ReleaseCard release={COMMUNITY_CLI_RELEASE} cs={cs} />
+        <ReleaseCard release={COMMUNITY_CLI_RELEASE} variant="cli" cs={cs} />
       </div>
 
       {/* ─── Network parameters ─── */}
