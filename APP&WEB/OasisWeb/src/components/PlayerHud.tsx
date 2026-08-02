@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Star, MapPin, Rocket, Egg, User, Wallet, ScanLine, Zap, Package } from 'lucide-react';
+import { Coins, Star, MapPin, Rocket, Egg, User, Wallet, ScanLine, Zap, Package, Globe } from 'lucide-react';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
 import { getAddressType } from '../lib/zionWallet';
 import { WORLDS } from '../domain/config/worlds';
 import ShipLoadout from './ShipLoadout';
 import PlayerSettings from './PlayerSettings';
+import SocialPanel from './SocialPanel';
 
 const XP_PER_LEVEL = 1000;
 
@@ -58,6 +59,7 @@ export default function PlayerHud() {
   const { xp, credits, completedQuests, discoveredWorlds, scannedWorlds, collectedEggs, address, shipLoadout } = useGameStore();
   const [showShip, setShowShip] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSocial, setShowSocial] = useState(false);
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
   const consciousness = CONSCIOUSNESS_NAMES[(level - 1) % CONSCIOUSNESS_NAMES.length] ?? 'Physical';
@@ -70,6 +72,7 @@ export default function PlayerHud() {
       <AnimatePresence>
         {showShip && <ShipLoadout onClose={() => setShowShip(false)} />}
         {showSettings && <PlayerSettings onClose={() => setShowSettings(false)} />}
+        {showSocial && <SocialPanel onClose={() => setShowSocial(false)} />}
       </AnimatePresence>
 
       <motion.div
@@ -151,6 +154,14 @@ export default function PlayerHud() {
               title="Ship loadout"
             >
               <Rocket className="h-4 w-4 text-oasis-cyan" />
+            </button>
+            <button
+              onClick={() => setShowSocial(true)}
+              className="zion-button-ghost !p-2"
+              aria-label="Social — leaderboard, guilds, quests"
+              title="Leaderboard · Guilds · Quests"
+            >
+              <Globe className="h-4 w-4 text-oasis-emerald" />
             </button>
             <button
               onClick={() => setShowSettings(true)}

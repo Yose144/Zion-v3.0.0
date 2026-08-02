@@ -434,7 +434,7 @@ export default function OasisClient() {
         {phase === 'intro' && <WarpIntro onEnter={handleEnter} />}
       </AnimatePresence>
 
-      <WarpFlash active={warping} />
+      <WarpFlash active={warping} worldName={selectedWorld?.name} />
 
       <AnimatePresence>
         {phase === 'rite' && (
