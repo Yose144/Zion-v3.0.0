@@ -297,17 +297,39 @@ EXPORT uint64_t autolykos_hash(
     memcpy(seed_buf + 31 + header_len, nonce_be, 8);
     seed_len = 31 + header_len + 8;
 
-    /* Step 5: genIndexes(seed, N) */
+    /* Step 5: genIndexes(seed, N) — correct Ergo reference implementation */
     uint8_t hash32[32];
     blake2b256_one(seed_buf, seed_len, hash32);
-    /* ext = hash32 || hash32[0..2] */
-    memcpy(ext, hash32, 32);
-    memcpy(ext + 32, hash32, 3);
+
+    /* 1. Interpret hash as 4 BE uint64s, split each into (low32, high32) */
+    /* 2. Byteswap each uint32 */
+    /* 3. Repeat first uint32 at position 8 (9 total) */
+    /* 4. Generate 32 indexes using bit rotation across adjacent pairs */
+    uint32_t r[9];
+    for (i = 0; i < 4; i++) {
+        uint32_t lo = ((uint32_t)hash32[i*8+4] << 24) | ((uint32_t)hash32[i*8+5] << 16)
+                    | ((uint32_t)hash32[i*8+6] <<  8) |  (uint32_t)hash32[i*8+7];
+        uint32_t hi = ((uint32_t)hash32[i*8]   << 24) | ((uint32_t)hash32[i*8+1] << 16)
+                    | ((uint32_t)hash32[i*8+2] <<  8) |  (uint32_t)hash32[i*8+3];
+        r[i*2]     = ((lo & 0xFF) << 24) | ((lo & 0xFF00) << 8)
+                   | ((lo >> 8) & 0xFF00) | ((lo >> 24) & 0xFF);
+        r[i*2 + 1] = ((hi & 0xFF) << 24) | ((hi & 0xFF00) << 8)
+                   | ((hi >> 8) & 0xFF00) | ((hi >> 24) & 0xFF);
+    }
+    r[8] = r[0];
 
     uint32_t indices[AUTOLYKOS_K];
     for (k = 0; k < AUTOLYKOS_K; k++) {
-        uint32_t raw = ((uint32_t)ext[k] << 24) | ((uint32_t)ext[k+1] << 16)
-                     | ((uint32_t)ext[k+2] <<  8) |  (uint32_t)ext[k+3];
+        int pair = k / 4;
+        int shift = k % 4;
+        uint32_t raw;
+        switch (shift) {
+            case 0: raw = r[pair]; break;
+            case 1: raw = (r[pair] << 8)  | (r[pair+1] >> 24); break;
+            case 2: raw = (r[pair] << 16) | (r[pair+1] >> 16); break;
+            case 3: raw = (r[pair] << 24) | (r[pair+1] >> 8);  break;
+            default: raw = 0; break;
+        }
         indices[k] = raw % N;
     }
 

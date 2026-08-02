@@ -3107,12 +3107,34 @@ fn run_remote_session(
                 _ => None,
             })
             .unwrap_or(default_ext_backend);
-        // Share the CUDA device with the external GPU thread to avoid
-        // creating a second CUDA context (deadlock on consumer GPUs).
-        // Only relevant when ext backend == CUDA (override mode).
+        // When stream1 is disabled, create a standalone CUDA device in the
+        // main thread so the external GPU thread can use it.  We use
+        // CudaDevice::new(0) (default stream) because new_with_stream causes
+        // SIGSEGV when the device is used from a different thread (CUDA
+        // context thread-affinity issue with non-blocking streams).
         #[cfg(feature = "gpu-cuda")]
         let shared_cuda = if bk == gpu_backend::GpuBackendKind::Cuda {
-            tri_gpu.shared_cuda_device()
+            if let Some(dev) = tri_gpu.shared_cuda_device() {
+                Some(dev)
+            } else {
+                match cudarc::driver::CudaDevice::new(0) {
+                    Ok(dev) => {
+                        private_print!(
+                            "[{}] ext_gpu_cuda_device_created_standalone (stream1 disabled, default stream)",
+                            log_timestamp()
+                        );
+                        Some(dev)
+                    }
+                    Err(e) => {
+                        private_eprint!(
+                            "[{}] ext_gpu_cuda_device_create_failed: {}",
+                            log_timestamp(),
+                            e
+                        );
+                        None
+                    }
+                }
+            }
         } else {
             None
         };
@@ -4968,7 +4990,7 @@ fn external_gpu_thread(
             | "kawpow_quai" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
                 Some((height / 7500) as u32)
             }
-            "autolykos" | "autolykos_erg" => Some((height / 45000) as u32),
+            "autolykos" | "autolykos_erg" => Some(height as u32),
             "zelhash" | "zelhash_flux" | "beamhash" | "beamhash_beam" => None,
             _ => None,
         }
@@ -5176,13 +5198,6 @@ fn external_gpu_thread(
             }
         };
 
-        private_eprint!(
-            "ext_gpu_debug after backend_init algo={} job_algo={} has_job={}",
-            current_algo.as_deref().unwrap_or("none"),
-            algo,
-            current_job.is_some()
-        );
-
         // Ensure DAG is loaded for DAG-based algorithms.
         // Also check the ProgPow random-math period — ProgPoWZ (ZANO) changes
         // its math sequence every 50 blocks, but the DAG epoch is 30000 blocks.
@@ -5194,13 +5209,6 @@ fn external_gpu_thread(
         let progpow_period = progpow_period_for_algorithm(algo, job.height);
         let epoch_changed = epoch != last_epoch;
         let period_changed = progpow_period != last_progpow_period;
-        private_eprint!(
-            "ext_gpu_debug epoch={:?} progpow_period={:?} epoch_changed={} period_changed={}",
-            epoch,
-            progpow_period,
-            epoch_changed,
-            period_changed
-        );
         if epoch_changed || period_changed {
             if epoch_changed {
                 if let Some(ep) = epoch {
@@ -5323,8 +5331,6 @@ fn external_gpu_thread(
                 | "beamhash"
                 | "beamhash_beam"
         );
-
-        private_eprint!("ext_gpu_debug before mine_batch algo={} header_len={} use_raw={} nonce={} batch_size={}", algo, header_bytes.len(), use_raw_header, nonce, batch_size);
 
         let result = if header_bytes.len() > 80 || use_raw_header {
             gpu_miner.mine_batch_raw(&header_bytes, target, nonce, batch_size)
