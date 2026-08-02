@@ -34,6 +34,13 @@ function paymentMethodText(method: string): string {
   return method || 'Neuvedeno';
 }
 
+function shippingMethodText(method: string): string {
+  if (method === 'zasilkovna-home') return 'Doručení domů (Zásilkovna)';
+  if (method === 'zasilkovna') return 'Výdejní místo Zásilkovna';
+  if (method?.includes('virtualni')) return 'Digitální doručení';
+  return method || 'Neuvedeno';
+}
+
 function paymentStatusText(status: string): string {
   const s = (status || '').toLowerCase();
   if (s === 'paid') return 'Zaplaceno';
@@ -42,12 +49,82 @@ function paymentStatusText(status: string): string {
   return status || 'Neuvedeno';
 }
 
-function paymentStatusColor(status: string, theme: ShopTheme): string {
-  const s = (status || '').toLowerCase();
-  if (s === 'paid') return theme === 'rasta' ? '#00ff7f' : '#06b6d4';
-  if (s === 'pending') return '#FFD700';
-  if (s === 'failed') return theme === 'rasta' ? '#c01026' : '#f43f5e';
-  return '#FFD700';
+interface ThemePalette {
+  bg: string;
+  card: string;
+  surface: string;
+  text: string;
+  muted: string;
+  accent: string;
+  accent2: string;
+  accent3: string;
+  border: string;
+  borderSubtle: string;
+  headerGradient: string;
+  headerFallback: string;
+  successBg: string;
+  itemsBg: string;
+  itemsBorder: string;
+  paymentBg: string;
+  paymentBorder: string;
+  nextBg: string;
+  nextBorder: string;
+  footerGradient: string;
+  footerFallback: string;
+  successIconText: string;
+}
+
+function themePalette(theme: ShopTheme): ThemePalette {
+  if (theme === 'zion') {
+    return {
+      bg: '#090a0f',
+      card: '#0f111a',
+      surface: 'rgba(255,255,255,0.04)',
+      text: '#e5e7eb',
+      muted: '#94a3b8',
+      accent: '#ffd700',
+      accent2: '#06b6d4',
+      accent3: '#9333ea',
+      border: 'rgba(255,255,255,0.12)',
+      borderSubtle: 'rgba(255,255,255,0.08)',
+      headerGradient: 'linear-gradient(135deg, #06b6d4 0%, #9333ea 50%, #ffd700 100%)',
+      headerFallback: '#9333ea',
+      successBg: '#06b6d4',
+      itemsBg: 'rgba(147,51,234,0.10)',
+      itemsBorder: 'rgba(147,51,234,0.45)',
+      paymentBg: 'rgba(255,215,0,0.08)',
+      paymentBorder: 'rgba(255,215,0,0.40)',
+      nextBg: 'rgba(6,182,212,0.10)',
+      nextBorder: 'rgba(6,182,212,0.35)',
+      footerGradient: 'linear-gradient(135deg, #06b6d4 0%, #9333ea 50%, #ffd700 100%)',
+      footerFallback: '#9333ea',
+      successIconText: '#000000',
+    };
+  }
+  return {
+    bg: '#0a0a0a',
+    card: '#0f0f0f',
+    surface: 'rgba(255,255,255,0.04)',
+    text: '#e5e7eb',
+    muted: '#9af59a',
+    accent: '#FFD700',
+    accent2: '#c01026',
+    accent3: '#00ff7f',
+    border: 'rgba(255,255,255,0.12)',
+    borderSubtle: 'rgba(255,255,255,0.08)',
+    headerGradient: 'linear-gradient(135deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%)',
+    headerFallback: '#1c7b1c',
+    successBg: '#00ff7f',
+    itemsBg: 'rgba(34,139,34,0.15)',
+    itemsBorder: 'rgba(0,255,0,0.45)',
+    paymentBg: 'rgba(255,215,0,0.08)',
+    paymentBorder: 'rgba(255,215,0,0.40)',
+    nextBg: 'rgba(34,139,34,0.12)',
+    nextBorder: 'rgba(0,255,0,0.35)',
+    footerGradient: 'linear-gradient(135deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%)',
+    footerFallback: '#1c7b1c',
+    successIconText: '#000000',
+  };
 }
 
 function formatAddress(order: OrderEmailData): string {
@@ -55,58 +132,12 @@ function formatAddress(order: OrderEmailData): string {
   return parts.join(', ');
 }
 
-interface ThemeColors {
-  muted: string;
-  accent: string;
-  accent2: string;
-  accent3: string;
-  headerGradient: string;
-  successIcon: string;
-  itemsBorder: string;
-  itemsBox: string;
-  paymentBorder: string;
-  paymentBox: string;
-  nextBox: string;
-  footerGradient: string;
-}
-
-function themeColors(theme: ShopTheme): ThemeColors {
-  if (theme === 'zion') {
-    return {
-      muted: '#94a3b8',
-      accent: '#ffd700',
-      accent2: '#06b6d4',
-      accent3: '#9333ea',
-      headerGradient: 'linear-gradient(135deg, #06b6d4 0%, #9333ea 50%, #ffd700 100%)',
-      successIcon: 'linear-gradient(145deg, #06b6d4, #9333ea)',
-      itemsBorder: 'rgba(147,51,234,0.35)',
-      itemsBox: 'rgba(147,51,234,0.12)',
-      paymentBorder: 'rgba(255,215,0,0.35)',
-      paymentBox: 'rgba(255,215,0,0.08)',
-      nextBox: 'rgba(6,182,212,0.12)',
-      footerGradient: 'linear-gradient(135deg, #06b6d4 0%, #9333ea 50%, #ffd700 100%)',
-    };
-  }
-  return {
-    muted: '#9af59a',
-    accent: '#FFD700',
-    accent2: '#c01026',
-    accent3: '#00ff7f',
-    headerGradient: 'linear-gradient(135deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%)',
-    successIcon: 'linear-gradient(145deg, #1f9b1f, #00ff7f)',
-    itemsBorder: 'rgba(0,255,0,0.35)',
-    itemsBox: 'rgba(34,139,34,0.2)',
-    paymentBorder: 'rgba(255,215,0,0.35)',
-    paymentBox: 'rgba(255,215,0,0.08)',
-    nextBox: 'rgba(34,139,34,0.15)',
-    footerGradient: 'linear-gradient(135deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%)',
-  };
-}
-
 function formatItemsHtml(order: OrderEmailData, theme: ShopTheme): string {
-  const t = themeColors(theme);
+  const t = themePalette(theme);
   const items = Array.isArray(order.items) ? order.items : [];
-  if (items.length === 0) return `<p style="color:${t.muted};text-align:center;">Žádné položky</p>`;
+  if (items.length === 0) {
+    return `<tr><td style="color:${t.muted};font-size:15px;text-align:center;padding:14px 0;">Žádné položky</td></tr>`;
+  }
 
   const rows = items
     .map((it) => {
@@ -115,23 +146,23 @@ function formatItemsHtml(order: OrderEmailData, theme: ShopTheme): string {
       const unitPrice = Math.round((raw.priceCzk as number) || 0);
       const total = qty * unitPrice;
       const name = String(raw.name ?? 'Produkt');
-      const sku = raw.sku ? ` <span style="color:#999;font-size:13px;">SKU: ${escapeHtml(String(raw.sku))}</span>` : '';
+      const sku = raw.sku ? ` <span style="color:#999999;font-size:13px;">SKU: ${escapeHtml(String(raw.sku))}</span>` : '';
       return `
-        <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
-          <td style="color:#fff;font-size:15px;padding:14px 0;">
-            <strong>${escapeHtml(name)}</strong>${sku}
+        <tr>
+          <td style="color:${t.text};font-size:15px;padding:14px 10px;border-bottom:1px solid ${t.borderSubtle};vertical-align:middle;">
+            <strong style="color:${t.text};">${escapeHtml(name)}</strong>${sku}
           </td>
-          <td style="color:${t.muted};font-size:15px;text-align:center;padding:14px 0;">${qty}×</td>
-          <td style="color:${t.accent};font-size:16px;text-align:right;padding:14px 0;font-weight:600;">${formatPrice(total)}</td>
+          <td style="color:${t.muted};font-size:15px;text-align:center;padding:14px 10px;border-bottom:1px solid ${t.borderSubtle};vertical-align:middle;width:80px;">${qty}×</td>
+          <td style="color:${t.accent};font-size:16px;text-align:right;padding:14px 10px;border-bottom:1px solid ${t.borderSubtle};vertical-align:middle;width:120px;font-weight:600;">${formatPrice(total)}</td>
         </tr>`;
     })
     .join('');
 
-  return `<table width="100%" cellpadding="10" cellspacing="0">${rows}</table>`;
+  return `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">${rows}</table>`;
 }
 
 function formatShippingHtml(order: OrderEmailData, theme: ShopTheme): string {
-  const t = themeColors(theme);
+  const t = themePalette(theme);
   let address = '';
   if (order.shipping === 'zasilkovna-home') {
     address = formatAddress(order);
@@ -149,20 +180,24 @@ function formatShippingHtml(order: OrderEmailData, theme: ShopTheme): string {
   }
 
   return `
-    <div style="background:linear-gradient(145deg, ${t.paymentBox}, rgba(0,0,0,0.35)); border:2px solid ${t.paymentBorder}; border-radius:18px; padding:32px; margin-bottom:36px; box-shadow:inset 0 2px 8px rgba(255,215,0,0.08);">
-      <h3 style="color:${t.accent};margin:0 0 20px 0;font-size:22px;text-align:center;letter-spacing:1px;font-weight:700;">📦 Dodací adresa</h3>
-      <div style="background:rgba(0,0,0,0.3);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.08);color:#fff;font-size:15px;line-height:1.7;">
-        ${escapeHtml(order.customerName)}<br>
-        ${address}<br><br>
-        <strong style="color:${t.muted};">Způsob doručení:</strong> ${escapeHtml(paymentMethodText(order.shipping))}<br>
-        ${order.shippingCzk > 0 ? `<strong style="color:${t.accent};">Poštovné:</strong> ${formatPrice(order.shippingCzk)}<br>` : ''}
-      </div>
-    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:36px;background:${t.paymentBg};border:2px solid ${t.paymentBorder};border-radius:18px;">
+      <tr><td style="padding:32px 28px;">
+        <h3 style="color:${t.accent};margin:0 0 20px 0;font-size:22px;text-align:center;letter-spacing:1px;font-weight:700;">📦 Dodací adresa</h3>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:rgba(0,0,0,0.35);border:1px solid ${t.borderSubtle};border-radius:12px;">
+          <tr><td style="padding:20px;color:${t.text};font-size:15px;line-height:1.7;">
+            ${escapeHtml(order.customerName)}<br>
+            ${address}<br><br>
+            <span style="color:${t.muted};"><strong>Způsob doručení:</strong></span> ${escapeHtml(shippingMethodText(order.shipping))}<br>
+            ${order.shippingCzk > 0 ? `<span style="color:${t.accent};"><strong>Poštovné:</strong></span> ${formatPrice(order.shippingCzk)}<br>` : ''}
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
   `;
 }
 
 async function paymentInstructionsHtml(order: OrderEmailData, theme: ShopTheme): Promise<string> {
-  const t = themeColors(theme);
+  const t = themePalette(theme);
   const status = (order.paymentStatus || '').toLowerCase();
   if (status === 'paid') {
     return `<tr><td colspan="2" style="color:${t.accent3};font-size:14px;padding-top:12px;text-align:center;"><strong>✅ Platba přijata</strong></td></tr>`;
@@ -178,29 +213,29 @@ async function paymentInstructionsHtml(order: OrderEmailData, theme: ShopTheme):
     return `
       <tr>
         <td colspan="2" style="padding-top:16px;">
-          <div style="background:${t.paymentBox};border-radius:8px;padding:16px;border:1px solid ${t.paymentBorder};">
-            <p style="color:${t.accent};font-size:14px;margin:0 0 12px 0;font-weight:600;">💳 Instrukce k platbě:</p>
-            <table style="width:100%;">
-              <tr>
-                <td style="vertical-align:top;padding-right:16px;">
-                  <p style="color:#fff;font-size:13px;margin:0;line-height:1.8;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:${t.paymentBg};border:1px solid ${t.paymentBorder};border-radius:8px;">
+            <tr><td style="padding:16px;">
+              <p style="color:${t.accent};font-size:14px;margin:0 0 12px 0;font-weight:600;">💳 Instrukce k platbě:</p>
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                <tr>
+                  <td style="vertical-align:top;padding-right:16px;color:${t.text};font-size:13px;line-height:1.8;" width="55%">
                     <strong>Číslo účtu:</strong> ${escapeHtml(COMPANY.bankAccount)}<br>
                     <strong>IBAN:</strong> ${escapeHtml(COMPANY.iban)}<br>
                     <strong>Variabilní symbol:</strong> ${escapeHtml(order.orderId)}<br>
                     <strong>Částka:</strong> ${formatPrice(order.totalCzk)}<br>
                     <strong>Zpráva:</strong> Objednávka ${escapeHtml(order.orderId)}<br>
-                  </p>
-                </td>
-                <td style="vertical-align:top;text-align:center;">
-                  <img src="${qrDataUrl}" alt="QR platba" style="width:150px;height:150px;border-radius:8px;background:#fff;padding:4px;" />
-                  <p style="color:${t.muted};font-size:11px;margin:8px 0 0 0;">Naskenujte v bankovní aplikaci</p>
-                </td>
-              </tr>
-            </table>
-            <p style="color:${t.muted};font-size:12px;margin:12px 0 0 0;text-align:center;">
-              Platbu prosím uhraďte do 7 dnů. Po přijetí platby Vás budeme kontaktovat.
-            </p>
-          </div>
+                  </td>
+                  <td style="vertical-align:top;text-align:center;" width="45%">
+                    <img src="${qrDataUrl}" alt="QR platba" width="150" height="150" style="border-radius:8px;background:#ffffff;padding:4px;display:block;margin:0 auto;" />
+                    <p style="color:${t.muted};font-size:11px;margin:8px 0 0 0;">Naskenujte v bankovní aplikaci</p>
+                  </td>
+                </tr>
+              </table>
+              <p style="color:${t.muted};font-size:12px;margin:12px 0 0 0;text-align:center;">
+                Platbu prosím uhraďte do 7 dnů. Po přijetí platby Vás budeme kontaktovat.
+              </p>
+            </td></tr>
+          </table>
         </td>
       </tr>
     `;
@@ -214,24 +249,26 @@ function digitalDownloadsHtml(_order: OrderEmailData): string {
 }
 
 function zionTokenSectionHtml(order: OrderEmailData, theme: ShopTheme): string {
+  const t = themePalette(theme);
   const tokens = order.zionTokens || 0;
   if (tokens === 0) return '';
 
-  const accent3 = theme === 'zion' ? '#06b6d4' : '#00ff7f';
-  const muted = theme === 'zion' ? '#94a3b8' : '#9af59a';
-
   return `
-    <div style="background:linear-gradient(145deg, rgba(0,255,127,0.12), rgba(0,0,0,0.5)); border:3px solid rgba(0,255,127,0.4); border-radius:18px; padding:32px; margin-bottom:36px; box-shadow:0 0 30px rgba(0,255,127,0.2), inset 0 2px 12px rgba(0,255,127,0.1);">
-      <h3 style="color:${accent3};margin:0 0 20px 0;font-size:24px;text-align:center;letter-spacing:1.2px;font-weight:700;text-shadow:0 2px 8px rgba(0,255,127,0.3);">
-        🎁 ZION TOKEN BONUS 🎁
-      </h3>
-      <p style="color:${muted};font-size:16px;text-align:center;margin:0 0 24px 0;line-height:1.6;">
-        Jah Bless! 🙏 Za váš nákup jste získali <strong style="color:${accent3};font-size:20px;">${tokens.toLocaleString('cs-CZ')} ZION tokenů</strong> jako poděkování!
-      </p>
-      <div style="background:rgba(0,0,0,0.3);border-radius:12px;padding:20px;border:1px solid rgba(0,255,127,0.2);text-align:center;">
-        <p style="color:#8a8f94;font-size:13px;margin:0;">💎 Tokeny budou připsány na vaši ZION peněženku po spuštění odměňovacího programu.</p>
-      </div>
-    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:36px;background:rgba(0,255,127,0.08);border:3px solid rgba(0,255,127,0.35);border-radius:18px;">
+      <tr><td style="padding:32px 28px;text-align:center;">
+        <h3 style="color:${t.accent3};margin:0 0 20px 0;font-size:24px;letter-spacing:1.2px;font-weight:700;">
+          🎁 ZION TOKEN BONUS 🎁
+        </h3>
+        <p style="color:${t.muted};font-size:16px;margin:0 0 24px 0;line-height:1.6;">
+          Jah Bless! 🙏 Za váš nákup jste získali <strong style="color:${t.accent3};font-size:20px;">${tokens.toLocaleString('cs-CZ')} ZION tokenů</strong> jako poděkování!
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:rgba(0,0,0,0.35);border:1px solid rgba(0,255,127,0.2);border-radius:12px;">
+          <tr><td style="padding:20px;color:#8a8f94;font-size:13px;text-align:center;">
+            💎 Tokeny budou připsány na vaši ZION peněženku po spuštění odměňovacího programu.
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
   `;
 }
 
@@ -239,15 +276,14 @@ export async function buildV2OrderConfirmationHtml(
   order: OrderEmailData,
   theme: ShopTheme = 'rasta'
 ): Promise<string> {
-  const t = themeColors(theme);
+  const t = themePalette(theme);
   const orderDate = new Date().toLocaleDateString('cs-CZ');
   const itemsHtml = formatItemsHtml(order, theme);
   const shippingHtml = formatShippingHtml(order, theme);
   const paymentInstructions = await paymentInstructionsHtml(order, theme);
   const paymentStatus = paymentStatusText(order.paymentStatus);
-  const statusColor = paymentStatusColor(order.paymentStatus, theme);
+  const statusColor = theme === 'zion' ? '#06b6d4' : '#00ff7f';
   const paymentMethod = paymentMethodText(order.payment);
-  const accent3 = theme === 'zion' ? '#06b6d4' : '#00ff7f';
   const processingInfo =
     order.paymentStatus.toLowerCase() === 'paid'
       ? 'Vaši objednávku nyní zpracováváme a připravujeme k odeslání'
@@ -264,118 +300,138 @@ export async function buildV2OrderConfirmationHtml(
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZION - Potvrzení objednávky #${escapeHtml(order.orderId)}</title>
 </head>
-<body style="margin:0;padding:0;font-family:'Trebuchet MS','Verdana',sans-serif;background:radial-gradient(circle at 20% 20%,${theme === 'zion' ? 'rgba(147,51,234,0.15)' : 'rgba(0,255,0,0.15)'},transparent 40%),radial-gradient(circle at 80% 15%,rgba(255,215,0,0.15),transparent 45%),radial-gradient(circle at 50% 90%,${theme === 'zion' ? 'rgba(6,182,212,0.18)' : 'rgba(220,20,60,0.18)'},transparent 40%),#0a0a0a;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(145deg, rgba(0,0,0,0.85), rgba(0,0,0,0.96));padding:50px 20px;">
-    <tr>
-      <td align="center">
-        <table width="680" cellpadding="0" cellspacing="0" style="background:#0f0f0f;border-radius:24px;overflow:hidden;box-shadow:0 28px 72px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.06);">
-          <tr>
-            <td style="background:${t.headerGradient};padding:4px;">
-              <div style="background:#0f0f0f;padding:38px 32px;text-align:center;">
-                <div style="display:inline-block;padding:11px 22px;border-radius:999px;background:rgba(0,0,0,0.4);color:${t.accent};font-size:13px;letter-spacing:3.5px;border:1px solid rgba(255,215,0,0.5);text-transform:uppercase;font-weight:600;">
-                  ⚡ ESHOP OBJEDNÁVKA ⚡
-                </div>
-                <h1 style="color:${t.accent};margin:18px 0 8px 0;font-size:38px;text-shadow:0 8px 24px rgba(0,0,0,0.5), 0 0 40px rgba(255,215,0,0.3);font-weight:700;">ZION TERRA NOVA</h1>
+<body style="margin:0;padding:0;background:${t.bg};">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.bg}" style="border-collapse:collapse;background:${t.bg};">
+    <tr><td align="center" style="padding:40px 20px;">
+      <table width="680" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.card}" style="border-collapse:collapse;background:${t.card};border-radius:24px;overflow:hidden;border:1px solid ${t.borderSubtle};max-width:680px;width:100%;">
+        <tr>
+          <td background="${t.headerGradient}" bgcolor="${t.headerFallback}" style="background:${t.headerGradient};padding:4px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.card}" style="border-collapse:collapse;background:${t.card};">
+              <tr><td style="padding:38px 32px;text-align:center;">
+                <table align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;display:inline-table;">
+                  <tr><td style="padding:11px 22px;border-radius:999px;background:rgba(0,0,0,0.4);color:${t.accent};font-size:13px;letter-spacing:3.5px;border:1px solid ${t.accent};text-transform:uppercase;font-weight:600;text-align:center;">
+                    ⚡ ESHOP OBJEDNÁVKA ⚡
+                  </td></tr>
+                </table>
+                <h1 style="color:${t.accent};margin:18px 0 8px 0;font-size:38px;font-weight:700;">ZION TERRA NOVA</h1>
                 <p style="color:${t.muted};margin:0;font-size:16px;letter-spacing:1.5px;font-weight:500;">🌿 One Love • One Chain • One Future 🌿</p>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:50px 40px 30px 40px;background:linear-gradient(180deg, #0a0a0a 0%, #050505 100%);">
-              <div style="text-align:center;margin-bottom:36px;">
-                <div style="background:${t.successIcon};width:96px;height:96px;border-radius:50%;margin:0 auto 22px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 50px rgba(0,255,0,0.35), 0 12px 32px rgba(0,0,0,0.4);border:3px solid rgba(255,215,0,0.4);position:relative;">
-                  <span style="font-size:52px;color:#000;font-weight:bold;">✓</span>
-                </div>
-                <h2 style="color:${t.accent};margin:0;font-size:30px;letter-spacing:0.8px;font-weight:700;text-shadow:0 4px 16px rgba(0,0,0,0.5);">Jah Bless! 🙏 Objednávka přijata</h2>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:50px 40px 30px 40px;background:linear-gradient(180deg, #0a0a0a 0%, #050505 100%);">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+              <tr><td align="center" style="text-align:center;padding-bottom:36px;">
+                <table align="center" width="96" height="96" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.successBg}" style="border-collapse:collapse;background:${t.successBg};border-radius:50%;border:3px solid ${t.accent};">
+                  <tr><td align="center" valign="middle" style="text-align:center;vertical-align:middle;color:${t.successIconText};font-size:52px;font-weight:bold;">✓</td></tr>
+                </table>
+                <h2 style="color:${t.accent};margin:22px 0 0 0;font-size:30px;letter-spacing:0.8px;font-weight:700;">Jah Bless! 🙏 Objednávka přijata</h2>
                 <p style="color:${t.muted};margin:16px 0 0 0;font-size:16px;line-height:1.6;">
                   Díky za důvěru! 💚 Vaše objednávka byla úspěšně zpracována.<br>
                   <span style="color:${t.accent};font-weight:600;">ZION rodina</span> se rozrůstá o dalšího strážce světla. ✨
                 </p>
-              </div>
+              </td></tr>
+            </table>
 
-              <div style="background:linear-gradient(145deg, ${t.itemsBox}, rgba(0,0,0,0.4)); border:2px solid ${t.itemsBorder}; border-radius:18px; padding:32px; margin-bottom:36px; box-shadow:inset 0 2px 8px rgba(0,0,0,0.1);">
-                <h3 style="color:${t.accent};margin:0 0 24px 0;font-size:22px;text-align:center;letter-spacing:1px;font-weight:700;border-bottom:2px solid rgba(255,215,0,0.3);padding-bottom:16px;">📋 Detaily objednávky</h3>
-                <table width="100%" cellpadding="12" cellspacing="0">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:36px;background:${t.itemsBg};border:2px solid ${t.itemsBorder};border-radius:18px;">
+              <tr><td style="padding:32px 28px;">
+                <h3 style="color:${t.accent};margin:0 0 24px 0;font-size:22px;text-align:center;letter-spacing:1px;font-weight:700;border-bottom:2px solid ${t.paymentBorder};padding-bottom:16px;">📋 Detaily objednávky</h3>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
                   <tr>
-                    <td style="color:${t.muted};font-size:15px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);font-weight:600;">🔖 Číslo objednávky:</td>
-                    <td style="color:${t.accent};font-size:17px;text-align:right;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);font-weight:700;letter-spacing:1px;">${escapeHtml(order.orderId)}</td>
+                    <td style="color:${t.muted};font-size:15px;padding:10px 0;border-bottom:1px solid ${t.borderSubtle};font-weight:600;">🔖 Číslo objednávky:</td>
+                    <td style="color:${t.accent};font-size:17px;text-align:right;padding:10px 0;border-bottom:1px solid ${t.borderSubtle};font-weight:700;letter-spacing:1px;">${escapeHtml(order.orderId)}</td>
                   </tr>
                   <tr>
-                    <td style="color:${t.muted};font-size:15px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);font-weight:600;">👤 Jméno:</td>
-                    <td style="color:#fff;font-size:16px;text-align:right;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);">${escapeHtml(order.customerName)}</td>
+                    <td style="color:${t.muted};font-size:15px;padding:10px 0;border-bottom:1px solid ${t.borderSubtle};font-weight:600;">👤 Jméno:</td>
+                    <td style="color:${t.text};font-size:16px;text-align:right;padding:10px 0;border-bottom:1px solid ${t.borderSubtle};">${escapeHtml(order.customerName)}</td>
                   </tr>
                   <tr>
-                    <td style="color:${t.muted};font-size:15px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);font-weight:600;">📧 Email:</td>
-                    <td style="color:#fff;font-size:16px;text-align:right;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);">${escapeHtml(order.customerEmail)}</td>
+                    <td style="color:${t.muted};font-size:15px;padding:10px 0;border-bottom:1px solid ${t.borderSubtle};font-weight:600;">📧 Email:</td>
+                    <td style="color:${t.text};font-size:16px;text-align:right;padding:10px 0;border-bottom:1px solid ${t.borderSubtle};">${escapeHtml(order.customerEmail)}</td>
                   </tr>
                   <tr>
-                    <td style="color:${t.muted};font-size:15px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);font-weight:600;">📅 Datum objednávky:</td>
-                    <td style="color:#fff;font-size:16px;text-align:right;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);">${orderDate}</td>
+                    <td style="color:${t.muted};font-size:15px;padding:10px 0;border-bottom:1px solid ${t.borderSubtle};font-weight:600;">📅 Datum objednávky:</td>
+                    <td style="color:${t.text};font-size:16px;text-align:right;padding:10px 0;border-bottom:1px solid ${t.borderSubtle};">${orderDate}</td>
                   </tr>
                   <tr>
                     <td style="color:${t.muted};font-size:15px;padding:10px 0;font-weight:600;">💰 Celková cena:</td>
                     <td style="color:${t.accent};font-size:22px;text-align:right;padding:10px 0;font-weight:700;">${formatPrice(order.totalCzk)}</td>
                   </tr>
                 </table>
-              </div>
+              </td></tr>
+            </table>
 
-              <div style="background:linear-gradient(145deg, rgba(220,20,60,0.15), rgba(0,0,0,0.4)); border:2px solid rgba(220,20,60,0.3); border-radius:18px; padding:32px; margin-bottom:36px; box-shadow:inset 0 2px 8px rgba(220,20,60,0.1);">
-                <h3 style="color:${t.accent};margin:0 0 24px 0;font-size:22px;text-align:center;letter-spacing:1px;font-weight:700;border-bottom:2px solid rgba(255,215,0,0.3);padding-bottom:16px;">🛒 Položky objednávky</h3>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:36px;background:${t.surface};border:2px solid ${t.border};border-radius:18px;">
+              <tr><td style="padding:32px 28px;">
+                <h3 style="color:${t.accent};margin:0 0 24px 0;font-size:22px;text-align:center;letter-spacing:1px;font-weight:700;border-bottom:2px solid ${t.paymentBorder};padding-bottom:16px;">🛒 Položky objednávky</h3>
                 ${itemsHtml}
-              </div>
+              </td></tr>
+            </table>
 
-              ${zionTokenSectionHtml(order, theme)}
-              ${digitalDownloadsHtml(order)}
-              ${shippingHtml}
+            ${zionTokenSectionHtml(order, theme)}
+            ${digitalDownloadsHtml(order)}
+            ${shippingHtml}
 
-              <div style="background:linear-gradient(145deg, ${t.paymentBox}, rgba(0,0,0,0.4)); border:2px solid ${t.paymentBorder}; border-radius:18px; padding:32px; margin-bottom:36px; box-shadow:inset 0 2px 8px rgba(255,215,0,0.1);">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:36px;background:${t.paymentBg};border:2px solid ${t.paymentBorder};border-radius:18px;">
+              <tr><td style="padding:32px 28px;">
                 <h3 style="color:${t.accent};margin:0 0 20px 0;font-size:22px;text-align:center;letter-spacing:1px;font-weight:700;">💳 Informace o platbě</h3>
-                <div style="background:rgba(0,0,0,0.3);border-radius:12px;padding:24px;border:1px solid rgba(255,255,255,0.08);">
-                  <table width="100%" cellpadding="8" cellspacing="0">
-                    <tr>
-                      <td style="color:${t.muted};font-size:15px;font-weight:600;">Způsob platby:</td>
-                      <td style="color:#fff;font-size:16px;text-align:right;">${escapeHtml(paymentMethod)}</td>
-                    </tr>
-                    <tr>
-                      <td style="color:${t.muted};font-size:15px;font-weight:600;">Status platby:</td>
-                      <td style="text-align:right;">
-                        <span style="display:inline-block;padding:6px 16px;background:${statusColor};color:#000;font-weight:700;border-radius:999px;font-size:14px;">${escapeHtml(paymentStatus)}</span>
-                      </td>
-                    </tr>
-                    ${paymentInstructions}
-                  </table>
-                </div>
-              </div>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:rgba(0,0,0,0.35);border:1px solid ${t.borderSubtle};border-radius:12px;">
+                  <tr><td style="padding:24px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                      <tr>
+                        <td style="color:${t.muted};font-size:15px;font-weight:600;">Způsob platby:</td>
+                        <td style="color:${t.text};font-size:16px;text-align:right;">${escapeHtml(paymentMethod)}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:${t.muted};font-size:15px;font-weight:600;padding-top:8px;">Status platby:</td>
+                        <td style="text-align:right;padding-top:8px;">
+                          <span style="display:inline-block;padding:6px 16px;background:${statusColor};color:#000000;font-weight:700;border-radius:999px;font-size:14px;">${escapeHtml(paymentStatus)}</span>
+                        </td>
+                      </tr>
+                      ${paymentInstructions}
+                    </table>
+                  </td></tr>
+                </table>
+              </td></tr>
+            </table>
 
-              <div style="background:linear-gradient(145deg, ${t.nextBox}, rgba(0,0,0,0.3)); border:2px solid ${theme === 'zion' ? 'rgba(6,182,212,0.25)' : 'rgba(0,255,0,0.25)'}; border-radius:18px; padding:28px; margin-bottom:24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:24px;background:${t.nextBg};border:2px solid ${t.nextBorder};border-radius:18px;">
+              <tr><td style="padding:28px;">
                 <h3 style="color:${t.accent};margin:0 0 18px 0;font-size:20px;text-align:center;letter-spacing:0.8px;font-weight:700;">⚡ Co bude dál?</h3>
-                <ul style="color:${t.muted};font-size:15px;line-height:1.8;margin:0;padding-left:24px;">
-                  <li style="margin-bottom:10px;">✅ <strong>Potvrzení:</strong> Tímto emailem potvrzujeme přijetí objednávky</li>
-                  <li style="margin-bottom:10px;">📦 <strong>Zpracování:</strong> ${processingInfo}</li>
-                  <li style="margin-bottom:10px;">🚚 <strong>Doručení:</strong> ${deliveryInfo}</li>
-                  <li>💚 <strong>Podpora:</strong> Pro jakékoliv dotazy nás kontaktujte na ${escapeHtml(COMPANY.supportEmail)}</li>
-                </ul>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td style="background:${t.footerGradient};padding:3px;">
-              <div style="background:#0a0a0a;padding:32px;text-align:center;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                  <tr><td style="color:${t.muted};font-size:15px;line-height:1.8;padding-left:24px;">
+                    <span style="color:${t.text};">✅ <strong>Potvrzení:</strong></span> Tímto emailem potvrzujeme přijetí objednávky<br>
+                    <span style="color:${t.text};">📦 <strong>Zpracování:</strong></span> ${processingInfo}<br>
+                    <span style="color:${t.text};">🚚 <strong>Doručení:</strong></span> ${deliveryInfo}<br>
+                    <span style="color:${t.text};">💚 <strong>Podpora:</strong></span> Pro jakékoliv dotazy nás kontaktujte na ${escapeHtml(COMPANY.supportEmail)}
+                  </td></tr>
+                </table>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td background="${t.footerGradient}" bgcolor="${t.footerFallback}" style="background:${t.footerGradient};padding:3px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.bg}" style="border-collapse:collapse;background:${t.bg};">
+              <tr><td style="padding:32px;text-align:center;">
                 <p style="color:${t.muted};font-size:16px;margin:0 0 12px 0;font-weight:600;letter-spacing:0.5px;">☮️ Peace & One Love ☮️</p>
-                <p style="color:#999;font-size:13px;margin:0 0 8px 0;line-height:1.6;">
+                <p style="color:#999999;font-size:13px;margin:0 0 8px 0;line-height:1.6;">
                   Tento email byl odeslán z <strong style="color:${t.accent};">ZION eShop</strong><br>
                   Pokud máte jakékoliv dotazy, neváhejte nás kontaktovat
                 </p>
-                <div style="margin:16px 0;">
-                  <a href="${escapeHtml(COMPANY.shopUrl)}" style="display:inline-block;padding:12px 28px;background:${t.successIcon};color:#000;text-decoration:none;border-radius:999px;font-weight:700;font-size:15px;box-shadow:0 6px 20px rgba(0,255,0,0.3);border:2px solid rgba(255,215,0,0.4);letter-spacing:0.5px;">🛒 Přejít do eshopu</a>
-                </div>
-                <p style="color:#666;font-size:12px;margin:16px 0 0 0;">© 2026 ZION Terra Nova • All Rights Reserved</p>
-              </div>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
+                <table align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:16px 0;">
+                  <tr><td style="padding:12px 28px;background:${t.successBg};border-radius:999px;text-align:center;">
+                    <a href="${escapeHtml(COMPANY.shopUrl)}" style="color:#000000;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:0.5px;">🛒 Přejít do eshopu</a>
+                  </td></tr>
+                </table>
+                <p style="color:#666666;font-size:12px;margin:16px 0 0 0;">© 2026 ZION Terra Nova • All Rights Reserved</p>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
   </table>
 </body>
 </html>`;
