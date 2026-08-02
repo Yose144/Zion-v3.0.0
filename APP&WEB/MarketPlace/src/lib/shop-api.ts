@@ -1,4 +1,12 @@
+import { getAdminKey } from './admin-auth';
 import type { ShopProductData, CartItem, ShippingMethod, ShopOrderInput } from '@/types/shop';
+
+function adminHeaders(): Record<string, string> {
+  const key = getAdminKey();
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (key) headers['X-API-Key'] = key;
+  return headers;
+}
 
 export interface ShopProductsResponse {
   data: ShopProductData[];
@@ -152,6 +160,117 @@ export async function verifyStripeSession(sessionId: string): Promise<StripeVeri
       body: JSON.stringify({ sessionId }),
     });
     return (await res.json()) as StripeVerifyResult;
+  } catch {
+    return null;
+  }
+}
+
+export interface AdminOrdersListResult {
+  success: boolean;
+  data?: {
+    orders: {
+      id: string;
+      orderId: string;
+      status: string;
+      paymentStatus: string;
+      customerName: string;
+      customerEmail: string;
+      totalCzk: number;
+      shippingCzk: number;
+      shipping: string;
+      payment: string;
+      trackingNumber: string | null;
+      createdAt: string;
+      invoices: { id: string; invoiceNumber: string; status: string; pdfUrl: string | null }[];
+    }[];
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+  error?: string;
+}
+
+export async function listAdminOrders(params?: {
+  status?: string;
+  paymentStatus?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<AdminOrdersListResult | null> {
+  const q = new URLSearchParams();
+  if (params?.status) q.set('status', params.status);
+  if (params?.paymentStatus) q.set('paymentStatus', params.paymentStatus);
+  if (params?.search) q.set('search', params.search);
+  if (params?.page) q.set('page', String(params.page));
+  if (params?.limit) q.set('limit', String(params.limit));
+
+  try {
+    const res = await fetch(`/api/admin/orders?${q.toString()}`, {
+      headers: adminHeaders(),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as AdminOrdersListResult;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateOrderStatus(
+  id: string,
+  status: string
+): Promise<{ success: boolean; error?: string } | null> {
+  try {
+    const res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}/status`, {
+      method: 'POST',
+      headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    return (await res.json()) as { success: boolean; error?: string };
+  } catch {
+    return null;
+  }
+}
+
+export async function updateTrackingNumber(
+  id: string,
+  trackingNumber: string
+): Promise<{ success: boolean; error?: string } | null> {
+  try {
+    const res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}/shipping`, {
+      method: 'POST',
+      headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trackingNumber }),
+    });
+    return (await res.json()) as { success: boolean; error?: string };
+  } catch {
+    return null;
+  }
+}
+
+export async function sendInvoiceEmail(id: string): Promise<{ success: boolean; error?: string } | null> {
+  try {
+    const res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}/invoice/send`, {
+      method: 'POST',
+      headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+    });
+    return (await res.json()) as { success: boolean; error?: string };
+  } catch {
+    return null;
+  }
+}
+
+export async function regenerateInvoice(
+  id: string,
+  dueDays?: number
+): Promise<{ success: boolean; data?: unknown; error?: string } | null> {
+  try {
+    const res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}/invoice`, {
+      method: 'POST',
+      headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(dueDays ? { dueDays } : {}),
+    });
+    return (await res.json()) as { success: boolean; data?: unknown; error?: string };
   } catch {
     return null;
   }
