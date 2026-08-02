@@ -49,15 +49,49 @@ function applyPublicBuildHiding() {
     if (labelWrapper) labelWrapper.style.display = 'none';
   }
 
-  // Hide the Trinity panel non-ZION stream cards.
-  for (const id of ['stream-card-2', 'stream-card-3']) {
+  // Show Boost stream cards with masked labels (instead of hiding them).
+  const boostLabels = { 'stream-card-2': 'Stream 2 · Boost 1', 'stream-card-3': 'Stream 3 · Boost 2' };
+  for (const [id, label] of Object.entries(boostLabels)) {
     const card = document.getElementById(id);
-    if (card) card.style.display = 'none';
+    if (card) {
+      card.style.display = '';
+      const labelEl = card.querySelector('.stream-label');
+      if (labelEl) labelEl.textContent = label;
+    }
   }
 
   // Rename "Trinity" panel header to "Mining".
   const trinityHeader = document.querySelector('.trinity-header h3');
   if (trinityHeader) trinityHeader.textContent = 'Mining';
+
+  // Rebrand "Trinity" card kicker to "Boost" in settings.
+  document.querySelectorAll('.card-kicker').forEach(el => {
+    if (el.textContent.trim() === 'Trinity') el.textContent = 'Boost';
+  });
+  // Rebrand "Parallel Coin Mining" heading to "Boost Streams".
+  document.querySelectorAll('h3').forEach(el => {
+    if (el.textContent.trim() === 'Parallel Coin Mining') el.textContent = 'Boost Streams';
+  });
+  // Rebrand "Enable Trinity" to "Enable Boost" (in case it's visible).
+  document.querySelectorAll('.mode-title').forEach(el => {
+    if (el.textContent.trim() === 'Enable Trinity') el.textContent = 'Enable Boost';
+  });
+  // Hide slider hints that mention external coins.
+  document.querySelectorAll('.slider-hint').forEach(el => {
+    const t = el.textContent.toLowerCase();
+    if (t.includes('external coin') || t.includes('gpu coin') || t.includes('cpu coin')
+        || t.includes('trinity') || t.includes('parallel')) {
+      el.style.display = 'none';
+    }
+  });
+  // Hide section dividers "CPU Stream" and "Stream 2/3" labels in the Trinity card.
+  document.querySelectorAll('.section-divider, .wizard-label-sm').forEach(el => {
+    const t = el.textContent.toLowerCase();
+    if (t.includes('stream 2') || t.includes('stream 3') || t.includes('cpu stream')
+        || t.includes('gpu external') || t.includes('cpu external')) {
+      el.style.display = 'none';
+    }
+  });
 }
 
 let currentView = 'dashboard';

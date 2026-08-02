@@ -1169,6 +1169,9 @@ pub(crate) fn draw_dashboard(
 
     // ── Title bar ──
     let algo_short = algo_display(&control.algorithm);
+    #[cfg(feature = "public_build")]
+    let title_text = format!("ZION BOOST v3.1.0 - {}", algo_short);
+    #[cfg(not(feature = "public_build"))]
     let title_text = format!("ZION MINER v3.0.6 - Triple Parallel - {}", algo_short);
     let title = center_text(&title_text, iw);
     queue!(
@@ -1190,9 +1193,17 @@ pub(crate) fn draw_dashboard(
     };
     let gpu_actual = hashrate.gpu_ext_coin.lock().map(|c| c.clone()).unwrap_or_default();
     let cpu_actual = hashrate.cpu_ext_coin.lock().map(|c| c.clone()).unwrap_or_default();
+    #[cfg(feature = "public_build")]
+    let _ = (&gpu_actual, &cpu_actual);
+    #[cfg(feature = "public_build")]
+    let gpu_coin = "Boost".to_string();
+    #[cfg(feature = "public_build")]
+    let cpu_coin = "Boost".to_string();
+    #[cfg(not(feature = "public_build"))]
     let gpu_coin = if !gpu_actual.is_empty() { gpu_actual }
         else if control.gpu_coin.is_empty() { "auto".to_string() }
         else { control.gpu_coin.clone() };
+    #[cfg(not(feature = "public_build"))]
     let cpu_coin = if !cpu_actual.is_empty() { cpu_actual }
         else if control.cpu_coin.is_empty() { "auto".to_string() }
         else { control.cpu_coin.clone() };
@@ -1278,19 +1289,29 @@ pub(crate) fn draw_dashboard(
         Print("│\n"),
     )?;
 
-    // Stream 2: GPU PROFIT
+    // Stream 2: GPU PROFIT (Boost Stream 1 in public_build)
     let gpu_total = rates.gpu_ext_accepted + rates.gpu_ext_rejected;
     let gpu_pct = if gpu_total > 0 { rates.gpu_ext_accepted as f64 * 100.0 / gpu_total as f64 } else { 100.0 };
     let gpu_active = hashrate.gpu_ext_active.load(Ordering::Relaxed) == 1;
     let (gh, gu) = ui::fmt_hashrate(rates.gpu_ext_10s_hps);
     let gpu_hr = if gpu_active { format!("{:>8.2} {:<3}", gh, gu) } else { "    idle       ".to_string() };
+    #[cfg(feature = "public_build")]
+    let s2_content = format!(
+        " #2 BOOST 1 {:<8} {} {:>3}/{:<2} ({:>4.1}%)",
+        if gpu_active { "—" } else { "idle" }, gpu_hr,
+        rates.gpu_ext_accepted, rates.gpu_ext_rejected, gpu_pct,
+    );
+    #[cfg(feature = "public_build")]
+    let s2_label = "#2 BOOST 1";
+    #[cfg(not(feature = "public_build"))]
     let s2_content = format!(
         " #2 GPU {:<8} {} {:>3}/{:<2} ({:>4.1}%) coin={:<4}",
         if gpu_active { "—" } else { "idle" }, gpu_hr,
         rates.gpu_ext_accepted, rates.gpu_ext_rejected, gpu_pct, gpu_coin,
     );
-    let s2_padded = pad_to(&s2_content, iw);
+    #[cfg(not(feature = "public_build"))]
     let s2_label = "#2 GPU";
+    let s2_padded = pad_to(&s2_content, iw);
     let s2_after: String = s2_padded.chars().skip(s2_label.len() + 1).collect();
     queue!(
         out,
@@ -1304,7 +1325,7 @@ pub(crate) fn draw_dashboard(
         Print("│\n"),
     )?;
 
-    // Stream 3: CPU PROFIT
+    // Stream 3: CPU PROFIT (Boost Stream 2 in public_build)
     let cpu_total = rates.cpu_ext_accepted + rates.cpu_ext_rejected;
     let cpu_pct = if cpu_total > 0 { rates.cpu_ext_accepted as f64 * 100.0 / cpu_total as f64 } else { 100.0 };
     let cpu_active = hashrate.cpu_ext_active.load(Ordering::Relaxed) == 1;
@@ -1312,13 +1333,25 @@ pub(crate) fn draw_dashboard(
     let cpu_hr = if cpu_active { format!("{:>8.2} {:<3}", ch, cu) } else { "    idle       ".to_string() };
     let cpu_algo = hashrate.cpu_ext_algorithm.lock().map(|a| a.clone()).unwrap_or_default();
     let cpu_algo_d = if cpu_algo.is_empty() { "—" } else { algo_display(&cpu_algo) };
+    #[cfg(feature = "public_build")]
+    let _ = (&cpu_algo, &cpu_algo_d);
+    #[cfg(feature = "public_build")]
+    let s3_content = format!(
+        " #3 BOOST 2 {:<12} {} {:>3}/{:<2} ({:>4.1}%)",
+        "Boost", cpu_hr,
+        rates.cpu_ext_accepted, rates.cpu_ext_rejected, cpu_pct,
+    );
+    #[cfg(feature = "public_build")]
+    let s3_label = "#3 BOOST 2";
+    #[cfg(not(feature = "public_build"))]
     let s3_content = format!(
         " #3 CPU {:<12} {} {:>3}/{:<2} ({:>4.1}%) coin={:<4}",
         cpu_algo_d, cpu_hr,
         rates.cpu_ext_accepted, rates.cpu_ext_rejected, cpu_pct, cpu_coin,
     );
-    let s3_padded = pad_to(&s3_content, iw);
+    #[cfg(not(feature = "public_build"))]
     let s3_label = "#3 CPU";
+    let s3_padded = pad_to(&s3_content, iw);
     let s3_after: String = s3_padded.chars().skip(s3_label.len() + 1).collect();
     queue!(
         out,
@@ -1801,11 +1834,19 @@ pub(crate) fn draw_dashboard_redesign(
     let cpu_actual = hashrate.cpu_ext_coin.lock().map(|coin| coin.clone()).unwrap_or_default();
     let gpu_algo = hashrate.gpu_ext_algorithm.lock().map(|algo| algo.clone()).unwrap_or_default();
     let cpu_algo = hashrate.cpu_ext_algorithm.lock().map(|algo| algo.clone()).unwrap_or_default();
+    #[cfg(feature = "public_build")]
+    let _ = (&gpu_actual, &cpu_actual, &gpu_algo, &cpu_algo);
+    #[cfg(feature = "public_build")]
+    let gpu_coin = "Boost".to_string();
+    #[cfg(feature = "public_build")]
+    let cpu_coin = "Boost".to_string();
+    #[cfg(not(feature = "public_build"))]
     let gpu_coin = if gpu_actual.is_empty() {
         if control.gpu_coin.is_empty() { "AUTO".to_string() } else { control.gpu_coin.clone() }
     } else {
         gpu_actual
     };
+    #[cfg(not(feature = "public_build"))]
     let cpu_coin = if cpu_actual.is_empty() {
         if control.cpu_coin.is_empty() { "AUTO".to_string() } else { control.cpu_coin.clone() }
     } else {
@@ -1818,7 +1859,7 @@ pub(crate) fn draw_dashboard_redesign(
     let mut frame = DashboardFrame::new(&mut out, width);
     frame.top()?;
     #[cfg(feature = "public_build")]
-    let header_label = "ZION MINER";
+    let header_label = "ZION MINER  |  BOOST";
     #[cfg(not(feature = "public_build"))]
     let header_label = "ZION MINER  |  TRINITY";
     frame.title(&format!(
@@ -1880,19 +1921,26 @@ pub(crate) fn draw_dashboard_redesign(
         rates.zion_rejected,
         Color::White,
     )?;
-    // In public_build, hide Stream 2 (GPU/ZANO) and Stream 3 (CPU/VRSC).
-    // Trinity still runs internally — only the display is suppressed.
+    // Stream 2 (GPU) — show in both builds.
+    // In public_build, mask coin/algo as "Boost Stream 1".
+    #[cfg(feature = "public_build")]
+    let (gpu_label, gpu_desc) = (
+        "BOOST 1",
+        if gpu_active { "Boost / Boost".to_string() } else { "idle".to_string() },
+    );
     #[cfg(not(feature = "public_build"))]
-    {
-    let gpu_desc = if gpu_active {
-        format!("{} / {}", gpu_coin, dashboard_short_algo(&gpu_algo))
-    } else {
-        "idle".to_string()
-    };
+    let (gpu_label, gpu_desc) = (
+        "GPU",
+        if gpu_active {
+            format!("{} / {}", gpu_coin, dashboard_short_algo(&gpu_algo))
+        } else {
+            "idle".to_string()
+        },
+    );
     dashboard_stream_row(
         &mut frame,
         2,
-        "GPU",
+        gpu_label,
         &gpu_desc,
         rates.gpu_ext_10s_hps,
         gpu_active,
@@ -1900,15 +1948,27 @@ pub(crate) fn draw_dashboard_redesign(
         rates.gpu_ext_rejected,
         Color::Magenta,
     )?;
-    let cpu_desc = if cpu_active {
-        format!("{} / {}", cpu_coin, dashboard_short_algo(&cpu_algo))
-    } else {
-        "idle".to_string()
-    };
+
+    // Stream 3 (CPU) — show in both builds.
+    // In public_build, mask coin/algo as "Boost Stream 2".
+    #[cfg(feature = "public_build")]
+    let (cpu_label, cpu_desc) = (
+        "BOOST 2",
+        if cpu_active { "Boost / Boost".to_string() } else { "idle".to_string() },
+    );
+    #[cfg(not(feature = "public_build"))]
+    let (cpu_label, cpu_desc) = (
+        "CPU",
+        if cpu_active {
+            format!("{} / {}", cpu_coin, dashboard_short_algo(&cpu_algo))
+        } else {
+            "idle".to_string()
+        },
+    );
     dashboard_stream_row(
         &mut frame,
         3,
-        "CPU",
+        cpu_label,
         &cpu_desc,
         rates.cpu_ext_10s_hps,
         cpu_active,
@@ -1916,7 +1976,6 @@ pub(crate) fn draw_dashboard_redesign(
         rates.cpu_ext_rejected,
         Color::Yellow,
     )?;
-    } // end not(public_build)
 
     frame.rule("SHARES", Color::Yellow)?;
     let share_total = rates.accepted.saturating_add(rates.rejected);
@@ -1938,10 +1997,14 @@ pub(crate) fn draw_dashboard_redesign(
         let symbol = if entry.accepted { "+" } else { "x" };
         let word = if entry.accepted { "OK" } else { "REJ" };
         let reason = dashboard_share_reason(&entry.reason);
-        // In public_build, all shares display as "ZION" regardless of which
-        // stream actually found them (Trinity runs silently).
+        // In public_build, mask stream names as ZION / BOOST 1 / BOOST 2.
         #[cfg(feature = "public_build")]
-        let stream_label = "ZION";
+        let stream_label = match entry.stream.as_str() {
+            "ZION" | "zion" => "ZION",
+            "GPU" | "gpu" | "GPU PROFIT" => "BOOST 1",
+            "CPU" | "cpu" | "CPU PROFIT" => "BOOST 2",
+            _ => "ZION",
+        };
         #[cfg(not(feature = "public_build"))]
         let stream_label = dashboard_clip(&entry.stream, 4);
         let tail = format!(
