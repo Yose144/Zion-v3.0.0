@@ -6,8 +6,8 @@ import type { ShopOrderInput } from '@/types/shop';
 import { sendAdminOrderNotification, sendCustomerOrderConfirmation } from '@/lib/email';
 import { createInvoiceForOrder } from '@/lib/invoice';
 
-const BANK_ACCOUNT = 'CZ680600000000259251079';
-const BANK_BIC = 'AGBACZPP';
+const BANK_ACCOUNT = 'CZ6320100000002901809148';
+const BANK_BIC = 'FIOBCZPPXXX';
 
 // POST /api/shop/orders — create order and return bank transfer QR
 export async function POST(req: NextRequest) {
@@ -109,8 +109,8 @@ export async function POST(req: NextRequest) {
         order,
         invoice: invoiceResult?.invoice ?? null,
         bank: {
-          account: '259251079/0600',
-          iban: 'CZ68 0600 0000 0002 5925 1079',
+          account: '2901809148 / 2010',
+          iban: 'CZ63 2010 0000 0029 0180 9148',
           bic: BANK_BIC,
           vs,
           amount: body.total,

@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { setAdminKey } from '@/lib/admin-auth';
 
 export default function AdminLoginPage() {
-  const [key, setKey] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -16,15 +17,19 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/admin/orders?limit=1', {
-        headers: { 'X-API-Key': key },
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
       });
 
-      if (res.ok) {
-        setAdminKey(key);
+      const data = (await res.json()) as { success: boolean; apiKey?: string; error?: string };
+
+      if (res.ok && data.success && data.apiKey) {
+        setAdminKey(data.apiKey);
         router.replace('/admin/orders');
       } else {
-        setError('Neplatný admin klíč.');
+        setError(data.error ?? 'Neplatné přihlašovací údaje.');
       }
     } catch {
       setError('Chyba připojení.');
@@ -40,21 +45,29 @@ export default function AdminLoginPage() {
         className="w-full max-w-md p-8 rounded-2xl border border-white/10 bg-oasis-surface"
       >
         <h1 className="text-2xl font-black text-gradient mb-2">Market Admin</h1>
-        <p className="text-sm text-gray-400 mb-6">Zadej admin API klíč pro přístup.</p>
+        <p className="text-sm text-gray-400 mb-6">Přihlášení pro správce.</p>
 
         {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
         <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Uživatelské jméno"
+          className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm mb-4 focus:border-oasis-cyan focus:outline-none"
+        />
+
+        <input
           type="password"
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-          placeholder="API klíč"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Heslo"
           className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm mb-4 focus:border-oasis-cyan focus:outline-none"
         />
 
         <button
           type="submit"
-          disabled={loading || !key}
+          disabled={loading || !username || !password}
           className="w-full py-3 rounded-lg bg-gradient-to-r from-oasis-cyan to-oasis-purple text-black font-bold text-sm hover:opacity-90 disabled:opacity-40"
         >
           {loading ? 'Ověřuji…' : 'Přihlásit'}

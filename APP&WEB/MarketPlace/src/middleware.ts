@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
+function adminApiKey(): string | undefined {
+  return process.env.ADMIN_API_KEY;
+}
 
 const isAllowedOrigin = (origin: string): boolean => {
   if (!origin) return true;
@@ -26,10 +28,12 @@ export function middleware(request: NextRequest) {
   }
 
   const isAdminRoute = request.nextUrl.pathname.startsWith('/api/admin/');
+  const isLoginRoute = request.nextUrl.pathname === '/api/admin/login';
 
-  // Admin API protection
-  if (isAdminRoute) {
-    if (!ADMIN_API_KEY) {
+  // Admin API protection (skip login route)
+  if (isAdminRoute && !isLoginRoute) {
+    const key = adminApiKey();
+    if (!key) {
       return NextResponse.json(
         { success: false, error: 'ADMIN_API_KEY not configured' },
         { status: 500 }
@@ -40,7 +44,7 @@ export function middleware(request: NextRequest) {
     const apiKey = request.headers.get('X-API-Key') || '';
     const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
 
-    if (bearer !== ADMIN_API_KEY && apiKey !== ADMIN_API_KEY) {
+    if (bearer !== key && apiKey !== key) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
