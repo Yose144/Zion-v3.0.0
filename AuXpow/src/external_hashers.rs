@@ -1562,14 +1562,14 @@ pub const PROGPOW_PERIOD: u32 = 10;
 
 pub const AUTOLYKOS_K: usize = 32;
 pub const AUTOLYKOS_M_SIZE: usize = 8192;
-const AUTOLYKOS_N_BASE: u64 = 2_097_152; // 2^21 — Autolykos v2 (post-fork block 417,792)
+const AUTOLYKOS_N_BASE: u64 = 67_108_864; // 2^26 — Autolykos v2 (official Ergo spec)
 const AUTOLYKOS_INCREASE_START: u64 = 614_400;
 const AUTOLYKOS_INCREASE_PERIOD: u64 = 51_200;
 const AUTOLYKOS_N_INCREASE_HEIGHT_MAX: u64 = 4_198_400;
 
 /// Calculate the Autolykos v2 N parameter from block height.
 ///
-/// N starts at 2^21 = 2,097,152 until block 614,400, then grows by 5% every
+/// N starts at 2^26 = 67,108,864 until block 614,400, then grows by 5% every
 /// 51,200 blocks (integer arithmetic: N = N / 100 * 105).  From block
 /// 4,198,400 onward N is fixed at 2,143,944,600.
 pub fn autolykos_calc_n(height: u32) -> u32 {
@@ -1676,16 +1676,40 @@ pub fn hash_autolykos(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
         seed.extend_from_slice(&nonce_bytes);
         let seed_hash = blake2b256(&seed);
 
-        let mut extended = [0u8; 35];
-        extended[..32].copy_from_slice(&seed_hash);
-        extended[32..35].copy_from_slice(&seed_hash[..3]);
+        // genIndexes: correct Ergo reference implementation.
+        // 1. Interpret hash as 4 BE uint64s, split each into (low32, high32)
+        // 2. Byteswap each uint32
+        // 3. Repeat first uint32 at position 8 (9 total)
+        // 4. Generate 32 indexes using bit rotation across adjacent pairs
+        let mut r = [0u32; 9];
+        for i in 0..4 {
+            let lo = u32::from_be_bytes(
+                seed_hash[i * 8 + 4..i * 8 + 8].try_into().expect("4 bytes"),
+            );
+            let hi = u32::from_be_bytes(
+                seed_hash[i * 8..i * 8 + 4].try_into().expect("4 bytes"),
+            );
+            r[i * 2] = lo;
+            r[i * 2 + 1] = hi;
+        }
+        for v in r.iter_mut().take(8) {
+            *v = v.swap_bytes();
+        }
+        r[8] = r[0];
 
         // Step 5+6: sum k elements, final BLAKE2b-256
         let mut sum32 = [0u8; 32];
         let mut jhm = Vec::with_capacity(4 + 4 + AUTOLYKOS_M_SIZE);
         for i in 0..AUTOLYKOS_K {
-            let window = u32::from_be_bytes(extended[i..i + 4].try_into().expect("4 bytes"));
-            let idx = window % n;
+            // Slicing with bit rotation: 4 indexes per r[i], r[i+1] pair
+            let idx = match i % 4 {
+                0 => r[i / 4],
+                1 => (r[i / 4] << 8) | (r[i / 4 + 1] >> 24),
+                2 => (r[i / 4] << 16) | (r[i / 4 + 1] >> 16),
+                3 => (r[i / 4] << 24) | (r[i / 4 + 1] >> 8),
+                _ => unreachable!(),
+            };
+            let idx = idx % n;
 
             jhm.clear();
             jhm.extend_from_slice(&idx.to_be_bytes());
@@ -4251,6 +4275,24 @@ mod tests {
         assert!(!is_valid_autolykos_solution(
             &header, nonce, height, &target
         ));
+    }
+
+    /// Compute the Autolykos v2 hash for the exact nonce that was rejected by
+    /// 2miners, to compare with the GPU's reported hash.
+    #[test]
+    fn autolykos_real_share_hash() {
+        let header = hex::decode("22b5d5945b16cfabc83d783fcf000f8aed8d71d8888c10e166d5a5de95a6e8a3")
+            .unwrap();
+        let nonce: u64 = 3882819743174043543;
+        let height: u32 = 1842101;
+        let hash = hash_autolykos(&header, nonce, height);
+        eprintln!("CPU hash for rejected nonce: {}", hex::encode(hash));
+        eprintln!("GPU reported hash:           000000002dc1694d7c5d6641048c433b35b7fb7db316a2018fa250a4dbda00fb");
+        // Check if the hash meets the target
+        let target = hex::decode("000000003f00000003f00000003f00000003f00000003f00000003f00000003f")
+            .unwrap();
+        let target_arr: [u8; 32] = target.as_slice().try_into().unwrap();
+        eprintln!("Meets target: {}", hash <= target_arr);
     }
 
     // ── PearlHash (PRL) ─────────────────────────────────────────────

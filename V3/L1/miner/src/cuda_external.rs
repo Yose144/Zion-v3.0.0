@@ -16,7 +16,7 @@ use crate::{private_eprint, private_print};
 ///   - kawpow / kawpow_rvn (Ravencoin / CLORE / EVR / MEWC)
 ///   - beamhash / beamhash_beam (Beam — BeamHash III Wagner solver)
 use anyhow::{Context, Result};
-use cudarc::driver::result::mem_get_info;
+use cudarc::driver::result::{mem_get_info, stream as cuda_stream};
 use cudarc::driver::sys::CUdevice_attribute;
 use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
 use cudarc::nvrtc::{compile_ptx_with_opts, CompileOptions};
@@ -283,12 +283,12 @@ pub struct CudaExternalMiner {
 
 impl CudaExternalMiner {
     pub fn new(algorithm: &str, work_size: usize) -> Result<Self> {
-        // Use a non-blocking CUDA stream so this external-miner work can
-        // overlap with the main ZION deeksha miner on the default stream.
-        // This is the same primary CUDA context (no second context is
-        // created), just a different stream, so there is no consumer-GPU
-        // deadlock risk while still getting true concurrency.
-        let dev = CudaDevice::new_with_stream(0)
+        // Use the default CUDA stream.  Using a non-blocking stream
+        // (new_with_stream) causes deadlocks when the primary CUDA context
+        // has already been initialized by cuda_runtime_usable() or auto-tune.
+        // The default stream serializes with other CUDA work, but when
+        // stream1 is disabled, there is no other CUDA work to conflict with.
+        let dev = CudaDevice::new(0)
             .map_err(|e| anyhow::anyhow!("CUDA device init failed: {e}"))?;
         Self::new_with_device(algorithm, work_size, dev)
     }
@@ -522,6 +522,13 @@ impl CudaExternalMiner {
             // Free old table first (if any) to release VRAM before reallocating.
             self.autolykos_r_table = None;
 
+            // When CUDA memory pools are enabled (is_async=true), CudaSlice::drop
+            // calls cuMemFreeAsync which is stream-ordered — the VRAM is not
+            // actually returned to the pool until the stream synchronizes.
+            // Without this sync, mem_get_info() still sees the old allocation
+            // and bails with "R table too large for VRAM" on every new block.
+            let _ = unsafe { cuda_stream::synchronize(*self.dev.cu_stream()) };
+
             // R table: N elements × 8 uint32_t = N × 32 bytes
             let table_elems = n as usize * 8;
             let table_bytes = table_elems * 4;
@@ -529,7 +536,7 @@ impl CudaExternalMiner {
             // Check available VRAM before attempting allocation.
             // We need the table + some headroom for other GPU resources.
             if let Ok((free_bytes, _total_bytes)) = mem_get_info() {
-                let headroom = 512 * 1024 * 1024; // 512 MB headroom
+                let headroom = 32 * 1024 * 1024; // 32 MB — M/output/header are <1 MB total
                 if table_bytes + headroom > free_bytes {
                     anyhow::bail!(
                         "autolykos R table too large for VRAM: {:.2} GB needed, {:.2} GB free (height={}, N={})",
@@ -2137,7 +2144,7 @@ mod tests {
     use super::*;
 
     /// Test that the GPU autolykos kernel produces the same hash as the CPU
-    /// reference implementation. Uses height=0 (N=2^21=2M, table=~64MB).
+    /// reference implementation. Uses height=0 (N=2^26=67M, table=~2GB).
     #[test]
     fn test_autolykos_gpu_vs_cpu() {
         // Skip if no CUDA device available
@@ -2218,6 +2225,65 @@ mod tests {
         );
 
         eprintln!("autolykos GPU vs CPU test PASSED!");
+    }
+
+    /// Test GPU vs CPU at a real ERG mainnet height (1842101) with the actual
+    /// header from 2miners. This catches bugs that only manifest at non-zero
+    /// heights (R table differences, height encoding, etc.).
+    #[test]
+    fn test_autolykos_gpu_vs_cpu_at_real_height() {
+        let dev = match CudaDevice::new_with_stream(0) {
+            Ok(d) => d,
+            Err(e) => {
+                eprintln!("Skipping autolykos real-height test: no CUDA device ({e})");
+                return;
+            }
+        };
+        let free_info = std::process::Command::new("nvidia-smi")
+            .args(["--query-gpu=memory.free", "--format=csv,noheader,nounits"])
+            .output();
+        if let Ok(out) = free_info {
+            let s = String::from_utf8_lossy(&out.stdout);
+            if let Ok(free_mib) = s.trim().parse::<u64>() {
+                if free_mib < 2500 {
+                    eprintln!("Skipping autolykos real-height test: only {} MiB free", free_mib);
+                    return;
+                }
+            }
+        }
+        let mut miner = match CudaExternalMiner::new_with_device("autolykos", 256, dev) {
+            Ok(m) => m,
+            Err(e) => {
+                eprintln!("Skipping autolykos real-height test: miner init failed ({e})");
+                return;
+            }
+        };
+        // Real ERG mainnet height from 2miners job 141b
+        let height: u64 = 1842101;
+        miner.update_epoch(height).expect("update_epoch");
+
+        // Real header (blob) from 2miners notify for job 141b
+        let header: [u8; 32] = {
+            let h = hex::decode("22b5d5945b16cfabc83d783fcf000f8aed8d71d8888c10e166d5a5de95a6e8a3")
+                .unwrap();
+            h.try_into().unwrap()
+        };
+        let target = DifficultyTarget {
+            bytes: [0xFFu8; 32],
+        };
+        // Test with the actual nonce that was rejected by 2miners
+        let test_nonce: u64 = 3882819743174043543;
+        let result = miner
+            .mine_batch_raw(&header, target, test_nonce, 1)
+            .expect("mine_batch_raw");
+        assert!(!result.solutions.is_empty(), "GPU found no solution");
+        let (gpu_nonce, gpu_hash, _) = result.solutions[0];
+        let cpu_hash = zion_auxpow::external_hashers::hash_autolykos(&header, gpu_nonce, height as u32);
+        eprintln!("Real-height GPU: nonce={} hash={}", gpu_nonce, hex::encode(gpu_hash));
+        eprintln!("Real-height CPU: nonce={} hash={}", gpu_nonce, hex::encode(cpu_hash));
+        eprintln!("2miners reported GPU hash: 000000002dc1694d7c5d6641048c433b35b7fb7db316a2018fa250a4dbda00fb");
+        assert_eq!(gpu_hash, cpu_hash, "GPU hash != CPU hash at height {}", height);
+        eprintln!("autolykos real-height GPU vs CPU test PASSED!");
     }
 
     /// Benchmark the autolykos kernel hashrate at height=0 (N=2M, table=64MB).

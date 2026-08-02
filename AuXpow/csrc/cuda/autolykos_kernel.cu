@@ -18,7 +18,7 @@
 //   stored as 32 bytes: [0x00, hash[1], hash[2], ..., hash[31]]
 //
 // M = (0..1024).flatMap(i => Longs.toByteArray(i))  (8192 bytes, big-endian)
-// N depends on block height (2^21, then +5% every 51,200 blocks).
+// N depends on block height (2^26, then +5% every 51,200 blocks).
 //
 // This kernel is compiled at runtime via NVRTC.
 
@@ -319,7 +319,12 @@ __device__ __forceinline__ void blake2b_256_from_words(
 
 // ----------------------------------------------------------------------------
 // Generate the k = 32 pseudorandom indexes from seed
-// Uses hash wrapping (& 31) instead of extended[] array to save registers.
+// Correct Ergo reference genIndexes implementation:
+//   1. hash = Blake2b256(seed)
+//   2. Split hash into 4 BE uint64s, then each into (low32, high32) → 8 uint32s
+//   3. Byteswap each uint32
+//   4. Repeat first uint32 at position 8 (9 total)
+//   5. Generate 32 indexes using bit rotation across adjacent pairs
 // ----------------------------------------------------------------------------
 
 __device__ __forceinline__ void gen_indexes(
@@ -331,13 +336,28 @@ __device__ __forceinline__ void gen_indexes(
     uint8_t hash[32];
     blake2b_256_oneblock(seed, seed_len, hash);
 
-    for (int i = 0; i < 32; i++) {
-        uint32_t val =
-            ((uint32_t)hash[i       & 31] << 24) |
-            ((uint32_t)hash[(i + 1) & 31] << 16) |
-            ((uint32_t)hash[(i + 2) & 31] <<  8) |
-            ((uint32_t)hash[(i + 3) & 31]      );
-        indexes[i] = val % N;
+    // Step 1+2: hash64to32 + byteswap
+    uint32_t r[9];
+    #pragma unroll
+    for (int i = 0; i < 4; i++) {
+        uint32_t lo = ((uint32_t)hash[i*8+4] << 24) | ((uint32_t)hash[i*8+5] << 16)
+                    | ((uint32_t)hash[i*8+6] <<  8) |  (uint32_t)hash[i*8+7];
+        uint32_t hi = ((uint32_t)hash[i*8]   << 24) | ((uint32_t)hash[i*8+1] << 16)
+                    | ((uint32_t)hash[i*8+2] <<  8) |  (uint32_t)hash[i*8+3];
+        // byteswap (equivalent to __byte_perm or swap_bytes)
+        r[i*2]     = __byte_perm(lo, 0, 0x0123);
+        r[i*2 + 1] = __byte_perm(hi, 0, 0x0123);
+    }
+    // Step 3: repeat first element
+    r[8] = r[0];
+
+    // Step 4: slicing with bit rotation — 4 indexes per pair
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        indexes[i*4]     = r[i] % N;
+        indexes[i*4 + 1] = ((r[i] << 8)  | (r[i+1] >> 24)) % N;
+        indexes[i*4 + 2] = ((r[i] << 16) | (r[i+1] >> 16)) % N;
+        indexes[i*4 + 3] = ((r[i] << 24) | (r[i+1] >> 8))  % N;
     }
 }
 
