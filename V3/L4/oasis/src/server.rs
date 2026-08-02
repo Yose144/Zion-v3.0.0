@@ -99,6 +99,7 @@ pub fn build_router(state: OasisState) -> Router {
         .route("/api/v1/oasis/player/:address", get(get_player))
         .route("/api/v1/oasis/leaderboard", get(leaderboard))
         .route("/api/v1/oasis/leaderboard/top100", get(top_100_leaderboard))
+        .route("/api/v1/oasis/guilds", get(list_guilds))
         .route("/api/v1/oasis/guild/:id", get(get_guild))
         .route("/api/v1/oasis/map", get(territory_map))
         .route("/api/v1/oasis/rewards/pools", get(reward_pools))
@@ -320,10 +321,18 @@ async fn award_xp(
     // Broadcast XP award to WebSocket subscribers
     if let Some(ref hub) = state.ws_hub {
         hub.broadcast(crate::websocket::WsEvent::XpAward {
-            address,
+            address: address.clone(),
             amount: award.actual_amount,
             total_xp: award.new_total_xp,
         });
+        // Broadcast LevelUp if the player leveled up
+        if award.leveled_up {
+            hub.broadcast(crate::websocket::WsEvent::LevelUp {
+                address,
+                new_level: award.new_level as u32,
+                level_name: resp.level.clone(),
+            });
+        }
     }
 
     (StatusCode::OK, Json(ApiResponse::ok(resp))).into_response()
@@ -424,6 +433,27 @@ async fn get_guild(State(state): State<OasisState>, Path(id): Path<String>) -> i
     }
 }
 
+/// GET /api/v1/oasis/guilds
+async fn list_guilds(State(state): State<OasisState>) -> impl IntoResponse {
+    match state.db.list_guilds(100) {
+        Ok(guilds) if !guilds.is_empty() => {
+            (StatusCode::OK, Json(ApiResponse::ok(guilds))).into_response()
+        }
+        _ => {
+            let mut demo1 = Guild::new("demo-guild-1".into(), "Star Forgers".into(), "zion1demo".into());
+            demo1.description = "Forging unity in the Celestial Mountains.".into();
+            demo1.guild_xp = 7500;
+            demo1.territories = vec!["celestial-peaks".into()];
+            let mut demo2 = Guild::new("demo-guild-2".into(), "Quantum Monks".into(), "zion1seeker".into());
+            demo2.description = "Meditation and mining in the Crystal Caves.".into();
+            demo2.guild_xp = 5200;
+            demo2.territories = vec!["crystal-caves".into()];
+            let demo = vec![demo1, demo2];
+            (StatusCode::OK, Json(ApiResponse::ok(demo))).into_response()
+        }
+    }
+}
+
 /// Request for POST /api/v1/oasis/guild/:id/join
 #[derive(Debug, Deserialize)]
 pub struct JoinGuildRequest {
@@ -505,6 +535,13 @@ async fn join_guild(
         .metrics
         .guild_joins_total
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    // Broadcast guild join to WebSocket subscribers
+    if let Some(ref hub) = state.ws_hub {
+        hub.broadcast(crate::websocket::WsEvent::GuildJoin {
+            guild_id: id.clone(),
+            address: req.address.clone(),
+        });
+    }
     (StatusCode::OK, Json(ApiResponse::ok(guild))).into_response()
 }
 
@@ -592,11 +629,18 @@ async fn create_raid_team(
         .requests_total
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let id = uuid::Uuid::new_v4().to_string();
-    let raid = RaidTeam::new(id.clone(), req.name, req.leader_address);
+    let raid = RaidTeam::new(id.clone(), req.name.clone(), req.leader_address.clone());
     state
         .metrics
         .raid_team_creations_total
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    // Broadcast raid team creation to WebSocket subscribers
+    if let Some(ref hub) = state.ws_hub {
+        hub.broadcast(crate::websocket::WsEvent::RaidTeamCreate {
+            raid_team_id: id,
+            leader: req.leader_address,
+        });
+    }
     (StatusCode::CREATED, Json(ApiResponse::ok(raid))).into_response()
 }
 
@@ -623,10 +667,21 @@ pub struct JoinRaidRequest {
 
 /// POST /api/v1/oasis/raid-team/:id/join
 async fn join_raid_team(
+    State(state): State<OasisState>,
     Path(id): Path<String>,
-    Json(_req): Json<JoinRaidRequest>,
+    Json(req): Json<JoinRaidRequest>,
 ) -> impl IntoResponse {
-    // Placeholder - would add member to raid team in DB
+    state
+        .metrics
+        .requests_total
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    // Broadcast raid team join to WebSocket subscribers
+    if let Some(ref hub) = state.ws_hub {
+        hub.broadcast(crate::websocket::WsEvent::RaidTeamJoin {
+            raid_team_id: id.clone(),
+            address: req.address.clone(),
+        });
+    }
     (
         StatusCode::OK,
         Json(ApiResponse::ok(format!(
@@ -782,6 +837,8 @@ async fn avatar_quests(State(state): State<OasisState>, Path(id): Path<u16>) -> 
 #[derive(Debug, Deserialize)]
 pub struct CombatRequest {
     pub action: String,
+    pub attacker_address: String,
+    pub defender_address: String,
     pub attacker_level: u8,
     pub defender_level: u8,
     pub base_damage: u32,
@@ -877,6 +934,14 @@ async fn resolve_combat(
         .metrics
         .combat_resolutions_total
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    // Broadcast combat result to WebSocket subscribers
+    if let Some(ref hub) = state.ws_hub {
+        hub.broadcast(crate::websocket::WsEvent::CombatResult {
+            winner: req.attacker_address.clone(),
+            loser: req.defender_address.clone(),
+            xp_awarded: result.damage_dealt as u64,
+        });
+    }
     (StatusCode::OK, Json(ApiResponse::ok(resp)))
 }
 
@@ -1139,6 +1204,22 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_list_guilds_endpoint() {
+        let state = test_state();
+        let app = build_router(state);
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/oasis/guilds")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
     }
 
     #[tokio::test]

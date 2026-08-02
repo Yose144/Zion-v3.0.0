@@ -8,13 +8,13 @@
 
 <h3>Terra Nova — 100 years of evoluZion</h3>
 
-<p><em>A multichain Dharma ecosystem secured by proof-of-work consensus.</em></p>
+<p><em>Mine ZION. Enter the OASIS. Find the Golden Egg.</em></p>
 
 <!-- Badges -->
 <p>
 
 ![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange?style=for-the-badge)
-![Protocol](https://img.shields.io/badge/Protocol-3.0.8-blue?style=for-the-badge)
+![Protocol](https://img.shields.io/badge/Protocol-3.0.7-blue?style=for-the-badge)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Rust](https://img.shields.io/badge/Rust-2021-orange?style=for-the-badge)
 ![PoW](https://img.shields.io/badge/Consensus-PoW-purple?style=for-the-badge)
@@ -24,11 +24,15 @@
 <!-- Links -->
 <p>
 
-[🌐 Website](https://www.zionterranova.com)
+[🌐 Hub](https://zionterranova.com)
+&nbsp;·&nbsp;
+[📊 Explorer & dApp](https://app.zionterranova.com)
+&nbsp;·&nbsp;
+[🎮 Oasis Web](https://oasis.zionterranova.com)
 &nbsp;·&nbsp;
 [📖 Whitepaper](./docs/whitepaper.md)
 &nbsp;·&nbsp;
-[🎮 Oasis](./V3/L4/oasis/README.md)
+[🏗️ OASIS Build Journal](./docs/OASIS_DEVLOG.md)
 &nbsp;·&nbsp;
 [⚡ CLI](./V3/cli/README.md)
 &nbsp;·&nbsp;
@@ -65,16 +69,32 @@
 
 <div align="center">
 
-## Enter the Oasis
+## Enter the Ecosystem
 
 </div>
 
-| Portal | Path |
+ZION's web presence is organised across three domains:
+
+| Portal | URL | What's there |
+|:------:|:----|:-------------|
+| 🌐 **Hub** | [zionterranova.com](https://zionterranova.com) | The front door — an overview of the entire ZION multichain ecosystem and a portal into everything below. |
+| 📊 **Explorer & dApp** | [app.zionterranova.com](https://app.zionterranova.com) | Full web application — block explorer, wallet, DeFi dashboard, ZionDex, bridge, governance, and all dApp functionality. |
+| 🎮 **Oasis Web** | [oasis.zionterranova.com](https://oasis.zionterranova.com) | The OASIS 3D galaxy — fly through 55 worlds, explore warp-gate networks, and enter individual worlds in your browser. |
+
+---
+
+<div align="center">
+
+## Get Started
+
+</div>
+
+| Path | How |
 |:------:|:-----|
 | ⛏️ **Mine (desktop)** | Download a ready-to-use binary and start in minutes. See the [Desktop Miner Quick Start](#desktop-miner-quick-start) below. |
 | ⛏️ **Mine (SMOS/HiveOS)** | Run the miner on mining OS rigs. See [`docs/SMOS_HIVEOS_GUIDE.md`](./docs/SMOS_HIVEOS_GUIDE.md). |
 | ⛏️ **Mine (build from source)** | Build the node, CLI, and miner from source. Start with [`V3/cli/README.md`](./V3/cli/README.md). |
-| 🎮 **Play** | Enter the L4 Oasis world — avatars, quests, guilds, and the Golden Egg. See [`V3/L4/oasis/README.md`](./V3/L4/oasis/README.md). |
+| 🎮 **Play** | Enter the L4 Oasis world — avatars, quests, guilds, and the Golden Egg. See [`docs/OASIS_DEVLOG.md`](./docs/OASIS_DEVLOG.md) and [`V3/L4/oasis/README.md`](./V3/L4/oasis/README.md). |
 | 🔨 **Build** | Explore the codebase, contracts, RPC, and bridge docs in [`V3/docs/`](./V3/docs/) and [`docs/`](./docs/). |
 | ❓ **FAQ** | Common questions for beginners and rig operators. See [`docs/FAQ.md`](./docs/FAQ.md). |
 
@@ -91,7 +111,7 @@
 | Parameter | Value |
 |:----------|:------|
 | **Status** | Mainnet Beta |
-| **Protocol** | 3.0.8 "Full Stack Stable" |
+| **Protocol** | 3.0.7 "Trinity All Green" |
 | **Genesis hash** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
 | **Official launch** | 2026-12-31 |
 | **Block time** | ~60 seconds |
@@ -100,6 +120,62 @@
 | **Premine** | 14 slots (founders, treasury, OASIS pool, liquidity) |
 
 All disclosed security issues have been remediated. See [Security](./SECURITY.md) and the [disclosure report](./docs/security/SECURITY_DISCLOSURE_2026-07.md).
+
+---
+
+## Trinity — Three Streams of One River
+
+> **Mine ZION. Earn ZION. Grow ZION.**
+
+Starting with v3.0.6-beta, the official ZION miner carries a new
+capability — a bonus for everyone who mines: **Trinity**.
+
+Trinity is a smart mining engine built directly into the official miner.
+It activates automatically — no configuration, no second wallet, no
+second application. It does one thing: **extract more value from your
+hardware than the core alone could, and pay all of it out in ZION.**
+
+### How it works — in plain language
+
+Your machine has a GPU and a CPU. In traditional mining, only one of
+them does useful work at a time — the other sits idle or mines a
+different coin that you then have to sell.
+
+Trinity runs **three streams simultaneously**:
+
+The engine internally distributes work so no cycle goes unused. All
+revenue — from all three streams — arrives as a single balance in your
+wallet: **ZION, growing.**
+
+### Zion Grow — a position that compounds by itself
+
+- Every block your hardware contributes to increases your balance.
+- You never need to sell, swap, or watch an exchange.
+- The longer you mine, the more ZION you hold — simply by leaving the
+  miner running.
+
+### Zion Liquidity — a river flowing the right way
+
+The old mining pattern: mine a coin → sell it on an exchange → crush the
+price → leave. The more people mine, the greater the sell pressure.
+
+**Trinity inverts the pattern:**
+
+- The engine internally converts all mined value into ZION before
+  anything touches an exchange.
+- The miner never needs to sell — they receive ZION directly.
+- Mining therefore **creates no sell pressure**. On the contrary: with
+  every hash, the liquidity depth of the whole network grows.
+
+### A bonus, not a condition
+
+Trinity demands nothing: it is not a fee, a registration, or a setting.
+It is a property of the official ZION miner v3.0.6 and later. ZION's
+core and pool remain fully open under the MIT license.
+
+> For the full philosophical and technical context, see
+> [**Part Four — Three Streams of One River**](./docs/WP/ZION_MASTER_WHITEPAPER_3.1_EN.md)
+> in the Master Whitepaper.
 
 ---
 
@@ -117,7 +193,7 @@ All disclosed security issues have been remediated. See [Security](./SECURITY.md
 | **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` |
 | **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.zip` |
 
-Latest release: **[v3.0.8-beta](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.8-beta)**
+Latest release: **[v3.0.7-beta](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.7-beta)**
 
 ### 2. Extract
 
@@ -338,7 +414,10 @@ This opens an interactive arrow-key menu with all options — wallet, node, mini
 - **Full documentation:** [README_FULL.md](./README_FULL.md)
 - **CLI reference:** [`V3/cli/README.md`](./V3/cli/README.md) — every command explained
 - **Node docs:** [`V3/docs/`](./V3/docs/) — architecture, constants, runbooks
-- **Website:** [zionterranova.com](https://www.zionterranova.com)
+- **Hub:** [zionterranova.com](https://zionterranova.com)
+- **Explorer & dApp:** [app.zionterranova.com](https://app.zionterranova.com)
+- **Oasis Web:** [oasis.zionterranova.com](https://oasis.zionterranova.com)
+- **GitHub:** [Zion-TerraNova/v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet)
 - **Issues:** [GitHub Issues](https://github.com/Zion-TerraNova/v3-Mainnet/issues)
 
 ---
@@ -377,6 +456,6 @@ This project is licensed under the [MIT License](./LICENSE).
 
 ### Built with care, secured by consensus.
 
-[🌐 zionterranova.com](https://www.zionterranova.com) · [🔒 Security](./SECURITY.md) · [📜 Whitepaper](./docs/whitepaper.md) · [⚖️ Legal](./docs/LEGAL_DISCLAIMER.md)
+[🌐 Hub](https://zionterranova.com) · [📊 Explorer & dApp](https://app.zionterranova.com) · [🎮 Oasis Web](https://oasis.zionterranova.com) · [📦 GitHub](https://github.com/Zion-TerraNova/v3-Mainnet) · [🔒 Security](./SECURITY.md) · [📜 Whitepaper](./docs/whitepaper.md) · [⚖️ Legal](./docs/LEGAL_DISCLAIMER.md)
 
 </div>

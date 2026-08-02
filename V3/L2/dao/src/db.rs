@@ -12,10 +12,12 @@
 //! scan_state — last scanned L1 block height (singleton row)
 //! ```
 
+use std::collections::BTreeMap;
+use std::path::Path;
+
 use chrono::Utc;
 use rusqlite::{params, Connection};
 use serde_json;
-use std::path::Path;
 
 use crate::error::{DaoError, DaoResult};
 use crate::proposal::Proposal;
@@ -105,6 +107,32 @@ impl DaoDb {
             "#,
             )
             .map_err(|e| DaoError::Internal(e.to_string()))?;
+
+        // Migration for election support: add election_tallies column if it doesn't exist.
+        // This uses PRAGMA instead of "ADD COLUMN IF NOT EXISTS" for older SQLite versions.
+        let has_col: bool = self
+            .conn
+            .prepare("PRAGMA table_info(proposals)")
+            .map_err(|e| DaoError::Internal(e.to_string()))?
+            .query_map([], |row| {
+                let name: String = row.get(1)?;
+                Ok(name)
+            })
+            .map_err(|e| DaoError::Internal(e.to_string()))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| DaoError::Internal(e.to_string()))?
+            .iter()
+            .any(|n| n == "election_tallies");
+
+        if !has_col {
+            self.conn
+                .execute(
+                    "ALTER TABLE proposals ADD COLUMN election_tallies TEXT DEFAULT '{}'",
+                    [],
+                )
+                .map_err(|e| DaoError::Internal(e.to_string()))?;
+        }
+
         Ok(())
     }
 
@@ -114,14 +142,16 @@ impl DaoDb {
     pub fn insert_proposal(&self, p: &Proposal) -> DaoResult<i64> {
         let type_json = serde_json::to_string(&p.proposal_type)
             .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let tallies_json = serde_json::to_string(&p.election_tallies)
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
         let status = format!("{:?}", p.status);
 
         self.conn
             .execute(
                 r#"INSERT INTO proposals
                     (id, uuid, status, proposal_type, title, description, proposer,
-                     votes_yes, votes_no, votes_abstain, created_at, voting_ends_at)
-                   VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)"#,
+                     votes_yes, votes_no, votes_abstain, election_tallies, created_at, voting_ends_at)
+                   VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)"#,
                 params![
                     p.id,
                     p.id.to_string(), // use numeric id as uuid for now
@@ -133,6 +163,7 @@ impl DaoDb {
                     p.votes_for,
                     p.votes_against,
                     p.votes_abstain,
+                    tallies_json,
                     p.created_at.to_rfc3339(),
                     p.voting_ends_at.to_rfc3339(),
                 ],
@@ -146,16 +177,19 @@ impl DaoDb {
     pub fn update_proposal_status(&self, p: &Proposal) -> DaoResult<()> {
         let status = format!("{:?}", p.status);
         let executed_at = p.executed_at.as_ref().map(|dt| dt.to_rfc3339());
+        let tallies_json = serde_json::to_string(&p.election_tallies)
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
 
         self.conn
             .execute(
                 r#"UPDATE proposals SET status=?1, votes_yes=?2, votes_no=?3,
-                       votes_abstain=?4, executed_at=?5 WHERE id=?6"#,
+                       votes_abstain=?4, election_tallies=?5, executed_at=?6 WHERE id=?7"#,
                 params![
                     status,
                     p.votes_for,
                     p.votes_against,
                     p.votes_abstain,
+                    tallies_json,
                     executed_at,
                     p.id,
                 ],
@@ -169,12 +203,13 @@ impl DaoDb {
         self.conn
             .execute(
                 r#"UPDATE proposals SET status=?1, votes_yes=?2, votes_no=?3,
-                       votes_abstain=?4, executed_at=?5 WHERE id=?6"#,
+                       votes_abstain=?4, election_tallies=?5, executed_at=?6 WHERE id=?7"#,
                 params![
                     row.status,
                     row.votes_yes,
                     row.votes_no,
                     row.votes_abstain,
+                    row.election_tallies,
                     row.executed_at,
                     row.id,
                 ],
@@ -189,7 +224,7 @@ impl DaoDb {
             .conn
             .prepare(
                 r#"SELECT id, status, proposal_type, title, description, proposer,
-                          votes_yes, votes_no, votes_abstain, created_at, voting_ends_at, executed_at
+                          votes_yes, votes_no, votes_abstain, election_tallies, created_at, voting_ends_at, executed_at
                    FROM proposals ORDER BY id"#,
             )
             .map_err(|e| DaoError::Internal(e.to_string()))?;
@@ -206,9 +241,10 @@ impl DaoDb {
                     votes_yes: row.get(6)?,
                     votes_no: row.get(7)?,
                     votes_abstain: row.get(8)?,
-                    created_at: row.get(9)?,
-                    voting_ends_at: row.get(10)?,
-                    executed_at: row.get(11)?,
+                    election_tallies: row.get(9)?,
+                    created_at: row.get(10)?,
+                    voting_ends_at: row.get(11)?,
+                    executed_at: row.get(12)?,
                 })
             })
             .map_err(|e| DaoError::Internal(e.to_string()))?
@@ -224,7 +260,7 @@ impl DaoDb {
             .conn
             .prepare(
                 r#"SELECT id, status, proposal_type, title, description, proposer,
-                          votes_yes, votes_no, votes_abstain, created_at, voting_ends_at, executed_at
+                          votes_yes, votes_no, votes_abstain, election_tallies, created_at, voting_ends_at, executed_at
                    FROM proposals WHERE id=?1"#,
             )
             .map_err(|e| DaoError::Internal(e.to_string()))?;
@@ -241,9 +277,10 @@ impl DaoDb {
                     votes_yes: row.get(6)?,
                     votes_no: row.get(7)?,
                     votes_abstain: row.get(8)?,
-                    created_at: row.get(9)?,
-                    voting_ends_at: row.get(10)?,
-                    executed_at: row.get(11)?,
+                    election_tallies: row.get(9)?,
+                    created_at: row.get(10)?,
+                    voting_ends_at: row.get(11)?,
+                    executed_at: row.get(12)?,
                 })
             })
             .map_err(|e| DaoError::Internal(e.to_string()))?;
@@ -266,10 +303,11 @@ impl DaoDb {
         weight: u64,
         l1_tx_hash: Option<&str>,
     ) -> DaoResult<bool> {
-        let choice_str = match choice {
+        let choice_str = match &choice {
             VoteChoice::Yes => "yes",
             VoteChoice::No => "no",
             VoteChoice::Abstain => "abstain",
+            VoteChoice::Candidate(party) => party.as_str(),
         };
 
         let tx = self.conn.unchecked_transaction()?;
@@ -287,16 +325,37 @@ impl DaoDb {
         };
 
         if inserted {
-            let col = match choice {
-                VoteChoice::Yes => "votes_yes",
-                VoteChoice::No => "votes_no",
-                VoteChoice::Abstain => "votes_abstain",
+            match choice {
+                VoteChoice::Yes => tx.execute(
+                    "UPDATE proposals SET votes_yes = votes_yes + ?1 WHERE id = ?2",
+                    params![weight, proposal_id],
+                )?,
+                VoteChoice::No => tx.execute(
+                    "UPDATE proposals SET votes_no = votes_no + ?1 WHERE id = ?2",
+                    params![weight, proposal_id],
+                )?,
+                VoteChoice::Abstain => tx.execute(
+                    "UPDATE proposals SET votes_abstain = votes_abstain + ?1 WHERE id = ?2",
+                    params![weight, proposal_id],
+                )?,
+                VoteChoice::Candidate(ref party) => {
+                    // Update per-party tally stored as JSON
+                    let tallies_json: String = tx.query_row(
+                        "SELECT election_tallies FROM proposals WHERE id=?1",
+                        params![proposal_id],
+                        |row| row.get(0),
+                    )?;
+                    let mut tallies: BTreeMap<String, u64> =
+                        serde_json::from_str(&tallies_json).unwrap_or_default();
+                    *tallies.entry(party.clone()).or_insert(0) += weight;
+                    let updated = serde_json::to_string(&tallies)
+                        .map_err(|e| DaoError::Internal(e.to_string()))?;
+                    tx.execute(
+                        "UPDATE proposals SET election_tallies=?1, votes_yes = votes_yes + ?2 WHERE id = ?3",
+                        params![updated, weight, proposal_id],
+                    )?
+                }
             };
-            tx.execute(
-                &format!("UPDATE proposals SET {col} = {col} + ?1 WHERE id = ?2"),
-                params![weight, proposal_id],
-            )
-            .map_err(|e| DaoError::Internal(e.to_string()))?;
         }
 
         tx.commit().map_err(|e| DaoError::Internal(e.to_string()))?;
@@ -323,6 +382,30 @@ impl DaoDb {
             .map_err(|e| DaoError::Internal(e.to_string()))?;
 
         Ok((yes as u64, no as u64, abstain as u64))
+    }
+
+    /// Per-candidate/party tallies for an election proposal.
+    pub fn election_tallies(&self, proposal_id: u64) -> DaoResult<BTreeMap<String, u64>> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                r#"SELECT choice, SUM(weight) FROM votes
+                   WHERE proposal_id=?1 AND choice NOT IN ('yes','no','abstain')
+                   GROUP BY choice"#,
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+
+        let rows = stmt
+            .query_map(params![proposal_id], |row| {
+                let choice: String = row.get(0)?;
+                let weight: i64 = row.get(1)?;
+                Ok((choice, weight as u64))
+            })
+            .map_err(|e| DaoError::Internal(e.to_string()))?
+            .collect::<Result<BTreeMap<_, _>, _>>()
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+
+        Ok(rows)
     }
 
     /// Check if a voter already voted on a proposal.
@@ -416,6 +499,7 @@ pub struct ProposalRow {
     pub votes_yes: i64,
     pub votes_no: i64,
     pub votes_abstain: i64,
+    pub election_tallies: String,
     pub created_at: String,
     pub voting_ends_at: String,
     pub executed_at: Option<String>,
@@ -456,8 +540,8 @@ mod tests {
         // We need a proposal row first (minimal insert)
         db.conn.execute(
             r#"INSERT INTO proposals (id,uuid,status,proposal_type,title,description,
-               proposer,votes_yes,votes_no,votes_abstain,created_at,voting_ends_at)
-               VALUES (1,'1','Active','{}','Test','desc','zion1test',0,0,0,datetime('now'),datetime('now'))"#,
+               proposer,votes_yes,votes_no,votes_abstain,election_tallies,created_at,voting_ends_at)
+               VALUES (1,'1','Active','{}','Test','desc','zion1test',0,0,0,'{}',datetime('now'),datetime('now'))"#,
             [],
         ).unwrap();
 
@@ -477,8 +561,8 @@ mod tests {
         let db = make_db();
         db.conn.execute(
             r#"INSERT INTO proposals (id,uuid,status,proposal_type,title,description,
-               proposer,votes_yes,votes_no,votes_abstain,created_at,voting_ends_at)
-               VALUES (2,'2','Active','{}','Test2','d','zion1test',0,0,0,datetime('now'),datetime('now'))"#,
+               proposer,votes_yes,votes_no,votes_abstain,election_tallies,created_at,voting_ends_at)
+               VALUES (2,'2','Active','{}','Test2','d','zion1test',0,0,0,'{}',datetime('now'),datetime('now'))"#,
             [],
         ).unwrap();
 
@@ -500,8 +584,8 @@ mod tests {
         let db = make_db();
         db.conn.execute(
             r#"INSERT INTO proposals (id,uuid,status,proposal_type,title,description,
-               proposer,votes_yes,votes_no,votes_abstain,created_at,voting_ends_at)
-               VALUES (3,'3','Active','{}','Test3','d','zion1test',0,0,0,datetime('now'),datetime('now'))"#,
+               proposer,votes_yes,votes_no,votes_abstain,election_tallies,created_at,voting_ends_at)
+               VALUES (3,'3','Active','{}','Test3','d','zion1test',0,0,0,'{}',datetime('now'),datetime('now'))"#,
             [],
         ).unwrap();
 

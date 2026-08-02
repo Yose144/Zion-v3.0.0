@@ -413,8 +413,8 @@ mod tests {
 
     #[test]
     fn test_new_listener_defaults() {
-        let l = L1BlockListener::new("http://127.0.0.1:8443".to_string());
-        assert_eq!(l.rpc_url, "http://127.0.0.1:8443");
+        let l = L1BlockListener::new("http://127.0.0.1:9443".to_string());
+        assert_eq!(l.rpc_url, "http://127.0.0.1:9443");
         assert_eq!(l.last_height, 0);
         assert_eq!(l.poll_interval_secs, 10);
     }

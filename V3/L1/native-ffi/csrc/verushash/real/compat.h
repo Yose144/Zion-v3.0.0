@@ -27,10 +27,17 @@
         #include <intrin.h>
     #else
         #include <x86intrin.h>
-        #include <cpuid.h>
+        /* <cpuid.h> is included by verus_clhash.h when needed; including it
+         * here too causes __get_cpuid_max redefinition on GCC 9 (Ubuntu 20.04). */
     #endif
 #else
     #define VERUSHASH_PORTABLE_ONLY 1
+#endif
+
+#if defined(_MSC_VER)
+    #define VERUSHASH_ALWAYS_INLINE static __forceinline
+#else
+    #define VERUSHASH_ALWAYS_INLINE static inline __attribute__((always_inline))
 #endif
 
 /* ---------------------------------------------------------------

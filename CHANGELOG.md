@@ -7,17 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.7-beta] — 2026-07-23 (Trinity All Green)
+
+### Added
+- **Trinity engine** — three-stream mining architecture: ZION core + GPU auxiliary + CPU auxiliary, all paid out in ZION
+- **Native-ffi hash implementations** — hardware-accelerated C kernels for auxiliary merge-mining algorithms
+- **PPLNS 10k+ miner optimizations** — miner ID interning (u32), incremental share weights, configurable window size
+- **DAO API improvements** — proposal row-to-value conversion, parsed JSON fields for frontend
+- **Shared L1 types crate** — `zion-l1-types` eliminates address/RPC duplication across bridge/dao/atomic-swap
+- **OASIS guild system** — list_guilds endpoint, guild-based gameplay
+- **Free World L1 scanner** — improved chain monitoring
+
+### Fixed
+- **Block retention bug** — `set_block_retention(0)` was skipped by `> 0` guard, causing unintended pruning
+- **NVIDIA OpenCL address-space mismatch** — keccak256_136_mix kernel fix
+- **Vardiff clamp** — pool difficulty adjustment bounds
+- **DAO election tally** — D'Hondt seat allocation integration
+- **Bridge relayer** — RPC address normalization edge cases
+
+### Security
+- **Secrets scan** — all hardcoded server IPs removed from public-facing content
+- **Hardhat config cleanup** — no sensitive data in build configs
+
+---
+
 ## [3.0.6-beta] — 2026-07-15 (Protocol + Pool + Docs Sync)
 
 ### Added
-- **AuxPow B2b stream profit system** — RVN kawpow live on Edge pool, auto coin switching, revenue tracking
-- **GPU-native Pearl PoUW pipeline** — Merkle proof reconstruction, E2E verification
-- **PearlStratum protocol** — PRL (Pearl) external coin support
+- **Trinity engine (initial release)** — three-stream mining: ZION core + GPU auxiliary + CPU auxiliary, all revenue paid in ZION
+- **Proof-of-Useful-Work pipeline** — Merkle proof reconstruction, end-to-end verification
+- **Auxiliary stratum protocol** — external coin support for GPU and CPU streams
 - **BridgeValidator contract tracking** — Base Mainnet 5/5 guardian multisig address
 
 ### Fixed
 - **Pool CLI earnings** — switched from non-existent JSON-RPC to pool HTTP API
-- **Edge environment** — added missing `ZION_POOL_AUXPOW_*` and stream-profit env vars
 - **Protocol version** — synced live node, code, and docs to `zion-v3-node/3.0.6`
 - **Backup node documentation** — noted offline status and seed peers
 

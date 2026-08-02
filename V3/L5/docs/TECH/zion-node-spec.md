@@ -149,8 +149,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 
 # 5. Clone and build ZION
-git clone https://github.com/Yose144/2.9.6.git
-cd 2.9.6-main/V3
+git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
+cd v3-Mainnet/V3
 cargo build --release -p zion-core --bin node
 
 # 6. Configure node
@@ -170,7 +170,7 @@ After=network.target
 [Service]
 Type=simple
 User=zion-node
-ExecStart=/home/zion-node/2.9.6-main/V3/target/release/node
+ExecStart=/home/zion-node/zion/V3/target/release/node
 Restart=always
 RestartSec=10
 

@@ -321,7 +321,7 @@ downhill — toward those who do the work.
 Trinity demands nothing: it is not a fee, a registration, or a
 setting. It is a property of the official ZION miner v3.0.6 and later.
 ZION's core and pool remain fully open under the MIT license; the Triple
-Stream engine is a proprietary bonus layer above them — free to everyone
+Stream engine is a bonus layer above them — free to everyone
 who mines with the official miner.
 
 ---
